@@ -6,6 +6,9 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `overview/AGENT_OVERVIEW.md` – リポジトリ構成と既存サーバーの要点。
 - `requirements/WEB_CLIENT_REQUIREMENTS.md` – 機能・非機能要件。
 - `planning/WEB_CLIENT_WORK_PLAN.md` – 実装計画とマイルストーン。
+- `planning/phase0/PHASE0_DELIVERABLES.md` – フェーズ0の進捗サマリと意思決定ログ。
+- `planning/phase0/API_INVENTORY.md` – REST エンドポイント一覧と利用方針。
+- `planning/phase1/PHASE1_FOUNDATION.md` – フェーズ1 技術基盤メモとチェックリスト。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` – 1画面完結レイアウトの設計指針。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` Appendix – 既存カルテ画面から抽出した業務要件メモ。
 - 参考資料（PDF, 画像等）は `docs/` 配下の各カテゴリに再配置し、本ハブからリンク。
@@ -30,3 +33,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 ## 今後の拡張候補
 - 認証トークン方式や SSE/WebSocket 化の検討結果は `planning/` 直下の補遺として追加予定。
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
+
+## 直近更新
+- 2025-10-29: `planning/phase0/PHASE0_DELIVERABLES.md`, `planning/phase0/API_INVENTORY.md` を追加し、フェーズ0タスクの進捗と REST API 利用方針を整理。
+- 2025-10-29: `planning/phase1/PHASE1_FOUNDATION.md` を追加し、web-client プロジェクト初期セットアップと採用スタックを記録。
