@@ -1,0 +1,32 @@
+# Web クライアント開発ドキュメントハブ
+
+Web クライアント構想に必要なドキュメントをカテゴリ別にまとめたナビゲーションです。各フォルダは `docs/web-client/` 配下に整理されています。
+
+## ストラクチャ概要
+- `overview/AGENT_OVERVIEW.md` – リポジトリ構成と既存サーバーの要点。
+- `requirements/WEB_CLIENT_REQUIREMENTS.md` – 機能・非機能要件。
+- `planning/WEB_CLIENT_WORK_PLAN.md` – 実装計画とマイルストーン。
+- `ux/ONE_SCREEN_LAYOUT_GUIDE.md` – 1画面完結レイアウトの設計指針。
+- `ux/ONE_SCREEN_LAYOUT_GUIDE.md` Appendix – 既存カルテ画面から抽出した業務要件メモ。
+- 参考資料（PDF, 画像等）は `docs/` 配下の各カテゴリに再配置し、本ハブからリンク。
+
+## 開発者の入り口
+1. `overview/AGENT_OVERVIEW.md` でシステム全体像と制約を理解する。
+2. `requirements/WEB_CLIENT_REQUIREMENTS.md` をレビューしてスコープ・品質要件を把握する。
+3. `planning/WEB_CLIENT_WORK_PLAN.md` のフェーズ計画に沿ってタスクを進行する。
+4. UI/UX 検討時は `ux/` 内ドキュメント（特に Appendix）と設計検討メモを参照する。
+
+## サーバー連携とセキュリティの要点
+- WildFly 上の既存 WAR を改変せず、REST API (`/patient`, `/karte`, `/orca` 等) を活用する。
+- 認証ヘッダ: `userName`, `password(MD5)`, `clientUUID` をすべてのリクエストに付与する。
+- `/chartEvent/subscribe` を用いた長輪講で排他制御とリアルタイム更新を実現する。
+- 自費カルテは `DocInfoModel.healthInsurance` と `DocInfoModel.isSendClaim` を適切に設定し、CLAIM 送信を制御する。
+
+## 運用ガイドライン
+- ドキュメント更新時は内容と日付を記録し、本ハブの該当セクションへリンクを追加する。
+- 新規資料を追加した場合は `README.md`（本ファイル）にカテゴリと保存場所を明記する。
+- セキュリティ関連の変更は必ずレビューを経て、関連ドキュメントへ反映する。
+
+## 今後の拡張候補
+- 認証トークン方式や SSE/WebSocket 化の検討結果は `planning/` 直下の補遺として追加予定。
+- PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
