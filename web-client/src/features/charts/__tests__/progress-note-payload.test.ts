@@ -3,7 +3,10 @@ import { describe, expect, it } from 'vitest';
 
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
-import { createProgressNoteDocument } from '@/features/charts/utils/progress-note-payload';
+import {
+  createProgressNoteDocument,
+  type ProgressNoteBilling,
+} from '@/features/charts/utils/progress-note-payload';
 import type { AuthSession } from '@/libs/auth/auth-types';
 
 describe('createProgressNoteDocument', () => {
@@ -74,6 +77,13 @@ describe('createProgressNoteDocument', () => {
     },
   };
 
+  const insuranceBilling: ProgressNoteBilling = {
+    mode: 'insurance',
+    classCode: 'Z1',
+    description: 'Z1 自費',
+    guid: 'INS-001',
+  };
+
   it('builds a document payload with progress course modules', () => {
     const document = createProgressNoteDocument({
       draft,
@@ -86,6 +96,7 @@ describe('createProgressNoteDocument', () => {
       licenseName: session.userProfile?.licenseName,
       departmentCode: visit.departmentCode,
       departmentName: visit.departmentName,
+      billing: insuranceBilling,
     });
 
     expect(document.docInfoModel.docType).toBe('karte');
@@ -104,5 +115,74 @@ describe('createProgressNoteDocument', () => {
     const planText = Buffer.from(planModule.beanBytes ?? '', 'base64').toString('utf-8');
     expect(planText).toContain('P:');
     expect(planText).toContain(draft.plan);
+  });
+
+  it('marks self-pay notes to skip CLAIM transmission and embeds summary', () => {
+    const billing: ProgressNoteBilling = {
+      mode: 'self-pay',
+      receiptCode: '950',
+      label: 'その他の自費（非課税）',
+      quantity: '1回',
+      performer: '看護師A',
+      lotNumber: 'LOT-01',
+      memo: '麻酔クリーム込み',
+    };
+
+    const document = createProgressNoteDocument({
+      draft,
+      visit,
+      karteId: 4001,
+      session,
+      billing,
+    });
+
+    expect(document.docInfoModel.healthInsurance).toBe('950');
+    expect(document.docInfoModel.healthInsuranceDesc).toContain('その他の自費（非課税）');
+    expect(document.docInfoModel.healthInsuranceDesc).toContain('数量: 1回');
+    expect(document.docInfoModel.healthInsuranceDesc).toContain('実施者: 看護師A');
+    expect(document.docInfoModel.healthInsuranceGUID).toBe('');
+    expect(document.docInfoModel.sendClaim).toBe(false);
+  });
+
+  it('supports taxable self-pay receipts by disabling CLAIM send', () => {
+    const billing: ProgressNoteBilling = {
+      mode: 'self-pay',
+      receiptCode: '960',
+      label: 'その他の自費（課税）',
+    };
+
+    const document = createProgressNoteDocument({
+      draft,
+      visit,
+      karteId: 4001,
+      session,
+      billing,
+    });
+
+    expect(document.docInfoModel.healthInsurance).toBe('960');
+    expect(document.docInfoModel.healthInsuranceDesc).toBe('その他の自費（課税）');
+    expect(document.docInfoModel.sendClaim).toBe(false);
+  });
+
+  it('trims whitespace-only self-pay inputs before embedding description', () => {
+    const billing: ProgressNoteBilling = {
+      mode: 'self-pay',
+      receiptCode: '950',
+      label: 'その他の自費（非課税）',
+      quantity: '  ',
+      performer: '\n',
+      lotNumber: '',
+      memo: '  メモ  ',
+    };
+
+    const document = createProgressNoteDocument({
+      draft,
+      visit,
+      karteId: 4001,
+      session,
+      billing,
+    });
+
+    expect(document.docInfoModel.healthInsuranceDesc).toBe('その他の自費（非課税） / 備考: メモ');
   });
 });

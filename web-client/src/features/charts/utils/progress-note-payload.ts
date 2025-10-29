@@ -9,6 +9,27 @@ export interface ProgressNoteDraft {
   plan: string;
 }
 
+export type BillingMode = 'insurance' | 'self-pay';
+
+export interface InsuranceBillingDetails {
+  mode: 'insurance';
+  classCode?: string;
+  description?: string;
+  guid?: string;
+}
+
+export interface SelfPayBillingDetails {
+  mode: 'self-pay';
+  receiptCode: string;
+  label: string;
+  quantity?: string;
+  performer?: string;
+  lotNumber?: string;
+  memo?: string;
+}
+
+export type ProgressNoteBilling = InsuranceBillingDetails | SelfPayBillingDetails;
+
 export interface ProgressNoteContext {
   draft: ProgressNoteDraft;
   visit: PatientVisitSummary;
@@ -20,6 +41,7 @@ export interface ProgressNoteContext {
   licenseName?: string;
   departmentCode?: string;
   departmentName?: string;
+  billing: ProgressNoteBilling;
 }
 
 const escapeXml = (value: string) =>
@@ -71,8 +93,37 @@ const formatTimestamp = (date: Date) => {
   return iso.slice(0, 19);
 };
 
+const buildSelfPayDescription = (billing: SelfPayBillingDetails) => {
+  const quantity = billing.quantity?.trim();
+  const performer = billing.performer?.trim();
+  const lotNumber = billing.lotNumber?.trim();
+  const memo = billing.memo?.trim();
+
+  const parts = [
+    billing.label,
+    quantity ? `数量: ${quantity}` : null,
+    performer ? `実施者: ${performer}` : null,
+    lotNumber ? `ロット: ${lotNumber}` : null,
+    memo ? `備考: ${memo}` : null,
+  ].filter((entry): entry is string => Boolean(entry));
+
+  return parts.join(' / ');
+};
+
 export const createProgressNoteDocument = (context: ProgressNoteContext) => {
-  const { draft, visit, karteId, session, facilityName, userDisplayName, userModelId, licenseName, departmentCode, departmentName } = context;
+  const {
+    draft,
+    visit,
+    karteId,
+    session,
+    facilityName,
+    userDisplayName,
+    userModelId,
+    licenseName,
+    departmentCode,
+    departmentName,
+    billing,
+  } = context;
 
   const { credentials, userProfile } = session;
   const now = new Date();
@@ -124,6 +175,26 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
     },
   } as const;
 
+  const billingInfo = (() => {
+    if (billing.mode === 'insurance') {
+      return {
+        healthInsurance: billing.classCode ?? '',
+        healthInsuranceDesc: billing.description ?? '',
+        healthInsuranceGUID: billing.guid ?? visit.insuranceUid ?? '',
+        sendClaim: Boolean(billing.classCode),
+      };
+    }
+
+    const description = buildSelfPayDescription(billing);
+
+    return {
+      healthInsurance: billing.receiptCode,
+      healthInsuranceDesc: description,
+      healthInsuranceGUID: '',
+      sendClaim: false,
+    };
+  })();
+
   return {
     ...baseEntry,
     docInfoModel: {
@@ -138,9 +209,9 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
       firstConfirmDate: timestamp,
       department: visit.departmentCode ?? departmentCode ?? '',
       departmentDesc: departmentDescriptor,
-      healthInsurance: '',
-      healthInsuranceDesc: '',
-      healthInsuranceGUID: visit.insuranceUid ?? '',
+      healthInsurance: billingInfo.healthInsurance,
+      healthInsuranceDesc: billingInfo.healthInsuranceDesc,
+      healthInsuranceGUID: billingInfo.healthInsuranceGUID,
       hasMark: false,
       hasImage: false,
       hasRp: false,
@@ -150,7 +221,7 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
       status: 'F',
       parentId: null,
       parentIdRelation: null,
-      sendClaim: false,
+      sendClaim: billingInfo.sendClaim,
       patientId: visit.patientId,
       patientName: visit.fullName,
       patientGender: visit.gender ?? '',
