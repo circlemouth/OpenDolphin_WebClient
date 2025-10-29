@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:load": "tsx scripts/load-test.ts",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build"
@@ -35,6 +36,7 @@
     "@storybook/addon-essentials": "^8.6.14",
     "@storybook/addon-interactions": "^8.6.14",
     "@storybook/react-vite": "^8.6.14",
+    "@axe-core/react": "^4.8.5",
     "@testing-library/jest-dom": "^6.9.1",
     "@testing-library/react": "^16.3.0",
     "@testing-library/user-event": "^14.6.1",
@@ -42,6 +44,7 @@
     "@types/react": "^19.1.16",
     "@types/react-dom": "^19.1.9",
     "@types/testing-library__jest-dom": "^5.14.9",
+    "@vitejs/plugin-basic-ssl": "^1.0.2",
     "@vitejs/plugin-react": "^5.0.4",
     "@vitest/coverage-v8": "^4.0.5",
     "eslint": "^9.36.0",
@@ -55,6 +58,9 @@
     "vite": "^6.0.11",
     "vitest": "^4.0.5",
     "storybook": "^8.6.14",
-    "eslint-plugin-storybook": "^0.8.0"
+    "axe-core": "^4.10.0",
+    "eslint-plugin-storybook": "^0.8.0",
+    "tsx": "^4.19.2",
+    "vitest-axe": "^1.0.0-pre.5"
   }
 }

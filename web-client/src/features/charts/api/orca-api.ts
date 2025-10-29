@@ -1,4 +1,5 @@
 import { httpClient } from '@/libs/http';
+import { measureApiPerformance } from '@/libs/monitoring';
 
 import type {
   DiseaseMasterEntry,
@@ -6,6 +7,7 @@ import type {
   GeneralNameEntry,
   TensuMasterEntry,
 } from '@/features/charts/types/orca';
+import { determineInteractionSeverity } from '@/features/charts/utils/interactionSeverity';
 
 interface RawTensuMaster {
   srycd?: string | null;
@@ -111,6 +113,12 @@ const mapDrugInteraction = (entry: RawDrugInteraction): DrugInteractionEntry | n
     code2,
     symptomCode: entry.syojyoucd ?? undefined,
     symptomDescription: entry.sskijo ?? undefined,
+    severity: determineInteractionSeverity({
+      code1,
+      code2,
+      symptomCode: entry.syojyoucd ?? undefined,
+      symptomDescription: entry.sskijo ?? undefined,
+    }),
   };
 };
 
@@ -133,9 +141,20 @@ export const searchTensuByName = async (
   const now = formatOrcaDate(options?.date);
   const partial = options?.partialMatch ?? true;
   const endpoint = `/orca/tensu/name/${buildParam([trimmed, now, partial])}/`;
-  const response = await httpClient.get<RawTensuListResponse>(endpoint);
-  const list = response.data?.list ?? [];
-  return list.map(mapTensuMaster).filter((item): item is TensuMasterEntry => Boolean(item));
+  return measureApiPerformance(
+    'orca.master.search',
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<RawTensuListResponse>(endpoint);
+      const list = response.data?.list ?? [];
+      return list.map(mapTensuMaster).filter((item): item is TensuMasterEntry => Boolean(item));
+    },
+    {
+      keyword: trimmed,
+      partial,
+      date: options?.date?.toISOString(),
+    },
+  );
 };
 
 export const searchDiseaseByName = async (
@@ -149,9 +168,20 @@ export const searchDiseaseByName = async (
   const now = formatOrcaDate(options?.date);
   const partial = options?.partialMatch ?? true;
   const endpoint = `/orca/disease/name/${buildParam([trimmed, now, partial])}/`;
-  const response = await httpClient.get<RawDiseaseListResponse>(endpoint);
-  const list = response.data?.list ?? [];
-  return list.map(mapDiseaseEntry).filter((item): item is DiseaseMasterEntry => Boolean(item));
+  return measureApiPerformance(
+    'orca.master.search',
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<RawDiseaseListResponse>(endpoint);
+      const list = response.data?.list ?? [];
+      return list.map(mapDiseaseEntry).filter((item): item is DiseaseMasterEntry => Boolean(item));
+    },
+    {
+      keyword: trimmed,
+      partial,
+      date: options?.date?.toISOString(),
+    },
+  );
 };
 
 export const lookupGeneralName = async (code: string): Promise<GeneralNameEntry | null> => {
@@ -160,15 +190,22 @@ export const lookupGeneralName = async (code: string): Promise<GeneralNameEntry 
     return null;
   }
   const endpoint = `/orca/general/${encodeURIComponent(trimmed)}`;
-  const response = await httpClient.get<RawGeneralNameResponse>(endpoint);
-  const payload = response.data;
-  if (!payload?.code || !payload.name) {
-    return null;
-  }
-  return {
-    code: payload.code,
-    name: payload.name,
-  };
+  return measureApiPerformance(
+    'orca.master.search',
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<RawGeneralNameResponse>(endpoint);
+      const payload = response.data;
+      if (!payload?.code || !payload.name) {
+        return null;
+      }
+      return {
+        code: payload.code,
+        name: payload.name,
+      };
+    },
+    { keyword: trimmed },
+  );
 };
 
 export const checkDrugInteractions = async (
@@ -182,7 +219,14 @@ export const checkDrugInteractions = async (
     codes1,
     codes2,
   };
-  const response = await httpClient.put<RawDrugInteractionListResponse>('/orca/interaction', payload);
-  const list = response.data?.list ?? [];
-  return list.map(mapDrugInteraction).filter((item): item is DrugInteractionEntry => Boolean(item));
+  return measureApiPerformance(
+    'orca.master.search',
+    'PUT /orca/interaction',
+    async () => {
+      const response = await httpClient.put<RawDrugInteractionListResponse>('/orca/interaction', payload);
+      const list = response.data?.list ?? [];
+      return list.map(mapDrugInteraction).filter((item): item is DrugInteractionEntry => Boolean(item));
+    },
+    { existingCount: codes2.length, candidateCount: codes1.length },
+  );
 };

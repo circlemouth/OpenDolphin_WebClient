@@ -1,5 +1,7 @@
 import axios from 'axios';
 
+import { getCsrfToken, refreshCsrfToken, shouldAttachCsrfHeader } from '@/libs/security';
+
 type AuthHeaderProvider = () => Record<string, string> | null | Promise<Record<string, string> | null>;
 
 export type HttpAuditPhase = 'request' | 'response' | 'error';
@@ -39,11 +41,14 @@ declare module 'axios' {
 const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 const timeout = Number.parseInt(import.meta.env.VITE_HTTP_TIMEOUT_MS ?? '10000', 10);
 const maxRetries = Number.parseInt(import.meta.env.VITE_HTTP_MAX_RETRIES ?? '1', 10);
+const auditExclusionPattern = /\/audit\/logs$/;
 
 export const httpClient = axios.create({
   baseURL,
   timeout,
   withCredentials: true,
+  xsrfCookieName: 'ODW_XSRF',
+  xsrfHeaderName: 'X-CSRF-Token',
 });
 
 httpClient.interceptors.request.use(async (config) => {
@@ -63,16 +68,35 @@ httpClient.interceptors.request.use(async (config) => {
     }
   }
 
+  config.headers = {
+    'Cache-Control': 'no-store',
+    Pragma: 'no-cache',
+    'X-Requested-With': 'XMLHttpRequest',
+    ...config.headers,
+  };
+
+  if (shouldAttachCsrfHeader(config.method)) {
+    const token = getCsrfToken();
+    if (token) {
+      config.headers = {
+        ...config.headers,
+        'X-CSRF-Token': token,
+      };
+    }
+  }
+
   if (import.meta.env.DEV) {
     console.debug(`[HTTP] ${config.method?.toUpperCase() ?? 'GET'} ${config.url}`, config);
   }
 
-  auditLogger?.({
-    phase: 'request',
-    method: config.method?.toUpperCase() ?? 'GET',
-    url: config.url,
-    retryCount: config.metadata?.retryCount ?? 0,
-  });
+  if (!auditExclusionPattern.test(config.url ?? '')) {
+    auditLogger?.({
+      phase: 'request',
+      method: config.method?.toUpperCase() ?? 'GET',
+      url: config.url,
+      retryCount: config.metadata?.retryCount ?? 0,
+    });
+  }
 
   return config;
 });
@@ -94,22 +118,26 @@ httpClient.interceptors.response.use(
     if (import.meta.env.DEV && response.config.metadata?.startTime) {
       const elapsed = Date.now() - response.config.metadata.startTime;
       console.debug(`[HTTP] ${response.config.url} completed in ${elapsed}ms`);
-      auditLogger?.({
-        phase: 'response',
-        method: response.config.method?.toUpperCase() ?? 'GET',
-        url: response.config.url,
-        status: response.status,
-        durationMs: elapsed,
-        retryCount: response.config.metadata?.retryCount ?? 0,
-      });
+      if (!auditExclusionPattern.test(response.config.url ?? '')) {
+        auditLogger?.({
+          phase: 'response',
+          method: response.config.method?.toUpperCase() ?? 'GET',
+          url: response.config.url,
+          status: response.status,
+          durationMs: elapsed,
+          retryCount: response.config.metadata?.retryCount ?? 0,
+        });
+      }
     } else {
-      auditLogger?.({
-        phase: 'response',
-        method: response.config.method?.toUpperCase() ?? 'GET',
-        url: response.config.url,
-        status: response.status,
-        retryCount: response.config.metadata?.retryCount ?? 0,
-      });
+      if (!auditExclusionPattern.test(response.config.url ?? '')) {
+        auditLogger?.({
+          phase: 'response',
+          method: response.config.method?.toUpperCase() ?? 'GET',
+          url: response.config.url,
+          status: response.status,
+          retryCount: response.config.metadata?.retryCount ?? 0,
+        });
+      }
     }
     return response;
   },
@@ -119,15 +147,20 @@ httpClient.interceptors.response.use(
         const elapsed = error.config.metadata?.startTime
           ? Date.now() - error.config.metadata.startTime
           : undefined;
-        auditLogger?.({
-          phase: 'error',
-          method: error.config.method?.toUpperCase() ?? 'GET',
-          url: error.config.url,
-          status: error.response?.status,
-          durationMs: elapsed,
-          retryCount: error.config.metadata?.retryCount ?? 0,
-          error,
-        });
+        if (error.response?.status === 419 || error.response?.headers?.['x-csrf-refresh'] === 'required') {
+          refreshCsrfToken();
+        }
+        if (!auditExclusionPattern.test(error.config.url ?? '')) {
+          auditLogger?.({
+            phase: 'error',
+            method: error.config.method?.toUpperCase() ?? 'GET',
+            url: error.config.url,
+            status: error.response?.status,
+            durationMs: elapsed,
+            retryCount: error.config.metadata?.retryCount ?? 0,
+            error,
+          });
+        }
       }
       return Promise.reject(error);
     }
@@ -137,15 +170,21 @@ httpClient.interceptors.response.use(
     const retryCount = config.metadata.retryCount ?? 0;
 
     const elapsed = config.metadata.startTime ? Date.now() - config.metadata.startTime : undefined;
-    auditLogger?.({
-      phase: 'error',
-      method: config.method?.toUpperCase() ?? 'GET',
-      url: config.url,
-      status: error.response?.status,
-      durationMs: elapsed,
-      retryCount,
-      error,
-    });
+    if (error.response?.status === 419 || error.response?.headers?.['x-csrf-refresh'] === 'required') {
+      refreshCsrfToken();
+    }
+
+    if (!auditExclusionPattern.test(config.url ?? '')) {
+      auditLogger?.({
+        phase: 'error',
+        method: config.method?.toUpperCase() ?? 'GET',
+        url: config.url,
+        status: error.response?.status,
+        durationMs: elapsed,
+        retryCount,
+        error,
+      });
+    }
 
     if (retryCount >= maxRetries) {
       return Promise.reject(error);
