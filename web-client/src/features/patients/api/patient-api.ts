@@ -7,28 +7,13 @@ import type {
   PatientSummary,
   RawPatientResource,
 } from '@/features/patients/types/patient';
+import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
 
 const searchEndpointMap: Record<PatientSearchMode, string> = {
   name: '/patient/name/',
   kana: '/patient/kana/',
   id: '/patient/id/',
   digit: '/patient/digit/',
-};
-
-const isString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
-
-const buildSafetyNotes = (resource: RawPatientResource): string[] => {
-  const candidates = [
-    resource.appMemo,
-    resource.reserve1,
-    resource.reserve2,
-    resource.reserve3,
-    resource.reserve4,
-    resource.reserve5,
-    resource.reserve6,
-  ].filter(isString);
-
-  return Array.from(new Set(candidates.map((candidate) => candidate.trim())));
 };
 
 const transformPatient = (resource: RawPatientResource): PatientSummary | null => {
@@ -49,7 +34,15 @@ const transformPatient = (resource: RawPatientResource): PatientSummary | null =
     genderDesc: resource.genderDesc?.trim(),
     birthday: resource.birthday?.trim(),
     lastVisitDate: resource.pvtDate?.trim(),
-    safetyNotes: buildSafetyNotes(resource),
+    safetyNotes: buildSafetyNotes([
+      resource.appMemo,
+      resource.reserve1,
+      resource.reserve2,
+      resource.reserve3,
+      resource.reserve4,
+      resource.reserve5,
+      resource.reserve6,
+    ]),
     raw: resource,
   };
 };

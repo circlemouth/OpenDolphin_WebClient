@@ -37,6 +37,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-02-14: フェーズ2 カルテ編集機能を実装。`features/charts` に診察開始/終了、SOAP 保存、長輪講同期を追加し、`planning/phase2/PHASE2_PROGRESS.md` を更新。
 - 2026-01-15: フェーズ2 前半の進捗を `planning/phase2/PHASE2_PROGRESS.md` に整理。患者検索 UI / カルテ履歴 β 実装と既存ユーザー影響メモを追加。
 - 2025-11-05: 認証ラッパーのセキュリティレビュー完了を追記し、`planning/phase1/PHASE1_SECURITY_REVIEW.md` を新設。フェーズ1完了条件を更新。
 - 2025-11-04: フェーズ1成果物として認証 SDK/HTTP クライアント/Storybook を整備し、`design-system/ALPHA_COMPONENTS.md` を新設。`planning/phase1/PHASE1_FOUNDATION.md` と `planning/WEB_CLIENT_WORK_PLAN.md` のステータスを更新。

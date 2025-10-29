@@ -15,6 +15,7 @@
 - `common/`: shared models, converters, and utilities.
 - `server/`: Java EE WAR exposing REST endpoints and session beans.
 - `client/`: Swing UI packaged as fat JAR with plugin mechanism.
+- `web-client/`: React + TypeScript の新規 Web クライアント。Vite + React Query 構成で `src/features/` 配下にドメイン機能を格納。
 - `ext_lib/`: proprietary jars to install via `mvn install:install-file`.
 
 ## Build & Toolchain
@@ -51,6 +52,12 @@
 - REST communication via `open.dolphin.delegater.*`, wrapping RESTEasy client.
 - Plugin loader reads `META-INF/plugins/open.dolphin.*` resource files for dynamic component discovery.
 - `StubFactory` selects `ProjectStub` implementation (`dolphin` / `asp` / `i18n`) to apply environment-specific defaults.
+
+### web-client
+- `web-client/` は Vite + React 18 + TypeScript 構成。`npm run dev` / `npm run build` でビルド。
+- `src/features/` にドメイン機能を整理。`auth/`（セッション管理・HTTP ヘッダ）、`patients/`（患者検索/カルテ取得）、`charts/`（カルテ編集と排他制御）。
+- React Query で REST API をラップし、`libs/http` の axios クライアントが監査ログ・リトライを担う。
+- Phase 2 では `/chartEvent/subscribe` ロングポーリングと `/karte/document` 保存を実装。`TextArea` など共通 UI は `src/components/` に配置。
 
 ## Configuration & Properties
 - Defaults in `client/src/main/java/open/dolphin/resources/Defaults.properties`.
