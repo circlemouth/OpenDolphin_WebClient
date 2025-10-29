@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styled from '@emotion/styled';
 import { z } from 'zod';
 import { useForm } from 'react-hook-form';
@@ -9,6 +9,7 @@ import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { usePatientSearch } from '@/features/patients/hooks/usePatientSearch';
 import type { PatientSearchMode, PatientSummary } from '@/features/patients/types/patient';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
+import { recordOperationEvent } from '@/libs/audit';
 
 const PageLayout = styled.div`
   display: grid;
@@ -128,6 +129,8 @@ export const PatientsPage = () => {
   const [fromDateInput, setFromDateInput] = useState(defaultFromDateInput);
   const [karteFromDate, setKarteFromDate] = useState(defaultKarteFromDate());
 
+  const lastSearchAuditRef = useRef<number>(0);
+
   const searchQuery = usePatientSearch(searchParams);
 
   const patients = useMemo(() => searchQuery.data ?? [], [searchQuery.data]);
@@ -154,6 +157,49 @@ export const PatientsPage = () => {
     fromDate: karteFromDate,
     enabled: Boolean(selectedPatient),
   });
+
+  useEffect(() => {
+    if (!searchParams || searchQuery.status !== 'success') {
+      return;
+    }
+    if (lastSearchAuditRef.current === searchQuery.dataUpdatedAt) {
+      return;
+    }
+    lastSearchAuditRef.current = searchQuery.dataUpdatedAt;
+    const hitCount = searchQuery.data?.length ?? 0;
+    recordOperationEvent(
+      'patient',
+      hitCount > 0 ? 'info' : 'warning',
+      'patient_search',
+      '患者検索を実行しました',
+      {
+        keywordLength: searchParams.keyword.length,
+        mode: searchParams.mode,
+        hitCount,
+      },
+    );
+  }, [searchParams, searchQuery.status, searchQuery.dataUpdatedAt, searchQuery.data]);
+
+  useEffect(() => {
+    if (!selectedPatient) {
+      return;
+    }
+    recordOperationEvent('patient', 'info', 'patient_select', '患者を選択しました', {
+      patientId: selectedPatient.patientId,
+      fullName: selectedPatient.fullName,
+    });
+  }, [selectedPatient]);
+
+  useEffect(() => {
+    if (karteQuery.status !== 'success' || !selectedPatient) {
+      return;
+    }
+    recordOperationEvent('chart', 'info', 'karte_fetch', 'カルテ情報を取得しました', {
+      patientId: selectedPatient.patientId,
+      fromDate: karteFromDate,
+      hasDocuments: Boolean(karteQuery.data?.documents?.length),
+    });
+  }, [karteQuery.status, karteQuery.data, selectedPatient, karteFromDate]);
 
   const onSubmit = handleSubmit((values) => {
     setSearchParams(values);

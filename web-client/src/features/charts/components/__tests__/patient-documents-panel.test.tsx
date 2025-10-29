@@ -2,13 +2,12 @@ import userEvent from '@testing-library/user-event';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { fireEvent, render, screen } from '@/test/test-utils';
+import { PatientDocumentsPanel, type PatientDocumentPreviewPayload } from '@/features/charts/components/PatientDocumentsPanel';
 import {
-  PatientDocumentsPanel,
   buildInstructionHtml,
   buildReferralHtml,
   buildVaccinationConsentHtml,
-  type PatientDocumentPreviewPayload,
-} from '@/features/charts/components/PatientDocumentsPanel';
+} from '@/features/charts/components/patientDocumentTemplates';
 
 const patient = {
   id: 'P001',

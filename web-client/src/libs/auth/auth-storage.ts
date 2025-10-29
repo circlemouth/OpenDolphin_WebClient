@@ -10,20 +10,37 @@ const STORAGE_KEY = 'opendolphin:web-client:auth';
 
 type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
-const getStorage = (): StorageLike | null => {
+const memoryStore = new Map<string, string>();
+
+const memoryStorage: StorageLike & { clear: () => void } = {
+  getItem(key: string) {
+    return memoryStore.get(key) ?? null;
+  },
+  setItem(key: string, value: string) {
+    memoryStore.set(key, value);
+  },
+  removeItem(key: string) {
+    memoryStore.delete(key);
+  },
+  clear() {
+    memoryStore.clear();
+  },
+};
+
+const getStorage = (): (StorageLike & { clear?: () => void }) | null => {
   if (typeof window === 'undefined') {
-    return null;
+    return memoryStorage;
   }
 
-  if (window.sessionStorage) {
-    return window.sessionStorage;
+  try {
+    if (window.sessionStorage) {
+      return window.sessionStorage;
+    }
+  } catch {
+    // sessionStorage が利用できない（Safari プライベートモード等）の場合はメモリにフォールバック
   }
 
-  if (window.localStorage) {
-    return window.localStorage;
-  }
-
-  return null;
+  return memoryStorage;
 };
 
 export const loadStoredAuthSession = (): StoredAuthSession | null => {
@@ -71,9 +88,11 @@ export const clearAuthSession = () => {
   }
 
   storage.removeItem(STORAGE_KEY);
+  storage.clear?.();
 };
 
 export const __internal = {
   STORAGE_KEY,
   getStorage,
+  memoryStorage,
 };

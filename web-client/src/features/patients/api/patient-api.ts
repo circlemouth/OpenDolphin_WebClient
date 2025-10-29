@@ -1,4 +1,5 @@
 import { httpClient } from '@/libs/http';
+import { measureApiPerformance } from '@/libs/monitoring';
 
 import type {
   PatientListResponse,
@@ -59,10 +60,20 @@ export const searchPatients = async (params: PatientSearchRequest): Promise<Pati
   }
 
   const path = buildPatientSearchPath({ ...params, keyword });
-  const response = await httpClient.get<PatientListResponse>(path);
-  const rawList = response.data?.list ?? [];
+  return measureApiPerformance(
+    'patients.search',
+    `GET ${path}`,
+    async () => {
+      const response = await httpClient.get<PatientListResponse>(path);
+      const rawList = response.data?.list ?? [];
 
-  return rawList
-    .map(transformPatient)
-    .filter((patient): patient is PatientSummary => Boolean(patient));
+      return rawList
+        .map(transformPatient)
+        .filter((patient): patient is PatientSummary => Boolean(patient));
+    },
+    {
+      mode: params.mode,
+      keywordLength: keyword.length,
+    },
+  );
 };

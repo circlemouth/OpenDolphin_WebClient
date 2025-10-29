@@ -1,4 +1,5 @@
 import { httpClient } from '@/libs/http';
+import { measureApiPerformance } from '@/libs/monitoring';
 
 import type {
   AllergySummary,
@@ -67,29 +68,39 @@ export const fetchKarteByPatientId = async (
   }
 
   const endpoint = buildKartePidPath(trimmedId, fromDate.trim());
-  const response = await httpClient.get<RawKarteBean>(endpoint);
-  const raw = response.data;
+  return measureApiPerformance(
+    'charts.karte.fetch',
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<RawKarteBean>(endpoint);
+      const raw = response.data;
 
-  if (!raw || !raw.id) {
-    return null;
-  }
+      if (!raw || !raw.id) {
+        return null;
+      }
 
-  const allergies = (raw.allergies ?? [])
-    .map(transformAllergy)
-    .filter((entry): entry is AllergySummary => Boolean(entry));
-  const documents = (raw.docInfoList ?? [])
-    .map(transformDocInfo)
-    .filter((entry): entry is DocInfoSummary => Boolean(entry));
-  const memos = (raw.memoList ?? [])
-    .map(transformMemo)
-    .filter((entry): entry is PatientMemoSummary => Boolean(entry));
+      const allergies = (raw.allergies ?? [])
+        .map(transformAllergy)
+        .filter((entry): entry is AllergySummary => Boolean(entry));
+      const documents = (raw.docInfoList ?? [])
+        .map(transformDocInfo)
+        .filter((entry): entry is DocInfoSummary => Boolean(entry));
+      const memos = (raw.memoList ?? [])
+        .map(transformMemo)
+        .filter((entry): entry is PatientMemoSummary => Boolean(entry));
 
-  return {
-    id: raw.id,
-    created: raw.created,
-    allergies,
-    documents,
-    memos,
-    lastDocDate: raw.lastDocDate ?? null,
-  };
+      return {
+        id: raw.id,
+        created: raw.created,
+        allergies,
+        documents,
+        memos,
+        lastDocDate: raw.lastDocDate ?? null,
+      };
+    },
+    {
+      patientId: trimmedId,
+      fromDate,
+    },
+  );
 };

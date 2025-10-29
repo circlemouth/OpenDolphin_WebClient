@@ -30,4 +30,5 @@ export interface DrugInteractionEntry {
   code2: string;
   symptomCode?: string;
   symptomDescription?: string;
+  severity?: 'critical' | 'warning' | 'info';
 }
