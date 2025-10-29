@@ -3,10 +3,14 @@ import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
 import { Button, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
+import { StampLibraryPanel } from '@/features/charts/components/StampLibraryPanel';
+import { OrcaOrderPanel } from '@/features/charts/components/OrcaOrderPanel';
 import { useChartEventSubscription } from '@/features/charts/hooks/useChartEventSubscription';
 import { useChartLock } from '@/features/charts/hooks/useChartLock';
 import { usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
+import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
+import type { StampDefinition } from '@/features/charts/types/stamp';
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
@@ -122,6 +126,9 @@ export const ChartsPage = () => {
   const { session } = useAuth();
   const navigate = useNavigate();
   const visitsQuery = usePatientVisits();
+  const userPk = session?.userProfile?.userModelId ?? null;
+  const stampLibraryQuery = useStampLibrary(userPk);
+  const canLoadStampLibrary = Boolean(userPk);
   const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
   const [filter, setFilter] = useState('');
   const [draft, setDraft] = useState<ProgressNoteDraft>(defaultDraft);
@@ -243,6 +250,27 @@ export const ChartsPage = () => {
   const isLockedByOther = Boolean(
     selectedVisit && selectedVisit.ownerUuid && clientUuid && selectedVisit.ownerUuid !== clientUuid,
   );
+
+  const handleInsertStamp = (stamp: StampDefinition) => {
+    if (!isLockedByMe) {
+      setSaveError('診察を開始してからスタンプを挿入してください');
+      return;
+    }
+    const contextLabel = stamp.path.slice(1).join(' / ');
+    const snippet = [
+      stamp.name,
+      stamp.entity ? `(${stamp.entity})` : null,
+      contextLabel ? `[${contextLabel}]` : null,
+    ]
+      .filter(Boolean)
+      .join(' ');
+    setDraft((prev) => {
+      const planText = prev.plan ? `${prev.plan}\n${snippet}` : snippet;
+      return { ...prev, plan: planText };
+    });
+    setSaveError(null);
+    setSaveFeedback(`スタンプ「${stamp.name}」をPlanに追記しました。`);
+  };
 
   return (
     <Stack gap={16}>
@@ -403,6 +431,19 @@ export const ChartsPage = () => {
               </div>
             </ColumnStack>
           </SurfaceCard>
+          <StampLibraryPanel
+            stamps={stampLibraryQuery.data ?? []}
+            isLoading={canLoadStampLibrary ? stampLibraryQuery.isLoading : false}
+            isFetching={canLoadStampLibrary ? stampLibraryQuery.isFetching : false}
+            error={canLoadStampLibrary ? stampLibraryQuery.error : null}
+            onReload={() => {
+              if (canLoadStampLibrary) {
+                void stampLibraryQuery.refetch();
+              }
+            }}
+            onInsert={handleInsertStamp}
+            disabled={!isLockedByMe || !canLoadStampLibrary}
+          />
         </Stack>
 
         <Stack gap={16}>
@@ -447,6 +488,7 @@ export const ChartsPage = () => {
               )}
             </Stack>
           </SurfaceCard>
+          <OrcaOrderPanel disabled={!isLockedByMe} />
         </Stack>
       </PageGrid>
     </Stack>
