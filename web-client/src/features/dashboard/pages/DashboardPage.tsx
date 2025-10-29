@@ -1,34 +1,46 @@
-import styled from '@emotion/styled';
+import { Button, Stack, StatusBadge, SurfaceCard } from '@/components';
 
-const PlaceholderCard = styled.section`
-  background: ${({ theme }) => theme.palette.surface};
-  border-radius: ${({ theme }) => theme.radius.lg};
-  box-shadow: ${({ theme }) => theme.elevation.level1};
-  padding: 24px;
-  display: grid;
-  gap: 12px;
-`;
-
-const Heading = styled.h2`
-  font-size: ${({ theme }) => theme.typography.headingMd};
-  font-weight: 600;
-`;
-
-const Copy = styled.p`
-  color: ${({ theme }) => theme.palette.textMuted};
-`;
+const SectionTitle = ({ children, id }: { children: string; id?: string }) => (
+  <h2
+    id={id}
+    style={{
+      fontSize: '1.375rem',
+      fontWeight: 600,
+      display: 'flex',
+      alignItems: 'center',
+      gap: '0.75rem',
+    }}
+  >
+    {children}
+  </h2>
+);
 
 export const DashboardPage = () => (
-  <PlaceholderCard aria-labelledby="dashboard-heading">
-    <Heading id="dashboard-heading">ダッシュボード（仮）</Heading>
-    <Copy>
-      フェーズ1では認証・HTTP クライアント・アプリシェルの基盤整備に注力します。フェーズ2以降で患者検索やカルテ
-      UI を段階的に組み込みます。
-    </Copy>
-    <Copy>
-      現時点ではダミー API 連携と UI スケルトンを準備中です。進捗は
-      <code>docs/web-client/planning/phase1/PHASE1_FOUNDATION.md</code>
-      を参照してください。
-    </Copy>
-  </PlaceholderCard>
+  <Stack gap={24} aria-labelledby="dashboard-heading">
+    <SurfaceCard as="section" aria-labelledby="dashboard-heading">
+      <Stack gap={16}>
+        <SectionTitle id="dashboard-heading">フェーズ1 プラットフォーム基盤</SectionTitle>
+        <p>
+          認証 SDK、共通 HTTP クライアント、UI コンポーネントライブラリを整備し、フェーズ2以降の開発を加速するための基盤を完成させました。
+        </p>
+        <Stack direction="row" align="center" gap={12} wrap>
+          <StatusBadge tone="info">Auth SDK ready</StatusBadge>
+          <StatusBadge tone="success">HTTP client hardened</StatusBadge>
+          <StatusBadge tone="neutral">Design system α</StatusBadge>
+        </Stack>
+        <p>
+          Storybook でデザインシステム α 版を公開しています。共通コンポーネントの仕様やアクセシビリティ属性は
+          <code>docs/web-client/design-system/ALPHA_COMPONENTS.md</code> にまとめています。
+        </p>
+        <Stack direction="row" gap={12} wrap>
+          <Button as="a" href="/storybook" aria-label="Storybook を開く" variant="primary">
+            Storybook を開く
+          </Button>
+          <Button as="a" href="/docs/web-client/planning/phase1/PHASE1_FOUNDATION.md" variant="secondary">
+            ドキュメントを見る
+          </Button>
+        </Stack>
+      </Stack>
+    </SurfaceCard>
+  </Stack>
 );

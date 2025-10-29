@@ -2,6 +2,8 @@ import { Fragment } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import styled from '@emotion/styled';
 
+import { Button, StatusBadge, SurfaceCard, Stack } from '@/components';
+
 const SkipLink = styled.a`
   position: absolute;
   top: -40px;
@@ -57,22 +59,6 @@ const HeaderActions = styled.div`
   display: flex;
   gap: 12px;
   align-items: center;
-
-  button {
-    appearance: none;
-    border: none;
-    border-radius: ${({ theme }) => theme.radius.sm};
-    padding: 8px 14px;
-    background: transparent;
-    color: ${({ theme }) => theme.palette.textMuted};
-    transition: background 0.2s ease;
-    cursor: pointer;
-
-    &:hover {
-      background: ${({ theme }) => theme.palette.surfaceMuted};
-      color: ${({ theme }) => theme.palette.text};
-    }
-  }
 `;
 
 const Body = styled.div`
@@ -137,12 +123,20 @@ const Main = styled.main`
 `;
 
 const Sidebar = styled.aside`
-  background: ${({ theme }) => theme.palette.surface};
-  border-radius: ${({ theme }) => theme.radius.md};
-  box-shadow: ${({ theme }) => theme.elevation.level1};
-  padding: 16px;
   display: grid;
   gap: 12px;
+`;
+
+const SidebarHeading = styled.h3`
+  font-size: ${({ theme }) => theme.typography.headingSm};
+  font-weight: 600;
+  margin: 0;
+`;
+
+const SidebarText = styled.p`
+  margin: 0;
+  color: ${({ theme }) => theme.palette.textMuted};
+  font-size: ${({ theme }) => theme.typography.body};
 `;
 
 const Footer = styled.footer`
@@ -153,38 +147,6 @@ const Footer = styled.footer`
   color: ${({ theme }) => theme.palette.textMuted};
   font-size: ${({ theme }) => theme.typography.caption};
   border-top: 1px solid ${({ theme }) => theme.palette.border};
-`;
-
-const PlaceholderBadge = styled.span`
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  padding: 4px 10px;
-  border-radius: ${({ theme }) => theme.radius.sm};
-  background: ${({ theme }) => theme.palette.surfaceMuted};
-  color: ${({ theme }) => theme.palette.textMuted};
-  font-size: ${({ theme }) => theme.typography.caption};
-  font-weight: 600;
-  letter-spacing: 0.04em;
-`;
-
-const SidebarCard = styled.div`
-  background: ${({ theme }) => theme.palette.surfaceMuted};
-  border-radius: ${({ theme }) => theme.radius.md};
-  padding: 16px;
-  display: grid;
-  gap: 8px;
-  border: 1px dashed ${({ theme }) => theme.palette.border};
-`;
-
-const SidebarHeading = styled.h3`
-  font-size: ${({ theme }) => theme.typography.headingSm};
-  font-weight: 600;
-`;
-
-const SidebarCopy = styled.p`
-  color: ${({ theme }) => theme.palette.textMuted};
-  font-size: ${({ theme }) => theme.typography.body};
 `;
 
 const sidebarTips = [
@@ -203,10 +165,10 @@ export const AppShell = () => (
           <span>フェーズ1 プラットフォーム基盤</span>
         </Logo>
         <HeaderActions>
-          <PlaceholderBadge>α prebuild</PlaceholderBadge>
-          <button type="button" aria-label="通知センター（準備中）">
+          <StatusBadge tone="info">α prebuild</StatusBadge>
+          <Button variant="ghost" size="sm" aria-label="通知センター（準備中）">
             通知
-          </button>
+          </Button>
         </HeaderActions>
       </Header>
 
@@ -232,12 +194,16 @@ export const AppShell = () => (
         </Main>
 
         <Sidebar aria-label="進捗メモ">
-          <SidebarHeading>フェーズ1 トピック</SidebarHeading>
-          {sidebarTips.map((tip) => (
-            <SidebarCard key={tip}>
-              <SidebarCopy>{tip}</SidebarCopy>
-            </SidebarCard>
-          ))}
+          <SurfaceCard tone="muted" padding="sm">
+            <Stack gap={8}>
+              <SidebarHeading>フェーズ1 トピック</SidebarHeading>
+              <Stack gap={8}>
+                {sidebarTips.map((tip) => (
+                  <SidebarText key={tip}>{tip}</SidebarText>
+                ))}
+              </Stack>
+            </Stack>
+          </SurfaceCard>
         </Sidebar>
       </Body>
 
