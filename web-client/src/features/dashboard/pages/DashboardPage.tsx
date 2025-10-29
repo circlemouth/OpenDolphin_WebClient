@@ -19,25 +19,26 @@ export const DashboardPage = () => (
   <Stack gap={24} aria-labelledby="dashboard-heading">
     <SurfaceCard as="section" aria-labelledby="dashboard-heading">
       <Stack gap={16}>
-        <SectionTitle id="dashboard-heading">フェーズ1 プラットフォーム基盤</SectionTitle>
+        <SectionTitle id="dashboard-heading">フェーズ2 コア診療フロー（進捗レポート）</SectionTitle>
         <p>
-          認証 SDK、共通 HTTP クライアント、UI コンポーネントライブラリを整備し、フェーズ2以降の開発を加速するための基盤を完成させました。
+          ログインフローから患者検索・カルテ履歴まで一連の体験を Web クライアントで再現するため、フェーズ2タスクの前半を完了しました。
+          認証済みセッションはヘッダー連携に自動反映され、患者安全情報（アレルギー・警告メモ）が常時確認できます。
         </p>
         <Stack direction="row" align="center" gap={12} wrap>
-          <StatusBadge tone="info">Auth SDK ready</StatusBadge>
-          <StatusBadge tone="success">HTTP client hardened</StatusBadge>
-          <StatusBadge tone="neutral">Design system α</StatusBadge>
+          <StatusBadge tone="success">ログイン/ログアウト 実装済</StatusBadge>
+          <StatusBadge tone="info">患者検索 + 安全情報</StatusBadge>
+          <StatusBadge tone="warning">カルテ閲覧 β</StatusBadge>
         </Stack>
         <p>
-          Storybook でデザインシステム α 版を公開しています。共通コンポーネントの仕様やアクセシビリティ属性は
-          <code>docs/web-client/design-system/ALPHA_COMPONENTS.md</code> にまとめています。
+          フェーズ2の要点は <code>docs/web-client/planning/phase2/PHASE2_PROGRESS.md</code> に整理しています。安全情報パネルやカルテ履歴の UX
+          改善メモも随時追加予定です。
         </p>
         <Stack direction="row" gap={12} wrap>
-          <Button as="a" href="/storybook" aria-label="Storybook を開く" variant="primary">
-            Storybook を開く
+          <Button as="a" href="/docs/web-client/planning/phase2/PHASE2_PROGRESS.md" variant="primary">
+            フェーズ2進捗メモを見る
           </Button>
-          <Button as="a" href="/docs/web-client/planning/phase1/PHASE1_FOUNDATION.md" variant="secondary">
-            ドキュメントを見る
+          <Button as="a" href="/docs/web-client/planning/WEB_CLIENT_WORK_PLAN.md" variant="secondary">
+            実装計画を確認
           </Button>
         </Stack>
       </Stack>

@@ -1,8 +1,9 @@
-import { Fragment } from 'react';
-import { NavLink, Outlet } from 'react-router-dom';
+import { Fragment, useMemo } from 'react';
+import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import styled from '@emotion/styled';
 
 import { Button, StatusBadge, SurfaceCard, Stack } from '@/components';
+import { useAuth } from '@/libs/auth';
 
 const SkipLink = styled.a`
   position: absolute;
@@ -59,6 +60,23 @@ const HeaderActions = styled.div`
   display: flex;
   gap: 12px;
   align-items: center;
+`;
+
+const UserProfile = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  line-height: 1.2;
+`;
+
+const UserName = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.palette.text};
+`;
+
+const UserMeta = styled.span`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.palette.textMuted};
 `;
 
 const Body = styled.div`
@@ -150,64 +168,99 @@ const Footer = styled.footer`
 `;
 
 const sidebarTips = [
-  '再診シナリオのクリックパスをフェーズ2で検証予定',
-  'カルテ排他制御（clientUUID）は SDK で提供予定',
-  'Storybook でフォームコンポーネントを設計中',
+  '患者検索と安全情報パネルを Web 版に実装しました',
+  'カルテ履歴（DocInfo）を参照できるベータ版を搭載',
+  'ログイン/ログアウトで clientUUID を自動維持します',
 ];
 
-export const AppShell = () => (
-  <Fragment>
-    <SkipLink href="#main-content">メインコンテンツへスキップ</SkipLink>
-    <Shell>
-      <Header>
-        <Logo>
-          <span>OpenDolphin Web Client</span>
-          <span>フェーズ1 プラットフォーム基盤</span>
-        </Logo>
-        <HeaderActions>
-          <StatusBadge tone="info">α prebuild</StatusBadge>
-          <Button variant="ghost" size="sm" aria-label="通知センター（準備中）">
-            通知
-          </Button>
-        </HeaderActions>
-      </Header>
+export const AppShell = () => {
+  const navigate = useNavigate();
+  const { session, logout } = useAuth();
 
-      <Body>
-        <Navigation aria-label="主要ナビゲーション">
-          <NavTitle>Primary</NavTitle>
-          <NavItem to="/" end>
-            ダッシュボード
-          </NavItem>
-          <NavItem to="/patients" aria-disabled>
-            患者リスト（準備中）
-          </NavItem>
-          <NavItem to="/charts" aria-disabled>
-            カルテ（準備中）
-          </NavItem>
-          <NavItem to="/orca" aria-disabled>
-            ORCA 連携（準備中）
-          </NavItem>
-        </Navigation>
+  const userDisplay = useMemo(() => {
+    if (session?.userProfile?.displayName) {
+      return session.userProfile.displayName;
+    }
+    if (session) {
+      return `${session.credentials.facilityId}:${session.credentials.userId}`;
+    }
+    return 'サインイン済みユーザー';
+  }, [session]);
 
-        <Main id="main-content">
-          <Outlet />
-        </Main>
+  const userMeta = useMemo(() => {
+    if (!session) {
+      return '';
+    }
+    const { facilityId, userId } = session.credentials;
+    return `施設 ${facilityId} / ユーザー ${userId}`;
+  }, [session]);
 
-        <Sidebar aria-label="進捗メモ">
-          <SurfaceCard tone="muted" padding="sm">
-            <Stack gap={8}>
-              <SidebarHeading>フェーズ1 トピック</SidebarHeading>
+  const handleLogout = () => {
+    logout();
+    navigate('/login', { replace: true });
+  };
+
+  return (
+    <Fragment>
+      <SkipLink href="#main-content">メインコンテンツへスキップ</SkipLink>
+      <Shell>
+        <Header>
+          <Logo>
+            <span>OpenDolphin Web Client</span>
+            <span>フェーズ2 コア診療フロー β</span>
+          </Logo>
+          <HeaderActions>
+            <UserProfile aria-label="サインインユーザー情報">
+              <UserName>{userDisplay}</UserName>
+              <UserMeta>{userMeta}</UserMeta>
+            </UserProfile>
+            <StatusBadge tone="info">β build</StatusBadge>
+            <Button variant="ghost" size="sm" aria-label="通知センター（準備中）">
+              通知
+            </Button>
+            <Button variant="secondary" size="sm" onClick={handleLogout}>
+              ログアウト
+            </Button>
+          </HeaderActions>
+        </Header>
+
+        <Body>
+          <Navigation aria-label="主要ナビゲーション">
+            <NavTitle>Primary</NavTitle>
+            <NavItem to="/patients">
+              患者リスト
+            </NavItem>
+            <NavItem to="/dashboard">
+              ダッシュボード
+            </NavItem>
+            <NavItem to="/charts" aria-disabled>
+              カルテ編集（準備中）
+            </NavItem>
+            <NavItem to="/orca" aria-disabled>
+              ORCA 連携（準備中）
+            </NavItem>
+          </Navigation>
+
+          <Main id="main-content">
+            <Outlet />
+          </Main>
+
+          <Sidebar aria-label="フェーズ進捗メモ">
+            <SurfaceCard tone="muted" padding="sm">
               <Stack gap={8}>
-                {sidebarTips.map((tip) => (
-                  <SidebarText key={tip}>{tip}</SidebarText>
-                ))}
+                <SidebarHeading>フェーズ2 ハイライト</SidebarHeading>
+                <Stack gap={8}>
+                  {sidebarTips.map((tip) => (
+                    <SidebarText key={tip}>{tip}</SidebarText>
+                  ))}
+                </Stack>
               </Stack>
-            </Stack>
-          </SurfaceCard>
-        </Sidebar>
-      </Body>
+            </SurfaceCard>
+          </Sidebar>
+        </Body>
 
-      <Footer>© {new Date().getFullYear()} OpenDolphin</Footer>
-    </Shell>
-  </Fragment>
-);
+        <Footer>© {new Date().getFullYear()} OpenDolphin</Footer>
+      </Shell>
+    </Fragment>
+  );
+};
