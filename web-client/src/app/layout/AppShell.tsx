@@ -89,6 +89,18 @@ const Body = styled.div`
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+  height: calc(
+    100vh - ${({ theme }) => theme.layout.headerHeight} - ${({ theme }) => theme.layout.footerHeight}
+  );
+  min-height: 0;
+
+  @media (max-width: 1280px) {
+    grid-template-columns: ${({ theme }) => theme.layout.navWidth} minmax(0, 1fr);
+  }
+
+  @media (max-width: 960px) {
+    grid-template-columns: minmax(0, 1fr);
+  }
 `;
 
 const Navigation = styled.nav`
@@ -99,6 +111,14 @@ const Navigation = styled.nav`
   background: ${({ theme }) => theme.palette.surface};
   border-radius: ${({ theme }) => theme.radius.md};
   box-shadow: ${({ theme }) => theme.elevation.level1};
+  position: sticky;
+  top: ${({ theme }) => theme.layout.gutter};
+  align-self: start;
+
+  @media (max-width: 960px) {
+    order: -1;
+    position: static;
+  }
 `;
 
 const NavTitle = styled.h2`
@@ -138,11 +158,26 @@ const Main = styled.main`
   flex-direction: column;
   gap: ${({ theme }) => theme.layout.gutter};
   min-width: 0;
+  min-height: 0;
+  overflow: auto;
+
+  @media (max-width: 960px) {
+    order: 2;
+    overflow: visible;
+  }
 `;
 
 const Sidebar = styled.aside`
   display: grid;
   gap: 12px;
+  position: sticky;
+  top: ${({ theme }) => theme.layout.gutter};
+  align-self: start;
+
+  @media (max-width: 960px) {
+    order: 1;
+    position: static;
+  }
 `;
 
 const SidebarHeading = styled.h3`
@@ -168,9 +203,9 @@ const Footer = styled.footer`
 `;
 
 const sidebarTips = [
+  'カルテ編集画面で診察開始/終了と排他制御が可能になりました',
+  '長輪講イベントの自動反映で受付・カルテ状態がリアルタイム更新されます',
   '患者検索と安全情報パネルを Web 版に実装しました',
-  'カルテ履歴（DocInfo）を参照できるベータ版を搭載',
-  'ログイン/ログアウトで clientUUID を自動維持します',
 ];
 
 export const AppShell = () => {
@@ -233,8 +268,8 @@ export const AppShell = () => {
             <NavItem to="/dashboard">
               ダッシュボード
             </NavItem>
-            <NavItem to="/charts" aria-disabled>
-              カルテ編集（準備中）
+            <NavItem to="/charts">
+              カルテ編集
             </NavItem>
             <NavItem to="/orca" aria-disabled>
               ORCA 連携（準備中）

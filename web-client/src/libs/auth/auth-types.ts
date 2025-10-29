@@ -18,6 +18,10 @@ export interface AuthenticatedUserProfile {
   userId: string;
   displayName?: string;
   roles?: string[];
+  userModelId?: number;
+  commonName?: string;
+  facilityName?: string;
+  licenseName?: string;
 }
 
 export interface AuthSession {
