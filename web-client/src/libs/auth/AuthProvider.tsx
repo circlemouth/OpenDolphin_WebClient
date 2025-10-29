@@ -2,47 +2,59 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { PropsWithChildren } from 'react';
 
 import { AuthContext } from '@/libs/auth/auth-context';
-import { createAuthHeaders, createClientUuid, hashPasswordMd5 } from '@/libs/auth/auth-headers';
-import type { AuthContextValue, AuthCredentials, LoginPayload } from '@/libs/auth/auth-types';
+import { createAuthHeaders } from '@/libs/auth/auth-headers';
+import { destroyAuthSession, loginWithPassword, restoreAuthSession } from '@/libs/auth/auth-service';
+import type { AuthContextValue, AuthSession, LoginPayload } from '@/libs/auth/auth-types';
 import { setAuthHeaderProvider } from '@/libs/http/httpClient';
 
 export const AuthProvider = ({ children }: PropsWithChildren) => {
-  const [credentials, setCredentials] = useState<AuthCredentials | null>(null);
+  const [session, setSession] = useState<AuthSession | null>(() => restoreAuthSession());
 
   useEffect(() => {
-    setAuthHeaderProvider(() => (credentials ? createAuthHeaders(credentials) : null));
-  }, [credentials]);
+    setAuthHeaderProvider(() => (session ? createAuthHeaders(session.credentials) : null));
+  }, [session]);
 
-  const login = useCallback(async (payload: LoginPayload) => {
-    const passwordMd5 = await hashPasswordMd5(payload.password);
-    const clientUuid = createClientUuid(payload.clientUuid);
-
-    const nextCredentials: AuthCredentials = {
-      facilityId: payload.facilityId,
-      userId: payload.userId,
-      passwordMd5,
-      clientUuid,
+  useEffect(() => {
+    const handleStorage = () => {
+      setSession(restoreAuthSession());
     };
 
-    setCredentials(nextCredentials);
-    return nextCredentials;
+    if (typeof window !== 'undefined') {
+      window.addEventListener('storage', handleStorage);
+    }
+
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('storage', handleStorage);
+      }
+    };
+  }, []);
+
+  const login = useCallback(async (payload: LoginPayload) => {
+    const nextSession = await loginWithPassword(payload);
+    setSession(nextSession);
+    return nextSession;
   }, []);
 
   const logout = useCallback(() => {
-    setCredentials(null);
+    destroyAuthSession();
+    setSession(null);
   }, []);
 
-  const getAuthHeaders = useCallback(() => (credentials ? createAuthHeaders(credentials) : {}), [credentials]);
+  const getAuthHeaders = useCallback(
+    () => (session ? createAuthHeaders(session.credentials) : {}),
+    [session],
+  );
 
   const value = useMemo<AuthContextValue>(
     () => ({
-      credentials,
-      isAuthenticated: Boolean(credentials),
+      session,
+      isAuthenticated: Boolean(session),
       login,
       logout,
       getAuthHeaders,
     }),
-    [credentials, getAuthHeaders, login, logout],
+    [getAuthHeaders, login, logout, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

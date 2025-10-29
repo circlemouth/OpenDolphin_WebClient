@@ -1,1 +1,6 @@
-export { httpClient, setAuthHeaderProvider } from './httpClient';
+export {
+  httpClient,
+  setAuthHeaderProvider,
+  setHttpAuditLogger,
+} from './httpClient';
+export type { HttpAuditEvent, HttpAuditPhase } from './httpClient';
