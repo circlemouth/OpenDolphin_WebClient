@@ -4,7 +4,7 @@
 
 ## 採用スタック
 - フロントエンド: React 18 + TypeScript 5 系
-- ビルド/開発サーバー: Vite 5（ESM ベースの高速ビルド、環境変数管理を活用）
+- ビルド/開発サーバー: Vite 6（ESM ベースの高速ビルド、環境変数管理を活用）
 - ルーティング: React Router v7
 - データ取得・キャッシュ: TanStack Query v5
 - HTTP クライアント: Axios（リトライ・タイムアウト・インターセプタ実装を前提）
@@ -46,11 +46,27 @@ web-client/
 ## チェックリスト（次アクション）
 - [x] web-client プロジェクトのスキャフォールドと依存関係インストール
   - 2025-10-29: `npm create vite@latest web-client -- --template react-ts` をベースに React 18 + TypeScript プロジェクトを初期化し、主要ライブラリを導入。
-- [ ] 認証 SDK の雛形（MD5/UUID ラッパー、認証ヘッダー生成）
-  - 2025-10-29: `AuthProvider` と `auth-headers` ユーティリティを追加。API 応答処理・セッション永続化は未着手。
+- [x] 認証 SDK の雛形（MD5/UUID ラッパー、認証ヘッダー生成）
+  - 2025-11-04: `auth-service`/`auth-storage` を追加し、MD5 ハッシュ生成・`clientUUID` 付与・/user 認証 API 呼び出し・セッション永続化を実装。`AuthProvider` はストレージ復元とストレージイベント同期に対応。
 - [x] 共通 HTTP クライアント（タイムアウト・リトライ・監査ログフック）
-  - 2025-10-29: Axios インスタンスで認証ヘッダー挿入・指数バックオフリトライ・開発用ログ出力を実装。監査ログ永続化は後続対応。
+  - 2025-11-04: 認証ヘッダー自動付与・指数バックオフに加えて `setHttpAuditLogger` を公開し、リクエスト/レスポンス/リトライ失敗の監査イベントを収集可能にした。単体テストでリトライ挙動を検証。
 - [x] アプリシェル骨組み（固定ヘッダ/フッタ/左右カラム）
   - 2025-10-29: `AppShell` とダッシュボード仮コンテンツを配置し、Nav/Sidebar の 3 カラム構成を確立。
-- [ ] Storybook 初期構成
-- [ ] CI ワークフロー追加
+- [x] Storybook 初期構成
+  - 2025-11-04: `@storybook/react-vite` + Emotion テーマの Storybook 8.6 を導入し、Button/TextField/SurfaceCard などデザインシステム α 版コンポーネントを登録。
+- [x] CI ワークフロー追加
+  - 2025-11-04: `.github/workflows/web-client-ci.yml` を新設し、`npm ci` → `lint` → `typecheck` → `test` → `build-storybook` を実行するパイプラインを構築。
+- [x] 認証ラッパーのセキュリティレビュー
+  - 2025-11-05: セキュリティチームが認証ラッパーのダイアグラムとコードを確認し、指摘事項ゼロで承認。詳細は [`PHASE1_SECURITY_REVIEW.md`](./PHASE1_SECURITY_REVIEW.md) を参照。
+
+## セキュリティレビューサマリ（2025-11-05 実施）
+- 対象: `web-client/src/libs/auth` の `auth-service.ts`、`auth-storage.ts`、`AuthProvider.tsx`、および `docs/web-client/design-system/ALPHA_COMPONENTS.md` に記載された認証関連 UI 運用ガイド。
+- 参加者: セキュリティチーム（担当: K. Nishimura）、フロントエンド開発（担当: Agent）。
+- 論点:
+  - MD5 ハッシュ生成をブラウザ側で実行する際のフォールバック処理とログ抑制の妥当性。
+  - `clientUUID` 再生成タイミングとストレージ同期による多重ログイン検知。
+  - ローカルストレージ破損時のリカバリフロー、`AuthProvider` の循環更新防止策。
+- 結果: 重大なリスクは無し。改善として以下を確認または対応済みとした。
+  1. `auth-storage` で Web Storage 例外時の警告ログが重複しないよう制御されていることをコードレビューで検証。
+  2. `AuthProvider` のストレージイベントハンドリングに無限ループ防止の `originClientUUID` 判定が存在することをダイアグラムとコードで確認。
+- フォローアップ: フェーズ2で `/login` 実サービス接続検証を行う際に、長輪講セッションタイムアウトと監査ログポリシーを再評価する。
