@@ -1,7 +1,7 @@
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
-import { Button, Stack, SurfaceCard, TextField } from '@/components';
+import { Button, Stack, StatusBadge, SurfaceCard, TextField } from '@/components';
 import type {
   DiseaseMasterEntry,
   DrugInteractionEntry,
@@ -10,6 +10,8 @@ import type {
 } from '@/features/charts/types/orca';
 import { useDiseaseSearch, useGeneralNameLookup, useTensuSearch } from '@/features/charts/hooks/useOrcaMasterSearch';
 import { useInteractionCheck } from '@/features/charts/hooks/useInteractionCheck';
+import { recordOperationEvent } from '@/libs/audit';
+import { shouldBlockOrderBySeverity } from '@/features/charts/utils/interactionSeverity';
 
 const SectionHeader = styled.header`
   display: flex;
@@ -39,6 +41,10 @@ const ResultCard = styled.div`
 const ResultTitle = styled.div`
   font-weight: 600;
   color: ${({ theme }) => theme.palette.text};
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
 `;
 
 const ResultMeta = styled.div`
@@ -46,6 +52,21 @@ const ResultMeta = styled.div`
   color: ${({ theme }) => theme.palette.textMuted};
   margin-top: 4px;
   white-space: pre-wrap;
+`;
+
+const SeverityBadge = styled(StatusBadge)`
+  text-transform: none;
+  font-size: 0.75rem;
+  letter-spacing: normal;
+`;
+
+const AlertSummary = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: ${({ theme }) => theme.palette.surfaceMuted};
 `;
 
 const SelectionList = styled.ul`
@@ -108,6 +129,18 @@ const formatInteractionLabel = (interaction: DrugInteractionEntry, selections: S
   return `${fromName} × ${toName}`;
 };
 
+const severityToneMap: Record<NonNullable<DrugInteractionEntry['severity']>, 'danger' | 'warning' | 'info'> = {
+  critical: 'danger',
+  warning: 'warning',
+  info: 'info',
+};
+
+const severityLabelMap: Record<NonNullable<DrugInteractionEntry['severity']>, string> = {
+  critical: '重大',
+  warning: '注意',
+  info: '参考',
+};
+
 export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
   const [mode, setMode] = useState<OrcaSearchMode>('tensu');
   const [keyword, setKeyword] = useState('');
@@ -119,6 +152,7 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
   const [searchError, setSearchError] = useState<string | null>(null);
   const [existingSelections, setExistingSelections] = useState<Selection[]>([]);
   const [candidateSelections, setCandidateSelections] = useState<Selection[]>([]);
+  const [showMinorAlerts, setShowMinorAlerts] = useState(false);
 
   const tensuSearch = useTensuSearch();
   const diseaseSearch = useDiseaseSearch();
@@ -185,9 +219,19 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
 
   const handleInteractionCheck = async () => {
     interactionCheck.reset();
-    await interactionCheck.mutateAsync({
+    setShowMinorAlerts(false);
+    const result = await interactionCheck.mutateAsync({
       existingCodes: existingSelections.map((item) => item.code),
       candidateCodes: candidateSelections.map((item) => item.code),
+    });
+    const criticalCount = result.filter((entry) => shouldBlockOrderBySeverity(entry.severity ?? 'info')).length;
+    const severity: 'critical' | 'warning' | 'info' =
+      criticalCount > 0 ? 'critical' : result.length > 0 ? 'warning' : 'info';
+    recordOperationEvent('orca', severity, 'interaction_check', '併用禁忌チェックを実行しました', {
+      existingSelections: existingSelections.length,
+      candidateSelections: candidateSelections.length,
+      totalAlerts: result.length,
+      criticalAlerts: criticalCount,
     });
   };
 
@@ -245,6 +289,24 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
   };
 
   const renderedResults = renderSearchResults();
+
+  const visibleInteractions = useMemo(() => {
+    if (!interactionCheck.data) {
+      return [];
+    }
+    if (showMinorAlerts) {
+      return interactionCheck.data;
+    }
+    return interactionCheck.data.filter((entry) => shouldBlockOrderBySeverity(entry.severity ?? 'info'));
+  }, [interactionCheck.data, showMinorAlerts]);
+
+  const criticalAlertCount = useMemo(
+    () => (interactionCheck.data ?? []).filter((entry) => shouldBlockOrderBySeverity(entry.severity ?? 'info')).length,
+    [interactionCheck.data],
+  );
+  const totalAlerts = interactionCheck.data?.length ?? 0;
+  const hasCriticalAlerts = criticalAlertCount > 0;
+  const nonCriticalCount = totalAlerts - criticalAlertCount;
 
   return (
     <SurfaceCard>
@@ -356,24 +418,61 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
             >
               併用禁忌を確認
             </Button>
-            {interactionCheck.data && interactionCheck.data.length === 0 ? (
-              <InlineMessage>併用禁忌は見つかりませんでした。</InlineMessage>
-            ) : null}
             {interactionCheck.isError ? (
               <InlineError>併用禁忌チェックに失敗しました。後ほど再試行してください。</InlineError>
             ) : null}
-            {interactionCheck.data && interactionCheck.data.length > 0 ? (
-              <ResultList>
-                {interactionCheck.data.map((entry) => (
-                  <ResultCard key={`${entry.code1}-${entry.code2}-${entry.symptomCode ?? ''}`}>
-                    <ResultTitle>{formatInteractionLabel(entry, [...existingSelections, ...candidateSelections])}</ResultTitle>
-                    <ResultMeta>
-                      {entry.symptomDescription ?? '詳細不明'}
-                      {entry.symptomCode ? ` / 症状コード: ${entry.symptomCode}` : ''}
-                    </ResultMeta>
-                  </ResultCard>
-                ))}
-              </ResultList>
+            {interactionCheck.data ? (
+              totalAlerts === 0 ? (
+                <InlineMessage>併用禁忌は見つかりませんでした。</InlineMessage>
+              ) : (
+                <Stack gap={12}>
+                  <AlertSummary role="status" aria-live="polite">
+                    <div style={{ fontWeight: 600 }}>
+                      重大通知 {criticalAlertCount} 件 / 軽微通知 {nonCriticalCount} 件
+                    </div>
+                    <div>
+                      重大通知のみ入力遮断を適用します。
+                      {hasCriticalAlerts
+                        ? '重大通知に対応後、処方操作を継続してください。'
+                        : '軽微通知は情報提供のみで処方操作を遮断しません。'}
+                    </div>
+                    {nonCriticalCount > 0 ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowMinorAlerts((prev) => !prev)}
+                      >
+                        {showMinorAlerts ? '重大通知のみ表示' : `軽微な通知 ${nonCriticalCount} 件も表示`}
+                      </Button>
+                    ) : null}
+                  </AlertSummary>
+                  {visibleInteractions.length > 0 ? (
+                    <ResultList>
+                      {visibleInteractions.map((entry) => (
+                        <ResultCard key={`${entry.code1}-${entry.code2}-${entry.symptomCode ?? ''}`}>
+                          <ResultTitle>
+                            <SeverityBadge tone={severityToneMap[entry.severity ?? 'info']}>
+                              {severityLabelMap[entry.severity ?? 'info']}
+                            </SeverityBadge>
+                            <span>
+                              {formatInteractionLabel(entry, [...existingSelections, ...candidateSelections])}
+                            </span>
+                          </ResultTitle>
+                          <ResultMeta>
+                            {entry.symptomDescription ?? '詳細不明'}
+                            {entry.symptomCode ? ` / 症状コード: ${entry.symptomCode}` : ''}
+                          </ResultMeta>
+                        </ResultCard>
+                      ))}
+                    </ResultList>
+                  ) : (
+                    <InlineMessage>
+                      重大通知は存在しません。軽微な通知のみが発生しているため処方操作は継続可能です。
+                    </InlineMessage>
+                  )}
+                </Stack>
+              )
             ) : null}
           </Stack>
         </SurfaceCard>

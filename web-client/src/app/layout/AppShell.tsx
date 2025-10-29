@@ -203,9 +203,9 @@ const Footer = styled.footer`
 `;
 
 const sidebarTips = [
-  'カルテ編集画面で診察開始/終了と排他制御が可能になりました',
-  '長輪講イベントの自動反映で受付・カルテ状態がリアルタイム更新されます',
-  '患者検索と安全情報パネルを Web 版に実装しました',
+  'HTTPS・CSP・CSRF を含む前面セキュリティ対策を適用しました',
+  '患者検索・カルテ取得・ORCA マスター検索に性能計測と監査ログを追加しました',
+  '30 クライアント同時接続を想定した負荷テストスクリプトを提供しています',
 ];
 
 export const AppShell = () => {
@@ -242,14 +242,14 @@ export const AppShell = () => {
         <Header>
           <Logo>
             <span>OpenDolphin Web Client</span>
-            <span>フェーズ2 コア診療フロー β</span>
+            <span>フェーズ4 品質・安全性強化</span>
           </Logo>
           <HeaderActions>
             <UserProfile aria-label="サインインユーザー情報">
               <UserName>{userDisplay}</UserName>
               <UserMeta>{userMeta}</UserMeta>
             </UserProfile>
-            <StatusBadge tone="info">β build</StatusBadge>
+            <StatusBadge tone="info">Phase4 QA</StatusBadge>
             <Button variant="ghost" size="sm" aria-label="通知センター（準備中）">
               通知
             </Button>
@@ -283,7 +283,7 @@ export const AppShell = () => {
           <Sidebar aria-label="フェーズ進捗メモ">
             <SurfaceCard tone="muted" padding="sm">
               <Stack gap={8}>
-                <SidebarHeading>フェーズ2 ハイライト</SidebarHeading>
+                <SidebarHeading>フェーズ4 ハイライト</SidebarHeading>
                 <Stack gap={8}>
                   {sidebarTips.map((tip) => (
                     <SidebarText key={tip}>{tip}</SidebarText>
