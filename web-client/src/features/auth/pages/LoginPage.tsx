@@ -7,6 +7,7 @@ import { z } from 'zod';
 
 import { Button, Stack, SurfaceCard, TextField } from '@/components';
 import { useAuth } from '@/libs/auth';
+import { recordOperationEvent } from '@/libs/audit';
 
 const loginSchema = z.object({
   facilityId: z.string().min(1, '施設IDを入力してください'),
@@ -46,10 +47,21 @@ export const LoginPage = () => {
 
   const mutation = useMutation({
     mutationFn: login,
-    onSuccess: () => {
+    onSuccess: (session) => {
+      recordOperationEvent('auth', 'info', 'login_success', 'ユーザーが正常にサインインしました', {
+        facilityId: session.credentials.facilityId,
+        userId: session.credentials.userId,
+      });
       const state = location.state as LocationState | undefined;
       const redirectTo = state?.from?.pathname && state.from.pathname !== '/login' ? state.from.pathname : '/patients';
       navigate(redirectTo, { replace: true });
+    },
+    onError: (error: unknown, variables) => {
+      recordOperationEvent('auth', 'warning', 'login_failure', 'サインインに失敗しました', {
+        facilityId: variables.facilityId,
+        userId: variables.userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
     },
   });
 
@@ -60,6 +72,10 @@ export const LoginPage = () => {
   }, [isAuthenticated, navigate]);
 
   const onSubmit = handleSubmit((values) => {
+    recordOperationEvent('auth', 'info', 'login_attempt', 'ユーザーがサインインを試行しました', {
+      facilityId: values.facilityId,
+      userId: values.userId,
+    });
     mutation.mutate({
       facilityId: values.facilityId,
       userId: values.userId,
