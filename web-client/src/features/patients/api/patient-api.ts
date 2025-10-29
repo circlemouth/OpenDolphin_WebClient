@@ -1,0 +1,75 @@
+import { httpClient } from '@/libs/http';
+
+import type {
+  PatientListResponse,
+  PatientSearchMode,
+  PatientSearchRequest,
+  PatientSummary,
+  RawPatientResource,
+} from '@/features/patients/types/patient';
+
+const searchEndpointMap: Record<PatientSearchMode, string> = {
+  name: '/patient/name/',
+  kana: '/patient/kana/',
+  id: '/patient/id/',
+  digit: '/patient/digit/',
+};
+
+const isString = (value: unknown): value is string => typeof value === 'string' && value.trim().length > 0;
+
+const buildSafetyNotes = (resource: RawPatientResource): string[] => {
+  const candidates = [
+    resource.appMemo,
+    resource.reserve1,
+    resource.reserve2,
+    resource.reserve3,
+    resource.reserve4,
+    resource.reserve5,
+    resource.reserve6,
+  ].filter(isString);
+
+  return Array.from(new Set(candidates.map((candidate) => candidate.trim())));
+};
+
+const transformPatient = (resource: RawPatientResource): PatientSummary | null => {
+  const id = resource.id ?? 0;
+  const patientId = resource.patientId?.trim();
+  const fullName = resource.fullName?.trim();
+
+  if (!id || !patientId || !fullName) {
+    return null;
+  }
+
+  return {
+    id,
+    patientId,
+    fullName,
+    kanaName: resource.kanaName?.trim(),
+    gender: resource.gender?.trim(),
+    genderDesc: resource.genderDesc?.trim(),
+    birthday: resource.birthday?.trim(),
+    lastVisitDate: resource.pvtDate?.trim(),
+    safetyNotes: buildSafetyNotes(resource),
+    raw: resource,
+  };
+};
+
+export const buildPatientSearchPath = ({ mode, keyword }: PatientSearchRequest): string => {
+  const base = searchEndpointMap[mode] ?? searchEndpointMap.name;
+  return `${base}${encodeURIComponent(keyword.trim())}`;
+};
+
+export const searchPatients = async (params: PatientSearchRequest): Promise<PatientSummary[]> => {
+  const keyword = params.keyword.trim();
+  if (!keyword) {
+    return [];
+  }
+
+  const path = buildPatientSearchPath({ ...params, keyword });
+  const response = await httpClient.get<PatientListResponse>(path);
+  const rawList = response.data?.list ?? [];
+
+  return rawList
+    .map(transformPatient)
+    .filter((patient): patient is PatientSummary => Boolean(patient));
+};
