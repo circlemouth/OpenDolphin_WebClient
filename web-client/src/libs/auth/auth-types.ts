@@ -13,10 +13,22 @@ export interface LoginPayload extends AuthIdentity {
   clientUuid?: string;
 }
 
+export interface AuthenticatedUserProfile {
+  facilityId: string;
+  userId: string;
+  displayName?: string;
+  roles?: string[];
+}
+
+export interface AuthSession {
+  credentials: AuthCredentials;
+  userProfile?: AuthenticatedUserProfile;
+}
+
 export interface AuthContextValue {
-  credentials: AuthCredentials | null;
+  session: AuthSession | null;
   isAuthenticated: boolean;
-  login: (payload: LoginPayload) => Promise<AuthCredentials>;
+  login: (payload: LoginPayload) => Promise<AuthSession>;
   logout: () => void;
   getAuthHeaders: () => Record<string, string>;
 }
