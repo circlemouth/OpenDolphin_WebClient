@@ -3,11 +3,28 @@ import { createAuthHeaders, createClientUuid, hashPasswordMd5 } from '@/libs/aut
 import { clearAuthSession, loadStoredAuthSession, persistAuthSession } from '@/libs/auth/auth-storage';
 import type { AuthSession, LoginPayload } from '@/libs/auth/auth-types';
 
+interface RoleResource {
+  role?: string;
+}
+
+interface LicenseResource {
+  license?: string;
+}
+
+interface FacilityResource {
+  facilityId?: string;
+  facilityName?: string;
+}
+
 interface UserResourceResponse {
+  id?: number;
   userId: string;
   facilityId: string;
   displayName?: string;
-  roles?: string[];
+  commonName?: string;
+  roles?: RoleResource[];
+  licenseModel?: LicenseResource | null;
+  facilityModel?: FacilityResource | null;
 }
 
 const formatUserEndpoint = (facilityId: string, userId: string) => `/user/${facilityId}:${userId}`;
@@ -44,8 +61,12 @@ export const loginWithPassword = async (payload: LoginPayload): Promise<AuthSess
     ? {
         facilityId: response.data.facilityId ?? payload.facilityId,
         userId: response.data.userId ?? payload.userId,
-        displayName: response.data.displayName,
-        roles: response.data.roles,
+        displayName: response.data.displayName ?? response.data.commonName,
+        roles: response.data.roles?.map((role) => role.role).filter((role): role is string => Boolean(role)),
+        userModelId: response.data.id,
+        commonName: response.data.commonName,
+        facilityName: response.data.facilityModel?.facilityName,
+        licenseName: response.data.licenseModel?.license,
       }
     : undefined;
 
