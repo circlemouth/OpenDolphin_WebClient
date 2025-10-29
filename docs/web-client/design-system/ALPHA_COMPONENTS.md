@@ -16,6 +16,7 @@
 | --- | --- | --- | --- |
 | `Button` | 主要/副次アクション | `variant` (`primary`/`secondary`/`ghost`/`danger`), `size`, `isLoading`, `as="a"` | Anchor レンダリング対応。ローディング表示、左/右アイコンをサポート。 |
 | `TextField` | フォーム入力 | `label`, `description`, `errorMessage`, `leftAdornment` など | `ControlledTextField` で React Hook Form に統合可能。必須表示や aria 属性を内包。 |
+| `SelectField` | セレクト入力 | `label`, `options`, `description`, `errorMessage` | TextField と同一スタイルの `<select>` を提供。請求モードやテンプレート選択で利用。 |
 | `SurfaceCard` | 情報カード/サマリー | `tone` (`default`/`muted`/`elevated`), `padding` | 3 カラムレイアウトのサイドバー/メインセクションで再利用。 |
 | `StatusBadge` | ステータス表示 | `tone` (`info`/`success`/`warning`/`danger`/`neutral`) | 診療状態や環境バージョンのバッジ表示に利用。 |
 | `Stack` | 水平/垂直の余白制御 | `direction`, `gap`, `align`, `justify`, `wrap` | レイアウトユーティリティ。 |
@@ -27,4 +28,5 @@
 - [ ] `Button` と `SurfaceCard` のダークモード配色案を検討し、将来のアクセシビリティ要件に備える。
 
 更新履歴
+- 2026-03-06: `SelectField` を追加し、請求モードや文書テンプレート選択に利用。 (担当: Agent)
 - 2025-11-04: 初版公開。Storybook セットアップと基礎コンポーネントを登録。 (担当: Agent)
