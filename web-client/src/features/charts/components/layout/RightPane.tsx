@@ -58,6 +58,8 @@ interface RightPaneProps {
   onPatientMemoSave: () => void;
   onPatientMemoReset: () => void;
   patientMemoDisabled?: boolean;
+  hasPatientMemoHistory: boolean;
+  onPatientMemoHistoryOpen: () => void;
   freeDocumentComment: string;
   freeDocumentStatus: SaveStatus;
   freeDocumentError: string | null;
@@ -132,6 +134,18 @@ const EditorCard = styled.section`
 
 const EditorHeader = styled.div`
   display: grid;
+  gap: 4px;
+`;
+
+const EditorHeaderTop = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+const EditorHeaderActions = styled.div`
+  display: flex;
   gap: 4px;
 `;
 
@@ -297,6 +311,8 @@ export const RightPane = ({
   onPatientMemoSave,
   onPatientMemoReset,
   patientMemoDisabled = false,
+  hasPatientMemoHistory,
+  onPatientMemoHistoryOpen,
   freeDocumentComment,
   freeDocumentStatus,
   freeDocumentError,
@@ -371,7 +387,22 @@ export const RightPane = ({
 
       <EditorCard aria-labelledby="patient-memo-heading">
         <EditorHeader>
-          <SectionTitle id="patient-memo-heading">患者メモ（院内共有）</SectionTitle>
+          <EditorHeaderTop>
+            <SectionTitle id="patient-memo-heading">患者メモ（院内共有）</SectionTitle>
+            {hasPatientMemoHistory ? (
+              <EditorHeaderActions>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={onPatientMemoHistoryOpen}
+                  disabled={patientMemoDisabled}
+                >
+                  履歴
+                </Button>
+              </EditorHeaderActions>
+            ) : null}
+          </EditorHeaderTop>
           <HelperText>カルテ全体の注意事項を記録します。保存すると既存オンプレクライアントと共用されます。</HelperText>
         </EditorHeader>
         <TextArea
