@@ -10,6 +10,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `planning/phase0/API_INVENTORY.md` – REST エンドポイント一覧と利用方針。
 - `planning/phase1/PHASE1_FOUNDATION.md` – フェーズ1 技術基盤メモとチェックリスト。
 - `planning/phase2/PHASE2_PROGRESS.md` – フェーズ2 コア診療フロー前半の実装メモとリスク/次ステップ整理。
+- `planning/WEB_VS_ONPRE_CHECKLIST.md` – Web とオンプレクライアントの機能差分チェックリストとフォローアップタスク。
 - `features/PHASE3_STAMP_AND_ORCA.md` – フェーズ3 スタンプ/ORCA 連携仕様と運用メモ。
 - `features/PHASE4_SECURITY_AND_QUALITY.md` – フェーズ4 品質・安全性強化タスクの実装概要と運用注意点。
 - `features/ORDER_ENTRY_DATA_GUIDE.md` – すべてのオーダカテゴリ（処方・注射・手術・検査など）を登録する際に必須となるサーバー側データ要件まとめ。
@@ -42,6 +43,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-04-21: Web／オンプレ機能差分チェックリストを追加。`planning/WEB_VS_ONPRE_CHECKLIST.md` を新設し、今後の追従タスクを整理。
 - 2026-04-20: カルテ入力 (`/charts/:visitId`) と受付一覧 (`/reception`) を分離し、受付→カルテ遷移導線と空状態ガイダンスを整理。`ux/KARTE_SCREEN_IMPLEMENTATION.md` を更新。
 - 2026-04-17: カルテ画面 UI をフルレイアウト化。`ux/KARTE_SCREEN_IMPLEMENTATION.md` を新設し、`features/charts/pages/ChartsPage.tsx` の刷新内容とショートカット/レスポンシブ仕様を整理。
 - 2026-03-30: フェーズ4 セキュリティ/性能/負荷対策を実装。`features/PHASE4_SECURITY_AND_QUALITY.md` を新設し、`planning/WEB_CLIENT_WORK_PLAN.md` のフェーズ4タスクを完了として更新。
