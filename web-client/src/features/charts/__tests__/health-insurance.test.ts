@@ -41,6 +41,28 @@ const buildSampleBean = () => {
   return Buffer.from(xml, 'utf-8').toString('base64');
 };
 
+const buildAlternateBean = () => {
+  const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_202" class="java.beans.XMLDecoder">
+ <object class="open.dolphin.infomodel.PVTHealthInsuranceModel">
+  <void property="GUID">
+   <string>INS-GUID-02</string>
+  </void>
+  <void property="insuranceClass">
+   <string>共済</string>
+  </void>
+  <void property="insuranceClassCode">
+   <string>K1</string>
+  </void>
+  <void property="startDate">
+   <string>2026-02-01</string>
+  </void>
+ </object>
+</java>`;
+
+  return Buffer.from(xml, 'utf-8').toString('base64');
+};
+
 describe('health insurance utilities', () => {
   afterEach(() => {
     vi.unstubAllGlobals();
@@ -82,6 +104,34 @@ describe('health insurance utilities', () => {
     const options = extractInsuranceOptions(visit);
     expect(options).toHaveLength(1);
     expect(options[0].guid).toBe('INS-GUID-01');
+  });
+
+  it('handles multiple insurance entries and preserves GUID ordering', () => {
+    const visit: PatientVisitSummary = {
+      visitId: 2,
+      facilityId: '0001',
+      visitDate: '2026-04-01',
+      state: 1,
+      patientPk: 2,
+      patientId: 'P002',
+      fullName: '患者 複数保険',
+      safetyNotes: [],
+      raw: {
+        id: 2,
+        patientModel: {
+          id: 2,
+          patientId: 'P002',
+          fullName: '患者 複数保険',
+          healthInsurances: [{ beanBytes: buildSampleBean() }, { beanBytes: buildAlternateBean() }],
+        },
+      },
+    } as unknown as PatientVisitSummary;
+
+    const options = extractInsuranceOptions(visit);
+    expect(options).toHaveLength(2);
+    expect(options[0].guid).toBe('INS-GUID-01');
+    expect(options[1].guid).toBe('INS-GUID-02');
+    expect(options[1].label).toContain('共済');
   });
 
   it('reports warnings for unsupported property formats', () => {
