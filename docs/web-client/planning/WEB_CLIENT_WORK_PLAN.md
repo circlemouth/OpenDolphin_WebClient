@@ -97,6 +97,8 @@
     - 2026-03-06: `PatientDocumentsPanel` で指導文/紹介状テンプレートを提供し、ブラウザ印刷による PDF 保存を案内。患者情報を自動差し込み。
   - [x] 施設予約一覧（PatientSchedule）とラボ検査履歴ビューアを Web クライアントへ移植。
     - 2026-05-12: `FacilitySchedulePage` を追加し、日付・担当医・状態で施設全体の予定カルテを可視化。`LabResultsPanel` で `/lab/module`・`/lab/item` を利用した検査結果一覧・推移グラフ・PDF 出力を提供し、オンプレ機能差分を解消。
+  - [x] 診断書エディタとシェーマエディタを Web クライアントへ移植。
+    - 2026-05-20: `ChartsPage` Supplement パネルに診断書編集カードとシェーマエディタを追加。`/odletter` 系 API・`POST /karte/document` による保存、プレビュー印刷、監査ログ送信を実装し、`features/MEDICAL_CERTIFICATES_AND_SCHEMA.md` と運用マニュアルを更新。
 - **完了条件**
   - 医師・看護師モニターによる自由診療シナリオが問題なく完遂し、ORCA 連携ログでエラーが発生しない。
   - CLI/ブラウザ自動テストで自費/保険双方のカルテ保存が成功する。

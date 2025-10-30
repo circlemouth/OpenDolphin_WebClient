@@ -1,6 +1,8 @@
 import { httpClient } from '@/libs/http';
 import { measureApiPerformance } from '@/libs/monitoring';
 
+import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
+
 export interface RawFreeDocumentResource {
   id?: number;
   facilityPatId?: string;
@@ -14,11 +16,6 @@ export interface FreeDocumentSummary {
   confirmedAt: string | null;
   comment: string;
 }
-
-const formatRestTimestamp = (date: Date) => {
-  const iso = date.toISOString();
-  return iso.slice(0, 19);
-};
 
 const transformFreeDocument = (raw: RawFreeDocumentResource | null | undefined): FreeDocumentSummary | null => {
   if (!raw) {
