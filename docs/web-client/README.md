@@ -12,6 +12,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `planning/phase2/PHASE2_PROGRESS.md` – フェーズ2 コア診療フロー前半の実装メモとリスク/次ステップ整理。
 - `features/PHASE3_STAMP_AND_ORCA.md` – フェーズ3 スタンプ/ORCA 連携仕様と運用メモ。
 - `features/PHASE4_SECURITY_AND_QUALITY.md` – フェーズ4 品質・安全性強化タスクの実装概要と運用注意点。
+- `features/ORDER_ENTRY_DATA_GUIDE.md` – 処方・注射・処置オーダ入力時に必須となるサーバー側データ要件まとめ。
 - `design-system/ALPHA_COMPONENTS.md` – デザインシステム α 版の Storybook 運用とコンポーネント一覧。
 - `operations/TEST_SERVER_DEPLOY.md` – テスト環境向けサーバーデプロイとアカウント登録手順。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` – 1画面完結レイアウトの設計指針。
