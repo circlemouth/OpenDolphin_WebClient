@@ -2,8 +2,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import {
+  decodeHealthInsuranceBean,
+  encodeHealthInsuranceBean,
   extractInsuranceOptions,
   parseHealthInsuranceBean,
+  type BeanPropertyValue,
   type ParseHealthInsuranceOptions,
 } from '@/features/charts/utils/health-insurance';
 
@@ -158,6 +161,50 @@ describe('health insurance utilities', () => {
     expect(parsed?.label).toContain('社保');
     expect(warnings).toHaveLength(1);
     expect(warnings[0]).toContain('nested');
+  });
+
+  it('round-trips bean properties when encoding after edits', () => {
+    const bean = buildSampleBean();
+    const { properties, order } = decodeHealthInsuranceBean(bean);
+
+    const updated: Record<string, BeanPropertyValue> = { ...properties };
+    updated.insuranceNumber = { type: 'string', value: '7654321' };
+    updated.clientNumber = { type: 'string', value: '9876' };
+
+    const encoded = encodeHealthInsuranceBean(updated, order);
+    const parsed = parseHealthInsuranceBean(encoded);
+
+    expect(parsed?.number).toBe('7654321');
+    expect(parsed?.clientNumber).toBe('9876');
+
+    const { order: encodedOrder } = decodeHealthInsuranceBean(encoded);
+    expect(encodedOrder).toEqual(order);
+  });
+
+  it('preserves raw property bodies when encountered', () => {
+    const xml = `<?xml version="1.0" encoding="UTF-8"?>
+<java version="1.8.0_202" class="java.beans.XMLDecoder">
+ <object class="open.dolphin.infomodel.PVTHealthInsuranceModel">
+  <void property="insuranceClass">
+   <string>社保</string>
+  </void>
+  <void property="nested">
+   <object class="java.lang.Object">
+    <void method="toString" />
+   </object>
+  </void>
+ </object>
+</java>`;
+    const bean = Buffer.from(xml, 'utf-8').toString('base64');
+
+    const { properties, order } = decodeHealthInsuranceBean(bean);
+    expect(properties.nested?.type).toBe('raw');
+
+    const encoded = encodeHealthInsuranceBean(properties, order);
+    const decodedXml = Buffer.from(encoded, 'base64').toString('utf-8');
+
+    expect(decodedXml).toContain('<void property="nested">');
+    expect(decodedXml).toContain('<void method="toString" />');
   });
 
   it('falls back to placeholder entry when decoding fails', () => {

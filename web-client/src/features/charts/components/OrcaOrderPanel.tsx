@@ -99,6 +99,7 @@ type Selection = {
 
 type OrcaOrderPanelProps = {
   disabled?: boolean;
+  onCreateOrder?: (selection: Selection) => Promise<void>;
 };
 
 const formatTensuMeta = (entry: TensuMasterEntry) => {
@@ -141,7 +142,7 @@ const severityLabelMap: Record<NonNullable<DrugInteractionEntry['severity']>, st
   info: '参考',
 };
 
-export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
+export const OrcaOrderPanel = ({ disabled, onCreateOrder }: OrcaOrderPanelProps) => {
   const [mode, setMode] = useState<OrcaSearchMode>('tensu');
   const [keyword, setKeyword] = useState('');
   const [partialMatch, setPartialMatch] = useState(true);
@@ -153,6 +154,8 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
   const [existingSelections, setExistingSelections] = useState<Selection[]>([]);
   const [candidateSelections, setCandidateSelections] = useState<Selection[]>([]);
   const [showMinorAlerts, setShowMinorAlerts] = useState(false);
+  const [orderError, setOrderError] = useState<string | null>(null);
+  const [pendingCode, setPendingCode] = useState<string | null>(null);
 
   const tensuSearch = useTensuSearch();
   const diseaseSearch = useDiseaseSearch();
@@ -235,6 +238,29 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
     });
   };
 
+  const handleCreateOrder = async (item: Selection) => {
+    if (!onCreateOrder) {
+      return;
+    }
+    try {
+      setPendingCode(item.code);
+      setOrderError(null);
+      await onCreateOrder(item);
+      recordOperationEvent('orca', 'info', 'order_create', 'ORCA 検索結果からオーダを追加しました', {
+        code: item.code,
+      });
+    } catch (error) {
+      console.error('ORCA オーダの追加に失敗しました', error);
+      setOrderError(
+        error instanceof Error
+          ? error.message
+          : 'オーダの追加に失敗しました。ネットワーク状況を確認して再試行してください。',
+      );
+    } finally {
+      setPendingCode(null);
+    }
+  };
+
   const renderSearchResults = () => {
     if (lastSearchMode === 'tensu') {
       return tensuResults.map((entry) => (
@@ -244,6 +270,18 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
           </ResultTitle>
           <ResultMeta>{formatTensuMeta(entry)}</ResultMeta>
           <ToggleRow>
+            {onCreateOrder ? (
+              <Button
+                type="button"
+                size="sm"
+                variant="primary"
+                onClick={() => void handleCreateOrder({ code: entry.code, name: entry.name })}
+                disabled={disabled || pendingCode === entry.code}
+                isLoading={pendingCode === entry.code}
+              >
+                カルテに追加
+              </Button>
+            ) : null}
             <Button
               type="button"
               size="sm"
@@ -361,6 +399,8 @@ export const OrcaOrderPanel = ({ disabled }: OrcaOrderPanelProps) => {
         </SectionHeader>
 
         {renderedResults ? <ResultList>{renderedResults}</ResultList> : null}
+
+        {orderError && onCreateOrder ? <InlineError>{orderError}</InlineError> : null}
 
         <SurfaceCard tone="muted">
           <Stack gap={12}>

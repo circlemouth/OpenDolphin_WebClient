@@ -2,10 +2,13 @@ import { httpClient } from '@/libs/http';
 import { measureApiPerformance } from '@/libs/monitoring';
 
 import type {
+  PatientDetail,
+  PatientHealthInsurance,
   PatientListResponse,
   PatientSearchMode,
   PatientSearchRequest,
   PatientSummary,
+  PatientUpsertPayload,
   RawPatientResource,
 } from '@/features/patients/types/patient';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
@@ -48,6 +51,100 @@ const transformPatient = (resource: RawPatientResource): PatientSummary | null =
   };
 };
 
+const toHealthInsuranceList = (list?: RawPatientResource['healthInsurances']): PatientHealthInsurance[] => {
+  if (!list || list.length === 0) {
+    return [];
+  }
+  return list
+    .map((entry) => {
+      const beanBytes = entry?.beanBytes?.trim();
+      if (!beanBytes) {
+        return null;
+      }
+      return {
+        id: entry?.id ?? undefined,
+        beanBytes,
+      } satisfies PatientHealthInsurance;
+    })
+    .filter((entry): entry is PatientHealthInsurance => Boolean(entry));
+};
+
+const transformPatientDetail = (resource: RawPatientResource): PatientDetail | null => {
+  const summary = transformPatient(resource);
+  if (!summary) {
+    return null;
+  }
+
+  const address = resource.simpleAddressModel ?? null;
+  const normalizedAddress = address
+    ? {
+        zipCode: address.zipCode?.trim() ?? undefined,
+        address: address.address?.trim() ?? undefined,
+      }
+    : null;
+
+  return {
+    id: summary.id,
+    patientId: summary.patientId,
+    fullName: summary.fullName,
+    kanaName: resource.kanaName?.trim() ?? undefined,
+    gender: resource.gender?.trim() ?? 'U',
+    genderDesc: resource.genderDesc?.trim() ?? undefined,
+    birthday: resource.birthday?.trim() ?? undefined,
+    memo: resource.memo?.trim() ?? undefined,
+    appMemo: resource.appMemo?.trim() ?? undefined,
+    relations: resource.relations?.trim() ?? undefined,
+    telephone: resource.telephone?.trim() ?? undefined,
+    mobilePhone: resource.mobilePhone?.trim() ?? undefined,
+    email: resource.email?.trim() ?? undefined,
+    address: normalizedAddress,
+    reserve1: resource.reserve1?.trim() ?? undefined,
+    reserve2: resource.reserve2?.trim() ?? undefined,
+    reserve3: resource.reserve3?.trim() ?? undefined,
+    reserve4: resource.reserve4?.trim() ?? undefined,
+    reserve5: resource.reserve5?.trim() ?? undefined,
+    reserve6: resource.reserve6?.trim() ?? undefined,
+    safetyNotes: summary.safetyNotes,
+    healthInsurances: toHealthInsuranceList(resource.healthInsurances),
+    raw: resource,
+  };
+};
+
+const buildUpsertRequestPayload = (payload: PatientUpsertPayload) => {
+  const address = payload.address;
+  return {
+    id: payload.id,
+    patientId: payload.patientId.trim(),
+    fullName: payload.fullName.trim(),
+    kanaName: payload.kanaName?.trim(),
+    gender: payload.gender.trim(),
+    genderDesc: payload.genderDesc?.trim(),
+    birthday: payload.birthday?.trim(),
+    memo: payload.memo?.trim(),
+    appMemo: payload.appMemo?.trim(),
+    relations: payload.relations?.trim(),
+    telephone: payload.telephone?.trim(),
+    mobilePhone: payload.mobilePhone?.trim(),
+    email: payload.email?.trim(),
+    reserve1: payload.reserve1?.trim(),
+    reserve2: payload.reserve2?.trim(),
+    reserve3: payload.reserve3?.trim(),
+    reserve4: payload.reserve4?.trim(),
+    reserve5: payload.reserve5?.trim(),
+    reserve6: payload.reserve6?.trim(),
+    simpleAddressModel: address
+      ? {
+          zipCode: address.zipCode?.trim(),
+          address: address.address?.trim(),
+        }
+      : undefined,
+    healthInsurances: payload.healthInsurances.map((entry) => ({
+      id: entry.id,
+      beanBytes: entry.beanBytes,
+    })),
+  };
+};
+
 export const buildPatientSearchPath = ({ mode, keyword }: PatientSearchRequest): string => {
   const base = searchEndpointMap[mode] ?? searchEndpointMap.name;
   return `${base}${encodeURIComponent(keyword.trim())}`;
@@ -74,6 +171,61 @@ export const searchPatients = async (params: PatientSearchRequest): Promise<Pati
     {
       mode: params.mode,
       keywordLength: keyword.length,
+    },
+  );
+};
+
+export const fetchPatientById = async (patientId: string): Promise<PatientDetail | null> => {
+  const trimmed = patientId.trim();
+  if (!trimmed) {
+    return null;
+  }
+
+  const path = `/patient/id/${encodeURIComponent(trimmed)}`;
+  return measureApiPerformance(
+    'patients.fetchById',
+    `GET ${path}`,
+    async () => {
+      const response = await httpClient.get<RawPatientResource>(path);
+      const resource = response.data;
+      if (!resource) {
+        return null;
+      }
+      return transformPatientDetail(resource);
+    },
+    {
+      patientId: trimmed,
+    },
+  );
+};
+
+export const createPatient = async (payload: PatientUpsertPayload): Promise<string> => {
+  const requestBody = buildUpsertRequestPayload(payload);
+  return measureApiPerformance(
+    'patients.create',
+    'POST /patient',
+    async () => {
+      const response = await httpClient.post<string>('/patient', requestBody);
+      return response.data ?? '';
+    },
+    {
+      hasInsurance: payload.healthInsurances.length > 0,
+    },
+  );
+};
+
+export const updatePatient = async (payload: PatientUpsertPayload): Promise<string> => {
+  const requestBody = buildUpsertRequestPayload(payload);
+  return measureApiPerformance(
+    'patients.update',
+    'PUT /patient',
+    async () => {
+      const response = await httpClient.put<string>('/patient', requestBody);
+      return response.data ?? '';
+    },
+    {
+      patientId: payload.patientId.trim(),
+      hasInsurance: payload.healthInsurances.length > 0,
     },
   );
 };
