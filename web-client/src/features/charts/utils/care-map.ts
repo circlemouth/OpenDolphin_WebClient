@@ -3,7 +3,7 @@ import type { AppointmentSummary } from '@/features/reception/api/appointment-ap
 import type { LaboModule } from '@/features/charts/types/labo';
 import type { MediaItem } from '@/features/charts/types/media';
 
-export type CareMapEventType = 'document' | 'appointment' | 'lab' | 'image';
+export type CareMapEventType = 'document' | 'appointment' | 'lab' | 'image' | 'attachment';
 
 export interface CareMapEventMeta {
   [key: string]: unknown;
@@ -82,6 +82,26 @@ const summarizeLaboModule = (module: LaboModule): { description: string; details
   return { description, details: highlight || undefined };
 };
 
+const formatFileSize = (size: number | undefined): string | undefined => {
+  if (!size || size <= 0) {
+    return undefined;
+  }
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  const units = ['KB', 'MB', 'GB'];
+  let value = size;
+  let unitIndex = -1;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  if (unitIndex < 0) {
+    unitIndex = 0;
+  }
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+};
+
 export const buildCareMapEvents = ({
   documents,
   appointments,
@@ -145,13 +165,41 @@ export const buildCareMapEvents = ({
     if (!occurredAt) {
       continue;
     }
+    const detailParts: string[] = [];
+    if (media.fileName) {
+      detailParts.push(media.fileName);
+    }
+    const formattedSize = formatFileSize(media.size);
+    if (formattedSize) {
+      detailParts.push(formattedSize);
+    }
+    if (media.documentDepartment) {
+      detailParts.push(media.documentDepartment);
+    }
+    if (media.kind === 'pdf') {
+      detailParts.push('PDF 添付');
+    } else if (media.kind === 'other' && media.contentType) {
+      detailParts.push(media.contentType);
+    }
+
+    const eventType: CareMapEventType = media.kind === 'image' ? 'image' : 'attachment';
+
     events.push({
-      id: `image-${media.id}`,
-      type: 'image',
+      id: media.id,
+      type: eventType,
       occurredAt,
       title: media.title,
-      description: media.description ?? undefined,
-      meta: { mediaId: media.id },
+      description: media.description ?? media.documentTitle ?? undefined,
+      details: detailParts.length ? detailParts.join(' / ') : undefined,
+      meta: {
+        mediaId: media.id,
+        attachmentId: media.attachmentId,
+        documentId: media.documentId,
+        contentType: media.contentType,
+        fileName: media.fileName,
+        kind: media.kind,
+        uri: media.uri ?? undefined,
+      },
     });
   }
 
