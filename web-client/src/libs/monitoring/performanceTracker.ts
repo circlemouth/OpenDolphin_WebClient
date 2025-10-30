@@ -7,7 +7,11 @@ export type PerformanceMetricName =
   | 'patients.create'
   | 'patients.update'
   | 'charts.karte.fetch'
-  | 'orca.master.search';
+  | 'orca.master.search'
+  | 'reception.pvtHistory'
+  | 'reception.documentStatus'
+  | 'schedule.document.create'
+  | 'schedule.document.delete';
 
 interface PerformanceMetricConfig {
   category: AuditCategory;
@@ -45,6 +49,26 @@ const metricConfig: Record<PerformanceMetricName, PerformanceMetricConfig> = {
     category: 'orca',
     targetMs: 3_000,
     description: 'ORCA マスター検索レスポンス',
+  },
+  'reception.pvtHistory': {
+    category: 'reception',
+    targetMs: 3_000,
+    description: '受付履歴取得レスポンス',
+  },
+  'reception.documentStatus': {
+    category: 'reception',
+    targetMs: 3_000,
+    description: '仮保存カルテ状況取得レスポンス',
+  },
+  'schedule.document.create': {
+    category: 'reception',
+    targetMs: 5_000,
+    description: '予約連動カルテ生成レスポンス',
+  },
+  'schedule.document.delete': {
+    category: 'reception',
+    targetMs: 5_000,
+    description: '予約削除レスポンス',
   },
 };
 

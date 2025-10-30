@@ -1,9 +1,10 @@
-import { Fragment, useMemo } from 'react';
+import { Fragment, useMemo, useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import styled from '@emotion/styled';
 
 import { Button, StatusBadge, SurfaceCard, Stack } from '@/components';
 import { useAuth } from '@/libs/auth';
+import { SidebarContext } from './SidebarContext';
 
 const SkipLink = styled.a`
   position: absolute;
@@ -211,6 +212,18 @@ const sidebarTips = [
 export const AppShell = () => {
   const navigate = useNavigate();
   const { session, logout } = useAuth();
+  const [sidebarContent, setSidebarContent] = useState<React.ReactNode | null>(null);
+  const sidebarController = useMemo(
+    () => ({
+      setSidebar: (content: React.ReactNode | null) => {
+        setSidebarContent(content);
+      },
+      clearSidebar: () => {
+        setSidebarContent(null);
+      },
+    }),
+    [],
+  );
 
   const userDisplay = useMemo(() => {
     if (session?.userProfile?.displayName) {
@@ -259,8 +272,9 @@ export const AppShell = () => {
           </HeaderActions>
         </Header>
 
-        <Body>
-          <Navigation aria-label="主要ナビゲーション">
+        <SidebarContext.Provider value={sidebarController}>
+          <Body>
+            <Navigation aria-label="主要ナビゲーション">
             <NavTitle>Primary</NavTitle>
             <NavItem to="/patients">
               患者リスト
@@ -282,23 +296,28 @@ export const AppShell = () => {
             </NavItem>
           </Navigation>
 
-          <Main id="main-content">
-            <Outlet />
-          </Main>
+            <Main id="main-content">
+              <Outlet />
+            </Main>
 
-          <Sidebar aria-label="フェーズ進捗メモ">
-            <SurfaceCard tone="muted" padding="sm">
-              <Stack gap={8}>
-                <SidebarHeading>フェーズ4 ハイライト</SidebarHeading>
-                <Stack gap={8}>
-                  {sidebarTips.map((tip) => (
-                    <SidebarText key={tip}>{tip}</SidebarText>
-                  ))}
-                </Stack>
-              </Stack>
-            </SurfaceCard>
-          </Sidebar>
-        </Body>
+            <Sidebar aria-label={sidebarContent ? 'コンテキストサイドバー' : 'フェーズ進捗メモ'}>
+              {sidebarContent ? (
+                sidebarContent
+              ) : (
+                <SurfaceCard tone="muted" padding="sm">
+                  <Stack gap={8}>
+                    <SidebarHeading>フェーズ4 ハイライト</SidebarHeading>
+                    <Stack gap={8}>
+                      {sidebarTips.map((tip) => (
+                        <SidebarText key={tip}>{tip}</SidebarText>
+                      ))}
+                    </Stack>
+                  </Stack>
+                </SurfaceCard>
+              )}
+            </Sidebar>
+          </Body>
+        </SidebarContext.Provider>
 
         <Footer>© {new Date().getFullYear()} OpenDolphin</Footer>
       </Shell>

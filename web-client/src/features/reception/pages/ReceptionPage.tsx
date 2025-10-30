@@ -1,9 +1,11 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
 import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
-import { usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
+import { useSidebar } from '@/app/layout/SidebarContext';
+import { patientVisitsQueryKey, usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { hasOpenBit } from '@/features/charts/utils/visit-state';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import { useAuth } from '@/libs/auth';
@@ -11,11 +13,15 @@ import { useReceptionCallMutation, useReceptionMemoMutation } from '@/features/r
 import { AppointmentManager } from '@/features/reception/components/AppointmentManager';
 import { BarcodeCheckInPanel } from '@/features/reception/components/BarcodeCheckInPanel';
 import { ColumnConfigurator } from '@/features/reception/components/ColumnConfigurator';
+import { ReceptionVisitSidebar } from '@/features/reception/components/ReceptionVisitSidebar';
+import { VisitManagementDialog } from '@/features/reception/components/VisitManagementDialog';
+import { useTemporaryDocuments } from '@/features/reception/hooks/useTemporaryDocuments';
 import {
   useReceptionPreferences,
   type ReceptionColumnKey,
   type ReceptionViewMode,
 } from '@/features/reception/hooks/useReceptionPreferences';
+import { deleteVisit, updateVisitState } from '@/features/reception/api/visit-api';
 
 type QueueStatus = 'waiting' | 'calling' | 'inProgress';
 type StatusFilter = 'all' | QueueStatus;
@@ -236,8 +242,35 @@ export const ReceptionPage = () => {
   const [scheduleTarget, setScheduleTarget] = useState<PatientVisitSummary | null>(null);
   const [isAppointmentSaving, setIsAppointmentSaving] = useState(false);
   const [showColumnConfigurator, setShowColumnConfigurator] = useState(false);
+  const queryClient = useQueryClient();
+  const { setSidebar, clearSidebar } = useSidebar();
+  const temporaryDocumentsQuery = useTemporaryDocuments();
 
   const visits = useMemo(() => visitsQuery.data ?? [], [visitsQuery.data]);
+  const temporaryDocumentPatientIds = useMemo(
+    () => new Set((temporaryDocumentsQuery.data ?? []).map((entry) => entry.patientId)),
+    [temporaryDocumentsQuery.data],
+  );
+  const [selectedVisitId, setSelectedVisitId] = useState<number | null>(null);
+  const [manageTargetId, setManageTargetId] = useState<number | null>(null);
+  const [desiredState, setDesiredState] = useState(0);
+  const [manageError, setManageError] = useState<string | null>(null);
+
+  const selectedVisit = useMemo(
+    () => visits.find((visit) => visit.visitId === selectedVisitId) ?? null,
+    [visits, selectedVisitId],
+  );
+  const manageTarget = useMemo(
+    () => visits.find((visit) => visit.visitId === manageTargetId) ?? null,
+    [visits, manageTargetId],
+  );
+
+  useEffect(() => {
+    if (manageTarget) {
+      setDesiredState(manageTarget.state ?? 0);
+    }
+  }, [manageTarget]);
+
   const visibleColumns = useMemo(() => preferences.visibleColumns, [preferences.visibleColumns]);
   const isColumnVisible = useCallback(
     (key: ReceptionColumnKey) => visibleColumns.includes(key),
@@ -254,6 +287,48 @@ export const ReceptionPage = () => {
       setIsAppointmentSaving(false);
     }
   }, [scheduleTarget, visits]);
+
+  const handleOpenChart = useCallback(
+    (visitId: number) => {
+      navigate(`/charts/${visitId}`);
+    },
+    [navigate],
+  );
+
+  const handleOpenManage = useCallback(
+    (visit: PatientVisitSummary) => {
+      setManageError(null);
+      setManageTargetId(visit.visitId);
+      setDesiredState(visit.state ?? 0);
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!selectedVisit) {
+      clearSidebar();
+      return;
+    }
+    setSidebar(
+      <ReceptionVisitSidebar
+        visit={selectedVisit}
+        onClose={() => setSelectedVisitId(null)}
+        onManage={() => handleOpenManage(selectedVisit)}
+        onOpenChart={() => handleOpenChart(selectedVisit.visitId)}
+        hasTemporaryDocument={temporaryDocumentPatientIds.has(selectedVisit.patientId)}
+      />,
+    );
+    return () => {
+      clearSidebar();
+    };
+  }, [
+    selectedVisit,
+    clearSidebar,
+    setSidebar,
+    handleOpenManage,
+    handleOpenChart,
+    temporaryDocumentPatientIds,
+  ]);
 
   const handleCloseAppointmentManager = () => {
     setIsAppointmentSaving(false);
@@ -331,10 +406,6 @@ export const ReceptionPage = () => {
     }
   };
 
-  const handleOpenChart = (visitId: number) => {
-    navigate(`/charts/${visitId}`);
-  };
-
   const renderStatusBadge = (visit: PatientVisitSummary) => {
     const status = classifyVisit(visit);
     if (status === 'inProgress') {
@@ -345,6 +416,89 @@ export const ReceptionPage = () => {
     }
     return <StatusBadge tone="neutral">待機中</StatusBadge>;
   };
+
+  const visitStateMutation = useMutation({
+    mutationFn: async ({ visitId, nextState }: { visitId: number; nextState: number }) => {
+      await updateVisitState(visitId, nextState);
+      return { visitId, nextState };
+    },
+    onSuccess: ({ visitId, nextState }) => {
+      queryClient.setQueryData<PatientVisitSummary[] | undefined>(patientVisitsQueryKey, (current) => {
+        if (!current) {
+          return current;
+        }
+        return current.map((visit) =>
+          visit.visitId === visitId
+            ? {
+                ...visit,
+                state: nextState,
+                raw: {
+                  ...visit.raw,
+                  state: nextState,
+                },
+              }
+            : visit,
+        );
+      });
+      setManageTargetId(null);
+      setManageError(null);
+    },
+    onError: (error) => {
+      setManageError(extractErrorMessage(error));
+    },
+  });
+
+  const visitDeleteMutation = useMutation({
+    mutationFn: async (visitId: number) => {
+      await deleteVisit(visitId);
+      return visitId;
+    },
+    onSuccess: (visitId) => {
+      queryClient.setQueryData<PatientVisitSummary[] | undefined>(patientVisitsQueryKey, (current) =>
+        current ? current.filter((visit) => visit.visitId !== visitId) : current,
+      );
+      setManageTargetId(null);
+      setManageError(null);
+      setSelectedVisitId((current) => (current === visitId ? null : current));
+    },
+    onError: (error) => {
+      setManageError(extractErrorMessage(error));
+    },
+  });
+
+  const handleSubmitStateUpdate = async () => {
+    if (!manageTarget) {
+      return;
+    }
+    setManageError(null);
+    try {
+      await visitStateMutation.mutateAsync({ visitId: manageTarget.visitId, nextState: desiredState });
+    } catch (error) {
+      // already handled in onError
+    }
+  };
+
+  const handleDeleteVisit = async () => {
+    if (!manageTarget) {
+      return;
+    }
+    setManageError(null);
+    try {
+      await visitDeleteMutation.mutateAsync(manageTarget.visitId);
+    } catch (error) {
+      // already handled
+    }
+  };
+
+  const handleCloseManageDialog = () => {
+    if (visitStateMutation.isPending || visitDeleteMutation.isPending) {
+      return;
+    }
+    setManageTargetId(null);
+    setManageError(null);
+  };
+
+  const isManageProcessing = visitStateMutation.isPending || visitDeleteMutation.isPending;
 
   return (
     <PageContainer>
@@ -483,7 +637,14 @@ export const ReceptionPage = () => {
                 const renderColumnContent = (column: ReceptionColumnKey) => {
                   switch (column) {
                     case 'status':
-                      return renderStatusBadge(visit);
+                      return (
+                        <BadgeRow>
+                          {renderStatusBadge(visit)}
+                          {temporaryDocumentPatientIds.has(visit.patientId) ? (
+                            <StatusBadge tone="danger">仮保存カルテあり</StatusBadge>
+                          ) : null}
+                        </BadgeRow>
+                      );
                     case 'patientId':
                       return visit.patientId;
                     case 'kanaName':
@@ -607,6 +768,21 @@ export const ReceptionPage = () => {
                         >
                           カルテを開く
                         </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => setSelectedVisitId(visit.visitId)}
+                        >
+                          受付詳細
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={() => handleOpenManage(visit)}
+                          disabled={isManageProcessing}
+                        >
+                          詳細操作
+                        </Button>
                       </ActionRow>
                     </TableActionCell>
                   </tr>
@@ -640,8 +816,16 @@ export const ReceptionPage = () => {
             const doctorInfo =
               [visit.doctorName?.trim(), visit.doctorId?.trim()].filter(Boolean).join(' / ') ||
               '---';
+            const isTemporaryDocument = temporaryDocumentPatientIds.has(visit.patientId);
 
             const badges: JSX.Element[] = [];
+            if (isTemporaryDocument) {
+              badges.push(
+                <StatusBadge key="document" tone="danger">
+                  仮保存カルテあり
+                </StatusBadge>,
+              );
+            }
             if (isColumnVisible('owner')) {
               if (isOwnedByMe) {
                 badges.push(
@@ -773,6 +957,21 @@ export const ReceptionPage = () => {
                   >
                     カルテを開く
                   </Button>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => setSelectedVisitId(visit.visitId)}
+                  >
+                    受付詳細
+                  </Button>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    onClick={() => handleOpenManage(visit)}
+                    disabled={isManageProcessing}
+                  >
+                    詳細操作
+                  </Button>
                 </Stack>
               </VisitCard>
             );
@@ -794,6 +993,23 @@ export const ReceptionPage = () => {
           }
           onClose={handleCloseAppointmentManager}
           onPendingChange={setIsAppointmentSaving}
+        />
+      ) : null}
+      {manageTarget ? (
+        <VisitManagementDialog
+          visit={manageTarget}
+          stateValue={desiredState}
+          onChangeState={setDesiredState}
+          onSubmitState={() => {
+            void handleSubmitStateUpdate();
+          }}
+          onDelete={() => {
+            void handleDeleteVisit();
+          }}
+          onClose={handleCloseManageDialog}
+          isUpdating={visitStateMutation.isPending}
+          isDeleting={visitDeleteMutation.isPending}
+          errorMessage={manageError}
         />
       ) : null}
     </PageContainer>

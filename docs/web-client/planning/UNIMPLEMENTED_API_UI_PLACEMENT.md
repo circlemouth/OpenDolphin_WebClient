@@ -14,9 +14,9 @@
 
 | 対象 API | 想定 UI / 配置 | 実装フェーズ | 備考 |
 | --- | --- | --- | --- |
-| `/patient/pvt/*` / `/patient/documents/status` | 既存 `ReceptionPage` のカードアクションに「詳細」ドロワを追加し、来院履歴・カルテ連携を右サイドの詳細ペインで表示。`AppShell` の右カラム（Sidebar）を利用して受付詳細を表示する。 | フェーズ4 品質強化 | `/patient/documents/status` はカルテ状態バッジとして表示。 |
-| `/pvt/*` / `DELETE /pvt2/{pvtPK}` | `ReceptionPage` の各受付カードに「受付取消」および状態直接編集用のモーダルを追加。旧 API は互換目的で「詳細操作」タブに限定。 | フェーズ4 | 既存の ChartEvent 連携と競合しないよう操作前にロック確認。 |
-| `/schedule/document` / `DELETE /schedule/pvt` | `FacilitySchedulePage` の予約詳細ダイアログに「カルテ連動」セクションを追加して文書生成・解除を操作。 | フェーズ5 | 予約カードから直接カルテ作成できる導線を提供。 |
+| `/patient/pvt/*` / `/patient/documents/status` | 既存 `ReceptionPage` のカードアクションに「詳細」ドロワを追加し、来院履歴・カルテ連携を右サイドの詳細ペインで表示。`AppShell` の右カラム（Sidebar）を利用して受付詳細を表示する。 | フェーズ4 品質強化 | `/patient/documents/status` はカルテ状態バッジとして表示。2026-05-24: `ReceptionVisitSidebar` を実装し、来院履歴と仮保存カルテ有無を提示。 |
+| `/pvt/*` / `DELETE /pvt2/{pvtPK}` | `ReceptionPage` の各受付カードに「受付取消」および状態直接編集用のモーダルを追加。旧 API は互換目的で「詳細操作」タブに限定。 | フェーズ4 | 既存の ChartEvent 連携と競合しないよう操作前にロック確認。2026-05-24: `VisitManagementDialog` で状態更新（`PUT /pvt`）と取消（`DELETE /pvt2`）を提供。 |
+| `/schedule/document` / `DELETE /schedule/pvt` | `FacilitySchedulePage` の予約詳細ダイアログに「カルテ連動」セクションを追加して文書生成・解除を操作。 | フェーズ5 | 予約カードから直接カルテ作成できる導線を提供。2026-05-25: 予約詳細ダイアログを実装し、カルテ生成（POST /schedule/document）と予約削除（DELETE /schedule/pvt）を提供。 |
 
 ## 3. カルテ・文書関連 API
 
