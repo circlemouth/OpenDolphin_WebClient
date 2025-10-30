@@ -24,6 +24,55 @@ export interface PastSummaryItem {
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 
+const formatMediaTimestamp = (value?: string | null): string | null => {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
+
+const formatMediaSize = (size?: number): string | null => {
+  if (!size || size <= 0) {
+    return null;
+  }
+  if (size < 1024) {
+    return `${size} B`;
+  }
+  const units = ['KB', 'MB', 'GB'];
+  let value = size;
+  let unitIndex = -1;
+  while (value >= 1024 && unitIndex < units.length - 1) {
+    value /= 1024;
+    unitIndex += 1;
+  }
+  if (unitIndex < 0) {
+    unitIndex = 0;
+  }
+  return `${value.toFixed(value >= 10 ? 0 : 1)} ${units[unitIndex]}`;
+};
+
+const mediaKindLabel = (kind: MediaItem['kind']): string => {
+  switch (kind) {
+    case 'image':
+      return 'IMG';
+    case 'pdf':
+      return 'PDF';
+    default:
+      return 'FILE';
+  }
+};
+
 interface RightPaneProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
@@ -38,6 +87,8 @@ interface RightPaneProps {
   monshinSummary: MonshinSummaryItem[];
   vitalSigns: VitalSignItem[];
   mediaItems: MediaItem[];
+  mediaLoading?: boolean;
+  mediaError?: string | null;
   pastSummaries: PastSummaryItem[];
   onSnippetDragStart: (snippet: string) => void;
   onMediaOpen: (item: MediaItem) => void;
@@ -232,7 +283,7 @@ const MediaGrid = styled.div`
 `;
 
 const MediaThumb = styled.button`
-  border: none;
+  border: 1px solid ${({ theme }) => theme.palette.border};
   border-radius: ${({ theme }) => theme.radius.sm};
   overflow: hidden;
   position: relative;
@@ -240,14 +291,62 @@ const MediaThumb = styled.button`
   cursor: pointer;
   box-shadow: ${({ theme }) => theme.elevation.level1};
   background: ${({ theme }) => theme.palette.surface};
+  display: flex;
+  flex-direction: column;
+  text-align: left;
 `;
 
-const MediaCaption = styled.span`
-  display: block;
+const MediaPreview = styled.div<{ $kind: MediaItem['kind'] }>`
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.85rem;
+  letter-spacing: 0.08em;
+  color: ${({ theme, $kind }) => {
+    switch ($kind) {
+      case 'pdf':
+        return theme.palette.primaryStrong;
+      default:
+        return theme.palette.text;
+    }
+  }};
+  background: ${({ theme, $kind }) => {
+    switch ($kind) {
+      case 'image':
+        return theme.palette.surfaceStrong;
+      case 'pdf':
+        return theme.palette.warning;
+      default:
+        return theme.palette.surfaceMuted;
+    }
+  }};
+`;
+
+const MediaCaption = styled.div`
+  display: grid;
+  gap: 2px;
   padding: 6px;
   font-size: 0.75rem;
   color: ${({ theme }) => theme.palette.text};
-  text-align: left;
+`;
+
+const MediaTitle = styled.span`
+  font-weight: 600;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.text};
+`;
+
+const MediaMeta = styled.span`
+  font-size: 0.7rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const MediaNotice = styled.span<{ $tone?: 'muted' | 'danger' }>`
+  font-size: 0.85rem;
+  color: ${({ theme, $tone }) => ($tone === 'danger' ? theme.palette.danger : theme.palette.textMuted)};
 `;
 
 const PastSummaryList = styled.div`
@@ -534,22 +633,31 @@ export const RightPane = ({
       </Section>
       <Section>
         <SectionTitle>関連画像 / 検査</SectionTitle>
-        {mediaItems.length === 0 ? (
-          <span style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-            画像はまだありません。検査取り込みから追加できます。
-          </span>
+        {mediaLoading ? (
+          <MediaNotice>画像・添付を読み込んでいます…</MediaNotice>
+        ) : mediaError ? (
+          <MediaNotice $tone="danger">画像・添付の取得に失敗しました。再読み込みしてください。</MediaNotice>
+        ) : mediaItems.length === 0 ? (
+          <MediaNotice>画像・添付はまだありません。検査取り込みやカルテ添付から追加できます。</MediaNotice>
         ) : (
           <MediaGrid>
-            {mediaItems.map((media) => (
-              <MediaThumb key={media.id} onClick={() => onMediaOpen(media)}>
-                <img
-                  src={media.thumbnailUrl}
-                  alt={media.title}
-                  style={{ width: '100%', aspectRatio: '4 / 3', objectFit: 'cover' }}
-                />
-                <MediaCaption>{media.title}</MediaCaption>
-              </MediaThumb>
-            ))}
+            {mediaItems.map((media) => {
+              const timestamp = formatMediaTimestamp(media.capturedAt);
+              const sizeLabel = formatMediaSize(media.size);
+              const documentLabel = media.documentTitle && media.documentTitle !== media.title ? media.documentTitle : null;
+              return (
+                <MediaThumb key={media.id} type="button" onClick={() => onMediaOpen(media)}>
+                  <MediaPreview $kind={media.kind}>{mediaKindLabel(media.kind)}</MediaPreview>
+                  <MediaCaption>
+                    <MediaTitle>{media.title}</MediaTitle>
+                    {documentLabel ? <MediaMeta>{documentLabel}</MediaMeta> : null}
+                    {media.fileName ? <MediaMeta>{media.fileName}</MediaMeta> : null}
+                    {sizeLabel ? <MediaMeta>{sizeLabel}</MediaMeta> : null}
+                    {timestamp ? <MediaMeta>{timestamp}</MediaMeta> : null}
+                  </MediaCaption>
+                </MediaThumb>
+              );
+            })}
           </MediaGrid>
         )}
       </Section>

@@ -21,6 +21,8 @@ interface CareMapPanelProps {
   karteId: number | null;
   documents: DocInfoSummary[];
   mediaItems: MediaItem[];
+  mediaLoading?: boolean;
+  mediaError?: unknown;
 }
 
 const PanelCard = styled(SurfaceCard)`
@@ -155,6 +157,8 @@ const EventDot = styled.span<{ $type: CareMapEventType }>`
         return theme.palette.warning;
       case 'image':
         return theme.palette.accent;
+      case 'attachment':
+        return theme.palette.primaryStrong;
       default:
         return theme.palette.primary;
     }
@@ -200,6 +204,8 @@ const EventItem = styled.div<{ $type: CareMapEventType }>`
           return theme.palette.warning;
         case 'image':
           return theme.palette.accent;
+        case 'attachment':
+          return theme.palette.primaryStrong;
         default:
           return theme.palette.primary;
       }
@@ -261,6 +267,7 @@ const EVENT_LABEL: Record<CareMapEventType, string> = {
   appointment: '予約',
   lab: '検査',
   image: '画像',
+  attachment: '添付',
 };
 
 type FilterState = Record<CareMapEventType, boolean>;
@@ -321,13 +328,14 @@ const formatTimeLabel = (value: Date) => {
   });
 };
 
-export const CareMapPanel = ({ patientId, patientName, karteId, documents, mediaItems }: CareMapPanelProps) => {
+export const CareMapPanel = ({ patientId, patientName, karteId, documents, mediaItems, mediaLoading = false, mediaError = null }: CareMapPanelProps) => {
   const [monthOffset, setMonthOffset] = useState(0);
   const [filters, setFilters] = useState<FilterState>({
     document: true,
     appointment: true,
     lab: true,
     image: true,
+    attachment: true,
   });
 
   const baseDate = useMemo(() => {
@@ -406,7 +414,7 @@ export const CareMapPanel = ({ patientId, patientName, karteId, documents, media
   }, [selectedDate, calendarStart, calendarEnd, monthStart]);
 
   useEffect(() => {
-    setFilters({ document: true, appointment: true, lab: true, image: true });
+    setFilters({ document: true, appointment: true, lab: true, image: true, attachment: true });
   }, [patientId]);
 
   const selectedEvents = useMemo(
@@ -427,8 +435,8 @@ export const CareMapPanel = ({ patientId, patientName, karteId, documents, media
     setSelectedDate(key);
   };
 
-  const loading = appointmentsQuery.isLoading || laboModulesQuery.isLoading;
-  const error = appointmentsQuery.error || laboModulesQuery.error;
+  const loading = appointmentsQuery.isLoading || laboModulesQuery.isLoading || mediaLoading;
+  const error = appointmentsQuery.error || laboModulesQuery.error || mediaError;
 
   return (
     <PanelCard>
@@ -438,7 +446,7 @@ export const CareMapPanel = ({ patientId, patientName, karteId, documents, media
             <h2>CareMap（治療履歴カレンダー）</h2>
             <p>
               {patientName ? `${patientName} さんの` : ''}
-              予約・カルテ・検査・画像履歴を月単位で確認できます。
+              予約・カルテ・検査・画像・添付履歴を月単位で確認できます。
             </p>
           </div>
           <MonthControls>
