@@ -10,6 +10,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `planning/phase0/API_INVENTORY.md` – REST エンドポイント一覧と利用方針。
 - `planning/phase1/PHASE1_FOUNDATION.md` – フェーズ1 技術基盤メモとチェックリスト。
 - `planning/phase2/PHASE2_PROGRESS.md` – フェーズ2 コア診療フロー前半の実装メモとリスク/次ステップ整理。
+- `planning/UNIMPLEMENTED_API_UI_PLACEMENT.md` – 未整備 API に対応する UI の配置計画とフェーズ別実装方針。
 - `planning/WEB_VS_ONPRE_CHECKLIST.md` – Web とオンプレクライアントの機能差分チェックリストとフォローアップタスク。
 - `features/PHASE3_STAMP_AND_ORCA.md` – フェーズ3 スタンプ/ORCA 連携仕様と運用メモ。
 - `features/PHASE4_SECURITY_AND_QUALITY.md` – フェーズ4 品質・安全性強化タスクの実装概要と運用注意点。
@@ -50,6 +51,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-05-24: 未整備 API 対応 UI の配置計画を `planning/UNIMPLEMENTED_API_UI_PLACEMENT.md` として追加し、フェーズ5 以降の実装方針を整理。
 - 2026-05-23: `planning/WEB_VS_ONPRE_CHECKLIST.md` に REST API 実装比較セクションを追記し、オンプレ版との API 差分を一覧化。
 - 2026-05-22: CareMap に添付ファイル統合とプレビュー機能を追加。`features/CARE_MAP_TIMELINE.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、
   `operations/CAREMAP_ATTACHMENT_MIGRATION.md` を新設して image-browser 設定の移行手順と Web 版での確認ポイントを整理。
