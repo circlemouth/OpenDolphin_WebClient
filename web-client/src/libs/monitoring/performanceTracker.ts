@@ -1,7 +1,13 @@
 import { recordOperationEvent } from '@/libs/audit';
 import type { AuditCategory, AuditSeverity } from '@/libs/audit';
 
-export type PerformanceMetricName = 'patients.search' | 'charts.karte.fetch' | 'orca.master.search';
+export type PerformanceMetricName =
+  | 'patients.search'
+  | 'patients.fetchById'
+  | 'patients.create'
+  | 'patients.update'
+  | 'charts.karte.fetch'
+  | 'orca.master.search';
 
 interface PerformanceMetricConfig {
   category: AuditCategory;
@@ -14,6 +20,21 @@ const metricConfig: Record<PerformanceMetricName, PerformanceMetricConfig> = {
     category: 'patient',
     targetMs: 3_000,
     description: '患者検索レスポンス',
+  },
+  'patients.fetchById': {
+    category: 'patient',
+    targetMs: 3_000,
+    description: '患者詳細取得レスポンス',
+  },
+  'patients.create': {
+    category: 'patient',
+    targetMs: 5_000,
+    description: '患者登録レスポンス',
+  },
+  'patients.update': {
+    category: 'patient',
+    targetMs: 5_000,
+    description: '患者更新レスポンス',
   },
   'charts.karte.fetch': {
     category: 'chart',

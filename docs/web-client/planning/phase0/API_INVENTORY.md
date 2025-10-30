@@ -29,7 +29,7 @@
 | PatientResource | GET | `/patient/id/{pid}` | 患者ID直接取得 | ✅ 詳細画面遷移 | 受付リストや外部連携から利用。
 | PatientResource | GET | `/patient/pvt/{yyyymmdd}` | 日次来院者取得 | 🛠 受付リスト表示 | 表示範囲/ページング未実装。
 | PatientResource | GET | `/patient/documents/status` | 仮保存カルテの患者一覧 | ✅ 下書き管理に活用 | 応答量多い場合はlazy load検討。
-| PatientResource | POST/PUT | `/patient` | 新規患者登録/更新 | ⚠ フロントからの登録可否未確定 | 既存受付オペレーションとの整合要確認。
+| PatientResource | POST/PUT | `/patient` | 新規患者登録/更新 | ✅ Web 編集フォーム経由で実装済み | `PatientsPage` からの登録/更新で健康保険 Bean 再生成と監査ログ送信を実施。
 | PatientResource | GET | `/patient/count/{name}` | 検索件数確認 | 🛠 UX最適化用 | 1000件超過時のみ使用。
 | PVTResource | GET | `/pvt/{param}` | 受付リスト/状態取得 | ✅ 受付リスト初期表示 | `param`=`fid,yyyymmdd,states` 形式。
 | PVTResource | PUT | `/pvt/{param}` | 受付状態更新 | ✅ 診察開始/終了のトグル | 業務フローと同期必須。

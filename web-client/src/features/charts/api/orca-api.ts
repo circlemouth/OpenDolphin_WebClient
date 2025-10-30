@@ -8,6 +8,7 @@ import type {
   TensuMasterEntry,
 } from '@/features/charts/types/orca';
 import { determineInteractionSeverity } from '@/features/charts/utils/interactionSeverity';
+import type { ModuleListPayload, ModuleModelPayload } from '@/features/charts/types/module';
 
 interface RawTensuMaster {
   srycd?: string | null;
@@ -229,4 +230,35 @@ export const checkDrugInteractions = async (
     },
     { existingCount: codes2.length, candidateCount: codes1.length },
   );
+};
+
+const mapModuleModel = (entry: ModuleModelPayload): ModuleModelPayload | null => {
+  if (!entry.moduleInfoBean || !entry.beanBytes) {
+    return null;
+  }
+  return {
+    moduleInfoBean: {
+      stampName: entry.moduleInfoBean.stampName,
+      stampRole: entry.moduleInfoBean.stampRole,
+      stampNumber: entry.moduleInfoBean.stampNumber,
+      entity: entry.moduleInfoBean.entity,
+      stampId: entry.moduleInfoBean.stampId ?? undefined,
+    },
+    beanBytes: entry.beanBytes,
+  };
+};
+
+export const fetchOrcaOrderModules = async (code: string, name: string): Promise<ModuleModelPayload[]> => {
+  const trimmedCode = code.trim();
+  const trimmedName = name.trim();
+  if (!trimmedCode || !trimmedName) {
+    return [];
+  }
+  const endpoint = `/orca/stamp/${encodeURIComponent(trimmedCode)},${encodeURIComponent(trimmedName)}`;
+  const response = await httpClient.get<ModuleListPayload>(endpoint);
+  const payload = response.data;
+  if (!payload?.list) {
+    return [];
+  }
+  return payload.list.map(mapModuleModel).filter((module): module is ModuleModelPayload => Boolean(module));
 };
