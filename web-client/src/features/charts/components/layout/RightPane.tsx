@@ -1,5 +1,7 @@
 import styled from '@emotion/styled';
 
+import { Button, TextArea } from '@/components';
+
 interface MonshinSummaryItem {
   id: string;
   question: string;
@@ -27,9 +29,19 @@ export interface PastSummaryItem {
   recordedAt?: string;
 }
 
+type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
+
 interface RightPaneProps {
   isCollapsed: boolean;
   onToggleCollapse: () => void;
+  visitMemo: string;
+  visitMemoStatus: SaveStatus;
+  visitMemoError: string | null;
+  visitMemoDirty: boolean;
+  onVisitMemoChange: (value: string) => void;
+  onVisitMemoSave: () => void;
+  onVisitMemoReset: () => void;
+  visitMemoDisabled?: boolean;
   monshinSummary: MonshinSummaryItem[];
   vitalSigns: VitalSignItem[];
   mediaItems: MediaItem[];
@@ -37,6 +49,15 @@ interface RightPaneProps {
   onSnippetDragStart: (snippet: string) => void;
   onMediaOpen: (item: MediaItem) => void;
   onPastSummaryOpen: (item: PastSummaryItem) => void;
+  patientMemo: string;
+  patientMemoStatus: SaveStatus;
+  patientMemoError: string | null;
+  patientMemoDirty: boolean;
+  patientMemoUpdatedAt: string | null;
+  onPatientMemoChange: (value: string) => void;
+  onPatientMemoSave: () => void;
+  onPatientMemoReset: () => void;
+  patientMemoDisabled?: boolean;
   onHoverExpand?: () => void;
   onHoverLeave?: () => void;
 }
@@ -90,6 +111,68 @@ const SectionTitle = styled.h3`
   font-size: 0.95rem;
   color: ${({ theme }) => theme.palette.text};
 `;
+
+const EditorCard = styled.section`
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  border: 1px solid ${({ theme }) => theme.palette.border};
+  background: ${({ theme }) => theme.palette.surfaceMuted};
+`;
+
+const EditorHeader = styled.div`
+  display: grid;
+  gap: 4px;
+`;
+
+const HelperText = styled.p`
+  margin: 0;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const EditorFooter = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const EditorActions = styled.div`
+  display: flex;
+  gap: 8px;
+`;
+
+const StatusText = styled.span<{ $tone: 'muted' | 'success' | 'danger' }>`
+  font-size: 0.8rem;
+  color: ${({ theme, $tone }) => {
+    if ($tone === 'success') {
+      return theme.palette.success;
+    }
+    if ($tone === 'danger') {
+      return theme.palette.danger;
+    }
+    return theme.palette.textMuted;
+  }};
+`;
+
+const formatUpdatedAt = (value: string | null) => {
+  if (!value) {
+    return '---';
+  }
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) {
+    return '---';
+  }
+  return date.toLocaleString('ja-JP', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+};
 
 const SummaryItem = styled.div`
   display: grid;
@@ -181,6 +264,14 @@ const PastSummaryExcerpt = styled.span`
 export const RightPane = ({
   isCollapsed,
   onToggleCollapse,
+  visitMemo,
+  visitMemoStatus,
+  visitMemoError,
+  visitMemoDirty,
+  onVisitMemoChange,
+  onVisitMemoSave,
+  onVisitMemoReset,
+  visitMemoDisabled = false,
   monshinSummary,
   vitalSigns,
   mediaItems,
@@ -188,6 +279,15 @@ export const RightPane = ({
   onSnippetDragStart,
   onMediaOpen,
   onPastSummaryOpen,
+  patientMemo,
+  patientMemoStatus,
+  patientMemoError,
+  patientMemoDirty,
+  patientMemoUpdatedAt,
+  onPatientMemoChange,
+  onPatientMemoSave,
+  onPatientMemoReset,
+  patientMemoDisabled = false,
   onHoverExpand,
   onHoverLeave,
 }: RightPaneProps) => (
@@ -201,6 +301,108 @@ export const RightPane = ({
       {isCollapsed ? '＜' : '＞'}
     </CollapseButton>
     <PaneContent $collapsed={isCollapsed}>
+      <EditorCard aria-labelledby="visit-memo-heading">
+        <EditorHeader>
+          <SectionTitle id="visit-memo-heading">問診メモ（受付共有）</SectionTitle>
+          <HelperText>受付と診察端末で共有される主訴メモです。保存すると ChartEvent 経由で即時同期されます。</HelperText>
+        </EditorHeader>
+        <TextArea
+          label="主訴 / 受付メモ"
+          value={visitMemo}
+          onChange={(event) => onVisitMemoChange(event.currentTarget.value)}
+          placeholder="例：動悸がする、発熱 38.5℃"
+          rows={4}
+          disabled={visitMemoDisabled}
+        />
+        <EditorFooter>
+          <StatusText $tone={visitMemoError ? 'danger' : visitMemoStatus === 'saved' ? 'success' : 'muted'}>
+            {visitMemoError
+              ? visitMemoError
+              : visitMemoStatus === 'saving'
+                ? '保存中…'
+                : visitMemoStatus === 'saved'
+                  ? '保存しました'
+                  : visitMemoDirty
+                    ? '未保存の変更があります'
+                    : '受付共有メモは未入力でも保存できます'}
+          </StatusText>
+          <EditorActions>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onVisitMemoReset}
+              disabled={visitMemoDisabled || visitMemoStatus === 'saving' || !visitMemoDirty}
+            >
+              取り消し
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onVisitMemoSave}
+              disabled={
+                visitMemoDisabled ||
+                visitMemoStatus === 'saving' ||
+                (!visitMemoDirty && visitMemoStatus !== 'error')
+              }
+            >
+              保存
+            </Button>
+          </EditorActions>
+        </EditorFooter>
+      </EditorCard>
+
+      <EditorCard aria-labelledby="patient-memo-heading">
+        <EditorHeader>
+          <SectionTitle id="patient-memo-heading">患者メモ（院内共有）</SectionTitle>
+          <HelperText>カルテ全体の注意事項を記録します。保存すると既存オンプレクライアントと共用されます。</HelperText>
+        </EditorHeader>
+        <TextArea
+          label="患者メモ"
+          value={patientMemo}
+          onChange={(event) => onPatientMemoChange(event.currentTarget.value)}
+          placeholder="例：ペニシリンアレルギーあり / 感染症対策のため個室対応"
+          rows={5}
+          disabled={patientMemoDisabled}
+        />
+        <EditorFooter>
+          <StatusText $tone={patientMemoError ? 'danger' : patientMemoStatus === 'saved' ? 'success' : 'muted'}>
+            {patientMemoError
+              ? patientMemoError
+              : patientMemoStatus === 'saving'
+                ? '保存中…'
+                : patientMemoStatus === 'saved'
+                  ? '保存しました'
+                  : patientMemoDirty
+                    ? '未保存の変更があります'
+                    : patientMemoUpdatedAt
+                      ? `最終更新: ${formatUpdatedAt(patientMemoUpdatedAt)}`
+                      : '最初の保存で患者メモが作成されます'}
+          </StatusText>
+          <EditorActions>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onPatientMemoReset}
+              disabled={patientMemoDisabled || patientMemoStatus === 'saving' || !patientMemoDirty}
+            >
+              取り消し
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onPatientMemoSave}
+              disabled={
+                patientMemoDisabled ||
+                patientMemoStatus === 'saving' ||
+                (!patientMemoDirty && patientMemoStatus !== 'error')
+              }
+            >
+              保存
+            </Button>
+          </EditorActions>
+        </EditorFooter>
+      </EditorCard>
+
       <Section>
         <SectionTitle>最新問診＋バイタル</SectionTitle>
         {monshinSummary.length === 0 ? (
