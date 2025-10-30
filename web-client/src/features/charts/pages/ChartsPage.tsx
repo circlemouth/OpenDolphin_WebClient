@@ -1,26 +1,32 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate, useParams } from 'react-router-dom';
 
 import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
+import { recordOperationEvent } from '@/libs/audit';
 import { StampLibraryPanel } from '@/features/charts/components/StampLibraryPanel';
 import { OrcaOrderPanel } from '@/features/charts/components/OrcaOrderPanel';
 import { OrderSetPanel } from '@/features/charts/components/OrderSetPanel';
 import { PatientDocumentsPanel } from '@/features/charts/components/PatientDocumentsPanel';
+import { publishChartEvent } from '@/features/charts/api/chart-event-api';
 import { useChartEventSubscription } from '@/features/charts/hooks/useChartEventSubscription';
 import { useChartLock } from '@/features/charts/hooks/useChartLock';
-import { usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
+import { patientVisitsQueryKey, usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { StampDefinition } from '@/features/charts/types/stamp';
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
+import { CHART_EVENT_TYPES } from '@/features/charts/types/chart-event';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
 import type { BillingMode, ProgressNoteBilling } from '@/features/charts/utils/progress-note-payload';
 import { extractInsuranceOptions } from '@/features/charts/utils/health-insurance';
 import type { ParsedHealthInsurance } from '@/features/charts/utils/health-insurance';
+import { updatePatientMemo } from '@/features/patients/api/patient-memo-api';
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
+import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
 import { useAuth } from '@/libs/auth';
 import { PatientHeaderBar } from '@/features/charts/components/layout/PatientHeaderBar';
 import { VisitChecklist, type VisitChecklistItem } from '@/features/charts/components/layout/VisitChecklist';
@@ -226,6 +232,7 @@ const placeholderImage = (title: string) => {
 export const ChartsPage = () => {
   useChartEventSubscription();
 
+  const queryClient = useQueryClient();
   const navigate = useNavigate();
   const params = useParams<{ visitId?: string }>();
   const { session } = useAuth();
@@ -239,6 +246,9 @@ export const ChartsPage = () => {
     createInitialBillingState('insurance', null, session?.userProfile?.displayName),
   );
   const [chiefComplaint, setChiefComplaint] = useState('');
+  const [chiefComplaintDirty, setChiefComplaintDirty] = useState(false);
+  const [chiefComplaintStatus, setChiefComplaintStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [chiefComplaintError, setChiefComplaintError] = useState<string | null>(null);
   const [diagnosisTags, setDiagnosisTags] = useState<string[]>([]);
   const [checklist, setChecklist] = useState<VisitChecklistItem[]>(INITIAL_CHECKLIST);
   const [activeSurface, setActiveSurface] = useState<SurfaceMode>('objective');
@@ -269,6 +279,12 @@ export const ChartsPage = () => {
   const [unsentTaskCount, setUnsentTaskCount] = useState<number>(INITIAL_CHECKLIST.length);
   const [documentPreset, setDocumentPreset] = useState<DocumentPresetState | null>(null);
   const [lastAppliedOrderSetId, setLastAppliedOrderSetId] = useState<string | null>(null);
+  const [patientMemo, setPatientMemo] = useState('');
+  const [patientMemoId, setPatientMemoId] = useState<number | null>(null);
+  const [patientMemoDirty, setPatientMemoDirty] = useState(false);
+  const [patientMemoStatus, setPatientMemoStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [patientMemoError, setPatientMemoError] = useState<string | null>(null);
+  const [patientMemoUpdatedAt, setPatientMemoUpdatedAt] = useState<string | null>(null);
   const chiefComplaintRef = useRef<HTMLInputElement | null>(null);
   const isComposingRef = useRef(false);
 
@@ -312,6 +328,10 @@ export const ChartsPage = () => {
     enabled: Boolean(selectedVisit),
   });
 
+  const karteId = karteQuery.data?.id ?? null;
+  const latestPatientMemo = useMemo(() => karteQuery.data?.memos?.[0] ?? null, [karteQuery.data?.memos]);
+  const refetchKarte = karteQuery.refetch;
+
   const clientUuid = session?.credentials.clientUuid;
   const lock = useChartLock(selectedVisit, clientUuid);
 
@@ -327,12 +347,21 @@ export const ChartsPage = () => {
     setPlanCards([]);
     previousPlanCardsRef.current = null;
     setChiefComplaint(selectedVisit.memo ?? '');
+    setChiefComplaintDirty(false);
+    setChiefComplaintStatus('idle');
+    setChiefComplaintError(null);
     setDiagnosisTags([]);
     setSaveState('saved');
     setHasUnsavedChanges(false);
     setSaveError(null);
     setDocumentPreset(null);
     setLastAppliedOrderSetId(null);
+    setPatientMemo('');
+    setPatientMemoId(null);
+    setPatientMemoDirty(false);
+    setPatientMemoStatus('idle');
+    setPatientMemoError(null);
+    setPatientMemoUpdatedAt(null);
   }, [selectedVisit, selectedVisit?.visitId, session?.userProfile?.displayName]);
 
   useEffect(() => {
@@ -346,12 +375,21 @@ export const ChartsPage = () => {
     setPlanCards([]);
     previousPlanCardsRef.current = null;
     setChiefComplaint('');
+    setChiefComplaintDirty(false);
+    setChiefComplaintStatus('idle');
+    setChiefComplaintError(null);
     setDiagnosisTags([]);
     setSaveState('saved');
     setHasUnsavedChanges(false);
     setSaveError(null);
     setDocumentPreset(null);
     setLastAppliedOrderSetId(null);
+    setPatientMemo('');
+    setPatientMemoId(null);
+    setPatientMemoDirty(false);
+    setPatientMemoStatus('idle');
+    setPatientMemoError(null);
+    setPatientMemoUpdatedAt(null);
   }, [selectedVisit, session?.userProfile?.displayName]);
 
   useEffect(() => {
@@ -366,6 +404,22 @@ export const ChartsPage = () => {
       setBilling((prev) => ({ ...prev, mode: 'self-pay', insuranceId: null }));
     }
   }, [insuranceOptions, selectedVisit, billing.mode, billing.insuranceId]);
+
+  useEffect(() => {
+    if (chiefComplaintStatus !== 'saved') {
+      return;
+    }
+    const timer = window.setTimeout(() => setChiefComplaintStatus('idle'), 2000);
+    return () => window.clearTimeout(timer);
+  }, [chiefComplaintStatus]);
+
+  useEffect(() => {
+    if (patientMemoStatus !== 'saved') {
+      return;
+    }
+    const timer = window.setTimeout(() => setPatientMemoStatus('idle'), 2000);
+    return () => window.clearTimeout(timer);
+  }, [patientMemoStatus]);
 
   const monshinSummary = useMemo(() => {
     const memos = karteQuery.data?.memos ?? [];
@@ -390,6 +444,31 @@ export const ChartsPage = () => {
         : [],
     [draft.objective],
   );
+
+  useEffect(() => {
+    if (!latestPatientMemo) {
+      setPatientMemoId(null);
+      setPatientMemoUpdatedAt(null);
+      if (!patientMemoDirty || patientMemoStatus === 'saved') {
+        setPatientMemo('');
+        setPatientMemoDirty(false);
+      }
+      if (patientMemoStatus === 'saved') {
+        setPatientMemoStatus('idle');
+      }
+      return;
+    }
+
+    setPatientMemoId(latestPatientMemo.id);
+    setPatientMemoUpdatedAt(latestPatientMemo.confirmed ?? null);
+    if (!patientMemoDirty || patientMemoStatus === 'saved') {
+      setPatientMemo(latestPatientMemo.memo ?? '');
+      setPatientMemoDirty(false);
+      if (patientMemoStatus === 'saved') {
+        setPatientMemoStatus('idle');
+      }
+    }
+  }, [latestPatientMemo, patientMemoDirty, patientMemoStatus]);
 
   const pastSummaries: PastSummaryItem[] = useMemo(() => {
     const documents = karteQuery.data?.documents ?? [];
@@ -507,6 +586,193 @@ export const ChartsPage = () => {
   const handlePlanCardFocus = useCallback((id: string) => {
     setFocusedPlanCardId(id);
   }, []);
+
+  const handleChiefComplaintChange = useCallback(
+    (value: string) => {
+      setChiefComplaint(value);
+      if (!selectedVisit) {
+        setChiefComplaintDirty(false);
+        setChiefComplaintStatus('idle');
+        setChiefComplaintError(null);
+        return;
+      }
+      const original = selectedVisit.memo?.trim() ?? '';
+      const normalized = value.trim();
+      setChiefComplaintDirty(normalized !== original);
+      setChiefComplaintStatus('idle');
+      setChiefComplaintError(null);
+    },
+    [selectedVisit],
+  );
+
+  const handleChiefComplaintReset = useCallback(() => {
+    setChiefComplaint(selectedVisit?.memo ?? '');
+    setChiefComplaintDirty(false);
+    setChiefComplaintStatus('idle');
+    setChiefComplaintError(null);
+  }, [selectedVisit]);
+
+  const handleChiefComplaintCommit = useCallback(async () => {
+    if (!selectedVisit) {
+      return;
+    }
+    if (!chiefComplaintDirty && chiefComplaintStatus !== 'error') {
+      return;
+    }
+    const normalized = chiefComplaint.trim();
+    const original = selectedVisit.memo?.trim() ?? '';
+    if (normalized === original && chiefComplaintStatus !== 'error') {
+      setChiefComplaintDirty(false);
+      setChiefComplaintStatus('idle');
+      setChiefComplaintError(null);
+      return;
+    }
+
+    setChiefComplaint(normalized);
+    setChiefComplaintStatus('saving');
+    setChiefComplaintError(null);
+
+    try {
+      await publishChartEvent({
+        visit: selectedVisit,
+        memo: normalized.length > 0 ? normalized : null,
+        eventType: CHART_EVENT_TYPES.PVT_MEMO,
+      });
+
+      const updatedMemo = normalized.length > 0 ? normalized : undefined;
+      queryClient.setQueryData<PatientVisitSummary[] | undefined>(patientVisitsQueryKey, (current) => {
+        if (!current) {
+          return current;
+        }
+        return current.map((visit) => {
+          if (visit.visitId !== selectedVisit.visitId) {
+            return visit;
+          }
+          const safetyNotes = buildSafetyNotes([
+            visit.raw.patientModel?.appMemo,
+            visit.raw.patientModel?.reserve1,
+            visit.raw.patientModel?.reserve2,
+            visit.raw.patientModel?.reserve3,
+            visit.raw.patientModel?.reserve4,
+            visit.raw.patientModel?.reserve5,
+            visit.raw.patientModel?.reserve6,
+            updatedMemo,
+          ]);
+          return {
+            ...visit,
+            memo: updatedMemo,
+            safetyNotes,
+            raw: {
+              ...visit.raw,
+              memo: updatedMemo,
+            },
+          };
+        });
+      });
+
+      setChiefComplaintDirty(false);
+      setChiefComplaintStatus('saved');
+      setChiefComplaintError(null);
+      recordOperationEvent('chart', 'info', 'visit_memo_update', '受付メモ（主訴）を更新しました', {
+        visitId: selectedVisit.visitId,
+        patientId: selectedVisit.patientId,
+        memoLength: normalized.length,
+      });
+    } catch (error) {
+      console.error('主訴メモの更新に失敗しました', error);
+      setChiefComplaintStatus('error');
+      setChiefComplaintError('主訴メモの保存に失敗しました。ネットワークを確認して再試行してください。');
+    }
+  }, [
+    buildSafetyNotes,
+    chiefComplaint,
+    chiefComplaintDirty,
+    chiefComplaintStatus,
+    publishChartEvent,
+    queryClient,
+    recordOperationEvent,
+    selectedVisit,
+  ]);
+
+  const handlePatientMemoChange = useCallback(
+    (value: string) => {
+      setPatientMemo(value);
+      const normalized = value.trim();
+      const original = latestPatientMemo?.memo?.trim() ?? '';
+      setPatientMemoDirty(normalized !== original);
+      setPatientMemoStatus('idle');
+      setPatientMemoError(null);
+    },
+    [latestPatientMemo],
+  );
+
+  const handlePatientMemoReset = useCallback(() => {
+    setPatientMemo(latestPatientMemo?.memo ?? '');
+    setPatientMemoDirty(false);
+    setPatientMemoStatus('idle');
+    setPatientMemoError(null);
+  }, [latestPatientMemo]);
+
+  const handlePatientMemoSave = useCallback(async () => {
+    if (!selectedVisit) {
+      return;
+    }
+    if (!karteId) {
+      setPatientMemoStatus('error');
+      setPatientMemoError('カルテ情報を取得できませんでした。ページを再読み込みしてください。');
+      return;
+    }
+    if (!session) {
+      setPatientMemoStatus('error');
+      setPatientMemoError('セッション情報が無効です。再度ログインしてください。');
+      return;
+    }
+    if (!patientMemoDirty && patientMemoStatus !== 'error') {
+      return;
+    }
+
+    const normalized = patientMemo.trim();
+    setPatientMemo(normalized);
+    setPatientMemoStatus('saving');
+    setPatientMemoError(null);
+
+    try {
+      await updatePatientMemo({
+        memoId: patientMemoId ?? undefined,
+        karteId,
+        memo: normalized,
+        session,
+      });
+      recordOperationEvent('chart', 'info', 'patient_memo_update', '患者メモを更新しました', {
+        karteId,
+        patientId: selectedVisit.patientId,
+        memoLength: normalized.length,
+      });
+      setPatientMemoDirty(false);
+      setPatientMemoStatus('saved');
+      setPatientMemoUpdatedAt(new Date().toISOString());
+      try {
+        await refetchKarte();
+      } catch (refetchError) {
+        console.warn('患者メモ再取得に失敗しました', refetchError);
+      }
+    } catch (error) {
+      console.error('患者メモの更新に失敗しました', error);
+      setPatientMemoStatus('error');
+      setPatientMemoError('患者メモの保存に失敗しました。ネットワークを確認して再試行してください。');
+    }
+  }, [
+    karteId,
+    patientMemo,
+    patientMemoDirty,
+    patientMemoId,
+    patientMemoStatus,
+    refetchKarte,
+    recordOperationEvent,
+    selectedVisit,
+    session,
+    updatePatientMemo,
+  ]);
 
   const handleDraftChange = useCallback((key: keyof ProgressNoteDraft, value: string) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
@@ -1038,7 +1304,7 @@ export const ChartsPage = () => {
         ref={chiefComplaintRef}
         patient={selectedVisit}
         chiefComplaint={chiefComplaint}
-        onChiefComplaintChange={setChiefComplaint}
+        onChiefComplaintChange={handleChiefComplaintChange}
         diagnosisTags={diagnosisTags}
         onAddDiagnosisTag={handleAddDiagnosisTag}
         onRemoveDiagnosisTag={handleRemoveDiagnosisTag}
@@ -1278,6 +1544,14 @@ export const ChartsPage = () => {
                 setRightPaneCollapsed(true);
               }
             }}
+            visitMemo={chiefComplaint}
+            visitMemoStatus={chiefComplaintStatus}
+            visitMemoError={chiefComplaintError}
+            visitMemoDirty={chiefComplaintDirty}
+            onVisitMemoChange={handleChiefComplaintChange}
+            onVisitMemoSave={handleChiefComplaintCommit}
+            onVisitMemoReset={handleChiefComplaintReset}
+            visitMemoDisabled={!selectedVisit}
             monshinSummary={monshinSummary}
             vitalSigns={vitalSigns}
             mediaItems={mediaItems}
@@ -1285,6 +1559,15 @@ export const ChartsPage = () => {
             onSnippetDragStart={handleSnippetDragStart}
             onMediaOpen={handleMediaOpen}
             onPastSummaryOpen={handlePastSummaryOpen}
+            patientMemo={patientMemo}
+            patientMemoStatus={patientMemoStatus}
+            patientMemoError={patientMemoError}
+            patientMemoDirty={patientMemoDirty}
+            patientMemoUpdatedAt={patientMemoUpdatedAt}
+            onPatientMemoChange={handlePatientMemoChange}
+            onPatientMemoSave={handlePatientMemoSave}
+            onPatientMemoReset={handlePatientMemoReset}
+            patientMemoDisabled={!selectedVisit}
           />
         </RightRail>
       </ContentGrid>
