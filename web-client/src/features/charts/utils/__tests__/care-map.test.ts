@@ -65,9 +65,28 @@ describe('care-map utilities', () => {
   const baseMedia: MediaItem = {
     id: 'media-1',
     title: '胸部X線',
-    thumbnailUrl: 'data:image/png;base64,xxx',
     capturedAt: '2026-05-04T08:15:00',
     description: '正面像',
+    attachmentId: 300,
+    documentId: 1,
+    fileName: 'chest-xray.png',
+    size: 512 * 1024,
+    contentType: 'image/png',
+    kind: 'image',
+    documentTitle: '初診カルテ',
+    documentDepartment: '内科',
+  };
+
+  const pdfMedia: MediaItem = {
+    ...baseMedia,
+    id: 'media-2',
+    title: '造影検査レポート',
+    capturedAt: '2026-05-05 09:30:00',
+    fileName: 'contrast-report.pdf',
+    size: 2 * 1024 * 1024,
+    contentType: 'application/pdf',
+    kind: 'pdf',
+    attachmentId: 301,
   };
 
   it('parses various date formats for care map events', () => {
@@ -92,7 +111,7 @@ describe('care-map utilities', () => {
       documents: [baseDoc],
       appointments: [baseAppointment],
       laboModules: [baseLaboModule],
-      mediaItems: [baseMedia],
+      mediaItems: [baseMedia, pdfMedia],
     });
 
     expect(events.map((event) => event.type)).toEqual([
@@ -100,11 +119,13 @@ describe('care-map utilities', () => {
       'appointment',
       'lab',
       'image',
+      'attachment',
     ]);
 
     expect(events[2].description).toContain('2件の検査結果');
     expect(events[2].details).toContain('HbA1c');
     expect(events[0].meta).toMatchObject({ docPk: 1 });
+    expect(events[4].details).toContain('PDF 添付');
   });
 
   it('groups events by date key', () => {

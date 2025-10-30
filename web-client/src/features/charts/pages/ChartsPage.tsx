@@ -20,6 +20,7 @@ import { patientVisitsQueryKey, usePatientVisits } from '@/features/charts/hooks
 import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
 import { useFreeDocument } from '@/features/charts/hooks/useFreeDocument';
+import { useDocumentAttachments } from '@/features/charts/hooks/useDocumentAttachments';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { StampDefinition } from '@/features/charts/types/stamp';
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
@@ -291,15 +292,6 @@ type DocumentPresetState = {
   memo?: string;
   extraNote?: string;
   version: number;
-};
-
-const placeholderImage = (title: string) => {
-  const encoded = encodeURIComponent(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">\n      <rect width="320" height="240" fill="${'#b8d0ed'}"/>\n      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20" fill="${'#1d3d5e'}">${
-        title || 'No Image'
-      }</text>\n    </svg>`,
-  );
-  return `data:image/svg+xml;charset=utf-8,${encoded}`;
 };
 
 export const ChartsPage = () => {
@@ -667,17 +659,56 @@ export const ChartsPage = () => {
     }));
   }, [karteQuery.data?.documents]);
 
-  const mediaItems: MediaItem[] = useMemo(
-    () =>
-      pastSummaries.slice(0, 4).map((summary) => ({
-        id: `media-${summary.id}`,
-        title: summary.title,
-        thumbnailUrl: placeholderImage(summary.title),
-        capturedAt: summary.recordedAt,
-        description: summary.excerpt,
-      })),
-    [pastSummaries],
-  );
+  const documentIds = useMemo(() => (karteQuery.data?.documents ?? []).map((doc) => doc.docPk), [karteQuery.data?.documents]);
+
+  const attachmentsQuery = useDocumentAttachments(documentIds, {
+    enabled: Boolean(selectedVisit?.patientId && documentIds.length > 0),
+  });
+
+  const mediaItems: MediaItem[] = useMemo(() => {
+    const source = attachmentsQuery.data;
+    if (!source || source.length === 0) {
+      return [];
+    }
+    const toTime = (value?: string | null): number => {
+      if (!value) {
+        return Number.NEGATIVE_INFINITY;
+      }
+      const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+      const time = new Date(normalized).getTime();
+      return Number.isNaN(time) ? Number.NEGATIVE_INFINITY : time;
+    };
+    return source
+      .slice()
+      .sort((a, b) => {
+        const timeA = toTime(a.recordedAt ?? a.confirmedAt ?? a.createdAt ?? null);
+        const timeB = toTime(b.recordedAt ?? b.confirmedAt ?? b.createdAt ?? null);
+        return timeB - timeA;
+      })
+      .slice(0, 12)
+      .map((attachment) => {
+        const capturedAt = attachment.recordedAt ?? attachment.confirmedAt ?? attachment.createdAt ?? null;
+        return {
+          id: `attachment-${attachment.id}`,
+          title: attachment.title,
+          capturedAt,
+          description: attachment.description ?? attachment.documentTitle ?? undefined,
+          attachmentId: attachment.id,
+          documentId: attachment.documentId,
+          fileName: attachment.fileName,
+          size: attachment.size,
+          contentType: attachment.contentType,
+          kind: attachment.kind,
+          documentTitle: attachment.documentTitle,
+          documentDepartment: attachment.documentDepartment,
+          documentStatus: attachment.documentStatus,
+          uri: attachment.uri ?? null,
+        };
+      });
+  }, [attachmentsQuery.data]);
+
+  const mediaItemsLoading = attachmentsQuery.isLoading;
+  const mediaItemsError = attachmentsQuery.error ? '画像・添付の取得に失敗しました。再読み込みしてください。' : null;
 
   useEffect(() => {
     setMiniSummaryLines(pastSummaries.slice(0, 3).map((item) => `${item.title}：${item.excerpt}`));
@@ -1870,6 +1901,8 @@ export const ChartsPage = () => {
                     karteId={karteQuery.data?.id ?? null}
                     documents={karteQuery.data?.documents ?? []}
                     mediaItems={mediaItems}
+                    mediaLoading={mediaItemsLoading}
+                    mediaError={attachmentsQuery.error ?? null}
                   />
                   <OrderSetPanel
                     orderSets={orderSets}
@@ -2011,6 +2044,8 @@ export const ChartsPage = () => {
             monshinSummary={monshinSummary}
             vitalSigns={vitalSigns}
             mediaItems={mediaItems}
+            mediaLoading={mediaItemsLoading}
+            mediaError={mediaItemsError}
             pastSummaries={pastSummaries}
             onSnippetDragStart={handleSnippetDragStart}
             onMediaOpen={handleMediaOpen}
