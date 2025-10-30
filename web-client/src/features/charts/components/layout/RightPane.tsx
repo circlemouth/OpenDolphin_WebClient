@@ -58,6 +58,15 @@ interface RightPaneProps {
   onPatientMemoSave: () => void;
   onPatientMemoReset: () => void;
   patientMemoDisabled?: boolean;
+  freeDocumentComment: string;
+  freeDocumentStatus: SaveStatus;
+  freeDocumentError: string | null;
+  freeDocumentDirty: boolean;
+  freeDocumentUpdatedAt: string | null;
+  onFreeDocumentChange: (value: string) => void;
+  onFreeDocumentSave: () => void;
+  onFreeDocumentReset: () => void;
+  freeDocumentDisabled?: boolean;
   onHoverExpand?: () => void;
   onHoverLeave?: () => void;
 }
@@ -288,6 +297,15 @@ export const RightPane = ({
   onPatientMemoSave,
   onPatientMemoReset,
   patientMemoDisabled = false,
+  freeDocumentComment,
+  freeDocumentStatus,
+  freeDocumentError,
+  freeDocumentDirty,
+  freeDocumentUpdatedAt,
+  onFreeDocumentChange,
+  onFreeDocumentSave,
+  onFreeDocumentReset,
+  freeDocumentDisabled = false,
   onHoverExpand,
   onHoverLeave,
 }: RightPaneProps) => (
@@ -395,6 +413,58 @@ export const RightPane = ({
                 patientMemoDisabled ||
                 patientMemoStatus === 'saving' ||
                 (!patientMemoDirty && patientMemoStatus !== 'error')
+              }
+            >
+              保存
+            </Button>
+          </EditorActions>
+        </EditorFooter>
+      </EditorCard>
+
+      <EditorCard aria-labelledby="free-document-heading">
+        <EditorHeader>
+          <SectionTitle id="free-document-heading">サマリ文書（FreeDocument）</SectionTitle>
+          <HelperText>診療経過の要約を保存します。オンプレ版クライアントと同じサマリ文書を更新します。</HelperText>
+        </EditorHeader>
+        <TextArea
+          label="サマリ本文"
+          value={freeDocumentComment}
+          onChange={(event) => onFreeDocumentChange(event.currentTarget.value)}
+          placeholder="例：診断の経緯、今後のフォロー方針などを記録"
+          rows={6}
+          disabled={freeDocumentDisabled}
+        />
+        <EditorFooter>
+          <StatusText $tone={freeDocumentError ? 'danger' : freeDocumentStatus === 'saved' ? 'success' : 'muted'}>
+            {freeDocumentError
+              ? freeDocumentError
+              : freeDocumentStatus === 'saving'
+                ? '保存中…'
+                : freeDocumentStatus === 'saved'
+                  ? '保存しました'
+                  : freeDocumentDirty
+                    ? '未保存の変更があります'
+                    : freeDocumentUpdatedAt
+                      ? `最終更新: ${formatUpdatedAt(freeDocumentUpdatedAt)}`
+                      : '最初の保存でサマリ文書が作成されます'}
+          </StatusText>
+          <EditorActions>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={onFreeDocumentReset}
+              disabled={freeDocumentDisabled || freeDocumentStatus === 'saving' || !freeDocumentDirty}
+            >
+              取り消し
+            </Button>
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={onFreeDocumentSave}
+              disabled={
+                freeDocumentDisabled ||
+                freeDocumentStatus === 'saving' ||
+                (!freeDocumentDirty && freeDocumentStatus !== 'error')
               }
             >
               保存

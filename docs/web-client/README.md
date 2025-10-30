@@ -14,6 +14,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `features/PHASE3_STAMP_AND_ORCA.md` – フェーズ3 スタンプ/ORCA 連携仕様と運用メモ。
 - `features/PHASE4_SECURITY_AND_QUALITY.md` – フェーズ4 品質・安全性強化タスクの実装概要と運用注意点。
 - `features/ORDER_ENTRY_DATA_GUIDE.md` – すべてのオーダカテゴリ（処方・注射・手術・検査など）を登録する際に必須となるサーバー側データ要件まとめ。
+- `features/RECEPTION_SCHEDULE_AND_SUMMARY.md` – 受付予約管理と FreeDocument 連携の仕様・運用メモ。
 - `design-system/ALPHA_COMPONENTS.md` – デザインシステム α 版の Storybook 運用とコンポーネント一覧。
 - `operations/TEST_SERVER_DEPLOY.md` – テスト環境向けサーバーデプロイとアカウント登録手順。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` – 1画面完結レイアウトの設計指針。
@@ -43,6 +44,8 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-05-02: 受付予約管理で保存中の操作ガードを追加。`features/RECEPTION_SCHEDULE_AND_SUMMARY.md` に予約保存中のボタン無効化仕様を追記し、二重操作防止策と運用上の注意を明文化。
+- 2026-05-01: 受付予約管理（`AppointmentManager`）と FreeDocument 編集 UI を追加。`features/RECEPTION_SCHEDULE_AND_SUMMARY.md` と `planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、Swing 版とのデータ整合と運用手順を整理。
 - 2026-04-25: カルテ右ペインに問診メモ／患者メモ編集カードと `/karte/memo` 連携を追加。`ux/KARTE_SCREEN_IMPLEMENTATION.md` と `planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、オンプレ MemoInspector 相当の編集フローを Web に反映。
 - 2026-04-23: 受付患者一覧に呼出トグルとインラインメモ編集を追加。`ux/KARTE_SCREEN_IMPLEMENTATION.md` と `planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、オンプレ版と同等の受付操作を Web でも提供。
 - 2026-04-21: Web／オンプレ機能差分チェックリストを追加。`planning/WEB_VS_ONPRE_CHECKLIST.md` を新設し、今後の追従タスクを整理。
