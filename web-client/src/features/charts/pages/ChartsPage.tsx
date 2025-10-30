@@ -5,13 +5,16 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
 import { StampLibraryPanel } from '@/features/charts/components/StampLibraryPanel';
 import { OrcaOrderPanel } from '@/features/charts/components/OrcaOrderPanel';
+import { OrderSetPanel } from '@/features/charts/components/OrderSetPanel';
 import { PatientDocumentsPanel } from '@/features/charts/components/PatientDocumentsPanel';
 import { useChartEventSubscription } from '@/features/charts/hooks/useChartEventSubscription';
 import { useChartLock } from '@/features/charts/hooks/useChartLock';
 import { usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
+import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { StampDefinition } from '@/features/charts/types/stamp';
+import type { OrderSetDefinition } from '@/features/charts/types/order-set';
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
 import type { BillingMode, ProgressNoteBilling } from '@/features/charts/utils/progress-note-payload';
@@ -204,6 +207,13 @@ const createPlanCard = (type: PlanComposerCard['type'], detail = '', title = '')
   note: '',
 });
 
+type DocumentPresetState = {
+  templateId: string;
+  memo?: string;
+  extraNote?: string;
+  version: number;
+};
+
 const placeholderImage = (title: string) => {
   const encoded = encodeURIComponent(
     `<svg xmlns="http://www.w3.org/2000/svg" width="320" height="240" viewBox="0 0 320 240">\n      <rect width="320" height="240" fill="${'#b8d0ed'}"/>\n      <text x="50%" y="50%" dominant-baseline="middle" text-anchor="middle" font-size="20" fill="${'#1d3d5e'}">${
@@ -223,6 +233,7 @@ export const ChartsPage = () => {
   const userPk = session?.userProfile?.userModelId ?? null;
   const stampLibraryQuery = useStampLibrary(userPk);
   const canLoadStampLibrary = Boolean(userPk);
+  const { orderSets, createOrderSet, updateOrderSet, deleteOrderSet, markOrderSetUsed } = useOrderSets();
   const [draft, setDraft] = useState<ProgressNoteDraft>(defaultDraft);
   const [billing, setBilling] = useState<BillingState>(
     createInitialBillingState('insurance', null, session?.userProfile?.displayName),
@@ -255,6 +266,8 @@ export const ChartsPage = () => {
   }>({ open: false, title: '', current: [], incoming: [] });
   const [miniSummaryLines, setMiniSummaryLines] = useState<string[]>([]);
   const [unsentTaskCount, setUnsentTaskCount] = useState<number>(INITIAL_CHECKLIST.length);
+  const [documentPreset, setDocumentPreset] = useState<DocumentPresetState | null>(null);
+  const [lastAppliedOrderSetId, setLastAppliedOrderSetId] = useState<string | null>(null);
   const chiefComplaintRef = useRef<HTMLInputElement | null>(null);
   const isComposingRef = useRef(false);
 
@@ -316,6 +329,8 @@ export const ChartsPage = () => {
     setDiagnosisTags([]);
     setSaveState('idle');
     setSaveError(null);
+    setDocumentPreset(null);
+    setLastAppliedOrderSetId(null);
   }, [selectedVisit, selectedVisit?.visitId, session?.userProfile?.displayName]);
 
   useEffect(() => {
@@ -332,6 +347,8 @@ export const ChartsPage = () => {
     setDiagnosisTags([]);
     setSaveState('idle');
     setSaveError(null);
+    setDocumentPreset(null);
+    setLastAppliedOrderSetId(null);
   }, [selectedVisit, session?.userProfile?.displayName]);
 
   useEffect(() => {
@@ -670,6 +687,66 @@ export const ChartsPage = () => {
       setSaveError(null);
     },
     [activeSurface, handleObjectiveInsertText, isLockedByMe, updatePlanCards],
+  );
+
+  const handleApplyOrderSet = useCallback(
+    (definition: OrderSetDefinition) => {
+      if (!isLockedByMe) {
+        setSaveError('診察を開始してからオーダセットを適用してください');
+        return;
+      }
+
+      const appendDraftField = (field: 'subjective' | 'assessment', value?: string) => {
+        const snippet = value?.trim();
+        if (!snippet) {
+          return;
+        }
+        setDraft((prev) => {
+          const current = prev[field] ?? '';
+          return {
+            ...prev,
+            [field]: current ? `${current}\n${snippet}` : snippet,
+          };
+        });
+      };
+
+      appendDraftField('subjective', definition.progressNote?.subjective);
+      appendDraftField('assessment', definition.progressNote?.assessment);
+      if (definition.progressNote?.objective?.trim()) {
+        handleObjectiveInsertText(definition.progressNote.objective.trim());
+      }
+
+      if (definition.planItems.length > 0) {
+        updatePlanCards((cards) => [
+          ...cards,
+          ...definition.planItems.map((item) => ({
+            ...createPlanCard(item.type, item.detail, item.title),
+            note: item.note,
+          })),
+        ]);
+      }
+
+      if (definition.documentPreset) {
+        setDocumentPreset({
+          templateId: definition.documentPreset.templateId,
+          memo: definition.documentPreset.memo,
+          extraNote: definition.documentPreset.extraNote,
+          version: Date.now(),
+        });
+      }
+
+      setActiveSurface('plan');
+      setSaveState('idle');
+      setSaveError(null);
+      setLastAppliedOrderSetId(definition.id);
+      markOrderSetUsed(definition.id);
+    },
+    [
+      handleObjectiveInsertText,
+      isLockedByMe,
+      markOrderSetUsed,
+      updatePlanCards,
+    ],
   );
 
   const searchResults = useMemo<SearchResultItem[]>(() => {
@@ -1085,6 +1162,15 @@ export const ChartsPage = () => {
                   </Stack>
                 </SurfaceCard>
                 <SupplementGrid>
+                  <OrderSetPanel
+                    orderSets={orderSets}
+                    onApply={handleApplyOrderSet}
+                    onCreate={createOrderSet}
+                    onUpdate={updateOrderSet}
+                    onDelete={deleteOrderSet}
+                    disabled={!isLockedByMe}
+                    lastAppliedId={lastAppliedOrderSetId}
+                  />
                   <StampLibraryPanel
                     stamps={stampLibraryQuery.data ?? []}
                     isLoading={canLoadStampLibrary ? stampLibraryQuery.isLoading : false}
@@ -1117,6 +1203,7 @@ export const ChartsPage = () => {
                       session?.credentials.userId
                     }
                     disabled={!selectedVisit}
+                    preset={documentPreset}
                   />
                 </SupplementGrid>
               </WorkspaceStack>
