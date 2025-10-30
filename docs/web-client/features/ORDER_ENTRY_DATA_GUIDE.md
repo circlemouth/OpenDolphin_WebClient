@@ -161,3 +161,9 @@
 5. CLAIM 送信や処方せん出力・検体検査送信を行う場合、保険情報・交付日・医療機関番号・`labtestOrderNumber` など関連する `DocInfoModel` フィールドが揃っているか確認する。
 
 上記要件を満たすことで、クライアントから送信されるカルテ文書がサーバー側モデルと齟齬なくマッピングされ、すべてのオーダカテゴリを安全かつ漏れなく登録できます。
+
+## 7. Web クライアント実装補足
+
+- `ChartsPage` ではスタンプ／ORCA 検索から取得した `ModuleModel` を `orderModules` として保持し、`createProgressNoteDocument` へ結合することで ProgressCourse 以外のモジュールをカルテ保存に含めている。
+- モジュールの `entity` に応じて `DocInfoModel.hasRp`／`hasTreatment`／`hasLaboTest` を自動的に更新し、オンプレ版と同じ検索／帳票挙動を再現する。
+- 保存前にモジュールの `beanBytes` を Base64 デコードして `ClaimItem` 要素の有無を検証し、欠落時はエラーとして保存を中断する。フロントエンドの単体テストで正常系／異常系をカバー済み。

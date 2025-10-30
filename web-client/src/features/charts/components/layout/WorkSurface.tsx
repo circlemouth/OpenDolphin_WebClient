@@ -2,7 +2,7 @@ import type { UIEvent } from 'react';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import styled from '@emotion/styled';
 
-import { Button, SurfaceCard, TextArea } from '@/components';
+import { Button, StatusBadge, SurfaceCard, TextArea } from '@/components';
 
 export type SurfaceMode = 'objective' | 'plan';
 
@@ -12,6 +12,8 @@ export interface PlanComposerCard {
   title: string;
   detail: string;
   note: string;
+  orderModuleId?: string | null;
+  orderSummary?: string | null;
 }
 
 interface WorkSurfaceProps {
@@ -205,6 +207,14 @@ const PlanDetailArea = styled.textarea`
   resize: vertical;
   color: ${({ theme }) => theme.palette.text};
   background: ${({ theme }) => theme.palette.surface};
+`;
+
+const OrderSummaryRow = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.palette.textMuted};
 `;
 
 const PlanNoteArea = styled.textarea`
@@ -439,6 +449,14 @@ export const WorkSurface = ({
                     placeholder={`${planTypeLabel(card.type)}内容`}
                     onFocus={() => onPlanCardFocus(card.id)}
                   />
+                  {card.orderSummary ? (
+                    <OrderSummaryRow>
+                      <StatusBadge tone="info" size="sm">
+                        オーダ
+                      </StatusBadge>
+                      <span>{card.orderSummary}</span>
+                    </OrderSummaryRow>
+                  ) : null}
                   <PlanDetailArea
                     value={card.detail}
                     onChange={(event) => onPlanCardChange(card.id, { detail: event.currentTarget.value })}

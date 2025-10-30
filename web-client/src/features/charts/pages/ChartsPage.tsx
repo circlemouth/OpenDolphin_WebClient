@@ -30,6 +30,8 @@ import { updatePatientMemo } from '@/features/patients/api/patient-memo-api';
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
 import { useAuth } from '@/libs/auth';
+import { fetchStampModule } from '@/features/charts/api/stamp-api';
+import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
 import { PatientHeaderBar } from '@/features/charts/components/layout/PatientHeaderBar';
 import { VisitChecklist, type VisitChecklistItem } from '@/features/charts/components/layout/VisitChecklist';
 import {
@@ -195,11 +197,67 @@ type SearchResultItem = {
   planType?: PlanComposerCard['type'];
 };
 
+const ORDER_ENTITY_PLAN_TYPE: Record<string, PlanComposerCard['type']> = {
+  medOrder: 'medication',
+  injectionOrder: 'injection',
+  treatmentOrder: 'procedure',
+  surgeryOrder: 'procedure',
+  testOrder: 'exam',
+  physiologyOrder: 'exam',
+  bacteriaOrder: 'exam',
+  radiologyOrder: 'exam',
+  baseChargeOrder: 'procedure',
+  instractionChargeOrder: 'guidance',
+  otherOrder: 'procedure',
+  generalOrder: 'followup',
+};
+
+const ORDER_ENTITY_LABEL: Record<string, string> = {
+  medOrder: '処方',
+  injectionOrder: '注射',
+  treatmentOrder: '処置',
+  surgeryOrder: '手術',
+  testOrder: '検体検査',
+  physiologyOrder: '生体検査',
+  bacteriaOrder: '細菌検査',
+  radiologyOrder: '画像検査',
+  baseChargeOrder: '診察料',
+  instractionChargeOrder: '指導',
+  otherOrder: 'その他',
+  generalOrder: '汎用',
+};
+
+const getEntityLabel = (entity: string) => ORDER_ENTITY_LABEL[entity] ?? 'オーダ';
+
+interface OrderModuleDraft {
+  id: string;
+  source: 'stamp' | 'orca';
+  stampId?: string;
+  label: string;
+  moduleInfo: {
+    stampName: string;
+    stampRole: string;
+    entity: string;
+    stampNumber: number;
+    stampId?: string;
+  };
+  beanBytes: string;
+}
+
+const createOrderModuleId = () => globalThis.crypto?.randomUUID?.() ?? `order-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const buildOrderSummary = (draft: OrderModuleDraft) => {
+  const label = getEntityLabel(draft.moduleInfo.entity);
+  const name = draft.moduleInfo.stampName || draft.label;
+  return `${label}: ${name}`;
+};
+
 const serializePlanCards = (cards: PlanComposerCard[]) =>
   cards
     .map((card) => {
       const rows = [
         `[${card.type}] ${card.title || '未入力'}`,
+        card.orderSummary ? `オーダ: ${card.orderSummary}` : null,
         card.detail,
         card.note ? `メモ: ${card.note}` : null,
       ].filter(Boolean);
@@ -207,12 +265,19 @@ const serializePlanCards = (cards: PlanComposerCard[]) =>
     })
     .join('\n\n');
 
-const createPlanCard = (type: PlanComposerCard['type'], detail = '', title = ''): PlanComposerCard => ({
+const createPlanCard = (
+  type: PlanComposerCard['type'],
+  detail = '',
+  title = '',
+  extras?: Partial<Pick<PlanComposerCard, 'orderModuleId' | 'orderSummary'>>,
+): PlanComposerCard => ({
   id: `${type}-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
   type,
   title,
   detail,
   note: '',
+  orderModuleId: extras?.orderModuleId ?? null,
+  orderSummary: extras?.orderSummary ?? null,
 });
 
 type DocumentPresetState = {
@@ -258,6 +323,7 @@ export const ChartsPage = () => {
   const previousPlanCardsRef = useRef<PlanComposerCard[] | null>(null);
   const [focusedPlanCardId, setFocusedPlanCardId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [orderModules, setOrderModules] = useState<OrderModuleDraft[]>([]);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | undefined>(undefined);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -357,6 +423,7 @@ export const ChartsPage = () => {
     setUnsentTaskCount(INITIAL_CHECKLIST.length);
     setDraft(defaultDraft);
     setPlanCards([]);
+    setOrderModules([]);
     previousPlanCardsRef.current = null;
     setChiefComplaint(selectedVisit.memo ?? '');
     setChiefComplaintDirty(false);
@@ -371,7 +438,7 @@ export const ChartsPage = () => {
     setPatientMemo('');
     setPatientMemoId(null);
     setPatientMemoDirty(false);
-   setPatientMemoStatus('idle');
+    setPatientMemoStatus('idle');
     setPatientMemoError(null);
     setPatientMemoUpdatedAt(null);
     setFreeDocumentComment('');
@@ -391,6 +458,7 @@ export const ChartsPage = () => {
     setUnsentTaskCount(INITIAL_CHECKLIST.length);
     setDraft(defaultDraft);
     setPlanCards([]);
+    setOrderModules([]);
     previousPlanCardsRef.current = null;
     setChiefComplaint('');
     setChiefComplaintDirty(false);
@@ -568,6 +636,30 @@ export const ChartsPage = () => {
     [],
   );
 
+  const registerOrderModules = useCallback(
+    (drafts: OrderModuleDraft[]) => {
+      if (drafts.length === 0) {
+        return;
+      }
+      setOrderModules((prev) => [...prev, ...drafts]);
+      updatePlanCards((cards) => {
+        const appended = drafts.map((draft) => {
+          const entity = draft.moduleInfo.entity;
+          const planType = ORDER_ENTITY_PLAN_TYPE[entity] ?? 'followup';
+          const summary = buildOrderSummary(draft);
+          const title = draft.moduleInfo.stampName || draft.label;
+          const detail = draft.label || draft.moduleInfo.stampName;
+          return createPlanCard(planType, detail, title, {
+            orderModuleId: draft.id,
+            orderSummary: summary,
+          });
+        });
+        return [...cards, ...appended];
+      });
+    },
+    [updatePlanCards],
+  );
+
   const handlePlanCardChange = useCallback(
     (id: string, patch: Partial<PlanComposerCard>) => {
       updatePlanCards((cards) =>
@@ -579,7 +671,15 @@ export const ChartsPage = () => {
 
   const handlePlanCardRemove = useCallback(
     (id: string) => {
-      updatePlanCards((cards) => cards.filter((card) => card.id !== id));
+      let moduleToRemove: string | null = null;
+      updatePlanCards((cards) => {
+        const target = cards.find((card) => card.id === id);
+        moduleToRemove = target?.orderModuleId ?? null;
+        return cards.filter((card) => card.id !== id);
+      });
+      if (moduleToRemove) {
+        setOrderModules((prev) => prev.filter((module) => module.id !== moduleToRemove));
+      }
     },
     [updatePlanCards],
   );
@@ -613,6 +713,7 @@ export const ChartsPage = () => {
       const snapshot = previousPlanCardsRef.current;
       setPlanCards(snapshot);
       setDraft((prev) => ({ ...prev, plan: serializePlanCards(snapshot) }));
+      setOrderModules((prev) => prev.filter((module) => snapshot.some((card) => card.orderModuleId === module.id)));
       previousPlanCardsRef.current = null;
     }
   }, []);
@@ -1028,6 +1129,16 @@ export const ChartsPage = () => {
           departmentCode: selectedVisit.departmentCode,
           departmentName: selectedVisit.departmentName,
           billing: billingPayload,
+          orderModules: orderModules.map((module) => ({
+            moduleInfoBean: {
+              stampName: module.moduleInfo.stampName,
+              stampRole: module.moduleInfo.stampRole,
+              stampNumber: module.moduleInfo.stampNumber,
+              entity: module.moduleInfo.entity,
+              stampId: module.moduleInfo.stampId,
+            },
+            beanBytes: module.beanBytes,
+          })),
         },
         nextState,
         selectedVisit.visitId,
@@ -1051,6 +1162,7 @@ export const ChartsPage = () => {
     selectedSelfPayOption.label,
     draft,
     lock,
+    orderModules,
   ]);
 
   const handleSaveDraft = useCallback(() => {
@@ -1086,22 +1198,64 @@ export const ChartsPage = () => {
 
   const handleInsertStamp = useCallback(
     (stamp: StampDefinition) => {
-      if (!isLockedByMe) {
-        setSaveError('診察を開始してからスタンプを挿入してください');
-        return;
-      }
-      const contextLabel = stamp.path.slice(1).join(' / ');
-      const snippet = [stamp.name, stamp.entity ? `(${stamp.entity})` : null, contextLabel ? `[${contextLabel}]` : null]
-        .filter(Boolean)
-        .join(' ');
-      if (activeSurface === 'objective') {
-        handleObjectiveInsertText(snippet);
-      } else {
-        updatePlanCards((cards) => [...cards, createPlanCard('procedure', snippet, stamp.name)]);
-      }
-      setSaveError(null);
+      void (async () => {
+        if (!isLockedByMe) {
+          setSaveError('診察を開始してからスタンプを挿入してください');
+          return;
+        }
+        const contextLabel = stamp.path.slice(1).join(' / ');
+        const snippet = [stamp.name, stamp.entity ? `(${stamp.entity})` : null, contextLabel ? `[${contextLabel}]` : null]
+          .filter(Boolean)
+          .join(' ');
+
+        if (activeSurface === 'objective') {
+          handleObjectiveInsertText(snippet);
+        }
+
+        if (!stamp.stampId) {
+          updatePlanCards((cards) => [...cards, createPlanCard('procedure', snippet, stamp.name)]);
+          setSaveError('スタンプに ID が未割り当てのため、テキストとして挿入しました。');
+          return;
+        }
+
+        try {
+          const payload = await fetchStampModule(stamp.stampId);
+          const draft: OrderModuleDraft = {
+            id: createOrderModuleId(),
+            source: 'stamp',
+            stampId: stamp.stampId ?? undefined,
+            label: snippet || stamp.name,
+            moduleInfo: {
+              stampName: stamp.name,
+              stampRole: stamp.role ?? 'p',
+              entity: stamp.entity ?? 'generalOrder',
+              stampNumber: 0,
+              stampId: stamp.stampId ?? undefined,
+            },
+            beanBytes: payload.stampBytes,
+          };
+          registerOrderModules([draft]);
+          recordOperationEvent('chart', 'info', 'order_module_add', 'スタンプからオーダを追加しました', {
+            stampId: stamp.stampId,
+            entity: draft.moduleInfo.entity,
+          });
+          setSaveError(null);
+        } catch (error) {
+          console.error('スタンプの取得に失敗しました', error);
+          setSaveError('スタンプの取得に失敗しました。時間をおいて再試行してください。');
+          updatePlanCards((cards) => [...cards, createPlanCard('procedure', snippet, stamp.name)]);
+        }
+      })();
     },
-    [activeSurface, handleObjectiveInsertText, isLockedByMe, updatePlanCards],
+    [
+      activeSurface,
+      handleObjectiveInsertText,
+      isLockedByMe,
+      recordOperationEvent,
+      registerOrderModules,
+      setSaveError,
+      updatePlanCards,
+    ],
   );
 
   const handleApplyOrderSet = useCallback(
@@ -1142,27 +1296,66 @@ export const ChartsPage = () => {
       }
 
       if (definition.documentPreset) {
-      setDocumentPreset({
-        templateId: definition.documentPreset.templateId,
-        memo: definition.documentPreset.memo,
-        extraNote: definition.documentPreset.extraNote,
-        version: Date.now(),
-      });
-    }
+        setDocumentPreset({
+          templateId: definition.documentPreset.templateId,
+          memo: definition.documentPreset.memo,
+          extraNote: definition.documentPreset.extraNote,
+          version: Date.now(),
+        });
+      }
 
-    setActiveSurface('plan');
-    setSaveState('idle');
-    setHasUnsavedChanges(true);
-    setSaveError(null);
-    setLastAppliedOrderSetId(definition.id);
-    markOrderSetUsed(definition.id);
-  },
-  [
-      handleObjectiveInsertText,
-      isLockedByMe,
-      markOrderSetUsed,
-      updatePlanCards,
-    ],
+      setActiveSurface('plan');
+      setSaveState('idle');
+      setHasUnsavedChanges(true);
+      setSaveError(null);
+      setLastAppliedOrderSetId(definition.id);
+      markOrderSetUsed(definition.id);
+    },
+    [handleObjectiveInsertText, isLockedByMe, markOrderSetUsed, updatePlanCards],
+  );
+
+  const handleCreateOrderFromOrca = useCallback(
+    async ({ code, name }: { code: string; name: string }) => {
+      if (!isLockedByMe) {
+        throw new Error('診察を開始してからオーダを追加してください');
+      }
+      const modules = await fetchOrcaOrderModules(code, name);
+      if (modules.length === 0) {
+        throw new Error('ORCA から診療行為を取得できませんでした');
+      }
+      const drafts: OrderModuleDraft[] = modules
+        .map((module, index) => {
+          if (!module.moduleInfoBean || !module.beanBytes) {
+            return null;
+          }
+          return {
+            id: createOrderModuleId(),
+            source: 'orca' as const,
+            label: `${name} (${code})`,
+            moduleInfo: {
+              stampName: module.moduleInfoBean.stampName,
+              stampRole: module.moduleInfoBean.stampRole ?? 'p',
+              entity: module.moduleInfoBean.entity ?? 'generalOrder',
+              stampNumber: module.moduleInfoBean.stampNumber ?? index,
+              stampId: module.moduleInfoBean.stampId ?? undefined,
+            },
+            beanBytes: module.beanBytes,
+          } satisfies OrderModuleDraft;
+        })
+        .filter((draft): draft is OrderModuleDraft => Boolean(draft));
+
+      if (drafts.length === 0) {
+        throw new Error('ORCA から取得したスタンプに必要なデータが含まれていません');
+      }
+
+      registerOrderModules(drafts);
+      recordOperationEvent('chart', 'info', 'order_module_add', 'ORCA マスターからオーダを追加しました', {
+        code,
+        count: drafts.length,
+      });
+      setSaveError(null);
+    },
+    [isLockedByMe, recordOperationEvent, registerOrderModules],
   );
 
   const searchResults = useMemo<SearchResultItem[]>(() => {
@@ -1600,7 +1793,7 @@ export const ChartsPage = () => {
                     onInsert={handleInsertStamp}
                     disabled={!isLockedByMe || !canLoadStampLibrary}
                   />
-                  <OrcaOrderPanel disabled={!isLockedByMe} />
+                  <OrcaOrderPanel disabled={!isLockedByMe} onCreateOrder={handleCreateOrderFromOrca} />
                   <PatientDocumentsPanel
                     patient={
                       selectedVisit
