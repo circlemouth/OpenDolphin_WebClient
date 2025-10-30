@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
@@ -9,6 +9,13 @@ import type { PatientVisitSummary } from '@/features/charts/types/patient-visit'
 import { useAuth } from '@/libs/auth';
 import { useReceptionCallMutation, useReceptionMemoMutation } from '@/features/reception/hooks/useReceptionActions';
 import { AppointmentManager } from '@/features/reception/components/AppointmentManager';
+import { BarcodeCheckInPanel } from '@/features/reception/components/BarcodeCheckInPanel';
+import { ColumnConfigurator } from '@/features/reception/components/ColumnConfigurator';
+import {
+  useReceptionPreferences,
+  type ReceptionColumnKey,
+  type ReceptionViewMode,
+} from '@/features/reception/hooks/useReceptionPreferences';
 
 type QueueStatus = 'waiting' | 'calling' | 'inProgress';
 type StatusFilter = 'all' | QueueStatus;
@@ -136,6 +143,53 @@ const EmptyState = styled(SurfaceCard)`
   align-items: flex-start;
 `;
 
+const ConfiguratorContainer = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+`;
+
+const TableWrapper = styled(SurfaceCard)`
+  padding: 0;
+  overflow-x: auto;
+`;
+
+const VisitTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+`;
+
+const TableHeadCell = styled.th`
+  text-align: left;
+  padding: 12px 16px;
+  font-weight: 600;
+  color: ${({ theme }) => theme.palette.textMuted};
+  border-bottom: 1px solid ${({ theme }) => theme.palette.border};
+`;
+
+const TableDataCell = styled.td`
+  padding: 12px 16px;
+  vertical-align: top;
+  border-bottom: 1px solid ${({ theme }) => theme.palette.border};
+`;
+
+const TableActionCell = styled(TableDataCell)`
+  min-width: 220px;
+`;
+
+const columnHeaders: Record<ReceptionColumnKey, string> = {
+  status: 'ステータス',
+  patientId: '患者ID',
+  kanaName: 'ふりがな',
+  visitDate: '来院日時',
+  memo: '受付メモ',
+  safetyNotes: '安全メモ',
+  insurance: '保険情報',
+  doctor: '担当医',
+  owner: '編集中端末',
+};
+
 const statusFilterOptions: { value: StatusFilter; label: string }[] = [
   { value: 'all', label: 'すべて' },
   { value: 'waiting', label: '待機中' },
@@ -168,6 +222,7 @@ export const ReceptionPage = () => {
   const { session } = useAuth();
   const clientUuid = session?.credentials.clientUuid;
   const visitsQuery = usePatientVisits();
+  const { preferences, setViewMode, setVisibleColumns } = useReceptionPreferences();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   const receptionCallMutation = useReceptionCallMutation();
@@ -180,8 +235,14 @@ export const ReceptionPage = () => {
   const [memoError, setMemoError] = useState<{ visitId: number; message: string } | null>(null);
   const [scheduleTarget, setScheduleTarget] = useState<PatientVisitSummary | null>(null);
   const [isAppointmentSaving, setIsAppointmentSaving] = useState(false);
+  const [showColumnConfigurator, setShowColumnConfigurator] = useState(false);
 
   const visits = useMemo(() => visitsQuery.data ?? [], [visitsQuery.data]);
+  const visibleColumns = useMemo(() => preferences.visibleColumns, [preferences.visibleColumns]);
+  const isColumnVisible = useCallback(
+    (key: ReceptionColumnKey) => visibleColumns.includes(key),
+    [visibleColumns],
+  );
 
   useEffect(() => {
     if (!scheduleTarget) {
@@ -305,6 +366,22 @@ export const ReceptionPage = () => {
             onChange={(event) => setStatusFilter(event.currentTarget.value as StatusFilter)}
             options={statusFilterOptions}
           />
+          <SelectField
+            label="表示形式"
+            value={preferences.viewMode}
+            onChange={(event) => setViewMode(event.currentTarget.value as ReceptionViewMode)}
+            options={[
+              { value: 'card', label: 'カード表示' },
+              { value: 'table', label: '表形式' },
+            ]}
+          />
+          <Button
+            type="button"
+            variant="secondary"
+            onClick={() => setShowColumnConfigurator((prev) => !prev)}
+          >
+            {showColumnConfigurator ? '項目設定を閉じる' : '表示項目を設定'}
+          </Button>
           <Button
             type="button"
             variant="ghost"
@@ -333,6 +410,17 @@ export const ReceptionPage = () => {
         </SummaryCard>
       </SummaryRow>
 
+      <ConfiguratorContainer>
+        <BarcodeCheckInPanel />
+        {showColumnConfigurator ? (
+          <ColumnConfigurator
+            selected={visibleColumns}
+            onChange={(columns) => setVisibleColumns(columns)}
+            onClose={() => setShowColumnConfigurator(false)}
+          />
+        ) : null}
+      </ConfiguratorContainer>
+
       {visitsQuery.isLoading ? (
         <EmptyState tone="muted">
           <h2 style={{ margin: 0, fontSize: '1rem' }}>受付情報を読み込み中です…</h2>
@@ -355,21 +443,250 @@ export const ReceptionPage = () => {
             再取得する
           </Button>
         </EmptyState>
+      ) : preferences.viewMode === 'table' ? (
+        <TableWrapper tone="muted">
+          <VisitTable>
+            <thead>
+              <tr>
+                <TableHeadCell>氏名</TableHeadCell>
+                {visibleColumns.map((column) => (
+                  <TableHeadCell key={column}>{columnHeaders[column]}</TableHeadCell>
+                ))}
+                <TableHeadCell>操作</TableHeadCell>
+              </tr>
+            </thead>
+            <tbody>
+              {filteredVisits.map((visit) => {
+                const isOwnedByMe = clientUuid && visit.ownerUuid === clientUuid;
+                const isOwnedByOther =
+                  clientUuid && visit.ownerUuid && visit.ownerUuid !== clientUuid;
+                const isCalling = hasOpenBit(visit.state);
+                const canToggleCall = !visit.ownerUuid;
+                const callButtonLabel = isCalling ? '待機に戻す' : '呼出する';
+                const callButtonTitle = !canToggleCall
+                  ? '診察中のため呼出状態は変更できません'
+                  : undefined;
+                const isStateUpdating =
+                  statePendingVisitId === visit.visitId && receptionCallMutation.isPending;
+                const isMemoEditing = editingMemoVisitId === visit.visitId;
+                const isMemoUpdating =
+                  memoPendingVisitId === visit.visitId && receptionMemoMutation.isPending;
+                const stateErrorMessage =
+                  stateError?.visitId === visit.visitId ? stateError.message : null;
+                const memoErrorMessage =
+                  memoError?.visitId === visit.visitId ? memoError.message : null;
+                const firstInsurance = visit.raw.firstInsurance?.trim();
+                const doctorInfo =
+                  [visit.doctorName?.trim(), visit.doctorId?.trim()].filter(Boolean).join(' / ') ||
+                  '---';
+
+                const renderColumnContent = (column: ReceptionColumnKey) => {
+                  switch (column) {
+                    case 'status':
+                      return renderStatusBadge(visit);
+                    case 'patientId':
+                      return visit.patientId;
+                    case 'kanaName':
+                      return visit.kanaName ?? '---';
+                    case 'visitDate':
+                      return visit.visitDate ?? '---';
+                    case 'memo':
+                      if (isMemoEditing) {
+                        return (
+                          <MemoEditor>
+                            <TextArea
+                              label="受付メモ"
+                              description="保存すると他端末にも即座に反映されます"
+                              placeholder="スタッフ間で共有したい注意事項を入力"
+                              value={memoDraft}
+                              onChange={(event) => setMemoDraft(event.currentTarget.value)}
+                              disabled={isMemoUpdating}
+                            />
+                            {memoErrorMessage ? (
+                              <ErrorText role="alert">{memoErrorMessage}</ErrorText>
+                            ) : null}
+                            <ActionRow>
+                              <Button
+                                type="button"
+                                variant="primary"
+                                onClick={() => {
+                                  void handleSaveMemo(visit);
+                                }}
+                                isLoading={isMemoUpdating}
+                              >
+                                保存する
+                              </Button>
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={handleCancelMemoEdit}
+                                disabled={isMemoUpdating}
+                              >
+                                キャンセル
+                              </Button>
+                            </ActionRow>
+                          </MemoEditor>
+                        );
+                      }
+                      return visit.memo ?? '---';
+                    case 'safetyNotes':
+                      return visit.safetyNotes?.length ? (
+                        <BadgeRow>
+                          {visit.safetyNotes.map((note) => (
+                            <StatusBadge key={note} tone="warning">
+                              {note}
+                            </StatusBadge>
+                          ))}
+                        </BadgeRow>
+                      ) : (
+                        '---'
+                      );
+                    case 'insurance':
+                      return firstInsurance ?? '---';
+                    case 'doctor':
+                      return doctorInfo;
+                    case 'owner':
+                      if (isOwnedByMe) {
+                        return <StatusBadge tone="success">自端末で編集中</StatusBadge>;
+                      }
+                      if (isOwnedByOther) {
+                        return <StatusBadge tone="danger">他端末で編集中</StatusBadge>;
+                      }
+                      return '---';
+                    default:
+                      return null;
+                  }
+                };
+
+                return (
+                  <tr key={visit.visitId}>
+                    <TableDataCell>
+                      <div style={{ fontWeight: 600 }}>{visit.fullName}</div>
+                    </TableDataCell>
+                    {visibleColumns.map((column) => (
+                      <TableDataCell key={column}>{renderColumnContent(column)}</TableDataCell>
+                    ))}
+                    <TableActionCell>
+                      {stateErrorMessage ? <ErrorText role="alert">{stateErrorMessage}</ErrorText> : null}
+                      {!isMemoEditing && memoErrorMessage ? (
+                        <ErrorText role="alert">{memoErrorMessage}</ErrorText>
+                      ) : null}
+                      <ActionRow>
+                        <Button
+                          type="button"
+                          variant={isCalling ? 'secondary' : 'primary'}
+                          onClick={() => {
+                            void handleToggleCall(visit);
+                          }}
+                          disabled={!canToggleCall || isStateUpdating}
+                          isLoading={isStateUpdating}
+                          title={callButtonTitle}
+                        >
+                          {callButtonLabel}
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => handleStartMemoEdit(visit)}
+                          disabled={isMemoUpdating || isMemoEditing}
+                        >
+                          受付メモを編集
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          onClick={() => setScheduleTarget(visit)}
+                          disabled={isMemoUpdating || isStateUpdating || isAppointmentSaving}
+                        >
+                          予約を管理
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="primary"
+                          onClick={() => handleOpenChart(visit.visitId)}
+                        >
+                          カルテを開く
+                        </Button>
+                      </ActionRow>
+                    </TableActionCell>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </VisitTable>
+        </TableWrapper>
       ) : (
         <QueueGrid>
           {filteredVisits.map((visit) => {
-            const statusBadge = renderStatusBadge(visit);
+            const statusBadge = isColumnVisible('status') ? renderStatusBadge(visit) : null;
             const isOwnedByMe = clientUuid && visit.ownerUuid === clientUuid;
             const isOwnedByOther = clientUuid && visit.ownerUuid && visit.ownerUuid !== clientUuid;
             const isCalling = hasOpenBit(visit.state);
             const canToggleCall = !visit.ownerUuid;
             const callButtonLabel = isCalling ? '待機に戻す' : '呼出する';
-            const callButtonTitle = !canToggleCall ? '診察中のため呼出状態は変更できません' : undefined;
-            const isStateUpdating = statePendingVisitId === visit.visitId && receptionCallMutation.isPending;
+            const callButtonTitle = !canToggleCall
+              ? '診察中のため呼出状態は変更できません'
+              : undefined;
+            const isStateUpdating =
+              statePendingVisitId === visit.visitId && receptionCallMutation.isPending;
             const isMemoEditing = editingMemoVisitId === visit.visitId;
-            const isMemoUpdating = memoPendingVisitId === visit.visitId && receptionMemoMutation.isPending;
-            const stateErrorMessage = stateError?.visitId === visit.visitId ? stateError.message : null;
-            const memoErrorMessage = memoError?.visitId === visit.visitId ? memoError.message : null;
+            const isMemoUpdating =
+              memoPendingVisitId === visit.visitId && receptionMemoMutation.isPending;
+            const stateErrorMessage =
+              stateError?.visitId === visit.visitId ? stateError.message : null;
+            const memoErrorMessage =
+              memoError?.visitId === visit.visitId ? memoError.message : null;
+            const firstInsurance = visit.raw.firstInsurance?.trim() ?? '---';
+            const doctorInfo =
+              [visit.doctorName?.trim(), visit.doctorId?.trim()].filter(Boolean).join(' / ') ||
+              '---';
+
+            const badges: JSX.Element[] = [];
+            if (isColumnVisible('owner')) {
+              if (isOwnedByMe) {
+                badges.push(
+                  <StatusBadge key="owner-self" tone="success">
+                    自端末で編集中
+                  </StatusBadge>,
+                );
+              }
+              if (isOwnedByOther) {
+                badges.push(
+                  <StatusBadge key="owner-other" tone="danger">
+                    他端末で編集中
+                  </StatusBadge>,
+                );
+              }
+            }
+            if (isColumnVisible('safetyNotes') && !visit.ownerUuid && visit.safetyNotes?.length) {
+              visit.safetyNotes.forEach((note) => {
+                badges.push(
+                  <StatusBadge key={`note-${note}`} tone="warning">
+                    {note}
+                  </StatusBadge>,
+                );
+              });
+            }
+
+            const metaItems: JSX.Element[] = [];
+            if (isColumnVisible('patientId')) {
+              metaItems.push(<span key="patientId">ID: {visit.patientId}</span>);
+            }
+            if (isColumnVisible('kanaName')) {
+              metaItems.push(<span key="kanaName">かな: {visit.kanaName ?? '---'}</span>);
+            }
+            if (isColumnVisible('visitDate')) {
+              metaItems.push(<span key="visitDate">来院: {visit.visitDate ?? '---'}</span>);
+            }
+            if (isColumnVisible('insurance')) {
+              metaItems.push(<span key="insurance">保険: {firstInsurance}</span>);
+            }
+            if (isColumnVisible('doctor')) {
+              metaItems.push(<span key="doctor">担当: {doctorInfo}</span>);
+            }
+            if (isColumnVisible('memo')) {
+              metaItems.push(<span key="memo">受付メモ: {visit.memo ?? '---'}</span>);
+            }
 
             return (
               <VisitCard key={visit.visitId} tone="muted" padding="lg">
@@ -377,29 +694,13 @@ export const ReceptionPage = () => {
                   <CardHeader>
                     <div>
                       <PatientName>{visit.fullName}</PatientName>
-                      <MetaList>
-                        <span>ID: {visit.patientId}</span>
-                        <span>来院: {visit.visitDate ?? '---'}</span>
-                        {visit.memo ? <span>受付メモ: {visit.memo}</span> : null}
-                      </MetaList>
+                      {metaItems.length ? <MetaList>{metaItems}</MetaList> : null}
                     </div>
                     {statusBadge}
                   </CardHeader>
-                  <BadgeRow>
-                    {isOwnedByMe ? <StatusBadge tone="success">自端末で編集中</StatusBadge> : null}
-                    {isOwnedByOther ? <StatusBadge tone="danger">他端末で編集中</StatusBadge> : null}
-                    {!visit.ownerUuid && visit.safetyNotes?.length
-                      ? visit.safetyNotes.map((note) => (
-                          <StatusBadge key={note} tone="warning">
-                            {note}
-                          </StatusBadge>
-                        ))
-                      : null}
-                  </BadgeRow>
-                  {stateErrorMessage ? (
-                    <ErrorText role="alert">{stateErrorMessage}</ErrorText>
-                  ) : null}
-                  {memoErrorMessage ? (
+                  {badges.length ? <BadgeRow>{badges}</BadgeRow> : null}
+                  {stateErrorMessage ? <ErrorText role="alert">{stateErrorMessage}</ErrorText> : null}
+                  {memoErrorMessage && !isMemoEditing ? (
                     <ErrorText role="alert">{memoErrorMessage}</ErrorText>
                   ) : null}
                   {isMemoEditing ? (
@@ -412,6 +713,7 @@ export const ReceptionPage = () => {
                         onChange={(event) => setMemoDraft(event.currentTarget.value)}
                         disabled={isMemoUpdating}
                       />
+                      {memoErrorMessage ? <ErrorText role="alert">{memoErrorMessage}</ErrorText> : null}
                       <ActionRow>
                         <Button
                           type="button"
@@ -447,28 +749,32 @@ export const ReceptionPage = () => {
                     >
                       {callButtonLabel}
                     </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => handleStartMemoEdit(visit)}
+                      disabled={isMemoUpdating || isMemoEditing}
+                    >
+                      受付メモを編集
+                    </Button>
+                  </ActionRow>
                   <Button
                     type="button"
                     variant="secondary"
-                    onClick={() => handleStartMemoEdit(visit)}
-                    disabled={isMemoUpdating || isMemoEditing}
+                    onClick={() => setScheduleTarget(visit)}
+                    disabled={isMemoUpdating || isStateUpdating || isAppointmentSaving}
                   >
-                    受付メモを編集
+                    予約を管理
                   </Button>
-                </ActionRow>
-                <Button
-                  type="button"
-                  variant="secondary"
-                  onClick={() => setScheduleTarget(visit)}
-                  disabled={isMemoUpdating || isStateUpdating || isAppointmentSaving}
-                >
-                  予約を管理
-                </Button>
-                <Button type="button" variant="primary" onClick={() => handleOpenChart(visit.visitId)}>
-                  カルテを開く
-                </Button>
-              </Stack>
-            </VisitCard>
+                  <Button
+                    type="button"
+                    variant="primary"
+                    onClick={() => handleOpenChart(visit.visitId)}
+                  >
+                    カルテを開く
+                  </Button>
+                </Stack>
+              </VisitCard>
             );
           })}
         </QueueGrid>
