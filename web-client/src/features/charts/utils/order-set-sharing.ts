@@ -117,7 +117,7 @@ export const parseSharePackage = (raw: string): OrderSetSharePackage => {
   let parsed: unknown;
   try {
     parsed = JSON.parse(raw);
-  } catch (error) {
+  } catch {
     throw new OrderSetShareParseError('共有ファイルが正しい JSON 形式ではありません。');
   }
 
