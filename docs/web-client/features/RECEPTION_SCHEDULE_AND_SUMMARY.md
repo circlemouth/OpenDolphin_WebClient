@@ -37,3 +37,15 @@ Web クライアントに追加された受付予約管理機能と FreeDocument
 - `src/features/reception/api/__tests__/appointment-api.test.ts` で CRUD ペイロードと変換ロジックを検証。
 - `src/features/charts/api/__tests__/free-document-api.test.ts` で FreeDocument API の取得／保存を検証。
 - フィールド運用ルールや業務マニュアルの更新は `planning/WEB_VS_ONPRE_CHECKLIST.md` に追記済み。受付スタッフ向け資料の改訂と合わせて参照してください。
+
+## 4. 予約リマインダー送信フロー
+
+- 対象画面: `受付患者一覧` → `予約を管理` → `AppointmentManager` の「リマインダー」ボタン。
+- 送信手段:
+  - メール: 件名/本文を自動生成し、クリップボードコピーまたは `mailto:` でメールアプリを起動。送信先メールアドレスを必須入力。
+  - SMS: 送信先電話番号を記録し、本文をコピーして外部 SMS 端末に貼り付ける運用を想定。
+- 送信記録:
+  - `送信済みを記録` 操作で `/appo` PUT を発行し、予約メモ末尾に `【リマインダー】YYYY/MM/DD HH:mm メール(test@example.com) / 任意メモ by 受付 太郎` の形式でログを追記。
+  - ログはオンプレ版と共有され、Web 側でも最新リマインダーがカードに表示される。
+- 運用ドキュメント: `operations/RECEPTION_WEB_CLIENT_MANUAL.md` に受付スタッフ向け手順・研修スケジュールを掲載。ロールアウト時は SMS 運用端末と送信記録ルールの整合を確認する。
+- テスト: `src/features/reception/components/__tests__/AppointmentManager.reminder.test.tsx` でリマインダー記録フローを統合テスト化。既存テストも新プロパティ（施設名・担当者名）に対応済み。
