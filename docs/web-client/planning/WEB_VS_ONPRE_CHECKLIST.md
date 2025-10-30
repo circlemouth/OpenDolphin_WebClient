@@ -2,6 +2,76 @@
 
 本チェックリストは、Web クライアントの機能が既存オンプレ（Swing）クライアントと同等かを確認し、差分解消に向けた次タスクを明確にするためのものである。各項目をレビューし、完了条件を満たしたらチェックを入れる。未完了の場合はフォローアップタスクを起票すること。
 
+## 0. REST API 実装比較（2026-05-23 更新）
+
+Swing クライアントが利用する REST API 一覧を Web クライアント実装と突き合わせ、対応状況を整理した。`◯`=Web クライアントで実装済み、`×`=未対応、`△`=部分対応（同系統の API の一部のみ実装）。
+
+### 認証・システム
+
+| API | ステータス | Web クライアントでの実装箇所 / 備考 |
+| --- | --- | --- |
+| GET `/user/{facilityId:userId}` | ◯ | 認証時に `loginWithPassword` が呼び出し、ユーザー情報を取得する（`web-client/src/libs/auth/auth-service.ts`）。 |
+| GET `/user` / `POST /user` / `PUT /user` / `DELETE /user/{userId}` / `PUT /user/facility` / `GET /user/name/{userId}` | × | 現行の Web クライアントでは HTTP クライアント呼び出しが存在せず、管理系 UI も未実装。 |
+| GET `/serverinfo/jamri` / `/serverinfo/claim/conn` / `/serverinfo/cloud/zero` | × | サーバー情報表示機能は未実装。 |
+| GET `/dolphin` / `POST /dolphin` / `GET /dolphin/activity/{...}` / `POST /dolphin/license` / `GET /dolphin/cloudzero/sendmail` | × | システム設定・監査ログ UI は未着手。 |
+
+### 患者・受付・予約
+
+| API | ステータス | Web クライアントでの実装箇所 / 備考 |
+| --- | --- | --- |
+| GET `/patient/name/{keyword}` / `/patient/kana/{keyword}` / `/patient/digit/{keyword}` | ◯ | `searchPatients` が検索モードごとに呼び分ける（`web-client/src/features/patients/api/patient-api.ts`）。 |
+| GET `/patient/id/{patientId}` | ◯ | `fetchPatientById` が詳細取得に利用（`web-client/src/features/patients/api/patient-api.ts`）。 |
+| POST `/patient` / PUT `/patient` | ◯ | `createPatient` / `updatePatient` が登録・更新に使用（`web-client/src/features/patients/api/patient-api.ts`）。 |
+| GET `/patient/pvt/{date}` / `/patient/documents/status` / `/patient/count/{keyword}` / `/patient/all` / `/patient/custom/{param}` | × | 現行 UI からの呼び出し無し。将来の一覧・統計機能で検討。 |
+| GET `/pvt/{param}` / PUT `/pvt/{param}` / PUT `/pvt/memo/{param}` / DELETE `/pvt/{pvtPK}` / POST `/pvt` | × | 受付状態更新は `PVTResource` API を未使用。Web 版は `PVT2` 系 API を利用。 |
+| POST `/pvt2` | ◯ | 受付登録で `registerVisit` が使用（`web-client/src/features/reception/api/visit-api.ts`）。 |
+| GET `/pvt2/pvtList` | ◯ | 待ち患者一覧取得で `fetchPatientVisits` が使用（`web-client/src/features/charts/api/patient-visit-api.ts`）。 |
+| DELETE `/pvt2/{pvtPK}` | × | 受付削除 UI 未実装。 |
+| GET `/schedule/pvt/{param}` | ◯ | 施設スケジュール取得で `fetchFacilitySchedule` が使用（`web-client/src/features/schedule/api/facility-schedule-api.ts`）。 |
+| POST `/schedule/document` / DELETE `/schedule/pvt/{param}` | × | 予約連動ドキュメント生成・削除フローは未実装。 |
+| PUT `/appo` | ◯ | 予約一括保存で `saveAppointments` が呼び出す（`web-client/src/features/reception/api/appointment-api.ts`）。 |
+
+### カルテ・文書・検査
+
+| API | ステータス | Web クライアントでの実装箇所 / 備考 |
+| --- | --- | --- |
+| GET `/karte/pid/{patientId,from}` | ◯ | カルテ概要取得で `fetchKarteByPatientId` が使用（`web-client/src/features/patients/api/karte-api.ts`）。 |
+| GET `/karte/documents/{docIds}` / GET `/karte/attachment/{attachmentId}` | ◯ | 添付メタデータ・本体の取得に `fetchDocumentAttachments` / `fetchAttachmentContent` が使用（`web-client/src/features/charts/api/attachment-api.ts`）。 |
+| POST `/karte/document` | ◯ | シェーマ保存などで `saveSchemaDocument` が使用（`web-client/src/features/charts/api/schema-api.ts`）。 |
+| POST `/karte/document/pvt/{pvtPk,state}` | ◯ | 受付紐付カルテ保存で `saveProgressNote` が使用（`web-client/src/features/charts/api/progress-note-api.ts`）。 |
+| PUT `/karte/memo` | ◯ | 患者メモ更新で `updatePatientMemo` が使用（`web-client/src/features/patients/api/patient-memo-api.ts`）。 |
+| GET `/karte/freedocument/{patientId}` / PUT `/karte/freedocument` | ◯ | FreeDocument の取得・保存で `fetchFreeDocument` / `saveFreeDocument` が使用（`web-client/src/features/charts/api/free-document-api.ts`）。 |
+| GET `/karte/appo/{karteId,...}` | ◯ | 予約取得で `fetchAppointments` が使用（`web-client/src/features/reception/api/appointment-api.ts`）。 |
+| その他の `/karte` 系（`GET /karte/{...}`、`GET /karte/docinfo/{...}`、`GET /karte/modules/{...}`、`GET /karte/images/{...}`、`GET /karte/diagnosis/{...}`、`POST/PUT/DELETE /karte/diagnosis`、`GET/POST/PUT/DELETE /karte/observations`、`PUT /karte/claim`、`GET /karte/moduleSearch/{...}`、`GET /karte/docinfo/all/{...}`、`PUT /karte/document/{id}`、`DELETE /karte/document/{id}`） | × | 現行 Web 実装では未使用。必要に応じて今後検討。 |
+| PUT `/karte/document` | △ | 既存コードには呼び出し無し。更新フローは未実装のため要検討。 |
+
+| API | ステータス | Web クライアントでの実装箇所 / 備考 |
+| --- | --- | --- |
+| PUT `/odletter/letter` / GET `/odletter/list/{karteId}` / GET `/odletter/letter/{letterId}` / DELETE `/odletter/letter/{letterId}` | ◯ | 診断書機能で `saveMedicalCertificate`、`fetchLetterSummaries`、`fetchMedicalCertificate`、`deleteLetter` が利用（`web-client/src/features/charts/api/letter-api.ts`）。 |
+| GET `/lab/module/{patientId,...}` / GET `/lab/item/{patientId,...}` | ◯ | 検査結果ビューアで `fetchLaboModules` / `fetchLaboItemTrend` が利用（`web-client/src/features/charts/api/labo-api.ts`）。 |
+| GET `/lab/module/count/{...}` / GET `/lab/patient/{...}` / POST `/lab/module` / DELETE `/lab/module/{...}` | × | レポート集計・モジュール登録 UI は未実装。 |
+
+### リアルタイム同期・テンプレート
+
+| API | ステータス | Web クライアントでの実装箇所 / 備考 |
+| --- | --- | --- |
+| GET `/chartEvent/subscribe` / PUT `/chartEvent/event` | ◯ | ロングポーリング購読・イベント送信で `subscribeChartEvent` / `publishChartEvent` が利用（`web-client/src/features/charts/api/chart-event-api.ts`）。 |
+| GET `/chartEvent/dispatch` | × | 旧クライアント専用 API。Web 版は未対応。 |
+| GET `/stamp/tree/{userPk}` / GET `/stamp/id/{stampId}` | ◯ | 個人スタンプ取得・スタンプ挿入で `fetchStampLibrary` / `fetchStampModule` が利用（`web-client/src/features/charts/api/stamp-api.ts`）。 |
+| その他の `/stamp` 系（`PUT /stamp/tree`、`PUT /stamp/tree/sync`、`PUT /stamp/tree/forcesync`、`PUT /stamp/published/tree`、`PUT /stamp/published/cancel`、`GET /stamp/published/tree`、`PUT /stamp/subscribed/tree`、`DELETE /stamp/subscribed/tree/{...}`、`GET /stamp/list/{...}`、`PUT /stamp/id`、`PUT /stamp/list`、`DELETE /stamp/id/{...}`、`DELETE /stamp/list/{...}`） | × | スタンプ編集・共有 UI は未実装。 |
+
+### ORCA・MML 連携
+
+| API | ステータス | Web クライアントでの実装箇所 / 備考 |
+| --- | --- | --- |
+| GET `/orca/tensu/name/{...}/` / GET `/orca/disease/name/{...}/` / GET `/orca/general/{code}` / PUT `/orca/interaction` / GET `/orca/stamp/{code,name}` | ◯ | ORCA マスター検索と併用禁忌チェックで `searchTensuByName`、`searchDiseaseByName`、`lookupGeneralName`、`checkDrugInteractions`、`fetchOrcaOrderModules` が利用（`web-client/src/features/charts/api/orca-api.ts`）。 |
+| その他の `/orca` 系（`GET /orca/facilitycode`、`GET /orca/tensu/shinku/{...}/`、`GET /orca/tensu/code/{...}/`、`GET /orca/tensu/ten/{...}/`、`GET /orca/disease/import/{...}`、`GET /orca/disease/active/{...}`、`GET /orca/inputset`、`GET /orca/deptinfo`） | × | 追加マスター参照・設定取得は未実装。 |
+| `/mml` 系エンドポイント全般 | × | MML エクスポート UI 未実装。 |
+
+---
+
+上表の未対応 API は機能差分が残る領域であり、優先順位と担当を決めたうえで `planning/WEB_CLIENT_WORK_PLAN.md` に落とし込むこと。
+
 ## 1. オーダー登録機能
 - [x] **ProgressCourse 以外のモジュール保存**: 処方・注射・検査など `Bundle*` モジュールがサーバーへ送信・保存されるか確認し、`DocInfoModel` の `hasRp`/`hasTreatment`/`hasLaboTest` フラグが適切に更新されるよう実装する。
   - 2026-05-03: `ChartsPage` にオーダモジュール管理を実装し、保存時に `createProgressNoteDocument` へモジュール配列を統合。エンティティ別に `DocInfoModel` のフラグを自動で立てるよう改修。
