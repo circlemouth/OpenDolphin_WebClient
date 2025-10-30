@@ -22,13 +22,13 @@ Swing クライアントが利用する REST API 一覧を Web クライアン�
 | GET `/patient/name/{keyword}` / `/patient/kana/{keyword}` / `/patient/digit/{keyword}` | ◯ | `searchPatients` が検索モードごとに呼び分ける（`web-client/src/features/patients/api/patient-api.ts`）。 |
 | GET `/patient/id/{patientId}` | ◯ | `fetchPatientById` が詳細取得に利用（`web-client/src/features/patients/api/patient-api.ts`）。 |
 | POST `/patient` / PUT `/patient` | ◯ | `createPatient` / `updatePatient` が登録・更新に使用（`web-client/src/features/patients/api/patient-api.ts`）。 |
-| GET `/patient/pvt/{date}` / `/patient/documents/status` / `/patient/count/{keyword}` / `/patient/all` / `/patient/custom/{param}` | × | 現行 UI からの呼び出し無し。将来の一覧・統計機能で検討。 |
-| GET `/pvt/{param}` / PUT `/pvt/{param}` / PUT `/pvt/memo/{param}` / DELETE `/pvt/{pvtPK}` / POST `/pvt` | × | 受付状態更新は `PVTResource` API を未使用。Web 版は `PVT2` 系 API を利用。 |
+| GET `/patient/pvt/{date}` / `/patient/documents/status` / `/patient/count/{keyword}` / `/patient/all` / `/patient/custom/{param}` | △ | `ReceptionPage` の受付詳細ドロワで `GET /patient/pvt/{date}` と `GET /patient/documents/status` を呼び出し、当日履歴と仮保存カルテ有無を表示。件数系・全件取得 API は未実装。 |
+| GET `/pvt/{param}` / PUT `/pvt/{param}` / PUT `/pvt/memo/{param}` / DELETE `/pvt/{pvtPK}` / POST `/pvt` | △ | 受付状態直接編集モーダルから `PUT /pvt/{pvtPK,state}` を使用。メモ更新は従来どおりチャートイベント経由。`GET /pvt` と `POST /pvt` は未使用。 |
 | POST `/pvt2` | ◯ | 受付登録で `registerVisit` が使用（`web-client/src/features/reception/api/visit-api.ts`）。 |
 | GET `/pvt2/pvtList` | ◯ | 待ち患者一覧取得で `fetchPatientVisits` が使用（`web-client/src/features/charts/api/patient-visit-api.ts`）。 |
-| DELETE `/pvt2/{pvtPK}` | × | 受付削除 UI 未実装。 |
+| DELETE `/pvt2/{pvtPK}` | ◯ | 受付詳細モーダルから取消操作を提供し、`deleteVisit` が `ReceptionPage` で利用。 |
 | GET `/schedule/pvt/{param}` | ◯ | 施設スケジュール取得で `fetchFacilitySchedule` が使用（`web-client/src/features/schedule/api/facility-schedule-api.ts`）。 |
-| POST `/schedule/document` / DELETE `/schedule/pvt/{param}` | × | 予約連動ドキュメント生成・削除フローは未実装。 |
+| POST `/schedule/document` / DELETE `/schedule/pvt/{param}` | ◯ | `FacilitySchedulePage` の予約詳細ダイアログからカルテ生成と予約削除を提供（`ScheduleReservationDialog`）。操作結果は監査・性能ログへ記録し、Swing 版と同等のフローを実現。 |
 | PUT `/appo` | ◯ | 予約一括保存で `saveAppointments` が呼び出す（`web-client/src/features/reception/api/appointment-api.ts`）。 |
 
 ### カルテ・文書・検査

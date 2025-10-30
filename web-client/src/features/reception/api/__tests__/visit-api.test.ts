@@ -1,7 +1,27 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { PatientDetail } from '@/features/patients/types/patient';
-import { buildVisitRegistrationPayload } from '@/features/reception/api/visit-api';
+import { buildVisitRegistrationPayload, deleteVisit, updateVisitState } from '@/features/reception/api/visit-api';
+import { httpClient } from '@/libs/http';
+
+vi.mock('@/libs/http', async () => {
+  const actual = await vi.importActual<typeof import('@/libs/http')>('@/libs/http');
+  return {
+    ...actual,
+    httpClient: {
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn(),
+    },
+  };
+});
+
+describe('visit-api', () => {
+  beforeEach(() => {
+    vi.mocked(httpClient.post).mockReset();
+    vi.mocked(httpClient.put).mockReset();
+    vi.mocked(httpClient.delete).mockReset();
+  });
 
 const createPatientDetail = (): PatientDetail => ({
   id: 1,
@@ -44,12 +64,12 @@ const createPatientDetail = (): PatientDetail => ({
   },
 });
 
-describe('buildVisitRegistrationPayload', () => {
-  it('整形済みの受付登録ペイロードを生成できる', () => {
-    const patient = createPatientDetail();
-    const checkInAt = new Date('2025-03-15T09:30:00+09:00');
+  describe('buildVisitRegistrationPayload', () => {
+    it('整形済みの受付登録ペイロードを生成できる', () => {
+      const patient = createPatientDetail();
+      const checkInAt = new Date('2025-03-15T09:30:00+09:00');
 
-    const payload = buildVisitRegistrationPayload(patient, {
+      const payload = buildVisitRegistrationPayload(patient, {
       memo: '再来受付',
       departmentCode: '01',
       departmentName: '内科',
@@ -79,5 +99,25 @@ describe('buildVisitRegistrationPayload', () => {
         beanBytes: '<xml>insurance</xml>',
       },
     ]);
+    });
+  });
+});
+
+describe('visit-api mutations', () => {
+  beforeEach(() => {
+    vi.mocked(httpClient.put).mockReset();
+    vi.mocked(httpClient.delete).mockReset();
+  });
+
+  it('更新 API を呼び出す', async () => {
+    vi.mocked(httpClient.put).mockResolvedValue({ data: '1' } as never);
+    await updateVisitState(123, 5);
+    expect(httpClient.put).toHaveBeenCalledWith('/pvt/123,5');
+  });
+
+  it('削除 API を呼び出す', async () => {
+    vi.mocked(httpClient.delete).mockResolvedValue({ data: null } as never);
+    await deleteVisit(456);
+    expect(httpClient.delete).toHaveBeenCalledWith('/pvt2/456');
   });
 });
