@@ -2,11 +2,12 @@ import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
-import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextField } from '@/components';
+import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
 import { usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { hasOpenBit } from '@/features/charts/utils/visit-state';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import { useAuth } from '@/libs/auth';
+import { useReceptionCallMutation, useReceptionMemoMutation } from '@/features/reception/hooks/useReceptionActions';
 
 type QueueStatus = 'waiting' | 'calling' | 'inProgress';
 type StatusFilter = 'all' | QueueStatus;
@@ -108,6 +109,24 @@ const BadgeRow = styled.div`
   gap: 6px;
 `;
 
+const ActionRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const MemoEditor = styled.div`
+  display: grid;
+  gap: 12px;
+`;
+
+const ErrorText = styled.p`
+  margin: 0;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.palette.danger};
+`;
+
 const EmptyState = styled(SurfaceCard)`
   padding: 32px;
   display: flex;
@@ -133,6 +152,16 @@ const classifyVisit = (visit: PatientVisitSummary): QueueStatus => {
   return 'waiting';
 };
 
+const extractErrorMessage = (error: unknown) => {
+  if (typeof error === 'string') {
+    return error;
+  }
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+  return '操作に失敗しました。時間をおいて再度お試しください。';
+};
+
 export const ReceptionPage = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
@@ -140,6 +169,14 @@ export const ReceptionPage = () => {
   const visitsQuery = usePatientVisits();
   const [keyword, setKeyword] = useState('');
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
+  const receptionCallMutation = useReceptionCallMutation();
+  const receptionMemoMutation = useReceptionMemoMutation();
+  const [statePendingVisitId, setStatePendingVisitId] = useState<number | null>(null);
+  const [memoPendingVisitId, setMemoPendingVisitId] = useState<number | null>(null);
+  const [editingMemoVisitId, setEditingMemoVisitId] = useState<number | null>(null);
+  const [memoDraft, setMemoDraft] = useState('');
+  const [stateError, setStateError] = useState<{ visitId: number; message: string } | null>(null);
+  const [memoError, setMemoError] = useState<{ visitId: number; message: string } | null>(null);
 
   const visits = useMemo(() => visitsQuery.data ?? [], [visitsQuery.data]);
 
@@ -168,6 +205,49 @@ export const ReceptionPage = () => {
       return target.includes(normalizedKeyword);
     });
   }, [keyword, statusFilter, visits]);
+
+  const handleToggleCall = async (visit: PatientVisitSummary) => {
+    if (visit.ownerUuid) {
+      return;
+    }
+    setStateError(null);
+    setStatePendingVisitId(visit.visitId);
+    try {
+      await receptionCallMutation.mutateAsync({
+        visit,
+        shouldCall: !hasOpenBit(visit.state),
+      });
+    } catch (error) {
+      setStateError({ visitId: visit.visitId, message: extractErrorMessage(error) });
+    } finally {
+      setStatePendingVisitId(null);
+    }
+  };
+
+  const handleStartMemoEdit = (visit: PatientVisitSummary) => {
+    setMemoError(null);
+    setEditingMemoVisitId(visit.visitId);
+    setMemoDraft(visit.memo ?? '');
+  };
+
+  const handleCancelMemoEdit = () => {
+    setEditingMemoVisitId(null);
+    setMemoDraft('');
+  };
+
+  const handleSaveMemo = async (visit: PatientVisitSummary) => {
+    setMemoError(null);
+    setMemoPendingVisitId(visit.visitId);
+    try {
+      await receptionMemoMutation.mutateAsync({ visit, memo: memoDraft });
+      setEditingMemoVisitId(null);
+      setMemoDraft('');
+    } catch (error) {
+      setMemoError({ visitId: visit.visitId, message: extractErrorMessage(error) });
+    } finally {
+      setMemoPendingVisitId(null);
+    }
+  };
 
   const handleOpenChart = (visitId: number) => {
     navigate(`/charts/${visitId}`);
@@ -260,6 +340,15 @@ export const ReceptionPage = () => {
             const statusBadge = renderStatusBadge(visit);
             const isOwnedByMe = clientUuid && visit.ownerUuid === clientUuid;
             const isOwnedByOther = clientUuid && visit.ownerUuid && visit.ownerUuid !== clientUuid;
+            const isCalling = hasOpenBit(visit.state);
+            const canToggleCall = !visit.ownerUuid;
+            const callButtonLabel = isCalling ? '待機に戻す' : '呼出する';
+            const callButtonTitle = !canToggleCall ? '診察中のため呼出状態は変更できません' : undefined;
+            const isStateUpdating = statePendingVisitId === visit.visitId && receptionCallMutation.isPending;
+            const isMemoEditing = editingMemoVisitId === visit.visitId;
+            const isMemoUpdating = memoPendingVisitId === visit.visitId && receptionMemoMutation.isPending;
+            const stateErrorMessage = stateError?.visitId === visit.visitId ? stateError.message : null;
+            const memoErrorMessage = memoError?.visitId === visit.visitId ? memoError.message : null;
 
             return (
               <VisitCard key={visit.visitId} tone="muted" padding="lg">
@@ -286,6 +375,66 @@ export const ReceptionPage = () => {
                         ))
                       : null}
                   </BadgeRow>
+                  {stateErrorMessage ? (
+                    <ErrorText role="alert">{stateErrorMessage}</ErrorText>
+                  ) : null}
+                  {memoErrorMessage ? (
+                    <ErrorText role="alert">{memoErrorMessage}</ErrorText>
+                  ) : null}
+                  {isMemoEditing ? (
+                    <MemoEditor>
+                      <TextArea
+                        label="受付メモ"
+                        description="保存すると他端末にも即座に反映されます"
+                        placeholder="スタッフ間で共有したい注意事項を入力"
+                        value={memoDraft}
+                        onChange={(event) => setMemoDraft(event.currentTarget.value)}
+                        disabled={isMemoUpdating}
+                      />
+                      <ActionRow>
+                        <Button
+                          type="button"
+                          variant="primary"
+                          onClick={() => {
+                            void handleSaveMemo(visit);
+                          }}
+                          isLoading={isMemoUpdating}
+                        >
+                          保存する
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          onClick={handleCancelMemoEdit}
+                          disabled={isMemoUpdating}
+                        >
+                          キャンセル
+                        </Button>
+                      </ActionRow>
+                    </MemoEditor>
+                  ) : null}
+                  <ActionRow>
+                    <Button
+                      type="button"
+                      variant={isCalling ? 'secondary' : 'primary'}
+                      onClick={() => {
+                        void handleToggleCall(visit);
+                      }}
+                      disabled={!canToggleCall || isStateUpdating}
+                      isLoading={isStateUpdating}
+                      title={callButtonTitle}
+                    >
+                      {callButtonLabel}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => handleStartMemoEdit(visit)}
+                      disabled={isMemoUpdating || isMemoEditing}
+                    >
+                      受付メモを編集
+                    </Button>
+                  </ActionRow>
                   <Button type="button" variant="primary" onClick={() => handleOpenChart(visit.visitId)}>
                     カルテを開く
                   </Button>
