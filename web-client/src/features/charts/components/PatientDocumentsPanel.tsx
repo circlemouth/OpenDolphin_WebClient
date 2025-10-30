@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
 import { Button, SelectField, Stack, SurfaceCard, TextArea, TextField } from '@/components';
@@ -11,6 +11,12 @@ interface PatientDocumentsPanelProps {
   doctorName?: string;
   disabled?: boolean;
   onPreviewGenerated?: (payload: PatientDocumentPreviewPayload) => void;
+  preset?: {
+    templateId?: string;
+    memo?: string;
+    extraNote?: string;
+    version: number;
+  } | null;
 }
 
 const InlineMessage = styled.p`
@@ -33,6 +39,7 @@ export const PatientDocumentsPanel = ({
   doctorName,
   disabled,
   onPreviewGenerated,
+  preset,
 }: PatientDocumentsPanelProps) => {
   const [selectedTemplate, setSelectedTemplate] = useState(TEMPLATE_DEFINITIONS[0].id);
   const [memo, setMemo] = useState('');
@@ -49,6 +56,20 @@ export const PatientDocumentsPanel = ({
     () => TEMPLATE_DEFINITIONS.find((template) => template.id === selectedTemplate) ?? TEMPLATE_DEFINITIONS[0],
     [selectedTemplate],
   );
+
+  useEffect(() => {
+    if (!preset) {
+      return;
+    }
+    const templateId = preset.templateId && options.some((option) => option.value === preset.templateId)
+      ? preset.templateId
+      : TEMPLATE_DEFINITIONS[0].id;
+    setSelectedTemplate(templateId);
+    setMemo(preset.memo ?? '');
+    setExtraNote(preset.extraNote ?? '');
+    setInfo('オーダセットから文書テンプレートを読み込みました。内容を確認して必要に応じて修正してください。');
+    setError(null);
+  }, [options, preset]);
 
   const handlePreview = () => {
     setInfo(null);
