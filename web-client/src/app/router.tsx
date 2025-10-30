@@ -5,6 +5,7 @@ import { AppShell } from '@/app/layout/AppShell';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
 import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { PatientsPage } from '@/features/patients/pages/PatientsPage';
+import { ReceptionPage } from '@/features/reception/pages/ReceptionPage';
 import { ChartsPage } from '@/features/charts/pages/ChartsPage';
 import { RequireAuth } from '@/libs/auth';
 
@@ -24,6 +25,14 @@ export const createAppRouter = () =>
             }
           />
           <Route
+            path="reception"
+            element={
+              <Suspense fallback={<div>ロード中...</div>}>
+                <ReceptionPage />
+              </Suspense>
+            }
+          />
+          <Route
             path="dashboard"
             element={
               <Suspense fallback={<div>ロード中...</div>}>
@@ -33,6 +42,14 @@ export const createAppRouter = () =>
           />
           <Route
             path="charts"
+            element={
+              <Suspense fallback={<div>ロード中...</div>}>
+                <ChartsPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="charts/:visitId"
             element={
               <Suspense fallback={<div>ロード中...</div>}>
                 <ChartsPage />
