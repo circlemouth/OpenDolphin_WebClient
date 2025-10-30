@@ -44,6 +44,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-05-05: 患者メモ履歴ダイアログを追加し、右ペインから保存済みメモのプレビューと復元が可能に。`ux/KARTE_SCREEN_IMPLEMENTATION.md`、`features/PATIENT_MANAGEMENT_GUIDE.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新して監査ログや運用手順を反映。
 - 2026-05-03: `PatientsPage` に患者情報編集フォームを追加し、`/patient` POST/PUT と健康保険管理の Web 実装を完了。`features/PATIENT_MANAGEMENT_GUIDE.md` を新設し、`planning/WEB_VS_ONPRE_CHECKLIST.md` と `planning/phase0/API_INVENTORY.md` を更新。
 - 2026-05-02: 受付予約管理で保存中の操作ガードを追加。`features/RECEPTION_SCHEDULE_AND_SUMMARY.md` に予約保存中のボタン無効化仕様を追記し、二重操作防止策と運用上の注意を明文化。
 - 2026-05-01: 受付予約管理（`AppointmentManager`）と FreeDocument 編集 UI を追加。`features/RECEPTION_SCHEDULE_AND_SUMMARY.md` と `planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、Swing 版とのデータ整合と運用手順を整理。

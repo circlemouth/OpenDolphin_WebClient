@@ -44,6 +44,10 @@ import {
   type MediaItem,
   type PastSummaryItem,
 } from '@/features/charts/components/layout/RightPane';
+import {
+  PatientMemoHistoryDialog,
+  type PatientMemoHistoryEntry,
+} from '@/features/charts/components/layout/PatientMemoHistoryDialog';
 import { MiniSummaryDock } from '@/features/charts/components/layout/MiniSummaryDock';
 import { StatusBar } from '@/features/charts/components/layout/StatusBar';
 import { UnifiedSearchOverlay } from '@/features/charts/components/layout/UnifiedSearchOverlay';
@@ -353,6 +357,7 @@ export const ChartsPage = () => {
   const [patientMemoStatus, setPatientMemoStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [patientMemoError, setPatientMemoError] = useState<string | null>(null);
   const [patientMemoUpdatedAt, setPatientMemoUpdatedAt] = useState<string | null>(null);
+  const [isPatientMemoHistoryOpen, setPatientMemoHistoryOpen] = useState(false);
   const [freeDocumentComment, setFreeDocumentComment] = useState('');
   const [freeDocumentId, setFreeDocumentId] = useState<number | null>(null);
   const [freeDocumentDirty, setFreeDocumentDirty] = useState(false);
@@ -531,6 +536,25 @@ export const ChartsPage = () => {
       question: memo.confirmed ? memo.confirmed : 'スタッフ記録',
       answer: memo.memo ?? '記録なし',
     }));
+  }, [karteQuery.data?.memos]);
+
+  const patientMemoHistory = useMemo<PatientMemoHistoryEntry[]>(() => {
+    const memos = karteQuery.data?.memos ?? [];
+    return memos
+      .map((memo) => ({
+        id: memo.id,
+        memo: memo.memo?.trim() ?? '',
+        confirmed: memo.confirmed ?? null,
+        status: memo.status ?? undefined,
+      }))
+      .sort((a, b) => {
+        const timeA = a.confirmed ? Date.parse(a.confirmed) : Number.MIN_SAFE_INTEGER;
+        const timeB = b.confirmed ? Date.parse(b.confirmed) : Number.MIN_SAFE_INTEGER;
+        if (!Number.isNaN(timeB - timeA) && timeB !== timeA) {
+          return timeB - timeA;
+        }
+        return b.id - a.id;
+      });
   }, [karteQuery.data?.memos]);
 
   useEffect(() => {
@@ -870,6 +894,37 @@ export const ChartsPage = () => {
     setPatientMemoStatus('idle');
     setPatientMemoError(null);
   }, [latestPatientMemo]);
+
+  const handlePatientMemoHistoryOpen = () => {
+    if (patientMemoHistory.length === 0) {
+      return;
+    }
+    setPatientMemoHistoryOpen(true);
+  };
+
+  const handlePatientMemoHistoryClose = () => {
+    setPatientMemoHistoryOpen(false);
+  };
+
+  const handlePatientMemoHistoryRestore = (entry: PatientMemoHistoryEntry) => {
+    const restoredMemo = entry.memo ?? '';
+    setPatientMemo(restoredMemo);
+    const normalized = restoredMemo.trim();
+    const original = latestPatientMemo?.memo?.trim() ?? '';
+    setPatientMemoDirty(normalized !== original);
+    setPatientMemoStatus('idle');
+    setPatientMemoError(null);
+    setPatientMemoUpdatedAt(entry.confirmed ?? null);
+    setPatientMemoHistoryOpen(false);
+    if (selectedVisit) {
+      recordOperationEvent('chart', 'info', 'patient_memo_history_apply', '患者メモの過去バージョンを展開しました', {
+        patientId: selectedVisit.patientId,
+        karteId,
+        restoredMemoId: entry.id,
+        restoredLength: normalized.length,
+      });
+    }
+  };
 
   const handlePatientMemoSave = useCallback(async () => {
     if (!selectedVisit) {
@@ -1889,6 +1944,8 @@ export const ChartsPage = () => {
             onPatientMemoSave={handlePatientMemoSave}
             onPatientMemoReset={handlePatientMemoReset}
             patientMemoDisabled={!selectedVisit}
+            hasPatientMemoHistory={patientMemoHistory.length > 0}
+            onPatientMemoHistoryOpen={handlePatientMemoHistoryOpen}
             freeDocumentComment={freeDocumentComment}
             freeDocumentStatus={freeDocumentStatus}
             freeDocumentError={freeDocumentError}
@@ -1936,6 +1993,13 @@ export const ChartsPage = () => {
         incomingParagraphs={diffMergeState.incoming}
         onMerge={handleDiffMerge}
         onClose={() => setDiffMergeState((prev) => ({ ...prev, open: false }))}
+      />
+      <PatientMemoHistoryDialog
+        open={isPatientMemoHistoryOpen}
+        entries={patientMemoHistory}
+        activeEntryId={latestPatientMemo?.id ?? null}
+        onClose={handlePatientMemoHistoryClose}
+        onRestore={handlePatientMemoHistoryRestore}
       />
     </PageShell>
   );
