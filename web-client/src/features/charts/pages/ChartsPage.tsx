@@ -15,10 +15,12 @@ import { useChartLock } from '@/features/charts/hooks/useChartLock';
 import { patientVisitsQueryKey, usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
+import { useFreeDocument } from '@/features/charts/hooks/useFreeDocument';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { StampDefinition } from '@/features/charts/types/stamp';
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
+import { saveFreeDocument } from '@/features/charts/api/free-document-api';
 import { CHART_EVENT_TYPES } from '@/features/charts/types/chart-event';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
 import type { BillingMode, ProgressNoteBilling } from '@/features/charts/utils/progress-note-payload';
@@ -285,6 +287,12 @@ export const ChartsPage = () => {
   const [patientMemoStatus, setPatientMemoStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [patientMemoError, setPatientMemoError] = useState<string | null>(null);
   const [patientMemoUpdatedAt, setPatientMemoUpdatedAt] = useState<string | null>(null);
+  const [freeDocumentComment, setFreeDocumentComment] = useState('');
+  const [freeDocumentId, setFreeDocumentId] = useState<number | null>(null);
+  const [freeDocumentDirty, setFreeDocumentDirty] = useState(false);
+  const [freeDocumentStatus, setFreeDocumentStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [freeDocumentError, setFreeDocumentError] = useState<string | null>(null);
+  const [freeDocumentUpdatedAt, setFreeDocumentUpdatedAt] = useState<string | null>(null);
   const chiefComplaintRef = useRef<HTMLInputElement | null>(null);
   const isComposingRef = useRef(false);
 
@@ -331,6 +339,10 @@ export const ChartsPage = () => {
   const karteId = karteQuery.data?.id ?? null;
   const latestPatientMemo = useMemo(() => karteQuery.data?.memos?.[0] ?? null, [karteQuery.data?.memos]);
   const refetchKarte = karteQuery.refetch;
+  const freeDocumentQuery = useFreeDocument(selectedVisit?.patientId ?? null, {
+    enabled: Boolean(selectedVisit),
+  });
+  const latestFreeDocument = useMemo(() => freeDocumentQuery.data ?? null, [freeDocumentQuery.data]);
 
   const clientUuid = session?.credentials.clientUuid;
   const lock = useChartLock(selectedVisit, clientUuid);
@@ -359,9 +371,15 @@ export const ChartsPage = () => {
     setPatientMemo('');
     setPatientMemoId(null);
     setPatientMemoDirty(false);
-    setPatientMemoStatus('idle');
+   setPatientMemoStatus('idle');
     setPatientMemoError(null);
     setPatientMemoUpdatedAt(null);
+    setFreeDocumentComment('');
+    setFreeDocumentId(null);
+    setFreeDocumentDirty(false);
+    setFreeDocumentStatus('idle');
+    setFreeDocumentError(null);
+    setFreeDocumentUpdatedAt(null);
   }, [selectedVisit, selectedVisit?.visitId, session?.userProfile?.displayName]);
 
   useEffect(() => {
@@ -390,6 +408,12 @@ export const ChartsPage = () => {
     setPatientMemoStatus('idle');
     setPatientMemoError(null);
     setPatientMemoUpdatedAt(null);
+    setFreeDocumentComment('');
+    setFreeDocumentId(null);
+    setFreeDocumentDirty(false);
+    setFreeDocumentStatus('idle');
+    setFreeDocumentError(null);
+    setFreeDocumentUpdatedAt(null);
   }, [selectedVisit, session?.userProfile?.displayName]);
 
   useEffect(() => {
@@ -421,6 +445,14 @@ export const ChartsPage = () => {
     return () => window.clearTimeout(timer);
   }, [patientMemoStatus]);
 
+  useEffect(() => {
+    if (freeDocumentStatus !== 'saved') {
+      return;
+    }
+    const timer = window.setTimeout(() => setFreeDocumentStatus('idle'), 2000);
+    return () => window.clearTimeout(timer);
+  }, [freeDocumentStatus]);
+
   const monshinSummary = useMemo(() => {
     const memos = karteQuery.data?.memos ?? [];
     if (memos.length === 0) {
@@ -432,6 +464,31 @@ export const ChartsPage = () => {
       answer: memo.memo ?? '記録なし',
     }));
   }, [karteQuery.data?.memos]);
+
+  useEffect(() => {
+    if (!latestFreeDocument) {
+      setFreeDocumentId(null);
+      setFreeDocumentUpdatedAt(null);
+      if (!freeDocumentDirty || freeDocumentStatus === 'saved') {
+        setFreeDocumentComment('');
+        setFreeDocumentDirty(false);
+        if (freeDocumentStatus === 'saved') {
+          setFreeDocumentStatus('idle');
+        }
+      }
+      return;
+    }
+
+    setFreeDocumentId(latestFreeDocument.id ?? null);
+    setFreeDocumentUpdatedAt(latestFreeDocument.confirmedAt ?? null);
+    if (!freeDocumentDirty || freeDocumentStatus === 'saved') {
+      setFreeDocumentComment(latestFreeDocument.comment ?? '');
+      setFreeDocumentDirty(false);
+      if (freeDocumentStatus === 'saved') {
+        setFreeDocumentStatus('idle');
+      }
+    }
+  }, [latestFreeDocument, freeDocumentDirty, freeDocumentStatus]);
 
   const vitalSigns = useMemo(
     () =>
@@ -772,6 +829,77 @@ export const ChartsPage = () => {
     selectedVisit,
     session,
     updatePatientMemo,
+  ]);
+
+  const handleFreeDocumentChange = useCallback(
+    (value: string) => {
+      setFreeDocumentComment(value);
+      const normalized = value.trim();
+      const original = latestFreeDocument?.comment?.trim() ?? '';
+      setFreeDocumentDirty(normalized !== original);
+      setFreeDocumentStatus('idle');
+      setFreeDocumentError(null);
+    },
+    [latestFreeDocument],
+  );
+
+  const handleFreeDocumentReset = useCallback(() => {
+    setFreeDocumentComment(latestFreeDocument?.comment ?? '');
+    setFreeDocumentDirty(false);
+    setFreeDocumentStatus('idle');
+    setFreeDocumentError(null);
+  }, [latestFreeDocument]);
+
+  const handleFreeDocumentSave = useCallback(async () => {
+    if (!selectedVisit) {
+      return;
+    }
+    if (!session) {
+      setFreeDocumentStatus('error');
+      setFreeDocumentError('セッション情報が無効です。再度ログインしてください。');
+      return;
+    }
+    if (!freeDocumentDirty && freeDocumentStatus !== 'error') {
+      return;
+    }
+
+    const normalized = freeDocumentComment.trim();
+    setFreeDocumentComment(normalized);
+    setFreeDocumentStatus('saving');
+    setFreeDocumentError(null);
+
+    try {
+      await saveFreeDocument({
+        patientId: selectedVisit.patientId,
+        comment: normalized,
+        id: freeDocumentId ?? undefined,
+      });
+      recordOperationEvent('chart', 'info', 'free_document_save', 'サマリ文書を保存しました', {
+        patientId: selectedVisit.patientId,
+        commentLength: normalized.length,
+      });
+      setFreeDocumentDirty(false);
+      setFreeDocumentStatus('saved');
+      setFreeDocumentUpdatedAt(new Date().toISOString());
+      try {
+        await freeDocumentQuery.refetch();
+      } catch (refetchError) {
+        console.warn('FreeDocument 再取得に失敗しました', refetchError);
+      }
+    } catch (error) {
+      console.error('FreeDocument の保存に失敗しました', error);
+      setFreeDocumentStatus('error');
+      setFreeDocumentError('サマリ文書の保存に失敗しました。ネットワークを確認して再試行してください。');
+    }
+  }, [
+    freeDocumentComment,
+    freeDocumentDirty,
+    freeDocumentId,
+    freeDocumentStatus,
+    freeDocumentQuery,
+    recordOperationEvent,
+    selectedVisit,
+    session,
   ]);
 
   const handleDraftChange = useCallback((key: keyof ProgressNoteDraft, value: string) => {
@@ -1568,6 +1696,15 @@ export const ChartsPage = () => {
             onPatientMemoSave={handlePatientMemoSave}
             onPatientMemoReset={handlePatientMemoReset}
             patientMemoDisabled={!selectedVisit}
+            freeDocumentComment={freeDocumentComment}
+            freeDocumentStatus={freeDocumentStatus}
+            freeDocumentError={freeDocumentError}
+            freeDocumentDirty={freeDocumentDirty}
+            freeDocumentUpdatedAt={freeDocumentUpdatedAt}
+            onFreeDocumentChange={handleFreeDocumentChange}
+            onFreeDocumentSave={handleFreeDocumentSave}
+            onFreeDocumentReset={handleFreeDocumentReset}
+            freeDocumentDisabled={!selectedVisit}
           />
         </RightRail>
       </ContentGrid>

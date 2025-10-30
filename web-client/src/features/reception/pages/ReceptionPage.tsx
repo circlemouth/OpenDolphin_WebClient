@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
 
@@ -8,6 +8,7 @@ import { hasOpenBit } from '@/features/charts/utils/visit-state';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import { useAuth } from '@/libs/auth';
 import { useReceptionCallMutation, useReceptionMemoMutation } from '@/features/reception/hooks/useReceptionActions';
+import { AppointmentManager } from '@/features/reception/components/AppointmentManager';
 
 type QueueStatus = 'waiting' | 'calling' | 'inProgress';
 type StatusFilter = 'all' | QueueStatus;
@@ -177,8 +178,26 @@ export const ReceptionPage = () => {
   const [memoDraft, setMemoDraft] = useState('');
   const [stateError, setStateError] = useState<{ visitId: number; message: string } | null>(null);
   const [memoError, setMemoError] = useState<{ visitId: number; message: string } | null>(null);
+  const [scheduleTarget, setScheduleTarget] = useState<PatientVisitSummary | null>(null);
+  const [isAppointmentSaving, setIsAppointmentSaving] = useState(false);
 
   const visits = useMemo(() => visitsQuery.data ?? [], [visitsQuery.data]);
+
+  useEffect(() => {
+    if (!scheduleTarget) {
+      return;
+    }
+    const exists = visits.some((visit) => visit.visitId === scheduleTarget.visitId);
+    if (!exists) {
+      setScheduleTarget(null);
+      setIsAppointmentSaving(false);
+    }
+  }, [scheduleTarget, visits]);
+
+  const handleCloseAppointmentManager = () => {
+    setIsAppointmentSaving(false);
+    setScheduleTarget(null);
+  };
 
   const summary = useMemo(() => {
     const base = { waiting: 0, calling: 0, inProgress: 0 } as Record<QueueStatus, number>;
@@ -205,6 +224,8 @@ export const ReceptionPage = () => {
       return target.includes(normalizedKeyword);
     });
   }, [keyword, statusFilter, visits]);
+
+  const scheduleKarteId = scheduleTarget?.patientPk ?? null;
 
   const handleToggleCall = async (visit: PatientVisitSummary) => {
     if (visit.ownerUuid) {
@@ -426,24 +447,43 @@ export const ReceptionPage = () => {
                     >
                       {callButtonLabel}
                     </Button>
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      onClick={() => handleStartMemoEdit(visit)}
-                      disabled={isMemoUpdating || isMemoEditing}
-                    >
-                      受付メモを編集
-                    </Button>
-                  </ActionRow>
-                  <Button type="button" variant="primary" onClick={() => handleOpenChart(visit.visitId)}>
-                    カルテを開く
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={() => handleStartMemoEdit(visit)}
+                    disabled={isMemoUpdating || isMemoEditing}
+                  >
+                    受付メモを編集
                   </Button>
-                </Stack>
-              </VisitCard>
+                </ActionRow>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={() => setScheduleTarget(visit)}
+                  disabled={isMemoUpdating || isStateUpdating || isAppointmentSaving}
+                >
+                  予約を管理
+                </Button>
+                <Button type="button" variant="primary" onClick={() => handleOpenChart(visit.visitId)}>
+                  カルテを開く
+                </Button>
+              </Stack>
+            </VisitCard>
             );
           })}
         </QueueGrid>
       )}
+      {scheduleTarget && session ? (
+        <AppointmentManager
+          visit={scheduleTarget}
+          karteId={scheduleKarteId}
+          facilityId={session.credentials.facilityId}
+          userId={session.credentials.userId}
+          userModelId={session.userProfile?.userModelId}
+          onClose={handleCloseAppointmentManager}
+          onPendingChange={setIsAppointmentSaving}
+        />
+      ) : null}
     </PageContainer>
   );
 };
