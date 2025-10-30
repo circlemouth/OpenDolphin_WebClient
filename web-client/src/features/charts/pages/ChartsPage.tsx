@@ -9,6 +9,8 @@ import { StampLibraryPanel } from '@/features/charts/components/StampLibraryPane
 import { OrcaOrderPanel } from '@/features/charts/components/OrcaOrderPanel';
 import { OrderSetPanel } from '@/features/charts/components/OrderSetPanel';
 import { PatientDocumentsPanel } from '@/features/charts/components/PatientDocumentsPanel';
+import { MedicalCertificatesPanel } from '@/features/charts/components/MedicalCertificatesPanel';
+import { SchemaEditorPanel } from '@/features/charts/components/SchemaEditorPanel';
 import { LabResultsPanel } from '@/features/charts/components/LabResultsPanel';
 import { CareMapPanel } from '@/features/charts/components/CareMapPanel';
 import { publishChartEvent } from '@/features/charts/api/chart-event-api';
@@ -53,6 +55,7 @@ import { UnifiedSearchOverlay } from '@/features/charts/components/layout/Unifie
 import { ImageViewerOverlay } from '@/features/charts/components/layout/ImageViewerOverlay';
 import { DiffMergeOverlay } from '@/features/charts/components/layout/DiffMergeOverlay';
 import { BIT_OPEN } from '@/features/charts/utils/visit-state';
+import { calculateAgeLabel } from '@/features/charts/utils/age-label';
 
 const PageShell = styled.div`
   min-height: 100vh;
@@ -306,6 +309,10 @@ export const ChartsPage = () => {
   const navigate = useNavigate();
   const params = useParams<{ visitId?: string }>();
   const { session } = useAuth();
+  const doctorDisplayName =
+    session?.userProfile?.displayName ??
+    (session?.userProfile as { commonName?: string } | undefined)?.commonName ??
+    session?.credentials.userId ?? '';
   const visitsQuery = usePatientVisits();
   const userPk = session?.userProfile?.userModelId ?? null;
   const stampLibraryQuery = useStampLibrary(userPk);
@@ -414,6 +421,31 @@ export const ChartsPage = () => {
   });
 
   const karteId = karteQuery.data?.id ?? null;
+  const patientPk = selectedVisit?.patientPk ?? null;
+  const patientSummaryForDocuments = useMemo(() => {
+    if (!selectedVisit) {
+      return null;
+    }
+    const raw = selectedVisit.raw.patientModel;
+    const address = raw?.simpleAddressModel?.address ?? undefined;
+    const zipCode = raw?.simpleAddressModel?.zipCode ?? undefined;
+    const telephone = raw?.telephone ?? undefined;
+    const mobilePhone = raw?.mobilePhone ?? undefined;
+    const birthday = selectedVisit.birthday ?? raw?.birthday ?? undefined;
+    const gender = selectedVisit.gender ?? raw?.gender ?? raw?.genderDesc ?? undefined;
+    return {
+      id: selectedVisit.patientId,
+      name: selectedVisit.fullName,
+      kana: selectedVisit.kanaName ?? raw?.kanaName ?? undefined,
+      gender,
+      birthday,
+      ageLabel: calculateAgeLabel(birthday),
+      address,
+      zipCode,
+      telephone,
+      mobilePhone,
+    };
+  }, [selectedVisit]);
   const latestPatientMemo = useMemo(() => karteQuery.data?.memos?.[0] ?? null, [karteQuery.data?.memos]);
   const refetchKarte = karteQuery.refetch;
   const freeDocumentQuery = useFreeDocument(selectedVisit?.patientId ?? null, {
@@ -1872,23 +1904,46 @@ export const ChartsPage = () => {
                   <OrcaOrderPanel disabled={!isLockedByMe} onCreateOrder={handleCreateOrderFromOrca} />
                   <PatientDocumentsPanel
                     patient={
-                      selectedVisit
+                      patientSummaryForDocuments
                         ? {
-                            id: selectedVisit.patientId,
-                            name: selectedVisit.fullName,
-                            gender: selectedVisit.gender ?? undefined,
-                            birthday: selectedVisit.birthday ?? undefined,
+                            id: patientSummaryForDocuments.id,
+                            name: patientSummaryForDocuments.name,
+                            gender: patientSummaryForDocuments.gender,
+                            birthday: patientSummaryForDocuments.birthday,
                           }
                         : null
                     }
                     facilityName={session?.userProfile?.facilityName}
-                    doctorName={
-                      session?.userProfile?.displayName ??
-                      (session?.userProfile as { commonName?: string } | undefined)?.commonName ??
-                      session?.credentials.userId
-                    }
+                    doctorName={doctorDisplayName}
                     disabled={!selectedVisit}
                     preset={documentPreset}
+                  />
+                  <MedicalCertificatesPanel
+                    patient={patientSummaryForDocuments}
+                    karteId={karteId}
+                    patientPk={patientPk}
+                    session={session}
+                    facilityName={session?.userProfile?.facilityName}
+                    doctorName={doctorDisplayName}
+                    departmentName={selectedVisit?.departmentName ?? undefined}
+                    disabled={!selectedVisit}
+                    onSaved={() => {
+                      void karteQuery.refetch();
+                    }}
+                  />
+                  <SchemaEditorPanel
+                    patient={patientSummaryForDocuments}
+                    patientPk={patientPk}
+                    karteId={karteId}
+                    session={session}
+                    facilityName={session?.userProfile?.facilityName}
+                    licenseName={session?.userProfile?.licenseName ?? null}
+                    departmentName={selectedVisit?.departmentName ?? null}
+                    departmentCode={selectedVisit?.departmentCode ?? null}
+                    disabled={!selectedVisit}
+                    onSaved={() => {
+                      void karteQuery.refetch();
+                    }}
                   />
                   <LabResultsPanel
                     patientId={selectedVisit ? selectedVisit.patientId : null}
