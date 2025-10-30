@@ -50,6 +50,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-05-23: `planning/WEB_VS_ONPRE_CHECKLIST.md` に REST API 実装比較セクションを追記し、オンプレ版との API 差分を一覧化。
 - 2026-05-22: CareMap に添付ファイル統合とプレビュー機能を追加。`features/CARE_MAP_TIMELINE.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、
   `operations/CAREMAP_ATTACHMENT_MIGRATION.md` を新設して image-browser 設定の移行手順と Web 版での確認ポイントを整理。
 - 2026-05-13: CareMap（治療履歴カレンダー）を追加。`features/CARE_MAP_TIMELINE.md` を新設し、`features/charts/components/CareMapPanel.tsx`、
