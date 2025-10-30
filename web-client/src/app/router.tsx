@@ -7,6 +7,7 @@ import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { PatientsPage } from '@/features/patients/pages/PatientsPage';
 import { ReceptionPage } from '@/features/reception/pages/ReceptionPage';
 import { ChartsPage } from '@/features/charts/pages/ChartsPage';
+import { FacilitySchedulePage } from '@/features/schedule/pages/FacilitySchedulePage';
 import { RequireAuth } from '@/libs/auth';
 
 export const createAppRouter = () =>
@@ -29,6 +30,14 @@ export const createAppRouter = () =>
             element={
               <Suspense fallback={<div>ロード中...</div>}>
                 <ReceptionPage />
+              </Suspense>
+            }
+          />
+          <Route
+            path="facility-schedule"
+            element={
+              <Suspense fallback={<div>ロード中...</div>}>
+                <FacilitySchedulePage />
               </Suspense>
             }
           />

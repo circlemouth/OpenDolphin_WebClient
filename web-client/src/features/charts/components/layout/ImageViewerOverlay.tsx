@@ -1,6 +1,6 @@
 import styled from '@emotion/styled';
 
-import type { MediaItem } from './RightPane';
+import type { MediaItem } from '@/features/charts/types/media';
 
 interface ImageViewerOverlayProps {
   open: boolean;
