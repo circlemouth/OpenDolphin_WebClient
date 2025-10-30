@@ -45,6 +45,8 @@ describe('AppointmentManager', () => {
         facilityId="FAC001"
         userId="user-1"
         userModelId={99}
+        facilityName="テストクリニック"
+        operatorName="受付 太郎"
         onClose={vi.fn()}
         onPendingChange={onPendingChange}
       />,
@@ -62,6 +64,8 @@ describe('AppointmentManager', () => {
         facilityId="FAC001"
         userId="user-1"
         userModelId={99}
+        facilityName="テストクリニック"
+        operatorName="受付 太郎"
         onClose={vi.fn()}
         onPendingChange={onPendingChange}
       />,
@@ -78,6 +82,8 @@ describe('AppointmentManager', () => {
         facilityId="FAC001"
         userId="user-1"
         userModelId={99}
+        facilityName="テストクリニック"
+        operatorName="受付 太郎"
         onClose={vi.fn()}
         onPendingChange={onPendingChange}
       />,
