@@ -1,7 +1,8 @@
 import axios from 'axios';
 
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
-import type { RawChartEvent } from '@/features/charts/types/chart-event';
+import { CHART_EVENT_TYPES } from '@/features/charts/types/chart-event';
+import type { ChartEventType, RawChartEvent } from '@/features/charts/types/chart-event';
 import { httpClient } from '@/libs/http';
 
 interface SubscribeOptions {
@@ -29,29 +30,41 @@ export const subscribeChartEvent = async ({
 
 export interface ChartEventRequest {
   visit: PatientVisitSummary;
-  nextState: number;
-  ownerUuid: string | null;
+  nextState?: number;
+  ownerUuid?: string | null;
+  memo?: string | null;
+  eventType?: ChartEventType;
 }
 
-export const publishChartEvent = async ({ visit, nextState, ownerUuid }: ChartEventRequest) => {
+export const publishChartEvent = async ({
+  visit,
+  nextState,
+  ownerUuid,
+  memo,
+  eventType,
+}: ChartEventRequest) => {
+  const resolvedState = nextState ?? visit.state;
+  const resolvedOwnerUuid = ownerUuid ?? visit.ownerUuid ?? null;
+  const resolvedMemo = memo ?? visit.memo ?? null;
   const payload: RawChartEvent = {
-    eventType: 0,
+    eventType: eventType ?? CHART_EVENT_TYPES.PVT_STATE,
     pvtPk: visit.visitId,
-    state: nextState,
-    ownerUUID: ownerUuid,
+    state: resolvedState,
+    ownerUUID: resolvedOwnerUuid,
     facilityId: visit.facilityId,
-    memo: visit.memo,
+    memo: resolvedMemo ?? undefined,
     ptPk: visit.patientPk,
     patientModel: {
       ...visit.raw.patientModel,
-      ownerUUID: ownerUuid ?? undefined,
+      ownerUUID: resolvedOwnerUuid ?? undefined,
     },
     patientVisitModel: {
       ...visit.raw,
-      state: nextState,
+      state: resolvedState,
+      memo: resolvedMemo ?? undefined,
       patientModel: {
         ...visit.raw.patientModel,
-        ownerUUID: ownerUuid ?? undefined,
+        ownerUUID: resolvedOwnerUuid ?? undefined,
       },
     },
   };
