@@ -8,7 +8,7 @@ export type SurfaceMode = 'objective' | 'plan';
 
 export interface PlanComposerCard {
   id: string;
-  type: 'medication' | 'procedure' | 'exam' | 'followup';
+  type: 'medication' | 'procedure' | 'exam' | 'followup' | 'injection' | 'guidance';
   title: string;
   detail: string;
   note: string;
@@ -228,10 +228,14 @@ const planTypeLabel = (type: PlanComposerCard['type']) => {
   switch (type) {
     case 'medication':
       return '薬';
+    case 'injection':
+      return '注射';
     case 'procedure':
       return '処置';
     case 'exam':
       return '検査';
+    case 'guidance':
+      return '指導料';
     case 'followup':
       return 'フォローアップ';
     default:
