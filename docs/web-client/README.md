@@ -17,6 +17,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `operations/TEST_SERVER_DEPLOY.md` – テスト環境向けサーバーデプロイとアカウント登録手順。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` – 1画面完結レイアウトの設計指針。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` Appendix – 既存カルテ画面から抽出した業務要件メモ。
+- `ux/KARTE_SCREEN_IMPLEMENTATION.md` – 最新カルテ画面 UI 実装の構造・ショートカット・レスポンシブ整理。
 - 参考資料（PDF, 画像等）は `docs/` 配下の各カテゴリに再配置し、本ハブからリンク。
 
 ## 開発者の入り口
@@ -41,6 +42,8 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-04-20: カルテ入力 (`/charts/:visitId`) と受付一覧 (`/reception`) を分離し、受付→カルテ遷移導線と空状態ガイダンスを整理。`ux/KARTE_SCREEN_IMPLEMENTATION.md` を更新。
+- 2026-04-17: カルテ画面 UI をフルレイアウト化。`ux/KARTE_SCREEN_IMPLEMENTATION.md` を新設し、`features/charts/pages/ChartsPage.tsx` の刷新内容とショートカット/レスポンシブ仕様を整理。
 - 2026-03-30: フェーズ4 セキュリティ/性能/負荷対策を実装。`features/PHASE4_SECURITY_AND_QUALITY.md` を新設し、`planning/WEB_CLIENT_WORK_PLAN.md` のフェーズ4タスクを完了として更新。
 - 2026-02-20: フェーズ3 前半のスタンプライブラリ・ORCA 連携 UI を実装。`features/PHASE3_STAMP_AND_ORCA.md` を新設し、`planning/WEB_CLIENT_WORK_PLAN.md` のタスクステータスを更新。
 - 2026-02-14: フェーズ2 カルテ編集機能を実装。`features/charts` に診察開始/終了、SOAP 保存、長輪講同期を追加し、`planning/phase2/PHASE2_PROGRESS.md` を更新。
