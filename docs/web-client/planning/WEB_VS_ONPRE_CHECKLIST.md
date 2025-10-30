@@ -64,8 +64,9 @@
   - 2026-05-08: 予約カードに「リマインダー」操作を実装し、メール/SMS 選択・本文コピー・送信履歴の自動記録を提供。`features/RECEPTION_SCHEDULE_AND_SUMMARY.md` と `operations/RECEPTION_WEB_CLIENT_MANUAL.md` に運用手順を掲載。
 
 ## 5. 未実装（要フォローアップ）
-- [x] **CareMap（治療履歴カレンダー）**: オンプレ版 `CareMapDocument` が提供するカレンダービュー、予約・検査履歴連動、画像履歴の統合表示を Web クライアントへ移植する。
-  - 2026-05-13: `ChartsPage` 補助パネルに `CareMapPanel` を追加し、`/karte/appo` と `labo` 系 API、カルテ文書サマリ、画像メディアをカレンダーへ集約。イベント種別フィルタ、月次ナビゲーション、日別タイムラインを備え、オンプレ版 CareMap 同等の俯瞰体験を Web で提供。関連仕様は `features/CARE_MAP_TIMELINE.md` と `ux/KARTE_SCREEN_IMPLEMENTATION.md` へ反映。
+- [ ] **CareMap（治療履歴カレンダー）**: オンプレ版 `CareMapDocument` は `AbstractBrowser`/`DefaultBrowser`（`impl/img`）の設定に基づき患者ごとの画像ディレクトリを走査し、PDF/画像添付の存在もアイコンで通知する。一方 Web 版は `ChartsPage` でカルテ文書サマリからプレースホルダーの `mediaItems` を生成しているだけで、実ファイル連携が未実装のため機能同等ではない。
+  - 2026-05-13: `ChartsPage` 補助パネルに `CareMapPanel` を追加し、予約・検査・カルテサマリは集約済み。ただし画像イベントは `pastSummaries` からタイトル・抜粋を流用した仮データであり、`ImageBrowser` 相当のファイル走査・設定（基底ディレクトリ指定、列数・並び替え、PDF 判別等）が移植されていない。
+  - フォローアップ: `/karte/attachment` 等の実データ API を用いた画像/添付の取得と、患者別ディレクトリや PACS 連携設定の管理 UI を設計。オンプレ `image-browser.properties` の互換読み込み・移行手順を定義し、既存ユーザーの画像保管先設定を Web へ移せるようにする。
 - [x] **ラボ検査履歴ビューア**: `LaboTestPanel` が担う検査結果一覧・グラフ表示・PDF 出力を Web クライアントにも実装する。
   - 2026-05-12: `LabResultsPanel` をカルテ補助エリアに追加し、`/lab/module`・`/lab/item` API から取得した検査履歴を表示。異常値の強調、項目検索、
     推移グラフ（簡易 SVG チャート）、ブラウザ印刷による PDF 出力を提供。担当医向けに既存カルテから即座に検査結果を引用できるようにし、
