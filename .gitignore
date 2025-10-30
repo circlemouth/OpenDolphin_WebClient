@@ -1,4 +1,17 @@
 .DS_Store
+
+# Maven build artifacts
 /common/target/
 /server/target/
 /client/target/
+
+# Docker Compose runtime output
+/docker/output/
+
+# Environment overrides (samples stay tracked)
+.env
+.env.*
+!.env.sample
+web-client/.env
+web-client/.env.*
+!web-client/.env.sample
