@@ -2,7 +2,8 @@ import { useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
 import { Button, SelectField, Stack, SurfaceCard, TextArea, TextField } from '@/components';
-import { PatientDocumentPreviewPayload, PatientSummaryInfo, TEMPLATE_DEFINITIONS } from './patientDocumentTemplates';
+import { TEMPLATE_DEFINITIONS } from './patientDocumentTemplates';
+import type { PatientDocumentPreviewPayload, PatientSummaryInfo } from './patientDocumentTemplates';
 
 interface PatientDocumentsPanelProps {
   patient?: PatientSummaryInfo | null;
