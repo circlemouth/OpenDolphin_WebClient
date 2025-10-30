@@ -1,11 +1,21 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
+import { useMutation, useQueryClient } from '@tanstack/react-query';
 
 import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextField } from '@/components';
-import { useFacilitySchedule } from '@/features/schedule/hooks/useFacilitySchedule';
+import {
+  facilityScheduleQueryKey,
+  useFacilitySchedule,
+} from '@/features/schedule/hooks/useFacilitySchedule';
 import type { FacilityScheduleEntry } from '@/features/schedule/api/facility-schedule-api';
+import {
+  createScheduleDocument,
+  deleteScheduledVisit,
+} from '@/features/schedule/api/schedule-document-api';
+import { ScheduleReservationDialog } from '@/features/schedule/components/ScheduleReservationDialog';
 import { useAuth } from '@/libs/auth';
+import { recordOperationEvent } from '@/libs/audit';
 import { hasOpenBit } from '@/features/charts/utils/visit-state';
 
 const PageContainer = styled.div`
@@ -118,6 +128,12 @@ const InlineMessage = styled.p`
   margin: 0;
   font-size: 0.85rem;
   color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const NoticeMessage = styled.p`
+  margin: 0;
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.palette.success};
 `;
 
 type ScheduleStatus = 'scheduled' | 'calling' | 'inProgress';
@@ -241,14 +257,29 @@ export const FacilitySchedulePage = () => {
   const [statusFilter, setStatusFilter] = useState<'all' | ScheduleStatus>('all');
   const [keyword, setKeyword] = useState('');
   const [assignedOnly, setAssignedOnly] = useState(false);
+  const [selectedEntry, setSelectedEntry] = useState<FacilityScheduleEntry | null>(null);
+  const [dialogFeedback, setDialogFeedback] = useState<string | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
+  const [pageNotice, setPageNotice] = useState<string | null>(null);
+
+  const userModelId = session?.userProfile?.userModelId ?? null;
 
   const doctorOrcaId = session?.userProfile?.userId ?? null;
-  const scheduleQuery = useFacilitySchedule({
-    date: selectedDate,
-    assignedOnly: assignedOnly && Boolean(doctorOrcaId),
-    orcaDoctorId: assignedOnly && doctorOrcaId ? doctorOrcaId : undefined,
-    unassignedDoctorId: assignedOnly && doctorOrcaId ? '18080' : undefined,
-  });
+  const scheduleParams = useMemo(
+    () => ({
+      date: selectedDate,
+      assignedOnly: assignedOnly && Boolean(doctorOrcaId),
+      orcaDoctorId: assignedOnly && doctorOrcaId ? doctorOrcaId : undefined,
+      unassignedDoctorId: assignedOnly && doctorOrcaId ? '18080' : undefined,
+    }),
+    [assignedOnly, doctorOrcaId, selectedDate],
+  );
+  const scheduleQueryKeyValue = useMemo(
+    () => facilityScheduleQueryKey(scheduleParams),
+    [scheduleParams],
+  );
+  const scheduleQuery = useFacilitySchedule(scheduleParams);
+  const queryClient = useQueryClient();
 
   const entries = scheduleQuery.data ?? [];
 
@@ -269,6 +300,41 @@ export const FacilitySchedulePage = () => {
     return base;
   }, [entries]);
 
+  useEffect(() => {
+    if (!pageNotice) {
+      return;
+    }
+    const timer = setTimeout(() => {
+      setPageNotice(null);
+    }, 5000);
+    return () => clearTimeout(timer);
+  }, [pageNotice]);
+
+  useEffect(() => {
+    if (!selectedEntry) {
+      return;
+    }
+    const stillExists = entries.some((entry) => entry.visitId === selectedEntry.visitId);
+    if (!stillExists) {
+      setSelectedEntry(null);
+    }
+  }, [entries, selectedEntry]);
+
+  const resetDialogMessages = useCallback(() => {
+    setDialogFeedback(null);
+    setDialogError(null);
+  }, []);
+
+  const handleOpenReservation = useCallback((entry: FacilityScheduleEntry) => {
+    setSelectedEntry(entry);
+    resetDialogMessages();
+  }, [resetDialogMessages]);
+
+  const handleCloseReservation = useCallback(() => {
+    setSelectedEntry(null);
+    resetDialogMessages();
+  }, [resetDialogMessages]);
+
   const handlePrevDay = () => {
     const date = new Date(`${selectedDate}T00:00:00`);
     date.setDate(date.getDate() - 1);
@@ -286,6 +352,109 @@ export const FacilitySchedulePage = () => {
       navigate(`/charts/${entry.visitId}`);
     }
   };
+
+  type CreateDocumentArgs = { entry: FacilityScheduleEntry; sendClaim: boolean; scheduleDate: string };
+
+  const createDocumentMutation = useMutation<number, unknown, CreateDocumentArgs>({
+    mutationFn: ({ entry, sendClaim, scheduleDate }) => {
+      if (!userModelId) {
+        return Promise.reject(new Error('担当者情報が取得できませんでした'));
+      }
+      return createScheduleDocument({
+        visitId: entry.visitId,
+        patientPk: entry.patientPk,
+        scheduleDate,
+        providerId: userModelId,
+        sendClaim,
+      });
+    },
+    onMutate: () => {
+      setDialogError(null);
+    },
+    onSuccess: (count, { entry, sendClaim, scheduleDate }) => {
+      setDialogFeedback('カルテ文書を生成しました。受付一覧を確認してください。');
+      setPageNotice(`${entry.patientName} の予約からカルテ文書を生成しました。`);
+      recordOperationEvent('reception', 'info', 'schedule_document_create', '予約連動カルテを生成しました', {
+        visitId: entry.visitId,
+        patientPk: entry.patientPk,
+        scheduleDate,
+        sendClaim,
+        count,
+      });
+      void queryClient.invalidateQueries({ queryKey: scheduleQueryKeyValue });
+    },
+    onError: (error, { entry, sendClaim, scheduleDate }) => {
+      const message = error instanceof Error ? error.message : String(error);
+      setDialogError(`カルテ生成に失敗しました: ${message}`);
+      recordOperationEvent(
+        'reception',
+        'warning',
+        'schedule_document_create_failed',
+        '予約連動カルテ生成に失敗しました',
+        {
+          visitId: entry.visitId,
+          patientPk: entry.patientPk,
+          scheduleDate,
+          sendClaim,
+          error: message,
+        },
+      );
+    },
+  });
+
+  type DeleteReservationArgs = { entry: FacilityScheduleEntry; scheduleDate: string };
+
+  const deleteReservationMutation = useMutation<void, unknown, DeleteReservationArgs>({
+    mutationFn: ({ entry, scheduleDate }) =>
+      deleteScheduledVisit({ visitId: entry.visitId, patientPk: entry.patientPk, scheduleDate }),
+    onMutate: () => {
+      setDialogError(null);
+    },
+    onSuccess: (_, { entry, scheduleDate }) => {
+      setPageNotice(`${entry.patientName} の予約を削除しました。`);
+      recordOperationEvent('reception', 'info', 'schedule_reservation_delete', '施設スケジュールから予約を削除しました', {
+        visitId: entry.visitId,
+        patientPk: entry.patientPk,
+        scheduleDate,
+      });
+      handleCloseReservation();
+      void queryClient.invalidateQueries({ queryKey: scheduleQueryKeyValue });
+    },
+    onError: (error, { entry, scheduleDate }) => {
+      const message = error instanceof Error ? error.message : String(error);
+      setDialogError(`予約削除に失敗しました: ${message}`);
+      recordOperationEvent(
+        'reception',
+        'warning',
+        'schedule_reservation_delete_failed',
+        '施設スケジュールの予約削除に失敗しました',
+        {
+          visitId: entry.visitId,
+          patientPk: entry.patientPk,
+          scheduleDate,
+          error: message,
+        },
+      );
+    },
+  });
+
+  const handleCreateDocument = useCallback(
+    (sendClaim: boolean) => {
+      if (!selectedEntry) {
+        return;
+      }
+      setDialogFeedback(null);
+      createDocumentMutation.mutate({ entry: selectedEntry, sendClaim, scheduleDate: selectedDate });
+    },
+    [createDocumentMutation, selectedDate, selectedEntry],
+  );
+
+  const handleDeleteReservation = useCallback(() => {
+    if (!selectedEntry) {
+      return;
+    }
+    deleteReservationMutation.mutate({ entry: selectedEntry, scheduleDate: selectedDate });
+  }, [deleteReservationMutation, selectedDate, selectedEntry]);
 
   return (
     <PageContainer>
@@ -388,6 +557,7 @@ export const FacilitySchedulePage = () => {
               {filteredEntries.length} 件を表示中
               {doctorFilter !== 'all' ? ` / 担当医: ${doctorFilter}` : ''}
             </InlineMessage>
+            {pageNotice ? <NoticeMessage role="status">{pageNotice}</NoticeMessage> : null}
           </div>
           <Button type="button" variant="secondary" size="sm" onClick={() => scheduleQuery.refetch()} isLoading={scheduleQuery.isFetching}>
             再読み込み
@@ -447,15 +617,20 @@ export const FacilitySchedulePage = () => {
                       </TableCell>
                       <TableCell>{formatDateTime(entry.lastDocumentDate)}</TableCell>
                       <TableCell>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleOpenChart(entry)}
-                          disabled={!entry.visitId}
-                        >
-                          カルテを開く
-                        </Button>
+                        <Stack gap={8}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenChart(entry)}
+                            disabled={!entry.visitId}
+                          >
+                            カルテを開く
+                          </Button>
+                          <Button type="button" variant="ghost" size="sm" onClick={() => handleOpenReservation(entry)}>
+                            予約詳細
+                          </Button>
+                        </Stack>
                       </TableCell>
                     </TableRow>
                   );
@@ -465,6 +640,22 @@ export const FacilitySchedulePage = () => {
           </ScheduleTable>
         </TableWrapper>
       </ScheduleCard>
+
+      {selectedEntry ? (
+        <ScheduleReservationDialog
+          entry={selectedEntry}
+          selectedDate={selectedDate}
+          onClose={handleCloseReservation}
+          onCreateDocument={handleCreateDocument}
+          onDeleteReservation={handleDeleteReservation}
+          onOpenChart={() => handleOpenChart(selectedEntry)}
+          isCreating={createDocumentMutation.isLoading}
+          isDeleting={deleteReservationMutation.isLoading}
+          isCreateDisabled={!userModelId}
+          feedbackMessage={dialogFeedback}
+          errorMessage={dialogError}
+        />
+      ) : null}
     </PageContainer>
   );
 };
