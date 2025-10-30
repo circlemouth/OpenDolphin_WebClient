@@ -43,6 +43,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-04-23: 受付患者一覧に呼出トグルとインラインメモ編集を追加。`ux/KARTE_SCREEN_IMPLEMENTATION.md` と `planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、オンプレ版と同等の受付操作を Web でも提供。
 - 2026-04-21: Web／オンプレ機能差分チェックリストを追加。`planning/WEB_VS_ONPRE_CHECKLIST.md` を新設し、今後の追従タスクを整理。
 - 2026-04-20: カルテ入力 (`/charts/:visitId`) と受付一覧 (`/reception`) を分離し、受付→カルテ遷移導線と空状態ガイダンスを整理。`ux/KARTE_SCREEN_IMPLEMENTATION.md` を更新。
 - 2026-04-17: カルテ画面 UI をフルレイアウト化。`ux/KARTE_SCREEN_IMPLEMENTATION.md` を新設し、`features/charts/pages/ChartsPage.tsx` の刷新内容とショートカット/レスポンシブ仕様を整理。
