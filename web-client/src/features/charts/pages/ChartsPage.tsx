@@ -246,6 +246,7 @@ export const ChartsPage = () => {
   const previousPlanCardsRef = useRef<PlanComposerCard[] | null>(null);
   const [focusedPlanCardId, setFocusedPlanCardId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | undefined>(undefined);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [rightPaneCollapsed, setRightPaneCollapsed] = useState(false);
@@ -327,7 +328,8 @@ export const ChartsPage = () => {
     previousPlanCardsRef.current = null;
     setChiefComplaint(selectedVisit.memo ?? '');
     setDiagnosisTags([]);
-    setSaveState('idle');
+    setSaveState('saved');
+    setHasUnsavedChanges(false);
     setSaveError(null);
     setDocumentPreset(null);
     setLastAppliedOrderSetId(null);
@@ -345,7 +347,8 @@ export const ChartsPage = () => {
     previousPlanCardsRef.current = null;
     setChiefComplaint('');
     setDiagnosisTags([]);
-    setSaveState('idle');
+    setSaveState('saved');
+    setHasUnsavedChanges(false);
     setSaveError(null);
     setDocumentPreset(null);
     setLastAppliedOrderSetId(null);
@@ -422,6 +425,7 @@ export const ChartsPage = () => {
         previousPlanCardsRef.current = snapshot;
         setDraft((draftPrev) => ({ ...draftPrev, plan: serializePlanCards(next) }));
         setSaveState('idle');
+        setHasUnsavedChanges(true);
         return next;
       });
     },
@@ -480,6 +484,7 @@ export const ChartsPage = () => {
   const handleObjectiveInsertText = useCallback((text: string) => {
     setDraft((prev) => ({ ...prev, objective: prev.objective ? `${prev.objective}\n${text}` : text }));
     setSaveState('idle');
+    setHasUnsavedChanges(true);
   }, []);
 
   const handlePlanInsertText = useCallback(
@@ -506,12 +511,15 @@ export const ChartsPage = () => {
   const handleDraftChange = useCallback((key: keyof ProgressNoteDraft, value: string) => {
     setDraft((prev) => ({ ...prev, [key]: value }));
     setSaveState('idle');
+    setHasUnsavedChanges(true);
   }, []);
 
   const updateBilling = useCallback(
     (patch: Partial<BillingState>) => {
       setBilling((prev) => ({ ...prev, ...patch }));
       setSaveError(null);
+      setSaveState('idle');
+      setHasUnsavedChanges(true);
     },
     [],
   );
@@ -552,13 +560,25 @@ export const ChartsPage = () => {
   }, [lock, selectedVisit]);
 
   const handleUnlock = useCallback(async () => {
+    if (!selectedVisit) {
+      setSaveError('診察対象の受付を選択してください');
+      return;
+    }
+    if (saveState === 'saving') {
+      setSaveError('保存処理が完了してから診察を終了してください');
+      return;
+    }
+    if (hasUnsavedChanges) {
+      await handleSave();
+      return;
+    }
     setSaveError(null);
     try {
       await lock.unlock();
     } catch (error) {
       setSaveError(error instanceof Error ? error.message : '診察終了に失敗しました');
     }
-  }, [lock]);
+  }, [handleSave, hasUnsavedChanges, lock, saveState, selectedVisit]);
 
   const handleSave = useCallback(async () => {
     if (!session || !selectedVisit) {
@@ -619,6 +639,7 @@ export const ChartsPage = () => {
         selectedVisit.visitId,
       );
       setSaveState('saved');
+      setHasUnsavedChanges(false);
       setLastSavedAt(new Date().toLocaleTimeString());
       await lock.unlock();
       await karteQuery.refetch();
@@ -727,21 +748,22 @@ export const ChartsPage = () => {
       }
 
       if (definition.documentPreset) {
-        setDocumentPreset({
-          templateId: definition.documentPreset.templateId,
-          memo: definition.documentPreset.memo,
-          extraNote: definition.documentPreset.extraNote,
-          version: Date.now(),
-        });
-      }
+      setDocumentPreset({
+        templateId: definition.documentPreset.templateId,
+        memo: definition.documentPreset.memo,
+        extraNote: definition.documentPreset.extraNote,
+        version: Date.now(),
+      });
+    }
 
-      setActiveSurface('plan');
-      setSaveState('idle');
-      setSaveError(null);
-      setLastAppliedOrderSetId(definition.id);
-      markOrderSetUsed(definition.id);
-    },
-    [
+    setActiveSurface('plan');
+    setSaveState('idle');
+    setHasUnsavedChanges(true);
+    setSaveError(null);
+    setLastAppliedOrderSetId(definition.id);
+    markOrderSetUsed(definition.id);
+  },
+  [
       handleObjectiveInsertText,
       isLockedByMe,
       markOrderSetUsed,
