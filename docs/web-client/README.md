@@ -51,6 +51,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-05-25: 施設予約一覧に予約詳細ダイアログとカルテ連動操作を追加。`features/FACILITY_SCHEDULE_VIEW.md`、`features/RECEPTION_SCHEDULE_AND_SUMMARY.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md`、`planning/UNIMPLEMENTED_API_UI_PLACEMENT.md` を更新し、未整備 API 対応状況を反映。
 - 2026-05-24: 未整備 API 対応 UI の配置計画を `planning/UNIMPLEMENTED_API_UI_PLACEMENT.md` として追加し、フェーズ5 以降の実装方針を整理。
 - 2026-05-23: `planning/WEB_VS_ONPRE_CHECKLIST.md` に REST API 実装比較セクションを追記し、オンプレ版との API 差分を一覧化。
 - 2026-05-22: CareMap に添付ファイル統合とプレビュー機能を追加。`features/CARE_MAP_TIMELINE.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、
