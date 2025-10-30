@@ -15,6 +15,9 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `features/PHASE4_SECURITY_AND_QUALITY.md` – フェーズ4 品質・安全性強化タスクの実装概要と運用注意点。
 - `features/ORDER_ENTRY_DATA_GUIDE.md` – すべてのオーダカテゴリ（処方・注射・手術・検査など）を登録する際に必須となるサーバー側データ要件まとめ。
 - `features/RECEPTION_SCHEDULE_AND_SUMMARY.md` – 受付予約管理と FreeDocument 連携の仕様・運用メモ。
+- `features/FACILITY_SCHEDULE_VIEW.md` – 施設全体の予約一覧（PatientSchedule Web 版）の仕様と運用注意点。
+- `features/LAB_RESULTS_VIEWER.md` – ラボ検査履歴ビューアの仕様と API 利用方針。
+- `features/CARE_MAP_TIMELINE.md` – CareMap カレンダーの仕様とデータ連携。
 - `design-system/ALPHA_COMPONENTS.md` – デザインシステム α 版の Storybook 運用とコンポーネント一覧。
 - `operations/TEST_SERVER_DEPLOY.md` – テスト環境向けサーバーデプロイとアカウント登録手順。
 - `operations/RECEPTION_WEB_CLIENT_MANUAL.md` – 受付担当者向け Web クライアント運用マニュアルと研修計画。
@@ -45,6 +48,9 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-05-13: CareMap（治療履歴カレンダー）を追加。`features/CARE_MAP_TIMELINE.md` を新設し、`features/charts/components/CareMapPanel.tsx`、
+  `planning/WEB_VS_ONPRE_CHECKLIST.md`、`ux/KARTE_SCREEN_IMPLEMENTATION.md` に仕様を反映。
+- 2026-05-12: 施設予約一覧ページとラボ検査履歴ビューアを追加。`features/FACILITY_SCHEDULE_VIEW.md`、`features/LAB_RESULTS_VIEWER.md`、`operations/RECEPTION_WEB_CLIENT_MANUAL.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、オンプレとの機能差分を解消。
 - 2026-05-08: オーダセット共有/インポート機能と予約リマインダー送信フローを追加。`features/PHASE3_STAMP_AND_ORCA.md`、`features/RECEPTION_SCHEDULE_AND_SUMMARY.md`、`operations/RECEPTION_WEB_CLIENT_MANUAL.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、共有手順・リマインダー運用・研修計画を反映。
 - 2026-05-05: 患者メモ履歴ダイアログを追加し、右ペインから保存済みメモのプレビューと復元が可能に。`ux/KARTE_SCREEN_IMPLEMENTATION.md`、`features/PATIENT_MANAGEMENT_GUIDE.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新して監査ログや運用手順を反映。
 - 2026-05-03: `PatientsPage` に患者情報編集フォームを追加し、`/patient` POST/PUT と健康保険管理の Web 実装を完了。`features/PATIENT_MANAGEMENT_GUIDE.md` を新設し、`planning/WEB_VS_ONPRE_CHECKLIST.md` と `planning/phase0/API_INVENTORY.md` を更新。

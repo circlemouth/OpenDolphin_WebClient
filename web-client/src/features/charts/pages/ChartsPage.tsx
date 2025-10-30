@@ -9,6 +9,8 @@ import { StampLibraryPanel } from '@/features/charts/components/StampLibraryPane
 import { OrcaOrderPanel } from '@/features/charts/components/OrcaOrderPanel';
 import { OrderSetPanel } from '@/features/charts/components/OrderSetPanel';
 import { PatientDocumentsPanel } from '@/features/charts/components/PatientDocumentsPanel';
+import { LabResultsPanel } from '@/features/charts/components/LabResultsPanel';
+import { CareMapPanel } from '@/features/charts/components/CareMapPanel';
 import { publishChartEvent } from '@/features/charts/api/chart-event-api';
 import { useChartEventSubscription } from '@/features/charts/hooks/useChartEventSubscription';
 import { useChartLock } from '@/features/charts/hooks/useChartLock';
@@ -39,11 +41,8 @@ import {
   type PlanComposerCard,
   type SurfaceMode,
 } from '@/features/charts/components/layout/WorkSurface';
-import {
-  RightPane,
-  type MediaItem,
-  type PastSummaryItem,
-} from '@/features/charts/components/layout/RightPane';
+import { RightPane, type PastSummaryItem } from '@/features/charts/components/layout/RightPane';
+import type { MediaItem } from '@/features/charts/types/media';
 import {
   PatientMemoHistoryDialog,
   type PatientMemoHistoryEntry,
@@ -1833,6 +1832,13 @@ export const ChartsPage = () => {
                   </Stack>
                 </SurfaceCard>
                 <SupplementGrid>
+                  <CareMapPanel
+                    patientId={selectedVisit ? selectedVisit.patientId : null}
+                    patientName={selectedVisit?.fullName}
+                    karteId={karteQuery.data?.id ?? null}
+                    documents={karteQuery.data?.documents ?? []}
+                    mediaItems={mediaItems}
+                  />
                   <OrderSetPanel
                     orderSets={orderSets}
                     onApply={handleApplyOrderSet}
@@ -1883,6 +1889,10 @@ export const ChartsPage = () => {
                     }
                     disabled={!selectedVisit}
                     preset={documentPreset}
+                  />
+                  <LabResultsPanel
+                    patientId={selectedVisit ? selectedVisit.patientId : null}
+                    patientName={selectedVisit?.fullName}
                   />
                 </SupplementGrid>
               </WorkspaceStack>
