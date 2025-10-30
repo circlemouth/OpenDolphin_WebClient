@@ -1,7 +1,7 @@
 import { setHttpAuditLogger } from '@/libs/http';
 import { getCsrfToken } from '@/libs/security';
 
-export type AuditCategory = 'http' | 'auth' | 'patient' | 'chart' | 'orca' | 'system';
+export type AuditCategory = 'http' | 'auth' | 'patient' | 'chart' | 'orca' | 'system' | 'reception';
 export type AuditSeverity = 'info' | 'warning' | 'critical';
 
 export interface ClientAuditEvent {

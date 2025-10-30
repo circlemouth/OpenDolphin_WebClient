@@ -150,3 +150,12 @@ export const registerVisit = async (
 
   await httpClient.post('/pvt2', requestBody);
 };
+
+export const updateVisitState = async (visitId: number, state: number) => {
+  const endpoint = `/pvt/${visitId},${state}`;
+  await httpClient.put<string>(endpoint);
+};
+
+export const deleteVisit = async (visitId: number) => {
+  await httpClient.delete(`/pvt2/${visitId}`);
+};
