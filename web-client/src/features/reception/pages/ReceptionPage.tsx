@@ -480,6 +480,12 @@ export const ReceptionPage = () => {
           facilityId={session.credentials.facilityId}
           userId={session.credentials.userId}
           userModelId={session.userProfile?.userModelId}
+          facilityName={session.userProfile?.facilityName}
+          operatorName={
+            session.userProfile?.displayName ??
+            session.userProfile?.commonName ??
+            session.credentials.userId
+          }
           onClose={handleCloseAppointmentManager}
           onPendingChange={setIsAppointmentSaving}
         />

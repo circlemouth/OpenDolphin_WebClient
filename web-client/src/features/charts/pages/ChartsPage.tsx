@@ -311,7 +311,14 @@ export const ChartsPage = () => {
   const userPk = session?.userProfile?.userModelId ?? null;
   const stampLibraryQuery = useStampLibrary(userPk);
   const canLoadStampLibrary = Boolean(userPk);
-  const { orderSets, createOrderSet, updateOrderSet, deleteOrderSet, markOrderSetUsed } = useOrderSets();
+  const {
+    orderSets,
+    createOrderSet,
+    updateOrderSet,
+    deleteOrderSet,
+    markOrderSetUsed,
+    importSharedOrderSets,
+  } = useOrderSets();
   const [draft, setDraft] = useState<ProgressNoteDraft>(defaultDraft);
   const [billing, setBilling] = useState<BillingState>(
     createInitialBillingState('insurance', null, session?.userProfile?.displayName),
@@ -1834,6 +1841,14 @@ export const ChartsPage = () => {
                     onDelete={deleteOrderSet}
                     disabled={!isLockedByMe}
                     lastAppliedId={lastAppliedOrderSetId}
+                    onImportShared={importSharedOrderSets}
+                    shareMetadata={{
+                      facilityName: session?.userProfile?.facilityName,
+                      author:
+                        session?.userProfile?.displayName ??
+                        session?.userProfile?.commonName ??
+                        session?.credentials.userId,
+                    }}
                   />
                   <StampLibraryPanel
                     stamps={stampLibraryQuery.data ?? []}

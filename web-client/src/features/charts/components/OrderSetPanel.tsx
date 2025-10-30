@@ -10,6 +10,14 @@ import type {
   OrderSetPlanType,
 } from '@/features/charts/types/order-set';
 import { TEMPLATE_DEFINITIONS } from '@/features/charts/components/patientDocumentTemplates';
+import {
+  buildSharePackage,
+  ORDER_SET_SHARE_VERSION,
+  OrderSetShareParseError,
+  type OrderSetImportResult,
+  type OrderSetShareItem,
+  parseSharePackage,
+} from '@/features/charts/utils/order-set-sharing';
 
 const PanelHeader = styled.header`
   display: flex;
@@ -173,6 +181,8 @@ interface OrderSetPanelProps {
   onDelete: (id: string) => void;
   disabled?: boolean;
   lastAppliedId?: string | null;
+  onImportShared: (items: OrderSetShareItem[], strategy: 'merge' | 'replace') => OrderSetImportResult;
+  shareMetadata?: { facilityName?: string; author?: string };
 }
 
 type EditorState = {
@@ -519,10 +529,18 @@ export const OrderSetPanel = ({
   onDelete,
   disabled,
   lastAppliedId,
+  onImportShared,
+  shareMetadata,
 }: OrderSetPanelProps) => {
   const [query, setQuery] = useState('');
   const [editorMode, setEditorMode] = useState<{ mode: 'create' | 'edit'; target?: OrderSetDefinition } | null>(null);
   const [confirmTarget, setConfirmTarget] = useState<OrderSetDefinition | null>(null);
+  const [isShareDialogOpen, setIsShareDialogOpen] = useState(false);
+  const [shareJson, setShareJson] = useState('');
+  const [shareExportedAt, setShareExportedAt] = useState('');
+  const [importText, setImportText] = useState('');
+  const [shareFeedback, setShareFeedback] = useState<string | null>(null);
+  const [shareError, setShareError] = useState<string | null>(null);
 
   const filtered = useMemo(() => {
     const keyword = query.trim().toLowerCase();
@@ -552,6 +570,107 @@ export const OrderSetPanel = ({
     [editorMode, onCreate, onUpdate],
   );
 
+  const handleOpenShareDialog = useCallback(() => {
+    const sharePackage = buildSharePackage(orderSets, {
+      facilityName: shareMetadata?.facilityName,
+      author: shareMetadata?.author,
+    });
+    setShareJson(JSON.stringify(sharePackage, null, 2));
+    setShareExportedAt(new Date(sharePackage.exportedAt).toLocaleString('ja-JP'));
+    setImportText('');
+    setShareFeedback(null);
+    setShareError(null);
+    setIsShareDialogOpen(true);
+  }, [orderSets, shareMetadata]);
+
+  const handleCloseShareDialog = useCallback(() => {
+    setIsShareDialogOpen(false);
+  }, []);
+
+  const handleCopyShare = useCallback(async () => {
+    if (typeof navigator === 'undefined' || !navigator.clipboard) {
+      setShareError('クリップボード API が利用できません。ブラウザの設定をご確認ください。');
+      setShareFeedback(null);
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(shareJson);
+      setShareFeedback('共有 JSON をクリップボードへコピーしました。');
+      setShareError(null);
+    } catch (error) {
+      console.error('共有 JSON のコピーに失敗しました', error);
+      setShareError('共有 JSON のコピーに失敗しました。権限設定をご確認ください。');
+      setShareFeedback(null);
+    }
+  }, [shareJson]);
+
+  const handleDownloadShare = useCallback(() => {
+    if (typeof window === 'undefined') {
+      setShareError('ブラウザ環境でのみダウンロードできます。');
+      setShareFeedback(null);
+      return;
+    }
+    try {
+      const blob = new Blob([shareJson], { type: 'application/json;charset=utf-8' });
+      const url = window.URL.createObjectURL(blob);
+      const anchor = window.document.createElement('a');
+      anchor.href = url;
+      anchor.download = `order-sets_${Date.now()}.json`;
+      anchor.rel = 'noopener';
+      window.document.body.appendChild(anchor);
+      anchor.click();
+      window.document.body.removeChild(anchor);
+      window.setTimeout(() => {
+        window.URL.revokeObjectURL(url);
+      }, 1000);
+      setShareFeedback('共有 JSON をダウンロードしました。');
+      setShareError(null);
+    } catch (error) {
+      console.error('共有 JSON のダウンロードに失敗しました', error);
+      setShareError('共有 JSON のダウンロードに失敗しました。ブラウザの設定をご確認ください。');
+      setShareFeedback(null);
+    }
+  }, [shareJson]);
+
+  const handleImportShare = useCallback(
+    (strategy: 'merge' | 'replace') => {
+      const source = importText.trim();
+      if (!source) {
+        setShareError('インポートする共有 JSON を貼り付けてください。');
+        setShareFeedback(null);
+        return;
+      }
+      try {
+        const sharePackage = parseSharePackage(source);
+        if (sharePackage.items.length === 0) {
+          setShareError('共有 JSON にオーダセットが含まれていません。');
+          setShareFeedback(null);
+          return;
+        }
+        const result = onImportShared(sharePackage.items, strategy);
+        const action = strategy === 'replace' ? '置き換え' : '統合';
+        const replacedText =
+          strategy === 'replace' && result.replaced
+            ? ` / 置換 ${result.replaced} 件`
+            : '';
+        setShareFeedback(
+          `共有テンプレートを${action}しました（新規 ${result.created} 件 / 更新 ${result.updated} 件${replacedText}）。`,
+        );
+        setShareError(null);
+        setImportText('');
+      } catch (error) {
+        console.error('共有 JSON のインポートに失敗しました', error);
+        if (error instanceof OrderSetShareParseError) {
+          setShareError(error.message);
+        } else {
+          setShareError('共有 JSON の解析に失敗しました。内容をご確認ください。');
+        }
+        setShareFeedback(null);
+      }
+    },
+    [importText, onImportShared],
+  );
+
   return (
     <SurfaceCard tone="muted">
       <Stack gap={16}>
@@ -563,6 +682,9 @@ export const OrderSetPanel = ({
             </InlineMessage>
           </div>
           <HeaderActions>
+            <Button type="button" variant="ghost" onClick={handleOpenShareDialog}>
+              共有 / インポート
+            </Button>
             <TextField
               label="検索"
               placeholder="セット名やタグで検索"
@@ -574,6 +696,9 @@ export const OrderSetPanel = ({
             </Button>
           </HeaderActions>
         </PanelHeader>
+
+        {!isShareDialogOpen && shareFeedback ? <InlineMessage>{shareFeedback}</InlineMessage> : null}
+        {!isShareDialogOpen && shareError ? <InlineError role="alert">{shareError}</InlineError> : null}
 
         {filtered.length === 0 ? (
           <InlineMessage>登録済みのオーダセットがありません。新規作成してください。</InlineMessage>
@@ -646,6 +771,72 @@ export const OrderSetPanel = ({
           </OrderSetList>
         )}
       </Stack>
+
+      {isShareDialogOpen ? (
+        <DialogOverlay role="dialog" aria-modal aria-label="オーダセット共有">
+          <DialogShell>
+            <DialogHeader>
+              <DialogTitle>オーダセットの共有 / インポート</DialogTitle>
+              <Button type="button" variant="ghost" onClick={handleCloseShareDialog}>
+                閉じる
+              </Button>
+            </DialogHeader>
+
+            <Stack gap={16}>
+              <InlineMessage>
+                共有フォーマット v{ORDER_SET_SHARE_VERSION} でエクスポートします。施設内・他院で共有する場合は JSON ファイルを配布してください。
+              </InlineMessage>
+
+              <SurfaceCard tone="muted">
+                <Stack gap={12}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>エクスポート</h3>
+                  <InlineMessage>
+                    {shareMetadata?.facilityName ? `施設: ${shareMetadata.facilityName} / ` : ''}
+                    {shareMetadata?.author ? `作成者: ${shareMetadata.author} / ` : ''}
+                    出力時刻: {shareExportedAt || '---'}
+                  </InlineMessage>
+                  <TextArea label="共有 JSON" value={shareJson} readOnly rows={8} />
+                  <HeaderActions style={{ justifyContent: 'flex-end' }}>
+                    <Button type="button" variant="secondary" onClick={handleCopyShare}>
+                      JSON をコピー
+                    </Button>
+                    <Button type="button" onClick={handleDownloadShare}>
+                      JSON をダウンロード
+                    </Button>
+                  </HeaderActions>
+                </Stack>
+              </SurfaceCard>
+
+              <SurfaceCard tone="muted">
+                <Stack gap={12}>
+                  <h3 style={{ margin: 0, fontSize: '1rem', fontWeight: 700 }}>インポート</h3>
+                  <TextArea
+                    label="共有 JSON を貼り付け"
+                    placeholder="共有された JSON を貼り付けてください"
+                    value={importText}
+                    onChange={(event) => setImportText(event.currentTarget.value)}
+                    rows={8}
+                  />
+                  <InlineMessage>
+                    統合は同名のセットを更新し、新規セットを追加します。置き換えは既存セットをすべて削除して共有内容に差し替えます。
+                  </InlineMessage>
+                  <HeaderActions style={{ justifyContent: 'flex-end' }}>
+                    <Button type="button" variant="secondary" onClick={() => handleImportShare('merge')}>
+                      統合インポート
+                    </Button>
+                    <Button type="button" variant="danger" onClick={() => handleImportShare('replace')}>
+                      置き換えインポート
+                    </Button>
+                  </HeaderActions>
+                </Stack>
+              </SurfaceCard>
+
+              {shareFeedback ? <InlineMessage>{shareFeedback}</InlineMessage> : null}
+              {shareError ? <InlineError role="alert">{shareError}</InlineError> : null}
+            </Stack>
+          </DialogShell>
+        </DialogOverlay>
+      ) : null}
 
       {editorMode ? (
         <OrderSetEditorDialog
