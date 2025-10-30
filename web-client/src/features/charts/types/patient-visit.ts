@@ -25,6 +25,8 @@ export interface RawPatientVisit {
   doctorId?: string;
   doctorName?: string;
   jmariNumber?: string;
+  firstInsurance?: string;
+  lastDocDate?: string | null;
   patientModel?: RawPatientModel | null;
 }
 

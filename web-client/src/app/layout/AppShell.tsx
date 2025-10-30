@@ -268,6 +268,9 @@ export const AppShell = () => {
             <NavItem to="/reception">
               受付一覧
             </NavItem>
+            <NavItem to="/facility-schedule">
+              施設予約一覧
+            </NavItem>
             <NavItem to="/dashboard">
               ダッシュボード
             </NavItem>

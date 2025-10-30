@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
 
 import { Button, TextArea } from '@/components';
+import type { MediaItem } from '@/features/charts/types/media';
 
 interface MonshinSummaryItem {
   id: string;
@@ -12,14 +13,6 @@ interface VitalSignItem {
   id: string;
   label: string;
   value: string;
-}
-
-export interface MediaItem {
-  id: string;
-  title: string;
-  thumbnailUrl: string;
-  capturedAt?: string;
-  description?: string;
 }
 
 export interface PastSummaryItem {
