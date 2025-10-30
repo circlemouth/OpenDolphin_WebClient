@@ -6,6 +6,12 @@ import type {
   OrderSetInput,
   OrderSetPlanItem,
 } from '@/features/charts/types/order-set';
+import {
+  mergeDefinitions,
+  type OrderSetImportResult,
+  type OrderSetShareItem,
+  toOrderSetInput,
+} from '@/features/charts/utils/order-set-sharing';
 
 const STORAGE_KEY = 'opd.web.orderSets.v1';
 
@@ -200,11 +206,34 @@ export const useOrderSets = () => {
     );
   }, []);
 
+  const importSharedOrderSets = useCallback(
+    (items: OrderSetShareItem[], strategy: 'merge' | 'replace' = 'merge'): OrderSetImportResult => {
+      const inputs = items
+        .map(toOrderSetInput)
+        .filter((input) => input.name.trim().length > 0 && input.planItems.length > 0);
+
+      if (inputs.length === 0) {
+        return { created: 0, updated: 0, replaced: 0 };
+      }
+
+      let result: OrderSetImportResult = { created: 0, updated: 0, replaced: 0 };
+      setOrderSets((prev) => {
+        const merged = mergeDefinitions(prev, inputs, strategy);
+        result = merged.result;
+        return merged.next;
+      });
+
+      return result;
+    },
+    [],
+  );
+
   return {
     orderSets: sorted,
     createOrderSet,
     updateOrderSet,
     deleteOrderSet,
     markOrderSetUsed,
+    importSharedOrderSets,
   } as const;
 };

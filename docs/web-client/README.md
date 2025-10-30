@@ -17,6 +17,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `features/RECEPTION_SCHEDULE_AND_SUMMARY.md` – 受付予約管理と FreeDocument 連携の仕様・運用メモ。
 - `design-system/ALPHA_COMPONENTS.md` – デザインシステム α 版の Storybook 運用とコンポーネント一覧。
 - `operations/TEST_SERVER_DEPLOY.md` – テスト環境向けサーバーデプロイとアカウント登録手順。
+- `operations/RECEPTION_WEB_CLIENT_MANUAL.md` – 受付担当者向け Web クライアント運用マニュアルと研修計画。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` – 1画面完結レイアウトの設計指針。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` Appendix – 既存カルテ画面から抽出した業務要件メモ。
 - `ux/KARTE_SCREEN_IMPLEMENTATION.md` – 最新カルテ画面 UI 実装の構造・ショートカット・レスポンシブ整理。
@@ -44,6 +45,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - PDF/帳票のブラウザネイティブ化検討、法令変更キャッチアップ資料を新規カテゴリとして拡張する。
 
 ## 直近更新
+- 2026-05-08: オーダセット共有/インポート機能と予約リマインダー送信フローを追加。`features/PHASE3_STAMP_AND_ORCA.md`、`features/RECEPTION_SCHEDULE_AND_SUMMARY.md`、`operations/RECEPTION_WEB_CLIENT_MANUAL.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新し、共有手順・リマインダー運用・研修計画を反映。
 - 2026-05-05: 患者メモ履歴ダイアログを追加し、右ペインから保存済みメモのプレビューと復元が可能に。`ux/KARTE_SCREEN_IMPLEMENTATION.md`、`features/PATIENT_MANAGEMENT_GUIDE.md`、`planning/WEB_VS_ONPRE_CHECKLIST.md` を更新して監査ログや運用手順を反映。
 - 2026-05-03: `PatientsPage` に患者情報編集フォームを追加し、`/patient` POST/PUT と健康保険管理の Web 実装を完了。`features/PATIENT_MANAGEMENT_GUIDE.md` を新設し、`planning/WEB_VS_ONPRE_CHECKLIST.md` と `planning/phase0/API_INVENTORY.md` を更新。
 - 2026-05-02: 受付予約管理で保存中の操作ガードを追加。`features/RECEPTION_SCHEDULE_AND_SUMMARY.md` に予約保存中のボタン無効化仕様を追記し、二重操作防止策と運用上の注意を明文化。
