@@ -22,6 +22,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - `design-system/ALPHA_COMPONENTS.md` – デザインシステム α 版の Storybook 運用とコンポーネント一覧。
 - `operations/TEST_SERVER_DEPLOY.md` – テスト環境向けサーバーデプロイとアカウント登録手順。
 - `operations/RECEPTION_WEB_CLIENT_MANUAL.md` – 受付担当者向け Web クライアント運用マニュアルと研修計画。
+- `operations/LOCAL_BACKEND_DOCKER.md` – Docker Compose を用いた既存サーバーのローカル起動手順。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` – 1画面完結レイアウトの設計指針。
 - `ux/ONE_SCREEN_LAYOUT_GUIDE.md` Appendix – 既存カルテ画面から抽出した業務要件メモ。
 - `ux/KARTE_SCREEN_IMPLEMENTATION.md` – 最新カルテ画面 UI 実装の構造・ショートカット・レスポンシブ整理。
@@ -71,5 +72,6 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - 2026-01-15: フェーズ2 前半の進捗を `planning/phase2/PHASE2_PROGRESS.md` に整理。患者検索 UI / カルテ履歴 β 実装と既存ユーザー影響メモを追加。
 - 2025-11-05: 認証ラッパーのセキュリティレビュー完了を追記し、`planning/phase1/PHASE1_SECURITY_REVIEW.md` を新設。フェーズ1完了条件を更新。
 - 2025-11-04: フェーズ1成果物として認証 SDK/HTTP クライアント/Storybook を整備し、`design-system/ALPHA_COMPONENTS.md` を新設。`planning/phase1/PHASE1_FOUNDATION.md` と `planning/WEB_CLIENT_WORK_PLAN.md` のステータスを更新。
+- 2025-10-30: Docker Compose による既存サーバー起動手順を整備し、Web クライアントは Vite プロキシと `.env.local` を追加してローカル検証を簡素化。
 - 2025-10-29: `planning/phase0/PHASE0_DELIVERABLES.md`, `planning/phase0/API_INVENTORY.md` を追加し、フェーズ0タスクの進捗と REST API 利用方針を整理。
 - 2025-10-29: `planning/phase1/PHASE1_FOUNDATION.md` を追加し、web-client プロジェクト初期セットアップと採用スタックを記録。

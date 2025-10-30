@@ -1,0 +1,8 @@
+.git
+.gitignore
+**/target
+**/.mvn
+**/node_modules
+docs
+web-client/node_modules
+*.log
