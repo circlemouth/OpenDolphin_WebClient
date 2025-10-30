@@ -1,4 +1,5 @@
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
+import type { ModuleModelPayload } from '@/features/charts/types/module';
 import type { AuthSession } from '@/libs/auth/auth-types';
 
 export interface ProgressNoteDraft {
@@ -42,7 +43,30 @@ export interface ProgressNoteContext {
   departmentCode?: string;
   departmentName?: string;
   billing: ProgressNoteBilling;
+  orderModules?: ModuleModelPayload[];
 }
+
+const decodeBase64 = (input: string) => {
+  const bufferLike = (globalThis as {
+    Buffer?: { from: (value: string, encoding: string) => { toString: (encoding: string) => string } };
+  }).Buffer;
+
+  if (bufferLike) {
+    return bufferLike.from(input, 'base64').toString('utf-8');
+  }
+
+  if (typeof globalThis.atob === 'function') {
+    const binary = globalThis.atob(input);
+    const bytes = new Uint8Array(binary.length);
+    for (let index = 0; index < binary.length; index += 1) {
+      bytes[index] = binary.charCodeAt(index);
+    }
+    const decoder = new TextDecoder('utf-8');
+    return decoder.decode(bytes);
+  }
+
+  throw new Error('Base64 デコードに対応していない環境です。');
+};
 
 const escapeXml = (value: string) =>
   value
@@ -110,6 +134,37 @@ const buildSelfPayDescription = (billing: SelfPayBillingDetails) => {
   return parts.join(' / ');
 };
 
+const ORDER_ENTITY_TREATMENT_FLAGS = new Set([
+  'injectionOrder',
+  'treatmentOrder',
+  'surgeryOrder',
+  'baseChargeOrder',
+  'instractionChargeOrder',
+  'otherOrder',
+  'generalOrder',
+]);
+
+const ORDER_ENTITY_LABO_FLAGS = new Set([
+  'testOrder',
+  'physiologyOrder',
+  'bacteriaOrder',
+  'radiologyOrder',
+]);
+
+const ensureClaimItems = (modules: ModuleModelPayload[]) => {
+  modules.forEach((module) => {
+    const beanBytes = module.beanBytes ?? '';
+    if (!beanBytes.trim()) {
+      throw new Error('オーダスタンプのシリアライズデータが欠落しています。スタンプを再登録してください。');
+    }
+    const xml = decodeBase64(beanBytes);
+    if (!/ClaimItem/i.test(xml)) {
+      const stampName = module.moduleInfoBean?.stampName ?? '不明なスタンプ';
+      throw new Error(`${stampName} に ClaimItem 情報が含まれていません。ORCA 連携設定を確認してください。`);
+    }
+  });
+};
+
 export const createProgressNoteDocument = (context: ProgressNoteContext) => {
   const {
     draft,
@@ -123,12 +178,17 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
     departmentCode,
     departmentName,
     billing,
+    orderModules = [],
   } = context;
 
   const { credentials, userProfile } = session;
   const now = new Date();
   const timestamp = formatTimestamp(now);
   const docId = generateDocId();
+
+  if (orderModules.length > 0) {
+    ensureClaimItems(orderModules);
+  }
 
   const soaText = [
     draft.subjective ? `S: ${draft.subjective}` : null,
@@ -195,6 +255,39 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
     };
   })();
 
+  const treatmentEntities = orderModules
+    .map((module) => module.moduleInfoBean?.entity)
+    .filter((entity): entity is string => Boolean(entity));
+
+  const hasMedication = treatmentEntities.some((entity) => entity === 'medOrder');
+  const hasTreatment = treatmentEntities.some((entity) => ORDER_ENTITY_TREATMENT_FLAGS.has(entity));
+  const hasLabo = treatmentEntities.some((entity) => ORDER_ENTITY_LABO_FLAGS.has(entity));
+
+  const mergedModules = (() => {
+    if (orderModules.length === 0) {
+      return undefined;
+    }
+    const baseStampOffset = 2;
+    return orderModules
+      .map((module, index) => {
+        if (!module.moduleInfoBean || !module.beanBytes) {
+          return null;
+        }
+        return {
+          ...baseEntry,
+          moduleInfoBean: {
+            stampName: module.moduleInfoBean.stampName,
+            stampRole: module.moduleInfoBean.stampRole,
+            stampNumber: baseStampOffset + index,
+            entity: module.moduleInfoBean.entity,
+            stampId: module.moduleInfoBean.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        };
+      })
+      .filter((module): module is typeof baseEntry & { moduleInfoBean: { stampName: string; stampRole: string; stampNumber: number; entity: string; stampId?: string } } => Boolean(module));
+  })();
+
   return {
     ...baseEntry,
     docInfoModel: {
@@ -214,9 +307,9 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
       healthInsuranceGUID: billingInfo.healthInsuranceGUID,
       hasMark: false,
       hasImage: false,
-      hasRp: false,
-      hasTreatment: false,
-      hasLaboTest: false,
+      hasRp: hasMedication,
+      hasTreatment: hasTreatment,
+      hasLaboTest: hasLabo,
       versionNumber: '1',
       status: 'F',
       parentId: null,
@@ -253,6 +346,7 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
         },
         beanBytes: planBeanBytes,
       },
+      ...(mergedModules ?? []),
     ],
     memo: visit.memo ?? undefined,
   };

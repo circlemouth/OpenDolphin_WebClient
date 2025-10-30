@@ -241,7 +241,6 @@ export const AppointmentManager = ({
       setFormError('予約内容（メニュー名など）を入力してください。');
       return false;
     }
-    const targetIso = parsed.toISOString();
     const duplicate = appointments.some(
       (appointment) =>
         appointment.id !== form.id &&

@@ -1,6 +1,7 @@
 import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
+import type { ModuleModelPayload } from '@/features/charts/types/module';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
 import {
@@ -184,5 +185,58 @@ describe('createProgressNoteDocument', () => {
     });
 
     expect(document.docInfoModel.healthInsuranceDesc).toBe('その他の自費（非課税） / 備考: メモ');
+  });
+
+  it('merges order modules and updates document flags', () => {
+    const orderModule: ModuleModelPayload = {
+      moduleInfoBean: {
+        stampName: '内服薬処方',
+        stampRole: 'p',
+        stampNumber: 0,
+        entity: 'medOrder',
+        stampId: 'stamp-001',
+      },
+      beanBytes: Buffer.from('<ClaimItem code="123"/>', 'utf-8').toString('base64'),
+    };
+
+    const document = createProgressNoteDocument({
+      draft,
+      visit,
+      karteId: 4001,
+      session,
+      billing: insuranceBilling,
+      orderModules: [orderModule],
+    });
+
+    expect(document.modules).toHaveLength(3);
+    const orderEntry = document.modules?.[2];
+    expect(orderEntry?.moduleInfoBean.stampName).toBe('内服薬処方');
+    expect(orderEntry?.moduleInfoBean.entity).toBe('medOrder');
+    expect(document.docInfoModel.hasRp).toBe(true);
+    expect(document.docInfoModel.hasTreatment).toBe(false);
+    expect(document.docInfoModel.hasLaboTest).toBe(false);
+  });
+
+  it('validates claim items in order modules', () => {
+    const invalidModule: ModuleModelPayload = {
+      moduleInfoBean: {
+        stampName: '検査依頼',
+        stampRole: 'p',
+        stampNumber: 0,
+        entity: 'testOrder',
+      },
+      beanBytes: Buffer.from('<BundleTest></BundleTest>', 'utf-8').toString('base64'),
+    };
+
+    expect(() =>
+      createProgressNoteDocument({
+        draft,
+        visit,
+        karteId: 4001,
+        session,
+        billing: insuranceBilling,
+        orderModules: [invalidModule],
+      }),
+    ).toThrow('検査依頼 に ClaimItem 情報が含まれていません。ORCA 連携設定を確認してください。');
   });
 });
