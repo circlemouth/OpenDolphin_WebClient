@@ -28,7 +28,7 @@
 | --- | --- | --- | --- |
 | `/karte/docinfo/*` / `/karte/modules/*` / `/karte/images/*` | `ChartsPage` 左カラムのカルテタイムラインにフィルタパネルを追加し、詳細情報は中央カラムのタイムライン項目をクリックした際のスライドオーバーで表示。 | フェーズ5（一部完了） | 2026-05-24: `DocumentTimelinePanel` で `/karte/docinfo` と `/karte/documents` を利用済み。`/karte/modules`・`/karte/images` の UI は未移植。 |
 | `/karte/diagnosis` 系 CRUD | `ChartsPage` 右ペインに「病名管理」カードを追加。検索・登録は既存スタンプセクションから遷移するモーダルで行う。 | フェーズ5（完了済み） | 2026-05-24: `DiagnosisPanel` と `useDiagnosisMutations` で `/karte/diagnosis` の CRUD を提供。 |
-| `/karte/observations` / `/karte/claim` / `/karte/moduleSearch` | `ChartsPage` の中央カラムにタブを追加し、「指示・観察」「請求調整」を切り替えられるようにする。`SurfaceCard` + `DataGrid` を使用。 | フェーズ6（完了済み） | 2026-05-27: 既存の `ObservationPanel` に加え、`ClaimAdjustmentPanel` を新設。`/karte/moduleSearch` でモジュール検索し、`PUT /karte/claim` により CLAIM 再送信を提供。操作ログとバリデーションを React Query 経由で実装。 |
+| `/karte/observations` / `/karte/claim` / `/karte/moduleSearch` | `ChartsPage` の中央カラムにタブを追加し、「観察記録」「請求調整」を切り替えられるようにする。`SurfaceCard` + `DataGrid` を使用。 | フェーズ6（完了済み） | 2026-05-27: 既存の `ObservationPanel` に加え、`ClaimAdjustmentPanel` を新設。`/karte/moduleSearch` でモジュール検索し、`PUT /karte/claim` により CLAIM 再送信を提供。操作ログとバリデーションを React Query 経由で実装。 |
 | `PUT /karte/document` | 既存カルテタイムラインの各ノートカードに「編集」アクションを追加し、エディタをモーダルで再利用。保存時に `PUT` を呼び出しつつバージョン履歴を保持。 | フェーズ5（完了済み） | 2026-05-27: `DocumentTimelinePanel` に編集ボタンを追加し、`ChartsPage` の進行記録コンポーザから既存文書を読み込み・上書きできるようにした。`updateDocument` API を通じて `PUT /karte/document` を呼び出し、CLAIM 判定やモジュール再構成も行う。 |
 
 ## 4. テンプレート・スタンプ管理

@@ -35,6 +35,7 @@
 - F6: 患者選択後、`/karte/` API を使用してカルテ履歴を取得し、文書／モジュール／添付画像を閲覧できる。
 - F7: カルテ新規作成・編集時に既存の DocumentModelConverter フォーマットでサーバーに送信し、保存結果を画面に反映する。
 - F8: カルテ編集中は `clientUUID` を利用して排他制御状態をサーバーに通知し、他端末からの編集をブロックする。
+- UI表示ラベル: サイドバーでは /charts ルートを「カルテ閲覧」と表記し、カルテ画面の観察機能は「観察記録」タブとして提供する。（根拠: web-client/src/app/layout/AppShell.tsx, web-client/src/features/charts/components/ObservationPanel.tsx）
 
 ### 5.4 スタンプ・オーダリング
 - F9: スタンプ（診療行為テンプレート）の閲覧・検索・挿入をサポートする。必要に応じて `/stamp` 系 API を利用。
