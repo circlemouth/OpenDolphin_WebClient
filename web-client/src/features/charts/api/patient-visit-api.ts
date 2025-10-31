@@ -8,7 +8,7 @@ import type {
   RawPatientVisit,
 } from '@/features/charts/types/patient-visit';
 
-const normalizePatientVisit = (resource: RawPatientVisit): PatientVisitSummary | null => {
+export const normalizePatientVisit = (resource: RawPatientVisit): PatientVisitSummary | null => {
   const visitId = resource.id ?? 0;
   const patientModel: RawPatientModel | null | undefined = resource.patientModel;
   const patientPk = patientModel?.id ?? 0;

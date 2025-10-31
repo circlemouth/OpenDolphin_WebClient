@@ -4,7 +4,7 @@ import styled from '@emotion/styled';
 import { Button, SurfaceCard } from '@/components';
 import { useAppointments } from '@/features/reception/hooks/useAppointments';
 import { useLaboModules } from '@/features/charts/hooks/useLaboModules';
-import type { DocInfoSummary } from '@/features/patients/types/karte';
+import type { DocInfoSummary } from '@/features/charts/types/doc';
 import type { MediaItem } from '@/features/charts/types/media';
 import {
   buildCareMapEvents,
@@ -14,6 +14,8 @@ import {
   type CareMapEvent,
   type CareMapEventType,
 } from '@/features/charts/utils/care-map';
+import { MasudaSupportPanel } from '@/features/charts/components/MasudaSupportPanel';
+import { useAuth } from '@/libs/auth';
 
 interface CareMapPanelProps {
   patientId: string | null;
@@ -329,6 +331,8 @@ const formatTimeLabel = (value: Date) => {
 };
 
 export const CareMapPanel = ({ patientId, patientName, karteId, documents, mediaItems, mediaLoading = false, mediaError = null }: CareMapPanelProps) => {
+  const { session } = useAuth();
+  const userId = session?.credentials.userId ?? null;
   const [monthOffset, setMonthOffset] = useState(0);
   const [filters, setFilters] = useState<FilterState>({
     document: true,
@@ -531,6 +535,7 @@ export const CareMapPanel = ({ patientId, patientName, karteId, documents, media
           )}
         </>
       ) : null}
+      {karteId && userId ? <MasudaSupportPanel karteId={karteId} userId={userId} /> : null}
     </PanelCard>
   );
 };

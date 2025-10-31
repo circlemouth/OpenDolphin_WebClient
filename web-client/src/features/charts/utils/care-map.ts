@@ -1,4 +1,4 @@
-import type { DocInfoSummary } from '@/features/patients/types/karte';
+import type { DocInfoSummary } from '@/features/charts/types/doc';
 import type { AppointmentSummary } from '@/features/reception/api/appointment-api';
 import type { LaboModule } from '@/features/charts/types/labo';
 import type { MediaItem } from '@/features/charts/types/media';

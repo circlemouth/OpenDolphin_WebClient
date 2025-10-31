@@ -1,4 +1,6 @@
-# 未整備 REST API 対応 UI 配置計画 (2026-05-24)
+﻿# 未整備 REST API 対応 UI 配置計画 (2026-05-27)
+
+- 2026-05-27 (Codex): 調査結果を反映し、実装済み API の扱いと残課題を更新。
 
 本資料では、`planning/WEB_VS_ONPRE_CHECKLIST.md` の REST API 比較表で未対応 (`×` または `△`) と判定されたエンドポイントに対し、Web クライアント上のどこに UI を配置し、どのフェーズで実装するかの方針を整理する。オンプレ（Swing）クライアントの画面構成との対応関係を明示し、実装時の責務分担と情報アーキテクチャを明確化することが目的である。
 
@@ -6,26 +8,28 @@
 
 | 対象 API | 想定 UI / 配置 | 実装フェーズ | 備考 |
 | --- | --- | --- | --- |
-| `/user` CRUD / `/user/facility` / `/user/name` | 左カラムナビゲーションに新設する「管理」セクション配下の `UserAdministrationPage`。`AppShell` の Primary ナビに続けて `Administration` グループを追加し、SurfaceCard ベースの一覧＋詳細ドロワを提供する。 | フェーズ5 並行運用準備 | 施設管理者のみがアクセスできるようロールガードを実装。ユーザー一括登録 CSV 取り込みは将来タスクとして別途検討。 |
-| `/serverinfo/*` | 同 `UserAdministrationPage` 内の「システム状態」タブとして配置。ヘッダ右上の通知ボタンと連携し、最新情報を右サイドバーに表示する。 | フェーズ5 | API 応答をポーリングし監査ログへ記録。重大度に応じてバッジ色を切り替える。 |
-| `/dolphin` 系設定・ライセンス | 管理セクション配下に `SystemPreferencesPage` を追加。`SurfaceCard` で「基本情報」「ライセンス」「Cloud Zero 連携」をタブ切り替え。 | フェーズ6 継続改善 | ライセンス更新はモーダルでトークン入力→`POST /dolphin/license`。アクティビティログはテーブル表示。 |
+| `/user` CRUD / `/user/facility` / `/user/name` | 左カラムナビゲーションに新設した「Administration」グループ配下の `UserAdministrationPage`。SurfaceCard ベースの一覧＋詳細ドロワで CRUD を提供する。 | フェーズ5（完了済み） | 2026-05-24: `web-client/src/features/administration/pages/UserAdministrationPage.tsx` で実装済み。ロールガードは `AuthProvider`／`AppShell` で制御。残タスク: ユーザー一括登録 CSV の検討。 |
+| `/serverinfo/*` | `SystemPreferencesPage` 内の「システム状態」タブとして配置し、ヘッダーの通知と連動するステータス表示を行う。 | フェーズ5（完了済み） | 2026-05-24: `useServerInfoSnapshot`・`SystemPreferencesPage` が `/serverinfo/jamri` などを取得して表示・監査記録を実装済み。 |
+| `/dolphin` 系設定・ライセンス | 管理セクション配下の `SystemPreferencesPage` に「ライセンス」「Cloud Zero」「稼働状況」「施設管理者登録」カードを配置する。 | フェーズ5（完了済み） | 2026-06-01: `/dolphin/activity`・`/dolphin/license` に加え、`registerFacilityAdmin`（POST `/dolphin`）と施設情報更新フォームを実装。Cloud Zero 手動連携も維持。 |
+| /20/adm/phr/* | SystemPreferencesPage の PHR 管理タブでキー管理・データ出力・テキスト取得を提供する。 | フェーズ6（完了済み） | 2026-06-01: PhrManagementPanel と phr-api.ts を追加し、キー生成・JSON ダウンロード・/20/adm/phr/medication 等のテキスト API を実装。 |
+| /patient/all /patient/custom/* /patient/count/* | 「Administration > 患者データ出力」ページで CSV/JSON ダウンロードと件数チェックを提供する。 | フェーズ6（完了済み） | 2026-06-01: PatientDataExportPage.tsx と patient-export-api.ts を新設し、監査ログ付きで管理者が一括エクスポート可能にした。 |
 
 ## 2. 受付・予約周辺 API
 
 | 対象 API | 想定 UI / 配置 | 実装フェーズ | 備考 |
 | --- | --- | --- | --- |
-| `/patient/pvt/*` / `/patient/documents/status` | 既存 `ReceptionPage` のカードアクションに「詳細」ドロワを追加し、来院履歴・カルテ連携を右サイドの詳細ペインで表示。`AppShell` の右カラム（Sidebar）を利用して受付詳細を表示する。 | フェーズ4 品質強化 | `/patient/documents/status` はカルテ状態バッジとして表示。2026-05-24: `ReceptionVisitSidebar` を実装し、来院履歴と仮保存カルテ有無を提示。 |
-| `/pvt/*` / `DELETE /pvt2/{pvtPK}` | `ReceptionPage` の各受付カードに「受付取消」および状態直接編集用のモーダルを追加。旧 API は互換目的で「詳細操作」タブに限定。 | フェーズ4 | 既存の ChartEvent 連携と競合しないよう操作前にロック確認。2026-05-24: `VisitManagementDialog` で状態更新（`PUT /pvt`）と取消（`DELETE /pvt2`）を提供。 |
-| `/schedule/document` / `DELETE /schedule/pvt` | `FacilitySchedulePage` の予約詳細ダイアログに「カルテ連動」セクションを追加して文書生成・解除を操作。 | フェーズ5 | 予約カードから直接カルテ作成できる導線を提供。2026-05-25: 予約詳細ダイアログを実装し、カルテ生成（POST /schedule/document）と予約削除（DELETE /schedule/pvt）を提供。 |
+| `/patient/pvt/*` / `/patient/documents/status` | 既存 `ReceptionPage` のカードアクションに「詳細」ドロワを追加し、来院履歴・カルテ連携を右サイドの詳細ペインで表示。`AppShell` の右カラム（Sidebar）を利用して受付詳細を表示する。 | フェーズ4（完了済み） | `/patient/documents/status` はカルテ状態バッジとして表示。2026-05-24: `ReceptionVisitSidebar` を実装し、来院履歴と仮保存カルテ有無を提示。 |
+| `/pvt/*` / `DELETE /pvt2/{pvtPK}` | `ReceptionPage` の各受付カードに「受付取消」および状態直接編集用のモーダルを追加。旧 API は互換目的で「詳細操作」タブに限定。 | フェーズ4（完了済み） | 2026-05-27: `VisitManagementDialog` に旧 API タブを実装し、`GET /pvt` 一覧表示・`POST /pvt` 登録・`PUT /pvt/memo` 更新を提供。既存の状態変更・取消機能と統合し、互換フローを Web から完結可能にした。 |
+| `/schedule/document` / `DELETE /schedule/pvt` | `FacilitySchedulePage` の予約詳細ダイアログに「カルテ連動」セクションを追加して文書生成・解除を操作。 | フェーズ5（完了済み） | 予約カードから直接カルテ作成できる導線を提供。2026-05-25: 予約詳細ダイアログを実装し、カルテ生成（POST /schedule/document）と予約削除（DELETE /schedule/pvt）を提供。 |
 
 ## 3. カルテ・文書関連 API
 
 | 対象 API | 想定 UI / 配置 | 実装フェーズ | 備考 |
 | --- | --- | --- | --- |
-| `/karte/docinfo/*` / `/karte/modules/*` / `/karte/images/*` | `ChartsPage` 左カラムのカルテタイムラインにフィルタパネルを追加し、詳細情報は中央カラムのタイムライン項目をクリックした際のスライドオーバーで表示。 | フェーズ5 | ドキュメント内のモジュール一覧はオンプレの DocInfoInspector 相当を再現。 |
-| `/karte/diagnosis` 系 CRUD | `ChartsPage` 右ペインに「病名管理」カードを追加。検索・登録は既存スタンプセクションから遷移するモーダルで行う。 | フェーズ5 | 既存 ORCA マスター検索 UI と再利用。保存時に `/karte/diagnosis` を呼び出す。 |
-| `/karte/observations` / `/karte/claim` / `/karte/moduleSearch` | `ChartsPage` の中央カラムにタブを追加し、「指示・観察」「請求調整」を切り替えられるようにする。`SurfaceCard` + `DataGrid` を使用。 | フェーズ6 | 請求調整は請求エラー解消を支援するため、警告バッジと監査ログ送出を実装。 |
-| `PUT /karte/document` | 既存カルテタイムラインの各ノートカードに「編集」アクションを追加し、エディタをモーダルで再利用。保存時に `PUT` を呼び出しつつバージョン履歴を保持。 | フェーズ5 | 新旧 API の差分検証を `__tests__/progress-note-api.test.ts` に追加する。 |
+| `/karte/docinfo/*` / `/karte/modules/*` / `/karte/images/*` | `ChartsPage` 左カラムのカルテタイムラインにフィルタパネルを追加し、詳細情報は中央カラムのタイムライン項目をクリックした際のスライドオーバーで表示。 | フェーズ5（一部完了） | 2026-05-24: `DocumentTimelinePanel` で `/karte/docinfo` と `/karte/documents` を利用済み。`/karte/modules`・`/karte/images` の UI は未移植。 |
+| `/karte/diagnosis` 系 CRUD | `ChartsPage` 右ペインに「病名管理」カードを追加。検索・登録は既存スタンプセクションから遷移するモーダルで行う。 | フェーズ5（完了済み） | 2026-05-24: `DiagnosisPanel` と `useDiagnosisMutations` で `/karte/diagnosis` の CRUD を提供。 |
+| `/karte/observations` / `/karte/claim` / `/karte/moduleSearch` | `ChartsPage` の中央カラムにタブを追加し、「指示・観察」「請求調整」を切り替えられるようにする。`SurfaceCard` + `DataGrid` を使用。 | フェーズ6（完了済み） | 2026-05-27: 既存の `ObservationPanel` に加え、`ClaimAdjustmentPanel` を新設。`/karte/moduleSearch` でモジュール検索し、`PUT /karte/claim` により CLAIM 再送信を提供。操作ログとバリデーションを React Query 経由で実装。 |
+| `PUT /karte/document` | 既存カルテタイムラインの各ノートカードに「編集」アクションを追加し、エディタをモーダルで再利用。保存時に `PUT` を呼び出しつつバージョン履歴を保持。 | フェーズ5（完了済み） | 2026-05-27: `DocumentTimelinePanel` に編集ボタンを追加し、`ChartsPage` の進行記録コンポーザから既存文書を読み込み・上書きできるようにした。`updateDocument` API を通じて `PUT /karte/document` を呼び出し、CLAIM 判定やモジュール再構成も行う。 |
 
 ## 4. テンプレート・スタンプ管理
 
@@ -50,3 +54,7 @@
 5. **ドキュメント連携**: 実装完了時には `planning/WEB_VS_ONPRE_CHECKLIST.md` の該当行を更新し、UI スクリーンショットを `docs/web-client/ux` 配下に保存する。
 
 この計画はフェーズ5以降のスプリント計画に統合し、進捗に応じて四半期ごとに見直すこと。
+
+
+
+

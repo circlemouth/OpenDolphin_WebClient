@@ -6,6 +6,16 @@ export interface RawStampTreeModel {
   description?: string;
   category?: string;
   treeBytes?: string | null;
+  publishType?: string | null;
+  partyName?: string | null;
+  url?: string | null;
+  publishedDate?: string | null;
+  lastUpdated?: string | null;
+  published?: string | null;
+  versionNumber?: string | null;
+  userModel?: {
+    id?: number;
+  } | null;
 }
 
 export interface RawPublishedTreeModel extends RawStampTreeModel {

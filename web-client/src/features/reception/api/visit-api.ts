@@ -1,4 +1,12 @@
+import { recordOperationEvent } from '@/libs/audit';
 import { httpClient } from '@/libs/http';
+import { measureApiPerformance } from '@/libs/monitoring';
+import { normalizePatientVisit } from '@/features/charts/api/patient-visit-api';
+import type {
+  PatientVisitListResponse,
+  PatientVisitSummary,
+  RawPatientVisit,
+} from '@/features/charts/types/patient-visit';
 import type { PatientDetail, PatientDetailAddress } from '@/features/patients/types/patient';
 
 export interface VisitRegistrationOptions {
@@ -158,4 +166,97 @@ export const updateVisitState = async (visitId: number, state: number) => {
 
 export const deleteVisit = async (visitId: number) => {
   await httpClient.delete(`/pvt2/${visitId}`);
+};
+
+const encodeParam = (value: string) => encodeURIComponent(value);
+
+export interface LegacyVisitSearchParams {
+  visitDate: string;
+  firstResult?: number;
+  appointmentFrom?: string | null;
+  appointmentTo?: string | null;
+  doctorId?: string | null;
+  unassignedDoctorId?: string | null;
+}
+
+const coerceDate = (input: string | null | undefined, fallback: string): string => {
+  const trimmed = input?.trim();
+  if (!trimmed) {
+    return fallback;
+  }
+  return trimmed;
+};
+
+const toNonNegativeInteger = (value: number | null | undefined, fallback: number): number => {
+  if (typeof value !== 'number' || Number.isNaN(value)) {
+    return fallback;
+  }
+  return Math.max(0, Math.floor(value));
+};
+
+export const fetchLegacyVisits = async (params: LegacyVisitSearchParams): Promise<PatientVisitSummary[]> => {
+  const baseDate = coerceDate(params.visitDate, new Date().toISOString().slice(0, 10));
+  const firstResult = toNonNegativeInteger(params.firstResult, 0);
+  const appoFrom = coerceDate(params.appointmentFrom, baseDate);
+  const appoTo = coerceDate(params.appointmentTo, appoFrom);
+
+  const doctorId = params.doctorId?.trim();
+  const unassigned = params.unassignedDoctorId?.trim() || '19999';
+
+  const segments = doctorId
+    ? [doctorId, unassigned, baseDate, String(firstResult), appoFrom, appoTo]
+    : [baseDate, String(firstResult), appoFrom, appoTo];
+
+  const endpoint = `/pvt/${encodeParam(segments.join(','))}`;
+  const response = await measureApiPerformance(
+    'reception.legacy.fetchVisits',
+    `GET ${endpoint}`,
+    async () => httpClient.get<PatientVisitListResponse>(endpoint),
+    {
+      doctorId: doctorId ?? 'all',
+      visitDate: baseDate,
+      firstResult,
+    },
+  );
+
+  const list = response.data?.list ?? [];
+  const visits = list
+    .map(normalizePatientVisit)
+    .filter((visit): visit is PatientVisitSummary => Boolean(visit));
+
+  recordOperationEvent('reception', 'info', 'legacy_fetch_visits', '旧API (GET /pvt) で受付一覧を取得しました', {
+    doctorId: doctorId ?? null,
+    resultCount: visits.length,
+  });
+
+  return visits;
+};
+
+export const registerLegacyVisit = async (payload: RawPatientVisit): Promise<void> => {
+  await measureApiPerformance(
+    'reception.legacy.registerVisit',
+    'POST /pvt',
+    async () => httpClient.post('/pvt', payload),
+    { hasPatientModel: Boolean(payload.patientModel) },
+  );
+
+  const patientId = payload.patientModel?.patientId ?? null;
+  recordOperationEvent('reception', 'warning', 'legacy_register_visit', '旧API (POST /pvt) で受付登録を実行しました', {
+    patientId,
+    doctorId: payload.doctorId ?? null,
+  });
+};
+
+export const updateLegacyVisitMemo = async (visitId: number, memo: string): Promise<void> => {
+  const endpoint = `/pvt/memo/${encodeParam(`${visitId},${memo}`)}`;
+  await measureApiPerformance(
+    'reception.legacy.updateMemo',
+    `PUT ${endpoint}`,
+    async () => httpClient.put<string>(endpoint),
+    { visitId },
+  );
+
+  recordOperationEvent('reception', 'info', 'legacy_update_memo', '旧API (PUT /pvt/memo) で受付メモを更新しました', {
+    visitId,
+  });
 };

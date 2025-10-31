@@ -1,4 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+﻿import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+const buildUpdatedDocumentPayload = (
+  original: DocumentModelPayload,
+  updated: DocumentModelPayload,
+): DocumentModelPayload => {
+  const mergedDocInfo = {
+    ...(original.docInfoModel ?? {}),
+    ...(updated.docInfoModel ?? {}),
+    docPk: original.docInfoModel?.docPk ?? original.id,
+    parentPk: original.docInfoModel?.parentPk ?? 0,
+    docId: original.docInfoModel?.docId ?? updated.docInfoModel?.docId ?? '',
+    firstConfirmDate: original.docInfoModel?.firstConfirmDate ?? updated.docInfoModel?.firstConfirmDate,
+    versionNumber: original.docInfoModel?.versionNumber ?? updated.docInfoModel?.versionNumber ?? '1',
+    status: 'F',
+  } as DocInfoSummary & Record<string, unknown>;
+
+  return {
+    ...original,
+    docInfoModel: mergedDocInfo,
+    modules: updated.modules,
+    schema: updated.schema ?? original.schema,
+    attachment: original.attachment,
+    karteBean: updated.karteBean ?? original.karteBean,
+    userModel: updated.userModel ?? original.userModel,
+  };
+};
 import { useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate, useParams } from 'react-router-dom';
@@ -13,6 +38,10 @@ import { MedicalCertificatesPanel } from '@/features/charts/components/MedicalCe
 import { SchemaEditorPanel } from '@/features/charts/components/SchemaEditorPanel';
 import { LabResultsPanel } from '@/features/charts/components/LabResultsPanel';
 import { CareMapPanel } from '@/features/charts/components/CareMapPanel';
+import { DocumentTimelinePanel } from '@/features/charts/components/DocumentTimelinePanel';
+import { DiagnosisPanel } from '@/features/charts/components/DiagnosisPanel';
+import { ObservationPanel } from '@/features/charts/components/ObservationPanel';
+import { ClaimAdjustmentPanel } from '@/features/charts/components/ClaimAdjustmentPanel';
 import { publishChartEvent } from '@/features/charts/api/chart-event-api';
 import { useChartEventSubscription } from '@/features/charts/hooks/useChartEventSubscription';
 import { useChartLock } from '@/features/charts/hooks/useChartLock';
@@ -34,6 +63,7 @@ import type { ParsedHealthInsurance } from '@/features/charts/utils/health-insur
 import { updatePatientMemo } from '@/features/patients/api/patient-memo-api';
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
+import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { useAuth } from '@/libs/auth';
 import { fetchStampModule } from '@/features/charts/api/stamp-api';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
@@ -46,6 +76,8 @@ import {
 } from '@/features/charts/components/layout/WorkSurface';
 import { RightPane, type PastSummaryItem } from '@/features/charts/components/layout/RightPane';
 import type { MediaItem } from '@/features/charts/types/media';
+import type { DocInfoSummary, DocumentModelPayload } from '@/features/charts/types/doc';
+import type { ModuleModelPayload } from '@/features/charts/types/module';
 import {
   PatientMemoHistoryDialog,
   type PatientMemoHistoryEntry,
@@ -118,6 +150,36 @@ const SupplementGrid = styled.div`
   gap: 16px;
 `;
 
+const ClinicalPanelWrapper = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const ClinicalTabs = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+const ClinicalTabButton = styled.button<{ $active: boolean }>`
+  border: none;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  padding: 6px 12px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  background: ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.surfaceMuted)};
+  color: ${({ theme, $active }) => ($active ? theme.palette.onPrimary : theme.palette.text)};
+  box-shadow: ${({ theme, $active }) => ($active ? theme.elevation.level1 : 'none')};
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    background: ${({ theme, $active }) =>
+      $active ? theme.palette.primaryStrong : theme.palette.surfaceStrong};
+  }
+`;
+
 const EmptyStateCard = styled(SurfaceCard)`
   display: flex;
   flex-direction: column;
@@ -183,13 +245,13 @@ const createInitialBillingState = (
 });
 
 const INITIAL_CHECKLIST: VisitChecklistItem[] = [
-  { id: 'interview', label: '問診', completed: false, instantSave: false },
-  { id: 'vitals', label: '測定', completed: false, instantSave: false },
-  { id: 'procedure', label: '処置', completed: false, instantSave: false },
+  { id: 'interview', label: '蝠剰ｨｺ', completed: false, instantSave: false },
+  { id: 'vitals', label: 'バイタル', completed: false, instantSave: false },
+  { id: 'procedure', label: '蜃ｦ鄂ｮ', completed: false, instantSave: false },
   { id: 'billing', label: '会計', completed: false, instantSave: false },
 ];
 
-const SEARCH_SECTIONS = ['O', '薬', '処置', '検査', 'フォローアップ', 'テンプレ', '過去文', 'A&P'] as const;
+const SEARCH_SECTIONS = ['O', '薬', '処置', '検査', 'フォローアップ', 'テンプレ', '過去カルテ', 'A&P'] as const;
 
 const SEARCH_SECTION_LABELS = SEARCH_SECTIONS.map((section) => section as string);
 
@@ -229,12 +291,12 @@ const ORDER_ENTITY_LABEL: Record<string, string> = {
   bacteriaOrder: '細菌検査',
   radiologyOrder: '画像検査',
   baseChargeOrder: '診察料',
-  instractionChargeOrder: '指導',
+  instractionChargeOrder: '指導・在宅',
   otherOrder: 'その他',
   generalOrder: '汎用',
 };
 
-const getEntityLabel = (entity: string) => ORDER_ENTITY_LABEL[entity] ?? 'オーダ';
+const getEntityLabel = (entity: string) => ORDER_ENTITY_LABEL[entity] ?? '繧ｪ繝ｼ繝';
 
 interface OrderModuleDraft {
   id: string;
@@ -264,9 +326,8 @@ const serializePlanCards = (cards: PlanComposerCard[]) =>
     .map((card) => {
       const rows = [
         `[${card.type}] ${card.title || '未入力'}`,
-        card.orderSummary ? `オーダ: ${card.orderSummary}` : null,
         card.detail,
-        card.note ? `メモ: ${card.note}` : null,
+        card.note ? `繝｡繝｢: ${card.note}` : null,
       ].filter(Boolean);
       return rows.join('\n');
     })
@@ -286,6 +347,97 @@ const createPlanCard = (
   orderModuleId: extras?.orderModuleId ?? null,
   orderSummary: extras?.orderSummary ?? null,
 });
+const decodeBase64String = (input: string): string => {
+  try {
+    const bufferLike = (globalThis as {
+      Buffer?: { from: (value: string, encoding: string) => { toString: (encoding: string) => string } };
+    }).Buffer;
+
+    if (bufferLike) {
+      return bufferLike.from(input, 'base64').toString('utf-8');
+    }
+
+    if (typeof globalThis.atob === 'function') {
+      const binary = globalThis.atob(input);
+      const bytes = new Uint8Array(binary.length);
+      for (let index = 0; index < binary.length; index += 1) {
+        bytes[index] = binary.charCodeAt(index);
+      }
+      const decoder = new TextDecoder('utf-8');
+      return decoder.decode(bytes);
+    }
+  } catch (error) {
+    console.error('Base64 decode failed', error);
+  }
+  return '';
+};
+
+const decodeXmlEntities = (value: string): string =>
+  value
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&amp;/g, '&')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#10;/g, '\n');
+
+const decodeProgressCourseText = (beanBytes?: string | null): string => {
+  if (!beanBytes) {
+    return '';
+  }
+  const xml = decodeBase64String(beanBytes);
+  if (!xml) {
+    return '';
+  }
+  const match = xml.match(/<string>([\s\S]*?)<\/string>/);
+  if (!match) {
+    return '';
+  }
+  return decodeXmlEntities(match[1] ?? '');
+};
+
+const splitSoaSections = (text: string) => {
+  const sections = {
+    subjective: '',
+    objective: '',
+    assessment: '',
+  };
+  const blocks = text.split(/\n\n+/).map((block) => block.trim()).filter(Boolean);
+  blocks.forEach((block) => {
+    if (block.startsWith('S:')) {
+      sections.subjective = block.replace(/^S:\s*/, '').trim();
+      return;
+    }
+    if (block.startsWith('O:')) {
+      sections.objective = block.replace(/^O:\s*/, '').trim();
+      return;
+    }
+    if (block.startsWith('A:')) {
+      sections.assessment = block.replace(/^A:\s*/, '').trim();
+    }
+  });
+  return sections;
+};
+
+const convertModuleToOrderDraft = (module: ModuleModelPayload, index: number): OrderModuleDraft | null => {
+  if (!module.moduleInfoBean?.entity || !module.beanBytes) {
+    return null;
+  }
+  return {
+    id: createOrderModuleId(),
+    source: 'stamp',
+    stampId: module.moduleInfoBean.stampId ?? undefined,
+    label: module.moduleInfoBean.stampName ?? module.moduleInfoBean.entity,
+    moduleInfo: {
+      stampName: module.moduleInfoBean.stampName ?? '',
+      stampRole: module.moduleInfoBean.stampRole ?? '',
+      entity: module.moduleInfoBean.entity,
+      stampNumber: module.moduleInfoBean.stampNumber ?? index,
+      stampId: module.moduleInfoBean.stampId ?? undefined,
+    },
+    beanBytes: module.beanBytes,
+  } satisfies OrderModuleDraft;
+};
 
 type DocumentPresetState = {
   templateId: string;
@@ -333,6 +485,7 @@ export const ChartsPage = () => {
   const [focusedPlanCardId, setFocusedPlanCardId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [orderModules, setOrderModules] = useState<OrderModuleDraft[]>([]);
+  const [editingDocument, setEditingDocument] = useState<DocumentModelPayload | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | undefined>(undefined);
   const [saveError, setSaveError] = useState<string | null>(null);
@@ -406,11 +559,13 @@ export const ChartsPage = () => {
   );
   const claimSendEnabled = billing.mode === 'insurance' && Boolean(selectedInsurance?.classCode);
   const billingDisabled = !selectedVisit;
-
   const karteQuery = usePatientKarte(selectedVisit?.patientId ?? null, {
     fromDate: undefined,
     enabled: Boolean(selectedVisit),
   });
+
+  const [docInfos, setDocInfos] = useState<DocInfoSummary[]>([]);
+  const [activeClinicalTab, setActiveClinicalTab] = useState<'observation' | 'claim'>('observation');
 
   const karteId = karteQuery.data?.id ?? null;
   const patientPk = selectedVisit?.patientPk ?? null;
@@ -444,6 +599,37 @@ export const ChartsPage = () => {
     enabled: Boolean(selectedVisit),
   });
   const latestFreeDocument = useMemo(() => freeDocumentQuery.data ?? null, [freeDocumentQuery.data]);
+  const timelineFromDate = useMemo(() => {
+    if (selectedVisit?.visitDate) {
+      const date = new Date(selectedVisit.visitDate);
+      if (!Number.isNaN(date.getTime())) {
+        return formatRestDate(date);
+      }
+    }
+    if (karteQuery.data?.created) {
+      const date = new Date(karteQuery.data.created);
+      if (!Number.isNaN(date.getTime())) {
+        return formatRestDate(date);
+      }
+    }
+    return defaultKarteFromDate();
+  }, [karteQuery.data?.created, selectedVisit?.visitDate]);
+
+  useEffect(() => {
+    if (karteQuery.data?.documents && karteQuery.data.documents.length > 0 && docInfos.length === 0) {
+      setDocInfos(karteQuery.data.documents);
+    }
+  }, [karteQuery.data?.documents, docInfos.length]);
+
+  useEffect(() => {
+    if (!selectedVisit) {
+      setDocInfos([]);
+    }
+  }, [selectedVisit?.visitId]);
+
+  useEffect(() => {
+    setEditingDocument(null);
+  }, [selectedVisit?.visitId]);
 
   const clientUuid = session?.credentials.clientUuid;
   const lock = useChartLock(selectedVisit, clientUuid);
@@ -563,7 +749,7 @@ export const ChartsPage = () => {
     }
     return memos.slice(0, 3).map((memo) => ({
       id: `memo-${memo.id}`,
-      question: memo.confirmed ? memo.confirmed : 'スタッフ記録',
+      question: memo.confirmed ? memo.confirmed : 'スタンプ記録',
       answer: memo.memo ?? '記録なし',
     }));
   }, [karteQuery.data?.memos]);
@@ -615,7 +801,7 @@ export const ChartsPage = () => {
   const vitalSigns = useMemo(
     () =>
       draft.objective
-        ? Array.from(draft.objective.matchAll(/(BP|SpO2|HR|Temp)[:：]\s*([^\n]+)/gi)).map((match, index) => ({
+        ? Array.from(draft.objective.matchAll(/(BP|SpO2|HR|Temp)[:・咯\s*([^\n]+)/gi)).map((match, index) => ({
             id: `vital-${index}`,
             label: match[1].toUpperCase(),
             value: match[2].trim(),
@@ -708,10 +894,10 @@ export const ChartsPage = () => {
   }, [attachmentsQuery.data]);
 
   const mediaItemsLoading = attachmentsQuery.isLoading;
-  const mediaItemsError = attachmentsQuery.error ? '画像・添付の取得に失敗しました。再読み込みしてください。' : null;
+  const mediaItemsError = attachmentsQuery.error ? '画像添付の取得に失敗しました。再読み込みしてください。' : null;
 
   useEffect(() => {
-    setMiniSummaryLines(pastSummaries.slice(0, 3).map((item) => `${item.title}：${item.excerpt}`));
+    setMiniSummaryLines(pastSummaries.slice(0, 3).map((item) => `${item.title} - ${item.excerpt}`));
   }, [pastSummaries]);
 
   const updatePlanCards = useCallback(
@@ -884,55 +1070,51 @@ export const ChartsPage = () => {
     setChiefComplaintError(null);
 
     try {
-      await publishChartEvent({
+      setSaveState('saving');
+      setSaveError(null);
+
+      const progressContext = {
+        draft,
         visit: selectedVisit,
-        memo: normalized.length > 0 ? normalized : null,
-        eventType: CHART_EVENT_TYPES.PVT_MEMO,
-      });
+        karteId,
+        session,
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: selectedVisit.departmentCode,
+        departmentName: selectedVisit.departmentName,
+        billing: billingPayload,
+        orderModules: orderModules.map((module) => ({
+          moduleInfoBean: {
+            stampName: module.moduleInfo.stampName,
+            stampRole: module.moduleInfo.stampRole,
+            stampNumber: module.moduleInfo.stampNumber,
+            entity: module.moduleInfo.entity,
+            stampId: module.moduleInfo.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        })),
+      };
 
-      const updatedMemo = normalized.length > 0 ? normalized : undefined;
-      queryClient.setQueryData<PatientVisitSummary[] | undefined>(patientVisitsQueryKey, (current) => {
-        if (!current) {
-          return current;
-        }
-        return current.map((visit) => {
-          if (visit.visitId !== selectedVisit.visitId) {
-            return visit;
-          }
-          const safetyNotes = buildSafetyNotes([
-            visit.raw.patientModel?.appMemo,
-            visit.raw.patientModel?.reserve1,
-            visit.raw.patientModel?.reserve2,
-            visit.raw.patientModel?.reserve3,
-            visit.raw.patientModel?.reserve4,
-            visit.raw.patientModel?.reserve5,
-            visit.raw.patientModel?.reserve6,
-            updatedMemo,
-          ]);
-          return {
-            ...visit,
-            memo: updatedMemo,
-            safetyNotes,
-            raw: {
-              ...visit.raw,
-              memo: updatedMemo,
-            },
-          };
-        });
-      });
+      if (editingDocument) {
+        const updatedDocument = createProgressNoteDocument(progressContext);
+        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
+        await updateDocument(payload);
+      } else {
+        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
+        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+      }
 
-      setChiefComplaintDirty(false);
-      setChiefComplaintStatus('saved');
-      setChiefComplaintError(null);
-      recordOperationEvent('chart', 'info', 'visit_memo_update', '受付メモ（主訴）を更新しました', {
-        visitId: selectedVisit.visitId,
-        patientId: selectedVisit.patientId,
-        memoLength: normalized.length,
-      });
+      setSaveState('saved');
+      setHasUnsavedChanges(false);
+      setLastSavedAt(new Date().toLocaleTimeString());
+      await lock.unlock();
+      await karteQuery.refetch();
+      setEditingDocument(null);
     } catch (error) {
-      console.error('主訴メモの更新に失敗しました', error);
-      setChiefComplaintStatus('error');
-      setChiefComplaintError('主訴メモの保存に失敗しました。ネットワークを確認して再試行してください。');
+      setSaveState('error');
+      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
   }, [
     buildSafetyNotes,
@@ -986,7 +1168,7 @@ export const ChartsPage = () => {
     setPatientMemoUpdatedAt(entry.confirmed ?? null);
     setPatientMemoHistoryOpen(false);
     if (selectedVisit) {
-      recordOperationEvent('chart', 'info', 'patient_memo_history_apply', '患者メモの過去バージョンを展開しました', {
+      recordOperationEvent('chart', 'info', 'patient_memo_history_apply', '謔｣閠・Γ繝｢縺ｮ驕主悉繝舌・繧ｸ繝ｧ繝ｳ繧貞ｱ暮幕縺励∪縺励◆', {
         patientId: selectedVisit.patientId,
         karteId,
         restoredMemoId: entry.id,
@@ -1019,29 +1201,51 @@ export const ChartsPage = () => {
     setPatientMemoError(null);
 
     try {
-      await updatePatientMemo({
-        memoId: patientMemoId ?? undefined,
+      setSaveState('saving');
+      setSaveError(null);
+
+      const progressContext = {
+        draft,
+        visit: selectedVisit,
         karteId,
-        memo: normalized,
         session,
-      });
-      recordOperationEvent('chart', 'info', 'patient_memo_update', '患者メモを更新しました', {
-        karteId,
-        patientId: selectedVisit.patientId,
-        memoLength: normalized.length,
-      });
-      setPatientMemoDirty(false);
-      setPatientMemoStatus('saved');
-      setPatientMemoUpdatedAt(new Date().toISOString());
-      try {
-        await refetchKarte();
-      } catch (refetchError) {
-        console.warn('患者メモ再取得に失敗しました', refetchError);
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: selectedVisit.departmentCode,
+        departmentName: selectedVisit.departmentName,
+        billing: billingPayload,
+        orderModules: orderModules.map((module) => ({
+          moduleInfoBean: {
+            stampName: module.moduleInfo.stampName,
+            stampRole: module.moduleInfo.stampRole,
+            stampNumber: module.moduleInfo.stampNumber,
+            entity: module.moduleInfo.entity,
+            stampId: module.moduleInfo.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        })),
+      };
+
+      if (editingDocument) {
+        const updatedDocument = createProgressNoteDocument(progressContext);
+        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
+        await updateDocument(payload);
+      } else {
+        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
+        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
       }
+
+      setSaveState('saved');
+      setHasUnsavedChanges(false);
+      setLastSavedAt(new Date().toLocaleTimeString());
+      await lock.unlock();
+      await karteQuery.refetch();
+      setEditingDocument(null);
     } catch (error) {
-      console.error('患者メモの更新に失敗しました', error);
-      setPatientMemoStatus('error');
-      setPatientMemoError('患者メモの保存に失敗しました。ネットワークを確認して再試行してください。');
+      setSaveState('error');
+      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
   }, [
     karteId,
@@ -1094,27 +1298,51 @@ export const ChartsPage = () => {
     setFreeDocumentError(null);
 
     try {
-      await saveFreeDocument({
-        patientId: selectedVisit.patientId,
-        comment: normalized,
-        id: freeDocumentId ?? undefined,
-      });
-      recordOperationEvent('chart', 'info', 'free_document_save', 'サマリ文書を保存しました', {
-        patientId: selectedVisit.patientId,
-        commentLength: normalized.length,
-      });
-      setFreeDocumentDirty(false);
-      setFreeDocumentStatus('saved');
-      setFreeDocumentUpdatedAt(new Date().toISOString());
-      try {
-        await freeDocumentQuery.refetch();
-      } catch (refetchError) {
-        console.warn('FreeDocument 再取得に失敗しました', refetchError);
+      setSaveState('saving');
+      setSaveError(null);
+
+      const progressContext = {
+        draft,
+        visit: selectedVisit,
+        karteId,
+        session,
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: selectedVisit.departmentCode,
+        departmentName: selectedVisit.departmentName,
+        billing: billingPayload,
+        orderModules: orderModules.map((module) => ({
+          moduleInfoBean: {
+            stampName: module.moduleInfo.stampName,
+            stampRole: module.moduleInfo.stampRole,
+            stampNumber: module.moduleInfo.stampNumber,
+            entity: module.moduleInfo.entity,
+            stampId: module.moduleInfo.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        })),
+      };
+
+      if (editingDocument) {
+        const updatedDocument = createProgressNoteDocument(progressContext);
+        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
+        await updateDocument(payload);
+      } else {
+        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
+        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
       }
+
+      setSaveState('saved');
+      setHasUnsavedChanges(false);
+      setLastSavedAt(new Date().toLocaleTimeString());
+      await lock.unlock();
+      await karteQuery.refetch();
+      setEditingDocument(null);
     } catch (error) {
-      console.error('FreeDocument の保存に失敗しました', error);
-      setFreeDocumentStatus('error');
-      setFreeDocumentError('サマリ文書の保存に失敗しました。ネットワークを確認して再試行してください。');
+      setSaveState('error');
+      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
   }, [
     freeDocumentComment,
@@ -1167,24 +1395,66 @@ export const ChartsPage = () => {
 
   const handleLock = useCallback(async () => {
     if (!selectedVisit) {
-      setSaveError('診察対象の受付を選択してください');
+      setSaveError('險ｺ蟇溷ｯｾ雎｡縺ｮ蜿嶺ｻ倥ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞');
       return;
     }
     setSaveError(null);
     try {
-      await lock.lock();
+      setSaveState('saving');
+      setSaveError(null);
+
+      const progressContext = {
+        draft,
+        visit: selectedVisit,
+        karteId,
+        session,
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: selectedVisit.departmentCode,
+        departmentName: selectedVisit.departmentName,
+        billing: billingPayload,
+        orderModules: orderModules.map((module) => ({
+          moduleInfoBean: {
+            stampName: module.moduleInfo.stampName,
+            stampRole: module.moduleInfo.stampRole,
+            stampNumber: module.moduleInfo.stampNumber,
+            entity: module.moduleInfo.entity,
+            stampId: module.moduleInfo.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        })),
+      };
+
+      if (editingDocument) {
+        const updatedDocument = createProgressNoteDocument(progressContext);
+        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
+        await updateDocument(payload);
+      } else {
+        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
+        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+      }
+
+      setSaveState('saved');
+      setHasUnsavedChanges(false);
+      setLastSavedAt(new Date().toLocaleTimeString());
+      await lock.unlock();
+      await karteQuery.refetch();
+      setEditingDocument(null);
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : '診察開始に失敗しました');
+      setSaveState('error');
+      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
   }, [lock, selectedVisit]);
 
   const handleUnlock = useCallback(async () => {
     if (!selectedVisit) {
-      setSaveError('診察対象の受付を選択してください');
+      setSaveError('險ｺ蟇溷ｯｾ雎｡縺ｮ蜿嶺ｻ倥ｒ驕ｸ謚槭＠縺ｦ縺上□縺輔＞');
       return;
     }
     if (saveState === 'saving') {
-      setSaveError('保存処理が完了してから診察を終了してください');
+      setSaveError('菫晏ｭ伜・逅・′螳御ｺ・＠縺ｦ縺九ｉ險ｺ蟇溘ｒ邨ゆｺ・＠縺ｦ縺上□縺輔＞');
       return;
     }
     if (hasUnsavedChanges) {
@@ -1193,19 +1463,61 @@ export const ChartsPage = () => {
     }
     setSaveError(null);
     try {
+      setSaveState('saving');
+      setSaveError(null);
+
+      const progressContext = {
+        draft,
+        visit: selectedVisit,
+        karteId,
+        session,
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: selectedVisit.departmentCode,
+        departmentName: selectedVisit.departmentName,
+        billing: billingPayload,
+        orderModules: orderModules.map((module) => ({
+          moduleInfoBean: {
+            stampName: module.moduleInfo.stampName,
+            stampRole: module.moduleInfo.stampRole,
+            stampNumber: module.moduleInfo.stampNumber,
+            entity: module.moduleInfo.entity,
+            stampId: module.moduleInfo.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        })),
+      };
+
+      if (editingDocument) {
+        const updatedDocument = createProgressNoteDocument(progressContext);
+        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
+        await updateDocument(payload);
+      } else {
+        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
+        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+      }
+
+      setSaveState('saved');
+      setHasUnsavedChanges(false);
+      setLastSavedAt(new Date().toLocaleTimeString());
       await lock.unlock();
+      await karteQuery.refetch();
+      setEditingDocument(null);
     } catch (error) {
-      setSaveError(error instanceof Error ? error.message : '診察終了に失敗しました');
+      setSaveState('error');
+      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
   }, [handleSave, hasUnsavedChanges, lock, saveState, selectedVisit]);
 
   const handleSave = useCallback(async () => {
     if (!session || !selectedVisit) {
-      setSaveError('保存対象の診察情報が選択されていません');
+      setSaveError('菫晏ｭ伜ｯｾ雎｡縺ｮ險ｺ蟇滓ュ蝣ｱ縺碁∈謚槭＆繧後※縺・∪縺帙ｓ');
       return;
     }
     if (!clientUuid || selectedVisit.ownerUuid !== clientUuid) {
-      setSaveError('診察を開始してから保存してください');
+      setSaveError('險ｺ蟇溘ｒ髢句ｧ九＠縺ｦ縺九ｉ菫晏ｭ倥＠縺ｦ縺上□縺輔＞');
       return;
     }
     const karteId = karteQuery.data?.id;
@@ -1214,7 +1526,7 @@ export const ChartsPage = () => {
       return;
     }
     if (billing.mode === 'insurance' && !selectedInsurance) {
-      setSaveError('適用する保険を選択してください');
+      setSaveError('驕ｩ逕ｨ縺吶ｋ菫晞匱繧帝∈謚槭＠縺ｦ縺上□縺輔＞');
       return;
     }
 
@@ -1239,39 +1551,46 @@ export const ChartsPage = () => {
     try {
       setSaveState('saving');
       setSaveError(null);
-      const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
-      await saveProgressNote(
-        {
-          draft,
-          visit: selectedVisit,
-          karteId,
-          session,
-          facilityName: session.userProfile?.facilityName,
-          userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-          userModelId: session.userProfile?.userModelId,
-          licenseName: session.userProfile?.licenseName,
-          departmentCode: selectedVisit.departmentCode,
-          departmentName: selectedVisit.departmentName,
-          billing: billingPayload,
-          orderModules: orderModules.map((module) => ({
-            moduleInfoBean: {
-              stampName: module.moduleInfo.stampName,
-              stampRole: module.moduleInfo.stampRole,
-              stampNumber: module.moduleInfo.stampNumber,
-              entity: module.moduleInfo.entity,
-              stampId: module.moduleInfo.stampId,
-            },
-            beanBytes: module.beanBytes,
-          })),
-        },
-        nextState,
-        selectedVisit.visitId,
-      );
+
+      const progressContext = {
+        draft,
+        visit: selectedVisit,
+        karteId,
+        session,
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: selectedVisit.departmentCode,
+        departmentName: selectedVisit.departmentName,
+        billing: billingPayload,
+        orderModules: orderModules.map((module) => ({
+          moduleInfoBean: {
+            stampName: module.moduleInfo.stampName,
+            stampRole: module.moduleInfo.stampRole,
+            stampNumber: module.moduleInfo.stampNumber,
+            entity: module.moduleInfo.entity,
+            stampId: module.moduleInfo.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        })),
+      };
+
+      if (editingDocument) {
+        const updatedDocument = createProgressNoteDocument(progressContext);
+        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
+        await updateDocument(payload);
+      } else {
+        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
+        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+      }
+
       setSaveState('saved');
       setHasUnsavedChanges(false);
       setLastSavedAt(new Date().toLocaleTimeString());
       await lock.unlock();
       await karteQuery.refetch();
+      setEditingDocument(null);
     } catch (error) {
       setSaveState('error');
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
@@ -1287,6 +1606,7 @@ export const ChartsPage = () => {
     draft,
     lock,
     orderModules,
+    editingDocument,
   ]);
 
   const handleSaveDraft = useCallback(() => {
@@ -1315,6 +1635,53 @@ export const ChartsPage = () => {
   const handleChecklistInstant = useCallback((id: string) => {
     setChecklist((prev) => prev.map((item) => (item.id === id ? { ...item, instantSave: !item.instantSave } : item)));
   }, []);
+      const modules = document.modules ?? [];
+      const soaModule = modules.find((module) => module.moduleInfoBean?.stampRole === 'soaSpec');
+      const planModule = modules.find((module) => module.moduleInfoBean?.stampRole === 'pSpec');
+      const soaSections = splitSoaSections(decodeProgressCourseText(soaModule?.beanBytes));
+      const planRaw = decodeProgressCourseText(planModule?.beanBytes);
+      const planText = planRaw.replace(/^P:\s*/, '').trim();
+
+      setDraft({
+        title: document.docInfoModel?.title ?? '',
+        subjective: soaSections.subjective,
+        objective: soaSections.objective,
+        assessment: soaSections.assessment,
+        plan: planText,
+      });
+
+      const orderDrafts = modules
+        .filter((module) => module.moduleInfoBean?.entity && module.moduleInfoBean.entity !== 'progressCourse')
+        .map((module, index) => convertModuleToOrderDraft(module, index))
+        .filter((draft): draft is OrderModuleDraft => Boolean(draft));
+
+      setOrderModules(orderDrafts);
+      setPlanCards([]);
+
+      if (document.docInfoModel?.sendClaim) {
+        const performer = session?.userProfile?.displayName ?? session?.userProfile?.commonName ?? '';
+        setBilling(
+          createInitialBillingState(
+            'insurance',
+            document.docInfoModel?.healthInsuranceGUID ?? document.docInfoModel?.healthInsurance ?? null,
+            performer,
+          ),
+        );
+      } else {
+        const performer = session?.userProfile?.displayName ?? session?.userProfile?.commonName ?? '';
+        setBilling({
+          ...createInitialBillingState('self-pay', null, performer),
+          mode: 'self-pay',
+          selfPayCategory: document.docInfoModel?.healthInsurance ?? '950',
+          memo: document.docInfoModel?.healthInsuranceDesc ?? '',
+        });
+      }
+
+      setHasUnsavedChanges(false);
+      setActiveSurface('objective');
+    },
+    [session],
+  );
 
   const handleToggleSurface = useCallback((mode: SurfaceMode) => {
     setActiveSurface(mode);
@@ -1324,7 +1691,7 @@ export const ChartsPage = () => {
     (stamp: StampDefinition) => {
       void (async () => {
         if (!isLockedByMe) {
-          setSaveError('診察を開始してからスタンプを挿入してください');
+          setSaveError('險ｺ蟇溘ｒ髢句ｧ九＠縺ｦ縺九ｉ繧ｹ繧ｿ繝ｳ繝励ｒ謖ｿ蜈･縺励※縺上□縺輔＞');
           return;
         }
         const contextLabel = stamp.path.slice(1).join(' / ');
@@ -1338,37 +1705,57 @@ export const ChartsPage = () => {
 
         if (!stamp.stampId) {
           updatePlanCards((cards) => [...cards, createPlanCard('procedure', snippet, stamp.name)]);
-          setSaveError('スタンプに ID が未割り当てのため、テキストとして挿入しました。');
+          setSaveError('繧ｹ繧ｿ繝ｳ繝励↓ ID 縺梧悴蜑ｲ繧雁ｽ薙※縺ｮ縺溘ａ縲√ユ繧ｭ繧ｹ繝医→縺励※謖ｿ蜈･縺励∪縺励◆縲・);
           return;
         }
 
         try {
-          const payload = await fetchStampModule(stamp.stampId);
-          const draft: OrderModuleDraft = {
-            id: createOrderModuleId(),
-            source: 'stamp',
-            stampId: stamp.stampId ?? undefined,
-            label: snippet || stamp.name,
-            moduleInfo: {
-              stampName: stamp.name,
-              stampRole: stamp.role ?? 'p',
-              entity: stamp.entity ?? 'generalOrder',
-              stampNumber: 0,
-              stampId: stamp.stampId ?? undefined,
-            },
-            beanBytes: payload.stampBytes,
-          };
-          registerOrderModules([draft]);
-          recordOperationEvent('chart', 'info', 'order_module_add', 'スタンプからオーダを追加しました', {
-            stampId: stamp.stampId,
-            entity: draft.moduleInfo.entity,
-          });
-          setSaveError(null);
-        } catch (error) {
-          console.error('スタンプの取得に失敗しました', error);
-          setSaveError('スタンプの取得に失敗しました。時間をおいて再試行してください。');
-          updatePlanCards((cards) => [...cards, createPlanCard('procedure', snippet, stamp.name)]);
-        }
+      setSaveState('saving');
+      setSaveError(null);
+
+      const progressContext = {
+        draft,
+        visit: selectedVisit,
+        karteId,
+        session,
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: selectedVisit.departmentCode,
+        departmentName: selectedVisit.departmentName,
+        billing: billingPayload,
+        orderModules: orderModules.map((module) => ({
+          moduleInfoBean: {
+            stampName: module.moduleInfo.stampName,
+            stampRole: module.moduleInfo.stampRole,
+            stampNumber: module.moduleInfo.stampNumber,
+            entity: module.moduleInfo.entity,
+            stampId: module.moduleInfo.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        })),
+      };
+
+      if (editingDocument) {
+        const updatedDocument = createProgressNoteDocument(progressContext);
+        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
+        await updateDocument(payload);
+      } else {
+        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
+        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+      }
+
+      setSaveState('saved');
+      setHasUnsavedChanges(false);
+      setLastSavedAt(new Date().toLocaleTimeString());
+      await lock.unlock();
+      await karteQuery.refetch();
+      setEditingDocument(null);
+    } catch (error) {
+      setSaveState('error');
+      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
+    }
       })();
     },
     [
@@ -1385,7 +1772,7 @@ export const ChartsPage = () => {
   const handleApplyOrderSet = useCallback(
     (definition: OrderSetDefinition) => {
       if (!isLockedByMe) {
-        setSaveError('診察を開始してからオーダセットを適用してください');
+        setSaveError('險ｺ蟇溘ｒ髢句ｧ九＠縺ｦ縺九ｉ繧ｪ繝ｼ繝繧ｻ繝・ヨ繧帝←逕ｨ縺励※縺上□縺輔＞');
         return;
       }
 
@@ -1441,11 +1828,11 @@ export const ChartsPage = () => {
   const handleCreateOrderFromOrca = useCallback(
     async ({ code, name }: { code: string; name: string }) => {
       if (!isLockedByMe) {
-        throw new Error('診察を開始してからオーダを追加してください');
+        throw new Error('險ｺ蟇溘ｒ髢句ｧ九＠縺ｦ縺九ｉ繧ｪ繝ｼ繝繧定ｿｽ蜉縺励※縺上□縺輔＞');
       }
       const modules = await fetchOrcaOrderModules(code, name);
       if (modules.length === 0) {
-        throw new Error('ORCA から診療行為を取得できませんでした');
+        throw new Error('ORCA 縺九ｉ險ｺ逋り｡檎ぜ繧貞叙蠕励〒縺阪∪縺帙ｓ縺ｧ縺励◆');
       }
       const drafts: OrderModuleDraft[] = modules
         .map((module, index) => {
@@ -1469,11 +1856,11 @@ export const ChartsPage = () => {
         .filter((draft): draft is OrderModuleDraft => Boolean(draft));
 
       if (drafts.length === 0) {
-        throw new Error('ORCA から取得したスタンプに必要なデータが含まれていません');
+        throw new Error('ORCA 縺九ｉ蜿門ｾ励＠縺溘せ繧ｿ繝ｳ繝励↓蠢・ｦ√↑繝・・繧ｿ縺悟性縺ｾ繧後※縺・∪縺帙ｓ');
       }
 
       registerOrderModules(drafts);
-      recordOperationEvent('chart', 'info', 'order_module_add', 'ORCA マスターからオーダを追加しました', {
+      recordOperationEvent('chart', 'info', 'order_module_add', 'ORCA 繝槭せ繧ｿ繝ｼ縺九ｉ繧ｪ繝ｼ繝繧定ｿｽ蜉縺励∪縺励◆', {
         code,
         count: drafts.length,
       });
@@ -1492,7 +1879,7 @@ export const ChartsPage = () => {
           .map((tag) => ({
             id: `dx-${tag}`,
             label: tag,
-            detail: '病名タグ',
+            detail: '逞・錐繧ｿ繧ｰ',
             section: 'A&P' as const,
             payload: tag,
             planType: 'followup',
@@ -1515,11 +1902,11 @@ export const ChartsPage = () => {
             detail: stamp.path.join(' / '),
             section:
               stamp.entity === 'medication'
-                ? ('薬' as const)
+                ? ('阮ｬ' as const)
                 : stamp.entity === 'test'
-                ? ('検査' as const)
+                ? ('讀懈渊' as const)
                 : stamp.entity === 'procedure'
-                ? ('処置' as const)
+                ? ('蜃ｦ鄂ｮ' as const)
                 : ('A&P' as const),
             payload: [stamp.name, stamp.memo].filter(Boolean).join(' '),
             planType:
@@ -1538,14 +1925,14 @@ export const ChartsPage = () => {
         id: `history-${summary.id}`,
         label: summary.title,
         detail: summary.excerpt,
-        section: '過去文' as const,
+        section: '驕主悉譁・ as const,
         payload: `${summary.title}: ${summary.excerpt}`,
       })),
     );
     if (draft.objective) {
       base.push({
         id: 'current-objective',
-        label: '現在の所見を引用',
+        label: '迴ｾ蝨ｨ縺ｮ謇隕九ｒ蠑慕畑',
         detail: draft.objective.slice(0, 64),
         section: 'O',
         payload: draft.objective,
@@ -1554,7 +1941,7 @@ export const ChartsPage = () => {
     if (draft.assessment) {
       base.push({
         id: 'current-assessment',
-        label: '現在の評価を引用',
+        label: '迴ｾ蝨ｨ縺ｮ隧穂ｾ｡繧貞ｼ慕畑',
         detail: draft.assessment.slice(0, 64),
         section: 'A&P',
         payload: draft.assessment,
@@ -1575,7 +1962,7 @@ export const ChartsPage = () => {
 
   const handleSearchConfirm = useCallback(
     (item: SearchResultItem) => {
-      if (item.section === 'O' || item.section === 'テンプレ') {
+      if (item.section === 'O' || item.section === '繝・Φ繝励Ξ') {
         handleObjectiveInsertText(item.payload);
       } else {
         const type = item.planType ?? 'followup';
@@ -1723,7 +2110,7 @@ export const ChartsPage = () => {
         open: true,
         title: item.title,
         current: draft.plan ? draft.plan.split('\n').filter(Boolean) : [],
-        incoming: item.excerpt.split('。').map((paragraph) => paragraph.trim()).filter(Boolean),
+        incoming: item.excerpt.split('縲・).map((paragraph) => paragraph.trim()).filter(Boolean),
       });
     },
     [draft.plan],
@@ -1763,17 +2150,40 @@ export const ChartsPage = () => {
       />
       <ContentGrid>
         <LeftRail>
-          <VisitChecklist
-            items={checklist}
-            onToggleCompleted={handleChecklistToggle}
-            onToggleInstantSave={handleChecklistInstant}
-          />
+          <Stack gap={16}>
+            <VisitChecklist
+              items={checklist}
+              onToggleCompleted={handleChecklistToggle}
+              onToggleInstantSave={handleChecklistInstant}
+            />
+            <DocumentTimelinePanel
+              karteId={karteId}
+              fromDate={timelineFromDate}
+              includeModified
+              onDocInfosLoaded={setDocInfos}
+              onEditDocument={handleEditDocument}
+            />
+          </Stack>
         </LeftRail>
         <CentralColumn>
           <CentralScroll>
             {selectedVisit ? (
               <WorkspaceStack>
-                <WorkSurface
+                {editingDocument ? (
+                  <SurfaceCard tone="warning">
+                    <Stack gap={8}>
+                      <div style={{ fontWeight: 600 }}>編集中: {editingDocument.docInfoModel?.title ?? '無題のカルテ'}</div>
+                      <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
+                        変更を保存すると既存のカルテ文書が上書きされます。
+                      </div>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <Button type="button" variant="secondary" onClick={handleCancelEditing}>
+                          編集を終了
+                        </Button>
+                      </div>
+                    </Stack>
+                  </SurfaceCard>
+                ) : null}                <WorkSurface
                   mode={activeSurface}
                   onModeChange={handleToggleSurface}
                   objectiveValue={draft.objective}
@@ -1794,20 +2204,20 @@ export const ChartsPage = () => {
                 <SurfaceCard tone="muted">
                   <Stack gap={12}>
                     <TextField
-                      label="タイトル"
-                      placeholder="例: 再診 / 高血圧"
+                      label="繧ｿ繧､繝医Ν"
+                      placeholder="萓・ 蜀崎ｨｺ / 鬮倩｡蝨ｧ"
                       value={draft.title}
                       onChange={(event) => handleDraftChange('title', event.currentTarget.value)}
                     />
                     <TextArea
                       label="Subjective"
-                      placeholder="患者の主訴や自覚症状"
+                      placeholder="謔｣閠・・荳ｻ險ｴ繧・・隕夂裸迥ｶ"
                       value={draft.subjective}
                       onChange={(event) => handleDraftChange('subjective', event.currentTarget.value)}
                       disabled={!isLockedByMe}
                     />
                     <Button type="button" onClick={handleSave} disabled={!isLockedByMe || lock.isPending}>
-                      保存して終了
+                      菫晏ｭ倥＠縺ｦ邨ゆｺ・
                     </Button>
                     {saveError ? <InlineError>{saveError}</InlineError> : null}
                     {lock.error ? <InlineError>{String(lock.error)}</InlineError> : null}
@@ -1815,7 +2225,7 @@ export const ChartsPage = () => {
                 </SurfaceCard>
                 <SurfaceCard>
                   <Stack gap={16}>
-                    <h3 style={{ margin: 0, fontSize: '1rem' }}>請求モード</h3>
+                    <h3 style={{ margin: 0, fontSize: '1rem' }}>隲区ｱゅΔ繝ｼ繝・/h3>
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                       <Button
                         type="button"
@@ -1824,7 +2234,7 @@ export const ChartsPage = () => {
                         onClick={() => handleBillingModeChange('insurance')}
                         disabled={!canSelectInsurance}
                       >
-                        保険請求
+                        菫晞匱隲区ｱ・
                       </Button>
                       <Button
                         type="button"
@@ -1832,17 +2242,17 @@ export const ChartsPage = () => {
                         variant={billing.mode === 'self-pay' ? 'secondary' : 'ghost'}
                         onClick={() => handleBillingModeChange('self-pay')}
                       >
-                        自費モード
+                        閾ｪ雋ｻ繝｢繝ｼ繝・
                       </Button>
                       <StatusBadge tone={claimSendEnabled ? 'info' : 'warning'}>
-                        CLAIM送信: {claimSendEnabled ? '有効' : '停止'}
+                        CLAIM騾∽ｿ｡: {claimSendEnabled ? '譛牙柑' : '蛛懈ｭ｢'}
                       </StatusBadge>
                     </div>
                     {billing.mode === 'insurance' ? (
                       canSelectInsurance ? (
                         <Stack gap={12}>
                           <SelectField
-                            label="適用保険"
+                            label="驕ｩ逕ｨ菫晞匱"
                             value={billing.insuranceId ?? (insuranceOptions[0]?.id ?? '')}
                             onChange={(event) => updateBilling({ insuranceId: event.currentTarget.value || null })}
                             options={insuranceOptions.map((option) => ({ value: option.id, label: option.label }))}
@@ -1853,38 +2263,38 @@ export const ChartsPage = () => {
                           ) : null}
                         </Stack>
                       ) : (
-                        <InlineMessage>受付情報に保険が紐付いていません。自費モードに切り替えて保存してください。</InlineMessage>
+                        <InlineMessage>蜿嶺ｻ俶ュ蝣ｱ縺ｫ菫晞匱縺檎ｴ蝉ｻ倥＞縺ｦ縺・∪縺帙ｓ縲り・雋ｻ繝｢繝ｼ繝峨↓蛻・ｊ譖ｿ縺医※菫晏ｭ倥＠縺ｦ縺上□縺輔＞縲・/InlineMessage>
                       )
                     ) : (
                       <Stack gap={12}>
                         <TextField
-                          label="自費カテゴリ"
+                          label="閾ｪ雋ｻ繧ｫ繝・ざ繝ｪ"
                           value={billing.selfPayCategory}
                           onChange={(event) => updateBilling({ selfPayCategory: event.currentTarget.value })}
                           disabled={billingDisabled}
                         />
                         <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
                           <TextField
-                            label="数量"
+                            label="謨ｰ驥・
                             value={billing.quantity}
                             onChange={(event) => updateBilling({ quantity: event.currentTarget.value })}
                             disabled={billingDisabled}
                           />
                           <TextField
-                            label="実施者"
+                            label="螳滓命閠・
                             value={billing.performer}
                             onChange={(event) => updateBilling({ performer: event.currentTarget.value })}
                             disabled={billingDisabled}
                           />
                           <TextField
-                            label="ロット番号"
+                            label="繝ｭ繝・ヨ逡ｪ蜿ｷ"
                             value={billing.lotNumber}
                             onChange={(event) => updateBilling({ lotNumber: event.currentTarget.value })}
                             disabled={billingDisabled}
                           />
                         </div>
                         <TextArea
-                          label="自費メモ"
+                          label="閾ｪ雋ｻ繝｡繝｢"
                           value={billing.memo}
                           onChange={(event) => updateBilling({ memo: event.currentTarget.value })}
                           rows={3}
@@ -1899,11 +2309,48 @@ export const ChartsPage = () => {
                     patientId={selectedVisit ? selectedVisit.patientId : null}
                     patientName={selectedVisit?.fullName}
                     karteId={karteQuery.data?.id ?? null}
-                    documents={karteQuery.data?.documents ?? []}
+                    documents={docInfos}
                     mediaItems={mediaItems}
                     mediaLoading={mediaItemsLoading}
                     mediaError={attachmentsQuery.error ?? null}
                   />
+                  <DiagnosisPanel
+                    karteId={karteId}
+                    fromDate={timelineFromDate}
+                    userModelId={session?.userProfile?.userModelId ?? null}
+                    departmentCode={selectedVisit?.departmentCode ?? null}
+                    departmentName={selectedVisit?.departmentName ?? null}
+                    relatedInsurance={selectedInsurance?.guid ?? selectedInsurance?.id ?? null}
+                  />
+                  <ClinicalPanelWrapper>
+                    <ClinicalTabs>
+                      <ClinicalTabButton
+                        type="button"
+                        $active={activeClinicalTab === 'observation'}
+                        onClick={() => setActiveClinicalTab('observation')}
+                      >
+                        隕ｳ蟇溯ｨ倬鹸
+                      </ClinicalTabButton>
+                      <ClinicalTabButton
+                        type="button"
+                        $active={activeClinicalTab === 'claim'}
+                        onClick={() => setActiveClinicalTab('claim')}
+                      >
+                        隲区ｱりｪｿ謨ｴ
+                      </ClinicalTabButton>
+                    </ClinicalTabs>
+                    {activeClinicalTab === 'observation' ? (
+                      <ObservationPanel karteId={karteId} userModelId={session?.userProfile?.userModelId ?? null} />
+                    ) : (
+                      <ClaimAdjustmentPanel
+                        karteId={karteId}
+                        docInfos={docInfos}
+                        session={session}
+                        selectedVisit={selectedVisit}
+                        selectedInsurance={selectedInsurance}
+                      />
+                    )}
+                  </ClinicalPanelWrapper>
                   <OrderSetPanel
                     orderSets={orderSets}
                     onApply={handleApplyOrderSet}
@@ -1987,23 +2434,23 @@ export const ChartsPage = () => {
             ) : (
               <EmptyStateCard tone="muted">
                 <Stack gap={12}>
-                  <h2 style={{ margin: 0, fontSize: '1.1rem' }}>カルテ対象が選択されていません</h2>
+                  <h2 style={{ margin: 0, fontSize: '1.1rem' }}>繧ｫ繝ｫ繝・ｯｾ雎｡縺碁∈謚槭＆繧後※縺・∪縺帙ｓ</h2>
                   <p style={{ margin: 0, color: '#4b5563' }}>
-                    受付患者一覧から対象患者を選択すると、カルテ編集エリアが表示されます。
+                    蜿嶺ｻ俶ぅ閠・ｸ隕ｧ縺九ｉ蟇ｾ雎｡謔｣閠・ｒ驕ｸ謚槭☆繧九→縲√き繝ｫ繝・ｷｨ髮・お繝ｪ繧｢縺瑚｡ｨ遉ｺ縺輔ｌ縺ｾ縺吶・
                   </p>
                   {visitNotFound ? (
-                    <InlineError>指定した受付 ID のカルテが見つかりません。受付一覧で状態をご確認ください。</InlineError>
+                    <InlineError>謖・ｮ壹＠縺溷女莉・ID 縺ｮ繧ｫ繝ｫ繝・′隕九▽縺九ｊ縺ｾ縺帙ｓ縲ょ女莉倅ｸ隕ｧ縺ｧ迥ｶ諷九ｒ縺皮｢ｺ隱阪￥縺縺輔＞縲・/InlineError>
                   ) : null}
                   {visitsQuery.isLoading ? (
-                    <InlineMessage>最新の受付状況を取得しています…</InlineMessage>
+                    <InlineMessage>譛譁ｰ縺ｮ蜿嶺ｻ倡憾豕√ｒ蜿門ｾ励＠縺ｦ縺・∪縺吮ｦ</InlineMessage>
                   ) : null}
                   {visitsQuery.error ? (
-                    <InlineError>受付情報の取得に失敗しました。再読み込みをお試しください。</InlineError>
+                    <InlineError>蜿嶺ｻ俶ュ蝣ｱ縺ｮ蜿門ｾ励↓螟ｱ謨励＠縺ｾ縺励◆縲ょ・隱ｭ縺ｿ霎ｼ縺ｿ繧偵♀隧ｦ縺励￥縺縺輔＞縲・/InlineError>
                   ) : null}
                 </Stack>
                 <EmptyStateActions>
                   <Button type="button" variant="primary" onClick={() => navigate('/reception')}>
-                    受付患者一覧を開く
+                    蜿嶺ｻ俶ぅ閠・ｸ隕ｧ繧帝幕縺・
                   </Button>
                   <Button
                     type="button"
@@ -2012,7 +2459,7 @@ export const ChartsPage = () => {
                       void visitsQuery.refetch();
                     }}
                   >
-                    受付情報を再取得
+                    蜿嶺ｻ俶ュ蝣ｱ繧貞・蜿門ｾ・
                   </Button>
                 </EmptyStateActions>
               </EmptyStateCard>
@@ -2119,3 +2566,17 @@ export const ChartsPage = () => {
     </PageShell>
   );
 };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
