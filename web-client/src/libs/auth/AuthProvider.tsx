@@ -46,6 +46,23 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     [session],
   );
 
+  const hasRole = useCallback(
+    (role: string) => {
+      const normalized = role?.trim().toLowerCase();
+      if (!normalized) {
+        return false;
+      }
+      const roles = session?.userProfile?.roles ?? [];
+      return roles.some((entry) => entry?.toLowerCase() === normalized);
+    },
+    [session],
+  );
+
+  const hasAnyRole = useCallback(
+    (...roles: string[]) => roles.some((role) => hasRole(role)),
+    [hasRole],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       session,
@@ -53,8 +70,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       login,
       logout,
       getAuthHeaders,
+      hasRole,
+      hasAnyRole,
     }),
-    [getAuthHeaders, login, logout, session],
+    [getAuthHeaders, hasAnyRole, hasRole, login, logout, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

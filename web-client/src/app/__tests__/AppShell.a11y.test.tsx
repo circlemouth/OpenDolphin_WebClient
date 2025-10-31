@@ -25,6 +25,8 @@ const mockAuthContext: AuthContextValue = {
   login: async () => mockSession,
   logout: () => undefined,
   getAuthHeaders: () => ({}),
+  hasRole: () => false,
+  hasAnyRole: () => false,
 };
 
 describe('AppShell accessibility', () => {

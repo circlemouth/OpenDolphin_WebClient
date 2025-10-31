@@ -211,7 +211,7 @@ const sidebarTips = [
 
 export const AppShell = () => {
   const navigate = useNavigate();
-  const { session, logout } = useAuth();
+  const { session, logout, hasRole } = useAuth();
   const [sidebarContent, setSidebarContent] = useState<React.ReactNode | null>(null);
   const sidebarController = useMemo(
     () => ({
@@ -224,6 +224,8 @@ export const AppShell = () => {
     }),
     [],
   );
+
+  const canAccessAdministration = hasRole('admin') || hasRole('manager') || hasRole('system');
 
   const userDisplay = useMemo(() => {
     if (session?.userProfile?.displayName) {
@@ -294,6 +296,23 @@ export const AppShell = () => {
             <NavItem to="/orca" aria-disabled>
               ORCA 連携（準備中）
             </NavItem>
+            {canAccessAdministration ? (
+              <Fragment>
+                <NavTitle>Administration</NavTitle>
+                <NavItem to="/administration/users">
+                  ユーザー管理
+                </NavItem>
+                <NavItem to="/administration/patients">
+                  患者データ出力
+                </NavItem>
+                <NavItem to="/administration/system">
+                  システム設定
+                </NavItem>
+                <NavItem to="/administration/stamps">
+                  繧ｹ繧ｿ繝ｳ繝励Λ繧､繝悶Λ繝ｪ
+                </NavItem>
+              </Fragment>
+            ) : null}
           </Navigation>
 
             <Main id="main-content">

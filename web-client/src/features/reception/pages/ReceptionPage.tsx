@@ -21,7 +21,14 @@ import {
   type ReceptionColumnKey,
   type ReceptionViewMode,
 } from '@/features/reception/hooks/useReceptionPreferences';
-import { deleteVisit, updateVisitState } from '@/features/reception/api/visit-api';
+import {
+  deleteVisit,
+  fetchLegacyVisits,
+  registerLegacyVisit,
+  updateLegacyVisitMemo,
+  updateVisitState,
+  type LegacyVisitSearchParams,
+} from '@/features/reception/api/visit-api';
 
 type QueueStatus = 'waiting' | 'calling' | 'inProgress';
 type StatusFilter = 'all' | QueueStatus;
@@ -466,6 +473,48 @@ export const ReceptionPage = () => {
     },
   });
 
+  const legacyMemoMutation = useMutation({
+    mutationFn: async ({ visitId, memo }: { visitId: number; memo: string }) => {
+      await updateLegacyVisitMemo(visitId, memo);
+      return { visitId, memo };
+    },
+    onSuccess: ({ visitId, memo }) => {
+      queryClient.setQueryData<PatientVisitSummary[] | undefined>(patientVisitsQueryKey, (current) => {
+        if (!current) {
+          return current;
+        }
+        return current.map((visit) =>
+          visit.visitId === visitId
+            ? {
+                ...visit,
+                memo,
+                raw: {
+                  ...visit.raw,
+                  memo,
+                  patientModel: visit.raw.patientModel
+                    ? {
+                        ...visit.raw.patientModel,
+                        memo,
+                      }
+                    : visit.raw.patientModel,
+                },
+              }
+            : visit,
+        );
+      });
+    },
+  });
+
+  const legacyRegisterMutation = useMutation({
+    mutationFn: async (visit: PatientVisitSummary['raw']) => {
+      await registerLegacyVisit(visit);
+      return visit.id ?? null;
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: patientVisitsQueryKey });
+    },
+  });
+
   const handleSubmitStateUpdate = async () => {
     if (!manageTarget) {
       return;
@@ -473,7 +522,7 @@ export const ReceptionPage = () => {
     setManageError(null);
     try {
       await visitStateMutation.mutateAsync({ visitId: manageTarget.visitId, nextState: desiredState });
-    } catch (error) {
+    } catch {
       // already handled in onError
     }
   };
@@ -485,20 +534,54 @@ export const ReceptionPage = () => {
     setManageError(null);
     try {
       await visitDeleteMutation.mutateAsync(manageTarget.visitId);
-    } catch (error) {
+    } catch {
       // already handled
     }
   };
 
   const handleCloseManageDialog = () => {
-    if (visitStateMutation.isPending || visitDeleteMutation.isPending) {
+    if (visitStateMutation.isPending || visitDeleteMutation.isPending || legacyMemoMutation.isPending || legacyRegisterMutation.isPending) {
       return;
     }
     setManageTargetId(null);
     setManageError(null);
   };
 
-  const isManageProcessing = visitStateMutation.isPending || visitDeleteMutation.isPending;
+  const isManageProcessing =
+    visitStateMutation.isPending ||
+    visitDeleteMutation.isPending ||
+    legacyMemoMutation.isPending ||
+    legacyRegisterMutation.isPending;
+
+  const handleLegacyMemoSubmit = async (memo: string) => {
+    if (!manageTarget) {
+      throw new Error('受付情報が見つかりません。');
+    }
+    try {
+      await legacyMemoMutation.mutateAsync({ visitId: manageTarget.visitId, memo });
+    } catch (error) {
+      throw new Error(extractErrorMessage(error));
+    }
+  };
+
+  const handleLegacyFetchVisits = async (params: LegacyVisitSearchParams) => {
+    try {
+      return await fetchLegacyVisits(params);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error));
+    }
+  };
+
+  const handleLegacyReRegister = async () => {
+    if (!manageTarget) {
+      throw new Error('受付情報が見つかりません。');
+    }
+    try {
+      await legacyRegisterMutation.mutateAsync(manageTarget.raw);
+    } catch (error) {
+      throw new Error(extractErrorMessage(error));
+    }
+  };
 
   return (
     <PageContainer>
@@ -1010,6 +1093,9 @@ export const ReceptionPage = () => {
           isUpdating={visitStateMutation.isPending}
           isDeleting={visitDeleteMutation.isPending}
           errorMessage={manageError}
+          onLegacyMemoSubmit={handleLegacyMemoSubmit}
+          onLegacyFetchVisits={handleLegacyFetchVisits}
+          onLegacyReRegister={handleLegacyReRegister}
         />
       ) : null}
     </PageContainer>

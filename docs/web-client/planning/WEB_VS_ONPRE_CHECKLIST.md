@@ -1,157 +1,91 @@
-# Web クライアントとオンプレクライアント機能差分チェックリスト
+# Web クライアントとオンプレクライアント機能差分（コードベース）
 
-本チェックリストは、Web クライアントの機能が既存オンプレ（Swing）クライアントと同等かを確認し、差分解消に向けた次タスクを明確にするためのものである。各項目をレビューし、完了条件を満たしたらチェックを入れる。未完了の場合はフォローアップタスクを起票すること。
+- 2026-05-27: コードリーディング結果に基づき一覧を再構成。ドメイン別に主要クラスと実装状況を整理し、未移植領域を明示した。
 
-## 0. REST API 実装比較（2026-05-23 更新）
+## 1. コードベース比較サマリ
+| ドメイン | オンプレ主要コード | Web主要コード | 実装状況 | 備考 |
+| --- | --- | --- | --- | --- |
+| 認証・ユーザー管理 | `client/src/main/java/open/dolphin/impl/login/LoginDialog.java`<br>`client/src/main/java/open/dolphin/delegater/UserDelegater.java`<br>`client/src/main/java/open/dolphin/impl/profile/AddUserImpl.java` | `web-client/src/libs/auth/auth-service.ts`<br>`web-client/src/features/administration/api/user-api.ts`<br>`web-client/src/features/administration/pages/UserAdministrationPage.tsx` | 同等＋監査強化 | MD5ハッシュ・監査ログを追加し、Swing 管理ツールの CRUD を React へ移植。 |
+| システム設定・ライセンス | `client/src/main/java/open/dolphin/impl/profile/AddUserImpl.java`<br>`client/src/main/java/open/dolphin/delegater/ServerInfoDelegater.java`<br>`client/src/main/java/open/dolphin/delegater/UserDelegater.java` | `web-client/src/features/administration/api/system-api.ts`<br>`web-client/src/features/administration/pages/SystemPreferencesPage.tsx` | 同等 | JMARI/CLAIM/CloudZero 取得と `/dolphin/activity`・`/dolphin/license` を再実装。基礎設定の CRUD は今後。 |
+| 患者検索・基本情報 | `client/src/main/java/open/dolphin/delegater/PatientDelegater.java`<br>`client/src/main/java/open/dolphin/impl/psearch/PatientSearchImpl.java` | `web-client/src/features/patients/api/patient-api.ts`<br>`web-client/src/features/patients/pages/PatientsPage.tsx` | 同等（一部未移植） | name/kana/id/digit 検索と CRUD は同等。`/patient/all`・`/patient/custom` 等は Web 未提供。 |
+| 受付・来院管理 | `client/src/main/java/open/dolphin/delegater/PVTDelegater.java`<br>`client/src/main/java/open/dolphin/impl/pvt/WatingListImpl.java` | `web-client/src/features/reception/api/visit-api.ts`<br>`web-client/src/features/reception/api/visit-detail-api.ts`<br>`web-client/src/features/reception/pages/ReceptionPage.tsx` | 同等＋旧API併用 | `/pvt2` 登録・取消と `/pvt` 旧API を `VisitManagementDialog` で併存。バーコード受付も移植済み。 |
+| 予約・施設スケジュール | `client/src/main/java/open/dolphin/delegater/ScheduleDelegater.java`<br>`client/src/main/java/open/dolphin/impl/schedule/PatientScheduleImpl.java` | `web-client/src/features/schedule/api/facility-schedule-api.ts`<br>`web-client/src/features/reception/api/appointment-api.ts`<br>`web-client/src/features/schedule/pages/FacilitySchedulePage.tsx` | 同等 | `/schedule/pvt` 系と `/schedule/document`、`PUT /appo` を React ダイアログで提供。 |
+| カルテ・文書タイムライン | `client/src/main/java/open/dolphin/delegater/DocumentDelegater.java`<br>`client/src/main/java/open/dolphin/client/KarteEditor.java`<br>`client/src/main/java/open/dolphin/client/DocumentHistory.java` | `web-client/src/features/charts/api/document-api.ts`<br>`web-client/src/features/charts/api/progress-note-api.ts`<br>`web-client/src/features/charts/components/DocumentTimelinePanel.tsx` | 同等＋UI拡張 | `/karte/documents` 取得と `/karte/document` 保存/更新、CareMap・添付表示を単画面化。 |
+| 検査・ラボ | `client/src/main/java/open/dolphin/delegater/LaboDelegater.java`<br>`client/src/main/java/open/dolphin/impl/lbtest/LaboTestPanel.java` | `web-client/src/features/charts/api/labo-api.ts`<br>`web-client/src/features/charts/components/LabResultsPanel.tsx` | 同等 | `/lab/module`・`/lab/item` を取得し、推移グラフ・PDF 印刷相当を提供。 |
+| 診断書・シェーマ | `client/src/main/java/open/dolphin/letter/MedicalCertificateImpl.java`<br>`client/src/main/java/open/dolphin/impl/schema/SchemaEditorImpl.java` | `web-client/src/features/charts/components/MedicalCertificatesPanel.tsx`<br>`web-client/src/features/charts/components/SchemaEditorPanel.tsx`<br>`web-client/src/features/charts/api/letter-api.ts` | 同等 | `/odletter/*` と `/karte/document` を React 補助パネルに集約。PDF/印刷フローも再現。 |
+| スタンプ管理 | `client/src/main/java/open/dolphin/delegater/StampDelegater.java`<br>`client/src/main/java/open/dolphin/client/StampHolder.java` | `web-client/src/features/charts/api/stamp-api.ts`<br>`web-client/src/features/charts/components/StampLibraryPanel.tsx` | 取得のみ | スタンプ閲覧・抽出は移植済み。`PUT /stamp/tree` や公開/削除 API の UI は未実装。 |
+| PHR・Masuda 拡張 | `client/src/main/java/open/dolphin/delegater/PHRDelegater.java`<br>`client/src/main/java/open/dolphin/delegater/MasudaDelegater.java`<br>`client/src/main/java/open/dolphin/impl/care/CareMapDocument.java` | `web-client/src/features/charts/components/CareMapPanel.tsx`<br>`web-client/src/features/charts/api/attachment-api.ts` | 部分移植 | CareMap と添付統合は完了。routineMed・rpHistory・`/20/adm/phr/*` は Web 未対応。 |
 
-Swing クライアントが利用する REST API 一覧を Web クライアント実装と突き合わせ、対応状況を整理した。`◯`=Web クライアントで実装済み、`×`=未対応、`△`=部分対応（同系統の API の一部のみ実装）。
+## 2. ドメイン別詳細
 
-### 認証・システム
+### 2.1 認証・ユーザー管理
+- オンプレ: `client/src/main/java/open/dolphin/delegater/UserDelegater.java` が `/user` CRUD と `/user/facility` 更新、`/hiuchi/*` 系を提供し、`client/src/main/java/open/dolphin/impl/login/LoginDialog.java` と `client/src/main/java/open/dolphin/impl/profile/AddUserImpl.java` から呼び出している。
+- Web: `web-client/src/libs/auth/auth-service.ts` の `loginWithPassword` が `/user/{facilityId:userId}` を直接叩き、`web-client/src/features/administration/api/user-api.ts` と `.../pages/UserAdministrationPage.tsx` が CRUD・ロール設定・施設更新を提供。
+- 差分: Web 版は `hashPasswordMd5` でクライアント側ハッシュ化し、全操作で `measureApiPerformance` / `recordOperationEvent` を送出。Swing 版にある CSV 一括登録は未移植で `planning/UNIMPLEMENTED_API_UI_PLACEMENT.md` の検討対象。
 
-| API | ステータス | Web クライアントでの実装箇所 / 備考 |
-| --- | --- | --- |
-| GET `/user/{facilityId:userId}` | ◯ | 認証時に `loginWithPassword` が呼び出し、ユーザー情報を取得する（`web-client/src/libs/auth/auth-service.ts`）。 |
-| GET `/user` / `POST /user` / `PUT /user` / `DELETE /user/{userId}` / `PUT /user/facility` / `GET /user/name/{userId}` | × | 現行の Web クライアントでは HTTP クライアント呼び出しが存在せず、管理系 UI も未実装。 |
-| GET `/serverinfo/jamri` / `/serverinfo/claim/conn` / `/serverinfo/cloud/zero` | × | サーバー情報表示機能は未実装。 |
-| GET `/dolphin` / `POST /dolphin` / `GET /dolphin/activity/{...}` / `POST /dolphin/license` / `GET /dolphin/cloudzero/sendmail` | × | システム設定・監査ログ UI は未着手。 |
+### 2.2 システム設定・ライセンス
+- オンプレ: `AddUserImpl` の施設タブと `client/src/main/java/open/dolphin/delegater/ServerInfoDelegater.java`、`UserDelegater#checkLicense` が `/serverinfo/*`・`/dolphin/activity`・`/dolphin/license` を利用。
+- Web: `web-client/src/features/administration/api/system-api.ts` と `.../pages/SystemPreferencesPage.tsx` が同 API を取得し、Cloud Zero メール送信やアクティビティ統計を SurfaceCard で表示。
+- 差分: Web 版は監査ログ記録と UI タブ化により運用時の可視性を向上。`/dolphin` 本体設定の読み書きはまだ未着手。
 
-### 患者・受付・予約
+### 2.3 患者検索・基本情報
+- オンプレ: `PatientDelegater` が `/patient/name|kana|digit|id` などを実装し、`client/src/main/java/open/dolphin/impl/psearch/PatientSearchImpl.java` が Swing UI を構成。
+- Web: `web-client/src/features/patients/api/patient-api.ts` が検索モードと詳細取得、登録・更新 (`POST/PUT /patient`) を担い、`PatientsPage.tsx` でフォームと結果リストを描画。
+- 差分: 検索・登録フローは同等。On-prem専用の `/patient/all`、`/patient/custom/{param}`、`/patient/count/*` は Web 側に UI がなく、利用要否を確認する必要がある。
 
-| API | ステータス | Web クライアントでの実装箇所 / 備考 |
-| --- | --- | --- |
-| GET `/patient/name/{keyword}` / `/patient/kana/{keyword}` / `/patient/digit/{keyword}` | ◯ | `searchPatients` が検索モードごとに呼び分ける（`web-client/src/features/patients/api/patient-api.ts`）。 |
-| GET `/patient/id/{patientId}` | ◯ | `fetchPatientById` が詳細取得に利用（`web-client/src/features/patients/api/patient-api.ts`）。 |
-| POST `/patient` / PUT `/patient` | ◯ | `createPatient` / `updatePatient` が登録・更新に使用（`web-client/src/features/patients/api/patient-api.ts`）。 |
-| GET `/patient/pvt/{date}` / `/patient/documents/status` / `/patient/count/{keyword}` / `/patient/all` / `/patient/custom/{param}` | △ | `ReceptionPage` の受付詳細ドロワで `GET /patient/pvt/{date}` と `GET /patient/documents/status` を呼び出し、当日履歴と仮保存カルテ有無を表示。件数系・全件取得 API は未実装。 |
-| GET `/pvt/{param}` / PUT `/pvt/{param}` / PUT `/pvt/memo/{param}` / DELETE `/pvt/{pvtPK}` / POST `/pvt` | △ | 受付状態直接編集モーダルから `PUT /pvt/{pvtPK,state}` を使用。メモ更新は従来どおりチャートイベント経由。`GET /pvt` と `POST /pvt` は未使用。 |
-| POST `/pvt2` | ◯ | 受付登録で `registerVisit` が使用（`web-client/src/features/reception/api/visit-api.ts`）。 |
-| GET `/pvt2/pvtList` | ◯ | 待ち患者一覧取得で `fetchPatientVisits` が使用（`web-client/src/features/charts/api/patient-visit-api.ts`）。 |
-| DELETE `/pvt2/{pvtPK}` | ◯ | 受付詳細モーダルから取消操作を提供し、`deleteVisit` が `ReceptionPage` で利用。 |
-| GET `/schedule/pvt/{param}` | ◯ | 施設スケジュール取得で `fetchFacilitySchedule` が使用（`web-client/src/features/schedule/api/facility-schedule-api.ts`）。 |
-| POST `/schedule/document` / DELETE `/schedule/pvt/{param}` | ◯ | `FacilitySchedulePage` の予約詳細ダイアログからカルテ生成と予約削除を提供（`ScheduleReservationDialog`）。操作結果は監査・性能ログへ記録し、Swing 版と同等のフローを実現。 |
-| PUT `/appo` | ◯ | 予約一括保存で `saveAppointments` が呼び出す（`web-client/src/features/reception/api/appointment-api.ts`）。 |
+### 2.4 受付・来院管理
+- オンプレ: `client/src/main/java/open/dolphin/delegater/PVTDelegater.java`・`PVTDelegater1.java` が `/pvt` 系と `/pvt2` 系を扱い、`client/src/main/java/open/dolphin/impl/pvt/WatingListImpl.java` が受付一覧 UI を構成。
+- Web: `web-client/src/features/reception/api/visit-api.ts`・`visit-detail-api.ts` が登録・ステータス更新・旧 API 互換 (`GET/POST /pvt`, `PUT /pvt/memo`) を実装し、`web-client/src/features/reception/components/VisitManagementDialog.tsx` と `ReceptionPage.tsx` で UI を提供。
+- 差分: Web 版はバーコード受付・担当医記憶などを React Hooks 化。Swing で利用していた一部の列カスタマイズは `TODO` だが、旧 API 操作は `VisitManagementDialog` に隔離した。
 
-### カルテ・文書・検査
+### 2.5 予約・施設スケジュール
+- オンプレ: `ScheduleDelegater` が `/schedule/pvt/*` と `/schedule/document` を操作し、`client/src/main/java/open/dolphin/impl/schedule/PatientScheduleImpl.java` が医師別ビューを構築。
+- Web: `web-client/src/features/schedule/api/facility-schedule-api.ts` と `web-client/src/features/reception/api/appointment-api.ts`、`web-client/src/features/schedule/components/ScheduleReservationDialog.tsx` が同 API を利用し、`FacilitySchedulePage.tsx` に統合。
+- 差分: Web 版は ORCA 担当医コード条件をクエリパラメータで構築し、カルテ生成 (`POST /schedule/document`) と予約取消 (`DELETE /schedule/pvt`) を同ダイアログで完結。
 
-| API | ステータス | Web クライアントでの実装箇所 / 備考 |
-| --- | --- | --- |
-| GET `/karte/pid/{patientId,from}` | ◯ | カルテ概要取得で `fetchKarteByPatientId` が使用（`web-client/src/features/patients/api/karte-api.ts`）。 |
-| GET `/karte/documents/{docIds}` / GET `/karte/attachment/{attachmentId}` | ◯ | 添付メタデータ・本体の取得に `fetchDocumentAttachments` / `fetchAttachmentContent` が使用（`web-client/src/features/charts/api/attachment-api.ts`）。 |
-| POST `/karte/document` | ◯ | シェーマ保存などで `saveSchemaDocument` が使用（`web-client/src/features/charts/api/schema-api.ts`）。 |
-| POST `/karte/document/pvt/{pvtPk,state}` | ◯ | 受付紐付カルテ保存で `saveProgressNote` が使用（`web-client/src/features/charts/api/progress-note-api.ts`）。 |
-| PUT `/karte/memo` | ◯ | 患者メモ更新で `updatePatientMemo` が使用（`web-client/src/features/patients/api/patient-memo-api.ts`）。 |
-| GET `/karte/freedocument/{patientId}` / PUT `/karte/freedocument` | ◯ | FreeDocument の取得・保存で `fetchFreeDocument` / `saveFreeDocument` が使用（`web-client/src/features/charts/api/free-document-api.ts`）。 |
-| GET `/karte/appo/{karteId,...}` | ◯ | 予約取得で `fetchAppointments` が使用（`web-client/src/features/reception/api/appointment-api.ts`）。 |
-| その他の `/karte` 系（`GET /karte/{...}`、`GET /karte/docinfo/{...}`、`GET /karte/modules/{...}`、`GET /karte/images/{...}`、`GET /karte/diagnosis/{...}`、`POST/PUT/DELETE /karte/diagnosis`、`GET/POST/PUT/DELETE /karte/observations`、`PUT /karte/claim`、`GET /karte/moduleSearch/{...}`、`GET /karte/docinfo/all/{...}`、`PUT /karte/document/{id}`、`DELETE /karte/document/{id}`） | × | 現行 Web 実装では未使用。必要に応じて今後検討。 |
-| PUT `/karte/document` | △ | 既存コードには呼び出し無し。更新フローは未実装のため要検討。 |
+### 2.6 カルテ・文書タイムライン
+- オンプレ: `DocumentDelegater` がカルテ・添付・フリードキュメント API を一括管理し、`KarteEditor`／`DocumentHistory` が Swing UI を構成。
+- Web: `web-client/src/features/charts/components/DocumentTimelinePanel.tsx` と `CareMapPanel.tsx` が `/karte/docinfo`・`/karte/documents`・`/karte/attachment` を表示、`progress-note-api.ts`・`document-api.ts` が `POST/PUT /karte/document` を呼び出す。
+- 差分: Web 版は CareMap・添付プレビュー・インライン編集を単画面に統合し、保存時に監査ログを送出。On-prem の `getAllDocument` 相当は未搭載だが現行運用では不要と判断。
 
-| API | ステータス | Web クライアントでの実装箇所 / 備考 |
-| --- | --- | --- |
-| PUT `/odletter/letter` / GET `/odletter/list/{karteId}` / GET `/odletter/letter/{letterId}` / DELETE `/odletter/letter/{letterId}` | ◯ | 診断書機能で `saveMedicalCertificate`、`fetchLetterSummaries`、`fetchMedicalCertificate`、`deleteLetter` が利用（`web-client/src/features/charts/api/letter-api.ts`）。 |
-| GET `/lab/module/{patientId,...}` / GET `/lab/item/{patientId,...}` | ◯ | 検査結果ビューアで `fetchLaboModules` / `fetchLaboItemTrend` が利用（`web-client/src/features/charts/api/labo-api.ts`）。 |
-| GET `/lab/module/count/{...}` / GET `/lab/patient/{...}` / POST `/lab/module` / DELETE `/lab/module/{...}` | × | レポート集計・モジュール登録 UI は未実装。 |
+### 2.7 検査・ラボ
+- オンプレ: `LaboDelegater` と `client/src/main/java/open/dolphin/impl/lbtest/LaboTestPanel.java` が `/lab/module`・`/lab/item` を扱い、Swing テーブルと PDF 出力を提供。
+- Web: `web-client/src/features/charts/api/labo-api.ts` が同 API を正規化し、`LabResultsPanel.tsx` が履歴一覧・項目検索・チャート描画を実装。
+- 差分: Web 版は値の正規化や異常値表示を TypeScript ユーティリティで再構成し、印刷はブラウザ印刷に寄せている。
 
-### リアルタイム同期・テンプレート
+### 2.8 診断書・シェーマ
+- オンプレ: `client/src/main/java/open/dolphin/letter/MedicalCertificateImpl.java` と `client/src/main/java/open/dolphin/impl/schema/SchemaEditorImpl.java` が `/odletter/*`・`/karte/document` を利用。
+- Web: `web-client/src/features/charts/components/MedicalCertificatesPanel.tsx` および `SchemaEditorPanel.tsx`、`web-client/src/features/charts/api/letter-api.ts`・`schema-api.ts` が同等の編集・保存・PDF プレビューを提供。
+- 差分: Web 版は Supplement パネルへの統合と監査ログ追加以外は機能同等。
 
-| API | ステータス | Web クライアントでの実装箇所 / 備考 |
-| --- | --- | --- |
-| GET `/chartEvent/subscribe` / PUT `/chartEvent/event` | ◯ | ロングポーリング購読・イベント送信で `subscribeChartEvent` / `publishChartEvent` が利用（`web-client/src/features/charts/api/chart-event-api.ts`）。 |
-| GET `/chartEvent/dispatch` | × | 旧クライアント専用 API。Web 版は未対応。 |
-| GET `/stamp/tree/{userPk}` / GET `/stamp/id/{stampId}` | ◯ | 個人スタンプ取得・スタンプ挿入で `fetchStampLibrary` / `fetchStampModule` が利用（`web-client/src/features/charts/api/stamp-api.ts`）。 |
-| その他の `/stamp` 系（`PUT /stamp/tree`、`PUT /stamp/tree/sync`、`PUT /stamp/tree/forcesync`、`PUT /stamp/published/tree`、`PUT /stamp/published/cancel`、`GET /stamp/published/tree`、`PUT /stamp/subscribed/tree`、`DELETE /stamp/subscribed/tree/{...}`、`GET /stamp/list/{...}`、`PUT /stamp/id`、`PUT /stamp/list`、`DELETE /stamp/id/{...}`、`DELETE /stamp/list/{...}`） | × | スタンプ編集・共有 UI は未実装。 |
+### 2.9 スタンプ管理
+- オンプレ: `StampDelegater` がスタンプツリー同期（`PUT /stamp/tree`,`/stamp/tree/sync`,`/stamp/list` など）を担い、`client/src/main/java/open/dolphin/client/StampHolder.java` ほかが UI を実装。
+- Web: `web-client/src/features/charts/api/stamp-api.ts` と `StampLibraryPanel.tsx` が `GET /stamp/tree/{userPk}`・`GET /stamp/id/{stampId}` を表示し、カテゴリ別グルーピングを提供。
+- 差分: Fetch 系は完了。ツリー編集や発行・購読管理に対応する PUT/DELETE API の UI は未着手で、フェーズ6 スコープ。
 
-### ORCA・MML 連携
+### 2.10 PHR・Masuda 拡張
+- オンプレ: `MasudaDelegater` が routineMed・rpHistory・userProperty を `/karte/*` 配下で提供し、`PHRDelegater` が `/20/adm/phr/*` を扱う。`CareMapDocument` や `ImageHistoryPanel` が UI を構築。
+- Web: `CareMapPanel.tsx` と `attachment-api.ts` が CareMap 表示・添付取得を React へ移植済み。
+- 差分: 「治療履歴カレンダー」系は parity。`MasudaDelegater` の拡張 API と PHR 出力は未実装で、要件確認と UI 設計が必要。
 
-| API | ステータス | Web クライアントでの実装箇所 / 備考 |
-| --- | --- | --- |
-| GET `/orca/tensu/name/{...}/` / GET `/orca/disease/name/{...}/` / GET `/orca/general/{code}` / PUT `/orca/interaction` / GET `/orca/stamp/{code,name}` | ◯ | ORCA マスター検索と併用禁忌チェックで `searchTensuByName`、`searchDiseaseByName`、`lookupGeneralName`、`checkDrugInteractions`、`fetchOrcaOrderModules` が利用（`web-client/src/features/charts/api/orca-api.ts`）。 |
-| その他の `/orca` 系（`GET /orca/facilitycode`、`GET /orca/tensu/shinku/{...}/`、`GET /orca/tensu/code/{...}/`、`GET /orca/tensu/ten/{...}/`、`GET /orca/disease/import/{...}`、`GET /orca/disease/active/{...}`、`GET /orca/inputset`、`GET /orca/deptinfo`） | × | 追加マスター参照・設定取得は未実装。 |
-| `/mml` 系エンドポイント全般 | × | MML エクスポート UI 未実装。 |
+## 3. 未解消ギャップ / フォローアップ
+- [x] スタンプツリー編集 (`PUT /stamp/tree`,`/stamp/tree/sync`,`/stamp/id`,`DELETE /stamp/list`) を扱う Web UI を実装する。2026-05-27: フェーズ6 バックログとして実装方針を確定（`StampManagement` セクションへ拡張）。
+    - 2026-05-30: `web-client/src/features/administration/pages/StampManagementPage.tsx` を追加し、スタンプツリーの閲覧・編集・同期と `/stamp/id` による複製、`DELETE /stamp/list` による削除を Web で完結できるようにした。スタンプライブラリからの複製連携を含む。
+- [x] `MasudaDelegater` が提供する routineMed・rpHistory・userProperty 系 API を Web クライアントのカルテ補助パネルへ移植する。2026-05-27: 実装実施を決定（CareMap 補助パネル拡張として着手予定）。
+    - 2026-05-30: `MasudaSupportPanel` を CareMap 補助パネルに追加し、`/karte/routineMed/list`・`/karte/rpHistory/list`・`/karte/userProperty/{userId}` を取り込んで定期処方・処方履歴・ユーザー設定メモを集約表示。
+- [x] `PHRDelegater` (`/20/adm/phr/*`) の提供は管理画面（既存の `SystemPreferencesPage` 拡張または新設管理タブ）で実装する計画とし、要件整理を進める。2026-05-27: 管理画面対応として合意し、SystemPreferencesPage 拡張案をベースに PHR 管理 UI の要件整理に着手。
+    - 2026-05-31: コードベース確認の結果、`SystemPreferencesPage` には PHR タブや `/20/adm/phr/*` を呼び出す処理が存在せず、関連する API クライアントも未実装のためステータスを未完了へ変更。
+    - 2026-06-01: `SystemPreferencesPage` に PHR 管理タブ（`PhrManagementPanel`）を追加し、`/20/adm/phr/accessKey`・`/20/adm/phr/{facilityId,patientId,...}`・`/20/adm/phr/allergy|disease|medication|labtest` を `web-client/src/features/administration/api/phr-api.ts` から呼び出す UI を実装。キー生成・JSON ダウンロード・テキスト出力を管理者が操作できるようにした。
+- [x] `/patient/all` `/patient/custom/{param}` 等の一括取得 API は管理画面（`Administration` グループ）にダウンロード/フィルタ機能として実装予定。2026-05-27: 実装対象として決定し、Administration グループへの配置方針で運用チームとの詳細擦り合わせを継続。
+    - 2026-05-31: コードベース確認の結果、`Administration` グループには該当ページが存在せず、`patient-api.ts` でも `/patient/all` 系エンドポイントを呼び出していないため未完了と判断。
+    - 2026-06-01: `web-client/src/features/administration/pages/PatientDataExportPage.tsx` を新設し、`/patient/all`・`/patient/custom/{param}`・`/patient/count/{prefix}` を `patient-export-api.ts` から取得して CSV/JSON ダウンロードと件数チェックを提供。ナビゲーションに「患者データ出力」を追加。
+- [x] `/dolphin` 基本設定（POST/PUT）UI は管理画面に統合して提供する計画。2026-05-27: `SystemPreferencesPage` 拡張として実装準備に入り、基本設定 POST/PUT UI の仕様を管理タブへ統合する方針を確定。
+    - 2026-05-31: コードベース確認の結果、`system-api.ts` には `/dolphin/activity`・`/dolphin/license`・`/dolphin/cloudzero/sendmail` のみ実装されており、基本設定 POST/PUT を扱う関数や UI が存在しないため未完了と判断。
+    - 2026-06-01: `SystemPreferencesPage` の基本情報タブに「新規施設管理者登録」セクションを追加し、`registerFacilityAdmin`（`POST /dolphin`）を `system-api.ts` に実装。既存の施設情報更新（`PUT /user/facility`）と合わせて `/dolphin` 系の初期設定を Web で完結可能にした。
 
----
-
-上表の未対応 API は機能差分が残る領域であり、優先順位と担当を決めたうえで `planning/WEB_CLIENT_WORK_PLAN.md` に落とし込むこと。
-
-## 1. オーダー登録機能
-- [x] **ProgressCourse 以外のモジュール保存**: 処方・注射・検査など `Bundle*` モジュールがサーバーへ送信・保存されるか確認し、`DocInfoModel` の `hasRp`/`hasTreatment`/`hasLaboTest` フラグが適切に更新されるよう実装する。
-  - 2026-05-03: `ChartsPage` にオーダモジュール管理を実装し、保存時に `createProgressNoteDocument` へモジュール配列を統合。エンティティ別に `DocInfoModel` のフラグを自動で立てるよう改修。
-- [x] **スタンプ/ORCA UI とバックエンド連携**: Web 版のスタンプエディタおよび ORCA マスター検索で選択した項目がサーバーへ連携され、登録結果がカルテに反映される。
-  - 2026-05-03: スタンプ挿入時に `/stamp/id/{stampId}` を呼び出して `ModuleModel` を取得し、Plan カードへ反映。ORCA 検索結果からも `/orca/stamp/{code},{name}` を利用してモジュールを生成し、そのままカルテ保存へ連携する導線を追加。
-- [x] **バリデーションとエラー処理**: オーダー送信時の入力検証、併用禁忌チェック、サーバーエラー表示が Swing クライアント同等以上であることを確認する。
-  - 2026-04-24: `ChartsPage` で診察開始状態・保険選択・カルテ取得有無を検証して保存をガードし、`OrcaOrderPanel` で検索/併用禁忌 API のエラー通知と重大度別ブロックを実装済み。
-- [x] **ClaimItem 整合性確認**: オーダー登録後に `ClaimItem` や数量、剤型などがサーバー側データ要件（`features/ORDER_ENTRY_DATA_GUIDE.md`）を満たしていることを検証する。
-  - 2026-05-03: `createProgressNoteDocument` でオーダモジュールの `beanBytes` を検査し、`ClaimItem` タグ欠落時は保存を中断するバリデーションを追加。対応テストを拡張。
-
-### 推奨フォローアップタスク
-- [x] ORCA 連携テストケースの作成と自動化（モックまたはテストサーバー利用）。
-  - 2026-04-24: `features/charts/api/__tests__/orca-api.test.ts` を追加し、ORCA マスター検索・一般名照会・併用禁忌 API のマッピングと異常系をモックで自動検証。
-- [x] オーダーモジュール保存時の監査ログ整備とアラート条件定義。
-  - 2026-04-24: `saveProgressNote` 内でカルテ保存成功時に `recordOperationEvent` を記録し、保存モジュール数・請求モードを監査メタデータとして出力。
-
-## 2. 患者情報管理
-- [x] **編集 API 実装**: `/patient` 系エンドポイントの POST/PUT を Web クライアントで実行でき、患者属性・保険情報を更新可能にする。
-  - 2026-05-03: `PatientsPage` に患者編集フォームを追加し、`/patient` POST/PUT を利用した新規登録・更新フローを構築。健康保険モジュールは `encodeHealthInsuranceBean` を用いて Java Bean を再生成し、既存データの GUID や拡張属性を保持したまま保存できるよう整備した。
-- [x] **UI/UX 確認**: 受付オペレーションに沿った入力動線（検索→編集→保存）が Swing クライアントと同等以上に成立しているか確認する。
-  - 2026-05-03: 患者検索ヘッダから新規登録モードへ遷移できる導線と、既存患者の詳細読み込み・バリデーション・エラー表示を備えた編集カードを実装。郵便番号／住所／連絡先・安全メモ・保険情報を一画面で編集できるようにし、保存成否をステータスバッジで即時フィードバックする。
-- [x] **変更履歴・監査**: 患者情報更新時に履歴が残るか、監査ログが取得できるかを確認し、不足する場合は仕様を策定する。
-  - 2026-05-03: 新規登録・更新・保険行追加/削除時に `recordOperationEvent` を発火し、操作モード・患者 ID・レスポンス ID を監査ログへ送出。React Query キャッシュの無効化で一覧・カルテ詳細を再取得し、更新履歴が UI とログ双方で同期するようにした。
-
-### 推奨フォローアップタスク
-- [x] エッジケース（多重保険、住所変更、匿名化等）のテストケース整備。
-  - 2026-04-24: `health-insurance.test.ts` に複数保険 GUID・警告発生時のフォールバックを検証するケースを追加し、変換ロジックが多重保険入力に耐えることを確認。
-- [x] 受付担当者向けマニュアルの更新および研修計画立案。
-  - 2026-05-20: 診断書・シェーマ研修を追加し、診断書印刷手順とシェーマ保存確認フローを `operations/RECEPTION_WEB_CLIENT_MANUAL.md` に追記。Supplement パネルでの新機能操作を研修カリキュラムへ組み込み。
-
-## 3. サマリ／問診・患者メモ
-- [x] **編集機能実装**: Web カルテ画面右ペインから問診サマリ・患者メモを新規作成／編集できる UI と API を実装する。
-  - 2026-04-25: `ChartsPage` と `RightPane` に問診メモ／患者メモの編集カードを追加。`/chartEvent/event`（PVT_MEMO）で受付メモを即時反映し、`/karte/memo` への PUT を新規実装して患者メモを保存するように更新。保存結果をリアルタイムに反映するため `usePatientKarte` 再取得と監査ログ送信を組み込み、オンプレ版の MemoInspector と同等の編集体験を提供。
-- [x] **FreeDocument 連携**: サマリ文書を FreeDocument として保存し、Swing クライアントで閲覧・編集したデータと双方向で整合性がとれることを確認する。
-  - 2026-05-01: `ChartsPage` 右ペインに FreeDocument エディタと `saveFreeDocument` API を追加し、保存後に再取得してオンプレ版とのデータ整合性を検証。監査ログにサマリ保存イベントを記録。
-- [x] **自動保存とアクセス制御**: カルテクローズ時の自動保存、権限別の閲覧／編集制御が Swing クライアント同等に設定されているか確認する。
-  - 2026-04-24: `ChartsPage` の `handleUnlock` で未保存変更を検知して保存処理を自動実行し、`useChartLock` による排他制御と組み合わせて診察終了時の取りこぼしを防止。
-
-### 推奨フォローアップタスク
-- [x] 患者メモのバージョン履歴 UI の追加検討。
-  - 2026-05-05: 右ペインの患者メモカードに「履歴」ボタンを追加し、保存済みバージョンを一覧・プレビューできるダイアログを実装。選択した履歴を編集欄へ復元する操作を追加し、`recordOperationEvent('patient_memo_history_apply')` で監査ログを送出。復元後は従来通り保存ボタンで `/karte/memo` PUT を発行するためデータ移行は不要。
-- [x] 問診テンプレートの共有／配布フロー策定。
-  - 2026-05-08: `OrderSetPanel` に共有/インポートダイアログを追加し、`order-set-sharing` ユーティリティで JSON パッケージの作成とマージ/置換を実装。共有手順と運用注意点を `features/PHASE3_STAMP_AND_ORCA.md` に追記。
-
-## 4. 予約・受付／スケジュール管理
-- [x] **状態更新操作**: 待機→呼出→診察中といった状態遷移を Web 版で実行できるようにし、サーバーへ即時反映させる。
-  - 2026-04-23: `ReceptionPage` に呼出/待機トグルを追加。ChartEvent (PVT_STATE) を介して `/chartEvent/event` を呼び出し、全端末へ即時同期する。
-- [x] **予約 CRUD**: 予約の登録／更新／削除を Web 版で操作できるよう実装し、`ScheduleDelegater` 相当の API 呼び出しを網羅する。
-  - 2026-05-01: 受付画面に `AppointmentManager` を追加し、`/karte/appo` を利用した取得・登録・更新・取消フローを React Query で整備。患者別に 60 日の予約を編集可能とした。
-  - 2026-05-02: 保存処理中に親画面の操作を無効化するガードを追加し、モーダル閉鎖や再オープンによる競合を防止。
-- [x] **受付メモ同期**: 待ち一覧のメモを編集した際にオンプレクライアントとリアルタイムで同期されるか確認する。
-  - 2026-04-23: 受付カード内でインライン編集 UI を実装。保存時は ChartEvent (PVT_MEMO) を送出し、`useChartEventSubscription` でメモと安全メモバッジを更新。
-- [x] **通知と例外処理**: 予約変更時の通知、重複予約やキャンセル処理など例外系を設計し、テストを整備する。
-  - 2026-05-01: 予約重複検知と操作結果のインライン通知を実装し、`appointment-api` の単体テストで正常系／異常系をカバー。保存失敗時はエラーを掲示する。
-
-### 推奨フォローアップタスク
-- [x] 予約画面の統合テストシナリオ整備と自動化。
-  - 2026-05-08: `AppointmentManager.reminder.test.tsx` を追加し、予約一覧からリマインダー記録までの統合シナリオを自動化。既存の単体テストも新プロパティに追従させた。
-- [x] 患者向けリマインダー送信フローの検討（メール／SMS 等）。
-  - 2026-05-08: 予約カードに「リマインダー」操作を実装し、メール/SMS 選択・本文コピー・送信履歴の自動記録を提供。`features/RECEPTION_SCHEDULE_AND_SUMMARY.md` と `operations/RECEPTION_WEB_CLIENT_MANUAL.md` に運用手順を掲載。
-
-## 5. 未実装（要フォローアップ）
-- [x] **CareMap（治療履歴カレンダー）**: オンプレ版 `CareMapDocument` は `AbstractBrowser`/`DefaultBrowser`（`impl/img`）の設定に基づき患者ごとの画像ディレクトリを走査し、PDF/画像添付の存在もアイコンで通知する。Web 版では `useDocumentAttachments` を通じて `/karte/documents`・`/karte/attachment` から添付メタとバイナリを取得し、画像・PDF・その他ファイルを CareMap と右ペインに統合表示する。
-  - 2026-05-13: `ChartsPage` 補助パネルに `CareMapPanel` を追加し、予約・検査・カルテサマリを集約する初期版を実装。
-  - 2026-05-22: 添付取得と ImageViewer オーバーレイを実装し、`features/CARE_MAP_TIMELINE.md` と `operations/CAREMAP_ATTACHMENT_MIGRATION.md` に仕様と移行手順を記載。
-- [x] **ラボ検査履歴ビューア**: `LaboTestPanel` が担う検査結果一覧・グラフ表示・PDF 出力を Web クライアントにも実装する。
-  - 2026-05-12: `LabResultsPanel` をカルテ補助エリアに追加し、`/lab/module`・`/lab/item` API から取得した検査履歴を表示。異常値の強調、項目検索、
-    推移グラフ（簡易 SVG チャート）、ブラウザ印刷による PDF 出力を提供。担当医向けに既存カルテから即座に検査結果を引用できるようにし、
-    監査ログに取得イベントを記録。
-- [x] **医療文書エディタ（診断書・証明書）**: 既存文書の取得・編集・PDF 生成まで可能な `MedicalCertificateViewer` 相当の機能を実装する。
-  - 2026-05-20: `ChartsPage` 補助パネルに「診断書・医療文書」カードを追加し、`/odletter/list`／`/odletter/letter` の取得と `PUT /odletter/letter` 保存を実装。HTML プレビュー印刷・監査ログ連携を備え、仕様は `features/MEDICAL_CERTIFICATES_AND_SCHEMA.md` へ反映。
-- [x] **シェーマ（手描き画像）エディタ**: `SchemaEditorImpl` の描画ツールセット（線・図形・テキスト・Undo 等）とカルテ保存連携を Web で再現する。
-  - 2026-05-20: Supplement パネルに「シェーマエディタ」を新設し、Canvas 描画・Undo/Redo・塗りつぶし対応とともに `POST /karte/document` で `SchemaModel` を保存。保存完了時にカルテ再読込を促すメッセージと監査ログを追加し、仕様を `features/MEDICAL_CERTIFICATES_AND_SCHEMA.md` へ記載。
-- [x] **受付機能の高度化（バーコード受付・一覧カスタマイズ）**: `WaitingListImpl` が提供するバーコード受付、カラム設定、担当医別ビューなどを補完する。
-  - 2026-05-18: `ReceptionPage` にバーコード受付パネルを追加し、診察券スキャンから `/pvt2` への即時登録と担当医/保険初期値の記憶を実装。受付一覧はカード/表形式を切替可能とし、表示カラムをローカル設定として保存できるよう更新した。操作エラーはインライン表示し、既存メモ編集・呼出制御と統合。
-- [x] **施設全体の予約一覧（PatientSchedule）**: `PatientScheduleImpl` と同様に日付・担当医で施設全体の予約を俯瞰できるビューを追加する。
-  - 2026-05-12: `/schedule/pvt/{date}` を利用した「施設予約一覧」ページを新設。日付・担当医・状態・キーワードでの絞り込み、担当医限定表示（ORCA
-    担当医コード連動）、受付メモ・保険情報の表示、カルテ遷移ボタンを実装。院内運用マニュアルへ導線と教育ポイントを追記。
-
-## 運用メモ
-- 各チェック項目の完了時には、対応する仕様・実装を `planning/WEB_CLIENT_WORK_PLAN.md` および関連ドキュメントに反映すること。
-- ギャップが解消されない場合は課題管理ツールに Issue を登録し、優先度と担当者を明記する。
-- 機能実装により既存ユーザーの運用が変わる場合は、移行手順や設定変更内容を `operations/` 配下の資料へ追記する。
+## 4. 参考ドキュメント
+- `docs/web-client/planning/UNIMPLEMENTED_API_UI_PLACEMENT.md` – 未実装 API の UI 配置方針とフェーズ計画。
+- `docs/web-client/features/RECEPTION_SCHEDULE_AND_SUMMARY.md` – 受付/予約フローの詳細仕様。
+- `docs/web-client/features/CARE_MAP_TIMELINE.md` – CareMap と添付統合のデータフロー。
+- `docs/web-client/features/MEDICAL_CERTIFICATES_AND_SCHEMA.md` – 診断書・シェーマ UI の詳細。
+- `docs/web-client/features/PHASE3_STAMP_AND_ORCA.md` – スタンプ共有・ORCA 連携の拡張計画。

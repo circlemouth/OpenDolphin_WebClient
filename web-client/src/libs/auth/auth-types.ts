@@ -35,4 +35,6 @@ export interface AuthContextValue {
   login: (payload: LoginPayload) => Promise<AuthSession>;
   logout: () => void;
   getAuthHeaders: () => Record<string, string>;
+  hasRole: (role: string) => boolean;
+  hasAnyRole: (...roles: string[]) => boolean;
 }
