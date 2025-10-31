@@ -1,11 +1,13 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
-import type {
-  DocInfoListResponse,
-  DocInfoSummary,
-  DocumentListResponse,
-  DocumentModelPayload,
+import {
+  fromRawDocumentModel,
+  toDocInfoSummary,
+  type DocInfoListResponse,
+  type DocInfoSummary,
+  type DocumentListResponse,
+  type DocumentModelPayload,
 } from '@/features/charts/types/doc';
 
 const encodeParam = (value: string) => encodeURIComponent(value);
@@ -18,12 +20,15 @@ export const fetchDocInfos = async (
   const param = `${karteId},${fromDate},${includeModified}`;
   const endpoint = `/karte/docinfo/${encodeParam(param)}`;
   const response = await measureApiPerformance(
-    'charts.docinfo.fetchList',
+    PERFORMANCE_METRICS.charts.docInfo.fetchList,
     `GET ${endpoint}`,
     async () => httpClient.get<DocInfoListResponse>(endpoint),
     { karteId, fromDate, includeModified },
   );
-  return response.data?.list ?? [];
+  const list = response.data?.list ?? [];
+  return list
+    .map((entry) => toDocInfoSummary(entry))
+    .filter((entry): entry is DocInfoSummary => Boolean(entry));
 };
 
 export const fetchDocumentsByIds = async (docIds: number[]): Promise<DocumentModelPayload[]> => {
@@ -33,18 +38,21 @@ export const fetchDocumentsByIds = async (docIds: number[]): Promise<DocumentMod
   const param = docIds.join(',');
   const endpoint = `/karte/documents/${encodeParam(param)}`;
   const response = await measureApiPerformance(
-    'charts.docinfo.fetchDocuments',
+    PERFORMANCE_METRICS.charts.docInfo.fetchDocuments,
     `GET ${endpoint}`,
     async () => httpClient.get<DocumentListResponse>(endpoint),
     { count: docIds.length },
   );
-  return response.data?.list ?? [];
+  const list = response.data?.list ?? [];
+  return list
+    .map((entry) => fromRawDocumentModel(entry))
+    .filter((entry): entry is DocumentModelPayload => Boolean(entry));
 };
 
 export const updateDocumentTitle = async (docPk: number, title: string) => {
   const endpoint = `/karte/document/${docPk}`;
   await measureApiPerformance(
-    'charts.docinfo.updateTitle',
+    PERFORMANCE_METRICS.charts.docInfo.updateTitle,
     `PUT ${endpoint}`,
     async () =>
       httpClient.put<string>(endpoint, title, {

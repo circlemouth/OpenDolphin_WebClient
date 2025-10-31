@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 import { recordOperationEvent } from '@/libs/audit';
 
 import type { ObservationListResponse, ObservationModel } from '@/features/charts/types/observation';
@@ -18,7 +18,7 @@ export const fetchObservations = async (
   }
   const endpoint = `/karte/observations/${encodeParam(parts.join(','))}`;
   const response = await measureApiPerformance(
-    'charts.observations.fetch',
+    PERFORMANCE_METRICS.charts.observations.fetch,
     `GET ${endpoint}`,
     async () => httpClient.get<ObservationListResponse>(endpoint),
     { karteId, observation, phenomenon, firstConfirmed },
@@ -32,7 +32,7 @@ const wrapObservationList = (list: ObservationModel[]) => ({
 
 export const createObservations = async (observations: ObservationModel[]): Promise<number[]> => {
   const response = await measureApiPerformance(
-    'charts.observations.create',
+    PERFORMANCE_METRICS.charts.observations.create,
     'POST /karte/observations',
     async () => httpClient.post<string>('/karte/observations', wrapObservationList(observations)),
     { count: observations.length },
@@ -50,7 +50,7 @@ export const createObservations = async (observations: ObservationModel[]): Prom
 
 export const updateObservations = async (observations: ObservationModel[]): Promise<number> => {
   const response = await measureApiPerformance(
-    'charts.observations.update',
+    PERFORMANCE_METRICS.charts.observations.update,
     'PUT /karte/observations',
     async () => httpClient.put<string>('/karte/observations', wrapObservationList(observations)),
     { count: observations.length },
@@ -67,7 +67,7 @@ export const deleteObservations = async (ids: number[]): Promise<void> => {
   }
   const endpoint = `/karte/observations/${ids.join(',')}`;
   await measureApiPerformance(
-    'charts.observations.delete',
+    PERFORMANCE_METRICS.charts.observations.delete,
     `DELETE ${endpoint}`,
     async () => httpClient.delete(endpoint),
     { count: ids.length },

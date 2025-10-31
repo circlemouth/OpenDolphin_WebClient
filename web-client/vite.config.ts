@@ -1,6 +1,6 @@
 import path from 'node:path';
 
-import { defineConfig } from 'vite';
+import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
@@ -19,12 +19,12 @@ const apiProxy = {
 export default defineConfig({
   plugins: [react(), basicSsl()],
   server: {
-    https: true,
+    https: {},
     strictPort: true,
     proxy: { ...apiProxy },
   },
   preview: {
-    https: true,
+    https: {},
     proxy: { ...apiProxy },
   },
   resolve: {

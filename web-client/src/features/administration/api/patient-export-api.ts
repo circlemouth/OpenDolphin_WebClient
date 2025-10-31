@@ -1,6 +1,6 @@
 import { httpClient } from '@/libs/http';
 import { recordOperationEvent } from '@/libs/audit';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type { PatientListResponse, RawPatientResource } from '@/features/patients/types/patient';
 
@@ -9,7 +9,7 @@ const extractPatientList = (response: PatientListResponse | null | undefined): R
 
 export const fetchAllPatients = async (): Promise<RawPatientResource[]> => {
   const response = await measureApiPerformance(
-    'administration.patientExport.fetchAll',
+    PERFORMANCE_METRICS.administration.patientExport.fetchAll,
     'GET /patient/all',
     async () => httpClient.get<PatientListResponse>('/patient/all'),
   );
@@ -24,7 +24,7 @@ export const fetchCustomPatients = async (condition: string): Promise<RawPatient
   const trimmed = condition.trim();
   const endpoint = `/patient/custom/${encodeURIComponent(trimmed)}`;
   const response = await measureApiPerformance(
-    'administration.patientExport.fetchCustom',
+    PERFORMANCE_METRICS.administration.patientExport.fetchCustom,
     `GET ${endpoint}`,
     async () => httpClient.get<PatientListResponse>(endpoint),
     { condition: trimmed },
@@ -41,7 +41,7 @@ export const fetchPatientCountByPrefix = async (prefix: string): Promise<number>
   const trimmed = prefix.trim();
   const endpoint = `/patient/count/${encodeURIComponent(trimmed)}`;
   const response = await measureApiPerformance(
-    'administration.patientExport.countByPrefix',
+    PERFORMANCE_METRICS.administration.patientExport.countByPrefix,
     `GET ${endpoint}`,
     async () => httpClient.get<string>(endpoint),
     { prefix: trimmed },

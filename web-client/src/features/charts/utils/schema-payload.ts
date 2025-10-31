@@ -1,3 +1,4 @@
+import type { DocumentModelPayload } from '@/features/charts/types/doc';
 import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
 import { generateDocumentId } from '@/features/charts/utils/document-id';
 
@@ -21,7 +22,7 @@ export interface SchemaSaveContext {
   now?: Date;
 }
 
-export const buildSchemaDocumentPayload = (context: SchemaSaveContext) => {
+export const buildSchemaDocumentPayload = (context: SchemaSaveContext): DocumentModelPayload => {
   const {
     karteId,
     patientId,
@@ -98,6 +99,7 @@ export const buildSchemaDocumentPayload = (context: SchemaSaveContext) => {
       patientName,
       patientGender: patientGender ?? '',
       facilityName: facilityName ?? '',
+      creatorLicense: licenseName ?? '',
       createrLisence: licenseName ?? '',
     },
     karteBean: {
@@ -120,5 +122,7 @@ export const buildSchemaDocumentPayload = (context: SchemaSaveContext) => {
         jpegByte: jpegBase64,
       },
     ],
+    attachment: [],
+    memo: null,
   };
 };

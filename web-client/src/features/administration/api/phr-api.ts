@@ -2,7 +2,7 @@ import axios from 'axios';
 
 import { httpClient } from '@/libs/http';
 import { recordOperationEvent } from '@/libs/audit';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type {
   PhrContainer,
@@ -65,7 +65,7 @@ export const fetchPhrKeyByPatientId = async (patientId: string): Promise<PhrKeyL
   handleNullableLookup(async () => {
     const endpoint = `/20/adm/phr/patient/${encodeURIComponent(patientId.trim())}`;
     const response = await measureApiPerformance(
-      'administration.phr.fetchKeyByPatient',
+      PERFORMANCE_METRICS.administration.phr.fetchKeyByPatient,
       `GET ${endpoint}`,
       async () => httpClient.get<PhrKeyLookupResult>(endpoint),
       { patientId },
@@ -81,7 +81,7 @@ export const fetchPhrKeyByAccessKey = async (accessKey: string): Promise<PhrKeyL
   handleNullableLookup(async () => {
     const endpoint = `/20/adm/phr/accessKey/${encodeURIComponent(accessKey.trim())}`;
     const response = await measureApiPerformance(
-      'administration.phr.fetchKeyByAccess',
+      PERFORMANCE_METRICS.administration.phr.fetchKeyByAccess,
       `GET ${endpoint}`,
       async () => httpClient.get<PhrKeyLookupResult>(endpoint),
       { accessKey },
@@ -103,7 +103,7 @@ export const upsertPhrKey = async (payload: PhrKeyUpsertPayload): Promise<number
     registeredString: normalizeDateTime(payload.registeredString) ?? undefined,
   };
   const response = await measureApiPerformance(
-    'administration.phr.upsertKey',
+    PERFORMANCE_METRICS.administration.phr.upsertKey,
     'PUT /20/adm/phr/accessKey',
     async () => httpClient.put<number>('/20/adm/phr/accessKey', body),
     { patientId: payload.patientId, facilityId: payload.facilityId },
@@ -139,7 +139,7 @@ const buildPhrContainerPath = (request: PhrContainerRequest): string => {
 export const fetchPhrContainer = async (request: PhrContainerRequest): Promise<PhrContainer> => {
   const endpoint = buildPhrContainerPath(request);
   const response = await measureApiPerformance(
-    'administration.phr.fetchContainer',
+    PERFORMANCE_METRICS.administration.phr.fetchContainer,
     `GET ${endpoint}`,
     async () => httpClient.get<PhrContainer>(endpoint, { responseType: 'json' }),
     {
@@ -166,7 +166,7 @@ export const fetchPhrText = async (patientId: string, type: PhrTextType): Promis
   const base = phrTextEndpointMap[type];
   const endpoint = `${base}${encodeURIComponent(patientId.trim())}`;
   const response = await measureApiPerformance(
-    'administration.phr.fetchText',
+    PERFORMANCE_METRICS.administration.phr.fetchText,
     `GET ${endpoint}`,
     async () => httpClient.get<string>(endpoint),
     { patientId, type },

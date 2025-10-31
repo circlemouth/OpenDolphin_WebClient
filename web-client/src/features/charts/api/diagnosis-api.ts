@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 import { recordOperationEvent } from '@/libs/audit';
 
 import type {
@@ -17,7 +17,7 @@ export const fetchDiagnoses = async (
   const param = [karteId, fromDate, activeOnly].join(',');
   const endpoint = `/karte/diagnosis/${encodeParam(param)}`;
   const response = await measureApiPerformance(
-    'charts.diagnosis.fetch',
+    PERFORMANCE_METRICS.charts.diagnosis.fetch,
     `GET ${endpoint}`,
     async () => httpClient.get<RegisteredDiagnosisListResponse>(endpoint),
     { karteId, fromDate, activeOnly },
@@ -33,7 +33,7 @@ export const createDiagnoses = async (
   diagnoses: RegisteredDiagnosis[],
 ): Promise<number[]> => {
   const response = await measureApiPerformance(
-    'charts.diagnosis.create',
+    PERFORMANCE_METRICS.charts.diagnosis.create,
     'POST /karte/diagnosis',
     async () => httpClient.post<string>('/karte/diagnosis', wrapDiagnosisList(diagnoses)),
     { count: diagnoses.length },
@@ -51,7 +51,7 @@ export const createDiagnoses = async (
 
 export const updateDiagnoses = async (diagnoses: RegisteredDiagnosis[]): Promise<number> => {
   const response = await measureApiPerformance(
-    'charts.diagnosis.update',
+    PERFORMANCE_METRICS.charts.diagnosis.update,
     'PUT /karte/diagnosis',
     async () => httpClient.put<string>('/karte/diagnosis', wrapDiagnosisList(diagnoses)),
     { count: diagnoses.length },
@@ -69,7 +69,7 @@ export const deleteDiagnoses = async (ids: number[]): Promise<void> => {
   }
   const endpoint = `/karte/diagnosis/${ids.join(',')}`;
   await measureApiPerformance(
-    'charts.diagnosis.delete',
+    PERFORMANCE_METRICS.charts.diagnosis.delete,
     `DELETE ${endpoint}`,
     async () => httpClient.delete(endpoint),
     { count: ids.length },

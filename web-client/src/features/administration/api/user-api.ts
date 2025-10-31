@@ -1,6 +1,6 @@
 import { httpClient } from '@/libs/http';
 import { recordOperationEvent } from '@/libs/audit';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type {
   FacilityModel,
@@ -33,7 +33,7 @@ const sanitizeUserPayload = (user: UserModel): UserModel => {
 
 export const fetchUsers = async (): Promise<UserModel[]> => {
   const response = await measureApiPerformance(
-    'administration.users.fetchAll',
+    PERFORMANCE_METRICS.administration.users.fetchAll,
     'GET /user',
     async () => httpClient.get<UserListResponse>('/user'),
   );
@@ -43,7 +43,7 @@ export const fetchUsers = async (): Promise<UserModel[]> => {
 export const fetchUserDetail = async (userId: string): Promise<UserModel | null> => {
   const endpoint = `/user/${encodeURIComponent(userId)}`;
   const response = await measureApiPerformance(
-    'administration.users.fetchOne',
+    PERFORMANCE_METRICS.administration.users.fetchOne,
     `GET ${endpoint}`,
     async () => httpClient.get<UserModel>(endpoint),
     { userId },
@@ -54,7 +54,7 @@ export const fetchUserDetail = async (userId: string): Promise<UserModel | null>
 export const createUser = async (user: UserModel): Promise<number> => {
   const payload = sanitizeUserPayload(user);
   const response = await measureApiPerformance(
-    'administration.users.create',
+    PERFORMANCE_METRICS.administration.users.create,
     'POST /user',
     async () => httpClient.post<string>('/user', payload),
     { userId: user.userId, roles: user.roles?.map((role) => role.role) ?? [] },
@@ -69,7 +69,7 @@ export const createUser = async (user: UserModel): Promise<number> => {
 export const updateUser = async (user: UserModel): Promise<number> => {
   const payload = sanitizeUserPayload(user);
   const response = await measureApiPerformance(
-    'administration.users.update',
+    PERFORMANCE_METRICS.administration.users.update,
     'PUT /user',
     async () => httpClient.put<string>('/user', payload),
     { userId: user.userId, roles: user.roles?.map((role) => role.role) ?? [] },
@@ -84,7 +84,7 @@ export const updateUser = async (user: UserModel): Promise<number> => {
 export const deleteUser = async (userId: string): Promise<void> => {
   const endpoint = `/user/${encodeURIComponent(userId)}`;
   await measureApiPerformance(
-    'administration.users.delete',
+    PERFORMANCE_METRICS.administration.users.delete,
     `DELETE ${endpoint}`,
     async () => httpClient.delete<void>(endpoint),
     { userId },
@@ -101,7 +101,7 @@ export interface FacilityUpdatePayload {
 export const updateFacility = async (payload: FacilityUpdatePayload): Promise<number> => {
   const cleaned = deepClone(payload);
   const response = await measureApiPerformance(
-    'administration.facility.update',
+    PERFORMANCE_METRICS.administration.facility.update,
     'PUT /user/facility',
     async () => httpClient.put<string>('/user/facility', cleaned),
     { facilityId: payload.facilityModel.facilityId },
@@ -115,7 +115,7 @@ export const updateFacility = async (payload: FacilityUpdatePayload): Promise<nu
 export const fetchUserDisplayName = async (userId: string): Promise<string> => {
   const endpoint = `/user/name/${encodeURIComponent(userId)}`;
   const response = await measureApiPerformance(
-    'administration.users.resolveName',
+    PERFORMANCE_METRICS.administration.users.resolveName,
     `GET ${endpoint}`,
     async () => httpClient.get<string>(endpoint),
     { userId },

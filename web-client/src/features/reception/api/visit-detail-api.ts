@@ -1,4 +1,4 @@
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 import { httpClient } from '@/libs/http';
 import type { PatientListResponse, RawPatientResource } from '@/features/patients/types/patient';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
@@ -106,7 +106,7 @@ export const fetchPatientVisitHistory = async (
   }
 
   const results = await measureApiPerformance(
-    'reception.pvtHistory',
+    PERFORMANCE_METRICS.reception.pvtHistory,
     'GET /patient/pvt/{prefix}',
     async () => {
       const historyLists = await Promise.all(prefixes.map((prefix) => fetchPatientsByPvtPrefix(prefix)));
@@ -150,7 +150,7 @@ export const fetchPatientVisitHistory = async (
 
 export const fetchTemporaryDocumentPatients = async (): Promise<TemporaryDocumentPatient[]> =>
   measureApiPerformance(
-    'reception.documentStatus',
+    PERFORMANCE_METRICS.reception.documentStatus,
     'GET /patient/documents/status',
     async () => {
       const response = await httpClient.get<PatientListResponse>('/patient/documents/status');

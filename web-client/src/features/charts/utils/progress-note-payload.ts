@@ -1,5 +1,6 @@
-import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
+import type { DocumentModelPayload } from '@/features/charts/types/doc';
 import type { ModuleModelPayload } from '@/features/charts/types/module';
+import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { AuthSession } from '@/libs/auth/auth-types';
 
 export interface ProgressNoteDraft {
@@ -165,7 +166,7 @@ const ensureClaimItems = (modules: ModuleModelPayload[]) => {
   });
 };
 
-export const createProgressNoteDocument = (context: ProgressNoteContext) => {
+export const createProgressNoteDocument = (context: ProgressNoteContext): DocumentModelPayload => {
   const {
     draft,
     visit,
@@ -319,6 +320,7 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
       patientName: visit.fullName,
       patientGender: visit.gender ?? '',
       facilityName: facilityName ?? credentials.facilityId,
+      creatorLicense: licenseName ?? '',
       createrLisence: licenseName ?? '',
     },
     karteBean: {
@@ -348,6 +350,8 @@ export const createProgressNoteDocument = (context: ProgressNoteContext) => {
       },
       ...(mergedModules ?? []),
     ],
-    memo: visit.memo ?? undefined,
+    schema: [],
+    attachment: [],
+    memo: visit.memo ?? null,
   };
 };

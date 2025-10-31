@@ -1,14 +1,15 @@
 import { recordOperationEvent } from '@/libs/audit';
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
-import type { DocumentModelPayload } from '@/features/charts/types/doc';
+import { toRawDocumentModel, type DocumentModelPayload } from '@/features/charts/types/doc';
 
 export const updateDocument = async (payload: DocumentModelPayload): Promise<void> => {
+  const rawPayload = toRawDocumentModel(payload);
   await measureApiPerformance(
-    'charts.document.update',
+    PERFORMANCE_METRICS.charts.document.update,
     'PUT /karte/document',
-    async () => httpClient.put<string>('/karte/document', payload),
+    async () => httpClient.put<string>('/karte/document', rawPayload),
     { docPk: payload.id },
   );
 

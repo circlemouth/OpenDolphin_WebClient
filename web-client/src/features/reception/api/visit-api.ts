@@ -1,6 +1,6 @@
 import { recordOperationEvent } from '@/libs/audit';
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 import { normalizePatientVisit } from '@/features/charts/api/patient-visit-api';
 import type {
   PatientVisitListResponse,
@@ -209,7 +209,7 @@ export const fetchLegacyVisits = async (params: LegacyVisitSearchParams): Promis
 
   const endpoint = `/pvt/${encodeParam(segments.join(','))}`;
   const response = await measureApiPerformance(
-    'reception.legacy.fetchVisits',
+    PERFORMANCE_METRICS.reception.legacy.fetchVisits,
     `GET ${endpoint}`,
     async () => httpClient.get<PatientVisitListResponse>(endpoint),
     {
@@ -234,7 +234,7 @@ export const fetchLegacyVisits = async (params: LegacyVisitSearchParams): Promis
 
 export const registerLegacyVisit = async (payload: RawPatientVisit): Promise<void> => {
   await measureApiPerformance(
-    'reception.legacy.registerVisit',
+    PERFORMANCE_METRICS.reception.legacy.registerVisit,
     'POST /pvt',
     async () => httpClient.post('/pvt', payload),
     { hasPatientModel: Boolean(payload.patientModel) },
@@ -250,7 +250,7 @@ export const registerLegacyVisit = async (payload: RawPatientVisit): Promise<voi
 export const updateLegacyVisitMemo = async (visitId: number, memo: string): Promise<void> => {
   const endpoint = `/pvt/memo/${encodeParam(`${visitId},${memo}`)}`;
   await measureApiPerformance(
-    'reception.legacy.updateMemo',
+    PERFORMANCE_METRICS.reception.legacy.updateMemo,
     `PUT ${endpoint}`,
     async () => httpClient.put<string>(endpoint),
     { visitId },

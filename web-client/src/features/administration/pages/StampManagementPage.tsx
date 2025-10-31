@@ -104,7 +104,7 @@ const TreeNodeRow = styled.div<{ $selected?: boolean }>`
   align-items: center;
   gap: 8px;
   padding: 6px 8px;
-  border-radius: ${({ theme }) => theme.radius.sm};
+  border-radius: ${({ theme }) => theme.radius.xs};
   background: ${({ theme, $selected }) => ($selected ? theme.palette.surfaceStrong : 'transparent')};
   color: ${({ theme, $selected }) => ($selected ? theme.palette.text : theme.palette.textMuted)};
   cursor: pointer;
@@ -825,7 +825,9 @@ export const StampManagementPage = () => {
       return locatedNode.parent;
     }
     if (treeNodes.length) {
-      const firstFolder = treeNodes.find((node) => node.type === 'folder') as StampTreeFolderNode | undefined;
+      const firstFolder = treeNodes.find(
+        (node): node is StampTreeFolderNode => node.type === 'folder',
+      );
       return firstFolder ?? null;
     }
     return null;
@@ -1100,7 +1102,7 @@ export const StampManagementPage = () => {
             </HelperText>
             <StampLibraryPanel
               stamps={stampLibraryQuery.data ?? []}
-              isLoading={stampLibraryQuery.isLoading}
+              isLoading={stampLibraryQuery.isPending}
               isFetching={stampLibraryQuery.isFetching}
               error={stampLibraryQuery.error}
               onReload={() => stampLibraryQuery.refetch()}

@@ -552,7 +552,7 @@ export const UserAdministrationPage = () => {
               value={filter}
               onChange={(event) => setFilter(event.currentTarget.value)}
             />
-            {usersQuery.isLoading ? (
+            {usersQuery.isPending ? (
               <EmptyState>読み込み中です…</EmptyState>
             ) : filteredUsers.length === 0 ? (
               <EmptyState>一致するユーザーが見つかりません。</EmptyState>

@@ -14,9 +14,13 @@ vi.mock('@/libs/http', async () => {
   };
 });
 
-vi.mock('@/libs/monitoring', () => ({
-  measureApiPerformance: vi.fn((_, __, fn: () => Promise<unknown>) => fn()),
-}));
+vi.mock('@/libs/monitoring', async () => {
+  const actual = await vi.importActual<typeof import('@/libs/monitoring')>('@/libs/monitoring');
+  return {
+    ...actual,
+    measureApiPerformance: vi.fn((_, __, fn: () => Promise<unknown>) => fn()),
+  };
+});
 
 describe('facility-schedule-api', () => {
   beforeEach(() => {

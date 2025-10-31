@@ -1,4 +1,3 @@
-import { Buffer } from 'node:buffer';
 import { describe, expect, it } from 'vitest';
 
 import type { ModuleModelPayload } from '@/features/charts/types/module';
@@ -9,6 +8,54 @@ import {
   type ProgressNoteBilling,
 } from '@/features/charts/utils/progress-note-payload';
 import type { AuthSession } from '@/libs/auth/auth-types';
+
+const BASE64_CHARS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/';
+
+const decodeBase64 = (input: string): string => {
+  const sanitized = input.replace(/[^A-Za-z0-9+/=]/g, '');
+  const bytes: number[] = [];
+  let buffer = 0;
+  let bits = 0;
+
+  for (const char of sanitized) {
+    if (char === '=') {
+      // Padding indicates the end of meaningful input.
+      break;
+    }
+    const value = BASE64_CHARS.indexOf(char);
+    if (value < 0) {
+      continue;
+    }
+    buffer = (buffer << 6) | value;
+    bits += 6;
+    if (bits >= 8) {
+      bits -= 8;
+      bytes.push((buffer >> bits) & 0xff);
+    }
+  }
+
+  return new TextDecoder().decode(Uint8Array.from(bytes));
+};
+
+const encodeBase64 = (input: string): string => {
+  const bytes = new TextEncoder().encode(input);
+  let output = '';
+
+  for (let index = 0; index < bytes.length; index += 3) {
+    const a = bytes[index];
+    const b = bytes[index + 1];
+    const c = bytes[index + 2];
+
+    const triple = (a << 16) | ((b ?? 0) << 8) | (c ?? 0);
+
+    output += BASE64_CHARS[(triple >> 18) & 0x3f];
+    output += BASE64_CHARS[(triple >> 12) & 0x3f];
+    output += index + 1 < bytes.length ? BASE64_CHARS[(triple >> 6) & 0x3f] : '=';
+    output += index + 2 < bytes.length ? BASE64_CHARS[triple & 0x3f] : '=';
+  }
+
+  return output;
+};
 
 describe('createProgressNoteDocument', () => {
   const draft: ProgressNoteDraft = {
@@ -109,11 +156,11 @@ describe('createProgressNoteDocument', () => {
     expect(soaModule.moduleInfoBean.stampRole).toBe('soaSpec');
     expect(planModule.moduleInfoBean.stampRole).toBe('pSpec');
 
-    const soaText = Buffer.from(soaModule.beanBytes ?? '', 'base64').toString('utf-8');
+    const soaText = decodeBase64(soaModule.beanBytes ?? '');
     expect(soaText).toContain('S:');
     expect(soaText).toContain(draft.subjective);
 
-    const planText = Buffer.from(planModule.beanBytes ?? '', 'base64').toString('utf-8');
+    const planText = decodeBase64(planModule.beanBytes ?? '');
     expect(planText).toContain('P:');
     expect(planText).toContain(draft.plan);
   });
@@ -196,7 +243,7 @@ describe('createProgressNoteDocument', () => {
         entity: 'medOrder',
         stampId: 'stamp-001',
       },
-      beanBytes: Buffer.from('<ClaimItem code="123"/>', 'utf-8').toString('base64'),
+      beanBytes: encodeBase64('<ClaimItem code="123"/>'),
     };
 
     const document = createProgressNoteDocument({
@@ -209,9 +256,9 @@ describe('createProgressNoteDocument', () => {
     });
 
     expect(document.modules).toHaveLength(3);
-    const orderEntry = document.modules?.[2];
-    expect(orderEntry?.moduleInfoBean.stampName).toBe('内服薬処方');
-    expect(orderEntry?.moduleInfoBean.entity).toBe('medOrder');
+    const orderEntry = document.modules[2];
+    expect(orderEntry.moduleInfoBean?.stampName).toBe('内服薬処方');
+    expect(orderEntry.moduleInfoBean?.entity).toBe('medOrder');
     expect(document.docInfoModel.hasRp).toBe(true);
     expect(document.docInfoModel.hasTreatment).toBe(false);
     expect(document.docInfoModel.hasLaboTest).toBe(false);
@@ -225,7 +272,7 @@ describe('createProgressNoteDocument', () => {
         stampNumber: 0,
         entity: 'testOrder',
       },
-      beanBytes: Buffer.from('<BundleTest></BundleTest>', 'utf-8').toString('base64'),
+      beanBytes: encodeBase64('<BundleTest></BundleTest>'),
     };
 
     expect(() =>

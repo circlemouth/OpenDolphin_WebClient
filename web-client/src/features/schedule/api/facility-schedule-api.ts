@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 import type {
   RawPatientModel,
   RawPatientVisit,
@@ -98,7 +98,7 @@ export const fetchFacilitySchedule = async (
   const endpoint = buildEndpoint(params);
 
   return measureApiPerformance(
-    'schedule.facility.fetch',
+    PERFORMANCE_METRICS.schedule.facility.fetch,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<FacilityScheduleResponse>(endpoint);

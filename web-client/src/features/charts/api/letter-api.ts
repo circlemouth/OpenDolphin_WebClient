@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type {
   LetterSummary,
@@ -81,7 +81,7 @@ const isMedicalCertificate = (raw: RawLetterModuleResource) =>
 export const fetchLetterSummaries = async (karteId: number): Promise<LetterSummary[]> => {
   const endpoint = `/odletter/list/${karteId}`;
   return measureApiPerformance(
-    'charts.letters.fetchList',
+    PERFORMANCE_METRICS.charts.letters.fetchList,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawLetterModuleListResource>(endpoint);
@@ -95,7 +95,7 @@ export const fetchLetterSummaries = async (karteId: number): Promise<LetterSumma
 export const fetchMedicalCertificate = async (letterId: number): Promise<MedicalCertificateDetail> => {
   const endpoint = `/odletter/letter/${letterId}`;
   return measureApiPerformance(
-    'charts.letters.fetchDetail',
+    PERFORMANCE_METRICS.charts.letters.fetchDetail,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawLetterModuleResource>(endpoint);
@@ -148,7 +148,7 @@ export const saveMedicalCertificate = async (
     handleClass: LETTER_VIEWER_HANDLE_CLASS,
   };
   return measureApiPerformance(
-    'charts.letters.save',
+    PERFORMANCE_METRICS.charts.letters.save,
     `PUT ${endpoint}`,
     async () => {
       const response = await httpClient.put<string>(endpoint, enriched);
@@ -161,7 +161,7 @@ export const saveMedicalCertificate = async (
 export const deleteLetter = async (letterId: number) => {
   const endpoint = `/odletter/letter/${letterId}`;
   return measureApiPerformance(
-    'charts.letters.delete',
+    PERFORMANCE_METRICS.charts.letters.delete,
     `DELETE ${endpoint}`,
     async () => {
       await httpClient.delete(endpoint);

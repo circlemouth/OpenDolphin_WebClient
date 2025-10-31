@@ -3,25 +3,35 @@ const buildUpdatedDocumentPayload = (
   original: DocumentModelPayload,
   updated: DocumentModelPayload,
 ): DocumentModelPayload => {
-  const mergedDocInfo = {
-    ...(original.docInfoModel ?? {}),
-    ...(updated.docInfoModel ?? {}),
-    docPk: original.docInfoModel?.docPk ?? original.id,
-    parentPk: original.docInfoModel?.parentPk ?? 0,
-    docId: original.docInfoModel?.docId ?? updated.docInfoModel?.docId ?? '',
-    firstConfirmDate: original.docInfoModel?.firstConfirmDate ?? updated.docInfoModel?.firstConfirmDate,
-    versionNumber: original.docInfoModel?.versionNumber ?? updated.docInfoModel?.versionNumber ?? '1',
-    status: 'F',
-  } as DocInfoSummary & Record<string, unknown>;
+  const mergedDocInfo: DocInfoSummary = {
+    ...original.docInfoModel,
+    ...updated.docInfoModel,
+    docPk: original.docInfoModel.docPk || original.id,
+    parentPk: original.docInfoModel.parentPk ?? updated.docInfoModel.parentPk ?? null,
+    docId: updated.docInfoModel.docId ?? original.docInfoModel.docId,
+    firstConfirmDate: updated.docInfoModel.firstConfirmDate ?? original.docInfoModel.firstConfirmDate,
+    versionNumber: updated.docInfoModel.versionNumber ?? original.docInfoModel.versionNumber ?? '1',
+    status: updated.docInfoModel.status ?? original.docInfoModel.status ?? 'F',
+    creatorLicense: updated.docInfoModel.creatorLicense ?? original.docInfoModel.creatorLicense,
+    createrLisence:
+      updated.docInfoModel.createrLisence ??
+      updated.docInfoModel.creatorLicense ??
+      original.docInfoModel.createrLisence ??
+      original.docInfoModel.creatorLicense ??
+      null,
+    pVTHealthInsuranceModel:
+      updated.docInfoModel.pVTHealthInsuranceModel ?? original.docInfoModel.pVTHealthInsuranceModel,
+  };
 
   return {
     ...original,
     docInfoModel: mergedDocInfo,
-    modules: updated.modules,
-    schema: updated.schema ?? original.schema,
+    modules: updated.modules.length ? updated.modules : original.modules,
+    schema: updated.schema.length ? updated.schema : original.schema,
     attachment: original.attachment,
     karteBean: updated.karteBean ?? original.karteBean,
     userModel: updated.userModel ?? original.userModel,
+    memo: updated.memo ?? original.memo,
   };
 };
 import { useQueryClient } from '@tanstack/react-query';
@@ -45,7 +55,7 @@ import { ClaimAdjustmentPanel } from '@/features/charts/components/ClaimAdjustme
 import { publishChartEvent } from '@/features/charts/api/chart-event-api';
 import { useChartEventSubscription } from '@/features/charts/hooks/useChartEventSubscription';
 import { useChartLock } from '@/features/charts/hooks/useChartLock';
-import { patientVisitsQueryKey, usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
+import { usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
 import { useFreeDocument } from '@/features/charts/hooks/useFreeDocument';
@@ -54,8 +64,6 @@ import type { PatientVisitSummary } from '@/features/charts/types/patient-visit'
 import type { StampDefinition } from '@/features/charts/types/stamp';
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
-import { saveFreeDocument } from '@/features/charts/api/free-document-api';
-import { CHART_EVENT_TYPES } from '@/features/charts/types/chart-event';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
 import type { BillingMode, ProgressNoteBilling } from '@/features/charts/utils/progress-note-payload';
 import { extractInsuranceOptions } from '@/features/charts/utils/health-insurance';
@@ -65,7 +73,6 @@ import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { useAuth } from '@/libs/auth';
-import { fetchStampModule } from '@/features/charts/api/stamp-api';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
 import { PatientHeaderBar } from '@/features/charts/components/layout/PatientHeaderBar';
 import { VisitChecklist, type VisitChecklistItem } from '@/features/charts/components/layout/VisitChecklist';
@@ -831,7 +838,11 @@ export const ChartsPage = () => {
   const vitalSigns = useMemo(
     () =>
       draft.objective
-        ? Array.from(draft.objective.matchAll(/(BP|SpO2|HR|Temp)[:・咯\s*([^\n]+)/gi)).map((match, index) => ({
+        ? Array.from(
+            draft.objective.matchAll(
+              /(BP|SpO2|HR|Temp)\s*[:=\uFF1A\u30FB-]?\s*([^\n]+)/gi,
+            ),
+          ).map((match, index) => ({
             id: `vital-${index}`,
             label: match[1].toUpperCase(),
             value: match[2].trim(),
@@ -2603,6 +2614,7 @@ export const ChartsPage = () => {
     </PageShell>
   );
 };
+
 
 
 

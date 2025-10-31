@@ -10,9 +10,15 @@ import { setAuthHeaderProvider } from '@/libs/http/httpClient';
 export const AuthProvider = ({ children }: PropsWithChildren) => {
   const [session, setSession] = useState<AuthSession | null>(() => restoreAuthSession());
 
+  const getAuthHeaders = useCallback(() => createAuthHeaders(session?.credentials), [session]);
+
   useEffect(() => {
-    setAuthHeaderProvider(() => (session ? createAuthHeaders(session.credentials) : null));
-  }, [session]);
+    setAuthHeaderProvider(getAuthHeaders);
+
+    return () => {
+      setAuthHeaderProvider(null);
+    };
+  }, [getAuthHeaders]);
 
   useEffect(() => {
     const handleStorage = () => {
@@ -40,11 +46,6 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     destroyAuthSession();
     setSession(null);
   }, []);
-
-  const getAuthHeaders = useCallback(
-    () => (session ? createAuthHeaders(session.credentials) : {}),
-    [session],
-  );
 
   const hasRole = useCallback(
     (role: string) => {

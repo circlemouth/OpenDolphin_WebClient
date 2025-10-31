@@ -9,18 +9,27 @@ import type {
 } from 'react';
 import { forwardRef } from 'react';
 
+import type { AppTheme, PaletteToken } from '@/styles/theme';
+
 const spin = keyframes`
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 `;
 
-type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
-type ButtonSize = 'md' | 'sm';
+export type ButtonVariant = 'primary' | 'secondary' | 'ghost' | 'danger';
+export type ButtonSize = 'md' | 'sm';
 
-const variantTokens: Record<ButtonVariant, { background: string; color: string; border: string; hover: string }> = {
+interface VariantTokens {
+  background?: PaletteToken;
+  color?: PaletteToken;
+  border?: PaletteToken;
+  hover?: PaletteToken;
+}
+
+const variantTokens: Record<ButtonVariant, VariantTokens> = {
   primary: {
     background: 'primary',
-    color: 'surface',
+    color: 'onPrimary',
     border: 'primary',
     hover: 'primaryStrong',
   },
@@ -31,14 +40,12 @@ const variantTokens: Record<ButtonVariant, { background: string; color: string; 
     hover: 'surfaceStrong',
   },
   ghost: {
-    background: 'transparent',
     color: 'textMuted',
-    border: 'transparent',
     hover: 'surfaceMuted',
   },
   danger: {
     background: 'danger',
-    color: 'surface',
+    color: 'onPrimary',
     border: 'danger',
     hover: 'primaryStrong',
   },
@@ -59,8 +66,10 @@ interface StyledButtonProps {
   $variant: ButtonVariant;
   $size: ButtonSize;
   $fullWidth: boolean;
-  $isLoading: boolean;
 }
+
+const resolvePalette = (theme: AppTheme, token: PaletteToken | undefined, fallback: string) =>
+  token ? theme.palette[token] : fallback;
 
 const StyledButton = styled.button<StyledButtonProps>`
   position: relative;
@@ -73,16 +82,19 @@ const StyledButton = styled.button<StyledButtonProps>`
   font-size: ${({ $size }) => sizeTokens[$size].fontSize};
   font-weight: 600;
   border-radius: ${({ theme }) => theme.radius.md};
-  border: 1px solid ${({ theme, $variant }) => theme.palette[variantTokens[$variant].border] ?? 'transparent'};
-  background: ${({ theme, $variant }) => theme.palette[variantTokens[$variant].background] ?? 'transparent'};
-  color: ${({ theme, $variant }) => theme.palette[variantTokens[$variant].color] ?? theme.palette.text};
+  border: 1px solid
+    ${({ theme, $variant }) => resolvePalette(theme, variantTokens[$variant].border, 'transparent')};
+  background: ${({ theme, $variant }) =>
+    resolvePalette(theme, variantTokens[$variant].background, 'transparent')};
+  color: ${({ theme, $variant }) => resolvePalette(theme, variantTokens[$variant].color, theme.palette.text)};
   cursor: pointer;
   transition: background 0.2s ease, transform 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: ${({ $variant }) =>
     $variant === 'ghost' ? 'none' : '0 6px 16px rgba(42, 66, 124, 0.12)'};
 
-  &:hover:not(:disabled) {
-    background: ${({ theme, $variant }) => theme.palette[variantTokens[$variant].hover] ?? 'transparent'};
+  &:hover:not(:disabled):not([aria-disabled='true']) {
+    background: ${({ theme, $variant }) =>
+      resolvePalette(theme, variantTokens[$variant].hover, theme.palette.surfaceMuted)};
     transform: translateY(-1px);
   }
 
@@ -91,12 +103,19 @@ const StyledButton = styled.button<StyledButtonProps>`
     outline-offset: 2px;
   }
 
-  &:disabled {
+  &:disabled,
+  &[aria-disabled='true'] {
     opacity: 0.55;
     cursor: not-allowed;
     box-shadow: none;
   }
+
+  &[aria-disabled='true'] {
+    pointer-events: none;
+  }
 `;
+
+const AnchorStyledButton = StyledButton.withComponent('a');
 
 const Spinner = styled.span`
   width: 1rem;
@@ -119,24 +138,34 @@ interface ButtonBaseProps {
   isLoading?: boolean;
   leftIcon?: ReactNode;
   rightIcon?: ReactNode;
+  disabled?: boolean;
 }
 
-type NativeButtonProps = ButtonBaseProps & ButtonHTMLAttributes<HTMLButtonElement> & { as?: 'button' };
-type AnchorButtonProps = ButtonBaseProps & AnchorHTMLAttributes<HTMLAnchorElement> & { as: 'a' };
+type NativeButtonProps = ButtonBaseProps &
+  Omit<ButtonHTMLAttributes<HTMLButtonElement>, keyof ButtonBaseProps | 'as'> & { as?: 'button' };
+type AnchorButtonProps = ButtonBaseProps &
+  Omit<AnchorHTMLAttributes<HTMLAnchorElement>, keyof ButtonBaseProps | 'as'> & { as: 'a' };
 
 export type ButtonProps = NativeButtonProps | AnchorButtonProps;
 
-const renderContent = (children: ReactNode, isLoading: boolean, leftIcon?: ReactNode, rightIcon?: ReactNode) => (
+const isAnchorProps = (props: ButtonProps): props is AnchorButtonProps => props.as === 'a';
+
+const renderContent = (
+  children: ReactNode,
+  isLoading: boolean,
+  leftIcon?: ReactNode,
+  rightIcon?: ReactNode,
+) => (
   <>
-    {isLoading && <Spinner role="status" aria-hidden />}
+    {isLoading ? <Spinner role="status" aria-hidden /> : null}
     {!isLoading && leftIcon ? <IconWrapper>{leftIcon}</IconWrapper> : null}
     <span>{children}</span>
     {!isLoading && rightIcon ? <IconWrapper>{rightIcon}</IconWrapper> : null}
   </>
 );
 
-export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>(
-  (props, ref) => {
+export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonProps>((props, ref) => {
+  if (isAnchorProps(props)) {
     const {
       variant = 'primary',
       size = 'md',
@@ -145,61 +174,80 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
       leftIcon,
       rightIcon,
       children,
-      ...rest
+      disabled = false,
+      onClick,
+      tabIndex,
+      as: _as,
+      ...anchorProps
     } = props;
 
     const shared = {
       $variant: variant,
       $size: size,
       $fullWidth: fullWidth,
-      $isLoading: isLoading,
     } as const;
 
-    if (rest.as === 'a') {
-      const { onClick, tabIndex, disabled, ...anchorProps } = rest;
-      const isDisabled = Boolean(disabled ?? anchorProps['aria-disabled'] ?? isLoading);
-      const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
-        if (isDisabled) {
-          event.preventDefault();
-          event.stopPropagation();
-          return;
-        }
-        onClick?.(event);
-      };
+    const isDisabled = disabled || isLoading;
 
-      return (
-        <StyledButton
-          {...shared}
-          {...anchorProps}
-          ref={ref as ForwardedRef<HTMLAnchorElement>}
-          as="a"
-          aria-busy={isLoading}
-          aria-disabled={isDisabled || undefined}
-          tabIndex={isDisabled ? -1 : tabIndex}
-          onClick={handleClick}
-        >
-          {renderContent(children, isLoading, leftIcon, rightIcon)}
-        </StyledButton>
-      );
-    }
+    const handleClick = (event: MouseEvent<HTMLAnchorElement>) => {
+      if (isDisabled) {
+        event.preventDefault();
+        event.stopPropagation();
+        return;
+      }
 
-    const buttonProps = rest as NativeButtonProps;
-    const { type, disabled, ...native } = buttonProps;
-    const isDisabled = Boolean(disabled || isLoading);
+      onClick?.(event);
+    };
 
     return (
-      <StyledButton
+      <AnchorStyledButton
         {...shared}
-        {...native}
-        ref={ref as ForwardedRef<HTMLButtonElement>}
-        type={type ?? 'button'}
+        {...anchorProps}
+        ref={ref as ForwardedRef<HTMLAnchorElement>}
         aria-busy={isLoading}
-        disabled={isDisabled}
+        aria-disabled={isDisabled || undefined}
+        tabIndex={isDisabled ? -1 : tabIndex}
+        onClick={handleClick}
       >
         {renderContent(children, isLoading, leftIcon, rightIcon)}
-      </StyledButton>
+      </AnchorStyledButton>
     );
-  },
-);
+  }
+
+  const {
+    variant = 'primary',
+    size = 'md',
+    fullWidth = false,
+    isLoading = false,
+    leftIcon,
+    rightIcon,
+    children,
+    disabled = false,
+    type,
+    as: _as,
+    ...buttonProps
+  } = props;
+
+  const shared = {
+    $variant: variant,
+    $size: size,
+    $fullWidth: fullWidth,
+  } as const;
+
+  const isDisabled = disabled || isLoading;
+
+  return (
+    <StyledButton
+      {...shared}
+      {...buttonProps}
+      ref={ref as ForwardedRef<HTMLButtonElement>}
+      type={type ?? 'button'}
+      aria-busy={isLoading}
+      disabled={isDisabled}
+    >
+      {renderContent(children, isLoading, leftIcon, rightIcon)}
+    </StyledButton>
+  );
+});
 
 Button.displayName = 'Button';

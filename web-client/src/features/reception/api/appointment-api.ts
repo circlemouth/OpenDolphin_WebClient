@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 export interface RawAppointmentResource {
   id?: number;
@@ -84,7 +84,7 @@ export const fetchAppointments = async (
   )}`;
 
   return measureApiPerformance(
-    'reception.appointments.fetch',
+    PERFORMANCE_METRICS.reception.appointments.fetch,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawAppoListListResource>(endpoint);
@@ -178,7 +178,7 @@ export const saveAppointments = async (commands: AppointmentCommand[]): Promise<
   };
 
   await measureApiPerformance(
-    'reception.appointments.save',
+    PERFORMANCE_METRICS.reception.appointments.save,
     'PUT /appo',
     async () => {
       await httpClient.put<string>('/appo', payload);

@@ -1,3 +1,5 @@
+import type { AuthHeaders } from '@/libs/auth/auth-headers';
+
 export interface AuthIdentity {
   facilityId: string;
   userId: string;
@@ -34,7 +36,7 @@ export interface AuthContextValue {
   isAuthenticated: boolean;
   login: (payload: LoginPayload) => Promise<AuthSession>;
   logout: () => void;
-  getAuthHeaders: () => Record<string, string>;
+  getAuthHeaders: () => AuthHeaders | null;
   hasRole: (role: string) => boolean;
   hasAnyRole: (...roles: string[]) => boolean;
 }

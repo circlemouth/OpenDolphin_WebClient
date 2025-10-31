@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import type { JSX } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate } from 'react-router-dom';
@@ -204,10 +205,10 @@ const columnHeaders: Record<ReceptionColumnKey, string> = {
 };
 
 const statusFilterOptions: { value: StatusFilter; label: string }[] = [
-  { value: 'all', label: 'すべて' },
+  { value: 'all', label: '縺吶∋縺ｦ' },
   { value: 'waiting', label: '待機中' },
-  { value: 'calling', label: '呼出済み' },
-  { value: 'inProgress', label: '診察中' },
+  { value: 'calling', label: '蜻ｼ蜃ｺ貂医∩' },
+  { value: 'inProgress', label: '險ｺ蟇滉ｸｭ' },
 ];
 
 const classifyVisit = (visit: PatientVisitSummary): QueueStatus => {
@@ -416,10 +417,10 @@ export const ReceptionPage = () => {
   const renderStatusBadge = (visit: PatientVisitSummary) => {
     const status = classifyVisit(visit);
     if (status === 'inProgress') {
-      return <StatusBadge tone="info">診察中</StatusBadge>;
+      return <StatusBadge tone="info">險ｺ蟇滉ｸｭ</StatusBadge>;
     }
     if (status === 'calling') {
-      return <StatusBadge tone="warning">呼出済み</StatusBadge>;
+      return <StatusBadge tone="warning">蜻ｼ蜃ｺ貂医∩</StatusBadge>;
     }
     return <StatusBadge tone="neutral">待機中</StatusBadge>;
   };
@@ -588,12 +589,12 @@ export const ReceptionPage = () => {
       <HeaderBar>
         <TitleBlock>
           <h1>受付患者一覧</h1>
-          <p>待機状況を確認し、カルテ編集へ素早く遷移できます。</p>
+          <p>受付状況を確認し、カルテ画面へ素早く遷移できます。</p>
         </TitleBlock>
         <Controls>
           <TextField
-            label="検索"
-            placeholder="氏名・患者ID・メモで絞り込み"
+            label="讀懃ｴ｢"
+            placeholder="氏名・患者ID・メモで縮り込み"
             value={keyword}
             onChange={(event) => setKeyword(event.currentTarget.value)}
           />
@@ -608,7 +609,7 @@ export const ReceptionPage = () => {
             value={preferences.viewMode}
             onChange={(event) => setViewMode(event.currentTarget.value as ReceptionViewMode)}
             options={[
-              { value: 'card', label: 'カード表示' },
+              { value: 'card', label: '繧ｫ繝ｼ繝芽｡ｨ遉ｺ' },
               { value: 'table', label: '表形式' },
             ]}
           />
@@ -617,7 +618,7 @@ export const ReceptionPage = () => {
             variant="secondary"
             onClick={() => setShowColumnConfigurator((prev) => !prev)}
           >
-            {showColumnConfigurator ? '項目設定を閉じる' : '表示項目を設定'}
+            {showColumnConfigurator ? '列設定を閉じる' : '表示列を設定'}
           </Button>
           <Button
             type="button"
@@ -638,11 +639,11 @@ export const ReceptionPage = () => {
           <strong>{summary.waiting}</strong>
         </SummaryCard>
         <SummaryCard tone="muted">
-          <span>呼出済み</span>
+          <span>蜻ｼ蜃ｺ貂医∩</span>
           <strong>{summary.calling}</strong>
         </SummaryCard>
         <SummaryCard tone="muted">
-          <span>診察中</span>
+          <span>險ｺ蟇滉ｸｭ</span>
           <strong>{summary.inProgress}</strong>
         </SummaryCard>
       </SummaryRow>
@@ -658,16 +659,16 @@ export const ReceptionPage = () => {
         ) : null}
       </ConfiguratorContainer>
 
-      {visitsQuery.isLoading ? (
+      {visitsQuery.isPending ? (
         <EmptyState tone="muted">
-          <h2 style={{ margin: 0, fontSize: '1rem' }}>受付情報を読み込み中です…</h2>
+          <h2 style={{ margin: 0, fontSize: '1rem' }}>蜿嶺ｻ俶ュ蝣ｱ繧定ｪｭ縺ｿ霎ｼ縺ｿ荳ｭ縺ｧ縺吮ｦ</h2>
           <p style={{ margin: 0, color: '#4b5563' }}>スタッフが受付登録を完了すると自動で表示されます。</p>
         </EmptyState>
       ) : filteredVisits.length === 0 ? (
         <EmptyState tone="muted">
-          <h2 style={{ margin: 0, fontSize: '1rem' }}>表示できる受付がありません</h2>
+          <h2 style={{ margin: 0, fontSize: '1rem' }}>陦ｨ遉ｺ縺ｧ縺阪ｋ蜿嶺ｻ倥′縺ゅｊ縺ｾ縺帙ｓ</h2>
           <p style={{ margin: 0, color: '#4b5563' }}>
-            絞り込み条件を確認するか、最新情報への更新をお試しください。
+            縮り込み条件を確認するか、最新情報への更新をお試しください。
           </p>
           <Button
             type="button"
@@ -685,7 +686,7 @@ export const ReceptionPage = () => {
           <VisitTable>
             <thead>
               <tr>
-                <TableHeadCell>氏名</TableHeadCell>
+                <TableHeadCell>豌丞錐</TableHeadCell>
                 {visibleColumns.map((column) => (
                   <TableHeadCell key={column}>{columnHeaders[column]}</TableHeadCell>
                 ))}
@@ -699,9 +700,9 @@ export const ReceptionPage = () => {
                   clientUuid && visit.ownerUuid && visit.ownerUuid !== clientUuid;
                 const isCalling = hasOpenBit(visit.state);
                 const canToggleCall = !visit.ownerUuid;
-                const callButtonLabel = isCalling ? '待機に戻す' : '呼出する';
+                const callButtonLabel = isCalling ? '呼出を解除' : '呼出する';
                 const callButtonTitle = !canToggleCall
-                  ? '診察中のため呼出状態は変更できません'
+                  ? '診察中のため呼出状態を変更できません'
                   : undefined;
                 const isStateUpdating =
                   statePendingVisitId === visit.visitId && receptionCallMutation.isPending;
@@ -739,9 +740,9 @@ export const ReceptionPage = () => {
                         return (
                           <MemoEditor>
                             <TextArea
-                              label="受付メモ"
-                              description="保存すると他端末にも即座に反映されます"
-                              placeholder="スタッフ間で共有したい注意事項を入力"
+                              label="蜿嶺ｻ倥Γ繝｢"
+                              description="保存すると他端末にも即座に反映されます。"
+                              placeholder="スタッフ間で共有したい注意事項を入力してください。"
                               value={memoDraft}
                               onChange={(event) => setMemoDraft(event.currentTarget.value)}
                               disabled={isMemoUpdating}
@@ -766,7 +767,7 @@ export const ReceptionPage = () => {
                                 onClick={handleCancelMemoEdit}
                                 disabled={isMemoUpdating}
                               >
-                                キャンセル
+                                繧ｭ繝｣繝ｳ繧ｻ繝ｫ
                               </Button>
                             </ActionRow>
                           </MemoEditor>
@@ -856,7 +857,7 @@ export const ReceptionPage = () => {
                           variant="ghost"
                           onClick={() => setSelectedVisitId(visit.visitId)}
                         >
-                          受付詳細
+                          蜿嶺ｻ倩ｩｳ邏ｰ
                         </Button>
                         <Button
                           type="button"
@@ -882,9 +883,9 @@ export const ReceptionPage = () => {
             const isOwnedByOther = clientUuid && visit.ownerUuid && visit.ownerUuid !== clientUuid;
             const isCalling = hasOpenBit(visit.state);
             const canToggleCall = !visit.ownerUuid;
-            const callButtonLabel = isCalling ? '待機に戻す' : '呼出する';
+            const callButtonLabel = isCalling ? '呼出を解除' : '呼出する';
             const callButtonTitle = !canToggleCall
-              ? '診察中のため呼出状態は変更できません'
+              ? '診察中のため呼出状態を変更できません'
               : undefined;
             const isStateUpdating =
               statePendingVisitId === visit.visitId && receptionCallMutation.isPending;
@@ -940,19 +941,19 @@ export const ReceptionPage = () => {
               metaItems.push(<span key="patientId">ID: {visit.patientId}</span>);
             }
             if (isColumnVisible('kanaName')) {
-              metaItems.push(<span key="kanaName">かな: {visit.kanaName ?? '---'}</span>);
+              metaItems.push(<span key="kanaName">縺九↑: {visit.kanaName ?? '---'}</span>);
             }
             if (isColumnVisible('visitDate')) {
-              metaItems.push(<span key="visitDate">来院: {visit.visitDate ?? '---'}</span>);
+              metaItems.push(<span key="visitDate">譚･髯｢: {visit.visitDate ?? '---'}</span>);
             }
             if (isColumnVisible('insurance')) {
-              metaItems.push(<span key="insurance">保険: {firstInsurance}</span>);
+              metaItems.push(<span key="insurance">菫晞匱: {firstInsurance}</span>);
             }
             if (isColumnVisible('doctor')) {
-              metaItems.push(<span key="doctor">担当: {doctorInfo}</span>);
+              metaItems.push(<span key="doctor">担当医: {doctorInfo}</span>);
             }
             if (isColumnVisible('memo')) {
-              metaItems.push(<span key="memo">受付メモ: {visit.memo ?? '---'}</span>);
+              metaItems.push(<span key="memo">蜿嶺ｻ倥Γ繝｢: {visit.memo ?? '---'}</span>);
             }
 
             return (
@@ -973,9 +974,9 @@ export const ReceptionPage = () => {
                   {isMemoEditing ? (
                     <MemoEditor>
                       <TextArea
-                        label="受付メモ"
-                        description="保存すると他端末にも即座に反映されます"
-                        placeholder="スタッフ間で共有したい注意事項を入力"
+                        label="蜿嶺ｻ倥Γ繝｢"
+                        description="保存すると他端末にも即座に反映されます。"
+                        placeholder="スタッフ間で共有したい注意事項を入力してください。"
                         value={memoDraft}
                         onChange={(event) => setMemoDraft(event.currentTarget.value)}
                         disabled={isMemoUpdating}
@@ -998,7 +999,7 @@ export const ReceptionPage = () => {
                           onClick={handleCancelMemoEdit}
                           disabled={isMemoUpdating}
                         >
-                          キャンセル
+                          繧ｭ繝｣繝ｳ繧ｻ繝ｫ
                         </Button>
                       </ActionRow>
                     </MemoEditor>
@@ -1045,7 +1046,7 @@ export const ReceptionPage = () => {
                     variant="secondary"
                     onClick={() => setSelectedVisitId(visit.visitId)}
                   >
-                    受付詳細
+                    蜿嶺ｻ倩ｩｳ邏ｰ
                   </Button>
                   <Button
                     type="button"

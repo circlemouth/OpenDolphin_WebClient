@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
 
@@ -43,7 +43,7 @@ export const fetchFreeDocument = async (patientId: string): Promise<FreeDocument
 
   const endpoint = `/karte/freedocument/${encodeURIComponent(trimmed)}`;
   return measureApiPerformance(
-    'charts.freeDocument.fetch',
+    PERFORMANCE_METRICS.charts.freeDocument.fetch,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawFreeDocumentResource | null>(endpoint);
@@ -77,7 +77,7 @@ export const saveFreeDocument = async (payload: SaveFreeDocumentPayload): Promis
 
   const endpoint = '/karte/freedocument';
   await measureApiPerformance(
-    'charts.freeDocument.save',
+    PERFORMANCE_METRICS.charts.freeDocument.save,
     `PUT ${endpoint}`,
     async () => {
       await httpClient.put<string>(endpoint, requestBody);
