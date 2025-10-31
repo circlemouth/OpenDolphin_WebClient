@@ -97,9 +97,8 @@ Web カルテの Supplement パネルに「診断書・医療文書」「シェ�
 
 ## 9. 参照資料
 
-- `features/RECEPTION_SCHEDULE_AND_SUMMARY.md`: 機能仕様と API 詳細。
-- `features/FACILITY_SCHEDULE_VIEW.md`: 施設予約一覧ページの詳細仕様と注意点。
-- `features/LAB_RESULTS_VIEWER.md`: 医師向け検査履歴ビューア仕様（受付研修で参照する場合の参考資料）。
-- `planning/WEB_VS_ONPRE_CHECKLIST.md`: オンプレとの差分解消状況。
-- `features/PHASE3_STAMP_AND_ORCA.md`: 医師向けオーダセット共有手順（必要に応じて受付教育に転用）。
-- `features/MEDICAL_CERTIFICATES_AND_SCHEMA.md`: 診断書エディタとシェーマエディタの詳細仕様。
+- [`guides/CLINICAL_MODULES.md#2-受付・予約・サマリ運用`](../guides/CLINICAL_MODULES.md#2-%E5%8F%97%E4%BB%98%E3%83%BB%E4%BA%88%E7%B4%84%E3%83%BB%E3%82%B5%E3%83%9E%E3%83%AA%E9%81%8B%E7%94%A8): 受付画面・予約管理・リマインダー運用の仕様。
+- [`guides/CLINICAL_MODULES.md#3-カルテ補助パネル`](../guides/CLINICAL_MODULES.md#3-%E3%82%AB%E3%83%AB%E3%83%86%E8%A3%9C%E5%8A%A9%E3%83%91%E3%83%8D%E3%83%AB): CareMap やラボビューアの利用ガイド。
+- [`guides/CLINICAL_MODULES.md#5-文書・シェーマ・テンプレート`](../guides/CLINICAL_MODULES.md#5-%E6%96%87%E6%9B%B8%E3%83%BB%E3%82%B7%E3%82%A7%E3%83%BC%E3%83%9E%E3%83%BB%E3%83%86%E3%83%B3%E3%83%97%E3%83%AC%E3%83%BC%E3%83%88): 診断書・FreeDocument・シェーマの運用。
+- [`process/SWING_PARITY_CHECKLIST.md`](../process/SWING_PARITY_CHECKLIST.md): オンプレ版との機能差分と残タスク一覧。
+- [`process/SECURITY_AND_QUALITY_IMPROVEMENTS.md`](../process/SECURITY_AND_QUALITY_IMPROVEMENTS.md): 監査・セキュリティ運用の最新ポリシー。
