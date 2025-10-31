@@ -37,9 +37,6 @@ export const DashboardPage = () => (
           <Button as="a" href="/docs/web-client/planning/phase2/PHASE2_PROGRESS.md" variant="primary">
             フェーズ2進捗メモを見る
           </Button>
-          <Button as="a" href="/docs/web-client/planning/WEB_CLIENT_WORK_PLAN.md" variant="secondary">
-            実装計画を確認
-          </Button>
         </Stack>
       </Stack>
     </SurfaceCard>

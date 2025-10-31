@@ -3,7 +3,6 @@ import { Navigate, Route, createBrowserRouter, createRoutesFromElements } from '
 
 import { AppShell } from '@/app/layout/AppShell';
 import { LoginPage } from '@/features/auth/pages/LoginPage';
-import { DashboardPage } from '@/features/dashboard/pages/DashboardPage';
 import { PatientsPage } from '@/features/patients/pages/PatientsPage';
 import { ReceptionPage } from '@/features/reception/pages/ReceptionPage';
 import { ChartsPage } from '@/features/charts/pages/ChartsPage';
@@ -24,7 +23,7 @@ export const createAppRouter = () =>
           <Route
             path="patients"
             element={
-              <Suspense fallback={<div>繝ｭ繝ｼ繝我ｸｭ...</div>}>
+              <Suspense fallback={<div>ロード中...</div>}>
                 <PatientsPage />
               </Suspense>
             }
@@ -32,7 +31,7 @@ export const createAppRouter = () =>
           <Route
             path="reception"
             element={
-              <Suspense fallback={<div>繝ｭ繝ｼ繝我ｸｭ...</div>}>
+              <Suspense fallback={<div>ロード中...</div>}>
                 <ReceptionPage />
               </Suspense>
             }
@@ -40,23 +39,15 @@ export const createAppRouter = () =>
           <Route
             path="facility-schedule"
             element={
-              <Suspense fallback={<div>繝ｭ繝ｼ繝我ｸｭ...</div>}>
+              <Suspense fallback={<div>ロード中...</div>}>
                 <FacilitySchedulePage />
-              </Suspense>
-            }
-          />
-          <Route
-            path="dashboard"
-            element={
-              <Suspense fallback={<div>繝ｭ繝ｼ繝我ｸｭ...</div>}>
-                <DashboardPage />
               </Suspense>
             }
           />
           <Route
             path="charts"
             element={
-              <Suspense fallback={<div>繝ｭ繝ｼ繝我ｸｭ...</div>}>
+              <Suspense fallback={<div>ロード中...</div>}>
                 <ChartsPage />
               </Suspense>
             }
@@ -64,7 +55,7 @@ export const createAppRouter = () =>
           <Route
             path="charts/:visitId"
             element={
-              <Suspense fallback={<div>繝ｭ繝ｼ繝我ｸｭ...</div>}>
+              <Suspense fallback={<div>ロード中...</div>}>
                 <ChartsPage />
               </Suspense>
             }
@@ -103,7 +94,7 @@ export const createAppRouter = () =>
             path="administration/stamps"
             element={
               <RequireRole roles={['admin']}>
-                <Suspense fallback={<div>隱ｭ霎ｼ荳ｭ...</div>}>
+                <Suspense fallback={<div>読込中...</div>}>
                   <StampManagementPage />
                 </Suspense>
               </RequireRole>

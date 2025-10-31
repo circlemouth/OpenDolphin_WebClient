@@ -12,7 +12,6 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 
 - `requirements/WEB_CLIENT_REQUIREMENTS.md` – 機能・非機能要件。
 
-- `planning/WEB_CLIENT_WORK_PLAN.md` – 実装計画とマイルストーン。
 
 - `planning/phase0/PHASE0_DELIVERABLES.md` – フェーズ0の進捗サマリと意思決定ログ。
 
@@ -68,7 +67,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 
 2. `requirements/WEB_CLIENT_REQUIREMENTS.md` をレビューしてスコープ・品質要件を把握する。
 
-3. `planning/WEB_CLIENT_WORK_PLAN.md` のフェーズ計画に沿ってタスクを進行する。
+3. `planning/phase*/` 配下のフェーズ計画に沿ってタスクを進行する。
 
 4. UI/UX 検討時は `ux/` 内ドキュメント（特に Appendix）と設計検討メモを参照する。
 
@@ -154,9 +153,9 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 
 - 2026-04-17: カルテ画面 UI をフルレイアウト化。`ux/KARTE_SCREEN_IMPLEMENTATION.md` を新設し、`features/charts/pages/ChartsPage.tsx` の刷新内容とショートカット/レスポンシブ仕様を整理。
 
-- 2026-03-30: フェーズ4 セキュリティ/性能/負荷対策を実装。`features/PHASE4_SECURITY_AND_QUALITY.md` を新設し、`planning/WEB_CLIENT_WORK_PLAN.md` のフェーズ4タスクを完了として更新。
+- 2026-03-30: フェーズ4 セキュリティ/性能/負荷対策を実装。`features/PHASE4_SECURITY_AND_QUALITY.md` を新設し、フェーズ4タスクを完了として記録。
 
-- 2026-02-20: フェーズ3 前半のスタンプライブラリ・ORCA 連携 UI を実装。`features/PHASE3_STAMP_AND_ORCA.md` を新設し、`planning/WEB_CLIENT_WORK_PLAN.md` のタスクステータスを更新。
+- 2026-02-20: フェーズ3 前半のスタンプライブラリ・ORCA 連携 UI を実装。`features/PHASE3_STAMP_AND_ORCA.md` を新設し、フェーズ3タスクステータスを更新。
 
 - 2026-02-14: フェーズ2 カルテ編集機能を実装。`features/charts` に診察開始/終了、SOAP 保存、長輪講同期を追加し、`planning/phase2/PHASE2_PROGRESS.md` を更新。
 
@@ -164,7 +163,7 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 
 - 2025-11-05: 認証ラッパーのセキュリティレビュー完了を追記し、`planning/phase1/PHASE1_SECURITY_REVIEW.md` を新設。フェーズ1完了条件を更新。
 
-- 2025-11-04: フェーズ1成果物として認証 SDK/HTTP クライアント/Storybook を整備し、`design-system/ALPHA_COMPONENTS.md` を新設。`planning/phase1/PHASE1_FOUNDATION.md` と `planning/WEB_CLIENT_WORK_PLAN.md` のステータスを更新。
+- 2025-11-04: フェーズ1成果物として認証 SDK/HTTP クライアント/Storybook を整備し、`design-system/ALPHA_COMPONENTS.md` を新設。`planning/phase1/PHASE1_FOUNDATION.md` のステータスを更新。
 
 - 2025-10-31: 受付管理ダイアログ (`web-client/src/features/reception/components/VisitManagementDialog.tsx`) の文字列化けと JSX 崩れを修復し、SelectField/SurfaceCard などの props を最新版に合わせて整理。受付メモ差し戻しボタンは暫定文言「入力を元に戻す」を設定しており、旧仕様との差異がないか要確認。
 - 2025-10-30: Docker Compose による既存サーバー起動手順を整備し、Web クライアントは Vite プロキシと `.env.local` を追加してローカル検証を簡素化。
@@ -172,6 +171,3 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 - 2025-10-29: `planning/phase0/PHASE0_DELIVERABLES.md`, `planning/phase0/API_INVENTORY.md` を追加し、フェーズ0タスクの進捗と REST API 利用方針を整理。
 
 - 2025-10-29: `planning/phase1/PHASE1_FOUNDATION.md` を追加し、web-client プロジェクト初期セットアップと採用スタックを記録。
-
-
-
