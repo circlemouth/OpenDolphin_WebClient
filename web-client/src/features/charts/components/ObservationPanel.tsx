@@ -200,7 +200,7 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
   return (
     <PanelCard>
       <PanelHeader>
-        <h3>隕ｳ蟇溯ｨ倬鹸</h3>
+        <h3>観察記録</h3>
         <p>バイタルなどの観察記録を参照・登録できます。</p>
       </PanelHeader>
       <FilterRow>
@@ -222,11 +222,11 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
           onClick={() => observationsQuery.refetch()}
           isLoading={observationsQuery.isFetching}
         >
-          蜀崎ｪｭ霎ｼ
+          再読込
         </Button>
       </FilterRow>
       <SurfaceCard tone="muted">
-        <h4 style={{ margin: '0 0 8px', fontSize: '0.95rem' }}>譁ｰ縺励＞隕ｳ蟇溘ｒ逋ｻ骭ｲ</h4>
+        <h4 style={{ margin: '0 0 8px', fontSize: '0.95rem' }}>新しい観察記録を登録</h4>
         <FormGrid>
           <TextField
             label="Observation"
@@ -241,7 +241,7 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
             placeholder="例: BT"
           />
           <TextField
-            label="蛟､"
+            label="値"
             value={newValue}
             onChange={(event) => setNewValue(event.currentTarget.value)}
             placeholder="例: 36.8"
@@ -254,7 +254,7 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
           />
         </FormGrid>
         <TextArea
-          label="繝｡繝｢"
+          label="メモ"
           value={newMemo}
           onChange={(event) => setNewMemo(event.currentTarget.value)}
           rows={2}
@@ -269,7 +269,7 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
             setNewMemo('');
             setFormError(null);
           }}>
-            繧ｯ繝ｪ繧｢
+            クリア
           </Button>
           <Button
             type="button"
@@ -277,7 +277,7 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
             disabled={!newObservation.trim() || !newPhenomenon.trim()}
             isLoading={createMutation.isPending}
           >
-            逋ｻ骭ｲ
+            登録
           </Button>
         </div>
       </SurfaceCard>
@@ -290,8 +290,8 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
       ) : (
         <ObservationList>
           <ObservationHeaderRow>
-            <span>観察</span>
-            <span>蛟､</span>
+            <span>観察項目</span>
+            <span>値</span>
             <span>日時</span>
           </ObservationHeaderRow>
           {sortedObservations.map((item) => (
@@ -313,7 +313,7 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
                   disabled={deleteMutation.isPending}
                   onClick={() => handleDelete(item)}
                 >
-                  蜑企勁
+                  削除
                 </Button>
               </div>
             </ObservationRow>

@@ -204,7 +204,7 @@ const Footer = styled.footer`
 `;
 
 const sidebarTips = [
-  'HTTPS・CSP・CSRF を含む前面セキュリティ対策を適用しました',
+  'HTTPS・CSP・CSRF を含む全面セキュリティ対策を適用しました',
   '患者検索・カルテ取得・ORCA マスター検索に性能計測と監査ログを追加しました',
   '30 クライアント同時接続を想定した負荷テストスクリプトを提供しています',
 ];
@@ -277,43 +277,43 @@ export const AppShell = () => {
         <SidebarContext.Provider value={sidebarController}>
           <Body>
             <Navigation aria-label="主要ナビゲーション">
-            <NavTitle>Primary</NavTitle>
-            <NavItem to="/patients">
-              患者リスト
-            </NavItem>
-            <NavItem to="/reception">
-              受付一覧
-            </NavItem>
-            <NavItem to="/facility-schedule">
-              施設予約一覧
-            </NavItem>
-            <NavItem to="/dashboard">
-              ダッシュボード
-            </NavItem>
-            <NavItem to="/charts">
-              カルテ編集
-            </NavItem>
-            <NavItem to="/orca" aria-disabled>
-              ORCA 連携（準備中）
-            </NavItem>
-            {canAccessAdministration ? (
-              <Fragment>
-                <NavTitle>Administration</NavTitle>
-                <NavItem to="/administration/users">
-                  ユーザー管理
-                </NavItem>
-                <NavItem to="/administration/patients">
-                  患者データ出力
-                </NavItem>
-                <NavItem to="/administration/system">
-                  システム設定
-                </NavItem>
-                <NavItem to="/administration/stamps">
-                  繧ｹ繧ｿ繝ｳ繝励Λ繧､繝悶Λ繝ｪ
-                </NavItem>
-              </Fragment>
-            ) : null}
-          </Navigation>
+              <NavTitle>主要メニュー</NavTitle>
+              <NavItem to="/patients">
+                患者一覧
+              </NavItem>
+              <NavItem to="/reception">
+                受付一覧
+              </NavItem>
+              <NavItem to="/facility-schedule">
+                施設スケジュール
+              </NavItem>
+              <NavItem to="/dashboard">
+                ダッシュボード
+              </NavItem>
+              <NavItem to="/charts">
+                カルテ閲覧
+              </NavItem>
+              <NavItem to="/orca" aria-disabled>
+                ORCA 連携（準備中）
+              </NavItem>
+              {canAccessAdministration ? (
+                <Fragment>
+                  <NavTitle>管理者メニュー</NavTitle>
+                  <NavItem to="/administration/users">
+                    ユーザー管理
+                  </NavItem>
+                  <NavItem to="/administration/patients">
+                    患者データ出力
+                  </NavItem>
+                  <NavItem to="/administration/system">
+                    システム設定
+                  </NavItem>
+                  <NavItem to="/administration/stamps">
+                    スタンプ管理
+                  </NavItem>
+                </Fragment>
+              ) : null}
+            </Navigation>
 
             <Main id="main-content">
               <Outlet />
