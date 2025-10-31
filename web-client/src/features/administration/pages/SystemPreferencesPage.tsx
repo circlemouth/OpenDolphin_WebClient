@@ -368,21 +368,21 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
     if (facilityUnavailable) {
       setPhrKeyFeedback({
         tone: 'danger',
-        message: '譁ｽ險ｭ ID 縺瑚ｧ｣豎ｺ縺ｧ縺阪∪縺帙ｓ縲ょ・繝ｭ繧ｰ繧､繝ｳ縺励※縺上□縺輔＞縲・,
+        message: '施設 ID が解決できません。再度ログインしてください。',
       });
       return;
     }
     if (!phrKeyForm.patientId?.trim()) {
       setPhrKeyFeedback({
         tone: 'danger',
-        message: '謔｣閠・ID 繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲・,
+        message: '患者 ID を入力してください。',
       });
       return;
     }
     if (!phrKeyForm.accessKey?.trim() || !phrKeyForm.secretKey?.trim()) {
       setPhrKeyFeedback({
         tone: 'danger',
-        message: '繧｢繧ｯ繧ｻ繧ｹ繧ｭ繝ｼ縺ｨ繧ｷ繝ｼ繧ｯ繝ｬ繝・ヨ繧ｭ繝ｼ繧貞・蜉帙＠縺ｦ縺上□縺輔＞・郁・蜍慕函謌舌ｂ蛻ｩ逕ｨ縺ｧ縺阪∪縺呻ｼ峨・,
+        message: 'アクセスキーとシークレットキーを入力してください（自動生成も利用できます）。',
       });
       return;
     }
@@ -397,13 +397,13 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
       });
       setPhrKeyFeedback({
         tone: 'info',
-        message: 'PHR 繧ｭ繝ｼ繧堤匳骭ｲ縺励∪縺励◆縲・,
+        message: 'PHR キーを登録しました。',
       });
     } catch (error) {
       console.error(error);
       setPhrKeyFeedback({
         tone: 'danger',
-        message: 'PHR 繧ｭ繝ｼ縺ｮ逋ｻ骭ｲ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・,
+        message: 'PHR キーの登録に失敗しました。',
       });
     }
   };
@@ -412,7 +412,7 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
     if (facilityUnavailable) {
       setPhrContainerFeedback({
         tone: 'danger',
-        message: '譁ｽ險ｭ ID 縺瑚ｧ｣豎ｺ縺ｧ縺阪∪縺帙ｓ縲ょ・繝ｭ繧ｰ繧､繝ｳ縺励※縺上□縺輔＞縲・,
+        message: '施設 ID が解決できません。再度ログインしてください。',
       });
       return;
     }
@@ -420,7 +420,7 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
     if (!targetPatientId) {
       setPhrContainerFeedback({
         tone: 'danger',
-        message: '謔｣閠・ID 繧呈欠螳壹＠縺ｦ縺上□縺輔＞縲・,
+        message: '患者 ID を指定してください。',
       });
       return;
     }
@@ -435,14 +435,14 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
       setPhrContainer(container);
       setPhrContainerFeedback({
         tone: 'info',
-        message: 'PHR 繝・・繧ｿ繧貞叙蠕励＠縺ｾ縺励◆縲・,
+        message: 'PHR コンテナを取得しました。',
       });
     } catch (error) {
       console.error(error);
       setPhrContainer(null);
       setPhrContainerFeedback({
         tone: 'danger',
-        message: 'PHR 繝・・繧ｿ縺ｮ蜿門ｾ励↓螟ｱ謨励＠縺ｾ縺励◆縲・,
+        message: 'PHR コンテナの取得に失敗しました。',
       });
     }
   };
@@ -466,7 +466,7 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
     if (!targetPatientId) {
       setPhrTextFeedback({
         tone: 'danger',
-        message: '謔｣閠・ID 繧呈欠螳壹＠縺ｦ縺上□縺輔＞縲・,
+        message: '患者 ID を指定してください。',
       });
       return;
     }
@@ -476,14 +476,14 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
       setPhrTextContents(text);
       setPhrTextFeedback({
         tone: 'info',
-        message: '繝・く繧ｹ繝医ョ繝ｼ繧ｿ繧貞叙蠕励＠縺ｾ縺励◆縲・,
+        message: 'テキストデータを取得しました。',
       });
     } catch (error) {
       console.error(error);
       setPhrTextContents('');
       setPhrTextFeedback({
         tone: 'danger',
-        message: '繝・く繧ｹ繝医ョ繝ｼ繧ｿ縺ｮ蜿門ｾ励↓螟ｱ謨励＠縺ｾ縺励◆縲・,
+        message: 'テキストデータの取得に失敗しました。',
       });
     }
   };
@@ -495,16 +495,17 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
     <Stack gap={20}>
       <SurfaceCard>
         <Stack gap={16}>
-          <SectionTitle>PHR 繧ｭ繝ｼ邂｡逅・/SectionTitle>
+          <SectionTitle>PHR キー管理</SectionTitle>
           <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-            謔｣閠・＃縺ｨ縺ｮ PHR 繧ｭ繝ｼ・医い繧ｯ繧ｻ繧ｹ繧ｭ繝ｼ・上す繝ｼ繧ｯ繝ｬ繝・ヨ繧ｭ繝ｼ・峨ｒ蜿ら・繝ｻ譖ｴ譁ｰ縺ｧ縺阪∪縺吶・          </p>
+            施設に紐づく PHR キーやアクセスキーを検索・生成し、クラウド連携に必要な資格情報を更新します。
+          </p>
           {facilityUnavailable ? (
-            <FeedbackBanner tone="danger">譁ｽ險ｭ ID 縺梧悴蜿門ｾ励・縺溘ａ謫堺ｽ懊〒縺阪∪縺帙ｓ縲ょ・繝ｭ繧ｰ繧､繝ｳ蠕後↓蜀崎ｩｦ陦後＠縺ｦ縺上□縺輔＞縲・/FeedbackBanner>
+            <FeedbackBanner tone="danger">施設 ID を取得できません。再度ログインしてからやり直してください。</FeedbackBanner>
           ) : null}
           {phrKeyFeedback ? <FeedbackBanner tone={phrKeyFeedback.tone}>{phrKeyFeedback.message}</FeedbackBanner> : null}
           <Stack direction="row" gap={12} wrap>
             <TextField
-              label="謔｣閠・ID 讀懃ｴ｢"
+              label="患者 ID"
               value={patientIdInput}
               onChange={(event) => setPatientIdInput(event.currentTarget.value)}
               style={{ minWidth: 200 }}
@@ -514,9 +515,10 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
               isLoading={keyByPatientMutation.isPending}
               disabled={facilityUnavailable}
             >
-              謔｣閠・ID 縺ｧ蜿門ｾ・            </Button>
+              患者 ID で検索
+            </Button>
             <TextField
-              label="繧｢繧ｯ繧ｻ繧ｹ繧ｭ繝ｼ讀懃ｴ｢"
+              label="アクセスキー"
               value={accessKeyInput}
               onChange={(event) => setAccessKeyInput(event.currentTarget.value)}
               style={{ minWidth: 200 }}
@@ -526,63 +528,67 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
               isLoading={keyByAccessMutation.isPending}
               disabled={facilityUnavailable}
             >
-              繧｢繧ｯ繧ｻ繧ｹ繧ｭ繝ｼ縺ｧ蜿門ｾ・            </Button>
+              アクセスキーで検索
+            </Button>
           </Stack>
           <FormGrid>
             <TextField
-              label="謔｣閠・ID"
+              label="患者 ID"
               value={phrKeyForm.patientId}
               onChange={(event) => handleKeyFieldChange('patientId', event.currentTarget.value)}
             />
             <TextField
-              label="繧｢繧ｯ繧ｻ繧ｹ繧ｭ繝ｼ"
+              label="アクセスキー"
               value={phrKeyForm.accessKey}
               onChange={(event) => handleKeyFieldChange('accessKey', event.currentTarget.value)}
             />
             <TextField
-              label="繧ｷ繝ｼ繧ｯ繝ｬ繝・ヨ繧ｭ繝ｼ"
+              label="シークレットキー"
               value={phrKeyForm.secretKey}
               onChange={(event) => handleKeyFieldChange('secretKey', event.currentTarget.value)}
             />
             <TextField
-              label="逋ｻ骭ｲ譌･譎・(yyyy-MM-ddTHH:mm:ss)"
+              label="登録日時 (yyyy-MM-ddTHH:mm:ss)"
               value={phrKeyForm.registeredString ?? ''}
               onChange={(event) => handleKeyFieldChange('registeredString', event.currentTarget.value)}
             />
           </FormGrid>
           <Stack direction="row" gap={12} wrap>
             <Button variant="ghost" onClick={handleGenerateKeys} disabled={facilityUnavailable}>
-              繧ｭ繝ｼ繧定・蜍慕函謌・            </Button>
+              ランダムキーを生成
+            </Button>
             <Button variant="ghost" onClick={handleSetNow} disabled={facilityUnavailable}>
-              逋ｻ骭ｲ譌･譎ゅｒ迴ｾ蝨ｨ譎ょ綾縺ｧ譖ｴ譁ｰ
+              登録日時を現在時刻で更新
             </Button>
             <Button
               onClick={handleSavePhrKey}
               isLoading={keyUpsertMutation.isPending}
               disabled={facilityUnavailable}
             >
-              PHR 繧ｭ繝ｼ繧剃ｿ晏ｭ・            </Button>
+              PHR キーを保存
+            </Button>
           </Stack>
         </Stack>
       </SurfaceCard>
 
       <SurfaceCard>
         <Stack gap={16}>
-          <SectionTitle>PHR 繝・・繧ｿ蜿門ｾ・/SectionTitle>
+          <SectionTitle>PHR コンテナ取得</SectionTitle>
           <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-            PHR 繧ｳ繝ｳ繝・リ・域枚譖ｸ繝ｻ讀懈渊・峨ｒ蜿門ｾ励＠縲゛SON 蠖｢蠑上〒繝繧ｦ繝ｳ繝ｭ繝ｼ繝峨〒縺阪∪縺吶よ悄髢薙ｒ謖・ｮ壹☆繧九→蠢・ｦ√↑繝・・繧ｿ縺ｮ縺ｿ繧貞叙蠕励＠縺ｾ縺吶・          </p>
+            PHR の文書・検査データを取得し、最新のコンテナ内容を確認できます。JSON でダウンロードして外部システムへ連携する場合は、取得履歴が監査対象となる点にご注意ください。
+          </p>
           {phrContainerFeedback ? (
             <FeedbackBanner tone={phrContainerFeedback.tone}>{phrContainerFeedback.message}</FeedbackBanner>
           ) : null}
           <FormGrid>
             <TextField
-              label="譁・嶌蜿門ｾ怜渕貅匁律 (萓・ 2025-01-01)"
+              label="文書取得開始日 (例: 2025-01-01)"
               placeholder="YYYY-MM-DD"
               value={documentSince}
               onChange={(event) => setDocumentSince(event.currentTarget.value)}
             />
             <TextField
-              label="讀懈渊蜿門ｾ怜渕貅匁律 (萓・ 2025-01-01)"
+              label="検査取得開始日 (例: 2025-01-01)"
               placeholder="YYYY-MM-DD"
               value={labSince}
               onChange={(event) => setLabSince(event.currentTarget.value)}
@@ -594,48 +600,46 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
               isLoading={containerMutation.isPending}
               disabled={facilityUnavailable}
             >
-              PHR 繝・・繧ｿ繧貞叙蠕・            </Button>
-            <Button
-              variant="ghost"
-              onClick={handleDownloadContainer}
-              disabled={!phrContainer}
-            >
-              JSON 繧偵ム繧ｦ繝ｳ繝ｭ繝ｼ繝・            </Button>
+              PHR コンテナを取得
+            </Button>
+            <Button variant="ghost" onClick={handleDownloadContainer} disabled={!phrContainer}>
+              JSON をダウンロード
+            </Button>
           </Stack>
           {containerMutation.isPending ? (
-            <EmptyState>PHR 繝・・繧ｿ繧貞叙蠕励＠縺ｦ縺・∪縺吮ｦ</EmptyState>
+            <EmptyState>PHR コンテナを取得しています...</EmptyState>
           ) : phrContainer ? (
             <Stack gap={12}>
               <InfoGrid>
                 <InfoCard>
-                  <InfoLabel>譁・嶌莉ｶ謨ｰ</InfoLabel>
+                  <InfoLabel>文書件数</InfoLabel>
                   <InfoValue>{docList.length}</InfoValue>
                 </InfoCard>
                 <InfoCard>
-                  <InfoLabel>讀懈渊莉ｶ謨ｰ</InfoLabel>
+                  <InfoLabel>検査件数</InfoLabel>
                   <InfoValue>{labList.length}</InfoValue>
                 </InfoCard>
               </InfoGrid>
               {docList.length > 0 ? (
                 <div>
-                  <h4 style={{ margin: '16px 0 8px', fontSize: '0.95rem' }}>譁・嶌讎りｦ・ｼ域怙螟ｧ 5 莉ｶ・・/h4>
+                  <h4 style={{ margin: '16px 0 8px', fontSize: '0.95rem' }}>文書サマリー（最新 5 件）</h4>
                   <ResultTable>
                     <thead>
                       <tr>
-                        <th>譁・嶌 ID</th>
-                        <th>髢句ｧ区律譎・/th>
-                        <th>迥ｶ諷・/th>
-                        <th>諡・ｽ灘現</th>
-                        <th>繝｢繧ｸ繝･繝ｼ繝ｫ謨ｰ</th>
+                        <th>文書 ID</th>
+                        <th>作成日時</th>
+                        <th>ステータス</th>
+                        <th>担当医</th>
+                        <th>バンドル数</th>
                       </tr>
                     </thead>
                     <tbody>
                       {docList.slice(0, 5).map((doc, index) => (
                         <tr key={`${doc.catchId ?? 'doc'}-${index}`}>
-                          <td>{doc.catchId ?? '窶・}</td>
+                          <td>{doc.catchId ?? '---'}</td>
                           <td>{formatTimestamp(doc.started)}</td>
-                          <td>{doc.status ?? '窶・}</td>
-                          <td>{doc.physicianName ?? '窶・}</td>
+                          <td>{doc.status ?? '---'}</td>
+                          <td>{doc.physicianName ?? '---'}</td>
                           <td>{doc.bundles?.length ?? 0}</td>
                         </tr>
                       ))}
@@ -643,68 +647,63 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
                   </ResultTable>
                 </div>
               ) : (
-                <EmptyState>譁・嶌縺ｯ隕九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆縲・/EmptyState>
+                <EmptyState>文書データはまだありません。</EmptyState>
               )}
               {labList.length > 0 ? (
                 <div>
-                  <h4 style={{ margin: '16px 0 8px', fontSize: '0.95rem' }}>讀懈渊讎りｦ・ｼ域怙螟ｧ 5 莉ｶ・・/h4>
+                  <h4 style={{ margin: '16px 0 8px', fontSize: '0.95rem' }}>検査結果サマリー（最新 5 件）</h4>
                   <ResultTable>
                     <thead>
                       <tr>
-                        <th>繝｢繧ｸ繝･繝ｼ繝ｫ ID</th>
-                        <th>謗｡蜿匁律</th>
-                        <th>讀懈渊鬆・岼謨ｰ</th>
-                        <th>萓晞ｼ譁ｽ險ｭ</th>
+                        <th>検査 ID</th>
+                        <th>採取日時</th>
+                        <th>項目数</th>
+                        <th>実施施設</th>
                       </tr>
                     </thead>
                     <tbody>
                       {labList.slice(0, 5).map((lab, index) => (
                         <tr key={`${lab.catchId ?? 'lab'}-${index}`}>
-                          <td>{lab.catchId ?? '窶・}</td>
+                          <td>{lab.catchId ?? '---'}</td>
                           <td>{formatTimestamp(lab.sampleDate)}</td>
                           <td>{lab.numOfItems ?? lab.testItems?.length ?? 0}</td>
-                          <td>{lab.facilityName ?? '窶・}</td>
+                          <td>{lab.facilityName ?? '---'}</td>
                         </tr>
                       ))}
                     </tbody>
                   </ResultTable>
                 </div>
               ) : (
-                <EmptyState>讀懈渊繝・・繧ｿ縺ｯ隕九▽縺九ｊ縺ｾ縺帙ｓ縺ｧ縺励◆縲・/EmptyState>
+                <EmptyState>検査データはまだありません。</EmptyState>
               )}
             </Stack>
           ) : (
-            <EmptyState>PHR 繝・・繧ｿ縺ｯ縺ｾ縺蜿門ｾ励＆繧後※縺・∪縺帙ｓ縲・/EmptyState>
+            <EmptyState>PHR コンテナはまだ取得していません。</EmptyState>
           )}
         </Stack>
       </SurfaceCard>
 
       <SurfaceCard>
         <Stack gap={16}>
-          <SectionTitle>繝・く繧ｹ繝医お繧ｯ繧ｹ繝昴・繝・/SectionTitle>
+          <SectionTitle>PHR テキスト表示</SectionTitle>
           <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-            繧｢繝ｬ繝ｫ繧ｮ繝ｼ繝ｻ逞・錐繝ｻ蜃ｦ譁ｹ繝ｻ讀懈渊縺ｪ縺ｩ縺ｮ繝・く繧ｹ繝域ュ蝣ｱ繧貞叙蠕励＠縲・劼螟夜｣謳ｺ繧・ぅ閠・署萓帷畑縺ｫ豢ｻ逕ｨ縺ｧ縺阪∪縺吶・          </p>
+            処方や検査などのテキストデータを取得して内容を確認できます。コピーして共有する際は取り扱いにご注意ください。
+          </p>
           {phrTextFeedback ? <FeedbackBanner tone={phrTextFeedback.tone}>{phrTextFeedback.message}</FeedbackBanner> : null}
           <Stack direction="row" gap={12} wrap>
             <SelectField
-              label="蜿門ｾ怜ｯｾ雎｡"
+              label="取得対象"
               name="phrTextType"
               value={phrTextType}
               onChange={(event) => setPhrTextType(event.currentTarget.value as PhrTextType)}
               options={phrTextOptions}
               style={{ minWidth: 220 }}
             />
-            <Button
-              onClick={handleFetchPhrText}
-              isLoading={phrTextMutation.isPending}
-              disabled={facilityUnavailable}
-            >
-              繝・く繧ｹ繝医ｒ蜿門ｾ・            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setPhrTextContents('')}
-            >
-              陦ｨ遉ｺ繧偵け繝ｪ繧｢
+            <Button onClick={handleFetchPhrText} isLoading={phrTextMutation.isPending} disabled={facilityUnavailable}>
+              テキストを取得
+            </Button>
+            <Button variant="ghost" onClick={() => setPhrTextContents('')}>
+              表示をクリア
             </Button>
           </Stack>
           <div
@@ -721,7 +720,7 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
             }}
             aria-live="polite"
           >
-            {phrTextContents ? phrTextContents : '繝・く繧ｹ繝医′陦ｨ遉ｺ縺輔ｌ縺ｾ縺吶・}
+            {phrTextContents ? phrTextContents : 'テキストはまだ表示されていません。'}
           </div>
         </Stack>
       </SurfaceCard>
@@ -730,7 +729,7 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
 };
 
 const formatNumber = (value?: number | null): string =>
-  typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('ja-JP') : '窶・;
+  typeof value === 'number' && Number.isFinite(value) ? value.toLocaleString('ja-JP') : '---';
 
 export const SystemPreferencesPage = () => {
   const { session } = useAuth();
@@ -813,7 +812,7 @@ export const SystemPreferencesPage = () => {
     if (!facilityForm.facilityId || facilityForm.id == null) {
       setFacilityFeedback({
         tone: 'danger',
-        message: '譁ｽ險ｭ諠・ｱ縺ｮ隱ｭ縺ｿ霎ｼ縺ｿ縺悟ｮ御ｺ・＠縺ｦ縺・∪縺帙ｓ縲・,
+        message: '施設情報の読み込みが完了していません。',
       });
       return;
     }
@@ -832,11 +831,11 @@ export const SystemPreferencesPage = () => {
       });
       setFacilityFeedback({
         tone: 'info',
-        message: '譁ｽ險ｭ諠・ｱ繧呈峩譁ｰ縺励∪縺励◆縲・,
+        message: '施設情報を更新しました。',
       });
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : '譁ｽ險ｭ諠・ｱ縺ｮ譖ｴ譁ｰ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・;
+      const message = error instanceof Error ? error.message : '施設情報の更新に失敗しました。';
       setFacilityFeedback({
         tone: 'danger',
         message,
@@ -848,21 +847,21 @@ export const SystemPreferencesPage = () => {
     if (!facilityAdminForm.userId.trim() || !facilityAdminForm.password.trim()) {
       setFacilityAdminFeedback({
         tone: 'danger',
-        message: '邂｡逅・・・繝ｦ繝ｼ繧ｶ繝ｼ ID 縺ｨ莉ｮ繝代せ繝ｯ繝ｼ繝峨ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・,
+        message: '管理者ユーザー ID と仮パスワードを入力してください。',
       });
       return;
     }
     if (!facilityAdminForm.sirName.trim() || !facilityAdminForm.givenName.trim()) {
       setFacilityAdminFeedback({
         tone: 'danger',
-        message: '邂｡逅・・ｰ丞錐・亥ｧ薙・蜷搾ｼ峨ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・,
+        message: '管理者氏名（姓・名）を入力してください。',
       });
       return;
     }
     if (!facilityAdminForm.facilityName.trim()) {
       setFacilityAdminFeedback({
         tone: 'danger',
-        message: '譁ｰ隕乗命險ｭ蜷阪ｒ蜈･蜉帙＠縺ｦ縺上□縺輔＞縲・,
+        message: '新規施設名を入力してください。',
       });
       return;
     }
@@ -884,11 +883,11 @@ export const SystemPreferencesPage = () => {
       });
       setFacilityAdminFeedback({
         tone: 'info',
-        message: `譁ｰ隕乗命險ｭ ID ${result.facilityId} / 邂｡逅・・${result.userId} 繧堤匳骭ｲ縺励∪縺励◆縲Ａ,
+        message: `施設 ID ${result.facilityId} / 管理者 ID ${result.userId} を登録しました。`,
       });
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : '譁ｽ險ｭ邂｡逅・・・逋ｻ骭ｲ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・;
+      const message = error instanceof Error ? error.message : '施設管理者の登録に失敗しました。';
       setFacilityAdminFeedback({
         tone: 'danger',
         message,
@@ -901,7 +900,7 @@ export const SystemPreferencesPage = () => {
     if (!token) {
       setLicenseFeedback({
         tone: 'danger',
-        message: '繝ｩ繧､繧ｻ繝ｳ繧ｹ UID 繧貞・蜉帙＠縺ｦ縺上□縺輔＞縲・,
+        message: 'ライセンス UID を入力してください。',
       });
       return;
     }
@@ -912,24 +911,24 @@ export const SystemPreferencesPage = () => {
       let tone: FeedbackState['tone'] = 'info';
       switch (result.status) {
         case 'success':
-          message = '繝ｩ繧､繧ｻ繝ｳ繧ｹ隱崎ｨｼ縺悟ｮ御ｺ・＠縺ｾ縺励◆縲・;
+          message = 'ライセンスの認証が完了しました。';
           break;
         case 'limit_reached':
           tone = 'danger';
-          message = '繝ｩ繧､繧ｻ繝ｳ繧ｹ謨ｰ縺御ｸ企剞縺ｫ驕斐＠縺ｦ縺・∪縺吶ゆｸ崎ｦ√↑遶ｯ譛ｫ縺ｮ逋ｻ骭ｲ繧定ｧ｣髯､縺励※縺上□縺輔＞縲・;
+          message = 'ライセンス数の上限に達しました。契約内容をご確認ください。';
           break;
         case 'write_failed':
           tone = 'danger';
-          message = '繝ｩ繧､繧ｻ繝ｳ繧ｹ繝輔ぃ繧､繝ｫ縺ｮ譖ｴ譁ｰ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲よｨｩ髯舌∪縺溘・繝・ぅ繧ｹ繧ｯ迥ｶ諷九ｒ遒ｺ隱阪＠縺ｦ縺上□縺輔＞縲・;
+          message = 'ライセンスファイルの書き込みに失敗しました。権限とディスクの空き容量を確認してください。';
           break;
         default:
           tone = 'danger';
-          message = '繝ｩ繧､繧ｻ繝ｳ繧ｹ隱崎ｨｼ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲６ID 繧堤｢ｺ隱阪・荳翫∝・隧ｦ陦後＠縺ｦ縺上□縺輔＞縲・;
+          message = 'ライセンス認証に失敗しました。UID が正しいか確認してください。';
       }
       setLicenseFeedback({ tone, message });
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : '繝ｩ繧､繧ｻ繝ｳ繧ｹ隱崎ｨｼ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・;
+      const message = error instanceof Error ? error.message : 'ライセンス認証に失敗しました。';
       setLicenseFeedback({
         tone: 'danger',
         message,
@@ -943,11 +942,11 @@ export const SystemPreferencesPage = () => {
       await cloudZeroMutation.mutateAsync();
       setCloudFeedback({
         tone: 'info',
-        message: 'Cloud Zero 騾｣謳ｺ繝｡繝ｼ繝ｫ騾∽ｿ｡繧定ｦ∵ｱゅ＠縺ｾ縺励◆縲・,
+        message: 'Cloud Zero 連携メール送信を要求しました。',
       });
     } catch (error) {
       console.error(error);
-      const message = error instanceof Error ? error.message : 'Cloud Zero 騾｣謳ｺ縺ｫ螟ｱ謨励＠縺ｾ縺励◆縲・;
+      const message = error instanceof Error ? error.message : 'Cloud Zero 連携メールの要求に失敗しました。';
       setCloudFeedback({
         tone: 'danger',
         message,
@@ -962,9 +961,10 @@ export const SystemPreferencesPage = () => {
       <SurfaceCard>
         <Stack gap={16}>
           <div>
-            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>繧ｷ繧ｹ繝・Β險ｭ螳・/h2>
+            <h2 style={{ margin: 0, fontSize: '1.3rem' }}>システム設定</h2>
             <p style={{ margin: '4px 0 0', color: '#64748b', fontSize: '0.9rem' }}>
-              譁ｽ險ｭ諠・ｱ繝ｻ繝ｩ繧､繧ｻ繝ｳ繧ｹ繝ｻCloud Zero 騾｣謳ｺ繧堤ｮ｡逅・＠縺ｾ縺吶・            </p>
+              施設情報、ライセンス、Cloud Zero 連携、PHR 管理をまとめて設定します。
+            </p>
           </div>
           <TabNav>
             <Button
@@ -972,28 +972,29 @@ export const SystemPreferencesPage = () => {
               variant={activeTab === 'basic' ? 'primary' : 'ghost'}
               onClick={() => setActiveTab('basic')}
             >
-              蝓ｺ譛ｬ諠・ｱ
+              基本情報
             </Button>
             <Button
               size="sm"
               variant={activeTab === 'license' ? 'primary' : 'ghost'}
               onClick={() => setActiveTab('license')}
             >
-              繝ｩ繧､繧ｻ繝ｳ繧ｹ
+              ライセンス
             </Button>
             <Button
               size="sm"
               variant={activeTab === 'cloud' ? 'primary' : 'ghost'}
               onClick={() => setActiveTab('cloud')}
             >
-              Cloud Zero 騾｣謳ｺ
+              Cloud Zero 連携
             </Button>
             <Button
               size="sm"
               variant={activeTab === 'phr' ? 'primary' : 'ghost'}
               onClick={() => setActiveTab('phr')}
             >
-              PHR 邂｡逅・            </Button>
+              PHR 管理
+            </Button>
           </TabNav>
         </Stack>
       </SurfaceCard>
@@ -1002,28 +1003,29 @@ export const SystemPreferencesPage = () => {
         <Stack gap={20}>
           <SurfaceCard>
             <Stack gap={16}>
-              <SectionTitle>譁ｽ險ｭ諠・ｱ</SectionTitle>
+              <SectionTitle>施設情報</SectionTitle>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-                譁ｽ險ｭ蜷阪ｄ菴乗園縲・｣邨｡蜈医↑縺ｩ縺ｮ諠・ｱ繧呈峩譁ｰ縺ｧ縺阪∪縺吶・              </p>
+                施設名や所在地、連絡先などを更新します。既存情報を読み込んだうえで編集してください。
+              </p>
               {facilityFeedback ? <FeedbackBanner tone={facilityFeedback.tone}>{facilityFeedback.message}</FeedbackBanner> : null}
               <FormGrid>
                 <TextField
-                  label="譁ｽ險ｭ蜷・
+                  label="施設名"
                   value={facilityForm.facilityName}
                   onChange={(event) => handleFacilityChange('facilityName', event.currentTarget.value)}
                 />
                 <TextField
-                  label="驛ｵ萓ｿ逡ｪ蜿ｷ"
+                  label="郵便番号"
                   value={facilityForm.zipCode}
                   onChange={(event) => handleFacilityChange('zipCode', event.currentTarget.value)}
                 />
                 <TextField
-                  label="菴乗園"
+                  label="住所"
                   value={facilityForm.address}
                   onChange={(event) => handleFacilityChange('address', event.currentTarget.value)}
                 />
                 <TextField
-                  label="髮ｻ隧ｱ逡ｪ蜿ｷ"
+                  label="電話番号"
                   value={facilityForm.telephone}
                   onChange={(event) => handleFacilityChange('telephone', event.currentTarget.value)}
                 />
@@ -1033,7 +1035,7 @@ export const SystemPreferencesPage = () => {
                   onChange={(event) => handleFacilityChange('facsimile', event.currentTarget.value)}
                 />
                 <TextField
-                  label="Web 繧ｵ繧､繝・
+                  label="Web サイト URL"
                   value={facilityForm.url}
                   onChange={(event) => handleFacilityChange('url', event.currentTarget.value)}
                 />
@@ -1044,37 +1046,39 @@ export const SystemPreferencesPage = () => {
                   isLoading={facilityMutation.isPending}
                   disabled={!baselineFacility}
                 >
-                  譁ｽ險ｭ諠・ｱ繧剃ｿ晏ｭ・                </Button>
+                  施設情報を保存
+                </Button>
               </div>
             </Stack>
           </SurfaceCard>
 
           <SurfaceCard>
             <Stack gap={16}>
-              <SectionTitle>譁ｰ隕乗命險ｭ邂｡逅・・匳骭ｲ</SectionTitle>
+              <SectionTitle>新規施設管理者登録</SectionTitle>
               <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-                譁ｰ縺励＞譁ｽ險ｭ縺ｨ邂｡逅・・い繧ｫ繧ｦ繝ｳ繝医ｒ荳諡ｬ縺ｧ逋ｻ骭ｲ縺励∪縺吶ゆｻｮ繝代せ繝ｯ繝ｼ繝峨・逋ｻ骭ｲ蠕後↓蛻ｩ逕ｨ閠・∈蜈ｱ譛峨＠縺ｦ縺上□縺輔＞縲・              </p>
+                新しい施設と管理者アカウントを同時に登録します。必要項目を入力し、登録ボタンを押してください。
+              </p>
               {facilityAdminFeedback ? (
                 <FeedbackBanner tone={facilityAdminFeedback.tone}>{facilityAdminFeedback.message}</FeedbackBanner>
               ) : null}
               <FormGrid>
                 <TextField
-                  label="譁ｽ險ｭ蜷・
+                  label="施設名"
                   value={facilityAdminForm.facilityName}
                   onChange={(event) => handleFacilityAdminChange('facilityName', event.currentTarget.value)}
                 />
                 <TextField
-                  label="驛ｵ萓ｿ逡ｪ蜿ｷ"
+                  label="郵便番号"
                   value={facilityAdminForm.facilityZipCode}
                   onChange={(event) => handleFacilityAdminChange('facilityZipCode', event.currentTarget.value)}
                 />
                 <TextField
-                  label="菴乗園"
+                  label="住所"
                   value={facilityAdminForm.facilityAddress}
                   onChange={(event) => handleFacilityAdminChange('facilityAddress', event.currentTarget.value)}
                 />
                 <TextField
-                  label="髮ｻ隧ｱ逡ｪ蜿ｷ"
+                  label="電話番号"
                   value={facilityAdminForm.facilityTelephone}
                   onChange={(event) => handleFacilityAdminChange('facilityTelephone', event.currentTarget.value)}
                 />
@@ -1084,35 +1088,35 @@ export const SystemPreferencesPage = () => {
                   onChange={(event) => handleFacilityAdminChange('facilityFacsimile', event.currentTarget.value)}
                 />
                 <TextField
-                  label="Web 繧ｵ繧､繝・
+                  label="Web サイト URL"
                   value={facilityAdminForm.facilityUrl}
                   onChange={(event) => handleFacilityAdminChange('facilityUrl', event.currentTarget.value)}
                 />
               </FormGrid>
               <FormGrid>
                 <TextField
-                  label="邂｡逅・・Θ繝ｼ繧ｶ繝ｼ ID"
+                  label="管理者ユーザー ID"
                   value={facilityAdminForm.userId}
                   onChange={(event) => handleFacilityAdminChange('userId', event.currentTarget.value)}
                 />
                 <TextField
                   type="password"
-                  label="莉ｮ繝代せ繝ｯ繝ｼ繝・
+                  label="仮パスワード"
                   value={facilityAdminForm.password}
                   onChange={(event) => handleFacilityAdminChange('password', event.currentTarget.value)}
                 />
                 <TextField
-                  label="蟋・
+                  label="姓"
                   value={facilityAdminForm.sirName}
                   onChange={(event) => handleFacilityAdminChange('sirName', event.currentTarget.value)}
                 />
                 <TextField
-                  label="蜷・
+                  label="名"
                   value={facilityAdminForm.givenName}
                   onChange={(event) => handleFacilityAdminChange('givenName', event.currentTarget.value)}
                 />
                 <TextField
-                  label="繝｡繝ｼ繝ｫ繧｢繝峨Ξ繧ｹ"
+                  label="メールアドレス"
                   value={facilityAdminForm.email}
                   onChange={(event) => handleFacilityAdminChange('email', event.currentTarget.value)}
                 />
@@ -1122,7 +1126,7 @@ export const SystemPreferencesPage = () => {
                   onClick={handleFacilityAdminSubmit}
                   isLoading={facilityAdminMutation.isPending}
                 >
-                  譁ｽ險ｭ邂｡逅・・ｒ逋ｻ骭ｲ
+                  管理者を登録
                 </Button>
               </div>
             </Stack>
@@ -1130,18 +1134,18 @@ export const SystemPreferencesPage = () => {
 
           <SurfaceCard>
             <Stack gap={16}>
-              <SectionTitle>繧ｵ繝ｼ繝舌・繧ｹ繝・・繧ｿ繧ｹ</SectionTitle>
+              <SectionTitle>サーバー情報</SectionTitle>
               {serverInfoQuery.isLoading ? (
-                <EmptyState>繧ｵ繝ｼ繝舌・諠・ｱ繧貞叙蠕励＠縺ｦ縺・∪縺吮ｦ</EmptyState>
+                <EmptyState>サーバー情報を読み込んでいます...</EmptyState>
               ) : serverInfo ? (
                 <InfoGrid>
                   <InfoCard>
-                    <InfoLabel>JMARI 繧ｳ繝ｼ繝・/InfoLabel>
-                    <InfoValue>{serverInfo.jamriCode || '譛ｪ險ｭ螳・}</InfoValue>
+                    <InfoLabel>JMARI コード</InfoLabel>
+                    <InfoValue>{serverInfo.jamriCode || '未設定'}</InfoValue>
                   </InfoCard>
                   <InfoCard>
-                    <InfoLabel>CLAIM 謗･邯・/InfoLabel>
-                    <InfoValue>{serverInfo.claimConnection || '譛ｪ險ｭ螳・}</InfoValue>
+                    <InfoLabel>CLAIM 接続</InfoLabel>
+                    <InfoValue>{serverInfo.claimConnection || '未設定'}</InfoValue>
                   </InfoCard>
                   <InfoCard>
                     <InfoLabel>Cloud Zero</InfoLabel>
@@ -1149,32 +1153,32 @@ export const SystemPreferencesPage = () => {
                       {serverInfo.cloudZeroStatus ? (
                         <StatusBadge tone="info">{serverInfo.cloudZeroStatus}</StatusBadge>
                       ) : (
-                        '譛ｪ險ｭ螳・
+                        '未設定'
                       )}
                     </InfoValue>
                   </InfoCard>
                 </InfoGrid>
               ) : (
-                <EmptyState>繧ｵ繝ｼ繝舌・諠・ｱ繧貞叙蠕励〒縺阪∪縺帙ｓ縺ｧ縺励◆縲・/EmptyState>
+                <EmptyState>サーバー情報を取得できませんでした。</EmptyState>
               )}
             </Stack>
           </SurfaceCard>
 
           <SurfaceCard>
             <Stack gap={16}>
-              <SectionTitle>遞ｼ蜒咲憾豕・/SectionTitle>
+              <SectionTitle>稼働統計</SectionTitle>
               {activitiesQuery.isLoading ? (
-                <EmptyState>遞ｼ蜒咲憾豕√ｒ髮・ｨ医＠縺ｦ縺・∪縺吮ｦ</EmptyState>
+                <EmptyState>稼働統計を読み込んでいます...</EmptyState>
               ) : activitiesQuery.data && activitiesQuery.data.length > 0 ? (
                 <ActivityTable>
                   <thead>
                     <tr>
-                      <th>譛滄俣</th>
-                      <th>謔｣閠・焚</th>
-                      <th>譚･髯｢莉ｶ謨ｰ</th>
-                      <th>繧ｫ繝ｫ繝・ｽ懈・</th>
-                      <th>讀懈渊邨先棡</th>
-                      <th>險ｺ譁ｭ譖ｸ</th>
+                      <th>集計期間</th>
+                      <th>患者数</th>
+                      <th>来院回数</th>
+                      <th>カルテ件数</th>
+                      <th>検査件数</th>
+                      <th>紹介状件数</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1191,7 +1195,7 @@ export const SystemPreferencesPage = () => {
                   </tbody>
                 </ActivityTable>
               ) : (
-                <EmptyState>遞ｼ蜒咲憾豕√・繝・・繧ｿ縺瑚ｦ九▽縺九ｊ縺ｾ縺帙ｓ縲・/EmptyState>
+                <EmptyState>稼働統計データはまだありません。</EmptyState>
               )}
             </Stack>
           </SurfaceCard>
@@ -1201,13 +1205,14 @@ export const SystemPreferencesPage = () => {
       {activeTab === 'license' ? (
         <SurfaceCard>
           <Stack gap={16}>
-            <SectionTitle>繝ｩ繧､繧ｻ繝ｳ繧ｹ隱崎ｨｼ</SectionTitle>
+            <SectionTitle>ライセンス認証</SectionTitle>
             <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-              譁ｰ縺励＞繝ｩ繧､繧ｻ繝ｳ繧ｹ UID 繧貞・蜉帙＠縲∫匳骭ｲ遶ｯ譛ｫ謨ｰ繧呈峩譁ｰ縺励∪縺吶・            </p>
+              有効なライセンス UID を入力し、認証を実行します。契約更新時は再度登録してください。
+            </p>
             {licenseFeedback ? <FeedbackBanner tone={licenseFeedback.tone}>{licenseFeedback.message}</FeedbackBanner> : null}
             <TextField
-              label="繝ｩ繧､繧ｻ繝ｳ繧ｹ UID"
-              placeholder="萓・ XXXX-XXXX-XXXX-XXXX"
+              label="ライセンス UID"
+              placeholder="例: XXXX-XXXX-XXXX-XXXX"
               value={licenseToken}
               onChange={(event) => {
                 setLicenseToken(event.currentTarget.value);
@@ -1219,10 +1224,10 @@ export const SystemPreferencesPage = () => {
                 onClick={handleSubmitLicense}
                 isLoading={licenseMutation.isPending}
               >
-                繝ｩ繧､繧ｻ繝ｳ繧ｹ隱崎ｨｼ
+                ライセンスを認証
               </Button>
               <Button variant="ghost" onClick={() => setLicenseToken('')} disabled={licenseMutation.isPending}>
-                繧ｯ繝ｪ繧｢
+                クリア
               </Button>
             </div>
           </Stack>
@@ -1232,19 +1237,20 @@ export const SystemPreferencesPage = () => {
       {activeTab === 'cloud' ? (
         <SurfaceCard>
           <Stack gap={16}>
-            <SectionTitle>Cloud Zero 騾｣謳ｺ</SectionTitle>
+            <SectionTitle>Cloud Zero 連携</SectionTitle>
             <p style={{ margin: 0, color: '#64748b', fontSize: '0.9rem' }}>
-              Cloud Zero 騾｣謳ｺ繝｡繝ｼ繝ｫ繧呈焔蜍輔〒騾∽ｿ｡縺励∵怦谺｡蛻ｩ逕ｨ迥ｶ豕√ｒ蝣ｱ蜻翫＠縺ｾ縺吶・            </p>
+              Cloud Zero 連携メールを送信し、初期設定をやり直す場合に利用します。
+            </p>
             {cloudFeedback ? <FeedbackBanner tone={cloudFeedback.tone}>{cloudFeedback.message}</FeedbackBanner> : null}
             <Button
               onClick={handleTriggerCloudZero}
               isLoading={cloudZeroMutation.isPending}
             >
-              騾｣謳ｺ繝｡繝ｼ繝ｫ繧帝∽ｿ｡
+              連携メールを送信
             </Button>
             {serverInfo?.cloudZeroStatus ? (
               <InfoCard>
-                <InfoLabel>迴ｾ蝨ｨ縺ｮ繧ｹ繝・・繧ｿ繧ｹ</InfoLabel>
+                <InfoLabel>最新ステータス</InfoLabel>
                 <InfoValue>{serverInfo.cloudZeroStatus}</InfoValue>
               </InfoCard>
             ) : null}
