@@ -104,6 +104,10 @@ Web クライアント構想に必要なドキュメントをカテゴリ別に�
 
 
 ## 直近更新
+- 2025-10-31: OrderConsole を 6 タブ構成へ再編し、意思決定支援バナー・Plan カード連携・ラボ結果の前回比較を実装。`ux/KARTE_SCREEN_IMPLEMENTATION.md` と `features/LAB_RESULTS_VIEWER.md` を更新。
+- 2025-10-31: 患者ヘッダに写真・主病名・目的・支払区分・緊急連絡先・診察タイマー・検索ショートカットを追加。`ux/KARTE_SCREEN_IMPLEMENTATION.md` に UI とデータ参照元の更新メモを追記。
+- 2025-10-31: カルテ画面のステータスバーに署名・会計ステータスとショートカットモーダルを追加。`ux/KARTE_SCREEN_IMPLEMENTATION.md` に署名フロー／ショートカット一覧を追記し、`web-client/src/features/charts/components/layout/StatusBar.tsx` を更新。
+- 2025-10-31: WorkSurface を SOAP タブ/アコーディオン構造へ更新し、問診カード・ROS/PE テンプレート・参照カルテ／検査結果の分割表示を実装。`ux/KARTE_SCREEN_IMPLEMENTATION.md` と `features/LAB_RESULTS_VIEWER.md` に操作フローと引用パターンを追記。
   - 2026-05-07: 監査・パフォーマンス計測を整理し、src/libs/monitoring/performanceTracker.ts に PERFORMANCE_METRICS と閾値表を集約。API 層は共通定数経由でメトリクス名を参照し、監査カテゴリに dministration / schedule を追加。
   - 2026-05-06: テーマトークン拡張と Button/StatusBadge/SurfaceCard 更新。design-system/THEME_TOKEN_MEMO_20260506.md 参照。
 

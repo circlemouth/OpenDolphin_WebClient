@@ -2,25 +2,7 @@ import styled from '@emotion/styled';
 
 import { Button, TextArea } from '@/components';
 import type { MediaItem } from '@/features/charts/types/media';
-
-interface MonshinSummaryItem {
-  id: string;
-  question: string;
-  answer: string;
-}
-
-interface VitalSignItem {
-  id: string;
-  label: string;
-  value: string;
-}
-
-export interface PastSummaryItem {
-  id: string;
-  title: string;
-  excerpt: string;
-  recordedAt?: string;
-}
+import type { MonshinSummaryItem, PastSummaryItem, VitalSignItem } from '@/features/charts/types/reference';
 
 type SaveStatus = 'idle' | 'saving' | 'saved' | 'error';
 

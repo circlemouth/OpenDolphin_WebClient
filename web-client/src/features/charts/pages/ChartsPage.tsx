@@ -37,21 +37,14 @@ const buildUpdatedDocumentPayload = (
 import { useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate, useParams } from 'react-router-dom';
+import type { ComponentProps } from 'react';
 
-import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
+import { Button, Stack, SurfaceCard, TextArea, TextField } from '@/components';
 import { recordOperationEvent } from '@/libs/audit';
-import { StampLibraryPanel } from '@/features/charts/components/StampLibraryPanel';
-import { OrcaOrderPanel } from '@/features/charts/components/OrcaOrderPanel';
-import { OrderSetPanel } from '@/features/charts/components/OrderSetPanel';
-import { PatientDocumentsPanel } from '@/features/charts/components/PatientDocumentsPanel';
-import { MedicalCertificatesPanel } from '@/features/charts/components/MedicalCertificatesPanel';
-import { SchemaEditorPanel } from '@/features/charts/components/SchemaEditorPanel';
-import { LabResultsPanel } from '@/features/charts/components/LabResultsPanel';
 import { CareMapPanel } from '@/features/charts/components/CareMapPanel';
 import { DocumentTimelinePanel } from '@/features/charts/components/DocumentTimelinePanel';
 import { DiagnosisPanel } from '@/features/charts/components/DiagnosisPanel';
 import { ObservationPanel } from '@/features/charts/components/ObservationPanel';
-import { ClaimAdjustmentPanel } from '@/features/charts/components/ClaimAdjustmentPanel';
 import { publishChartEvent } from '@/features/charts/api/chart-event-api';
 import { useChartEventSubscription } from '@/features/charts/hooks/useChartEventSubscription';
 import { useChartLock } from '@/features/charts/hooks/useChartLock';
@@ -60,15 +53,22 @@ import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
 import { useFreeDocument } from '@/features/charts/hooks/useFreeDocument';
 import { useDocumentAttachments } from '@/features/charts/hooks/useDocumentAttachments';
+import { useLaboModules } from '@/features/charts/hooks/useLaboModules';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { StampDefinition } from '@/features/charts/types/stamp';
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
-import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
-import type { BillingMode, ProgressNoteBilling } from '@/features/charts/utils/progress-note-payload';
+import {
+  buildObjectiveNarrative,
+  type ProgressNoteDraft,
+  type ProgressNoteContext,
+  type BillingMode,
+  type ProgressNoteBilling,
+} from '@/features/charts/utils/progress-note-payload';
 import { extractInsuranceOptions } from '@/features/charts/utils/health-insurance';
 import type { ParsedHealthInsurance } from '@/features/charts/utils/health-insurance';
 import { updatePatientMemo } from '@/features/patients/api/patient-memo-api';
+import { usePatientDetail } from '@/features/patients/hooks/usePatientDetail';
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
@@ -76,12 +76,7 @@ import { useAuth } from '@/libs/auth';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
 import { PatientHeaderBar } from '@/features/charts/components/layout/PatientHeaderBar';
 import { VisitChecklist, type VisitChecklistItem } from '@/features/charts/components/layout/VisitChecklist';
-import {
-  WorkSurface,
-  type PlanComposerCard,
-  type SurfaceMode,
-} from '@/features/charts/components/layout/WorkSurface';
-import { RightPane, type PastSummaryItem } from '@/features/charts/components/layout/RightPane';
+import { WorkSurface, type PlanComposerCard, type SoapSection } from '@/features/charts/components/layout/WorkSurface';
 import type { MediaItem } from '@/features/charts/types/media';
 import type { DocInfoSummary, DocumentModelPayload } from '@/features/charts/types/doc';
 import type { ModuleModelPayload } from '@/features/charts/types/module';
@@ -90,12 +85,21 @@ import {
   type PatientMemoHistoryEntry,
 } from '@/features/charts/components/layout/PatientMemoHistoryDialog';
 import { MiniSummaryDock } from '@/features/charts/components/layout/MiniSummaryDock';
+import { OrderConsole } from '@/features/charts/components/layout/OrderConsole';
 import { StatusBar } from '@/features/charts/components/layout/StatusBar';
 import { UnifiedSearchOverlay } from '@/features/charts/components/layout/UnifiedSearchOverlay';
 import { ImageViewerOverlay } from '@/features/charts/components/layout/ImageViewerOverlay';
 import { DiffMergeOverlay } from '@/features/charts/components/layout/DiffMergeOverlay';
+import { ClinicalReferencePanel } from '@/features/charts/components/layout/ClinicalReferencePanel';
 import { BIT_OPEN } from '@/features/charts/utils/visit-state';
 import { calculateAgeLabel } from '@/features/charts/utils/age-label';
+import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
+import { fetchDocumentsByIds } from '@/features/charts/api/doc-info-api';
+import { sendClaimDocument } from '@/features/charts/api/claim-api';
+import { ShortcutOverlay } from '@/features/charts/components/layout/ShortcutOverlay';
+import type { MonshinSummaryItem, PastSummaryItem, VitalSignItem } from '@/features/charts/types/reference';
+import type { OrderModuleSummary } from '@/features/charts/components/layout/OrderConsole';
+import type { DecisionSupportMessage } from '@/features/charts/types/decision-support';
 
 const PageShell = styled.div`
   min-height: 100vh;
@@ -107,17 +111,34 @@ const PageShell = styled.div`
 const ContentGrid = styled.div`
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr) auto;
+  grid-template-columns: minmax(240px, 22%) minmax(0, 56%) minmax(240px, 22%);
   column-gap: 24px;
   align-items: start;
   padding: 16px 24px 140px;
   min-height: 0;
+
+  @media (max-width: 1600px) {
+    grid-template-columns: minmax(220px, 24%) minmax(0, 52%) minmax(220px, 24%);
+  }
+
+  @media (max-width: 1280px) {
+    grid-template-columns: minmax(200px, 28%) minmax(0, 44%) minmax(200px, 28%);
+  }
+
+  @media (max-width: 1100px) {
+    grid-template-columns: minmax(200px, 1fr);
+    grid-auto-rows: minmax(0, auto);
+    row-gap: 24px;
+  }
 `;
 
 const LeftRail = styled.div`
   position: sticky;
   top: 80px;
   align-self: start;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
 `;
 
 const CentralColumn = styled.div`
@@ -157,34 +178,137 @@ const SupplementGrid = styled.div`
   gap: 16px;
 `;
 
-const ClinicalPanelWrapper = styled.div`
+const ContextCard = styled(SurfaceCard)`
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 16px;
+  padding: 16px;
 `;
 
-const ClinicalTabs = styled.div`
+const ContextHeader = styled.div`
   display: flex;
+  align-items: center;
+  justify-content: space-between;
   gap: 8px;
-  flex-wrap: wrap;
 `;
 
-const ClinicalTabButton = styled.button<{ $active: boolean }>`
+const ContextHeaderActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const ContextHistoryToggle = styled.button`
   border: none;
-  border-radius: ${({ theme }) => theme.radius.sm};
+  background: ${({ theme }) => theme.palette.surfaceMuted};
+  color: ${({ theme }) => theme.palette.text};
   padding: 6px 12px;
+  border-radius: ${({ theme }) => theme.radius.sm};
   cursor: pointer;
-  font-size: 0.9rem;
-  font-weight: 600;
-  background: ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.surfaceMuted)};
-  color: ${({ theme, $active }) => ($active ? theme.palette.onPrimary : theme.palette.text)};
-  box-shadow: ${({ theme, $active }) => ($active ? theme.elevation.level1 : 'none')};
-  transition: background 0.2s ease, color 0.2s ease;
+  font-size: 0.85rem;
 
   &:hover {
-    background: ${({ theme, $active }) =>
-      $active ? theme.palette.primaryStrong : theme.palette.surfaceStrong};
+    background: ${({ theme }) => theme.palette.surfaceStrong};
   }
+`;
+
+const ContextSection = styled.section`
+  display: grid;
+  gap: 12px;
+`;
+
+const ContextSectionTitle = styled.h4`
+  margin: 0;
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.palette.text};
+`;
+
+const ContextItemList = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+const ContextItemRow = styled.div<{ $pinned?: boolean }>`
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  background: ${({ theme, $pinned }) => ($pinned ? theme.palette.surfaceStrong : theme.palette.surfaceMuted)};
+`;
+
+const ContextItemBody = styled.div`
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+`;
+
+const ContextItemTitle = styled.div`
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: ${({ theme }) => theme.palette.text};
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const ContextItemDetail = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+  line-height: 1.4;
+`;
+
+const ContextItemActions = styled.div`
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 6px;
+`;
+
+const ContextItemMeta = styled.div`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const ContextPinButton = styled.button<{ $active?: boolean }>`
+  border: none;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  padding: 4px 8px;
+  font-size: 0.75rem;
+  cursor: pointer;
+  background: ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.surface)};
+  color: ${({ theme, $active }) => ($active ? theme.palette.onPrimary : theme.palette.text)};
+  box-shadow: ${({ theme }) => theme.elevation.level1};
+
+  &:hover {
+    background: ${({ theme, $active }) => ($active ? theme.palette.primaryStrong : theme.palette.surfaceStrong)};
+  }
+`;
+
+const MemoCard = styled(SurfaceCard)`
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+`;
+
+const MemoHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+`;
+
+const MemoActions = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 8px;
+`;
+
+const MemoHelper = styled.p`
+  margin: 0;
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.palette.textMuted};
 `;
 
 const EmptyStateCard = styled(SurfaceCard)`
@@ -218,6 +342,8 @@ const defaultDraft: ProgressNoteDraft = {
   title: '',
   subjective: '',
   objective: '',
+  ros: '',
+  physicalExam: '',
   assessment: '',
   plan: '',
 };
@@ -272,6 +398,24 @@ type SearchResultItem = {
   payload: string;
   planType?: PlanComposerCard['type'];
 };
+
+type ContextItemKind = 'monshin' | 'vital' | 'summary' | 'media';
+
+type ContextItemDescriptor = {
+  id: string;
+  kind: ContextItemKind;
+  title: string;
+  detail: string;
+  timestamp?: string | null;
+  payload?: string;
+  actionLabel?: string;
+  onActivate?: () => void;
+};
+
+type DocumentTimelineProps = Pick<
+  ComponentProps<typeof DocumentTimelinePanel>,
+  'karteId' | 'fromDate' | 'includeModified' | 'onDocInfosLoaded' | 'onEditDocument' | 'onDocumentSelected'
+>;
 
 const ORDER_ENTITY_PLAN_TYPE: Record<string, PlanComposerCard['type']> = {
   medOrder: 'medication',
@@ -328,6 +472,20 @@ const buildOrderSummary = (draft: OrderModuleDraft) => {
   return `${label}: ${name}`;
 };
 
+const toLocaleTimeLabel = (value: string | null | undefined): string | null => {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+  const parsed = new Date(normalized);
+  if (Number.isNaN(parsed.getTime())) {
+    return value;
+  }
+  return parsed.toLocaleTimeString();
+};
+
+const GLOBAL_SEARCH_SHORTCUT = 'F3';
+
 const serializePlanCards = (cards: PlanComposerCard[]) =>
   cards
     .map((card) => {
@@ -353,7 +511,21 @@ const createPlanCard = (
   note: '',
   orderModuleId: extras?.orderModuleId ?? null,
   orderSummary: extras?.orderSummary ?? null,
+  isPrimaryDiagnosis: false,
 });
+
+const resolvePrimaryDiagnosisText = (card: PlanComposerCard): string => {
+  const title = card.title?.trim();
+  if (title) {
+    return title;
+  }
+  const detail = card.detail?.trim();
+  if (detail) {
+    const [firstLine] = detail.split(/\r?\n/);
+    return firstLine?.trim() ?? '';
+  }
+  return '';
+};
 const decodeBase64String = (input: string): string => {
   try {
     const bufferLike = (globalThis as {
@@ -403,12 +575,538 @@ const decodeProgressCourseText = (beanBytes?: string | null): string => {
   return decodeXmlEntities(match[1] ?? '');
 };
 
+interface LeftContextColumnProps {
+  checklist: VisitChecklistItem[];
+  onToggleChecklist: (id: string) => void;
+  onToggleInstantChecklist: (id: string) => void;
+  documentTimeline: DocumentTimelineProps;
+  visitMemo: string;
+  visitMemoStatus: 'idle' | 'saving' | 'saved' | 'error';
+  visitMemoError: string | null;
+  visitMemoDirty: boolean;
+  onVisitMemoChange: (value: string) => void;
+  onVisitMemoSave: () => void;
+  onVisitMemoReset: () => void;
+  visitMemoDisabled?: boolean;
+  contextItems: ContextItemDescriptor[];
+  pinnedContextIds: string[];
+  onTogglePinContext: (id: string) => void;
+  showHistory: boolean;
+  onToggleHistory: () => void;
+  monshinSummary: MonshinSummaryItem[];
+  vitalSigns: VitalSignItem[];
+  mediaItems: MediaItem[];
+  mediaLoading?: boolean;
+  mediaError?: string | null;
+  onSnippetDragStart: (snippet: string) => void;
+  onMediaOpen: (item: MediaItem) => void;
+  pastSummaries: PastSummaryItem[];
+  onPastSummaryOpen: (item: PastSummaryItem) => void;
+  patientMemo: string;
+  patientMemoStatus: 'idle' | 'saving' | 'saved' | 'error';
+  patientMemoError: string | null;
+  patientMemoDirty: boolean;
+  patientMemoUpdatedAt: string | null;
+  onPatientMemoChange: (value: string) => void;
+  onPatientMemoSave: () => void;
+  onPatientMemoReset: () => void;
+  patientMemoDisabled?: boolean;
+  hasPatientMemoHistory: boolean;
+  onPatientMemoHistoryOpen: () => void;
+  freeDocumentComment: string;
+  freeDocumentStatus: 'idle' | 'saving' | 'saved' | 'error';
+  freeDocumentError: string | null;
+  freeDocumentDirty: boolean;
+  freeDocumentUpdatedAt: string | null;
+  onFreeDocumentChange: (value: string) => void;
+  onFreeDocumentSave: () => void;
+  onFreeDocumentReset: () => void;
+  freeDocumentDisabled?: boolean;
+}
+
+const formatUpdatedAt = (value: string | null) => {
+  if (!value) {
+    return null;
+  }
+  const normalized = value.includes('T') ? value : value.replace(' ', 'T');
+  const date = new Date(normalized);
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+  return date.toLocaleString('ja-JP', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+};
+
+const LeftContextColumn = ({
+  checklist,
+  onToggleChecklist,
+  onToggleInstantChecklist,
+  documentTimeline,
+  visitMemo,
+  visitMemoStatus,
+  visitMemoError,
+  visitMemoDirty,
+  onVisitMemoChange,
+  onVisitMemoSave,
+  onVisitMemoReset,
+  visitMemoDisabled,
+  contextItems,
+  pinnedContextIds,
+  onTogglePinContext,
+  showHistory,
+  onToggleHistory,
+  monshinSummary,
+  vitalSigns,
+  mediaItems,
+  mediaLoading,
+  mediaError,
+  onSnippetDragStart,
+  onMediaOpen,
+  pastSummaries,
+  onPastSummaryOpen,
+  patientMemo,
+  patientMemoStatus,
+  patientMemoError,
+  patientMemoDirty,
+  patientMemoUpdatedAt,
+  onPatientMemoChange,
+  onPatientMemoSave,
+  onPatientMemoReset,
+  patientMemoDisabled,
+  hasPatientMemoHistory,
+  onPatientMemoHistoryOpen,
+  freeDocumentComment,
+  freeDocumentStatus,
+  freeDocumentError,
+  freeDocumentDirty,
+  freeDocumentUpdatedAt,
+  onFreeDocumentChange,
+  onFreeDocumentSave,
+  onFreeDocumentReset,
+  freeDocumentDisabled,
+}: LeftContextColumnProps) => {
+  const pinnedEntries = pinnedContextIds
+    .map((id) => contextItems.find((item) => item.id === id))
+    .filter((item): item is ContextItemDescriptor => Boolean(item));
+  const otherEntries = contextItems.filter((item) => !pinnedContextIds.includes(item.id));
+  const historyEntries = otherEntries.filter(
+    (item) => item.kind !== 'monshin' && item.kind !== 'vital' && item.kind !== 'media',
+  );
+  const visibleHistory = showHistory ? historyEntries : historyEntries.slice(0, 4);
+  const hasMoreHistory = historyEntries.length > visibleHistory.length;
+
+  const renderContextItem = (item: ContextItemDescriptor, pinned: boolean) => (
+    <ContextItemRow
+      key={item.id}
+      $pinned={pinned}
+      draggable={Boolean(item.payload)}
+      onDragStart={(event) => {
+        if (item.payload) {
+          event.dataTransfer.setData('text/plain', item.payload);
+          onSnippetDragStart(item.payload);
+        }
+      }}
+    >
+      <ContextItemBody>
+        <ContextItemTitle>
+          {item.kind === 'monshin'
+            ? `問診: ${item.title}`
+            : item.kind === 'summary'
+            ? `カルテ: ${item.title}`
+            : item.kind === 'media'
+            ? `メディア: ${item.title}`
+            : `${item.title}`}
+        </ContextItemTitle>
+        <ContextItemDetail>{item.detail}</ContextItemDetail>
+        {item.timestamp ? <ContextItemMeta>{item.timestamp}</ContextItemMeta> : null}
+      </ContextItemBody>
+      <ContextItemActions>
+        <ContextPinButton type="button" $active={pinned} onClick={() => onTogglePinContext(item.id)}>
+          {pinned ? 'ピン解除' : 'ピン留め'}
+        </ContextPinButton>
+        {item.onActivate ? (
+          <Button type="button" size="sm" variant="ghost" onClick={item.onActivate}>
+            {item.actionLabel ?? '開く'}
+          </Button>
+        ) : null}
+      </ContextItemActions>
+    </ContextItemRow>
+  );
+
+  return (
+    <LeftRail>
+      <VisitChecklist
+        items={checklist}
+        onToggleCompleted={onToggleChecklist}
+        onToggleInstantSave={onToggleInstantChecklist}
+      />
+
+      <MemoCard>
+        <MemoHeader>
+          <h3 style={{ margin: 0, fontSize: '1rem' }}>問診メモ</h3>
+          <MemoActions>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={onVisitMemoReset}
+              disabled={visitMemoDisabled || (!visitMemoDirty && visitMemoStatus !== 'error') || visitMemoStatus === 'saving'}
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={onVisitMemoSave}
+              disabled={visitMemoDisabled || (visitMemoStatus === 'idle' && !visitMemoDirty)}
+              isLoading={visitMemoStatus === 'saving'}
+            >
+              保存
+            </Button>
+          </MemoActions>
+        </MemoHeader>
+        <TextArea
+          value={visitMemo}
+          onChange={(event) => onVisitMemoChange(event.currentTarget.value)}
+          rows={4}
+          disabled={visitMemoDisabled}
+        />
+        {visitMemoError ? <InlineError>{visitMemoError}</InlineError> : null}
+        {visitMemoStatus === 'saving' ? <InlineMessage>保存中…</InlineMessage> : null}
+        {visitMemoStatus === 'saved' ? <InlineMessage>保存しました</InlineMessage> : null}
+        {visitMemoDirty && visitMemoStatus !== 'saving' && visitMemoStatus !== 'error' ? (
+          <InlineMessage>未保存の変更があります</InlineMessage>
+        ) : null}
+      </MemoCard>
+
+      <ClinicalReferencePanel
+        monshinSummary={monshinSummary}
+        vitalSigns={vitalSigns}
+        mediaItems={mediaItems}
+        mediaLoading={mediaLoading}
+        mediaError={mediaError}
+        pastSummaries={pastSummaries}
+        onSnippetDragStart={onSnippetDragStart}
+        onMediaOpen={onMediaOpen}
+        onPastSummaryOpen={onPastSummaryOpen}
+      />
+
+      <ContextCard>
+        <ContextHeader>
+          <h3 style={{ margin: 0, fontSize: '1rem' }}>診療コンテキスト</h3>
+          {historyEntries.length > 0 ? (
+            <ContextHeaderActions>
+              <ContextHistoryToggle type="button" onClick={onToggleHistory}>
+                {showHistory ? '履歴を閉じる' : '履歴を展開'}
+              </ContextHistoryToggle>
+            </ContextHeaderActions>
+          ) : null}
+        </ContextHeader>
+
+        {pinnedEntries.length > 0 ? (
+          <ContextSection>
+            <ContextSectionTitle>ピン留め</ContextSectionTitle>
+            <ContextItemList>
+              {pinnedEntries.map((item) => renderContextItem(item, true))}
+            </ContextItemList>
+          </ContextSection>
+        ) : null}
+
+        <ContextSection>
+          <ContextSectionTitle>履歴スナップショット</ContextSectionTitle>
+          {visibleHistory.length === 0 ? <InlineMessage>参照履歴がまだありません。</InlineMessage> : null}
+          <ContextItemList>
+            {visibleHistory.map((item) => renderContextItem(item, false))}
+          </ContextItemList>
+          {hasMoreHistory ? (
+            <ContextHistoryToggle type="button" onClick={onToggleHistory}>
+              {showHistory ? '履歴を閉じる' : `${historyEntries.length - visibleHistory.length}件の履歴を表示`}
+            </ContextHistoryToggle>
+          ) : null}
+        </ContextSection>
+      </ContextCard>
+
+      <MemoCard>
+        <MemoHeader>
+          <h3 style={{ margin: 0, fontSize: '1rem' }}>患者メモ</h3>
+          <MemoActions>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={onPatientMemoHistoryOpen}
+              disabled={!hasPatientMemoHistory}
+            >
+              履歴
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={onPatientMemoReset}
+              disabled={
+                patientMemoDisabled ||
+                (!patientMemoDirty && patientMemoStatus !== 'error') ||
+                patientMemoStatus === 'saving'
+              }
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={onPatientMemoSave}
+              disabled={patientMemoDisabled || (patientMemoStatus === 'idle' && !patientMemoDirty)}
+              isLoading={patientMemoStatus === 'saving'}
+            >
+              保存
+            </Button>
+          </MemoActions>
+        </MemoHeader>
+        <TextArea
+          value={patientMemo}
+          onChange={(event) => onPatientMemoChange(event.currentTarget.value)}
+          rows={5}
+          disabled={patientMemoDisabled}
+        />
+        {patientMemoError ? <InlineError>{patientMemoError}</InlineError> : null}
+        {patientMemoStatus === 'saving' ? <InlineMessage>保存中…</InlineMessage> : null}
+        {patientMemoStatus === 'saved' ? <InlineMessage>保存しました</InlineMessage> : null}
+        {patientMemoDirty && patientMemoStatus !== 'saving' && patientMemoStatus !== 'error' ? (
+          <InlineMessage>未保存の変更があります</InlineMessage>
+        ) : null}
+        {patientMemoUpdatedAt ? <MemoHelper>最終更新: {formatUpdatedAt(patientMemoUpdatedAt)}</MemoHelper> : null}
+      </MemoCard>
+
+      <MemoCard>
+        <MemoHeader>
+          <h3 style={{ margin: 0, fontSize: '1rem' }}>サマリメモ</h3>
+          <MemoActions>
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={onFreeDocumentReset}
+              disabled={
+                freeDocumentDisabled ||
+                (!freeDocumentDirty && freeDocumentStatus !== 'error') ||
+                freeDocumentStatus === 'saving'
+              }
+            >
+              取消
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="secondary"
+              onClick={onFreeDocumentSave}
+              disabled={freeDocumentDisabled || (freeDocumentStatus === 'idle' && !freeDocumentDirty)}
+              isLoading={freeDocumentStatus === 'saving'}
+            >
+              保存
+            </Button>
+          </MemoActions>
+        </MemoHeader>
+        <TextArea
+          value={freeDocumentComment}
+          onChange={(event) => onFreeDocumentChange(event.currentTarget.value)}
+          rows={5}
+          disabled={freeDocumentDisabled}
+        />
+        {freeDocumentError ? <InlineError>{freeDocumentError}</InlineError> : null}
+        {freeDocumentStatus === 'saving' ? <InlineMessage>保存中…</InlineMessage> : null}
+        {freeDocumentStatus === 'saved' ? <InlineMessage>保存しました</InlineMessage> : null}
+        {freeDocumentDirty && freeDocumentStatus !== 'saving' && freeDocumentStatus !== 'error' ? (
+          <InlineMessage>未保存の変更があります</InlineMessage>
+        ) : null}
+        {freeDocumentUpdatedAt ? <MemoHelper>最終更新: {formatUpdatedAt(freeDocumentUpdatedAt)}</MemoHelper> : null}
+      </MemoCard>
+
+      <DocumentTimelinePanel {...documentTimeline} />
+    </LeftRail>
+  );
+};
+
+type WorkSurfaceProps = ComponentProps<typeof WorkSurface>;
+type CareMapProps = ComponentProps<typeof CareMapPanel>;
+type DiagnosisProps = ComponentProps<typeof DiagnosisPanel>;
+type ObservationProps = ComponentProps<typeof ObservationPanel>;
+type StampLibraryPanelProps = ComponentProps<typeof import('@/features/charts/components/StampLibraryPanel').StampLibraryPanel>;
+type OrcaOrderPanelProps = ComponentProps<typeof import('@/features/charts/components/OrcaOrderPanel').OrcaOrderPanel>;
+type LabResultsPanelProps = ComponentProps<typeof import('@/features/charts/components/LabResultsPanel').LabResultsPanel>;
+type PatientDocumentsPanelProps = ComponentProps<typeof import('@/features/charts/components/PatientDocumentsPanel').PatientDocumentsPanel>;
+type MedicalCertificatesPanelProps = ComponentProps<typeof import('@/features/charts/components/MedicalCertificatesPanel').MedicalCertificatesPanel>;
+type SchemaEditorPanelProps = ComponentProps<typeof import('@/features/charts/components/SchemaEditorPanel').SchemaEditorPanel>;
+type ClaimAdjustmentPanelProps = ComponentProps<typeof import('@/features/charts/components/ClaimAdjustmentPanel').ClaimAdjustmentPanel>;
+
+interface WorkSurfaceNoteProps {
+  title: string;
+  onTitleChange: (value: string) => void;
+  onSave: () => void;
+  saveDisabled: boolean;
+  saveError: string | null;
+  lockError: string | null;
+}
+
+interface WorkSurfaceColumnProps {
+  editingDocument: DocumentModelPayload | null;
+  onCancelEditing: () => void;
+  workSurface: WorkSurfaceProps;
+  noteProps: WorkSurfaceNoteProps;
+  careMap: CareMapProps;
+  diagnosis: DiagnosisProps;
+  observation: ObservationProps;
+}
+
+const WorkSurfaceColumn = ({
+  editingDocument,
+  onCancelEditing,
+  workSurface,
+  noteProps,
+  careMap,
+  diagnosis,
+  observation,
+}: WorkSurfaceColumnProps) => (
+  <CentralColumn>
+    <CentralScroll>
+      <WorkspaceStack>
+        {editingDocument ? (
+          <SurfaceCard tone="warning">
+            <Stack gap={8}>
+              <div style={{ fontWeight: 600 }}>編集中: {editingDocument.docInfoModel?.title ?? '無題のカルテ'}</div>
+              <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>変更を保存すると既存のカルテ文書が上書きされます。</div>
+              <div style={{ display: 'flex', gap: 8 }}>
+                <Button type="button" variant="secondary" onClick={onCancelEditing}>
+                  編集を終了
+                </Button>
+              </div>
+            </Stack>
+          </SurfaceCard>
+        ) : null}
+
+        <SurfaceCard tone="muted">
+          <Stack gap={12}>
+            <TextField
+              label="タイトル"
+              placeholder="例: 再診 / 高血圧"
+              value={noteProps.title}
+              onChange={(event) => noteProps.onTitleChange(event.currentTarget.value)}
+            />
+            <Button type="button" onClick={noteProps.onSave} disabled={noteProps.saveDisabled}>
+              保存して終了
+            </Button>
+            {noteProps.saveError ? <InlineError>{noteProps.saveError}</InlineError> : null}
+            {noteProps.lockError ? <InlineError>{noteProps.lockError}</InlineError> : null}
+          </Stack>
+        </SurfaceCard>
+
+        <WorkSurface {...workSurface} />
+
+        <SupplementGrid>
+          <CareMapPanel {...careMap} />
+          <DiagnosisPanel {...diagnosis} />
+          <ObservationPanel {...observation} />
+        </SupplementGrid>
+      </WorkspaceStack>
+    </CentralScroll>
+  </CentralColumn>
+);
+
+type OrderConsoleBaseProps = Omit<
+  ComponentProps<typeof OrderConsole>,
+  'collapsed' | 'forceCollapse' | 'onToggleCollapse' | 'onHoverExpand' | 'onHoverLeave' | 'activeTab' | 'onTabChange'
+>;
+
+interface OrderResultsColumnProps {
+  collapsed: boolean;
+  forceCollapse: boolean;
+  onToggleCollapse: () => void;
+  onHoverExpand: () => void;
+  onHoverLeave: () => void;
+  consoleProps: OrderConsoleBaseProps;
+}
+
+const OrderResultsColumn = ({
+  collapsed,
+  forceCollapse,
+  onToggleCollapse,
+  onHoverExpand,
+  onHoverLeave,
+  consoleProps,
+}: OrderResultsColumnProps) => (
+  <RightRail>
+    <OrderConsole
+      collapsed={collapsed}
+      forceCollapse={forceCollapse}
+      onToggleCollapse={onToggleCollapse}
+      onHoverExpand={onHoverExpand}
+      onHoverLeave={onHoverLeave}
+      {...consoleProps}
+    />
+  </RightRail>
+);
+
 const splitSoaSections = (text: string) => {
   const sections = {
     subjective: '',
     objective: '',
+    ros: '',
+    physicalExam: '',
     assessment: '',
   };
+
+  const parseObjectiveBlock = (raw: string) => {
+    const lines = raw.split('\n');
+    const buffers: Record<'objective' | 'ros' | 'physicalExam', string[]> = {
+      objective: [],
+      ros: [],
+      physicalExam: [],
+    };
+    let current: 'objective' | 'ros' | 'physicalExam' = 'objective';
+
+    lines.forEach((line) => {
+      const rosMatch = line.match(/^\s*ROS[:：]\s*(.*)$/i);
+      if (rosMatch) {
+        current = 'ros';
+        if (rosMatch[1]) {
+          buffers.ros.push(rosMatch[1]);
+        }
+        return;
+      }
+      const peMatch = line.match(/^\s*(PE|Physical\s*Exam)[:：]\s*(.*)$/i);
+      if (peMatch) {
+        current = 'physicalExam';
+        if (peMatch[2]) {
+          buffers.physicalExam.push(peMatch[2]);
+        }
+        return;
+      }
+
+      if (current === 'ros') {
+        const value = line.trim();
+        if (value) {
+          buffers.ros.push(value);
+        }
+        return;
+      }
+      if (current === 'physicalExam') {
+        const value = line.trim();
+        if (value) {
+          buffers.physicalExam.push(value);
+        }
+        return;
+      }
+      buffers.objective.push(line);
+    });
+
+    return {
+      objective: buffers.objective.join('\n').trim(),
+      ros: buffers.ros.join('\n').trim(),
+      physicalExam: buffers.physicalExam.join('\n').trim(),
+    };
+  };
+
   const blocks = text.split(/\n\n+/).map((block) => block.trim()).filter(Boolean);
   blocks.forEach((block) => {
     if (block.startsWith('S:')) {
@@ -416,7 +1114,10 @@ const splitSoaSections = (text: string) => {
       return;
     }
     if (block.startsWith('O:')) {
-      sections.objective = block.replace(/^O:\s*/, '').trim();
+      const parsed = parseObjectiveBlock(block.replace(/^O:\s*/, ''));
+      sections.objective = parsed.objective;
+      sections.ros = parsed.ros;
+      sections.physicalExam = parsed.physicalExam;
       return;
     }
     if (block.startsWith('A:')) {
@@ -485,13 +1186,27 @@ export const ChartsPage = () => {
   const [chiefComplaintStatus, setChiefComplaintStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [chiefComplaintError, setChiefComplaintError] = useState<string | null>(null);
   const [diagnosisTags, setDiagnosisTags] = useState<string[]>([]);
+  const [primaryDiagnosis, setPrimaryDiagnosis] = useState('');
+  const [primaryDiagnosisCardId, setPrimaryDiagnosisCardId] = useState<string | null>(null);
+  const [consultationStartAt, setConsultationStartAt] = useState<number | null>(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [checklist, setChecklist] = useState<VisitChecklistItem[]>(INITIAL_CHECKLIST);
-  const [activeSurface, setActiveSurface] = useState<SurfaceMode>('objective');
+  const [activeSection, setActiveSection] = useState<SoapSection>('subjective');
   const [planCards, setPlanCards] = useState<PlanComposerCard[]>([]);
   const previousPlanCardsRef = useRef<PlanComposerCard[] | null>(null);
   const [focusedPlanCardId, setFocusedPlanCardId] = useState<string | null>(null);
   const [saveState, setSaveState] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [orderModules, setOrderModules] = useState<OrderModuleDraft[]>([]);
+  const orderModuleSummaries = useMemo<OrderModuleSummary[]>(
+    () =>
+      orderModules.map((module) => ({
+        id: module.id,
+        entity: module.moduleInfo.entity,
+        label: module.moduleInfo.stampName || module.label,
+        source: module.source,
+      })),
+    [orderModules],
+  );
   const [editingDocument, setEditingDocument] = useState<DocumentModelPayload | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [lastSavedAt, setLastSavedAt] = useState<string | undefined>(undefined);
@@ -511,9 +1226,18 @@ export const ChartsPage = () => {
     title: string;
     current: string[];
     incoming: string[];
-  }>({ open: false, title: '', current: [], incoming: [] });
+    target: 'plan' | 'subjective';
+  }>({ open: false, title: '', current: [], incoming: [], target: 'plan' });
   const [miniSummaryLines, setMiniSummaryLines] = useState<string[]>([]);
   const [unsentTaskCount, setUnsentTaskCount] = useState<number>(INITIAL_CHECKLIST.length);
+  const [lastSavedDocId, setLastSavedDocId] = useState<number | null>(null);
+  const [signatureState, setSignatureState] = useState<'idle' | 'signing' | 'signed' | 'blocked' | 'error'>('idle');
+  const [signatureError, setSignatureError] = useState<string | null>(null);
+  const [lastSignedAt, setLastSignedAt] = useState<string | null>(null);
+  const [claimState, setClaimState] = useState<'idle' | 'sending' | 'sent' | 'error'>('idle');
+  const [claimError, setClaimError] = useState<string | null>(null);
+  const [lastClaimSentAt, setLastClaimSentAt] = useState<string | null>(null);
+  const [shortcutsOpen, setShortcutsOpen] = useState(false);
   const [documentPreset, setDocumentPreset] = useState<DocumentPresetState | null>(null);
   const [lastAppliedOrderSetId, setLastAppliedOrderSetId] = useState<string | null>(null);
   const [patientMemo, setPatientMemo] = useState('');
@@ -529,8 +1253,14 @@ export const ChartsPage = () => {
   const [freeDocumentStatus, setFreeDocumentStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
   const [freeDocumentError, setFreeDocumentError] = useState<string | null>(null);
   const [freeDocumentUpdatedAt, setFreeDocumentUpdatedAt] = useState<string | null>(null);
+  const [pinnedContextIds, setPinnedContextIds] = useState<string[]>([]);
+  const [contextHistoryOpen, setContextHistoryOpen] = useState(false);
+  const [referenceSplitOpen, setReferenceSplitOpen] = useState(false);
+  const [referenceDocument, setReferenceDocument] = useState<DocumentModelPayload | null>(null);
   const chiefComplaintRef = useRef<HTMLInputElement | null>(null);
   const isComposingRef = useRef(false);
+  const previousLockStateRef = useRef(false);
+  const previousVisitIdRef = useRef<number | null>(null);
 
   const selectedVisitId = useMemo(() => {
     if (!params.visitId) {
@@ -600,9 +1330,12 @@ export const ChartsPage = () => {
     fromDate: undefined,
     enabled: Boolean(selectedVisit),
   });
+  const patientDetailQuery = usePatientDetail(selectedVisit?.patientId ?? null, {
+    enabled: Boolean(selectedVisit),
+  });
+  const patientDetail = patientDetailQuery.data ?? null;
 
   const [docInfos, setDocInfos] = useState<DocInfoSummary[]>([]);
-  const [activeClinicalTab, setActiveClinicalTab] = useState<'observation' | 'claim'>('observation');
 
   const karteId = karteQuery.data?.id ?? null;
   const patientPk = selectedVisit?.patientPk ?? null;
@@ -630,6 +1363,65 @@ export const ChartsPage = () => {
       mobilePhone,
     };
   }, [selectedVisit]);
+  const patientPhotoUrl = useMemo(() => {
+    if (!patientDetail?.raw) {
+      return null;
+    }
+    const raw = patientDetail.raw as Record<string, unknown>;
+    const portrait = typeof raw.portrait === 'string' ? raw.portrait.trim() : '';
+    if (portrait) {
+      return portrait;
+    }
+    const photo = typeof raw.photo === 'string' ? raw.photo.trim() : '';
+    if (photo) {
+      if (photo.startsWith('data:') || /^https?:\/\//.test(photo)) {
+        return photo;
+      }
+      return `data:image/jpeg;base64,${photo}`;
+    }
+    return null;
+  }, [patientDetail]);
+  const visitPurpose = useMemo(() => {
+    if (!selectedVisit) {
+      return null;
+    }
+    const appointment = selectedVisit.raw?.appointment?.trim();
+    if (appointment) {
+      return appointment;
+    }
+    const memo = selectedVisit.memo?.trim();
+    if (memo) {
+      return memo;
+    }
+    return null;
+  }, [selectedVisit]);
+  const paymentCategory = useMemo(() => {
+    if (!selectedVisit) {
+      return null;
+    }
+    if (billing.mode === 'self-pay') {
+      return `自費: ${selectedSelfPayOption.label}`;
+    }
+    if (selectedInsurance) {
+      const base = selectedInsurance.className ?? selectedInsurance.label ?? '';
+      const code = selectedInsurance.classCode?.trim();
+      if (base && code) {
+        return `${base} (${code})`;
+      }
+      return base || null;
+    }
+    return null;
+  }, [billing.mode, selectedInsurance, selectedSelfPayOption.label, selectedVisit]);
+  const emergencyContact = useMemo(() => {
+    if (!patientDetail) {
+      return null;
+    }
+    const sanitize = (value?: string | null) => value?.trim() ?? '';
+    const entries = [sanitize(patientDetail.relations), sanitize(patientDetail.telephone), sanitize(patientDetail.mobilePhone)].filter(
+      (entry) => entry.length > 0,
+    );
+    return entries.length > 0 ? entries.join(' / ') : null;
+  }, [patientDetail]);
   const latestPatientMemo = useMemo(() => karteQuery.data?.memos?.[0] ?? null, [karteQuery.data?.memos]);
   const refetchKarte = karteQuery.refetch;
   const freeDocumentQuery = useFreeDocument(selectedVisit?.patientId ?? null, {
@@ -662,11 +1454,11 @@ export const ChartsPage = () => {
     if (!selectedVisit) {
       setDocInfos([]);
     }
-  }, [selectedVisit?.visitId]);
+  }, [selectedVisit]);
 
   useEffect(() => {
     setEditingDocument(null);
-  }, [selectedVisit?.visitId]);
+  }, [selectedVisit]);
 
   const clientUuid = session?.credentials.clientUuid;
   const lock = useChartLock(selectedVisit, clientUuid);
@@ -705,6 +1497,12 @@ export const ChartsPage = () => {
     setFreeDocumentStatus('idle');
     setFreeDocumentError(null);
     setFreeDocumentUpdatedAt(null);
+    setPrimaryDiagnosis('');
+    setPrimaryDiagnosisCardId(null);
+    setConsultationStartAt(null);
+    setElapsedSeconds(0);
+    previousLockStateRef.current = false;
+    previousVisitIdRef.current = selectedVisit.visitId ?? null;
   }, [selectedVisit, selectedVisit?.visitId, session?.userProfile?.displayName]);
 
   useEffect(() => {
@@ -740,7 +1538,18 @@ export const ChartsPage = () => {
     setFreeDocumentStatus('idle');
     setFreeDocumentError(null);
     setFreeDocumentUpdatedAt(null);
+    setPrimaryDiagnosis('');
+    setPrimaryDiagnosisCardId(null);
+    setConsultationStartAt(null);
+    setElapsedSeconds(0);
+    previousLockStateRef.current = false;
+    previousVisitIdRef.current = null;
   }, [selectedVisit, session?.userProfile?.displayName]);
+
+  useEffect(() => {
+    setReferenceDocument(null);
+    setReferenceSplitOpen(false);
+  }, [selectedVisit?.visitId]);
 
   useEffect(() => {
     if (!selectedVisit) {
@@ -779,7 +1588,7 @@ export const ChartsPage = () => {
     return () => window.clearTimeout(timer);
   }, [freeDocumentStatus]);
 
-  const monshinSummary = useMemo(() => {
+  const monshinSummary = useMemo<MonshinSummaryItem[]>(() => {
     const memos = karteQuery.data?.memos ?? [];
     if (memos.length === 0) {
       return [];
@@ -810,6 +1619,59 @@ export const ChartsPage = () => {
       });
   }, [karteQuery.data?.memos]);
 
+  const referenceDocumentSnapshot = useMemo(() => {
+    if (!referenceDocument) {
+      return null;
+    }
+    const modules = referenceDocument.modules ?? [];
+    const soaModule = modules.find((module) => module.moduleInfoBean?.stampRole === 'soaSpec');
+    const planModule = modules.find((module) => module.moduleInfoBean?.stampRole === 'pSpec');
+    const soaText = decodeProgressCourseText(soaModule?.beanBytes);
+    const planText = decodeProgressCourseText(planModule?.beanBytes).replace(/^P:\s*/, '').trim();
+    const sections = splitSoaSections(soaText);
+    return {
+      title: referenceDocument.docInfoModel?.title ?? '過去カルテ',
+      confirmedAt: referenceDocument.docInfoModel?.confirmDate ?? null,
+      subjective: sections.subjective,
+      objective: sections.objective,
+      ros: sections.ros,
+      physicalExam: sections.physicalExam,
+      assessment: sections.assessment,
+      plan: planText,
+    };
+  }, [referenceDocument]);
+
+  const referenceLaboQuery = useLaboModules(selectedVisit ? selectedVisit.patientId : null, 12);
+
+  const referenceLabModules = useMemo(
+    () =>
+      (referenceLaboQuery.data ?? [])
+        .slice(0, 6)
+        .map((module) => ({
+          id: `lab-${module.id}`,
+          sampleDate: module.sampleDate ?? null,
+          items: module.items
+            .slice(0, 6)
+            .map((item) => ({
+              id: `lab-${module.id}-${item.id}`,
+              label: item.itemName ?? '検査項目',
+              value: item.valueText ?? '---',
+              unit: item.unit ?? undefined,
+              abnormalFlag: item.abnormalFlag ?? null,
+            })),
+        })),
+    [referenceLaboQuery.data],
+  );
+
+  const referenceLabError = useMemo(() => {
+    if (!referenceLaboQuery.error) {
+      return null;
+    }
+    return referenceLaboQuery.error instanceof Error
+      ? referenceLaboQuery.error.message
+      : '検査結果の取得に失敗しました。';
+  }, [referenceLaboQuery.error]);
+
   useEffect(() => {
     if (!latestFreeDocument) {
       setFreeDocumentId(null);
@@ -835,11 +1697,16 @@ export const ChartsPage = () => {
     }
   }, [latestFreeDocument, freeDocumentDirty, freeDocumentStatus]);
 
-  const vitalSigns = useMemo(
+  const objectiveNarrative = useMemo(
+    () => buildObjectiveNarrative({ objective: draft.objective, ros: draft.ros, physicalExam: draft.physicalExam }),
+    [draft.objective, draft.physicalExam, draft.ros],
+  );
+
+  const vitalSigns = useMemo<VitalSignItem[]>(
     () =>
-      draft.objective
+      objectiveNarrative
         ? Array.from(
-            draft.objective.matchAll(
+            objectiveNarrative.matchAll(
               /(BP|SpO2|HR|Temp)\s*[:=\uFF1A\u30FB-]?\s*([^\n]+)/gi,
             ),
           ).map((match, index) => ({
@@ -848,7 +1715,7 @@ export const ChartsPage = () => {
             value: match[2].trim(),
           }))
         : [],
-    [draft.objective],
+    [objectiveNarrative],
   );
 
   useEffect(() => {
@@ -956,6 +1823,23 @@ export const ChartsPage = () => {
     [],
   );
 
+  useEffect(() => {
+    const primaryCard = planCards.find((card) => card.isPrimaryDiagnosis);
+    if (!primaryCard) {
+      if (primaryDiagnosisCardId) {
+        setPrimaryDiagnosisCardId(null);
+      }
+      return;
+    }
+    if (primaryDiagnosisCardId !== primaryCard.id) {
+      setPrimaryDiagnosisCardId(primaryCard.id);
+    }
+    const resolved = resolvePrimaryDiagnosisText(primaryCard);
+    if (resolved !== primaryDiagnosis) {
+      setPrimaryDiagnosis(resolved);
+    }
+  }, [planCards, primaryDiagnosis, primaryDiagnosisCardId]);
+
   const registerOrderModules = useCallback(
     (drafts: OrderModuleDraft[]) => {
       if (drafts.length === 0) {
@@ -989,6 +1873,84 @@ export const ChartsPage = () => {
     [updatePlanCards],
   );
 
+  const handlePlanPrimaryDiagnosisSelect = useCallback(
+    (id: string) => {
+      let found = false;
+      let resolved = '';
+      updatePlanCards((cards) =>
+        cards.map((card) => {
+          if (card.id === id) {
+            found = true;
+            const nextCard = { ...card, isPrimaryDiagnosis: true };
+            resolved = resolvePrimaryDiagnosisText(nextCard);
+            return nextCard;
+          }
+          if (card.isPrimaryDiagnosis) {
+            return { ...card, isPrimaryDiagnosis: false };
+          }
+          return card;
+        }),
+      );
+      if (found) {
+        setPrimaryDiagnosisCardId(id);
+        setPrimaryDiagnosis(resolved);
+        if (resolved) {
+          setDiagnosisTags((prev) => (prev.includes(resolved) ? prev : [resolved, ...prev]));
+        }
+      }
+    },
+    [updatePlanCards],
+  );
+
+  const handlePrimaryDiagnosisChange = useCallback((value: string) => {
+    setPrimaryDiagnosis(value);
+    setSaveState('idle');
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const handlePrimaryDiagnosisCommit = useCallback(
+    (input: string) => {
+      const trimmed = input.trim();
+      setPrimaryDiagnosis(trimmed);
+      if (!trimmed) {
+        updatePlanCards((cards) =>
+          cards.map((card) => (card.isPrimaryDiagnosis ? { ...card, isPrimaryDiagnosis: false } : card)),
+        );
+        setPrimaryDiagnosisCardId(null);
+        return;
+      }
+
+      let nextPrimaryCardId: string | null = primaryDiagnosisCardId;
+      updatePlanCards((cards) => {
+        let found = false;
+        const nextCards = cards.map((card) => {
+          if (card.id === primaryDiagnosisCardId || card.isPrimaryDiagnosis) {
+            if (!found) {
+              found = true;
+              const nextCard = { ...card, title: trimmed, isPrimaryDiagnosis: true };
+              nextPrimaryCardId = nextCard.id;
+              return nextCard;
+            }
+            return { ...card, isPrimaryDiagnosis: false };
+          }
+          return card;
+        });
+        if (found) {
+          return nextCards;
+        }
+        const newCard: PlanComposerCard = { ...createPlanCard('followup', '', trimmed), isPrimaryDiagnosis: true };
+        nextPrimaryCardId = newCard.id;
+        return [newCard, ...cards];
+      });
+
+      setPrimaryDiagnosisCardId(nextPrimaryCardId);
+      if (trimmed) {
+        setDiagnosisTags((prev) => (prev.includes(trimmed) ? prev : [trimmed, ...prev]));
+      }
+    },
+    [primaryDiagnosisCardId, updatePlanCards],
+  );
+
   const handlePlanCardRemove = useCallback(
     (id: string) => {
       let moduleToRemove: string | null = null;
@@ -1000,8 +1962,12 @@ export const ChartsPage = () => {
       if (moduleToRemove) {
         setOrderModules((prev) => prev.filter((module) => module.id !== moduleToRemove));
       }
+      if (id === primaryDiagnosisCardId) {
+        setPrimaryDiagnosisCardId(null);
+        setPrimaryDiagnosis('');
+      }
     },
-    [updatePlanCards],
+    [primaryDiagnosisCardId, updatePlanCards],
   );
 
   const handlePlanCardInsert = useCallback(
@@ -1040,6 +2006,30 @@ export const ChartsPage = () => {
 
   const handleObjectiveInsertText = useCallback((text: string) => {
     setDraft((prev) => ({ ...prev, objective: prev.objective ? `${prev.objective}\n${text}` : text }));
+    setSaveState('idle');
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const handleSubjectiveInsertText = useCallback((text: string) => {
+    setDraft((prev) => ({ ...prev, subjective: prev.subjective ? `${prev.subjective}\n${text}` : text }));
+    setSaveState('idle');
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const handleRosInsertText = useCallback((text: string) => {
+    setDraft((prev) => ({ ...prev, ros: prev.ros ? `${prev.ros}\n${text}` : text }));
+    setSaveState('idle');
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const handlePhysicalExamInsertText = useCallback((text: string) => {
+    setDraft((prev) => ({ ...prev, physicalExam: prev.physicalExam ? `${prev.physicalExam}\n${text}` : text }));
+    setSaveState('idle');
+    setHasUnsavedChanges(true);
+  }, []);
+
+  const handleAssessmentInsertText = useCallback((text: string) => {
+    setDraft((prev) => ({ ...prev, assessment: prev.assessment ? `${prev.assessment}\n${text}` : text }));
     setSaveState('idle');
     setHasUnsavedChanges(true);
   }, []);
@@ -1428,26 +2418,34 @@ export const ChartsPage = () => {
     [billing.insuranceId, canSelectInsurance, insuranceOptions, updateBilling],
   );
 
-  const isLockedByMe = useMemo(
-    () => Boolean(selectedVisit && clientUuid && selectedVisit.ownerUuid === clientUuid),
-    [clientUuid, selectedVisit],
-  );
-  const isLockedByOther = useMemo(
-    () => Boolean(selectedVisit && selectedVisit.ownerUuid && clientUuid && selectedVisit.ownerUuid !== clientUuid),
-    [clientUuid, selectedVisit],
+  const buildOrderModulePayloads = useCallback(
+    () =>
+      orderModules.map((module) => ({
+        moduleInfoBean: {
+          stampName: module.moduleInfo.stampName,
+          stampRole: module.moduleInfo.stampRole,
+          stampNumber: module.moduleInfo.stampNumber,
+          entity: module.moduleInfo.entity,
+          stampId: module.moduleInfo.stampId ?? undefined,
+        },
+        beanBytes: module.beanBytes,
+      })),
+    [orderModules],
   );
 
-  const handleLock = useCallback(async () => {
-    if (!selectedVisit) {
-      setSaveError('診察対象の受付を選択してください');
-      return;
-    }
-    setSaveError(null);
-    try {
-      setSaveState('saving');
-      setSaveError(null);
+  const resolveProgressContext = useCallback(
+    (): { context: ProgressNoteContext | null; error: string | null } => {
+      if (!session || !selectedVisit) {
+        return { context: null, error: '診察対象の受付が選択されていません' };
+      }
+      if (!karteId) {
+        return { context: null, error: 'カルテ情報の取得に失敗しました。再度お試しください。' };
+      }
+      if (billing.mode === 'insurance' && !selectedInsurance) {
+        return { context: null, error: '適用する保険を選択してください' };
+      }
 
-      const progressContext = {
+      const context: ProgressNoteContext = {
         draft,
         visit: selectedVisit,
         karteId,
@@ -1459,30 +2457,196 @@ export const ChartsPage = () => {
         departmentCode: selectedVisit.departmentCode,
         departmentName: selectedVisit.departmentName,
         billing: billingPayload,
-        orderModules: orderModules.map((module) => ({
-          moduleInfoBean: {
-            stampName: module.moduleInfo.stampName,
-            stampRole: module.moduleInfo.stampRole,
-            stampNumber: module.moduleInfo.stampNumber,
-            entity: module.moduleInfo.entity,
-            stampId: module.moduleInfo.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        })),
+        orderModules: buildOrderModulePayloads(),
       };
 
+      return { context, error: null };
+    },
+    [billing.mode, billingPayload, buildOrderModulePayloads, karteId, selectedInsurance, selectedVisit, session, draft],
+  );
+
+  const isLockedByMe = useMemo(
+    () => Boolean(selectedVisit && clientUuid && selectedVisit.ownerUuid === clientUuid),
+    [clientUuid, selectedVisit],
+  );
+  const isLockedByOther = useMemo(
+    () => Boolean(selectedVisit && selectedVisit.ownerUuid && clientUuid && selectedVisit.ownerUuid !== clientUuid),
+    [clientUuid, selectedVisit],
+  );
+
+  useEffect(() => {
+    const currentVisitId = selectedVisit?.visitId ?? null;
+    if (currentVisitId !== previousVisitIdRef.current) {
+      setConsultationStartAt(null);
+      setElapsedSeconds(0);
+      previousLockStateRef.current = false;
+      previousVisitIdRef.current = currentVisitId;
+    }
+
+    if (!selectedVisit) {
+      return;
+    }
+
+    if (isLockedByMe && !previousLockStateRef.current) {
+      setConsultationStartAt(Date.now());
+    } else if (!isLockedByMe && previousLockStateRef.current) {
+      setConsultationStartAt(null);
+      setElapsedSeconds(0);
+    }
+
+    previousLockStateRef.current = isLockedByMe;
+  }, [isLockedByMe, selectedVisit]);
+
+  useEffect(() => {
+    if (!consultationStartAt || !isLockedByMe) {
+      return;
+    }
+    if (typeof window === 'undefined') {
+      return;
+    }
+    const tick = () => {
+      const diff = Math.max(0, Math.floor((Date.now() - consultationStartAt) / 1000));
+      setElapsedSeconds(diff);
+    };
+    tick();
+    const handle = window.setInterval(tick, 1000);
+    return () => {
+      window.clearInterval(handle);
+    };
+  }, [consultationStartAt, isLockedByMe]);
+
+  useEffect(() => {
+    setSignatureState('idle');
+    setSignatureError(null);
+    setLastSignedAt(null);
+    setClaimState('idle');
+    setClaimError(null);
+    setLastClaimSentAt(null);
+    setLastSavedDocId(null);
+  }, [selectedVisit]);
+
+  const elapsedTimeLabel = useMemo(() => {
+    const total = Math.max(0, elapsedSeconds);
+    const hours = Math.floor(total / 3600);
+    const minutes = Math.floor((total % 3600) / 60);
+    const seconds = total % 60;
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }, [elapsedSeconds]);
+  const isTimerRunning = Boolean(isLockedByMe && consultationStartAt);
+
+  const planSignatureRequirements = useMemo(
+    () => new Set<PlanComposerCard['type']>(['medication', 'injection', 'procedure', 'exam', 'guidance']),
+    [],
+  );
+
+  const pendingPlanOrders = useMemo(
+    () => planCards.filter((card) => planSignatureRequirements.has(card.type) && !card.orderModuleId),
+    [planCards, planSignatureRequirements],
+  );
+
+  const orphanOrderModules = useMemo(
+    () => orderModules.filter((module) => !planCards.some((card) => card.orderModuleId === module.id)),
+    [orderModules, planCards],
+  );
+
+  const signatureGuard = useMemo(() => {
+    if (!isLockedByMe) {
+      return { ready: false, reason: '診察を開始してから署名してください' };
+    }
+    if (saveState === 'saving') {
+      return { ready: false, reason: '保存完了を待ってください' };
+    }
+    if (hasUnsavedChanges) {
+      return { ready: false, reason: '保存してから署名してください' };
+    }
+    if (saveState !== 'saved') {
+      return { ready: false, reason: '保存してから署名してください' };
+    }
+    if (!editingDocument && !lastSavedDocId) {
+      return { ready: false, reason: '保存済みのカルテが見つかりません。保存後に再度お試しください。' };
+    }
+    if (pendingPlanOrders.length > 0) {
+      return { ready: false, reason: 'Planカードに未確定のオーダがあります。必要なオーダを確定してください。' };
+    }
+    if (orphanOrderModules.length > 0) {
+      return { ready: false, reason: 'Planとオーダの内容が一致していません。不要なオーダを整理してください。' };
+    }
+    return { ready: true, reason: null };
+  }, [
+    editingDocument,
+    hasUnsavedChanges,
+    isLockedByMe,
+    lastSavedDocId,
+    orphanOrderModules,
+    pendingPlanOrders,
+    saveState,
+  ]);
+
+  const claimGuard = useMemo(() => {
+    if (!isLockedByMe) {
+      return { ready: false, reason: '診察を開始してから会計連携してください' };
+    }
+    if (signatureState !== 'signed') {
+      return { ready: false, reason: '署名完了後に会計連携を実行してください' };
+    }
+    if (!claimSendEnabled) {
+      return { ready: false, reason: '保険診療（送信対象の保険選択時）のみ CLAIM を送信できます' };
+    }
+    if (saveState !== 'saved') {
+      return { ready: false, reason: '保存してから会計連携を実行してください' };
+    }
+    if (!editingDocument && !lastSavedDocId) {
+      return { ready: false, reason: '保存済みのカルテが見つかりません。保存後に再度お試しください。' };
+    }
+    return { ready: true, reason: null };
+  }, [claimSendEnabled, editingDocument, isLockedByMe, lastSavedDocId, saveState, signatureState]);
+
+  const signatureDisabled = !signatureGuard.ready;
+  const signatureDisabledReason = signatureGuard.reason;
+  const claimDisabled = !claimGuard.ready;
+  const claimDisabledReason = claimGuard.reason;
+
+  const handleLock = useCallback(async () => {
+    if (!selectedVisit) {
+      setSaveError('診察対象の受付を選択してください');
+      return;
+    }
+    const { context, error } = resolveProgressContext();
+    if (!context) {
+      setSaveError(error);
+      setSaveState('error');
+      return;
+    }
+
+    try {
+      setSaveState('saving');
+      setSaveError(null);
+
       if (editingDocument) {
-        const updatedDocument = createProgressNoteDocument(progressContext);
+        const updatedDocument = createProgressNoteDocument(context);
         const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
         await updateDocument(payload);
+        setLastSavedDocId(editingDocument.docInfoModel?.docPk ?? editingDocument.id);
       } else {
         const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
-        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+        const docIdentifier = await saveProgressNote(context, nextState, selectedVisit.visitId);
+        const parsedId = Number.parseInt(docIdentifier ?? '', 10);
+        setLastSavedDocId(Number.isFinite(parsedId) ? parsedId : null);
       }
 
       setSaveState('saved');
       setHasUnsavedChanges(false);
-      setLastSavedAt(new Date().toLocaleTimeString());
+      const nowLabel = new Date().toLocaleTimeString();
+      setLastSavedAt(nowLabel);
+      setSignatureState('idle');
+      setSignatureError(null);
+      setLastSignedAt(null);
+      setClaimState('idle');
+      setClaimError(null);
+      setLastClaimSentAt(null);
       await lock.unlock();
       await karteQuery.refetch();
       setEditingDocument(null);
@@ -1490,7 +2654,7 @@ export const ChartsPage = () => {
       setSaveState('error');
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
-  }, [billingPayload, lock, selectedVisit]);
+  }, [draft, editingDocument, karteId, karteQuery, lock, orderModules, resolveProgressContext, selectedVisit, session]);
 
   const handleSave = useCallback(async () => {
     if (!session || !selectedVisit) {
@@ -1501,13 +2665,11 @@ export const ChartsPage = () => {
       setSaveError('診察を開始してから保存してください');
       return;
     }
-    const karteId = karteQuery.data?.id;
-    if (!karteId) {
-      setSaveError('カルテ情報の取得に失敗しました。再度お試しください。');
-      return;
-    }
-    if (billing.mode === 'insurance' && !selectedInsurance) {
-      setSaveError('適用する保険を選択してください');
+
+    const { context, error } = resolveProgressContext();
+    if (!context) {
+      setSaveError(error);
+      setSaveState('error');
       return;
     }
 
@@ -1515,42 +2677,28 @@ export const ChartsPage = () => {
       setSaveState('saving');
       setSaveError(null);
 
-      const progressContext = {
-        draft,
-        visit: selectedVisit,
-        karteId,
-        session,
-        facilityName: session.userProfile?.facilityName,
-        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-        userModelId: session.userProfile?.userModelId,
-        licenseName: session.userProfile?.licenseName,
-        departmentCode: selectedVisit.departmentCode,
-        departmentName: selectedVisit.departmentName,
-        billing: billingPayload,
-        orderModules: orderModules.map((module) => ({
-          moduleInfoBean: {
-            stampName: module.moduleInfo.stampName,
-            stampRole: module.moduleInfo.stampRole,
-            stampNumber: module.moduleInfo.stampNumber,
-            entity: module.moduleInfo.entity,
-            stampId: module.moduleInfo.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        })),
-      };
-
       if (editingDocument) {
-        const updatedDocument = createProgressNoteDocument(progressContext);
+        const updatedDocument = createProgressNoteDocument(context);
         const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
         await updateDocument(payload);
+        setLastSavedDocId(editingDocument.docInfoModel?.docPk ?? editingDocument.id);
       } else {
         const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
-        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+        const docIdentifier = await saveProgressNote(context, nextState, selectedVisit.visitId);
+        const parsedId = Number.parseInt(docIdentifier ?? '', 10);
+        setLastSavedDocId(Number.isFinite(parsedId) ? parsedId : null);
       }
 
       setSaveState('saved');
       setHasUnsavedChanges(false);
-      setLastSavedAt(new Date().toLocaleTimeString());
+      const nowLabel = new Date().toLocaleTimeString();
+      setLastSavedAt(nowLabel);
+      setSignatureState('idle');
+      setSignatureError(null);
+      setLastSignedAt(null);
+      setClaimState('idle');
+      setClaimError(null);
+      setLastClaimSentAt(null);
       await lock.unlock();
       await karteQuery.refetch();
       setEditingDocument(null);
@@ -1559,18 +2707,16 @@ export const ChartsPage = () => {
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
   }, [
-    session,
-    selectedVisit,
     clientUuid,
-    karteQuery,
-    billingPayload,
-    billing,
-    selectedInsurance,
-    selectedSelfPayOption.label,
     draft,
+    editingDocument,
+    karteId,
+    karteQuery,
     lock,
     orderModules,
-    editingDocument,
+    resolveProgressContext,
+    selectedVisit,
+    session,
   ]);
 
   const handleUnlock = useCallback(async () => {
@@ -1591,42 +2737,29 @@ export const ChartsPage = () => {
       setSaveState('saving');
       setSaveError(null);
 
-      const progressContext = {
-        draft,
-        visit: selectedVisit,
-        karteId,
-        session,
-        facilityName: session.userProfile?.facilityName,
-        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-        userModelId: session.userProfile?.userModelId,
-        licenseName: session.userProfile?.licenseName,
-        departmentCode: selectedVisit.departmentCode,
-        departmentName: selectedVisit.departmentName,
-        billing: billingPayload,
-        orderModules: orderModules.map((module) => ({
-          moduleInfoBean: {
-            stampName: module.moduleInfo.stampName,
-            stampRole: module.moduleInfo.stampRole,
-            stampNumber: module.moduleInfo.stampNumber,
-            entity: module.moduleInfo.entity,
-            stampId: module.moduleInfo.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        })),
-      };
+      const { context, error } = resolveProgressContext();
+      if (!context) {
+        setSaveState('error');
+        setSaveError(error);
+        return;
+      }
 
       if (editingDocument) {
-        const updatedDocument = createProgressNoteDocument(progressContext);
+        const updatedDocument = createProgressNoteDocument(context);
         const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
         await updateDocument(payload);
+        setLastSavedDocId(editingDocument.docInfoModel?.docPk ?? editingDocument.id);
       } else {
         const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
-        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
+        const docIdentifier = await saveProgressNote(context, nextState, selectedVisit.visitId);
+        const parsedId = Number.parseInt(docIdentifier ?? '', 10);
+        setLastSavedDocId(Number.isFinite(parsedId) ? parsedId : null);
       }
 
       setSaveState('saved');
       setHasUnsavedChanges(false);
-      setLastSavedAt(new Date().toLocaleTimeString());
+      const nowLabel = new Date().toLocaleTimeString();
+      setLastSavedAt(nowLabel);
       await lock.unlock();
       await karteQuery.refetch();
       setEditingDocument(null);
@@ -1634,11 +2767,176 @@ export const ChartsPage = () => {
       setSaveState('error');
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
-  }, [billingPayload, handleSave, hasUnsavedChanges, lock, saveState, selectedVisit]);
+  }, [
+    draft,
+    editingDocument,
+    handleSave,
+    hasUnsavedChanges,
+    karteId,
+    karteQuery,
+    lock,
+    orderModules,
+    resolveProgressContext,
+    saveState,
+    selectedVisit,
+    session,
+  ]);
 
   const handleSaveDraft = useCallback(() => {
     void handleSave();
   }, [handleSave]);
+
+  const handleOpenShortcuts = useCallback(() => {
+    setShortcutsOpen(true);
+  }, []);
+
+  const handleCloseShortcuts = useCallback(() => {
+    setShortcutsOpen(false);
+  }, []);
+
+  const handleSignDocument = useCallback(async () => {
+    if (!signatureGuard.ready) {
+      setSignatureState('blocked');
+      setSignatureError(null);
+      return;
+    }
+
+    const { context, error } = resolveProgressContext();
+    if (!context) {
+      setSignatureState('error');
+      setSignatureError(error ?? '署名に必要な情報を取得できませんでした');
+      return;
+    }
+
+    const targetDocId = editingDocument?.docInfoModel?.docPk ?? editingDocument?.id ?? lastSavedDocId;
+    if (!targetDocId) {
+      setSignatureState('error');
+      setSignatureError('保存済みのカルテが見つかりません。保存後に再度お試しください。');
+      return;
+    }
+
+    setSignatureState('signing');
+    setSignatureError(null);
+
+    try {
+      let baseDocument: DocumentModelPayload | null = editingDocument;
+      if (!baseDocument) {
+        const documents = await fetchDocumentsByIds([targetDocId]);
+        baseDocument = documents[0] ?? null;
+      }
+
+      if (!baseDocument) {
+        throw new Error('カルテ文書の取得に失敗しました');
+      }
+
+      const updatedDocument = createProgressNoteDocument(context);
+      const payload = buildUpdatedDocumentPayload(baseDocument, updatedDocument);
+      const now = new Date();
+      const confirmTimestamp = formatRestTimestamp(now);
+      payload.confirmed = confirmTimestamp;
+      payload.recorded = payload.recorded ?? confirmTimestamp;
+      payload.status = 'F';
+      payload.docInfoModel.status = 'F';
+      payload.docInfoModel.confirmDate = confirmTimestamp;
+      payload.docInfoModel.firstConfirmDate = payload.docInfoModel.firstConfirmDate ?? confirmTimestamp;
+
+      await updateDocument(payload);
+      await publishChartEvent({ visit: selectedVisit, nextState: selectedVisit.state, ownerUuid: clientUuid });
+      setSignatureState('signed');
+      setSignatureError(null);
+      setLastSignedAt(now.toLocaleTimeString());
+      setLastSavedDocId(payload.docInfoModel.docPk ?? targetDocId);
+      setClaimState('idle');
+      setClaimError(null);
+      setLastClaimSentAt(null);
+      await karteQuery.refetch();
+    } catch (error) {
+      setSignatureState('error');
+      setSignatureError(error instanceof Error ? error.message : '署名処理に失敗しました');
+    }
+  }, [
+    clientUuid,
+    editingDocument,
+    karteQuery,
+    lastSavedDocId,
+    resolveProgressContext,
+    selectedVisit,
+    signatureGuard.ready,
+  ]);
+
+  const handleSendClaim = useCallback(async () => {
+    if (!claimGuard.ready) {
+      setClaimError(claimDisabledReason ?? null);
+      return;
+    }
+
+    const { context, error } = resolveProgressContext();
+    if (!context) {
+      setClaimState('error');
+      setClaimError(error ?? '会計連携に必要な情報を取得できませんでした');
+      return;
+    }
+
+    const targetDocId = editingDocument?.docInfoModel?.docPk ?? editingDocument?.id ?? lastSavedDocId;
+    if (!targetDocId) {
+      setClaimState('error');
+      setClaimError('保存済みのカルテが見つかりません。保存後に再度お試しください。');
+      return;
+    }
+
+    setClaimState('sending');
+    setClaimError(null);
+
+    try {
+      let baseDocument: DocumentModelPayload | null = editingDocument;
+      if (!baseDocument) {
+        const documents = await fetchDocumentsByIds([targetDocId]);
+        baseDocument = documents[0] ?? null;
+      }
+
+      if (!baseDocument) {
+        throw new Error('カルテ文書の取得に失敗しました');
+      }
+
+      const updatedDocument = createProgressNoteDocument(context);
+      const payload = buildUpdatedDocumentPayload(baseDocument, updatedDocument);
+      const now = new Date();
+      const confirmTimestamp = formatRestTimestamp(now);
+      payload.confirmed = confirmTimestamp;
+      payload.recorded = payload.recorded ?? confirmTimestamp;
+      payload.status = 'F';
+      payload.docInfoModel.status = 'F';
+      payload.docInfoModel.confirmDate = confirmTimestamp;
+      payload.docInfoModel.firstConfirmDate = payload.docInfoModel.firstConfirmDate ?? confirmTimestamp;
+      payload.docInfoModel.sendClaim = true;
+
+      await sendClaimDocument(payload);
+      setClaimState('sent');
+      setClaimError(null);
+      setLastClaimSentAt(now.toLocaleTimeString());
+    } catch (error) {
+      setClaimState('error');
+      setClaimError(error instanceof Error ? error.message : '会計連携に失敗しました');
+      return;
+    }
+
+    try {
+      await publishChartEvent({ visit: selectedVisit, nextState: selectedVisit.state, ownerUuid: clientUuid });
+      await karteQuery.refetch();
+    } catch (eventError) {
+      // ChartEvent 送信失敗は重大ではないため、警告のみ表示
+      setClaimError((prev) => prev ?? (eventError instanceof Error ? `ChartEvent送信に失敗しました: ${eventError.message}` : 'ChartEvent送信に失敗しました'));
+    }
+  }, [
+    claimDisabledReason,
+    claimGuard.ready,
+    clientUuid,
+    editingDocument,
+    karteQuery,
+    lastSavedDocId,
+    resolveProgressContext,
+    selectedVisit,
+  ]);
 
   const handleAddDiagnosisTag = useCallback(
     (value: string) => {
@@ -1680,6 +2978,8 @@ export const ChartsPage = () => {
         title: document.docInfoModel?.title ?? '',
         subjective: soaSections.subjective,
         objective: soaSections.objective,
+        ros: soaSections.ros,
+        physicalExam: soaSections.physicalExam,
         assessment: soaSections.assessment,
         plan: planText,
       });
@@ -1691,6 +2991,27 @@ export const ChartsPage = () => {
 
       setOrderModules(orderDrafts);
       setPlanCards([]);
+
+      const confirmLabel = toLocaleTimeLabel(document.docInfoModel?.confirmDate ?? document.docInfoModel?.firstConfirmDate ?? null);
+      if (confirmLabel) {
+        setSignatureState('signed');
+        setLastSignedAt(confirmLabel);
+      } else {
+        setSignatureState('idle');
+        setLastSignedAt(null);
+      }
+      setSignatureError(null);
+
+      if (document.docInfoModel?.sendClaim) {
+        setClaimState('sent');
+        setClaimError(null);
+        setLastClaimSentAt(toLocaleTimeLabel(document.docInfoModel?.claimDate ?? null));
+      } else {
+        setClaimState('idle');
+        setClaimError(null);
+        setLastClaimSentAt(null);
+      }
+      setLastSavedDocId(document.docInfoModel?.docPk ?? document.id ?? null);
 
       if (document.docInfoModel?.sendClaim) {
         const performer = session?.userProfile?.displayName ?? session?.userProfile?.commonName ?? '';
@@ -1712,7 +3033,7 @@ export const ChartsPage = () => {
       }
 
       setHasUnsavedChanges(false);
-      setActiveSurface('objective');
+      setActiveSection('objective');
     },
     [session],
   );
@@ -1727,12 +3048,8 @@ export const ChartsPage = () => {
     setHasUnsavedChanges(false);
     setSaveState('idle');
     setSaveError(null);
-    setActiveSurface('objective');
+    setActiveSection('subjective');
   }, [session]);
-
-  const handleToggleSurface = useCallback((mode: SurfaceMode) => {
-    setActiveSurface(mode);
-  }, []);
 
   const handleInsertStamp = useCallback(
     (stamp: StampDefinition) => {
@@ -1746,7 +3063,7 @@ export const ChartsPage = () => {
           .filter(Boolean)
           .join(' ');
 
-        if (activeSurface === 'objective') {
+        if (activeSection !== 'plan') {
           handleObjectiveInsertText(snippet);
         }
 
@@ -1805,16 +3122,7 @@ export const ChartsPage = () => {
     }
       })();
     },
-    [
-      activeSurface,
-      billingPayload,
-      handleObjectiveInsertText,
-      isLockedByMe,
-      recordOperationEvent,
-      registerOrderModules,
-      setSaveError,
-      updatePlanCards,
-    ],
+    [activeSection, billingPayload, handleObjectiveInsertText, isLockedByMe, recordOperationEvent, registerOrderModules, setSaveError, updatePlanCards],
   );
 
   const handleApplyOrderSet = useCallback(
@@ -1977,13 +3285,13 @@ export const ChartsPage = () => {
         payload: `${summary.title}: ${summary.excerpt}`,
       })),
     );
-    if (draft.objective) {
+    if (objectiveNarrative) {
       base.push({
         id: 'current-objective',
         label: '現在の所見を引用',
-        detail: draft.objective.slice(0, 64),
+        detail: objectiveNarrative.slice(0, 64),
         section: 'O',
-        payload: draft.objective,
+        payload: objectiveNarrative,
       });
     }
     if (draft.assessment) {
@@ -1998,7 +3306,7 @@ export const ChartsPage = () => {
     }
 
     return base.filter((item) => (query ? item.label.toLowerCase().includes(query) || item.detail.toLowerCase().includes(query) : true));
-  }, [diagnosisTags, draft.assessment, draft.objective, pastSummaries, searchQuery, stampLibraryQuery.data]);
+  }, [diagnosisTags, draft.assessment, objectiveNarrative, pastSummaries, searchQuery, stampLibraryQuery.data]);
 
   const filteredSearchResults = useMemo(() => searchResults.filter((item) => item.section === searchSection), [searchResults, searchSection]);
 
@@ -2065,7 +3373,15 @@ export const ChartsPage = () => {
       }
       if (event.key === 'F2') {
         event.preventDefault();
-        setActiveSurface((prev) => (prev === 'objective' ? 'plan' : 'objective'));
+        setActiveSection((prev) => {
+          if (prev === 'objective') {
+            return 'plan';
+          }
+          if (prev === 'plan') {
+            return 'objective';
+          }
+          return 'objective';
+        });
       }
       if (event.key === 'F3') {
         event.preventDefault();
@@ -2159,17 +3475,116 @@ export const ChartsPage = () => {
         title: item.title,
         current: draft.plan ? draft.plan.split('\n').filter(Boolean) : [],
         incoming: item.excerpt.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean),
+        target: 'plan',
       });
     },
     [draft.plan],
   );
 
+  const handleMonshinDiffRequest = useCallback(
+    (incoming: string[]) => {
+      setDiffMergeState({
+        open: true,
+        title: '問診との差分確認',
+        current: draft.subjective ? draft.subjective.split('\n').map((paragraph) => paragraph.trim()).filter(Boolean) : [],
+        incoming,
+        target: 'subjective',
+      });
+    },
+    [draft.subjective],
+  );
+
+  const handleMonshinHistoryRequest = useCallback(() => {
+    setContextHistoryOpen(true);
+  }, []);
+
+  const handleReferenceSplitToggle = useCallback(() => {
+    setReferenceSplitOpen((prev) => !prev);
+  }, []);
+
+  const handleReferenceDocumentSelected = useCallback((document: DocumentModelPayload | null) => {
+    setReferenceDocument(document);
+  }, []);
+
+  const contextItems = useMemo<ContextItemDescriptor[]>(() => {
+    const items: ContextItemDescriptor[] = [];
+
+    for (const summary of monshinSummary) {
+      const snippet = `${summary.question}: ${summary.answer}`;
+      items.push({
+        id: `monshin-${summary.id}`,
+        kind: 'monshin',
+        title: summary.question,
+        detail: summary.answer,
+        payload: snippet,
+        actionLabel: 'コピー',
+        onActivate: () => handleSnippetDragStart(snippet),
+      });
+    }
+
+    for (const vital of vitalSigns) {
+      const snippet = `${vital.label}: ${vital.value}`;
+      items.push({
+        id: `vital-${vital.id}`,
+        kind: 'vital',
+        title: vital.label,
+        detail: vital.value,
+        payload: snippet,
+        actionLabel: 'コピー',
+        onActivate: () => handleSnippetDragStart(snippet),
+      });
+    }
+
+    for (const summary of pastSummaries) {
+      items.push({
+        id: `summary-${summary.id}`,
+        kind: 'summary',
+        title: summary.title,
+        detail: summary.excerpt,
+        timestamp: summary.recordedAt ?? null,
+        actionLabel: '展開',
+        onActivate: () => handlePastSummaryOpen(summary),
+      });
+    }
+
+    for (const media of mediaItems) {
+      const timestamp = media.capturedAt ?? media.confirmedAt ?? media.createdAt ?? null;
+      items.push({
+        id: `media-${media.id}`,
+        kind: 'media',
+        title: media.title,
+        detail: media.description ?? media.documentTitle ?? 'プレビューを開きます',
+        timestamp: timestamp ? formatUpdatedAt(timestamp) ?? timestamp : null,
+        actionLabel: 'プレビュー',
+        onActivate: () => handleMediaOpen(media),
+      });
+    }
+
+    return items;
+  }, [handleMediaOpen, handlePastSummaryOpen, handleSnippetDragStart, mediaItems, monshinSummary, pastSummaries, vitalSigns]);
+
+  useEffect(() => {
+    setPinnedContextIds((prev) => prev.filter((id) => contextItems.some((item) => item.id === id)));
+  }, [contextItems]);
+
+  const handleTogglePinnedContext = useCallback((id: string) => {
+    setPinnedContextIds((prev) => (prev.includes(id) ? prev.filter((value) => value !== id) : [...prev, id]));
+  }, []);
+
+  const handleToggleContextHistory = useCallback(() => {
+    setContextHistoryOpen((prev) => !prev);
+  }, []);
+
   const handleDiffMerge = useCallback(
     (selected: string[]) => {
-      selected.forEach((paragraph) => handlePlanInsertText(paragraph));
+      if (diffMergeState.target === 'subjective') {
+        selected.forEach((paragraph) => handleSubjectiveInsertText(paragraph));
+      } else {
+        selected.forEach((paragraph) => handlePlanInsertText(paragraph));
+      }
       setDiffMergeState((prev) => ({ ...prev, open: false }));
     },
-    [handlePlanInsertText],
+    [diffMergeState.target, handlePlanInsertText, handleSubjectiveInsertText],
   );
 
   const handleMiniSummaryExpand = useCallback(() => {
@@ -2178,6 +3593,235 @@ export const ChartsPage = () => {
     }
   }, [handlePastSummaryOpen, pastSummaries]);
 
+  const documentTimelineProps: DocumentTimelineProps = {
+    karteId,
+    fromDate: timelineFromDate,
+    includeModified: true,
+    onDocInfosLoaded: setDocInfos,
+    onEditDocument: handleEditDocument,
+    onDocumentSelected: handleReferenceDocumentSelected,
+  };
+
+  const handleSectionChange = useCallback((section: SoapSection) => {
+    setActiveSection(section);
+  }, []);
+
+  const workSurfaceProps: WorkSurfaceProps = {
+    activeSection,
+    onSectionChange: handleSectionChange,
+    subjectiveValue: draft.subjective,
+    onSubjectiveChange: (value) => handleDraftChange('subjective', value),
+    onSubjectiveInsertText: handleSubjectiveInsertText,
+    objectiveValue: draft.objective,
+    onObjectiveChange: (value) => handleDraftChange('objective', value),
+    onObjectiveInsertText: handleObjectiveInsertText,
+    rosValue: draft.ros,
+    onRosChange: (value) => handleDraftChange('ros', value),
+    onRosInsertText: handleRosInsertText,
+    physicalExamValue: draft.physicalExam,
+    onPhysicalExamChange: (value) => handleDraftChange('physicalExam', value),
+    onPhysicalExamInsertText: handlePhysicalExamInsertText,
+    assessmentValue: draft.assessment,
+    onAssessmentChange: (value) => handleDraftChange('assessment', value),
+    onAssessmentInsertText: handleAssessmentInsertText,
+    planCards,
+    onPlanCardChange: handlePlanCardChange,
+    onPlanCardRemove: handlePlanCardRemove,
+    onPlanCardInsert: handlePlanCardInsert,
+    onPlanCardReorder: handlePlanCardReorder,
+    onPlanUndo: handlePlanUndo,
+    onPlanCardFocus: handlePlanCardFocus,
+    onPlanInsertText: handlePlanInsertText,
+    primaryDiagnosisCardId,
+    onPrimaryDiagnosisSelect: handlePlanPrimaryDiagnosisSelect,
+    referenceSplitOpen,
+    onReferenceSplitToggle: handleReferenceSplitToggle,
+    referenceDocument: referenceDocumentSnapshot,
+    referenceLabModules,
+    referenceLabLoading: referenceLaboQuery.isLoading,
+    referenceLabError,
+    monshinSummary,
+    onMonshinDiffRequest: handleMonshinDiffRequest,
+    onMonshinHistoryRequest: handleMonshinHistoryRequest,
+    isLockedByMe,
+  };
+
+  const lockErrorMessage = lock.error ? (lock.error instanceof Error ? lock.error.message : String(lock.error)) : null;
+
+  const noteProps: WorkSurfaceNoteProps = {
+    title: draft.title,
+    onTitleChange: (value) => handleDraftChange('title', value),
+    onSave: handleSave,
+    saveDisabled: !isLockedByMe || lock.isPending,
+    saveError,
+    lockError: lockErrorMessage,
+  };
+
+  const careMapProps: CareMapProps = {
+    patientId: selectedVisit ? selectedVisit.patientId : null,
+    patientName: selectedVisit?.fullName,
+    karteId: karteQuery.data?.id ?? null,
+    documents: docInfos,
+    mediaItems,
+    mediaLoading: mediaItemsLoading,
+    mediaError: attachmentsQuery.error ?? null,
+  };
+
+  const diagnosisProps: DiagnosisProps = {
+    karteId,
+    fromDate: timelineFromDate,
+    userModelId: session?.userProfile?.userModelId ?? null,
+    departmentCode: selectedVisit?.departmentCode ?? null,
+    departmentName: selectedVisit?.departmentName ?? null,
+    relatedInsurance: selectedInsurance?.guid ?? selectedInsurance?.id ?? null,
+  };
+
+  const observationProps: ObservationProps = {
+    karteId,
+    userModelId: session?.userProfile?.userModelId ?? null,
+  };
+
+  const orderSetPanelProps = {
+    orderSets,
+    onApply: handleApplyOrderSet,
+    onCreate: createOrderSet,
+    onUpdate: updateOrderSet,
+    onDelete: deleteOrderSet,
+    disabled: !isLockedByMe,
+    lastAppliedId: lastAppliedOrderSetId,
+    onImportShared: importSharedOrderSets,
+    shareMetadata: {
+      facilityName: session?.userProfile?.facilityName,
+      author:
+        session?.userProfile?.displayName ??
+        session?.userProfile?.commonName ??
+        session?.credentials.userId,
+    },
+  };
+
+  const stampLibraryProps: StampLibraryPanelProps = {
+    stamps: stampLibraryQuery.data ?? [],
+    isLoading: canLoadStampLibrary ? stampLibraryQuery.isLoading : false,
+    isFetching: canLoadStampLibrary ? stampLibraryQuery.isFetching : false,
+    error: canLoadStampLibrary ? stampLibraryQuery.error : null,
+    onReload: () => {
+      if (canLoadStampLibrary) {
+        void stampLibraryQuery.refetch();
+      }
+    },
+    onInsert: handleInsertStamp,
+    disabled: !isLockedByMe || !canLoadStampLibrary,
+  };
+
+  const orcaOrderProps: OrcaOrderPanelProps = {
+    disabled: !isLockedByMe,
+    onCreateOrder: handleCreateOrderFromOrca,
+  };
+
+  const labResultsProps: LabResultsPanelProps = {
+    patientId: selectedVisit ? selectedVisit.patientId : null,
+    patientName: selectedVisit?.fullName,
+  };
+
+  const patientDocumentsProps: PatientDocumentsPanelProps = {
+    patient:
+      patientSummaryForDocuments
+        ? {
+            id: patientSummaryForDocuments.id,
+            name: patientSummaryForDocuments.name,
+            gender: patientSummaryForDocuments.gender,
+            birthday: patientSummaryForDocuments.birthday,
+          }
+        : null,
+    facilityName: session?.userProfile?.facilityName,
+    doctorName: doctorDisplayName,
+    disabled: !selectedVisit,
+    preset: documentPreset,
+  };
+
+  const medicalCertificatesProps: MedicalCertificatesPanelProps = {
+    patient: patientSummaryForDocuments,
+    karteId,
+    patientPk,
+    session,
+    facilityName: session?.userProfile?.facilityName,
+    doctorName: doctorDisplayName,
+    departmentName: selectedVisit?.departmentName ?? undefined,
+    disabled: !selectedVisit,
+    onSaved: () => {
+      void karteQuery.refetch();
+    },
+  };
+
+  const schemaEditorProps: SchemaEditorPanelProps = {
+    patient: patientSummaryForDocuments,
+    patientPk,
+    karteId,
+    session,
+    facilityName: session?.userProfile?.facilityName,
+    licenseName: session?.userProfile?.licenseName ?? null,
+    departmentName: selectedVisit?.departmentName ?? null,
+    departmentCode: selectedVisit?.departmentCode ?? null,
+    disabled: !selectedVisit,
+    onSaved: () => {
+      void karteQuery.refetch();
+    },
+  };
+
+  const claimAdjustmentProps: ClaimAdjustmentPanelProps = {
+    karteId,
+    docInfos,
+    session,
+    selectedVisit,
+    selectedInsurance,
+  };
+
+  const baseDecisionSupportMessages = useMemo<DecisionSupportMessage[]>(() => {
+    const safetyNotes = selectedVisit?.safetyNotes ?? [];
+    return safetyNotes.map((note, index) => {
+      const normalized = note.trim();
+      const severity: DecisionSupportMessage['severity'] =
+        /禁忌|アナフィラ|ショック|重症/.test(normalized) ? 'danger' :
+        /注意|慎重|警告/.test(normalized) ? 'warning' :
+        'info';
+      const category: DecisionSupportMessage['category'] = /アレルギ/.test(normalized) ? 'allergy' : 'safety';
+      return {
+        id: `safety-${index}`,
+        severity,
+        category,
+        headline: normalized,
+      };
+    });
+  }, [selectedVisit?.safetyNotes]);
+
+  const orderConsoleProps: OrderConsoleBaseProps = {
+    orderSetProps: orderSetPanelProps,
+    stampLibraryProps,
+    orcaOrderProps,
+    labResultsProps,
+    patientDocumentsProps,
+    medicalCertificatesProps,
+    schemaEditorProps,
+    planCards,
+    orderModules: orderModuleSummaries,
+    onPlanCardChange: handlePlanCardChange,
+    onPlanCardRemove: handlePlanCardRemove,
+    onPlanCardFocus: handlePlanCardFocus,
+    orderEditingDisabled: !isLockedByMe,
+    decisionSupportMessages: baseDecisionSupportMessages,
+    billingProps: {
+      billing,
+      onModeChange: handleBillingModeChange,
+      updateBilling,
+      canSelectInsurance,
+      insuranceOptions,
+      selectedInsurance,
+      claimSendEnabled,
+      billingDisabled,
+    },
+    claimAdjustmentProps,
+  };
+
   return (
     <PageShell>
       <PatientHeaderBar
@@ -2185,301 +3829,89 @@ export const ChartsPage = () => {
         patient={selectedVisit}
         chiefComplaint={chiefComplaint}
         onChiefComplaintChange={handleChiefComplaintChange}
+        primaryDiagnosis={primaryDiagnosis}
+        onPrimaryDiagnosisChange={handlePrimaryDiagnosisChange}
+        onPrimaryDiagnosisCommit={handlePrimaryDiagnosisCommit}
         diagnosisTags={diagnosisTags}
         onAddDiagnosisTag={handleAddDiagnosisTag}
         onRemoveDiagnosisTag={handleRemoveDiagnosisTag}
+        visitPurpose={visitPurpose}
+        paymentCategory={paymentCategory}
+        emergencyContact={emergencyContact}
+        patientPhotoUrl={patientPhotoUrl}
         cautionFlags={selectedVisit?.safetyNotes ?? []}
         onToggleLock={isLockedByMe ? handleUnlock : handleLock}
         isLockedByMe={isLockedByMe}
         isLockedByOther={isLockedByOther}
         isLockPending={lock.isPending}
         onOpenSearch={() => setSearchOpen(true)}
+        searchShortcutHint={GLOBAL_SEARCH_SHORTCUT}
+        elapsedTimeLabel={elapsedTimeLabel}
+        isTimerRunning={isTimerRunning}
         canEdit={Boolean(selectedVisit)}
       />
       <ContentGrid>
-        <LeftRail>
-          <Stack gap={16}>
-            <VisitChecklist
-              items={checklist}
-              onToggleCompleted={handleChecklistToggle}
-              onToggleInstantSave={handleChecklistInstant}
-            />
-            <DocumentTimelinePanel
-              karteId={karteId}
-              fromDate={timelineFromDate}
-              includeModified
-              onDocInfosLoaded={setDocInfos}
-              onEditDocument={handleEditDocument}
-            />
-          </Stack>
-        </LeftRail>
-        <CentralColumn>
-          <CentralScroll>
-            {selectedVisit ? (
-              <WorkspaceStack>
-                {editingDocument ? (
-                  <SurfaceCard tone="warning">
-                    <Stack gap={8}>
-                      <div style={{ fontWeight: 600 }}>編集中: {editingDocument.docInfoModel?.title ?? '無題のカルテ'}</div>
-                      <div style={{ fontSize: '0.85rem', color: '#6b7280' }}>
-                        変更を保存すると既存のカルテ文書が上書きされます。
-                      </div>
-                      <div style={{ display: 'flex', gap: 8 }}>
-                        <Button type="button" variant="secondary" onClick={handleCancelEditing}>
-                          編集を終了
-                        </Button>
-                      </div>
-                    </Stack>
-                  </SurfaceCard>
-                ) : null}                <WorkSurface
-                  mode={activeSurface}
-                  onModeChange={handleToggleSurface}
-                  objectiveValue={draft.objective}
-                  onObjectiveChange={(value) => handleDraftChange('objective', value)}
-                  assessmentValue={draft.assessment}
-                  onAssessmentChange={(value) => handleDraftChange('assessment', value)}
-                  planCards={planCards}
-                  onPlanCardChange={handlePlanCardChange}
-                  onPlanCardRemove={handlePlanCardRemove}
-                  onPlanCardInsert={handlePlanCardInsert}
-                  onPlanCardReorder={handlePlanCardReorder}
-                  onPlanUndo={handlePlanUndo}
-                  onPlanCardFocus={handlePlanCardFocus}
-                  onObjectiveInsertText={handleObjectiveInsertText}
-                  onPlanInsertText={handlePlanInsertText}
-                  isLockedByMe={isLockedByMe}
-                />
-                <SurfaceCard tone="muted">
-                  <Stack gap={12}>
-                    <TextField
-                      label="タイトル"
-                      placeholder="例: 再診 / 高血圧"
-                      value={draft.title}
-                      onChange={(event) => handleDraftChange('title', event.currentTarget.value)}
-                    />
-                    <TextArea
-                      label="Subjective"
-                      placeholder="患者の主訴や自覚症状"
-                      value={draft.subjective}
-                      onChange={(event) => handleDraftChange('subjective', event.currentTarget.value)}
-                      disabled={!isLockedByMe}
-                    />
-                    <Button type="button" onClick={handleSave} disabled={!isLockedByMe || lock.isPending}>
-                      保存して終了
-                    </Button>
-                    {saveError ? <InlineError>{saveError}</InlineError> : null}
-                    {lock.error ? <InlineError>{String(lock.error)}</InlineError> : null}
-                  </Stack>
-                </SurfaceCard>
-                <SurfaceCard>
-                  <Stack gap={16}>
-                    <h3 style={{ margin: 0, fontSize: '1rem' }}>請求モード</h3>
-                    <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={billing.mode === 'insurance' ? 'primary' : 'ghost'}
-                        onClick={() => handleBillingModeChange('insurance')}
-                        disabled={!canSelectInsurance}
-                      >
-                        保険請求
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={billing.mode === 'self-pay' ? 'secondary' : 'ghost'}
-                        onClick={() => handleBillingModeChange('self-pay')}
-                      >
-                        自費モード
-                      </Button>
-                      <StatusBadge tone={claimSendEnabled ? 'info' : 'warning'}>
-                        CLAIM送信: {claimSendEnabled ? '有効' : '無効'}
-                      </StatusBadge>
-                    </div>
-                    {billing.mode === 'insurance' ? (
-                      canSelectInsurance ? (
-                        <Stack gap={12}>
-                          <SelectField
-                            label="適用保険"
-                            value={billing.insuranceId ?? (insuranceOptions[0]?.id ?? '')}
-                            onChange={(event) => updateBilling({ insuranceId: event.currentTarget.value || null })}
-                            options={insuranceOptions.map((option) => ({ value: option.id, label: option.label }))}
-                            disabled={billingDisabled}
-                          />
-                          {selectedInsurance ? (
-                            <InlineMessage>{selectedInsurance.description ?? selectedInsurance.label}</InlineMessage>
-                          ) : null}
-                        </Stack>
-                      ) : (
-                        <InlineMessage>受付情報に保険が紐付いていません。自費モードに切り替えて保存してください。</InlineMessage>
-                      )
-                    ) : (
-                      <Stack gap={12}>
-                        <TextField
-                          label="自費カテゴリ"
-                          value={billing.selfPayCategory}
-                          onChange={(event) => updateBilling({ selfPayCategory: event.currentTarget.value })}
-                          disabled={billingDisabled}
-                        />
-                        <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
-                          <TextField
-                            label="数量"
-                            value={billing.quantity}
-                            onChange={(event) => updateBilling({ quantity: event.currentTarget.value })}
-                            disabled={billingDisabled}
-                          />
-                          <TextField
-                            label="実施者"
-                            value={billing.performer}
-                            onChange={(event) => updateBilling({ performer: event.currentTarget.value })}
-                            disabled={billingDisabled}
-                          />
-                          <TextField
-                            label="ロット番号"
-                            value={billing.lotNumber}
-                            onChange={(event) => updateBilling({ lotNumber: event.currentTarget.value })}
-                            disabled={billingDisabled}
-                          />
-                        </div>
-                        <TextArea
-                          label="自費メモ"
-                          value={billing.memo}
-                          onChange={(event) => updateBilling({ memo: event.currentTarget.value })}
-                          rows={3}
-                          disabled={billingDisabled}
-                        />
-                      </Stack>
-                    )}
-                  </Stack>
-                </SurfaceCard>
-                <SupplementGrid>
-                  <CareMapPanel
-                    patientId={selectedVisit ? selectedVisit.patientId : null}
-                    patientName={selectedVisit?.fullName}
-                    karteId={karteQuery.data?.id ?? null}
-                    documents={docInfos}
-                    mediaItems={mediaItems}
-                    mediaLoading={mediaItemsLoading}
-                    mediaError={attachmentsQuery.error ?? null}
-                  />
-                  <DiagnosisPanel
-                    karteId={karteId}
-                    fromDate={timelineFromDate}
-                    userModelId={session?.userProfile?.userModelId ?? null}
-                    departmentCode={selectedVisit?.departmentCode ?? null}
-                    departmentName={selectedVisit?.departmentName ?? null}
-                    relatedInsurance={selectedInsurance?.guid ?? selectedInsurance?.id ?? null}
-                  />
-                  <ClinicalPanelWrapper>
-                    <ClinicalTabs>
-                      <ClinicalTabButton
-                        type="button"
-                        $active={activeClinicalTab === 'observation'}
-                        onClick={() => setActiveClinicalTab('observation')}
-                      >
-                        観察記録
-                      </ClinicalTabButton>
-                      <ClinicalTabButton
-                        type="button"
-                        $active={activeClinicalTab === 'claim'}
-                        onClick={() => setActiveClinicalTab('claim')}
-                      >
-                        請求調整
-                      </ClinicalTabButton>
-                    </ClinicalTabs>
-                    {activeClinicalTab === 'observation' ? (
-                      <ObservationPanel karteId={karteId} userModelId={session?.userProfile?.userModelId ?? null} />
-                    ) : (
-                      <ClaimAdjustmentPanel
-                        karteId={karteId}
-                        docInfos={docInfos}
-                        session={session}
-                        selectedVisit={selectedVisit}
-                        selectedInsurance={selectedInsurance}
-                      />
-                    )}
-                  </ClinicalPanelWrapper>
-                  <OrderSetPanel
-                    orderSets={orderSets}
-                    onApply={handleApplyOrderSet}
-                    onCreate={createOrderSet}
-                    onUpdate={updateOrderSet}
-                    onDelete={deleteOrderSet}
-                    disabled={!isLockedByMe}
-                    lastAppliedId={lastAppliedOrderSetId}
-                    onImportShared={importSharedOrderSets}
-                    shareMetadata={{
-                      facilityName: session?.userProfile?.facilityName,
-                      author:
-                        session?.userProfile?.displayName ??
-                        session?.userProfile?.commonName ??
-                        session?.credentials.userId,
-                    }}
-                  />
-                  <StampLibraryPanel
-                    stamps={stampLibraryQuery.data ?? []}
-                    isLoading={canLoadStampLibrary ? stampLibraryQuery.isLoading : false}
-                    isFetching={canLoadStampLibrary ? stampLibraryQuery.isFetching : false}
-                    error={canLoadStampLibrary ? stampLibraryQuery.error : null}
-                    onReload={() => {
-                      if (canLoadStampLibrary) {
-                        void stampLibraryQuery.refetch();
-                      }
-                    }}
-                    onInsert={handleInsertStamp}
-                    disabled={!isLockedByMe || !canLoadStampLibrary}
-                  />
-                  <OrcaOrderPanel disabled={!isLockedByMe} onCreateOrder={handleCreateOrderFromOrca} />
-                  <PatientDocumentsPanel
-                    patient={
-                      patientSummaryForDocuments
-                        ? {
-                            id: patientSummaryForDocuments.id,
-                            name: patientSummaryForDocuments.name,
-                            gender: patientSummaryForDocuments.gender,
-                            birthday: patientSummaryForDocuments.birthday,
-                          }
-                        : null
-                    }
-                    facilityName={session?.userProfile?.facilityName}
-                    doctorName={doctorDisplayName}
-                    disabled={!selectedVisit}
-                    preset={documentPreset}
-                  />
-                  <MedicalCertificatesPanel
-                    patient={patientSummaryForDocuments}
-                    karteId={karteId}
-                    patientPk={patientPk}
-                    session={session}
-                    facilityName={session?.userProfile?.facilityName}
-                    doctorName={doctorDisplayName}
-                    departmentName={selectedVisit?.departmentName ?? undefined}
-                    disabled={!selectedVisit}
-                    onSaved={() => {
-                      void karteQuery.refetch();
-                    }}
-                  />
-                  <SchemaEditorPanel
-                    patient={patientSummaryForDocuments}
-                    patientPk={patientPk}
-                    karteId={karteId}
-                    session={session}
-                    facilityName={session?.userProfile?.facilityName}
-                    licenseName={session?.userProfile?.licenseName ?? null}
-                    departmentName={selectedVisit?.departmentName ?? null}
-                    departmentCode={selectedVisit?.departmentCode ?? null}
-                    disabled={!selectedVisit}
-                    onSaved={() => {
-                      void karteQuery.refetch();
-                    }}
-                  />
-                  <LabResultsPanel
-                    patientId={selectedVisit ? selectedVisit.patientId : null}
-                    patientName={selectedVisit?.fullName}
-                  />
-                </SupplementGrid>
-              </WorkspaceStack>
-            ) : (
+        <LeftContextColumn
+          checklist={checklist}
+          onToggleChecklist={handleChecklistToggle}
+          onToggleInstantChecklist={handleChecklistInstant}
+          documentTimeline={documentTimelineProps}
+          visitMemo={chiefComplaint}
+          visitMemoStatus={chiefComplaintStatus}
+          visitMemoError={chiefComplaintError}
+          visitMemoDirty={chiefComplaintDirty}
+          onVisitMemoChange={handleChiefComplaintChange}
+          onVisitMemoSave={handleChiefComplaintCommit}
+          onVisitMemoReset={handleChiefComplaintReset}
+          visitMemoDisabled={!selectedVisit}
+          contextItems={contextItems}
+          pinnedContextIds={pinnedContextIds}
+          onTogglePinContext={handleTogglePinnedContext}
+          showHistory={contextHistoryOpen}
+          onToggleHistory={handleToggleContextHistory}
+          monshinSummary={monshinSummary}
+          vitalSigns={vitalSigns}
+          mediaItems={mediaItems}
+          mediaLoading={mediaItemsLoading}
+          mediaError={mediaItemsError}
+          onSnippetDragStart={handleSnippetDragStart}
+          onMediaOpen={handleMediaOpen}
+          pastSummaries={pastSummaries}
+          onPastSummaryOpen={handlePastSummaryOpen}
+          patientMemo={patientMemo}
+          patientMemoStatus={patientMemoStatus}
+          patientMemoError={patientMemoError}
+          patientMemoDirty={patientMemoDirty}
+          patientMemoUpdatedAt={patientMemoUpdatedAt}
+          onPatientMemoChange={handlePatientMemoChange}
+          onPatientMemoSave={handlePatientMemoSave}
+          onPatientMemoReset={handlePatientMemoReset}
+          patientMemoDisabled={!selectedVisit}
+          hasPatientMemoHistory={patientMemoHistory.length > 0}
+          onPatientMemoHistoryOpen={handlePatientMemoHistoryOpen}
+          freeDocumentComment={freeDocumentComment}
+          freeDocumentStatus={freeDocumentStatus}
+          freeDocumentError={freeDocumentError}
+          freeDocumentDirty={freeDocumentDirty}
+          freeDocumentUpdatedAt={freeDocumentUpdatedAt}
+          onFreeDocumentChange={handleFreeDocumentChange}
+          onFreeDocumentSave={handleFreeDocumentSave}
+          onFreeDocumentReset={handleFreeDocumentReset}
+          freeDocumentDisabled={!selectedVisit}
+        />
+        {selectedVisit ? (
+          <WorkSurfaceColumn
+            editingDocument={editingDocument}
+            onCancelEditing={handleCancelEditing}
+            workSurface={workSurfaceProps}
+            noteProps={noteProps}
+            careMap={careMapProps}
+            diagnosis={diagnosisProps}
+            observation={observationProps}
+          />
+        ) : (
+          <CentralColumn>
+            <CentralScroll>
               <EmptyStateCard tone="muted">
                 <Stack gap={12}>
                   <h2 style={{ margin: 0, fontSize: '1.1rem' }}>カルテ対象が選択されていません</h2>
@@ -2511,76 +3943,54 @@ export const ChartsPage = () => {
                   </Button>
                 </EmptyStateActions>
               </EmptyStateCard>
-            )}
-          </CentralScroll>
-        </CentralColumn>
-        <RightRail>
-          <RightPane
-            isCollapsed={rightPaneCollapsed}
-            onToggleCollapse={() => (!forceCollapse ? setRightPaneCollapsed((prev) => !prev) : undefined)}
-            onHoverExpand={() => {
-              if (forceCollapse) {
-                setRightPaneCollapsed(false);
-              }
-            }}
-            onHoverLeave={() => {
-              if (forceCollapse) {
-                setRightPaneCollapsed(true);
-              }
-            }}
-            visitMemo={chiefComplaint}
-            visitMemoStatus={chiefComplaintStatus}
-            visitMemoError={chiefComplaintError}
-            visitMemoDirty={chiefComplaintDirty}
-            onVisitMemoChange={handleChiefComplaintChange}
-            onVisitMemoSave={handleChiefComplaintCommit}
-            onVisitMemoReset={handleChiefComplaintReset}
-            visitMemoDisabled={!selectedVisit}
-            monshinSummary={monshinSummary}
-            vitalSigns={vitalSigns}
-            mediaItems={mediaItems}
-            mediaLoading={mediaItemsLoading}
-            mediaError={mediaItemsError}
-            pastSummaries={pastSummaries}
-            onSnippetDragStart={handleSnippetDragStart}
-            onMediaOpen={handleMediaOpen}
-            onPastSummaryOpen={handlePastSummaryOpen}
-            patientMemo={patientMemo}
-            patientMemoStatus={patientMemoStatus}
-            patientMemoError={patientMemoError}
-            patientMemoDirty={patientMemoDirty}
-            patientMemoUpdatedAt={patientMemoUpdatedAt}
-            onPatientMemoChange={handlePatientMemoChange}
-            onPatientMemoSave={handlePatientMemoSave}
-            onPatientMemoReset={handlePatientMemoReset}
-            patientMemoDisabled={!selectedVisit}
-            hasPatientMemoHistory={patientMemoHistory.length > 0}
-            onPatientMemoHistoryOpen={handlePatientMemoHistoryOpen}
-            freeDocumentComment={freeDocumentComment}
-            freeDocumentStatus={freeDocumentStatus}
-            freeDocumentError={freeDocumentError}
-            freeDocumentDirty={freeDocumentDirty}
-            freeDocumentUpdatedAt={freeDocumentUpdatedAt}
-            onFreeDocumentChange={handleFreeDocumentChange}
-            onFreeDocumentSave={handleFreeDocumentSave}
-            onFreeDocumentReset={handleFreeDocumentReset}
-            freeDocumentDisabled={!selectedVisit}
-          />
-        </RightRail>
+            </CentralScroll>
+          </CentralColumn>
+        )}
+        <OrderResultsColumn
+          collapsed={rightPaneCollapsed}
+          forceCollapse={forceCollapse}
+          onToggleCollapse={() => (!forceCollapse ? setRightPaneCollapsed((prev) => !prev) : undefined)}
+          onHoverExpand={() => {
+            if (forceCollapse) {
+              setRightPaneCollapsed(false);
+            }
+          }}
+          onHoverLeave={() => {
+            if (forceCollapse) {
+              setRightPaneCollapsed(true);
+            }
+          }}
+          consoleProps={orderConsoleProps}
+        />
       </ContentGrid>
       <StatusBar
         saveState={saveState}
+        signatureState={signatureState}
+        claimState={claimState}
         unsentTaskCount={unsentTaskCount}
         lastSavedAt={lastSavedAt}
+        lastSignedAt={lastSignedAt}
+        lastClaimSentAt={lastClaimSentAt}
         onSaveDraft={handleSaveDraft}
+        onSignDocument={handleSignDocument}
+        onSendClaim={handleSendClaim}
+        onOpenShortcuts={handleOpenShortcuts}
         onCallNextPatient={handleCallNextPatient}
         isLockedByMe={isLockedByMe}
+        signatureDisabled={signatureDisabled}
+        claimDisabled={claimDisabled}
+        signatureDisabledReason={signatureDisabledReason}
+        claimDisabledReason={claimDisabledReason}
+        signatureError={signatureError}
+        claimError={claimError}
       />
       <MiniSummaryDock
         summaryLines={miniSummaryLines}
         onExpand={handleMiniSummaryExpand}
         onSnippetDragStart={handleSnippetDragStart}
       />
+
+      <ShortcutOverlay open={shortcutsOpen} onClose={handleCloseShortcuts} />
 
       <UnifiedSearchOverlay
         open={searchOpen}
@@ -2614,18 +4024,3 @@ export const ChartsPage = () => {
     </PageShell>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-

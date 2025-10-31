@@ -4,6 +4,7 @@ import type { ModuleModelPayload } from '@/features/charts/types/module';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { ProgressNoteDraft } from '@/features/charts/utils/progress-note-payload';
 import {
+  buildObjectiveNarrative,
   createProgressNoteDocument,
   type ProgressNoteBilling,
 } from '@/features/charts/utils/progress-note-payload';
@@ -62,6 +63,8 @@ describe('createProgressNoteDocument', () => {
     title: '高血圧フォロー',
     subjective: '食事療法を継続。頭痛なし。',
     objective: '血圧 132/84, 脈拍 68',
+    ros: '咳嗽なし / 呼吸困難なし。',
+    physicalExam: '胸部: 呼吸音清。腹部: 平坦・軟。',
     assessment: 'コントロール良好、経過観察',
     plan: '処方継続、2ヶ月後受診',
   };
@@ -159,6 +162,10 @@ describe('createProgressNoteDocument', () => {
     const soaText = decodeBase64(soaModule.beanBytes ?? '');
     expect(soaText).toContain('S:');
     expect(soaText).toContain(draft.subjective);
+    expect(soaText).toContain('ROS:');
+    expect(soaText).toContain(draft.ros);
+    expect(soaText).toContain('PE:');
+    expect(soaText).toContain(draft.physicalExam);
 
     const planText = decodeBase64(planModule.beanBytes ?? '');
     expect(planText).toContain('P:');
@@ -190,6 +197,24 @@ describe('createProgressNoteDocument', () => {
     expect(document.docInfoModel.healthInsuranceDesc).toContain('実施者: 看護師A');
     expect(document.docInfoModel.healthInsuranceGUID).toBe('');
     expect(document.docInfoModel.sendClaim).toBe(false);
+  });
+
+  it('buildObjectiveNarrative joins core, ROS, and PE sections with headings', () => {
+    expect(
+      buildObjectiveNarrative({
+        objective: 'バイタル安定。',
+        ros: '胸部症状なし。',
+        physicalExam: '心音整、雑音なし。',
+      }),
+    ).toBe('バイタル安定。\n\nROS:\n胸部症状なし。\n\nPE:\n心音整、雑音なし。');
+
+    expect(
+      buildObjectiveNarrative({
+        objective: '',
+        ros: '食欲良好',
+        physicalExam: '',
+      }),
+    ).toBe('ROS:\n食欲良好');
   });
 
   it('supports taxable self-pay receipts by disabling CLAIM send', () => {
