@@ -1,8 +1,9 @@
-import { Fragment, useMemo, useState } from 'react';
-import { NavLink, Outlet, useNavigate } from 'react-router-dom';
+import { Fragment, useEffect, useId, useMemo, useRef, useState } from 'react';
+import type { KeyboardEvent } from 'react';
+import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import styled from '@emotion/styled';
 
-import { Button, StatusBadge, SurfaceCard, Stack } from '@/components';
+import { Button } from '@/components';
 import { useAuth } from '@/libs/auth';
 import { SidebarContext } from './SidebarContext';
 
@@ -33,18 +34,21 @@ const Shell = styled.div`
 const Header = styled.header`
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: ${({ theme }) => theme.layout.gutter};
   padding: 0 ${({ theme }) => theme.layout.gutter};
   background: ${({ theme }) => theme.palette.surface};
   box-shadow: ${({ theme }) => theme.elevation.level1};
   position: sticky;
   top: 0;
   z-index: 20;
+  flex-wrap: nowrap;
+  min-width: 0;
 `;
 
 const Logo = styled.div`
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
 
   span:first-of-type {
     font-weight: 700;
@@ -59,8 +63,10 @@ const Logo = styled.div`
 
 const HeaderActions = styled.div`
   display: flex;
-  gap: 12px;
   align-items: center;
+  gap: 12px;
+  margin-left: auto;
+  flex-shrink: 0;
 `;
 
 const UserProfile = styled.div`
@@ -81,9 +87,8 @@ const UserMeta = styled.span`
 `;
 
 const Body = styled.div`
-  display: grid;
-  grid-template-columns: ${({ theme }) => theme.layout.navWidth} minmax(0, 1fr) ${({ theme }) =>
-        theme.layout.sidebarWidth};
+  display: flex;
+  flex-direction: column;
   gap: ${({ theme }) => theme.layout.gutter};
   padding: ${({ theme }) => theme.layout.gutter};
   max-width: ${({ theme }) => theme.layout.contentMaxWidth};
@@ -94,53 +99,47 @@ const Body = styled.div`
     100vh - ${({ theme }) => theme.layout.headerHeight} - ${({ theme }) => theme.layout.footerHeight}
   );
   min-height: 0;
-
-  @media (max-width: 1280px) {
-    grid-template-columns: ${({ theme }) => theme.layout.navWidth} minmax(0, 1fr);
-  }
-
-  @media (max-width: 960px) {
-    grid-template-columns: minmax(0, 1fr);
-  }
 `;
 
 const Navigation = styled.nav`
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 16px;
-  background: ${({ theme }) => theme.palette.surface};
-  border-radius: ${({ theme }) => theme.radius.md};
-  box-shadow: ${({ theme }) => theme.elevation.level1};
-  position: sticky;
-  top: ${({ theme }) => theme.layout.gutter};
-  align-self: start;
+  align-items: center;
+  padding: 0;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
 
-  @media (max-width: 960px) {
-    order: -1;
-    position: static;
+  &::-webkit-scrollbar {
+    display: none;
   }
 `;
 
-const NavTitle = styled.h2`
-  font-size: ${({ theme }) => theme.typography.caption};
-  font-weight: 600;
-  color: ${({ theme }) => theme.palette.textMuted};
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+const NavList = styled.div`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+  padding: 0 4px;
 `;
 
 const NavItem = styled(NavLink)`
-  display: block;
-  padding: 10px 12px;
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 10px;
   border-radius: ${({ theme }) => theme.radius.sm};
   color: ${({ theme }) => theme.palette.textMuted};
-  transition: background 0.2s ease, color 0.2s ease;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   font-weight: 500;
+  text-decoration: none;
+  border: 1px solid transparent;
+  flex-shrink: 0;
 
   &[aria-current='page'] {
     background: ${({ theme }) => theme.palette.primary};
-    color: ${({ theme }) => theme.palette.surface};
+    color: ${({ theme }) => theme.palette.onPrimary};
+    box-shadow: 0 0 0 1px transparent;
   }
 
   &:hover {
@@ -148,9 +147,73 @@ const NavItem = styled(NavLink)`
     color: ${({ theme }) => theme.palette.text};
   }
 
+  &:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px ${({ theme }) => theme.palette.accent};
+  }
+
   &[aria-disabled='true'] {
     pointer-events: none;
     opacity: 0.45;
+  }
+`;
+
+const AdminMenuWrapper = styled.div`
+  position: relative;
+`;
+
+const AdminMenuList = styled.div`
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  min-width: 200px;
+  background: ${({ theme }) => theme.palette.surface};
+  border-radius: ${({ theme }) => theme.radius.md};
+  box-shadow: ${({ theme }) => theme.elevation.level2};
+  border: 1px solid ${({ theme }) => theme.palette.border};
+  z-index: 40;
+`;
+
+const AdminMenuItem = styled(NavLink)`
+  display: block;
+  padding: 8px 10px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  color: ${({ theme }) => theme.palette.text};
+  font-size: ${({ theme }) => theme.typography.body};
+  text-decoration: none;
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &[aria-current='page'] {
+    background: ${({ theme }) => theme.palette.primary};
+    color: ${({ theme }) => theme.palette.onPrimary};
+  }
+
+  &:hover,
+  &:focus-visible {
+    background: ${({ theme }) => theme.palette.surfaceMuted};
+    outline: none;
+  }
+
+  &[aria-disabled='true'] {
+    pointer-events: none;
+    opacity: 0.45;
+  }
+`;
+
+const ContentRegion = styled.div<{ hasSidebar: boolean }>`
+  display: grid;
+  grid-template-columns: ${({ hasSidebar }) =>
+    hasSidebar ? 'minmax(0, 1fr) minmax(260px, 340px)' : 'minmax(0, 1fr)'};
+  gap: ${({ theme }) => theme.layout.gutter};
+  flex: 1;
+  min-height: 0;
+
+  @media (max-width: 1200px) {
+    grid-template-columns: minmax(0, 1fr);
   }
 `;
 
@@ -161,36 +224,14 @@ const Main = styled.main`
   min-width: 0;
   min-height: 0;
   overflow: auto;
-
-  @media (max-width: 960px) {
-    order: 2;
-    overflow: visible;
-  }
 `;
 
 const Sidebar = styled.aside`
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-  position: sticky;
-  top: ${({ theme }) => theme.layout.gutter};
-  align-self: start;
-
-  @media (max-width: 960px) {
-    order: 1;
-    position: static;
-  }
-`;
-
-const SidebarHeading = styled.h3`
-  font-size: ${({ theme }) => theme.typography.headingSm};
-  font-weight: 600;
-  margin: 0;
-`;
-
-const SidebarText = styled.p`
-  margin: 0;
-  color: ${({ theme }) => theme.palette.textMuted};
-  font-size: ${({ theme }) => theme.typography.body};
+  min-height: 0;
+  overflow: auto;
 `;
 
 const Footer = styled.footer`
@@ -202,12 +243,6 @@ const Footer = styled.footer`
   font-size: ${({ theme }) => theme.typography.caption};
   border-top: 1px solid ${({ theme }) => theme.palette.border};
 `;
-
-const sidebarTips = [
-  'HTTPS・CSP・CSRF を含む全面セキュリティ対策を適用しました',
-  '患者検索・カルテ取得・ORCA マスター検索に性能計測と監査ログを追加しました',
-  '30 クライアント同時接続を想定した負荷テストスクリプトを提供しています',
-];
 
 export const AppShell = () => {
   const navigate = useNavigate();
@@ -224,6 +259,11 @@ export const AppShell = () => {
     }),
     [],
   );
+
+  const location = useLocation();
+  const adminMenuRef = useRef<HTMLDivElement | null>(null);
+  const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
+  const adminMenuId = useId();
 
   const canAccessAdministration = hasRole('admin') || hasRole('manager') || hasRole('system');
 
@@ -250,6 +290,45 @@ export const AppShell = () => {
     navigate('/login', { replace: true });
   };
 
+  useEffect(() => {
+    setIsAdminMenuOpen(false);
+  }, [location.pathname]);
+
+  useEffect(() => {
+    if (!isAdminMenuOpen) {
+      return;
+    }
+    const handleClickOutside = (event: MouseEvent) => {
+      if (adminMenuRef.current && !adminMenuRef.current.contains(event.target as Node)) {
+        setIsAdminMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isAdminMenuOpen]);
+
+  const toggleAdminMenu = () => {
+    setIsAdminMenuOpen((prev) => !prev);
+  };
+
+  const handleAdminMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === 'Escape') {
+      setIsAdminMenuOpen(false);
+      const target = event.target as HTMLElement;
+      if (typeof target.blur === 'function') {
+        target.blur();
+      }
+    }
+  };
+
+  const handleAdminMenuItemSelect = () => {
+    setIsAdminMenuOpen(false);
+  };
+
+  const hasSidebar = Boolean(sidebarContent);
+
   return (
     <Fragment>
       <SkipLink href="#main-content">メインコンテンツへスキップ</SkipLink>
@@ -259,25 +338,9 @@ export const AppShell = () => {
             <span>OpenDolphin Web Client</span>
             <span>フェーズ4 品質・安全性強化</span>
           </Logo>
-          <HeaderActions>
-            <UserProfile aria-label="サインインユーザー情報">
-              <UserName>{userDisplay}</UserName>
-              <UserMeta>{userMeta}</UserMeta>
-            </UserProfile>
-            <StatusBadge tone="info">Phase4 QA</StatusBadge>
-            <Button variant="ghost" size="sm" aria-label="通知センター（準備中）">
-              通知
-            </Button>
-            <Button variant="secondary" size="sm" onClick={handleLogout}>
-              ログアウト
-            </Button>
-          </HeaderActions>
-        </Header>
 
-        <SidebarContext.Provider value={sidebarController}>
-          <Body>
-            <Navigation aria-label="主要ナビゲーション">
-              <NavTitle>主要メニュー</NavTitle>
+          <Navigation aria-label="主要ナビゲーション">
+            <NavList>
               <NavItem to="/patients">
                 患者一覧
               </NavItem>
@@ -287,54 +350,75 @@ export const AppShell = () => {
               <NavItem to="/facility-schedule">
                 施設スケジュール
               </NavItem>
-              <NavItem to="/dashboard">
-                ダッシュボード
-              </NavItem>
               <NavItem to="/charts">
                 カルテ閲覧
               </NavItem>
-              <NavItem to="/orca" aria-disabled>
-                ORCA 連携（準備中）
-              </NavItem>
-              {canAccessAdministration ? (
-                <Fragment>
-                  <NavTitle>管理者メニュー</NavTitle>
-                  <NavItem to="/administration/users">
-                    ユーザー管理
-                  </NavItem>
-                  <NavItem to="/administration/patients">
-                    患者データ出力
-                  </NavItem>
-                  <NavItem to="/administration/system">
-                    システム設定
-                  </NavItem>
-                  <NavItem to="/administration/stamps">
-                    スタンプ管理
-                  </NavItem>
-                </Fragment>
+            </NavList>
+          </Navigation>
+
+          <HeaderActions>
+            <UserProfile aria-label="サインインユーザー情報">
+              <UserName>{userDisplay}</UserName>
+              <UserMeta>{userMeta}</UserMeta>
+            </UserProfile>
+            <Button variant="ghost" size="sm" aria-label="通知センター（準備中）">
+              通知
+            </Button>
+            {canAccessAdministration ? (
+              <AdminMenuWrapper ref={adminMenuRef} onKeyDown={handleAdminMenuKeyDown}>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={toggleAdminMenu}
+                  aria-expanded={isAdminMenuOpen}
+                  aria-haspopup="menu"
+                  aria-controls={adminMenuId}
+                >
+                  管理メニュー
+                </Button>
+                {isAdminMenuOpen ? (
+                  <AdminMenuList id={adminMenuId} role="menu" aria-label="管理者メニュー">
+                    <AdminMenuItem
+                      to="/orca"
+                      role="menuitem"
+                      aria-disabled
+                      tabIndex={-1}
+                    >
+                      ORCA 連携（準備中）
+                    </AdminMenuItem>
+                    <AdminMenuItem to="/administration/users" role="menuitem" onClick={handleAdminMenuItemSelect}>
+                      ユーザー管理
+                    </AdminMenuItem>
+                    <AdminMenuItem to="/administration/patients" role="menuitem" onClick={handleAdminMenuItemSelect}>
+                      患者データ出力
+                    </AdminMenuItem>
+                    <AdminMenuItem to="/administration/system" role="menuitem" onClick={handleAdminMenuItemSelect}>
+                      システム設定
+                    </AdminMenuItem>
+                    <AdminMenuItem to="/administration/stamps" role="menuitem" onClick={handleAdminMenuItemSelect}>
+                      スタンプ管理
+                    </AdminMenuItem>
+                  </AdminMenuList>
+                ) : null}
+              </AdminMenuWrapper>
+            ) : null}
+            <Button variant="secondary" size="sm" onClick={handleLogout}>
+              ログアウト
+            </Button>
+          </HeaderActions>
+        </Header>
+
+        <SidebarContext.Provider value={sidebarController}>
+          <Body>
+            <ContentRegion hasSidebar={hasSidebar}>
+              <Main id="main-content">
+                <Outlet />
+              </Main>
+              {hasSidebar ? (
+                <Sidebar aria-label="コンテキストサイドバー">{sidebarContent}</Sidebar>
               ) : null}
-            </Navigation>
-
-            <Main id="main-content">
-              <Outlet />
-            </Main>
-
-            <Sidebar aria-label={sidebarContent ? 'コンテキストサイドバー' : 'フェーズ進捗メモ'}>
-              {sidebarContent ? (
-                sidebarContent
-              ) : (
-                <SurfaceCard tone="muted" padding="sm">
-                  <Stack gap={8}>
-                    <SidebarHeading>フェーズ4 ハイライト</SidebarHeading>
-                    <Stack gap={8}>
-                      {sidebarTips.map((tip) => (
-                        <SidebarText key={tip}>{tip}</SidebarText>
-                      ))}
-                    </Stack>
-                  </Stack>
-                </SurfaceCard>
-              )}
-            </Sidebar>
+            </ContentRegion>
           </Body>
         </SidebarContext.Provider>
 

@@ -334,7 +334,7 @@ const serializePlanCards = (cards: PlanComposerCard[]) =>
       const rows = [
         `[${card.type}] ${card.title || '未入力'}`,
         card.detail,
-        card.note ? `繝｡繝｢: ${card.note}` : null,
+        card.note ? `メモ: ${card.note}` : null,
       ].filter(Boolean);
       return rows.join('\n');
     })

@@ -390,6 +390,8 @@ export const RightPane = ({
   monshinSummary,
   vitalSigns,
   mediaItems,
+  mediaLoading = false,
+  mediaError = null,
   pastSummaries,
   onSnippetDragStart,
   onMediaOpen,

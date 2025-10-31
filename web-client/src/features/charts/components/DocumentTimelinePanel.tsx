@@ -300,7 +300,7 @@ export const DocumentTimelinePanel = ({
       </PanelHeader>
       <ToolbarRow>
         <TextField
-          label="讀懃ｴ｢"
+          label="検索"
           placeholder="カルテ名・診療科・ステータスで絞り込み"
           value={keyword}
           onChange={(event) => setKeyword(event.currentTarget.value)}
@@ -315,7 +315,7 @@ export const DocumentTimelinePanel = ({
           }}
           isLoading={docInfosQuery.isFetching}
         >
-          譖ｴ譁ｰ
+          更新
         </Button>
       </ToolbarRow>
       {docInfosQuery.isLoading ? (

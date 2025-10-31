@@ -322,7 +322,7 @@ export const DiagnosisPanel = ({
           <ListHeader>
             <span>病名</span>
             <span>コード</span>
-            <span>髢句ｧ区律</span>
+            <span>開始日</span>
             <span>操作</span>
           </ListHeader>
           {sortedDiagnoses.map((diagnosis) => (
@@ -356,7 +356,7 @@ export const DiagnosisPanel = ({
                   disabled={deleteMutation.isPending}
                   onClick={() => handleDelete(diagnosis)}
                 >
-                  蜑企勁
+                  削除
                 </Button>
               </ActionsCell>
             </DiagnosisRow>

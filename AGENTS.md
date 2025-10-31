@@ -7,12 +7,12 @@
 - `server/`: 既存サーバー実装。**サーバースクリプトは絶対に触らないこと。**
 
 ## プロジェクト目的
-`docs/web-client/planning/WEB_CLIENT_WORK_PLAN.md` に記載されている通り、本プロジェクトの目的は電子カルテの Web クライアントを新規に構築すること。ロードマップ・マイルストーン・UX 指針は同ドキュメントおよび `docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md` を参照する。
+本プロジェクトの目的は電子カルテの Web クライアントを新規に構築すること。ロードマップ・マイルストーン・UX 指針は `docs/web-client/README.md` および `docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md` を参照する。
 
 ## 作業方針
 - 変更対象は Web クライアント開発に必要なフロントエンド資産とドキュメントのみとし、`server/` 配下のコード・スクリプトには手を加えない。
 - 必要な資料は `docs/web-client/README.md` から辿り、更新時は同 README に概要と保存場所を追記する。
-- タスク遂行時は `docs/web-client/planning/WEB_CLIENT_WORK_PLAN.md` のフェーズ計画に従い、進捗や決定事項をドキュメントへ反映する。
+- タスク遂行時は `docs/web-client/planning/phase*/` 配下のフェーズ計画に従い、進捗や決定事項をドキュメントへ反映する。
 - 機能や UI 実装を行う際は、暫定版ではなく実運用を前提とした完成度（業務フローに即した操作性・アクセシビリティ・例外処理まで含む）で仕上げること。利用者視点で本番投入できる品質を常に確保する。
 
 ## コミュニケーション

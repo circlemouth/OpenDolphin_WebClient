@@ -39,7 +39,7 @@ describe('AppShell accessibility', () => {
           <MemoryRouter initialEntries={['/']}>
             <Routes>
               <Route element={<AppShell />}>
-                <Route index element={<section aria-label="ダッシュボードセクション">ダッシュボード</section>} />
+                <Route index element={<section aria-label="患者一覧セクション">患者一覧</section>} />
               </Route>
             </Routes>
           </MemoryRouter>
