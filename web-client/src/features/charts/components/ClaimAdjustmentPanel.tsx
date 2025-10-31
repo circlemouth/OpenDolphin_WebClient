@@ -103,38 +103,40 @@ const buildClaimPayload = (
   },
 ): DocumentModelPayload => {
   const now = new Date().toISOString();
-  const docInfo = {
-    ...(document.docInfoModel ?? {}),
+  const source = document.docInfoModel;
+
+  const updatedDocInfo: DocInfoSummary = {
+    ...source,
     confirmDate: now,
     claimDate: now,
     sendClaim: true,
-    facilityName: context.session?.userProfile?.facilityName ?? document.docInfoModel?.facilityName,
-    createrLisence: context.session?.userProfile?.licenseName ?? document.docInfoModel?.createrLisence,
-    patientId: context.visit?.patientId ?? document.docInfoModel?.patientId,
-    patientName: context.visit?.fullName ?? document.docInfoModel?.patientName,
-    patientGender: context.visit?.gender ?? document.docInfoModel?.patientGender,
+    facilityName: context.session?.userProfile?.facilityName ?? source.facilityName,
+    creatorLicense: context.session?.userProfile?.licenseName ?? source.creatorLicense ?? null,
+    createrLisence: context.session?.userProfile?.licenseName ?? source.createrLisence ?? null,
+    patientId: context.visit?.patientId ?? source.patientId,
+    patientName: context.visit?.fullName ?? source.patientName,
+    patientGender: context.visit?.gender ?? source.patientGender,
     healthInsuranceGUID:
-      context.insurance?.guid ?? context.visit?.insuranceUid ?? document.docInfoModel?.healthInsuranceGUID,
-    healthInsurance: context.insurance?.classCode ?? document.docInfoModel?.healthInsurance,
-    healthInsuranceDesc: context.insurance?.description ?? document.docInfoModel?.healthInsuranceDesc,
-  } as Record<string, unknown>;
-
-  if (context.insurance) {
-    docInfo.pVTHealthInsuranceModel = {
-      uuid: context.insurance.guid ?? null,
-      insuranceClass: context.insurance.className ?? context.insurance.description ?? '',
-      insuranceClassCode: context.insurance.classCode ?? '',
-      insuranceNumber: context.insurance.number ?? '',
-      clientGroup: context.insurance.clientGroup ?? '',
-      clientNumber: context.insurance.clientNumber ?? '',
-      startDate: context.insurance.startDate ?? '',
-      expiredDate: context.insurance.expiredDate ?? '',
-    };
-  }
+      context.insurance?.guid ?? context.visit?.insuranceUid ?? source.healthInsuranceGUID,
+    healthInsurance: context.insurance?.classCode ?? source.healthInsurance,
+    healthInsuranceDesc: context.insurance?.description ?? source.healthInsuranceDesc,
+    pVTHealthInsuranceModel: context.insurance
+      ? {
+          uuid: context.insurance.guid ?? null,
+          insuranceClass: context.insurance.className ?? context.insurance.description ?? '',
+          insuranceClassCode: context.insurance.classCode ?? '',
+          insuranceNumber: context.insurance.number ?? '',
+          clientGroup: context.insurance.clientGroup ?? '',
+          clientNumber: context.insurance.clientNumber ?? '',
+          startDate: context.insurance.startDate ?? null,
+          expiredDate: context.insurance.expiredDate ?? null,
+        }
+      : source.pVTHealthInsuranceModel,
+  };
 
   return {
     ...document,
-    docInfoModel: docInfo as DocInfoSummary & Record<string, unknown>,
+    docInfoModel: updatedDocInfo,
   };
 };
 

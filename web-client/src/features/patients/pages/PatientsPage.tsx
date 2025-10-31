@@ -131,44 +131,49 @@ const defaultInsuranceOrder = [
   'expiredDate',
 ] as const;
 
+const optionalFormString = z.string().optional().default('');
+
+const optionalDateString = z
+  .string()
+  .optional()
+  .default('')
+  .refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), {
+    message: 'YYYY-MM-DD 形式で入力してください',
+  });
+
 const insuranceSchema = z.object({
   id: z.number().optional(),
-  guid: z.string().optional(),
-  className: z.string().optional(),
-  classCode: z.string().optional(),
-  insuranceNumber: z.string().optional(),
-  clientGroup: z.string().optional(),
-  clientNumber: z.string().optional(),
-  startDate: z.string().optional(),
-  expiredDate: z.string().optional(),
+  guid: optionalFormString,
+  className: optionalFormString,
+  classCode: optionalFormString,
+  insuranceNumber: optionalFormString,
+  clientGroup: optionalFormString,
+  clientNumber: optionalFormString,
+  startDate: optionalFormString,
+  expiredDate: optionalFormString,
 });
 
 const patientEditorSchema = z.object({
   id: z.number().optional(),
   patientId: z.string().min(1, '患者IDを入力してください'),
   fullName: z.string().min(1, '氏名を入力してください'),
-  kanaName: z.string().optional(),
+  kanaName: optionalFormString,
   gender: z.enum(['M', 'F', 'U', 'O']).default('U'),
-  birthday: z
-    .string()
-    .optional()
-    .refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), {
-      message: 'YYYY-MM-DD 形式で入力してください',
-    }),
-  telephone: z.string().optional(),
-  mobilePhone: z.string().optional(),
-  email: z.string().optional(),
-  memo: z.string().optional(),
-  appMemo: z.string().optional(),
-  relations: z.string().optional(),
-  zipCode: z.string().optional(),
-  address: z.string().optional(),
-  reserve1: z.string().optional(),
-  reserve2: z.string().optional(),
-  reserve3: z.string().optional(),
-  reserve4: z.string().optional(),
-  reserve5: z.string().optional(),
-  reserve6: z.string().optional(),
+  birthday: optionalDateString,
+  telephone: optionalFormString,
+  mobilePhone: optionalFormString,
+  email: optionalFormString,
+  memo: optionalFormString,
+  appMemo: optionalFormString,
+  relations: optionalFormString,
+  zipCode: optionalFormString,
+  address: optionalFormString,
+  reserve1: optionalFormString,
+  reserve2: optionalFormString,
+  reserve3: optionalFormString,
+  reserve4: optionalFormString,
+  reserve5: optionalFormString,
+  reserve6: optionalFormString,
   healthInsurances: z.array(insuranceSchema),
 });
 
@@ -681,7 +686,7 @@ export const PatientsPage = () => {
         <SurfaceCard as="section" aria-labelledby="patient-result-heading">
           <Stack gap={12}>
             <SectionTitle id="patient-result-heading">検索結果</SectionTitle>
-            {searchQuery.isLoading ? (
+            {searchQuery.isPending ? (
               <p>患者リストを読み込み中です…</p>
             ) : patients.length === 0 ? (
               <p>{searchParams ? '該当する患者が見つかりませんでした。' : '検索条件を入力してください。'}</p>
@@ -757,7 +762,7 @@ export const PatientsPage = () => {
                   </div>
                   <div>
                     <h3 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: 600 }}>アレルギー</h3>
-                    {karteQuery.isLoading ? (
+                  {karteQuery.isPending ? (
                       <SubtleText>読み込み中…</SubtleText>
                     ) : karteQuery.data?.allergies?.length ? (
                       <ul style={{ margin: 0, paddingInlineStart: '1.2rem', color: '#1e293b' }}>
@@ -776,7 +781,7 @@ export const PatientsPage = () => {
                   </div>
                   <div>
                     <h3 style={{ margin: '0 0 8px', fontSize: '1rem', fontWeight: 600 }}>患者メモ</h3>
-                    {karteQuery.isLoading ? (
+                    {karteQuery.isPending ? (
                       <SubtleText>読み込み中…</SubtleText>
                     ) : karteQuery.data?.memos?.length ? (
                       <ul style={{ margin: 0, paddingInlineStart: '1.2rem', color: '#1e293b' }}>
@@ -824,7 +829,7 @@ export const PatientsPage = () => {
 
               {formMode === 'update' && !selectedPatient ? (
                 <SubtleText>患者を選択すると編集フォームが表示されます。</SubtleText>
-              ) : formMode === 'update' && detailQuery.isLoading ? (
+              ) : formMode === 'update' && detailQuery.isPending ? (
                 <SubtleText>患者情報を読み込み中です…</SubtleText>
               ) : (
                 <form onSubmit={submitPatient}>
@@ -1059,7 +1064,7 @@ export const PatientsPage = () => {
                           variant="ghost"
                           size="sm"
                           onClick={() => detailQuery.refetch()}
-                          disabled={detailQuery.isLoading}
+                          disabled={detailQuery.isPending}
                         >
                           最新情報を再取得
                         </Button>
@@ -1094,7 +1099,7 @@ export const PatientsPage = () => {
                 </label>
               </div>
               {selectedPatient ? (
-                karteQuery.isLoading ? (
+                karteQuery.isPending ? (
                   <p>カルテ履歴を取得中です…</p>
                 ) : karteQuery.data?.documents?.length ? (
                   <Stack gap={12}>

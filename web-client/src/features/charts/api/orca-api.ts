@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type {
   DiseaseMasterEntry,
@@ -143,7 +143,7 @@ export const searchTensuByName = async (
   const partial = options?.partialMatch ?? true;
   const endpoint = `/orca/tensu/name/${buildParam([trimmed, now, partial])}/`;
   return measureApiPerformance(
-    'orca.master.search',
+    PERFORMANCE_METRICS.orca.master.search,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawTensuListResponse>(endpoint);
@@ -170,7 +170,7 @@ export const searchDiseaseByName = async (
   const partial = options?.partialMatch ?? true;
   const endpoint = `/orca/disease/name/${buildParam([trimmed, now, partial])}/`;
   return measureApiPerformance(
-    'orca.master.search',
+    PERFORMANCE_METRICS.orca.master.search,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawDiseaseListResponse>(endpoint);
@@ -192,7 +192,7 @@ export const lookupGeneralName = async (code: string): Promise<GeneralNameEntry 
   }
   const endpoint = `/orca/general/${encodeURIComponent(trimmed)}`;
   return measureApiPerformance(
-    'orca.master.search',
+    PERFORMANCE_METRICS.orca.master.search,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawGeneralNameResponse>(endpoint);
@@ -221,7 +221,7 @@ export const checkDrugInteractions = async (
     codes2,
   };
   return measureApiPerformance(
-    'orca.master.search',
+    PERFORMANCE_METRICS.orca.master.search,
     'PUT /orca/interaction',
     async () => {
       const response = await httpClient.put<RawDrugInteractionListResponse>('/orca/interaction', payload);

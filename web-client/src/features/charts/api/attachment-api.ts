@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type { AttachmentContent, AttachmentSummary, AttachmentKind } from '@/features/charts/types/attachment';
 
@@ -131,7 +131,7 @@ export const fetchDocumentAttachments = async (documentIds: number[]): Promise<A
   for (const chunk of chunkIds(uniqueIds)) {
     const endpoint = `/karte/documents/${chunk.join(',')}`;
     const response = await measureApiPerformance(
-      'charts.attachments.fetchDocuments',
+      PERFORMANCE_METRICS.charts.attachments.fetchDocuments,
       `GET ${endpoint}`,
       async () => httpClient.get<RawDocumentList>(endpoint),
       { documentCount: chunk.length },
@@ -158,7 +158,7 @@ export const fetchDocumentAttachments = async (documentIds: number[]): Promise<A
 export const fetchAttachmentContent = async (attachmentId: number): Promise<AttachmentContent> => {
   const endpoint = `/karte/attachment/${attachmentId}`;
   const response = await measureApiPerformance(
-    'charts.attachments.fetchContent',
+    PERFORMANCE_METRICS.charts.attachments.fetchContent,
     `GET ${endpoint}`,
     async () => httpClient.get<RawAttachmentModel>(endpoint),
     { attachmentId },

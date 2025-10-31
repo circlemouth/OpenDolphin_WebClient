@@ -1135,7 +1135,7 @@ export const SystemPreferencesPage = () => {
           <SurfaceCard>
             <Stack gap={16}>
               <SectionTitle>サーバー情報</SectionTitle>
-              {serverInfoQuery.isLoading ? (
+              {serverInfoQuery.isPending ? (
                 <EmptyState>サーバー情報を読み込んでいます...</EmptyState>
               ) : serverInfo ? (
                 <InfoGrid>
@@ -1167,7 +1167,7 @@ export const SystemPreferencesPage = () => {
           <SurfaceCard>
             <Stack gap={16}>
               <SectionTitle>稼働統計</SectionTitle>
-              {activitiesQuery.isLoading ? (
+              {activitiesQuery.isPending ? (
                 <EmptyState>稼働統計を読み込んでいます...</EmptyState>
               ) : activitiesQuery.data && activitiesQuery.data.length > 0 ? (
                 <ActivityTable>

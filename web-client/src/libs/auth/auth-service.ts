@@ -52,9 +52,14 @@ export const loginWithPassword = async (payload: LoginPayload): Promise<AuthSess
     clientUuid,
   } as const;
 
+  const authHeaders = createAuthHeaders(credentials);
+  if (!authHeaders) {
+    throw new Error('認証ヘッダーの生成に失敗しました。');
+  }
+
   const endpoint = formatUserEndpoint(payload.facilityId, payload.userId);
   const response = await httpClient.get<UserResourceResponse>(endpoint, {
-    headers: createAuthHeaders(credentials),
+    headers: authHeaders,
   });
 
   const userProfile = response.data

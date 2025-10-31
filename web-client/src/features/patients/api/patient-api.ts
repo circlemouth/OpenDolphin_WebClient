@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type {
   PatientDetail,
@@ -57,16 +57,19 @@ const toHealthInsuranceList = (list?: RawPatientResource['healthInsurances']): P
   }
   return list
     .map((entry) => {
-      const beanBytes = entry?.beanBytes?.trim();
-      if (!beanBytes) {
+      if (!entry) {
+        return null;
+      }
+      const rawBeanBytes = typeof entry.beanBytes === 'string' ? entry.beanBytes.trim() : '';
+      if (!rawBeanBytes) {
         return null;
       }
       return {
-        id: entry?.id ?? undefined,
-        beanBytes,
+        id: entry.id ?? undefined,
+        beanBytes: rawBeanBytes,
       } satisfies PatientHealthInsurance;
     })
-    .filter((entry): entry is PatientHealthInsurance => Boolean(entry));
+    .filter((entry): entry is PatientHealthInsurance => entry !== null);
 };
 
 const transformPatientDetail = (resource: RawPatientResource): PatientDetail | null => {
@@ -158,7 +161,7 @@ export const searchPatients = async (params: PatientSearchRequest): Promise<Pati
 
   const path = buildPatientSearchPath({ ...params, keyword });
   return measureApiPerformance(
-    'patients.search',
+    PERFORMANCE_METRICS.patients.search,
     `GET ${path}`,
     async () => {
       const response = await httpClient.get<PatientListResponse>(path);
@@ -183,7 +186,7 @@ export const fetchPatientById = async (patientId: string): Promise<PatientDetail
 
   const path = `/patient/id/${encodeURIComponent(trimmed)}`;
   return measureApiPerformance(
-    'patients.fetchById',
+    PERFORMANCE_METRICS.patients.fetchById,
     `GET ${path}`,
     async () => {
       const response = await httpClient.get<RawPatientResource>(path);
@@ -202,7 +205,7 @@ export const fetchPatientById = async (patientId: string): Promise<PatientDetail
 export const createPatient = async (payload: PatientUpsertPayload): Promise<string> => {
   const requestBody = buildUpsertRequestPayload(payload);
   return measureApiPerformance(
-    'patients.create',
+    PERFORMANCE_METRICS.patients.create,
     'POST /patient',
     async () => {
       const response = await httpClient.post<string>('/patient', requestBody);
@@ -217,7 +220,7 @@ export const createPatient = async (payload: PatientUpsertPayload): Promise<stri
 export const updatePatient = async (payload: PatientUpsertPayload): Promise<string> => {
   const requestBody = buildUpsertRequestPayload(payload);
   return measureApiPerformance(
-    'patients.update',
+    PERFORMANCE_METRICS.patients.update,
     'PUT /patient',
     async () => {
       const response = await httpClient.put<string>('/patient', requestBody);

@@ -36,14 +36,16 @@ export const createClientUuid = (seed?: string) => {
   return uuidv4();
 };
 
+export type AuthHeaders = Record<string, string>;
+
 export const createAuthHeaders = (credentials?: {
   facilityId: string;
   userId: string;
   passwordMd5: string;
   clientUuid: string;
-}) => {
+}): AuthHeaders | null => {
   if (!credentials) {
-    return {};
+    return null;
   }
 
   return {

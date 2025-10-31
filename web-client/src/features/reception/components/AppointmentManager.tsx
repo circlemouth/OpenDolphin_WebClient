@@ -680,7 +680,7 @@ export const AppointmentManager = ({
         </Button>
       </HeaderRow>
 
-      {appointmentsQuery.isLoading ? <InlineText>予約情報を取得しています…</InlineText> : null}
+      {appointmentsQuery.isPending ? <InlineText>予約情報を取得しています…</InlineText> : null}
       {appointmentsQuery.error ? <ErrorText>予約情報の取得に失敗しました。再読み込みしてください。</ErrorText> : null}
       {infoMessage ? <InfoText>{infoMessage}</InfoText> : null}
       {formError ? <ErrorText role="alert">{formError}</ErrorText> : null}

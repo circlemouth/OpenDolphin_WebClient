@@ -379,8 +379,8 @@ export const DocumentTimelinePanel = ({
                 </li>
                 <li>
                   <strong>作成者:</strong>{' '}
-                  {detailQuery.data.docInfoModel?.createrLicense ??
-                    detailQuery.data.docInfoModel?.departmentDesc ??
+                  {detailQuery.data.docInfoModel.creatorLicense ??
+                    detailQuery.data.docInfoModel.departmentDesc ??
                     '---'}
                 </li>
                 <li>

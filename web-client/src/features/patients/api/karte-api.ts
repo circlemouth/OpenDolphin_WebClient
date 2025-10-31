@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type {
   AllergySummary,
@@ -69,7 +69,7 @@ export const fetchKarteByPatientId = async (
 
   const endpoint = buildKartePidPath(trimmedId, fromDate.trim());
   return measureApiPerformance(
-    'charts.karte.fetch',
+    PERFORMANCE_METRICS.charts.karte.fetch,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawKarteBean>(endpoint);

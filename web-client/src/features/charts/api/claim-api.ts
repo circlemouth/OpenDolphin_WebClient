@@ -1,8 +1,8 @@
 import { recordOperationEvent } from '@/libs/audit';
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
-import type { DocumentModelPayload } from '@/features/charts/types/doc';
+import { toRawDocumentModel, type DocumentModelPayload } from '@/features/charts/types/doc';
 import type { ModuleModelPayload } from '@/features/charts/types/module';
 
 interface ModuleSearchResponse {
@@ -44,14 +44,14 @@ export const searchModules = async ({
 
   const endpoint = `/karte/moduleSearch/${encodeParam(segments.join(','))}`;
   const response = await measureApiPerformance(
-    'charts.claim.moduleSearch',
+    PERFORMANCE_METRICS.charts.claim.moduleSearch,
     `GET ${endpoint}`,
     async () => httpClient.get<ModuleSearchResponse>(endpoint),
     { karteId, entityCount: entities.length },
   );
 
   const modules = response.data?.list ?? [];
-  recordOperationEvent('charts', 'info', 'claim_module_search', 'モジュール検索 (GET /karte/moduleSearch) を実行しました', {
+  recordOperationEvent('chart', 'info', 'claim_module_search', 'モジュール検索 (GET /karte/moduleSearch) を実行しました', {
     karteId,
     entityCount: entities.length,
     resultCount: modules.length,
@@ -60,15 +60,16 @@ export const searchModules = async ({
 };
 
 export const sendClaimDocument = async (payload: DocumentModelPayload): Promise<void> => {
+  const rawPayload = toRawDocumentModel(payload);
   await measureApiPerformance(
-    'charts.claim.send',
+    PERFORMANCE_METRICS.charts.claim.send,
     'PUT /karte/claim',
-    async () => httpClient.put<string>('/karte/claim', payload),
+    async () => httpClient.put<string>('/karte/claim', rawPayload),
     { docPk: payload.id },
   );
 
   recordOperationEvent(
-    'charts',
+    'chart',
     'warning',
     'claim_send',
     'CLAIM 再送信 (PUT /karte/claim) を実行しました',

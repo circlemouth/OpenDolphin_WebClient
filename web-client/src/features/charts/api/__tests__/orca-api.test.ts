@@ -19,13 +19,17 @@ vi.mock('@/libs/http', async () => {
   };
 });
 
-vi.mock('@/libs/monitoring', () => ({
-  measureApiPerformance: async <T>(
-    _metric: unknown,
-    _action: unknown,
-    fn: () => Promise<T>,
-  ) => fn(),
-}));
+vi.mock('@/libs/monitoring', async () => {
+  const actual = await vi.importActual<typeof import('@/libs/monitoring')>('@/libs/monitoring');
+  return {
+    ...actual,
+    measureApiPerformance: vi.fn(async <T>(
+      _metric: unknown,
+      _action: unknown,
+      fn: () => Promise<T>,
+    ) => fn()),
+  };
+});
 
 describe('orca-api', () => {
   beforeEach(() => {

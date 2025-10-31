@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 export interface CreateScheduleDocumentParams {
   visitId: number;
@@ -38,7 +38,7 @@ export const createScheduleDocument = async ({
   sendClaim,
 }: CreateScheduleDocumentParams): Promise<number> =>
   measureApiPerformance(
-    'schedule.document.create',
+    PERFORMANCE_METRICS.schedule.document.create,
     'POST /schedule/document',
     async () => {
       const payload = {
@@ -64,7 +64,7 @@ export const createScheduleDocument = async ({
 
 export const deleteScheduledVisit = async (params: DeleteScheduleEntryParams): Promise<void> =>
   measureApiPerformance(
-    'schedule.document.delete',
+    PERFORMANCE_METRICS.schedule.document.delete,
     'DELETE /schedule/pvt/{param}',
     async () => {
       const endpoint = buildDeletionEndpoint(params);

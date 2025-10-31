@@ -8,7 +8,7 @@ export const useAuth = () => {
   const context = useContext(AuthContext);
 
   if (!context) {
-    throw new Error('useAuth は AuthProvider 内でのみ利用できます');
+    throw new Error('useAuth は AuthProvider 配下でのみ利用できます');
   }
 
   return context;

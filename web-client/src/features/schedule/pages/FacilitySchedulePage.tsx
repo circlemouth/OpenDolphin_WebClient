@@ -139,7 +139,7 @@ const NoticeMessage = styled.p`
 type ScheduleStatus = 'scheduled' | 'calling' | 'inProgress';
 
 const statusLabels: Record<ScheduleStatus, string> = {
-  scheduled: '待機',
+  scheduled: '予約済み',
   calling: '呼出中',
   inProgress: '診察中',
 };
@@ -185,6 +185,16 @@ const classifyStatus = (entry: FacilityScheduleEntry): ScheduleStatus => {
     return 'calling';
   }
   return 'scheduled';
+};
+
+const getPatientDisplayName = (entry: FacilityScheduleEntry) => {
+  if (entry.patientName) {
+    return entry.patientName;
+  }
+  if (entry.patientId) {
+    return `患者ID ${entry.patientId}`;
+  }
+  return '不明な患者';
 };
 
 const filterEntries = (
@@ -263,8 +273,8 @@ export const FacilitySchedulePage = () => {
   const [pageNotice, setPageNotice] = useState<string | null>(null);
 
   const userModelId = session?.userProfile?.userModelId ?? null;
-
   const doctorOrcaId = session?.userProfile?.userId ?? null;
+
   const scheduleParams = useMemo(
     () => ({
       date: selectedDate,
@@ -274,10 +284,12 @@ export const FacilitySchedulePage = () => {
     }),
     [assignedOnly, doctorOrcaId, selectedDate],
   );
+
   const scheduleQueryKeyValue = useMemo(
     () => facilityScheduleQueryKey(scheduleParams),
     [scheduleParams],
   );
+
   const scheduleQuery = useFacilitySchedule(scheduleParams);
   const queryClient = useQueryClient();
 
@@ -299,6 +311,8 @@ export const FacilitySchedulePage = () => {
     });
     return base;
   }, [entries]);
+
+  const numberFormatter = useMemo(() => new Intl.NumberFormat('ja-JP'), []);
 
   useEffect(() => {
     if (!pageNotice) {
@@ -325,10 +339,13 @@ export const FacilitySchedulePage = () => {
     setDialogError(null);
   }, []);
 
-  const handleOpenReservation = useCallback((entry: FacilityScheduleEntry) => {
-    setSelectedEntry(entry);
-    resetDialogMessages();
-  }, [resetDialogMessages]);
+  const handleOpenReservation = useCallback(
+    (entry: FacilityScheduleEntry) => {
+      setSelectedEntry(entry);
+      resetDialogMessages();
+    },
+    [resetDialogMessages],
+  );
 
   const handleCloseReservation = useCallback(() => {
     setSelectedEntry(null);
@@ -353,12 +370,16 @@ export const FacilitySchedulePage = () => {
     }
   };
 
-  type CreateDocumentArgs = { entry: FacilityScheduleEntry; sendClaim: boolean; scheduleDate: string };
+  type CreateDocumentArgs = {
+    entry: FacilityScheduleEntry;
+    sendClaim: boolean;
+    scheduleDate: string;
+  };
 
   const createDocumentMutation = useMutation<number, unknown, CreateDocumentArgs>({
     mutationFn: ({ entry, sendClaim, scheduleDate }) => {
       if (!userModelId) {
-        return Promise.reject(new Error('担当者情報が取得できませんでした'));
+        return Promise.reject(new Error('担当医情報が取得できませんでした'));
       }
       return createScheduleDocument({
         visitId: entry.visitId,
@@ -372,25 +393,32 @@ export const FacilitySchedulePage = () => {
       setDialogError(null);
     },
     onSuccess: (count, { entry, sendClaim, scheduleDate }) => {
+      const patientLabel = getPatientDisplayName(entry);
       setDialogFeedback('カルテ文書を生成しました。受付一覧を確認してください。');
-      setPageNotice(`${entry.patientName} の予約からカルテ文書を生成しました。`);
-      recordOperationEvent('reception', 'info', 'schedule_document_create', '予約連動カルテを生成しました', {
-        visitId: entry.visitId,
-        patientPk: entry.patientPk,
-        scheduleDate,
-        sendClaim,
-        count,
-      });
+      setPageNotice(`${patientLabel} の予約からカルテ文書を生成しました。`);
+      recordOperationEvent(
+        'reception',
+        'info',
+        'schedule_document_create',
+        '予約連動カルテを生成しました',
+        {
+          visitId: entry.visitId,
+          patientPk: entry.patientPk,
+          scheduleDate,
+          sendClaim,
+          count,
+        },
+      );
       void queryClient.invalidateQueries({ queryKey: scheduleQueryKeyValue });
     },
     onError: (error, { entry, sendClaim, scheduleDate }) => {
       const message = error instanceof Error ? error.message : String(error);
-      setDialogError(`カルテ生成に失敗しました: ${message}`);
+      setDialogError(`カルテ文書の生成に失敗しました: ${message}`);
       recordOperationEvent(
         'reception',
         'warning',
         'schedule_document_create_failed',
-        '予約連動カルテ生成に失敗しました',
+        '予約連動カルテの生成に失敗しました',
         {
           visitId: entry.visitId,
           patientPk: entry.patientPk,
@@ -411,18 +439,25 @@ export const FacilitySchedulePage = () => {
       setDialogError(null);
     },
     onSuccess: (_, { entry, scheduleDate }) => {
-      setPageNotice(`${entry.patientName} の予約を削除しました。`);
-      recordOperationEvent('reception', 'info', 'schedule_reservation_delete', '施設スケジュールから予約を削除しました', {
-        visitId: entry.visitId,
-        patientPk: entry.patientPk,
-        scheduleDate,
-      });
+      const patientLabel = getPatientDisplayName(entry);
+      setPageNotice(`${patientLabel} の予約を削除しました。`);
+      recordOperationEvent(
+        'reception',
+        'info',
+        'schedule_reservation_delete',
+        '施設スケジュールから予約を削除しました',
+        {
+          visitId: entry.visitId,
+          patientPk: entry.patientPk,
+          scheduleDate,
+        },
+      );
       handleCloseReservation();
       void queryClient.invalidateQueries({ queryKey: scheduleQueryKeyValue });
     },
     onError: (error, { entry, scheduleDate }) => {
       const message = error instanceof Error ? error.message : String(error);
-      setDialogError(`予約削除に失敗しました: ${message}`);
+      setDialogError(`予約の削除に失敗しました: ${message}`);
       recordOperationEvent(
         'reception',
         'warning',
@@ -456,11 +491,19 @@ export const FacilitySchedulePage = () => {
     deleteReservationMutation.mutate({ entry: selectedEntry, scheduleDate: selectedDate });
   }, [deleteReservationMutation, selectedDate, selectedEntry]);
 
+  const assignedOnlyHint =
+    assignedOnly && !doctorOrcaId
+      ? '担当医のみ表示は ORCA 担当医コードが未設定のため無効です。'
+      : '担当医や状態で絞り込み、受付状況に応じた準備を進められます。';
+
   return (
     <PageContainer>
       <Header>
         <h1>施設全体の予約一覧</h1>
-        <p>来院予定を日付・担当医ごとに俯瞰し、診療状況を把握します。オンプレ版 PatientSchedule の運用を Web へ統合しました。</p>
+        <p>
+          来院予定を日付と担当医ごとに俯瞰し、診療状況を把握します。オンプレ版 PatientSchedule の運用を
+          Web へ統合しました。
+        </p>
       </Header>
 
       <ControlsCard aria-labelledby="schedule-control-heading">
@@ -468,11 +511,7 @@ export const FacilitySchedulePage = () => {
           <h2 id="schedule-control-heading" style={{ margin: 0, fontSize: '1.1rem' }}>
             表示条件
           </h2>
-          <InlineMessage>
-            {assignedOnly && !doctorOrcaId
-              ? '担当医のみ表示は ORCA 担当医コードが未設定のため無効です。'
-              : '担当医や状態で絞り込み、受付状況に応じた準備を進められます。'}
-          </InlineMessage>
+          <InlineMessage>{assignedOnlyHint}</InlineMessage>
         </Stack>
         <ControlRow>
           <div style={{ minWidth: '200px' }}>
@@ -533,19 +572,19 @@ export const FacilitySchedulePage = () => {
       <SummaryGrid>
         <SummaryCard tone="muted" padding="sm">
           <span>予約件数</span>
-          <strong>{stats.total}</strong>
+          <strong>{numberFormatter.format(stats.total)}</strong>
         </SummaryCard>
         <SummaryCard tone="muted" padding="sm">
           <span>{statusLabels.scheduled}</span>
-          <strong>{stats.scheduled}</strong>
+          <strong>{numberFormatter.format(stats.scheduled)}</strong>
         </SummaryCard>
         <SummaryCard tone="muted" padding="sm">
           <span>{statusLabels.calling}</span>
-          <strong>{stats.calling}</strong>
+          <strong>{numberFormatter.format(stats.calling)}</strong>
         </SummaryCard>
         <SummaryCard tone="muted" padding="sm">
           <span>{statusLabels.inProgress}</span>
-          <strong>{stats.inProgress}</strong>
+          <strong>{numberFormatter.format(stats.inProgress)}</strong>
         </SummaryCard>
       </SummaryGrid>
 
@@ -554,12 +593,18 @@ export const FacilitySchedulePage = () => {
           <div>
             <h2 style={{ margin: 0, fontSize: '1.2rem' }}>予約詳細</h2>
             <InlineMessage>
-              {filteredEntries.length} 件を表示中
+              {numberFormatter.format(filteredEntries.length)} 件を表示中
               {doctorFilter !== 'all' ? ` / 担当医: ${doctorFilter}` : ''}
             </InlineMessage>
             {pageNotice ? <NoticeMessage role="status">{pageNotice}</NoticeMessage> : null}
           </div>
-          <Button type="button" variant="secondary" size="sm" onClick={() => scheduleQuery.refetch()} isLoading={scheduleQuery.isFetching}>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            onClick={() => scheduleQuery.refetch()}
+            isLoading={scheduleQuery.isFetching}
+          >
             再読み込み
           </Button>
         </Stack>
@@ -577,14 +622,14 @@ export const FacilitySchedulePage = () => {
               </tr>
             </thead>
             <tbody>
-              {scheduleQuery.isLoading ? (
+              {scheduleQuery.isPending ? (
                 <tr>
                   <TableCell colSpan={7}>読み込み中です…</TableCell>
                 </tr>
               ) : filteredEntries.length === 0 ? (
                 <tr>
                   <TableCell colSpan={7}>
-                    <EmptyState>条件に一致する予約がありません。</EmptyState>
+                    <EmptyState>条件に一致する予約はありません。</EmptyState>
                   </TableCell>
                 </tr>
               ) : (
@@ -612,7 +657,7 @@ export const FacilitySchedulePage = () => {
                       <TableCell>
                         <div>{entry.memo ?? '---'}</div>
                         <div style={{ fontSize: '0.8rem', color: '#64748b' }}>
-                          {entry.firstInsurance ? `保険: ${entry.firstInsurance}` : '保険情報未登録'}
+                          {entry.firstInsurance ? `保険: ${entry.firstInsurance}` : '保険情報は未登録'}
                         </div>
                       </TableCell>
                       <TableCell>{formatDateTime(entry.lastDocumentDate)}</TableCell>
@@ -627,7 +672,12 @@ export const FacilitySchedulePage = () => {
                           >
                             カルテを開く
                           </Button>
-                          <Button type="button" variant="ghost" size="sm" onClick={() => handleOpenReservation(entry)}>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleOpenReservation(entry)}
+                          >
                             予約詳細
                           </Button>
                         </Stack>
@@ -649,8 +699,8 @@ export const FacilitySchedulePage = () => {
           onCreateDocument={handleCreateDocument}
           onDeleteReservation={handleDeleteReservation}
           onOpenChart={() => handleOpenChart(selectedEntry)}
-          isCreating={createDocumentMutation.isLoading}
-          isDeleting={deleteReservationMutation.isLoading}
+          isCreating={createDocumentMutation.isPending}
+          isDeleting={deleteReservationMutation.isPending}
           isCreateDisabled={!userModelId}
           feedbackMessage={dialogFeedback}
           errorMessage={dialogError}
@@ -659,3 +709,4 @@ export const FacilitySchedulePage = () => {
     </PageContainer>
   );
 };
+

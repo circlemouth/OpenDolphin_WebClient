@@ -1,8 +1,9 @@
-import axios from 'axios';
+import axios, { AxiosHeaders } from 'axios';
 
 import { getCsrfToken, refreshCsrfToken, shouldAttachCsrfHeader } from '@/libs/security';
+import type { AuthHeaders } from '@/libs/auth/auth-headers';
 
-type AuthHeaderProvider = () => Record<string, string> | null | Promise<Record<string, string> | null>;
+type AuthHeaderProvider = () => AuthHeaders | null | Promise<AuthHeaders | null>;
 
 export type HttpAuditPhase = 'request' | 'response' | 'error';
 
@@ -52,38 +53,38 @@ export const httpClient = axios.create({
 });
 
 httpClient.interceptors.request.use(async (config) => {
+  const existingHeaders = config.headers;
   config.metadata = {
     ...(config.metadata ?? {}),
     startTime: Date.now(),
     retryCount: config.metadata?.retryCount ?? 0,
   };
 
-  if (authHeaderProvider) {
-    const headers = await authHeaderProvider();
-    if (headers) {
-      config.headers = {
-        ...headers,
-        ...config.headers,
-      };
-    }
-  }
-
-  config.headers = {
+  const mergedHeaders = AxiosHeaders.from({
     'Cache-Control': 'no-store',
     Pragma: 'no-cache',
     'X-Requested-With': 'XMLHttpRequest',
-    ...config.headers,
-  };
+  });
+
+  if (authHeaderProvider) {
+    const headers = await authHeaderProvider();
+    if (headers) {
+      mergedHeaders.set(headers);
+    }
+  }
+
+  if (existingHeaders) {
+    mergedHeaders.set(existingHeaders);
+  }
 
   if (shouldAttachCsrfHeader(config.method)) {
     const token = getCsrfToken();
     if (token) {
-      config.headers = {
-        ...config.headers,
-        'X-CSRF-Token': token,
-      };
+      mergedHeaders.set({ 'X-CSRF-Token': token });
     }
   }
+
+  config.headers = mergedHeaders;
 
   if (import.meta.env.DEV) {
     console.debug(`[HTTP] ${config.method?.toUpperCase() ?? 'GET'} ${config.url}`, config);

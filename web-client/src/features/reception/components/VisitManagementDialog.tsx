@@ -1,7 +1,16 @@
 import { useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
-import { Button, SelectField, SurfaceCard, Stack, StatusBadge, TextArea, TextField } from '@/components';
+import {
+  Button,
+  SelectField,
+  SurfaceCard,
+  Stack,
+  StatusBadge,
+  TextArea,
+  TextField,
+} from '@/components';
+import type { SelectOption } from '@/components/SelectField';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { LegacyVisitSearchParams } from '@/features/reception/api/visit-api';
 
@@ -58,9 +67,9 @@ const DangerNotice = styled.div`
   font-size: 0.9rem;
 `;
 
-const options = [
-  { value: 0, label: '待機中 (0)' },
-  { value: 1, label: '呼出済み (1)' },
+const baseVisitStateOptions: SelectOption[] = [
+  { value: '0', label: '待機中 (0)' },
+  { value: '1', label: '呼出済み (1)' },
 ];
 
 const TabSwitcher = styled.div`
@@ -142,37 +151,40 @@ export const VisitManagementDialog = ({
   onLegacyFetchVisits,
   onLegacyReRegister,
 }: VisitManagementDialogProps) => {
-  const stateOptions = options.some((option) => option.value === visit.state)
-    ? options
-    : [...options, { value: visit.state, label: `現在の状態 (${visit.state})` }];
-
+  const visitStateValue = String(visit.state);
+  const stateOptions: SelectOption[] = baseVisitStateOptions.some(
+    (option) => option.value === visitStateValue,
+  )
+    ? baseVisitStateOptions
+    : [
+        ...baseVisitStateOptions,
+        { value: visitStateValue, label: `現在の状態 (${visitStateValue})` },
+      ];
   const [activeTab, setActiveTab] = useState<'standard' | 'legacy'>('standard');
   const [legacyMemo, setLegacyMemo] = useState(visit.memo ?? '');
-  const [legacyMemoStatus, setLegacyMemoStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [legacyMemoStatus, setLegacyMemoStatus] =
+    useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [legacyMemoMessage, setLegacyMemoMessage] = useState<string | null>(null);
 
-  const defaultLegacyParams = useMemo(
-    () => {
-      const baseDate = visit.visitDate ? visit.visitDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
-      return {
-        visitDate: baseDate,
-        appointmentFrom: baseDate,
-        appointmentTo: baseDate,
-        firstResult: '0',
-        doctorId: visit.doctorId ?? '',
-        unassignedDoctorId: '19999',
-      };
-    },
-    [visit.visitDate, visit.doctorId],
-  );
+  const defaultLegacyParams = useMemo(() => {
+    const baseDate = visit.visitDate ? visit.visitDate.slice(0, 10) : new Date().toISOString().slice(0, 10);
+    return {
+      visitDate: baseDate,
+      appointmentFrom: baseDate,
+      appointmentTo: baseDate,
+      firstResult: '0',
+      doctorId: visit.doctorId ?? '',
+      unassignedDoctorId: '19999',
+    };
+  }, [visit.visitDate, visit.doctorId]);
 
   const [legacyParams, setLegacyParams] = useState(defaultLegacyParams);
   const [legacyResults, setLegacyResults] = useState<PatientVisitSummary[]>([]);
-  const [legacyFetchState, setLegacyFetchState] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+  const [legacyFetchState, setLegacyFetchState] =
+    useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [legacyFetchError, setLegacyFetchError] = useState<string | null>(null);
-  const [legacyReRegisterStatus, setLegacyReRegisterStatus] = useState<'idle' | 'loading' | 'success' | 'error'>(
-    'idle',
-  );
+  const [legacyReRegisterStatus, setLegacyReRegisterStatus] =
+    useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [legacyReRegisterMessage, setLegacyReRegisterMessage] = useState<string | null>(null);
 
   useEffect(() => {
@@ -196,7 +208,8 @@ export const VisitManagementDialog = ({
       setLegacyMemoMessage('旧APIで受付メモを更新しました。');
     } catch (error) {
       setLegacyMemoStatus('error');
-      const message = error instanceof Error ? error.message : '受付メモの更新に失敗しました。';
+      const message =
+        error instanceof Error ? error.message : '受付メモの更新に失敗しました。';
       setLegacyMemoMessage(message);
     }
   };
@@ -218,7 +231,8 @@ export const VisitManagementDialog = ({
       setLegacyFetchState('success');
     } catch (error) {
       setLegacyFetchState('error');
-      const message = error instanceof Error ? error.message : '受付一覧の取得に失敗しました。';
+      const message =
+        error instanceof Error ? error.message : '受付一覧の取得に失敗しました。';
       setLegacyFetchError(message);
     }
   };
@@ -229,10 +243,13 @@ export const VisitManagementDialog = ({
     try {
       await onLegacyReRegister();
       setLegacyReRegisterStatus('success');
-      setLegacyReRegisterMessage('旧APIで再登録を受け付けました。受付一覧を再取得して状況を確認してください。');
+      setLegacyReRegisterMessage(
+        '旧APIで再登録を受け付けました。受付一覧を再取得して状況を確認してください。',
+      );
     } catch (error) {
       setLegacyReRegisterStatus('error');
-      const message = error instanceof Error ? error.message : '旧APIでの受付登録に失敗しました。';
+      const message =
+        error instanceof Error ? error.message : '旧APIでの受付登録に失敗しました。';
       setLegacyReRegisterMessage(message);
     }
   };
@@ -245,7 +262,7 @@ export const VisitManagementDialog = ({
   };
 
   return (
-    <DialogOverlay role="dialog" aria-modal aria-label="受付詳細操作" onClick={onClose}>
+    <DialogOverlay role="dialog" aria-modal="true" aria-label="受付詳細操作" onClick={onClose}>
       <DialogShell tone="muted" padding="lg" onClick={(event) => event.stopPropagation()}>
         <DialogHeader>
           <div>
@@ -279,13 +296,8 @@ export const VisitManagementDialog = ({
                 onChange={(event) => onChangeState(Number.parseInt(event.currentTarget.value, 10))}
                 disabled={isUpdating || isDeleting}
                 description="診察開始前に呼出済みへ更新すると診察室モニターへ即時反映されます"
-              >
-                {stateOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </SelectField>
+                options={stateOptions}
+              />
               <Button
                 type="button"
                 variant="primary"
@@ -295,7 +307,9 @@ export const VisitManagementDialog = ({
               >
                 状態を更新
               </Button>
-              {visit.ownerUuid ? <StatusBadge tone="info">他端末で編集中: {visit.ownerUuid}</StatusBadge> : null}
+              {visit.ownerUuid ? (
+                <StatusBadge tone="info">他端末で編集中: {visit.ownerUuid}</StatusBadge>
+              ) : null}
             </Stack>
 
             <DangerNotice>
@@ -325,11 +339,11 @@ export const VisitManagementDialog = ({
             <LegacySection>
               <h3 style={{ margin: 0, fontSize: '1rem' }}>受付メモ更新 (PUT /pvt/memo)</h3>
               <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
-                Swing クライアントと同じ旧 API を利用して受付メモを更新します。更新内容は即座にロングポーリングへ配信されます。
+                Swing クライアントと同じ旧 API を利用して受付メモを更新します。更新結果は即座にロングポーリングへ配信されます。
               </p>
               <TextArea
                 label="受付メモ"
-                minRows={3}
+                rows={3}
                 value={legacyMemo}
                 onChange={(event) => {
                   setLegacyMemo(event.currentTarget.value);
@@ -349,7 +363,7 @@ export const VisitManagementDialog = ({
                   }}
                   disabled={legacyMemoStatus === 'loading'}
                 >
-                  元に戻す
+                  入力を元に戻す
                 </Button>
                 <Button
                   type="button"
@@ -358,7 +372,7 @@ export const VisitManagementDialog = ({
                   disabled={legacyMemoStatus === 'loading'}
                   isLoading={legacyMemoStatus === 'loading'}
                 >
-                  旧APIで保存
+                  旧APIで保存する
                 </Button>
               </div>
               {legacyMemoMessage ? (
@@ -528,3 +542,4 @@ export const VisitManagementDialog = ({
     </DialogOverlay>
   );
 };
+

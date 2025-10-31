@@ -1,13 +1,14 @@
 import { httpClient } from '@/libs/http';
 import { recordOperationEvent } from '@/libs/audit';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
+import type { PerformanceMetricName } from '@/libs/monitoring';
 
 import type { ActivityListResponse, ActivityModel, LicenseResult, ServerInfoSnapshot } from '@/features/administration/types/system';
 import type { RoleModel } from '@/features/administration/types/user';
 
-const fetchServerInfoText = async (path: string, metric: string): Promise<string> => {
+const fetchServerInfoText = async (path: string, metric: PerformanceMetricName): Promise<string> => {
   const response = await measureApiPerformance(
-    `administration.serverinfo.${metric}`,
+    metric,
     `GET ${path}`,
     async () => httpClient.get<string>(path),
     { endpoint: path },
@@ -17,9 +18,9 @@ const fetchServerInfoText = async (path: string, metric: string): Promise<string
 
 export const fetchServerInfoSnapshot = async (): Promise<ServerInfoSnapshot> => {
   const [jamriCode, claimConnection, cloudZeroStatus] = await Promise.all([
-    fetchServerInfoText('/serverinfo/jamri', 'jamri'),
-    fetchServerInfoText('/serverinfo/claim/conn', 'claim'),
-    fetchServerInfoText('/serverinfo/cloud/zero', 'cloud'),
+    fetchServerInfoText('/serverinfo/jamri', PERFORMANCE_METRICS.administration.system.serverInfo.jamri),
+    fetchServerInfoText('/serverinfo/claim/conn', PERFORMANCE_METRICS.administration.system.serverInfo.claim),
+    fetchServerInfoText('/serverinfo/cloud/zero', PERFORMANCE_METRICS.administration.system.serverInfo.cloud),
   ]);
   return {
     jamriCode,
@@ -37,7 +38,7 @@ export interface ActivityQueryOptions {
 export const fetchActivities = async ({ year, month, count }: ActivityQueryOptions): Promise<ActivityModel[]> => {
   const endpoint = `/dolphin/activity/${year},${month},${count}`;
   const response = await measureApiPerformance(
-    'administration.activities.fetch',
+    PERFORMANCE_METRICS.administration.system.activitiesFetch,
     `GET ${endpoint}`,
     async () => httpClient.get<ActivityListResponse>(endpoint),
     { year, month, count },
@@ -61,7 +62,7 @@ const mapLicenseResponse = (code: string): LicenseResult => {
 
 export const submitLicenseToken = async (token: string): Promise<LicenseResult> => {
   const response = await measureApiPerformance(
-    'administration.license.submit',
+    PERFORMANCE_METRICS.administration.system.licenseSubmit,
     'POST /dolphin/license',
     async () =>
       httpClient.post<string>('/dolphin/license', token, {
@@ -82,7 +83,7 @@ export const submitLicenseToken = async (token: string): Promise<LicenseResult> 
 
 export const triggerCloudZeroReport = async (): Promise<void> => {
   await measureApiPerformance(
-    'administration.cloudzero.mail',
+    PERFORMANCE_METRICS.administration.system.cloudZeroMail,
     'GET /dolphin/cloudzero/sendmail',
     async () => httpClient.get<void>('/dolphin/cloudzero/sendmail'),
   );
@@ -140,7 +141,7 @@ export const registerFacilityAdmin = async (
   };
 
   const response = await measureApiPerformance(
-    'administration.facilityAdmin.register',
+    PERFORMANCE_METRICS.administration.facility.registerAdmin,
     'POST /dolphin',
     async () => httpClient.post<string>('/dolphin', requestBody),
     { userId: trimmedUserId },

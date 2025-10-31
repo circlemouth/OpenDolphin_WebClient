@@ -1,5 +1,5 @@
 import { httpClient } from '@/libs/http';
-import { measureApiPerformance } from '@/libs/monitoring';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 import type {
   LaboModule,
@@ -121,7 +121,7 @@ export const fetchLaboModules = async (
   const endpoint = buildModuleEndpoint(patientId, offset, limit);
 
   return measureApiPerformance(
-    'charts.labo.modules.fetch',
+    PERFORMANCE_METRICS.charts.labo.modulesFetch,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawLaboModuleListResponse>(endpoint);
@@ -155,7 +155,7 @@ export const fetchLaboItemTrend = async (
   const endpoint = buildTrendEndpoint(patientId, itemCode, offset, limit);
 
   return measureApiPerformance(
-    'charts.labo.trend.fetch',
+    PERFORMANCE_METRICS.charts.labo.trendFetch,
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawLaboItemListResponse>(endpoint);
