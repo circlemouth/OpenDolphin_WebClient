@@ -107,6 +107,19 @@ const ItemsCell = styled.td<{ $abnormal?: boolean }>`
   color: ${({ theme, $abnormal }) => ($abnormal ? theme.palette.danger : theme.palette.text)};
 `;
 
+const TrendCell = styled(ItemsCell)<{ $trend?: 'up' | 'down' | 'flat' }>`
+  color: ${({ theme, $trend }) => {
+    if ($trend === 'up') {
+      return theme.palette.danger;
+    }
+    if ($trend === 'down') {
+      return theme.palette.success;
+    }
+    return theme.palette.text;
+  }};
+  font-weight: ${({ $trend }) => ($trend && $trend !== 'flat' ? 600 : 400)};
+`;
+
 const InlineMessage = styled.p`
   margin: 0;
   font-size: 0.85rem;
@@ -146,7 +159,7 @@ const TrendTable = styled.table`
   border-collapse: collapse;
 `;
 
-const TrendCell = styled.td`
+const TrendTableCell = styled.td`
   padding: 8px;
   border-top: 1px solid ${({ theme }) => theme.palette.border};
   font-size: 0.85rem;
@@ -178,6 +191,61 @@ const formatDate = (iso: string | null | undefined, withTime = false) => {
 };
 
 const isAbnormal = (flag: string | null | undefined) => Boolean(flag && flag.trim() && flag.trim().toUpperCase() !== 'N' && flag !== '0');
+
+const parseNumericValue = (value?: string | null): number | null => {
+  if (!value) {
+    return null;
+  }
+  const sanitized = value.replace(/[^0-9.+-]/g, '');
+  if (!sanitized) {
+    return null;
+  }
+  const parsed = Number.parseFloat(sanitized);
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const getDecimalPrecision = (value?: string | null): number => {
+  if (!value) {
+    return 0;
+  }
+  const match = value.match(/[0-9]+(?:\.([0-9]+))?/);
+  if (!match || !match[1]) {
+    return 0;
+  }
+  return match[1].length;
+};
+
+type TrendDirection = 'up' | 'down' | 'flat';
+
+const formatDifferenceLabel = (
+  currentText: string | null | undefined,
+  previousText: string | null | undefined,
+): { label: string; trend: TrendDirection } => {
+  if (!previousText || !previousText.trim()) {
+    return { label: '---', trend: 'flat' };
+  }
+  const current = parseNumericValue(currentText);
+  const previous = parseNumericValue(previousText);
+  if (current !== null && previous !== null) {
+    const delta = current - previous;
+    if (Math.abs(delta) < 1e-6) {
+      return { label: '→ ±0', trend: 'flat' };
+    }
+    const decimals = Math.min(Math.max(getDecimalPrecision(currentText), getDecimalPrecision(previousText)), 3);
+    const formatted = delta.toFixed(decimals > 0 ? decimals : 0);
+    const trend: TrendDirection = delta > 0 ? 'up' : 'down';
+    const arrow = trend === 'up' ? '↑ ' : '↓ ';
+    const sign = delta > 0 ? '+' : '';
+    return { label: `${arrow}${sign}${formatted}`, trend };
+  }
+
+  const normalizedCurrent = (currentText ?? '').trim();
+  const normalizedPrevious = (previousText ?? '').trim();
+  if (normalizedCurrent && normalizedCurrent === normalizedPrevious) {
+    return { label: '→ 同値', trend: 'flat' };
+  }
+  return { label: '↺ 更新', trend: 'flat' };
+};
 
 const buildTrendPath = (entries: LaboTrendEntry[]) => {
   const numericEntries = entries.filter((entry) => entry.numericValue !== null);
@@ -223,11 +291,34 @@ export const LabResultsPanel = ({ patientId, patientName }: LabResultsPanelProps
   const [selectedItemCode, setSelectedItemCode] = useState<string | null>(null);
 
   const modulesQuery = useLaboModules(patientId, 40);
-  const modules = modulesQuery.data ?? [];
+  const modules = useMemo(() => modulesQuery.data ?? [], [modulesQuery.data]);
   const selectedModule = useMemo(
     () => modules.find((module) => module.id === selectedModuleId) ?? modules[0] ?? null,
     [modules, selectedModuleId],
   );
+
+  const selectedModuleIndex = useMemo(
+    () => (selectedModule ? modules.findIndex((module) => module.id === selectedModule.id) : -1),
+    [modules, selectedModule],
+  );
+
+  const previousModule = useMemo(() => {
+    if (selectedModuleIndex < 0) {
+      return null;
+    }
+    return modules[selectedModuleIndex + 1] ?? null;
+  }, [modules, selectedModuleIndex]);
+
+  const previousValueMap = useMemo(() => {
+    if (!previousModule) {
+      return new Map<string, LaboItem>();
+    }
+    const map = new Map<string, LaboItem>();
+    previousModule.items.forEach((item) => {
+      map.set(item.itemCode, item);
+    });
+    return map;
+  }, [previousModule]);
 
   useEffect(() => {
     if (!selectedModule && modules.length > 0) {
@@ -277,16 +368,23 @@ export const LabResultsPanel = ({ patientId, patientName }: LabResultsPanelProps
     }
     const title = `検査結果_${patientName ?? '患者'}_${formatDate(selectedModule.sampleDate, true)}`;
     const rows = selectedModule.items
-      .map(
-        (item) => `
+      .map((item) => {
+        const previousItem = previousValueMap.get(item.itemCode) ?? null;
+        const { label: differenceLabel } = formatDifferenceLabel(item.valueText, previousItem?.valueText ?? null);
+        const comment =
+          item.comments.length > 0 ? item.comments.join(' / ') : item.specimenName ?? '';
+        return `
           <tr>
             <td style="padding:8px;border:1px solid #d0d7e2;">${item.itemName}</td>
-            <td style="padding:8px;border:1px solid #d0d7e2;">${item.valueText}</td>
+            <td style="padding:8px;border:1px solid #d0d7e2;">${item.valueText ?? ''}</td>
+            <td style="padding:8px;border:1px solid #d0d7e2;">${previousItem?.valueText ?? ''}</td>
+            <td style="padding:8px;border:1px solid #d0d7e2;">${differenceLabel}</td>
             <td style="padding:8px;border:1px solid #d0d7e2;">${item.unit ?? ''}</td>
             <td style="padding:8px;border:1px solid #d0d7e2;">${item.normalRange ?? ''}</td>
             <td style="padding:8px;border:1px solid #d0d7e2;">${item.abnormalFlag ?? ''}</td>
-          </tr>`,
-      )
+            <td style="padding:8px;border:1px solid #d0d7e2;">${comment}</td>
+          </tr>`;
+      })
       .join('');
     printWindow.document.write(`
       <html>
@@ -307,9 +405,12 @@ export const LabResultsPanel = ({ patientId, patientName }: LabResultsPanelProps
               <tr>
                 <th style="padding:8px;border:1px solid #d0d7e2;">項目</th>
                 <th style="padding:8px;border:1px solid #d0d7e2;">結果</th>
+                <th style="padding:8px;border:1px solid #d0d7e2;">前回値</th>
+                <th style="padding:8px;border:1px solid #d0d7e2;">変化</th>
                 <th style="padding:8px;border:1px solid #d0d7e2;">単位</th>
                 <th style="padding:8px;border:1px solid #d0d7e2;">基準値</th>
                 <th style="padding:8px;border:1px solid #d0d7e2;">判定</th>
+                <th style="padding:8px;border:1px solid #d0d7e2;">備考</th>
               </tr>
             </thead>
             <tbody>
@@ -416,6 +517,8 @@ export const LabResultsPanel = ({ patientId, patientName }: LabResultsPanelProps
                 <tr>
                   <ItemsHeadCell style={{ width: '180px' }}>項目</ItemsHeadCell>
                   <ItemsHeadCell style={{ width: '120px' }}>結果</ItemsHeadCell>
+                  <ItemsHeadCell style={{ width: '120px' }}>前回値</ItemsHeadCell>
+                  <ItemsHeadCell style={{ width: '100px' }}>変化</ItemsHeadCell>
                   <ItemsHeadCell style={{ width: '80px' }}>単位</ItemsHeadCell>
                   <ItemsHeadCell style={{ width: '160px' }}>基準値</ItemsHeadCell>
                   <ItemsHeadCell style={{ width: '80px' }}>判定</ItemsHeadCell>
@@ -424,23 +527,33 @@ export const LabResultsPanel = ({ patientId, patientName }: LabResultsPanelProps
                 </tr>
               </thead>
               <tbody>
-                {filteredItems.map((item) => (
-                  <tr key={item.id}>
-                    <ItemsCell $abnormal={isAbnormal(item.abnormalFlag)}>{item.itemName}</ItemsCell>
-                    <ItemsCell $abnormal={isAbnormal(item.abnormalFlag)}>{item.valueText || '---'}</ItemsCell>
-                    <ItemsCell>{item.unit ?? ''}</ItemsCell>
-                    <ItemsCell>{item.normalRange ?? ''}</ItemsCell>
-                    <ItemsCell>{item.abnormalFlag ?? ''}</ItemsCell>
-                    <ItemsCell>
-                      {item.comments.length > 0 ? item.comments.join(' / ') : item.specimenName ?? ''}
-                    </ItemsCell>
-                    <ItemsCell>
-                      <Button type="button" variant="ghost" size="sm" onClick={() => handleOpenTrend(item)}>
-                        推移
-                      </Button>
-                    </ItemsCell>
-                  </tr>
-                ))}
+                {filteredItems.map((item) => {
+                  const previousItem = previousValueMap.get(item.itemCode) ?? null;
+                  const previousAbnormal = previousItem ? isAbnormal(previousItem.abnormalFlag) : false;
+                  const { label: differenceLabel, trend } = formatDifferenceLabel(
+                    item.valueText,
+                    previousItem?.valueText ?? null,
+                  );
+                  return (
+                    <tr key={item.id}>
+                      <ItemsCell $abnormal={isAbnormal(item.abnormalFlag)}>{item.itemName}</ItemsCell>
+                      <ItemsCell $abnormal={isAbnormal(item.abnormalFlag)}>{item.valueText || '---'}</ItemsCell>
+                      <ItemsCell $abnormal={previousAbnormal}>{previousItem?.valueText ?? '---'}</ItemsCell>
+                      <TrendCell $trend={trend}>{differenceLabel}</TrendCell>
+                      <ItemsCell>{item.unit ?? ''}</ItemsCell>
+                      <ItemsCell>{item.normalRange ?? ''}</ItemsCell>
+                      <ItemsCell>{item.abnormalFlag ?? ''}</ItemsCell>
+                      <ItemsCell>
+                        {item.comments.length > 0 ? item.comments.join(' / ') : item.specimenName ?? ''}
+                      </ItemsCell>
+                      <ItemsCell>
+                        <Button type="button" variant="ghost" size="sm" onClick={() => handleOpenTrend(item)}>
+                          推移
+                        </Button>
+                      </ItemsCell>
+                    </tr>
+                  );
+                })}
               </tbody>
             </ItemsTable>
           </ItemsTableWrapper>
@@ -502,11 +615,11 @@ export const LabResultsPanel = ({ patientId, patientName }: LabResultsPanelProps
               <tbody>
                 {(trendQuery.data ?? []).map((entry) => (
                   <tr key={entry.sampleDate}>
-                    <TrendCell>{formatDate(entry.sampleDate, true)}</TrendCell>
-                    <TrendCell>{entry.valueText || '---'}</TrendCell>
-                    <TrendCell>{entry.unit ?? ''}</TrendCell>
-                    <TrendCell>{entry.abnormalFlag ?? ''}</TrendCell>
-                    <TrendCell>{entry.normalRange ?? ''}</TrendCell>
+                    <TrendTableCell>{formatDate(entry.sampleDate, true)}</TrendTableCell>
+                    <TrendTableCell>{entry.valueText || '---'}</TrendTableCell>
+                    <TrendTableCell>{entry.unit ?? ''}</TrendTableCell>
+                    <TrendTableCell>{entry.abnormalFlag ?? ''}</TrendTableCell>
+                    <TrendTableCell>{entry.normalRange ?? ''}</TrendTableCell>
                   </tr>
                 ))}
               </tbody>

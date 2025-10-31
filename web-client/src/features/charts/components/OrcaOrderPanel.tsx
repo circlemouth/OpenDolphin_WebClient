@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
 import { Button, Stack, StatusBadge, SurfaceCard, TextField } from '@/components';
@@ -10,6 +10,7 @@ import type {
 } from '@/features/charts/types/orca';
 import { useDiseaseSearch, useGeneralNameLookup, useTensuSearch } from '@/features/charts/hooks/useOrcaMasterSearch';
 import { useInteractionCheck } from '@/features/charts/hooks/useInteractionCheck';
+import type { DecisionSupportMessage } from '@/features/charts/types/decision-support';
 import { recordOperationEvent } from '@/libs/audit';
 import { shouldBlockOrderBySeverity } from '@/features/charts/utils/interactionSeverity';
 
@@ -100,6 +101,8 @@ type Selection = {
 type OrcaOrderPanelProps = {
   disabled?: boolean;
   onCreateOrder?: (selection: Selection) => Promise<void>;
+  initialMode?: OrcaSearchMode;
+  onDecisionSupportUpdate?: (messages: DecisionSupportMessage[]) => void;
 };
 
 const formatTensuMeta = (entry: TensuMasterEntry) => {
@@ -142,8 +145,13 @@ const severityLabelMap: Record<NonNullable<DrugInteractionEntry['severity']>, st
   info: '参考',
 };
 
-export const OrcaOrderPanel = ({ disabled, onCreateOrder }: OrcaOrderPanelProps) => {
-  const [mode, setMode] = useState<OrcaSearchMode>('tensu');
+export const OrcaOrderPanel = ({
+  disabled,
+  onCreateOrder,
+  initialMode = 'tensu',
+  onDecisionSupportUpdate,
+}: OrcaOrderPanelProps) => {
+  const [mode, setMode] = useState<OrcaSearchMode>(initialMode);
   const [keyword, setKeyword] = useState('');
   const [partialMatch, setPartialMatch] = useState(true);
   const [tensuResults, setTensuResults] = useState<TensuMasterEntry[]>([]);
@@ -345,6 +353,30 @@ export const OrcaOrderPanel = ({ disabled, onCreateOrder }: OrcaOrderPanelProps)
   const totalAlerts = interactionCheck.data?.length ?? 0;
   const hasCriticalAlerts = criticalAlertCount > 0;
   const nonCriticalCount = totalAlerts - criticalAlertCount;
+
+  useEffect(() => {
+    if (!onDecisionSupportUpdate) {
+      return;
+    }
+    if (!interactionCheck.data || interactionCheck.data.length === 0) {
+      onDecisionSupportUpdate([]);
+      return () => {
+        onDecisionSupportUpdate([]);
+      };
+    }
+    const selections = [...existingSelections, ...candidateSelections];
+    const messages: DecisionSupportMessage[] = interactionCheck.data.map((entry) => ({
+      id: `${entry.code1}-${entry.code2}-${entry.symptomCode ?? 'none'}`,
+      severity: severityToneMap[entry.severity ?? 'info'],
+      category: 'interaction',
+      headline: formatInteractionLabel(entry, selections),
+      detail: entry.symptomDescription ?? undefined,
+    }));
+    onDecisionSupportUpdate(messages);
+    return () => {
+      onDecisionSupportUpdate([]);
+    };
+  }, [candidateSelections, existingSelections, interactionCheck.data, onDecisionSupportUpdate]);
 
   return (
     <SurfaceCard>

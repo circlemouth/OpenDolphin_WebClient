@@ -7,6 +7,8 @@ export interface ProgressNoteDraft {
   title: string;
   subjective: string;
   objective: string;
+  ros: string;
+  physicalExam: string;
   assessment: string;
   plan: string;
 }
@@ -166,6 +168,25 @@ const ensureClaimItems = (modules: ModuleModelPayload[]) => {
   });
 };
 
+export const buildObjectiveNarrative = (input: Pick<ProgressNoteDraft, 'objective' | 'ros' | 'physicalExam'>) => {
+  const segments: string[] = [];
+  const primary = input.objective.trim();
+  const ros = input.ros.trim();
+  const pe = input.physicalExam.trim();
+
+  if (primary) {
+    segments.push(primary);
+  }
+  if (ros) {
+    segments.push(`ROS:\n${ros}`);
+  }
+  if (pe) {
+    segments.push(`PE:\n${pe}`);
+  }
+
+  return segments.join('\n\n');
+};
+
 export const createProgressNoteDocument = (context: ProgressNoteContext): DocumentModelPayload => {
   const {
     draft,
@@ -191,9 +212,10 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
     ensureClaimItems(orderModules);
   }
 
+  const objectiveNarrative = buildObjectiveNarrative(draft);
   const soaText = [
     draft.subjective ? `S: ${draft.subjective}` : null,
-    draft.objective ? `O: ${draft.objective}` : null,
+    objectiveNarrative ? `O: ${objectiveNarrative}` : null,
     draft.assessment ? `A: ${draft.assessment}` : null,
   ]
     .filter((entry): entry is string => Boolean(entry))
