@@ -84,8 +84,5 @@
     - 2026-06-01: `SystemPreferencesPage` の基本情報タブに「新規施設管理者登録」セクションを追加し、`registerFacilityAdmin`（`POST /dolphin`）を `system-api.ts` に実装。既存の施設情報更新（`PUT /user/facility`）と合わせて `/dolphin` 系の初期設定を Web で完結可能にした。
 
 ## 4. 参考ドキュメント
-- `docs/web-client/planning/UNIMPLEMENTED_API_UI_PLACEMENT.md` – 未実装 API の UI 配置方針とフェーズ計画。
-- `docs/web-client/features/RECEPTION_SCHEDULE_AND_SUMMARY.md` – 受付/予約フローの詳細仕様。
-- `docs/web-client/features/CARE_MAP_TIMELINE.md` – CareMap と添付統合のデータフロー。
-- `docs/web-client/features/MEDICAL_CERTIFICATES_AND_SCHEMA.md` – 診断書・シェーマ UI の詳細。
-- `docs/web-client/features/PHASE3_STAMP_AND_ORCA.md` – スタンプ共有・ORCA 連携の拡張計画。
+- `docs/web-client/process/API_UI_GAP_ANALYSIS.md` – 未実装 API の UI 配置方針とフェーズ計画。
+- `docs/web-client/guides/CLINICAL_MODULES.md` – 受付/予約・CareMap・診断書/シェーマ・スタンプ/ORCA の統合仕様。
