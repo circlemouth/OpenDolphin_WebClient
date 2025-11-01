@@ -43,6 +43,12 @@ web-client/
 - Vitest + MSW により API モックを用意し、認証・HTTP クライアントのユニットテストをカバー。
 - `.github/workflows/web-client-ci.yml` を新設し、Lint/Typecheck/Test を CI で実行できるようにする（セットアップ完了後に実装）。
 
+## 2025-11-01 追記: 開発モック導入（担当: Codex）
+- `main.tsx` の `enableMocking()` で DEV モード起動時に MSW を自動登録。`/api/pvt2/pvtList` `/api/chartEvent/*` `/api/karte/docinfo/*` をスタブし、カルテ DocumentTimeline のリグレッションテストをローカルで完結できるようにした。
+- 開発手順: `npm run dev` でモック起動、実 API 検証は `npm run build && npm run preview -- --host` を利用。切替時はブラウザで `mockServiceWorker` を解除する運用を定義。
+- フィクスチャ配置を `src/mocks/fixtures/` に統一。API が増えた際は `src/mocks/handlers/` をエリア毎に分割し、`handlers/index.ts` で束ねるガイドラインを追加。
+- ドキュメント反映: `web-client/README.md` に詳細手順を追記し、`docs/web-client/README.md` で参照案内を更新。
+
 ## チェックリスト（次アクション）
 - [x] web-client プロジェクトのスキャフォールドと依存関係インストール
   - 2025-10-29: `npm create vite@latest web-client -- --template react-ts` をベースに React 18 + TypeScript プロジェクトを初期化し、主要ライブラリを導入。
@@ -58,6 +64,8 @@ web-client/
   - 2025-11-04: `.github/workflows/web-client-ci.yml` を新設し、`npm ci` → `lint` → `typecheck` → `test` → `build-storybook` を実行するパイプラインを構築。
 - [x] 認証ラッパーのセキュリティレビュー
   - 2025-11-05: セキュリティチームが認証ラッパーのダイアグラムとコードを確認し、指摘事項ゼロで承認。詳細は [`PHASE1_SECURITY_REVIEW.md`](./PHASE1_SECURITY_REVIEW.md) を参照。
+- [x] MSW モック運用ルール整備
+  - 2025-11-01 (担当: Codex): `main.tsx` に MSW 初期化フックを追加し、`src/mocks/handlers`/`fixtures` を作成。`docs/web-client/README.md` と `web-client/README.md` に切替手順を明記。
 
 ## セキュリティレビューサマリ（2025-11-05 実施）
 - 対象: `web-client/src/libs/auth` の `auth-service.ts`、`auth-storage.ts`、`AuthProvider.tsx`、および `docs/web-client/design-system/ALPHA_COMPONENTS.md` に記載された認証関連 UI 運用ガイド。

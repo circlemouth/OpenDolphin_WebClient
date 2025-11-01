@@ -25,6 +25,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`design-system/ALPHA_COMPONENTS.md`](design-system/ALPHA_COMPONENTS.md): デザインシステム α 版と Storybook 運用指針。
 - [`ux/ONE_SCREEN_LAYOUT_GUIDE.md`](ux/ONE_SCREEN_LAYOUT_GUIDE.md): 1 画面完結のレイアウト指針と業務要件メモ。
 - [`ux/CHART_UI_GUIDE_INDEX.md`](ux/CHART_UI_GUIDE_INDEX.md): カルテ UI 関連資料の集約。改修前に必ず参照すること。
+  - 2025-11-01 (担当: Codex): DocumentTimelinePanel 安定化とエラーメッセージ整備の観点を追記し、タイムラインの状態遷移とフィードバック設計を整理。
 - [`ux/KARTE_SCREEN_IMPLEMENTATION.md`](ux/KARTE_SCREEN_IMPLEMENTATION.md): 最新カルテ画面の構造・ショートカット・レスポンシブ仕様。
 
 ### 5. 運用・オペレーション
@@ -39,12 +40,18 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 3. 実装タスクは `process/` 配下の計画ドキュメント（フェーズ別ロードマップ/差分チェックリスト/API ギャップ分析）に従って進める。
 4. UI/UX 検討時は `ux/` ディレクトリ、機能仕様は `features/`・`guides/` を参照し、更新時は本 README にも反映する。
 
+## DocumentTimeline 安定化と開発モック手順（2025-11-01 追記、担当: Codex）
+- `ux/CHART_UI_GUIDE_INDEX.md` / `ux/ONE_SCREEN_LAYOUT_GUIDE.md` / `ux/KARTE_SCREEN_IMPLEMENTATION.md` に、カテゴリ切替時のイベント再選択・詳細パネルの同期・エラートーン（情報/警告/危険/中立）を明文化。カルテ左レールの DocumentTimeline 改修時はこれらの要件に従う。
+- Web クライアント開発では、Vite 開発サーバー起動時に MSW が自動登録され、Charts Page 用の `/api/karte/docinfo/*` `/api/pvt2/pvtList` `/api/chartEvent/*` をモックする。詳細手順は `web-client/README.md#開発モックmswとバックエンド切替` を参照。
+- 実サーバー検証に切り替える際は `npm run build && npm run preview -- --host` を利用し、必要に応じてブラウザの Service Worker 管理画面で `mockServiceWorker` を解除する。スイッチ後は `VITE_DEV_PROXY_TARGET` で向き先を設定する。
+
 ## ドキュメント更新ルール
 - ドキュメントを追加・改訂した際は変更内容と日付を該当ファイルに記載し、本ハブへリンクを追記する。
 - セキュリティや監査に影響する変更は必ず `process/SECURITY_AND_QUALITY_IMPROVEMENTS.md` へ反映し、レビューを経てから適用する。
 - 参考資料（PDF / 画像など）は `docs/` 配下の適切なカテゴリに格納し、必ず本ファイルから辿れるようにする。
 
 ## 直近更新履歴
+- 2025-11-01 (担当: Codex): DocumentTimelinePanel の安定化方針とエラーメッセージ改善を `ux/CHART_UI_GUIDE_INDEX.md` / `ux/ONE_SCREEN_LAYOUT_GUIDE.md` / `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記し、MSW モック切替手順を `web-client/README.md` に整理。計画ドキュメント `phase1/PHASE1_FOUNDATION.md`・`phase2/PHASE2_PROGRESS.md` に進捗メモを追加。
 - 2025-11-01: 左レールに ProblemListCard / SafetySummaryCard を追加し、診断リストと安全サマリ（アレルギー/既往/内服）のガイドを `ux/ONE_SCREEN_LAYOUT_GUIDE.md` / `ux/KARTE_SCREEN_IMPLEMENTATION.md` / `ux/CHART_UI_GUIDE_INDEX.md` に反映。23インチ(1920px)の列比率と右レール折りたたみ条件を `docs/web-client/planning/phase2/PHASE2_PROGRESS.md`・`ux/ONE_SCREEN_LAYOUT_GUIDE.md`・`ux/CHART_UI_GUIDE_INDEX.md` に追記。
 - 2026-06-01: PHR 管理タブと患者データ出力ページを整理。`process/SWING_PARITY_CHECKLIST.md` を更新。
 - 2026-05-31: 管理画面の未実装項目調査を反映し、`process/SWING_PARITY_CHECKLIST.md` を再構成。
