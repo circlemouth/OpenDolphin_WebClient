@@ -27,7 +27,7 @@ const Shell = styled.div`
   display: grid;
   grid-template-rows: ${({ theme }) => theme.layout.headerHeight} 1fr ${({ theme }) =>
         theme.layout.footerHeight};
-  min-height: 100vh;
+  min-height: 100dvh;
   color: ${({ theme }) => theme.palette.text};
 `;
 
@@ -95,10 +95,16 @@ const Body = styled.div`
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
+  /* layout tokens drive main viewport height for nested scroll containers */
+  --app-shell-main-height: calc(
+    100dvh - ${({ theme }) => theme.layout.headerHeight} - ${({ theme }) => theme.layout.footerHeight}
+  );
   height: calc(
     100vh - ${({ theme }) => theme.layout.headerHeight} - ${({ theme }) => theme.layout.footerHeight}
   );
+  height: var(--app-shell-main-height);
   min-height: 0;
+  overflow: hidden;
 `;
 
 const Navigation = styled.nav`
@@ -211,19 +217,24 @@ const ContentRegion = styled.div<{ hasSidebar: boolean }>`
   gap: ${({ theme }) => theme.layout.gutter};
   flex: 1;
   min-height: 0;
+  height: 100%;
 
   @media (max-width: 1200px) {
     grid-template-columns: minmax(0, 1fr);
   }
 `;
 
-const Main = styled.main`
+const Main = styled('main', {
+  shouldForwardProp: (prop) => prop !== 'scrollLocked',
+})<{ scrollLocked: boolean }>`
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.layout.gutter};
   min-width: 0;
   min-height: 0;
-  overflow: auto;
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: ${({ scrollLocked }) => (scrollLocked ? 'hidden' : 'auto')};
 `;
 
 const Sidebar = styled.aside`
@@ -328,6 +339,7 @@ export const AppShell = () => {
   };
 
   const hasSidebar = Boolean(sidebarContent);
+  const isChartsView = location.pathname.startsWith('/charts');
 
   return (
     <Fragment>
@@ -412,7 +424,11 @@ export const AppShell = () => {
         <SidebarContext.Provider value={sidebarController}>
           <Body>
             <ContentRegion hasSidebar={hasSidebar}>
-              <Main id="main-content">
+              <Main
+                id="main-content"
+                scrollLocked={isChartsView}
+                data-app-shell-section={isChartsView ? 'charts' : 'default'}
+              >
                 <Outlet />
               </Main>
               {hasSidebar ? (

@@ -26,6 +26,7 @@ const ConsoleShell = styled.aside<{ $collapsed: boolean }>`
   flex-direction: column;
   transition: width 0.2s ease;
   overflow: hidden;
+  height: 100%;
 `;
 
 const CollapseButton = styled.button`
@@ -52,6 +53,7 @@ const ConsoleBody = styled.div<{ $collapsed: boolean }>`
   pointer-events: ${({ $collapsed }) => ($collapsed ? 'none' : 'auto')};
   height: 100%;
   overflow-y: auto;
+  scrollbar-gutter: stable both-edge;
 `;
 
 const TabList = styled.div`
