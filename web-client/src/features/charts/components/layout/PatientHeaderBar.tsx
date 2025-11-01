@@ -3,6 +3,7 @@ import styled from '@emotion/styled';
 
 import { Button, StatusBadge } from '@/components';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
+import { determineSafetyTone } from '@/features/charts/utils/caution-tone';
 
 interface PatientHeaderBarProps {
   patient: PatientVisitSummary | null;
@@ -21,18 +22,17 @@ interface PatientHeaderBarProps {
 }
 
 const Header = styled.header`
-  position: sticky;
-  top: 0;
-  z-index: 100;
+  min-height: var(--charts-header-height, 76px);
   display: grid;
-  grid-template-columns: 280px minmax(0, 1fr) 320px;
+  grid-template-columns: clamp(240px, 24%, 320px) minmax(0, 1fr) clamp(320px, 28%, 380px);
   align-items: center;
-  gap: 16px;
-  padding: 8px 24px;
-  height: 64px;
+  gap: 24px;
+  padding: 12px 32px;
   background: ${({ theme }) => theme.palette.surface};
   border-bottom: 1px solid ${({ theme }) => theme.palette.border};
   box-shadow: 0 2px 12px rgba(20, 31, 44, 0.08);
+  position: relative;
+  z-index: 10;
 `;
 
 const PatientBlock = styled.div`
@@ -62,7 +62,7 @@ const PatientMeta = styled.span`
 const ComplaintBlock = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 16px;
   min-width: 0;
 `;
 
@@ -74,11 +74,11 @@ const ComplaintLabel = styled.span`
 const InlineInput = styled.input`
   flex: 1 1 auto;
   min-width: 0;
-  border: none;
-  border-bottom: 2px solid ${({ theme }) => theme.palette.border};
-  padding: 6px 0;
+  border: 1px solid ${({ theme }) => theme.palette.border};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  padding: 8px 12px;
   font-size: 1rem;
-  background: transparent;
+  background: ${({ theme }) => theme.palette.surfaceMuted};
   color: ${({ theme }) => theme.palette.text};
   transition: border-color 0.2s ease;
 
@@ -94,34 +94,24 @@ const InlineInput = styled.input`
 
 const TagsBlock = styled.div`
   display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 6px;
+  gap: 8px;
+  align-content: center;
+  justify-items: start;
 `;
 
 const TagsRow = styled.div`
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
 `;
 
 const InlineButton = styled(Button)`
-  height: 32px;
   min-width: 0;
-  padding: 0 10px;
-  font-size: 0.85rem;
+  height: 36px;
+  padding: 0 14px;
+  font-size: 0.9rem;
 `;
-
-const cautionTone = (flag: string) => {
-  const normalized = flag.toLowerCase();
-  if (normalized.includes('禁') || normalized.includes('重症')) {
-    return 'danger' as const;
-  }
-  if (normalized.includes('アレルギー') || normalized.includes('注意')) {
-    return 'warning' as const;
-  }
-  return 'info' as const;
-};
 
 const calculateAge = (birthday?: string) => {
   if (!birthday) {
@@ -246,7 +236,7 @@ export const PatientHeaderBar = forwardRef<HTMLInputElement, PatientHeaderBarPro
           <TagsRow role="list" aria-label="注意フラグ">
             {cautionFlags.length > 0 ? (
               cautionFlags.map((flag) => (
-                <StatusBadge key={flag} tone={cautionTone(flag)} role="listitem">
+                <StatusBadge key={flag} tone={determineSafetyTone(flag)} role="listitem">
                   {flag}
                 </StatusBadge>
               ))

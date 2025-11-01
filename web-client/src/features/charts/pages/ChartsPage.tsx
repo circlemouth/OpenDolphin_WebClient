@@ -71,6 +71,7 @@ import type { ParsedHealthInsurance } from '@/features/charts/utils/health-insur
 import { updatePatientMemo } from '@/features/patients/api/patient-memo-api';
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
+import { determineSafetyTone, type SafetyTone } from '@/features/charts/utils/caution-tone';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { useAuth } from '@/libs/auth';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
@@ -98,31 +99,146 @@ import { BIT_OPEN } from '@/features/charts/utils/visit-state';
 import { calculateAgeLabel } from '@/features/charts/utils/age-label';
 
 const PageShell = styled.div`
+  --charts-header-height: 76px;
+  --charts-footer-height: 56px;
+  --charts-workspace-viewport: calc(100vh - var(--charts-header-height, 76px) - var(--charts-footer-height, 56px));
   min-height: 100vh;
+  height: 100vh;
   background: ${({ theme }) => theme.palette.background};
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+`;
+
+const ContentViewport = styled.main`
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+`;
+
+const ContentScrollArea = styled.div`
+  height: 100%;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edges;
 `;
 
 const ContentGrid = styled.div`
-  flex: 1 1 auto;
+  --charts-workspace-vertical-padding: 56px;
+  --charts-column-gap: clamp(16px, 2.2vw, 28px);
   display: grid;
-  grid-template-columns: 160px minmax(0, 1fr) auto;
-  column-gap: 24px;
+  grid-template-columns: clamp(240px, 22%, 300px) minmax(0, 1fr) clamp(320px, 26%, 360px);
+  grid-template-areas: 'left center right';
   align-items: start;
-  padding: 16px 24px 140px;
-  min-height: 0;
+  column-gap: var(--charts-column-gap);
+  row-gap: 24px;
+  padding: 24px 32px 32px;
+  min-height: 100%;
+  box-sizing: border-box;
+
+  @media (max-width: 1440px) {
+    padding: 24px 28px 30px;
+    --charts-workspace-vertical-padding: 54px;
+  }
+
+  @media (max-width: 1180px) {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-areas:
+      'left'
+      'center'
+      'right';
+    row-gap: 20px;
+    padding: 20px 24px 28px;
+    --charts-workspace-vertical-padding: 48px;
+    --charts-column-gap: 20px;
+  }
+
+  @media (max-width: 768px) {
+    padding: 16px 16px 24px;
+    row-gap: 16px;
+    --charts-workspace-vertical-padding: 40px;
+  }
 `;
 
 const LeftRail = styled.div`
-  position: sticky;
-  top: 80px;
-  align-self: start;
+  grid-area: left;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+`;
+
+const LeftRailContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  flex: 1 1 auto;
+  min-height: 0;
+`;
+
+const LeftRailSpacer = styled.div`
+  flex: 1 1 auto;
+`;
+
+const LeftPanelCard = styled(SurfaceCard)`
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+`;
+
+const LeftPanelTitle = styled.h3`
+  margin: 0;
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.palette.text};
+`;
+
+const LeftPanelBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+`;
+
+const BadgeWrap = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+`;
+
+const LeftPanelEmpty = styled.span`
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const VitalList = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+`;
+
+const VitalListItem = styled.li`
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.palette.text};
+`;
+
+const VitalLabel = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const VitalValue = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.palette.text};
 `;
 
 const CentralColumn = styled.div`
+  grid-area: center;
   min-width: 0;
-  height: calc(100vh - 80px - 48px);
+  min-height: 0;
   display: flex;
   flex-direction: column;
 `;
@@ -133,8 +249,6 @@ const CentralScroll = styled.div`
   display: flex;
   flex-direction: column;
   gap: 16px;
-  overflow-y: auto;
-  padding-right: 8px;
 `;
 
 const WorkspaceStack = styled.div`
@@ -144,11 +258,14 @@ const WorkspaceStack = styled.div`
 `;
 
 const RightRail = styled.div`
-  position: sticky;
-  top: 80px;
-  align-self: start;
-  height: calc(100vh - 80px - 48px);
+  grid-area: right;
   display: flex;
+  min-height: 0;
+  justify-content: flex-end;
+  @media (max-width: 1180px) {
+    justify-content: flex-start;
+    width: 100%;
+  }
 `;
 
 const SupplementGrid = styled.div`
@@ -230,6 +347,12 @@ type BillingState = {
   performer: string;
   lotNumber: string;
   memo: string;
+};
+
+type SafetyAlert = {
+  id: string;
+  label: string;
+  tone: SafetyTone;
 };
 
 const SELF_PAY_OPTIONS = [
@@ -453,6 +576,9 @@ type DocumentPresetState = {
   version: number;
 };
 
+const FORCE_COLLAPSE_BREAKPOINT = 860;
+const AUTO_EXPAND_BREAKPOINT = 1320;
+
 export const ChartsPage = () => {
   useChartEventSubscription();
 
@@ -498,6 +624,7 @@ export const ChartsPage = () => {
   const [saveError, setSaveError] = useState<string | null>(null);
   const [rightPaneCollapsed, setRightPaneCollapsed] = useState(false);
   const [forceCollapse, setForceCollapse] = useState(false);
+  const forceCollapseRef = useRef(false);
   const [searchOpen, setSearchOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchSection, setSearchSection] = useState<SearchSection>('O');
@@ -850,6 +977,44 @@ export const ChartsPage = () => {
         : [],
     [draft.objective],
   );
+
+  const safetyAlerts = useMemo<SafetyAlert[]>(() => {
+    const alerts = new Map<string, SafetyTone>();
+    const cautionNotes = buildSafetyNotes(selectedVisit?.safetyNotes ?? []);
+    cautionNotes.forEach((note) => {
+      if (!alerts.has(note)) {
+        alerts.set(note, determineSafetyTone(note));
+      }
+    });
+
+    const allergyNotesRaw = (karteQuery.data?.allergies ?? []).map((allergy, index) => {
+      const detailParts = [
+        allergy.factor ?? '',
+        allergy.severity ? `(${allergy.severity})` : '',
+        allergy.memo ?? '',
+      ]
+        .map((part) => part.trim())
+        .filter(Boolean);
+      const detail = detailParts.join(' ');
+      const base = detail || allergy.factor || `アレルギー ${index + 1}`;
+      return `アレルギー: ${base}`.trim();
+    });
+
+    const allergyNotes = buildSafetyNotes(allergyNotesRaw);
+    allergyNotes.forEach((note) => {
+      if (!alerts.has(note)) {
+        alerts.set(note, determineSafetyTone(note));
+      }
+    });
+
+    return Array.from(alerts.entries()).map(([label, tone], index) => ({
+      id: `safety-${index}`,
+      label,
+      tone,
+    }));
+}, [karteQuery.data?.allergies, selectedVisit?.safetyNotes]);
+
+  const problemList = useMemo(() => buildSafetyNotes(diagnosisTags), [diagnosisTags]);
 
   useEffect(() => {
     if (!latestPatientMemo) {
@@ -2039,16 +2204,22 @@ export const ChartsPage = () => {
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      if (width < 1000) {
-        setRightPaneCollapsed(true);
+      if (width < FORCE_COLLAPSE_BREAKPOINT) {
+        forceCollapseRef.current = true;
         setForceCollapse(true);
-      } else if (width < 1400) {
-        setForceCollapse(false);
-      } else {
-        setForceCollapse(false);
+        setRightPaneCollapsed(true);
+        return;
+      }
+
+      const wasForced = forceCollapseRef.current;
+      forceCollapseRef.current = false;
+      setForceCollapse(false);
+
+      if (wasForced || width >= AUTO_EXPAND_BREAKPOINT) {
         setRightPaneCollapsed(false);
       }
     };
+
     handleResize();
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -2196,14 +2367,80 @@ export const ChartsPage = () => {
         onOpenSearch={() => setSearchOpen(true)}
         canEdit={Boolean(selectedVisit)}
       />
-      <ContentGrid>
+      <ContentViewport>
+        <ContentScrollArea>
+          <ContentGrid>
         <LeftRail>
-          <Stack gap={16}>
+          <LeftRailContent>
+            {selectedVisit ? (
+              <>
+                {safetyAlerts.length > 0 ? (
+                  <LeftPanelCard role="region" aria-label="危険サイン / アレルギー">
+                    <LeftPanelTitle>危険サイン / アレルギー</LeftPanelTitle>
+                    <LeftPanelBody>
+                      <BadgeWrap>
+                        {safetyAlerts.map((alert) => (
+                          <StatusBadge key={alert.id} tone={alert.tone}>
+                            {alert.label}
+                          </StatusBadge>
+                        ))}
+                      </BadgeWrap>
+                    </LeftPanelBody>
+                  </LeftPanelCard>
+                ) : null}
+                <MiniSummaryDock
+                  summaryLines={miniSummaryLines}
+                  onExpand={handleMiniSummaryExpand}
+                  onSnippetDragStart={handleSnippetDragStart}
+                />
+                <LeftPanelCard role="region" aria-label="プロブレムリスト">
+                  <LeftPanelTitle>プロブレムリスト</LeftPanelTitle>
+                  <LeftPanelBody>
+                    {problemList.length > 0 ? (
+                      <BadgeWrap>
+                        {problemList.map((problem) => (
+                          <StatusBadge key={problem} tone="info">
+                            {problem}
+                          </StatusBadge>
+                        ))}
+                      </BadgeWrap>
+                    ) : (
+                      <LeftPanelEmpty>登録済みのプロブレムはありません。</LeftPanelEmpty>
+                    )}
+                  </LeftPanelBody>
+                </LeftPanelCard>
+                <LeftPanelCard role="region" aria-label="バイタルサマリ">
+                  <LeftPanelTitle>バイタル</LeftPanelTitle>
+                  <LeftPanelBody>
+                    {vitalSigns.length > 0 ? (
+                      <VitalList>
+                        {vitalSigns.map((vital) => (
+                          <VitalListItem key={vital.id}>
+                            <VitalLabel>{vital.label}</VitalLabel>
+                            <VitalValue>{vital.value}</VitalValue>
+                          </VitalListItem>
+                        ))}
+                      </VitalList>
+                    ) : (
+                      <LeftPanelEmpty>バイタルは未入力です。</LeftPanelEmpty>
+                    )}
+                  </LeftPanelBody>
+                </LeftPanelCard>
+              </>
+            ) : (
+              <LeftPanelCard role="region" aria-label="左レール情報">
+                <LeftPanelTitle>左レール情報</LeftPanelTitle>
+                <LeftPanelBody>
+                  <LeftPanelEmpty>患者を選択するとサマリや注意情報が表示されます。</LeftPanelEmpty>
+                </LeftPanelBody>
+              </LeftPanelCard>
+            )}
             <VisitChecklist
               items={checklist}
               onToggleCompleted={handleChecklistToggle}
               onToggleInstantSave={handleChecklistInstant}
             />
+            <LeftRailSpacer />
             <DocumentTimelinePanel
               karteId={karteId}
               fromDate={timelineFromDate}
@@ -2211,7 +2448,7 @@ export const ChartsPage = () => {
               onDocInfosLoaded={setDocInfos}
               onEditDocument={handleEditDocument}
             />
-          </Stack>
+          </LeftRailContent>
         </LeftRail>
         <CentralColumn>
           <CentralScroll>
@@ -2231,24 +2468,7 @@ export const ChartsPage = () => {
                       </div>
                     </Stack>
                   </SurfaceCard>
-                ) : null}                <WorkSurface
-                  mode={activeSurface}
-                  onModeChange={handleToggleSurface}
-                  objectiveValue={draft.objective}
-                  onObjectiveChange={(value) => handleDraftChange('objective', value)}
-                  assessmentValue={draft.assessment}
-                  onAssessmentChange={(value) => handleDraftChange('assessment', value)}
-                  planCards={planCards}
-                  onPlanCardChange={handlePlanCardChange}
-                  onPlanCardRemove={handlePlanCardRemove}
-                  onPlanCardInsert={handlePlanCardInsert}
-                  onPlanCardReorder={handlePlanCardReorder}
-                  onPlanUndo={handlePlanUndo}
-                  onPlanCardFocus={handlePlanCardFocus}
-                  onObjectiveInsertText={handleObjectiveInsertText}
-                  onPlanInsertText={handlePlanInsertText}
-                  isLockedByMe={isLockedByMe}
-                />
+                ) : null}
                 <SurfaceCard tone="muted">
                   <Stack gap={12}>
                     <TextField
@@ -2271,6 +2491,24 @@ export const ChartsPage = () => {
                     {lock.error ? <InlineError>{String(lock.error)}</InlineError> : null}
                   </Stack>
                 </SurfaceCard>
+                <WorkSurface
+                  mode={activeSurface}
+                  onModeChange={handleToggleSurface}
+                  objectiveValue={draft.objective}
+                  onObjectiveChange={(value) => handleDraftChange('objective', value)}
+                  assessmentValue={draft.assessment}
+                  onAssessmentChange={(value) => handleDraftChange('assessment', value)}
+                  planCards={planCards}
+                  onPlanCardChange={handlePlanCardChange}
+                  onPlanCardRemove={handlePlanCardRemove}
+                  onPlanCardInsert={handlePlanCardInsert}
+                  onPlanCardReorder={handlePlanCardReorder}
+                  onPlanUndo={handlePlanUndo}
+                  onPlanCardFocus={handlePlanCardFocus}
+                  onObjectiveInsertText={handleObjectiveInsertText}
+                  onPlanInsertText={handlePlanInsertText}
+                  isLockedByMe={isLockedByMe}
+                />
                 <SurfaceCard>
                   <Stack gap={16}>
                     <h3 style={{ margin: 0, fontSize: '1rem' }}>請求モード</h3>
@@ -2567,7 +2805,9 @@ export const ChartsPage = () => {
             freeDocumentDisabled={!selectedVisit}
           />
         </RightRail>
-      </ContentGrid>
+          </ContentGrid>
+        </ContentScrollArea>
+      </ContentViewport>
       <StatusBar
         saveState={saveState}
         unsentTaskCount={unsentTaskCount}
@@ -2576,12 +2816,6 @@ export const ChartsPage = () => {
         onCallNextPatient={handleCallNextPatient}
         isLockedByMe={isLockedByMe}
       />
-      <MiniSummaryDock
-        summaryLines={miniSummaryLines}
-        onExpand={handleMiniSummaryExpand}
-        onSnippetDragStart={handleSnippetDragStart}
-      />
-
       <UnifiedSearchOverlay
         open={searchOpen}
         query={searchQuery}
@@ -2614,7 +2848,6 @@ export const ChartsPage = () => {
     </PageShell>
   );
 };
-
 
 
 
