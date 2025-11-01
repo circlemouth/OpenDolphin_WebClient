@@ -14,20 +14,16 @@ interface VisitChecklistProps {
 }
 
 const ChecklistNav = styled.nav`
-  position: sticky;
-  top: 0;
-  align-self: stretch;
-  width: 160px;
-  min-width: 140px;
-  max-width: 180px;
+  width: 100%;
+  min-width: 0;
   background: ${({ theme }) => theme.palette.surface};
-  border-right: 1px solid ${({ theme }) => theme.palette.border};
+  border: 1px solid ${({ theme }) => theme.palette.border};
+  border-radius: ${({ theme }) => theme.radius.md};
   padding: 16px 12px;
   display: flex;
   flex-direction: column;
   gap: 12px;
-  height: calc(100vh - 80px - 48px);
-  overflow-y: auto;
+  box-shadow: ${({ theme }) => theme.elevation.level1};
 `;
 
 const Title = styled.h2`
