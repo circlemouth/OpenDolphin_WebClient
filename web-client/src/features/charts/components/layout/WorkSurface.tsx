@@ -38,25 +38,41 @@ interface WorkSurfaceProps {
 const SurfaceShell = styled.main`
   position: relative;
   flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
   overflow: hidden;
   border-radius: ${({ theme }) => theme.radius.lg};
   background: ${({ theme }) => theme.palette.surface};
   box-shadow: ${({ theme }) => theme.elevation.level1};
   min-height: 480px;
+  max-height: calc(var(--charts-workspace-viewport, 100vh) - var(--charts-workspace-vertical-padding, 56px));
+  @media (max-width: 1180px) {
+    max-height: none;
+  }
 `;
 
 const SurfaceToolbar = styled.div`
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  padding: 16px 24px 8px;
+  justify-content: flex-start;
+  gap: 8px 16px;
+  padding: 16px 16px 8px 24px;
   border-bottom: 1px solid ${({ theme }) => theme.palette.border};
+  @media (max-width: 768px) {
+    padding: 12px 12px 4px 20px;
+    gap: 8px 12px;
+  }
 `;
 
 const ToolbarActions = styled.div`
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: 8px;
+  &:last-of-type {
+    margin-left: auto;
+  }
 `;
 
 const ToggleButton = styled.button<{ $active: boolean }>`
@@ -76,6 +92,8 @@ const ToggleButton = styled.button<{ $active: boolean }>`
 `;
 
 const Slides = styled.div<{ $mode: SurfaceMode }>`
+  flex: 1 1 auto;
+  min-height: 0;
   display: flex;
   width: 200%;
   transform: translateX(${({ $mode }) => ($mode === 'objective' ? '0%' : '-50%')});
@@ -83,10 +101,21 @@ const Slides = styled.div<{ $mode: SurfaceMode }>`
 `;
 
 const Slide = styled.section`
-  width: 50%;
+  flex: 0 0 50%;
+  min-width: 50%;
   padding: 16px 24px 32px;
+  height: 100%;
+  min-height: 0;
   overflow-y: auto;
-  max-height: calc(100vh - 80px - 72px - 48px);
+  max-height: 100%;
+  scrollbar-gutter: stable both-edges;
+  box-sizing: border-box;
+  @media (max-width: 1180px) {
+    padding: 16px 20px 28px;
+  }
+  @media (max-width: 768px) {
+    padding: 12px 16px 20px;
+  }
 `;
 
 const HintBox = styled.div`

@@ -127,8 +127,17 @@ const Aside = styled.aside<{ $collapsed: boolean }>`
   transition: width 0.2s ease;
   overflow: hidden;
   height: 100%;
+  min-height: 0;
   display: flex;
   flex-direction: column;
+
+  @media (max-width: 1180px) {
+    width: 100%;
+    max-width: none;
+    border-left: none;
+    border-top: 1px solid ${({ theme }) => theme.palette.border};
+    border-radius: ${({ theme }) => theme.radius.lg};
+  }
 `;
 
 const PaneContent = styled.div<{ $collapsed: boolean }>`
@@ -138,8 +147,16 @@ const PaneContent = styled.div<{ $collapsed: boolean }>`
   padding: 16px;
   flex: 1 1 auto;
   overflow-y: auto;
+  max-height: calc(var(--charts-workspace-viewport, 100vh) - var(--charts-workspace-vertical-padding, 56px));
+  scrollbar-gutter: stable both-edges;
   opacity: ${({ $collapsed }) => ($collapsed ? 0 : 1)};
   pointer-events: ${({ $collapsed }) => ($collapsed ? 'none' : 'auto')};
+
+  @media (max-width: 1180px) {
+    max-height: none;
+    overflow-y: visible;
+    padding: 16px 20px 20px;
+  }
 `;
 
 const CollapseButton = styled.button`
@@ -154,6 +171,10 @@ const CollapseButton = styled.button`
   color: ${({ theme }) => theme.palette.text};
   cursor: pointer;
   box-shadow: ${({ theme }) => theme.elevation.level1};
+
+  @media (max-width: 1180px) {
+    display: none;
+  }
 `;
 
 const Section = styled.section`

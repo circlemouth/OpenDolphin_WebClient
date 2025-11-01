@@ -12,32 +12,31 @@ interface StatusBarProps {
 }
 
 const Footer = styled.footer`
-  position: fixed;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 32px;
+  min-height: var(--charts-footer-height, 56px);
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0 24px;
+  gap: 24px;
+  padding: 0 32px;
   background: ${({ theme }) => theme.palette.surface};
   border-top: 1px solid ${({ theme }) => theme.palette.border};
-  z-index: 95;
+  box-shadow: 0 -2px 12px rgba(20, 31, 44, 0.06);
+  flex-wrap: wrap;
 `;
 
 const StatusGroup = styled.div`
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 0.85rem;
+  gap: 16px;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
 `;
 
 const StatusIndicator = styled.span<{ $tone: 'neutral' | 'positive' | 'warning' | 'danger' }>`
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 10px;
+  padding: 6px 14px;
   border-radius: 999px;
   background: ${({ theme, $tone }) =>
     $tone === 'positive'
@@ -55,6 +54,7 @@ const StatusIndicator = styled.span<{ $tone: 'neutral' | 'positive' | 'warning' 
       : $tone === 'danger'
       ? theme.palette.danger
       : theme.palette.textMuted};
+  line-height: 1.1;
 `;
 
 export const StatusBar = ({
