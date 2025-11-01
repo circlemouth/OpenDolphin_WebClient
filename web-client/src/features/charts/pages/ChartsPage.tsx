@@ -3987,7 +3987,7 @@ export const ChartsPage = () => {
               ? {
                   ...card,
                   title: card.title || payload.summary,
-                  detail: card.detail || payload.detail ?? '',
+                  detail: card.detail || (payload.detail ?? ''),
                   orderSummary: payload.summary || card.orderSummary,
                 }
               : card,

@@ -1,6 +1,6 @@
 # Web カルテ UI リファレンス集約
 
-最終更新日: 2025-11-01
+最終更新日: 2025-11-01（DocumentTimeline 安定化・エラーメッセージ改善、担当: Codex）
 
 Web クライアントのカルテ UI（`ChartsPage` 配下）の仕様・構成案は複数の資料に分散しています。本ファイルは UI 改修や新規実装を行うエージェントが参照すべき一次資料を整理し、着手前に確認すべき観点をまとめたものです。**カルテ UI に関する変更を提案・実装する前に、必ず以下の資料を読み、記載された要件・レイアウト・フローを満たすようにしてください。**
 
@@ -16,6 +16,7 @@ Web クライアントのカルテ UI（`ChartsPage` 配下）の仕様・構成
 ## 2. カルテタイムラインと補助パネル
 - [`features/CARE_MAP_TIMELINE.md`](../features/CARE_MAP_TIMELINE.md)
   - CareMap カレンダーおよび日別タイムラインの仕様。カルテ文書・予約・検査・添付を種別フィルタで切り替える挙動や、カルテ右ペインとの情報同期について記載しています。
+- 2025-11-01 (担当: Codex): DocumentTimelinePanel のカテゴリ同期・選択保持・詳細ペインのエラートーン整理を反映。エラー表示は `info`/`warning`/`danger`/`neutral` の 4 種で統一し、API 由来のメッセージをそのまま提示する方針に更新。
 - [`features/RECEPTION_SCHEDULE_AND_SUMMARY.md`](../features/RECEPTION_SCHEDULE_AND_SUMMARY.md)
   - カルテ右ペインのサマリ文書カード、施設予約一覧との連携仕様、カルテ生成/予約削除フローの UI 条件がまとまっています。
 - [`features/FACILITY_SCHEDULE_VIEW.md`](../features/FACILITY_SCHEDULE_VIEW.md)
@@ -39,11 +40,19 @@ Web クライアントのカルテ UI（`ChartsPage` 配下）の仕様・構成
 - [`process/SECURITY_AND_QUALITY_IMPROVEMENTS.md`](../process/SECURITY_AND_QUALITY_IMPROVEMENTS.md)
   - カルテ保存・排他制御・監査ログの UI 側要件。UI 改修で監査計測やイベント送出を変更する場合は必ず反映が必要です。
 
+### DocumentTimeline 安定化メモ（2025-11-01、担当: Codex）
+- **カテゴリ切替の自動復元**: `DocumentTimelinePanel` は利用可能なカテゴリがゼロになった場合でも直近の有効カテゴリへフォールバックし、常にイベントが 1 件以上選択された状態を維持する。
+- **選択状態と詳細ペインの同期**: タイムライン上の選択は `useDocumentDetail` と連動し、カルテ／来院／検査／オーダの各ペイロードに応じて参照パネル・Plan Composer が更新される。連携先の詳細パネルも同トリガで再描画すること。
+- **トーン別エラーメッセージ**: 読み込み・空状態・API エラーは `InlineFeedback` の `neutral`/`info`/`warning`/`danger` で表現し、エラー時は `resolveErrorMessage` により例外メッセージをそのまま提示する。想定外の場合のみ既定文言「イベントの取得に失敗しました。」を使用。
+- **タイトル編集の即時フィードバック**: ドキュメントイベントにはタイトル編集 UI を常設し、更新成功時は `info`、失敗時は `danger` トーンで結果を表示する。監査ログと整合性を取るため、再取得後のタイトル確認を必須とする。
+- **MSW モックでの検証**: `npm run dev` 起動時は MSW が `/api/pvt2/pvtList` `/api/chartEvent/*` `/api/karte/docinfo/*` をスタブする。タイムライン挙動の単体検証はモック環境で実施し、実サーバー確認は `npm run preview`（Service Worker 無効化済み）で行う。
+
 ## 5. 実装前チェックリスト
 1. 上記ドキュメントを読み、対象領域（レイアウト／タイムライン／補助パネル／オーダリング）の要件を整理する。
 2. 既存 UI のスクリーンフローと API 呼び出しを `process/SWING_PARITY_CHECKLIST.md` および `process/API_UI_GAP_ANALYSIS.md` で確認し、Swing 版との整合性を保つ。
 3. 監査・品質要件（操作ログ、レスポンス監視）に影響する場合、関連ドキュメントを更新する計画を立てる。
-4. 実装後はドキュメント更新内容を `docs/web-client/README.md` に追記し、本ファイルの参照リストも最新化する。
+4. タイムラインのエラーメッセージは `danger` トーンで API メッセージを明示すること、読み込み/空状態は `neutral` で統一することを確認する。
+5. 実装後はドキュメント更新内容を `docs/web-client/README.md` に追記し、本ファイルの参照リストも最新化する。
 
 ---
 
