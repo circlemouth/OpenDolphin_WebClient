@@ -18,6 +18,8 @@ Web クライアントに関するドキュメントは以下のカテゴリに�
 - [`guides/CLINICAL_MODULES.md`](guides/CLINICAL_MODULES.md): 患者管理、受付・予約、カルテ補助、ORCA 連携、帳票/シェーマ機能の統合ガイド。
 - `operations/` 配下: テスト環境構築、受付運用マニュアル、CareMap 添付移行などの手順書。
 - `design-system/`・`ux/`: UI コンポーネントと UX ガイドライン。`ux/ONE_SCREEN_LAYOUT_GUIDE.md` はレイアウト検討の指針。
+- [`ux/CHART_UI_GUIDE_INDEX.md`](ux/CHART_UI_GUIDE_INDEX.md): カルテ UI 関連資料の集約。UI 改修時は本ファイルを必ず参照し、記載された
+  要件に従ってください。
 
 ## 4. 更新ルール
 - 新しい資料を追加した場合は必ずこの README にリンクと概要を追記すること。
