@@ -17,6 +17,8 @@ AppShell
 ├─ PatientHeaderBar (固定ヘッダー 約88px / 2段構成)
 ├─ ContentGrid (3 カラム)
 │  ├─ VisitChecklist (左レール / 160px 固定)
+│  ├─ ProblemListCard (左レール / sticky, 主病名・Plan連携)
+│  ├─ SafetySummaryCard (左レール / アレルギー・既往・内服サマリ)
 │  ├─ CentralColumn
 │  │  └─ WorkspaceStack
 │  │     ├─ WorkSurface（Subjective→Objective(ROS/PE)→Assessment→Plan のタブ＋アコーディオン）
@@ -36,6 +38,11 @@ AppShell
 > メモ: 患者写真フィールドはサーバー実装側で `RawPatientResource` に明示されていないため、`portrait` / `photo` のどちらを利用するか確認が必要（未提供時はイニシャル表示でフォールバック）。診察タイマーはローカル時刻ベースのため、サーバー保存済みの開始時刻が必要な場合は別途 API 拡張を検討する。
 - 左レールは 160px 固定幅で `ContentGrid` の sticky ラップ（top: 80px）内に配置。`VisitChecklist` 自体も sticky（top: 0）で、
   `calc(100vh - 80px - 48px)` の縦領域を確保しステータスバーと干渉しない。
+- `VisitChecklist` 直下に `ProblemListCard` を配置。React Query の診断データ (`useDiagnosisBuckets`) を参照してアクティブ／既往を分割し、
+  行のキーボード操作で `handlePlanPrimaryDiagnosisSelect` / `handlePlanCardInsert` を経由して A/P に反映する。主病名状態は `aria-pressed`
+  とステータスバッジで示し、Plan 側の主病名・ヘッダの主病名入力と双方向に同期する。既存のピン留め履歴は ProblemList からの
+  追加では変更せず、診療参照履歴との二重管理を防ぐ。
+- `ProblemListCard` の下に `SafetySummaryCard` を配置。`usePatientKarte().allergies`、`useDiagnoses({ karteId, fromDate, activeOnly: false })`、`fetchRoutineMedications` を統合し、`determineSafetyTone` で危険度をトーン表現する。各エントリはクリック/Enter/右端の「コピー」ボタンで `handleSnippetDragStart` を介してクリップボードへ送信でき、ドラッグ＆ドロップで Subjective/Objective/Plan へ挿入できる。React Query のキー `['masuda','routineMed', karteId ?? 'none']` を MasudaSupportPanel と共有し、定期処方 API のレスポンスを再利用する。
 - 中央カラムは PC モニター向けに高さ `calc(100vh - 80px - 48px)` を占有し、内部の `CentralScroll` をスクロールコンテナとして
   WorkSurface・請求フォーム・SupplementGrid を縦に積層。WorkSurface は SOAP（Subjective → Objective〈ROS/PE〉 → Assessment → Plan）
   をタブ＋アコーディオンで順次展開し、タブ遷移時はスクロール位置を保持する。Objective では否定語／数値ハイライトと ROS/PE

@@ -34,7 +34,7 @@ const buildUpdatedDocumentPayload = (
     memo: updated.memo ?? original.memo,
   };
 };
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ComponentProps } from 'react';
@@ -53,10 +53,17 @@ import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
 import { useFreeDocument } from '@/features/charts/hooks/useFreeDocument';
 import { useDocumentAttachments } from '@/features/charts/hooks/useDocumentAttachments';
-import { useLaboModules } from '@/features/charts/hooks/useLaboModules';
+import { useDiagnoses, useDiagnosisBuckets } from '@/features/charts/hooks/useDiagnoses';
+import { useTimelineEvents } from '@/features/charts/hooks/useTimelineEvents';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { StampDefinition } from '@/features/charts/types/stamp';
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
+import type { RegisteredDiagnosis } from '@/features/charts/types/diagnosis';
+import {
+  diagnosisDisplayName,
+  diagnosisStatusLabel,
+  formatDiagnosisDate,
+} from '@/features/charts/components/diagnosis-utils';
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
 import {
   buildObjectiveNarrative,
@@ -76,6 +83,7 @@ import { useAuth } from '@/libs/auth';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
 import { PatientHeaderBar } from '@/features/charts/components/layout/PatientHeaderBar';
 import { VisitChecklist, type VisitChecklistItem } from '@/features/charts/components/layout/VisitChecklist';
+import { ProblemListCard } from '@/features/charts/components/layout/ProblemListCard';
 import { WorkSurface, type PlanComposerCard, type SoapSection } from '@/features/charts/components/layout/WorkSurface';
 import type { MediaItem } from '@/features/charts/types/media';
 import type { DocInfoSummary, DocumentModelPayload } from '@/features/charts/types/doc';
@@ -85,6 +93,11 @@ import {
   type PatientMemoHistoryEntry,
 } from '@/features/charts/components/layout/PatientMemoHistoryDialog';
 import { MiniSummaryDock } from '@/features/charts/components/layout/MiniSummaryDock';
+import {
+  SafetySummaryCard,
+  type SafetySummaryEntry,
+  type SafetySummarySection,
+} from '@/features/charts/components/layout/SafetySummaryCard';
 import { OrderConsole } from '@/features/charts/components/layout/OrderConsole';
 import { StatusBar } from '@/features/charts/components/layout/StatusBar';
 import { UnifiedSearchOverlay } from '@/features/charts/components/layout/UnifiedSearchOverlay';
@@ -94,12 +107,26 @@ import { ClinicalReferencePanel } from '@/features/charts/components/layout/Clin
 import { BIT_OPEN } from '@/features/charts/utils/visit-state';
 import { calculateAgeLabel } from '@/features/charts/utils/age-label';
 import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
+import { determineSafetyTone } from '@/features/charts/utils/caution-tone';
+import {
+  routineMedicationLabel,
+  routineMedicationModules,
+  routineMedicationUpdatedAt,
+} from '@/features/charts/utils/routine-medication';
 import { fetchDocumentsByIds } from '@/features/charts/api/doc-info-api';
+import { fetchRoutineMedications } from '@/features/charts/api/masuda-api';
 import { sendClaimDocument } from '@/features/charts/api/claim-api';
 import { ShortcutOverlay } from '@/features/charts/components/layout/ShortcutOverlay';
 import type { MonshinSummaryItem, PastSummaryItem, VitalSignItem } from '@/features/charts/types/reference';
 import type { OrderModuleSummary } from '@/features/charts/components/layout/OrderConsole';
 import type { DecisionSupportMessage } from '@/features/charts/types/decision-support';
+import type { LaboModule } from '@/features/charts/types/labo';
+import type {
+  TimelineEvent,
+  TimelineEventPayload,
+  TimelineOrderSource,
+  TimelinePlanCardSource,
+} from '@/features/charts/utils/timeline-events';
 
 const PageShell = styled.div`
   min-height: 100vh;
@@ -414,8 +441,21 @@ type ContextItemDescriptor = {
 
 type DocumentTimelineProps = Pick<
   ComponentProps<typeof DocumentTimelinePanel>,
-  'karteId' | 'fromDate' | 'includeModified' | 'onDocInfosLoaded' | 'onEditDocument' | 'onDocumentSelected'
+  | 'events'
+  | 'isLoading'
+  | 'isFetching'
+  | 'error'
+  | 'onRefresh'
+  | 'onDocumentSelected'
+  | 'onVisitEventSelected'
+  | 'onLabEventSelected'
+  | 'onOrderEventSelected'
+  | 'onEditDocument'
 >;
+
+type TimelineLabPayload = Extract<TimelineEventPayload, { kind: 'lab' }>;
+type TimelineOrderPayload = Extract<TimelineEventPayload, { kind: 'order' }>;
+type TimelineVisitPayload = Extract<TimelineEventPayload, { kind: 'visit' }>;
 
 const ORDER_ENTITY_PLAN_TYPE: Record<string, PlanComposerCard['type']> = {
   medOrder: 'medication',
@@ -454,6 +494,7 @@ interface OrderModuleDraft {
   source: 'stamp' | 'orca';
   stampId?: string;
   label: string;
+  createdAt: string;
   moduleInfo: {
     stampName: string;
     stampRole: string;
@@ -525,6 +566,22 @@ const resolvePrimaryDiagnosisText = (card: PlanComposerCard): string => {
     return firstLine?.trim() ?? '';
   }
   return '';
+};
+
+const extractTimestampFromId = (id: string | null | undefined): string | null => {
+  if (!id) {
+    return null;
+  }
+  const segments = id.split('-');
+  if (segments.length < 3) {
+    return null;
+  }
+  const maybeTimestamp = Number.parseInt(segments[1] ?? '', 10);
+  if (!Number.isFinite(maybeTimestamp)) {
+    return null;
+  }
+  const date = new Date(maybeTimestamp);
+  return Number.isNaN(date.getTime()) ? null : date.toISOString();
 };
 const decodeBase64String = (input: string): string => {
   try {
@@ -602,6 +659,18 @@ interface LeftContextColumnProps {
   onMediaOpen: (item: MediaItem) => void;
   pastSummaries: PastSummaryItem[];
   onPastSummaryOpen: (item: PastSummaryItem) => void;
+  problemList: {
+    activeDiagnoses: RegisteredDiagnosis[];
+    pastDiagnoses: RegisteredDiagnosis[];
+    primaryDiagnosisName: string;
+    isLoading: boolean;
+    isFetching: boolean;
+    error: unknown;
+    onReload: () => void;
+    onSelectPrimary: (diagnosis: RegisteredDiagnosis) => void;
+    onAppendToPlan: (diagnosis: RegisteredDiagnosis) => void;
+  };
+  safetySummarySections: SafetySummarySection[];
   patientMemo: string;
   patientMemoStatus: 'idle' | 'saving' | 'saved' | 'error';
   patientMemoError: string | null;
@@ -663,6 +732,8 @@ const LeftContextColumn = ({
   onMediaOpen,
   pastSummaries,
   onPastSummaryOpen,
+  problemList,
+  safetySummarySections,
   patientMemo,
   patientMemoStatus,
   patientMemoError,
@@ -739,6 +810,20 @@ const LeftContextColumn = ({
         onToggleCompleted={onToggleChecklist}
         onToggleInstantSave={onToggleInstantChecklist}
       />
+
+      <ProblemListCard
+        activeDiagnoses={problemList.activeDiagnoses}
+        pastDiagnoses={problemList.pastDiagnoses}
+        primaryDiagnosisName={problemList.primaryDiagnosisName}
+        onSelectPrimary={problemList.onSelectPrimary}
+        onAppendToPlan={problemList.onAppendToPlan}
+        isLoading={problemList.isLoading}
+        isFetching={problemList.isFetching}
+        error={problemList.error}
+        onReload={problemList.onReload}
+      />
+
+      <SafetySummaryCard sections={safetySummarySections} onSnippetDragStart={onSnippetDragStart} />
 
       <MemoCard>
         <MemoHeader>
@@ -1136,6 +1221,7 @@ const convertModuleToOrderDraft = (module: ModuleModelPayload, index: number): O
     source: 'stamp',
     stampId: module.moduleInfoBean.stampId ?? undefined,
     label: module.moduleInfoBean.stampName ?? module.moduleInfoBean.entity,
+    createdAt: new Date().toISOString(),
     moduleInfo: {
       stampName: module.moduleInfoBean.stampName ?? '',
       stampRole: module.moduleInfoBean.stampRole ?? '',
@@ -1206,6 +1292,35 @@ export const ChartsPage = () => {
         source: module.source,
       })),
     [orderModules],
+  );
+  const timelineOrderSources = useMemo<TimelineOrderSource[]>(
+    () =>
+      orderModules.map((module) => {
+        const summary = buildOrderSummary(module);
+        return {
+          id: module.id,
+          type: ORDER_ENTITY_PLAN_TYPE[module.moduleInfo.entity] ?? 'procedure',
+          label: module.moduleInfo.stampName || module.label || summary,
+          detail: module.label,
+          orderModuleId: module.id,
+          createdAt: module.createdAt,
+          orderSummary: summary,
+        };
+      }),
+    [orderModules],
+  );
+  const timelinePlanSources = useMemo<TimelinePlanCardSource[]>(
+    () =>
+      planCards.map((card) => ({
+        id: card.orderModuleId ?? card.id,
+        type: card.type,
+        title: card.title,
+        detail: card.detail,
+        orderModuleId: card.orderModuleId ?? undefined,
+        orderSummary: card.orderSummary ?? undefined,
+        createdAt: extractTimestampFromId(card.id),
+      })),
+    [planCards],
   );
   const [editingDocument, setEditingDocument] = useState<DocumentModelPayload | null>(null);
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
@@ -1443,18 +1558,241 @@ export const ChartsPage = () => {
     }
     return defaultKarteFromDate();
   }, [karteQuery.data?.created, selectedVisit?.visitDate]);
+  const timeline = useTimelineEvents({
+    karteId,
+    fromDate: timelineFromDate,
+    includeModified: true,
+    patientId: selectedVisit ? selectedVisit.patientId : null,
+    orderSources: timelineOrderSources,
+    planCards: timelinePlanSources,
+    labLimit: 24,
+  });
 
-  useEffect(() => {
-    if (karteQuery.data?.documents && karteQuery.data.documents.length > 0 && docInfos.length === 0) {
-      setDocInfos(karteQuery.data.documents);
+  const diagnosisHistoryQuery = useDiagnoses({
+    karteId,
+    fromDate: timelineFromDate,
+    activeOnly: false,
+  });
+
+  const diagnosisBuckets = useDiagnosisBuckets({
+    karteId,
+    fromDate: timelineFromDate,
+    enabled: Boolean(karteId),
+  });
+
+  const routineMedicationsQuery = useQuery({
+    queryKey: ['masuda', 'routineMed', karteId ?? 'none'],
+    enabled: typeof karteId === 'number',
+    queryFn: () => fetchRoutineMedications(karteId ?? 0, { firstResult: 0, maxResults: 50 }),
+    staleTime: 1000 * 30,
+  });
+
+  const allergySummaryItems = useMemo<SafetySummaryEntry[]>(() => {
+    const allergies = karteQuery.data?.allergies ?? [];
+    return allergies.map((allergy, index) => {
+      const factor = allergy.factor?.trim() ?? '';
+      const label = factor.length ? factor : `アレルギー ${index + 1}`;
+      const detailParts = [allergy.severity?.trim(), allergy.memo?.trim()].filter(
+        (value): value is string => Boolean(value && value.length > 0),
+      );
+      const description = detailParts.length ? detailParts.join(' / ') : undefined;
+      const identified = allergy.identifiedDate ? formatDiagnosisDate(allergy.identifiedDate) : '---';
+      const meta = identified && identified !== '---' ? `確認日: ${identified}` : undefined;
+      const snippetParts = [`アレルギー: ${label}`];
+      if (allergy.severity && allergy.severity.trim().length) {
+        snippetParts.push(`重症度: ${allergy.severity.trim()}`);
+      }
+      if (allergy.memo && allergy.memo.trim().length) {
+        snippetParts.push(allergy.memo.trim());
+      }
+      if (meta) {
+        snippetParts.push(meta);
+      }
+      const snippet = snippetParts.join(' / ');
+      const tone = determineSafetyTone(`${label} ${detailParts.join(' ')}`);
+      return {
+        id: `allergy-${index}`,
+        label,
+        description,
+        meta,
+        tone,
+        snippet,
+      } satisfies SafetySummaryEntry;
+    });
+  }, [karteQuery.data?.allergies]);
+
+  const diagnosisSummaryItems = useMemo<SafetySummaryEntry[]>(() => {
+    const toTime = (value?: string | null) => {
+      if (!value) {
+        return Number.NEGATIVE_INFINITY;
+      }
+      const normalized = value.includes('T') ? value : `${value}T00:00:00`;
+      const time = new Date(normalized).getTime();
+      return Number.isNaN(time) ? Number.NEGATIVE_INFINITY : time;
+    };
+
+    const diagnoses = diagnosisHistoryQuery.data ?? [];
+    return diagnoses
+      .filter((diagnosis) => diagnosis.diagnosis && diagnosis.diagnosis.trim().length)
+      .sort((a, b) => {
+        const left = toTime(a.started ?? a.firstEncounterDate ?? null);
+        const right = toTime(b.started ?? b.firstEncounterDate ?? null);
+        return right - left;
+      })
+      .slice(0, 6)
+      .map((diagnosis, index) => {
+        const name = diagnosisDisplayName(diagnosis);
+        const statusLabel = diagnosisStatusLabel(diagnosis.status);
+        const description = statusLabel ? `状態: ${statusLabel}` : undefined;
+        const firstEncounter = diagnosis.firstEncounterDate ? formatDiagnosisDate(diagnosis.firstEncounterDate) : '---';
+        const ended = diagnosis.ended ? formatDiagnosisDate(diagnosis.ended) : '---';
+        const metaParts: string[] = [];
+        if (firstEncounter && firstEncounter !== '---') {
+          metaParts.push(`初回: ${firstEncounter}`);
+        }
+        if (ended && ended !== '---') {
+          metaParts.push(`終了: ${ended}`);
+        }
+        const meta = metaParts.length ? metaParts.join(' / ') : undefined;
+        const snippetParts = [`既往歴: ${name}`];
+        if (statusLabel && statusLabel !== '状態不明') {
+          snippetParts.push(`状態: ${statusLabel}`);
+        }
+        if (firstEncounter && firstEncounter !== '---') {
+          snippetParts.push(`初回: ${firstEncounter}`);
+        }
+        if (ended && ended !== '---') {
+          snippetParts.push(`終了: ${ended}`);
+        }
+        const snippet = snippetParts.join(' / ');
+        const tone = determineSafetyTone(`${name} ${statusLabel}`);
+        return {
+          id: `history-${diagnosis.id ?? index}`,
+          label: name,
+          description,
+          meta,
+          tone,
+          snippet,
+        } satisfies SafetySummaryEntry;
+      });
+  }, [diagnosisHistoryQuery.data]);
+
+  const medicationSummaryItems = useMemo<SafetySummaryEntry[]>(() => {
+    const toTime = (value?: string | null) => {
+      if (!value) {
+        return Number.NEGATIVE_INFINITY;
+      }
+      const time = new Date(value).getTime();
+      return Number.isNaN(time) ? Number.NEGATIVE_INFINITY : time;
+    };
+
+    const entries = routineMedicationsQuery.data ?? [];
+    return entries
+      .slice()
+      .sort((a, b) => toTime(b.lastUpdated) - toTime(a.lastUpdated))
+      .slice(0, 6)
+      .map((entry, index) => {
+        const label = routineMedicationLabel(entry);
+        const modules = routineMedicationModules(entry, 4);
+        const description = modules.length ? modules.join(' / ') : undefined;
+        const updated = routineMedicationUpdatedAt(entry);
+        const memo = entry.memo?.trim();
+        const metaParts: string[] = [];
+        if (memo && memo.length) {
+          metaParts.push(memo);
+        }
+        if (updated) {
+          metaParts.push(`最終更新: ${updated}`);
+        }
+        const meta = metaParts.length ? metaParts.join(' / ') : undefined;
+        const snippetParts = [`内服薬: ${label}`];
+        if (modules.length) {
+          snippetParts.push(`構成: ${modules.join(' / ')}`);
+        }
+        if (memo && memo.length) {
+          snippetParts.push(`備考: ${memo}`);
+        }
+        if (updated) {
+          snippetParts.push(`最終更新: ${updated}`);
+        }
+        const snippet = snippetParts.join(' / ');
+        const tone = determineSafetyTone(`${label} ${memo ?? ''}`);
+        return {
+          id: `medication-${entry.id ?? index}`,
+          label,
+          description,
+          meta,
+          tone,
+          snippet,
+        } satisfies SafetySummaryEntry;
+      });
+  }, [routineMedicationsQuery.data]);
+
+  const safetySummarySections = useMemo<SafetySummarySection[]>(() => {
+    if (!selectedVisit) {
+      const placeholder = 'カルテ対象を選択すると表示されます。';
+      return [
+        { id: 'allergies', title: 'アレルギー', items: [], emptyMessage: placeholder },
+        { id: 'histories', title: '既往歴', items: [], emptyMessage: placeholder },
+        { id: 'medications', title: '内服薬（現用）', items: [], emptyMessage: placeholder },
+      ];
     }
-  }, [karteQuery.data?.documents, docInfos.length]);
+
+    const allergyError = karteQuery.error ? 'アレルギー情報の取得に失敗しました。' : null;
+    const historyError = diagnosisHistoryQuery.error ? '既往歴の取得に失敗しました。' : null;
+    const medicationError = routineMedicationsQuery.error ? '定期処方の取得に失敗しました。' : null;
+
+    return [
+      {
+        id: 'allergies',
+        title: 'アレルギー',
+        items: allergySummaryItems,
+        loading: karteQuery.isLoading,
+        error: allergyError,
+        emptyMessage: '登録されたアレルギーはありません。',
+      },
+      {
+        id: 'histories',
+        title: '既往歴',
+        items: diagnosisSummaryItems,
+        loading: diagnosisHistoryQuery.isLoading,
+        error: historyError,
+        emptyMessage: '既往歴はまだ登録されていません。',
+      },
+      {
+        id: 'medications',
+        title: '内服薬（現用）',
+        items: medicationSummaryItems,
+        loading: routineMedicationsQuery.isLoading,
+        error: medicationError,
+        emptyMessage: '登録された定期処方はありません。',
+      },
+    ];
+  }, [
+    allergySummaryItems,
+    diagnosisHistoryQuery.error,
+    diagnosisHistoryQuery.isLoading,
+    diagnosisSummaryItems,
+    karteQuery.error,
+    karteQuery.isLoading,
+    medicationSummaryItems,
+    routineMedicationsQuery.error,
+    routineMedicationsQuery.isLoading,
+    selectedVisit,
+  ]);
 
   useEffect(() => {
     if (!selectedVisit) {
       setDocInfos([]);
     }
   }, [selectedVisit]);
+
+  useEffect(() => {
+    if (timeline.documents.length === 0 && docInfos.length === 0) {
+      return;
+    }
+    setDocInfos(timeline.documents);
+  }, [timeline.documents, docInfos.length]);
 
   useEffect(() => {
     setEditingDocument(null);
@@ -1641,36 +1979,46 @@ export const ChartsPage = () => {
     };
   }, [referenceDocument]);
 
-  const referenceLaboQuery = useLaboModules(selectedVisit ? selectedVisit.patientId : null, 12);
-
-  const referenceLabModules = useMemo(
-    () =>
-      (referenceLaboQuery.data ?? [])
-        .slice(0, 6)
-        .map((module) => ({
-          id: `lab-${module.id}`,
-          sampleDate: module.sampleDate ?? null,
-          items: module.items
-            .slice(0, 6)
-            .map((item) => ({
-              id: `lab-${module.id}-${item.id}`,
-              label: item.itemName ?? '検査項目',
-              value: item.valueText ?? '---',
-              unit: item.unit ?? undefined,
-              abnormalFlag: item.abnormalFlag ?? null,
-            })),
+  const mapLabModules = useCallback(
+    (modules: LaboModule[], limit = 6) =>
+      modules.slice(0, limit).map((module) => ({
+        id: `lab-${module.id}`,
+        sampleDate: module.sampleDate ?? null,
+        items: module.items.slice(0, 6).map((item) => ({
+          id: `lab-${module.id}-${item.id}`,
+          label: item.itemName ?? '検査項目',
+          value: item.valueText ?? '---',
+          unit: item.unit ?? undefined,
+          abnormalFlag: item.abnormalFlag ?? null,
         })),
-    [referenceLaboQuery.data],
+      })),
+    [],
   );
 
+  const defaultReferenceLabModules = useMemo(
+    () => mapLabModules(timeline.labModules, 6),
+    [mapLabModules, timeline.labModules],
+  );
+
+  const [referenceLabModules, setReferenceLabModules] = useState(defaultReferenceLabModules);
+  const [labSelectionActive, setLabSelectionActive] = useState(false);
+
+  useEffect(() => {
+    if (!labSelectionActive) {
+      setReferenceLabModules(defaultReferenceLabModules);
+    }
+  }, [defaultReferenceLabModules, labSelectionActive]);
+
+  const referenceLabLoading = timeline.isLoading || timeline.isFetching;
+
   const referenceLabError = useMemo(() => {
-    if (!referenceLaboQuery.error) {
+    if (!timeline.labError) {
       return null;
     }
-    return referenceLaboQuery.error instanceof Error
-      ? referenceLaboQuery.error.message
+    return timeline.labError instanceof Error
+      ? timeline.labError.message
       : '検査結果の取得に失敗しました。';
-  }, [referenceLaboQuery.error]);
+  }, [timeline.labError]);
 
   useEffect(() => {
     if (!latestFreeDocument) {
@@ -1971,10 +2319,65 @@ export const ChartsPage = () => {
   );
 
   const handlePlanCardInsert = useCallback(
-    (type: PlanComposerCard['type']) => {
-      updatePlanCards((cards) => [...cards, createPlanCard(type)]);
+    (type: PlanComposerCard['type'], initializer?: (card: PlanComposerCard) => PlanComposerCard) => {
+      let insertedId: string | null = null;
+      updatePlanCards((cards) => {
+        const baseCard = createPlanCard(type);
+        const nextCard = initializer ? initializer(baseCard) : baseCard;
+        insertedId = nextCard.id;
+        return [...cards, nextCard];
+      });
+      return insertedId;
     },
     [updatePlanCards],
+  );
+
+  const ensurePlanCardForDiagnosis = useCallback(
+    (diagnosis: RegisteredDiagnosis) => {
+      const label = diagnosis.diagnosis?.trim();
+      if (!label) {
+        return null;
+      }
+      const normalized = label.toLowerCase();
+      const existing = planCards.find((card) => {
+        const title = card.title?.trim().toLowerCase() ?? '';
+        const detailText = card.detail?.trim().toLowerCase() ?? '';
+        return title === normalized || (!title && detailText === normalized);
+      });
+      if (existing) {
+        return { id: existing.id, created: false } as const;
+      }
+      const detail = diagnosis.diagnosisCode?.trim();
+      const insertedId = handlePlanCardInsert('followup', (card) => ({
+        ...card,
+        title: label,
+        detail: detail ? `ICD10: ${detail}` : card.detail,
+      }));
+      return insertedId ? ({ id: insertedId, created: true } as const) : null;
+    },
+    [handlePlanCardInsert, planCards],
+  );
+
+  const handleProblemPrimarySelect = useCallback(
+    (diagnosis: RegisteredDiagnosis) => {
+      const ensured = ensurePlanCardForDiagnosis(diagnosis);
+      if (!ensured) {
+        return;
+      }
+      handlePlanPrimaryDiagnosisSelect(ensured.id);
+    },
+    [ensurePlanCardForDiagnosis, handlePlanPrimaryDiagnosisSelect],
+  );
+
+  const handleProblemPlanAppend = useCallback(
+    (diagnosis: RegisteredDiagnosis) => {
+      const ensured = ensurePlanCardForDiagnosis(diagnosis);
+      if (!ensured) {
+        return;
+      }
+      setFocusedPlanCardId(ensured.id);
+    },
+    [ensurePlanCardForDiagnosis, setFocusedPlanCardId],
   );
 
   const handlePlanCardReorder = useCallback(
@@ -3199,6 +3602,7 @@ export const ChartsPage = () => {
             id: createOrderModuleId(),
             source: 'orca' as const,
             label: `${name} (${code})`,
+            createdAt: new Date().toISOString(),
             moduleInfo: {
               stampName: module.moduleInfoBean.stampName,
               stampRole: module.moduleInfoBean.stampRole ?? 'p',
@@ -3502,9 +3906,67 @@ export const ChartsPage = () => {
     setReferenceSplitOpen((prev) => !prev);
   }, []);
 
-  const handleReferenceDocumentSelected = useCallback((document: DocumentModelPayload | null) => {
-    setReferenceDocument(document);
-  }, []);
+  const handleReferenceDocumentSelected = useCallback(
+    (document: DocumentModelPayload | null) => {
+      setReferenceDocument(document);
+      setLabSelectionActive(false);
+      setReferenceLabModules(defaultReferenceLabModules);
+    },
+    [defaultReferenceLabModules],
+  );
+
+  const handleTimelineVisitSelected = useCallback((_: TimelineVisitPayload, _event: TimelineEvent) => {
+    setLabSelectionActive(false);
+    setReferenceLabModules(defaultReferenceLabModules);
+  }, [defaultReferenceLabModules]);
+
+  const handleTimelineLabSelected = useCallback(
+    (payload: TimelineLabPayload, _event: TimelineEvent) => {
+      setLabSelectionActive(true);
+      const matched = timeline.labModules.find((module) => module.id === payload.moduleId);
+      if (matched) {
+        setReferenceLabModules(mapLabModules([matched], 1));
+        return;
+      }
+      setReferenceLabModules(defaultReferenceLabModules);
+    },
+    [defaultReferenceLabModules, mapLabModules, timeline.labModules],
+  );
+
+  const handleTimelineOrderSelected = useCallback(
+    (payload: TimelineOrderPayload, _event: TimelineEvent) => {
+      setLabSelectionActive(false);
+      setReferenceLabModules(defaultReferenceLabModules);
+      setActiveSection('plan');
+      updatePlanCards((cards) => {
+        const existing = cards.find(
+          (card) => card.id === payload.orderId || (payload.orderModuleId && card.orderModuleId === payload.orderModuleId),
+        );
+        if (existing) {
+          return cards.map((card) =>
+            card.id === existing.id
+              ? {
+                  ...card,
+                  title: card.title || payload.summary,
+                  detail: card.detail || payload.detail ?? '',
+                  orderSummary: payload.summary || card.orderSummary,
+                }
+              : card,
+          );
+        }
+        const newCard = {
+          ...createPlanCard(payload.orderType, payload.detail ?? '', payload.summary, {
+            orderModuleId: payload.orderModuleId ?? null,
+            orderSummary: payload.summary,
+          }),
+          id: payload.orderId,
+        };
+        return [...cards, newCard];
+      });
+      setFocusedPlanCardId(payload.orderId);
+    },
+    [defaultReferenceLabModules, updatePlanCards],
+  );
 
   const contextItems = useMemo<ContextItemDescriptor[]>(() => {
     const items: ContextItemDescriptor[] = [];
@@ -3594,12 +4056,30 @@ export const ChartsPage = () => {
   }, [handlePastSummaryOpen, pastSummaries]);
 
   const documentTimelineProps: DocumentTimelineProps = {
-    karteId,
-    fromDate: timelineFromDate,
-    includeModified: true,
-    onDocInfosLoaded: setDocInfos,
-    onEditDocument: handleEditDocument,
+    events: timeline.events,
+    isLoading: timeline.isLoading,
+    isFetching: timeline.isFetching,
+    error: timeline.error,
+    onRefresh: timeline.refetch,
     onDocumentSelected: handleReferenceDocumentSelected,
+    onVisitEventSelected: handleTimelineVisitSelected,
+    onLabEventSelected: handleTimelineLabSelected,
+    onOrderEventSelected: handleTimelineOrderSelected,
+    onEditDocument: handleEditDocument,
+  };
+
+  const problemListProps = {
+    activeDiagnoses: diagnosisBuckets.activeDiagnoses,
+    pastDiagnoses: diagnosisBuckets.pastDiagnoses,
+    primaryDiagnosisName: primaryDiagnosis,
+    isLoading: diagnosisBuckets.isLoading,
+    isFetching: diagnosisBuckets.isFetching,
+    error: diagnosisBuckets.error,
+    onReload: () => {
+      void diagnosisBuckets.refetch();
+    },
+    onSelectPrimary: handleProblemPrimarySelect,
+    onAppendToPlan: handleProblemPlanAppend,
   };
 
   const handleSectionChange = useCallback((section: SoapSection) => {
@@ -3638,7 +4118,7 @@ export const ChartsPage = () => {
     onReferenceSplitToggle: handleReferenceSplitToggle,
     referenceDocument: referenceDocumentSnapshot,
     referenceLabModules,
-    referenceLabLoading: referenceLaboQuery.isLoading,
+    referenceLabLoading,
     referenceLabError,
     monshinSummary,
     onMonshinDiffRequest: handleMonshinDiffRequest,
@@ -3878,6 +4358,8 @@ export const ChartsPage = () => {
           onMediaOpen={handleMediaOpen}
           pastSummaries={pastSummaries}
           onPastSummaryOpen={handlePastSummaryOpen}
+          problemList={problemListProps}
+          safetySummarySections={safetySummarySections}
           patientMemo={patientMemo}
           patientMemoStatus={patientMemoStatus}
           patientMemoError={patientMemoError}

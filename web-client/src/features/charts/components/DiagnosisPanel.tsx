@@ -4,9 +4,10 @@ import styled from '@emotion/styled';
 import { Button, StatusBadge, SurfaceCard, TextField } from '@/components';
 import {
   buildNewDiagnosis,
+  useDiagnosisBuckets,
   useDiagnosisMutations,
-  useDiagnoses,
 } from '@/features/charts/hooks/useDiagnoses';
+import { canResolveDiagnosis, diagnosisStatusTone, formatDiagnosisDate } from '@/features/charts/components/diagnosis-utils';
 import type { RegisteredDiagnosis } from '@/features/charts/types/diagnosis';
 import { formatRestDate } from '@/features/patients/utils/rest-date';
 
@@ -113,41 +114,6 @@ const InlineToggle = styled.label`
   user-select: none;
 `;
 
-const formatDate = (value?: string | null): string => {
-  if (!value) {
-    return '---';
-  }
-  const normalized = value.includes('T') ? value : `${value}T00:00:00`;
-  const date = new Date(normalized);
-  if (Number.isNaN(date.getTime())) {
-    return value;
-  }
-  return new Intl.DateTimeFormat('ja-JP', {
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(date);
-};
-
-const statusTone = (status?: string | null): 'info' | 'warning' | 'danger' => {
-  if (!status) {
-    return 'info';
-  }
-  const normalized = status.toUpperCase();
-  if (normalized === 'F') {
-    return 'info';
-  }
-  if (normalized === 'M') {
-    return 'warning';
-  }
-  if (normalized === 'D') {
-    return 'danger';
-  }
-  return 'info';
-};
-
-const canResolve = (diagnosis: RegisteredDiagnosis) => diagnosis.status?.toUpperCase() === 'F';
-
 export const DiagnosisPanel = ({
   karteId,
   fromDate,
@@ -162,29 +128,19 @@ export const DiagnosisPanel = ({
   const [nameInput, setNameInput] = useState('');
   const [codeInput, setCodeInput] = useState('');
 
-  const diagnosesQuery = useDiagnoses({
+  const diagnosisBuckets = useDiagnosisBuckets({
     karteId,
     fromDate,
-    activeOnly: !showInactive,
     enabled: Boolean(karteId),
   });
 
-  const { createMutation, updateMutation, deleteMutation } = useDiagnosisMutations(
-    karteId,
-    fromDate,
-    !showInactive,
-  );
+  const { createMutation, updateMutation, deleteMutation } = useDiagnosisMutations(karteId, fromDate);
 
-  const diagnoses = diagnosesQuery.data ?? [];
-
-  const sortedDiagnoses = useMemo(
-    () =>
-      [...diagnoses].sort((a, b) => {
-        const left = a.started ? new Date(a.started).getTime() : 0;
-        const right = b.started ? new Date(b.started).getTime() : 0;
-        return right - left;
-      }),
-    [diagnoses],
+  const activeDiagnoses = diagnosisBuckets.activeDiagnoses;
+  const pastDiagnoses = diagnosisBuckets.pastDiagnoses;
+  const displayedDiagnoses = useMemo(
+    () => (showInactive ? [...activeDiagnoses, ...pastDiagnoses] : activeDiagnoses),
+    [activeDiagnoses, pastDiagnoses, showInactive],
   );
 
   const handleResolve = async (diagnosis: RegisteredDiagnosis) => {
@@ -261,8 +217,8 @@ export const DiagnosisPanel = ({
           type="button"
           size="sm"
           variant="ghost"
-          onClick={() => diagnosesQuery.refetch()}
-          isLoading={diagnosesQuery.isFetching}
+          onClick={() => diagnosisBuckets.refetch()}
+          isLoading={diagnosisBuckets.isFetching}
         >
           再読込
         </Button>
@@ -311,11 +267,11 @@ export const DiagnosisPanel = ({
         </SurfaceCard>
       ) : null}
 
-      {diagnosesQuery.isLoading ? (
+      {diagnosisBuckets.isLoading ? (
         <FeedbackBox $tone="info">病名一覧を読み込んでいます…</FeedbackBox>
-      ) : diagnosesQuery.error ? (
+      ) : diagnosisBuckets.error ? (
         <FeedbackBox $tone="danger">病名一覧の取得に失敗しました。</FeedbackBox>
-      ) : sortedDiagnoses.length === 0 ? (
+      ) : displayedDiagnoses.length === 0 ? (
         <FeedbackBox $tone="info">病名の登録はありません。</FeedbackBox>
       ) : (
         <ListContainer>
@@ -325,7 +281,7 @@ export const DiagnosisPanel = ({
             <span>開始日</span>
             <span>操作</span>
           </ListHeader>
-          {sortedDiagnoses.map((diagnosis) => (
+          {displayedDiagnoses.map((diagnosis) => (
             <DiagnosisRow key={diagnosis.id ?? diagnosis.diagnosis ?? Math.random()}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                 <strong>{diagnosis.diagnosis ?? '不明な病名'}</strong>
@@ -334,17 +290,17 @@ export const DiagnosisPanel = ({
                 </span>
               </div>
               <div>
-                <StatusBadge tone={statusTone(diagnosis.status)}>
+                <StatusBadge tone={diagnosisStatusTone(diagnosis.status)}>
                   {diagnosis.status ?? 'F'}
                 </StatusBadge>
               </div>
-              <div style={{ fontSize: '0.85rem' }}>{formatDate(diagnosis.firstEncounterDate)}</div>
+              <div style={{ fontSize: '0.85rem' }}>{formatDiagnosisDate(diagnosis.firstEncounterDate)}</div>
               <ActionsCell>
                 <Button
                   type="button"
                   size="sm"
                   variant="ghost"
-                  disabled={!canResolve(diagnosis) || updateMutation.isPending}
+                  disabled={!canResolveDiagnosis(diagnosis) || updateMutation.isPending}
                   onClick={() => handleResolve(diagnosis)}
                 >
                   終了
@@ -366,5 +322,3 @@ export const DiagnosisPanel = ({
     </PanelCard>
   );
 };
-
-

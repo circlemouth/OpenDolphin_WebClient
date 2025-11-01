@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import {
@@ -37,6 +37,69 @@ export const useDiagnoses = ({
     },
     staleTime: 1000 * 30,
   });
+
+const diagnoseIdentifier = (diagnosis: RegisteredDiagnosis): string => {
+  if (diagnosis.id != null) {
+    return `${diagnosis.id}`;
+  }
+  const name = diagnosis.diagnosis?.trim() ?? '';
+  const started = diagnosis.started?.trim() ?? diagnosis.firstEncounterDate?.trim() ?? '';
+  return `${name}::${started}`;
+};
+
+const sortByStartedDesc = (diagnoses: RegisteredDiagnosis[]): RegisteredDiagnosis[] =>
+  [...diagnoses].sort((left, right) => {
+    const leftDate = left.started ?? left.firstEncounterDate ?? null;
+    const rightDate = right.started ?? right.firstEncounterDate ?? null;
+    const leftTs = leftDate ? new Date(leftDate).getTime() : 0;
+    const rightTs = rightDate ? new Date(rightDate).getTime() : 0;
+    return rightTs - leftTs;
+  });
+
+export interface DiagnosisBuckets {
+  active: RegisteredDiagnosis[];
+  past: RegisteredDiagnosis[];
+}
+
+export const partitionDiagnoses = (
+  activeDiagnoses: RegisteredDiagnosis[] | undefined,
+  allDiagnoses: RegisteredDiagnosis[] | undefined,
+): DiagnosisBuckets => {
+  const activeSorted = sortByStartedDesc(activeDiagnoses ?? []);
+  const allSorted = sortByStartedDesc(allDiagnoses ?? []);
+  const activeIds = new Set(activeSorted.map(diagnoseIdentifier));
+  const past = allSorted.filter((diagnosis) => !activeIds.has(diagnoseIdentifier(diagnosis)));
+  return {
+    active: activeSorted,
+    past,
+  };
+};
+
+interface UseDiagnosisBucketsOptions {
+  karteId: number | null;
+  fromDate: string;
+  enabled?: boolean;
+}
+
+export const useDiagnosisBuckets = ({ karteId, fromDate, enabled = true }: UseDiagnosisBucketsOptions) => {
+  const activeQuery = useDiagnoses({ karteId, fromDate, activeOnly: true, enabled });
+  const allQuery = useDiagnoses({ karteId, fromDate, activeOnly: false, enabled });
+
+  const buckets = useMemo(() => partitionDiagnoses(activeQuery.data, allQuery.data), [activeQuery.data, allQuery.data]);
+
+  const refetch = useCallback(async () => {
+    await Promise.all([activeQuery.refetch(), allQuery.refetch()]);
+  }, [activeQuery, allQuery]);
+
+  return {
+    activeDiagnoses: buckets.active,
+    pastDiagnoses: buckets.past,
+    isLoading: activeQuery.isLoading || allQuery.isLoading,
+    isFetching: activeQuery.isFetching || allQuery.isFetching,
+    error: activeQuery.error ?? allQuery.error ?? null,
+    refetch,
+  };
+};
 
 const toDateOnly = (date: Date): string => {
   const year = `${date.getFullYear()}`.padStart(4, '0');
@@ -94,15 +157,23 @@ export const buildNewDiagnosis = ({
   };
 };
 
+export const invalidateDiagnosisQueries = (
+  queryClient: ReturnType<typeof useQueryClient>,
+  karteId: number | null,
+  fromDate: string,
+) => {
+  void queryClient.invalidateQueries({ queryKey: diagnosesQueryKey(karteId, fromDate, true) });
+  void queryClient.invalidateQueries({ queryKey: diagnosesQueryKey(karteId, fromDate, false) });
+};
+
 export const useDiagnosisMutations = (
   karteId: number | null,
   fromDate: string,
-  activeOnly: boolean,
 ) => {
   const queryClient = useQueryClient();
-  const invalidate = () => {
-    void queryClient.invalidateQueries({ queryKey: diagnosesQueryKey(karteId, fromDate, activeOnly) });
-  };
+  const invalidate = useCallback(() => {
+    invalidateDiagnosisQueries(queryClient, karteId, fromDate);
+  }, [fromDate, karteId, queryClient]);
 
   const createMutation = useMutation({
     mutationFn: createDiagnoses,

@@ -44,7 +44,10 @@ interface WorkSurfaceProps {
   planCards: PlanComposerCard[];
   onPlanCardChange: (id: string, patch: Partial<PlanComposerCard>) => void;
   onPlanCardRemove: (id: string) => void;
-  onPlanCardInsert: (type: PlanComposerCard['type']) => void;
+  onPlanCardInsert: (
+    type: PlanComposerCard['type'],
+    initializer?: (card: PlanComposerCard) => PlanComposerCard,
+  ) => string | null;
   onPlanCardReorder: (fromId: string, toId: string) => void;
   onPlanUndo: () => void;
   onPlanCardFocus: (id: string) => void;
