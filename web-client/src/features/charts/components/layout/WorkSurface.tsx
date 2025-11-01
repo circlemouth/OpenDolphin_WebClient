@@ -125,7 +125,7 @@ const SurfaceShell = styled.main`
 `;
 
 const SurfaceHeader = styled.header`
-  padding: 16px 24px 12px;
+  padding: 12px 18px 8px;
   border-bottom: 1px solid ${({ theme }) => theme.palette.border};
   display: flex;
   align-items: center;
@@ -137,7 +137,7 @@ const SurfaceHeader = styled.header`
 const TabList = styled.div`
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  gap: 6px;
   flex: 1 1 auto;
   min-width: 240px;
 `;
@@ -153,9 +153,12 @@ const TabButton = styled.button<{ $active: boolean }>`
   background: ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.surfaceMuted)};
   color: ${({ theme, $active }) => ($active ? '#ffffff' : theme.palette.text)};
   border-radius: 999px;
-  padding: 8px 18px;
+  padding: 6px 16px;
   cursor: pointer;
   font-weight: 600;
+  font-size: 0.82rem;
+  line-height: 1.3;
+  letter-spacing: 0.01em;
   transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
   box-shadow: ${({ theme, $active }) => ($active ? theme.elevation.level2 : 'none')};
 
@@ -168,9 +171,9 @@ const TabButton = styled.button<{ $active: boolean }>`
 const SurfaceBody = styled.div`
   flex: 1 1 auto;
   overflow-y: auto;
-  padding: 16px 24px 24px;
+  padding: 16px 18px 20px;
   display: grid;
-  gap: 16px;
+  gap: 14px;
   background: ${({ theme }) => theme.palette.surfaceMuted};
 `;
 
@@ -323,7 +326,7 @@ const HintBox = styled.div`
   border-radius: ${({ theme }) => theme.radius.md};
   background: ${({ theme }) => theme.palette.surfaceMuted};
   color: ${({ theme }) => theme.palette.textMuted};
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   display: flex;
   gap: 12px;
 `;
@@ -331,7 +334,7 @@ const HintBox = styled.div`
 const HighlightStrip = styled.ul`
   margin: 12px 0 0;
   padding-inline-start: 1.2rem;
-  font-size: 0.85rem;
+  font-size: 0.82rem;
   color: ${({ theme }) => theme.palette.textMuted};
 `;
 
@@ -346,9 +349,9 @@ const PlanCardShell = styled.article<{ $primary: boolean }>`
   border-radius: ${({ theme }) => theme.radius.md};
   background: ${({ theme }) => theme.palette.surface};
   box-shadow: ${({ theme, $primary }) => ($primary ? theme.elevation.level2 : 'inset 0 1px 0 rgba(17, 24, 39, 0.04)')};
-  padding: 12px;
+  padding: 12px 14px;
   display: grid;
-  gap: 8px;
+  gap: 10px;
   cursor: grab;
 `;
 
@@ -356,7 +359,8 @@ const PlanHeader = styled.div`
   display: flex;
   align-items: center;
   justify-content: space-between;
-  gap: 12px;
+  gap: 10px;
+  flex-wrap: nowrap;
 `;
 
 const PlanTitleInput = styled.input`
@@ -385,7 +389,9 @@ const PlanTag = styled.span`
 const PlanActions = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
 `;
 
 const IconButton = styled.button`
@@ -400,6 +406,7 @@ const IconButton = styled.button`
   align-items: center;
   justify-content: center;
   transition: background 0.2s ease;
+  flex: 0 0 auto;
 
   &:hover {
     background: ${({ theme }) => theme.palette.accent};

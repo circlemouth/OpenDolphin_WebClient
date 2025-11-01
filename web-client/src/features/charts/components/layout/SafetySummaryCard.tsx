@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
+import type { SVGProps } from 'react';
 
-import { Button, StatusBadge, SurfaceCard } from '@/components';
+import { StatusBadge, SurfaceCard } from '@/components';
 import type { SafetyTone } from '@/features/charts/utils/caution-tone';
 import type { AppTheme } from '@/styles/theme';
 
@@ -27,38 +28,93 @@ interface SafetySummaryCardProps {
   onSnippetDragStart: (snippet: string) => void;
 }
 
+const CopyIcon = (props: SVGProps<SVGSVGElement>) => (
+  <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true" focusable="false" {...props}>
+    <path
+      fill="currentColor"
+      d="M8 3a2 2 0 0 0-2 2v12h2V5h9V3H8Zm4 4a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h8a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2h-8Zm0 2h8v12h-8V9Z"
+    />
+  </svg>
+);
+
+const IconActionButton = styled.button`
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  border: 1px solid ${({ theme }) => theme.palette.border};
+  background: ${({ theme }) => theme.palette.surface};
+  color: ${({ theme }) => theme.palette.textMuted};
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: ${({ theme }) => theme.elevation.level1};
+
+  &:hover:not(:disabled) {
+    background: ${({ theme }) => theme.palette.surfaceMuted};
+    color: ${({ theme }) => theme.palette.primary};
+    border-color: ${({ theme }) => theme.palette.primary};
+  }
+
+  &:focus-visible {
+    outline: 3px solid ${({ theme }) => theme.palette.accent};
+    outline-offset: 2px;
+  }
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+`;
+
 const Card = styled(SurfaceCard)`
   display: flex;
   flex-direction: column;
-  gap: 16px;
-  padding: 16px;
+  gap: 12px;
+  padding: 12px;
+  width: 100%;
+  max-width: 264px;
+  margin: 0 auto;
 `;
 
 const Header = styled.header`
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 
   h3 {
     margin: 0;
-    font-size: 1rem;
+    font-size: 0.9rem;
+    line-height: 1.35;
   }
 
   span {
-    font-size: 0.8rem;
+    font-size: 0.82rem;
+    line-height: 1.45;
     color: ${({ theme }) => theme.palette.textMuted};
+    overflow: hidden;
+    text-overflow: ellipsis;
+    display: -webkit-box;
+    -webkit-line-clamp: 6;
+    -webkit-box-orient: vertical;
+    max-height: calc(0.82rem * 1.45 * 6);
+    word-break: break-word;
   }
 `;
 
 const Section = styled.section`
   display: flex;
   flex-direction: column;
-  gap: 10px;
+  gap: 8px;
 `;
 
 const SectionTitle = styled.h4`
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
+  line-height: 1.4;
   color: ${({ theme }) => theme.palette.textMuted};
 `;
 
@@ -101,7 +157,7 @@ const toneBackground = (tone: SafetyTone, theme: AppTheme) => {
 const SummaryHandle = styled.div<{ $tone: SafetyTone }>`
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   border: 1px solid ${({ theme, $tone }) => toneBorder($tone, theme)};
   background: ${({ theme, $tone }) => toneBackground($tone, theme)};
   color: ${({ theme }) => theme.palette.text};
@@ -135,33 +191,55 @@ const SummaryHeader = styled.div`
 
 const SummaryLabel = styled.span`
   font-weight: 600;
-  font-size: 0.95rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  max-height: calc(0.82rem * 1.45 * 2);
+  word-break: break-word;
 `;
 
 const SummaryDescription = styled.span`
-  font-size: 0.85rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
   color: ${({ theme }) => theme.palette.text};
-  white-space: pre-wrap;
+  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 6;
+  -webkit-box-orient: vertical;
+  max-height: calc(0.82rem * 1.45 * 6);
+  word-break: break-word;
 `;
 
 const SummaryMeta = styled.span`
   font-size: 0.75rem;
+  line-height: 1.4;
   color: ${({ theme }) => theme.palette.textMuted};
-`;
-
-const CopyButton = styled(Button)`
-  align-self: center;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  max-height: calc(0.75rem * 1.4 * 3);
+  word-break: break-word;
 `;
 
 const Message = styled.p<{ $tone: 'info' | 'danger' }>`
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
   color: ${({ theme, $tone }) => ($tone === 'danger' ? theme.palette.danger : theme.palette.textMuted)};
 `;
 
 const EmptyNotice = styled.p`
   margin: 0;
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  line-height: 1.45;
   color: ${({ theme }) => theme.palette.textMuted};
 `;
 
@@ -176,7 +254,7 @@ export const SafetySummaryCard = ({ sections, onSnippetDragStart }: SafetySummar
     onSnippetDragStart(snippet);
     try {
       void navigator?.clipboard?.writeText?.(snippet);
-    } catch (error) {
+    } catch (_error) {
       // clipboard 取得に失敗した場合は黙ってフォールバック（ドラッグ操作で補える）
     }
   };
@@ -227,19 +305,18 @@ export const SafetySummaryCard = ({ sections, onSnippetDragStart }: SafetySummar
                         {item.description ? <SummaryDescription>{item.description}</SummaryDescription> : null}
                         {item.meta ? <SummaryMeta>{item.meta}</SummaryMeta> : null}
                       </SummaryHandle>
-                      <CopyButton
+                      <IconActionButton
                         type="button"
-                        size="sm"
-                        variant="ghost"
                         onClick={(event) => {
                           event.preventDefault();
                           event.stopPropagation();
                           handleCopy(item.snippet);
                         }}
                         aria-label={`${item.label} をコピー`}
+                        title={`${item.label} をコピー`}
                       >
-                        コピー
-                      </CopyButton>
+                        <CopyIcon aria-hidden="true" />
+                      </IconActionButton>
                     </SectionItem>
                   ))}
                 </SectionList>
