@@ -91,7 +91,6 @@ const Body = styled.div`
   flex-direction: column;
   gap: ${({ theme }) => theme.layout.gutter};
   padding: ${({ theme }) => theme.layout.gutter};
-  max-width: ${({ theme }) => theme.layout.contentMaxWidth};
   width: 100%;
   margin: 0 auto;
   box-sizing: border-box;
@@ -105,6 +104,10 @@ const Body = styled.div`
   height: var(--app-shell-main-height);
   min-height: 0;
   overflow: hidden;
+
+  &[data-app-section='charts'] {
+    padding-top: 0;
+  }
 `;
 
 const Navigation = styled.nav`
@@ -227,6 +230,8 @@ const ContentRegion = styled.div<{ hasSidebar: boolean }>`
 const Main = styled('main', {
   shouldForwardProp: (prop) => prop !== 'scrollLocked',
 })<{ scrollLocked: boolean }>`
+  --app-shell-sticky-offset: ${({ theme, scrollLocked }) =>
+    scrollLocked ? '0px' : theme.layout.headerHeight};
   display: flex;
   flex-direction: column;
   gap: ${({ theme }) => theme.layout.gutter};
@@ -422,7 +427,7 @@ export const AppShell = () => {
         </Header>
 
         <SidebarContext.Provider value={sidebarController}>
-          <Body>
+          <Body data-app-section={isChartsView ? 'charts' : 'default'}>
             <ContentRegion hasSidebar={hasSidebar}>
               <Main
                 id="main-content"

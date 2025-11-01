@@ -33,24 +33,33 @@ interface PatientHeaderBarProps {
   canEdit: boolean;
 }
 
-const Header = styled.header`
+const Header = styled.header<{ $compact: boolean }>`
   position: sticky;
-  top: 0;
+  top: ${({ theme }) =>
+    `var(--charts-shell-offset, calc(${theme.layout.headerHeight} + ${theme.layout.gutter}))`};
   z-index: 100;
-  min-height: var(--charts-header-height, 76px);
+  min-height: ${({ $compact }) =>
+    $compact ? 'var(--charts-header-height-compact, 56px)' : 'var(--charts-header-height, 76px)'};
   display: grid;
-  grid-template-columns: clamp(240px, 24%, 320px) minmax(0, 1fr) clamp(320px, 28%, 380px);
+  grid-template-columns: clamp(232px, 24%, 296px) minmax(0, 1fr) clamp(280px, 26%, 352px);
   grid-template-rows: auto auto;
   align-items: start;
-  gap: 12px 24px;
-  padding: 12px 32px;
+  gap: ${({ $compact }) => ($compact ? '6px clamp(16px, 1.6vw, 22px)' : '10px clamp(18px, 1.8vw, 26px)')};
+  padding: ${({ $compact }) =>
+    $compact
+      ? '6px calc(var(--charts-content-padding-x, 16px) + 10px)'
+      : '12px calc(var(--charts-content-padding-x, 18px) + 12px)'};
   background: ${({ theme }) => theme.palette.surface};
   border-bottom: 1px solid ${({ theme }) => theme.palette.border};
-  box-shadow: 0 2px 12px rgba(20, 31, 44, 0.08);
+  box-shadow: ${({ $compact }) =>
+    $compact ? '0 1px 6px rgba(20, 31, 44, 0.05)' : '0 2px 12px rgba(20, 31, 44, 0.08)'};
 
   @media (max-width: 1240px) {
-    grid-template-columns: clamp(220px, 30%, 300px) minmax(0, 1fr) clamp(280px, 30%, 340px);
-    padding: 12px 24px;
+    grid-template-columns: clamp(220px, 30%, 280px) minmax(0, 1fr) clamp(260px, 30%, 320px);
+    padding: ${({ $compact }) =>
+      $compact
+        ? '6px calc(var(--charts-content-padding-x, 14px) + 8px)'
+        : '12px calc(var(--charts-content-padding-x, 16px) + 10px)'};
   }
 
   @media (max-width: 1100px) {
@@ -430,8 +439,10 @@ export const PatientHeaderBar = forwardRef<HTMLInputElement, PatientHeaderBarPro
       setTagDraft('');
     };
 
+    const isCompact = !patient;
+
     return (
-      <Header ref={containerRef} role="banner" aria-label="患者情報ヘッダー">
+      <Header ref={containerRef} $compact={isCompact} role="banner" aria-label="患者情報ヘッダー">
         <IdentitySection>
           <PhotoFrame>
             {patientPhotoUrl ? (

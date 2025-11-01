@@ -132,82 +132,189 @@ import type {
 } from '@/features/charts/utils/timeline-events';
 
 const PageShell = styled.div`
+  ${({ theme }) =>
+    `--charts-shell-offset: var(--app-shell-sticky-offset, 0px);`}
   --charts-header-height: 80px;
+  --charts-header-height-compact: 60px;
   --charts-footer-height: 48px;
   --charts-dock-height: 0px;
-  --charts-content-padding-x: 24px;
-  --charts-content-padding-top: 16px;
-  --charts-content-padding-bottom: 140px;
-  --charts-left-rail-min-width: 240px;
-  --charts-right-rail-min-width: 240px;
-  --charts-central-min-width: 780px;
-  --charts-content-gap: 24px;
+  --charts-viewport-span: min(100vw, 100%);
+  --charts-content-padding-x: clamp(12px, 1.15vw, 20px);
+  --charts-content-padding-top: 12px;
+  --charts-content-padding-bottom: 128px;
+  --charts-content-gap: clamp(16px, 1.6vw, 22px);
+  --charts-left-rail-min-width: 264px;
+  --charts-left-rail-max-width: 264px;
+  --charts-left-rail-width: clamp(var(--charts-left-rail-min-width), 19vw, var(--charts-left-rail-max-width));
+  --charts-right-rail-min-width: 264px;
+  --charts-right-rail-max-width: 264px;
+  --charts-right-rail-width: clamp(var(--charts-right-rail-min-width), 19vw, var(--charts-right-rail-max-width));
+  --charts-central-min-width: 736px;
+  --charts-central-dynamic-width: calc(
+    var(--charts-viewport-span) - var(--charts-left-rail-width) - var(--charts-right-rail-width) -
+    (var(--charts-content-gap) * 2) - (var(--charts-content-padding-x) * 2)
+  );
+  --charts-central-max-width: var(--charts-central-dynamic-width);
+  --charts-central-width: clamp(
+    var(--charts-central-min-width),
+    var(--charts-central-dynamic-width),
+    var(--charts-central-max-width)
+  );
 
   min-height: 100vh;
   background: ${({ theme }) => theme.palette.background};
   display: flex;
   flex-direction: column;
+
+  &[data-right-collapsed='true'] {
+    --charts-right-rail-min-width: 48px;
+    --charts-right-rail-max-width: 56px;
+    --charts-right-rail-width: clamp(var(--charts-right-rail-min-width), 5vw, var(--charts-right-rail-max-width));
+    --charts-content-gap: clamp(14px, 1.4vw, 20px);
+  }
+
+  @media (min-width: 1600px) {
+    --charts-left-rail-max-width: 288px;
+    --charts-right-rail-max-width: 288px;
+  }
+
+  @media (min-width: 1920px) {
+    --charts-content-gap: clamp(18px, 1.6vw, 24px);
+  }
+
+  @media (max-width: 1359px) {
+    --charts-content-padding-x: clamp(12px, 1.8vw, 18px);
+    --charts-content-gap: clamp(14px, 2vw, 20px);
+    --charts-left-rail-min-width: 240px;
+    --charts-left-rail-max-width: 252px;
+    --charts-left-rail-width: clamp(var(--charts-left-rail-min-width), 22vw, var(--charts-left-rail-max-width));
+    --charts-right-rail-min-width: 240px;
+    --charts-right-rail-max-width: 252px;
+    --charts-right-rail-width: clamp(var(--charts-right-rail-min-width), 22vw, var(--charts-right-rail-max-width));
+    --charts-central-min-width: 640px;
+  }
+
+  @media (max-width: 1279px) {
+    --charts-content-padding-x: clamp(10px, 2.2vw, 16px);
+    --charts-content-gap: clamp(12px, 2.4vw, 18px);
+    --charts-left-rail-min-width: 228px;
+    --charts-left-rail-max-width: 236px;
+    --charts-left-rail-width: clamp(var(--charts-left-rail-min-width), 24vw, var(--charts-left-rail-max-width));
+    --charts-right-rail-min-width: 220px;
+    --charts-right-rail-max-width: 232px;
+    --charts-right-rail-width: clamp(var(--charts-right-rail-min-width), 24vw, var(--charts-right-rail-max-width));
+    --charts-central-min-width: 600px;
+  }
+
+  @media (max-width: 1099px) {
+    --charts-content-padding-x: clamp(10px, 3vw, 16px);
+    --charts-content-gap: clamp(12px, 3vw, 18px);
+    --charts-left-rail-min-width: 188px;
+    --charts-left-rail-max-width: 208px;
+    --charts-left-rail-width: clamp(var(--charts-left-rail-min-width), 28vw, var(--charts-left-rail-max-width));
+    --charts-right-rail-min-width: 80px;
+    --charts-right-rail-max-width: 160px;
+    --charts-right-rail-width: clamp(var(--charts-right-rail-min-width), 18vw, var(--charts-right-rail-max-width));
+    --charts-central-min-width: 560px;
+  }
+
+  @media (max-width: 999px) {
+    --charts-content-padding-x: clamp(12px, 4vw, 20px);
+    --charts-content-gap: clamp(14px, 4vw, 22px);
+    --charts-central-dynamic-width: calc(var(--charts-viewport-span) - (var(--charts-content-padding-x) * 2));
+    --charts-central-min-width: 0px;
+    --charts-central-max-width: var(--charts-central-dynamic-width);
+    --charts-central-width: clamp(0px, var(--charts-central-dynamic-width), var(--charts-central-max-width));
+  }
+
+  @media (max-width: 767px) {
+    --charts-content-padding-top: 10px;
+    --charts-content-padding-bottom: 112px;
+  }
 `;
 
 const ContentGrid = styled.div`
   flex: 1 1 auto;
   display: grid;
   grid-template-columns:
-    minmax(var(--charts-left-rail-min-width), 22%)
-    minmax(var(--charts-central-min-width), 56%)
-    minmax(var(--charts-right-rail-min-width), 22%);
+    minmax(var(--charts-left-rail-min-width), var(--charts-left-rail-width))
+    minmax(var(--charts-central-min-width), var(--charts-central-width))
+    minmax(var(--charts-right-rail-min-width), var(--charts-right-rail-width));
+  grid-template-areas: 'left central right';
   column-gap: var(--charts-content-gap);
   align-items: start;
   padding: var(--charts-content-padding-top) var(--charts-content-padding-x) var(--charts-content-padding-bottom);
+  box-sizing: border-box;
+  width: 100%;
   min-height: 0;
 
-  @media (max-width: 1600px) {
-    --charts-left-rail-min-width: 220px;
-    --charts-right-rail-min-width: 220px;
-
+  @media (max-width: 1099px) {
     grid-template-columns:
-      minmax(var(--charts-left-rail-min-width), 24%)
-      minmax(var(--charts-central-min-width), 52%)
-      minmax(var(--charts-right-rail-min-width), 24%);
+      minmax(var(--charts-left-rail-min-width), var(--charts-left-rail-width))
+      minmax(var(--charts-central-min-width), var(--charts-central-width))
+      minmax(var(--charts-right-rail-min-width), var(--charts-right-rail-width));
   }
 
-  @media (max-width: 1280px) {
-    --charts-left-rail-min-width: 200px;
-    --charts-right-rail-min-width: 200px;
-
-    grid-template-columns:
-      minmax(var(--charts-left-rail-min-width), 28%)
-      minmax(var(--charts-central-min-width), 44%)
-      minmax(var(--charts-right-rail-min-width), 28%);
-  }
-
-  @media (max-width: 1100px) {
-    --charts-left-rail-min-width: 0px;
-    --charts-right-rail-min-width: 0px;
-    --charts-central-min-width: 0px;
-
+  @media (max-width: 999px) {
     grid-template-columns: minmax(0, 1fr);
-    grid-auto-rows: minmax(0, auto);
-    row-gap: 24px;
+    grid-template-areas:
+      'central'
+      'left'
+      'right';
+    row-gap: var(--charts-content-gap);
+  }
+
+  &[data-compact-header='true'] {
+    --charts-header-height: var(--charts-header-height-compact);
+    --charts-content-padding-top: 6px;
   }
 `;
 
 const LeftRail = styled.div`
+  grid-area: left;
+  width: min(100%, var(--charts-left-rail-width, 264px));
+  max-width: var(--charts-left-rail-width, 264px);
   min-width: var(--charts-left-rail-min-width, 0px);
   position: sticky;
-  top: calc(var(--charts-header-height) + var(--charts-content-padding-top));
+  top: calc(var(--charts-shell-offset, 0px) + var(--charts-header-height) + var(--charts-content-padding-top));
   align-self: start;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 10px;
+
+  & > * {
+    width: 100%;
+  }
+
+  @media (max-width: 1099px) {
+    gap: 10px;
+  }
+
+  @media (max-width: 999px) {
+    position: static;
+    top: auto;
+    width: 100%;
+    max-width: none;
+    min-width: 0;
+  }
 `;
 
 const CentralColumn = styled.div`
-  min-width: min(100%, var(--charts-central-min-width, 0px));
+  grid-area: central;
+  min-width: 0;
   min-height: 0;
   height: calc(100vh - var(--charts-header-height) - var(--charts-footer-height));
   display: flex;
   flex-direction: column;
+  padding-inline: clamp(8px, 1.2vw, 16px);
+
+  @media (max-width: 1099px) {
+    height: auto;
+  }
+
+  @media (max-width: 999px) {
+    padding-inline: 0;
+  }
 `;
 
 const CentralScroll = styled.div`
@@ -215,30 +322,46 @@ const CentralScroll = styled.div`
   min-height: 0;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   overflow-y: auto;
-  padding-right: 8px;
+  padding: 0 clamp(6px, 1vw, 10px) 6px;
+  scrollbar-gutter: stable both-edge;
+
+  @media (max-width: 999px) {
+    overflow-y: visible;
+    padding: 0;
+  }
 `;
 
 const WorkspaceStack = styled.div`
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
 `;
 
 const RightRail = styled.div`
+  grid-area: right;
+  width: min(100%, var(--charts-right-rail-width, 264px));
+  max-width: var(--charts-right-rail-width, 264px);
   min-width: var(--charts-right-rail-min-width, 0px);
   position: sticky;
-  top: calc(var(--charts-header-height) + var(--charts-content-padding-top));
+  top: calc(var(--charts-shell-offset, 0px) + var(--charts-header-height) + var(--charts-content-padding-top));
   align-self: start;
   height: calc(100vh - var(--charts-header-height) - var(--charts-footer-height));
   display: flex;
+
+  @media (max-width: 999px) {
+    position: static;
+    height: auto;
+    width: 100%;
+    max-width: none;
+  }
 `;
 
 const SupplementGrid = styled.div`
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
-  gap: 16px;
+  gap: 14px;
 `;
 
 const ContextCard = styled(SurfaceCard)`
@@ -4341,8 +4464,14 @@ export const ChartsPage = () => {
     claimAdjustmentProps,
   };
 
+  const hasSelectedVisit = Boolean(selectedVisit);
+  const isRightRailCollapsed = forceCollapse || rightPaneCollapsed;
+
   return (
-    <PageShell>
+    <PageShell
+      data-right-collapsed={isRightRailCollapsed}
+      data-compact-header={hasSelectedVisit ? 'false' : 'true'}
+    >
       <PatientHeaderBar
         ref={chiefComplaintRef}
         patient={selectedVisit}
@@ -4367,7 +4496,7 @@ export const ChartsPage = () => {
         searchShortcutHint={GLOBAL_SEARCH_SHORTCUT}
         elapsedTimeLabel={elapsedTimeLabel}
         isTimerRunning={isTimerRunning}
-        canEdit={Boolean(selectedVisit)}
+        canEdit={hasSelectedVisit}
       />
       <ContentGrid>
         <LeftContextColumn

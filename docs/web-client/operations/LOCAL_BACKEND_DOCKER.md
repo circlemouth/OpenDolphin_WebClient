@@ -26,10 +26,18 @@ Web クライアント開発チーム向けに、既存サーバー WAR を改�
    APP_HTTP_PORT=8080
    APP_ADMIN_PORT=9990
    POSTGRES_PORT=5432
+   SYSAD_USER_NAME=1.3.6.1.4.1.9414.10.1:dolphin
+   SYSAD_PASSWORD=36cdf8b887a5cffc78dcd5c08991b993
    ```
 3. `docker compose build server` を実行し、WAR のビルドと WildFly イメージの作成を行う。
 4. `docker compose up -d` で全コンテナを起動する。初回は Postgres の初期化と WildFly のデプロイに数分かかる。
-5. 起動後、`http://localhost:8080/opendolphin-server/resources/serverinfo` へアクセスし、JSON が返ることを確認する。
+5. 起動後、以下のヘルスチェックコマンドが 0 で終了し、JSON が返ることを確認する。
+   ```bash
+   curl -sf \
+     -H "userName:${SYSAD_USER_NAME:-1.3.6.1.4.1.9414.10.1:dolphin}" \
+     -H "password:${SYSAD_PASSWORD:-36cdf8b887a5cffc78dcd5c08991b993}" \
+     http://localhost:8080/openDolphin/resources/dolphin
+   ```
 
 ## データベースの初期データ投入
 - 本リポジトリには ORCA/電子カルテ用スキーマやマスターデータを含めていない。実運用データをコピーするか、別途提供される初期化スクリプトを `docker-entrypoint-initdb.d/` に配置して `db` サービスを再起動する。
@@ -42,6 +50,6 @@ Web クライアント開発チーム向けに、既存サーバー WAR を改�
 - 永続ボリューム削除（DB リセット）: `docker compose down -v`（データが消えるため要注意）
 
 ## トラブルシュート
-- `server` のヘルスチェックが失敗する場合は、`docker compose logs server` で WildFly の起動ログを確認する。データベース未起動・認証エラー・`custom.properties` の記述ミスなどが典型。
+- `server` のヘルスチェックが失敗する場合は、`docker compose logs server` で WildFly の起動ログを確認する。ヘルスエンドポイント `openDolphin/resources/dolphin` にアクセスする際の `SYSAD_USER_NAME` / `SYSAD_PASSWORD` 設定ミスやデータベース未起動・`custom.properties` の記述ミスなどが典型。
 - Postgres 接続情報を変更した場合は `custom.properties` と `.env` の双方を整合させたうえで、`docker compose build server`→`docker compose up -d` の順で再構築する。
 - 既存機能で追加の外部サービス（SMTP/SMS 等）が必要な場合は、別途モックコンテナを用意するか `custom.properties` 上で無効化する。
