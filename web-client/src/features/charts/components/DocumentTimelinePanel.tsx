@@ -1,22 +1,42 @@
-﻿import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 
 import { Button, StatusBadge, SurfaceCard, TextField } from '@/components';
-import { useDocInfos, useDocumentDetail } from '@/features/charts/hooks/useDocInfos';
 import { updateDocumentTitle } from '@/features/charts/api/doc-info-api';
-import type { DocInfoSummary, DocumentModelPayload } from '@/features/charts/types/doc';
+import { useDocumentDetail } from '@/features/charts/hooks/useDocInfos';
+import {
+  TIMELINE_EVENT_CATEGORIES,
+  TIMELINE_EVENT_META,
+  filterTimelineEvents,
+  type TimelineEvent,
+  type TimelineEventCategory,
+  type TimelineEventCategoryMeta,
+  type TimelineEventPayload,
+} from '@/features/charts/utils/timeline-events';
+import type { DocumentModelPayload } from '@/features/charts/types/doc';
+import type { PaletteToken } from '@/styles/theme';
+
+type DocumentEventPayload = Extract<TimelineEventPayload, { kind: 'document' }>;
+type VisitEventPayload = Extract<TimelineEventPayload, { kind: 'visit' }>;
+type LabEventPayload = Extract<TimelineEventPayload, { kind: 'lab' }>;
+type OrderEventPayload = Extract<TimelineEventPayload, { kind: 'order' }>;
+
+type FeedbackTone = 'info' | 'warning' | 'danger' | 'neutral';
 
 type DocumentTimelinePanelProps = {
-  karteId: number | null;
-  fromDate: string;
-  includeModified?: boolean;
+  events: TimelineEvent[];
+  categories?: TimelineEventCategoryMeta[];
+  isLoading: boolean;
+  isFetching: boolean;
+  error: unknown;
+  onRefresh?: () => void;
   onDocumentSelected?: (document: DocumentModelPayload | null) => void;
-  onDocInfosLoaded?: (documents: DocInfoSummary[]) => void;
+  onVisitEventSelected?: (payload: VisitEventPayload, event: TimelineEvent) => void;
+  onLabEventSelected?: (payload: LabEventPayload, event: TimelineEvent) => void;
+  onOrderEventSelected?: (payload: OrderEventPayload, event: TimelineEvent) => void;
   onEditDocument?: (document: DocumentModelPayload) => void;
 };
-
-type StatusTone = 'info' | 'warning' | 'danger' | 'muted';
 
 const DocumentPanelCard = styled(SurfaceCard)`
   display: flex;
@@ -49,6 +69,37 @@ const ToolbarRow = styled.div`
   flex-wrap: wrap;
 `;
 
+const FilterGroup = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+`;
+
+const FilterButton = styled.button<{ $active: boolean; $color: PaletteToken }>`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  border: 1px solid ${({ theme, $active, $color }) => ($active ? theme.palette[$color] : theme.palette.border)};
+  background: ${({ theme, $active }) => ($active ? theme.palette.surfaceStrong : theme.palette.surfaceMuted)};
+  color: ${({ theme, $active, $color }) => ($active ? theme.palette[$color] : theme.palette.textMuted)};
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border 0.2s ease, background 0.2s ease, color 0.2s ease;
+
+  &:hover {
+    border-color: ${({ theme, $color }) => theme.palette[$color]};
+    color: ${({ theme, $color }) => theme.palette[$color]};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme, $color }) => theme.palette[$color]};
+    outline-offset: 2px;
+  }
+`;
+
 const ListContainer = styled.div`
   display: flex;
   flex-direction: column;
@@ -57,17 +108,13 @@ const ListContainer = styled.div`
   overflow-y: auto;
 `;
 
-const DocumentItem = styled.button<{ $selected: boolean }>`
+const TimelineItem = styled.button<{ $selected: boolean }>`
   display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 6px;
+  gap: 12px;
   padding: 10px 12px;
   border-radius: ${({ theme }) => theme.radius.md};
-  border: 1px solid
-    ${({ theme, $selected }) => ($selected ? theme.palette.primary : theme.palette.border)};
-  background: ${({ theme, $selected }) =>
-    $selected ? theme.palette.surfaceStrong : theme.palette.surfaceMuted};
+  border: 1px solid ${({ theme, $selected }) => ($selected ? theme.palette.primary : theme.palette.border)};
+  background: ${({ theme, $selected }) => ($selected ? theme.palette.surfaceStrong : theme.palette.surfaceMuted)};
   transition: border 0.2s ease, box-shadow 0.2s ease;
   cursor: pointer;
   text-align: left;
@@ -78,18 +125,50 @@ const DocumentItem = styled.button<{ $selected: boolean }>`
   }
 `;
 
-const DocumentMeta = styled.div`
+const EventIcon = styled.span<{ $color: PaletteToken }>`
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  border: 1px solid ${({ theme, $color }) => theme.palette[$color]};
+  color: ${({ theme, $color }) => theme.palette[$color]};
+  font-size: 0.85rem;
+  font-weight: 600;
+`;
+
+const TimelineContent = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  flex: 1 1 auto;
+`;
+
+const TimelineHeaderRow = styled.div`
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 8px;
   flex-wrap: wrap;
   font-size: 0.8rem;
   color: ${({ theme }) => theme.palette.textMuted};
 `;
 
-const DocumentTitle = styled.span`
+const TimelineTitle = styled.div`
   font-weight: 600;
   color: ${({ theme }) => theme.palette.text};
+  font-size: 0.95rem;
+`;
+
+const TimelineSubtitle = styled.div`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const TimelineDescription = styled.div`
+  font-size: 0.78rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+  line-height: 1.5;
 `;
 
 const DetailCard = styled.div`
@@ -124,7 +203,7 @@ const DetailList = styled.ul`
   color: ${({ theme }) => theme.palette.text};
 `;
 
-const InlineFeedback = styled.div<{ $tone: StatusTone }>`
+const InlineFeedback = styled.div<{ $tone: FeedbackTone }>`
   font-size: 0.85rem;
   padding: 10px 12px;
   border-radius: ${({ theme }) => theme.radius.sm};
@@ -134,8 +213,8 @@ const InlineFeedback = styled.div<{ $tone: StatusTone }>`
         return theme.palette.warningMuted ?? '#fef3c7';
       case 'danger':
         return theme.palette.dangerMuted ?? '#fee2e2';
-      case 'muted':
-        return theme.palette.surfaceMuted;
+      case 'info':
+        return theme.palette.surfaceStrong;
       default:
         return theme.palette.surfaceMuted;
     }
@@ -146,10 +225,10 @@ const InlineFeedback = styled.div<{ $tone: StatusTone }>`
         return theme.palette.warning ?? '#b45309';
       case 'danger':
         return theme.palette.danger ?? '#b91c1c';
-      case 'muted':
-        return theme.palette.textMuted;
+      case 'info':
+        return theme.palette.primaryStrong;
       default:
-        return theme.palette.text;
+        return theme.palette.textMuted;
     }
   }};
   border: 1px solid
@@ -159,8 +238,8 @@ const InlineFeedback = styled.div<{ $tone: StatusTone }>`
           return theme.palette.warning ?? '#f59e0b';
         case 'danger':
           return theme.palette.danger ?? '#f87171';
-        case 'muted':
-          return theme.palette.border;
+        case 'info':
+          return theme.palette.primary ?? '#1d3d5e';
         default:
           return theme.palette.border;
       }
@@ -185,9 +264,9 @@ const formatDateTime = (value?: string | null): string => {
   }).format(date);
 };
 
-const getStatusTone = (status?: string | null): StatusTone => {
+const getStatusTone = (status?: string | null): 'info' | 'warning' | 'danger' | 'neutral' => {
   if (!status) {
-    return 'muted';
+    return 'neutral';
   }
   const normalized = status.toUpperCase();
   if (normalized === 'F') {
@@ -199,109 +278,387 @@ const getStatusTone = (status?: string | null): StatusTone => {
   if (normalized === 'D') {
     return 'danger';
   }
-  return 'muted';
+  return 'neutral';
 };
 
-const filterDocuments = (documents: DocInfoSummary[], keyword: string): DocInfoSummary[] => {
-  if (!keyword) {
-    return documents;
-  }
-  const normalized = keyword.trim().toLowerCase();
-  if (!normalized) {
-    return documents;
-  }
-  return documents.filter((doc) => {
-    const haystack = [
-      doc.title,
-      doc.docType,
-      doc.departmentDesc,
-      doc.status,
-      doc.docId,
-    ]
-      .filter(Boolean)
-      .join(' ')
-      .toLowerCase();
-    return haystack.includes(normalized);
-  });
-};
+const resolveErrorMessage = (error: unknown): string =>
+  error instanceof Error ? error.message : 'イベントの取得に失敗しました。';
 
 export const DocumentTimelinePanel = ({
-  karteId,
-  fromDate,
-  includeModified = true,
+  events,
+  categories = TIMELINE_EVENT_CATEGORIES,
+  isLoading,
+  isFetching,
+  error,
+  onRefresh,
   onDocumentSelected,
-  onDocInfosLoaded,
+  onVisitEventSelected,
+  onLabEventSelected,
+  onOrderEventSelected,
+  onEditDocument,
 }: DocumentTimelinePanelProps) => {
   const [keyword, setKeyword] = useState('');
-  const [selectedDocPk, setSelectedDocPk] = useState<number | null>(null);
+  const [activeCategories, setActiveCategories] = useState<TimelineEventCategory[]>(categories.map((category) => category.id));
+  const [selectedEventId, setSelectedEventId] = useState<string | null>(null);
   const [renameTitle, setRenameTitle] = useState('');
   const [renameFeedback, setRenameFeedback] = useState<{ tone: 'info' | 'danger'; message: string } | null>(null);
+  const emittedEventIdRef = useRef<string | null>(null);
 
-  const docInfosQuery = useDocInfos({
-    karteId,
-    fromDate,
-    includeModified,
-    enabled: Boolean(karteId),
-  });
+  useEffect(() => {
+    const available = new Set(categories.map((category) => category.id));
+    setActiveCategories((prev) => {
+      const filtered = prev.filter((id) => available.has(id));
+      if (filtered.length === 0) {
+        return Array.from(available);
+      }
+      return filtered;
+    });
+  }, [categories]);
 
-  const detailQuery = useDocumentDetail(selectedDocPk, { enabled: Boolean(selectedDocPk) });
+  const categoryMap = useMemo(() => {
+    const map = new Map<TimelineEventCategory, TimelineEventCategoryMeta>();
+    categories.forEach((category) => map.set(category.id, category));
+    return map;
+  }, [categories]);
+
+  const filteredEvents = useMemo(
+    () => filterTimelineEvents(events, { categories: new Set(activeCategories), keyword }),
+    [events, activeCategories, keyword],
+  );
+
+  useEffect(() => {
+    if (filteredEvents.length === 0) {
+      setSelectedEventId(null);
+      return;
+    }
+    if (!selectedEventId || !filteredEvents.some((item) => item.id === selectedEventId)) {
+      setSelectedEventId(filteredEvents[0]?.id ?? null);
+    }
+  }, [filteredEvents, selectedEventId]);
+
+  const selectedEvent = useMemo(
+    () => (selectedEventId ? events.find((event) => event.id === selectedEventId) ?? null : null),
+    [events, selectedEventId],
+  );
+
+  const selectedDocumentPk = selectedEvent?.payload.kind === 'document' ? selectedEvent.payload.docPk : null;
+
+  const detailQuery = useDocumentDetail(selectedDocumentPk, { enabled: Boolean(selectedDocumentPk) });
+
   const renameMutation = useMutation({
     mutationFn: async ({ docPk, title }: { docPk: number; title: string }) => updateDocumentTitle(docPk, title),
     onSuccess: () => {
       setRenameFeedback({ tone: 'info', message: 'タイトルを更新しました。' });
-      void docInfosQuery.refetch();
       void detailQuery.refetch();
+      if (onRefresh) {
+        void onRefresh();
+      }
     },
-    onError: (error: unknown) => {
+    onError: (mutationError: unknown) => {
       setRenameFeedback({
         tone: 'danger',
-        message: error instanceof Error ? error.message : 'タイトルの更新に失敗しました。',
+        message: mutationError instanceof Error ? mutationError.message : 'タイトルの更新に失敗しました。',
       });
     },
   });
 
   useEffect(() => {
-    if (detailQuery.data && onDocumentSelected) {
-      onDocumentSelected(detailQuery.data);
+    if (selectedEvent?.payload.kind === 'document' && detailQuery.data) {
+      setRenameTitle(detailQuery.data.docInfoModel?.title ?? '');
+      if (onDocumentSelected) {
+        onDocumentSelected(detailQuery.data);
+      }
     }
-  }, [detailQuery.data, onDocumentSelected]);
+  }, [detailQuery.data, onDocumentSelected, selectedEvent?.payload.kind]);
 
   useEffect(() => {
-    if (!docInfosQuery.data || docInfosQuery.data.length === 0) {
-      setSelectedDocPk(null);
-      return;
+    if (selectedEvent?.payload.kind !== 'document' && onDocumentSelected) {
+      onDocumentSelected(null);
     }
-    if (selectedDocPk && docInfosQuery.data.some((doc) => doc.docPk === selectedDocPk)) {
-      return;
-    }
-    setSelectedDocPk(docInfosQuery.data[0]?.docPk ?? null);
-  }, [docInfosQuery.data, selectedDocPk]);
-
-  const filteredDocs = useMemo(
-    () => filterDocuments(docInfosQuery.data ?? [], keyword),
-    [docInfosQuery.data, keyword],
-  );
+  }, [onDocumentSelected, selectedEvent?.payload.kind]);
 
   useEffect(() => {
-    if (onDocInfosLoaded) {
-      onDocInfosLoaded(docInfosQuery.data ?? []);
+    if (!selectedEvent) {
+      emittedEventIdRef.current = null;
+      return;
     }
-  }, [docInfosQuery.data, onDocInfosLoaded]);
+    if (emittedEventIdRef.current === selectedEvent.id) {
+      return;
+    }
+    emittedEventIdRef.current = selectedEvent.id;
+    switch (selectedEvent.payload.kind) {
+      case 'visit':
+        onVisitEventSelected?.(selectedEvent.payload, selectedEvent);
+        break;
+      case 'lab':
+        onLabEventSelected?.(selectedEvent.payload, selectedEvent);
+        break;
+      case 'order':
+        onOrderEventSelected?.(selectedEvent.payload, selectedEvent);
+        break;
+      default:
+        break;
+    }
+  }, [onLabEventSelected, onOrderEventSelected, onVisitEventSelected, selectedEvent]);
 
-  const handleSelect = (docPk: number) => {
-    setSelectedDocPk(docPk);
+  const handleToggleCategory = (category: TimelineEventCategory) => {
+    setActiveCategories((prev) => {
+      if (prev.includes(category)) {
+        const next = prev.filter((value) => value !== category);
+        return next.length === 0 ? prev : next;
+      }
+      return [...prev, category];
+    });
+  };
+
+  const handleSelectEvent = (eventId: string) => {
+    setSelectedEventId(eventId);
+    setRenameFeedback(null);
+  };
+
+  const handleRename = useCallback(() => {
+    if (!selectedDocumentPk) {
+      return;
+    }
+    const trimmed = renameTitle.trim();
+    if (!trimmed) {
+      setRenameFeedback({ tone: 'danger', message: 'タイトルを入力してください。' });
+      return;
+    }
+    renameMutation.mutate({ docPk: selectedDocumentPk, title: trimmed });
+  }, [renameMutation, renameTitle, selectedDocumentPk]);
+
+  const selectedDocumentDetail = detailQuery.data;
+  const documentPayload: DocumentEventPayload | null =
+    selectedEvent?.payload.kind === 'document' ? selectedEvent.payload : null;
+  const visitPayload: VisitEventPayload | null =
+    selectedEvent?.payload.kind === 'visit' ? selectedEvent.payload : null;
+  const labPayload: LabEventPayload | null =
+    selectedEvent?.payload.kind === 'lab' ? selectedEvent.payload : null;
+  const orderPayload: OrderEventPayload | null =
+    selectedEvent?.payload.kind === 'order' ? selectedEvent.payload : null;
+
+  const renderDetailContent = () => {
+    if (!selectedEvent) {
+      return <InlineFeedback $tone="neutral">イベントを選択すると詳細を表示します。</InlineFeedback>;
+    }
+
+    if (selectedEvent.payload.kind === 'document') {
+      if (detailQuery.isLoading) {
+        return <InlineFeedback $tone="neutral">カルテ詳細を読み込んでいます…</InlineFeedback>;
+      }
+      if (detailQuery.error) {
+        return <InlineFeedback $tone="danger">カルテ詳細の取得に失敗しました。</InlineFeedback>;
+      }
+      if (!selectedDocumentDetail) {
+        return <InlineFeedback $tone="neutral">カルテ詳細が見つかりませんでした。</InlineFeedback>;
+      }
+      return (
+        <>
+          <DetailSection>
+            <DetailHeading>カルテ基本情報</DetailHeading>
+            <DetailList>
+              <li>
+                <strong>タイトル:</strong> {selectedDocumentDetail.docInfoModel?.title ?? '---'}
+              </li>
+              <li>
+                <strong>確定日時:</strong> {formatDateTime(selectedDocumentDetail.docInfoModel?.confirmDate)}
+              </li>
+              <li>
+                <strong>ステータス:</strong> {selectedDocumentDetail.status ?? '---'}
+              </li>
+              <li>
+                <strong>診療科:</strong> {selectedEvent.badge ?? '---'}
+              </li>
+              <li>
+                <strong>目的:</strong> {selectedDocumentDetail.docInfoModel?.purposeDesc ?? '---'}
+              </li>
+            </DetailList>
+            {onEditDocument ? (
+              <div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => onEditDocument(selectedDocumentDetail)}
+                >
+                  編集
+                </Button>
+              </div>
+            ) : null}
+          </DetailSection>
+          <DetailSection>
+            <DetailHeading>タイトル編集</DetailHeading>
+            <TextField
+              label="タイトル"
+              value={renameTitle}
+              onChange={(event) => {
+                setRenameTitle(event.currentTarget.value);
+                setRenameFeedback(null);
+              }}
+            />
+            <div style={{ display: 'flex', gap: 8 }}>
+              <Button
+                type="button"
+                size="sm"
+                variant="ghost"
+                onClick={() => {
+                  setRenameTitle(selectedDocumentDetail.docInfoModel?.title ?? '');
+                  setRenameFeedback(null);
+                }}
+              >
+                リセット
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                onClick={handleRename}
+                disabled={renameMutation.isPending}
+                isLoading={renameMutation.isPending}
+              >
+                更新
+              </Button>
+            </div>
+            {renameFeedback ? <InlineFeedback $tone={renameFeedback.tone}>{renameFeedback.message}</InlineFeedback> : null}
+          </DetailSection>
+          <DetailSection>
+            <DetailHeading>モジュール</DetailHeading>
+            {selectedDocumentDetail.modules && selectedDocumentDetail.modules.length > 0 ? (
+              <DetailList>
+                {selectedDocumentDetail.modules.slice(0, 5).map((module, index) => (
+                  <li key={`${selectedDocumentDetail.id}-module-${index}`}>
+                    {module.moduleInfoBean?.stampName ?? module.moduleInfoBean?.stampRole ?? 'スタンプ'} (
+                    {module.moduleInfoBean?.entity ?? 'entity'})
+                  </li>
+                ))}
+                {selectedDocumentDetail.modules.length > 5 ? (
+                  <li>…ほか {selectedDocumentDetail.modules.length - 5} 件</li>
+                ) : null}
+              </DetailList>
+            ) : (
+              <InlineFeedback $tone="neutral">モジュール情報はありません。</InlineFeedback>
+            )}
+          </DetailSection>
+          <DetailSection>
+            <DetailHeading>添付ファイル</DetailHeading>
+            {selectedDocumentDetail.attachment && selectedDocumentDetail.attachment.length > 0 ? (
+              <DetailList>
+                {selectedDocumentDetail.attachment.slice(0, 5).map((attachment) => (
+                  <li key={`${selectedDocumentDetail.id}-attachment-${attachment.id}`}>
+                    {attachment.title ?? attachment.fileName ?? '添付ファイル'}
+                  </li>
+                ))}
+                {selectedDocumentDetail.attachment.length > 5 ? (
+                  <li>…ほか {selectedDocumentDetail.attachment.length - 5} 件</li>
+                ) : null}
+              </DetailList>
+            ) : (
+              <InlineFeedback $tone="neutral">添付ファイルはありません。</InlineFeedback>
+            )}
+          </DetailSection>
+        </>
+      );
+    }
+
+    if (selectedEvent.payload.kind === 'lab' && labPayload) {
+      return (
+        <>
+          <DetailSection>
+            <DetailHeading>検査概要</DetailHeading>
+            <DetailList>
+              <li>
+                <strong>採取日時:</strong> {formatDateTime(labPayload.sampleDate ?? null)}
+              </li>
+              <li>
+                <strong>異常件数:</strong> {labPayload.abnormalCount} 件
+              </li>
+            </DetailList>
+          </DetailSection>
+          <DetailSection>
+            <DetailHeading>主な項目</DetailHeading>
+            {labPayload.topItems.length > 0 ? (
+              <DetailList>
+                {labPayload.topItems.map((item, index) => (
+                  <li key={`lab-item-${index}`}>
+                    {item.name}: {item.value}
+                    {item.unit ? ` ${item.unit}` : ''}
+                  </li>
+                ))}
+              </DetailList>
+            ) : (
+              <InlineFeedback $tone="neutral">表示できる検査項目がありません。</InlineFeedback>
+            )}
+            <InlineFeedback $tone="info">選択すると中央カラムの検査参照が更新されます。</InlineFeedback>
+          </DetailSection>
+        </>
+      );
+    }
+
+    if (selectedEvent.payload.kind === 'order' && orderPayload) {
+      return (
+        <>
+          <DetailSection>
+            <DetailHeading>オーダ概要</DetailHeading>
+            <DetailList>
+              <li>
+                <strong>カテゴリ:</strong> {selectedEvent.subtitle ?? 'オーダ'}
+              </li>
+              <li>
+                <strong>概要:</strong> {orderPayload.summary}
+              </li>
+              {orderPayload.detail ? (
+                <li>
+                  <strong>詳細:</strong> {orderPayload.detail}
+                </li>
+              ) : null}
+            </DetailList>
+            <InlineFeedback $tone="info">選択すると Plan にドラフトを挿入します。</InlineFeedback>
+          </DetailSection>
+        </>
+      );
+    }
+
+    if (selectedEvent.payload.kind === 'visit' && visitPayload) {
+      return (
+        <>
+          <DetailSection>
+            <DetailHeading>来院情報</DetailHeading>
+            <DetailList>
+              <li>
+                <strong>日時:</strong> {formatDateTime(selectedEvent.occurredAt)}
+              </li>
+              <li>
+                <strong>診療科:</strong> {visitPayload.department ?? '---'}
+              </li>
+              <li>
+                <strong>担当医:</strong> {visitPayload.doctor ?? '---'}
+              </li>
+              <li>
+                <strong>ステータス:</strong> {visitPayload.state}
+              </li>
+            </DetailList>
+            {selectedEvent.description ? (
+              <InlineFeedback $tone="neutral">{selectedEvent.description}</InlineFeedback>
+            ) : null}
+            <InlineFeedback $tone="info">来院イベントは参考表示のみで、自動操作はありません。</InlineFeedback>
+          </DetailSection>
+        </>
+      );
+    }
+
+    return <InlineFeedback $tone="neutral">イベント詳細が見つかりませんでした。</InlineFeedback>;
   };
 
   return (
     <DocumentPanelCard>
       <PanelHeader>
-        <h3>カルテタイムライン</h3>
-        <p>カルテの確定履歴を一覧し、内容を素早く確認できます。</p>
+        <h3>イベントタイムライン</h3>
+        <p>カルテ・来院・検査・オーダを横断的に検索し、中央カラムと連携します。</p>
       </PanelHeader>
       <ToolbarRow>
         <TextField
           label="検索"
-          placeholder="カルテ名・診療科・ステータスで絞り込み"
+          placeholder="タイトル・診療科・検査項目などで絞り込み"
           value={keyword}
           onChange={(event) => setKeyword(event.currentTarget.value)}
         />
@@ -311,174 +668,86 @@ export const DocumentTimelinePanel = ({
           size="sm"
           onClick={() => {
             setKeyword('');
-            void docInfosQuery.refetch();
+            if (onRefresh) {
+              void onRefresh();
+            }
           }}
-          isLoading={docInfosQuery.isFetching}
+          isLoading={isFetching}
         >
           更新
         </Button>
       </ToolbarRow>
-      {docInfosQuery.isLoading ? (
-        <InlineFeedback $tone="muted">カルテ一覧を読み込んでいます…</InlineFeedback>
-      ) : docInfosQuery.error ? (
-        <InlineFeedback $tone="danger">
-          カルテ情報の取得に失敗しました。ネットワークと権限を確認してください。
-        </InlineFeedback>
-      ) : filteredDocs.length === 0 ? (
-        <InlineFeedback $tone="muted">該当する文書がありません。</InlineFeedback>
+      <FilterGroup>
+        {categories.map((category) => (
+          <FilterButton
+            key={category.id}
+            type="button"
+            $active={activeCategories.includes(category.id)}
+            $color={category.color}
+            onClick={() => handleToggleCategory(category.id)}
+          >
+            <span>{category.icon}</span>
+            <span>{category.label}</span>
+          </FilterButton>
+        ))}
+      </FilterGroup>
+      {isLoading ? (
+        <InlineFeedback $tone="neutral">イベントを読み込んでいます…</InlineFeedback>
+      ) : error ? (
+        <InlineFeedback $tone="danger">{resolveErrorMessage(error)}</InlineFeedback>
+      ) : filteredEvents.length === 0 ? (
+        <InlineFeedback $tone="neutral">該当するイベントがありません。</InlineFeedback>
       ) : (
         <ListContainer role="list">
-          {filteredDocs.map((doc) => {
-            const isSelected = doc.docPk === selectedDocPk;
-            const tone = getStatusTone(doc.status);
+          {filteredEvents.map((event) => {
+            const isSelected = event.id === selectedEventId;
+            const meta = categoryMap.get(event.type) ?? TIMELINE_EVENT_META[event.type];
+            const badgeTone =
+              event.payload.kind === 'document'
+                ? getStatusTone(event.payload.status)
+                : event.payload.kind === 'lab' && event.payload.abnormalCount > 0
+                  ? 'warning'
+                  : 'neutral';
+            const statusLabel =
+              event.payload.kind === 'document'
+                ? event.payload.status ?? '---'
+                : event.payload.kind === 'lab' && event.payload.abnormalCount > 0
+                  ? '要確認'
+                  : event.payload.kind === 'visit'
+                    ? `状態 ${event.payload.state}`
+                    : event.badge ?? null;
+
             return (
-              <DocumentItem
-                key={doc.docPk}
+              <TimelineItem
+                key={event.id}
                 type="button"
                 $selected={isSelected}
-                onClick={() => handleSelect(doc.docPk)}
+                onClick={() => handleSelectEvent(event.id)}
                 role="listitem"
                 aria-pressed={isSelected}
               >
-                <DocumentMeta>
-                  <StatusBadge tone={tone === 'muted' ? 'info' : tone}>
-                    {doc.status ?? '---'}
-                  </StatusBadge>
-                  <span>{formatDateTime(doc.confirmDate ?? doc.firstConfirmDate ?? undefined)}</span>
-                  {doc.departmentDesc ? <span>{doc.departmentDesc}</span> : null}
-                  {doc.docType ? <span>{doc.docType}</span> : null}
-                </DocumentMeta>
-                <DocumentTitle>{doc.title || '無題のカルテ'}</DocumentTitle>
-              </DocumentItem>
+                <EventIcon $color={meta.color}>{meta.icon}</EventIcon>
+                <TimelineContent>
+                  <TimelineHeaderRow>
+                    <span>{formatDateTime(event.occurredAt)}</span>
+                    {statusLabel ? <StatusBadge tone={badgeTone}>{statusLabel}</StatusBadge> : null}
+                    {event.payload.kind === 'document' && event.badge ? <span>{event.badge}</span> : null}
+                  </TimelineHeaderRow>
+                  <TimelineTitle>{event.title}</TimelineTitle>
+                  {event.subtitle ? <TimelineSubtitle>{event.subtitle}</TimelineSubtitle> : null}
+                  {event.description ? <TimelineDescription>{event.description}</TimelineDescription> : null}
+                </TimelineContent>
+              </TimelineItem>
             );
           })}
         </ListContainer>
       )}
-
       <DetailCard aria-live="polite">
         <DetailSection>
-          <DetailHeading>カルテ詳細</DetailHeading>
-          {detailQuery.isLoading ? (
-            <InlineFeedback $tone="muted">カルテ詳細を読み込んでいます…</InlineFeedback>
-          ) : !selectedDocPk ? (
-            <InlineFeedback $tone="muted">カルテを選択すると詳細を表示します。</InlineFeedback>
-          ) : detailQuery.error ? (
-            <InlineFeedback $tone="danger">カルテ詳細の取得に失敗しました。</InlineFeedback>
-          ) : detailQuery.data ? (
-            <>
-              <DetailList>
-                <li>
-                  <strong>タイトル:</strong> {detailQuery.data.docInfoModel?.title ?? '---'}
-                </li>
-                <li>
-                  <strong>確定日時:</strong>{' '}
-                  {formatDateTime(detailQuery.data.docInfoModel?.confirmDate)}
-                </li>
-                <li>
-                  <strong>ステータス:</strong> {detailQuery.data.status ?? '---'}
-                </li>
-                <li>
-                  <strong>作成者:</strong>{' '}
-                  {detailQuery.data.docInfoModel.creatorLicense ??
-                    detailQuery.data.docInfoModel.departmentDesc ??
-                    '---'}
-                </li>
-                <li>
-                  <strong>請求送信:</strong>{' '}
-                  {detailQuery.data.docInfoModel?.sendClaim ? '送信あり' : '未送信'}
-                </li>
-              </DetailList>
-              <DetailSection>
-                <DetailHeading>タイトル編集</DetailHeading>
-                <TextField
-                  label="タイトル"
-                  value={renameTitle}
-                  onChange={(event) => {
-                    setRenameTitle(event.currentTarget.value);
-                    setRenameFeedback(null);
-                  }}
-                  disabled={!detailQuery.data}
-                />
-                <div style={{ display: 'flex', gap: 8 }}>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => {
-                      setRenameTitle(detailQuery.data?.docInfoModel?.title ?? '');
-                      setRenameFeedback(null);
-                    }}
-                    disabled={!detailQuery.data}
-                  >
-                    リセット
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    onClick={handleRename}
-                    disabled={!selectedDocPk || renameMutation.isPending}
-                    isLoading={renameMutation.isPending}
-                  >
-                    更新
-                  </Button>
-                </div>
-                {renameFeedback ? (
-                  <InlineFeedback $tone={renameFeedback.tone}>{renameFeedback.message}</InlineFeedback>
-                ) : null}
-              </DetailSection>
-              <DetailSection>
-                <DetailHeading>モジュール</DetailHeading>
-                {detailQuery.data.modules && detailQuery.data.modules.length > 0 ? (
-                  <DetailList>
-                    {detailQuery.data.modules.slice(0, 5).map((module, index) => (
-                      <li key={`${detailQuery.data!.id}-module-${index}`}>
-                        {module.moduleInfoBean?.stampName ?? module.moduleInfoBean?.stampRole ?? 'スタンプ'}{' '}
-                        ({module.moduleInfoBean?.entity ?? 'entity'})
-                      </li>
-                    ))}
-                    {detailQuery.data.modules.length > 5 ? (
-                      <li>…ほか {detailQuery.data.modules.length - 5} 件</li>
-                    ) : null}
-                  </DetailList>
-                ) : (
-                  <InlineFeedback $tone="muted">モジュール情報はありません。</InlineFeedback>
-                )}
-              </DetailSection>
-              <DetailSection>
-                <DetailHeading>添付ファイル</DetailHeading>
-                {detailQuery.data.attachment && detailQuery.data.attachment.length > 0 ? (
-                  <DetailList>
-                    {detailQuery.data.attachment.slice(0, 5).map((attachment) => (
-                      <li key={`${detailQuery.data!.id}-attachment-${attachment.id}`}>
-                        {attachment.title ?? attachment.fileName ?? '添付ファイル'}
-                      </li>
-                    ))}
-                    {detailQuery.data.attachment.length > 5 ? (
-                      <li>…ほか {detailQuery.data.attachment.length - 5} 件</li>
-                    ) : null}
-                  </DetailList>
-                ) : (
-                  <InlineFeedback $tone="muted">添付ファイルはありません。</InlineFeedback>
-                )}
-              </DetailSection>
-            </>
-          ) : (
-            <InlineFeedback $tone="muted">詳細情報が見つかりませんでした。</InlineFeedback>
-          )}
+          <DetailHeading>イベント詳細</DetailHeading>
+          {renderDetailContent()}
         </DetailSection>
       </DetailCard>
     </DocumentPanelCard>
   );
 };
-
-
-
-
-
-
-
-
-
-
-
-

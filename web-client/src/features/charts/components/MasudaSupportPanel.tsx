@@ -7,11 +7,14 @@ import {
   fetchRoutineMedications,
   fetchRpHistory,
   fetchUserProperties,
-  type RoutineMedicationEntry,
-  type RoutineMedicationModule,
   type RpHistoryEntry,
   type UserPropertyEntry,
 } from '@/features/charts/api/masuda-api';
+import {
+  routineMedicationLabel,
+  routineMedicationModules,
+  routineMedicationUpdatedAt,
+} from '@/features/charts/utils/routine-medication';
 
 type MasudaSupportPanelProps = {
   karteId: number | null;
@@ -69,30 +72,6 @@ const ItemMeta = styled.div`
   font-size: 0.85rem;
 `;
 
-const getModuleSummary = (module: RoutineMedicationModule) => {
-  const info = module.moduleInfoBean;
-  if (!info) {
-    return null;
-  }
-  const name = info.stampName ?? info.stampId ?? '';
-  const entity = info.entity ? `（${info.entity}）` : '';
-  return `${name}${entity}`;
-};
-
-const getRoutineLabel = (entry: RoutineMedicationEntry) => {
-  if (entry.name && entry.name.trim().length) {
-    return entry.name.trim();
-  }
-  if (entry.moduleList && entry.moduleList.length) {
-    const first = entry.moduleList.find((module) => module.moduleInfoBean?.stampName)?.moduleInfoBean
-      ?.stampName;
-    if (first) {
-      return first;
-    }
-  }
-  return `定期処方 #${entry.id ?? ''}`;
-};
-
 const getRpSummary = (entry: RpHistoryEntry) => {
   const items = entry.rpList ?? [];
   if (!items.length) {
@@ -110,9 +89,10 @@ const formatDateLabel = (value?: string | null) => {
   if (Number.isNaN(date.getTime())) {
     return value;
   }
-  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(
-    date.getDate(),
-  ).padStart(2, '0')}`;
+  const yyyy = `${date.getFullYear()}`.padStart(4, '0');
+  const mm = `${date.getMonth() + 1}`.padStart(2, '0');
+  const dd = `${date.getDate()}`.padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 const groupUserProperties = (entries: UserPropertyEntry[]) => {
@@ -185,12 +165,9 @@ export const MasudaSupportPanel = ({ karteId, userId }: MasudaSupportPanelProps)
             routineQuery.data && routineQuery.data.length ? (
               <List>
                 {routineQuery.data.map((entry) => {
-                  const title = getRoutineLabel(entry);
-                  const updated = formatDateLabel(entry.lastUpdated);
-                  const modules = (entry.moduleList ?? [])
-                    .map(getModuleSummary)
-                    .filter(Boolean)
-                    .slice(0, 5) as string[];
+                  const title = routineMedicationLabel(entry);
+                  const updated = routineMedicationUpdatedAt(entry);
+                  const modules = routineMedicationModules(entry, 5);
                   return (
                     <ListItem key={`routine-${entry.id ?? title}`}>
                       <ItemTitle>{title}</ItemTitle>
