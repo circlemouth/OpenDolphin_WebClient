@@ -1,5 +1,6 @@
-import { useState } from 'react';
-import styled from '@emotion/styled';
+﻿import styled from '@emotion/styled';
+
+import { SurfaceCard } from '@/components';
 
 interface MiniSummaryDockProps {
   summaryLines: string[];
@@ -7,80 +8,85 @@ interface MiniSummaryDockProps {
   onSnippetDragStart: (snippet: string) => void;
 }
 
-const DockContainer = styled.div<{ $hovered: boolean }>`
-  position: fixed;
-  right: 24px;
-  bottom: 64px;
-  width: ${({ $hovered }) => ($hovered ? '360px' : '320px')};
-  height: ${({ $hovered }) => ($hovered ? '240px' : '210px')};
-  background: ${({ theme }) => theme.palette.surface};
-  border: 1px solid ${({ theme }) => theme.palette.border};
-  border-radius: ${({ theme }) => theme.radius.lg};
-  box-shadow: ${({ theme }) => theme.elevation.level1};
-  transition: width 0.2s ease, height 0.2s ease, box-shadow 0.2s ease;
+const DockCard = styled(SurfaceCard)`
   display: flex;
   flex-direction: column;
-  overflow: hidden;
-  z-index: 90;
+  gap: 12px;
+  padding: 16px;
 `;
 
 const DockHeader = styled.div`
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  padding: 12px 16px;
-  border-bottom: 1px solid ${({ theme }) => theme.palette.border};
-  font-size: 0.9rem;
+  justify-content: space-between;
+  gap: 12px;
+`;
+
+const DockTitle = styled.span`
+  font-size: 0.95rem;
   font-weight: 600;
+  color: ${({ theme }) => theme.palette.text};
 `;
 
 const DockBody = styled.div`
-  flex: 1;
-  padding: 12px 16px;
   display: flex;
   flex-direction: column;
   gap: 8px;
-  background: ${({ theme }) => theme.palette.surfaceMuted};
+`;
+
+const ExpandButton = styled.button`
+  border: none;
+  background: transparent;
+  color: ${({ theme }) => theme.palette.primaryStrong};
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: ${({ theme }) => theme.radius.sm};
+  transition: background 0.2s ease, color 0.2s ease;
+
+  &:hover,
+  &:focus-visible {
+    background: ${({ theme }) => theme.palette.surfaceMuted};
+    outline: none;
+  }
 `;
 
 const SummaryLine = styled.button`
+  display: flex;
+  align-items: flex-start;
   text-align: left;
-  border: none;
+  border: 1px solid ${({ theme }) => theme.palette.border};
   background: ${({ theme }) => theme.palette.surface};
   border-radius: ${({ theme }) => theme.radius.sm};
-  padding: 8px;
+  padding: 10px 12px;
   cursor: grab;
   font-size: 0.85rem;
   color: ${({ theme }) => theme.palette.text};
-  box-shadow: inset 0 0 0 1px ${({ theme }) => theme.palette.border};
+  transition: border 0.2s ease, box-shadow 0.2s ease;
+
+  &:hover {
+    border-color: ${({ theme }) => theme.palette.primary};
+    box-shadow: ${({ theme }) => theme.elevation.level1};
+  }
+`;
+
+const EmptyNotice = styled.span`
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.textMuted};
 `;
 
 export const MiniSummaryDock = ({ summaryLines, onExpand, onSnippetDragStart }: MiniSummaryDockProps) => {
-  const [hovered, setHovered] = useState(false);
-
   return (
-    <DockContainer
-      $hovered={hovered}
-      onMouseEnter={() => setHovered(true)}
-      onMouseLeave={() => setHovered(false)}
-      role="complementary"
-      aria-label="ミニサマリ"
-    >
+    <DockCard role="complementary" aria-label="ミニサマリ">
       <DockHeader>
-        <span>前回サマリ</span>
-        <button
-          type="button"
-          onClick={onExpand}
-          style={{ border: 'none', background: 'transparent', color: '#1d3d5e', cursor: 'pointer' }}
-        >
+        <DockTitle>前回サマリ</DockTitle>
+        <ExpandButton type="button" onClick={onExpand}>
           展開
-        </button>
+        </ExpandButton>
       </DockHeader>
       <DockBody>
         {summaryLines.length === 0 ? (
-          <span style={{ fontSize: '0.8rem', color: '#6b7280' }}>
-            前回カルテのサマリがありません。カルテ保存後に要約が表示されます。
-          </span>
+          <EmptyNotice>前回カルテの要約はありません。保存後に最新のサマリが表示されます。</EmptyNotice>
         ) : (
           summaryLines.map((line, index) => (
             <SummaryLine
@@ -97,6 +103,6 @@ export const MiniSummaryDock = ({ summaryLines, onExpand, onSnippetDragStart }: 
           ))
         )}
       </DockBody>
-    </DockContainer>
+    </DockCard>
   );
 };
