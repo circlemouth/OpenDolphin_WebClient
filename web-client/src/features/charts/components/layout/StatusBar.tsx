@@ -1,3 +1,4 @@
+import { forwardRef } from 'react';
 import styled from '@emotion/styled';
 
 import { Button } from '@/components';
@@ -110,7 +111,7 @@ const resolveTone = (state: string, successValue: string, processingValue: strin
   return 'neutral';
 };
 
-export const StatusBar = ({
+export const StatusBar = forwardRef<HTMLElement, StatusBarProps>(({
   saveState,
   signatureState,
   claimState,
@@ -130,7 +131,7 @@ export const StatusBar = ({
   claimDisabledReason,
   signatureError,
   claimError,
-}: StatusBarProps) => {
+}, ref) => {
   const saveTone = resolveTone(saveState, 'saved', 'saving');
   const saveLabel = (() => {
     switch (saveState) {
@@ -186,7 +187,7 @@ export const StatusBar = ({
   const claimTooltip = claimError ?? claimDisabledReason ?? undefined;
 
   return (
-    <Footer aria-label="ステータスバー">
+    <Footer ref={ref} aria-label="ステータスバー">
       <StatusColumn>
         <StatusRow>
           <StatusIndicator $tone={saveTone} title={saveState === 'error' ? '保存に失敗しました。再試行してください。' : undefined}>
@@ -248,4 +249,6 @@ export const StatusBar = ({
       </ActionGroup>
     </Footer>
   );
-};
+});
+
+StatusBar.displayName = 'StatusBar';

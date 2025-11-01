@@ -1,4 +1,5 @@
-﻿import styled from '@emotion/styled';
+﻿import { forwardRef } from 'react';
+import styled from '@emotion/styled';
 
 import { SurfaceCard } from '@/components';
 
@@ -75,9 +76,9 @@ const EmptyNotice = styled.span`
   color: ${({ theme }) => theme.palette.textMuted};
 `;
 
-export const MiniSummaryDock = ({ summaryLines, onExpand, onSnippetDragStart }: MiniSummaryDockProps) => {
+export const MiniSummaryDock = forwardRef<HTMLDivElement, MiniSummaryDockProps>(({ summaryLines, onExpand, onSnippetDragStart }, ref) => {
   return (
-    <DockCard role="complementary" aria-label="ミニサマリ">
+    <DockCard ref={ref} role="complementary" aria-label="ミニサマリ">
       <DockHeader>
         <DockTitle>前回サマリ</DockTitle>
         <ExpandButton type="button" onClick={onExpand}>
@@ -105,4 +106,6 @@ export const MiniSummaryDock = ({ summaryLines, onExpand, onSnippetDragStart }: 
       </DockBody>
     </DockCard>
   );
-};
+});
+
+MiniSummaryDock.displayName = 'MiniSummaryDock';

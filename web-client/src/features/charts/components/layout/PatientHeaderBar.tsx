@@ -1,5 +1,6 @@
 import { forwardRef, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
+import type { Ref } from 'react';
 
 import { Button, StatusBadge } from '@/components';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
@@ -15,6 +16,7 @@ interface PatientHeaderBarProps {
   diagnosisTags: string[];
   onAddDiagnosisTag: (value: string) => void;
   onRemoveDiagnosisTag: (value: string) => void;
+  containerRef?: Ref<HTMLDivElement>;
   visitPurpose?: string | null;
   paymentCategory?: string | null;
   emergencyContact?: string | null;
@@ -388,6 +390,7 @@ export const PatientHeaderBar = forwardRef<HTMLInputElement, PatientHeaderBarPro
       isTimerRunning,
       searchShortcutHint,
       canEdit,
+      containerRef,
     },
     complaintInputRef,
   ) => {
@@ -428,7 +431,7 @@ export const PatientHeaderBar = forwardRef<HTMLInputElement, PatientHeaderBarPro
     };
 
     return (
-      <Header role="banner" aria-label="患者情報ヘッダー">
+      <Header ref={containerRef} role="banner" aria-label="患者情報ヘッダー">
         <IdentitySection>
           <PhotoFrame>
             {patientPhotoUrl ? (

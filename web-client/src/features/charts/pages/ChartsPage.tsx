@@ -39,6 +39,9 @@ import styled from '@emotion/styled';
 import { useNavigate, useParams } from 'react-router-dom';
 import type { ComponentProps } from 'react';
 
+const RIGHT_CONSOLE_COLLAPSE_BREAKPOINT = 1000;
+const RIGHT_CONSOLE_AUTO_EXPAND_BREAKPOINT = 1400;
+
 import { Button, Stack, SurfaceCard, TextArea, TextField } from '@/components';
 import { recordOperationEvent } from '@/libs/audit';
 import { CareMapPanel } from '@/features/charts/components/CareMapPanel';
@@ -129,6 +132,17 @@ import type {
 } from '@/features/charts/utils/timeline-events';
 
 const PageShell = styled.div`
+  --charts-header-height: 80px;
+  --charts-footer-height: 48px;
+  --charts-dock-height: 0px;
+  --charts-content-padding-x: 24px;
+  --charts-content-padding-top: 16px;
+  --charts-content-padding-bottom: 140px;
+  --charts-left-rail-min-width: 240px;
+  --charts-right-rail-min-width: 240px;
+  --charts-central-min-width: 780px;
+  --charts-content-gap: 24px;
+
   min-height: 100vh;
   background: ${({ theme }) => theme.palette.background};
   display: flex;
@@ -138,30 +152,50 @@ const PageShell = styled.div`
 const ContentGrid = styled.div`
   flex: 1 1 auto;
   display: grid;
-  grid-template-columns: minmax(240px, 22%) minmax(0, 56%) minmax(240px, 22%);
-  column-gap: 24px;
+  grid-template-columns:
+    minmax(var(--charts-left-rail-min-width), 22%)
+    minmax(var(--charts-central-min-width), 56%)
+    minmax(var(--charts-right-rail-min-width), 22%);
+  column-gap: var(--charts-content-gap);
   align-items: start;
-  padding: 16px 24px 140px;
+  padding: var(--charts-content-padding-top) var(--charts-content-padding-x) var(--charts-content-padding-bottom);
   min-height: 0;
 
   @media (max-width: 1600px) {
-    grid-template-columns: minmax(220px, 24%) minmax(0, 52%) minmax(220px, 24%);
+    --charts-left-rail-min-width: 220px;
+    --charts-right-rail-min-width: 220px;
+
+    grid-template-columns:
+      minmax(var(--charts-left-rail-min-width), 24%)
+      minmax(var(--charts-central-min-width), 52%)
+      minmax(var(--charts-right-rail-min-width), 24%);
   }
 
   @media (max-width: 1280px) {
-    grid-template-columns: minmax(200px, 28%) minmax(0, 44%) minmax(200px, 28%);
+    --charts-left-rail-min-width: 200px;
+    --charts-right-rail-min-width: 200px;
+
+    grid-template-columns:
+      minmax(var(--charts-left-rail-min-width), 28%)
+      minmax(var(--charts-central-min-width), 44%)
+      minmax(var(--charts-right-rail-min-width), 28%);
   }
 
   @media (max-width: 1100px) {
-    grid-template-columns: minmax(200px, 1fr);
+    --charts-left-rail-min-width: 0px;
+    --charts-right-rail-min-width: 0px;
+    --charts-central-min-width: 0px;
+
+    grid-template-columns: minmax(0, 1fr);
     grid-auto-rows: minmax(0, auto);
     row-gap: 24px;
   }
 `;
 
 const LeftRail = styled.div`
+  min-width: var(--charts-left-rail-min-width, 0px);
   position: sticky;
-  top: 80px;
+  top: calc(var(--charts-header-height) + var(--charts-content-padding-top));
   align-self: start;
   display: flex;
   flex-direction: column;
@@ -169,8 +203,9 @@ const LeftRail = styled.div`
 `;
 
 const CentralColumn = styled.div`
-  min-width: 0;
-  height: calc(100vh - 80px - 48px);
+  min-width: min(100%, var(--charts-central-min-width, 0px));
+  min-height: 0;
+  height: calc(100vh - var(--charts-header-height) - var(--charts-footer-height));
   display: flex;
   flex-direction: column;
 `;
@@ -192,10 +227,11 @@ const WorkspaceStack = styled.div`
 `;
 
 const RightRail = styled.div`
+  min-width: var(--charts-right-rail-min-width, 0px);
   position: sticky;
-  top: 80px;
+  top: calc(var(--charts-header-height) + var(--charts-content-padding-top));
   align-self: start;
-  height: calc(100vh - 80px - 48px);
+  height: calc(100vh - var(--charts-header-height) - var(--charts-footer-height));
   display: flex;
 `;
 
@@ -3751,13 +3787,16 @@ export const ChartsPage = () => {
   useEffect(() => {
     const handleResize = () => {
       const width = window.innerWidth;
-      if (width < 1000) {
+      const shouldForceCollapse = width < RIGHT_CONSOLE_COLLAPSE_BREAKPOINT;
+
+      setForceCollapse(shouldForceCollapse);
+
+      if (shouldForceCollapse) {
         setRightPaneCollapsed(true);
-        setForceCollapse(true);
-      } else if (width < 1400) {
-        setForceCollapse(false);
-      } else {
-        setForceCollapse(false);
+        return;
+      }
+
+      if (width >= RIGHT_CONSOLE_AUTO_EXPAND_BREAKPOINT) {
         setRightPaneCollapsed(false);
       }
     };
