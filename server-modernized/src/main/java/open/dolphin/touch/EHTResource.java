@@ -28,20 +28,20 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.StreamingOutput;
 import open.dolphin.converter.NLaboModuleConverter;
 import open.dolphin.infomodel.AllergyModel;
 import open.dolphin.infomodel.AttachmentModel;
@@ -90,8 +90,8 @@ import open.dolphin.touch.converter.ISendPackage2;
 import open.dolphin.touch.converter.IVitalModel;
 import open.dolphin.touch.session.EHTServiceBean;
 import open.orca.rest.ORCAConnection;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *
@@ -406,7 +406,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
                 
                 int cnt = 0;
@@ -433,7 +433,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
                 
                 int cnt = 0;
@@ -460,7 +460,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
 
                 int cnt = 0;
@@ -515,7 +515,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
@@ -542,7 +542,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
@@ -569,7 +569,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                                 
                 int cnt = 0;
@@ -768,7 +768,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 String[] pks = mapper.readValue(json, String[].class);
                 
                 long pk = Long.parseLong(pks[0]);
@@ -1267,7 +1267,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 
                 String fpid = getFidPid(servletReq.getRemoteUser(), param);
                 List<VitalModel> list = ehtService.getPatVital(fpid);
@@ -1292,7 +1292,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 
                 IVitalModel imodel = mapper.readValue(json, IVitalModel.class);
                 VitalModel model = imodel.toModel();
@@ -1313,7 +1313,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
                 int cnt = ehtService.removeVital(json);
                 mapper = getSerializeMapper();
@@ -1330,7 +1330,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 
                 long karteId = Long.parseLong(param);
                 List<IPhysicalModel> result = ehtService.getPhysicals(karteId);
@@ -1349,7 +1349,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 
                 IPhysicalModel physical = mapper.readValue(json, IPhysicalModel.class);
                 int cnt = 0;
@@ -1371,7 +1371,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 
                 String[] params = json.split(CAMMA);
                 List<Long> list = new ArrayList<Long>(params.length);

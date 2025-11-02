@@ -1,6 +1,6 @@
 package open.dolphin.touch.converter;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 import open.dolphin.infomodel.ExtRefModel;
 
 /**
