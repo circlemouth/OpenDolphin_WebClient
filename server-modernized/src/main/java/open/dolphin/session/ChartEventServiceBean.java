@@ -10,7 +10,7 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -18,12 +18,14 @@ import jakarta.servlet.AsyncContext;
 import open.dolphin.infomodel.*;
 import open.dolphin.mbean.ServletContextHolder;
 import open.dolphin.rest.ChartEventResource;
+import jakarta.transaction.Transactional;
 
 /**
  * ChartEventServiceBean
  * @author masuda, Masuda Naika
  */
-@Stateless
+@ApplicationScoped
+@Transactional
 public class ChartEventServiceBean {
 
     //private static final Logger logger = Logger.getLogger(ChartEventServiceBean.class.getSimpleName());

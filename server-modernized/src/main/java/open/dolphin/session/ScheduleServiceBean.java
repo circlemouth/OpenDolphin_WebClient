@@ -17,8 +17,7 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jakarta.annotation.Resource;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
@@ -43,13 +42,15 @@ import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.msg.ClaimSender;
 import open.dolphin.touch.converter.IOSHelper;
+import jakarta.transaction.Transactional;
 
 /**
  * (予定カルテ対応)
  * @author kazushi Minagawa.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
 public class ScheduleServiceBean {
     
     private static final String QUERY_PVT_BY_FID_DATE

@@ -8,10 +8,11 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Logger;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.msg.MMLHelper;
@@ -29,7 +30,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author kazushi
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
 public class MmlServiceBean {
     
     // parameter

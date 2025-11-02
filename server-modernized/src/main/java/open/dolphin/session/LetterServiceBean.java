@@ -3,7 +3,7 @@ package open.dolphin.session;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -12,13 +12,15 @@ import open.dolphin.infomodel.LetterDate;
 import open.dolphin.infomodel.LetterItem;
 import open.dolphin.infomodel.LetterModule;
 import open.dolphin.infomodel.LetterText;
+import jakarta.transaction.Transactional;
 
 /**
  *
  * @author Kazushi Minagawa, Digital Globe, Inc.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
 public class LetterServiceBean {
     
     private static final String KARTE_ID = "karteId";

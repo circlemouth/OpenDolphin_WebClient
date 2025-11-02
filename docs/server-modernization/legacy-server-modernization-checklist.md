@@ -31,7 +31,7 @@
 - [x] API 認証ヘッダと 2FA エンドポイントのセキュリティ要件（レート制限・監査ログ）を追加設計した。`docs/server-modernization/rest-api-modernization.md` に設計メモを記載し、監査ログ・OTP 署名要件を整理済み。
 
 ### 3.3 セッション/EJB 層
-- [ ] `open.dolphin.session`・`adm10.session`・`adm20.session` に存在する `@Stateless` Bean を CDI/シングルトンへリファクタするか、Jakarta EJB 互換 API へ移行する。
+- [x] `open.dolphin.session`・`adm10.session`・`adm20.session` に存在する `@Stateless` Bean を CDI/シングルトンへリファクタするか、Jakarta EJB 互換 API へ移行する。`server-modernized/src/main/java/open/dolphin/session/` では `@ApplicationScoped` + `@Transactional` の CDI Bean へ刷新し、トランザクション境界を維持したまま EJB 依存を排除済み。
 - [ ] `EntityManager` 利用箇所の JPQL/Native クエリを棚卸しし、パフォーマンスクリティカルなクエリにインデックス/ビューを設計する。
 - [ ] ClaimSender / DiagnosisSender など JMS 依存を含むメッセージング部を評価し、Jakarta Messaging or 外部メッセージングサービスへの移行方針を決定する。
 - [ ] 例外ハンドリングとトランザクション境界を再設計し、分散トレーシング用のコンテキスト伝播を追加する。
