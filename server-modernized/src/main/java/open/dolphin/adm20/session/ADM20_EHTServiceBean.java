@@ -91,6 +91,7 @@ import open.dolphin.security.fido.Fido2Config;
 import open.dolphin.security.totp.BackupCodeGenerator;
 import open.dolphin.security.totp.TotpRegistrationResult;
 import open.dolphin.security.totp.TotpSecretProtector;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -98,6 +99,7 @@ import open.dolphin.security.totp.TotpSecretProtector;
  */
 @Named
 @Stateless
+@SessionOperation
 public class ADM20_EHTServiceBean {
 
     // 新規患者

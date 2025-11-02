@@ -35,6 +35,7 @@ import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.StampModel;
 import open.dolphin.infomodel.StampTreeModel;
 import open.dolphin.infomodel.VitalModel;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -42,6 +43,7 @@ import open.dolphin.infomodel.VitalModel;
  */
 @Named
 @Stateless
+@SessionOperation
 public class ADM10_EHTServiceBean {
     
     // Karte

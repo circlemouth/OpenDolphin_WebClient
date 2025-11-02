@@ -18,6 +18,7 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.Query;
+import open.dolphin.adm20.converter.IOSHelper;
 import open.dolphin.infomodel.AttachmentModel;
 import open.dolphin.infomodel.CarePlanModel;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
@@ -34,7 +35,7 @@ import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.msg.gateway.MessagingGateway;
-import open.dolphin.adm20.converter.IOSHelper;
+import open.dolphin.session.framework.SessionOperation;
 //import org.jboss.logging.Logger;
 
 /**
@@ -43,6 +44,7 @@ import open.dolphin.adm20.converter.IOSHelper;
  */
 @Named
 @Stateless
+@SessionOperation
 public class ADM20_AdmissionServiceBean {
     
     // parameters
