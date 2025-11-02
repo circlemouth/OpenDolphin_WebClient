@@ -76,6 +76,30 @@ install_maven() {
   ln -sf "${install_dir}/bin/mvn" /usr/local/bin/mvn
 }
 
+prepare_maven_settings() {
+  local source="${REPO_ROOT}/docker/server/settings.xml"
+  local target_dir="${HOME}/.m2"
+  MAVEN_SETTINGS=""
+
+  if [[ -f "${source}" ]]; then
+    mkdir -p "${target_dir}"
+    MAVEN_SETTINGS="${target_dir}/opendolphin-server-settings.xml"
+    cp "${source}" "${MAVEN_SETTINGS}"
+    log "WildFly 用 Maven リポジトリ設定を ${MAVEN_SETTINGS} に配置しました"
+  else
+    log "docker/server/settings.xml が見つからないため追加リポジトリ設定をスキップします"
+  fi
+}
+
+run_mvn() {
+  local cmd=(mvn -B -ntp)
+  if [[ -n "${MAVEN_SETTINGS:-}" ]]; then
+    cmd+=(-s "${MAVEN_SETTINGS}")
+  fi
+  cmd+=("$@")
+  "${cmd[@]}"
+}
+
 configure_java_home() {
   local java_home
   java_home="$(dirname "$(dirname "$(readlink -f "$(command -v javac)")")")"
@@ -113,7 +137,7 @@ install_ext_libraries() {
     fi
 
     log "${groupId}:${artifactId}:${version} をローカルリポジトリへ登録します"
-    mvn install:install-file \
+    run_mvn install:install-file \
       -Dfile="${ext_dir}/${jar}" \
       -DgroupId="${groupId}" \
       -DartifactId="${artifactId}" \
@@ -125,8 +149,14 @@ install_ext_libraries() {
 
 prime_modernized_server_dependencies() {
   pushd "${REPO_ROOT}" >/dev/null
+  log "親 POM をローカルリポジトリへインストールします"
+  run_mvn --non-recursive -f pom.xml install
+
+  log "共通モジュールをローカルリポジトリへインストールします"
+  run_mvn -f common/pom.xml -DskipTests install
+
   log "server-modernized モジュールの依存関係を事前取得します"
-  mvn -pl server-modernized -am -DskipTests package
+  run_mvn -f server-modernized/pom.xml -DskipTests package
   popd >/dev/null
 }
 
@@ -135,6 +165,7 @@ main() {
   ensure_repo_root
   install_apt_packages
   install_maven
+  prepare_maven_settings
   configure_java_home
   install_ext_libraries
   prime_modernized_server_dependencies
