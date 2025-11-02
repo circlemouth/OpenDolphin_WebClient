@@ -10,6 +10,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -18,6 +19,7 @@ import open.dolphin.infomodel.*;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class UserServiceBean {
 
     private static final String QUERY_USER_BY_UID = "from UserModel u where u.userId=:uid";

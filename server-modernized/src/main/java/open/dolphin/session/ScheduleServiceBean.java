@@ -3,21 +3,17 @@ package open.dolphin.session;
 import java.beans.XMLDecoder;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.jms.Connection;
 import jakarta.jms.ConnectionFactory;
@@ -28,6 +24,7 @@ import jakarta.jms.ObjectMessage;
 import jakarta.jms.Session;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.AttachmentModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
@@ -40,9 +37,9 @@ import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.infomodel.ProgressCourse;
 import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.UserModel;
-import open.dolphin.msg.ClaimSender;
+import open.dolphin.msg.gateway.MessagingGateway;
+import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.touch.converter.IOSHelper;
-import jakarta.transaction.Transactional;
 
 /**
  * (予定カルテ対応)
@@ -51,6 +48,7 @@ import jakarta.transaction.Transactional;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class ScheduleServiceBean {
     
     private static final String QUERY_PVT_BY_FID_DATE
@@ -88,6 +86,9 @@ public class ScheduleServiceBean {
     
     @PersistenceContext
     private EntityManager em;
+
+    @Inject
+    private MessagingGateway messagingGateway;
     
 //s.oh^ 2014/02/21 Claim送信方法の変更
     //@Resource(mappedName = "java:/JmsXA")
@@ -355,60 +356,8 @@ public class ScheduleServiceBean {
             
             // CLAIM送信
             if (send) {
-//s.oh^ 2014/01/23 ORCAとの接続対応
-                Properties config = new Properties();
-                sb = new StringBuilder();
-                sb.append(System.getProperty("jboss.home.dir"));
-                sb.append(File.separator);
-                sb.append("custom.properties");
-                File f = new File(sb.toString());
-                try {
-                    FileInputStream fin = new FileInputStream(f);
-                    InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect");
-                    config.load(r);
-                    r.close();
-                } catch (IOException ex) {
-                    ex.printStackTrace(System.err);
-                    return 1;
-                }
-                String claimConn = config.getProperty("claim.conn");
-                if(claimConn != null && claimConn.equals("server")) {
-//s.oh$
-                    // DocInfoへ開始日等を設定する
-                    schedule.toDetuch();
-//s.oh^ 2014/02/21 Claim送信方法の変更
-                    //Connection conn = null;
-                    //try {
-                    //    conn = connectionFactory.createConnection();
-                    //    Session session = conn.createSession(false, QueueSession.AUTO_ACKNOWLEDGE);
-                    //    ObjectMessage msg = session.createObjectMessage(schedule);
-                    //    MessageProducer producer = session.createProducer(queue);
-                    //    producer.send(msg);
-                    //} catch (Exception e) {
-                    //    e.printStackTrace(System.err);
-                    //} finally {
-                    //    if(conn != null) {
-                    //        try {
-                    //            conn.close();
-                    //        } catch (JMSException e) { 
-                    //        }
-                    //    }
-                    //}
-                    // ORCA CLAIM 送信パラメータ
-                    String host = config.getProperty("claim.host");
-                    int port = Integer.parseInt(config.getProperty("claim.send.port"));
-                    String enc = config.getProperty("claim.send.encoding");
-                    String facilityId = config.getProperty("dolphin.facilityId");
-                    Logger.getLogger("open.dolphin").info("Schedule message has received. Sending ORCA will start(Not Que).");
-                    ClaimSender sender = new ClaimSender(host, port, enc);
-                    try {
-                        sender.send(schedule);
-                    } catch (Exception ex) {
-                        ex.printStackTrace(System.err);
-                        Logger.getLogger("open.dolphin").warning("Claim send error : " + ex.getMessage());
-                    }
-//s.oh$
-                }
+                schedule.toDetuch();
+                messagingGateway.dispatchClaim(schedule);
             }
             
             return 1;

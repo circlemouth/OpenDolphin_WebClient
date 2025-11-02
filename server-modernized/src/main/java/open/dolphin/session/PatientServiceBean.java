@@ -18,6 +18,7 @@ import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -26,6 +27,7 @@ import open.dolphin.infomodel.RegisteredDiagnosisModel;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class PatientServiceBean {
 
     // cancel status=64 を where 節へ追加

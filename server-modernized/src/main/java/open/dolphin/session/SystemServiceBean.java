@@ -23,6 +23,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.OidSender;
+import open.dolphin.session.framework.SessionOperation;
 import open.stamp.seed.CopyStampTreeBuilder;
 import open.stamp.seed.CopyStampTreeDirector;
 import jakarta.transaction.Transactional;
@@ -35,6 +36,7 @@ import jakarta.transaction.Transactional;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 //s.oh^ 2014/02/21 Claim送信方法の変更
 //@ResourceAdapter("hornetq-ra.rar")
 //s.oh$

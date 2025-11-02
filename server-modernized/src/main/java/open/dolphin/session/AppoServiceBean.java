@@ -7,6 +7,7 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.infomodel.AppointmentModel;
 
 /**
@@ -16,6 +17,7 @@ import open.dolphin.infomodel.AppointmentModel;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class AppoServiceBean {
 
     private static final String QUERY_APPOINTMENT_BY_KARTE_ID = "from AppointmentModel a where a.karte.id=:karteId and a.date between :fromDate and :toDate";
