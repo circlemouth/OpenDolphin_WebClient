@@ -15,7 +15,7 @@ import jakarta.annotation.PreDestroy;
 import jakarta.annotation.Resource;
 import jakarta.ejb.Singleton;
 import jakarta.ejb.Startup;
-import javax.enterprise.concurrent.ManagedThreadFactory;
+import jakarta.enterprise.concurrent.ManagedThreadFactory;
 import jakarta.inject.Inject;
 import jakarta.jms.*;
 import open.dolphin.infomodel.HealthInsuranceModel;
