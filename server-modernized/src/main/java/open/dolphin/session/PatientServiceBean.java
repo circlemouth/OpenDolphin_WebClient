@@ -4,12 +4,13 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
@@ -23,7 +24,8 @@ import open.dolphin.infomodel.RegisteredDiagnosisModel;
  * @author Kazushi Minagawa, Digital Globe, Inc
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
 public class PatientServiceBean {
 
     // cancel status=64 を where 節へ追加

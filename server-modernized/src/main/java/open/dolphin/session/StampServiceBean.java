@@ -3,13 +3,12 @@ package open.dolphin.session;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import jakarta.annotation.Resource;
-import jakarta.ejb.SessionContext;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 
 /**
@@ -17,7 +16,8 @@ import open.dolphin.infomodel.*;
  * @author kazushi, Minagawa, Digital Globe, Inc.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
 public class StampServiceBean {
 
     private static final String QUERY_TREE_BY_USER_PK = "from StampTreeModel s where s.user.id=:userPK";
@@ -33,9 +33,6 @@ public class StampServiceBean {
     private static final String TREE_ID = "treeId";
     private static final String ID = "id";
     
-    @Resource
-    private SessionContext ctx;
-
     @PersistenceContext
     private EntityManager em;
     

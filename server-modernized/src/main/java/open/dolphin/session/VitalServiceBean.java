@@ -6,14 +6,13 @@ package open.dolphin.session;
 
 import java.util.Collection;
 import java.util.List;
-import jakarta.annotation.Resource;
-import jakarta.ejb.SessionContext;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 
 /**
@@ -22,7 +21,8 @@ import open.dolphin.infomodel.*;
  * @author Life Sciences Computing Corporation.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
 public class VitalServiceBean {
 
     private static final String QUERY_VITAL_BY_FPID = "from VitalModel v where v.facilityPatId=:fpid";
@@ -30,9 +30,6 @@ public class VitalServiceBean {
 
     private static final String ID = "id";
     private static final String FPID = "fpid";
-
-    @Resource
-    private SessionContext ctx;
 
     @PersistenceContext
     private EntityManager em;
