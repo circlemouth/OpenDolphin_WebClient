@@ -2,22 +2,24 @@ package open.dolphin.session;
 
 import java.util.Collection;
 import java.util.List;
-import jakarta.annotation.Resource;
-import jakarta.ejb.SessionContext;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
  * @author kazushi Minagawa, Digital Globe, Inc.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
+@SessionOperation
 public class UserServiceBean {
 
     private static final String QUERY_USER_BY_UID = "from UserModel u where u.userId=:uid";
@@ -27,9 +29,6 @@ public class UserServiceBean {
     private static final String FID = "fid";
     private static final String MEMBER_TYPE = "memberType";
     private static final String MEMBER_TYPE_EXPIRED = "EXPIRED";
-
-    @Resource
-    private SessionContext ctx;
 
     @PersistenceContext
     private EntityManager em;

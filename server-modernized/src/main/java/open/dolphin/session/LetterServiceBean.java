@@ -3,22 +3,26 @@ package open.dolphin.session;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.LetterDate;
 import open.dolphin.infomodel.LetterItem;
 import open.dolphin.infomodel.LetterModule;
 import open.dolphin.infomodel.LetterText;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
  * @author Kazushi Minagawa, Digital Globe, Inc.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
+@SessionOperation
 public class LetterServiceBean {
     
     private static final String KARTE_ID = "karteId";
