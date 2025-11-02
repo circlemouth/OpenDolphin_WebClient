@@ -10,6 +10,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 import json
 import re
 import sys
@@ -58,6 +59,22 @@ class ExecutionResult:
     message: str = ""
     elapsed_primary: Optional[float] = None
     elapsed_secondary: Optional[float] = None
+
+
+@dataclass
+class BaselineArtifact:
+    status: Optional[int]
+    body_json: Any = None
+    body_text: Optional[str] = None
+    body_bytes: Optional[bytes] = None
+
+    @property
+    def detected_mode(self) -> str:
+        if self.body_json is not None:
+            return "json"
+        if self.body_bytes is not None:
+            return "bytes"
+        return "text"
 
 
 def load_inventory(path: Path) -> List[Endpoint]:
@@ -282,6 +299,69 @@ def save_artifacts(
         dump_response("secondary_response", secondary_url, secondary)
 
 
+def load_baseline_artifacts(path: Path) -> Dict[str, BaselineArtifact]:
+    artifacts: Dict[str, BaselineArtifact] = {}
+    if not path.exists():
+        raise FileNotFoundError(f"ベースラインディレクトリが存在しません: {path}")
+    for child in path.iterdir():
+        if not child.is_dir():
+            continue
+        response_path = child / "primary_response.json"
+        if not response_path.exists():
+            response_path = child / "secondary_response.json"
+            if not response_path.exists():
+                continue
+        try:
+            data = json.loads(response_path.read_text())
+        except json.JSONDecodeError as exc:
+            raise ValueError(f"ベースライン成果物の読み込みに失敗しました: {response_path}") from exc
+        body_bytes_hex = data.get("body_bytes_base64")
+        artifacts[child.name] = BaselineArtifact(
+            status=data.get("status"),
+            body_json=data.get("body_json"),
+            body_text=data.get("body_text"),
+            body_bytes=bytes.fromhex(body_bytes_hex) if body_bytes_hex else None,
+        )
+    return artifacts
+
+
+def canonicalize_baseline_body(
+    baseline: BaselineArtifact, mode: str, ignore_fields: List[str]
+) -> Any:
+    resolved_mode = mode
+    if mode in ("auto", "default"):
+        resolved_mode = baseline.detected_mode
+    if resolved_mode == "status":
+        return None
+    if resolved_mode == "json":
+        if baseline.body_json is None:
+            raise ValueError("ベースラインに JSON データが含まれていません")
+        payload = copy.deepcopy(baseline.body_json)
+        if ignore_fields and isinstance(payload, dict):
+            for key in ignore_fields:
+                payload.pop(key, None)
+        return payload
+    if resolved_mode == "bytes":
+        if baseline.body_bytes is not None:
+            return baseline.body_bytes
+        if baseline.body_text is not None:
+            return baseline.body_text.encode("utf-8")
+        if baseline.body_json is not None:
+            return json.dumps(baseline.body_json).encode("utf-8")
+        return b""
+    # text or fallback
+    if baseline.body_text is not None:
+        return baseline.body_text
+    if baseline.body_json is not None:
+        return json.dumps(baseline.body_json, ensure_ascii=False)
+    if baseline.body_bytes is not None:
+        try:
+            return baseline.body_bytes.decode("utf-8")
+        except Exception:  # noqa: BLE001
+            return baseline.body_bytes.hex()
+    return ""
+
+
 def execute(
     endpoints: List[Endpoint],
     defaults: Dict[str, Any],
@@ -292,6 +372,7 @@ def execute(
     verify_tls: bool,
     artifact_dir: Optional[Path],
     allow_skips: bool,
+    baseline_artifacts: Optional[Dict[str, BaselineArtifact]] = None,
 ) -> Tuple[List[ExecutionResult], bool]:
     results: List[ExecutionResult] = []
     base_primary = primary_base_url.rstrip("/")
@@ -352,6 +433,21 @@ def execute(
                     results.append(result)
                     continue
 
+                baseline = None
+                if baseline_artifacts is not None:
+                    baseline = baseline_artifacts.get(endpoint.id)
+                    if baseline is None:
+                        result.message = "ベースラインが見つかりません"
+                        save_artifacts(
+                            artifact_dir,
+                            endpoint,
+                            request_kwargs,
+                            body_mode,
+                            primary_client.base_url.join(url_primary).human_repr(),
+                            response,
+                        )
+                        results.append(result)
+                        continue
                 secondary_response = None
                 url_secondary = None
                 if secondary_client is not None:
@@ -407,6 +503,29 @@ def execute(
                         secondary_client.base_url.join(url_secondary).human_repr(),
                         secondary_response,
                     )
+                elif baseline is not None:
+                    try:
+                        primary_body = canonicalize_response_body(response, spec.compare_mode, spec.compare_ignore_fields)
+                        baseline_body = canonicalize_baseline_body(baseline, spec.compare_mode, spec.compare_ignore_fields)
+                        baseline_status = baseline.status
+                        if baseline_status is not None and baseline_status != result.status_primary:
+                            result.mismatch = True
+                            result.message = f"ベースラインのステータス {baseline_status} と一致しません"
+                        elif primary_body != baseline_body:
+                            result.mismatch = True
+                            result.message = "ベースラインとレスポンスボディが一致しません"
+                        else:
+                            result.success = True
+                    except Exception as exc:  # noqa: BLE001
+                        result.message = f"ベースライン比較失敗: {exc}"
+                    save_artifacts(
+                        artifact_dir,
+                        endpoint,
+                        request_kwargs,
+                        body_mode,
+                        primary_client.base_url.join(url_primary).human_repr(),
+                        response,
+                    )
                 else:
                     result.success = True
                     save_artifacts(
@@ -437,6 +556,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--insecure", action="store_true", help="TLS 証明書検証を無効化する")
     parser.add_argument("--artifact-dir", type=Path, help="レスポンスを保存するディレクトリ")
     parser.add_argument("--allow-skips", action="store_true", help="skip 指定されたエンドポイントを失敗扱いにしない")
+    parser.add_argument("--baseline-dir", type=Path, help="旧サーバー結果の成果物ディレクトリを指定してレスポンス比較を行う")
     return parser.parse_args(argv)
 
 
@@ -446,6 +566,12 @@ def main(argv: Optional[List[str]] = None) -> int:
     config = yaml.safe_load(args.config.read_text())
     defaults = config.get("defaults", {})
     cases = config.get("cases", [])
+
+    baseline_artifacts = None
+    if args.baseline_dir:
+        baseline_artifacts = load_baseline_artifacts(args.baseline_dir)
+        if args.secondary_base_url:
+            raise ValueError("--baseline-dir と --secondary-base-url は同時に指定できません")
 
     results, has_error = execute(
         endpoints=inventory,
@@ -457,6 +583,7 @@ def main(argv: Optional[List[str]] = None) -> int:
         verify_tls=not args.insecure,
         artifact_dir=args.artifact_dir,
         allow_skips=args.allow_skips,
+        baseline_artifacts=baseline_artifacts,
     )
 
     success_count = sum(1 for r in results if r.success)
