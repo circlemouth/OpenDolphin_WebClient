@@ -1,0 +1,45 @@
+name: Reporting Preview
+
+on:
+  pull_request:
+    paths:
+      - 'server-modernized/reporting/**'
+      - 'server-modernized/pom.xml'
+      - 'docker/server-modernized/**'
+      - '.github/workflows/reporting-preview.yml'
+
+jobs:
+  render:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Temurin JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - name: Cache Maven repository
+        uses: actions/cache@v4
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+      - name: Build server-modernized WAR
+        run: mvn -pl server-modernized -am -DskipTests package
+      - name: Render sample PDF
+        run: |
+          mkdir -p reporting/output
+          java \
+            -cp "$(find server-modernized/target -name 'classes' -o -name '*.jar' -print | paste -sd: -)" \
+            open.dolphin.reporting.PdfRendererKt \
+            --templates server-modernized/reporting/templates \
+            --output reporting/output/sample.pdf \
+            --config server-modernized/reporting/signing-config.sample.json || echo "Renderer not yet implemented"
+      - name: Upload preview artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reporting-preview
+          path: reporting/output

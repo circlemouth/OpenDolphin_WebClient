@@ -1,0 +1,10 @@
+{
+  "keystorePath": "reporting/secrets/signature.p12",
+  "keystorePassword": "changeit",
+  "keyAlias": "opendolphin-report",
+  "tsaUrl": "https://tsa.example.com/tsa",
+  "tsaUsername": "tsa-user",
+  "tsaPassword": "tsa-password",
+  "reason": "Medical record export",
+  "location": "Tokyo, JP"
+}
