@@ -17,10 +17,10 @@
 
 ## 4. リアルタイム配信チャネル移行方針
 - 旧 `/chartEvent/subscribe` は長輪講ポーリング同等の仕組み。モダナイズ後は WildFly 26 の `Server-Sent Events (SSE)` を採用。
-- 実装案:
-  1. `jakarta.ws.rs.sse.Sse` を用いたブロードキャストエンドポイント（`/chart-events`）。
-  2. イベント ID を `ChartEventModel` の更新トークンとして払い出し、再接続時は `Last-Event-ID` ヘッダーで差分配信。
-  3. 認証は Bearer トークン + 2FA セッション確認を必須化。
+- 実装状況:
+  1. `jakarta.ws.rs.sse.Sse` を用いたブロードキャストエンドポイント `/chart-events` を `ChartEventStreamResource` として追加。`clientUUID` ヘッダによりクライアント識別を継続しつつ、同一発行者への配信は抑制する。
+  2. `ChartEventSseSupport` でイベント ID を採番し、最大 100 件の履歴バッファを保持。再接続時は `Last-Event-ID` ヘッダーに基づき欠落イベントのみを再送する。
+  3. 認証は既存の Bearer トークン + 2FA セッション確認フローを流用。未認証リクエストは 400 応答で切断する。
 - 旧クライアント互換のため、SSE 実装と並行して既存 REST pull API (`/chartEvent/dispatch`) を一定期間提供し、OpenAPI 内で Deprecated マークを付与予定。
 
 ## 5. 認証ヘッダと 2FA セキュリティ要件
