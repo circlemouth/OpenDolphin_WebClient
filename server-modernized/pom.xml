@@ -134,10 +134,36 @@
             <version>1.16</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcprov-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
+        <dependency>
+            <groupId>org.bouncycastle</groupId>
+            <artifactId>bcpkix-jdk18on</artifactId>
+            <version>1.78.1</version>
+        </dependency>
     </dependencies>
 
     <version>2.7.1</version>
     <build>
+        <resources>
+            <resource>
+                <directory>src/main/resources</directory>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/reporting/templates</directory>
+                <targetPath>reporting/templates</targetPath>
+                <includes>
+                    <include>**/*.vm</include>
+                </includes>
+            </resource>
+            <resource>
+                <directory>${project.basedir}/reporting/glossary</directory>
+                <targetPath>reporting/glossary</targetPath>
+            </resource>
+        </resources>
         <plugins>
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
