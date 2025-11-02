@@ -19,6 +19,7 @@ import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.mbean.ServletContextHolder;
 import open.dolphin.rest.ChartEventResource;
+import open.dolphin.rest.ChartEventSseSupport;
 import open.dolphin.session.framework.SessionOperation;
 
 /**
@@ -34,6 +35,9 @@ public class ChartEventServiceBean {
     
     @Inject
     private ServletContextHolder contextHolder;
+
+    @Inject
+    private ChartEventSseSupport chartEventSseSupport;
     
     @PersistenceContext
     private EntityManager em;
@@ -78,6 +82,8 @@ public class ChartEventServiceBean {
                 }
             }
         }
+
+        chartEventSseSupport.broadcast(evt);
     }
     
     public String getServerUUID() {

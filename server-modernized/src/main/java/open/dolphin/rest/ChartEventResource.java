@@ -40,7 +40,7 @@ public class ChartEventResource extends AbstractResource {
     
     @Inject
     private ServletContextHolder contextHolder;
-    
+
     @Context
     private HttpServletRequest servletReq;
     
@@ -105,7 +105,7 @@ public class ChartEventResource extends AbstractResource {
             }
         });
     }
-    
+
     @PUT
     @Path("/event")
     @Consumes()

@@ -2254,6 +2254,7 @@ paths:
       summary: subscribe
       description: 'Legacy signature: ``public void subscribe()``. Payload structure
         follows the original server implementation.'
+      deprecated: true
       responses:
         '200':
           description: Successful response carrying the legacy payload.
@@ -2261,6 +2262,34 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LegacyResponse'
+  /chart-events:
+    get:
+      operationId: chartstreamresource_1
+      tags:
+      - ChartEventResource
+      summary: subscribeChartEvents
+      description: 'Server-Sent Events stream delivering chart event updates. Requires
+        ``clientUUID`` header and supports reconnect with ``Last-Event-ID``.'
+      parameters:
+      - name: clientUUID
+        in: header
+        required: true
+        schema:
+          type: string
+        description: Legacy chart client identifier used to suppress echo events.
+      - name: Last-Event-ID
+        in: header
+        required: false
+        schema:
+          type: string
+        description: Last received SSE event id for replaying missed events.
+      responses:
+        '200':
+          description: Continuous SSE stream with chart updates.
+          content:
+            text/event-stream:
+              schema:
+                type: string
   /demo/document/progressCourse/{param}:
     get:
       operationId: demoresourceasp_1
