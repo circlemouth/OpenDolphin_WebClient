@@ -76,6 +76,35 @@ python server-modernized/tools/api-smoke-test/run_smoke.py \
 
 詳細を確認したい場合は `artifact-dir` 配下の `request.json`・`primary_response.json`・`secondary_response.json` を参照してください。
 
+## CI 自動化とベースライン比較
+
+GitHub Actions に `API Smoke Test` ワークフロー（`.github/workflows/api-smoke-test.yml`）を追加し、旧サーバーとモダナイズ版を Docker Compose で順番に起動してレスポンスを比較できるようにしました。ワークフローでは以下の流れで実行します。
+
+1. `docker compose up -d db server` で旧サーバーを起動し、`test_config.ci.yaml` で定義した最小エンドポイントに対して `run_smoke.py` を実行し成果物 (`artifacts/baseline/`) を生成する。
+2. 旧サーバーを停止した後、`docker compose --profile modernized up -d server-modernized` でモダナイズ版を起動し、同一設定で再度 `run_smoke.py` を実行する。この際 `--baseline-dir artifacts/baseline` を指定して、直前に取得した旧サーバー結果とレスポンスを比較する。
+3. `artifacts/modernized/` 以下にモダナイズ版のレスポンスを保存し、アーティファクトとしてアップロードする。
+
+CI 用の設定ファイル `server-modernized/tools/api-smoke-test/test_config.ci.yaml` は認証ヘッダーのみで疎通できる `/dolphin` および `/serverinfo/*` エンドポイントを対象とした最小構成です。追加で比較したい API がある場合は、同ファイルにケースを追記しつつ、必要なテストデータを `generate_config_skeleton.py` で生成した雛形に従って補完してください。
+
+### `--baseline-dir` オプション
+
+`run_smoke.py` に `--baseline-dir` オプションを追加し、`--secondary-base-url` を指定せずとも過去の成果物ディレクトリとレスポンスを比較できるようにしています。ベースライン成果物（`<endpoint-id>/primary_response.json`）内のボディ・ステータスを読み込んで、新しい実行結果と差分を判定します。以下のシナリオで利用してください。
+
+```bash
+# 旧サーバーからベースラインを取得
+python run_smoke.py --config test_config.yaml \
+  --primary-base-url https://legacy.example.com/api \
+  --artifact-dir artifacts/legacy
+
+# モダナイズ版と比較
+python run_smoke.py --config test_config.yaml \
+  --primary-base-url https://modern.example.com/api \
+  --baseline-dir artifacts/legacy \
+  --artifact-dir artifacts/modern
+```
+
+`--baseline-dir` と `--secondary-base-url` は同時に指定できません。比較対象サーバーを直接叩きたい場合は従来通り `--secondary-base-url` を利用してください。
+
 ## 注意事項
 
 - 旧サーバーの API は 300 件以上存在します。雛形生成後にすべてのプレースホルダーへ実データを設定してから実行してください。

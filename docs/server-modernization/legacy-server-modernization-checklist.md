@@ -64,8 +64,8 @@
 - [x] 設定変更・デプロイ作業のワークフローを標準化し、権限分離とレビュー手順を明文化する。→ `docs/server-modernization/security/DEPLOYMENT_WORKFLOW.md` に標準フローを追加。
 
 ### 3.8 品質保証 / 運用
-- [ ] API 互換性検証用スモークテスト（`api-smoke-test.md`）を自動化し、CI パイプラインで旧/新サーバー比較を実行する。
-- [ ] 監視メトリクス（応答時間、DB 接続数、エラーレート）を定義し、APM or Prometheus/Loki 収集基盤を導入する。
+- [x] API 互換性検証用スモークテスト（`api-smoke-test.md`）を自動化し、CI パイプラインで旧/新サーバー比較を実行する。→ `.github/workflows/api-smoke-test.yml` を追加し、`run_smoke.py --baseline-dir` で旧サーバー成果物と比較。
+- [x] 監視メトリクス（応答時間、DB 接続数、エラーレート）を定義し、APM or Prometheus/Loki 収集基盤を導入する。→ `open.dolphin.metrics.*` で MicroProfile Metrics を公開し、Prometheus 取り込み用エンドポイントを整備。
 - [ ] リリース手順・ロールバック手順を更新し、旧サーバーとの共存期間中のカットオーバープランを策定する。
 - [ ] 利用者向け周知（メンテナンスウィンドウ、2FA 再登録等）のコミュニケーション計画を準備する。
 - [ ] SLA/SLO と障害対応フローをドキュメント化し、訓練計画を立てる。
