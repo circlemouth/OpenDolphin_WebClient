@@ -17,18 +17,18 @@ import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Resource;
-import javax.ejb.Stateless;
-import javax.inject.Named;
-import javax.jms.Connection;
-import javax.jms.ConnectionFactory;
-import javax.jms.JMSException;
-import javax.jms.MessageProducer;
-import javax.jms.ObjectMessage;
-//import javax.jms.QueueSession;
-import javax.jms.Session;
-import javax.persistence.EntityManager;
-import javax.persistence.PersistenceContext;
+import jakarta.annotation.Resource;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Named;
+import jakarta.jms.Connection;
+import jakarta.jms.ConnectionFactory;
+import jakarta.jms.JMSException;
+import jakarta.jms.MessageProducer;
+import jakarta.jms.ObjectMessage;
+//import jakarta.jms.QueueSession;
+import jakarta.jms.Session;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import open.dolphin.infomodel.AttachmentModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
@@ -93,7 +93,7 @@ public class ScheduleServiceBean {
     //private ConnectionFactory connectionFactory;
     //
     //@Resource(mappedName = "java:/queue/dolphin")
-    //private javax.jms.Queue queue;
+    //private jakarta.jms.Queue queue;
 //s.oh$
     
     public List<PatientVisitModel> getPvt(String fid, String did, String unassigned, String date) {

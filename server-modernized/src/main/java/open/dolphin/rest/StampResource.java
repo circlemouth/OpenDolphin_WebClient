@@ -4,19 +4,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.PublishedTreeListConverter;
 import open.dolphin.converter.StampListConverter;
 import open.dolphin.converter.StampModelConverter;
 import open.dolphin.converter.StampTreeHolderConverter;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.StampServiceBean;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * REST Web Service
@@ -58,7 +58,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
 
         long pk = stampServiceBean.putTree(model);
@@ -76,7 +76,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
 
         String pkAndVersion = stampServiceBean.syncTree(model);
@@ -93,7 +93,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
 
         stampServiceBean.forceSyncTree(model);
@@ -124,7 +124,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StampTreeHolder h = mapper.readValue(json, StampTreeHolder.class);
 
         String version = stampServiceBean.updatePublishedTree(h);
@@ -140,7 +140,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
         
         String version = stampServiceBean.cancelPublishedTree(model);
@@ -173,7 +173,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         SubscribedTreeList list = mapper.readValue(json, SubscribedTreeList.class);
         
         List<Long> result = stampServiceBean.subscribeTrees(list.getList());
@@ -245,7 +245,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StampModel model = mapper.readValue(json, StampModel.class);
 
         String ret = stampServiceBean.putStamp(model);
@@ -262,7 +262,7 @@ public class StampResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         StampList list = mapper.readValue(json, StampList.class);
 
         List<String> ret = stampServiceBean.putStamp(list.getList());

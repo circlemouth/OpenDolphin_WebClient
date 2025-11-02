@@ -4,9 +4,9 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.IInfoModel;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.SerializationConfig;
-import org.codehaus.jackson.map.annotate.JsonSerialize;
+import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 
 /**
  *
@@ -46,9 +46,9 @@ public class AbstractResource {
     // 2013/06/24    
     protected static ObjectMapper getSerializeMapper() {
         ObjectMapper mapper = new ObjectMapper();
-        //mapper.getSerializationConfig().setSerializationInclusion(JsonSerialize.Inclusion.NON_NULL);
-        mapper.configure(SerializationConfig.Feature.WRITE_NULL_MAP_VALUES, false);
-        mapper.configure(SerializationConfig.Feature.FAIL_ON_EMPTY_BEANS, false);
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
+        mapper.disable(SerializationFeature.FAIL_ON_EMPTY_BEANS);
         return mapper;
     }
 }

@@ -15,13 +15,13 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.annotation.Resource;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
+import jakarta.annotation.Resource;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.StringListConverter;
 import open.dolphin.converter.UserModelConverter;
 import open.dolphin.infomodel.ChartEventModel;
@@ -49,7 +49,7 @@ import open.dolphin.touch.converter.ISendPackage2;
 import open.dolphin.touch.converter.IVisitPackage;
 import open.dolphin.touch.session.IPhoneServiceBean;
 import open.orca.rest.ORCAConnection;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *

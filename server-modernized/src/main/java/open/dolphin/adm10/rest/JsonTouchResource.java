@@ -25,12 +25,12 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.StreamingOutput;
 import open.dolphin.adm10.converter.IBundleModule;
 import open.dolphin.adm10.converter.IOSHelper;
 import open.dolphin.converter.UserModelConverter;
@@ -60,7 +60,7 @@ import open.dolphin.infomodel.StampModel;
 import open.dolphin.session.ChartEventServiceBean;
 import open.dolphin.session.KarteServiceBean;
 import open.orca.rest.ORCAConnection;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  *
