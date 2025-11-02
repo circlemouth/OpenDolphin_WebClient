@@ -21,7 +21,7 @@
 - [x] WildFly 26 LTS 以降のランタイムに合わせて Jakarta EE 8 API へ置換し、`jakarta.*` 依存へ切り替える。依存座標は Jakarta API へ移行済み。
 - [x] `wildfly-maven-plugin` の接続情報を Maven Settings / 環境変数へ外部化し、CI/CD から秘密情報を除去する。`server-modernized/pom.xml` で `serverId`/環境変数プロファイルを導入し、`.env.sample`・運用ドキュメントを更新。
 - [x] `server-modernized/pom.xml` に BOM 管理を導入し、RESTEasy・JDBC ドライバ等を WildFly 同梱版へ寄せる。WildFly BOM を import して依存バージョンを統制。
-- [x] Docker Compose の WildFly イメージを更新し、ヘルスチェックや環境変数テンプレートを `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` に統合する。WildFly 26.1.3.Final ベースの Dockerfile と移行手順を追加済み。
+- [x] Docker Compose に従来サーバー (`server`) とモダナイズ版 (`server-modernized` プロファイル) の両構成を用意し、ヘルスチェックや環境変数テンプレートを `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` に統合済み。WildFly 26.1.3.Final ベースの Dockerfile は `docker/server-modernized/` に分離し、評価時のみ起動できるよう切替手順を記載。
 
 ### 3.2 REST API レイヤー
 - [ ] `server-api-inventory.yaml` と既存 `*.rest` 実装を突合し、全エンドポイントの入力/出力スキーマを OpenAPI で定義する。
