@@ -25,7 +25,7 @@ export interface ClientAuditEvent {
   metadata?: Record<string, unknown>;
 }
 
-const AUDIT_ENDPOINT = import.meta.env.VITE_AUDIT_ENDPOINT ?? '/audit/logs';
+const AUDIT_ENDPOINT = import.meta.env.VITE_AUDIT_ENDPOINT ?? (import.meta.env.DEV ? null : '/audit/logs');
 const FLUSH_INTERVAL_MS = 5_000;
 const MAX_BUFFER_SIZE = 25;
 
@@ -49,9 +49,9 @@ const drainEvents = () => ({
   generatedAt: new Date().toISOString(),
 });
 
-const postWithFetch = async (body: string) => {
+const postWithFetch = async (endpoint: string, body: string) => {
   const token = getCsrfToken();
-  await fetch(AUDIT_ENDPOINT, {
+  await fetch(endpoint, {
     method: 'POST',
     credentials: 'include',
     headers: {
@@ -69,19 +69,25 @@ export const flushBuffer = async (reason: 'interval' | 'manual' | 'visibilitycha
     return;
   }
 
+  const endpoint = AUDIT_ENDPOINT;
+  if (!endpoint) {
+    drainEvents();
+    return;
+  }
+
   const snapshot = drainEvents();
   const payload = JSON.stringify({ reason, ...snapshot });
 
   if (typeof navigator !== 'undefined' && navigator.sendBeacon) {
     const blob = new Blob([payload], { type: 'application/json' });
-    const sent = navigator.sendBeacon(AUDIT_ENDPOINT, blob);
+    const sent = navigator.sendBeacon(endpoint, blob);
     if (sent) {
       return;
     }
   }
 
   try {
-    await postWithFetch(payload);
+    await postWithFetch(endpoint, payload);
   } catch (error) {
     console.warn('監査ログの送信に失敗しました。再送キューに積み直します。', error);
     eventBuffer.unshift(...snapshot.events);
