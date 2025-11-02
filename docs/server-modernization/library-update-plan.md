@@ -10,6 +10,8 @@
 - `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md`：WildFly 26 + PostgreSQL 14 を用いたローカル検証手順。近代化後のターゲットランタイムの基準とする。
 - `docs/web-client/operations/TEST_SERVER_DEPLOY.md`：WildFly 9 系での手動デプロイ手順。旧環境との差分確認・ロールバック用の基準とする。
 - `docs/web-client/architecture/REPOSITORY_OVERVIEW.md`：サーバー依存関係、資格情報外部化の注意点を記載。pom 更新時のレビューチェックリストとして活用する。
+- `docs/server-modernization/server-api-inventory.md`：旧サーバー REST API の全エンドポイント一覧。検証観点の抜け漏れ防止に利用する。
+- `docs/server-modernization/api-smoke-test.md`：レスポンス互換性検証用スモークテストの運用手順。
 
 ## フェーズ 1：ライブラリアップデート実施計画
 1. **ビルド環境の整備**
