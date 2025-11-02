@@ -7,11 +7,11 @@
 
 ## Quick Facts
 - **Tech stack**: Java 8 (legacy `server/`) + Java EE 7 / WildFly 10、および Java 17 (`server-modernized/`) + Jakarta EE 8 / WildFly 26 LTS。
-- **Modules**: `common` (shared models), `server` (REST + EJB), `client` (Swing desktop).
+- **Modules**: `common` (shared models), `server` (REST + EJB), `server-modernized` (Jakarta EE 8 / WildFly 26 移行版), `client` (Swing desktop).
 - **Manual deps**: `ext_lib/AppleJavaExtensions.jar`, `ext_lib/iTextAsian.jar` must live in local Maven repo.
 
 ## Repository Layout
-- Root `pom.xml` orchestrates the three modules and enforces Java 1.8 compilation.
+- Root `pom.xml` orchestrates the four modules (`common`, `server`, `server-modernized`, `client`) and enforces Java 1.8 compilation for legacy modules.
 - `common/`: shared models, converters, and utilities.
 - `server/`: Java EE WAR exposing REST endpoints and session beans.
 - `client/`: Swing UI packaged as fat JAR with plugin mechanism.
