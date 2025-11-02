@@ -14,9 +14,9 @@
 
 ## 2. persistence.xml の Secrets 外部化
 
-- `server-modernized/src/main/resources/META-INF/persistence.xml` を Jakarta EE 仕様に合わせて新設し、JNDI `java:jboss/datasources/PostgresDS` のみを参照する構成へ変更した。これにより JDBC URL・資格情報はすべて WildFly データソースへ委譲され、Git に資格情報が残らない。
+- `server-modernized/src/main/resources/META-INF/persistence.xml` を Jakarta EE 8 (JPA 2.2) 仕様に合わせて新設し、JNDI `java:jboss/datasources/PostgresDS` のみを参照する構成へ変更した。これにより JDBC URL・資格情報はすべて WildFly データソースへ委譲され、Git に資格情報が残らない。
 - Secrets 管理は `server-modernized/config/server-modernized.env.sample` をひな形として整備。既存利用者は現行の `custom.properties` に加えて `.env` を作成し、CI/CD から環境変数として注入するだけで移行が完了する。
-- Hibernate プロパティは `jakarta.persistence.schema-generation.database.action=none` を基本とし、不要な自動 DDL 生成を停止。Lazy Load の強制有効化を禁止し、セッション境界外アクセスが発生した場合は明示的に例外が出るよう調整した。
+- Hibernate プロパティは `javax.persistence.schema-generation.database.action=none` を基本とし、不要な自動 DDL 生成を停止。Lazy Load の強制有効化を禁止し、セッション境界外アクセスが発生した場合は明示的に例外が出るよう調整した。
 
 ## 3. スキーマのリバースエンジニアリングと Flyway 化
 
