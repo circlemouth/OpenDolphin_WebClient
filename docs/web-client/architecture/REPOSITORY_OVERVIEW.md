@@ -6,7 +6,7 @@
 - Capture notable quirks, risks, and recurring tasks.
 
 ## Quick Facts
-- **Tech stack**: Java 17 (server-modernized), Maven 3.9, Jakarta EE 8 API, WildFly 26 LTS。
+- **Tech stack**: Java 8 (legacy `server/`) + Java EE 7 / WildFly 10、および Java 17 (`server-modernized/`) + Jakarta EE 8 / WildFly 26 LTS。
 - **Modules**: `common` (shared models), `server` (REST + EJB), `client` (Swing desktop).
 - **Manual deps**: `ext_lib/AppleJavaExtensions.jar`, `ext_lib/iTextAsian.jar` must live in local Maven repo.
 
@@ -19,11 +19,11 @@
 - `ext_lib/`: proprietary jars to install via `mvn install:install-file`.
 
 ## Build & Toolchain
-- Requires JDK 17 (for `server-modernized/`) and Maven ≥ 3.9.0. Legacy `server/` モジュールは JDK 8 のまま維持されるが、モダナイズ作業は JDK 17 を前提とする。
+- Requires Maven ≥ 3.9.0。`server/` モジュールは JDK 8 / Java EE 7、`server-modernized/` は JDK 17 / Jakarta EE 8 を使用する。
 - Typical workflow:
   1. Install manual jars (`iTextAsian`, `AppleJavaExtensions`).
   2. `mvn clean package` at repo root (produces `server/target/opendolphin-server.war` & `client/target/OpenDolphin.jar`).
-- WildFly plugin config in `server-modernized/pom.xml` uses environment-aware propertiesと `settings.xml` の `<server>` 定義で管理資格情報を外部化済み。既存 `server/pom.xml` に残るハードコード値は参照のみ。
+- WildFly plugin config in `server-modernized/pom.xml` uses environment-aware propertiesと `settings.xml` の `<server>` 定義で管理資格情報を外部化済み。既存 `server/pom.xml` に残るハードコード値は参照のみで、従来環境のビルドは Docker Compose の `server` サービスで賄う。
 - Manual install commands:
   ```bash
   mvn install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
