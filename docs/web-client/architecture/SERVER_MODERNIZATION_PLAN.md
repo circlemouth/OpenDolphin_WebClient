@@ -95,6 +95,7 @@
   - 医療従事者ごとの個別 ID、2FA（TOTP または FIDO2）の実装計画。
   - ロールセット（医師、看護師、医療事務、管理者）と ABAC ポリシー。
   - 休眠アカウント自動無効化、退職手続き Runbook。
+  - Phase 3.7 にて TOTP/FIDO2 API（`/20/adm/factor2/*`）と監査ログを実装済み。詳細は `docs/server-modernization/security/3_7-security-compliance.md` を参照。
 
 - **Compliance Ledger Service**
   - Append-only ログテーブル + WORM ストレージ連携。

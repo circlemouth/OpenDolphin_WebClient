@@ -1537,6 +1537,131 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/LegacyResponse'
+  /20/adm/factor2/totp/registration:
+    post:
+      operationId: admissionresource_totpRegistration
+      tags:
+      - AdmissionResource
+      summary: startTotpRegistration
+      description: 'Starts a TOTP registration and issues otpauth parameters. Returns
+        the encrypted credential reference and provisioning URI.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TotpRegistrationRequest'
+      responses:
+        '200':
+          description: TOTP registration payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpRegistrationResponse'
+  /20/adm/factor2/totp/verification:
+    post:
+      operationId: admissionresource_totpVerification
+      tags:
+      - AdmissionResource
+      summary: verifyTotpRegistration
+      description: 'Completes a TOTP registration by validating the one-time password
+        and issuing hashed backup codes.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TotpVerificationRequest'
+      responses:
+        '200':
+          description: Verification status and regenerated backup codes.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TotpVerificationResponse'
+  /20/adm/factor2/fido2/registration/options:
+    post:
+      operationId: admissionresource_fidoRegistrationOptions
+      tags:
+      - AdmissionResource
+      summary: startFidoRegistration
+      description: 'Starts a FIDO2/WebAuthn registration ceremony and returns PublicKeyCredentialCreationOptions.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FidoRegistrationOptionsRequest'
+      responses:
+        '200':
+          description: Registration options payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FidoRegistrationOptionsResponse'
+  /20/adm/factor2/fido2/registration/finish:
+    post:
+      operationId: admissionresource_fidoRegistrationFinish
+      tags:
+      - AdmissionResource
+      summary: finishFidoRegistration
+      description: 'Finalises a WebAuthn registration and persists the credential.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FidoRegistrationFinishRequest'
+      responses:
+        '200':
+          description: Registered credential identifier.
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  credentialId:
+                    type: string
+  /20/adm/factor2/fido2/assertion/options:
+    post:
+      operationId: admissionresource_fidoAssertionOptions
+      tags:
+      - AdmissionResource
+      summary: startFidoAssertion
+      description: 'Starts a FIDO2/WebAuthn authentication ceremony.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FidoAssertionOptionsRequest'
+      responses:
+        '200':
+          description: Assertion options payload.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FidoAssertionOptionsResponse'
+  /20/adm/factor2/fido2/assertion/finish:
+    post:
+      operationId: admissionresource_fidoAssertionFinish
+      tags:
+      - AdmissionResource
+      summary: finishFidoAssertion
+      description: 'Validates a WebAuthn assertion and updates the credential counter.'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FidoAssertionFinishRequest'
+      responses:
+        '200':
+          description: Authentication outcome.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FidoAssertionResponse'
   /20/adm/lastDateCount/{param}:
     get:
       operationId: admissionresource_10
@@ -5738,6 +5863,129 @@ components:
       type: object
       description: Serialized representation of ``open.dolphin.infomodel.UserModel``.
       additionalProperties: true
+    TotpRegistrationRequest:
+      type: object
+      properties:
+        userPk:
+          type: integer
+          format: int64
+        accountName:
+          type: string
+        issuer:
+          type: string
+        label:
+          type: string
+      required:
+      - userPk
+    TotpRegistrationResponse:
+      type: object
+      properties:
+        credentialId:
+          type: integer
+          format: int64
+        secret:
+          type: string
+        provisioningUri:
+          type: string
+    TotpVerificationRequest:
+      type: object
+      properties:
+        userPk:
+          type: integer
+          format: int64
+        credentialId:
+          type: integer
+          format: int64
+        code:
+          type: string
+      required:
+      - userPk
+      - credentialId
+      - code
+    TotpVerificationResponse:
+      type: object
+      properties:
+        verified:
+          type: boolean
+        backupCodes:
+          type: array
+          items:
+            type: string
+    FidoRegistrationOptionsRequest:
+      type: object
+      properties:
+        userPk:
+          type: integer
+          format: int64
+        userId:
+          type: string
+        displayName:
+          type: string
+        authenticatorAttachment:
+          type: string
+      required:
+      - userPk
+      - userId
+    FidoRegistrationOptionsResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+        publicKeyCredentialCreationOptions:
+          type: string
+    FidoRegistrationFinishRequest:
+      type: object
+      properties:
+        userPk:
+          type: integer
+          format: int64
+        requestId:
+          type: string
+        credentialResponse:
+          type: string
+        label:
+          type: string
+      required:
+      - userPk
+      - requestId
+      - credentialResponse
+    FidoAssertionOptionsRequest:
+      type: object
+      properties:
+        userPk:
+          type: integer
+          format: int64
+        userId:
+          type: string
+      required:
+      - userPk
+      - userId
+    FidoAssertionOptionsResponse:
+      type: object
+      properties:
+        requestId:
+          type: string
+        publicKeyCredentialRequestOptions:
+          type: string
+    FidoAssertionFinishRequest:
+      type: object
+      properties:
+        userPk:
+          type: integer
+          format: int64
+        requestId:
+          type: string
+        credentialResponse:
+          type: string
+      required:
+      - userPk
+      - requestId
+      - credentialResponse
+    FidoAssertionResponse:
+      type: object
+      properties:
+        authenticated:
+          type: boolean
     VisitPackage:
       type: object
       description: Serialized representation of ``open.dolphin.infomodel.VisitPackage``.

@@ -12,13 +12,17 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import jakarta.inject.Inject;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.Consumes;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jakarta.inject.Inject;
 import jakarta.persistence.NoResultException;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.DELETE;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
@@ -29,6 +33,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.StreamingOutput;
 import open.dolphin.adm20.PlivoSender;
 import open.dolphin.adm20.session.ADM20_AdmissionServiceBean;
@@ -61,6 +66,21 @@ import open.dolphin.session.ChartEventServiceBean;
 import open.orca.rest.ORCAConnection;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import open.dolphin.adm20.dto.FidoAssertionFinishRequest;
+import open.dolphin.adm20.dto.FidoAssertionOptionsRequest;
+import open.dolphin.adm20.dto.FidoAssertionOptionsResponse;
+import open.dolphin.adm20.dto.FidoAssertionResponse;
+import open.dolphin.adm20.dto.FidoRegistrationFinishRequest;
+import open.dolphin.adm20.dto.FidoRegistrationOptionsRequest;
+import open.dolphin.adm20.dto.FidoRegistrationOptionsResponse;
+import open.dolphin.adm20.dto.TotpRegistrationRequest;
+import open.dolphin.adm20.dto.TotpRegistrationResponse;
+import open.dolphin.adm20.dto.TotpVerificationRequest;
+import open.dolphin.adm20.dto.TotpVerificationResponse;
+import open.dolphin.security.SecondFactorSecurityConfig;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.totp.TotpRegistrationResult;
 
 
 
@@ -77,7 +97,19 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
     
     @Inject
     private ADM20_EHTServiceBean ehtService;
-    
+
+    @Inject
+    private SecondFactorSecurityConfig secondFactorSecurityConfig;
+
+    @Inject
+    private AuditTrailService auditTrailService;
+
+    @Context
+    private HttpServletRequest httpRequest;
+
+    private final ObjectMapper jsonMapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+
     @Inject
     private PlivoSender plivoSender;
 
@@ -679,11 +711,177 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Factor2Spec spec = mapper.readValue(json, Factor2Spec.class);
-        
+
         UserModel result = ehtService.getUserWithF2Backup(spec);
         UserModelConverter conv = new UserModelConverter();
         conv.setModel(result);
         return conv;
+    }
+
+    @POST
+    @Path("/factor2/totp/registration")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response startTotpRegistration(String json) throws IOException {
+        TotpRegistrationRequest request = jsonMapper.readValue(json, TotpRegistrationRequest.class);
+        try {
+            TotpRegistrationResult result = ehtService.startTotpRegistration(
+                    request.getUserPk(),
+                    request.getLabel(),
+                    request.getAccountName(),
+                    request.getIssuer(),
+                    secondFactorSecurityConfig.getTotpSecretProtector());
+
+            TotpRegistrationResponse response = new TotpRegistrationResponse();
+            response.setCredentialId(result.credentialId());
+            response.setSecret(result.secret());
+            response.setProvisioningUri(result.provisioningUri());
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("credentialId", result.credentialId());
+            details.put("label", request.getLabel());
+            recordAudit("TOTP_REGISTER_INIT", "/20/adm/factor2/totp/registration", request.getUserPk(), details);
+            return Response.ok(response).build();
+        } catch (NoResultException e) {
+            throw new WebApplicationException(e, 404);
+        } catch (SecurityException e) {
+            throw new WebApplicationException(e, 400);
+        }
+    }
+
+    @POST
+    @Path("/factor2/totp/verification")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response verifyTotpRegistration(String json) throws IOException {
+        TotpVerificationRequest request = jsonMapper.readValue(json, TotpVerificationRequest.class);
+        try {
+            List<String> codes = ehtService.completeTotpRegistration(
+                    request.getUserPk(),
+                    request.getCredentialId(),
+                    request.getCode(),
+                    secondFactorSecurityConfig.getTotpSecretProtector());
+            TotpVerificationResponse response = new TotpVerificationResponse();
+            response.setVerified(true);
+            response.setBackupCodes(codes);
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("credentialId", request.getCredentialId());
+            details.put("backupCodes", codes.size());
+            recordAudit("TOTP_REGISTER_COMPLETE", "/20/adm/factor2/totp/verification", request.getUserPk(), details);
+            return Response.ok(response).build();
+        } catch (NoResultException e) {
+            throw new WebApplicationException(e, 404);
+        } catch (SecurityException e) {
+            throw new WebApplicationException(e, 400);
+        }
+    }
+
+    @POST
+    @Path("/factor2/fido2/registration/options")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response startFidoRegistration(String json) throws IOException {
+        FidoRegistrationOptionsRequest request = jsonMapper.readValue(json, FidoRegistrationOptionsRequest.class);
+        try {
+            var challenge = ehtService.startFidoRegistration(
+                    request.getUserPk(),
+                    secondFactorSecurityConfig.getFido2Config(),
+                    request.getAuthenticatorAttachment());
+            FidoRegistrationOptionsResponse response = new FidoRegistrationOptionsResponse();
+            response.setRequestId(challenge.getRequestId());
+            response.setPublicKeyCredentialCreationOptions(challenge.getChallengePayload());
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("requestId", challenge.getRequestId());
+            details.put("authenticatorAttachment", request.getAuthenticatorAttachment());
+            recordAudit("FIDO2_REGISTER_INIT", "/20/adm/factor2/fido2/registration/options", request.getUserPk(), details);
+            return Response.ok(response).build();
+        } catch (NoResultException e) {
+            throw new WebApplicationException(e, 404);
+        } catch (SecurityException e) {
+            throw new WebApplicationException(e, 400);
+        }
+    }
+
+    @POST
+    @Path("/factor2/fido2/registration/finish")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response finishFidoRegistration(String json) throws IOException {
+        FidoRegistrationFinishRequest request = jsonMapper.readValue(json, FidoRegistrationFinishRequest.class);
+        try {
+            var credential = ehtService.finishFidoRegistration(
+                    request.getUserPk(),
+                    request.getRequestId(),
+                    request.getCredentialResponse(),
+                    request.getLabel(),
+                    secondFactorSecurityConfig.getFido2Config());
+            Map<String, Object> result = new HashMap<>();
+            result.put("credentialId", credential.getCredentialId());
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("credentialId", credential.getCredentialId());
+            recordAudit("FIDO2_REGISTER_COMPLETE", "/20/adm/factor2/fido2/registration/finish", request.getUserPk(), details);
+            return Response.ok(result).build();
+        } catch (NoResultException e) {
+            throw new WebApplicationException(e, 404);
+        } catch (SecurityException e) {
+            throw new WebApplicationException(e, 400);
+        }
+    }
+
+    @POST
+    @Path("/factor2/fido2/assertion/options")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response startFidoAssertion(String json) throws IOException {
+        FidoAssertionOptionsRequest request = jsonMapper.readValue(json, FidoAssertionOptionsRequest.class);
+        try {
+            var challenge = ehtService.startFidoAssertion(
+                    request.getUserPk(),
+                    request.getUserId(),
+                    secondFactorSecurityConfig.getFido2Config());
+            FidoAssertionOptionsResponse response = new FidoAssertionOptionsResponse();
+            response.setRequestId(challenge.getRequestId());
+            response.setPublicKeyCredentialRequestOptions(challenge.getChallengePayload());
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("requestId", challenge.getRequestId());
+            recordAudit("FIDO2_ASSERT_INIT", "/20/adm/factor2/fido2/assertion/options", request.getUserPk(), details);
+            return Response.ok(response).build();
+        } catch (NoResultException e) {
+            throw new WebApplicationException(e, 404);
+        } catch (SecurityException e) {
+            throw new WebApplicationException(e, 400);
+        }
+    }
+
+    @POST
+    @Path("/factor2/fido2/assertion/finish")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response finishFidoAssertion(String json) throws IOException {
+        FidoAssertionFinishRequest request = jsonMapper.readValue(json, FidoAssertionFinishRequest.class);
+        try {
+            boolean success = ehtService.finishFidoAssertion(
+                    request.getUserPk(),
+                    request.getRequestId(),
+                    request.getCredentialResponse(),
+                    secondFactorSecurityConfig.getFido2Config());
+            FidoAssertionResponse response = new FidoAssertionResponse();
+            response.setAuthenticated(success);
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("requestId", request.getRequestId());
+            details.put("authenticated", success);
+            recordAudit("FIDO2_ASSERT_COMPLETE", "/20/adm/factor2/fido2/assertion/finish", request.getUserPk(), details);
+            return Response.ok(response).build();
+        } catch (NoResultException e) {
+            throw new WebApplicationException(e, 404);
+        } catch (SecurityException e) {
+            throw new WebApplicationException(e, 400);
+        }
     }
 //minagawa$  
     
@@ -773,6 +971,25 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         }
 
         return ret.toString();        
+    }
+
+    private void recordAudit(String action, String resource, long userPk, Map<String, Object> details) {
+        AuditEventPayload payload = new AuditEventPayload();
+        String actorId = Optional.ofNullable(httpRequest.getRemoteUser()).orElse(String.valueOf(userPk));
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(actorId);
+        if (httpRequest != null && httpRequest.isUserInRole("ADMIN")) {
+            payload.setActorRole("ADMIN");
+        }
+        payload.setAction(action);
+        payload.setResource(resource);
+        payload.setDetails(details);
+        if (httpRequest != null) {
+            payload.setIpAddress(httpRequest.getRemoteAddr());
+            payload.setUserAgent(httpRequest.getHeader("User-Agent"));
+            payload.setRequestId(Optional.ofNullable(httpRequest.getHeader("X-Request-Id")).orElse(UUID.randomUUID().toString()));
+        }
+        auditTrailService.record(payload);
     }
      
     private Connection getConnection() {
