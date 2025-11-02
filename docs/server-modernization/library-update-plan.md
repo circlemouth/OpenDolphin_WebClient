@@ -4,11 +4,14 @@
 - 既存サーバー資産（`server/` 配下）はコード改修を避けつつ、ビルド環境と依存ライブラリを最新 LTS に追従させる。
 - 現行構成は Java 8 / Java EE 7 / WildFly 9 系を前提としており、ライブラリの脆弱性および保守性に課題がある。
 - 今回は現行スクリプトを複製した `server-modernized/` ディレクトリを新設し、作業中も元資産を保持する。
+- Web クライアント刷新とサーバーモダナイズを並行実施しており、**既存サーバースクリプトの変更が一時停止された場合は `server-modernized/` 配下のみで作業を行い、`server/` 以下のコードには手を触れない** 方針を徹底する。
 
 ## 既存ドキュメントの整理
 - `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md`：WildFly 26 + PostgreSQL 14 を用いたローカル検証手順。近代化後のターゲットランタイムの基準とする。
 - `docs/web-client/operations/TEST_SERVER_DEPLOY.md`：WildFly 9 系での手動デプロイ手順。旧環境との差分確認・ロールバック用の基準とする。
 - `docs/web-client/architecture/REPOSITORY_OVERVIEW.md`：サーバー依存関係、資格情報外部化の注意点を記載。pom 更新時のレビューチェックリストとして活用する。
+- `docs/server-modernization/server-api-inventory.md`：旧サーバー REST API の全エンドポイント一覧。検証観点の抜け漏れ防止に利用する。
+- `docs/server-modernization/api-smoke-test.md`：レスポンス互換性検証用スモークテストの運用手順。
 
 ## フェーズ 1：ライブラリアップデート実施計画
 1. **ビルド環境の整備**
