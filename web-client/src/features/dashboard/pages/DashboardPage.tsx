@@ -30,11 +30,11 @@ export const DashboardPage = () => (
           <StatusBadge tone="warning">カルテ閲覧 β</StatusBadge>
         </Stack>
         <p>
-          フェーズ2の要点は <code>docs/web-client/planning/phase2/PHASE2_PROGRESS.md</code> に整理しています。安全情報パネルやカルテ履歴の UX
+          フェーズ2の要点は <code>docs/server-modernization/phase2/PHASE2_PROGRESS.md</code> に整理しています。安全情報パネルやカルテ履歴の UX
           改善メモも随時追加予定です。
         </p>
         <Stack direction="row" gap={12} wrap>
-          <Button as="a" href="/docs/web-client/planning/phase2/PHASE2_PROGRESS.md" variant="primary">
+          <Button as="a" href="/docs/server-modernization/phase2/PHASE2_PROGRESS.md" variant="primary">
             フェーズ2進捗メモを見る
           </Button>
         </Stack>

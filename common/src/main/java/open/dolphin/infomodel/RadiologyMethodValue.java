@@ -3,7 +3,7 @@
  */
 package open.dolphin.infomodel;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * RadiologyMethodValue

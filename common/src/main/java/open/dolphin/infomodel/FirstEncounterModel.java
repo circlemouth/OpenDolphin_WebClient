@@ -1,6 +1,6 @@
 package open.dolphin.infomodel;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * 初診時情報クラス。

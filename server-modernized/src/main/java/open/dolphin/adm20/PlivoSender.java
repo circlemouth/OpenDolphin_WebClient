@@ -9,14 +9,13 @@ import com.plivo.api.models.message.MessageCreateResponse;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.io.IOException;
+import java.time.Duration;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Objects;
 import java.util.Set;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -38,6 +37,10 @@ public class PlivoSender {
 
     private static final Logger LOGGER = Logger.getLogger(PlivoSender.class.getName());
     private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
+    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration DEFAULT_WRITE_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofSeconds(45);
 
     private final SmsGatewayConfig smsGatewayConfig;
     private final SessionTraceManager traceManager;
@@ -136,12 +139,18 @@ public class PlivoSender {
             if (current != null && current.settings().equals(settings)) {
                 return current.client();
             }
+            Duration connectTimeout = sanitizeDuration(settings.connectTimeout(), DEFAULT_CONNECT_TIMEOUT);
+            Duration readTimeout = sanitizeDuration(settings.readTimeout(), DEFAULT_READ_TIMEOUT);
+            Duration writeTimeout = sanitizeDuration(settings.writeTimeout(), DEFAULT_WRITE_TIMEOUT);
+            Duration callTimeout = sanitizeDuration(settings.callTimeout(), DEFAULT_CALL_TIMEOUT);
+
             OkHttpClient.Builder builder = new OkHttpClient.Builder()
-                    .retryOnConnectionFailure(true)
-                    .connectTimeout(10, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .writeTimeout(30, TimeUnit.SECONDS)
-                    .connectionSpecs(Arrays.asList(createTlsSpec()));
+                    .retryOnConnectionFailure(settings.retryOnConnectionFailure())
+                    .connectTimeout(connectTimeout)
+                    .readTimeout(readTimeout)
+                    .writeTimeout(writeTimeout)
+                    .callTimeout(callTimeout)
+                    .connectionSpecs(List.of(createTlsSpec()));
 
             LogLevel logLevel = settings.logLevel();
             if (logLevel == null) {
@@ -166,6 +175,17 @@ public class PlivoSender {
                 .tlsVersions(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)
                 .allEnabledCipherSuites()
                 .build();
+    }
+
+    private Duration sanitizeDuration(Duration candidate, Duration fallback) {
+        if (candidate == null) {
+            return fallback;
+        }
+        if (candidate.isNegative() || candidate.isZero()) {
+            LOGGER.log(Level.FINE, "Invalid timeout value detected for Plivo HTTP client: {0}. Using fallback {1}.", new Object[]{candidate, fallback});
+            return fallback;
+        }
+        return candidate;
     }
 
     private record CachedClient(PlivoSettings settings, PlivoClient client) { }

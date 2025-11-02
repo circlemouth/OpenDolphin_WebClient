@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import jakarta.annotation.Resource;
+import jakarta.enterprise.concurrent.ManagedScheduledExecutorService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -37,6 +39,7 @@ import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.infomodel.ProgressCourse;
 import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.UserModel;
+import open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames;
 import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.touch.converter.IOSHelper;
@@ -89,6 +92,9 @@ public class ScheduleServiceBean {
 
     @Inject
     private MessagingGateway messagingGateway;
+
+    @Resource(lookup = ConcurrencyResourceNames.DEFAULT_SCHEDULER)
+    private ManagedScheduledExecutorService scheduler;
     
 //s.oh^ 2014/02/21 Claim送信方法の変更
     //@Resource(mappedName = "java:/JmsXA")
@@ -357,7 +363,7 @@ public class ScheduleServiceBean {
             // CLAIM送信
             if (send) {
                 schedule.toDetuch();
-                messagingGateway.dispatchClaim(schedule);
+                dispatchClaimAsync(schedule);
             }
             
             return 1;
@@ -398,7 +404,21 @@ public class ScheduleServiceBean {
         
         return cnt;
     }
-        
+
+    private void dispatchClaimAsync(DocumentModel document) {
+        Runnable task = () -> messagingGateway.dispatchClaim(document);
+        try {
+            if (scheduler != null) {
+                scheduler.execute(task);
+            } else {
+                task.run();
+            }
+        } catch (Exception ex) {
+            Logger.getLogger("open.dolphin").log(Level.SEVERE, "Failed to submit claim dispatch task", ex);
+            task.run();
+        }
+    }
+
     public List<String> deleteDocument(long id) {
         
         //----------------------------------------

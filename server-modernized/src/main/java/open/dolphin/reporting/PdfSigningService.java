@@ -1,30 +1,37 @@
 package open.dolphin.reporting;
 
-import com.lowagie.text.pdf.PdfReader;
-import com.lowagie.text.pdf.PdfSignatureAppearance;
-import com.lowagie.text.pdf.PdfStamper;
-import com.lowagie.text.pdf.security.BouncyCastleDigest;
-import com.lowagie.text.pdf.security.DigestAlgorithms;
-import com.lowagie.text.pdf.security.ExternalDigest;
-import com.lowagie.text.pdf.security.ExternalSignature;
-import com.lowagie.text.pdf.security.MakeSignature;
-import com.lowagie.text.pdf.security.PrivateKeySignature;
-import com.lowagie.text.pdf.security.TSAClient;
-import com.lowagie.text.pdf.security.TSAClientBouncyCastle;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.security.GeneralSecurityException;
 import java.security.KeyStore;
+import java.security.MessageDigest;
 import java.security.PrivateKey;
 import java.security.Security;
+import java.security.Signature;
 import java.security.cert.Certificate;
+import java.security.cert.X509Certificate;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
+import org.openpdf.text.pdf.PdfDate;
+import org.openpdf.text.pdf.PdfDictionary;
+import org.openpdf.text.pdf.PdfName;
+import org.openpdf.text.pdf.PdfPKCS7;
+import org.openpdf.text.pdf.PdfReader;
+import org.openpdf.text.pdf.PdfSignature;
+import org.openpdf.text.pdf.PdfSignatureAppearance;
+import org.openpdf.text.pdf.PdfStamper;
+import org.openpdf.text.pdf.PdfString;
+import org.openpdf.text.pdf.TSAClient;
+import org.openpdf.text.pdf.TSAClientBouncyCastle;
 
 /**
  * Applies digital signatures (and optional timestamps) to generated PDFs.
@@ -82,32 +89,81 @@ public final class PdfSigningService {
             PdfReader reader = new PdfReader(inputStream);
             try {
                 PdfStamper stamper = PdfStamper.createSignature(reader, outputStream, '\0', null, true);
-                try {
-                    PdfSignatureAppearance appearance = stamper.getSignatureAppearance();
-                    appearance.setReason(config.getReason());
-                    appearance.setLocation(config.getLocation());
-                    appearance.setCertificationLevel(PdfSignatureAppearance.NOT_CERTIFIED);
+                PdfSignatureAppearance appearance = stamper.getSignatureAppearance();
+                appearance.setReason(config.getReason());
+                appearance.setLocation(config.getLocation());
+                appearance.setCertificationLevel(PdfSignatureAppearance.NOT_CERTIFIED);
 
-                    ExternalDigest digest = new BouncyCastleDigest();
-                    ExternalSignature signature = new PrivateKeySignature(privateKey, DigestAlgorithms.SHA256,
-                            BouncyCastleProvider.PROVIDER_NAME);
+                Calendar signDate = Calendar.getInstance();
+                appearance.setSignDate((Calendar) signDate.clone());
 
-                    TSAClient tsaClient = null;
-                    if (applyTsa && config.getTsaUrl() != null && !config.getTsaUrl().isBlank()) {
-                        tsaClient = new TSAClientBouncyCastle(config.getTsaUrl(), config.getTsaUsername(),
-                                toNullableString(config.getTsaPassword()));
-                    }
-
-                    MakeSignature.signDetached(appearance, digest, signature, chain, null, null, tsaClient, 0,
-                            MakeSignature.CryptoStandard.CMS);
-                } finally {
-                    stamper.close();
+                PdfSignature signatureDictionary = new PdfSignature(PdfName.ADOBE_PPKLITE, PdfName.ADBE_PKCS7_DETACHED);
+                if (config.getReason() != null && !config.getReason().isBlank()) {
+                    signatureDictionary.setReason(config.getReason());
                 }
+                if (config.getLocation() != null && !config.getLocation().isBlank()) {
+                    signatureDictionary.setLocation(config.getLocation());
+                }
+                signatureDictionary.setDate(new PdfDate(signDate));
+
+                PdfPKCS7 pkcs7 = new PdfPKCS7(privateKey, chain, null, "SHA256",
+                        BouncyCastleProvider.PROVIDER_NAME, false);
+                String signerName = PdfPKCS7.getSubjectFields((X509Certificate) chain[0]).getField("CN");
+                if (signerName != null && !signerName.isBlank()) {
+                    signatureDictionary.setName(signerName);
+                }
+
+                appearance.setCryptoDictionary(signatureDictionary);
+
+                Map<PdfName, Integer> exclusionSizes = new HashMap<>();
+                int estimatedSignatureSize = 16384;
+                exclusionSizes.put(PdfName.CONTENTS, estimatedSignatureSize * 2 + 2);
+                appearance.preClose(exclusionSizes);
+
+                MessageDigest messageDigest = MessageDigest.getInstance("SHA-256",
+                        BouncyCastleProvider.PROVIDER_NAME);
+                Signature signature = Signature.getInstance(pkcs7.getDigestAlgorithm(),
+                        BouncyCastleProvider.PROVIDER_NAME);
+                signature.initSign(privateKey);
+                try (InputStream rangeStream = appearance.getRangeStream()) {
+                    byte[] buffer = new byte[8192];
+                    int read;
+                    while ((read = rangeStream.read(buffer)) > 0) {
+                        messageDigest.update(buffer, 0, read);
+                        signature.update(buffer, 0, read);
+                    }
+                }
+                byte[] hash = messageDigest.digest();
+                byte[] signedDigest = signature.sign();
+                pkcs7.setExternalDigest(signedDigest, null, resolveEncryptionAlgorithm(privateKey));
+
+                TSAClient tsaClient = null;
+                if (applyTsa && config.getTsaUrl() != null && !config.getTsaUrl().isBlank()) {
+                    TSAClientBouncyCastle client = new TSAClientBouncyCastle(config.getTsaUrl(), config.getTsaUsername(),
+                            toNullableString(config.getTsaPassword()));
+                    client.setDigestName("SHA-256");
+                    tsaClient = client;
+                }
+
+                Calendar signingTime = (Calendar) signDate.clone();
+                byte[] encodedSignature = pkcs7.getEncodedPKCS7(hash, signingTime, tsaClient, null);
+
+                if (encodedSignature.length > estimatedSignatureSize) {
+                    throw new GeneralSecurityException(
+                            "Encoded signature size exceeds reserved placeholder: " + encodedSignature.length);
+                }
+
+                byte[] paddedSignature = new byte[estimatedSignatureSize];
+                System.arraycopy(encodedSignature, 0, paddedSignature, 0, encodedSignature.length);
+
+                PdfDictionary updateDictionary = new PdfDictionary();
+                updateDictionary.put(PdfName.CONTENTS, new PdfString(paddedSignature).setHexWriting(true));
+                appearance.close(updateDictionary);
             } finally {
                 reader.close();
             }
         }
-        Files.move(tempFile, pdfPath, java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        Files.move(tempFile, pdfPath, StandardCopyOption.REPLACE_EXISTING);
     }
 
     private KeyStore loadKeyStore(SigningConfig config) throws GeneralSecurityException, IOException {
@@ -116,6 +172,20 @@ public final class PdfSigningService {
             keyStore.load(keyStream, config.getKeystorePassword());
             return keyStore;
         }
+    }
+
+    private String resolveEncryptionAlgorithm(PrivateKey key) {
+        String algorithm = key.getAlgorithm();
+        if ("RSA".equalsIgnoreCase(algorithm)) {
+            return "RSA";
+        }
+        if ("DSA".equalsIgnoreCase(algorithm)) {
+            return "DSA";
+        }
+        if ("EC".equalsIgnoreCase(algorithm) || "ECDSA".equalsIgnoreCase(algorithm)) {
+            return "ECDSA";
+        }
+        return algorithm;
     }
 
     private String toNullableString(char[] value) {

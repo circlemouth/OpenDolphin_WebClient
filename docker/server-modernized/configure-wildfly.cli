@@ -76,4 +76,17 @@ if (outcome != success) of /subsystem=undertow/server=default-server/host=defaul
     /subsystem=undertow/server=default-server/host=default-host/filter-ref=referrer:add
 end-if
 
+# --- ActiveMQ Artemis JMS リソース（予約・通知バッチ向け） ---
+if (outcome != success) of /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource()
+    /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:add(entries=["java:/queue/dolphin","java:jboss/exported/jms/queue/dolphin"], durable=true)
+end-if
+if (outcome != success) of /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:read-resource()
+    /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:add(entries=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"], connectors=["in-vm"], use-global-pools=false)
+end-if
+if (outcome != success) of /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource()
+    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:add(entries=["java:/JmsXA"], connectors=["in-vm"], transaction="xa")
+end-if
+
+# Micrometer 監視連携: JMS/Undertow のメトリクスが Micrometer のスクレイプ対象と整合するように保守すること。
+
 stop-embedded-server

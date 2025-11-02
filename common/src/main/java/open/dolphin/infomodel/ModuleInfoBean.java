@@ -18,9 +18,9 @@
  */
 package open.dolphin.infomodel;
 
-import javax.persistence.Column;
-import javax.persistence.Embeddable;
-import javax.persistence.Transient;
+import jakarta.persistence.Column;
+import jakarta.persistence.Embeddable;
+import jakarta.persistence.Transient;
 
 /**
  * Stamp 及び Module の属性を保持するクラス。

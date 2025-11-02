@@ -1,8 +1,10 @@
 # AGENTS README
+作業をするにあたり、明示的に指示された場合を除き、Pythonスクリプトの実行は禁止する
 
 ## リポジトリ概要
 - `client/`: 既存 Swing クライアントと共通ライブラリ。Java/Swing 資産で、参照のみ。
 - `docs/`: 設計・要件ドキュメント。Web クライアント関連は `docs/web-client/README.md` をナビゲーションハブとする。
+- サーバーモダナイズに関する資料は `docs/server-modernization/phase2/README.md` を起点に辿る。
 - `common/`, `ext_lib/`: 共有ユーティリティおよび外部ライブラリ。
 - `server/`: 既存サーバー実装。**サーバースクリプトは絶対に触らないこと。**
 

@@ -16,6 +16,7 @@ import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames;
 import open.dolphin.session.ChartEventServiceBean;
 import open.dolphin.session.SystemServiceBean;
 import open.orca.rest.ORCAConnection;
@@ -30,7 +31,7 @@ public class ServletStartup {
     private static final Logger DOLPHIN_LOGGER = Logger.getLogger("open.dolphin");
     private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
 
-    @Resource
+    @Resource(lookup = ConcurrencyResourceNames.DEFAULT_SCHEDULER)
     private ManagedScheduledExecutorService scheduler;
 
     @Inject

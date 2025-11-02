@@ -1,6 +1,6 @@
 package open.dolphin.infomodel;
 
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * 紹介状モデル。

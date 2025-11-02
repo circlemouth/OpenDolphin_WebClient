@@ -74,6 +74,14 @@ Web クライアントに追加された受付予約管理機能と FreeDocument
   - サイドバーは `AppShell` の共通スロットを利用しており、他ページへ遷移した際は自動的に原状復帰する。
   - 「詳細操作」モーダルは状態変更・受付取消を同一画面で提供し、更新中はボタンを無効化して二重送信を防止。取消時にはロングポーリング参加者に削除が配信される。
   - 受付が削除された場合、開いていたドロワやモーダルは自動的に閉じ、一覧キャッシュからも該当行を除去する。
+
+### 4.1 受付サイドバー刷新（2025-11-02 更新）
+
+- 旧 `ReceptionVisitSidebar` を廃止し、`ReceptionSidebarContent` へ集約。タブ構成を「受付」「患者」「履歴」の 3 本立てにし、受付未選択時は患者タブへフォールバックする。URL パラメータ `rid` / `pid` とも同期し、ブラウザ更新で状態が失われない。
+- 受付タブ: 呼出トグル（`visit_call_start` / `visit_call_cancel` / `visit_call_toggle_failed`）、カルテ遷移、詳細操作を提供。`callState` の `pendingId` が一致する間はトグルを `isLoading` 表示にし、エラー発生時は負荷フィードバックを表示する。
+- 患者タブ: `PatientEditorPanel` を `layout="sidebar"` で利用し、保存成功時に `patient_upsert_from_sidebar` を記録。`autoCreateReceptionEnabled` は `localStorage` へ保存し、設定変更は `auto_reception_preference_update` として監査ログに残す。
+- 履歴タブ: `useVisitHistory` と `usePatientKarte` を組み合わせ、`karteFromDate` の日付入力でカルテ取得期間を制御。未入力時は `defaultKarteFromDate()` を再設定し、カルテ文書サマリは直近 10 件を上限に表示する。
+- 共通操作: タブ切替は `sidebar_tab_change`、サイドバーを閉じる操作は `sidebar_close` として `source: reception-sidebar` を付与し、監査ログの追跡性を確保した。
 - 既存ユーザーへの影響:
   - カード表示・表形式どちらにも「受付詳細」「詳細操作」ボタンが追加される。従来の操作導線（呼出、メモ編集、予約管理）は変わらない。
   - 受付取消は即時反映され、Swing クライアントの待合表示からも除外される。誤取消防止のため、業務手順書で運用ルール（取消前の患者確認など）を周知する。

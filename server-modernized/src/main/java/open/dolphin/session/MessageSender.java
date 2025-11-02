@@ -1,15 +1,18 @@
 package open.dolphin.session;
 
-import java.io.*;
-import java.util.Collection;
-import java.util.Properties;
-import java.util.logging.Logger;
 import jakarta.ejb.ActivationConfigProperty;
 import jakarta.ejb.MessageDriven;
 import jakarta.inject.Inject;
+import jakarta.jms.JMSException;
 import jakarta.jms.Message;
 import jakarta.jms.MessageListener;
 import jakarta.jms.ObjectMessage;
+import java.io.BufferedReader;
+import java.io.StringReader;
+import java.util.Collection;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import open.dolphin.infomodel.ActivityModel;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
@@ -18,140 +21,159 @@ import open.dolphin.mbean.PVTBuilder;
 import open.dolphin.msg.ClaimSender;
 import open.dolphin.msg.DiagnosisSender;
 import open.dolphin.msg.OidSender;
+import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
+import open.dolphin.msg.gateway.MessagingConfig;
 import org.jboss.ejb3.annotation.ResourceAdapter;
 
-//s.oh^ 2014/02/21 Claim送信方法の変更
-//@MessageDriven(activationConfig = {
-//    @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "jakarta.jms.Queue"),
-//    @ActivationConfigProperty(propertyName = "destination", propertyValue = "queue/dolphin"),
-//    @ActivationConfigProperty(propertyName = "acknowledgeMode",propertyValue = "Auto-acknowledge")
-//})
-//
-//@ResourceAdapter("hornetq-ra.rar")
-//public class MessageSender implements MessageListener {
-//    
-//    private static boolean sendClaim;
-//    private static String HOST;
-//    private static int PORT;
-//    private static String ENC;
-//    private static String FACILITY_ID;
-//    
-//    static {
-//        try {
-//            // 設定ファイルを読み込む
-//            Properties config = new Properties();
-//            FileInputStream f = new FileInputStream(new File(System.getProperty("jboss.home.dir"), "custom.properties"));
-//            InputStreamReader r = new InputStreamReader(f, "JISAutoDetect");
-//            config.load(r);
-//            r.close();
-//            
-//            // CLAIM送信
-//            String test = config.getProperty("claim.conn");         // connection type
-//            boolean send = (test!=null && test.equals("server"));   // = server
-//            sendClaim = send;
-//            
-//            // Server側で send する場合
-//            if (send) {
-//                // ORCA CLAIM 送信パラメータ
-//                HOST = config.getProperty("claim.host");
-//                PORT = Integer.parseInt(config.getProperty("claim.send.port"));
-//                ENC = config.getProperty("claim.send.encoding");
-//                FACILITY_ID = config.getProperty("dolphin.facilityId");
-//            }
-//            
-//        } catch (Exception e) {
-//            e.printStackTrace(System.err);
-//        }
-//    }
-//    
-//    @Inject
-//    private PVTServiceBean pvtServiceBean;
-//            
-//
-//    @Override
-//    public void onMessage(Message message) {
-//
-//        try {
-//            if (message instanceof ObjectMessage) {
-//                
-//                ObjectMessage objMessage = (ObjectMessage)message;
-//                Object obj = objMessage.getObject();
-//
-//                if (obj instanceof DocumentModel) {
-//                    // onMessageされるのは DocInfo.senClaim=trueの時
-//                    // sendClaim=trueならここで送信、falseならクライアントで送信されている
-//                    if (sendClaim) {
-//                        log("Document message has received. Sending ORCA will start(Que).");
-//                        ClaimSender sender = new ClaimSender(HOST,PORT,ENC);
-//                        sender.send((DocumentModel)obj);
-//                    }
-//                    
-//                } else if (obj instanceof DiagnosisSendWrapper) {
-//                    if (sendClaim) {
-//                        log("DiagnosisSendWrapper message has received. Sending ORCA will start(Que).");
-//                        DiagnosisSender sender = new DiagnosisSender(HOST,PORT,ENC);
-//                        sender.send((DiagnosisSendWrapper)obj);
-//                    }
-//                    
-//                } else if (obj instanceof String) {
-//                    log("PVT(CLAIM) message has received. Adding Dolphin will start.");
-//                    parseAndSend((String)obj);
-//                    
-//                
-//                } else if (obj instanceof AccountSummary) {
-//                    log("AccountSummary message has received. Replying tester will start.");
-//                    OidSender sender = new OidSender();
-//                    sender.send((AccountSummary)obj);
-//                
-//                } else if (obj instanceof ActivityModel[]) {
-//                    log("ActivityModel message has received. Reporting will start.");
-//                    OidSender sender = new OidSender();
-//                    sender.sendActivity((ActivityModel[])obj);
-//                } 
-//            }
-//
-//        } catch (Exception e) {
-//            e.printStackTrace(System.err);
-//            Logger.getLogger("open.dolphin").warning(e.getMessage());
-//        }
-//    }
-//    
-//    private void parseAndSend(String pvtXml) throws Exception {
-//        log(pvtXml);
-//        
-//        // Parse
-//        BufferedReader r = new BufferedReader(new StringReader(pvtXml));
-//        PVTBuilder builder = new PVTBuilder();
-//        builder.parse(r);
-//        PatientVisitModel model = builder.getProduct();
-//        
-////s.oh^ 2014/03/13 ORCA患者登録対応
-//        if(model == null) {
-//            return;
-//        }
-////s.oh$
-//
-//        // 関係構築
-//        model.setFacilityId(FACILITY_ID);
-//        model.getPatientModel().setFacilityId(FACILITY_ID);
-//
-//        Collection<HealthInsuranceModel> c = model.getPatientModel().getHealthInsurances();
-//        if (c!= null && c.size() > 0) {
-//            for (HealthInsuranceModel hm : c) {
-//                hm.setPatient(model.getPatientModel());
-//            }
-//        }
-//
-//        int result = pvtServiceBean.addPvt(model);
-//    }
-//    
-//    private void log(String msg) {
-//        Logger.getLogger("open.dolphin").info(msg);
-//    }
-//}
+@MessageDriven(activationConfig = {
+        @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "java:/queue/dolphin"),
+        @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "jakarta.jms.Queue"),
+        @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge")
+})
+@ResourceAdapter("activemq-ra.rar")
 public class MessageSender implements MessageListener {
+
+    private static final Logger LOGGER = Logger.getLogger(MessageSender.class.getName());
+    private static final String TRACE_ID_PROPERTY = "open.dolphin.traceId";
+
+    @Inject
+    private PVTServiceBean pvtServiceBean;
+
+    @Inject
+    private MessagingConfig messagingConfig;
+
     @Override
     public void onMessage(Message message) {
+        String traceId = readTraceId(message);
+        try {
+            if (message instanceof ObjectMessage objectMessage) {
+                Object payload = objectMessage.getObject();
+                handlePayload(payload, traceId);
+            } else {
+                LOGGER.warning(() -> "Unsupported JMS message type received: " + message.getClass().getName());
+            }
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, () -> String.format("MessageSender processing failure [traceId=%s]", traceId), ex);
+            throw new RuntimeException("Failed to process messaging payload", ex);
+        }
+    }
+
+    private void handlePayload(Object payload, String traceId) throws Exception {
+        if (payload instanceof DocumentModel document) {
+            handleDocument(document, traceId);
+        } else if (payload instanceof DiagnosisSendWrapper wrapper) {
+            handleDiagnosis(wrapper, traceId);
+        } else if (payload instanceof String pvtXml) {
+            handlePvt(pvtXml, traceId);
+        } else if (payload instanceof AccountSummary summary) {
+            handleAccountSummary(summary, traceId);
+        } else if (payload instanceof ActivityModel[] activities) {
+            handleActivityReport(activities, traceId);
+        } else {
+            LOGGER.warning(() -> "Unsupported payload received on JMS queue: " + payload.getClass().getName());
+        }
+    }
+
+    private void handleDocument(DocumentModel document, String traceId) throws Exception {
+        MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
+        if (!settings.isReady()) {
+            LOGGER.warning(() -> String.format("CLAIM send skipped because claim settings are incomplete [traceId=%s]", traceId));
+            return;
+        }
+        LOGGER.info(() -> String.format("Processing CLAIM JMS message [traceId=%s]", traceId));
+        try {
+            ClaimSender sender = new ClaimSender(settings.host(), settings.port(), settings.encodingOrDefault());
+            sender.send(document);
+            ExternalServiceAuditLogger.logClaimSuccess(traceId, document, settings);
+        } catch (Exception ex) {
+            ExternalServiceAuditLogger.logClaimFailure(traceId, document, settings, ex);
+            throw ex;
+        }
+    }
+
+    private void handleDiagnosis(DiagnosisSendWrapper wrapper, String traceId) throws Exception {
+        MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
+        if (!settings.isReady()) {
+            LOGGER.warning(() -> String.format("Diagnosis send skipped because claim settings are incomplete [traceId=%s]", traceId));
+            return;
+        }
+        LOGGER.info(() -> String.format("Processing Diagnosis JMS message [traceId=%s]", traceId));
+        try {
+            DiagnosisSender sender = new DiagnosisSender(settings.host(), settings.port(), settings.encodingOrDefault());
+            sender.send(wrapper);
+            ExternalServiceAuditLogger.logDiagnosisSuccess(traceId, wrapper, settings);
+        } catch (Exception ex) {
+            ExternalServiceAuditLogger.logDiagnosisFailure(traceId, wrapper, settings, ex);
+            throw ex;
+        }
+    }
+
+    private void handlePvt(String pvtXml, String traceId) throws Exception {
+        String facilityId = resolveFacilityId();
+        if (facilityId == null || facilityId.isBlank()) {
+            LOGGER.warning(() -> String.format("Facility ID unavailable; skipping PVT import [traceId=%s]", traceId));
+            return;
+        }
+        LOGGER.info(() -> String.format("Processing PVT JMS message [traceId=%s]", traceId));
+        PatientVisitModel model = parsePvt(pvtXml, facilityId);
+        if (model == null) {
+            LOGGER.fine(() -> String.format("Parsed PVT model is null; skipping addPvt [traceId=%s]", traceId));
+            return;
+        }
+        pvtServiceBean.addPvt(model);
+    }
+
+    private void handleAccountSummary(AccountSummary summary, String traceId) throws Exception {
+        LOGGER.info(() -> String.format("Processing AccountSummary JMS message [traceId=%s]", traceId));
+        OidSender sender = new OidSender();
+        sender.send(summary);
+    }
+
+    private void handleActivityReport(ActivityModel[] activities, String traceId) throws Exception {
+        LOGGER.info(() -> String.format("Processing ActivityModel JMS message [traceId=%s]", traceId));
+        OidSender sender = new OidSender();
+        sender.sendActivity(activities);
+    }
+
+    private PatientVisitModel parsePvt(String pvtXml, String facilityId) throws Exception {
+        BufferedReader reader = new BufferedReader(new StringReader(pvtXml));
+        PVTBuilder builder = new PVTBuilder();
+        builder.parse(reader);
+        PatientVisitModel model = builder.getProduct();
+        if (model == null) {
+            return null;
+        }
+
+        model.setFacilityId(facilityId);
+        if (model.getPatientModel() != null) {
+            model.getPatientModel().setFacilityId(facilityId);
+            Collection<HealthInsuranceModel> insurances = model.getPatientModel().getHealthInsurances();
+            if (insurances != null) {
+                for (HealthInsuranceModel insurance : insurances) {
+                    insurance.setPatient(model.getPatientModel());
+                }
+            }
+        }
+        return model;
+    }
+
+    private String resolveFacilityId() {
+        MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
+        if (settings.facilityId() != null && !settings.facilityId().isBlank()) {
+            return settings.facilityId();
+        }
+        MessagingConfig.ClaimSettings reloaded = messagingConfig.reloadClaimSettings();
+        return reloaded.facilityId();
+    }
+
+    private String readTraceId(Message message) {
+        try {
+            if (message.propertyExists(TRACE_ID_PROPERTY)) {
+                return message.getStringProperty(TRACE_ID_PROPERTY);
+            }
+        } catch (JMSException ex) {
+            LOGGER.log(Level.FINE, "Failed to read traceId from JMS message", ex);
+        }
+        return null;
     }
 }
-//s.oh$
