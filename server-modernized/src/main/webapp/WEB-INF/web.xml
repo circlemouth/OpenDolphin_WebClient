@@ -45,7 +45,14 @@
                 open.dolphin.adm20.rest.PHRResource
         </param-value>
     </context-param>
-    
+
+    <context-param>
+        <param-name>resteasy.providers</param-name>
+        <param-value>
+                open.dolphin.metrics.RequestMetricsFilter
+        </param-value>
+    </context-param>
+
     <context-param>
         <param-name>resteasy.servlet.mapping.prefix</param-name>
         <param-value>/resources</param-value>

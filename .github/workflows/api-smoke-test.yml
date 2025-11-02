@@ -1,0 +1,122 @@
+name: API Smoke Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'server-modernized/**'
+      - 'docker/**'
+      - '.github/workflows/api-smoke-test.yml'
+      - '.github/workflows/web-client-ci.yml'
+      - 'server-modernized/tools/api-smoke-test/**'
+      - 'docs/server-modernization/**'
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install smoke test dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r server-modernized/tools/api-smoke-test/requirements.txt
+
+      - name: Start PostgreSQL
+        run: docker compose up -d db
+
+      - name: Wait for PostgreSQL readiness
+        run: |
+          for i in {1..30}; do
+            if docker compose exec -T db pg_isready -U opendolphin; then
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "PostgreSQL is not ready" >&2
+          docker compose logs db
+          exit 1
+
+      - name: Start legacy server (baseline)
+        run: docker compose up -d server
+
+      - name: Wait for legacy server
+        run: |
+          for i in {1..30}; do
+            if curl -sf \
+              -H "userName: 1.3.6.1.4.1.9414.10.1:dolphin" \
+              -H "password: 36cdf8b887a5cffc78dcd5c08991b993" \
+              http://localhost:8080/openDolphin/resources/dolphin; then
+              exit 0
+            fi
+            sleep 10
+          done
+          docker compose logs server
+          exit 1
+
+      - name: Run smoke test against legacy server
+        run: |
+          mkdir -p artifacts/baseline
+          python server-modernized/tools/api-smoke-test/run_smoke.py \
+            --config server-modernized/tools/api-smoke-test/test_config.ci.yaml \
+            --primary-base-url http://localhost:8080/openDolphin/resources \
+            --artifact-dir artifacts/baseline \
+            --allow-skips
+
+      - name: Stop legacy server
+        run: |
+          docker compose stop server
+          docker compose rm -f server
+
+      - name: Start modernized server
+        run: docker compose --profile modernized up -d server-modernized
+
+      - name: Wait for modernized server
+        run: |
+          for i in {1..30}; do
+            if curl -sf \
+              -H "userName: 1.3.6.1.4.1.9414.10.1:dolphin" \
+              -H "password: 36cdf8b887a5cffc78dcd5c08991b993" \
+              http://localhost:8080/openDolphin/resources/dolphin; then
+              exit 0
+            fi
+            sleep 10
+          done
+          docker compose logs server-modernized
+          exit 1
+
+      - name: Run smoke test comparison
+        run: |
+          mkdir -p artifacts/modernized
+          python server-modernized/tools/api-smoke-test/run_smoke.py \
+            --config server-modernized/tools/api-smoke-test/test_config.ci.yaml \
+            --primary-base-url http://localhost:8080/openDolphin/resources \
+            --artifact-dir artifacts/modernized \
+            --baseline-dir artifacts/baseline \
+            --allow-skips
+
+      - name: Upload smoke test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: api-smoke-test-artifacts
+          path: artifacts
+
+      - name: Collect container logs
+        if: always()
+        run: |
+          docker compose logs server || true
+          docker compose logs server-modernized || true
+          docker compose logs db || true
+
+      - name: Tear down containers
+        if: always()
+        run: docker compose down -v

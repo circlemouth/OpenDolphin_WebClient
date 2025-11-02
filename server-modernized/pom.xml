@@ -122,6 +122,18 @@
             <version>2.3.0.Final</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.metrics</groupId>
+            <artifactId>microprofile-metrics-api</artifactId>
+            <version>3.0</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>io.agroal</groupId>
+            <artifactId>agroal-api</artifactId>
+            <version>1.16</version>
+            <scope>provided</scope>
+        </dependency>
     </dependencies>
 
     <version>2.7.1</version>
