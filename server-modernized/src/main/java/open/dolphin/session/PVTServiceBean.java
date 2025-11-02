@@ -12,22 +12,26 @@ import java.util.List;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.mbean.KanaToAscii;
 import open.dolphin.mbean.ServletContextHolder;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
  * @author Kazushi Minagawa, Digital Globe, Inc.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
+@SessionOperation
 public class PVTServiceBean {
 
     private static final String QUERY_PATIENT_BY_FID_PID        = "from PatientModel p where p.facilityId=:fid and p.patientId=:pid";

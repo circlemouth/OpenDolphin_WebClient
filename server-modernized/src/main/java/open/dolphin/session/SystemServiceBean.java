@@ -15,7 +15,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
@@ -23,8 +23,10 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.OidSender;
+import open.dolphin.session.framework.SessionOperation;
 import open.stamp.seed.CopyStampTreeBuilder;
 import open.stamp.seed.CopyStampTreeDirector;
+import jakarta.transaction.Transactional;
 //import org.jboss.ejb3.annotation.ResourceAdapter;
 
 /**
@@ -32,7 +34,9 @@ import open.stamp.seed.CopyStampTreeDirector;
  * @author kazushi, Minagawa, Digital Globe, Inc.
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
+@SessionOperation
 //s.oh^ 2014/02/21 Claim送信方法の変更
 //@ResourceAdapter("hornetq-ra.rar")
 //s.oh$
