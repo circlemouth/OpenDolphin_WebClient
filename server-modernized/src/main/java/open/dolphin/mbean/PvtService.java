@@ -10,14 +10,14 @@ import java.util.Collection;
 import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.annotation.PostConstruct;
-import javax.annotation.PreDestroy;
-import javax.annotation.Resource;
-import javax.ejb.Singleton;
-import javax.ejb.Startup;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Resource;
+import jakarta.ejb.Singleton;
+import jakarta.ejb.Startup;
 import javax.enterprise.concurrent.ManagedThreadFactory;
-import javax.inject.Inject;
-import javax.jms.*;
+import jakarta.inject.Inject;
+import jakarta.jms.*;
 import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.session.PVTServiceBean;
@@ -187,7 +187,7 @@ public class PvtService implements Runnable {
 
             BufferedInputStream reader;
             BufferedOutputStream writer = null;
-            javax.jms.Connection conn = null;
+            jakarta.jms.Connection conn = null;
             
             try {
                 printInfo();

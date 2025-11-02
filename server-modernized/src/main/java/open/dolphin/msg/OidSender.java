@@ -11,12 +11,12 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Properties;
 import java.util.logging.Logger;
-import javax.mail.Message.RecipientType;
-import javax.mail.MessagingException;
-import javax.mail.PasswordAuthentication;
-import javax.mail.Session;
-import javax.mail.Transport;
-import javax.mail.internet.InternetAddress;
+import jakarta.mail.Message.RecipientType;
+import jakarta.mail.MessagingException;
+import jakarta.mail.PasswordAuthentication;
+import jakarta.mail.Session;
+import jakarta.mail.Transport;
+import jakarta.mail.internet.InternetAddress;
 import open.dolphin.infomodel.ActivityModel;
 import open.dolphin.session.AccountSummary;
 import org.apache.velocity.VelocityContext;
@@ -105,7 +105,7 @@ public class OidSender {
 //s.oh$
 
             Session session = Session.getDefaultInstance(props,
-                    new javax.mail.Authenticator() {
+                    new jakarta.mail.Authenticator() {
 
                         @Override
                         protected PasswordAuthentication getPasswordAuthentication() {
@@ -115,10 +115,10 @@ public class OidSender {
                     });
 
 
-            javax.mail.internet.MimeMessage mimeMessage = new javax.mail.internet.MimeMessage(session);
+            jakarta.mail.internet.MimeMessage mimeMessage = new jakarta.mail.internet.MimeMessage(session);
 
             mimeMessage.setFrom(new InternetAddress(DOLPHIN_EMAIL_ADDRESS));
-            mimeMessage.setRecipients(javax.mail.Message.RecipientType.TO, InternetAddress.parse(account.getUserEmail()));
+            mimeMessage.setRecipients(jakarta.mail.Message.RecipientType.TO, InternetAddress.parse(account.getUserEmail()));
             mimeMessage.addRecipients(RecipientType.BCC, DOLPHIN_EMAIL_ADDRESS);
 
             mimeMessage.setSubject(ACCOUNT_MAKING_RESULT, MAIL_ENC);
@@ -200,7 +200,7 @@ public class OidSender {
             props.put("mail.smtp.auth", config.getProperty("cloud.zero.mail.auth"));
             props.put("mail.smtp.port", config.getProperty("cloud.zero.mail.port"));
             Session session = Session.getDefaultInstance(props,
-                    new javax.mail.Authenticator() {
+                    new jakarta.mail.Authenticator() {
 
                         @Override
                         protected PasswordAuthentication getPasswordAuthentication() {
@@ -211,7 +211,7 @@ public class OidSender {
                     });
             
             // Message
-            javax.mail.internet.MimeMessage mimeMessage = new javax.mail.internet.MimeMessage(session);
+            jakarta.mail.internet.MimeMessage mimeMessage = new jakarta.mail.internet.MimeMessage(session);
 
             // 差出人
             mimeMessage.setFrom(new InternetAddress(mailFrom));
@@ -219,7 +219,7 @@ public class OidSender {
             // 宛先
             InternetAddress[] addressTo = new InternetAddress[1];
             addressTo[0] = new InternetAddress(mailTo);
-            mimeMessage.setRecipients(javax.mail.Message.RecipientType.TO, addressTo);
+            mimeMessage.setRecipients(jakarta.mail.Message.RecipientType.TO, addressTo);
             
             // BCC
             mimeMessage.addRecipients(RecipientType.BCC, DG_DOLPHIN_EMAIL_ADDRESS);

@@ -6,11 +6,11 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
 import java.util.logging.Logger;
-import javax.ejb.Stateless;
-import javax.inject.Named;
-import javax.persistence.EntityManager;
-import javax.persistence.NoResultException;
-import javax.persistence.PersistenceContext;
+import jakarta.ejb.Stateless;
+import jakarta.inject.Named;
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.NoResultException;
+import jakarta.persistence.PersistenceContext;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.ClaimSender;
 import open.dolphin.msg.DiagnosisSender;
@@ -99,7 +99,7 @@ public class KarteServiceBean {
     //private ConnectionFactory connectionFactory;
     //
     //@Resource(mappedName = "java:/queue/dolphin")
-    //private javax.jms.Queue queue;
+    //private jakarta.jms.Queue queue;
 //s.oh$
     
     public KarteBean getKarte(String fid, String pid, Date fromDate) {

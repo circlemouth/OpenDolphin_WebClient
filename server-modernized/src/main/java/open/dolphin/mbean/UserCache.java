@@ -2,7 +2,7 @@ package open.dolphin.mbean;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
-import javax.inject.Singleton;
+import jakarta.inject.Singleton;
 
 /**
  * ユーザーのキャッシュ

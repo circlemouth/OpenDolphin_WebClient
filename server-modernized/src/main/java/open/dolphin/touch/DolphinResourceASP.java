@@ -3,17 +3,17 @@ package open.dolphin.touch;
 import java.beans.XMLDecoder;
 import java.io.*;
 import java.util.*;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.touch.converter.IDocument;
 import open.dolphin.touch.converter.IDocument2;
 import open.dolphin.touch.session.IPhoneServiceBean;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * REST Web Service

@@ -1,6 +1,6 @@
 package open.dolphin.adm10.converter;
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 import open.dolphin.infomodel.ExtRefModel;
 
 /**

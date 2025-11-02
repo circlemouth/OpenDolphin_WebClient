@@ -4,19 +4,19 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.NLaboItemListConverter;
 import open.dolphin.converter.NLaboModuleListConverter;
 import open.dolphin.converter.PatientLiteListConverter;
 import open.dolphin.converter.PatientModelConverter;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.NLabServiceBean;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * REST Web Service
@@ -127,7 +127,7 @@ public class NLabResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         NLaboModule module = mapper.readValue(json, NLaboModule.class);
        
         List<NLaboItem> items = module.getItems();
