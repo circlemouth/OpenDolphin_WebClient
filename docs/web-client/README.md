@@ -12,6 +12,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`../server-modernization/legacy-server-modernization-checklist.md`](../server-modernization/legacy-server-modernization-checklist.md): 旧サーバー仕様サマリとモダナイズ実装チェックリスト。
 - [`../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md`](../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md): 永続化層モダナイズ完了報告と移行手順。
 - [`../server-modernization/reporting/3_5-reporting-modernization.md`](../server-modernization/reporting/3_5-reporting-modernization.md): 帳票テンプレート刷新内容と CI 運用ガイド。
+- [`../server-modernization/external-integrations/3_6-external-service-modernization.md`](../server-modernization/external-integrations/3_6-external-service-modernization.md): 外部サービス連携（Plivo/ORCA/API ゲートウェイ）のモダナイズ報告と運用指針。
 
 ### 2. プロセス / 計画
 - [`process/ROADMAP.md`](process/ROADMAP.md): フェーズ 0〜2 の成果と次アクションを統合したロードマップ。

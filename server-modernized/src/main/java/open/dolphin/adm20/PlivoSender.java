@@ -1,111 +1,172 @@
 package open.dolphin.adm20;
 
-import com.plivo.helper.api.client.RestAPI;
-import com.plivo.helper.api.response.message.MessageResponse;
-import com.plivo.helper.exception.PlivoException;
-import java.util.LinkedHashMap;
+import com.fasterxml.jackson.databind.module.SimpleModule;
+import com.plivo.api.PlivoClient;
+import com.plivo.api.exceptions.PlivoRestException;
+import com.plivo.api.models.base.LogLevel;
+import com.plivo.api.models.message.Message;
+import com.plivo.api.models.message.MessageCreateResponse;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
+import java.util.Set;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
+import okhttp3.ConnectionSpec;
+import okhttp3.OkHttpClient;
+import okhttp3.TlsVersion;
+import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
+import open.dolphin.msg.gateway.SmsGatewayConfig;
+import open.dolphin.msg.gateway.SmsGatewayConfig.PlivoSettings;
+import open.dolphin.session.framework.SessionTraceContext;
+import open.dolphin.session.framework.SessionTraceManager;
 
 /**
- *
- * @author kazushi Minagawa.
+ * Plivo SMS 送信ラッパー。最新 SDK と TLS 設定での送信を行い、
+ * 環境変数／custom.properties に基づいて認証情報を取得する。
  */
+@ApplicationScoped
 public class PlivoSender {
-    
-    private static final String AUTH_ID = "MAOWU0NWU1MZC4NJK5MT";
-    private static final String AUTH_TOKEN = "MmM4NzYwYmVhYjZhN2I4MTJhNGVmN2NmMzkyNTc1";
-    private static final String SRC_NUMBER = "14159681855";
-    
-    private String authId = AUTH_ID;
-    private String authToken = AUTH_TOKEN;
-    private String srcNumber = SRC_NUMBER;
-    
-    public PlivoSender() {
+
+    private static final Logger LOGGER = Logger.getLogger(PlivoSender.class.getName());
+    private static final Pattern NON_DIGIT_PATTERN = Pattern.compile("[^0-9]");
+
+    private final SmsGatewayConfig smsGatewayConfig;
+    private final SessionTraceManager traceManager;
+
+    private volatile CachedClient cachedClient;
+
+    @Inject
+    public PlivoSender(SmsGatewayConfig smsGatewayConfig, SessionTraceManager traceManager) {
+        this.smsGatewayConfig = smsGatewayConfig;
+        this.traceManager = traceManager;
     }
-    
-    public void send(List<String> list, String message) throws SMSException {
-        
-        // 送信先
-        StringBuilder sb = new StringBuilder();
-        for (String number : list) {
-            
-            String[] params = number.split("\\s*-\\s*");
-            
-            if (params.length==4) {
-                // +81-090-4667-6797 -> 819046676797
-                String test = params[0];
-                test = (test.startsWith("+")) ? test.substring(1) : test;
-                String test2 = params[1];
-                test2 = (test2.startsWith("0")) ? test2.substring(1) : test2;
-                sb.append(test).append(test2).append(params[2]).append(params[3]).append("<");
-            }
-            else if (params.length==3)
-            {
-                // 090-4667-6797 -> 819046676797
-                String test = params[0];
-                test = (test.startsWith("0")) ? test.substring(1) : test;
-                sb.append("81").append(test).append(params[1]).append(params[2]).append("<");
-            }
+
+    public void send(List<String> destinations, String message) throws SMSException {
+        if (destinations == null || destinations.isEmpty()) {
+            throw new SMSException("SMS の送信先が設定されていません");
         }
-        // Trim last < 
-        int len = sb.length();
-        sb.setLength(len-1);
-        String dest = sb.toString();
-        
-        // API
-        RestAPI api = new RestAPI(getAuthId(), getAuthToken(), "v1");
-        
-        LinkedHashMap<String, String> parameters = new LinkedHashMap();
-        parameters.put("src", getSrcNumber());
-        parameters.put("dst", dest);
-        parameters.put("text", message);
-        
+        PlivoSettings settings = smsGatewayConfig.plivoSettings();
+        if (!settings.isConfigured()) {
+            throw new SMSException("Plivo SMS の認証情報が未設定です");
+        }
+        if (message == null || message.isBlank()) {
+            throw new SMSException("SMS メッセージ本文が空です");
+        }
+
+        List<String> normalizedRecipients = normalizeRecipients(destinations, settings.defaultCountryCode());
+        if (normalizedRecipients.isEmpty()) {
+            throw new SMSException("有効な送信先電話番号が存在しません");
+        }
+
+        SessionTraceContext traceContext = traceManager.current();
+        String traceId = traceContext != null ? traceContext.getTraceId() : null;
+
+        ExternalServiceAuditLogger.logSmsRequest(traceId, normalizedRecipients, settings);
+
         try {
-            MessageResponse msgResponse = api.sendMessage(parameters);
-            info(msgResponse.apiId);
-            if (msgResponse.serverCode == 202) {
-                info("SMS success " + msgResponse.messageUuids.get(0));
-            } else {
-                warn("SMS error " + msgResponse.error);
-                throw new SMSException(msgResponse.error);
-            }
-        } catch (PlivoException e) {
-            warn(e.getLocalizedMessage());
-            throw new SMSException(e.getLocalizedMessage());
+            MessageCreateResponse response = Message.creator(settings.sourceNumber(), normalizedRecipients, message)
+                    .log(settings.logMessageContent())
+                    .client(resolveClient(settings))
+                    .create();
+
+            ExternalServiceAuditLogger.logSmsSuccess(traceId, normalizedRecipients, settings, response);
+            LOGGER.info(() -> String.format(Locale.ROOT,
+                    "Plivo SMS sent. recipients=%s messageUuid=%s", normalizedRecipients,
+                    response != null ? response.getMessageUuid() : "n/a"));
+        } catch (PlivoRestException | IOException ex) {
+            ExternalServiceAuditLogger.logSmsFailure(traceId, normalizedRecipients, settings, ex);
+            throw new SMSException("SMS 送信に失敗しました", ex);
         }
     }
-    
-    private void info(String msg) {
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, msg);
-    }
-    
-    private void warn(String msg) {
-        Logger.getLogger(this.getClass().getName()).log(Level.INFO, msg);
+
+    private List<String> normalizeRecipients(List<String> rawRecipients, String defaultCountryCode) {
+        Set<String> normalized = new LinkedHashSet<>();
+        for (String number : rawRecipients) {
+            String formatted = normalizeNumber(number, defaultCountryCode);
+            if (formatted != null) {
+                normalized.add(formatted);
+            }
+        }
+        return new ArrayList<>(normalized);
     }
 
-    public String getAuthId() {
-        return authId;
+    private String normalizeNumber(String number, String defaultCountryCode) {
+        if (number == null) {
+            return null;
+        }
+        String trimmed = number.trim();
+        if (trimmed.isEmpty()) {
+            return null;
+        }
+        boolean startsWithPlus = trimmed.startsWith("+");
+        String normalizedDigits = NON_DIGIT_PATTERN.matcher(trimmed).replaceAll("");
+        if (normalizedDigits.isEmpty()) {
+            return null;
+        }
+        if (startsWithPlus) {
+            return "+" + normalizedDigits;
+        }
+        if (normalizedDigits.startsWith("0")) {
+            normalizedDigits = normalizedDigits.substring(1);
+        }
+        String country = Objects.requireNonNullElse(defaultCountryCode, "+81");
+        if (!country.startsWith("+")) {
+            country = "+" + country;
+        }
+        return country + normalizedDigits;
     }
 
-    public void setAuthId(String authId) {
-        this.authId = authId;
+    private PlivoClient resolveClient(PlivoSettings settings) {
+        CachedClient current = cachedClient;
+        if (current != null && current.settings().equals(settings)) {
+            return current.client();
+        }
+
+        synchronized (this) {
+            current = cachedClient;
+            if (current != null && current.settings().equals(settings)) {
+                return current.client();
+            }
+            OkHttpClient.Builder builder = new OkHttpClient.Builder()
+                    .retryOnConnectionFailure(true)
+                    .connectTimeout(10, TimeUnit.SECONDS)
+                    .readTimeout(30, TimeUnit.SECONDS)
+                    .writeTimeout(30, TimeUnit.SECONDS)
+                    .connectionSpecs(Arrays.asList(createTlsSpec()));
+
+            LogLevel logLevel = settings.logLevel();
+            if (logLevel == null) {
+                logLevel = LogLevel.NONE;
+            }
+
+            PlivoClient client = new PlivoClient(
+                    settings.authId(),
+                    settings.authToken(),
+                    builder,
+                    settings.baseUrl(),
+                    new SimpleModule(),
+                    logLevel
+            );
+            cachedClient = new CachedClient(settings, client);
+            return client;
+        }
     }
 
-    public String getAuthToken() {
-        return authToken;
+    private ConnectionSpec createTlsSpec() {
+        return new ConnectionSpec.Builder(ConnectionSpec.MODERN_TLS)
+                .tlsVersions(TlsVersion.TLS_1_2, TlsVersion.TLS_1_3)
+                .allEnabledCipherSuites()
+                .build();
     }
 
-    public void setAuthToken(String authToken) {
-        this.authToken = authToken;
-    }
-
-    public String getSrcNumber() {
-        return srcNumber;
-    }
-
-    public void setSrcNumber(String srcNumber) {
-        this.srcNumber = srcNumber;
-    }
+    private record CachedClient(PlivoSettings settings, PlivoClient client) { }
 }
