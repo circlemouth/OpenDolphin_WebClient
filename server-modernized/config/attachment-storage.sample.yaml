@@ -1,0 +1,16 @@
+# 添付ファイル保存先の設定例
+# storage.type: database|s3
+storage:
+  type: s3
+  database:
+    lobTable: schema_attachment
+  s3:
+    bucket: opendolphin-attachments
+    region: ap-northeast-1
+    basePath: clinics/${FACILITY_ID}
+    serverSideEncryption: AES256
+    kmsKeyId: null
+    multipartUploadThresholdMb: 50
+    lifecycle:
+      transitionToStandardIaAfterDays: 30
+      expireAfterDays: 3650

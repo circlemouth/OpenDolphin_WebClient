@@ -10,6 +10,8 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`architecture/REST_API_INVENTORY.md`](architecture/REST_API_INVENTORY.md): Web クライアントが利用する REST API 一覧と留意点。
 - [`architecture/SERVER_MODERNIZATION_PLAN.md`](architecture/SERVER_MODERNIZATION_PLAN.md): 既存サーバー刷新・連携の将来計画。
 - [`../server-modernization/legacy-server-modernization-checklist.md`](../server-modernization/legacy-server-modernization-checklist.md): 旧サーバー仕様サマリとモダナイズ実装チェックリスト。
+- [`../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md`](../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md): 永続化層モダナイズ完了報告と移行手順。
+- [`../server-modernization/reporting/3_5-reporting-modernization.md`](../server-modernization/reporting/3_5-reporting-modernization.md): 帳票テンプレート刷新内容と CI 運用ガイド。
 
 ### 2. プロセス / 計画
 - [`process/ROADMAP.md`](process/ROADMAP.md): フェーズ 0〜2 の成果と次アクションを統合したロードマップ。
