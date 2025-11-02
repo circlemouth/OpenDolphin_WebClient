@@ -57,11 +57,11 @@
 - [x] 外部接続設定を環境変数化し、Sandbox/本番の切り替え手順を定義する。→ 同上ドキュメント「4. Sandbox / 本番切替運用」。
 
 ### 3.7 セキュリティ / コンプライアンス
-- [ ] 2 要素認証エンドポイント（`/20/adm/factor2/*`）の実装をレビューし、FIDO2/TOTP 等の最新方式へ更新する。
-- [ ] HTTPS 常時化、HSTS、CSP、WAF 連携など運用レベルのセキュリティ設定を整備する。
-- [ ] 操作ログ・監査証跡の要件を `docs/server-modernization/api-smoke-test.md` と突き合わせ、改ざん耐性のあるログ保管を実装する。
-- [ ] 個人情報保護対応（第三者提供記録・アクセス制御）を `docs/web-client/architecture/SERVER_MODERNIZATION_PLAN.md` の法令要件と整合させる。
-- [ ] 設定変更・デプロイ作業のワークフローを標準化し、権限分離とレビュー手順を明文化する。
+- [x] 2 要素認証エンドポイント（`/20/adm/factor2/*`）の実装をレビューし、FIDO2/TOTP 等の最新方式へ更新する。→ `AdmissionResource` に TOTP/FIDO2 登録・認証 API を追加し、`Factor2Credential`/`Factor2Challenge` で認証器管理を実装（詳細: `docs/server-modernization/security/3_7-security-compliance.md`）。
+- [x] HTTPS 常時化、HSTS、CSP、WAF 連携など運用レベルのセキュリティ設定を整備する。→ `docker/server-modernized/configure-wildfly.cli` へ HSTS/CSP/リダイレクト設定を追加、WAF 連携手順は同ドキュメントに記載。
+- [x] 操作ログ・監査証跡の要件を `docs/server-modernization/api-smoke-test.md` と突き合わせ、改ざん耐性のあるログ保管を実装する。→ `AuditTrailService` と `d_audit_event` を新設し、ハッシュチェーンで監査ログを永続化。
+- [x] 個人情報保護対応（第三者提供記録・アクセス制御）を `docs/web-client/architecture/SERVER_MODERNIZATION_PLAN.md` の法令要件と整合させる。→ `ThirdPartyDisclosureRecord` テーブルと運用ガイドを整備。
+- [x] 設定変更・デプロイ作業のワークフローを標準化し、権限分離とレビュー手順を明文化する。→ `docs/server-modernization/security/DEPLOYMENT_WORKFLOW.md` に標準フローを追加。
 
 ### 3.8 品質保証 / 運用
 - [ ] API 互換性検証用スモークテスト（`api-smoke-test.md`）を自動化し、CI パイプラインで旧/新サーバー比較を実行する。

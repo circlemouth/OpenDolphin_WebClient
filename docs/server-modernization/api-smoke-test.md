@@ -81,4 +81,5 @@ python server-modernized/tools/api-smoke-test/run_smoke.py \
 - 旧サーバーの API は 300 件以上存在します。雛形生成後にすべてのプレースホルダーへ実データを設定してから実行してください。
 - `compare.mode` を `status` や `bytes` に変更することで JSON 以外のレスポンス比較方法を調整できます。JSON フィールドで差分を許容する場合は `compare.ignore_fields` に無視したいキー (トップレベル) を列挙してください。
 - 実行前に `docs/server-modernization/server-api-inventory.md` を参照し、業務的に不要な API が含まれていないか確認してください。
+- `/20/adm/factor2/totp/*` および `/20/adm/factor2/fido2/*` を検証した場合は、`SELECT action FROM d_audit_event ORDER BY event_time DESC LIMIT 5;` を実行して監査ログが記録されていることを確認してください。
 
