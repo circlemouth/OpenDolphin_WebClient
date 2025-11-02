@@ -19,6 +19,7 @@ import open.dolphin.infomodel.PHRKey;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -26,6 +27,7 @@ import open.dolphin.infomodel.SchemaModel;
  */
 @Named
 @Stateless
+@SessionOperation
 public class AMD20_PHRServiceBean {
     
     @PersistenceContext
