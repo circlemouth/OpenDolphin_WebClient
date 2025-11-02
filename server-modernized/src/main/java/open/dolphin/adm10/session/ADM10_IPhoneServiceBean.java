@@ -8,6 +8,7 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import open.dolphin.infomodel.*;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -15,6 +16,7 @@ import open.dolphin.infomodel.*;
  */
 @Named
 @Stateless
+@SessionOperation
 public class ADM10_IPhoneServiceBean {
 
     // ユーザー検索
