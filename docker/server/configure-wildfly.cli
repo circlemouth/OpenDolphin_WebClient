@@ -1,6 +1,6 @@
 embed-server --std-out=echo --server-config=standalone.xml
 
-module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=javax.api,javax.transaction.api
+module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=jakarta.api,jakarta.transaction.api
 
 if (outcome == success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource()
     /subsystem=datasources/jdbc-driver=postgresql:remove()
