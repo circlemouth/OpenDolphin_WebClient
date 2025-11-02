@@ -11,20 +11,23 @@
 ## 2. PDF 生成ライブラリの更新とライセンス確認
 
 - `server-modernized/pom.xml` の Velocity を `velocity-engine-core 2.3` に更新し、PDF 生成には AGPL フリーの `openpdf 1.3.39` を採用。旧 iText 2.x 依存を排除し、ライセンス面のリスクを解消した。
+- OpenPDF 上でテンプレートから PDF を生成する `open.dolphin.reporting.PdfDocumentWriter` と、それを呼び出す高レベル API `open.dolphin.reporting.PdfRenderer` を追加し、Velocity のレンダリング結果を直ちに帳票 PDF に変換できるようにした。日本語フォントは `HeiseiKakuGo-W5` を既定にして見読性を確保している。
+- 署名機能で利用する BouncyCastle (`bcprov-jdk18on` / `bcpkix-jdk18on`) を依存に追加し、Apache License 2.0 互換であることを確認した。
 - Docker ビルドでインストールしていた `iTextAsian` は OpenPDF との後方互換のために引き続きバンドルするが、商用ライセンスは不要となった。`docs/server-modernization/reporting/LICENSE_COMPATIBILITY.md` にライセンス比較表を追記済み。
-- `server-modernized/reporting/README.md` を更新し、WAR 生成時に最新テンプレートと OpenPDF が同梱されることを明示した。
+- `server-modernized/reporting/README.md` を更新し、WAR 生成時に最新テンプレートと OpenPDF が同梱されること、テンプレート探索パスを環境変数で上書きできることを明示した。
 
 ## 3. 署名・タイムスタンプ付与ワークフロー
 
 - 電子署名と TSA 連携の設定を `server-modernized/reporting/signing-config.sample.json` に定義し、CI/CD から Secrets として供給する設計とした。
+- `open.dolphin.reporting.PdfSigningService` を実装し、PKCS#12 キーストアから秘密鍵と証明書チェーンを読み込んで `MakeSignature.signDetached` を実行できるようにした。署名理由 (`reason`) や所在地 (`location`) はコンフィグで差し替え可能。
 - 署名鍵は PKCS#12 を前提にし、`keystorePath`・`tsaUrl` などを環境ごとに差し替え可能。ローカル検証ではダミー鍵を使用し、本番デプロイ時のみ実鍵をマウントする手順を明文化した。
-- タイムスタンプ付与失敗時は電子署名のみで継続し、監査ログへ失敗理由を記録するフォールバックポリシーを運用手順書へ追記した。
+- タイムスタンプ付与が失敗した場合は警告を記録した上で TSA なしで再署名するフォールバックを実装し、監査ログと運用ドキュメントに手順を追記した。
 
 ## 4. Git 管理と CI プレビュー
 
 - テンプレートは Git で追跡する構造とし、Pull Request での差分レビューが可能になった。更新手順は `server-modernized/reporting/README.md` に整理している。
-- `.github/workflows/reporting-preview.yml` を新設し、テンプレート変更時に `mvn -pl server-modernized -am -DskipTests package` を実行して WAR を生成。続けて `PdfRendererKt`（将来的に実装予定）を呼び出し、プレビュー PDF をアーティファクトとして保存するようにした。
-- CI が失敗した場合は帳票ビルドを中断し、テンプレートの構文エラーや依存関係の破損を早期に検知できる。プレビュー生成がまだ未実装の場合はワークフロー内で警告メッセージを残し、アーティファクトの欠落をレビュー時に確認できるようになっている。
+- `.github/workflows/reporting-preview.yml` を新設し、テンプレート変更時に `mvn -pl server-modernized -am -DskipTests package` を実行して WAR を生成。続けて実装済みの `open.dolphin.reporting.PdfRendererKt` を呼び出し、プレビュー PDF をアーティファクトとして保存するようにした。
+- CI が失敗した場合は帳票ビルドを中断し、テンプレートの構文エラーや依存関係の破損を早期に検知できる。署名設定が未投入の場合でも署名無しのプレビューを自動生成するため、レビュアーは常に最新版のレイアウトを確認できる。
 
 ## 5. 利用者影響と移行手順
 
