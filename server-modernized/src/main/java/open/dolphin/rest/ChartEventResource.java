@@ -1,20 +1,20 @@
 package open.dolphin.rest;
 
 import java.io.IOException;
-import javax.inject.Inject;
-import javax.servlet.AsyncContext;
-import javax.servlet.AsyncEvent;
-import javax.servlet.AsyncListener;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.servlet.AsyncContext;
+import jakarta.servlet.AsyncEvent;
+import jakarta.servlet.AsyncListener;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.ChartEventModelConverter;
 import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.mbean.ServletContextHolder;
 import open.dolphin.session.ChartEventServiceBean;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * ChartEventResource
@@ -120,7 +120,7 @@ public class ChartEventResource extends AbstractResource {
         debug("putChartEvent did call");
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         ChartEventModel msg = mapper.readValue(json, ChartEventModel.class);
         int cnt = eventServiceBean.processChartEvent(msg);
         return String.valueOf(cnt);

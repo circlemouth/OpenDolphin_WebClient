@@ -2,19 +2,19 @@ package open.dolphin.rest;
 
 import java.io.IOException;
 import java.util.List;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.PatientListConverter;
 import open.dolphin.converter.PatientModelConverter;
 import open.dolphin.infomodel.PatientList;
 import open.dolphin.infomodel.PatientModel;
 import static open.dolphin.rest.AbstractResource.getRemoteFacility;
 import open.dolphin.session.PatientServiceBean;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * REST Web Service
@@ -148,7 +148,7 @@ public class PatientResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         PatientModel patient = mapper.readValue(json, PatientModel.class);
         
         patient.setFacilityId(fid);
@@ -169,7 +169,7 @@ public class PatientResource extends AbstractResource {
         
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         PatientModel patient = mapper.readValue(json, PatientModel.class);
 
         patient.setFacilityId(fid);

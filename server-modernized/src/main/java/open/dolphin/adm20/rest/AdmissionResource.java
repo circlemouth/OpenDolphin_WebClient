@@ -12,24 +12,24 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.Consumes;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.Consumes;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javax.persistence.NoResultException;
-import javax.ws.rs.DELETE;
-import javax.ws.rs.GET;
-import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.StreamingOutput;
+import jakarta.persistence.NoResultException;
+import jakarta.ws.rs.DELETE;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.PUT;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.StreamingOutput;
 import open.dolphin.adm20.session.ADM20_AdmissionServiceBean;
 import open.dolphin.adm20.ICarePlanModel;
 import open.dolphin.adm20.OTPHelper;
@@ -59,8 +59,8 @@ import open.dolphin.infomodel.SMSMessage;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.session.ChartEventServiceBean;
 import open.orca.rest.ORCAConnection;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 
 
@@ -368,7 +368,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IOndobanModel30[] array = mapper.readValue(json, IOndobanModel30[].class);
                 
                 ArrayList<OndobanModel> saveList = new ArrayList(array.length);
@@ -394,7 +394,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IOndobanModel30[] array = mapper.readValue(json, IOndobanModel30[].class);
                 
                 ArrayList<OndobanModel> updateList = new ArrayList(array.length);
@@ -420,7 +420,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 IOndobanModel30[] array = mapper.readValue(json, IOndobanModel30[].class);
                 
                 ArrayList<OndobanModel> updateList = new ArrayList(array.length);
@@ -481,7 +481,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 INurseProgressCourse conv = mapper.readValue(json, INurseProgressCourse.class);
                 
                 NurseProgressCourseModel model = conv.toModel();
@@ -505,7 +505,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 INurseProgressCourse conv = mapper.readValue(json, INurseProgressCourse.class);
                 
                 NurseProgressCourseModel model = conv.toModel();
@@ -527,7 +527,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
                 ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 INurseProgressCourse conv = mapper.readValue(json, INurseProgressCourse.class);
                 
                 NurseProgressCourseModel model = conv.toModel();
@@ -660,7 +660,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
     public UserModelConverter getUserWithNewFactor2Device(String json) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Factor2Spec spec = mapper.readValue(json, Factor2Spec.class);
         
         UserModel result = ehtService.getUserWithNewFactor2Device(spec);
@@ -676,7 +676,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
     public UserModelConverter getUserWithF2Backup(String json) throws IOException {
 
         ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         Factor2Spec spec = mapper.readValue(json, Factor2Spec.class);
         
         UserModel result = ehtService.getUserWithF2Backup(spec);

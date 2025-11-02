@@ -3,19 +3,19 @@ package open.dolphin.rest;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
-import javax.inject.Inject;
-import javax.servlet.http.HttpServletRequest;
-import javax.ws.rs.*;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.PatientVisitListConverter;
 import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.PatientVisitList;
 import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.session.ChartEventServiceBean;
 import open.dolphin.session.PVTServiceBean;
-import org.codehaus.jackson.map.DeserializationConfig;
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * PVTResource2
@@ -66,7 +66,7 @@ public class PVTResource2 extends AbstractResource {
 //        return cntStr;   
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         PatientVisitModel model = mapper.readValue(json, PatientVisitModel.class);
 
         // 関係構築

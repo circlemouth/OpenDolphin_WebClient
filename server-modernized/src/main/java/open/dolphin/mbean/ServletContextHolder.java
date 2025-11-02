@@ -6,8 +6,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import javax.inject.Singleton;
-import javax.servlet.AsyncContext;
+import jakarta.inject.Singleton;
+import jakarta.servlet.AsyncContext;
 import open.dolphin.infomodel.PatientVisitModel;
 
 /**
