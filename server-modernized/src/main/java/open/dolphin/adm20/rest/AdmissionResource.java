@@ -30,10 +30,10 @@ import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.StreamingOutput;
+import open.dolphin.adm20.PlivoSender;
 import open.dolphin.adm20.session.ADM20_AdmissionServiceBean;
 import open.dolphin.adm20.ICarePlanModel;
 import open.dolphin.adm20.OTPHelper;
-import open.dolphin.adm20.PlivoSender;
 import open.dolphin.adm20.converter.IDocument;
 import open.dolphin.adm20.converter.ILastDateCount30;
 import open.dolphin.adm20.converter.INurseProgressCourse;
@@ -78,6 +78,9 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
     @Inject
     private ADM20_EHTServiceBean ehtService;
     
+    @Inject
+    private PlivoSender plivoSender;
+
     // VisitTouch2 Admission Model
     
     //  /10/eht/karteNumber/
@@ -553,8 +556,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
                 ObjectMapper mapper = new ObjectMapper();
                 SMSMessage sms = mapper.readValue(json, SMSMessage.class);
                 
-                PlivoSender plivo = new PlivoSender();
-                plivo.send(sms.getNumbers(), sms.getMessage());
+                plivoSender.send(sms.getNumbers(), sms.getMessage());
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(output, String.valueOf(sms.getNumbers().size()));
@@ -588,8 +590,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
                 List<String> numbers = new ArrayList(1);
                 numbers.add(spec.getMobileNumber());
                 
-                PlivoSender plivo = new PlivoSender();
-                plivo.send(numbers, String.valueOf(code));
+                plivoSender.send(numbers, String.valueOf(code));
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(output, "1");

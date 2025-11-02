@@ -51,20 +51,26 @@ public class MessagingGateway {
     private void sendClaimInternal(DocumentModel document, MessagingConfig.ClaimSettings settings, String traceId) {
         try {
             LOGGER.info(() -> String.format("Document message received. Sending ORCA will start (async) [traceId=%s]", traceId));
+            ExternalServiceAuditLogger.logClaimRequest(traceId, document, settings);
             ClaimSender sender = new ClaimSender(settings.host(), settings.port(), settings.encodingOrDefault());
             sender.send(document);
+            ExternalServiceAuditLogger.logClaimSuccess(traceId, document, settings);
         } catch (Exception ex) {
             LOGGER.log(Level.WARNING, () -> String.format("Claim send error [traceId=%s]", traceId), ex);
+            ExternalServiceAuditLogger.logClaimFailure(traceId, document, settings, ex);
         }
     }
 
     private void sendDiagnosisInternal(DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings, String traceId) {
         try {
             LOGGER.info(() -> String.format("Diagnosis message received. Sending ORCA will start (async) [traceId=%s]", traceId));
+            ExternalServiceAuditLogger.logDiagnosisRequest(traceId, wrapper, settings);
             DiagnosisSender sender = new DiagnosisSender(settings.host(), settings.port(), settings.encodingOrDefault());
             sender.send(wrapper);
+            ExternalServiceAuditLogger.logDiagnosisSuccess(traceId, wrapper, settings);
         } catch (Exception ex) {
             LOGGER.log(Level.WARNING, () -> String.format("Diagnosis claim send error [traceId=%s]", traceId), ex);
+            ExternalServiceAuditLogger.logDiagnosisFailure(traceId, wrapper, settings, ex);
         }
     }
 
