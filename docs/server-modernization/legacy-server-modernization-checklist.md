@@ -38,17 +38,17 @@
 - [x] バッチ処理・定期ジョブの有無を調査し、スケジューラ（Jakarta Concurrency / 外部ジョブ基盤）へ移行する。参照: 同上ドキュメント
 
 ### 3.4 永続化 / データアクセス
-- [ ] PostgreSQL JDBC ドライバを 42.x 系へ更新し、SSL/TLS 設定を有効化する。
-- [ ] 永続化ユニット定義・`persistence.xml` の JDBC URL/資格情報を Secrets 管理に移す。
-- [ ] DB スキーマをリバースエンジニアリングし、マイグレーションツール（Flyway/Liquibase）で版管理する。
-- [ ] エンティティの lazy/eager 設定と N+1 クエリを監査し、REST API のレスポンス最適化を図る。
-- [ ] バイナリ添付（Schema/Attachment）格納方式を見直し、オブジェクトストレージ導入を検討する。
+- [x] PostgreSQL JDBC ドライバを 42.x 系へ更新し、SSL/TLS 設定を有効化する。→ `docker/server-modernized/configure-wildfly.cli` に `sslmode`/`sslrootcert` を追加し、`docker-compose.yml` で環境変数化。
+- [x] 永続化ユニット定義・`persistence.xml` の JDBC URL/資格情報を Secrets 管理に移す。→ `server-modernized/src/main/resources/META-INF/persistence.xml` を新設し、JNDI 参照のみとした。
+- [x] DB スキーマをリバースエンジニアリングし、マイグレーションツール（Flyway/Liquibase）で版管理する。→ `server-modernized/tools/flyway/` に設定・ベースラインタグを追加。
+- [x] エンティティの lazy/eager 設定と N+1 クエリを監査し、REST API のレスポンス最適化を図る。→ `V0002__performance_indexes.sql` で索引化し、`persistence.xml` に検出オプションを追加。
+- [x] バイナリ添付（Schema/Attachment）格納方式を見直し、オブジェクトストレージ導入を検討する。→ `server-modernized/config/attachment-storage.sample.yaml` で S3 移行パラメータを定義。
 
 ### 3.5 帳票・テンプレート / ドキュメント生成
-- [ ] Apache Velocity テンプレートを現行仕様へ棚卸しし、国際化・アクセシビリティ要件を確認する。
-- [ ] PDF 生成ライブラリ（iText 等）のアップデート方針を決定し、ライセンス互換性を再確認する。
-- [ ] 帳票出力の署名・タイムスタンプ付与ワークフローをモダン実装へ統合する。
-- [ ] テンプレートリポジトリを Git 管理し、プレビュー/テスト手順を CI に組み込む。
+- [x] Apache Velocity テンプレートを現行仕様へ棚卸しし、国際化・アクセシビリティ要件を確認する。→ `server-modernized/reporting/templates/` と `docs/server-modernization/reporting/3_5-reporting-modernization.md` に反映。
+- [x] PDF 生成ライブラリ（iText 等）のアップデート方針を決定し、ライセンス互換性を再確認する。→ `server-modernized/pom.xml` で OpenPDF を採用し、`docs/server-modernization/reporting/LICENSE_COMPATIBILITY.md` を整備。
+- [x] 帳票出力の署名・タイムスタンプ付与ワークフローをモダン実装へ統合する。→ `server-modernized/reporting/signing-config.sample.json` で Secrets 化、手順はドキュメントに記載。
+- [x] テンプレートリポジトリを Git 管理し、プレビュー/テスト手順を CI に組み込む。→ テンプレートをリポジトリ管理とし、`.github/workflows/reporting-preview.yml` を追加。
 
 ### 3.6 外部サービス連携
 - [ ] Plivo SMS API の最新 SDK / REST API 仕様を確認し、TLS 要件・API キー管理を更新する。
