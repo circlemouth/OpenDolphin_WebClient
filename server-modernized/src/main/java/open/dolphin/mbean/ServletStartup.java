@@ -1,107 +1,132 @@
 package open.dolphin.mbean;
 
-import java.util.Calendar;
-import java.util.GregorianCalendar;
-import java.util.Properties;
-import java.util.Timer;
-import java.util.logging.Logger;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
-import jakarta.ejb.Schedule;
-import jakarta.ejb.Singleton;
-import jakarta.ejb.Startup;
-import jakarta.ejb.Timeout;
+import jakarta.annotation.Resource;
+import jakarta.enterprise.concurrent.ManagedScheduledExecutorService;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.Duration;
+import java.time.Instant;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
+import java.util.GregorianCalendar;
+import java.util.Properties;
+import java.util.concurrent.ScheduledFuture;
+import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import open.dolphin.session.ChartEventServiceBean;
 import open.dolphin.session.SystemServiceBean;
 import open.orca.rest.ORCAConnection;
-//import open.dolphin.updater.Updater;
 
 /**
- * スタートアップ時にUpdaterとStateServiceBeanを自動実行
- * @author masuda, Masuda Naika
+ * サーバー起動時の初期化と定期ジョブの実行を Jakarta Concurrency へ移行したライフサイクル管理コンポーネント。
  */
-@Singleton
-@Startup
+@ApplicationScoped
 public class ServletStartup {
-    
-private static final Logger logger = Logger.getLogger(ServletStartup.class.getSimpleName());
+
+    private static final Logger LOGGER = Logger.getLogger(ServletStartup.class.getSimpleName());
+    private static final Logger DOLPHIN_LOGGER = Logger.getLogger("open.dolphin");
+    private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+
+    @Resource
+    private ManagedScheduledExecutorService scheduler;
 
     @Inject
     private ChartEventServiceBean eventServiceBean;
-    
-//s.oh^ 2014/07/08 クラウド0対応
+
     @Inject
     private SystemServiceBean systemServiceBean;
-//s.oh$
-    
-//    @Inject
-//    private Updater updater;
+
+    private ScheduledFuture<?> midnightRefreshTask;
+    private ScheduledFuture<?> monthlyActivityTask;
 
     @PostConstruct
     public void init() {
-//        updater.start();
         eventServiceBean.start();
+        if (scheduler == null) {
+            LOGGER.warning("ManagedScheduledExecutorService is not available. Timed jobs will not be executed.");
+            return;
+        }
+        scheduleMidnightRefresh();
+        scheduleMonthlyActivityReport();
     }
 
     @PreDestroy
     public void stop() {
+        cancelTask(midnightRefreshTask);
+        cancelTask(monthlyActivityTask);
     }
 
-    // 日付が変わったらpvtListをクリアしクライアントに伝える
-    @Schedule(hour="0", minute="0", persistent=false)
-    public void dayChange() {
-        Logger.getLogger("open.dolphin").info("Renew pvtlist.");
-        eventServiceBean.renewPvtList();
+    private void scheduleMidnightRefresh() {
+        Duration delay = Duration.between(Instant.now(), nextMidnight());
+        if (delay.isNegative()) {
+            delay = delay.plusDays(1);
+        }
+        midnightRefreshTask = scheduler.scheduleAtFixedRate(this::renewPatientVisitListSafely,
+                delay.toMillis(), Duration.ofDays(1).toMillis(), TimeUnit.MILLISECONDS);
     }
-    @Timeout
-    public void timeout(Timer timer) {
-        logger.warning("ServletStartup: timeout occurred");
-    }
-    
-//    @Schedule(dayOfWeek = "*", hour = "*", minute = "*", second = "*/5",year="2012", persistent = false)
-//    public void backgroundProcessing() {
-//        System.out.println("\n\n\t AutomaticSchedulerBean's backgroundProcessing() called....at: "+new Date());
-//    }
-    
-//s.oh^ 2014/07/08 クラウド0対応
-    /**
-     * 毎月の１日 AM 5:10 に先月のアクティビティをメールで管理者へ送信する
-     */
-    @Schedule(dayOfMonth="1", hour="5", minute="0", persistent=false)
-    //@Schedule(hour="15", minute="0", persistent=false)
-    public void sendMonthlyActivities() {
-        Logger.getLogger("open.dolphin").info("Send monthly Activities.");
-     
-//minagawa^ custom.properties          
-//        Properties config = new Properties();
-//        StringBuilder sb = new StringBuilder();
-//        sb.append(System.getProperty("jboss.home.dir"));
-//        sb.append(File.separator);
-//        sb.append("custom.properties");
-//        File f = new File(sb.toString());
-//        try {
-//            FileInputStream fin = new FileInputStream(f);
-//            InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect");
-//            config.load(r);
-//            r.close();
-//        } catch (IOException ex) {
-//            ex.printStackTrace(System.err);
-//            throw new RuntimeException(ex.getMessage());
-//        }
-        Properties config = ORCAConnection.getInstance().getProperties();
-//minagawa$        
-        String zero = config.getProperty("cloud.zero");
-        if(zero != null && zero.equals("true")) {
-            // 先月の月と年
-            GregorianCalendar gc = new GregorianCalendar();
-            gc.add(Calendar.MONTH, -1);
-            int year = gc.get(Calendar.YEAR);
-            int month = gc.get(Calendar.MONTH);
 
-            // レポートメール
-            systemServiceBean.sendMonthlyActivities(year, month);
-        }          
+    private void renewPatientVisitListSafely() {
+        try {
+            DOLPHIN_LOGGER.info("Renew pvtlist.");
+            eventServiceBean.renewPvtList();
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "Failed to renew patient visit list", ex);
+        }
     }
-//s.oh$
+
+    private void scheduleMonthlyActivityReport() {
+        scheduleNextMonthlyReport();
+    }
+
+    private void scheduleNextMonthlyReport() {
+        Duration delay = Duration.between(Instant.now(), nextMonthlyExecution());
+        if (delay.isNegative()) {
+            delay = Duration.ZERO;
+        }
+        monthlyActivityTask = scheduler.schedule(() -> {
+            runMonthlyActivityReportSafely();
+            scheduleNextMonthlyReport();
+        }, delay.toMillis(), TimeUnit.MILLISECONDS);
+    }
+
+    private void runMonthlyActivityReportSafely() {
+        try {
+            Properties config = ORCAConnection.getInstance().getProperties();
+            String zero = config.getProperty("cloud.zero");
+            if ("true".equalsIgnoreCase(zero)) {
+                GregorianCalendar gc = new GregorianCalendar();
+                gc.add(GregorianCalendar.MONTH, -1);
+                int year = gc.get(GregorianCalendar.YEAR);
+                int month = gc.get(GregorianCalendar.MONTH);
+                DOLPHIN_LOGGER.info("Send monthly Activities.");
+                systemServiceBean.sendMonthlyActivities(year, month);
+            }
+        } catch (Exception ex) {
+            LOGGER.log(Level.SEVERE, "Failed to send monthly activity report", ex);
+        }
+    }
+
+    private void cancelTask(ScheduledFuture<?> future) {
+        if (future != null) {
+            future.cancel(true);
+        }
+    }
+
+    private Instant nextMidnight() {
+        ZonedDateTime now = ZonedDateTime.now(DEFAULT_ZONE);
+        ZonedDateTime next = now.plusDays(1).withHour(0).withMinute(0).withSecond(0).withNano(0);
+        return next.toInstant();
+    }
+
+    private Instant nextMonthlyExecution() {
+        ZonedDateTime now = ZonedDateTime.now(DEFAULT_ZONE);
+        ZonedDateTime next = now.withDayOfMonth(1).withHour(5).withMinute(0).withSecond(0).withNano(0);
+        if (!now.isBefore(next)) {
+            next = next.plusMonths(1).withDayOfMonth(1);
+        }
+        return next.toInstant();
+    }
 }

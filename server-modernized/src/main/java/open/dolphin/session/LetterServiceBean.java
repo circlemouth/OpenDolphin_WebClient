@@ -8,11 +8,12 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.LetterDate;
 import open.dolphin.infomodel.LetterItem;
 import open.dolphin.infomodel.LetterModule;
 import open.dolphin.infomodel.LetterText;
-import jakarta.transaction.Transactional;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -21,6 +22,7 @@ import jakarta.transaction.Transactional;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class LetterServiceBean {
     
     private static final String KARTE_ID = "karteId";

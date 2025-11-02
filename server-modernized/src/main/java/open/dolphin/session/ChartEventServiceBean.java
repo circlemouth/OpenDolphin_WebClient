@@ -15,10 +15,11 @@ import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.servlet.AsyncContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.mbean.ServletContextHolder;
 import open.dolphin.rest.ChartEventResource;
-import jakarta.transaction.Transactional;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  * ChartEventServiceBean
@@ -26,6 +27,7 @@ import jakarta.transaction.Transactional;
  */
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class ChartEventServiceBean {
 
     //private static final Logger logger = Logger.getLogger(ChartEventServiceBean.class.getSimpleName());

@@ -3,20 +3,17 @@ package open.dolphin.adm20.session;
 import java.beans.XMLDecoder;
 import java.io.BufferedInputStream;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
 import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
@@ -36,8 +33,7 @@ import open.dolphin.infomodel.ProgressCourse;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.UserModel;
-import open.dolphin.msg.ClaimSender;
-import open.dolphin.msg.DiagnosisSender;
+import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.adm20.converter.IOSHelper;
 //import org.jboss.logging.Logger;
 
@@ -87,6 +83,9 @@ public class ADM20_AdmissionServiceBean {
     
     @PersistenceContext
     private EntityManager em;
+
+    @Inject
+    private MessagingGateway messagingGateway;
     
     public KarteBean getKarte(long ptPK) {
         // Karte
@@ -627,63 +626,7 @@ public class ADM20_AdmissionServiceBean {
     
         // JMS+MDB
     public void sendDocument(DocumentModel document) {
-//s.oh^ 2014/01/23 ORCAとの接続対応
-        Properties config = new Properties();
-        StringBuilder sb = new StringBuilder();
-        sb.append(System.getProperty("jboss.home.dir"));
-        sb.append(File.separator);
-        sb.append("custom.properties");
-        File f = new File(sb.toString());
-        try {
-            FileInputStream fin = new FileInputStream(f);
-            try (InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect")) {
-                config.load(r);
-            }
-        } catch (IOException ex) {
-            ex.printStackTrace(System.err);
-            return;
-        }
-        String claimConn = config.getProperty("claim.conn");
-        if(claimConn != null && claimConn.equals("server")) {
-//s.oh$
-//s.oh^ 2014/02/21 Claim送信方法の変更
-            //Connection conn = null;
-            //try {
-            //    conn = connectionFactory.createConnection();
-            //    Session session = conn.createSession(false, QueueSession.AUTO_ACKNOWLEDGE);
-            //
-            //    ObjectMessage msg = session.createObjectMessage(document);
-            //    MessageProducer producer = session.createProducer(queue);
-            //    producer.send(msg);
-            //
-            //
-            //} catch (Exception e) {
-            //    e.printStackTrace(System.err);
-            //    throw new RuntimeException(e.getMessage());
-            //
-            //} finally {
-            //    if(conn != null) {
-            //        try {
-            //            conn.close();
-            //        } catch (JMSException e) { 
-            //        }
-            //    }
-            //}
-            // ORCA CLAIM 送信パラメータ
-            String host = config.getProperty("claim.host");
-            int port = Integer.parseInt(config.getProperty("claim.send.port"));
-            String enc = config.getProperty("claim.send.encoding");
-            String facilityId = config.getProperty("dolphin.facilityId");
-            java.util.logging.Logger.getLogger("open.dolphin").info("Document message has received. Sending ORCA will start(Not Que).");
-            ClaimSender sender = new ClaimSender(host, port, enc);
-            try {
-                sender.send(document);
-            } catch (Exception ex) {
-                ex.printStackTrace(System.err);
-                java.util.logging.Logger.getLogger("open.dolphin").log(Level.WARNING, "Claim send error : {0}", ex.getMessage());
-            }
-//s.oh$
-        }
+        messagingGateway.dispatchClaim(document);
     }
     
     /**
@@ -740,67 +683,9 @@ public class ADM20_AdmissionServiceBean {
         // CLAIM送信
         //-------------------------------------------------------------
         if (wrapper.getSendClaim() && wrapper.getConfirmDate()!=null) {
-//s.oh^ 2014/01/23 ORCAとの接続対応
-            Properties config = new Properties();
-            StringBuilder sb = new StringBuilder();
-            sb.append(System.getProperty("jboss.home.dir"));
-            sb.append(File.separator);
-            sb.append("custom.properties");
-            File f = new File(sb.toString());
-            try {
-                FileInputStream fin = new FileInputStream(f);
-                InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect");
-                config.load(r);
-                r.close();
-            } catch (IOException ex) {
-                ex.printStackTrace(System.err);
-                throw new RuntimeException(ex.getMessage());
-            }
-            String claimConn = config.getProperty("claim.conn");
-            if(claimConn != null && claimConn.equals("server")) {
-//s.oh$
-//s.oh^ 2014/02/21 Claim送信方法の変更
-                //Connection conn = null;
-                //try {
-                //    conn = connectionFactory.createConnection();
-                //    Session session = conn.createSession(false, QueueSession.AUTO_ACKNOWLEDGE);
-                //
-                //    ObjectMessage msg = session.createObjectMessage(wrapper);
-                //    MessageProducer producer = session.createProducer(queue);
-                //    producer.send(msg);
-                //
-                //} catch (Exception e) {
-                //    e.printStackTrace(System.err);
-                //    throw new RuntimeException(e.getMessage());
-                //
-                //} 
-                //finally {
-                //    if(conn != null)
-                //    {
-                //        try
-                //        {
-                //        conn.close();
-                //        }
-                //        catch (JMSException e)
-                //        { 
-                //        }
-                //    }
-                //}
-                String host = config.getProperty("claim.host");
-                int port = Integer.parseInt(config.getProperty("claim.send.port"));
-                String enc = config.getProperty("claim.send.encoding");
-                java.util.logging.Logger.getLogger("open.dolphin").info("DiagnosisSendWrapper message has received. Sending ORCA will start(Not Que).");
-                DiagnosisSender sender = new DiagnosisSender(host, port, enc);
-                try {
-                    sender.send(wrapper);
-                } catch (Exception ex) {
-                    ex.printStackTrace(System.err);
-                    java.util.logging.Logger.getLogger("open.dolphin").warning("Diagnosis Claim send error : " + ex.getMessage());
-                }
-//s.oh$
-            }
+            messagingGateway.dispatchDiagnosis(wrapper);
         }
-        
+
         return ret;
     }
     

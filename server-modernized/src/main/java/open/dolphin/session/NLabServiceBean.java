@@ -9,8 +9,9 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
-import open.dolphin.infomodel.*;
 import jakarta.transaction.Transactional;
+import open.dolphin.infomodel.*;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -19,6 +20,7 @@ import jakarta.transaction.Transactional;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class NLabServiceBean {
 
     private static final String QUERY_MODULE_BY_MODULE_KEY = "from NLaboModule m where m.moduleKey=:moduleKey";

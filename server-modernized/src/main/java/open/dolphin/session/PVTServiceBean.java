@@ -18,10 +18,11 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.mbean.KanaToAscii;
 import open.dolphin.mbean.ServletContextHolder;
-import jakarta.transaction.Transactional;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -30,6 +31,7 @@ import jakarta.transaction.Transactional;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class PVTServiceBean {
 
     private static final String QUERY_PATIENT_BY_FID_PID        = "from PatientModel p where p.facilityId=:fid and p.patientId=:pid";

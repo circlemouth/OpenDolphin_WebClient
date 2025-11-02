@@ -14,6 +14,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  * バイタル対応
@@ -23,6 +24,7 @@ import open.dolphin.infomodel.*;
 @Named
 @ApplicationScoped
 @Transactional
+@SessionOperation
 public class VitalServiceBean {
 
     private static final String QUERY_VITAL_BY_FPID = "from VitalModel v where v.facilityPatId=:fpid";
