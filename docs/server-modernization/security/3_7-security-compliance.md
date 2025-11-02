@@ -42,6 +42,8 @@
 | FIDO2 Relying Party Name | `FIDO2_RP_NAME` | `OpenDolphin Dev` | UI 表示用名称。 |
 | FIDO2 許可オリジン | `FIDO2_ALLOWED_ORIGINS` | `https://localhost:8443,http://localhost:8080` | カンマ区切りで許可する Origin を指定。 |
 
+※ 運用互換性のため `FACTOR2_AES_KEY` (プレーン文字列) も受け付ける。与えられた値が 128/192/256bit 以外の場合は SHA-256 で 256bit 鍵を導出して AES-GCM に利用する。
+
 ## 6. 既存ユーザーへの移行手順
 
 1. 本マイグレーション適用後、`d_factor2_backupkey` は空になるため最初のログインでバックアップコード再登録を促す。

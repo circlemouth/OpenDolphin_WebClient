@@ -3,8 +3,11 @@ package open.dolphin.security.totp;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
 import java.security.GeneralSecurityException;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
+import java.util.logging.Logger;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -19,14 +22,13 @@ public class TotpSecretProtector {
     private static final int GCM_TAG_LENGTH = 128;
     private static final int IV_LENGTH = 12;
 
+    private static final Logger LOGGER = Logger.getLogger(TotpSecretProtector.class.getName());
+
     private final SecretKey secretKey;
     private final SecureRandom random = new SecureRandom();
 
     public TotpSecretProtector(byte[] keyBytes) {
-        if (keyBytes.length != 16 && keyBytes.length != 24 && keyBytes.length != 32) {
-            throw new IllegalArgumentException("AES key must be 128/192/256 bits");
-        }
-        this.secretKey = new SecretKeySpec(keyBytes, "AES");
+        this.secretKey = new SecretKeySpec(normalizeKey(keyBytes), "AES");
     }
 
     public String encrypt(String plainText) {
@@ -64,5 +66,21 @@ public class TotpSecretProtector {
 
     public static TotpSecretProtector fromBase64(String base64Key) {
         return new TotpSecretProtector(Base64.getDecoder().decode(base64Key));
+    }
+
+    private byte[] normalizeKey(byte[] keyBytes) {
+        int length = keyBytes.length;
+        if (length == 16 || length == 24 || length == 32) {
+            return keyBytes;
+        }
+        LOGGER.warning(() -> String.format(
+                "Invalid AES key length %d bytes. Deriving 256-bit key using SHA-256 digest.",
+                length));
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            return digest.digest(keyBytes);
+        } catch (NoSuchAlgorithmException e) {
+            throw new IllegalStateException("SHA-256 algorithm is not available", e);
+        }
     }
 }
