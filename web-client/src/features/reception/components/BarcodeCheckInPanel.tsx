@@ -3,7 +3,7 @@ import type { FormEvent } from 'react';
 import styled from '@emotion/styled';
 
 import { Button, Stack, SurfaceCard, TextField } from '@/components';
-import { useReceptionCheckIn } from '@/features/reception/hooks/useReceptionCheckIn';
+import { useReceptionCheckIn, type BarcodeCheckInResult } from '@/features/reception/hooks/useReceptionCheckIn';
 import { useReceptionPreferences } from '@/features/reception/hooks/useReceptionPreferences';
 
 const Panel = styled(SurfaceCard)`
@@ -33,7 +33,11 @@ const FeedbackMessage = styled.p<{ tone: 'success' | 'danger' | 'neutral' }>`
   }};
 `;
 
-export const BarcodeCheckInPanel = () => {
+interface BarcodeCheckInPanelProps {
+  onSuccess?: (result: BarcodeCheckInResult) => void;
+}
+
+export const BarcodeCheckInPanel = ({ onSuccess }: BarcodeCheckInPanelProps) => {
   const [barcode, setBarcode] = useState('');
   const [memo, setMemo] = useState('');
   const [departmentCode, setDepartmentCode] = useState('');
@@ -82,6 +86,7 @@ export const BarcodeCheckInPanel = () => {
         tone: 'success',
         message: `患者ID ${result.patientId} (${result.patient.fullName}) を受付登録しました。`,
       });
+      onSuccess?.(result);
       resetForm();
       setDefaults({
         defaultDepartmentCode: departmentCode || undefined,

@@ -9,6 +9,8 @@ import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
+import java.time.Duration;
+import java.time.format.DateTimeParseException;
 import java.util.Locale;
 import java.util.Properties;
 import java.util.logging.Level;
@@ -31,6 +33,11 @@ public class SmsGatewayConfig {
     private static final String ENV_LOG_LEVEL = "PLIVO_LOG_LEVEL";
     private static final String ENV_LOG_CONTENT = "PLIVO_LOG_MESSAGE_CONTENT";
     private static final String ENV_DEFAULT_COUNTRY = "PLIVO_DEFAULT_COUNTRY";
+    private static final String ENV_HTTP_CONNECT_TIMEOUT = "PLIVO_HTTP_CONNECT_TIMEOUT";
+    private static final String ENV_HTTP_READ_TIMEOUT = "PLIVO_HTTP_READ_TIMEOUT";
+    private static final String ENV_HTTP_WRITE_TIMEOUT = "PLIVO_HTTP_WRITE_TIMEOUT";
+    private static final String ENV_HTTP_CALL_TIMEOUT = "PLIVO_HTTP_CALL_TIMEOUT";
+    private static final String ENV_HTTP_RETRY_ON_FAILURE = "PLIVO_HTTP_RETRY_ON_CONNECTION_FAILURE";
 
     private static final String PROP_AUTH_ID = "plivo.auth.id";
     private static final String PROP_AUTH_TOKEN = "plivo.auth.token";
@@ -40,10 +47,20 @@ public class SmsGatewayConfig {
     private static final String PROP_LOG_LEVEL = "plivo.log.level";
     private static final String PROP_LOG_CONTENT = "plivo.log.messageContent";
     private static final String PROP_DEFAULT_COUNTRY = "plivo.defaultCountry";
+    private static final String PROP_HTTP_CONNECT_TIMEOUT = "plivo.http.connectTimeout";
+    private static final String PROP_HTTP_READ_TIMEOUT = "plivo.http.readTimeout";
+    private static final String PROP_HTTP_WRITE_TIMEOUT = "plivo.http.writeTimeout";
+    private static final String PROP_HTTP_CALL_TIMEOUT = "plivo.http.callTimeout";
+    private static final String PROP_HTTP_RETRY_ON_FAILURE = "plivo.http.retryOnConnectionFailure";
 
     private static final String ENVIRONMENT_SANDBOX = "sandbox";
     private static final String DEFAULT_PROD_BASE = "https://api.plivo.com/v1/";
     private static final String DEFAULT_SANDBOX_BASE = "https://api.sandbox.plivo.com/v1/";
+
+    private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(10);
+    private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration DEFAULT_WRITE_TIMEOUT = Duration.ofSeconds(30);
+    private static final Duration DEFAULT_CALL_TIMEOUT = Duration.ofSeconds(45);
 
     private volatile PlivoSettings cachedSettings;
 
@@ -65,6 +82,11 @@ public class SmsGatewayConfig {
         LogLevel logLevel = parseLogLevel(firstNonBlank(env(ENV_LOG_LEVEL), properties.getProperty(PROP_LOG_LEVEL)));
         boolean logContent = parseBoolean(firstNonBlank(env(ENV_LOG_CONTENT), properties.getProperty(PROP_LOG_CONTENT)), false);
         String defaultCountry = firstNonBlank(env(ENV_DEFAULT_COUNTRY), properties.getProperty(PROP_DEFAULT_COUNTRY));
+        Duration connectTimeout = parseDuration(firstNonBlank(env(ENV_HTTP_CONNECT_TIMEOUT), properties.getProperty(PROP_HTTP_CONNECT_TIMEOUT)), DEFAULT_CONNECT_TIMEOUT);
+        Duration readTimeout = parseDuration(firstNonBlank(env(ENV_HTTP_READ_TIMEOUT), properties.getProperty(PROP_HTTP_READ_TIMEOUT)), DEFAULT_READ_TIMEOUT);
+        Duration writeTimeout = parseDuration(firstNonBlank(env(ENV_HTTP_WRITE_TIMEOUT), properties.getProperty(PROP_HTTP_WRITE_TIMEOUT)), DEFAULT_WRITE_TIMEOUT);
+        Duration callTimeout = parseDuration(firstNonBlank(env(ENV_HTTP_CALL_TIMEOUT), properties.getProperty(PROP_HTTP_CALL_TIMEOUT)), DEFAULT_CALL_TIMEOUT);
+        boolean retryOnConnectionFailure = parseBoolean(firstNonBlank(env(ENV_HTTP_RETRY_ON_FAILURE), properties.getProperty(PROP_HTTP_RETRY_ON_FAILURE)), true);
 
         PlivoSettings settings = new PlivoSettings(
                 trim(authId),
@@ -74,7 +96,12 @@ public class SmsGatewayConfig {
                 environmentName(environment),
                 logLevel,
                 logContent,
-                normalizeCountryCode(defaultCountry)
+                normalizeCountryCode(defaultCountry),
+                connectTimeout,
+                readTimeout,
+                writeTimeout,
+                callTimeout,
+                retryOnConnectionFailure
         );
         cachedSettings = settings;
         return settings;
@@ -150,6 +177,35 @@ public class SmsGatewayConfig {
         }
     }
 
+    private Duration parseDuration(String value, Duration defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        String trimmed = value.trim();
+        try {
+            return Duration.parse(trimmed);
+        } catch (DateTimeParseException ex) {
+            try {
+                if (trimmed.endsWith("ms") || trimmed.endsWith("MS")) {
+                    String numeric = trimmed.substring(0, trimmed.length() - 2).trim();
+                    return Duration.ofMillis(Long.parseLong(numeric));
+                }
+                if (trimmed.endsWith("s") || trimmed.endsWith("S")) {
+                    String numeric = trimmed.substring(0, trimmed.length() - 1).trim();
+                    return Duration.ofSeconds(Long.parseLong(numeric));
+                }
+                if (trimmed.endsWith("m") || trimmed.endsWith("M")) {
+                    String numeric = trimmed.substring(0, trimmed.length() - 1).trim();
+                    return Duration.ofMinutes(Long.parseLong(numeric));
+                }
+                return Duration.ofSeconds(Long.parseLong(trimmed));
+            } catch (NumberFormatException inner) {
+                LOGGER.log(Level.WARNING, "Invalid Plivo timeout value: {0}", trimmed);
+                return defaultValue;
+            }
+        }
+    }
+
     private boolean parseBoolean(String value, boolean defaultValue) {
         if (value == null || value.isBlank()) {
             return defaultValue;
@@ -199,7 +255,12 @@ public class SmsGatewayConfig {
             String environment,
             LogLevel logLevel,
             boolean logMessageContent,
-            String defaultCountryCode
+            String defaultCountryCode,
+            Duration connectTimeout,
+            Duration readTimeout,
+            Duration writeTimeout,
+            Duration callTimeout,
+            boolean retryOnConnectionFailure
     ) {
 
         public boolean isConfigured() {

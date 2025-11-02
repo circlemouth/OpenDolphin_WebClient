@@ -4,15 +4,16 @@ FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /workspace
 
 COPY pom.xml ./
+RUN grep -v '<module>server</module>' pom.xml | grep -v '<module>client</module>' > pom.server-modernized.xml
 COPY common ./common
 COPY server-modernized ./server-modernized
 COPY ext_lib ./ext_lib
 COPY docker/server/settings.xml /tmp/maven-settings.xml
 
-RUN mvn -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
-RUN mvn -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar
-RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.postgresql:postgresql:42.7.3
-RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.hibernate:hibernate-core:5.0.10.Final
+RUN mvn -N -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
+RUN mvn -N -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar
+RUN mvn -N -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.postgresql:postgresql:42.7.3
+RUN mvn -N -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.hibernate:hibernate-core:5.0.10.Final
 
 RUN mkdir -p /tmp/hbcompat/src/org/hibernate/type /tmp/hbcompat/classes
 RUN cat <<'JAVA' > /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
@@ -51,10 +52,10 @@ JAVA
 RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
-RUN mvn -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package && \
+RUN mvn -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package && \
     mv server-modernized/target/opendolphin-server-*.war server-modernized/target/opendolphin-server.war
 
-FROM quay.io/wildfly/wildfly:26.1.3.Final
+FROM quay.io/wildfly/wildfly:33.0.2.Final-jdk17
 ENV JBOSS_HOME=/opt/jboss/wildfly \
     WILDFLY_HOME=/opt/jboss/wildfly
 

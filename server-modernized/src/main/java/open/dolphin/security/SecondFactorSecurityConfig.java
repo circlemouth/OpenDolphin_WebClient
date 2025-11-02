@@ -2,8 +2,6 @@ package open.dolphin.security;
 
 import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.logging.Logger;
 import open.dolphin.security.fido.Fido2Config;
 import open.dolphin.security.totp.TotpSecretProtector;
@@ -37,17 +35,13 @@ public class SecondFactorSecurityConfig {
 
     private String resolveTotpKey() {
         String key = System.getenv(ENV_TOTP_KEY_BASE64);
-        if (key != null && !key.isBlank()) {
-            return key.trim();
+        if (key == null || key.isBlank()) {
+            LOGGER.severe(() -> ENV_TOTP_KEY_BASE64 + " must be provided via Secrets Manager. Raw key fallback has been removed.");
+            throw new IllegalStateException("Environment variable " + ENV_TOTP_KEY_BASE64 + " is required for TOTP encryption");
         }
-        String raw = System.getenv(ENV_TOTP_KEY);
-        if (raw != null && !raw.isBlank()) {
-            LOGGER.info(() -> "Deriving base64 TOTP key from " + ENV_TOTP_KEY);
-            byte[] bytes = raw.getBytes(StandardCharsets.UTF_8);
-            return Base64.getEncoder().encodeToString(bytes);
+        if (System.getenv(ENV_TOTP_KEY) != null) {
+            LOGGER.info(() -> ENV_TOTP_KEY + " is ignored; configure " + ENV_TOTP_KEY_BASE64 + " instead.");
         }
-        LOGGER.warning("FACTOR2_AES_KEY_B64 is not set. Falling back to development default key.");
-        byte[] devKey = "opendolphin-dev-factor2-key-32bytes".getBytes(StandardCharsets.UTF_8);
-        return Base64.getEncoder().encodeToString(devKey);
+        return key.trim();
     }
 }

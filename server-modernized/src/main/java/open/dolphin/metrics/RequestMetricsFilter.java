@@ -1,6 +1,5 @@
 package open.dolphin.metrics;
 
-import java.util.concurrent.TimeUnit;
 import jakarta.annotation.Priority;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.Priorities;
@@ -12,9 +11,9 @@ import jakarta.ws.rs.container.ContainerResponseFilter;
 import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.Tag;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
+import java.util.concurrent.TimeUnit;
+import io.micrometer.core.instrument.MeterRegistry;
+import io.micrometer.core.instrument.Tags;
 
 /**
  * REST API のリクエスト／レスポンスメトリクスを収集するフィルター。
@@ -34,8 +33,7 @@ public class RequestMetricsFilter implements ContainerRequestFilter, ContainerRe
     private ResourceInfo resourceInfo;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.APPLICATION)
-    private MetricRegistry metricRegistry;
+    private MeterRegistry meterRegistry;
 
     @Override
     public void filter(ContainerRequestContext requestContext) {
@@ -50,6 +48,9 @@ public class RequestMetricsFilter implements ContainerRequestFilter, ContainerRe
             return;
         }
         long elapsed = System.nanoTime() - (Long) startObject;
+        if (meterRegistry == null) {
+            return;
+        }
         String method = requestContext.getMethod();
         String template = (String) requestContext.getProperty(TEMPLATE_KEY);
         if (template == null || template.isEmpty()) {
@@ -57,22 +58,15 @@ public class RequestMetricsFilter implements ContainerRequestFilter, ContainerRe
             template = rawPath.startsWith("/") ? rawPath : "/" + rawPath;
         }
 
-        Tag[] baseTags = new Tag[] {
-            new Tag("method", method),
-            new Tag("path", template)
-        };
+        Tags baseTags = Tags.of("method", method, "path", template);
 
-        metricRegistry.counter(REQUEST_COUNTER, baseTags).inc();
-        metricRegistry.timer(DURATION_TIMER, baseTags).update(elapsed, TimeUnit.NANOSECONDS);
+        meterRegistry.counter(REQUEST_COUNTER, baseTags).increment();
+        meterRegistry.timer(DURATION_TIMER, baseTags).record(elapsed, TimeUnit.NANOSECONDS);
 
         int status = responseContext.getStatus();
         if (status >= 400) {
-            Tag[] errorTags = new Tag[] {
-                new Tag("method", method),
-                new Tag("path", template),
-                new Tag("status", Integer.toString(status))
-            };
-            metricRegistry.counter(ERROR_COUNTER, errorTags).inc();
+            Tags errorTags = baseTags.and("status", Integer.toString(status));
+            meterRegistry.counter(ERROR_COUNTER, errorTags).increment();
         }
     }
 

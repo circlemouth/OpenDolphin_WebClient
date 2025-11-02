@@ -2,7 +2,7 @@ package open.dolphin.infomodel;
 
 import java.io.Serializable;
 import java.util.Date;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  *
@@ -22,7 +22,7 @@ public class LetterDate extends InfoModel implements Serializable {
     private String name;
 
     @Column(name = "c_value")
-    @Temporal(javax.persistence.TemporalType.DATE)
+    @Temporal(jakarta.persistence.TemporalType.DATE)
     private Date value;
 
     @ManyToOne

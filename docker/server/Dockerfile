@@ -4,17 +4,18 @@ FROM maven:3.9.6-eclipse-temurin-8 AS build
 WORKDIR /workspace
 
 COPY pom.xml ./
+RUN sed '/<module>server-modernized<\/module>/d' pom.xml > pom.server-classic.xml
 COPY common ./common
 COPY server ./server
 COPY client ./client
 COPY ext_lib ./ext_lib
 COPY docker/server/settings.xml /tmp/maven-settings.xml
 
-RUN mvn -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
-RUN mvn -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar
-RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.postgresql:postgresql:42.7.3
-RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.hibernate:hibernate-core:5.0.10.Final
-RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=javax.jms:javax.jms-api:2.0.1
+RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
+RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar
+RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.postgresql:postgresql:42.7.3
+RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.hibernate:hibernate-core:5.0.10.Final
+RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B dependency:get -Dartifact=javax.jms:javax.jms-api:2.0.1
 
 RUN mkdir -p /tmp/hbcompat/src/org/hibernate/type /tmp/hbcompat/classes
 RUN cat <<'JAVA' > /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
@@ -53,7 +54,7 @@ JAVA
 RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
-RUN mvn -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package && \
+RUN mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package && \
     mv server/target/opendolphin-server-*.war server/target/opendolphin-server.war
 
 FROM jboss/wildfly:10.1.0.Final

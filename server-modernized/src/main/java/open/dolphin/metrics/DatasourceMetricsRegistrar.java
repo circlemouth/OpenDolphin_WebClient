@@ -2,22 +2,21 @@ package open.dolphin.metrics;
 
 import io.agroal.api.AgroalDataSource;
 import io.agroal.api.AgroalDataSourceMetrics;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.Meter;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.annotation.Resource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.context.Initialized;
 import jakarta.enterprise.event.Observes;
 import jakarta.inject.Inject;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
-import org.eclipse.microprofile.metrics.Gauge;
-import org.eclipse.microprofile.metrics.Metadata;
-import org.eclipse.microprofile.metrics.MetricRegistry;
-import org.eclipse.microprofile.metrics.MetricType;
-import org.eclipse.microprofile.metrics.MetricUnits;
-import org.eclipse.microprofile.metrics.annotation.RegistryType;
 
 /**
- * データソースの接続プールメトリクスを MicroProfile Metrics へ公開する。
+ * データソースの接続プールメトリクスを Micrometer へ公開する。
  */
 @ApplicationScoped
 public class DatasourceMetricsRegistrar {
@@ -30,10 +29,16 @@ public class DatasourceMetricsRegistrar {
     private AgroalDataSource dataSource;
 
     @Inject
-    @RegistryType(type = MetricRegistry.Type.APPLICATION)
-    private MetricRegistry metricRegistry;
+    private MeterRegistry meterRegistry;
+
+    // Micrometer Gauge は弱参照が既定のため、Supplier を保持して GC による解放を防ぐ。
+    private final List<Supplier<Number>> registeredSuppliers = new ArrayList<>();
 
     public void init(@Observes @Initialized(ApplicationScoped.class) Object init) {
+        if (meterRegistry == null) {
+            return;
+        }
+        registeredSuppliers.clear();
         registerGauge(
             ACTIVE_CONNECTIONS,
             "現在アクティブな JDBC 接続数",
@@ -52,24 +57,20 @@ public class DatasourceMetricsRegistrar {
     }
 
     private void registerGauge(String name, String description, Function<AgroalDataSourceMetrics, Long> extractor) {
-        Supplier<Long> supplier = () -> {
+        meterRegistry.find(name).meters().forEach(this::removeMeterSafely);
+
+        Supplier<Number> supplier = () -> {
             AgroalDataSourceMetrics metrics = getMetrics();
             if (metrics == null) {
-                return 0L;
+                return 0;
             }
             return extractor.apply(metrics);
         };
-        if (metricRegistry.getGauges().containsKey(name)) {
-            metricRegistry.remove(name);
-        }
-        Metadata metadata = Metadata.builder()
-            .withName(name)
-            .withDescription(description)
-            .withType(MetricType.GAUGE)
-            .withUnit(MetricUnits.NONE)
-            .build();
-        Gauge<Long> gauge = supplier::get;
-        metricRegistry.register(metadata, gauge);
+        registeredSuppliers.add(supplier);
+        Gauge.builder(name, supplier, value -> value.get().doubleValue())
+            .description(description)
+            .strongReference(true)
+            .register(meterRegistry);
     }
 
     private AgroalDataSourceMetrics getMetrics() {
@@ -80,6 +81,14 @@ public class DatasourceMetricsRegistrar {
             return dataSource.getMetrics();
         } catch (Exception ex) {
             return null;
+        }
+    }
+
+    private void removeMeterSafely(Meter meter) {
+        try {
+            meterRegistry.remove(meter);
+        } catch (UnsupportedOperationException ignored) {
+            // WildFly Micrometer 実装は remove 未サポートの場合があるため握り潰す。
         }
     }
 }

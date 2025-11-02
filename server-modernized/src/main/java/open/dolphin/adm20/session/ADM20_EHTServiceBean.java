@@ -906,13 +906,13 @@ public class ADM20_EHTServiceBean {
                 .id(userHandle(userPk))
                 .build();
 
-        StartRegistrationOptions.Builder builder = StartRegistrationOptions.builder()
+        StartRegistrationOptions registrationOptions = StartRegistrationOptions.builder()
                 .user(identity)
                 .timeout(60000L)
                 .authenticatorSelection(buildAuthenticatorSelection(authenticatorAttachment))
-                .excludeCredentials(descriptorsForUser(userPk));
+                .build();
 
-        PublicKeyCredentialCreationOptions options = rp.startRegistration(builder.build());
+        PublicKeyCredentialCreationOptions options = rp.startRegistration(registrationOptions);
 
         Factor2Challenge challenge = new Factor2Challenge();
         challenge.setUserPK(userPk);
@@ -1049,15 +1049,14 @@ public class ADM20_EHTServiceBean {
     }
 
     private AuthenticatorSelectionCriteria buildAuthenticatorSelection(String attachment) {
-        if (attachment == null || attachment.isBlank()) {
-            return AuthenticatorSelectionCriteria.builder().userVerification(UserVerificationRequirement.REQUIRED).build();
-        }
-        AuthenticatorSelectionCriteria.Builder builder = AuthenticatorSelectionCriteria.builder()
+        var builder = AuthenticatorSelectionCriteria.builder()
                 .userVerification(UserVerificationRequirement.REQUIRED);
-        if ("platform".equalsIgnoreCase(attachment)) {
-            builder.authenticatorAttachment(AuthenticatorAttachment.PLATFORM);
-        } else if ("cross-platform".equalsIgnoreCase(attachment) || "cross_platform".equalsIgnoreCase(attachment)) {
-            builder.authenticatorAttachment(AuthenticatorAttachment.CROSS_PLATFORM);
+        if (attachment != null && !attachment.isBlank()) {
+            if ("platform".equalsIgnoreCase(attachment)) {
+                builder.authenticatorAttachment(AuthenticatorAttachment.PLATFORM);
+            } else if ("cross-platform".equalsIgnoreCase(attachment) || "cross_platform".equalsIgnoreCase(attachment)) {
+                builder.authenticatorAttachment(AuthenticatorAttachment.CROSS_PLATFORM);
+            }
         }
         return builder.build();
     }

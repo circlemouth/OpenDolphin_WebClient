@@ -19,7 +19,7 @@
 ## 3. 署名・タイムスタンプ付与ワークフロー
 
 - 電子署名と TSA 連携の設定を `server-modernized/reporting/signing-config.sample.json` に定義し、CI/CD から Secrets として供給する設計とした。
-- `open.dolphin.reporting.PdfSigningService` を実装し、PKCS#12 キーストアから秘密鍵と証明書チェーンを読み込んで `MakeSignature.signDetached` を実行できるようにした。署名理由 (`reason`) や所在地 (`location`) はコンフィグで差し替え可能。
+- `open.dolphin.reporting.PdfSigningService` を実装し、PKCS#12 キーストアから秘密鍵と証明書チェーンを読み込んで OpenPDF 3.x の `PdfPKCS7` と BouncyCastle で署名できるようにした。署名理由 (`reason`) や所在地 (`location`) はコンフィグで差し替え可能。
 - 署名鍵は PKCS#12 を前提にし、`keystorePath`・`tsaUrl` などを環境ごとに差し替え可能。ローカル検証ではダミー鍵を使用し、本番デプロイ時のみ実鍵をマウントする手順を明文化した。
 - タイムスタンプ付与が失敗した場合は警告を記録した上で TSA なしで再署名するフォールバックを実装し、監査ログと運用ドキュメントに手順を追記した。
 

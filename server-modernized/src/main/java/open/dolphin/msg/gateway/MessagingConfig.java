@@ -20,6 +20,7 @@ public class MessagingConfig {
     private static final String CLAIM_HOST = "claim.host";
     private static final String CLAIM_PORT = "claim.send.port";
     private static final String CLAIM_ENCODING = "claim.send.encoding";
+    private static final String DOLPHIN_FACILITY = "dolphin.facilityId";
 
     private volatile ClaimSettings cachedClaimSettings;
 
@@ -37,7 +38,8 @@ public class MessagingConfig {
         String host = properties.getProperty(CLAIM_HOST);
         int port = parsePort(properties.getProperty(CLAIM_PORT));
         String encoding = properties.getProperty(CLAIM_ENCODING, "SHIFT_JIS");
-        ClaimSettings settings = new ClaimSettings(serverSide, host, port, encoding);
+        String facilityId = properties.getProperty(DOLPHIN_FACILITY);
+        ClaimSettings settings = new ClaimSettings(serverSide, host, port, encoding, facilityId);
         cachedClaimSettings = settings;
         return settings;
     }
@@ -96,7 +98,7 @@ public class MessagingConfig {
         }
     }
 
-    public record ClaimSettings(boolean serverSideSend, String host, int port, String encoding) {
+    public record ClaimSettings(boolean serverSideSend, String host, int port, String encoding, String facilityId) {
 
         public boolean isReady() {
             return serverSideSend && host != null && !host.isBlank() && port > 0;

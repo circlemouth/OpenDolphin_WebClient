@@ -55,6 +55,162 @@ Web クライアント開発チーム向けに、従来サーバー（Java 8 / W
      http://localhost:${APP_HTTP_PORT:-8080}/openDolphin/resources/dolphin
    ```
 
+## 初期ログイン情報（2025-11-02 更新）
+
+- 施設 ID: `1.3.6.1.4.1.9414.72.103`
+- 管理者アカウント: `admin`
+  - 平文パスワード: `admin2025`
+  - MD5: `e88df8596ff8847e232b1e4b1b5ffde2`
+- 医師アカウント: `doctor1`
+  - 平文パスワード: `doctor2025`
+  - MD5: `632080fabdb968f9ac4f31fb55104648`
+
+### 生成手順メモ
+
+1. 管理者アカウントの JSON ペイロードを作成する（パスは任意）。
+   ```bash
+   cat <<'JSON' > /tmp/create-admin.json
+   {
+     "userId": "admin",
+     "password": "e88df8596ff8847e232b1e4b1b5ffde2",
+     "sirName": "管理",
+     "givenName": "者",
+     "commonName": "管理 者",
+     "email": "admin@example.com",
+     "memberType": "FACILITY_USER",
+     "registeredDate": "2025-11-02",
+     "facilityModel": {
+       "facilityName": "OpenDolphin ローカル検証クリニック",
+       "zipCode": "1000000",
+       "address": "東京都千代田区1-1-1",
+       "telephone": "03-0000-0000",
+       "memberType": "FACILITY_USER",
+       "registeredDate": "2025-11-02"
+     },
+     "licenseModel": {
+       "license": "doctor",
+       "licenseDesc": "医師",
+       "licenseCodeSys": "MML0026"
+     },
+     "departmentModel": {
+       "department": "01",
+       "departmentDesc": "内科",
+       "departmentCodeSys": "MML0028"
+     },
+     "roles": [
+       { "role": "admin" },
+       { "role": "user" }
+     ]
+   }
+   JSON
+   ```
+2. `/openDolphin/resources/dolphin` に対して `SYSAD_USER_NAME` / `SYSAD_PASSWORD` をヘッダーに付与して POST し、施設と管理者を登録する。
+   ```bash
+   curl -H "Content-Type: application/json" \
+        -H "userName:${SYSAD_USER_NAME:-1.3.6.1.4.1.9414.10.1:dolphin}" \
+        -H "password:${SYSAD_PASSWORD:-36cdf8b887a5cffc78dcd5c08991b993}" \
+        -d @/tmp/create-admin.json \
+        http://localhost:${APP_HTTP_PORT:-8080}/openDolphin/resources/dolphin
+   ```
+3. 医師ユーザーの JSON を用意し、`userId` と `roles[].userId` に施設 ID を含む複合キーを設定する。
+   ```bash
+   cat <<'JSON' > /tmp/create-doctor.json
+   {
+     "userId": "1.3.6.1.4.1.9414.72.103:doctor1",
+     "password": "632080fabdb968f9ac4f31fb55104648",
+     "sirName": "テスト",
+     "givenName": "太郎",
+     "commonName": "テスト 太郎",
+     "email": "doctor1@example.com",
+     "memberType": "FACILITY_USER",
+     "registeredDate": "2025-11-02",
+     "facilityModel": { "id": 24, "facilityId": "1.3.6.1.4.1.9414.72.103" },
+     "licenseModel": { "license": "doctor", "licenseDesc": "医師", "licenseCodeSys": "MML0026" },
+     "departmentModel": { "department": "01", "departmentDesc": "内科", "departmentCodeSys": "MML0028" },
+     "roles": [ { "role": "user", "userId": "1.3.6.1.4.1.9414.72.103:doctor1" } ]
+   }
+   JSON
+   ```
+4. 管理者資格情報をヘッダーに指定し、`/openDolphin/resources/user` へ POST してユーザーを追加する。
+   ```bash
+   curl -H "Content-Type: application/json" \
+        -H "userName:1.3.6.1.4.1.9414.72.103:admin" \
+        -H "password:e88df8596ff8847e232b1e4b1b5ffde2" \
+        -H "clientUUID:11111111-2222-3333-4444-555555555555" \
+        -d @/tmp/create-doctor.json \
+        http://localhost:${APP_HTTP_PORT:-8080}/openDolphin/resources/user
+   ```
+5. 生成済みアカウントは以下で確認できる。
+   ```bash
+   curl -H "userName:1.3.6.1.4.1.9414.72.103:admin" \
+        -H "password:e88df8596ff8847e232b1e4b1b5ffde2" \
+         http://localhost:${APP_HTTP_PORT:-8080}/openDolphin/resources/user/1.3.6.1.4.1.9414.72.103:admin
+   ```
+
+> `facilityModel.id` は `GET /openDolphin/resources/user/1.3.6.1.4.1.9414.72.103:admin` のレスポンスに含まれる数値（初期セットアップ直後は `24`）。環境で異なる場合は適宜読み替える。
+
+## Web クライアント（Vite）から接続する
+
+ローカルの従来サーバーに対して Web クライアントを `npm run dev` で起動する際は、Vite のプロキシ先を `VITE_DEV_PROXY_TARGET` で `http://localhost:8080/openDolphin/resources` に指定する。
+
+```bash
+# 1. バックエンドを起動（未起動の場合）
+docker compose up -d
+
+# 2. Web クライアントを開発モードで起動
+cd web-client
+npm install            # 初回のみ
+VITE_DEV_PROXY_TARGET=http://localhost:8080/openDolphin/resources npm run dev -- --host
+```
+
+ブラウザで `https://localhost:5173` を開き、医師アカウント `1.3.6.1.4.1.9414.72.103:doctor1`（パスワード `doctor2025`）などでログインできることを確認する。
+
+## テスト患者データ投入（2025-11-02 登録済み）
+
+`POST /openDolphin/resources/patient` に管理者資格情報を付与してリクエストすると、施設内のテスト患者を一括登録できる。以下の 10 件を挿入済み（施設 `1.3.6.1.4.1.9414.72.103`）。
+
+| 患者ID | 氏名 | 性別 | 生年月日 |
+| --- | --- | --- | --- |
+| WEB1001 | 青木 太郎 | M | 1980-01-15 |
+| WEB1002 | 青木 花子 | F | 1984-05-02 |
+| WEB1003 | 石田 健 | M | 1975-09-18 |
+| WEB1004 | 上田 美咲 | F | 1990-12-07 |
+| WEB1005 | 大野 誠 | M | 1972-03-30 |
+| WEB1006 | 加藤 結衣 | F | 1995-08-21 |
+| WEB1007 | 佐藤 陸 | M | 2001-11-03 |
+| WEB1008 | 高橋 美優 | F | 1998-04-12 |
+| WEB1009 | 中村 光 | F | 1988-07-09 |
+| WEB1010 | 山本 陽菜 | F | 2003-02-27 |
+
+再投入が必要な場合は、1 行 1 JSON オブジェクトのファイルを作成し、`while` ループで送信する。
+
+```bash
+cat <<'JSONL' > /tmp/patient-seed.jsonl
+{"patientId":"WEB1001","familyName":"青木","givenName":"太郎","fullName":"青木 太郎","kanaFamilyName":"アオキ","kanaGivenName":"タロウ","kanaName":"アオキ タロウ","gender":"M","genderDesc":"男性","birthday":"1980-01-15","telephone":"03-6200-1001","email":"web1001@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-1"}}
+{"patientId":"WEB1002","familyName":"青木","givenName":"花子","fullName":"青木 花子","kanaFamilyName":"アオキ","kanaGivenName":"ハナコ","kanaName":"アオキ ハナコ","gender":"F","genderDesc":"女性","birthday":"1984-05-02","telephone":"03-6200-1002","email":"web1002@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-2"}}
+{"patientId":"WEB1003","familyName":"石田","givenName":"健","fullName":"石田 健","kanaFamilyName":"イシダ","kanaGivenName":"ケン","kanaName":"イシダ ケン","gender":"M","genderDesc":"男性","birthday":"1975-09-18","telephone":"03-6200-1003","email":"web1003@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-3"}}
+{"patientId":"WEB1004","familyName":"上田","givenName":"美咲","fullName":"上田 美咲","kanaFamilyName":"ウエダ","kanaGivenName":"ミサキ","kanaName":"ウエダ ミサキ","gender":"F","genderDesc":"女性","birthday":"1990-12-07","telephone":"03-6200-1004","email":"web1004@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-4"}}
+{"patientId":"WEB1005","familyName":"大野","givenName":"誠","fullName":"大野 誠","kanaFamilyName":"オオノ","kanaGivenName":"マコト","kanaName":"オオノ マコト","gender":"M","genderDesc":"男性","birthday":"1972-03-30","telephone":"03-6200-1005","email":"web1005@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-5"}}
+{"patientId":"WEB1006","familyName":"加藤","givenName":"結衣","fullName":"加藤 結衣","kanaFamilyName":"カトウ","kanaGivenName":"ユイ","kanaName":"カトウ ユイ","gender":"F","genderDesc":"女性","birthday":"1995-08-21","telephone":"03-6200-1006","email":"web1006@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-6"}}
+{"patientId":"WEB1007","familyName":"佐藤","givenName":"陸","fullName":"佐藤 陸","kanaFamilyName":"サトウ","kanaGivenName":"リク","kanaName":"サトウ リク","gender":"M","genderDesc":"男性","birthday":"2001-11-03","telephone":"03-6200-1007","email":"web1007@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-7"}}
+{"patientId":"WEB1008","familyName":"高橋","givenName":"美優","fullName":"高橋 美優","kanaFamilyName":"タカハシ","kanaGivenName":"ミユ","kanaName":"タカハシ ミユ","gender":"F","genderDesc":"女性","birthday":"1998-04-12","telephone":"03-6200-1008","email":"web1008@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-8"}}
+{"patientId":"WEB1009","familyName":"中村","givenName":"光","fullName":"中村 光","kanaFamilyName":"ナカムラ","kanaGivenName":"ヒカリ","kanaName":"ナカムラ ヒカリ","gender":"F","genderDesc":"女性","birthday":"1988-07-09","telephone":"03-6200-1009","email":"web1009@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-9"}}
+{"patientId":"WEB1010","familyName":"山本","givenName":"陽菜","fullName":"山本 陽菜","kanaFamilyName":"ヤマモト","kanaGivenName":"ヒナ","kanaName":"ヤマモト ヒナ","gender":"F","genderDesc":"女性","birthday":"2003-02-27","telephone":"03-6200-1010","email":"web1010@example.com","address":{"zipCode":"1600023","address":"東京都新宿区西新宿1-1-10"}}
+JSONL
+
+while IFS= read -r payload; do
+  printf '%s' "$payload" | curl -sS -X POST \
+    -H 'Content-Type: application/json' \
+    -H 'userName:1.3.6.1.4.1.9414.72.103:admin' \
+    -H 'password:e88df8596ff8847e232b1e4b1b5ffde2' \
+    --data @- \
+    http://localhost:8080/openDolphin/resources/patient
+  printf '\n'
+done < /tmp/patient-seed.jsonl
+```
+
+登録内容は `GET /openDolphin/resources/patient/digit/WEB100` などで確認できる。既存データを全削除する場合は Postgres の `d_patient` テーブルから対象施設の行を削除するか、環境を再構築してから再投入する。
+
 ## モダナイズ版サーバーの起動
 > **注意:** `server` と `server-modernized` は同一ポートを利用するため、同時に起動できない。切り替える際は片方を停止してからもう一方を起動すること。
 

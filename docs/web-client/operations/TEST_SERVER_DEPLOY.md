@@ -2,6 +2,15 @@
 
 このドキュメントは、Web クライアントを検証する目的で既存の OpenDolphin Java EE サーバー (WildFly + PostgreSQL) をローカルに展開し、アカウントを登録するまでの流れをまとめたものです。
 
+## 0. ローカル Docker 構成で用意した初期アカウント（2025-11-02）
+
+- 施設 ID: `1.3.6.1.4.1.9414.72.103`
+- 管理者: `1.3.6.1.4.1.9414.72.103:admin` / パスワード `admin2025`（MD5: `e88df8596ff8847e232b1e4b1b5ffde2`）
+- 医師ユーザー: `1.3.6.1.4.1.9414.72.103:doctor1` / パスワード `doctor2025`（MD5: `632080fabdb968f9ac4f31fb55104648`）
+- テスト患者: `WEB1001` 〜 `WEB1010`（青木 太郎 ほか 10 名）。氏名・生年月日・再投入手順は [`operations/LOCAL_BACKEND_DOCKER.md`](LOCAL_BACKEND_DOCKER.md#テスト患者データ投入2025-11-02-登録済み) を参照。
+
+作成手順の詳細と `curl` 例は [`operations/LOCAL_BACKEND_DOCKER.md`](LOCAL_BACKEND_DOCKER.md) を参照。Docker Compose で環境を再構築した場合は同手順で再発行すること。
+
 ## 1. 前提条件
 
 - JDK 1.8.0_60 以上、および Maven 3.3.3 以上をインストールしておくこと。

@@ -1,7 +1,7 @@
 package open.dolphin.infomodel;
 
 
-import javax.persistence.Embeddable;
+import jakarta.persistence.Embeddable;
 
 /**
  * SimpleAddressModel

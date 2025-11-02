@@ -19,7 +19,7 @@
 package open.dolphin.infomodel;
 
 import java.util.Date;
-import javax.persistence.*;
+import jakarta.persistence.*;
 
 /**
  * PublishedTreeModel
