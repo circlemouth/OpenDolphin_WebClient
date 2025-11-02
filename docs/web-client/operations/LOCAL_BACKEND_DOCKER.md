@@ -31,8 +31,18 @@ Web クライアント開発チーム向けに、従来サーバー（Java 8 / W
    POSTGRES_PORT=5432
    SYSAD_USER_NAME=1.3.6.1.4.1.9414.10.1:dolphin
    SYSAD_PASSWORD=36cdf8b887a5cffc78dcd5c08991b993
+   PLIVO_AUTH_ID=
+   PLIVO_AUTH_TOKEN=
+   PLIVO_SOURCE_NUMBER=
+   PLIVO_BASE_URL=https://api.plivo.com/v1/
+   PLIVO_ENVIRONMENT=production
+   PLIVO_LOG_LEVEL=NONE
+   PLIVO_LOG_MESSAGE_CONTENT=false
+   PLIVO_DEFAULT_COUNTRY=+81
    ```
 3. DB コンテナをビルドしておく: `docker compose pull db`（イメージ取得のみの場合）または `docker compose up -d db`。
+
+> **Plivo SMS 認証情報**: `PLIVO_AUTH_ID` / `PLIVO_AUTH_TOKEN` / `PLIVO_SOURCE_NUMBER` は必須。Sandbox を利用する場合は `PLIVO_ENVIRONMENT=sandbox` とし、必要に応じて `PLIVO_BASE_URL` を `https://api.sandbox.plivo.com/v1/` へ変更する。環境変数が未設定のまま SMS エンドポイントを呼び出すと 500 エラー（`SMSException`）となるため注意。
 
 ## 従来サーバー（既定）の起動
 1. `docker compose build server` を実行し、旧 `server/` モジュールをビルドした WAR を WildFly 10 イメージへ組み込む。旧イメージからアップデートする場合は `docker compose build --no-cache server` を推奨する。

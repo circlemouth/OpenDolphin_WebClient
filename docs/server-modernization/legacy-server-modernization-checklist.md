@@ -51,10 +51,10 @@
 - [x] テンプレートリポジトリを Git 管理し、プレビュー/テスト手順を CI に組み込む。→ テンプレートをリポジトリ管理とし、`.github/workflows/reporting-preview.yml` を追加。
 
 ### 3.6 外部サービス連携
-- [ ] Plivo SMS API の最新 SDK / REST API 仕様を確認し、TLS 要件・API キー管理を更新する。
-- [ ] ORCA / レセプト電文送信処理（`open.dolphin.msg`）のプロトコル仕様と監査ログ要件を整理する。
-- [ ] 将来の API ゲートウェイ（Kong / Apigee 等）導入時のルーティング・認証統合方針をまとめる。
-- [ ] 外部接続設定を環境変数化し、Sandbox/本番の切り替え手順を定義する。
+- [x] Plivo SMS API の最新 SDK / REST API 仕様を確認し、TLS 要件・API キー管理を更新する。→ `docs/server-modernization/external-integrations/3_6-external-service-modernization.md#1-plivo-sms-api-モダナイズ`
+- [x] ORCA / レセプト電文送信処理（`open.dolphin.msg`）のプロトコル仕様と監査ログ要件を整理する。→ 同上ドキュメント「2. ORCA／レセプト電文送信の監査ログ要件」を参照。
+- [x] 将来の API ゲートウェイ（Kong / Apigee 等）導入時のルーティング・認証統合方針をまとめる。→ 同上ドキュメント「3. API ゲートウェイ統合方針」。
+- [x] 外部接続設定を環境変数化し、Sandbox/本番の切り替え手順を定義する。→ 同上ドキュメント「4. Sandbox / 本番切替運用」。
 
 ### 3.7 セキュリティ / コンプライアンス
 - [ ] 2 要素認証エンドポイント（`/20/adm/factor2/*`）の実装をレビューし、FIDO2/TOTP 等の最新方式へ更新する。

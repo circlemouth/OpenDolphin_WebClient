@@ -86,7 +86,7 @@
         <dependency>
             <groupId>com.plivo</groupId>
             <artifactId>plivo-java</artifactId>
-            <version>3.0.6</version>
+            <version>5.46.3</version>
         </dependency>
         <dependency>
             <groupId>jakarta.jms</groupId>
