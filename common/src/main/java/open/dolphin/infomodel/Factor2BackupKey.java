@@ -1,6 +1,7 @@
 package open.dolphin.infomodel;
 
 import java.io.Serializable;
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -21,6 +22,12 @@ public class Factor2BackupKey implements Serializable {
     private long userPK;
     
     private String backupKey;
+
+    @Column(name = "created_at")
+    private java.time.Instant createdAt;
+
+    @Column(name = "hash_algorithm", length = 32)
+    private String hashAlgorithm;
 
     public Long getId() {
         return id;
@@ -69,5 +76,21 @@ public class Factor2BackupKey implements Serializable {
 
     public void setBackupKey(String backupKey) {
         this.backupKey = backupKey;
+    }
+
+    public java.time.Instant getCreatedAt() {
+        return createdAt;
+    }
+
+    public void setCreatedAt(java.time.Instant createdAt) {
+        this.createdAt = createdAt;
+    }
+
+    public String getHashAlgorithm() {
+        return hashAlgorithm;
+    }
+
+    public void setHashAlgorithm(String hashAlgorithm) {
+        this.hashAlgorithm = hashAlgorithm;
     }
 }
