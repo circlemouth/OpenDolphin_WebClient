@@ -37,4 +37,43 @@ else
     /subsystem=logging/logger=open.dolphin:add(level=INFO)
 end-if
 
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=redirect-socket,value=https)
+/subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=proxy-address-forwarding,value=true)
+
+if (outcome == success) of /subsystem=undertow/configuration=filter/response-header=hsts:read-resource()
+    /subsystem=undertow/configuration=filter/response-header=hsts:write-attribute(name=header-value,value="max-age=63072000; includeSubDomains")
+else
+    /subsystem=undertow/configuration=filter/response-header=hsts:add(header-name="Strict-Transport-Security", header-value="max-age=63072000; includeSubDomains")
+end-if
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=hsts:read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/filter-ref=hsts:add
+end-if
+
+if (outcome == success) of /subsystem=undertow/configuration=filter/response-header=csp:read-resource()
+    /subsystem=undertow/configuration=filter/response-header=csp:write-attribute(name=header-value,value="default-src 'self'")
+else
+    /subsystem=undertow/configuration=filter/response-header=csp:add(header-name="Content-Security-Policy", header-value="default-src 'self'")
+end-if
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=csp:read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/filter-ref=csp:add
+end-if
+
+if (outcome == success) of /subsystem=undertow/configuration=filter/response-header=xcto:read-resource()
+    /subsystem=undertow/configuration=filter/response-header=xcto:write-attribute(name=header-value,value="nosniff")
+else
+    /subsystem=undertow/configuration=filter/response-header=xcto:add(header-name="X-Content-Type-Options", header-value="nosniff")
+end-if
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=xcto:read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/filter-ref=xcto:add
+end-if
+
+if (outcome == success) of /subsystem=undertow/configuration=filter/response-header=referrer:read-resource()
+    /subsystem=undertow/configuration=filter/response-header=referrer:write-attribute(name=header-value,value="no-referrer")
+else
+    /subsystem=undertow/configuration=filter/response-header=referrer:add(header-name="Referrer-Policy", header-value="no-referrer")
+end-if
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=referrer:read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/filter-ref=referrer:add
+end-if
+
 stop-embedded-server

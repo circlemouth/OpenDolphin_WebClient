@@ -25,10 +25,13 @@
 
 ## 5. 認証ヘッダと 2FA セキュリティ要件
 - **共通ヘッダ設計**: `Authorization: Bearer <JWT>` に統一。JWT には `fid`, `uid`, `sessionId`, `factor2` クレームを含める。
-- **レート制限**: `/20/adm/factor2/code`・`/20/adm/factor2/device` など OTP 再発行系エンドポイントは 5 リクエスト/分（ユーザー単位）で制限し、429 応答にリトライ情報を付与。
-- **監査ログ**: OTP 認証成功/失敗、デバイス登録、バックアップコード照会を `AuditEvent` エンティティで永続化。JWT の `jti` とクライアント IP を必須記録。
-- **署名検証**: OTP 応答は HMAC-SHA256（`OTPHelper`）でサーバー署名済みコードと比較し、タイムスキュー ±90 秒を許容。
-- **移行措置**: 既存ユーザーは初回ログイン時にバックアップコード再発行を強制し、新 JWT 配布後に旧 Basic 認証ヘッダを無効化。
+- **多要素認証 API**:
+  - TOTP: `POST /20/adm/factor2/totp/registration` → `POST /20/adm/factor2/totp/verification`。シークレットは AES-GCM で暗号化保管し、バックアップコードは `SHA-256` でハッシュ化。
+  - FIDO2: `POST /20/adm/factor2/fido2/registration/options` / `finish`、`/assertion/options` / `finish`。`Factor2Credential` へ公開鍵・署名カウンタを保存し、`Factor2Challenge` でチャレンジを追跡。
+- **レート制限**: `/20/adm/factor2/code`（SMS）、新設 TOTP/FIDO2 エンドポイントとも 5 リクエスト/分（ユーザー単位）を上限とし、API Gateway で制御する。
+- **監査ログ**: TOTP/FIDO2 の登録・認証成功/失敗、バックアップコード発行を `AuditTrailService` 経由で `d_audit_event` に永続化。JWT の `jti` とクライアント IP を必須記録。
+- **署名検証**: TOTP 応答は `OTPHelper` の `verifyCurrentWindow` を使用し、タイムスキュー ±90 秒を許容。FIDO2 は Yubico WebAuthn Server を利用し署名カウンタを検証。
+- **移行措置**: 既存ユーザーは初回ログイン時にバックアップコード再発行を強制し、新方式登録後に旧 Basic 認証ヘッダを無効化。`d_factor2_backupkey` の旧データは Flyway で削除済み。
 
 ## 6. 今後の課題
 - OpenAPI スキーマを InfoModel の実フィールド定義へリッチ化する自動生成パイプラインの構築。

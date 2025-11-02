@@ -4,11 +4,51 @@
  */
 package open.dolphin.adm20.session;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yubico.webauthn.AssertionRequest;
+import com.yubico.webauthn.AssertionResult;
+import com.yubico.webauthn.FinishAssertionOptions;
+import com.yubico.webauthn.FinishRegistrationOptions;
+import com.yubico.webauthn.RegisteredCredential;
+import com.yubico.webauthn.RelyingParty;
+import com.yubico.webauthn.StartAssertionOptions;
+import com.yubico.webauthn.StartRegistrationOptions;
+import com.yubico.webauthn.credential.CredentialRepository;
+import com.yubico.webauthn.data.AuthenticatorAttachment;
+import com.yubico.webauthn.data.AuthenticatorSelectionCriteria;
+import com.yubico.webauthn.data.ByteArray;
+import com.yubico.webauthn.data.ClientAssertionExtensionOutputs;
+import com.yubico.webauthn.data.ClientRegistrationExtensionOutputs;
+import com.yubico.webauthn.data.PublicKeyCredential;
+import com.yubico.webauthn.data.PublicKeyCredentialCreationOptions;
+import com.yubico.webauthn.data.PublicKeyCredentialDescriptor;
+import com.yubico.webauthn.data.PublicKeyCredentialRequestOptions;
+import com.yubico.webauthn.data.PublicKeyCredentialType;
+import com.yubico.webauthn.data.RelyingPartyIdentity;
+import com.yubico.webauthn.data.UserIdentity;
+import com.yubico.webauthn.data.UserVerificationRequirement;
+import com.yubico.webauthn.exception.AssertionFailedException;
+import com.yubico.webauthn.exception.RegistrationFailedException;
+import com.yubico.webauthn.data.AuthenticatorAttestationResponse;
+import com.yubico.webauthn.data.AuthenticatorAssertionResponse;
+import java.nio.ByteBuffer;
+import java.security.SecureRandom;
+import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.UUID;
 import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
@@ -20,8 +60,13 @@ import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.FacilityModel;
 import open.dolphin.infomodel.Factor2BackupKey;
 import open.dolphin.infomodel.Factor2Code;
+import open.dolphin.infomodel.Factor2Challenge;
+import open.dolphin.infomodel.Factor2ChallengeType;
+import open.dolphin.infomodel.Factor2Credential;
+import open.dolphin.infomodel.Factor2CredentialType;
 import open.dolphin.infomodel.Factor2Device;
 import open.dolphin.infomodel.Factor2Spec;
+import open.dolphin.infomodel.ThirdPartyDisclosureRecord;
 import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.KarteNumber;
@@ -41,6 +86,11 @@ import open.dolphin.infomodel.StampModel;
 import open.dolphin.infomodel.StampTreeModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.infomodel.VitalModel;
+import open.dolphin.security.HashUtil;
+import open.dolphin.security.fido.Fido2Config;
+import open.dolphin.security.totp.BackupCodeGenerator;
+import open.dolphin.security.totp.TotpRegistrationResult;
+import open.dolphin.security.totp.TotpSecretProtector;
 
 /**
  *
@@ -49,15 +99,22 @@ import open.dolphin.infomodel.VitalModel;
 @Named
 @Stateless
 public class ADM20_EHTServiceBean {
-    
+
     // 新規患者
     private static final String QUERY_FIRST_VISITOR_LIST = "from KarteBean k where k.patient.facilityId=:facilityId order by k.created desc";
-    
+
     // Karte
     private static final String QUERY_KARTE = "from KarteBean k where k.patient.id=:patientPk";
-    
+
     // Document & module
     private static final String QUERY_DOCUMENT_BY_PK = "from DocumentModel d where d.id=:pk";
+
+    private static final int BACKUP_CODE_COUNT = 10;
+    private static final int FIDO_CHALLENGE_TTL_SECONDS = 300;
+
+    private final SecureRandom secureRandom = new SecureRandom();
+    private final ObjectMapper securityMapper = new ObjectMapper()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     private static final String QUERY_DOCUMENT_BY_LINK_ID = "from DocumentModel d where d.linkId=:id";
     
     private static final String QUERY_MODULE_BY_DOCUMENT = "from ModuleModel m where m.document.id=:id";
@@ -675,8 +732,101 @@ public class ADM20_EHTServiceBean {
     }
     
 //minagawa^ ２段階認証
+    public TotpRegistrationResult startTotpRegistration(long userPk, String label, String accountName, String issuer, TotpSecretProtector protector) {
+
+        UserModel user = em.find(UserModel.class, userPk);
+        if (user == null) {
+            throw new NoResultException("User not found");
+        }
+        if (user.getMemberType() != null && user.getMemberType().equals("EXPIRED")) {
+            throw new SecurityException("Expired User");
+        }
+
+        cleanupUnverifiedTotp(userPk);
+
+        OTPHelper helper = new OTPHelper();
+        String secret = helper.generateSecret();
+        Instant now = Instant.now();
+
+        Factor2Credential credential = new Factor2Credential();
+        credential.setUserPK(userPk);
+        credential.setCredentialType(Factor2CredentialType.TOTP);
+        credential.setLabel(label != null && !label.isBlank() ? label : "Authenticator");
+        credential.setCredentialId(generateCredentialReference());
+        credential.setSecret(protector.encrypt(secret));
+        credential.setVerified(false);
+        credential.setCreatedAt(now);
+        credential.setUpdatedAt(now);
+        credential.setTransports("TOTP");
+
+        Map<String, Object> metadata = new HashMap<>();
+        metadata.put("issuer", issuer);
+        metadata.put("accountName", accountName);
+        credential.setMetadata(writeJson(metadata));
+
+        em.persist(credential);
+
+        String provisioningUri = helper.buildProvisioningUri(secret,
+                accountName != null && !accountName.isBlank() ? accountName : user.getUserId(),
+                issuer != null && !issuer.isBlank() ? issuer : "OpenDolphin");
+
+        return new TotpRegistrationResult(credential.getId(), secret, provisioningUri);
+    }
+
+    public List<String> completeTotpRegistration(long userPk, long credentialId, String code, TotpSecretProtector protector) {
+
+        Factor2Credential credential = em.find(Factor2Credential.class, credentialId);
+        if (credential == null || credential.getUserPK() != userPk) {
+            throw new SecurityException("TOTP credential not found");
+        }
+        if (credential.isVerified()) {
+            throw new SecurityException("TOTP credential already verified");
+        }
+        if (credential.getCredentialType() != Factor2CredentialType.TOTP) {
+            throw new SecurityException("Invalid credential type");
+        }
+
+        int numericCode;
+        try {
+            numericCode = Integer.parseInt(code.trim());
+        } catch (NumberFormatException e) {
+            throw new SecurityException("Invalid TOTP code", e);
+        }
+
+        OTPHelper helper = new OTPHelper();
+        String secret = protector.decrypt(credential.getSecret());
+        if (!helper.verifyCurrentWindow(secret, numericCode)) {
+            throw new SecurityException("TOTP verification failed");
+        }
+
+        Instant now = Instant.now();
+        credential.setVerified(true);
+        credential.setUpdatedAt(now);
+        credential.setLastUsedAt(now);
+        em.merge(credential);
+
+        UserModel user = em.find(UserModel.class, userPk);
+        user.setFactor2Auth("TOTP");
+
+        cleanupBackupKeys(userPk);
+
+        BackupCodeGenerator generator = new BackupCodeGenerator();
+        List<String> codes = generator.generateCodes(BACKUP_CODE_COUNT);
+        for (String raw : codes) {
+            Factor2BackupKey key = new Factor2BackupKey();
+            key.setUserPK(userPk);
+            key.setBackupKey(hashBackupCode(userPk, raw));
+            key.setHashAlgorithm("SHA-256");
+            key.setCreatedAt(now);
+            em.persist(key);
+        }
+
+        removeFactor2Codes(userPk);
+        return codes;
+    }
+
     public void saveFactor2Code(Factor2Code f2Code) {
-        
+
         List<Factor2Code> list = em.createQuery("from Factor2Code f where f.userPK=:userPK")
                 .setParameter("userPK", f2Code.getUserPK())
                 .getResultList();
@@ -686,6 +836,368 @@ public class ADM20_EHTServiceBean {
             }
         }
         em.persist(f2Code);
+    }
+
+    private void cleanupUnverifiedTotp(long userPk) {
+        List<Factor2Credential> stale = em.createQuery("from Factor2Credential f where f.userPK=:userPK and f.credentialType=:type and f.verified=false", Factor2Credential.class)
+                .setParameter("userPK", userPk)
+                .setParameter("type", Factor2CredentialType.TOTP)
+                .getResultList();
+        for (Factor2Credential credential : stale) {
+            em.remove(credential);
+        }
+    }
+
+    private void cleanupBackupKeys(long userPk) {
+        List<Factor2BackupKey> existing = em.createQuery("from Factor2BackupKey f where f.userPK=:userPK", Factor2BackupKey.class)
+                .setParameter("userPK", userPk)
+                .getResultList();
+        for (Factor2BackupKey key : existing) {
+            em.remove(key);
+        }
+    }
+
+    private void removeFactor2Codes(long userPk) {
+        List<Factor2Code> list = em.createQuery("from Factor2Code f where f.userPK=:userPK", Factor2Code.class)
+                .setParameter("userPK", userPk)
+                .getResultList();
+        for (Factor2Code code : list) {
+            em.remove(code);
+        }
+    }
+
+    private String generateCredentialReference() {
+        byte[] buffer = new byte[16];
+        secureRandom.nextBytes(buffer);
+        return Base64.getUrlEncoder().withoutPadding().encodeToString(buffer);
+    }
+
+    private String writeJson(Object value) {
+        try {
+            return securityMapper.writeValueAsString(value);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to serialize security metadata", e);
+        }
+    }
+
+    private String hashBackupCode(long userPk, String rawCode) {
+        String normalized = rawCode == null ? "" : rawCode.replace(" ", "").toUpperCase();
+        return HashUtil.sha256(userPk + ":" + normalized);
+    }
+
+    public Factor2Challenge startFidoRegistration(long userPk, Fido2Config config, String authenticatorAttachment) {
+
+        UserModel user = em.find(UserModel.class, userPk);
+        if (user == null) {
+            throw new NoResultException("User not found");
+        }
+        if (user.getMemberType() != null && user.getMemberType().equals("EXPIRED")) {
+            throw new SecurityException("Expired User");
+        }
+
+        cleanupChallenges(userPk, Factor2ChallengeType.FIDO2_REGISTRATION);
+
+        RelyingParty rp = buildRelyingParty(config);
+        UserIdentity identity = UserIdentity.builder()
+                .name(user.getUserId())
+                .displayName(user.getCommonName() != null ? user.getCommonName() : user.getUserId())
+                .id(userHandle(userPk))
+                .build();
+
+        StartRegistrationOptions.Builder builder = StartRegistrationOptions.builder()
+                .user(identity)
+                .timeout(60000L)
+                .authenticatorSelection(buildAuthenticatorSelection(authenticatorAttachment))
+                .excludeCredentials(descriptorsForUser(userPk));
+
+        PublicKeyCredentialCreationOptions options = rp.startRegistration(builder.build());
+
+        Factor2Challenge challenge = new Factor2Challenge();
+        challenge.setUserPK(userPk);
+        challenge.setChallengeType(Factor2ChallengeType.FIDO2_REGISTRATION);
+        challenge.setRequestId(UUID.randomUUID().toString());
+        challenge.setChallengePayload(writeJson(options));
+        Instant now = Instant.now();
+        challenge.setCreatedAt(now);
+        challenge.setExpiresAt(now.plusSeconds(FIDO_CHALLENGE_TTL_SECONDS));
+        challenge.setRpId(config.getRelyingPartyId());
+        challenge.setOrigin(config.getAllowedOrigins().isEmpty() ? null : config.getAllowedOrigins().get(0));
+        em.persist(challenge);
+        return challenge;
+    }
+
+    public Factor2Credential finishFidoRegistration(long userPk, String requestId, String credentialResponseJson, String label, Fido2Config config) {
+
+        Factor2Challenge challenge = requireChallenge(requestId, Factor2ChallengeType.FIDO2_REGISTRATION, userPk);
+        PublicKeyCredentialCreationOptions options = readJson(challenge.getChallengePayload(), PublicKeyCredentialCreationOptions.class);
+
+        RelyingParty rp = buildRelyingParty(config);
+
+        PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensionOutputs> credential =
+                readJson(credentialResponseJson, new TypeReference<PublicKeyCredential<AuthenticatorAttestationResponse, ClientRegistrationExtensionOutputs>>() {});
+
+        try {
+            var result = rp.finishRegistration(FinishRegistrationOptions.builder()
+                    .request(options)
+                    .response(credential)
+                    .build());
+
+            Factor2Credential entity = new Factor2Credential();
+            entity.setUserPK(userPk);
+            entity.setCredentialType(Factor2CredentialType.FIDO2);
+            entity.setCredentialId(result.getKeyId().getId().getBase64Url());
+            entity.setPublicKey(result.getPublicKeyCose().getBase64Url());
+            entity.setSignCount(result.getSignatureCount());
+            entity.setLabel(label != null && !label.isBlank() ? label : "FIDO2 Authenticator");
+            Instant now = Instant.now();
+            entity.setCreatedAt(now);
+            entity.setUpdatedAt(now);
+            entity.setVerified(true);
+            entity.setTransports(result.getKeyId().getTransports().map(this::writeJson).orElse(null));
+
+            Map<String, Object> metadata = new HashMap<>();
+            metadata.put("attestationTrusted", result.isAttestationTrusted());
+            result.getAttestationType().ifPresent(type -> metadata.put("attestationType", type.name()));
+            entity.setMetadata(writeJson(metadata));
+
+            em.persist(entity);
+            em.remove(challenge);
+            return entity;
+        } catch (RegistrationFailedException e) {
+            throw new SecurityException("FIDO2 registration failed", e);
+        }
+    }
+
+    public Factor2Challenge startFidoAssertion(long userPk, String userId, Fido2Config config) {
+        cleanupChallenges(userPk, Factor2ChallengeType.FIDO2_ASSERTION);
+        RelyingParty rp = buildRelyingParty(config);
+        StartAssertionOptions options = StartAssertionOptions.builder()
+                .username(userId)
+                .userVerification(UserVerificationRequirement.REQUIRED)
+                .timeout(60000L)
+                .build();
+
+        AssertionRequest request = rp.startAssertion(options);
+        Factor2Challenge challenge = new Factor2Challenge();
+        challenge.setUserPK(userPk);
+        challenge.setChallengeType(Factor2ChallengeType.FIDO2_ASSERTION);
+        challenge.setRequestId(UUID.randomUUID().toString());
+        challenge.setChallengePayload(writeJson(request));
+        Instant now = Instant.now();
+        challenge.setCreatedAt(now);
+        challenge.setExpiresAt(now.plusSeconds(FIDO_CHALLENGE_TTL_SECONDS));
+        challenge.setRpId(config.getRelyingPartyId());
+        challenge.setOrigin(config.getAllowedOrigins().isEmpty() ? null : config.getAllowedOrigins().get(0));
+        em.persist(challenge);
+        return challenge;
+    }
+
+    public boolean finishFidoAssertion(long userPk, String requestId, String credentialResponseJson, Fido2Config config) {
+        Factor2Challenge challenge = requireChallenge(requestId, Factor2ChallengeType.FIDO2_ASSERTION, userPk);
+        AssertionRequest assertionRequest = readJson(challenge.getChallengePayload(), AssertionRequest.class);
+        RelyingParty rp = buildRelyingParty(config);
+        PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs> credential =
+                readJson(credentialResponseJson, new TypeReference<PublicKeyCredential<AuthenticatorAssertionResponse, ClientAssertionExtensionOutputs>>() {});
+
+        try {
+            AssertionResult result = rp.finishAssertion(FinishAssertionOptions.builder()
+                    .request(assertionRequest)
+                    .response(credential)
+                    .build());
+            if (!result.isSuccess()) {
+                return false;
+            }
+
+            String credentialId = result.getCredentialId().getBase64Url();
+            Factor2Credential entity = requireFidoCredential(userPk, credentialId);
+            entity.setSignCount(result.getSignatureCount());
+            entity.setLastUsedAt(Instant.now());
+            entity.setUpdatedAt(Instant.now());
+            em.merge(entity);
+            em.remove(challenge);
+            return true;
+        } catch (AssertionFailedException e) {
+            throw new SecurityException("FIDO2 assertion failed", e);
+        }
+    }
+
+    private void cleanupChallenges(long userPk, Factor2ChallengeType type) {
+        List<Factor2Challenge> list = em.createQuery("from Factor2Challenge c where c.userPK=:userPK and c.challengeType=:type", Factor2Challenge.class)
+                .setParameter("userPK", userPk)
+                .setParameter("type", type)
+                .getResultList();
+        for (Factor2Challenge challenge : list) {
+            em.remove(challenge);
+        }
+    }
+
+    private Factor2Challenge requireChallenge(String requestId, Factor2ChallengeType type, long userPk) {
+        Factor2Challenge challenge = em.createQuery("from Factor2Challenge c where c.requestId=:requestId and c.challengeType=:type", Factor2Challenge.class)
+                .setParameter("requestId", requestId)
+                .setParameter("type", type)
+                .getSingleResult();
+        if (challenge.getUserPK() != userPk) {
+            throw new SecurityException("Challenge user mismatch");
+        }
+        if (challenge.getExpiresAt() != null && challenge.getExpiresAt().isBefore(Instant.now())) {
+            em.remove(challenge);
+            throw new SecurityException("Challenge expired");
+        }
+        return challenge;
+    }
+
+    private AuthenticatorSelectionCriteria buildAuthenticatorSelection(String attachment) {
+        if (attachment == null || attachment.isBlank()) {
+            return AuthenticatorSelectionCriteria.builder().userVerification(UserVerificationRequirement.REQUIRED).build();
+        }
+        AuthenticatorSelectionCriteria.Builder builder = AuthenticatorSelectionCriteria.builder()
+                .userVerification(UserVerificationRequirement.REQUIRED);
+        if ("platform".equalsIgnoreCase(attachment)) {
+            builder.authenticatorAttachment(AuthenticatorAttachment.PLATFORM);
+        } else if ("cross-platform".equalsIgnoreCase(attachment) || "cross_platform".equalsIgnoreCase(attachment)) {
+            builder.authenticatorAttachment(AuthenticatorAttachment.CROSS_PLATFORM);
+        }
+        return builder.build();
+    }
+
+    private RelyingParty buildRelyingParty(Fido2Config config) {
+        RelyingPartyIdentity identity = RelyingPartyIdentity.builder()
+                .id(config.getRelyingPartyId())
+                .name(config.getRelyingPartyName())
+                .build();
+        return RelyingParty.builder()
+                .identity(identity)
+                .credentialRepository(createCredentialRepository())
+                .origins(new HashSet<>(config.getAllowedOrigins()))
+                .build();
+    }
+
+    private CredentialRepository createCredentialRepository() {
+        return new CredentialRepository() {
+            @Override
+            public Set<PublicKeyCredentialDescriptor> getCredentialIdsForUsername(String username) {
+                UserModel user = findUserByUsername(username);
+                if (user == null) {
+                    return Set.of();
+                }
+                return descriptorsForUser(user.getId());
+            }
+
+            @Override
+            public Optional<ByteArray> getUserHandleForUsername(String username) {
+                UserModel user = findUserByUsername(username);
+                return user == null ? Optional.empty() : Optional.of(userHandle(user.getId()));
+            }
+
+            @Override
+            public Optional<String> getUsernameForUserHandle(ByteArray userHandle) {
+                long userPk = userPkFromHandle(userHandle);
+                UserModel user = em.find(UserModel.class, userPk);
+                return user == null ? Optional.empty() : Optional.ofNullable(user.getUserId());
+            }
+
+            @Override
+            public Optional<RegisteredCredential> lookup(ByteArray credentialId, ByteArray userHandle) {
+                long userPk = userPkFromHandle(userHandle);
+                Factor2Credential credential = findFidoCredential(userPk, credentialId.getBase64Url());
+                if (credential == null) {
+                    return Optional.empty();
+                }
+                return Optional.of(RegisteredCredential.builder()
+                        .credentialId(credentialId)
+                        .userHandle(userHandle)
+                        .publicKeyCose(new ByteArray(Base64.getUrlDecoder().decode(credential.getPublicKey())))
+                        .signatureCount(credential.getSignCount())
+                        .build());
+            }
+
+            @Override
+            public Set<RegisteredCredential> lookupAll(ByteArray credentialId) {
+                List<Factor2Credential> list = em.createQuery("from Factor2Credential f where f.credentialId=:credentialId and f.credentialType=:type", Factor2Credential.class)
+                        .setParameter("credentialId", credentialId.getBase64Url())
+                        .setParameter("type", Factor2CredentialType.FIDO2)
+                        .getResultList();
+                Set<RegisteredCredential> result = new HashSet<>();
+                for (Factor2Credential credential : list) {
+                    result.add(RegisteredCredential.builder()
+                            .credentialId(credentialId)
+                            .userHandle(userHandle(credential.getUserPK()))
+                            .publicKeyCose(new ByteArray(Base64.getUrlDecoder().decode(credential.getPublicKey())))
+                            .signatureCount(credential.getSignCount())
+                            .build());
+                }
+                return result;
+            }
+        };
+    }
+
+    private Set<PublicKeyCredentialDescriptor> descriptorsForUser(long userPk) {
+        List<Factor2Credential> credentials = em.createQuery("from Factor2Credential f where f.userPK=:userPK and f.credentialType=:type and f.verified=true", Factor2Credential.class)
+                .setParameter("userPK", userPk)
+                .setParameter("type", Factor2CredentialType.FIDO2)
+                .getResultList();
+        Set<PublicKeyCredentialDescriptor> descriptors = new HashSet<>();
+        for (Factor2Credential credential : credentials) {
+            ByteArray id = new ByteArray(Base64.getUrlDecoder().decode(credential.getCredentialId()));
+            descriptors.add(PublicKeyCredentialDescriptor.builder()
+                    .id(id)
+                    .type(PublicKeyCredentialType.PUBLIC_KEY)
+                    .build());
+        }
+        return descriptors;
+    }
+
+    private Factor2Credential requireFidoCredential(long userPk, String credentialId) {
+        Factor2Credential credential = findFidoCredential(userPk, credentialId);
+        if (credential == null) {
+            throw new SecurityException("FIDO2 credential not registered");
+        }
+        return credential;
+    }
+
+    private Factor2Credential findFidoCredential(long userPk, String credentialId) {
+        return em.createQuery("from Factor2Credential f where f.userPK=:userPK and f.credentialId=:credentialId and f.credentialType=:type", Factor2Credential.class)
+                .setParameter("userPK", userPk)
+                .setParameter("credentialId", credentialId)
+                .setParameter("type", Factor2CredentialType.FIDO2)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    private UserModel findUserByUsername(String username) {
+        return em.createQuery("from UserModel u where u.userId=:userId", UserModel.class)
+                .setParameter("userId", username)
+                .getResultStream()
+                .findFirst()
+                .orElse(null);
+    }
+
+    private ByteArray userHandle(long userPk) {
+        ByteBuffer buffer = ByteBuffer.allocate(Long.BYTES);
+        buffer.putLong(userPk);
+        return new ByteArray(buffer.array());
+    }
+
+    private long userPkFromHandle(ByteArray handle) {
+        ByteBuffer buffer = ByteBuffer.wrap(handle.getBytes());
+        return buffer.getLong();
+    }
+
+    private <T> T readJson(String json, Class<T> type) {
+        try {
+            return securityMapper.readValue(json, type);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to parse JSON", e);
+        }
+    }
+
+    private <T> T readJson(String json, TypeReference<T> type) {
+        try {
+            return securityMapper.readValue(json, type);
+        } catch (JsonProcessingException e) {
+            throw new IllegalStateException("Failed to parse JSON", e);
+        }
     }
     
     public void saveFactor2(Factor2Spec spec) {
@@ -716,11 +1228,14 @@ public class ADM20_EHTServiceBean {
         device.setMacAddress(spec.getMacAddress());
         device.setEntryDate(spec.getEntryDate());
         em.persist(device);
-        
+
         // バックアップキー
+        Instant now = Instant.now();
         Factor2BackupKey key = new Factor2BackupKey();
         key.setUserPK(userPK);
-        key.setBackupKey(spec.getBackupKey());
+        key.setBackupKey(hashBackupCode(userPK, spec.getBackupKey()));
+        key.setHashAlgorithm("SHA-256");
+        key.setCreatedAt(now);
         em.persist(key);
     }
     
@@ -737,13 +1252,18 @@ public class ADM20_EHTServiceBean {
         for (Factor2Device device : list) {
             em.remove(device);
         }
-        
-        // バックアップキーを削除する
-        List<Factor2BackupKey> list2 = em.createQuery("from Factor2BackupKey f where f.userPK=:userPK")
+
+        cleanupBackupKeys(userPK);
+        cleanupUnverifiedTotp(userPK);
+        cleanupChallenges(userPK, Factor2ChallengeType.FIDO2_REGISTRATION);
+        cleanupChallenges(userPK, Factor2ChallengeType.FIDO2_ASSERTION);
+        removeFactor2Codes(userPK);
+
+        List<Factor2Credential> credentials = em.createQuery("from Factor2Credential f where f.userPK=:userPK", Factor2Credential.class)
                 .setParameter("userPK", userPK)
                 .getResultList();
-        for (Factor2BackupKey bk : list2) {
-            em.remove(bk);
+        for (Factor2Credential credential : credentials) {
+            em.remove(credential);
         }
     }
     
@@ -800,7 +1320,7 @@ public class ADM20_EHTServiceBean {
         // getResultListは無用な例外をスローさせないため
         List<Factor2BackupKey> entries = (List<Factor2BackupKey>) em.createQuery("from Factor2BackupKey f where f.userPK=:userPK and f.backupKey=:backupKey")
                 .setParameter("userPK", userPK)
-                .setParameter("backupKey", spec.getBackupKey())
+                .setParameter("backupKey", hashBackupCode(userPK, spec.getBackupKey()))
                 .getResultList();
         if (entries.isEmpty()) {
             throw new NoResultException("2-Factor backupKey error");
