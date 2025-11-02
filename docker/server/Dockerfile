@@ -1,12 +1,11 @@
 # syntax=docker/dockerfile:1.7
 
-FROM maven:3.9.6-eclipse-temurin-8 AS build
+FROM maven:3.9.6-eclipse-temurin-17 AS build
 WORKDIR /workspace
 
 COPY pom.xml ./
 COPY common ./common
-COPY server ./server
-COPY client ./client
+COPY server-modernized ./server-modernized
 COPY ext_lib ./ext_lib
 COPY docker/server/settings.xml /tmp/maven-settings.xml
 
@@ -14,7 +13,6 @@ RUN mvn -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextA
 RUN mvn -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar
 RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.postgresql:postgresql:42.7.3
 RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=org.hibernate:hibernate-core:5.0.10.Final
-RUN mvn -s /tmp/maven-settings.xml -B dependency:get -Dartifact=javax.jms:javax.jms-api:2.0.1
 
 RUN mkdir -p /tmp/hbcompat/src/org/hibernate/type /tmp/hbcompat/classes
 RUN cat <<'EOF' > /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
@@ -53,18 +51,17 @@ EOF
 RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
-RUN mvn -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package && \
-    mv server/target/opendolphin-server-*.war server/target/opendolphin-server.war
+RUN mvn -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package && \
+    mv server-modernized/target/opendolphin-server-*.war server-modernized/target/opendolphin-server.war
 
-FROM jboss/wildfly:10.1.0.Final
+FROM quay.io/wildfly/wildfly:26.1.3.Final
 ENV JBOSS_HOME=/opt/jboss/wildfly \
     WILDFLY_HOME=/opt/jboss/wildfly
 
 USER root
-COPY --from=build /workspace/server/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
+COPY --from=build /workspace/server-modernized/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
-COPY --from=build /root/.m2/repository/javax/jms/javax.jms-api/2.0.1/javax.jms-api-2.0.1.jar /opt/jboss/javax-jms-api.jar
 COPY docker/server/custom.properties ${WILDFLY_HOME}/custom.properties
 COPY docker/server/configure-wildfly.cli /opt/jboss/configure-wildfly.cli
 COPY docker/server/bootstrap.sh /opt/jboss/bootstrap.sh
@@ -72,7 +69,6 @@ RUN chmod +x /opt/jboss/bootstrap.sh
 
 RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
-    mv /opt/jboss/javax-jms-api.jar /opt/jboss/tmp/WEB-INF/lib/ && \
     cd /opt/jboss/tmp && \
     jar uf ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war -C /opt/jboss/tmp WEB-INF && \
     rm -rf /opt/jboss/tmp
