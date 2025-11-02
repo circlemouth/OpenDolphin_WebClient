@@ -44,7 +44,7 @@ public class Fido2Config {
         }
         String rpName = System.getenv(ENV_RP_NAME);
         if (rpName == null || rpName.isBlank()) {
-            rpName = "OpenDolphin";
+            rpName = "OpenDolphin Dev";
         }
         String origins = System.getenv(ENV_ORIGINS);
         List<String> allowedOrigins = origins == null || origins.isBlank()
