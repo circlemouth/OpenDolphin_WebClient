@@ -31,6 +31,8 @@ sudo ./scripts/setup_codex_env.sh
 
 コンテナが既に root ユーザーであれば `sudo` は不要です。処理の途中で Maven や JDK が既に条件を満たす場合はスキップされます。
 
+> **補足:** スクリプトは `git rev-parse --show-toplevel` とスクリプト自身の位置情報からリポジトリルートを自動判別します。リポジトリ配下のどこから呼び出しても動作しますが、`pom.xml` を検出できない場合はエラーで終了します。
+
 ## 実行後の確認
 
 - `mvn -v` で `Apache Maven 3.9.6` と `Java version: 17` が表示される

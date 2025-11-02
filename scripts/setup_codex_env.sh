@@ -13,13 +13,35 @@ require_root() {
 }
 
 ensure_repo_root() {
-  local script_dir
-  script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-  REPO_ROOT="$(cd "${script_dir}/.." && pwd)"
-  if [[ ! -f "${REPO_ROOT}/pom.xml" ]]; then
-    echo "リポジトリルートで実行できません。scripts ディレクトリ構成を確認してください。" >&2
-    exit 1
+  local candidate
+
+  if command -v git >/dev/null 2>&1; then
+    if candidate="$(git -C "${PWD}" rev-parse --show-toplevel 2>/dev/null)"; then
+      if [[ -f "${candidate}/pom.xml" ]]; then
+        REPO_ROOT="${candidate}"
+        return
+      fi
+    fi
   fi
+
+  if [[ -f "${PWD}/pom.xml" ]]; then
+    REPO_ROOT="${PWD}"
+    return
+  fi
+
+  local script_source="${BASH_SOURCE[0]-}"
+  if [[ -n "${script_source}" ]]; then
+    local script_dir
+    script_dir="$(cd "$(dirname "${script_source}")" && pwd)"
+    candidate="$(cd "${script_dir}/.." && pwd)"
+    if [[ -f "${candidate}/pom.xml" ]]; then
+      REPO_ROOT="${candidate}"
+      return
+    fi
+  fi
+
+  echo "リポジトリルートを特定できません。scripts ディレクトリ構成を確認するか、リポジトリ内から実行してください。" >&2
+  exit 1
 }
 
 install_apt_packages() {
