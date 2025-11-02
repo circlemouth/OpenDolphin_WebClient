@@ -1,0 +1,26 @@
+embed-server --std-out=echo --server-config=standalone.xml
+
+module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=jakarta.api,jakarta.transaction.api
+
+if (outcome == success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource()
+    /subsystem=datasources/jdbc-driver=postgresql:remove()
+end-if
+/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
+
+if (outcome == success) of /subsystem=datasources/data-source=ORCADS:read-resource()
+    /subsystem=datasources/data-source=ORCADS:remove()
+end-if
+/subsystem=datasources/data-source=ORCADS:add(jndi-name=java:jboss/datasources/ORCADS, driver-name=postgresql, connection-url=jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin}, user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
+
+if (outcome == success) of /subsystem=datasources/data-source=PostgresDS:read-resource()
+    /subsystem=datasources/data-source=PostgresDS:remove()
+end-if
+/subsystem=datasources/data-source=PostgresDS:add(jndi-name=java:jboss/datasources/PostgresDS, driver-name=postgresql, connection-url=jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin}, user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
+
+if (outcome == success) of /subsystem=logging/logger=open.dolphin:read-resource()
+    /subsystem=logging/logger=open.dolphin:write-attribute(name=level,value=INFO)
+else
+    /subsystem=logging/logger=open.dolphin:add(level=INFO)
+end-if
+
+stop-embedded-server
