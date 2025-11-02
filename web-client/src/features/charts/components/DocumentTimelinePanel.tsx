@@ -365,6 +365,13 @@ export const DocumentTimelinePanel = ({
   const [renameTitle, setRenameTitle] = useState('');
   const [renameFeedback, setRenameFeedback] = useState<{ tone: 'info' | 'danger'; message: string } | null>(null);
   const emittedEventIdRef = useRef<string | null>(null);
+  const documentSelectionCallbackRef = useRef<DocumentTimelinePanelProps['onDocumentSelected']>();
+  const lastDocumentEventIdRef = useRef<string | null>(null);
+  const lastDocumentDataVersionRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    documentSelectionCallbackRef.current = onDocumentSelected;
+  }, [onDocumentSelected]);
 
   useEffect(() => {
     setActiveCategories((prev) => {
@@ -421,19 +428,38 @@ export const DocumentTimelinePanel = ({
   });
 
   useEffect(() => {
-    if (selectedEvent?.payload.kind === 'document' && detailQuery.data) {
-      setRenameTitle(detailQuery.data.docInfoModel?.title ?? '');
-      if (onDocumentSelected) {
-        onDocumentSelected(detailQuery.data);
+    const emitDocumentSelection = documentSelectionCallbackRef.current;
+    if (!selectedEvent || selectedEvent.payload.kind !== 'document') {
+      if (lastDocumentEventIdRef.current !== null) {
+        emitDocumentSelection?.(null);
       }
+      lastDocumentEventIdRef.current = null;
+      lastDocumentDataVersionRef.current = null;
+      setRenameTitle((prev) => (prev === '' ? prev : ''));
+      return;
     }
-  }, [detailQuery.data, onDocumentSelected, selectedEvent?.payload.kind]);
 
-  useEffect(() => {
-    if (selectedEvent?.payload.kind !== 'document' && onDocumentSelected) {
-      onDocumentSelected(null);
+    if (!detailQuery.data) {
+      return;
     }
-  }, [onDocumentSelected, selectedEvent?.payload.kind]);
+
+    const currentEventId = selectedEvent.id;
+    const currentDataVersion = detailQuery.dataUpdatedAt ?? null;
+
+    if (
+      lastDocumentEventIdRef.current === currentEventId &&
+      lastDocumentDataVersionRef.current === currentDataVersion
+    ) {
+      return;
+    }
+
+    lastDocumentEventIdRef.current = currentEventId;
+    lastDocumentDataVersionRef.current = currentDataVersion;
+
+    const nextTitle = detailQuery.data.docInfoModel?.title ?? '';
+    setRenameTitle((prev) => (prev === nextTitle ? prev : nextTitle));
+    emitDocumentSelection?.(detailQuery.data);
+  }, [detailQuery.data, detailQuery.dataUpdatedAt, selectedEvent]);
 
   useEffect(() => {
     if (!selectedEvent) {

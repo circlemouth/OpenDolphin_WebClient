@@ -598,6 +598,65 @@ type ContextItemDescriptor = {
   onActivate?: () => void;
 };
 
+type ReferenceLabModuleItem = {
+  id: string;
+  label: string;
+  value: string;
+  unit?: string;
+  abnormalFlag: string | null;
+};
+
+type ReferenceLabModuleSnapshot = {
+  id: string;
+  sampleDate: string | null;
+  items: ReferenceLabModuleItem[];
+};
+
+const areReferenceLabModulesEqual = (
+  prevModules: ReferenceLabModuleSnapshot[] | undefined,
+  nextModules: ReferenceLabModuleSnapshot[] | undefined,
+) => {
+  if (prevModules === nextModules) {
+    return true;
+  }
+  if (!prevModules || !nextModules) {
+    return false;
+  }
+  if (prevModules.length !== nextModules.length) {
+    return false;
+  }
+  for (let moduleIndex = 0; moduleIndex < prevModules.length; moduleIndex += 1) {
+    const prevModule = prevModules[moduleIndex];
+    const nextModule = nextModules[moduleIndex];
+    if (!nextModule) {
+      return false;
+    }
+    if (prevModule.id !== nextModule.id || prevModule.sampleDate !== nextModule.sampleDate) {
+      return false;
+    }
+    if (prevModule.items.length !== nextModule.items.length) {
+      return false;
+    }
+    for (let itemIndex = 0; itemIndex < prevModule.items.length; itemIndex += 1) {
+      const prevItem = prevModule.items[itemIndex];
+      const nextItem = nextModule.items[itemIndex];
+      if (!nextItem) {
+        return false;
+      }
+      if (
+        prevItem.id !== nextItem.id ||
+        prevItem.label !== nextItem.label ||
+        prevItem.value !== nextItem.value ||
+        prevItem.unit !== nextItem.unit ||
+        prevItem.abnormalFlag !== nextItem.abnormalFlag
+      ) {
+        return false;
+      }
+    }
+  }
+  return true;
+};
+
 type DocumentTimelineProps = Pick<
   ComponentProps<typeof DocumentTimelinePanel>,
   | 'events'
@@ -2159,13 +2218,19 @@ export const ChartsPage = () => {
     [mapLabModules, timeline.labModules],
   );
 
-  const [referenceLabModules, setReferenceLabModules] = useState(defaultReferenceLabModules);
+  const [referenceLabModules, setReferenceLabModules] = useState(() => defaultReferenceLabModules);
   const [labSelectionActive, setLabSelectionActive] = useState(false);
 
   useEffect(() => {
-    if (!labSelectionActive) {
-      setReferenceLabModules(defaultReferenceLabModules);
+    if (labSelectionActive) {
+      return;
     }
+    setReferenceLabModules((prev) => {
+      if (areReferenceLabModulesEqual(prev, defaultReferenceLabModules)) {
+        return prev;
+      }
+      return defaultReferenceLabModules;
+    });
   }, [defaultReferenceLabModules, labSelectionActive]);
 
   const referenceLabLoading = timeline.isLoading || timeline.isFetching;

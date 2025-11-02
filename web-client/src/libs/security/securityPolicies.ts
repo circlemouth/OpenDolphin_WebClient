@@ -3,16 +3,41 @@ import { refreshCsrfToken } from '@/libs/security/csrf';
 const isLocalhost = (hostname: string) =>
   hostname === 'localhost' || hostname === '127.0.0.1' || hostname.endsWith('.local');
 
-const SECURITY_META_TAGS: Array<{ name: string; content: string; httpEquiv?: string }> = [
+const buildContentSecurityPolicy = () => {
+  const directives: Record<string, Set<string>> = {
+    "default-src": new Set(["'self'"]),
+    "script-src": new Set(["'self'"]),
+    "style-src": new Set(["'self'", "'unsafe-inline'"]),
+    "img-src": new Set(["'self'", 'data:']),
+    "font-src": new Set(["'self'", 'data:']),
+    "connect-src": new Set(["'self'", 'https:']),
+    "worker-src": new Set(["'self'"]),
+    "base-uri": new Set(["'self'"]),
+    "form-action": new Set(["'self'"]),
+  };
+
+  if (import.meta.env.DEV) {
+    directives["script-src"].add("'unsafe-eval'");
+    directives["script-src"].add("'unsafe-inline'");
+    directives["connect-src"].add('ws:');
+    directives["connect-src"].add('wss:');
+    directives["img-src"].add('blob:');
+    directives["worker-src"].add('blob:');
+  }
+
+  return Object.entries(directives)
+    .map(([directive, values]) => `${directive} ${Array.from(values).join(' ')}`)
+    .join('; ');
+};
+
+const getSecurityMetaTags = () => [
   {
     httpEquiv: 'Content-Security-Policy',
     name: 'csp-policy',
-    content:
-      "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; font-src 'self' data:; connect-src 'self' https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'",
+    content: buildContentSecurityPolicy(),
   },
   { name: 'referrer', content: 'no-referrer' },
   { httpEquiv: 'X-Content-Type-Options', name: 'x-content-type-options', content: 'nosniff' },
-  { httpEquiv: 'X-Frame-Options', name: 'x-frame-options', content: 'DENY' },
   { name: 'color-scheme', content: 'light dark' },
 ];
 
@@ -69,7 +94,7 @@ const setupSecurityPolicyViolationLogger = () => {
 
 export const initializeSecurityPolicies = () => {
   enforceHttps();
-  SECURITY_META_TAGS.forEach(applyMetaTag);
+  getSecurityMetaTags().forEach(applyMetaTag);
   setupSecurityPolicyViolationLogger();
   refreshCsrfToken();
 };

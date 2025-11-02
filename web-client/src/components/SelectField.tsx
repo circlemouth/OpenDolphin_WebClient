@@ -79,7 +79,7 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
     {
       label,
       id,
-      options,
+      options: rawOptions = [],
       description,
       errorMessage,
       leftAdornment,
@@ -89,6 +89,17 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
     },
     ref,
   ) => {
+    const options = Array.isArray(rawOptions) ? rawOptions : [];
+
+    if (import.meta.env?.DEV && !Array.isArray(rawOptions)) {
+      // options が undefined や null のままだと UI 全体がクラッシュしてしまうため、開発時に警告する
+      // eslint-disable-next-line no-console
+      console.warn('SelectField: options prop が配列ではありません。空配列としてレンダリングします。', {
+        label,
+        provided: rawOptions,
+      });
+    }
+
     const generatedId = useId();
     const fieldId = id ?? generatedId;
     const descriptionId = description ? `${fieldId}-desc` : undefined;
