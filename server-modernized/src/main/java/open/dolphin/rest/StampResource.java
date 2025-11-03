@@ -3,7 +3,11 @@ package open.dolphin.rest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -14,7 +18,11 @@ import open.dolphin.converter.StampListConverter;
 import open.dolphin.converter.StampModelConverter;
 import open.dolphin.converter.StampTreeHolderConverter;
 import open.dolphin.infomodel.*;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.StampServiceBean;
+import open.dolphin.session.framework.SessionTraceContext;
+import open.dolphin.session.framework.SessionTraceManager;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -28,6 +36,15 @@ public class StampResource extends AbstractResource {
 
     @Inject
     private StampServiceBean stampServiceBean;
+
+    @Inject
+    private AuditTrailService auditTrailService;
+
+    @Inject
+    private SessionTraceManager sessionTraceManager;
+
+    @Context
+    private HttpServletRequest httpServletRequest;
 
     /** Creates a new instance of StampResource */
     public StampResource() {
@@ -284,9 +301,21 @@ public class StampResource extends AbstractResource {
     @Path("/id/{param}")
     public void deleteStamp(@PathParam("param") String param) {
 
-        int cnt = stampServiceBean.removeStamp(param);
+        List<String> targetIds = List.of(param);
+        StampModel existing = stampServiceBean.getStamp(param);
+        if (existing == null) {
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null, "stamp_not_found");
+            throw new NotFoundException("Stamp not found: " + param);
+        }
 
-        debug(String.valueOf(cnt));
+        try {
+            int cnt = stampServiceBean.removeStamp(param);
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "success", cnt, null);
+            debug(String.valueOf(cnt));
+        } catch (RuntimeException e) {
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null, e.getClass().getSimpleName());
+            throw e;
+        }
     }
     
 
@@ -298,8 +327,126 @@ public class StampResource extends AbstractResource {
         List<String> list = new ArrayList<String>();
         list.addAll(Arrays.asList(params));
 
-        int cnt = stampServiceBean.removeStamp(list);
+        List<StampModel> resolved = stampServiceBean.getStamp(list);
+        List<String> missing = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            StampModel model = (resolved != null && resolved.size() > i) ? resolved.get(i) : null;
+            if (model == null) {
+                missing.add(list.get(i));
+            }
+        }
+        if (!missing.isEmpty()) {
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "failed", null,
+                    "missing_ids:" + String.join(CAMMA, missing));
+            throw new NotFoundException("Missing stamp ids: " + String.join(CAMMA, missing));
+        }
 
-        debug(String.valueOf(cnt));
+        try {
+            int cnt = stampServiceBean.removeStamp(list);
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "success", cnt, null);
+            debug(String.valueOf(cnt));
+        } catch (RuntimeException e) {
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "failed", null, e.getClass().getSimpleName());
+            throw e;
+        }
+    }
+
+    private void recordStampDeletionAudit(String action, List<String> ids, String status, Integer deletedCount, String reason) {
+        if (auditTrailService == null) {
+            return;
+        }
+        AuditEventPayload payload = createBaseAuditPayload(action);
+        Map<String, Object> details = new HashMap<>();
+        details.put("stampIds", List.copyOf(ids));
+        details.put("status", status);
+        if (deletedCount != null) {
+            details.put("deletedCount", deletedCount);
+        }
+        if (reason != null) {
+            details.put("reason", reason);
+        }
+        enrichUserDetails(details);
+        enrichTraceDetails(details);
+        payload.setDetails(details);
+        auditTrailService.record(payload);
+    }
+
+    private AuditEventPayload createBaseAuditPayload(String action) {
+        AuditEventPayload payload = new AuditEventPayload();
+        String actorId = resolveActorId();
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(resolveActorDisplayName(actorId));
+        if (httpServletRequest != null && httpServletRequest.isUserInRole("ADMIN")) {
+            payload.setActorRole("ADMIN");
+        }
+        payload.setAction(action);
+        payload.setResource(resolveResourcePath());
+        payload.setRequestId(resolveRequestId());
+        payload.setIpAddress(resolveIpAddress());
+        payload.setUserAgent(resolveUserAgent());
+        return payload;
+    }
+
+    private void enrichUserDetails(Map<String, Object> details) {
+        String remoteUser = resolveRemoteUser();
+        if (remoteUser != null) {
+            details.put("remoteUser", remoteUser);
+            int idx = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+            if (idx > 0) {
+                details.put("facilityId", remoteUser.substring(0, idx));
+                if (idx + 1 < remoteUser.length()) {
+                    details.put("userId", remoteUser.substring(idx + 1));
+                }
+            }
+        }
+    }
+
+    private void enrichTraceDetails(Map<String, Object> details) {
+        if (sessionTraceManager == null) {
+            return;
+        }
+        SessionTraceContext context = sessionTraceManager.current();
+        if (context != null) {
+            details.put("traceId", context.getTraceId());
+            details.put("sessionOperation", context.getOperation());
+        }
+    }
+
+    private String resolveActorId() {
+        return Optional.ofNullable(resolveRemoteUser()).orElse("system");
+    }
+
+    private String resolveActorDisplayName(String actorId) {
+        if (actorId == null) {
+            return "system";
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx >= 0 && idx + 1 < actorId.length()) {
+            return actorId.substring(idx + 1);
+        }
+        return actorId;
+    }
+
+    private String resolveResourcePath() {
+        return httpServletRequest != null ? httpServletRequest.getRequestURI() : "/stamp";
+    }
+
+    private String resolveRequestId() {
+        if (httpServletRequest == null) {
+            return UUID.randomUUID().toString();
+        }
+        return Optional.ofNullable(httpServletRequest.getHeader("X-Request-Id")).orElse(UUID.randomUUID().toString());
+    }
+
+    private String resolveIpAddress() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteAddr() : null;
+    }
+
+    private String resolveUserAgent() {
+        return httpServletRequest != null ? httpServletRequest.getHeader("User-Agent") : null;
+    }
+
+    private String resolveRemoteUser() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteUser() : null;
     }
 }

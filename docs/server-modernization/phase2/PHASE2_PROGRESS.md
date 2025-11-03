@@ -1,15 +1,96 @@
 # フェーズ2 進捗メモ (更新: 2026-05-27)
 
+- 🔍 `JsonTouchResource` 16 件・`PHRResource` 11 件はコード実装を確認したが、adm10 document/mkdocument の未実装や自動テスト・監査証跡不足が判明。`API_PARITY_MATRIX.md` の該当行を `[ ] / △ 要証跡` へ差し戻し、未解決事項を明記。
+- 📊 集計サマリを再計算し、legacy 256 件中 185 件が証跡取得済み、未整備 71 件（DolphinResourceASP 19 + DemoResourceASP 15 + SystemResource 5 + MmlResource 4 + JsonTouchResource 16 + PHRResource 11 + `/pvt2/{pvtPK}` DELETE 1）であることを追記。モダナイズ専用 API は 8 件（`/mml/*` 追加分 + PHR export/status）。
+- 📄 変更ドキュメント: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`（集計・JsonTouch・PHR・PVT2 DELETE 更新）、`docs/server-modernization/phase2/domains/STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md`（MML を「実装確認/証跡未整備」へ修正）、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`（関連検証ログを Open ステータスへ修正）。
+- ⚠️ 未整備タスク: JsonTouch adm10 document 系の正式移植とテスト追加、PHR エクスポート REST/API 実装、`/pvt2/{pvtPK}` DELETE の自動テスト整備、MmlResource Labtest/Letter の動作ログ取得。担当（Worker C/D/E/F）へフォローを依頼済み。
+
+## 2025-11-03 追記: PVTResource2 / SystemResource パリティ再点検（担当: Codex）
+- ✅ `server-modernized/src/main/java/open/dolphin/rest/PVTResource2.java` の POST/GET 実装と `server-modernized/src/test/java/open/dolphin/rest/PVTResource2Test.java` のカバレッジを確認し、`/pvt2` POST・`/pvt2/pvtList` GET を `[x]` 判定へ更新。facility ID 再紐付けと `PatientVisitListConverter` 包装処理の単体テスト証跡を取得済み。
+- ⚠️ `DELETE /pvt2/{pvtPK}` はモダナイズ実装済みだが自動テストが存在せず、`PVTServiceBean#removePvt` 呼び出しと施設スコープ検証が未証明。`PVTResource2Test` へ削除ケースを追加してから `[x]` 化する。
+- ⚠️ `SystemResource`（`/dolphin` ルート + activity/cloudzero/license）5 件は実装のみでテスト証跡が無い。`SystemResourceTest` を新設し、ルート疎通・ロール再紐付け・月次集計・CloudZero 送信・ライセンスファイル更新の正常/例外系を自動化する必要あり。
+- 📎 ドキュメントを更新: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`（PVT2 行と SystemResource 行の最新判定）、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`（検証ログ追記）、`docs/web-client/README.md`（更新概要を反映）。
+- 📋 未解決 API（マトリクス [ ] 継続）: DELETE `/pvt2/{pvtPK}`、GET `/dolphin`、POST `/dolphin`、GET `/dolphin/activity/{param}`、GET `/dolphin/cloudzero/sendmail`、POST `/dolphin/license`（いずれもテスト証跡未整備）。
+
+## 2025-11-03 追記: EHTResource API パリティ完了（担当: Codex）
+- ✅ `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java` と `ADM20_EHTServiceBean` を拡張し、旧サーバーの `/20/adm/eht/*` 43 エンドポイントを全移植。CLAIM 送信／バイタル／身体所見系に Jakarta 版のトランザクション境界とレスポンス順序（`order by`）を反映。
+- ✅ 監査ログを拡充（`EHT_CLAIM_SEND(2)`, `EHT_PHYSICAL_*`, `EHT_VITAL_*`）し、`EHTResourceTest`（sendClaim/vital/physical）を追加。`API_PARITY_MATRIX.md` と `EHT_SECURITY_AUDIT_CHECKLIST.md` を刷新し、Runbook 4.2 にテスト ID `EHT-RUN-20251103-*` を登録。
+- ⚠️ ローカルに Maven が存在せず `mvn -pl server-modernized test` は `bash: mvn: command not found`（2025-11-03 14:15 JST）。ユニットテストは追加済みのため、Maven 導入後に実行ログを取得し Runbook/監査テーブルを確定させる。ORCA／CLAIM 実機検証は Worker E・Worker A へ引き続き依頼済み。
+
+## 2025-11-03 追記: PHR/MML API パリティ再確認（担当: Worker D）
+- ✅ `PHRResource` の 11 エンドポイント全てが Jakarta 版で実装されていることをコード確認。`docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` と `API_PARITY_MATRIX.md` を修正し、実装済みである一方テスト証跡が無いことを `△ 要証跡` として明示。
+- ✅ `MmlResource` の Labtest/Letter 系エンドポイント（`/mml/labtest/*`, `/mml/letter/*`）が現行ソースに存在することを確認し、`STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md` を更新。Runbook/マトリクスから「未移植」表記を除去し、テスト未整備のフォローを追記。
+- ⚠️ PHR エクスポート基盤は REST エンドポイント・ジョブワーカーが未実装。`PhrExportJobManager` が未定義クラス `ManagedExecutorFactory` を参照、`PhrExportJobWorker` クラス欠如、S3 ストレージはスタブのままと判明。Runbook (`EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`) の手順 6 を **Blocked** 表記へ差し替え。
+- 📌 Flyway DDL `server-modernized/tools/flyway/sql/V0220__phr_async_job.sql` は存在するが適用ログ無し。`WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md` にタスクとして (1) REST 実装、(2) ジョブワーカー整備、(3) DDL 適用手順、(4) テスト・監視追加 を列挙。実装完了まで `PHRResource` の API チェックボックスは `[ ]` のままとし、証跡取得後に `[x]` へ引き上げる。
+
+## 2025-11-03 追記: DemoResourceASP 再点検（担当: Worker B）
+- ⚠️ `DemoResourceAsp` が `ModuleModel` を import しておらずコンパイルエラー（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:20-65,398-400）。`API_PARITY_MATRIX.md` の DemoResourceASP 行を `[ ]` へ戻し、修正必須として明記。
+- ⚠️ `/demo/module/*` と `/demo/document/progressCourse` で `BundleDolphin` の `orderName` を補完していないため `entity`/`entityName` が null になる（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:398-415,588-604／server/src/main/java/open/dolphin/touch/DemoResourceASP.java:1457-1489,1659-1671）。
+- ⚠️ `/demo/item/laboItem` の `comment2` がレガシー実装（常に `comment1` を再利用）と異なるため、Pad デモ UI 表示が変わる恐れ（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:552-553／server/src/main/java/open/dolphin/touch/DemoResourceASP.java:1140-1144）。
+- ⚠️ `DemoResourceAspTest` では 15 末実装のうち 6 エンドポイントが未カバーで、Maven 未導入によりテスト未実行（server-modernized/src/test/java/open/dolphin/rest/DemoResourceAspTest.java:64-210／docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md:106-116）。Pad フラグと `patientVisit` 系のシナリオを追加し、CI で `mvn -f pom.server-modernized.xml test -Dtest=DemoResourceAspTest` を実行するアクションを登録。
+- 📌 次アクション: `ModuleModel` の import 追記と `bundle.setOrderName` 復活、ラボコメント仕様を legacy と揃える修正、および不足テスト/実行ログを Runbook へ反映。
+
 ## 2026-05-27 追記: セッション層ログの SLF4J 移行（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/session/` 配下のセッション Bean、`session/framework`、`security/`（FIDO/TOTP 含む）、`metrics/MeterRegistryProducer` の `java.util.logging` 呼び出しを `org.slf4j.Logger` ベースへ統一。ログレベル・メッセージ文面は既存実装を踏襲しつつ、クラス単位でロガーを取得する形に整理した。
 - ✅ `server-modernized/pom.xml` に `org.slf4j:slf4j-api:2.0.13`（provided）を追加し、コンパイル時に SLF4J API を解決できるようにした。WildFly 33 標準の `slf4j-jboss-logmanager` バインディングで自動的に JBoss LogManager へルーティングされるため、追加の運用設定は不要。
 - ℹ️ 監査ログや Micrometer 連携は SLF4J への移行後も既存のログカテゴリ名を維持する。`logging.properties` 側のカテゴリ指定を変更する必要はないが、WildFly コンソールで `org.slf4j` ロガーを有効化すると新メッセージを確認できる。
+
+## 2025-11-03 追記: DolphinResourceASP / JsonTouch 再点検（担当: Worker C）
+- 🔍 `server-modernized/src/main/java/open/dolphin/touch/DolphinResource.java:26-1488` と `DolphinResourceASP.java:25-1446` を確認し、legacy 実装のコピーであること・`System.err` ログ／施設 ID 突合・監査・キャッシュが未導入であることを再確認。`server-modernized/src/main/webapp/WEB-INF/web.xml:20-46` に `open.dolphin.touch.DolphinResourceASP` が登録されておらず RESTEasy から到達できないため、API パリティでは `[ ]` 継続とした。
+- 🔍 `JsonTouch` 系は `/jtouch`（touch）／`/10/adm/jtouch`（adm10）／`/20/adm/jtouch`（adm20）に分散しているが、ADM10 側の document/mkdocument が未実装なため Reverse Proxy で `/10/adm` prefix を除去する前提が必要。`JsonTouchResourceParityTest` は 7 ケースのみをカバーしており、document／interaction／stamp 系の証跡が不足。
+- 📝 `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` の DolphinResourceASP・JsonTouchResource 行を更新し、未登録・未テストのギャップを明記。`docs/server-modernization/phase2/domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md` と `docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md` に再点検メモを追記。
+- ⚠️ 次アクション: ① RESTEasy 登録＋エンドポイント露出の確認、② Touch 用キャッシュ／認可／監査実装、③ JsonTouch document/interaction/stamp 系のテスト整備と Reverse Proxy 手順化、④ 監査ログ・エラー応答フォーマットの統一。完了後に API パリティを `[x]` へ更新する。
+
+## 2025-11-03 追記: DolphinResourceASP 移植設計着手（担当: Worker C）
+- ✅ `docs/server-modernization/phase2/domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md` を作成し、旧 `/touch/*` 19 エンドポイントのレスポンス構造・認可ギャップ・キャッシュ要件を整理。Worker F（スタンプキャッシュ）／Worker E（Touch UI 例外統一）との連携タスクを明文化した。
+- 🔍 旧サーバー実装 (`server/src/main/java/open/dolphin/touch/DolphinResourceASP.java`) を精査し、`getProgressCource` など大容量レスポンスと `postDocument(2)` のデータ更新パスを特定。キャッシュ導入時に患者単位の無効化が必要なことを確認。
+- ⚠️ モダナイズ実装では `TouchResponseCache`・`TouchErrorResponse`・`TouchXmlWriter`（仮称）の新設、および施設 ID 整合チェック／UI 例外イベント連携を次ステップで実装する。Worker F からスタンプキャッシュ方針、Worker E からエラー payload 仕様を取得次第、本メモと Runbook を更新する。
+
+## 2025-11-03 追記: Admission/System 2FA API 移植検証（担当: Worker A）
+- ✅ `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` で `AdmissionResource` 28 件・`SystemResource` 5 件をすべて `◎ 移行済み` へ更新し、FIDO2/TOTP 系／carePlan 系の未チェック行を解消。
+- ✅ `server-modernized/src/main/java/open/dolphin/adm20/rest/AdmissionResource.java` に 2FA 失敗時の `*_FAILED` 監査ロギングと `status` フラグを追加し、`TotpHelper#verifyCurrentWindow` を ±90 秒ウィンドウへ拡張。
+- ✅ 新規ユニットテスト `AdmissionResourceFactor2Test` / `TotpHelperTest` / `TotpSecretProtectorTest` を追加し、2FA API と暗号化ユーティリティの互換性を検証可能にした（`mvn -f pom.server-modernized.xml test` で実行）。
+- ✅ 2025-11-03: `AdmissionResourceFactor2Test` に FIDO2/TOTP の成功・異常系カバレッジを追加（`startFidoRegistrationRecordsAuditOnSuccess` / `finishFidoRegistrationRecordsAuditOnNotFound` / `finishFidoAssertionRecordsAuditOnSecurityViolation` ほか計 8 ケース）。`API_PARITY_MATRIX.md` のメモと `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の手順 4-3 を更新。
+- ⚠️ ローカル環境に Maven バイナリが無いためテストコマンド実行は未完了。2025-11-03 時点でも `mvn -f pom.server-modernized.xml test` は `bash: mvn: command not found` で失敗。`mvn` が利用可能になり次第、上記テスト群を実行して Runbook の手順 4-3 を完了させる必要がある。
+
+## 2025-11-03 追記: Stamp / Letter 監査ログ整備（担当: Worker F）
+- ✅ `server-modernized/src/main/java/open/dolphin/rest/StampResource.java` に `AuditTrailService` 連携と 404 応答処理を実装。単体テスト `StampResourceTest`（削除成功／不存在／一括削除シナリオ）を追加し、監査ペイロードを検証できるようにした。
+- ✅ `server-modernized/src/main/java/open/dolphin/rest/LetterResource.java` に監査ログ記録と 404 応答処理を実装。取得・削除双方のテスト `LetterResourceTest` を作成し、`LETTER_DELETE` 監査アクションをカバー。
+- ✅ `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` と `docs/server-modernization/phase2/domains/STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md` を更新し、監査テスト実施状況と Runbook ID（STAMP-AUDIT-20251103-01 / LETTER-AUDIT-20251103-01 / ORCA-COMPAT-20251103-01）を明記。
+- 🔍 ORCA 連携 `PUT /orca/interaction` はソース比較で互換性を確認済み。ORCA テスト DB が未整備のため、実データ検証は Runbook ORCA-COMPAT-20251103-01 でオープン。
+- ⚠️ ローカル環境には Maven が存在せず、`mvn -f server-modernized/pom.xml test` が `bash: mvn: command not found` で失敗。CI でのテスト実行と `d_audit_event` 確認、スタンプキャッシュ連携試験は Pending。Runbook 検証ログにフォローアップを記載済み。
+
+## 2025-11-03 追記: DemoResourceASP JSON モダナイズ（担当: Worker B）
+- ✅ DemoResourceASP 専用の新 REST クラス `open.dolphin.rest.DemoResourceAsp` を実装し、`web.xml` の `resteasy.resources` に登録。共通 DTO `open.dolphin.rest.dto.DemoAspResponses` を整備して InfoModel → JSON 変換を統一。
+- ✅ ユニットテスト `DemoResourceAspTest` を追加し、ユーザー認証・患者/来院リスト・処方・カルテ本文・ラボ・診断・パッケージ API の JSON 形状を Mockito で検証（`mvn` 未導入につきローカル実行は Pending）。
+- ✅ `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` の DemoResourceASP 行を `◎ 移行済み` へ更新し、`docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md` に JSON 変換ルール・サンプルペイロード・pad フラグ扱いを追記。
+- 🔄 `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` へ DemoResourceAspTest 実行待ちのメモを追記予定。Maven セットアップ後に `DemoResourceAspTest` を含む `mvn -f pom.server-modernized.xml test` を実施し、Runbook テストログへ結果を反映する。
 
 ## 2025-11-04 追記: Jakarta Naming API 再適用（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/metrics/MeterRegistryProducer.java` と `open/orca/rest/ORCAConnection.java`（モダナイズ版）の `javax.naming.*` 参照を `jakarta.naming.InitialContext` / `NamingException` へ戻し、WildFly 33 の Jakarta EE 10 API と整合。
 - ℹ️ 旧サーバーモジュール（`server/`）は Java EE 7 / WildFly 10 前提のため `javax.naming` を維持し、Jakarta 化は実施しない方針を再確認。
 - ✅ `pom.server-modernized.xml` に JBoss Public Repository (`https://repository.jboss.org/nexus/content/groups/public-jboss/`) を登録しつつ、`jakarta.websocket` については Maven Central で取得できる `2.1.0` 系へ明示的に固定。WildFly BOM が要求する `*-jbossorg-2` 系は引き続きローカルからは取得できないためバージョンを上書きした。
 - ⚠️ `mvn -f pom.server-modernized.xml -pl server-modernized -am -DskipTests compile` は `jakarta.naming.InitialContext` を提供する Jakarta Naming API がリモートリポジトリ（JBoss Public Repository）経由で取得できず失敗。Jakarta EE 10 向け `jakarta.naming` の公開先が JBoss リポジトリのみである点と、リポジトリ側が 403 を返すため依存解決が進まない事象を確認した。
+
+## 2025-11-03 追記: REST API パリティマトリクス整備（担当: Codex）
+- ✅ `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` を新設し、旧サーバー OpenAPI とモダナイズ版インベントリを正規化パス＋HTTP メソッドで突合。1:1 対応 106 件・未移植 150 件・モダナイズ専用 13 件を算出した。
+- ✅ `docs/server-modernization/rest-api-modernization.md` にマトリクスへの参照を追加し、API 移植状況レビュー時の導線を整備。
+- ℹ️ 未移植の主要領域は 2FA 系 (`AdmissionResource`)、旧 ASP リソース群、`EHTResource`、`StampResource`、`PHRResource`。対応完了後はマトリクスの該当行を `◎` に更新する運用とする。
+
+## 2025-11-03 追記: EHTResource 監査ログ対応（担当: Worker D）
+- ✅ `docs/server-modernization/phase2/domains/EHT_SECURITY_AUDIT_CHECKLIST.md` を作成し、`/20/adm/eht/*` の現状棚卸し・セキュリティギャップ・法令準拠観点・外部連携テスト手順を整理。`docs/web-client/README.md` へリンクを追記。
+- ✅ `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java` に監査ログ記録処理を追加（メモ／アレルギー／診断／ドキュメントの POST/PUT/DELETE 成功時）、`SessionTraceManager` の traceId を監査詳細へ連携。
+- ✅ `ADM20_EHTServiceBean` を `@ApplicationScoped` + `@Transactional` 化し、Jakarta EE 10 の CDI ベーストランザクション境界へ移行。
+- ⚠️ ローカル環境に Maven が存在せず `mvn -pl server-modernized -am -DskipTests package` が実行できない。コンパイルテストは Maven 導入後に再実施する必要あり。
+
+## 2025-11-03 追記: 外部インターフェース互換ランブック整備（担当: Codex）
+- ✅ `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` を作成し、API パリティ確認・設定移行・Smoke テスト・切替手順を統合した運用ガイドを整理。
+- ✅ `docs/web-client/README.md` へランブックの導線を追加し、Web クライアント開発チームからも参照できるようにした。
+
+## 2025-11-03 追記: DemoResourceASP デモデータ移行仕様整理（担当: Codex）
+- ✅ `docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md` を新設し、旧 ASP 実装 15 エンドポイントのデータローディング仕様・モダナイズ側コンスタント差分・変換方針・QA テストケース・UX 影響を一括で整理。
+- ✅ `docs/web-client/README.md` に同資料の導線を追加し、フロントエンド担当が `ONE_SCREEN` ガイドと合わせて参照できるようにした。
+- 🔄 Worker F 連携タスク: スタンプ変換（`BundleDolphin`）の品目名・用法文言の整合確認を依頼。`getModule`/`getProgressCource` 実装差分レビュー待ち。
 
 ℹ️ 以下 2025-11-03 記録は `javax.naming` への一時移行履歴として保存。
 ## 2025-11-03 追記: Micrometer JNDI `javax.naming` 置換（担当: Codex）

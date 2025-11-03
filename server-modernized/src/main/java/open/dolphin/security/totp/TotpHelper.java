@@ -21,7 +21,8 @@ public final class TotpHelper {
     private static final int BACKUP_KEY_BYTES = 8;
     private static final int OTP_DIGITS = 6;
     private static final int TIME_STEP_SECONDS = 30;
-    private static final int DEFAULT_WINDOW = 1;
+    private static final int DEFAULT_PAST_WINDOWS = 3;
+    private static final int DEFAULT_FUTURE_WINDOWS = 3;
     private static final int OTP_MODULUS = (int) Math.pow(10, OTP_DIGITS);
     private static final String HMAC_ALGORITHM = "HmacSHA1";
     private static final SecureRandom RANDOM = new SecureRandom();
@@ -48,7 +49,7 @@ public final class TotpHelper {
     }
 
     public static boolean verifyCurrentWindow(String secret, int code) {
-        return verify(secret, code, DEFAULT_WINDOW, DEFAULT_WINDOW, Instant.now());
+        return verify(secret, code, DEFAULT_PAST_WINDOWS, DEFAULT_FUTURE_WINDOWS, Instant.now());
     }
 
     public static boolean verify(String secret, int code, int pastWindows, int futureWindows, Instant referenceTime) {

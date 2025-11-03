@@ -24,8 +24,14 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.inject.Inject;
@@ -43,7 +49,10 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.StreamingOutput;
 import open.dolphin.infomodel.AllergyModel;
+import open.dolphin.infomodel.AttachmentModel;
 import open.dolphin.infomodel.BundleDolphin;
+import open.dolphin.infomodel.ChartEventModel;
+import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.DrugInteractionModel;
 import open.dolphin.infomodel.IInfoModel;
@@ -51,18 +60,23 @@ import open.dolphin.infomodel.KarteNumber;
 import open.dolphin.infomodel.IStampTreeModel;
 import open.dolphin.infomodel.InfoModel;
 import open.dolphin.infomodel.InteractionCodeList;
+import open.dolphin.infomodel.LastDateCount;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.NLaboItem;
 import open.dolphin.infomodel.NLaboModule;
 import open.dolphin.infomodel.ObservationModel;
+import open.dolphin.infomodel.PatientFreeDocumentModel;
 import open.dolphin.infomodel.PatientMemoModel;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.StampModel;
+import open.dolphin.infomodel.VitalModel;
 import open.dolphin.session.ChartEventServiceBean;
 import open.dolphin.adm20.session.ADM20_EHTServiceBean;
 import open.dolphin.adm20.converter.IAllergyModel;
+import open.dolphin.adm20.converter.IAttachmentModel;
 import open.dolphin.adm20.converter.IBundleModule;
 import open.dolphin.adm20.converter.IDocument;
+import open.dolphin.adm20.converter.IDocument2;
 import open.dolphin.adm20.converter.IKarteNumber;
 import open.dolphin.adm20.converter.ILaboGraphItem;
 import open.dolphin.adm20.converter.ILaboValue;
@@ -70,14 +84,25 @@ import open.dolphin.adm20.converter.IOSHelper;
 import open.dolphin.adm20.converter.IPatientMemoModel;
 import open.dolphin.adm20.converter.IPatientModel;
 import open.dolphin.adm20.converter.IPatientVisitModel;
+import open.dolphin.adm20.converter.IPhysicalModel;
+import open.dolphin.adm20.converter.IFastDocInfo;
 import open.dolphin.adm20.converter.IProgressCourseModule30;
 import open.dolphin.adm20.converter.IRegisteredDiagnosis;
+import open.dolphin.adm20.converter.ILastDateCount;
 import open.dolphin.adm20.converter.NLaboModuleConverter;
+import open.dolphin.adm20.converter.ISendPackage;
+import open.dolphin.adm20.converter.ISendPackage2;
+import open.dolphin.adm20.converter.IVitalModel;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientVisitModel;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.session.framework.SessionTraceContext;
+import open.dolphin.session.framework.SessionTraceManager;
 import open.orca.rest.ORCAConnection;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import open.dolphin.session.KarteServiceBean;
 
 /**
  *
@@ -111,11 +136,17 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     @Inject
     private ADM20_EHTServiceBean ehtService;
     
-    //@Inject
-    //private KarteServiceBean karteService;
+    @Inject
+    private KarteServiceBean karteService;
     
     @Inject
     private ChartEventServiceBean eventServiceBean;
+
+    @Inject
+    private AuditTrailService auditTrailService;
+
+    @Inject
+    private SessionTraceManager sessionTraceManager;
     
     //@Inject
     //private AdmissionSessionBean admissionSessionBean;
@@ -194,6 +225,90 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     
 // ここへ Move
     @GET
+    @Path("/patient/pvt/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getPatientsByPvt(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String facilityId = getRemoteFacility(servletReq.getRemoteUser());
+                List<PatientModel> list = ehtService.getPatientsByPvtDate(facilityId, param);
+                List<IPatientModel> result = new ArrayList<>(list.size());
+                for (PatientModel model : list) {
+                    IPatientModel converted = new IPatientModel();
+                    converted.setModel(model);
+                    result.add(converted);
+                }
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, result);
+            }
+        };
+    }
+
+    @GET
+    @Path("/patient/documents/status")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getPatientsByTmpKarte() {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String facilityId = getRemoteFacility(servletReq.getRemoteUser());
+                List<PatientModel> list = ehtService.getTmpKarte(facilityId);
+                List<IPatientModel> result = new ArrayList<>(list.size());
+                for (PatientModel model : list) {
+                    IPatientModel converted = new IPatientModel();
+                    converted.setModel(model);
+                    result.add(converted);
+                }
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, result);
+            }
+        };
+    }
+
+    @GET
+    @Path("/lastDateCount/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getLastDateCount(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String[] params = param.split(",");
+                if (params.length < 3) {
+                    throw new WebApplicationException();
+                }
+                long ptPK = Long.parseLong(params[0]);
+                String fidPid = params[1] + ":" + params[2];
+                LastDateCount data = ehtService.getLastDateCount(ptPK, fidPid);
+                ILastDateCount converted = new ILastDateCount();
+                converted.fromModel(data);
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, converted);
+            }
+        };
+    }
+
+    @GET
+    @Path("/freedocument/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getPatientFreeDocument(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String fidPid = getFidPid(servletReq.getRemoteUser(), param);
+                PatientFreeDocumentModel model = ehtService.getPatientFreeDocument(fidPid);
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, model != null ? model.getComment() : "");
+            }
+        };
+    }
+
+    @GET
     @Path("/karteNumber/{param}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public StreamingOutput getEHTKarte(final @PathParam("param") String param) {
@@ -244,10 +359,19 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 ObjectMapper mapper = new ObjectMapper();
                 IPatientMemoModel model = mapper.readValue(json, IPatientMemoModel.class);
                 Long pk = ehtService.addPatientMemo(model.toModel());
-                List<Long> list = new ArrayList(1);
-                list.add(pk);
+                List<Long> memoIds = new ArrayList<>(1);
+                memoIds.add(pk);
+                Set<Long> karteIds = new HashSet<>(1);
+                if (model.getKarteBean() != null) {
+                    karteIds.add(model.getKarteBean().getId());
+                }
                 mapper = getSerializeMapper();
-                mapper.writeValue(os, list);
+                mapper.writeValue(os, memoIds);
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("createdMemoIds", memoIds);
+                details.put("payloadCount", memoIds.size());
+                recordAuditEvent("EHT_MEMO_CREATE", "/20/adm/eht/memo", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -266,6 +390,15 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 int cnt = ehtService.updatePatientMemo(model.toModel());
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+
+                Set<Long> karteIds = new HashSet<>(1);
+                if (model.getKarteBean() != null) {
+                    karteIds.add(model.getKarteBean().getId());
+                }
+                Map<String, Object> details = new HashMap<>();
+                details.put("updatedMemoIds", List.of(model.getId()));
+                details.put("affectedRows", cnt);
+                recordAuditEvent("EHT_MEMO_UPDATE", "/20/adm/eht/memo", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -284,6 +417,15 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 int cnt = ehtService.deletePatientMemo(model.toModel());
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+
+                Set<Long> karteIds = new HashSet<>(1);
+                if (model.getKarteBean() != null) {
+                    karteIds.add(model.getKarteBean().getId());
+                }
+                Map<String, Object> details = new HashMap<>();
+                details.put("deletedMemoIds", List.of(model.getId()));
+                details.put("affectedRows", cnt);
+                recordAuditEvent("EHT_MEMO_DELETE", "/20/adm/eht/memo", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -326,13 +468,22 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
                 
                 List<Long> pkList = new ArrayList(allergies.length);
+                Set<Long> karteIds = new HashSet<>();
                 for (IAllergyModel am : allergies) {
                     ObservationModel om = am.toObservationModel();
                     long pk = ehtService.addAllergy(om);
                     pkList.add(pk);
+                    if (am.getKartePK() > 0) {
+                        karteIds.add(am.getKartePK());
+                    }
                 }
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, pkList);
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("createdAllergyIds", pkList);
+                details.put("payloadCount", pkList.size());
+                recordAuditEvent("EHT_ALLERGY_CREATE", "/20/adm/eht/allergy", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -352,14 +503,29 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
                 
                 int cnt = 0;
+                List<Long> observationIds = new ArrayList<>(allergies.length);
+                Set<Long> karteIds = new HashSet<>();
                 for (IAllergyModel am : allergies) {
                     ObservationModel om = am.toObservationModel();
                     ehtService.updateAllergy(om);
                     cnt++;
+                    if (am.getObservationId() > 0) {
+                        observationIds.add(am.getObservationId());
+                    }
+                    if (am.getKartePK() > 0) {
+                        karteIds.add(am.getKartePK());
+                    }
                 }
 
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                if (!observationIds.isEmpty()) {
+                    details.put("updatedAllergyIds", observationIds);
+                }
+                details.put("affectedRows", cnt);
+                recordAuditEvent("EHT_ALLERGY_UPDATE", "/20/adm/eht/allergy", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -379,14 +545,29 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
 
                 int cnt = 0;
+                List<Long> observationIds = new ArrayList<>(allergies.length);
+                Set<Long> karteIds = new HashSet<>();
                 for (IAllergyModel am : allergies) {
                     ObservationModel om = am.toObservationModel();
                     ehtService.deleteAllergy(om);
                     cnt++;
+                    if (am.getObservationId() > 0) {
+                        observationIds.add(am.getObservationId());
+                    }
+                    if (am.getKartePK() > 0) {
+                        karteIds.add(am.getKartePK());
+                    }
                 }
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                if (!observationIds.isEmpty()) {
+                    details.put("deletedAllergyIds", observationIds);
+                }
+                details.put("affectedRows", cnt);
+                recordAuditEvent("EHT_ALLERGY_DELETE", "/20/adm/eht/allergy", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -434,15 +615,29 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
+                Set<Long> karteIds = new HashSet<>();
+                List<String> diagnosisCodes = new ArrayList<>(list.length);
                 for (IRegisteredDiagnosis ir : list) {
                     RegisteredDiagnosisModel model = ir.toModel();
                     ehtService.addDiagnosis(model);
                     cnt++;
+                    if (ir.getKarteBean() != null) {
+                        karteIds.add(ir.getKarteBean().getId());
+                    }
+                    if (ir.getDiagnosisCode() != null) {
+                        diagnosisCodes.add(ir.getDiagnosisCode());
+                    }
                 }
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
 
+                Map<String, Object> details = new HashMap<>();
+                if (!diagnosisCodes.isEmpty()) {
+                    details.put("diagnosisCodes", diagnosisCodes);
+                }
+                details.put("payloadCount", cnt);
+                recordAuditEvent("EHT_DIAGNOSIS_CREATE", "/20/adm/eht/diagnosis", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -461,14 +656,29 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
+                Set<Long> karteIds = new HashSet<>();
+                List<Long> diagnosisIds = new ArrayList<>(list.length);
                 for (IRegisteredDiagnosis ir : list) {
                     RegisteredDiagnosisModel model = ir.toModel();
                     ehtService.updateDiagnosis(model);
                     cnt++;
+                    if (ir.getKarteBean() != null) {
+                        karteIds.add(ir.getKarteBean().getId());
+                    }
+                    if (ir.getId() > 0) {
+                        diagnosisIds.add(ir.getId());
+                    }
                 }
                       
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                if (!diagnosisIds.isEmpty()) {
+                    details.put("updatedDiagnosisIds", diagnosisIds);
+                }
+                details.put("affectedRows", cnt);
+                recordAuditEvent("EHT_DIAGNOSIS_UPDATE", "/20/adm/eht/diagnosis", joinKarteIds(karteIds), details);
                 
             }
         };
@@ -488,14 +698,29 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                                 
                 int cnt = 0;
+                Set<Long> karteIds = new HashSet<>();
+                List<Long> diagnosisIds = new ArrayList<>(list.length);
                 for (IRegisteredDiagnosis ir : list) {
                     RegisteredDiagnosisModel model = ir.toModel();
                     ehtService.deleteDiagnosis(model);
                     cnt++;
+                    if (ir.getKarteBean() != null) {
+                        karteIds.add(ir.getKarteBean().getId());
+                    }
+                    if (ir.getId() > 0) {
+                        diagnosisIds.add(ir.getId());
+                    }
                 }
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                if (!diagnosisIds.isEmpty()) {
+                    details.put("deletedDiagnosisIds", diagnosisIds);
+                }
+                details.put("affectedRows", cnt);
+                recordAuditEvent("EHT_DIAGNOSIS_DELETE", "/20/adm/eht/diagnosis", joinKarteIds(karteIds), details);
             }
         };
     }
@@ -535,6 +760,74 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                
                 ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, ret);
+            }
+        };
+    }
+
+    @GET
+    @Path("/module/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getModule(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String[] params = param.split(",");
+                if (params.length < 4) {
+                    throw new WebApplicationException();
+                }
+                long patientPk = Long.parseLong(params[0]);
+                String entity = params[1];
+                int firstResult = Integer.parseInt(params[2]);
+                int maxResult = Integer.parseInt(params[3]);
+
+                List<ModuleModel> list = ehtService.getModules(patientPk, entity, firstResult, maxResult);
+                List<IBundleModule> result = new ArrayList<>(list.size());
+                for (ModuleModel module : list) {
+                    IBundleModule converted = new IBundleModule();
+                    converted.fromModel(module);
+                    if (module.getModel() instanceof BundleDolphin bundle) {
+                        converted.getModel().setOrderName(bundle.getOrderName());
+                    } else if (module.getModuleInfoBean() != null) {
+                        converted.getModel().setOrderName(module.getModuleInfoBean().getEntity());
+                    }
+                    result.add(converted);
+                }
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, result);
+            }
+        };
+    }
+
+    @GET
+    @Path("/module/last/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getLastModule(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String[] params = param.split(",");
+                if (params.length < 2) {
+                    throw new WebApplicationException();
+                }
+                long patientPk = Long.parseLong(params[0]);
+                String entity = params[1];
+
+                List<ModuleModel> list = ehtService.getLastModule(patientPk, entity);
+                List<IBundleModule> result = new ArrayList<>(list.size());
+                for (ModuleModel module : list) {
+                    IBundleModule converted = new IBundleModule();
+                    converted.fromModel(module);
+                    if (module.getModel() instanceof BundleDolphin bundle) {
+                        converted.getModel().setOrderName(bundle.getOrderName());
+                    } else if (module.getModuleInfoBean() != null) {
+                        converted.getModel().setOrderName(module.getModuleInfoBean().getEntity());
+                    }
+                    result.add(converted);
+                }
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, result);
             }
         };
     }
@@ -638,7 +931,29 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             }
         }; 
     }
-    
+
+    @GET
+    @Path("/docinfo/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getFastDocInfoList(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                long ptPK = Long.parseLong(param);
+                List<DocInfoModel> list = ehtService.getDocInfoList(ptPK);
+                List<IFastDocInfo> result = new ArrayList<>(list.size());
+                for (DocInfoModel model : list) {
+                    IFastDocInfo converted = new IFastDocInfo();
+                    converted.fromModel(model);
+                    result.add(converted);
+                }
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, result);
+            }
+        };
+    }
+
     @GET
     @Path("/document/{param}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -664,7 +979,136 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             }
         };
     }
-    
+
+    @GET
+    @Path("/document2/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getDocument2(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                long docPK = Long.parseLong(param);
+                DocumentModel doc = ehtService.getDocumentByPk(docPK);
+                doc.toDetuch();
+                IDocument2 converted = new IDocument2();
+                converted.fromModel(doc);
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, converted);
+            }
+        };
+    }
+
+    @GET
+    @Path("/attachment/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getAttachment(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                long id = Long.parseLong(param);
+                AttachmentModel attachment = ehtService.getAttachment(id);
+                IAttachmentModel converted = new IAttachmentModel();
+                if (attachment != null) {
+                    converted.fromModel(attachment);
+                }
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, converted);
+            }
+        };
+    }
+
+    @PUT
+    @Path("/sendClaim")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput sendPackage(final String json) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+
+                DocumentModel document = pkg.documentModel();
+                ChartEventModel chartEvent = pkg.chartEventModel();
+
+                if (document != null) {
+                    karteService.sendDocument(document);
+                }
+                if (chartEvent != null) {
+                    eventServiceBean.processChartEvent(chartEvent);
+                }
+
+                os.write(0);
+
+                Map<String, Object> details = new HashMap<>();
+                if (document != null) {
+                    if (document.getDocInfoModel() != null) {
+                        details.put("documentId", document.getDocInfoModel().getDocId());
+                    } else {
+                        details.put("documentPk", document.getId());
+                    }
+                    if (document.getKarteBean() != null) {
+                        details.put("karteId", document.getKarteBean().getId());
+                    }
+                }
+                if (chartEvent != null) {
+                    details.put("chartEventType", chartEvent.getEventType());
+                    details.put("chartEventFacility", chartEvent.getFacilityId());
+                }
+                recordAuditEvent("EHT_CLAIM_SEND", "/20/adm/eht/sendClaim", resolvePatientFromDocumentOrEvent(document, chartEvent), details);
+            }
+        };
+    }
+
+    @PUT
+    @Path("/sendClaim2")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput sendPackage2(final String json) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+
+                DocumentModel document = pkg.documentModel();
+                ChartEventModel chartEvent = pkg.chartEventModel();
+
+                if (document != null) {
+                    karteService.sendDocument(document);
+                }
+                if (chartEvent != null) {
+                    eventServiceBean.processChartEvent(chartEvent);
+                }
+
+                os.write(0);
+
+                Map<String, Object> details = new HashMap<>();
+                if (document != null) {
+                    if (document.getDocInfoModel() != null) {
+                        details.put("documentId", document.getDocInfoModel().getDocId());
+                    } else {
+                        details.put("documentPk", document.getId());
+                    }
+                    if (document.getKarteBean() != null) {
+                        details.put("karteId", document.getKarteBean().getId());
+                    }
+                }
+                if (chartEvent != null) {
+                    details.put("chartEventType", chartEvent.getEventType());
+                    details.put("chartEventFacility", chartEvent.getFacilityId());
+                }
+                recordAuditEvent("EHT_CLAIM_SEND2", "/20/adm/eht/sendClaim2", resolvePatientFromDocumentOrEvent(document, chartEvent), details);
+            }
+        };
+    }
+
     @DELETE
     @Path("/document")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -680,10 +1124,24 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 String[] pks = mapper.readValue(json, String[].class);
                 
                 long pk = Long.parseLong(pks[0]);
+                Long karteId = null;
+                try {
+                    DocumentModel document = ehtService.getDocumentByPk(pk);
+                    if (document != null && document.getKarteBean() != null) {
+                        karteId = document.getKarteBean().getId();
+                    }
+                } catch (Exception ignore) {
+                    // 監査用の参照が失敗しても削除処理は継続する
+                }
                 List<String> list = ehtService.deleteDocumentByPk(pk);
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, list);
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("deletedDocGroup", list);
+                details.put("requestedDocPk", pk);
+                recordAuditEvent("EHT_DOCUMENT_DELETE", "/20/adm/eht/document", karteId != null ? String.valueOf(karteId) : null, details);
             }
         };
     }
@@ -990,7 +1448,150 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
 
         return ret.toString();        
     }
-    
+
+    @GET
+    @Path("/vital/pat/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getPatVital(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                String fidPid = getFidPid(servletReq.getRemoteUser(), param);
+                List<VitalModel> list = ehtService.getPatVital(fidPid);
+                List<IVitalModel> result = new ArrayList<>(list.size());
+                for (VitalModel model : list) {
+                    IVitalModel converted = new IVitalModel();
+                    converted.fromModel(model);
+                    result.add(converted);
+                }
+                mapper = getSerializeMapper();
+                mapper.writeValue(os, result);
+            }
+        };
+    }
+
+    @POST
+    @Path("/vital")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput postVital(final String json) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                IVitalModel input = mapper.readValue(json, IVitalModel.class);
+                VitalModel model = input.toModel();
+                int cnt = ehtService.addVital(model);
+                mapper = getSerializeMapper();
+                mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("facilityPatId", input.getFacilityPatId());
+                details.put("vitalDate", input.getDate());
+                details.put("vitalTime", input.getTime());
+                details.put("vitalId", model.getId());
+                recordAuditEvent("EHT_VITAL_CREATE", "/20/adm/eht/vital", extractPatientFromFidPid(input.getFacilityPatId()), details);
+            }
+        };
+    }
+
+    @DELETE
+    @Path("/vital/id/{param}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput removeVital(final String json) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String vitalId = json.replace("\"", "").trim();
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                int cnt = ehtService.removeVital(vitalId);
+                mapper = getSerializeMapper();
+                mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("vitalId", vitalId);
+                recordAuditEvent("EHT_VITAL_DELETE", "/20/adm/eht/vital", null, details);
+            }
+        };
+    }
+
+    @GET
+    @Path("/physical/karteid/{param}")
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput getKartePhysical(@PathParam("param") String param) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                long karteId = Long.parseLong(param);
+                List<IPhysicalModel> list = ehtService.getPhysicals(karteId);
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, list);
+            }
+        };
+    }
+
+    @POST
+    @Path("/physical")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput postPhysical(final String json) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                IPhysicalModel model = mapper.readValue(json, IPhysicalModel.class);
+                List<ObservationModel> observations = model.toObservationModel();
+                List<Long> ids = ehtService.addObservations(observations);
+                mapper = getSerializeMapper();
+                mapper.writeValue(os, String.valueOf(ids != null ? ids.size() : 0));
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("observationIds", ids);
+                Long karteId = model.getKartePK() > 0 ? model.getKartePK() : null;
+                if (karteId != null) {
+                    details.put("karteId", karteId);
+                }
+                recordAuditEvent("EHT_PHYSICAL_CREATE", "/20/adm/eht/physical", karteId != null ? String.valueOf(karteId) : null, details);
+            }
+        };
+    }
+
+    @DELETE
+    @Path("/physical/id/{param}")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput removePhysical(final String json) {
+
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                String[] tokens = json.split(CAMMA);
+                List<Long> ids = new ArrayList<>(tokens.length);
+                for (String token : tokens) {
+                    ids.add(Long.parseLong(token.trim()));
+                }
+                int cnt = ehtService.removeObservations(ids);
+                ObjectMapper mapper = getSerializeMapper();
+                mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                details.put("observationIds", ids);
+                recordAuditEvent("EHT_PHYSICAL_DELETE", "/20/adm/eht/physical", null, details);
+            }
+        };
+    }
+
     // サーバー情報の取得
     @GET
     @Path("/claim/conn")
@@ -1058,6 +1659,102 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             ex.printStackTrace(System.err);
         }
         return config.getProperty(item, "");
+    }
+
+    private String resolvePatientFromDocumentOrEvent(DocumentModel document, ChartEventModel chartEvent) {
+        if (document != null && document.getKarteBean() != null && document.getKarteBean().getPatientModel() != null) {
+            return String.valueOf(document.getKarteBean().getPatientModel().getId());
+        }
+        if (chartEvent != null) {
+            if (chartEvent.getPatientModel() != null) {
+                return String.valueOf(chartEvent.getPatientModel().getId());
+            }
+            if (chartEvent.getPtPk() > 0) {
+                return String.valueOf(chartEvent.getPtPk());
+            }
+        }
+        return null;
+    }
+
+    private String extractPatientFromFidPid(String fidPid) {
+        if (fidPid == null || fidPid.isBlank()) {
+            return null;
+        }
+        int index = fidPid.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (index < 0 || index + 1 >= fidPid.length()) {
+            return null;
+        }
+        return fidPid.substring(index + 1);
+    }
+
+    private void recordAuditEvent(String action, String resource, String patientId, Map<String, Object> extraDetails) {
+        if (auditTrailService == null) {
+            return;
+        }
+        Map<String, Object> details = prepareAuditDetails(extraDetails);
+        AuditEventPayload payload = new AuditEventPayload();
+        String actorId = resolveActorId();
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(actorId);
+        if (servletReq != null && servletReq.isUserInRole("ADMIN")) {
+            payload.setActorRole("ADMIN");
+        }
+        payload.setAction(action);
+        payload.setResource(resource);
+        payload.setPatientId(patientId);
+        if (servletReq != null) {
+            payload.setIpAddress(servletReq.getRemoteAddr());
+            payload.setUserAgent(servletReq.getHeader("User-Agent"));
+            payload.setRequestId(Optional.ofNullable(servletReq.getHeader("X-Request-Id")).orElse(UUID.randomUUID().toString()));
+        } else {
+            payload.setRequestId(UUID.randomUUID().toString());
+        }
+        payload.setDetails(details);
+        auditTrailService.record(payload);
+    }
+
+    private Map<String, Object> prepareAuditDetails(Map<String, Object> extraDetails) {
+        Map<String, Object> details = new HashMap<>();
+        if (extraDetails != null && !extraDetails.isEmpty()) {
+            details.putAll(extraDetails);
+        }
+        SessionTraceContext context = sessionTraceManager != null ? sessionTraceManager.current() : null;
+        if (context != null) {
+            details.putIfAbsent("traceId", context.getTraceId());
+            details.putIfAbsent("sessionOperation", context.getOperation());
+        }
+        String remoteUser = servletReq != null ? servletReq.getRemoteUser() : null;
+        if (remoteUser != null && !remoteUser.isEmpty()) {
+            details.putIfAbsent("facilityId", getRemoteFacility(remoteUser));
+        }
+        return details;
+    }
+
+    private String resolveActorId() {
+        if (servletReq == null) {
+            return "anonymous";
+        }
+        String remoteUser = servletReq.getRemoteUser();
+        return remoteUser != null ? remoteUser : "anonymous";
+    }
+
+    private String joinKarteIds(Set<Long> karteIds) {
+        if (karteIds == null || karteIds.isEmpty()) {
+            return null;
+        }
+        StringBuilder builder = new StringBuilder();
+        boolean first = true;
+        for (Long id : karteIds) {
+            if (id == null) {
+                continue;
+            }
+            if (!first) {
+                builder.append(',');
+            }
+            builder.append(id);
+            first = false;
+        }
+        return builder.length() == 0 ? null : builder.toString();
     }
      
     // srycdのListからカンマ区切りの文字列を作る

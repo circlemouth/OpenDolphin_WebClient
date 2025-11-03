@@ -4,27 +4,17 @@ import java.beans.XMLDecoder;
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringReader;
-import java.io.UnsupportedEncodingException;
 import java.sql.Connection;
-import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
 import java.util.List;
-import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -33,22 +23,16 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.StreamingOutput;
 import open.dolphin.adm10.converter.IBundleModule;
 import open.dolphin.adm10.converter.IOSHelper;
+import open.dolphin.converter.StringListConverter;
 import open.dolphin.converter.UserModelConverter;
-import open.dolphin.infomodel.ChartEventModel;
-import open.dolphin.infomodel.DiagnosisSendWrapper;
-import open.dolphin.infomodel.DocInfoModel;
-import open.dolphin.infomodel.DocumentModel;
-import open.dolphin.infomodel.PVTHealthInsuranceModel;
-import open.dolphin.infomodel.PVTPublicInsuranceItemModel;
 import open.dolphin.infomodel.PatientList;
 import open.dolphin.infomodel.PatientModel;
-import open.dolphin.infomodel.UserModel;
+import open.dolphin.infomodel.StringList;
 import open.dolphin.infomodel.VisitPackage;
 import open.dolphin.adm10.converter.IPatientList;
 import open.dolphin.adm10.converter.ISendPackage;
 import open.dolphin.adm10.converter.IVisitPackage;
 import open.dolphin.adm10.session.ADM10_EHTServiceBean;
-import open.dolphin.adm10.session.ADM10_IPhoneServiceBean;
 import open.dolphin.infomodel.BundleDolphin;
 import open.dolphin.infomodel.DrugInteractionModel;
 import open.dolphin.infomodel.IInfoModel;
@@ -57,8 +41,7 @@ import open.dolphin.infomodel.InfoModel;
 import open.dolphin.infomodel.InteractionCodeList;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.StampModel;
-import open.dolphin.session.ChartEventServiceBean;
-import open.dolphin.session.KarteServiceBean;
+import open.dolphin.touch.JsonTouchSharedService;
 import open.orca.rest.ORCAConnection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -69,20 +52,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Path("/10/adm/jtouch")
 public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     
-    private static final String QUERY_FACILITYID_BY_1001
-            ="select kanritbl from tbl_syskanri where kanricd='1001'";
-    
     @Inject
-    private ADM10_IPhoneServiceBean iPhoneService;
-    
+    private JsonTouchSharedService sharedService;
+
     @Inject
     private ADM10_EHTServiceBean ehtService;
-    
-    @Inject
-    private KarteServiceBean karteService;
-    
-    @Inject
-    private ChartEventServiceBean chartService;
     
 //minagawa^ 2013/08/29
     //@Resource(mappedName="java:jboss/datasources/OrcaDS")
@@ -93,15 +67,19 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/user/{uid}")
     @Produces(MediaType.APPLICATION_JSON)
     public UserModelConverter getUserById(@PathParam("uid") String uid) {
-        
-        // 検索
-        UserModel user = iPhoneService.getUserById(uid);
-        
-        // Converter
-        UserModelConverter conv = new UserModelConverter();
-        conv.setModel(user);
-        
-        return conv;
+        return sharedService.getUserById(uid);
+    }
+
+    @GET
+    @Path("/patient/{pid}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public open.dolphin.adm10.converter.IPatientModel getPatientById(@Context HttpServletRequest servletReq, @PathParam("pid") String pid) {
+        String fid = getRemoteFacility(servletReq.getRemoteUser());
+        JsonTouchSharedService.PatientModelSnapshot snapshot = sharedService.getPatientSnapshot(fid, pid);
+        open.dolphin.adm10.converter.IPatientModel model = new open.dolphin.adm10.converter.IPatientModel();
+        model.setModel(snapshot.getPatient());
+        model.setKartePK(snapshot.getKartePk());
+        return model;
     }
     
     @GET
@@ -119,31 +97,39 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         int firstResult = params.length==3 ? Integer.parseInt(params[1]) : 0;
         int maxResult = params.length==3 ? Integer.parseInt(params[2]) :100;
 
-        List<PatientModel> list;
-
-        // ひらがなで始まっている場合はカナに変換する
-        if (KanjiHelper.isHiragana(name.charAt(0))) {
-            name = KanjiHelper.hiraganaToKatakana(name);
-        }
-
-        if (KanjiHelper.isKatakana(name.charAt(0))) {
-            list = iPhoneService.getPatientsByKana(fid, name, firstResult, maxResult);
-
-        } else {
-            // 漢字で検索
-            list = iPhoneService.getPatientsByName(fid, name, firstResult, maxResult);
-        }
-        
-        //System.err.println(list.size());
+        List<PatientModel> list = sharedService.getPatientsByNameOrId(fid, name, firstResult, maxResult);
 
         PatientList patients = new PatientList();
         patients.setList(list);
-        IPatientList ipatients = new IPatientList();
-        ipatients.setModel(patients);
+        IPatientList response = new IPatientList();
+        response.setModel(patients);
+        return response;
+    }
 
-        return ipatients;
-    }  
-    
+    @GET
+    @Path("/patients/count")
+    @Produces(MediaType.TEXT_PLAIN)
+    public String getPatientCount(@Context HttpServletRequest servletReq) {
+        String fid = getRemoteFacility(servletReq.getRemoteUser());
+        return String.valueOf(sharedService.countPatients(fid));
+    }
+
+    @GET
+    @Path("/patients/dump/kana/{param}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public StringListConverter getPatientsWithKana(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
+        String fid = getRemoteFacility(servletReq.getRemoteUser());
+        String[] params = param.split(",");
+        int first = Integer.parseInt(params[0]);
+        int max = Integer.parseInt(params[1]);
+        List<String> kanaList = sharedService.getPatientsWithKana(fid, first, max);
+        StringList stringList = new StringList();
+        stringList.setList(kanaList);
+        StringListConverter converter = new StringListConverter();
+        converter.setModel(stringList);
+        return converter;
+    }
+
     @GET
     @Path("/visitpackage/{param}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -157,20 +143,9 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         int mode = Integer.parseInt(params[3]);
         
         // VisitTouchでカルテ作成に必要なwrapperオブジェクト
-        VisitPackage visit = iPhoneService.getVisitPackage(pvtPK, patientPK, docPK, mode);
-        
-        if (visit.getDocumenModel()!=null) {
-            visit.getDocumenModel().toDetuch();
-        }
-        
-        // 保健医療機関コードとJMARI番号
-        String number = getFacilityCodeBy1001();
-        visit.setNumber(number);
-        
-        // Converter
+        VisitPackage visit = sharedService.getVisitPackage(pvtPK, patientPK, docPK, mode);
         IVisitPackage conv = new IVisitPackage();
         conv.setModel(visit);
-        
         return conv;
     }
     
@@ -185,140 +160,14 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         ObjectMapper mapper = new ObjectMapper();
         ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
         
-        long retPk = 0L;
-        
-        // カルテ文書
-        DocumentModel model = pkg.documentModel();
-        if (model!=null) {
- //minagawa^ VisitTouch 公費保険不具合        
-            DocInfoModel docInfo = model.getDocInfoModel();
-            PVTHealthInsuranceModel pvtIns = docInfo.getPVTHealthInsuranceModel();
-            if (pvtIns!=null) {
-                PVTPublicInsuranceItemModel[] arr;
-                arr = pvtIns.getPVTPublicInsuranceItem();
-                if (arr!=null && arr.length>0) {
-                    List<PVTPublicInsuranceItemModel> list = new ArrayList(arr.length);
-                    list.addAll(Arrays.asList(arr));
-                    pvtIns.setPublicItems(list);
-                }   
-            }
-//minagawa$      
-            retPk = karteService.addDocument(model);
-        }
-        
-        // 病名Wrapper
-        DiagnosisSendWrapper wrapper = pkg.diagnosisSendWrapperModel();
-        if (wrapper!=null) {
-            karteService.postPutSendDiagnosis(wrapper);
-        }
-        
-        // 削除病名
-        List<String> deleted = pkg.deletedDiagnsis();
-        if (deleted!=null) {
-            List<Long> list = new ArrayList(deleted.size());
-            for (String str : deleted) {
-                list.add(Long.parseLong(str));
-            }
-            karteService.removeDiagnosis(list);
-        }
-        
-        // Status更新
-        ChartEventModel cvt = pkg.chartEventModel();
-        if (cvt!=null) {
-            chartService.processChartEvent(cvt);
-        }
-        
+        long retPk = sharedService.processSendPackageElements(
+                pkg != null ? pkg.documentModel() : null,
+                pkg != null ? pkg.diagnosisSendWrapperModel() : null,
+                pkg != null ? pkg.deletedDiagnsis() : null,
+                pkg != null ? pkg.chartEventModel() : null);
         return String.valueOf(retPk);
     }
     
-    /**
-     * 保健医療機関コードとJMARIコードを取得する。
-     * @return 
-     */
-    private String getFacilityCodeBy1001() {
-       
-//s.oh^ 2013/10/17 ローカルORCA対応
-        try {
-            // custom.properties から 保健医療機関コードとJMARIコードを読む
-            Properties config = new Properties();
-            // コンフィグファイルを読み込む
-            StringBuilder sb = new StringBuilder();
-            sb.append(System.getProperty("jboss.home.dir"));
-            sb.append(File.separator);
-            sb.append("custom.properties");
-            File f = new File(sb.toString());
-            FileInputStream fin = new FileInputStream(f);
-            try (InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect")) {
-                config.load(r);
-            }
-            // JMARI code
-            String jmari = config.getProperty("jamri.code");
-            String hcfacility = config.getProperty("healthcarefacility.code");
-            if(jmari != null && jmari.length() == 12 && hcfacility != null && hcfacility.length() == 10) {
-                StringBuilder ret = new StringBuilder();
-                ret.append(hcfacility);
-                ret.append("JPN");
-                ret.append(jmari);
-                return ret.toString();
-            }
-        } catch (FileNotFoundException ex) {
-            Logger.getLogger(JsonTouchResource.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(JsonTouchResource.class.getName()).log(Level.SEVERE, null, ex);
-        } catch (IOException ex) {
-            Logger.getLogger(JsonTouchResource.class.getName()).log(Level.SEVERE, null, ex);
-        }
-//s.oh$
-        // SQL 文
-        StringBuilder buf = new StringBuilder();
-        buf.append(QUERY_FACILITYID_BY_1001);
-        String sql = buf.toString();
-
-        Connection con = null;
-        PreparedStatement ps;
-        
-        StringBuilder ret = new StringBuilder();
-
-        try {
-//minagawa^ 2013/08/29
-            //con = ds.getConnection();
-            con = ORCAConnection.getInstance().getConnection();
-//minagawa$
-            ps = con.prepareStatement(sql);
-
-            try (ResultSet rs = ps.executeQuery()) {
-                if (rs.next()) {
-                    
-                    String line = rs.getString(1);
-                    
-                    // 保険医療機関コード 10桁
-                    ret.append(line.substring(0, 10));
-                    
-                    // JMARIコード JPN+12桁 (total 15)
-                    int index = line.indexOf("JPN");
-                    if (index>0) {
-                        ret.append(line.substring(index, index+15));
-                    }
-                }
-            }
-            ps.close();
-            con.close();
-            con = null;
-
-        } catch (Exception e) {
-            e.printStackTrace(System.err);
-
-        } finally {
-            if (con != null) {
-                try {
-                    con.close();
-                } catch (Exception e) {
-                }
-            }
-        }
-
-        return ret.toString();        
-    }
 ////minagawa^    
 //    private void log(String msg) {
 //        Logger.getLogger("open.dolphin").info(msg);

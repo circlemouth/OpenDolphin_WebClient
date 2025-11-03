@@ -1,0 +1,12 @@
+<!DOCTYPE html>
+<html lang="$context.locale.language">
+<head>
+  <meta charset="UTF-8" />
+  <title>$context.documentTitle</title>
+  <style>
+    body { font-family: 'HeiseiKakuGo-W5', 'Noto Sans JP', 'Hiragino Sans', sans-serif; font-size: 12pt; }
+    h1 { font-size: 16pt; margin-bottom: 0.5rem; }
+  </style>
+</head>
+<body>
+<h1>$context.documentTitle</h1>

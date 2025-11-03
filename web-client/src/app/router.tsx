@@ -19,7 +19,7 @@ export const createAppRouter = () =>
       <Route>
         <Route path="/login" element={<LoginPage />} />
         <Route path="/" element={<RequireAuth><AppShell /></RequireAuth>}>
-          <Route index element={<Navigate to="/patients" replace />} />
+          <Route index element={<Navigate to="/reception" replace />} />
           <Route
             path="patients"
             element={

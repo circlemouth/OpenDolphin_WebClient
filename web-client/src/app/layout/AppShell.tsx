@@ -25,8 +25,7 @@ const SkipLink = styled.a`
 
 const Shell = styled.div`
   display: grid;
-  grid-template-rows: ${({ theme }) => theme.layout.headerHeight} 1fr ${({ theme }) =>
-        theme.layout.footerHeight};
+  grid-template-rows: ${({ theme }) => theme.layout.headerHeight} 1fr;
   min-height: 100dvh;
   color: ${({ theme }) => theme.palette.text};
 `;
@@ -95,12 +94,8 @@ const Body = styled.div`
   margin: 0 auto;
   box-sizing: border-box;
   /* layout tokens drive main viewport height for nested scroll containers */
-  --app-shell-main-height: calc(
-    100dvh - ${({ theme }) => theme.layout.headerHeight} - ${({ theme }) => theme.layout.footerHeight}
-  );
-  height: calc(
-    100vh - ${({ theme }) => theme.layout.headerHeight} - ${({ theme }) => theme.layout.footerHeight}
-  );
+  --app-shell-main-height: calc(100dvh - ${({ theme }) => theme.layout.headerHeight});
+  height: calc(100vh - ${({ theme }) => theme.layout.headerHeight});
   height: var(--app-shell-main-height);
   min-height: 0;
   overflow: hidden;
@@ -250,16 +245,6 @@ const Sidebar = styled.aside`
   overflow: auto;
 `;
 
-const Footer = styled.footer`
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: ${({ theme }) => theme.palette.surface};
-  color: ${({ theme }) => theme.palette.textMuted};
-  font-size: ${({ theme }) => theme.typography.caption};
-  border-top: 1px solid ${({ theme }) => theme.palette.border};
-`;
-
 export const AppShell = () => {
   const navigate = useNavigate();
   const { session, logout, hasRole } = useAuth();
@@ -358,11 +343,11 @@ export const AppShell = () => {
 
           <Navigation aria-label="主要ナビゲーション">
             <NavList>
-              <NavItem to="/patients">
-                患者一覧
-              </NavItem>
               <NavItem to="/reception">
                 受付一覧
+              </NavItem>
+              <NavItem to="/patients">
+                患者一覧
               </NavItem>
               <NavItem to="/facility-schedule">
                 施設スケジュール
@@ -442,8 +427,6 @@ export const AppShell = () => {
             </ContentRegion>
           </Body>
         </SidebarContext.Provider>
-
-        <Footer>© {new Date().getFullYear()} OpenDolphin</Footer>
       </Shell>
     </Fragment>
   );

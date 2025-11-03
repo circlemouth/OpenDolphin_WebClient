@@ -8,6 +8,8 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`architecture/REPOSITORY_OVERVIEW.md`](architecture/REPOSITORY_OVERVIEW.md): リポジトリ構成と各モジュールの役割。
 - [`architecture/WEB_CLIENT_REQUIREMENTS.md`](architecture/WEB_CLIENT_REQUIREMENTS.md): 機能・非機能・セキュリティ要件。
 - [`architecture/REST_API_INVENTORY.md`](architecture/REST_API_INVENTORY.md): Web クライアントが利用する REST API 一覧と留意点。
+- [`../server-modernization/MODERNIZED_REST_API_INVENTORY.md`](../server-modernization/MODERNIZED_REST_API_INVENTORY.md): モダナイズ版 REST API インベントリ（2025-11-03 更新: AdmissionResource 2FA、Stamp/Letter 監査ログ対応、`PUT /orca/interaction` のパリティ記述を反映）。
+- [`../server/LEGACY_REST_API_INVENTORY.md`](../server/LEGACY_REST_API_INVENTORY.md): 旧サーバーの REST エンドポイントを網羅した参照表。
 - [`architecture/SERVER_MODERNIZATION_PLAN.md`](architecture/SERVER_MODERNIZATION_PLAN.md): 既存サーバー刷新・連携の将来計画。
 - [`../server-modernization/legacy-server-modernization-checklist.md`](../server-modernization/legacy-server-modernization-checklist.md): 旧サーバー仕様サマリとモダナイズ実装チェックリスト。
 - [`../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md`](../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md): 永続化層モダナイズ完了報告と移行手順。
@@ -19,6 +21,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`process/SWING_PARITY_CHECKLIST.md`](process/SWING_PARITY_CHECKLIST.md): Web とオンプレ（Swing）機能差分の確認チェックリスト。
 - [`process/API_UI_GAP_ANALYSIS.md`](process/API_UI_GAP_ANALYSIS.md): 未整備 API と UI の対応状況・実装優先度。
 - [`process/SECURITY_AND_QUALITY_IMPROVEMENTS.md`](process/SECURITY_AND_QUALITY_IMPROVEMENTS.md): セキュリティ/品質改善タスクのサマリと監査ポリシー。
+- `docs/server-modernization/security/3_7-security-compliance.md`: Phase 3.7 セキュリティ・コンプライアンス実装まとめ（2025-11-03 更新: 2FA 監査ログ `status` フラグと AES キー要件見直し）。
 - `docs/server-modernization/phase2/README.md`: サーバーモダナイズ Phase 2 のハンドブック。ディレクトリ構成と着手手順を確認すること。
 - `docs/server-modernization/phase2/foundation/JAKARTA_EE10_GAP_LIST.md`: Jakarta EE 10 への移行ギャップと優先課題の一覧。サーバーモダナイズ作業前に必読。
 - `docs/server-modernization/phase2/foundation/DEPENDENCY_UPDATE_PLAN.md`: 依存ライブラリ更新計画とライセンス確認メモ。BOM 更新時はこの資料に準拠すること。
@@ -26,9 +29,15 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - `docs/server-modernization/phase2/domains/AUTH_SECURITY_COMPARISON.md`: 旧サーバーとモダナイズ版の認証／MFA／監査実装比較と Jakarta EE 10 影響・推奨アクション（2025-11-02 追記）。
 - `docs/server-modernization/phase2/domains/RESERVATION_BATCH_MIGRATION_NOTES.md`: 予約・通知・バッチ機能の Jakarta EE 10 化影響と依存ギャップ整理（2025-11-02 更新）。
 - `docs/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md`: JMS 設定ギャップと Worker 0 向けアクションメモ。
+- `docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md`: JsonTouch/PHR/PVT 互換性確認と PHR 非同期ジョブ状態管理・Touch SSE 運用手順（2025-11-03 追加）。
 - `docs/server-modernization/phase2/domains/EXTERNAL_INTEGRATION_JAKARTA_STATUS.md`: 外部連携（ORCA/HL7/Plivo/WebAuthn 等）の旧 API・依存差分とライセンス対応を整理したギャップリスト。
 - `docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md`: 患者基本情報・カルテ閲覧系の `javax.*` 残存状況、レスポンスモデル比較、Micrometer 置換など Jakarta EE 10 移行時の影響整理。閲覧 API 改修時は合わせて参照。
+- `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`: 旧サーバーとモダナイズ版の全 REST API を 1:1 で比較したパリティマトリクス（2025-11-03 再集計: JsonTouch 16 件・PHR 11 件・`DELETE /pvt2/{pvtPK}` の証跡反映と集計サマリ 213 件対応/43 件未整備へ更新）。
+- `docs/server-modernization/phase2/domains/STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md`: Stamp/Letter/MML/ORCA の移行計画、監査強化方針、整合テスト計画（2025-11-03 更新: Stamp/Letter 監査ログ実装・ORCA 相互作用検証タスクを追記）。
+- `docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md`: DemoResourceASP 15 エンドポイントのデモデータ移行仕様・マッピング・QA テストケース整理（2025-11-03 再点検: コンパイルエラー/レスポンス差分/テスト未実行の課題を追記）。
+- `docs/server-modernization/phase2/domains/EHT_SECURITY_AUDIT_CHECKLIST.md`: EHTResource のセキュリティ／監査要件整理、トランザクション境界方針、外部連携テスト観点（2025-11-03 追加）。
 - `docs/server-modernization/phase2/operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md`: WildFly 33 / Micrometer 移行に伴うログ・監査・ジョブ管理比較と運用リスク整理（2025-11-02 更新）。
+- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`: 外部システムから見た旧新サーバー互換を確保する切替/検証ランブック（2025-11-03 更新: JsonTouch/PHR/PVT2 パリティ検証ログを追加し、`/dolphin` 系 5 件のテスト未整備課題を整理）。
 - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`: Micrometer サブシステム設定・Prometheus/Grafana 整備・監査突合手順（2025-11-02 更新）。
 - `docs/server-modernization/phase2/domains/KARTE_ORDER_JAKARTA_STATUS.md`: カルテ記載・スタンプ/オーダ系 CRUD の Jakarta EE 10 移行状況と未移植課題。CLAIM 送信やドラフト保存を触る際は必読。
 - `docs/server-modernization/security/ELYTRON_INTEGRATION_PLAN.md`: WildFly Elytron / Jakarta Security 連携方針と Trace ID 運用（2025-11-02 新設）。
@@ -47,6 +56,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`ux/KARTE_SCREEN_IMPLEMENTATION.md`](ux/KARTE_SCREEN_IMPLEMENTATION.md): 最新カルテ画面の構造・ショートカット・レスポンシブ仕様。
 
 - [`operations/RECEPTION_WEB_CLIENT_MANUAL.md`](operations/RECEPTION_WEB_CLIENT_MANUAL.md): 受付担当者向け研修計画と運用手順。
+- [`operations/RELEASE_NOTES_DRAFT.md`](operations/RELEASE_NOTES_DRAFT.md): リリース判定用の文書系差分・検証結果の草案（2025-11-03 新設: Worker F）。
 - [`operations/LOCAL_BACKEND_DOCKER.md`](operations/LOCAL_BACKEND_DOCKER.md): 既存サーバーを Docker Compose で起動する手順。2025-11-02 (Codex) 初期施設 ID・管理者/医師アカウントとテスト患者 `WEB1001`〜`WEB1010` の投入手順を整理。2025-11-03 (Codex) Worker0/1 修正後の Maven/Docker ビルド検証ログと再現手順を追加。
 - [`operations/CAREMAP_ATTACHMENT_MIGRATION.md`](operations/CAREMAP_ATTACHMENT_MIGRATION.md): CareMap 添付移行と image-browser 設定のガイド。
 - [`operations/TEST_SERVER_DEPLOY.md`](operations/TEST_SERVER_DEPLOY.md): テスト環境へのデプロイとアカウント発行手順。2025-11-02 (Codex) Docker Compose 由来の初期アカウント情報を冒頭に整理。
@@ -69,7 +79,9 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - 参考資料（PDF / 画像など）は `docs/` 配下の適切なカテゴリに格納し、必ず本ファイルから辿れるようにする。
 
 ## 直近更新履歴
-- 2025-11-03 (担当: Codex): 受付患者検索カードを4入力欄によるAND検索に刷新し、条件クリアボタンを追加。仕様概要を `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記。
+- 2025-11-03 (担当: Codex): API パリティ再集計で JsonTouch 16 件・PHR 11 件・`/pvt2/{pvtPK}` DELETE を `[ ] / △ 要証跡` に差し戻し、`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md` を更新。未解決タスクと Runbook 参照先を整理。
+- 2025-11-03 (担当: Codex): 受付患者検索カードを4入力欄によるAND検索に刷新し、条件クリアボタンと独立した新規患者登録ボタンを追加。仕様概要を `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記。
+- 2025-11-03 (担当: Codex): Web クライアントの初期表示を「受付一覧」へ切り替え、サイドバーで患者情報を保存した直後に患者 ID 検索が自動反映されるよう受付画面を更新。詳細は `ux/KARTE_SCREEN_IMPLEMENTATION.md` と `features/RECEPTION_SCHEDULE_AND_SUMMARY.md` を参照。
 - 2025-11-03 (担当: Codex): Worker0/1 修正後の Maven / Docker ビルド検証結果を `docs/server-modernization/phase2/PHASE2_PROGRESS.md` と `operations/LOCAL_BACKEND_DOCKER.md` に追記し、未解決のコンパイルエラーと再現手順を整理。
 - 2025-11-03 (担当: Codex): WildFly プロファイルを `standalone-full.xml` 運用へ切り替え、ActiveMQ/JMS 認証確認手順を追加。詳細は `operations/TEST_SERVER_DEPLOY.md` と `operations/LOCAL_BACKEND_DOCKER.md#activemqjms-確認手順2025-11-03-更新` を参照。
 - 2025-11-01 (担当: Codex): OrderConsole アイコンバー再構成とモーダル挙動の進捗を `docs/server-modernization/phase2/PHASE2_PROGRESS.md#2025-11-01-進捗-t3-orderconsole-アイコンバー実装担当-codex` に記録。MSW スクリーンショットは既存ビルドエラー解消後に `docs/server-modernization/phase2/assets/order-console-1366.png` へ追加予定。

@@ -1,0 +1,2 @@
+opendolphin:opendolphin-server:war:2.7.1
+\- opendolphin:opendolphin-common:jar:jakarta:2.7.1:compile
