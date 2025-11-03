@@ -32,7 +32,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - `docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md`: JsonTouch/PHR/PVT 互換性確認と PHR 非同期ジョブ状態管理・Touch SSE 運用手順（2025-11-03 追加）。
 - `docs/server-modernization/phase2/domains/EXTERNAL_INTEGRATION_JAKARTA_STATUS.md`: 外部連携（ORCA/HL7/Plivo/WebAuthn 等）の旧 API・依存差分とライセンス対応を整理したギャップリスト。
 - `docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md`: 患者基本情報・カルテ閲覧系の `javax.*` 残存状況、レスポンスモデル比較、Micrometer 置換など Jakarta EE 10 移行時の影響整理。閲覧 API 改修時は合わせて参照。
-- `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`: 旧サーバーとモダナイズ版の全 REST API を 1:1 で比較したパリティマトリクス（2025-11-03 再集計: JsonTouch 16 件・PHR 11 件・`DELETE /pvt2/{pvtPK}` の証跡反映と集計サマリ 213 件対応/43 件未整備へ更新）。
+- `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`: 旧サーバーとモダナイズ版の全 REST API を 1:1 で比較したパリティマトリクス（2026-05-27 更新: `DELETE /pvt2/{pvtPK}` の単体テスト証跡を追加し、1:1 対応 202 件／未整備 54 件へ再集計）。
 - `docs/server-modernization/phase2/domains/STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md`: Stamp/Letter/MML/ORCA の移行計画、監査強化方針、整合テスト計画（2025-11-03 更新: Stamp/Letter 監査ログ実装・ORCA 相互作用検証タスクを追記）。
 - `docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md`: DemoResourceASP 15 エンドポイントのデモデータ移行仕様・マッピング・QA テストケース整理（2025-11-03 再点検: コンパイルエラー/レスポンス差分/テスト未実行の課題を追記）。
 - `docs/server-modernization/phase2/domains/EHT_SECURITY_AUDIT_CHECKLIST.md`: EHTResource のセキュリティ／監査要件整理、トランザクション境界方針、外部連携テスト観点（2025-11-03 追加）。
@@ -81,6 +81,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - 参考資料（PDF / 画像など）は `docs/` 配下の適切なカテゴリに格納し、必ず本ファイルから辿れるようにする。
 
 ## 直近更新履歴
+- 2026-05-27 (担当: Codex): `PVTResource2Test` に DELETE 正常／施設不一致ケースを追加し、`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md`・`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` を更新。`/pvt2/{pvtPK}` DELETE が `[x]` 判定となったことを記録。
 - 2026-05-27 (担当: Codex): JsonTouch `/10/adm/jtouch/document*` 実装と Parity テスト拡張の結果を `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md`・`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` に反映。`JsonTouchResourceParityTest` を 17 ケースに増強し、Maven `-pl server-modernized test` が DuplicateProjectException で失敗する旨を Runbook に記録。
 - 2025-11-03 (担当: Codex): API パリティ再集計で JsonTouch 16 件・PHR 11 件・`/pvt2/{pvtPK}` DELETE を `[ ] / △ 要証跡` に差し戻し、`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md` を更新。未解決タスクと Runbook 参照先を整理。
 - 2025-11-03 (担当: Codex): 受付患者検索カードを4入力欄によるAND検索に刷新し、条件クリアボタンと独立した新規患者登録ボタンを追加。仕様概要を `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記。
