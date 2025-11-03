@@ -14,7 +14,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  * @author kazushi Minagawa.
  */
 public class JSONStampBuilder {
-    
+
+    private static final Logger LOGGER = Logger.getLogger(JSONStampBuilder.class.getName());
+
     public String build(InfoModel model) {
         
         if (model==null) {
@@ -122,9 +124,9 @@ public class JSONStampBuilder {
             sw.close();
             //System.err.println(json);
             return json;
-//minagawa$        
+//minagawa$
         } catch (Exception ex) {
-            ex.printStackTrace(System.err);
+            LOGGER.log(Level.SEVERE, "Failed to create text stamp JSON", ex);
         }
         return null;
     }

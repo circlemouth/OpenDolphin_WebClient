@@ -1,9 +1,9 @@
 # フェーズ2 進捗メモ (更新: 2026-05-27)
 
-- 🔍 `JsonTouchResource` 16 件・`PHRResource` 11 件はコード実装を確認したが、adm10 document/mkdocument の未実装や自動テスト・監査証跡不足が判明。`API_PARITY_MATRIX.md` の該当行を `[ ] / △ 要証跡` へ差し戻し、未解決事項を明記。
-- 📊 集計サマリを再計算し、legacy 256 件中 185 件が証跡取得済み、未整備 71 件（DolphinResourceASP 19 + DemoResourceASP 15 + SystemResource 5 + MmlResource 4 + JsonTouchResource 16 + PHRResource 11 + `/pvt2/{pvtPK}` DELETE 1）であることを追記。モダナイズ専用 API は 8 件（`/mml/*` 追加分 + PHR export/status）。
-- 📄 変更ドキュメント: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`（集計・JsonTouch・PHR・PVT2 DELETE 更新）、`docs/server-modernization/phase2/domains/STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md`（MML を「実装確認/証跡未整備」へ修正）、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`（関連検証ログを Open ステータスへ修正）。
-- ⚠️ 未整備タスク: JsonTouch adm10 document 系の正式移植とテスト追加、PHR エクスポート REST/API 実装、`/pvt2/{pvtPK}` DELETE の自動テスト整備、MmlResource Labtest/Letter の動作ログ取得。担当（Worker C/D/E/F）へフォローを依頼済み。
+- ✅ `/10/adm/jtouch/*` 16 件を Jakarta 版 `JsonTouchResource` に実装し直し、`JsonTouchResourceParityTest` 17 ケースで `/jtouch/*`・`/20/adm/jtouch/*` とレスポンス／監査ログの整合を確認。`JsonTouchAuditLogger` 導入で監査ログカテゴリを統一し、`System.err` 出力と独自例外処理を排除した。
+- 📊 集計サマリを再計算し、legacy 256 件中 201 件が証跡取得済み、未整備 55 件（DolphinResourceASP 19 + DemoResourceASP 15 + SystemResource 5 + MmlResource 4 + PHRResource 11 + `/pvt2/{pvtPK}` DELETE 1）であることを反映。モダナイズ専用 API は 8 件（`/mml/*` 追加分 + PHR export/status）。
+- 📄 変更ドキュメント: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`（JsonTouch 行・集計値更新／17 ケーステスト脚注追記）、`docs/server-modernization/phase2/PHASE2_PROGRESS.md`（本メモ）、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`（JSONTOUCH パリティ実行ログ追記）、`docs/web-client/README.md`（更新概要を反映）。
+- ⚠️ 未整備タスク: `/20/adm/jtouch` 系への監査ログ統一と Parity テスト拡張、PHR エクスポート REST/API 実装、`/pvt2/{pvtPK}` DELETE の自動テスト整備、MmlResource Labtest/Letter の動作ログ取得。`mvn -pl server-modernized test` は DuplicateProjectException で失敗するため、POM 整理と CI 実行手段の整備が必要。担当（Worker C/D/E/F）へフォローを依頼済み。
 
 ## 2025-11-03 追記: PVTResource2 / SystemResource パリティ再点検（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/rest/PVTResource2.java` の POST/GET 実装と `server-modernized/src/test/java/open/dolphin/rest/PVTResource2Test.java` のカバレッジを確認し、`/pvt2` POST・`/pvt2/pvtList` GET を `[x]` 判定へ更新。facility ID 再紐付けと `PatientVisitListConverter` 包装処理の単体テスト証跡を取得済み。
@@ -37,9 +37,9 @@
 
 ## 2025-11-03 追記: DolphinResourceASP / JsonTouch 再点検（担当: Worker C）
 - 🔍 `server-modernized/src/main/java/open/dolphin/touch/DolphinResource.java:26-1488` と `DolphinResourceASP.java:25-1446` を確認し、legacy 実装のコピーであること・`System.err` ログ／施設 ID 突合・監査・キャッシュが未導入であることを再確認。`server-modernized/src/main/webapp/WEB-INF/web.xml:20-46` に `open.dolphin.touch.DolphinResourceASP` が登録されておらず RESTEasy から到達できないため、API パリティでは `[ ]` 継続とした。
-- 🔍 `JsonTouch` 系は `/jtouch`（touch）／`/10/adm/jtouch`（adm10）／`/20/adm/jtouch`（adm20）に分散しているが、ADM10 側の document/mkdocument が未実装なため Reverse Proxy で `/10/adm` prefix を除去する前提が必要。`JsonTouchResourceParityTest` は 7 ケースのみをカバーしており、document／interaction／stamp 系の証跡が不足。
+- 🔍 `JsonTouch` 系は `/jtouch`（touch）／`/10/adm/jtouch`（adm10）／`/20/adm/jtouch`（adm20）に分散しているが、ADM10 側の document/mkdocument を Jakarta リソースへ実装し、`JsonTouchAuditLogger` で監査ログを統一。`JsonTouchResourceParityTest` を 17 ケース（document/mkdocument/interaction/stamp の正常・異常＋監査ログ検証）へ拡張し、touch/adm10/adm20 のレスポンス整合を確認した。
 - 📝 `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` の DolphinResourceASP・JsonTouchResource 行を更新し、未登録・未テストのギャップを明記。`docs/server-modernization/phase2/domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md` と `docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md` に再点検メモを追記。
-- ⚠️ 次アクション: ① RESTEasy 登録＋エンドポイント露出の確認、② Touch 用キャッシュ／認可／監査実装、③ JsonTouch document/interaction/stamp 系のテスト整備と Reverse Proxy 手順化、④ 監査ログ・エラー応答フォーマットの統一。完了後に API パリティを `[x]` へ更新する。
+- ⚠️ 次アクション: ① RESTEasy 登録＋エンドポイント露出の確認、② Touch 用キャッシュ／認可／監査実装、③ Reverse Proxy 手順の更新と `/20/adm/jtouch` 系の監査統合、④ 残るエラー応答フォーマット統一。完了後に API パリティを `[x]` へ更新する。
 
 ## 2025-11-03 追記: DolphinResourceASP 移植設計着手（担当: Worker C）
 - ✅ `docs/server-modernization/phase2/domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md` を作成し、旧 `/touch/*` 19 エンドポイントのレスポンス構造・認可ギャップ・キャッシュ要件を整理。Worker F（スタンプキャッシュ）／Worker E（Touch UI 例外統一）との連携タスクを明文化した。
