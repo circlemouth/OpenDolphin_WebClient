@@ -1,5 +1,11 @@
 # フェーズ2 進捗メモ (更新: 2026-05-27)
 
+## 2025-11-04 追記: Jakarta Naming API 再適用（担当: Codex）
+- ✅ `server-modernized/src/main/java/open/dolphin/metrics/MeterRegistryProducer.java` と `open/orca/rest/ORCAConnection.java`（モダナイズ版／旧版）の `javax.naming.*` 参照を `jakarta.naming.InitialContext` / `NamingException` へ戻し、WildFly 33 の Jakarta EE 10 API と整合。
+- ✅ 旧サーバーモジュール（`server/pom.xml`）に `jakarta.naming:jakarta.naming-api:2.1.1`（scope=`provided`）を追加し、ビルド時に `jakarta.naming` パッケージを解決できるようにした。
+- ⚠️ `mvn -f pom.server-modernized.xml -pl server-modernized -am -DskipTests compile` を実行したが、WildFly BOM が参照する `jakarta.websocket:jakarta.websocket-(client-)api:2.1.0-jbossorg-2` が Maven Central に存在せず依存解決で失敗。JBoss リポジトリの HTTPS 化または WildFly モジュール参照へ切り替える追フォローが必要。
+
+ℹ️ 以下 2025-11-03 記録は `javax.naming` への一時移行履歴として保存。
 ## 2025-11-03 追記: Micrometer JNDI `javax.naming` 置換（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/metrics/MeterRegistryProducer.java` の JNDI 参照を `jakarta.naming.*` から Java 17 標準の `javax.naming.InitialContext` / `NamingException` へ差し替え。Wildcard 型判定ロジックは従来どおり維持。
 - ✅ `rg "jakarta.naming"` で `server-modernized` 配下および `pom.xml` に余剰依存が残っていないことを確認。Jakarta Naming API の `provided` 依存は不要となり、WildFly 付属の JNDI 実装を使用する前提を整理。
