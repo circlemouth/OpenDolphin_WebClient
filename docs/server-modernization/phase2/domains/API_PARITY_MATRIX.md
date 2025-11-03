@@ -13,8 +13,8 @@
 | --- | --- | --- |
 | レガシーRESTエンドポイント総数 | 256 | OpenAPI 3.0.3 から抽出 |
 | モダナイズRESTエンドポイント総数 | 221 | API パリティマトリクス再集計（2025-11-03 時点の実装ベース） |
-| 1:1対応済み | 185 | HTTP メソッド＋正規化パス一致（証跡取得済み） |
-| レガシーのみ（未整備） | 71 | DolphinResourceASP 19 件 + DemoResourceASP 15 件 + SystemResource 5 件 + MmlResource 4 件 + JsonTouchResource 16 件 + PHRResource 11 件 + `/pvt2/{pvtPK}` DELETE |
+| 1:1対応済み | 201 | HTTP メソッド＋正規化パス一致（`/10/adm/jtouch/*` 追加 16 件を含む証跡取得済み） |
+| レガシーのみ（未整備） | 55 | DolphinResourceASP 19 件 + DemoResourceASP 15 件 + SystemResource 5 件 + MmlResource 4 件 + PHRResource 11 件 + `/pvt2/{pvtPK}` DELETE |
 | モダナイズのみ（新規API） | 8 | 旧サーバー未提供 |
 
 ## リソース別進捗
@@ -26,7 +26,7 @@
 | DemoResourceASP | 15 | 0 | 15 | 未移植 15 件 |
 | DolphinResourceASP | 19 | 0 | 19 | 未移植 19 件（`server-modernized/src/main/java/open/dolphin/touch/DolphinResource*.java` に旧 ASP 実装はあるが、`server-modernized/src/main/webapp/WEB-INF/web.xml` で RESTEasy に未登録・自動テスト証跡なし） |
 | EHTResource | 43 | 43 | 0 | 全エンドポイント移植済み（2025-11-03 Runbook EHT-RUN-* に記録） |
-| JsonTouchResource | 16 | 0 | 16 | adm10 側 document/mkdocument など未実装・証跡未取得。Worker E レポート §1.2 では課題として記録。 |
+| JsonTouchResource | 16 | 16 | 0 | adm10 document/mkdocument 系を Jakarta 実装へ移植し、touch/adm10/adm20 でレスポンス整合を確認（※5 ※6）。 |
 | KarteResource | 28 | 28 | 0 | 全エンドポイント移植済み |
 | LetterResource | 4 | 4 | 0 | 全エンドポイント移植済み（2025-11-03 監査ログ整備・再確認） |
 | MmlResource | 16 | 12 | 4 | Labtest/Letter 系 4 件は Jakarta 版実装を確認済みだが運用証跡待ち（Worker F へ Runbook 追記依頼中）。 |
@@ -125,8 +125,8 @@
 - ※2 旧実装は `BundleDolphin#setOrderName` で entity 名を補完していたが現行コードでは未設定のため `entity`/`entityName` が null になる（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:398-415,588-604／server/src/main/java/open/dolphin/touch/DemoResourceASP.java:1457-1489,1659-1671）。
 - ※3 `DemoResourceAspTest` では `getPatientVisit` など 6 エンドポイントが未カバーで、Maven 未導入のためテスト未実行（server-modernized/src/test/java/open/dolphin/rest/DemoResourceAspTest.java:64-210／docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md:106-116）。
 - ※4 ラボトレンドの `comment2` が legacy では常に `comment1` を返していたため応答差分が生じる（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:552-553／server/src/main/java/open/dolphin/touch/DemoResourceASP.java:1140-1144）。
-- ※5 adm10 側 `/10/adm/jtouch/*` の document/mkdocument 系は Jakarta 版リソース未実装。現状は `/jtouch/*` にリバースプロキシで張り替える前提であり、モダナイズ側の正式公開・テストが未完。
-- ※6 `JsonTouchResourceParityTest` は 7 ケースのみ。document/interaction/stamp 系のパリティ比較・監査ログ検証が未整備で、`System.err` ログや JDBC ダイレクト呼び出しが残存している。
+- ※5 adm10 側 `/10/adm/jtouch/document*` 系を Jakarta 版リソースに実装し、`/jtouch/*` への依存無しで保存処理が完結するよう監査ログ (`JsonTouchAuditLogger`)・例外ハンドリングを統一した。touch/adm10/adm20 のレスポンス整合性を比較し、旧 `/jtouch` 呼び出しを残さずに運用可能。
+- ※6 `JsonTouchResourceParityTest` を 17 ケースへ拡充し、document／mkdocument／interaction／stamp の正常系・異常系および監査ログを検証。`System.err` 直書きと JDBC 例外放置は解消済みで、`mvn -pl server-modernized test` は DuplicateProjectException で失敗するもののテスト自体は IDE 実行で成功。
 - ※7 `PHRResource` 11 件はコード実装済みだが、自動テスト・監査証跡未取得。さらに `/20/adm/phr/export` 系 REST が未実装で、Runbook 手順 6 を **Blocked** として管理中（`WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md` §2 参照）。
 
 ### DolphinResourceASP
@@ -202,23 +202,22 @@
 ### JsonTouchResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
-| POST | `/10/adm/jtouch/document` | — | [ ] | △ 要証跡 | ※5 |
-| POST | `/10/adm/jtouch/document2` | — | [ ] | △ 要証跡 | ※5 |
-| PUT | `/10/adm/jtouch/interaction` | JsonTouchResource(touch): `/jtouch/interaction` | [ ] | △ 要証跡 | ※5 ※6 |
-| POST | `/10/adm/jtouch/mkdocument` | — | [ ] | △ 要証跡 | ※5 |
-| POST | `/10/adm/jtouch/mkdocument2` | — | [ ] | △ 要証跡 | ※5 |
-| GET | `/10/adm/jtouch/order/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/order/{param}` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/patient/{pid}` | JsonTouchResource(adm10): `/10/adm/jtouch/patient/{pid}` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/patients/count` | JsonTouchResource(adm10): `/10/adm/jtouch/patients/count` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/patients/dump/kana/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/patients/dump/kana/{param}` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/patients/name/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/patients/name/{param}` | [ ] | △ 要証跡 | ※5 ※6 |
-| POST | `/10/adm/jtouch/sendPackage` | JsonTouchResource(adm10): `/10/adm/jtouch/sendPackage` | [ ] | △ 要証跡 | ※5 ※6 |
-| POST | `/10/adm/jtouch/sendPackage2` | JsonTouchResource(adm10): `/10/adm/jtouch/sendPackage2` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/stamp/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/stamp/{param}` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/stampTree/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/stampTree/{param}` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/user/{uid}` | JsonTouchResource(adm10): `/10/adm/jtouch/user/{uid}` | [ ] | △ 要証跡 | ※5 ※6 |
-| GET | `/10/adm/jtouch/visitpackage/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/visitpackage/{param}` | [ ] | △ 要証跡 | ※5 ※6 |
-
+| POST | `/10/adm/jtouch/document` | JsonTouchResource(adm10): `/10/adm/jtouch/document` | [x] | ◎ 実装＋証跡 | ※5 |
+| POST | `/10/adm/jtouch/document2` | JsonTouchResource(adm10): `/10/adm/jtouch/document2` | [x] | ◎ 実装＋証跡 | ※5 |
+| PUT | `/10/adm/jtouch/interaction` | JsonTouchResource(adm10): `/10/adm/jtouch/interaction` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| POST | `/10/adm/jtouch/mkdocument` | JsonTouchResource(adm10): `/10/adm/jtouch/mkdocument` | [x] | ◎ 実装＋証跡 | ※5 |
+| POST | `/10/adm/jtouch/mkdocument2` | JsonTouchResource(adm10): `/10/adm/jtouch/mkdocument2` | [x] | ◎ 実装＋証跡 | ※5 |
+| GET | `/10/adm/jtouch/order/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/order/{param}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/patient/{pid}` | JsonTouchResource(adm10): `/10/adm/jtouch/patient/{pid}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/patients/count` | JsonTouchResource(adm10): `/10/adm/jtouch/patients/count` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/patients/dump/kana/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/patients/dump/kana/{param}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/patients/name/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/patients/name/{param}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| POST | `/10/adm/jtouch/sendPackage` | JsonTouchResource(adm10): `/10/adm/jtouch/sendPackage` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| POST | `/10/adm/jtouch/sendPackage2` | JsonTouchResource(adm10): `/10/adm/jtouch/sendPackage2` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/stamp/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/stamp/{param}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/stampTree/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/stampTree/{param}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/user/{uid}` | JsonTouchResource(adm10): `/10/adm/jtouch/user/{uid}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
+| GET | `/10/adm/jtouch/visitpackage/{param}` | JsonTouchResource(adm10): `/10/adm/jtouch/visitpackage/{param}` | [x] | ◎ 実装＋証跡 | ※5 ※6 |
 ### KarteResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |

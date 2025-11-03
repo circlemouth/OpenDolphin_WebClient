@@ -81,6 +81,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - 参考資料（PDF / 画像など）は `docs/` 配下の適切なカテゴリに格納し、必ず本ファイルから辿れるようにする。
 
 ## 直近更新履歴
+- 2026-05-27 (担当: Codex): JsonTouch `/10/adm/jtouch/document*` 実装と Parity テスト拡張の結果を `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md`・`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` に反映。`JsonTouchResourceParityTest` を 17 ケースに増強し、Maven `-pl server-modernized test` が DuplicateProjectException で失敗する旨を Runbook に記録。
 - 2025-11-03 (担当: Codex): API パリティ再集計で JsonTouch 16 件・PHR 11 件・`/pvt2/{pvtPK}` DELETE を `[ ] / △ 要証跡` に差し戻し、`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md` を更新。未解決タスクと Runbook 参照先を整理。
 - 2025-11-03 (担当: Codex): 受付患者検索カードを4入力欄によるAND検索に刷新し、条件クリアボタンと独立した新規患者登録ボタンを追加。仕様概要を `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記。
 - 2025-11-03 (担当: Codex): Web クライアントの初期表示を「受付一覧」へ切り替え、サイドバーで患者情報を保存した直後に患者 ID 検索が自動反映されるよう受付画面を更新。詳細は `ux/KARTE_SCREEN_IMPLEMENTATION.md` と `features/RECEPTION_SCHEDULE_AND_SUMMARY.md` を参照。

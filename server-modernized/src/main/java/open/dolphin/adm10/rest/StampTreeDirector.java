@@ -4,6 +4,8 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -23,6 +25,8 @@ public final class StampTreeDirector {
     private final int TT_STAMP_BOX  	= 4;
     
     private AbstractStampTreeBuilder builder;
+
+    private static final Logger LOGGER = Logger.getLogger(StampTreeDirector.class.getName());
     
     /**
      * Creates new StampTreeDirector
@@ -31,28 +35,22 @@ public final class StampTreeDirector {
         this.builder = builder;
     }
     
-    public String build(BufferedReader reader) {
-        
+    public String build(BufferedReader reader) throws IOException {
+
         SAXBuilder docBuilder = new SAXBuilder();
-        
+
         try {
             Document doc = docBuilder.build(reader);
             Element root = doc.getRootElement();
-            
+
             builder.buildStart();
             parseChildren(root);
             builder.buildEnd();
+            return builder.getProduct();
+        } catch (JDOMException e) {
+            LOGGER.log(Level.SEVERE, "Stamp tree XML is not well-formed", e);
+            throw new IOException("Stamp tree XML parsing failed", e);
         }
-        // indicates a well-formedness error
-        catch (JDOMException e) {
-            e.printStackTrace(System.err);
-            System.err.println("Not well-formed.");
-            System.err.println(e.getMessage());
-        } catch (IOException e) {
-            e.printStackTrace(System.err);
-        }
-        
-        return builder.getProduct();
     }
     
     public void parseChildren(Element current) {

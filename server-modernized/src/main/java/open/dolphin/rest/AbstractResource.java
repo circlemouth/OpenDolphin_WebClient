@@ -2,6 +2,7 @@
 
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.IInfoModel;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -21,9 +22,9 @@ public class AbstractResource {
         try {
             return new SimpleDateFormat("yyyy-MM-dd HH:mm:ss").parse(source);
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            Logger.getLogger(getClass().getName()).log(Level.WARNING, "Failed to parse date: " + source, e);
+            return null;
         }
-        return null;
     }
 
     protected void debug(String msg) {

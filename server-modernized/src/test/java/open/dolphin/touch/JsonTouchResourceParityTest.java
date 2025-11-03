@@ -3,23 +3,40 @@ package open.dolphin.touch;
 import static org.junit.jupiter.api.Assertions.*;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.StreamingOutput;
+import java.beans.XMLEncoder;
+import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.logging.Handler;
+import java.util.logging.LogRecord;
+import java.util.logging.Logger;
 import open.dolphin.converter.StringListConverter;
 import open.dolphin.converter.UserModelConverter;
+import open.dolphin.adm10.session.ADM10_EHTServiceBean;
 import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.DocumentModel;
+import open.dolphin.infomodel.DrugInteractionModel;
+import open.dolphin.infomodel.IStampTreeModel;
 import open.dolphin.infomodel.PatientModel;
+import open.dolphin.infomodel.StampModel;
+import open.dolphin.infomodel.StampTreeModel;
+import open.dolphin.infomodel.TextStampModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.infomodel.VisitPackage;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * Ensures the JsonTouch endpoints served from different base paths share the same behaviour.
@@ -33,6 +50,8 @@ class JsonTouchResourceParityTest {
     private open.dolphin.adm10.rest.JsonTouchResource adm10Resource;
     private open.dolphin.adm20.rest.JsonTouchResource adm20Resource;
     private HttpServletRequest servletRequest;
+    private TestLogHandler auditHandler;
+    private StubAdm10EhtService ehtService;
 
     @BeforeEach
     void setUp() throws Exception {
@@ -69,10 +88,23 @@ class JsonTouchResourceParityTest {
         injectField(adm10Resource, "sharedService", sharedService);
         injectField(adm20Resource, "sharedService", sharedService);
 
+        ehtService = new StubAdm10EhtService();
+        injectField(adm10Resource, "ehtService", ehtService);
+
         servletRequest = (HttpServletRequest) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
                 new Class[]{HttpServletRequest.class},
                 (proxy, method, args) -> "getRemoteUser".equals(method.getName()) ? REMOTE_USER : null);
+
+        auditHandler = new TestLogHandler();
+        Logger auditLogger = Logger.getLogger("open.dolphin.audit.JsonTouch");
+        auditLogger.addHandler(auditHandler);
+    }
+
+    @AfterEach
+    void tearDown() {
+        Logger auditLogger = Logger.getLogger("open.dolphin.audit.JsonTouch");
+        auditLogger.removeHandler(auditHandler);
     }
 
     @Test
@@ -163,10 +195,190 @@ class JsonTouchResourceParityTest {
         assertEquals(touchResponse, adm20Response);
     }
 
+    @Test
+    void documentSubmissionParity() throws Exception {
+        auditHandler.clear();
+        String payload = createDocumentPayload();
+        String touchResponse = touchResource.postDocument(payload);
+        String adm10Response = adm10Resource.postDocument(payload);
+
+        assertEquals(touchResponse, adm10Response);
+        assertTrue(auditHandler.containsSuccess("POST /jtouch/document"));
+        assertTrue(auditHandler.containsSuccess("POST /10/adm/jtouch/document"));
+    }
+
+    @Test
+    void documentSubmissionFailureParity() throws Exception {
+        sharedService.setFailOnSaveDocument(true);
+        auditHandler.clear();
+        String payload = createDocumentPayload();
+
+        assertThrows(WebApplicationException.class, () -> touchResource.postDocument(payload));
+        assertThrows(WebApplicationException.class, () -> adm10Resource.postDocument(payload));
+        assertTrue(auditHandler.containsFailure("POST /jtouch/document"));
+        assertTrue(auditHandler.containsFailure("POST /10/adm/jtouch/document"));
+        sharedService.setFailOnSaveDocument(false);
+    }
+
+    @Test
+    void mkDocumentParity() throws Exception {
+        auditHandler.clear();
+        String payload = createMkDocumentPayload();
+        String touchResponse = touchResource.postMkDocument(payload);
+        String adm10Response = adm10Resource.postMkDocument(payload);
+
+        assertEquals(touchResponse, adm10Response);
+        assertTrue(auditHandler.containsSuccess("POST /jtouch/mkdocument"));
+        assertTrue(auditHandler.containsSuccess("POST /10/adm/jtouch/mkdocument"));
+    }
+
+    @Test
+    void interactionStreamSuccess() throws Exception {
+        auditHandler.clear();
+        setInteractionExecutor(sql -> List.of(new DrugInteractionModel("111", "222", "SYM", "desc")));
+        String payload = "{\"codes1\":[\"111\"],\"codes2\":[\"222\"]}";
+
+        String body = readOutput(adm10Resource.checkInteraction(payload));
+
+        assertTrue(body.contains("drugcd"));
+        assertTrue(auditHandler.containsSuccess("PUT /10/adm/jtouch/interaction"));
+    }
+
+    @Test
+    void interactionStreamFailure() throws Exception {
+        setInteractionExecutor(sql -> {
+            throw new java.sql.SQLException("simulated");
+        });
+        auditHandler.clear();
+        String payload = "{\"codes1\":[\"111\"],\"codes2\":[\"222\"]}";
+
+        assertThrows(WebApplicationException.class, () -> readOutput(adm10Resource.checkInteraction(payload)));
+        assertTrue(auditHandler.containsFailure("PUT /10/adm/jtouch/interaction"));
+    }
+
+    @Test
+    void stampTreeStreamSuccess() throws Exception {
+        auditHandler.clear();
+        ehtService.setTreeModel(createStampTreeModel());
+
+        String body = readOutput(adm10Resource.getStampTree("1"));
+
+        assertTrue(body.contains("stampTreeList"));
+        assertTrue(auditHandler.containsSuccess("GET /10/adm/jtouch/stampTree"));
+    }
+
+    @Test
+    void stampTreeStreamFailure() {
+        ehtService.setFailTree(true);
+        auditHandler.clear();
+
+        assertThrows(WebApplicationException.class, () -> readOutput(adm10Resource.getStampTree("1")));
+        assertTrue(auditHandler.containsFailure("GET /10/adm/jtouch/stampTree"));
+    }
+
+    @Test
+    void stampRetrievalSuccess() throws Exception {
+        ehtService.setStampModel(createStampModel());
+        auditHandler.clear();
+
+        String body = readOutput(adm10Resource.getStamp("stamp-1"));
+
+        assertFalse(body.isEmpty());
+        assertTrue(auditHandler.containsSuccess("GET /10/adm/jtouch/stamp"));
+    }
+
+    @Test
+    void stampRetrievalFailure() {
+        ehtService.setFailStamp(true);
+        auditHandler.clear();
+
+        assertThrows(WebApplicationException.class, () -> readOutput(adm10Resource.getStamp("stamp-1")));
+        assertTrue(auditHandler.containsFailure("GET /10/adm/jtouch/stamp"));
+    }
+
     private static void injectField(Object target, String name, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(name);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private void setInteractionExecutor(open.dolphin.adm10.rest.JsonTouchResource.InteractionExecutor executor) throws Exception {
+        Field field = adm10Resource.getClass().getDeclaredField("interactionExecutor");
+        field.setAccessible(true);
+        field.set(adm10Resource, executor);
+    }
+
+    private String createDocumentPayload() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        open.dolphin.touch.converter.IDocument document = new open.dolphin.touch.converter.IDocument();
+        document.setId(1L);
+        return mapper.writeValueAsString(document);
+    }
+
+    private String createMkDocumentPayload() throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        open.dolphin.touch.converter.IMKDocument document = new open.dolphin.touch.converter.IMKDocument();
+        document.getDocument().setId(2L);
+        return mapper.writeValueAsString(document);
+    }
+
+    private String readOutput(StreamingOutput output) throws Exception {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        output.write(baos);
+        return baos.toString(StandardCharsets.UTF_8);
+    }
+
+    private IStampTreeModel createStampTreeModel() {
+        StampTreeModel model = new StampTreeModel();
+        String xml = "<stampBox><stampTree name=\"diagnosis\" entity=\"diagnosis\"><root name=\"Root\" entity=\"diagnosis\"><stampInfo name=\"Test\" role=\"role\" entity=\"entity\" editable=\"true\" memo=\"memo\" stampId=\"stamp-1\"/></root></stampTree></stampBox>";
+        model.setTreeBytes(xml.getBytes(StandardCharsets.UTF_8));
+        return model;
+    }
+
+    private StampModel createStampModel() {
+        TextStampModel text = new TextStampModel();
+        text.setText("sample");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        try (XMLEncoder encoder = new XMLEncoder(baos)) {
+            encoder.writeObject(text);
+        }
+        StampModel stamp = new StampModel();
+        stamp.setStampBytes(baos.toByteArray());
+        return stamp;
+    }
+
+    private static class TestLogHandler extends Handler {
+        private final List<LogRecord> records = new ArrayList<>();
+
+        @Override
+        public void publish(LogRecord record) {
+            records.add(record);
+        }
+
+        @Override
+        public void flush() {
+        }
+
+        @Override
+        public void close() throws SecurityException {
+            records.clear();
+        }
+
+        void clear() {
+            records.clear();
+        }
+
+        boolean containsSuccess(String endpoint) {
+            return contains(endpoint, "event=success");
+        }
+
+        boolean containsFailure(String endpoint) {
+            return contains(endpoint, "event=failure");
+        }
+
+        private boolean contains(String endpoint, String token) {
+            return records.stream().anyMatch(r -> r.getMessage().contains(endpoint) && r.getMessage().contains(token));
+        }
     }
 
     private static class StubJsonTouchSharedService extends JsonTouchSharedService {
@@ -176,9 +388,19 @@ class JsonTouchResourceParityTest {
         private List<String> kanaList = Collections.emptyList();
         private VisitPackage visitPackage = new VisitPackage();
         private UserModelConverter userConverter = new UserModelConverter();
+        private long nextDocumentPk = 99L;
+        private boolean failOnSaveDocument;
 
         void setUserConverter(UserModelConverter converter) {
             this.userConverter = converter;
+        }
+
+        void setNextDocumentPk(long nextDocumentPk) {
+            this.nextDocumentPk = nextDocumentPk;
+        }
+
+        void setFailOnSaveDocument(boolean failOnSaveDocument) {
+            this.failOnSaveDocument = failOnSaveDocument;
         }
 
         @Override
@@ -212,8 +434,73 @@ class JsonTouchResourceParityTest {
         }
 
         @Override
+        public long saveDocument(DocumentModel model) {
+            if (failOnSaveDocument) {
+                throw new IllegalStateException("save failed");
+            }
+            return nextDocumentPk;
+        }
+
+        @Override
+        public long processSendPackage(open.dolphin.touch.converter.ISendPackage pkg) {
+            return processSendPackageElements(
+                    pkg != null ? pkg.documentModel() : null,
+                    pkg != null ? pkg.diagnosisSendWrapperModel() : null,
+                    pkg != null ? pkg.deletedDiagnsis() : null,
+                    pkg != null ? pkg.chartEventModel() : null);
+        }
+
+        @Override
+        public long processSendPackage2(open.dolphin.touch.converter.ISendPackage2 pkg) {
+            return processSendPackageElements(
+                    pkg != null ? pkg.documentModel() : null,
+                    pkg != null ? pkg.diagnosisSendWrapperModel() : null,
+                    pkg != null ? pkg.deletedDiagnsis() : null,
+                    pkg != null ? pkg.chartEventModel() : null);
+        }
+
+        @Override
         public long processSendPackageElements(DocumentModel model, DiagnosisSendWrapper wrapper, List<String> deletedDiagnosis, ChartEventModel chartEvent) {
             return 99L;
+        }
+    }
+
+    private static class StubAdm10EhtService extends ADM10_EHTServiceBean {
+        private IStampTreeModel treeModel;
+        private StampModel stampModel;
+        private boolean failTree;
+        private boolean failStamp;
+
+        void setTreeModel(IStampTreeModel treeModel) {
+            this.treeModel = treeModel;
+        }
+
+        void setStampModel(StampModel stampModel) {
+            this.stampModel = stampModel;
+        }
+
+        void setFailTree(boolean failTree) {
+            this.failTree = failTree;
+        }
+
+        void setFailStamp(boolean failStamp) {
+            this.failStamp = failStamp;
+        }
+
+        @Override
+        public IStampTreeModel getTrees(long userPK) {
+            if (failTree) {
+                throw new IllegalStateException("tree failure");
+            }
+            return treeModel;
+        }
+
+        @Override
+        public StampModel getStamp(String stampId) {
+            if (failStamp) {
+                throw new IllegalStateException("stamp failure");
+            }
+            return stampModel;
         }
     }
 }

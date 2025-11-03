@@ -2,6 +2,8 @@ package open.dolphin.touch;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.function.Function;
+import java.util.logging.Logger;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -31,6 +33,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Path("/jtouch")
 public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
+
+    private static final Logger LOGGER = Logger.getLogger(JsonTouchResource.class.getName());
 
     @Inject
     private JsonTouchSharedService sharedService;
@@ -122,12 +126,18 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
-        long retPk = sharedService.processSendPackage(pkg);
-        return String.valueOf(retPk);
+    public String postSendPackage(String json) {
+        final String endpoint = "POST /jtouch/sendPackage";
+        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+            long retPk = sharedService.processSendPackage(pkg);
+            JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
+            return String.valueOf(retPk);
+        } catch (IOException | RuntimeException e) {
+            throw JsonTouchAuditLogger.failure(LOGGER, endpoint, traceId, e);
+        }
     }
     
     // S.Oh 2014/02/06 iPadのFreeText対応 Add Start
@@ -135,12 +145,18 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage2(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
-        long retPk = sharedService.processSendPackage2(pkg);
-        return String.valueOf(retPk);
+    public String postSendPackage2(String json) {
+        final String endpoint = "POST /jtouch/sendPackage2";
+        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+            long retPk = sharedService.processSendPackage2(pkg);
+            JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
+            return String.valueOf(retPk);
+        } catch (IOException | RuntimeException e) {
+            throw JsonTouchAuditLogger.failure(LOGGER, endpoint, traceId, e);
+        }
     }
     // S.Oh 2014/02/06 Add End
     
@@ -148,14 +164,8 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/document")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postDocument(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        IDocument document = mapper.readValue(json, IDocument.class);
-        DocumentModel model = document.toModel();
-        
-        long pk = sharedService.saveDocument(model);
-        return String.valueOf(pk);
+    public String postDocument(String json) {
+        return handleDocumentPayload("POST /jtouch/document", json, IDocument.class, IDocument::toModel);
     }
     
     // S.Oh 2014/02/06 iPadのFreeText対応 Add Start
@@ -163,14 +173,8 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/document2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postDocument2(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        IDocument2 document = mapper.readValue(json, IDocument2.class);
-        DocumentModel model = document.toModel();
-        
-        long pk = sharedService.saveDocument(model);
-        return String.valueOf(pk);
+    public String postDocument2(String json) {
+        return handleDocumentPayload("POST /jtouch/document2", json, IDocument2.class, IDocument2::toModel);
     }
     // S.Oh 2014/02/06 Add End
     
@@ -178,14 +182,8 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/mkdocument")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postMkDocument(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        IMKDocument document = mapper.readValue(json, IMKDocument.class);
-        DocumentModel model = document.toModel();
-        
-        long pk = sharedService.saveDocument(model);
-        return String.valueOf(pk);
+    public String postMkDocument(String json) {
+        return handleDocumentPayload("POST /jtouch/mkdocument", json, IMKDocument.class, IMKDocument::toModel);
     }
     
     // S.Oh 2014/02/06 iPadのFreeText対応 Add Start
@@ -193,13 +191,21 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/mkdocument2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postMkDocument2(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        IMKDocument2 document = mapper.readValue(json, IMKDocument2.class);
-        DocumentModel model = document.toModel();
-        
-        long pk = sharedService.saveDocument(model);
-        return String.valueOf(pk);
+    public String postMkDocument2(String json) {
+        return handleDocumentPayload("POST /jtouch/mkdocument2", json, IMKDocument2.class, IMKDocument2::toModel);
+    }
+
+    private <T> String handleDocumentPayload(String endpoint, String json, Class<T> payloadType, Function<T, DocumentModel> converter) {
+        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            T payload = mapper.readValue(json, payloadType);
+            DocumentModel model = converter.apply(payload);
+            long pk = sharedService.saveDocument(model);
+            JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + pk);
+            return String.valueOf(pk);
+        } catch (IOException | RuntimeException e) {
+            throw JsonTouchAuditLogger.failure(LOGGER, endpoint, traceId, e);
+        }
     }
 }
