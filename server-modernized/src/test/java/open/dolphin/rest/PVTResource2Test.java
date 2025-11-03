@@ -6,8 +6,11 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.servlet.http.HttpServletRequest;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
+import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import open.dolphin.converter.PatientVisitListConverter;
 import open.dolphin.converter.PatientVisitModelConverter;
 import open.dolphin.infomodel.HealthInsuranceModel;
@@ -46,6 +49,8 @@ class PVTResource2Test {
                     }
                     return null;
                 });
+
+        pvtServiceBean.setChartEventServiceBean(chartEventServiceBean);
 
         injectField(resource, "pvtServiceBean", pvtServiceBean);
         injectField(resource, "eventServiceBean", chartEventServiceBean);
@@ -90,7 +95,7 @@ class PVTResource2Test {
         PatientVisitModel visit = new PatientVisitModel();
         visit.setFacilityId("F001");
         visit.setPvtDate("2025-11-03 10:00:00");
-        chartEventServiceBean.pvtList = Collections.singletonList(visit);
+        chartEventServiceBean.setPvtList("F001", new ArrayList<>(Collections.singletonList(visit)));
 
         PatientVisitListConverter converter = resource.getPvtList();
 
@@ -101,6 +106,35 @@ class PVTResource2Test {
         assertEquals("F001", converted.get(0).getFacilityId());
     }
 
+    @Test
+    void deletePvt_removesVisitForAuthenticatedFacility() {
+        PatientVisitModel visit = new PatientVisitModel();
+        visit.setId(10L);
+        visit.setFacilityId("F001");
+        chartEventServiceBean.setPvtList("F001", new ArrayList<>(Collections.singletonList(visit)));
+
+        resource.deletePvt("10");
+
+        assertEquals(10L, pvtServiceBean.getRemovedId());
+        assertEquals("F001", pvtServiceBean.getRemovedFacility());
+        assertTrue(chartEventServiceBean.getPvtList("F001").isEmpty(), "Visit should be removed from facility list");
+    }
+
+    @Test
+    void deletePvt_throwsWhenFacilityDoesNotOwnVisit() {
+        PatientVisitModel visit = new PatientVisitModel();
+        visit.setId(20L);
+        visit.setFacilityId("F002");
+        chartEventServiceBean.setPvtList("F002", new ArrayList<>(Collections.singletonList(visit)));
+
+        IllegalArgumentException thrown = assertThrows(IllegalArgumentException.class, () -> resource.deletePvt("20"));
+
+        assertEquals("Facility mismatch", thrown.getMessage());
+        assertEquals(20L, pvtServiceBean.getRemovedId());
+        assertEquals("F001", pvtServiceBean.getRemovedFacility());
+        assertEquals(1, chartEventServiceBean.getPvtList("F002").size(), "Visit list for original facility must remain intact");
+    }
+
     private static void injectField(Object target, String fieldName, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
@@ -109,6 +143,13 @@ class PVTResource2Test {
 
     private static class RecordingPvtServiceBean extends PVTServiceBean {
         private PatientVisitModel received;
+        private Long removedId;
+        private String removedFacility;
+        private StubChartEventServiceBean chartEventServiceBean;
+
+        void setChartEventServiceBean(StubChartEventServiceBean chartEventServiceBean) {
+            this.chartEventServiceBean = chartEventServiceBean;
+        }
 
         @Override
         public int addPvt(PatientVisitModel pvt) {
@@ -118,16 +159,50 @@ class PVTResource2Test {
 
         @Override
         public int removePvt(long id, String fid) {
-            return 0;
+            this.removedId = id;
+            this.removedFacility = fid;
+
+            if (chartEventServiceBean == null) {
+                throw new IllegalStateException("ChartEventServiceBean is not configured");
+            }
+
+            String actualFacility = chartEventServiceBean.findFacilityFor(id);
+            if (!fid.equals(actualFacility)) {
+                throw new IllegalArgumentException("Facility mismatch");
+            }
+
+            List<PatientVisitModel> pvtList = chartEventServiceBean.getPvtList(fid);
+            pvtList.removeIf(model -> model.getId() == id);
+            return 1;
+        }
+
+        Long getRemovedId() {
+            return removedId;
+        }
+
+        String getRemovedFacility() {
+            return removedFacility;
         }
     }
 
     private static class StubChartEventServiceBean extends ChartEventServiceBean {
-        private List<PatientVisitModel> pvtList = Collections.emptyList();
+        private final Map<String, List<PatientVisitModel>> pvtLists = new HashMap<>();
 
         @Override
         public List<PatientVisitModel> getPvtList(String fid) {
-            return pvtList;
+            return pvtLists.computeIfAbsent(fid, key -> new ArrayList<>());
+        }
+
+        void setPvtList(String facilityId, List<PatientVisitModel> visits) {
+            pvtLists.put(facilityId, visits);
+        }
+
+        String findFacilityFor(long visitId) {
+            return pvtLists.entrySet().stream()
+                    .filter(entry -> entry.getValue().stream().anyMatch(model -> model.getId() == visitId))
+                    .map(Map.Entry::getKey)
+                    .findFirst()
+                    .orElse(null);
         }
     }
 }
