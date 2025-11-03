@@ -47,21 +47,33 @@ mvn install:install-file \
    成功すると `server/target/opendolphin-server.war` が生成されます。
 2. ビルド時に `JAVA_HOME` が JDK 1.8 を指していること、およびコンパイルターゲットが 1.8 になっていることを確認してください。
 
-## 4. WildFly の設定
+## 4. WildFly の設定（2025-11-03 更新）
 
 1. WildFly を任意のディレクトリへ展開し、管理ユーザーを作成します。
    ```bash
    bin/add-user.sh
    ```
-2. `standalone/configuration/standalone-full.xml` で以下を確認します。
-   - `datasources` に PostgreSQL 用の `PostgresDS` が存在し、OpenDolphin 用のデータベースへ接続できること。
-   - `security-domain` (もしくは Elytron 設定) により `servletRequest.getRemoteUser()` が `施設ID:ユーザーID` 形式で解決されること。
+   JMS 向けの認証が別途必要な場合は、同コマンドで `-a` オプションを付与し `guest` ロールへ追加してください。
+2. `standalone/configuration/standalone-full.xml` を運用プロファイルとして利用します。以下を事前に確認します。
+   - `datasources` に PostgreSQL 用の `PostgresDS` が存在し、OpenDolphin 用データベースへ接続できること。
+   - `security-domain` (または Elytron 設定) が `施設ID:ユーザーID` 形式で `servletRequest.getRemoteUser()` を解決できること。
+   - `subsystem messaging-activemq` の `server=default` にて `default-resource-adapter-name="activemq-ra"` が設定されていること。
 3. OpenDolphin 固有の設定ファイル `custom.properties` や `license.properties` を `${JBOSS_HOME}/` 直下へ配置し、ORCA 接続やライセンス情報を用意します。
-4. サーバーを起動します。
+4. サーバーを `standalone-full.xml` プロファイルで起動します。
    ```bash
    bin/standalone.sh -c standalone-full.xml
    ```
-   ログに例外が出ないこと、管理コンソールから `PostgresDS` が正常に接続できることを確認します。
+   起動ログに例外が無いこと、管理コンソールから `PostgresDS` が正常に接続できることを確認します。
+5. WildFly 起動後に管理 CLI で ActiveMQ/JMS 設定と認証を確認します（手順詳細は [`operations/LOCAL_BACKEND_DOCKER.md`](LOCAL_BACKEND_DOCKER.md#activemqjms-確認手順2025-11-03-更新) を参照）。
+   ```bash
+   bin/jboss-cli.sh --connect <<'CLI'
+   /subsystem=messaging-activemq/server=default:write-attribute(name=default-resource-adapter-name,value=activemq-ra)
+   /subsystem=messaging-activemq/server=default:read-attribute(name=default-resource-adapter-name)
+   jms-queue list
+   quit
+   CLI
+   ```
+   `jms-queue list` 実行後に運用が想定するキュー（例: `DocumentNotificationQueue`, `RealtimeEventQueue` 等）が列挙され、CLI の終了コードが 0 であることを確認してください。必要に応じて CLI から `jms-queue read --name=<queueName>` を実行し、認証設定（`entries` や `durable` フラグ）が想定通りであるかを確認します。
 
 ## 5. WAR のデプロイ
 
@@ -151,7 +163,10 @@ curl -k https://localhost:8443/api/user \
 
 ---
 
-**備考**
+**備考（2025-11-03 更新）**
 
-- WildFly の管理 CLI を利用すると、`deploy`, `undeploy`, `datasource` 設定の自動化が容易になります。
+- WildFly の管理 CLI を利用すると、`deploy`, `undeploy`, `datasource` 設定の自動化が容易になります。JMS まわりの確認結果は `server/log/server.log` にも出力されるため、CLI の終了後に併せて確認してください。
+- DB 名や接続文字列が `.env` や `custom.properties` と一致しているかを、CLI の `/subsystem=datasources/data-source=PostgresDS:read-resource(include-runtime=true)` または `bin/jboss-cli.sh --connect --commands="data-source read-resource --name=PostgresDS"` で必ず確認してください。
+- PostgreSQL のログ (`docker logs db` など) を確認し、認証エラーや接続再試行が発生していないことを検証します。
+- `docker-compose.modernized.dev.yml` のヘルスチェック（`server-modernized-dev` セクションの `curl`）を再実行し、HTTP ステータスが 2xx となることを最終確認してください。ヘルスチェックの再実行タイミングは JMS 設定反映後・WAR 再デプロイ後のいずれでも必須です。
 - ORCA 連携を行う場合は `custom.properties` の接続パラメータと、`PostgresDS` から参照するデータベースユーザーに十分な権限が必要です。

@@ -28,8 +28,8 @@ services:
       db-modernized:
         condition: service_healthy
     environment:
-      DB_HOST: db-modernized
-      DB_PORT: 5432
+      DB_HOST: ${MODERNIZED_DB_HOST:-db-modernized}
+      DB_PORT: ${MODERNIZED_DB_PORT:-5432}
       DB_NAME: ${MODERNIZED_POSTGRES_DB:-opendolphin_modern}
       DB_USER: ${MODERNIZED_POSTGRES_USER:-opendolphin}
       DB_PASSWORD: ${MODERNIZED_POSTGRES_PASSWORD:-opendolphin}

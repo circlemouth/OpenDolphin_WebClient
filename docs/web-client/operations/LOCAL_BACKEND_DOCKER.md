@@ -96,8 +96,36 @@ Web クライアント開発チーム向けに、従来サーバー（Java 8 / W
      http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/dolphin
    ```
 5. Web クライアントからモダナイズ版 API を呼び出す場合は、`web-client/.env.local` の `VITE_DEV_PROXY_TARGET` を `http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}` へ変更する。
+6. 既存コンテナを差し替える場合は、再ビルドと再適用を同一コマンドで実行する。
+   ```bash
+   docker compose -p modern-testing \
+     -f docker-compose.yml \
+     -f docker-compose.modernized.dev.yml \
+     up -d --build --force-recreate server-modernized-dev
+   ```
+   - WAR の更新のみ再適用したい場合でも `--force-recreate` で新しいイメージを確実に反映させる。ビルドキャッシュを無効化したいときは事前に `docker compose ... build --no-cache server-modernized-dev` を実行する。
+   - 起動完了後に `bin/jboss-cli.sh` を用いた JMS 確認と `curl` ヘルスチェックを再実施し、HTTP ステータスが 2xx であることを確認する（手順は後述）。
 
 > **補足**: 使用後は `docker compose -p modern-testing down` で `db-modernized` / `server-modernized-dev` を停止する。従来サーバー側とポートや DB が混在しないよう注意。
+
+### ActiveMQ/JMS 確認手順（2025-11-03 更新）
+
+1. WildFly の管理ポート (既定 `9995`) へ接続できる環境で、コンテナ内の `bin/jboss-cli.sh` を実行する。ローカルで `docker exec -it opendolphin-server-modernized-dev /opt/jboss/wildfly/bin/jboss-cli.sh --connect` とするか、ホスト側に WildFly を展開している場合は `bin/jboss-cli.sh --connect --controller=localhost:9995` を利用する。
+2. CLI から以下を実行し、ActiveMQ 設定と JMS キューが正しく登録されていることを確認する。
+   ```bash
+   /subsystem=messaging-activemq/server=default:write-attribute(name=default-resource-adapter-name,value=activemq-ra)
+   /subsystem=messaging-activemq/server=default:read-attribute(name=default-resource-adapter-name)
+   jms-queue list
+   ```
+   - `default-resource-adapter-name` が `activemq-ra` になっていない場合は同コマンドで上書きする。
+   - `jms-queue list` の結果に `DocumentNotificationQueue` `RealtimeEventQueue` `AuditTrailQueue` など運用要件のキューが含まれているか確認する。詳細を確認したい場合は `jms-queue read --name=<queueName>` を実行し、`entries` と `durable` の値を照合する。
+3. CLI を終了後、PostgreSQL ログにエラーが無いか (`docker logs db-modernized --tail=200`) を確認し、`docker-compose.modernized.dev.yml` が定義するヘルスチェックと同一オプションで `curl` を再実行する。
+   ```bash
+   curl -sf -H "userName:${SYSAD_USER_NAME:-1.3.6.1.4.1.9414.10.1:dolphin}" \
+        -H "password:${SYSAD_PASSWORD:-36cdf8b887a5cffc78dcd5c08991b993}" \
+        http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/dolphin
+   ```
+   HTTP ステータスが 2xx の場合のみ構築完了とする。非 2xx の場合は JMS 設定やデータソースに戻り、`server-modernized-dev` のログを再確認する。
 
 ### 2025-11-03 ビルド検証メモ（Worker0/1 修正反映後の確認）
 

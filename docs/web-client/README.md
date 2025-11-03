@@ -71,6 +71,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 ## 直近更新履歴
 - 2025-11-03 (担当: Codex): 受付患者検索カードを4入力欄によるAND検索に刷新し、条件クリアボタンを追加。仕様概要を `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記。
 - 2025-11-03 (担当: Codex): Worker0/1 修正後の Maven / Docker ビルド検証結果を `docs/server-modernization/phase2/PHASE2_PROGRESS.md` と `operations/LOCAL_BACKEND_DOCKER.md` に追記し、未解決のコンパイルエラーと再現手順を整理。
+- 2025-11-03 (担当: Codex): WildFly プロファイルを `standalone-full.xml` 運用へ切り替え、ActiveMQ/JMS 認証確認手順を追加。詳細は `operations/TEST_SERVER_DEPLOY.md` と `operations/LOCAL_BACKEND_DOCKER.md#activemqjms-確認手順2025-11-03-更新` を参照。
 - 2025-11-01 (担当: Codex): OrderConsole アイコンバー再構成とモーダル挙動の進捗を `docs/server-modernization/phase2/PHASE2_PROGRESS.md#2025-11-01-進捗-t3-orderconsole-アイコンバー実装担当-codex` に記録。MSW スクリーンショットは既存ビルドエラー解消後に `docs/server-modernization/phase2/assets/order-console-1366.png` へ追加予定。
 - 2025-11-01 (担当: Codex): 左レール VisitChecklist / ProblemListCard / SafetySummaryCard の縮小対応を実施し、`docs/server-modernization/phase2/PHASE2_PROGRESS.md` に T2 の確認メモを追記。
 - 2025-11-01 (担当: Codex): `docker-compose.yml` の WildFly ヘルスチェックを OpenDolphin API に切り替え、SYSAD 認証ヘッダーを追加。手順を `operations/LOCAL_BACKEND_DOCKER.md` に追記。
