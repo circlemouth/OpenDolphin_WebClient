@@ -55,8 +55,10 @@ public class SessionOperationInterceptor {
 
     private void logException(SessionServiceException exception) {
         if (LOGGER.isLoggable(Level.SEVERE)) {
-            LOGGER.log(Level.SEVERE, () -> String.format("Session operation failed [traceId=%s, operation=%s]",
-                    exception.getTraceId(), exception.getOperation()), exception);
+            LOGGER.log(Level.SEVERE,
+                    String.format("Session operation failed [traceId=%s, operation=%s]",
+                            exception.getTraceId(), exception.getOperation()),
+                    exception);
         }
     }
 

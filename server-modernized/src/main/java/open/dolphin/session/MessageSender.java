@@ -53,7 +53,7 @@ public class MessageSender implements MessageListener {
                 LOGGER.warning(() -> "Unsupported JMS message type received: " + message.getClass().getName());
             }
         } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, () -> String.format("MessageSender processing failure [traceId=%s]", traceId), ex);
+            LOGGER.log(Level.SEVERE, String.format("MessageSender processing failure [traceId=%s]", traceId), ex);
             throw new RuntimeException("Failed to process messaging payload", ex);
         }
     }
@@ -81,6 +81,7 @@ public class MessageSender implements MessageListener {
             return;
         }
         LOGGER.info(() -> String.format("Processing CLAIM JMS message [traceId=%s]", traceId));
+        ExternalServiceAuditLogger.logClaimRequest(traceId, document, settings);
         try {
             ClaimSender sender = new ClaimSender(settings.host(), settings.port(), settings.encodingOrDefault());
             sender.send(document);
@@ -98,6 +99,7 @@ public class MessageSender implements MessageListener {
             return;
         }
         LOGGER.info(() -> String.format("Processing Diagnosis JMS message [traceId=%s]", traceId));
+        ExternalServiceAuditLogger.logDiagnosisRequest(traceId, wrapper, settings);
         try {
             DiagnosisSender sender = new DiagnosisSender(settings.host(), settings.port(), settings.encodingOrDefault());
             sender.send(wrapper);

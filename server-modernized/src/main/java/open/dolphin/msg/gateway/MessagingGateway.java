@@ -91,25 +91,25 @@ public class MessagingGateway {
     }
 
     private void sendClaimDirect(DocumentModel document, MessagingConfig.ClaimSettings settings, String traceId) {
+        LOGGER.info(() -> String.format("Claim fallback send started [traceId=%s]", traceId));
         try {
-            LOGGER.info(() -> String.format("Claim fallback send started [traceId=%s]", traceId));
             ClaimSender sender = new ClaimSender(settings.host(), settings.port(), settings.encodingOrDefault());
             sender.send(document);
             ExternalServiceAuditLogger.logClaimSuccess(traceId, document, settings);
         } catch (Exception ex) {
-            LOGGER.log(Level.WARNING, () -> String.format("Claim send error [traceId=%s]", traceId), ex);
+            LOGGER.log(Level.WARNING, String.format("Claim send error [traceId=%s]", traceId), ex);
             ExternalServiceAuditLogger.logClaimFailure(traceId, document, settings, ex);
         }
     }
 
     private void sendDiagnosisDirect(DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings, String traceId) {
+        LOGGER.info(() -> String.format("Diagnosis fallback send started [traceId=%s]", traceId));
         try {
-            LOGGER.info(() -> String.format("Diagnosis fallback send started [traceId=%s]", traceId));
             DiagnosisSender sender = new DiagnosisSender(settings.host(), settings.port(), settings.encodingOrDefault());
             sender.send(wrapper);
             ExternalServiceAuditLogger.logDiagnosisSuccess(traceId, wrapper, settings);
         } catch (Exception ex) {
-            LOGGER.log(Level.WARNING, () -> String.format("Diagnosis send error [traceId=%s]", traceId), ex);
+            LOGGER.log(Level.WARNING, String.format("Diagnosis send error [traceId=%s]", traceId), ex);
             ExternalServiceAuditLogger.logDiagnosisFailure(traceId, wrapper, settings, ex);
         }
     }

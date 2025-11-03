@@ -4,6 +4,7 @@ import com.plivo.api.models.message.MessageCreateResponse;
 import java.time.Instant;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.DocInfoModel;
@@ -21,46 +22,78 @@ public final class ExternalServiceAuditLogger {
     private ExternalServiceAuditLogger() {
     }
 
-    static void logClaimRequest(String traceId, DocumentModel document, MessagingConfig.ClaimSettings settings) {
-        log(Level.INFO, "CLAIM_REQUEST", traceId, documentSummary(document), settingsSummary(settings), null);
+    public static void logClaimRequest(String traceId, DocumentModel document, MessagingConfig.ClaimSettings settings) {
+        log(Level.INFO, "CLAIM_REQUEST", traceId,
+                () -> documentSummary(document),
+                () -> settingsSummary(settings),
+                null);
     }
 
-    static void logClaimSuccess(String traceId, DocumentModel document, MessagingConfig.ClaimSettings settings) {
-        log(Level.INFO, "CLAIM_SUCCESS", traceId, documentSummary(document), settingsSummary(settings), null);
+    public static void logClaimSuccess(String traceId, DocumentModel document, MessagingConfig.ClaimSettings settings) {
+        log(Level.INFO, "CLAIM_SUCCESS", traceId,
+                () -> documentSummary(document),
+                () -> settingsSummary(settings),
+                null);
     }
 
-    static void logClaimFailure(String traceId, DocumentModel document, MessagingConfig.ClaimSettings settings, Throwable error) {
-        log(Level.WARNING, "CLAIM_FAILURE", traceId, documentSummary(document), settingsSummary(settings), error);
+    public static void logClaimFailure(String traceId, DocumentModel document, MessagingConfig.ClaimSettings settings, Throwable error) {
+        log(Level.WARNING, "CLAIM_FAILURE", traceId,
+                () -> documentSummary(document),
+                () -> settingsSummary(settings),
+                error);
     }
 
-    static void logDiagnosisRequest(String traceId, DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings) {
-        log(Level.INFO, "DIAGNOSIS_REQUEST", traceId, diagnosisSummary(wrapper), settingsSummary(settings), null);
+    public static void logDiagnosisRequest(String traceId, DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings) {
+        log(Level.INFO, "DIAGNOSIS_REQUEST", traceId,
+                () -> diagnosisSummary(wrapper),
+                () -> settingsSummary(settings),
+                null);
     }
 
-    static void logDiagnosisSuccess(String traceId, DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings) {
-        log(Level.INFO, "DIAGNOSIS_SUCCESS", traceId, diagnosisSummary(wrapper), settingsSummary(settings), null);
+    public static void logDiagnosisSuccess(String traceId, DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings) {
+        log(Level.INFO, "DIAGNOSIS_SUCCESS", traceId,
+                () -> diagnosisSummary(wrapper),
+                () -> settingsSummary(settings),
+                null);
     }
 
-    static void logDiagnosisFailure(String traceId, DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings, Throwable error) {
-        log(Level.WARNING, "DIAGNOSIS_FAILURE", traceId, diagnosisSummary(wrapper), settingsSummary(settings), error);
+    public static void logDiagnosisFailure(String traceId, DiagnosisSendWrapper wrapper, MessagingConfig.ClaimSettings settings, Throwable error) {
+        log(Level.WARNING, "DIAGNOSIS_FAILURE", traceId,
+                () -> diagnosisSummary(wrapper),
+                () -> settingsSummary(settings),
+                error);
     }
 
-    static void logSmsRequest(String traceId, List<String> destinations, SmsGatewayConfig.PlivoSettings settings) {
-        log(Level.INFO, "SMS_REQUEST", traceId, smsSummary(destinations, null), smsSettingsSummary(settings), null);
+    public static void logSmsRequest(String traceId, List<String> destinations, SmsGatewayConfig.PlivoSettings settings) {
+        log(Level.INFO, "SMS_REQUEST", traceId,
+                () -> smsSummary(destinations, null),
+                () -> smsSettingsSummary(settings),
+                null);
     }
 
-    static void logSmsSuccess(String traceId, List<String> destinations, SmsGatewayConfig.PlivoSettings settings, MessageCreateResponse response) {
-        log(Level.INFO, "SMS_SUCCESS", traceId, smsSummary(destinations, response), smsSettingsSummary(settings), null);
+    public static void logSmsSuccess(String traceId, List<String> destinations, SmsGatewayConfig.PlivoSettings settings, MessageCreateResponse response) {
+        log(Level.INFO, "SMS_SUCCESS", traceId,
+                () -> smsSummary(destinations, response),
+                () -> smsSettingsSummary(settings),
+                null);
     }
 
-    static void logSmsFailure(String traceId, List<String> destinations, SmsGatewayConfig.PlivoSettings settings, Throwable error) {
-        log(Level.WARNING, "SMS_FAILURE", traceId, smsSummary(destinations, null), smsSettingsSummary(settings), error);
+    public static void logSmsFailure(String traceId, List<String> destinations, SmsGatewayConfig.PlivoSettings settings, Throwable error) {
+        log(Level.WARNING, "SMS_FAILURE", traceId,
+                () -> smsSummary(destinations, null),
+                () -> smsSettingsSummary(settings),
+                error);
     }
 
-    private static void log(Level level, String event, String traceId, String payloadSummary, String settingsSummary, Throwable error) {
+    private static void log(Level level, String event, String traceId,
+            Supplier<String> payloadSummarySupplier,
+            Supplier<String> settingsSummarySupplier,
+            Throwable error) {
         if (!AUDIT_LOGGER.isLoggable(level)) {
             return;
         }
+        String payloadSummary = payloadSummarySupplier != null ? payloadSummarySupplier.get() : null;
+        String settingsSummary = settingsSummarySupplier != null ? settingsSummarySupplier.get() : null;
         StringBuilder builder = new StringBuilder();
         builder.append("event=").append(event);
         builder.append(" timestamp=").append(FORMATTER.format(Instant.now()));

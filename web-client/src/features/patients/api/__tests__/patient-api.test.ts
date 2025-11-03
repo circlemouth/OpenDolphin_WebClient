@@ -29,8 +29,8 @@ describe('patient-api', () => {
   });
 
   it('builds search path with encoded keyword', () => {
-    expect(buildPatientSearchPath({ mode: 'name', keyword: '山田 太郎' })).toBe('/patient/name/%E5%B1%B1%E7%94%B0%20%E5%A4%AA%E9%83%8E');
-    expect(buildPatientSearchPath({ mode: 'id', keyword: '000123' })).toBe('/patient/id/000123');
+    expect(buildPatientSearchPath('name', '山田 太郎')).toBe('/patient/name/%E5%B1%B1%E7%94%B0%20%E5%A4%AA%E9%83%8E');
+    expect(buildPatientSearchPath('id', '000123')).toBe('/patient/id/000123');
   });
 
   it('returns empty array when keyword is blank', async () => {
@@ -70,6 +70,31 @@ describe('patient-api', () => {
       patientId: '0001-01',
       safetyNotes: ['ペニシリン禁忌', '感染症注意'],
     });
+  });
+
+  it('intersects results when multiple criteria provided', async () => {
+    vi.mocked(httpClient.get)
+      .mockResolvedValueOnce({
+        data: {
+          list: [
+            { id: 1, patientId: '0001', fullName: '山田 太郎' },
+            { id: 2, patientId: '0002', fullName: '山田 花子' },
+          ],
+        },
+      } as never)
+      .mockResolvedValueOnce({
+        data: {
+          list: [
+            { id: 1, patientId: '0001', fullName: '山田 太郎' },
+          ],
+        },
+      } as never);
+
+    const result = await searchPatients({ nameKeyword: '山田', idKeyword: '0001' });
+
+    expect(httpClient.get).toHaveBeenCalledTimes(2);
+    expect(result).toHaveLength(1);
+    expect(result[0]?.patientId).toBe('0001');
   });
 
   it('fetches patient detail and normalizes fields', async () => {

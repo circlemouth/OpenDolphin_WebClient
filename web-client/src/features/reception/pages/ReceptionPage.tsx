@@ -1,10 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import type { JSX } from 'react';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { Button, SelectField, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
+import { Button, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
 import { useSidebar } from '@/app/layout/SidebarContext';
 import { patientVisitsQueryKey, usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { hasOpenBit } from '@/features/charts/utils/visit-state';
@@ -32,13 +32,8 @@ import {
 } from '@/features/reception/api/visit-api';
 import { usePatientSearch } from '@/features/patients/hooks/usePatientSearch';
 import type { PatientUpsertMode } from '@/features/patients/hooks/usePatientUpsert';
-import type {
-  PatientDetail,
-  PatientSearchMode,
-  PatientSearchRequest,
-  PatientSummary,
-} from '@/features/patients/types/patient';
-import { defaultKarteFromDate } from '@/features/patients/utils/rest-date';
+import type { PatientDetail, PatientSearchRequest, PatientSummary } from '@/features/patients/types/patient';
+import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { recordOperationEvent } from '@/libs/audit';
 import {
   ReceptionSidebarContent,
@@ -57,6 +52,32 @@ const QUEUE_GROUP_LABELS: Record<QueueStatus, { title: string; subtitle: string 
   inProgress: { title: '診察中患者', subtitle: '診察中' },
 };
 const QUEUE_ORDER: QueueStatus[] = ['waiting', 'calling', 'inProgress'];
+
+const KARTE_DATE_INPUT_PATTERN = /^([0-9]{4})-([0-9]{2})-([0-9]{2})$/;
+
+const toKarteDateInputValue = (restFormatted: string): string => {
+  if (!restFormatted) {
+    return '';
+  }
+  const [datePart] = restFormatted.split(' ');
+  return datePart ?? restFormatted;
+};
+
+const toRestFormattedDate = (input: string): string | null => {
+  const match = KARTE_DATE_INPUT_PATTERN.exec(input);
+  if (!match) {
+    return null;
+  }
+  const [, year, month, day] = match;
+  const numericYear = Number(year);
+  const numericMonth = Number(month) - 1;
+  const numericDay = Number(day);
+  const candidate = new Date(numericYear, numericMonth, numericDay, 0, 0, 0);
+  if (Number.isNaN(candidate.getTime())) {
+    return null;
+  }
+  return formatRestDate(candidate);
+};
 
 const PageContainer = styled.div`
   display: flex;
@@ -192,11 +213,24 @@ const SearchForm = styled.form`
 const SearchFields = styled.div`
   display: grid;
   gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
 
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
+`;
+
+const SearchActions = styled.div`
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+const SearchHint = styled.p`
+  margin: 0;
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.palette.textMuted};
 `;
 
 const PatientResultList = styled.div`
@@ -204,31 +238,79 @@ const PatientResultList = styled.div`
   gap: 8px;
 `;
 
-const PatientResultItem = styled.div`
+const PatientResultItem = styled.div<{ $selected: boolean }>`
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
-  border: 1px solid ${({ theme }) => theme.palette.border};
+  align-items: stretch;
+  gap: 16px;
+  padding: 12px 16px;
+  border: 1px solid ${({ theme, $selected }) => ($selected ? theme.palette.primary : theme.palette.border)};
   border-radius: ${({ theme }) => theme.radius.md};
-  background: ${({ theme }) => theme.palette.surface};
+  background: ${({ theme, $selected }) =>
+    $selected ? `${theme.palette.primary}12` : theme.palette.surface};
+  box-shadow: ${({ theme, $selected }) =>
+    $selected ? `0 0 0 3px ${theme.palette.primary}26` : 'none'};
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  cursor: pointer;
+  outline: none;
+
+  &:hover,
+  &:focus-within {
+    border-color: ${({ theme }) => theme.palette.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.palette.primary}19`};
+  }
+
+  &:focus-visible {
+    border-color: ${({ theme }) => theme.palette.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.palette.primary}33`};
+  }
 `;
 
 const PatientResultInfo = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
+  display: grid;
+  gap: 8px;
+  flex: 1;
   min-width: 0;
 `;
 
 const PatientResultName = styled.span`
-  font-weight: 600;
+  font-weight: 700;
+  font-size: 1rem;
+  color: ${({ theme }) => theme.palette.textPrimary};
 `;
 
-const PatientResultMeta = styled.span`
+const PatientResultMeta = styled.div`
+  display: grid;
+  gap: 6px 16px;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
   font-size: 0.85rem;
+`;
+
+const PatientResultMetaItem = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+`;
+
+const PatientResultMetaLabel = styled.span`
   color: ${({ theme }) => theme.palette.textMuted};
+  letter-spacing: 0.02em;
+  font-size: 0.75rem;
+`;
+
+const PatientResultMetaValue = styled.span`
+  color: ${({ theme }) => theme.palette.text};
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+`;
+
+const PatientSafetyNotes = styled.div`
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
 `;
 
 const PatientResultActions = styled.div`
@@ -288,6 +370,41 @@ const buildPatientSummaryFromDetail = (detail: PatientDetail): PatientSummary =>
   safetyNotes: detail.safetyNotes,
   raw: detail.raw,
 });
+
+const formatDisplayDate = (value?: string | null) => {
+  if (!value) {
+    return '---';
+  }
+  try {
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) {
+      return value;
+    }
+    return new Intl.DateTimeFormat('ja-JP', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    }).format(date);
+  } catch {
+    return value;
+  }
+};
+
+const resolveSafetyNoteTone = (note: string): 'danger' | 'warning' | 'info' => {
+  const normalized = note.trim();
+  if (!normalized) {
+    return 'info';
+  }
+  if (/禁忌|アナフィラ|ショック|重症/.test(normalized)) {
+    return 'danger';
+  }
+  if (/注意|慎重|警告/.test(normalized)) {
+    return 'warning';
+  }
+  return 'info';
+};
 
 const VisitCard = styled(SurfaceCard)`
   display: flex;
@@ -385,17 +502,24 @@ export const ReceptionPage = () => {
     () => new Set((temporaryDocumentsQuery.data ?? []).map((entry) => entry.patientId)),
     [temporaryDocumentsQuery.data],
   );
+  const defaultKarteFromDateValue = useMemo(() => defaultKarteFromDate(), []);
+  const defaultKarteFromDateInputValue = useMemo(
+    () => toKarteDateInputValue(defaultKarteFromDateValue),
+    [defaultKarteFromDateValue],
+  );
   const [receptionSearchKeyword, setReceptionSearchKeyword] = useState('');
-  const [patientSearchMode, setPatientSearchMode] = useState<PatientSearchMode>('name');
-  const [patientSearchKeyword, setPatientSearchKeyword] = useState('');
+  const [patientSearchName, setPatientSearchName] = useState('');
+  const [patientSearchKana, setPatientSearchKana] = useState('');
+  const [patientSearchId, setPatientSearchId] = useState('');
+  const [patientSearchDigit, setPatientSearchDigit] = useState('');
   const [patientSearchParams, setPatientSearchParams] = useState<PatientSearchRequest | null>(null);
   const patientSearchQuery = usePatientSearch(patientSearchParams);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedPatientSummary, setSelectedPatientSummary] = useState<PatientSummary | null>(null);
   const [activeSidebarTab, setActiveSidebarTab] = useState<SidebarTab>('reception');
-  const [karteFromDateInput, setKarteFromDateInput] = useState<string>(defaultKarteFromDate());
-  const [karteFromDate, setKarteFromDate] = useState<string>(defaultKarteFromDate());
+  const [karteFromDate, setKarteFromDate] = useState<string>(defaultKarteFromDateValue);
+  const [karteFromDateInput, setKarteFromDateInput] = useState<string>(defaultKarteFromDateInputValue);
   const [urlSearchParams, setUrlSearchParams] = useSearchParams();
   const [autoCreateReceptionEnabled, setAutoCreateReceptionEnabled] = useState<boolean>(() => {
     if (typeof window === 'undefined') {
@@ -408,6 +532,17 @@ export const ReceptionPage = () => {
     return true;
   });
   const [patientFormMode, setPatientFormMode] = useState<PatientUpsertMode>('update');
+
+  const hasPatientSearchInput = useMemo(
+    () =>
+      Boolean(
+        patientSearchName.trim() ||
+          patientSearchKana.trim() ||
+          patientSearchId.trim() ||
+          patientSearchDigit.trim(),
+      ),
+    [patientSearchDigit, patientSearchId, patientSearchKana, patientSearchName],
+  );
 
   useEffect(() => {
     const ridParam = urlSearchParams.get('rid');
@@ -514,32 +649,66 @@ export const ReceptionPage = () => {
   );
 
   const handlePatientSearch = useCallback(() => {
-    const keywordInput = patientSearchKeyword.trim();
-    if (!keywordInput) {
-      setSearchError('患者検索キーワードを入力してください');
+    const trimmedName = patientSearchName.trim();
+    const trimmedKana = patientSearchKana.trim();
+    const trimmedId = patientSearchId.trim();
+    const trimmedDigit = patientSearchDigit.trim();
+
+    if (!trimmedName && !trimmedKana && !trimmedId && !trimmedDigit) {
+      setSearchError('検索条件を1つ以上入力してください');
       return;
     }
+
     setSearchError(null);
-    const params: PatientSearchRequest = { keyword: keywordInput, mode: patientSearchMode };
+    const params: PatientSearchRequest = {
+      nameKeyword: trimmedName || undefined,
+      kanaKeyword: trimmedKana || undefined,
+      idKeyword: trimmedId || undefined,
+      digitKeyword: trimmedDigit || undefined,
+    };
     setPatientSearchParams(params);
     recordOperationEvent('patient', 'info', 'patient_search_inline', '受付画面から患者検索を実行しました', {
-      keywordLength: keywordInput.length,
-      mode: patientSearchMode,
+      activeFilters: [trimmedName, trimmedKana, trimmedId, trimmedDigit].filter((value) => value.length > 0).length,
+      nameLength: trimmedName.length,
+      kanaLength: trimmedKana.length,
+      idLength: trimmedId.length,
+      digitLength: trimmedDigit.length,
     });
-  }, [patientSearchKeyword, patientSearchMode]);
+  }, [patientSearchDigit, patientSearchId, patientSearchKana, patientSearchName]);
+
+  const handleClearPatientSearch = useCallback(() => {
+    if (!hasPatientSearchInput && !patientSearchParams) {
+      return;
+    }
+    setPatientSearchName('');
+    setPatientSearchKana('');
+    setPatientSearchId('');
+    setPatientSearchDigit('');
+    setPatientSearchParams(null);
+    setSearchError(null);
+    recordOperationEvent('patient', 'info', 'patient_search_clear', '受付画面の患者検索条件をクリアしました', {});
+  }, [
+    hasPatientSearchInput,
+    patientSearchParams,
+  ]);
 
   const handleSelectPatientSummary = useCallback(
-    (summary: PatientSummary, options?: { focusTab?: SidebarTab }) => {
+    (
+      summary: PatientSummary,
+      options?: { focusTab?: SidebarTab; shouldRecordEvent?: boolean },
+    ) => {
       setSelectedPatientId(summary.patientId);
       setSelectedPatientSummary(summary);
       setSelectedVisitId(null);
       setPatientFormMode('update');
       setActiveSidebarTab(options?.focusTab ?? 'patient');
-      recordOperationEvent('patient', 'info', 'patient_select', '患者を選択しました', {
-        patientId: summary.patientId,
-        fullName: summary.fullName,
-        source: 'reception-page-search',
-      });
+      if (options?.shouldRecordEvent ?? true) {
+        recordOperationEvent('patient', 'info', 'patient_select', '患者を選択しました', {
+          patientId: summary.patientId,
+          fullName: summary.fullName,
+          source: 'reception-page-search',
+        });
+      }
     },
     [],
   );
@@ -637,6 +806,39 @@ export const ReceptionPage = () => {
   );
 
   const patientResults = useMemo(() => patientSearchQuery.data ?? [], [patientSearchQuery.data]);
+  const patientSearchUpdatedAt = patientSearchQuery.dataUpdatedAt;
+  const lastAutoSelectAtRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (!patientSearchParams) {
+      return;
+    }
+    if (!patientResults.length) {
+      lastAutoSelectAtRef.current = 0;
+      return;
+    }
+    if (!patientSearchUpdatedAt) {
+      return;
+    }
+    if (lastAutoSelectAtRef.current === patientSearchUpdatedAt) {
+      return;
+    }
+    lastAutoSelectAtRef.current = patientSearchUpdatedAt;
+    const isCurrentSelected =
+      selectedPatientId !== null &&
+      patientResults.some((patient) => patient.patientId === selectedPatientId);
+    if (isCurrentSelected) {
+      return;
+    }
+    const firstPatient = patientResults[0];
+    handleSelectPatientSummary(firstPatient, { focusTab: 'patient', shouldRecordEvent: false });
+  }, [
+    handleSelectPatientSummary,
+    patientResults,
+    patientSearchParams,
+    patientSearchUpdatedAt,
+    selectedPatientId,
+  ]);
 
   const filteredVisits = useMemo(() => {
     const normalizedKeyword = receptionSearchKeyword.trim().toLowerCase();
@@ -919,16 +1121,26 @@ export const ReceptionPage = () => {
     [refetchPatientSearch],
   );
 
-  const handleSidebarKarteFromDateChange = useCallback((value: string) => {
-    if (!value) {
-      const fallback = defaultKarteFromDate();
-      setKarteFromDateInput(fallback);
-      setKarteFromDate(fallback);
-      return;
-    }
-    setKarteFromDateInput(value);
-    setKarteFromDate(value);
-  }, []);
+  const handleSidebarKarteFromDateChange = useCallback(
+    (value: string) => {
+      if (!value) {
+        setKarteFromDate(defaultKarteFromDateValue);
+        setKarteFromDateInput(defaultKarteFromDateInputValue);
+        return;
+      }
+
+      const restFormatted = toRestFormattedDate(value);
+      if (!restFormatted) {
+        setKarteFromDate(defaultKarteFromDateValue);
+        setKarteFromDateInput(defaultKarteFromDateInputValue);
+        return;
+      }
+
+      setKarteFromDate(restFormatted);
+      setKarteFromDateInput(value);
+    },
+    [defaultKarteFromDateInputValue, defaultKarteFromDateValue],
+  );
 
   const handleAutoReceptionPreference = useCallback((enabled: boolean) => {
     setAutoCreateReceptionEnabled(enabled);
@@ -976,6 +1188,7 @@ export const ReceptionPage = () => {
         karteFromDate={karteFromDate}
         karteFromDateInput={karteFromDateInput}
         onChangeKarteFromDate={handleSidebarKarteFromDateChange}
+        formatDisplayDate={formatDisplayDate}
       />
     );
   }, [
@@ -1344,27 +1557,65 @@ export const ReceptionPage = () => {
             >
               <SearchFields>
                 <TextField
-                  label="患者検索キーワード"
-                  placeholder="患者ID または 氏名"
-                  value={patientSearchKeyword}
-                  onChange={(event) => setPatientSearchKeyword(event.currentTarget.value)}
+                  label="氏名（漢字）"
+                  placeholder="例：山田 太郎"
+                  value={patientSearchName}
+                  onChange={(event) => {
+                    setPatientSearchName(event.currentTarget.value);
+                    if (searchError) {
+                      setSearchError(null);
+                    }
+                  }}
                   errorMessage={searchError ?? undefined}
                 />
-                <SelectField
-                  label="検索対象"
-                  value={patientSearchMode}
-                  onChange={(event) => setPatientSearchMode(event.currentTarget.value as PatientSearchMode)}
-                  options={[
-                    { value: 'name', label: '漢字氏名' },
-                    { value: 'kana', label: 'カナ氏名' },
-                    { value: 'id', label: '患者ID' },
-                    { value: 'digit', label: '番号（下4桁など）' },
-                  ]}
+                <TextField
+                  label="氏名（カナ）"
+                  placeholder="例：ヤマダ タロウ"
+                  value={patientSearchKana}
+                  onChange={(event) => {
+                    setPatientSearchKana(event.currentTarget.value);
+                    if (searchError) {
+                      setSearchError(null);
+                    }
+                  }}
                 />
+                <TextField
+                  label="患者ID"
+                  placeholder="例：000123"
+                  value={patientSearchId}
+                  onChange={(event) => {
+                    setPatientSearchId(event.currentTarget.value);
+                    if (searchError) {
+                      setSearchError(null);
+                    }
+                  }}
+                />
+                <TextField
+                  label="数字検索（生年月日・電話など）"
+                  placeholder="例：0101"
+                  value={patientSearchDigit}
+                  onChange={(event) => {
+                    setPatientSearchDigit(event.currentTarget.value);
+                    if (searchError) {
+                      setSearchError(null);
+                    }
+                  }}
+                />
+              </SearchFields>
+              <SearchActions>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  onClick={handleClearPatientSearch}
+                  disabled={!hasPatientSearchInput && !patientSearchParams}
+                >
+                  条件をクリア
+                </Button>
                 <Button type="submit" variant="primary" isLoading={patientSearchQuery.isFetching}>
                   検索実行
                 </Button>
-              </SearchFields>
+              </SearchActions>
+              <SearchHint>入力した項目のすべてに一致する患者だけを表示します。</SearchHint>
             </SearchForm>
             {searchError ? (
               <span style={{ color: '#dc2626', fontSize: '0.85rem' }} role="alert">
@@ -1376,38 +1627,123 @@ export const ReceptionPage = () => {
                 患者検索に失敗しました。時間をおいて再度お試しください。
               </span>
             ) : null}
-            {patientResults.length > 0 ? (
-              <PatientResultList>
-                {patientResults.map((patient) => (
-                  <PatientResultItem key={patient.patientId}>
-                    <PatientResultInfo>
-                      <PatientResultName>{patient.fullName}</PatientResultName>
-                      <PatientResultMeta>患者ID: {patient.patientId}</PatientResultMeta>
-                    </PatientResultInfo>
-                    <PatientResultActions>
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="sm"
+            {!patientSearchQuery.isError ? (
+              patientSearchQuery.isPending ? (
+                <p style={{ color: '#64748b', fontSize: '0.85rem' }} aria-live="polite">
+                  患者リストを読み込み中です…
+                </p>
+              ) : patientResults.length === 0 ? (
+                <p style={{ color: '#64748b', fontSize: '0.85rem' }}>
+                  {patientSearchParams
+                    ? '該当する患者が見つかりませんでした。'
+                    : '検索条件を入力してください。'}
+                </p>
+              ) : (
+                <PatientResultList
+                  role="listbox"
+                  aria-label="患者検索結果"
+                  aria-busy={patientSearchQuery.isFetching && !patientSearchQuery.isPending}
+                >
+                  {patientResults.map((patient) => {
+                    const genderLabel = patient.genderDesc ?? patient.gender ?? '---';
+                    const birthdayLabel = formatDisplayDate(patient.birthday);
+                    const lastVisitLabel = formatDisplayDate(patient.lastVisitDate);
+                    const safetyNotes = patient.safetyNotes ?? [];
+                    const cardIdBase = `patient-result-${patient.patientId}`;
+                    const titleId = `${cardIdBase}-name`;
+                    const metaId = `${cardIdBase}-meta`;
+                    const safetyId = `${cardIdBase}-safety`;
+                    const isSelected = selectedPatientId === patient.patientId;
+                    const describedByIds = [metaId, safetyNotes.length ? safetyId : null]
+                      .filter(Boolean)
+                      .join(' ');
+
+                    return (
+                      <PatientResultItem
+                        key={patient.patientId}
+                        role="option"
+                        aria-labelledby={titleId}
+                        aria-describedby={describedByIds}
+                        aria-selected={isSelected}
+                        tabIndex={0}
+                        $selected={isSelected}
                         onClick={() => handleSelectPatientSummary(patient, { focusTab: 'patient' })}
-                      >
-                        詳細
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="primary"
-                        size="sm"
-                        onClick={() => {
-                          void handleQuickReceptionCreate(patient);
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter' || event.key === ' ') {
+                            event.preventDefault();
+                            handleSelectPatientSummary(patient, { focusTab: 'patient' });
+                          }
                         }}
-                        isLoading={quickReceptionPatientId === patient.patientId}
                       >
-                        受付に追加
-                      </Button>
-                    </PatientResultActions>
-                  </PatientResultItem>
-                ))}
-              </PatientResultList>
+                        <PatientResultInfo>
+                          <PatientResultName id={titleId}>{patient.fullName ?? '---'}</PatientResultName>
+                          <PatientResultMeta id={metaId} aria-label="患者属性一覧">
+                            <PatientResultMetaItem>
+                              <PatientResultMetaLabel>患者ID</PatientResultMetaLabel>
+                              <PatientResultMetaValue>{patient.patientId || '---'}</PatientResultMetaValue>
+                            </PatientResultMetaItem>
+                            <PatientResultMetaItem>
+                              <PatientResultMetaLabel>性別</PatientResultMetaLabel>
+                              <PatientResultMetaValue>{genderLabel}</PatientResultMetaValue>
+                            </PatientResultMetaItem>
+                            <PatientResultMetaItem>
+                              <PatientResultMetaLabel>生年月日</PatientResultMetaLabel>
+                              <PatientResultMetaValue>{birthdayLabel}</PatientResultMetaValue>
+                            </PatientResultMetaItem>
+                            <PatientResultMetaItem>
+                              <PatientResultMetaLabel>最終来院日</PatientResultMetaLabel>
+                              <PatientResultMetaValue>{lastVisitLabel}</PatientResultMetaValue>
+                            </PatientResultMetaItem>
+                            <PatientResultMetaItem>
+                              <PatientResultMetaLabel id={`${safetyId}-label`}>患者安全情報</PatientResultMetaLabel>
+                              {safetyNotes.length ? (
+                                <PatientSafetyNotes id={safetyId} aria-labelledby={`${safetyId}-label`}>
+                                  {safetyNotes.map((note, index) => (
+                                    <StatusBadge
+                                      key={`${patient.patientId}-safety-${index}`}
+                                      tone={resolveSafetyNoteTone(note)}
+                                      size="sm"
+                                    >
+                                      {note}
+                                    </StatusBadge>
+                                  ))}
+                                </PatientSafetyNotes>
+                              ) : (
+                                <PatientResultMetaValue id={safetyId}>---</PatientResultMetaValue>
+                              )}
+                            </PatientResultMetaItem>
+                          </PatientResultMeta>
+                        </PatientResultInfo>
+                        <PatientResultActions>
+                          <Button
+                            type="button"
+                            variant="secondary"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              handleSelectPatientSummary(patient, { focusTab: 'patient' });
+                            }}
+                          >
+                            詳細
+                          </Button>
+                          <Button
+                            type="button"
+                            variant="primary"
+                            size="sm"
+                            onClick={(event) => {
+                              event.stopPropagation();
+                              void handleQuickReceptionCreate(patient);
+                            }}
+                            isLoading={quickReceptionPatientId === patient.patientId}
+                          >
+                            受付に追加
+                          </Button>
+                        </PatientResultActions>
+                      </PatientResultItem>
+                    );
+                  })}
+                </PatientResultList>
+              )
             ) : null}
           </PatientSearchCard>
           <BarcodeCheckInPanel onSuccess={handleBarcodeSuccess} />

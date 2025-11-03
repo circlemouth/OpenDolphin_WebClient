@@ -10,7 +10,6 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.sse.Sse;
-import jakarta.ws.rs.sse.SseElementType;
 import jakarta.ws.rs.sse.SseEventSink;
 
 /**
@@ -27,7 +26,6 @@ public class ChartEventStreamResource extends AbstractResource {
 
     @GET
     @Produces(MediaType.SERVER_SENT_EVENTS)
-    @SseElementType(MediaType.APPLICATION_JSON)
     public void subscribe(@Context SseEventSink eventSink,
                           @Context Sse sse,
                           @HeaderParam(ChartEventResource.CLIENT_UUID) String clientUUID,
@@ -52,4 +50,3 @@ public class ChartEventStreamResource extends AbstractResource {
         sseSupport.register(fid, clientUUID, sse, eventSink, lastEventId);
     }
 }
-
