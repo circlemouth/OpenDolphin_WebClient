@@ -1,6 +1,7 @@
 embed-server --std-out=echo --server-config=standalone-full.xml
 
-module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=jakarta.api,jakarta.transaction.api
+# 2025-11-03 モダナイズ対応: WildFly 33 base レイヤ指定（依存は javax 系で維持）
+module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=javax.api,javax.transaction.api --module-root-dir=/opt/jboss/wildfly/modules/system/layers/base
 
 if (outcome == success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource()
     /subsystem=datasources/jdbc-driver=postgresql:remove()
@@ -10,7 +11,8 @@ end-if
 if (outcome == success) of /subsystem=datasources/data-source=ORCADS:read-resource()
     /subsystem=datasources/data-source=ORCADS:remove()
 end-if
-/subsystem=datasources/data-source=ORCADS:add(jndi-name=java:jboss/datasources/ORCADS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
+# 2025-11-03 モダナイズ対応: デフォルトDB名opendolphin_modernへ統一
+/subsystem=datasources/data-source=ORCADS:add(jndi-name=java:jboss/datasources/ORCADS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
 /subsystem=datasources/data-source=ORCADS:write-attribute(name=query-timeout,value=60)
 if (outcome == success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
     /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:remove()
@@ -22,7 +24,7 @@ end-if
 if (outcome == success) of /subsystem=datasources/data-source=PostgresDS:read-resource()
     /subsystem=datasources/data-source=PostgresDS:remove()
 end-if
-/subsystem=datasources/data-source=PostgresDS:add(jndi-name=java:jboss/datasources/PostgresDS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
+/subsystem=datasources/data-source=PostgresDS:add(jndi-name=java:jboss/datasources/PostgresDS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
 /subsystem=datasources/data-source=PostgresDS:write-attribute(name=query-timeout,value=60)
 if (outcome == success) of /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:read-resource()
     /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:remove()
@@ -80,11 +82,16 @@ end-if
 if (outcome != success) of /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource()
     /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:add(entries=["java:/queue/dolphin","java:jboss/exported/jms/queue/dolphin"], durable=true)
 end-if
-if (outcome != success) of /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:read-resource()
-    /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:add(entries=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"], connectors=["in-vm"], use-global-pools=false)
+if (outcome == success) of /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:read-resource()
+    /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:remove()
 end-if
-if (outcome != success) of /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource()
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:add(entries=["java:/JmsXA"], connectors=["in-vm"], transaction="xa")
+if (outcome == success) of /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:read-resource()
+    /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:write-attribute(name=entries, value=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"])
+else
+    /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:add(entries=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"], connectors=["in-vm"], use-global-pools=false)
+end-if
+if (outcome == success) of /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource()
+    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:remove()
 end-if
 
 # Micrometer 監視連携: JMS/Undertow のメトリクスが Micrometer のスクレイプ対象と整合するように保守すること。
