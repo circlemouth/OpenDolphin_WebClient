@@ -11,4 +11,18 @@
     <module>common</module>
     <module>server-modernized</module>
   </modules>
+
+  <repositories>
+    <repository>
+      <id>jboss-public</id>
+      <name>JBoss Public Repository Group</name>
+      <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+      <releases>
+        <enabled>true</enabled>
+      </releases>
+      <snapshots>
+        <enabled>false</enabled>
+      </snapshots>
+    </repository>
+  </repositories>
 </project>

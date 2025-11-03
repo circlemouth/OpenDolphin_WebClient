@@ -133,8 +133,8 @@ Docker 関連資産は `ops/` 以下に整理されている。旧サーバー�
 
 - 手元環境に Apache Maven 3.9.6 を手動配置（`$HOME/.local/apache-maven-3.9.6`）し、`export PATH=$HOME/.local/apache-maven-3.9.6/bin:$PATH` を設定した上で各コマンドを実行。
 - `mvn -f pom.server-modernized.xml -pl common -DskipTests -ntp package` は成功。
-- `mvn -f pom.server-modernized.xml -s ops/shared/docker/settings.xml -pl server-modernized -am -DskipTests -ntp package` はコンパイルエラーで失敗。`ADM20_EHTServiceBean` の `com.yubico.webauthn.credential.*`、`MeterRegistryProducer` の `jakarta.naming.*`、`ChartEventStreamResource` の `jakarta.ws.rs.sse.SseElementType`、`PlivoSender`／`MessageSender` の `okhttp3.*`・`ConnectionSpec`・`TlsVersion`、`ExternalServiceAuditLogger` の可視性、および `Logger#log(Level, Supplier, Throwable)` 呼び出しが未解決。
-- 同一エラーが `docker compose -p modern-testing -f docker-compose.yml -f docker-compose.modernized.dev.yml build server-modernized-dev` でも発生し、`server-modernized/target/opendolphin-server.war` は生成されない。
+- `mvn -f pom.server-modernized.xml -pl server-modernized -am -DskipTests -ntp compile` は 2025-11-04 時点で失敗。Jakarta Naming API (`jakarta.naming:jakarta.naming-api`) が JBoss Public Repository 専用配布であり、ネットワーク制限により 403 応答で取得できないため `jakarta.naming.InitialContext` が解決できなかった。
+- `docker compose -p modern-testing -f docker-compose.yml -f docker-compose.modernized.dev.yml build server-modernized-dev` も同様の理由で WAR 生成に失敗する見込み。JBoss リポジトリへのアクセス制限を解消した後に再実行する。
 - ログ採取例: `mvn ... | tee /tmp/mvn_server.log`、`docker compose ... | tee /tmp/docker_build.log`。
 
 ## 初期ログイン情報（2025-11-02 更新）
