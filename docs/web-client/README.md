@@ -47,7 +47,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`ux/KARTE_SCREEN_IMPLEMENTATION.md`](ux/KARTE_SCREEN_IMPLEMENTATION.md): 最新カルテ画面の構造・ショートカット・レスポンシブ仕様。
 
 - [`operations/RECEPTION_WEB_CLIENT_MANUAL.md`](operations/RECEPTION_WEB_CLIENT_MANUAL.md): 受付担当者向け研修計画と運用手順。
-- [`operations/LOCAL_BACKEND_DOCKER.md`](operations/LOCAL_BACKEND_DOCKER.md): 既存サーバーを Docker Compose で起動する手順。2025-11-02 (Codex) 初期施設 ID・管理者/医師アカウントとテスト患者 `WEB1001`〜`WEB1010` の投入手順を整理。
+- [`operations/LOCAL_BACKEND_DOCKER.md`](operations/LOCAL_BACKEND_DOCKER.md): 既存サーバーを Docker Compose で起動する手順。2025-11-02 (Codex) 初期施設 ID・管理者/医師アカウントとテスト患者 `WEB1001`〜`WEB1010` の投入手順を整理。2025-11-03 (Codex) Worker0/1 修正後の Maven/Docker ビルド検証ログと再現手順を追加。
 - [`operations/CAREMAP_ATTACHMENT_MIGRATION.md`](operations/CAREMAP_ATTACHMENT_MIGRATION.md): CareMap 添付移行と image-browser 設定のガイド。
 - [`operations/TEST_SERVER_DEPLOY.md`](operations/TEST_SERVER_DEPLOY.md): テスト環境へのデプロイとアカウント発行手順。2025-11-02 (Codex) Docker Compose 由来の初期アカウント情報を冒頭に整理。
 - [`../server-modernization/operations/OBSERVABILITY_AND_METRICS.md`](../server-modernization/operations/OBSERVABILITY_AND_METRICS.md): モダナイズ版サーバーのメトリクス公開と Prometheus/Grafana 連携ガイド。
@@ -69,6 +69,8 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - 参考資料（PDF / 画像など）は `docs/` 配下の適切なカテゴリに格納し、必ず本ファイルから辿れるようにする。
 
 ## 直近更新履歴
+- 2025-11-03 (担当: Codex): 受付患者検索カードを4入力欄によるAND検索に刷新し、条件クリアボタンを追加。仕様概要を `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記。
+- 2025-11-03 (担当: Codex): Worker0/1 修正後の Maven / Docker ビルド検証結果を `docs/server-modernization/phase2/PHASE2_PROGRESS.md` と `operations/LOCAL_BACKEND_DOCKER.md` に追記し、未解決のコンパイルエラーと再現手順を整理。
 - 2025-11-01 (担当: Codex): OrderConsole アイコンバー再構成とモーダル挙動の進捗を `docs/server-modernization/phase2/PHASE2_PROGRESS.md#2025-11-01-進捗-t3-orderconsole-アイコンバー実装担当-codex` に記録。MSW スクリーンショットは既存ビルドエラー解消後に `docs/server-modernization/phase2/assets/order-console-1366.png` へ追加予定。
 - 2025-11-01 (担当: Codex): 左レール VisitChecklist / ProblemListCard / SafetySummaryCard の縮小対応を実施し、`docs/server-modernization/phase2/PHASE2_PROGRESS.md` に T2 の確認メモを追記。
 - 2025-11-01 (担当: Codex): `docker-compose.yml` の WildFly ヘルスチェックを OpenDolphin API に切り替え、SYSAD 認証ヘッダーを追加。手順を `operations/LOCAL_BACKEND_DOCKER.md` に追記。

@@ -148,18 +148,17 @@ const buildUpsertRequestPayload = (payload: PatientUpsertPayload) => {
   };
 };
 
-export const buildPatientSearchPath = ({ mode, keyword }: PatientSearchRequest): string => {
+export const buildPatientSearchPath = (mode: PatientSearchMode, keyword: string): string => {
   const base = searchEndpointMap[mode] ?? searchEndpointMap.name;
   return `${base}${encodeURIComponent(keyword.trim())}`;
 };
 
-export const searchPatients = async (params: PatientSearchRequest): Promise<PatientSummary[]> => {
-  const keyword = params.keyword.trim();
-  if (!keyword) {
+const fetchPatientsByMode = async (mode: PatientSearchMode, keyword: string): Promise<PatientSummary[]> => {
+  const trimmed = keyword.trim();
+  if (!trimmed) {
     return [];
   }
-
-  const path = buildPatientSearchPath({ ...params, keyword });
+  const path = buildPatientSearchPath(mode, trimmed);
   return measureApiPerformance(
     PERFORMANCE_METRICS.patients.search,
     `GET ${path}`,
@@ -172,10 +171,48 @@ export const searchPatients = async (params: PatientSearchRequest): Promise<Pati
         .filter((patient): patient is PatientSummary => Boolean(patient));
     },
     {
-      mode: params.mode,
-      keywordLength: keyword.length,
+      mode,
+      keywordLength: trimmed.length,
     },
   );
+};
+
+export const searchPatients = async (params: PatientSearchRequest): Promise<PatientSummary[]> => {
+  if ('keyword' in params) {
+    return fetchPatientsByMode(params.mode, params.keyword);
+  }
+
+  const filters = [
+    { mode: 'name' as const, keyword: params.nameKeyword },
+    { mode: 'kana' as const, keyword: params.kanaKeyword },
+    { mode: 'id' as const, keyword: params.idKeyword },
+    { mode: 'digit' as const, keyword: params.digitKeyword },
+  ].filter((entry) => Boolean(entry.keyword && entry.keyword.trim()));
+
+  if (filters.length === 0) {
+    return [];
+  }
+
+  const results = await Promise.all(
+    filters.map(async ({ mode, keyword }) => fetchPatientsByMode(mode, keyword ?? '')),
+  );
+
+  const [firstResult = []] = results;
+  if (firstResult.length === 0) {
+    return [];
+  }
+
+  const intersection = new Map(firstResult.map((patient) => [patient.patientId, patient]));
+  for (const result of results.slice(1)) {
+    const patientIds = new Set(result.map((patient) => patient.patientId));
+    for (const patientId of Array.from(intersection.keys())) {
+      if (!patientIds.has(patientId)) {
+        intersection.delete(patientId);
+      }
+    }
+  }
+
+  return Array.from(intersection.values());
 };
 
 export const fetchPatientById = async (patientId: string): Promise<PatientDetail | null> => {

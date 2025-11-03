@@ -2,7 +2,8 @@ package open.dolphin.infomodel;
 
 import java.io.Serializable;
 import jakarta.persistence.*;
-import org.hibernate.annotations.Type;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  *
@@ -22,7 +23,7 @@ public class LetterText extends InfoModel implements Serializable {
     private String name;
 
     @Lob
-    @Type(type="org.hibernate.type.StringClobType")
+    @JdbcTypeCode(SqlTypes.CLOB)
     private String textValue;
 
     @ManyToOne

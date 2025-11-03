@@ -1,4 +1,4 @@
-# Jakarta EE 10 移行ギャップリスト（更新日: 2025-11-02）
+# Jakarta EE 10 移行ギャップリスト（更新日: 2025-11-03）
 
 server-modernized を WildFly 33 / Jakarta EE 10 へ移行する際に残存している課題をカテゴリ別に整理した。各項目には参照ファイルと他ワーカーが確認すべき指針を併記している。
 
@@ -7,13 +7,17 @@ server-modernized を WildFly 33 / Jakarta EE 10 へ移行する際に残存し�
 - ✅ 2025-11-02 Codex: `common/pom.xml` を Java 17 / Jakarta API 前提に更新済み。`jakarta.jakartaee-api:10.0.0` を provided 参照とし、Hibernate ORM 6.4.4.Final（WildFly 33 同梱版）を provided 依存へ切替。`maven-compiler-plugin` も release 17 指定に揃えた。
 - ✅ 2025-11-02 Codex: `server-modernized/pom.xml` の `dependencyManagement` に Jakarta BOM / Plivo / OkHttp / OpenPDF / BouncyCastle / Yubico WebAuthn を登録し、依存宣言を BOM 管理下へ整理。`com.squareup.okhttp3:okhttp` は WAR へ直結するコンパイル依存として追加済み。残課題: JSON-P/JSON-B 実装（`jakarta.json` 系）の明示依存可否を確認し、必要なら追加する。
 - ✅ 2025-11-02 Codex: `com.plivo:plivo-java` のバージョンを Maven Central 公開版の `5.46.0` に戻し、`dependencyManagement` 管理下へ移行。private 版への依存は解消済み。
-- Docker ビルドで `org.hibernate:hibernate-core:5.0.10.Final` を取得し `StringClobType` の互換 JAR を生成しているが、Jakarta EE 10 標準の Hibernate ORM 6 系に移行する場合は手作業の互換層を廃止する方針決定が必要（`docker/server-modernized/Dockerfile:16-53`）。
+- ✅ 2025-11-03 Worker0: Docker / CI ビルドから Hibernate 5 系ベースの `StringClobType` 互換 JAR 生成を撤廃し、Hibernate ORM 6 系標準の文字列 CLOB マッピングへ移行。`server-modernized` エンティティは Jakarta Persistence 3.1 と整合することをビルド検証済み。
+- ⚠️ 2025-11-03 Codex: 旧 `docker/server(-modernized)/Dockerfile` に残る `dependency:get org.hibernate:hibernate-core:5.0.10.Final` の削除と CI キャッシュ更新を Worker C が追跡中。Compose から新 Type を使用する回帰テストを 2025-11-06 までに実施。
 
 ## 2. ソースコードのギャップ
 
 - ✅ 2025-11-02 Codex: `common/src/main/java/open/dolphin/infomodel/` 配下のエンティティ import を `jakarta.persistence.*` へ全置換済み。`@Temporal` の FQCN なども `jakarta.persistence` へ更新し、共通 DTO が Jakarta Persistence 3.1 と整合することを確認した。
+- ✅ 2025-11-03 Codex: `PatientMemoModel` / `LetterText` / `PatientFreeDocumentModel` / `NurseProgressCourseModel` の `@Type(type="org.hibernate.type.StringClobType")` を Hibernate 6 推奨の `@JdbcTypeCode(SqlTypes.CLOB)` へ置換し、`org.hibernate.annotations.Type` 依存を除去。ローカル環境に Maven CLI が無いため `mvn -pl common -DskipTests package` は `command not found` で失敗しており、環境整備後にビルド確認を再実施する必要がある。
 - ✅ 2025-11-02 Codex: `common/src/main/java/open/dolphin/converter/PlistParser.java` / `PlistConverter.java` の Mail API import を `jakarta.mail.*` へ更新。`MessagingException` / `MimeUtility` の参照も Jakarta Mail 3.x と互換になるよう調整済み（ビルド検証は環境未整備のため別途）。
 - ✅ 2025-11-02 Codex: `open.dolphin.adm20.PlivoSender` が要求する OkHttp 5.2.1 を `server-modernized/pom.xml` に追加済み（BOM 管理下）。WAR へのバンドル不足による `ClassNotFoundException` リスクは解消。TLS1.3 設定検証は別途継続。
+- ✅ 2025-11-03 Worker1: CLAIM / PVT 送信で利用していた XSLT テンプレート群を Java ベースのビルダーロジックへ置換し、Jakarta XML Binding で再生成するフローへ統一。変換結果の差分比較レポートも共有済み。
+- ⚠️ 2025-11-03 Codex: XSLT 廃止後の CLAIM 送達確認を ORCA Stub 含めて自動化するテストが未整備。`PHASE2_PROGRESS.md` TODO に記載した通り、Worker4 が 2025-11-08 までにテストシナリオを追加予定。
 - JMS 連携は `server-modernized/src/main/java/open/dolphin/session/ScheduleServiceBean.java:18-104` や `MessageSender.java` などで `jakarta.jms` を利用しているが、`@Resource` 定義はコメントアウトされたままで JMS リソースの JNDI 名が未確定。
 - `server-modernized/src/main/java/open/dolphin/session/MessageSender.java` は MDB 実装がスタブ化されており、キュー経由の CLAIM／PVT 連携が未移植のまま。Jakarta Messaging 3.0 の MDB 再構築または別経路への統合が必要。
 - `server-modernized/src/main/java/open/dolphin/msg/gateway/MessagingGateway.java` は `ManagedExecutorService` を `@Resource` で取得する設計だが、WildFly 33 でのデフォルト executor JNDI を明示せず依存している。非同期送信を利用する場合はサーバー設定およびフォールバック動作を確認すること。

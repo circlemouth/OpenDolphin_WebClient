@@ -1,9 +1,18 @@
 export type PatientSearchMode = 'name' | 'kana' | 'id' | 'digit';
 
-export interface PatientSearchRequest {
-  keyword: string;
-  mode: PatientSearchMode;
-}
+export type PatientSearchRequest =
+  | {
+      keyword: string;
+      mode: PatientSearchMode;
+    }
+  | {
+      nameKeyword?: string;
+      kanaKeyword?: string;
+      idKeyword?: string;
+      digitKeyword?: string;
+      keyword?: undefined;
+      mode?: undefined;
+    };
 
 export interface RawPatientResource {
   id?: number;

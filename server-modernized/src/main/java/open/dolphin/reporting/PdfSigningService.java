@@ -21,17 +21,17 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bouncycastle.jce.provider.BouncyCastleProvider;
-import org.openpdf.text.pdf.PdfDate;
-import org.openpdf.text.pdf.PdfDictionary;
-import org.openpdf.text.pdf.PdfName;
-import org.openpdf.text.pdf.PdfPKCS7;
-import org.openpdf.text.pdf.PdfReader;
-import org.openpdf.text.pdf.PdfSignature;
-import org.openpdf.text.pdf.PdfSignatureAppearance;
-import org.openpdf.text.pdf.PdfStamper;
-import org.openpdf.text.pdf.PdfString;
-import org.openpdf.text.pdf.TSAClient;
-import org.openpdf.text.pdf.TSAClientBouncyCastle;
+import com.lowagie.text.pdf.PdfDate;
+import com.lowagie.text.pdf.PdfDictionary;
+import com.lowagie.text.pdf.PdfName;
+import com.lowagie.text.pdf.PdfPKCS7;
+import com.lowagie.text.pdf.PdfReader;
+import com.lowagie.text.pdf.PdfSignature;
+import com.lowagie.text.pdf.PdfSignatureAppearance;
+import com.lowagie.text.pdf.PdfStamper;
+import com.lowagie.text.pdf.PdfString;
+import com.lowagie.text.pdf.TSAClient;
+import com.lowagie.text.pdf.TSAClientBouncyCastle;
 
 /**
  * Applies digital signatures (and optional timestamps) to generated PDFs.
@@ -120,9 +120,10 @@ public final class PdfSigningService {
                 exclusionSizes.put(PdfName.CONTENTS, estimatedSignatureSize * 2 + 2);
                 appearance.preClose(exclusionSizes);
 
+                String encryptionAlgorithm = resolveEncryptionAlgorithm(privateKey);
                 MessageDigest messageDigest = MessageDigest.getInstance("SHA-256",
                         BouncyCastleProvider.PROVIDER_NAME);
-                Signature signature = Signature.getInstance(pkcs7.getDigestAlgorithm(),
+                Signature signature = Signature.getInstance("SHA256with" + encryptionAlgorithm,
                         BouncyCastleProvider.PROVIDER_NAME);
                 signature.initSign(privateKey);
                 try (InputStream rangeStream = appearance.getRangeStream()) {
@@ -135,7 +136,7 @@ public final class PdfSigningService {
                 }
                 byte[] hash = messageDigest.digest();
                 byte[] signedDigest = signature.sign();
-                pkcs7.setExternalDigest(signedDigest, null, resolveEncryptionAlgorithm(privateKey));
+                pkcs7.setExternalDigest(signedDigest, null, encryptionAlgorithm);
 
                 TSAClient tsaClient = null;
                 if (applyTsa && config.getTsaUrl() != null && !config.getTsaUrl().isBlank()) {

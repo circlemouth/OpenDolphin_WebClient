@@ -281,6 +281,13 @@ const LeftRail = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
+  height: calc(
+    100vh - var(--charts-shell-offset, 0px) - var(--charts-header-height) - var(--charts-content-padding-top) -
+      var(--charts-footer-height, 0px)
+  );
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-gutter: stable both-edge;
 
   & > * {
     width: 100%;
@@ -291,6 +298,9 @@ const LeftRail = styled.div`
   }
 
   @media (max-width: 999px) {
+    height: auto;
+    min-height: auto;
+    overflow: visible;
     position: static;
     top: auto;
     width: 100%;

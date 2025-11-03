@@ -38,7 +38,7 @@ import jakarta.ws.rs.core.StreamingOutput;
 import open.dolphin.adm20.PlivoSender;
 import open.dolphin.adm20.session.ADM20_AdmissionServiceBean;
 import open.dolphin.adm20.ICarePlanModel;
-import open.dolphin.adm20.OTPHelper;
+import open.dolphin.security.totp.TotpHelper;
 import open.dolphin.adm20.converter.IDocument;
 import open.dolphin.adm20.converter.ILastDateCount30;
 import open.dolphin.adm20.converter.INurseProgressCourse;
@@ -611,9 +611,8 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
                 Factor2Code spec = mapper.readValue(json, Factor2Code.class);
                 
                 // One time password
-                OTPHelper helper = new OTPHelper();
-                long code = helper.getOTP();
-                spec.setCode(String.valueOf(code));
+                String code = TotpHelper.generateSmsCode();
+                spec.setCode(code);
                 
                 // persist temporaly
                 ehtService.saveFactor2Code(spec);
@@ -622,7 +621,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
                 List<String> numbers = new ArrayList(1);
                 numbers.add(spec.getMobileNumber());
                 
-                plivoSender.send(numbers, String.valueOf(code));
+                plivoSender.send(numbers, code);
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(output, "1");
@@ -645,7 +644,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
                 Factor2Spec spec = mapper.readValue(json, Factor2Spec.class);
                 
                 // Backup key
-                String bkey = new OTPHelper().getBackupKey();
+                String bkey = TotpHelper.generateBackupKey();
                 spec.setBackupKey(bkey);
                 
                 // 保存

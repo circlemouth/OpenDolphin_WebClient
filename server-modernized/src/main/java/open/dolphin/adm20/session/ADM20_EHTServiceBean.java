@@ -16,7 +16,8 @@ import com.yubico.webauthn.RegisteredCredential;
 import com.yubico.webauthn.RelyingParty;
 import com.yubico.webauthn.StartAssertionOptions;
 import com.yubico.webauthn.StartRegistrationOptions;
-import com.yubico.webauthn.credential.CredentialRepository;
+import com.yubico.webauthn.CredentialRepository;
+import com.yubico.webauthn.data.AttestationType;
 import com.yubico.webauthn.data.AuthenticatorAttachment;
 import com.yubico.webauthn.data.AuthenticatorSelectionCriteria;
 import com.yubico.webauthn.data.ByteArray;
@@ -89,6 +90,7 @@ import open.dolphin.infomodel.VitalModel;
 import open.dolphin.security.HashUtil;
 import open.dolphin.security.fido.Fido2Config;
 import open.dolphin.security.totp.BackupCodeGenerator;
+import open.dolphin.security.totp.TotpHelper;
 import open.dolphin.security.totp.TotpRegistrationResult;
 import open.dolphin.security.totp.TotpSecretProtector;
 import open.dolphin.session.framework.SessionOperation;
@@ -746,8 +748,7 @@ public class ADM20_EHTServiceBean {
 
         cleanupUnverifiedTotp(userPk);
 
-        OTPHelper helper = new OTPHelper();
-        String secret = helper.generateSecret();
+        String secret = TotpHelper.generateSecret();
         Instant now = Instant.now();
 
         Factor2Credential credential = new Factor2Credential();
@@ -768,7 +769,7 @@ public class ADM20_EHTServiceBean {
 
         em.persist(credential);
 
-        String provisioningUri = helper.buildProvisioningUri(secret,
+        String provisioningUri = TotpHelper.buildProvisioningUri(secret,
                 accountName != null && !accountName.isBlank() ? accountName : user.getUserId(),
                 issuer != null && !issuer.isBlank() ? issuer : "OpenDolphin");
 
@@ -795,9 +796,8 @@ public class ADM20_EHTServiceBean {
             throw new SecurityException("Invalid TOTP code", e);
         }
 
-        OTPHelper helper = new OTPHelper();
         String secret = protector.decrypt(credential.getSecret());
-        if (!helper.verifyCurrentWindow(secret, numericCode)) {
+        if (!TotpHelper.verifyCurrentWindow(secret, numericCode)) {
             throw new SecurityException("TOTP verification failed");
         }
 
@@ -959,7 +959,10 @@ public class ADM20_EHTServiceBean {
 
             Map<String, Object> metadata = new HashMap<>();
             metadata.put("attestationTrusted", result.isAttestationTrusted());
-            result.getAttestationType().ifPresent(type -> metadata.put("attestationType", type.name()));
+            AttestationType attestationType = result.getAttestationType();
+            if (attestationType != null) {
+                metadata.put("attestationType", attestationType.name());
+            }
             entity.setMetadata(writeJson(metadata));
 
             em.persist(entity);

@@ -5,6 +5,8 @@
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
                         http://maven.apache.org/xsd/maven-4.0.0.xsd">
 
+  <!-- 更新日: 2025-11-03, 担当: Codex -->
+
   <modelVersion>4.0.0</modelVersion>
   <parent>
     <artifactId>opendolphin</artifactId>
@@ -39,6 +41,12 @@
       <artifactId>jakarta.jakartaee-api</artifactId>
       <version>${jakarta.jakartaee-api.version}</version>
       <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <version>4.13.2</version>
+      <scope>test</scope>
     </dependency>
   </dependencies>
   <version>2.7.1</version>

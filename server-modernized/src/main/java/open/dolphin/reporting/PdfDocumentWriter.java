@@ -1,15 +1,15 @@
 package open.dolphin.reporting;
 
-import org.openpdf.text.Chunk;
-import org.openpdf.text.Document;
-import org.openpdf.text.DocumentException;
-import org.openpdf.text.Font;
-import org.openpdf.text.List;
-import org.openpdf.text.ListItem;
-import org.openpdf.text.PageSize;
-import org.openpdf.text.Paragraph;
-import org.openpdf.text.pdf.BaseFont;
-import org.openpdf.text.pdf.PdfWriter;
+import com.lowagie.text.Chunk;
+import com.lowagie.text.Document;
+import com.lowagie.text.DocumentException;
+import com.lowagie.text.Font;
+import com.lowagie.text.List;
+import com.lowagie.text.ListItem;
+import com.lowagie.text.PageSize;
+import com.lowagie.text.Paragraph;
+import com.lowagie.text.pdf.BaseFont;
+import com.lowagie.text.pdf.PdfWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;

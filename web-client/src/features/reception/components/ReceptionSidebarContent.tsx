@@ -40,6 +40,8 @@ export interface ReceptionSidebarContentProps {
   karteFromDate: string;
   karteFromDateInput?: string;
   onChangeKarteFromDate: (value: string) => void;
+  onRequestKarteRefetch?: () => void;
+  formatDisplayDate: (value?: string | null) => string;
 }
 
 const Container = styled.div`
@@ -189,6 +191,76 @@ const HistoryMeta = styled.dl`
   }
 `;
 
+const HistoryHeader = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+`;
+
+const HistoryControls = styled.div`
+  display: inline-flex;
+  align-items: flex-end;
+  gap: 8px;
+  flex-wrap: wrap;
+`;
+
+const DocumentList = styled.ul`
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 10px;
+`;
+
+const DocumentItem = styled.li<{ $marked: boolean }>`
+  border: 1px solid
+    ${({ theme, $marked }) => ($marked ? theme.palette.danger : theme.palette.border)};
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: ${({ theme, $marked }) =>
+    $marked ? theme.palette.dangerSubtle : theme.palette.surface};
+  padding: 12px 16px;
+  display: grid;
+  gap: 6px;
+`;
+
+const DocumentTitleRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const DocumentTitle = styled.span`
+  font-weight: 600;
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.palette.textPrimary};
+`;
+
+const DocumentBadgeRow = styled.div`
+  display: inline-flex;
+  gap: 6px;
+  flex-wrap: wrap;
+`;
+
+const DocumentMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const toKarteDateInputValue = (value?: string | null): string => {
+  if (!value) {
+    return '';
+  }
+  const [datePart] = value.split(' ');
+  return datePart ?? value;
+};
+
 const formatDateTime = (value?: string | null) => {
   if (!value) {
     return '---';
@@ -208,6 +280,19 @@ const deriveStatusBadge = (visit: PatientVisitSummary) => {
     return <StatusBadge tone="warning">呼出済み</StatusBadge>;
   }
   return <StatusBadge tone="neutral">待機中</StatusBadge>;
+};
+
+const resolveDocumentStatusTone = (status?: string | null): 'neutral' | 'info' | 'success' | 'warning' => {
+  if (!status) {
+    return 'neutral';
+  }
+  if (/未署名|未確定|ドラフト|下書/.test(status)) {
+    return 'warning';
+  }
+  if (/確定|署名済|完了|済/.test(status)) {
+    return 'success';
+  }
+  return 'info';
 };
 
 const tabId = (tab: ReceptionSidebarTab) => `reception-sidebar-tab-${tab}`;
@@ -234,6 +319,8 @@ export const ReceptionSidebarContent = ({
   karteFromDate,
   karteFromDateInput,
   onChangeKarteFromDate,
+  onRequestKarteRefetch,
+  formatDisplayDate,
 }: ReceptionSidebarContentProps) => {
   const resolvedPatientId =
     patientId ?? patientSummary?.patientId ?? visit?.patientId ?? null;
@@ -244,6 +331,11 @@ export const ReceptionSidebarContent = ({
     fromDate: karteFromDate,
     enabled: activeTab === 'history' && Boolean(resolvedPatientId),
   });
+  const { refetch: refetchKarte } = karteQuery;
+  const karteFromDateInputValue = useMemo(
+    () => karteFromDateInput ?? toKarteDateInputValue(karteFromDate),
+    [karteFromDateInput, karteFromDate],
+  );
 
   useEffect(() => {
     if (activeTab === 'reception' && !visit) {
@@ -361,6 +453,18 @@ export const ReceptionSidebarContent = ({
     [onChangeKarteFromDate, resolvedPatientId],
   );
 
+  const handleKarteRefetch = useCallback(() => {
+    if (!resolvedPatientId) {
+      return;
+    }
+    void refetchKarte();
+    onRequestKarteRefetch?.();
+    recordOperationEvent('reception', 'info', 'karte_history_refetch', 'カルテ履歴を再取得しました', {
+      patientId: resolvedPatientId,
+      source: 'reception-sidebar',
+    });
+  }, [onRequestKarteRefetch, refetchKarte, resolvedPatientId]);
+
   const renderReceptionTab = () => {
     if (!visit) {
       return (
@@ -474,6 +578,8 @@ export const ReceptionSidebarContent = ({
 
     const historyItems = visitHistoryQuery.data ?? [];
     const karte = karteQuery.data;
+    const isKartePending = karteQuery.isPending;
+    const isKarteRefetching = karteQuery.isFetching && !karteQuery.isPending;
 
     return (
       <TabPanel role="tabpanel" id={panelId('history')} aria-labelledby={tabId('history')}>
@@ -496,15 +602,28 @@ export const ReceptionSidebarContent = ({
 
         <HistoryCard padding="md" tone="muted" aria-live="polite">
           <Stack gap={12}>
-            <SectionTitle>カルテ履歴</SectionTitle>
-            <TextField
-              label="取得開始日"
-              type="date"
-              value={karteFromDateInput ?? karteFromDate}
-              onChange={(event) => handleKarteDateChange(event.currentTarget.value)}
-            />
+            <HistoryHeader>
+              <SectionTitle>カルテ履歴</SectionTitle>
+              <HistoryControls>
+                <TextField
+                  label="取得開始日"
+                  type="date"
+                  value={karteFromDateInputValue}
+                  onChange={(event) => handleKarteDateChange(event.currentTarget.value)}
+                />
+                <Button
+                  type="button"
+                  variant="secondary"
+                  onClick={handleKarteRefetch}
+                  disabled={!resolvedPatientId}
+                  isLoading={isKarteRefetching}
+                >
+                  再取得
+                </Button>
+              </HistoryControls>
+            </HistoryHeader>
           </Stack>
-          {karteQuery.isLoading ? (
+          {isKartePending ? (
             <span>カルテ情報を取得しています…</span>
           ) : karte ? (
             <Stack gap={12}>
@@ -520,15 +639,28 @@ export const ReceptionSidebarContent = ({
               </HistoryMeta>
               {karte.documents.length ? (
                 <Section>
-                  <SectionTitle>主要文書</SectionTitle>
-                  <HistoryList>
-                    {karte.documents.slice(0, 10).map((doc) => (
-                      <li key={doc.docPk}>
-                        {doc.title ?? '無題'} ／ {formatDateTime(doc.confirmDate) ?? '---'} ／{' '}
-                        {doc.departmentDesc ?? '診療科未設定'}
-                      </li>
+                  <SectionTitle>カルテ文書一覧</SectionTitle>
+                  <DocumentList>
+                    {karte.documents.map((doc) => (
+                      <DocumentItem key={doc.docPk} $marked={Boolean(doc.hasMark)}>
+                        <DocumentTitleRow>
+                          <DocumentTitle>{doc.title ?? '無題'}</DocumentTitle>
+                          <DocumentBadgeRow>
+                            {doc.status ? (
+                              <StatusBadge tone={resolveDocumentStatusTone(doc.status)}>
+                                {doc.status}
+                              </StatusBadge>
+                            ) : null}
+                            {doc.hasMark ? <StatusBadge tone="danger">注意</StatusBadge> : null}
+                          </DocumentBadgeRow>
+                        </DocumentTitleRow>
+                        <DocumentMeta>
+                          <span>確定日: {formatDisplayDate(doc.confirmDate)}</span>
+                          <span>診療科: {doc.departmentDesc ?? '---'}</span>
+                        </DocumentMeta>
+                      </DocumentItem>
                     ))}
-                  </HistoryList>
+                  </DocumentList>
                 </Section>
               ) : (
                 <span>カルテ文書は登録されていません。</span>

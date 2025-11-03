@@ -103,6 +103,6 @@ Micrometer は Undertow / Datasource など各サブシステムの統計情報�
 
 ## 6. PDF署名ライブラリのライセンス告知
 
-- **OpenPDF 3.0.0（LGPL 2.1 / MPL 1.1 デュアルライセンス）**: WAR 配布時は `docs/server-modernization/reporting/LICENSE_COMPATIBILITY.md` と GitHub 上のソース入手先を同梱・案内する。派生改変を行った場合は変更点を含むソース一式を 3 年間保管し、請求があれば提供できる体制を維持する。
+- **OpenPDF 1.3.41（LGPL 2.1 / MPL 1.1 デュアルライセンス）**: WAR 配布時は `docs/server-modernization/reporting/LICENSE_COMPATIBILITY.md` と GitHub 上のソース入手先を同梱・案内する。派生改変を行った場合は変更点を含むソース一式を 3 年間保管し、請求があれば提供できる体制を維持する。
 - **BouncyCastle 1.82（Bouncy Castle License）**: `LICENSE` に加えて Bouncy Castle License 文面を同梱し、暗号ポリシーの変更や FIPS 対応の判断は `docs/server-modernization/security/CRYPTO_POLICY_NOTES.md` に記録する。
 - 上記ライブラリの更新を行った際は `docs/server-modernization/phase2/foundation/DEPENDENCY_UPDATE_PLAN.md` と `docs/server-modernization/phase2/domains/EXTERNAL_INTEGRATION_JAKARTA_STATUS.md` を同期し、`PHASE2_PROGRESS.md` に反映日時を追記する。
