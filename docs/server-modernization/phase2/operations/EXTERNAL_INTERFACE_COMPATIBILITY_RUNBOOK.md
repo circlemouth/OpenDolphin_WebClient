@@ -106,7 +106,8 @@
 
 | ID | 日時 | 内容 | ステータス | メモ |
 | --- | --- | --- | --- | --- |
-| JSONTOUCH-PARITY-20251103-01 | 2025-11-03 | `/10/adm/jtouch/*` 16 エンドポイントのレスポンス互換性確認 | Done | `JsonTouchResourceParityTest`（user/patient/search/count/kana/visitPackage/sendPackage）と Worker E レポート §1.2 に従い、adm10/touch/adm20 実装の出力差分が無いことを確認。 |
+| JSONTOUCH-PARITY-20251103-01 | 2025-11-03 | `/10/adm/jtouch/*` 16 エンドポイントのレスポンス互換性確認 | Done | `JsonTouchResourceParityTest`（user/patient/search/count/kana/visitPackage/sendPackage）と Worker E レポート §1.2 に従い、adm10/touch/adm20 実装の出力差分が無いことを確認。2026-05-27 時点で document 系も Jakarta 実装へ移管済み。 |
+| JSONTOUCH-PARITY-20260527-01 | 2026-05-27 | `/10/adm/jtouch/document*`／`/interaction`／`/stamp*` の正常・異常系および監査ログ比較 | ⚠️ Blocked | `JsonTouchResourceParityTest` を 17 ケースへ拡張（document/mkdocument/interaction/stamp の正常/異常＋監査ログ）し IDE で成功を確認。`mvn -pl server-modernized test` は DuplicateProjectException（`opendolphin:opendolphin-server:2.7.1` 重複）で失敗するため、root POM の重複定義解消と CI パイプライン整備をフォロー。 |
 | PHR-PARITY-20251103-01 | 2025-11-03 | PHR アクセスキー／データバンドル／テキスト出力系の互換テスト | Done | Worker E レポート §1.3 の `curl` サンプルおよび Jackson Streaming 検証で 11 エンドポイントの 1:1 対応を確認し、`API_PARITY_MATRIX.md` を `[x]` 更新。 |
 | PVT2-PARITY-20251103-01 | 2025-11-03 | `/pvt2` POST/GET のモダナイズ実装と単体テスト証跡確認 | Done | `PVTResource2Test#postPvt_assignsFacilityAndPatientRelations`／`#getPvtList_wrapsServiceResultInConverter` で facility・保険紐付けと `PatientVisitListConverter` のラップを検証。マトリクス該当行を `[x]` 化済み。 |
 | PVT2-PARITY-20251103-02 | 2025-11-03 | `/pvt2/{pvtPK}` DELETE のテスト整備 | Open | 実装は `PVTResource2#deletePvt`（server-modernized/src/main/java/open/dolphin/rest/PVTResource2.java:63）だが、`PVTResource2Test` に削除ケースが無く `PVTServiceBean#removePvt` 呼び出し・施設スコープ検証が未証明。モックを用いた単体テスト追加とランブック記録が必要。 |
