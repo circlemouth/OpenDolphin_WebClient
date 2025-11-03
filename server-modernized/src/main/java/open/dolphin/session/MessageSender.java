@@ -23,14 +23,16 @@ import open.dolphin.msg.DiagnosisSender;
 import open.dolphin.msg.OidSender;
 import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
 import open.dolphin.msg.gateway.MessagingConfig;
-import org.jboss.ejb3.annotation.ResourceAdapter;
-
+/**
+ * JMS メッセージドリブン Bean。リソースアダプタの指定は Jakarta Connectors のデプロイ記述子
+ * （META-INF/ejb-jar.xml）に委譲し、実行時プロパティ {@code messaging.resource.adapter}
+ * で外部化している。
+ */
 @MessageDriven(activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "java:/queue/dolphin"),
         @ActivationConfigProperty(propertyName = "destinationType", propertyValue = "jakarta.jms.Queue"),
         @ActivationConfigProperty(propertyName = "acknowledgeMode", propertyValue = "Auto-acknowledge")
 })
-@ResourceAdapter("activemq-ra.rar")
 public class MessageSender implements MessageListener {
 
     private static final Logger LOGGER = Logger.getLogger(MessageSender.class.getName());

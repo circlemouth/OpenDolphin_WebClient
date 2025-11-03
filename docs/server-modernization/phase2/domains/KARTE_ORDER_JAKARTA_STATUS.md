@@ -10,7 +10,7 @@
 ## 1. CRUD シナリオ差分表
 | シナリオ | 旧サーバー (`server`) | モダナイズ版 (`server-modernized`) | ギャップ・課題 |
 | --- | --- | --- | --- |
-| 文書保存（確定/CLAIM送信） | `KarteResource#postDocument` → `KarteServiceBean#addDocument` が `javax.ws.rs`/Jackson1 で JSON を受け、`ClaimSender` を同期呼び出し。 | `jakarta.ws.rs` + Jackson 2.17 で受信し、`KarteServiceBean#addDocument` が `MessagingGateway.dispatchClaim` に渡す。`@Transactional` と `SessionOperationInterceptor` に依存。 | JMS キュー（`java:/queue/dolphin`）経由でのサーバー送信へ復旧済み。引き続き WildFly 33 へのキュー/接続ファクトリ定義の CLI 化と、`DocumentModel` など `jakarta.persistence` 未移行部分の解消が必要。 |
+| 文書保存（確定/CLAIM送信） | `KarteResource#postDocument` → `KarteServiceBean#addDocument` が `javax.ws.rs`/Jackson1 で JSON を受け、`ClaimSender` を同期呼び出し。 | `jakarta.ws.rs` + Jackson 2.17 で受信し、`KarteServiceBean#addDocument` が `MessagingGateway.dispatchClaim` に渡す。`@Transactional` と `SessionOperationInterceptor` に依存。 | JMS キュー（`java:/queue/dolphin`）経由でのサーバー送信へ復旧済み。`META-INF/ejb-jar.xml` でリソースアダプタ名を `${messaging.resource.adapter:activemq-ra.rar}` として外部化しており、WildFly のプロパティ置換へ依存する。引き続き WildFly 33 へのキュー/接続ファクトリ定義の CLI 化と、`DocumentModel` など `jakarta.persistence` 未移行部分の解消が必要。 |
 | 文書保存 + 受付状態更新 | `/karte/document/pvt/{params}` で `addDocumentAndUpdatePVTState` が EJB (`@Stateless`) トランザクション上で PVT 状態を更新。 | CDI (`@ApplicationScoped` + `@Transactional`) に移行、`messagingGateway` の非同期送信後に `PatientVisitModel` を更新。 | Jakarta CDI 4 スキーマの `beans.xml` へ更新済み。今後は JMS 経由の CLAIM 完了後に PVT 更新が期待どおりロールバック連動するか統合テストで確認し、`PVTServiceBean` のスレッドセーフ性を検証する必要がある。 |
 | 文書削除 | `deleteDocument` がリレーションを逐次 `STATUS_DELETE` に更新し、`javax.persistence` エンティティを使用。 | 実装はほぼ同じだが `@Transactional` 付与のみ。 | `jakarta.persistence` へ変換されておらず、WildFly 33 の JPA モジュールと API 名称が不一致。楽観ロックがなく同時削除検知ができない。 |
 | 傷病名一括処理 + CLAIM | `postPutSendDiagnosis` が削除/更新/追加後に `ClaimSender` を同期呼出。 | `MessagingGateway.dispatchDiagnosis` で非同期送信。 | `DiagnosisSendWrapper` に Bean Validation がなく、Jakarta 変換後も入力検証が未実装。`MessagingGateway` は `custom.properties` に依存し、WildFly 33 での配置手順未整理。 |
@@ -41,7 +41,7 @@
 ## 4. テンプレート/Bean 定義の Jakarta スキーマ影響
 - 2025-11-02 時点で `server-modernized/src/main/webapp/WEB-INF/web.xml` を Servlet 6.0 スキーマへ更新済み。WildFly 33 での再デプロイ時に async filter/servlet 設定が問題なく読み込まれるかを確認する。
 - 同日 `WEB-INF/beans.xml` も CDI 4.0 (`beans_4_0.xsd`) へ更新し、`SessionOperationInterceptor` を `<interceptors>` セクションで有効化した。稼働時ログでインターセプタ登録を確認するタスクが残る。
-- `MessageSender` を Jakarta Messaging 3.0 の MDB として復旧済み。`messaging-activemq` サブシステムへ `java:/JmsXA` / `java:/queue/dolphin` を登録し、ORCA 連携キューのヘルスチェック手順を整備する必要がある。 
+- `MessageSender` を Jakarta Messaging 3.0 の MDB として復旧済み。`META-INF/ejb-jar.xml` で `messaging.resource.adapter` システムプロパティを解決してリソースアダプタ名を指定するため、WildFly のプロパティ置換設定が前提となる。`messaging-activemq` サブシステムへ `java:/JmsXA` / `java:/queue/dolphin` を登録し、ORCA 連携キューのヘルスチェック手順を整備する必要がある。
 
 ## 5. 未移植機能・優先度
 - **High**: `common` モジュールの `javax.persistence` → `jakarta.persistence` 変換（`common/pom.xml`, `DocumentModel` ほか）。カルテ CRUD で使用する全エンティティに影響。
