@@ -3,7 +3,7 @@
 ## 1. OpenAPI ドキュメント整備
 - `docs/server-modernization/server-api-inventory.yaml` に旧サーバーの REST エンドポイントを OpenAPI 3.0.3 形式で整理。
 - `components.schemas` にレガシー DTO（`open.dolphin.infomodel.*`）を参照できるダミースキーマを設け、仕様追跡時に対象クラスへジャンプできるようにした。
-- `paths` セクションは `server-modernized/tools/api-smoke-test/api_inventory.yaml` をソースに自動生成し、既存スモークテストとの整合性を保つ。
+- `paths` セクションは `ops/tests/api-smoke-test/api_inventory.yaml` をソースに自動生成し、既存スモークテストとの整合性を保つ。
 
 ## 2. Jakarta RESTful Web Services への移行
 - `server-modernized/src/main/java/open/dolphin/rest/` および `open/dolphin/adm*/rest` 配下の `@Path` リソースで `javax.ws.rs.*` を `jakarta.ws.rs.*` へ置換。

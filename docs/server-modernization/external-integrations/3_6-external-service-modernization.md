@@ -26,7 +26,7 @@
 | `PLIVO_LOG_MESSAGE_CONTENT` | `plivo.log.messageContent` | `false` | Plivo 側でメッセージ本文を保存するかどうか |
 | `PLIVO_DEFAULT_COUNTRY` | `plivo.defaultCountry` | `+81` | 国内番号を正規化する際の国番号 |
 
-- `docker-compose.yml` / `.env.sample` / `docker/server/custom.properties` にテンプレート値を追記済み。既存利用者は `.env` で Secrets を管理し、Git 管理下から削除された平文認証情報を移行すること。
+- `docker-compose.yml` / `.env.sample` / `ops/shared/docker/custom.properties` にテンプレート値を追記済み。既存利用者は `.env` で Secrets を管理し、Git 管理下から削除された平文認証情報を移行すること。
 
 ### 1.3 送信フローと監査
 - `PlivoSender#send` は送信先番号を E.164 に正規化し、重複排除後にまとめて送信。Plivo API への要求・成功・失敗を `open.dolphin.audit.external` ロガーへ INFO/WARN で出力する。

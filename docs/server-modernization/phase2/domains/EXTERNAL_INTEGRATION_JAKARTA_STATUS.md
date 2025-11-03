@@ -6,7 +6,7 @@
 
 | 連携対象 | 主な実装/参照ファイル | 現状 (`javax.*` 利用を含む) | 差分・懸念点 | 優先度 |
 | --- | --- | --- | --- | --- |
-| ORCA レセ電／保険請求／JMS | `server-modernized/src/main/java/open/dolphin/msg/*`<br>`server-modernized/src/main/java/open/dolphin/session/ScheduleServiceBean.java`<br>`common/src/main/java/open/dolphin/converter/PlistParser.java` / `PlistConverter.java`<br>`docker/server-modernized/configure-wildfly.cli` | `ScheduleServiceBean` などは `jakarta.jms` へ移行済み。`common` の plist 変換も `jakarta.mail.*`／Jakarta Persistence へ置換済みで、`common/pom.xml` は Jakarta API を参照。 | ActiveMQ Artemis 用の JMS リソースが CLI に未定義のため、サーバー起動後に `ObjectMessage` を送る経路が成立しない。Worker1 の対応により CLAIM / PVT 変換の XSLT は Java 実装へ移行済みだが、差分検証レポートの自動化と ORCA Stub での E2E テストが未着手。 | High |
+| ORCA レセ電／保険請求／JMS | `server-modernized/src/main/java/open/dolphin/msg/*`<br>`server-modernized/src/main/java/open/dolphin/session/ScheduleServiceBean.java`<br>`common/src/main/java/open/dolphin/converter/PlistParser.java` / `PlistConverter.java`<br>`ops/modernized-server/docker/configure-wildfly.cli` | `ScheduleServiceBean` などは `jakarta.jms` へ移行済み。`common` の plist 変換も `jakarta.mail.*`／Jakarta Persistence へ置換済みで、`common/pom.xml` は Jakarta API を参照。 | ActiveMQ Artemis 用の JMS リソースが CLI に未定義のため、サーバー起動後に `ObjectMessage` を送る経路が成立しない。Worker1 の対応により CLAIM / PVT 変換の XSLT は Java 実装へ移行済みだが、差分検証レポートの自動化と ORCA Stub での E2E テストが未着手。 | High |
 | 検査機器／HL7（Falco、ORCA 取込） | `client/src/main/java/open/dolphin/impl/falco/HL7Falco.java`<br>`common/src/main/java/open/dolphin/common/OrcaAnalyze.java`<br>`common/src/main/java/open/dolphin/infomodel/*` | 解析・生成処理は JDK 標準の `javax.xml.parsers` / `javax.xml.transform` を使用。モデル層は `javax.persistence.*` アノテーション（`common/src/main/java/open/dolphin/infomodel`）に依存。 | XML API は Java SE で引き続き `javax` 名称のため大きな変化は無いが、JPA アノテーション移行のため `jakarta.persistence.*` へ全置換が必要。Swing 資産と共有しているため、一括変換時の互換テストが必須。 | High |
 | FIDO2 / WebAuthn（二要素認証） | `server-modernized/src/main/java/open/dolphin/adm20/session/ADM20_EHTServiceBean.java`<br>`server-modernized/src/main/java/open/dolphin/security/fido/Fido2Config.java` | `com.yubico:webauthn-server-*` 2.6.0 を採用。`RelyingParty.builder()` に `Set<String>` の `origins` を渡し、Jackson でシリアライズ。 | 2.6.x で `StartRegistrationOptions`／`FinishRegistrationOptions` の段階付きビルダーが導入され、除外クレデンシャルは `CredentialRepository` 側で自動処理となった。 | Medium |
 | Plivo SMS／外部通知 | `server-modernized/src/main/java/open/dolphin/adm20/PlivoSender.java`<br>`server-modernized/src/main/java/open/dolphin/msg/gateway/SmsGatewayConfig.java`<br>`server-modernized/pom.xml` | POM で `com.plivo:plivo-java:5.46.3`（未公開版）を指定。SDK 内部は Retrofit 2.2.0 と OkHttp 4.12.0 を利用。`PlivoSender` では `OkHttpClient.Builder` と TLS 設定を直接制御。 | 公開されている最新版は 5.46.0。OkHttp 5.2.1 へ上げる場合、`logging-interceptor` も 5 系へ揃えないと `NoSuchMethodError` が発生する。`connectionSpecs(Arrays.asList(...))` は 5 系でも動作するが、HTTP/2 既定化に伴いタイムアウト初期値が異なるため再検証が必要。MIT ライセンス継続。 | High |
@@ -49,7 +49,7 @@
 
 ### JMS 設定ドラフト（WildFly 33）
 
-以下は `docker/server-modernized/configure-wildfly.cli` に追記する想定のサンプル。`queue/dolphin` の JNDI 名と `java:/JmsXA` の統合リソースを定義し、MDB 復旧に備える。
+以下は `ops/modernized-server/docker/configure-wildfly.cli` に追記する想定のサンプル。`queue/dolphin` の JNDI 名と `java:/JmsXA` の統合リソースを定義し、MDB 復旧に備える。
 
 ```cli
 if (outcome != success) of /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource()

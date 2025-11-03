@@ -26,10 +26,10 @@
   - `beans.xml` が `beans_1_0.xsd` のまま（`server-modernized/src/main/webapp/WEB-INF/beans.xml:1-4`）。Jakarta CDI 4.1 では `beans_4_0.xsd` への置換が推奨される。
 
 - **WildFly CLI 設定**  
-  - モダナイズ版 CLI は HTTPS リダイレクトやセキュリティヘッダを追加（`docker/server-modernized/configure-wildfly.cli:40-77`）。ActiveMQ/JMS、EE Concurrency、Micrometer など Jakarta EE 10 で要求されるサブシステム設定は未整備。
+  - モダナイズ版 CLI は HTTPS リダイレクトやセキュリティヘッダを追加（`ops/modernized-server/docker/configure-wildfly.cli:40-77`）。ActiveMQ/JMS、EE Concurrency、Micrometer など Jakarta EE 10 で要求されるサブシステム設定は未整備。
 
 - **Docker ビルド**  
-  - 両 Dockerfile で Hibernate 5.0.10 の `StringClobType` 互換 JAR を生成し WAR へバンドルしている（`docker/server-modernized/Dockerfile:18-61`）。Jakarta EE 10 では Hibernate ORM 6 系への移行と互換 JAR 撤廃が前提。
+  - 両 Dockerfile で Hibernate 5.0.10 の `StringClobType` 互換 JAR を生成し WAR へバンドルしている（`ops/modernized-server/docker/Dockerfile:18-61`）。Jakarta EE 10 では Hibernate ORM 6 系への移行と互換 JAR 撤廃が前提。
 
 ## 3. Jakarta 対応課題とブロッカー
 

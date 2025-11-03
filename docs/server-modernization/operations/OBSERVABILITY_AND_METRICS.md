@@ -38,7 +38,7 @@ WildFly 33 では MicroProfile Metrics 拡張が廃止され、Micrometer サブ
 
 ## 2. WildFly Micrometer サブシステム設定
 
-`docker/server/configure-wildfly.cli` に Micrometer 用の設定ブロックを追加した。既存環境へ適用する場合は Management CLI で本スクリプトを再実行するか、Docker イメージを再ビルドする。サブシステム設定の要点は以下の通り。 citeturn1search0turn1search6
+`ops/legacy-server/docker/configure-wildfly.cli` に Micrometer 用の設定ブロックを追加した。既存環境へ適用する場合は Management CLI で本スクリプトを再実行するか、Docker イメージを再ビルドする。サブシステム設定の要点は以下の通り。 citeturn1search0turn1search6
 
 ```bash
 # Micrometer 設定抜粋

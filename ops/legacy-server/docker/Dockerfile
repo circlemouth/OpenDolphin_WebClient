@@ -9,7 +9,7 @@ COPY common ./common
 COPY server ./server
 COPY client ./client
 COPY ext_lib ./ext_lib
-COPY docker/server/settings.xml /tmp/maven-settings.xml
+COPY ops/shared/docker/settings.xml /tmp/maven-settings.xml
 
 RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
 RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar
@@ -66,9 +66,9 @@ COPY --from=build /workspace/server/target/opendolphin-server.war ${WILDFLY_HOME
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
 COPY --from=build /root/.m2/repository/javax/jms/javax.jms-api/2.0.1/javax.jms-api-2.0.1.jar /opt/jboss/javax-jms-api.jar
-COPY docker/server/custom.properties ${WILDFLY_HOME}/custom.properties
-COPY docker/server/configure-wildfly.cli /opt/jboss/configure-wildfly.cli
-COPY docker/server/bootstrap.sh /opt/jboss/bootstrap.sh
+COPY ops/shared/docker/custom.properties ${WILDFLY_HOME}/custom.properties
+COPY ops/legacy-server/docker/configure-wildfly.cli /opt/jboss/configure-wildfly.cli
+COPY ops/shared/docker/bootstrap.sh /opt/jboss/bootstrap.sh
 RUN chmod +x /opt/jboss/bootstrap.sh
 
 RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
