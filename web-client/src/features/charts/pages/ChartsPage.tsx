@@ -281,6 +281,9 @@ const LeftRail = styled.div`
   display: flex;
   flex-direction: column;
   gap: 10px;
+  box-sizing: border-box;
+  padding-bottom: calc(var(--charts-footer-height, 0px) + 24px);
+  scroll-padding-bottom: calc(var(--charts-footer-height, 0px) + 24px);
   height: calc(
     100vh - var(--charts-shell-offset, 0px) - var(--charts-header-height) - var(--charts-content-padding-top) -
       var(--charts-footer-height, 0px)
@@ -306,6 +309,8 @@ const LeftRail = styled.div`
     width: 100%;
     max-width: none;
     min-width: 0;
+    padding-bottom: 24px;
+    scroll-padding-bottom: 24px;
   }
 `;
 

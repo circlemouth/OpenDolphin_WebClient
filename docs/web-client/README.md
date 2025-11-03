@@ -60,6 +60,8 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`operations/LOCAL_BACKEND_DOCKER.md`](operations/LOCAL_BACKEND_DOCKER.md): 既存サーバーを Docker Compose で起動する手順。2025-11-02 (Codex) 初期施設 ID・管理者/医師アカウントとテスト患者 `WEB1001`〜`WEB1010` の投入手順を整理。2025-11-03 (Codex) Worker0/1 修正後の Maven/Docker ビルド検証ログと再現手順を追加。
 - [`operations/CAREMAP_ATTACHMENT_MIGRATION.md`](operations/CAREMAP_ATTACHMENT_MIGRATION.md): CareMap 添付移行と image-browser 設定のガイド。
 - [`operations/TEST_SERVER_DEPLOY.md`](operations/TEST_SERVER_DEPLOY.md): テスト環境へのデプロイとアカウント発行手順。2025-11-02 (Codex) Docker Compose 由来の初期アカウント情報を冒頭に整理。
+- [`operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md`](operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md): Charts 左カラムと固定フッター干渉の解消内容と検証ログ（2025-11-03 追加: Codex）。
+- [`operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md`](operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md): 患者ヘッダー「診察開始/終了」ボタンの disabled 表示を単色化し、`aria-pressed`/`aria-busy` を追加した検証ノート（2025-11-03 追加: Codex）。
 - [`../server-modernization/operations/OBSERVABILITY_AND_METRICS.md`](../server-modernization/operations/OBSERVABILITY_AND_METRICS.md): モダナイズ版サーバーのメトリクス公開と Prometheus/Grafana 連携ガイド。
 
 ## 開発者の入り口

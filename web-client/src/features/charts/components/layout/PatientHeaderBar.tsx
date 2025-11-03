@@ -587,6 +587,9 @@ export const PatientHeaderBar = forwardRef<HTMLInputElement, PatientHeaderBarPro
               variant={isLockedByMe ? 'secondary' : 'primary'}
               onClick={onToggleLock}
               disabled={!canEdit || isLockPending || isLockedByOther}
+              aria-pressed={isLockedByMe}
+              aria-busy={isLockPending}
+              isLoading={isLockPending}
             >
               {isLockedByMe ? '診察終了' : '診察開始'}
             </LockButton>
