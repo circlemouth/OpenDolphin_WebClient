@@ -87,4 +87,4 @@ EXPOSE 8080 9990
 
 USER jboss
 ENTRYPOINT ["/opt/jboss/bootstrap.sh"]
-CMD ["-c", "standalone.xml", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
+CMD ["/opt/jboss/wildfly/bin/standalone.sh", "-c", "standalone-full.xml", "-b", "0.0.0.0", "-bmanagement", "0.0.0.0"]
