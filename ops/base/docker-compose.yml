@@ -1,0 +1,23 @@
+services:
+  db:
+    image: postgres:14
+    container_name: opendolphin-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-opendolphin}
+      POSTGRES_USER: ${POSTGRES_USER:-opendolphin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opendolphin}
+      POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD:-md5}
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS:---auth-host=md5 --auth-local=trust}
+      TZ: Asia/Tokyo
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres-data:

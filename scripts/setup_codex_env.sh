@@ -295,7 +295,7 @@ install_ext_libraries() {
     fi
 
     log "${groupId}:${artifactId}:${version} をローカルリポジトリへ登録します"
-    mvn -N -f "${MODERNIZED_POM}" -s docker/server/settings.xml \
+    mvn -N -f "${MODERNIZED_POM}" -s ops/shared/docker/settings.xml \
       -B install:install-file \
       -Dfile="${ext_dir}/${jar}" \
       -DgroupId="${groupId}" \
@@ -310,7 +310,7 @@ prime_modernized_server_dependencies() {
   pushd "${REPO_ROOT}" >/dev/null
   prepare_modernized_parent_pom
   log "server-modernized モジュールの依存関係を事前取得します"
-  mvn -f "${MODERNIZED_POM}" -s docker/server/settings.xml \
+  mvn -f "${MODERNIZED_POM}" -s ops/shared/docker/settings.xml \
     -pl server-modernized -am -DskipTests package
   popd >/dev/null
 }

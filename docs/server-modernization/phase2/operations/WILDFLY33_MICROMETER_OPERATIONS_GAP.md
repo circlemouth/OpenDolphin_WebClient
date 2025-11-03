@@ -12,12 +12,12 @@
 | REST メトリクス | 計測なし。 | `RequestMetricsFilter` が Micrometer (`MeterRegistry`) を介して `opendolphin_api_*` シリーズをカウント／タイム計測し、`X-Trace-Id` と連携。<br>参照: `server-modernized/src/main/java/open/dolphin/metrics/RequestMetricsFilter.java:1` | Micrometer への移行完了。残タスク: Prometheus 管理ポートのアクセス制御を `operations` 配下へ追記、Grafana の P95/エラーレートダッシュボード更新、`step` と `scrape_interval` の整合検証を定期運用に組み込む。 |
 | JDBC プールメトリクス | 計測なし。 | `DatasourceMetricsRegistrar` が Micrometer Gauge を登録し、Agroal メトリクス API から接続数を供給。再デプロイ時に重複しないよう既存 Gauge を削除後に再登録する。<br>参照: `server-modernized/src/main/java/open/dolphin/metrics/DatasourceMetricsRegistrar.java:1` | Micrometer 用 Gauge 実装へ置き換え済み。Grafana で接続枯渇アラート（`active_connections` と `available_connections` の閾値監視）を追加し、夜間バッチ時のピーク値を `max_used_connections` で確認する運用手順を整備。 |
 | 定期ジョブ / バックグラウンド処理 | `ServletStartup` の `@Schedule`（EJB Timer）が日次更新／月次集計を実行。<br>参照: `server/src/main/java/open/dolphin/mbean/ServletStartup.java:1` | `ManagedScheduledExecutorService` を注入し、アプリケーションスコープで日次・月次処理をスケジュール。<br>参照: `server-modernized/src/main/java/open/dolphin/mbean/ServletStartup.java:1` | WildFly 33 では `ee-concurrency` サブシステムのリソース名を CLI で明示する必要がある。Failover 時の再スケジュール可否と監査ログ連携（成功/失敗記録）を Micrometer のメトリクスと併せて整備する。 |
-| JMS / 非同期ジョブ | `MessageSender` / `ScheduleServiceBean` に JMS キュー定義（HornetQ）を想定するコードが存在するが、現在はコメントアウト済み。`docker/server/configure-wildfly.cli` もキュー未定義。 | `MessagingGateway` が `ManagedExecutorService` で非同期送信を代替。JMS リソース注入は依然コメントアウトされ、`configure-wildfly.cli` も ActiveMQ 設定なし。<br>参照: `server-modernized/src/main/java/open/dolphin/session/MessageSender.java` | JMS 再有効化時は Micrometer の Executor メトリクス（`executor.*`）を合わせて収集できるようにする。並行度・失敗回数を Prometheus へ送出し、CLAIM 送信トレースと整合させる必要がある。 |
+| JMS / 非同期ジョブ | `MessageSender` / `ScheduleServiceBean` に JMS キュー定義（HornetQ）を想定するコードが存在するが、現在はコメントアウト済み。`ops/legacy-server/docker/configure-wildfly.cli` もキュー未定義。 | `MessagingGateway` が `ManagedExecutorService` で非同期送信を代替。JMS リソース注入は依然コメントアウトされ、`configure-wildfly.cli` も ActiveMQ 設定なし。<br>参照: `server-modernized/src/main/java/open/dolphin/session/MessageSender.java` | JMS 再有効化時は Micrometer の Executor メトリクス（`executor.*`）を合わせて収集できるようにする。並行度・失敗回数を Prometheus へ送出し、CLAIM 送信トレースと整合させる必要がある。 |
 
 ## 2. 完了した Micrometer 対応とフォローアップ
 
 - `RequestMetricsFilter` / `DatasourceMetricsRegistrar` を Micrometer API ベースへ書き換え、`MeterRegistryProducer` で WildFly の Micrometer レジストリを CDI 経由で供給する実装を追加した。<sup>1</sup>
-- `docker/server/configure-wildfly.cli` に Micrometer 拡張・Prometheus レジストリ・Undertow 統計有効化のコマンドを追記し、OTLP 送信先とスクレイプ間隔を環境変数化した。<sup>2</sup>
+- `ops/legacy-server/docker/configure-wildfly.cli` に Micrometer 拡張・Prometheus レジストリ・Undertow 統計有効化のコマンドを追記し、OTLP 送信先とスクレイプ間隔を環境変数化した。<sup>2</sup>
 - 運用手順書は `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md` を Micrometer 前提で更新済み。SRE チームは Prometheus 管理ポートの認証方式とアラート条件を 2025-11-06 までにレビューする。
 
 ## 3. 監査ログ × Micrometer 突合要件
@@ -34,7 +34,7 @@
 
 ## 5. パフォーマンス / JMS ギャップの列挙
 
-- `docker/server-modernized/configure-wildfly.cli` のデータソース設定は従来と同じ `min/max-pool-size`・`background-validation` に留まり、Agroal 固有のプール最適化（`initial-size`, `pool-prefill`, `leak-detection` 等）を未設定。Micrometer で可視化する前にチューニング指標を整理する。
+- `ops/modernized-server/docker/configure-wildfly.cli` のデータソース設定は従来と同じ `min/max-pool-size`・`background-validation` に留まり、Agroal 固有のプール最適化（`initial-size`, `pool-prefill`, `leak-detection` 等）を未設定。Micrometer で可視化する前にチューニング指標を整理する。
 - `ManagedScheduledExecutorService` / `ManagedExecutorService` を利用するクラス（`ServletStartup`, `MessagingGateway`）は、リソースが取得できなかった場合に同期実行へフォールバックしている。再デプロイ時の二重スケジュールや停止処理の例外を監査ログへ記録する仕組みが必要。
 - JMS 関連クラス（`MessageSender`, `ScheduleServiceBean`）では `@Resource` がコメントアウトされたまま残存しており、Jakarta JMS へ移行するか非同期実装で置き換えるかが未決定。JMS を継続する場合は ActiveMQ 設定と永続化ポリシー（ジャーナル／アドレス設定）を CLI に追加する。
 - `PlivoSender` が `okhttp`／`plivo-java` へ直接依存する一方で BOM 管理は未整理。Micrometer 設定追加とあわせて依存更新計画（`DEPENDENCY_UPDATE_PLAN.md`）のバージョン確定が必要。

@@ -21,7 +21,7 @@
 - [x] WildFly 26 LTS 以降のランタイムに合わせて Jakarta EE 8 API へ置換し、`jakarta.*` 依存へ切り替える。依存座標は Jakarta API へ移行済み。
 - [x] `wildfly-maven-plugin` の接続情報を Maven Settings / 環境変数へ外部化し、CI/CD から秘密情報を除去する。`server-modernized/pom.xml` で `serverId`/環境変数プロファイルを導入し、`.env.sample`・運用ドキュメントを更新。
 - [x] `server-modernized/pom.xml` に BOM 管理を導入し、RESTEasy・JDBC ドライバ等を WildFly 同梱版へ寄せる。WildFly BOM を import して依存バージョンを統制。
-- [x] Docker Compose に従来サーバー (`server`) とモダナイズ版 (`server-modernized` プロファイル) の両構成を用意し、ヘルスチェックや環境変数テンプレートを `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` に統合済み。WildFly 26.1.3.Final ベースの Dockerfile は `docker/server-modernized/` に分離し、評価時のみ起動できるよう切替手順を記載。
+- [x] Docker Compose に従来サーバー (`server`) とモダナイズ版 (`server-modernized` プロファイル) の両構成を用意し、ヘルスチェックや環境変数テンプレートを `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` に統合済み。WildFly 26.1.3.Final ベースの Dockerfile は `ops/modernized-server/docker/` に分離し、評価時のみ起動できるよう切替手順を記載。
 
 ### 3.2 REST API レイヤー
 - [x] `server-api-inventory.yaml` と既存 `*.rest` 実装を突合し、全エンドポイントの入力/出力スキーマを OpenAPI で定義した。成果物は `docs/server-modernization/server-api-inventory.yaml` に格納し、各パスごとにレガシー DTO を参照できるよう `components.schemas` を整備した。
@@ -38,7 +38,7 @@
 - [x] バッチ処理・定期ジョブの有無を調査し、スケジューラ（Jakarta Concurrency / 外部ジョブ基盤）へ移行する。参照: 同上ドキュメント
 
 ### 3.4 永続化 / データアクセス
-- [x] PostgreSQL JDBC ドライバを 42.x 系へ更新し、SSL/TLS 設定を有効化する。→ `docker/server-modernized/configure-wildfly.cli` に `sslmode`/`sslrootcert` を追加し、`docker-compose.yml` で環境変数化。
+- [x] PostgreSQL JDBC ドライバを 42.x 系へ更新し、SSL/TLS 設定を有効化する。→ `ops/modernized-server/docker/configure-wildfly.cli` に `sslmode`/`sslrootcert` を追加し、`docker-compose.yml` で環境変数化。
 - [x] 永続化ユニット定義・`persistence.xml` の JDBC URL/資格情報を Secrets 管理に移す。→ `server-modernized/src/main/resources/META-INF/persistence.xml` を新設し、JNDI 参照のみとした。
 - [x] DB スキーマをリバースエンジニアリングし、マイグレーションツール（Flyway/Liquibase）で版管理する。→ `server-modernized/tools/flyway/` に設定・ベースラインタグを追加。
 - [x] エンティティの lazy/eager 設定と N+1 クエリを監査し、REST API のレスポンス最適化を図る。→ `V0002__performance_indexes.sql` で索引化し、`persistence.xml` に検出オプションを追加。
@@ -58,7 +58,7 @@
 
 ### 3.7 セキュリティ / コンプライアンス
 - [x] 2 要素認証エンドポイント（`/20/adm/factor2/*`）の実装をレビューし、FIDO2/TOTP 等の最新方式へ更新する。→ `AdmissionResource` に TOTP/FIDO2 登録・認証 API を追加し、`Factor2Credential`/`Factor2Challenge` で認証器管理を実装（詳細: `docs/server-modernization/security/3_7-security-compliance.md`）。
-- [x] HTTPS 常時化、HSTS、CSP、WAF 連携など運用レベルのセキュリティ設定を整備する。→ `docker/server-modernized/configure-wildfly.cli` へ HSTS/CSP/リダイレクト設定を追加、WAF 連携手順は同ドキュメントに記載。
+- [x] HTTPS 常時化、HSTS、CSP、WAF 連携など運用レベルのセキュリティ設定を整備する。→ `ops/modernized-server/docker/configure-wildfly.cli` へ HSTS/CSP/リダイレクト設定を追加、WAF 連携手順は同ドキュメントに記載。
 - [x] 操作ログ・監査証跡の要件を `docs/server-modernization/api-smoke-test.md` と突き合わせ、改ざん耐性のあるログ保管を実装する。→ `AuditTrailService` と `d_audit_event` を新設し、ハッシュチェーンで監査ログを永続化。
 - [x] 個人情報保護対応（第三者提供記録・アクセス制御）を `docs/web-client/architecture/SERVER_MODERNIZATION_PLAN.md` の法令要件と整合させる。→ `ThirdPartyDisclosureRecord` テーブルと運用ガイドを整備。
 - [x] 設定変更・デプロイ作業のワークフローを標準化し、権限分離とレビュー手順を明文化する。→ `docs/server-modernization/security/DEPLOYMENT_WORKFLOW.md` に標準フローを追加。

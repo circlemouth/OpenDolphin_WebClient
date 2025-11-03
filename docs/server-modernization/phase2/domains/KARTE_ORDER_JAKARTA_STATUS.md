@@ -25,7 +25,7 @@
 | --- | --- | --- | --- |
 | REST API (`javax.ws.rs`) | `server/src/main/java/open/dolphin/rest/*.java` | 旧サーバーは `javax.ws.rs` / `javax.servlet` に依存。 | 運用対象を `server-modernized` へ切替し、旧モジュールはビルド対象から外す。RESTEasy 6 設定を `jakarta.ws.rs.core.Application` ベースへ整理。 |
 | サーブレット/非同期 (`javax.servlet`) | `server/src/main/java/open/dolphin/rest/ChartEventResource.java` ほか | 旧コードは `javax.servlet`、新コードは `jakarta.servlet` へ切替済みだが `web.xml` が JavaEE 3.0 スキーマ。 | `web.xml` を `https://jakarta.ee/xml/ns/jakartaee` + 6.0 schema に更新し、WildFly 33 で async filter/servlet が正しく登録されるようにする。 |
-| トランザクション (`javax.transaction`) | `docker/server/configure-wildfly.cli` | モジュール依存に `javax.transaction.api` を指定。 | CLI スクリプトを `jakarta.transaction.api` へ更新し、WildFly 33 のモジュール名と整合させる。 |
+| トランザクション (`javax.transaction`) | `ops/legacy-server/docker/configure-wildfly.cli` | モジュール依存に `javax.transaction.api` を指定。 | CLI スクリプトを `jakarta.transaction.api` へ更新し、WildFly 33 のモジュール名と整合させる。 |
 | 永続化 (`javax.persistence`) | `common/src/main/java/open/dolphin/infomodel/*` | エンティティ/リスナーを `javax.persistence` で宣言。 | `jakarta.persistence` へ全面置換し、`common/pom.xml` の依存を Jakarta API + WildFly 付属ライブラリへ揃える。 |
 | バリデーション (`javax.validation`) | ※参照なし | 入力 DTO に Bean Validation 未導入。 | `jakarta.validation` を BOM に追加し、カルテ/オーダ API のリクエスト DTO へ `@NotNull` 等を付与。 |
 
