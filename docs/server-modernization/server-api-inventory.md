@@ -2,7 +2,7 @@
 
 以下の表は既存サーバー (`server/`) が公開する REST エンドポイントをリソース別に整理したものです。各行は HTTP メソッド・URL パス・Java 実装メソッドを示します。
 
-エンドポイントの網羅的なマニフェストは `docs/server-modernization/server-api-inventory.yaml` に OpenAPI 形式で整理しています。テスト用のエンドポイント羅列は従来どおり `server-modernized/tools/api-smoke-test/api_inventory.yaml` に残してあります。
+エンドポイントの網羅的なマニフェストは `docs/server-modernization/server-api-inventory.yaml` に OpenAPI 形式で整理しています。テスト用のエンドポイント羅列は従来どおり `ops/tests/api-smoke-test/api_inventory.yaml` に残してあります。
 
 ## AdmissionResource
 

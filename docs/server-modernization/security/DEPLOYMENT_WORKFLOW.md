@@ -16,7 +16,7 @@ Phase 3.7 の実装に合わせ、2FA 設定や通信制御を変更する際の
 
 1. 変更前に `AuditTrailService` のテーブルをバックアップ（`pg_dump -t d_audit_event` など）する。
 2. 必要な環境変数を Secrets Manager / Vault に登録し、CI/CD パイプラインの `docker-compose.yml` へ反映する。
-3. `docker/server-modernized/configure-wildfly.cli` の変更がある場合は、`jboss-cli` の dry-run を実施し差分を確認する。
+3. `ops/modernized-server/docker/configure-wildfly.cli` の変更がある場合は、`jboss-cli` の dry-run を実施し差分を確認する。
 4. デプロイ後に以下を実施。
    - `/20/adm/factor2/fido2/registration/options` を用いた疎通確認（stg 環境で実施）。
    - `SELECT action, request_id FROM d_audit_event ORDER BY event_time DESC LIMIT 5;` でログが生成されていることを確認。

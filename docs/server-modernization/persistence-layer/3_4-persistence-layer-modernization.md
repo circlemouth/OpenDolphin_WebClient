@@ -4,7 +4,7 @@
 
 ## 1. PostgreSQL JDBC 42.x + TLS 対応
 
-- `server-modernized/pom.xml` で JDBC ドライバを 42.7.3 へ更新し、`docker/server-modernized/configure-wildfly.cli` のデータソース定義に `sslmode`／`sslrootcert` を追加した。これにより、TLS 接続が必須の環境でも WildFly の再設定なしに接続できる。
+- `server-modernized/pom.xml` で JDBC ドライバを 42.7.3 へ更新し、`ops/modernized-server/docker/configure-wildfly.cli` のデータソース定義に `sslmode`／`sslrootcert` を追加した。これにより、TLS 接続が必須の環境でも WildFly の再設定なしに接続できる。
 - Docker Compose では `DB_SSLMODE`／`DB_SSLROOTCERT` を環境変数として受け取り、Secrets に格納された証明書をボリュームマウントするだけで TLS を有効化できる。デフォルト値は `prefer` とし、ローカル検証用の平文接続も維持した。
 - 旧バージョンからの移行では `.env`（もしくは Secrets Manager のキー）に以下の値を追加するだけでよく、アプリケーション再起動時に新しい設定が反映される。
   ```env

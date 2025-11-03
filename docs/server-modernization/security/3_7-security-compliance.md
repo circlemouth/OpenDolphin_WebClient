@@ -15,7 +15,7 @@
 
 ## 2. 通信経路とヘッダ強化
 
-- `docker/server-modernized/configure-wildfly.cli` に以下の設定を追加。
+- `ops/modernized-server/docker/configure-wildfly.cli` に以下の設定を追加。
   - HTTP→HTTPS リダイレクトを有効化し、`Strict-Transport-Security` を `max-age=63072000; includeSubDomains` で送出。
   - `Content-Security-Policy: default-src 'self'` と `X-Content-Type-Options: nosniff`、`Referrer-Policy: no-referrer` を Undertow フィルタとして設定。
 - WAF との連携はリバースプロキシ（例: AWS WAF + ALB、もしくは ModSecurity）を前段に置き、`X-Forwarded-*` ヘッダを WildFly 側で受け入れる構成を推奨。導入手順と監査証跡への統合方針は下記参照。

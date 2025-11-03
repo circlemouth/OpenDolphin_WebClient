@@ -1,6 +1,6 @@
 # API スモークテスト運用手順
 
-旧サーバーとモダナイズサーバーのレスポンス同等性を検証するためのスモークテスト手順を以下に示します。テストでは `server-modernized/tools/api-smoke-test/` 配下のスクリプトとインベントリを利用します。
+旧サーバーとモダナイズサーバーのレスポンス同等性を検証するためのスモークテスト手順を以下に示します。テストでは `ops/tests/api-smoke-test/` 配下のスクリプトとインベントリを利用します。
 
 ## 構成ファイル
 
@@ -23,12 +23,12 @@
    ```bash
    python -m venv .venv
    source .venv/bin/activate
-   pip install -r server-modernized/tools/api-smoke-test/requirements.txt
+   pip install -r ops/tests/api-smoke-test/requirements.txt
    ```
 3. インベントリからテスト設定の雛形を生成します。
    ```bash
-   python server-modernized/tools/api-smoke-test/generate_config_skeleton.py \
-     --output server-modernized/tools/api-smoke-test/test_config.yaml
+   python ops/tests/api-smoke-test/generate_config_skeleton.py \
+     --output ops/tests/api-smoke-test/test_config.yaml
    ```
 4. 生成された `test_config.yaml` を編集し、全エンドポイントの `path_params`・`query`・`headers`・`body` などを実際の検証データに置き換えます。
    - `<REQUIRED>` と書かれた項目は必須です。未設定のまま実行するとスクリプトがエラーを返します。
@@ -41,8 +41,8 @@
 モダナイズ版が未整備の場合でも、旧サーバーに対して一括でリクエストを投げてステータスを確認できます。
 
 ```bash
-python server-modernized/tools/api-smoke-test/run_smoke.py \
-  --config server-modernized/tools/api-smoke-test/test_config.yaml \
+python ops/tests/api-smoke-test/run_smoke.py \
+  --config ops/tests/api-smoke-test/test_config.yaml \
   --primary-base-url https://legacy.example.com/api \
   --artifact-dir artifacts/legacy-only
 ```
@@ -55,8 +55,8 @@ python server-modernized/tools/api-smoke-test/run_smoke.py \
 旧サーバーとモダナイズ版のレスポンス同等性を検証する場合は両方のベース URL を指定します。
 
 ```bash
-python server-modernized/tools/api-smoke-test/run_smoke.py \
-  --config server-modernized/tools/api-smoke-test/test_config.yaml \
+python ops/tests/api-smoke-test/run_smoke.py \
+  --config ops/tests/api-smoke-test/test_config.yaml \
   --primary-base-url https://legacy.example.com/api \
   --secondary-base-url https://modern.example.com/api \
   --artifact-dir artifacts/compare
@@ -80,11 +80,11 @@ python server-modernized/tools/api-smoke-test/run_smoke.py \
 
 GitHub Actions に `API Smoke Test` ワークフロー（`.github/workflows/api-smoke-test.yml`）を追加し、旧サーバーとモダナイズ版を Docker Compose で順番に起動してレスポンスを比較できるようにしました。ワークフローでは以下の流れで実行します。
 
-1. `docker compose up -d db server` で旧サーバーを起動し、`test_config.ci.yaml` で定義した最小エンドポイントに対して `run_smoke.py` を実行し成果物 (`artifacts/baseline/`) を生成する。
-2. 旧サーバーを停止した後、`docker compose --profile modernized up -d server-modernized` でモダナイズ版を起動し、同一設定で再度 `run_smoke.py` を実行する。この際 `--baseline-dir artifacts/baseline` を指定して、直前に取得した旧サーバー結果とレスポンスを比較する。
+1. `docker compose -f ops/tests/api-smoke-test/docker-compose.yml up -d db server` で旧サーバーを起動し、`test_config.ci.yaml` で定義した最小エンドポイントに対して `run_smoke.py` を実行し成果物 (`artifacts/baseline/`) を生成する。
+2. 旧サーバーを停止した後、`docker compose -f ops/tests/api-smoke-test/docker-compose.yml --profile modernized up -d server-modernized` でモダナイズ版を起動し、同一設定で再度 `run_smoke.py` を実行する。この際 `--baseline-dir artifacts/baseline` を指定して、直前に取得した旧サーバー結果とレスポンスを比較する。
 3. `artifacts/modernized/` 以下にモダナイズ版のレスポンスを保存し、アーティファクトとしてアップロードする。
 
-CI 用の設定ファイル `server-modernized/tools/api-smoke-test/test_config.ci.yaml` は認証ヘッダーのみで疎通できる `/dolphin` および `/serverinfo/*` エンドポイントを対象とした最小構成です。追加で比較したい API がある場合は、同ファイルにケースを追記しつつ、必要なテストデータを `generate_config_skeleton.py` で生成した雛形に従って補完してください。
+CI 用の設定ファイル `ops/tests/api-smoke-test/test_config.ci.yaml` は認証ヘッダーのみで疎通できる `/dolphin` および `/serverinfo/*` エンドポイントを対象とした最小構成です。追加で比較したい API がある場合は、同ファイルにケースを追記しつつ、必要なテストデータを `generate_config_skeleton.py` で生成した雛形に従って補完してください。
 
 ### `--baseline-dir` オプション
 
