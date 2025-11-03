@@ -1,16 +1,16 @@
 # フェーズ2 進捗メモ (更新: 2026-05-27)
 
 - ✅ `/10/adm/jtouch/*` 16 件を Jakarta 版 `JsonTouchResource` に実装し直し、`JsonTouchResourceParityTest` 17 ケースで `/jtouch/*`・`/20/adm/jtouch/*` とレスポンス／監査ログの整合を確認。`JsonTouchAuditLogger` 導入で監査ログカテゴリを統一し、`System.err` 出力と独自例外処理を排除した。
-- 📊 集計サマリを再計算し、legacy 256 件中 201 件が証跡取得済み、未整備 55 件（DolphinResourceASP 19 + DemoResourceASP 15 + SystemResource 5 + MmlResource 4 + PHRResource 11 + `/pvt2/{pvtPK}` DELETE 1）であることを反映。モダナイズ専用 API は 8 件（`/mml/*` 追加分 + PHR export/status）。
+- 📊 集計サマリを再計算し、legacy 256 件中 202 件が証跡取得済み、未整備 54 件（DolphinResourceASP 19 + DemoResourceASP 15 + SystemResource 5 + MmlResource 4 + PHRResource 11）であることを反映。モダナイズ専用 API は 8 件（`/mml/*` 追加分 + PHR export/status）。
 - 📄 変更ドキュメント: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`（JsonTouch 行・集計値更新／17 ケーステスト脚注追記）、`docs/server-modernization/phase2/PHASE2_PROGRESS.md`（本メモ）、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`（JSONTOUCH パリティ実行ログ追記）、`docs/web-client/README.md`（更新概要を反映）。
-- ⚠️ 未整備タスク: `/20/adm/jtouch` 系への監査ログ統一と Parity テスト拡張、PHR エクスポート REST/API 実装、`/pvt2/{pvtPK}` DELETE の自動テスト整備、MmlResource Labtest/Letter の動作ログ取得。`mvn -pl server-modernized test` は DuplicateProjectException で失敗するため、POM 整理と CI 実行手段の整備が必要。担当（Worker C/D/E/F）へフォローを依頼済み。
+- ⚠️ 未整備タスク: `/20/adm/jtouch` 系への監査ログ統一と Parity テスト拡張、PHR エクスポート REST/API 実装、MmlResource Labtest/Letter の動作ログ取得。`mvn -pl server-modernized test` は DuplicateProjectException で失敗するため、POM 整理と CI 実行手段の整備が必要。担当（Worker C/D/E/F）へフォローを依頼済み。
 
 ## 2025-11-03 追記: PVTResource2 / SystemResource パリティ再点検（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/rest/PVTResource2.java` の POST/GET 実装と `server-modernized/src/test/java/open/dolphin/rest/PVTResource2Test.java` のカバレッジを確認し、`/pvt2` POST・`/pvt2/pvtList` GET を `[x]` 判定へ更新。facility ID 再紐付けと `PatientVisitListConverter` 包装処理の単体テスト証跡を取得済み。
-- ⚠️ `DELETE /pvt2/{pvtPK}` はモダナイズ実装済みだが自動テストが存在せず、`PVTServiceBean#removePvt` 呼び出しと施設スコープ検証が未証明。`PVTResource2Test` へ削除ケースを追加してから `[x]` 化する。
+- ✅ `DELETE /pvt2/{pvtPK}` の削除正常系／施設不一致例外系を `PVTResource2Test#deletePvt_removesVisitForAuthenticatedFacility`／`#deletePvt_throwsWhenFacilityDoesNotOwnVisit` として追加し、`PVTServiceBean#removePvt` 呼び出しパラメータと `ChartEventServiceBean#getPvtList` の副作用を検証。マトリクスと Runbook を `[x]` 化済み。
 - ⚠️ `SystemResource`（`/dolphin` ルート + activity/cloudzero/license）5 件は実装のみでテスト証跡が無い。`SystemResourceTest` を新設し、ルート疎通・ロール再紐付け・月次集計・CloudZero 送信・ライセンスファイル更新の正常/例外系を自動化する必要あり。
 - 📎 ドキュメントを更新: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`（PVT2 行と SystemResource 行の最新判定）、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`（検証ログ追記）、`docs/web-client/README.md`（更新概要を反映）。
-- 📋 未解決 API（マトリクス [ ] 継続）: DELETE `/pvt2/{pvtPK}`、GET `/dolphin`、POST `/dolphin`、GET `/dolphin/activity/{param}`、GET `/dolphin/cloudzero/sendmail`、POST `/dolphin/license`（いずれもテスト証跡未整備）。
+- 📋 未解決 API（マトリクス [ ] 継続）: GET `/dolphin`、POST `/dolphin`、GET `/dolphin/activity/{param}`、GET `/dolphin/cloudzero/sendmail`、POST `/dolphin/license`（いずれもテスト証跡未整備）。
 
 ## 2025-11-03 追記: EHTResource API パリティ完了（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/adm20/rest/EHTResource.java` と `ADM20_EHTServiceBean` を拡張し、旧サーバーの `/20/adm/eht/*` 43 エンドポイントを全移植。CLAIM 送信／バイタル／身体所見系に Jakarta 版のトランザクション境界とレスポンス順序（`order by`）を反映。
