@@ -133,7 +133,7 @@ Docker 関連資産は `ops/` 以下に整理されている。旧サーバー�
 
 - 手元環境に Apache Maven 3.9.6 を手動配置（`$HOME/.local/apache-maven-3.9.6`）し、`export PATH=$HOME/.local/apache-maven-3.9.6/bin:$PATH` を設定した上で各コマンドを実行。
 - `mvn -f pom.server-modernized.xml -pl common -DskipTests -ntp package` は成功。
-- `mvn -f pom.server-modernized.xml -s ops/shared/docker/settings.xml -pl server-modernized -am -DskipTests -ntp package` はコンパイルエラーで失敗。`ADM20_EHTServiceBean` の `com.yubico.webauthn.credential.*`、`MeterRegistryProducer` の `jakarta.naming.*`、`ChartEventStreamResource` の `jakarta.ws.rs.sse.SseElementType`、`PlivoSender`／`MessageSender` の `okhttp3.*`・`ConnectionSpec`・`TlsVersion`、`ExternalServiceAuditLogger` の可視性、および `Logger#log(Level, Supplier, Throwable)` 呼び出しが未解決。
+- `mvn -f pom.server-modernized.xml -s ops/shared/docker/settings.xml -pl server-modernized -am -DskipTests -ntp package` はコンパイルエラーで失敗。WildFly BOM が参照する `jakarta.websocket:jakarta.websocket-(client-)api:2.1.0-jbossorg-2` が Maven Central に存在せず依存解決が中断。旧課題（WebAuthn / OkHttp / SSE）の解消後も、JBoss 公開リポジトリ追加または WildFly モジュール参照へ切り替える対応が必須。
 - 同一エラーが `docker compose -p modern-testing -f docker-compose.yml -f docker-compose.modernized.dev.yml build server-modernized-dev` でも発生し、`server-modernized/target/opendolphin-server.war` は生成されない。
 - ログ採取例: `mvn ... | tee /tmp/mvn_server.log`、`docker compose ... | tee /tmp/docker_build.log`。
 
