@@ -3,7 +3,6 @@ package open.dolphin.session;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
@@ -12,6 +11,8 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.framework.SessionOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -22,6 +23,8 @@ import open.dolphin.session.framework.SessionOperation;
 @Transactional
 @SessionOperation
 public class NLabServiceBean {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(NLabServiceBean.class);
 
     private static final String QUERY_MODULE_BY_MODULE_KEY = "from NLaboModule m where m.moduleKey=:moduleKey";
     private static final String QUERY_MODULE_BY_PID_SAMPLEDATE_LABCODE = "from NLaboModule m where m.patientId=:fidPid and m.sampleDate=:sampleDate and m.laboCenterCode=:laboCode";
@@ -244,7 +247,7 @@ public class NLabServiceBean {
         //Logger.getLogger("open.dolphin").info("Lab module to detele is " + id);
         NLaboModule target = em.find(NLaboModule.class,id);
         em.remove(target);
-        Logger.getLogger("open.dolphin").info("Lab module deleted " + id);
+        LOGGER.info("Lab module deleted {}", id);
         return 1;
     }
 }

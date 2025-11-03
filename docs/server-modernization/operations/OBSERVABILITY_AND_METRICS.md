@@ -100,6 +100,7 @@ Micrometer は Undertow / Datasource など各サブシステムの統計情報�
 - MicroProfile Metrics と Micrometer を同時に有効化すると二重登録による不整合が生じるため、モダナイズ版では Micrometer のみに統一する。 citeturn1search0
 - `security-enabled=true` のまま公開する場合は管理ポートを社内ネットワークで保護し、Basic 認証情報を Vault または Kubernetes Secret で管理する。 citeturn1search1
 - OTLP Collector を利用しない環境では `MICROMETER_OTLP_ENDPOINT` を無効化し、Prometheus Pull のみで運用することも可能。
+- `open.dolphin.session`／`open.dolphin.security`／`open.dolphin.metrics` の各モジュールは SLF4J API へ移行済み。WildFly 標準の SLF4J → JBoss LogManager ブリッジが前提となるため、独自のロギングハンドラを導入している場合は `standalone.xml` で `org.slf4j` モジュールが有効化されているか確認する。
 
 ## 6. PDF署名ライブラリのライセンス告知
 

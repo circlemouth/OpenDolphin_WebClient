@@ -49,6 +49,7 @@ Claim／傷病名電文の送信処理を `open.dolphin.msg.gateway.MessagingGat
 
 - **設定互換性**: `custom.properties`（`claim.conn`/`claim.host`/`claim.send.port`/`claim.send.encoding`）および ORCA 接続設定の読み取り仕様は維持されている。設定ファイルの再配置は不要。
 - **ログ出力**: 新しいトレース ID 付きログにより、障害発生時は `SessionOperationInterceptor` が出力する `traceId` を参照する運用に切り替える。監査側手順書への追記が必要。
+- **ロギング API**: セッション層・セキュリティ層・メトリクス連携のロガーを SLF4J ベースへ統一した。WildFly が提供する `org.slf4j` モジュール経由で従来どおり JBoss LogManager へ出力されるため、追加の設定変更は不要だが、サードパーティ製ハンドラを利用している環境では SLF4J へのブリッジが有効になっていることを確認する。
 - **ジョブ管理**: WildFly の EJB タイマ設定から `ManagedScheduledExecutorService` への移行に伴い、アプリケーションサーバー設定でのジョブ定義は不要となった。`docs/server-modernization/session-layer/3_3-session-layer-modernization.md` を参照のうえ、新 scheduler の稼働確認を行う。
 
 以上により、チェックリスト 3.3 の未完了タスクは全て実装レベルで解消された。

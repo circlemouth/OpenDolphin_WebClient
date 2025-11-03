@@ -8,8 +8,6 @@ import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.text.SimpleDateFormat;
 import java.util.*;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
@@ -21,6 +19,8 @@ import open.dolphin.mbean.ServletContextHolder;
 import open.dolphin.rest.ChartEventResource;
 import open.dolphin.rest.ChartEventSseSupport;
 import open.dolphin.session.framework.SessionOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ChartEventServiceBean
@@ -31,7 +31,7 @@ import open.dolphin.session.framework.SessionOperation;
 @SessionOperation
 public class ChartEventServiceBean {
 
-    //private static final Logger logger = Logger.getLogger(ChartEventServiceBean.class.getSimpleName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(ChartEventServiceBean.class);
     
     @Inject
     private ServletContextHolder contextHolder;
@@ -435,11 +435,11 @@ public class ChartEventServiceBean {
             r.close();
             pvtListClear = config.getProperty("pvtlist.clear", "false");
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(ChartEventServiceBean.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.error("Failed to load custom.properties", ex);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(ChartEventServiceBean.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.error("Failed to read custom.properties due to unsupported encoding", ex);
         } catch (IOException ex) {
-            Logger.getLogger(ChartEventServiceBean.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.error("I/O error while reading custom.properties", ex);
         }
         
         if(pvtListClear != null && pvtListClear.equals("true")) {
@@ -491,19 +491,19 @@ public class ChartEventServiceBean {
         log("ChartEventService: renewPvtList did done");
     }
 
-//minagawa^    
+//minagawa^
     private void log(String msg) {
-        Logger.getLogger("open.dolphin").info(msg);
+        LOGGER.info(msg);
     }
-    
+
     private void debug(String msg) {
         if (DEBUG) {
-            Logger.getLogger("open.dolphin").info(msg);
+            LOGGER.debug(msg);
         }
     }
-    
+
     private void warn(String msg) {
-        Logger.getLogger("open.dolphin").info(msg);
+        LOGGER.warn(msg);
     }
-//minagawa$    
+//minagawa$
 }

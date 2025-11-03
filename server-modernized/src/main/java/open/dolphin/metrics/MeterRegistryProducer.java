@@ -6,8 +6,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import javax.naming.InitialContext;
 import javax.naming.NamingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * WildFly が提供する Micrometer MeterRegistry を CDI へ公開する。
@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class MeterRegistryProducer {
 
-    private static final Logger LOGGER = Logger.getLogger(MeterRegistryProducer.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(MeterRegistryProducer.class);
     private static final String WILDFLY_JNDI_NAME = "java:jboss/micrometer/registry";
 
     @Produces
@@ -26,7 +26,7 @@ public class MeterRegistryProducer {
         if (registry != null) {
             return registry;
         }
-        LOGGER.log(Level.WARNING, "Micrometer registry not found under {0}; falling back to global registry.", WILDFLY_JNDI_NAME);
+        LOGGER.warn("Micrometer registry not found under {}; falling back to global registry.", WILDFLY_JNDI_NAME);
         return Metrics.globalRegistry;
     }
 
@@ -38,7 +38,7 @@ public class MeterRegistryProducer {
                 return meterRegistry;
             }
         } catch (NamingException ex) {
-            LOGGER.log(Level.FINE, "WildFly Micrometer registry lookup failed: {0}", ex.getMessage());
+            LOGGER.debug("WildFly Micrometer registry lookup failed", ex);
         }
         return null;
     }

@@ -13,8 +13,6 @@ import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityExistsException;
@@ -27,6 +25,8 @@ import open.dolphin.session.framework.SessionOperation;
 import open.stamp.seed.CopyStampTreeBuilder;
 import open.stamp.seed.CopyStampTreeDirector;
 import jakarta.transaction.Transactional;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 //import org.jboss.ejb3.annotation.ResourceAdapter;
 
 /**
@@ -43,6 +43,8 @@ import jakarta.transaction.Transactional;
 public class SystemServiceBean {
 
     //private static final boolean DolphinPro = true;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemServiceBean.class);
 
     //private static final String BASE_OID = "1.3.6.1.4.1.9414.3.";               // 3.xx
     //private static final String DEMO_FACILITY_ID = "1.3.6.1.4.1.9414.2.1";
@@ -542,13 +544,13 @@ public class SystemServiceBean {
         //        }
         //    }
         //}
-        Logger.getLogger("open.dolphin").info("ActivityModel message has received. Reporting will start(Not Que).");
+        LOGGER.info("ActivityModel message has received. Reporting will start(Not Que).");
         OidSender sender = new OidSender();
         try {
             sender.sendActivity(ams);
         } catch (Exception ex) {
             ex.printStackTrace(System.err);
-            Logger.getLogger("open.dolphin").warning("ActivityModel message send error : " + ex.getMessage());
+            LOGGER.warn("ActivityModel message send error : {}", ex.getMessage());
         }
     }
     
@@ -596,22 +598,22 @@ public class SystemServiceBean {
                     test = ip.toString();
                 }
             } catch (UnknownHostException ex) {
-                Logger.getLogger("open.dolphin").log(Level.SEVERE, null, ex);
+                LOGGER.error("ActivityModel message send failure", ex);
             }
         }
         return test;
     }
     
     private void log(String name, String value) { 
-        Logger.getLogger("open.dolphin").log(Level.INFO, "{0}={1}", new Object[]{name, value});
+        LOGGER.info("{}={}", name, value);
     }
     
     private void log(String msg, long count) { 
-        Logger.getLogger("open.dolphin").log(Level.INFO, "{0}={1}", new Object[]{msg, count});
+        LOGGER.info("{}={}", msg, count);
     }
     
     private void log(String msg, long count, long total) { 
-        Logger.getLogger("open.dolphin").log(Level.INFO, "{0}={1}/{2}", new Object[]{msg, count, total});
+        LOGGER.info("{}={}/{}", msg, count, total);
     }
 //s.oh$
 }

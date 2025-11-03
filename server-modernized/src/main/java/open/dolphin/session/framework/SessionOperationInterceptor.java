@@ -7,15 +7,15 @@ import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @SessionOperation
 @Interceptor
 @Priority(Interceptor.Priority.APPLICATION)
 public class SessionOperationInterceptor {
 
-    private static final Logger LOGGER = Logger.getLogger(SessionOperationInterceptor.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(SessionOperationInterceptor.class);
 
     @Inject
     SessionTraceManager traceManager;
@@ -54,12 +54,8 @@ public class SessionOperationInterceptor {
     }
 
     private void logException(SessionServiceException exception) {
-        if (LOGGER.isLoggable(Level.SEVERE)) {
-            LOGGER.log(Level.SEVERE,
-                    String.format("Session operation failed [traceId=%s, operation=%s]",
-                            exception.getTraceId(), exception.getOperation()),
-                    exception);
-        }
+        LOGGER.error("Session operation failed [traceId={}, operation={}]",
+                exception.getTraceId(), exception.getOperation(), exception);
     }
 
     private String operationName(InvocationContext ctx) {

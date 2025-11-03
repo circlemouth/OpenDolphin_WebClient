@@ -2,14 +2,15 @@ package open.dolphin.security.fido;
 
 import java.util.Arrays;
 import java.util.List;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * FIDO2 / WebAuthn の設定値。
  */
 public class Fido2Config {
 
-    private static final Logger LOGGER = Logger.getLogger(Fido2Config.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(Fido2Config.class);
     private static final String ENV_RP_ID = "FIDO2_RP_ID";
     private static final String ENV_RP_NAME = "FIDO2_RP_NAME";
     private static final String ENV_ORIGINS = "FIDO2_ALLOWED_ORIGINS";
@@ -40,7 +41,7 @@ public class Fido2Config {
         String rpId = System.getenv(ENV_RP_ID);
         if (rpId == null || rpId.isBlank()) {
             rpId = "localhost";
-            LOGGER.warning("FIDO2_RP_ID is not set. Using localhost for development.");
+            LOGGER.warn("FIDO2_RP_ID is not set. Using localhost for development.");
         }
         String rpName = System.getenv(ENV_RP_NAME);
         if (rpName == null || rpName.isBlank()) {
