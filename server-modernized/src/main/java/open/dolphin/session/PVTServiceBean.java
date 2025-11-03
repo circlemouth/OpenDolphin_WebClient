@@ -10,8 +10,6 @@ import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -23,6 +21,8 @@ import open.dolphin.infomodel.*;
 import open.dolphin.mbean.KanaToAscii;
 import open.dolphin.mbean.ServletContextHolder;
 import open.dolphin.session.framework.SessionOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -55,6 +55,8 @@ public class PVTServiceBean {
     private static final int BIT_SAVE_CLAIM     = 1;
     private static final int BIT_MODIFY_CLAIM   = 2;
     private static final int BIT_CANCEL         = 6;
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(PVTServiceBean.class);
 
     @PersistenceContext
     private EntityManager em;
@@ -98,7 +100,7 @@ public class PVTServiceBean {
                     .setParameter(PID, patient.getPatientId())
                     .getSingleResult();
             
-            Logger.getLogger("open.dolphin").info("addPvt : merge patient");
+            LOGGER.info("addPvt : merge patient");
 
             //-----------------------------
             // 健康保険情報を更新する
@@ -164,7 +166,7 @@ public class PVTServiceBean {
             pvt.setPatientModel(exist);
 
         } catch (NoResultException e) {
-            Logger.getLogger("open.dolphin").info("addPvt : add patient");
+            LOGGER.info("addPvt : add patient");
             // 新規患者であれば登録する
             // 患者属性は cascade=PERSIST で自動的に保存される
             em.persist(patient);
@@ -186,7 +188,7 @@ public class PVTServiceBean {
         
 //minagawa^ 予約: ORCAで未来日受付の場合、persistしてリターン(予定カルテ対応)
         if (!isToday(pvt.getPvtDate())) {
-            Logger.getLogger("open.dolphin").log(Level.INFO, "scheduled PVT: {0}", pvt.getPvtDate());
+            LOGGER.info("scheduled PVT: {}", pvt.getPvtDate());
             // 2重登録をチェックする
             int index = pvt.getPvtDate().indexOf("T");
             String test = pvt.getPvtDate().substring(0, index);
@@ -302,7 +304,7 @@ public class PVTServiceBean {
             config.load(isr);
             isr.close();
             if(config.getProperty("csv.output") != null) {
-                Logger.getLogger("open.dolphin").log(Level.INFO, "Output CSV : " + pvt.getPatientId());
+                LOGGER.info("Output CSV : {}", pvt.getPatientId());
                 sb = new StringBuilder();
                 sb.append(pvt.getPatientModel().getPatientId()).append(",");  // pid,
                 sb.append(pvt.getPatientModel().getFullName()).append(",");   // name,
@@ -344,7 +346,7 @@ public class PVTServiceBean {
                 tmp.renameTo(dest);
             }
         } catch (IOException ex) {
-            Logger.getLogger(PVTServiceBean.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.error((String) null, ex);
         }
         
         return 1;   // 追加１個

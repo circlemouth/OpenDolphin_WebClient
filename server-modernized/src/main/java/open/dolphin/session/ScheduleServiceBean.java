@@ -10,8 +10,6 @@ import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.UUID;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jakarta.annotation.Resource;
 import jakarta.enterprise.concurrent.ManagedScheduledExecutorService;
 import jakarta.enterprise.context.ApplicationScoped;
@@ -43,6 +41,8 @@ import open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames;
 import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.touch.converter.IOSHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * (予定カルテ対応)
@@ -84,8 +84,10 @@ public class ScheduleServiceBean {
     private static final String QUERY_SCHEMA_BY_DOC_ID 
             = "from SchemaModel i where i.document.id=:id";
     
-    private static final String QUERY_ATTACHMENT_BY_DOC_ID 
+    private static final String QUERY_ATTACHMENT_BY_DOC_ID
             = "from AttachmentModel a where a.document.id=:id";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(ScheduleServiceBean.class);
     
     @PersistenceContext
     private EntityManager em;
@@ -198,7 +200,7 @@ public class ScheduleServiceBean {
                                                  .getResultList();
             if (!list.isEmpty()) {
                 // 当日のカルテがある場合は何もしない
-                Logger.getLogger("open.dolphin").log(Level.INFO, "{0} has karte at {1}", new Object[]{patient.getFullName(), startDate});
+                LOGGER.info("{} has karte at {}", patient.getFullName(), startDate);
                 return 0;
             }
             
@@ -284,10 +286,10 @@ public class ScheduleServiceBean {
                     schedule.addModule(pSpecModule);
                 }
 //s.oh$
-                Logger.getLogger("open.dolphin").info("did rpClone");
+                LOGGER.info("did rpClone");
                 
             } catch (Exception e) {
-                Logger.getLogger("open.dolphin").info("lastDocDate dose not exist");
+                LOGGER.info("lastDocDate dose not exist");
                 schedule = new DocumentModel();
                 String uuid = UUID.randomUUID().toString().replaceAll("-", "");
                 schedule.getDocInfoModel().setDocId(uuid);
@@ -296,7 +298,7 @@ public class ScheduleServiceBean {
                 schedule.getDocInfoModel().setPurpose(IInfoModel.PURPOSE_RECORD);
                 schedule.getDocInfoModel().setHasRp(false);
                 schedule.getDocInfoModel().setVersionNumber("1.0");
-                Logger.getLogger("open.dolphin").info("did create new karte");
+                LOGGER.info("did create new karte");
             }
             
             // Confirmed
@@ -414,7 +416,7 @@ public class ScheduleServiceBean {
                 task.run();
             }
         } catch (Exception ex) {
-            Logger.getLogger("open.dolphin").log(Level.SEVERE, "Failed to submit claim dispatch task", ex);
+            LOGGER.error("Failed to submit claim dispatch task", ex);
             task.run();
         }
     }

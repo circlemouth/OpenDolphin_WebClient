@@ -10,8 +10,6 @@ import jakarta.jms.ObjectMessage;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.Collection;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import open.dolphin.infomodel.ActivityModel;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.DocumentModel;
@@ -24,6 +22,8 @@ import open.dolphin.msg.OidSender;
 import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
 import open.dolphin.msg.gateway.MessagingConfig;
 import org.jboss.ejb3.annotation.ResourceAdapter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @MessageDriven(activationConfig = {
         @ActivationConfigProperty(propertyName = "destinationLookup", propertyValue = "java:/queue/dolphin"),
@@ -33,7 +33,7 @@ import org.jboss.ejb3.annotation.ResourceAdapter;
 @ResourceAdapter("activemq-ra.rar")
 public class MessageSender implements MessageListener {
 
-    private static final Logger LOGGER = Logger.getLogger(MessageSender.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(MessageSender.class);
     private static final String TRACE_ID_PROPERTY = "open.dolphin.traceId";
 
     @Inject
@@ -50,10 +50,10 @@ public class MessageSender implements MessageListener {
                 Object payload = objectMessage.getObject();
                 handlePayload(payload, traceId);
             } else {
-                LOGGER.warning(() -> "Unsupported JMS message type received: " + message.getClass().getName());
+                LOGGER.warn("Unsupported JMS message type received: {}", message.getClass().getName());
             }
         } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, String.format("MessageSender processing failure [traceId=%s]", traceId), ex);
+            LOGGER.error("MessageSender processing failure [traceId={}]", traceId, ex);
             throw new RuntimeException("Failed to process messaging payload", ex);
         }
     }
@@ -70,17 +70,17 @@ public class MessageSender implements MessageListener {
         } else if (payload instanceof ActivityModel[] activities) {
             handleActivityReport(activities, traceId);
         } else {
-            LOGGER.warning(() -> "Unsupported payload received on JMS queue: " + payload.getClass().getName());
+            LOGGER.warn("Unsupported payload received on JMS queue: {}", payload.getClass().getName());
         }
     }
 
     private void handleDocument(DocumentModel document, String traceId) throws Exception {
         MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
         if (!settings.isReady()) {
-            LOGGER.warning(() -> String.format("CLAIM send skipped because claim settings are incomplete [traceId=%s]", traceId));
+            LOGGER.warn("CLAIM send skipped because claim settings are incomplete [traceId={}]", traceId);
             return;
         }
-        LOGGER.info(() -> String.format("Processing CLAIM JMS message [traceId=%s]", traceId));
+        LOGGER.info("Processing CLAIM JMS message [traceId={}]", traceId);
         ExternalServiceAuditLogger.logClaimRequest(traceId, document, settings);
         try {
             ClaimSender sender = new ClaimSender(settings.host(), settings.port(), settings.encodingOrDefault());
@@ -95,10 +95,10 @@ public class MessageSender implements MessageListener {
     private void handleDiagnosis(DiagnosisSendWrapper wrapper, String traceId) throws Exception {
         MessagingConfig.ClaimSettings settings = messagingConfig.claimSettings();
         if (!settings.isReady()) {
-            LOGGER.warning(() -> String.format("Diagnosis send skipped because claim settings are incomplete [traceId=%s]", traceId));
+            LOGGER.warn("Diagnosis send skipped because claim settings are incomplete [traceId={}]", traceId);
             return;
         }
-        LOGGER.info(() -> String.format("Processing Diagnosis JMS message [traceId=%s]", traceId));
+        LOGGER.info("Processing Diagnosis JMS message [traceId={}]", traceId);
         ExternalServiceAuditLogger.logDiagnosisRequest(traceId, wrapper, settings);
         try {
             DiagnosisSender sender = new DiagnosisSender(settings.host(), settings.port(), settings.encodingOrDefault());
@@ -113,26 +113,26 @@ public class MessageSender implements MessageListener {
     private void handlePvt(String pvtXml, String traceId) throws Exception {
         String facilityId = resolveFacilityId();
         if (facilityId == null || facilityId.isBlank()) {
-            LOGGER.warning(() -> String.format("Facility ID unavailable; skipping PVT import [traceId=%s]", traceId));
+            LOGGER.warn("Facility ID unavailable; skipping PVT import [traceId={}]", traceId);
             return;
         }
-        LOGGER.info(() -> String.format("Processing PVT JMS message [traceId=%s]", traceId));
+        LOGGER.info("Processing PVT JMS message [traceId={}]", traceId);
         PatientVisitModel model = parsePvt(pvtXml, facilityId);
         if (model == null) {
-            LOGGER.fine(() -> String.format("Parsed PVT model is null; skipping addPvt [traceId=%s]", traceId));
+            LOGGER.debug("Parsed PVT model is null; skipping addPvt [traceId={}]", traceId);
             return;
         }
         pvtServiceBean.addPvt(model);
     }
 
     private void handleAccountSummary(AccountSummary summary, String traceId) throws Exception {
-        LOGGER.info(() -> String.format("Processing AccountSummary JMS message [traceId=%s]", traceId));
+        LOGGER.info("Processing AccountSummary JMS message [traceId={}]", traceId);
         OidSender sender = new OidSender();
         sender.send(summary);
     }
 
     private void handleActivityReport(ActivityModel[] activities, String traceId) throws Exception {
-        LOGGER.info(() -> String.format("Processing ActivityModel JMS message [traceId=%s]", traceId));
+        LOGGER.info("Processing ActivityModel JMS message [traceId={}]", traceId);
         OidSender sender = new OidSender();
         sender.sendActivity(activities);
     }
@@ -174,7 +174,7 @@ public class MessageSender implements MessageListener {
                 return message.getStringProperty(TRACE_ID_PROPERTY);
             }
         } catch (JMSException ex) {
-            LOGGER.log(Level.FINE, "Failed to read traceId from JMS message", ex);
+            LOGGER.debug("Failed to read traceId from JMS message", ex);
         }
         return null;
     }

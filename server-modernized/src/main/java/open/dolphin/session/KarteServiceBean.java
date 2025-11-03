@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -16,6 +15,8 @@ import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.framework.SessionOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -36,6 +37,8 @@ public class KarteServiceBean {
     private static final String ENTITY = "entity";
     private static final String FID = "fid";
     private static final String PID = "pid";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KarteServiceBean.class);
 
     private static final String QUERY_KARTE = "from KarteBean k where k.patient.id=:patientPk";
     private static final String QUERY_ALLERGY = "from ObservationModel o where o.karte.id=:karteId and o.observation='Allergy'";
@@ -525,7 +528,7 @@ public class KarteServiceBean {
         if (!document.getDocInfoModel().isSendClaim()) {
             return id;
         }
-        //Logger.getLogger("open.dolphin").info("KarteServiceBean will send claim");
+        //LOGGER.info("KarteServiceBean will send claim");
         sendDocument(document);
         
         return id;
@@ -1116,14 +1119,14 @@ public class KarteServiceBean {
                     update.setId(current.getId());
                 }
             }catch(NoResultException ex) {
-                Logger.getLogger("open.dolphin").warning("FreeDocument NoResultException");
+                LOGGER.warn("FreeDocument NoResultException");
             }
             em.persist(update);
-            Logger.getLogger("open.dolphin").info("New FreeDocument");
+            LOGGER.info("New FreeDocument");
             return 1;
         }
         em.merge(update);
-        Logger.getLogger("open.dolphin").info("Update FreeDocument");
+        LOGGER.info("Update FreeDocument");
         return 1;
     }
 //s.oh$

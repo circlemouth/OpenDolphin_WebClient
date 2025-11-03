@@ -7,7 +7,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Base64;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import javax.crypto.Cipher;
 import javax.crypto.SecretKey;
 import javax.crypto.spec.GCMParameterSpec;
@@ -22,7 +23,7 @@ public class TotpSecretProtector {
     private static final int GCM_TAG_LENGTH = 128;
     private static final int IV_LENGTH = 12;
 
-    private static final Logger LOGGER = Logger.getLogger(TotpSecretProtector.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(TotpSecretProtector.class);
 
     private final SecretKey secretKey;
     private final SecureRandom random = new SecureRandom();
@@ -73,9 +74,8 @@ public class TotpSecretProtector {
         if (length == 16 || length == 24 || length == 32) {
             return keyBytes;
         }
-        LOGGER.warning(() -> String.format(
-                "Invalid AES key length %d bytes. Deriving 256-bit key using SHA-256 digest.",
-                length));
+        LOGGER.warn("Invalid AES key length {} bytes. Deriving 256-bit key using SHA-256 digest.",
+                length);
         try {
             MessageDigest digest = MessageDigest.getInstance("SHA-256");
             return digest.digest(keyBytes);

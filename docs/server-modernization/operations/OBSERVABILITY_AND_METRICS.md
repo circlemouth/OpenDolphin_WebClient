@@ -113,6 +113,7 @@ Micrometer は Undertow / Datasource など各サブシステムの統計情報�
 - MicroProfile Metrics と Micrometer を同時に有効化すると二重登録による不整合が生じるため、モダナイズ版では Micrometer のみに統一する。 citeturn1search0
 - `security-enabled=true` のまま公開する場合は管理ポートを社内ネットワークで保護し、Basic 認証情報を Vault または Kubernetes Secret で管理する。 citeturn1search1
 - OTLP Collector を利用しない環境では `MICROMETER_OTLP_ENDPOINT` を無効化し、Prometheus Pull のみで運用することも可能。
+- セッション層／セキュリティ構成のログ出力は `org.slf4j.Logger` ベースへ統一した。WildFly 33 では `org.slf4j` モジュールが標準提供されるため追加ハンドラ設定は不要だが、スタンドアロン構成で Logback 等へリダイレクトする場合は JBoss LogManager のブリッジ設定（`logging.properties`）を維持したまま行うこと。詳細な出力先は従来どおり管理コンソールまたは `standalone.conf` で調整する。 
 
 ## 6. PDF署名ライブラリのライセンス告知
 

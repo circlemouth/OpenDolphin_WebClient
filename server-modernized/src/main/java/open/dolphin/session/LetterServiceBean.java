@@ -1,8 +1,6 @@
 package open.dolphin.session;
 
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
@@ -14,6 +12,8 @@ import open.dolphin.infomodel.LetterItem;
 import open.dolphin.infomodel.LetterModule;
 import open.dolphin.infomodel.LetterText;
 import open.dolphin.session.framework.SessionOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -33,6 +33,8 @@ public class LetterServiceBean {
     private static final String QUERY_ITEM_BY_ID = "from LetterItem l where l.module.id=:id";
     private static final String QUERY_TEXT_BY_ID = "from LetterText l where l.module.id=:id";
     private static final String QUERY_DATE_BY_ID = "from LetterDate l where l.module.id=:id";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(LetterServiceBean.class);
 
     @PersistenceContext
     private EntityManager em;
@@ -76,7 +78,7 @@ public class LetterServiceBean {
                     em.remove(item);
                 }
             }catch(NoResultException e) {
-                Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_ITEM_BY_ID : {0}", new Object[]{e.toString()});
+                LOGGER.warn("QUERY_ITEM_BY_ID : {}", e.toString());
             }
 
             try {
@@ -89,7 +91,7 @@ public class LetterServiceBean {
                     em.remove(txt);
                 }
             }catch(NoResultException e) {
-                Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_TEXT_BY_ID : {0}", new Object[]{e.toString()});
+                LOGGER.warn("QUERY_TEXT_BY_ID : {}", e.toString());
             }
 
             try {
@@ -102,7 +104,7 @@ public class LetterServiceBean {
                     em.remove(date);
                 }
             }catch(NoResultException e) {
-                Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_DATE_BY_ID : {0}", new Object[]{e.toString()});
+                LOGGER.warn("QUERY_DATE_BY_ID : {}", e.toString());
             }
 
             try {
@@ -112,7 +114,7 @@ public class LetterServiceBean {
                             .getSingleResult();
                 em.remove(delete);
             }catch(NoResultException e) {
-                Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_LETTER_BY_ID : {0}", new Object[]{e.toString()});
+                LOGGER.warn("QUERY_LETTER_BY_ID : {}", e.toString());
             }
         }
         
@@ -172,7 +174,7 @@ public class LetterServiceBean {
                 em.remove(item);
             }
         }catch(NoResultException e) {
-            Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_ITEM_BY_ID : {0}", new Object[]{e.toString()});
+            LOGGER.warn("QUERY_ITEM_BY_ID : {}", e.toString());
         }
 
         try {
@@ -185,7 +187,7 @@ public class LetterServiceBean {
                 em.remove(txt);
             }
         }catch(NoResultException e) {
-            Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_TEXT_BY_ID : {0}", new Object[]{e.toString()});
+            LOGGER.warn("QUERY_TEXT_BY_ID : {}", e.toString());
         }
 
         try {
@@ -198,7 +200,7 @@ public class LetterServiceBean {
                 em.remove(date);
             }
         }catch(NoResultException e) {
-            Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_DATE_BY_ID : {0}", new Object[]{e.toString()});
+            LOGGER.warn("QUERY_DATE_BY_ID : {}", e.toString());
         }
 
         try {
@@ -208,7 +210,7 @@ public class LetterServiceBean {
                         .getSingleResult();
             em.remove(delete);
         }catch(NoResultException e) {
-            Logger.getLogger("open.dolphin").log(Level.WARNING, "QUERY_LETTER_BY_ID : {0}", new Object[]{e.toString()});
+            LOGGER.warn("QUERY_LETTER_BY_ID : {}", e.toString());
         }
     }
 }

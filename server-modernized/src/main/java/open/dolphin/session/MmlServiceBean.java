@@ -7,7 +7,6 @@ import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
@@ -25,6 +24,8 @@ import org.apache.velocity.exception.MethodInvocationException;
 import org.apache.velocity.exception.ParseErrorException;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -35,7 +36,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Transactional
 @SessionOperation
 public class MmlServiceBean {
-    
+
     // parameter
     private static final String KARTE_ID = "karteId";
     private static final String ID = "id";
@@ -70,6 +71,8 @@ public class MmlServiceBean {
     private static final String MML_HELPER_OBJECT = "mmlHelper";
     private static final String MML_HELPER_TEMPLATE = "mml2.3Helper.vm";
     private static final String MML_HELPER_ENCODING = "SHIFT_JIS";
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(MmlServiceBean.class);
     
     @PersistenceContext
     private EntityManager em;
@@ -160,7 +163,7 @@ public class MmlServiceBean {
             e.printStackTrace(System.err);
             StringBuilder sb = new StringBuilder();
             sb.append(index).append(" は例外が発生しました");
-            Logger.getLogger("open.dolphin").fine(sb.toString());
+            LOGGER.debug(sb.toString());
         }
     }    
     
@@ -278,7 +281,7 @@ public class MmlServiceBean {
                 e.printStackTrace(System.err);
                 sb = new StringBuilder();
                 sb.append(index).append(" は例外が発生しました");
-                Logger.getLogger("open.dolphin").fine(sb.toString());
+                LOGGER.debug(sb.toString());
             }
         }
     }
@@ -416,7 +419,7 @@ public class MmlServiceBean {
             e.printStackTrace(System.err);
             sb = new StringBuilder();
             sb.append(index).append(" は例外が発生しました");
-            Logger.getLogger("open.dolphin").fine(sb.toString());
+            LOGGER.debug(sb.toString());
         }
     }
         
@@ -556,7 +559,7 @@ public class MmlServiceBean {
                 e.printStackTrace(System.err);
                 sb = new StringBuilder();
                 sb.append(index).append(" は例外が発生しました");
-                Logger.getLogger("open.dolphin").fine(sb.toString());
+                LOGGER.debug(sb.toString());
             }
         }
     }
@@ -616,7 +619,7 @@ public class MmlServiceBean {
     }
     
     private void log(String msg) {
-        Logger.getLogger("open.dolphin").info(msg);
+        LOGGER.info(msg);
     }
     
     
@@ -674,7 +677,7 @@ public class MmlServiceBean {
             e.printStackTrace(System.err);
             StringBuilder sb = new StringBuilder();
             sb.append(index).append(" は例外が発生しました");
-            Logger.getLogger("open.dolphin").fine(sb.toString());
+            LOGGER.debug(sb.toString());
         }
     }
     
