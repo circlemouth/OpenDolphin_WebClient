@@ -13,8 +13,8 @@
 | --- | --- | --- |
 | レガシーRESTエンドポイント総数 | 256 | OpenAPI 3.0.3 から抽出 |
 | モダナイズRESTエンドポイント総数 | 221 | API パリティマトリクス再集計（2025-11-03 時点の実装ベース） |
-| 1:1対応済み | 185 | HTTP メソッド＋正規化パス一致（証跡取得済み） |
-| レガシーのみ（未整備） | 71 | DolphinResourceASP 19 件 + DemoResourceASP 15 件 + SystemResource 5 件 + MmlResource 4 件 + JsonTouchResource 16 件 + PHRResource 11 件 + `/pvt2/{pvtPK}` DELETE |
+| 1:1対応済み | 186 | HTTP メソッド＋正規化パス一致（証跡取得済み） |
+| レガシーのみ（未整備） | 70 | DolphinResourceASP 19 件 + DemoResourceASP 15 件 + SystemResource 5 件 + MmlResource 4 件 + JsonTouchResource 16 件 + PHRResource 11 件 |
 | モダナイズのみ（新規API） | 8 | 旧サーバー未提供 |
 
 ## リソース別進捗
@@ -34,7 +34,7 @@
 | OrcaResource | 13 | 13 | 0 | PUT /orca/interaction を含め全エンドポイント整合（2025-11-03 再確認） |
 | PHRResource | 11 | 0 | 11 | `PHRResource` に実装は存在するが自動テスト・監査証跡未整備。PHR エクスポート API は未実装で Blocked。 |
 | PVTResource | 5 | 5 | 0 | 全エンドポイント移植済み |
-| PVTResource2 | 3 | 2 | 1 | POST/GET のみ証跡あり。DELETE は自動テスト未整備で未証跡。 |
+| PVTResource2 | 3 | 3 | 0 | `/pvt2/{pvtPK}` DELETE の自動テストを追加し、facility 突合と `PVTServiceBean#removePvt` の副作用を証跡化。 |
 | PatientResource | 11 | 11 | 0 | 全エンドポイント移植済み |
 | ScheduleResource | 3 | 3 | 0 | 全エンドポイント移植済み |
 | ServerInfoResource | 3 | 3 | 0 | 全エンドポイント移植済み |
@@ -337,7 +337,7 @@
 | --- | --- | --- | --- | --- | --- |
 | POST | `/pvt2` | PVTResource2: `/pvt2` | [x] | ◎ 移行済み | レガシー: postPvt ｜ 2025-11-03: `PVTResource2Test#postPvt_assignsFacilityAndPatientRelations` で facility ID・保険モデルの再紐付けと `PVTServiceBean#addPvt` 呼び出しを検証。 |
 | GET | `/pvt2/pvtList` | PVTResource2: `/pvt2/pvtList` | [x] | ◎ 移行済み | レガシー: getPvtList ｜ 2025-11-03: `PVTResource2Test#getPvtList_wrapsServiceResultInConverter` で `ChartEventServiceBean#getPvtList` の戻り値が `PatientVisitListConverter` に格納されることを確認。 |
-| DELETE | `/pvt2/{pvtPK}` | PVTResource2: `/pvt2/{pvtPK}` | [ ] | ✖ テスト未整備 | レガシー: deletePvt ｜ 実装のみ存在。`PVTResource2Test` に削除ケースが無く、`PVTServiceBean#removePvt` の facility スコープ検証・監査証跡が未実施。 |
+| DELETE | `/pvt2/{pvtPK}` | PVTResource2: `/pvt2/{pvtPK}` | [x] | ◎ 移行済み | レガシー: deletePvt ｜ 2026-06-02: `PVTResource2Test#deletePvt_removesVisitForAuthenticatedFacility`／`#deletePvt_throwsWhenFacilityDoesNotMatch` で facility 突合・例外制御と `PVTServiceBean#removePvt` の副作用（待機リスト除去）を検証。 |
 
 ### PatientResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |

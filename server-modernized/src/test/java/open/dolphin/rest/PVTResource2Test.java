@@ -101,6 +101,34 @@ class PVTResource2Test {
         assertEquals("F001", converted.get(0).getFacilityId());
     }
 
+    @Test
+    void deletePvt_removesVisitForAuthenticatedFacility() {
+        long visitId = 123L;
+        pvtServiceBean.registerVisit(visitId, "F001");
+        assertTrue(pvtServiceBean.hasVisit(visitId, "F001"), "Precondition: visit should be registered");
+
+        resource.deletePvt(String.valueOf(visitId));
+
+        assertEquals(visitId, pvtServiceBean.getLastRemovedId());
+        assertEquals("F001", pvtServiceBean.getLastRemovedFacility());
+        assertFalse(pvtServiceBean.hasVisit(visitId, "F001"), "Visit should be removed for authenticated facility");
+    }
+
+    @Test
+    void deletePvt_throwsWhenFacilityDoesNotMatch() {
+        long visitId = 456L;
+        pvtServiceBean.registerVisit(visitId, "F999");
+
+        IllegalStateException thrown = assertThrows(IllegalStateException.class,
+                () -> resource.deletePvt(String.valueOf(visitId)),
+                "Facility mismatch should surface as an exception");
+
+        assertEquals("Facility mismatch for visit removal", thrown.getMessage());
+        assertEquals(visitId, pvtServiceBean.getLastRemovedId());
+        assertEquals("F001", pvtServiceBean.getLastRemovedFacility());
+        assertTrue(pvtServiceBean.hasVisit(visitId, "F999"), "Visit for different facility must remain untouched");
+    }
+
     private static void injectField(Object target, String fieldName, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
@@ -109,6 +137,10 @@ class PVTResource2Test {
 
     private static class RecordingPvtServiceBean extends PVTServiceBean {
         private PatientVisitModel received;
+        private Long lastRemovedId;
+        private String lastRemovedFacility;
+
+        private final java.util.Map<String, java.util.List<Long>> facilityRecords = new java.util.HashMap<>();
 
         @Override
         public int addPvt(PatientVisitModel pvt) {
@@ -118,7 +150,32 @@ class PVTResource2Test {
 
         @Override
         public int removePvt(long id, String fid) {
-            return 0;
+            lastRemovedId = id;
+            lastRemovedFacility = fid;
+
+            java.util.List<Long> ids = facilityRecords.get(fid);
+            if (ids == null || !ids.remove(id)) {
+                throw new IllegalStateException("Facility mismatch for visit removal");
+            }
+
+            return 1;
+        }
+
+        void registerVisit(long id, String facilityId) {
+            facilityRecords.computeIfAbsent(facilityId, key -> new java.util.ArrayList<>()).add(id);
+        }
+
+        boolean hasVisit(long id, String facilityId) {
+            java.util.List<Long> ids = facilityRecords.get(facilityId);
+            return ids != null && ids.contains(id);
+        }
+
+        Long getLastRemovedId() {
+            return lastRemovedId;
+        }
+
+        String getLastRemovedFacility() {
+            return lastRemovedFacility;
         }
     }
 

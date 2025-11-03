@@ -81,6 +81,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - 参考資料（PDF / 画像など）は `docs/` 配下の適切なカテゴリに格納し、必ず本ファイルから辿れるようにする。
 
 ## 直近更新履歴
+- 2026-06-02 (担当: Codex): `/pvt2/{pvtPK}` DELETE の自動テストを整備し、`PVTResource2Test`・`API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md`・`EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` を更新。`mvn -f pom.server-modernized.xml -Dtest=PVTResource2Test test` がモジュール指定漏れで失敗したため、`-pl server-modernized` 付きの再実行と依存ビルド手順を Runbook に追記。
 - 2025-11-03 (担当: Codex): API パリティ再集計で JsonTouch 16 件・PHR 11 件・`/pvt2/{pvtPK}` DELETE を `[ ] / △ 要証跡` に差し戻し、`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md` を更新。未解決タスクと Runbook 参照先を整理。
 - 2025-11-03 (担当: Codex): 受付患者検索カードを4入力欄によるAND検索に刷新し、条件クリアボタンと独立した新規患者登録ボタンを追加。仕様概要を `ux/KARTE_SCREEN_IMPLEMENTATION.md` に追記。
 - 2025-11-03 (担当: Codex): Web クライアントの初期表示を「受付一覧」へ切り替え、サイドバーで患者情報を保存した直後に患者 ID 検索が自動反映されるよう受付画面を更新。詳細は `ux/KARTE_SCREEN_IMPLEMENTATION.md` と `features/RECEPTION_SCHEDULE_AND_SUMMARY.md` を参照。
