@@ -5,7 +5,6 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.*;
-import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
@@ -16,6 +15,8 @@ import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.framework.SessionOperation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -26,6 +27,8 @@ import open.dolphin.session.framework.SessionOperation;
 @Transactional
 @SessionOperation
 public class KarteServiceBean {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger(KarteServiceBean.class);
     
     // parameters
     private static final String PATIENT_PK = "patientPk";
@@ -1116,14 +1119,14 @@ public class KarteServiceBean {
                     update.setId(current.getId());
                 }
             }catch(NoResultException ex) {
-                Logger.getLogger("open.dolphin").warning("FreeDocument NoResultException");
+                LOGGER.warn("FreeDocument NoResultException");
             }
             em.persist(update);
-            Logger.getLogger("open.dolphin").info("New FreeDocument");
+            LOGGER.info("New FreeDocument");
             return 1;
         }
         em.merge(update);
-        Logger.getLogger("open.dolphin").info("Update FreeDocument");
+        LOGGER.info("Update FreeDocument");
         return 1;
     }
 //s.oh$
