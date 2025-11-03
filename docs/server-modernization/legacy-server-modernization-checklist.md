@@ -25,7 +25,7 @@
 
 ### 3.2 REST API レイヤー
 - [x] `server-api-inventory.yaml` と既存 `*.rest` 実装を突合し、全エンドポイントの入力/出力スキーマを OpenAPI で定義した。成果物は `docs/server-modernization/server-api-inventory.yaml` に格納し、各パスごとにレガシー DTO を参照できるよう `components.schemas` を整備した。
-- [x] Admission / Dolphin / Demo リソースで使用している JAX-RS アノテーションを Jakarta RESTful Web Services 仕様へ移行し、デフォルトエンコーディングやエラー応答を整理した。`server-modernized/src/main/java/open/dolphin/rest` 配下では `jakarta.ws.rs.*` と `jakarta.inject.*` へ移行済み。
+- [ ] Admission / Dolphin / Demo リソースで使用している JAX-RS アノテーションを Jakarta RESTful Web Services 仕様へ移行し、デフォルトエンコーディングやエラー応答を整理した。`server-modernized/src/main/java/open/dolphin/rest` 配下では `jakarta.ws.rs.*` と `jakarta.inject.*` へ移行済み。(**注:** `API_PARITY_MATRIX.md` の通り、`DolphinResourceASP` `DemoResourceASP` 等、54件のAPIが未移植のため、この項目は未完了とする)
 - [x] レスポンスシリアライザ（Jackson / JSON-B）を最新化し、Legacy JSON と互換性検証を行った。`jackson-databind 2.17.x` を導入し、`AbstractResource#getSerializeMapper` で Null 抑制・空 Bean 設定を Jakarta 版へ調整した。
 - [x] WebSocket / サーバー送信イベント相当のチャネル（`/chartEvent/subscribe` 等）の代替実装方針を決定した。詳細は `docs/server-modernization/rest-api-modernization.md` の「リアルタイム配信チャネル移行方針」を参照。
 - [x] API 認証ヘッダと 2FA エンドポイントのセキュリティ要件（レート制限・監査ログ）を追加設計した。`docs/server-modernization/rest-api-modernization.md` に設計メモを記載し、監査ログ・OTP 署名要件を整理済み。
