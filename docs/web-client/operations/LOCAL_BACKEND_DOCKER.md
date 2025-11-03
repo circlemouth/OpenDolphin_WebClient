@@ -2,10 +2,12 @@
 
 Web クライアント開発チーム向けに、従来サーバー（Java 8 / WildFly 10 ベース）とモダナイズ版サーバー（Java 17 / WildFly 33 ベース）の両方を Docker Compose で起動できる構成を用意した。既定では従来サーバーを利用し、モダナイズ版を評価したい場合にのみ明示的に起動する。
 
+Docker 関連資産は `ops/` 以下に整理されている。旧サーバー用 Compose は `ops/legacy-server/docker-compose.yml`、モダナイズ版は `ops/modernized-server/docker-compose.yml`、双方を同時に扱うテスト用構成は `ops/tests/api-smoke-test/docker-compose.yml` を参照する（ディレクトリ概要は `ops/README.md` を参照）。
+
 ## 前提条件
 - Docker Desktop 4.x 以上（または Docker Engine 24.x 以上）と Docker Compose v2 系列。
 - 初回ビルド時は Maven 依存ライブラリのダウンロードが発生するため、安定したネットワーク環境を用意すること。
-- サーバー側コード (`server/`、`server-modernized/`) は改変しない。設定は `docker/server/custom.properties` と環境変数で行う。
+- サーバー側コード (`server/`、`server-modernized/`) は改変しない。設定は `ops/shared/docker/custom.properties` と環境変数で行う。
 
 ## 構成概要
 | サービス | プロファイル / オーバーレイ | 役割 | ポート | 永続化 |
@@ -14,13 +16,13 @@ Web クライアント開発チーム向けに、従来サーバー（Java 8 / W
 | `server` | 常時 | WildFly 10.1.0.Final + 旧 OpenDolphin WAR | 8080 (`APP_HTTP_PORT`), 9990 (`APP_ADMIN_PORT`) | なし |
 | `server-modernized` / `server-modernized-dev` | `--profile modernized` または `docker-compose.modernized.dev.yml` を追加 | WildFly 33.0.2.Final + モダナイズ版 WAR | 8080 / 9080（`MODERNIZED_APP_HTTP_PORT`）、9990 / 9995（`MODERNIZED_APP_ADMIN_PORT`） | なし |
 
-- `server` はデフォルトで起動対象。`server-modernized` を利用する場合は、`docker compose --profile modernized ...` もしくは後述の `docker-compose.modernized.dev.yml` 追加指定のどちらかを選択する（推奨は後者）。
-- いずれのサーバーでも `custom.properties` は `docker/server/custom.properties` をベースにビルド時コピーされる。値を変更したい場合はファイルを編集して再ビルドする。
+- `server` はデフォルトで起動対象。`server-modernized` を利用する場合は、`docker compose -f ops/modernized-server/docker-compose.yml up -d` で単独起動するか、後述の `docker-compose.modernized.dev.yml` を組み合わせて同時検証する（推奨は後者）。
+- いずれのサーバーでも `custom.properties` は `ops/shared/docker/custom.properties` をベースにビルド時コピーされる。値を変更したい場合はファイルを編集して再ビルドする。
 - モダナイズ版 WAR のビルドは Java 17 + Maven 3.9、従来版は Java 8 + Maven 3.9 で行う。
 - WildFly のデータソース `java:jboss/datasources/ORCADS` は CLI スクリプトで自動作成し、PostgreSQL コンテナへ接続する。
 
 ## 共通セットアップ手順
-1. `docker/server/custom.properties` を開き、施設名や `claim.jdbc.url`（デフォルトは `jdbc:postgresql://db:5432/opendolphin`）等をローカル事情に合わせて修正する。
+1. `ops/shared/docker/custom.properties` を開き、施設名や `claim.jdbc.url`（デフォルトは `jdbc:postgresql://db:5432/opendolphin`）等をローカル事情に合わせて修正する。
 2. プロジェクトルートの `.env.sample` をコピーして `.env` を作成し、必要な環境変数を上書きする。
    ```env
    POSTGRES_DB=opendolphin
@@ -40,13 +42,13 @@ Web クライアント開発チーム向けに、従来サーバー（Java 8 / W
    PLIVO_LOG_MESSAGE_CONTENT=false
    PLIVO_DEFAULT_COUNTRY=+81
    ```
-3. DB コンテナをビルドしておく: `docker compose pull db`（イメージ取得のみの場合）または `docker compose up -d db`。
+3. DB コンテナをビルドしておく: `docker compose -f ops/base/docker-compose.yml pull db`（イメージ取得のみの場合）または `docker compose -f ops/base/docker-compose.yml up -d db`。
 
 > **Plivo SMS 認証情報**: `PLIVO_AUTH_ID` / `PLIVO_AUTH_TOKEN` / `PLIVO_SOURCE_NUMBER` は必須。Sandbox を利用する場合は `PLIVO_ENVIRONMENT=sandbox` とし、必要に応じて `PLIVO_BASE_URL` を `https://api.sandbox.plivo.com/v1/` へ変更する。環境変数が未設定のまま SMS エンドポイントを呼び出すと 500 エラー（`SMSException`）となるため注意。
 
 ## 従来サーバー（既定）の起動
-1. `docker compose build server` を実行し、旧 `server/` モジュールをビルドした WAR を WildFly 10 イメージへ組み込む。旧イメージからアップデートする場合は `docker compose build --no-cache server` を推奨する。
-2. `docker compose up -d` を実行し、`db` と `server` を起動する。
+1. `docker compose -f ops/legacy-server/docker-compose.yml build server` を実行し、旧 `server/` モジュールをビルドした WAR を WildFly 10 イメージへ組み込む。旧イメージからアップデートする場合は `docker compose -f ops/legacy-server/docker-compose.yml build --no-cache server` を推奨する。
+2. `docker compose -f ops/legacy-server/docker-compose.yml up -d` を実行し、`db` と `server` を起動する。
 3. 起動後、以下のヘルスチェックコマンドが 0 で終了し、JSON が返ることを確認する。
    ```bash
    curl -sf \
@@ -131,7 +133,7 @@ Web クライアント開発チーム向けに、従来サーバー（Java 8 / W
 
 - 手元環境に Apache Maven 3.9.6 を手動配置（`$HOME/.local/apache-maven-3.9.6`）し、`export PATH=$HOME/.local/apache-maven-3.9.6/bin:$PATH` を設定した上で各コマンドを実行。
 - `mvn -f pom.server-modernized.xml -pl common -DskipTests -ntp package` は成功。
-- `mvn -f pom.server-modernized.xml -s docker/server/settings.xml -pl server-modernized -am -DskipTests -ntp package` はコンパイルエラーで失敗。`ADM20_EHTServiceBean` の `com.yubico.webauthn.credential.*`、`MeterRegistryProducer` の `jakarta.naming.*`、`ChartEventStreamResource` の `jakarta.ws.rs.sse.SseElementType`、`PlivoSender`／`MessageSender` の `okhttp3.*`・`ConnectionSpec`・`TlsVersion`、`ExternalServiceAuditLogger` の可視性、および `Logger#log(Level, Supplier, Throwable)` 呼び出しが未解決。
+- `mvn -f pom.server-modernized.xml -s ops/shared/docker/settings.xml -pl server-modernized -am -DskipTests -ntp package` はコンパイルエラーで失敗。`ADM20_EHTServiceBean` の `com.yubico.webauthn.credential.*`、`MeterRegistryProducer` の `jakarta.naming.*`、`ChartEventStreamResource` の `jakarta.ws.rs.sse.SseElementType`、`PlivoSender`／`MessageSender` の `okhttp3.*`・`ConnectionSpec`・`TlsVersion`、`ExternalServiceAuditLogger` の可視性、および `Logger#log(Level, Supplier, Throwable)` 呼び出しが未解決。
 - 同一エラーが `docker compose -p modern-testing -f docker-compose.yml -f docker-compose.modernized.dev.yml build server-modernized-dev` でも発生し、`server-modernized/target/opendolphin-server.war` は生成されない。
 - ログ採取例: `mvn ... | tee /tmp/mvn_server.log`、`docker compose ... | tee /tmp/docker_build.log`。
 

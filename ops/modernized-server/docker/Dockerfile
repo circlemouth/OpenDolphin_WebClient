@@ -8,7 +8,7 @@ RUN grep -v '<module>server</module>' pom.xml | grep -v '<module>client</module>
 COPY common ./common
 COPY server-modernized ./server-modernized
 COPY ext_lib ./ext_lib
-COPY docker/server/settings.xml /tmp/maven-settings.xml
+COPY ops/shared/docker/settings.xml /tmp/maven-settings.xml
 
 RUN mvn -N -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
 RUN mvn -N -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar
@@ -63,9 +63,9 @@ USER root
 COPY --from=build /workspace/server-modernized/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
-COPY docker/server/custom.properties ${WILDFLY_HOME}/custom.properties
-COPY docker/server-modernized/configure-wildfly.cli /opt/jboss/configure-wildfly.cli
-COPY docker/server/bootstrap.sh /opt/jboss/bootstrap.sh
+COPY ops/shared/docker/custom.properties ${WILDFLY_HOME}/custom.properties
+COPY ops/modernized-server/docker/configure-wildfly.cli /opt/jboss/configure-wildfly.cli
+COPY ops/shared/docker/bootstrap.sh /opt/jboss/bootstrap.sh
 RUN chmod +x /opt/jboss/bootstrap.sh
 
 RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \

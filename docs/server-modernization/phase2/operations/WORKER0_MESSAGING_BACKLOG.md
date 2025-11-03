@@ -2,7 +2,7 @@
 
 - **現状把握**  
   - `server-modernized` の各セッション Bean で `jakarta.jms` を import しているものの、`@Resource(mappedName="java:/queue/dolphin")` などは全てコメントアウトされている（例: `server-modernized/src/main/java/open/dolphin/session/SystemServiceBean.java:68-73`、`ScheduleServiceBean.java:93-100`）。  
-  - WildFly 設定 CLI には ActiveMQ サブシステム／キュー定義が存在せず、`java:/queue/dolphin` がレジストリに登録されていない（`docker/server-modernized/configure-wildfly.cli`）。  
+  - WildFly 設定 CLI には ActiveMQ サブシステム／キュー定義が存在せず、`java:/queue/dolphin` がレジストリに登録されていない（`ops/modernized-server/docker/configure-wildfly.cli`）。  
   - `MessageSender` は MDB 定義を全て無効化したスタブになっており、再有効化にはリソースアダプタと `messaging-activemq` の再導入が必要（`server-modernized/src/main/java/open/dolphin/session/MessageSender.java:1-156`）。
 
 - **参照資料**  

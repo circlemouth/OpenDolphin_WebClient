@@ -22,7 +22,7 @@ services:
   server-modernized-dev:
     build:
       context: .
-      dockerfile: docker/server-modernized/Dockerfile
+      dockerfile: ops/modernized-server/docker/Dockerfile
     container_name: opendolphin-server-modernized-dev
     depends_on:
       db-modernized:
