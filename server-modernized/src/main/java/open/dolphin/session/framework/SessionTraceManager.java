@@ -5,8 +5,8 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Maintains the trace context for session layer invocations on a per-thread
@@ -16,15 +16,15 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class SessionTraceManager {
 
-    private static final Logger LOGGER = Logger.getLogger(SessionTraceManager.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(SessionTraceManager.class);
 
     private final ThreadLocal<SessionTraceContext> current = new ThreadLocal<>();
 
     public SessionTraceContext start(String operationName, Map<String, String> attributes) {
         SessionTraceContext context = new SessionTraceContext(generateTraceId(), Instant.now(), operationName, attributes);
         current.set(context);
-        if (LOGGER.isLoggable(Level.FINE)) {
-            LOGGER.fine(() -> "Session trace started: " + context.getTraceId() + " op=" + context.getOperation());
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Session trace started: {} op={}", context.getTraceId(), context.getOperation());
         }
         return context;
     }

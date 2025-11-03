@@ -6,8 +6,8 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.enterprise.inject.Produces;
 import jakarta.naming.InitialContext;
 import jakarta.naming.NamingException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * WildFly が提供する Micrometer MeterRegistry を CDI へ公開する。
@@ -16,7 +16,7 @@ import java.util.logging.Logger;
 @ApplicationScoped
 public class MeterRegistryProducer {
 
-    private static final Logger LOGGER = Logger.getLogger(MeterRegistryProducer.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(MeterRegistryProducer.class);
     private static final String PROPERTY_KEY = "open.dolphin.metrics.registry.jndi";
     private static final String ENVIRONMENT_KEY = "OPEN_DOLPHIN_METRICS_REGISTRY_JNDI";
     private static final String DEFAULT_JNDI_NAME = "java:jboss/micrometer/registry";
@@ -29,7 +29,7 @@ public class MeterRegistryProducer {
         if (registry != null) {
             return registry;
         }
-        LOGGER.log(Level.WARNING, "Micrometer registry not found under {0}; falling back to global registry.", jndiName);
+        LOGGER.warn("Micrometer registry not found under {}; falling back to global registry.", jndiName);
         return Metrics.globalRegistry;
     }
 
@@ -53,7 +53,7 @@ public class MeterRegistryProducer {
                 return meterRegistry;
             }
         } catch (NamingException ex) {
-            LOGGER.log(Level.FINE, "Micrometer registry lookup failed for {0}: {1}", new Object[]{jndiName, ex.getMessage()});
+            LOGGER.debug("Micrometer registry lookup failed for {}: {}", jndiName, ex.getMessage());
         }
         return null;
     }
