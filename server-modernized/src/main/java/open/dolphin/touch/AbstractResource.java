@@ -36,7 +36,7 @@ public class AbstractResource {
     protected static final String STRING_QUOT = "\"";
     protected static final String STRING_APOS = "'";
     
-    protected static final String DOLPHIN_ASP_OID = "1.3.6.1.4.1.9414.";
+    public static final String DOLPHIN_ASP_OID = "1.3.6.1.4.1.9414.";
     protected static final String USER_START = "<user>";
     protected static final String USER_END = "</user>";
     protected static final String FACILITY_START = "<facility>";

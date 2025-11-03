@@ -50,13 +50,15 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import jakarta.ejb.Stateless;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.AllergyModel;
 import open.dolphin.infomodel.AttachmentModel;
+import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.FacilityModel;
 import open.dolphin.infomodel.Factor2BackupKey;
@@ -79,14 +81,18 @@ import open.dolphin.infomodel.NLaboModule;
 import open.dolphin.infomodel.NurseProgressCourseModel;
 import open.dolphin.infomodel.ObservationModel;
 import open.dolphin.infomodel.OndobanModel;
+import open.dolphin.infomodel.LastDateCount;
+import open.dolphin.infomodel.PatientFreeDocumentModel;
 import open.dolphin.infomodel.PatientMemoModel;
 import open.dolphin.infomodel.PatientModel;
+import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.StampModel;
 import open.dolphin.infomodel.StampTreeModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.infomodel.VitalModel;
+import open.dolphin.adm20.converter.IPhysicalModel;
 import open.dolphin.security.HashUtil;
 import open.dolphin.security.fido.Fido2Config;
 import open.dolphin.security.totp.BackupCodeGenerator;
@@ -100,7 +106,8 @@ import open.dolphin.session.framework.SessionOperation;
  * @author kazushi
  */
 @Named
-@Stateless
+@ApplicationScoped
+@Transactional
 @SessionOperation
 public class ADM20_EHTServiceBean {
 
@@ -110,20 +117,24 @@ public class ADM20_EHTServiceBean {
     // Karte
     private static final String QUERY_KARTE = "from KarteBean k where k.patient.id=:patientPk";
 
+    // 来院日検索
+    private static final String QUERY_PATIENT_BY_PVTDATE = "from PatientVisitModel p where p.facilityId = :fid and p.pvtDate like :date and p.status!=64";
+
     // Document & module
     private static final String QUERY_DOCUMENT_BY_PK = "from DocumentModel d where d.id=:pk";
-
+    private static final String QUERY_DOCUMENT_BY_LINK_ID = "from DocumentModel d where d.linkId=:id";
+    
     private static final int BACKUP_CODE_COUNT = 10;
     private static final int FIDO_CHALLENGE_TTL_SECONDS = 300;
 
     private final SecureRandom secureRandom = new SecureRandom();
     private final ObjectMapper securityMapper = new ObjectMapper()
             .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    private static final String QUERY_DOCUMENT_BY_LINK_ID = "from DocumentModel d where d.linkId=:id";
     
-    private static final String QUERY_MODULE_BY_DOCUMENT = "from ModuleModel m where m.document.id=:id";
-    private static final String QUERY_SCHEMA_BY_DOCUMENT = "from SchemaModel i where i.document.id=:id";
-    private static final String QUERY_ATTACHMENT_BY_DOC_ID = "from AttachmentModel a where a.document.id=:id";
+    private static final String QUERY_MODULE_BY_DOCUMENT = "from ModuleModel m where m.document.id=:id order by m.id";
+    private static final String QUERY_SCHEMA_BY_DOCUMENT = "from SchemaModel i where i.document.id=:id order by i.id";
+    private static final String QUERY_ATTACHMENT_BY_DOC_ID = "from AttachmentModel a where a.document.id=:id order by a.id";
+    private static final String QUERY_ATTACHMENT_BY_ID = "from AttachmentModel a where a.id=:id";
     private static final String QUERY_MODULE_BY_ENTITY = "from ModuleModel m where m.karte.id=:karteId and m.moduleInfo.entity=:entity and m.status='F' order by m.started desc";
     
     // memo
@@ -140,8 +151,10 @@ public class ADM20_EHTServiceBean {
     private static final String QUERY_INSURANCE_BY_PATIENT_PK = "from HealthInsuranceModel h where h.patient.id=:pk";
     
     // バイタル対応
+    private static final String QUERY_VITAL_BY_FPID = "from VitalModel v where v.facilityPatId=:fpid";
     private static final String QUERY_VITAL_BY_ID = "from VitalModel v where v.id=:id";
     private static final String ID = "id";
+    private static final String FPID = "fpid";
     
     @PersistenceContext
     private EntityManager em;
@@ -171,6 +184,115 @@ public class ADM20_EHTServiceBean {
     }
     
     
+    public List<PatientModel> getPatientsByPvtDate(String facilityId, String pvtDate) {
+        List<PatientVisitModel> visits = em.createQuery(QUERY_PATIENT_BY_PVTDATE, PatientVisitModel.class)
+                .setParameter("fid", facilityId)
+                .setParameter("date", pvtDate + "%")
+                .getResultList();
+
+        List<PatientModel> result = new ArrayList<>(visits.size());
+        for (PatientVisitModel visit : visits) {
+            PatientModel patient = visit.getPatientModel();
+            setHealthInsurances(patient);
+            patient.setPvtDate(visit.getPvtDate());
+            result.add(patient);
+        }
+        return result;
+    }
+
+    public List<PatientModel> getTmpKarte(String facilityId) {
+        List<DocumentModel> documents = em.createQuery("from DocumentModel d where d.karte.patient.facilityId=:fid and d.status='T'", DocumentModel.class)
+                .setParameter("fid", facilityId)
+                .getResultList();
+
+        Map<String, String> seen = new HashMap<>(documents.size());
+        List<PatientModel> result = new ArrayList<>();
+        for (DocumentModel document : documents) {
+            if (document.getFirstConfirmed() != null && document.getConfirmed() != null
+                    && document.getFirstConfirmed().after(document.getConfirmed())) {
+                continue;
+            }
+            KarteBean karte = document.getKarte();
+            if (karte == null || karte.getPatient() == null) {
+                continue;
+            }
+            PatientModel patient = karte.getPatient();
+            if (seen.putIfAbsent(patient.getPatientId(), "seen") == null) {
+                result.add(patient);
+            }
+        }
+        setHealthInsurances(result);
+        return result;
+    }
+
+    public LastDateCount getLastDateCount(long patientPk, String fidPid) {
+        LastDateCount result = new LastDateCount();
+
+        KarteBean karte = em.createQuery(QUERY_KARTE, KarteBean.class)
+                .setParameter("patientPk", patientPk)
+                .getSingleResult();
+        result.setCreated(karte.getCreated());
+
+        Long docCount = em.createQuery("select count(*) from DocumentModel d where d.karte.id=:karteId and (d.status='F' or d.status = 'T')", Long.class)
+                .setParameter("karteId", karte.getId())
+                .getSingleResult();
+        result.setDocCount(docCount);
+
+        if (docCount != 0L) {
+            Date lastDocDate = (Date) em.createNativeQuery("select max(m.started) from d_document m where m.karte_id=:karteId and m.docType=:docType and (m.status = 'F' or m.status = 'T')")
+                    .setParameter("karteId", karte.getId())
+                    .setParameter("docType", IInfoModel.DOCTYPE_KARTE)
+                    .getSingleResult();
+            result.setLastDocDate(lastDocDate);
+        }
+
+        Long labCount = em.createQuery("select count(*) from NLaboModule l where l.patientId=:fidPid", Long.class)
+                .setParameter("fidPid", fidPid)
+                .getSingleResult();
+        result.setLabCount(labCount);
+
+        if (labCount != 0L) {
+            String lastLabDate = (String) em.createNativeQuery("select max(m.sampleDate) from d_nlabo_module m where m.patientId=:fidPid")
+                    .setParameter("fidPid", fidPid)
+                    .getSingleResult();
+            result.setLastLabDate(lastLabDate);
+        }
+
+        Long imageCount = em.createQuery("select count(*) from SchemaModel l where l.karte.id=:karteId and (l.status='F' or l.status = 'T')", Long.class)
+                .setParameter("karteId", karte.getId())
+                .getSingleResult();
+        result.setImageCount(imageCount);
+
+        if (imageCount != 0L) {
+            Date lastImageDate = (Date) em.createNativeQuery("select max(m.started) from d_image m where m.karte_id=:karteId and (m.status = 'F' or m.status = 'T')")
+                    .setParameter("karteId", karte.getId())
+                    .getSingleResult();
+            result.setLastImageDate(lastImageDate);
+        }
+
+        Long diagnosisCount = em.createQuery("select count(*) from RegisteredDiagnosisModel l where l.karte.id=:karteId", Long.class)
+                .setParameter("karteId", karte.getId())
+                .getSingleResult();
+        result.setDiagnosisCount(diagnosisCount);
+
+        Long activeCount = em.createQuery("select count(*) from RegisteredDiagnosisModel l where l.karte.id=:karteId and l.ended is NULL", Long.class)
+                .setParameter("karteId", karte.getId())
+                .getSingleResult();
+        result.setActiveDiagnosisCount(activeCount);
+
+        return result;
+    }
+
+    public PatientFreeDocumentModel getPatientFreeDocument(String fidPid) {
+        try {
+            return em.createQuery("from PatientFreeDocumentModel p where p.facilityPatId=:fpid", PatientFreeDocumentModel.class)
+                    .setParameter(FPID, fidPid)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
     // 患者メモ
     public PatientMemoModel getPatientMemo(long ptPK) {
         
@@ -330,6 +452,23 @@ public class ADM20_EHTServiceBean {
     
     
     // Document
+    public List<DocInfoModel> getDocInfoList(long patientPk) {
+        KarteBean karte = em.createQuery(QUERY_KARTE, KarteBean.class)
+                .setParameter("patientPk", patientPk)
+                .getSingleResult();
+
+        List<DocumentModel> documents = em.createQuery("from DocumentModel d where d.karte.id=:karteId and (d.status='F' or d.status='T') order by d.started desc", DocumentModel.class)
+                .setParameter("karteId", karte.getId())
+                .getResultList();
+
+        List<DocInfoModel> result = new ArrayList<>(documents.size());
+        for (DocumentModel doc : documents) {
+            doc.toDetuch();
+            result.add(doc.getDocInfoModel());
+        }
+        return result;
+    }
+
     public DocumentModel getDocumentByPk(long docPk) {
 
         DocumentModel ret;
@@ -515,6 +654,27 @@ public class ADM20_EHTServiceBean {
     }
     
     
+    public List<ModuleModel> getLastModule(long patientPk, String entity) {
+        KarteBean karte = em.createQuery(QUERY_KARTE, KarteBean.class)
+                .setParameter("patientPk", patientPk)
+                .getSingleResult();
+
+        Date lastStarted = (Date) em.createNativeQuery("select max(m.started) from d_module m where m.karte_id=:karteId and m.entity=:entity and (m.status = 'F' or m.status = 'T')")
+                .setParameter("karteId", karte.getId())
+                .setParameter("entity", entity)
+                .getSingleResult();
+
+        if (lastStarted == null) {
+            return new ArrayList<>();
+        }
+
+        return em.createQuery("from ModuleModel m where m.karte.id=:karteId and m.started=:started and m.moduleInfo.entity=:entity and (m.status='F' or m.status='T')", ModuleModel.class)
+                .setParameter("karteId", karte.getId())
+                .setParameter("started", lastStarted)
+                .setParameter("entity", entity)
+                .getResultList();
+    }
+
     public List<NLaboModule> getLaboTest(String facilityId, String patientId, int firstResult, int maxResult) {
 
         StringBuilder sb = new StringBuilder();
@@ -641,6 +801,112 @@ public class ADM20_EHTServiceBean {
                 .getSingleResult();
 
         return vital;
+    }
+
+    public int addVital(VitalModel model) {
+        em.persist(model);
+        return 1;
+    }
+
+    public List<VitalModel> getPatVital(String fidPid) {
+        return em.createQuery(QUERY_VITAL_BY_FPID, VitalModel.class)
+                .setParameter(FPID, fidPid)
+                .getResultList();
+    }
+
+    public int removeVital(String id) {
+        VitalModel vital = getVital(id);
+        if (vital != null) {
+            em.remove(vital);
+            return 1;
+        }
+        return 0;
+    }
+
+    public List<Long> addObservations(List<ObservationModel> observations) {
+        if (observations == null || observations.isEmpty()) {
+            return List.of();
+        }
+        List<Long> ids = new ArrayList<>(observations.size());
+        for (ObservationModel model : observations) {
+            em.persist(model);
+            ids.add(model.getId());
+        }
+        return ids;
+    }
+
+    public int removeObservations(List<Long> observationIds) {
+        if (observationIds == null || observationIds.isEmpty()) {
+            return 0;
+        }
+        int removed = 0;
+        for (Long id : observationIds) {
+            ObservationModel model = em.find(ObservationModel.class, id);
+            if (model != null) {
+                em.remove(model);
+                removed++;
+            }
+        }
+        return removed;
+    }
+
+    public List<IPhysicalModel> getPhysicals(long karteId) {
+        List<ObservationModel> heights = em.createQuery("from ObservationModel o where o.karte.id=:karteId and o.observation='PhysicalExam' and o.phenomenon='bodyHeight'", ObservationModel.class)
+                .setParameter("karteId", karteId)
+                .getResultList();
+        List<ObservationModel> weights = em.createQuery("from ObservationModel o where o.karte.id=:karteId and o.observation='PhysicalExam' and o.phenomenon='bodyWeight'", ObservationModel.class)
+                .setParameter("karteId", karteId)
+                .getResultList();
+
+        List<IPhysicalModel> result = new ArrayList<>();
+
+        List<IPhysicalModel> weightModels = new ArrayList<>(weights.size());
+        for (ObservationModel weight : weights) {
+            IPhysicalModel model = new IPhysicalModel();
+            model.fromObservationModel(weight);
+            weightModels.add(model);
+        }
+
+        for (ObservationModel height : heights) {
+            IPhysicalModel heightModel = new IPhysicalModel();
+            heightModel.fromObservationModel(height);
+            String memo = heightModel.getMemo() != null ? heightModel.getMemo() : heightModel.getIdentifiedDate();
+
+            IPhysicalModel matched = null;
+            for (IPhysicalModel weightModel : weightModels) {
+                String weightMemo = weightModel.getMemo() != null ? weightModel.getMemo() : weightModel.getIdentifiedDate();
+                if (memo != null && memo.equals(weightMemo)) {
+                    IPhysicalModel combined = new IPhysicalModel();
+                    combined.setHeightId(heightModel.getHeightId());
+                    combined.setHeight(heightModel.getHeight());
+                    combined.setWeightId(weightModel.getWeightId());
+                    combined.setWeight(weightModel.getWeight());
+                    combined.setIdentifiedDate(heightModel.getIdentifiedDate());
+                    combined.setMemo(memo);
+                    result.add(combined);
+                    matched = weightModel;
+                    break;
+                }
+            }
+            if (matched != null) {
+                weightModels.remove(matched);
+            } else {
+                result.add(heightModel);
+            }
+        }
+
+        result.addAll(weightModels);
+        return result;
+    }
+
+    public AttachmentModel getAttachment(long id) {
+        try {
+            return em.createQuery(QUERY_ATTACHMENT_BY_ID, AttachmentModel.class)
+                    .setParameter(ID, id)
+                    .getSingleResult();
+        } catch (NoResultException ex) {
+            return null;
+        }
     }
 
 //-----------------------------------------------------------------------------

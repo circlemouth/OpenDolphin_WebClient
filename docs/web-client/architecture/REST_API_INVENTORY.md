@@ -4,6 +4,7 @@
 - 参照元: `server/src/main/java/open/dolphin/rest`, `server/src/main/java/open/orca/rest`, `docs/web-client/requirements/WEB_CLIENT_REQUIREMENTS.md` 第14章
 - 前提: すべてのリクエストで `userName` / `password(MD5)` / `clientUUID` ヘッダーを送出し、施設IDは WildFly の `RemoteUser` またはボディで補完する。
 - ステータス凡例: ✅=利用可、🛠=実装時調整あり、⚠=追加検証が必須、🚫=Webクライアント非対応。
+- 旧サーバー REST API の完全な一覧は [`../../server/LEGACY_REST_API_INVENTORY.md`](../../server/LEGACY_REST_API_INVENTORY.md) を参照。
 
 ## 1. 認証・ユーザー管理 (`UserResource`, `SystemResource`)
 
@@ -17,7 +18,10 @@
 | UserResource | GET | `/user/name/{userId}` | ユーザー表示名取得 | ✅ 各種一覧の表示補助に利用可 | 認証不要。キャッシュ方針を定める。
 | UserResource | PUT | `/user/facility` | 施設情報更新 | ⚠ 運用導入初期のみ使用想定 | CI/CD 管理者経由の運用設計が必要。
 | SystemResource | GET | `/dolphin/activity/{param}` | サーバー活動ログ取得 | ⚠ 監査ログUIの要否検討 | `param`=期間/施設、レスポンス大。パフォーマンス検証必要。
-| SystemResource | GET | `/dolphin/license` | ライセンス情報取得 | 🛠 システム設定画面で参照 | 表示のみ。変更は不可。
+| SystemResource | POST | `/dolphin` | 施設管理者アカウント登録 | ⚠ 運用チーム専用 | Web UI での露出は予定なし。登録結果の管理と監査が必要。
+| SystemResource | POST | `/dolphin/license` | CloudZero ライセンス登録/検証 | 🛠 システム設定画面で参照 | `0`=成功、`2`〜`4`=異常。書き込み系のため保護要。
+| SystemResource | GET | `/dolphin/cloudzero/sendmail` | 月次 CloudZero メール送信 | ⚠ バッチ代替導線の検討 | 現状はサーバーログへの記録のみ。手動実行は要注意。
+| ServerInfoResource | GET | `/serverinfo/*` | サーバー設定取得 | ✅ 初期設定画面で参照 | `jamri` / `claim/conn` / `cloud/zero` の3種。`custom.properties` を読み込む。
 
 ## 2. 患者・受付 (`PatientResource`, `PVTResource`, `ScheduleResource`)
 
@@ -31,13 +35,20 @@
 | PatientResource | GET | `/patient/documents/status` | 仮保存カルテの患者一覧 | ✅ 下書き管理に活用 | 応答量多い場合はlazy load検討。
 | PatientResource | POST/PUT | `/patient` | 新規患者登録/更新 | ✅ Web 編集フォーム経由で実装済み | `PatientsPage` からの登録/更新で健康保険 Bean 再生成と監査ログ送信を実施。
 | PatientResource | GET | `/patient/count/{name}` | 検索件数確認 | 🛠 UX最適化用 | 1000件超過時のみ使用。
+| PatientResource | GET | `/patient/all` | 全患者リスト取得 | ⚠ 大量データの扱いを検討 | 管理ツールのみで使用。ページング未実装。
+| PatientResource | GET | `/patient/custom/{param}` | カスタム検索 | ⚠ 要件ヒアリング中 | 傷病名や自由条件検索を想定。レスポンス増加に注意。
 | PVTResource | GET | `/pvt/{param}` | 受付リスト/状態取得 | ✅ 受付リスト初期表示 | `param`=`fid,yyyymmdd,states` 形式。
+| PVTResource | POST | `/pvt` | 受付登録 | ✅ 受付ダイアログから利用 | 保険情報の親参照をサーバー側で補完。 |
 | PVTResource | PUT | `/pvt/{param}` | 受付状態更新 | ✅ 診察開始/終了のトグル | 業務フローと同期必須。
 | PVTResource | PUT | `/pvt/memo/{param}` | 受付メモ更新 | 🛠 受付UIから利用 | `param`=`pvtPK,memo` エンコード要注意。
 | PVTResource | DELETE | `/pvt/{pvtPK}` | 受付削除 | ⚠ 監査要件確認後に UI 解放 | 現行運用では管理者のみ。
+| PVTResource2 | POST | `/pvt2` | 受付登録（拡張版） | ✅ VisitManagementDialog で利用 | 施設 ID を自動付与。保険情報を正規化。
+| PVTResource2 | DELETE | `/pvt2/{pvtPK}` | 受付削除 | ⚠ 担当者のみ操作 | ChartEvent 更新と整合を要確認。
+| PVTResource2 | GET | `/pvt2/pvtList` | ロングポーリング用受付一覧 | ✅ ChartsPage のステータス更新 | MSW モックで遅延・切断を再現済み。
 | ScheduleResource | GET | `/schedule/pvt/{param}` | 予約/受付一覧取得 | 🛠 カレンダーと連携 | `param`=`fid,yyyymmdd`。レスポンスは `PatientVisitList`。
 | ScheduleResource | POST | `/schedule/document` | 診療履歴作成（予約経由） | ⚠ 旧クライアント依存ロジック | 詳細仕様確認中。
 | ScheduleResource | DELETE | `/schedule/pvt/{param}` | 予約削除 | ⚠ 予約管理UI要件次第 | 権限ガードに注意。
+| AppoResource | PUT | `/appo` | 予約一括更新 | ⚠ 運用設計が未確定 | UI では段階導入を検討。成功時は更新件数のみ返却。
 
 ## 3. カルテ主機能 (`KarteResource`, `AppoResource`, `LetterResource`, `MmlResource`)
 
@@ -56,7 +67,8 @@
 | KarteResource | GET | `/karte/attachment/{docId}` | 添付取得 | 🛠 画像/ファイルプレビュー | 大容量対策が必要。
 | KarteResource | GET | `/karte/moduleSearch/{query}` | モジュール検索 | ⚠ UI要件ヒアリング中 | 既存スタンプ検索との住み分け要。
 | KarteResource | GET | `/karte/docinfo/all/{param}` | 全文書取得 | 🚫 レガシー互換のみ | 応答サイズが大きすぎるため利用不可。
-| AppoResource | GET | `/appo/{param}` | 予約取得 | ⚠ 予約システム連携時に検討 | 既存 UI からの移行計画未定。
+| NLabResource | GET | `/lab/module/{pid,first,max}` | ラボ結果取得 | ✅ ラボビューの基礎データ | 期間・件数パラメータで絞り込み。詳細は `/lab/item/*` で取得。
+| AppoResource | PUT | `/appo` | 予約一括更新 | ⚠ UI への露出検討中 | モバイル連携を想定。戻り値は更新件数のみ。
 | LetterResource | GET | `/letter/{param}` | 紹介状など文書取得 | 🛠 文書出力機能で使用 | Belforフォーマット対応要確認。
 | MmlResource | GET | `/mml/{param}` | MML文書出力 | ⚠ 互換性検証中 | 文字コード/encoding 要注意。
 
@@ -65,8 +77,8 @@
 | リソース | HTTP | パス | 主用途 | Webクライアント利用方針 | 備考 |
 | --- | --- | --- | --- | --- | --- |
 | ChartEventResource | GET | `/chartEvent/subscribe` | 長輪講サブスクライブ | ✅ 既存ロングポーリングの再利用 | タイムアウト/再接続戦略をクライアント側で再設計。
-| ChartEventResource | POST | `/chartEvent/event` | イベント送信 | ✅ カルテ更新通知 | 署名/保存時に publish。
-| ChartEventResource | POST | `/chartEvent/dispatch` | イベントディスパッチ | ⚠ 使われていない可能性 | 用途調査の上、必要なら新実装へ移行。
+| ChartEventResource | PUT | `/chartEvent/event` | イベント送信 | ✅ カルテ更新通知 | 署名/保存時に publish。
+| ChartEventResource | GET | `/chartEvent/dispatch` | イベントディスパッチ | ⚠ 使われていない可能性 | 用途調査の上、必要なら新実装へ移行。
 
 ## 5. スタンプ・テンプレート (`StampResource`)
 

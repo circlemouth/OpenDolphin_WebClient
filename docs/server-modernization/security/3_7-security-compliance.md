@@ -25,6 +25,7 @@
 
 - `AuditTrailService` と `d_audit_event` テーブルを新設し、操作内容を JSON 化して保存。ペイロードハッシュと直前レコードのハッシュを連結した `event_hash` を持つことで改ざん検出を可能にしている。
 - 2FA 登録・認証成功/失敗、バックアップコード再発行、FIDO2 チャレンジ等の重要イベントは `AdmissionResource` から `AuditTrailService` を呼び出し自動で記録。
+- 監査イベントの `details` には `status`（success/failed）と失敗理由を格納し、例外発生時は `TOTP_*_FAILED` / `FIDO2_*_FAILED` アクションを出力する。
 - 監査ログは `event_time` と `action` で検索できるようインデックスを追加。`api-smoke-test.md` の監査観点と整合させ、結果のレビュー手順を `DEPLOYMENT_WORKFLOW.md` に追記した。
 
 ## 4. 個人情報保護と第三者提供記録
@@ -42,7 +43,7 @@
 | FIDO2 Relying Party Name | `FIDO2_RP_NAME` | `OpenDolphin Dev` | UI 表示用名称。 |
 | FIDO2 許可オリジン | `FIDO2_ALLOWED_ORIGINS` | `https://localhost:8443,http://localhost:8080` | カンマ区切りで許可する Origin を指定。 |
 
-※ 運用互換性のため `FACTOR2_AES_KEY` (プレーン文字列) も受け付ける。与えられた値が 128/192/256bit 以外の場合は SHA-256 で 256bit 鍵を導出して AES-GCM に利用する。
+※ 2025-11-03 時点で `FACTOR2_AES_KEY`（プレーン文字列）フォールバックは廃止済み。`FACTOR2_AES_KEY_B64` を未設定のままデプロイするとブート時に例外が発生する。
 
 ## 6. 既存ユーザーへの移行手順
 
@@ -56,4 +57,3 @@
 - `docs/server-modernization/rest-api-modernization.md`：2FA API のセキュリティ要件更新。
 - `docs/server-modernization/security/DEPLOYMENT_WORKFLOW.md`：設定変更・レビュー・リリースの標準プロセス。
 - `docs/server-modernization/api-smoke-test.md`：監査観点とログ確認フローの追記。
-

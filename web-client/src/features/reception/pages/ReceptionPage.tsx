@@ -89,6 +89,7 @@ const ContentGrid = styled.div`
   display: grid;
   gap: 24px;
   grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  align-items: start;
 
   @media (max-width: 1280px) {
     grid-template-columns: 1fr;
@@ -97,15 +98,23 @@ const ContentGrid = styled.div`
 
 const ReceptionColumn = styled(SurfaceCard)`
   display: grid;
-  gap: 16px;
+  gap: 10px;
+  padding-block: 12px;
+  padding-inline: 20px;
 `;
 
 const ColumnHeader = styled.div`
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
-  align-items: flex-start;
-  gap: 16px;
+  align-items: flex-end;
+  gap: 10px;
+`;
+
+const ColumnLead = styled.div`
+  flex: 1 1 320px;
+  display: grid;
+  gap: 6px;
 `;
 
 const ColumnTitle = styled.div`
@@ -125,42 +134,43 @@ const ColumnTitle = styled.div`
   }
 `;
 
-const CountsRow = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
-`;
+const ReceptionSearchField = styled(TextField)`
+  /* テキストフィールドはラベルと入力枠のみで構成される前提 */
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  column-gap: 8px;
+  row-gap: 0;
+  width: 100%;
+  max-width: 440px;
+  min-width: 240px;
 
-const CountCard = styled.div`
-  flex: 1 1 120px;
-  min-width: 120px;
-  border: 1px solid ${({ theme }) => theme.palette.border};
-  border-radius: ${({ theme }) => theme.radius.md};
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-
-  span {
-    font-size: 0.8rem;
-    color: ${({ theme }) => theme.palette.textMuted};
+  > span:nth-of-type(1) {
+    grid-column: 1;
+    grid-row: 1;
+    margin: 0;
   }
 
-  strong {
-    font-size: 1.4rem;
+  > span:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  > span:nth-of-type(2) input {
+    width: 100%;
   }
 `;
 
 const GroupSection = styled.section`
   display: grid;
-  gap: 12px;
+  gap: 8px;
 `;
 
 const GroupTitleRow = styled.div`
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 `;
 
 const GroupTitle = styled.h3`
@@ -170,7 +180,7 @@ const GroupTitle = styled.h3`
 
 const GroupList = styled.div`
   display: grid;
-  gap: 12px;
+  gap: 8px;
 `;
 
 const GroupEmpty = styled.div`
@@ -197,6 +207,11 @@ const PatientSearchCard = styled(SurfaceCard)`
   gap: 16px;
 `;
 
+const NewPatientButtonRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+
 const PatientSearchHeader = styled.div`
   display: flex;
   justify-content: space-between;
@@ -212,12 +227,8 @@ const SearchForm = styled.form`
 
 const SearchFields = styled.div`
   display: grid;
-  gap: 12px;
-  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
+  gap: 8px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 `;
 
 const SearchActions = styled.div`
@@ -229,8 +240,39 @@ const SearchActions = styled.div`
 
 const SearchHint = styled.p`
   margin: 0;
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const CompactTextField = styled(TextField)`
+  gap: 0.2rem;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  align-items: center;
+
+  > span:nth-of-type(1) {
+    grid-column: 1;
+    grid-row: 1;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: ${({ theme }) => theme.palette.textMuted};
+    white-space: nowrap;
+  }
+
+  > span:nth-of-type(2) {
+    grid-column: 2;
+    grid-row: 1;
+    padding: 0.45rem 0.6rem;
+  }
+
+  > span:nth-of-type(2) input {
+    font-size: 0.9rem;
+  }
+
+  > span:nth-of-type(3) {
+    grid-column: 1 / -1;
+    grid-row: 2;
+  }
 `;
 
 const PatientResultList = styled.div`
@@ -411,6 +453,8 @@ const VisitCard = styled(SurfaceCard)`
   flex-direction: column;
   gap: 12px;
   height: 100%;
+  padding-block: 16px;
+  padding-inline: 20px;
 `;
 
 const CardHeader = styled.div`
@@ -685,6 +729,8 @@ export const ReceptionPage = () => {
     setPatientSearchId('');
     setPatientSearchDigit('');
     setPatientSearchParams(null);
+    setSelectedPatientId(null);
+    setSelectedPatientSummary(null);
     setSearchError(null);
     recordOperationEvent('patient', 'info', 'patient_search_clear', '受付画面の患者検索条件をクリアしました', {});
   }, [
@@ -712,6 +758,23 @@ export const ReceptionPage = () => {
     },
     [],
   );
+
+  const handleStartNewPatient = useCallback(() => {
+    setPatientFormMode('create');
+    setSelectedVisitId(null);
+    setSelectedPatientId(null);
+    setSelectedPatientSummary(null);
+    setActiveSidebarTab('patient');
+    recordOperationEvent(
+      'patient',
+      'info',
+      'patient_create_mode',
+      '新規患者登録フォームを開きました',
+      {
+        source: 'reception-page-right-column',
+      },
+    );
+  }, []);
 
   const handleBarcodeSuccess = useCallback(
     (result: BarcodeCheckInResult) => {
@@ -1116,6 +1179,12 @@ export const ReceptionPage = () => {
       }
       setPatientFormMode('update');
       setActiveSidebarTab('patient');
+      setPatientSearchName('');
+      setPatientSearchKana('');
+      setPatientSearchDigit('');
+      setPatientSearchId(patientId);
+      setPatientSearchParams({ idKeyword: patientId });
+      setSearchError(null);
       void refetchPatientSearch();
     },
     [refetchPatientSearch],
@@ -1308,8 +1377,8 @@ export const ReceptionPage = () => {
       }
 
       return (
-        <VisitCard key={visit.visitId} tone="muted" padding="lg">
-          <Stack gap={12}>
+        <VisitCard key={visit.visitId} tone="muted">
+          <Stack gap={10}>
             <CardHeader>
               <div>
                 <PatientName>{visit.fullName}</PatientName>
@@ -1442,12 +1511,20 @@ export const ReceptionPage = () => {
   return (
     <PageContainer>
       <ContentGrid>
-        <ReceptionColumn tone="muted" padding="lg">
+        <ReceptionColumn tone="muted">
           <ColumnHeader>
-            <ColumnTitle>
-              <h2>受付患者一覧</h2>
-              <p>受付検索で絞り込み、ステータスごとに受付状況を確認できます。</p>
-            </ColumnTitle>
+            <ColumnLead>
+              <ColumnTitle>
+                <h2>受付患者一覧</h2>
+                <p>受付検索で絞り込み、ステータスごとに受付状況を確認できます。</p>
+              </ColumnTitle>
+              <ReceptionSearchField
+                label="受付検索"
+                placeholder="氏名・患者ID・メモで絞り込み"
+                value={receptionSearchKeyword}
+                onChange={(event) => setReceptionSearchKeyword(event.currentTarget.value)}
+              />
+            </ColumnLead>
             <Button
               type="button"
               variant="ghost"
@@ -1459,26 +1536,6 @@ export const ReceptionPage = () => {
               {isReceptionRefreshing ? '更新中…' : '受付情報を再取得'}
             </Button>
           </ColumnHeader>
-          <TextField
-            label="受付検索"
-            placeholder="氏名・患者ID・メモで絞り込み"
-            value={receptionSearchKeyword}
-            onChange={(event) => setReceptionSearchKeyword(event.currentTarget.value)}
-          />
-          <CountsRow>
-            <CountCard>
-              <span>待機中</span>
-              <strong>{summary.waiting}</strong>
-            </CountCard>
-            <CountCard>
-              <span>呼出済み</span>
-              <strong>{summary.calling}</strong>
-            </CountCard>
-            <CountCard>
-              <span>診察中</span>
-              <strong>{summary.inProgress}</strong>
-            </CountCard>
-          </CountsRow>
           {isReceptionLoading ? (
             <GroupEmpty>受付情報を読み込み中です…</GroupEmpty>
           ) : (
@@ -1520,34 +1577,17 @@ export const ReceptionPage = () => {
           ) : null}
         </ReceptionColumn>
         <RightColumn>
+          <NewPatientButtonRow>
+            <Button type="button" variant="primary" onClick={handleStartNewPatient}>
+              新規患者登録
+            </Button>
+          </NewPatientButtonRow>
           <PatientSearchCard tone="muted" padding="lg">
             <PatientSearchHeader>
               <ColumnTitle>
                 <h2>患者検索</h2>
                 <p>患者情報の参照や受付登録を行います。</p>
               </ColumnTitle>
-              <Button
-                type="button"
-                variant="primary"
-                onClick={() => {
-                  setPatientFormMode('create');
-                  setSelectedVisitId(null);
-                  setSelectedPatientId(null);
-                  setSelectedPatientSummary(null);
-                  setActiveSidebarTab('patient');
-                  recordOperationEvent(
-                    'patient',
-                    'info',
-                    'patient_create_mode',
-                    '新規患者登録フォームを開きました',
-                    {
-                      source: 'reception-page-right-column',
-                    },
-                  );
-                }}
-              >
-                新規患者登録
-              </Button>
             </PatientSearchHeader>
             <SearchForm
               onSubmit={(event) => {
@@ -1556,7 +1596,7 @@ export const ReceptionPage = () => {
               }}
             >
               <SearchFields>
-                <TextField
+                <CompactTextField
                   label="氏名（漢字）"
                   placeholder="例：山田 太郎"
                   value={patientSearchName}
@@ -1568,7 +1608,7 @@ export const ReceptionPage = () => {
                   }}
                   errorMessage={searchError ?? undefined}
                 />
-                <TextField
+                <CompactTextField
                   label="氏名（カナ）"
                   placeholder="例：ヤマダ タロウ"
                   value={patientSearchKana}
@@ -1579,7 +1619,7 @@ export const ReceptionPage = () => {
                     }
                   }}
                 />
-                <TextField
+                <CompactTextField
                   label="患者ID"
                   placeholder="例：000123"
                   value={patientSearchId}
@@ -1590,7 +1630,7 @@ export const ReceptionPage = () => {
                     }
                   }}
                 />
-                <TextField
+                <CompactTextField
                   label="数字検索（生年月日・電話など）"
                   placeholder="例：0101"
                   value={patientSearchDigit}

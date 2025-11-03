@@ -25,6 +25,7 @@
                 open.dolphin.rest.NLabResource,
                 open.dolphin.rest.PVTResource,
                 open.dolphin.rest.PatientResource,
+                open.dolphin.rest.DemoResourceAsp,
                 open.dolphin.rest.StampResource,
                 open.dolphin.rest.SystemResource,
                 open.dolphin.rest.UserResource,

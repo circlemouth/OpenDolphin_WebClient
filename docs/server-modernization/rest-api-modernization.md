@@ -2,6 +2,8 @@
 
 ## 1. OpenAPI ドキュメント整備
 - `docs/server-modernization/server-api-inventory.yaml` に旧サーバーの REST エンドポイントを OpenAPI 3.0.3 形式で整理。
+- モダナイズ後の Jakarta REST リソースは `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` に表形式で整理し、最新のエンドポイント一覧を管理。
+- 新旧サーバーの 1:1 対応状況は `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` で追跡し、移植漏れの洗い出しに利用する。
 - `components.schemas` にレガシー DTO（`open.dolphin.infomodel.*`）を参照できるダミースキーマを設け、仕様追跡時に対象クラスへジャンプできるようにした。
 - `paths` セクションは `ops/tests/api-smoke-test/api_inventory.yaml` をソースに自動生成し、既存スモークテストとの整合性を保つ。
 
@@ -30,7 +32,8 @@
   - FIDO2: `POST /20/adm/factor2/fido2/registration/options` / `finish`、`/assertion/options` / `finish`。`Factor2Credential` へ公開鍵・署名カウンタを保存し、`Factor2Challenge` でチャレンジを追跡。
 - **レート制限**: `/20/adm/factor2/code`（SMS）、新設 TOTP/FIDO2 エンドポイントとも 5 リクエスト/分（ユーザー単位）を上限とし、API Gateway で制御する。
 - **監査ログ**: TOTP/FIDO2 の登録・認証成功/失敗、バックアップコード発行を `AuditTrailService` 経由で `d_audit_event` に永続化。JWT の `jti` とクライアント IP を必須記録。
-- **署名検証**: TOTP 応答は `OTPHelper` の `verifyCurrentWindow` を使用し、タイムスキュー ±90 秒を許容。FIDO2 は Yubico WebAuthn Server を利用し署名カウンタを検証。
+- **失敗時監査**: 例外発生時は `TOTP_*_FAILED` / `FIDO2_*_FAILED` として `status=failed`・理由を付与し、成功時は `status=success` を記録する。
+- **署名検証**: TOTP 応答は `TotpHelper#verifyCurrentWindow` を使用し、タイムスキュー ±90 秒を許容。FIDO2 は Yubico WebAuthn Server を利用し署名カウンタを検証。
 - **移行措置**: 既存ユーザーは初回ログイン時にバックアップコード再発行を強制し、新方式登録後に旧 Basic 認証ヘッダを無効化。`d_factor2_backupkey` の旧データは Flyway で削除済み。
 
 ## 6. 今後の課題
