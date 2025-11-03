@@ -24,6 +24,9 @@ interface VariantTokens {
   color?: PaletteToken;
   border?: PaletteToken;
   hover?: PaletteToken;
+  disabledBackground?: PaletteToken;
+  disabledColor?: PaletteToken;
+  disabledBorder?: PaletteToken;
 }
 
 const variantTokens: Record<ButtonVariant, VariantTokens> = {
@@ -32,22 +35,34 @@ const variantTokens: Record<ButtonVariant, VariantTokens> = {
     color: 'onPrimary',
     border: 'primary',
     hover: 'primaryStrong',
+    disabledBackground: 'surfaceStrong',
+    disabledColor: 'textMuted',
+    disabledBorder: 'border',
   },
   secondary: {
     background: 'surfaceMuted',
     color: 'text',
     border: 'border',
     hover: 'surfaceStrong',
+    disabledBackground: 'surfaceStrong',
+    disabledColor: 'textMuted',
+    disabledBorder: 'border',
   },
   ghost: {
     color: 'textMuted',
     hover: 'surfaceMuted',
+    disabledBackground: 'surfaceMuted',
+    disabledColor: 'textMuted',
+    disabledBorder: 'surfaceMuted',
   },
   danger: {
     background: 'danger',
     color: 'onPrimary',
     border: 'danger',
     hover: 'primaryStrong',
+    disabledBackground: 'surfaceStrong',
+    disabledColor: 'textMuted',
+    disabledBorder: 'border',
   },
 };
 
@@ -105,9 +120,16 @@ const StyledButton = styled.button<StyledButtonProps>`
 
   &:disabled,
   &[aria-disabled='true'] {
-    opacity: 0.55;
+    opacity: 1;
     cursor: not-allowed;
     box-shadow: none;
+    transform: none;
+    background: ${({ theme, $variant }) =>
+      resolvePalette(theme, variantTokens[$variant].disabledBackground, theme.palette.surfaceStrong)};
+    color: ${({ theme, $variant }) =>
+      resolvePalette(theme, variantTokens[$variant].disabledColor, theme.palette.textMuted)};
+    border-color: ${({ theme, $variant }) =>
+      resolvePalette(theme, variantTokens[$variant].disabledBorder, theme.palette.border)};
   }
 
   &[aria-disabled='true'] {
@@ -180,6 +202,7 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
       as: _as,
       ...anchorProps
     } = props;
+    void _as;
 
     const shared = {
       $variant: variant,
@@ -227,6 +250,7 @@ export const Button = forwardRef<HTMLButtonElement | HTMLAnchorElement, ButtonPr
     as: _as,
     ...buttonProps
   } = props;
+  void _as;
 
   const shared = {
     $variant: variant,
