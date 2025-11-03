@@ -71,6 +71,19 @@ end-if
 
 Micrometer は Undertow / Datasource など各サブシステムの統計情報を利用するため、`statistics-enabled` と `record-request-start-time` を有効化しておく。 citeturn1search0
 
+### 2.1 Micrometer レジストリの JNDI 名を切り替える
+
+`server-modernized` では `open.dolphin.metrics.MeterRegistryProducer` が Micrometer の `MeterRegistry` を JNDI から取得する。WildFly 以外のアプリケーションサーバーを利用する場合は、以下のプロパティで参照先を切り替える。
+
+| 設定種別 | キー | デフォルト値 | 説明 |
+| --- | --- | --- | --- |
+| Java システムプロパティ | `open.dolphin.metrics.registry.jndi` | `java:jboss/micrometer/registry` | 最優先で参照される。`standalone.conf` などで `-Dopen.dolphin.metrics.registry.jndi=java:global/metrics/registry` のように指定する。 |
+| 環境変数 | `OPEN_DOLPHIN_METRICS_REGISTRY_JNDI` | （未設定時はシステムプロパティへフォールバック） | システムプロパティが空の場合に参照。Docker / Kubernetes 環境での上書き用途。 |
+
+- いずれも未設定の場合は `java:jboss/micrometer/registry` を利用する。
+- 指定した JNDI に `MeterRegistry` が存在しない場合は WARNING ログを出力し、Micrometer のグローバルレジストリへフォールバックする。
+- WildFly でデフォルト値のまま運用する場合は追加設定は不要。別製品（例: Payara, OpenLiberty）ではサーバー側で公開する JNDI 名と一致させること。
+
 ## 3. Prometheus / Grafana ダッシュボード整備
 
 1. WildFly 管理ユーザーを作成し、Prometheus から Basic 認証でアクセスできるようにする。 (`add-user.sh` を使用)
