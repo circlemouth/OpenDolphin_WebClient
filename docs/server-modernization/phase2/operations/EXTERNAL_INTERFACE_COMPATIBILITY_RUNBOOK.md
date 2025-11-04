@@ -56,14 +56,54 @@
    - SMS/メール: `AdmissionResource` の `sendPackage` など通知 API を実行し、Plivo やメールゲートウェイで実送信ログが確認できるかをテスト。
 5. **レポート**  
    - テスト結果は `docs/server-modernization/phase2/PHASE2_PROGRESS.md` に日付・担当・概要を追記し、次回以降のリリースノートに転記する。
-6. **PHR 非同期ジョブ監視（未実装ステータス）**  
-   - 2025-11-03 時点でモダナイズ版には `POST /20/adm/phr/export` および `GET /20/adm/phr/status/{jobId}` の REST 実装が存在しない。`phr_async_job` テーブルも未作成の場合があるため、本手順は **Blocked** とする。  
-   - Flyway スクリプト `server-modernized/tools/flyway/sql/V0220__phr_async_job.sql` の適用可否を確認し、テーブルが存在しない環境では `flyway migrate` を実行しないこと（実装完了後に対応）。  
-   - API が実装された後に再開する想定の手順は `docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md` §2.5 を参照し、最新化されたら本 Runbook を更新する。
+6. **PHR 非同期ジョブ監視（2025-11-04 更新）**  
+   1. **Flyway 適用確認**  
+      - `docker compose exec modernized-db psql -U dolphin -c "\dt phr_async_job"` でテーブル有無を確認。存在しない場合は `docker compose exec modernized-backend flyway -configFiles=/opt/payara/tools/flyway/flyway.properties info` を実行し、`V0220__phr_async_job` が `Success` であることを確認する。未適用の場合のみ `flyway migrate` を実施。  
+   2. **ジョブ作成 (POST /20/adm/phr/export)**  
+      - 認証ヘッダー: Basic 認証（例: `-u F001:manager01:password`）、`X-Trace-Id`、`Accept: application/json`、`Content-Type: application/json` を付与。  
+      - サンプル:  
+        ```bash
+        curl -u F001\\:manager01:password \
+             -H 'X-Trace-Id: phr-export-$(date +%s)' \
+             -H 'Content-Type: application/json' \
+             -d '{"patientIds":["000001","000002"],"documentSince":"2024-01-01","labSince":"2024-01-01"}' \
+             https://<backend>/resources/20/adm/phr/export
+        ```  
+      - レスポンスから `jobId` を控え、`phr_export` の監査イベントが `d_audit_event` に記録されていることを確認。  
+   3. **ステータス確認 (GET /20/adm/phr/status/{jobId})**  
+      - `curl -u ... https://<backend>/resources/20/adm/phr/status/{jobId}` を実行し、`state=SUCCEEDED` と `downloadUrl` が返ることを確認。  
+      - DB: `select job_id,state,progress,result_uri from phr_async_job order by queued_at desc limit 5;` で進捗を確認。  
+   4. **成果物ダウンロード**  
+      - `downloadUrl` に含まれる `expires` と `token` パラメータを利用し、`curl -L -u ... "<downloadUrl>" -o phr-export.zip` で ZIP を取得。  
+      - 取得後に `unzip -l phr-export.zip` で patient JSON が含まれることを確認。  
+   5. **ジョブログ・監査確認**  
+      - `select action,resource,payload from d_audit_event where resource like '%/20/adm/phr/%' order by event_time desc limit 10;`  
+      - `grep -F 'PHR_EXPORT' server.log` でワーカー実行ログを確認。  
+   6. **ジョブ取消 (DELETE /20/adm/phr/status/{jobId})**  
+      - state=PENDING のジョブに対して `curl -X DELETE -u ... https://<backend>/resources/20/adm/phr/status/{jobId}` を実行し、`phr_async_job.state` が `CANCELLED` に遷移することを確認。  
+   7. **自動テスト**  
+      - `PHRResourceTest` を追加済み。`mvn -f pom.server-modernized.xml -pl server-modernized test -Dtest=PHRResourceTest` を実行して REST 層のリグレッションを確認する。  
+      - 2025-11-04 時点のローカル開発環境には Maven が導入されておらず `bash: mvn: command not found` となるため、CI もしくは Maven 導入済み端末で実行しログを Runbook に添付すること。
 7. **Touch クライアント SSE 確認**  
    - `curl -N -H 'Accept: text/event-stream' -H "ClientUUID:$UUID" "$BASE_URL/chart-events"` で SSE 接続を開始し、起動直後にリプレイされるイベント `retry:` 行を確認。`Last-Event-ID` を指定した再接続も試行する。  
    - PVT 登録操作を実施し、`event: pvt.updated` が SSE 経由で届くこと、`data:` の JSON が `ChartEventModel` スキーマ（`server-modernized/src/main/java/open/dolphin/rest/ChartEventSseSupport.java`）と一致することを確認。  
    - Touch UI 側で例外イベント (`event: error.*`) の通知が表示されることを Worker C のログに従いスクリーンショットで保存。SSE 切断時は `ChartEventSseSupport` ログ (`TouchSSE-...`) に WARN が出ないかを確認する。
+
+### Touch 来院履歴 API（2025-11-04 更新）
+
+- 対象エンドポイント: `GET /touch/patient/firstVisitors`, `/visit`, `/visitRange`, `/visitLast`。互換目的で `{param}` 版も並行提供するが、**新規実装は QueryParam 版を利用すること**。
+- クエリパラメータ仕様
+  - `facility`（任意）: 指定時は `HttpServletRequest#getRemoteUser()` の施設 ID と一致している必要がある。不一致の場合は 403 (`施設突合失敗`) を返し監査へ記録。
+  - `offset` / `limit`: デフォルト 0 / 50。`limit` の最大値は 1000。上限超過時は 400 (`limit` エラー)。
+  - `sort`: `firstVisit`（firstVisitors）, `pvtDate` or `patientKana`（visit 系）。`order` は `desc`（既定）/`asc`。
+  - `from`/`to`: `visitRange`・`visitLast` の必須パラメータ。`yyyy-MM-ddTHH:mm:ss` を受け付け、日付のみ指定時は `T00:00:00`/`T23:59:59` に補完する。
+  - `fallbackDays`: `visitLast` の再検索日数。既定 6 日・最大 14 日。結果が空でも 0 を指定した場合は再検索しない。
+- 認可・監査・計測
+  - ロール: `TOUCH_PATIENT_VISIT` または `ADMIN` を要求。未付与の場合は 403 とし、監査は `action=来院履歴照会` `details.reason=forbiddenRole` を記録。
+  - 監査イベント: 成功時は `action=来院履歴照会`、施設不一致時は `action=施設突合失敗`。`visitLast` では `details.fallbackApplied` で前日再検索の有無を確認できる。
+  - Micrometer: `touch_api_requests_total`（counter）、`touch_api_requests_error_total`、`touch_api_request_duration`（timer）へ `endpoint` / `outcome` / `error` タグ付きで送出する。
+- テスト: `server-modernized/src/test/java/open/dolphin/touch/DolphinResourceVisitTest.java` に施設突合、権限不足、Fallback、XML 出力のケースを追加。Runbook 参照時は `mvn -pl server-modernized test -Dtest=DolphinResourceVisitTest` の実行ログを添付する。
+
 
 ### 4.2 EHTResource シナリオ一覧（2025-11-03 追加）
 
@@ -111,11 +151,34 @@
 | PHR-PARITY-20251103-01 | 2025-11-03 | PHR アクセスキー／データバンドル／テキスト出力系の互換テスト | Done | Worker E レポート §1.3 の `curl` サンプルおよび Jackson Streaming 検証で 11 エンドポイントの 1:1 対応を確認し、`API_PARITY_MATRIX.md` を `[x]` 更新。 |
 | PVT2-PARITY-20251103-01 | 2025-11-03 | `/pvt2` POST/GET のモダナイズ実装と単体テスト証跡確認 | Done | `PVTResource2Test#postPvt_assignsFacilityAndPatientRelations`／`#getPvtList_wrapsServiceResultInConverter` で facility・保険紐付けと `PatientVisitListConverter` のラップを検証。マトリクス該当行を `[x]` 化済み。 |
 | PVT2-PARITY-20251103-02 | 2026-05-27 | `/pvt2/{pvtPK}` DELETE のテスト整備 | Done | `PVTResource2Test#deletePvt_removesVisitForAuthenticatedFacility`／`#deletePvt_throwsWhenFacilityDoesNotOwnVisit` を追加し、`PVTServiceBean#removePvt` の facility 引数と `ChartEventServiceBean#getPvtList` の副作用（リスト削除／施設不一致例外）を証跡化。API マトリクス・Phase2 進捗を更新済み。 |
-| SYS-PARITY-20251103-01 | 2025-11-03 | `/dolphin` 系 5 エンドポイントのテスト証跡確認 | Open | `SystemResource` には実装が存在するが `server-modernized/src/test/java` に対応テスト無し。`SystemResourceTest` を作成し、ルート GET/POST・活動ログ・CloudZero mail・ライセンス API の正常系／例外系を検証すること。マトリクス該当行は `[ ]` で維持。 |
+| SYS-PARITY-20251104-01 | 2025-11-04 | `/dolphin` 系 5 エンドポイントの統合テスト／監査証跡整備 | Done | `SystemResourceTest`（hellowDolphin/addFacilityAdmin/getActivities/sendCloudZeroMail/checkLicense）で正常系＋異常系（集計パラメータ不正、サービス例外、ライセンス読込/書込失敗、上限超過）をモック検証。監査ログは `AuditTrailService` キャプチャで成功/失敗分岐を確認。`mvn` は未導入のため CI で `mvn -pl server-modernized test -Dtest=SystemResourceTest` を実行しログ取得すること。 |
+| TOUCH-DOC-20251104-01 | 2025-11-04 | `/touch/document/progressCourse`／`/touch/idocument(2)` モダナイズ検証 | Pending | `DolphinResourceDocumentTest` を追加し、JSON 応答・施設不一致・バリデーション異常をカバー。`DolphinTouchAuditLogger` と `TouchErrorResponse` で監査ログ／エラー構造を統一。ローカル環境に Maven が無く `mvn -pl server-modernized test -Dtest=DolphinResourceDocumentTest` は未実行のため、CI 導入後に実行ログと `d_audit_event` 追跡を記録する。 |
 | STAMP-AUDIT-20251103-01 | 2025-11-03 | `StampResource` 削除 API の監査ログ強化。`StampResourceTest`（成功／404／一括失敗）を追加。 | Pending | ローカル環境に Maven が無くテスト未実行。CI で `mvn -f server-modernized/pom.xml test` 実行後、ステージ環境の `d_audit_event` で `STAMP_DELETE_*` エントリを確認する。キャッシュ無効化連携は Worker C が担当。 |
 | LETTER-AUDIT-20251103-01 | 2025-11-03 | `LetterResource` 取得/削除の 404 ハンドリングと監査ログ記録。`LetterResourceTest` を追加。 | Pending | Maven 不在によりテスト未実行。ステージ環境で `d_audit_event.action=LETTER_DELETE` を確認するタスクを継続。 |
 | ORCA-COMPAT-20251103-01 | 2025-11-03 | `PUT /orca/interaction` Jakarta 実装を旧コードと比較し差分なしであることを確認。 | Open | ORCA テスト DB 未接続。接続環境が整い次第、旧／新サーバーの応答 JSON を比較し、本ランブックへ結果を追記する。 |
-| DEMO-ASP-20251103-01 | 2025-11-03 | DemoResourceASP JSON モダナイズ (`DemoResourceAsp`/`DemoAspResponses`) 実装。`DemoResourceAspTest`（ユーザー/患者/処方/ラボ/カルテ）を作成。 | Open | `ModuleModel` import 欠落でビルド失敗、および `/demo/module/*` / `/demo/document/progressCourse` の `entity` 欄が null（orderName 未設定）。`DemoResourceAspTest` では 6 エンドポイント未カバー＋ Maven 未導入で未実行のため、修正後にテスト追加と `mvn -f pom.server-modernized.xml test -Dtest=DemoResourceAspTest` 実行ログを取得し、マトリクス/本メモを更新する。 |
+| DEMO-ASP-20251103-01 | 2025-11-04 | DemoResourceASP JSON パリティ検証 (`DemoResourceAsp`/`DemoAspResponses`) | Done | `ModuleModel` import／`BundleDolphin#setOrderName`／コメント互換／ヘッダー＆監査整備を反映し、`DemoResourceAspTest` で 15 エンドポイントの正常・異常系を `fixtures/demoresourceasp/*` と比較。Docker ローカルでは `curl` 比較手順を Runbook に追記済み。ローカルに Maven が無いため `mvn -f pom.server-modernized.xml test -Dtest=DemoResourceAspTest` は未実行（CI 導入後にログ添付予定）。 |
+
+### DEMO-ASP-20251104-01 比較チェック（curl サンプル）
+1. 旧環境を `docker compose -f docker-compose.yml up -d legacy-server` で起動し、モダナイズ版は `docker compose -f docker-compose.modernized.dev.yml up -d modernized-server` で起動する。
+2. 同一認証ヘッダーを付与してサンプルレスポンスを採取する。
+   ```bash
+   curl -s \
+     -H "userName=2.100:ehrTouch" \
+     -H "password=098f6bcd4621d373cade4e832627b4f6" \
+     -H "clientUUID=11111111-1111-1111-1111-111111111111" \
+     http://legacy.local:8080/opendolphin/api/demo/patient/firstVisitors/2.100,0,20 \
+     | jq '.' > legacy-demo-firstVisitors.json
+
+   curl -s \
+     -H "userName=2.100:ehrTouch" \
+     -H "password=098f6bcd4621d373cade4e832627b4f6" \
+     -H "clientUUID=11111111-1111-1111-1111-111111111111" \
+     -H "X-Facility-Id=2.100" \
+     http://modernized.local:8080/opendolphin/api/demo/patient/firstVisitors/2.100,0,20 \
+     | jq '.' > modern-demo-firstVisitors.json
+   ```
+3. `jq --sort-keys` や `git diff --no-index legacy-demo-firstVisitors.json modern-demo-firstVisitors.json` で差分を確認し、差異がなければログとして保存する。他 14 エンドポイントも同様に採取し、`fixtures/demoresourceasp/*` との比較結果を添付すること。
+4. Postman Collection は `ops/postman/DemoResourceAsp.postman_collection.json` に雛形を追加済み。環境ごとに `{{baseUrl}}` を切り替えて実行し、レスポンス履歴を Runbook へ添付する。 |
 
 ## 6. 更新フロー
 

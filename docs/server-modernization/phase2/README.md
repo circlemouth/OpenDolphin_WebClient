@@ -34,6 +34,7 @@ phase2/
 ## 推奨アクション（2025-11-02 時点）
 
 - `common/pom.xml` と共通エンティティの Jakarta API 化（Java 17 対応、`jakarta.persistence` 置換）。
+- `/touch/module*` 系 API の Jakarta 移行（2025-11-04 更新: `TouchModuleService` + `TouchModuleResourceTest`、キャッシュキー `method:paramHash`。詳細は `domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md` 参照）。
 - `web.xml` / `beans.xml` / `persistence.xml` の Jakarta EE 10 スキーマ更新。
 - BOM 再編（Plivo 5.46.0、OkHttp 5.2.1、Yubico WebAuthn 2.6.0、OpenPDF/BouncyCastle 最新版）とライセンス対応。
 - WildFly 33 用 `configure-wildfly.cli` の Micrometer / JMS 再定義。

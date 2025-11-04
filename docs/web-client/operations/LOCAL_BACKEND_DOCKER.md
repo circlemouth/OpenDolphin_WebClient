@@ -137,6 +137,28 @@ Docker 関連資産は `ops/` 以下に整理されている。旧サーバー�
 - `docker compose -p modern-testing -f docker-compose.yml -f docker-compose.modernized.dev.yml build server-modernized-dev` も同様の理由で WAR 生成に失敗する見込み。JBoss リポジトリへのアクセス制限を解消した後に再実行する。
 - ログ採取例: `mvn ... | tee /tmp/mvn_server.log`、`docker compose ... | tee /tmp/docker_build.log`。
 
+### 2025-11-04 Touch 個人情報 API 監査確認メモ（Worker B）
+
+- `/touch/patient{*}` `/touch/stamp{*}` `/touch/user/{param}` を呼び出す際は以下ヘッダーを必須とする:
+  - `userName` / `password`（従来どおり MD5）
+  - `X-Access-Reason`: アクセス理由（例: `care-plan-review`）
+  - 患者系のみ `X-Consent-Token`: 同意取得を記録するトークン（UUID 等）
+- 例: 患者基本情報を参照する `curl` テンプレート（`CONSENT_TOKEN` は同意取得記録の ID を指定）
+  ```bash
+  curl -sf \
+    -H "userName:${SYSAD_USER_NAME:-1.3.6.1.4.1.9414.10.1:dolphin}" \
+    -H "password:${SYSAD_PASSWORD:-36cdf8b887a5cffc78dcd5c08991b993}" \
+    -H "X-Trace-Id: touch-patient-profile" \
+    -H "X-Access-Reason: care-plan-review" \
+    -H "X-Consent-Token: ${CONSENT_TOKEN:-consent-20251104}" \
+    http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/touch/patient/33809 | jq
+  ```
+- 監査テーブル `d_audit_event` では以下アクションが出力されることを確認する:
+  - `TOUCH_PATIENT_PROFILE_VIEW` / `TOUCH_PATIENT_PACKAGE_VIEW`（患者系）
+  - `TOUCH_STAMP_FETCH` / `TOUCH_STAMP_TREE_FETCH`（スタンプ系。キャッシュヒット時も成功ログが出力される）
+  - `TOUCH_USER_LOOKUP`（ユーザ参照。S3 Secret は含まれない JSON）
+- 施設 ID が一致しない、`X-Access-Reason` 省略、Consent トークン未設定の場合はいずれも 403 または 401 が返却される。Runbook `PIA-Touch-20251104-01` に検証ログと SQL サンプルを添付済み。
+
 ## 初期ログイン情報（2025-11-02 更新）
 
 - 施設 ID: `1.3.6.1.4.1.9414.72.103`
@@ -319,6 +341,57 @@ done < /tmp/patient-seed.jsonl
      http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/dolphin
    ```
 5. 使い終わったら `docker compose -p modern-testing -f docker-compose.yml -f docker-compose.modernized.dev.yml down` で `db-modernized` / `server-modernized-dev` を停止する。
+
+### PHR エクスポート API 動作確認手順
+モダナイズ版スタック起動後、以下の順で `/20/adm/phr/export` 系エンドポイントを検証する。Basic 認証（例: `F001:manager01`）と `X-Trace-Id`、`Accept: application/json` を必須ヘッダーとする。
+
+1. **ジョブ生成**
+   ```bash
+   curl -u F001\:manager01:password \
+        -H 'X-Trace-Id: phr-export-'"$(date +%s)" \
+        -H 'Content-Type: application/json' \
+        -d '{"patientIds":["000001","000002"],"documentSince":"2024-01-01","labSince":"2024-01-01"}' \
+        http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/20/adm/phr/export
+   ```
+   応答の `jobId` を控える。
+
+2. **ステータス確認**
+   ```bash
+   curl -u F001\:manager01:password \
+        -H 'X-Trace-Id: phr-export-status-'"$(date +%s)" \
+        http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/20/adm/phr/status/${JOB_ID}
+   ```
+   `state=SUCCEEDED` と `downloadUrl` が返ることを確認する。
+
+3. **成果物ダウンロード**
+   ```bash
+   curl -u F001\:manager01:password -L \
+        "http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}${DOWNLOAD_URL_PATH}" \
+        -o phr-export.zip
+   unzip -l phr-export.zip
+   ```
+
+4. **ジョブ取消（任意）**
+   ```bash
+   curl -u F001\:manager01:password \
+        -X DELETE \
+        -H 'X-Trace-Id: phr-export-cancel-'"$(date +%s)" \
+        http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/20/adm/phr/status/${JOB_ID}
+   ```
+
+5. **DB / 監査ログ確認**
+   ```bash
+   docker compose -f ops/modernized-server/docker-compose.yml exec db \
+     psql -U opendolphin -d opendolphin \
+     -c "select job_id,state,progress,result_uri from phr_async_job order by queued_at desc limit 5;"
+
+   docker compose -f ops/modernized-server/docker-compose.yml exec db \
+     psql -U opendolphin -d opendolphin \
+     -c "select action,resource->>'path' as path, payload from d_audit_event where resource->>'path' like '%/20/adm/phr/%' order by event_time desc limit 10;"
+   ```
+
+6. **自動テスト（任意）**  
+   `PHRResourceTest` を追加済み。Maven が利用可能な環境では `mvn -f pom.server-modernized.xml -pl server-modernized test -Dtest=PHRResourceTest` を実行し、結果ログを Runbook 手順 6 に添付する。ローカルで `bash: mvn: command not found` となる場合は CI での実行を依頼する。
 
 ## データベースの初期データ投入
 - 本リポジトリには ORCA/電子カルテ用スキーマやマスターデータを含めていない。実運用データをコピーするか、別途提供される初期化スクリプトを `docker-entrypoint-initdb.d/` に配置して `db` サービスを再起動する。

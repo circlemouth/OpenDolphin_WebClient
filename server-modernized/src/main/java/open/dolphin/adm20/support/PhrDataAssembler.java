@@ -1,0 +1,358 @@
+package open.dolphin.adm20.support;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
+import java.nio.charset.StandardCharsets;
+import java.security.MessageDigest;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Base64;
+import java.util.Date;
+import java.util.List;
+import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import open.dolphin.adm20.converter.IOSHelper;
+import open.dolphin.adm20.session.AMD20_PHRServiceBean;
+import open.dolphin.infomodel.AllergyModel;
+import open.dolphin.infomodel.ClaimBundle;
+import open.dolphin.infomodel.ClaimItem;
+import open.dolphin.infomodel.DocumentModel;
+import open.dolphin.infomodel.KarteBean;
+import open.dolphin.infomodel.ModuleModel;
+import open.dolphin.infomodel.NLaboItem;
+import open.dolphin.infomodel.NLaboModule;
+import open.dolphin.infomodel.PHRBundle;
+import open.dolphin.infomodel.PHRCatch;
+import open.dolphin.infomodel.PHRClaimItem;
+import open.dolphin.infomodel.PHRContainer;
+import open.dolphin.infomodel.PHRKey;
+import open.dolphin.infomodel.RegisteredDiagnosisModel;
+import open.dolphin.infomodel.SchemaModel;
+import open.orca.rest.ORCAConnection;
+
+/**
+ * PHR データの組み立てを担当するヘルパー。
+ */
+@ApplicationScoped
+public class PhrDataAssembler {
+
+    private static final Logger LOGGER = Logger.getLogger(PhrDataAssembler.class.getName());
+    private static final ObjectMapper MAPPER = new ObjectMapper();
+
+    @Inject
+    private AMD20_PHRServiceBean phrServiceBean;
+
+    public Optional<PHRKey> findKeyByAccessKey(String accessKey) {
+        return Optional.ofNullable(phrServiceBean.getPHRKey(accessKey));
+    }
+
+    public Optional<PHRKey> findKeyByPatientId(String patientId) {
+        return Optional.ofNullable(phrServiceBean.getPHRKeyByPatientId(patientId));
+    }
+
+    public PHRContainer buildContainer(String facilityId,
+                                       String patientId,
+                                       String documentSince,
+                                       String labSince,
+                                       int rpRequest,
+                                       String replyTo) {
+        List<PHRCatch> docList = getPHRDocList(facilityId, patientId, documentSince, 0, 3,
+                new String[]{"medOrder", "injectionOrder"}, rpRequest, replyTo);
+        List<PHRBundle> empty = List.of();
+        if (docList == null) {
+            docList = new ArrayList<>();
+        }
+        List<NLaboModule> labModules = getPHRLabList(facilityId, patientId, labSince, 0, 3);
+        if (labModules == null) {
+            labModules = new ArrayList<>();
+        }
+
+        PHRContainer container = new PHRContainer();
+        container.setDocList(docList);
+        container.setLabList(labModules);
+        return container;
+    }
+
+    public List<AllergyModel> findAllergies(String facilityId, String patientId) {
+        KarteBean karte = phrServiceBean.getKarte(facilityId, patientId);
+        return phrServiceBean.getAllergies(karte.getId());
+    }
+
+    public List<RegisteredDiagnosisModel> findDiagnoses(String facilityId, String patientId) {
+        KarteBean karte = phrServiceBean.getKarte(facilityId, patientId);
+        return phrServiceBean.getDiagnosis(karte.getId());
+    }
+
+    public List<ModuleModel> findLastMedication(String facilityId, String patientId) {
+        KarteBean karte = phrServiceBean.getKarte(facilityId, patientId);
+        return phrServiceBean.getLastMedication(karte.getId());
+    }
+
+    public List<NLaboModule> findLabModules(String facilityId, String patientId) {
+        return phrServiceBean.getLastLabTest(facilityId, patientId);
+    }
+
+    public List<NLaboModule> findLabModules(String facilityId, String patientId, String since, int first, int max) {
+        return getPHRLabList(facilityId, patientId, since, first, max);
+    }
+
+    public Optional<SchemaModel> findLatestImage(String facilityId, String patientId) {
+        KarteBean karte = phrServiceBean.getKarte(facilityId, patientId);
+        return Optional.ofNullable(phrServiceBean.getImages(karte.getId()));
+    }
+
+    public String toJson(Object value) {
+        try {
+            return MAPPER.writeValueAsString(value);
+        } catch (Exception ex) {
+            throw new IllegalStateException("Failed to convert value to JSON", ex);
+        }
+    }
+
+    private List<PHRCatch> getPHRDocList(String fid,
+                                         String pid,
+                                         String docSince,
+                                         int first,
+                                         int max,
+                                         String[] entities,
+                                         int rpRequest,
+                                         String replyTo) {
+
+        Date sinceDate = (docSince != null) ? startedFromString(docSince) : null;
+
+        KarteBean karte = phrServiceBean.getKarte(fid, pid);
+
+        List<DocumentModel> list = phrServiceBean.getDocuments(karte.getId(), sinceDate, first, max, entities);
+
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
+
+        List<PHRCatch> result = new ArrayList<>(list.size());
+
+        list.forEach(doc -> {
+            PHRCatch phrCatch = new PHRCatch();
+            result.add(phrCatch);
+            doc.toDetuch();
+            phrCatch.setCatchId(doc.getDocInfoModel().getDocId());
+            phrCatch.setStarted(stringFromStarted(doc.getStarted()));
+            phrCatch.setConfirmed(stringFromStarted(doc.getConfirmed()));
+            phrCatch.setStatus(doc.getStatus());
+            phrCatch.setPatientId(karte.getPatientModel().getPatientId());
+            phrCatch.setPatientName(karte.getPatientModel().getFullName());
+            phrCatch.setPatientSex(karte.getPatientModel().getGender());
+            phrCatch.setPatientBirthday(karte.getPatientModel().getBirthday());
+            phrCatch.setPhysicianId(doc.getUserModel().getUserId());
+            phrCatch.setPhysicianName(doc.getUserModel().getCommonName());
+            phrCatch.setDepartment(doc.getUserModel().getDepartmentModel().getDepartment());
+            phrCatch.setDepartmentDesc(doc.getUserModel().getDepartmentModel().getDepartmentDesc());
+            phrCatch.setLicense(doc.getUserModel().getLicenseModel().getLicense());
+            phrCatch.setFacilityId(doc.getUserModel().getFacilityModel().getFacilityId());
+            phrCatch.setFacilityName(doc.getUserModel().getFacilityModel().getFacilityName());
+            phrCatch.setFacilityNumber(doc.getDocInfoModel().getJMARICode());
+
+            phrCatch.setRpRequest(rpRequest);
+            phrCatch.setRpReply(0);
+            if (replyTo != null) {
+                phrCatch.setRpReplyTo(replyTo);
+            }
+
+            List<ModuleModel> modules = doc.getModules();
+            if (modules == null || modules.isEmpty()) {
+                return;
+            }
+
+            modules.forEach(mm -> {
+                PHRBundle pcb = new PHRBundle();
+                phrCatch.addBundle(pcb);
+
+                pcb.setCatchId(phrCatch.getCatchId());
+                pcb.setBundleId(createModuleId(phrCatch.getStarted(), modules.size() - mm.getModuleInfoBean().getStampNumber()));
+
+                pcb.setStarted(stringFromStarted(mm.getStarted()));
+                pcb.setConfirmed(stringFromStarted(mm.getConfirmed()));
+                pcb.setStatus(mm.getStatus());
+
+                pcb.setEnt(mm.getModuleInfoBean().getEntity());
+                pcb.setRole(mm.getModuleInfoBean().getStampRole());
+                pcb.setNumber(mm.getModuleInfoBean().getStampNumber());
+
+                ClaimBundle bundle = (ClaimBundle) IOSHelper.xmlDecode(mm.getBeanBytes());
+                pcb.setAdmin(bundle.getAdmin());
+                pcb.setAdminCode(bundle.getAdminCode());
+                pcb.setAdminCodeSystem(bundle.getAdminCodeSystem());
+                pcb.setAdminMemo(bundle.getAdminMemo());
+                pcb.setBundleNumber(bundle.getBundleNumber());
+                pcb.setClsCode(bundle.getClassCode());
+                pcb.setClsCodeSystem(bundle.getClassCodeSystem());
+                pcb.setClsName(bundle.getClassName());
+                pcb.setInsurance(bundle.getInsurance());
+                pcb.setMemo(bundle.getMemo());
+                pcb.setOrderName(pcb.getEnt());
+
+                ClaimItem[] items = bundle.getClaimItem();
+                if (items != null && items.length > 0) {
+                    for (ClaimItem item : items) {
+                        PHRClaimItem phrItem = new PHRClaimItem();
+                        pcb.addPHRClaimItem(phrItem);
+
+                        phrItem.setClsCode(item.getClassCode());
+                        phrItem.setClsCodeSystem(item.getClassCodeSystem());
+                        phrItem.setCode(item.getCode());
+                        phrItem.setCodeSystem(item.getCodeSystem());
+                        phrItem.setMemo(item.getMemo());
+                        phrItem.setName(item.getName());
+                        phrItem.setQuantity(item.getNumber());
+                        phrItem.setUnit(item.getUnit());
+                        phrItem.setFrequency(item.getNumberCode());
+                        phrItem.setFrequencyName(item.getNumberCodeName());
+                        phrItem.setStartDate(item.getStartDate());
+                        phrItem.setEndDate(item.getEndDate());
+                        phrItem.setAdministration(item.getSanteiCode());
+                        phrItem.setDose(item.getDose());
+                        phrItem.setDoseUnit(item.getDoseUnit());
+                    }
+                }
+
+                String jmariCode = getFacilityCodeBy1001();
+                pcb.setFacilityNumber(jmariCode);
+            });
+        });
+
+        return result;
+    }
+
+    private List<NLaboModule> getPHRLabList(String fid, String pid, String labSince, int first, int max) {
+        List<NLaboModule> list = phrServiceBean.getLabTest(fid, pid, labSince, first, max);
+
+        if (list == null || list.isEmpty()) {
+            return List.of();
+        }
+
+        list.stream().forEach((module) -> {
+            if (module.getSampleDate() != null) {
+                module.setSampleDate(normalizeSampleDate2(module.getSampleDate()));
+            }
+            module.setModuleId(createLabModuleId(module.getSampleDate(), module.getJmariCode(), module.getPatientId(), module.getModuleCode()));
+        });
+
+        return list;
+    }
+
+    private String createModuleId(String docId, long serialNumber) {
+        StringBuilder sb = new StringBuilder();
+        sb.append(docId).append(serialNumber);
+        return sb.toString();
+    }
+
+    private String normalizeSampleDate2(String sampleDate) {
+        if (sampleDate == null) {
+            return null;
+        }
+        try {
+            sampleDate = sampleDate.replaceAll(" ", "");
+            sampleDate = sampleDate.replaceAll("T", "");
+            sampleDate = sampleDate.replaceAll("/", "");
+            sampleDate = sampleDate.replaceAll("-", "");
+            sampleDate = sampleDate.replaceAll(":", "");
+
+            if (sampleDate.length() == "yyyyMMdd".length()) {
+                sampleDate += "000000";
+            } else if (sampleDate.length() == "yyyyMMddHHmm".length()) {
+                sampleDate += "00";
+            }
+
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMddHHmmss");
+            Date d = sdf.parse(sampleDate);
+
+            sdf = new SimpleDateFormat("yyyy年M月d日");
+            return sdf.format(d);
+
+        } catch (ParseException ex) {
+            LOGGER.log(Level.WARNING, "Failed to normalize sample date: {0}", sampleDate);
+        }
+        return null;
+    }
+
+    private String createLabModuleId(String sampleDate, String jmariCode, String patientId, String labCode) {
+        try {
+            sampleDate = sampleDate.replaceAll(" ", "");
+            sampleDate = sampleDate.replaceAll("T", "");
+            sampleDate = sampleDate.replaceAll("/", "");
+            sampleDate = sampleDate.replaceAll("-", "");
+            sampleDate = sampleDate.replaceAll(":", "");
+
+            if (sampleDate.length() == "yyyyMMdd".length()) {
+                sampleDate += "000000";
+            } else if (sampleDate.length() == "yyyyMMddHHmm".length()) {
+                sampleDate += "00";
+            }
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(jmariCode).append(patientId).append(labCode).append(sampleDate);
+            String key = sb.toString().replaceAll("\\.", "");
+
+            MessageDigest d = MessageDigest.getInstance("SHA-1");
+            d.reset();
+            d.update(key.getBytes(StandardCharsets.UTF_8));
+            byte[] rowBytes = d.digest();
+
+            return Base64.getEncoder().encodeToString(rowBytes);
+
+        } catch (Exception ex) {
+            LOGGER.log(Level.WARNING, "Failed to create lab module id.", ex);
+        }
+        return null;
+    }
+
+    private String stringFromStarted(Date d) {
+        if (d == null) {
+            return null;
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+        return sdf.format(d);
+    }
+
+    private Date startedFromString(String str) {
+        try {
+            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+            return sdf.parse(str);
+        } catch (ParseException ex) {
+            LOGGER.log(Level.WARNING, "Failed to parse startedFrom string: {0}", str);
+        }
+        return null;
+    }
+
+    private String getFacilityCodeBy1001() {
+        try (Connection con = ORCAConnection.getInstance().getConnection()) {
+            if (con == null) {
+                return null;
+            }
+            String sql = "select kanritbl from tbl_syskanri where kanricd='1001'";
+            try (PreparedStatement ps = con.prepareStatement(sql);
+                 ResultSet rs = ps.executeQuery()) {
+                if (rs.next()) {
+                    String line = rs.getString(1);
+                    StringBuilder sb = new StringBuilder();
+                    sb.append(line, 0, 10);
+                    int index = line.indexOf("JPN");
+                    if (index > 0) {
+                        sb.append(line, index, index + 15);
+                    }
+                    return sb.toString();
+                }
+            }
+        } catch (SQLException ex) {
+            LOGGER.log(Level.WARNING, "Failed to lookup facility code.", ex);
+        }
+        return null;
+    }
+
+}

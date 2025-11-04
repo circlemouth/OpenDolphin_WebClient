@@ -1,11 +1,13 @@
 package open.dolphin.rest;
 
 import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import java.time.Instant;
@@ -15,8 +17,10 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import open.dolphin.infomodel.AllergyModel;
@@ -28,6 +32,8 @@ import open.dolphin.infomodel.DemoRp;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.FacilityModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
+import open.dolphin.infomodel.ModuleInfoBean;
+import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.NLaboItem;
 import open.dolphin.infomodel.NLaboModule;
 import open.dolphin.infomodel.PatientList;
@@ -61,6 +67,10 @@ import open.dolphin.touch.converter.IRegisteredDiagnosis;
 import open.dolphin.touch.converter.ISchemaModel;
 import open.dolphin.touch.converter.IOSHelper;
 import open.dolphin.touch.session.IPhoneServiceBean;
+import open.dolphin.touch.TouchAuthHandler;
+import open.dolphin.touch.support.TouchAuditHelper;
+import open.dolphin.touch.support.TouchRequestContext;
+import open.dolphin.touch.support.TouchRequestContextExtractor;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
 import open.dolphin.infomodel.PVTPublicInsuranceItemModel;
 import static open.dolphin.infomodel.IInfoModel.ROLE_P;
@@ -90,6 +100,22 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
     private static final String TEST_DEMO_FACILITY_ID = "1.3.6.1.4.1.9414.2.1";
     private static final String TEST_DEMO_PATIENT_ID = "00001";
 
+    private static final String ACTION_USER_LOOKUP = "DEMO_USER_LOOKUP";
+    private static final String ACTION_PATIENT_FIRST_VISIT = "DEMO_PATIENT_FIRST_VISIT";
+    private static final String ACTION_PATIENT_VISIT = "DEMO_PATIENT_VISIT";
+    private static final String ACTION_PATIENT_VISIT_RANGE = "DEMO_PATIENT_VISIT_RANGE";
+    private static final String ACTION_PATIENT_VISIT_LAST = "DEMO_PATIENT_VISIT_LAST";
+    private static final String ACTION_PATIENT_DETAIL = "DEMO_PATIENT_DETAIL";
+    private static final String ACTION_PATIENT_PACKAGE = "DEMO_PATIENT_PACKAGE";
+    private static final String ACTION_PATIENT_SEARCH = "DEMO_PATIENT_SEARCH";
+    private static final String ACTION_MODULE_FETCH = "DEMO_MODULE_FETCH";
+    private static final String ACTION_MODULE_RP = "DEMO_MODULE_RP";
+    private static final String ACTION_MODULE_DIAGNOSIS = "DEMO_MODULE_DIAGNOSIS";
+    private static final String ACTION_MODULE_SCHEMA = "DEMO_MODULE_SCHEMA";
+    private static final String ACTION_MODULE_LAB = "DEMO_MODULE_LAB";
+    private static final String ACTION_LAB_TREND = "DEMO_LAB_TREND";
+    private static final String ACTION_PROGRESS_COURSE = "DEMO_PROGRESS_COURSE";
+
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd", Locale.JAPAN);
     private static final DateTimeFormatter DATE_TIME_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss", Locale.JAPAN);
     private static final DateTimeFormatter DATE_TIME_PARAM_FORMAT = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss", Locale.JAPAN);
@@ -107,22 +133,42 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
     @Inject
     private IPhoneServiceBean iPhoneServiceBean;
 
+    @Context
+    private HttpServletRequest servletRequest;
+
+    @Inject
+    private TouchAuthHandler authHandler;
+
+    @Inject
+    private TouchAuditHelper auditHelper;
+
     public DemoResourceAsp() {
     }
 
     @GET
     @Path("/user/{param}")
     public Response getUser(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/user/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length < 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain userId,facilityId,password");
         }
-        String userId = params[0];
-        String facilityId = params[1];
-        String password = params[2];
-        boolean pad = params.length >= 4 && "pad".equals(params[3]);
+        String userId = trimToNull(params[0]);
+        String facilityId = trimToNull(params[1]);
+        String password = trimToNull(params[2]);
+        boolean pad = params.length >= 4 && "pad".equalsIgnoreCase(trimToNull(params[3]));
 
-        if (!TEST_FACILITY_ID.equals(facilityId) || !TEST_USER_ID.equals(userId) || !TEST_PASSWORD.equals(password)) {
+        if (userId == null || facilityId == null || password == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "parameters must not be blank");
+        }
+
+        validateFacility(facilityId, endpoint);
+        ensurePasswordHeaderMatches(password, endpoint);
+
+        if (!TEST_FACILITY_ID.equals(facilityId) || !TEST_USER_ID.equals(userId) || !TEST_PASSWORD.equalsIgnoreCase(password)) {
+            recordAudit(context, ACTION_USER_LOOKUP, "/demo/user",
+                    detailsOf("facilityId", facilityId, "userId", userId, "pad", pad, "result", "mismatch"));
             return Response.ok().build();
         }
 
@@ -152,18 +198,27 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
 
         IUserModel converter = new IUserModel();
         converter.setModel(user);
+        recordAudit(context, ACTION_USER_LOOKUP, "/demo/user",
+                detailsOf("facilityId", facilityId, "userId", userId, "pad", pad, "result", "success"));
         return Response.ok(converter).build();
     }
 
     @GET
     @Path("/patient/firstVisitors/{param}")
     public IPatientList getFirstVisitors(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/patient/firstVisitors/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length < 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain facilityId,offset,count");
         }
-        String facilityId = params[0];
-        boolean pad = params.length >= 4 && "pad".equals(params[3]);
+        String facilityId = trimToNull(params[0]);
+        boolean pad = params.length >= 4 && "pad".equalsIgnoreCase(trimToNull(params[3]));
+        if (facilityId == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId must not be blank");
+        }
+
+        validateFacility(facilityId, endpoint);
 
         List<DemoPatient> source = safeList(iPhoneServiceBean.getFirstVisitorsDemo(150, 50));
         List<PatientModel> models = new ArrayList<>(source.size());
@@ -178,21 +233,30 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             patient.setFirstVisited(toDate(cursor));
             models.add(patient);
         }
-        return toPatientList(models);
+        IPatientList response = toPatientList(models);
+        recordAudit(context, ACTION_PATIENT_FIRST_VISIT, "/demo/patient/firstVisitors",
+                detailsOf("facilityId", facilityId, "pad", pad, "resultCount", models.size()));
+        return response;
     }
 
     @GET
     @Path("/patient/visit/{param}")
     public List<IPatientVisitModel> getPatientVisit(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/patient/visit/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length != 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain facilityId,offset,count");
         }
-        String facilityId = params[0];
+        String facilityId = trimToNull(params[0]);
+        if (facilityId == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId must not be blank");
+        }
+        validateFacility(facilityId, endpoint);
+
         List<DemoPatient> source = safeList(iPhoneServiceBean.getPatientVisitDemo(0, 30));
         String pvtDate = DATE_FORMAT.format(LocalDate.now());
         List<IPatientVisitModel> visits = new ArrayList<>(source.size());
-        AtomicInteger padIndex = new AtomicInteger();
         for (DemoPatient demo : source) {
             DemoIdentifiers identifiers = new DemoIdentifiers(String.valueOf(demo.getId()), formatPatientId(demo.getId()));
             PatientModel patient = createPatientModel(demo, facilityId, identifiers.pk(), identifiers.patientId());
@@ -204,21 +268,30 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             visit.setState(0);
             visits.add(toPatientVisit(visit));
         }
+        recordAudit(context, ACTION_PATIENT_VISIT, "/demo/patient/visit",
+                detailsOf("facilityId", facilityId, "resultCount", visits.size()));
         return visits;
     }
 
     @GET
     @Path("/patient/visitRange/{param}")
     public List<IPatientVisitModel> getPatientVisitRange(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/patient/visitRange/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length < 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain facilityId,start,...");
         }
-        String facilityId = params[0];
-        String start = params[1];
+        String facilityId = trimToNull(params[0]);
+        String start = trimToNull(params[1]);
         int firstResult = params.length >= 6 ? parseInt(params[3], 0) : 0;
         int maxResult = params.length >= 6 ? (firstResult == 0 ? 60 : 1) : 60;
-        boolean pad = params.length >= 6 && "pad".equals(params[5]);
+        boolean pad = params.length >= 6 && "pad".equalsIgnoreCase(trimToNull(params[5]));
+        if (facilityId == null || start == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId and start must not be blank");
+        }
+
+        validateFacility(facilityId, endpoint);
 
         List<DemoPatient> source = safeList(iPhoneServiceBean.getPatientVisitRangeDemo(firstResult, maxResult));
         AtomicInteger padIndex = new AtomicInteger();
@@ -246,19 +319,29 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
                 dummyHour++;
             }
         }
+        recordAudit(context, ACTION_PATIENT_VISIT_RANGE, "/demo/patient/visitRange",
+                detailsOf("facilityId", facilityId, "start", start, "pad", pad,
+                        "firstResult", firstResult, "maxResult", maxResult, "resultCount", visits.size()));
         return visits;
     }
 
     @GET
     @Path("/patient/visitLast/{param}")
     public List<IPatientVisitModel> getPatientVisitLast(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/patient/visitLast/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length < 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain facilityId,start,...");
         }
-        String facilityId = params[0];
-        String start = params[1];
-        boolean pad = params.length >= 4 && "pad".equals(params[3]);
+        String facilityId = trimToNull(params[0]);
+        String start = trimToNull(params[1]);
+        boolean pad = params.length >= 4 && "pad".equalsIgnoreCase(trimToNull(params[3]));
+        if (facilityId == null || start == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId and start must not be blank");
+        }
+
+        validateFacility(facilityId, endpoint);
 
         List<DemoPatient> source = safeList(iPhoneServiceBean.getPatientVisitRangeDemo(60, 70));
         AtomicInteger padIndex = new AtomicInteger();
@@ -286,34 +369,51 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
                 dummyHour++;
             }
         }
+        recordAudit(context, ACTION_PATIENT_VISIT_LAST, "/demo/patient/visitLast",
+                detailsOf("facilityId", facilityId, "start", start, "pad", pad, "resultCount", visits.size()));
         return visits;
     }
 
     @GET
     @Path("/patient/{pk}")
     public IPatientModel getPatientById(@PathParam("pk") String pk) {
+        final String endpoint = "GET /demo/patient/{pk}";
+        TouchRequestContext context = requireContext(endpoint);
+        ensureFacilityHeader(endpoint);
         long id = parseLong(pk, 0L);
         DemoPatient demo = iPhoneServiceBean.getPatientDemo(id);
         if (demo == null) {
+            recordAudit(context, ACTION_PATIENT_DETAIL, "/demo/patient/" + pk,
+                    detailsOf("patientPk", pk, "found", false));
             return null;
         }
         PatientModel patient = createPatientModel(demo, TEST_DEMO_FACILITY_ID,
                 String.valueOf(demo.getId()), formatPatientId(demo.getId()));
-        return toPatientModel(patient);
+        IPatientModel result = toPatientModel(patient);
+        recordAudit(context, ACTION_PATIENT_DETAIL, "/demo/patient/" + pk,
+                detailsOf("patientPk", pk, "facilityId", patient.getFacilityId(), "found", true));
+        return result;
     }
 
     @GET
     @Path("/patients/name/{param}")
     public IPatientList getPatientsByName(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/patients/name/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length < 4) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain facilityId,keyword,first,max");
         }
-        String facilityId = params[0];
-        String keyword = params[1];
+        String facilityId = trimToNull(params[0]);
+        String keyword = params[1] != null ? params[1].trim() : "";
         int firstResult = parseInt(params[2], 0);
         int maxResult = parseInt(params[3], 50);
-        boolean pad = params.length >= 5 && "pad".equals(params[4]);
+        boolean pad = params.length >= 5 && "pad".equalsIgnoreCase(trimToNull(params[4]));
+        if (facilityId == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId must not be blank");
+        }
+
+        validateFacility(facilityId, endpoint);
 
         List<DemoPatient> source;
         if (!keyword.isEmpty() && isHiragana(keyword.charAt(0))) {
@@ -330,21 +430,33 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             PatientModel patient = createPatientModel(demo, facilityId, identifiers.pk(), identifiers.patientId());
             models.add(patient);
         }
-        return toPatientList(models);
+        IPatientList response = toPatientList(models);
+        recordAudit(context, ACTION_PATIENT_SEARCH, "/demo/patients/name",
+                detailsOf("facilityId", facilityId, "keyword", keyword, "pad", pad,
+                        "firstResult", firstResult, "maxResult", maxResult, "resultCount", models.size()));
+        return response;
     }
 
     @GET
     @Path("/patientPackage/{pk}")
     public PatientPackageResponse getPatientPackage(@PathParam("pk") String pk) {
+        final String endpoint = "GET /demo/patientPackage/{pk}";
+        TouchRequestContext context = requireContext(endpoint);
+        ensureFacilityHeader(endpoint);
         long id = parseLong(pk, -1L);
         if (id < 0) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "patientPk must be numeric");
         }
         PatientPackage pack = iPhoneServiceBean.getPatientPackage(id);
         if (pack == null || pack.getPatient() == null) {
+            recordAudit(context, ACTION_PATIENT_PACKAGE, "/demo/patientPackage/" + pk,
+                    detailsOf("patientPk", pk, "found", false));
             return null;
         }
         PatientModel patientModel = pack.getPatient();
+        if (authHandler != null) {
+            authHandler.verifyFacilityOwnership(servletRequest, patientModel.getFacilityId(), endpoint);
+        }
         IPatientModel patientConverter = toPatientModel(patientModel);
 
         List<HealthInsuranceDto> insurances = new ArrayList<>();
@@ -372,20 +484,31 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         for (AllergyModel allergy : safeList(pack.getAllergies())) {
             allergies.add(new AllergyDto(allergy.getFactor(), allergy.getSeverity(), allergy.getIdentifiedDate()));
         }
-        return new PatientPackageResponse(patientConverter, insurances, allergies);
+        PatientPackageResponse response = new PatientPackageResponse(patientConverter, insurances, allergies);
+        recordAudit(context, ACTION_PATIENT_PACKAGE, "/demo/patientPackage/" + pk,
+                detailsOf("patientPk", pk, "insuranceCount", insurances.size(),
+                        "allergyCount", allergies.size(), "facilityId", patientModel.getFacilityId(), "found", true));
+        return response;
     }
 
     @GET
     @Path("/module/{param}")
     public ModuleResponse getModule(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/module/{param}";
+        TouchRequestContext context = requireContext(endpoint);
+        ensureFacilityHeader(endpoint);
         String[] params = splitParams(param);
         if (params.length != 4) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain kartePk,entity,first,max");
         }
         long pk = parseLong(params[0], -1L);
-        String entity = params[1];
+        String entity = trimToNull(params[1]);
         int firstResult = parseInt(params[2], 0);
         int maxResult = parseInt(params[3], 20);
+
+        if (pk < 0 || entity == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "kartePk and entity must be specified");
+        }
 
         PageInfo pageInfo = null;
         if (firstResult == 0) {
@@ -402,6 +525,7 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             if (!(decoded instanceof BundleDolphin bundle)) {
                 continue;
             }
+            populateOrderName(bundle, module);
             ClaimItem[] items = bundle.getClaimItem();
             List<ClaimItemDto> claimItems = new ArrayList<>();
             if (items != null) {
@@ -414,15 +538,29 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             bundles.add(new ClaimBundleDto(bundle.getOrderName(), entityToName(bundle.getOrderName()), started,
                     bundle.getBundleNumber(), bundle.getAdmin(), claimItems));
         }
-        return new ModuleResponse(pageInfo, bundles);
+        ModuleResponse response = new ModuleResponse(pageInfo, bundles);
+        recordAudit(context, ACTION_MODULE_FETCH, "/demo/module",
+                detailsOf("kartePk", pk, "entity", entity, "firstResult", firstResult,
+                        "maxResult", maxResult, "resultCount", bundles.size()));
+        return response;
     }
 
     @GET
     @Path("/module/rp/{param}")
     public List<ClaimBundleDto> getRp(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/module/rp/{param}";
+        TouchRequestContext context = requireContext(endpoint);
+        ensureFacilityHeader(endpoint);
         String[] params = splitParams(param);
         if (params.length != 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain kartePk,first,max");
+        }
+        long pk = parseLong(params[0], -1L);
+        int firstResult = parseInt(params[1], 0);
+        int maxResult = parseInt(params[2], 20);
+
+        if (pk < 0) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "kartePk must be numeric");
         }
         List<DemoRp> source = safeList(iPhoneServiceBean.getRpDemo());
         Collections.shuffle(source, random);
@@ -440,18 +578,28 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             bundles.add(new ClaimBundleDto(ENTITY_MED_ORDER, entityToName(ENTITY_MED_ORDER),
                     DATE_FORMAT.format(anchor), String.valueOf(i + 3), administrationLabel(i), items));
         }
+        recordAudit(context, ACTION_MODULE_RP, "/demo/module/rp",
+                detailsOf("kartePk", pk, "firstResult", firstResult, "maxResult", maxResult,
+                        "resultCount", bundles.size()));
         return bundles;
     }
 
     @GET
     @Path("/module/diagnosis/{param}")
     public List<IRegisteredDiagnosis> getDiagnosis(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/module/diagnosis/{param}";
+        TouchRequestContext context = requireContext(endpoint);
+        ensureFacilityHeader(endpoint);
         String[] params = splitParams(param);
         if (params.length != 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain kartePk,first,max");
         }
+        long pk = parseLong(params[0], -1L);
         int firstResult = parseInt(params[1], 0);
         int maxResult = parseInt(params[2], 10);
+        if (pk < 0) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "kartePk must be numeric");
+        }
         List<DemoDisease> diseases = safeList(iPhoneServiceBean.getDiagnosisDemo());
         Collections.shuffle(diseases, random);
         List<IRegisteredDiagnosis> result = new ArrayList<>();
@@ -474,19 +622,28 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             converter.fromModel(model);
             result.add(converter);
         }
+        recordAudit(context, ACTION_MODULE_DIAGNOSIS, "/demo/module/diagnosis",
+                detailsOf("kartePk", pk, "firstResult", firstResult, "maxResult", maxResult,
+                        "resultCount", result.size()));
         return result;
     }
 
     @GET
     @Path("/module/schema/{param}")
     public List<ISchemaModel> getSchema(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/module/schema/{param}";
+        TouchRequestContext context = requireContext(endpoint);
+        ensureFacilityHeader(endpoint);
         String[] params = splitParams(param);
         if (params.length != 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain kartePk,first,max");
         }
         long pk = parseLong(params[0], -1L);
         int firstResult = parseInt(params[1], 0);
         int maxResult = parseInt(params[2], 10);
+        if (pk < 0) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "kartePk must be numeric");
+        }
         List<SchemaModel> schemas = safeList(iPhoneServiceBean.getSchema(pk, firstResult, maxResult));
         List<ISchemaModel> result = new ArrayList<>(schemas.size());
         for (SchemaModel schema : schemas) {
@@ -494,18 +651,30 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             converter.fromModel(schema);
             result.add(converter);
         }
+        recordAudit(context, ACTION_MODULE_SCHEMA, "/demo/module/schema",
+                detailsOf("kartePk", pk, "firstResult", firstResult, "maxResult", maxResult,
+                        "resultCount", result.size()));
         return result;
     }
 
     @GET
     @Path("/module/laboTest/{param}")
     public LaboTestResponse getLaboTest(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/module/laboTest/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length != 4) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain facilityId,patientId,first,max");
         }
+        String facilityId = trimToNull(params[0]);
+        String patientId = trimToNull(params[1]);
         int firstResult = parseInt(params[2], 0);
         int maxResult = parseInt(params[3], 20);
+        if (facilityId == null || patientId == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId and patientId must not be blank");
+        }
+
+        validateFacility(facilityId, endpoint);
         Long count = null;
         if (firstResult == 0) {
             count = iPhoneServiceBean.getLabTestCount(TEST_DEMO_FACILITY_ID, TEST_DEMO_PATIENT_ID);
@@ -518,30 +687,47 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
             anchor = anchor.minusDays(14);
             List<LaboItemDto> items = new ArrayList<>();
             for (NLaboItem item : safeList(module.getItems())) {
+                String fallbackComment2 = fallbackComment2(item);
                 items.add(new LaboItemDto(item.getGroupCode(), item.getGroupName(), item.getParentCode(),
                         item.getItemCode(), item.getMedisCode(), item.getItemName(), item.getNormalValue(),
-                        item.getUnit(), item.getValue(), item.getAbnormalFlg(), item.getComment1(), item.getComment2()));
+                        item.getUnit(), item.getValue(), item.getAbnormalFlg(), item.getComment1(), fallbackComment2));
             }
             moduleDtos.add(new LaboTestModule(module.getLaboCenterCode(), DATE_FORMAT.format(anchor),
                     module.getPatientId(), items));
         }
         PageInfo pageInfo = count != null ? new PageInfo(count.intValue()) : null;
-        return new LaboTestResponse(pageInfo, moduleDtos);
+        LaboTestResponse response = new LaboTestResponse(pageInfo, moduleDtos);
+        recordAudit(context, ACTION_MODULE_LAB, "/demo/module/laboTest",
+                detailsOf("facilityId", facilityId, "patientId", patientId, "firstResult", firstResult,
+                        "maxResult", maxResult, "resultCount", moduleDtos.size()));
+        return response;
     }
 
     @GET
     @Path("/item/laboItem/{param}")
     public LaboTrendResponse getLaboGraph(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/item/laboItem/{param}";
+        TouchRequestContext context = requireContext(endpoint);
         String[] params = splitParams(param);
         if (params.length != 5) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain facilityId,patientId,first,max,itemCode");
         }
+        String facilityId = trimToNull(params[0]);
+        String patientId = trimToNull(params[1]);
         int firstResult = parseInt(params[2], 0);
         int maxResult = parseInt(params[3], 20);
-        String itemCode = params[4];
+        String itemCode = trimToNull(params[4]);
+        if (facilityId == null || patientId == null || itemCode == null) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId, patientId and itemCode must not be blank");
+        }
+
+        validateFacility(facilityId, endpoint);
         List<NLaboItem> items = safeList(iPhoneServiceBean.getLaboTestItem(TEST_DEMO_FACILITY_ID,
                 TEST_DEMO_PATIENT_ID, firstResult, maxResult, itemCode));
         if (items.isEmpty()) {
+            recordAudit(context, ACTION_LAB_TREND, "/demo/item/laboItem",
+                    detailsOf("facilityId", facilityId, "patientId", patientId, "itemCode", itemCode,
+                            "firstResult", firstResult, "maxResult", maxResult, "resultCount", 0));
             return null;
         }
         NLaboItem header = items.get(items.size() - 1);
@@ -550,22 +736,32 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         for (NLaboItem item : items) {
             anchor = anchor.minusDays(14);
             results.add(new LaboTrendResult(DATE_FORMAT.format(anchor), item.getValue(),
-                    item.getComment1(), item.getComment2()));
+                    item.getComment1(), fallbackComment2(item)));
         }
-        return new LaboTrendResponse(header.getItemCode(), header.getItemName(), header.getNormalValue(),
+        LaboTrendResponse response = new LaboTrendResponse(header.getItemCode(), header.getItemName(), header.getNormalValue(),
                 header.getUnit(), results);
+        recordAudit(context, ACTION_LAB_TREND, "/demo/item/laboItem",
+                detailsOf("facilityId", facilityId, "patientId", patientId, "itemCode", itemCode,
+                        "firstResult", firstResult, "maxResult", maxResult, "resultCount", results.size()));
+        return response;
     }
 
     @GET
     @Path("/document/progressCourse/{param}")
     public ProgressCourseResponse getProgressCourse(@PathParam("param") String param) {
+        final String endpoint = "GET /demo/document/progressCourse/{param}";
+        TouchRequestContext context = requireContext(endpoint);
+        ensureFacilityHeader(endpoint);
         String[] params = splitParams(param);
         if (params.length != 3) {
-            throw new WebApplicationException(Response.Status.BAD_REQUEST);
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "param must contain patientPk,first,max");
         }
         long patientPk = parseLong(params[0], -1L);
         int firstResult = parseInt(params[1], 0);
         int maxResult = parseInt(params[2], 10);
+        if (patientPk < 0) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "patientPk must be numeric");
+        }
 
         PageInfo pageInfo = null;
         if (firstResult == 0) {
@@ -594,6 +790,7 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
                 } else if (ROLE_P_SPEC.equals(role) && decoded instanceof ProgressCourse progress) {
                     pSpec = progress.getFreeText();
                 } else if (ROLE_P.equals(role) && decoded instanceof BundleDolphin bundle) {
+                    populateOrderName(bundle, module);
                     orders.add(toClaimBundle(bundle, module.getStarted()));
                 }
             }
@@ -618,7 +815,11 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
 
             result.add(new ProgressCourseDocument(started, responsibility, soaTexts, orders, schemas));
         }
-        return new ProgressCourseResponse(pageInfo, result);
+        ProgressCourseResponse response = new ProgressCourseResponse(pageInfo, result);
+        recordAudit(context, ACTION_PROGRESS_COURSE, "/demo/document/progressCourse",
+                detailsOf("patientPk", patientPk, "firstResult", firstResult, "maxResult", maxResult,
+                        "resultCount", result.size()));
+        return response;
     }
 
     private ClaimBundleDto toClaimBundle(BundleDolphin bundle, java.util.Date startedDate) {
@@ -653,6 +854,75 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         IPatientVisitModel converter = new IPatientVisitModel();
         converter.setModel(model);
         return converter;
+    }
+
+    private TouchRequestContext requireContext(String endpoint) {
+        if (servletRequest == null) {
+            throw failure(Response.Status.INTERNAL_SERVER_ERROR, endpoint, "servlet request not available");
+        }
+        try {
+            TouchRequestContext context = TouchRequestContextExtractor.from(servletRequest);
+            validateUserHeaders(context, endpoint);
+            return context;
+        } catch (IllegalStateException ex) {
+            throw failure(Response.Status.UNAUTHORIZED, endpoint, ex.getMessage());
+        }
+    }
+
+    private void validateFacility(String facilityId, String endpoint) {
+        if (!hasText(facilityId)) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "facilityId must not be blank");
+        }
+        if (authHandler != null) {
+            String headerFacility = authHandler.requireFacilityHeader(servletRequest, endpoint);
+            if (hasText(headerFacility) && !headerFacility.equalsIgnoreCase(facilityId)) {
+                throw failure(Response.Status.FORBIDDEN, endpoint,
+                        "facilityId mismatch header=" + headerFacility + " param=" + facilityId);
+            }
+            authHandler.verifyFacilityOwnership(servletRequest, facilityId, endpoint);
+        }
+    }
+
+    private void ensureFacilityHeader(String endpoint) {
+        if (authHandler != null) {
+            authHandler.requireFacilityHeader(servletRequest, endpoint);
+        }
+    }
+
+    private void validateUserHeaders(TouchRequestContext context, String endpoint) {
+        String userHeader = header("userName");
+        if (!hasText(userHeader)) {
+            throw failure(Response.Status.UNAUTHORIZED, endpoint, "missing userName header");
+        }
+        if (!userHeader.equals(context.remoteUser())) {
+            throw failure(Response.Status.UNAUTHORIZED, endpoint, "userName header mismatch");
+        }
+        if (!hasText(header("password"))) {
+            throw failure(Response.Status.UNAUTHORIZED, endpoint, "missing password header");
+        }
+        if (!hasText(header("clientUUID"))) {
+            throw failure(Response.Status.BAD_REQUEST, endpoint, "missing clientUUID header");
+        }
+    }
+
+    private void ensurePasswordHeaderMatches(String expectedHash, String endpoint) {
+        if (!hasText(expectedHash)) {
+            return;
+        }
+        String headerPassword = header("password");
+        if (!hasText(headerPassword)) {
+            throw failure(Response.Status.UNAUTHORIZED, endpoint, "missing password header");
+        }
+        if (!headerPassword.equalsIgnoreCase(expectedHash)) {
+            throw failure(Response.Status.UNAUTHORIZED, endpoint, "password header mismatch");
+        }
+    }
+
+    private String header(String name) {
+        if (servletRequest == null || name == null) {
+            return null;
+        }
+        return trimToNull(servletRequest.getHeader(name));
     }
 
     private PatientModel createPatientModel(DemoPatient demo, String facilityId, String pk, String patientId) {
@@ -743,6 +1013,75 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
 
     private static String[] splitParams(String param) {
         return param != null ? param.split(",") : new String[0];
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private static boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private static String fallbackComment2(NLaboItem item) {
+        if (item == null) {
+            return null;
+        }
+        String comment2 = item.getComment2();
+        if (hasText(comment2)) {
+            return comment2;
+        }
+        return item.getComment1();
+    }
+
+    private static void populateOrderName(BundleDolphin bundle, ModuleModel module) {
+        if (bundle == null || module == null) {
+            return;
+        }
+        ModuleInfoBean info = module.getModuleInfoBean();
+        if (info != null && hasText(info.getEntity())) {
+            bundle.setOrderName(info.getEntity());
+        }
+    }
+
+    private WebApplicationException failure(Response.Status status, String endpoint, String message) {
+        Response.Status actual = status != null ? status : Response.Status.INTERNAL_SERVER_ERROR;
+        StringBuilder builder = new StringBuilder();
+        builder.append(actual.getStatusCode()).append(' ');
+        builder.append(endpoint != null ? endpoint : "unknown-endpoint");
+        if (hasText(message)) {
+            builder.append(" : ").append(message);
+        }
+        Response response = Response.status(actual)
+                .type(MediaType.TEXT_PLAIN_TYPE)
+                .entity(builder.toString())
+                .build();
+        return new WebApplicationException(response);
+    }
+
+    private Map<String, Object> detailsOf(Object... keyValues) {
+        if (keyValues == null || keyValues.length == 0) {
+            return Map.of();
+        }
+        Map<String, Object> details = new HashMap<>();
+        for (int i = 0; i + 1 < keyValues.length; i += 2) {
+            Object key = keyValues[i];
+            Object value = keyValues[i + 1];
+            if (key != null && value != null) {
+                details.put(key.toString(), value);
+            }
+        }
+        return details;
+    }
+
+    private void recordAudit(TouchRequestContext context, String action, String resource, Map<String, Object> details) {
+        if (auditHelper != null && context != null && hasText(action) && hasText(resource)) {
+            auditHelper.record(context, action, resource, details);
+        }
     }
 
     private static int progressDocumentCount(long patientPk) {

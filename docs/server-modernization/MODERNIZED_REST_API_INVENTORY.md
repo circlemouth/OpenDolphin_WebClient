@@ -205,17 +205,21 @@
 ### PHRResource (`/20/adm/phr`)
 | HTTP | パス | 主な処理 | 備考 |
 | --- | --- | --- | --- |
-| GET | `/20/adm/phr/accessKey/{param}` | アクセスキーから PHRKey 取得 | 見つからない場合は 404。Jackson で `PHRKey` を返却。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L73-L105】 |
-| GET | `/20/adm/phr/patient/{param}` | 患者 ID から PHRKey 取得 | 文字列日付を `PHRKey#dateToString` で整形して返却。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L89-L105】 |
-| PUT | `/20/adm/phr/accessKey` | PHRKey 登録/更新 | JSON を `PHRKey` にバインドし日付を復元して保存。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L107-L126】 |
-| GET | `/20/adm/phr/{param}` | PHR データバンドル取得 | 文書・検査を組み合わせた `PHRContainer` を返却。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L128-L164】 |
-| GET | `/20/adm/phr/allergy/{param}` | アレルギー一覧テキスト出力 | 施設 ID は `HttpServletRequest#getRemoteUser` から解決。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L166-L195】 |
-| GET | `/20/adm/phr/disease/{param}` | 病名一覧テキスト出力 | `RegisteredDiagnosisModel` を改行区切りで返却。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L197-L220】 |
-| GET | `/20/adm/phr/medication/{param}` | 直近処方テキスト出力 | `ClaimBundle` を復元して数量/用法を整形。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L222-L268】 |
-| GET | `/20/adm/phr/labtest/{param}` | 直近検査結果テキスト出力 | 検体日付を `normalizeSampleDate2` で整形。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L270-L314】 |
-| GET | `/20/adm/phr/abnormal/{param}` | 異常値テキスト出力 | 異常項目がない場合は「異常値はありません。」を返す。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L316-L360】 |
-| GET | `/20/adm/phr/image/{param}` | PHR 画像取得 | `SchemaModel#getJpegByte` をストリーム転送。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L362-L383】 |
-| POST | `/20/adm/phr/identityToken` | Layer ID トークン発行 | `IdentityService#getIdentityToken` を呼び出しテキストで返却。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L774-L803】 |
+| GET | `/20/adm/phr/accessKey/{accessKey}` | アクセスキーから PHRKey 取得 | 施設 ID を突合し、存在しない場合は TouchErrorResponse 付き 404。監査ログ `PHR_ACCESS_KEY_FETCH` を記録。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L104-L150】 |
+| GET | `/20/adm/phr/patient/{patientId}` | 患者 ID から PHRKey 取得 | `PHRKey#dateToString` で日付整形後に返却。施設不一致は 403 と監査 `facility_mismatch`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L152-L190】 |
+| PUT | `/20/adm/phr/accessKey` | PHRKey 登録/更新 | JSON を `PHRKey` にバインドし、登録時は remote facility を強制。監査 `PHR_ACCESS_KEY_UPSERT` を出力。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L167-L204】 |
+| GET | `/20/adm/phr/{facilityId,patientId,...}` | PHR データバンドル取得 | `PhrDataAssembler` で文書/検査を組み立てた `PHRContainer` を返却。`docSince`/`labSince`/SMS 返信先を含む。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L380-L438】 |
+| GET | `/20/adm/phr/allergy/{patientId}` | アレルギー一覧テキスト出力 | `AllergyModel` を改行区切りで返却。監査 `PHR_ALLERGY_TEXT` を出力。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L206-L243】 |
+| GET | `/20/adm/phr/disease/{patientId}` | 病名一覧テキスト出力 | 未登録時は固定メッセージを返却。監査 `PHR_DISEASE_TEXT`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L244-L276】 |
+| GET | `/20/adm/phr/medication/{patientId}` | 直近処方テキスト出力 | `ClaimBundle` を復元し数量/用法を整形。監査 `PHR_MEDICATION_TEXT`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L278-L300】 |
+| GET | `/20/adm/phr/labtest/{patientId}` | 直近検査結果テキスト出力 | 検体日付を `normalizeSampleDate2` で整形。監査 `PHR_LABTEST_TEXT`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L302-L323】 |
+| GET | `/20/adm/phr/abnormal/{patientId}` | 異常値テキスト出力 | 異常項目が無い場合は「異常値はありません。」を返却。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L325-L347】 |
+| GET | `/20/adm/phr/image/{patientId}` | PHR 画像取得 | `SchemaModel#getJpegByte` をストリーム転送し、存在しなければ 404。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L348-L379】 |
+| POST | `/20/adm/phr/identityToken` | Layer ID トークン発行 | `IdentityService#getIdentityToken` 呼び出し結果を返却し失敗時は TouchErrorResponse を使用。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L439-L460】 |
+| POST | `/20/adm/phr/export` | PHR データ非同期出力ジョブ作成 | `PhrExportJobManager#submit` でジョブ作成・監査 `PHR_EXPORT_REQUEST` を記録。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L462-L501】 |
+| GET | `/20/adm/phr/status/{jobId}` | PHR ジョブ状態取得 | `PHRAsyncJob` を参照し、完了時は署名付き `downloadUrl` を生成。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L503-L526】 |
+| DELETE | `/20/adm/phr/status/{jobId}` | PHR ジョブ取消 | `PHRAsyncJobServiceBean#cancel` で PENDING ジョブを `CANCELLED` へ遷移。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L528-L565】 |
+| GET | `/20/adm/phr/export/{jobId}/artifact` | 成果物ダウンロード | HMAC 署名を検証しファイルシステムから ZIP をストリーム配信。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L567-L626】 |
 
 > 非同期エクスポート系エンドポイント（`POST /20/adm/phr/export`、`GET /20/adm/phr/status/{jobId}` など）は現時点で実装が存在しない。`PhrExportJobManager` や `PHRAsyncJobServiceBean` は用意されているが、REST エンドポイント・ジョブワーカーが未実装なため運用不可。
 
@@ -267,6 +271,12 @@
 
 ### JsonTouchResource (`/touch/jtouch`)
 - `/touch/jtouch` 系は JSON ベースの軽量 API として患者検索、受付パッケージ取得、スタンプ取得などを提供。【F:server-modernized/src/main/java/open/dolphin/touch/JsonTouchResource.java†L69-L488】
+
+### TouchPatientResource / TouchStampResource / TouchUserResource (`/touch/*`)
+- `/touch/patient` 系エンドポイントを `TouchPatientResource` と `TouchPatientService` に分離し、施設整合チェック・`X-Access-Reason`／`X-Consent-Token` ヘッダー必須化・`AuditTrailService` 連携を実装。レスポンスは `IPatientModel`/DTO ベースの JSON へ正規化。【F:server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientResource.java†L13-L66】【F:server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientService.java†L25-L190】
+- `/touch/stamp`／`/touch/stampTree` は `TouchStampResource`＋`TouchStampService` が応答し、`TouchResponseCache`（TTL 10 秒）でスタンプ取得をキャッシュ。監査イベントは `TOUCH_STAMP_FETCH`／`TOUCH_STAMP_TREE_FETCH` へ統一。【F:server-modernized/src/main/java/open/dolphin/touch/stamp/TouchStampResource.java†L13-L45】【F:server-modernized/src/main/java/open/dolphin/touch/stamp/TouchStampService.java†L20-L69】
+- `/touch/user/{param}` は `TouchUserResource` へ移行し、`userName/password` ヘッダー検証・施設 ID 正規化・S3 Secret マスクを実施。監査は `TOUCH_USER_LOOKUP` に統一。【F:server-modernized/src/main/java/open/dolphin/touch/user/TouchUserResource.java†L13-L34】【F:server-modernized/src/main/java/open/dolphin/touch/user/TouchUserService.java†L24-L154】
+- ユニットテスト: `TouchPatientServiceTest`・`TouchStampServiceTest`・`TouchUserServiceTest` で consent／キャッシュ／ヘッダー突合を自動化（いずれも Maven 未導入環境のため CI 実行待ち）。【F:server-modernized/src/test/java/open/dolphin/touch/patient/TouchPatientServiceTest.java†L1-L112】【F:server-modernized/src/test/java/open/dolphin/touch/stamp/TouchStampServiceTest.java†L1-L73】【F:server-modernized/src/test/java/open/dolphin/touch/user/TouchUserServiceTest.java†L1-L110】
 
 ## 7. リアルタイム配信とモダナイズ特有の注意点
 

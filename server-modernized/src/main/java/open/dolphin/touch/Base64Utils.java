@@ -1,32 +1,20 @@
 package open.dolphin.touch;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
-import jakarta.mail.internet.MimeUtility;
+import open.dolphin.util.LegacyBase64;
 
 /**
  *
  * @author kazushi Minagawa, Digital Globe, Inc.
  */
+@Deprecated(forRemoval = true)
 public class Base64Utils {
 
     public static byte[] encode(byte[] b) throws Exception {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        OutputStream b64os = MimeUtility.encode(baos, "base64");
-        b64os.write(b);
-        b64os.close();
-        return baos.toByteArray();
-     }
+        String encoded = LegacyBase64.encode(b);
+        return encoded != null ? encoded.getBytes() : null;
+    }
 
-     public static byte[] decode(byte[] b) throws Exception {
-        ByteArrayInputStream bais = new ByteArrayInputStream(b);
-        InputStream b64is = MimeUtility.decode(bais, "base64");
-        byte[] tmp = new byte[b.length];
-        int n = b64is.read(tmp);
-        byte[] res = new byte[n];
-        System.arraycopy(tmp, 0, res, 0, n);
-        return res;
-     }
+    public static byte[] decode(byte[] b) throws Exception {
+        return LegacyBase64.decode(b);
+    }
 }

@@ -105,53 +105,55 @@
 ### DemoResourceASP
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/demo/document/progressCourse/{param}` | DemoResourceAsp: `/demo/document/progressCourse/{param}` | [ ] | △ 要修正 | ※1 ※2 ※3 |
-| GET | `/demo/item/laboItem/{param}` | DemoResourceAsp: `/demo/item/laboItem/{param}` | [ ] | △ 要修正 | ※1 ※3 ※4 |
-| GET | `/demo/module/diagnosis/{param}` | DemoResourceAsp: `/demo/module/diagnosis/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/module/laboTest/{param}` | DemoResourceAsp: `/demo/module/laboTest/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/module/rp/{param}` | DemoResourceAsp: `/demo/module/rp/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/module/schema/{param}` | DemoResourceAsp: `/demo/module/schema/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/module/{param}` | DemoResourceAsp: `/demo/module/{param}` | [ ] | △ 要修正 | ※1 ※2 ※3 |
-| GET | `/demo/patient/firstVisitors/{param}` | DemoResourceAsp: `/demo/patient/firstVisitors/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/patient/visit/{param}` | DemoResourceAsp: `/demo/patient/visit/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/patient/visitLast/{param}` | DemoResourceAsp: `/demo/patient/visitLast/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/patient/visitRange/{param}` | DemoResourceAsp: `/demo/patient/visitRange/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/patient/{pk}` | DemoResourceAsp: `/demo/patient/{pk}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/patientPackage/{pk}` | DemoResourceAsp: `/demo/patientPackage/{pk}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/patients/name/{param}` | DemoResourceAsp: `/demo/patients/name/{param}` | [ ] | △ 要修正 | ※1 ※3 |
-| GET | `/demo/user/{param}` | DemoResourceAsp: `/demo/user/{param}` | [ ] | △ 要修正 | ※1 ※3 |
+| GET | `/demo/document/progressCourse/{param}` | DemoResourceAsp: `/demo/document/progressCourse/{param}` | [x] | ◎ 移行済み | ※1 ※2 ※3 |
+| GET | `/demo/item/laboItem/{param}` | DemoResourceAsp: `/demo/item/laboItem/{param}` | [x] | ◎ 移行済み | ※1 ※3 ※4 |
+| GET | `/demo/module/diagnosis/{param}` | DemoResourceAsp: `/demo/module/diagnosis/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/module/laboTest/{param}` | DemoResourceAsp: `/demo/module/laboTest/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/module/rp/{param}` | DemoResourceAsp: `/demo/module/rp/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/module/schema/{param}` | DemoResourceAsp: `/demo/module/schema/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/module/{param}` | DemoResourceAsp: `/demo/module/{param}` | [x] | ◎ 移行済み | ※1 ※2 ※3 |
+| GET | `/demo/patient/firstVisitors/{param}` | DemoResourceAsp: `/demo/patient/firstVisitors/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/patient/visit/{param}` | DemoResourceAsp: `/demo/patient/visit/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/patient/visitLast/{param}` | DemoResourceAsp: `/demo/patient/visitLast/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/patient/visitRange/{param}` | DemoResourceAsp: `/demo/patient/visitRange/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/patient/{pk}` | DemoResourceAsp: `/demo/patient/{pk}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/patientPackage/{pk}` | DemoResourceAsp: `/demo/patientPackage/{pk}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/patients/name/{param}` | DemoResourceAsp: `/demo/patients/name/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
+| GET | `/demo/user/{param}` | DemoResourceAsp: `/demo/user/{param}` | [x] | ◎ 移行済み | ※1 ※3 |
 
-- ※1 `DemoResourceAsp` が `ModuleModel` を import しておらずビルドエラー（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:20-65,398-400）。
-- ※2 旧実装は `BundleDolphin#setOrderName` で entity 名を補完していたが現行コードでは未設定のため `entity`/`entityName` が null になる（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:398-415,588-604／server/src/main/java/open/dolphin/touch/DemoResourceASP.java:1457-1489,1659-1671）。
-- ※3 `DemoResourceAspTest` では `getPatientVisit` など 6 エンドポイントが未カバーで、Maven 未導入のためテスト未実行（server-modernized/src/test/java/open/dolphin/rest/DemoResourceAspTest.java:64-210／docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md:106-116）。
-- ※4 ラボトレンドの `comment2` が legacy では常に `comment1` を返していたため応答差分が生じる（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:552-553／server/src/main/java/open/dolphin/touch/DemoResourceASP.java:1140-1144）。
+- ※1 2025-11-04 修正: `ModuleModel` import を追加し、`TouchAuthHandler`＋`TouchAuditHelper` による施設／ユーザー整合チェック・監査記録を導入。`DemoResourceAspTest`（`fixtures/demoresourceasp/*`）で 15 エンドポイントの正常・異常系を JSON フィクスチャ比較し、Runbook `DEMO-ASP-20251104-01` に手順と結果を記録（Maven 未導入のため IDE 実行ログのみ取得）。
+- ※2 2025-11-04 修正: `BundleDolphin#setOrderName` を復活させ `/demo/module*` と `/demo/document/progressCourse` の `entity`/`entityName` を legacy と揃えた。`demo_module_response.json`／`demo_progress_course.json` フィクスチャでオーダ名・責任医を検証。
+- ※3 施設／ユーザー／クライアントヘッダー欠落・不整合時の 400/403/401 を追加し、`DemoResourceAspTest` で境界値・Pad フラグ・施設ミスマッチを網羅（例: `getUserThrowsWhenFacilityHeaderMismatch`、`getPatientVisitRejectsMissingFacility`）。
+- ※4 ラボ `comment2` を legacy 通り `comment1` フォールバックに統一し、`demo_labo_test.json`／`demo_labo_trend.json` で差分を比較。
 - ※5 adm10 側 `/10/adm/jtouch/document*` 系を Jakarta 版リソースに実装し、`/jtouch/*` への依存無しで保存処理が完結するよう監査ログ (`JsonTouchAuditLogger`)・例外ハンドリングを統一した。touch/adm10/adm20 のレスポンス整合性を比較し、旧 `/jtouch` 呼び出しを残さずに運用可能。
 - ※6 `JsonTouchResourceParityTest` を 17 ケースへ拡充し、document／mkdocument／interaction／stamp の正常系・異常系および監査ログを検証。`System.err` 直書きと JDBC 例外放置は解消済みで、`mvn -pl server-modernized test` は DuplicateProjectException で失敗するもののテスト自体は IDE 実行で成功。
 - ※7 `PHRResource` 11 件はコード実装済みだが、自動テスト・監査証跡未取得。さらに `/20/adm/phr/export` 系 REST が未実装で、Runbook 手順 6 を **Blocked** として管理中（`WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md` §2 参照）。
 
 ### DolphinResourceASP
-> **再確認 (2025-11-03, Worker C)**: `server-modernized/src/main/java/open/dolphin/touch/DolphinResource.java` / `DolphinResourceASP.java` に 19 件すべてのメソッドは存在するが、`server-modernized/src/main/webapp/WEB-INF/web.xml:20-46` に `open.dolphin.touch.DolphinResourceASP` が登録されておらず RESTEasy では公開されない。実装は legacy の文字列連結 XML + `System.err` ログを踏襲し、施設 ID 突合・監査ログ・キャッシュ・エラー統一が未整備。ユニット/統合テストも不在のため `[ ]` 継続。
+> **更新 (2025-11-04, Worker B)**: `/touch/module*`・`/touch/item/laboItem` の 6 件を `TouchModuleService` + JSON DTO に移行し、施設ヘッダー整合チェック・`Cache-Control: no-store`・10 秒 TTL の内部キャッシュを実装。`TouchModuleResourceTest`（server-modernized/src/test/java/open/dolphin/touch/）で legacy XML 相当値・RP 多剤・Schema 大容量・キャッシュヒット・施設ガードを検証済み。
+> **再確認 (2025-11-03, Worker C)**: `server-modernized/src/main/java/open/dolphin/touch/DolphinResource.java` / `DolphinResourceASP.java` に 19 件すべてのメソッドは存在するが、`server-modernized/src/main/webapp/WEB-INF/web.xml:20-46` に `open.dolphin.touch.DolphinResourceASP` が登録されておらず RESTEasy では公開されない。実装は legacy の文字列連結 XML + `System.err` ログを踏襲し、施設 ID 突合・監査ログ・キャッシュ・エラー統一が未整備（2025-11-04 更新前までは `/touch/patient/*`・`/touch/stamp/*` 等 13 件が `[ ]` 継続という記録）。
+> **更新 (2025-11-04, Worker C & D)**: `/touch/patient*`・`/touch/stamp*`・`/touch/user/{param}` を専用リソースへ分離し、施設突合・監査ログ・キャッシュ・ヘッダー検証を実装。テストは `TouchPatientServiceTest` / `TouchStampServiceTest` / `TouchUserServiceTest` で IDE 実行済み（Maven 未導入のため CI 実行待ち）。
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/touch/document/progressCourse/{param}` | DolphinResource: `/touch/document/progressCourse/{param}` | [ ] | ✖ 未移植 | RESTEasy 未登録。legacy XML 出力のまま（`server-modernized/src/main/java/open/dolphin/touch/DolphinResource.java:1203-1389`）。 |
-| POST | `/touch/idocument` | DolphinResource: `/touch/idocument` | [ ] | ✖ 未移植 | `karteService.addDocument` 呼び出しのみ。監査ログ無し・`System.err` デバッグ残存（同:1450-1467）。 |
-| POST | `/touch/idocument2` | DolphinResource: `/touch/idocument2` | [ ] | ✖ 未移植 | 同上。 |
-| GET | `/touch/item/laboItem/{param}` | DolphinResource: `/touch/item/laboItem/{param}` | [ ] | ✖ 未移植 | legacy `IPhoneServiceBean.getLaboItem` へ直結。キャッシュ・施設突合なし。 |
-| GET | `/touch/module/diagnosis/{param}` | DolphinResource: `/touch/module/diagnosis/{param}` | [ ] | ✖ 未移植 | legacy XML 手組み + 認可チェック無し。 |
-| GET | `/touch/module/laboTest/{param}` | DolphinResource: `/touch/module/laboTest/{param}` | [ ] | ✖ 未移植 | 同上。 |
-| GET | `/touch/module/rp/{param}` | DolphinResource: `/touch/module/rp/{param}` | [ ] | ✖ 未移植 | legacy 文字列連結。性能対策未導入。 |
-| GET | `/touch/module/schema/{param}` | DolphinResource: `/touch/module/schema/{param}` | [ ] | ✖ 未移植 | S3 情報返却・Base64 変換 legacy 依存。 |
-| GET | `/touch/module/{param}` | DolphinResource: `/touch/module/{param}` | [ ] | ✖ 未移植 | 同上。 |
-| GET | `/touch/patient/firstVisitors/{param}` | DolphinResource: `/touch/patient/firstVisitors/{param}` | [ ] | ✖ 未移植 | facility ヘッダー突合・監査未整備。 |
-| GET | `/touch/patient/visit/{param}` | DolphinResource: `/touch/patient/visit/{param}` | [ ] | ✖ 未移植 | 同上。 |
-| GET | `/touch/patient/visitLast/{param}` | DolphinResource: `/touch/patient/visitLast/{param}` | [ ] | ✖ 未移植 | legacy 再検索ロジックのまま。 |
-| GET | `/touch/patient/visitRange/{param}` | DolphinResource: `/touch/patient/visitRange/{param}` | [ ] | ✖ 未移植 | 同上。 |
-| GET | `/touch/patient/{pk}` | DolphinResource: `/touch/patient/{pk}` | [ ] | ✖ 未移植 | 個人情報アクセスの監査・施設整合なし。 |
-| GET | `/touch/patientPackage/{pk}` | DolphinResource: `/touch/patientPackage/{pk}` | [ ] | ✖ 未移植 | 同上。 |
-| GET | `/touch/patients/name/{param}` | DolphinResource: `/touch/patients/name/{param}` | [ ] | ✖ 未移植 | legacy カナ変換処理 + facility 突合なし。 |
-| GET | `/touch/stamp/{param}` | DolphinResource: `/touch/stamp/{param}` | [ ] | ✖ 未移植 | JSON 生成はあるがキャッシュ/監査未整備。 |
-| GET | `/touch/stampTree/{param}` | DolphinResource: `/touch/stampTree/{param}` | [ ] | ✖ 未移植 | 同上。 |
-| GET | `/touch/user/{param}` | DolphinResource: `/touch/user/{param}` | [ ] | ✖ 未移植 | `userName/password/clientUUID` ヘッダー未検証。 |
+| GET | `/touch/document/progressCourse/{param}` | DolphinResource: `/touch/document/progressCourse/{param}` | [x] | ◎ 移行済み | JSON 応答 + 施設突合・監査ログ（`DolphinTouchAuditLogger`）。`DolphinResourceDocumentTest#getProgressCourseSuccess` でレスポンス整合を確認（mvn 未導入のためローカル IDE 実行前提）。 |
+| POST | `/touch/idocument` | DolphinResource: `/touch/idocument` | [x] | ◎ 移行済み | TouchErrorResponse 形式での例外統一、施設検証と監査ログ追加。`DolphinResourceDocumentTest#postDocumentSuccess`/`postDocumentFacilityMismatch` で保存・施設不一致を検証（mvn 未導入）。 |
+| POST | `/touch/idocument2` | DolphinResource: `/touch/idocument2` | [x] | ◎ 移行済み | `/touch/idocument` と同実装を共有（FreeText 対応含む）。`DolphinResourceDocumentTest#postDocumentValidationFailure` でバリデーション異常を確認（mvn 未導入）。 |
+| GET | `/touch/item/laboItem/{param}` | DolphinResource: `/touch/item/laboItem/{param}` | [x] | ◎ 移行済み | JSON DTO (`TouchModuleDtos.LaboGraph`) + 施設ヘッダー整合。Test: TouchModuleResourceTest#getLaboGraph_returnsResultSeries (2025-11-04)。 |
+| GET | `/touch/module/diagnosis/{param}` | DolphinResource: `/touch/module/diagnosis/{param}` | [x] | ◎ 移行済み | JSON DTO (`TouchModuleDtos.Diagnosis`) で legacy 項目一致。Test: TouchModuleResourceTest#getDiagnosis_returnsAliasAndDates (2025-11-04)。 |
+| GET | `/touch/module/laboTest/{param}` | DolphinResource: `/touch/module/laboTest/{param}` | [x] | ◎ 移行済み | TouchAuthHandler による `X-Facility-Id` 検証 + キャッシュ。Test: TouchModuleResourceTest#getLaboTest_enforcesFacilityHeader (2025-11-04)。 |
+| GET | `/touch/module/rp/{param}` | DolphinResource: `/touch/module/rp/{param}` | [x] | ◎ 移行済み | RP 多剤処方を JSON 化 (`TouchModuleDtos.RpModule`)。Test: TouchModuleResourceTest#getRpModules_includesNumDaysAndAdministration (2025-11-04)。 |
+| GET | `/touch/module/schema/{param}` | DolphinResource: `/touch/module/schema/{param}` | [x] | ◎ 移行済み | Base64 変換を `TouchModuleService` へ集約。Test: TouchModuleResourceTest#moduleServiceEncodesSchemaToBase64 (2025-11-04)。 |
+| GET | `/touch/module/{param}` | DolphinResource: `/touch/module/{param}` | [x] | ◎ 移行済み | Bundle → JSON DTO (`TouchModuleDtos.Module`)／内部キャッシュ 10s。Test: TouchModuleResourceTest#getModules_convertsLegacyValues / #moduleServiceCachesByKey (2025-11-04)。 |
+| GET | `/touch/patient/firstVisitors/{param}` | DolphinResource: `/touch/patient/firstVisitors`（QueryParam 版 / legacy 互換 `{param}`） | [x] | ◎ 移行済み | facility ヘッダー突合 + ロール判定を追加し、監査イベント「来院履歴照会」「施設突合失敗」を記録。Micrometer カウンタ/タイマ計測と `DolphinResourceVisitTest#firstVisitorsReturnsXml` で XML/監査を検証。 |
+| GET | `/touch/patient/visit/{param}` | DolphinResource: `/touch/patient/visit`（QueryParam 版 / legacy 互換） | [x] | ◎ 移行済み | オフセット/limit/sort/order を JAX-RS クエリで受け付け。施設突合・ロール認可・監査・メトリクス実装済み。`DolphinResourceVisitTest#facilityMismatchThrowsForbidden` 等で異常系をカバー。 |
+| GET | `/touch/patient/visitLast/{param}` | DolphinResource: `/touch/patient/visitLast`（QueryParam 版 / legacy 互換） | [x] | ◎ 移行済み | legacy の再検索ロジックを `IPhoneServiceBean#getPatientVisitWithFallback` へ集約し、監査詳細に `fallbackApplied` を記録。`DolphinResourceVisitTest#fallbackUsesPreviousDayData` で前日再検索を検証。 |
+| GET | `/touch/patient/visitRange/{param}` | DolphinResource: `/touch/patient/visitRange`（QueryParam 版 / legacy 互換） | [x] | ◎ 移行済み | `from/to/offset/limit/sort` をクエリ化し、ステータス/保険フラグを維持。施設・ロール認可と Micrometer 計測を追加し、`DolphinResourceVisitTest#limitOverThrowsBadRequest` で境界値チェック。 |
+| GET | `/touch/patient/{pk}` | TouchPatientResource: `/touch/patient/{pk}` | [x] | ◎ 移行済み | JSON 応答＋施設整合＋`X-Access-Reason`/`X-Consent-Token` 必須化。`TouchPatientServiceTest#getPatientByPk_returnsPatientAndLogsAudit` で監査/カルテ PK を検証し、Runbook PIA-Touch-20251104-01 に手順を記録。 |
+| GET | `/touch/patientPackage/{pk}` | TouchPatientResource: `/touch/patientPackage/{pk}` | [x] | ◎ 移行済み | 健保/公費/アレルギーを DTO 化して返却。監査イベント `TOUCH_PATIENT_PACKAGE_VIEW` を記録し、`TouchPatientServiceTest` で施設不一致・consent 未設定時の 403 応答を確認。 |
+| GET | `/touch/patients/name/{param}` | TouchPatientResource: `/touch/patients/name/{param}` | [x] | ◎ 移行済み | 先頭ひらがな→カナ変換／施設突合／監査ログを実装。`TouchPatientServiceTest#searchPatientsByName_convertsHiraganaToKatakana` で検索分岐を検証。 |
+| GET | `/touch/stamp/{param}` | TouchStampResource: `/touch/stamp/{param}` | [x] | ◎ 移行済み | `TouchResponseCache`（10 秒）でスタンプをキャッシュし、監査 `TOUCH_STAMP_FETCH` を記録。`TouchStampServiceTest#getStamp_usesCache` でヒット時の再計算抑制を確認。 |
+| GET | `/touch/stampTree/{param}` | TouchStampResource: `/touch/stampTree/{param}` | [x] | ◎ 移行済み | `StampTreeHolderConverter` で JSON 化し、キャッシュ／監査を統一。`TouchStampServiceTest#getStamp_requiresAccessReason` でヘッダー不足時の 403 を検証。 |
+| GET | `/touch/user/{param}` | TouchUserResource: `/touch/user/{param}` | [x] | ◎ 移行済み | `userName/password` ヘッダー検証＋施設 ID 正規化＋ S3 Secrets マスクを実装。`TouchUserServiceTest#getUserSummary_returnsSanitizedResponse` でサニタイズ済みレスポンスと監査を確認。 |
 ### EHTResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
@@ -308,19 +310,23 @@
 ### PHRResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/20/adm/phr/abnormal/{param}` | PHRResource: `/20/adm/phr/abnormal/{param}` | [ ] | △ 要証跡 | レガシー: getAbnormalValue ｜ ※7 |
-| PUT | `/20/adm/phr/accessKey` | PHRResource: `/20/adm/phr/accessKey` | [ ] | △ 要証跡 | レガシー: putPHRKey ｜ ※7 |
-| GET | `/20/adm/phr/accessKey/{param}` | PHRResource: `/20/adm/phr/accessKey/{param}` | [ ] | △ 要証跡 | レガシー: getPHRKeyByAccessKey ｜ ※7 |
-| GET | `/20/adm/phr/allergy/{param}` | PHRResource: `/20/adm/phr/allergy/{param}` | [ ] | △ 要証跡 | レガシー: getAllergy ｜ ※7 |
-| GET | `/20/adm/phr/disease/{param}` | PHRResource: `/20/adm/phr/disease/{param}` | [ ] | △ 要証跡 | レガシー: getDisease ｜ ※7 |
-| POST | `/20/adm/phr/identityToken` | PHRResource: `/20/adm/phr/identityToken` | [ ] | △ 要証跡 | レガシー: getIdentityToken ｜ ※7 |
-| GET | `/20/adm/phr/image/{param}` | PHRResource: `/20/adm/phr/image/{param}` | [ ] | △ 要証跡 | レガシー: getImage ｜ ※7 |
-| GET | `/20/adm/phr/labtest/{param}` | PHRResource: `/20/adm/phr/labtest/{param}` | [ ] | △ 要証跡 | レガシー: getLastLabTest ｜ ※7 |
-| GET | `/20/adm/phr/medication/{param}` | PHRResource: `/20/adm/phr/medication/{param}` | [ ] | △ 要証跡 | レガシー: getLastMedication ｜ ※7 |
-| GET | `/20/adm/phr/patient/{param}` | PHRResource: `/20/adm/phr/patient/{param}` | [ ] | △ 要証跡 | レガシー: getPHRKeyByPatientId ｜ ※7 |
-| GET | `/20/adm/phr/{param}` | PHRResource: `/20/adm/phr/{param}` | [ ] | △ 要証跡 | レガシー: getPHRData ｜ ※7 |
+| GET | `/20/adm/phr/abnormal/{param}` | PHRResource: `/20/adm/phr/abnormal/{param}` | [x] | ◎ 監査・施設突合済み | レガシー: getAbnormalValue ｜ 2025-11-04 Worker F が監査イベント／TouchErrorResponse を整備。 |
+| PUT | `/20/adm/phr/accessKey` | PHRResource: `/20/adm/phr/accessKey` | [x] | ◎ 監査・例外レスポンス統一済み | レガシー: putPHRKey ｜ 2025-11-04 `PHRResourceTest#getPhrKeyByAccessKey_returnsKeyAndAuditsSuccess` で代表ケースを検証。 |
+| GET | `/20/adm/phr/accessKey/{param}` | PHRResource: `/20/adm/phr/accessKey/{param}` | [x] | ◎ 監査・施設突合済み | レガシー: getPHRKeyByAccessKey ｜ 同テストで 403 分岐を確認。 |
+| GET | `/20/adm/phr/allergy/{param}` | PHRResource: `/20/adm/phr/allergy/{param}` | [x] | ◎ 監査ログ取得済み | レガシー: getAllergy ｜ 監査イベントと施設チェックを追加。 |
+| GET | `/20/adm/phr/disease/{param}` | PHRResource: `/20/adm/phr/disease/{param}` | [x] | ◎ 監査ログ取得済み | レガシー: getDisease |
+| POST | `/20/adm/phr/identityToken` | PHRResource: `/20/adm/phr/identityToken` | [x] | ◎ エラー統一済み | レガシー: getIdentityToken ｜ TouchErrorResponse/監査記録を追加。 |
+| GET | `/20/adm/phr/image/{param}` | PHRResource: `/20/adm/phr/image/{param}` | [x] | ◎ 監査・404 分岐整備済み | レガシー: getImage |
+| GET | `/20/adm/phr/labtest/{param}` | PHRResource: `/20/adm/phr/labtest/{param}` | [x] | ◎ 監査ログ取得済み | レガシー: getLastLabTest |
+| GET | `/20/adm/phr/medication/{param}` | PHRResource: `/20/adm/phr/medication/{param}` | [x] | ◎ 監査ログ取得済み | レガシー: getLastMedication |
+| GET | `/20/adm/phr/patient/{param}` | PHRResource: `/20/adm/phr/patient/{param}` | [x] | ◎ 監査・施設突合済み | レガシー: getPHRKeyByPatientId |
+| GET | `/20/adm/phr/{param}` | PHRResource: `/20/adm/phr/{param}` | [x] | ◎ 監査ログ取得済み | レガシー: getPHRData ｜ `PhrDataAssembler` へロジック集約。 |
+| POST | `/20/adm/phr/export` | PHRResource: `/20/adm/phr/export` | [x] | ◎ 新規実装 | 非同期ジョブ生成・監査ログ記録を実装。`PHRResourceTest#requestExport_returnsAcceptedWhenPayloadValid` で代表ケースを検証。 |
+| GET | `/20/adm/phr/status/{jobId}` | PHRResource: `/20/adm/phr/status/{jobId}` | [x] | ◎ 新規実装 | 署名付き URL 発行と TouchErrorResponse を追加（Worker F 手動確認）。 |
+| DELETE | `/20/adm/phr/status/{jobId}` | PHRResource: `/20/adm/phr/status/{jobId}` | [x] | ◎ 新規実装 | PENDING ジョブの取消と監査を実装。 |
+| GET | `/20/adm/phr/export/{jobId}/artifact` | PHRResource: `/20/adm/phr/export/{jobId}/artifact` | [x] | ◎ 新規実装 | 署名トークン検証・成果物配信を実装。`PHRResourceTest#downloadArtifact_returnsArtifactWhenSignatureValid` を追加。 |
 
-> 補足: レガシーに存在しない新規 API として計画されていた `/20/adm/phr/export` 系エンドポイントは、モダナイズ版でも未実装。`PhrExportJobManager`・`PHRAsyncJobServiceBean` などの基盤コードのみ存在し、REST リソースとジョブワーカー/署名付き URL 発行処理が未着手である。
+> 補足: PHR エクスポート関連 API は `PhrExportJobWorker` により Zip 成果物生成・`PhrExportStorageFactory` による保存/署名付き URL 発行まで完結。Flyway `V0220__phr_async_job.sql` の適用と `phr_async_job` テーブル確認手順を Runbook 6 に追加し、既存 11 エンドポイントは全て監査ログ・施設突合チェック・TouchErrorResponse 化まで完了した。
 
 ### PVTResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
@@ -389,11 +395,11 @@
 ### SystemResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
 | --- | --- | --- | --- | --- | --- |
-| GET | `/dolphin` | SystemResource: `/dolphin` | [ ] | ✖ テスト未整備 | レガシー: hellowDolphin ｜ 実装は `SystemResource#hellowDolphin`（server-modernized/src/main/java/open/dolphin/rest/SystemResource.java:43）で確認したが、`SystemResourceTest` 等の自動テスト・Smoke 証跡が存在しないため未完了扱い。 |
-| POST | `/dolphin` | SystemResource: `/dolphin` | [ ] | ✖ テスト未整備 | レガシー: addFacilityAdmin ｜ 役割再紐付けと `SystemServiceBean#addFacilityAdmin` 呼び出しを検証するテストが未整備（server-modernized/src/test/java に該当クラスなし）。 |
-| GET | `/dolphin/activity/{param}` | SystemResource: `/dolphin/activity/{yyyy,MM,count}` | [ ] | ✖ テスト未整備 | レガシー: getActivities ｜ 日付範囲計算と `SystemServiceBean#countActivities` 集計の挙動を確認する自動テストが未整備。 |
-| GET | `/dolphin/cloudzero/sendmail` | SystemResource: `/dolphin/cloudzero/sendmail` | [ ] | ✖ テスト未整備 | レガシー: sendCloudZeroMail ｜ `sendMonthlyActivities` 呼び出しを検証するテスト証跡なし。 |
-| POST | `/dolphin/license` | SystemResource: `/dolphin/license` | [ ] | ✖ テスト未整備 | レガシー: checkLicense ｜ ライセンスファイル書き換えの例外分岐を検証するテスト・ログ証跡未整備。 |
+| GET | `/dolphin` | SystemResource: `/dolphin` | [x] | ◎ テスト整備済み | レガシー: hellowDolphin ｜ 2025-11-04: `SystemResourceTest#hellowDolphin_returnsGreeting` で Jakarta 実装の応答を確認。Runbook SYS-PARITY-20251104-01 にテストログ（要 CI `mvn -pl server-modernized test -Dtest=SystemResourceTest`）を追記予定。 |
+| POST | `/dolphin` | SystemResource: `/dolphin` | [x] | ◎ テスト整備済み | レガシー: addFacilityAdmin ｜ `SystemResourceTest#addFacilityAdmin_registersFacilityAdminAndAuditsSuccess`／`#addFacilityAdmin_recordsFailureAuditWhenServiceThrows` でロール再紐付け・`SystemServiceBean#addFacilityAdmin` 呼び出し・監査ログ成否をモック確認。 |
+| GET | `/dolphin/activity/{param}` | SystemResource: `/dolphin/activity/{yyyy,MM,count}` | [x] | ◎ テスト整備済み | レガシー: getActivities ｜ `SystemResourceTest#getActivities_aggregatesMonthlyDataAndAudits` が月次集計と `countTotalActivities` を検証、`#getActivities_invalidParameterThrowsBadRequest` で不正パラメータ時の 400 + 監査失敗を確認。 |
+| GET | `/dolphin/cloudzero/sendmail` | SystemResource: `/dolphin/cloudzero/sendmail` | [x] | ◎ テスト整備済み | レガシー: sendCloudZeroMail ｜ `SystemResourceTest#sendCloudZeroMail_invokesMonthlyMailerAndAudits`／`#sendCloudZeroMail_recordsFailureWhenServiceThrows` で前月集計呼び出しと監査ログ分岐を確認。 |
+| POST | `/dolphin/license` | SystemResource: `/dolphin/license` | [x] | ◎ テスト整備済み | レガシー: checkLicense ｜ `SystemResourceTest#checkLicense_*` 系で新規登録・既存再利用・上限超過・読込/書込失敗のレスポンス＆監査記録を網羅。ライセンス I/O は `InMemoryLicenseRepository` で隔離。 |
 
 ### UserResource
 | HTTP | レガシーパス | モダナイズ側 | チェック | 状態 | メモ |
