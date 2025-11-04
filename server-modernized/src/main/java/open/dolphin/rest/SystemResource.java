@@ -1,28 +1,42 @@
 package open.dolphin.rest;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.NotAuthorizedException;
+import jakarta.ws.rs.POST;
+import jakarta.ws.rs.GET;
+import jakarta.ws.rs.Path;
+import jakarta.ws.rs.PathParam;
+import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.MediaType;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.Properties;
-import java.util.logging.Logger;
-import jakarta.inject.Inject;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.Context;
-import jakarta.ws.rs.core.MediaType;
 import open.dolphin.infomodel.ActivityModel;
+import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.RoleModel;
 import open.dolphin.infomodel.UserModel;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.AccountSummary;
 import open.dolphin.session.SystemServiceBean;
-import com.fasterxml.jackson.databind.DeserializationFeature;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import open.dolphin.session.framework.SessionTraceContext;
+import open.dolphin.session.framework.SessionTraceManager;
+import open.dolphin.system.license.LicenseRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * REST Web Service
@@ -32,8 +46,22 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Path("/dolphin")
 public class SystemResource extends AbstractResource {
     
+    private static final Logger LOGGER = LoggerFactory.getLogger(SystemResource.class);
+
     @Inject
     private SystemServiceBean systemServiceBean;
+
+    @Inject
+    private AuditTrailService auditTrailService;
+
+    @Inject
+    private SessionTraceManager sessionTraceManager;
+
+    @Context
+    private HttpServletRequest httpServletRequest;
+
+    @Inject
+    private LicenseRepository licenseRepository;
 
     /** Creates a new instance of SystemResource */
     public SystemResource() {
@@ -57,30 +85,80 @@ public class SystemResource extends AbstractResource {
 
         // 関係を構築する
         List<RoleModel> roles = user.getRoles();
-        for (RoleModel role : roles) {
-            role.setUserModel(user);
+        if (roles != null) {
+            for (RoleModel role : roles) {
+                role.setUserModel(user);
+                role.setUserId(user.getUserId());
+            }
         }
 
-        AccountSummary summary = systemServiceBean.addFacilityAdmin(user);
-        String ret = summary.getFacilityId()+":"+summary.getUserId();
-        return ret;
+        try {
+            AccountSummary summary = systemServiceBean.addFacilityAdmin(user);
+            String ret = summary.getFacilityId() + ":" + summary.getUserId();
+
+            Map<String, Object> details = new HashMap<>();
+            details.put("status", "success");
+            details.put("facilityId", summary.getFacilityId());
+            details.put("createdUserId", summary.getUserId());
+            recordAudit("SYSTEM_FACILITY_ADMIN_ADD", details);
+
+            return ret;
+        } catch (RuntimeException ex) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("status", "failed");
+            details.put("reason", ex.getClass().getSimpleName());
+            details.put("createdUserId", user.getUserId());
+            recordAudit("SYSTEM_FACILITY_ADMIN_ADD", details);
+            throw ex;
+        }
     }
     
     @GET
     @Path("/activity/{param}")
     @Produces(MediaType.APPLICATION_JSON)
-    public List<ActivityModel> getActivities(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
+    public List<ActivityModel> getActivities(@PathParam("param") String param) {
         
-        // Parameters
+        if (param == null || param.isBlank()) {
+            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("rawParam", param)));
+            throw new BadRequestException("param must not be empty");
+        }
+
         String[] params = param.split(CAMMA);
-        int year = Integer.parseInt(params[0]);     // 集計起点年
-        int month = Integer.parseInt(params[1]);    // 集計起点月
-        int count = Integer.parseInt(params[2]);    // 過去何ヶ月
-        
-        String fid = getRemoteFacility(servletReq.getRemoteUser());
-        
-        ActivityModel[] array = new ActivityModel[count+1]; // +1=total
-        
+        if (params.length < 3) {
+            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("rawParam", param)));
+            throw new BadRequestException("param must contain year, month, count");
+        }
+
+        int requestedYear;
+        int requestedMonth;
+        int monthsRequested;
+        try {
+            requestedYear = Integer.parseInt(params[0]);
+            requestedMonth = Integer.parseInt(params[1]);
+            monthsRequested = Integer.parseInt(params[2]);
+        } catch (NumberFormatException ex) {
+            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("rawParam", param)));
+            throw new BadRequestException("param must be numeric", ex);
+        }
+
+        if (monthsRequested < 1) {
+            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("monthsRequested", monthsRequested)));
+            throw new BadRequestException("count must be >= 1");
+        }
+
+        String remoteUser = resolveRemoteUser();
+        if (remoteUser == null) {
+            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("anonymous_user", Map.of()));
+            throw new NotAuthorizedException("Remote user not available");
+        }
+
+        String fid = getRemoteFacility(remoteUser);
+
+        ActivityModel[] array = new ActivityModel[monthsRequested + 1]; // +1=total
+
+        int year = requestedYear;
+        int month = requestedMonth;
+
         // ex month=5,past=-3 -> 3,4,5
         GregorianCalendar gcFirst = new GregorianCalendar(year, month, 1);
         int numDays = gcFirst.getActualMaximum(Calendar.DAY_OF_MONTH);
@@ -103,8 +181,16 @@ public class SystemResource extends AbstractResource {
         
         // 総数
         ActivityModel am = systemServiceBean.countTotalActivities(fid);
-        array[array.length-1] =am;
-        
+        array[array.length-1] = am;
+
+        Map<String, Object> details = new HashMap<>();
+        details.put("status", "success");
+        details.put("facilityId", fid);
+        details.put("startYear", requestedYear);
+        details.put("startMonth", requestedMonth);
+        details.put("monthsRequested", monthsRequested);
+        recordAudit("SYSTEM_ACTIVITY_SUMMARY", details);
+
         return Arrays.asList(array);
     }
     
@@ -113,58 +199,69 @@ public class SystemResource extends AbstractResource {
     @Path("/license")
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    public String checkLicense(String uid) throws IOException {
+    public String checkLicense(String uid) {
         
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        Map<String, Object> base = new HashMap<>();
+        base.put("uid", uid);
 
-        Properties config = new Properties();
-        StringBuilder sb = new StringBuilder();
-        sb.append(System.getProperty("jboss.home.dir"));
-        sb.append(File.separator);
-        sb.append("license.properties");
-        File f = new File(sb.toString());
+        Properties config;
         try {
-            FileInputStream fin = new FileInputStream(f);
-            InputStreamReader isr = new InputStreamReader(fin, "UTF-8");
-            config.load(isr);
-            isr.close();
-            fin.close();
+            config = licenseRepository.load();
         } catch (IOException ex) {
-            Logger.getLogger("open.dolphin").warning("ライセンスファイル読込エラー");
-            ex.printStackTrace(System.err);
+            LOGGER.warn("ライセンスファイル読込エラー", ex);
+            Map<String, Object> details = new HashMap<>(base);
+            details.put("status", "failed");
+            details.put("reason", "read_error");
+            recordAudit("SYSTEM_LICENSE_CHECK", details);
             return "2";
         }
         
-        String val = config.getProperty("license.max", "3");
-        int max = Integer.parseInt(val);
-        for(int i = 0; i < max; i++) {
-            sb = new StringBuilder();
-            sb.append("license.uid");
-            sb.append(String.valueOf(i+1));
-            val = config.getProperty(sb.toString());
-            if(val == null) {
-                config.setProperty(sb.toString(), uid);
+        int max;
+        try {
+            max = Integer.parseInt(config.getProperty("license.max", "3"));
+        } catch (NumberFormatException ex) {
+            max = 3;
+        }
+
+        for (int i = 0; i < max; i++) {
+            String key = "license.uid" + (i + 1);
+            String val = config.getProperty(key);
+            if (val == null) {
+                config.setProperty(key, uid);
                 try {
-                    FileOutputStream fon = new FileOutputStream(f);
-                    config.store(fon, "OpenDolphinZero License");
-                    fon.close();
+                    licenseRepository.store(config);
                 } catch (IOException ex) {
-                    Logger.getLogger("open.dolphin").warning("ライセンスファイル保存エラー");
-                    ex.printStackTrace(System.err);
+                    LOGGER.warn("ライセンスファイル保存エラー", ex);
+                    Map<String, Object> details = new HashMap<>(base);
+                    details.put("status", "failed");
+                    details.put("reason", "write_error");
+                    details.put("slot", i + 1);
+                    recordAudit("SYSTEM_LICENSE_CHECK", details);
                     return "3";
                 }
-                Logger.getLogger("open.dolphin").info("ライセンス新規登録");
+                LOGGER.info("ライセンス新規登録: {}", uid);
+                Map<String, Object> details = new HashMap<>(base);
+                details.put("status", "success");
+                details.put("actionType", "registered");
+                details.put("slot", i + 1);
+                recordAudit("SYSTEM_LICENSE_CHECK", details);
                 return "0";
-            }else{
-                if(val.equals(uid)) {
-                    Logger.getLogger("open.dolphin").info("ライセンス登録済");
-                    return "0";
-                }
+            } else if (val.equals(uid)) {
+                LOGGER.info("ライセンス登録済: {}", uid);
+                Map<String, Object> details = new HashMap<>(base);
+                details.put("status", "success");
+                details.put("actionType", "already_registered");
+                details.put("slot", i + 1);
+                recordAudit("SYSTEM_LICENSE_CHECK", details);
+                return "0";
             }
         }
         
-        Logger.getLogger("open.dolphin").warning("ライセンス認証の制限数を超えました");
+        LOGGER.warn("ライセンス認証の制限数を超えました");
+        Map<String, Object> details = new HashMap<>(base);
+        details.put("status", "failed");
+        details.put("reason", "limit_exceeded");
+        recordAudit("SYSTEM_LICENSE_CHECK", details);
         return "4";
     }
 //s.oh$
@@ -173,13 +270,28 @@ public class SystemResource extends AbstractResource {
     @GET
     @Path("/cloudzero/sendmail")
     public void sendCloudZeroMail() {
-        Logger.getLogger("open.dolphin").info("Send CloudZero mail.");
-        
         GregorianCalendar gc = new GregorianCalendar();
         gc.add(Calendar.MONTH, -1);
         int year = gc.get(Calendar.YEAR);
         int month = gc.get(Calendar.MONTH);
-        systemServiceBean.sendMonthlyActivities(year, month);
+        try {
+            systemServiceBean.sendMonthlyActivities(year, month);
+            LOGGER.info("Send CloudZero mail: year={}, month={}", year, month);
+            Map<String, Object> details = new HashMap<>();
+            details.put("status", "success");
+            details.put("targetYear", year);
+            details.put("targetMonth", month);
+            recordAudit("SYSTEM_CLOUDZERO_SEND", details);
+        } catch (RuntimeException ex) {
+            LOGGER.error("Failed to send CloudZero mail", ex);
+            Map<String, Object> details = new HashMap<>();
+            details.put("status", "failed");
+            details.put("reason", ex.getClass().getSimpleName());
+            details.put("targetYear", year);
+            details.put("targetMonth", month);
+            recordAudit("SYSTEM_CLOUDZERO_SEND", details);
+            throw ex;
+        }
     }
 //s.oh$
     
@@ -195,4 +307,114 @@ public class SystemResource extends AbstractResource {
 
     Response r = target.request().post( Entity.entity(entity, MediaType.MULTIPART_FORM_DATA_TYPE));
      */
+
+    private Map<String, Object> failureDetails(String reason, Map<String, Object> extras) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("status", "failed");
+        details.put("reason", reason);
+        if (extras != null && !extras.isEmpty()) {
+            details.putAll(extras);
+        }
+        return details;
+    }
+
+    private void recordAudit(String action, Map<String, Object> details) {
+        if (auditTrailService == null) {
+            return;
+        }
+        AuditEventPayload payload = createBaseAuditPayload(action);
+        Map<String, Object> enriched = new HashMap<>();
+        if (details != null) {
+            enriched.putAll(details);
+        }
+        enrichRemoteUserDetails(enriched);
+        enrichTraceDetails(enriched);
+        payload.setDetails(enriched);
+        auditTrailService.record(payload);
+    }
+
+    private AuditEventPayload createBaseAuditPayload(String action) {
+        AuditEventPayload payload = new AuditEventPayload();
+        String actorId = resolveActorId();
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(resolveActorDisplayName(actorId));
+        payload.setActorRole(resolveActorRole());
+        payload.setAction(action);
+        payload.setResource(resolveResourcePath());
+        payload.setRequestId(resolveRequestId());
+        payload.setIpAddress(resolveIpAddress());
+        payload.setUserAgent(resolveUserAgent());
+        return payload;
+    }
+
+    private String resolveActorRole() {
+        if (httpServletRequest != null && httpServletRequest.isUserInRole("ADMIN")) {
+            return "ADMIN";
+        }
+        return null;
+    }
+
+    private void enrichRemoteUserDetails(Map<String, Object> details) {
+        String remoteUser = resolveRemoteUser();
+        if (remoteUser != null) {
+            details.put("remoteUser", remoteUser);
+            int idx = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+            if (idx > 0) {
+                details.put("facilityId", remoteUser.substring(0, idx));
+                if (idx + 1 < remoteUser.length()) {
+                    details.put("userId", remoteUser.substring(idx + 1));
+                }
+            }
+        }
+    }
+
+    private void enrichTraceDetails(Map<String, Object> details) {
+        if (sessionTraceManager == null) {
+            return;
+        }
+        SessionTraceContext context = sessionTraceManager.current();
+        if (context != null) {
+            details.put("traceId", context.getTraceId());
+            details.put("sessionOperation", context.getOperation());
+        }
+    }
+
+    private String resolveActorId() {
+        return Optional.ofNullable(resolveRemoteUser()).orElse("system");
+    }
+
+    private String resolveActorDisplayName(String actorId) {
+        if (actorId == null) {
+            return "system";
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx >= 0 && idx + 1 < actorId.length()) {
+            return actorId.substring(idx + 1);
+        }
+        return actorId;
+    }
+
+    private String resolveResourcePath() {
+        return httpServletRequest != null ? httpServletRequest.getRequestURI() : "/dolphin";
+    }
+
+    private String resolveRequestId() {
+        if (httpServletRequest == null) {
+            return UUID.randomUUID().toString();
+        }
+        return Optional.ofNullable(httpServletRequest.getHeader("X-Request-Id"))
+                .orElse(UUID.randomUUID().toString());
+    }
+
+    private String resolveIpAddress() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteAddr() : null;
+    }
+
+    private String resolveUserAgent() {
+        return httpServletRequest != null ? httpServletRequest.getHeader("User-Agent") : null;
+    }
+
+    private String resolveRemoteUser() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteUser() : null;
+    }
 }

@@ -69,6 +69,13 @@
    - Mockito ベースの単体テストで XML/JSON 出力とキャッシュ挙動を検証。  
    - `scripts/load-test.ts` を流用し `/touch/document/progressCourse` などを対象に 100 リクエスト負荷テストを実施。結果は Runbook へ添付。
 
+## 4. 2025-11-04 実装サマリ（Worker B）
+- `TouchModuleService`（`server-modernized/src/main/java/open/dolphin/touch/module/TouchModuleService.java`）を新設し、`CacheUtil`（共通モジュール）ベースの TTL 10 秒キャッシュを導入。キャッシュキーは `method:paramHash` 形式（例: `modules:-123456789`）。
+- 認可は `TouchAuthHandler` で `X-Facility-Id` と `remoteUser` を突合、レスポンスには `Cache-Control: no-store, no-cache, must-revalidate` を付与。
+- 監査ログは `TouchModuleAuditLogger`（logger 名: `open.dolphin.audit.TouchModule`）で開始／成功／失敗を記録。
+- JSON DTO 群は `TouchModuleDtos` に集約し、`/touch/module*` / `/touch/item/laboItem` の legacy XML 要素を網羅的にマッピング。
+- テスト: `TouchModuleResourceTest`（modules/rp/diagnosis/labo/schema/caching/施設ガード）を追加。`mvn -pl server-modernized -Dtest=TouchModuleResourceTest test` はローカルに Maven が無いため失敗（`bash: mvn: command not found`）。
+
 ## 5. 今後の作業項目
 1. **コード実装**
    - `DolphinResourceASP` を共通ヘルパーとキャッシュ利用構造へリファクタリング。

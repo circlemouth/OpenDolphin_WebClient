@@ -11,7 +11,7 @@ import java.util.logging.Logger;
 import open.dolphin.adm20.dto.PhrExportRequest;
 import open.dolphin.adm20.session.PHRAsyncJobServiceBean;
 import open.dolphin.infomodel.PHRAsyncJob;
-import open.dolphin.session.framework.ManagedExecutorFactory;
+import open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames;
 
 @ApplicationScoped
 public class PhrExportJobManager {
@@ -21,7 +21,7 @@ public class PhrExportJobManager {
 
     private static final ObjectMapper MAPPER = new ObjectMapper().findAndRegisterModules();
 
-    @Resource(lookup = ManagedExecutorFactory.DEFAULT_EXECUTOR)
+    @Resource(lookup = ConcurrencyResourceNames.DEFAULT_EXECUTOR)
     private ExecutorService executor;
 
     @Inject
@@ -31,8 +31,14 @@ public class PhrExportJobManager {
     private PhrExportJobWorker worker;
 
     public PHRAsyncJob submit(String facilityId, String userId, PhrExportRequest request) throws IOException {
+        if (request == null || request.isEmpty()) {
+            throw new IllegalArgumentException("PhrExportRequest must contain at least one patientId.");
+        }
         String scopeJson = MAPPER.writeValueAsString(request);
         PHRAsyncJob job = jobService.createJob(facilityId, JOB_TYPE, scopeJson);
+        if (executor == null) {
+            throw new IllegalStateException("Managed executor is not available for PHR export jobs.");
+        }
         executor.submit(() -> runJob(job.getJobId(), facilityId, userId, request));
         return job;
     }
@@ -45,7 +51,7 @@ public class PhrExportJobManager {
         try {
             worker.execute(jobId, facilityId, userId, request);
         } catch (Exception ex) {
-            LOGGER.log(Level.SEVERE, "Unhandled exception while executing PHR export job {0}", new Object[]{jobId});
+            LOGGER.log(Level.SEVERE, "Unhandled exception while executing PHR export job " + jobId, ex);
         }
     }
 }

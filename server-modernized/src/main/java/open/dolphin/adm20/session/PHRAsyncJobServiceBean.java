@@ -88,4 +88,20 @@ public class PHRAsyncJobServiceBean {
             job.setHeartbeatAt(OffsetDateTime.now());
         }
     }
+
+    public boolean cancel(UUID jobId) {
+        PHRAsyncJob job = em.find(PHRAsyncJob.class, jobId);
+        if (job == null) {
+            return false;
+        }
+        if (job.getState() != State.PENDING) {
+            return false;
+        }
+        OffsetDateTime now = OffsetDateTime.now();
+        job.setState(State.CANCELLED);
+        job.setFinishedAt(now);
+        job.setHeartbeatAt(now);
+        job.setLockedBy(null);
+        return true;
+    }
 }

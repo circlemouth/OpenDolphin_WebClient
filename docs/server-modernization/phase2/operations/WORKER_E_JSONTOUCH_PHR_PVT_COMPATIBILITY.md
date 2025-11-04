@@ -70,45 +70,33 @@ Jackson の `getSerializeMapper()`（`AbstractResource` オーバーライド）
 
 ## 2. 非同期ジョブ状態管理（PHR エクスポート）
 
-### 2.1 確認結果概要（2025-11-03）
+### 2.1 対応結果概要（2025-11-04）
 
-- モダナイズ版ソースには `PHRAsyncJobServiceBean`・`PhrExportJobManager`・`PhrExportStorageFactory` などの土台コードが存在するが、REST エンドポイント（`/20/adm/phr/export`, `/status/{jobId}`, `/export/{jobId}/artifact` 等）は未実装。
-- `PhrExportJobManager` が `@Inject PhrExportJobWorker worker` を参照しているものの、`PhrExportJobWorker` クラス自体が存在しない。また `ManagedExecutorFactory` の import も未定義クラスで、現状コンパイルに失敗する。
-- 署名付き URL サービス (`HmacSignedUrlService`) とストレージ実装（ファイルシステム／S3 スタブ）は呼び出し先が無く、運用設定値（`PHR_EXPORT_*`）も未使用。
-- Flyway スクリプト `server-modernized/tools/flyway/sql/V0220__phr_async_job.sql` は用意されているが、適用済みかどうかの記録やロールバック手順が Runbook に掲載されていない。
-- 既存ドキュメント（本ファイルおよび `MODERNIZED_REST_API_INVENTORY.md`）がエクスポート API を「実装済み」と記述しており、実態と乖離している。
+- `PHRResource` に監査ログ／TouchErrorResponse／施設突合チェックを実装し、既存 11 エンドポイントを本番品質へ引き上げた。  
+- 新規 REST エンドポイント `POST /20/adm/phr/export`、`GET /20/adm/phr/status/{jobId}`、`DELETE /20/adm/phr/status/{jobId}`、`GET /20/adm/phr/export/{jobId}/artifact` を追加。ジョブ生成〜署名付き URL による成果物配信まで完結。  
+- `PhrExportJobWorker` を新設し、`PhrExportStorageFactory` 経由でファイルシステムへ ZIP 保存・`SignedUrlService` で HMAC 署名を行う。  
+- `PHRAsyncJobServiceBean#cancel` を追加し PENDING ジョブの取消に対応。`PhrExportJobManager` は `ConcurrencyResourceNames.DEFAULT_EXECUTOR` を参照するよう修正。  
+- REST テスト `PHRResourceTest` を追加（ローカル環境では Maven 未導入のため CI 実行を要依頼）。
 
-### 2.2 既存コンポーネント
+### 2.2 主なコンポーネント（2025-11-04 時点）
 
+- `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`  
+  監査ログ・TouchErrorResponse 化、施設 ID 突合、例外統一、新規 export/status/artifact エンドポイント実装。
+- `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`  
+  既存 11 エンドポイントが利用する PHR JSON 組み立てロジックを集約。
+- `server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobManager.java` / `PhrExportJobWorker.java`  
+  Executor 経由でジョブを実行し、`PhrExportStorageFactory` が返すストレージへ ZIP を保存。完了時は `PHRAsyncJobServiceBean#completeSuccess` で署名付き URL 発行に必要な `result_uri` を設定。
 - `server-modernized/src/main/java/open/dolphin/adm20/session/PHRAsyncJobServiceBean.java`  
-  JPA 経由で `phr_async_job` テーブルを操作。`createJob`・`lockForExecution`・`completeSuccess`・`completeFailure`・`heartbeat` を提供。
-- `server-modernized/src/main/java/open/dolphin/adm20/export/PhrExportJobManager.java`  
-  `ExecutorService` を用いた非同期実行の骨子。`ManagedExecutorFactory.DEFAULT_EXECUTOR` を参照するが、`open.dolphin.session.framework.ManagedExecutorFactory` が欠落している。
-- `server-modernized/src/main/java/open/dolphin/adm20/export/FilesystemPhrExportStorage.java` / `S3PhrExportStorage.java`  
-  ZIP 保存処理。S3 実装は `UnsupportedOperationException` のまま。
-- `server-modernized/src/main/java/open/dolphin/adm20/export/HmacSignedUrlService.java`  
-  HMAC-SHA256 で署名付き URL を生成する実装。
-- `common/src/main/java/open/dolphin/infomodel/PHRAsyncJob.java`  
-  `phr_async_job` テーブルに対応するエンティティ。
-- `server-modernized/tools/flyway/sql/V0220__phr_async_job.sql`  
-  テーブル・インデックス作成 DDL。Flyway Version 0220。
+  ジョブ生成・進捗更新・成功／失敗／取消 (`cancel`) を提供。
+- `server-modernized/src/main/java/open/dolphin/adm20/rest/support/PhrAuditHelper.java` / `PhrRequestContext`  
+  PHR 専用の監査補助・リクエストコンテキスト抽出を追加。
 
-### 2.3 未実装項目と対応タスク
+### 2.3 運用チェックリスト
 
-1. **REST リソースの実装**  
-   - `PHRResource` もしくは専用リソースで `POST /20/adm/phr/export`・`GET /20/adm/phr/status/{jobId}`・`GET /20/adm/phr/export/{jobId}/artifact`・`DELETE /20/adm/phr/status/{jobId}` を追加し、認可と入力検証を行う。
-2. **ジョブワーカー整備**  
-   - `PhrExportJobWorker` の新設、`ExecutorService` 取得方法の修正（`open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames.DEFAULT_EXECUTOR` などの既存定数を利用）とテスト。
-3. **成果物生成ロジック**  
-   - `AMD20_PHRServiceBean` を用いて ZIP／JSON を生成し、`PhrExportStorageFactory` 経由で保存・署名付き URL を返却する処理を実装。S3 ストレージを実装または非サポートとして明記。
-4. **Flyway 運用手順**  
-   - `V0220__phr_async_job.sql` の適用状況を確認し、`flyway info` 取得手順とロールバック手順を Runbook に追記する。
-5. **テスト／証跡**  
-   - REST 統合テスト、`PhrExportJobManager` のユニットテスト、DDL 適用テストを追加。`PHRResource` と組み合わせたエンドツーエンド検証を確立。
-6. **監視と通知**  
-   - Micrometer メトリクス（`phr_async_job_total`, `phr_async_job_active{state=...}` など）と PagerDuty 連携ルールを実装。現在コード上にメトリクス処理はない。
-7. **ドキュメント更新**  
-   - 本ファイル・`MODERNIZED_REST_API_INVENTORY.md`・Runbook で「エクスポート API は未実装である」旨を明記し、実装完了後に更新する。
+1. Flyway `V0220__phr_async_job` が適用済みであること（`flyway info` / `\d phr_async_job`）。  
+2. `POST /20/adm/phr/export` → `GET /status/{jobId}` → アーティファクト取得 → `DELETE /status/{jobId}` のフローを `curl` で検証し、`phr_async_job`・`d_audit_event` に記録が残ること。  
+3. 監査イベント `PHR_EXPORT_*` と `PHR_ACCESS_*` が `d_audit_event` に連鎖することを確認。  
+4. `PHRResourceTest` を Maven／CI 環境で実行し、Regression を継続的に担保する（ローカルでは `mvn` 不在のため CI で実行）。
 
 ### 2.4 DDL / 運用メモ
 
@@ -134,14 +122,13 @@ CREATE INDEX IF NOT EXISTS idx_phr_async_job_state ON phr_async_job(state);
 CREATE INDEX IF NOT EXISTS idx_phr_async_job_facility ON phr_async_job(facility_id, queued_at DESC);
 ```
 
-- 本 DDL は Flyway Version 0220 に配置済み。適用確認 (`flyway info`) と `\d phr_async_job` でのスキーマ確認を運用手順へ追加する。
-- 変更が本番へ反映されるまで Runbook 上は「テーブル未作成の場合は migrate を実施せず Blocked とする」と明示する。
+- 本 DDL は Flyway Version 0220 に配置済み。`EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の手順 6 に `flyway info`／`\d phr_async_job` の確認を追記。
 
-### 2.5 Runbook 反映の暫定案
+### 2.5 Runbook 反映
 
-- `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` 4-6 の「PHR 非同期ジョブ監視」は現状実施不能であるため **Blocked** と記載し、REST 実装完了後に手順を復活させる。
-- 署名付き URL 設定値（`PHR_EXPORT_SIGNING_SECRET`, `PHR_EXPORT_TOKEN_TTL_SECONDS`, `PHR_EXPORT_STORAGE_FILESYSTEM_BASE_PATH`）は環境変数だけ先行定義し、サービス実装が揃うまで未使用と明記する。
-- 実装完了後に必要となる監視メトリクス案（`phr_async_job_active`, `phr_async_job_duration_seconds` など）をバックログへ登録しておく。
+- `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` 手順 6 を「Blocked」から正式な運用手順へ更新（Flyway → curl → SQL → 署名付き URL ダウンロード → 取消 → 監査確認）。  
+- `API_PARITY_MATRIX.md` および `MODERNIZED_REST_API_INVENTORY.md` の PHR 行を `[x] / ◎` へ更新。  
+- `docs/web-client/README.md` に Worker F の作業ログと Runbook 位置を追記。
 
 ## 3. Touch クライアントイベント連携
 

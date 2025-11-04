@@ -1,5 +1,7 @@
 package open.dolphin.touch.session;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
@@ -9,6 +11,7 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import open.dolphin.infomodel.*;
 
 /**
@@ -25,12 +28,12 @@ public class IPhoneServiceBean {
     
     // 来院情報検索
     private static final String QUERY_PATIENT_VISIT_BY_PK = "from PatientVisitModel p where p.id=:pk";
-    private static final String QUERY_PATIENT_VISIT_LIST = "from PatientVisitModel p where p.facilityId=:facilityId order by p.pvtDate";
-    private static final String QUERY_PATIENT_VISIT_LIST_RANGE = "from PatientVisitModel p where p.facilityId=:facilityId and p.pvtDate between :start and :end order by p.pvtDate";
+    private static final String QUERY_PATIENT_VISIT_LIST_BASE = "from PatientVisitModel p where p.facilityId=:facilityId";
+    private static final String QUERY_PATIENT_VISIT_LIST_RANGE_BASE = "from PatientVisitModel p where p.facilityId=:facilityId and p.pvtDate between :start and :end";
     private static final String QUERY_PATIENT_VISIT_LIST_BEFORE = "from PatientVisitModel p where p.facilityId=:facilityId and p.pvtDate < :before order by p.pvtDate";
-    
+
     // 初診検索
-    private static final String QUERY_FIRST_VISITOR_LIST = "from KarteBean k where k.patient.facilityId=:facilityId order by k.created desc";
+    private static final String QUERY_FIRST_VISITOR_LIST_BASE = "from KarteBean k where k.patient.facilityId=:facilityId";
     private static final String QUERY_FIRST_VISITOR_LIST_RANGE = "from KarteBean k where k.patient.facilityId=:facilityId and k.created between :start and :end order by k.created desc";
     
     // 患者検索
@@ -85,6 +88,37 @@ public class IPhoneServiceBean {
     @PersistenceContext
     private EntityManager em;
 
+    public enum VisitOrder {
+        PVT_DATE("p.pvtDate"),
+        PATIENT_KANA("p.patient.kanaName");
+
+        private final String orderClause;
+
+        VisitOrder(String orderClause) {
+            this.orderClause = orderClause;
+        }
+
+        public String getOrderClause() {
+            return orderClause;
+        }
+    }
+
+    public enum FirstVisitorOrder {
+        FIRST_VISIT("k.created"),
+        PATIENT_KANA("k.patient.kanaName"),
+        PATIENT_ID("k.patient.patientId");
+
+        private final String orderClause;
+
+        FirstVisitorOrder(String orderClause) {
+            this.orderClause = orderClause;
+        }
+
+        public String getOrderClause() {
+            return orderClause;
+        }
+    }
+
     public UserModel getUser(String userId, String password) {
 
         UserModel user = (UserModel)
@@ -125,31 +159,19 @@ public class IPhoneServiceBean {
     }
 
     public List<PatientVisitModel> getPatientVisit(String facilityId, int firstResult, int maxResult) {
-
-        // PatientVisitModelを施設IDで検索する
-        List<PatientVisitModel> result =
-                (List<PatientVisitModel>)em.createQuery(QUERY_PATIENT_VISIT_LIST)
-                                           .setParameter("facilityId", facilityId)
-                                           .setFirstResult(firstResult)
-                                           .setMaxResults(maxResult)
-                                           .getResultList();
-
-        return result;
+        return getPatientVisit(facilityId, firstResult, maxResult, VisitOrder.PVT_DATE, false);
     }
 
-    public List<PatientVisitModel> getPatientVisitRange(String facilityId, String start, String end, int firstResult, int MaxResult) {
+    public List<PatientVisitModel> getPatientVisit(String facilityId, int firstResult, int maxResult, VisitOrder order, boolean descending) {
+        return executeVisitQuery(QUERY_PATIENT_VISIT_LIST_BASE, facilityId, null, null, firstResult, maxResult, order, descending);
+    }
 
-        // PatientVisitModelを施設IDで検索する
-        List<PatientVisitModel> result =
-                (List<PatientVisitModel>)em.createQuery(QUERY_PATIENT_VISIT_LIST_RANGE)
-                                           .setParameter("facilityId", facilityId)
-                                           .setParameter("start", start)
-                                           .setParameter("end", end)
-                                           .setFirstResult(firstResult)
-                                           .setMaxResults(MaxResult)
-                                           .getResultList();
+    public List<PatientVisitModel> getPatientVisitRange(String facilityId, String start, String end, int firstResult, int maxResult) {
+        return getPatientVisitRange(facilityId, start, end, firstResult, maxResult, VisitOrder.PVT_DATE, false);
+    }
 
-        return result;
+    public List<PatientVisitModel> getPatientVisitRange(String facilityId, String start, String end, int firstResult, int maxResult, VisitOrder order, boolean descending) {
+        return executeVisitQuery(QUERY_PATIENT_VISIT_LIST_RANGE_BASE, facilityId, start, end, firstResult, maxResult, order, descending);
     }
 
     public List<PatientVisitModel> getPatientVisitBefore(String facilityId, String before) {
@@ -163,17 +185,69 @@ public class IPhoneServiceBean {
 
         return result;
     }
-    
-    public List<KarteBean> getFirstVisitors(String facilityId, int firstResult, int maxResult) {
 
-        List<KarteBean> list =
-                (List<KarteBean>)em.createQuery(QUERY_FIRST_VISITOR_LIST)
-                                           .setParameter("facilityId", facilityId)
-                                           .setFirstResult(firstResult)
-                                           .setMaxResults(maxResult)
-                                           .getResultList();
-        
-        return list;
+    public List<KarteBean> getFirstVisitors(String facilityId, int firstResult, int maxResult) {
+        return getFirstVisitors(facilityId, firstResult, maxResult, FirstVisitorOrder.FIRST_VISIT, true);
+    }
+
+    public List<KarteBean> getFirstVisitors(String facilityId, int firstResult, int maxResult, FirstVisitorOrder order, boolean descending) {
+        String orderClause = (order != null ? order.getOrderClause() : FirstVisitorOrder.FIRST_VISIT.getOrderClause());
+        String direction = descending ? " desc" : " asc";
+        String jpql = QUERY_FIRST_VISITOR_LIST_BASE + " order by " + orderClause + direction;
+        return em.createQuery(jpql, KarteBean.class)
+                .setParameter("facilityId", facilityId)
+                .setFirstResult(firstResult)
+                .setMaxResults(maxResult)
+                .getResultList();
+    }
+
+    public List<PatientVisitModel> getPatientVisitWithFallback(String facilityId, String start, String end, int maxResult, int fallbackDays, VisitOrder order, boolean descending) {
+        List<PatientVisitModel> current = getPatientVisitRange(facilityId, start, end, 0, maxResult, order, descending);
+        if (!current.isEmpty() || fallbackDays <= 0) {
+            return current;
+        }
+        LocalDate baseDate = extractDate(start);
+        if (baseDate == null) {
+            return current;
+        }
+        for (int i = 1; i <= fallbackDays; i++) {
+            LocalDate target = baseDate.minusDays(i);
+            String fallbackStart = target + "T00:00:00";
+            String fallbackEnd = target + "T23:59:59";
+            List<PatientVisitModel> fallback = getPatientVisitRange(facilityId, fallbackStart, fallbackEnd, 0, maxResult, order, descending);
+            if (!fallback.isEmpty()) {
+                return fallback;
+            }
+        }
+        return current;
+    }
+
+    private List<PatientVisitModel> executeVisitQuery(String baseJpql, String facilityId, String start, String end, int firstResult, int maxResult, VisitOrder order, boolean descending) {
+        String orderClause = (order != null ? order.getOrderClause() : VisitOrder.PVT_DATE.getOrderClause());
+        String direction = descending ? " desc" : " asc";
+        String jpql = baseJpql + " order by " + orderClause + direction;
+        TypedQuery<PatientVisitModel> query = em.createQuery(jpql, PatientVisitModel.class)
+                .setParameter("facilityId", facilityId)
+                .setFirstResult(firstResult)
+                .setMaxResults(maxResult);
+        if (start != null) {
+            query.setParameter("start", start);
+        }
+        if (end != null) {
+            query.setParameter("end", end);
+        }
+        return query.getResultList();
+    }
+
+    private LocalDate extractDate(String isoDateTime) {
+        if (isoDateTime == null || isoDateTime.length() < 10) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(isoDateTime.substring(0, 10));
+        } catch (DateTimeParseException e) {
+            return null;
+        }
     }
 
     public List<KarteBean> getFirstVisitorsRange(String facilityId, Date start, Date end) {
