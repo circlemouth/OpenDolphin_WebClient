@@ -11,7 +11,7 @@
 | 外部サービス監査 | ORCA／Plivo 連携の監査ログは手動ログ (`Logger`) のみ。 | `ExternalServiceAuditLogger` がトレース ID 付きで ORCA・Plivo 送受信を専用ロガーへ出力。<br>参照: `server-modernized/src/main/java/open/dolphin/msg/gateway/ExternalServiceAuditLogger.java:1` | `logging.properties` 推奨設定を Micrometer 連携版へ更新し、外部連携成功/失敗カウンタを `MeterRegistry` から集計できるようにする。 |
 | REST メトリクス | 計測なし。 | `RequestMetricsFilter` が Micrometer (`MeterRegistry`) を介して `opendolphin_api_*` シリーズをカウント／タイム計測し、`X-Trace-Id` と連携。<br>参照: `server-modernized/src/main/java/open/dolphin/metrics/RequestMetricsFilter.java:1` | Micrometer への移行完了。残タスク: Prometheus 管理ポートのアクセス制御を `operations` 配下へ追記、Grafana の P95/エラーレートダッシュボード更新、`step` と `scrape_interval` の整合検証を定期運用に組み込む。 |
 | JDBC プールメトリクス | 計測なし。 | `DatasourceMetricsRegistrar` が Micrometer Gauge を登録し、Agroal メトリクス API から接続数を供給。再デプロイ時に重複しないよう既存 Gauge を削除後に再登録する。<br>参照: `server-modernized/src/main/java/open/dolphin/metrics/DatasourceMetricsRegistrar.java:1` | Micrometer 用 Gauge 実装へ置き換え済み。Grafana で接続枯渇アラート（`active_connections` と `available_connections` の閾値監視）を追加し、夜間バッチ時のピーク値を `max_used_connections` で確認する運用手順を整備。 |
-| 定期ジョブ / バックグラウンド処理 | `ServletStartup` の `@Schedule`（EJB Timer）が日次更新／月次集計を実行。<br>参照: `server/src/main/java/open/dolphin/mbean/ServletStartup.java:1` | `ManagedScheduledExecutorService` を注入し、アプリケーションスコープで日次・月次処理をスケジュール。<br>参照: `server-modernized/src/main/java/open/dolphin/mbean/ServletStartup.java:1` | WildFly 33 では `ee-concurrency` サブシステムのリソース名を CLI で明示する必要がある。Failover 時の再スケジュール可否と監査ログ連携（成功/失敗記録）を Micrometer のメトリクスと併せて整備する。 |
+| 定期ジョブ / バックグラウンド処理 | `ServletStartup` の `@Schedule`（EJB Timer）が日次更新／月次集計を実行。<br>参照: `server/src/main/java/open/dolphin/mbean/ServletStartup.java:1` | `ManagedScheduledExecutorService` を注入し、アプリケーションスコープで日次・月次処理をスケジュール。<br>参照: `server-modernized/src/main/java/open/dolphin/mbean/ServletStartup.java:1` | 2026-06-03 時点で `ops/modernized-server/docker/configure-wildfly.cli` の適用と Worker S3 の `verify_startup.sh` により `managed-executor-service`／`managed-scheduled-executor-service`／`managed-thread-factory` の存在確認を自動化済み。今後は Failover 時の再スケジュール検証と Micrometer `executor.*` メトリクス監視を運用チェックリストへ組み込む。 |
 | JMS / 非同期ジョブ | `MessageSender` / `ScheduleServiceBean` に JMS キュー定義（HornetQ）を想定するコードが存在するが、現在はコメントアウト済み。`ops/legacy-server/docker/configure-wildfly.cli` もキュー未定義。 | `MessagingGateway` が `ManagedExecutorService` で非同期送信を代替。JMS リソース注入は依然コメントアウトされ、`configure-wildfly.cli` も ActiveMQ 設定なし。<br>参照: `server-modernized/src/main/java/open/dolphin/session/MessageSender.java` | JMS 再有効化時は Micrometer の Executor メトリクス（`executor.*`）を合わせて収集できるようにする。並行度・失敗回数を Prometheus へ送出し、CLAIM 送信トレースと整合させる必要がある。 |
 
 ## 2. 完了した Micrometer 対応とフォローアップ
@@ -45,6 +45,7 @@
 2. **障害復旧手順**: 監査ログと Micrometer を連携させることで、障害時に `AuditTrailService` のチェーン整合性を確認する検証手順（DB ロールバック時のハッシュ再計算など）を `operations` 系ドキュメントへ追記する。
 3. **アラート設計**: Micrometer への移行後、既存 Grafana / Prometheus ルールを `opendolphin_api_error_total`・`opendolphin_db_active_connections` に合わせて再設計する。WildFly 33 のヘルスチェックエンドポイント（`/health/ready` 等）も監視対象へ加える。
 4. **設定管理**: `configure-wildfly.cli` と `.env` で重複管理している設定値（Plivo、2FA、DB SSL）が散在しているため、Micrometer 追加分も含めて命名を統一し IaC（Terraform 等）へ移管する準備を進める。
+5. **Concurrency 監視**: `verify_startup.sh` が `managed-*` リソース確認を網羅するため、定期実行結果と `executor.*` メトリクス（キュー長・失敗件数）を `PHASE2_PROGRESS.md` へ記録し、再スケジュール失敗時のエスカレーションルートを決める。
 
 ---
 

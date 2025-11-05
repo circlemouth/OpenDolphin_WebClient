@@ -74,6 +74,7 @@ RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
     jar uf ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war -C /opt/jboss/tmp WEB-INF && \
     rm -rf /opt/jboss/tmp
 
+# Manual check (Ops-CLI): run `docker build -f ops/modernized-server/docker/Dockerfile .` and ensure the JBoss CLI log shows configure-wildfly.cli finishing with `outcome => success`
 RUN ${WILDFLY_HOME}/bin/jboss-cli.sh --file=/opt/jboss/configure-wildfly.cli && \
     rm -f /opt/jboss/configure-wildfly.cli
 
