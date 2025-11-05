@@ -60,6 +60,11 @@ Docker 関連資産は `ops/` 以下に整理されている。旧サーバー�
 ## モダナイズ版スタック（WildFly 33 / Jakarta EE 10）の起動
 `docker-compose.modernized.dev.yml` を併用すると、従来サーバーと共存したまま Jakarta EE 10 版を検証できる。
 
+### 起動前チェックリスト（WildFly 33 評価環境）
+- [ ] Secrets 配置を確認する。Worker S1 が整理した `docs/server-modernization/security/DEPLOYMENT_WORKFLOW.md` の手順に従い、`.env` と `ops/shared/docker/custom.properties` へ `FACTOR2_AES_KEY_B64` など必須値が投入されていること、Vault 連携が前提の項目にダミー値を置いていないことを再確認する。
+- [ ] Worker S3 提供の検証スクリプト `ops/modernized-server/checks/verify_startup.sh` を事前に実行し、`ops/modernized-server/checks/README.md` 記載のとおり Docker コンテナ名を指定して Secrets／データソース／JMS／Concurrency の各リソースが取得できることを確認する。
+- [ ] WildFly CLI (`ops/modernized-server/docker/configure-wildfly.cli`) で JMS/Concurrency リソースが定義済みであることを前提とする。`docker exec -it <container> /opt/jboss/wildfly/bin/jboss-cli.sh --connect` で `jms-queue list` および `/subsystem=ee/service=managed-*-service=default:read-resource` を実行し、必要なキューと `ManagedExecutorService`/`ManagedScheduledExecutorService`/`ManagedThreadFactory` が存在することを確認する。
+
 1. `.env` に必要なモダナイズ用パラメータを追記する（未指定時はデフォルト値を利用）。
    ```env
    MODERNIZED_POSTGRES_DB=opendolphin_modern

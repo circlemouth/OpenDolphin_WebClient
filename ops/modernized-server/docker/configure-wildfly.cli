@@ -3,34 +3,70 @@ embed-server --std-out=echo --server-config=standalone-full.xml
 # 2025-11-03 モダナイズ対応: WildFly 33 base レイヤ指定（依存は javax 系で維持）
 module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=javax.api,javax.transaction.api --module-root-dir=/opt/jboss/wildfly/modules/system/layers/base
 
-if (outcome == success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource()
-    /subsystem=datasources/jdbc-driver=postgresql:remove()
-end-if
-/subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
-
-if (outcome == success) of /subsystem=datasources/data-source=ORCADS:read-resource()
-    /subsystem=datasources/data-source=ORCADS:remove()
-end-if
-# 2025-11-03 モダナイズ対応: デフォルトDB名opendolphin_modernへ統一
-/subsystem=datasources/data-source=ORCADS:add(jndi-name=java:jboss/datasources/ORCADS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
-/subsystem=datasources/data-source=ORCADS:write-attribute(name=query-timeout,value=60)
-if (outcome == success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
-    /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:remove()
-end-if
-if (result != "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
-    /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
+if (outcome != success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource()
+    /subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
 end-if
 
-if (outcome == success) of /subsystem=datasources/data-source=PostgresDS:read-resource()
-    /subsystem=datasources/data-source=PostgresDS:remove()
+# 旧 ORCADS 設定を踏襲しつつ、再実行時に差分のみ反映されるよう冪等化
+if (outcome != success) of /subsystem=datasources/data-source=ORCADS:read-resource()
+    /subsystem=datasources/data-source=ORCADS:add(jndi-name=java:jboss/datasources/ORCADS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1", query-timeout=60)
+else
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=jndi-name,value="java:jboss/datasources/ORCADS")
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=driver-name,value=postgresql)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=connection-url,value="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}")
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=user-name,value=${env.DB_USER:opendolphin})
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=password,value=${env.DB_PASSWORD:opendolphin})
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=use-ccm,value=false)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=share-prepared-statements,value=true)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=min-pool-size,value=5)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=max-pool-size,value=50)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=background-validation,value=true)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=background-validation-millis,value=60000)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=validate-on-match,value=true)
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=check-valid-connection-sql,value="SELECT 1")
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=query-timeout,value=60)
 end-if
-/subsystem=datasources/data-source=PostgresDS:add(jndi-name=java:jboss/datasources/PostgresDS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1")
-/subsystem=datasources/data-source=PostgresDS:write-attribute(name=query-timeout,value=60)
-if (outcome == success) of /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:read-resource()
-    /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:remove()
+if (result == "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
+    if (outcome == success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
+        /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:remove()
+    end-if
+else
+    if (outcome != success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
+        /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
+    else
+        /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:write-attribute(name=value,value="${env.DB_SSLROOTCERT}")
+    end-if
 end-if
-if (result != "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
-    /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
+
+# 旧 PostgresDS を再デプロイ時に破棄しない形で同期
+if (outcome != success) of /subsystem=datasources/data-source=PostgresDS:read-resource()
+    /subsystem=datasources/data-source=PostgresDS:add(jndi-name=java:jboss/datasources/PostgresDS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1", query-timeout=60)
+else
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=jndi-name,value="java:jboss/datasources/PostgresDS")
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=driver-name,value=postgresql)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=connection-url,value="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}")
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=user-name,value=${env.DB_USER:opendolphin})
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=password,value=${env.DB_PASSWORD:opendolphin})
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=use-ccm,value=false)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=share-prepared-statements,value=true)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=min-pool-size,value=5)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=max-pool-size,value=50)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=background-validation,value=true)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=background-validation-millis,value=60000)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=validate-on-match,value=true)
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=check-valid-connection-sql,value="SELECT 1")
+    /subsystem=datasources/data-source=PostgresDS:write-attribute(name=query-timeout,value=60)
+end-if
+if (result == "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
+    if (outcome == success) of /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:read-resource()
+        /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:remove()
+    end-if
+else
+    if (outcome != success) of /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:read-resource()
+        /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
+    else
+        /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:write-attribute(name=value,value="${env.DB_SSLROOTCERT}")
+    end-if
 end-if
 
 if (outcome == success) of /subsystem=logging/logger=open.dolphin:read-resource()
@@ -79,20 +115,75 @@ if (outcome != success) of /subsystem=undertow/server=default-server/host=defaul
 end-if
 
 # --- ActiveMQ Artemis JMS リソース（予約・通知バッチ向け） ---
+# default-resource-adapter-name=activemq-ra で MDB 側の ${messaging.resource.adapter} と整合
+/subsystem=messaging-activemq/server=default:write-attribute(name=default-resource-adapter-name,value=activemq-ra)
 if (outcome != success) of /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource()
     /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:add(entries=["java:/queue/dolphin","java:jboss/exported/jms/queue/dolphin"], durable=true)
+else
+    /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:write-attribute(name=entries,value=["java:/queue/dolphin","java:jboss/exported/jms/queue/dolphin"])
+    /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:write-attribute(name=durable,value=true)
 end-if
 if (outcome == success) of /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:read-resource()
     /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:remove()
 end-if
-if (outcome == success) of /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:read-resource()
-    /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:write-attribute(name=entries, value=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"])
-else
+if (outcome != success) of /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:read-resource()
     /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:add(entries=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"], connectors=["in-vm"], use-global-pools=false)
+else
+    /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:write-attribute(name=entries,value=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"])
+    /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:write-attribute(name=connectors,value=["in-vm"])
+    /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:write-attribute(name=use-global-pools,value=false)
 end-if
-if (outcome == success) of /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource()
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:remove()
+# MDB が Jakarta Messaging の JmsXA を解決できるよう activemq-ra 経由で冪等作成
+if (outcome != success) of /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource()
+    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:add(entries=["java:/JmsXA"], connectors=["in-vm"], transaction="xa", use-local-tx=false)
+else
+    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=entries,value=["java:/JmsXA"])
+    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=connectors,value=["in-vm"])
+    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=transaction,value="xa")
+    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=use-local-tx,value=false)
 end-if
+
+# --- Jakarta Concurrency リソース（Managed Executor / Scheduler / ThreadFactory） ---
+if (outcome != success) of /subsystem=ee-concurrency/context-service=DolphinContext:read-resource()
+    /subsystem=ee-concurrency/context-service=DolphinContext:add(jndi-name="java:jboss/ee/concurrency/context/dolphin", use-transaction-of-enc=true)
+else
+    /subsystem=ee-concurrency/context-service=DolphinContext:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/context/dolphin")
+    /subsystem=ee-concurrency/context-service=DolphinContext:write-attribute(name=use-transaction-of-enc,value=true)
+end-if
+if (outcome != success) of /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:read-resource()
+    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:add(jndi-name="java:jboss/ee/concurrency/executor/dolphin", context-service=DolphinContext, long-running-tasks=true, hung-task-threshold=600000, core-threads=8, max-threads=64)
+else
+    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/executor/dolphin")
+    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=context-service,value=DolphinContext)
+    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=long-running-tasks,value=true)
+    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=hung-task-threshold,value=600000)
+    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=core-threads,value=8)
+    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=max-threads,value=64)
+end-if
+if (outcome != success) of /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:read-resource()
+    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:add(jndi-name="java:jboss/ee/concurrency/scheduler/dolphin", context-service=DolphinContext, hung-task-threshold=600000, core-threads=4)
+else
+    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/scheduler/dolphin")
+    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=context-service,value=DolphinContext)
+    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=hung-task-threshold,value=600000)
+    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=core-threads,value=4)
+end-if
+if (outcome != success) of /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:read-resource()
+    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:add(jndi-name="java:jboss/ee/concurrency/threadfactory/dolphin", context-service=DolphinContext, priority=5)
+else
+    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/threadfactory/dolphin")
+    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:write-attribute(name=context-service,value=DolphinContext)
+    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:write-attribute(name=priority,value=5)
+end-if
+/subsystem=ee-concurrency:write-attribute(name=default-context-service,value=DolphinContext)
+/subsystem=ee-concurrency:write-attribute(name=default-managed-executor-service,value=DolphinExecutor)
+/subsystem=ee-concurrency:write-attribute(name=default-managed-scheduled-executor-service,value=DolphinScheduler)
+/subsystem=ee-concurrency:write-attribute(name=default-managed-thread-factory,value=DolphinThreadFactory)
+
+# --- CLI 実行ログ確認用リソース記述出力 ---
+/subsystem=datasources:read-resource-description(recursive=false)
+/subsystem=messaging-activemq/server=default:read-resource-description(recursive=false)
+/subsystem=ee-concurrency:read-resource-description(recursive=false)
 
 # Micrometer 監視連携: JMS/Undertow のメトリクスが Micrometer のスクレイプ対象と整合するように保守すること。
 

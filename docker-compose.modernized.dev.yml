@@ -33,6 +33,7 @@ services:
       DB_NAME: ${MODERNIZED_POSTGRES_DB:-opendolphin_modern}
       DB_USER: ${MODERNIZED_POSTGRES_USER:-opendolphin}
       DB_PASSWORD: ${MODERNIZED_POSTGRES_PASSWORD:-opendolphin}
+      # ↑ 開発向けの代替値。本番で未上書きの場合、DB 接続が拒否され起動失敗となるため必ず Secrets から供給する。
       DB_SSLMODE: ${MODERNIZED_DB_SSLMODE:-prefer}
       DB_SSLROOTCERT: ${MODERNIZED_DB_SSLROOTCERT:-}
       PLIVO_AUTH_ID: ${PLIVO_AUTH_ID:-}
@@ -43,6 +44,7 @@ services:
       PLIVO_LOG_LEVEL: ${PLIVO_LOG_LEVEL:-NONE}
       PLIVO_LOG_MESSAGE_CONTENT: ${PLIVO_LOG_MESSAGE_CONTENT:-false}
       PLIVO_DEFAULT_COUNTRY: ${PLIVO_DEFAULT_COUNTRY:-+81}
+      # Secrets (本番必須項目)。未設定のまま本番デプロイすると WildFly が `IllegalStateException` で停止する。
       FACTOR2_AES_KEY_B64: ${FACTOR2_AES_KEY_B64:-b3BlbmRvbHBoaW4tZGV2LWZhY3RvcjIta2V5LTMyYnl0ZXM=}
       FIDO2_RP_ID: ${FIDO2_RP_ID:-localhost}
       FIDO2_RP_NAME: ${FIDO2_RP_NAME:-OpenDolphin Dev}

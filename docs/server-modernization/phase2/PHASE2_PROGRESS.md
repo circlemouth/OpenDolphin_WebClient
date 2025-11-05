@@ -1,4 +1,30 @@
-# フェーズ2 進捗メモ (更新: 2026-05-27)
+# フェーズ2 進捗メモ (更新: 2026-06-04)
+
+## 2026-06-04 追記: WildFly CLI 冪等化（担当: Worker S2）
+- ✅ `ops/modernized-server/docker/configure-wildfly.cli` の JDBC データソース（`java:/jboss/datasources/ORCADS` / `PostgresDS`）を `if (outcome != success)` 判定で増分更新し、旧 SSL 設定の有無に応じたプロパティ整理を行った。
+- ✅ ActiveMQ Artemis の `java:/queue/dolphin` / `java:/JmsXA` / `default-resource-adapter-name=activemq-ra` を冪等作成し、従来キューとの互換を保ったまま MDB 連携を有効化。
+- ✅ `ee-concurrency` サブシステムへ `DolphinContext` / `DolphinExecutor` / `DolphinScheduler` / `DolphinThreadFactory` を追加し、デフォルト参照先をまとめて JNDI 化。CLI ログには `:read-resource-description` で最終状態を記録。
+- ✅ `ops/modernized-server/docker/Dockerfile` に手動ビルド検証のコメントを追記し、CLI スクリプト完走確認手順を明示。
+
+## 2025-11-05 追記: Secrets 配布ワークフロー整備（担当: Worker S1）
+- ✅ `docs/server-modernization/security/DEPLOYMENT_WORKFLOW.md` へ `FACTOR2_AES_KEY_B64` の生成・ローテーション手順と Jakarta EE 10 向け Secrets 配布フローを追加し、未設定時の失敗条件と監査対応を明文化。
+- ✅ `.env.sample` / `server-modernized/config/server-modernized.env.sample` / `docker-compose.modernized.dev.yml` に Secrets 必須項目のコメントを追記し、本番では Vault 等から値を注入する必要がある旨と未設定時の挙動を明記。
+- ✅ `docs/server-modernization/phase2/operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md` へ Secrets 手順への参照を追加し、2FA 鍵欠落時の対応先を統一。
+
+## 2026-06-03 追記: Ops 自動検証スクリプト導入（担当: Worker S3）
+- ✅ WildFly 必須リソースを `docker exec` と `jboss-cli.sh` で検証する `ops/modernized-server/checks/verify_startup.sh` を追加。`set -euo pipefail` でブロッカーを即検知できるよう、各ステップで `[INFO]` / `[OK]` ログを整備。
+- ✅ スクリプトの前提条件と使用例を `ops/modernized-server/checks/README.md` に整理し、Ops チームがジョブ基盤へ組み込みやすいよう参照手順を明文化。
+- ✅ `docs/server-modernization/phase2/operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md` に「Ops 自動検証スクリプト」節を追加し、チェック対象リソースと導入意図をリンク付きで記載。
+
+## 2026-06-03 追記: WildFly 33 運用ランブック整理（担当: Worker S4）
+- ✅ `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` にモダナイズ版起動前チェックリストを新設し、Worker S1 の Secrets 配布手順／Worker S3 の検証スクリプト／JMS・Concurrency リソース確認を連携させた。
+- ✅ `docs/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md` へ JMS 設定完了証跡と CLI／`verify_startup.sh` を用いた検証フローを追記し、ログ保存場所とフェールオーバーテストの手順を明文化。
+- ✅ `docs/server-modernization/phase2/operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md` に Concurrency リソース整備済みである旨と `executor.*` メトリクス監視のフォローアップタスクを追加。
+- 📝 本メモを更新し、Documentation Runbook の進捗を記録。
+
+## 2026-06-02 追記: server-modernized 起動ブロッカー整理（担当: Codex）
+- ✅ 起動を阻害している依存リソースを調査し、`docs/server-modernization/phase2/operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md` に 2FA 秘密鍵・JDBC データソース・JMS・Jakarta Concurrency の不足点と対応手順をまとめた。
+- ✅ `docs/web-client/README.md` のナビゲーションへ上記ドキュメントを追加し、フロントエンド側からも参照できるようリンクを更新。
 
 ## 2026-05-27 Update: API parity tooling (owner Codex)
 - Added `scripts/api_parity_eval.py` to aggregate coverage by matching legacy OpenAPI (`docs/server-modernization/server-api-inventory.yaml`) and the parity matrix (`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`).

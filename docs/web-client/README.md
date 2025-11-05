@@ -29,6 +29,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - `docs/server-modernization/phase2/domains/AUTH_SECURITY_COMPARISON.md`: 旧サーバーとモダナイズ版の認証／MFA／監査実装比較と Jakarta EE 10 影響・推奨アクション（2025-11-02 追記）。
 - `docs/server-modernization/phase2/domains/RESERVATION_BATCH_MIGRATION_NOTES.md`: 予約・通知・バッチ機能の Jakarta EE 10 化影響と依存ギャップ整理（2025-11-02 更新）。
 - `docs/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md`: JMS 設定ギャップと Worker 0 向けアクションメモ。
+- `docs/server-modernization/phase2/operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md`: WildFly 起動を阻害する未実装リソース（2FA 秘密鍵 / JDBC データソース / JMS / Jakarta Concurrency）の調査結果と対応手順（2026-06-02 追加）。
 - `docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md`: JsonTouch/PHR/PVT 互換性確認と PHR 非同期ジョブ状態管理・Touch SSE 運用手順（2025-11-04 更新: PHR export API 実装・ジョブ監視手順を反映。2025-11-03 追加）。
 - `docs/server-modernization/phase2/domains/EXTERNAL_INTEGRATION_JAKARTA_STATUS.md`: 外部連携（ORCA/HL7/Plivo/WebAuthn 等）の旧 API・依存差分とライセンス対応を整理したギャップリスト。
 - `docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md`: 患者基本情報・カルテ閲覧系の `javax.*` 残存状況、レスポンスモデル比較、Micrometer 置換など Jakarta EE 10 移行時の影響整理。閲覧 API 改修時は合わせて参照。

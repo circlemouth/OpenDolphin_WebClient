@@ -1,0 +1,17 @@
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/adm20/rest/AdmissionResourceFactor2Test.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/rest/LetterResourceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/touch/DolphinResourceDocumentTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/security/totp/TotpHelperTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/touch/stamp/TouchStampServiceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/rest/PVTResource2Test.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/touch/user/TouchUserServiceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/touch/DolphinResourceVisitTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/rest/SystemResourceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/adm20/rest/EHTResourceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/rest/PHRResourceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/touch/TouchModuleResourceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/touch/JsonTouchResourceParityTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/rest/DemoResourceAspTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/security/totp/TotpSecretProtectorTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/rest/StampResourceTest.java
+/workspaces/OpenDolphin_WebClient/server-modernized/src/test/java/open/dolphin/touch/patient/TouchPatientServiceTest.java
