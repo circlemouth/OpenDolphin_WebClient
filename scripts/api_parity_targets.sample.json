@@ -1,0 +1,39 @@
+{
+  "defaults": {
+    "headers": {
+      "Accept": "application/json"
+    },
+    "expected_status": 200,
+    "compare": "json",
+    "ignore_keys": []
+  },
+  "targets": [
+    {
+      "name": "Server info / jamri",
+      "method": "GET",
+      "path": "/serverinfo/jamri",
+      "compare": "text"
+    },
+    {
+      "name": "User lookup",
+      "method": "GET",
+      "path": "/user/{userId}",
+      "query": {
+        "userId": "doctor01"
+      },
+      "legacy_headers": {
+        "userName": "doctor01",
+        "password": "md5hash",
+        "clientUUID": "legacy-client"
+      },
+      "modern_headers": {
+        "userName": "doctor01",
+        "password": "md5hash",
+        "clientUUID": "modern-client"
+      },
+      "ignore_keys": [
+        "lastLoginAt"
+      ]
+    }
+  ]
+}
