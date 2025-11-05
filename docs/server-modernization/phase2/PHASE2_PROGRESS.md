@@ -1,9 +1,10 @@
 # フェーズ2 進捗メモ (更新: 2026-05-27)
 
-- ✅ `/10/adm/jtouch/*` 16 件を Jakarta 版 `JsonTouchResource` に実装し直し、`JsonTouchResourceParityTest` 17 ケースで `/jtouch/*`・`/20/adm/jtouch/*` とレスポンス／監査ログの整合を確認。`JsonTouchAuditLogger` 導入で監査ログカテゴリを統一し、`System.err` 出力と独自例外処理を排除した。
-- 📊 集計サマリを再計算し、legacy 256 件中 213 件が証跡取得済み、未整備 43 件（DolphinResourceASP 19 + DemoResourceASP 15 + SystemResource 5 + MmlResource 4）。PHRResource 11 件と PHR export/status 系 API は 2025-11-04 時点で完了済み。
-- 📄 変更ドキュメント: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`（JsonTouch 行・集計値更新／17 ケーステスト脚注追記）、`docs/server-modernization/phase2/PHASE2_PROGRESS.md`（本メモ）、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`（JSONTOUCH パリティ実行ログ追記）、`docs/web-client/README.md`（更新概要を反映）。
-- ⚠️ 未整備タスク: `/20/adm/jtouch` 系への監査ログ統一と Parity テスト拡張、PHR エクスポート REST/API 実装、MmlResource Labtest/Letter の動作ログ取得。`mvn -pl server-modernized test` は DuplicateProjectException で失敗するため、POM 整理と CI 実行手段の整備が必要。担当（Worker C/D/E/F）へフォローを依頼済み。
+## 2026-05-27 Update: API parity tooling (owner Codex)
+- Added `scripts/api_parity_eval.py` to aggregate coverage by matching legacy OpenAPI (`docs/server-modernization/server-api-inventory.yaml`) and the parity matrix (`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`).
+- `[x]` combined with the complete symbol is treated as fully migrated; uncovered entries and OpenAPI gaps are listed in the CLI output for follow-up.
+- Introduced `scripts/api_parity_response_check.py` to send mirrored requests to both servers and compare status/body based on a JSON definition. Destination IPs are supplied via `LEGACY_API_BASE` / `MODERN_API_BASE` or `--legacy-base` / `--modern-base`.
+- Published `scripts/api_parity_targets.sample.json` as a template for request definitions and documented the workflow in `docs/server-modernization/operations/API_PARITY_RESPONSE_CHECK.md`.
 
 ## 2025-11-03 追記: PVTResource2 / SystemResource パリティ再点検（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/rest/PVTResource2.java` の POST/GET 実装と `server-modernized/src/test/java/open/dolphin/rest/PVTResource2Test.java` のカバレッジを確認し、`/pvt2` POST・`/pvt2/pvtList` GET を `[x]` 判定へ更新。facility ID 再紐付けと `PatientVisitListConverter` 包装処理の単体テスト証跡を取得済み。
