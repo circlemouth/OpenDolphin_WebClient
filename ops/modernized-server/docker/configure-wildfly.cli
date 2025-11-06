@@ -1,5 +1,10 @@
 embed-server --std-out=echo --server-config=standalone-full.xml
 
+# Disable standalone_xml_history rotation errors on mounted volumes
+if (outcome == success) of /core-service=management/service=configuration-manager:read-resource()
+    /core-service=management/service=configuration-manager:write-attribute(name=configuration-change-history-enabled,value=false)
+end-if
+
 # 2025-11-03 モダナイズ対応: WildFly 33 base レイヤ指定（依存は javax 系で維持）
 module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=javax.api,javax.transaction.api --module-root-dir=/opt/jboss/wildfly/modules/system/layers/base
 
@@ -126,15 +131,7 @@ else
     /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:write-attribute(name=connectors,value=["in-vm"])
     /subsystem=messaging-activemq/server=default/connection-factory=InVmConnectionFactory:write-attribute(name=use-global-pools,value=false)
 end-if
-# MDB が Jakarta Messaging の JmsXA を解決できるよう activemq-ra 経由で冪等作成
-if (outcome != success) of /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource()
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:add(entries=["java:/JmsXA"], connectors=["in-vm"], transaction="xa", use-local-tx=false)
-else
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=entries,value=["java:/JmsXA"])
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=connectors,value=["in-vm"])
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=transaction,value="xa")
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:write-attribute(name=use-local-tx,value=false)
-end-if
+# WildFly 33 では java:/JmsXA が既定で提供されるため、追加定義は行わない
 
 # --- Jakarta Concurrency リソース（Managed Executor / Scheduler / ThreadFactory） ---
 if (outcome != success) of /subsystem=ee/context-service=DolphinContext:read-resource()

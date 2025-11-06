@@ -53,6 +53,12 @@ public class PlivoSender {
         this.traceManager = traceManager;
     }
 
+    @SuppressWarnings("unused")
+    protected PlivoSender() {
+        this.smsGatewayConfig = null;
+        this.traceManager = null;
+    }
+
     public void send(List<String> destinations, String message) throws SMSException {
         if (destinations == null || destinations.isEmpty()) {
             throw new SMSException("SMS の送信先が設定されていません");

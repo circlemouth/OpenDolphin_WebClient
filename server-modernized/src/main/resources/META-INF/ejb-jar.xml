@@ -9,7 +9,7 @@
             <ejb-class>open.dolphin.session.MessageSender</ejb-class>
             <messaging-type>jakarta.jms.MessageListener</messaging-type>
             <resource-adapter>
-                <resource-adapter-name>${messaging.resource.adapter:activemq-ra.rar}</resource-adapter-name>
+                <resource-adapter-name>${messaging.resource.adapter:activemq-ra}</resource-adapter-name>
             </resource-adapter>
         </message-driven>
     </enterprise-beans>

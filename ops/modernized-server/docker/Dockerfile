@@ -76,7 +76,8 @@ RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
 
 # Manual check (Ops-CLI): run `docker build -f ops/modernized-server/docker/Dockerfile .` and ensure the JBoss CLI log shows configure-wildfly.cli finishing with `outcome => success`
 RUN ${WILDFLY_HOME}/bin/jboss-cli.sh --file=/opt/jboss/configure-wildfly.cli && \
-    rm -f /opt/jboss/configure-wildfly.cli
+    rm -f /opt/jboss/configure-wildfly.cli && \
+    rm -rf ${WILDFLY_HOME}/standalone/configuration/standalone_xml_history
 
 RUN chown -R jboss:0 ${WILDFLY_HOME} /opt/jboss/bootstrap.sh /opt/jboss/postgresql-driver.jar
 

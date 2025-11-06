@@ -164,99 +164,13 @@ Docker 関連資産は `ops/` 以下に整理されている。旧サーバー�
   - `TOUCH_USER_LOOKUP`（ユーザ参照。S3 Secret は含まれない JSON）
 - 施設 ID が一致しない、`X-Access-Reason` 省略、Consent トークン未設定の場合はいずれも 403 または 401 が返却される。Runbook `PIA-Touch-20251104-01` に検証ログと SQL サンプルを添付済み。
 
-## 初期ログイン情報（2025-11-02 更新）
+## 初期ログイン情報
 
-- 施設 ID: `1.3.6.1.4.1.9414.72.103`
-- 管理者アカウント: `admin`
-  - 平文パスワード: `admin2025`
-  - MD5: `e88df8596ff8847e232b1e4b1b5ffde2`
-- 医師アカウント: `doctor1`
-  - 平文パスワード: `doctor2025`
-  - MD5: `632080fabdb968f9ac4f31fb55104648`
+> 認証情報をリポジトリに含めない方針に変更しました。各環境固有のアカウント情報は `.gitignore` 登録済みの `docs/web-client/operations/mac-dev-login.local.md` などローカル専用ドキュメントで管理してください。以下ではアカウント作成 API の概要のみ記載します。
 
-### 生成手順メモ
-
-1. 管理者アカウントの JSON ペイロードを作成する（パスは任意）。
-   ```bash
-   cat <<'JSON' > /tmp/create-admin.json
-   {
-     "userId": "admin",
-     "password": "e88df8596ff8847e232b1e4b1b5ffde2",
-     "sirName": "管理",
-     "givenName": "者",
-     "commonName": "管理 者",
-     "email": "admin@example.com",
-     "memberType": "FACILITY_USER",
-     "registeredDate": "2025-11-02",
-     "facilityModel": {
-       "facilityName": "OpenDolphin ローカル検証クリニック",
-       "zipCode": "1000000",
-       "address": "東京都千代田区1-1-1",
-       "telephone": "03-0000-0000",
-       "memberType": "FACILITY_USER",
-       "registeredDate": "2025-11-02"
-     },
-     "licenseModel": {
-       "license": "doctor",
-       "licenseDesc": "医師",
-       "licenseCodeSys": "MML0026"
-     },
-     "departmentModel": {
-       "department": "01",
-       "departmentDesc": "内科",
-       "departmentCodeSys": "MML0028"
-     },
-     "roles": [
-       { "role": "admin" },
-       { "role": "user" }
-     ]
-   }
-   JSON
-   ```
-2. `/openDolphin/resources/dolphin` に対して `SYSAD_USER_NAME` / `SYSAD_PASSWORD` をヘッダーに付与して POST し、施設と管理者を登録する。
-   ```bash
-   curl -H "Content-Type: application/json" \
-        -H "userName:${SYSAD_USER_NAME:-1.3.6.1.4.1.9414.10.1:dolphin}" \
-        -H "password:${SYSAD_PASSWORD:-36cdf8b887a5cffc78dcd5c08991b993}" \
-        -d @/tmp/create-admin.json \
-        http://localhost:${APP_HTTP_PORT:-8080}/openDolphin/resources/dolphin
-   ```
-3. 医師ユーザーの JSON を用意し、`userId` と `roles[].userId` に施設 ID を含む複合キーを設定する。
-   ```bash
-   cat <<'JSON' > /tmp/create-doctor.json
-   {
-     "userId": "1.3.6.1.4.1.9414.72.103:doctor1",
-     "password": "632080fabdb968f9ac4f31fb55104648",
-     "sirName": "テスト",
-     "givenName": "太郎",
-     "commonName": "テスト 太郎",
-     "email": "doctor1@example.com",
-     "memberType": "FACILITY_USER",
-     "registeredDate": "2025-11-02",
-     "facilityModel": { "id": 24, "facilityId": "1.3.6.1.4.1.9414.72.103" },
-     "licenseModel": { "license": "doctor", "licenseDesc": "医師", "licenseCodeSys": "MML0026" },
-     "departmentModel": { "department": "01", "departmentDesc": "内科", "departmentCodeSys": "MML0028" },
-     "roles": [ { "role": "user", "userId": "1.3.6.1.4.1.9414.72.103:doctor1" } ]
-   }
-   JSON
-   ```
-4. 管理者資格情報をヘッダーに指定し、`/openDolphin/resources/user` へ POST してユーザーを追加する。
-   ```bash
-   curl -H "Content-Type: application/json" \
-        -H "userName:1.3.6.1.4.1.9414.72.103:admin" \
-        -H "password:e88df8596ff8847e232b1e4b1b5ffde2" \
-        -H "clientUUID:11111111-2222-3333-4444-555555555555" \
-        -d @/tmp/create-doctor.json \
-        http://localhost:${APP_HTTP_PORT:-8080}/openDolphin/resources/user
-   ```
-5. 生成済みアカウントは以下で確認できる。
-   ```bash
-   curl -H "userName:1.3.6.1.4.1.9414.72.103:admin" \
-        -H "password:e88df8596ff8847e232b1e4b1b5ffde2" \
-         http://localhost:${APP_HTTP_PORT:-8080}/openDolphin/resources/user/1.3.6.1.4.1.9414.72.103:admin
-   ```
-
-> `facilityModel.id` は `GET /openDolphin/resources/user/1.3.6.1.4.1.9414.72.103:admin` のレスポンスに含まれる数値（初期セットアップ直後は `24`）。環境で異なる場合は適宜読み替える。
+1. `SYSAD_USER_NAME` / `SYSAD_PASSWORD` をヘッダーに指定し、`POST /openDolphin/resources/dolphin` で施設と管理者を登録する。
+2. 管理者権限で `POST /openDolphin/resources/user` を呼び出し、医師アカウントを追加する。
+3. `GET /openDolphin/resources/user/{facility:userId}` で施設 ID や内部 ID を確認し、必要に応じてローカル専用ドキュメントへ記録する。
 
 ## Web クライアント（Vite）から接続する
 
