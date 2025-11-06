@@ -1,0 +1,10 @@
+{
+  "/patient/facilityId": "2.100",
+  "/patient/patientId": "00010",
+  "/healthInsurances/0/insuranceClass": "\u793e\u4fdd",
+  "/healthInsurances/0/insuranceNumber": "A001",
+  "/healthInsurances/0/payInRatio": "80",
+  "/healthInsurances/0/publicInsurances/0/providerName": "\u81ea\u6cbb\u4f53",
+  "/allergies/0/factor": "\u30da\u30cb\u30b7\u30ea\u30f3",
+  "/allergies/0/severity": "\u5f37"
+}

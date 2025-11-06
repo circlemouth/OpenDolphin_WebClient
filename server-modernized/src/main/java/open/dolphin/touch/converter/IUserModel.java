@@ -14,7 +14,9 @@ import open.dolphin.infomodel.UserModel;
  * @author Minagawa,Kazushi
  *
  */
-public final class IUserModel implements IInfoModelConverter {
+public final class IUserModel implements IInfoModelConverter, java.io.Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     private UserModel model;
 

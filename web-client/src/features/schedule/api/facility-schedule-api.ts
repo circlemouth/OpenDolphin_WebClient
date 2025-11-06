@@ -109,6 +109,11 @@ export const fetchFacilitySchedule = async (
         .filter((entry): entry is FacilityScheduleEntry => Boolean(entry))
         .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
     },
-    params,
+    {
+      date: params.date,
+      assignedOnly: params.assignedOnly ?? false,
+      orcaDoctorId: params.orcaDoctorId ?? null,
+      unassignedDoctorId: params.unassignedDoctorId ?? null,
+    },
   );
 };

@@ -27,9 +27,15 @@ public final class BlockWrapper extends HttpServletRequestWrapper {
     }
 
     public String getShortUser() {
+        if (remoteUser == null || remoteUser.isBlank()) {
+            return "-";
+        }
+        if (remoteUser.length() <= 17) {
+            return remoteUser;
+        }
         return remoteUser.substring(17);
     }
-    
+
     public String getRequestURIForLog() {
         // /openDolphin/resources/
         String ret = getRequestURI();

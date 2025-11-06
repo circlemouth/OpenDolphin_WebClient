@@ -13,6 +13,7 @@ import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientPackage;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
 import open.dolphin.infomodel.PVTPublicInsuranceItemModel;
+import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.touch.KanjiHelper;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
@@ -68,10 +69,9 @@ public class TouchPatientService {
                     "patient_package_not_found", "患者パッケージが見つかりません。", context.traceId());
         }
         ensureFacilityOwnership(context, pack.getPatient().getFacilityId());
-        IPatientModel patientConverter = new IPatientModel();
-        patientConverter.setModel(pack.getPatient());
         long kartePk = iPhoneServiceBean.getKartePKByPatientPK(patientPk);
-        patientConverter.setKartePK(kartePk);
+        JsonTouchSharedService.PatientModelSnapshot patientSnapshot =
+                JsonTouchSharedService.snapshot(pack.getPatient(), kartePk);
 
         List<HealthInsuranceDto> insurances = convertInsurances(pack.getInsurances());
         List<AllergyDto> allergies = convertAllergies(pack.getAllergies());
@@ -82,7 +82,7 @@ public class TouchPatientService {
                         "insuranceCount", insurances.size(),
                         "allergyCount", allergies.size()));
 
-        return new PatientPackageResponse(patientConverter, insurances, allergies);
+        return new PatientPackageResponse(patientSnapshot, insurances, allergies);
     }
 
     public IPatientList searchPatientsByName(TouchRequestContext context,

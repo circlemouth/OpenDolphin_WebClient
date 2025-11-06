@@ -21,6 +21,7 @@ import open.dolphin.session.SystemServiceBean;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
 import open.dolphin.system.license.LicenseRepository;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -28,9 +29,12 @@ import org.mockito.ArgumentCaptor;
 import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
-class SystemResourceTest {
+@MockitoSettings(strictness = Strictness.LENIENT)
+class SystemResourceTest extends RuntimeDelegateTestSupport {
 
     private static final String REMOTE_USER = "F001:manager01";
     private static final String REQUEST_ID = "req-001";

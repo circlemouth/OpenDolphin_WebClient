@@ -37,3 +37,15 @@ export const Elevated: Story = {
     tone: 'elevated',
   },
 };
+
+export const Warning: Story = {
+  args: {
+    tone: 'warning',
+  },
+};
+
+export const Danger: Story = {
+  args: {
+    tone: 'danger',
+  },
+};

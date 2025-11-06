@@ -20,6 +20,23 @@ const toIsoStringOrNull = (value: string | null | undefined): string | null => {
 
 const coerceBoolean = (value: unknown): boolean => Boolean(value);
 
+const hasPvtInsurancePayload = (model: PVTHealthInsuranceModel | null | undefined): model is PVTHealthInsuranceModel => {
+  if (!model) {
+    return false;
+  }
+
+  return Boolean(
+    (typeof model.uuid === 'string' && model.uuid.trim().length > 0) ||
+      model.insuranceClass.trim().length > 0 ||
+      model.insuranceClassCode.trim().length > 0 ||
+      model.insuranceNumber.trim().length > 0 ||
+      model.clientGroup.trim().length > 0 ||
+      (typeof model.clientNumber === 'string' && model.clientNumber.trim().length > 0) ||
+      (typeof model.startDate === 'string' && model.startDate.trim().length > 0) ||
+      (typeof model.expiredDate === 'string' && model.expiredDate.trim().length > 0),
+  );
+};
+
 export interface PVTHealthInsuranceModel {
   uuid: string | null;
   insuranceClass: string;
@@ -52,6 +69,9 @@ export interface RawDocInfoModel {
   purposeDesc?: string | null;
   confirmDate?: string | null;
   firstConfirmDate?: string | null;
+  recordedAt?: string | null;
+  createdAt?: string | null;
+  updatedAt?: string | null;
   department?: string | null;
   departmentDesc?: string | null;
   healthInsurance?: string | null;
@@ -75,46 +95,97 @@ export interface RawDocInfoModel {
   claimDate?: string | null;
   versionNumber?: string | null;
   versionNotes?: string | null;
-  parentId?: number | null;
+  parentId?: string | null;
   parentIdRelation?: string | null;
+  labtestOrderNumber?: string | null;
+  issuanceDate?: string | null;
+  institutionNumber?: string | null;
+  admFlag?: string | null;
+  useGeneralName?: boolean | null;
+  priscriptionOutput?: boolean | null;
+  chkPatientInfo?: boolean | null;
+  chkUseDrugInfo?: boolean | null;
+  chkHomeMedical?: boolean | null;
   pVTHealthInsuranceModel?: RawPVTHealthInsuranceModel | null;
+}
+
+export interface SchemaModelUserPayload {
+  id: number;
+  userId: string | null;
+  commonName: string | null;
+}
+
+export interface SchemaModelKartePayload {
+  id: number;
+  patientModel: {
+    id: number;
+  } | null;
+}
+
+export interface SchemaExtRefModelPayload {
+  contentType: string;
+  medicalRole: string;
+  title: string;
+  href: string;
 }
 
 export interface SchemaModelPayload {
   id: number;
-  confirmed?: string | null;
-  started?: string | null;
-  status?: string | null;
-  url?: string | null;
-  fileName?: string | null;
-  contentType?: string | null;
-  patientId?: string | null;
-  memo?: string | null;
-  extRefModel?: {
-    contentType?: string | null;
-    medicalRole?: string | null;
-    title?: string | null;
-    href?: string | null;
+  confirmed: string;
+  started: string;
+  recorded: string;
+  ended: string | null;
+  status: string;
+  linkId: number | null;
+  linkRelation: string | null;
+  userModel: SchemaModelUserPayload;
+  karteBean: SchemaModelKartePayload;
+  url: string;
+  fileName: string;
+  contentType: string;
+  patientId: string | null;
+  memo: string | null;
+  extRefModel: SchemaExtRefModelPayload;
+  jpegByte: string;
+}
+
+export interface RawSchemaModelUserPayload {
+  id?: number | null;
+  userId?: string | null;
+  commonName?: string | null;
+}
+
+export interface RawSchemaModelKartePayload {
+  id?: number | null;
+  patientModel?: {
+    id?: number | null;
   } | null;
-  jpegByte?: string | null;
+}
+
+export interface RawSchemaExtRefModelPayload {
+  contentType?: string | null;
+  medicalRole?: string | null;
+  title?: string | null;
+  href?: string | null;
 }
 
 export interface RawSchemaModelPayload {
-  id?: number;
+  id?: number | null;
   confirmed?: string | null;
   started?: string | null;
+  recorded?: string | null;
+  ended?: string | null;
   status?: string | null;
+  linkId?: number | null;
+  linkRelation?: string | null;
+  userModel?: RawSchemaModelUserPayload | null;
+  karteBean?: RawSchemaModelKartePayload | null;
   url?: string | null;
   fileName?: string | null;
   contentType?: string | null;
   patientId?: string | null;
   memo?: string | null;
-  extRefModel?: {
-    contentType?: string | null;
-    medicalRole?: string | null;
-    title?: string | null;
-    href?: string | null;
-  } | null;
+  extRefModel?: RawSchemaExtRefModelPayload | null;
   jpegByte?: string | null;
 }
 
@@ -125,6 +196,8 @@ export interface RawDocumentModelPayload {
   ended?: string | null;
   recorded?: string | null;
   status?: string | null;
+  linkId?: number | null;
+  linkRelation?: string | null;
   docInfoModel?: RawDocInfoModel | null;
   karteBean?: {
     id?: number;
@@ -147,16 +220,39 @@ const mapHealthInsurance = (raw: RawPVTHealthInsuranceModel | null | undefined):
   if (!raw) {
     return null;
   }
-  return {
-    uuid: raw.uuid ?? null,
-    insuranceClass: sanitizeString(raw.insuranceClass) ?? '',
-    insuranceClassCode: sanitizeString(raw.insuranceClassCode) ?? '',
-    insuranceNumber: sanitizeString(raw.insuranceNumber) ?? '',
-    clientGroup: sanitizeString(raw.clientGroup) ?? '',
-    clientNumber: sanitizeString(raw.clientNumber),
-    startDate: sanitizeString(raw.startDate),
-    expiredDate: sanitizeString(raw.expiredDate),
+
+  const uuid = sanitizeString(raw.uuid);
+  const insuranceClass = sanitizeString(raw.insuranceClass) ?? '';
+  const insuranceClassCode = sanitizeString(raw.insuranceClassCode) ?? '';
+  const insuranceNumber = sanitizeString(raw.insuranceNumber) ?? '';
+  const clientGroup = sanitizeString(raw.clientGroup) ?? '';
+  const clientNumber = sanitizeString(raw.clientNumber);
+  const startDate = sanitizeString(raw.startDate);
+  const expiredDate = sanitizeString(raw.expiredDate);
+
+  const mapped: PVTHealthInsuranceModel = {
+    uuid: uuid ?? null,
+    insuranceClass,
+    insuranceClassCode,
+    insuranceNumber,
+    clientGroup,
+    clientNumber,
+    startDate,
+    expiredDate,
   };
+
+  return hasPvtInsurancePayload(mapped) ? mapped : null;
+};
+
+const ensureDocId = (rawDocId: string | null | undefined, fallback: number): string => {
+  const normalized = sanitizeString(rawDocId);
+  if (normalized) {
+    return normalized;
+  }
+  if (Number.isFinite(fallback) && fallback > 0) {
+    return `DOC-${fallback}`;
+  }
+  return 'DOC-UNKNOWN';
 };
 
 const ensureTitle = (title: string | null): string => title ?? '無題のカルテ';
@@ -164,10 +260,10 @@ const ensureTitle = (title: string | null): string => title ?? '無題のカル�
 export interface DocInfoSummary {
   docPk: number;
   parentPk: number | null;
-  docId: string | null;
+  docId: string;
   docType: string;
   title: string;
-  purpose: string | null;
+  purpose: string;
   purposeDesc: string | null;
   confirmDate: string | null;
   firstConfirmDate: string | null;
@@ -195,10 +291,22 @@ export interface DocInfoSummary {
   sendLabtest: boolean;
   sendMml: boolean;
   claimDate: string | null;
+  recordedAt: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
   versionNumber: string | null;
   versionNotes: string | null;
-  parentId: number | null;
+  parentId: string | null;
   parentIdRelation: string | null;
+  labtestOrderNumber: string | null;
+  issuanceDate: string | null;
+  institutionNumber: string | null;
+  admFlag: string | null;
+  useGeneralName: boolean;
+  priscriptionOutput: boolean;
+  chkPatientInfo: boolean;
+  chkUseDrugInfo: boolean;
+  chkHomeMedical: boolean;
   pVTHealthInsuranceModel: PVTHealthInsuranceModel | null;
 }
 
@@ -208,17 +316,25 @@ export const toDocInfoSummary = (raw: RawDocInfoModel | null | undefined): DocIn
   }
 
   const creatorLicense = sanitizeString(raw.creatorLicense ?? raw.createrLisence);
+  const confirmDate = toIsoStringOrNull(raw.confirmDate);
+  const firstConfirmDate = toIsoStringOrNull(raw.firstConfirmDate);
+  const recordedAt = toIsoStringOrNull(raw.recordedAt) ?? confirmDate ?? firstConfirmDate;
+  const createdAt = toIsoStringOrNull(raw.createdAt) ?? firstConfirmDate ?? confirmDate;
+  const updatedAt = toIsoStringOrNull(raw.updatedAt) ?? confirmDate ?? recordedAt ?? createdAt;
+  const labtestOrderNumber = sanitizeString(raw.labtestOrderNumber);
+  const pvtModel = mapHealthInsurance(raw.pVTHealthInsuranceModel);
+  const sendClaim = coerceBoolean(raw.sendClaim) && hasPvtInsurancePayload(pvtModel);
 
   return {
     docPk: raw.docPk,
     parentPk: raw.parentPk ?? null,
-    docId: sanitizeString(raw.docId),
+    docId: ensureDocId(raw.docId, raw.docPk),
     docType: sanitizeString(raw.docType) ?? 'karte',
     title: ensureTitle(sanitizeString(raw.title)),
-    purpose: sanitizeString(raw.purpose),
+    purpose: sanitizeString(raw.purpose) ?? '',
     purposeDesc: sanitizeString(raw.purposeDesc),
-    confirmDate: toIsoStringOrNull(raw.confirmDate),
-    firstConfirmDate: toIsoStringOrNull(raw.firstConfirmDate),
+    confirmDate,
+    firstConfirmDate,
     department: sanitizeString(raw.department),
     departmentDesc: sanitizeString(raw.departmentDesc),
     healthInsurance: sanitizeString(raw.healthInsurance),
@@ -236,34 +352,211 @@ export const toDocInfoSummary = (raw: RawDocInfoModel | null | undefined): DocIn
     hasRp: coerceBoolean(raw.hasRp),
     hasTreatment: coerceBoolean(raw.hasTreatment),
     hasLaboTest: coerceBoolean(raw.hasLaboTest),
-    sendClaim: coerceBoolean(raw.sendClaim),
+    sendClaim,
     sendLabtest: coerceBoolean(raw.sendLabtest),
     sendMml: coerceBoolean(raw.sendMml),
     claimDate: toIsoStringOrNull(raw.claimDate),
+    recordedAt,
+    createdAt,
+    updatedAt,
     versionNumber: sanitizeString(raw.versionNumber),
     versionNotes: sanitizeString(raw.versionNotes),
-    parentId: raw.parentId ?? null,
+    parentId: sanitizeString(raw.parentId),
     parentIdRelation: sanitizeString(raw.parentIdRelation),
-    pVTHealthInsuranceModel: mapHealthInsurance(raw.pVTHealthInsuranceModel),
+    labtestOrderNumber,
+    issuanceDate: toIsoStringOrNull(raw.issuanceDate),
+    institutionNumber: sanitizeString(raw.institutionNumber),
+    admFlag: sanitizeString(raw.admFlag),
+    useGeneralName: coerceBoolean(raw.useGeneralName),
+    priscriptionOutput: coerceBoolean(raw.priscriptionOutput),
+    chkPatientInfo: coerceBoolean(raw.chkPatientInfo),
+    chkUseDrugInfo: coerceBoolean(raw.chkUseDrugInfo),
+    chkHomeMedical: coerceBoolean(raw.chkHomeMedical),
+    pVTHealthInsuranceModel: pvtModel,
   };
 };
 
-const normalizeSchema = (schema: RawSchemaModelPayload[] | null | undefined): SchemaModelPayload[] =>
+const SCHEMA_TIMESTAMP_FALLBACK = new Date(0).toISOString();
+
+const resolveSchemaTimestamp = (...candidates: (string | null | undefined)[]): string => {
+  for (const candidate of candidates) {
+    const normalized = toIsoStringOrNull(candidate);
+    if (normalized) {
+      return normalized;
+    }
+  }
+  return SCHEMA_TIMESTAMP_FALLBACK;
+};
+
+const resolveSchemaUserModel = (
+  raw: RawSchemaModelUserPayload | null | undefined,
+): SchemaModelUserPayload | null => {
+  if (!raw || typeof raw.id !== 'number') {
+    return null;
+  }
+  return {
+    id: raw.id,
+    userId: sanitizeString(raw.userId),
+    commonName: sanitizeString(raw.commonName),
+  };
+};
+
+const resolveSchemaKarteBean = (
+  raw: RawSchemaModelKartePayload | null | undefined,
+): SchemaModelKartePayload | null => {
+  if (!raw || typeof raw.id !== 'number') {
+    return null;
+  }
+  const patientModel =
+    raw.patientModel && typeof raw.patientModel.id === 'number'
+      ? { id: raw.patientModel.id }
+      : null;
+  return {
+    id: raw.id,
+    patientModel,
+  };
+};
+
+const resolveSchemaExtRefModel = (
+  raw: RawSchemaExtRefModelPayload | null | undefined,
+): SchemaExtRefModelPayload | null => {
+  if (!raw) {
+    return null;
+  }
+  const contentType = sanitizeString(raw.contentType);
+  const medicalRole = sanitizeString(raw.medicalRole);
+  const title = sanitizeString(raw.title);
+  const href = sanitizeString(raw.href);
+  if (!contentType || !medicalRole || !title || !href) {
+    return null;
+  }
+  return {
+    contentType,
+    medicalRole,
+    title,
+    href,
+  };
+};
+
+const resolveSchemaImageBytes = (value: string | null | undefined): string | null => {
+  if (typeof value !== 'string') {
+    return null;
+  }
+  return value.trim().length > 0 ? value : null;
+};
+
+const resolveSchemaFileName = (fileName: string | null | undefined, href: string): string => {
+  const sanitized = sanitizeString(fileName);
+  if (sanitized) {
+    return sanitized;
+  }
+  const segments = href.split('/').filter((segment) => segment.length > 0);
+  const lastSegment = segments[segments.length - 1];
+  return lastSegment ?? href;
+};
+
+const resolveSchemaUrl = (url: string | null | undefined, href: string): string => {
+  const sanitized = sanitizeString(url);
+  return sanitized ?? href;
+};
+
+const normalizeSchema = (schema: (RawSchemaModelPayload | null | undefined)[] | null | undefined): SchemaModelPayload[] =>
   (schema ?? [])
     .filter((entry): entry is RawSchemaModelPayload => Boolean(entry))
-    .map((entry) => ({
-      id: entry.id ?? 0,
-      confirmed: entry.confirmed ?? null,
-      started: entry.started ?? null,
-      status: entry.status ?? null,
-      url: entry.url ?? null,
-      fileName: entry.fileName ?? null,
-      contentType: entry.contentType ?? null,
-      patientId: entry.patientId ?? null,
-      memo: entry.memo ?? null,
-      extRefModel: entry.extRefModel ?? null,
-      jpegByte: entry.jpegByte ?? null,
-    }));
+    .map((entry) => {
+      const extRefModel = resolveSchemaExtRefModel(entry.extRefModel);
+      const userModel = resolveSchemaUserModel(entry.userModel);
+      const karteBean = resolveSchemaKarteBean(entry.karteBean);
+      const jpegByte = resolveSchemaImageBytes(entry.jpegByte ?? null);
+
+      if (!extRefModel || !userModel || !karteBean || !jpegByte) {
+        return null;
+      }
+
+      const confirmed = resolveSchemaTimestamp(entry.confirmed, entry.recorded, entry.started);
+      const started = resolveSchemaTimestamp(entry.started, entry.confirmed, entry.recorded);
+      const recorded = resolveSchemaTimestamp(entry.recorded, entry.confirmed, entry.started);
+      const ended = toIsoStringOrNull(entry.ended);
+      const linkId = typeof entry.linkId === 'number' ? entry.linkId : null;
+      const linkRelation = sanitizeString(entry.linkRelation);
+      const url = resolveSchemaUrl(entry.url, extRefModel.href);
+      const fileName = resolveSchemaFileName(entry.fileName, extRefModel.href);
+      const patientId = sanitizeString(entry.patientId);
+      const memo = sanitizeString(entry.memo);
+
+      return {
+        id: typeof entry.id === 'number' ? entry.id : 0,
+        confirmed,
+        started,
+        recorded,
+        ended,
+        status: sanitizeString(entry.status) ?? 'F',
+        linkId,
+        linkRelation,
+        userModel,
+        karteBean,
+        url,
+        fileName,
+        contentType: sanitizeString(entry.contentType) ?? extRefModel.contentType,
+        patientId,
+        memo,
+        extRefModel,
+        jpegByte,
+      } satisfies SchemaModelPayload;
+    })
+    .filter((entry): entry is SchemaModelPayload => Boolean(entry));
+
+const normalizeModules = (modules: (ModuleModelPayload | null | undefined)[] | null | undefined): ModuleModelPayload[] =>
+  (modules ?? [])
+    .filter((entry): entry is ModuleModelPayload => Boolean(entry))
+    .map((entry) => {
+      const userModel =
+        entry.userModel && typeof entry.userModel.id === 'number'
+          ? {
+              id: entry.userModel.id,
+              userId: sanitizeString(entry.userModel.userId),
+              commonName: sanitizeString(entry.userModel.commonName),
+            }
+          : null;
+
+      const karteBean =
+        entry.karteBean && typeof entry.karteBean.id === 'number'
+          ? {
+              id: entry.karteBean.id,
+              patientModel:
+                entry.karteBean.patientModel && typeof entry.karteBean.patientModel.id === 'number'
+                  ? { id: entry.karteBean.patientModel.id }
+                  : null,
+            }
+          : null;
+
+      const moduleInfoBean = entry.moduleInfoBean
+        ? {
+            stampName: sanitizeString(entry.moduleInfoBean.stampName) ?? '',
+            stampRole: sanitizeString(entry.moduleInfoBean.stampRole) ?? '',
+            stampNumber: entry.moduleInfoBean.stampNumber ?? 0,
+            entity: sanitizeString(entry.moduleInfoBean.entity) ?? '',
+            stampId: sanitizeString(entry.moduleInfoBean.stampId),
+            memo: sanitizeString(entry.moduleInfoBean.memo),
+          }
+        : null;
+
+      return {
+        id: entry.id ?? 0,
+        confirmed: entry.confirmed ?? null,
+        started: entry.started ?? null,
+        recorded: entry.recorded ?? null,
+        ended: entry.ended ?? null,
+        status: entry.status ?? null,
+        linkId: typeof entry.linkId === 'number' ? entry.linkId : null,
+        linkRelation: sanitizeString(entry.linkRelation),
+        userModel,
+        karteBean,
+        moduleInfoBean,
+        beanBytes: typeof entry.beanBytes === 'string' ? entry.beanBytes : null,
+        memo: sanitizeString(entry.memo),
+      } satisfies ModuleModelPayload;
+    });
 
 export interface DocumentModelPayload {
   id: number;
@@ -272,6 +565,8 @@ export interface DocumentModelPayload {
   ended: string | null;
   recorded: string | null;
   status: string;
+  linkId: number | null;
+  linkRelation: string | null;
   docInfoModel: DocInfoSummary;
   karteBean: {
     id: number;
@@ -301,6 +596,11 @@ export const fromRawDocumentModel = (raw: RawDocumentModelPayload | null | undef
     return null;
   }
 
+  const confirmed = toIsoStringOrNull(raw.confirmed);
+  const started = toIsoStringOrNull(raw.started);
+  const ended = toIsoStringOrNull(raw.ended);
+  const recorded = toIsoStringOrNull(raw.recorded);
+
   const normalizedDocInfo =
     docInfo ??
     (toDocInfoSummary({
@@ -309,30 +609,41 @@ export const fromRawDocumentModel = (raw: RawDocumentModelPayload | null | undef
       title: null,
     }) as DocInfoSummary);
 
+  normalizedDocInfo.confirmDate = normalizedDocInfo.confirmDate ?? confirmed;
+  normalizedDocInfo.firstConfirmDate = normalizedDocInfo.firstConfirmDate ?? started ?? confirmed;
+  normalizedDocInfo.recordedAt = normalizedDocInfo.recordedAt ?? recorded ?? confirmed ?? started ?? null;
+  normalizedDocInfo.createdAt = normalizedDocInfo.createdAt ?? started ?? normalizedDocInfo.firstConfirmDate ?? normalizedDocInfo.confirmDate;
+  normalizedDocInfo.updatedAt = normalizedDocInfo.updatedAt ?? confirmed ?? recorded ?? normalizedDocInfo.recordedAt ?? normalizedDocInfo.createdAt;
+
   return {
     id: raw.id ?? normalizedDocInfo.docPk,
-    confirmed: raw.confirmed ?? null,
-    started: raw.started ?? null,
-    ended: raw.ended ?? null,
-    recorded: raw.recorded ?? null,
+    confirmed: confirmed,
+    started: started,
+    ended: ended,
+    recorded: recorded,
     status: raw.status ?? normalizedDocInfo.status ?? 'F',
+    linkId: typeof raw.linkId === 'number' ? raw.linkId : null,
+    linkRelation: sanitizeString(raw.linkRelation),
     docInfoModel: normalizedDocInfo,
-    karteBean: raw.karteBean?.id
-      ? {
-          id: raw.karteBean.id,
-          patientModel: raw.karteBean.patientModel?.id
-            ? { id: raw.karteBean.patientModel.id }
-            : raw.karteBean.patientModel ?? null,
-        }
-      : raw.karteBean ?? null,
-    userModel: raw.userModel?.id
-      ? {
-          id: raw.userModel.id,
-          userId: raw.userModel.userId ?? null,
-          commonName: raw.userModel.commonName ?? null,
-        }
-      : raw.userModel ?? null,
-    modules: (raw.modules ?? []).filter((entry): entry is ModuleModelPayload => Boolean(entry)),
+    karteBean:
+      raw.karteBean && typeof raw.karteBean.id === 'number'
+        ? {
+            id: raw.karteBean.id,
+            patientModel:
+              raw.karteBean.patientModel && typeof raw.karteBean.patientModel.id === 'number'
+                ? { id: raw.karteBean.patientModel.id }
+                : null,
+          }
+        : null,
+    userModel:
+      raw.userModel && typeof raw.userModel.id === 'number'
+        ? {
+            id: raw.userModel.id,
+            userId: sanitizeString(raw.userModel.userId),
+            commonName: sanitizeString(raw.userModel.commonName),
+          }
+        : null,
+    modules: normalizeModules(raw.modules),
     schema: normalizeSchema(raw.schema),
     attachment: (raw.attachment ?? []).filter((entry): entry is AttachmentSummary => Boolean(entry)),
     memo: raw.memo ?? null,
@@ -340,27 +651,29 @@ export const fromRawDocumentModel = (raw: RawDocumentModelPayload | null | undef
 };
 
 export const toRawDocInfoModel = (summary: DocInfoSummary): RawDocInfoModel => {
-  const healthInsurance =
-    summary.pVTHealthInsuranceModel && Object.values(summary.pVTHealthInsuranceModel).some((value) => value)
-      ? {
-          uuid: summary.pVTHealthInsuranceModel.uuid,
-          insuranceClass: summary.pVTHealthInsuranceModel.insuranceClass,
-          insuranceClassCode: summary.pVTHealthInsuranceModel.insuranceClassCode,
-          insuranceNumber: summary.pVTHealthInsuranceModel.insuranceNumber,
-          clientGroup: summary.pVTHealthInsuranceModel.clientGroup,
-          clientNumber: summary.pVTHealthInsuranceModel.clientNumber ?? undefined,
-          startDate: summary.pVTHealthInsuranceModel.startDate ?? undefined,
-          expiredDate: summary.pVTHealthInsuranceModel.expiredDate ?? undefined,
-        }
-      : null;
+  const labtestOrderNumber = sanitizeString(summary.labtestOrderNumber);
+  const hasInsurance = hasPvtInsurancePayload(summary.pVTHealthInsuranceModel);
+  const rawHealthInsurance = hasInsurance
+    ? {
+        uuid: summary.pVTHealthInsuranceModel?.uuid ?? null,
+        insuranceClass: summary.pVTHealthInsuranceModel?.insuranceClass ?? '',
+        insuranceClassCode: summary.pVTHealthInsuranceModel?.insuranceClassCode ?? '',
+        insuranceNumber: summary.pVTHealthInsuranceModel?.insuranceNumber ?? '',
+        clientGroup: summary.pVTHealthInsuranceModel?.clientGroup ?? '',
+        clientNumber: summary.pVTHealthInsuranceModel?.clientNumber ?? undefined,
+        startDate: summary.pVTHealthInsuranceModel?.startDate ?? undefined,
+        expiredDate: summary.pVTHealthInsuranceModel?.expiredDate ?? undefined,
+      }
+    : undefined;
+  const normalizedSendClaim = summary.sendClaim && hasInsurance;
 
   return {
     docPk: summary.docPk,
     parentPk: summary.parentPk ?? undefined,
-    docId: summary.docId ?? undefined,
-    docType: summary.docType,
+    docId: summary.docId,
+    docType: summary.docType || 'karte',
     title: summary.title,
-    purpose: summary.purpose ?? undefined,
+    purpose: summary.purpose,
     purposeDesc: summary.purposeDesc ?? undefined,
     confirmDate: summary.confirmDate ?? undefined,
     firstConfirmDate: summary.firstConfirmDate ?? undefined,
@@ -380,7 +693,7 @@ export const toRawDocInfoModel = (summary: DocInfoSummary): RawDocInfoModel => {
     hasRp: summary.hasRp,
     hasTreatment: summary.hasTreatment,
     hasLaboTest: summary.hasLaboTest,
-    sendClaim: summary.sendClaim,
+    sendClaim: normalizedSendClaim,
     sendLabtest: summary.sendLabtest,
     sendMml: summary.sendMml,
     claimDate: summary.claimDate ?? undefined,
@@ -388,7 +701,19 @@ export const toRawDocInfoModel = (summary: DocInfoSummary): RawDocInfoModel => {
     versionNotes: summary.versionNotes ?? undefined,
     parentId: summary.parentId ?? undefined,
     parentIdRelation: summary.parentIdRelation ?? undefined,
-    pVTHealthInsuranceModel: healthInsurance ?? undefined,
+    labtestOrderNumber: labtestOrderNumber ?? undefined,
+    issuanceDate: summary.issuanceDate ?? undefined,
+    institutionNumber: summary.institutionNumber ?? undefined,
+    admFlag: summary.admFlag ?? undefined,
+    useGeneralName: summary.useGeneralName,
+    priscriptionOutput: summary.priscriptionOutput,
+    chkPatientInfo: summary.chkPatientInfo,
+    chkUseDrugInfo: summary.chkUseDrugInfo,
+    chkHomeMedical: summary.chkHomeMedical,
+    pVTHealthInsuranceModel: rawHealthInsurance ?? undefined,
+    recordedAt: summary.recordedAt ?? undefined,
+    createdAt: summary.createdAt ?? undefined,
+    updatedAt: summary.updatedAt ?? undefined,
   };
 };
 
@@ -399,23 +724,56 @@ export const toRawDocumentModel = (payload: DocumentModelPayload): RawDocumentMo
   ended: payload.ended ?? undefined,
   recorded: payload.recorded ?? undefined,
   status: payload.status ?? undefined,
+  linkId: payload.linkId ?? undefined,
+  linkRelation: payload.linkRelation ?? undefined,
   docInfoModel: toRawDocInfoModel(payload.docInfoModel),
   karteBean: payload.karteBean ?? undefined,
   userModel: payload.userModel ?? undefined,
-  modules: payload.modules.length ? payload.modules : undefined,
+  modules: payload.modules.length
+    ? payload.modules.map((entry) => ({
+        id: entry.id ?? undefined,
+        confirmed: entry.confirmed ?? undefined,
+        started: entry.started ?? undefined,
+        recorded: entry.recorded ?? undefined,
+        ended: entry.ended ?? undefined,
+        status: entry.status ?? undefined,
+        linkId: entry.linkId ?? undefined,
+        linkRelation: entry.linkRelation ?? undefined,
+        userModel: entry.userModel ?? undefined,
+        karteBean: entry.karteBean ?? undefined,
+        moduleInfoBean: entry.moduleInfoBean
+          ? {
+              stampName: entry.moduleInfoBean.stampName,
+              stampRole: entry.moduleInfoBean.stampRole,
+              stampNumber: entry.moduleInfoBean.stampNumber,
+              entity: entry.moduleInfoBean.entity,
+              stampId: entry.moduleInfoBean.stampId ?? undefined,
+              memo: entry.moduleInfoBean.memo ?? undefined,
+            }
+          : undefined,
+        beanBytes: entry.beanBytes ?? undefined,
+        memo: entry.memo ?? undefined,
+      }))
+    : undefined,
   schema: payload.schema.length
     ? payload.schema.map((entry) => ({
         id: entry.id,
-        confirmed: entry.confirmed ?? undefined,
-        started: entry.started ?? undefined,
-        status: entry.status ?? undefined,
-        url: entry.url ?? undefined,
-        fileName: entry.fileName ?? undefined,
-        contentType: entry.contentType ?? undefined,
-        patientId: entry.patientId ?? undefined,
-        memo: entry.memo ?? undefined,
-        extRefModel: entry.extRefModel ?? undefined,
-        jpegByte: entry.jpegByte ?? undefined,
+        confirmed: entry.confirmed,
+        started: entry.started,
+        recorded: entry.recorded,
+        ended: entry.ended ?? null,
+        status: entry.status,
+        linkId: entry.linkId ?? null,
+        linkRelation: entry.linkRelation ?? null,
+        userModel: entry.userModel,
+        karteBean: entry.karteBean,
+        url: entry.url,
+        fileName: entry.fileName,
+        contentType: entry.contentType,
+        patientId: entry.patientId ?? null,
+        memo: entry.memo ?? null,
+        extRefModel: entry.extRefModel,
+        jpegByte: entry.jpegByte,
       }))
     : undefined,
   attachment: payload.attachment.length ? payload.attachment : undefined,

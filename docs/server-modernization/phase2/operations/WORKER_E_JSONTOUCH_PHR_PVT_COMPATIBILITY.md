@@ -156,3 +156,23 @@ CREATE INDEX IF NOT EXISTS idx_phr_async_job_facility ON phr_async_job(facility_
 - `docs/web-client/README.md` に本ドキュメントへのリンクと更新概要を追記。
 
 以上。追加の実装タスクが発生した場合は Phase 2 計画 (`docs/web-client/planning/phase2/`) の進捗表へ転記すること。
+
+## 5. FirstEncounter docType フィルタ検証メモ（2026-06-07, 担当: Codex）
+
+- **目的**: `FirstEncounterModel` 統合後も Touch 旧クライアントの `FirstEncounter0/1/2Model` 区分を docType で判別できるようにし、REST 公開時の互換性を担保する。
+- **DB 棚卸し**（Ops 実施）:
+  - SQL: `SELECT docType, COUNT(*) FROM d_first_encounter GROUP BY docType ORDER BY COUNT(*) DESC;`
+  - 成果物: 集計結果と代表レコード（docType ごとに 3〜5 件）の `beanBytes`。現時点では Ops 依頼中で結果待ち。
+- **API 仕様（案）**:
+  - エンドポイント: `GET /touch/patient/{patientPk}/firstEncounter`
+  - クエリ: `docType`（任意, 例 `FirstEncounter0Model`）。未指定時は対象患者の全初診データを `recorded desc` で返却。
+  - レスポンス: `List<FirstEncounterModel>`。各要素に `docType` と `beanBytes` を含め、Touch クライアント側で `IOSHelper.xmlDecode` により Legacy DTO へ復元する。
+- **検証手順（想定）**:
+  1. Ops から受領した `beanBytes` を `IOSHelper.xmlDecode` で復元し、`instanceof` で旧 `FirstEncounterXModel` にマッピングできることを確認。
+  2. モダナイズ環境で `curl -G 'https://<host>/touch/patient/{pk}/firstEncounter' --data-urlencode 'docType=FirstEncounter0Model'` を実行し、レスポンスの `docType`／件数が DB 集計と一致するか突合。
+  3. docType 未指定リクエストと `docType=FirstEncounter1Model`／`2Model` の組み合わせでフィルタリング結果が変わることを確認。
+  4. API 応答の `beanBytes` をダンプし、`IOSHelper.xmlDecode` → 旧 DTO プロパティ比較（カルテ番号・記録日時・問診項目）を行う。差異があればテンプレート対応を整理。
+- **未解決事項**:
+  - Ops 集計結果待ち（DB 接続不可のため本ワークスペースでは未確認）。
+  - Legacy 側テンプレートとのマッピング一覧（docType → フォーム名称）が未整理。Ops/プロダクトチームへのヒアリングが必要。
+  - REST 実装時は Touch 監査ログ（`TOUCH_PATIENT_PROFILE_VIEW` 等）との整合、`X-Access-Reason`／`X-Consent-Token` 必須化、`AuditTrailService` へのイベント送出を忘れずに設計へ反映する。

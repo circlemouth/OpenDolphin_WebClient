@@ -626,6 +626,7 @@ public class DocInfoModel extends InfoModel
         ret.setTitle(this.getTitle());
         ret.setVersionNotes(this.getVersionNotes());
         ret.setVersionNumber(this.getVersionNumber());
+        ret.setAdmFlag(this.getAdmFlag());
         return ret;
 
         // ret.setDocPk(this.getDocPk());

@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
 import { Button, Stack, SurfaceCard, TextArea, TextField, SelectField } from '@/components';
+import type { SelectOption } from '@/components/SelectField';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import {
   type AppointmentCommand,
@@ -152,12 +153,12 @@ const fromInputValue = (value: string) => {
   return parsed;
 };
 
-const reminderChannels = [
+const reminderChannels: SelectOption[] = [
   { value: 'email', label: 'メール' },
   { value: 'sms', label: 'SMS' },
-] as const;
+];
 
-type ReminderChannel = (typeof reminderChannels)[number]['value'];
+type ReminderChannel = 'email' | 'sms';
 
 interface ReminderRecordInput {
   channel: ReminderChannel;

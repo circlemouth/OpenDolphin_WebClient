@@ -23,6 +23,11 @@ phase2/
 - `operations/` 配下  
   Micrometer 移行・WildFly 設定 (`WILDFLY33_MICROMETER_OPERATIONS_GAP.md`) や JMS 再導入メモ (`WORKER0_MESSAGING_BACKLOG.md`)。
 
+## 新規外部リポジトリ（2025-11-06 追記）
+
+- `ext_lib/OpenDolphin-ORCA-OQS`  
+  `MasudaNaika/OpenDolphin-ORCA-OQS` を Git サブモジュールとして追加。モダナイズ版サーバーにオンライン資格確認機能や電子処方箋ワークフローを統合する際の OQS SDK／電文変換の参照元として利用する。Jakarta EE 10 対応状況と統合方針は `domains/EXTERNAL_INTEGRATION_JAKARTA_STATUS.md` を参照。
+
 ## 新規エージェント向けチェックリスト
 
 1. `foundation/` ドキュメントを通読し、未解決ギャップと依存更新方針を把握する。  

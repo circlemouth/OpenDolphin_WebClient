@@ -261,6 +261,7 @@ public class ModuleInfoBean extends InfoModel implements StampInfo, Comparable, 
         ret.setStampNumber(this.getStampNumber());
         ret.setStampRole(this.getStampRole());
         ret.setTurnIn(this.isTurnIn());
+        ret.setPerformFlag(this.getPerformFlag());
         return ret;
     }
 

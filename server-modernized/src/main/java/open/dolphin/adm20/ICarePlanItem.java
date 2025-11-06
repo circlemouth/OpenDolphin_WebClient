@@ -6,7 +6,9 @@ import open.dolphin.infomodel.CarePlanItem;
  *
  * @author kazushi Minagawa
  */
-public class ICarePlanItem {
+public class ICarePlanItem implements java.io.Serializable {
+    
+    private static final long serialVersionUID = 1L;
     
     // id
     private long id;

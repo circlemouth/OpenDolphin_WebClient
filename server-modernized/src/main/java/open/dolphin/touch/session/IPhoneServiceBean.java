@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import jakarta.ejb.Stateless;
@@ -58,8 +59,8 @@ public class IPhoneServiceBean {
     private static final String QUERY_SCHEMA_BY_DOCUMENT = "from SchemaModel i where i.document.id=:id order by i.id";
 //s.oh$
     private static final String QUERY_SCHEMA = "from SchemaModel i where i.karte.id=:karteId and i.status='F' order by i.started desc";
-    private static final String QUERY_FIRST_ENCOUNTER_0 = "from FirstEncounter0Model f where f.karte.id=:karteId";
-    private static final String QUERY_FIRST_ENCOUNTER_1 = "from FirstEncounter1Model f where f.karte.id=:karteId";
+    private static final String QUERY_FIRST_ENCOUNTER_BY_KARTE = "from FirstEncounterModel f where f.karte.id=:karteId order by f.recorded desc";
+    private static final String QUERY_FIRST_ENCOUNTER_BY_KARTE_AND_TYPE = "from FirstEncounterModel f where f.karte.id=:karteId and f.docType=:docType order by f.recorded desc";
 	private static final String QUERY_DOCUMENT_LIST_BY_FACILITY = "from DocumentModel d where d.karte.patient.facilityId=:facilityId and d.status='F' order by d.started desc, d.confirmed desc";
     private static final String QUERY_DOCUMENT_LIST_BY_FACILITY_RANGE = "from DocumentModel d where d.karte.patient.facilityId=:facilityId and d.started between :start and :end and d.status='F' order by d.started desc, d.confirmed desc";
 //s.oh^ 2013/09/19
@@ -84,6 +85,7 @@ public class IPhoneServiceBean {
     private static final String PID = "pid";
     private static final String ID = "id";
     private static final String KARTE_ID = "karteId";
+    private static final String DOC_TYPE = "docType";
     
     @PersistenceContext
     private EntityManager em;
@@ -597,43 +599,35 @@ public class IPhoneServiceBean {
         return ret;
     }
     
-//    public FirstEncounter0Model getFirstEncounter0Model(long patientPk) {
-//
-//        KarteBean karte = (KarteBean) em.createQuery(QUERY_KARTE)
-//                                       .setParameter("patientPk", patientPk)
-//                                       .getSingleResult();
-//
-//        List<FirstEncounter0Model> ret = (List<FirstEncounter0Model>)
-//                            em.createQuery(QUERY_FIRST_ENCOUNTER_0)
-//                            .setParameter("karteId", karte.getId())
-//                            .getResultList();
-//        
-//        if (ret != null && ret.size() > 0) {
-//            return ret.get(0);
-//        }
-//
-//        return null;
-//    }
-//    
-//    public FirstEncounter1Model getFirstEncounter1Model(long patientPk) {
-//
-//        KarteBean karte = (KarteBean) em.createQuery(QUERY_KARTE)
-//                                       .setParameter("patientPk", patientPk)
-//                                       .getSingleResult();
-//
-//        // カルテの PK を得る
-//        long karteId = karte.getId();
-//
-//        List<FirstEncounter1Model> ret = em.createQuery(QUERY_FIRST_ENCOUNTER_1)
-//                        .setParameter("karteId", karteId)
-//                        .getResultList();
-//
-//        if (ret != null && ret.size() > 0) {
-//            return ret.get(0);
-//        }
-//        
-//        return null;
-//    }
+    public List<FirstEncounterModel> getFirstEncounterModels(long patientPk) {
+        return getFirstEncounterModels(patientPk, null);
+    }
+
+    public List<FirstEncounterModel> getFirstEncounterModels(long patientPk, String docType) {
+
+        KarteBean karte;
+        try {
+            karte = em.createQuery(QUERY_KARTE, KarteBean.class)
+                    .setParameter("patientPk", patientPk)
+                    .getSingleResult();
+        } catch (NoResultException e) {
+            return Collections.emptyList();
+        }
+
+        TypedQuery<FirstEncounterModel> query;
+        if (docType == null || docType.isBlank()) {
+            query = em.createQuery(QUERY_FIRST_ENCOUNTER_BY_KARTE, FirstEncounterModel.class);
+        } else {
+            query = em.createQuery(QUERY_FIRST_ENCOUNTER_BY_KARTE_AND_TYPE, FirstEncounterModel.class)
+                    .setParameter(DOC_TYPE, docType);
+        }
+        return query.setParameter(KARTE_ID, karte.getId()).getResultList();
+    }
+
+    public FirstEncounterModel getLatestFirstEncounter(long patientPk, String docType) {
+        List<FirstEncounterModel> encounters = getFirstEncounterModels(patientPk, docType);
+        return encounters.isEmpty() ? null : encounters.get(0);
+    }
 
     public List<DocumentModel> getDocuments(long patientPk, int firstResult, int maxResult) {
 

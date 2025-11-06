@@ -11,6 +11,7 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+import open.dolphin.session.support.ChartEventSessionKeys;
 
 /**
  * SSE endpoint for chart event notifications.
@@ -28,7 +29,7 @@ public class ChartEventStreamResource extends AbstractResource {
     @Produces(MediaType.SERVER_SENT_EVENTS)
     public void subscribe(@Context SseEventSink eventSink,
                           @Context Sse sse,
-                          @HeaderParam(ChartEventResource.CLIENT_UUID) String clientUUID,
+                          @HeaderParam(ChartEventSessionKeys.CLIENT_UUID) String clientUUID,
                           @HeaderParam("Last-Event-ID") String lastEventId) {
 
         if (eventSink == null || eventSink.isClosed()) {

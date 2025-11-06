@@ -7,10 +7,12 @@ package open.dolphin.common;
 import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.OutputStreamWriter;
 import java.io.PrintWriter;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.apache.commons.codec.binary.Base64;
@@ -423,17 +425,18 @@ public class OrcaApi {
             connection.setRequestMethod(REQUESTMETHOD_POST);
             connection.setRequestProperty("Content-Type", "application/xml");
             
-            byte[] encoded = Base64.encodeBase64((user + ":" + pass).getBytes());
-            connection.setRequestProperty("Authorization", "Basic " + new String(encoded));
+            byte[] encoded = Base64.encodeBase64((user + ":" + pass).getBytes(StandardCharsets.UTF_8));
+            connection.setRequestProperty("Authorization", "Basic " + new String(encoded, StandardCharsets.UTF_8));
             
-            connection.setRequestProperty("Content-Length", "" + data.length());
+            byte[] requestBody = data.getBytes(StandardCharsets.UTF_8);
+            connection.setRequestProperty("Content-Length", Integer.toString(requestBody.length));
             
-            PrintWriter printWriter = new PrintWriter(connection.getOutputStream());
-            printWriter.printf(data);
-            printWriter.close();
+            try (PrintWriter printWriter = new PrintWriter(new OutputStreamWriter(connection.getOutputStream(), StandardCharsets.UTF_8), true)) {
+                printWriter.print(data);
+            }
             
             InputStream is = connection.getInputStream();
-            BufferedReader reader = new BufferedReader(new InputStreamReader(is, "UTF-8"));
+            BufferedReader reader = new BufferedReader(new InputStreamReader(is, StandardCharsets.UTF_8));
             String line = null;
             while((line = reader.readLine()) != null) {
                 ret.append(line);//.append("\n");

@@ -1,5 +1,7 @@
 package open.dolphin.adm20.dto;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -15,11 +17,11 @@ public class PhrExportRequest {
     private String format;
 
     public List<String> getPatientIds() {
-        return patientIds;
+        return immutableList(patientIds);
     }
 
     public void setPatientIds(List<String> patientIds) {
-        this.patientIds = patientIds;
+        this.patientIds = immutableList(patientIds);
     }
 
     public String getDocumentSince() {
@@ -64,5 +66,9 @@ public class PhrExportRequest {
 
     public boolean isEmpty() {
         return patientIds == null || patientIds.isEmpty();
+    }
+
+    private static List<String> immutableList(List<String> source) {
+        return source == null ? null : Collections.unmodifiableList(new ArrayList<>(source));
     }
 }

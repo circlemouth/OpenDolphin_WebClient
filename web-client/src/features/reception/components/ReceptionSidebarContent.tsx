@@ -42,12 +42,26 @@ export interface ReceptionSidebarContentProps {
   onChangeKarteFromDate: (value: string) => void;
   onRequestKarteRefetch?: () => void;
   formatDisplayDate: (value?: string | null) => string;
+  patientSearchResults: PatientSummary[];
+  patientSearchState: {
+    hasParams: boolean;
+    isLoading: boolean;
+    isFetching: boolean;
+    isError: boolean;
+    usingManualResults: boolean;
+  };
+  searchErrorMessage: string | null;
+  onSelectPatientFromSearch: (summary: PatientSummary) => void;
+  onQuickReceptionCreate: (summary: PatientSummary) => void;
+  quickReceptionPatientId: string | null;
 }
 
 const Container = styled.div`
   display: grid;
   gap: 16px;
 `;
+
+const pillRadius = '9999px';
 
 const Header = styled.div`
   display: flex;
@@ -75,14 +89,14 @@ const TitleBlock = styled.div`
 const TabList = styled.div`
   display: inline-flex;
   gap: 8px;
-  border-radius: ${({ theme }) => theme.radius.full};
+  border-radius: ${pillRadius};
   background: ${({ theme }) => theme.palette.surfaceMuted};
   padding: 4px;
 `;
 
 const TabButton = styled.button<{ $active: boolean }>`
   border: none;
-  border-radius: ${({ theme }) => theme.radius.full};
+  border-radius: ${pillRadius};
   padding: 6px 16px;
   font-size: 0.9rem;
   font-weight: 600;
@@ -199,6 +213,72 @@ const HistoryHeader = styled.div`
   gap: 12px;
 `;
 
+const SearchResultsCard = styled(SurfaceCard)`
+  display: grid;
+  gap: 12px;
+`;
+
+const SearchResultMessage = styled.p`
+  margin: 0;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const SearchResultsList = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+const SearchResultItem = styled.button<{ $active: boolean }>`
+  display: grid;
+  gap: 6px;
+  padding: 10px 12px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  border: 1px solid
+    ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.border)};
+  background: ${({ theme, $active }) =>
+    $active ? `${theme.palette.primary}14` : theme.palette.surface};
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+  font: inherit;
+  color: inherit;
+  outline: none;
+  border-width: 1px;
+
+  &:hover,
+  &:focus-visible {
+    border-color: ${({ theme }) => theme.palette.primary};
+    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.palette.primary}19`};
+  }
+`;
+
+const SearchResultName = styled.span`
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: ${({ theme }) => theme.palette.textPrimary};
+`;
+
+const SearchResultMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const SearchResultBadges = styled.div`
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 6px;
+`;
+
+const SearchResultActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+`;
+
 const HistoryControls = styled.div`
   display: inline-flex;
   align-items: flex-end;
@@ -295,6 +375,20 @@ const resolveDocumentStatusTone = (status?: string | null): 'neutral' | 'info' |
   return 'info';
 };
 
+const resolveSafetyNoteTone = (note: string): 'danger' | 'warning' | 'info' => {
+  const normalized = note.trim();
+  if (!normalized) {
+    return 'info';
+  }
+  if (/禁忌|アナフィラ|ショック|重症/.test(normalized)) {
+    return 'danger';
+  }
+  if (/注意|慎重|警告/.test(normalized)) {
+    return 'warning';
+  }
+  return 'info';
+};
+
 const tabId = (tab: ReceptionSidebarTab) => `reception-sidebar-tab-${tab}`;
 const panelId = (tab: ReceptionSidebarTab) => `reception-sidebar-panel-${tab}`;
 
@@ -321,6 +415,12 @@ export const ReceptionSidebarContent = ({
   onChangeKarteFromDate,
   onRequestKarteRefetch,
   formatDisplayDate,
+  patientSearchResults,
+  patientSearchState,
+  searchErrorMessage,
+  onSelectPatientFromSearch,
+  onQuickReceptionCreate,
+  quickReceptionPatientId,
 }: ReceptionSidebarContentProps) => {
   const resolvedPatientId =
     patientId ?? patientSummary?.patientId ?? visit?.patientId ?? null;
@@ -397,7 +497,7 @@ export const ReceptionSidebarContent = ({
         source: 'reception-sidebar',
       });
     } catch (error) {
-      recordOperationEvent('reception', 'error', 'visit_call_toggle_failed', '呼出状態の更新に失敗しました', {
+      recordOperationEvent('reception', 'critical', 'visit_call_toggle_failed', '呼出状態の更新に失敗しました', {
         visitId: visit.visitId,
         patientId: visit.patientId,
         source: 'reception-sidebar',
@@ -549,22 +649,116 @@ export const ReceptionSidebarContent = ({
     );
   };
 
-  const renderPatientTab = () => (
-    <TabPanel role="tabpanel" id={panelId('patient')} aria-labelledby={tabId('patient')}>
-      <PatientEditorPanel
-        layout="sidebar"
-        mode={patientFormMode}
-        patientId={resolvedPatientId}
-        summary={patientSummary}
-        onModeChange={handleModeChange}
-        onSaved={handlePatientSaved}
-        showCollapseToggle={false}
-        autoCreateReceptionEnabled={autoCreateReceptionEnabled}
-        onToggleAutoCreateReception={handleAutoCreateToggle}
-        onCreateReceptionRequested={onCreateReception}
-      />
-    </TabPanel>
-  );
+  const renderPatientTab = () => {
+    const { hasParams, isLoading, isFetching, isError, usingManualResults } = patientSearchState;
+    const hasResults = patientSearchResults.length > 0;
+
+    return (
+      <TabPanel role="tabpanel" id={panelId('patient')} aria-labelledby={tabId('patient')}>
+        <SearchResultsCard tone="muted" padding="md" aria-live="polite">
+          <Stack gap={8}>
+            <SectionTitle>検索結果</SectionTitle>
+            {usingManualResults ? <StatusBadge tone="warning">バーコード候補</StatusBadge> : null}
+            {searchErrorMessage ? (
+              <Feedback role="alert" $tone="danger">
+                {searchErrorMessage}
+              </Feedback>
+            ) : null}
+            {isError ? (
+              <Feedback role="alert" $tone="danger">
+                患者検索に失敗しました。時間をおいて再度お試しください。
+              </Feedback>
+            ) : isLoading ? (
+              <SearchResultMessage>検索結果を読み込み中です…</SearchResultMessage>
+            ) : hasResults ? (
+              <SearchResultsList
+                role="listbox"
+                aria-label="患者検索結果"
+                aria-busy={isFetching}
+              >
+                {patientSearchResults.map((patient) => {
+                  const isSelected = resolvedPatientId === patient.patientId;
+                  const genderLabel = patient.genderDesc ?? patient.gender ?? '---';
+                  const lastVisitLabel = formatDisplayDate(patient.lastVisitDate);
+                  const safetyNotes = patient.safetyNotes ?? [];
+                  return (
+                    <SearchResultItem
+                      key={patient.patientId}
+                      type="button"
+                      role="option"
+                      aria-selected={isSelected}
+                      $active={isSelected}
+                      onClick={() => onSelectPatientFromSearch(patient)}
+                    >
+                      <div>
+                        <SearchResultName>{patient.fullName ?? '---'}</SearchResultName>
+                        <SearchResultMeta>
+                          <span>患者ID: {patient.patientId || '---'}</span>
+                          <span>性別: {genderLabel}</span>
+                          <span>最終来院: {lastVisitLabel}</span>
+                        </SearchResultMeta>
+                        {safetyNotes.length ? (
+                          <SearchResultBadges>
+                            {safetyNotes.map((note, index) => (
+                              <StatusBadge key={`${patient.patientId}-safety-${index}`} tone={resolveSafetyNoteTone(note)} size="sm">
+                                {note}
+                              </StatusBadge>
+                            ))}
+                          </SearchResultBadges>
+                        ) : null}
+                      </div>
+                      <SearchResultActions>
+                        <Button
+                          type="button"
+                          variant="secondary"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onSelectPatientFromSearch(patient);
+                          }}
+                        >
+                          詳細
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="primary"
+                          size="sm"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            onQuickReceptionCreate(patient);
+                          }}
+                          isLoading={quickReceptionPatientId === patient.patientId}
+                        >
+                          受付に追加
+                        </Button>
+                      </SearchResultActions>
+                    </SearchResultItem>
+                  );
+                })}
+              </SearchResultsList>
+            ) : hasParams ? (
+              <SearchResultMessage>該当する患者が見つかりませんでした。</SearchResultMessage>
+            ) : (
+              <SearchResultMessage>検索条件を入力すると結果が表示されます。</SearchResultMessage>
+            )}
+          </Stack>
+        </SearchResultsCard>
+
+        <PatientEditorPanel
+          layout="sidebar"
+          mode={patientFormMode}
+          patientId={resolvedPatientId}
+          summary={patientSummary}
+          onModeChange={handleModeChange}
+          onSaved={handlePatientSaved}
+          showCollapseToggle={false}
+          autoCreateReceptionEnabled={autoCreateReceptionEnabled}
+          onToggleAutoCreateReception={handleAutoCreateToggle}
+          onCreateReceptionRequested={onCreateReception}
+        />
+      </TabPanel>
+    );
+  };
 
   const renderHistoryTab = () => {
     if (!resolvedPatientId) {

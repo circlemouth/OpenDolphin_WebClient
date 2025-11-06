@@ -13,6 +13,7 @@ import open.dolphin.converter.ChartEventModelConverter;
 import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.mbean.ServletContextHolder;
 import open.dolphin.session.ChartEventServiceBean;
+import open.dolphin.session.support.ChartEventSessionKeys;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -30,11 +31,6 @@ public class ChartEventResource extends AbstractResource {
     
     private static final int asyncTimeout = 60 * 1000 * 60 *24; // 60 minutes*24
     
-    public static final String CLIENT_UUID = "clientUUID";
-    public static final String FID = "fid";
-    public static final String DISPATCH_URL = "/resources/chartEvent/dispatch";
-    public static final String KEY_NAME = "chartEvent";
-    
     @Inject
     private ChartEventServiceBean eventServiceBean;
     
@@ -49,7 +45,7 @@ public class ChartEventResource extends AbstractResource {
     public void subscribe() {
 
         String fid = getRemoteFacility(servletReq.getRemoteUser());
-        String clientUUID = servletReq.getHeader(CLIENT_UUID);
+        String clientUUID = servletReq.getHeader(ChartEventSessionKeys.CLIENT_UUID);
 //minagawa^        
         if (debug) {
             StringBuilder sb = new StringBuilder();
@@ -63,8 +59,8 @@ public class ChartEventResource extends AbstractResource {
         // timeoutを設定
         ac.setTimeout(asyncTimeout);
         // requestにfid, clientUUIDを記録しておく
-        ac.getRequest().setAttribute(FID, fid);
-        ac.getRequest().setAttribute(CLIENT_UUID, clientUUID);
+        ac.getRequest().setAttribute(ChartEventSessionKeys.FACILITY_ID, fid);
+        ac.getRequest().setAttribute(ChartEventSessionKeys.CLIENT_UUID, clientUUID);
         contextHolder.addAsyncContext(ac);
         
 //minagawa^
@@ -139,7 +135,7 @@ public class ChartEventResource extends AbstractResource {
 //        String json = getConverter().toJson(msg);
 //        return json;
         debug("deliverChartEvent did call");
-        ChartEventModel msg = (ChartEventModel)servletReq.getAttribute(KEY_NAME);
+        ChartEventModel msg = (ChartEventModel)servletReq.getAttribute(ChartEventSessionKeys.EVENT_ATTRIBUTE);
         ChartEventModelConverter conv = new ChartEventModelConverter();
         conv.setModel(msg);
         return conv;

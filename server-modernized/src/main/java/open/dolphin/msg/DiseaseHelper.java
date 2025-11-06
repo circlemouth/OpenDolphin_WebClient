@@ -1,5 +1,7 @@
 package open.dolphin.msg;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -41,7 +43,7 @@ public final class DiseaseHelper {
     private String jmariCode;
     
     // 病名モジュール(docInfo+RegisteredDiagnosis)のリスト
-    private List diagnosisModuleItems;
+    private List<DiagnosisModuleItem> diagnosisModuleItems;
     
 
     public String getPatientId() {
@@ -124,11 +126,15 @@ public final class DiseaseHelper {
         this.jmariCode = jmariCode;
     }
 
-    public List getDiagnosisModuleItems() {
+    public List<DiagnosisModuleItem> getDiagnosisModuleItems() {
         return diagnosisModuleItems;
     }
 
-    public void setDiagnosisModuleItems(List diagnosisModuleItems) {
-        this.diagnosisModuleItems = diagnosisModuleItems;
+    public void setDiagnosisModuleItems(List<DiagnosisModuleItem> diagnosisModuleItems) {
+        this.diagnosisModuleItems = immutableList(diagnosisModuleItems);
+    }
+
+    private static <T> List<T> immutableList(List<T> source) {
+        return source == null ? null : Collections.unmodifiableList(new ArrayList<>(source));
     }
 }

@@ -1,0 +1,110 @@
+{
+  "panels": [
+    {
+      "id": null,
+      "title": "CPD Duplicate Lines (Daily)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "grafana-bigquery-datasource",
+        "uid": "${DS_BIGQUERY_STATIC_ANALYSIS}"
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "format": "time_series",
+          "rawSql": "SELECT TIMESTAMP(report_date) AS time, SUM(duplicate_lines) AS duplicate_lines FROM `static_analysis.duplicate_code_daily` WHERE job_name = @job_name AND report_date BETWEEN @from_date AND @to_date GROUP BY report_date ORDER BY report_date",
+          "timeColumn": "time",
+          "timeColumnType": "TIMESTAMP",
+          "metricColumn": "duplicate_lines",
+          "params": [
+            {
+              "name": "job_name",
+              "type": "STRING",
+              "value": "Server-Modernized-Static-Analysis-Nightly"
+            },
+            {
+              "name": "from_date",
+              "type": "DATE",
+              "value": "${__from:date:iso}"
+            },
+            {
+              "name": "to_date",
+              "type": "DATE",
+              "value": "${__to:date:iso}"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "lines",
+          "color": {
+            "mode": "palette-classic"
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "legend": {
+          "displayMode": "table",
+          "placement": "bottom"
+        },
+        "tooltip": {
+          "mode": "single"
+        }
+      }
+    },
+    {
+      "id": null,
+      "title": "CPD Top Modules",
+      "type": "table",
+      "datasource": {
+        "type": "grafana-bigquery-datasource",
+        "uid": "${DS_BIGQUERY_STATIC_ANALYSIS}"
+      },
+      "targets": [
+        {
+          "refId": "B",
+          "format": "table",
+          "rawSql": "WITH latest AS ( SELECT * EXCEPT (modules) FROM `static_analysis.duplicate_code_daily` WHERE job_name = @job_name ORDER BY report_date DESC, build_number DESC LIMIT 1 ) SELECT m.name AS module, m.file_count AS duplicated_files FROM latest, UNNEST(latest.modules) AS m ORDER BY m.file_count DESC",
+          "params": [
+            {
+              "name": "job_name",
+              "type": "STRING",
+              "value": "Server-Modernized-Static-Analysis-Nightly"
+            }
+          ]
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "mappings": [],
+          "color": {
+            "mode": "thresholds"
+          },
+          "thresholds": {
+            "mode": "percentage",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "orange",
+                "value": 0.4
+              },
+              {
+                "color": "red",
+                "value": 0.7
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "options": {
+        "showHeader": true
+      }
+    }
+  ]
+}

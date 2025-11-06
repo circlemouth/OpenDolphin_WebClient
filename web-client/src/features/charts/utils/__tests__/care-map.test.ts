@@ -11,7 +11,7 @@ describe('care-map utilities', () => {
     docId: 'doc-1',
     docType: 'karte',
     title: '初診カルテ',
-    purpose: null,
+    purpose: '',
     purposeDesc: null,
     confirmDate: '2026-05-01 09:00:00',
     firstConfirmDate: null,
@@ -39,7 +39,17 @@ describe('care-map utilities', () => {
     versionNotes: null,
     parentId: null,
     parentIdRelation: null,
+    labtestOrderNumber: null,
+    issuanceDate: null,
+    institutionNumber: null,
+    admFlag: null,
+    useGeneralName: false,
+    priscriptionOutput: false,
+    chkPatientInfo: false,
+    chkUseDrugInfo: false,
+    chkHomeMedical: false,
     pVTHealthInsuranceModel: null,
+    createrLisence: null,
   };
 
   const baseAppointment: AppointmentSummary = {

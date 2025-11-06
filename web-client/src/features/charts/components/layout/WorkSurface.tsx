@@ -1,4 +1,4 @@
-import { type DragEvent, useMemo, useState } from 'react';
+import { type DragEvent, type ReactElement, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
 import { Button, StatusBadge, SurfaceCard, TextArea } from '@/components';
@@ -1231,7 +1231,7 @@ export const WorkSurface = ({
                         </ReferenceSectionBlock>
                       );
                     })
-                    .filter((node): node is JSX.Element => Boolean(node));
+                    .filter((node): node is ReactElement => Boolean(node));
                   return sections.length > 0 ? sections : <ReferenceEmpty>このカルテには引用可能な本文がありません。</ReferenceEmpty>;
                 })()}
             </ReferenceColumnCard>

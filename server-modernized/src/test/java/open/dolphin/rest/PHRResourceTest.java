@@ -30,6 +30,7 @@ import open.dolphin.adm20.session.PHRAsyncJobServiceBean;
 import open.dolphin.adm20.support.PhrDataAssembler;
 import open.dolphin.infomodel.PHRAsyncJob;
 import open.dolphin.infomodel.PHRKey;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -39,7 +40,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class PHRResourceTest {
+class PHRResourceTest extends RuntimeDelegateTestSupport {
 
     private static final String REMOTE_USER = "F001:user01";
     private static final String TRACE_ID = "trace-123";
@@ -84,13 +85,15 @@ class PHRResourceTest {
         setField(resource, "request", httpRequest);
         setField(resource, "exportConfig", exportConfig);
 
-        when(httpRequest.getRemoteUser()).thenReturn(REMOTE_USER);
-        when(httpRequest.getRemoteAddr()).thenReturn("192.0.2.10");
-        when(httpRequest.getHeader("User-Agent")).thenReturn("JUnit");
-        when(httpRequest.getHeader("X-Trace-Id")).thenReturn(null);
-        when(httpRequest.getAttribute(anyString())).thenReturn(TRACE_ID);
-        when(httpRequest.getRequestURI()).thenReturn("/resources/20/adm/phr/export");
-        when(exportConfig.getTokenTtlSeconds()).thenReturn(300L);
+        lenient().when(httpRequest.getRemoteUser()).thenReturn(REMOTE_USER);
+        lenient().when(httpRequest.getRemoteAddr()).thenReturn("192.0.2.10");
+        lenient().when(httpRequest.getHeader("User-Agent")).thenReturn("JUnit");
+        lenient().when(httpRequest.getHeader("X-Forwarded-For")).thenReturn("192.0.2.10");
+        lenient().when(httpRequest.getHeader("X-Trace-Id")).thenReturn(null);
+        lenient().when(httpRequest.getHeader("X-Request-Id")).thenReturn(null);
+        lenient().when(httpRequest.getAttribute(anyString())).thenReturn(TRACE_ID);
+        lenient().when(httpRequest.getRequestURI()).thenReturn("/resources/20/adm/phr/export");
+        lenient().when(exportConfig.getTokenTtlSeconds()).thenReturn(300L);
     }
 
     @AfterEach
@@ -117,7 +120,7 @@ class PHRResourceTest {
         verify(auditHelper).recordSuccess(argThat(ctx -> ctx != null && ctx.facilityId().equals("F001")),
                 eq("PHR_ACCESS_KEY_FETCH"),
                 eq("P001"),
-                argThat(details -> "FGH".equals(((String) details.get("accessKeySuffix")))));
+                argThat(details -> "EFGH".equals(details.get("accessKeySuffix"))));
     }
 
     @Test
@@ -132,7 +135,13 @@ class PHRResourceTest {
                 .isInstanceOf(WebApplicationException.class)
                 .extracting(ex -> ((WebApplicationException) ex).getResponse().getStatus())
                 .isEqualTo(403);
-        verify(auditHelper).recordFailure(any(), eq("PHR_ACCESS_KEY_FETCH"), isNull(), eq("facility_mismatch"), anyMap());
+        verify(auditHelper).recordFailure(any(),
+                eq("PHR_ACCESS_KEY_FETCH"),
+                eq("P001"),
+                eq("facility_mismatch"),
+                argThat(details -> "EFGH".equals(details.get("accessKeySuffix"))
+                        && "F999".equals(details.get("expectedFacilityId"))
+                        && "F001".equals(details.get("actualFacilityId"))));
     }
 
     @Test

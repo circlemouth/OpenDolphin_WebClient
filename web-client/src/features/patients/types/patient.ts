@@ -14,6 +14,8 @@ export type PatientSearchRequest =
       mode?: undefined;
     };
 
+export type PatientGender = 'M' | 'F' | 'U' | 'O';
+
 export interface RawPatientResource {
   id?: number;
   patientId?: string;
@@ -35,6 +37,7 @@ export interface RawPatientResource {
   telephone?: string;
   mobilePhone?: string;
   email?: string;
+  updatedAt?: string;
   simpleAddressModel?: {
     zipCode?: string;
     address?: string;
@@ -47,7 +50,7 @@ export interface PatientSummary {
   patientId: string;
   fullName: string;
   kanaName?: string;
-  gender?: string;
+  gender?: PatientGender;
   genderDesc?: string;
   birthday?: string;
   lastVisitDate?: string;
@@ -74,7 +77,7 @@ export interface PatientDetail {
   patientId: string;
   fullName: string;
   kanaName?: string;
-  gender: string;
+  gender: PatientGender;
   genderDesc?: string;
   birthday?: string;
   memo?: string;
@@ -90,6 +93,8 @@ export interface PatientDetail {
   reserve4?: string;
   reserve5?: string;
   reserve6?: string;
+  lastVisitDate?: string;
+  updatedAt?: string;
   safetyNotes: string[];
   healthInsurances: PatientHealthInsurance[];
   raw: RawPatientResource;
@@ -100,7 +105,7 @@ export interface PatientUpsertPayload {
   patientId: string;
   fullName: string;
   kanaName?: string;
-  gender: string;
+  gender: PatientGender;
   genderDesc?: string;
   birthday?: string;
   memo?: string;

@@ -37,11 +37,23 @@ public class IClaimItem implements java.io.Serializable {
     // 数量コード体系
     private String numberCodeSystem;
     
+    // 数量コード表示名
+    private String numberCodeName;
+    
     // メモ
     private String memo;
     
     // 薬剤区分
     private String ykzKbn;
+
+    // 算定コード
+    private String santeiCode;
+
+    // 投与量
+    private String dose;
+
+    // 投与量単位
+    private String doseUnit;
     
 
     public String getName() {
@@ -116,6 +128,14 @@ public class IClaimItem implements java.io.Serializable {
         this.numberCodeSystem = numberCodeSystem;
     }
 
+    public String getNumberCodeName() {
+        return numberCodeName;
+    }
+
+    public void setNumberCodeName(String numberCodeName) {
+        this.numberCodeName = numberCodeName;
+    }
+
     public String getMemo() {
         return memo;
     }
@@ -131,6 +151,30 @@ public class IClaimItem implements java.io.Serializable {
     public void setYkzKbn(String ykzKbn) {
         this.ykzKbn = ykzKbn;
     }
+
+    public String getSanteiCode() {
+        return santeiCode;
+    }
+
+    public void setSanteiCode(String santeiCode) {
+        this.santeiCode = santeiCode;
+    }
+
+    public String getDose() {
+        return dose;
+    }
+
+    public void setDose(String dose) {
+        this.dose = dose;
+    }
+
+    public String getDoseUnit() {
+        return doseUnit;
+    }
+
+    public void setDoseUnit(String doseUnit) {
+        this.doseUnit = doseUnit;
+    }
     
     public void fromModel(ClaimItem model) {
         this.setName(model.getName());
@@ -142,8 +186,12 @@ public class IClaimItem implements java.io.Serializable {
         this.setUnit(model.getUnit());
         this.setNumberCode(model.getNumberCode());
         this.setNumberCodeSystem(model.getNumberCodeSystem());
+        this.setNumberCodeName(model.getNumberCodeName());
         this.setMemo(model.getMemo());
         this.setYkzKbn(model.getYkzKbn());
+        this.setSanteiCode(model.getSanteiCode());
+        this.setDose(model.getDose());
+        this.setDoseUnit(model.getDoseUnit());
     }
     
     public ClaimItem toModel() {
@@ -157,8 +205,12 @@ public class IClaimItem implements java.io.Serializable {
         ret.setUnit(this.getUnit());
         ret.setNumberCode(this.getNumberCode());
         ret.setNumberCodeSystem(this.getNumberCodeSystem());
+        ret.setNumberCodeName(this.getNumberCodeName());
         ret.setMemo(this.getMemo());
         ret.setYkzKbn(this.getYkzKbn());
+        ret.setSanteiCode(this.getSanteiCode());
+        ret.setDose(this.getDose());
+        ret.setDoseUnit(this.getDoseUnit());
         return ret;
     }
 }

@@ -19,6 +19,8 @@ import java.util.logging.Logger;
 import java.util.function.Consumer;
 import open.dolphin.converter.ChartEventModelConverter;
 import open.dolphin.infomodel.ChartEventModel;
+import open.dolphin.session.support.ChartEventSessionKeys;
+import open.dolphin.session.support.ChartEventStreamPublisher;
 
 /**
  * Support component that bridges {@link ChartEventResource} SSE subscriptions
@@ -30,7 +32,7 @@ import open.dolphin.infomodel.ChartEventModel;
  * missed events through the {@code Last-Event-ID} header.</p>
  */
 @ApplicationScoped
-public class ChartEventSseSupport {
+public class ChartEventSseSupport implements ChartEventStreamPublisher {
 
     private static final Logger LOGGER = Logger.getLogger(ChartEventSseSupport.class.getName());
 
@@ -83,6 +85,7 @@ public class ChartEventSseSupport {
      * Broadcasts the chart event to SSE subscribers that belong to the same
      * facility but are not the issuer of the event.
      */
+    @Override
     public void broadcast(ChartEventModel event) {
         String facilityId = event.getFacilityId();
         if (facilityId == null) {
@@ -120,7 +123,7 @@ public class ChartEventSseSupport {
         }
 
         OutboundSseEvent event = client.sse.newEventBuilder()
-                .name("chart-event")
+                .name(ChartEventSessionKeys.SSE_EVENT_NAME)
                 .id(Long.toString(payload.id))
                 .mediaType(MediaType.APPLICATION_JSON_TYPE)
                 .data(String.class, payload.data)
@@ -220,4 +223,3 @@ public class ChartEventSseSupport {
         }
     }
 }
-

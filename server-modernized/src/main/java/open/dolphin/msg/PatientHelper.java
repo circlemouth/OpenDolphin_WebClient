@@ -1,12 +1,15 @@
 package open.dolphin.msg;
 
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.UUID;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
+import org.apache.commons.lang3.SerializationUtils;
 
 /**
  *
@@ -68,7 +71,11 @@ public class PatientHelper {
     }
     
     public List<PVTHealthInsuranceModel> getInsurances() {
-        return getPatient().getPvtHealthInsurances();
+        PatientModel snapshot = getPatient();
+        if (snapshot == null) {
+            return null;
+        }
+        return immutableInsuranceList(snapshot.getPvtHealthInsurances());
     }
     
     public List<RegisteredDiagnosisModel> getDiagnosisModuleItems() {
@@ -76,19 +83,19 @@ public class PatientHelper {
     }
 
     public PatientModel getPatient() {
-        return patient;
+        return patient == null ? null : SerializationUtils.clone(patient);
     }
 
     public void setPatient(PatientModel patient) {
-        this.patient = patient;
+        this.patient = patient == null ? null : SerializationUtils.clone(patient);
     }
 
     public List<RegisteredDiagnosisModel> getDiagnosisList() {
-        return diagnosisList;
+        return immutableDiagnosisList(diagnosisList);
     }
 
     public void setDiagnosisList(List<RegisteredDiagnosisModel> diagnosisList) {
-        this.diagnosisList = diagnosisList;
+        this.diagnosisList = immutableDiagnosisList(diagnosisList);
     }
     
     public void setFacility(String f) {
@@ -117,5 +124,27 @@ public class PatientHelper {
     public String getDocId() {
         String uuid = UUID.randomUUID().toString();
         return uuid.replaceAll("-", "");
+    }
+
+    private static List<RegisteredDiagnosisModel> immutableDiagnosisList(List<RegisteredDiagnosisModel> source) {
+        if (source == null) {
+            return null;
+        }
+        List<RegisteredDiagnosisModel> copy = new ArrayList<>(source.size());
+        for (RegisteredDiagnosisModel model : source) {
+            copy.add(model == null ? null : SerializationUtils.clone(model));
+        }
+        return Collections.unmodifiableList(copy);
+    }
+
+    private static List<PVTHealthInsuranceModel> immutableInsuranceList(List<PVTHealthInsuranceModel> source) {
+        if (source == null) {
+            return null;
+        }
+        List<PVTHealthInsuranceModel> copy = new ArrayList<>(source.size());
+        for (PVTHealthInsuranceModel model : source) {
+            copy.add(model == null ? null : SerializationUtils.clone(model));
+        }
+        return Collections.unmodifiableList(copy);
     }
 }

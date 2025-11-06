@@ -225,8 +225,9 @@ const createEmptyFormValues = (): UserFormValues => ({
 const formValuesFromUser = (user: UserModel): UserFormValues => {
   const { facilityId, localId } = splitCompositeUserId(user.userId);
   const hasAdminRole = (user.roles ?? []).some((role) => isAdminRole(role.role));
+  const compositeUserId = user.userId ?? composeUserId(facilityId, localId);
   return {
-    compositeUserId: user.userId,
+    compositeUserId,
     localUserId: localId || user.userId,
     sirName: user.sirName ?? '',
     givenName: user.givenName ?? '',
@@ -243,7 +244,6 @@ const formValuesFromUser = (user: UserModel): UserFormValues => {
     },
     password: '',
     passwordConfirm: '',
-    compositeUserId: user.userId ?? composeUserId(facilityId, localId),
   };
 };
 

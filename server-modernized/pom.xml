@@ -131,6 +131,26 @@
             <version>2.17.1</version>
         </dependency>
         <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-core</artifactId>
+            <version>2.17.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.core</groupId>
+            <artifactId>jackson-annotations</artifactId>
+            <version>2.17.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jdk8</artifactId>
+            <version>2.17.1</version>
+        </dependency>
+        <dependency>
+            <groupId>com.fasterxml.jackson.datatype</groupId>
+            <artifactId>jackson-datatype-jsr310</artifactId>
+            <version>2.17.1</version>
+        </dependency>
+        <dependency>
             <groupId>com.googlecode.jsontoken</groupId>
             <artifactId>jsontoken</artifactId>
             <version>1.1</version>
@@ -345,6 +365,143 @@
     </build>
 
     <profiles>
+        <profile>
+            <id>static-analysis</id>
+            <properties>
+                <spotbugs.plugin.version>4.8.5.0</spotbugs.plugin.version>
+                <findsecbugs.plugin.version>1.12.0</findsecbugs.plugin.version>
+                <checkstyle.plugin.version>3.3.1</checkstyle.plugin.version>
+                <checkstyle.version>10.12.4</checkstyle.version>
+                <pmd.plugin.version>3.21.0</pmd.plugin.version>
+                <pmd.version>6.55.0</pmd.version>
+                <static.analysis.config.dir>${project.parent.basedir}/server-modernized/config/static-analysis</static.analysis.config.dir>
+                <static.analysis.output.dir>${project.parent.basedir}/server-modernized/target/static-analysis</static.analysis.output.dir>
+            </properties>
+            <build>
+                <plugins>
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-antrun-plugin</artifactId>
+                        <version>3.1.0</version>
+                        <executions>
+                            <execution>
+                                <id>prepare-static-analysis-dirs</id>
+                                <phase>initialize</phase>
+                                <goals>
+                                    <goal>run</goal>
+                                </goals>
+                                <configuration>
+                                    <target>
+                                        <mkdir dir="${static.analysis.output.dir}/spotbugs"/>
+                                        <mkdir dir="${static.analysis.output.dir}/checkstyle"/>
+                                        <mkdir dir="${static.analysis.output.dir}/pmd"/>
+                                    </target>
+                                </configuration>
+                            </execution>
+                        </executions>
+                    </plugin>
+                    <plugin>
+                        <groupId>com.github.spotbugs</groupId>
+                        <artifactId>spotbugs-maven-plugin</artifactId>
+                        <version>${spotbugs.plugin.version}</version>
+                        <configuration>
+                            <effort>Max</effort>
+                            <threshold>Medium</threshold>
+                            <failOnError>false</failOnError>
+                            <includeTests>false</includeTests>
+                            <excludeFilterFile>${static.analysis.config.dir}/spotbugs-exclude.xml</excludeFilterFile>
+                            <xmlOutput>true</xmlOutput>
+                            <xmlOutputDirectory>${static.analysis.output.dir}/spotbugs</xmlOutputDirectory>
+                            <spotbugsXmlOutputDirectory>${static.analysis.output.dir}/spotbugs</spotbugsXmlOutputDirectory>
+                            <spotbugsXmlOutputFilename>spotbugs-${project.artifactId}.xml</spotbugsXmlOutputFilename>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>spotbugs-analyze</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>spotbugs</goal>
+                                </goals>
+                            </execution>
+                            <execution>
+                                <id>spotbugs-check</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>check</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.h3xstream.findsecbugs</groupId>
+                                <artifactId>findsecbugs-plugin</artifactId>
+                                <version>${findsecbugs.plugin.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-checkstyle-plugin</artifactId>
+                        <version>${checkstyle.plugin.version}</version>
+                        <configuration>
+                            <configLocation>${static.analysis.config.dir}/checkstyle.xml</configLocation>
+                            <includeTestSourceDirectory>false</includeTestSourceDirectory>
+                            <failOnViolation>false</failOnViolation>
+                            <linkXRef>false</linkXRef>
+                            <outputFile>${static.analysis.output.dir}/checkstyle/checkstyle-${project.artifactId}.xml</outputFile>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>checkstyle-report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>checkstyle</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>com.puppycrawl.tools</groupId>
+                                <artifactId>checkstyle</artifactId>
+                                <version>${checkstyle.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+
+                    <plugin>
+                        <groupId>org.apache.maven.plugins</groupId>
+                        <artifactId>maven-pmd-plugin</artifactId>
+                        <version>${pmd.plugin.version}</version>
+                        <configuration>
+                            <targetJdk>17</targetJdk>
+                            <linkXRef>false</linkXRef>
+                            <failOnViolation>false</failOnViolation>
+                            <rulesets>
+                                <ruleset>${static.analysis.config.dir}/pmd-ruleset.xml</ruleset>
+                            </rulesets>
+                            <targetDirectory>${static.analysis.output.dir}/pmd</targetDirectory>
+                        </configuration>
+                        <executions>
+                            <execution>
+                                <id>pmd-report</id>
+                                <phase>verify</phase>
+                                <goals>
+                                    <goal>pmd</goal>
+                                </goals>
+                            </execution>
+                        </executions>
+                        <dependencies>
+                            <dependency>
+                                <groupId>net.sourceforge.pmd</groupId>
+                                <artifactId>pmd-java</artifactId>
+                                <version>${pmd.version}</version>
+                            </dependency>
+                        </dependencies>
+                    </plugin>
+                </plugins>
+            </build>
+        </profile>
         <profile>
             <id>wildfly-hostname-env</id>
             <activation>

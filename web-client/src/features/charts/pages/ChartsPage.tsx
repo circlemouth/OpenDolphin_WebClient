@@ -9,6 +9,7 @@ const buildUpdatedDocumentPayload = (
     docPk: original.docInfoModel.docPk || original.id,
     parentPk: original.docInfoModel.parentPk ?? updated.docInfoModel.parentPk ?? null,
     docId: updated.docInfoModel.docId ?? original.docInfoModel.docId,
+    confirmDate: updated.docInfoModel.confirmDate ?? original.docInfoModel.confirmDate ?? null,
     firstConfirmDate: updated.docInfoModel.firstConfirmDate ?? original.docInfoModel.firstConfirmDate,
     versionNumber: updated.docInfoModel.versionNumber ?? original.docInfoModel.versionNumber ?? '1',
     status: updated.docInfoModel.status ?? original.docInfoModel.status ?? 'F',
@@ -21,6 +22,9 @@ const buildUpdatedDocumentPayload = (
       null,
     pVTHealthInsuranceModel:
       updated.docInfoModel.pVTHealthInsuranceModel ?? original.docInfoModel.pVTHealthInsuranceModel,
+    recordedAt: updated.docInfoModel.recordedAt ?? original.docInfoModel.recordedAt ?? updated.docInfoModel.confirmDate ?? original.docInfoModel.confirmDate ?? null,
+    createdAt: updated.docInfoModel.createdAt ?? original.docInfoModel.createdAt ?? original.docInfoModel.firstConfirmDate ?? original.docInfoModel.confirmDate ?? null,
+    updatedAt: updated.docInfoModel.updatedAt ?? updated.docInfoModel.confirmDate ?? original.docInfoModel.updatedAt ?? original.docInfoModel.confirmDate ?? null,
   };
 
   return {
@@ -70,6 +74,7 @@ import {
 import { saveProgressNote } from '@/features/charts/api/progress-note-api';
 import {
   buildObjectiveNarrative,
+  createProgressNoteDocument,
   type ProgressNoteDraft,
   type ProgressNoteContext,
   type BillingMode,
@@ -80,12 +85,10 @@ import type { ParsedHealthInsurance } from '@/features/charts/utils/health-insur
 import { updatePatientMemo } from '@/features/patients/api/patient-memo-api';
 import { usePatientDetail } from '@/features/patients/hooks/usePatientDetail';
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
-import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { useAuth } from '@/libs/auth';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
 import { PatientHeaderBar } from '@/features/charts/components/layout/PatientHeaderBar';
-import { VisitChecklist, type VisitChecklistItem } from '@/features/charts/components/layout/VisitChecklist';
 import { ProblemListCard } from '@/features/charts/components/layout/ProblemListCard';
 import { WorkSurface, type PlanComposerCard, type SoapSection } from '@/features/charts/components/layout/WorkSurface';
 import type { MediaItem } from '@/features/charts/types/media';
@@ -103,7 +106,7 @@ import {
 } from '@/features/charts/components/layout/SafetySummaryCard';
 import { OrderConsole } from '@/features/charts/components/layout/OrderConsole';
 import { StatusBar } from '@/features/charts/components/layout/StatusBar';
-import { UnifiedSearchOverlay } from '@/features/charts/components/layout/UnifiedSearchOverlay';
+import { UnifiedSearchOverlay, type SearchResultItem as UnifiedSearchResultItem } from '@/features/charts/components/layout/UnifiedSearchOverlay';
 import { ImageViewerOverlay } from '@/features/charts/components/layout/ImageViewerOverlay';
 import { DiffMergeOverlay } from '@/features/charts/components/layout/DiffMergeOverlay';
 import { ClinicalReferencePanel } from '@/features/charts/components/layout/ClinicalReferencePanel';
@@ -119,6 +122,7 @@ import {
 import { fetchDocumentsByIds } from '@/features/charts/api/doc-info-api';
 import { fetchRoutineMedications } from '@/features/charts/api/masuda-api';
 import { sendClaimDocument } from '@/features/charts/api/claim-api';
+import { updateDocument } from '@/features/charts/api/document-api';
 import { ShortcutOverlay } from '@/features/charts/components/layout/ShortcutOverlay';
 import type { MonshinSummaryItem, PastSummaryItem, VitalSignItem } from '@/features/charts/types/reference';
 import type { OrderModuleSummary } from '@/features/charts/components/layout/OrderConsole';
@@ -132,8 +136,7 @@ import type {
 } from '@/features/charts/utils/timeline-events';
 
 const PageShell = styled.div`
-  ${({ theme }) =>
-    `--charts-shell-offset: var(--app-shell-sticky-offset, 0px);`}
+  --charts-shell-offset: var(--app-shell-sticky-offset, 0px);
   --charts-header-height: 80px;
   --charts-header-height-compact: 60px;
   --charts-footer-height: 48px;
@@ -578,27 +581,11 @@ const createInitialBillingState = (
   memo: '',
 });
 
-const INITIAL_CHECKLIST: VisitChecklistItem[] = [
-  { id: 'interview', label: '問診', completed: false, instantSave: false },
-  { id: 'vitals', label: 'バイタル', completed: false, instantSave: false },
-  { id: 'procedure', label: '処置', completed: false, instantSave: false },
-  { id: 'billing', label: '会計', completed: false, instantSave: false },
-];
-
 const SEARCH_SECTIONS = ['O', '薬', '処置', '検査', 'フォローアップ', 'テンプレ', '過去カルテ', 'A&P'] as const;
-
-const SEARCH_SECTION_LABELS = SEARCH_SECTIONS.map((section) => section as string);
 
 type SearchSection = (typeof SEARCH_SECTIONS)[number];
 
-type SearchResultItem = {
-  id: string;
-  label: string;
-  detail: string;
-  section: SearchSection;
-  payload: string;
-  planType?: PlanComposerCard['type'];
-};
+type ChartSearchResultItem = UnifiedSearchResultItem<SearchSection, PlanComposerCard['type']>;
 
 type ContextItemKind = 'monshin' | 'vital' | 'summary' | 'media';
 
@@ -738,6 +725,14 @@ interface OrderModuleDraft {
   beanBytes: string;
 }
 
+type BuildProgressContextInput = {
+  draft: ProgressNoteDraft;
+  visit: PatientVisitSummary;
+  billing: ProgressNoteBilling;
+  visitMemo?: string | null;
+  orderModules?: ModuleModelPayload[];
+};
+
 const createOrderModuleId = () => globalThis.crypto?.randomUUID?.() ?? `order-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 
 const buildOrderSummary = (draft: OrderModuleDraft) => {
@@ -866,9 +861,6 @@ const decodeProgressCourseText = (beanBytes?: string | null): string => {
 };
 
 interface LeftContextColumnProps {
-  checklist: VisitChecklistItem[];
-  onToggleChecklist: (id: string) => void;
-  onToggleInstantChecklist: (id: string) => void;
   documentTimeline: DocumentTimelineProps;
   visitMemo: string;
   visitMemoStatus: 'idle' | 'saving' | 'saved' | 'error';
@@ -939,9 +931,6 @@ const formatUpdatedAt = (value: string | null) => {
 };
 
 const LeftContextColumn = ({
-  checklist,
-  onToggleChecklist,
-  onToggleInstantChecklist,
   documentTimeline,
   visitMemo,
   visitMemoStatus,
@@ -1038,12 +1027,6 @@ const LeftContextColumn = ({
 
   return (
     <LeftRail>
-      <VisitChecklist
-        items={checklist}
-        onToggleCompleted={onToggleChecklist}
-        onToggleInstantSave={onToggleInstantChecklist}
-      />
-
       <ProblemListCard
         activeDiagnoses={problemList.activeDiagnoses}
         pastDiagnoses={problemList.pastDiagnoses}
@@ -1084,6 +1067,7 @@ const LeftContextColumn = ({
           </MemoActions>
         </MemoHeader>
         <TextArea
+          label="問診メモ"
           value={visitMemo}
           onChange={(event) => onVisitMemoChange(event.currentTarget.value)}
           rows={4}
@@ -1183,6 +1167,7 @@ const LeftContextColumn = ({
           </MemoActions>
         </MemoHeader>
         <TextArea
+          label="患者メモ"
           value={patientMemo}
           onChange={(event) => onPatientMemoChange(event.currentTarget.value)}
           rows={5}
@@ -1227,6 +1212,7 @@ const LeftContextColumn = ({
           </MemoActions>
         </MemoHeader>
         <TextArea
+          label="サマリメモ"
           value={freeDocumentComment}
           onChange={(event) => onFreeDocumentChange(event.currentTarget.value)}
           rows={5}
@@ -1509,7 +1495,6 @@ export const ChartsPage = () => {
   const [primaryDiagnosisCardId, setPrimaryDiagnosisCardId] = useState<string | null>(null);
   const [consultationStartAt, setConsultationStartAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
-  const [checklist, setChecklist] = useState<VisitChecklistItem[]>(INITIAL_CHECKLIST);
   const [activeSection, setActiveSection] = useState<SoapSection>('subjective');
   const [planCards, setPlanCards] = useState<PlanComposerCard[]>([]);
   const previousPlanCardsRef = useRef<PlanComposerCard[] | null>(null);
@@ -1524,6 +1509,27 @@ export const ChartsPage = () => {
         label: module.moduleInfo.stampName || module.label,
         source: module.source,
       })),
+    [orderModules],
+  );
+  const orderModulePayloads = useMemo<ModuleModelPayload[]>(
+    () =>
+      orderModules.reduce<ModuleModelPayload[]>((acc, module) => {
+        const info = module.moduleInfo;
+        if (!info) {
+          return acc;
+        }
+        acc.push({
+          moduleInfoBean: {
+            stampName: info.stampName,
+            stampRole: info.stampRole,
+            stampNumber: info.stampNumber,
+            entity: info.entity,
+            stampId: info.stampId ?? null,
+          },
+          beanBytes: module.beanBytes,
+        });
+        return acc;
+      }, []),
     [orderModules],
   );
   const timelineOrderSources = useMemo<TimelineOrderSource[]>(
@@ -1577,7 +1583,6 @@ export const ChartsPage = () => {
     target: 'plan' | 'subjective';
   }>({ open: false, title: '', current: [], incoming: [], target: 'plan' });
   const [miniSummaryLines, setMiniSummaryLines] = useState<string[]>([]);
-  const [unsentTaskCount, setUnsentTaskCount] = useState<number>(INITIAL_CHECKLIST.length);
   const [lastSavedDocId, setLastSavedDocId] = useState<number | null>(null);
   const [signatureState, setSignatureState] = useState<'idle' | 'signing' | 'signed' | 'blocked' | 'error'>('idle');
   const [signatureError, setSignatureError] = useState<string | null>(null);
@@ -1686,6 +1691,36 @@ export const ChartsPage = () => {
   const [docInfos, setDocInfos] = useState<DocInfoSummary[]>([]);
 
   const karteId = karteQuery.data?.id ?? null;
+
+  const buildProgressContext = useCallback(
+    ({
+      draft: contextDraft,
+      visit,
+      billing: contextBilling,
+      visitMemo: contextVisitMemo,
+      orderModules: contextOrderModules,
+    }: BuildProgressContextInput): ProgressNoteContext => {
+      if (karteId == null || !session) {
+        throw new Error('セッション情報が未設定です。再度サインインしてから操作をやり直してください。');
+      }
+      return {
+        draft: contextDraft,
+        visit,
+        karteId,
+        session,
+        visitMemo: contextVisitMemo ?? null,
+        facilityName: session.userProfile?.facilityName,
+        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
+        userModelId: session.userProfile?.userModelId,
+        licenseName: session.userProfile?.licenseName,
+        departmentCode: visit.departmentCode,
+        departmentName: visit.departmentName,
+        billing: contextBilling,
+        orderModules: contextOrderModules ?? orderModulePayloads,
+      };
+    },
+    [karteId, orderModulePayloads, session],
+  );
   const patientPk = selectedVisit?.patientPk ?? null;
   const patientSummaryForDocuments = useMemo(() => {
     if (!selectedVisit) {
@@ -2040,8 +2075,6 @@ export const ChartsPage = () => {
     }
     const performer = session?.userProfile?.displayName;
     setBilling(createInitialBillingState('insurance', null, performer));
-    setChecklist(INITIAL_CHECKLIST);
-    setUnsentTaskCount(INITIAL_CHECKLIST.length);
     setDraft(defaultDraft);
     setPlanCards([]);
     setOrderModules([]);
@@ -2081,8 +2114,6 @@ export const ChartsPage = () => {
       return;
     }
     setBilling(createInitialBillingState('insurance', null, session?.userProfile?.displayName));
-    setChecklist(INITIAL_CHECKLIST);
-    setUnsentTaskCount(INITIAL_CHECKLIST.length);
     setDraft(defaultDraft);
     setPlanCards([]);
     setOrderModules([]);
@@ -2373,6 +2404,9 @@ export const ChartsPage = () => {
           id: `attachment-${attachment.id}`,
           title: attachment.title,
           capturedAt,
+          confirmedAt: attachment.confirmedAt ?? null,
+          createdAt: attachment.createdAt ?? null,
+          recordedAt: attachment.recordedAt ?? null,
           description: attachment.description ?? attachment.documentTitle ?? undefined,
           attachmentId: attachment.id,
           documentId: attachment.documentId,
@@ -2383,6 +2417,7 @@ export const ChartsPage = () => {
           documentTitle: attachment.documentTitle,
           documentDepartment: attachment.documentDepartment,
           documentStatus: attachment.documentStatus,
+          thumbnailUri: attachment.thumbnailUri ?? null,
           uri: attachment.uri ?? null,
         };
       });
@@ -2746,29 +2781,15 @@ export const ChartsPage = () => {
       setSaveState('saving');
       setSaveError(null);
 
-      const progressContext = {
+      if (!selectedVisit) {
+        throw new Error('診察対象の受付が選択されていません。');
+      }
+      const progressContext = buildProgressContext({
         draft,
         visit: selectedVisit,
-        karteId,
-        session,
-        facilityName: session.userProfile?.facilityName,
-        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-        userModelId: session.userProfile?.userModelId,
-        licenseName: session.userProfile?.licenseName,
-        departmentCode: selectedVisit.departmentCode,
-        departmentName: selectedVisit.departmentName,
         billing: billingPayload,
-        orderModules: orderModules.map((module) => ({
-          moduleInfoBean: {
-            stampName: module.moduleInfo.stampName,
-            stampRole: module.moduleInfo.stampRole,
-            stampNumber: module.moduleInfo.stampNumber,
-            entity: module.moduleInfo.entity,
-            stampId: module.moduleInfo.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        })),
-      };
+        visitMemo: chiefComplaint,
+      });
 
       if (editingDocument) {
         const updatedDocument = createProgressNoteDocument(progressContext);
@@ -2783,21 +2804,22 @@ export const ChartsPage = () => {
       setHasUnsavedChanges(false);
       setLastSavedAt(new Date().toLocaleTimeString());
       await lock.unlock();
-      await karteQuery.refetch();
+      await refetchKarte();
       setEditingDocument(null);
     } catch (error) {
       setSaveState('error');
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
   }, [
-    buildSafetyNotes,
     billingPayload,
+    buildProgressContext,
     chiefComplaint,
     chiefComplaintDirty,
     chiefComplaintStatus,
-    publishChartEvent,
-    queryClient,
-    recordOperationEvent,
+    draft,
+    editingDocument,
+    lock,
+    refetchKarte,
     selectedVisit,
   ]);
 
@@ -2878,29 +2900,15 @@ export const ChartsPage = () => {
       setSaveState('saving');
       setSaveError(null);
 
-      const progressContext = {
+      if (!selectedVisit) {
+        throw new Error('診察対象の受付が選択されていません。');
+      }
+      const progressContext = buildProgressContext({
         draft,
         visit: selectedVisit,
-        karteId,
-        session,
-        facilityName: session.userProfile?.facilityName,
-        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-        userModelId: session.userProfile?.userModelId,
-        licenseName: session.userProfile?.licenseName,
-        departmentCode: selectedVisit.departmentCode,
-        departmentName: selectedVisit.departmentName,
         billing: billingPayload,
-        orderModules: orderModules.map((module) => ({
-          moduleInfoBean: {
-            stampName: module.moduleInfo.stampName,
-            stampRole: module.moduleInfo.stampRole,
-            stampNumber: module.moduleInfo.stampNumber,
-            entity: module.moduleInfo.entity,
-            stampId: module.moduleInfo.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        })),
-      };
+        visitMemo: chiefComplaint,
+      });
 
       if (editingDocument) {
         const updatedDocument = createProgressNoteDocument(progressContext);
@@ -2915,7 +2923,7 @@ export const ChartsPage = () => {
       setHasUnsavedChanges(false);
       setLastSavedAt(new Date().toLocaleTimeString());
       await lock.unlock();
-      await karteQuery.refetch();
+      await refetchKarte();
       setEditingDocument(null);
     } catch (error) {
       setSaveState('error');
@@ -2923,16 +2931,18 @@ export const ChartsPage = () => {
     }
   }, [
     billingPayload,
+    buildProgressContext,
+    chiefComplaint,
+    draft,
+    editingDocument,
     karteId,
     patientMemo,
     patientMemoDirty,
-    patientMemoId,
     patientMemoStatus,
     refetchKarte,
-    recordOperationEvent,
+    lock,
     selectedVisit,
     session,
-    updatePatientMemo,
   ]);
 
   const handleFreeDocumentChange = useCallback(
@@ -2976,29 +2986,15 @@ export const ChartsPage = () => {
       setSaveState('saving');
       setSaveError(null);
 
-      const progressContext = {
+      if (!selectedVisit) {
+        throw new Error('診察対象の受付が選択されていません。');
+      }
+      const progressContext = buildProgressContext({
         draft,
         visit: selectedVisit,
-        karteId,
-        session,
-        facilityName: session.userProfile?.facilityName,
-        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-        userModelId: session.userProfile?.userModelId,
-        licenseName: session.userProfile?.licenseName,
-        departmentCode: selectedVisit.departmentCode,
-        departmentName: selectedVisit.departmentName,
         billing: billingPayload,
-        orderModules: orderModules.map((module) => ({
-          moduleInfoBean: {
-            stampName: module.moduleInfo.stampName,
-            stampRole: module.moduleInfo.stampRole,
-            stampNumber: module.moduleInfo.stampNumber,
-            entity: module.moduleInfo.entity,
-            stampId: module.moduleInfo.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        })),
-      };
+        visitMemo: chiefComplaint,
+      });
 
       if (editingDocument) {
         const updatedDocument = createProgressNoteDocument(progressContext);
@@ -3013,7 +3009,7 @@ export const ChartsPage = () => {
       setHasUnsavedChanges(false);
       setLastSavedAt(new Date().toLocaleTimeString());
       await lock.unlock();
-      await karteQuery.refetch();
+      await refetchKarte();
       setEditingDocument(null);
     } catch (error) {
       setSaveState('error');
@@ -3021,12 +3017,15 @@ export const ChartsPage = () => {
     }
   }, [
     billingPayload,
+    buildProgressContext,
+    chiefComplaint,
+    draft,
+    editingDocument,
     freeDocumentComment,
     freeDocumentDirty,
-    freeDocumentId,
     freeDocumentStatus,
-    freeDocumentQuery,
-    recordOperationEvent,
+    refetchKarte,
+    lock,
     selectedVisit,
     session,
   ]);
@@ -3060,21 +3059,6 @@ export const ChartsPage = () => {
     [billing.insuranceId, canSelectInsurance, insuranceOptions, updateBilling],
   );
 
-  const buildOrderModulePayloads = useCallback(
-    () =>
-      orderModules.map((module) => ({
-        moduleInfoBean: {
-          stampName: module.moduleInfo.stampName,
-          stampRole: module.moduleInfo.stampRole,
-          stampNumber: module.moduleInfo.stampNumber,
-          entity: module.moduleInfo.entity,
-          stampId: module.moduleInfo.stampId ?? undefined,
-        },
-        beanBytes: module.beanBytes,
-      })),
-    [orderModules],
-  );
-
   const resolveProgressContext = useCallback(
     (): { context: ProgressNoteContext | null; error: string | null } => {
       if (!session || !selectedVisit) {
@@ -3087,24 +3071,19 @@ export const ChartsPage = () => {
         return { context: null, error: '適用する保険を選択してください' };
       }
 
-      const context: ProgressNoteContext = {
-        draft,
-        visit: selectedVisit,
-        karteId,
-        session,
-        facilityName: session.userProfile?.facilityName,
-        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-        userModelId: session.userProfile?.userModelId,
-        licenseName: session.userProfile?.licenseName,
-        departmentCode: selectedVisit.departmentCode,
-        departmentName: selectedVisit.departmentName,
-        billing: billingPayload,
-        orderModules: buildOrderModulePayloads(),
-      };
-
-      return { context, error: null };
+      try {
+        const context = buildProgressContext({
+          draft,
+          visit: selectedVisit,
+          billing: billingPayload,
+          visitMemo: chiefComplaint,
+        });
+        return { context, error: null };
+      } catch (error) {
+        return { context: null, error: error instanceof Error ? error.message : 'カルテ文書の準備に失敗しました' };
+      }
     },
-    [billing.mode, billingPayload, buildOrderModulePayloads, karteId, selectedInsurance, selectedVisit, session, draft],
+    [billing.mode, billingPayload, buildProgressContext, chiefComplaint, karteId, selectedInsurance, selectedVisit, session, draft],
   );
 
   const isLockedByMe = useMemo(
@@ -3443,6 +3422,14 @@ export const ChartsPage = () => {
       return;
     }
 
+    if (!selectedVisit) {
+      setSignatureState('error');
+      setSignatureError('診察対象の受付が選択されていません。');
+      return;
+    }
+
+    const activeVisit = selectedVisit;
+
     const { context, error } = resolveProgressContext();
     if (!context) {
       setSignatureState('error');
@@ -3483,7 +3470,7 @@ export const ChartsPage = () => {
       payload.docInfoModel.firstConfirmDate = payload.docInfoModel.firstConfirmDate ?? confirmTimestamp;
 
       await updateDocument(payload);
-      await publishChartEvent({ visit: selectedVisit, nextState: selectedVisit.state, ownerUuid: clientUuid });
+      await publishChartEvent({ visit: activeVisit, nextState: activeVisit.state, ownerUuid: clientUuid });
       setSignatureState('signed');
       setSignatureError(null);
       setLastSignedAt(now.toLocaleTimeString());
@@ -3511,6 +3498,14 @@ export const ChartsPage = () => {
       setClaimError(claimDisabledReason ?? null);
       return;
     }
+
+    if (!selectedVisit) {
+      setClaimState('error');
+      setClaimError('診察対象の受付が選択されていません。');
+      return;
+    }
+
+    const activeVisit = selectedVisit;
 
     const { context, error } = resolveProgressContext();
     if (!context) {
@@ -3563,7 +3558,7 @@ export const ChartsPage = () => {
     }
 
     try {
-      await publishChartEvent({ visit: selectedVisit, nextState: selectedVisit.state, ownerUuid: clientUuid });
+      await publishChartEvent({ visit: activeVisit, nextState: activeVisit.state, ownerUuid: clientUuid });
       await karteQuery.refetch();
     } catch (eventError) {
       // ChartEvent 送信失敗は重大ではないため、警告のみ表示
@@ -3589,18 +3584,6 @@ export const ChartsPage = () => {
 
   const handleRemoveDiagnosisTag = useCallback((value: string) => {
     setDiagnosisTags((prev) => prev.filter((tag) => tag !== value));
-  }, []);
-
-  const handleChecklistToggle = useCallback((id: string) => {
-    setChecklist((prev) => {
-      const next = prev.map((item) => (item.id === id ? { ...item, completed: !item.completed } : item));
-      setUnsentTaskCount(next.filter((item) => !item.completed).length);
-      return next;
-    });
-  }, []);
-
-  const handleChecklistInstant = useCallback((id: string) => {
-    setChecklist((prev) => prev.map((item) => (item.id === id ? { ...item, instantSave: !item.instantSave } : item)));
   }, []);
 
   const handleEditDocument = useCallback(
@@ -3719,29 +3702,15 @@ export const ChartsPage = () => {
       setSaveState('saving');
       setSaveError(null);
 
-      const progressContext = {
+      if (!selectedVisit) {
+        throw new Error('診察対象の受付が選択されていません。');
+      }
+      const progressContext = buildProgressContext({
         draft,
         visit: selectedVisit,
-        karteId,
-        session,
-        facilityName: session.userProfile?.facilityName,
-        userDisplayName: session.userProfile?.displayName ?? session.userProfile?.commonName,
-        userModelId: session.userProfile?.userModelId,
-        licenseName: session.userProfile?.licenseName,
-        departmentCode: selectedVisit.departmentCode,
-        departmentName: selectedVisit.departmentName,
         billing: billingPayload,
-        orderModules: orderModules.map((module) => ({
-          moduleInfoBean: {
-            stampName: module.moduleInfo.stampName,
-            stampRole: module.moduleInfo.stampRole,
-            stampNumber: module.moduleInfo.stampNumber,
-            entity: module.moduleInfo.entity,
-            stampId: module.moduleInfo.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        })),
-      };
+        visitMemo: chiefComplaint,
+      });
 
       if (editingDocument) {
         const updatedDocument = createProgressNoteDocument(progressContext);
@@ -3756,7 +3725,7 @@ export const ChartsPage = () => {
       setHasUnsavedChanges(false);
       setLastSavedAt(new Date().toLocaleTimeString());
       await lock.unlock();
-      await karteQuery.refetch();
+      await refetchKarte();
       setEditingDocument(null);
     } catch (error) {
       setSaveState('error');
@@ -3764,7 +3733,20 @@ export const ChartsPage = () => {
     }
       })();
     },
-    [activeSection, billingPayload, handleObjectiveInsertText, isLockedByMe, recordOperationEvent, registerOrderModules, setSaveError, updatePlanCards],
+    [
+      activeSection,
+      billingPayload,
+      buildProgressContext,
+      chiefComplaint,
+      draft,
+      editingDocument,
+      handleObjectiveInsertText,
+      isLockedByMe,
+      lock,
+      refetchKarte,
+      selectedVisit,
+      updatePlanCards,
+    ],
   );
 
   const handleApplyOrderSet = useCallback(
@@ -3813,7 +3795,7 @@ export const ChartsPage = () => {
         });
       }
 
-      setActiveSurface('plan');
+      setActiveSection('plan');
       setSaveState('idle');
       setHasUnsavedChanges(true);
       setSaveError(null);
@@ -3832,27 +3814,26 @@ export const ChartsPage = () => {
       if (modules.length === 0) {
         throw new Error('ORCA から診療行為を取得できませんでした');
       }
-      const drafts: OrderModuleDraft[] = modules
-        .map((module, index) => {
-          if (!module.moduleInfoBean || !module.beanBytes) {
-            return null;
-          }
-          return {
-            id: createOrderModuleId(),
-            source: 'orca' as const,
-            label: `${name} (${code})`,
-            createdAt: new Date().toISOString(),
-            moduleInfo: {
-              stampName: module.moduleInfoBean.stampName,
-              stampRole: module.moduleInfoBean.stampRole ?? 'p',
-              entity: module.moduleInfoBean.entity ?? 'generalOrder',
-              stampNumber: module.moduleInfoBean.stampNumber ?? index,
-              stampId: module.moduleInfoBean.stampId ?? undefined,
-            },
-            beanBytes: module.beanBytes,
-          } satisfies OrderModuleDraft;
-        })
-        .filter((draft): draft is OrderModuleDraft => Boolean(draft));
+      const drafts = modules.reduce<OrderModuleDraft[]>((acc, module, index) => {
+        if (!module.moduleInfoBean || !module.beanBytes) {
+          return acc;
+        }
+        acc.push({
+          id: createOrderModuleId(),
+          source: 'orca' as const,
+          label: `${name} (${code})`,
+          createdAt: new Date().toISOString(),
+          moduleInfo: {
+            stampName: module.moduleInfoBean.stampName,
+            stampRole: module.moduleInfoBean.stampRole ?? 'p',
+            entity: module.moduleInfoBean.entity ?? 'generalOrder',
+            stampNumber: module.moduleInfoBean.stampNumber ?? index,
+            stampId: module.moduleInfoBean.stampId ?? undefined,
+          },
+          beanBytes: module.beanBytes,
+        });
+        return acc;
+      }, []);
 
       if (drafts.length === 0) {
         throw new Error('ORCA から取得したスタンプに有効なデータが含まれていません');
@@ -3868,8 +3849,8 @@ export const ChartsPage = () => {
     [isLockedByMe, recordOperationEvent, registerOrderModules],
   );
 
-  const searchResults = useMemo<SearchResultItem[]>(() => {
-    const base: SearchResultItem[] = [];
+  const searchResults = useMemo<ChartSearchResultItem[]>(() => {
+    const base: ChartSearchResultItem[] = [];
     const query = searchQuery.trim().toLowerCase();
     if (query) {
       base.push(
@@ -3879,9 +3860,9 @@ export const ChartsPage = () => {
             id: `dx-${tag}`,
             label: tag,
             detail: '診断タグ',
-            section: 'A&P' as const,
+            section: 'A&P' as SearchSection,
             payload: tag,
-            planType: 'followup',
+            planType: 'followup' as PlanComposerCard['type'],
           })),
       );
     }
@@ -3901,21 +3882,21 @@ export const ChartsPage = () => {
             detail: stamp.path.join(' / '),
             section:
               stamp.entity === 'medication'
-                ? ('薬' as const)
+                ? ('薬' as SearchSection)
                 : stamp.entity === 'test'
-                ? ('検査' as const)
+                ? ('検査' as SearchSection)
                 : stamp.entity === 'procedure'
-                ? ('処置' as const)
-                : ('A&P' as const),
+                ? ('処置' as SearchSection)
+                : ('A&P' as SearchSection),
             payload: [stamp.name, stamp.memo].filter(Boolean).join(' '),
             planType:
               stamp.entity === 'medication'
-                ? 'medication'
+                ? ('medication' as PlanComposerCard['type'])
                 : stamp.entity === 'test'
-                ? 'exam'
+                ? ('exam' as PlanComposerCard['type'])
                 : stamp.entity === 'procedure'
-                ? 'procedure'
-                : 'followup',
+                ? ('procedure' as PlanComposerCard['type'])
+                : ('followup' as PlanComposerCard['type']),
           })),
       );
     }
@@ -3924,7 +3905,7 @@ export const ChartsPage = () => {
         id: `history-${summary.id}`,
         label: summary.title,
         detail: summary.excerpt,
-        section: '過去カルテ' as const,
+        section: '過去カルテ' as SearchSection,
         payload: `${summary.title}: ${summary.excerpt}`,
       })),
     );
@@ -3933,7 +3914,7 @@ export const ChartsPage = () => {
         id: 'current-objective',
         label: '現在の所見を引用',
         detail: objectiveNarrative.slice(0, 64),
-        section: 'O',
+        section: 'O' as SearchSection,
         payload: objectiveNarrative,
       });
     }
@@ -3942,9 +3923,9 @@ export const ChartsPage = () => {
         id: 'current-assessment',
         label: '現在の評価を引用',
         detail: draft.assessment.slice(0, 64),
-        section: 'A&P',
+        section: 'A&P' as SearchSection,
         payload: draft.assessment,
-        planType: 'followup',
+        planType: 'followup' as PlanComposerCard['type'],
       });
     }
 
@@ -3960,11 +3941,16 @@ export const ChartsPage = () => {
   }, [filteredSearchResults.length, searchIndex]);
 
   const handleSearchConfirm = useCallback(
-    (item: SearchResultItem) => {
-      if (item.section === 'O' || item.section === '繝・Φ繝励Ξ') {
+    (item: ChartSearchResultItem) => {
+      if (!item.payload) {
+        setSearchOpen(false);
+        setSearchQuery('');
+        return;
+      }
+      if (item.section === 'O' || item.section === 'テンプレ') {
         handleObjectiveInsertText(item.payload);
       } else {
-        const type = item.planType ?? 'followup';
+        const type: PlanComposerCard['type'] = item.planType ?? 'followup';
         updatePlanCards((cards) => [...cards, createPlanCard(type, item.payload, item.label)]);
       }
       setSearchOpen(false);
@@ -4580,9 +4566,6 @@ export const ChartsPage = () => {
       />
       <ContentGrid>
         <LeftContextColumn
-          checklist={checklist}
-          onToggleChecklist={handleChecklistToggle}
-          onToggleInstantChecklist={handleChecklistInstant}
           documentTimeline={documentTimelineProps}
           visitMemo={chiefComplaint}
           visitMemoStatus={chiefComplaintStatus}
@@ -4697,7 +4680,6 @@ export const ChartsPage = () => {
         saveState={saveState}
         signatureState={signatureState}
         claimState={claimState}
-        unsentTaskCount={unsentTaskCount}
         lastSavedAt={lastSavedAt}
         lastSignedAt={lastSignedAt}
         lastClaimSentAt={lastClaimSentAt}
@@ -4726,10 +4708,10 @@ export const ChartsPage = () => {
         open={searchOpen}
         query={searchQuery}
         onQueryChange={setSearchQuery}
-        sections={SEARCH_SECTION_LABELS}
+        sections={SEARCH_SECTIONS}
         activeSection={searchSection}
-        onSectionChange={(section) => setSearchSection(section as SearchSection)}
-        results={filteredSearchResults.map((item) => ({ ...item, section: item.section }))}
+        onSectionChange={setSearchSection}
+        results={filteredSearchResults}
         selectedIndex={searchIndex}
         onSelectIndex={setSearchIndex}
         onConfirm={handleSearchConfirm}

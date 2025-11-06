@@ -199,8 +199,8 @@ public class SystemServiceBean {
             InputStream is = new ByteArrayInputStream(st.getTreeBytes());
             BufferedReader br = new BufferedReader(new InputStreamReader(is, "UTF-8"));
             CopyStampTreeBuilder builder = new CopyStampTreeBuilder();
-            CopyStampTreeDirector director = new CopyStampTreeDirector(builder);
-            director.build(br);
+            CopyStampTreeDirector director = new CopyStampTreeDirector();
+            director.build(br, builder);
             br.close();
             
             // copyした treeXml & bytes

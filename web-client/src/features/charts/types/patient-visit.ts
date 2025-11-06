@@ -9,6 +9,7 @@ export interface RawPatientModel extends RawPatientResource {
     id?: number;
     beanBytes?: string;
   }> | null;
+  firstInsurance?: string | null;
 }
 
 export interface RawPatientVisit {

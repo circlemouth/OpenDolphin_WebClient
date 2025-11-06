@@ -17,6 +17,7 @@ export interface AttachmentSummary {
   documentTitle?: string;
   documentDepartment?: string;
   documentStatus?: string;
+  thumbnailUri?: string | null;
 }
 
 export interface AttachmentContent {

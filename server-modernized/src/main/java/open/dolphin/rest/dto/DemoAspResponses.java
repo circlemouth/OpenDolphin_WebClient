@@ -1,6 +1,10 @@
 package open.dolphin.rest.dto;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import open.dolphin.touch.JsonTouchSharedService;
+import open.dolphin.touch.JsonTouchSharedService.PatientModelSnapshot;
 import open.dolphin.touch.converter.ISchemaModel;
 import open.dolphin.touch.converter.IPatientModel;
 
@@ -75,7 +79,7 @@ public final class DemoAspResponses {
             this.started = started;
             this.bundleNumber = bundleNumber;
             this.administration = administration;
-            this.items = items;
+            this.items = immutableList(items);
         }
 
         public String getEntity() {
@@ -99,7 +103,7 @@ public final class DemoAspResponses {
         }
 
         public List<ClaimItemDto> getItems() {
-            return items;
+            return defensiveList(items);
         }
     }
 
@@ -109,7 +113,7 @@ public final class DemoAspResponses {
 
         public ModuleResponse(PageInfo pageInfo, List<ClaimBundleDto> modules) {
             this.pageInfo = pageInfo;
-            this.modules = modules;
+            this.modules = immutableList(modules);
         }
 
         public PageInfo getPageInfo() {
@@ -117,7 +121,7 @@ public final class DemoAspResponses {
         }
 
         public List<ClaimBundleDto> getModules() {
-            return modules;
+            return defensiveList(modules);
         }
     }
 
@@ -132,9 +136,9 @@ public final class DemoAspResponses {
                                       List<ClaimBundleDto> orders, List<ISchemaModel> schemas) {
             this.started = started;
             this.responsibility = responsibility;
-            this.soaTexts = soaTexts;
-            this.orders = orders;
-            this.schemas = schemas;
+            this.soaTexts = immutableList(soaTexts);
+            this.orders = immutableList(orders);
+            this.schemas = immutableList(schemas);
         }
 
         public String getStarted() {
@@ -146,15 +150,15 @@ public final class DemoAspResponses {
         }
 
         public List<String> getSoaTexts() {
-            return soaTexts;
+            return defensiveList(soaTexts);
         }
 
         public List<ClaimBundleDto> getOrders() {
-            return orders;
+            return defensiveList(orders);
         }
 
         public List<ISchemaModel> getSchemas() {
-            return schemas;
+            return defensiveList(schemas);
         }
     }
 
@@ -164,7 +168,7 @@ public final class DemoAspResponses {
 
         public ProgressCourseResponse(PageInfo pageInfo, List<ProgressCourseDocument> documents) {
             this.pageInfo = pageInfo;
-            this.documents = documents;
+            this.documents = immutableList(documents);
         }
 
         public PageInfo getPageInfo() {
@@ -172,7 +176,7 @@ public final class DemoAspResponses {
         }
 
         public List<ProgressCourseDocument> getDocuments() {
-            return documents;
+            return defensiveList(documents);
         }
     }
 
@@ -266,7 +270,7 @@ public final class DemoAspResponses {
             this.laboCenterCode = laboCenterCode;
             this.sampleDate = sampleDate;
             this.patientId = patientId;
-            this.items = items;
+            this.items = immutableList(items);
         }
 
         public String getLaboCenterCode() {
@@ -282,7 +286,7 @@ public final class DemoAspResponses {
         }
 
         public List<LaboItemDto> getItems() {
-            return items;
+            return defensiveList(items);
         }
     }
 
@@ -292,7 +296,7 @@ public final class DemoAspResponses {
 
         public LaboTestResponse(PageInfo pageInfo, List<LaboTestModule> modules) {
             this.pageInfo = pageInfo;
-            this.modules = modules;
+            this.modules = immutableList(modules);
         }
 
         public PageInfo getPageInfo() {
@@ -300,7 +304,7 @@ public final class DemoAspResponses {
         }
 
         public List<LaboTestModule> getModules() {
-            return modules;
+            return defensiveList(modules);
         }
     }
 
@@ -347,7 +351,7 @@ public final class DemoAspResponses {
             this.itemName = itemName;
             this.normalValue = normalValue;
             this.unit = unit;
-            this.results = results;
+            this.results = immutableList(results);
         }
 
         public String getItemCode() {
@@ -367,7 +371,7 @@ public final class DemoAspResponses {
         }
 
         public List<LaboTrendResult> getResults() {
-            return results;
+            return defensiveList(results);
         }
     }
 
@@ -455,7 +459,7 @@ public final class DemoAspResponses {
             this.expiredDate = expiredDate;
             this.payInRatio = payInRatio;
             this.payOutRatio = payOutRatio;
-            this.publicInsurances = publicInsurances;
+            this.publicInsurances = immutableList(publicInsurances);
         }
 
         public String getInsuranceClass() {
@@ -503,7 +507,7 @@ public final class DemoAspResponses {
         }
 
         public List<PublicInsuranceDto> getPublicInsurances() {
-            return publicInsurances;
+            return defensiveList(publicInsurances);
         }
     }
 
@@ -532,27 +536,46 @@ public final class DemoAspResponses {
     }
 
     public static final class PatientPackageResponse {
-        private final IPatientModel patient;
+        private final PatientModelSnapshot patientSnapshot;
         private final List<HealthInsuranceDto> healthInsurances;
         private final List<AllergyDto> allergies;
 
-        public PatientPackageResponse(IPatientModel patient, List<HealthInsuranceDto> healthInsurances,
+        public PatientPackageResponse(PatientModelSnapshot patientSnapshot, List<HealthInsuranceDto> healthInsurances,
                                       List<AllergyDto> allergies) {
-            this.patient = patient;
-            this.healthInsurances = healthInsurances;
-            this.allergies = allergies;
+            this.patientSnapshot = patientSnapshot == null
+                    ? null
+                    : JsonTouchSharedService.snapshot(patientSnapshot.getPatient(), patientSnapshot.getKartePk());
+            this.healthInsurances = immutableList(healthInsurances);
+            this.allergies = immutableList(allergies);
         }
 
         public IPatientModel getPatient() {
-            return patient;
+            if (patientSnapshot == null) {
+                return null;
+            }
+            IPatientModel converter = new IPatientModel();
+            converter.setModel(patientSnapshot.getPatient());
+            converter.setKartePK(patientSnapshot.getKartePk());
+            return converter;
         }
 
         public List<HealthInsuranceDto> getHealthInsurances() {
-            return healthInsurances;
+            return defensiveList(healthInsurances);
         }
 
         public List<AllergyDto> getAllergies() {
-            return allergies;
+            return defensiveList(allergies);
         }
+    }
+
+    private static <T> List<T> defensiveList(List<T> source) {
+        if (source == null) {
+            return null;
+        }
+        return Collections.unmodifiableList(new ArrayList<>(source));
+    }
+
+    private static <T> List<T> immutableList(List<T> source) {
+        return defensiveList(source);
     }
 }

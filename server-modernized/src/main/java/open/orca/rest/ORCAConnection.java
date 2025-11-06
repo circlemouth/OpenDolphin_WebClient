@@ -82,7 +82,7 @@ public class ORCAConnection {
     
 //minagawa^     
     public Properties getProperties() {
-        return this.config;
+        return copyProperties(config);
     }
     
     public String getProperty(String prop) {
@@ -94,4 +94,12 @@ public class ORCAConnection {
         return test!=null && test.equals("server");
     }
 //minagawa$    
+
+    private static Properties copyProperties(Properties source) {
+        Properties copy = new Properties();
+        if (source != null) {
+            copy.putAll(source);
+        }
+        return copy;
+    }
 }

@@ -16,10 +16,11 @@ import open.dolphin.infomodel.PatientModel;
 import open.dolphin.touch.converter.IDocument;
 import open.dolphin.touch.session.IPhoneServiceBean;
 import open.dolphin.session.KarteServiceBean;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-public class DolphinResourceDocumentTest {
+public class DolphinResourceDocumentTest extends RuntimeDelegateTestSupport {
 
     private static final String REMOTE_USER = "F001:doctor01";
 
@@ -85,9 +86,7 @@ public class DolphinResourceDocumentTest {
 
     @Test
     void postDocumentValidationFailure() throws Exception {
-        IDocument payload = new IDocument();
-        payload.setKarteBean(null);
-        StubObjectMapper mapper = new StubObjectMapper(payload);
+        StubObjectMapper mapper = new StubObjectMapper(null);
         injectField(resource, "objectMapper", mapper);
 
         WebApplicationException ex = assertThrows(WebApplicationException.class,

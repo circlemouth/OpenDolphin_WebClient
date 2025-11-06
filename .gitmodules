@@ -1,0 +1,3 @@
+[submodule "ext_lib/OpenDolphin-ORCA-OQS"]
+	path = ext_lib/OpenDolphin-ORCA-OQS
+	url = https://github.com/MasudaNaika/OpenDolphin-ORCA-OQS.git

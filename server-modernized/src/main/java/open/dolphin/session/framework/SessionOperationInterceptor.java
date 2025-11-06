@@ -9,6 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.jboss.logmanager.MDC;
 
 @SessionOperation
 @Interceptor
@@ -29,7 +30,7 @@ public class SessionOperationInterceptor {
         if (newContext) {
             Map<String, String> attributes = new HashMap<>();
             attributes.put("component", ctx.getTarget().getClass().getSimpleName());
-            context = traceManager.start(operationName(ctx), attributes);
+            context = traceManager.start(operationName(ctx), attributes, currentHttpTraceId());
         }
 
         try {
@@ -62,5 +63,17 @@ public class SessionOperationInterceptor {
 
     private String operationName(InvocationContext ctx) {
         return ctx.getTarget().getClass().getName() + '#' + ctx.getMethod().getName();
+    }
+
+    private String currentHttpTraceId() {
+        Object fromJboss = MDC.get("traceId");
+        if (fromJboss instanceof String traceId && !traceId.isBlank()) {
+            return traceId;
+        }
+        String fromSlf4j = org.slf4j.MDC.get("traceId");
+        if (fromSlf4j != null && !fromSlf4j.isBlank()) {
+            return fromSlf4j;
+        }
+        return null;
     }
 }

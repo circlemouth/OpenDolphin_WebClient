@@ -169,6 +169,16 @@ export const ClaimAdjustmentPanel = ({
   const [selectedDocPk, setSelectedDocPk] = useState<number | null>(null);
   const [claimFeedback, setClaimFeedback] = useState<{ tone: 'info' | 'danger'; message: string } | null>(null);
   const cachedDocuments = useRef<Map<number, DocumentModelPayload>>(new Map());
+  const documentOptions = useMemo(
+    () => [
+      { value: '', label: '文書を選択' },
+      ...docInfos.map((doc) => ({
+        value: String(doc.docPk),
+        label: `${doc.title ?? '無題'}（${doc.confirmDate ?? '未確定'}）`,
+      })),
+    ],
+    [docInfos],
+  );
 
   const moduleSearchMutation = useMutation({
     mutationFn: searchModules,
@@ -351,16 +361,13 @@ export const ClaimAdjustmentPanel = ({
         <FieldGrid>
           <SelectField
             label="カルテ文書"
-            value={selectedDocPk ? String(selectedDocPk) : ''}
-            onChange={(event) => setSelectedDocPk(Number.parseInt(event.currentTarget.value, 10) || null)}
-          >
-            <option value="">文書を選択</option>
-            {docInfos.map((doc) => (
-              <option key={doc.docPk} value={doc.docPk}>
-                {doc.title ?? '無題'}（{doc.confirmDate ?? '未確定'}）
-              </option>
-            ))}
-          </SelectField>
+            options={documentOptions}
+            value={selectedDocPk !== null ? String(selectedDocPk) : ''}
+            onChange={(event) => {
+              const nextValue = event.currentTarget.value;
+              setSelectedDocPk(nextValue ? Number.parseInt(nextValue, 10) || null : null);
+            }}
+          />
           <TextField
             label="適用保険"
             value={
@@ -375,7 +382,8 @@ export const ClaimAdjustmentPanel = ({
         <TextArea
           label="送信メモ"
           placeholder="送信理由や補足事項をメモできます（任意）"
-          minRows={2}
+          rows={2}
+          style={{ minHeight: 'auto' }}
           readOnly
           value={
             selectedInsurance

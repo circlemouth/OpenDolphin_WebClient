@@ -16,9 +16,9 @@ import jakarta.servlet.AsyncContext;
 import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.mbean.ServletContextHolder;
-import open.dolphin.rest.ChartEventResource;
-import open.dolphin.rest.ChartEventSseSupport;
 import open.dolphin.session.framework.SessionOperation;
+import open.dolphin.session.support.ChartEventSessionKeys;
+import open.dolphin.session.support.ChartEventStreamPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -39,7 +39,7 @@ public class ChartEventServiceBean {
     private ServletContextHolder contextHolder;
 
     @Inject
-    private ChartEventSseSupport chartEventSseSupport;
+    private ChartEventStreamPublisher chartEventStreamPublisher;
     
     @PersistenceContext
     private EntityManager em;
@@ -60,16 +60,16 @@ public class ChartEventServiceBean {
             for (Iterator<AsyncContext> itr = acList.iterator(); itr.hasNext();) {
                 
                 AsyncContext ac = itr.next();
-                String acFid = (String) ac.getRequest().getAttribute(ChartEventResource.FID);
-                String acUUID = (String) ac.getRequest().getAttribute(ChartEventResource.CLIENT_UUID);
+                String acFid = (String) ac.getRequest().getAttribute(ChartEventSessionKeys.FACILITY_ID);
+                String acUUID = (String) ac.getRequest().getAttribute(ChartEventSessionKeys.CLIENT_UUID);
                 String issuerUUID = evt.getIssuerUUID();
                 
                 // 同一施設かつChartEventModelの発行者でないクライアントに通知する
                 if (fid.equals(acFid) && !acUUID.equals(issuerUUID)) {
                     itr.remove();
                     try {
-                        ac.getRequest().setAttribute(ChartEventResource.KEY_NAME, evt);
-                        ac.dispatch(ChartEventResource.DISPATCH_URL);
+                        ac.getRequest().setAttribute(ChartEventSessionKeys.EVENT_ATTRIBUTE, evt);
+                        ac.dispatch(ChartEventSessionKeys.DISPATCH_URL);
 //minagawa^                        
                         if (true) {
                             StringBuilder sb = new StringBuilder();
@@ -85,7 +85,7 @@ public class ChartEventServiceBean {
             }
         }
 
-        chartEventSseSupport.broadcast(evt);
+        chartEventStreamPublisher.broadcast(evt);
     }
     
     public String getServerUUID() {

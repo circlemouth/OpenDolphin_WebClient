@@ -12,7 +12,9 @@ import open.dolphin.infomodel.UserModel;
  * iPadのFreeText対応
  * @author S.Oh@Life Sciences Computing Corporation.
  */
-public class IAttachmentModel {
+public class IAttachmentModel implements java.io.Serializable {
+
+    private static final long serialVersionUID = 1L;
 
     private long id;
     

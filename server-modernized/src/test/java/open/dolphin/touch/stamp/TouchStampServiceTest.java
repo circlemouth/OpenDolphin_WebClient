@@ -12,16 +12,21 @@ import open.dolphin.converter.StampModelConverter;
 import open.dolphin.infomodel.StampModel;
 import open.dolphin.session.StampServiceBean;
 import open.dolphin.touch.support.TouchAuditHelper;
+import open.dolphin.touch.support.TouchErrorResponse;
 import open.dolphin.touch.support.TouchRequestContext;
 import open.dolphin.touch.support.TouchResponseCache;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import org.mockito.junit.jupiter.MockitoSettings;
+import org.mockito.quality.Strictness;
 
 @ExtendWith(MockitoExtension.class)
-class TouchStampServiceTest {
+@MockitoSettings(strictness = Strictness.LENIENT)
+class TouchStampServiceTest extends RuntimeDelegateTestSupport {
 
     private static final TouchRequestContext CONTEXT = new TouchRequestContext(
             "1.3.6.1.4.1.9414.2.10:user",
@@ -68,6 +73,9 @@ class TouchStampServiceTest {
         WebApplicationException ex = assertThrows(WebApplicationException.class,
                 () -> service.getStamp(CONTEXT_NO_REASON, "stamp-1"));
         assertThat(ex.getResponse().getStatus()).isEqualTo(403);
+        assertThat(ex.getResponse().getEntity()).isInstanceOf(TouchErrorResponse.class);
+        TouchErrorResponse payload = (TouchErrorResponse) ex.getResponse().getEntity();
+        assertThat(payload.type()).isEqualTo("access_reason_required");
         verify(stampServiceBean, times(0)).getStamp("stamp-1");
     }
 
