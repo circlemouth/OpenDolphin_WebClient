@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ruleset name="OpenDolphin Initial PMD Ruleset"
+         xmlns="http://pmd.sourceforge.net/ruleset/2.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://pmd.sourceforge.net/ruleset/2.0.0 https://pmd.sourceforge.io/ruleset_2_0_0.xsd">
+
+  <description>
+    common レイヤーの品質指標可視化を目的とした軽量 PMD ルールセット。
+    Jakarta EE 10 に未対応なルールは含めず、運用状況を見ながら段階的に拡張する。
+  </description>
+
+  <!-- Best Practices -->
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateField"/>
+  <rule ref="category/java/bestpractices.xml/UnusedPrivateMethod"/>
+  <rule ref="category/java/bestpractices.xml/UseTryWithResources">
+    <priority>3</priority>
+  </rule>
+  <rule ref="category/java/bestpractices.xml/AvoidReassigningParameters">
+    <priority>3</priority>
+  </rule>
+
+  <!-- Error Prone -->
+  <rule ref="category/java/errorprone.xml/AvoidLosingExceptionInformation">
+    <priority>3</priority>
+  </rule>
+  <rule ref="category/java/errorprone.xml/AvoidDuplicateLiterals">
+    <priority>4</priority>
+  </rule>
+  <!-- Performance -->
+  <rule ref="category/java/performance.xml/AvoidInstantiatingObjectsInLoops">
+    <priority>4</priority>
+  </rule>
+
+  <exclude-pattern>.*/src/main/java/open/dolphin/touch/.*</exclude-pattern>
+</ruleset>

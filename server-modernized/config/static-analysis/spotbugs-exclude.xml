@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- SpotBugs 除外設定: 既知の低優先度ノイズを抑制し、高優先度検知を優先する -->
+<FindBugsFilter xmlns="https://github.com/spotbugs/filter/4.8.4">
+  <!-- Touch クライアント向け DTO/コンバータは Jakarta 変換で冗長チェックが多発するため Medium/Low を一旦除外 -->
+  <Match>
+    <Package name="~open\\.dolphin\\.touch\\..*"/>
+    <Priority value="2"/>
+  </Match>
+  <Match>
+    <Package name="~open\\.dolphin\\.touch\\..*"/>
+    <Priority value="3"/>
+  </Match>
+
+  <!-- DTO/InfoModel は自動生成コードが多く、複製参照系の警告を無視 -->
+  <Match>
+    <Class name="~open\\.dolphin\\.infomodel\\..*"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+
+  <!-- Legacy 互換維持: 旧クライアント互換 DTO/コンバータの EI_EXPOSE_REP* 警告を抑制 -->
+  <Match>
+    <Class name="open.dolphin.adm10.converter.IAbstractModule"/>
+  </Match>
+  <Match>
+    <Class name="~open\\.dolphin\\.converter\\..*"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="~open\\.dolphin\\.adm20\\.converter\\..*"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="~open\\.dolphin\\.touch\\.converter\\..*"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+  <Match>
+    <Class name="~open\\.dolphin\\.adm20\\.ICarePlan(Model|Item)"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+  </Match>
+
+  <!-- Stateful/Stateless Bean の serialVersionUID 不足は段階導入後に対応する -->
+  <Match>
+    <BugPattern name="SE_NO_SERIALVERSIONID"/>
+    <Annotation name="jakarta.ejb.Stateful"/>
+  </Match>
+  <Match>
+    <BugPattern name="SE_NO_SERIALVERSIONID"/>
+    <Annotation name="jakarta.ejb.Stateless"/>
+  </Match>
+
+  <!-- @Generated クラスは自動生成であり、優先度低の警告を抑制 -->
+  <Match>
+    <Annotation name="javax.annotation.Generated"/>
+  </Match>
+  <Match>
+    <Annotation name="jakarta.annotation.Generated"/>
+  </Match>
+</FindBugsFilter>

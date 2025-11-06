@@ -2,6 +2,7 @@ package open.dolphin.msg;
 
 import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
+import org.apache.commons.lang3.SerializationUtils;
 
 /**
  *
@@ -20,18 +21,20 @@ public class DiagnosisModuleItem {
     }
 
     public DocInfoModel getDocInfo() {
-        return docInfo;
+        return docInfo == null ? null : SerializationUtils.clone(docInfo);
     }
 
     public void setDocInfo(DocInfoModel docInfo) {
-        this.docInfo = docInfo;
+        this.docInfo = docInfo == null ? null : SerializationUtils.clone(docInfo);
     }
 
     public RegisteredDiagnosisModel getRegisteredDiagnosisModule() {
-        return registeredDiagnosisModule;
+        return registeredDiagnosisModule == null ? null : SerializationUtils.clone(registeredDiagnosisModule);
     }
 
     public void setRegisteredDiagnosisModule(RegisteredDiagnosisModel registeredDiagnosisModule) {
-        this.registeredDiagnosisModule = registeredDiagnosisModule;
+        this.registeredDiagnosisModule = registeredDiagnosisModule == null
+                ? null
+                : SerializationUtils.clone(registeredDiagnosisModule);
     }
 }

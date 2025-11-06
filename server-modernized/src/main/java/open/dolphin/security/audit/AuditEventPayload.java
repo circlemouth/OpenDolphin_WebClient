@@ -1,5 +1,7 @@
 package open.dolphin.security.audit;
 
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 /**
@@ -91,10 +93,14 @@ public class AuditEventPayload {
     }
 
     public Map<String, Object> getDetails() {
-        return details;
+        return immutableMap(details);
     }
 
     public void setDetails(Map<String, Object> details) {
-        this.details = details;
+        this.details = immutableMap(details);
+    }
+
+    private static Map<String, Object> immutableMap(Map<String, Object> source) {
+        return source == null ? null : Collections.unmodifiableMap(new HashMap<>(source));
     }
 }

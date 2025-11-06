@@ -1,5 +1,6 @@
-import type { DocumentModelPayload } from '@/features/charts/types/doc';
-import type { ModuleModelPayload } from '@/features/charts/types/module';
+import type { DocumentModelPayload, PVTHealthInsuranceModel } from '@/features/charts/types/doc';
+import type { ModuleInfoBeanPayload, ModuleModelPayload } from '@/features/charts/types/module';
+import { hasSerializedModuleBean } from '@/features/charts/types/module';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { AuthSession } from '@/libs/auth/auth-types';
 
@@ -39,6 +40,7 @@ export interface ProgressNoteContext {
   visit: PatientVisitSummary;
   karteId: number;
   session: AuthSession;
+  visitMemo?: string | null;
   facilityName?: string;
   userDisplayName?: string;
   userModelId?: number;
@@ -154,15 +156,11 @@ const ORDER_ENTITY_LABO_FLAGS = new Set([
   'radiologyOrder',
 ]);
 
-const ensureClaimItems = (modules: ModuleModelPayload[]) => {
+const ensureClaimItems = (modules: readonly (ModuleModelPayload & { beanBytes: string; moduleInfoBean: ModuleInfoBeanPayload })[]) => {
   modules.forEach((module) => {
-    const beanBytes = module.beanBytes ?? '';
-    if (!beanBytes.trim()) {
-      throw new Error('オーダスタンプのシリアライズデータが欠落しています。スタンプを再登録してください。');
-    }
-    const xml = decodeBase64(beanBytes);
+    const xml = decodeBase64(module.beanBytes);
     if (!/ClaimItem/i.test(xml)) {
-      const stampName = module.moduleInfoBean?.stampName ?? '不明なスタンプ';
+      const stampName = module.moduleInfoBean.stampName ?? '不明なスタンプ';
       throw new Error(`${stampName} に ClaimItem 情報が含まれていません。ORCA 連携設定を確認してください。`);
     }
   });
@@ -194,6 +192,7 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
     karteId,
     session,
     facilityName,
+    visitMemo,
     userDisplayName,
     userModelId,
     licenseName,
@@ -208,8 +207,18 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
   const timestamp = formatTimestamp(now);
   const docId = generateDocId();
 
-  if (orderModules.length > 0) {
-    ensureClaimItems(orderModules);
+  const serializedOrderModules = orderModules.filter(
+    (module): module is ModuleModelPayload & { beanBytes: string; moduleInfoBean: ModuleInfoBeanPayload } => {
+      if (!hasSerializedModuleBean(module)) {
+        const stampName = module?.moduleInfoBean?.stampName ?? '不明なスタンプ';
+        throw new Error(`${stampName} のスタンプ情報が不完全です。スタンプを再登録してください。`);
+      }
+      return true;
+    },
+  );
+
+  if (serializedOrderModules.length > 0) {
+    ensureClaimItems(serializedOrderModules);
   }
 
   const objectiveNarrative = buildObjectiveNarrative(draft);
@@ -245,7 +254,7 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
     started: timestamp,
     recorded: timestamp,
     ended: null,
-    linkId: 0,
+    linkId: null as number | null,
     linkRelation: null,
     status: 'F',
     userModel: {
@@ -260,11 +269,22 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
 
   const billingInfo = (() => {
     if (billing.mode === 'insurance') {
+      const insuranceModel = {
+        uuid: billing.guid ?? visit.insuranceUid ?? null,
+        insuranceClass: billing.description ?? '',
+        insuranceClassCode: billing.classCode ?? '',
+        insuranceNumber: '',
+        clientGroup: '',
+        clientNumber: null,
+        startDate: null,
+        expiredDate: null,
+      } satisfies PVTHealthInsuranceModel;
       return {
         healthInsurance: billing.classCode ?? '',
         healthInsuranceDesc: billing.description ?? '',
         healthInsuranceGUID: billing.guid ?? visit.insuranceUid ?? '',
         sendClaim: Boolean(billing.classCode),
+        insuranceModel,
       };
     }
 
@@ -275,10 +295,13 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
       healthInsuranceDesc: description,
       healthInsuranceGUID: '',
       sendClaim: false,
+      insuranceModel: null,
     };
   })();
 
-  const treatmentEntities = orderModules
+  const claimDate = billingInfo.sendClaim ? timestamp : null;
+
+  const treatmentEntities = serializedOrderModules
     .map((module) => module.moduleInfoBean?.entity)
     .filter((entity): entity is string => Boolean(entity));
 
@@ -287,28 +310,23 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
   const hasLabo = treatmentEntities.some((entity) => ORDER_ENTITY_LABO_FLAGS.has(entity));
 
   const mergedModules = (() => {
-    if (orderModules.length === 0) {
+    if (serializedOrderModules.length === 0) {
       return undefined;
     }
     const baseStampOffset = 2;
-    return orderModules
-      .map((module, index) => {
-        if (!module.moduleInfoBean || !module.beanBytes) {
-          return null;
-        }
-        return {
-          ...baseEntry,
-          moduleInfoBean: {
-            stampName: module.moduleInfoBean.stampName,
-            stampRole: module.moduleInfoBean.stampRole,
-            stampNumber: baseStampOffset + index,
-            entity: module.moduleInfoBean.entity,
-            stampId: module.moduleInfoBean.stampId ?? undefined,
-          },
-          beanBytes: module.beanBytes,
-        };
-      })
-      .filter((module): module is typeof baseEntry & { moduleInfoBean: { stampName: string; stampRole: string; stampNumber: number; entity: string; stampId?: string } } => Boolean(module));
+    return serializedOrderModules.map((module, index) => ({
+      ...baseEntry,
+      moduleInfoBean: {
+        stampName: module.moduleInfoBean.stampName,
+        stampRole: module.moduleInfoBean.stampRole,
+        stampNumber: baseStampOffset + index,
+        entity: module.moduleInfoBean.entity,
+        stampId: module.moduleInfoBean.stampId ?? undefined,
+        memo: module.moduleInfoBean.memo ?? undefined,
+      },
+      beanBytes: module.beanBytes,
+      memo: module.memo ?? undefined,
+    }));
   })();
 
   return {
@@ -323,27 +341,44 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
       purposeDesc: 'progress note',
       confirmDate: timestamp,
       firstConfirmDate: timestamp,
+      recordedAt: timestamp,
+      createdAt: timestamp,
+      updatedAt: timestamp,
       department: visit.departmentCode ?? departmentCode ?? '',
       departmentDesc: departmentDescriptor,
       healthInsurance: billingInfo.healthInsurance,
       healthInsuranceDesc: billingInfo.healthInsuranceDesc,
       healthInsuranceGUID: billingInfo.healthInsuranceGUID,
+      patientId: visit.patientId,
+      patientName: visit.fullName,
+      patientGender: visit.gender ?? null,
+      facilityName: facilityName ?? credentials.facilityId ?? null,
+      creatorLicense: licenseName ?? null,
+      createrLisence: licenseName ?? null,
       hasMark: false,
       hasImage: false,
       hasRp: hasMedication,
       hasTreatment: hasTreatment,
       hasLaboTest: hasLabo,
       versionNumber: '1',
+      versionNotes: null,
       status: 'F',
       parentId: null,
       parentIdRelation: null,
       sendClaim: billingInfo.sendClaim,
-      patientId: visit.patientId,
-      patientName: visit.fullName,
-      patientGender: visit.gender ?? '',
-      facilityName: facilityName ?? credentials.facilityId,
-      creatorLicense: licenseName ?? '',
-      createrLisence: licenseName ?? '',
+      sendLabtest: hasLabo,
+      sendMml: false,
+      claimDate,
+      labtestOrderNumber: null,
+      issuanceDate: null,
+      institutionNumber: null,
+      admFlag: 'V',
+      useGeneralName: false,
+      priscriptionOutput: hasMedication,
+      chkPatientInfo: false,
+      chkUseDrugInfo: false,
+      chkHomeMedical: false,
+      pVTHealthInsuranceModel: billingInfo.insuranceModel,
     },
     karteBean: {
       id: karteId,
@@ -374,6 +409,6 @@ export const createProgressNoteDocument = (context: ProgressNoteContext): Docume
     ],
     schema: [],
     attachment: [],
-    memo: visit.memo ?? null,
+    memo: visitMemo ?? visit.memo ?? null,
   };
 };

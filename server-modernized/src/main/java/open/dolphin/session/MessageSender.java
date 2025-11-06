@@ -19,6 +19,7 @@ import open.dolphin.mbean.PVTBuilder;
 import open.dolphin.msg.ClaimSender;
 import open.dolphin.msg.DiagnosisSender;
 import open.dolphin.msg.OidSender;
+import open.dolphin.msg.dto.AccountSummaryMessage;
 import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
 import open.dolphin.msg.gateway.MessagingConfig;
 import org.slf4j.Logger;
@@ -67,7 +68,7 @@ public class MessageSender implements MessageListener {
             handleDiagnosis(wrapper, traceId);
         } else if (payload instanceof String pvtXml) {
             handlePvt(pvtXml, traceId);
-        } else if (payload instanceof AccountSummary summary) {
+        } else if (payload instanceof AccountSummaryMessage summary) {
             handleAccountSummary(summary, traceId);
         } else if (payload instanceof ActivityModel[] activities) {
             handleActivityReport(activities, traceId);
@@ -127,7 +128,7 @@ public class MessageSender implements MessageListener {
         pvtServiceBean.addPvt(model);
     }
 
-    private void handleAccountSummary(AccountSummary summary, String traceId) throws Exception {
+    private void handleAccountSummary(AccountSummaryMessage summary, String traceId) throws Exception {
         LOGGER.info("Processing AccountSummary JMS message [traceId={}]", traceId);
         OidSender sender = new OidSender();
         sender.send(summary);

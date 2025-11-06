@@ -7,13 +7,16 @@ export interface SelectOption {
   label: string;
 }
 
-export interface SelectFieldProps extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size'> {
+export interface SelectFieldProps
+  extends Omit<SelectHTMLAttributes<HTMLSelectElement>, 'size' | 'children' | 'value' | 'defaultValue'> {
   label: string;
   options: SelectOption[];
   description?: string;
   errorMessage?: string;
   leftAdornment?: ReactNode;
   requiredIndicator?: ReactNode;
+  value?: string;
+  defaultValue?: string;
 }
 
 const FieldWrapper = styled.label`
@@ -79,24 +82,25 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
     {
       label,
       id,
-      options: rawOptions = [],
+      options: optionsProp,
       description,
       errorMessage,
       leftAdornment,
       required,
       requiredIndicator = <span aria-hidden="true">*</span>,
+      value,
+      defaultValue,
       ...props
     },
     ref,
   ) => {
-    const options = Array.isArray(rawOptions) ? rawOptions : [];
+    const options = Array.isArray(optionsProp) ? optionsProp : [];
 
-    if (import.meta.env?.DEV && !Array.isArray(rawOptions)) {
+    if (import.meta.env?.DEV && !Array.isArray(optionsProp)) {
       // options が undefined や null のままだと UI 全体がクラッシュしてしまうため、開発時に警告する
-      // eslint-disable-next-line no-console
       console.warn('SelectField: options prop が配列ではありません。空配列としてレンダリングします。', {
         label,
-        provided: rawOptions,
+        provided: optionsProp,
       });
     }
 
@@ -121,6 +125,8 @@ export const SelectField = forwardRef<HTMLSelectElement, SelectFieldProps>(
             aria-invalid={hasError}
             aria-describedby={[descriptionId, errorId].filter(Boolean).join(' ') || undefined}
             required={required}
+            {...(value !== undefined ? { value } : {})}
+            {...(value === undefined && defaultValue !== undefined ? { defaultValue } : {})}
             {...props}
           >
             {options.map((option) => (

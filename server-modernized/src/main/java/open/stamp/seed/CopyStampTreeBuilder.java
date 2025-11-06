@@ -39,11 +39,11 @@ public class CopyStampTreeBuilder {
     }
     
     public List<String> getSeedStampList() {
-        return seedStampList;
+        return immutableList(seedStampList);
     }
     
     public List<StampModel> getStampModelToPersist() {
-        return listToPersist;
+        return immutableList(listToPersist);
     }
 
     //build を開始する。
@@ -182,5 +182,12 @@ public class CopyStampTreeBuilder {
         if (DEBUG) {
             System.err.print(str);
         }
+    }
+
+    private static <T> List<T> immutableList(List<T> source) {
+        if (source == null || source.isEmpty()) {
+            return List.of();
+        }
+        return List.copyOf(source);
     }
 }

@@ -5,6 +5,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Objects;
 import org.jdom.Document;
 import org.jdom.Element;
 import org.jdom.JDOMException;
@@ -18,20 +19,16 @@ import org.jdom.input.SAXBuilder;
  */
 public class CopyStampTreeDirector {
 
-    private final int TT_STAMP_INFO = 0;
-    private final int TT_NODE       = 1;
-    private final int TT_ROOT       = 2;
-    private final int TT_STAMP_TREE = 3;
-    private final int TT_STAMP_BOX  = 4;
+    private static final int TT_STAMP_INFO = 0;
+    private static final int TT_NODE = 1;
+    private static final int TT_ROOT = 2;
+    private static final int TT_STAMP_TREE = 3;
+    private static final int TT_STAMP_BOX = 4;
 
-    private CopyStampTreeBuilder builder;
-
-    // Creates new CopyStampTreeDirector
-    public CopyStampTreeDirector(CopyStampTreeBuilder builder) {
-        this.builder = builder;
+    public CopyStampTreeDirector() {
     }
 
-    public void build(BufferedReader reader) {
+    public void build(BufferedReader reader, CopyStampTreeBuilder builder) {
 
         SAXBuilder docBuilder = new SAXBuilder();
 
@@ -39,9 +36,10 @@ public class CopyStampTreeDirector {
             Document doc = docBuilder.build(reader);
             Element root = doc.getRootElement();
 
-            builder.buildStart();
-            parseChildren(root);
-            builder.buildEnd();
+            CopyStampTreeBuilder workBuilder = Objects.requireNonNull(builder, "builder must not be null");
+            workBuilder.buildStart();
+            parseChildren(root, workBuilder);
+            workBuilder.buildEnd();
         }
         // indicates a well-formedness error
         catch (JDOMException e) {
@@ -53,21 +51,21 @@ public class CopyStampTreeDirector {
         }
     }
 
-    public void parseChildren(Element current) throws IOException {
+    public void parseChildren(Element current, CopyStampTreeBuilder builder) throws IOException {
         
-        int eType = startElement(current.getName(), current);
+        int eType = startElement(current.getName(), current, builder);
 
         List children = current.getChildren();
         Iterator iterator = children.iterator();
 
         while (iterator.hasNext()) {
             Element child = (Element) iterator.next();
-            parseChildren(child);
+            parseChildren(child, builder);
         }
-        endElement(eType);
+        endElement(eType, builder);
     }
 
-    public int startElement(String eName, Element e) throws IOException {
+    public int startElement(String eName, Element e, CopyStampTreeBuilder builder) throws IOException {
 
         if (eName.equals("stampInfo")) {
             builder.buildStampInfo(
@@ -93,7 +91,7 @@ public class CopyStampTreeDirector {
         return -1;
     }
 
-    public void endElement(int eType) throws IOException {
+    public void endElement(int eType, CopyStampTreeBuilder builder) throws IOException {
 
         switch (eType) {
             case TT_NODE:

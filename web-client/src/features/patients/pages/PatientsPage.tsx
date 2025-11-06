@@ -218,7 +218,11 @@ export const PatientsPage = () => {
       return;
     }
     try {
-      const formatted = formatRestDate(value);
+      const [year, month, day] = value.split('-').map((part) => Number.parseInt(part, 10));
+      if (!year || !month || !day) {
+        return;
+      }
+      const formatted = formatRestDate(new Date(year, month - 1, day));
       setKarteFromDate(formatted);
     } catch {
       // noop

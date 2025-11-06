@@ -6,15 +6,16 @@ import type { PatientSearchRequest, PatientSummary } from '@/features/patients/t
 export const patientSearchQueryKey = ['patients', 'search'] as const;
 
 export const usePatientSearch = (params: PatientSearchRequest | null) => {
+  const hasText = (value: string | undefined) => Boolean(value && value.trim().length > 0);
   const hasCriteria =
     params !== null &&
     ('keyword' in params
-      ? params.keyword.trim().length > 0
+      ? hasText(params.keyword)
       : Boolean(
-          (params.nameKeyword && params.nameKeyword.trim()) ||
-            (params.kanaKeyword && params.kanaKeyword.trim()) ||
-            (params.idKeyword && params.idKeyword.trim()) ||
-            (params.digitKeyword && params.digitKeyword.trim()),
+          hasText(params.nameKeyword) ||
+            hasText(params.kanaKeyword) ||
+            hasText(params.idKeyword) ||
+            hasText(params.digitKeyword),
         ));
 
   return useQuery<PatientSummary[]>({

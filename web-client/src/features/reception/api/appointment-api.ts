@@ -1,3 +1,4 @@
+import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
 import { httpClient } from '@/libs/http';
 import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
@@ -32,20 +33,21 @@ export interface AppointmentSummary {
 const APPOINTMENT_STATE_NEW = 1;
 const APPOINTMENT_STATE_REPLACE = 3;
 
-const formatRestDateTime = (date: Date) => {
-  const iso = date.toISOString();
-  return iso.slice(0, 19);
-};
-
 const parseDateTime = (value: string | undefined): string | null => {
   if (!value) {
     return null;
   }
-  const parsed = new Date(value);
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
+  }
+  const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
+  const withZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(normalized) ? normalized : `${normalized}+09:00`;
+  const parsed = new Date(withZone);
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }
-  return parsed.toISOString();
+  return formatRestTimestamp(parsed);
 };
 
 const transformAppointment = (
@@ -80,7 +82,7 @@ export const fetchAppointments = async (
 ): Promise<AppointmentSummary[]> => {
   const { karteId, from, to } = params;
   const endpoint = `/karte/appo/${encodeURIComponent(
-    `${karteId},${formatRestDateTime(from)},${formatRestDateTime(to)}`,
+    `${karteId},${formatRestTimestamp(from)},${formatRestTimestamp(to)}`,
   )}`;
 
   return measureApiPerformance(
@@ -95,7 +97,7 @@ export const fetchAppointments = async (
         .filter((entry): entry is AppointmentSummary => Boolean(entry))
         .sort((a, b) => a.dateTime.localeCompare(b.dateTime));
     },
-    { karteId, from: from.toISOString(), to: to.toISOString() },
+    { karteId, from: formatRestTimestamp(from), to: formatRestTimestamp(to) },
   );
 };
 
@@ -138,8 +140,8 @@ interface AppointmentPayload {
 }
 
 const buildAppointmentPayload = (command: AppointmentCommand): AppointmentPayload => {
-  const timestamp = formatRestDateTime(new Date());
-  const scheduled = formatRestDateTime(command.scheduledAt);
+  const timestamp = formatRestTimestamp(new Date());
+  const scheduled = formatRestTimestamp(command.scheduledAt);
   const state = command.action === 'create' ? APPOINTMENT_STATE_NEW : APPOINTMENT_STATE_REPLACE;
   const name = command.action === 'cancel' ? null : command.name;
   const memo = command.action === 'cancel' ? null : command.memo ?? null;

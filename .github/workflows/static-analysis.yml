@@ -1,0 +1,122 @@
+name: Server Static Analysis
+
+on:
+  pull_request:
+    paths:
+      - 'common/**/*.java'
+      - 'server-modernized/**/*.java'
+      - 'pom.server-modernized.xml'
+      - 'scripts/run-static-analysis-diff.sh'
+      - '.github/workflows/static-analysis.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'common/**/*.java'
+      - 'server-modernized/**/*.java'
+      - 'pom.server-modernized.xml'
+      - 'scripts/run-static-analysis-diff.sh'
+      - '.github/workflows/static-analysis.yml'
+
+jobs:
+  static-analysis:
+    name: static-analysis
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Temurin JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+
+      - name: Full Static Analysis (verify)
+        run: mvn -f pom.server-modernized.xml -Pstatic-analysis verify -DskipTests -B
+
+      - name: Upload static analysis reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: static-analysis-reports
+          path: server-modernized/target/static-analysis
+          if-no-files-found: warn
+
+      - name: Fetch base branch
+        if: ${{ github.event_name == 'pull_request' }}
+        run: git fetch origin ${{ github.base_ref }} --depth=1
+
+      - name: Diff-only Checkstyle/PMD gate
+        if: ${{ github.event_name == 'pull_request' }}
+        run: scripts/run-static-analysis-diff.sh --base origin/${{ github.base_ref }} --target HEAD
+
+      - name: Notify Slack on failure
+        if: failure()
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_STATIC_ANALYSIS_WEBHOOK }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          if [ -z "${SLACK_WEBHOOK_URL}" ]; then
+            echo "Slack webhook is not configured. Skipping notification."
+            exit 0
+          fi
+          message="静的解析ワークフローが失敗しました: ${WORKFLOW_NAME} #${RUN_NUMBER} (${RUN_URL})"
+          payload=$(jq -n --arg text "$message" '{text: $text}')
+          curl -s -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+
+      - name: Notify PagerDuty on failure
+        if: failure()
+        env:
+          PAGERDUTY_ROUTING_KEY: ${{ secrets.PAGERDUTY_STATIC_ANALYSIS_ROUTING_KEY }}
+          WORKFLOW_NAME: ${{ github.workflow }}
+          RUN_NUMBER: ${{ github.run_number }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REF_NAME: ${{ github.ref_name }}
+          HEAD_REF: ${{ github.head_ref || github.ref_name }}
+          COMMIT_SHA: ${{ github.sha }}
+        run: |
+          if [ -z "${PAGERDUTY_ROUTING_KEY}" ]; then
+            echo "PagerDuty routing key is not configured. Skipping notification."
+            exit 0
+          fi
+          summary="静的解析ワークフロー失敗: ${WORKFLOW_NAME} #${RUN_NUMBER}"
+          payload=$(jq -n \
+            --arg routing_key "$PAGERDUTY_ROUTING_KEY" \
+            --arg summary "$summary" \
+            --arg run_url "$RUN_URL" \
+            --arg head_ref "$HEAD_REF" \
+            --arg ref_name "$REF_NAME" \
+            --arg commit "$COMMIT_SHA" \
+            '{
+              routing_key: $routing_key,
+              event_action: "trigger",
+              dedup_key: ("static-analysis-" + $commit),
+              payload: {
+                summary: $summary,
+                severity: "error",
+                source: "github-actions",
+                component: "server-modernized",
+                group: "static-analysis",
+                custom_details: {
+                  head_ref: $head_ref,
+                  ref_name: $ref_name,
+                  commit: $commit,
+                  run_url: $run_url
+                }
+              },
+              links: [
+                {
+                  href: $run_url,
+                  text: "GitHub Actions Run"
+                }
+              ]
+            }')
+          curl -s -X POST -H 'Content-Type: application/json' --data "$payload" https://events.pagerduty.com/v2/enqueue

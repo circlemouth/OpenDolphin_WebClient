@@ -17,7 +17,7 @@
 | `Button` | 主要/副次アクション | `variant` (`primary`/`secondary`/`ghost`/`danger`), `size`, `fullWidth`, `isLoading`, `as="a"`, `leftIcon`, `rightIcon` | Anchor レンダリング時の disabled/aria 制御とローディング表示を統一、左右アイコンを共通化。 |
 | `TextField` | フォーム入力 | `label`, `description`, `errorMessage`, `leftAdornment` など | `ControlledTextField` で React Hook Form に統合可能。必須表示や aria 属性を内包。 |
 | `SelectField` | セレクト入力 | `label`, `options`, `description`, `errorMessage` | TextField と同一スタイルの `<select>` を提供。請求モードやテンプレート選択で利用。 |
-| `SurfaceCard` | 情報カード/サマリー | `tone` (`default`/`muted`/`elevated`), `padding`, `as` | 3 カラムレイアウトのサイドバー/メインセクションで再利用。Emotion の `as` で section/nav へ切り替え可能。 |
+| `SurfaceCard` | 情報カード/サマリー | `tone` (`default`/`muted`/`elevated`/`warning`/`danger`), `padding`, `as` | 3 カラムレイアウトのサイドバー/メインセクションで再利用。Emotion の `as` 指定と `forwardRef` で DOM 参照にも対応。 |
 | `StatusBadge` | ステータス表示 | `tone` (`info`/`success`/`warning`/`danger`/`neutral`), `size` (`md`/`sm`) | 診療状態や環境バージョンのバッジ表示に利用。`size="sm"` でカード内の密度に追従。 |
 | `Stack` | 水平/垂直の余白制御 | `direction`, `gap`, `align`, `justify`, `wrap` | レイアウトユーティリティ。 |
 | `ControlledTextField` | RHF 向けラッパー | `control`, `name`, `rules` | バリデーションメッセージを TextField に引き渡す。 |
@@ -27,7 +27,8 @@
 - [ ] `Table`/`DataList` の設計に着手し、患者一覧/カルテ履歴で再利用可能な API を提供。
 - [ ] `Button` と `SurfaceCard` のダークモード配色案を検討し、将来のアクセシビリティ要件に備える。
 
-更新履歴`n- 2026-05-06: パレットトークン拡張・Button/StatusBadge/SurfaceCard の props を整理し、Storybook 仕様を更新。 (担当: Agent)
+## 更新履歴
+- 2025-11-06: SurfaceCard に warning/danger トーンと ref 透過を追加。SelectField/TextArea の必須 props 運用を整理。 (担当: Agent)
+- 2026-05-06: パレットトークン拡張・Button/StatusBadge/SurfaceCard の props を整理し、Storybook 仕様を更新。 (担当: Agent)
 - 2026-03-06: `SelectField` を追加し、請求モードや文書テンプレート選択に利用。 (担当: Agent)
 - 2025-11-04: 初版公開。Storybook セットアップと基礎コンポーネントを登録。 (担当: Agent)
-

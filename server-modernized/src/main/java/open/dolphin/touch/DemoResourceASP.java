@@ -1,5 +1,6 @@
 package open.dolphin.touch;
 
+import java.nio.charset.StandardCharsets;
 import java.text.SimpleDateFormat;
 import java.util.*;
 import jakarta.inject.Inject;
@@ -1285,8 +1286,8 @@ public class DemoResourceASP extends AbstractResource {
 
                 sb.append(ELEMENT_SCHEMA_START);
 
-                byte[] bytes = schema.getJpegByte();
-                String base64Str = new String(Base64Utils.encode(bytes));
+                    byte[] bytes = schema.getJpegByte();
+                    String base64Str = new String(Base64Utils.encode(bytes), StandardCharsets.UTF_8);
                 propertyString(ELEMENT_BASE64, base64Str, sb);
 
                 sb.append(ELEMENT_SCHEMA_END);
@@ -1634,7 +1635,7 @@ public class DemoResourceASP extends AbstractResource {
                     sb.append(ELEMENT_SCHEMA_START);
 
                     byte[] bytes = schema.getJpegByte();
-                    String base64Str = new String(Base64Utils.encode(bytes));
+                    String base64Str = new String(Base64Utils.encode(bytes), StandardCharsets.UTF_8);
                     propertyString(ELEMENT_BASE64, base64Str, sb);
 
                     sb.append(ELEMENT_SCHEMA_END);

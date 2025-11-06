@@ -12,6 +12,7 @@ import type {
   RawPatientResource,
 } from '@/features/patients/types/patient';
 import { buildSafetyNotes } from '@/features/patients/utils/safety-notes';
+import { normalizeGender } from '@/features/patients/utils/normalize-gender';
 
 const searchEndpointMap: Record<PatientSearchMode, string> = {
   name: '/patient/name/',
@@ -34,7 +35,7 @@ const transformPatient = (resource: RawPatientResource): PatientSummary | null =
     patientId,
     fullName,
     kanaName: resource.kanaName?.trim(),
-    gender: resource.gender?.trim(),
+    gender: normalizeGender(resource.gender),
     genderDesc: resource.genderDesc?.trim(),
     birthday: resource.birthday?.trim(),
     lastVisitDate: resource.pvtDate?.trim(),
@@ -52,24 +53,24 @@ const transformPatient = (resource: RawPatientResource): PatientSummary | null =
 };
 
 const toHealthInsuranceList = (list?: RawPatientResource['healthInsurances']): PatientHealthInsurance[] => {
-  if (!list || list.length === 0) {
-    return [];
+  const results: PatientHealthInsurance[] = [];
+  if (!list) {
+    return results;
   }
-  return list
-    .map((entry) => {
-      if (!entry) {
-        return null;
-      }
-      const rawBeanBytes = typeof entry.beanBytes === 'string' ? entry.beanBytes.trim() : '';
-      if (!rawBeanBytes) {
-        return null;
-      }
-      return {
-        id: entry.id ?? undefined,
-        beanBytes: rawBeanBytes,
-      } satisfies PatientHealthInsurance;
-    })
-    .filter((entry): entry is PatientHealthInsurance => entry !== null);
+  for (const entry of list) {
+    if (!entry) {
+      continue;
+    }
+    const rawBeanBytes = typeof entry.beanBytes === 'string' ? entry.beanBytes.trim() : '';
+    if (!rawBeanBytes) {
+      continue;
+    }
+    results.push({
+      id: entry.id ?? undefined,
+      beanBytes: rawBeanBytes,
+    });
+  }
+  return results;
 };
 
 const transformPatientDetail = (resource: RawPatientResource): PatientDetail | null => {
@@ -91,7 +92,7 @@ const transformPatientDetail = (resource: RawPatientResource): PatientDetail | n
     patientId: summary.patientId,
     fullName: summary.fullName,
     kanaName: resource.kanaName?.trim() ?? undefined,
-    gender: resource.gender?.trim() ?? 'U',
+    gender: normalizeGender(resource.gender),
     genderDesc: resource.genderDesc?.trim() ?? undefined,
     birthday: resource.birthday?.trim() ?? undefined,
     memo: resource.memo?.trim() ?? undefined,
@@ -107,6 +108,8 @@ const transformPatientDetail = (resource: RawPatientResource): PatientDetail | n
     reserve4: resource.reserve4?.trim() ?? undefined,
     reserve5: resource.reserve5?.trim() ?? undefined,
     reserve6: resource.reserve6?.trim() ?? undefined,
+    lastVisitDate: resource.pvtDate?.trim() ?? undefined,
+    updatedAt: resource.updatedAt?.trim() ?? undefined,
     safetyNotes: summary.safetyNotes,
     healthInsurances: toHealthInsuranceList(resource.healthInsurances),
     raw: resource,
@@ -178,8 +181,8 @@ const fetchPatientsByMode = async (mode: PatientSearchMode, keyword: string): Pr
 };
 
 export const searchPatients = async (params: PatientSearchRequest): Promise<PatientSummary[]> => {
-  if ('keyword' in params) {
-    return fetchPatientsByMode(params.mode, params.keyword);
+  if ('mode' in params && 'keyword' in params && typeof params.mode === 'string') {
+    return fetchPatientsByMode(params.mode, params.keyword ?? '');
   }
 
   const filters = [

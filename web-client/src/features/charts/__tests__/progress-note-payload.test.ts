@@ -154,8 +154,18 @@ describe('createProgressNoteDocument', () => {
     expect(document.docInfoModel.title).toBe(draft.title);
     expect(document.docInfoModel.facilityName).toBe('OpenDolphin Clinic');
     expect(document.modules).toHaveLength(2);
+    expect(document.docInfoModel.pVTHealthInsuranceModel?.insuranceClassCode).toBe('Z1');
+    expect(document.docInfoModel.claimDate).not.toBeNull();
+    expect(document.docInfoModel.sendMml).toBe(false);
+    expect(document.linkId).toBeNull();
+    expect(document.linkRelation).toBeNull();
 
     const [soaModule, planModule] = document.modules;
+    expect(soaModule.moduleInfoBean).toBeTruthy();
+    expect(planModule.moduleInfoBean).toBeTruthy();
+    if (!soaModule.moduleInfoBean || !planModule.moduleInfoBean) {
+      throw new Error('moduleInfoBean が未定義です');
+    }
     expect(soaModule.moduleInfoBean.stampRole).toBe('soaSpec');
     expect(planModule.moduleInfoBean.stampRole).toBe('pSpec');
 
@@ -197,6 +207,8 @@ describe('createProgressNoteDocument', () => {
     expect(document.docInfoModel.healthInsuranceDesc).toContain('実施者: 看護師A');
     expect(document.docInfoModel.healthInsuranceGUID).toBe('');
     expect(document.docInfoModel.sendClaim).toBe(false);
+    expect(document.docInfoModel.claimDate).toBeNull();
+    expect(document.docInfoModel.sendLabtest).toBe(false);
   });
 
   it('buildObjectiveNarrative joins core, ROS, and PE sections with headings', () => {
@@ -287,6 +299,33 @@ describe('createProgressNoteDocument', () => {
     expect(document.docInfoModel.hasRp).toBe(true);
     expect(document.docInfoModel.hasTreatment).toBe(false);
     expect(document.docInfoModel.hasLaboTest).toBe(false);
+    expect(document.docInfoModel.sendLabtest).toBe(false);
+  });
+
+  it('enables labtest transmission when lab orders are present', () => {
+    const labModule: ModuleModelPayload = {
+      moduleInfoBean: {
+        stampName: '血液検査セット',
+        stampRole: 'p',
+        stampNumber: 0,
+        entity: 'testOrder',
+        stampId: 'stamp-lab-001',
+      },
+      beanBytes: encodeBase64('<ClaimItem code="LAB001"/>'),
+    };
+
+    const document = createProgressNoteDocument({
+      draft,
+      visit,
+      karteId: 4001,
+      session,
+      billing: insuranceBilling,
+      orderModules: [labModule],
+    });
+
+    expect(document.docInfoModel.hasLaboTest).toBe(true);
+    expect(document.docInfoModel.sendLabtest).toBe(true);
+    expect(document.docInfoModel.priscriptionOutput).toBe(false);
   });
 
   it('validates claim items in order modules', () => {

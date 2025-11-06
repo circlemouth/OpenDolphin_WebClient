@@ -20,6 +20,7 @@ import { useTemporaryDocuments } from '@/features/reception/hooks/useTemporaryDo
 import {
   useReceptionPreferences,
   type ReceptionColumnKey,
+  type ReceptionPreferences,
 } from '@/features/reception/hooks/useReceptionPreferences';
 import {
   deleteVisit,
@@ -207,9 +208,51 @@ const PatientSearchCard = styled(SurfaceCard)`
   gap: 16px;
 `;
 
-const NewPatientButtonRow = styled.div`
+const SearchHeaderControls = styled.div`
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 12px;
+`;
+
+const RegistrationDefaultsContainer = styled.div`
+  display: grid;
+  gap: 6px;
+  flex: 1 1 320px;
+  min-width: 260px;
+`;
+
+const RegistrationDefaultsLabel = styled.span`
+  font-size: 0.75rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+  font-weight: 600;
+  letter-spacing: 0.02em;
+`;
+
+const RegistrationDefaultsFields = styled.div`
+  display: grid;
+  gap: 6px;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+`;
+
+const RegistrationDefaultField = styled(TextField)`
+  gap: 0.2rem;
+
+  > span:nth-of-type(1) {
+    font-size: 0.75rem;
+    color: ${({ theme }) => theme.palette.textMuted};
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  > span:nth-of-type(2) {
+    padding: 0.35rem 0.5rem;
+  }
+
+  > span:nth-of-type(2) input {
+    font-size: 0.85rem;
+  }
 `;
 
 const PatientSearchHeader = styled.div`
@@ -239,6 +282,22 @@ const SearchActions = styled.div`
 `;
 
 const SearchHint = styled.p`
+  margin: 0;
+  font-size: 0.8rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const CardSection = styled.section`
+  display: grid;
+  gap: 12px;
+`;
+
+const SectionHeading = styled.h3`
+  margin: 0;
+  font-size: 0.95rem;
+`;
+
+const SectionDescription = styled.p`
   margin: 0;
   font-size: 0.8rem;
   color: ${({ theme }) => theme.palette.textMuted};
@@ -274,93 +333,15 @@ const CompactTextField = styled(TextField)`
     grid-row: 2;
   }
 `;
+const DEFAULT_PREF_KEY_MAP = {
+  departmentCode: 'defaultDepartmentCode',
+  departmentName: 'defaultDepartmentName',
+  doctorId: 'defaultDoctorId',
+  doctorName: 'defaultDoctorName',
+  insuranceUid: 'defaultInsuranceUid',
+} as const;
 
-const PatientResultList = styled.div`
-  display: grid;
-  gap: 8px;
-`;
-
-const PatientResultItem = styled.div<{ $selected: boolean }>`
-  display: flex;
-  justify-content: space-between;
-  align-items: stretch;
-  gap: 16px;
-  padding: 12px 16px;
-  border: 1px solid ${({ theme, $selected }) => ($selected ? theme.palette.primary : theme.palette.border)};
-  border-radius: ${({ theme }) => theme.radius.md};
-  background: ${({ theme, $selected }) =>
-    $selected ? `${theme.palette.primary}12` : theme.palette.surface};
-  box-shadow: ${({ theme, $selected }) =>
-    $selected ? `0 0 0 3px ${theme.palette.primary}26` : 'none'};
-  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
-  cursor: pointer;
-  outline: none;
-
-  &:hover,
-  &:focus-within {
-    border-color: ${({ theme }) => theme.palette.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.palette.primary}19`};
-  }
-
-  &:focus-visible {
-    border-color: ${({ theme }) => theme.palette.primary};
-    box-shadow: 0 0 0 3px ${({ theme }) => `${theme.palette.primary}33`};
-  }
-`;
-
-const PatientResultInfo = styled.div`
-  display: grid;
-  gap: 8px;
-  flex: 1;
-  min-width: 0;
-`;
-
-const PatientResultName = styled.span`
-  font-weight: 700;
-  font-size: 1rem;
-  color: ${({ theme }) => theme.palette.textPrimary};
-`;
-
-const PatientResultMeta = styled.div`
-  display: grid;
-  gap: 6px 16px;
-  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
-  font-size: 0.85rem;
-`;
-
-const PatientResultMetaItem = styled.div`
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-`;
-
-const PatientResultMetaLabel = styled.span`
-  color: ${({ theme }) => theme.palette.textMuted};
-  letter-spacing: 0.02em;
-  font-size: 0.75rem;
-`;
-
-const PatientResultMetaValue = styled.span`
-  color: ${({ theme }) => theme.palette.text};
-  font-weight: 500;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-`;
-
-const PatientSafetyNotes = styled.div`
-  display: inline-flex;
-  flex-wrap: wrap;
-  gap: 6px;
-`;
-
-const PatientResultActions = styled.div`
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  justify-content: flex-end;
-`;
+type DefaultPrefField = keyof typeof DEFAULT_PREF_KEY_MAP;
 
 const buildPatientSummaryFromVisit = (visit: PatientVisitSummary): PatientSummary => {
   const baseRaw = visit.raw.patientModel ?? {};
@@ -405,10 +386,10 @@ const buildPatientSummaryFromDetail = (detail: PatientDetail): PatientSummary =>
   patientId: detail.patientId,
   fullName: detail.fullName,
   kanaName: detail.kanaName ?? undefined,
-  gender: detail.gender ?? undefined,
+  gender: detail.gender,
   genderDesc: detail.genderDesc ?? undefined,
   birthday: detail.birthday ?? undefined,
-  lastVisitDate: detail.raw?.pvtDate ?? undefined,
+  lastVisitDate: detail.lastVisitDate ?? detail.raw?.pvtDate ?? undefined,
   safetyNotes: detail.safetyNotes,
   raw: detail.raw,
 });
@@ -432,20 +413,6 @@ const formatDisplayDate = (value?: string | null) => {
   } catch {
     return value;
   }
-};
-
-const resolveSafetyNoteTone = (note: string): 'danger' | 'warning' | 'info' => {
-  const normalized = note.trim();
-  if (!normalized) {
-    return 'info';
-  }
-  if (/禁忌|アナフィラ|ショック|重症/.test(normalized)) {
-    return 'danger';
-  }
-  if (/注意|慎重|警告/.test(normalized)) {
-    return 'warning';
-  }
-  return 'info';
 };
 
 const VisitCard = styled(SurfaceCard)`
@@ -510,6 +477,23 @@ const classifyVisit = (visit: PatientVisitSummary): QueueStatus => {
   return 'waiting';
 };
 
+const toVisitTimestamp = (visit: PatientVisitSummary): number => {
+  const isoString = visit.visitDate ?? visit.raw?.pvtDate ?? null;
+  if (!isoString) {
+    return 0;
+  }
+  const time = new Date(isoString).getTime();
+  return Number.isNaN(time) ? 0 : time;
+};
+
+const compareVisitArrival = (a: PatientVisitSummary, b: PatientVisitSummary): number => {
+  const diff = toVisitTimestamp(a) - toVisitTimestamp(b);
+  if (diff !== 0) {
+    return diff;
+  }
+  return a.visitId - b.visitId;
+};
+
 const extractErrorMessage = (error: unknown) => {
   if (typeof error === 'string') {
     return error;
@@ -525,7 +509,7 @@ export const ReceptionPage = () => {
   const { session } = useAuth();
   const clientUuid = session?.credentials.clientUuid;
   const visitsQuery = usePatientVisits();
-  const { preferences, setVisibleColumns } = useReceptionPreferences();
+  const { preferences, setVisibleColumns, setDefaults } = useReceptionPreferences();
   const receptionCallMutation = useReceptionCallMutation();
   const receptionMemoMutation = useReceptionMemoMutation();
   const [statePendingVisitId, setStatePendingVisitId] = useState<number | null>(null);
@@ -558,6 +542,8 @@ export const ReceptionPage = () => {
   const [patientSearchDigit, setPatientSearchDigit] = useState('');
   const [patientSearchParams, setPatientSearchParams] = useState<PatientSearchRequest | null>(null);
   const patientSearchQuery = usePatientSearch(patientSearchParams);
+  const [manualPatientResults, setManualPatientResults] = useState<PatientSummary[] | null>(null);
+  const skipNextAutoSelectRef = useRef<boolean>(false);
   const [searchError, setSearchError] = useState<string | null>(null);
   const [selectedPatientId, setSelectedPatientId] = useState<string | null>(null);
   const [selectedPatientSummary, setSelectedPatientSummary] = useState<PatientSummary | null>(null);
@@ -642,6 +628,18 @@ export const ReceptionPage = () => {
   }, [patientSearchQuery.data, selectedPatientId, selectedVisit]);
 
   useEffect(() => {
+    if (!manualPatientResults) {
+      return;
+    }
+    if (patientSearchQuery.isFetching) {
+      return;
+    }
+    if (patientSearchQuery.isSuccess) {
+      setManualPatientResults(null);
+    }
+  }, [manualPatientResults, patientSearchQuery.isFetching, patientSearchQuery.isSuccess]);
+
+  useEffect(() => {
     if (manageTarget) {
       setDesiredState(manageTarget.state ?? 0);
     }
@@ -704,6 +702,7 @@ export const ReceptionPage = () => {
     }
 
     setSearchError(null);
+    setManualPatientResults(null);
     const params: PatientSearchRequest = {
       nameKeyword: trimmedName || undefined,
       kanaKeyword: trimmedKana || undefined,
@@ -732,6 +731,7 @@ export const ReceptionPage = () => {
     setSelectedPatientId(null);
     setSelectedPatientSummary(null);
     setSearchError(null);
+    setManualPatientResults(null);
     recordOperationEvent('patient', 'info', 'patient_search_clear', '受付画面の患者検索条件をクリアしました', {});
   }, [
     hasPatientSearchInput,
@@ -784,9 +784,62 @@ export const ReceptionPage = () => {
       setSelectedPatientSummary(buildPatientSummaryFromDetail(result.patient));
       setPatientFormMode('update');
       setActiveSidebarTab('patient');
+      setManualPatientResults(null);
+      skipNextAutoSelectRef.current = false;
     },
     [],
   );
+
+  const handleBarcodeMultipleMatches = useCallback(
+    ({ patientId, candidates }: { patientId: string; candidates: PatientSummary[] }) => {
+      skipNextAutoSelectRef.current = true;
+      setSelectedVisitId(null);
+      setSelectedPatientId(null);
+      setSelectedPatientSummary(null);
+      setPatientFormMode('update');
+      setActiveSidebarTab('patient');
+      setManualPatientResults(candidates);
+      setPatientSearchName('');
+      setPatientSearchKana('');
+      setPatientSearchId('');
+      setPatientSearchDigit(patientId);
+      setPatientSearchParams({ digitKeyword: patientId });
+      setSearchError(null);
+      recordOperationEvent('patient', 'warning', 'patient_search_barcode_multiple', 'バーコード受付で複数の患者候補が見つかりました', {
+        source: 'reception-barcode',
+        candidateCount: candidates.length,
+        scannedDigit: patientId,
+      });
+    },
+    [],
+  );
+
+  const handleBarcodeNotFound = useCallback(
+    (patientId: string) => {
+      skipNextAutoSelectRef.current = false;
+      setManualPatientResults(null);
+      setSelectedVisitId(null);
+      setSelectedPatientId(null);
+      setSelectedPatientSummary(null);
+      setPatientSearchParams(null);
+      setPatientSearchDigit(patientId);
+      setPatientSearchId(patientId);
+      setSearchError(null);
+      recordOperationEvent('patient', 'warning', 'patient_search_barcode_not_found', 'バーコード受付で患者が見つかりませんでした', {
+        source: 'reception-barcode',
+        scannedDigit: patientId,
+      });
+    },
+    [],
+  );
+
+  const handleBarcodeUnhandledError = useCallback((error: Error) => {
+    setSearchError(error.message);
+    recordOperationEvent('reception', 'critical', 'barcode_check_in_error', 'バーコード受付で予期せぬエラーが発生しました', {
+      source: 'reception-barcode',
+      errorMessage: error.message,
+    });
+  }, []);
 
   const handleCreateReceptionFromPatient = useCallback(
     async (detail: PatientDetail) => {
@@ -805,7 +858,7 @@ export const ReceptionPage = () => {
         });
       } catch (error) {
         const message = error instanceof Error ? error.message : '受付登録に失敗しました。';
-        recordOperationEvent('reception', 'error', 'visit_create_from_patient_failed', '患者編集からの受付作成に失敗しました', {
+        recordOperationEvent('reception', 'critical', 'visit_create_from_patient_failed', '患者編集からの受付作成に失敗しました', {
           patientId: detail.patientId,
         });
         throw new Error(message);
@@ -868,7 +921,27 @@ export const ReceptionPage = () => {
     [receptionCallMutation],
   );
 
-  const patientResults = useMemo(() => patientSearchQuery.data ?? [], [patientSearchQuery.data]);
+  const queryPatientResults = patientSearchQuery.data ?? [];
+  const patientResults = useMemo(
+    () => manualPatientResults ?? queryPatientResults,
+    [manualPatientResults, queryPatientResults],
+  );
+  const patientSearchState = useMemo(
+    () => ({
+      hasParams: Boolean(patientSearchParams) || manualPatientResults !== null,
+      isLoading: patientSearchQuery.isPending && Boolean(patientSearchParams),
+      isFetching: patientSearchQuery.isFetching && !patientSearchQuery.isPending,
+      isError: patientSearchQuery.isError,
+      usingManualResults: manualPatientResults !== null,
+    }),
+    [
+      manualPatientResults,
+      patientSearchParams,
+      patientSearchQuery.isError,
+      patientSearchQuery.isFetching,
+      patientSearchQuery.isPending,
+    ],
+  );
   const patientSearchUpdatedAt = patientSearchQuery.dataUpdatedAt;
   const lastAutoSelectAtRef = useRef<number>(0);
 
@@ -887,6 +960,10 @@ export const ReceptionPage = () => {
       return;
     }
     lastAutoSelectAtRef.current = patientSearchUpdatedAt;
+    if (skipNextAutoSelectRef.current) {
+      skipNextAutoSelectRef.current = false;
+      return;
+    }
     const isCurrentSelected =
       selectedPatientId !== null &&
       patientResults.some((patient) => patient.patientId === selectedPatientId);
@@ -930,31 +1007,26 @@ export const ReceptionPage = () => {
     });
   }, [receptionSearchKeyword, visits]);
 
-  const groupedVisits = useMemo(
-    () =>
-      filteredVisits.reduce(
-        (groups, visit) => {
-          const status = classifyVisit(visit);
-          groups[status].push(visit);
-          return groups;
-        },
-        {
-          waiting: [] as PatientVisitSummary[],
-          calling: [] as PatientVisitSummary[],
-          inProgress: [] as PatientVisitSummary[],
-        },
-      ),
-    [filteredVisits],
-  );
+  const groupedVisits = useMemo(() => {
+    const groups = filteredVisits.reduce(
+      (accumulator, visit) => {
+        const status = classifyVisit(visit);
+        accumulator[status].push(visit);
+        return accumulator;
+      },
+      {
+        waiting: [] as PatientVisitSummary[],
+        calling: [] as PatientVisitSummary[],
+        inProgress: [] as PatientVisitSummary[],
+      },
+    );
 
-  const summary = useMemo(
-    () => ({
-      waiting: groupedVisits.waiting.length,
-      calling: groupedVisits.calling.length,
-      inProgress: groupedVisits.inProgress.length,
-    }),
-    [groupedVisits],
-  );
+    return {
+      waiting: [...groups.waiting].sort(compareVisitArrival), // 受付が後の患者が下に並ぶよう来院順で整列
+      calling: groups.calling,
+      inProgress: groups.inProgress,
+    };
+  }, [filteredVisits]);
 
   const isReceptionLoading = visitsQuery.isPending;
   const isReceptionRefreshing = visitsQuery.isFetching && !visitsQuery.isPending;
@@ -1218,6 +1290,32 @@ export const ReceptionPage = () => {
   const isCallMutating = receptionCallMutation.isPending;
   const isMemoMutating = receptionMemoMutation.isPending;
 
+  const registrationDefaults = useMemo(
+    () => ({
+      departmentCode: preferences.defaultDepartmentCode ?? undefined,
+      departmentName: preferences.defaultDepartmentName ?? undefined,
+      doctorId: preferences.defaultDoctorId ?? undefined,
+      doctorName: preferences.defaultDoctorName ?? undefined,
+      insuranceUid: preferences.defaultInsuranceUid ?? undefined,
+    }),
+    [
+      preferences.defaultDepartmentCode,
+      preferences.defaultDepartmentName,
+      preferences.defaultDoctorId,
+      preferences.defaultDoctorName,
+      preferences.defaultInsuranceUid,
+    ],
+  );
+
+  const handleRegistrationDefaultChange = useCallback(
+    (field: DefaultPrefField, value: string) => {
+      setDefaults({
+        [DEFAULT_PREF_KEY_MAP[field]]: value ? value : undefined,
+      } as Partial<Omit<ReceptionPreferences, 'viewMode' | 'visibleColumns'>>);
+    },
+    [setDefaults],
+  );
+
   const callState = useMemo(
     () => ({
       pendingId: statePendingVisitId,
@@ -1228,7 +1326,18 @@ export const ReceptionPage = () => {
   );
 
   const sidebarContent = useMemo(() => {
-    if (!selectedVisit && !selectedPatientSummary && !selectedPatientId) {
+    const shouldRenderSidebar =
+      Boolean(selectedVisit) ||
+      Boolean(selectedPatientSummary) ||
+      Boolean(selectedPatientId) ||
+      patientSearchState.hasParams ||
+      patientSearchState.isLoading ||
+      patientSearchState.isFetching ||
+      patientSearchState.isError ||
+      patientResults.length > 0 ||
+      Boolean(searchError);
+
+    if (!shouldRenderSidebar) {
       return null;
     }
     const hasTemporaryDocument =
@@ -1258,6 +1367,14 @@ export const ReceptionPage = () => {
         karteFromDateInput={karteFromDateInput}
         onChangeKarteFromDate={handleSidebarKarteFromDateChange}
         formatDisplayDate={formatDisplayDate}
+        patientSearchResults={patientResults}
+        patientSearchState={patientSearchState}
+        searchErrorMessage={searchError}
+        onSelectPatientFromSearch={(patient) =>
+          handleSelectPatientSummary(patient, { focusTab: 'patient' })
+        }
+        onQuickReceptionCreate={handleQuickReceptionCreate}
+        quickReceptionPatientId={quickReceptionPatientId}
       />
     );
   }, [
@@ -1268,6 +1385,8 @@ export const ReceptionPage = () => {
     handleCreateReceptionFromPatient,
     handleOpenChart,
     handleOpenManage,
+    handleQuickReceptionCreate,
+    handleSelectPatientSummary,
     handlePatientSaved,
     handleSidebarClose,
     handleSidebarKarteFromDateChange,
@@ -1275,6 +1394,10 @@ export const ReceptionPage = () => {
     karteFromDate,
     karteFromDateInput,
     patientFormMode,
+    patientResults,
+    patientSearchState,
+    quickReceptionPatientId,
+    searchError,
     selectedPatientId,
     selectedPatientSummary,
     selectedVisit,
@@ -1577,11 +1700,56 @@ export const ReceptionPage = () => {
           ) : null}
         </ReceptionColumn>
         <RightColumn>
-          <NewPatientButtonRow>
+          <SearchHeaderControls>
+            <RegistrationDefaultsContainer>
+              <RegistrationDefaultsLabel>受付登録時の初期値</RegistrationDefaultsLabel>
+              <RegistrationDefaultsFields>
+                <RegistrationDefaultField
+                  label="診療科コード"
+                  value={preferences.defaultDepartmentCode ?? ''}
+                  onChange={(event) =>
+                    handleRegistrationDefaultChange('departmentCode', event.currentTarget.value)
+                  }
+                  placeholder="例：01"
+                />
+                <RegistrationDefaultField
+                  label="診療科名"
+                  value={preferences.defaultDepartmentName ?? ''}
+                  onChange={(event) =>
+                    handleRegistrationDefaultChange('departmentName', event.currentTarget.value)
+                  }
+                  placeholder="例：内科"
+                />
+                <RegistrationDefaultField
+                  label="担当医コード"
+                  value={preferences.defaultDoctorId ?? ''}
+                  onChange={(event) =>
+                    handleRegistrationDefaultChange('doctorId', event.currentTarget.value)
+                  }
+                  placeholder="例：D001"
+                />
+                <RegistrationDefaultField
+                  label="担当医名"
+                  value={preferences.defaultDoctorName ?? ''}
+                  onChange={(event) =>
+                    handleRegistrationDefaultChange('doctorName', event.currentTarget.value)
+                  }
+                  placeholder="例：青木 医師"
+                />
+                <RegistrationDefaultField
+                  label="保険UUID"
+                  value={preferences.defaultInsuranceUid ?? ''}
+                  onChange={(event) =>
+                    handleRegistrationDefaultChange('insuranceUid', event.currentTarget.value)
+                  }
+                  placeholder="必要に応じて指定"
+                />
+              </RegistrationDefaultsFields>
+            </RegistrationDefaultsContainer>
             <Button type="button" variant="primary" onClick={handleStartNewPatient}>
               新規患者登録
             </Button>
-          </NewPatientButtonRow>
+          </SearchHeaderControls>
           <PatientSearchCard tone="muted" padding="lg">
             <PatientSearchHeader>
               <ColumnTitle>
@@ -1657,6 +1825,19 @@ export const ReceptionPage = () => {
               </SearchActions>
               <SearchHint>入力した項目のすべてに一致する患者だけを表示します。</SearchHint>
             </SearchForm>
+            <CardSection aria-label="バーコード受付">
+              <SectionHeading>バーコード受付</SectionHeading>
+              <SectionDescription>
+                診察券のバーコードを読み取ると、設定した初期値で受付に追加します。該当患者が複数ある場合は検索結果に候補を表示します。
+              </SectionDescription>
+              <BarcodeCheckInPanel
+                registrationDefaults={registrationDefaults}
+                onSuccess={handleBarcodeSuccess}
+                onMultipleMatches={handleBarcodeMultipleMatches}
+                onNotFound={handleBarcodeNotFound}
+                onUnhandledError={handleBarcodeUnhandledError}
+              />
+            </CardSection>
             {searchError ? (
               <span style={{ color: '#dc2626', fontSize: '0.85rem' }} role="alert">
                 {searchError}
@@ -1668,125 +1849,17 @@ export const ReceptionPage = () => {
               </span>
             ) : null}
             {!patientSearchQuery.isError ? (
-              patientSearchQuery.isPending ? (
+              patientSearchQuery.isFetching && !patientSearchQuery.isPending ? (
                 <p style={{ color: '#64748b', fontSize: '0.85rem' }} aria-live="polite">
-                  患者リストを読み込み中です…
-                </p>
-              ) : patientResults.length === 0 ? (
-                <p style={{ color: '#64748b', fontSize: '0.85rem' }}>
-                  {patientSearchParams
-                    ? '該当する患者が見つかりませんでした。'
-                    : '検索条件を入力してください。'}
+                  患者検索結果を更新中です…
                 </p>
               ) : (
-                <PatientResultList
-                  role="listbox"
-                  aria-label="患者検索結果"
-                  aria-busy={patientSearchQuery.isFetching && !patientSearchQuery.isPending}
-                >
-                  {patientResults.map((patient) => {
-                    const genderLabel = patient.genderDesc ?? patient.gender ?? '---';
-                    const birthdayLabel = formatDisplayDate(patient.birthday);
-                    const lastVisitLabel = formatDisplayDate(patient.lastVisitDate);
-                    const safetyNotes = patient.safetyNotes ?? [];
-                    const cardIdBase = `patient-result-${patient.patientId}`;
-                    const titleId = `${cardIdBase}-name`;
-                    const metaId = `${cardIdBase}-meta`;
-                    const safetyId = `${cardIdBase}-safety`;
-                    const isSelected = selectedPatientId === patient.patientId;
-                    const describedByIds = [metaId, safetyNotes.length ? safetyId : null]
-                      .filter(Boolean)
-                      .join(' ');
-
-                    return (
-                      <PatientResultItem
-                        key={patient.patientId}
-                        role="option"
-                        aria-labelledby={titleId}
-                        aria-describedby={describedByIds}
-                        aria-selected={isSelected}
-                        tabIndex={0}
-                        $selected={isSelected}
-                        onClick={() => handleSelectPatientSummary(patient, { focusTab: 'patient' })}
-                        onKeyDown={(event) => {
-                          if (event.key === 'Enter' || event.key === ' ') {
-                            event.preventDefault();
-                            handleSelectPatientSummary(patient, { focusTab: 'patient' });
-                          }
-                        }}
-                      >
-                        <PatientResultInfo>
-                          <PatientResultName id={titleId}>{patient.fullName ?? '---'}</PatientResultName>
-                          <PatientResultMeta id={metaId} aria-label="患者属性一覧">
-                            <PatientResultMetaItem>
-                              <PatientResultMetaLabel>患者ID</PatientResultMetaLabel>
-                              <PatientResultMetaValue>{patient.patientId || '---'}</PatientResultMetaValue>
-                            </PatientResultMetaItem>
-                            <PatientResultMetaItem>
-                              <PatientResultMetaLabel>性別</PatientResultMetaLabel>
-                              <PatientResultMetaValue>{genderLabel}</PatientResultMetaValue>
-                            </PatientResultMetaItem>
-                            <PatientResultMetaItem>
-                              <PatientResultMetaLabel>生年月日</PatientResultMetaLabel>
-                              <PatientResultMetaValue>{birthdayLabel}</PatientResultMetaValue>
-                            </PatientResultMetaItem>
-                            <PatientResultMetaItem>
-                              <PatientResultMetaLabel>最終来院日</PatientResultMetaLabel>
-                              <PatientResultMetaValue>{lastVisitLabel}</PatientResultMetaValue>
-                            </PatientResultMetaItem>
-                            <PatientResultMetaItem>
-                              <PatientResultMetaLabel id={`${safetyId}-label`}>患者安全情報</PatientResultMetaLabel>
-                              {safetyNotes.length ? (
-                                <PatientSafetyNotes id={safetyId} aria-labelledby={`${safetyId}-label`}>
-                                  {safetyNotes.map((note, index) => (
-                                    <StatusBadge
-                                      key={`${patient.patientId}-safety-${index}`}
-                                      tone={resolveSafetyNoteTone(note)}
-                                      size="sm"
-                                    >
-                                      {note}
-                                    </StatusBadge>
-                                  ))}
-                                </PatientSafetyNotes>
-                              ) : (
-                                <PatientResultMetaValue id={safetyId}>---</PatientResultMetaValue>
-                              )}
-                            </PatientResultMetaItem>
-                          </PatientResultMeta>
-                        </PatientResultInfo>
-                        <PatientResultActions>
-                          <Button
-                            type="button"
-                            variant="secondary"
-                            size="sm"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              handleSelectPatientSummary(patient, { focusTab: 'patient' });
-                            }}
-                          >
-                            詳細
-                          </Button>
-                          <Button
-                            type="button"
-                            variant="primary"
-                            size="sm"
-                            onClick={(event) => {
-                              event.stopPropagation();
-                              void handleQuickReceptionCreate(patient);
-                            }}
-                            isLoading={quickReceptionPatientId === patient.patientId}
-                          >
-                            受付に追加
-                          </Button>
-                        </PatientResultActions>
-                      </PatientResultItem>
-                    );
-                  })}
-                </PatientResultList>
+                <SectionDescription role="note">
+                  検索結果は右側のサイドバー「患者」タブに表示されます。
+                </SectionDescription>
               )
             ) : null}
           </PatientSearchCard>
-          <BarcodeCheckInPanel onSuccess={handleBarcodeSuccess} />
         </RightColumn>
       </ContentGrid>
       {scheduleTarget && session ? (

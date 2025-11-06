@@ -25,11 +25,11 @@ public final class SigningConfig {
 
     private SigningConfig(Builder builder) {
         this.keystorePath = builder.keystorePath;
-        this.keystorePassword = builder.keystorePassword;
+        this.keystorePassword = builder.keystorePassword != null ? builder.keystorePassword.clone() : null;
         this.keyAlias = builder.keyAlias;
         this.tsaUrl = builder.tsaUrl;
         this.tsaUsername = builder.tsaUsername;
-        this.tsaPassword = builder.tsaPassword;
+        this.tsaPassword = builder.tsaPassword != null ? builder.tsaPassword.clone() : null;
         this.reason = builder.reason;
         this.location = builder.location;
     }
@@ -128,7 +128,7 @@ public final class SigningConfig {
         }
 
         public Builder keystorePassword(char[] keystorePassword) {
-            this.keystorePassword = Objects.requireNonNull(keystorePassword, "keystorePassword must not be null");
+            this.keystorePassword = Objects.requireNonNull(keystorePassword, "keystorePassword must not be null").clone();
             return this;
         }
 
@@ -148,7 +148,7 @@ public final class SigningConfig {
         }
 
         public Builder tsaPassword(char[] tsaPassword) {
-            this.tsaPassword = tsaPassword;
+            this.tsaPassword = tsaPassword == null ? null : tsaPassword.clone();
             return this;
         }
 

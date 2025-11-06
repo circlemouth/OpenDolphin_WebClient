@@ -28,6 +28,7 @@ import open.dolphin.touch.converter.IOSHelper;
 import open.dolphin.touch.module.TouchModuleDtos;
 import open.dolphin.touch.module.TouchModuleService;
 import open.dolphin.touch.session.IPhoneServiceBean;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -36,7 +37,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class TouchModuleResourceTest {
+class TouchModuleResourceTest extends RuntimeDelegateTestSupport {
 
     @Mock
     private IPhoneServiceBean iphoneService;
@@ -146,7 +147,7 @@ class TouchModuleResourceTest {
     @Test
     void getLaboTest_missingHeaderThrows() {
         HttpServletRequest request = mock(HttpServletRequest.class);
-        when(request.getRemoteUser()).thenReturn("F001:doctor01");
+        lenient().when(request.getRemoteUser()).thenReturn("F001:doctor01");
 
         WebApplicationException ex = assertThrows(WebApplicationException.class,
                 () -> resource.getLaboTest(request, "F001,00001,0,20"));

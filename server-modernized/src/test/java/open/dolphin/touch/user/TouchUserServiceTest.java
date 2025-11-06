@@ -18,6 +18,7 @@ import open.dolphin.touch.AbstractResource;
 import open.dolphin.touch.support.TouchAuditHelper;
 import open.dolphin.touch.support.TouchRequestContext;
 import open.dolphin.touch.session.IPhoneServiceBean;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -26,7 +27,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class TouchUserServiceTest {
+class TouchUserServiceTest extends RuntimeDelegateTestSupport {
 
     private static final TouchRequestContext CONTEXT = new TouchRequestContext(
             "1.3.6.1.4.1.9414.2.10:user",

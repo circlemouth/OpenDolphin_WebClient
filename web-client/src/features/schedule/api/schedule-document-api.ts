@@ -70,5 +70,9 @@ export const deleteScheduledVisit = async (params: DeleteScheduleEntryParams): P
       const endpoint = buildDeletionEndpoint(params);
       await httpClient.delete(endpoint);
     },
-    params,
+    {
+      visitId: params.visitId,
+      patientPk: params.patientPk,
+      scheduleDate: params.scheduleDate,
+    },
   );

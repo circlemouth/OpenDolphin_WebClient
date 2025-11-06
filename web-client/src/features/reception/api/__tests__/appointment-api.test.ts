@@ -48,13 +48,13 @@ describe('appointment-api', () => {
       },
     } as never);
 
-    const from = new Date('2026-04-01T00:00:00');
-    const to = new Date('2026-06-01T00:00:00');
+    const from = new Date('2026-04-01T00:00:00+09:00');
+    const to = new Date('2026-06-01T00:00:00+09:00');
 
     const result = await fetchAppointments({ karteId: 200, from, to });
 
     expect(httpClient.get).toHaveBeenCalledWith(
-      '/karte/appo/200%2C2026-04-01T00%3A00%3A00%2C2026-06-01T00%3A00%3A00',
+      '/karte/appo/200%2C2026-04-01%2000%3A00%3A00%2C2026-06-01%2000%3A00%3A00',
     );
     expect(result).toHaveLength(2);
     expect(result[0]).toMatchObject({
@@ -63,7 +63,7 @@ describe('appointment-api', () => {
       patientId: '0001',
       karteId: 200,
     });
-    expect(result[0].dateTime).toBe(new Date('2026-05-01T10:00:00+09:00').toISOString());
+    expect(result[0].dateTime).toBe('2026-05-01 10:00:00');
   });
 
   it('sends appointment payload with metadata on save', async () => {
@@ -95,6 +95,7 @@ describe('appointment-api', () => {
           patientId: '0001',
           karteBean: { id: 200 },
           userModel: { id: 42, userId: 'FAC001:doctor01' },
+          date: '2026-05-10 09:00:00',
         }),
       ],
     });

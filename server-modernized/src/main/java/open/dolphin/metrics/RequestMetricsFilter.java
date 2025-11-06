@@ -12,6 +12,7 @@ import jakarta.ws.rs.container.ResourceInfo;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.ext.Provider;
 import java.util.concurrent.TimeUnit;
+import java.util.regex.Pattern;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Tags;
 
@@ -28,6 +29,10 @@ public class RequestMetricsFilter implements ContainerRequestFilter, ContainerRe
     private static final String REQUEST_COUNTER = "opendolphin_api_request_total";
     private static final String ERROR_COUNTER = "opendolphin_api_error_total";
     private static final String DURATION_TIMER = "opendolphin_api_request_duration";
+    private static final String AUTH_FAILURE_COUNTER = "opendolphin_auth_reject_total";
+    private static final Pattern NUMERIC_SEGMENT = Pattern.compile("^[0-9]+$");
+    private static final Pattern UUID_SEGMENT = Pattern.compile("^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$");
+    private static final Pattern HEX_SEGMENT = Pattern.compile("^[0-9a-fA-F]{32,}$");
 
     @Context
     private ResourceInfo resourceInfo;
@@ -54,19 +59,22 @@ public class RequestMetricsFilter implements ContainerRequestFilter, ContainerRe
         String method = requestContext.getMethod();
         String template = (String) requestContext.getProperty(TEMPLATE_KEY);
         if (template == null || template.isEmpty()) {
-            String rawPath = requestContext.getUriInfo().getPath();
-            template = rawPath.startsWith("/") ? rawPath : "/" + rawPath;
+            template = normalisePath(requestContext.getUriInfo().getPath());
         }
 
-        Tags baseTags = Tags.of("method", method, "path", template);
+        int status = responseContext.getStatus();
+        String statusValue = Integer.toString(status);
+
+        Tags baseTags = Tags.of("method", method, "path", template, "status", statusValue);
 
         meterRegistry.counter(REQUEST_COUNTER, baseTags).increment();
         meterRegistry.timer(DURATION_TIMER, baseTags).record(elapsed, TimeUnit.NANOSECONDS);
 
-        int status = responseContext.getStatus();
         if (status >= 400) {
-            Tags errorTags = baseTags.and("status", Integer.toString(status));
-            meterRegistry.counter(ERROR_COUNTER, errorTags).increment();
+            meterRegistry.counter(ERROR_COUNTER, baseTags).increment();
+        }
+        if (status == 401 || status == 403) {
+            meterRegistry.counter(AUTH_FAILURE_COUNTER, baseTags).increment();
         }
     }
 
@@ -91,6 +99,48 @@ public class RequestMetricsFilter implements ContainerRequestFilter, ContainerRe
             template = "/" + template;
         }
         return template.replaceAll("//+", "/");
+    }
+
+    private String normalisePath(String rawPath) {
+        if (rawPath == null || rawPath.isBlank()) {
+            return "/";
+        }
+        String[] segments = rawPath.split("/");
+        StringBuilder builder = new StringBuilder();
+        int index = 0;
+        for (String segment : segments) {
+            if (segment == null || segment.isBlank()) {
+                continue;
+            }
+            builder.append('/');
+            builder.append(normaliseSegment(segment, index == 0));
+            index++;
+        }
+        String normalised = builder.toString();
+        if (normalised.isEmpty()) {
+            return "/";
+        }
+        return normalised.replaceAll("//+", "/");
+    }
+
+    private String normaliseSegment(String segment, boolean firstSegment) {
+        String value = segment.trim();
+        if (value.isEmpty()) {
+            return "";
+        }
+        if (!firstSegment && NUMERIC_SEGMENT.matcher(value).matches()) {
+            return "{id}";
+        }
+        if (UUID_SEGMENT.matcher(value).matches()) {
+            return "{uuid}";
+        }
+        if (HEX_SEGMENT.matcher(value).matches()) {
+            return "{hex}";
+        }
+        if (value.length() > 40 && value.matches("^[0-9a-zA-Z\\-_.~]+$")) {
+            return "{token}";
+        }
+        return value;
     }
 
     private void appendPath(StringBuilder builder, Path path) {

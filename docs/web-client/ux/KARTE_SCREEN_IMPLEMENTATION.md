@@ -6,7 +6,8 @@
 
 - web-client/src/app/layout/AppShell.tsx でサイドバーの文言を整理し、主要メニューは「受付一覧」「患者一覧」「施設スケジュール」「カルテ閲覧」と表記する。ログイン直後は `/reception` を初期表示とし、管理者向けは「管理者メニュー > ユーザー管理 / 患者データ出力 / システム設定 / スタンプ管理」に統一。（担当: Agent 1 の UI ラベル差し替えを確認）
 - web-client/src/features/charts/components/ObservationPanel.tsx の見出しを「観察記録」、入力欄を「値」「メモ」「登録」など実運用語へ差し替え。看護記録チームと共有済みの呼称と一致。（担当: Agent 1）
-- web-client/src/features/charts/pages/ChartsPage.tsx では診療チェックリストを「問診」「バイタル」「処置」「会計」とし、保存エラー文言も診療フローに沿った日本語へ更新。カルテ閲覧メニューの文言変更に合わせ、操作ログ文言も更新済み。
+- web-client/src/features/charts/pages/ChartsPage.tsx では診療チェックリストを「問診」「バイタル」「処置」「会計」とし、保存エラー文言も診療フローに沿った日本語へ更新（2025-10-31 対応）。カルテ閲覧メニューの文言変更に合わせ、操作ログ文言も更新済み。
+- 2025-11-06 (担当: Codex): 左レール VisitChecklist を廃止し、ProblemListCard を先頭に繰り上げ。ステータスバーの「未完タスク」表示も撤去し、保存／署名／会計連携ステータスのみを残した。
 
 ## 1. レイアウト概要
 
@@ -16,9 +17,9 @@
 AppShell
 ├─ PatientHeaderBar (固定ヘッダー 約88px / 2段構成)
 ├─ ContentGrid (3 カラム)
-│  ├─ VisitChecklist (左レール / 160px 固定)
 │  ├─ ProblemListCard (左レール / sticky, 主病名・Plan連携)
 │  ├─ SafetySummaryCard (左レール / アレルギー・既往・内服サマリ)
+│  ├─ ClinicalReferencePanel / MemoCard 群 / DocumentTimelinePanel（左レール）
 │  ├─ CentralColumn
 │  │  └─ WorkspaceStack
 │  │     ├─ WorkSurface（Subjective→Objective(ROS/PE)→Assessment→Plan のタブ＋アコーディオン）
@@ -38,13 +39,14 @@ AppShell
 - `AppShell` の Body コンテナは `contentMaxWidth` 制限を撤廃しており、患者一覧・受付一覧など他メニューでもウィンドウ幅に合わせて中央カラムがフルに拡張する。ChartsPage も同じコンテナ上で動作するため、大画面では左右レールの固定幅と中央カラムの残余幅拡張がシームレスに繋がる。
 
 > メモ: 患者写真フィールドはサーバー実装側で `RawPatientResource` に明示されていないため、`portrait` / `photo` のどちらを利用するか確認が必要（未提供時はイニシャル表示でフォールバック）。診察タイマーはローカル時刻ベースのため、サーバー保存済みの開始時刻が必要な場合は別途 API 拡張を検討する。
-- 左レールは 160px 固定幅で `ContentGrid` の sticky ラップ（top: 80px）内に配置。`VisitChecklist` 自体も sticky（top: 0）で、
+- 左レールは 160px 固定幅で `ContentGrid` の sticky ラップ（top: 80px）内に配置。`LeftRail` 自体が sticky（top: 0）で、
   `calc(100vh - 80px - 48px)` の縦領域を確保しステータスバーと干渉しない。
-- `VisitChecklist` 直下に `ProblemListCard` を配置。React Query の診断データ (`useDiagnosisBuckets`) を参照してアクティブ／既往を分割し、
+- 左レール先頭カードは `ProblemListCard`。React Query の診断データ (`useDiagnosisBuckets`) を参照してアクティブ／既往を分割し、
   行のキーボード操作で `handlePlanPrimaryDiagnosisSelect` / `handlePlanCardInsert` を経由して A/P に反映する。主病名状態は `aria-pressed`
   とステータスバッジで示し、Plan 側の主病名・ヘッダの主病名入力と双方向に同期する。既存のピン留め履歴は ProblemList からの
   追加では変更せず、診療参照履歴との二重管理を防ぐ。
 - `ProblemListCard` の下に `SafetySummaryCard` を配置。`usePatientKarte().allergies`、`useDiagnoses({ karteId, fromDate, activeOnly: false })`、`fetchRoutineMedications` を統合し、`determineSafetyTone` で危険度をトーン表現する。各エントリはクリック/Enter/右端の「コピー」ボタンで `handleSnippetDragStart` を介してクリップボードへ送信でき、ドラッグ＆ドロップで Subjective/Objective/Plan へ挿入できる。React Query のキー `['masuda','routineMed', karteId ?? 'none']` を MasudaSupportPanel と共有し、定期処方 API のレスポンスを再利用する。
+- `ClinicalReferencePanel`・問診/患者/サマリメモカード・`DocumentTimelinePanel` はいずれも API 連携と保存操作を伴う常設機能であり、ダミー UI は存在しない。各カードで `handleSnippetDragStart` を共有し、ドラッグ＆ドロップ／ピン留め／履歴復元などの実運用操作が可能。
 - 中央カラムは PC モニター向けに高さ `calc(100vh - 80px - 48px)` を占有し、内部の `CentralScroll` をスクロールコンテナとして
   WorkSurface・請求フォーム・SupplementGrid を縦に積層。WorkSurface は SOAP（Subjective → Objective〈ROS/PE〉 → Assessment → Plan）
   をタブ＋アコーディオンで順次展開し、タブ遷移時はスクロール位置を保持する。Objective では否定語／数値ハイライトと ROS/PE
@@ -71,7 +73,7 @@ AppShell
 ### 2025-11-01 追記: Swing 版 UI の位置・サイズに揃える再配置計画（担当: Codex）
 - **カラム幅の見直し**: 1366px 幅を標準として `LeftRail`＝264px、`CentralColumn`＝736px、`RightRail`＝264px を起点にしつつ、中央カラムはビューポートから左右レール・列間ギャップ・外周パディングを差し引いた残余幅をそのまま取得する。1600px／1920px などの解像度でも中央が余白なく拡張し、1280px 前後では左右レールが 252px／236px へ段階的に縮小して全体が画面幅に追従する。
 - **右ペインの 2 段構成化**: Swing 版の縦アイコンバーを参考に、`OrderConsole` を「アイコンバー（48px）＋内容パネル（最大 216px）」へ分割。既存タブをアイコン化し、ホバー／クリックで内容パネルがスライドする UI を設計する。幅不足時は内容パネルを自動でオーバーレイ表示に切り替える。
-- **左レールの圧縮**: `VisitChecklist` と安全サマリ系カードのパディングを 12px／行間 8px へ縮小、フォントサイズを 13px 相当（`0.82rem`）に統一する。Swing 版で確認できた 6 行表示密度を満たすよう、カード内の補助ボタンをアイコン化し横幅を確保する。
+- **左レールの圧縮**: `ProblemListCard` と安全サマリ系カードのパディングを 12px／行間 8px へ縮小、フォントサイズを 13px 相当（`0.82rem`）に統一する。Swing 版で確認できた 6 行表示密度を満たすよう、カード内の補助ボタンをアイコン化し横幅を確保する。
 - **中央ワークスペースの余白調整**: `WorkSurface` の左右マージンを 16px に固定し、タブと Plan カードが 736px 幅内に収まるようレイアウトを再整理する。Plan カードのアクション群は 2 行折り返しではなく 1 行に収め、Swing 版の「処方Do」ボタン位置と視線距離を合わせる。
 - **ヘッダーとフッター**: `PatientHeaderBar` は高さ `clamp(72px, 8vh, 96px)`、`StatusBar` は `clamp(36px, 4vh, 44px)` に再設定し、Swing 版と同じ視覚重量を目指す。主訴と主病名欄は左右 300px 幅の 2 カラムで配置し、補助ボタンは右端にまとめる。
 - **レスポンシブシナリオ**: 1100px〜1279px では右ペインを折りたたみ状態へ初期化し、1000px 未満では右ペインをモーダルに移行する。Swing 版で行っていた「右メニューを最小化する」操作と同じ操作距離を実現する。
@@ -89,7 +91,7 @@ AppShell
 - 患者メモ保存後は `usePatientKarte` を再フェッチして RightPane の問診サマリ／MiniSummaryDock と同期。保存済みタイムスタンプはローカルで即時表示し、再取得完了後に確定時刻へ置換する。
 - 幅 1400px 未満では折りたたみボタンを表示し、1000px 未満では自動折りたたみ＋ホバー時の一時展開を行う。
 - 右下ドックは 3 行の前回要約を常時表示し、ドラッグ＆ドロップで O/A&P へ挿入可能。
-- ステータスバーは保存 / 署名 / 会計連携のステータス（色分け）と未完タスク数、主要アクション（保存・署名・会計連携・次患者・ショートカット）を固定表示。中央カラム下端は 140px のパディングで被りを回避。
+- ステータスバーは保存 / 署名 / 会計連携のステータス（色分け）と主要アクション（保存・署名・会計連携・次患者・ショートカット）を固定表示。中央カラム下端は 140px のパディングで被りを回避。
 - 診察終了（ロック解除）操作は `handleUnlock` が保存状態を確認し、未保存の変更があれば保存処理を自動実行してから `useChartLock` でロック解除イベントを送出する。保存中は終了操作をガードし、書きかけカルテの取りこぼしを防ぐ。
 
 ### ReceptionPage (受付患者一覧)
@@ -153,7 +155,7 @@ AppShell
 - 署名ボタンは Plan カードとオーダモジュールの整合性（未紐付けカード／孤立オーダ）を検証し、未確定のオーダがある場合は警告文を表示して無効化する。
 - `StatusBar` には署名・会計連携のステータス（未署名／署名処理中／署名済み、未送信／連携中／連携済み）を色分けで表示し、直近の処理時刻を併記。
 - 会計連携（CLAIM 送信）は署名完了かつ保険診療時のみ有効。送信成功時はステータスを緑表示し、会計タブは必要に応じて手動で切り替える（自動フォーカスは行わない）。
-- 未完タスク数はチェックリスト完了状況から自動更新。
+- 左レールの診療チェックリストは 2025-11-06 に廃止済みのため、StatusBar から未完タスク表示を撤去した。
 
 ## 6. オーバーレイ
 

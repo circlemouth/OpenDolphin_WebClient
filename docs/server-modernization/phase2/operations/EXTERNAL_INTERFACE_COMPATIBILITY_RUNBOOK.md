@@ -36,6 +36,13 @@
 
 ### 3.3 データ・スキーマ
 - DB マイグレーションは Flyway（`server-modernized/src/main/resources/db/migration` 想定）を実行し、レガシー DB のスキーマと一致させる。差分がある場合は `docs/server-modernization/persistence-layer/` の各メモで例外処理を確認。
+- `ClaimItem` / `DocInfoModel` / `ModuleInfoBean` の追加フィールドに伴い、`d_document.admflag` と `d_module.performflag` 列の存在を確認する。以下の SQL を `information_schema` へ投げ、いずれかが返らない場合はモダナイズ側でカラム追加を実施する（`server-modernized/tools/sql/check_doc_module_flags.sql` へまとめ済み）。
+  ```sql
+  SELECT column_name FROM information_schema.columns WHERE table_name = 'd_document' AND column_name = 'admflag';
+  SELECT column_name FROM information_schema.columns WHERE table_name = 'd_module' AND column_name = 'performflag';
+  ```
+  - 欠損が判明した環境では `server-modernized/tools/flyway/sql/V0221__doc_module_flag_columns.sql` を適用し、`VARCHAR(1)` で両カラムを作成する。マイグレーション適用後に再度上記 SQL で結果を確認し、本ランブックの検証ログへ記録する。
+  - 値の初期化ポリシー（例: 外来 `'V'`, 実施 `'P'`）は環境ごとに異なるため、必要に応じて `docs/server-modernization/phase2/notes/common-dto-diff-A-M.md` の補足と Ops 判断を参照して実データ更新を行う。
 - 添付ファイルや PDF など外部ストレージを利用するプロジェクトでは、`server-modernized/config/attachment-storage.sample.yaml` を参照し、S3 互換設定を旧環境と合わせる。
 - 監査ログテーブル `d_audit_event` および支援テーブル（`d_audit_detail` 等）が旧サーバーと同じインデックス構成か確認する。
 
@@ -88,7 +95,41 @@
       - `PhrDataAssembler` で `NLaboModule` → `PHRLabModule` 変換を行うよう更新。ラボ結果のレスポンスでは `labList[].catchId` が `createLabModuleId` に基づく安定 ID となり、`testItems` 配列へ `lipemia` / `hemolysis` / `frequency` など追加プロパティが展開される。  
       - 互換確認時は `/20/adm/phr/container/{fid,pid,...}` を実行し、Legacy 側の XML → JSON 変換結果と `frequencyName`/`doseUnit` 等が一致するか CSV 比較すること。差異が出た場合は `common/src/main/java/open/dolphin/infomodel/ClaimItem.java` と `PHRClaimItem.java` の新規フィールドにマッピング漏れがないか確認する。  
       - Lab モジュール ID 生成で ORCA `tbl_syskanri (kanricd='1001')` から取得する JMARI コードが未設定の場合、施設 ID にフォールバックしている。検証環境では `custom.properties` の `healthcarefacility.code` を事前に投入する。
-7. **Touch クライアント SSE 確認**  
+7. **2FA / 監査 / Secrets チェック（2026-06-05 更新）**  
+   1. **Flyway スキーマ確認**  
+      - `docker compose exec modernized-db psql -U dolphin -c "\dt d_factor2_*"` で 2FA 関連テーブルの存在を確認し、`docker compose exec modernized-backend flyway -configFiles=/opt/payara/tools/flyway/flyway.properties info | grep V0003__security_phase3_stage7` で適用済みステータスが `Success` であることを確認する。  
+      - `docker compose exec modernized-db psql -U dolphin -c "SELECT indexname FROM pg_indexes WHERE tablename = 'd_audit_event';"` を実行し、`idx_audit_event_time` / `idx_audit_event_action` が作成されているか確認する。存在しない場合は Flyway の再適用を検討する。  
+   2. **Secrets 整合性**  
+      - `docker compose exec modernized-backend sh -lc 'printenv FACTOR2_AES_KEY_B64 FIDO2_RP_ID FIDO2_ALLOWED_ORIGINS PHR_EXPORT_SIGNING_SECRET'` で必須変数が空でないことを確認（値はターミナルに残さず、実行後は履歴を削除する）。  
+      - `docker compose exec modernized-backend sh -lc 'echo -n \"$FACTOR2_AES_KEY_B64\" | wc -c'` を実行し、長さが 44（32 byte の Base64）であることを確認。`base64 -d` が失敗した場合は Secrets 登録をやり直す。`PHR_EXPORT_SIGNING_SECRET` も `wc -c` で 32 文字以上あることを確認する。  
+      - `bash ops/check-secrets.sh` を CI と手動検証双方で実行し、以下の期待値を満たしているか自動判定する。スクリプトは欠損・形式不一致で非ゼロ終了となり、デプロイを中断する。  
+
+        | 変数 | 期待値 | 備考 |
+        | --- | --- | --- |
+        | `FACTOR2_AES_KEY_B64` | Base64 44 文字（32 byte AES キー） | `base64 -d` が成功すること。 |
+        | `FIDO2_RP_ID` | ドメイン形式（小文字英数字・ハイフン） | 例: `ehr.example.jp`。 |
+        | `FIDO2_ALLOWED_ORIGINS` | `https://` で始まる URL のカンマ区切り | 例: `https://ehr.example.jp,https://ehr-stage.example.jp`。 |
+        | `PHR_EXPORT_SIGNING_SECRET` | 32 文字以上のランダム値 | ローテーション時はダウンロード URL 有効性をリグレッション。 |
+        | `PHR_EXPORT_STORAGE_TYPE` | `FILESYSTEM` または `S3` | `S3` を選択した場合は下記も必須。 |
+        | `PHR_EXPORT_S3_BUCKET` | S3 バケット名（3〜63 文字） | 例: `opendolphin-phr-export-prod`。 |
+        | `PHR_EXPORT_S3_REGION` / `AWS_REGION` | `ap-northeast-1` などのリージョン識別子 | SDK が参照するため双方を揃える。 |
+        | `PHR_EXPORT_S3_PREFIX` | 任意。空の場合は `phr-exports/` などを推奨 | バケット直下のプレフィックス。 |
+        | `AWS_ACCESS_KEY_ID` / `AWS_SECRET_ACCESS_KEY` | IAM 認証情報（30+ 文字） | EC2 IAM ロール利用時は未設定で警告でも許容。 |
+
+      - ドライラン結果（2026-06-07）: `FACTOR2_AES_KEY_B64` などにダミー値を設定して `bash ops/check-secrets.sh` を実行し、FILESYSTEM 運用で正常終了・S3 項目が警告になることを確認。S3 用 Secrets はステージ環境で投入後に再検証する。  
+      - CI 失敗条件: ① 必須変数が未設定、② 正規表現（ドメイン/URL/Base64）に合致しない、③ `FACTOR2_AES_KEY_B64` Base64 デコードが失敗、④ `PHR_EXPORT_STORAGE_TYPE=S3` で S3 関連変数が欠損。失敗時は Slack `#ops-alert` と PagerDuty `Modernized Server` サービスへ通知し、Secrets を Vault `kv/modernized-server/<env>/` に再登録後ジョブを再実行する。  
+   3. **2FA API 動作確認**  
+      - `docs/server-modernization/api-smoke-test.md` の「2FA」シナリオ、または `mvn -f pom.server-modernized.xml test -Dtest=AdmissionResourceFactor2Test` を実行し、TOTP 登録・認証成功/失敗、FIDO2 登録・認証失敗ケースの監査ログが期待どおりであるか確認する。  
+      - 手動確認時は `/20/adm/factor2/totp/registration` → `/verification` のフローでテスト用ユーザーを登録し、`select credential_type, verified from d_factor2_credential where user_pk=<pk>;` を実行して `verified=true` になっていることを確認。FIDO2 はステージ環境の Web クライアントから登録し、`d_factor2_challenge` の `expires_at` が 5 分以内で削除されることを確認する。  
+   4. **監査ログハッシュ検証**  
+      - `docker compose exec modernized-db psql -U dolphin -c "SELECT event_time, action, previous_hash, event_hash FROM d_audit_event ORDER BY event_time DESC LIMIT 20;"` を実行し、`previous_hash` と直前行の `event_hash` が一致していることを確認。  
+      - 異常があれば `docs/server-modernization/security/DEPLOYMENT_WORKFLOW.md` の補正手順に従い、監査担当へエスカレーションする。  
+      - ドライラン結果（2026-06-07）: ローカル検証環境では `d_audit_event` が空で比較対象なし。Stage DB リストア後にレコードを挿入してハッシュ破損を再現し、通知ルートを確認する。  
+      - 改善提案: `AuditHashVerifier`（仮称）を Payara Timer で 5 分間隔に実行し、結果を `/health/audit-chain` で公開。異常検知時は PagerDuty/Slack 通知と同時に影響範囲を CSV へ書き出す。設計詳細は `phase2/notes/phr-2fa-audit-implementation-prep.md#audit-ops-003` を参照。  
+   5. **バックアップコードローテーション確認**  
+      - ローテーション直後に `select count(*) from d_factor2_backupkey;` で件数を確認し、必要なユーザー数と一致しているか評価。古いバックアップコードが残っている場合は削除・再発行計画を立てる。  
+      - `d_factor2_code` に SMS コードが残存していないか（`expires_at` カラムが無い Legacy スキーマのため、運用で手動削除が必要）を確認し、不要なレコードはクリーニングする。
+8. **Touch クライアント SSE 確認**  
    - `curl -N -H 'Accept: text/event-stream' -H "ClientUUID:$UUID" "$BASE_URL/chart-events"` で SSE 接続を開始し、起動直後にリプレイされるイベント `retry:` 行を確認。`Last-Event-ID` を指定した再接続も試行する。  
    - PVT 登録操作を実施し、`event: pvt.updated` が SSE 経由で届くこと、`data:` の JSON が `ChartEventModel` スキーマ（`server-modernized/src/main/java/open/dolphin/rest/ChartEventSseSupport.java`）と一致することを確認。  
    - Touch UI 側で例外イベント (`event: error.*`) の通知が表示されることを Worker C のログに従いスクリーンショットで保存。SSE 切断時は `ChartEventSseSupport` ログ (`TouchSSE-...`) に WARN が出ないかを確認する。
@@ -154,6 +195,8 @@
 
 | ID | 日時 | 内容 | ステータス | メモ |
 | --- | --- | --- | --- | --- |
+| SECRETS-CHECK-20260607-01 | 2026-06-07 | `ops/check-secrets.sh` で 2FA/PHR Secrets 検査フローをドライラン（FILESYSTEM モード、ダミー値）し、CI 失敗条件と通知ルールを追記。 | Done | `PHR_EXPORT_STORAGE_TYPE=FILESYSTEM` のため S3 変数は警告のみ。S3 版はステージングに Secrets 投入後に再検証予定。 |
+| AUDIT-CHAIN-VERIFY-20260607-01 | 2026-06-07 | `SELECT event_time, previous_hash, event_hash ...` によるハッシュチェーン手動検証と PagerDuty 通知ドライラン計画 | ⚠️ Blocked | ローカル環境で `d_audit_event` が空のため SQL 実行結果が得られず。Stage DB リストア後に再実施し、異常ケースを手動で挿入してジョブ想定動作を確認する。 |
 | TOUCH-AUDIT-20251106-01 | 2025-11-06 | `/touch/*` 監査ログの actorRole 連携確認、および `/touch/patient/{pk}` XML 応答の Jakarta 移行後フォーマット差分確認 | Pending | `SessionTraceContext#setActorRole` 追加により Touch API の `TouchAuditHelper` が役割を取得可能。`DolphinResource` が患者詳細 XML を分離実装したため、旧サーバーとの比較テストを `TOUCH_XML_COMPAT` ケースへ追加予定。 |
 | JSONTOUCH-PARITY-20251103-01 | 2025-11-03 | `/10/adm/jtouch/*` 16 エンドポイントのレスポンス互換性確認 | Done | `JsonTouchResourceParityTest`（user/patient/search/count/kana/visitPackage/sendPackage）と Worker E レポート §1.2 に従い、adm10/touch/adm20 実装の出力差分が無いことを確認。2026-05-27 時点で document 系も Jakarta 実装へ移管済み。 |
 | JSONTOUCH-PARITY-20260527-01 | 2026-05-27 | `/10/adm/jtouch/document*`／`/interaction`／`/stamp*` の正常・異常系および監査ログ比較 | ⚠️ Blocked | `JsonTouchResourceParityTest` を 17 ケースへ拡張（document/mkdocument/interaction/stamp の正常/異常＋監査ログ）し IDE で成功を確認。`mvn -pl server-modernized test` は DuplicateProjectException（`opendolphin:opendolphin-server:2.7.1` 重複）で失敗するため、root POM の重複定義解消と CI パイプライン整備をフォロー。 |

@@ -548,7 +548,7 @@ export const OrderSetPanel = ({
       return orderSets;
     }
     return orderSets.filter((set) => {
-      const haystack = [set.name, set.description, set.tags.join(' ')]
+      const haystack = [set.name ?? '', set.description ?? '', set.tags.join(' ')]
         .map((value) => value.toLowerCase())
         .join(' ');
       return haystack.includes(keyword);

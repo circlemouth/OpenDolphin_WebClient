@@ -21,6 +21,7 @@ import {
   type BeanPropertyValue,
 } from '@/features/charts/utils/health-insurance';
 import { fetchPatientById } from '@/features/patients/api/patient-api';
+import { normalizeGender } from '@/features/patients/utils/normalize-gender';
 
 export type PatientEditorLayout = 'page' | 'sidebar';
 
@@ -86,7 +87,7 @@ const FeedbackMessage = styled.div<{ $tone: 'success' | 'error' | 'info' }>`
   font-weight: 600;
   background: ${({ theme, $tone }) => {
     if ($tone === 'success') {
-      return theme.palette.successSubtle;
+      return theme.palette.surfaceMuted;
     }
     if ($tone === 'error') {
       return theme.palette.dangerSubtle;
@@ -185,8 +186,9 @@ export const patientEditorSchema = z.object({
 });
 
 export type PatientEditorFormValues = z.infer<typeof patientEditorSchema>;
+type PatientEditorFormInput = z.input<typeof patientEditorSchema>;
 
-export const defaultPatientEditorValues: PatientEditorFormValues = {
+export const defaultPatientEditorValues: PatientEditorFormInput = {
   patientId: '',
   fullName: '',
   kanaName: '',
@@ -221,6 +223,33 @@ const createEmptyInsuranceMeta = (): InsuranceMeta => {
   }
   return { properties, order: [...defaultInsuranceOrder] };
 };
+
+const mapDetailToFormValues = (
+  detail: PatientDetail,
+  healthInsurances: PatientEditorFormInput['healthInsurances'],
+): PatientEditorFormInput => ({
+  id: detail.id,
+  patientId: detail.patientId,
+  fullName: detail.fullName,
+  kanaName: detail.kanaName ?? '',
+  gender: normalizeGender(detail.gender),
+  birthday: detail.birthday ?? '',
+  telephone: detail.telephone ?? '',
+  mobilePhone: detail.mobilePhone ?? '',
+  email: detail.email ?? '',
+  memo: detail.memo ?? '',
+  appMemo: detail.appMemo ?? '',
+  relations: detail.relations ?? '',
+  zipCode: detail.address?.zipCode ?? '',
+  address: detail.address?.address ?? '',
+  reserve1: detail.reserve1 ?? '',
+  reserve2: detail.reserve2 ?? '',
+  reserve3: detail.reserve3 ?? '',
+  reserve4: detail.reserve4 ?? '',
+  reserve5: detail.reserve5 ?? '',
+  reserve6: detail.reserve6 ?? '',
+  healthInsurances,
+});
 
 const toOptionalString = (value?: string | null) => {
   if (typeof value !== 'string') {
@@ -289,7 +318,7 @@ export const PatientEditorPanel = ({
     handleSubmit,
     reset,
     formState: { errors },
-  } = useForm<PatientEditorFormValues>({
+  } = useForm<PatientEditorFormInput, undefined, PatientEditorFormValues>({
     mode: 'onBlur',
     resolver: zodResolver(patientEditorSchema),
     defaultValues: defaultPatientEditorValues,
@@ -347,29 +376,7 @@ export const PatientEditorPanel = ({
       } satisfies PatientEditorFormValues['healthInsurances'][number];
     });
 
-    reset({
-      id: detail.id,
-      patientId: detail.patientId,
-      fullName: detail.fullName,
-      kanaName: detail.kanaName ?? '',
-      gender: detail.gender ?? 'U',
-      birthday: detail.birthday ?? '',
-      telephone: detail.telephone ?? '',
-      mobilePhone: detail.mobilePhone ?? '',
-      email: detail.email ?? '',
-      memo: detail.memo ?? '',
-      appMemo: detail.appMemo ?? '',
-      relations: detail.relations ?? '',
-      zipCode: detail.address?.zipCode ?? '',
-      address: detail.address?.address ?? '',
-      reserve1: detail.reserve1 ?? '',
-      reserve2: detail.reserve2 ?? '',
-      reserve3: detail.reserve3 ?? '',
-      reserve4: detail.reserve4 ?? '',
-      reserve5: detail.reserve5 ?? '',
-      reserve6: detail.reserve6 ?? '',
-      healthInsurances: nextInsurances,
-    });
+    reset(mapDetailToFormValues(detail, nextInsurances));
     insuranceMetaRef.current = {};
     pendingInsuranceMetaRef.current = [];
     setFeedback(null);
@@ -393,7 +400,7 @@ export const PatientEditorPanel = ({
       });
     }
 
-    const existingIds = new Set(insuranceFields.map((field) => field.id));
+    const existingIds: Set<string> = new Set(insuranceFields.map((field) => field.id));
     Object.keys(insuranceMetaRef.current).forEach((key) => {
       if (!existingIds.has(key)) {
         delete insuranceMetaRef.current[key];
@@ -543,29 +550,7 @@ export const PatientEditorPanel = ({
           } satisfies PatientEditorFormValues['healthInsurances'][number];
         });
 
-        reset({
-          id: detail.id,
-          patientId: detail.patientId,
-          fullName: detail.fullName,
-          kanaName: detail.kanaName ?? '',
-          gender: detail.gender ?? 'U',
-          birthday: detail.birthday ?? '',
-          telephone: detail.telephone ?? '',
-          mobilePhone: detail.mobilePhone ?? '',
-          email: detail.email ?? '',
-          memo: detail.memo ?? '',
-          appMemo: detail.appMemo ?? '',
-          relations: detail.relations ?? '',
-          zipCode: detail.address?.zipCode ?? '',
-          address: detail.address?.address ?? '',
-          reserve1: detail.reserve1 ?? '',
-          reserve2: detail.reserve2 ?? '',
-          reserve3: detail.reserve3 ?? '',
-          reserve4: detail.reserve4 ?? '',
-          reserve5: detail.reserve5 ?? '',
-          reserve6: detail.reserve6 ?? '',
-          healthInsurances: nextInsurances,
-        });
+        reset(mapDetailToFormValues(detail, nextInsurances));
         insuranceMetaRef.current = {};
         pendingInsuranceMetaRef.current = [];
       }
@@ -590,7 +575,7 @@ export const PatientEditorPanel = ({
     } catch (error) {
       const message = error instanceof Error ? error.message : '患者情報の保存に失敗しました。';
       setFeedback({ tone: 'error', message });
-      recordOperationEvent('patient', 'error', 'patient_upsert_failed', '患者情報の登録/更新に失敗しました', {
+      recordOperationEvent('patient', 'critical', 'patient_upsert_failed', '患者情報の登録/更新に失敗しました', {
         patientId: values.patientId,
         mode,
       });
@@ -834,7 +819,7 @@ export const PatientEditorPanel = ({
           <Stack gap={6}>
             <strong>最新の患者概要</strong>
             <SubtleText>
-              最終更新日: {formatDisplayDate(detail.raw?.updatedAt as string | undefined)} ／ 最終来院: {formatDisplayDate(detail.raw?.pvtDate as string | undefined)}
+              最終更新日: {formatDisplayDate(detail.updatedAt)} ／ 最終来院: {formatDisplayDate(detail.lastVisitDate)}
             </SubtleText>
           </Stack>
         </SurfaceCard>

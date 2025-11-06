@@ -17,6 +17,8 @@ import open.dolphin.adm20.converter.IOSHelper;
  */
 public class ICarePlanModel implements Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     // PK
     private long id;
     

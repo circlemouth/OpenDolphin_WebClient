@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 
-import { fetchPatientById } from '@/features/patients/api/patient-api';
-import type { PatientDetail } from '@/features/patients/types/patient';
+import { fetchPatientById, searchPatients } from '@/features/patients/api/patient-api';
+import type { PatientDetail, PatientSummary } from '@/features/patients/types/patient';
 import { patientVisitsQueryKey } from '@/features/charts/hooks/usePatientVisits';
 import { registerVisit, type VisitRegistrationOptions } from '@/features/reception/api/visit-api';
 
@@ -12,6 +12,28 @@ export interface BarcodeCheckInArgs extends VisitRegistrationOptions {
 export interface BarcodeCheckInResult {
   patient: PatientDetail;
   patientId: string;
+}
+
+export class BarcodeCheckInNotFoundError extends Error {
+  readonly patientId: string;
+
+  constructor(patientId: string, message?: string) {
+    super(message ?? `患者ID ${patientId} の情報が見つかりませんでした。`);
+    this.name = 'BarcodeCheckInNotFoundError';
+    this.patientId = patientId;
+  }
+}
+
+export class BarcodeCheckInMultipleMatchesError extends Error {
+  readonly patientId: string;
+  readonly matches: PatientSummary[];
+
+  constructor(patientId: string, matches: PatientSummary[], message?: string) {
+    super(message ?? `患者ID ${patientId} に該当する患者が複数見つかりました。詳細を確認してください。`);
+    this.name = 'BarcodeCheckInMultipleMatchesError';
+    this.patientId = patientId;
+    this.matches = matches;
+  }
 }
 
 const PATIENT_ID_PATTERN = /(\d{4,})/g;
@@ -42,19 +64,37 @@ export const useReceptionCheckIn = () => {
 
   return useMutation<BarcodeCheckInResult, Error, BarcodeCheckInArgs>({
     mutationFn: async ({ code, ...options }) => {
-      const patientId = extractPatientIdFromScan(code);
-      if (!patientId) {
+      const extracted = extractPatientIdFromScan(code);
+      if (!extracted) {
         throw buildError('バーコードから患者IDを判読できませんでした。フォーマットを確認してください。');
       }
 
+      const directPatient = await fetchPatientById(extracted);
+      if (directPatient) {
+        await registerVisit(directPatient, { ...options, source: 'barcode' });
+        return { patient: directPatient, patientId: directPatient.patientId } satisfies BarcodeCheckInResult;
+      }
+
+      const searchCandidates = await searchPatients({ digitKeyword: extracted });
+
+      if (searchCandidates.length === 0) {
+        throw new BarcodeCheckInNotFoundError(extracted);
+      }
+
+      if (searchCandidates.length > 1) {
+        throw new BarcodeCheckInMultipleMatchesError(extracted, searchCandidates);
+      }
+
+      const [{ patientId }] = searchCandidates;
       const patient = await fetchPatientById(patientId);
+
       if (!patient) {
-        throw buildError(`患者ID ${patientId} の情報が見つかりませんでした。`);
+        throw new BarcodeCheckInNotFoundError(extracted);
       }
 
       await registerVisit(patient, { ...options, source: 'barcode' });
 
-      return { patient, patientId } satisfies BarcodeCheckInResult;
+      return { patient, patientId: patient.patientId } satisfies BarcodeCheckInResult;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: patientVisitsQueryKey });

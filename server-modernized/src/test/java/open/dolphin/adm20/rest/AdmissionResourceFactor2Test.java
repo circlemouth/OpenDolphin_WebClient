@@ -38,6 +38,7 @@ import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.security.fido.Fido2Config;
 import open.dolphin.security.totp.TotpRegistrationResult;
 import open.dolphin.security.totp.TotpSecretProtector;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -47,7 +48,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class AdmissionResourceFactor2Test {
+class AdmissionResourceFactor2Test extends RuntimeDelegateTestSupport {
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 

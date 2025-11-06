@@ -18,7 +18,7 @@ import jakarta.mail.Session;
 import jakarta.mail.Transport;
 import jakarta.mail.internet.InternetAddress;
 import open.dolphin.infomodel.ActivityModel;
-import open.dolphin.session.AccountSummary;
+import open.dolphin.msg.dto.AccountSummaryMessage;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.exception.MethodInvocationException;
@@ -49,7 +49,7 @@ public class OidSender {
     private static final String ASP_MEMBER = "ASP_MEMBER";
 
 
-    public void send(AccountSummary account) {
+    public void send(AccountSummaryMessage account) {
 
         try {
 
@@ -88,13 +88,13 @@ public class OidSender {
             ////--------------------------------------
             try (BufferedWriter bw = new BufferedWriter(sw)) {
                 // ライセンスのタイプでテンプレートを選択する
-                switch (account.getMemberType()) {
-                    case ASP_TESTER:
-                        Velocity.mergeTemplate(TESTER_TEMPLATE, TEMPLATE_ENC, context, bw);
-                        break;
-                    case ASP_MEMBER:
-                        Velocity.mergeTemplate(MEMBER_TEMPLATE, TEMPLATE_ENC, context, bw);
-                        break;
+                String memberType = account.getMemberType();
+                if (ASP_TESTER.equals(memberType)) {
+                    Velocity.mergeTemplate(TESTER_TEMPLATE, TEMPLATE_ENC, context, bw);
+                } else if (ASP_MEMBER.equals(memberType)) {
+                    Velocity.mergeTemplate(MEMBER_TEMPLATE, TEMPLATE_ENC, context, bw);
+                } else {
+                    Logger.getLogger("open.dolphin").warning("Unsupported memberType for AccountSummary: " + memberType);
                 }
                 
                 bw.flush();

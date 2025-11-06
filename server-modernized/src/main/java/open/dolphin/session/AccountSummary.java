@@ -2,12 +2,13 @@ package open.dolphin.session;
 
 import java.text.DateFormat;
 import java.util.Date;
+import open.dolphin.msg.dto.AccountSummaryMessage;
 
 /**
  * AccountSummary
  *
  */
-public final class AccountSummary implements java.io.Serializable {
+public final class AccountSummary implements AccountSummaryMessage {
     
     private String facilityId;
     
@@ -30,6 +31,7 @@ public final class AccountSummary implements java.io.Serializable {
     private Date registeredDate;
     
     
+    @Override
     public String getUserId() {
         return userId;
     }
@@ -38,6 +40,7 @@ public final class AccountSummary implements java.io.Serializable {
         this.userId = userId;
     }
     
+    @Override
     public String getUserEmail() {
         return userEmail;
     }
@@ -46,6 +49,7 @@ public final class AccountSummary implements java.io.Serializable {
         this.userEmail = adminEmail;
     }
     
+    @Override
     public String getUserName() {
         return userName;
     }
@@ -54,6 +58,7 @@ public final class AccountSummary implements java.io.Serializable {
         this.userName = adminName;
     }
     
+    @Override
     public String getFacilityAddress() {
         return facilityAddress;
     }
@@ -62,6 +67,7 @@ public final class AccountSummary implements java.io.Serializable {
         this.facilityAddress = facilityAddrees;
     }
     
+    @Override
     public String getFacilityId() {
         return facilityId;
     }
@@ -70,6 +76,7 @@ public final class AccountSummary implements java.io.Serializable {
         this.facilityId = facilityId;
     }
     
+    @Override
     public String getFacilityName() {
         return facilityName;
     }
@@ -78,6 +85,7 @@ public final class AccountSummary implements java.io.Serializable {
         this.facilityName = facilityName;
     }
     
+    @Override
     public String getFacilityTelephone() {
         return FacilityTelephone;
     }
@@ -86,6 +94,7 @@ public final class AccountSummary implements java.io.Serializable {
         FacilityTelephone = facilityTelephone;
     }
     
+    @Override
     public String getFacilityZipCode() {
         return facilityZipCode;
     }
@@ -94,6 +103,7 @@ public final class AccountSummary implements java.io.Serializable {
         this.facilityZipCode = facilityZipCode;
     }
 
+    @Override
     public String getMemberType() {
         return memberType;
     }
@@ -102,14 +112,16 @@ public final class AccountSummary implements java.io.Serializable {
         this.memberType = memberType;
     }
 
+    @Override
     public Date getRegisteredDate() {
-        return registeredDate;
+        return registeredDate == null ? null : new Date(registeredDate.getTime());
     }
 
     public void setRegisteredDate(Date registeredDate) {
-        this.registeredDate = registeredDate;
+        this.registeredDate = registeredDate == null ? null : new Date(registeredDate.getTime());
     }
     
+    @Override
     public String getRdDate() {
         return DateFormat.getDateInstance().format(registeredDate);
         

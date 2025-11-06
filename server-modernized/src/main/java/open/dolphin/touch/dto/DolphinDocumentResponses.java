@@ -1,5 +1,7 @@
 package open.dolphin.touch.dto;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -66,7 +68,7 @@ public final class DolphinDocumentResponses {
         public ClaimBundleDto(String entity, String entityName, List<ClaimItemDto> claimItems) {
             this.entity = entity;
             this.entityName = entityName;
-            this.claimItems = claimItems;
+            this.claimItems = immutableList(claimItems);
         }
 
         public String getEntity() {
@@ -78,7 +80,7 @@ public final class DolphinDocumentResponses {
         }
 
         public List<ClaimItemDto> getClaimItems() {
-            return claimItems;
+            return defensiveList(claimItems);
         }
     }
 
@@ -123,9 +125,9 @@ public final class DolphinDocumentResponses {
             this.documentPk = documentPk;
             this.started = started;
             this.responsibility = responsibility;
-            this.soaTexts = soaTexts;
-            this.orders = orders;
-            this.schemas = schemas;
+            this.soaTexts = immutableList(soaTexts);
+            this.orders = immutableList(orders);
+            this.schemas = immutableList(schemas);
         }
 
         public long getDocumentPk() {
@@ -141,15 +143,15 @@ public final class DolphinDocumentResponses {
         }
 
         public List<String> getSoaTexts() {
-            return soaTexts;
+            return defensiveList(soaTexts);
         }
 
         public List<ClaimBundleDto> getOrders() {
-            return orders;
+            return defensiveList(orders);
         }
 
         public List<SchemaDto> getSchemas() {
-            return schemas;
+            return defensiveList(schemas);
         }
     }
 
@@ -159,7 +161,7 @@ public final class DolphinDocumentResponses {
 
         public ProgressCourseResponse(PageInfo pageInfo, List<ProgressCourseDocument> documents) {
             this.pageInfo = pageInfo;
-            this.documents = documents;
+            this.documents = immutableList(documents);
         }
 
         public PageInfo getPageInfo() {
@@ -167,7 +169,15 @@ public final class DolphinDocumentResponses {
         }
 
         public List<ProgressCourseDocument> getDocuments() {
-            return documents;
+            return defensiveList(documents);
         }
+    }
+
+    private static <T> List<T> immutableList(List<T> source) {
+        return source == null ? null : Collections.unmodifiableList(new ArrayList<>(source));
+    }
+
+    private static <T> List<T> defensiveList(List<T> source) {
+        return immutableList(source);
     }
 }

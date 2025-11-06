@@ -18,13 +18,14 @@ import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.session.ChartEventServiceBean;
 import open.dolphin.session.PVTServiceBean;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
  * Contract tests for {@link PVTResource2}.
  */
-class PVTResource2Test {
+class PVTResource2Test extends RuntimeDelegateTestSupport {
 
     private static final String FACILITY_REMOTE_USER = "F001:doctor01";
 
@@ -62,6 +63,7 @@ class PVTResource2Test {
         PatientModel patient = new PatientModel();
         patient.setPatientId("000010");
         patient.setFacilityId("legacy");
+        patient.setBirthday("1980-01-01");
         HealthInsuranceModel insurance = new HealthInsuranceModel();
         insurance.setBeanBytes(new byte[]{1, 2, 3});
         patient.setHealthInsurances(Collections.singletonList(insurance));

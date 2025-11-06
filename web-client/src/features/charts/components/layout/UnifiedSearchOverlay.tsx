@@ -1,23 +1,25 @@
 import styled from '@emotion/styled';
 
-interface SearchResultItem {
+export interface SearchResultItem<TSection extends string = string, TPlanType extends string = string> {
   id: string;
   label: string;
   detail: string;
-  section: string;
+  section: TSection;
+  payload?: string;
+  planType?: TPlanType;
 }
 
-interface UnifiedSearchOverlayProps {
+interface UnifiedSearchOverlayProps<TSection extends string = string, TPlanType extends string = string> {
   open: boolean;
   query: string;
   onQueryChange: (value: string) => void;
-  sections: string[];
-  activeSection: string;
-  onSectionChange: (section: string) => void;
-  results: SearchResultItem[];
+  sections: readonly TSection[];
+  activeSection: TSection;
+  onSectionChange: (section: TSection) => void;
+  results: SearchResultItem<TSection, TPlanType>[];
   selectedIndex: number;
   onSelectIndex: (index: number) => void;
-  onConfirm: (item: SearchResultItem) => void;
+  onConfirm: (item: SearchResultItem<TSection, TPlanType>) => void;
   onClose: () => void;
 }
 
@@ -84,7 +86,7 @@ const ResultItem = styled.li<{ $active: boolean }>`
   color: ${({ theme }) => theme.palette.text};
 `;
 
-export const UnifiedSearchOverlay = ({
+export const UnifiedSearchOverlay = <TSection extends string = string, TPlanType extends string = string>({
   open,
   query,
   onQueryChange,
@@ -96,7 +98,7 @@ export const UnifiedSearchOverlay = ({
   onSelectIndex,
   onConfirm,
   onClose,
-}: UnifiedSearchOverlayProps) => {
+}: UnifiedSearchOverlayProps<TSection, TPlanType>) => {
   if (!open) {
     return null;
   }

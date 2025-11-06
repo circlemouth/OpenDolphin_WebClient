@@ -52,55 +52,53 @@ public class LogFilter implements Filter {
     public void doFilter(ServletRequest request, ServletResponse response, FilterChain chain) throws IOException, ServletException {
 
         HttpServletRequest req = (HttpServletRequest)request;
-        
-        if (req.getRequestURI().endsWith("identityToken")) {
-            chain.doFilter(request, response);
-            return;
-        }
-        
-        String headerUser = safeHeader(req, USER_NAME);
-        String headerPassword = safeHeader(req, PASSWORD);
-        Optional<String> principalUser = resolvePrincipalUser();
-
-        String effectiveUser = principalUser.orElse(headerUser);
-        boolean authentication = principalUser.isPresent();
-
-        if (!authentication) {
-            authentication = authenticateWithHeaders(req, headerUser, headerPassword);
-        }
-
-        if (!authentication) {
-            HttpServletResponse res = (HttpServletResponse)response;
-            String requestURI = req.getRequestURI();
-            String msg = UNAUTHORIZED_USER + String.valueOf(effectiveUser) + ": " + requestURI;
-            Logger.getLogger("open.dolphin").warning(msg);
-            res.sendError(HttpServletResponse.SC_FORBIDDEN);
-            return;
-        }
+        HttpServletResponse res = (HttpServletResponse) response;
 
         String traceId = resolveTraceId(req);
         req.setAttribute(TRACE_ID_ATTRIBUTE, traceId);
+        res.setHeader(TRACE_ID_HEADER, traceId);
         Object previousTraceId = MDC.put(MDC_TRACE_ID_KEY, traceId);
 
-        BlockWrapper wrapper = new BlockWrapper(req);
-        wrapper.setRemoteUser(effectiveUser);
+        try {
+            boolean identityTokenRequest = isIdentityTokenRequest(req);
 
-        StringBuilder sb = new StringBuilder();
-        sb.append(wrapper.getRemoteAddr()).append(" ");
-        sb.append(wrapper.getShortUser()).append(" ");
-        sb.append(wrapper.getMethod()).append(" ");
+            String headerUser = safeHeader(req, USER_NAME);
+            String headerPassword = safeHeader(req, PASSWORD);
+            Optional<String> principalUser = resolvePrincipalUser();
+
+            String effectiveUser = principalUser.orElse(headerUser);
+            boolean authentication = principalUser.isPresent() || identityTokenRequest;
+
+            if (!authentication) {
+                authentication = authenticateWithHeaders(req, headerUser, headerPassword);
+            }
+
+            if (!authentication) {
+                String requestURI = req.getRequestURI();
+                String msg = UNAUTHORIZED_USER + String.valueOf(effectiveUser) + ": " + requestURI + " traceId=" + traceId;
+                Logger.getLogger("open.dolphin").warning(msg);
+                res.sendError(HttpServletResponse.SC_FORBIDDEN);
+                return;
+            }
+
+            BlockWrapper wrapper = new BlockWrapper(req);
+            wrapper.setRemoteUser(effectiveUser);
+
+            StringBuilder sb = new StringBuilder();
+            sb.append(wrapper.getRemoteAddr()).append(" ");
+            sb.append(wrapper.getShortUser()).append(" ");
+            sb.append(wrapper.getMethod()).append(" ");
 //minagawa^ VisitTouch logを分ける        
-        String uri = wrapper.getRequestURIForLog();
-        sb.append(uri);
-        sb.append(" traceId=").append(traceId);
-        if (uri.startsWith("/jtouch")) {
-            Logger.getLogger("visit.touch").info(sb.toString());
-        } else {
-            Logger.getLogger("open.dolphin").info(sb.toString());
-        }
+            String uri = wrapper.getRequestURIForLog();
+            sb.append(uri);
+            sb.append(" traceId=").append(traceId);
+            if (uri.startsWith("/jtouch")) {
+                Logger.getLogger("visit.touch").info(sb.toString());
+            } else {
+                Logger.getLogger("open.dolphin").info(sb.toString());
+            }
 //minagawa 
 
-        try {
             chain.doFilter(wrapper, response);
         } finally {
             restorePreviousTraceId(previousTraceId);
@@ -178,5 +176,13 @@ public class LogFilter implements Filter {
             return null;
         }
         return value.trim();
+    }
+
+    private boolean isIdentityTokenRequest(HttpServletRequest request) {
+        String uri = request.getRequestURI();
+        if (uri == null) {
+            return false;
+        }
+        return uri.endsWith("identityToken");
     }
 }

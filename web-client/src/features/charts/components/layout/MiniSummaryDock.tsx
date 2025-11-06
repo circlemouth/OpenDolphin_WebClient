@@ -13,7 +13,6 @@ const DockCard = styled(SurfaceCard)`
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 16px;
 `;
 
 const DockHeader = styled.div`
@@ -76,9 +75,9 @@ const EmptyNotice = styled.span`
   color: ${({ theme }) => theme.palette.textMuted};
 `;
 
-export const MiniSummaryDock = forwardRef<HTMLDivElement, MiniSummaryDockProps>(({ summaryLines, onExpand, onSnippetDragStart }, ref) => {
-  return (
-    <DockCard ref={ref} role="complementary" aria-label="ミニサマリ">
+export const MiniSummaryDock = forwardRef<HTMLDivElement, MiniSummaryDockProps>(
+  ({ summaryLines, onExpand, onSnippetDragStart }, ref) => (
+    <DockCard ref={ref} role="complementary" aria-label="ミニサマリ" tone="muted" padding="md">
       <DockHeader>
         <DockTitle>前回サマリ</DockTitle>
         <ExpandButton type="button" onClick={onExpand}>
@@ -105,7 +104,7 @@ export const MiniSummaryDock = forwardRef<HTMLDivElement, MiniSummaryDockProps>(
         )}
       </DockBody>
     </DockCard>
-  );
-});
+  ),
+);
 
 MiniSummaryDock.displayName = 'MiniSummaryDock';

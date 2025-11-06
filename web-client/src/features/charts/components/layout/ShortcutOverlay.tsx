@@ -32,7 +32,7 @@ const Panel = styled.div`
   overflow-y: auto;
   background: ${({ theme }) => theme.palette.surface};
   border-radius: ${({ theme }) => theme.radius.lg};
-  box-shadow: ${({ theme }) => theme.elevation.level3};
+  box-shadow: ${({ theme }) => theme.elevation.level2};
   padding: 24px;
   display: grid;
   gap: 20px;

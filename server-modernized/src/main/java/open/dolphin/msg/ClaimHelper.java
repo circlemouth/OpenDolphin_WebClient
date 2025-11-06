@@ -1,7 +1,9 @@
 package open.dolphin.msg;
 
+import java.util.Arrays;
 import open.dolphin.infomodel.ClaimBundle;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
+import org.apache.commons.lang3.SerializationUtils;
 
 /**
  * ClaimHelper
@@ -156,13 +158,13 @@ public final class ClaimHelper {
     }
     
     public void setClaimBundle(ClaimBundle[] claimBundle) {
-        this.claimBundle = claimBundle;
+        this.claimBundle = claimBundle == null ? null : Arrays.copyOf(claimBundle, claimBundle.length);
     }
-    
+
     public ClaimBundle[] getClaimBundle() {
-        return claimBundle;
+        return claimBundle == null ? null : Arrays.copyOf(claimBundle, claimBundle.length);
     }
-    
+
     public void addClaimBundle(ClaimBundle val) {
         
         if (val == null) {
@@ -175,10 +177,9 @@ public final class ClaimHelper {
             return;
         }
         int len = claimBundle.length;
-        ClaimBundle[] dest = new ClaimBundle[len + 1];
-        System.arraycopy(claimBundle, 0, dest, 0, len);
+        ClaimBundle[] dest = Arrays.copyOf(claimBundle, len + 1);
+        dest[len] = val;
         claimBundle = dest;
-        claimBundle[len] = val;
     }
 
     public String getCreatorDept() {
@@ -249,10 +250,10 @@ public final class ClaimHelper {
     // 健康保険情報を送信する 2010-11-10
     //------------------------------------
     public PVTHealthInsuranceModel getSelectedInsurance() {
-        return selectedInsurance;
+        return selectedInsurance == null ? null : SerializationUtils.clone(selectedInsurance);
     }
 
     public void setSelectedInsurance(PVTHealthInsuranceModel selectedInsurance) {
-        this.selectedInsurance = selectedInsurance;
+        this.selectedInsurance = selectedInsurance == null ? null : SerializationUtils.clone(selectedInsurance);
     }
 }

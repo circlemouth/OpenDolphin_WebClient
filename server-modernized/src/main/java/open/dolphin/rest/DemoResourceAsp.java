@@ -61,6 +61,7 @@ import open.dolphin.rest.dto.DemoAspResponses.PatientPackageResponse;
 import open.dolphin.rest.dto.DemoAspResponses.ProgressCourseDocument;
 import open.dolphin.rest.dto.DemoAspResponses.ProgressCourseResponse;
 import open.dolphin.rest.dto.DemoAspResponses.PublicInsuranceDto;
+import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.touch.converter.IPatientVisitModel;
@@ -458,7 +459,9 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         if (authHandler != null) {
             authHandler.verifyFacilityOwnership(servletRequest, patientModel.getFacilityId(), endpoint);
         }
-        IPatientModel patientConverter = toPatientModel(patientModel);
+        long kartePk = iPhoneServiceBean.getKartePKByPatientPK(patientModel.getId());
+        JsonTouchSharedService.PatientModelSnapshot patientSnapshot =
+                JsonTouchSharedService.snapshot(patientModel, kartePk);
 
         List<HealthInsuranceDto> insurances = new ArrayList<>();
         List<HealthInsuranceModel> rawIns = safeList(pack.getInsurances());
@@ -485,10 +488,11 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
         for (AllergyModel allergy : safeList(pack.getAllergies())) {
             allergies.add(new AllergyDto(allergy.getFactor(), allergy.getSeverity(), allergy.getIdentifiedDate()));
         }
-        PatientPackageResponse response = new PatientPackageResponse(patientConverter, insurances, allergies);
+        PatientPackageResponse response = new PatientPackageResponse(patientSnapshot, insurances, allergies);
         recordAudit(context, ACTION_PATIENT_PACKAGE, "/demo/patientPackage/" + pk,
                 detailsOf("patientPk", pk, "insuranceCount", insurances.size(),
-                        "allergyCount", allergies.size(), "facilityId", patientModel.getFacilityId(), "found", true));
+                        "allergyCount", allergies.size(), "facilityId", patientModel.getFacilityId(),
+                        "kartePk", kartePk, "found", true));
         return response;
     }
 

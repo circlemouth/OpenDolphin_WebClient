@@ -44,7 +44,7 @@ describe('letter-api transforms', () => {
     expect(summary).toEqual({
       id: 12,
       title: '診断書:胃腸炎',
-      confirmedAt: '2025-03-10T10:15:30.000Z',
+      confirmedAt: '2025-03-10 10:15:30',
       status: 'F',
       letterType: 'medicalCertificate',
     });
@@ -56,6 +56,7 @@ describe('letter-api transforms', () => {
     expect(detail.informedContent).toContain('自宅療養');
     expect(detail.consultantHospital).toBe('テスト病院');
     expect(detail.patientName).toBe('田中 花子');
+    expect(detail.confirmedAt).toBe('2025-03-10 10:15:30');
   });
 
   it('builds payloads for saving', () => {
@@ -73,11 +74,14 @@ describe('letter-api transforms', () => {
     expect(payload.letterTexts[0]).toEqual({ name: 'informedContent', textValue: '自宅療養と水分補給を指示。' });
     expect(payload.karteBean.id).toBe(88);
     expect(payload.userModel.id).toBe(55);
+    expect(payload.confirmed).toBe('2025-04-01 18:00:00');
+    expect(payload.started).toBe('2025-04-01 18:00:00');
+    expect(payload.recorded).toBe('2025-04-01 18:00:00');
   });
 
   it('handles invalid dates gracefully', () => {
-    const { toIsoStringOrNull } = __testables;
-    expect(toIsoStringOrNull('invalid')).toBe('invalid');
-    expect(toIsoStringOrNull(undefined)).toBeNull();
+    const { toRestTimestampOrNull } = __testables;
+    expect(toRestTimestampOrNull('invalid')).toBe('invalid');
+    expect(toRestTimestampOrNull(undefined)).toBeNull();
   });
 });

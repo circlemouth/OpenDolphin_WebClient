@@ -3,6 +3,9 @@ package open.dolphin.touch.patient;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.ArgumentMatchers.anyString;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -15,6 +18,8 @@ import open.dolphin.touch.support.TouchRequestContext;
 import open.dolphin.touch.session.IPhoneServiceBean;
 import open.dolphin.touch.support.TouchAuditHelper;
 import jakarta.ws.rs.WebApplicationException;
+import open.dolphin.touch.support.TouchErrorResponse;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -23,7 +28,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class TouchPatientServiceTest {
+class TouchPatientServiceTest extends RuntimeDelegateTestSupport {
 
     private static final TouchRequestContext CONTEXT = new TouchRequestContext(
             "1.3.6.1.4.1.9414.2.10:user",
@@ -67,7 +72,10 @@ class TouchPatientServiceTest {
         WebApplicationException ex = assertThrows(WebApplicationException.class,
                 () -> service.getPatientByPk(CONTEXT_NO_CONSENT, 10L));
         assertThat(ex.getResponse().getStatus()).isEqualTo(403);
-        verify(iPhoneServiceBean, never()).getPatient(any());
+        assertThat(ex.getResponse().getEntity()).isInstanceOf(TouchErrorResponse.class);
+        TouchErrorResponse payload = (TouchErrorResponse) ex.getResponse().getEntity();
+        assertThat(payload.type()).isEqualTo("consent_required");
+        verify(iPhoneServiceBean, never()).getPatient(anyLong());
     }
 
     @Test
@@ -77,7 +85,7 @@ class TouchPatientServiceTest {
         model.setFacilityId(CONTEXT.facilityId());
         when(iPhoneServiceBean.getPatient(10L)).thenReturn(model);
         when(iPhoneServiceBean.getKartePKByPatientPK(10L)).thenReturn(20L);
-        when(auditHelper.record(any(), any(), any(), any())).thenReturn(Optional.empty());
+        when(auditHelper.record(any(), anyString(), anyString(), any())).thenReturn(Optional.empty());
 
         var result = service.getPatientByPk(CONTEXT, 10L);
 
@@ -86,9 +94,9 @@ class TouchPatientServiceTest {
 
         ArgumentCaptor<Map<String, Object>> detailsCaptor = ArgumentCaptor.forClass(Map.class);
         verify(auditHelper).record(
-                CONTEXT,
-                "TOUCH_PATIENT_PROFILE_VIEW",
-                "/touch/patient/10",
+                eq(CONTEXT),
+                eq("TOUCH_PATIENT_PROFILE_VIEW"),
+                eq("/touch/patient/10"),
                 detailsCaptor.capture()
         );
         assertThat(detailsCaptor.getValue()).containsEntry("patientPk", 10L);

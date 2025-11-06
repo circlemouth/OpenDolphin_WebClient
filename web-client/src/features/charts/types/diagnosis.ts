@@ -21,6 +21,7 @@ export interface RegisteredDiagnosis {
   started?: string | null;
   ended?: string | null;
   recorded?: string | null;
+  confirmed?: string | null;
   status?: string | null;
   relatedHealthInsurance?: string | null;
   department?: string | null;

@@ -286,7 +286,7 @@ export const MedicalCertificatesPanel = ({
     return [
       { value: 'new', label: '新規作成' },
       ...base.map((entry) => ({
-        value: entry.id,
+        value: String(entry.id),
         label: `${entry.title}${entry.confirmedAt ? ` / ${new Date(entry.confirmedAt).toLocaleString('ja-JP')}` : ''}`,
       })),
     ];
@@ -307,7 +307,7 @@ export const MedicalCertificatesPanel = ({
         <SelectField
           label="既存診断書"
           options={letterOptions}
-          value={selectedLetterId}
+          value={selectedLetterId === 'new' ? 'new' : String(selectedLetterId)}
           onChange={(event) => {
             const next = event.currentTarget.value === 'new' ? 'new' : Number.parseInt(event.currentTarget.value, 10);
             setSelectedLetterId(next);

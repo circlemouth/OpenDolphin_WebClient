@@ -2,6 +2,7 @@ package open.dolphin.touch;
 
 import java.beans.XMLDecoder;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -1142,7 +1143,7 @@ public class DolphinResourceASP extends AbstractResource {
                 }
 
                 byte[] bytes = schema.getJpegByte();
-                String base64Str = new String(Base64Utils.encode(bytes));
+                String base64Str = new String(Base64Utils.encode(bytes), StandardCharsets.UTF_8);
                 propertyString(ELEMENT_BASE64, base64Str, sb);
 
                 sb.append(ELEMENT_SCHEMA_END);
@@ -1288,7 +1289,7 @@ public class DolphinResourceASP extends AbstractResource {
 
                     // image bytes
                     byte[] bytes = schema.getJpegByte();
-                    String base64Str = new String(Base64Utils.encode(bytes));
+                    String base64Str = new String(Base64Utils.encode(bytes), StandardCharsets.UTF_8);
                     propertyString(ELEMENT_BASE64, base64Str, sb);
 
                     sb.append(ELEMENT_SCHEMA_END);

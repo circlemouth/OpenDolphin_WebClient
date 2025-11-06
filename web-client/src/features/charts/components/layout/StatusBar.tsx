@@ -9,7 +9,6 @@ interface StatusBarProps {
   saveState: 'idle' | 'saving' | 'saved' | 'error';
   signatureState: 'idle' | 'signing' | 'signed' | 'blocked' | 'error';
   claimState: 'idle' | 'sending' | 'sent' | 'error';
-  unsentTaskCount: number;
   lastSavedAt?: string;
   lastSignedAt?: string | null;
   lastClaimSentAt?: string | null;
@@ -115,7 +114,6 @@ export const StatusBar = forwardRef<HTMLElement, StatusBarProps>(({
   saveState,
   signatureState,
   claimState,
-  unsentTaskCount,
   lastSavedAt,
   lastSignedAt,
   lastClaimSentAt,
@@ -182,7 +180,6 @@ export const StatusBar = forwardRef<HTMLElement, StatusBarProps>(({
     }
   })();
 
-  const unsentTone: Tone = unsentTaskCount > 0 ? 'warning' : 'neutral';
   const signatureTooltip = signatureError ?? signatureDisabledReason ?? undefined;
   const claimTooltip = claimError ?? claimDisabledReason ?? undefined;
 
@@ -199,7 +196,6 @@ export const StatusBar = forwardRef<HTMLElement, StatusBarProps>(({
           <StatusIndicator $tone={claimTone} title={claimTooltip ?? undefined}>
             {claimLabel}
           </StatusIndicator>
-          <StatusIndicator $tone={unsentTone}>未完タスク: {unsentTaskCount}</StatusIndicator>
         </StatusRow>
         {signatureError ? <InlineNotice $tone="danger">署名エラー: {signatureError}</InlineNotice> : null}
         {claimError ? <InlineNotice $tone="danger">会計連携エラー: {claimError}</InlineNotice> : null}

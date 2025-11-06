@@ -14,6 +14,8 @@ import open.dolphin.infomodel.UserModel;
  */
 public class IOndobanModel30 implements java.io.Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     //---------------------------
     // iOS アダプター
     private long id;

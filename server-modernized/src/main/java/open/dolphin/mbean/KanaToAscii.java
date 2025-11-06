@@ -1,5 +1,6 @@
 package open.dolphin.mbean;
 
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 /**
@@ -578,7 +579,7 @@ public class KanaToAscii {
             }
 
         }
-        byte[] ChgByte = strCHG.getBytes();
+        byte[] ChgByte = strCHG.getBytes(StandardCharsets.US_ASCII);
         for (nLen = 0; nLen < ChgByte.length; nLen++) {
             if (ChgByte[nLen] == '$') {
                 if (nLen + 1 < ChgByte.length) {
@@ -595,7 +596,7 @@ public class KanaToAscii {
                 }
             }
         }
-        String sAsc = new String(ChgByte); //    
+        String sAsc = new String(ChgByte, StandardCharsets.US_ASCII); //    
 
         sAsc.replace("$", "");
         sAsc.replace("OO", "OH");

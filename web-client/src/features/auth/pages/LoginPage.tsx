@@ -16,10 +16,10 @@ const loginSchema = z.object({
   clientUuid: z
     .string()
     .trim()
-    .optional()
     .transform((value) => (value ? value : undefined)),
 });
 
+type LoginFormInput = z.input<typeof loginSchema>;
 export type LoginFormValues = z.infer<typeof loginSchema>;
 
 interface LocationState {
@@ -35,13 +35,13 @@ export const LoginPage = () => {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormValues>({
+  } = useForm<LoginFormInput, undefined, LoginFormValues>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
       facilityId: '',
       userId: '',
       password: '',
-      clientUuid: undefined,
+      clientUuid: '',
     },
   });
 

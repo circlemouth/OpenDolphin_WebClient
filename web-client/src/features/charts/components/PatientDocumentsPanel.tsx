@@ -4,6 +4,7 @@ import styled from '@emotion/styled';
 import { Button, SelectField, Stack, SurfaceCard, TextArea, TextField } from '@/components';
 import { TEMPLATE_DEFINITIONS } from './patientDocumentTemplates';
 import type { PatientDocumentPreviewPayload, PatientSummaryInfo } from './patientDocumentTemplates';
+export type { PatientDocumentPreviewPayload } from './patientDocumentTemplates';
 
 interface PatientDocumentsPanelProps {
   patient?: PatientSummaryInfo | null;
@@ -178,4 +179,3 @@ export const PatientDocumentsPanel = ({
     </SurfaceCard>
   );
 };
-

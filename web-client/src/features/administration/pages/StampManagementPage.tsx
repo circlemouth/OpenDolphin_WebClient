@@ -963,130 +963,138 @@ export const StampManagementPage = () => {
             <SectionTitle>詳細</SectionTitle>
             {locatedNode ? (
               <Fragment>
-                {locatedNode.node.type === 'folder' ? (
-                  <Stack gap={12}>
-                    <SubTitle>フォルダ設定</SubTitle>
-                    <FieldGroup gap={12}>
-                      <TextField
-                        label="フォルダ名"
-                        value={locatedNode.node.name}
-                        onChange={(event) =>
-                          handleUpdateFolder({
-                            name: event.currentTarget.value,
-                          })
-                        }
-                      />
-                      <TextField
-                        label="Entity"
-                        value={locatedNode.node.entity ?? ''}
-                        onChange={(event) =>
-                          handleUpdateFolder({
-                            entity: event.currentTarget.value || undefined,
-                          })
-                        }
-                      />
-                      <TextField
-                        label="Role"
-                        value={locatedNode.node.role ?? ''}
-                        onChange={(event) =>
-                          handleUpdateFolder({
-                            role: event.currentTarget.value || undefined,
-                          })
-                        }
-                      />
-                    </FieldGroup>
-                    <Divider />
-                    <InlineActions>
-                      <Button type="button" size="sm" onClick={() => handleAddChildFolder(locatedNode.node)}>
-                        子フォルダを追加
-                      </Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('up')}>
-                        上へ
-                      </Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('down')}>
-                        下へ
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="danger"
-                        onClick={() => handleRemoveNode(locatedNode.node, false)}
-                      >
-                        フォルダを削除
-                      </Button>
-                    </InlineActions>
-                  </Stack>
-                ) : (
-                  <Stack gap={12}>
-                    <SubTitle>スタンプ設定</SubTitle>
-                    <FieldGroup gap={12}>
-                      <TextField
-                        label="スタンプ名"
-                        value={locatedNode.node.name}
-                        onChange={(event) =>
-                          handleUpdateStamp({
-                            name: event.currentTarget.value,
-                          })
-                        }
-                      />
-                      <TextField
-                        label="Entity"
-                        value={locatedNode.node.entity ?? ''}
-                        onChange={(event) =>
-                          handleUpdateStamp({
-                            entity: event.currentTarget.value || undefined,
-                          })
-                        }
-                      />
-                      <TextField
-                        label="Role"
-                        value={locatedNode.node.role ?? ''}
-                        onChange={(event) =>
-                          handleUpdateStamp({
-                            role: event.currentTarget.value || undefined,
-                          })
-                        }
-                      />
-                      <TextArea
-                        label="メモ"
-                        value={locatedNode.node.memo ?? ''}
-                        rows={3}
-                        onChange={(event) =>
-                          handleUpdateStamp({
-                            memo: event.currentTarget.value || undefined,
-                          })
-                        }
-                      />
-                      <TextField label="スタンプID" value={locatedNode.node.stampId ?? ''} disabled />
-                    </FieldGroup>
-                    <Divider />
-                    <InlineActions>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('up')}>
-                        上へ
-                      </Button>
-                      <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('down')}>
-                        下へ
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={() => handleRemoveNode(locatedNode.node, false)}
-                      >
-                        ツリーから外す
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="danger"
-                        isLoading={deleteStampMutation.isPending}
-                        onClick={() => handleDeleteStamp(locatedNode.node)}
-                      >
-                        スタンプを削除
-                      </Button>
-                    </InlineActions>
-                  </Stack>
-                )}
+                {locatedNode.node.type === 'folder'
+                  ? (() => {
+                      const folderNode = locatedNode.node;
+                      return (
+                        <Stack gap={12}>
+                          <SubTitle>フォルダ設定</SubTitle>
+                          <FieldGroup gap={12}>
+                            <TextField
+                              label="フォルダ名"
+                              value={folderNode.name}
+                              onChange={(event) =>
+                                handleUpdateFolder({
+                                  name: event.currentTarget.value,
+                                })
+                              }
+                            />
+                            <TextField
+                              label="Entity"
+                              value={folderNode.entity ?? ''}
+                              onChange={(event) =>
+                                handleUpdateFolder({
+                                  entity: event.currentTarget.value || undefined,
+                                })
+                              }
+                            />
+                            <TextField
+                              label="Role"
+                              value={folderNode.role ?? ''}
+                              onChange={(event) =>
+                                handleUpdateFolder({
+                                  role: event.currentTarget.value || undefined,
+                                })
+                              }
+                            />
+                          </FieldGroup>
+                          <Divider />
+                          <InlineActions>
+                            <Button type="button" size="sm" onClick={() => handleAddChildFolder(folderNode)}>
+                              子フォルダを追加
+                            </Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('up')}>
+                              上へ
+                            </Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('down')}>
+                              下へ
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="danger"
+                              onClick={() => handleRemoveNode(folderNode, false)}
+                            >
+                              フォルダを削除
+                            </Button>
+                          </InlineActions>
+                        </Stack>
+                      );
+                    })()
+                  : (() => {
+                      const stampNode = locatedNode.node;
+                      return (
+                        <Stack gap={12}>
+                          <SubTitle>スタンプ設定</SubTitle>
+                          <FieldGroup gap={12}>
+                            <TextField
+                              label="スタンプ名"
+                              value={stampNode.name}
+                              onChange={(event) =>
+                                handleUpdateStamp({
+                                  name: event.currentTarget.value,
+                                })
+                              }
+                            />
+                            <TextField
+                              label="Entity"
+                              value={stampNode.entity ?? ''}
+                              onChange={(event) =>
+                                handleUpdateStamp({
+                                  entity: event.currentTarget.value || undefined,
+                                })
+                              }
+                            />
+                            <TextField
+                              label="Role"
+                              value={stampNode.role ?? ''}
+                              onChange={(event) =>
+                                handleUpdateStamp({
+                                  role: event.currentTarget.value || undefined,
+                                })
+                              }
+                            />
+                            <TextArea
+                              label="メモ"
+                              value={stampNode.memo ?? ''}
+                              rows={3}
+                              onChange={(event) =>
+                                handleUpdateStamp({
+                                  memo: event.currentTarget.value || undefined,
+                                })
+                              }
+                            />
+                            <TextField label="スタンプID" value={stampNode.stampId ?? ''} disabled />
+                          </FieldGroup>
+                          <Divider />
+                          <InlineActions>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('up')}>
+                              上へ
+                            </Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => handleMoveNode('down')}>
+                              下へ
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="secondary"
+                              onClick={() => handleRemoveNode(stampNode, false)}
+                            >
+                              ツリーから外す
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="danger"
+                              isLoading={deleteStampMutation.isPending}
+                              onClick={() => handleDeleteStamp(stampNode)}
+                            >
+                              スタンプを削除
+                            </Button>
+                          </InlineActions>
+                        </Stack>
+                      );
+                    })()}
               </Fragment>
             ) : (
               <HelperText>編集したいフォルダまたはスタンプを選択してください。</HelperText>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
+import type { OrderSetShareItem } from '@/features/charts/utils/order-set-sharing';
 import {
   buildSharePackage,
   mergeDefinitions,
@@ -77,7 +78,7 @@ describe('order-set-sharing utilities', () => {
   });
 
   it('merges shared definitions and keeps counts', () => {
-    const importedItem = {
+    const importedItem: OrderSetShareItem = {
       name: '高血圧 再診セット',
       description: '更新説明',
       tags: ['内科', 'フォロー'],
@@ -91,7 +92,7 @@ describe('order-set-sharing utilities', () => {
     expect(result.created).toBe(0);
     expect(next[0].planItems[0].title).toBe('バルサルタン 80mg');
 
-    const secondImport = {
+    const secondImport: OrderSetShareItem = {
       name: '喘息管理',
       tags: ['呼吸器'],
       planItems: [{ type: 'guidance', title: '吸入指導', detail: '1日2回', note: '' }],

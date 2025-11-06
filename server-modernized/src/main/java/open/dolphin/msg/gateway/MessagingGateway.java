@@ -9,6 +9,7 @@ import jakarta.jms.ObjectMessage;
 import jakarta.jms.Queue;
 import java.io.Serializable;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
@@ -17,6 +18,7 @@ import open.dolphin.msg.ClaimSender;
 import open.dolphin.msg.DiagnosisSender;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
+import org.jboss.logmanager.MDC;
 
 @ApplicationScoped
 public class MessagingGateway {
@@ -26,6 +28,7 @@ public class MessagingGateway {
     private static final String PAYLOAD_TYPE_PROPERTY = "open.dolphin.payloadType";
     private static final String PAYLOAD_TYPE_CLAIM = "CLAIM";
     private static final String PAYLOAD_TYPE_DIAGNOSIS = "DIAGNOSIS";
+    private static final String TRACE_ID_MDC_KEY = "traceId";
 
     @Resource(lookup = "java:/JmsXA")
     private ConnectionFactory connectionFactory;
@@ -78,9 +81,7 @@ public class MessagingGateway {
         }
         try (JMSContext context = connectionFactory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
             ObjectMessage message = context.createObjectMessage(payload);
-            if (traceId != null) {
-                message.setStringProperty(TRACE_ID_PROPERTY, traceId);
-            }
+            message.setStringProperty(TRACE_ID_PROPERTY, traceId);
             message.setStringProperty(PAYLOAD_TYPE_PROPERTY, payloadType);
             context.createProducer().send(dolphinQueue, message);
             return true;
@@ -117,6 +118,21 @@ public class MessagingGateway {
     private String currentTraceId() {
         return Optional.ofNullable(traceManager.current())
                 .map(SessionTraceContext::getTraceId)
-                .orElse(null);
+                .filter(id -> !id.isBlank())
+                .orElseGet(this::resolveTraceIdFromMdcOrGenerate);
+    }
+
+    private String resolveTraceIdFromMdcOrGenerate() {
+        Object fromJboss = MDC.get(TRACE_ID_MDC_KEY);
+        if (fromJboss instanceof String traceId && !traceId.isBlank()) {
+            return traceId;
+        }
+        String fromSlf4j = org.slf4j.MDC.get(TRACE_ID_MDC_KEY);
+        if (fromSlf4j != null && !fromSlf4j.isBlank()) {
+            return fromSlf4j;
+        }
+        String generated = UUID.randomUUID().toString();
+        LOGGER.warning(() -> "Missing traceId for messaging dispatch; generated fallback traceId=" + generated);
+        return generated;
     }
 }

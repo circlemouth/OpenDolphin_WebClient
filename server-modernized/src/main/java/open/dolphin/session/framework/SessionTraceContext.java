@@ -39,7 +39,10 @@ public final class SessionTraceContext {
     }
 
     public Map<String, String> getAttributes() {
-        return attributes;
+        if (attributes.isEmpty()) {
+            return attributes;
+        }
+        return Collections.unmodifiableMap(new HashMap<>(attributes));
     }
 
     public String getActorRole() {

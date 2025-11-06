@@ -18,7 +18,6 @@ import {
 import type { DocumentModelPayload } from '@/features/charts/types/doc';
 import type { PaletteToken } from '@/styles/theme';
 
-type DocumentEventPayload = Extract<TimelineEventPayload, { kind: 'document' }>;
 type VisitEventPayload = Extract<TimelineEventPayload, { kind: 'visit' }>;
 type LabEventPayload = Extract<TimelineEventPayload, { kind: 'lab' }>;
 type OrderEventPayload = Extract<TimelineEventPayload, { kind: 'order' }>;
@@ -365,7 +364,7 @@ export const DocumentTimelinePanel = ({
   const [renameTitle, setRenameTitle] = useState('');
   const [renameFeedback, setRenameFeedback] = useState<{ tone: 'info' | 'danger'; message: string } | null>(null);
   const emittedEventIdRef = useRef<string | null>(null);
-  const documentSelectionCallbackRef = useRef<DocumentTimelinePanelProps['onDocumentSelected']>();
+  const documentSelectionCallbackRef = useRef<DocumentTimelinePanelProps['onDocumentSelected'] | null>(null);
   const lastDocumentEventIdRef = useRef<string | null>(null);
   const lastDocumentDataVersionRef = useRef<number | null>(null);
 
@@ -513,8 +512,6 @@ export const DocumentTimelinePanel = ({
   }, [renameMutation, renameTitle, selectedDocumentPk]);
 
   const selectedDocumentDetail = detailQuery.data;
-  const documentPayload: DocumentEventPayload | null =
-    selectedEvent?.payload.kind === 'document' ? selectedEvent.payload : null;
   const visitPayload: VisitEventPayload | null =
     selectedEvent?.payload.kind === 'visit' ? selectedEvent.payload : null;
   const labPayload: LabEventPayload | null =

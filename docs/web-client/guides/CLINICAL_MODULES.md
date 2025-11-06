@@ -81,8 +81,24 @@ Web クライアントに実装済みの主要臨床モジュールと運用機�
 
 ### 4.4 オーダーデータ要件
 - すべての文書は `DocumentModel` と `DocInfoModel` の必須フィールド（`status`、`confirmed`、`docId`、`docType`、保険情報、CLAIM フラグ等）を網羅する。
+- Web クライアントの `DocInfoSummary` は `docId`／`docType`／`title`／`purpose`／`status` を空文字許容の必須文字列として保持し、未入力時でも空文字で初期化してサーバーの `@Column(nullable=false)` 制約と整合させる。
+- `sendClaim` は `pVTHealthInsuranceModel` が実値（保険区分・番号・GUID 等）のいずれかを含む場合のみ `true` にできる。CLAIM／検体検査連携を行う文書では保険情報とラボオーダー番号を保存前に再確認し、欠落している場合はフラグを下げてから送信する。
 - `ModuleModel` は `beanBytes` と `ModuleInfoBean.entity` を必須とし、`ClaimBundle`/`ClaimItem` に診療行為コード・数量・単位・区分 (`classCode`、`ykzKbn`) を正確に設定する。
 - ORCA コードからカテゴリを導出し、`DocInfoModel.hasRp/hasTreatment/hasLaboTest` などのフラグを適切に更新。詳しくは `web-client/src/features/charts/api` と `web-client/scripts/order-entry` 系テストを参照。
+
+### 4.5 Touch 初診 docType とクライアント対応（2026-06-07 追加）
+- Touch 旧クライアントで利用していた初診問診フォームは `FirstEncounterModel.docType` で区別される。モダナイズ後も下表の docType を維持し、Web クライアントの診療履歴ビュー（CareMap/PatientPackage）で適切にラベル表示する。
+
+| docType | 想定フォーム | クライアント表示方針 |
+| --- | --- | --- |
+| `FirstEncounter0Model` | Touch 初診フォーム v0（標準） | 「初診問診（標準）」として表示。問診内容は `IOSHelper.xmlDecode` で復元し、既存 UI と同じ項目ラベルを使用。 |
+| `FirstEncounter1Model` | Touch 初診フォーム v1（旧バージョン） | 「初診問診（v1）」と明示。フォーム項目差異がある場合はテンプレート差異を別紙に反映する。 |
+| `FirstEncounter2Model` | Touch 初診フォーム v2（限定運用） | 「初診問診（v2）」として扱う。使用頻度が低いため、未知項目は原文ラベルのまま表示する。 |
+| *(その他)* | 想定外の値 | UI では「初診問診（未分類）」で表示し、監査ログに docType を残す。Ops へ報告してテンプレート追加要否を判断する。 |
+
+- Touch REST API（予定）: `GET /touch/patient/{patientPk}/firstEncounter`。`docType` クエリを指定すると対象フォームのみ取得できる。例: `GET .../firstEncounter?docType=FirstEncounter0Model`。
+- Web クライアントは患者パッケージ詳細に初診問診カードを追加し、`docType` ごとにフォーム名を表示。`beanBytes` はバックエンドから Base64 で受け取り、`open.dolphin.touch.converter.IOSHelper.xmlDecode` と同等のロジックで JSON へ正規化してレンダリングする（実装検討中）。
+- Ops からの docType 件数集計が揃い次第、表示優先順位（標準 > v1 > v2）とテンプレート差分を補足資料に追記する。
 
 ## 5. 文書・シェーマ・テンプレート
 - **診断書エディタ** (`ChartsPage` Supplement): `GET /odletter/list`, `GET /odletter/letter/{id}`, `PUT /odletter/letter` を利用。患者情報差し込み、HTML プレビュー → 印刷、保存後のキャッシュ失効、監査ログ出力を実装。`linkId` に旧 PK を渡して履歴を置換。

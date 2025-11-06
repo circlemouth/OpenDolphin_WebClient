@@ -16,6 +16,7 @@ import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -1311,7 +1312,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 long pk = Long.parseLong(param);
                 String json = getTreeJson(pk);
-                os.write(json.getBytes());
+                os.write(json.getBytes(StandardCharsets.UTF_8));
             }
         };
     }
@@ -1321,7 +1322,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         IStampTreeModel treeModel = ehtService.getTrees(userPK);
         
         try {
-            String treeXml = new String(treeModel.getTreeBytes(), "UTF-8");
+            String treeXml = new String(treeModel.getTreeBytes(), StandardCharsets.UTF_8);
             BufferedReader reader = new BufferedReader(new StringReader(treeXml));
             JSONStampTreeBuilder builder = new JSONStampTreeBuilder();
             StampTreeDirector director = new StampTreeDirector(builder);
@@ -1353,7 +1354,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     InfoModel model = (InfoModel)d.readObject();
                     JSONStampBuilder builder = new JSONStampBuilder();
                     String json = builder.build(model);
-                    os.write(json.getBytes());
+                    os.write(json.getBytes(StandardCharsets.UTF_8));
                 } else {
                     os.write(null);
                 }

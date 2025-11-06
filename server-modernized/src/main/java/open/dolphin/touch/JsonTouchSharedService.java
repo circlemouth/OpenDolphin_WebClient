@@ -35,6 +35,7 @@ import open.dolphin.touch.converter.IVisitPackage;
 import open.dolphin.touch.session.IPhoneServiceBean;
 import open.dolphin.touch.KanjiHelper;
 import open.orca.rest.ORCAConnection;
+import org.apache.commons.lang3.SerializationUtils;
 
 /**
  * Shared implementation for JsonTouch style endpoints.
@@ -47,12 +48,12 @@ public class JsonTouchSharedService {
         private final long kartePk;
 
         private PatientModelSnapshot(PatientModel patient, long kartePk) {
-            this.patient = patient;
+            this.patient = clonePatient(patient);
             this.kartePk = kartePk;
         }
 
         public PatientModel getPatient() {
-            return patient;
+            return clonePatient(patient);
         }
 
         public long getKartePk() {
@@ -88,7 +89,7 @@ public class JsonTouchSharedService {
     public PatientModelSnapshot getPatientSnapshot(String facilityId, String pid) {
         PatientModel patient = iPhoneService.getPatientById(facilityId, pid);
         long kartePk = iPhoneService.getKartePKByPatientPK(patient.getId());
-        return new PatientModelSnapshot(patient, kartePk);
+        return snapshot(patient, kartePk);
     }
 
     public List<PatientModel> getPatientsByNameOrId(String facilityId, String name, int firstResult, int maxResult) {
@@ -278,5 +279,9 @@ public class JsonTouchSharedService {
             LOGGER.log(Level.SEVERE, "Failed to query facility code from ORCA", ex);
         }
         return null;
+    }
+
+    private static PatientModel clonePatient(PatientModel patient) {
+        return patient == null ? null : SerializationUtils.clone(patient);
     }
 }

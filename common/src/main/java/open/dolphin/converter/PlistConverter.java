@@ -9,6 +9,7 @@ import java.lang.reflect.Method;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeUtility;
 import open.dolphin.infomodel.IInfoModel;
@@ -313,7 +314,7 @@ public final class PlistConverter {
      */
     private static void keyData(String key, byte[] value, StringWriter writer) throws IOException, MessagingException {
         if (value != null) {
-            String base64Str = new String(base64Encode(value));
+            String base64Str = new String(base64Encode(value), StandardCharsets.UTF_8);
             writer.write(KEY_START);
             writer.write(key);
             writer.write(KEY_END);

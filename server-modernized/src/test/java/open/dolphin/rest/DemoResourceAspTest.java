@@ -5,6 +5,7 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -20,8 +21,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDate;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.Random;
 import open.dolphin.infomodel.AllergyModel;
 import open.dolphin.infomodel.BundleMed;
 import open.dolphin.infomodel.ClaimItem;
@@ -29,6 +32,7 @@ import open.dolphin.infomodel.DemoDisease;
 import open.dolphin.infomodel.DemoPatient;
 import open.dolphin.infomodel.DemoRp;
 import open.dolphin.infomodel.DocumentModel;
+import open.dolphin.infomodel.ExtRefModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.ModuleInfoBean;
 import open.dolphin.infomodel.ModuleModel;
@@ -55,10 +59,11 @@ import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.touch.converter.IPatientVisitModel;
 import open.dolphin.touch.converter.IRegisteredDiagnosis;
 import open.dolphin.touch.converter.ISchemaModel;
-import open.dolphin.touch.converter.IUserModel;
 import open.dolphin.touch.converter.IOSHelper;
 import open.dolphin.touch.session.IPhoneServiceBean;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import open.dolphin.touch.TouchAuthHandler;
+import open.dolphin.touch.support.TouchRequestContextExtractor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -66,7 +71,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class DemoResourceAspTest {
+class DemoResourceAspTest extends RuntimeDelegateTestSupport {
 
     @Mock
     private IPhoneServiceBean service;
@@ -90,16 +95,23 @@ class DemoResourceAspTest {
         setField(resource, "servletRequest", request);
         authHandler = new TouchAuthHandler();
         setField(resource, "authHandler", authHandler);
+        setField(resource, "random", new Random(0L));
         objectMapper = new ObjectMapper();
+        lenient().when(request.getHeader(TouchRequestContextExtractor.HEADER_TRACE_ID)).thenReturn("trace-asp");
+        lenient().when(request.getHeader(TouchRequestContextExtractor.HEADER_ACCESS_REASON)).thenReturn(null);
+        lenient().when(request.getHeader(TouchRequestContextExtractor.HEADER_CONSENT_TOKEN)).thenReturn(null);
+        lenient().when(request.getHeader("User-Agent")).thenReturn("JUnit");
+        lenient().when(request.getHeader("X-Forwarded-For")).thenReturn(null);
+        lenient().when(request.getRemoteAddr()).thenReturn("127.0.0.1");
     }
 
     private void configureAuth(String facilityId, String userId) {
         String remoteUser = facilityId + ":" + userId;
-        when(request.getRemoteUser()).thenReturn(remoteUser);
-        when(request.getHeader("userName")).thenReturn(remoteUser);
-        when(request.getHeader("password")).thenReturn(PASSWORD_MD5);
-        when(request.getHeader("clientUUID")).thenReturn(CLIENT_UUID);
-        when(request.getHeader(TouchAuthHandler.FACILITY_HEADER)).thenReturn(facilityId);
+        lenient().when(request.getRemoteUser()).thenReturn(remoteUser);
+        lenient().when(request.getHeader("userName")).thenReturn(remoteUser);
+        lenient().when(request.getHeader("password")).thenReturn(PASSWORD_MD5);
+        lenient().when(request.getHeader("clientUUID")).thenReturn(CLIENT_UUID);
+        lenient().when(request.getHeader(TouchAuthHandler.FACILITY_HEADER)).thenReturn(facilityId);
     }
 
     private void assertMatchesFixture(String fixtureName, Object actual) throws IOException {
@@ -129,10 +141,10 @@ class DemoResourceAspTest {
     void getUserReturnsUserWhenCredentialsMatch() throws Exception {
         configureAuth(FACILITY_ID, USER_ID);
 
-        Response response = resource.getUser(FACILITY_ID + "," + USER_ID + "," + PASSWORD_MD5);
+        Response response = resource.getUser(USER_ID + "," + FACILITY_ID + "," + PASSWORD_MD5);
 
         assertThat(response.getStatus()).isEqualTo(200);
-        assertThat(response.getEntity()).isInstanceOf(IUserModel.class);
+        assertThat(response.getEntity()).isInstanceOf(open.dolphin.adm10.converter.IUserModel.class);
         assertMatchesFixture("demo_user_success.json", response.getEntity());
     }
 
@@ -141,7 +153,7 @@ class DemoResourceAspTest {
         configureAuth(FACILITY_ID, USER_ID);
         when(request.getHeader("password")).thenReturn("deadbeefdeadbeefdeadbeefdeadbeef");
 
-        assertThatThrownBy(() -> resource.getUser(FACILITY_ID + "," + USER_ID + "," + PASSWORD_MD5))
+        assertThatThrownBy(() -> resource.getUser(USER_ID + "," + FACILITY_ID + "," + PASSWORD_MD5))
                 .isInstanceOf(WebApplicationException.class)
                 .satisfies(ex -> assertThat(((WebApplicationException) ex).getResponse().getStatus()).isEqualTo(401));
     }
@@ -151,7 +163,7 @@ class DemoResourceAspTest {
         configureAuth(FACILITY_ID, USER_ID);
         when(request.getHeader(TouchAuthHandler.FACILITY_HEADER)).thenReturn("3.300");
 
-        assertThatThrownBy(() -> resource.getUser(FACILITY_ID + "," + USER_ID + "," + PASSWORD_MD5))
+        assertThatThrownBy(() -> resource.getUser(USER_ID + "," + FACILITY_ID + "," + PASSWORD_MD5))
                 .isInstanceOf(WebApplicationException.class)
                 .satisfies(ex -> assertThat(((WebApplicationException) ex).getResponse().getStatus()).isEqualTo(403));
     }
@@ -319,7 +331,8 @@ class DemoResourceAspTest {
         rp3.setName("睡眠薬");
         rp3.setQuantity("1");
         rp3.setUnit("tab");
-        when(service.getRpDemo()).thenReturn(List.of(rp1, rp2, rp3));
+        List<DemoRp> rps = new ArrayList<>(List.of(rp1, rp2, rp3));
+        when(service.getRpDemo()).thenReturn(rps);
 
         List<ClaimBundleDto> bundles = resource.getRp("55,0,10");
         assertThat(bundles).isNotEmpty();
@@ -340,6 +353,9 @@ class DemoResourceAspTest {
         configureAuth(FACILITY_ID, USER_ID);
         SchemaModel schema = new SchemaModel();
         schema.setJpegByte(new byte[] {1, 2, 3});
+        ExtRefModel extRef = new ExtRefModel();
+        extRef.setContentType("image/jpeg");
+        schema.setExtRefModel(extRef);
         when(service.getSchema(42L, 0, 10)).thenReturn(List.of(schema));
 
         List<ISchemaModel> schemas = resource.getSchema("42,0,10");
@@ -389,6 +405,9 @@ class DemoResourceAspTest {
 
         SchemaModel schema = new SchemaModel();
         schema.setJpegByte(new byte[] {1, 2, 3});
+        ExtRefModel extRef = new ExtRefModel();
+        extRef.setContentType("image/jpeg");
+        schema.setExtRefModel(extRef);
 
         document.setModules(List.of(soaModule, orderModule));
         document.setSchema(List.of(schema));
@@ -496,7 +515,8 @@ class DemoResourceAspTest {
         DemoDisease disease2 = new DemoDisease();
         disease2.setId(2L);
         disease2.setDisease("頭痛");
-        when(service.getDiagnosisDemo()).thenReturn(List.of(disease1, disease2));
+        List<DemoDisease> diseases = new ArrayList<>(List.of(disease1, disease2));
+        when(service.getDiagnosisDemo()).thenReturn(diseases);
 
         List<IRegisteredDiagnosis> diagnosis = resource.getDiagnosis("1,0,2");
         assertThat(diagnosis).hasSize(2);

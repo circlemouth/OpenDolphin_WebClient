@@ -1,6 +1,3 @@
-import { httpClient } from '@/libs/http';
-import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
-
 import type {
   LetterSummary,
   MedicalCertificateDetail,
@@ -10,19 +7,27 @@ import type {
   RawLetterTextResource,
 } from '@/features/charts/types/letter';
 import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
+import { httpClient } from '@/libs/http';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
 const LETTER_VIEWER_HANDLE_CLASS = 'open.dolphin.letter.MedicalCertificateViewer';
 const MEDICAL_CERTIFICATE_TYPE = 'medicalCertificate';
 
-const toIsoStringOrNull = (value: string | null | undefined) => {
+const toRestTimestampOrNull = (value: string | null | undefined) => {
   if (!value) {
     return null;
   }
-  const parsed = new Date(value);
-  if (Number.isNaN(parsed.getTime())) {
-    return value;
+  const trimmed = value.trim();
+  if (!trimmed) {
+    return null;
   }
-  return parsed.toISOString();
+  const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
+  const withZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(normalized) ? normalized : `${normalized}+09:00`;
+  const parsed = new Date(withZone);
+  if (Number.isNaN(parsed.getTime())) {
+    return trimmed;
+  }
+  return formatRestTimestamp(parsed);
 };
 
 const findItemValue = (items: RawLetterItemResource[] | null | undefined, key: string) => {
@@ -44,7 +49,7 @@ const findTextValue = (texts: RawLetterTextResource[] | null | undefined, key: s
 export const transformLetterSummary = (raw: RawLetterModuleResource): LetterSummary => ({
   id: raw.id ?? 0,
   title: raw.title?.trim() || '診断書',
-  confirmedAt: toIsoStringOrNull(raw.confirmed ?? raw.started ?? null),
+  confirmedAt: toRestTimestampOrNull(raw.confirmed ?? raw.started ?? null),
   status: raw.status ?? 'F',
   letterType: raw.letterType ?? null,
 });
@@ -52,7 +57,7 @@ export const transformLetterSummary = (raw: RawLetterModuleResource): LetterSumm
 export const transformMedicalCertificate = (raw: RawLetterModuleResource): MedicalCertificateDetail => ({
   id: raw.id ?? null,
   linkId: raw.linkId ?? null,
-  confirmedAt: toIsoStringOrNull(raw.confirmed ?? raw.started ?? null),
+  confirmedAt: toRestTimestampOrNull(raw.confirmed ?? raw.started ?? null),
   title: raw.title?.trim() || '診断書',
   disease: findItemValue(raw.letterItems ?? null, 'disease'),
   informedContent: findTextValue(raw.letterTexts ?? null, 'informedContent'),
@@ -226,7 +231,7 @@ export const isMedicalCertificateSummary = (summary: LetterSummary) =>
   summary.letterType === MEDICAL_CERTIFICATE_TYPE || summary.title.includes('診断書');
 
 export const __testables = {
-  toIsoStringOrNull,
+  toRestTimestampOrNull,
   findItemValue,
   findTextValue,
   isMedicalCertificate,

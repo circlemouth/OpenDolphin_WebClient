@@ -1,5 +1,7 @@
 package open.dolphin.adm20.dto;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 
 /**
@@ -19,10 +21,14 @@ public class TotpVerificationResponse {
     }
 
     public List<String> getBackupCodes() {
-        return backupCodes;
+        return immutableList(backupCodes);
     }
 
     public void setBackupCodes(List<String> backupCodes) {
-        this.backupCodes = backupCodes;
+        this.backupCodes = immutableList(backupCodes);
+    }
+
+    private static List<String> immutableList(List<String> source) {
+        return source == null ? null : Collections.unmodifiableList(new ArrayList<>(source));
     }
 }

@@ -6,6 +6,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.nio.charset.StandardCharsets;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeUtility;
 import javax.xml.parsers.SAXParser;
@@ -185,7 +186,7 @@ public final class PlistParser {
                             // <data>...</data> -> obj.set(currentKey, Base64Decord(...))
                             if (value != null) {
                                 try {
-                                    byte[] bytes = base64Decode(value.getBytes());
+                                    byte[] bytes = base64Decode(value.getBytes(StandardCharsets.UTF_8));
                                     storeByte(currentKey, bytes);
                                 } catch (Exception e) {
                                     System.err.println("TT_DATA Exception: " + e.getMessage());

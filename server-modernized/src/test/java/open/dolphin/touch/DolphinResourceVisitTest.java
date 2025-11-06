@@ -16,6 +16,7 @@ import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.framework.SessionTraceManager;
+import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import open.dolphin.touch.session.IPhoneServiceBean;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -23,7 +24,7 @@ import org.junit.jupiter.api.Test;
 /**
  * Tests for visit-related Touch endpoints implemented in {@link DolphinResource}.
  */
-class DolphinResourceVisitTest {
+class DolphinResourceVisitTest extends RuntimeDelegateTestSupport {
 
     private DolphinResource resource;
     private StubIPhoneServiceBean service;
@@ -53,6 +54,7 @@ class DolphinResourceVisitTest {
         ForbiddenException ex = assertThrows(ForbiddenException.class,
                 () -> resource.getPatientVisit(request, "F999", 0, 10, "pvtDate", "desc"));
         assertTrue(ex.getMessage().contains("施設"));
+        assertEquals(403, ex.getResponse().getStatus());
         assertFalse(service.patientVisitCalled, "Service should not be invoked on facility mismatch");
         assertEquals(1, auditService.payloads.size());
         assertEquals("施設突合失敗", auditService.payloads.get(0).getAction());
@@ -66,6 +68,7 @@ class DolphinResourceVisitTest {
         ForbiddenException ex = assertThrows(ForbiddenException.class,
                 () -> resource.getFirstVisitors(request, "F001", 0, 10, "firstVisit", "desc"));
         assertTrue(ex.getMessage().contains("権限"));
+        assertEquals(403, ex.getResponse().getStatus());
         assertEquals(1, auditService.payloads.size());
         AuditEventPayload payload = auditService.payloads.get(0);
         assertEquals("来院履歴照会", payload.getAction());
@@ -77,8 +80,9 @@ class DolphinResourceVisitTest {
         HttpServletRequest request = request("F001:doctor01", Set.of("TOUCH_PATIENT_VISIT"), Map.of(), "127.0.0.1");
         injectField(resource, "servletRequest", request);
 
-        assertThrows(BadRequestException.class, () ->
+        BadRequestException ex = assertThrows(BadRequestException.class, () ->
                 resource.getPatientVisitRange(request, "F001", "2025-11-03T00:00:00", "2025-11-03T23:59:59", 0, 5001, "pvtDate", "desc"));
+        assertEquals(400, ex.getResponse().getStatus());
     }
 
     @Test

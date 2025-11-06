@@ -22,7 +22,7 @@ public class Fido2Config {
     public Fido2Config(String relyingPartyId, String relyingPartyName, List<String> allowedOrigins) {
         this.relyingPartyId = relyingPartyId;
         this.relyingPartyName = relyingPartyName;
-        this.allowedOrigins = allowedOrigins;
+        this.allowedOrigins = allowedOrigins == null ? List.of() : List.copyOf(allowedOrigins);
     }
 
     public String getRelyingPartyId() {
@@ -34,7 +34,7 @@ public class Fido2Config {
     }
 
     public List<String> getAllowedOrigins() {
-        return allowedOrigins;
+        return List.copyOf(allowedOrigins);
     }
 
     public static Fido2Config fromEnvironment() {

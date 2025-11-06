@@ -11,6 +11,8 @@ import open.dolphin.infomodel.*;
  */
 public class IDocument implements java.io.Serializable {
     
+    private static final long serialVersionUID = 1L;
+    
     // PK
     private long id;
     
