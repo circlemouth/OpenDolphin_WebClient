@@ -33,6 +33,18 @@ public class SessionTraceManager {
         return current.get();
     }
 
+    public void setActorRole(String actorRole) {
+        SessionTraceContext context = current();
+        if (context == null) {
+            return;
+        }
+        SessionTraceContext updated = context.withActorRole(actorRole);
+        current.set(updated);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Session trace actor role set: {} traceId={}", actorRole, updated.getTraceId());
+        }
+    }
+
     public void clear() {
         current.remove();
     }

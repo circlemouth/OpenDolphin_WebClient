@@ -4,7 +4,6 @@ import static org.junit.jupiter.api.Assertions.*;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.WebApplicationException;
-import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.time.Instant;
@@ -180,7 +179,7 @@ public class DolphinResourceDocumentTest {
 
         @Override
         @SuppressWarnings("unchecked")
-        public <T> T readValue(String content, Class<T> valueType) throws IOException {
+        public <T> T readValue(String content, Class<T> valueType) {
             return (T) payload;
         }
     }

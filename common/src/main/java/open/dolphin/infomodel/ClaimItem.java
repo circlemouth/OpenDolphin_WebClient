@@ -19,6 +19,7 @@
  */
 package open.dolphin.infomodel;
 
+import java.util.ArrayList;
 import java.util.List;
 
 
@@ -57,6 +58,9 @@ public class ClaimItem extends InfoModel {
     
     // 数量コード体系
     private String numberCodeSystem;
+
+    // 数量コード表示名（例: 分3 毎食後）
+    private String numberCodeName;
     
     // メモ
     private String memo;
@@ -70,6 +74,15 @@ public class ClaimItem extends InfoModel {
     private float suryo2;
     private String startDate;//開始日
     private String endDate;//終了日
+
+    // 算定コード
+    private String santeiCode;
+
+    // 投与量
+    private String dose;
+
+    // 投与量単位
+    private String doseUnit;
 
     
     /** Creates new ClaimItem */
@@ -146,7 +159,15 @@ public class ClaimItem extends InfoModel {
     
     public void setNumberCodeSystem(String val) {
         numberCodeSystem = val;
-    }     
+    }
+
+    public String getNumberCodeName() {
+        return numberCodeName;
+    }
+
+    public void setNumberCodeName(String numberCodeName) {
+        this.numberCodeName = numberCodeName;
+    }
         
     public String getMemo() {
         return memo;
@@ -176,8 +197,20 @@ public class ClaimItem extends InfoModel {
         ret.setNumber(this.getNumber());
         ret.setNumberCode(this.getNumberCode());
         ret.setNumberCodeSystem(this.getNumberCodeSystem());
+        ret.setNumberCodeName(this.getNumberCodeName());
         ret.setUnit(this.getUnit());
         ret.setYkzKbn(this.getYkzKbn());
+        ret.setSanteiCode(this.getSanteiCode());
+        ret.setDose(this.getDose());
+        ret.setDoseUnit(this.getDoseUnit());
+        ret.setStartDate(this.getStartDate());
+        ret.setEndDate(this.getEndDate());
+        ret.setSuryo1(this.getSuryo1());
+        ret.setSuryo2(this.getSuryo2());
+        List<String> kijunCdSet = this.getSstKijunCdSet();
+        if (kijunCdSet != null) {
+            ret.setSstKijunCdSet(new ArrayList<>(kijunCdSet));
+        }
         return ret;
     }
 
@@ -242,6 +275,30 @@ public class ClaimItem extends InfoModel {
 
     public void setEndDate(String endDate) {
         this.endDate = endDate;
+    }
+
+    public String getSanteiCode() {
+        return santeiCode;
+    }
+
+    public void setSanteiCode(String santeiCode) {
+        this.santeiCode = santeiCode;
+    }
+
+    public String getDose() {
+        return dose;
+    }
+
+    public void setDose(String dose) {
+        this.dose = dose;
+    }
+
+    public String getDoseUnit() {
+        return doseUnit;
+    }
+
+    public void setDoseUnit(String doseUnit) {
+        this.doseUnit = doseUnit;
     }
       
     /**

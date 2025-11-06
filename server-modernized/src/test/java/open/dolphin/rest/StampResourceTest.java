@@ -72,7 +72,7 @@ class StampResourceTest {
         assertThat(payload.getResource()).isEqualTo("/stamp/id/1");
         Map<String, Object> details = payload.getDetails();
         assertThat(details.get("status")).isEqualTo("success");
-        assertThat((List<?>) details.get("stampIds")).containsExactly("1");
+        assertThat(stampIds(details)).containsExactly("1");
         assertThat(details.get("deletedCount")).isEqualTo(1);
         assertThat(details.get("facilityId")).isEqualTo("FAC001");
         assertThat(details.get("userId")).isEqualTo("user01");
@@ -90,7 +90,7 @@ class StampResourceTest {
         Map<String, Object> details = auditCaptor.getValue().getDetails();
         assertThat(details.get("status")).isEqualTo("failed");
         assertThat(details.get("reason")).isEqualTo("stamp_not_found");
-        assertThat((List<?>) details.get("stampIds")).containsExactly("404");
+        assertThat(stampIds(details)).containsExactly("404");
     }
 
     @Test
@@ -113,7 +113,7 @@ class StampResourceTest {
         assertThat(payload.getAction()).isEqualTo("STAMP_DELETE_BULK");
         Map<String, Object> details = payload.getDetails();
         assertThat(details.get("status")).isEqualTo("success");
-        assertThat((List<?>) details.get("stampIds")).containsExactly("1", "2");
+        assertThat(stampIds(details)).containsExactly("1", "2");
         assertThat(details.get("deletedCount")).isEqualTo(2);
     }
 
@@ -135,6 +135,11 @@ class StampResourceTest {
         Map<String, Object> details = auditCaptor.getValue().getDetails();
         assertThat(details.get("status")).isEqualTo("failed");
         assertThat(details.get("reason")).isEqualTo("missing_ids:2");
-        assertThat((List<?>) details.get("stampIds")).containsExactly("1", "2");
+        assertThat(stampIds(details)).containsExactly("1", "2");
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<Object> stampIds(Map<String, Object> details) {
+        return (List<Object>) details.get("stampIds");
     }
 }

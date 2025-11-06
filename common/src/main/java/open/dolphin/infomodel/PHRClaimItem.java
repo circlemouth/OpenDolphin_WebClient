@@ -40,6 +40,27 @@ public class PHRClaimItem implements java.io.Serializable {
     
     // 薬剤区分
     private String ykzKbn;
+
+    // 用法コード
+    private String frequency;
+
+    // 用法コード表示名
+    private String frequencyName;
+
+    // 投与開始日
+    private String startDate;
+
+    // 投与終了日
+    private String endDate;
+
+    // 算定区分（用法）
+    private String administration;
+
+    // 投与量
+    private String dose;
+
+    // 投与量単位
+    private String doseUnit;
     
 
     public String getName() {
@@ -129,5 +150,61 @@ public class PHRClaimItem implements java.io.Serializable {
 
     public void setClsCodeSystem(String clsCodeSystem) {
         this.clsCodeSystem = clsCodeSystem;
+    }
+
+    public String getFrequency() {
+        return frequency;
+    }
+
+    public void setFrequency(String frequency) {
+        this.frequency = frequency;
+    }
+
+    public String getFrequencyName() {
+        return frequencyName;
+    }
+
+    public void setFrequencyName(String frequencyName) {
+        this.frequencyName = frequencyName;
+    }
+
+    public String getStartDate() {
+        return startDate;
+    }
+
+    public void setStartDate(String startDate) {
+        this.startDate = startDate;
+    }
+
+    public String getEndDate() {
+        return endDate;
+    }
+
+    public void setEndDate(String endDate) {
+        this.endDate = endDate;
+    }
+
+    public String getAdministration() {
+        return administration;
+    }
+
+    public void setAdministration(String administration) {
+        this.administration = administration;
+    }
+
+    public String getDose() {
+        return dose;
+    }
+
+    public void setDose(String dose) {
+        this.dose = dose;
+    }
+
+    public String getDoseUnit() {
+        return doseUnit;
+    }
+
+    public void setDoseUnit(String doseUnit) {
+        this.doseUnit = doseUnit;
     }
 }

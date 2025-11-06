@@ -1,0 +1,4 @@
+services:
+  server:
+    build:
+      dockerfile: tmp/Dockerfile.legacy.jdk17

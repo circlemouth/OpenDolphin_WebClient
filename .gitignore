@@ -4,6 +4,7 @@
 /common/target/
 /server/target/
 /client/target/
+/server-modernized/target/
 
 # Docker Compose runtime output
 /docker/output/

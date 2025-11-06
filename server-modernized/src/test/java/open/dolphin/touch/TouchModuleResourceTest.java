@@ -132,7 +132,7 @@ class TouchModuleResourceTest {
     @Test
     void getLaboTest_enforcesFacilityHeader() {
         when(iphoneService.getLabTestCount("F001", "00001")).thenReturn(0L);
-        when(iphoneService.getLabTest("F001", "00001", 0, 50))
+        when(iphoneService.getLaboTest("F001", "00001", 0, 50))
                 .thenReturn(List.of());
         HttpServletRequest request = mock(HttpServletRequest.class);
         when(request.getHeader(TouchAuthHandler.FACILITY_HEADER)).thenReturn("F001");

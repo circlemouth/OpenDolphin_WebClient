@@ -140,6 +140,7 @@ public class DolphinResource extends AbstractResource {
     private static final String METRIC_VISIT = "touch.patient.visit";
     private static final String METRIC_VISIT_RANGE = "touch.patient.visitRange";
     private static final String METRIC_VISIT_LAST = "touch.patient.visitLast";
+    private static final String METRIC_PATIENT_DETAIL = "touch.patient.detail";
     private static final DateTimeFormatter ISO_DATE_TIME = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss");
     private static final String[] AUTHORIZED_ROLES = {"TOUCH_PATIENT_VISIT", "ADMIN"};
 
@@ -587,6 +588,9 @@ public class DolphinResource extends AbstractResource {
         }
         String actorRole = resolveActorRole(request);
         if (actorRole != null) {
+            if (sessionTraceManager != null) {
+                sessionTraceManager.setActorRole(actorRole);
+            }
             return actorRole;
         }
         Map<String, Object> details = new HashMap<>();
@@ -703,6 +707,9 @@ public class DolphinResource extends AbstractResource {
         }
         for (String role : AUTHORIZED_ROLES) {
             if (request.isUserInRole(role)) {
+                if (sessionTraceManager != null) {
+                    sessionTraceManager.setActorRole(role);
+                }
                 return role;
             }
         }
@@ -775,10 +782,85 @@ public class DolphinResource extends AbstractResource {
         propertyString(ELEMENT_BIRTHDAY, patient.getBirthday(), sb);
     }
 
+    private String buildPatientDetailXml(PatientModel patient) {
+        StringBuilder sb = new StringBuilder(XML);
+        sb.append(RESOURCE_START);
+        if (patient != null) {
+            sb.append(PATIENT_START);
+            appendPatientCore(sb, patient);
+            if (patient.getSimpleAddressModel() != null) {
+                sb.append(ELEMENT_ADDRESS_START);
+                propertyString(ELEMENT_ZIP_CODE, patient.getSimpleAddressModel().getZipCode(), sb);
+                propertyString(ELEMENT_FULL_ADDRESS, patient.getSimpleAddressModel().getAddress(), sb);
+                sb.append(ELEMENT_ADDRESS_END);
+            }
+            propertyString(ELEMENT_TELEPHONE, patient.getTelephone(), sb);
+            propertyString(ELEMENT_MOBILE_PHONE, patient.getMobilePhone(), sb);
+            propertyString(ELEMENT_E_MAIL, patient.getEmail(), sb);
+            sb.append(PATIENT_END);
+        }
+        sb.append(RESOURCE_END);
+        return sb.toString();
+    }
 
     @GET
     @Path("/patient/{pk}")
-    @Produces("application/xml")
+    @Produces(MediaType.APPLICATION_XML)
+    public String getPatientById(@Context HttpServletRequest request, @PathParam("pk") String pk) {
+        final String endpoint = "GET /touch/patient/{pk}";
+        final String requestId = resolveRequestId(request);
+        long startNanos = System.nanoTime();
+        Throwable error = null;
+        boolean success = false;
+        String facilityId = null;
+        String actorRole = null;
+        try {
+            long patientPk = parseLong(pk, "pk", endpoint);
+            facilityId = resolveFacility(request, null, endpoint, requestId);
+            actorRole = ensureRole(request, facilityId, endpoint, requestId);
+
+            PatientModel patient = iPhoneServiceBean.getPatient(patientPk);
+            if (patient == null) {
+                Map<String, Object> details = new HashMap<>();
+                details.put("patientPk", patientPk);
+                recordAuditEvent("患者情報照会", endpoint, facilityId, requestId, actorRole, details, false);
+                throw new NotFoundException("指定された患者が見つかりません: " + patientPk);
+            }
+
+            String patientFacility = trimToNull(patient.getFacilityId());
+            if (patientFacility != null && !patientFacility.equals(facilityId)) {
+                Map<String, Object> details = new HashMap<>();
+                details.put("patientPk", patientPk);
+                details.put("patientFacilityId", patientFacility);
+                details.put("requestedFacilityId", facilityId);
+                details.put("reason", "facilityMismatch");
+                recordAuditEvent("患者情報照会", endpoint, facilityId, requestId, actorRole, details, false);
+                throw forbidden(endpoint, "指定された施設に所属しない患者です");
+            }
+
+            String xml = buildPatientDetailXml(patient);
+            Map<String, Object> details = new HashMap<>();
+            details.put("patientPk", patientPk);
+            details.put("patientId", patient.getPatientId());
+            details.put("resultFormat", "xml");
+            recordAuditEvent("患者情報照会", endpoint, facilityId, requestId, actorRole, details, true);
+            success = true;
+            debug(xml);
+            return xml;
+        } catch (RuntimeException ex) {
+            error = ex;
+            if (facilityId != null && actorRole != null) {
+                Map<String, Object> details = new HashMap<>();
+                details.put("error", ex.getClass().getSimpleName());
+                details.put("message", ex.getMessage());
+                recordAuditEvent("患者情報照会", endpoint, facilityId, requestId, actorRole, details, false);
+            }
+            throw ex;
+        } finally {
+            recordMetrics(METRIC_PATIENT_DETAIL, success, startNanos, error);
+        }
+    }
+
     @GET
     @Path("/module/rp/{param}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -1033,6 +1115,7 @@ public class DolphinResource extends AbstractResource {
     public ProgressCourseResponse getProgressCource(@PathParam("param") String param) {
         final String endpoint = "GET /touch/document/progressCourse";
         final String traceId = DolphinTouchAuditLogger.begin(endpoint, () -> "param=" + param);
+        long patientPk = -1L;
         try {
             String facilityId = requireFacility(endpoint, traceId);
             String[] params = param != null ? param.split(",") : new String[0];
@@ -1041,7 +1124,7 @@ public class DolphinResource extends AbstractResource {
                         "Expected parameters patientPk,firstResult,maxResult");
             }
 
-            long patientPk = parseLong(params[0], -1L);
+            patientPk = parseLong(params[0], -1L);
             int firstResult = parseInt(params[1], 0);
             int maxResult = parseInt(params[2], 20);
             if (patientPk <= 0) {

@@ -321,7 +321,7 @@ done < /tmp/patient-seed.jsonl
 登録内容は `GET /openDolphin/resources/patient/digit/WEB100` などで確認できる。既存データを全削除する場合は Postgres の `d_patient` テーブルから対象施設の行を削除するか、環境を再構築してから再投入する。
 
 ## モダナイズ版サーバーの起動（サマリ）
-> **注意:** `server` と `server-modernized-dev` はポート競合するため同時に起動できない。切り替える際は片方を停止してからもう一方を起動すること。
+> **注意:** 旧サーバーと同時利用する場合は後述「同時起動スクリプト」を併用し、両方の WAR ビルドが成功していることを確認すること。
 
 1. 既存の `server` コンテナが起動している場合は `docker compose down` で停止する。
 2. モダナイズ版のビルド:  
@@ -346,6 +346,35 @@ done < /tmp/patient-seed.jsonl
      http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources/dolphin
    ```
 5. 使い終わったら `docker compose -p modern-testing -f docker-compose.yml -f docker-compose.modernized.dev.yml down` で `db-modernized` / `server-modernized-dev` を停止する。
+
+### 同時起動スクリプト（2025-11-05 追加）
+開発中に旧 (WildFly 10)・新 (WildFly 33) サーバーを同時に検証したい場合は、`scripts/start_legacy_modernized.sh` を利用する。`docker compose` v2 を前提に、以下の Compose ファイルを束ねて起動する。
+
+- `docker-compose.yml`
+- `ops/base/docker-compose.yml`
+- `docker-compose.modernized.dev.yml`
+
+```bash
+# 状態確認
+./scripts/start_legacy_modernized.sh status
+
+# 初回起動（ビルド込み）
+./scripts/start_legacy_modernized.sh start --build
+
+# 既存コンテナの停止
+./scripts/start_legacy_modernized.sh stop
+
+# ログ追跡（例: -f）
+./scripts/start_legacy_modernized.sh logs -f
+
+# 完全停止（必要に応じて --volumes などを追加）
+./scripts/start_legacy_modernized.sh down
+```
+
+- スクリプトは一時的なオーバーレイ Compose ファイルを生成し、旧サーバーの `Dockerfile` を明示指定してビルド／起動する。
+- `start` コマンドは `--build` / `--no-build` / `--force-recreate` / `--pull` を受け付ける。`server-modernized` の依存が未解決の場合は先に修正してから `--build` を利用すること。
+- プロジェクト名は既定で `legacy-vs-modern`。必要に応じて `PROJECT_NAME=legacy-sandbox ./scripts/start_legacy_modernized.sh start` のように環境変数で上書きできる。
+- 完全にリソースを消去する場合は `down` 後に `docker compose --project-name legacy-vs-modern down --volumes` などを適宜実行する。
 
 ### PHR エクスポート API 動作確認手順
 モダナイズ版スタック起動後、以下の順で `/20/adm/phr/export` 系エンドポイントを検証する。Basic 認証（例: `F001:manager01`）と `X-Trace-Id`、`Accept: application/json` を必須ヘッダーとする。
