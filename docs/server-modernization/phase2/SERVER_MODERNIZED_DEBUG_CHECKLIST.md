@@ -1,4 +1,4 @@
-# server-modernized デバッグチェックリスト（2026-06-04）
+# server-modernized デバッグチェックリスト（2026-06-14）
 
 server-modernized モジュールのデバッグ状況を把握するためのチェックリスト。  
 各項目はレガシーサーバーとの機能同等性確認に向けた実施タスクを網羅しており、進捗更新時は本ファイルと `PHASE2_PROGRESS.md` の両方を更新すること。
@@ -26,7 +26,7 @@ server-modernized モジュールのデバッグ状況を把握するための�
 
 - [ ] `server-modernized/src/main/java` をレイヤー別に整理し、循環依存や未使用コンポーネントを棚卸しする（備考: マッピング未作成）
 - [ ] フィルター/インフラ層（例: `LogFilter`, `RequestMetricsFilter`）の挙動をレビューし、ログ・トレース ID の伝搬状況を可視化する（備考: 未着手）
-- [ ] 静的解析ツール導入可否を調査し、CI 反映方針をまとめる（備考: 未着手）
+- [x] 静的解析ツール導入可否を調査し、CI 反映方針をまとめる（備考: `docs/server-modernization/phase2/notes/static-analysis-plan.md` / `notes/static-analysis-findings.md` に SpotBugs/Checkstyle/PMD の導入方針と Jenkins/GitHub Actions 実装、Nightly CPD 設計、差分ゲート手順、Ops への資格情報・通知運用フローを記録。`PHASE2_PROGRESS.md` にも 2026-06-14 時点の進捗・残タスクを反映済み）
 
 ## フェーズ3: REST/API レイヤー
 
@@ -78,8 +78,8 @@ server-modernized モジュールのデバッグ状況を把握するための�
 
 ---
 
-### 現時点の総括（2026-06-04）
+### 現時点の総括（2026-06-14）
 
-- 既存ドキュメント棚卸しとデバッグ観点の洗い出しを完了。詳細な実行タスクは未着手のため、優先度に応じてフェーズ1以降を順次着手する。
-- Python スクリプトの利用には追加承認が必要なため、API 同等性検証を進める前に運用チームと実行方針を確認する。
-- 直近のアクション: ビルド検証（フェーズ1）と静的解析準備（フェーズ2）を最優先で実施し、既存コードとのギャップ調査を開始する。
+- フェーズ1のビルド検証・共通 DTO 差分整理は完了済み。フェーズ2では SpotBugs/Checkstyle/PMD + Nightly CPD の CI 組み込み、`EI_EXPOSE_REP*` 棚卸し、防御的コピー実装、Legacy 除外設定更新まで進捗。Ops 環境での資格情報登録と Nightly 実ジョブ稼働、Slack/PagerDuty 通知疎通、BigQuery/Grafana 連携は未確認のためフォローが必要。
+- フェーズ3以降（REST/API 同等性・セッション層・外部連携など）は引き続き未着手。RuntimeDelegate スタブ展開でテストの一部を復旧したものの、`JsonTouchResourceParityTest` / `InfoModelCloneTest` など一部失敗が残っており、次サイクルで解析・修正を行う。
+- 直近のアクション: 1) Ops による資格情報棚卸し・Nightly CPD 初回実行と証跡共有、2) SpotBugs 防御的コピー残件（JMS/MBean 32 件）の解消、3) Touch/EHT API パリティ検証とテスト赤字の解消を優先する。
