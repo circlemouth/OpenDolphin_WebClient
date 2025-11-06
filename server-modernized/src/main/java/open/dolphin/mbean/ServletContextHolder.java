@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
-import jakarta.inject.Singleton;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.servlet.AsyncContext;
 import open.dolphin.infomodel.PatientVisitModel;
 
@@ -14,7 +14,7 @@ import open.dolphin.infomodel.PatientVisitModel;
  * サーブレットの諸情報を保持するクラス
  * @author masuda, Masuda Naika
  */
-@Singleton
+@ApplicationScoped
 public class ServletContextHolder {
 
     // 今日と明日

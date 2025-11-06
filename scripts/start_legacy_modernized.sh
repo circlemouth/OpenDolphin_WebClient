@@ -192,8 +192,11 @@ EOF
 
 create_override_file() {
   prepare_legacy_assets
-  local override_file
-  override_file="$(mktemp "${TMPDIR:-/tmp}/od-compose-override-XXXXXX.yml")"
+  local tmpdir="${TMPDIR:-/tmp}"
+  local tmpfile
+  tmpfile="$(mktemp "${tmpdir}/od-compose-override-XXXXXX")"
+  local override_file="${tmpfile}.yml"
+  mv "${tmpfile}" "${override_file}"
   cat >"${override_file}" <<YAML
 services:
   server:

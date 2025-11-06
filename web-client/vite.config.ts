@@ -4,7 +4,7 @@ import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
-const apiProxyTarget = process.env.VITE_DEV_PROXY_TARGET ?? 'http://localhost:8080/opendolphin-server/resources';
+const apiProxyTarget = process.env.VITE_DEV_PROXY_TARGET ?? 'http://localhost:8080/openDolphin/resources';
 
 const apiProxy = {
   '/api': {
