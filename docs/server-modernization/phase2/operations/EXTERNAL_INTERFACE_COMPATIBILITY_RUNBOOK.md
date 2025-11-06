@@ -84,6 +84,10 @@
    7. **自動テスト**  
       - `PHRResourceTest` を追加済み。`mvn -f pom.server-modernized.xml -pl server-modernized test -Dtest=PHRResourceTest` を実行して REST 層のリグレッションを確認する。  
       - 2025-11-04 時点のローカル開発環境には Maven が導入されておらず `bash: mvn: command not found` となるため、CI もしくは Maven 導入済み端末で実行しログを Runbook に添付すること。
+   - **2025-11-06 追記**  
+      - `PhrDataAssembler` で `NLaboModule` → `PHRLabModule` 変換を行うよう更新。ラボ結果のレスポンスでは `labList[].catchId` が `createLabModuleId` に基づく安定 ID となり、`testItems` 配列へ `lipemia` / `hemolysis` / `frequency` など追加プロパティが展開される。  
+      - 互換確認時は `/20/adm/phr/container/{fid,pid,...}` を実行し、Legacy 側の XML → JSON 変換結果と `frequencyName`/`doseUnit` 等が一致するか CSV 比較すること。差異が出た場合は `common/src/main/java/open/dolphin/infomodel/ClaimItem.java` と `PHRClaimItem.java` の新規フィールドにマッピング漏れがないか確認する。  
+      - Lab モジュール ID 生成で ORCA `tbl_syskanri (kanricd='1001')` から取得する JMARI コードが未設定の場合、施設 ID にフォールバックしている。検証環境では `custom.properties` の `healthcarefacility.code` を事前に投入する。
 7. **Touch クライアント SSE 確認**  
    - `curl -N -H 'Accept: text/event-stream' -H "ClientUUID:$UUID" "$BASE_URL/chart-events"` で SSE 接続を開始し、起動直後にリプレイされるイベント `retry:` 行を確認。`Last-Event-ID` を指定した再接続も試行する。  
    - PVT 登録操作を実施し、`event: pvt.updated` が SSE 経由で届くこと、`data:` の JSON が `ChartEventModel` スキーマ（`server-modernized/src/main/java/open/dolphin/rest/ChartEventSseSupport.java`）と一致することを確認。  
@@ -103,6 +107,10 @@
   - 監査イベント: 成功時は `action=来院履歴照会`、施設不一致時は `action=施設突合失敗`。`visitLast` では `details.fallbackApplied` で前日再検索の有無を確認できる。
   - Micrometer: `touch_api_requests_total`（counter）、`touch_api_requests_error_total`、`touch_api_request_duration`（timer）へ `endpoint` / `outcome` / `error` タグ付きで送出する。
 - テスト: `server-modernized/src/test/java/open/dolphin/touch/DolphinResourceVisitTest.java` に施設突合、権限不足、Fallback、XML 出力のケースを追加。Runbook 参照時は `mvn -pl server-modernized test -Dtest=DolphinResourceVisitTest` の実行ログを添付する。
+- **2025-11-06 追記**  
+  - `TouchModuleService` が `ModuleModel#getModel()` にキャッシュされた `StampModel` を扱う際、内部の Stamp XML を `IOSHelper#xmlDecode` で展開し `BundleDolphin` を復元するよう調整済み。レガシー版と同じ RP モジュール／Schema 変換が行われることを `TouchModuleResourceTest` で再確認する。  
+  - 既存の `/touch/module/*` エンドポイント監査ログ（`TouchModuleAuditLogger`）に変更はないが、キャッシュヒット時も `bundle.getOrderName()` の補完が実行されるため、薬剤オーダーの `orderName` 欄が欠落しないことを UI でスポットチェックする。  
+  - iOS Touch 向け JSON ペイロードのデシリアライズは `server-modernized/src/main/java/open/dolphin/adm10/converter/` 配下の `IMKDocument`・`IMKDocument2`・`ISendPackage2` へ移管済み。旧 `server/` 実装と同じフィールド構造／`ObjectMapper` 設定（`DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES=false`）を適用しているため、互換検証では `/20/adm/jtouch/sendPackage(2)` と `/20/adm/jtouch/mkdocument(2)` の JSON 差分を `JsonTouchResourceParityTest` で比較し、未知フィールドを含む iOS クライアントからのリクエストでもエラーにならないことを確認する。差異が出た場合はモジュール側の Jackson 設定を Legacy と同一に揃える。
 
 
 ### 4.2 EHTResource シナリオ一覧（2025-11-03 追加）
@@ -146,6 +154,7 @@
 
 | ID | 日時 | 内容 | ステータス | メモ |
 | --- | --- | --- | --- | --- |
+| TOUCH-AUDIT-20251106-01 | 2025-11-06 | `/touch/*` 監査ログの actorRole 連携確認、および `/touch/patient/{pk}` XML 応答の Jakarta 移行後フォーマット差分確認 | Pending | `SessionTraceContext#setActorRole` 追加により Touch API の `TouchAuditHelper` が役割を取得可能。`DolphinResource` が患者詳細 XML を分離実装したため、旧サーバーとの比較テストを `TOUCH_XML_COMPAT` ケースへ追加予定。 |
 | JSONTOUCH-PARITY-20251103-01 | 2025-11-03 | `/10/adm/jtouch/*` 16 エンドポイントのレスポンス互換性確認 | Done | `JsonTouchResourceParityTest`（user/patient/search/count/kana/visitPackage/sendPackage）と Worker E レポート §1.2 に従い、adm10/touch/adm20 実装の出力差分が無いことを確認。2026-05-27 時点で document 系も Jakarta 実装へ移管済み。 |
 | JSONTOUCH-PARITY-20260527-01 | 2026-05-27 | `/10/adm/jtouch/document*`／`/interaction`／`/stamp*` の正常・異常系および監査ログ比較 | ⚠️ Blocked | `JsonTouchResourceParityTest` を 17 ケースへ拡張（document/mkdocument/interaction/stamp の正常/異常＋監査ログ）し IDE で成功を確認。`mvn -pl server-modernized test` は DuplicateProjectException（`opendolphin:opendolphin-server:2.7.1` 重複）で失敗するため、root POM の重複定義解消と CI パイプライン整備をフォロー。 |
 | PHR-PARITY-20251103-01 | 2025-11-03 | PHR アクセスキー／データバンドル／テキスト出力系の互換テスト | Done | Worker E レポート §1.3 の `curl` サンプルおよび Jackson Streaming 検証で 11 エンドポイントの 1:1 対応を確認し、`API_PARITY_MATRIX.md` を `[x]` 更新。 |

@@ -7,10 +7,6 @@ import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
 import jakarta.ws.rs.WebApplicationException;
-import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
-import java.time.ZoneOffset;
 import java.util.Optional;
 import open.dolphin.converter.StampModelConverter;
 import open.dolphin.infomodel.StampModel;
@@ -62,7 +58,7 @@ class TouchStampServiceTest {
         service = new TouchStampService();
         service.stampServiceBean = stampServiceBean;
         service.auditHelper = auditHelper;
-        service.responseCache = new TouchResponseCache(Duration.ofMinutes(1), Clock.fixed(Instant.now(), ZoneOffset.UTC));
+        service.responseCache = new TouchResponseCache();
         when(auditHelper.record(org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any(), org.mockito.ArgumentMatchers.any()))
                 .thenReturn(Optional.empty());
     }

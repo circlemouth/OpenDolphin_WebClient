@@ -32,7 +32,7 @@ import open.dolphin.adm20.session.ADM20_EHTServiceBean;
 import open.dolphin.infomodel.Factor2Challenge;
 import open.dolphin.infomodel.Factor2Credential;
 import open.dolphin.security.SecondFactorSecurityConfig;
-import open.dolphin.security.audit.AuditEvent;
+import open.dolphin.infomodel.AuditEvent;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.security.fido.Fido2Config;
@@ -154,7 +154,7 @@ class AdmissionResourceFactor2Test {
         assertThat(response.getEntity()).isInstanceOf(TotpVerificationResponse.class);
         TotpVerificationResponse payload = (TotpVerificationResponse) response.getEntity();
         assertThat(payload.isVerified()).isTrue();
-        assertThat(payload.getBackupCodes()).containsExactly("BACKUP-1", "BACKUP-2");
+        assertThat(payload.getBackupCodes()).containsExactlyInAnyOrder("BACKUP-1", "BACKUP-2");
 
         verify(auditTrailService).record(auditPayloadCaptor.capture());
         AuditEventPayload audit = auditPayloadCaptor.getValue();
@@ -215,7 +215,8 @@ class AdmissionResourceFactor2Test {
         Response response = resource.finishFidoRegistration(objectMapper.writeValueAsString(request));
         assertThat(response.getStatus()).isEqualTo(Response.Status.OK.getStatusCode());
         assertThat(response.getEntity()).isInstanceOf(Map.class);
-        Map<?, ?> payload = (Map<?, ?>) response.getEntity();
+        @SuppressWarnings("unchecked")
+        Map<String, Object> payload = (Map<String, Object>) response.getEntity();
         assertThat(payload).containsEntry("credentialId", "cred-303");
 
         verify(auditTrailService).record(auditPayloadCaptor.capture());

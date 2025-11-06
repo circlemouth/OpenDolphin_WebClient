@@ -28,11 +28,15 @@ import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.NLaboItem;
 import open.dolphin.infomodel.NLaboModule;
+import open.dolphin.infomodel.PatientModel;
+import open.dolphin.infomodel.FacilityModel;
 import open.dolphin.infomodel.PHRBundle;
 import open.dolphin.infomodel.PHRCatch;
 import open.dolphin.infomodel.PHRClaimItem;
 import open.dolphin.infomodel.PHRContainer;
 import open.dolphin.infomodel.PHRKey;
+import open.dolphin.infomodel.PHRLabItem;
+import open.dolphin.infomodel.PHRLabModule;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
 import open.orca.rest.ORCAConnection;
@@ -65,14 +69,10 @@ public class PhrDataAssembler {
                                        String replyTo) {
         List<PHRCatch> docList = getPHRDocList(facilityId, patientId, documentSince, 0, 3,
                 new String[]{"medOrder", "injectionOrder"}, rpRequest, replyTo);
-        List<PHRBundle> empty = List.of();
         if (docList == null) {
             docList = new ArrayList<>();
         }
-        List<NLaboModule> labModules = getPHRLabList(facilityId, patientId, labSince, 0, 3);
-        if (labModules == null) {
-            labModules = new ArrayList<>();
-        }
+        List<PHRLabModule> labModules = getPHRLabList(facilityId, patientId, labSince, 0, 3);
 
         PHRContainer container = new PHRContainer();
         container.setDocList(docList);
@@ -99,7 +99,7 @@ public class PhrDataAssembler {
         return phrServiceBean.getLastLabTest(facilityId, patientId);
     }
 
-    public List<NLaboModule> findLabModules(String facilityId, String patientId, String since, int first, int max) {
+    public List<PHRLabModule> findLabModules(String facilityId, String patientId, String since, int first, int max) {
         return getPHRLabList(facilityId, patientId, since, first, max);
     }
 
@@ -136,6 +136,7 @@ public class PhrDataAssembler {
         }
 
         List<PHRCatch> result = new ArrayList<>(list.size());
+        String cachedFacilityNumber = extractJmariCode(getFacilityCodeBy1001());
 
         list.forEach(doc -> {
             PHRCatch phrCatch = new PHRCatch();
@@ -156,7 +157,8 @@ public class PhrDataAssembler {
             phrCatch.setLicense(doc.getUserModel().getLicenseModel().getLicense());
             phrCatch.setFacilityId(doc.getUserModel().getFacilityModel().getFacilityId());
             phrCatch.setFacilityName(doc.getUserModel().getFacilityModel().getFacilityName());
-            phrCatch.setFacilityNumber(doc.getDocInfoModel().getJMARICode());
+            String resolvedFacilityNumber = resolveFacilityNumber(doc, cachedFacilityNumber, fid);
+            phrCatch.setFacilityNumber(resolvedFacilityNumber);
 
             phrCatch.setRpRequest(rpRequest);
             phrCatch.setRpReply(0);
@@ -196,6 +198,7 @@ public class PhrDataAssembler {
                 pcb.setInsurance(bundle.getInsurance());
                 pcb.setMemo(bundle.getMemo());
                 pcb.setOrderName(pcb.getEnt());
+                pcb.setFacilityNumber(resolvedFacilityNumber);
 
                 ClaimItem[] items = bundle.getClaimItem();
                 if (items != null && items.length > 0) {
@@ -211,6 +214,9 @@ public class PhrDataAssembler {
                         phrItem.setName(item.getName());
                         phrItem.setQuantity(item.getNumber());
                         phrItem.setUnit(item.getUnit());
+                        phrItem.setNumberCode(item.getNumberCode());
+                        phrItem.setNumberCodeSystem(item.getNumberCodeSystem());
+                        phrItem.setYkzKbn(item.getYkzKbn());
                         phrItem.setFrequency(item.getNumberCode());
                         phrItem.setFrequencyName(item.getNumberCodeName());
                         phrItem.setStartDate(item.getStartDate());
@@ -220,30 +226,140 @@ public class PhrDataAssembler {
                         phrItem.setDoseUnit(item.getDoseUnit());
                     }
                 }
-
-                String jmariCode = getFacilityCodeBy1001();
-                pcb.setFacilityNumber(jmariCode);
             });
         });
 
         return result;
     }
 
-    private List<NLaboModule> getPHRLabList(String fid, String pid, String labSince, int first, int max) {
+    private String resolveLabCodeForId(NLaboModule module) {
+        if (module.getModuleKey() != null && !module.getModuleKey().isBlank()) {
+            return module.getModuleKey();
+        }
+        if (module.getLaboCenterCode() != null && !module.getLaboCenterCode().isBlank()) {
+            return module.getLaboCenterCode();
+        }
+        return module.getId() != null ? module.getId().toString() : "0";
+    }
+
+    private String defaultString(String value) {
+        return value != null ? value : "";
+    }
+
+    private PHRLabItem toPhrLabItem(NLaboModule module, NLaboItem item, String sampleDate) {
+        PHRLabItem phrItem = new PHRLabItem();
+        phrItem.setPatientId(item.getPatientId());
+        phrItem.setSampleDate(sampleDate);
+        String labCode = !isBlank(module.getLaboCenterCode()) ? module.getLaboCenterCode() : item.getLaboCode();
+        phrItem.setLabCode(labCode);
+        phrItem.setLipemia(item.getLipemia());
+        phrItem.setHemolysis(item.getHemolysis());
+        phrItem.setDialysis(item.getDialysis());
+        phrItem.setReportStatus(item.getReportStatus());
+        phrItem.setGroupCode(item.getGroupCode());
+        phrItem.setGroupName(item.getGroupName());
+        phrItem.setParentCode(item.getParentCode());
+        phrItem.setItemCode(item.getItemCode());
+        phrItem.setMedisCode(item.getMedisCode());
+        phrItem.setItemName(item.getItemName());
+        phrItem.setAbnormalFlg(item.getAbnormalFlg());
+        phrItem.setNormalValue(item.getNormalValue());
+        phrItem.setValue(item.getValue());
+        phrItem.setUnit(item.getUnit());
+        phrItem.setSpecimenCode(item.getSpecimenCode());
+        phrItem.setSpecimenName(item.getSpecimenName());
+        phrItem.setCommentCode1(item.getCommentCode1());
+        phrItem.setComment1(item.getComment1());
+        phrItem.setCommentCode2(item.getCommentCode2());
+        phrItem.setComment2(item.getComment2());
+        phrItem.setSortKey(item.getSortKey());
+        return phrItem;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private String extractJmariCode(String facilityNumber) {
+        if (isBlank(facilityNumber)) {
+            return null;
+        }
+        int index = facilityNumber.indexOf("JPN");
+        if (index >= 0 && facilityNumber.length() >= index + 15) {
+            return facilityNumber.substring(index, index + 15);
+        }
+        return facilityNumber;
+    }
+
+    private String resolveFacilityNumber(DocumentModel doc, String cachedFacilityNumber, String facilityId) {
+        String docFacilityNumber = null;
+        if (doc != null && doc.getDocInfoModel() != null) {
+            docFacilityNumber = doc.getDocInfoModel().getJMARICode();
+        }
+        String fromDoc = extractJmariCode(docFacilityNumber);
+        if (!isBlank(fromDoc)) {
+            return fromDoc;
+        }
+        if (!isBlank(cachedFacilityNumber)) {
+            return cachedFacilityNumber;
+        }
+        return facilityId;
+    }
+
+    private List<PHRLabModule> getPHRLabList(String fid, String pid, String labSince, int first, int max) {
         List<NLaboModule> list = phrServiceBean.getLabTest(fid, pid, labSince, first, max);
 
         if (list == null || list.isEmpty()) {
             return List.of();
         }
 
-        list.stream().forEach((module) -> {
-            if (module.getSampleDate() != null) {
-                module.setSampleDate(normalizeSampleDate2(module.getSampleDate()));
-            }
-            module.setModuleId(createLabModuleId(module.getSampleDate(), module.getJmariCode(), module.getPatientId(), module.getModuleCode()));
-        });
+        PatientModel patient = phrServiceBean.getPatient(fid, pid);
+        FacilityModel facility = phrServiceBean.getFacility(fid);
+        String cachedFacilityNumber = extractJmariCode(getFacilityCodeBy1001());
+        String facilityNumberForLab = !isBlank(cachedFacilityNumber) ? cachedFacilityNumber : fid;
 
-        return list;
+        List<PHRLabModule> result = new ArrayList<>(list.size());
+
+        for (NLaboModule module : list) {
+            String rawSampleDate = module.getSampleDate();
+            String normalizedSampleDate = normalizeSampleDate2(rawSampleDate);
+            String labCodeForId = resolveLabCodeForId(module);
+            String moduleId = rawSampleDate != null
+                    ? createLabModuleId(rawSampleDate, facilityNumberForLab, defaultString(pid), labCodeForId)
+                    : null;
+
+            PHRLabModule phrModule = new PHRLabModule();
+            phrModule.setCatchId(moduleId);
+            phrModule.setPatientName(patient != null ? patient.getFullName() : module.getPatientName());
+            phrModule.setPatientSex(patient != null ? patient.getGender() : module.getPatientSex());
+            phrModule.setPatientBirthday(patient != null ? patient.getBirthday() : null);
+            phrModule.setFacilityId(facility != null ? facility.getFacilityId() : defaultString(module.getFacilityId()));
+            phrModule.setFacilityName(facility != null ? facility.getFacilityName() : module.getFacilityName());
+            phrModule.setFacilityNumber(facilityNumberForLab);
+            phrModule.setLabCenterCode(module.getLaboCenterCode());
+            String sampleDateForItems = normalizedSampleDate != null ? normalizedSampleDate : rawSampleDate;
+            phrModule.setSampleDate(sampleDateForItems);
+            phrModule.setReportFormat(module.getReportFormat());
+
+            String numOfItems = module.getNumOfItems();
+            if (isBlank(numOfItems) && module.getItems() != null) {
+                numOfItems = Integer.toString(module.getItems().size());
+            }
+            phrModule.setNumOfItems(numOfItems);
+
+            List<NLaboItem> items = module.getItems();
+            if (items != null && !items.isEmpty()) {
+                List<PHRLabItem> phrItems = new ArrayList<>(items.size());
+                for (NLaboItem item : items) {
+                    phrItems.add(toPhrLabItem(module, item, sampleDateForItems));
+                }
+                phrModule.setTestItems(phrItems);
+            }
+
+            result.add(phrModule);
+        }
+
+        return result;
     }
 
     private String createModuleId(String docId, long serialNumber) {

@@ -23,6 +23,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
+import open.dolphin.adm10.converter.IUserModel;
 import open.dolphin.infomodel.AllergyModel;
 import open.dolphin.infomodel.BundleDolphin;
 import open.dolphin.infomodel.ClaimItem;

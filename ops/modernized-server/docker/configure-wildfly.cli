@@ -26,16 +26,12 @@ else
     /subsystem=datasources/data-source=ORCADS:write-attribute(name=check-valid-connection-sql,value="SELECT 1")
     /subsystem=datasources/data-source=ORCADS:write-attribute(name=query-timeout,value=60)
 end-if
-if (result == "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
-    if (outcome == success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
-        /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:remove()
-    end-if
-else
-    if (outcome != success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
-        /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
-    else
-        /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:write-attribute(name=value,value="${env.DB_SSLROOTCERT}")
-    end-if
+# SSL ルート証明書の指定がない場合は削除し、指定がある場合は再作成で常に最新値へ更新
+if (outcome == success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
+    /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:remove()
+end-if
+if (result != "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
+    /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
 end-if
 
 # 旧 PostgresDS を再デプロイ時に破棄しない形で同期
@@ -57,16 +53,11 @@ else
     /subsystem=datasources/data-source=PostgresDS:write-attribute(name=check-valid-connection-sql,value="SELECT 1")
     /subsystem=datasources/data-source=PostgresDS:write-attribute(name=query-timeout,value=60)
 end-if
-if (result == "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
-    if (outcome == success) of /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:read-resource()
-        /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:remove()
-    end-if
-else
-    if (outcome != success) of /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:read-resource()
-        /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
-    else
-        /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:write-attribute(name=value,value="${env.DB_SSLROOTCERT}")
-    end-if
+if (outcome == success) of /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:read-resource()
+    /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:remove()
+end-if
+if (result != "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
+    /subsystem=datasources/data-source=PostgresDS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
 end-if
 
 if (outcome == success) of /subsystem=logging/logger=open.dolphin:read-resource()
@@ -115,8 +106,10 @@ if (outcome != success) of /subsystem=undertow/server=default-server/host=defaul
 end-if
 
 # --- ActiveMQ Artemis JMS リソース（予約・通知バッチ向け） ---
-# default-resource-adapter-name=activemq-ra で MDB 側の ${messaging.resource.adapter} と整合
-/subsystem=messaging-activemq/server=default:write-attribute(name=default-resource-adapter-name,value=activemq-ra)
+# default-resource-adapter-name が管理モデルに存在する場合のみ activemq-ra へ統一
+if (outcome == success) of /subsystem=messaging-activemq/server=default:read-attribute(name=default-resource-adapter-name)
+    /subsystem=messaging-activemq/server=default:write-attribute(name=default-resource-adapter-name,value=activemq-ra)
+end-if
 if (outcome != success) of /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource()
     /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:add(entries=["java:/queue/dolphin","java:jboss/exported/jms/queue/dolphin"], durable=true)
 else
@@ -144,46 +137,41 @@ else
 end-if
 
 # --- Jakarta Concurrency リソース（Managed Executor / Scheduler / ThreadFactory） ---
-if (outcome != success) of /subsystem=ee-concurrency/context-service=DolphinContext:read-resource()
-    /subsystem=ee-concurrency/context-service=DolphinContext:add(jndi-name="java:jboss/ee/concurrency/context/dolphin", use-transaction-of-enc=true)
+if (outcome != success) of /subsystem=ee/context-service=DolphinContext:read-resource()
+    /subsystem=ee/context-service=DolphinContext:add(jndi-name="java:jboss/ee/concurrency/context/dolphin", use-transaction-setup-provider=true)
 else
-    /subsystem=ee-concurrency/context-service=DolphinContext:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/context/dolphin")
-    /subsystem=ee-concurrency/context-service=DolphinContext:write-attribute(name=use-transaction-of-enc,value=true)
+    /subsystem=ee/context-service=DolphinContext:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/context/dolphin")
+    /subsystem=ee/context-service=DolphinContext:write-attribute(name=use-transaction-setup-provider,value=true)
 end-if
-if (outcome != success) of /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:read-resource()
-    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:add(jndi-name="java:jboss/ee/concurrency/executor/dolphin", context-service=DolphinContext, long-running-tasks=true, hung-task-threshold=600000, core-threads=8, max-threads=64)
+if (outcome != success) of /subsystem=ee/managed-executor-service=DolphinExecutor:read-resource()
+    /subsystem=ee/managed-executor-service=DolphinExecutor:add(jndi-name="java:jboss/ee/concurrency/executor/dolphin", context-service=DolphinContext, long-running-tasks=true, hung-task-threshold=600000, core-threads=8, max-threads=64)
 else
-    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/executor/dolphin")
-    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=context-service,value=DolphinContext)
-    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=long-running-tasks,value=true)
-    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=hung-task-threshold,value=600000)
-    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=core-threads,value=8)
-    /subsystem=ee-concurrency/managed-executor-service=DolphinExecutor:write-attribute(name=max-threads,value=64)
+    /subsystem=ee/managed-executor-service=DolphinExecutor:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/executor/dolphin")
+    /subsystem=ee/managed-executor-service=DolphinExecutor:write-attribute(name=context-service,value=DolphinContext)
+    /subsystem=ee/managed-executor-service=DolphinExecutor:write-attribute(name=long-running-tasks,value=true)
+    /subsystem=ee/managed-executor-service=DolphinExecutor:write-attribute(name=hung-task-threshold,value=600000)
+    /subsystem=ee/managed-executor-service=DolphinExecutor:write-attribute(name=core-threads,value=8)
+    /subsystem=ee/managed-executor-service=DolphinExecutor:write-attribute(name=max-threads,value=64)
 end-if
-if (outcome != success) of /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:read-resource()
-    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:add(jndi-name="java:jboss/ee/concurrency/scheduler/dolphin", context-service=DolphinContext, hung-task-threshold=600000, core-threads=4)
+if (outcome != success) of /subsystem=ee/managed-scheduled-executor-service=DolphinScheduler:read-resource()
+    /subsystem=ee/managed-scheduled-executor-service=DolphinScheduler:add(jndi-name="java:jboss/ee/concurrency/scheduler/dolphin", context-service=DolphinContext, hung-task-threshold=600000, core-threads=4)
 else
-    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/scheduler/dolphin")
-    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=context-service,value=DolphinContext)
-    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=hung-task-threshold,value=600000)
-    /subsystem=ee-concurrency/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=core-threads,value=4)
+    /subsystem=ee/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/scheduler/dolphin")
+    /subsystem=ee/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=context-service,value=DolphinContext)
+    /subsystem=ee/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=hung-task-threshold,value=600000)
+    /subsystem=ee/managed-scheduled-executor-service=DolphinScheduler:write-attribute(name=core-threads,value=4)
 end-if
-if (outcome != success) of /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:read-resource()
-    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:add(jndi-name="java:jboss/ee/concurrency/threadfactory/dolphin", context-service=DolphinContext, priority=5)
+if (outcome != success) of /subsystem=ee/managed-thread-factory=DolphinThreadFactory:read-resource()
+    /subsystem=ee/managed-thread-factory=DolphinThreadFactory:add(jndi-name="java:jboss/ee/concurrency/threadfactory/dolphin", context-service=DolphinContext, priority=5)
 else
-    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/threadfactory/dolphin")
-    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:write-attribute(name=context-service,value=DolphinContext)
-    /subsystem=ee-concurrency/managed-thread-factory=DolphinThreadFactory:write-attribute(name=priority,value=5)
+    /subsystem=ee/managed-thread-factory=DolphinThreadFactory:write-attribute(name=jndi-name,value="java:jboss/ee/concurrency/threadfactory/dolphin")
+    /subsystem=ee/managed-thread-factory=DolphinThreadFactory:write-attribute(name=context-service,value=DolphinContext)
+    /subsystem=ee/managed-thread-factory=DolphinThreadFactory:write-attribute(name=priority,value=5)
 end-if
-/subsystem=ee-concurrency:write-attribute(name=default-context-service,value=DolphinContext)
-/subsystem=ee-concurrency:write-attribute(name=default-managed-executor-service,value=DolphinExecutor)
-/subsystem=ee-concurrency:write-attribute(name=default-managed-scheduled-executor-service,value=DolphinScheduler)
-/subsystem=ee-concurrency:write-attribute(name=default-managed-thread-factory,value=DolphinThreadFactory)
-
-# --- CLI 実行ログ確認用リソース記述出力 ---
-/subsystem=datasources:read-resource-description(recursive=false)
-/subsystem=messaging-activemq/server=default:read-resource-description(recursive=false)
-/subsystem=ee-concurrency:read-resource-description(recursive=false)
+/subsystem=ee/service=default-bindings:write-attribute(name=context-service,value="java:jboss/ee/concurrency/context/dolphin")
+/subsystem=ee/service=default-bindings:write-attribute(name=managed-executor-service,value="java:jboss/ee/concurrency/executor/dolphin")
+/subsystem=ee/service=default-bindings:write-attribute(name=managed-scheduled-executor-service,value="java:jboss/ee/concurrency/scheduler/dolphin")
+/subsystem=ee/service=default-bindings:write-attribute(name=managed-thread-factory,value="java:jboss/ee/concurrency/threadfactory/dolphin")
 
 # Micrometer 監視連携: JMS/Undertow のメトリクスが Micrometer のスクレイプ対象と整合するように保守すること。
 

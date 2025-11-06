@@ -57,6 +57,9 @@ public class PHRBundle extends PHRModel implements java.io.Serializable {
     
     // 保険種別
     private String insurance;
+
+    // 医療機関番号
+    private String facilityNumber;
     
     // = Entity
     private String orderName;
@@ -132,6 +135,14 @@ public class PHRBundle extends PHRModel implements java.io.Serializable {
 
     public void setInsurance(String insurance) {
         this.insurance = insurance;
+    }
+
+    public String getFacilityNumber() {
+        return facilityNumber;
+    }
+
+    public void setFacilityNumber(String facilityNumber) {
+        this.facilityNumber = facilityNumber;
     }
     
     public String getOrderName() {

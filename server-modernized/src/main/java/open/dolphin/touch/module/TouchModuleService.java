@@ -9,6 +9,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Collections;
+import java.util.Collection;
 import java.util.Date;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
@@ -16,7 +17,7 @@ import open.dolphin.common.cache.CacheUtil;
 import open.dolphin.infomodel.BundleDolphin;
 import open.dolphin.infomodel.BundleMed;
 import open.dolphin.infomodel.ClaimItem;
-import open.dolphin.infomodel.InfoModel;
+import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.NLaboItem;
 import open.dolphin.infomodel.NLaboModule;
@@ -293,16 +294,42 @@ public class TouchModuleService {
         if (moduleModel == null) {
             return null;
         }
-        InfoModel model = moduleModel.getModel();
+        IInfoModel model = moduleModel.getModel();
         if (model == null) {
-            model = (InfoModel) IOSHelper.xmlDecode(moduleModel.getBeanBytes());
-            moduleModel.setModel(model);
+            Object decoded = IOSHelper.xmlDecode(moduleModel.getBeanBytes());
+            if (decoded instanceof IInfoModel infoModel) {
+                model = infoModel;
+                moduleModel.setModel(infoModel);
+            } else {
+                return null;
+            }
         }
         if (model instanceof BundleDolphin bundle) {
             return bundle;
         }
-        if (model instanceof StampModel stamp && stamp.getModel() instanceof BundleDolphin inner) {
-            return inner;
+        if (model instanceof StampModel stamp) {
+            return extractBundleFromStamp(stamp);
+        }
+        return null;
+    }
+
+    private BundleDolphin extractBundleFromStamp(StampModel stamp) {
+        if (stamp == null) {
+            return null;
+        }
+        byte[] bytes = stamp.getStampBytes();
+        if (bytes == null || bytes.length == 0) {
+            return null;
+        }
+        Object decoded = IOSHelper.xmlDecode(bytes);
+        if (decoded instanceof BundleDolphin bundle) {
+            return bundle;
+        }
+        if (decoded instanceof BundleMed med) {
+            return med;
+        }
+        if (decoded instanceof StampModel nested) {
+            return extractBundleFromStamp(nested);
         }
         return null;
     }

@@ -7,6 +7,7 @@ import static org.mockito.Mockito.*;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.StreamingOutput;
 import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.nio.file.Files;

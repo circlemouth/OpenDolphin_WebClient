@@ -9,7 +9,9 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import open.dolphin.converter.UserModelConverter;
 import open.dolphin.infomodel.VisitPackage;
+import open.dolphin.infomodel.PatientModel;
 import open.dolphin.adm20.converter.IPatientList;
+import open.dolphin.adm20.converter.IPatientModel;
 import open.dolphin.adm20.converter.ISendPackage;
 import open.dolphin.adm20.converter.IVisitPackage;
 import open.dolphin.converter.StringListConverter;
@@ -18,6 +20,7 @@ import open.dolphin.infomodel.StringList;
 import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.adm20.converter.ISendPackage2;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.DeserializationFeature;
 
 /**
  *
@@ -68,10 +71,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @GET
     @Path("/patient/{pid}")
     @Produces(MediaType.APPLICATION_JSON)
-    public open.dolphin.adm20.converter.IPatientModel getPatientById(@Context HttpServletRequest servletReq, @PathParam("pid") String pid) {
+    public IPatientModel getPatientById(@Context HttpServletRequest servletReq, @PathParam("pid") String pid) {
         String fid = getRemoteFacility(servletReq.getRemoteUser());
         JsonTouchSharedService.PatientModelSnapshot snapshot = sharedService.getPatientSnapshot(fid, pid);
-        open.dolphin.adm20.converter.IPatientModel model = new open.dolphin.adm20.converter.IPatientModel();
+        IPatientModel model = new IPatientModel();
         model.setModel(snapshot.getPatient());
         model.setKartePK(snapshot.getKartePk());
         return model;
@@ -130,6 +133,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         //System.err.println(json);
         
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
         
         long retPk = sharedService.processSendPackageElements(
@@ -148,6 +152,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     public String postSendPackage2(String json) throws IOException {
         
         ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
         
         long retPk = sharedService.processSendPackageElements(

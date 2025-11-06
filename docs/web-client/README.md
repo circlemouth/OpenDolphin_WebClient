@@ -38,7 +38,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - `docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md`: DemoResourceASP 15 エンドポイントのデモデータ移行仕様・マッピング・QA テストケース整理（2025-11-03 再点検: コンパイルエラー/レスポンス差分/テスト未実行の課題を追記）。
 - `docs/server-modernization/phase2/domains/EHT_SECURITY_AUDIT_CHECKLIST.md`: EHTResource のセキュリティ／監査要件整理、トランザクション境界方針、外部連携テスト観点（2025-11-03 追加）。
 - `docs/server-modernization/phase2/operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md`: WildFly 33 / Micrometer 移行に伴うログ・監査・ジョブ管理比較と運用リスク整理（2025-11-02 更新）。
-- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`: 外部システムから見た旧新サーバー互換を確保する切替/検証ランブック（2025-11-04 更新: SystemResource 監査整備・PHR export 手順・Touch 来院履歴 API の QueryParam 仕様を追記。2025-11-03 更新: JsonTouch/PHR/PVT2 パリティ検証ログを追加し、`/dolphin` 系 5 件のテスト未整備課題を整理）。
+- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`: 外部システムから見た旧新サーバー互換を確保する切替/検証ランブック（2025-11-06 更新: Touch 監査ログの actorRole 連携確認と `/touch/patient/{pk}` XML 分離の検証 TODO を追記、あわせて PHR ラボモジュール変換と TouchModuleService RP 復元の互換確認手順を補足。2025-11-04 更新: SystemResource 監査整備・PHR export 手順・Touch 来院履歴 API の QueryParam 仕様を追記。2025-11-03 更新: JsonTouch/PHR/PVT2 パリティ検証ログを追加し、`/dolphin` 系 5 件のテスト未整備課題を整理）。
 - `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`: Micrometer サブシステム設定・Prometheus/Grafana 整備・監査突合手順（2025-11-02 更新）。
 - `docs/server-modernization/phase2/domains/KARTE_ORDER_JAKARTA_STATUS.md`: カルテ記載・スタンプ/オーダ系 CRUD の Jakarta EE 10 移行状況と未移植課題。CLAIM 送信やドラフト保存を触る際は必読。
 - `docs/server-modernization/phase2/domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md`: DolphinResourceASP モダナイズ計画メモ（2025-11-04 更新: TouchModuleService / TouchModuleResourceTest の導入とキャッシュキー `method:paramHash` 方針を追記）。
@@ -59,7 +59,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 
 - [`operations/RECEPTION_WEB_CLIENT_MANUAL.md`](operations/RECEPTION_WEB_CLIENT_MANUAL.md): 受付担当者向け研修計画と運用手順。
 - [`operations/RELEASE_NOTES_DRAFT.md`](operations/RELEASE_NOTES_DRAFT.md): リリース判定用の文書系差分・検証結果の草案（2025-11-03 新設: Worker F）。
-- [`operations/LOCAL_BACKEND_DOCKER.md`](operations/LOCAL_BACKEND_DOCKER.md): 既存サーバーを Docker Compose で起動する手順。2025-11-02 (Codex) 初期施設 ID・管理者/医師アカウントとテスト患者 `WEB1001`〜`WEB1010` の投入手順を整理。2025-11-03 (Codex) Worker0/1 修正後の Maven/Docker ビルド検証ログと再現手順を追加。2025-11-04 (Worker B) Touch 個人情報 API における `X-Access-Reason`／`X-Consent-Token` ヘッダー運用と PIA 監査ログ確認フローを Runbook へ追記。
+- [`operations/LOCAL_BACKEND_DOCKER.md`](operations/LOCAL_BACKEND_DOCKER.md): 既存サーバーを Docker Compose で起動する手順。2025-11-02 (Codex) 初期施設 ID・管理者/医師アカウントとテスト患者 `WEB1001`〜`WEB1010` の投入手順を整理。2025-11-03 (Codex) Worker0/1 修正後の Maven/Docker ビルド検証ログと再現手順を追加。2025-11-04 (Worker B) Touch 個人情報 API における `X-Access-Reason`／`X-Consent-Token` ヘッダー運用と PIA 監査ログ確認フローを Runbook へ追記。2025-11-05 (Codex) `scripts/start_legacy_modernized.sh` による旧/新サーバー同時起動手順を追加。
 - [`operations/CAREMAP_ATTACHMENT_MIGRATION.md`](operations/CAREMAP_ATTACHMENT_MIGRATION.md): CareMap 添付移行と image-browser 設定のガイド。
 - [`operations/TEST_SERVER_DEPLOY.md`](operations/TEST_SERVER_DEPLOY.md): テスト環境へのデプロイとアカウント発行手順。2025-11-02 (Codex) Docker Compose 由来の初期アカウント情報を冒頭に整理。
 - [`operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md`](operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md): Charts 左カラムと固定フッター干渉の解消内容と検証ログ（2025-11-03 追加: Codex）。

@@ -2,6 +2,7 @@ package open.dolphin.session.framework;
 
 import java.time.Instant;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
@@ -10,6 +11,8 @@ import java.util.Objects;
  * session-layer invocation.
  */
 public final class SessionTraceContext {
+
+    public static final String ATTRIBUTE_ACTOR_ROLE = "actorRole";
 
     private final String traceId;
     private final Instant startedAt;
@@ -37,5 +40,19 @@ public final class SessionTraceContext {
 
     public Map<String, String> getAttributes() {
         return attributes;
+    }
+
+    public String getActorRole() {
+        return attributes.get(ATTRIBUTE_ACTOR_ROLE);
+    }
+
+    public SessionTraceContext withActorRole(String actorRole) {
+        Map<String, String> updated = new HashMap<>(attributes);
+        if (actorRole == null || actorRole.isBlank()) {
+            updated.remove(ATTRIBUTE_ACTOR_ROLE);
+        } else {
+            updated.put(ATTRIBUTE_ACTOR_ROLE, actorRole);
+        }
+        return new SessionTraceContext(traceId, startedAt, operation, updated);
     }
 }

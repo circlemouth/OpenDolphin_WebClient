@@ -113,8 +113,8 @@ class JsonTouchResourceParityTest {
         UserModelConverter adm10 = adm10Resource.getUserById("doctor01");
         UserModelConverter adm20 = adm20Resource.getUserById("doctor01");
 
-        assertEquals(touch.getModel().getUserId(), adm10.getModel().getUserId());
-        assertEquals(touch.getModel().getUserId(), adm20.getModel().getUserId());
+        assertEquals(touch.getUserId(), adm10.getUserId());
+        assertEquals(touch.getUserId(), adm20.getUserId());
     }
 
     @Test
@@ -302,10 +302,25 @@ class JsonTouchResourceParityTest {
         field.set(target, value);
     }
 
-    private void setInteractionExecutor(open.dolphin.adm10.rest.JsonTouchResource.InteractionExecutor executor) throws Exception {
+    private void setInteractionExecutor(SqlExecutor executor) throws Exception {
         Field field = adm10Resource.getClass().getDeclaredField("interactionExecutor");
         field.setAccessible(true);
-        field.set(adm10Resource, executor);
+        Class<?> executorType = field.getType();
+        Object proxy = Proxy.newProxyInstance(
+                executorType.getClassLoader(),
+                new Class[]{executorType},
+                (proxyInstance, method, args) -> {
+                    if ("execute".equals(method.getName())) {
+                        return executor.execute((String) args[0]);
+                    }
+                    throw new UnsupportedOperationException(method.getName());
+                });
+        field.set(adm10Resource, proxy);
+    }
+
+    @FunctionalInterface
+    private interface SqlExecutor {
+        List<DrugInteractionModel> execute(String sql) throws Exception;
     }
 
     private String createDocumentPayload() throws IOException {
