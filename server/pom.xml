@@ -13,6 +13,10 @@
     </parent>
     <artifactId>opendolphin-server</artifactId>
     <packaging>war</packaging>
+
+    <properties>
+        <opendolphin.common.classifier/>
+    </properties>
     
     <repositories>
         <repository>
@@ -26,6 +30,8 @@
         <dependency>
             <groupId>opendolphin</groupId>
             <artifactId>opendolphin-common</artifactId>
+            <version>${project.version}</version>
+            <classifier>${opendolphin.common.classifier}</classifier>
         </dependency>
         <dependency>
             <groupId>javax</groupId>
@@ -135,4 +141,13 @@
             </plugin>
         </plugins>
     </build>
+
+    <profiles>
+        <profile>
+            <id>legacy-wildfly10</id>
+            <properties>
+                <opendolphin.common.classifier>legacy</opendolphin.common.classifier>
+            </properties>
+        </profile>
+    </profiles>
 </project>
