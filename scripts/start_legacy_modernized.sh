@@ -84,12 +84,7 @@ end-if
 if (outcome != success) of /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource()
     /subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:add(entries=["java:/queue/dolphin","java:jboss/exported/jms/queue/dolphin"], durable=true)
 end-if
-if (outcome != success) of /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:read-resource()
-    /subsystem=messaging-activemq/server=default/connection-factory=DolphinConnectionFactory:add(entries=["java:/ConnectionFactory","java:jboss/exported/jms/ConnectionFactory"], connectors=["in-vm"], use-global-pools=false)
-end-if
-if (outcome != success) of /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource()
-    /subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:add(entries=["java:/JmsXA"], connectors=["in-vm"], transaction="xa")
-end-if
+# WildFly 10 ships java:/ConnectionFactory / java:/JmsXA by default. Avoid re-registration to keep CLI idempotent.
 # --- End ActiveMQ Artemis JMS ---
 
 if (outcome == success) of /subsystem=logging/logger=open.dolphin:read-resource()
@@ -158,7 +153,7 @@ JAVA
 RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
-RUN mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package && \
+RUN mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -Plegacy-wildfly10 -DskipTests -Dmaven.test.skip=true package && \
     mv server/target/opendolphin-server-*.war server/target/opendolphin-server.war
 
 FROM jboss/wildfly:10.1.0.Final
