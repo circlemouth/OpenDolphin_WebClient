@@ -22,6 +22,67 @@
 3. `diff -u artifacts/parity-manual/<ID>/legacy/response.json artifacts/parity-manual/<ID>/modern/response.json` を行い、差分が残った場合は `README.manual.md` に記録しつつ、`artifacts/manual/<ID>/` へコピーしてレビュー資料化する。
 4. 監査ログ確認が必要なケース（例: `/20/adm/factor2/*`）は `psql -h localhost -U opendolphin -d opendolphin -c "SELECT action FROM d_audit_event ORDER BY event_time DESC LIMIT 5;"` を実行し、結果を `artifacts/manual/audit_log.txt` に追記。`PARITY_HEADER_FILE` の `clientUUID` をケース毎に変えるとトレースが容易。
 
+### 1.3 `headers/` プロファイル棚卸し（2026-06-16 時点）
+
+| ファイル | 対象ロール / 用途 | 主なヘッダー | 備考 |
+| --- | --- | --- | --- |
+| `headers/legacy-default.headers` | `doctor1` の一般 API。`test_config.manual.csv` の `serverinfo`/`chart_summary` などで使用。 | `userName` / `password` / `clientUUID` / `facilityId` | `ops/tests/api-smoke-test/headers/legacy-default.headers` をそのまま `PARITY_HEADER_FILE` へ指定する。 |
+| `headers/adm20-admin.headers` | ADM20 受付・2FA 系 FIDO/TOTP テスト用。 | `userName` / `password` / `clientUUID` / `facilityId` / `factor2-mode` | `/20/adm/factor2/*` を叩く際の最小構成。`factor2-mode` を他値に差し替えてユーザー属性を再現する。 |
+| `headers/javatime-stage.headers.template` | JavaTime（ORCA・Touch） Stage 監視。Bearer トークンを後から埋め込み。 | `Content-Type` / `X-Trace-Id` / `Authorization: Bearer ...` | `.template` を複製して `javatime-stage.headers` をローカル作成（`.gitignore` 済）。Stage トークンは Secrets で配布。 |
+
+### 1.4 `payloads/` テンプレート棚卸し
+
+| ファイル | 対象 API | 紐付くケース | 備考 |
+| --- | --- | --- | --- |
+| `payloads/fido2_enroll.json` | `/20/adm/factor2/fido2/enroll`（旧 REST 名称）。 | `fido2_enroll`（`ops/tests/api-smoke-test/test_config.manual.csv`） | `challenge` に `/registration/options` 応答の Base64 を代入してから使用する。現行 API では `/registration/finish` へ合わせる必要あり。 |
+| `payloads/javatime_orca_interaction.json` | `/orca/interaction` | `JAVATIME_ORCA_001` | `issuedAt` を ISO8601 で毎回更新。 |
+| `payloads/javatime_touch_sendPackage.json` | `/touch/sendPackage` | `JAVATIME_TOUCH_001` | `bundleList` にサンプルイベントを追加予定。 |
+
+### 1.5 `README.manual.md` の重要ポイント（抜粋）
+
+- `ops/tests/api-smoke-test/README.manual.md` で `BASE_URL_LEGACY` / `BASE_URL_MODERN` / `PARITY_HEADER_FILE` の設定から `diff` 取得、監査ログ採取まで 6 手順に分けて説明（1〜6 行目）。
+- JavaTime の Stage 実行手順は Bearer トークンを `javatime-stage.headers` にのみ保存し、`issuedAt` を `date --iso-8601=seconds` で更新するよう明示（「JavaTime 手動ケースの準備」節）。
+- Stage 実行時の証跡（`tmp/java-time/*`）を 30 日以内に Evidence ストレージへ転記し、`docs/server-modernization/phase2/notes/worker-directives-20260614.md` へリンクを残すことを周知（同節末尾）。
+
+### 1.6 命名規則とフォルダ構成
+
+- `ops/tests/api-smoke-test/headers/<system>-<role>.headers` を小文字ハイフン区切りで作成し、秘密情報を含むものは `.gitignore` で除外する（Stage/本番は `.headers.template` をコミット）。
+- `payloads/<feature>_<operation>.json` はスネークケースで命名し、`test_config.*` の `payload_template` パスと一致させる。チャレンジ／署名のように都度変わる値は `PLACEHOLDER` を含め、実行直前にスクリプトで差し替える。
+- `artifacts/parity-manual/<ID>/<legacy|modern>/` にレスポンス／ヘッダー／メタを保存する構成を README で標準化済み。CI では `PARITY_OUTPUT_DIR=artifacts/ci-smoke` など別ディレクトリを推奨。
+- JavaTime 固有の証跡は `tmp/java-time/` 配下に置き、後続ドキュメント（Runbook §4.3 等）からリンクする。
+
+### 1.7 CI 連携前提（環境変数・シークレット）
+
+| 種別 | 名称 / 例 | 用途 | 備考 |
+| --- | --- | --- | --- |
+| 環境変数 | `BASE_URL_LEGACY`, `BASE_URL_MODERN` | `ops/tools/send_parallel_request.sh` と `run_smoke.py` の送信先 URL。 | GitHub Actions では Compose サービス名（`http://legacy-server:8080` 等）を設定。 |
+| 環境変数 | `PARITY_HEADER_FILE`, `PARITY_BODY_FILE`, `PARITY_OUTPUT_DIR` | 追加ヘッダーとボディテンプレート、成果物保存先。 | ボディが不要な場合は `PARITY_BODY_FILE` を未設定にする。 |
+| シークレット | Legacy/Modern 認証情報（`SMOKE_USER_NAME`、`SMOKE_PASSWORD`、`SMOKE_CLIENT_UUID`、`SMOKE_FACILITY_ID`） | `headers/*.headers` を CI 上で生成するための元データ。 | `test_config.ci.yaml` の `defaults.headers`（`ops/tests/api-smoke-test/test_config.ci.yaml`）を参照し、テンプレートから置換。 |
+| シークレット | `JAVATIME_STAGE_BEARER` | `javatime-stage.headers` 生成用。 | Stage トークンはリポジトリへコミットしない。 |
+| シークレット | 2FA シード（TOTP/FIDO2） | `/20/adm/factor2/*` の再現に必要なテストアカウント秘密情報。 | `docs/web-client/operations/TEST_SERVER_DEPLOY.md` 記載のキーを Secrets Manager に保管し、ジョブ開始時に `payloads/*` へ流し込む。 |
+| 作業用ファイル | `artifacts/ci-smoke/` | CI パリティ比較結果の保存先。 | `actions/upload-artifact` で保存し、`docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ10-2の証跡とする。 |
+
+### 1.8 不足ケース一覧（ADM20/FIDO2 など）
+
+| 区分 | API / 手順 | 現状ギャップ | 必要資材 | 参照 |
+| --- | --- | --- | --- | --- |
+| FIDO2 登録 | `/20/adm/factor2/fido2/registration/options` / `.../finish` | `test_config.manual.csv` には `fido2_enroll` のみで、現行 2 フェーズ API を網羅できていない。 | `payloads/fido2_registration_finish.json`（仮）と `headers/adm20-admin.headers` の派生。`registration/options` 応答を保存する仕組み。 | `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` §5 |
+| FIDO2 認証 | `/20/adm/factor2/fido2/assertion/options` / `.../finish` | ログインフローの検証ケースが存在せず、監査ログ比較が不可能。 | WebAuthn テストクライアント or モック応答、`payloads/fido2_assertion_finish.json`。 | 同上 |
+| TOTP | `/20/adm/factor2/totp/registration` / `.../verification` | `headers/adm20-admin.headers` のみで TOTP 登録〜検証のスクリプト・payload が未整備。 | `payloads/totp_registration.json`（仮）、TOTP 秘密鍵の管理ルール、`psql` 採取テンプレ。 | `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md`、`test_config.manual.csv` |
+| SMS/端末管理 | `/20/adm/factor2/code`, `/20/adm/factor2/device`, `/20/adm/user/factor2/device`, `/20/adm/user/factor2/backup` | 端末紐付け/バックアップコード解除の実データがなく、`README.manual.md` でも手順未定義。 | SMS 送信モック（`ops/mock/sms` など）と `headers/adm20-operator.headers`。 | AdmissionResource 一覧 |
+| ADM20 受付系 | `/20/adm/carePlan`, `/20/adm/nurseProgressCourse`, `/20/adm/ondoban` など | カルテ受付・温度板データの payload が 0 件のため、フェールセーフ確認ができない。 | `payloads/adm20_careplan_upsert.json` 等と、`docs/web-client/operations/TEST_SERVER_DEPLOY.md` の患者データを流用した CSV。 | 同上 |
+
+### 1.9 拡充計画（フェーズ10-2 対応）
+
+| タスク | 優先度 | 担当（案） | 必要モック / 準備 | 成果物 |
+| --- | --- | --- | --- | --- |
+| FIDO2 登録フロー整備（`registration/options`→`finish`） | High | Worker D（ADM20 担当） | WebAuthn サンプルレスポンス、`payloads/fido2_registration_finish.json`／`headers/adm20-admin.headers` 複製、自動 `challenge` 差替えスクリプト。 | `test_config.manual.csv` へ `fido2_registration_options`/`fido2_registration_finish` 追加、README へ手順追記。 |
+| FIDO2 認証フロー整備（`assertion/options`→`finish`） | High | Worker Q（Security QA） | ソフトウェア認証器（Yubico demo など）と `payloads/fido2_assertion_finish.json`、監査ログ採取 SQL。 | `artifacts/parity-manual/fido2_assertion_*` のベースライン + `docs/server-modernization/phase2/notes/test-data-inventory.md` 更新。 |
+| TOTP/SMS 端末管理ケース | Medium | Worker L（Ops Automation） | TOTP シード（`WEB1001` など）、SMS モック、`payloads/totp_registration.json`・`payloads/totp_verification.json`。 | `headers/adm20-operator.headers`、`test_config.manual.csv` に `totp_registration` ほか追加、`README.manual.md` に `psql` 取得テンプレ。 |
+| ADM20 受付ドメイン（carePlan/nurseProgressCourse/ondoban） | Medium | Worker P（業務ドメイン） | `docs/web-client/operations/TEST_SERVER_DEPLOY.md` の患者データ、`payloads/adm20_careplan_upsert.json`、`payloads/nurseProgress_sample.json`。 | モダン/Legacy それぞれのレスポンス保存、ArchiMate での業務フローリンク。 |
+
+> これらのタスク完了後、`docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` のフェーズ10-2 行（テストデータ・モック整理）を `[x]` へ更新できる状態になる。
+
 ## 2. API パリティチェッカー（scripts/api_parity_response_check.py）
 
 | 資材 | 内容 / 用途 | 備考 |
@@ -55,6 +116,52 @@
 1. `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` に沿って `custom.properties`／Secrets を確認し、Plivo/ORCA 等の外部連携が正しく設定されていることを確認。
 2. `curl -X POST https://<host>/20/adm/factor2/totp/challenge -H 'userName: ...' ...` のように手動で API を呼び出し、レスポンスと `server-modernized` ログ（`RequestMetricsFilter` 出力）を `tmp/manual-audit/` に保存。
 3. `psql` で `d_audit_event` を抽出し、`trace_id` と REST ログの `traceId` を突合。結果は `docs/server-modernization/phase2/notes/test-data-inventory.md` へ追記。
+
+### 3.1 監査ログ・外部副作用テスト設計（/20/adm/factor2/*）
+
+| Case ID | METHOD / Path | 監査アクション（`d_audit_event.action`） | 外部副作用 / 検証ポイント | マスキング / 保存先 |
+| --- | --- | --- | --- | --- |
+| `factor2_totp_registration` | `POST /20/adm/factor2/totp/registration` | `TOTP_REGISTER_INIT` | `d_factor2_challenge` へシードを生成、`d_factor2_credential` に未検証レコードが増える | `payload.secret`、`provisioningUri`、`Factor2SecretProtector` が出力する AES-GCM ciphertext は `***masked***` に置換。レスポンス：`artifacts/parity-manual/factor2_totp_registration/*`、監査 SQL：`artifacts/manual/audit_log.txt` |
+| `factor2_totp_verification` | `POST /20/adm/factor2/totp/verification` | `TOTP_REGISTER_COMPLETE` / `...FAILED` | `d_factor2_credential.verified=true`、`d_factor2_backupkey` にハッシュ化バックアップコード | `payload.backupCodes[]`、`code` は全てマスキング。`tmp/manual-audit/<date>/psql_factor2_totp_verification.sql` へ未加工を保管し、Evidence へ暗号化転送。|
+| `factor2_fido2_assert_finish` | `POST /20/adm/factor2/fido2/assertion/finish` | `FIDO2_ASSERT_COMPLETE` / `...FAILED` | `d_factor2_challenge` の `request_id` が消費され、`d_factor2_credential.sign_count` が +1 | `clientDataJSON`、`authenticatorData`、`signature` を公開レポートではトークン化（先頭 6 文字 + `…`）。証跡は `artifacts/parity-manual/factor2_fido2_assert_finish/*` と `tmp/manual-audit/<date>/factor2_fido2_assert_finish.psql` に保存。|
+
+#### 実施手順
+1. **前提準備**
+   - `docker compose` もしくはローカル WildFly で Legacy/Modernized の両方を起動し、`BASE_URL_LEGACY`（例: `http://localhost:8080`）と `BASE_URL_MODERN`（例: `http://localhost:18080`）を決定する。現状リポジトリには `server-modernized/db-baseline/` の DDL が含まれていないため、Secrets Storage からベースラインスキーマを取得して適用する必要がある（未取得の場合は `ERROR: relation "d_audit_event" does not exist` で失敗する）。
+   - Secrets: `FACTOR2_AES_KEY_B64`, `FIDO2_RP_ID`/`NAME`/`ALLOWED_ORIGINS` を `.env` か Vault から投入。`ops/check-secrets.sh` で欠損を検出する。
+   - ヘッダー: `PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/adm20-admin.headers` をベースに `clientUUID` をケースごとに固有化（`factor2-totp-registration-<date>` など）し、`X-Trace-Id` も `factor2-<case>-<timestamp>` 形式で追加すると `RequestMetricsFilter` と突合しやすい。
+2. **API 送信**
+   ```bash
+   BASE_URL_LEGACY=http://localhost:8080 \
+   BASE_URL_MODERN=http://localhost:18080 \
+   PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/adm20-admin.headers \
+   PARITY_BODY_FILE=tmp/manual-audit/totp_registration.json \
+     ./ops/tools/send_parallel_request.sh POST /20/adm/factor2/totp/registration factor2_totp_registration
+   ```
+   - ボディは `tmp/manual-audit/<case>.json` に保存し、使い回し禁止。
+   - スクリプトは `artifacts/parity-manual/<ID>/<legacy|modern>/response.json|headers.txt|meta.json` を自動生成する。
+3. **監査ログ採取**
+   ```bash
+   PGPASSWORD=opendolphin psql -h localhost -U opendolphin -d opendolphin <<'SQL' | tee tmp/manual-audit/factor2_totp_registration.psql
+   \\pset format aligned
+   SELECT event_time, action, request_id, payload
+     FROM d_audit_event
+    WHERE action IN ('TOTP_REGISTER_INIT','TOTP_REGISTER_COMPLETE','FIDO2_ASSERT_COMPLETE','FIDO2_ASSERT_COMPLETE_FAILED')
+    ORDER BY event_time DESC
+    LIMIT 20;
+   SQL
+   ```
+   - `payload` は `jq` 等で `secret`, `backupCodes`, `challengePayload` を `\"***masked***\"` へ置換してから `artifacts/manual/audit_log.txt` へ貼り付ける。
+   - `d_factor2_credential` / `d_factor2_challenge` / `d_factor2_backupkey` についても `\d` と `SELECT` の結果を `tmp/manual-audit/<date>/factor2_side_effects.sql` へ保存する。
+4. **証跡の整理**
+   - `artifacts/parity-manual/<case>/...`：HTTP 応答とヘッダー。
+   - `artifacts/manual/audit_log.txt`：マスク済みの `psql` 実行ログとブロッカーの記録。最新版（2025-11-07）は `docker`/`ddl` 不足により API 実行が失敗したことを記録済み。
+   - `tmp/manual-audit/<date>/`：未マスキングの SQL／curl ログ。Evidence ストレージへ暗号化転送後にローカルから削除。
+
+#### 既知のブロッカー（2025-11-07 時点）
+- Codespaces コンテナ内では `dockerd` 起動時に `iptables v1.8.7 (nf_tables): ... Permission denied` が発生し、`docker compose` で Legacy/Modernized を同時起動できない。ローカル実行者はホスト OS で Docker を起動するか、WildFly を直接セットアップする。
+- `server-modernized/tools/flyway/sql/V0001__baseline_tag.sql` はベースラインの説明のみで DDL を含まず、`d_audit_event` などのテーブルが生成されない。Secrets ストレージの `server-modernized/db-baseline/` を展開し Flyway `baseline+migrate` を完了させるまで `psql` 採取は不可能。
+- 上記ブロッカーの詳細と再現ログは `artifacts/manual/audit_log.txt`（ケース ID ごとに `status_code=000`, `exit_code=7` を記録）を参照。
 
 ## 4. フォローアップ
 - Ops/QA は本ノートを基に `ops/tests/` へ README / サンプルデータを追加し、Python スクリプト実行が許可されない期間でも再現性を確保する。

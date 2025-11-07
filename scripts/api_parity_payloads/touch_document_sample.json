@@ -1,0 +1,19 @@
+{
+  "docInfo": {
+    "docPk": 12001,
+    "admFlag": "A",
+    "title": "JavaTime regression note",
+    "departmentDesc": "General"
+  },
+  "modules": [
+    {
+      "moduleId": "module-1",
+      "moduleInfo": {
+        "moduleId": "module-1",
+        "entity": "progressCourse",
+        "status": "final",
+        "performFlag": "1"
+      }
+    }
+  ]
+}

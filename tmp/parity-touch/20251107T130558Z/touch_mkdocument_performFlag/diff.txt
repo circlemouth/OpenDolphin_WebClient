@@ -1,0 +1,18 @@
+--- tmp/parity-touch/20251107T130558Z/touch_mkdocument_performFlag/legacy/response.sorted.json	2025-11-07 13:12:16.958569877 +0000
++++ tmp/parity-touch/20251107T130558Z/touch_mkdocument_performFlag/modern/response.sorted.json	2025-11-07 13:12:16.981944863 +0000
+@@ -1,13 +1,13 @@
+ {
+   "docInfo": {
+-    "admFlag": "A",
++    "admFlag": null,
+     "docPk": 22002
+   },
+   "modules": [
+     {
+       "moduleInfo": {
+         "moduleId": "module-temp-1",
+-        "performFlag": "1"
++        "performFlag": null
+       }
+     }
+   ]

@@ -1,0 +1,28 @@
+{
+  "defaults": {
+    "header_file": "ops/tests/api-smoke-test/headers/legacy-default.headers"
+  },
+  "targets": [
+    {
+      "id": "touch_sendPackage_javaTime",
+      "name": "POST /touch/sendPackage (JavaTime)",
+      "method": "POST",
+      "path": "/touch/sendPackage",
+      "body_file": "ops/tests/api-smoke-test/payloads/javatime_touch_sendPackage.json"
+    },
+    {
+      "id": "touch_document_admFlag",
+      "name": "POST /touch/document (admFlag)",
+      "method": "POST",
+      "path": "/touch/document",
+      "body_file": "scripts/api_parity_payloads/touch_document_sample.json"
+    },
+    {
+      "id": "touch_mkdocument_performFlag",
+      "name": "POST /touch/mkdocument (performFlag)",
+      "method": "POST",
+      "path": "/touch/mkdocument",
+      "body_file": "scripts/api_parity_payloads/touch_mkdocument_sample.json"
+    }
+  ]
+}
