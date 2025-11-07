@@ -1,6 +1,6 @@
 # Web クライアント開発ドキュメントハブ
 
-Web クライアントに関する設計・要件・運用資料を集約したナビゲーションです。まずは本ファイルから各カテゴリへ移動し、更新時は必ず該当セクションへリンクと概要を追記してください。
+Web クライアントに関する設計・要件・運用資料を集約したナビゲーションです。まずは本ファイルから各カテゴリへ移動し、更新時は必ず該当セクションへリンクと概要を追記してください。Phase2 以降は棚卸し台帳[`planning/phase2/DOC_STATUS.md`](planning/phase2/DOC_STATUS.md)で Active/Dormant/Archive を更新し、本ハブと内容を同期させます。
 
 ## カテゴリ構成
 
@@ -8,50 +8,28 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`architecture/REPOSITORY_OVERVIEW.md`](architecture/REPOSITORY_OVERVIEW.md): リポジトリ構成と各モジュールの役割。
 - [`architecture/WEB_CLIENT_REQUIREMENTS.md`](architecture/WEB_CLIENT_REQUIREMENTS.md): 機能・非機能・セキュリティ要件。
 - [`architecture/REST_API_INVENTORY.md`](architecture/REST_API_INVENTORY.md): Web クライアントが利用する REST API 一覧と留意点。
-- [`../server-modernization/MODERNIZED_REST_API_INVENTORY.md`](../server-modernization/MODERNIZED_REST_API_INVENTORY.md): モダナイズ版 REST API インベントリ（2025-11-04 更新: Touch 患者・スタンプ・ユーザ API の新リソース登録とプライバシー監査要件を追記／2025-11-03 更新: AdmissionResource 2FA、Stamp/Letter 監査ログ対応、`PUT /orca/interaction` のパリティ記述を反映）。
-- [`../server/LEGACY_REST_API_INVENTORY.md`](../server/LEGACY_REST_API_INVENTORY.md): 旧サーバーの REST エンドポイントを網羅した参照表。
-- [`architecture/SERVER_MODERNIZATION_PLAN.md`](architecture/SERVER_MODERNIZATION_PLAN.md): 既存サーバー刷新・連携の将来計画。
-- [`../server-modernization/legacy-server-modernization-checklist.md`](../server-modernization/legacy-server-modernization-checklist.md): 旧サーバー仕様サマリとモダナイズ実装チェックリスト。
-- [`../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md`](../server-modernization/persistence-layer/3_4-persistence-layer-modernization.md): 永続化層モダナイズ完了報告と移行手順。
-- [`../server-modernization/reporting/3_5-reporting-modernization.md`](../server-modernization/reporting/3_5-reporting-modernization.md): 帳票テンプレート刷新内容と CI 運用ガイド。
-- [`../server-modernization/external-integrations/3_6-external-service-modernization.md`](../server-modernization/external-integrations/3_6-external-service-modernization.md): 外部サービス連携（Plivo/ORCA/API ゲートウェイ）のモダナイズ報告と運用指針。
+- [`../server/LEGACY_REST_API_INVENTORY.md`](../server/LEGACY_REST_API_INVENTORY.md): 旧サーバーの REST エンドポイント参照表（クライアント互換確認用）。
+- サーバー API のモダナイズ資料（`MODERNIZED_REST_API_INVENTORY.md` や Persistence/Reporting など）は [Server Modernization Phase2 Index](../server-modernization/phase2/INDEX.md) から辿る。
 
 ### 2. プロセス / 計画
 - [`process/ROADMAP.md`](process/ROADMAP.md): フェーズ 0〜2 の成果と次アクションを統合したロードマップ。
 - [`process/SWING_PARITY_CHECKLIST.md`](process/SWING_PARITY_CHECKLIST.md): Web とオンプレ（Swing）機能差分の確認チェックリスト。
 - [`process/API_UI_GAP_ANALYSIS.md`](process/API_UI_GAP_ANALYSIS.md): 未整備 API と UI の対応状況・実装優先度。
 - [`process/SECURITY_AND_QUALITY_IMPROVEMENTS.md`](process/SECURITY_AND_QUALITY_IMPROVEMENTS.md): セキュリティ/品質改善タスクのサマリと監査ポリシー。
-- `docs/server-modernization/security/3_7-security-compliance.md`: Phase 3.7 セキュリティ・コンプライアンス実装まとめ（2025-11-03 更新: 2FA 監査ログ `status` フラグと AES キー要件見直し）。
-- `docs/server-modernization/phase2/README.md`: サーバーモダナイズ Phase 2 のハンドブック。ディレクトリ構成と着手手順を確認すること（2025-11-06 更新: オンライン資格確認・電子処方箋統合向け OQS サブモジュール追加の背景と参照先を追記）。
-- `docs/server-modernization/phase2/foundation/JAKARTA_EE10_GAP_LIST.md`: Jakarta EE 10 への移行ギャップと優先課題の一覧。サーバーモダナイズ作業前に必読。
-- `docs/server-modernization/phase2/foundation/DEPENDENCY_UPDATE_PLAN.md`: 依存ライブラリ更新計画とライセンス確認メモ。BOM 更新時はこの資料に準拠すること。
-- `docs/server-modernization/phase2/foundation/IMPACT_MATRIX.md`: Jakarta 移行で影響を受ける領域と担当者メモ。週次レビューで進捗を同期。
-- `docs/server-modernization/phase2/domains/AUTH_SECURITY_COMPARISON.md`: 旧サーバーとモダナイズ版の認証／MFA／監査実装比較と Jakarta EE 10 影響・推奨アクション（2025-11-02 追記）。
-- `docs/server-modernization/phase2/domains/RESERVATION_BATCH_MIGRATION_NOTES.md`: 予約・通知・バッチ機能の Jakarta EE 10 化影響と依存ギャップ整理（2025-11-02 更新）。
-- `docs/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md`: JMS 設定ギャップと Worker 0 向けアクションメモ。
-- `docs/server-modernization/phase2/operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md`: WildFly 起動を阻害する未実装リソース（2FA 秘密鍵 / JDBC データソース / JMS / Jakarta Concurrency）の調査結果と対応手順（2026-06-02 追加）。
-- `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md`: server-modernized デバッグ観点をフェーズ別に整理したチェックリスト（2026-06-04 追加: 進捗確認と優先タスクの可視化）。
-- `docs/server-modernization/phase2/notes/phr-2fa-audit-implementation-prep.md`: PHR エクスポート／2FA／監査の未実装課題を実装フェーズに移行するためのチケット草案集（2026-06-07 追加: S3 ストレージ、Secrets 自動検査、監査ハッシュ自動化、第三者提供 API の作業ブロックと受入条件を整理）。
-- `docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md`: JsonTouch/PHR/PVT 互換性確認と PHR 非同期ジョブ状態管理・Touch SSE 運用手順（2025-11-04 更新: PHR export API 実装・ジョブ監視手順を反映。2025-11-03 追加）。
-- `docs/server-modernization/phase2/domains/EXTERNAL_INTEGRATION_JAKARTA_STATUS.md`: 外部連携（ORCA/HL7/Plivo/WebAuthn 等）の旧 API・依存差分とライセンス対応を整理したギャップリスト（2025-11-06 更新: OQS サブモジュール活用計画と資格確認/電子処方箋ブリッジ整備の TODO を追加）。
-- `docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md`: 患者基本情報・カルテ閲覧系の `javax.*` 残存状況、レスポンスモデル比較、Micrometer 置換など Jakarta EE 10 移行時の影響整理。閲覧 API 改修時は合わせて参照。
-- `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`: 旧サーバーとモダナイズ版の全 REST API を 1:1 で比較したパリティマトリクス（2026-05-27 更新: `DELETE /pvt2/{pvtPK}` の単体テスト証跡を追加し、1:1 対応 202 件／未整備 54 件へ再集計。2025-11-04 (Worker A) `/touch/document/progressCourse`・`/touch/idocument(2)` 行を JSON モダナイズ＋監査ログ整備済みとして更新。2025-11-04 (Worker B) `/touch/patient/*` `/touch/stamp*` `/touch/user/{param}` 行を TouchPatient/Stamp/UserResource へ移管し、監査ログ＋単体テスト証跡を反映）。
-- `docs/server-modernization/phase2/domains/STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md`: Stamp/Letter/MML/ORCA の移行計画、監査強化方針、整合テスト計画（2025-11-03 更新: Stamp/Letter 監査ログ実装・ORCA 相互作用検証タスクを追記）。
-- `docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md`: DemoResourceASP 15 エンドポイントのデモデータ移行仕様・マッピング・QA テストケース整理（2025-11-03 再点検: コンパイルエラー/レスポンス差分/テスト未実行の課題を追記）。
-- `docs/server-modernization/phase2/domains/EHT_SECURITY_AUDIT_CHECKLIST.md`: EHTResource のセキュリティ／監査要件整理、トランザクション境界方針、外部連携テスト観点（2025-11-03 追加）。
-- `docs/server-modernization/phase2/operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md`: WildFly 33 / Micrometer 移行に伴うログ・監査・ジョブ管理比較と運用リスク整理（2025-11-02 更新）。
-- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`: 外部システムから見た旧新サーバー互換を確保する切替/検証ランブック（2025-11-06 更新: Touch 監査ログの actorRole 連携確認と `/touch/patient/{pk}` XML 分離の検証 TODO を追記、あわせて PHR ラボモジュール変換と TouchModuleService RP 復元の互換確認手順を補足。2025-11-04 更新: SystemResource 監査整備・PHR export 手順・Touch 来院履歴 API の QueryParam 仕様を追記。2025-11-03 更新: JsonTouch/PHR/PVT2 パリティ検証ログを追加し、`/dolphin` 系 5 件のテスト未整備課題を整理）。
-- `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`: Micrometer サブシステム設定・Prometheus/Grafana 整備・監査突合手順（2025-11-07 更新: JavaTime Stage Dry-Run ログ保存先、`/var/log/java-time-sample.log` ローテーションと 30 日保管ルール、GitHub Actions 週次 Dry-Run を追記）。
-- `docs/server-modernization/phase2/domains/KARTE_ORDER_JAKARTA_STATUS.md`: カルテ記載・スタンプ/オーダ系 CRUD の Jakarta EE 10 移行状況と未移植課題。CLAIM 送信やドラフト保存を触る際は必読。
-- `docs/server-modernization/phase2/domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md`: DolphinResourceASP モダナイズ計画メモ（2025-11-04 更新: TouchModuleService / TouchModuleResourceTest の導入とキャッシュキー `method:paramHash` 方針を追記）。
-- `docs/server-modernization/security/ELYTRON_INTEGRATION_PLAN.md`: WildFly Elytron / Jakarta Security 連携方針と Trace ID 運用（2025-11-02 新設）。
+- [`planning/phase2/DOC_STATUS.md`](planning/phase2/DOC_STATUS.md): ドキュメント棚卸しとステータス管理。追加資料を作る際はまずここで区分を決める。
 
-### 3. 臨床・機能ガイド
+### 3. サーバーモダナイズ連携
+- [`../server-modernization/phase2/INDEX.md`](../server-modernization/phase2/INDEX.md): Phase2 ドキュメントのナビゲーション（foundation/domains/operations/notes を集約）。
+- `docs/server-modernization/security/3_7-security-compliance.md`: Phase 3.7 セキュリティ・コンプライアンス実装まとめ（2FA 監査ログ `status` フラグと AES キー要件見直し）。
+- `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md`: デバッグ観点のチェックリスト。ブロッカー調査時は `SERVER_MODERNIZED_STARTUP_BLOCKERS.md` を合わせて参照。
+- 旧サーバーとモダナイズ版の REST API インベントリはそれぞれ [`../server/LEGACY_REST_API_INVENTORY.md`](../server/LEGACY_REST_API_INVENTORY.md) と [`../server-modernization/MODERNIZED_REST_API_INVENTORY.md`](../server-modernization/MODERNIZED_REST_API_INVENTORY.md) を使用。
+
+### 4. 臨床・機能ガイド
 - [`guides/CLINICAL_MODULES.md`](guides/CLINICAL_MODULES.md): 患者管理、受付・予約、カルテ補助、ORCA 連携、帳票/シェーマ機能の統合ガイド。（2025-11-06 更新: DocInfoSummary 必須フィールドの非 null 化と CLAIM/ラボ連携時の保険バリデーション方針を追記）
 - `features/` 配下: CareMap、受付予約、スタンプライブラリ、ラボ結果、ORCA 連携など機能別仕様書。
 - `process/`・`architecture/` 補遺: API・データ要件、モダナイゼーション計画の補足資料。
 
-### 4. UX / デザインシステム
+### 5. UX / デザインシステム
 - [`design-system/ALPHA_COMPONENTS.md`](design-system/ALPHA_COMPONENTS.md): デザインシステム α 版と Storybook 運用指針。（2025-11-06 更新: SurfaceCard の warning/danger トーン追加と forwardRef 対応、SelectField/TextArea の必須 props 整理を追記）
 - [`ux/ONE_SCREEN_LAYOUT_GUIDE.md`](ux/ONE_SCREEN_LAYOUT_GUIDE.md): 1 画面完結のレイアウト指針と業務要件メモ。
 - [`ux/CHART_UI_GUIDE_INDEX.md`](ux/CHART_UI_GUIDE_INDEX.md): カルテ UI 関連資料の集約。改修前に必ず参照すること。

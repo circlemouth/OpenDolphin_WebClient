@@ -18,6 +18,13 @@
 - 機能や UI 実装を行う際は、暫定版ではなく実運用を前提とした完成度（業務フローに即した操作性・アクセシビリティ・例外処理まで含む）で仕上げること。利用者視点で本番投入できる品質を常に確保する。
 - カルテ UI（`ChartsPage` などカルテ画面に関係するフロントエンド）を変更するタスクでは、作業前に必ず `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` を確認し、同ファイルからリンクされるレイアウト・ワークフロー・監査要件を踏まえて設計・実装・ドキュメント更新を行うこと。
 
+## ドキュメント整理・保存ルール
+- Web クライアント側の資料は `docs/web-client/README.md`、サーバーモダナイズ側は `docs/server-modernization/phase2/INDEX.md` を必ず起点とし、リンクを追加したら棚卸し台帳 `docs/web-client/planning/phase2/DOC_STATUS.md` のステータスを更新する。
+- 参照頻度が低下した資料は `DOC_STATUS.md` で Dormant/Archive に区分し、Archive 判定になったら `docs/archive/<YYYYQn>/`（例: `docs/archive/2025Q4/`）へ移動する。移動元ファイルにはスタブとアーカイブ先リンクを残すこと。
+- サーバー系タスクで作成する Runbook や計画書は `docs/server-modernization/phase2/(foundation|domains|operations|notes)/` 配下へ保存する。クライアント系タスクは `docs/web-client/(architecture|features|guides|operations|ux)/` を使用し、`LEGACY_INTEGRATION_CHECKS.md` など既存カテゴリに追記する。
+- マネージャーが `【ワーカー指示】` を出す場合は、指示内に保存先ディレクトリを明記し、サーバー系・クライアント系の成果物が衝突しないようディレクトリを分ける。ワーカーは `【ワーカー報告】` と合わせて保存先パスと `DOC_STATUS.md` への反映状況を報告する。
+- サーバーとクライアントの検証タスクを並列で行う際は、ログやスクリーンショットを `docs/server-modernization/phase2/operations/logs/` に日付付きで保存し、Web クライアント側の手順書（例: `docs/web-client/operations/LEGACY_INTEGRATION_CHECKS.md`）から参照できるようにする。
+
 ## タスク分担と役割
 - 作業量が大きいと判断したタスクではマネージャーとして対応し、必要なワーカー数を検討したうえでタスクを分割する。
 - 各ワーカーには担当範囲が重複しないよう十分配慮した明快なプロンプトを用意し、成果物と着手手順が即座に把握できる記述とする。
