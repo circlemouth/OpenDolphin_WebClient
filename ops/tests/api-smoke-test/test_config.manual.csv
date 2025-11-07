@@ -1,0 +1,7 @@
+id,method,path,headers_profile,payload_template,expectation
+serverinfo,GET,/serverinfo/version,legacy-default,,比較結果を artifacts/manual/serverinfo/ に保存
+user_profile,GET,/user/doctor1,legacy-default,,ユーザー情報レスポンス整形後 diff
+chart_summary,GET,/chart/WEB1001/summary,legacy-default,,chart サマリ diff と `d_audit_event` ログ採取
+fido2_enroll,POST,/20/adm/factor2/fido2/enroll,adm20-admin,ops/tests/api-smoke-test/payloads/fido2_enroll.json,レスポンス + audit ログの traceId を比較
+JAVATIME_ORCA_001,PUT,/orca/interaction,javatime-stage,ops/tests/api-smoke-test/payloads/javatime_orca_interaction.json,Stage ORCA JavaTime サンプル（担当: Worker P / Runbook §4.3）で ISO8601 を検証し `tmp/java-time/orca-response-*.json` を保存
+JAVATIME_TOUCH_001,POST,/touch/sendPackage,javatime-stage,ops/tests/api-smoke-test/payloads/javatime_touch_sendPackage.json,Stage Touch sendPackage JavaTime サンプル（担当: Worker P / Runbook §4.3 & notes §9）で Legacy/Modern を比較し `tmp/java-time/touch-response-*.json` を保存

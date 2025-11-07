@@ -1,10 +1,8 @@
 import userEvent from '@testing-library/user-event';
 import { describe, expect, it, vi } from 'vitest';
 
-import {
-  DocumentTimelinePanel,
-  deriveActiveCategories,
-} from '@/features/charts/components/DocumentTimelinePanel';
+import { DocumentTimelinePanel } from '@/features/charts/components/DocumentTimelinePanel';
+import { deriveActiveCategories } from '@/features/charts/components/document-timeline-utils';
 import {
   TIMELINE_EVENT_CATEGORIES,
   type TimelineEvent,

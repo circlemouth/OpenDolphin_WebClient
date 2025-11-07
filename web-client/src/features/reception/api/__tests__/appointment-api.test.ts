@@ -68,37 +68,54 @@ describe('appointment-api', () => {
 
   it('sends appointment payload with metadata on save', async () => {
     vi.mocked(httpClient.put).mockResolvedValue({ data: '1' } as never);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-05-09T01:23:45+09:00'));
 
-    const command: AppointmentCommand = {
-      action: 'create',
-      facilityId: 'FAC001',
-      userId: 'doctor01',
-      userModelId: 42,
-      karteId: 200,
-      patientId: '0001',
-      scheduledAt: new Date('2026-05-10T09:00:00'),
-      name: '定期検査',
-      memo: '事前に絶食',
-    };
+    try {
+      const command: AppointmentCommand = {
+        action: 'create',
+        facilityId: 'FAC001',
+        userId: 'doctor01',
+        userModelId: 42,
+        karteId: 200,
+        patientId: '0001',
+        scheduledAt: new Date('2026-05-10T09:00:00+09:00'),
+        name: '定期検査',
+        memo: '事前に絶食',
+      };
 
-    await saveAppointments([command]);
+      await saveAppointments([command]);
 
-    expect(httpClient.put).toHaveBeenCalledTimes(1);
-    const [endpoint, payload] = vi.mocked(httpClient.put).mock.calls[0];
-    expect(endpoint).toBe('/appo');
-    expect(payload).toMatchObject({
-      list: [
-        expect.objectContaining({
-          state: 1,
-          name: '定期検査',
-          memo: '事前に絶食',
-          patientId: '0001',
-          karteBean: { id: 200 },
-          userModel: { id: 42, userId: 'FAC001:doctor01' },
-          date: '2026-05-10 09:00:00',
-        }),
-      ],
-    });
+      expect(httpClient.put).toHaveBeenCalledTimes(1);
+      const [endpoint, payload] = vi.mocked(httpClient.put).mock.calls[0];
+      expect(endpoint).toBe('/appo');
+
+      const expectedAuditTimestamp = '2026-05-09 01:23:45';
+      const expectedScheduleTimestamp = '2026-05-10 09:00:00';
+
+      expect(payload).toMatchObject({
+        list: [
+          expect.objectContaining({
+            state: 1,
+            name: '定期検査',
+            memo: '事前に絶食',
+            patientId: '0001',
+            karteBean: { id: 200 },
+            userModel: { id: 42, userId: 'FAC001:doctor01' },
+            date: expectedScheduleTimestamp,
+            confirmed: expectedAuditTimestamp,
+            started: expectedAuditTimestamp,
+            recorded: expectedAuditTimestamp,
+            status: 'F',
+            linkId: 0,
+            linkRelation: null,
+            ended: null,
+          }),
+        ],
+      });
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it('marks command as replace when updating or cancelling', async () => {
@@ -112,15 +129,35 @@ describe('appointment-api', () => {
       userModelId: 42,
       karteId: 200,
       patientId: '0001',
-      scheduledAt: new Date('2026-05-11T09:00:00'),
+      scheduledAt: new Date('2026-05-11T09:00:00+09:00'),
       name: '再診',
       memo: '',
     };
 
-    await saveAppointments([update]);
+    const cancel: AppointmentCommand = {
+      action: 'cancel',
+      id: 77,
+      facilityId: 'FAC001',
+      userId: 'doctor01',
+      userModelId: 42,
+      karteId: 200,
+      patientId: '0001',
+      scheduledAt: new Date('2026-05-12T10:30:00+09:00'),
+      name: '取消対象',
+      memo: 'キャンセル理由',
+    };
+
+    await saveAppointments([update, cancel]);
 
     const [, payload] = vi.mocked(httpClient.put).mock.calls[0];
-    expect((payload as { list: Array<{ state: number; name: string | null }> }).list[0].state).toBe(3);
-    expect((payload as { list: Array<{ name: string | null }> }).list[0].name).toBe('再診');
+    const list = (payload as {
+      list: Array<{ state: number; name: string | null; memo: string | null }>;
+    }).list;
+
+    expect(list[0].state).toBe(3);
+    expect(list[0].name).toBe('再診');
+    expect(list[1].state).toBe(3);
+    expect(list[1].name).toBeNull();
+    expect(list[1].memo).toBeNull();
   });
 });

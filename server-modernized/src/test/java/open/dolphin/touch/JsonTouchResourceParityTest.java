@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.lang.reflect.Field;
 import java.lang.reflect.Proxy;
 import java.nio.charset.StandardCharsets;
+import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -33,6 +34,7 @@ import open.dolphin.infomodel.UserModel;
 import open.dolphin.infomodel.VisitPackage;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
+import open.dolphin.rest.jackson.LegacyObjectMapperProducer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -90,6 +92,12 @@ class JsonTouchResourceParityTest {
 
         ehtService = new StubAdm10EhtService();
         injectField(adm10Resource, "ehtService", ehtService);
+
+        LegacyObjectMapperProducer producer = new LegacyObjectMapperProducer();
+        ObjectMapper legacyMapper = producer.provideLegacyAwareMapper();
+        injectField(touchResource, "legacyTouchMapper", legacyMapper);
+        injectField(adm10Resource, "legacyTouchMapper", legacyMapper);
+        injectField(adm20Resource, "legacyTouchMapper", legacyMapper);
 
         servletRequest = (HttpServletRequest) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
@@ -296,10 +304,36 @@ class JsonTouchResourceParityTest {
         assertTrue(auditHandler.containsFailure("GET /10/adm/jtouch/stamp"));
     }
 
+    @Test
+    void javaTimePayloadParity() throws Exception {
+        String payload = "{\"issuedAt\":\"2026-06-18T09:15:30+09:00\"}";
+        JavaTimeEnvelope touch = deserializeJavaTimePayload(touchResource, payload);
+        JavaTimeEnvelope adm10 = deserializeJavaTimePayload(adm10Resource, payload);
+        JavaTimeEnvelope adm20 = deserializeJavaTimePayload(adm20Resource, payload);
+
+        OffsetDateTime expected = OffsetDateTime.parse("2026-06-18T09:15:30+09:00");
+        assertEquals(expected, touch.getIssuedAt());
+        assertEquals(touch.getIssuedAt(), adm10.getIssuedAt());
+        assertEquals(touch.getIssuedAt(), adm20.getIssuedAt());
+
+        String serialized = getLegacyMapper(touchResource).writeValueAsString(touch);
+        assertTrue(serialized.contains("2026-06-18T09:15:30+09:00"));
+    }
+
     private static void injectField(Object target, String name, Object value) throws Exception {
         Field field = target.getClass().getDeclaredField(name);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private ObjectMapper getLegacyMapper(Object resource) throws Exception {
+        Field field = resource.getClass().getDeclaredField("legacyTouchMapper");
+        field.setAccessible(true);
+        return (ObjectMapper) field.get(resource);
+    }
+
+    private JavaTimeEnvelope deserializeJavaTimePayload(Object resource, String payload) throws Exception {
+        return getLegacyMapper(resource).readValue(payload, JavaTimeEnvelope.class);
     }
 
     private void setInteractionExecutor(SqlExecutor executor) throws Exception {
@@ -516,6 +550,18 @@ class JsonTouchResourceParityTest {
                 throw new IllegalStateException("stamp failure");
             }
             return stampModel;
+        }
+    }
+
+    private static class JavaTimeEnvelope {
+        private OffsetDateTime issuedAt;
+
+        public OffsetDateTime getIssuedAt() {
+            return issuedAt;
+        }
+
+        public void setIssuedAt(OffsetDateTime issuedAt) {
+            this.issuedAt = issuedAt;
         }
     }
 }

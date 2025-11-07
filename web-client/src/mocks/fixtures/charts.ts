@@ -128,6 +128,12 @@ export const patientVisitListFixture: PatientVisitListResponse = {
   list: [samplePatientVisit],
 };
 
+export const chartsPatientListFixture = {
+  list: [samplePatientVisit],
+  sequence: '1700000000000',
+  gapSize: 42,
+};
+
 export const docInfoListFixture: DocInfoListResponse = {
   list: sampleDocInfos,
 };

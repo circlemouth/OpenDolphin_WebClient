@@ -46,7 +46,7 @@ import type { ComponentProps } from 'react';
 const RIGHT_CONSOLE_COLLAPSE_BREAKPOINT = 1000;
 const RIGHT_CONSOLE_AUTO_EXPAND_BREAKPOINT = 1400;
 
-import { Button, Stack, SurfaceCard, TextArea, TextField } from '@/components';
+import { Button, ReplayGapBanner, Stack, SurfaceCard, TextArea, TextField } from '@/components';
 import { recordOperationEvent } from '@/libs/audit';
 import { CareMapPanel } from '@/features/charts/components/CareMapPanel';
 import { DocumentTimelinePanel } from '@/features/charts/components/DocumentTimelinePanel';
@@ -58,10 +58,12 @@ import { useChartLock } from '@/features/charts/hooks/useChartLock';
 import { usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { useStampLibrary } from '@/features/charts/hooks/useStampLibrary';
 import { useOrderSets } from '@/features/charts/hooks/useOrderSets';
-import { useFreeDocument } from '@/features/charts/hooks/useFreeDocument';
+import { saveFreeDocument } from '@/features/charts/api/free-document-api';
+import { freeDocumentQueryKey, useFreeDocument } from '@/features/charts/hooks/useFreeDocument';
 import { useDocumentAttachments } from '@/features/charts/hooks/useDocumentAttachments';
 import { useDiagnoses, useDiagnosisBuckets } from '@/features/charts/hooks/useDiagnoses';
 import { useTimelineEvents } from '@/features/charts/hooks/useTimelineEvents';
+import { useChartsReplayGap } from '@/features/charts/hooks/useChartsReplayGap';
 import type { PatientVisitSummary } from '@/features/charts/types/patient-visit';
 import type { StampDefinition } from '@/features/charts/types/stamp';
 import type { OrderSetDefinition } from '@/features/charts/types/order-set';
@@ -84,7 +86,7 @@ import { extractInsuranceOptions } from '@/features/charts/utils/health-insuranc
 import type { ParsedHealthInsurance } from '@/features/charts/utils/health-insurance';
 import { updatePatientMemo } from '@/features/patients/api/patient-memo-api';
 import { usePatientDetail } from '@/features/patients/hooks/usePatientDetail';
-import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
+import { patientKarteQueryKey, usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { useAuth } from '@/libs/auth';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
@@ -129,7 +131,6 @@ import type { OrderModuleSummary } from '@/features/charts/components/layout/Ord
 import type { DecisionSupportMessage } from '@/features/charts/types/decision-support';
 import type { LaboModule } from '@/features/charts/types/labo';
 import type {
-  TimelineEvent,
   TimelineEventPayload,
   TimelineOrderSource,
   TimelinePlanCardSource,
@@ -234,9 +235,13 @@ const PageShell = styled.div`
     --charts-content-padding-top: 10px;
     --charts-content-padding-bottom: 112px;
   }
+
+  &[data-replay-gap='true'] {
+    filter: saturate(0.85);
+  }
 `;
 
-const ContentGrid = styled.div`
+const ContentGrid = styled.div<{ $locked: boolean }>`
   flex: 1 1 auto;
   display: grid;
   grid-template-columns:
@@ -271,6 +276,14 @@ const ContentGrid = styled.div`
     --charts-header-height: var(--charts-header-height-compact);
     --charts-content-padding-top: 6px;
   }
+
+  ${({ $locked }) =>
+    $locked
+      ? `
+    pointer-events: none;
+    opacity: 0.55;
+  `
+      : ''}
 `;
 
 const LeftRail = styled.div`
@@ -675,7 +688,6 @@ type DocumentTimelineProps = Pick<
 
 type TimelineLabPayload = Extract<TimelineEventPayload, { kind: 'lab' }>;
 type TimelineOrderPayload = Extract<TimelineEventPayload, { kind: 'order' }>;
-type TimelineVisitPayload = Extract<TimelineEventPayload, { kind: 'visit' }>;
 
 const ORDER_ENTITY_PLAN_TYPE: Record<string, PlanComposerCard['type']> = {
   medOrder: 'medication',
@@ -1471,6 +1483,7 @@ export const ChartsPage = () => {
     (session?.userProfile as { commonName?: string } | undefined)?.commonName ??
     session?.credentials.userId ?? '';
   const visitsQuery = usePatientVisits();
+  const chartsReplayGap = useChartsReplayGap();
   const userPk = session?.userProfile?.userModelId ?? null;
   const stampLibraryQuery = useStampLibrary(userPk);
   const canLoadStampLibrary = Boolean(userPk);
@@ -2897,50 +2910,39 @@ export const ChartsPage = () => {
     setPatientMemoError(null);
 
     try {
-      setSaveState('saving');
-      setSaveError(null);
-
-      if (!selectedVisit) {
-        throw new Error('診察対象の受付が選択されていません。');
-      }
-      const progressContext = buildProgressContext({
-        draft,
-        visit: selectedVisit,
-        billing: billingPayload,
-        visitMemo: chiefComplaint,
+      await updatePatientMemo({
+        memoId: patientMemoId,
+        karteId,
+        memo: normalized,
+        session,
       });
 
-      if (editingDocument) {
-        const updatedDocument = createProgressNoteDocument(progressContext);
-        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
-        await updateDocument(payload);
-      } else {
-        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
-        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
-      }
+      setPatientMemoStatus('saved');
+      setPatientMemoDirty(false);
+      setPatientMemoUpdatedAt(new Date().toISOString());
 
-      setSaveState('saved');
-      setHasUnsavedChanges(false);
-      setLastSavedAt(new Date().toLocaleTimeString());
-      await lock.unlock();
-      await refetchKarte();
-      setEditingDocument(null);
+      recordOperationEvent('chart', 'info', 'patient_memo_save', '患者メモを保存しました', {
+        patientId: selectedVisit.patientId,
+        karteId,
+        memoLength: normalized.length,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: patientKarteQueryKey });
     } catch (error) {
-      setSaveState('error');
-      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
+      setPatientMemoStatus('error');
+      setPatientMemoError(
+        error instanceof Error && error.message
+          ? error.message
+          : '患者メモの保存に失敗しました。通信状態を確認して再度お試しください。',
+      );
     }
   }, [
-    billingPayload,
-    buildProgressContext,
-    chiefComplaint,
-    draft,
-    editingDocument,
     karteId,
     patientMemo,
     patientMemoDirty,
+    patientMemoId,
     patientMemoStatus,
-    refetchKarte,
-    lock,
+    queryClient,
     selectedVisit,
     session,
   ]);
@@ -2968,11 +2970,6 @@ export const ChartsPage = () => {
     if (!selectedVisit) {
       return;
     }
-    if (!session) {
-      setFreeDocumentStatus('error');
-      setFreeDocumentError('セッション情報が無効です。再度ログインしてください。');
-      return;
-    }
     if (!freeDocumentDirty && freeDocumentStatus !== 'error') {
       return;
     }
@@ -2983,51 +2980,39 @@ export const ChartsPage = () => {
     setFreeDocumentError(null);
 
     try {
-      setSaveState('saving');
-      setSaveError(null);
-
-      if (!selectedVisit) {
-        throw new Error('診察対象の受付が選択されていません。');
-      }
-      const progressContext = buildProgressContext({
-        draft,
-        visit: selectedVisit,
-        billing: billingPayload,
-        visitMemo: chiefComplaint,
+      const result = await saveFreeDocument({
+        patientId: selectedVisit.patientId,
+        comment: normalized,
+        id: freeDocumentId,
       });
 
-      if (editingDocument) {
-        const updatedDocument = createProgressNoteDocument(progressContext);
-        const payload = buildUpdatedDocumentPayload(editingDocument, updatedDocument);
-        await updateDocument(payload);
-      } else {
-        const nextState = selectedVisit.state & ~(1 << BIT_OPEN);
-        await saveProgressNote(progressContext, nextState, selectedVisit.visitId);
-      }
+      setFreeDocumentStatus('saved');
+      setFreeDocumentDirty(false);
+      setFreeDocumentUpdatedAt(result?.confirmedAt ?? new Date().toISOString());
+      setFreeDocumentId(result?.id ?? freeDocumentId ?? null);
 
-      setSaveState('saved');
-      setHasUnsavedChanges(false);
-      setLastSavedAt(new Date().toLocaleTimeString());
-      await lock.unlock();
-      await refetchKarte();
-      setEditingDocument(null);
+      recordOperationEvent('chart', 'info', 'free_document_save', '自由記載欄を保存しました', {
+        patientId: selectedVisit.patientId,
+        freeDocumentId: result?.id ?? freeDocumentId ?? null,
+        snippetLength: normalized.length,
+      });
+
+      await queryClient.invalidateQueries({ queryKey: freeDocumentQueryKey });
     } catch (error) {
-      setSaveState('error');
-      setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
+      setFreeDocumentStatus('error');
+      setFreeDocumentError(
+        error instanceof Error && error.message
+          ? error.message
+          : '自由記載欄の保存に失敗しました。時間をおいて再度お試しください。',
+      );
     }
   }, [
-    billingPayload,
-    buildProgressContext,
-    chiefComplaint,
-    draft,
-    editingDocument,
     freeDocumentComment,
     freeDocumentDirty,
+    freeDocumentId,
     freeDocumentStatus,
-    refetchKarte,
-    lock,
+    queryClient,
     selectedVisit,
-    session,
   ]);
 
   const handleDraftChange = useCallback((key: keyof ProgressNoteDraft, value: string) => {
@@ -3275,7 +3260,7 @@ export const ChartsPage = () => {
       setSaveState('error');
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
-  }, [draft, editingDocument, karteId, karteQuery, lock, orderModules, resolveProgressContext, selectedVisit, session]);
+  }, [editingDocument, karteQuery, lock, resolveProgressContext, selectedVisit]);
 
   const handleSave = useCallback(async () => {
     if (!session || !selectedVisit) {
@@ -3327,18 +3312,7 @@ export const ChartsPage = () => {
       setSaveState('error');
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
-  }, [
-    clientUuid,
-    draft,
-    editingDocument,
-    karteId,
-    karteQuery,
-    lock,
-    orderModules,
-    resolveProgressContext,
-    selectedVisit,
-    session,
-  ]);
+  }, [clientUuid, editingDocument, karteQuery, lock, resolveProgressContext, selectedVisit, session]);
 
   const handleUnlock = useCallback(async () => {
     if (!selectedVisit) {
@@ -3388,20 +3362,7 @@ export const ChartsPage = () => {
       setSaveState('error');
       setSaveError(error instanceof Error ? error.message : 'カルテの保存に失敗しました');
     }
-  }, [
-    draft,
-    editingDocument,
-    handleSave,
-    hasUnsavedChanges,
-    karteId,
-    karteQuery,
-    lock,
-    orderModules,
-    resolveProgressContext,
-    saveState,
-    selectedVisit,
-    session,
-  ]);
+  }, [editingDocument, handleSave, hasUnsavedChanges, karteQuery, lock, resolveProgressContext, saveState, selectedVisit]);
 
   const handleSaveDraft = useCallback(() => {
     void handleSave();
@@ -3846,7 +3807,7 @@ export const ChartsPage = () => {
       });
       setSaveError(null);
     },
-    [isLockedByMe, recordOperationEvent, registerOrderModules],
+    [isLockedByMe, registerOrderModules],
   );
 
   const searchResults = useMemo<ChartSearchResultItem[]>(() => {
@@ -4143,13 +4104,13 @@ export const ChartsPage = () => {
     [defaultReferenceLabModules],
   );
 
-  const handleTimelineVisitSelected = useCallback((_: TimelineVisitPayload, _event: TimelineEvent) => {
+  const handleTimelineVisitSelected = useCallback(() => {
     setLabSelectionActive(false);
     setReferenceLabModules(defaultReferenceLabModules);
   }, [defaultReferenceLabModules]);
 
   const handleTimelineLabSelected = useCallback(
-    (payload: TimelineLabPayload, _event: TimelineEvent) => {
+    (payload: TimelineLabPayload) => {
       setLabSelectionActive(true);
       const matched = timeline.labModules.find((module) => module.id === payload.moduleId);
       if (matched) {
@@ -4162,7 +4123,7 @@ export const ChartsPage = () => {
   );
 
   const handleTimelineOrderSelected = useCallback(
-    (payload: TimelineOrderPayload, _event: TimelineEvent) => {
+    (payload: TimelineOrderPayload) => {
       setLabSelectionActive(false);
       setReferenceLabModules(defaultReferenceLabModules);
       setActiveSection('plan');
@@ -4537,7 +4498,10 @@ export const ChartsPage = () => {
     <PageShell
       data-right-collapsed={isRightRailCollapsed}
       data-compact-header={hasSelectedVisit ? 'false' : 'true'}
+      data-replay-gap={chartsReplayGap.lockEditing ? 'true' : 'false'}
+      aria-busy={chartsReplayGap.ariaBusy}
     >
+      <ReplayGapBanner {...chartsReplayGap.banner} placement="inline" />
       <PatientHeaderBar
         ref={chiefComplaintRef}
         patient={selectedVisit}
@@ -4564,7 +4528,7 @@ export const ChartsPage = () => {
         isTimerRunning={isTimerRunning}
         canEdit={hasSelectedVisit}
       />
-      <ContentGrid>
+      <ContentGrid $locked={chartsReplayGap.lockEditing} aria-busy={chartsReplayGap.ariaBusy}>
         <LeftContextColumn
           documentTimeline={documentTimelineProps}
           visitMemo={chiefComplaint}

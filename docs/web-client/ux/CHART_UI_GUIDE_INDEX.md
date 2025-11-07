@@ -43,6 +43,8 @@ Web クライアントのカルテ UI（`ChartsPage` 配下）の仕様・構成
   - カルテ関連 API と UI の結び付き、および未移植機能の整理。既存 UI の不足箇所を把握する際に参照します。
 - [`process/SECURITY_AND_QUALITY_IMPROVEMENTS.md`](../process/SECURITY_AND_QUALITY_IMPROVEMENTS.md)
   - カルテ保存・排他制御・監査ログの UI 側要件。UI 改修で監査計測やイベント送出を変更する場合は必ず反映が必要です。
+- [`operations/RECEPTION_WEB_CLIENT_MANUAL.md#64-ui-ワイヤーフレームと通知バリアント`](../operations/RECEPTION_WEB_CLIENT_MANUAL.md#64-ui-%E3%83%AF%E3%82%A4%E3%83%A4%E3%83%BC%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%81%A8%E9%80%9A%E7%9F%A5%E3%83%90%E3%83%AA%E3%82%A2%E3%83%B3%E3%83%88)
+  - `chart-events.replay-gap` を受信した際のトースト/バナー/再取得ボタン構成、状態遷移（Idle→GapDetected→Reloading→Recovered/Retry）、Web/Touch 向け擬似コードをまとめた最新仕様。2026-06-14 追記で Touch 向け `ReplayGapState` 詳細・監査ペイロード・ローカル通知（Worker T）を掲載。ChartsPage の患者ヘッダーに同じ UX を適用する際は必ず参照すること。
 
 ### DocumentTimeline 安定化メモ（2025-11-01、担当: Codex）
 - **カテゴリ切替の自動復元**: `DocumentTimelinePanel` は利用可能なカテゴリがゼロになった場合でも直近の有効カテゴリへフォールバックし、常にイベントが 1 件以上選択された状態を維持する。

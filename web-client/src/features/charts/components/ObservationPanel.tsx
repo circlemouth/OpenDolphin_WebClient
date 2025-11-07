@@ -141,7 +141,7 @@ export const ObservationPanel = ({ karteId, userModelId }: ObservationPanelProps
     undefined,
   );
 
-  const observations = observationsQuery.data ?? [];
+  const observations = useMemo(() => observationsQuery.data ?? [], [observationsQuery.data]);
 
   const sortedObservations = useMemo(
     () =>

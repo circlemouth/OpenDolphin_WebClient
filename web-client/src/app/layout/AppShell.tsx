@@ -3,8 +3,9 @@ import type { KeyboardEvent } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import styled from '@emotion/styled';
 
-import { Button } from '@/components';
+import { Button, ReplayGapBanner, ReplayGapToast } from '@/components';
 import { useAuth } from '@/libs/auth';
+import { useReceptionReplayGap } from '@/features/reception/hooks/useReceptionReplayGap';
 import { SidebarContext } from './SidebarContext';
 
 const SkipLink = styled.a`
@@ -102,6 +103,10 @@ const Body = styled.div`
 
   &[data-app-section='charts'] {
     padding-top: 0;
+  }
+
+  &[data-replay-gap='true'] {
+    filter: saturate(0.85);
   }
 `;
 
@@ -245,9 +250,15 @@ const Sidebar = styled.aside`
   overflow: auto;
 `;
 
+const BannerSlot = styled.div`
+  padding: 8px ${({ theme }) => theme.layout.gutter};
+  background: ${({ theme }) => theme.palette.background};
+`;
+
 export const AppShell = () => {
   const navigate = useNavigate();
   const { session, logout, hasRole } = useAuth();
+  const receptionReplayGap = useReceptionReplayGap();
   const [sidebarContent, setSidebarContent] = useState<React.ReactNode | null>(null);
   const sidebarController = useMemo(
     () => ({
@@ -410,9 +421,18 @@ export const AppShell = () => {
             </Button>
           </HeaderActions>
         </Header>
+        {receptionReplayGap.banner.visible ? (
+          <BannerSlot>
+            <ReplayGapBanner {...receptionReplayGap.banner} placement="global" />
+          </BannerSlot>
+        ) : null}
 
         <SidebarContext.Provider value={sidebarController}>
-          <Body data-app-section={isChartsView ? 'charts' : 'default'}>
+          <Body
+            data-app-section={isChartsView ? 'charts' : 'default'}
+            data-replay-gap={receptionReplayGap.dimContent ? 'true' : 'false'}
+            aria-busy={receptionReplayGap.ariaBusy}
+          >
             <ContentRegion hasSidebar={hasSidebar}>
               <Main
                 id="main-content"
@@ -428,6 +448,12 @@ export const AppShell = () => {
           </Body>
         </SidebarContext.Provider>
       </Shell>
+      <ReplayGapToast
+        visible={receptionReplayGap.toast.visible}
+        phaseLabel={receptionReplayGap.toast.phaseLabel}
+        message={receptionReplayGap.toast.message}
+        runbookHref={receptionReplayGap.toast.runbookHref}
+      />
     </Fragment>
   );
 };

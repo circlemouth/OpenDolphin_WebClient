@@ -257,7 +257,7 @@ export const UserAdministrationPage = () => {
   const usersQuery = useUsersQuery();
   const { createMutation, updateMutation, deleteMutation } = useUserMutations();
 
-  const users = usersQuery.data ?? [];
+  const users = useMemo(() => usersQuery.data ?? [], [usersQuery.data]);
 
   const [filter, setFilter] = useState('');
   const [selectedUserId, setSelectedUserId] = useState<string | null>(null);
@@ -357,18 +357,21 @@ export const UserAdministrationPage = () => {
     [formValues.roles.admin],
   );
 
-  const ensureFacilityModel = (user: UserModel): UserModel => {
-    if (user.facilityModel) {
+  const ensureFacilityModel = useCallback(
+    (user: UserModel): UserModel => {
+      if (user.facilityModel) {
+        return user;
+      }
+      if (baselineUser?.facilityModel) {
+        return {
+          ...user,
+          facilityModel: baselineUser.facilityModel,
+        };
+      }
       return user;
-    }
-    if (baselineUser?.facilityModel) {
-      return {
-        ...user,
-        facilityModel: baselineUser.facilityModel,
-      };
-    }
-    return user;
-  };
+    },
+    [baselineUser],
+  );
 
   const handleSubmit = useCallback(async () => {
     if (!formMode) {
@@ -489,6 +492,7 @@ export const UserAdministrationPage = () => {
     buildRoles,
     closeModal,
     createMutation,
+    ensureFacilityModel,
     facilityId,
     formMode,
     formValues,

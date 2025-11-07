@@ -1,56 +1,22 @@
 import { buildCareMapEvents, groupCareMapEventsByDate, parseCareMapDate } from '../care-map';
-import type { DocInfoSummary } from '@/features/charts/types/doc';
 import type { AppointmentSummary } from '@/features/reception/api/appointment-api';
 import type { LaboModule } from '@/features/charts/types/labo';
 import type { MediaItem } from '@/features/charts/types/media';
+import { createDocInfoSummary } from './doc-info-summary.fixture';
 
 describe('care-map utilities', () => {
-  const baseDoc: DocInfoSummary = {
+  const baseDoc = createDocInfoSummary({
     docPk: 1,
-    parentPk: null,
     docId: 'doc-1',
     docType: 'karte',
     title: '初診カルテ',
-    purpose: '',
-    purposeDesc: null,
     confirmDate: '2026-05-01 09:00:00',
     firstConfirmDate: null,
-    department: null,
     departmentDesc: '内科',
-    healthInsurance: null,
-    healthInsuranceDesc: null,
-    healthInsuranceGUID: null,
     patientName: '患者 太郎',
     patientId: '0001',
-    patientGender: null,
     facilityName: 'OpenDolphin Clinic',
-    creatorLicense: null,
-    status: 'F',
-    hasMark: false,
-    hasImage: false,
-    hasRp: false,
-    hasTreatment: false,
-    hasLaboTest: false,
-    sendClaim: false,
-    sendLabtest: false,
-    sendMml: false,
-    claimDate: null,
-    versionNumber: '1',
-    versionNotes: null,
-    parentId: null,
-    parentIdRelation: null,
-    labtestOrderNumber: null,
-    issuanceDate: null,
-    institutionNumber: null,
-    admFlag: null,
-    useGeneralName: false,
-    priscriptionOutput: false,
-    chkPatientInfo: false,
-    chkUseDrugInfo: false,
-    chkHomeMedical: false,
-    pVTHealthInsuranceModel: null,
-    createrLisence: null,
-  };
+  });
 
   const baseAppointment: AppointmentSummary = {
     id: 10,

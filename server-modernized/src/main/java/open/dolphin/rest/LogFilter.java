@@ -135,7 +135,9 @@ public class LogFilter implements Filter {
             return false;
         }
 
-        boolean authenticated = password.equals(userCache.getMap().get(userName));
+        boolean authenticated = userCache.findPassword(userName)
+                .map(password::equals)
+                .orElse(false);
 
         if (authenticated) {
             return true;
@@ -147,7 +149,7 @@ public class LogFilter implements Filter {
         if (!authenticated) {
             authenticated = userService.authenticate(userName, password);
             if (authenticated) {
-                userCache.getMap().put(userName, password);
+                userCache.cachePassword(userName, password);
             }
         }
 

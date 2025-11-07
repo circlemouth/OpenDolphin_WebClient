@@ -40,7 +40,6 @@ import open.dolphin.touch.session.IPhoneServiceBean;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.touch.converter.IDocument2;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import open.dolphin.touch.DolphinTouchAuditLogger;
 import io.micrometer.core.instrument.MeterRegistry;
 import open.dolphin.security.audit.AuditEventPayload;
@@ -149,7 +148,9 @@ public class DolphinResource extends AbstractResource {
     @Context
     private HttpServletRequest servletRequest;
 
-    private final ObjectMapper objectMapper;
+    @Inject
+    // LegacyObjectMapperProducer で ADM/Touch 共通のデシリアライズ設定を共有
+    private ObjectMapper legacyTouchMapper;
 
     @Inject
     private IPhoneServiceBean iPhoneServiceBean;
@@ -171,12 +172,6 @@ public class DolphinResource extends AbstractResource {
 
     @Inject
     private MeterRegistry meterRegistry;
-
-    /** Creates a new instance of DolphinResource */
-    public DolphinResource() {
-        objectMapper = new ObjectMapper()
-                .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-    }
 
     @GET
     @Path("/patient/firstVisitors")
@@ -1185,7 +1180,7 @@ public class DolphinResource extends AbstractResource {
                 () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
             String facilityId = requireFacility(endpoint, traceId);
-            T payload = objectMapper.readValue(json, payloadType);
+            T payload = legacyTouchMapper.readValue(json, payloadType);
             if (payload == null) {
                 throw DolphinTouchAuditLogger.validationFailure(LOGGER, endpoint, traceId,
                         "Payload must not be empty");
@@ -1450,8 +1445,7 @@ public class DolphinResource extends AbstractResource {
 //    public String postPriscription(String json) throws IOException {
 //        
 //        // JSON to IPriscription
-//        ObjectMapper mapper = new ObjectMapper();
-//        IPriscription document = mapper.readValue(json, IPriscription.class);
+//        IPriscription document = legacyTouchMapper.readValue(json, IPriscription.class);
 //        
 //        // IPriscriptionModel to PriscriptionModel
 //        PriscriptionModel model = document.toModel();

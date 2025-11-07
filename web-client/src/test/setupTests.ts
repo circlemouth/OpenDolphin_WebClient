@@ -5,7 +5,7 @@ import { toHaveNoViolations } from 'vitest-axe/matchers';
 expect.extend({ toHaveNoViolations });
 
 declare module 'vitest' {
-  interface Assertion<T = any> {
+  interface Assertion {
     toHaveNoViolations(): Promise<void>;
   }
 

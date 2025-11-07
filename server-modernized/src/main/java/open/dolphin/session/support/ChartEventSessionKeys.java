@@ -15,4 +15,6 @@ public final class ChartEventSessionKeys {
     public static final String DISPATCH_URL = "/resources/chartEvent/dispatch";
     public static final String EVENT_ATTRIBUTE = "chartEvent";
     public static final String SSE_EVENT_NAME = "chart-event";
+    public static final String SSE_REPLAY_GAP_EVENT_NAME = "chart-events.replay-gap";
+    public static final String HISTORY_GAP_ATTRIBUTE = "chartEventHistoryGapDetected";
 }

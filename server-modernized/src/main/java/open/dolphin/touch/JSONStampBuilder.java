@@ -5,6 +5,7 @@ import java.io.StringWriter;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.*;
+import open.dolphin.rest.AbstractResource;
 import com.fasterxml.jackson.core.JsonGenerationException;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -121,7 +122,7 @@ public class JSONStampBuilder {
             TextStampModel tx = (TextStampModel)model;
 //minagawa^               
             StringWriter sw = new StringWriter();
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = AbstractResource.getSerializeMapper();
             mapper.writeValue(sw, tx);
             String json = sw.toString();
             sw.close();

@@ -2,7 +2,10 @@ package open.dolphin.rest;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import io.micrometer.core.instrument.Gauge;
+import io.micrometer.core.instrument.MeterRegistry;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.sse.OutboundSseEvent;
 import jakarta.ws.rs.sse.Sse;
@@ -13,6 +16,7 @@ import java.util.concurrent.CompletionStage;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.CopyOnWriteArrayList;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -37,12 +41,24 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
     private static final Logger LOGGER = Logger.getLogger(ChartEventSseSupport.class.getName());
 
     private static final int HISTORY_LIMIT = 100;
+    private static final String HISTORY_RETAINED_GAUGE = "chartEvent.history.retained";
+    private static final String HISTORY_GAP_COUNTER = "chartEvent.history.gapDetected";
 
     private final Map<String, FacilityContext> facilityContexts = new ConcurrentHashMap<>();
 
     private final AtomicLong sequence = new AtomicLong();
 
     private final ObjectMapper mapper = AbstractResource.getSerializeMapper();
+
+    private static final String REPLAY_GAP_RELOAD_PAYLOAD = "{\"requiredAction\":\"reload\"}";
+
+    private MeterRegistry meterRegistry;
+
+    @Inject
+    void setMeterRegistry(MeterRegistry meterRegistry) {
+        this.meterRegistry = meterRegistry;
+        facilityContexts.forEach(this::registerHistoryGauge);
+    }
 
     /**
      * Registers a new SSE subscription for the specified facility.
@@ -62,11 +78,23 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
         }
 
         FacilityContext context = facilityContexts.computeIfAbsent(facilityId, id -> new FacilityContext());
+        registerHistoryGauge(facilityId, context);
         SseClient client = new SseClient(clientUuid, sink, sse);
         context.addClient(client);
 
         long replayAfter = parseEventId(lastEventId);
         if (replayAfter >= 0) {
+            if (context.isHistoryGap(replayAfter)) {
+                client.markHistoryGapDetected();
+                long oldestHistoryId = context.getOldestHistoryId();
+                LOGGER.log(
+                        Level.WARNING,
+                        "SSE history gap detected for facility {0}, client {1}: lastEventId={2}, oldestHistoryId={3}",
+                        new Object[]{facilityId, clientUuid, replayAfter, oldestHistoryId}
+                );
+                recordHistoryGapMetric(facilityId);
+                sendReplayGapEvent(context, client);
+            }
             context.replayHistory(replayAfter, client, payload -> sendEvent(context, payload, client));
         }
     }
@@ -117,6 +145,17 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
         }
     }
 
+    private void registerHistoryGauge(String facilityId, FacilityContext context) {
+        context.registerGaugeIfNecessary(meterRegistry, facilityId);
+    }
+
+    private void recordHistoryGapMetric(String facilityId) {
+        if (meterRegistry == null) {
+            return;
+        }
+        meterRegistry.counter(HISTORY_GAP_COUNTER, "facility", facilityId).increment();
+    }
+
     private void sendEvent(FacilityContext context, SsePayload payload, SseClient client) {
         if (client == null || client.sink.isClosed()) {
             return;
@@ -127,6 +166,26 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
                 .id(Long.toString(payload.id))
                 .mediaType(MediaType.APPLICATION_JSON_TYPE)
                 .data(String.class, payload.data)
+                .build();
+
+        CompletionStage<?> stage = client.sink.send(event);
+        stage.whenComplete((ignored, throwable) -> {
+            if (throwable != null) {
+                LOGGER.log(Level.FINE, "SSE sink send failed, removing client", throwable);
+                context.removeClient(client.sink);
+            }
+        });
+    }
+
+    private void sendReplayGapEvent(FacilityContext context, SseClient client) {
+        if (client == null || client.sink.isClosed()) {
+            return;
+        }
+
+        OutboundSseEvent event = client.sse.newEventBuilder()
+                .name(ChartEventSessionKeys.SSE_REPLAY_GAP_EVENT_NAME)
+                .mediaType(MediaType.APPLICATION_JSON_TYPE)
+                .data(String.class, REPLAY_GAP_RELOAD_PAYLOAD)
                 .build();
 
         CompletionStage<?> stage = client.sink.send(event);
@@ -165,6 +224,8 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
 
         private final CopyOnWriteArrayList<SseClient> clients = new CopyOnWriteArrayList<>();
         private final ConcurrentLinkedDeque<SsePayload> history = new ConcurrentLinkedDeque<>();
+        private final AtomicLong latestSequenceId = new AtomicLong(-1L);
+        private final AtomicBoolean gaugeRegistered = new AtomicBoolean();
 
         void addClient(SseClient client) {
             clients.add(client);
@@ -177,6 +238,7 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
 
         void appendHistory(SsePayload payload) {
             history.addLast(payload);
+            latestSequenceId.set(payload.id);
             while (history.size() > HISTORY_LIMIT) {
                 history.pollFirst();
             }
@@ -188,6 +250,51 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
                     sender.accept(payload);
                 }
             }
+        }
+
+        long getOldestHistoryId() {
+            SsePayload oldest = history.peekFirst();
+            if (oldest == null) {
+                long latest = latestSequenceId.get();
+                return latest >= 0 ? latest : -1L;
+            }
+            return oldest.id;
+        }
+
+        long getLatestSequenceId() {
+            return latestSequenceId.get();
+        }
+
+        double getRetainedSpan() {
+            long latest = getLatestSequenceId();
+            long oldest = getOldestHistoryId();
+            if (latest < 0 || oldest < 0) {
+                return 0D;
+            }
+            long span = latest - oldest;
+            return span < 0 ? 0D : (double) span;
+        }
+
+        boolean isHistoryGap(long lastEventId) {
+            if (lastEventId < 0) {
+                return false;
+            }
+            long oldest = getOldestHistoryId();
+            return oldest >= 0 && lastEventId < oldest;
+        }
+
+        void registerGaugeIfNecessary(MeterRegistry registry, String facilityId) {
+            if (registry == null) {
+                return;
+            }
+            if (!gaugeRegistered.compareAndSet(false, true)) {
+                return;
+            }
+            Gauge.builder(HISTORY_RETAINED_GAUGE, this, FacilityContext::getRetainedSpan)
+                    .description("Difference between latest and oldest SSE chart-event history IDs")
+                    .tag("facility", facilityId)
+                    .strongReference(true)
+                    .register(registry);
         }
 
         private void closeQuietly(SseEventSink sink) {
@@ -203,11 +310,16 @@ public class ChartEventSseSupport implements ChartEventStreamPublisher {
         private final String clientUuid;
         private final SseEventSink sink;
         private final Sse sse;
+        private final Map<String, Object> attributes = new ConcurrentHashMap<>();
 
         private SseClient(String clientUuid, SseEventSink sink, Sse sse) {
             this.clientUuid = clientUuid;
             this.sink = sink;
             this.sse = sse;
+        }
+
+        private void markHistoryGapDetected() {
+            attributes.put(ChartEventSessionKeys.HISTORY_GAP_ATTRIBUTE, Boolean.TRUE);
         }
     }
 

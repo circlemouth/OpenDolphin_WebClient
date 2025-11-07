@@ -454,7 +454,10 @@ export const AppointmentManager = ({
     };
   }, [onPendingChange]);
 
-  const appointments = appointmentsQuery.data ?? [];
+  const appointments = useMemo(
+    () => appointmentsQuery.data ?? [],
+    [appointmentsQuery.data],
+  );
 
   useEffect(() => {
     if (!selectedAppointmentId) {

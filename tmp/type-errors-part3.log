@@ -1,0 +1,144 @@
+129:src/features/charts/components/DiagnosisPanel.tsx(96,67): error TS2339: Property 'dangerMuted' does not exist on type 'Palette'.
+130:src/features/charts/components/DocumentTimelinePanel.tsx(134,30): error TS2339: Property 'warningMuted' does not exist on type 'Palette'.
+131:src/features/charts/components/DocumentTimelinePanel.tsx(136,30): error TS2339: Property 'dangerMuted' does not exist on type 'Palette'.
+132:src/features/charts/components/DocumentTimelinePanel.tsx(418,30): error TS2304: Cannot find name 'handleRename'.
+133:src/features/charts/components/layout/RightPane.tsx(636,10): error TS2304: Cannot find name 'mediaLoading'.
+134:src/features/charts/components/layout/RightPane.tsx(638,13): error TS2552: Cannot find name 'mediaError'. Did you mean 'MediaError'?
+135:src/features/charts/components/layout/WorkSurface.tsx(454,48): error TS2322: Type '{ children: string; tone: "info"; size: string; }' is not assignable to type 'IntrinsicAttributes & StatusBadgeProps'.
+137:src/features/charts/components/MedicalCertificatesPanel.tsx(43,41): error TS2339: Property 'textPrimary' does not exist on type 'Palette'.
+138:src/features/charts/components/MedicalCertificatesPanel.tsx(309,11): error TS2322: Type '({ value: number; label: string; } | { value: string; label: string; })[]' is not assignable to type 'SelectOption[]'.
+143:src/features/charts/components/ObservationPanel.tsx(82,67): error TS2339: Property 'dangerMuted' does not exist on type 'Palette'.
+144:src/features/charts/components/OrderSetPanel.tsx(552,25): error TS18048: 'value' is possibly 'undefined'.
+145:src/features/charts/hooks/useDiagnoses.ts(84,5): error TS2353: Object literal may only specify known properties, and 'confirmed' does not exist in type 'RegisteredDiagnosis'.
+146:src/features/charts/pages/ChartsPage.tsx(23,5): error TS2353: Object literal may only specify known properties, and 'karteBean' does not exist in type 'DocumentModelPayload'.
+147:src/features/charts/pages/ChartsPage.tsx(23,24): error TS2339: Property 'karteBean' does not exist on type 'DocumentModelPayload'.
+148:src/features/charts/pages/ChartsPage.tsx(23,46): error TS2339: Property 'karteBean' does not exist on type 'DocumentModelPayload'.
+149:src/features/charts/pages/ChartsPage.tsx(24,24): error TS2339: Property 'userModel' does not exist on type 'DocumentModelPayload'.
+150:src/features/charts/pages/ChartsPage.tsx(24,46): error TS2339: Property 'userModel' does not exist on type 'DocumentModelPayload'.
+151:src/features/charts/pages/ChartsPage.tsx(48,10): error TS6133: 'patientVisitsQueryKey' is declared but its value is never read.
+152:src/features/charts/pages/ChartsPage.tsx(57,1): error TS6133: 'saveFreeDocument' is declared but its value is never read.
+153:src/features/charts/pages/ChartsPage.tsx(58,1): error TS6133: 'CHART_EVENT_TYPES' is declared but its value is never read.
+154:src/features/charts/pages/ChartsPage.tsx(68,1): error TS6133: 'fetchStampModule' is declared but its value is never read.
+155:src/features/charts/pages/ChartsPage.tsx(173,61): error TS2551: Property 'onPrimary' does not exist on type 'Palette'. Did you mean 'primary'?
+156:src/features/charts/pages/ChartsPage.tsx(1115,23): error TS18047: 'session' is possibly 'null'.
+157:src/features/charts/pages/ChartsPage.tsx(1116,26): error TS18047: 'session' is possibly 'null'.
+158:src/features/charts/pages/ChartsPage.tsx(1116,62): error TS18047: 'session' is possibly 'null'.
+159:src/features/charts/pages/ChartsPage.tsx(1117,22): error TS18047: 'session' is possibly 'null'.
+160:src/features/charts/pages/ChartsPage.tsx(1118,22): error TS18047: 'session' is possibly 'null'.
+161:src/features/charts/pages/ChartsPage.tsx(1135,33): error TS2304: Cannot find name 'createProgressNoteDocument'.
+162:src/features/charts/pages/ChartsPage.tsx(1137,15): error TS2552: Cannot find name 'updateDocument'. Did you mean 'updatedDocument'?
+163:src/features/charts/pages/ChartsPage.tsx(1140,32): error TS2345: Argument of type '{ draft: ProgressNoteDraft; visit: PatientVisitSummary; karteId: number | null; session: AuthSession | null; facilityName: string | undefined; ... 6 more ...; orderModules: { ...; }[]; }' is not assignable to parameter of type 'ProgressNoteContext'.
+167:src/features/charts/pages/ChartsPage.tsx(1267,33): error TS2304: Cannot find name 'createProgressNoteDocument'.
+168:src/features/charts/pages/ChartsPage.tsx(1269,15): error TS2552: Cannot find name 'updateDocument'. Did you mean 'updatedDocument'?
+169:src/features/charts/pages/ChartsPage.tsx(1365,33): error TS2304: Cannot find name 'createProgressNoteDocument'.
+170:src/features/charts/pages/ChartsPage.tsx(1367,15): error TS2304: Cannot find name 'updateDocument'.
+171:src/features/charts/pages/ChartsPage.tsx(1370,32): error TS2345: Argument of type '{ draft: ProgressNoteDraft; visit: PatientVisitSummary; karteId: number | null; session: AuthSession; facilityName: string | undefined; ... 6 more ...; orderModules: { ...; }[]; }' is not assignable to parameter of type 'ProgressNoteContext'.
+175:src/features/charts/pages/ChartsPage.tsx(1448,23): error TS18047: 'session' is possibly 'null'.
+176:src/features/charts/pages/ChartsPage.tsx(1449,26): error TS18047: 'session' is possibly 'null'.
+177:src/features/charts/pages/ChartsPage.tsx(1449,62): error TS18047: 'session' is possibly 'null'.
+178:src/features/charts/pages/ChartsPage.tsx(1450,22): error TS18047: 'session' is possibly 'null'.
+179:src/features/charts/pages/ChartsPage.tsx(1451,22): error TS18047: 'session' is possibly 'null'.
+180:src/features/charts/pages/ChartsPage.tsx(1468,33): error TS2304: Cannot find name 'createProgressNoteDocument'.
+181:src/features/charts/pages/ChartsPage.tsx(1470,15): error TS2304: Cannot find name 'updateDocument'.
+182:src/features/charts/pages/ChartsPage.tsx(1473,32): error TS2345: Argument of type '{ draft: ProgressNoteDraft; visit: PatientVisitSummary; karteId: number | null; session: AuthSession | null; facilityName: string | undefined; ... 6 more ...; orderModules: { ...; }[]; }' is not assignable to parameter of type 'ProgressNoteContext'.
+186:src/features/charts/pages/ChartsPage.tsx(1536,33): error TS2304: Cannot find name 'createProgressNoteDocument'.
+187:src/features/charts/pages/ChartsPage.tsx(1538,15): error TS2304: Cannot find name 'updateDocument'.
+188:src/features/charts/pages/ChartsPage.tsx(1592,23): error TS18047: 'session' is possibly 'null'.
+189:src/features/charts/pages/ChartsPage.tsx(1593,26): error TS18047: 'session' is possibly 'null'.
+190:src/features/charts/pages/ChartsPage.tsx(1593,62): error TS18047: 'session' is possibly 'null'.
+191:src/features/charts/pages/ChartsPage.tsx(1594,22): error TS18047: 'session' is possibly 'null'.
+192:src/features/charts/pages/ChartsPage.tsx(1595,22): error TS18047: 'session' is possibly 'null'.
+193:src/features/charts/pages/ChartsPage.tsx(1612,33): error TS2304: Cannot find name 'createProgressNoteDocument'.
+194:src/features/charts/pages/ChartsPage.tsx(1614,15): error TS2304: Cannot find name 'updateDocument'.
+195:src/features/charts/pages/ChartsPage.tsx(1617,32): error TS2345: Argument of type '{ draft: ProgressNoteDraft; visit: PatientVisitSummary; karteId: number | null; session: AuthSession | null; facilityName: string | undefined; ... 6 more ...; orderModules: { ...; }[]; }' is not assignable to parameter of type 'ProgressNoteContext'.
+199:src/features/charts/pages/ChartsPage.tsx(1693,36): error TS2551: Property 'healthInsuranceGUID' does not exist on type 'DocInfoSummary'. Did you mean 'healthInsurance'?
+200:src/features/charts/pages/ChartsPage.tsx(1761,23): error TS18047: 'session' is possibly 'null'.
+201:src/features/charts/pages/ChartsPage.tsx(1762,26): error TS18047: 'session' is possibly 'null'.
+202:src/features/charts/pages/ChartsPage.tsx(1762,62): error TS18047: 'session' is possibly 'null'.
+203:src/features/charts/pages/ChartsPage.tsx(1763,22): error TS18047: 'session' is possibly 'null'.
+204:src/features/charts/pages/ChartsPage.tsx(1764,22): error TS18047: 'session' is possibly 'null'.
+205:src/features/charts/pages/ChartsPage.tsx(1765,25): error TS18047: 'selectedVisit' is possibly 'null'.
+206:src/features/charts/pages/ChartsPage.tsx(1766,25): error TS18047: 'selectedVisit' is possibly 'null'.
+207:src/features/charts/pages/ChartsPage.tsx(1781,33): error TS2304: Cannot find name 'createProgressNoteDocument'.
+208:src/features/charts/pages/ChartsPage.tsx(1783,15): error TS2304: Cannot find name 'updateDocument'.
+209:src/features/charts/pages/ChartsPage.tsx(1785,27): error TS18047: 'selectedVisit' is possibly 'null'.
+210:src/features/charts/pages/ChartsPage.tsx(1786,32): error TS2345: Argument of type '{ draft: ProgressNoteDraft; visit: PatientVisitSummary | null; karteId: number | null; session: AuthSession | null; facilityName: string | undefined; ... 6 more ...; orderModules: { ...; }[]; }' is not assignable to parameter of type 'ProgressNoteContext'.
+214:src/features/charts/pages/ChartsPage.tsx(1786,60): error TS18047: 'selectedVisit' is possibly 'null'.
+215:src/features/charts/pages/ChartsPage.tsx(1878,13): error TS2322: Type '({ id: `${string}-${string}-${string}-${string}-${string}`; source: "orca"; label: string; moduleInfo: { stampName: string; stampRole: string; entity: string; stampNumber: number; stampId: string | undefined; }; beanBytes: string; } | null)[]' is not assignable to type 'OrderModuleDraft[]'.
+218:src/features/charts/pages/ChartsPage.tsx(1897,35): error TS2677: A type predicate's type must be assignable to its parameter's type.
+222:src/features/charts/pages/ChartsPage.tsx(1918,9): error TS2345: Argument of type '{ id: string; label: string; detail: string; section: "A&P"; payload: string; planType: string; }' is not assignable to parameter of type 'SearchResultItem'.
+225:src/features/charts/pages/ChartsPage.tsx(1932,9): error TS2345: Argument of type '{ id: string; label: string; detail: string; section: "陷・ｽｦ驗ゑｽｮ" | "隶諛域ｸ・ | "髦ｮ・ｬ" | "A&P"; payload: string; planType: string; }' is not assignable to parameter of type 'SearchResultItem'.
+228:src/features/charts/pages/ChartsPage.tsx(2006,35): error TS2367: This comparison appears to be unintentional because the types '"陷・ｽｦ驗ゑｽｮ" | "隶諛域ｸ・ | "郢晁ｼ斐°郢晢ｽｭ郢晢ｽｼ郢ｧ・｢郢昴・繝ｻ" | "髦ｮ・ｬ" | "A&P" | "郢昴・ﾎｦ郢晏干ﾎ・ | "鬩穂ｸｻ謔臥ｹｧ・ｫ郢晢ｽｫ郢昴・' and '"驛｢譏ｴ繝ｻ・趣ｽｦ驛｢譎丞ｹｲ・弱・' have no overlap.
+229:src/features/charts/pages/ChartsPage.tsx(2214,32): error TS2322: Type '"warning"' is not assignable to type 'SurfaceTone | undefined'.
+230:src/features/charts/pages/ChartsPage.tsx(2588,9): error TS2719: Type '(item: SearchResultItem) => void' is not assignable to type '(item: SearchResultItem) => void'. Two different types with this name exist, but they are unrelated.
+233:src/features/charts/utils/__tests__/care-map.test.ts(7,1): error TS2593: Cannot find name 'describe'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha` and then add 'jest' or 'mocha' to the types field in your tsconfig.
+234:src/features/charts/utils/__tests__/care-map.test.ts(92,3): error TS2593: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha` and then add 'jest' or 'mocha' to the types field in your tsconfig.
+235:src/features/charts/utils/__tests__/care-map.test.ts(94,5): error TS2304: Cannot find name 'expect'.
+236:src/features/charts/utils/__tests__/care-map.test.ts(95,5): error TS2304: Cannot find name 'expect'.
+237:src/features/charts/utils/__tests__/care-map.test.ts(96,5): error TS2304: Cannot find name 'expect'.
+238:src/features/charts/utils/__tests__/care-map.test.ts(97,5): error TS2304: Cannot find name 'expect'.
+239:src/features/charts/utils/__tests__/care-map.test.ts(98,5): error TS2304: Cannot find name 'expect'.
+240:src/features/charts/utils/__tests__/care-map.test.ts(101,5): error TS2304: Cannot find name 'expect'.
+241:src/features/charts/utils/__tests__/care-map.test.ts(102,5): error TS2304: Cannot find name 'expect'.
+242:src/features/charts/utils/__tests__/care-map.test.ts(105,5): error TS2304: Cannot find name 'expect'.
+243:src/features/charts/utils/__tests__/care-map.test.ts(106,5): error TS2304: Cannot find name 'expect'.
+244:src/features/charts/utils/__tests__/care-map.test.ts(109,3): error TS2593: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha` and then add 'jest' or 'mocha' to the types field in your tsconfig.
+245:src/features/charts/utils/__tests__/care-map.test.ts(117,5): error TS2304: Cannot find name 'expect'.
+246:src/features/charts/utils/__tests__/care-map.test.ts(125,5): error TS2304: Cannot find name 'expect'.
+247:src/features/charts/utils/__tests__/care-map.test.ts(126,5): error TS2304: Cannot find name 'expect'.
+248:src/features/charts/utils/__tests__/care-map.test.ts(127,5): error TS2304: Cannot find name 'expect'.
+249:src/features/charts/utils/__tests__/care-map.test.ts(128,5): error TS2304: Cannot find name 'expect'.
+250:src/features/charts/utils/__tests__/care-map.test.ts(131,3): error TS2593: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha` and then add 'jest' or 'mocha' to the types field in your tsconfig.
+251:src/features/charts/utils/__tests__/care-map.test.ts(143,5): error TS2304: Cannot find name 'expect'.
+252:src/features/charts/utils/__tests__/care-map.test.ts(149,5): error TS2304: Cannot find name 'expect'.
+253:src/features/charts/utils/__tests__/care-map.test.ts(150,5): error TS2304: Cannot find name 'expect'.
+254:src/features/charts/utils/__tests__/care-map.test.ts(153,3): error TS2593: Cannot find name 'it'. Do you need to install type definitions for a test runner? Try `npm i --save-dev @types/jest` or `npm i --save-dev @types/mocha` and then add 'jest' or 'mocha' to the types field in your tsconfig.
+255:src/features/charts/utils/__tests__/care-map.test.ts(161,5): error TS2304: Cannot find name 'expect'.
+256:src/features/charts/utils/__tests__/order-set-sharing.test.ts(89,82): error TS2345: Argument of type '{ name: string; description: string; tags: string[]; planItems: { type: string; title: string; detail: string; note: string; }[]; }' is not assignable to parameter of type 'OrderSetShareItem'.
+262:src/features/charts/utils/__tests__/order-set-sharing.test.ts(100,65): error TS2345: Argument of type '{ name: string; tags: string[]; planItems: { type: string; title: string; detail: string; note: string; }[]; }' is not assignable to parameter of type 'OrderSetShareItem'.
+268:src/features/charts/utils/__tests__/order-set-sharing.test.ts(104,67): error TS2345: Argument of type '{ name: string; tags: string[]; planItems: { type: string; title: string; detail: string; note: string; }[]; }' is not assignable to parameter of type 'OrderSetShareItem'.
+274:src/features/charts/utils/care-map.ts(122,7): error TS2322: Type 'string | null | undefined' is not assignable to type 'string'.
+276:src/features/charts/utils/progress-note-payload.ts(288,35): error TS2677: A type predicate's type must be assignable to its parameter's type.
+279:src/features/dashboard/pages/DashboardPage.tsx(20,18): error TS2322: Type '{ children: Element; as: string; "aria-labelledby": string; }' is not assignable to type 'IntrinsicAttributes & SurfaceCardProps'.
+281:src/features/patients/api/__tests__/patient-api.test.ts(92,31): error TS2591: Cannot find name 'Buffer'. Do you need to install type definitions for node? Try `npm i --save-dev @types/node` and then add 'node' to the types field in your tsconfig.
+282:src/features/patients/api/patient-api.ts(58,3): error TS2322: Type '({ id: number | undefined; beanBytes: string; } | null)[]' is not assignable to type 'PatientHealthInsurance[]'.
+285:src/features/patients/api/patient-api.ts(69,31): error TS2677: A type predicate's type must be assignable to its parameter's type.
+288:src/features/patients/pages/PatientsPage.tsx(271,5): error TS2322: Type 'Resolver<{ patientId: string; fullName: string; healthInsurances: { id?: number | undefined; guid?: string | undefined; className?: string | undefined; classCode?: string | undefined; insuranceNumber?: string | undefined; clientGroup?: string | undefined; clientNumber?: string | undefined; startDate?: string | undef...' is not assignable to type 'Resolver<{ patientId: string; fullName: string; gender: "U" | "M" | "F" | "O"; healthInsurances: { id?: number | undefined; guid?: string | undefined; className?: string | undefined; classCode?: string | undefined; ... 4 more ...; expiredDate?: string | undefined; }[]; ... 16 more ...; reserve6?: string | undefined;...'.
+293:src/features/patients/pages/PatientsPage.tsx(383,22): error TS2345: Argument of type '{ id: number; patientId: string; fullName: string; kanaName: string; gender: string; birthday: string; telephone: string; mobilePhone: string; email: string; memo: string; appMemo: string; relations: string; ... 8 more ...; healthInsurances: { ...; }[]; }' is not assignable to parameter of type '{ patientId: string; fullName: string; gender: "U" | "M" | "F" | "O"; healthInsurances: { id?: number | undefined; guid?: string | undefined; className?: string | undefined; classCode?: string | undefined; ... 4 more ...; expiredDate?: string | undefined; }[]; ... 16 more ...; reserve6?: string | undefined; } | { .....'.
+296:src/features/patients/pages/PatientsPage.tsx(431,28): error TS2345: Argument of type 'string' is not assignable to parameter of type 'never'.
+297:src/features/patients/pages/PatientsPage.tsx(593,39): error TS2345: Argument of type '"error"' is not assignable to parameter of type 'AuditSeverity'.
+298:src/features/patients/pages/PatientsPage.tsx(617,20): error TS2322: Type '{ children: Element; as: string; "aria-labelledby": string; }' is not assignable to type 'IntrinsicAttributes & SurfaceCardProps'.
+300:src/features/patients/pages/PatientsPage.tsx(681,22): error TS2322: Type '{ children: Element; as: string; "aria-labelledby": string; }' is not assignable to type 'IntrinsicAttributes & SurfaceCardProps'.
+302:src/features/patients/pages/PatientsPage.tsx(732,24): error TS2322: Type '{ children: Element; as: string; "aria-labelledby": string; }' is not assignable to type 'IntrinsicAttributes & SurfaceCardProps'.
+304:src/features/patients/pages/PatientsPage.tsx(801,24): error TS2322: Type '{ children: Element; as: string; "aria-labelledby": string; }' is not assignable to type 'IntrinsicAttributes & SurfaceCardProps'.
+306:src/features/patients/pages/PatientsPage.tsx(1078,24): error TS2322: Type '{ children: Element; as: string; "aria-labelledby": string; }' is not assignable to type 'IntrinsicAttributes & SurfaceCardProps'.
+308:src/features/reception/api/appointment-api.ts(87,5): error TS2345: Argument of type '"reception.appointments.fetch"' is not assignable to parameter of type 'PerformanceMetricName'.
+309:src/features/reception/api/appointment-api.ts(181,5): error TS2345: Argument of type '"reception.appointments.save"' is not assignable to parameter of type 'PerformanceMetricName'.
+310:src/features/reception/api/visit-api.ts(212,5): error TS2345: Argument of type '"reception.legacy.fetchVisits"' is not assignable to parameter of type 'PerformanceMetricName'.
+311:src/features/reception/api/visit-api.ts(237,5): error TS2345: Argument of type '"reception.legacy.registerVisit"' is not assignable to parameter of type 'PerformanceMetricName'.
+312:src/features/reception/api/visit-api.ts(253,5): error TS2345: Argument of type '"reception.legacy.updateMemo"' is not assignable to parameter of type 'PerformanceMetricName'.
+313:src/features/reception/components/__tests__/AppointmentManager.reminder.test.tsx(38,3): error TS2304: Cannot find name 'afterEach'.
+314:src/features/reception/components/AppointmentManager.tsx(329,13): error TS4104: The type 'readonly [{ readonly value: "email"; readonly label: "郢晢ｽ｡郢晢ｽｼ郢晢ｽｫ"; }, { readonly value: "sms"; readonly label: "SMS"; }]' is 'readonly' and cannot be assigned to the mutable type 'SelectOption[]'.
+315:src/features/reception/components/VisitManagementDialog.tsx(56,46): error TS2339: Property 'dangerSubtle' does not exist on type 'Palette'.
+316:src/features/reception/components/VisitManagementDialog.tsx(78,61): error TS2551: Property 'onPrimary' does not exist on type 'Palette'. Did you mean 'primary'?
+317:src/features/reception/components/VisitManagementDialog.tsx(95,67): error TS2339: Property 'dangerSubtle' does not exist on type 'Palette'.
+318:src/features/reception/components/VisitManagementDialog.tsx(276,16): error TS2741: Property 'options' is missing in type '{ children: Element[]; label: string; value: string; onChange: (event: ChangeEvent<HTMLSelectElement>) => void; disabled: boolean; description: string; }' but required in type 'SelectFieldProps'.
+319:src/features/reception/components/VisitManagementDialog.tsx(332,17): error TS2322: Type '{ label: string; minRows: number; value: string; onChange: (event: ChangeEvent<HTMLTextAreaElement>) => void; disabled: boolean; }' is not assignable to type 'IntrinsicAttributes & TextAreaProps & RefAttributes<HTMLTextAreaElement>'.
+321:src/features/reception/pages/ReceptionPage.tsx(904,27): error TS2503: Cannot find namespace 'JSX'.
+322:src/features/reception/pages/ReceptionPage.tsx(938,30): error TS2503: Cannot find namespace 'JSX'.
+323:src/features/schedule/api/facility-schedule-api.ts(101,5): error TS2345: Argument of type '"schedule.facility.fetch"' is not assignable to parameter of type 'PerformanceMetricName'.
+324:src/features/schedule/api/schedule-document-api.ts(73,5): error TS2345: Argument of type 'DeleteScheduleEntryParams' is not assignable to parameter of type 'Record<string, unknown>'.
+326:src/features/schedule/components/ScheduleReservationDialog.tsx(90,46): error TS2339: Property 'dangerSubtle' does not exist on type 'Palette'.
+327:src/features/schedule/pages/FacilitySchedulePage.tsx(652,46): error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<number, unknown, CreateDocumentArgs, unknown>'.
+329:src/features/schedule/pages/FacilitySchedulePage.tsx(653,49): error TS2339: Property 'isLoading' does not exist on type 'UseMutationResult<void, unknown, DeleteReservationArgs, unknown>'.
+331:src/libs/auth/auth-headers.ts(1,22): error TS7016: Could not find a declaration file for module 'crypto-js'. 'C:/Users/marug/Documents/OpenDolphin_WebClient/web-client/node_modules/crypto-js/index.js' implicitly has an 'any' type.
+333:src/libs/auth/AuthProvider.tsx(14,27): error TS2345: Argument of type '() => { userName?: undefined; password?: undefined; clientUUID?: undefined; } | { userName: string; password: string; clientUUID: string; } | null' is not assignable to parameter of type 'AuthHeaderProvider'.
+339:src/libs/auth/AuthProvider.tsx(72,7): error TS2322: Type '() => { userName?: undefined; password?: undefined; clientUUID?: undefined; } | { userName: string; password: string; clientUUID: string; }' is not assignable to type '() => Record<string, string>'.
+344:src/libs/http/httpClient.ts(64,7): error TS2322: Type '{ [x: string]: any; Accept?: AxiosHeaderValue | undefined; "Content-Length"?: AxiosHeaderValue | undefined; "User-Agent"?: AxiosHeaderValue | undefined; "Content-Encoding"?: AxiosHeaderValue | undefined; Authorization?: AxiosHeaderValue | undefined; 'Content-Type'?: ContentType | undefined; }' is not assignable to type 'AxiosRequestHeaders'.
+346:src/libs/http/httpClient.ts(71,3): error TS2322: Type '{ Accept?: AxiosHeaderValue | undefined; "Content-Length"?: AxiosHeaderValue | undefined; "User-Agent"?: AxiosHeaderValue | undefined; ... 5 more ...; 'X-Requested-With': string; }' is not assignable to type 'AxiosRequestHeaders'.
+348:src/libs/http/httpClient.ts(81,7): error TS2322: Type '{ 'X-CSRF-Token': string; Accept?: AxiosHeaderValue | undefined; "Content-Length"?: AxiosHeaderValue | undefined; "User-Agent"?: AxiosHeaderValue | undefined; "Content-Encoding"?: AxiosHeaderValue | undefined; Authorization?: AxiosHeaderValue | undefined; 'Content-Type'?: ContentType | undefined; }' is not assignable to type 'AxiosRequestHeaders'.
+350:src/libs/monitoring/performanceTracker.ts(99,7): error TS2345: Argument of type 'AuditCategory' is not assignable to parameter of type '"auth" | "system" | "patient" | "chart" | "orca" | "reception"'.
+352:src/libs/monitoring/performanceTracker.ts(115,7): error TS2345: Argument of type 'AuditCategory' is not assignable to parameter of type '"auth" | "system" | "patient" | "chart" | "orca" | "reception"'.
+354:src/test/setupTests.ts(4,1): error TS2304: Cannot find name 'expect'.
+355:vite.config.ts(22,5): error TS2769: No overload matches this call.
+359:vite.config.ts(27,5): error TS2769: No overload matches this call.

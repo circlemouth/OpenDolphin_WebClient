@@ -20,7 +20,6 @@ import open.dolphin.infomodel.StringList;
 import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.adm20.converter.ISendPackage2;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 
 /**
  *
@@ -31,6 +30,9 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     
     @Inject
     private JsonTouchSharedService sharedService;
+
+    @Inject
+    private ObjectMapper legacyTouchMapper;
     
 //minagawa^ 2013/08/29
     //@Resource(mappedName="java:jboss/datasources/OrcaDS")
@@ -132,9 +134,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         
         //System.err.println(json);
         
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+        ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
         
         long retPk = sharedService.processSendPackageElements(
                 pkg != null ? pkg.documentModel() : null,
@@ -151,9 +151,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String postSendPackage2(String json) throws IOException {
         
-        ObjectMapper mapper = new ObjectMapper();
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+        ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
         
         long retPk = sharedService.processSendPackageElements(
                 pkg != null ? pkg.documentModel() : null,

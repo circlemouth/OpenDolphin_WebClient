@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import styled from '@emotion/styled';
-import { z } from 'zod';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 
@@ -21,9 +20,17 @@ import {
   type BeanPropertyValue,
 } from '@/features/charts/utils/health-insurance';
 import { fetchPatientById } from '@/features/patients/api/patient-api';
-import { normalizeGender } from '@/features/patients/utils/normalize-gender';
+import {
+  defaultInsuranceOrder,
+  defaultPatientEditorValues,
+  genderOptions,
+  mapDetailToFormValues,
+  patientEditorSchema,
+  type PatientEditorFormInput,
+  type PatientEditorFormValues,
+} from './patient-editor.schema';
 
-export type PatientEditorLayout = 'page' | 'sidebar';
+type PatientEditorLayout = 'page' | 'sidebar';
 
 const PanelContainer = styled.div<{ $layout: PatientEditorLayout }>`
   display: grid;
@@ -121,96 +128,6 @@ const CheckboxInput = styled.input`
   accent-color: ${({ theme }) => theme.palette.primary};
 `;
 
-const genderOptions = [
-  { value: 'M', label: '男性' },
-  { value: 'F', label: '女性' },
-  { value: 'U', label: '不明' },
-  { value: 'O', label: 'その他' },
-] as const;
-
-const defaultInsuranceOrder = [
-  'GUID',
-  'insuranceClass',
-  'insuranceClassCode',
-  'insuranceNumber',
-  'clientGroup',
-  'clientNumber',
-  'startDate',
-  'expiredDate',
-] as const;
-
-const optionalFormString = z.string().optional().default('');
-
-const optionalDateString = z
-  .string()
-  .optional()
-  .default('')
-  .refine((value) => !value || /^\d{4}-\d{2}-\d{2}$/.test(value), {
-    message: 'YYYY-MM-DD 形式で入力してください',
-  });
-
-const insuranceSchema = z.object({
-  id: z.number().optional(),
-  guid: optionalFormString,
-  className: optionalFormString,
-  classCode: optionalFormString,
-  insuranceNumber: optionalFormString,
-  clientGroup: optionalFormString,
-  clientNumber: optionalFormString,
-  startDate: optionalFormString,
-  expiredDate: optionalFormString,
-});
-
-export const patientEditorSchema = z.object({
-  id: z.number().optional(),
-  patientId: z.string().min(1, '患者IDを入力してください'),
-  fullName: z.string().min(1, '氏名を入力してください'),
-  kanaName: optionalFormString,
-  gender: z.enum(['M', 'F', 'U', 'O']).default('U'),
-  birthday: optionalDateString,
-  telephone: optionalFormString,
-  mobilePhone: optionalFormString,
-  email: optionalFormString,
-  memo: optionalFormString,
-  appMemo: optionalFormString,
-  relations: optionalFormString,
-  zipCode: optionalFormString,
-  address: optionalFormString,
-  reserve1: optionalFormString,
-  reserve2: optionalFormString,
-  reserve3: optionalFormString,
-  reserve4: optionalFormString,
-  reserve5: optionalFormString,
-  reserve6: optionalFormString,
-  healthInsurances: z.array(insuranceSchema),
-});
-
-export type PatientEditorFormValues = z.infer<typeof patientEditorSchema>;
-type PatientEditorFormInput = z.input<typeof patientEditorSchema>;
-
-export const defaultPatientEditorValues: PatientEditorFormInput = {
-  patientId: '',
-  fullName: '',
-  kanaName: '',
-  gender: 'U',
-  birthday: '',
-  telephone: '',
-  mobilePhone: '',
-  email: '',
-  memo: '',
-  appMemo: '',
-  relations: '',
-  zipCode: '',
-  address: '',
-  reserve1: '',
-  reserve2: '',
-  reserve3: '',
-  reserve4: '',
-  reserve5: '',
-  reserve6: '',
-  healthInsurances: [],
-};
-
 type InsuranceMeta = {
   properties: Record<string, BeanPropertyValue>;
   order: string[];
@@ -223,33 +140,6 @@ const createEmptyInsuranceMeta = (): InsuranceMeta => {
   }
   return { properties, order: [...defaultInsuranceOrder] };
 };
-
-const mapDetailToFormValues = (
-  detail: PatientDetail,
-  healthInsurances: PatientEditorFormInput['healthInsurances'],
-): PatientEditorFormInput => ({
-  id: detail.id,
-  patientId: detail.patientId,
-  fullName: detail.fullName,
-  kanaName: detail.kanaName ?? '',
-  gender: normalizeGender(detail.gender),
-  birthday: detail.birthday ?? '',
-  telephone: detail.telephone ?? '',
-  mobilePhone: detail.mobilePhone ?? '',
-  email: detail.email ?? '',
-  memo: detail.memo ?? '',
-  appMemo: detail.appMemo ?? '',
-  relations: detail.relations ?? '',
-  zipCode: detail.address?.zipCode ?? '',
-  address: detail.address?.address ?? '',
-  reserve1: detail.reserve1 ?? '',
-  reserve2: detail.reserve2 ?? '',
-  reserve3: detail.reserve3 ?? '',
-  reserve4: detail.reserve4 ?? '',
-  reserve5: detail.reserve5 ?? '',
-  reserve6: detail.reserve6 ?? '',
-  healthInsurances,
-});
 
 const toOptionalString = (value?: string | null) => {
   if (typeof value !== 'string') {
@@ -280,7 +170,7 @@ const formatDisplayDate = (value?: string | null) => {
   }
 };
 
-export interface PatientEditorPanelProps {
+interface PatientEditorPanelProps {
   mode: PatientUpsertMode;
   patientId: string | null;
   summary: PatientSummary | null;

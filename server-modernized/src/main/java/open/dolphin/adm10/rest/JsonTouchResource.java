@@ -14,6 +14,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.function.Function;
@@ -69,6 +70,9 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
 
     @Inject
     private ADM10_EHTServiceBean ehtService;
+
+    @Inject
+    private ObjectMapper legacyTouchMapper;
 
     private InteractionExecutor interactionExecutor = new DatabaseInteractionExecutor();
     
@@ -171,7 +175,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         final String endpoint = "POST /10/adm/jtouch/sendPackage";
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = legacyTouchMapper;
             ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
 
             long retPk = sharedService.processSendPackageElements(
@@ -194,7 +198,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         final String endpoint = "POST /10/adm/jtouch/sendPackage2";
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = legacyTouchMapper;
             ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
 
             long retPk = sharedService.processSendPackageElements(
@@ -254,6 +258,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     //---------------------------------------------------------------------------
     // EHT から引っ越し
     //---------------------------------------------------------------------------
+    /**
+     * Legacy VisitTouch streaming endpoint.
+     * Web clients fetch the same payload via REST `/karte/*`, so this remains ADM10 only.
+     */
     @GET
     @Path("/order/{param}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -299,6 +307,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         };
     }
     
+    /**
+     * Legacy-only interaction lookup backed by ADM10 SQL.
+     * Modern Web clients should rely on ORCA `/orca/interaction` or `/mml/interaction`.
+     */
     @PUT
     @Path("/interaction")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -309,7 +321,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
             final String endpoint = "PUT /10/adm/jtouch/interaction";
             final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
             try {
-                ObjectMapper mapper = new ObjectMapper();
+                ObjectMapper mapper = legacyTouchMapper;
                 InteractionCodeList input = mapper.readValue(json, InteractionCodeList.class);
 
                 List<DrugInteractionModel> ret = new ArrayList<>();
@@ -317,9 +329,9 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
                 if (input.getCodes1() == null || input.getCodes1().isEmpty()
                         || input.getCodes2() == null || input.getCodes2().isEmpty()) {
                     mapper = getSerializeMapper();
-                    mapper.writeValue(os, ret);
-                    JsonTouchAuditLogger.success(endpoint, traceId, () -> "interactionCount=0");
-                    return;
+                    mapper.writeValue(os, Collections.emptyList());
+                JsonTouchAuditLogger.success(endpoint, traceId, () -> "interactionCount=0");
+                return;
                 }
 
                 StringBuilder sb = new StringBuilder();
@@ -333,10 +345,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
                 String sql = sb.toString();
 
                 ret = interactionExecutor.execute(sql);
+                List<InteractionRow> payload = toInteractionRows(ret);
                 mapper = getSerializeMapper();
-                mapper.writeValue(os, ret);
-                final int count = ret != null ? ret.size() : 0;
-                JsonTouchAuditLogger.success(endpoint, traceId, () -> "interactionCount=" + count);
+                mapper.writeValue(os, payload);
+                JsonTouchAuditLogger.success(endpoint, traceId, () -> "interactionCount=" + payload.size());
             } catch (IOException | SQLException | RuntimeException e) {
                 throw JsonTouchAuditLogger.failure(LOGGER, endpoint, traceId, e);
             }
@@ -344,6 +356,9 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     }
 //--------------------------------------------------------------------    
     
+    /**
+     * Legacy VisitTouch stamp tree JSON builder exposed only under `/10/adm/jtouch`.
+     */
     @GET
     @Path("/stampTree/{param}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -377,6 +392,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         }
     }
 
+    /**
+     * Legacy VisitTouch stamp payload exporter (XML -> JSON).
+     * Web clients use `StampResource` instead.
+     */
     @GET
     @Path("/stamp/{param}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
@@ -413,7 +432,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     private <T> String handleDocumentPayload(String endpoint, String json, Class<T> payloadType, Function<T, DocumentModel> converter) {
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
-            ObjectMapper mapper = new ObjectMapper();
+            ObjectMapper mapper = legacyTouchMapper;
             T payload = mapper.readValue(json, payloadType);
             DocumentModel model = converter.apply(payload);
             long pk = sharedService.saveDocument(model);
@@ -453,6 +472,54 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @FunctionalInterface
     interface InteractionExecutor {
         List<DrugInteractionModel> execute(String sql) throws SQLException;
+    }
+
+    private static List<InteractionRow> toInteractionRows(List<DrugInteractionModel> rows) {
+        if (rows == null || rows.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<InteractionRow> payload = new ArrayList<>(rows.size());
+        for (DrugInteractionModel model : rows) {
+            if (model == null) {
+                continue;
+            }
+            payload.add(new InteractionRow(
+                    model.getSrycd1(),
+                    model.getSrycd2(),
+                    model.getSyojyoucd(),
+                    model.getSskijo()));
+        }
+        return payload;
+    }
+
+    private static final class InteractionRow {
+        private final String drugcd;
+        private final String drugcd2;
+        private final String syojyoucd;
+        private final String syojyou;
+
+        private InteractionRow(String drugcd, String drugcd2, String syojyoucd, String syojyou) {
+            this.drugcd = drugcd;
+            this.drugcd2 = drugcd2;
+            this.syojyoucd = syojyoucd;
+            this.syojyou = syojyou;
+        }
+
+        public String getDrugcd() {
+            return drugcd;
+        }
+
+        public String getDrugcd2() {
+            return drugcd2;
+        }
+
+        public String getSyojyoucd() {
+            return syojyoucd;
+        }
+
+        public String getSyojyou() {
+            return syojyou;
+        }
     }
 
     private static final class DatabaseInteractionExecutor implements InteractionExecutor {

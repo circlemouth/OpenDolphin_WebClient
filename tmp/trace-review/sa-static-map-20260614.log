@@ -1,0 +1,21 @@
+[2026-06-14T10:25Z] SA-STATIC-MAP / Worker A
+Commands:
+  1. rg --files server-modernized/src/main/java/open | sed 's@/[^/]*$@@' | sort -u
+     - 用途: open.* パッケージ一覧の棚卸し（38 ディレクトリ）。
+  2. rg -n "VitalServiceBean" server-modernized/src/main/java
+     - 用途: セッション層での参照有無を確認（定義のみヒット）。
+  3. sed -n '1,200p' server-modernized/src/main/java/open/dolphin/rest/LogFilter.java
+     - 用途: Trace-ID 生成と UserCache 依存の確認。
+  4. sed -n '1,200p' server-modernized/src/main/java/open/dolphin/metrics/RequestMetricsFilter.java
+     - 用途: Micrometer タグと Trace-ID の扱いを確認。
+  5. sed -n '1,200p' server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceManager.java
+     - 用途: preferredTraceId の扱いと MDC 連携ロジックを確認。
+  6. sed -n '1,200p' server-modernized/src/main/java/open/dolphin/msg/gateway/MessagingGateway.java
+     - 用途: JMS プロパティ `open.dolphin.traceId` の設定と Trace 取得元を確認。
+  7. sed -n '1,220p' server-modernized/src/main/java/open/dolphin/session/MessageSender.java
+     - 用途: JMS traceId プロパティの読み出しと監査ログ連携の確認。
+Findings Snapshot:
+  - REST/API ↔ セッション ↔ Messaging の循環依存を確認（SessionTraceManager と MessagingGateway の相互利用）。
+  - `open.dolphin.session.VitalServiceBean` は参照無しでデッドコード化。
+  - `open.dolphin.mbean.UserCache` が Map を公開し、LogFilter から直接書き換えられている。
+  - Trace-ID は LogFilter → RequestMetricsFilter → SessionTraceManager → MessagingGateway → MessageSender で別々に生成・保持されており、統一されていない。
