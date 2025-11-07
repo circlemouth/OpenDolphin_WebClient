@@ -24,3 +24,9 @@
 - 基底 `Button` コンポーネントを利用する全画面で `disabled` スタイルが単色化される。主要導線（受付一覧、予約管理、オーダ系フォーム）で視覚確認を行うこと。
 - Danger バリアント（削除／キャンセル系）も `surfaceStrong` ベースになるため、後続で危険操作向けの専用トーンが必要か UI チームと協議する。
 - Safari 17 / Edge 130 でのフォーカスリング・スピナー表示は QA チームに確認依頼済み（2025-11-04 日次確認で回収予定）。
+
+## `chart-events.replay-gap` 連動ガイド {#chart-events-replay-gap}
+
+- Touch カルテの患者ヘッダーでも `chart-events.replay-gap` 通知を受信した場合は Web 受付と同じ UX を踏襲する。詳細手順は `docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md#6-chart-eventsreplay-gap-受信時のリロード-ux` を参照。
+- 通知受信時は患者ヘッダー上部に黄色バナーを表示し、「カルテ一覧を再同期」を押下すると `/rest/pvt2/pvtList` を再取得し再接続する。3 回失敗した場合は Ops 連絡先（`ops@dolphin.example.jp`）と Runbook SSE 手順へのリンクを提示する。
+- 受付側で復旧済みでも Touch 側にバナーが残る場合があるため、端末内 `ChartEventsProvider` で `Last-Event-ID` を API 応答の `sequence` で上書きし、完了時にバナーを自動クローズする実装を追加する。

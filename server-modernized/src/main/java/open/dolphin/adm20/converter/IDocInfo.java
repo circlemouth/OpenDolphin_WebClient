@@ -600,7 +600,10 @@ public class IDocInfo implements java.io.Serializable {
         ret.setPriscriptionOutput(IOSHelper.toBool(this.getPriscriptionOutput()));
         
         // IOS 注意
-        ret.setPVTHealthInsuranceModel(this.getPvtHealthInsuranceModel().toModel());
+        IPVTHealthInsurance insurance = this.getPvtHealthInsuranceModel();
+        if (insurance != null) {
+            ret.setPVTHealthInsuranceModel(insurance.toModel());
+        }
         
         // IOS 注意
         ret.setFacilityName(this.getFacilityName());

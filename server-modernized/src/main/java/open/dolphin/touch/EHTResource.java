@@ -91,7 +91,6 @@ import open.dolphin.touch.converter.ISendPackage2;
 import open.dolphin.touch.converter.IVitalModel;
 import open.dolphin.touch.session.EHTServiceBean;
 import open.orca.rest.ORCAConnection;
-import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
@@ -131,6 +130,10 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     
     @Inject
     private ChartEventServiceBean eventServiceBean;
+
+    @Inject
+    // LegacyObjectMapperProducer で Touch 系 JSON の既定設定を共有
+    private ObjectMapper legacyTouchMapper;
     
     @Context
     private HttpServletRequest servletReq;
@@ -309,10 +312,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                IPatientMemoModel model = mapper.readValue(json, IPatientMemoModel.class);
+                IPatientMemoModel model = legacyTouchMapper.readValue(json, IPatientMemoModel.class);
                 int cnt = ehtService.addPatientMemo(model.toModel());
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };
@@ -327,10 +329,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                IPatientMemoModel model = mapper.readValue(json, IPatientMemoModel.class);
+                IPatientMemoModel model = legacyTouchMapper.readValue(json, IPatientMemoModel.class);
                 int cnt = ehtService.updatePatientMemo(model.toModel());
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
                 
             }
@@ -346,10 +347,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                IPatientMemoModel model = mapper.readValue(json, IPatientMemoModel.class);
+                IPatientMemoModel model = legacyTouchMapper.readValue(json, IPatientMemoModel.class);
                 int cnt = ehtService.deletePatientMemo(model.toModel());
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };
@@ -406,9 +406,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
+                IAllergyModel[] allergies = legacyTouchMapper.readValue(json, IAllergyModel[].class);
                 
                 int cnt = 0;
                 for (IAllergyModel am : allergies) {
@@ -416,7 +414,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     ehtService.addAllergy(om);
                     cnt++;
                 }
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
 
             }
@@ -433,9 +431,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
+                IAllergyModel[] allergies = legacyTouchMapper.readValue(json, IAllergyModel[].class);
                 
                 int cnt = 0;
                 for (IAllergyModel am : allergies) {
@@ -444,7 +440,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     cnt++;
                 }
 
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };
@@ -460,9 +456,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                IAllergyModel[] allergies = mapper.readValue(json, IAllergyModel[].class);
+                IAllergyModel[] allergies = legacyTouchMapper.readValue(json, IAllergyModel[].class);
 
                 int cnt = 0;
                 for (IAllergyModel am : allergies) {
@@ -471,7 +465,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     cnt++;
                 }
                 
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };
@@ -515,9 +509,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
+                IRegisteredDiagnosis[] list = legacyTouchMapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
                 for (IRegisteredDiagnosis ir : list) {
@@ -526,7 +518,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     cnt++;
                 }
                 
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
 
             }
@@ -542,9 +534,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
+                IRegisteredDiagnosis[] list = legacyTouchMapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
                 for (IRegisteredDiagnosis ir : list) {
@@ -553,7 +543,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     cnt++;
                 }
                       
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
                 
             }
@@ -569,9 +559,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
+                IRegisteredDiagnosis[] list = legacyTouchMapper.readValue(json, IRegisteredDiagnosis[].class);
                                 
                 int cnt = 0;
                 for (IRegisteredDiagnosis ir : list) {
@@ -580,7 +568,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     cnt++;
                 }
                 
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };
@@ -705,8 +693,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ObjectMapper mapper = new ObjectMapper();
-                ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+                ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
 
                 // カルテ文書
                 DocumentModel model = pkg.documentModel();
@@ -737,8 +724,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ObjectMapper mapper = new ObjectMapper();
-                ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+                ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
 
                 // カルテ文書
                 DocumentModel model = pkg.documentModel();
@@ -768,14 +754,12 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                String[] pks = mapper.readValue(json, String[].class);
+                String[] pks = legacyTouchMapper.readValue(json, String[].class);
                 
                 long pk = Long.parseLong(pks[0]);
                 List<String> list = ehtService.deleteDocumentByPk(pk);
                 
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, list);
             }
         };
@@ -1193,8 +1177,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
 
-                ObjectMapper mapper = new ObjectMapper();
-                InteractionCodeList input = mapper.readValue(json, InteractionCodeList.class);
+                InteractionCodeList input = legacyTouchMapper.readValue(json, InteractionCodeList.class);
                 
 //                if (input.getCodes1()!=null)
 //                {
@@ -1216,7 +1199,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                         input.getCodes1().isEmpty() || 
                         input.getCodes2() == null   || 
                         input.getCodes2().isEmpty()) {
-                    mapper = getSerializeMapper();
+                    ObjectMapper mapper = getSerializeMapper();
                     mapper.writeValue(os, ret);
                 }
 
@@ -1245,7 +1228,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     rs.close();
                     closeStatement(st);
                     closeConnection(con);
-                    mapper = getSerializeMapper();
+                    ObjectMapper mapper = getSerializeMapper();
                     mapper.writeValue(os, ret);
                     
                 } catch (Exception e) {
@@ -1267,9 +1250,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                
                 String fpid = getFidPid(servletReq.getRemoteUser(), param);
                 List<VitalModel> list = ehtService.getPatVital(fpid);
                 List<IVitalModel> result = new ArrayList();
@@ -1278,7 +1258,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                     ac.fromModel(m);
                     result.add(ac);
                 }
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, result);
             }
         };
@@ -1292,14 +1272,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                
-                IVitalModel imodel = mapper.readValue(json, IVitalModel.class);
+                IVitalModel imodel = legacyTouchMapper.readValue(json, IVitalModel.class);
                 VitalModel model = imodel.toModel();
                 int cnt = ehtService.addVital(model);
-                          
-                mapper = getSerializeMapper();
+
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };
@@ -1313,11 +1290,8 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-
                 int cnt = ehtService.removeVital(json);
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };
@@ -1330,12 +1304,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                
                 long karteId = Long.parseLong(param);
                 List<IPhysicalModel> result = ehtService.getPhysicals(karteId);
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, result);
             }
         };
@@ -1349,15 +1320,12 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                
-                IPhysicalModel physical = mapper.readValue(json, IPhysicalModel.class);
+                IPhysicalModel physical = legacyTouchMapper.readValue(json, IPhysicalModel.class);
                 int cnt = 0;
                 List<ObservationModel> om = physical.toObservationModel();
                 ehtService.addObservations(om);
                 
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(1));
             }
         };
@@ -1371,9 +1339,6 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                ObjectMapper mapper = new ObjectMapper();
-                mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-                
                 String[] params = json.split(CAMMA);
                 List<Long> list = new ArrayList<Long>(params.length);
                 for (String s : params) {
@@ -1381,7 +1346,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 }
                 
                 int cnt = ehtService.removeObservations(list);
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
             }
         };

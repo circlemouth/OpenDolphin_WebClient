@@ -41,7 +41,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - `docs/server-modernization/phase2/domains/EHT_SECURITY_AUDIT_CHECKLIST.md`: EHTResource のセキュリティ／監査要件整理、トランザクション境界方針、外部連携テスト観点（2025-11-03 追加）。
 - `docs/server-modernization/phase2/operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md`: WildFly 33 / Micrometer 移行に伴うログ・監査・ジョブ管理比較と運用リスク整理（2025-11-02 更新）。
 - `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`: 外部システムから見た旧新サーバー互換を確保する切替/検証ランブック（2025-11-06 更新: Touch 監査ログの actorRole 連携確認と `/touch/patient/{pk}` XML 分離の検証 TODO を追記、あわせて PHR ラボモジュール変換と TouchModuleService RP 復元の互換確認手順を補足。2025-11-04 更新: SystemResource 監査整備・PHR export 手順・Touch 来院履歴 API の QueryParam 仕様を追記。2025-11-03 更新: JsonTouch/PHR/PVT2 パリティ検証ログを追加し、`/dolphin` 系 5 件のテスト未整備課題を整理）。
-- `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`: Micrometer サブシステム設定・Prometheus/Grafana 整備・監査突合手順（2025-11-02 更新）。
+- `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md`: Micrometer サブシステム設定・Prometheus/Grafana 整備・監査突合手順（2025-11-07 更新: JavaTime Stage Dry-Run ログ保存先、`/var/log/java-time-sample.log` ローテーションと 30 日保管ルール、GitHub Actions 週次 Dry-Run を追記）。
 - `docs/server-modernization/phase2/domains/KARTE_ORDER_JAKARTA_STATUS.md`: カルテ記載・スタンプ/オーダ系 CRUD の Jakarta EE 10 移行状況と未移植課題。CLAIM 送信やドラフト保存を触る際は必読。
 - `docs/server-modernization/phase2/domains/DOLPHIN_RESOURCE_ASP_MIGRATION.md`: DolphinResourceASP モダナイズ計画メモ（2025-11-04 更新: TouchModuleService / TouchModuleResourceTest の導入とキャッシュキー `method:paramHash` 方針を追記）。
 - `docs/server-modernization/security/ELYTRON_INTEGRATION_PLAN.md`: WildFly Elytron / Jakarta Security 連携方針と Trace ID 運用（2025-11-02 新設）。
@@ -59,14 +59,14 @@ Web クライアントに関する設計・要件・運用資料を集約した�
   - 2025-11-01 (追記): AppShell コンテンツ領域の `contentMaxWidth` 制限撤廃と、患者一覧/受付一覧/ChartsPage がウィンドウ幅へ追従するレイアウト更新を反映。
 - [`ux/KARTE_SCREEN_IMPLEMENTATION.md`](ux/KARTE_SCREEN_IMPLEMENTATION.md): 最新カルテ画面の構造・ショートカット・レスポンシブ仕様。
 
-- [`operations/RECEPTION_WEB_CLIENT_MANUAL.md`](operations/RECEPTION_WEB_CLIENT_MANUAL.md): 受付担当者向け研修計画と運用手順。
+- [`operations/RECEPTION_WEB_CLIENT_MANUAL.md`](operations/RECEPTION_WEB_CLIENT_MANUAL.md): 受付担当者向け研修計画と運用手順。2026-06-14 (Worker O) `chart-events.replay-gap` 通知 UI のワイヤーフレーム、状態遷移図、Web/Touch 擬似コード、監査・再取得フローを追記。2026-06-14 (Worker T) Touch 向け `ReplayGapState` 詳細・ローカル通知・監査ペイロード・UI モックを追加し、iOS/Android 擬似コードを更新。
 - [`operations/RELEASE_NOTES_DRAFT.md`](operations/RELEASE_NOTES_DRAFT.md): リリース判定用の文書系差分・検証結果の草案（2025-11-03 新設: Worker F）。
 - [`operations/LOCAL_BACKEND_DOCKER.md`](operations/LOCAL_BACKEND_DOCKER.md): 既存サーバーを Docker Compose で起動する手順。2025-11-02 (Codex) 初期施設 ID・管理者/医師アカウントとテスト患者 `WEB1001`〜`WEB1010` の投入手順を整理。2025-11-03 (Codex) Worker0/1 修正後の Maven/Docker ビルド検証ログと再現手順を追加。2025-11-04 (Worker B) Touch 個人情報 API における `X-Access-Reason`／`X-Consent-Token` ヘッダー運用と PIA 監査ログ確認フローを Runbook へ追記。2025-11-05 (Codex) `scripts/start_legacy_modernized.sh` による旧/新サーバー同時起動手順を追加。
 - [`operations/CAREMAP_ATTACHMENT_MIGRATION.md`](operations/CAREMAP_ATTACHMENT_MIGRATION.md): CareMap 添付移行と image-browser 設定のガイド。
 - [`operations/TEST_SERVER_DEPLOY.md`](operations/TEST_SERVER_DEPLOY.md): テスト環境へのデプロイとアカウント発行手順。2025-11-02 (Codex) Docker Compose 由来の初期アカウント情報を冒頭に整理。
 - [`operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md`](operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md): Charts 左カラムと固定フッター干渉の解消内容と検証ログ（2025-11-03 追加: Codex）。
 - [`operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md`](operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md): 患者ヘッダー「診察開始/終了」ボタンの disabled 表示を単色化し、`aria-pressed`/`aria-busy` を追加した検証ノート（2025-11-03 追加: Codex）。
-- [`../server-modernization/operations/OBSERVABILITY_AND_METRICS.md`](../server-modernization/operations/OBSERVABILITY_AND_METRICS.md): モダナイズ版サーバーのメトリクス公開と Prometheus/Grafana 連携ガイド。
+- [`../server-modernization/operations/OBSERVABILITY_AND_METRICS.md`](../server-modernization/operations/OBSERVABILITY_AND_METRICS.md): モダナイズ版サーバーのメトリクス公開と Prometheus/Grafana 連携ガイド（2025-11-07: Stage Dry-Run 証跡、logrotate / Evidence ルール、GitHub Actions 週次 Dry-Run を更新）。
 
 ## 開発者の入り口
 1. `architecture/REPOSITORY_OVERVIEW.md` でシステム全体像と制約を把握する。
@@ -85,12 +85,16 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - 参考資料（PDF / 画像など）は `docs/` 配下の適切なカテゴリに格納し、必ず本ファイルから辿れるようにする。
 
 ## 直近更新履歴
+- 2026-06-14 (Worker O): `operations/RECEPTION_WEB_CLIENT_MANUAL.md` へ `chart-events.replay-gap` 再取得 UX のワイヤーフレーム/状態遷移/擬似コードを追加し、`ux/CHART_UI_GUIDE_INDEX.md` からの誘導リンクと Touch SSE クライアント改修メモを整備。
+- 2026-06-14 (Worker T): Touch 向け `ReplayGapState` の状態遷移表・iOS/Android 擬似コード・監査ペイロード例・ローカル通知/アクセシビリティ要件・UI モック（`docs/server-modernization/phase2/notes/assets/touch-replay-gap-banner.svg`）を `operations/RECEPTION_WEB_CLIENT_MANUAL.md#68-touch-replaygapstate-実装詳細2026-06-14-追記-worker-t` に追加し、`ux/CHART_UI_GUIDE_INDEX.md` へも追記。
+- 2026-06-08 (担当: Codex): シェーマ保存ペイロード `src/features/charts/utils/schema-payload.ts` の DocInfoSummary `recordedAt/createdAt/updatedAt` を REST タイムスタンプで必須化し、CareMap・Timeline ユーティリティの共通フィクスチャ `src/features/charts/utils/__tests__/doc-info-summary.fixture.ts` を追加してテストモックの型整合性を確保。
 - 2026-06-07 (担当: Codex): Touch 初診 `docType` 棚卸し進捗と API 検証手順を `docs/server-modernization/phase2/notes/common-dto-diff-A-M.md`・`docs/server-modernization/phase2/operations/WORKER_E_JSONTOUCH_PHR_PVT_COMPATIBILITY.md` に追記し、クライアント仕様書 `guides/CLINICAL_MODULES.md` へ docType 一覧と利用例を追加。
 - 2026-06-06 (担当: Codex): Touch 向け FirstEncounterModel 統合対応を `docs/server-modernization/phase2/notes/common-dto-diff-A-M.md`・`docs/server-modernization/phase2/PHASE2_PROGRESS.md` に反映し、`d_first_encounter` の docType 運用と互換性確認手順を共有。
 - 2026-06-04 (担当: Codex): `docs/server-modernization/phase2/notes/common-dto-diff-N-Z.md` を追加し、Legacy 版と Jakarta 移行後の Common DTO（N〜Z）差分・PHR 拡張・新規 Async ジョブ／第三者提供記録エンティティの影響を整理。`docs/server-modernization/phase2/PHASE2_PROGRESS.md` にもフォローアップタスクを追記。
 - 2026-05-27 (owner: Codex): Added scripts/api_parity_eval.py and scripts/api_parity_response_check.py plus documentation (docs/server-modernization/phase2/PHASE2_PROGRESS.md, docs/server-modernization/operations/API_PARITY_RESPONSE_CHECK.md). Use python scripts/api_parity_eval.py for documentation parity and python scripts/api_parity_response_check.py --config <file> for live comparisons.
 - 2026-05-27 (担当: Codex): `PVTResource2Test` に DELETE 正常／施設不一致ケースを追加し、`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md`・`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` を更新。`/pvt2/{pvtPK}` DELETE が `[x]` 判定となったことを記録。
 - 2026-05-27 (担当: Codex): JsonTouch `/10/adm/jtouch/document*` 実装と Parity テスト拡張の結果を `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md`・`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` に反映。`JsonTouchResourceParityTest` を 17 ケースに増強し、Maven `-pl server-modernized test` が DuplicateProjectException で失敗する旨を Runbook に記録。
+- 2025-11-07 (担当: Codex): ChartsPage の保存/ロック/ORCA 生成ハンドラと ObservationPanel の Hook 依存を整理し、`react-hooks/exhaustive-deps` 警告を解消。`resolveProgressContext` 依存へ集約した保存系の副作用と、観察データの `useMemo` 固定化で再描画を安定化。
 - 2025-11-06 (担当: Codex): `ux/KARTE_SCREEN_IMPLEMENTATION.md` を更新し、左レール VisitChecklist 廃止と ProblemListCard 先頭化・StatusBar からの未完タスク表示撤去を記録。
 - 2025-11-03 (担当: Codex): API パリティ再集計で JsonTouch 16 件・PHR 11 件・`/pvt2/{pvtPK}` DELETE を `[ ] / △ 要証跡` に差し戻し、`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md` を更新。未解決タスクと Runbook 参照先を整理。
 - 2025-11-04 (担当: Worker E): SystemResource `/dolphin` 系 5 エンドポイントを `[x]` 判定へ更新し、`SystemResourceTest` 追加・監査ログ分岐・ライセンス I/O 例外の証跡を `API_PARITY_MATRIX.md`・`PHASE2_PROGRESS.md`・`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` に反映。

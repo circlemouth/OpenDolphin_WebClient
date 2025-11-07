@@ -1,0 +1,45 @@
+groups:
+  - name: chart-event-history
+    rules:
+      - alert: ChartEventHistoryRetentionWarning
+        expr: chartEvent_history_retained{facility!=""} >= 85
+        # 2026-06-21 ローカル再現メトリクス (tmp/chart-event-metrics-20260622.*) の p95=79 を踏まえ、
+        # 85 件が 10 分続いた場合を Warning とする
+        for: 10m
+        labels:
+          severity: warning
+          service: chart-event-sse
+          runbook: docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md
+        annotations:
+          summary: "chartEvent.history.retained が 85 件以上 (facility {{ $labels.facility }})"
+          description: |
+            ChartEvent SSE の履歴バッファが 85 件に張り付いた状態です。クライアント切断や
+            `/rest/pvt2/pvtList` バックログを疑い、Runbook 手順 8 に従って Last-Event-ID 再接続試験と
+            Touch/Web クライアントの再読込ガイダンスを実施してください。
+      - alert: ChartEventHistoryRetentionCritical
+        expr: chartEvent_history_retained{facility!=""} >= 98
+        # 100 件上限に 3 分以上貼り付いた場合はギャップ発生前提で Critical
+        for: 3m
+        labels:
+          severity: critical
+          service: chart-event-sse
+          runbook: docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md
+        annotations:
+          summary: "chartEvent.history.retained が上限 100 件に達しています (facility {{ $labels.facility }})"
+          description: |
+            履歴バッファが飽和しています。`chart-events.replay-gap` を受信していなくても
+            施設単位で強制リロードが必要な状態のため、即時に `/rest/pvt2/pvtList` の再取得と
+            ChartEvent SSE の再接続を案内してください。
+      - alert: ChartEventHistoryGapDetected
+        expr: increase(chartEvent_history_gapDetected{facility!=""}[5m]) > 0
+        for: 0m
+        labels:
+          severity: critical
+          service: chart-event-sse
+          runbook: docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md
+        annotations:
+          summary: "chartEvent.history.gapDetected が増加 (facility {{ $labels.facility }})"
+          description: |
+            SSE 再接続時に履歴ギャップが発生しました。対象施設のクライアントへ
+            `chart-events.replay-gap` イベントが送出されているため、Touch/Web クライアント側で
+            `/rest/pvt2/pvtList` の再取得を促し、必要に応じてセッションをフルリロードしてください。

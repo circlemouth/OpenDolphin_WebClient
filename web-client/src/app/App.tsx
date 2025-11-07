@@ -4,6 +4,7 @@ import { ThemeProvider } from '@emotion/react';
 import { RouterProvider } from 'react-router-dom';
 
 import { AuthProvider } from '@/libs/auth/AuthProvider';
+import { ReplayGapProvider } from '@/features/replay-gap/ReplayGapContext';
 import { GlobalStyle } from '@/styles/GlobalStyle';
 import { appTheme } from '@/styles/theme';
 import { createAppRouter } from './router';
@@ -30,7 +31,9 @@ export const App = () => {
       <GlobalStyle />
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <RouterProvider router={router} />
+          <ReplayGapProvider>
+            <RouterProvider router={router} />
+          </ReplayGapProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>

@@ -33,14 +33,21 @@ import {
 } from '@/features/reception/api/visit-api';
 import { usePatientSearch } from '@/features/patients/hooks/usePatientSearch';
 import type { PatientUpsertMode } from '@/features/patients/hooks/usePatientUpsert';
-import type { PatientDetail, PatientSearchRequest, PatientSummary } from '@/features/patients/types/patient';
+import type {
+  PatientDetail,
+  PatientGender,
+  PatientSearchRequest,
+  PatientSummary,
+} from '@/features/patients/types/patient';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
+import { normalizeGender } from '@/features/patients/utils/normalize-gender';
 import { recordOperationEvent } from '@/libs/audit';
 import {
   ReceptionSidebarContent,
   type ReceptionSidebarTab,
 } from '@/features/reception/components/ReceptionSidebarContent';
 import { fetchPatientById } from '@/features/patients/api/patient-api';
+import { useReceptionReplayGap } from '@/features/reception/hooks/useReceptionReplayGap';
 
 type QueueStatus = 'waiting' | 'calling' | 'inProgress';
 type SidebarTab = ReceptionSidebarTab;
@@ -179,9 +186,12 @@ const GroupTitle = styled.h3`
   font-size: 1rem;
 `;
 
-const GroupList = styled.div`
+const GroupList = styled.div<{ $dimmed: boolean }>`
   display: grid;
   gap: 8px;
+  opacity: ${({ $dimmed }) => ($dimmed ? 0.45 : 1)};
+  pointer-events: ${({ $dimmed }) => ($dimmed ? 'none' : 'auto')};
+  transition: opacity 0.2s ease;
 `;
 
 const GroupEmpty = styled.div`
@@ -191,6 +201,31 @@ const GroupEmpty = styled.div`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.palette.textMuted};
   text-align: center;
+`;
+
+const ReplayGapSkeletonStack = styled.div`
+  display: grid;
+  gap: 6px;
+  margin-bottom: 8px;
+`;
+
+const ReplayGapSkeletonRow = styled.div`
+  height: 56px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  background: ${({ theme }) => theme.palette.surfaceMuted};
+  animation: replay-gap-pulse 1.2s ease-in-out infinite;
+
+  @keyframes replay-gap-pulse {
+    0% {
+      opacity: 0.4;
+    }
+    50% {
+      opacity: 0.9;
+    }
+    100% {
+      opacity: 0.4;
+    }
+  }
 `;
 
 const ColumnTools = styled.div`
@@ -343,14 +378,22 @@ const DEFAULT_PREF_KEY_MAP = {
 
 type DefaultPrefField = keyof typeof DEFAULT_PREF_KEY_MAP;
 
+const toPatientGender = (value?: string | null): PatientGender | undefined => {
+  if (value === undefined || value === null) {
+    return undefined;
+  }
+  return normalizeGender(value);
+};
+
 const buildPatientSummaryFromVisit = (visit: PatientVisitSummary): PatientSummary => {
   const baseRaw = visit.raw.patientModel ?? {};
+  const normalizedGender = toPatientGender(visit.gender ?? baseRaw.gender);
   return {
     id: visit.patientPk,
     patientId: visit.patientId,
     fullName: visit.fullName,
     kanaName: visit.kanaName ?? undefined,
-    gender: visit.gender ?? baseRaw.gender ?? undefined,
+    gender: normalizedGender,
     genderDesc: baseRaw.genderDesc ?? undefined,
     birthday: visit.birthday ?? baseRaw.birthday ?? undefined,
     lastVisitDate: visit.visitDate,
@@ -524,6 +567,7 @@ export const ReceptionPage = () => {
   const queryClient = useQueryClient();
   const { setSidebar, clearSidebar } = useSidebar();
   const temporaryDocumentsQuery = useTemporaryDocuments();
+  const replayGapUi = useReceptionReplayGap();
 
   const visits = useMemo(() => visitsQuery.data ?? [], [visitsQuery.data]);
   const temporaryDocumentPatientIds = useMemo(
@@ -921,7 +965,10 @@ export const ReceptionPage = () => {
     [receptionCallMutation],
   );
 
-  const queryPatientResults = patientSearchQuery.data ?? [];
+  const queryPatientResults = useMemo(
+    () => patientSearchQuery.data ?? [],
+    [patientSearchQuery.data],
+  );
   const patientResults = useMemo(
     () => manualPatientResults ?? queryPatientResults,
     [manualPatientResults, queryPatientResults],
@@ -1620,6 +1667,7 @@ export const ReceptionPage = () => {
       isManageProcessing,
       isMemoMutating,
       memoDraft,
+      editingMemoVisitId,
       memoError,
       memoPendingVisitId,
       setActiveSidebarTab,
@@ -1673,8 +1721,17 @@ export const ReceptionPage = () => {
                       {subtitle}：{visitsForStatus.length}件
                     </span>
                   </GroupTitleRow>
+                  {replayGapUi.showSkeletons ? (
+                    <ReplayGapSkeletonStack role="status" aria-live="polite">
+                      {[0, 1, 2].map((index) => (
+                        <ReplayGapSkeletonRow key={`${status}-skeleton-${index}`} />
+                      ))}
+                    </ReplayGapSkeletonStack>
+                  ) : null}
                   {visitsForStatus.length ? (
-                    <GroupList>{visitsForStatus.map(getVisitCard)}</GroupList>
+                    <GroupList $dimmed={replayGapUi.dimContent} aria-busy={replayGapUi.ariaBusy}>
+                      {visitsForStatus.map(getVisitCard)}
+                    </GroupList>
                   ) : (
                     <GroupEmpty>該当する受付はありません。</GroupEmpty>
                   )}

@@ -249,12 +249,16 @@ const toneLabel: Record<SafetyTone, string> = {
   info: '情報',
 };
 
+const SAFETY_SUMMARY_LOADING_MESSAGE = '安全サマリを読み込み中です…';
+const SAFETY_SUMMARY_ERROR_FALLBACK =
+  '安全サマリを取得できませんでした。時間をおいて再度お試しください。';
+
 export const SafetySummaryCard = ({ sections, onSnippetDragStart }: SafetySummaryCardProps) => {
   const handleCopy = (snippet: string) => {
     onSnippetDragStart(snippet);
     try {
       void navigator?.clipboard?.writeText?.(snippet);
-    } catch (_error) {
+    } catch {
       // clipboard 取得に失敗した場合は黙ってフォールバック（ドラッグ操作で補える）
     }
   };
@@ -267,12 +271,14 @@ export const SafetySummaryCard = ({ sections, onSnippetDragStart }: SafetySummar
       </Header>
       {sections.map((section) => {
         const sectionId = `safety-summary-${section.id}`;
+        const shouldShowError = !section.loading && section.error != null;
+        const resolvedErrorMessage = section.error?.trim() || SAFETY_SUMMARY_ERROR_FALLBACK;
         return (
           <Section key={section.id} aria-labelledby={sectionId} aria-busy={section.loading}>
             <SectionTitle id={sectionId}>{section.title}</SectionTitle>
-            {section.loading ? <Message $tone="info">読み込み中です…</Message> : null}
-            {!section.loading && section.error ? (
-              <Message $tone="danger">{section.error}</Message>
+            {section.loading ? <Message $tone="info">{SAFETY_SUMMARY_LOADING_MESSAGE}</Message> : null}
+            {shouldShowError ? (
+              <Message $tone="danger">{resolvedErrorMessage}</Message>
             ) : null}
             {!section.loading && !section.error ? (
               section.items.length ? (

@@ -37,6 +37,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     private static final Logger LOGGER = Logger.getLogger(JsonTouchResource.class.getName());
 
     @Inject
+    // Phase3: JavaTimeModule など Touch 固有モジュールも CDI プロデューサで集約予定。
+    private ObjectMapper legacyTouchMapper;
+
+    @Inject
     private JsonTouchSharedService sharedService;
     
     @GET
@@ -130,8 +134,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         final String endpoint = "POST /jtouch/sendPackage";
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+            ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
             long retPk = sharedService.processSendPackage(pkg);
             JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
             return String.valueOf(retPk);
@@ -149,8 +152,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         final String endpoint = "POST /jtouch/sendPackage2";
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+            ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
             long retPk = sharedService.processSendPackage2(pkg);
             JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
             return String.valueOf(retPk);
@@ -198,8 +200,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     private <T> String handleDocumentPayload(String endpoint, String json, Class<T> payloadType, Function<T, DocumentModel> converter) {
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
-            ObjectMapper mapper = new ObjectMapper();
-            T payload = mapper.readValue(json, payloadType);
+            T payload = legacyTouchMapper.readValue(json, payloadType);
             DocumentModel model = converter.apply(payload);
             long pk = sharedService.saveDocument(model);
             JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + pk);

@@ -36,6 +36,142 @@ WildFly 33 では MicroProfile Metrics 拡張が廃止され、Micrometer サブ
 2. Loki（または `open.dolphin` ログ）から同一 `traceId` のログを抽出し、ユーザー ID／IP／操作を確認する。
 3. `AuditEvent` テーブルのチェーンハッシュと照合し、改ざんがないことを保証する。
 
+### 1.4 Chart Event SSE メトリクスとアラート
+
+`ChartEventSseSupport` は来院イベント SSE の履歴状態を Micrometer で公開しており、Prometheus では `chartEvent_history_retained`（Gauge）と `chartEvent_history_gapDetected`（Counter）として取得できる。前者は最新 ID と履歴先頭 ID の差分を計測し、後者は履歴ギャップ検知時にインクリメントされる。
+
+- 履歴ギャップが起きたクライアントには `event: chart-events.replay-gap` / `data: {"requiredAction":"reload"}` の SSE を即時送出し、Touch/Web クライアントへフルリロードを促す。
+- Alertmanager 用のしきい値案は `ops/monitoring/chart-event-alerts.yml` に保存した。`chartEvent_history_retained >= 90` を 5 分継続した場合に Warning を通知し、`increase(chartEvent_history_gapDetected[5m]) > 0` で Critical を発報する。Runbook (`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` 手順 8) とセットで導入する。
+
+### 1.5 JavaTime 出力監視（d_audit_event / ORCA・Touch）
+
+JavaTimeModule 適用後は監査ログ（`d_audit_event.payload`）と ORCA 連携レスポンスの時刻表現が ISO8601（例: `2026-06-18T09:15:30+09:00`）で統一される。実環境で形式が崩れた場合は ORCA 側の署名や医療記録の監査証跡に影響するため、以下の手順で定期的にサンプルを採取し、Loki/Elastic/Grafana から差分を検出する。
+
+#### サンプル採取手順
+
+- 監査ログ採取（Stage / Prod 共通）  
+  ```bash
+  docker compose exec modernized-db psql -U dolphin -d opendolphin <<'SQL'
+  SELECT id,
+         event_time,
+         action,
+         payload::jsonb ->> 'issuedAt'          AS issued_at_iso,
+         payload::jsonb #>> '{request,createdAt}' AS payload_created_at
+    FROM d_audit_event
+   WHERE action IN ('ORCA_INTERACTION','TOUCH_SENDPACKAGE','TOUCH_SENDPACKAGE2')
+     AND payload IS NOT NULL
+   ORDER BY event_time DESC
+   LIMIT 20;
+  SQL
+  ```
+  `issued_at_iso` が `^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?[+-]\d{2}:\d{2}$` に一致しない場合は Runbook §4.3 の手順で再取得し、エスカレーションする。
+
+- ORCA 連携 CLI（`PUT /orca/interaction`）  
+  ```bash
+  BASE_URL="https://stage.backend/opendolphin/api"
+  curl -sS -X PUT "$BASE_URL/orca/interaction" \
+    -H 'Content-Type: application/json' \
+    -H 'X-Trace-Id: java-time-'"$(date +%s)" \
+    -H 'Authorization: Bearer <token>' \
+    -d '{"codes1":["620001601"],"codes2":["610007155"],"issuedAt":"'"$(date --iso-8601=seconds)"'"}' \
+    | jq '.issuedAt,.result[].timestamp'
+  ```
+  レスポンス内 `issuedAt` / `result[].timestamp` が ISO8601 であること、`X-Trace-Id` で `d_audit_event` と突合できることを確認する。
+
+- Touch `sendPackage` CLI（`POST /touch/sendPackage*`）  
+  `ops/tools/send_parallel_request.sh` に `PARITY_BODY_FILE` で JSON を渡すと Legacy/Modern 双方のレスポンスを同時取得できる。例:
+  ```bash
+  export BASE_URL_LEGACY=http://legacy.local:8080/opendolphin/api
+  export BASE_URL_MODERN=https://stage.backend/opendolphin/api
+  export PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/touch-stage.txt
+  export PARITY_BODY_FILE=tmp/sendPackage-probe.json
+  cat >"$PARITY_BODY_FILE" <<'JSON'
+  {
+    "issuedAt": "2026-06-18T09:30:00+09:00",
+    "patientId": "000001",
+    "department": "01",
+    "bundleList": []
+  }
+  JSON
+  ./ops/tools/send_parallel_request.sh POST /touch/sendPackage JAVATIME_TOUCH_001
+  ```
+  保存された `artifacts/parity-manual/JAVATIME_TOUCH_001/*/response.json` を `jq -r '.issuedAt'` で抽出し、Legacy/Modern の形式が一致するか比較する。
+
+#### 自動採取スクリプト / Cron
+
+- `ops/monitoring/scripts/java-time-sample.sh` で上記 3 手順（`d_audit_event`、`PUT /orca/interaction`、`POST /touch/sendPackage`）を一括実行できる。`--dry-run` で外部アクセス無しのログを確認してから、本実行で `tmp/java-time/audit-YYYYMMDD.sql` や `tmp/java-time/orca-response-YYYYMMDD.json` を採取する。  
+- 主要な環境変数は `JAVA_TIME_BASE_URL_MODERN`（Stage URL）、`JAVA_TIME_AUTH_HEADER` もしくは `JAVATIME_BEARER_TOKEN`（Bearer トークン）、`JAVA_TIME_PSQL_CMD`（`docker compose exec -T modernized-db psql ...` 等）。  
+- サーバーに常駐させる Cron 設定例:
+  ```cron
+  # Stage JavaTime サンプル採取 (毎日 03:00 JST)
+  0 3 * * * cd /opt/opendolphin && \
+    JAVA_TIME_BASE_URL_MODERN=https://stage.backend/opendolphin/api \
+    JAVA_TIME_AUTH_HEADER="Authorization: Bearer ${JAVATIME_STAGE_TOKEN}" \
+    JAVA_TIME_OUTPUT_DIR=/var/lib/opendolphin/java-time/$(date +\%Y\%m\%d) \
+    bash ops/monitoring/scripts/java-time-sample.sh >> /var/log/java-time-sample.log 2>&1
+  ```
+  Cron 実行ログには `tmp/java-time/` 配下の保存先が出力されるため、Runbook §4.3 の証跡リンクとして転記する。
+
+#### ログローテーションと Evidence
+
+- Stage Dry-Run（2025-11-07 10:26 UTC）の結果を `tmp/java-time/logs/java-time-sample-20251107-dry-run.log` に保存済み。`JAVA_TIME_AUTH_HEADER`（Stage Bearer）が未共有のため API 呼び出しは保留中だが、ディレクトリ `tmp/java-time/20240620/` を本番採取用に先行作成した。Stage トークン取得後は同ディレクトリ内に `audit-YYYYMMDD.sql` / `orca-response-YYYYMMDD.json` / `touch-response-YYYYMMDD.json` を格納し、Evidence へコピーする。  
+- `/var/log/java-time-sample.log` はローテーションしないと 1 週間で 10MB 超に膨れ上がる。Ops ホストでは下記 `logrotate` スニペットを `/etc/logrotate.d/java-time-sample` に配置し、圧縮 8 世代を維持する。
+  ```conf
+  /var/log/java-time-sample.log {
+    daily
+    rotate 8
+    compress
+    missingok
+    notifempty
+    create 0640 ops ops
+    sharedscripts
+    postrotate
+      systemctl reload rsyslog >/dev/null 2>&1 || true
+    endscript
+  }
+  ```
+- `tmp/java-time/<YYYYMMDD>/` 直下の SQL/JSON は 30 日保持ルール。31 日目に自動削除する場合は `find /var/lib/opendolphin/java-time -maxdepth 1 -type d -mtime +30 -exec rm -rf {} +` を Cron へ追加する。削除前に Evidence（SharePoint/Evidence S3）へ同期すること。  
+- Evidence へのリンク例:  
+  - SQL: `tmp/java-time/20240620/audit-20251107.sql`（Stage Token 取得後に本実行で上書き予定）  
+  - Dry-Run ログ: `tmp/java-time/logs/java-time-sample-20251107-dry-run.log`
+
+#### GitHub Actions 週次 Dry-Run
+
+- `.github/workflows/java-time-sample.yml`（および運用ドキュメント向けの `ci/java-time-sample.yml`）で毎週月曜 00:30 JST に Dry-Run を実行する。`JAVA_TIME_OUTPUT_DIR=tmp/java-time/github-actions-${{ github.run_id }}` を指定し、`ops/monitoring/scripts/java-time-sample.sh --dry-run` のログをアーティファクトへ保存する。  
+- Dry-Run では Stage API へアクセスしないため Secrets を必要としないが、ジョブ失敗時は Slack/PagerDuty へ通知せず GitHub 通知で把握する方針。Stage トークンが揃い次第、`secrets.JAVATIME_STAGE_TOKEN` を注入して本番 API を叩くモードへ昇格する。
+
+#### Loki / Elastic / Grafana クエリ例
+
+- **Loki (LogQL)**  
+  ```
+  {app="modernized-backend",logger="open.dolphin.audit"} 
+  |= "d_audit_event" 
+  | json
+  | action=~"ORCA_INTERACTION|TOUCH_SENDPACKAGE.*"
+  | line_format "{{.event_time}} {{.payload.issuedAt}}"
+  ```
+  ISO8601 以外を検出したい場合は `| payload_issued_at = payload.issuedAt | payload_issued_at !~ "^\\d{4}-\\d{2}-\\d{2}T.*[+-]\\d{2}:\\d{2}$"` を追加し、ヒットしたログを Slack/#server-modernized-alerts へ共有する。
+
+- **Elastic / Kibana (KQL)**  
+  ```
+  action : ("ORCA_INTERACTION" or "TOUCH_SENDPACKAGE" or "TOUCH_SENDPACKAGE2")
+  and payload.issuedAt.keyword : *
+  ```
+  絞り込み後に `payload.issuedAt.keyword` フィールドへ Scripted Field `Instant.parse(params._value)` を適用するとエラー行だけが抽出される。未登録（null/空文字）の場合は `payload.issuedAt.keyword : ""` で監視できる。
+
+- **Grafana (PostgreSQL データソース)**  
+  ```
+  SELECT
+    event_time AS "time",
+    payload::jsonb ->> 'issuedAt' AS issued_at_iso,
+    payload::jsonb #>> '{bundleList,0,startedAt}' AS bundle_started_at,
+    request_id
+  FROM d_audit_event
+  WHERE $__timeFilter(event_time)
+    AND action IN ('ORCA_INTERACTION','TOUCH_SENDPACKAGE','TOUCH_SENDPACKAGE2');
+  ```
+  パネルの Transform で `Add field from calculation` → `to_unix_timestamp(issued_at_iso)` を設定すると、時刻形式が崩れた行は `NaN` になり即座に検知できる。ステージ環境で日次スポットチェック、プロダクションで 15 分毎アラート（`WHEN count(isnan(issued_at_epoch)) > 0`）を設定し、Runbook §4.3 の手順で追跡する。
+
 ## 2. WildFly Micrometer サブシステム設定
 
 `ops/legacy-server/docker/configure-wildfly.cli` に Micrometer 用の設定ブロックを追加した。既存環境へ適用する場合は Management CLI で本スクリプトを再実行するか、Docker イメージを再ビルドする。サブシステム設定の要点は以下の通り。 citeturn1search0turn1search6

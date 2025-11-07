@@ -1,7 +1,7 @@
 import { AxiosError, type AxiosResponse, type InternalAxiosRequestConfig } from 'axios';
 import { describe, expect, it } from 'vitest';
 
-import { resolveErrorMessage } from '@/features/charts/components/DocumentTimelinePanel';
+import { resolveErrorMessage } from '@/features/charts/components/document-timeline-utils';
 
 const createAxiosError = (options: { status?: number; code?: string }) => {
   const config = { url: '/test', method: 'get' } as InternalAxiosRequestConfig;

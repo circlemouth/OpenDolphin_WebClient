@@ -132,7 +132,20 @@
 8. **Touch クライアント SSE 確認**  
    - `curl -N -H 'Accept: text/event-stream' -H "ClientUUID:$UUID" "$BASE_URL/chart-events"` で SSE 接続を開始し、起動直後にリプレイされるイベント `retry:` 行を確認。`Last-Event-ID` を指定した再接続も試行する。  
    - PVT 登録操作を実施し、`event: pvt.updated` が SSE 経由で届くこと、`data:` の JSON が `ChartEventModel` スキーマ（`server-modernized/src/main/java/open/dolphin/rest/ChartEventSseSupport.java`）と一致することを確認。  
+   - `event: chart-events.replay-gap` を受信した場合は対象施設の来院リストが欠落しているため、直ちに `curl -H "ClientUUID:$UUID" "$BASE_URL/rest/pvt2/pvtList"` で最新状態を再取得し、クライアントへフルリロードのガイダンスを表示する。処置内容をオペレーションログへ残す。Web/Touch のリロード UX は `docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md#6-chart-eventsreplay-gap-受信時のリロード-ux` を参照して案内する。  
    - Touch UI 側で例外イベント (`event: error.*`) の通知が表示されることを Worker C のログに従いスクリーンショットで保存。SSE 切断時は `ChartEventSseSupport` ログ (`TouchSSE-...`) に WARN が出ないかを確認する。
+   - メトリクス監視（実測: `tmp/chart-event-metrics-20260622.{csv,json}`）:  
+     - `chartEvent.history.retained{facility=<fid>}`（`sequence - oldestHistoryId`）の 24h ローカル計測では平均 15 / p95 79 / 上限 100（欠落 6 回）であった。結果をもとに `ops/monitoring/chart-event-alerts.yml` へ Warning=85 (10 分継続)・Critical=98 (3 分継続) を設定済み。  
+     - Alertmanager で `ChartEventHistoryRetentionWarning` を受信した場合: 10 分以内に `chart-events` SSE の Last-Event-ID を再確認し、受付/Touch UI の自動リロードが成功しているかを `ReceptionReloadAudit` ログから確認。必要に応じて `/rest/pvt2/pvtList` を手動実行し、結果を Ops Slack へ共有する。  
+     - `ChartEventHistoryRetentionCritical` または `ChartEventHistoryGapDetected`（`increase(chartEvent.history.gapDetected[5m]) > 0`）が発火した場合: 直ちに対象施設の接続を停止→`/rest/pvt2/pvtList` を強制リロード→`chart-events.replay-gap` 通知に従いユーザーへ再同期を案内する。Incident 記録へ Alert ID・施設・`gapDetected` カウンター値を追記する。  
+     - Counter `chartEvent.history.gapDetected{facility=<fid>}` が増加した場合はゼロから +1 された瞬間の `gapEvents`（Summary JSON）と突合し、Runbook この節の記録テンプレートに沿って Ops 日誌へ残す。  
+   - 履歴バッファ検証:  
+     1. SSE ストリームの `id:` 行から最新 ID を `LAST_ID` として控える。  
+     2. `TEST_ID=$((LAST_ID-120))` を計算し、`curl -N -H 'Accept: text/event-stream' -H "ClientUUID:$UUID" -H "Last-Event-ID:$TEST_ID" "$BASE_URL/chart-events"` を再実行して 100 件（`HISTORY_LIMIT`）を超えるギャップを擬似的に作る。  
+     3. 再接続時に `ChartEventSseSupport` が `WARN SSE history gap detected for facility ...` を出力し、Counter が +1 されることを確認（例: `promtool query instant 'chartEvent.history.gapDetected{facility="$FID"}'`）。  
+     4. ギャップ > 100 で警告が出た場合はただちに `curl -H "ClientUUID:$UUID" "$BASE_URL/rest/pvt2/pvtList"` で来院リストをフルリロードし、オペレーションログへ「SSE gap >100 によりリロード実施」と記録する。  
+     5. ギャップが 100 件未満であればカウンター増加は発生せず、そのまま SSE を継続しリロードは不要。  
+   - 10 分以上の通信断や `Last-Event-ID` が大きく古い状態で復帰した場合は常に `/rest/pvt2/pvtList` を再取得し、`sequence` ギャップを Ops 手順書に記録すること。
 
 ### Touch 来院履歴 API（2025-11-04 更新）
 
@@ -171,6 +184,73 @@
 | EHT-RUN-20251103-PHY | 身体所見 (`/physical` POST/DELETE/GET) | Pending | `EHTResourceTest.postPhysicalCreatesObservationsAndLogsAudit` 追加済（Maven 未導入のため未実行）。 |
 | EHT-RUN-20251103-VITAL | バイタル (`/vital` GET/POST/DELETE) | Pending | `EHTResourceTest.postVitalRecordsAudit` 追加済（Maven 未導入のため未実行）。 |
 | EHT-RUN-20251103-CLAIM2 | CLAIM 送信 (`/sendClaim`, `/sendClaim2`) | Pending | `EHTResourceTest.sendClaimWithoutDocumentLogsChartEvent` で監査ログを検証予定。JMS 実送信ログは Staging MQ 復旧後に確認。 |
+
+### 4.3 JavaTime 出力検証（2026-06-18 追加）
+
+> 目的: JavaTimeModule 適用後も監査ログと ORCA/Touch 連携レスポンスが ISO8601 形式（`WRITE_DATES_AS_TIMESTAMPS=false`）を維持しているかを Stage/Prod で継続的に確認する。
+
+1. **準備**  
+   - `BASE_URL_LEGACY` / `BASE_URL_MODERN` / `PARITY_HEADER_FILE` を `.env` で指定し、Python スクリプトは使用せず Bash から `ops/tools/send_parallel_request.sh` を呼び出す。  
+   - Stage 接続に必要な Bearer は `ops/tests/api-smoke-test/headers/javatime-stage.headers.template` をコピーして `.../javatime-stage.headers` を生成し、ローカル保管（`.gitignore` 済み）。2025-11-07 時点では Stage トークン未共有のため Dry-Run のみ実施 (`tmp/java-time/logs/java-time-sample-20251107-dry-run.log`)。トークン受領後はファイルへ直接貼り付け、リポジトリへはコミットしない。  
+   - 監査ログ採取用に `docker compose exec modernized-db psql -U dolphin -d opendolphin` が実行できることを確認。  
+   - 取得物の保存先: `artifacts/parity-manual/JAVATIME_*`（HTTP 応答）、`tmp/java-time/audit-$(date +%Y%m%d).sql`（SQL 出力）、`tmp/java-time/logs/`（CLI や Grafana/Loki/Elastic のログ）。Evidence への転記前に 30 日保持ルールを順守する。
+2. **監査ログサンプル（d_audit_event）**  
+   ```bash
+   docker compose exec modernized-db psql -U dolphin -d opendolphin <<'SQL' \
+     | tee tmp/java-time/audit-$(date +%Y%m%d).sql
+   SELECT id,
+          event_time,
+          action,
+          payload::jsonb ->> 'issuedAt' AS issued_at_iso,
+          payload::jsonb #>> '{orcaRequest,requestedAt}' AS orca_requested_at
+     FROM d_audit_event
+    WHERE action IN ('ORCA_INTERACTION','TOUCH_SENDPACKAGE','TOUCH_SENDPACKAGE2')
+    ORDER BY event_time DESC
+    LIMIT 20;
+   SQL
+   ```
+   正規表現 `^\d{4}-\d{2}-\d{2}T.*[+-]\d{2}:\d{2}$` に一致しない行は `notes/touch-api-parity.md` §9 と同じフローでエスカレーションする。
+3. **ORCA 連携 (`PUT /orca/interaction`)**  
+   ```bash
+   BASE_URL_MODERN=https://stage.backend/opendolphin/api
+   curl -sS -X PUT "$BASE_URL_MODERN/orca/interaction" \
+     -H 'Content-Type: application/json' \
+     -H 'X-Trace-Id: java-time-orca-'"$(date +%s)" \
+     -H 'Authorization: Bearer <token>' \
+     -d '{"codes1":["620001601"],"codes2":["610007155"],"issuedAt":"'"$(date --iso-8601=seconds)"'"}' \
+     | tee tmp/java-time/orca-response.json
+   jq -r '.issuedAt, .result[].timestamp' tmp/java-time/orca-response.json
+   ```
+   - 取得した `X-Trace-Id` をキーに `d_audit_event` を確認（手順 2 の SQL に `AND request_id='<traceId>'` を追加）。  
+   - ORCA DB が未接続の場合は `ops/tests/api-smoke-test/test_config.manual.csv` のスタブケースを使用し、Legacy 側レスポンスとのフィールド比較を行う。
+4. **Touch sendPackage (`POST /touch/sendPackage*`)**  
+   ```bash
+   export BASE_URL_LEGACY=http://legacy.local:8080/opendolphin/api
+   export BASE_URL_MODERN=https://stage.backend/opendolphin/api
+   export PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/javatime-stage.headers
+   export PARITY_BODY_FILE=tmp/sendPackage-probe.json
+   cat >"$PARITY_BODY_FILE" <<'JSON'
+   {
+     "issuedAt": "2026-06-18T09:30:00+09:00",
+     "patientId": "000001",
+     "department": "01",
+     "bundleList": []
+   }
+   JSON
+   ./ops/tools/send_parallel_request.sh POST /touch/sendPackage JAVATIME_TOUCH_001
+   ./ops/tools/send_parallel_request.sh POST /touch/sendPackage2 JAVATIME_TOUCH_002
+   ```
+   - `jq -r '.issuedAt' artifacts/parity-manual/JAVATIME_TOUCH_001/*/response.json` で Legacy/Modern を比較し、差分があればファイルごと `tmp/java-time/diffs/` に保存。  
+   - 監査イベント（`action=TOUCH_SENDPACKAGE*`）を `psql` で追跡し、`payload` 内の `bundleList[].startedAt` `completedAt` も ISO8601 であることを確認する。
+5. **ops/tests/api-smoke-test 連携**  
+   - `PARITY_OUTPUT_DIR=artifacts/parity-manual/java-time` として `./ops/tools/send_parallel_request.sh` を再実行し、`README.manual.md` 手順に沿って差分を `diff -u` で取得。  
+   - `test_config.manual.csv` へ `JAVATIME_ORCA_001` / `JAVATIME_TOUCH_001` を追記済みの場合は該当 ID を使用し、レポートを `PHASE2_PROGRESS.md` と `notes/worker-directives-20260614.md` へリンクする。`headers/javatime-stage.headers.template` を Stage トークン込みで複製したファイルを `PARITY_HEADER_FILE` に指定する。  
+6. **自動採取スクリプト（任意）**  
+   - `ops/monitoring/scripts/java-time-sample.sh` を `JAVA_TIME_BASE_URL_MODERN=https://stage.backend/opendolphin/api` など必要な環境変数付きで実行すると、手順 2〜4 を一括自動化できる。`JAVA_TIME_OUTPUT_DIR=tmp/java-time/$(date +%Y%m%d)` を指定すると日付単位で保存可能。`--dry-run` で事前にログを確認し、本実行は Cron（`docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md` §1.5）へ登録する。  
+   - 出力物（`tmp/java-time/audit-YYYYMMDD.sql`, `tmp/java-time/orca-response-YYYYMMDD.json`, `tmp/java-time/touch-response-YYYYMMDD.json`）を Evidence へ保存し、`PHASE2_PROGRESS.md` の当日欄へ「JavaTime 監視 OK/NG」を記載する。
+7. **結果の共有とエスカレーション**  
+   - すべての出力が ISO8601 である場合は `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日欄へ「JavaTime 監視 OK」と記入し、Grafana/Loki/Elastic のスクリーンショットを Evidence へ添付。  
+   - 差分が見つかった場合は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead → Security/Compliance の順で連絡し、詳細は `notes/touch-api-parity.md` §9 の手順に従う。
 
 ## 5. 切替手順（サンプル）
 

@@ -7,6 +7,7 @@ package open.dolphin.session;
 import java.util.Collection;
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Vetoed;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
@@ -25,6 +26,7 @@ import open.dolphin.session.framework.SessionOperation;
 @ApplicationScoped
 @Transactional
 @SessionOperation
+@Vetoed
 public class VitalServiceBean {
 
     private static final String QUERY_VITAL_BY_FPID = "from VitalModel v where v.facilityPatId=:fpid";

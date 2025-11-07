@@ -37,6 +37,8 @@ GIT_BRANCH=""
 GIT_COMMIT=""
 GENERATED_AT=""
 OUTPUT="-"
+REPO_ROOT="${REPO_ROOT:-$(pwd)}"
+REPO_ROOT="${REPO_ROOT%/}"
 
 while [[ $# -gt 0 ]]; do
   case "$1" in
@@ -98,7 +100,21 @@ if [[ -z "$GENERATED_AT" ]]; then
   GENERATED_AT="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
 fi
 
-readarray -t METRIC_LINES < <(awk '
+readarray -t METRIC_LINES < <(awk -v repo_root="$REPO_ROOT" '
+  function record_path(raw_attr) {
+    path = raw_attr
+    gsub(/^[[:space:]]+/, "", path)
+    sub(/^[Pp][Aa][Tt][Hh]="?/, "", path)
+    sub(/"$/, "", path)
+    gsub(/\r/, "", path)
+    if (repo_root != "" && index(path, repo_root "/") == 1) {
+      path = substr(path, length(repo_root) + 2)
+    }
+    if (length(path) > 0) {
+      files[path] = 1
+    }
+  }
+
   /<duplication[[:space:]]/ {
     duplication_count++
     if (match($0, /lines="[0-9]+"/)) {
@@ -116,13 +132,11 @@ readarray -t METRIC_LINES < <(awk '
     next
   }
 
-  in_dup && /<file[[:space:]]/ {
+  in_dup && /path="[^"]+"/ {
     if (match($0, /path="[^"]+"/)) {
-      path = substr($0, RSTART, RLENGTH)
-      sub(/^path="/, "", path)
-      sub(/"$/, "", path)
-      files[path] = 1
+      record_path(substr($0, RSTART, RLENGTH))
     }
+    next
   }
 
   END {

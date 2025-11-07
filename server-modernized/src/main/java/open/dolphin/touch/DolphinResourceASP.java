@@ -104,6 +104,10 @@ public class DolphinResourceASP extends AbstractResource {
     @Inject
     private KarteServiceBean karteService;
 
+    @Inject
+    // LegacyObjectMapperProducer を介して Touch 既定設定を共有
+    private ObjectMapper legacyTouchMapper;
+
     /** Creates a new instance of DolphinResource */
     public DolphinResourceASP() {
     }
@@ -1413,8 +1417,7 @@ public class DolphinResourceASP extends AbstractResource {
         //System.err.println("post document did call");
         System.err.println(json);
         
-        ObjectMapper mapper = new ObjectMapper();
-        IDocument document = mapper.readValue(json, IDocument.class);
+        IDocument document = legacyTouchMapper.readValue(json, IDocument.class);
         DocumentModel model = document.toModel();
         System.err.println(model.toString());
         
@@ -1437,8 +1440,7 @@ public class DolphinResourceASP extends AbstractResource {
         
         System.err.println(json);
         
-        ObjectMapper mapper = new ObjectMapper();
-        IDocument2 document = mapper.readValue(json, IDocument2.class);
+        IDocument2 document = legacyTouchMapper.readValue(json, IDocument2.class);
         DocumentModel model = document.toModel();
         System.err.println(model.toString());
         

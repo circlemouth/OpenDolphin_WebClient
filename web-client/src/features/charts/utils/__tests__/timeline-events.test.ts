@@ -5,53 +5,17 @@ import type { PatientVisitSummary } from '@/features/charts/types/patient-visit'
 import type { LaboModule, LaboItem } from '@/features/charts/types/labo';
 import type { TimelineOrderSource, TimelinePlanCardSource } from '../timeline-events';
 import { buildTimelineEvents, filterTimelineEvents } from '../timeline-events';
+import { createDocInfoSummary } from './doc-info-summary.fixture';
 
-const createDoc = (overrides: Partial<DocInfoSummary> = {}): DocInfoSummary => ({
-  docPk: overrides.docPk ?? 1,
-  parentPk: overrides.parentPk ?? null,
-  docId: overrides.docId ?? `DOC-${overrides.docPk ?? 1}`,
-  docType: overrides.docType ?? '経過記録',
-  title: overrides.title ?? '標準カルテ',
-  purpose: overrides.purpose ?? '',
-  purposeDesc: overrides.purposeDesc ?? null,
-  confirmDate: overrides.confirmDate ?? '2025-10-10T09:00:00Z',
-  firstConfirmDate: overrides.firstConfirmDate ?? null,
-  department: overrides.department ?? null,
-  departmentDesc: overrides.departmentDesc ?? '内科',
-  healthInsurance: overrides.healthInsurance ?? null,
-  healthInsuranceDesc: overrides.healthInsuranceDesc ?? null,
-  healthInsuranceGUID: overrides.healthInsuranceGUID ?? null,
-  patientName: overrides.patientName ?? null,
-  patientId: overrides.patientId ?? null,
-  patientGender: overrides.patientGender ?? null,
-  facilityName: overrides.facilityName ?? null,
-  creatorLicense: overrides.creatorLicense ?? null,
-  createrLisence: overrides.createrLisence ?? null,
-  status: overrides.status ?? 'F',
-  hasMark: overrides.hasMark ?? false,
-  hasImage: overrides.hasImage ?? false,
-  hasRp: overrides.hasRp ?? false,
-  hasTreatment: overrides.hasTreatment ?? false,
-  hasLaboTest: overrides.hasLaboTest ?? false,
-  sendClaim: overrides.sendClaim ?? false,
-  sendLabtest: overrides.sendLabtest ?? false,
-  sendMml: overrides.sendMml ?? false,
-  claimDate: overrides.claimDate ?? null,
-  versionNumber: overrides.versionNumber ?? '1',
-  versionNotes: overrides.versionNotes ?? null,
-  parentId: overrides.parentId ?? null,
-  parentIdRelation: overrides.parentIdRelation ?? null,
-  labtestOrderNumber: overrides.labtestOrderNumber ?? null,
-  issuanceDate: overrides.issuanceDate ?? null,
-  institutionNumber: overrides.institutionNumber ?? null,
-  admFlag: overrides.admFlag ?? null,
-  useGeneralName: overrides.useGeneralName ?? false,
-  priscriptionOutput: overrides.priscriptionOutput ?? false,
-  chkPatientInfo: overrides.chkPatientInfo ?? false,
-  chkUseDrugInfo: overrides.chkUseDrugInfo ?? false,
-  chkHomeMedical: overrides.chkHomeMedical ?? false,
-  pVTHealthInsuranceModel: overrides.pVTHealthInsuranceModel ?? null,
-});
+const createDoc = (overrides: Partial<DocInfoSummary> = {}): DocInfoSummary =>
+  createDocInfoSummary({
+    docType: '経過記録',
+    departmentDesc: '内科',
+    title: '標準カルテ',
+    confirmDate: '2025-10-10T09:00:00Z',
+    firstConfirmDate: null,
+    ...overrides,
+  });
 
 const createVisit = (overrides: Partial<PatientVisitSummary> = {}): PatientVisitSummary => ({
   visitId: overrides.visitId ?? 1,

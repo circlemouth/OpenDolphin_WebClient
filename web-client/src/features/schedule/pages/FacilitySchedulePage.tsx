@@ -293,7 +293,10 @@ export const FacilitySchedulePage = () => {
   const scheduleQuery = useFacilitySchedule(scheduleParams);
   const queryClient = useQueryClient();
 
-  const entries = scheduleQuery.data ?? [];
+  const entries = useMemo(
+    () => scheduleQuery.data ?? [],
+    [scheduleQuery.data],
+  );
 
   const doctorOptions = useMemo(() => buildDoctorOptions(entries), [entries]);
   const statusOptions = useMemo(() => buildStatusOptions(), []);
@@ -709,4 +712,3 @@ export const FacilitySchedulePage = () => {
     </PageContainer>
   );
 };
-

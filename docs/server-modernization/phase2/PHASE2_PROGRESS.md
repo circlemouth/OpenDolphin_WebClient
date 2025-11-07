@@ -1,5 +1,9 @@
 # フェーズ2 進捗メモ (更新: 2026-06-14)
 
+## 2026-06-14 追記: Phase0-Scope-Adjustment（担当: Codex）
+- ✅ ステークホルダー合意に基づきフェーズ0（環境棚卸し・Compose 手順整理）はサーバーモダナイズ デバッグ範囲から除外。今後の進捗報告・チェックリスト更新はフェーズ1以降のみを対象とし、フェーズ0タスクが再度必要になった場合は別チケットで復活させる方針を確認。
+- 📌 `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ0節へスコープ除外の注記を追記済み。
+
 ## 2026-06-14 追記: RuntimeDelegate-Expansion（担当: Codex）
 - ✅ `DemoResourceAspTest`／`TouchModuleResourceTest`／`DolphinResourceDocumentTest`／`TouchUserServiceTest`／`PHRResourceTest` を `RuntimeDelegateTestSupport` 継承・Mockito `lenient()` 化し、RuntimeDelegate 未登録／Strictness による失敗を解消。
 - ✅ `TestRuntimeDelegate` に `Cache-Control`・`MediaType` ヘッダーデリゲートを実装、レスポンスヘッダーへ `Cache-Control` を反映。StackOverflow/UnsupportedOperationException を抑止。
@@ -20,6 +24,15 @@
 - 📊 Medium `EI_EXPOSE_REP*` 903 件のうち 831 件が Legacy 範囲（infomodel/converter/Touch・ADM コンバータ／ICarePlan）であることを確認。手動対応継続分 68 件は REST/Touch DTO・セキュリティ設定・Messaging/MBean へ分類済み。
 - 🔁 再評価方針: Touch/ADM 互換 API 廃止または InfoModel 自動生成化の完了時、SpotBugs 5.x への更新時にフィルタを見直し。四半期ごとにフィルタ無しの試験実行を行い、監査ログへ追記する。
 - 📦 アーティファクトは `server-modernized/target/static-analysis/spotbugs/` を CI アップロード対象に追加予定。Ops 共有時はログと XML を ZIP 化して提供。
+
+## 2026-06-15 追記: TraceContextProvider-Design（担当: Worker A）
+- ✅ `docs/server-modernization/phase2/notes/infrastructure-trace-review.md` に `TraceContextProvider` / `TraceContextBridge` の設計案と依存関係図を追加。`MessagingGateway` から `SessionTraceManager` への直接依存を解消する方針を整理した。
+- 📌 新規チケット `TRC-15 TraceContextProvider`（Phase2 backlog）を登録。スコープは「Provider インタフェース追加」「MessagingGateway / MessageSender / RequestContextExtractor の移行」「JMS traceId 欠落監視ロジック」。
+- 🔁 次アクション:
+  1. Worker A: Provider インタフェースと `TraceContextBridge` 仮実装を `server-modernized/src/main/java/open/dolphin/infrastructure/trace/` に追加し、単体テストで MDC 引き継ぎを確認。
+  2. Worker C: JMS 周り（`MessagingGateway`, `MessageSender`）を Provider API に移行し、`SessionTraceManager` への依存を削除。
+  3. Worker D: PHASE2 OPS から Grafana/Alertmanager へ JMS traceId 欠落 WARN の通知ルールを追加。
+- ✅ チケット情報を `docs/server-modernization/phase2/notes/static-analysis-plan.md` および `docs/server-modernization/phase2/notes/ops-observability-plan.md` にリンク予定。
 
 ## 2026-06-14 追記: Static-Analysis-First-Run-Triage（担当: Codex）
 - ✅ Jenkins `Server-Modernized-Static-Analysis` / GitHub Actions `Server Static Analysis` の最新成果物を `tmp/static-analysis-20260614.log` で採取し、SpotBugs High 14・Medium 1,149、Checkstyle 3,255、PMD priority3 48 / priority4 280 を照合。両 CI の数値差分なし。
@@ -65,6 +78,13 @@
 - ✅ `docs/server-modernization/phase2/notes/static-analysis-findings.md` に Nightly PMD CPD ジョブ設計（Jenkins 優先・GHA 代替）、アーティファクト保管、Grafana/BigQuery ダッシュボード案、Slack 情報通知閾値案を記載。
 - ✅ 週次レビュー体制案を整理。Phase2 静的解析スタンドアップ（木曜 10:00 JST）で CPD 指標・SpotBugs/PMD backlog をレビュー。参加者: Backend (Lead: 山本), Ops (担当: 佐々木), QA (担当: 田中)。議事録は `static-analysis-review-minutes.md`（新規予定）へ格納予定。
 - 📝 次ステップ: 1) Jenkins に `Server-Modernized-Static-Analysis-Nightly` ジョブを作成し、`cron('H 3 * * *')` で稼働開始。2) Ops が CPD XML → BigQuery 連携スクリプトを整備し、Grafana ダッシュボードを公開。3) Slack `#dev-quality` への Info 通知テンプレートを試行し、閾値を調整。
+
+## 2026-06-14 追記: SA-DOC-OPERATIONS（担当: Worker D）
+- ✅ `docs/server-modernization/phase2/notes/static-analysis-plan.md` に `SA-INFRA-MUTABILITY-HARDENING` 実施計画を追記。JMS ヘルパー / MBean キャッシュ / 外部接続ラッパーの 3 クラスタごとに担当・検証観点（JMS ラウンドトリップ、MBean Exposure IT、Plivo/ORCA WireMock など）・完了目安（6/21・6/25・6/28）を明文化。
+- ✅ `docs/server-modernization/phase2/notes/ops-observability-plan.md` を新設し、Nightly CPD ジョブ (`ci/jenkins/nightly-cpd.groovy`) の前提、Slack/PagerDuty 資格情報、証跡保存ディレクトリ `ops/analytics/evidence/nightly-cpd/<date>/`、BigQuery/Grafana 連携（`ops/analytics/bigquery/static_analysis_duplicate_code_daily.sql`, `ops/analytics/grafana/static_analysis_cpd_panels.json`）を整理。`docs/web-client/operations/TEST_SERVER_DEPLOY.md` で定義された WildFly + PostgreSQL リファレンス環境を前提条件として明示。
+- ✅ `docs/server-modernization/phase2/notes/test-data-inventory.md` を新設し、`ops/tests/api-smoke-test/`、`scripts/api_parity_response_check.py`、監査ログ検証で必要なテストデータ・SQL・成果物保存ルール・Python 実行制約時の代替手順（curl / Postman / `psql`）を一覧化。追加作成すべき手動資材（`test_config.manual.csv`, `ops/tools/send_parallel_request.sh` など）も記録。
+- ✅ `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ8〜10 の備考を更新し、観測性・回帰テスト・ドキュメント運用タスクから上述ノートを参照できるようにした。
+- 🔁 残タスク: 1) Ops が Nightly CPD を本番 Jenkins で 3 連続実行し、Slack/PagerDuty Permalink と Grafana パネル更新スクリーンショットを `ops-observability-plan.md` へ追記。2) `test-data-inventory.md` で定義した手動テスト資材を実体化し、CI と同じ成果物格納ルールを整備。3) 各 `SA-INFRA-MUTABILITY-HARDENING` クラスタ完了時に SpotBugs 件数差分とラウンドトリップテストログを本メモへ追記。
 
 ## 2026-06-12 追記: Static-Analysis-First-Run-Triage（担当: Codex）
 - ⚠️ サンドボックスでは CI 実行不可のため、現行レポートは 2025-11-06 時点のローカル実行結果ベース。件数サマリと対応計画を `static-analysis-findings.md` に追記。
@@ -559,3 +579,10 @@
 - SOAP チE��プレート（定型斁E�Eスタンプ）やプラン編雁EUI の拡張。`ProgressCourse` 以外�E ModuleModel�E��E方・検査�E��E保存フロー設計、E
 - `/chartEvent/event` を用ぁE��征E��スチE�Eタス更新 UI を左カラムへ統合。看護師画面とのスチE�Eタス整合性検証、E
 - ORCA 連携の準備として、患老E��細パネルに保険惁E��サマリ�E�健康保険 GUID�E�を表示する案を検討、E
+
+## 2026-06-15 追記: SA-DOC-OPERATIONS-Continuation（担当: Worker D）
+- ✅ Nightly CPD をサンドボックスで手動実行し、`ops/analytics/evidence/nightly-cpd/20240615/` に `build-local-sandbox.log` と `cpd-metrics.json`（duplicate_lines=21837, duplication_count=258, file_count=175）を保存。Slack / PagerDuty / Grafana 証跡は取得不可のためプレースホルダを配置し、本番ジョブ後に差し替える運用を `docs/server-modernization/phase2/notes/ops-observability-plan.md` に追記。
+- ✅ `ops/tools/cpd-metrics.sh` を LF 化し、リポジトリルート自動検出と絶対パス対応を実装。CPD XML から BigQuery 取り込み JSON を生成する標準手順を Evidence ディレクトリへ記録。
+- ✅ Python 禁止時の API 回帰資材として `ops/tests/api-smoke-test/test_config.manual.csv`・`headers/*.headers`・`payloads/`・`README.manual.md` と `ops/tools/send_parallel_request.sh` を追加。`docs/server-modernization/phase2/notes/test-data-inventory.md` に環境変数・保存先・監査ログ収集フローを反映。
+- ⚙️ `static-analysis-plan.md` / `static-analysis-findings.md` に `PlivoSender` / `ORCAConnection` / `CopyStampTreeBuilder` の残課題、テスト案（PlivoSenderDefensiveCopyIT / ORCAConnectionSecureConfigTest / CopyStampTreeRoundTripTest）とブロッカー（Plivo Sandbox 資格情報、ORCA 接続設定）を追記し、`SA-INFRA-MUTABILITY-HARDENING` 着手状況を共有。
+- 📌 Next: Ops が Jenkins 本番ジョブで Slack/PagerDuty Permalink と Grafana スクショを採取し Evidence を更新。Worker D は外部接続ラッパーの実装・テストを 2026-06-21 までに開始し、MBean/JMS 防御的コピー残件を並行削減する。

@@ -8,6 +8,7 @@ import {
   searchPatients,
   updatePatient,
 } from '@/features/patients/api/patient-api';
+import type { PatientUpsertPayload } from '@/features/patients/types/patient';
 
 vi.mock('@/libs/http', async () => {
   const actual = await vi.importActual<typeof import('@/libs/http')>('@/libs/http');
@@ -150,7 +151,7 @@ describe('patient-api', () => {
       memo: 'アレルギー有り ',
       address: { zipCode: '100-0001', address: '東京都千代田区 ' },
       healthInsurances: [{ beanBytes: 'YmVhbg==', id: undefined }],
-    };
+    } satisfies PatientUpsertPayload;
 
     const result = await createPatient(payload);
 

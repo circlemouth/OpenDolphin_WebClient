@@ -1,110 +1,71 @@
-# server-modernized レイヤー別パッケージマップ（2026-06-09 更新）
+# server-modernized レイヤー別パッケージマップ（2026-06-14 更新）
 
 ## 作業範囲
-- 対象: `server-modernized/src/main/java` 配下の `open.*` パッケージ。
-- `jakarta/` および `META-INF/` は Jakarta EE 設定リソースのみのため一覧から除外。
-- 代表クラスは外形把握を目的に目視で抽出した。
+- 対象: `server-modernized/src/main/java/open.*`。`rg --files server-modernized/src/main/java/open | sed 's@/[^/]*$@@' | sort -u` で 38 パッケージ（`open.dolphin.*`, `open.orca.rest`, `open.stamp.seed` など）を棚卸し。
+- `jakarta/` および `META-INF/` 配下は Jakarta EE 設定のみのため除外。
+- 表の「主な依存先 / 備考」列に、直接 import している層や循環依存の気づきを追記した。
 
-## レイヤー別サマリー
+## 5層分類サマリー
 
 ### REST / API レイヤー
 
-| パッケージ | 代表クラス | 主な責務 | 備考 |
+| パッケージ | 代表クラス | 主な責務 | 主な依存先 / 備考 |
 | --- | --- | --- | --- |
-| `open.dolphin.rest` | `KarteResource`, `PatientResource`, `LogFilter` | カルテ・患者・スタンプ等の JAX-RS API。セッション層 Bean を注入し、`open.dolphin.converter` 経由で DTO 化する。 | SSE (`ChartEventStreamResource`) や監査 (`AuditTrailService`) を利用。`LogFilter` がリクエストトレースを設定。 |
-| `open.dolphin.touch` | `DolphinResource`, `JsonTouchResource`, `TouchAuthHandler` | タブレット／Touch クライアント向け REST API。タッチ専用 DTO/ビルダー群（`converter/`, `dto/`, `module/`, `patient/`, `stamp/`, `support/`）を束ねる。 | `open.dolphin.session` の Bean を直接呼び出し、`SessionTraceManager` 経由でトレース連携。 |
-| `open.orca.rest` | `OrcaResource`, `ORCAConnection` | ORCA レセプトシステムへの HTTP/JSON 連携エンドポイント。 | `StringTool` で ORCA 固有の文字列整形。 |
-| `open.dolphin.adm10.rest` | `JsonTouchResource`, `AbstractStampTreeBuilder` | ADM10 系（旧 iOS クライアント）向け REST。タッチ系と共通のスタンプ構築ヘルパーを提供。 | `adm10/converter` のインタフェースを使用。 |
-| `open.dolphin.adm20.rest` | `DolphinResourceASP`, `TouchAuthHandler` | ADM20 系（新 Touch/ASP）向け REST。`support/` 経由で認証・監査補助を行う。 | `adm20/dto`・`support` と密結合。 |
+| `open.dolphin.rest`, `open.dolphin.rest.dto` | `KarteResource`, `PatientResource`, `LogFilter`, `RequestMetricsFilter`, `DemoAspResponses` | Web クライアント／外部連携向け JAX-RS エンドポイントと DTO。フィルタで Trace-ID・Micrometer タグを設定し、`session` Bean へ委譲。 | `open.dolphin.session.*`, `session.support`, `metrics`, `security.audit`。`LogFilter` が `mbean.UserCache` を参照するためインフラ層にも依存。 |
+| `open.dolphin.touch`（`converter/`, `dto/`, `module/`, `patient/`, `patient.dto/`, `stamp/`, `support/`, `user/`） | `DolphinResource`, `JsonTouchResource`, `TouchRequestContextExtractor`, `TouchAuthHandler` | Touch/タブレット向け REST。Touch 専用 DTO/ビルダーが API 応答を構成。`TouchRequestContextExtractor` が `LogFilter` のリクエスト属性から Trace-ID を取得。 | `open.dolphin.session`, `touch.session`, `open.dolphin.rest.LogFilter`。`touch.converter` を `session` が import しており層間逆依存が継続。 |
+| `open.dolphin.adm10.rest`, `open.dolphin.adm10.converter` | `JsonTouchResource`, `AbstractStampTreeBuilder`, `JSONStampBuilder` | ADM10（旧 iOS/EHT）向け REST と DTO。レガシースタンプの JSON 生成。 | `open.dolphin.adm10.session`, `open.dolphin.touch.converter`。ADM10/Touch の仕様差分がセッション層へ漏れている。 |
+| `open.dolphin.adm20.rest`, `open.dolphin.adm20.rest.support`, `open.dolphin.adm20.converter`, `open.dolphin.adm20.dto` | `AdmissionResource`, `PHRResource`, `PhrRequestContextExtractor`, `IOSHelper`, `Phr*Dto` | ADM20/PHR 向け REST と DTO。`PhrRequestContextExtractor` が HTTP Trace を監査用 `PhrRequestContext` へ変換。 | `open.dolphin.adm20.session`, `adm20.support`, `open.dolphin.session`, `security.audit`。`LogFilter` の属性と `X-Trace-Id` ヘッダに依存。 |
+| `open.dolphin.touch.session` | `EHTServiceBean`, `IPhoneServiceBean` | Touch API 専用のアプリケーションサービス。REST から直接 CDI される。 | `open.dolphin.session`, `touch.converter`。REST ↔ セッションを跨いだ密結合の温床。 |
+| `open.orca.rest` | `OrcaResource`, `ORCAConnection`, `StringTool` | ORCA レセプト HTTP 連携。REST API から外部システムへ送信するブリッジ。 | `open.dolphin.msg`, `okhttp3`。ADM/PHR 系サポートクラスから直接呼ばれる。 |
 
 ### セッション / アプリケーションレイヤー
 
-| パッケージ | 代表クラス | 主な責務 | 備考 |
+| パッケージ | 代表クラス | 主な責務 | 主な依存先 / 備考 |
 | --- | --- | --- | --- |
-| `open.dolphin.session` | `KarteServiceBean`, `UserServiceBean`, `ChartEventServiceBean` | JPA/EJB を利用した業務ロジック。カルテ取得、スタンプ保存、患者管理、イベント配信、メッセージング指示などを担当。 | `MessagingGateway` や `ServletContextHolder` を注入。`touch.converter` インタフェースを直接参照。 |
-| `open.dolphin.session.framework` | `SessionOperationInterceptor`, `SessionTraceManager`, `SessionServiceException` | セッション層呼び出しのトレース文脈管理と共通例外ハンドリング。 | `@SessionOperation` アノテーションで各 Bean に適用。 |
-| `open.dolphin.touch.session` | `EHTServiceBean`, `IPhoneServiceBean` | Touch クライアント固有のセッションサービス。`open.dolphin.session` をラップしつつ、タッチ DTO へ適合させる。 | `touch.support.TouchAuditHelper` と連携。 |
-| `open.dolphin.adm10.session` | `ADM10_EHTServiceBean`, `ADM10_IPhoneServiceBean` | ADM10 向けレガシーサービス層。iOS/EHT 用のラッパーを提供。 | `adm10/converter` インタフェースへの依存が強い。 |
-| `open.dolphin.adm20.session` | `ADM20_AdmissionServiceBean`, `PHRAsyncJobServiceBean` | ADM20/PHR 機能向けサービス。入院・PHR 非同期処理の集約。 | `adm20/export`, `adm20/support` と連携。 |
+| `open.dolphin.session`, `open.dolphin.session.support` | `KarteServiceBean`, `ChartEventServiceBean`, `MessageSender`, `ChartEventStreamPublisher` | JPA/EJB による業務処理、SSE 配信、JMS 受信。`session.support` が SSE の属性キーやブロードキャスト抽象を提供。 | `open.dolphin.infomodel`, `open.dolphin.msg`, `open.dolphin.touch.converter`, `session.framework`。`touch.converter` への依存が REST 層との循環原因。 |
+| `open.dolphin.session.framework` | `SessionOperationInterceptor`, `SessionTraceManager`, `SessionServiceException` | セッション呼び出しのトレース文脈開始/終了と例外ラップ。HTTP Trace-ID が無い場合は独自 ID を生成。 | `org.jboss.logmanager.MDC`, `org.slf4j.MDC`。`msg.gateway` からも呼ばれ層間循環を生む。 |
+| `open.dolphin.adm10.session` | `ADM10_EHTServiceBean`, `ADM10_IPhoneServiceBean` | ADM10 (Legacy) 用サービス。Touch 互換 DTO に変換して返却。 | `open.dolphin.adm10.converter`, `open.dolphin.session`。 |
+| `open.dolphin.adm20.session` | `ADM20_AdmissionServiceBean`, `PHRAsyncJobServiceBean` | ADM20/PHR 用業務ロジック。PHR エクスポート・SMS 送信など Async 指示をまとめる。 | `open.dolphin.adm20.support`, `open.dolphin.adm20.export`, `open.dolphin.msg.gateway`. |
+| `open.dolphin.adm20.support` | `PhrDataAssembler` | PHR 向けデータ組立。ORCA や `ADM20_PHRServiceBean` を束ねて JSON/ハッシュを生成。 | `open.dolphin.adm20.session`, `open.orca.rest.ORCAConnection`, `open.dolphin.adm20.converter`. |
+| `open.dolphin.session.VitalServiceBean` | `VitalServiceBean` | バイタル CRUD を担当する予定だった Bean。 | `@Vetoed` を付与し CDI から除外（2026-06-15）。REST/Touch での利用予定が固まるまではソースのみ保持。 |
 
-### メッセージング / 外部接続
+### メッセージング / インフラレイヤー
 
-| パッケージ | 代表クラス | 主な責務 | 備考 |
+| パッケージ | 代表クラス | 主な責務 | 主な依存先 / 備考 |
 | --- | --- | --- | --- |
-| `open.dolphin.msg` | `ClaimSender`, `DiagnosisSender`, `MMLHelper` | CLAIM/MML 生成と送信ロジック。Velocity テンプレートで電カルデータを HL7/MML 形式へ変換。 | `OidSender` は `session.AccountSummary` を参照し施設 OID を決定。 |
-| `open.dolphin.msg.gateway` | `MessagingGateway`, `MessagingConfig`, `ExternalServiceAuditLogger` | JMS キュー投入・フォールバック送信・外部サービス監査ログ記録。 | `SessionTraceManager` から Trace-Id を取得し、監査ログと JMS メッセージに付与。 |
-| `open.dolphin.adm20.export` | `PHRExportJob`, `PHRExportConfig` | PHR エクスポート向けジョブ／設定管理。 | PHR 非同期サービスの設定ハブ。 |
+| `open.dolphin.msg`, `open.dolphin.msg.dto` | `ClaimSender`, `DiagnosisSender`, `OidSender`, `AccountSummaryMessage` | CLAIM/MML 電文生成と送信。DTO インタフェースでセッション層の `AccountSummary` 実装に橋を架ける。 | `open.dolphin.infomodel`, `Velocity`。`AccountSummary` が `msg.dto` を実装し、依存方向を一部逆転させている。 |
+| `open.dolphin.msg.gateway` | `MessagingGateway`, `MessagingConfig`, `ExternalServiceAuditLogger`, `SmsGatewayConfig` | JMS エンキュー、外部送信フォールバック、監査ログ出力、SMS ゲートウェイ設定。 | `jakarta.jms`, `open.dolphin.session.framework.SessionTraceManager`。Trace 取得のためセッション層への逆参照が発生し循環に。 |
+| `open.dolphin.metrics` | `RequestMetricsFilter`, `MeterRegistryProducer`, `DatasourceMetricsRegistrar` | Micrometer ベースのリクエスト／DB メトリクス。JAX-RS フィルタとして API 層に差し込む。 | `io.micrometer.core.instrument`, `jakarta.ws.rs`. Trace-ID タグは HTTP レイヤー依存。 |
+| `open.dolphin.infrastructure.concurrent` | `ConcurrencyResourceNames` | Jakarta Concurrency リソース名を集中管理するユーティリティ。 | `jakarta.enterprise.concurrent`。設定値を共有するのみで他層からの依存は無い。 |
+| `open.dolphin.mbean` | `ServletStartup`, `ServletContextHolder`, `UserCache`, `PVTBuilder`, `PvtService`, `InitialAccountMaker` | WildFly MBean/サービス。ServletContext やユーザーキャッシュ、PVT 生成ツールをグローバル公開。 | `open.dolphin.rest.LogFilter` が `UserCache` にアクセス。`ServletContextHolder` は AsyncContext を直接晒し、SpotBugs 未解決 32 件（EI_EXPOSE）に含まれる。 |
+| `open.dolphin.adm20.export` | `PHRExportJob`, `PHRExportConfig` | PHR データの抽出・ファイル出力ジョブ。 | `open.dolphin.adm20.session`, `open.dolphin.msg`. 永続レイヤーとの境界上にあるため重複記載。 |
+| `open.dolphin.adm20`（root） | `PlivoSender`, `SMSException` | Plivo SMS を用いた外部通知ラッパー。Trace を監査ログへ転記。 | `open.dolphin.msg.gateway.SmsGatewayConfig`, `open.dolphin.session.framework.SessionTraceManager`. |
+| `open.orca.rest` | `ORCAConnection` | ORCA 連携 HTTP クライアント（API 列にも記載）。 | `okhttp3`, `net.sf.json`. ADM/PHR サポートから直接呼ばれる。 |
+| `open.stamp.seed` | `CopyStampTreeBuilder`, `CopyStampTreeDirector` | レガシースタンプ XML の組立と JMS 配信用 DTO 生成。 | `open.dolphin.msg`, `open.dolphin.session`. Mutable コレクションを公開しており SpotBugs 32 件に含まれる。 |
 
-### セキュリティ / 監査
+### セキュリティ / 監査レイヤー
 
-| パッケージ | 代表クラス | 主な責務 | 備考 |
+| パッケージ | 代表クラス | 主な責務 | 主な依存先 / 備考 |
 | --- | --- | --- | --- |
-| `open.dolphin.security` | `SecondFactorSecurityConfig`, `HashUtil` | 2FA（TOTP/FIDO2）設定とハッシュ関連ユーティリティの集約。 | Secrets（環境変数）から鍵を取得し `TotpSecretProtector` を初期化。 |
-| `open.dolphin.security.audit` | `AuditTrailService`, `AuditEventPayload` | 監査イベントをチェーンハッシュ付きで永続化。 | JPA で `AuditEvent` をロックしながら追記。 |
-| `open.dolphin.security.fido` | `Fido2Config` | FIDO2 サーバー設定の読込。 | `SecondFactorSecurityConfig` から利用。 |
-| `open.dolphin.security.totp` | `TotpSecretProtector`, `BackupCodeGenerator` | TOTP 秘密鍵の暗号化・バックアップコード生成。 | AES 鍵の取得は Secrets 依存。 |
+| `open.dolphin.security` | `SecondFactorSecurityConfig`, `HashUtil` | TOTP/FIDO2 の設定／秘密情報ユーティリティ。 | `jakarta.enterprise`, `java.security`. DTO の防御的コピーが進行中。 |
+| `open.dolphin.security.audit` | `AuditTrailService`, `AuditEventPayload` | 監査イベント永続化とチェーンハッシュ。 | `jakarta.persistence`, `open.dolphin.session.framework.SessionTraceManager`. |
+| `open.dolphin.security.fido` | `Fido2Config` | FIDO2 サーバー設定ローダ。 | `open.dolphin.security.SecondFactorSecurityConfig`. |
+| `open.dolphin.security.totp` | `TotpSecretProtector`, `BackupCodeGenerator` | TOTP シークレットとバックアップコード生成/保管。 | `javax.crypto`, `open.dolphin.security`. |
+| `open.dolphin.adm20.mbean` | `IdentityService`, `LayerConfig` | Layer Identity Token 発行。REST フィルタを通らないエンドポイントの認証責務を担う。 | `open.dolphin.adm20.rest`. Trace-ID は HTTP 層から受け取らない。 |
 
-### メトリクス / クロスカッティング
+### ストレージ / 永続レイヤー
 
-| パッケージ | 代表クラス | 主な責務 | 備考 |
+| パッケージ | 代表クラス | 主な責務 | 主な依存先 / 備考 |
 | --- | --- | --- | --- |
-| `open.dolphin.metrics` | `RequestMetricsFilter`, `MeterRegistryProducer`, `DatasourceMetricsRegistrar` | Micrometer による REST リクエスト計測とデータソースメトリクス登録。 | `RequestMetricsFilter` は JAX-RS フィルタで API 応答時間／エラー数を記録。 |
+| `open.dolphin.reporting` | `PdfRenderer`, `PdfDocumentWriter`, `SigningConfig`, `PdfSigningService` | 帳票テンプレートのレンダリング、PDF 生成、署名。 | `OpenPDF`, `BouncyCastle`, `open.dolphin.msg`. `SigningConfig` などが SpotBugs mutability 対象。 |
+| `open.dolphin.system.license` | `FileLicenseRepository`, `LicenseRepository` | `license.properties` の読み書き。 | `java.io`, `java.util.Properties`. REST `SystemResource` が直接呼び出し API 層から FS へアクセスしている。 |
+| `open.dolphin.adm20.export` | `PHRExportJob`, `PHRExportConfig` | PHR エクスポートのファイル生成と配置。 | `java.nio.file`, `open.dolphin.adm20.session`. Messaging 表にも記載済み。 |
+| `open.stamp.seed` | `CopyStampTreeBuilder`, `CopyStampTreeDirector` | スタンプ XML 永続化および配信準備。 | `open.dolphin.msg`. インフラ／ストレージ両観点で監視対象。 |
 
-### サポート / インフラ
-
-| パッケージ | 代表クラス | 主な責務 | 備考 |
-| --- | --- | --- | --- |
-| `open.dolphin.mbean` | `ServletStartup`, `ServletContextHolder`, `UserCache` | WildFly 起動時の初期化、AsyncContext 管理、ユーザーキャッシュ。 | `ChartEventServiceBean` が AsyncContext リストへアクセス。 |
-| `open.dolphin.infrastructure.concurrent` | `ConcurrencyResourceNames` | EJB の同時実行リソース命名を一元管理。 | `session` 層で使用。 |
-| `open.dolphin.reporting` | `PdfRenderer`, `ReportTemplateEngine`, `SigningConfig` | PDF 帳票生成と署名。 | PHR/紹介状出力で利用。 |
-| `open.dolphin.system.license` | `FileLicenseRepository`, `LicenseRepository` | ライセンスファイルの読み出し／検証。 | `SystemResource` から参照。 |
-| `open.dolphin.adm10.converter` | `IAbstractModule`, `IPatientModel`, `ISendPackage` | ADM10 向けインタフェース群。XML/DTO をレガシークライアント仕様に整形。 | `rest`・`session` 双方が依存。 |
-| `open.dolphin.adm20.converter` | `IAbstractModule30`, `IVisitPackage` | ADM20/PHR 向けモジュール定義インタフェース。 | ADM20 REST/Session で共通利用。 |
-| `open.dolphin.adm20.dto` | `AdmissionDtos`, `PHRAsyncJobDto` | ADM20 エコシステム向け DTO。 | PHR 非同期処理で使用。 |
-| `open.dolphin.adm20.support` | `AdmissionAuditLogger`, `TouchAuthSupport` | ADM20 認証・監査ヘルパー。 | REST/Session 両方から参照。 |
-| `open.dolphin.touch.converter` | `IPatientModel`, `IRegisteredDiagnosis`, `ISendPackage2` | Touch 用データ抽象インタフェース。 | `session` 層が DTO 変換時に利用。 |
-| `open.dolphin.touch.support` | `TouchAuditHelper`, `TouchRequestContextExtractor` | Touch リクエストの監査情報組み立てとトレース連携。 | REST/Session/TotP 連携時に利用。 |
-| `open.stamp.seed` | `CopyStampTreeBuilder`, `CopyStampTreeDirector` | スタンプツリーの複製ユーティリティ。 | `session` 層がスタンプ複製時に利用。 |
-
-## 依存関係の主な流れ
-- **API → セッション → メッセージング**: `open.dolphin.rest` / `touch` / `adm10.rest` / `adm20.rest` が `open.dolphin.session`（各種 ServiceBean）を呼び出し、さらに JMS 経由の送信が必要な処理は `open.dolphin.msg.gateway.MessagingGateway` を経由する。
-- **セッション → サポート層**: `session` Bean は `open.dolphin.mbean.ServletContextHolder` で SSE 用コンテキストを共有し、スタンプ複製時に `open.stamp.seed` を利用する。
-- **セッション → Touch/ADM コンバータ**: レガシー API 互換のため、サービス層が `touch.converter` や `adm10.converter` のインタフェースへ変換を行う。
-- **メッセージング → セッションフレームワーク**: JMS ゲートウェイは `SessionTraceManager` から Trace-Id を取得し、監査／メッセージの相関を維持する。
-- **セキュリティ／メトリクスは横断的**: `SecondFactorSecurityConfig` が TOTP/FIDO 設定を提供し、`RequestMetricsFilter` が全 REST エンドポイントにメトリクスを付与する。
-
-## 循環参照と改善メモ
-
-| 循環 | 具体例 | 影響 | 改善アイデア |
-| --- | --- | --- | --- |
-| `rest ↔ session` | `rest` 側は各種 `ServiceBean` を注入。`open.dolphin.session.ChartEventServiceBean` が `open.dolphin.rest.ChartEventResource` / `ChartEventSseSupport` を import。 | セッション層がプレゼンテーション層に依存し、リファクタリングやテスト分離が困難。 | SSE 用定数とサポートクラスを `session` 直下または専用 `event` パッケージへ移動し、REST 層からのみ参照する構造へ整理。 |
-| `session ↔ msg` | `KarteServiceBean` などが `MessagingGateway` を呼び出し、`open.dolphin.msg.OidSender` が `session.AccountSummary` を import。 | メッセージング実装と業務サービスが密結合。メッセージングテスト時にセッション層のビルドが必須。 | `AccountSummary` を `common` / `infomodel` へ移動し、`msg` パッケージからセッション層への参照を排除。 |
-| `session ↔ touch.converter` | `session` Bean が Touch 変換インタフェースを直接参照し、`touch` REST が `session` Bean を注入。 | レガシー Touch 仕様がセッション層へ漏れ、API 拡張時に影響範囲が広がる。 | Touch 用インタフェースを `common`（共有 DTO）へ抽出し、セッション層から Touch 実装を切り離す。 |
-| `rest ↔ touch` | `touch` パッケージの `AbstractResource` 等が `open.dolphin.rest.AbstractResource` を継承し、`rest` 側が `touch.converter`／`touch.support` を参照。 | Touch/REST の責務境界が曖昧になり API 差分の整理が難しい。 | 共通部分を `rest.core`（仮称）として切り出し、REST（一般）と Touch を個別モジュール化。 |
-
-### Layer-Decoupling-POC (2026-06-10 更新)
-- SSE 定数と SSE 向けブロードキャスト API を `open.dolphin.session.support` へ抽出し、`ChartEventServiceBean` から `open.dolphin.rest.*` への依存を解消。
-- `open.dolphin.msg.OidSender` は `AccountSummaryMessage` インタフェース経由でアカウント情報を受け取るようになり、`open.dolphin.session.AccountSummary` への直接参照が不要になった。
-
-```text
-rest.ChartEventStreamResource
-  └─> session.support.ChartEventSessionKeys
-
-rest.ChartEventSseSupport
-  └─> session.support.ChartEventStreamPublisher
-
-session.ChartEventServiceBean
-  ├─> session.support.ChartEventSessionKeys
-  └─> session.support.ChartEventStreamPublisher
-
-msg.OidSender
-  └─> msg.dto.AccountSummaryMessage
-
-session.AccountSummary
-  └─> msg.dto.AccountSummaryMessage
-```
-
-### その他の気づき
-- `open.dolphin.metrics` と `open.dolphin.security.*` は他レイヤーからの参照のみで逆参照はなく、循環なし。
-- `open.dolphin.mbean.ServletContextHolder` は AsyncContext のリストを直接公開しているため、同期制御の見直しとイベント通知用 API 化が望ましい。
-- `open.dolphin.adm10.converter`／`adm20.converter` のインタフェースが `common` 側に存在せず、モダナイズ済み API とコード共有しづらい。共通 DTO 化を検討したい。
+### 相互依存と既知課題
+- `touch.converter` を `session`/`adm10.session`/`adm20.session` が import しており、REST/API ↔ セッションの循環が解消されていない。共通 DTO 抽出または REST core モジュール化が必要。
+- `msg.gateway.MessagingGateway` が `SessionTraceManager` を注入し、逆に `session.MessageSender` が `msg.*` を呼び出すことで Messaging ↔ セッション間に循環が残る。Trace API を独立レイヤー化するか、イベントバス経由で相互依存を断つ必要がある。
+- `mbean.UserCache#getMap()` が `ConcurrentHashMap` を生公開し、`rest.LogFilter` が直接書き換える。SpotBugs 残 32 件（JMS/MBean）に該当。キャッシュ API の抽象化と防御的コピーが必須。
+- `system.license.FileLicenseRepository` を REST `SystemResource` が直呼びしており、API 層からファイルシステムへのアクセス責務が漏れている。ライセンス管理サービス層の新設を要検討。
+- `open.dolphin.session.VitalServiceBean` は `@Vetoed` 化し CDI ビルド対象から除外済み。利用再開時は REST/API 側の要求仕様を確定させた上で注入対象へ戻す。
+- `identityToken` エンドポイントは `LogFilter`／`RequestMetricsFilter` を通らず、`adm20.mbean.IdentityService` から直接 JWT を発行するため Trace-ID／監査情報が欠落。フィルタ適用または `SessionTraceManager` 連携の導線が求められる。

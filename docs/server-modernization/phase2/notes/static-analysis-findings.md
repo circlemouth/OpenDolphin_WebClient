@@ -1,3 +1,41 @@
+## 2026-06-14 追記: SA-STATIC-MAP（担当: Worker A）
+- `rg -n "VitalServiceBean" server-modernized/src/main/java` で定義箇所しかヒットせず（`server-modernized/src/main/java/open/dolphin/session/VitalServiceBean.java:28`）、REST/Touch からの参照が無いことを確認。
+- `rg -n "open\\.dolphin\\.msg" server-modernized/src/main/java/open/dolphin/session` と `rg -n "SessionTraceManager" server-modernized/src/main/java/open/dolphin/msg` で循環 import を特定。
+- `open.dolphin.mbean.UserCache#getMap()` が `ConcurrentHashMap` をそのまま返し、`open.dolphin.rest.LogFilter` から書き換えられていることを確認。
+
+### 判明事項
+1. **未使用 Bean: `open.dolphin.session.VitalServiceBean`**  
+   - `server-modernized/src/main/java/open/dolphin/session/VitalServiceBean.java:28-117` に CRUD 実装が存在するが、`rg` での参照結果がゼロ。WAR へ含めると CDI 起動コストだけが発生し、SpotBugs `IS2_INCONSISTENT_SYNC` 抑止にも影響する。2026-06-15 時点で `@Vetoed` を付与し CDI 対象から除外済み。REST レイヤーへ公開する計画が固まり次第、`beans.xml`／`@Vetoed` の解除と API 実装を検討する。  
+2. **セッション ↔ メッセージング循環依存**  
+   - `open.dolphin.msg.gateway.MessagingGateway`（`server-modernized/src/main/java/open/dolphin/msg/gateway/MessagingGateway.java:24-120`）が `SessionTraceManager` を直接注入し Trace-ID を取得。逆方向に `open.dolphin.session.MessageSender`（`.../session/MessageSender.java:37-174`）が `open.dolphin.msg.*` を呼び出すため、層の循環と依存グラフの複雑化を招いている。`SessionTraceManager` を抽象化した `TraceContextProvider` を Messaging 側へ差し替えるか、JMS プロパティに HTTP Trace を強制するラッパを導入する必要がある。  
+3. **`open.dolphin.mbean.UserCache` の可変オブジェクト暴露**  
+   - `server-modernized/src/main/java/open/dolphin/mbean/UserCache.java:9-21` は `ConcurrentHashMap` を返すだけの API で、`LogFilter`（`.../rest/LogFilter.java:68-125`）が直接 `put` している。MBean が HTTP 層のパスワード情報を保持する実装になっており、SpotBugs `EI_EXPOSE_REP2` および静的解析残 32 件に該当する。Java EE セキュリティへ移行する際の足かせとなる。  
+
+### JMS/MBean 32 件との紐付け
+- 上記 2,3 は `SA-INFRA-MUTABILITY-HARDENING` の対象（JMS/キャッシュ 32 件）に含まれる。Trace-Id 循環を解消しないと JMS 経路の mutability 改修が難しいため、同タスクの前提作業として管理。  
+- `UserCache` の可視性問題は SpotBugs `EI_EXPOSE_REP2` が再発する要因のため、今回の棚卸し結果をもとにキャッシュ API を CDI bean へ置き換える。  
+
+#### 2026-06-15 追記: UserCache Hardening 完了
+- `open.dolphin.mbean.UserCache` は `ConcurrentHashMap` を直接返していたため `EI_EXPOSE_REP2` に該当。`findPassword`／`cachePassword`／`snapshot` の専用 API を提供し、外部へは防御的コピーを返すよう修正した（`server-modernized/src/main/java/open/dolphin/mbean/UserCache.java:1-71`）。  
+- `open.dolphin.rest.LogFilter` も新 API を利用するよう更新し、認証キャッシュ操作を `UserCache` に閉じ込めた（`server-modernized/src/main/java/open/dolphin/rest/LogFilter.java:135-152`）。  
+- SpotBugs `EI_EXPOSE_REP2`（MBean ユーザーキャッシュ分）が解消されたことを `SA-INFRA-MUTABILITY-HARDENING` の証跡として計上。残る 31 件は JMS DTO と `ServletContextHolder` などの MBean 公開 API が対象。  
+
+### 推奨アクション
+- `VitalServiceBean` を REST API に接続するか、`beans.xml` から除外しテストを追加。未使用のままなら `pom.server-modernized.xml` でビルド対象から外す案を提案。  
+- Trace コンテキスト共有を `SessionTraceManager` → `TraceContextBridge`（仮称）へ切り出し、`msg.gateway` 側からの `session.framework` 依存を削減。  
+- `UserCache` を `UserCredentialCacheService`（`Map` 非公開）へリネームし、防御的コピー＋監査ログを導入。SpotBugs 32 件のうち `mbean.*` 系 5 件をここで一括解消できる。  
+
+## 2026-06-15 追記: SA-INFRA-MUTABILITY-HARDENING（外部接続ラッパー、担当: Worker D）
+
+| クラス | 状態 | 観測内容 / 次アクション |
+| --- | --- | --- |
+| `open.dolphin.adm20.PlivoSender`<br/>（`server-modernized/src/main/java/open/dolphin/adm20/PlivoSender.java:33-153`） | ⚠️ 未対応 (`EI_EXPOSE_REP2` 2 件) | - `SmsGatewayConfig.PlivoSettings` record が `authId`/`authToken` を `String` のまま `ExternalServiceAuditLogger` に渡しており、`CachedClient` が同インスタンスを共有するため、SpotBugs が「mutable object stored into static field」警告を継続発報。<br/>- 対策: `PlivoSettings` から認証要素を `PlivoSecret`（`char[]` + `clone()` + `Arrays.equals`）へ分離し、`CachedClient.settings()` は `AuthFingerprint`（`MessageDigest`）で比較する。`PlivoSenderDefensiveCopyIT` を WireMock で実行し、`settings.authToken()` を書き換えた場合でも再送時にキャッシュへ伝播しないことを確認。<br/>- ブロッカー: Plivo Sandbox の API Key が Ops から未支給。`worker-directives-20260614.md` へ依頼済み。 |
+| `open.orca.rest.ORCAConnection`<br/>（`server-modernized/src/main/java/open/orca/rest/ORCAConnection.java:11-120`） | ⚠️ 未対応 (`EI_EXPOSE_REP2` 2 件) | - `Properties config` をそのまま保持し、`getProperties()` が複製を返すものの `copy.putAll` は読み取り専用化していないため、呼び出し側が `claim.password` を改ざんすると次回 `DriverManager.getConnection` へ反映される。<br/>- 対策: `SecureOrcaConfigSnapshot`（`Map<String, String>` + `Collections.unmodifiableMap`）を新設し、`isSendClaim` / `getProperty` からは `Optional<String>` 経由で `jdbcURL` と `claim.conn` 以外を隠蔽。`ORCAConnectionSecureConfigTest` で `Properties` 改ざん時に元の `config` が変わらないことを検証。<br/>- ブロッカー: ORCA 接続確認には `custom.properties` の実ファイルが必要。`docs/web-client/operations/TEST_SERVER_DEPLOY.md` のローカル Compose で代替できるか Ops と調整中。 |
+| `open.stamp.seed.CopyStampTree{Builder,Director}`<br/>（`server-modernized/src/main/java/open/stamp/seed/*.java`） | ⚠️ 未対応 (`EI_EXPOSE_REP` 1 件) | - `CopyStampTreeBuilder#getStampModelToPersist()` は `List.copyOf(listToPersist)` を返すが、`StampModel` 自体はミューテーブルであり、受領側が `setStampBytes()` 等を行うと SpotBugs が再検出するリスク。<br/>- 対策: `StampModel` にシード複製用ファクトリ (`StampModel.forSeedClone(StampModel source)`) を追加し、Builder 内部ではスナップショットを保持。`CopyStampTreeRoundTripTest` で `buildStart()` → `buildEnd()` を複数回実行しても `seedStampList` / `listToPersist` の内容が外部操作で変わらないことを確認。<br/>- ブロッカー: 既存 `StampModel` に `clone()` 実装が無いため、`infomodel` 側のテスト資産と手戻り調整が必要。`common` モジュールの依存関係調査を 2026-06-18 までに実施予定。 |
+
+- 証跡: `ops/analytics/evidence/nightly-cpd/20240615/` で `cpd-metrics.json` を更新し、Slack/PagerDuty/Grafana のプレースホルダを追加。Ops が本番ジョブを流した後に差し替える。  
+- 次ステップ: 上記 3 クラスの設計案を `static-analysis-plan.md` へ反映し、`server-modernized` の単体テスト (`PlivoSenderDefensiveCopyIT`, `ORCAConnectionSecureConfigTest`, `CopyStampTreeRoundTripTest`) を新設。SpotBugs `EI_EXPOSE_REP*` 件数を 5→0 へ減らす。  
+
 # 静的解析初回レポート（2025-11-06）
 
 ## 2026-06-14 追記: SpotBugs-EI-DefensiveCopy（担当: Codex）
@@ -384,3 +422,7 @@ jobs:
 - SpotBugs 除外フィルタを DTO／自動生成領域で拡張しつつ、高優先度項目をチケット化。
 - Checkstyle/PMD のルール緩和 or 差分限定実行の運用手順を策定。
 - CI への組み込みに向けた Jenkinsfile / GitHub Actions のサンプルワークフローをドラフト化。
+
+## 2025-11-07 追記: SA-TOUCH-API-PARITY ログ解析（担当: Worker F）
+- `JsonTouchResourceParityTest` 失敗ログ（`server-modernized/target/surefire-reports/TEST-open.dolphin.touch.JsonTouchResourceParityTest.xml`）より、`documentSubmissionFailureParity`・`stampTreeStreamFailure`・`interactionStreamFailure` など計 7 ケースが `jakarta.ws.rs.ext.RuntimeDelegate` のプロバイダ未設定で落ちている。`JsonTouchAuditLogger.failure`（`server-modernized/src/main/java/open/dolphin/touch/JsonTouchAuditLogger.java:31-44`）は `Response.serverError()` を直接呼び出すため、アプリサーバ外で動かすテスト環境に JAX-RS 実装（例: `org.glassfish.jersey.core:jersey-common`）が入っていないと `RuntimeDelegate.findDelegate` が `ClassNotFoundException` を投げてしまう。テストスコープへ Jersey を追加して `RuntimeDelegate` が ServiceLoader で解決されるようにする案で対応方針を固める。
+- `InfoModelCloneTest` の最新ログ（`server-modernized/target/surefire-reports/TEST-open.dolphin.infomodel.InfoModelCloneTest.xml`）では `tests=2, failures=0` のため再現せず。テスト内容は `DocInfoModel.clone` が `admFlag` を、`ModuleInfoBean.clone` が `performFlag` を保持するかを検証しており、現行ソース（`common/src/main/java/open/dolphin/infomodel/DocInfoModel.java:600-639`, `ModuleInfoBean.java:240-268`）では setter 経由で複製している。以前の失敗報告（failures=2）は `common` モジュールを含めずに `mvn -pl server-modernized ...` を実行した結果ローカルに古い `opendolphin-common` JAR（admFlag/performFlag の clone 対応前）が残っていた可能性が高く、常に `-am` 付きで再ビルドするか `common` を先に `install` する運用に改める必要がある。

@@ -104,3 +104,70 @@ METRIC opendolphin_api_request_duration tags=[tag(method=GET), tag(path=/20/adm/
 - 監査・JMS 双方で HTTP traceId とセッション traceId を統一的に参照可能になったため、既存監査帳票のフィールド解釈を再確認する。
 - `RequestMetricsFilter` の正規化により Grafana 側のダッシュボード（path タグ参照）を最新ルールへ合わせて更新する必要がある。
 - JMS 側で WARN が観測された場合は、バックグラウンドジョブなど HTTP トレース外の経路が残っていないかを確認し、必要に応じて `SessionOperation` 付与を検討。
+
+## Trace-ID 伝搬シーケンス（2026-06-14 追記）
+```text
+Client Browser / Mobile
+  -> LogFilter (rest/LogFilter.java:56-126)
+       - X-Trace-Id ヘッダ or UUID を生成し、MDC と request attribute へ設定
+       - `UserCache` で BASIC 認証ヘッダを検証、失敗時は traceId 付与前に終了
+  -> RequestMetricsFilter (metrics/RequestMetricsFilter.java:39-94)
+       - `method`/`path`/`status` タグを Micrometer へ記録
+       - Trace-ID はタグに含まれないため、ログとメトリクスが別鍵になる
+  -> REST Resource / Support (`rest.*`, `touch.*`, `adm20.rest.support`)
+       - `PhrRequestContextExtractor` 等が request attribute から HTTP traceId を読み出し監査 DTO に格納
+  -> SessionOperationInterceptor (session/framework/SessionOperationInterceptor.java:23-63)
+       - MDC の `traceId` を拾えない場合は null を渡し、新規セッショントレースを開始
+  -> SessionTraceManager (session/framework/SessionTraceManager.java:23-87)
+       - preferredTraceId が無ければ UUID を再生成し、JBoss/SLF4J MDC を上書き
+  -> Session Bean (`session.*`, `adm20.session.*`, `touch.session.*`)
+       - 業務ロジック実行。JMS 送信や監査ヘルパーは `SessionTraceManager.current()` から traceId を取得
+  -> MessagingGateway (msg/gateway/MessagingGateway.java:42-134)
+       - JMS ObjectMessage へ `open.dolphin.traceId` プロパティを設定し、Fallback 送信時もログへ出力
+  -> JMS Queue `java:/queue/dolphin`
+  -> MessageSender (session/MessageSender.java:37-174)
+       - 受信メッセージから traceId プロパティを読み、監査ログと `OidSender` へ伝搬
+  -> External System / Audit Trail
+       - `ExternalServiceAuditLogger` が HTTP traceId, Session traceId, JMS traceId を並記しつつ外部システムへ送信
+```
+
+- HTTP 層で生成した Trace-ID が `SessionTraceManager` の再採番で置き換わるケースが多く、JMS プロパティとログ出力の整合性が崩れる。`SessionOperationInterceptor#currentHttpTraceId` の戻り値を `SessionTraceManager.start` へ渡すための public API が必要。
+- `LogFilter` が失敗パスで `traceId` を残さないため、シーケンス冒頭で `Client -> LogFilter` の矢印が途切れるケースが存在する。未認証経路でも UUID を発行し、`RequestMetricsFilter` 以降へ受け渡すことで監査ログとメトリクスの突合が容易になる。
+- JMS プロパティ `open.dolphin.traceId` を強制必須にし、`MessageSender` 側で欠落時に WARN + 新規採番するガードを設けると Trace-ID の一貫性を確保できる。
+
+## TraceContextProvider 設計案（2026-06-15）
+`MessagingGateway` が `SessionTraceManager` に直接依存している現状を解消するため、HTTP/セッション/JMS で共通利用できる `TraceContextProvider` インタフェースを追加し、実装を 2 層に分離する。
+
+```text
+     +-------------------+          +------------------------+
+     | LogFilter / REST  |          | SessionOperationInterceptor |
+     |  - resolves HTTP  |          |  - starts session trace     |
+     +---------+---------+          +---------------+------------+
+               |                                   |
+               v                                   v
+        +------+-------------------------------+--------------+
+        | TraceContextBridge (new)                              |
+        |  - implements TraceContextProvider                    |
+        |  - reads MDC / request attribute / session context    |
+        |  - exposes getCurrentTraceId(), ensureTraceId(), etc. |
+        +------+-------------------------------+--------------+
+               |                                   |
+         uses  |                                   | updates
+               v                                   v
+     +---------+---------+                +--------+---------+
+     | MessagingGateway  |                | SessionTraceManager |
+     |  - depends only   |                |  - internal only    |
+     |    on provider    |                |    (no JMS usage)   |
+     +---------+---------+                +--------------------+
+               |
+               v
+     +---------+---------+
+     | JMS Producer/Cons |
+     +-------------------+
+```
+
+- `TraceContextProvider`（インタフェース）: `Optional<String> currentTraceId()`, `String ensureTraceId()`, `void adoptHttpTrace(String traceId)` などを提供。REST フィルタ／JMS／バッチ処理が同一 API でトレース ID を扱えるようにする。
+- `TraceContextBridge`（CDI Bean）: `SecurityContext`, `HttpServletRequest`, `SessionTraceManager` から必要な情報を取り出し、MDC 同期を担う。JMS バックグラウンドジョブには `TraceContextBridge#ensureTraceId()` を注入して呼び出すだけで済む。
+- `SessionTraceManager` は従来通りセッション層専用に留め、`MessagingGateway` からは見えなくなる。これによりセッション ↔ メッセージングの循環依存が切断され、`SA-INFRA-MUTABILITY-HARDENING` での並列作業が容易になる。
+
+実装タスク `TRC-15 TraceContextProvider` を `PHASE2_PROGRESS.md` に追記し、フェーズ 2 期間で `TraceContextBridge` のスケルトン実装 + JMS/REST 双方の移行を行う。
