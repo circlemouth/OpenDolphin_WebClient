@@ -1,11 +1,68 @@
 # Ops 観測性・Nightly CPD 実行計画（2026-06-15 更新、担当: Worker D）
 
+## 2025-11-07 追記: TraceID-JMS ログ採取トライアル（担当: TraceID-JMS）
+- 代表 API: `/serverinfo/version`, `/user/doctor1`, `/chart/WEB1001/summary` を `ops/tests/api-smoke-test/test_config.manual.csv` の `serverinfo` / `user_profile` / `chart_summary` ケースから選定し、`ops/tests/api-smoke-test/README.manual.md` 手順に従って `PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/legacy-default.headers` を利用する方針を確定。
+- HTTP/JMS/セッションログは `artifacts/parity-manual/TRACEID_JMS/<legacy|modern>/` に `response.json` と `meta.json` を保存し、同じ ID で `artifacts/parity-manual/TRACEID_JMS/trace/<traceId>-{http|jms|session}.log` を並べて証跡化する計画。
+- Modernized サーバーを `scripts/start_legacy_modernized.sh start --build`（内部で `docker compose` を利用）で起動し、`ops/tools/send_parallel_request.sh` で `BASE_URL_LEGACY`/`BASE_URL_MODERN` を `http://localhost:9080/openDolphin/resources` へ向ける段取りだったが、ローカル環境に Docker/Compose が存在せず `[ERROR] docker compose (v2) または docker-compose が見つかりません。` で停止。サーバー非起動のため API 呼び出し・ログ採取は未実施。
+- 次アクション: ① Docker/Compose 付きのホストまたは既存モダナイズド環境へのアクセス許可を確保、② `scripts/start_legacy_modernized.sh` で modernized のみ起動（legacy 側は不要なら `--profile server-modernized-dev` のみで再構成）、③ `docker compose logs server-modernized-dev | rg traceId=<value>` と `docker compose logs server-modernized-dev | rg MessagingGateway` で HTTP/JMS ログを抽出し、`/opt/jboss/wildfly/standalone/log/server.log` を `docker cp` で取得、④ `SessionTraceManager` デバッグログを出すため `standalone-full.xml` の `org.slf4j.simpleLogger.log.open.dolphin.session.framework.SessionTraceManager=DEBUG` を一時設定する。
+
 ## 2026-06-15 追記: Nightly CPD サンドボックス実行証跡
 - Codex サンドボックスから Jenkins へアクセスできないため、本番ジョブの代替として `mvn -f pom.server-modernized.xml -pl server-modernized -Pstatic-analysis pmd:cpd -Dcpd.outputXML=true` をローカルで実行し、生成物を `ops/analytics/evidence/nightly-cpd/20240615/` へ集約した。`build-local-sandbox.log` に Maven ログを保存済み。
 - `server-modernized/target/static-analysis/pmd/cpd.xml` → `ops/tools/cpd-metrics.sh`（CRLF 除去と絶対パス対応を追加）でメトリクスを抽出。`cpd-metrics.json` には `duplicate_lines=21837 / duplication_count=258 / file_count=175` を記録。
 - Slack / PagerDuty / Grafana はネットワーク制限で実測不可のため、同ディレクトリにプレースホルダ (`slack_notify.txt`, `pagerduty_event.json`, `grafana_panel_screenshot.png`) と README を配置。Ops は Jenkins 本番ジョブ `Server-Modernized-Static-Analysis-Nightly` を起動し、取得した Permalink / Incident ID / ダッシュボードスクリーンショットで置き換えること。
 - Grafana パネルは `ops/analytics/grafana/static_analysis_cpd_panels.json` を `Static Analysis` ダッシュボードへ適用後、BigQuery 側に 3 日分のダミーデータを投入してスクリーンショットを採取する。撮影ファイルは `ops/analytics/evidence/nightly-cpd/<yyyymmdd>/grafana_panel_screenshot.png` を差し替え。
 - Jenkins 実行時は `server-modernized/target/static-analysis/pmd/cpd.xml`（`reporting` の outputDirectory 指定で配置）をアーティファクトへ保存し、`ops/tools/cpd-metrics.sh` に `REPO_ROOT` を指定して相対パス化すると BigQuery 取り込みでモジュール列が `server-modernized/...` になる。
+
+## 2025-11-07 追記: REST-Exception-Review（担当: Worker Codex）
+- 対象: `server-modernized/src/main/java/open/dolphin/rest/AbstractResource.java` と同ディレクトリ配下のすべての `*Resource` クラス（Appo/User/Patient/PVT/PVT2/Schedule/NLab/Mml/Karte/Letter/Stamp/System/ServerInfo/ChartEvent*/DemoResourceAsp ほか）、および `LogFilter`。
+- 例外・HTTP ステータス現状
+  - `AbstractResource` は JSON マッパー/日付変換のみ提供し、共通の例外ユーティリティや `Response` ビルダーを持たない。
+  - `LogFilter`（server-modernized/src/main/java/open/dolphin/rest/LogFilter.java:70-105）は認証エラー時に 403 を即時返却し、アクセスログとして `remoteAddr shortUser method path traceId` を INFO で出力するが、レスポンスステータス/処理時間/エラーコードは記録されない。
+  - `UserResource`（同 UserResource.java:36-80）をはじめ、`PatientResource`、`AppoResource`、`PVTResource(2)`、`ScheduleResource`、`NLabResource`、`MmlResource`、`ChartEventResource`、`KarteResource#sendDocument`（同 KarteResource.java:640-659）、`ServerInfoResource` などは、権限 NG や例外時にも 200 + `"0"`/`null`/空文字を返す。StackTrace を `System.err` に出すだけの箇所もあり、フロントエンドからは異常を検知できない。
+  - HTTP 例外 (`BadRequestException`/`NotFoundException`/`NotAuthorizedException`) を投げているのは `SystemResource`, `StampResource`, `LetterResource`, `ChartEventStreamResource`, `DemoResourceAsp` の一部 API に限られ、メッセージはプレーンテキストで JSON 定型レスポンスは存在しない。
+  - Touch 系 `DemoResourceAsp` は `WebApplicationException` を返すヘルパー `failure(...)` を持つが、`Response` エンティティは `text/plain` かつ `traceId` や `errorCode` を含まない。
+  - 監査ログ (`AuditTrailService`) へ書き込むのは `SystemResource`・`LetterResource`・`StampResource` の限定的な操作のみで、患者情報・スタンプ削除以外の 4xx/5xx には追跡手段が無い。
+- ログ出力仕様のギャップ
+  - `Logger.getLogger("open.dolphin")` と `org.slf4j.Logger` が混在しており、フォーマットも自由記述。例: `UserResource` は WARNING ログのみ、`ServerInfoResource` は `printStackTrace` のみ。
+  - `LogFilter` で `X-Trace-Id` ヘッダを付与しているものの、後段でレスポンス/エラーコードと結び付ける箇所が無いため、AP サーバーログから原因を逆引きできない。
+  - Micrometer `RequestMetricsFilter` は `/metrics` 用のカウンタ値を記録するが、アプリのエラー応答テンプレートと連動していないため運用監査視点では参照しにくい。
+- curl 検証結果
+  - `docker compose -f docker-compose.modernized.dev.yml up -d` を試行したが、作業環境に Docker 実行環境がインストールされておらず `bash: docker: command not found` で失敗。
+  - 代替として `mvn -f pom.server-modernized.xml -pl server-modernized -DskipTests wildfly:run` で WildFly 直接起動を試みたが、Galleon Feature Pack のパースエラー（`unexpected content: element ... feature-pack`）でサーバーをプロビジョニングできなかった。したがって `curl` での 400/401/500 実応答とログ差分確認は未実施。専用のモダナイズサーバーが利用できる CI/検証環境で再トライすること。
+- 望ましいレスポンステンプレート案（JSON, UTF-8）
+  ```json
+  {
+    "timestamp": "2025-11-07T12:57:14+09:00",
+    "traceId": "<LogFilter で生成した UUID>",
+    "requestId": "<X-Request-Id またはサーバー生成>",
+    "status": 403,
+    "error": "Forbidden",
+    "code": "USER_ID_MISMATCH",
+    "message": "ログインユーザーとリクエストされた userId が一致しません。",
+    "path": "/openDolphin/resources/user/{userId}",
+    "details": {
+      "facilityId": "1.3.6.1.4.1.9414.10.1",
+      "userId": "demo"
+    }
+  }
+  ```
+  - 4xx 系: バリデーションは 400（`code=INVALID_PARAMETER`）、認証ヘッダ欠落は 401、権限不一致は 403、リソースなしは 404、楽観ロックや業務制約違反は 409。
+  - 5xx 系: 既存ビジネス例外を `ApiException`（`code`, `httpStatus`, `userMessage`, `detail`）にラップし、`ExceptionMapper<ApiException>`/`ExceptionMapper<Throwable>` で JSON を標準化する。スタックトレースはログにのみ記録し、レスポンスには含めない。
+  - 成功時も `Location`/`X-Trace-Id`/`X-Request-Id` を統一ヘッダとして返却する（POST = 201, DELETE = 204等）。
+- 望ましいログフィールド
+  - 1行 JSON で `{"ts":"...","level":"ERROR","traceId":"...","requestId":"...","method":"PUT","path":"/karte/claim","status":500,"latencyMs":842,"facilityId":"...","userId":"...","clientIp":"...","userAgent":"...","errorCode":"PDF_SEND_FAILED","exception":"MessagingException","stacktraceRef":"logstash#20251107-1257-01"}` のようにキーを固定。
+  - 収集必須フィールド: timestamp, level, traceId, requestId, sessionOperation (`SessionTraceManager`), facilityId, userId, httpMethod, path, status, latencyMs, clientIp, userAgent, requestBytes/responseBytes, errorCode, exceptionClass, message。任意フィールドとして patientId/karteId/letterId など業務キーを details に格納。
+  - 実装案: `LogFilter` で `traceId` を MDC に入れつつ、`ContainerResponseFilter` を追加してレスポンス確定時に status/latency を MDC に載せ、`org.jboss.logmanager` の JSON Formatter か SLF4J+logstash-encoder へ統一する。
+  - 監査ログ (`AuditTrailService`) は `traceId`/`requestId`/`status`/`reason` を必須キーとして、現状カバー外の CRUD（患者登録、スタンプ更新、スケジュール削除、PVT受付）にもフックを追加。
+- フォローアップタスク
+  1. `ApiProblem` DTO と `@Provider` `GlobalExceptionMapper` を作成し、`UserResource` 等の `return "0"`/`null` をすべて `throw` に置き換える。
+  2. `LogFilter` を `OncePerRequestFilter` 化し、`Stopwatch` で処理時間を測定して INFO/ERROR の構造化ログを出力。レスポンスヘッダ `X-Trace-Id`/`X-Request-Id` を常に付加。
+  3. `DemoResourceAsp.failure(...)` を JSON エンティティへ置き換え、Touch クライアントともフォーマットを合わせる。
+  4. 再度 `docker compose` での検証が可能になった時点で、下記 3 ケースを自動化:  
+     - `curl -H 'userName: demo' ... /dolphin/activity/''` → 400 （バリデーション）  
+     - `curl /user/{notSelf}`（ヘッダ mismatch）→ 403  
+     - `curl -X PUT /karte/claim`（無効 JSON）→ 500  
+     それぞれ `server-modernized/standalone/log/server.log` の対応ログとレスポンスボディを照合し、本ノートに Evidence を追記する。
 
 ## 1. Nightly CPD ジョブ運用
 - Jenkins パイプライン `ci/jenkins/nightly-cpd.groovy` を `Server-Modernized-Static-Analysis-Nightly` として登録し、`cron('H 3 * * *')` で毎日 03:00 JST に起動する。

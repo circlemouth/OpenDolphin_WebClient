@@ -1,15 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
+
 usage() {
   cat <<'USAGE'
-usage: ops/tools/send_parallel_request.sh METHOD PATH [ID]
+usage:
+  ops/tools/send_parallel_request.sh METHOD PATH [ID]
+  ops/tools/send_parallel_request.sh --config CONFIG_JSON
 
-必須:
+必須 (単発実行時):
   METHOD   HTTP メソッド (GET/POST/PUT/DELETE など)
   PATH     リクエストパス。先頭に / が無い場合は自動で付与。
 任意:
   ID       保存ディレクトリ名。省略時は METHOD+PATH をサニタイズして使用。
+
+config モード:
+  --config CONFIG_JSON   `scripts/api_parity_targets.sample.json` と同形式の JSON を読み込み、
+                         targets 配列の内容を順番に送信する。各ターゲットでは
+                         `method` / `path` / `id` / `body_file` / `header_file` / `query`
+                         を指定できる（無指定時は defaults を利用）。
 
 環境変数:
   BASE_URL_LEGACY   旧サーバーのベース URL (default: http://localhost:8080)
@@ -19,6 +30,121 @@ usage: ops/tools/send_parallel_request.sh METHOD PATH [ID]
   PARITY_BODY_FILE    --data-binary で送信するボディファイル
 USAGE
 }
+
+require_command() {
+  local cmd="$1"
+  if ! command -v "$cmd" >/dev/null 2>&1; then
+    printf '[ERROR] %s command is required but not found\n' "$cmd" >&2
+    exit 1
+  fi
+}
+
+run_config_mode() {
+  local config_file="$1"
+  if [[ ! -f "$config_file" ]]; then
+    printf '[ERROR] config file not found: %s\n' "$config_file" >&2
+    exit 1
+  fi
+  require_command jq
+
+  local jq_filter='
+    def merge_defaults($defaults):
+      ($defaults // {}) as $d
+      | . as $target
+      | $d + $target;
+    (.defaults // {}) as $defaults
+    | (.targets // [])[]
+    | merge_defaults($defaults)
+  '
+
+  local base_header_file="${PARITY_HEADER_FILE-}"
+  local base_body_file="${PARITY_BODY_FILE-}"
+
+  jq -c "$jq_filter" "$config_file" | while IFS= read -r target; do
+    [[ -z "$target" ]] && continue
+    local method path query_string request_path request_id header_file body_file name
+    method="$(jq -r '.method // "GET"' <<<"$target")"
+    path="$(jq -r '.path // empty' <<<"$target")"
+    if [[ -z "$path" || "$path" == "null" ]]; then
+      printf '[WARN] skip entry without path: %s\n' "$target" >&2
+      continue
+    fi
+    name="$(jq -r '.name // empty' <<<"$target")"
+    request_id="$(jq -r '.id // .request_id // .name // empty' <<<"$target")"
+    header_file="$(jq -r '.header_file // empty' <<<"$target")"
+    body_file="$(jq -r '.body_file // empty' <<<"$target")"
+    query_string="$(jq -r '
+      (.query // null) as $q
+      | if $q == null then ""
+        else
+          ($q | to_entries | map("\(.key)=\(.value|tostring|@uri)") | join("&"))
+        end
+    ' <<<"$target")"
+
+    request_path="$path"
+    if [[ -n "$query_string" ]]; then
+      if [[ "$request_path" == *\?* ]]; then
+        request_path="${request_path}&${query_string}"
+      else
+        request_path="${request_path}?${query_string}"
+      fi
+    fi
+
+    printf '\n[CONFIG] %s%s (%s %s)\n' \
+      "${request_id:+${request_id} }" \
+      "${name:+${name}}" \
+      "$method" \
+      "$request_path"
+
+    (
+      if [[ -n "$header_file" && "$header_file" != "null" ]]; then
+        export PARITY_HEADER_FILE="$header_file"
+      elif [[ -n "$base_header_file" ]]; then
+        export PARITY_HEADER_FILE="$base_header_file"
+      else
+        unset PARITY_HEADER_FILE || true
+      fi
+      if [[ -n "$body_file" && "$body_file" != "null" ]]; then
+        export PARITY_BODY_FILE="$body_file"
+      elif [[ -n "$base_body_file" ]]; then
+        export PARITY_BODY_FILE="$base_body_file"
+      else
+        unset PARITY_BODY_FILE || true
+      fi
+      "$SCRIPT_PATH" "$method" "$request_path" "${request_id:-}"
+    )
+  done
+}
+
+CONFIG_FILE=""
+while [[ $# -gt 0 ]]; do
+  case "$1" in
+    --config)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      CONFIG_FILE="$2"
+      shift 2
+      ;;
+    -h|--help)
+      usage
+      exit 0
+      ;;
+    --)
+      shift
+      break
+      ;;
+    *)
+      break
+      ;;
+  esac
+done
+
+if [[ -n "$CONFIG_FILE" ]]; then
+  run_config_mode "$CONFIG_FILE"
+  exit 0
+fi
 
 if [[ $# -lt 2 ]]; then
   usage >&2
@@ -73,7 +199,7 @@ send_request() {
   tmp_stats="$(mktemp)"
   curl_exit=0
   if curl -sS -X "$METHOD" "$base_url$REQUEST_PATH" \
-      -w '%{http_code} %{time_total}' \
+      -w '%{http_code} %{time_total}\n' \
       -D "$tmp_headers" \
       -o "$tmp_body" \
       "${HEADER_ARGS[@]}" \

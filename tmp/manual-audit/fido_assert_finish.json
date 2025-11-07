@@ -1,0 +1,8 @@
+{
+  "userPk": 101,
+  "credentialId": "cred-placeholder",
+  "clientDataJSON": "BASE64_CLIENT_DATA",
+  "authenticatorData": "BASE64_AUTH_DATA",
+  "signature": "BASE64_SIGNATURE",
+  "userHandle": "doctor1"
+}

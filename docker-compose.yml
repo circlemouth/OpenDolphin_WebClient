@@ -2,17 +2,103 @@
 # 個別に起動する場合は ops/legacy-server/docker-compose.yml または ops/modernized-server/docker-compose.yml を参照してください。
 services:
   db:
-    extends:
-      file: ops/base/docker-compose.yml
-      service: db
+    image: postgres:14
+    container_name: opendolphin-postgres
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-opendolphin}
+      POSTGRES_USER: ${POSTGRES_USER:-opendolphin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-opendolphin}
+      POSTGRES_HOST_AUTH_METHOD: ${POSTGRES_HOST_AUTH_METHOD:-md5}
+      POSTGRES_INITDB_ARGS: ${POSTGRES_INITDB_ARGS:---auth-host=md5 --auth-local=trust}
+      TZ: Asia/Tokyo
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
 
   server:
-    extends:
-      file: ops/legacy-server/docker-compose.yml
-      service: server
+    build:
+      context: .
+      dockerfile: ops/legacy-server/docker/Dockerfile
+    container_name: opendolphin-server
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-opendolphin}
+      DB_USER: ${POSTGRES_USER:-opendolphin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-opendolphin}
+      DB_SSLMODE: ${DB_SSLMODE:-prefer}
+      DB_SSLROOTCERT: ${DB_SSLROOTCERT:-}
+      PLIVO_AUTH_ID: ${PLIVO_AUTH_ID:-}
+      PLIVO_AUTH_TOKEN: ${PLIVO_AUTH_TOKEN:-}
+      PLIVO_SOURCE_NUMBER: ${PLIVO_SOURCE_NUMBER:-}
+      PLIVO_BASE_URL: ${PLIVO_BASE_URL:-https://api.plivo.com/v1/}
+      PLIVO_ENVIRONMENT: ${PLIVO_ENVIRONMENT:-production}
+      PLIVO_LOG_LEVEL: ${PLIVO_LOG_LEVEL:-NONE}
+      PLIVO_LOG_MESSAGE_CONTENT: ${PLIVO_LOG_MESSAGE_CONTENT:-false}
+      PLIVO_DEFAULT_COUNTRY: ${PLIVO_DEFAULT_COUNTRY:-+81}
+      FACTOR2_AES_KEY_B64: ${FACTOR2_AES_KEY_B64:-b3BlbmRvbHBoaW4tZGV2LWZhY3RvcjIta2V5LTMyYnl0ZXM=}
+      FIDO2_RP_ID: ${FIDO2_RP_ID:-localhost}
+      FIDO2_RP_NAME: ${FIDO2_RP_NAME:-OpenDolphin Dev}
+      FIDO2_ALLOWED_ORIGINS: ${FIDO2_ALLOWED_ORIGINS:-https://localhost:8443,http://localhost:8080}
+      TZ: Asia/Tokyo
+    ports:
+      - "${APP_HTTP_PORT:-8080}:8080"
+      - "${APP_ADMIN_PORT:-9990}:9990"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -sf -H "userName: ${SYSAD_USER_NAME:-1.3.6.1.4.1.9414.10.1:dolphin}" -H "password: ${SYSAD_PASSWORD:-36cdf8b887a5cffc78dcd5c08991b993}" http://localhost:8080/openDolphin/resources/dolphin || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
 
   server-modernized:
     profiles: ["modernized"]
-    extends:
-      file: ops/modernized-server/docker-compose.yml
-      service: server-modernized
+    build:
+      context: .
+      dockerfile: ops/modernized-server/docker/Dockerfile
+    container_name: opendolphin-server-modernized
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      DB_HOST: db
+      DB_PORT: 5432
+      DB_NAME: ${POSTGRES_DB:-opendolphin}
+      DB_USER: ${POSTGRES_USER:-opendolphin}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-opendolphin}
+      DB_SSLMODE: ${DB_SSLMODE:-prefer}
+      DB_SSLROOTCERT: ${DB_SSLROOTCERT:-}
+      PLIVO_AUTH_ID: ${PLIVO_AUTH_ID:-}
+      PLIVO_AUTH_TOKEN: ${PLIVO_AUTH_TOKEN:-}
+      PLIVO_SOURCE_NUMBER: ${PLIVO_SOURCE_NUMBER:-}
+      PLIVO_BASE_URL: ${PLIVO_BASE_URL:-https://api.plivo.com/v1/}
+      PLIVO_ENVIRONMENT: ${PLIVO_ENVIRONMENT:-production}
+      PLIVO_LOG_LEVEL: ${PLIVO_LOG_LEVEL:-NONE}
+      PLIVO_LOG_MESSAGE_CONTENT: ${PLIVO_LOG_MESSAGE_CONTENT:-false}
+      PLIVO_DEFAULT_COUNTRY: ${PLIVO_DEFAULT_COUNTRY:-+81}
+      TZ: Asia/Tokyo
+    ports:
+      - "${APP_HTTP_PORT:-8080}:8080"
+      - "${APP_ADMIN_PORT:-9990}:9990"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - >-
+          curl -sf -H "userName: ${SYSAD_USER_NAME:-1.3.6.1.4.1.9414.10.1:dolphin}" -H "password: ${SYSAD_PASSWORD:-36cdf8b887a5cffc78dcd5c08991b993}" http://localhost:8080/openDolphin/resources/dolphin || exit 1
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
+volumes:
+  postgres-data:

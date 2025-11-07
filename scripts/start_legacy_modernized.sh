@@ -255,7 +255,11 @@ main() {
         esac
       done
       compose config >/dev/null
-      compose up -d "${up_opts[@]}" "${SERVICES[@]}"
+      if ((${#up_opts[@]} > 0)); then
+        compose up -d "${up_opts[@]}" "${SERVICES[@]}"
+      else
+        compose up -d "${SERVICES[@]}"
+      fi
       ;;
     stop)
       compose stop "${SERVICES[@]}"

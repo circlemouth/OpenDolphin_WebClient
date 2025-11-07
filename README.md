@@ -76,3 +76,10 @@ mvn install:install-file -Dfile=/path/to/AppleJavaExtensions.jar -DgroupId=com.a
  * 今後はターミノロジーの英語化等において pull request を受け付ける予定があります。
  * クライアント側の機能追加はありません。
 
+
+#### １１．JsonTouch / InfoModel API パリティ再現手順（2025-11-07 更新）
+1. Legacy / Modern サーバーを任意の環境で起動し、`BASE_URL_LEGACY` / `BASE_URL_MODERN` をセットする（サンドボックスでは HTTP モックで代替可能）。
+2. `PARITY_OUTPUT_DIR=tmp/parity-touch/<timestamp>` を指定して `ops/tools/send_parallel_request.sh --config scripts/api_parity_targets.touch.json` を実行する。
+   - コンフィグは `JsonTouchResourceParityTest` / `InfoModelCloneTest` で失敗している `POST /touch/sendPackage`・`POST /touch/document`・`POST /touch/mkdocument` だけを送信する。
+3. それぞれの出力（`tmp/parity-touch/<timestamp>/<request-id>/<legacy|modern>/response.json`）を `jq --sort-keys` で整形し、`diff -u` で差分を `diff.txt` に保存する。
+4. 差分判定結果は `docs/server-modernization/phase2/notes/rest-touch-diff-report.md` へ追記し、必要に応じて `docs/web-client/README.md` などの Runbook から参照できるようにする。

@@ -39,3 +39,15 @@
   1. Touch `/jtouch` もテスト体制が整い次第、`LegacyObjectMapperProducer` から CDI 注入する構成へ移行し、`JsonTouchResourceParityTest` が直接インスタンス化している制約を解消する。
   2. SSE 100 件の履歴上限が Web クライアント要件を満たすか、`docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` へ試験記録を追加。 
   3. Legacy 限定とした API（`collectModules`, `interaction`, `stampTree`, `stamp`）について、API インベントリと Runbook の公開ステータスを `LegacyOnly` へ切り替え、周知を徹底する。
+
+## 3. API パリティ差分（2025-11-07）
+
+- 取得手順: `PARITY_OUTPUT_DIR=tmp/parity-touch/20251107T130558Z ops/tools/send_parallel_request.sh --config scripts/api_parity_targets.touch.json`
+- 備考: Legacy/Modern 実サーバーを起動できないサンドボックス環境のため、`JsonTouchResourceParityTest` / `InfoModelCloneTest` で再現したレスポンス差分を HTTP モックへ配備し、差分項目だけを抽出した。実サーバーで再計測する場合は同一コンフィグを利用しベース URL だけ切り替える。
+- Diff ファイル: `tmp/parity-touch/20251107T130558Z/<request-id>/diff.txt`（`jq --sort-keys` 済み）。
+
+| Request ID | Endpoint | 差分概要 | 暫定判断 |
+| --- | --- | --- | --- |
+| `touch_sendPackage_javaTime` | `POST /touch/sendPackage` | Legacy は `issuedAt` を `+09:00` のまま返却するが、Modern は `2026-06-18T00:15:30Z` へ正規化しており `JsonTouchResourceParityTest#javaTimePayloadParity` と同じタイムゾーンずれを再現。 | **要修正**（`LegacyObjectMapperProducer` の JavaTime 設定を `/touch` 系でも共有） |
+| `touch_document_admFlag` | `POST /touch/document` | Modern 側では `docInfo.admFlag` と `modules[].moduleInfo.performFlag` が `null` になり、`InfoModelCloneTest` の失敗内容そのまま。 | **要修正**（`DocInfoModel#clone` / `ModuleInfoBean#clone` の伝播確認と再配備） |
+| `touch_mkdocument_performFlag` | `POST /touch/mkdocument` | mkdocument でも `admFlag` / `performFlag` が欠落。 | **要修正**（mkdocument 系 DTO も clone 修正が必要） |

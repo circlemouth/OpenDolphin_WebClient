@@ -1,0 +1,18 @@
+{
+  "docInfo": {
+    "docPk": 22002,
+    "admFlag": "A",
+    "title": "Template registration"
+  },
+  "modules": [
+    {
+      "moduleId": "module-temp-1",
+      "moduleInfo": {
+        "moduleId": "module-temp-1",
+        "entity": "template",
+        "status": "draft",
+        "performFlag": "1"
+      }
+    }
+  ]
+}

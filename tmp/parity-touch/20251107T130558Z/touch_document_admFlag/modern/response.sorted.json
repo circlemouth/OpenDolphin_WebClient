@@ -1,0 +1,14 @@
+{
+  "docInfo": {
+    "admFlag": null,
+    "docPk": 12001
+  },
+  "modules": [
+    {
+      "moduleInfo": {
+        "moduleId": "module-1",
+        "performFlag": null
+      }
+    }
+  ]
+}

@@ -1,4 +1,49 @@
-# フェーズ2 進捗メモ (更新: 2026-06-14)
+# フェーズ2 進捗メモ (更新: 2026-06-15)
+
+## 2025-11-07 追記: TraceID-JMS トレース採取（担当: TraceID-JMS）
+- `ops/tests/api-smoke-test/test_config.manual.csv` から `/serverinfo/version`・`/user/doctor1`・`/chart/WEB1001/summary` を Trace ID 追跡対象として選び、HTTP/JMS/セッションログを `artifacts/parity-manual/TRACEID_JMS/trace/` へ集約する運用を `docs/server-modernization/phase2/notes/ops-observability-plan.md` に追記。
+- `scripts/start_legacy_modernized.sh start --build` で Modernized サーバーを起動する計画だったが、実行環境に Docker/Compose が存在せず `[ERROR] docker compose (v2) または docker-compose が見つかりません。` で停止。サーバー未起動のため `ops/tools/send_parallel_request.sh` によるケース実行とログ採取は未着手。
+- ブロッカー解消後に `/serverinfo/version` などを `TraceID-JMS-*` ID で再実行し、`docker compose logs server-modernized-dev | rg traceId=` および `MessagingGateway` 出力を `artifacts/parity-manual/TRACEID_JMS/trace/` へ保存する。
+
+## 2026-06-15 追記: Progress-Update-Flow（担当: Codex）
+- ✅ `PHASE2_PROGRESS.md` / `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` の同期フロー、RACI、レビュースケジュール、共通テンプレートを定義。
+- 📌 案件ごとの証跡とチェックリストの突合ルール、週次・リリース前レビューの実施要領を以下に明文化。
+
+### Progress / Checklist Sync Flow
+| トリガー | 対応内容 | 期限 | 反映先 |
+| --- | --- | --- | --- |
+| 新規証跡（テストログ・アーティファクト・設計ドキュメント）の追加 | 24h 以内に `PHASE2_PROGRESS.md` へ追記し、証跡パスと結果要約・残課題を明記。同時に該当チケットへリンクを共有 | 発見後 24h 以内 | `PHASE2_PROGRESS.md`, チケットコメント |
+| チェックリスト項目のステータス変化（`[ ]`→`[x]`／備考更新） | 影響範囲を口頭確認後、同営業日内にチェックリストを更新し、進捗メモへ「Checklist: フェーズX-項目名」リンクを追記 | 12h（営業日内） | `SERVER_MODERNIZED_DEBUG_CHECKLIST.md`, `PHASE2_PROGRESS.md` |
+| ドキュメント/計画系ファイルの構成変更や追加決定事項 | 変更と理由を `docs/server-modernization/phase2/` 配下の該当ファイルへ即日反映し、進捗メモで編集箇所とレビュアーを宣言 | 24h | 対象ドキュメント, `PHASE2_PROGRESS.md` |
+| 重大ブロッカー・監査指摘の検知 | 4h 以内に Phase2 マネージャへエスカレーションし、暫定措置・連絡先を進捗メモと Slack `#phase2-modernized` に掲示 | 4h | `PHASE2_PROGRESS.md`, Slack, Jira |
+
+### レビューサイクル
+- 週次レビュー（毎週水曜 10:00 JST）: Phase2 マネージャが直近 7 日分の進捗とチェックリスト差分を確認し、Ops/QA へ課題共有。未反映証跡がある場合はその場で担当者にアクションを割り当てる。
+- リリース前レビュー（マイルストーン凍結の 3 営業日前）: チェックリスト `[ ]` を棚卸し、必須証跡の所在確認・欠落時の Go/No-Go 判断を行う。全項目に進捗メモリンクが付与されていることを Exit 条件とする。
+- 臨時レビュー: 重大ブロッカー報告や仕様変更時に随時開催し、決定内容を進捗メモとフェーズ計画へ記録。
+
+### RACI（進捗同期関連）
+| ワーク | Responsible | Accountable | Consulted | Informed |
+| --- | --- | --- | --- | --- |
+| 証跡ログの進捗メモ反映 | 各タスク担当ワーカー | Phase2 マネージャ（Codex） | QA リード / Ops 担当 | Server Modernization WG / プロダクトオーナー |
+| チェックリスト更新と突合 | チェックリスト担当ワーカー | Phase2 マネージャ | ドメイン SME / テックリード | PMO / QA |
+| 週次・リリース前レビュー運営 | Phase2 マネージャ | Server Modernization プログラムマネージャ | Ops, QA, UX リード | 参加全員, 経営窓口 |
+
+### Progress 記入テンプレート
+**チェック項目**
+- [ ] タイトルに日付・トピック名・担当者を含めたか
+- [ ] 対応内容・結果・テストコマンド／ログ・証跡パスを列挙したか
+- [ ] 残タスク／次アクションと担当者を明記したか
+- [ ] チェックリストや関連ドキュメントへのリンクを付与したか
+
+**記入例**
+```markdown
+## 2026-06-15 追記: Example-Artifact-Run（担当: Worker F）
+- ✅ `mvn -f pom.server-modernized.xml -pl server-modernized -Dtest=JsonTouchResourceParityTest test` を実行し、`server-modernized/target/surefire-reports/TEST-open.dolphin.touch.JsonTouchResourceParityTest.xml` を証跡として保存。
+- 📁 証跡: `ops/analytics/evidence/20260615/json-touch/`
+- 🔁 次アクション: `SA-TOUCH-JSON-PARITY` でレスポンス整合性の差分調査を継続。進捗はチェックリスト フェーズ3-REST/API 項目へ反映。
+```
+
 
 ## 2026-06-14 追記: Phase0-Scope-Adjustment（担当: Codex）
 - ✅ ステークホルダー合意に基づきフェーズ0（環境棚卸し・Compose 手順整理）はサーバーモダナイズ デバッグ範囲から除外。今後の進捗報告・チェックリスト更新はフェーズ1以降のみを対象とし、フェーズ0タスクが再度必要になった場合は別チケットで復活させる方針を確認。
