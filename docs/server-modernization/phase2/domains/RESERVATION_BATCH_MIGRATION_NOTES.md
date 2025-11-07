@@ -80,3 +80,23 @@ Jakarta EE 10 化、依存更新、WildFly 33 への切替が予約（受付）�
 - **SSE 運用ドキュメント不足**: 新チャート通知は SSE へ移行済みだが、既存クライアントがロングポールのみを使用する場合のフォールバックや `Last-Event-ID` の扱いが決まっていない。REST API ドキュメントとテストケースを更新し、ブラウザ側のリコネクト実装を確定する。
 
 上記の詳細と JMS 設定ギャップは `WORKER0_MESSAGING_BACKLOG.md` にも共有した。次のアクションとして、依存追加と Micrometer 移行 PoC のオーナー決定、SSE 仕様の公開、そして JMS CLI テンプレートのドラフト作成を提案する。
+
+## 6. JMS 設定ギャップ統合メモ（Worker0 引き継ぎ）
+
+本節は `operations/WORKER0_MESSAGING_BACKLOG.md` の要点を取り込み、JMS サブシステムの確認・復旧・証跡取得フローを一元化した。
+
+1. **設定テンプレートの適用**: `ops/modernized-server/docker/configure-wildfly.cli` を適用し、`dolphinQueue`／`JmsXA`／`ConnectionFactory` が `outcome => success` で登録されることを CLI ログに残す。ログは `docs/server-modernization/phase2/operations/logs/` へ保存。
+2. **ヘルスチェック**: `ops/modernized-server/checks/verify_startup.sh opendolphin-server-modernized-dev` を実行し、Secrets/JDBC/JMS/Concurrency が全て `OK` であるスクリーンショットまたはログを取得する。
+3. **CLI 直接確認**: `jboss-cli.sh --connect` から `jms-queue list` と `/subsystem=messaging-activemq/server=default/pooled-connection-factory=JmsXA:read-resource` を発行し、`entries` が `java:/queue/dolphin`／`java:jboss/exported/jms/queue/dolphin` を含むことを記録。
+4. **再起動テスト**: `docker restart opendolphin-server-modernized-dev` 後に手順 1-3 を繰り返し、リソースが自動復元されることを確認する。
+5. **アラート連携**: Micrometer から JMS メトリクスを取得するまでは `server.log` の `WFLYMSGAMQ` WARN を SRE へ即時共有する。`docs/web-client/planning/phase2/DOC_STATUS.md` のタスク欄に検証日・担当を追記する。
+
+## 7. クライアント統合テストシナリオ
+
+旧サーバーとモダナイズサーバーを切り替えながら Web クライアントを検証する際は [`docs/web-client/operations/LEGACY_INTEGRATION_CHECKS.md`](../../../web-client/operations/LEGACY_INTEGRATION_CHECKS.md) を使用する。同ドキュメントでは以下を扱う。
+
+- `/pvt` REST 更新と SSE 購読の同時検証手順。
+- JMS 経由での CLAIM 送信可否チェックと `MessagingGateway` フォールバック確認。
+- 予約状態のビットフラグが UI と合致しているかの確認項目（BIT_OPEN/BIT_TREATMENT/BIT_CANCEL 等）。
+
+検証結果は `planning/phase2/DOC_STATUS.md` の「Active ドキュメント」にメモし、未消化の項目は Dormant/Archive 移行条件として扱う。
