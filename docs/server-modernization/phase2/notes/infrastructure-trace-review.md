@@ -27,7 +27,7 @@
   - 監査ヘルパーは `SessionTraceManager.current()` からセッション層 traceId を詳細フィールドへ追加し、HTTP traceId と並存する形で記録する（`server-modernized/src/main/java/open/dolphin/adm20/rest/support/PhrAuditHelper.java:40-70`）。
 
 - **外部サービス連携 / JMS**  
-  - `MessagingGateway` がセッション層 traceId を JMS メッセージプロパティ `open.dolphin.traceId` やログへ付与し、非同期処理へ伝搬する（`server-modernized/src/main/java/open/dolphin/msg/gateway/MessagingGateway.java:42-121`）。  
+- `MessagingGateway` がセッション層 traceId を JMS メッセージプロパティ `openDolphinTraceId` やログへ付与し、非同期処理へ伝搬する（`server-modernized/src/main/java/open/dolphin/msg/gateway/MessagingGateway.java:42-121`）。  
   - JMS コンシューマ（`MessageSender`）側は同じプロパティを読み込み、監査ログや例外ログへ埋め込む設計。
 
 ## 判明した課題と改善案
@@ -77,7 +77,7 @@
   - HTTP レイヤーの `traceId` を取得できた場合はセッション層へ引き継ぎ、欠損時は新規採番。
   - `org.jboss.logmanager.MDC` と `org.slf4j.MDC` を同期し、`clear()` 時に元の値へ復元するフックを追加。
 - `MessagingGateway`
-  - セッションコンテキストから traceId を取得できない場合は WARN を出しつつ新規採番し、JMS プロパティ `open.dolphin.traceId` へ常時設定。
+- セッションコンテキストから traceId を取得できない場合は WARN を出しつつ新規採番し、JMS プロパティ `openDolphinTraceId` へ常時設定。
 - `RequestMetricsFilter`
   - `ResourceInfo` からテンプレートを引けない場合でも、動的 ID 部分を `{id}/{hex}` などに正規化したパスを生成。
   - すべてのメトリクスに `status` タグを追加し、401/403 は `opendolphin_auth_reject_total` でカウント。
@@ -123,7 +123,7 @@ Client Browser / Mobile
   -> Session Bean (`session.*`, `adm20.session.*`, `touch.session.*`)
        - 業務ロジック実行。JMS 送信や監査ヘルパーは `SessionTraceManager.current()` から traceId を取得
   -> MessagingGateway (msg/gateway/MessagingGateway.java:42-134)
-       - JMS ObjectMessage へ `open.dolphin.traceId` プロパティを設定し、Fallback 送信時もログへ出力
+      - JMS ObjectMessage へ `openDolphinTraceId` プロパティを設定し、Fallback 送信時もログへ出力
   -> JMS Queue `java:/queue/dolphin`
   -> MessageSender (session/MessageSender.java:37-174)
        - 受信メッセージから traceId プロパティを読み、監査ログと `OidSender` へ伝搬
@@ -133,7 +133,7 @@ Client Browser / Mobile
 
 - HTTP 層で生成した Trace-ID が `SessionTraceManager` の再採番で置き換わるケースが多く、JMS プロパティとログ出力の整合性が崩れる。`SessionOperationInterceptor#currentHttpTraceId` の戻り値を `SessionTraceManager.start` へ渡すための public API が必要。
 - `LogFilter` が失敗パスで `traceId` を残さないため、シーケンス冒頭で `Client -> LogFilter` の矢印が途切れるケースが存在する。未認証経路でも UUID を発行し、`RequestMetricsFilter` 以降へ受け渡すことで監査ログとメトリクスの突合が容易になる。
-- JMS プロパティ `open.dolphin.traceId` を強制必須にし、`MessageSender` 側で欠落時に WARN + 新規採番するガードを設けると Trace-ID の一貫性を確保できる。
+- JMS プロパティ `openDolphinTraceId` を強制必須にし、`MessageSender` 側で欠落時に WARN + 新規採番するガードを設けると Trace-ID の一貫性を確保できる。
 
 ## TraceContextProvider 設計案（2026-06-15）
 `MessagingGateway` が `SessionTraceManager` に直接依存している現状を解消するため、HTTP/セッション/JMS で共通利用できる `TraceContextProvider` インタフェースを追加し、実装を 2 層に分離する。

@@ -32,7 +32,13 @@ public class AbstractResource {
     }
 
     public static String getRemoteFacility(String remoteUser) {
+        if (remoteUser == null) {
+            return null;
+        }
         int index = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (index < 0) {
+            return remoteUser;
+        }
         return remoteUser.substring(0, index);
     }
 

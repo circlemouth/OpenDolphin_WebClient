@@ -33,7 +33,7 @@ services:
       - default
       - orca-weborca
     environment:
-      DB_HOST: db
+      DB_HOST: ${LEGACY_DB_HOST:-opendolphin-postgres}
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-opendolphin}
       DB_USER: ${POSTGRES_USER:-opendolphin}
@@ -78,7 +78,7 @@ services:
       - default
       - orca-weborca
     environment:
-      DB_HOST: db
+      DB_HOST: ${MODERNIZED_DB_HOST:-opendolphin-postgres-modernized}
       DB_PORT: 5432
       DB_NAME: ${POSTGRES_DB:-opendolphin}
       DB_USER: ${POSTGRES_USER:-opendolphin}

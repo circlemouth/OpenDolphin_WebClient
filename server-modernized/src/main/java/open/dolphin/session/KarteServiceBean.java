@@ -104,6 +104,9 @@ public class KarteServiceBean {
     @Inject
     private MessagingGateway messagingGateway;
 
+    @Inject
+    private MmlSenderBean mmlSenderBean;
+
 //s.oh^ 2014/02/21 Claim送信方法の変更
     //@Resource(mappedName = "java:/JmsXA")
     //private ConnectionFactory connectionFactory;
@@ -631,6 +634,30 @@ public class KarteServiceBean {
     // JMS+MDB
     public void sendDocument(DocumentModel document) {
         messagingGateway.dispatchClaim(document);
+        if (shouldSendMml(document)) {
+            try {
+                mmlSenderBean.send(document);
+            } catch (Exception ex) {
+                LOGGER.warn("MML dispatch failed for document {}: {}", documentId(document), ex.getMessage(), ex);
+            }
+        }
+    }
+
+    private boolean shouldSendMml(DocumentModel document) {
+        if (document == null || document.getDocInfoModel() == null) {
+            return false;
+        }
+        return document.getDocInfoModel().isSendMml();
+    }
+
+    private String documentId(DocumentModel document) {
+        if (document == null) {
+            return null;
+        }
+        if (document.getDocInfoModel() != null && document.getDocInfoModel().getDocId() != null) {
+            return document.getDocInfoModel().getDocId();
+        }
+        return document.getId() > 0 ? String.valueOf(document.getId()) : null;
     }
 
     /**

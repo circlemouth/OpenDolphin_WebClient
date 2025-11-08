@@ -12,6 +12,10 @@
         <class>open.dolphin.infomodel.UserModel</class>
         <class>open.dolphin.infomodel.FacilityModel</class>
         <class>open.dolphin.infomodel.RoleModel</class>
+        <class>open.dolphin.infomodel.PatientModel</class>
+        <class>open.dolphin.infomodel.HealthInsuranceModel</class>
+        <class>open.dolphin.infomodel.KarteBean</class>
+        <class>open.dolphin.infomodel.RegisteredDiagnosisModel</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>

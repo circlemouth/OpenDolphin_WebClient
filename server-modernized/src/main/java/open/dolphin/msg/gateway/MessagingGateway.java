@@ -24,8 +24,6 @@ import org.jboss.logmanager.MDC;
 public class MessagingGateway {
 
     private static final Logger LOGGER = Logger.getLogger(MessagingGateway.class.getName());
-    private static final String TRACE_ID_PROPERTY = "open.dolphin.traceId";
-    private static final String PAYLOAD_TYPE_PROPERTY = "open.dolphin.payloadType";
     private static final String PAYLOAD_TYPE_CLAIM = "CLAIM";
     private static final String PAYLOAD_TYPE_DIAGNOSIS = "DIAGNOSIS";
     private static final String TRACE_ID_MDC_KEY = "traceId";
@@ -81,8 +79,8 @@ public class MessagingGateway {
         }
         try (JMSContext context = connectionFactory.createContext(JMSContext.AUTO_ACKNOWLEDGE)) {
             ObjectMessage message = context.createObjectMessage(payload);
-            message.setStringProperty(TRACE_ID_PROPERTY, traceId);
-            message.setStringProperty(PAYLOAD_TYPE_PROPERTY, payloadType);
+            message.setStringProperty(MessagingHeaders.TRACE_ID, traceId);
+            message.setStringProperty(MessagingHeaders.PAYLOAD_TYPE, payloadType);
             context.createProducer().send(dolphinQueue, message);
             return true;
         } catch (Exception ex) {

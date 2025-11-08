@@ -54,8 +54,15 @@
      /subsystem=ee/service=managed-thread-factory=default:read-resource
      ```
      存在しない場合は `add` コマンドでコアプールサイズ・キュー長を含めて明示定義する。
-  2. `ops/modernized-server/docker/configure-wildfly.cli` へ同コマンドを追記し、Docker / 手動構築のどちらでも再現できるよう統一する。
-  3. 起動後に `server.log` へ `ManagedScheduledExecutorService is not available` 警告が出ていないことを確認し、Micrometer のジョブメトリクスが取得できるかを合わせて検証する。
+ 2. `ops/modernized-server/docker/configure-wildfly.cli` へ同コマンドを追記し、Docker / 手動構築のどちらでも再現できるよう統一する。
+ 3. 起動後に `server.log` へ `ManagedScheduledExecutorService is not available` 警告が出ていないことを確認し、Micrometer のジョブメトリクスが取得できるかを合わせて検証する。
+
+### 5. Legacy WildFly 10 参考情報（2025-11-09 追加）
+
+- 背景: Legacy `opendolphin-server`（WildFly 10）を Modernized サービスと同居させるため `docker compose` で `jma-receipt-docker-for-ubuntu-2204_default` ネットワークへ接続すると、Legacy/Modernized 双方の `db` サービスと ORCA スタックの `db` が同名エイリアスになる。`DB_HOST=db` のままでは Legacy の JDBC URL が ORCA Postgres へ向かい、`jboss.persistenceunit."opendolphin-server.war#opendolphinPU"` が `FATAL: password authentication failed for user "opendolphin"` で停止する。
+- 影響: `server-legacy.log` に `WFLYCTL0412` / `WFLYCTL0186` が記録され、`/openDolphin/resources/serverinfo/*` が 404 のままになるため API パリティ比較が実施できない。
+- 対応: `docker-compose.yml` / `ops/legacy-server/docker-compose.yml` / `scripts/start_legacy_modernized.sh` / `ops/legacy-server/docker/configure-wildfly.cli` を更新し、`DB_HOST` 既定値と CLI のフォールバックを固有名 `opendolphin-postgres` に変更。再ビルド後に `jboss-cli PostgresDS:test-connection-in-pool` と `deployment=...opendolphinPU:read-resource` を実行し、`ServerInfoResource` の 200 応答と合わせて `artifacts/parity-manual/CLAIM_SEND_ATTEMPT/legacy/` 配下へ保存（`server-legacy-fixed.log`, `jboss-cli_*.txt`, `serverinfo_*_20251108T19*.txt` など）。
+- 補足: 誤配線の再発を防ぐため `docker network inspect` 結果（`docker-network-legacy-vs-modern_default.json` / `docker-network-orca-default.json`）と `docker inspect opendolphin-server --format '{{json .NetworkSettings.Networks}}'` を同フォルダに残し、今後 ORCA ネットワークへ接続する際はホスト名衝突の有無を確認すること。
 
 ## 実装フロー提案
 

@@ -46,6 +46,21 @@
   - `metadata.gapDurationMs`: `gapDetectedAt` から `recoveredAt` までの経過時間。`metadata.escalated` は Ops Escalation ガイドのトリガー。
 - Web 実装（`web-client/src/features/replay-gap/ReplayGapContext.tsx`）では上記スキーマを満たす JSON を `/rest/audit/events` へ送信し、HTTP 失敗時は 3 回まで指数バックオフで再送する。Touch 実装でも同じ helper（`sendReplayGapAudit`) を流用する予定。
 
+## 7. base_readonly スモーク (2025-11-09)
+
+- 実行コマンド: `BASE_URL_LEGACY=http://localhost:8080/openDolphin/resources BASE_URL_MODERN=http://localhost:9080/openDolphin/resources ./ops/tests/api-smoke-test/run.sh --dual --scenario base_readonly`
+- 証跡: `artifacts/parity-manual/smoke/20251108T212422Z/{legacy,modernized}/`（`metadata.json` にシナリオ/ケース/実行時刻を記録）。
+- 対象ヘッダー: `ops/tests/api-smoke-test/headers/legacy-default.headers`（`1.3.6.1.4.1.9414.72.103:doctor1` 認証）。
+- 目的: 読取専用 API の最小セット（`/dolphin`, `/serverinfo/jamri`, `/mml/patient/list/<fid>`）で Legacy / Modernized のレスポンスシェイプを比較し、以降の POST 系シナリオに備えて CLI & DB シード手順を確立する。
+
+| Endpoint | Legacy 結果 | Modernized 結果 | 差分/備考 |
+| --- | --- | --- | --- |
+| `GET /dolphin` | 200 / ボディ `"Hellow, Dolphin"`。ヘッダーは `X-Powered-By: Undertow/1`, `Server: WildFly/10`, `Content-Type: text/plain` のみ。 | 200 / ボディ同一。`Referrer-Policy`, `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Trace-Id` などセキュリティ系ヘッダーが追加。 | ペイロードは一致。Modernized 側の追加ヘッダーはセキュリティ要件と合致するため受け入れ済み。 |
+| `GET /serverinfo/jamri` | 200 / ボディ長 0。`custom.properties` の `jamri.code` が未設定。 | 200 / 同じく空文字。 | 両系統とも設定欠如。インフラが `custom.properties` を同期するまで `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` へフォローアップを記載。 |
+| `GET /mml/patient/list/1.3.6.1.4.1.9414.72.103` | 200 / `7001,7002,7003,7004,7005,7006,7007,7008,7009,7010`。 | 200 / 同一。 | `api_smoke_seed.sql` で投入した 10 件の合成患者が双方で取得できることを確認。CSV 並び順・改行とも完全一致。 |
+
+- 追加タスク: `/serverinfo/*` の値を `custom.properties` シードに含める、`base_readonly` に `/karte/docinfo`, `/orca/tensu/name` など業務代表 API を追加し、差分が発生した場合は本ノートへ追記する。
+
 ## 6. 2025-11-07 実装サマリ
 - `server-modernized/pom.xml` へ `org.glassfish.jersey.core:jersey-common:3.1.5`（test scope）を追加し、`JsonTouchAuditLogger` が JAX-RS `RuntimeDelegate` を利用する単体テストでもプロバイダ解決できるようにした。
 - `open.dolphin.{touch,adm10,adm20}.converter.IDocInfo` の `toModel()` で `IPVTHealthInsurance` が `null` の場合は `setPVTHealthInsuranceModel` をスキップするよう統一し、簡易ペイロードでの `NullPointerException` を解消。
@@ -96,3 +111,14 @@
 - ストリーミング系のレスポンス整形は従来通り `AbstractResource#getSerializeMapper()` の生成 Mapper を使用する。`JSONStampBuilder` も同メソッドから取得する Mapper に切り替え、`ObjectMapper` のローカル生成を廃止した。
 - 監査ログ／例外ハンドリングは既存の `try-catch` を維持しつつ、`legacyTouchMapper` の共有化に伴いリソース内での `mapper.configure(...)` 呼び出しを完全撤去（ランタイム再設定リスク除去）。追加の Jackson Module は今回不要だったため `LegacyObjectMapperProducer` の設定は据え置き。
 - 検証: `mvn -f pom.server-modernized.xml -pl server-modernized -am -DfailIfNoTests=false -Dtest=JsonTouchResourceParityTest,InfoModelCloneTest test`（ログ: `server-modernized/target/surefire-reports/TEST-open.dolphin.touch.JsonTouchResourceParityTest.xml`, `server-modernized/target/surefire-reports/TEST-open.dolphin.infomodel.InfoModelCloneTest.xml`）。`JsonTouchResourceParityTest` で Legacy/ADM/Touch すべての JSON 互換が維持されることを確認。
+
+## 11. 2025-11-09 Claim/Diagnosis/MML Smoke（Worker F）
+- **JMS プロパティ整備**: `MessagingGateway`／`MessageSender` で使用する JMS ヘッダーを `openDolphinTraceId` / `openDolphinPayloadType` に統一する `MessagingHeaders` を追加し、AMQ139012（Java identifier 以外を指定した場合の Artemis 例外）を解消。`AbstractResource#getRemoteFacility` も null / 区切り文字欠落時にそのまま返すよう防御した。
+- **EHT フォールバック / 診断テーブル**: `EHTResource.sendPackage(1/2)` で `StringIndexOutOfBoundsException` を握り潰し、フォールバック時も 0/1 バイトレスポンスと監査ログを返す。`server-modernized/tools/flyway/sql/V0222__diagnosis_legacy_tables.sql` を追加し、`d_facility/d_users/d_patient/d_karte` を Legacy から schema dump → modernized DB へ適用のうえ `d_diagnosis` / `d_diagnosis_seq` を作成。`docker exec opendolphin-postgres-modernized psql ... "SELECT COUNT(*) FROM d_diagnosis;"` で 1 件挿入済みを確認。
+- **CLI 実行結果**:  
+  - `PUT /20/adm/eht/sendClaim 20251108T213043Z` → Legacy 403（従来通り）、Modernized は Velocity テンプレート `claimHelper.vm` 不在により `ResourceNotFoundException` で 500（JMS enqueue 自体は成功し AMQ139012 は再現せず）。  
+  - `POST /karte/diagnosis/claim 20251108T213050Z` → Modernized 200 応答で `d_diagnosis.id=1` を採番。  
+  - `PUT /mml/send 20251108T213129Z` → Modernized 200。  
+  成果物・ログ・DB スナップショットは `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251108T213140Z/` に保存。
+- **テスト**: `cd server-modernized && mvn -Dtest=MmlSenderBeanSmokeTest test`（ログ: `tmp/mvn-mml.log`）。`MmlSenderBeanSmokeTest` は 1/1 パス。
+- **残課題**: `claimHelper.vm` をどの WAR/モジュールでバンドルするか決め、`PUT /20/adm/eht/sendClaim` で 2xx 応答と ORCA ACK/NAK を採取する。Legacy 側 403（Basic 認証失敗）も別タスクで要確認。
