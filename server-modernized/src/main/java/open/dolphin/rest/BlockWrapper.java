@@ -30,10 +30,11 @@ public final class BlockWrapper extends HttpServletRequestWrapper {
         if (remoteUser == null || remoteUser.isBlank()) {
             return "-";
         }
-        if (remoteUser.length() <= 17) {
-            return remoteUser;
+        int separator = remoteUser.lastIndexOf(':');
+        if (separator >= 0 && separator + 1 < remoteUser.length()) {
+            return remoteUser.substring(separator + 1);
         }
-        return remoteUser.substring(17);
+        return remoteUser;
     }
 
     public String getRequestURIForLog() {

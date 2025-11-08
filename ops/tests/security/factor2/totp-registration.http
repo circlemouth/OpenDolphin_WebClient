@@ -1,0 +1,15 @@
+### TOTP registration (start)
+POST http://localhost:9080/openDolphin/resources/20/adm/factor2/totp/registration
+Content-Type: application/json
+userName: adm20admin
+password: dolphin
+clientUUID: manual-smoke-client
+facilityId: 1.3.6.1.4.1.9414.72.103
+factor2-mode: admin
+
+{
+  "userPk": 20,
+  "accountName": "adm20admin",
+  "issuer": "OpenDolphin Dev",
+  "label": "ADM20"
+}

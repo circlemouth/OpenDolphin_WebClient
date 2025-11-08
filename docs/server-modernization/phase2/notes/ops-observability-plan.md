@@ -1,4 +1,24 @@
-# Ops 観測性・Nightly CPD 実行計画（2026-06-15 更新、担当: Worker D）
+# Ops 観測性・Nightly CPD 実行計画（2026-06-16 更新、担当: Worker D）
+
+## 2026-06-16 追記: Secrets 読み込み順と Micrometer/Prometheus 試行（担当: Worker Codex）
+
+### .env / configure-wildfly 読み込み順
+| 順序 | レイヤ | ファイル / エントリ | 摘要 |
+| --- | --- | --- | --- |
+| 1 | Compose ルート | `.env` / `.env.sample` | `POSTGRES_*`, `FACTOR2_AES_KEY_B64`, `LOGFILTER_HEADER_AUTH_ENABLED`（2026-06-16 追加）をここで定義。`ops/tools/logfilter_toggle.sh` もこのファイルを編集する。 |
+| 2 | docker-compose (legacy) | `docker-compose.yml` → `services.server{,-modernized}.environment` | `.env` の値を `${VAR:-default}` で展開し、コンテナ環境変数へ渡す。`server-modernized` には `LOGFILTER_HEADER_AUTH_ENABLED` を追加済み。 |
+| 3 | docker-compose (modernized dev) | `docker-compose.modernized.dev.yml` | `server-modernized-dev` の DB 接続情報、FIDO2、FACTOR2、Micrometer 系パラメータを注入。 |
+| 4 | WildFly CLI | `ops/legacy-server/docker/configure-wildfly.cli` / `ops/modernized-server/docker/configure-wildfly.cli` | `${env.DB_HOST}`, `${env.DB_SSLMODE}` などでコンテナ環境変数を参照し、JDBC/JMS/Micrometer/Elytron リソースを定義。 |
+| 5 | Jakarta EE | `SecondFactorSecurityConfig` / `Fido2Config` | `System.getenv` から 2FA Secrets を直接参照。`FACTOR2_AES_KEY_B64` が空の場合は `IllegalStateException` を即時送出。 |
+
+関連ログ/証跡: `artifacts/parity-manual/secrets/env-loading-notes.md`, `artifacts/parity-manual/secrets/wildfly-start.log`
+
+### Micrometer / Prometheus 試行
+- `ops/tools/send_parallel_request.sh --loop 5 GET /dolphin observability_loop` で負荷を作り、レスポンスを `artifacts/parity-manual/observability/observability_loop_loop###/*` に保存（Legacy/Modern を同一 URL に向け、リクエストメトリクスが発火することを確認）。
+- `curl http://localhost:9080/actuator/{health,metrics,prometheus}` および `curl http://localhost:9080/metrics/application` を実行し、レスポンス/ヘッダーを `artifacts/parity-manual/observability/actuator_health.log` などへ保存した。WildFly は起動しているものの、いずれも `HTTP/1.1 404 Not Found` で Micrometer エンドポイントが公開されていないことが判明。
+- `ops/modernized-server/docker/configure-wildfly.cli` には legacy 版と異なり `subsystem=micrometer` ブロックが未定義のため、`micrometer` サブシステムと `registry=prometheus` を modernized 側にも追加し、`MICROMETER_PROMETHEUS_CONTEXT=/metrics/application` を有効化するタスクが残る。
+- 監視連携の現状: `RequestMetricsFilter` / `DatasourceMetricsRegistrar` は Micrometer API へ記録しているが、JNDI `java:jboss/micrometer/registry` が未バインドなため `Metrics.globalRegistry` フォールバックで稼働中（`docker logs | rg \"Micrometer registry not found\"` 参照）。Prometheus 連携を確認するには WildFly 管理 CLI で `subsystem=micrometer:add(...)` を適用し、再度 `/metrics/application` を取得する必要がある。
+
 
 ## 2025-11-07 追記: TraceID-JMS ログ採取トライアル（担当: TraceID-JMS）
 - 代表 API: `/serverinfo/version`, `/user/doctor1`, `/chart/WEB1001/summary` を `ops/tests/api-smoke-test/test_config.manual.csv` の `serverinfo` / `user_profile` / `chart_summary` ケースから選定し、`ops/tests/api-smoke-test/README.manual.md` 手順に従って `PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/legacy-default.headers` を利用する方針を確定。

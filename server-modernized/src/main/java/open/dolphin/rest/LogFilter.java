@@ -2,6 +2,7 @@ package open.dolphin.rest;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -34,6 +35,8 @@ public class LogFilter implements Filter {
     private static final String SYSAD_USER_ID = "1.3.6.1.4.1.9414.10.1:dolphin";
     private static final String SYSAD_PASSWORD = "36cdf8b887a5cffc78dcd5c08991b993";
     private static final String SYSAD_PATH = "dolphin";
+    private static final String HEADER_AUTH_ENV = "LOGFILTER_HEADER_AUTH_ENABLED";
+    private static final String HEADER_AUTH_PROPERTY = "opendolphin.logfilter.header-auth.enabled";
 
     @Inject
     private UserServiceBean userService;
@@ -44,8 +47,12 @@ public class LogFilter implements Filter {
     @Inject
     private SecurityContext securityContext;
 
+    private volatile boolean headerAuthEnabled = true;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
+        headerAuthEnabled = resolveHeaderAuthEnabled(filterConfig);
+        SECURITY_LOGGER.log(Level.INFO, "LogFilter header fallback is {0}", headerAuthEnabled ? "enabled" : "disabled");
     }
 
     @Override
@@ -62,15 +69,17 @@ public class LogFilter implements Filter {
         try {
             boolean identityTokenRequest = isIdentityTokenRequest(req);
 
-            String headerUser = safeHeader(req, USER_NAME);
-            String headerPassword = safeHeader(req, PASSWORD);
+            String headerUser = headerAuthEnabled ? safeHeader(req, USER_NAME) : null;
+            String headerPassword = headerAuthEnabled ? safeHeader(req, PASSWORD) : null;
             Optional<String> principalUser = resolvePrincipalUser();
 
             String effectiveUser = principalUser.orElse(headerUser);
             boolean authentication = principalUser.isPresent() || identityTokenRequest;
 
-            if (!authentication) {
+            if (!authentication && headerAuthEnabled) {
                 authentication = authenticateWithHeaders(req, headerUser, headerPassword);
+            } else if (!authentication) {
+                SECURITY_LOGGER.warning(() -> "Header-based authentication is disabled; rejecting " + req.getRequestURI());
             }
 
             if (!authentication) {
@@ -126,6 +135,49 @@ public class LogFilter implements Filter {
         } catch (IllegalStateException ex) {
             SECURITY_LOGGER.log(Level.FINE, "SecurityContext is not available yet; falling back to header authentication.", ex);
             return Optional.empty();
+        }
+    }
+
+    private boolean resolveHeaderAuthEnabled(FilterConfig filterConfig) {
+        String initValue = filterConfig == null ? null : filterConfig.getInitParameter("header-auth-enabled");
+        String candidate = firstNonBlank(initValue, System.getProperty(HEADER_AUTH_PROPERTY), System.getenv(HEADER_AUTH_ENV));
+        if (candidate == null) {
+            return true;
+        }
+        return parseBooleanFlag(candidate, true);
+    }
+
+    private String firstNonBlank(String... candidates) {
+        if (candidates == null) {
+            return null;
+        }
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.isBlank()) {
+                return candidate.trim();
+            }
+        }
+        return null;
+    }
+
+    private boolean parseBooleanFlag(String value, boolean defaultValue) {
+        if (value == null) {
+            return defaultValue;
+        }
+        switch (value.trim().toLowerCase(Locale.ROOT)) {
+            case "1":
+            case "true":
+            case "yes":
+            case "on":
+                return true;
+            case "0":
+            case "false":
+            case "no":
+            case "off":
+                return false;
+            default:
+                SECURITY_LOGGER.log(Level.WARNING, "Unknown header auth flag value: {0}; fallback to {1}",
+                        new Object[]{value, defaultValue});
+                return defaultValue;
         }
     }
 

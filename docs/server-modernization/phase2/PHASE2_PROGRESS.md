@@ -5,9 +5,49 @@
 - `scripts/start_legacy_modernized.sh start --build` で Modernized サーバーを起動する計画だったが、実行環境に Docker/Compose が存在せず `[ERROR] docker compose (v2) または docker-compose が見つかりません。` で停止。サーバー未起動のため `ops/tools/send_parallel_request.sh` によるケース実行とログ採取は未着手。
 - ブロッカー解消後に `/serverinfo/version` などを `TraceID-JMS-*` ID で再実行し、`docker compose logs server-modernized-dev | rg traceId=` および `MessagingGateway` 出力を `artifacts/parity-manual/TRACEID_JMS/trace/` へ保存する。
 
+## 2025-11-07 追記: Legacy-Modernized-Capture-Gate（担当: Worker #1）
+- ✅ `scripts/setup_codex_env.sh` を CRLF 行末状態で実行した際の失敗、LF 変換後に root 権限を要求される事実を CLI で検証し、`artifacts/parity-manual/setup/20251107T234615Z/` にログを保存（`setup_codex_env*.log`）。root が取れない環境では事前に承認を得て `sudo` を使う必要がある旨を Runbook に記載。
+- ⚙️ `docker-compose.modernized.dev.yml` の依存関係 (`db-modernized` → `server-modernized-dev`) を整理し、`docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml` による起動順序・フォールバック手順・CLI 専用運用を `docs/server-modernization/phase2/operations/LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md` と `ops/tools/send_parallel_request.profile.env.sample` に統合。`MODERNIZED_TARGET_PROFILE` で `compose` / `remote-dev` / `custom` 切替を定義。
+- 📁 証跡: `artifacts/parity-manual/setup/20251107T234615Z/compose_services.txt`（Compose サービス一覧）/`compose_profiles.txt`（有効 profile）および前述ログ一式。  
+  Checklist: `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ0 #25/#26 を更新済み。
+
+## 2025-11-08 追記: Postgres ベースライン復旧計画（担当: Worker #2）
+- ✅ `docs/server-modernization/phase2/operations/POSTGRES_BASELINE_RESTORE.md` を新規作成し、Legacy/Modernized 双方で Secrets から DDL を取得→`docker exec ... psql -f` → `flyway baseline+migrate` を流すまでの手順、`LEGACY_MODERNIZED_CAPTURE_RUNBOOK`・`TRACE_PROPAGATION_CHECK` との Gate 関係を整理。
+- ✅ DDL/シード所在と不足オブジェクト一覧、調査ログを `artifacts/parity-manual/db-restore/20251108/{ddl_inventory.md,missing_objects.md,investigation.log}` に保存。`facility_num` シーケンスや `d_audit_event` 系テーブルが Secrets 側 dump にしか存在しないことを明文化。
+- ⚠️ Secrets Storage からの dump 提供待ち（Ops/DBA）。提供後に本 Runbook 手順へ実測ログ (`legacy_psql.log`, `modern_psql.log`, `flyway_migrate.log`) を追記し、`artifacts/manual/audit_log.txt` にも成功ケースを記録する必要あり。
+- 📁 関連更新: `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ2 に当該タスクを追記。
+
+## 2025-11-08 追記: scripts/ops-tools CRLF 排除（担当: Worker #1）
+- ✅ `.gitattributes` を新規作成し、`scripts/**` と `ops/tools/**` で利用するシェル／CLI ファイル（`*.sh/*.bash/*.zsh/*.ksh/*.command/*.cli/*.env/*.env.*/*.profile/*.ps1/*.psm1`）を `text eol=lf` へ強制。Runbook #25/#26 で問題化した CRLF 由来の失敗を防ぐため、対象範囲と除外ポリシー（node_modules 等は非対象）をコメントに記録。
+- ✅ `git status --porcelain` を採取 → `git add --renormalize .` を実行 → 既存タスクの差分を `git restore --staged` で戻し、CRLF が残っていた `scripts/setup_codex_env.sh` / `scripts/run-static-analysis-diff.sh` のみを LF 化 (`perl -pi -e 's/\\r$//'`)。代表ファイルの `file` コマンド結果と `git diff --stat` を `artifacts/parity-manual/setup/20251108-renormalize/` に保存。
+- 📝 作業内容と今後のフローを `docs/server-modernization/phase2/operations/DEV_ENV_COMPATIBILITY_NOTES.md` へ整理済み。`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` のフェーズ0 備考にも同ノートと証跡パスを追記。
+
 ## 2026-06-15 追記: Progress-Update-Flow（担当: Codex）
 - ✅ `PHASE2_PROGRESS.md` / `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` の同期フロー、RACI、レビュースケジュール、共通テンプレートを定義。
 - 📌 案件ごとの証跡とチェックリストの突合ルール、週次・リリース前レビューの実施要領を以下に明文化。
+
+## 2026-06-16 追記: Factor2 Secrets & Elytron Toggle（担当: Codex）
+- ✅ `ops/tools/logfilter_toggle.sh` を新規追加し、`.env` の `LOGFILTER_HEADER_AUTH_ENABLED` を CLI で切り替え可能にした。`LogFilter` は env / system property / init-param を優先順位付きで解釈し、`docker-compose*.yml` にも同変数を追加。詳細は `docs/server-modernization/phase2/notes/security-elytron-migration.md`。
+- ✅ `.env.sample` と `docs/server-modernization/phase2/notes/ops-observability-plan.md` に Secrets 読み込み順と Micrometer/Prometheus 連携メモを追記し、`artifacts/parity-manual/observability/{health,metrics,prometheus}.log` へ `curl` の `Connection refused` 証跡を保存。
+- ✅ `docs/server-modernization/phase2/operations/FACTOR2_RECOVERY_RUNBOOK.md` と `artifacts/parity-manual/secrets/wildfly-start.log` に Secrets 欠落時の起動失敗シナリオ（Docker BuildKit がタイムアウトし WildFly 未起動）を記録。`SecondFactorSecurityConfig` のエラーメッセージも Runbook に転記。
+- ⚠️ サンドボックスに `scripts/start_wildfly_headless.sh` が無く Docker も利用不可なため、`FACTOR2_AES_KEY_B64` 未設定時の実ログは未取得。`ops/tests/security/factor2/*.http` も未整備のため、`ops/tests/api-smoke-test` + `ops/tools/send_parallel_request.sh --loop` で代替する計画を `docs/server-modernization/phase2/notes/test-data-inventory.md` へ追記。
+- 📁 証跡: `artifacts/parity-manual/secrets/env-loading-notes.md`, `artifacts/parity-manual/audit/factor2-audit-plan.md`, `artifacts/parity-manual/observability/*.log`
+- 🔁 次アクション: Docker が使えるホストで `FACTOR2_AES_KEY_B64` を削除→WildFly起動→`d_audit_event` 取得まで実施し、Runbook のログ抜粋を差し替える。`ops/tests/security/factor2` ディレクトリを新規作成して `.http` スクリプトを格納。
+
+## 2025-11-08 追記: Trace Propagation Harness（担当: Codex）
+- ✅ `ops/tests/api-smoke-test/test_config.manual.csv` / `rest_error_scenarios.manual.csv` に `trace_http_200/400/401/500` を追加し、`SessionOperation` 単位で追跡すべきステータス・ヘッダー・trace-id を整理。`ops/tests/api-smoke-test/headers/{trace-anonymous,trace-session}.headers` で CLI から `X-Trace-Id` を注入できるようにした。  
+- ✅ `ops/tools/send_parallel_request.sh` に `--profile` / `--profile-file` を実装し、`send_parallel_request.profile.env.sample` を自動で `source` できるよう拡張。`README.manual.md` にも CLI 流れと `PARITY_HEADER_FILE` の差し替え手順を追記。
+- ✅ `trace_http_200` を実行し、`artifacts/parity-manual/TRACEID_JMS/20251108T060500Z/trace_serverinfo_jamri/{legacy,modern}/` へ HTTP/メタ情報を保存。`TRACE_PROPAGATION_CHECK.md` と `domain-transaction-parity.md` に証跡リンクとチェックリスト対応状況を追加。
+- ⚠️ Legacy イメージは `ops/legacy-server/docker/configure-wildfly.cli` が `org.wildfly.extension.micrometer` を要求するためビルド失敗。ログを `artifacts/parity-manual/TRACEID_JMS/20251108T0526Z/legacy_build.log` に保存し、V2 Runbook 側へ Blocker として記録。
+- ⚠️ Modernized DB (`db-modernized`) は初期データ未投入のため `d_users` 等が存在せず、`trace_http_400/401/500` は `LogFilter` 認証で失敗。`modern_server_full.log` に `relation "d_users" does not exist` のトレースを保存し、`docs/server-modernization/phase2/operations/TRACE_PROPAGATION_CHECK.md` にシード作業が前提である旨を追記。
+- 📁 証跡: `artifacts/parity-manual/TRACEID_JMS/20251108T060500Z/*`, `artifacts/parity-manual/TRACEID_JMS/20251108T0526Z/{legacy_build.log,modern_server_full.log}`
+
+## 2026-06-16 追記: JPQL / Trace parity（担当: Worker #2）
+- ✅ Legacy/modernized の `persistence.xml` に `hibernate.show_sql` と `hibernate.archive.autodetection` を追記し、`scripts/start_legacy_modernized.sh` で両サーバーを再構築。モダナイズ用 Postgres (`opendolphin_modern`) に Facility/User/Role の最小データを投入して `/user/doctor1` を実行できる状態を整備。
+- ✅ `scripts/jpql_trace_compare.sh` を新規追加し、`artifacts/parity-manual/JPQL/{legacy.log,modernized.log,jpql.diff}` に SQL ログと差分を保存。`docs/server-modernization/phase2/notes/domain-transaction-parity.md` に Checklist #48 の観測結果と残課題を記載。
+- ✅ `test_config.manual.csv` に `trace-id` 列を追加し、`README.manual.md`/`test-data-inventory.md` にヘッダーフローを更新。`TRACE_PROPAGATION_CHECK.md` を新設し、`X-Trace-Id` を使った HTTP ログ採取手順とギャップ（Legacy 側で traceId が出力されない点など）を整理。
+- ⚠️ `/chart/WEB1001/summary` などカルテ系 API に必要なサンプルデータが未投入のため、Checklist #49〜#50, #73〜#74 分の JPQL ログは未取得。`d_patient` `d_karte` へ移行データを投入後に継続する。
+- 📁 証跡: `artifacts/parity-manual/JPQL/*`, `artifacts/parity-manual/TRACEID_JMS/trace/*`, `tmp/trace/user_profile.headers`
 
 ### Progress / Checklist Sync Flow
 | トリガー | 対応内容 | 期限 | 反映先 |

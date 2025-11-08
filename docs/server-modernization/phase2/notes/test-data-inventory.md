@@ -9,7 +9,7 @@
 | `api_inventory.yaml` | REST エンドポイント 300+ 件のメタデータ。`resource` / `http_method` / `path_template` / `requires_body` を保持。 | `generate_config_skeleton.py` がこのファイルからケース雛形を生成。 |
 | `test_config.sample.yaml` | 手動実行時のテンプレート。`defaults.headers` に Legacy 認証ヘッダーを定義。 | `docs/web-client/operations/TEST_SERVER_DEPLOY.md` セクション 0 の初期アカウント（施設 ID: `1.3.6.1.4.1.9414.72.103`, doctor1 など）を転記して使用。 |
 | `test_config.ci.yaml` | GitHub Actions 用の最小ケース。`cases` に `/dolphin` / `/serverinfo/*` の疎通確認を定義。 | 認証値 (`userName`, `password`, `clientUUID`) は CI 専用。Ops が本番 API を検証する際は `clientUUID` を固有値に置換。 |
-| `test_config.manual.csv` | Python 禁止時のチェックリスト。`id,method,path,headers_profile,payload_template,expectation` を列挙。 | 2026-06-15 追加。`headers/` `payloads/` とペアで使用し、`artifacts/...` の保存先や監査ログ要否を把握する。 |
+| `test_config.manual.csv` | Python 禁止時のチェックリスト。`id,method,path,headers_profile,payload_template,expectation,trace-id` を列挙。 | 2026-06-15 追加。`headers/` `payloads/` とペアで使用し、`artifacts/...` の保存先や監査ログ要否を把握する。`trace-id` 列には `X-Trace-Id` に載せる推奨値を記録し、`SessionTraceManager`／JMS ログの突合に再利用する。 |
 | `docker-compose.yml` | `../base`（PostgreSQL）, `../legacy-server`, `../modernized-server` のサービスを合成。 | Compose で両サーバーを順に起動し、`run_smoke.py` で比較できる。 |
 | `run_smoke.py` / `generate_config_skeleton.py` | Python 3.11 で動作。`requirements.txt`（httpx / PyYAML）を事前インストール。 | 本プロジェクトでは Python 実行には明示許可が必要。Ops 実行時は承認取得または代替手順を利用。 |
 | `headers/*.headers` | `userName`/`password`/`facilityId` などのヘッダー束。`legacy-default` / `adm20-admin` など複数プロフィールを管理。 | `PARITY_HEADER_FILE` 環境変数で `ops/tools/send_parallel_request.sh` から読み込む。 |
@@ -167,3 +167,49 @@
 - Ops/QA は本ノートを基に `ops/tests/` へ README / サンプルデータを追加し、Python スクリプト実行が許可されない期間でも再現性を確保する。
 - 追加で必要なサンプル（例: Chart UI 用カルテデータ）は `docs/web-client/operations/TEST_SERVER_DEPLOY.md` に追記し、本ノートからリンクする。
 - 更新や新規データセットを登録した際は更新日・担当・参照パスを本ノートに追記すること。
+
+## 5. Factor2 監査ログ設計（2026-06-16 追記）
+- `ops/tests/security/factor2/*.http` はまだ存在しないため、当面は `ops/tools/send_parallel_request.sh` を直接叩く。2026-06-16 版で `--loop` オプションが追加され、`factor2_totp_registration_loop001` のようなサフィックスで連続リクエストを保存できる。
+- HTTP 証跡: `artifacts/parity-manual/factor2_*/*/meta.json` に `exit_code=7`（接続不可）を残しており、環境復旧後は同じディレクトリへ成功レスポンスを上書き予定。
+- 監査ログ／DB 副作用: `artifacts/parity-manual/audit/factor2-audit-plan.md` に採取テンプレートを作成。`d_audit_event`, `d_factor2_{credential,challenge,backupkey}` を `psql` でダンプし、マスク済みログを `artifacts/parity-manual/audit/` へ保管する。
+- Secrets 欠落時の挙動は `docs/server-modernization/phase2/operations/FACTOR2_RECOVERY_RUNBOOK.md` に Runbook 化。`artifacts/parity-manual/secrets/wildfly-start.log` へ `scripts/start_legacy_modernized.sh start --build` 実行ログ（BuildKit がタイムアウトし WildFly 未起動）が保存されている。
+- 今後の TODO:
+  1. Docker が利用可能な環境で `/20/adm/factor2/*` を再実行し、`d_audit_event` への `TOTP_REGISTER_*` / `FIDO2_ASSERT_COMPLETE` 記録を採取。
+  2. `ops/tests/security/factor2` ディレクトリを新設し、`.http` テンプレートと `README` を格納。
+  3. `artifacts/parity-manual/observability/` で記録した `/actuator/metrics` 取得ログと突合し、2FA API 実行時に `Micrometer` メトリクスへ `traceId` が伝搬しているかを確認。
+
+## 2. Factor2 セキュリティテスト（ops/tests/security/factor2）
+
+| 資材 | 内容 / 用途 | 備考 |
+| --- | --- | --- |
+| `totp-registration.http` | `/20/adm/factor2/totp/registration` の REST 呼び出しテンプレート。ADM20 管理者ヘッダーと JSON ボディを同梱。 | レスポンスの `secret` / `credentialId` を保存し、`node` などで 6 桁 TOTP を生成する。 |
+| `totp-verification.http` | `/factor2/totp/verification` でコード検証＆バックアップコード発行。 | `{{credentialId}}` と `{{code}}` を置換して利用。 |
+| `fido-registration-*.http` | FIDO2 登録フロー（options/finish）。`requestId` と WebAuthn クライアントレスポンスを差し込む。 | WebAuthn テストハーネス（例: `webauthn-json` CLI）と組み合わせてレスポンスを生成。 |
+| `fido-assertion-*.http` | FIDO2 認証フロー（options/finish）。 | 認証時の `requestId`／クライアントレスポンスを差し替え。 |
+| `README.md` | 上記 `.http` の使い方、ヘッダー、注意事項をまとめたコンパニオン。 | Python 禁止ポリシーに従い、Node 系ユーティリティ（`npx otplib-cli` など）で TOTP を算出する手順を記載。 |
+
+### 2.1 手動実行の流れ
+1. `ops/tests/security/factor2/*.http` を VS Code REST Client 等で開き、`userPk` / `credentialId` / `requestId` をテストユーザーへ置換する。
+2. TOTP 検証前に `npm install -g otplib-cli`（または `npx otplib-cli generate --secret <BASE32>`）でワンタイムコード生成器を用意し、`totp-verification.http` の `code` に転記する（Python 禁止時の代替手段）。
+3. 各リクエストのレスポンスを `artifacts/parity-manual/factor2_<case>/` に保存する。例: `factor2_totp_registration/registration_success.json`、`factor2_fido2_assert_finish/assertion_response.json`。
+4. 監査ログは `docker exec -e PGPASSWORD=opendolphin opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -c "\\timing off;SELECT event_time,action,trace_id,(details->>'status') AS status FROM d_audit_event WHERE action LIKE 'TOTP_%' OR action LIKE 'FIDO2_%' ORDER BY event_time DESC LIMIT 20;" > artifacts/parity-manual/audit/factor2_audit.sql` のように採取する。
+
+### 2.2 現状のギャップ
+- 2026-06-18 時点の `db-modernized` には `d_user` / `d_factor2_*` / `d_audit_event` が作成されておらず、2FA API は 500 で失敗する。`artifacts/parity-manual/factor2_totp_registration/registration_failure_no_data.log` および `artifacts/parity-manual/audit/d_audit_event_missing.log` に証跡を保存済み。
+- Flyway ベースライン（`server-modernized/tools/flyway/sql/V0003__security_phase3_stage7.sql` 等）を適用し、`SELECT count(*) FROM d_audit_event;` が成功する状態になってから成功レスポンスと監査ログを再採取する。
+- FIDO2 フローは WebAuthn クライアントレスポンスが必須のため、`fido-registration-finish.http` / `fido-assertion-finish.http` の `credentialResponse` にブラウザからコピーした JSON を Base64 URL セーフ化して埋め込む。CLI だけで完結させる場合は `@simplewebauthn/browser` などを用いた補助スクリプトが必要。
+
+### 2.3 参考 SQL スニペット
+```sql
+SELECT event_time,
+       action,
+       details ->> 'status'       AS status,
+       details #>> '{request,userPk}' AS user_pk,
+       trace_id
+  FROM d_audit_event
+ WHERE action LIKE 'TOTP_%'
+    OR action LIKE 'FIDO2_%'
+ ORDER BY event_time DESC
+ LIMIT 20;
+```
+※ 現状はテーブルが無いため `relation "d_audit_event" does not exist` が返る。Flyway 適用後に実行し、`artifacts/parity-manual/audit/factor2_*.sql` へ保存する。

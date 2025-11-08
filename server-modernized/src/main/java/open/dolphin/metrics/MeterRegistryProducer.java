@@ -3,6 +3,7 @@ package open.dolphin.metrics;
 import io.micrometer.core.instrument.MeterRegistry;
 import io.micrometer.core.instrument.Metrics;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
 import jakarta.naming.InitialContext;
 import jakarta.naming.NamingException;
@@ -22,7 +23,7 @@ public class MeterRegistryProducer {
     private static final String DEFAULT_JNDI_NAME = "java:jboss/micrometer/registry";
 
     @Produces
-    @ApplicationScoped
+    @Dependent
     public MeterRegistry produceMeterRegistry() {
         String jndiName = resolveJndiName();
         MeterRegistry registry = lookupRegistry(jndiName);

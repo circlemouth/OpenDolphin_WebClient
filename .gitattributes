@@ -1,0 +1,29 @@
+# Portable script line endings (Runbook #25/#26 対策)
+# 既存の属性設定は存在しないため、本指定は scripts/ および ops/tools/ 配下のみを対象とし、
+# それ以外（node_modules 等の外部資産）は従来の挙動を維持する。
+
+# scripts/
+scripts/**/*.sh      text eol=lf
+scripts/**/*.bash    text eol=lf
+scripts/**/*.zsh     text eol=lf
+scripts/**/*.ksh     text eol=lf
+scripts/**/*.command text eol=lf
+scripts/**/*.cli     text eol=lf
+scripts/**/*.env     text eol=lf
+scripts/**/*.env.*   text eol=lf
+scripts/**/*.profile text eol=lf
+scripts/**/*.ps1     text eol=lf
+scripts/**/*.psm1    text eol=lf
+
+# ops/tools/
+ops/tools/**/*.sh      text eol=lf
+ops/tools/**/*.bash    text eol=lf
+ops/tools/**/*.zsh     text eol=lf
+ops/tools/**/*.ksh     text eol=lf
+ops/tools/**/*.command text eol=lf
+ops/tools/**/*.cli     text eol=lf
+ops/tools/**/*.env     text eol=lf
+ops/tools/**/*.env.*   text eol=lf
+ops/tools/**/*.profile text eol=lf
+ops/tools/**/*.ps1     text eol=lf
+ops/tools/**/*.psm1    text eol=lf
