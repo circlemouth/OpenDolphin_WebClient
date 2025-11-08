@@ -101,7 +101,8 @@ parse_global_opts() {
 }
 
 parse_start_opts() {
-  local build=0 pull=0 args=("$@")
+  local build=0 pull=0
+  local -a args=("$@")
   START_ARGS=(up -d)
   while [[ ${#args[@]} -gt 0 ]]; do
     case "${args[0]}" in
@@ -124,7 +125,10 @@ parse_start_opts() {
   done
   [[ $pull -eq 1 ]] && START_ARGS+=(--pull always)
   [[ $build -eq 1 ]] && START_ARGS+=(--build)
-  START_ARGS+=("${args[@]}" "${SERVICES[@]}")
+  if [[ ${#args[@]} -gt 0 ]]; then
+    START_ARGS+=("${args[@]}")
+  fi
+  START_ARGS+=("${SERVICES[@]}")
 }
 
 run_start() {

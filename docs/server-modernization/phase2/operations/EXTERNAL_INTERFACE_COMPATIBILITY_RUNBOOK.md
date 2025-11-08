@@ -252,6 +252,45 @@
    - すべての出力が ISO8601 である場合は `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日欄へ「JavaTime 監視 OK」と記入し、Grafana/Loki/Elastic のスクリーンショットを Evidence へ添付。  
    - 差分が見つかった場合は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead → Security/Compliance の順で連絡し、詳細は `notes/touch-api-parity.md` §9 の手順に従う。
 
+### 4.4 WebORCA テストコンテナ（2025-11-08 追加）
+
+1. **サブモジュール取得**  
+   `docker/orca/jma-receipt-docker` は WebORCA（ORCA Web 版）を Ubuntu 22.04 ベースで再現する Compose 構成。まだ取得していない場合は以下で初期化する。  
+   ```bash
+   git submodule update --init docker/orca/jma-receipt-docker
+   ```
+2. **起動**  
+   - 既定でホスト 8000/TCP を公開する。別の WebORCA が同ポートを使用している場合は既存コンテナを流用するか、`docker-compose.override.yml` に `ports: ["18000:8000"]` などを記載して上書きする。  
+   - Apple Silicon では `DOCKER_DEFAULT_PLATFORM=linux/amd64` を付与してビルドする。  
+   ```bash
+   cd docker/orca/jma-receipt-docker
+   DOCKER_DEFAULT_PLATFORM=linux/amd64 \
+   ORMASTER_PASS='ormaster' docker compose up -d --build
+   ```
+   - 既に `jma-receipt-docker-for-ubuntu-2204-orca-1` が起動済みの場合は上記コマンドは不要。状態を確認するだけで良い。
+3. **ヘルスチェック**  
+   - ホストからの応答: `curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/` が `200` を返すこと。  
+   - コンテナ同士の疎通: `docker run --rm --network jma-receipt-docker-for-ubuntu-2204_default curlimages/curl:8.7.1 -s -o /dev/null -w "%{http_code}" http://orca:8000/` を実行して `200` を確認。  
+   - ログは `docker logs jma-receipt-docker-for-ubuntu-2204-orca-1 --tail 200` で取得し、証跡（例: `artifacts/orca-connectivity/20251108T075913Z/`）へ保管する。
+4. **OpenDolphin コンテナとのネットワーク共有**  
+   - `docker-compose.yml` / `docker-compose.modernized.dev.yml` は `orca-weborca`（外部名: `jma-receipt-docker-for-ubuntu-2204_default`）ネットワークを external として宣言済み。WebORCA Compose を先に起動し、このネットワークが存在する状態で `docker compose up` すると `opendolphin-server` / `opendolphin-server-modernized[-dev]` が自動で参加する。  
+   - 既存コンテナをネットワークへ後付けする場合のみ、従来どおり `docker network connect jma-receipt-docker-for-ubuntu-2204_default <container>` を実行する。  
+   - ネットワークへ接続できない場合は `docker network inspect jma-receipt-docker-for-ubuntu-2204_default` で状態を確認し、存在しなければ WebORCA Compose を起動するか `docker network create --driver bridge jma-receipt-docker-for-ubuntu-2204_default` でプレースホルダを作成する。
+5. **`custom.properties` の設定**  
+   - `ops/shared/docker/custom.properties` に ORCA 連携用の値を追記してから `docker compose build` を再実行する。最低限以下を設定する。  
+     ```properties
+     claim.host=orca
+     claim.send.port=8000
+     claim.send.encoding=MS932
+     ```  
+   - `claim.conn=server`（既定値）と合わせて `ServerInfoResource` / `OrcaResource` が ORCA ホストを正しく解決することを確認する。
+6. **通信確認**  
+   - Legacy/Modernized いずれかのサーバーから `curl -s http://localhost:8080/openDolphin/resources/serverinfo/claim/conn` を実行し `server` が返ること。  
+   - `ops/tools/send_parallel_request.sh POST /orca/interaction ...` のように ORCA エンドポイントを叩き、`artifacts/parity-manual/<ID>/` に Legacy/Modernized 両方のレスポンスを保存する。  
+   - 問題が発生した場合は `docker logs jma-receipt-docker-for-ubuntu-2204-orca-1` と `server.log` をペアで添付し、`PHASE2_PROGRESS.md` へリンクを記録する。
+7. **停止**  
+   - 利用終了後は `docker compose down`（または `docker compose -p jma-receipt-docker-for-ubuntu-2204 down`）で後片付けし、永続ボリュームが不要であれば `docker volume rm jma-receipt-docker-for-ubuntu-2204_pg_data jma-receipt-docker-for-ubuntu-2204_orca_state` を実行する。
+
 ## 5. 切替手順（サンプル）
 
 1. **準備日 (T-7)**  
@@ -265,7 +304,8 @@
    - モダナイズ版を本番環境へデプロイし、ヘルスチェック `/health` `/metrics` を確認。  
    - DNS／ロードバランサの向き先をモダナイズ版へ変更。
 4. **切替後監視 (T0+1h〜)**  
-   - Micrometer メトリクス (`opendolphin_api_request_total` 等) と監査ログを監視し、エラー率やレスポンス遅延を確認。  
+   - Micrometer メトリクス (`wildfly_undertow_request_count_total{server,http_listener}`, `wildfly_request_controller_active_requests`, `wildfly_datasources_pool_active_count{data_source}` 等) と監査ログを監視し、エラー率やレスポンス遅延を確認。`rate(wildfly_undertow_error_count_total[5m]) / rate(wildfly_undertow_request_count_total[5m]) > 0.05` を PagerDuty Critical、`wildfly_datasources_pool_available_count{data_source="ORCADS"} < 5` が 2 分継続したら Warning、`wildfly_request_controller_active_requests > 64` が 3 分続いたら Slack #server-modernized-alerts へ通知する。  
+   - `/actuator/{health,metrics,prometheus}` が 200 を返すことを `curl` で確認し、ログを Evidence へ保存する。WildFly 33 では Prometheus レジストリ用のサブリソースが存在しないため、管理ポート (9990) の `/metrics` `/metrics/application` を基準にしつつ、Undertow 逆プロキシでアプリケーションポート (`http://localhost:9080/actuator/*`) へ転送する。ホスト/ポートを変更する場合は `MICROMETER_MANAGEMENT_HOST` / `MICROMETER_MANAGEMENT_PORT` で上書きする。  
    - 外部システム（ORCA、SMS、帳票）の担当者と連携し、サンプル取引が成功しているかを確認。
 5. **フォールバック**  
    - 致命的な差分が発生した場合の手順を事前に定義（DNS 戻し、DB ロールバックなど）。  
@@ -275,6 +315,8 @@
 
 | ID | 日時 | 内容 | ステータス | メモ |
 | --- | --- | --- | --- | --- |
+| OBS-ACTUATOR-20251108-01 | 2025-11-08 | `scripts/start_wildfly_headless.sh start --build`（modernized のみ）で `/actuator/{health,metrics,prometheus}` を取得したが、Micrometer CDI 二重登録により `HTTP/1.1 503 Service Unavailable`。証跡: `artifacts/parity-manual/observability/20251108T063106Z/`（README, wildfly_start.log, actuator_*.log, send_parallel_request 出力）。 | Done | Legacy プロファイルが含まれず `curl: (7)`。Modernized `/dolphin` は 404 だが Micrometer エラーカウンタ/レイテンシは取得可。フォローアップ: 成功ケース採取。 |
+| OBS-ACTUATOR-20251108-02 | 2025-11-08 | `scripts/start_legacy_modernized.sh start --build` で legacy/modernized/両 DB を起動し、`PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/sysad-actuator.headers` で `ops/tools/send_parallel_request.sh --profile compose --loop 5 GET /dolphin` を実行。`curl -i http://localhost:9080/actuator/{health,metrics,prometheus}` と `curl -i http://localhost:9995/metrics/application` を取得。証跡: `artifacts/parity-manual/observability/20251108T074657Z-success/`。 | Done | Legacy/Modernized とも `HTTP 200`。`docs/server-modernization/phase2/operations/logs/2025-11-08-pagerduty-observability.txt` に Grafana/PagerDuty 反映ログ、README に 404 証跡との比較手順を記載。 |
 | SECRETS-CHECK-20260607-01 | 2026-06-07 | `ops/check-secrets.sh` で 2FA/PHR Secrets 検査フローをドライラン（FILESYSTEM モード、ダミー値）し、CI 失敗条件と通知ルールを追記。 | Done | `PHR_EXPORT_STORAGE_TYPE=FILESYSTEM` のため S3 変数は警告のみ。S3 版はステージングに Secrets 投入後に再検証予定。 |
 | AUDIT-CHAIN-VERIFY-20260607-01 | 2026-06-07 | `SELECT event_time, previous_hash, event_hash ...` によるハッシュチェーン手動検証と PagerDuty 通知ドライラン計画 | ⚠️ Blocked | ローカル環境で `d_audit_event` が空のため SQL 実行結果が得られず。Stage DB リストア後に再実施し、異常ケースを手動で挿入してジョブ想定動作を確認する。 |
 | TOUCH-AUDIT-20251106-01 | 2025-11-06 | `/touch/*` 監査ログの actorRole 連携確認、および `/touch/patient/{pk}` XML 応答の Jakarta 移行後フォーマット差分確認 | Pending | `SessionTraceContext#setActorRole` 追加により Touch API の `TouchAuditHelper` が役割を取得可能。`DolphinResource` が患者詳細 XML を分離実装したため、旧サーバーとの比較テストを `TOUCH_XML_COMPAT` ケースへ追加予定。 |

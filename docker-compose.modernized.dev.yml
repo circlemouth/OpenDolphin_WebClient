@@ -54,6 +54,9 @@ services:
     ports:
       - "${MODERNIZED_APP_HTTP_PORT:-9080}:8080"
       - "${MODERNIZED_APP_ADMIN_PORT:-9995}:9990"
+    networks:
+      - default
+      - orca-weborca
     healthcheck:
       test:
         [
@@ -66,3 +69,8 @@ services:
 
 volumes:
   postgres-data-modernized:
+
+networks:
+  orca-weborca:
+    external: true
+    name: jma-receipt-docker-for-ubuntu-2204_default

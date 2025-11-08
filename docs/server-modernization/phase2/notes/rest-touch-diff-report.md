@@ -51,3 +51,26 @@
 | `touch_sendPackage_javaTime` | `POST /touch/sendPackage` | Legacy は `issuedAt` を `+09:00` のまま返却するが、Modern は `2026-06-18T00:15:30Z` へ正規化しており `JsonTouchResourceParityTest#javaTimePayloadParity` と同じタイムゾーンずれを再現。 | **要修正**（`LegacyObjectMapperProducer` の JavaTime 設定を `/touch` 系でも共有） |
 | `touch_document_admFlag` | `POST /touch/document` | Modern 側では `docInfo.admFlag` と `modules[].moduleInfo.performFlag` が `null` になり、`InfoModelCloneTest` の失敗内容そのまま。 | **要修正**（`DocInfoModel#clone` / `ModuleInfoBean#clone` の伝播確認と再配備） |
 | `touch_mkdocument_performFlag` | `POST /touch/mkdocument` | mkdocument でも `admFlag` / `performFlag` が欠落。 | **要修正**（mkdocument 系 DTO も clone 修正が必要） |
+
+## 5. ADM コンバータ差分スナップショット（2025-11-08）
+
+- **テストエントリ**: `server-modernized/src/test/java/open/dolphin/adm/AdmConverterSnapshotTest.java` を追加し、`IPatientModel` (touch/adm10/adm20) の JSON を `tmp/legacy-fixtures/admxx/patient_model.json` に固定した。`touch` 版の JSON をレガシー基準とし、ADM 系 DTO のマッピング漏れを自動検出する。
+- **再現コマンド**: `mvn -f pom.server-modernized.xml -pl server-modernized -am test -Dtest=AdmConverterSnapshotTest#patientModelSnapshot -DskipITs -Dsurefire.failIfNoSpecifiedTests=false`。フィクスチャを更新したい場合のみ `-Dadm.snapshot.update=true` を付与し、生成された JSON をレビューしてからコミットする。
+- **サンプル payload**: `tmp/legacy-fixtures/adm10/patient_model.json` / `tmp/legacy-fixtures/adm20/patient_model.json` に `reserve1`〜`reserve6` と `healthInsurances[*].publicItems[*]` を含む JSON を保存。`reserve` 系フィールドの一例を抜粋。
+
+```json
+{
+  "reserve1": "ワクチン待機",
+  "reserve2": "在宅酸素",
+  "reserve3": "MRワクチン済",
+  "reserve4": "要薬剤指導",
+  "reserve5": "家族付き添い",
+  "reserve6": "要通訳"
+}
+```
+
+- **差分結果**: `artifacts/parity-manual/adm-snapshots/20251108T063545Z/patient_model/adm20/diff.txt` に `ADM20` だけ `reserve1`〜`reserve6` が欠落していた証跡を保存。Legacy 受付端末では `reserve2`（在宅酸素）や `reserve4`（要薬剤指導）を絞り込みキーにしているため、欠落すると業務フローが破綻する。
+- **対処**: `server-modernized/src/main/java/open/dolphin/adm20/converter/IPatientModel.java` に `getReserve1`〜`getReserve6` を再追加し、同テストが 2025-11-08 15:40 JST 時点でグリーンであることを確認。今後 ADM DTO を追加・修正する場合は本スナップショットテストへフィクスチャを追加し、本節を更新する。
+- **2025-11-08 追記 (VisitPackage/Labo/Diagnosis)**: `AdmConverterSnapshotTest` へ `visit_package` / `labo_item` / `registered_diagnosis` の 3 シナリオを追加し、`tmp/legacy-fixtures/adm10|adm20/<scenario>.json` に `IVisitPackage` / `ILaboGraphItem` / `IRegisteredDiagnosis` の touch 出力を保存した。`patientMemo` にはダミー `karteBean`/`userModel` を埋め込み、病名・検査項目は 2 件ずつで差分検出しやすい構成にしてある。
+- **スナップショット更新手順**: サンドボックスに `mvn` が無いため、`server-modernized` ディレクトリで `jshell --class-path "<依存クラスパス>"` を起動し、`AdmConverterSnapshotTest` を `Class.forName` + `Method#setAccessible(true)` で直接呼び出す（具体的なクラスパス例とスクリプトは `docs/server-modernization/phase2/notes/test-data-inventory.md#6` を参照）。`adm.snapshot.update=true` をセットしてから `patientModelSnapshot`／`visitPackageSnapshot`／`laboItemSnapshot`／`registeredDiagnosisSnapshot` を順に実行すると各 JSON が再生成される。
+- **結果**: VisitPackage / Labo / Diagnosis いずれも touch ⇔ ADM10/20 で差分は発生せず。`adm.snapshot.update=false` で再実行し、アサーションが全てグリーンであることを確認したため、新規 `artifacts/parity-manual/adm-snapshots/<timestamp>/` は発生していない。

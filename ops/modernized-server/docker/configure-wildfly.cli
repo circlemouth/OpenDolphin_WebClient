@@ -5,6 +5,12 @@ if (outcome == success) of /core-service=management/service=configuration-manage
     /core-service=management/service=configuration-manager:write-attribute(name=configuration-change-history-enabled,value=false)
 end-if
 
+# Management HTTP interface: Micrometer/Prometheus endpoints basic auth
+if (outcome == success) of /core-service=management/management-interface=http-interface:read-resource()
+    /core-service=management/management-interface=http-interface:write-attribute(name=console-enabled,value=false)
+    /core-service=management/management-interface=http-interface:write-attribute(name=http-authentication-factory,value=management-http-authentication)
+end-if
+
 # 2025-11-03 モダナイズ対応: WildFly 33 base レイヤ指定（依存は javax 系で維持）
 module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=javax.api,javax.transaction.api --module-root-dir=/opt/jboss/wildfly/modules/system/layers/base
 
@@ -171,5 +177,80 @@ end-if
 /subsystem=ee/service=default-bindings:write-attribute(name=managed-thread-factory,value="java:jboss/ee/concurrency/threadfactory/dolphin")
 
 # Micrometer 監視連携: JMS/Undertow のメトリクスが Micrometer のスクレイプ対象と整合するように保守すること。
+if (outcome != success) of /extension=org.wildfly.extension.micrometer:read-resource()
+    /extension=org.wildfly.extension.micrometer:add
+end-if
+
+if (outcome == success) of /subsystem=micrometer:read-resource()
+    /subsystem=micrometer:write-attribute(name=endpoint,value="${env.MICROMETER_OTLP_ENDPOINT:http://otel-collector:4318/v1/metrics}")
+    /subsystem=micrometer:write-attribute(name=step,value=${env.MICROMETER_STEP_SECONDS:60})
+    /subsystem=micrometer:write-attribute(name=exposed-subsystems,value=["*"])
+else
+    /subsystem=micrometer:add(endpoint="${env.MICROMETER_OTLP_ENDPOINT:http://otel-collector:4318/v1/metrics}", step=${env.MICROMETER_STEP_SECONDS:60}, exposed-subsystems=["*"])
+end-if
+
+if (outcome == success) of /subsystem=undertow:read-resource()
+    /subsystem=undertow:write-attribute(name=statistics-enabled,value=true)
+end-if
+if (outcome == success) of /subsystem=undertow/server=default-server/http-listener=default:read-resource()
+    /subsystem=undertow/server=default-server/http-listener=default:write-attribute(name=record-request-start-time,value=true)
+end-if
+
+# Actuator → 管理ポート (9990) 逆プロキシ設定
+if (outcome != success) of /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=management-metrics:read-resource()
+    /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=management-metrics:add(host="${env.MICROMETER_MANAGEMENT_HOST:127.0.0.1}", port=${env.MICROMETER_MANAGEMENT_PORT:9990})
+else
+    /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=management-metrics:write-attribute(name=host,value="${env.MICROMETER_MANAGEMENT_HOST:127.0.0.1}")
+    /socket-binding-group=standard-sockets/remote-destination-outbound-socket-binding=management-metrics:write-attribute(name=port,value=${env.MICROMETER_MANAGEMENT_PORT:9990})
+end-if
+
+if (outcome != success) of /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-health:read-resource()
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-health:add()
+end-if
+if (outcome != success) of /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-health/host=management:read-resource()
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-health/host=management:add(outbound-socket-binding=management-metrics, scheme="http", path="/health")
+else
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-health/host=management:write-attribute(name=outbound-socket-binding,value=management-metrics)
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-health/host=management:write-attribute(name=scheme,value="http")
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-health/host=management:write-attribute(name=path,value="/health")
+end-if
+
+if (outcome != success) of /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-metrics:read-resource()
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-metrics:add()
+end-if
+if (outcome != success) of /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-metrics/host=management:read-resource()
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-metrics/host=management:add(outbound-socket-binding=management-metrics, scheme="http", path="/metrics")
+else
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-metrics/host=management:write-attribute(name=outbound-socket-binding,value=management-metrics)
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-metrics/host=management:write-attribute(name=scheme,value="http")
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-metrics/host=management:write-attribute(name=path,value="/metrics")
+end-if
+
+if (outcome != success) of /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-prometheus:read-resource()
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-prometheus:add()
+end-if
+if (outcome != success) of /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-prometheus/host=management:read-resource()
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-prometheus/host=management:add(outbound-socket-binding=management-metrics, scheme="http", path="/metrics/application")
+else
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-prometheus/host=management:write-attribute(name=outbound-socket-binding,value=management-metrics)
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-prometheus/host=management:write-attribute(name=scheme,value="http")
+    /subsystem=undertow/configuration=handler/reverse-proxy=metrics-proxy-actuator-prometheus/host=management:write-attribute(name=path,value="/metrics/application")
+end-if
+
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/location="/actuator/health":read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/location="/actuator/health":add(handler=metrics-proxy-actuator-health)
+else
+    /subsystem=undertow/server=default-server/host=default-host/location="/actuator/health":write-attribute(name=handler,value=metrics-proxy-actuator-health)
+end-if
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/location="/actuator/metrics":read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/location="/actuator/metrics":add(handler=metrics-proxy-actuator-metrics)
+else
+    /subsystem=undertow/server=default-server/host=default-host/location="/actuator/metrics":write-attribute(name=handler,value=metrics-proxy-actuator-metrics)
+end-if
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/location="/actuator/prometheus":read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/location="/actuator/prometheus":add(handler=metrics-proxy-actuator-prometheus)
+else
+    /subsystem=undertow/server=default-server/host=default-host/location="/actuator/prometheus":write-attribute(name=handler,value=metrics-proxy-actuator-prometheus)
+end-if
 
 stop-embedded-server

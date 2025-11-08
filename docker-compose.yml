@@ -29,6 +29,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - orca-weborca
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -71,6 +74,9 @@ services:
     depends_on:
       db:
         condition: service_healthy
+    networks:
+      - default
+      - orca-weborca
     environment:
       DB_HOST: db
       DB_PORT: 5432
@@ -103,3 +109,8 @@ services:
 
 volumes:
   postgres-data:
+
+networks:
+  orca-weborca:
+    external: true
+    name: jma-receipt-docker-for-ubuntu-2204_default
