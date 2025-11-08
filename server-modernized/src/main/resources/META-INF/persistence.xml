@@ -9,6 +9,9 @@
         <shared-cache-mode>ENABLE_SELECTIVE</shared-cache-mode>
         <validation-mode>CALLBACK</validation-mode>
         <exclude-unlisted-classes>false</exclude-unlisted-classes>
+        <class>open.dolphin.infomodel.UserModel</class>
+        <class>open.dolphin.infomodel.FacilityModel</class>
+        <class>open.dolphin.infomodel.RoleModel</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
@@ -16,6 +19,9 @@
             <property name="hibernate.enable_lazy_load_no_trans" value="false"/>
             <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>
             <property name="hibernate.query.fail_on_pagination_over_collection_fetch" value="true"/>
+            <property name="hibernate.show_sql" value="true"/>
+            <property name="hibernate.archive.autodetection" value="class,hbm"/>
+            <property name="hibernate.query.jpaql_strict_compliance" value="false"/>
         </properties>
     </persistence-unit>
 </persistence>

@@ -1,0 +1,14 @@
+### FIDO2 assertion finish
+POST http://localhost:9080/openDolphin/resources/20/adm/factor2/fido2/assertion/finish
+Content-Type: application/json
+userName: adm20admin
+password: dolphin
+clientUUID: manual-smoke-client
+facilityId: 1.3.6.1.4.1.9414.72.103
+factor2-mode: admin
+
+{
+  "userPk": 20,
+  "requestId": "{{requestId-from-options}}",
+  "credentialResponse": "{{webauthn-assertion-response-json-base64}}"
+}

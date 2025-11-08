@@ -27,7 +27,17 @@ public final class BlockWrapper extends HttpServletRequestWrapper {
     }
 
     public String getShortUser() {
-        return remoteUser.substring(17);
+        if (remoteUser == null || remoteUser.isEmpty()) {
+            return "-";
+        }
+        int separator = remoteUser.lastIndexOf(':');
+        if (separator >= 0 && separator + 1 < remoteUser.length()) {
+            return remoteUser.substring(separator + 1);
+        }
+        if (remoteUser.length() > 17) {
+            return remoteUser.substring(17);
+        }
+        return remoteUser;
     }
     
     public String getRequestURIForLog() {

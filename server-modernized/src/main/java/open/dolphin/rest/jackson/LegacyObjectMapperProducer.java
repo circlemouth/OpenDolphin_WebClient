@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.context.Dependent;
 import jakarta.enterprise.inject.Produces;
 import open.dolphin.rest.AbstractResource;
 
@@ -17,7 +18,7 @@ import open.dolphin.rest.AbstractResource;
 public class LegacyObjectMapperProducer {
 
     @Produces
-    @ApplicationScoped
+    @Dependent
     public ObjectMapper provideLegacyAwareMapper() {
         ObjectMapper mapper = AbstractResource.getSerializeMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

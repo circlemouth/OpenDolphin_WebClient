@@ -3,6 +3,8 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
+PROFILE_NAME=""
+PROFILE_FILE="${SEND_PARALLEL_REQUEST_PROFILE_FILE:-${SCRIPT_DIR}/send_parallel_request.profile.env.sample}"
 
 usage() {
   cat <<'USAGE'
@@ -21,6 +23,13 @@ config モード:
                          targets 配列の内容を順番に送信する。各ターゲットでは
                          `method` / `path` / `id` / `body_file` / `header_file` / `query`
                          を指定できる（無指定時は defaults を利用）。
+
+実行オプション:
+  --loop COUNT           同一リクエストを COUNT 回繰り返す（出力先は `_loop###` サフィックスで保存）。
+  --loop-sleep SECONDS   繰り返し実行時に各ループ間で待機する秒数（小数可、既定 0）。
+  --profile NAME         `send_parallel_request.profile.env.sample` を `MODERNIZED_TARGET_PROFILE=NAME`
+                         で読み込み、BASE_URL_* などの環境変数を一括設定する。
+  --profile-file FILE    --profile で使用するテンプレートファイルを指定する（省略時は ops/tools 配下）。
 
 環境変数:
   BASE_URL_LEGACY   旧サーバーのベース URL (default: http://localhost:8080)
@@ -111,12 +120,15 @@ run_config_mode() {
       else
         unset PARITY_BODY_FILE || true
       fi
-      "$SCRIPT_PATH" "$method" "$request_path" "${request_id:-}"
+      local extra_args=(--loop "$LOOP_COUNT" --loop-sleep "$LOOP_SLEEP")
+      "$SCRIPT_PATH" "${extra_args[@]}" "$method" "$request_path" "${request_id:-}"
     )
   done
 }
 
 CONFIG_FILE=""
+LOOP_COUNT=1
+LOOP_SLEEP=0
 while [[ $# -gt 0 ]]; do
   case "$1" in
     --config)
@@ -125,6 +137,46 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       CONFIG_FILE="$2"
+      shift 2
+      ;;
+    --loop)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      if ! [[ "$2" =~ ^[0-9]+$ ]] || [[ "$2" -lt 1 ]]; then
+        printf '[ERROR] --loop には 1 以上の整数を指定してください\n' >&2
+        exit 1
+      fi
+      LOOP_COUNT="$2"
+      shift 2
+      ;;
+    --loop-sleep)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      if ! [[ "$2" =~ ^[0-9]+([.][0-9]+)?$ ]]; then
+        printf '[ERROR] --loop-sleep には 0 以上の数値（秒）を指定してください\n' >&2
+        exit 1
+      fi
+      LOOP_SLEEP="$2"
+      shift 2
+      ;;
+    --profile)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      PROFILE_NAME="$2"
+      shift 2
+      ;;
+    --profile-file)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      PROFILE_FILE="$2"
       shift 2
       ;;
     -h|--help)
@@ -140,6 +192,19 @@ while [[ $# -gt 0 ]]; do
       ;;
   esac
 done
+
+if [[ -n "$PROFILE_NAME" ]]; then
+  if [[ ! -f "$PROFILE_FILE" ]]; then
+    printf '[ERROR] profile file not found: %s\n' "$PROFILE_FILE" >&2
+    exit 1
+  fi
+  export MODERNIZED_TARGET_PROFILE="$PROFILE_NAME"
+  # shellcheck disable=SC1090
+  if ! source "$PROFILE_FILE"; then
+    printf '[ERROR] failed to source profile file: %s\n' "$PROFILE_FILE" >&2
+    exit 1
+  fi
+fi
 
 if [[ -n "$CONFIG_FILE" ]]; then
   run_config_mode "$CONFIG_FILE"
@@ -186,7 +251,8 @@ fi
 send_request() {
   local label="$1"
   local base_url="$2"
-  local target_dir="$OUTPUT_DIR/$REQUEST_ID/$label"
+  local request_id="$3"
+  local target_dir="$OUTPUT_DIR/$request_id/$label"
   mkdir -p "$target_dir"
 
   local body_path="$target_dir/response.json"
@@ -219,15 +285,32 @@ send_request() {
   "method": "$METHOD",
   "path": "$REQUEST_PATH",
   "base_url": "$base_url",
+  "request_id": "$request_id",
   "status_code": ${status_code:-0},
   "time_total": "${time_total:-0}",
   "exit_code": $curl_exit
 }
 META
 
-  printf '%s %s -> %s (status=%s, time=%s, exit=%s)\n' \
-    "$METHOD" "$REQUEST_PATH" "$label" "${status_code:-0}" "${time_total:-0}" "$curl_exit"
+  printf '%s %s -> %s (%s) (status=%s, time=%s, exit=%s)\n' \
+    "$METHOD" "$REQUEST_PATH" "$label" "$request_id" "${status_code:-0}" "${time_total:-0}" "$curl_exit"
 }
 
-send_request legacy "$BASE_URL_LEGACY"
-send_request modern "$BASE_URL_MODERN"
+run_iteration() {
+  local iteration_request_id="$1"
+  send_request legacy "$BASE_URL_LEGACY" "$iteration_request_id"
+  send_request modern "$BASE_URL_MODERN" "$iteration_request_id"
+}
+
+if [[ "$LOOP_COUNT" -le 1 ]]; then
+  run_iteration "$REQUEST_ID"
+else
+  printf '[LOOP] %s %s を %d 回実行します（sleep=%ss）\n' "$METHOD" "$REQUEST_PATH" "$LOOP_COUNT" "$LOOP_SLEEP"
+  for ((i = 1; i <= LOOP_COUNT; i++)); do
+    printf '[LOOP] %d/%d\n' "$i" "$LOOP_COUNT"
+    run_iteration "$(printf '%s_loop%03d' "$REQUEST_ID" "$i")"
+    if [[ "$i" -lt "$LOOP_COUNT" ]]; then
+      sleep "$LOOP_SLEEP"
+    fi
+  done
+fi

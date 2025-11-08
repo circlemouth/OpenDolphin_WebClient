@@ -154,6 +154,34 @@ class LogFilterTest {
         field.set(filter, value);
     }
 
+    @Test
+    void headerFallbackDisabledRejectsRequestsWithoutPrincipal() throws Exception {
+        setField("headerAuthEnabled", false);
+        when(userService.authenticate(anyString(), anyString())).thenReturn(true);
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+
+        Map<String, Object> attributes = new HashMap<>();
+        doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0, String.class), invocation.getArgument(1));
+            return null;
+        }).when(request).setAttribute(anyString(), any());
+        when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0, String.class)));
+        when(request.getRequestURI()).thenReturn("/openDolphin/resources/protected");
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRemoteAddr()).thenReturn("192.0.2.30");
+
+        doNothing().when(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+
+        filter.doFilter(request, response, chain);
+
+        verify(userService, never()).authenticate(anyString(), anyString());
+        verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+        verify(chain, never()).doFilter(any(ServletRequest.class), any(ServletResponse.class));
+    }
+
     private static final class TestLogHandler extends Handler {
 
         private final List<LogRecord> records = new CopyOnWriteArrayList<>();
