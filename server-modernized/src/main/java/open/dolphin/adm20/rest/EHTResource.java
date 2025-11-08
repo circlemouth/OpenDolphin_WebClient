@@ -111,6 +111,13 @@ import open.dolphin.session.KarteServiceBean;
  */
 @Path("/20/adm/eht")
 public class EHTResource extends open.dolphin.rest.AbstractResource {
+
+    private static final Logger LOGGER = Logger.getLogger(EHTResource.class.getName());
+    private static final int FACILITY_ID_LENGTH = 10;
+    private static final int JMARI_ID_LENGTH = 15;
+    private static final String JMARI_PREFIX = "JPN";
+    private static final int SUCCESS_RESPONSE = 0x00;
+    private static final int FALLBACK_RESPONSE = 0x01;
     
     private static final String QUERY_FACILITYID_BY_1001
             ="select kanritbl from tbl_syskanri where kanricd='1001'";
@@ -1033,34 +1040,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
 
-                DocumentModel document = pkg.documentModel();
-                ChartEventModel chartEvent = pkg.chartEventModel();
-
-                if (document != null) {
-                    karteService.sendDocument(document);
-                }
-                if (chartEvent != null) {
-                    eventServiceBean.processChartEvent(chartEvent);
-                }
-
-                os.write(0);
-
-                Map<String, Object> details = new HashMap<>();
-                if (document != null) {
-                    if (document.getDocInfoModel() != null) {
-                        details.put("documentId", document.getDocInfoModel().getDocId());
-                    } else {
-                        details.put("documentPk", document.getId());
-                    }
-                    if (document.getKarteBean() != null) {
-                        details.put("karteId", document.getKarteBean().getId());
-                    }
-                }
-                if (chartEvent != null) {
-                    details.put("chartEventType", chartEvent.getEventType());
-                    details.put("chartEventFacility", chartEvent.getFacilityId());
-                }
-                recordAuditEvent("EHT_CLAIM_SEND", "/20/adm/eht/sendClaim", resolvePatientFromDocumentOrEvent(document, chartEvent), details);
+                handleClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "EHT_CLAIM_SEND", "/20/adm/eht/sendClaim");
             }
         };
     }
@@ -1078,36 +1058,61 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
                 ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
 
-                DocumentModel document = pkg.documentModel();
-                ChartEventModel chartEvent = pkg.chartEventModel();
-
-                if (document != null) {
-                    karteService.sendDocument(document);
-                }
-                if (chartEvent != null) {
-                    eventServiceBean.processChartEvent(chartEvent);
-                }
-
-                os.write(0);
-
-                Map<String, Object> details = new HashMap<>();
-                if (document != null) {
-                    if (document.getDocInfoModel() != null) {
-                        details.put("documentId", document.getDocInfoModel().getDocId());
-                    } else {
-                        details.put("documentPk", document.getId());
-                    }
-                    if (document.getKarteBean() != null) {
-                        details.put("karteId", document.getKarteBean().getId());
-                    }
-                }
-                if (chartEvent != null) {
-                    details.put("chartEventType", chartEvent.getEventType());
-                    details.put("chartEventFacility", chartEvent.getFacilityId());
-                }
-                recordAuditEvent("EHT_CLAIM_SEND2", "/20/adm/eht/sendClaim2", resolvePatientFromDocumentOrEvent(document, chartEvent), details);
+                handleClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "EHT_CLAIM_SEND2", "/20/adm/eht/sendClaim2");
             }
         };
+    }
+
+    private void handleClaimSend(DocumentModel document, ChartEventModel chartEvent, OutputStream os,
+            String auditAction, String endpoint) throws IOException {
+        boolean fallback = false;
+        Exception fallbackCause = null;
+        try {
+            if (document != null) {
+                karteService.sendDocument(document);
+            }
+            if (chartEvent != null) {
+                eventServiceBean.processChartEvent(chartEvent);
+            }
+        } catch (StringIndexOutOfBoundsException ex) {
+            fallback = true;
+            fallbackCause = ex;
+            logClaimFallback(endpoint, ex);
+        }
+        os.write(fallback ? FALLBACK_RESPONSE : SUCCESS_RESPONSE);
+        Map<String, Object> details = buildClaimAuditDetails(document, chartEvent);
+        if (fallback) {
+            details.put("fallbackReason", fallbackCause != null ? fallbackCause.getClass().getSimpleName() : "StringIndexOutOfBoundsException");
+            details.put("fallbackMessage", fallbackCause != null ? fallbackCause.getMessage() : "StringIndexOutOfBoundsException");
+            details.put("fallbackTraceId", Optional.ofNullable(currentTraceId()).orElse("unknown"));
+        }
+        recordAuditEvent(auditAction, endpoint, resolvePatientFromDocumentOrEvent(document, chartEvent), details);
+    }
+
+    private Map<String, Object> buildClaimAuditDetails(DocumentModel document, ChartEventModel chartEvent) {
+        Map<String, Object> details = new HashMap<>();
+        if (document != null) {
+            if (document.getDocInfoModel() != null) {
+                details.put("documentId", document.getDocInfoModel().getDocId());
+            } else {
+                details.put("documentPk", document.getId());
+            }
+            if (document.getKarteBean() != null) {
+                details.put("karteId", document.getKarteBean().getId());
+            }
+        }
+        if (chartEvent != null) {
+            details.put("chartEventType", chartEvent.getEventType());
+            details.put("chartEventFacility", chartEvent.getFacilityId());
+        }
+        return details;
+    }
+
+    private void logClaimFallback(String endpoint, Exception ex) {
+        String traceId = Optional.ofNullable(currentTraceId()).orElse("unknown");
+        String message = String.format("Fallback response issued by %s due to %s [traceId=%s]",
+                endpoint, ex.getClass().getSimpleName(), traceId);
+        LOGGER.log(Level.WARNING, message, ex);
     }
 
     @DELETE
@@ -1393,11 +1398,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 return ret.toString();
             }
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(EHTResource.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, "custom.properties not found while resolving facility identifiers", ex);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(EHTResource.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, "Unsupported encoding when reading custom.properties", ex);
         } catch (IOException ex) {
-            Logger.getLogger(EHTResource.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, "Failed to read custom.properties", ex);
         }
 //s.oh$
         // SQL 文
@@ -1411,24 +1416,13 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         StringBuilder ret = new StringBuilder();
 
         try {
-            //con = ds.getConnection();
             con = getConnection();
             ps = con.prepareStatement(sql);
 
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-
-                String line = rs.getString(1);
-                
-                // 保険医療機関コード 10桁
-                ret.append(line.substring(0, 10));
-                
-                // JMARIコード JPN+12桁 (total 15)
-                int index = line.indexOf("JPN");
-                if (index>0) {
-                    ret.append(line.substring(index, index+15));
-                }
+                appendFacilityIdentifiers(ret, rs.getString(1), "adm20");
             }
             rs.close();
             ps.close();
@@ -1436,8 +1430,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             con = null;
 
         } catch (SQLException e) {
-            e.printStackTrace(System.err);
-
+            LOGGER.log(Level.SEVERE, "Failed to load facility/JMARI identifiers from tbl_syskanri", e);
         } finally {
             if (con != null) {
                 try {
@@ -1660,6 +1653,45 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             ex.printStackTrace(System.err);
         }
         return config.getProperty(item, "");
+    }
+
+    private String currentTraceId() {
+        if (sessionTraceManager == null) {
+            return null;
+        }
+        SessionTraceContext context = sessionTraceManager.current();
+        return context != null ? context.getTraceId() : null;
+    }
+
+    private void appendFacilityIdentifiers(StringBuilder target, String rawValue, String context) {
+        if (rawValue == null || rawValue.isEmpty()) {
+            LOGGER.log(Level.WARNING, () -> String.format("%s: tbl_syskanri.kanritbl is empty for kanricd=1001", context));
+            return;
+        }
+        appendSubstringSafely(target, rawValue, 0, FACILITY_ID_LENGTH, "facilityId", context);
+        int index = rawValue.indexOf(JMARI_PREFIX);
+        if (index >= 0) {
+            appendSubstringSafely(target, rawValue, index, JMARI_ID_LENGTH, "jmariCode", context);
+        } else {
+            LOGGER.log(Level.WARNING, () -> String.format("%s: JMARI prefix '%s' not found in value '%s'", context, JMARI_PREFIX, rawValue));
+        }
+    }
+
+    private void appendSubstringSafely(StringBuilder target, String value, int beginIndex, int expectedLength,
+            String fieldName, String context) {
+        if (value.length() <= beginIndex) {
+            LOGGER.log(Level.WARNING, () -> String.format(
+                    "%s: insufficient length for %s (beginIndex=%d, valueLength=%d, raw=%s)",
+                    context, fieldName, beginIndex, value.length(), value));
+            return;
+        }
+        int endExclusive = Math.min(value.length(), beginIndex + expectedLength);
+        if (value.length() < beginIndex + expectedLength) {
+            LOGGER.log(Level.WARNING, () -> String.format(
+                    "%s: truncated %s (expectedLength=%d, available=%d, raw=%s)",
+                    context, fieldName, expectedLength, value.length() - beginIndex, value));
+        }
+        target.append(value, beginIndex, endExclusive);
     }
 
     private String resolvePatientFromDocumentOrEvent(DocumentModel document, ChartEventModel chartEvent) {

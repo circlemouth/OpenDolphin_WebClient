@@ -1,0 +1,809 @@
+=========================================================================
+
+  JBoss Bootstrap Environment
+
+  JBOSS_HOME: /opt/jboss/wildfly
+
+  JAVA: /opt/java/openjdk/bin/java
+
+  JAVA_OPTS:  -Djdk.serialFilter="maxbytes=10485760;maxdepth=128;maxarray=100000;maxrefs=300000" -Xms64m -Xmx512m -XX:MetaspaceSize=96M -XX:MaxMetaspaceSize=256m -Djava.net.preferIPv4Stack=true -Djboss.modules.system.pkgs=org.jboss.byteman -Djava.awt.headless=true  --add-exports=java.desktop/sun.awt=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.ldap=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.url.ldap=ALL-UNNAMED --add-exports=java.naming/com.sun.jndi.url.ldaps=ALL-UNNAMED --add-exports=jdk.naming.dns/com.sun.jndi.dns=ALL-UNNAMED --add-opens=java.base/java.lang=ALL-UNNAMED --add-opens=java.base/java.lang.invoke=ALL-UNNAMED --add-opens=java.base/java.lang.reflect=ALL-UNNAMED --add-opens=java.base/java.io=ALL-UNNAMED --add-opens=java.base/java.net=ALL-UNNAMED --add-opens=java.base/java.security=ALL-UNNAMED --add-opens=java.base/java.util=ALL-UNNAMED --add-opens=java.base/java.util.concurrent=ALL-UNNAMED --add-opens=java.management/javax.management=ALL-UNNAMED --add-opens=java.naming/javax.naming=ALL-UNNAMED -Djava.security.manager=allow
+
+=========================================================================
+
+[0m06:22:03,504 INFO  [org.jboss.modules] (main) JBoss Modules version 2.1.5.Final
+[0m[0m06:22:03,745 INFO  [org.jboss.msc] (main) JBoss MSC version 1.5.5.Final
+[0m[0m06:22:03,749 INFO  [org.jboss.threads] (main) JBoss Threads version 2.4.0.Final
+[0m[0m06:22:03,797 INFO  [org.jboss.as] (MSC service thread 1-1) WFLYSRV0049: WildFly 33.0.2.Final (WildFly Core 25.0.2.Final) starting
+[0m[0m06:22:03,820 INFO  [org.jboss.vfs] (MSC service thread 1-4) VFS000002: Failed to clean existing content for temp file provider of type temp. Enable DEBUG level log to find what caused this
+[0m[0m06:22:04,280 INFO  [org.wildfly.security] (Controller Boot Thread) ELY00001: WildFly Elytron version 2.5.2.Final
+[0m[0m06:22:04,573 INFO  [org.jboss.as.controller.management-deprecated] (ServerService Thread Pool -- 17) WFLYCTL0028: Attribute 'use-transaction-setup-provider' in the resource at address '/subsystem=ee/context-service=DolphinContext' is deprecated, and may be removed in a future version. See the attribute description in the output of the read-resource-description operation to learn more about the deprecation.
+[0m[0m06:22:04,735 INFO  [org.jboss.as.repository] (ServerService Thread Pool -- 2) WFLYDR0001: Content added at location /opt/jboss/wildfly/standalone/data/content/b7/5215e5fa0325b5dda35a01cbae069dfb290ea7/content
+[0m[0m06:22:04,755 INFO  [org.jboss.as.server] (Controller Boot Thread) WFLYSRV0039: Creating http management service using socket-binding (management-http)
+[0m[0m06:22:04,762 INFO  [org.xnio] (MSC service thread 1-3) XNIO version 3.8.16.Final
+[0m[0m06:22:04,764 INFO  [org.xnio.nio] (MSC service thread 1-3) XNIO NIO Implementation Version 3.8.16.Final
+[0m[0m06:22:04,782 INFO  [org.wildfly.extension.elytron.oidc._private] (ServerService Thread Pool -- 56) WFLYOIDC0001: Activating WildFly Elytron OIDC Subsystem
+[0m[0m06:22:04,785 INFO  [org.wildfly.extension.health] (ServerService Thread Pool -- 57) WFLYHEALTH0001: Activating Base Health Subsystem
+[0m[0m06:22:04,787 INFO  [org.wildfly.extension.microprofile.jwt.smallrye] (ServerService Thread Pool -- 72) WFLYJWT0001: Activating MicroProfile JWT Subsystem
+[0m[0m06:22:04,788 INFO  [org.jboss.as.clustering.infinispan] (ServerService Thread Pool -- 59) WFLYCLINF0001: Activating Infinispan subsystem.
+[0m[33m06:22:04,791 WARN  [org.jboss.as.txn] (ServerService Thread Pool -- 80) WFLYTX0013: The node-identifier attribute on the /subsystem=transactions is set to the default value. This is a danger for environments running multiple servers. Please make sure the attribute value is unique.
+[0m[0m06:22:04,795 INFO  [org.wildfly.extension.microprofile.config.smallrye] (ServerService Thread Pool -- 71) WFLYCONF0001: Activating MicroProfile Config Subsystem
+[0m[0m06:22:04,796 INFO  [org.jboss.as.naming] (ServerService Thread Pool -- 73) WFLYNAM0001: Activating Naming Subsystem
+[0m[0m06:22:04,799 INFO  [org.jboss.as.jaxrs] (ServerService Thread Pool -- 61) WFLYRS0016: RESTEasy version 6.2.10.Final
+[0m[0m06:22:04,804 INFO  [org.jboss.as.jsf] (ServerService Thread Pool -- 66) WFLYJSF0007: Activated the following Jakarta Server Faces Implementations: [main]
+[0m[0m06:22:04,812 INFO  [org.wildfly.iiop.openjdk] (ServerService Thread Pool -- 58) WFLYIIOP0001: Activating IIOP Subsystem
+[0m[0m06:22:04,813 INFO  [org.wildfly.extension.io] (ServerService Thread Pool -- 60) WFLYIO001: Worker 'default' has auto-configured to 16 IO threads with 128 max task threads based on your 8 available processors
+[0m[0m06:22:04,814 INFO  [org.wildfly.extension.metrics] (ServerService Thread Pool -- 69) WFLYMETRICS0001: Activating Base Metrics Subsystem
+[0m[0m06:22:04,813 INFO  [org.jboss.as.webservices] (ServerService Thread Pool -- 82) WFLYWS0002: Activating WebServices Extension
+[0m[0m06:22:04,826 INFO  [org.jboss.remoting] (MSC service thread 1-6) JBoss Remoting version 5.0.29.Final
+[0m[0m06:22:04,833 INFO  [org.jboss.as.server.deployment] (MSC service thread 1-8) WFLYSRV0027: Starting deployment of "opendolphin-server.war" (runtime-name: "opendolphin-server.war")
+[0m[0m06:22:04,838 INFO  [org.jboss.as.connector] (MSC service thread 1-7) WFLYJCA0009: Starting Jakarta Connectors Subsystem (WildFly/IronJacamar 3.0.9.Final)
+[0m[0m06:22:04,842 INFO  [org.jboss.as.connector.subsystems.datasources] (ServerService Thread Pool -- 47) WFLYJCA0004: Deploying JDBC-compliant driver class org.h2.Driver (version 2.2)
+[0m[0m06:22:04,847 INFO  [org.jboss.as.naming] (MSC service thread 1-8) WFLYNAM0003: Starting Naming Service
+[0m[0m06:22:04,850 INFO  [org.jboss.as.connector.deployers.jdbc] (MSC service thread 1-1) WFLYJCA0018: Started Driver service with driver-name = h2
+[0m[0m06:22:04,860 INFO  [org.jboss.as.mail.extension] (MSC service thread 1-6) WFLYMAIL0001: Bound mail session [java:jboss/mail/Default]
+[0m[0m06:22:04,863 INFO  [org.jboss.as.connector.subsystems.datasources] (ServerService Thread Pool -- 47) WFLYJCA0005: Deploying non-JDBC-compliant driver class org.postgresql.Driver (version 42.7)
+[0m[0m06:22:04,869 INFO  [org.jboss.as.connector.deployers.jdbc] (MSC service thread 1-5) WFLYJCA0018: Started Driver service with driver-name = postgresql
+[0m[0m06:22:04,871 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-4) WFLYUT0003: Undertow 2.3.17.Final starting
+[0m[33m06:22:04,888 WARN  [org.wildfly.extension.elytron] (MSC service thread 1-6) WFLYELY00023: KeyStore file '/opt/jboss/wildfly/standalone/configuration/application.keystore' does not exist. Used blank.
+[0m[0m06:22:04,931 INFO  [org.jboss.as.ejb3] (MSC service thread 1-8) WFLYEJB0481: Strict pool slsb-strict-max-pool is using a max instance size of 128 (per class), which is derived from thread worker pool sizing.
+[0m[0m06:22:04,931 INFO  [org.jboss.as.ejb3] (MSC service thread 1-5) WFLYEJB0482: Strict pool mdb-strict-max-pool is using a max instance size of 32 (per class), which is derived from the number of CPUs on this host.
+[0m[33m06:22:04,934 WARN  [org.wildfly.extension.elytron] (MSC service thread 1-5) WFLYELY01084: KeyStore /opt/jboss/wildfly/standalone/configuration/application.keystore not found, it will be auto-generated on first use with a self-signed certificate for host localhost
+[0m[0m06:22:04,950 INFO  [org.wildfly.extension.undertow] (ServerService Thread Pool -- 81) WFLYUT0014: Creating file handler for path '/opt/jboss/wildfly/welcome-content' with options [directory-listing: 'false', follow-symlink: 'false', case-sensitive: 'true', safe-symlink-paths: '[]']
+[0m[0m06:22:04,955 INFO  [io.micrometer.core.instrument.push.PushMeterRegistry] (ServerService Thread Pool -- 70) publishing metrics for WildFlyOtlpRegistry every 1m
+[0m[0m06:22:04,959 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-1) WFLYUT0012: Started server default-server.
+[0m[0m06:22:04,960 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-3) Queuing requests.
+[0m[0m06:22:04,963 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-3) WFLYUT0018: Host default-host starting
+[0m[0m06:22:05,017 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-1) WFLYUT0006: Undertow HTTP listener default listening on 0.0.0.0:8080
+[0m[0m06:22:05,106 INFO  [org.jboss.as.ejb3] (MSC service thread 1-7) WFLYEJB0493: Jakarta Enterprise Beans subsystem suspension complete
+[0m[0m06:22:05,118 INFO  [org.wildfly.extension.undertow] (MSC service thread 1-1) WFLYUT0006: Undertow HTTPS listener https listening on 0.0.0.0:8443
+[0m[0m06:22:05,145 INFO  [org.wildfly.iiop.openjdk] (MSC service thread 1-2) WFLYIIOP0009: CORBA ORB Service started
+[0m[0m06:22:05,158 INFO  [org.jboss.as.server.deployment.scanner] (MSC service thread 1-5) WFLYDS0013: Started FileSystemDeploymentService for directory /opt/jboss/wildfly/standalone/deployments
+[0m[0m06:22:05,159 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-4) WFLYJCA0001: Bound data source [java:jboss/datasources/ORCADS]
+[0m[0m06:22:05,160 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-8) WFLYJCA0001: Bound data source [java:jboss/datasources/ExampleDS]
+[0m[0m06:22:05,161 INFO  [org.jboss.as.connector.subsystems.datasources] (MSC service thread 1-8) WFLYJCA0001: Bound data source [java:jboss/datasources/PostgresDS]
+[0m[0m06:22:05,169 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-7) WFLYMSGAMQ0075: AIO wasn't located on this platform, it will fall back to using pure Java NIO. Your platform is Linux, install LibAIO to enable the AIO journal and achieve optimal performance.
+[0m[0m06:22:05,198 INFO  [org.jboss.ws.common.management] (MSC service thread 1-1) JBWS022052: Starting JBossWS 7.1.0.Final (Apache CXF 4.0.5) 
+[0m[0m06:22:05,254 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221000: Primary message broker is starting with configuration Broker Configuration (clustered=false,journalDirectory=/opt/jboss/wildfly/standalone/data/activemq/journal,bindingsDirectory=/opt/jboss/wildfly/standalone/data/activemq/bindings,largeMessagesDirectory=/opt/jboss/wildfly/standalone/data/activemq/largemessages,pagingDirectory=/opt/jboss/wildfly/standalone/data/activemq/paging)
+[0m[0m06:22:05,273 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221013: Using NIO Journal
+[0m[0m06:22:05,326 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-server]. Adding protocol support for: CORE
+[0m[0m06:22:05,327 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-amqp-protocol]. Adding protocol support for: AMQP
+[0m[0m06:22:05,327 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-hornetq-protocol]. Adding protocol support for: HORNETQ
+[0m[0m06:22:05,327 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221043: Protocol module found: [artemis-stomp-protocol]. Adding protocol support for: STOMP
+[0m[0m06:22:05,368 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221034: Waiting indefinitely to obtain primary lock
+[0m[0m06:22:05,369 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221035: Primary Server Obtained primary lock
+[0m[0m06:22:05,475 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221003: Deploying ANYCAST queue jms.queue.ExpiryQueue on address jms.queue.ExpiryQueue
+[0m[0m06:22:05,528 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221003: Deploying ANYCAST queue jms.queue.DLQ on address jms.queue.DLQ
+[0m[0m06:22:05,528 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221003: Deploying ANYCAST queue jms.queue.dolphinQueue on address jms.queue.dolphinQueue
+[0m[0m06:22:05,532 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-1) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor-throughput acceptor
+[0m[0m06:22:05,532 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-6) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor acceptor
+[0m[0m06:22:05,532 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-7) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor-throughput acceptor
+[0m[0m06:22:05,532 INFO  [org.wildfly.extension.messaging-activemq] (MSC service thread 1-1) WFLYMSGAMQ0016: Registered HTTP upgrade for activemq-remoting protocol handled by http-acceptor acceptor
+[0m[0m06:22:05,679 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221007: Server is now active
+[0m[0m06:22:05,679 INFO  [org.apache.activemq.artemis.core.server] (ServerService Thread Pool -- 84) AMQ221001: Apache ActiveMQ Artemis Message Broker version 2.35.0 [default, nodeID=f97a6dda-bce8-11f0-86ea-ca1f94c55e5d] 
+[0m[33m06:22:05,682 WARN  [org.apache.activemq.artemis.jms.server] (ServerService Thread Pool -- 84) AMQ122005: Invalid "host" value "0.0.0.0" detected for "http-connector" connector. Switching to "c0a257ca82b3". If this new address is incorrect please manually configure the connector to use the proper one.
+[0m[0m06:22:05,692 INFO  [org.wildfly.extension.messaging-activemq] (ServerService Thread Pool -- 84) WFLYMSGAMQ0002: Bound messaging object to jndi name java:jboss/exported/jms/RemoteConnectionFactory
+[0m[0m06:22:05,710 INFO  [org.wildfly.extension.messaging-activemq] (ServerService Thread Pool -- 85) WFLYMSGAMQ0002: Bound messaging object to jndi name java:/ConnectionFactory
+[0m[0m06:22:05,710 INFO  [org.wildfly.extension.messaging-activemq] (ServerService Thread Pool -- 85) WFLYMSGAMQ0002: Bound messaging object to jndi name java:jboss/exported/jms/ConnectionFactory
+[0m[0m06:22:05,739 INFO  [org.jboss.as.connector.deployment] (MSC service thread 1-8) WFLYJCA0007: Registered connection factory java:/JmsXA
+[0m[0m06:22:05,780 INFO  [org.apache.activemq.artemis.ra.ActiveMQRALogger] (MSC service thread 1-8) AMQ151007: Resource adaptor started
+[0m[0m06:22:05,780 INFO  [org.jboss.as.connector.services.resourceadapters.ResourceAdapterActivatorService$ResourceAdapterActivator] (MSC service thread 1-8) IJ020002: Deployed: file://RaActivatoractivemq-ra
+[0m[0m06:22:05,783 INFO  [org.jboss.as.connector.deployment] (MSC service thread 1-6) WFLYJCA0118: Binding connection factory named java:/JmsXA to alias java:jboss/DefaultJMSConnectionFactory
+[0m[0m06:22:05,783 INFO  [org.jboss.as.connector.deployment] (MSC service thread 1-1) WFLYJCA0002: Bound Jakarta Connectors ConnectionFactory [java:/JmsXA]
+[0m[0m06:22:07,682 INFO  [org.jboss.as.jpa] (MSC service thread 1-1) WFLYJPA0002: Read persistence.xml for opendolphinPU
+[0m[0m06:22:07,835 INFO  [org.jipijapa] (MSC service thread 1-5) JIPIORMV6020260: Second level cache enabled for opendolphin-server.war#opendolphinPU
+[0m[0m06:22:07,941 INFO  [org.jboss.weld.deployer] (MSC service thread 1-8) WFLYWELD0003: Processing weld deployment opendolphin-server.war
+[0m[0m06:22:07,992 INFO  [org.hibernate.validator.internal.util.Version] (MSC service thread 1-8) HV000001: Hibernate Validator 8.0.1.Final
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'PvtService' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/PvtService!java.lang.Runnable
+	java:app/opendolphin-server/PvtService!java.lang.Runnable
+	java:module/PvtService!java.lang.Runnable
+	java:global/opendolphin-server/PvtService
+	java:app/opendolphin-server/PvtService
+	java:module/PvtService
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'IPhoneServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/IPhoneServiceBean!open.dolphin.touch.session.IPhoneServiceBean
+	java:app/opendolphin-server/IPhoneServiceBean!open.dolphin.touch.session.IPhoneServiceBean
+	java:module/IPhoneServiceBean!open.dolphin.touch.session.IPhoneServiceBean
+	java:global/opendolphin-server/IPhoneServiceBean
+	java:app/opendolphin-server/IPhoneServiceBean
+	java:module/IPhoneServiceBean
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'ADM20_AdmissionServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/ADM20_AdmissionServiceBean!open.dolphin.adm20.session.ADM20_AdmissionServiceBean
+	java:app/opendolphin-server/ADM20_AdmissionServiceBean!open.dolphin.adm20.session.ADM20_AdmissionServiceBean
+	java:module/ADM20_AdmissionServiceBean!open.dolphin.adm20.session.ADM20_AdmissionServiceBean
+	java:global/opendolphin-server/ADM20_AdmissionServiceBean
+	java:app/opendolphin-server/ADM20_AdmissionServiceBean
+	java:module/ADM20_AdmissionServiceBean
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'EHTServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/EHTServiceBean!open.dolphin.touch.session.EHTServiceBean
+	java:app/opendolphin-server/EHTServiceBean!open.dolphin.touch.session.EHTServiceBean
+	java:module/EHTServiceBean!open.dolphin.touch.session.EHTServiceBean
+	java:global/opendolphin-server/EHTServiceBean
+	java:app/opendolphin-server/EHTServiceBean
+	java:module/EHTServiceBean
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'PHRAsyncJobServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/PHRAsyncJobServiceBean!open.dolphin.adm20.session.PHRAsyncJobServiceBean
+	java:app/opendolphin-server/PHRAsyncJobServiceBean!open.dolphin.adm20.session.PHRAsyncJobServiceBean
+	java:module/PHRAsyncJobServiceBean!open.dolphin.adm20.session.PHRAsyncJobServiceBean
+	java:global/opendolphin-server/PHRAsyncJobServiceBean
+	java:app/opendolphin-server/PHRAsyncJobServiceBean
+	java:module/PHRAsyncJobServiceBean
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'OrcaResource' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/OrcaResource!open.orca.rest.OrcaResource
+	java:app/opendolphin-server/OrcaResource!open.orca.rest.OrcaResource
+	java:module/OrcaResource!open.orca.rest.OrcaResource
+	java:global/opendolphin-server/OrcaResource
+	java:app/opendolphin-server/OrcaResource
+	java:module/OrcaResource
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'AuditTrailService' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/AuditTrailService!open.dolphin.security.audit.AuditTrailService
+	java:app/opendolphin-server/AuditTrailService!open.dolphin.security.audit.AuditTrailService
+	java:module/AuditTrailService!open.dolphin.security.audit.AuditTrailService
+	java:global/opendolphin-server/AuditTrailService
+	java:app/opendolphin-server/AuditTrailService
+	java:module/AuditTrailService
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'IdentityService' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/IdentityService!open.dolphin.adm20.mbean.IdentityService
+	java:app/opendolphin-server/IdentityService!open.dolphin.adm20.mbean.IdentityService
+	java:module/IdentityService!open.dolphin.adm20.mbean.IdentityService
+	java:global/opendolphin-server/IdentityService
+	java:app/opendolphin-server/IdentityService
+	java:module/IdentityService
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'InitialAccountMaker' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/InitialAccountMaker!open.dolphin.mbean.InitialAccountMaker
+	java:app/opendolphin-server/InitialAccountMaker!open.dolphin.mbean.InitialAccountMaker
+	java:module/InitialAccountMaker!open.dolphin.mbean.InitialAccountMaker
+	java:global/opendolphin-server/InitialAccountMaker
+	java:app/opendolphin-server/InitialAccountMaker
+	java:module/InitialAccountMaker
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'ADM10_EHTServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/ADM10_EHTServiceBean!open.dolphin.adm10.session.ADM10_EHTServiceBean
+	java:app/opendolphin-server/ADM10_EHTServiceBean!open.dolphin.adm10.session.ADM10_EHTServiceBean
+	java:module/ADM10_EHTServiceBean!open.dolphin.adm10.session.ADM10_EHTServiceBean
+	java:global/opendolphin-server/ADM10_EHTServiceBean
+	java:app/opendolphin-server/ADM10_EHTServiceBean
+	java:module/ADM10_EHTServiceBean
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'AMD20_PHRServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/AMD20_PHRServiceBean!open.dolphin.adm20.session.AMD20_PHRServiceBean
+	java:app/opendolphin-server/AMD20_PHRServiceBean!open.dolphin.adm20.session.AMD20_PHRServiceBean
+	java:module/AMD20_PHRServiceBean!open.dolphin.adm20.session.AMD20_PHRServiceBean
+	java:global/opendolphin-server/AMD20_PHRServiceBean
+	java:app/opendolphin-server/AMD20_PHRServiceBean
+	java:module/AMD20_PHRServiceBean
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'ADM20_IPhoneServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/ADM20_IPhoneServiceBean!open.dolphin.adm20.session.ADM20_IPhoneServiceBean
+	java:app/opendolphin-server/ADM20_IPhoneServiceBean!open.dolphin.adm20.session.ADM20_IPhoneServiceBean
+	java:module/ADM20_IPhoneServiceBean!open.dolphin.adm20.session.ADM20_IPhoneServiceBean
+	java:global/opendolphin-server/ADM20_IPhoneServiceBean
+	java:app/opendolphin-server/ADM20_IPhoneServiceBean
+	java:module/ADM20_IPhoneServiceBean
+
+[0m[0m06:22:08,066 INFO  [org.jboss.as.ejb3.deployment] (MSC service thread 1-8) WFLYEJB0473: JNDI bindings for session bean named 'ADM10_IPhoneServiceBean' in deployment unit 'deployment "opendolphin-server.war"' are as follows:
+
+	java:global/opendolphin-server/ADM10_IPhoneServiceBean!open.dolphin.adm10.session.ADM10_IPhoneServiceBean
+	java:app/opendolphin-server/ADM10_IPhoneServiceBean!open.dolphin.adm10.session.ADM10_IPhoneServiceBean
+	java:module/ADM10_IPhoneServiceBean!open.dolphin.adm10.session.ADM10_IPhoneServiceBean
+	java:global/opendolphin-server/ADM10_IPhoneServiceBean
+	java:app/opendolphin-server/ADM10_IPhoneServiceBean
+	java:module/ADM10_IPhoneServiceBean
+
+[0m[0m06:22:08,115 INFO  [org.infinispan.CONTAINER] (ServerService Thread Pool -- 85) ISPN000556: Starting user marshaller 'org.wildfly.clustering.infinispan.marshalling.jboss.JBossMarshaller'
+[0m[0m06:22:08,286 INFO  [org.jipijapa] (MSC service thread 1-6) JIPIORMV6020260: Second level cache enabled for opendolphin-server.war#opendolphinPU
+[0m[33m06:22:08,314 WARN  [org.jboss.as.jaxrs] (MSC service thread 1-6) WFLYRS0018: Explicit usage of Jackson annotation in a Jakarta RESTful Web Services deployment; the system will disable Jakarta JSON Binding processing for the current deployment. Consider setting the 'resteasy.preferJacksonOverJsonB' property to 'false' to restore Jakarta JSON Binding.
+[0m[0m06:22:08,316 INFO  [org.jboss.as.connector.deployers.jdbc] (MSC service thread 1-6) WFLYJCA0005: Deploying non-JDBC-compliant driver class org.postgresql.Driver (version 42.7)
+[0m[0m06:22:08,335 INFO  [org.jboss.weld.Version] (MSC service thread 1-6) WELD-000900: 5.1.2 (Final)
+[0m[0m06:22:08,356 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 85) WFLYJPA0010: Starting Persistence Unit (phase 1 of 2) Service 'opendolphin-server.war#opendolphinPU'
+[0m[0m06:22:08,366 INFO  [org.hibernate.jpa.internal.util.LogHelper] (ServerService Thread Pool -- 85) HHH000204: Processing PersistenceUnitInfo [name: opendolphinPU]
+[0m[0m06:22:08,377 INFO  [org.jboss.as.connector.deployers.jdbc] (MSC service thread 1-4) WFLYJCA0018: Started Driver service with driver-name = opendolphin-server.war_org.postgresql.Driver_42_7
+[0m[0m06:22:08,398 INFO  [org.jboss.as.ejb3] (MSC service thread 1-2) WFLYEJB0042: Started message driven bean 'MessageSender' with 'activemq-ra.rar' resource adapter
+[0m[0m06:22:08,416 INFO  [org.hibernate.Version] (ServerService Thread Pool -- 85) HHH000412: Hibernate ORM core version 6.4.4.Final
+[0m[33m06:22:08,451 WARN  [org.hibernate.orm.deprecation] (ServerService Thread Pool -- 85) HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
+[0m[0m06:22:08,459 INFO  [org.hibernate.cache.internal.RegionFactoryInitiator] (ServerService Thread Pool -- 85) HHH000025: Second-level cache region factory [org.infinispan.hibernate.cache.v62.InfinispanRegionFactory]
+[0m[0m06:22:08,488 INFO  [org.hibernate.envers.boot.internal.EnversServiceImpl] (ServerService Thread Pool -- 85) Envers integration enabled? : true
+[0m[0m06:22:08,590 INFO  [org.jboss.as.jpa] (ServerService Thread Pool -- 85) WFLYJPA0010: Starting Persistence Unit (phase 2 of 2) Service 'opendolphin-server.war#opendolphinPU'
+[0m[0m06:22:09,400 INFO  [org.jboss.weld.Bootstrap] (Weld Thread Pool -- 6) WELD-000119: Not generating any bean definitions from open.dolphin.metrics.DatasourceMetricsRegistrar because of underlying class loading error: Type io.agroal.api.AgroalDataSource from [Module "deployment.opendolphin-server.war" from Service Module Loader] not found.  If this is unexpected, enable DEBUG logging to see the full error.
+[0m[33m06:22:09,455 WARN  [org.jboss.weld.Validator] (MSC service thread 1-1) WELD-001478: Interceptor class open.dolphin.session.framework.SessionOperationInterceptor is enabled for the application and for the bean archive opendolphin-server.war/. It will only be invoked in the @Priority part of the chain.
+[0m[0m06:22:09,922 INFO  [open.dolphin] (ServerService Thread Pool -- 86) pvt_idx3 exists
+[0m[0m06:22:09,923 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_karte_idx exists
+[0m[0m06:22:09,923 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_document_idx exists
+[0m[0m06:22:09,924 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_diagnosis_idx exists
+[0m[0m06:22:09,924 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_patient_memo_idx exists
+[0m[0m06:22:09,925 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_letter_module_idx exists
+[0m[0m06:22:09,926 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_observation_idx exists
+[0m[0m06:22:09,926 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_module_idx exists
+[0m[0m06:22:09,927 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_image_idx exists
+[0m[0m06:22:09,927 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_attachment_idx exists
+[0m[0m06:22:09,927 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_nlabo_module_idx exists
+[0m[0m06:22:09,928 INFO  [open.dolphin] (ServerService Thread Pool -- 86) d_nlabo_item_idx exists
+[0m[0m06:22:09,928 INFO  [open.dolphin] (ServerService Thread Pool -- 86) fid_pid_idx exists
+[0m[0m06:22:09,928 INFO  [open.dolphin] (ServerService Thread Pool -- 86) pvt_idx1 exists
+[0m[0m06:22:09,929 INFO  [open.dolphin] (ServerService Thread Pool -- 86) pub_tree_idx1 exists
+[0m[0m06:22:09,929 INFO  [open.dolphin] (ServerService Thread Pool -- 86) patient_idx1 dose not exists
+[0m[0m06:22:09,952 INFO  [org.wildfly.security.soteria.original.SamRegistrationInstaller] (ServerService Thread Pool -- 86) Initializing Soteria 3.0.3.Final for context '/openDolphin'
+[0m[0m06:22:10,227 INFO  [org.wildfly.extension.undertow] (ServerService Thread Pool -- 86) WFLYUT0021: Registered web context: '/openDolphin' for server 'default-server'
+[0m[0m06:22:10,345 INFO  [org.jboss.as.server] (ServerService Thread Pool -- 48) WFLYSRV0010: Deployed "opendolphin-server.war" (runtime-name : "opendolphin-server.war")
+[0m[0m06:22:10,384 INFO  [org.jboss.as.server] (Controller Boot Thread) WFLYSRV0212: Resuming server
+[0m[0m06:22:10,475 INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0060: Http management interface listening on http://0.0.0.0:9990/management
+[0m[0m06:22:10,476 INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0054: Admin console is not enabled
+[0m[0m06:22:10,486 INFO  [org.jboss.as] (Controller Boot Thread) WFLYSRV0025: WildFly 33.0.2.Final (WildFly Core 25.0.2.Final) started in 7124ms - Started 751 of 961 services (353 services are lazy, passive or on-demand) - Server configuration file in use: standalone-full.xml - Minimum feature stability level: community
+[0m[0m06:22:33,262 INFO  [open.dolphin.rest.LogFilter] (default task-1) LogFilter header fallback is enabled
+[0m[0m06:22:33,263 INFO  [open.dolphin.rest.LogFilter] (default task-1) LogFilter header fallback is enabled
+[0m[0m06:22:33,269 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=fe1de121-b79e-4824-8eaf-aaa2e01b4158
+[0m[0m06:22:33,270 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=f9dac356-b814-4921-8d0d-3410daf451f5
+[0m[33m06:22:33,282 WARN  [open.dolphin.metrics.MeterRegistryProducer] (default task-1) Micrometer registry not found under java:jboss/micrometer/registry; falling back to global registry.
+[0m[0m06:23:03,407 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=fcd9e179-1c64-4105-afc3-cdbac4e73da1
+[0m[0m06:23:03,408 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=c4d84276-6d8d-4b73-93be-fa41b3df9333
+[0m[33m06:23:04,351 WARNING [io.micrometer.registry.otlp.OtlpMeterRegistry] (otlp-metrics-publisher) Failed to publish metrics to OTLP receiver: java.net.UnknownHostException: otel-collector
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:572)
+	at java.base/java.net.Socket.connect(Socket.java:633)
+	at java.base/sun.net.NetworkClient.doConnect(NetworkClient.java:178)
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:533)
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:638)
+	at java.base/sun.net.www.http.HttpClient.<init>(HttpClient.java:281)
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:386)
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:408)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getNewHttpClient(HttpURLConnection.java:1308)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1241)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1127)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:1056)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream0(HttpURLConnection.java:1450)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream(HttpURLConnection.java:1421)
+	at io.micrometer@1.12.4//io.micrometer.core.ipc.http.HttpUrlConnectionSender.send(HttpUrlConnectionSender.java:98)
+	at io.micrometer@1.12.4//io.micrometer.core.ipc.http.HttpSender$Request$Builder.send(HttpSender.java:306)
+	at io.micrometer@1.12.4//io.micrometer.registry.otlp.OtlpMeterRegistry.publish(OtlpMeterRegistry.java:168)
+	at io.micrometer@1.12.4//io.micrometer.core.instrument.push.PushMeterRegistry.publishSafelyOrSkipIfInProgress(PushMeterRegistry.java:64)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java:305)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+[0m[0m06:23:33,504 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=cd6a1eef-0dda-46e0-86ae-7af0ee58545d
+[0m[0m06:23:33,508 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=7972047d-1800-4fd1-b24c-52ff88b1cba2
+[0m[0m06:23:58,469 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous PUT /20/adm/eht/sendClaim traceId=4e51e432-3633-4cef-a243-8890dae3ce99
+[0m[0m06:23:58,471 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous PUT /20/adm/eht/sendClaim traceId=9adebc34-a490-45cd-b130-9de8d7290d18
+[0m[0m06:23:58,675 INFO  [stdout] (default task-1) null
+[0m[0m06:23:58,696 INFO  [open.dolphin.audit.external] (default task-1) event=CLAIM_REQUEST timestamp=2025-11-08T21:23:58.695930708Z traceId=9adebc34-a490-45cd-b130-9de8d7290d18 document.docId=CLAIMTEST20251108ABCDEF0000000001 document.patientId=0000001 orca.host=orca orca.port=8000
+[0m[33m06:23:58,732 WARNING [open.dolphin.msg.gateway.MessagingGateway] (default task-1) Failed to enqueue messaging payload type CLAIM: jakarta.jms.JMSRuntimeException: AMQ139012: The property name 'open.dolphin.traceId' is not a valid java identifier.
+	at org.apache.activemq.artemis.client@2.35.0//org.apache.activemq.artemis.jms.client.ActiveMQMessage.checkProperty(ActiveMQMessage.java:911)
+	at org.apache.activemq.artemis.client@2.35.0//org.apache.activemq.artemis.jms.client.ActiveMQMessage.setStringProperty(ActiveMQMessage.java:669)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway.enqueue(MessagingGateway.java:84)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway.dispatchClaim(MessagingGateway.java:53)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway$Proxy$_$$_WeldClientProxy.dispatchClaim(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean.sendDocument(KarteServiceBean.java:636)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldSubclass.sendDocument$$super(Unknown Source)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.TerminalAroundInvokeInvocationContext.proceedInternal(TerminalAroundInvokeInvocationContext.java:55)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:86)
+	at deployment.opendolphin-server.war//open.dolphin.session.framework.SessionOperationInterceptor.aroundInvoke(SessionOperationInterceptor.java:37)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke(SimpleInterceptorInvocation.java:75)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.NonTerminalAroundInvokeInvocationContext.proceedInternal(NonTerminalAroundInvokeInvocationContext.java:72)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:86)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:181)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:169)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.doIntercept(TransactionalInterceptorRequired.java:37)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.intercept(TransactionalInterceptorBase.java:74)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.intercept(TransactionalInterceptorRequired.java:31)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke(SimpleInterceptorInvocation.java:75)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeAroundInvoke(InterceptorMethodHandler.java:90)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeInterception(InterceptorMethodHandler.java:73)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.invoke(InterceptorMethodHandler.java:56)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:80)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:68)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldSubclass.sendDocument(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldClientProxy.sendDocument(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.adm20.rest.EHTResource$30.write(EHTResource.java:1040)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:37)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:22)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$writeTo$1(ServerWriterInterceptorContext.java:74)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousExecutionContext.executeBlockingIo(SynchronousExecutionContext.java:218)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.writeTo(ServerWriterInterceptorContext.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:224)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.proceed(AbstractWriterInterceptorContext.java:207)
+	at org.jboss.resteasy.resteasy-crypto@6.2.10.Final//org.jboss.resteasy.security.doseta.DigitalSigningInterceptor.aroundWriteTo(DigitalSigningInterceptor.java:108)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:231)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.getStarted(AbstractWriterInterceptorContext.java:161)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$getStarted$0(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.aroundWriteTo(ServerWriterInterceptorContext.java:87)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.getStarted(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.lambda$writeNomapResponse$3(ServerResponseWriter.java:166)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl.filter(ContainerResponseContextImpl.java:365)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.executeFilters(ServerResponseWriter.java:243)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:100)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.writeResponse(SynchronousDispatcher.java:518)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:458)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:240)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:154)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:321)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:157)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:229)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher.service(ServletContainerDispatcher.java:222)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:55)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:51)
+	at jakarta.servlet.api@6.0.0//jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:74)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:129)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler.handleRequest(FilterHandler.java:84)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletChain$1.handleRequest(ServletChain.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.lambda$handleRequest$1(ElytronRunAsHandler.java:68)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.FlexibleIdentityAssociation.runAsFunctionEx(FlexibleIdentityAssociation.java:103)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAsFunctionEx(Scoped.java:161)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAs(Scoped.java:73)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.handleRequest(ElytronRunAsHandler.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.RedirectDirHandler.handleRequest(RedirectDirHandler.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:117)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+	at org.wildfly.security.elytron-web.undertow-server-servlet@4.1.0.Final//org.wildfly.elytron.web.undertow.server.servlet.CleanUpHandler.handleRequest(CleanUpHandler.java:38)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:44)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:51)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.SendErrorPageHandler.handleRequest(SendErrorPageHandler.java:52)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.MetricsHandler.handleRequest(MetricsHandler.java:64)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.MetricsChainHandler.handleRequest(MetricsChainHandler.java:59)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:276)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:132)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:256)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:101)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.Connectors.executeRootHandler(Connectors.java:395)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:859)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
+	at org.jboss.xnio@3.8.16.Final//org.xnio.XnioWorker$WorkerThreadFactory$1$1.run(XnioWorker.java:1282)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+[0m[33m06:23:58,733 WARNING [open.dolphin.msg.gateway.MessagingGateway] (default task-1) Claim JMS enqueue failed. Falling back to synchronous send [traceId=9adebc34-a490-45cd-b130-9de8d7290d18]
+[0m[0m06:23:58,733 INFO  [open.dolphin.msg.gateway.MessagingGateway] (default task-1) Claim fallback send started [traceId=9adebc34-a490-45cd-b130-9de8d7290d18]
+[0m[33m06:23:58,756 WARN  [org.apache.velocity.deprecation] (default task-1) configuration key 'classpath.resource.loader.class' has been deprecated in favor of 'resource.loader.classpath.class'
+[0m[33m06:23:58,756 WARN  [org.apache.velocity.deprecation] (default task-1) configuration key 'file.resource.loader.path' has been deprecated in favor of 'resource.loader.file.path'
+[0m[33m06:23:58,756 WARN  [org.apache.velocity.deprecation] (default task-1) configuration key 'resource.loader' has been deprecated in favor of 'resource.loaders'
+[0m[33m06:23:58,757 WARN  [org.apache.velocity.deprecation] (default task-1) configuration key 'input.encoding' has been deprecated in favor of 'resource.default_encoding'
+[0m[33m06:23:58,758 WARN  [org.apache.velocity.deprecation] (default task-1) configuration key 'file.resource.loader.cache' has been deprecated in favor of 'resource.loader.file.cache'
+[0m[31m06:23:58,792 ERROR [org.apache.velocity.loader] (default task-1) ResourceManager: unable to find resource 'claimHelper.vm' in any resource loader.
+[0m[33m06:23:58,792 WARNING [open.dolphin.msg.gateway.MessagingGateway] (default task-1) Claim send error [traceId=9adebc34-a490-45cd-b130-9de8d7290d18]: org.apache.velocity.exception.ResourceNotFoundException: Unable to find resource 'claimHelper.vm'
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.resource.ResourceManagerImpl.loadResource(ResourceManagerImpl.java:465)
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.resource.ResourceManagerImpl.getResource(ResourceManagerImpl.java:346)
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.RuntimeInstance.getTemplate(RuntimeInstance.java:1677)
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.RuntimeSingleton.getTemplate(RuntimeSingleton.java:304)
+	at deployment.opendolphin-server.war//org.apache.velocity.app.Velocity.mergeTemplate(Velocity.java:258)
+	at deployment.opendolphin-server.war//open.dolphin.msg.ClaimSender.send(ClaimSender.java:183)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway.sendClaimDirect(MessagingGateway.java:98)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway.dispatchClaim(MessagingGateway.java:58)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway$Proxy$_$$_WeldClientProxy.dispatchClaim(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean.sendDocument(KarteServiceBean.java:636)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldSubclass.sendDocument$$super(Unknown Source)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.TerminalAroundInvokeInvocationContext.proceedInternal(TerminalAroundInvokeInvocationContext.java:55)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:86)
+	at deployment.opendolphin-server.war//open.dolphin.session.framework.SessionOperationInterceptor.aroundInvoke(SessionOperationInterceptor.java:37)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke(SimpleInterceptorInvocation.java:75)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.NonTerminalAroundInvokeInvocationContext.proceedInternal(NonTerminalAroundInvokeInvocationContext.java:72)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:86)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:181)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:169)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.doIntercept(TransactionalInterceptorRequired.java:37)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.intercept(TransactionalInterceptorBase.java:74)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.intercept(TransactionalInterceptorRequired.java:31)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke(SimpleInterceptorInvocation.java:75)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeAroundInvoke(InterceptorMethodHandler.java:90)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeInterception(InterceptorMethodHandler.java:73)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.invoke(InterceptorMethodHandler.java:56)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:80)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:68)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldSubclass.sendDocument(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldClientProxy.sendDocument(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.adm20.rest.EHTResource$30.write(EHTResource.java:1040)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:37)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:22)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$writeTo$1(ServerWriterInterceptorContext.java:74)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousExecutionContext.executeBlockingIo(SynchronousExecutionContext.java:218)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.writeTo(ServerWriterInterceptorContext.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:224)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.proceed(AbstractWriterInterceptorContext.java:207)
+	at org.jboss.resteasy.resteasy-crypto@6.2.10.Final//org.jboss.resteasy.security.doseta.DigitalSigningInterceptor.aroundWriteTo(DigitalSigningInterceptor.java:108)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:231)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.getStarted(AbstractWriterInterceptorContext.java:161)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$getStarted$0(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.aroundWriteTo(ServerWriterInterceptorContext.java:87)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.getStarted(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.lambda$writeNomapResponse$3(ServerResponseWriter.java:166)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl.filter(ContainerResponseContextImpl.java:365)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.executeFilters(ServerResponseWriter.java:243)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:100)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.writeResponse(SynchronousDispatcher.java:518)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:458)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:240)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:154)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:321)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:157)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:229)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher.service(ServletContainerDispatcher.java:222)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:55)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:51)
+	at jakarta.servlet.api@6.0.0//jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:74)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:129)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler.handleRequest(FilterHandler.java:84)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletChain$1.handleRequest(ServletChain.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.lambda$handleRequest$1(ElytronRunAsHandler.java:68)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.FlexibleIdentityAssociation.runAsFunctionEx(FlexibleIdentityAssociation.java:103)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAsFunctionEx(Scoped.java:161)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAs(Scoped.java:73)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.handleRequest(ElytronRunAsHandler.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.RedirectDirHandler.handleRequest(RedirectDirHandler.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:117)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+	at org.wildfly.security.elytron-web.undertow-server-servlet@4.1.0.Final//org.wildfly.elytron.web.undertow.server.servlet.CleanUpHandler.handleRequest(CleanUpHandler.java:38)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:44)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:51)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.SendErrorPageHandler.handleRequest(SendErrorPageHandler.java:52)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.MetricsHandler.handleRequest(MetricsHandler.java:64)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.MetricsChainHandler.handleRequest(MetricsChainHandler.java:59)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:276)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:132)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:256)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:101)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.Connectors.executeRootHandler(Connectors.java:395)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:859)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
+	at org.jboss.xnio@3.8.16.Final//org.xnio.XnioWorker$WorkerThreadFactory$1$1.run(XnioWorker.java:1282)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+[0m[33m06:23:58,793 WARNING [open.dolphin.audit.external] (default task-1) event=CLAIM_FAILURE timestamp=2025-11-08T21:23:58.793430541Z traceId=9adebc34-a490-45cd-b130-9de8d7290d18 document.docId=CLAIMTEST20251108ABCDEF0000000001 document.patientId=0000001 orca.host=orca orca.port=8000: org.apache.velocity.exception.ResourceNotFoundException: Unable to find resource 'claimHelper.vm'
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.resource.ResourceManagerImpl.loadResource(ResourceManagerImpl.java:465)
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.resource.ResourceManagerImpl.getResource(ResourceManagerImpl.java:346)
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.RuntimeInstance.getTemplate(RuntimeInstance.java:1677)
+	at deployment.opendolphin-server.war//org.apache.velocity.runtime.RuntimeSingleton.getTemplate(RuntimeSingleton.java:304)
+	at deployment.opendolphin-server.war//org.apache.velocity.app.Velocity.mergeTemplate(Velocity.java:258)
+	at deployment.opendolphin-server.war//open.dolphin.msg.ClaimSender.send(ClaimSender.java:183)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway.sendClaimDirect(MessagingGateway.java:98)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway.dispatchClaim(MessagingGateway.java:58)
+	at deployment.opendolphin-server.war//open.dolphin.msg.gateway.MessagingGateway$Proxy$_$$_WeldClientProxy.dispatchClaim(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean.sendDocument(KarteServiceBean.java:636)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldSubclass.sendDocument$$super(Unknown Source)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.TerminalAroundInvokeInvocationContext.proceedInternal(TerminalAroundInvokeInvocationContext.java:55)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:86)
+	at deployment.opendolphin-server.war//open.dolphin.session.framework.SessionOperationInterceptor.aroundInvoke(SessionOperationInterceptor.java:37)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke(SimpleInterceptorInvocation.java:75)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.NonTerminalAroundInvokeInvocationContext.proceedInternal(NonTerminalAroundInvokeInvocationContext.java:72)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.AroundInvokeInvocationContext.proceed(AroundInvokeInvocationContext.java:86)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:181)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.invokeInOurTx(TransactionalInterceptorBase.java:169)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.doIntercept(TransactionalInterceptorRequired.java:37)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorBase.intercept(TransactionalInterceptorBase.java:74)
+	at org.jboss.jts//com.arjuna.ats.jta.cdi.transactional.TransactionalInterceptorRequired.intercept(TransactionalInterceptorRequired.java:31)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke0(Native Method)
+	at java.base/jdk.internal.reflect.NativeMethodAccessorImpl.invoke(NativeMethodAccessorImpl.java:77)
+	at java.base/jdk.internal.reflect.DelegatingMethodAccessorImpl.invoke(DelegatingMethodAccessorImpl.java:43)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:569)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.reader.SimpleInterceptorInvocation$SimpleMethodInvocation.invoke(SimpleInterceptorInvocation.java:75)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeAroundInvoke(InterceptorMethodHandler.java:90)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.executeInterception(InterceptorMethodHandler.java:73)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.interceptor.proxy.InterceptorMethodHandler.invoke(InterceptorMethodHandler.java:56)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:80)
+	at org.jboss.weld.core@5.1.2.Final//org.jboss.weld.bean.proxy.CombinedInterceptorAndDecoratorStackMethodHandler.invoke(CombinedInterceptorAndDecoratorStackMethodHandler.java:68)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldSubclass.sendDocument(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldClientProxy.sendDocument(Unknown Source)
+	at deployment.opendolphin-server.war//open.dolphin.adm20.rest.EHTResource$30.write(EHTResource.java:1040)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:37)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:22)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$writeTo$1(ServerWriterInterceptorContext.java:74)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousExecutionContext.executeBlockingIo(SynchronousExecutionContext.java:218)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.writeTo(ServerWriterInterceptorContext.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:224)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.proceed(AbstractWriterInterceptorContext.java:207)
+	at org.jboss.resteasy.resteasy-crypto@6.2.10.Final//org.jboss.resteasy.security.doseta.DigitalSigningInterceptor.aroundWriteTo(DigitalSigningInterceptor.java:108)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:231)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.getStarted(AbstractWriterInterceptorContext.java:161)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$getStarted$0(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.aroundWriteTo(ServerWriterInterceptorContext.java:87)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.getStarted(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.lambda$writeNomapResponse$3(ServerResponseWriter.java:166)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl.filter(ContainerResponseContextImpl.java:365)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.executeFilters(ServerResponseWriter.java:243)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:100)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.writeResponse(SynchronousDispatcher.java:518)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:458)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:240)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:154)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:321)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:157)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:229)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher.service(ServletContainerDispatcher.java:222)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:55)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:51)
+	at jakarta.servlet.api@6.0.0//jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:74)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:129)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler.handleRequest(FilterHandler.java:84)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletChain$1.handleRequest(ServletChain.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.lambda$handleRequest$1(ElytronRunAsHandler.java:68)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.FlexibleIdentityAssociation.runAsFunctionEx(FlexibleIdentityAssociation.java:103)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAsFunctionEx(Scoped.java:161)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAs(Scoped.java:73)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.handleRequest(ElytronRunAsHandler.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.RedirectDirHandler.handleRequest(RedirectDirHandler.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:117)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+	at org.wildfly.security.elytron-web.undertow-server-servlet@4.1.0.Final//org.wildfly.elytron.web.undertow.server.servlet.CleanUpHandler.handleRequest(CleanUpHandler.java:38)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:44)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:51)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.SendErrorPageHandler.handleRequest(SendErrorPageHandler.java:52)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.MetricsHandler.handleRequest(MetricsHandler.java:64)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.MetricsChainHandler.handleRequest(MetricsChainHandler.java:59)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:276)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:132)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:256)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:101)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.Connectors.executeRootHandler(Connectors.java:395)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:859)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
+	at org.jboss.xnio@3.8.16.Final//org.xnio.XnioWorker$WorkerThreadFactory$1$1.run(XnioWorker.java:1282)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+[0m[31m06:23:58,804 ERROR [org.jboss.resteasy.core.providerfactory.DefaultExceptionMapper] (default task-1) RESTEASY002375: Error processing request PUT /openDolphin/resources/20/adm/eht/sendClaim - open.dolphin.adm20.rest.EHTResource.sendPackage: java.lang.StringIndexOutOfBoundsException: begin 0, end -1, length 9
+	at java.base/java.lang.String.checkBoundsBeginEnd(String.java:4606)
+	at java.base/java.lang.String.substring(String.java:2709)
+	at deployment.opendolphin-server.war//open.dolphin.rest.AbstractResource.getRemoteFacility(AbstractResource.java:36)
+	at deployment.opendolphin-server.war//open.dolphin.adm20.rest.EHTResource.prepareAuditDetails(EHTResource.java:1729)
+	at deployment.opendolphin-server.war//open.dolphin.adm20.rest.EHTResource.recordAuditEvent(EHTResource.java:1695)
+	at deployment.opendolphin-server.war//open.dolphin.adm20.rest.EHTResource$30.write(EHTResource.java:1063)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:37)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.providers.StreamingOutputProvider.writeTo(StreamingOutputProvider.java:22)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$writeTo$1(ServerWriterInterceptorContext.java:74)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousExecutionContext.executeBlockingIo(SynchronousExecutionContext.java:218)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.writeTo(ServerWriterInterceptorContext.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:224)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.proceed(AbstractWriterInterceptorContext.java:207)
+	at org.jboss.resteasy.resteasy-crypto@6.2.10.Final//org.jboss.resteasy.security.doseta.DigitalSigningInterceptor.aroundWriteTo(DigitalSigningInterceptor.java:108)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.syncProceed(AbstractWriterInterceptorContext.java:231)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.AbstractWriterInterceptorContext.getStarted(AbstractWriterInterceptorContext.java:161)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.lambda$getStarted$0(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.aroundWriteTo(ServerWriterInterceptorContext.java:87)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ServerWriterInterceptorContext.getStarted(ServerWriterInterceptorContext.java:68)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.lambda$writeNomapResponse$3(ServerResponseWriter.java:166)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.ContainerResponseContextImpl.filter(ContainerResponseContextImpl.java:365)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.executeFilters(ServerResponseWriter.java:243)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:100)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.ServerResponseWriter.writeNomapResponse(ServerResponseWriter.java:73)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.writeResponse(SynchronousDispatcher.java:518)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:458)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$invoke$4(SynchronousDispatcher.java:240)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.lambda$preprocess$0(SynchronousDispatcher.java:154)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.interception.jaxrs.PreMatchContainerRequestContext.filter(PreMatchContainerRequestContext.java:321)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.preprocess(SynchronousDispatcher.java:157)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.core.SynchronousDispatcher.invoke(SynchronousDispatcher.java:229)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.ServletContainerDispatcher.service(ServletContainerDispatcher.java:222)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:55)
+	at org.jboss.resteasy.resteasy-core@6.2.10.Final//org.jboss.resteasy.plugins.server.servlet.HttpServletDispatcher.service(HttpServletDispatcher.java:51)
+	at jakarta.servlet.api@6.0.0//jakarta.servlet.http.HttpServlet.service(HttpServlet.java:614)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletHandler.handleRequest(ServletHandler.java:74)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:129)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at deployment.opendolphin-server.war//open.dolphin.rest.LogFilter.doFilter(LogFilter.java:111)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ManagedFilter.doFilter(ManagedFilter.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler$FilterChainImpl.doFilter(FilterHandler.java:131)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.FilterHandler.handleRequest(FilterHandler.java:84)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletSecurityRoleHandler.handleRequest(ServletSecurityRoleHandler.java:62)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletChain$1.handleRequest(ServletChain.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletDispatchingHandler.handleRequest(ServletDispatchingHandler.java:36)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.lambda$handleRequest$1(ElytronRunAsHandler.java:68)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.FlexibleIdentityAssociation.runAsFunctionEx(FlexibleIdentityAssociation.java:103)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAsFunctionEx(Scoped.java:161)
+	at org.wildfly.security.elytron-base@2.5.2.Final//org.wildfly.security.auth.server.Scoped.runAs(Scoped.java:73)
+	at org.wildfly.security.elytron-web.undertow-server@4.1.0.Final//org.wildfly.elytron.web.undertow.server.ElytronRunAsHandler.handleRequest(ElytronRunAsHandler.java:67)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.RedirectDirHandler.handleRequest(RedirectDirHandler.java:68)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.SSLInformationAssociationHandler.handleRequest(SSLInformationAssociationHandler.java:117)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletAuthenticationCallHandler.handleRequest(ServletAuthenticationCallHandler.java:57)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractConfidentialityHandler.handleRequest(AbstractConfidentialityHandler.java:46)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.security.ServletConfidentialityConstraintHandler.handleRequest(ServletConfidentialityConstraintHandler.java:64)
+	at io.undertow.core@2.3.17.Final//io.undertow.security.handlers.AbstractSecurityContextAssociationHandler.handleRequest(AbstractSecurityContextAssociationHandler.java:43)
+	at org.wildfly.security.elytron-web.undertow-server-servlet@4.1.0.Final//org.wildfly.elytron.web.undertow.server.servlet.CleanUpHandler.handleRequest(CleanUpHandler.java:38)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.security.jacc.JACCContextIdHandler.handleRequest(JACCContextIdHandler.java:44)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.GlobalRequestControllerHandler.handleRequest(GlobalRequestControllerHandler.java:51)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.SendErrorPageHandler.handleRequest(SendErrorPageHandler.java:52)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.PredicateHandler.handleRequest(PredicateHandler.java:43)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.handlers.MetricsHandler.handleRequest(MetricsHandler.java:64)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.MetricsChainHandler.handleRequest(MetricsChainHandler.java:59)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.handleFirstRequest(ServletInitialHandler.java:276)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:135)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$2.call(ServletInitialHandler.java:132)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ServletRequestContextThreadSetupAction$1.call(ServletRequestContextThreadSetupAction.java:48)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.core.ContextClassLoaderSetupAction$1.call(ContextClassLoaderSetupAction.java:43)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at org.wildfly.extension.undertow@33.0.2.Final//org.wildfly.extension.undertow.deployment.UndertowDeploymentInfoService$UndertowThreadSetupAction.lambda$create$0(UndertowDeploymentInfoService.java:1421)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler.dispatchRequest(ServletInitialHandler.java:256)
+	at io.undertow.servlet@2.3.17.Final//io.undertow.servlet.handlers.ServletInitialHandler$1.handleRequest(ServletInitialHandler.java:101)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.Connectors.executeRootHandler(Connectors.java:395)
+	at io.undertow.core@2.3.17.Final//io.undertow.server.HttpServerExchange$1.run(HttpServerExchange.java:859)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.ContextClassLoaderSavingRunnable.run(ContextClassLoaderSavingRunnable.java:35)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor.safeRun(EnhancedQueueExecutor.java:1990)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.doRunTask(EnhancedQueueExecutor.java:1486)
+	at org.jboss.threads@2.4.0.Final//org.jboss.threads.EnhancedQueueExecutor$ThreadBody.run(EnhancedQueueExecutor.java:1377)
+	at org.jboss.xnio@3.8.16.Final//org.xnio.XnioWorker$WorkerThreadFactory$1$1.run(XnioWorker.java:1282)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+[0m[0m06:23:59,967 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /dolphin traceId=507f5f4a-e281-4aaf-a9da-83d85f8919eb
+[0m[0m06:23:59,967 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /dolphin traceId=21818526-a24f-45cb-9217-ae6f33be87b4
+[0m[0m06:24:00,115 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /serverinfo/jamri traceId=27c85275-053f-4a74-babb-70863ea3d8f3
+[0m[0m06:24:00,116 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /serverinfo/jamri traceId=07b07e63-c3c5-47a0-81f7-0302eda63e22
+[0m[0m06:24:00,337 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /mml/patient/list/1.3.6.1.4.1.9414.72.103 traceId=26475fe5-b1d4-43a9-a052-812b12bd73a4
+[0m[0m06:24:00,338 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /mml/patient/list/1.3.6.1.4.1.9414.72.103 traceId=516f7cff-66df-44b2-8ad6-ded785b34c06
+[0m[0m06:24:00,551 INFO  [stdout] (default task-1) Hibernate: select pm1_0.id,pm1_0.address,pm1_0.zipCode,pm1_0.appMemo,pm1_0.birthday,pm1_0.email,pm1_0.facilityId,pm1_0.familyName,pm1_0.fullName,pm1_0.gender,pm1_0.genderDesc,pm1_0.givenName,pm1_0.jpegPhoto,pm1_0.kanaFamilyName,pm1_0.kanaGivenName,pm1_0.kanaName,pm1_0.maritalStatus,pm1_0.memo,pm1_0.mobilePhone,pm1_0.nationality,pm1_0.ownerUUID,pm1_0.patientId,pm1_0.relations,pm1_0.reserve1,pm1_0.reserve2,pm1_0.reserve3,pm1_0.reserve4,pm1_0.reserve5,pm1_0.reserve6,pm1_0.romanFamilyName,pm1_0.romanGivenName,pm1_0.romanName,pm1_0.telephone from d_patient pm1_0 where pm1_0.facilityId=?
+[0m[0m06:24:00,567 INFO  [open.dolphin.session.MmlServiceBean] (default task-1) 1.3.6.1.4.1.9414.72.103:患者総数 = 10
+[0m[0m06:24:03,626 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=6040e9eb-950b-4b25-a537-efe59f45ba24
+[0m[0m06:24:03,626 INFO  [open.dolphin] (default task-1) 127.0.0.1 anonymous GET /dolphin traceId=4e9a307c-1d9b-471f-abd8-a09b493c15b7
+[0m[33m06:24:04,279 WARNING [io.micrometer.registry.otlp.OtlpMeterRegistry] (otlp-metrics-publisher) Failed to publish metrics to OTLP receiver: java.net.UnknownHostException: otel-collector
+	at java.base/sun.nio.ch.NioSocketImpl.connect(NioSocketImpl.java:572)
+	at java.base/java.net.Socket.connect(Socket.java:633)
+	at java.base/sun.net.NetworkClient.doConnect(NetworkClient.java:178)
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:533)
+	at java.base/sun.net.www.http.HttpClient.openServer(HttpClient.java:638)
+	at java.base/sun.net.www.http.HttpClient.<init>(HttpClient.java:281)
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:386)
+	at java.base/sun.net.www.http.HttpClient.New(HttpClient.java:408)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getNewHttpClient(HttpURLConnection.java:1308)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect0(HttpURLConnection.java:1241)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.plainConnect(HttpURLConnection.java:1127)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.connect(HttpURLConnection.java:1056)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream0(HttpURLConnection.java:1450)
+	at java.base/sun.net.www.protocol.http.HttpURLConnection.getOutputStream(HttpURLConnection.java:1421)
+	at io.micrometer@1.12.4//io.micrometer.core.ipc.http.HttpUrlConnectionSender.send(HttpUrlConnectionSender.java:98)
+	at io.micrometer@1.12.4//io.micrometer.core.ipc.http.HttpSender$Request$Builder.send(HttpSender.java:306)
+	at io.micrometer@1.12.4//io.micrometer.registry.otlp.OtlpMeterRegistry.publish(OtlpMeterRegistry.java:168)
+	at io.micrometer@1.12.4//io.micrometer.core.instrument.push.PushMeterRegistry.publishSafelyOrSkipIfInProgress(PushMeterRegistry.java:64)
+	at java.base/java.util.concurrent.Executors$RunnableAdapter.call(Executors.java:539)
+	at java.base/java.util.concurrent.FutureTask.runAndReset(FutureTask.java:305)
+	at java.base/java.util.concurrent.ScheduledThreadPoolExecutor$ScheduledFutureTask.run(ScheduledThreadPoolExecutor.java:305)
+	at java.base/java.util.concurrent.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:1136)
+	at java.base/java.util.concurrent.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:635)
+	at java.base/java.lang.Thread.run(Thread.java:840)
+
+[0m[0m06:24:22,916 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /dolphin traceId=ef30ee35-c062-486c-9000-5907c69e8009
+[0m[0m06:24:22,916 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /dolphin traceId=3bf30aad-8e2c-4aa8-9943-27916ee863c4
+[0m[0m06:24:23,011 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /serverinfo/jamri traceId=2faa8292-f38c-451b-b6ac-3c9346140d25
+[0m[0m06:24:23,011 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /serverinfo/jamri traceId=df5634c9-429b-4dca-9a76-e99986b3b63d
+[0m[0m06:24:23,140 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /mml/patient/list/1.3.6.1.4.1.9414.72.103 traceId=2c49e4b1-35f9-4673-ae2d-2b49bfde8c0d
+[0m[0m06:24:23,141 INFO  [open.dolphin] (default task-1) 192.168.65.1 anonymous GET /mml/patient/list/1.3.6.1.4.1.9414.72.103 traceId=f0aaffd7-d633-43bb-a857-51ddd81836ee
+[0m[0m06:24:23,145 INFO  [stdout] (default task-1) Hibernate: select pm1_0.id,pm1_0.address,pm1_0.zipCode,pm1_0.appMemo,pm1_0.birthday,pm1_0.email,pm1_0.facilityId,pm1_0.familyName,pm1_0.fullName,pm1_0.gender,pm1_0.genderDesc,pm1_0.givenName,pm1_0.jpegPhoto,pm1_0.kanaFamilyName,pm1_0.kanaGivenName,pm1_0.kanaName,pm1_0.maritalStatus,pm1_0.memo,pm1_0.mobilePhone,pm1_0.nationality,pm1_0.ownerUUID,pm1_0.patientId,pm1_0.relations,pm1_0.reserve1,pm1_0.reserve2,pm1_0.reserve3,pm1_0.reserve4,pm1_0.reserve5,pm1_0.reserve6,pm1_0.romanFamilyName,pm1_0.romanGivenName,pm1_0.romanName,pm1_0.telephone from d_patient pm1_0 where pm1_0.facilityId=?
+[0m[0m06:24:23,155 INFO  [open.dolphin.session.MmlServiceBean] (default task-1) 1.3.6.1.4.1.9414.72.103:患者総数 = 10

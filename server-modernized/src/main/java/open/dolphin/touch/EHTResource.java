@@ -99,6 +99,13 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Path("/10/eht")
 public class EHTResource extends open.dolphin.rest.AbstractResource {
+
+    private static final Logger LOGGER = Logger.getLogger(EHTResource.class.getName());
+    private static final int FACILITY_ID_LENGTH = 10;
+    private static final int JMARI_ID_LENGTH = 15;
+    private static final String JMARI_PREFIX = "JPN";
+    private static final int SUCCESS_RESPONSE = 0x00;
+    private static final int FALLBACK_RESPONSE = 0x01;
     
     private static final String QUERY_FACILITYID_BY_1001
             ="select kanritbl from tbl_syskanri where kanricd='1001'";
@@ -695,19 +702,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 
                 ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
 
-                // カルテ文書
-                DocumentModel model = pkg.documentModel();
-                if (model!=null) {
-                    karteService.sendDocument(model);
-                }
-
-                // Status更新
-                ChartEventModel cvt = pkg.chartEventModel();
-                if (cvt!=null) {
-                    eventServiceBean.processChartEvent(cvt);
-                } else {
-                }
-                os.write(0);
+                handleTouchClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "/10/eht/sendClaim");
             }
         };
     }
@@ -726,23 +721,64 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 
                 ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
 
-                // カルテ文書
-                DocumentModel model = pkg.documentModel();
-                if (model!=null) {
-                    karteService.sendDocument(model);
-                }
-
-                // Status更新
-                ChartEventModel cvt = pkg.chartEventModel();
-                if (cvt!=null) {
-                    eventServiceBean.processChartEvent(cvt);
-                } else {
-                }
-                os.write(0);
+                handleTouchClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "/10/eht/sendClaim2");
             }
         };
     }
     // S.Oh 2014/02/06 Add End
+
+    private void handleTouchClaimSend(DocumentModel document, ChartEventModel chartEvent, OutputStream os, String endpoint) throws IOException {
+        boolean fallback = false;
+        try {
+            if (document != null) {
+                karteService.sendDocument(document);
+            }
+            if (chartEvent != null) {
+                eventServiceBean.processChartEvent(chartEvent);
+            }
+        } catch (StringIndexOutOfBoundsException ex) {
+            fallback = true;
+            logTouchFallback(endpoint, ex);
+        }
+        os.write(fallback ? FALLBACK_RESPONSE : SUCCESS_RESPONSE);
+    }
+
+    private void logTouchFallback(String endpoint, Exception ex) {
+        LOGGER.log(Level.WARNING,
+                String.format("Fallback response issued by %s due to %s", endpoint, ex.getClass().getSimpleName()),
+                ex);
+    }
+
+    private void appendFacilityIdentifiers(StringBuilder target, String rawValue, String context) {
+        if (rawValue == null || rawValue.isEmpty()) {
+            LOGGER.log(Level.WARNING, () -> String.format("%s: tbl_syskanri.kanritbl is empty for kanricd=1001", context));
+            return;
+        }
+        appendSubstringSafely(target, rawValue, 0, FACILITY_ID_LENGTH, "facilityId", context);
+        int index = rawValue.indexOf(JMARI_PREFIX);
+        if (index >= 0) {
+            appendSubstringSafely(target, rawValue, index, JMARI_ID_LENGTH, "jmariCode", context);
+        } else {
+            LOGGER.log(Level.WARNING, () -> String.format("%s: JMARI prefix '%s' not found in value '%s'", context, JMARI_PREFIX, rawValue));
+        }
+    }
+
+    private void appendSubstringSafely(StringBuilder target, String value, int beginIndex, int expectedLength,
+            String fieldName, String context) {
+        if (value.length() <= beginIndex) {
+            LOGGER.log(Level.WARNING, () -> String.format(
+                    "%s: insufficient length for %s (beginIndex=%d, valueLength=%d, raw=%s)",
+                    context, fieldName, beginIndex, value.length(), value));
+            return;
+        }
+        int endExclusive = Math.min(value.length(), beginIndex + expectedLength);
+        if (value.length() < beginIndex + expectedLength) {
+            LOGGER.log(Level.WARNING, () -> String.format(
+                    "%s: truncated %s (expectedLength=%d, available=%d, raw=%s)",
+                    context, fieldName, expectedLength, value.length() - beginIndex, value));
+        }
+        target.append(value, beginIndex, endExclusive);
+    }
     
     @DELETE
     @Path("/document")
@@ -1110,11 +1146,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 return ret.toString();
             }
         } catch (FileNotFoundException ex) {
-            Logger.getLogger(EHTResource.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, "custom.properties not found while resolving facility identifiers", ex);
         } catch (UnsupportedEncodingException ex) {
-            Logger.getLogger(EHTResource.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, "Unsupported encoding when reading custom.properties", ex);
         } catch (IOException ex) {
-            Logger.getLogger(EHTResource.class.getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, "Failed to read custom.properties", ex);
         }
 //s.oh$
         // SQL 文
@@ -1135,17 +1171,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             ResultSet rs = ps.executeQuery();
 
             if (rs.next()) {
-
-                String line = rs.getString(1);
-                
-                // 保険医療機関コード 10桁
-                ret.append(line.substring(0, 10));
-                
-                // JMARIコード JPN+12桁 (total 15)
-                int index = line.indexOf("JPN");
-                if (index>0) {
-                    ret.append(line.substring(index, index+15));
-                }
+                appendFacilityIdentifiers(ret, rs.getString(1), "touch");
             }
             rs.close();
             ps.close();
@@ -1153,7 +1179,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             con = null;
 
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            LOGGER.log(Level.SEVERE, "Failed to load facility/JMARI identifiers from tbl_syskanri", e);
 
         } finally {
             if (con != null) {

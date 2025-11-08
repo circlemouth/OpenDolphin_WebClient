@@ -1,0 +1,50 @@
+{
+  "sendClaim": true,
+  "confirmDate": "2025-11-08 09:30:00.000",
+  "title": "初診病名登録",
+  "purpose": "diagnosis",
+  "groupId": "DX-20251108-01",
+  "patientId": "0000001",
+  "patientName": "テスト 太郎",
+  "patientGender": "M",
+  "facilityName": "OpenDolphin Test Clinic",
+  "jamariCode": "1234567",
+  "department": "01",
+  "departmentDesc": "内科",
+  "creatorName": "Doctor Test",
+  "creatorId": "doctor1",
+  "creatorLicense": "doctor",
+  "addedDiagnosis": [
+    {
+      "id": 0,
+      "confirmed": 1762561800000,
+      "started": 1762561800000,
+      "ended": null,
+      "recorded": 1762561800000,
+      "linkId": 0,
+      "linkRelation": null,
+      "status": "F",
+      "karteBean": {
+        "id": 2001
+      },
+      "userModel": {
+        "id": 9001
+      },
+      "diagnosis": "感冒",
+      "diagnosisCode": "J00",
+      "diagnosisCodeSystem": "ICD10",
+      "category": "mainDiagnosis",
+      "categoryDesc": "主病名",
+      "categoryCodeSys": "custom",
+      "outcome": "provisional",
+      "outcomeDesc": "継続",
+      "outcomeCodeSys": "custom",
+      "firstEncounterDate": "2025-11-08",
+      "relatedHealthInsurance": "060",
+      "department": "01",
+      "departmentDesc": "内科"
+    }
+  ],
+  "updatedDiagnosis": [],
+  "deletedDiagnosis": []
+}

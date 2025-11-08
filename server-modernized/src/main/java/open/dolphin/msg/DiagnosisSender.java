@@ -7,6 +7,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.*;
 import org.apache.velocity.VelocityContext;
@@ -21,6 +22,8 @@ import org.apache.velocity.app.Velocity;
  * @author kazushi Minagawa.
  */
 public class DiagnosisSender {
+
+    private static final Logger CLAIM_LOGGER = Logger.getLogger("dolphin.claim");
     
     private static final int EOT = 0x04;
     private static final int ACK = 0x06;
@@ -44,9 +47,10 @@ public class DiagnosisSender {
     private int port;
     private String enc;
     
-    private boolean DEBUG;
+    private final boolean DEBUG;
 
     public DiagnosisSender() {
+        DEBUG = CLAIM_LOGGER.isLoggable(Level.FINE);
     }
     
     public DiagnosisSender(String host, int port, String enc) {
@@ -54,9 +58,6 @@ public class DiagnosisSender {
         this.host = host;
         this.port = port;
         this.enc = enc;
-//minagawa^ CLAIM Log        
-        DEBUG = Logger.getLogger("dolphin.claim").getLevel().equals(java.util.logging.Level.FINE);
-//minagawa$        
     }
 
     /**
@@ -242,7 +243,7 @@ public class DiagnosisSender {
         bw.close();
         String claimMessage = sw.toString();
 //minagawa^ CLAIM Log    
-        log(claimMessage);
+        CLAIM_LOGGER.info(claimMessage);
 //        if (DEBUG) {
 //            debug(claimMessage);
 //        }
@@ -266,15 +267,7 @@ public class DiagnosisSender {
 
         // Reads result
         int c = reader.read();
-        if (c == ACK) {
-            sb = new StringBuilder();
-            sb.append(ACK_STR).append(baseInfo);
-            log(sb.toString());
-        } else if (c == NAK) {
-            sb = new StringBuilder();
-            sb.append(NAK_STR).append(baseInfo);
-            log(sb.toString());
-        }
+        logAckResult(c, baseInfo);
 
         writer.close();
         reader.close();
@@ -323,16 +316,24 @@ public class DiagnosisSender {
 //s.oh$
     
 //minagawa^ CLAIM Log    
-    private void log(String msg) {
-        Logger.getLogger("dolphin.claim").info(msg);
-    }
-    
     private void debug(String msg) {
-        Logger.getLogger("dolphin.claim").fine(msg);
+        CLAIM_LOGGER.fine(msg);
     }
     
-    private void warning(String msg) {
-        Logger.getLogger("dolphin.claim").warning(msg);
+    private void logAckResult(int responseCode, String baseInfo) {
+        String prefix;
+        Level level;
+        if (responseCode == ACK) {
+            prefix = ACK_STR;
+            level = Level.INFO;
+        } else if (responseCode == NAK) {
+            prefix = NAK_STR;
+            level = Level.WARNING;
+        } else {
+            prefix = "UNKNOWN(" + responseCode + "): ";
+            level = Level.WARNING;
+        }
+        CLAIM_LOGGER.log(level, prefix + baseInfo);
     }
 //minagawa$    
 

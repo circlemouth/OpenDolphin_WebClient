@@ -1,0 +1,50 @@
+# 添付ファイル保存モード検証チェックリスト
+
+## 1. 目的と範囲
+- `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` #L83 に記載のタスクを分解し、DB/LargeObject と S3 互換ストレージ（MinIO モック）を切り替えながら `/karte/attachment` 系 API のアップロード/ダウンロードを検証するための前提条件と手順を整理する。
+- 設定および運用手順はモダナイズサーバー（WildFly 33, `docker-compose.modernized.dev.yml`）を対象とし、Legacy サーバーには適用しない。
+
+## 2. `attachment-storage.yaml` 必須項目
+Secrets へ登録する `attachment-storage.yaml` は `server-modernized/config/attachment-storage.sample.yaml` を雛形とし、最低限以下のキーを埋める。
+
+| キー | 必須 | 説明 | 備考 |
+| --- | --- | --- | --- |
+| `storage.type` | ✅ | `database` または `s3` で保存先を切替。 | 現状リポジトリ内で参照コード未確認のため、実装側での読み込み先を要確認。 |
+| `storage.database.lobTable` | ✅ (database モード時) | 添付バイナリを格納する LOB テーブル名。既定値: `schema_attachment`。 | 既存 DB の `d_attachment`.`bytes` を利用する際は `schema_attachment` から `d_attachment` へ揃える必要あり。 |
+| `storage.s3.bucket` | ✅ (s3 モード時) | MinIO/S3 のバケット名。例: `opendolphin-attachments`。 | テナント毎 prefix は `basePath` で調整。 |
+| `storage.s3.region` | ✅ | MinIO ではダミーでも良いが、SDK が期待する値（例: `ap-northeast-1`）を設定。 |
+| `storage.s3.basePath` | ✅ | `clinics/${FACILITY_ID}` など施設別パス。 | `${FACILITY_ID}` 置換要件を確認すること。 |
+| `storage.s3.serverSideEncryption` / `kmsKeyId` | 任意 | サーバー側暗号化設定。 | MinIO モックでは `AES256` 固定運用を想定。 |
+| `storage.s3.multipartUploadThresholdMb` | 任意 | マルチパート開始閾値 (MB)。 | 大容量 PDF を前提に 50MB 以上を推奨。 |
+| `storage.s3.lifecycle.transitionToStandardIaAfterDays` | 任意 | ライフサイクル移行日数。 | 実運用では S3 側ポリシーと整合させる。 |
+| `storage.s3.lifecycle.expireAfterDays` | 任意 | 自動削除までの日数。 | 例: 3650 日 (10 年)。 |
+
+> 注意: `rg -n "attachment-storage" -g "*"` を実行してもソースコード側での参照が確認できなかったため、WildFly 起動時にこの YAML をどのように読み込むのか追加設計が必要。Secrets へ投入する前に `server-modernized` 側へバインド処理を実装すること。
+
+## 3. MinIO / S3 モック前提条件
+- リポジトリ内に `minio` や `MODERNIZED_STORAGE_MODE` を参照する Compose/CLI 設定は存在しない（`rg -n "minio"`, `rg -n "MODERNIZED_STORAGE_MODE"` いずれもヒットせず）。MinIO コンテナと認証情報（`MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `MINIO_SERVER_URL` など）は別途提供が必要。
+- モック環境で必要となる代表的な Secrets／環境変数:
+  - `ATTACHMENT_S3_ENDPOINT`（例: `http://minio:9000`）
+  - `ATTACHMENT_S3_ACCESS_KEY` / `ATTACHMENT_S3_SECRET_KEY`
+  - `ATTACHMENT_S3_REGION`（MinIO は任意文字列）
+  - `ATTACHMENT_S3_BUCKET` と `ATTACHMENT_S3_BASE_PATH`
+- これらの値を `attachment-storage.yaml` または WildFly のシステムプロパティへどのように橋渡しするか設計未定。Secrets 設計時にフォーマットと保管場所を確定する。
+
+## 4. モード切替と再起動の暫定手順
+1. **Compose プロジェクト分離**: `COMPOSE_PROJECT_NAME=od-attach-db`（DB モード）、`COMPOSE_PROJECT_NAME=od-attach-s3`（S3 モード）を使い分け、`docker compose -f docker-compose.modernized.dev.yml up -d --build` でそれぞれ起動。既存 Compose ファイルにはストレージ関連の環境変数が無いため、`.env` 等で暫定的に注入する。 
+2. **設定反映**: DB モードは `attachment-storage.yaml` の `storage.type=database` を Secrets ボリュームに配置。S3 モードでは MinIO 設定を埋めたファイルをマウントし、WildFly 起動前に `MODERNIZED_STORAGE_MODE=s3`（※現状未実装）を環境変数として渡す想定。
+3. **アプリ再起動**: `docker compose restart server-modernized-dev` 実行。構成が未完成のため、現状は再起動しても値が反映されない点に注意。実装完了後は再起動直後に `/openDolphin/resources/dolphin` ヘルスチェックを確認する。
+
+## 5. 検証ステータス（2025-11-08T20:54:51Z）
+- `ops/tests/storage/attachment-mode/` ディレクトリがリポジトリに存在せず、添付アップロード/ダウンロード自動化スクリプトを実行できない。`ls ops/tests/storage/attachment-mode` が `No such file or directory` を返すことを確認。
+- `MODERNIZED_STORAGE_MODE` を参照する実装が見つからないため、DB/S3 の切替ロジックが未実装と判断。 
+- 上記理由によりバイナリハッシュ比較 (`shasum -a 256`) やレスポンス JSON 差分採取は開始できず、`artifacts/parity-manual/attachments/20251108T205451Z/README.md` へブロッカーを記録済み。
+
+## 6. Runbook / 参照資料
+- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`: 外部ストレージ（S3/ファイル共有）設定手順。添付ストレージ切替方針と Secrets 管理ルールを参照すること。
+- `docs/server-modernization/persistence-layer/3_4-persistence-layer-modernization.md`: S3 デュアルライト構想および `attachment-storage.yaml` ひな形の背景。
+
+## 7. 今後必要なアクション
+- `server-modernized` で `attachment-storage.yaml` をロードし、`storage.type` に応じて `AttachmentModel` 保存先を切り替える実装を追加。
+- MinIO コンテナ定義と資格情報を `docker-compose.modernized.dev.yml` または別 Compose ファイルへ追加し、`ops/tests/storage/attachment-mode/*.sh` を新設して REST 経由のアップロード/ダウンロードを自動化。
+- テスト成果物（レスポンス JSON と `shasum`）を `artifacts/parity-manual/attachments/<timestamp>/` に保存し、本チェックリストへ成功/失敗・使用設定を追記する。

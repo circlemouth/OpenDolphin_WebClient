@@ -68,6 +68,12 @@ COPY ops/modernized-server/docker/configure-wildfly.cli /opt/jboss/configure-wil
 COPY ops/shared/docker/bootstrap.sh /opt/jboss/bootstrap.sh
 RUN chmod +x /opt/jboss/bootstrap.sh
 
+RUN cat <<'EOF' >> ${WILDFLY_HOME}/standalone/configuration/logging.properties
+# OpenDolphin Claim/Diagnosis logger (keeps Logger.getLogger("dolphin.claim") level non-null)
+logger.category.dolphin.claim.level=INFO
+logger.category.dolphin.claim.useParentHandlers=true
+EOF
+
 RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
     cd /opt/jboss/tmp && \

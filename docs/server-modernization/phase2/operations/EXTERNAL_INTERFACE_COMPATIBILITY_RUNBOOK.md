@@ -14,6 +14,24 @@
 | 監査・ログ設定 | `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md` のとおり、監査ログ（`d_audit_event`）と Micrometer メトリクスを収集できることを確認。 | 運用 |  |
 | Smoke テスト | `docs/server-modernization/api-smoke-test.md` の手順で旧サーバーのベースラインを取得し、モダナイズ版と差分がないことを確認。 | QA |  |
 
+### 1.1 base_readonly スモーク採取ログ (2025-11-09)
+
+- 目的: 認証ヘッダーのみで呼び出せる読取専用 API（`/dolphin`, `/serverinfo/jamri`, `/mml/patient/list/<fid>`）のレスポンスを Legacy/Modernized 両系統で比較し、CLI ベースの Runbook を固める。
+- 前提:
+  - `./scripts/start_legacy_modernized.sh start --build` で `opendolphin-postgres` / `opendolphin-postgres-modernized` / `opendolphin-server` / `opendolphin-server-modernized-dev` を起動。
+  - `d_facility.id=5001` / `d_users.id in (9001,9002)` / `d_patient.id in (7001-7010)` をローカル合成ベースラインで投入（`1.3.6.1.4.1.9414.72.103:{doctor1,admin}` と 10 件の `WEB1001`〜`WEB1010`）。
+- 実行コマンド:
+  ```bash
+  BASE_URL_LEGACY=http://localhost:8080/openDolphin/resources \
+  BASE_URL_MODERN=http://localhost:9080/openDolphin/resources \
+  ./ops/tests/api-smoke-test/run.sh --dual --scenario base_readonly
+  ```
+- 証跡: `artifacts/parity-manual/smoke/20251108T212422Z/{legacy,modernized}/`（`metadata.json` にシナリオ概要を記録）。詳細な差分メモは `docs/server-modernization/phase2/notes/touch-api-parity.md#7-base_readonly-スモーク-2025-11-09` を参照。
+- 結果サマリ:
+  - `/dolphin` のボディは完全一致。Modernized 側のみ `Referrer-Policy`, `Content-Security-Policy`, `Strict-Transport-Security`, `X-Content-Type-Options`, `X-Trace-Id` を追加で返却（許容済み）。
+  - `/serverinfo/jamri` は両系統とも空文字。`custom.properties` の `jamri.code` を設定しない限り値が得られないため、インフラが Secrets を更新するまで TODO として継続管理。
+  - `/mml/patient/list/1.3.6.1.4.1.9414.72.103` は `7001`〜`7010` の CSV を返し、一致を確認。
+
 ## 2. 基本方針
 
 1. **同一エンドポイント**: HTTP メソッド + パス + クエリ構造が一致することを保証し、ベース URL／コンテキストパスは旧サーバーと同一に設定する（例: `/opendolphin`）。  
@@ -183,7 +201,7 @@
 | EHT-RUN-20251103-STAMP | スタンプ取得 (`/stamp*`) | Pending | JSON 変換の差分確認を Worker C が担当。 |
 | EHT-RUN-20251103-PHY | 身体所見 (`/physical` POST/DELETE/GET) | Pending | `EHTResourceTest.postPhysicalCreatesObservationsAndLogsAudit` 追加済（Maven 未導入のため未実行）。 |
 | EHT-RUN-20251103-VITAL | バイタル (`/vital` GET/POST/DELETE) | Pending | `EHTResourceTest.postVitalRecordsAudit` 追加済（Maven 未導入のため未実行）。 |
-| EHT-RUN-20251103-CLAIM2 | CLAIM 送信 (`/sendClaim`, `/sendClaim2`) | Pending | `EHTResourceTest.sendClaimWithoutDocumentLogsChartEvent` で監査ログを検証予定。JMS 実送信ログは Staging MQ 復旧後に確認。 |
+| EHT-RUN-20251103-CLAIM2 | CLAIM 送信 (`/sendClaim`, `/sendClaim2`) | Pending | `EHTResourceTest.sendClaimWithoutDocumentLogsChartEvent` で監査ログを検証予定。JMS 実送信ログは Staging MQ 復旧後に確認。Compose 並列環境での再現ログとフォールバック分析は `docs/server-modernization/phase2/notes/messaging-parity-check.md`（`ops/tools/jms-probe.sh` 実行例・`artifacts/parity-manual/JMS/20251108T210639Z/`）を参照し、同手順を Gate チェックへ組み込むこと。 |
 
 ### 4.3 JavaTime 出力検証（2026-06-18 追加）
 
@@ -316,7 +334,8 @@
 | ID | 日時 | 内容 | ステータス | メモ |
 | --- | --- | --- | --- | --- |
 | OBS-ACTUATOR-20251108-01 | 2025-11-08 | `scripts/start_wildfly_headless.sh start --build`（modernized のみ）で `/actuator/{health,metrics,prometheus}` を取得したが、Micrometer CDI 二重登録により `HTTP/1.1 503 Service Unavailable`。証跡: `artifacts/parity-manual/observability/20251108T063106Z/`（README, wildfly_start.log, actuator_*.log, send_parallel_request 出力）。 | Done | Legacy プロファイルが含まれず `curl: (7)`。Modernized `/dolphin` は 404 だが Micrometer エラーカウンタ/レイテンシは取得可。フォローアップ: 成功ケース採取。 |
-| OBS-ACTUATOR-20251108-02 | 2025-11-08 | `scripts/start_legacy_modernized.sh start --build` で legacy/modernized/両 DB を起動し、`PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/sysad-actuator.headers` で `ops/tools/send_parallel_request.sh --profile compose --loop 5 GET /dolphin` を実行。`curl -i http://localhost:9080/actuator/{health,metrics,prometheus}` と `curl -i http://localhost:9995/metrics/application` を取得。証跡: `artifacts/parity-manual/observability/20251108T074657Z-success/`。 | Done | Legacy/Modernized とも `HTTP 200`。`docs/server-modernization/phase2/operations/logs/2025-11-08-pagerduty-observability.txt` に Grafana/PagerDuty 反映ログ、README に 404 証跡との比較手順を記載。 |
+| OBS-ACTUATOR-20251108-02 | 2025-11-08 | `scripts/start_legacy_modernized.sh start --build` で legacy/modernized/両 DB を起動し、`PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/sysad-actuator.headers` で `ops/tools/send_parallel_request.sh --profile compose --loop 5 GET /dolphin` を実行。`curl -i http://localhost:9080/actuator/{health,metrics,prometheus}` と `curl -i http://localhost:9995/metrics/application` を取得。証跡: `artifacts/parity-manual/observability/20251108T074657Z-success/`。 | Done | Legacy/Modernized とも `HTTP 200`。`mvn -f pom.server-modernized.xml -pl server-modernized -am package -DskipTests` → `jar tf ... | grep WEB-INF/jboss-deployment-structure.xml` で Micrometer 除外ファイルの恒久化を確認し、2025-11-08T10:32:44+09:00 の Grafana/PagerDuty 本番反映ログを `docs/server-modernization/phase2/operations/logs/2025-11-08-pagerduty-observability.txt` へ記録（残課題なし）。 |
+| OBS-ACTUATOR-20251108-03 | 2025-11-08 | `scripts/start_wildfly_headless.sh --env-file <profile> start --` を 4 パターン（baseline / `MODERNIZED_POSTGRES_PASSWORD` 欠落 / `FACTOR2_AES_KEY_B64` 欠落 / SYSAD header 欠落）で再実行し、`ops/tests/api-smoke-test/headers/sysad-actuator.headers` を用いて `/actuator/{health,prometheus}` の疎通を採取。証跡: `artifacts/parity-manual/secrets/20251108T204806Z/README.md` 以下。 | WIP | DB 秘密情報欠落時の `PSQLException` と `opendolphin_db_*` メトリクスを取得済み。FACTOR2/SYSAD は Compose 既定値が空文字をマスクするため要件未達。`ops-observability-plan.md` の Secrets マトリクスに改善策を記載。 |
 | SECRETS-CHECK-20260607-01 | 2026-06-07 | `ops/check-secrets.sh` で 2FA/PHR Secrets 検査フローをドライラン（FILESYSTEM モード、ダミー値）し、CI 失敗条件と通知ルールを追記。 | Done | `PHR_EXPORT_STORAGE_TYPE=FILESYSTEM` のため S3 変数は警告のみ。S3 版はステージングに Secrets 投入後に再検証予定。 |
 | AUDIT-CHAIN-VERIFY-20260607-01 | 2026-06-07 | `SELECT event_time, previous_hash, event_hash ...` によるハッシュチェーン手動検証と PagerDuty 通知ドライラン計画 | ⚠️ Blocked | ローカル環境で `d_audit_event` が空のため SQL 実行結果が得られず。Stage DB リストア後に再実施し、異常ケースを手動で挿入してジョブ想定動作を確認する。 |
 | TOUCH-AUDIT-20251106-01 | 2025-11-06 | `/touch/*` 監査ログの actorRole 連携確認、および `/touch/patient/{pk}` XML 応答の Jakarta 移行後フォーマット差分確認 | Pending | `SessionTraceContext#setActorRole` 追加により Touch API の `TouchAuditHelper` が役割を取得可能。`DolphinResource` が患者詳細 XML を分離実装したため、旧サーバーとの比較テストを `TOUCH_XML_COMPAT` ケースへ追加予定。 |

@@ -1,16 +1,25 @@
 package open.dolphin.rest;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import jakarta.inject.Inject;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.BadRequestException;
+import jakarta.ws.rs.InternalServerErrorException;
 import jakarta.ws.rs.core.MediaType;
+import open.dolphin.adm20.converter.ISendPackage;
 import open.dolphin.converter.*;
 import open.dolphin.infomodel.*;
+import open.dolphin.msg.dto.MmlDispatchResult;
 import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.session.MmlServiceBean;
+import open.dolphin.session.MmlSenderBean;
 
 /**
  *
@@ -21,6 +30,34 @@ public class MmlResource extends AbstractResource {
     
     @Inject
     private MmlServiceBean mmlServiceBean;
+
+    @Inject
+    private MmlSenderBean mmlSenderBean;
+
+    private ObjectMapper sendMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper;
+    }
+
+    @PUT
+    @Path("/send")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_JSON)
+    public MmlDispatchResult sendMmlPayload(String payload) {
+        try {
+            ISendPackage sendPackage = sendMapper().readValue(payload, ISendPackage.class);
+            DocumentModel document = sendPackage != null ? sendPackage.documentModel() : null;
+            if (document == null) {
+                throw new BadRequestException("document is required");
+            }
+            return mmlSenderBean.send(document);
+        } catch (BadRequestException ex) {
+            throw ex;
+        } catch (Exception ex) {
+            throw new InternalServerErrorException("Failed to dispatch MML payload", ex);
+        }
+    }
     
        
     @GET

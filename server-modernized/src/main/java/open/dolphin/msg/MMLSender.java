@@ -20,22 +20,27 @@ import org.apache.velocity.app.Velocity;
 public class MMLSender {
     
     private static final String OBJECT_NAME = "mmlHelper";
-    private static final String TEMPLATE_NAME = "mmlHelper.vm";
+    private static final String TEMPLATE_NAME = "mml2.3Helper.vm";
     private static final String TEMPLATE_ENC = "SHIFT_JIS";
+    private static final Logger LOGGER = Logger.getLogger("open.dolphin");
     
-    private boolean DEBUG;
+    private final boolean debugEnabled;
     
     public MMLSender() {
-        DEBUG = Logger.getLogger("open.dolphin").getLevel().equals(java.util.logging.Level.FINE);
+        this.debugEnabled = LOGGER.isLoggable(java.util.logging.Level.FINE);
     }
     
-    public void send(DocumentModel dm) throws Exception {
+    public String send(DocumentModel dm) throws Exception {
         
-        if (DEBUG) {
-            log("patientId = " + dm.getKarteBean().getPatientModel().getPatientId());
-            log("patientName = " + dm.getKarteBean().getPatientModel().getFullName());
-            log("userId = " + dm.getUserModel().getUserId());
-            log("userName = " + dm.getUserModel().getCommonName());
+        if (debugEnabled && dm != null) {
+            if (dm.getKarteBean() != null && dm.getKarteBean().getPatientModel() != null) {
+                log("patientId = " + dm.getKarteBean().getPatientModel().getPatientId());
+                log("patientName = " + dm.getKarteBean().getPatientModel().getFullName());
+            }
+            if (dm.getUserModel() != null) {
+                log("userId = " + dm.getUserModel().getUserId());
+                log("userName = " + dm.getUserModel().getCommonName());
+            }
         }
 
         // decode
@@ -48,7 +53,7 @@ public class MMLSender {
         helper.setDocument(dm);
         helper.buildText();
 
-        VelocityContext context = new VelocityContext();
+        VelocityContext context = VelocityHelper.getContext();
         context.put(OBJECT_NAME, helper);
         StringWriter sw = new StringWriter();
         BufferedWriter bw = new BufferedWriter(sw);
@@ -56,17 +61,18 @@ public class MMLSender {
         bw.flush();
         bw.close();
         String mml = sw.toString();
-        if (DEBUG) {
+        if (debugEnabled) {
             log(mml);
         }
+        return mml;
     }
 
     private void log(String msg) {
-        Logger.getLogger("open.dolphin").info(msg);
+        LOGGER.info(msg);
     }
     
     private void warning(String msg) {
-        Logger.getLogger("open.dolphin").warning(msg);
+        LOGGER.warning(msg);
     }
     
     private Object xmlDecode(byte[] bytes)  {

@@ -1,0 +1,23 @@
+宛先: #ops-db / DBA 担当各位
+件名: Gate #40 DB ベースライン復旧用 Secrets 配布依頼（UTC 2025-11-08T10:14:55Z 再送）
+内容:
+- 対象: Legacy + Modernized Postgres ベースライン
+- 必要ファイル:
+  * legacy-server/db-baseline/opendolphin-legacy-schema.sql
+  * legacy-server/db-baseline/opendolphin-legacy-seed.sql
+  * server-modernized/db-baseline/opendolphin-modern-schema.sql
+- 用途: フェーズ2 Gate #40 をクローズするためのベースライン復旧（psql / flyway ログ取得）
+- 期限: UTC 2025-11-08 18:00 までに受領希望（Ops 夜間メンテ前）
+- 証跡保存先: artifacts/parity-manual/db-restore/20251108T101455Z/investigation.log へ shasum と配置ログを記載
+- 参考: POSTGRES_BASELINE_RESTORE.md 0. Secrets フロー参照
+
+---
+フォローアップ記録
+- 送信日時: 2025-11-08T10:22:44Z
+- 担当: Gate40-DB ベースライン担当（Codex）
+- 想定回答期限: 2025-11-08T18:00Z（Ops 夜間メンテ開始前）
+- ステータス: Slack `#ops-db` スレッド URL / チケット ID とも未発番。返信待ち。
+]633;E;{   echo "[$IAM_TS] IAM added:"\x3b   echo "  bucket=gs://$BUCKET"\x3b   echo "  + group:ops-dba@example.com -> roles/storage.objectCreator"\x3b   echo "  + user:\xffffffffffffffe3\xffffffffffffff81\xffffffffffffff82\xffffffffffffffe3\xffffffffffffff81\xffffffffffffffaa\xffffffffffffffe3\xffffffffffffff81\xffffffffffffff9f\xffffffffffffffe3\xffffffffffffff81\xffffffffffffffae@gmail.com   -> roles/storage.objectAdmin"\x3b } >> artifacts/parity-manual/db-restore/20251108T101455Z/ops_request.txt;3cc06681-6a50-4de1-bcff-e6815b15efa8]633;C[20251108T200213Z] IAM added:
+  bucket=gs://ops-dba-transfer-maruguchi-clinic-hp
+  + group:ops-dba@example.com -> roles/storage.objectCreator
+  + user:あなたの@gmail.com   -> roles/storage.objectAdmin

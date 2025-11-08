@@ -22,6 +22,7 @@ import open.dolphin.msg.OidSender;
 import open.dolphin.msg.dto.AccountSummaryMessage;
 import open.dolphin.msg.gateway.ExternalServiceAuditLogger;
 import open.dolphin.msg.gateway.MessagingConfig;
+import open.dolphin.msg.gateway.MessagingHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 /**
@@ -37,7 +38,7 @@ import org.slf4j.LoggerFactory;
 public class MessageSender implements MessageListener {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(MessageSender.class);
-    private static final String TRACE_ID_PROPERTY = "open.dolphin.traceId";
+    private static final String TRACE_ID_PROPERTY = MessagingHeaders.TRACE_ID;
 
     @Inject
     private PVTServiceBean pvtServiceBean;
