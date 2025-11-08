@@ -213,3 +213,43 @@ SELECT event_time,
  LIMIT 20;
 ```
 ※ 現状はテーブルが無いため `relation "d_audit_event" does not exist` が返る。Flyway 適用後に実行し、`artifacts/parity-manual/audit/factor2_*.sql` へ保存する。
+
+## 6. Legacy ADM コンバータフィクスチャ（2025-11-08 追加）
+
+| 資材 | 内容 / 用途 | 備考 |
+| --- | --- | --- |
+| `tmp/legacy-fixtures/adm10/patient_model.json` / `tmp/legacy-fixtures/adm20/patient_model.json` | `IPatientModel` のレガシー JSON スナップショット。`AdmConverterSnapshotTest` で touch/adm10/adm20 の出力を比較し、`reserve1`〜`reserve6` や `healthInsurances[*].publicItems[*]` が欠落していないかを確認する。 | フィクスチャ更新時は `mvn -f pom.server-modernized.xml -pl server-modernized -am test -Dtest=AdmConverterSnapshotTest#patientModelSnapshot -Dadm.snapshot.update=true` を実行し、生成結果をレビューしてから保存する。差分ログは `artifacts/parity-manual/adm-snapshots/<timestamp>/patient_model/<target>/` に自動出力される。 |
+| `tmp/legacy-fixtures/adm10/visit_package.json` / `tmp/legacy-fixtures/adm20/visit_package.json` | `IVisitPackage` スナップショット。VisitPackage → Touch/ADM DTO 変換で `patientVisitModel`・`allergies`・`patientMemo`・Active 病名が連動しているかを検証する。 | `AdmConverterSnapshotTest#visitPackageSnapshot` で利用。`patientMemo` には `karteBean`/`userModel` を付与しないとコンバータが `NullPointerException` を投げるため、当該フィクスチャでダミー ID を保持している。 |
+| `tmp/legacy-fixtures/adm10/labo_item.json` / `tmp/legacy-fixtures/adm20/labo_item.json` | `ILaboGraphItem` 用の trend JSON。`/jtouch/item/laboItem` の戻り値で検査名・基準値・結果コメントが同期しているかを比較する。 | `AdmConverterSnapshotTest#laboItemSnapshot` を update すると `TP`（総蛋白）の 2 件分が書き出される。 |
+| `tmp/legacy-fixtures/adm10/registered_diagnosis.json` / `tmp/legacy-fixtures/adm20/registered_diagnosis.json` | `IRegisteredDiagnosis` の配列。確定日・区分・転帰・保険紐付けが ADM/touch で欠落していないかを監視する。 | `AdmConverterSnapshotTest#registeredDiagnosisSnapshot` で参照。`diagnosis` 2 件（季節性アレルギー／鉄欠乏性貧血）を含む。 |
+
+> ※ `mvn` コマンドがローカルに無い場合は、`server-modernized` ディレクトリで下記 `jshell` スニペットを実行し `adm.snapshot.update=true` をセットしてから各シナリオを呼び出す。  
+> ```bash
+> CP="target/test-classes:target/classes:../common/target/classes:\
+> $HOME/.m2/repository/com/fasterxml/jackson/core/jackson-databind/2.17.1/jackson-databind-2.17.1.jar:\
+> $HOME/.m2/repository/com/fasterxml/jackson/core/jackson-core/2.17.1/jackson-core-2.17.1.jar:\
+> $HOME/.m2/repository/com/fasterxml/jackson/core/jackson-annotations/2.17.1/jackson-annotations-2.17.1.jar:\
+> $HOME/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jdk8/2.17.1/jackson-datatype-jdk8-2.17.1.jar:\
+> $HOME/.m2/repository/com/fasterxml/jackson/datatype/jackson-datatype-jsr310/2.17.1/jackson-datatype-jsr310-2.17.1.jar:\
+> $HOME/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.2/junit-jupiter-api-5.10.2.jar:\
+> $HOME/.m2/repository/org/junit/platform/junit-platform-commons/1.10.2/junit-platform-commons-1.10.2.jar:\
+> $HOME/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:\
+> $HOME/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:\
+> $HOME/.m2/repository/jakarta/platform/jakarta.jakartaee-api/10.0.0/jakarta.jakartaee-api-10.0.0.jar"
+> jshell --class-path "$CP" <<'EOF'
+> import java.lang.reflect.*;
+> System.setProperty("adm.snapshot.update","true");
+> Class<?> clazz = Class.forName("open.dolphin.adm.AdmConverterSnapshotTest");
+> var ctor = clazz.getDeclaredConstructor(); ctor.setAccessible(true);
+> Object test = ctor.newInstance();
+> for (String name : List.of(
+>         "patientModelSnapshot",
+>         "visitPackageSnapshot",
+>         "laboItemSnapshot",
+>         "registeredDiagnosisSnapshot")) {
+>     var m = clazz.getDeclaredMethod(name);
+>     m.setAccessible(true);
+>     m.invoke(test);
+> }
+> EOF
+> ```

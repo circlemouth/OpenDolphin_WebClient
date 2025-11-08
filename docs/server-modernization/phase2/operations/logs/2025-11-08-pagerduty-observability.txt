@@ -1,0 +1,4 @@
+# PagerDuty/Grafana 更新ログ (2025-11-08T07:50Z)
+- Evidence: artifacts/parity-manual/observability/20251108T074657Z-success/
+- PagerDuty service `Server-Modernized-Ops`: ダッシュボード計測対象を `wildfly_undertow_request_count_total` / `opendolphin_api_request_duration_sum` に更新し、`rate(error_count_total[5m]) / rate(request_count_total[5m]) > 0.05` を Critical トリガーに設定。通知テンプレートへ Evidence ID (`OBS-ACTUATOR-20251108-02`) を追記。
+- Grafana dashboard `Static Analysis / Request Metrics`: Prometheus データソースに `job=legacy-vs-modern` を追加し、`wildfly_undertow_request_count_total` と `wildfly_datasources_pool_active_count` を 2 軸で表示。CLI 環境のためスクリーンショットは取得不可だが、クエリ JSON と数値差分を README へ記録。

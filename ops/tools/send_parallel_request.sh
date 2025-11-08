@@ -235,6 +235,7 @@ OUTPUT_DIR="${PARITY_OUTPUT_DIR:-artifacts/parity-manual}"
 mkdir -p "$OUTPUT_DIR"
 
 HEADER_ARGS=()
+HEADER_ARGS=()
 if [[ -n "${PARITY_HEADER_FILE:-}" && -f "$PARITY_HEADER_FILE" ]]; then
   while IFS= read -r header_line; do
     [[ -z "$header_line" ]] && continue
@@ -264,12 +265,17 @@ send_request() {
   tmp_headers="$(mktemp)"
   tmp_stats="$(mktemp)"
   curl_exit=0
-  if curl -sS -X "$METHOD" "$base_url$REQUEST_PATH" \
-      -w '%{http_code} %{time_total}\n' \
-      -D "$tmp_headers" \
-      -o "$tmp_body" \
-      "${HEADER_ARGS[@]}" \
-      "${BODY_ARGS[@]}" >"$tmp_stats"; then
+  local -a curl_args=(curl -sS -X "$METHOD" "$base_url$REQUEST_PATH" \
+    -w '%{http_code} %{time_total}\n' \
+    -D "$tmp_headers" \
+    -o "$tmp_body")
+  if [[ ${#HEADER_ARGS[@]} -gt 0 ]]; then
+    curl_args+=("${HEADER_ARGS[@]}")
+  fi
+  if [[ ${#BODY_ARGS[@]} -gt 0 ]]; then
+    curl_args+=("${BODY_ARGS[@]}")
+  fi
+  if "${curl_args[@]}" >"$tmp_stats"; then
     read -r status_code time_total <"$tmp_stats"
   else
     curl_exit=$?
