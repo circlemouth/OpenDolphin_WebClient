@@ -12,6 +12,8 @@ services:
     depends_on:
       db:
         condition: service_healthy
+      minio:
+        condition: service_started
     environment:
       DB_HOST: ${MODERNIZED_DB_HOST:-opendolphin-postgres}
       DB_PORT: 5432
@@ -28,10 +30,24 @@ services:
       PLIVO_LOG_LEVEL: ${PLIVO_LOG_LEVEL:-NONE}
       PLIVO_LOG_MESSAGE_CONTENT: ${PLIVO_LOG_MESSAGE_CONTENT:-false}
       PLIVO_DEFAULT_COUNTRY: ${PLIVO_DEFAULT_COUNTRY:-+81}
+      MODERNIZED_STORAGE_MODE: ${MODERNIZED_STORAGE_MODE:-database}
+      ATTACHMENT_STORAGE_CONFIG_PATH: ${ATTACHMENT_STORAGE_CONFIG_PATH:-/opt/jboss/config/attachment-storage.yaml}
+      ATTACHMENT_S3_ENDPOINT: ${ATTACHMENT_S3_ENDPOINT:-http://minio:9000}
+      ATTACHMENT_S3_ACCESS_KEY: ${ATTACHMENT_S3_ACCESS_KEY:-opendolphin}
+      ATTACHMENT_S3_SECRET_KEY: ${ATTACHMENT_S3_SECRET_KEY:-opendolphin-secret}
+      ATTACHMENT_S3_BUCKET: ${ATTACHMENT_S3_BUCKET:-opendolphin-attachments}
+      ATTACHMENT_S3_REGION: ${ATTACHMENT_S3_REGION:-ap-northeast-1}
+      ATTACHMENT_S3_BASE_PATH: ${ATTACHMENT_S3_BASE_PATH:-clinics/$${FACILITY_ID}}
+      ATTACHMENT_S3_FORCE_PATH_STYLE: ${ATTACHMENT_S3_FORCE_PATH_STYLE:-true}
+      ATTACHMENT_S3_SERVER_SIDE_ENCRYPTION: ${ATTACHMENT_S3_SERVER_SIDE_ENCRYPTION:-AES256}
+      ATTACHMENT_S3_KMS_KEY_ID: ${ATTACHMENT_S3_KMS_KEY_ID:-}
+      ATTACHMENT_S3_MULTIPART_THRESHOLD_MB: ${ATTACHMENT_S3_MULTIPART_THRESHOLD_MB:-64}
       TZ: Asia/Tokyo
     ports:
       - "${APP_HTTP_PORT:-8080}:8080"
       - "${APP_ADMIN_PORT:-9990}:9990"
+    volumes:
+      - ./config/attachment-storage.dev.yaml:/opt/jboss/config/attachment-storage.yaml:ro
     healthcheck:
       test:
         - CMD-SHELL
@@ -40,3 +56,40 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
+
+  minio:
+    image: minio/minio:latest
+    container_name: opendolphin-minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-opendolphin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-opendolphin-secret}
+    ports:
+      - "${MINIO_API_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  minio-mc:
+    image: minio/mc:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-opendolphin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-opendolphin-secret}
+      ATTACHMENT_S3_BUCKET: ${ATTACHMENT_S3_BUCKET:-opendolphin-attachments}
+    entrypoint: ["/bin/sh", "-c"]
+    command: |
+      mc alias set local http://minio:9000 "$$MINIO_ROOT_USER" "$$MINIO_ROOT_PASSWORD" && \
+      mc mb -p local/"$$ATTACHMENT_S3_BUCKET" >/dev/null 2>&1 || true && \
+      mc anonymous set none local/"$$ATTACHMENT_S3_BUCKET" >/dev/null 2>&1 || true && \
+      tail -f /dev/null
+
+volumes:
+  minio-data:

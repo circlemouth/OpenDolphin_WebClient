@@ -56,3 +56,35 @@ Optional flags:
 
 Document history:
 - 2026-05-27: Initial version (Codex).***
+
+## 2025-11-09 追加メモ（手動比較）
+- 目的: `/dolphin` のようにテキストレスポンスのみを返す API で JSON デコードエラーにならないよう `compare: "text"` を設定する。
+- 手順例:
+  ```bash
+  mkdir -p tmp/parity-touch/20251109T060930Z
+  cat <<'JSON' > tmp/parity-touch/20251109T060930Z/api_targets.json
+  {
+    "defaults": {
+      "headers": {
+        "userName": "1.3.6.1.4.1.9414.72.103:doctor1",
+        "password": "doctor2025",
+        "clientUUID": "parity-touch-client",
+        "facilityId": "1.3.6.1.4.1.9414.72.103"
+      },
+      "expected_status": 200
+    },
+    "targets": [
+      { "id": "dolphin_ping", "path": "/dolphin", "method": "GET", "compare": "text" },
+      { "id": "serverinfo_jamri", "path": "/serverinfo/jamri", "method": "GET", "compare": "text" }
+    ]
+  }
+  JSON
+
+  python3 scripts/api_parity_response_check.py \
+    --config tmp/parity-touch/20251109T060930Z/api_targets.json \
+    --legacy-base http://localhost:8080/openDolphin/resources \
+    --modern-base http://localhost:9080/openDolphin/resources \
+    | tee tmp/parity-touch/20251109T060930Z/diff.txt
+  ```
+- 出力: 2 ターゲットとも `[PASS]`。`tmp/parity-touch/20251109T060930Z/diff.txt` を `artifacts/parity-manual/TRACEID_JMS/` へコピーすれば再利用可能。
+- 注意: Compose が停止していると `exit code 7 (connection refused)` になるため、Docker 操作者と実行時間を調整する。

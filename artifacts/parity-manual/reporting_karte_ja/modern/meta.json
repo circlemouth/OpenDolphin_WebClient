@@ -4,6 +4,6 @@
   "base_url": "http://localhost:9080/openDolphin/resources",
   "request_id": "reporting_karte_ja",
   "status_code": 404,
-  "time_total": "0.009795",
+  "time_total": "0.005525",
   "exit_code": 0
 }

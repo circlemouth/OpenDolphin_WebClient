@@ -40,3 +40,19 @@
   - Modernized 側 `/user/doctor1` 実行時に `relation "d_users" does not exist` で `SessionOperation` が 500 になったスタックトレースを保存。`d_users` / `d_facility` 等の初期データ投入が無いと 200/400/401 ケースは実行できない旨を記載。
 
 > **次ステップ:** `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` を参照して `d_users` ほかテストデータを `db-modernized` と `db` の双方に投入し、`trace_http_400`〜`trace_http_500` を再実行。完了後は本ファイルと `domain-transaction-parity.md` を更新し、Checklist #49/#73/#74 をクローズする。
+
+## 5. 2025-11-09 実行ログ（Compose=local, RUN_ID=20251109T060930Z）
+- HTTP 証跡: `artifacts/parity-manual/TRACEID_JMS/20251109T060930Z/trace_http_{200,400,401,500}/`
+- WildFly ログ: `artifacts/parity-manual/TRACEID_JMS/20251109T060930Z/logs/modern_trace_http_*.log`
+
+| ケース | 期待 | Legacy | Modernized | 備考 |
+| --- | --- | --- | --- | --- |
+| `trace_http_200` (`GET /serverinfo/jamri`) | 200 | 200 | 200 | Trace ID は modernized のみ INFO 出力（Legacy LogFilter には未実装）。 |
+| `trace_http_400` (`GET /dolphin/activity/2025,04`) | 400 | **500** | **500** | Modernized が `UnknownEntityException: AuditEvent`。Legacy も 500 HTML。 |
+| `trace_http_401` (`GET /touch/user/...`) | 401 | **500** | **500** | Modernized ログに `Remote user does not contain facility separator`。Legacy は 500 HTML。 |
+| `trace_http_500` (`GET /karte/pid/INVALID,%5Bdate%5D`) | 500 | 200 | 400 | Legacy が例外を握り潰し 200。Modernized は JSON デコードエラーを 400 で返却。 |
+
+### 5.1 追加メモ / TODO
+1. JMS ログは今回のケースでは発生せず。`/20/adm/factor2/*` や Touch 送信系の Trace 採取が必要。
+2. Legacy 側の Trace ID 表示を `LogFilter` へ追加するまで、Legacy HTTP での可視化は未達。
+3. `dolphin/activity` と `touch/user` の 500 化により `rest_error_scenarios.manual.csv` も 400/401 を記録できていない。アプリ修正後、同 RUN_ID フォルダへ差分を上書きする。

@@ -6,6 +6,7 @@ WORKDIR /workspace
 COPY pom.xml ./
 RUN grep -v '<module>server</module>' pom.xml | grep -v '<module>client</module>' > pom.server-modernized.xml
 COPY common ./common
+COPY reporting ./reporting
 COPY server-modernized ./server-modernized
 COPY ext_lib ./ext_lib
 COPY ops/shared/docker/settings.xml /tmp/maven-settings.xml
@@ -60,9 +61,15 @@ ENV JBOSS_HOME=/opt/jboss/wildfly \
     WILDFLY_HOME=/opt/jboss/wildfly
 
 USER root
+RUN mkdir -p /usr/share/fonts/opendolphin
+COPY ops/assets/fonts/NotoSansCJKjp-Regular.otf /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+RUN chmod 644 /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+ENV OPENDOLPHIN_REPORT_FONT_PATH=/usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
 COPY --from=build /workspace/server-modernized/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
+RUN mkdir -p /opt/jboss/config
+COPY server-modernized/config/attachment-storage.sample.yaml /opt/jboss/config/attachment-storage.yaml
 COPY ops/shared/docker/custom.properties ${WILDFLY_HOME}/custom.properties
 COPY ops/modernized-server/docker/configure-wildfly.cli /opt/jboss/configure-wildfly.cli
 COPY ops/shared/docker/bootstrap.sh /opt/jboss/bootstrap.sh

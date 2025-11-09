@@ -15,6 +15,7 @@ import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.framework.SessionOperation;
+import open.dolphin.storage.attachment.AttachmentStorageManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -106,6 +107,9 @@ public class KarteServiceBean {
 
     @Inject
     private MmlSenderBean mmlSenderBean;
+
+    @Inject
+    private AttachmentStorageManager attachmentStorageManager;
 
 //s.oh^ 2014/02/21 Claim送信方法の変更
     //@Resource(mappedName = "java:/JmsXA")
@@ -480,6 +484,8 @@ public class KarteServiceBean {
 
         // 永続化する
         em.persist(document);
+        attachmentStorageManager.persistExternalAssets(document.getAttachment());
+        attachmentStorageManager.persistExternalAssets(document.getAttachment());
 
         // ID
         long id = document.getId();
@@ -734,6 +740,7 @@ public class KarteServiceBean {
                     AttachmentModel model = (AttachmentModel)iter.next();
                     model.setStatus(IInfoModel.STATUS_DELETE);
                     model.setEnded(ended);
+                    attachmentStorageManager.deleteExternalAsset(model);
                 }
                 
                 // 削除したDocumentのlinkID を 削除するDocument id(PK) にしてLoopさせる
@@ -1360,6 +1367,7 @@ public class KarteServiceBean {
             AttachmentModel attachment = (AttachmentModel)em.createQuery(QUERY_ATTACHMENT_BY_ID)
                                             .setParameter(ID, pk)
                                             .getSingleResult();
+            attachmentStorageManager.populateBinary(attachment);
             return attachment;
         } catch (NoResultException e) {
         }

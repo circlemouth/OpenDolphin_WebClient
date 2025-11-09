@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import jakarta.ejb.Stateless;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
@@ -39,6 +40,7 @@ import open.dolphin.infomodel.SchemaModel;
 import open.dolphin.infomodel.StampModel;
 import open.dolphin.infomodel.StampTreeModel;
 import open.dolphin.infomodel.VitalModel;
+import open.dolphin.storage.attachment.AttachmentStorageManager;
 import open.dolphin.touch.converter.IPhysicalModel;
 
 /**
@@ -100,6 +102,9 @@ public class EHTServiceBean {
     
     @PersistenceContext
     private EntityManager em;
+
+    @Inject
+    private AttachmentStorageManager attachmentStorageManager;
     
     // 直近の新患リスト
     public List<PatientModel> getFirstVisitors(String facilityId, int firstResult, int maxResult) {
@@ -931,6 +936,7 @@ public class EHTServiceBean {
             AttachmentModel attachment = (AttachmentModel)em.createQuery(QUERY_ATTACHMENT_BY_ID)
                                             .setParameter(ID, pk)
                                             .getSingleResult();
+            attachmentStorageManager.populateBinary(attachment);
             return attachment;
         } catch (NoResultException e) {
         }
