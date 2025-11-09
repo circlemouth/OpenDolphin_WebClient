@@ -122,3 +122,34 @@
   成果物・ログ・DB スナップショットは `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251108T213140Z/` に保存。
 - **テスト**: `cd server-modernized && mvn -Dtest=MmlSenderBeanSmokeTest test`（ログ: `tmp/mvn-mml.log`）。`MmlSenderBeanSmokeTest` は 1/1 パス。
 - **残課題**: `claimHelper.vm` をどの WAR/モジュールでバンドルするか決め、`PUT /20/adm/eht/sendClaim` で 2xx 応答と ORCA ACK/NAK を採取する。Legacy 側 403（Basic 認証失敗）も別タスクで要確認。
+
+## 10. 2025-11-09 Trace / REST / 監査スモーク採取
+
+- 成果物: `artifacts/parity-manual/{db-restore,smoke,rest-errors,TRACEID_JMS,audit}/20251109T060930Z/`
+- 目的: Checklist #49/#73/#74 に対する現状把握（Trace 200/400/401/500、REST 4xx/5xx、監査ログ/TOTP）の証跡を一括更新。
+
+### 10.1 DB ベースライン
+- `ops/db/local-baseline/local_synthetic_seed.sql` をレガシー／モダナイズ双方へ投入し、`mvn -f pom.server-modernized.xml -pl server-modernized org.flywaydb:flyway-maven-plugin:{baseline,migrate}` で V0001〜V0222 を適用。ログは `artifacts/parity-manual/db-restore/20251109T060930Z/`。
+- Modernized 側では `d_audit_event_seq` が欠落し 2FA 監査が 500 になるため、暫定対処として手動 `CREATE SEQUENCE d_audit_event_seq` → `setval(...)` を実施。再初期化時に消える恐れがあるので Flyway へ正式取り込みが必要。
+- `d_facility` / `d_users`（doctor1/admin）を Legacy 相当の facilityId (`1.3.6.1.4.1.9414.72.103`) へ合わせ、`hibernate_sequence` を 20002 に戻した。
+
+### 10.2 Smoke / Trace / REST 結果
+
+| ケース | Legacy | Modernized | ログ |
+| --- | --- | --- | --- |
+| `/dolphin` (base_readonly) | 200 OK | 200 OK | `artifacts/parity-manual/smoke/20251109T060930Z/` |
+| `/serverinfo/jamri` (Trace 200) | 200 OK | 200 OK | 同上＋`TRACEID_JMS/20251109T060930Z/trace_http_200/` |
+| `/mml/patient/list/...` | 200 OK | **500** (`String index out of range: -1`) | `smoke/.../logs/modern_server.log` |
+| `/dolphin/activity/2025,04` | **500** | **500** (`UnknownEntityException: AuditEvent`) | `rest-errors/.../trace_http_400/` ＋ `TRACEID_JMS/.../logs/modern_trace_http_400.log` |
+| `/touch/user/doctor1,...` | **500** | **500** (`Remote user does not contain facility separator`) | 同上 (`trace_http_401`) |
+| `/karte/pid/INVALID,%5Bdate%5D` | 200 (空 JSON) | 400 (`Not able to deserialize data provided`) | `rest-errors/.../trace_http_500/` |
+
+### 10.3 監査ログ / 2FA
+- `/20/adm/factor2/totp/registration` で `AuditTrailService` が `relation "d_audit_event_seq" does not exist` となるところまで再現。シーケンスを追加後、別ワーカーの Docker 停止で HTTP 接続が `connection refused` になり採取未完。
+- 手順と残タスクは `artifacts/parity-manual/audit/20251109T060930Z/README.md` に記載。`d_audit_event` へ `TOTP_*` 行が入るまで再実行が必要。
+
+### 10.4 マネージャー（Docker 操作者）への依頼
+1. Compose を起動した状態で 8080/9080 を開放し、`TRACEID_JMS` ケースと `/20/adm/factor2/*` を再実行できるよう維持する。
+2. Modernized DB に `d_audit_event_seq` が存在することを確認。欠落していれば `POSTGRES_BASELINE_RESTORE.md` の SQL を適用し、Flyway に組み込む検討を進める。
+3. `/dolphin/activity/2025,04` の JPQL (`AuditEvent`) および `/touch/user/...` の facility 判定を修正し、4xx/5xx 期待ステータスへ戻す。修正後は本節の artifacts を更新する。
+4. `/karte/pid/INVALID,%5Bdate%5D` は Legacy/Modernized で期待コードが揃っていないため、Legacy 側 `KarteServiceBean` の例外ハンドリングも含めて差分を整理する。

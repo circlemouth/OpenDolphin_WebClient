@@ -1,0 +1,14 @@
+# 開発環境向けの添付ファイル保存設定
+storage:
+  type: s3
+  database:
+    lobTable: d_attachment
+  s3:
+    bucket: opendolphin-attachments
+    region: ap-northeast-1
+    endpoint: http://minio:9000
+    basePath: clinics/${FACILITY_ID}/documents
+    forcePathStyle: true
+    serverSideEncryption: AES256
+    kmsKeyId: null
+    multipartUploadThresholdMb: 64

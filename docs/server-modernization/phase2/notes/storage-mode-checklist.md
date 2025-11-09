@@ -32,17 +32,25 @@ Secrets へ登録する `attachment-storage.yaml` は `server-modernized/config/
 
 ## 4. モード切替と再起動の暫定手順
 1. **Compose プロジェクト分離**: `COMPOSE_PROJECT_NAME=od-attach-db`（DB モード）、`COMPOSE_PROJECT_NAME=od-attach-s3`（S3 モード）を使い分け、`docker compose -f docker-compose.modernized.dev.yml up -d --build` でそれぞれ起動。既存 Compose ファイルにはストレージ関連の環境変数が無いため、`.env` 等で暫定的に注入する。 
-2. **設定反映**: DB モードは `attachment-storage.yaml` の `storage.type=database` を Secrets ボリュームに配置。S3 モードでは MinIO 設定を埋めたファイルをマウントし、WildFly 起動前に `MODERNIZED_STORAGE_MODE=s3`（※現状未実装）を環境変数として渡す想定。
-3. **アプリ再起動**: `docker compose restart server-modernized-dev` 実行。構成が未完成のため、現状は再起動しても値が反映されない点に注意。実装完了後は再起動直後に `/openDolphin/resources/dolphin` ヘルスチェックを確認する。
+2. **設定反映**: `.env` に `MODERNIZED_STORAGE_MODE`（`database`/`s3`）と MinIO 認証情報 (`MINIO_ROOT_USER`, `MINIO_ROOT_PASSWORD`, `ATTACHMENT_S3_*`) を追記し、`docker-compose.modernized.dev.yml` では MinIO + `minio-mc` が自動起動する。YAML (`server-modernized/config/attachment-storage.sample.yaml`) は `/opt/jboss/config/attachment-storage.yaml` にマウントされる。
+3. **アプリ再起動**: `MODERNIZED_STORAGE_MODE=<mode> docker compose -f docker-compose.modernized.dev.yml up -d server-modernized-dev` で起動し、`SYSAD_*` ヘッダー付きで `/openDolphin/resources/dolphin` を確認する。mode を切り替える際は `docker compose down -v` でボリュームをクリアした後に再起動する。
 
 ## 5. 検証ステータス（2025-11-08T20:54:51Z）
-- `ops/tests/storage/attachment-mode/` ディレクトリがリポジトリに存在せず、添付アップロード/ダウンロード自動化スクリプトを実行できない。`ls ops/tests/storage/attachment-mode` が `No such file or directory` を返すことを確認。
-- `MODERNIZED_STORAGE_MODE` を参照する実装が見つからないため、DB/S3 の切替ロジックが未実装と判断。 
+- `ops/tests/storage/attachment-mode/run.sh` を追加。`MODERNIZED_STORAGE_MODE=database|s3` で compose を起動し、サンプル添付をアップロード→ダウンロード→`sha256sum` 突合、MinIO ログ採取まで自動化する。docker を共有利用しているため、実行はマネージャーがタイミング調整の上で行う。
+- `MODERNIZED_STORAGE_MODE` / `ATTACHMENT_STORAGE_CONFIG_PATH` / `ATTACHMENT_S3_*` を `server-modernized` へ伝搬するロジックを実装済み。WildFly 起動時に `attachment-storage.yaml` を読み込み、S3 モードではアップロードを MinIO に退避し、取得時は自動でバイナリをフェッチする。
 - 上記理由によりバイナリハッシュ比較 (`shasum -a 256`) やレスポンス JSON 差分採取は開始できず、`artifacts/parity-manual/attachments/20251108T205451Z/README.md` へブロッカーを記録済み。
 
 ## 6. Runbook / 参照資料
 - `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`: 外部ストレージ（S3/ファイル共有）設定手順。添付ストレージ切替方針と Secrets 管理ルールを参照すること。
 - `docs/server-modernization/persistence-layer/3_4-persistence-layer-modernization.md`: S3 デュアルライト構想および `attachment-storage.yaml` ひな形の背景。
+- `ops/tests/storage/attachment-mode/README.md`: 自動化スクリプトの前提、実行手順、出力物レイアウト。
+
+## 8. マネージャー実行メモ（docker 専任者向け）
+
+1. `docker compose -f docker-compose.modernized.dev.yml down -v` で共有コンテナをリセットし、他タスクと排他状態を確保する。
+2. `ops/tests/storage/attachment-mode/run.sh --compose-file docker-compose.modernized.dev.yml --output-root artifacts/parity-manual/attachments` を実行。完走すると `artifacts/parity-manual/attachments/<UTC>/database|s3/` に API レスポンス、ハッシュ、MinIO/WildFly ログが保存される。
+3. 実行完了後、`docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` 該当タスクと本ファイルのステータス欄に完了日時と成果物パスを追記する。
+4. フェイルした場合は `artifacts/.../<mode>/logs/server.log` と `docker compose logs server-modernized-dev` を添付し、ブロッカー内容を本ファイル §5 へ追記する。
 
 ## 7. 今後必要なアクション
 - `server-modernized` で `attachment-storage.yaml` をロードし、`storage.type` に応じて `AttachmentModel` 保存先を切り替える実装を追加。

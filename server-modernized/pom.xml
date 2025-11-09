@@ -31,6 +31,9 @@
         <bouncycastle.version>1.82</bouncycastle.version>
         <micrometer.version>1.12.5</micrometer.version>
         <jboss.logmanager.version>3.1.2.Final</jboss.logmanager.version>
+        <aws.sdk.version>2.25.21</aws.sdk.version>
+        <snakeyaml.version>2.2</snakeyaml.version>
+        <microprofile.config.version>3.1</microprofile.config.version>
     </properties>
 
     <dependencyManagement>
@@ -103,6 +106,11 @@
     </dependencyManagement>
 
     <dependencies>
+        <dependency>
+            <groupId>opendolphin</groupId>
+            <artifactId>opendolphin-reporting</artifactId>
+            <version>${project.version}</version>
+        </dependency>
         <dependency>
             <groupId>opendolphin</groupId>
             <artifactId>opendolphin-common</artifactId>
@@ -183,6 +191,27 @@
         <dependency>
             <groupId>com.yubico</groupId>
             <artifactId>webauthn-server-attestation</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>s3</artifactId>
+            <version>${aws.sdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>software.amazon.awssdk</groupId>
+            <artifactId>url-connection-client</artifactId>
+            <version>${aws.sdk.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.yaml</groupId>
+            <artifactId>snakeyaml</artifactId>
+            <version>${snakeyaml.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.eclipse.microprofile.config</groupId>
+            <artifactId>microprofile-config-api</artifactId>
+            <version>${microprofile.config.version}</version>
+            <scope>provided</scope>
         </dependency>
         <dependency>
             <groupId>jakarta.jms</groupId>

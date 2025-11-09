@@ -105,6 +105,7 @@ WORKDIR /workspace
 COPY pom.xml ./
 RUN sed '/<module>server-modernized<\\/module>/d' pom.xml > pom.server-classic.xml
 COPY common ./common
+COPY reporting ./reporting
 COPY server ./server
 COPY client ./client
 COPY ext_lib ./ext_lib
@@ -161,6 +162,10 @@ ENV JBOSS_HOME=/opt/jboss/wildfly \
     WILDFLY_HOME=/opt/jboss/wildfly
 
 USER root
+RUN mkdir -p /usr/share/fonts/opendolphin
+COPY ops/assets/fonts/NotoSansCJKjp-Regular.otf /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+RUN chmod 644 /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+ENV OPENDOLPHIN_REPORT_FONT_PATH=/usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
 COPY --from=build /workspace/server/target/opendolphin-server.war \${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar

@@ -1,12 +1,7 @@
 #parse("common/header.vm")
-#set($patient = $context.patient)
-患者氏名: $patient.fullName
-生年月日: $patient.birthDate.format('yyyy年MM月dd日')
-主治医: $context.attendingDoctor
-診療日: $context.encounterDate.format('yyyy年MM月dd日')
+#parse("common/karte_helpers.vm")
+#renderPatientOverview($context)
 
-#foreach($item in $context.summaryItems)
-* $item.label: $item.value
-#end
+#renderSummaryList($context)
 
 #parse("common/footer.vm")
