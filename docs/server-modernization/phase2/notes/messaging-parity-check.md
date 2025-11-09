@@ -61,3 +61,51 @@
 2. `EHTResource.sendPackage` の 9 桁前提ロジックを排除（`String#indexOf` の戻り値検証 + 例外化）し、500 → 2xx へ戻す。
 3. カウンタ・監視設定を `docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md` と本メモへ反映。
 4. 本調査結果を `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ5 項目へ反映済み。Runbook 連携も後述の更新を参照。
+
+## 8. Claim/Diagnosis/MML 送信再検証 (2025-11-09)
+
+### 8.1 HTTP / JMS / DB 結果サマリ
+| リクエスト (ID) | Legacy | Modernized | JMS / DB 観測 | 証跡 |
+| --- | --- | --- | --- | --- |
+| `PUT /20/adm/eht/sendClaim` (`20251109T201826Z_CLAIM`) | 403（従来どおり Basic 認証エラー） | 200, 0.81s | `MessagingGateway` が enqueue → `MessageSender` が Claim payload を ORCA 向けに処理。`jms.queue.dolphinQueue` の `messages-added=2`, `message-count=0` で DLQ 流入なし。 | `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251109T201846Z/claim_send/`、`logs/jms_dolphinQueue_read-resource.txt` |
+| `POST /karte/diagnosis/claim` (`20251109T201827Z_DIAGNOSIS`) | 403 | 200, 0.05s | JMS enqueue までは成功するが `diseaseHelper.vm` が見つからず `MessageSender` が `ResourceNotFoundException` を投げ、メッセージが `jms.queue.DLQ` に 1 件蓄積。`d_diagnosis` には新規行が追加されず ID=1 のまま。 | `logs/docker_logs_opendolphin-server-modernized-dev.txt:504`、`logs/jms_DLQ_list-messages.txt`、`db/d_diagnosis_tail.txt` |
+| `PUT /mml/send` (`20251109T201827Z_MML`) | 403 | 200, 0.12s | `MmlSenderBean` が SHIFT_JIS で 10,040 bytes の XML を生成し、レスポンスへ `traceId` / `sha256` / `payload` を返却。JMS/DB 副作用なし。 | `mml_send/modern/response.json`、`logs/docker_logs_opendolphin-server-modernized-dev.txt:258-394` |
+
+> 実行環境: `legacy-vs-modern_default` ネットワーク上のヘルパーコンテナ（`opendolphin_webclient-server-modernized-dev:latest`）から `BASE_URL_MODERN=http://opendolphin-server-modernized-dev:8080/...` として `ops/tools/send_parallel_request.sh` を実行。ホスト → 9080/TCP のポートフォワードが応答しないため、この迂回手順を README に記録した。
+
+### 8.2 `claimHelper.vm` 配置・デプロイ方針
+1. **ソース確認**: Legacy Swing クライアントが参照する `client/src/main/java/open/dolphin/resources/templates/claimHelper.vm` と、Modernized WAR に含める `server-modernized/src/main/resources/claimHelper.vm` は完全一致（`artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251109T201846Z/templates/claimHelper.vm.diff` 参照）。Legacy からの流用が成立。 
+2. **ビルド工程**: `mvn -pl server-modernized package` もしくは `mvn -pl server-modernized -DskipTests package` を実行し、`server-modernized/target/classes/claimHelper.vm` が生成されること、および `jar tf server-modernized/target/opendolphin-server.war | grep claimHelper.vm` で WAR 内に内包されていることを確認。
+3. **コンテナ反映**: `docker compose build server-modernized-dev` を再実行すると、`ops/modernized-server/docker/Dockerfile` が `server-modernized/target/opendolphin-server.war` を WildFly へ配置するためテンプレートが自動で取り込まれる。必要に応じて `docker compose restart server-modernized-dev`。
+4. **動作確認**: `ops/tools/send_parallel_request.sh` を再実行し、`PUT /20/adm/eht/sendClaim` が 2xx で返り、`logs/docker_logs_opendolphin-server-modernized-dev.txt` に `Claim message enqueued`→`MessageSender Processing CLAIM JMS message` の INFO ペアが出現することをもって完了とする。 
+5. **監査更新**: `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` の該当行と `PHASE2_PROGRESS.md` へ証跡リンク（`artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251109T201846Z/claim_send/`）を追加し、再発時は本テンプレート存在有無を最初に確認する。 
+
+### 8.3 `MessagingHeaders` 仕様（JMS 属性図）
+- 実装: `server-modernized/src/main/java/open/dolphin/msg/gateway/MessagingHeaders.java`
+- 定義: `TRACE_ID=\"openDolphinTraceId\"`、`PAYLOAD_TYPE=\"openDolphinPayloadType\"`。JMS 仕様の「Java 識別子」制限を満たす camelCase 名で統一。Legacy で利用していた `open.dolphin.traceId` のような `.` 含みプロパティは禁止。
+
+```mermaid
+sequenceDiagram
+    participant REST as REST API (EHT/MML Resource)
+    participant Gateway as MessagingGateway
+    participant JMS as java:/queue/dolphin
+    participant Sender as MessageSender MDB
+    participant ORCA as ORCA HTTP Endpoint
+    REST->>Gateway: PUT/POST (traceId)
+    Gateway->>JMS: enqueue(payload, headers: openDolphinTraceId, openDolphinPayloadType)
+    JMS-->>Sender: JMS Message + headers
+    Sender->>ORCA: HTTP送信 (traceId ログ)
+    Sender->>Audit: open.dolphin.audit.external (action=CLAIM/MML/DIAGNOSIS)
+    Sender-->>Gateway: 成功/失敗を Structured Logging
+```
+
+| ヘッダー | 値の生成元 | 利用箇所 |
+| --- | --- | --- |
+| `openDolphinTraceId` | `SessionTraceManager#getCurrentTraceId()`。HTTP ログ・監査ログと JMS メッセージを突合。 | `MessagingGateway.enqueue()`／`MessageSender.handle*()`／`logs/jms_*list-messages.txt` |
+| `openDolphinPayloadType` | `MessagingGateway#dispatchClaim/Diagnosis/Mml` で `CLAIM` / `DIAGNOSIS` / `MML` を設定。 | `MessageSender` がハンドラを切り分け、DLQ 調査時のメッセージ区別にも利用。 |
+
+### 8.4 追加観測と TODO
+1. **Diagnosis JMS 破綻**: `open.dolphin.session.MessageSender` が `diseaseHelper.vm` を参照しており、現在 WAR に未同梱のため DLQ が増加。`artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251109T201846Z/logs/docker_logs_opendolphin-server-modernized-dev.txt:504`、`logs/jms_DLQ_list-messages.txt` を参照。テンプレート復旧計画を Claim と同様に策定する。 
+2. **DB 整合性**: Diagnosis API 200 でも `d_diagnosis` に変更が無い。トランザクション境界および CLI フィクスチャ (`tmp/claim-tests/send_diagnosis_success.json`) の `karte_id` / `user_id` を再点検し、`db/d_diagnosis_tail.txt` をベースラインに差分を記録する。 
+3. **MML 成功パス**: `mml_send/modern/response.json` に `payload` と `sha256` が格納されるようになったため、`MmlSenderBeanSmokeTest`（§4.4）と同じフィクスチャで回帰を取る。Micrometer WARN（`otel-collector` 未接続）は既知のインフラ TODO。
+4. **ポートフォワード課題**: ホスト → `localhost:9080` が無応答（但し TCP SYN は成功）なため、`legacy-vs-modern_default` 内で CLI を叩く Runbook を `CLAIM_DIAGNOSIS_FIX/README.md` へ明記済み。恒久対応として `socat`/`docker run -p` で 9080 を再公開する案を検討する。
