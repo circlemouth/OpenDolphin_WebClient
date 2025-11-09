@@ -309,6 +309,26 @@
 7. **停止**  
    - 利用終了後は `docker compose down`（または `docker compose -p jma-receipt-docker-for-ubuntu-2204 down`）で後片付けし、永続ボリュームが不要であれば `docker volume rm jma-receipt-docker-for-ubuntu-2204_pg_data jma-receipt-docker-for-ubuntu-2204_orca_state` を実行する。
 
+#### Gate #44: MmlSenderBeanSmokeTest 安定実行（2025-11-09 更新）
+
+1. **フィクスチャ確認**  
+   - `tmp/mml-tests/send_mml_success.json` と `tmp/mml-tests/mml.headers` が存在し、`docInfo.sendMml=true`・`encoding=Shift_JIS` になるよう整備されていることをチェックする。  
+   - `claim.host` など ORCA 向け設定は不要だが、`tmp/mml-tests/` を更新した場合は `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/<UTC>/mml_send/` にも反映させる。
+2. **テスト実行**  
+   ```bash
+   cd server-modernized
+   mvn -Dtest=MmlSenderBeanSmokeTest test | tee ../tmp/mvn-mml.log
+   ```  
+   - `Tests run: 1, Failures: 0, Errors: 0` を Gate 通過条件とする。ログ例: `tmp/mvn-mml.log`（2025-11-09 版）。
+3. **判定基準**  
+   - `MmlDispatchResult` の `encoding` が `SHIFT_JIS`（大文字化して比較）であること。  
+   - `payload` / `sha256` / `byteLength` がすべて非 null・非空であること。  
+   - `documentId` がフィクスチャの `docInfo.docId` と一致すること。  
+   - 失敗した場合は `server-modernized/src/test/java/open/dolphin/session/MmlSenderBeanSmokeTest.java` にログ出力を追加し、`tmp/mml-tests` 側の不備かコード不整合かを切り分ける。
+4. **証跡保存**  
+   - `tmp/mvn-mml.log` を `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/<UTC>/maven/MmlSenderBeanSmokeTest.log` へ複製し、`docs/server-modernization/phase2/notes/messaging-parity-check.md` §8.1 からリンクする。  
+   - Gate #44 のチェック欄へ「run:YYYY-MM-DD」「result:pass/fail」「log:tmp/mvn-mml.log」を追記する。
+
 ## 5. 切替手順（サンプル）
 
 1. **準備日 (T-7)**  

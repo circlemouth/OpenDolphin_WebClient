@@ -13,6 +13,7 @@
   - `setup_codex_env_unix_nonroot.log`: LF 変換済みコピーを root 未使用で実行し、root 権限必須エラーを確認
   - `compose_services.txt` / `compose_profiles.txt`: `docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml config --services/--profiles` の CLI 出力
 - **環境変数テンプレ**: `ops/tools/send_parallel_request.profile.env.sample`
+- **DB ベースライン Gate**: `docs/server-modernization/phase2/operations/POSTGRES_BASELINE_RESTORE.md`（節 6）および `artifacts/parity-manual/db-restore/20251109T200035Z/`（`psql -h localhost ...`, `flyway info`, README）を参照し、キャプチャ手順に入る前の必須 Gate とする。
 
 ## 1. 前提条件と権限
 

@@ -3,7 +3,7 @@
 - 作成: Worker #2 (Codex)
 - 目的: facility_num シーケンスや 2FA/監査テーブルが欠損した Postgres をローカル合成ベースライン（Hibernate 自動 DDL + `ops/db/local-baseline/local_synthetic_seed.sql`）で即座に復旧し、JMS / CLAIM / TRACE 系検証を継続できる状態へ戻す。
 - 関連 Runbook: [`LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md`](LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md), [`TRACE_PROPAGATION_CHECK.md`](TRACE_PROPAGATION_CHECK.md), [`FACTOR2_RECOVERY_RUNBOOK.md`](FACTOR2_RECOVERY_RUNBOOK.md)
-- 証跡: `artifacts/parity-manual/db-restore/20251108/`（DDL 所在・欠損オブジェクト一覧・調査ログ）
+- 証跡: `artifacts/parity-manual/db-restore/20251108/`（DDL 所在・欠損オブジェクト一覧・調査ログ）、`artifacts/parity-manual/db-restore/20251109T200035Z/`（`scripts/start_legacy_modernized.sh start --build` 再実行ログと `psql -h localhost ... \dt` / `SELECT count(*) FROM d_users;` / `flyway info` 証跡、README 付き）
 
 ## 0. ローカルベースライン方針（2025-11-08 改訂）
 
@@ -24,7 +24,8 @@
    - `ops/db/local-baseline/local_synthetic_seed.sql` …… 施設/ユーザー種データ + `facility_num` シーケンス。
    - `server-modernized/tools/flyway/sql/V0002__*.sql`…… インデックス・2FA・監査などの差分スクリプト。
    - `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` …… JSONL インポート等、追加データが必要な場合の参照。
-2. **ツール**: `docker compose`, `docker exec`, `psql`, `flyway`（`server-modernized/tools/flyway/flyway.conf` を利用）、`rg`, `jq`。
+2. **ツール**: `docker compose`, `docker exec`, `psql`, `flyway`（`server-modernized/tools/flyway/flyway.conf` を利用）、`rg`, `jq`。  
+   - macOS で `psql` が未導入の場合は `brew install libpq`。ネットワーク/承認制約で導入できない場合は `docker exec -e PGPASSWORD=... opendolphin-postgres bash -lc "psql -h localhost ..."` をフォールバック手段として Runbook に含める。
 3. **環境変数**: `.env` に定義された `POSTGRES_*` / `MODERNIZED_POSTGRES_*` を利用する。CLI で直接指定する場合は表 1 を参照。
 4. **権限**: コンテナ内で `psql -U opendolphin` を実行できること。Flyway 実行ユーザーは `flyway_schema_history` 作成権限が必要。
 5. **ゲート定義**:
@@ -72,13 +73,18 @@
 3. `facility_num` シーケンスが自動生成されていない場合は、次工程のシード SQL が作成するためここでは何もしない。
 
 ### 3.3 テーブルシードの投入
-1. リポジトリルートを `/workspace` と仮定し、シード SQL を投入する。
+1. `ops/db/local-baseline/local_synthetic_seed.sql` をホスト側の `psql -h localhost` で投入し、証跡を残す。
    ```bash
-   docker exec -i opendolphin-postgres psql \
-     -U ${POSTGRES_USER:-opendolphin} \
-     -d ${POSTGRES_DB:-opendolphin} \
-     -f /workspace/ops/db/local-baseline/local_synthetic_seed.sql | tee artifacts/parity-manual/db-restore/$(date -u +%Y%m%dT%H%M%SZ)/legacy_seed.log
+   export TS=$(date -u +%Y%m%dT%H%M%SZ)
+   mkdir -p artifacts/parity-manual/db-restore/$TS
+   PGPASSWORD=${POSTGRES_PASSWORD:-opendolphin} \
+     psql -h localhost -p ${POSTGRES_PORT:-5432} \
+          -U ${POSTGRES_USER:-opendolphin} \
+          -d ${POSTGRES_DB:-opendolphin} \
+          -f ops/db/local-baseline/local_synthetic_seed.sql \
+     | tee artifacts/parity-manual/db-restore/$TS/legacy_seed.log
    ```
+   - ホストに `psql` が無い場合は `docker exec -e PGPASSWORD=${POSTGRES_PASSWORD:-opendolphin} opendolphin-postgres bash -lc "psql -h localhost -U ${POSTGRES_USER:-opendolphin} ${POSTGRES_DB:-opendolphin} -f /workspace/ops/db/local-baseline/local_synthetic_seed.sql"` で代替する。
 2. 追加データが必要な場合は `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` に従い JSONL を投入し、`SELECT count(*) FROM d_patient;` 等で件数を採取する。
 3. CLAIM/JMS 依存テーブル（`claim_item`, `diagnosis_module` など）が必要なタスクは、`ops/tests/api-smoke-test` の CLI で対象 API を実行してデータを生成する。直接 SQL で作り込む場合は別ファイルを用意し、本 Runbook の付録へリンクする。
 
@@ -100,13 +106,18 @@
    ```
 2. 必要に応じてスキーマを初期化（Legacy と同様）。
 3. `./scripts/start_legacy_modernized.sh start --build` をもう一度実行し、今度は `server-modernized-dev` の起動ログで Hibernate が Modernized DB にテーブルを生成することを確認する。処理完了後に `./scripts/start_legacy_modernized.sh stop`。
-4. `ops/db/local-baseline/local_synthetic_seed.sql` を Modernized DB にも投入する。
+4. `ops/db/local-baseline/local_synthetic_seed.sql` を Modernized DB にも投入する（Legacy と同じ TS を利用すると整理しやすい）。
    ```bash
-   docker exec -i opendolphin-postgres-modernized psql \
-     -U ${MODERNIZED_POSTGRES_USER:-opendolphin} \
-     -d ${MODERNIZED_POSTGRES_DB:-opendolphin_modern} \
-     -f /workspace/ops/db/local-baseline/local_synthetic_seed.sql | tee artifacts/parity-manual/db-restore/$(date -u +%Y%m%dT%H%M%SZ)/modern_seed.log
+   export TS=${TS:-$(date -u +%Y%m%dT%H%M%SZ)}
+   mkdir -p artifacts/parity-manual/db-restore/$TS
+   PGPASSWORD=${MODERNIZED_POSTGRES_PASSWORD:-opendolphin} \
+     psql -h localhost -p ${MODERNIZED_POSTGRES_PORT:-55432} \
+          -U ${MODERNIZED_POSTGRES_USER:-opendolphin} \
+          -d ${MODERNIZED_POSTGRES_DB:-opendolphin_modern} \
+          -f ops/db/local-baseline/local_synthetic_seed.sql \
+     | tee artifacts/parity-manual/db-restore/$TS/modern_seed.log
    ```
+   - `psql` が無い場合は `docker exec -e PGPASSWORD=${MODERNIZED_POSTGRES_PASSWORD:-opendolphin} opendolphin-postgres-modernized bash -lc "psql -h localhost -U ${MODERNIZED_POSTGRES_USER:-opendolphin} ${MODERNIZED_POSTGRES_DB:-opendolphin_modern} -f /workspace/ops/db/local-baseline/local_synthetic_seed.sql"` を利用する。
 
 ### 4.2 Flyway baseline + migrate
 1. `.env` あるいはシェルで Flyway 用環境変数を設定。
@@ -119,11 +130,38 @@
    ```
 2. `server-modernized/tools/flyway/flyway.conf` を指定して baseline/migrate。
    ```bash
-   flyway -configFiles=server-modernized/tools/flyway/flyway.conf -locations=filesystem:server-modernized/tools/flyway/sql baseline
-   flyway -configFiles=server-modernized/tools/flyway/flyway.conf -locations=filesystem:server-modernized/tools/flyway/sql migrate
+   export TS=${TS:-$(date -u +%Y%m%dT%H%M%SZ)}
+   mkdir -p artifacts/parity-manual/db-restore/$TS
+
+   docker run --rm --network container:opendolphin-postgres-modernized \
+     -e DB_HOST=localhost -e DB_PORT=5432 \
+     -e DB_NAME=${DB_NAME} -e DB_USER=${DB_USER} -e DB_PASSWORD=${DB_PASSWORD} \
+     -v "$PWD/server-modernized/tools/flyway":/flyway-host \
+     flyway/flyway:10.17 \
+     -configFiles=/flyway-host/flyway.conf \
+     -locations=filesystem:/flyway-host/sql baseline \
+     | tee artifacts/parity-manual/db-restore/$TS/flyway_baseline_modern.log
+
+   docker run --rm --network container:opendolphin-postgres-modernized \
+     -e DB_HOST=localhost -e DB_PORT=5432 \
+     -e DB_NAME=${DB_NAME} -e DB_USER=${DB_USER} -e DB_PASSWORD=${DB_PASSWORD} \
+     -v "$PWD/server-modernized/tools/flyway":/flyway-host \
+     flyway/flyway:10.17 \
+     -configFiles=/flyway-host/flyway.conf \
+     -locations=filesystem:/flyway-host/sql migrate \
+     | tee artifacts/parity-manual/db-restore/$TS/flyway_migrate_modern.log
+
+   docker run --rm --network container:opendolphin-postgres-modernized \
+     -e DB_HOST=localhost -e DB_PORT=5432 \
+     -e DB_NAME=${DB_NAME} -e DB_USER=${DB_USER} -e DB_PASSWORD=${DB_PASSWORD} \
+     -v "$PWD/server-modernized/tools/flyway":/flyway-host \
+     flyway/flyway:10.17 \
+     -configFiles=/flyway-host/flyway.conf \
+     -locations=filesystem:/flyway-host/sql info \
+     | tee artifacts/parity-manual/db-restore/$TS/flyway_info_modern.log
    ```
-   - `baselineOnMigrate=true` だが、Hibernate でスキーマを生成した直後は必ず `baseline` → `migrate` の順で実行し、`flyway_schema_history` に `version=0`（baseline）と `2/3/220/221` のレコードを残す。
-   - `V0002` 実行時に `pg_trgm` 拡張を作成するため、Postgres の `shared_preload_libraries` に依存せず適用可能。
+   - `baselineOnMigrate=true` だが、Hibernate でスキーマを生成した直後は **必ず** `baseline` → `migrate` → `info` の順で実行し、`flyway_schema_history` に `0,0001,0002,0003,0220,0221,0222` を残す（`artifacts/parity-manual/db-restore/20251109T200035Z/flyway_info_modern.log` を参照）。
+   - `flyway/flyway:10.17` イメージは Flyway バイナリを同梱しているため、ホストに Flyway をインストールできない環境でも同様の手順で証跡を残せる。
 
 ### 4.3 代表テーブル確認
 ```bash
@@ -148,22 +186,51 @@ SQL
 
 ### 4.6 2025-11-08 実測ログと既知ブロッカー
 - ローカル合成ベースライン実行例: `artifacts/parity-manual/db-restore/20251108T120030Z/legacy_seed.log`, `.../modern_seed.log`, `.../flyway_migrate.log`。いずれも `V0002/V0003/V0220/V0221` の完了を確認済み。
+- 2025-11-09 再実演: `artifacts/parity-manual/db-restore/20251109T200035Z/` に `scripts/start_legacy_modernized.sh start --build` ログ、`psql -h localhost -U opendolphin opendolphin -c '\dt'`, `SELECT count(*) FROM d_users;`、`flyway/flyway:10.17 info`（Legacy/Modernized 両方）を保存し、README へ Gate 条件を紐付けた。
 - 旧来の Secrets 依存ログ（`psql_dt_modernized.log`, `psql_count_*.log`）はレガシーな失敗事例として残しているが、現行フローでは参照のみ。必要に応じて `DOC_STATUS.md` のステータスを `Dormant` へ変更する。
 - 既知ブロッカーが発生した場合は `artifacts/parity-manual/db-restore/<UTC>/blocked_actions.log` に「どのテーブル/シーケンスが存在しないか」「合成ベースラインを再適用したか」を記録し、Flyway の `repair` / `migrate` で解消する。
+
+### 4.7 想定失敗パターンと復旧手順
+
+| No. | 失敗パターン | 代表ログ / 証跡 | 復旧手順 |
+| --- | --- | --- | --- |
+| 1 | `bash: psql: command not found`（ホストに Postgres クライアント無し） | `artifacts/parity-manual/db-restore/20251109T200035Z/README.md`（備考セクション） | `brew install libpq` で導入、もしくは `docker exec -e PGPASSWORD=... opendolphin-postgres bash -lc "psql -h localhost ..."` へ切り替える。README にフォールバック経緯を必ず記載。 |
+| 2 | `ERROR: relation "appointment_model" does not exist (42P01)`（Flyway `V0002`） | `artifacts/parity-manual/db-restore/20251108T062436Z/flyway_migrate.log` | `./scripts/start_legacy_modernized.sh start --build` で Hibernate に再生成させ、`ops/db/local-baseline/local_synthetic_seed.sql` を両 DB に投入後、`flyway ... baseline` → `migrate` を再実行。 |
+| 3 | `Unable to obtain connection from database (Connection refused)`（Flyway コンテナ） | `blocked_actions.log` に追記 | `docker ps` で `opendolphin-postgres(-modernized)` の稼働を確認し、`--network container:<db>` で Flyway を起動。`DB_PORT` を 5432（コンテナ内部ポート）へ固定。 |
+| 4 | `SELECT count(*) FROM d_users;` が 0、`facility_num` シーケンス欠損 | `artifacts/parity-manual/db-restore/20251109T200035Z/psql_modern_d_users_count.log` 等 | `ops/db/local-baseline/local_synthetic_seed.sql` を再流し、`SELECT nextval('facility_num')` → `setval` で値を戻す。Gate では Legacy/Modernized 両方で 3 件以上のユーザーを必須とする。 |
 
 ## 5. Flyway / Dump 再作成
 - ローカル合成ベースラインから検証用スナップショットを作りたい場合は `server-modernized/tools/flyway/scripts/export-schema.sh` を使って `pg_dump --schema-only` を取得し、`artifacts/parity-manual/db-restore/<UTC>/` に保存する。共有が必要になったときのみ Ops へ暗号化ファイルを送付する。
 - レガシー DB も同様に `pg_dump --schema-only --no-owner` で取得し、患者データを含む `--data-only` 出力は暗号化したうえでプロジェクト共有ストレージに置く（Secrets 依存とは切り離す）。
 
-## 6. Gate 判定と後続タスク
-1. **Gate: DB 復旧完了**  
-   - Legacy/Modernized 両方で `psql` の代表クエリに成功し、`flyway_schema_history` に `0,2,3,220,221` のレコードが存在すること。
-   - `facility_num` シーケンスから `nextval` が取得でき、`SystemServiceBean` で施設作成 API が成功すること。
-2. **Gate: 監査ログ採取準備**  
-   - `d_audit_event` への `INSERT` が `psql` で手動確認できること（例: `INSERT INTO d_audit_event (...) VALUES (...) RETURNING id;`）。
-   - `TRACE_PROPAGATION_CHECK` のケース ID を `ops/tools/send_parallel_request.sh` で再実行し、`artifacts/parity-manual/TRACEID_JMS/` に追記できる状態であること。
-3. **Gate: JMS/CLAIM**  
-   - `ops/tools/jms-probe.sh`（または `MessagingGateway` 経由 API）を実行する前に本 Runbook 手順を完了し、`docs/server-modernization/phase2/operations/LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md` の Gate 表に「DB ベースライン復旧済み」という行を追加する。
+## 6. Gate 条件（開始前前提 / チェックリスト / 証跡）
+
+### 6.1 開始前前提
+- `LEGACY_MODERNIZED_CAPTURE_RUNBOOK` 手順 1〜2（Compose 起動・環境変数ロード）が完了し、`scripts/start_legacy_modernized.sh start --build` を 1 度以上成功させていること。
+- `ops/db/local-baseline/local_synthetic_seed.sql` と `server-modernized/tools/flyway/sql/` が最新であること（差分があれば本 Runbook を更新してから適用）。
+- `TRACE_PROPAGATION_CHECK` や JMS/CLAIM の検証担当者と着手タイミングを共有し、DB Gate 未完了のまま次工程へ進めないこと。
+- `brew install libpq` または `docker exec ... psql` のいずれかで `psql -h localhost` が実行可能であること（フォールバック手段含む）。
+
+### 6.2 復旧チェックリスト
+
+| No. | チェック項目 | コマンド / 参照 | 判定基準 |
+| --- | --- | --- | --- |
+| 1 | Legacy DB スキーマ生成 | `psql -h localhost -U opendolphin opendolphin -c '\dt'` | `d_facility` / `d_users` / `d_audit_event` 等 50+ テーブルが表示される（`psql_legacy_dt.log`）。 |
+| 2 | Modernized DB スキーマ生成 | `psql -h localhost -U opendolphin opendolphin_modern -c '\dt'` | `d_factor2_*`, `phr_async_job`, `d_document` 等を確認（`psql_modern_dt.log`）。 |
+| 3 | シード投入 / 件数確認 | `SELECT count(*) FROM d_users;`（Legacy/Modernized） | 双方とも 3 件以上。0 件の場合は `local_synthetic_seed.sql` を再投入。 |
+| 4 | Flyway バージョン整合 | `docker run ... flyway/flyway:10.17 info` | `flyway_schema_history` に `0,0001,0002,0003,0220,0221,0222` が `Success`。 |
+| 5 | facility_num シーケンス | `SELECT nextval('facility_num');` → `SELECT setval('facility_num', <前値>, true);` | `nextval` が連番を返し、`SystemServiceBean` で施設作成 API が成功。 |
+| 6 | 監査ログ書き込み | `INSERT INTO d_audit_event (...) VALUES (...) RETURNING id;` | 1 件以上挿入でき、`TRACE_PROPAGATION_CHECK` へ進む準備が整う。 |
+| 7 | JMS/CLAIM 事前条件 | `ops/tools/jms-probe.sh` 実行前に本表 1〜6 を完了 | Gate #40/#44 の前提として `docs/server-modernization/phase2/operations/LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md` を更新済み。 |
+
+### 6.3 証跡要件
+- `artifacts/parity-manual/db-restore/<UTC>/` に以下を保存（2025-11-09 版は `20251109T200035Z/` に格納済み）。
+  - `start_legacy_modernized_start_build.log`
+  - `psql_legacy_dt.log`, `psql_modern_dt.log`, `psql_*_d_users_count.log`
+  - `flyway_info_{legacy,modern}.log`（必要に応じ `flyway_baseline_modern.log` / `flyway_migrate_modern.log` も取得）
+  - README（Gate 適合状況、フォールバック手段、次アクション）
+- `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` と `PHASE2_PROGRESS.md` に証跡フォルダと更新日を明記し、他フェーズから辿れるようリンクする。
+- `TRACE_PROPAGATION_CHECK.md` / `LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md` の Gate 表には「DB ベースライン復旧済み（2025-11-09 証跡）」と記載し、未完了時は担当者/理由を追記する。
 
 ## 7. 連絡フロー
 - Ops/DBA へ連絡が必要なのは「本番スナップショットを再取得する」「暗号化 dump を共有ストレージへ保管する」ケースのみ。通常のローカル検証では開発チーム単独で完結させる。
