@@ -28,6 +28,10 @@
 
 > **注意:** `--profile modernized-dev` をホストで実行する場合は (1) Docker Desktop を導入して WSL 連携を有効化する、または (2) `/etc/hosts` に `opendolphin-server=127.0.0.1` 等を追記する。未設定のまま実行すると `curl: (6) Could not resolve host` になる。
 
+> **補足:** ホスト側で名前解決を変更できない場合は、以下のように helper コンテナを `legacy-vs-modern_default` ネットワークへ参加させて CLI を実行できる。  
+> `docker run --rm --network legacy-vs-modern_default -v "$PWD":/workspace -w /workspace mcr.microsoft.com/devcontainers/base:jammy bash -lc 'PARITY_HEADER_FILE=... PARITY_OUTPUT_DIR=... ops/tools/send_parallel_request.sh --profile modernized-dev ...'`  
+> これにより `opendolphin-server(-modernized-dev)` というコンテナ名をそのまま使用できる（RUN_ID=`20251110T122644Z` で確認）。
+
 ---
 
 ## 3. トレース ID 付き HTTP 実行

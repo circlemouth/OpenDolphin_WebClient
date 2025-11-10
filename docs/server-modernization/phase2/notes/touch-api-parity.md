@@ -144,6 +144,27 @@
 | `/touch/user/doctor1,...` | **500** | **500** (`Remote user does not contain facility separator`) | 同上 (`trace_http_401`) |
 | `/karte/pid/INVALID,%5Bdate%5D` | 200 (空 JSON) | 400 (`Not able to deserialize data provided`) | `rest-errors/.../trace_http_500/` |
 
+#### 10.2.1 2025-11-10 base_readonly 再取得（RUN_ID=20251110T132800Z）
+
+- 実行: `ops/tests/api-smoke-test/run.sh --scenario base_readonly --dual --profile compose`。成果物は `artifacts/parity-manual/smoke/20251110T132800Z/`。直前にデフォルト BASE_URL（8080/18080 直叩き）のまま流した RUN_ID=`20251110T132702Z` は Legacy=404/Modern=connection refused で失敗したが、証跡として残している。
+- 結果: Legacy は 3 ケースすべて 200（`/dolphin` 本文 = `"Hellow, Dolphin"`、`/mml/patient/list` = `3,7001,...,7010`）。Modernized は 3 ケースすべて HTML 404 レスポンスで終了し、ヘッダーは `Strict-Transport-Security` / `Content-Security-Policy` のデフォルトのみ。`docker ps | grep opendolphin-server-modernized-dev` 時点で `STATUS=Up ... (unhealthy)` となり、healthcheck の `curl .../openDolphin/resources/dolphin` が常時 404 を返している。
+
+| Case ID | Legacy | Modernized | 差分メモ |
+| --- | --- | --- | --- |
+| `base_readonly_dolphin` | 200 / `Hellow, Dolphin` | 404 / HTML エラーページ | WildFly で `openDolphin/resources` アプリが未展開。healthcheck と同じ 404 を再現。 |
+| `base_readonly_serverinfo` | 200 / 空ボディ | 404 / HTML エラーページ | `ServerInfoResource` が登録されておらず、Trace 200 ケースのベースラインが構築できない。 |
+| `base_readonly_patient_list` | 200 / patientId リスト | 404 / HTML エラーページ | `JsonMmlPatientListResource` がデプロイされていないため、以降の `/mml/*` シナリオが検証不能。 |
+
+- リスク評価:
+  1. **Modernized WildFly のアプリ未配置** — `open-dolphin-webservice.war` が 9080 側で起動しておらず、Phase2 の Smoke / Trace すべてが 404 で停止。`scripts/start_legacy_modernized.sh` の modernized-dev 側ビルド失敗または `standalone-opendolphin.xml` 上の deployment 名相違が疑わしい。
+  2. **監査ログも更新されない** — `artifacts/parity-manual/audit/20251110T132800Z/modern_d_audit_event.log` では過去 (21:32 JST) の `SYSTEM_ACTIVITY_SUMMARY` 行のみで、今回の `base_readonly_*` requestId は一切挿入されていない。Legacy 側はシード空のため 0 行のまま。
+  3. **次のシナリオが全滅** — `/serverinfo` 404 のままでは `TRACEID_JMS` ハーネスや `ops/tools/send_parallel_request.sh --profile compose` の 200 ベースラインが作れない。`rest_error_scenarios.manual.csv` 側も参照ログ未更新で放置される。
+
+- TODO / Follow-up:
+  - `server-modernized-dev` コンテナの WildFly ログで `Deployment \"open-dolphin-webservice.war\"` が成功しているかを `docker logs opendolphin-server-modernized-dev | rg -n 'Deployment'` で確認し、失敗していれば `ops/modernized-server/Dockerfile` のビルドパス（`standalone/deployments/` への配置）を修正。
+  - healthcheck が成功するまで `curl -i http://localhost:9080/openDolphin/resources/dolphin` の 404 を監視し、復旧後に RUN_ID を更新して再取得。
+  - Audit Trail: `artifacts/parity-manual/audit/20251110T132800Z/{legacy,modern}_d_audit_event.log` を参照して `d_audit_event_seq` が modern 側に残っていることを確認済み。アプリ復旧後に再発行し `docs/server-modernization/phase2/notes/test-data-inventory.md` §2 で成功ケースを差し替える。
+
 ### 10.3 監査ログ / 2FA
 - `/20/adm/factor2/totp/registration` で `AuditTrailService` が `relation "d_audit_event_seq" does not exist` となるところまで再現。シーケンスを追加後、別ワーカーの Docker 停止で HTTP 接続が `connection refused` になり採取未完。
 - 手順と残タスクは `artifacts/parity-manual/audit/20251109T060930Z/README.md` に記載。`d_audit_event` へ `TOTP_*` 行が入るまで再実行が必要。

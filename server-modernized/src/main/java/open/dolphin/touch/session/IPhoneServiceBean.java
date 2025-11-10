@@ -14,6 +14,7 @@ import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.persistence.TypedQuery;
 import open.dolphin.infomodel.*;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -21,6 +22,7 @@ import open.dolphin.infomodel.*;
  */
 @Named
 @Stateless
+@SessionOperation
 public class IPhoneServiceBean {
 
     // ユーザー検索

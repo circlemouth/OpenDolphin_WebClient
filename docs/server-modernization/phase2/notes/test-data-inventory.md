@@ -214,6 +214,11 @@ SELECT event_time,
 ```
 ※ 現状はテーブルが無いため `relation "d_audit_event" does not exist` が返る。Flyway 適用後に実行し、`artifacts/parity-manual/audit/factor2_*.sql` へ保存する。
 
+### 2.4 Smoke base_readonly 監査ログ（RUN_ID=20251110T132800Z）
+- 取得方法: `docker exec -i opendolphin-postgres psql -U opendolphin -d opendolphin -c "SELECT event_time,action,resource,request_id,patient_id FROM d_audit_event ORDER BY event_time DESC LIMIT 20;"` および `docker exec -i opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -c "..."`。ログは `artifacts/parity-manual/audit/20251110T132800Z/{legacy,modern}_d_audit_event.log` に保存。
+- 結果: Legacy 側は 0 行（シード段階で `d_audit_event` が空）、Modernized 側は 2025-11-10 21:32 JST 時点の `SYSTEM_ACTIVITY_SUMMARY` や `EHT_CLAIM_SEND` が最新で、今回の `base_readonly_*` requestId は挿入されていない。`ops/tests/api-smoke-test/run.sh --scenario base_readonly --dual --profile compose` の HTTP レイヤーがすべて 404 で異常終了しているため AuditTrail に到達できていない。
+- リスク: `openDolphin/resources` がデプロイされない限り `d_audit_event` の検証が進まず、`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ6/7 の監査ログ要件を満たせない。次回は WildFly の deployment を修復し、再取得ログを `artifacts/parity-manual/audit/<new run id>/` へ上書きする。
+
 ## 6. Legacy ADM コンバータフィクスチャ（2025-11-08 追加）
 
 | 資材 | 内容 / 用途 | 備考 |

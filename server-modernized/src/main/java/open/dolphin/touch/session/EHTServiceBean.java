@@ -42,6 +42,7 @@ import open.dolphin.infomodel.StampTreeModel;
 import open.dolphin.infomodel.VitalModel;
 import open.dolphin.storage.attachment.AttachmentStorageManager;
 import open.dolphin.touch.converter.IPhysicalModel;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  *
@@ -49,6 +50,7 @@ import open.dolphin.touch.converter.IPhysicalModel;
  */
 @Named
 @Stateless
+@SessionOperation
 public class EHTServiceBean {
     
     // 新規患者

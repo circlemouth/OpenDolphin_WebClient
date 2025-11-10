@@ -341,7 +341,8 @@ public class SystemResource extends AbstractResource {
         payload.setActorRole(resolveActorRole());
         payload.setAction(action);
         payload.setResource(resolveResourcePath());
-        payload.setRequestId(resolveRequestId());
+        String traceId = resolveTraceId(httpServletRequest);
+        payload.setRequestId(traceId != null ? traceId : resolveRequestId());
         payload.setIpAddress(resolveIpAddress());
         payload.setUserAgent(resolveUserAgent());
         return payload;
@@ -369,13 +370,20 @@ public class SystemResource extends AbstractResource {
     }
 
     private void enrichTraceDetails(Map<String, Object> details) {
-        if (sessionTraceManager == null) {
-            return;
+        boolean traceCaptured = false;
+        if (sessionTraceManager != null) {
+            SessionTraceContext context = sessionTraceManager.current();
+            if (context != null) {
+                details.put("traceId", context.getTraceId());
+                details.put("sessionOperation", context.getOperation());
+                traceCaptured = true;
+            }
         }
-        SessionTraceContext context = sessionTraceManager.current();
-        if (context != null) {
-            details.put("traceId", context.getTraceId());
-            details.put("sessionOperation", context.getOperation());
+        if (!traceCaptured) {
+            String traceId = resolveTraceId(httpServletRequest);
+            if (traceId != null) {
+                details.put("traceId", traceId);
+            }
         }
     }
 

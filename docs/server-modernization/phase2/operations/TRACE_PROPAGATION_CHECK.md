@@ -145,6 +145,32 @@ TODO / 対応案:
 | `IPhoneServiceBean` | `open.dolphin.touch.session` | ⚠️ 未付与 | `getUser`, `getPatientVisitByPk`, `getPatientList*`, `getKarte*` など全メソッドが素通し。`trace_http_401` で SessionOperation が静音になる要因。 |
 
 - 追加で `MmlSenderBean` や `SessionOperationInterceptor` 自体も `@SessionOperation` を持つが、サービス層 API の網羅率は **20/22 クラス (90.9%)**。Touch セッション 2 クラスを付与対象に加える改修チケットが必要。付与後は `touch/user` 系リクエストで `SessionTraceManager` が MDC を引き継ぎ、`trace_http_401`/`trace_appo_jpql` のような Touch 経路でもトレースが残る見込み。
+
+## 8. 2025-11-10 12:26Z: Trace Harness RUN_ID=20251110T122644Z（`--profile modernized-dev`）
+
+- 実行は helper コンテナ (`docker run --rm --network legacy-vs-modern_default -v $PWD:/workspace mcr.microsoft.com/devcontainers/base:jammy`) から行い、`send_parallel_request.sh --profile modernized-dev` で Docker ネットワーク内ホスト名 (`opendolphin-server(-modernized-dev)`) を直接解決。証跡は `artifacts/parity-manual/TRACEID_JMS/20251110T122644Z/`。
+- 400/401/500 は `artifacts/parity-manual/rest-errors/20251110T122644Z/` にも同期させ、`logs/{legacy,modern}_server.log` を同 RUN_ID で共用。
+
+| Case / Trace ID | Legacy (status / body) | Modernized (status / body) | 主なイベント |
+| --- | --- | --- | --- |
+| `trace_http_200` (`GET /serverinfo/jamri`) | **500** / HTML 500 | 200 / 空ボディ | Legacy `LogFilter` が `password.equals(userCache.getMap().get(userName))`（`server/src/main/java/open/dolphin/rest/LogFilter.java:37-60`）で NPE → Undertow 500 (`rest-errors/.../legacy_server.log:608-645`)。Modern 側は `modern_trace_http.log` に `trace-http-200` を記録。 |
+| `trace_http_400` (`GET /dolphin/activity/2025,04`) | **500** / HTML 500 | 400 / ヘッダーのみ | Legacy は上記 NPE のまま。Modern は 400 を返すが `SessionOperation`/`d_audit_event` ログは空（`logs/d_audit_event_trace-http-400.sql` 0 行）。 |
+| `trace_http_401` (`GET /touch/user/...` password 無し) | **500** / HTML 500 | **500** / `Remote user does not contain facility separator.` | `TouchRequestContextExtractor#from`（`server-modernized/src/main/java/open/dolphin/touch/support/TouchRequestContextExtractor.java:17-40`）が `remoteUser` に区切りが無いと `IllegalStateException` を投げ、RESTEasy が 500 を返却 (`rest-errors/.../modern_server.log:640,1368,14015,14855`)。`AbstractResource#getRemoteFacility` は null/区切り欠落を許容する実装 (`server-modernized/src/main/java/open/dolphin/rest/AbstractResource.java:24-40`) だが Touch 系が未利用。 |
+| `trace_http_500` (`GET /karte/pid/INVALID,%5Bdate%5D`) | 200 / `{}` | **400** / `Not able to deserialize data provided.` | Legacy は例外握り潰し + 空 JSON。Modern は `RESTEASY-JACKSON000100`（`rest-errors/.../modern_server.log:808,1536,14183,15023`）が `KarteBeanConverter["id"]` null 参照を示し 400 で終了。 |
+
+### 8.1 JMS / Audit / Trace
+- `logs/jms_dolphinQueue_read-resource.txt`：`messages-added=1L`, `message-count=0L`, `delivering-count=0`。Trace Harness 4 ケースでは JMS 送信が発生せず Queue 指標は初期値。
+- `logs/jms_DLQ_list-messages.txt`：空配列。DLQ 流入なし。
+- `logs/d_audit_event_trace-http-*.sql`：全て 0 行。`information_schema.columns` にも `trace_id` 列が存在しないため、監査ログから Trace ID を突合できない現状を明文化。
+- `logs/modern_trace_http.log`：helper コンテナ経由のアクセス (`172.23.0.7`) とホスト (`192.168.65.1`) の両方で `traceId=trace-http-*` を確認。Legacy 側は未実装。
+
+### 8.2 課題とフォローアップ
+1. **Legacy LogFilter 防御不足** — `LogFilter` で `password` が null の場合に 500 へ落ちるため、匿名や 401 ケースを再現できない。`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` #94 にブロッカーとして追記。
+2. **Touch 系の例外共通化不足** — `TouchRequestContextExtractor` による `IllegalStateException` で 401 ハーネスが成立しない。`AbstractResource#getRemoteFacility` との乖離を解消し、`@SessionOperation` 未付与の `EHTServiceBean` / `IPhoneServiceBean` へ付与するチケットを継続。
+3. **KarteBeanConverter null-safe 化** — `trace_http_500` が 400 で終了する要因。`domain-transaction-parity.md §3` に記載済みの `PatientVisitModel` 追加 / `KarteBeanConverter` 修正を優先度高で対応。
+4. **監査ログ拡張** — Trace Harness で収集した `d_audit_event` が空のため、`TRACEID_JMS_RUNBOOK.md` §4.2 に `trace_id` カラム追加案と `psql` 検証結果（0 行）を追記する。
+5. **Docs 反映** — 本 RUN_ID を `PHASE2_PROGRESS.md`・`DOC_STATUS.md`（`TRACE_PROPAGATION_CHECK.md` 行）・`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ8-1/8-2 備考へリンク済み。以後の再取得では本節の表を更新し、Legacy/Modern 両系統で 200/400/401/500 の想定値に到達するまで差分管理を続ける。
+
 =======
 ## 6. 2025-11-10: SessionOperation Trace Harness（RUN_ID=20251110T002045Z）
 

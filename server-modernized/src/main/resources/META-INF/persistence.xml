@@ -18,6 +18,14 @@
         <class>open.dolphin.infomodel.RegisteredDiagnosisModel</class>
         <class>open.dolphin.infomodel.PatientVisitModel</class>
         <class>open.dolphin.infomodel.AppointmentModel</class>
+        <class>open.dolphin.infomodel.LetterModule</class>
+        <class>open.dolphin.infomodel.NLaboModule</class>
+        <class>open.dolphin.infomodel.NLaboItem</class>
+        <class>open.dolphin.infomodel.StampTreeModel</class>
+        <class>open.dolphin.infomodel.DocumentModel</class>
+        <class>open.dolphin.infomodel.ModuleModel</class>
+        <class>open.dolphin.infomodel.SchemaModel</class>
+        <class>open.dolphin.infomodel.AttachmentModel</class>
         <class>open.dolphin.infomodel.AuditEvent</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
