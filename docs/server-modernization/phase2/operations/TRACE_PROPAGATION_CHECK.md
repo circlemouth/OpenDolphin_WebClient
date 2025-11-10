@@ -71,3 +71,57 @@ TODO / 対応案:
 1. Windows 側の Docker Desktop で当該 WSL ディストリビューションとの統合を有効化し、`docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml up -d` で `opendolphin-server(-modernized-dev)` 名前解決が成立する状態を作る。
 2. もしくはホスト側で `compose` プロファイルを利用し `BASE_URL_{LEGACY,MODERN}=http://localhost:{8080,9080}/openDolphin/resources` に切り替える（`TRACEID_JMS_RUNBOOK.md` §3.2 参照）。`modernized-dev` を引き続き使う場合は `/etc/hosts` や VPN ルータで `opendolphin-server*` を名前解決させる。
 3. 環境復旧後に `docker logs opendolphin-server-modernized-dev | rg traceId=` を再取得し、`TRACE_PROPAGATION_CHECK.md` の 5.1 表に 4xx/5xx の最新ステータスを反映する。
+
+## 6. 2025-11-10: SessionOperation Trace Harness（RUN_ID=20251110T002045Z）
+
+- 証跡ディレクトリ: `artifacts/parity-manual/TRACEID_JMS/20251110T002045Z/`（HTTP レスポンス・ヘッダー・`logs/{legacy,modern}_*.log`）。
+- `ops/tests/api-smoke-test/test_config.manual.csv` / `rest_error_scenarios.manual.csv` の `trace_http_{200,400,401,500}` / `trace-schedule-jpql` / `trace-appo-jpql` を `ops/tools/send_parallel_request.sh --profile compose --loop 1` で実行。すべて `X-Trace-Id` を CSV 記載値へ合わせたヘッダーファイル（`tmp/trace-headers/*.headers`）から送信した。
+- 詳細なドメイン／JPQL の差分メモは `docs/server-modernization/phase2/notes/domain-transaction-parity.md` の Trace Harness 節へリンク済み。
+
+| Case / Trace ID | Legacy (status) | Modernized (status) | SessionOperation / ログ観測 | メモ |
+| --- | --- | --- | --- | --- |
+| `trace_http_200` (`GET /serverinfo/jamri`) | 200 | 200 | Modernized のみ `open.dolphin` INFO に `trace-http-200` が 2 行出力。Legacy は traceId なし。 | 認証ヘッダー（userName/password/clientUUID/facilityId）を付与しないとモダナイズ側が応答待ちになるため、anonymous プロファイルは使用不可。 |
+| `trace_http_400` (`GET /dolphin/activity/2025,04`) | **500** (`ArrayIndexOutOfBoundsException`) | **400** (`BadRequestException: param must contain year, month, count`) | SessionOperation ログなし。`d_audit_event` への insert は成功。 | Legacy のバグ（`SystemResource#getActivities`）で 500 HTML を返却。Modernized 側は checklist #49 を満たす 400 応答になったが、Legacy/Modern でレスポンス体系が不一致。 |
+| `trace_http_401` (`GET /touch/user/doctor1,...,dolphin`) | **500** | **500** (`IllegalStateException: Remote user does not contain facility separator`) | SessionOperation ログなし。Trace ID は `LogFilter` のみ。 | パスワード欠落で 401 に落とし込む前に `TouchRequestContextExtractor` が例外を投げる。Checklist #73 は引き続き未達。 |
+| `trace_http_500` (`GET /karte/pid/INVALID,%5Bdate%5D`) | **200** (空 JSON) | **400** (`Not able to deserialize data provided`) | SessionOperation/SessionTraceManager のログ出力なし（INFO では確認不可）。 | 両環境とも ParseException 発生。Legacy は 200 + `{}`、Modernized は 400 + エラーメッセージ。`KarteBeanConverter` NullPointer（legacy ログ末尾）も再現。 |
+| `trace-schedule-jpql` (`GET /schedule/pvt/2025-11-09`) | 200 (`list` に患者 1 件) | 200 (`{"list":null}`) | Modernized ログには `d_patient_visit` の JPQL が記録されるのみで SessionOperation ログなし。 | モダナイズ側で JPQL は走るが DTO 変換で null が挿入。Legacy との差分を JPQL 表（`domain-transaction-parity.md`）に追記。 |
+| `trace-appo-jpql` (`PUT /appo`) | **500** (`IllegalArgumentException: delete event with null entity`) | **500** (`SessionServiceException` → `IllegalArgumentException`) | `SessionOperationInterceptor` が `trace-appo-jpql` を含む ERROR を出力。Trace 付きの stacktrace が `logs/modern_trace-appo-jpql.log` に保存済み。 | `AppointmentModel` が persistence unit に存在しないため `SessionOperation` で握り潰され 500。Legacy も同様の例外だが traceId ログ無し。 |
+
+### 6.1 SessionOperationInterceptor / SessionTraceManager の観測
+- `trace-appo-jpql` のみ `SessionOperationInterceptor` が ERROR ログを出力し、`trace-appo-jpql` を保持したまま CDI/Weld → JTA → Hibernate の stacktrace へ伝搬することを確認。
+- `trace_http_{400,401,500}` では INFO レベルに `SessionOperation`/`SessionTraceManager` の痕跡が残らず、`LogFilter` 由来の 2 行のみ。DEBUG へ引き上げる or 例外経路で INFO を差し込む改善が必要。
+- Legacy 側は依然として traceId を HTTP ログに出さないため、`server/` 側 `LogFilter` の改修（または `org.wildfly.extension.micrometer` 非対応問題をクリアした 10.1 ビルド）を行わない限り Legacy→JMS の突合が難しい。
+
+### 6.2 既知ブロッカー / 次アクション
+1. `TouchRequestContextExtractor` が `Remote user does not contain facility separator` を投げるため、401 想定ケースを正しく検証できない。ヘッダー仕様とバリデーションを整理し、`password` 欠落時に `SessionOperationInterceptor` まで進むよう修正する。
+2. `ScheduleServiceBean#getPvt` は Modernized で 200 になるが `list=null`。`PatientVisitModel` が persistence.xml に登録されているか、DTO 変換で null が挿入されていないかを確認する。詳細は `domain-transaction-parity.md` §3 を参照。
+3. `AppointmentModel` / `PatientVisitModel` などのエンティティ不足により `IllegalArgumentException` が継続発生。`server-modernized/src/main/resources/META-INF/persistence.xml` と Flyway seed (`server-modernized/tools/flyway/sql/V0223__schedule_appo_tables.sql` 相当) を更新し、JPQL パリティを回復する。
+4. JMS 連携を含む case（Touch sendPackage、Factor2 など）は未採取。`TRACEID_JMS/trace/` ディレクトリに JMS ログセットを追加し、`SessionTraceManager` → JMS ブリッジの確認まで拡張する。
+5. Legacy `LogFilter` の traceId ログ出力と `org.wildfly.extension.micrometer` モジュール欠如によるビルドブロックは未解消。Legacy 側へのパッチを適用し、`docker logs opendolphin-server` でも traceId を可視化する。
+=======
+## 6. 2025-11-10: SessionOperation Trace Harness（RUN_ID=20251110T002045Z）
+
+- 証跡ディレクトリ: `artifacts/parity-manual/TRACEID_JMS/20251110T002045Z/`（HTTP レスポンス・ヘッダー・`logs/{legacy,modern}_*.log`）。
+- `ops/tests/api-smoke-test/test_config.manual.csv` / `rest_error_scenarios.manual.csv` の `trace_http_{200,400,401,500}` / `trace-schedule-jpql` / `trace-appo-jpql` を `ops/tools/send_parallel_request.sh --profile compose --loop 1` で実行。すべて `X-Trace-Id` を CSV 記載値へ合わせたヘッダーファイル（`tmp/trace-headers/*.headers`）から送信した。
+- 詳細なドメイン／JPQL の差分メモは `docs/server-modernization/phase2/notes/domain-transaction-parity.md` の Trace Harness 節へリンク済み。
+
+| Case / Trace ID | Legacy (status) | Modernized (status) | SessionOperation / ログ観測 | メモ |
+| --- | --- | --- | --- | --- |
+| `trace_http_200` (`GET /serverinfo/jamri`) | 200 | 200 | Modernized のみ `open.dolphin` INFO に `trace-http-200` が 2 行出力。Legacy は traceId なし。 | 認証ヘッダー（userName/password/clientUUID/facilityId）を付与しないとモダナイズ側が応答待ちになるため、anonymous プロファイルは使用不可。 |
+| `trace_http_400` (`GET /dolphin/activity/2025,04`) | **500** (`ArrayIndexOutOfBoundsException`) | **400** (`BadRequestException: param must contain year, month, count`) | SessionOperation ログなし。`d_audit_event` への insert は成功。 | Legacy のバグ（`SystemResource#getActivities`）で 500 HTML を返却。Modernized 側は checklist #49 を満たす 400 応答になったが、Legacy/Modern でレスポンス体系が不一致。 |
+| `trace_http_401` (`GET /touch/user/doctor1,...,dolphin`) | **500** | **500** (`IllegalStateException: Remote user does not contain facility separator`) | SessionOperation ログなし。Trace ID は `LogFilter` のみ。 | パスワード欠落で 401 に落とし込む前に `TouchRequestContextExtractor` が例外を投げる。Checklist #73 は引き続き未達。 |
+| `trace_http_500` (`GET /karte/pid/INVALID,%5Bdate%5D`) | **200** (空 JSON) | **400** (`Not able to deserialize data provided`) | SessionOperation/SessionTraceManager のログ出力なし（INFO では確認不可）。 | 両環境とも ParseException 発生。Legacy は 200 + `{}`、Modernized は 400 + エラーメッセージ。`KarteBeanConverter` NullPointer（legacy ログ末尾）も再現。 |
+| `trace-schedule-jpql` (`GET /schedule/pvt/2025-11-09`) | 200 (`list` に患者 1 件) | 200 (`{"list":null}`) | Modernized ログには `d_patient_visit` の JPQL が記録されるのみで SessionOperation ログなし。 | モダナイズ側で JPQL は走るが DTO 変換で null のまま返却。Legacy との差分を JPQL 表（`domain-transaction-parity.md`）に追記。 |
+| `trace-appo-jpql` (`PUT /appo`) | **500** (`IllegalArgumentException: delete event with null entity`) | **500** (`SessionServiceException` → `IllegalArgumentException`) | `SessionOperationInterceptor` が `trace-appo-jpql` を含む ERROR を出力。Trace 付きの stacktrace が `logs/modern_trace-appo-jpql.log` に保存済み。 | `AppointmentModel` が persistence unit に存在しないため `SessionOperation` で握り潰され 500。Legacy も同様の例外だが traceId ログ無し。 |
+
+### 6.1 SessionOperationInterceptor / SessionTraceManager の観測
+- `trace-appo-jpql` のみ `SessionOperationInterceptor` が ERROR ログを出力し、`trace-appo-jpql` を保持したまま CDI/Weld → JTA → Hibernate の stacktrace へ伝搬することを確認。
+- `trace_http_{400,401,500}` では INFO レベルに `SessionOperation`/`SessionTraceManager` の痕跡が残らず、`LogFilter` 由来の 2 行のみ。DEBUG へ引き上げる or 例外経路で INFO を差し込む改善が必要。
+- Legacy 側は依然として traceId を HTTP ログに出さないため、`server/` 側 `LogFilter` の改修（または `org.wildfly.extension.micrometer` 非対応問題をクリアした 10.1 ビルド）を行わない限り Legacy→JMS の突合が難しい。
+
+### 6.2 既知ブロッカー / 次アクション
+1. `TouchRequestContextExtractor` が `Remote user does not contain facility separator` を投げるため、401 想定ケースを正しく検証できない。ヘッダー仕様とバリデーションを整理し、`password` 欠落時に `SessionOperationInterceptor` まで進むよう修正する。
+2. `ScheduleServiceBean#getPvt` は Modernized で 200 になるが `list=null`。`PatientVisitModel` が persistence.xml に登録されているか、DTO 変換で null が挿入されていないかを確認する。詳細は `domain-transaction-parity.md` §3 を参照。
+3. `AppointmentModel` / `PatientVisitModel` などのエンティティ不足により `IllegalArgumentException` が継続発生。`server-modernized/src/main/resources/META-INF/persistence.xml` と Flyway seed (`server-modernized/tools/flyway/sql/V0223__schedule_appo_tables.sql` 相当) を更新し、JPQL パリティを回復する。
+4. JMS 連携を含む case（Touch sendPackage、Factor2 など）は未採取。`TRACEID_JMS/trace/` ディレクトリに JMS ログセットを追加し、`SessionTraceManager` → JMS ブリッジの確認まで拡張する。
+5. Legacy `LogFilter` の traceId ログ出力と `org.wildfly.extension.micrometer` モジュール欠如によるビルドブロックは未解消。Legacy 側へのパッチを適用し、`docker logs opendolphin-server` でも traceId を可視化する。

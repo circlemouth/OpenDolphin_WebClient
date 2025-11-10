@@ -16,6 +16,8 @@
         <class>open.dolphin.infomodel.HealthInsuranceModel</class>
         <class>open.dolphin.infomodel.KarteBean</class>
         <class>open.dolphin.infomodel.RegisteredDiagnosisModel</class>
+        <class>open.dolphin.infomodel.PatientVisitModel</class>
+        <class>open.dolphin.infomodel.AppointmentModel</class>
         <class>open.dolphin.infomodel.AuditEvent</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
