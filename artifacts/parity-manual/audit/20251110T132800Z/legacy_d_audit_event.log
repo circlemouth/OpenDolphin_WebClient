@@ -1,0 +1,4 @@
+ event_time | action | resource | request_id | patient_id 
+------------+--------+----------+------------+------------
+(0 rows)
+

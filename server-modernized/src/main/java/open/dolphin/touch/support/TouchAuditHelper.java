@@ -68,11 +68,19 @@ public class TouchAuditHelper {
         if (additionalDetails != null && !additionalDetails.isEmpty()) {
             details.putAll(additionalDetails);
         }
+        boolean traceCaptured = false;
         if (sessionTraceManager != null) {
             SessionTraceContext traceContext = sessionTraceManager.current();
             if (traceContext != null) {
                 details.put("traceId", traceContext.getTraceId());
                 details.put("sessionOperation", traceContext.getOperation());
+                traceCaptured = true;
+            }
+        }
+        if (!traceCaptured) {
+            String traceId = context.traceId();
+            if (traceId != null && !traceId.isBlank()) {
+                details.put("traceId", traceId);
             }
         }
         return details;

@@ -1,0 +1,7 @@
+# Trace-enabled profile for authenticated SessionOperation endpoints
+userName: 1.3.6.1.4.1.9414.72.103:doctor1
+password: 632080fabdb968f9ac4f31fb55104648
+clientUUID: trace-session-client
+facilityId: 1.3.6.1.4.1.9414.72.103
+X-Trace-Id: trace-letter-20251110T132848Z
+Content-Type: application/json

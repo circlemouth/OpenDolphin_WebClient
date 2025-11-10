@@ -27,13 +27,11 @@ public class AuditTrailService {
 
     public AuditEvent record(AuditEventPayload payload) {
         Instant now = Instant.now();
-        AuditEvent latest = em.createQuery("select a from AuditEvent a order by a.eventTime desc", AuditEvent.class)
+        String previousHash = em.createQuery("select a.eventHash from AuditEvent a order by a.eventTime desc", String.class)
                 .setMaxResults(1)
-                .setLockMode(LockModeType.PESSIMISTIC_WRITE)
                 .getResultStream()
                 .findFirst()
-                .orElse(null);
-        String previousHash = latest != null ? latest.getEventHash() : "";
+                .orElse("");
 
         String serializedPayload = serializePayload(payload.getDetails());
         String payloadHash = hash(serializedPayload);

@@ -452,4 +452,128 @@ ON CONFLICT (id) DO UPDATE SET
     karte_id = EXCLUDED.karte_id,
     patientId = EXCLUDED.patientId;
 
+-- Chart summary seed for WEB1001 (ChartsPage parity)
+WITH web_patient_seed AS (
+    SELECT COALESCE(
+        (SELECT id FROM d_patient WHERE facilityId = '1.3.6.1.4.1.9414.72.103' AND patientId = 'WEB1001'),
+        nextval('hibernate_sequence')
+    ) AS id
+), upsert_web_patient AS (
+    INSERT INTO d_patient (
+        id,
+        facilityId,
+        patientId,
+        familyName,
+        givenName,
+        fullName,
+        kanaFamilyName,
+        kanaGivenName,
+        kanaName,
+        romanFamilyName,
+        romanGivenName,
+        romanName,
+        gender,
+        birthday,
+        telephone,
+        email
+    ) VALUES (
+        (SELECT id FROM web_patient_seed),
+        '1.3.6.1.4.1.9414.72.103',
+        'WEB1001',
+        '青木',
+        '太郎',
+        '青木 太郎',
+        'アオキ',
+        'タロウ',
+        'アオキ タロウ',
+        'Aoki',
+        'Taro',
+        'Aoki Taro',
+        'M',
+        '1980-01-15',
+        '03-6200-1001',
+        'web1001@example.com'
+    )
+    ON CONFLICT (id) DO UPDATE SET
+        facilityId = EXCLUDED.facilityId,
+        patientId = EXCLUDED.patientId,
+        fullName = EXCLUDED.fullName,
+        gender = EXCLUDED.gender
+    RETURNING id
+)
+SELECT id FROM upsert_web_patient;
+
+WITH web_patient_ref AS (
+    SELECT id FROM d_patient WHERE facilityId = '1.3.6.1.4.1.9414.72.103' AND patientId = 'WEB1001' LIMIT 1
+), web_karte_seed AS (
+    SELECT COALESCE(
+        (SELECT id FROM d_karte WHERE patient_id = (SELECT id FROM web_patient_ref)),
+        nextval('hibernate_sequence')
+    ) AS id
+)
+INSERT INTO d_karte (id, patient_id, created)
+VALUES (
+    (SELECT id FROM web_karte_seed),
+    (SELECT id FROM web_patient_ref),
+    DATE '2024-03-15'
+)
+ON CONFLICT (id) DO UPDATE SET
+    patient_id = EXCLUDED.patient_id,
+    created = EXCLUDED.created;
+
+WITH web_patient_ref AS (
+    SELECT id, facilityId FROM d_patient WHERE facilityId = '1.3.6.1.4.1.9414.72.103' AND patientId = 'WEB1001' LIMIT 1
+), web_visit_seed AS (
+    SELECT COALESCE(
+        (SELECT id FROM d_patient_visit WHERE patient_id = (SELECT id FROM web_patient_ref) AND pvtDate = '2025-11-10T10:30:00'),
+        nextval('hibernate_sequence')
+    ) AS id
+)
+INSERT INTO d_patient_visit (
+    id,
+    patient_id,
+    facilityId,
+    number,
+    pvtDate,
+    appointment,
+    department,
+    status,
+    insuranceUid,
+    deptCode,
+    deptName,
+    doctorId,
+    doctorName,
+    jmariNumber,
+    firstInsurance,
+    memo,
+    watingTime
+)
+VALUES (
+    (SELECT id FROM web_visit_seed),
+    (SELECT id FROM web_patient_ref),
+    (SELECT facilityId FROM web_patient_ref),
+    2,
+    '2025-11-10T10:30:00',
+    NULL,
+    'General Practice,01,Doctor One,doctor1,JMARI0001',
+    0,
+    NULL,
+    '01',
+    'General Practice',
+    'doctor1',
+    'Doctor One',
+    'JMARI0001',
+    'National Insurance',
+    'Chart summary synthetic visit',
+    '00:20'
+)
+ON CONFLICT (id) DO UPDATE SET
+    facilityId = EXCLUDED.facilityId,
+    pvtDate = EXCLUDED.pvtDate,
+    deptName = EXCLUDED.deptName,
+    deptCode = EXCLUDED.deptCode,
+    doctorId = EXCLUDED.doctorId,
+    doctorName = EXCLUDED.doctorName;
+
+
 COMMIT;

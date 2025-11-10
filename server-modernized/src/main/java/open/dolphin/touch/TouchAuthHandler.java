@@ -20,6 +20,7 @@ public class TouchAuthHandler {
     public static final String FACILITY_HEADER = "X-Facility-Id";
 
     private static final Logger LOGGER = Logger.getLogger(TouchAuthHandler.class.getName());
+    private static final String ANONYMOUS_PRINCIPAL = "anonymous";
 
     /**
      * Ensures the X-Facility-Id header is present and matches the authenticated user.
@@ -74,7 +75,7 @@ public class TouchAuthHandler {
             return null;
         }
         String remoteUser = request.getRemoteUser();
-        if (remoteUser == null || remoteUser.isEmpty()) {
+        if (remoteUser == null || remoteUser.isEmpty() || ANONYMOUS_PRINCIPAL.equalsIgnoreCase(remoteUser.trim())) {
             LOGGER.log(Level.FINE, "Remote user not available for Touch request");
             return null;
         }

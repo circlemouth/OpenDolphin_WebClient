@@ -29,8 +29,9 @@ public class LogFilter implements Filter {
     private static final String PASSWORD = "password";
     private static final String UNAUTHORIZED_USER = "Unauthorized user: ";
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
-    private static final String TRACE_ID_ATTRIBUTE = LogFilter.class.getName() + ".TRACE_ID";
+    public static final String TRACE_ID_ATTRIBUTE = LogFilter.class.getName() + ".TRACE_ID";
     private static final String MDC_TRACE_ID_KEY = "traceId";
+    private static final String ANONYMOUS_PRINCIPAL = "anonymous";
 
     private static final String SYSAD_USER_ID = "1.3.6.1.4.1.9414.10.1:dolphin";
     private static final String SYSAD_PASSWORD = "36cdf8b887a5cffc78dcd5c08991b993";
@@ -128,7 +129,7 @@ public class LogFilter implements Filter {
                 return Optional.empty();
             }
             String name = principal.getName();
-            if (name == null || name.isBlank()) {
+            if (name == null || name.isBlank() || isAnonymousPrincipal(name)) {
                 return Optional.empty();
             }
             return Optional.of(name);
@@ -238,5 +239,9 @@ public class LogFilter implements Filter {
             return false;
         }
         return uri.endsWith("identityToken");
+    }
+
+    private boolean isAnonymousPrincipal(String principalName) {
+        return principalName != null && ANONYMOUS_PRINCIPAL.equalsIgnoreCase(principalName.trim());
     }
 }

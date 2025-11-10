@@ -172,3 +172,73 @@
 5. **ログ保全**: 取得した並列キャプチャログは `artifacts/parity-manual/` 配下で日付単位に分け、`PHASE2_PROGRESS.md` へリンクを残さなければ Gate を閉じられない。
 
 以上の前提を満たした場合、GUI を使用せず CLI のみで Legacy/Modernized 並列キャプチャ環境を再現できる。
+
+## 7. DocumentModel/persistence + Trace Harness RUN_ID=20251110T133000Z
+- DocumentModel で使われる `ModuleModel` / `SchemaModel` / `AttachmentModel` は `server-modernized/src/main/resources/META-INF/persistence.xml` に列挙済みで、`server-modernized/tools/flyway/sql/V0224__document_module_tables.sql` によって Modernized DB に `d_document` / `d_module` / `d_image` / `d_attachment` を配置する準備が整っている。DocumentModel が参照するテーブルの欠損で生じる `UnknownEntityException` を回避するためのスキーマ基盤が構築されたが、まだ検証が完了していない。
+- RUN_ID=`20251110T133000Z` で `tmp/trace_http_200.headers` を使って trace harness を再取得し、HTTP/trace/JMS/`d_audit_event` を `artifacts/parity-manual/TRACEID_JMS/20251110T133000Z/trace_http_200/` に記録する計画。`trace_http_{400,500}` は AuditTrail ID 衝突バグによって Modernized が 500 を返す既知の issue として README に記載済みで、同様の挙動を想定している。
+- 次アクション: Modern WildFly を再ビルド（`mvn -pl server-modernized -DskipTests install` など）し、`docker compose -f docker-compose.modernized.dev.yml up -d db-modernized server-modernized-dev` を起動したうえで `GET /schedule/pvt/2025-11-09` を trace ヘッダー付きで実行し、HTTP 200 および `d_audit_event`/JMS TraceId を確認する。検証結果は `artifacts/parity-manual/TRACEID_JMS/20251110T133000Z/trace_http_200/` へ保存し、`PHASE2_PROGRESS.md` / `docs/server-modernization/phase2/notes/domain-transaction-parity.md` / `DOC_STATUS.md` に RUN_ID・ブロッカー・次アクションを整理したうえで次 RUN を採番する。Docker 操作が必要になった場合は一度手を止め、他ワーカーとの干渉がないことを確認してから再開する。
+
+## 3. GUI なしでの並列キャプチャ実行
+
+1. **環境変数の読み込み**  
+   ```bash
+   # 必要な profile/URL 定義（後述テンプレート）を読み込む
+   source ops/tools/send_parallel_request.profile.env.sample
+   ```
+2. **Legacy/Modernized 双方の URL を確認**  
+   `echo $BASE_URL_LEGACY`, `echo $BASE_URL_MODERN` で `/openDolphin/resources` の完全 URL が設定されていることを確認。
+3. **共通ヘッダー・リクエストファイルを準備**  
+   - 追加ヘッダー: `PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/default.txt`
+   - リクエストボディ: `PARITY_BODY_FILE=/tmp/request.json`（必要時）
+4. **CLI 送信 (`ops/tools/send_parallel_request.sh`)**  
+   - 事前に `dos2unix ops/tools/send_parallel_request.sh`（または `bash <(tr -d '\r' < ops/tools/send_parallel_request.sh)`）を実施。  
+   ```bash
+   BASE_URL_LEGACY=${BASE_URL_LEGACY:-http://localhost:8080/openDolphin/resources} \
+   BASE_URL_MODERN=${BASE_URL_MODERN:-http://localhost:9080/openDolphin/resources} \
+   PARITY_OUTPUT_DIR=artifacts/parity-manual \
+     bash <(tr -d '\r' < ops/tools/send_parallel_request.sh) GET /serverinfo/version trace-check
+   ```
+   - `legacy`/`modern` それぞれの応答が `artifacts/parity-manual/<ID>/legacy|modern/` に蓄積される。
+5. **ログ採取**  
+   - `docker compose logs server-modernized-dev | rg traceId=` などの出力も `artifacts/parity-manual/setup/<UTC>/` に保存する。
+
+## 4. `MODERNIZED_TARGET_PROFILE` / URL 切替
+
+- `MODERNIZED_TARGET_PROFILE` は CLI ツールで参照先を切り替えるための論理名。Runbookでは以下を標準とする。
+
+| Profile | 説明 | `BASE_URL_LEGACY` | `BASE_URL_MODERN` |
+| --- | --- | --- | --- |
+| `compose` (既定) | ローカル docker compose で旧/新を同時起動 | `http://localhost:8080/openDolphin/resources` | `http://localhost:9080/openDolphin/resources` |
+| `modernized-dev` | `docker-compose.modernized.dev.yml` で立てた helper コンテナや CI runner から直接コンテナ名でアクセス | `http://opendolphin-server:8080/openDolphin/resources` | `http://opendolphin-server-modernized-dev:8080/openDolphin/resources` |
+| `legacy-only` | Modernized を起動せず旧サーバーのみ比較ログを残す | 同上 | Modernized 側は `http://localhost:9080/openDolphin/resources`（未応答でも可） |
+| `remote-dev` | Modernized をリモート環境へ切り替える | 同上 | `MODERNIZED_REMOTE_BASE_URL` で上書き |
+| `custom` | 監査や再現試験用に任意 URL を指定 | 手動設定 | 手動設定 |
+
+- プロファイルごとの環境変数定義テンプレートは `ops/tools/send_parallel_request.profile.env.sample` を参照し、`source` して利用する。
+
+## 5. ログ・証跡整理
+
+| ファイル | 内容 | 実行コマンド |
+| --- | --- | --- |
+| `setup_codex_env.log` | CRLF のまま実行して失敗した証跡（shebang 解決不可） | `./scripts/setup_codex_env.sh` |
+| `setup_codex_env_nonroot.log` | `bash` 経由でも CRLF が原因で失敗することを確認 | `bash scripts/setup_codex_env.sh` |
+| `setup_codex_env_unix_nonroot.log` | LF 変換済みコピーで root 権限必須エラーを確認 | `tmp/setup_codex_env.sh` |
+| `compose_services.txt` | Compose で管理するサービス一覧 | `docker compose ... config --services` |
+| `compose_profiles.txt` | Compose で定義されている profile（`modernized`） | `docker compose ... config --profiles` |
+
+必要に応じて `docker compose logs`, `docker compose inspect`, `ops/tools/send_parallel_request.sh --config ...` の結果も同一ディレクトリへ追記し、`PHASE2_PROGRESS.md` に証跡パスを記録する。
+
+## 6. 既知の制約と注意事項
+
+1. **CRLF 行末問題**: `scripts/`・`ops/tools/` 配下の Bash スクリプトは CRLF のため、必ず LF へ変換してから実行する。Runbook実績では `tr -d '\r'` で一時変換した。
+2. **root 権限必須**: `scripts/setup_codex_env.sh` は `apt-get` と `/etc/profile.d` 書き込みを行うため root 不可欠。sudo 利用ができない環境では実行できない。
+3. **ネットワーク制限**: Maven Central への HTTPS 接続が必須。プロキシ環境では `https_proxy` を設定する。
+4. **Docker ボリュームの肥大化**: `postgres-data` / `postgres-data-modernized` は試験ごとに削除しないとディスクを圧迫する。`docker volume rm legacy-vs-modern_postgres-data*` でクリーンアップする。
+5. **ログ保全**: 取得した並列キャプチャログは `artifacts/parity-manual/` 配下で日付単位に分け、`PHASE2_PROGRESS.md` へリンクを残さなければ Gate を閉じられない。
+
+以上の前提を満たした場合、GUI を使用せず CLI のみで Legacy/Modernized 並列キャプチャ環境を再現できる。
+
+## 7. DocumentModel/persistence + Trace Harness RUN_ID=20251110T133000Z
+- DocumentModel で使われる `ModuleModel` / `SchemaModel` / `AttachmentModel` は `server-modernized/src/main/resources/META-INF/persistence.xml` に列挙済みで、`server-modernized/tools/flyway/sql/V0224__document_module_tables.sql` によって Modernized DB に `d_document` / `d_module` / `d_image` / `d_attachment` が作成される。これにより DocumentModel が参照するテーブルが存在しないために発生していた `UnknownEntityException` を回避できる下地が整った。
+- `tmp/trace_http_200.headers` を使って `trace_http_200` を再取得し、HTTP/Trace/JMS/`d_audit_event` を `artifacts/parity-manual/TRACEID_JMS/20251110T133000Z/` に保存（`README.md` にケース別ステータスとログ採取手順を追記）。`trace_http_{400,500}` も同 RUN_ID で再取得しており、現状は Modernized=400 / Legacy=500(400ケース)/200(500ケース) だが、`d_audit_event_id_seq` を再採番すると AuditTrail ID が衝突して Modernized も 500 になる既知バグのため README/TRACE_PROPAGATION_CHECK へ注記済み。`d_audit_event` には `traceId` カラムが無く `SYSTEM_ACTIVITY_SUMMARY` のみが蓄積される点もブロッカーとして維持する。
+- 次アクション: Modern WildFly を再ビルド (`mvn -pl server-modernized -DskipTests install` など) し、`docker compose -f docker-compose.modernized.dev.yml up -d db-modernized server-modernized-dev` を起動したうえで `GET /schedule/pvt/2025-11-09` に trace ヘッダーを付与して 200/`d_audit_event`/JMS を確認。新 RUN の `TRACEID_JMS/20251110T133000Z/` にログを蓄え、`PHASE2_PROGRESS.md`/`docs/server-modernization/phase2/notes/domain-transaction-parity.md`/`DOC_STATUS.md` に結果とブロッカー（DocumentModel persistence + audit traceId）を追記した上で次の RUN を採番する。Docker 操作が必要になったら一旦手を止め、他ワーカーと干渉しないよう指示を待ってから再開する。
