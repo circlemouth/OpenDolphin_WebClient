@@ -5,6 +5,8 @@
 - 関連 Runbook: [`LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md`](LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md), [`TRACE_PROPAGATION_CHECK.md`](TRACE_PROPAGATION_CHECK.md), [`FACTOR2_RECOVERY_RUNBOOK.md`](FACTOR2_RECOVERY_RUNBOOK.md)
 - 証跡: `artifacts/parity-manual/db-restore/20251108/`（DDL 所在・欠損オブジェクト一覧・調査ログ）、`artifacts/parity-manual/db-restore/20251109T200035Z/`（`scripts/start_legacy_modernized.sh start --build` 再実行ログと `psql -h localhost ... \dt` / `SELECT count(*) FROM d_users;` / `flyway info` 証跡、README 付き）
 
+> ⚠️ Windows/WSL2 で `docker` / `docker compose` が実行できない場合は、Docker Desktop を導入済みの Mac 手順（[Mac ホスト切替ガイド](#mac-ホスト切替ガイド)）へ即時切り替えてから本 Runbook を継続すること。
+
 ## 0. ローカルベースライン方針（2025-11-08 改訂）
 
 1. **デフォルトはローカル合成ベースライン**  
@@ -42,6 +44,11 @@
 | --- | --- | --- |
 | Legacy Postgres | `opendolphin-postgres` | `POSTGRES_DB` / `POSTGRES_USER`（既定: `opendolphin`） |
 | Modernized Postgres | `opendolphin-postgres-modernized` | `MODERNIZED_POSTGRES_DB` / `MODERNIZED_POSTGRES_USER`（既定: `opendolphin_modern` / `opendolphin`） |
+
+### Mac ホスト切替ガイド
+1. Windows/WSL2 側で `docker: not found` や `Cannot connect to the Docker daemon` が発生したら、Docker Desktop を最新安定版へ更新し、「Settings > Resources > WSL Integration」で対象ディストリ（例: Ubuntu-22.04）を有効化してから `./scripts/start_legacy_modernized.sh down && ./scripts/start_legacy_modernized.sh start --build` を再実行し、`docker compose ps` / `/actuator/health` 成功ログを `artifacts/parity-manual/db-restore/<UTC>/` に保存する。
+2. 上記が設備制約で実施できない場合は、Docker Desktop が利用可能な Mac ホストへリポジトリと `.env` を同期し、同コマンド列を Mac のターミナル（zsh 推奨）で再実行する。結果を `artifacts/parity-manual/db-restore/<UTC>-mac/` へ区別して保存し、`PHASE2_PROGRESS.md` および `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` から参照できるようリンクを追記する。
+3. いずれの環境でも `./scripts/start_legacy_modernized.sh start` の完了と Legacy/Modernized 両 `/actuator/health` 200 応答を確認できなければ、本 Runbook の 3 章以降（`psql`, `flyway`, シード投入）へ進まない。ブロッカーが解消したら再実行し、証跡を更新する。
 
 ## 2. 資材所在チェックリスト
 

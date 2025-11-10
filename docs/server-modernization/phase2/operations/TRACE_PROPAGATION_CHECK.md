@@ -98,6 +98,53 @@ TODO / 対応案:
 3. `AppointmentModel` / `PatientVisitModel` などのエンティティ不足により `IllegalArgumentException` が継続発生。`server-modernized/src/main/resources/META-INF/persistence.xml` と Flyway seed (`server-modernized/tools/flyway/sql/V0223__schedule_appo_tables.sql` 相当) を更新し、JPQL パリティを回復する。
 4. JMS 連携を含む case（Touch sendPackage、Factor2 など）は未採取。`TRACEID_JMS/trace/` ディレクトリに JMS ログセットを追加し、`SessionTraceManager` → JMS ブリッジの確認まで拡張する。
 5. Legacy `LogFilter` の traceId ログ出力と `org.wildfly.extension.micrometer` モジュール欠如によるビルドブロックは未解消。Legacy 側へのパッチを適用し、`docker logs opendolphin-server` でも traceId を可視化する。
+
+## 7. 2025-11-10 07:06Z: Trace Harness 再取得（RUN_ID=20251110T070638Z）
+
+- `PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/${RUN_ID}` を設定し、`tmp/trace-headers/trace_*.headers` / `ops/tests/api-smoke-test/payloads/appo_cancel_sample.json` を用意した上で各ケースを `ops/tools/send_parallel_request.sh --profile compose` で再実行。
+- HTTP 証跡は `artifacts/parity-manual/TRACEID_JMS/20251110T070638Z/trace_*/{legacy,modern}/` に保存されたが、いずれも `curl: (7) Failed to connect to localhost port {8080,9080}` で失敗し `meta.json` は `status_code=000`, `exit_code=7` を記録。
+- 実行ログは `artifacts/parity-manual/TRACEID_JMS/20251110T070638Z/logs/send_parallel_request.log` を参照。WildFly / SessionOperation ログは生成されていない。
+
+| Case / Trace ID | Legacy (status / exit) | Modernized (status / exit) | 備考 |
+| --- | --- | --- | --- |
+| `trace_http_200` | 000 / 7 | 000 / 7 | `curl` が 8080/9080 の TCP 接続を確立できず、認証ヘッダー送信前に失敗。 |
+| `trace_http_400` | 000 / 7 | 000 / 7 | `dolphin/activity` への BadRequest 再現は未到達。 |
+| `trace_http_401` | 000 / 7 | 000 / 7 | `TouchRequestContextExtractor` 以前に接続が切断され、Checklist #73 継続。 |
+| `trace_http_500` | 000 / 7 | 000 / 7 | `KarteServiceBean` のエラーパスは再検証できず。 |
+| `trace-schedule-jpql` | 000 / 7 | 000 / 7 | JPQL / DTO 差分を再取得できず、`{"list":null}` 問題は据え置き。 |
+| `trace-appo-jpql` | 000 / 7 | 000 / 7 | `SessionOperationInterceptor` ERROR ログは今回生成されず。 |
+
+### 7.1 ブロッカー / TODO
+1. `docker ps` が `The command 'docker' could not be found in this WSL 2 distro.` を返し、Docker Desktop↔WSL の統合が無効。Legacy/Modernized コンテナが起動していないため `localhost:{8080,9080}` も LISTEN していない。
+2. `compose` プロファイル用の `BASE_URL_{LEGACY,MODERN}` は有効だが、サーバープロセスが存在しないため `curl` は常に `status=000`。`docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml up -d` で両サーバーを起動した上で同コマンドを再実行する必要がある。
+3. 環境復旧後は `docker logs opendolphin-server(-modernized-dev) | rg traceId=` と `SessionOperationInterceptor` ERROR ログを再取得し、§6 の表を上書き更新する。
+
+### 7.2 @SessionOperation 静的解析（2025-11-10）
+- `rg --files -g '*ServiceBean.java' server-modernized/src/main/java/open/dolphin` と `rg '@SessionOperation' server-modernized/src/main/java/open/dolphin -n` の結果からサービス層 22 クラスの付与状況を棚卸し。
+- Legacy (`server/src/...`) には `@SessionOperation` が存在せず、Modernized 側での付与状況が唯一のソース。`touch/session` 系 2 クラスだけが未適用のままで、Touch API 由来の `trace_http_401` などで SessionOperationInterceptor が起動しない。
+
+| ServiceBean | パッケージ | `@SessionOperation` | 備考 |
+| --- | --- | --- | --- |
+| `SystemServiceBean` | `open.dolphin.session` | ✅ クラス付与 | `trace_http_400` で BadRequest を返す核心。`server-modernized/src/main/java/open/dolphin/session/SystemServiceBean.java:39`。 |
+| `UserServiceBean` | `open.dolphin.session` | ✅ | `LogFilter` header 認証の委譲先。 |
+| `PatientServiceBean` | `open.dolphin.session` | ✅ | `/patient/id/*` 系 JPQL。 |
+| `KarteServiceBean` | `open.dolphin.session` | ✅ | `trace_http_500`。 |
+| `ScheduleServiceBean` | `open.dolphin.session` | ✅ | `trace-schedule-jpql`。 |
+| `AppoServiceBean` | `open.dolphin.session` | ✅ | `trace-appo-jpql`（SessionOperationInterceptor ERROR 生成）。 |
+| `LetterServiceBean` | `open.dolphin.session` | ✅ | 文書/書簡 API。 |
+| `ChartEventServiceBean` | `open.dolphin.session` | ✅ | `ChartsPage` 連携イベント。 |
+| `StampServiceBean` | `open.dolphin.session` | ✅ | スタンプ管理。 |
+| `NLabServiceBean` | `open.dolphin.session` | ✅ | NLabo 連携。 |
+| `MmlServiceBean` | `open.dolphin.session` | ✅ | MML import/export。 |
+| `PVTServiceBean` | `open.dolphin.session` | ✅ | 患者来院情報。 |
+| `VitalServiceBean` | `open.dolphin.session` | ✅ | Vital measurement API。 |
+| `ADM10_EHTServiceBean` / `ADM10_IPhoneServiceBean` | `open.dolphin.adm10.session` | ✅ | ADM10 デバイス向け管理系。 |
+| `ADM20_AdmissionServiceBean` / `ADM20_EHTServiceBean` / `ADM20_IPhoneServiceBean` | `open.dolphin.adm20.session` | ✅ | ADM20 FIDO2 / Admission。 |
+| `AMD20_PHRServiceBean` / `PHRAsyncJobServiceBean` | `open.dolphin.adm20.session` | ✅ | PHR 連携と非同期処理。 |
+| `EHTServiceBean` | `open.dolphin.touch.session` | ⚠️ 未付与 | `getFirstVisitors`, `getPatientsByPvtDate`, `getTmpKarte` など Touch UI から直接呼ばれるメソッドが `SessionOperationInterceptor` を経由していない。traceId が SessionTraceManager に流れず、JMS/Audit の突合ができない。 |
+| `IPhoneServiceBean` | `open.dolphin.touch.session` | ⚠️ 未付与 | `getUser`, `getPatientVisitByPk`, `getPatientList*`, `getKarte*` など全メソッドが素通し。`trace_http_401` で SessionOperation が静音になる要因。 |
+
+- 追加で `MmlSenderBean` や `SessionOperationInterceptor` 自体も `@SessionOperation` を持つが、サービス層 API の網羅率は **20/22 クラス (90.9%)**。Touch セッション 2 クラスを付与対象に加える改修チケットが必要。付与後は `touch/user` 系リクエストで `SessionTraceManager` が MDC を引き継ぎ、`trace_http_401`/`trace_appo_jpql` のような Touch 経路でもトレースが残る見込み。
 =======
 ## 6. 2025-11-10: SessionOperation Trace Harness（RUN_ID=20251110T002045Z）
 
