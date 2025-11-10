@@ -144,6 +144,7 @@
 | Profile | 説明 | `BASE_URL_LEGACY` | `BASE_URL_MODERN` |
 | --- | --- | --- | --- |
 | `compose` (既定) | ローカル docker compose で旧/新を同時起動 | `http://localhost:8080/openDolphin/resources` | `http://localhost:9080/openDolphin/resources` |
+| `modernized-dev` | `docker-compose.modernized.dev.yml` で立てた helper コンテナや CI runner から直接コンテナ名でアクセス | `http://opendolphin-server:8080/openDolphin/resources` | `http://opendolphin-server-modernized-dev:8080/openDolphin/resources` |
 | `legacy-only` | Modernized を起動せず旧サーバーのみ比較ログを残す | 同上 | Modernized 側は `http://localhost:9080/openDolphin/resources`（未応答でも可） |
 | `remote-dev` | Modernized をリモート環境へ切り替える | 同上 | `MODERNIZED_REMOTE_BASE_URL` で上書き |
 | `custom` | 監査や再現試験用に任意 URL を指定 | 手動設定 | 手動設定 |
