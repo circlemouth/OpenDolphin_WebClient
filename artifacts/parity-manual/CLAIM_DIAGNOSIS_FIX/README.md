@@ -47,8 +47,27 @@
 - JMS ランタイム: `logs/jms_dolphinQueue_read-resource.txt`, `logs/jms_DLQ_read-resource.txt`, `logs/jms_DLQ_list-messages.txt`
 - DB スナップショット: `db/d_diagnosis_tail.txt`
 
-### 残課題
-1. **Diagnosis テンプレート不足**: `MessageSender` が `diseaseHelper.vm` を見つけられず DLQ 行き。`logs/docker_logs_opendolphin-server-modernized-dev.txt:504` 参照。テンプレ配置と Velocity path の再確認が必要。
-2. **Legacy ベースライン**: 403 の理由（ヘッダー照合 or Basic 認証）を `CLAIM_DIAGNOSIS_FIX` から切り出して別タスクで調査する必要あり。
-3. **DB 反映**: `d_diagnosis` に新規行が作成されていないため、API 実装かテストデータの不備を追う（`db/d_diagnosis_tail.txt` に変化無し）。
-4. **host→9080 の疎通不可**: 今回はネットワーク内ヘルパーで迂回。恒久的にアクセスできるよう `docker run --rm -p 19080:9080 ...` 等のプロキシを検討。
+### 残課題（2025-11-09T231845Z 時点）
+1. **`d_diagnosis_seq` の補正**: 23:18Z リトライでは ID=-47 が追加されており、シーケンス初期値が負方向にずれている。`d_diagnosis_seq` の `setval` と既存データの整合確認が必要。
+2. **レスポンス仕様の明文化**: `/karte/diagnosis/claim` は空 JSON を返すため、フロントエンドが成功可否を判別できる項目（traceId/登録件数/queued flag 等）を定義する。
+3. **Legacy 403 の原因解消**: 403 (Basic 認証 or ヘッダー不一致) の切り分けを進め、成功パターンのヘッダーセットを README に追記する。
+4. **host→9080 フォールバック**: 今回はホスト直接で通信できたが、疎通断が再発した場合に備えてヘルパーコンテナ経路（`docker run --network legacy-vs-modern_default ...`）と `socat` などのポート再公開案を Runbook/README 双方へ残す。
+
+## 2025-11-09T231845Z 証跡（Diagnosis テンプレ復旧）
+
+### 再現条件
+- `client/src/main/java/open/dolphin/resources/templates/diseaseHelper.vm` → `server-modernized/src/main/resources/diseaseHelper.vm` をコピーし、`mvn -f pom.server-modernized.xml -pl server-modernized -am package -DskipTests` を再実行（ログ: `maven/mvn_server-modernized_package.log`）。
+- `COMPOSE_FILE=docker-compose.yml:ops/base/docker-compose.yml:docker-compose.modernized.dev.yml docker compose build server-modernized-dev` → `./scripts/start_legacy_modernized.sh start` で Legacy/Modernized を再デプロイ。
+- `PARITY_HEADER_FILE=tmp/claim-tests/diagnosis.headers`、`PARITY_BODY_FILE=tmp/claim-tests/send_diagnosis_success.json`、`PARITY_OUTPUT_DIR=.../diagnosis_claim` を設定し、`./ops/tools/send_parallel_request.sh --profile compose POST /karte/diagnosis/claim 20251109T231900Z_DIAGNOSIS` をホストから実行（ヘルパー経路は fallback として残す）。
+
+### 実測要点
+- Legacy=403 / Modernized=200（0.238s）。レスポンスボディは空 JSON（従来どおり）。
+- `logs/jms_dolphinQueue_read-resource.txt`: `messages-added=1L`, `message-count=0L`, `delivering-count=0`。`logs/jms_DLQ_list-messages.txt`: `[]`（DLQ 0 件）。
+- `db/d_diagnosis_tail.txt`: 既存 ID=1 に加えて ID=-47 を INSERT（`karte_id=2001`、`diagnosiscode=J00`）。
+- `logs/docker_logs_opendolphin-server-modernized-dev.txt:349`: `MessageSender Processing Diagnosis JMS message [traceId=...]` を確認。例外ログなし。
+
+### DLQ / DB ステータス表
+| タイムスタンプ | JMS `dolphinQueue` | DLQ | `d_diagnosis` tail | 証跡パス |
+| --- | --- | --- | --- | --- |
+| 2025-11-09T20:18:46Z | `messages-added=2`, `message-count=0` | `list-messages` に traceId=62f8aa37… 1 件 | ID=1 のみ | `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251109T201846Z/{logs,db}/` |
+| 2025-11-09T23:18:45Z | `messages-added=1`, `message-count=0` | 空配列（0 件） | ID=1, -47 | `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251109T231845Z/{logs,db}/` |
