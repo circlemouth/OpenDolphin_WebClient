@@ -28,3 +28,16 @@
 - `test_config.manual.csv` 先頭に `trace_http_*` シナリオを追加し、200/400/401/500 の最小経路と推奨 `X-Trace-Id` を定義した。400/401/500 は `ops/tests/api-smoke-test/headers/trace-session.headers` を複製しつつ `X-Trace-Id` を書き換えて運用する。  
 - `rest_error_scenarios.manual.csv` ではエラーパス専用の定義ファイルを提供し、`expected_status` と再現ノートを明記した。CLI 実行時は `PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/<timestamp>` を指定し、`docs/server-modernization/phase2/operations/TRACE_PROPAGATION_CHECK.md` へ証跡リンクを追記する。  
 - `ops/tools/send_parallel_request.sh --profile compose ...` を使うと `send_parallel_request.profile.env.sample` を自動読込して URL を切り替えられる。`BASE_URL_LEGACY` を一時的に Modernized 側へ上書きしたい場合は `BASE_URL_LEGACY=http://localhost:9080/openDolphin/resources` をコマンドに付与する。
+
+### REST エラーケース再現テンプレ（RUN_ID=`20251110TnewZ` ひな形）
+
+1. `tmp/parity-headers/<case>_<RUN_ID>.headers` を `cp tmp/parity-headers/<case>_20251110TnewZ.headers tmp/parity-headers/<case>_<new RUN_ID>.headers` で複製し、`X-Trace-Id: parity-<case>-<new RUN_ID>` へ置換する。`password: 632080fabdb968f9ac4f31fb55104648`（Legacy LogFilter の MD5）と `facilityId: 1.3.6.1.4.1.9414.72.103` は固定値のため書き換え不要。`PUT` 系は `Content-Type: application/json` を残す。  
+2. `PARITY_HEADER_FILE` と（必要に応じて）`PARITY_BODY_FILE` を以下のテンプレに合わせて設定し、`PARITY_OUTPUT_DIR=artifacts/parity-manual/<case>/<RUN_ID>` を指定して `ops/tools/send_parallel_request.sh` を実行する。証跡が揃ったら `rest_error_scenarios.manual.csv` に記載の TraceId で `send_parallel_request.log` / `headers.txt` / `response.json` を保管する。
+
+| CSV `id` | ヘッダー / TraceId | ペイロード | 期待ステータス (Legacy / Modernized) | 証跡配置（例） | メモ |
+| --- | --- | --- | --- | --- | --- |
+| `rest_error_letter_fk` | `PARITY_HEADER_FILE=tmp/parity-headers/letter_<RUN_ID>.headers` / `X-Trace-Id: parity-letter-<RUN_ID>` | `PARITY_BODY_FILE=tmp/parity-letter/letter_put_payload.json` | `200 / 500` (`fk_d_letter_module_karte`) | `artifacts/parity-manual/letter/<RUN_ID>/` | `d_karte.id` を揃えるまで Modern 側 500 想定。 |
+| `rest_error_lab_empty` | `PARITY_HEADER_FILE=tmp/parity-headers/lab_<RUN_ID>.headers` / `X-Trace-Id: parity-lab-<RUN_ID>` | - | `200 / 200` （`list=null`） | `artifacts/parity-manual/lab/<RUN_ID>/` | `d_nlabo_module`⇔`d_nlabo_item` の紐付け調査と Audit/JMS 採取を TODO。 |
+| `rest_error_stamp_data_exception` | `PARITY_HEADER_FILE=tmp/parity-headers/stamp_<RUN_ID>.headers` / `X-Trace-Id: parity-stamp-<RUN_ID>` | `PARITY_BODY_FILE=tmp/parity-letter/stamp_tree_payload.json` | `500 / 500`（Legacy: First Commit Win, Modern: `Bad value for type long ... treeBytes`） | `artifacts/parity-manual/stamp/<RUN_ID>/` | 排他制御と `StampTreeModelConverter` 修正後に再取得。 |
+
+> 送信例: `PARITY_HEADER_FILE=tmp/parity-headers/letter_20251110TnewZ.headers PARITY_BODY_FILE=tmp/parity-letter/letter_put_payload.json PARITY_OUTPUT_DIR=artifacts/parity-manual/letter/20251110TnewZ RUN_ID=20251110TnewZ ./ops/tools/send_parallel_request.sh --profile compose PUT /odletter/letter rest_error_letter_fk`

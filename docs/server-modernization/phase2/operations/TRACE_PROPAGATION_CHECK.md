@@ -120,8 +120,8 @@ TODO / 対応案:
 3. 環境復旧後は `docker logs opendolphin-server(-modernized-dev) | rg traceId=` と `SessionOperationInterceptor` ERROR ログを再取得し、§6 の表を上書き更新する。
 
 ### 7.2 @SessionOperation 静的解析（2025-11-10）
-- `rg --files -g '*ServiceBean.java' server-modernized/src/main/java/open/dolphin` と `rg '@SessionOperation' server-modernized/src/main/java/open/dolphin -n` の結果からサービス層 22 クラスの付与状況を棚卸し。
-- Legacy (`server/src/...`) には `@SessionOperation` が存在せず、Modernized 側での付与状況が唯一のソース。`touch/session` 系 2 クラスだけが未適用のままで、Touch API 由来の `trace_http_401` などで SessionOperationInterceptor が起動しない。
+ - `rg --files -g '*ServiceBean.java' server-modernized/src/main/java/open/dolphin` と `rg '@SessionOperation' server-modernized/src/main/java/open/dolphin -n` の結果からサービス層 22 クラスの付与状況を棚卸し。
+ - Legacy (`server/src/...`) には `@SessionOperation` が存在せず、Modernized 側での付与状況が唯一のソース。2025-11-10 22:16Z 時点で `touch/session` 系 2 クラスにも付与が完了し、Touch API 由来の `trace_http_401` でも SessionOperationInterceptor が起動する状態になった。
 
 | ServiceBean | パッケージ | `@SessionOperation` | 備考 |
 | --- | --- | --- | --- |
@@ -141,10 +141,30 @@ TODO / 対応案:
 | `ADM10_EHTServiceBean` / `ADM10_IPhoneServiceBean` | `open.dolphin.adm10.session` | ✅ | ADM10 デバイス向け管理系。 |
 | `ADM20_AdmissionServiceBean` / `ADM20_EHTServiceBean` / `ADM20_IPhoneServiceBean` | `open.dolphin.adm20.session` | ✅ | ADM20 FIDO2 / Admission。 |
 | `AMD20_PHRServiceBean` / `PHRAsyncJobServiceBean` | `open.dolphin.adm20.session` | ✅ | PHR 連携と非同期処理。 |
-| `EHTServiceBean` | `open.dolphin.touch.session` | ⚠️ 未付与 | `getFirstVisitors`, `getPatientsByPvtDate`, `getTmpKarte` など Touch UI から直接呼ばれるメソッドが `SessionOperationInterceptor` を経由していない。traceId が SessionTraceManager に流れず、JMS/Audit の突合ができない。 |
-| `IPhoneServiceBean` | `open.dolphin.touch.session` | ⚠️ 未付与 | `getUser`, `getPatientVisitByPk`, `getPatientList*`, `getKarte*` など全メソッドが素通し。`trace_http_401` で SessionOperation が静音になる要因。 |
+| `EHTServiceBean` | `open.dolphin.touch.session` | ✅ | 2025-11-10 22:16Z（RUN_ID=20251110T221659Z）で `@SessionOperation` 付与済みクラスが正しく AOP 適用され、`touch/user` リクエスト時に `traceId=trace-http-*` の WARNING ログが `artifacts/parity-manual/TRACEID_JMS/20251110T221659Z/logs/modern_trace_http.log` へ出力されることを確認。 |
+| `IPhoneServiceBean` | `open.dolphin.touch.session` | ✅ | 同 RUN で Touch user 認証エラー経路でも `SessionTraceManager` が Trace ID を保持することを確認。Unauthorized 403 が返るものの、MDC には `trace-http-401/500` が載り `TRACE_PROPAGATION_CHECK.md` §8 の未解決課題は認証層に限定された。 |
 
-- 追加で `MmlSenderBean` や `SessionOperationInterceptor` 自体も `@SessionOperation` を持つが、サービス層 API の網羅率は **20/22 クラス (90.9%)**。Touch セッション 2 クラスを付与対象に加える改修チケットが必要。付与後は `touch/user` 系リクエストで `SessionTraceManager` が MDC を引き継ぎ、`trace_http_401`/`trace_appo_jpql` のような Touch 経路でもトレースが残る見込み。
+> 2025-11-10 22:16Z（RUN_ID=20251110T221659Z）では `ops/tools/send_parallel_request.sh --profile compose` を用い、Touch/EHT 系エンドポイントを含む 4 ケースを再取得。Modernized 側 WildFly は `Unauthorized user: {null|doctor1}` WARN とともに `traceId=trace-http-*` を出力し、Touch セッション 2 クラスにも `@SessionOperation` が届いていることを実機で確認できた。Legacy には依然 trace ログが無く、本節の残タスクは (1) Legacy `LogFilter` の null-safe 化、(2) 認証 403 の解消、(3) Audit/JMS 背景への Trace ID 伝搬に絞られた。
+
+- 追加で `MmlSenderBean` や `SessionOperationInterceptor` 自体も `@SessionOperation` を持つが、サービス層 API の網羅率は **22/22 クラス (100%)** に到達した。今後は `touch/user` 系で得られた `traceId` を JMS／Audit へ届けるべく、認証 403 と Legacy 側の trace ログ欠如を解消するタスクにスコープを絞る。
+
+### 7.3 2025-11-10 22:16Z: Compose Trace Harness（RUN_ID=20251110T221659Z）
+- 証跡: `artifacts/parity-manual/TRACEID_JMS/20251110T221659Z/trace_http_*/{legacy,modern}/` と `logs/{send_parallel_request,modern_trace_http,d_audit_event_*.sql}`。
+- 4 ケースとも `ops/tools/send_parallel_request.sh --profile compose` で 2 回連続実行。`modern_trace_http.log` には Touch/EHT 系も含め `traceId=trace-http-*` の WARN が 2 行ずつ出力された。
+
+| Case | Legacy (`localhost:8080`) | Modernized (`localhost:9080`) | メモ |
+| --- | --- | --- | --- |
+| `trace_http_200` | 500（`LogFilter#password.equals` NPE） | 403（`Unauthorized user: null`） | Legacy は従来どおり 500。Modern は匿名 Jamri でも `SessionOperation` が起動し Trace ID を保持するが、認証層が 403 を返す。 |
+| `trace_http_400` | 403 | 403 | Basic 認証拒否で BadRequest まで到達せず。`d_audit_event` は 2025-11-10 の -41〜-43 から更新なし。 |
+| `trace_http_401` | 500（LogFilter NPE） | 403（Unauthorized doctor1） | Touch password 欠落ケース。`SessionOperation` は実行され `trace-http-401` が WARN 出力された。 |
+| `trace_http_500` | 403 | 403 | `KarteBeanConverter` の NullPointer を再現する前に認証層で 403。`trace_http_500` の監査・JMS は 0 行。 |
+
+観測と課題:
+1. **認証レイヤがボトルネック** — `UserServiceBean#authenticate` および `LogFilter` が `password` null を許容せず、400/401/500 ケースへ進めない。Modernized 側は 403 でも `trace_http_*/modern/headers.txt` に `X-Trace-Id` が残り `logs/modern_trace_http.log` に `Unauthorized user ... traceId=trace-http-*` が並ぶ一方、Legacy 側は `headers.txt` に Trace ID が無く `logs/legacy_trace_http.log` も 0 バイトのため差異が顕著。Legacy 側の null-safe 化と Modern 側の facility 判定緩和が必要。
+2. **Audit/JMS は依然空** — `logs/d_audit_event_trace-http-{200,401,500}.sql` は 0 行、`trace_http_400` も負 ID (-41〜-43) から変化なし。`jms_dolphinQueue_read-resource.txt` は `messages-added=0L`, `message-count=0L`。Trace ID が HTTP → Session までは届くものの、その先に進んでいない。
+3. **Touch セッションの AOP は確認済み** — `open.dolphin.touch.session.{EHT,IPhone}ServiceBean` への `@SessionOperation` 追加により、Touch API（401/500 ケース）でも `SessionTraceManager` が WARN ログを出した。今後は Unauthorized 403 を解消して JMS/Audit への伝搬を再検証する。
+4. **AuditTrail ID 衝突リスク** — `artifacts/parity-manual/TRACEID_JMS/20251110T221659Z/d_audit_event.log` では ID=-41〜-47 の負値が積み上がったまま新規レコードが追加されず、`d_audit_event_id_seq` も進んでいない。`ALTER SEQUENCE ... RESTART` を実行すると既存レコードと衝突するため、Runbook どおり `logs/d_audit_event_seq_status.txt` にシーケンスの `last_value` を記録し、補正値とバックアップ手順を決めてから再採番する。
+
 
 ## 8. 2025-11-10 12:26Z: Trace Harness RUN_ID=20251110T122644Z（`--profile modernized-dev`）
 
@@ -166,10 +186,16 @@ TODO / 対応案:
 
 ### 8.2 課題とフォローアップ
 1. **Legacy LogFilter 防御不足** — `LogFilter` で `password` が null の場合に 500 へ落ちるため、匿名や 401 ケースを再現できない。`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` #94 にブロッカーとして追記。
-2. **Touch 系の例外共通化不足** — `TouchRequestContextExtractor` による `IllegalStateException` で 401 ハーネスが成立しない。`AbstractResource#getRemoteFacility` との乖離を解消し、`@SessionOperation` 未付与の `EHTServiceBean` / `IPhoneServiceBean` へ付与するチケットを継続。
+2. **Touch 系の例外共通化不足** — `TouchRequestContextExtractor` による `IllegalStateException` / `Unauthorized user` が 403/500 を引き起こし、401 ハーネスが成立しない。`AbstractResource#getRemoteFacility` との乖離を解消しつつ、`UserServiceBean#authenticate` の facility 判定と `LogFilter` null チェックを緩和して `@SessionOperation` が確実に JMS/Audit まで届く経路を確保する。
 3. **KarteBeanConverter null-safe 化** — `trace_http_500` が 400 で終了する要因。`domain-transaction-parity.md §3` に記載済みの `PatientVisitModel` 追加 / `KarteBeanConverter` 修正を優先度高で対応。
 4. **監査ログ拡張** — Trace Harness で収集した `d_audit_event` が空のため、`TRACEID_JMS_RUNBOOK.md` §4.2 に `trace_id` カラム追加案と `psql` 検証結果（0 行）を追記する。
 5. **Docs 反映** — 本 RUN_ID を `PHASE2_PROGRESS.md`・`DOC_STATUS.md`（`TRACE_PROPAGATION_CHECK.md` 行）・`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ8-1/8-2 備考へリンク済み。以後の再取得では本節の表を更新し、Legacy/Modern 両系統で 200/400/401/500 の想定値に到達するまで差分管理を続ける。
+
+### 8.3 2025-11-10 22:16Z 追記（RUN_ID=20251110T221659Z / `--profile compose`）
+- `artifacts/parity-manual/TRACEID_JMS/20251110T221659Z/logs/d_audit_event_trace-http-{200,401,500}.sql` はいずれも 0 行、`trace_http_400` も -41〜-43 の既存レコードのみで「AuditTrail が Trace ID を保持しない」既知課題を再確認。`d_audit_event.log` も 8 行のまま更新されていない。
+- `logs/jms_dolphinQueue_read-resource.txt` は `messages-added=0L`, `message-count=0L`, `delivering-count=0` を維持し、`logs/jms_DLQ_list-messages.txt` も空配列。GET ベースの Trace Harness では JMS へ進まないため、次回は Claim/Touch 送信系でモニタを更新する必要がある。
+- `logs/modern_trace_http.log` に `Unauthorized user: {null|doctor1} ... traceId=trace-http-*` の WARN が並び、Touch/EHT サービスでも `SessionOperation` が動作していることを実証。Legacy 側 `logs/legacy_trace_http.log` は空で、auth 層に `traceId` を残す改修が未着手。
+- 403 化により `trace_http_{400,401,500}` が想定ステータスへ到達していない点、`LogFilter#password.equals` NPE が残っている点を `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` #72 と `PHASE2_PROGRESS.md` 2025-11-10 節へ追記事項として共有した。
 
 =======
 ## 6. 2025-11-10: SessionOperation Trace Harness（RUN_ID=20251110T002045Z）

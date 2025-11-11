@@ -1,0 +1,1 @@
+JMS ログは `parity-lab-20251110TnewZ` 実行時に記録されず（grep -i JMS 不一致）。

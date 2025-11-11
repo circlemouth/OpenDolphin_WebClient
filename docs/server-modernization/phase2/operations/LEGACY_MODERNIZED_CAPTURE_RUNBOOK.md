@@ -14,6 +14,7 @@
   - `compose_services.txt` / `compose_profiles.txt`: `docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml config --services/--profiles` の CLI 出力
 - **環境変数テンプレ**: `ops/tools/send_parallel_request.profile.env.sample`
 - **DB ベースライン Gate**: `docs/server-modernization/phase2/operations/POSTGRES_BASELINE_RESTORE.md`（節 6）および `artifacts/parity-manual/db-restore/20251109T200035Z/`（`psql -h localhost ...`, `flyway info`, README）を参照し、キャプチャ手順に入る前の必須 Gate とする。
+- **PK 揃え済み→再取得待ち**: `ops/db/local-baseline/local_synthetic_seed.sql` で `WEB1001` の `d_karte.id=10` を固定し、`docker exec opendolphin-postgres-modernized psql -c "INSERT ..."`→`DELETE id=6`→`SELECT setval('opendolphin.hibernate_sequence',10,true);` で Modern DB を調整済み。Legacy/Modern 双方の `d_karte` を `docker exec opendolphin-postgres(-modernized) psql -c "SELECT id, patientId ..."` で採取し、結果は `artifacts/parity-manual/db/20251111T062323Z/karte_id_check.txt` に保存した。Docker 再デプロイと parity RUN_ID 更新は後続タスク。
 
 ## 1. 前提条件と権限
 
@@ -113,6 +114,14 @@
   3. DB 健全性が戻らない場合は `docker volume rm legacy-vs-modern_postgres-data-modernized` 後に再起動し、必要なら初期データを再投入
 - **証跡採取**: 重要な CLI 出力は `artifacts/parity-manual/setup/<UTC>/` に `tee` で保存する。Runbook 冒頭のログを参照。
 
+### 2.4 Flyway/Seed Refresh Gate（letter/lab/stamp）
+
+- `server-modernized/tools/flyway/sql/V0225__letter_lab_stamp_tables.sql` と `ops/db/local-baseline/local_synthetic_seed.sql` を適用して紹介状/ラボ/スタンプ系の欠損を解消する際は、以下の順番を厳守する。詳細コマンドは `server-modernized/tools/flyway/README.md` に記載。  
+  1. **Flyway migrate**: `docker run --rm --network legacy-vs-modern_default -v "$PWD":/workspace -w /workspace flyway/flyway:10.17 -configFiles=server-modernized/tools/flyway/flyway.conf migrate` を実行し、`flyway_schema_history` に version 0225 を登録する（`d_letter_module*` / `d_nlabo_module*` / `d_nlabo_item*` / `d_stamp_tree*` を作成）。  
+  2. **Seed 再投入**: Legacy (`db`)/Modernized (`db-modernized`) の両 Postgres に `psql -f ops/db/local-baseline/local_synthetic_seed.sql` を流し込み、`id=8` の紹介状、`id=9101/9201/9202` のラボデータ、`id=9` のスタンプツリーを復元する。  
+  3. **再デプロイと parity 取得**: `scripts/start_legacy_modernized.sh down && start --build` → `ops/tools/send_parallel_request.sh --profile compose --case {letter,lab,stamp}` の順に再実行して証跡を更新する。Docker コンテナの再起動や send_parallel_request の実行自体はホスト担当者が行うため、開発コンテナ内ではファイル更新と手順書作成に留め、次担当者へ「再デプロイ待ち」である旨を共有する。  
+- 上記が完了するまで `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md`・`docs/server-modernization/phase2/PHASE2_PROGRESS.md`・`docs/server-modernization/phase2/notes/domain-transaction-parity.md` には「Flyway/seed 追加を実施、Docker 再デプロイ待ち」と明記し、Docker 側の適用が完了したら RUN_ID を更新する。
+
 ## 3. GUI なしでの並列キャプチャ実行
 
 1. **環境変数の読み込み**  
@@ -125,6 +134,7 @@
 3. **共通ヘッダー・リクエストファイルを準備**  
    - 追加ヘッダー: `PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/default.txt`
    - リクエストボディ: `PARITY_BODY_FILE=/tmp/request.json`（必要時）
+   - Legacy/Modernized 共通で doctor1 を利用する場合は `userName: 1.3.6.1.4.1.9414.72.103:doctor1 / password: 632080fabdb968f9ac4f31fb55104648 (MD5)` をヘッダーに指定し、`clientUUID`, `facilityId`, `X-Trace-Id` をケースごとに差し替える。`tmp/parity-headers/<case>_<RUN_ID>.headers` をテンプレート化しておくと便利。
 4. **CLI 送信 (`ops/tools/send_parallel_request.sh`)**  
    - 事前に `dos2unix ops/tools/send_parallel_request.sh`（または `bash <(tr -d '\r' < ops/tools/send_parallel_request.sh)`）を実施。  
    ```bash
@@ -136,6 +146,49 @@
    - `legacy`/`modern` それぞれの応答が `artifacts/parity-manual/<ID>/legacy|modern/` に蓄積される。
 5. **ログ採取**  
    - `docker compose logs server-modernized-dev | rg traceId=` などの出力も `artifacts/parity-manual/setup/<UTC>/` に保存する。
+   - Host から `localhost` へ到達できない場合は前述の §3.1（Compose ネットワーク経由）を利用する。
+   - Host から `localhost` へ到達できない場合は §3.1（Compose ネットワーク経由での CLI 実行）を利用する。
+
+### 3.1 Compose ネットワーク経由での CLI 実行（buildpack-deps:curl）
+
+WSL やリモート CLI から `localhost:{8080,9080}` へ到達できない場合は、Compose ネットワーク上に helper コンテナを立てて CLI を実行する。
+
+```bash
+RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
+CASE=appo
+docker run --rm --network legacy-vs-modern_default \
+  -v "$PWD":/workspace -w /workspace buildpack-deps:curl \
+  bash -lc 'set -euo pipefail
+    BASE_URL_LEGACY="http://server:8080/openDolphin/resources"
+    BASE_URL_MODERN="http://server-modernized-dev:8080/openDolphin/resources"
+    PARITY_HEADER_FILE="/workspace/tmp/parity-headers/${CASE}_${RUN_ID}.headers"
+    PARITY_BODY_FILE="/workspace/ops/tests/api-smoke-test/payloads/appo_cancel_sample.json"
+    PARITY_OUTPUT_DIR="/workspace/artifacts/parity-manual/${CASE}/${RUN_ID}"
+    ops/tools/send_parallel_request.sh PUT /appo appo_put'
+```
+
+- `server` / `server-modernized-dev` は Compose のデフォルトネットワーク名。コンテナから見ると `localhost` ではなくこのホスト名を使う。
+- 出力先はホスト側と共有しているため、`artifacts/parity-manual/<case>/<RUN_ID>/` に legacy/modern のレスポンスが保存される。
+
+### 3.2 StampTree PUT 事前同期フロー（First Commit Win 回避）
+
+`StampServiceBean#getNextVersion`（`server/src/main/java/open/dolphin/session/StampServiceBean.java:42-96`）は保持している `versionNumber` が DB 側と一致した場合のみ `+1` を許容するため、固定 payload のまま `PUT /stamp/tree` を送ると常に `First Commit Win Exception`（Legacy=500）となる。Parity 取得や再現試験では以下の順序で version を同期してから PUT を実行する。
+
+1. **最新ツリーを取得**:  
+   ```bash
+   RUN_ID=${RUN_ID:-$(date -u +%Y%m%dT%H%M%SZ)}
+   USER_PK=${USER_PK:-9001}
+   for TARGET in legacy modern; do
+     BASE_URL=$([ "$TARGET" = legacy ] && echo "$BASE_URL_LEGACY" || echo "$BASE_URL_MODERN")
+     curl -sS -H @tmp/parity-headers/stamp_${RUN_ID}.headers \
+       "$BASE_URL/stamp/tree/${USER_PK}" \
+       | tee "artifacts/parity-manual/stamp/${RUN_ID}/${TARGET}/stamp_tree_get.json" >/dev/null
+   done
+   ```
+   `personalTree.versionNumber` と `personalTree.id` を控え、`treeBytes` をそのまま次ステップへ渡す。
+2. **payload へ反映**: `tmp/parity-letter/stamp_tree_payload.json` の `id`／`userModel.id`／`versionNumber`／`treeBytes` を GET 結果で上書きし、`publishedDate` など日付フィールドも差分があれば同期する。`jq` を使う場合は `jq '.personalTree | {id,versionNumber,treeBytes}' ...` で抜き出す。
+3. **PUT/sync を送信**: `ops/tools/send_parallel_request.sh --profile compose PUT /stamp/tree parity-stamp-${RUN_ID}` を実行する（`syncTree` 版も同 payload を利用）。この時点で Legacy は 200 を返し、Modernized 側は `treeBytes` bytea マッピングを修正済みであれば 200 になる。応答 ID / version は `artifacts/parity-manual/stamp/${RUN_ID}` に追記し、`rest_error_scenarios.manual.csv` の `rest_error_stamp_data_exception` 行へ RUN_ID を記録する。
+4. **差分メモ**: version 更新後に別セッションが PUT を実行する場合、再度 §3.2 の GET からやり直す。`StampManagementPage.tsx`（Web クライアント）も同じフローで `versionNumber` を同期するため、Runbook と UI で手順が乖離しないよう README へリンクを追加する。
 
 ## 4. `MODERNIZED_TARGET_PROFILE` / URL 切替
 
@@ -190,6 +243,7 @@
 3. **共通ヘッダー・リクエストファイルを準備**  
    - 追加ヘッダー: `PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/default.txt`
    - リクエストボディ: `PARITY_BODY_FILE=/tmp/request.json`（必要時）
+   - doctor1 を使う場合は `password: 632080fabdb968f9ac4f31fb55104648`（MD5）を指定し、`clientUUID`・`facilityId`・`X-Trace-Id` をケースごとに差し替える（`tmp/parity-headers/<case>_<RUN_ID>.headers` を利用）。Legacy は平文パスワードを受け付けない点に注意。
 4. **CLI 送信 (`ops/tools/send_parallel_request.sh`)**  
    - 事前に `dos2unix ops/tools/send_parallel_request.sh`（または `bash <(tr -d '\r' < ops/tools/send_parallel_request.sh)`）を実施。  
    ```bash
