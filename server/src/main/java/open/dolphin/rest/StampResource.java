@@ -1,9 +1,17 @@
 package open.dolphin.rest;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javax.inject.Inject;
 import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
@@ -14,7 +22,11 @@ import open.dolphin.converter.StampListConverter;
 import open.dolphin.converter.StampModelConverter;
 import open.dolphin.converter.StampTreeHolderConverter;
 import open.dolphin.infomodel.*;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.StampServiceBean;
+import open.dolphin.session.audit.StampAuditContext;
+import open.dolphin.session.audit.StampAuditContextHolder;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
 
@@ -26,11 +38,177 @@ import org.codehaus.jackson.map.ObjectMapper;
 @Path("/stamp")
 public class StampResource extends AbstractResource {
 
+    private static final Logger LOGGER = Logger.getLogger(StampResource.class.getName());
+
     @Inject
     private StampServiceBean stampServiceBean;
 
+    @Inject
+    private AuditTrailService auditTrailService;
+
+    @Context
+    private HttpServletRequest httpServletRequest;
+
+    private final ObjectMapper stampTreeMapper;
+
     /** Creates a new instance of StampResource */
     public StampResource() {
+        stampTreeMapper = new ObjectMapper();
+        stampTreeMapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+    }
+
+    private StampTreeModel deserializeStampTree(String json) throws IOException {
+        StampTreeModel model = stampTreeMapper.readValue(json, StampTreeModel.class);
+        ensureTreeBytes(model);
+        return model;
+    }
+
+    private void ensureTreeBytes(StampTreeModel model) {
+        if (model == null) {
+            return;
+        }
+        if ((model.getTreeBytes() == null || model.getTreeBytes().length == 0) && model.getTreeXml() != null) {
+            model.setTreeBytes(model.getTreeXml().getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private <T> T executeWithStampAuditContext(String action, StampOperation<T> operation) {
+        StampAuditContextHolder.set(buildAuditContext(action));
+        try {
+            return operation.execute();
+        } finally {
+            StampAuditContextHolder.clear();
+        }
+    }
+
+    private StampAuditContext buildAuditContext(String action) {
+        StampAuditContext context = new StampAuditContext();
+        context.setAction(action);
+        context.setTraceId(resolveTraceId(httpServletRequest));
+        context.setRequestId(resolveRequestId());
+        context.setRemoteUser(resolveRemoteUser());
+        if (httpServletRequest != null && httpServletRequest.isUserInRole("ADMIN")) {
+            context.setActorRole("ADMIN");
+        }
+        context.setRequestUri(resolveResourcePath());
+        context.setIpAddress(resolveIpAddress());
+        context.setUserAgent(resolveUserAgent());
+        return context;
+    }
+
+    private void logStampTreeFailure(String action, StampTreeModel model, RuntimeException e) {
+        String traceId = resolveTraceId(httpServletRequest);
+        Long userPk = (model != null && model.getUserModel() != null) ? model.getUserModel().getId() : null;
+        LOGGER.log(Level.WARNING, String.format("Stamp tree %s failed [traceId=%s, userPk=%s, version=%s]", action, traceId, userPk, model != null ? model.getVersionNumber() : null), e);
+    }
+
+    @FunctionalInterface
+    private interface StampOperation<T> {
+        T execute();
+    }
+
+    private void recordStampDeletionAudit(String action, List<String> targetIds, String outcome, Integer affected, String reason) {
+        if (auditTrailService == null) {
+            return;
+        }
+        try {
+            AuditEventPayload payload = createBaseAuditPayload(action);
+            Map<String, Object> details = new HashMap<>();
+            details.put("outcome", outcome);
+            details.put("targets", targetIds);
+            if (affected != null) {
+                details.put("affectedCount", affected);
+            }
+            if (reason != null) {
+                details.put("reason", reason);
+            }
+            enrichUserDetails(details);
+            enrichTraceDetails(details);
+            payload.setDetails(details);
+            auditTrailService.record(payload);
+        } catch (Exception ex) {
+            LOGGER.log(Level.FINE, "Failed to write stamp deletion audit for action " + action, ex);
+        }
+    }
+
+    private AuditEventPayload createBaseAuditPayload(String action) {
+        AuditEventPayload payload = new AuditEventPayload();
+        String actorId = resolveActorId();
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(resolveActorDisplayName(actorId));
+        if (httpServletRequest != null && httpServletRequest.isUserInRole("ADMIN")) {
+            payload.setActorRole("ADMIN");
+        }
+        payload.setAction(action);
+        payload.setResource(resolveResourcePath());
+        payload.setRequestId(resolveRequestId());
+        payload.setIpAddress(resolveIpAddress());
+        payload.setUserAgent(resolveUserAgent());
+        return payload;
+    }
+
+    private void enrichUserDetails(Map<String, Object> details) {
+        String remoteUser = resolveRemoteUser();
+        if (remoteUser == null) {
+            return;
+        }
+        details.put("remoteUser", remoteUser);
+        int idx = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx > 0) {
+            details.put("facilityId", remoteUser.substring(0, idx));
+            if (idx + 1 < remoteUser.length()) {
+                details.put("userId", remoteUser.substring(idx + 1));
+            }
+        }
+    }
+
+    private void enrichTraceDetails(Map<String, Object> details) {
+        String traceId = resolveTraceId(httpServletRequest);
+        if (traceId != null && !traceId.isEmpty()) {
+            details.put("traceId", traceId);
+        }
+    }
+
+    private String resolveActorId() {
+        return Optional.ofNullable(resolveRemoteUser()).orElse("system");
+    }
+
+    private String resolveActorDisplayName(String actorId) {
+        if (actorId == null) {
+            return "system";
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx >= 0 && idx + 1 < actorId.length()) {
+            return actorId.substring(idx + 1);
+        }
+        return actorId;
+    }
+
+    private String resolveResourcePath() {
+        return httpServletRequest != null ? httpServletRequest.getRequestURI() : "/stamp";
+    }
+
+    private String resolveRequestId() {
+        if (httpServletRequest == null) {
+            return UUID.randomUUID().toString();
+        }
+        String header = httpServletRequest.getHeader("X-Request-Id");
+        if (header != null && !header.isEmpty()) {
+            return header;
+        }
+        return UUID.randomUUID().toString();
+    }
+
+    private String resolveIpAddress() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteAddr() : null;
+    }
+
+    private String resolveUserAgent() {
+        return httpServletRequest != null ? httpServletRequest.getHeader("User-Agent") : null;
+    }
+
+    private String resolveRemoteUser() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteUser() : null;
     }
     
     //----------------------------------------------------------------------
@@ -55,17 +233,18 @@ public class StampResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public String putTree(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
-
-        long pk = stampServiceBean.putTree(model);
-        String pkStr = String.valueOf(pk);
-        debug(pkStr);
-
-        return pkStr;
+        StampTreeModel model = deserializeStampTree(json);
+        try {
+            return executeWithStampAuditContext("STAMP_TREE_PUT", () -> {
+                long pk = stampServiceBean.putTree(model);
+                String pkStr = String.valueOf(pk);
+                debug(pkStr);
+                return pkStr;
+            });
+        } catch (RuntimeException e) {
+            logStampTreeFailure("STAMP_TREE_PUT", model, e);
+            throw e;
+        }
     }
     
     @PUT
@@ -73,16 +252,17 @@ public class StampResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public String syncTree(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
-
-        String pkAndVersion = stampServiceBean.syncTree(model);
-        debug(pkAndVersion);
-
-        return pkAndVersion;
+        StampTreeModel model = deserializeStampTree(json);
+        try {
+            return executeWithStampAuditContext("STAMP_TREE_SYNC", () -> {
+                String pkAndVersion = stampServiceBean.syncTree(model);
+                debug(pkAndVersion);
+                return pkAndVersion;
+            });
+        } catch (RuntimeException e) {
+            logStampTreeFailure("STAMP_TREE_SYNC", model, e);
+            throw e;
+        }
     }
     
     @PUT
@@ -90,13 +270,16 @@ public class StampResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public void forceSyncTree(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
-
-        stampServiceBean.forceSyncTree(model);
+        StampTreeModel model = deserializeStampTree(json);
+        try {
+            executeWithStampAuditContext("STAMP_TREE_FORCE_SYNC", () -> {
+                stampServiceBean.forceSyncTree(model);
+                return Boolean.TRUE;
+            });
+        } catch (RuntimeException e) {
+            logStampTreeFailure("STAMP_TREE_FORCE_SYNC", model, e);
+            throw e;
+        }
     }
 
     //------------------------------------------------------------------
@@ -284,9 +467,21 @@ public class StampResource extends AbstractResource {
     @Path("/id/{param}")
     public void deleteStamp(@PathParam("param") String param) {
 
-        int cnt = stampServiceBean.removeStamp(param);
+        List<String> targetIds = Collections.singletonList(param);
+        StampModel existing = stampServiceBean.getStamp(param);
+        if (existing == null) {
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null, "stamp_not_found");
+            throw new NotFoundException("Stamp not found: " + param);
+        }
 
-        debug(String.valueOf(cnt));
+        try {
+            int cnt = stampServiceBean.removeStamp(param);
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "success", cnt, null);
+            debug(String.valueOf(cnt));
+        } catch (RuntimeException e) {
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null, e.getClass().getSimpleName());
+            throw e;
+        }
     }
     
 
@@ -298,8 +493,26 @@ public class StampResource extends AbstractResource {
         List<String> list = new ArrayList<String>();
         list.addAll(Arrays.asList(params));
 
-        int cnt = stampServiceBean.removeStamp(list);
+        List<StampModel> resolved = stampServiceBean.getStamp(list);
+        List<String> missing = new ArrayList<>();
+        for (int i = 0; i < list.size(); i++) {
+            StampModel model = (resolved != null && resolved.size() > i) ? resolved.get(i) : null;
+            if (model == null) {
+                missing.add(list.get(i));
+            }
+        }
+        if (!missing.isEmpty()) {
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "failed", null, "stamp_not_found:" + missing);
+            throw new NotFoundException("Stamps not found: " + missing);
+        }
 
-        debug(String.valueOf(cnt));
+        try {
+            int cnt = stampServiceBean.removeStamp(list);
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "success", cnt, null);
+            debug(String.valueOf(cnt));
+        } catch (RuntimeException e) {
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "failed", null, e.getClass().getSimpleName());
+            throw e;
+        }
     }
 }

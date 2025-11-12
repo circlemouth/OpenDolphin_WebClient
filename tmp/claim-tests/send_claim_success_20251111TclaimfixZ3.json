@@ -1,0 +1,117 @@
+{
+  "chartEvent": {
+    "eventType": 1,
+    "facilityId": "F001",
+    "issuerUUID": "CLAIM-TRACE-20251111TCLAIMFIXZ3",
+    "ownerUUID": "CHART-OWNER-20251111",
+    "ptPk": 70001,
+    "pvtPk": 80011,
+    "state": 3,
+    "memo": "CLAIM_SEND_SUCCESS_RUN_ID=20251111TclaimfixZ3"
+  },
+  "document": {
+    "id": 50012,
+    "confirmed": "2025-11-11 09:00:00.000",
+    "started": "2025-11-11 09:00:00.000",
+    "ended": null,
+    "recorded": "2025-11-11 09:05:00.000",
+    "linkId": 0,
+    "linkRelation": null,
+    "status": "F",
+    "docInfo": {
+      "docPk": 50012,
+      "parentPk": 0,
+      "docId": "CLAIMTEST20251111TCLAIMFIXZ30000000001",
+      "docType": "karte",
+      "title": "定期受診記録",
+      "purpose": "診療録",
+      "firstConfirmDate": "2025-11-11 09:00:00.000",
+      "confirmDate": "2025-11-11 09:00:00.000",
+      "department": "INTERNAL",
+      "departmentDesc": "01,内科,Dr.Test,DR001,1234567",
+      "healthInsurance": "060",
+      "healthInsuranceDesc": "協会けんぽ",
+      "healthInsuranceGUID": "HOGE-GUID-001",
+      "hasMark": "false",
+      "hasImage": "false",
+      "hasRp": "true",
+      "hasTreatment": "false",
+      "hasLaboTest": "false",
+      "versionNumber": "1",
+      "parentId": null,
+      "parentIdRelation": null,
+      "labtestOrderNumber": "LAB20251111TCLAIMFIXZ3",
+      "sendClaim": "true",
+      "claimDate": "2025-11-11 09:00:00.000",
+      "sendLabtest": "false",
+      "sendMml": "false",
+      "priscriptionOutput": "false",
+      "facilityName": "OpenDolphin Test Clinic",
+      "createrLisence": "doctor",
+      "patientId": "0000001",
+      "patientName": "テスト 太郎",
+      "patientGender": "M",
+      "status": "F",
+      "admFlag": "O"
+    },
+    "karteBean": {
+      "id": 60012,
+      "patientModel": {
+        "id": 70001,
+        "patientId": "0000001",
+        "facilityId": "F001"
+      }
+    },
+    "bundles": [
+      {
+        "id": 91012,
+        "confirmed": "2025-11-11 09:00:00.000",
+        "started": "2025-11-11 09:00:00.000",
+        "ended": null,
+        "recorded": "2025-11-11 09:05:00.000",
+        "linkId": 0,
+        "linkRelation": null,
+        "status": "F",
+        "moduleInfo": {
+          "stampName": "内服薬",
+          "stampRole": "karte",
+          "stampNumber": 0,
+          "entity": "medOrder",
+          "performFlag": "O"
+        },
+        "model": {
+          "className": "内服薬",
+          "classCode": "230000",
+          "classCodeSystem": "CLAIM",
+          "admin": "内服 毎食後",
+          "adminCode": "1",
+          "adminCodeSystem": "CLAIM",
+          "adminMemo": "",
+          "bundleNumber": "1",
+          "orderName": "medOrder",
+          "insurance": "060",
+          "memo": "テスト送信 RUN_ID=20251111TclaimfixZ3",
+          "claimItems": [
+            {
+              "name": "アセトアミノフェン錠200mg",
+              "code": "610002001",
+              "codeSystem": "YJ",
+              "classCode": "23",
+              "classCodeSystem": "MED",
+              "number": "3",
+              "unit": "錠",
+              "numberCode": "51",
+              "numberCodeSystem": "MED",
+              "numberCodeName": "１回",
+              "memo": "",
+              "ykzKbn": "0",
+              "santeiCode": "11",
+              "dose": "1",
+              "doseUnit": "T"
+            }
+          ]
+        }
+      }
+    ]
+  }
+}

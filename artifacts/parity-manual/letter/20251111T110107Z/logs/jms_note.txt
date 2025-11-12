@@ -1,0 +1,1 @@
+docker compose -p legacy-vs-modern logs server-modernized-dev --since 20m | rg -i JMS -> ヒットなし。letter parity-runでも JMS 送信イベント未発生。

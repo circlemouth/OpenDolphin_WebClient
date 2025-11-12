@@ -44,6 +44,7 @@ import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.StreamingOutput;
 import open.dolphin.infomodel.AllergyModel;
 import open.dolphin.infomodel.BundleDolphin;
+import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.DrugInteractionModel;
 import open.dolphin.infomodel.IInfoModel;
@@ -59,6 +60,7 @@ import open.dolphin.infomodel.PatientMemoModel;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.StampModel;
 import open.dolphin.session.ChartEventServiceBean;
+import open.dolphin.session.KarteServiceBean;
 import open.dolphin.adm20.session.ADM20_EHTServiceBean;
 import open.dolphin.adm20.converter.IAllergyModel;
 import open.dolphin.adm20.converter.IBundleModule;
@@ -72,6 +74,8 @@ import open.dolphin.adm20.converter.IPatientModel;
 import open.dolphin.adm20.converter.IPatientVisitModel;
 import open.dolphin.adm20.converter.IProgressCourseModule30;
 import open.dolphin.adm20.converter.IRegisteredDiagnosis;
+import open.dolphin.adm20.converter.ISendPackage;
+import open.dolphin.adm20.converter.ISendPackage2;
 import open.dolphin.adm20.converter.NLaboModuleConverter;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientVisitModel;
@@ -111,8 +115,8 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     @Inject
     private ADM20_EHTServiceBean ehtService;
     
-    //@Inject
-    //private KarteServiceBean karteService;
+    @Inject
+    private KarteServiceBean karteService;
     
     @Inject
     private ChartEventServiceBean eventServiceBean;
@@ -989,6 +993,55 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         }
 
         return ret.toString();        
+    }
+    
+    @PUT
+    @Path("/sendClaim")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput sendClaim(final String json) {
+        
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+                
+                handleClaimSend(pkg.documentModel(), pkg.chartEventModel());
+                os.write(0);
+            }
+        };
+    }
+    
+    @PUT
+    @Path("/sendClaim2")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    public StreamingOutput sendClaim2(final String json) {
+        
+        return new StreamingOutput() {
+            @Override
+            public void write(OutputStream os) throws IOException, WebApplicationException {
+                
+                ObjectMapper mapper = new ObjectMapper();
+                mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+                ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+                
+                handleClaimSend(pkg.documentModel(), pkg.chartEventModel());
+                os.write(0);
+            }
+        };
+    }
+    
+    private void handleClaimSend(DocumentModel document, ChartEventModel chartEvent) {
+        if (document != null) {
+            karteService.sendDocument(document);
+        }
+        if (chartEvent != null) {
+            eventServiceBean.processChartEvent(chartEvent);
+        }
     }
     
     // サーバー情報の取得

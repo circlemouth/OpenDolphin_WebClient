@@ -1,6 +1,7 @@
 package open.dolphin.rest;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -8,6 +9,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
@@ -34,6 +37,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Path("/stamp")
 public class StampResource extends AbstractResource {
 
+    private static final Logger LOGGER = Logger.getLogger(StampResource.class.getName());
+
     @Inject
     private StampServiceBean stampServiceBean;
 
@@ -46,8 +51,12 @@ public class StampResource extends AbstractResource {
     @Context
     private HttpServletRequest httpServletRequest;
 
+    private final ObjectMapper stampTreeMapper;
+
     /** Creates a new instance of StampResource */
     public StampResource() {
+        stampTreeMapper = new ObjectMapper();
+        stampTreeMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
     
     //----------------------------------------------------------------------
@@ -72,17 +81,17 @@ public class StampResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public String putTree(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
-
-        long pk = stampServiceBean.putTree(model);
-        String pkStr = String.valueOf(pk);
-        debug(pkStr);
-
-        return pkStr;
+        StampTreeModel model = deserializeStampTree(json);
+        try {
+            long pk = stampServiceBean.putTree(model);
+            String pkStr = String.valueOf(pk);
+            recordStampTreeAudit("STAMP_TREE_PUT", model, "success", pkStr, null, null);
+            debug(pkStr);
+            return pkStr;
+        } catch (RuntimeException e) {
+            handleStampTreeFailure("STAMP_TREE_PUT", model, e);
+            throw e;
+        }
     }
     
     @PUT
@@ -90,16 +99,17 @@ public class StampResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public String syncTree(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
-
-        String pkAndVersion = stampServiceBean.syncTree(model);
-        debug(pkAndVersion);
-
-        return pkAndVersion;
+        StampTreeModel model = deserializeStampTree(json);
+        try {
+            String pkAndVersion = stampServiceBean.syncTree(model);
+            String[] parsed = splitPkAndVersion(pkAndVersion);
+            recordStampTreeAudit("STAMP_TREE_SYNC", model, "success", parsed[0], parsed[1], null);
+            debug(pkAndVersion);
+            return pkAndVersion;
+        } catch (RuntimeException e) {
+            handleStampTreeFailure("STAMP_TREE_SYNC", model, e);
+            throw e;
+        }
     }
     
     @PUT
@@ -107,13 +117,14 @@ public class StampResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public void forceSyncTree(String json) throws IOException {
-        
-        ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
-        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        StampTreeModel model = mapper.readValue(json, StampTreeModel.class);
-
-        stampServiceBean.forceSyncTree(model);
+        StampTreeModel model = deserializeStampTree(json);
+        try {
+            stampServiceBean.forceSyncTree(model);
+            recordStampTreeAudit("STAMP_TREE_FORCE_SYNC", model, "success", model != null ? String.valueOf(model.getId()) : null, null, null);
+        } catch (RuntimeException e) {
+            handleStampTreeFailure("STAMP_TREE_FORCE_SYNC", model, e);
+            throw e;
+        }
     }
 
     //------------------------------------------------------------------
@@ -369,6 +380,71 @@ public class StampResource extends AbstractResource {
         enrichTraceDetails(details);
         payload.setDetails(details);
         auditTrailService.record(payload);
+    }
+
+    private void recordStampTreeAudit(String action, StampTreeModel model, String status, String treeId, String persistedVersion, String reason) {
+        if (auditTrailService == null) {
+            return;
+        }
+        AuditEventPayload payload = createBaseAuditPayload(action);
+        Map<String, Object> details = new HashMap<>();
+        details.put("status", status);
+        if (treeId != null) {
+            details.put("treeId", treeId);
+        } else if (model != null && model.getId() != 0) {
+            details.put("treeId", String.valueOf(model.getId()));
+        }
+        if (model != null && model.getUserModel() != null) {
+            details.put("userPk", model.getUserModel().getId());
+            details.put("payloadVersion", model.getVersionNumber());
+        }
+        if (persistedVersion != null) {
+            details.put("persistedVersion", persistedVersion);
+        }
+        if (reason != null) {
+            details.put("reason", reason);
+        }
+        enrichUserDetails(details);
+        enrichTraceDetails(details);
+        payload.setDetails(details);
+        auditTrailService.record(payload);
+    }
+
+    private void handleStampTreeFailure(String action, StampTreeModel model, RuntimeException e) {
+        logStampTreeFailure(action, model, e);
+        recordStampTreeAudit(action, model, "failed", null, null, e.getClass().getSimpleName());
+    }
+
+    private void logStampTreeFailure(String action, StampTreeModel model, RuntimeException e) {
+        String traceId = resolveTraceId(httpServletRequest);
+        Long userPk = model != null && model.getUserModel() != null ? model.getUserModel().getId() : null;
+        LOGGER.log(Level.WARNING, e, () -> String.format("Stamp tree %s failed [traceId=%s, userPk=%s, version=%s]", action, traceId, userPk, model != null ? model.getVersionNumber() : null));
+    }
+
+    private StampTreeModel deserializeStampTree(String json) throws IOException {
+        StampTreeModel model = stampTreeMapper.readValue(json, StampTreeModel.class);
+        ensureTreeBytes(model);
+        return model;
+    }
+
+    private void ensureTreeBytes(StampTreeModel model) {
+        if (model == null) {
+            return;
+        }
+        if ((model.getTreeBytes() == null || model.getTreeBytes().length == 0) && model.getTreeXml() != null) {
+            model.setTreeBytes(model.getTreeXml().getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private String[] splitPkAndVersion(String value) {
+        if (value == null) {
+            return new String[]{null, null};
+        }
+        String[] parts = value.split(CAMMA, 2);
+        if (parts.length == 1) {
+            return new String[]{parts[0], null};
+        }
+        return parts;
     }
 
     private AuditEventPayload createBaseAuditPayload(String action) {

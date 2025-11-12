@@ -190,6 +190,93 @@ docker run --rm --network legacy-vs-modern_default \
 3. **PUT/sync を送信**: `ops/tools/send_parallel_request.sh --profile compose PUT /stamp/tree parity-stamp-${RUN_ID}` を実行する（`syncTree` 版も同 payload を利用）。この時点で Legacy は 200 を返し、Modernized 側は `treeBytes` bytea マッピングを修正済みであれば 200 になる。応答 ID / version は `artifacts/parity-manual/stamp/${RUN_ID}` に追記し、`rest_error_scenarios.manual.csv` の `rest_error_stamp_data_exception` 行へ RUN_ID を記録する。
 4. **差分メモ**: version 更新後に別セッションが PUT を実行する場合、再度 §3.2 の GET からやり直す。`StampManagementPage.tsx`（Web クライアント）も同じフローで `versionNumber` を同期するため、Runbook と UI で手順が乖離しないよう README へリンクを追加する。
 
+### 3.3 `rest_error_{letter_fk,lab_empty,stamp_data_exception}` Audit/JMS 再取得（2025-11-11 更新）
+1. **コード反映後の初期化**  
+   `scripts/start_legacy_modernized.sh start --build` で Legacy / Modernized 両サーバーを再デプロイし、WildFly の healthcheck が 200 になるまで待機する。以降の CLI はすべて同一 RUN_ID（例: `RUN_ID=20251111TrestfixZ`）で統一する。
+2. **`d_audit_event_id_seq` の整合性確保**  
+   各 Postgres コンテナで以下を実行し、バックアップ・LOCK・`setval`・検証行挿入を一括で行う（`TRACEID_JMS_RUNBOOK.md §5.3` 参照）。ログファイルは後段 Evidence として利用する。  
+   ```bash
+   RUN_ID=${RUN_ID:-20251111TrestfixZ}
+   mkdir -p artifacts/parity-manual/db/${RUN_ID}/{modern,legacy}
+   docker exec opendolphin-postgres-modernized bash -lc '
+     cd /workspace
+     psql -U opendolphin -d opendolphin_modern \
+       -v audit_event_backup_file="/tmp/d_audit_event_before_seq_reset_${RUN_ID}.csv" \
+       -v audit_event_validation_log="/tmp/d_audit_event_seq_validation_${RUN_ID}.txt" \
+       -v audit_event_status_log="/tmp/d_audit_event_seq_status_${RUN_ID}.txt" \
+       -f ops/db/local-baseline/reset_d_audit_event_seq.sql'
+   '
+   docker cp opendolphin-postgres-modernized:/tmp/d_audit_event_before_seq_reset_${RUN_ID}.csv artifacts/parity-manual/db/${RUN_ID}/modern/audit_event_backup.csv
+   docker cp opendolphin-postgres-modernized:/tmp/d_audit_event_seq_validation_${RUN_ID}.txt artifacts/parity-manual/db/${RUN_ID}/modern/audit_event_validation_log.txt
+   docker cp opendolphin-postgres-modernized:/tmp/d_audit_event_seq_status_${RUN_ID}.txt artifacts/parity-manual/db/${RUN_ID}/modern/audit_event_status_log.txt
+   ```
+   Legacy 側も `docker cp ... artifacts/parity-manual/db/${RUN_ID}/legacy/` 以下へコピーし、ファイル名を `audit_event_*` で統一する。
+   Legacy 側も同じコマンドで取得し、`artifacts/parity-manual/db/${RUN_ID}/` に `_legacy` サフィックス付きで保管する。
+3. **REST ケースの送信**  
+   `tmp/parity-headers/{letter,lab,stamp}_${RUN_ID}.headers` を複製し、`ops/tools/send_parallel_request.sh --profile modernized-dev` で `rest_error_{letter_fk,lab_empty,stamp_data_exception}` を順番に送信する。`PARITY_OUTPUT_DIR=artifacts/parity-manual/<case>/${RUN_ID}` を忘れず指定し、`logs/send_parallel_request.log` に 3 ケースすべての traceId を残す。
+4. **Audit / JMS ログ採取**  
+   - `docker compose exec db-{legacy,modern} psql ... "select * from d_audit_event where request_id='parity-<case>-<RUN_ID>' order by id"` を `logs/d_audit_event_{legacy,modern}.txt` に保存。
+   - `docker compose exec opendolphin-server-modernized-dev /opt/jboss/wildfly/bin/jboss-cli.sh --connect --commands='/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource' > logs/jms_dolphinQueue_read-resource.txt` を実施。
+   - Legacy 側は `standalone/log/server.log` から `TRACEID=<case>` を含む行を抽出し `logs/legacy_trace.log` にまとめる。
+5. **ドキュメント反映**  
+   取得した HTTP/Audit/JMS/Evidence を `TRACE_PROPAGATION_CHECK.md`, `PHASE2_PROGRESS.md`, `domain-transaction-parity.md`, `ops/tests/api-smoke-test/rest_error_scenarios.manual.csv` にリンク。`logs/d_audit_event_{legacy,modern}.txt` が 0 行の場合は原因（例: `SEQ_SMOKE` 挿入失敗）を `artifacts/parity-manual/<case>/${RUN_ID}/README.md` に記載し、再採取条件を残す。
+
+### 3.4 Legacy JMS before/after ログ採取（2025-11-12 追加）
+
+フェーズ4-2「Legacy JMS queue messages-added=0L 継続」タスクでは、PUT/GET を投げる **前後で jboss-cli の出力を必ず 2 本ずつ** 残す。Docker ホスト上で直接 `docker exec` を叩くのではなく、helper コンテナを経由して `docker compose exec` を呼ぶ構成に統一する。
+
+1. **Legacy queue の before/after を取得**  
+   ```bash
+   RUN_ID=20251112T091500Z
+   CASE=stamp
+   for LABEL in before after; do
+     docker compose --profile modernized-dev run --rm helper bash -lc '
+       set -euo pipefail
+       cd /workspace
+       docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml exec opendolphin-server \
+         /opt/jboss/wildfly/bin/jboss-cli.sh \
+         --connect --commands="/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)" \
+         > artifacts/parity-manual/TRACEID_JMS/'"${RUN_ID}"'/logs/'"${LABEL}"'_jms_dolphinQueue_read-resource_legacy.txt
+     '
+   done
+   ```
+   - helper は `legacy-vs-modern_default` に常時参加しているため、`--network` や `/etc/hosts` の追記は不要。
+   - `LABEL=before` を REST 実行直前、`LABEL=after` を parity 実行直後に揃える。
+2. **Modernized queue も同手順で採取**  
+   上記スクリプトの `opendolphin-server` を `opendolphin-server-modernized-dev` に置き換え、`.../${LABEL}_jms_dolphinQueue_read-resource.txt` へ出力する。Modern 側は `messages-added` が 1 以上に増え `message-count=0L` へ戻る挙動をコメントで残す。
+3. **閲覧・差分確認**  
+   - `LABEL=before; rg -n 'messages-added|message-count|consumer-count' artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/logs/${LABEL}_jms_dolphinQueue_read-resource_legacy.txt` で 0L の継続を即時確認（`LABEL=after` でも同様に実行）。
+   - `diff -u logs/before_jms_dolphinQueue_read-resource_legacy.txt logs/after_jms_dolphinQueue_read-resource_legacy.txt` で変化なしを証跡化。
+   - `less -N artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/logs/{before,after}_jms_dolphinQueue_read-resource*.txt` を使えば CLI 色コードを除いたまま確認できる。
+4. **Runbook / チェックリスト連携**  
+   取得結果は `TRACEID_JMS_RUNBOOK.md` §4.1 のテンプレに沿って #コメントや `messages-added=0L` を残し、`PHASE2_PROGRESS.md` / `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` のフェーズ4-2 backlog に「ログ取得フロー整備済み」として反映する。差分を検出した場合は同日中に Issue 化し、本節へ追記する。
+5. **MDB 再起動フロー時に必ず採取するログ**（コマンド実行は禁止。マネージャー指示が出たら下記ファイルを取得済みフォルダへ追加する）
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/before_jms_dolphinQueue_read-resource_legacy.txt`
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/after_jms_dolphinQueue_read-resource_legacy.txt`
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/{before,after}_jms_dolphinQueue_read-resource.txt`（Modernized 対応）
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/legacy_mdb_restart.log`（`StampSenderMDB` 再起動 CLI の標準出力）
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/server.log`（`docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml cp opendolphin-server:/opt/jboss/wildfly/standalone/log/server.log artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/server.log` で取得。`StampSenderMDB` の `Starting/Stopping` が出力されていること）
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/jms_dolphinQueue_read-resource_legacy.txt`（再起動後の定点観測。`messages-added` と `consumer-count` をコメント追記）
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/standalone-full_dolphinQueue_snippet.txt`（`cat /opt/jboss/wildfly/standalone/configuration/standalone-full.xml | rg -n 'dolphinQueue'` の結果）
+   - `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/ejb-jar_StampSenderMDB_snippet.txt`（`server/src/main/resources/META-INF/ejb-jar.xml` の `StampSenderMDB` 設定抜粋。ローカルコピーでも可）
+6. **構成ファイルの diff テンプレ**
+   ```bash
+   mkdir -p artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config
+   docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml cp \
+     opendolphin-server:/opt/jboss/wildfly/standalone/configuration/standalone-full.xml \
+     artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/standalone-full_after.xml
+   docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml cp \
+     opendolphin-server:/opt/jboss/wildfly/standalone/deployments/opendolphin.war/WEB-INF/ejb-jar.xml \
+     artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/ejb-jar_after.xml
+   diff -u artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/standalone-full_before.xml \
+          artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/standalone-full_after.xml \
+          | tee artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/logs/standalone-full.diff
+   diff -u artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/ejb-jar_before.xml \
+          artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/ejb-jar_after.xml \
+          | tee artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/logs/ejb-jar.diff
+   ```
+   - `*_before.xml` は再起動前に採取したファイルをリネームしてから配置する。`messages-added` の変化がゼロでも `StampSenderMDB` の `destinationLookup` や `acknowledgeMode` が入れ替わっていないことを diff で確認し、結果と `server.log` の再起動時刻・`legacy_mdb_restart.log` の stop/start シーケンスを `domain-transaction-parity.md Appendix A.6` の記録列へ転記する。
+
 ## 4. `MODERNIZED_TARGET_PROFILE` / URL 切替
 
 - `MODERNIZED_TARGET_PROFILE` は CLI ツールで参照先を切り替えるための論理名。Runbookでは以下を標準とする。
@@ -230,6 +317,88 @@ docker run --rm --network legacy-vs-modern_default \
 - DocumentModel で使われる `ModuleModel` / `SchemaModel` / `AttachmentModel` は `server-modernized/src/main/resources/META-INF/persistence.xml` に列挙済みで、`server-modernized/tools/flyway/sql/V0224__document_module_tables.sql` によって Modernized DB に `d_document` / `d_module` / `d_image` / `d_attachment` を配置する準備が整っている。DocumentModel が参照するテーブルの欠損で生じる `UnknownEntityException` を回避するためのスキーマ基盤が構築されたが、まだ検証が完了していない。
 - RUN_ID=`20251110T133000Z` で `tmp/trace_http_200.headers` を使って trace harness を再取得し、HTTP/trace/JMS/`d_audit_event` を `artifacts/parity-manual/TRACEID_JMS/20251110T133000Z/trace_http_200/` に記録する計画。`trace_http_{400,500}` は AuditTrail ID 衝突バグによって Modernized が 500 を返す既知の issue として README に記載済みで、同様の挙動を想定している。
 - 次アクション: Modern WildFly を再ビルド（`mvn -pl server-modernized -DskipTests install` など）し、`docker compose -f docker-compose.modernized.dev.yml up -d db-modernized server-modernized-dev` を起動したうえで `GET /schedule/pvt/2025-11-09` を trace ヘッダー付きで実行し、HTTP 200 および `d_audit_event`/JMS TraceId を確認する。検証結果は `artifacts/parity-manual/TRACEID_JMS/20251110T133000Z/trace_http_200/` へ保存し、`PHASE2_PROGRESS.md` / `docs/server-modernization/phase2/notes/domain-transaction-parity.md` / `DOC_STATUS.md` に RUN_ID・ブロッカー・次アクションを整理したうえで次 RUN を採番する。Docker 操作が必要になった場合は一度手を止め、他ワーカーとの干渉がないことを確認してから再開する。
+
+## 8. ホスト↔9080 障害時の暫定運用（helper コンテナ利用）
+
+- RUN_ID=`20251111Tnetdiag3` の診断結果（`artifacts/parity-manual/network/20251111Tnetdiag3/README.txt`）の通り、`localhost:9080` では SYN 後に HTTP payload が返らない場合がある。再ビルドや Docker Desktop の再起動はマネージャー権限作業のため、本 Runbook では helper/socat による暫定アクセス手段のみ実施する。
+- 事象の判定基準: `curl -v http://localhost:9080/openDolphin/resources/serverinfo/jamri` が 20〜120 秒待ちで 0 byte 応答、`tcpdump -i lo0 port 9080` が握手＋ACK のみを記録しアプリデータが戻らない、pf で 9080 関連ルールがヒットしないこと。
+
+### 8.1 helper コンテナ経由での CLI 実行（必須運用）
+1. `docker compose --profile modernized-dev up -d helper` を起動済みであることを確認（または `docker run --rm --network legacy-vs-modern_default buildpack-deps:curl ...` を単発利用）。
+2. 以下のように Base URL をコンテナ名に切り替えて parity CLI を実行する。
+   ```bash
+   RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
+   docker run --rm --network legacy-vs-modern_default \
+     -v "$PWD":/workspace -w /workspace buildpack-deps:curl \
+     bash -lc 'set -euo pipefail
+       BASE_URL_LEGACY="http://server:8080/openDolphin/resources"
+       BASE_URL_MODERN="http://server-modernized-dev:8080/openDolphin/resources"
+       PARITY_OUTPUT_DIR="/workspace/artifacts/parity-manual/net-check/${RUN_ID}"
+       ops/tools/send_parallel_request.sh GET /serverinfo/jamri helper-net-check'
+   ```
+3. helper で取得した結果はホストと共有されるため、`artifacts/parity-manual/<case>/<RUN_ID>/helper/` へ保存し、`PHASE2_PROGRESS.md` と `DOC_STATUS.md` に「ホスト側ポート不通のため helper 経由で運用中」と記録する。
+
+### 8.2 socat での代替ポート公開
+- ホスト上で `socat TCP-LISTEN:19080,fork,reuseaddr TCP:localhost:9080` を起動し、クライアントには `http://localhost:19080` を案内する。
+- IPv6 (::1) は LISTEN しないため、必要に応じて `socat TCP-LISTEN:19080,fork,bind=[::1] TCP:[::1]:9080` を追加で起動する。
+- PID は `pgrep -x socat` で記録し、停止時は `kill <PID>`。`RUN_ID=20251111Tnetdiag3` では PID=59517 を控えた。
+- socat 越しでも 9080 からアプリ応答が戻らない場合は helper 内で直接 `server-modernized-dev:8080` を叩き、アプリ層が稼働していることを確認する。
+
+### 8.3 証跡と監査
+- 9080 障害時に採取した curl/tcpdump/pf ログは `artifacts/parity-manual/network/<RUN_ID>/` へ保存し、`README.txt` に取得方法・時刻・所見を残す。次回 RUN で事象が再発した場合は同ディレクトリへ追記して比較する。
+- helper/socat 経路を使ったまま本番操作を行う場合、手順書・作業チケットに「helper コンテナ経由アクセス必須」「Docker port-forward 復旧待ち」と明記し、恒久対策完了後に切り戻す。
+
+## 9. 恒久復旧手順（Docker Desktop 再起動／pf pass 追記／VPN 切替）
+
+> **実行権限**: Docker Desktop の再起動や pf.conf 編集はマネージャーが担当。ワーカーは文書化と確認コマンドの整備のみを行い、実操作は実施しない。
+
+- **ネットワーク証跡テンプレ**: `artifacts/parity-manual/network/TEMPLATE/` に `pf_rules_9080.txt` ほか採取必須ファイルを配置済み。Docker port-forward を再生成する際は当ディレクトリを `cp -R .../TEMPLATE <RUN_ID>` で複製し、各ログを指示通りに上書きして証跡を残す。
+
+### 9.0 テンプレ適用チェックリスト
+1. `RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)_netrecover` を宣言し、`LOG_ROOT=artifacts/parity-manual/network/${RUN_ID}` をエクスポートする。
+2. `cp -R artifacts/parity-manual/network/TEMPLATE ${LOG_ROOT}` を実行し、`README.txt`（テンプレに同梱）へ実施日・担当者を記入する。
+3. `docker compose --profile helper port backend 9080 | tee ${LOG_ROOT}/docker_backend_portforward.log` を実行し、直後に `docker compose logs --tail 200 backend server-modernized-dev >> ${LOG_ROOT}/docker_backend_portforward.log` を追記する。
+4. `curl -v http://localhost:9080/healthz --max-time 10 2>&1 | tee ${LOG_ROOT}/host_curl_9080.log` を取得し、VPN 状態と HTTP ステータスを冒頭コメントに書く。
+5. `sudo pfctl -sr | grep -E "9080|vpnkit" | tee ${LOG_ROOT}/pf_rules_9080.txt` を取得し、pf.conf の更新有無を先頭に残す。
+6. `sudo tcpdump -i lo0 port 9080 -w ${LOG_ROOT}/lo0_9080.pcap -U -G 10 -W 1` を採取し、サマリを `lo0_9080.pcap.sample.txt` として保存、`README.txt` にも HTTP 応答有無を追記する。
+7. `tree ${LOG_ROOT}` と `shasum ${LOG_ROOT}/lo0_9080.pcap` を `README.txt` 末尾へ貼り付け、証跡一式をチケットへ紐付ける。
+8. `docs/web-client/planning/phase2/DOC_STATUS.md` の「ネットワーク復旧」行を更新し、RUN_ID と確認済みコマンド（pfctl/curl/tcpdump/docker logs）を備考に書く。
+
+### 9.1 再起動前の退避
+1. `docker compose ps` で稼働中サービスを控える（例: `opendolphin-server`, `opendolphin-server-modernized-dev`, helper）。
+2. `docker compose logs --timestamps server-modernized-dev > artifacts/.../pre-restart.log` で応答停止時刻を保存。
+3. `lsof -iTCP:9080 -sTCP:LISTEN` で `com.docker.backend` / `vpnkit` が LISTEN している PID を控える。
+
+### 9.2 Docker Desktop/vpnkit の再起動候補
+1. Docker Desktop UI から `Quit Docker Desktop`（CLI の場合は `osascript -e 'quit app "Docker"'`）。
+2. 念のため `pkill -f com.docker.backend` を実行し、残存プロセスを停止。
+3. Docker Desktop を再起動し、`docker info` が成功するまで待つ。
+4. `docker compose -f docker-compose.modernized.dev.yml up -d helper` など最小構成の再起動をマネージャーが実施。ワーカー側ではビルドや再起動を要求しない。
+
+### 9.3 pf pass ルール案（必要時）
+- 症状再発時に pf が疑われる場合、`/etc/pf.conf` のアンカーに以下を追記し、審査後に `sudo pfctl -f /etc/pf.conf` で適用する。
+  ```pf
+  pass in  on lo0 proto tcp from 127.0.0.1 to any port 9080 flags S/SA keep state
+  pass out on lo0 proto tcp from 127.0.0.1 to any port 9080 flags S/SA keep state
+  pass in  on lo0 proto tcp from ::1        to any port 9080 flags S/SA keep state
+  pass out on lo0 proto tcp from ::1        to any port 9080 flags S/SA keep state
+  ```
+- 実施時は `/etc/pf.conf` バージョンと `pfctl -sr | grep 9080` を `artifacts/parity-manual/network/<RUN_ID>/pf_rules_9080.txt` に保存する。
+
+### 9.4 VPN/フィルタ切替
+- port-forward 復旧後に VPN が干渉しないか確認するため、VPN クライアントを一時停止 → `curl -v http://localhost:9080/...` → VPN 再接続の順で比較ログを採取。
+- 社内規定で VPN を常時接続する必要がある場合は、Security チームへ相談し localhost ループバックを除外できるか確認する。
+
+### 9.5 再起動後の確認コマンド
+1. `netstat -anv | grep 9080` または `lsof -iTCP:9080 -sTCP:LISTEN` で LISTEN ソケットが `com.docker.backend` に戻っているか確認。
+2. `docker compose ps helper server-modernized-dev` で port-forward 対象コンテナが Up 状態であることを確認。
+3. `curl -v http://localhost:9080/openDolphin/resources/serverinfo/jamri --max-time 10` を実行し、200/JSON が返るか確認。
+4. `tcpdump -i lo0 port 9080 -c 10` を短時間実行し、握手後に HTTP payload が返っていることを目視。
+5. `ops/tools/send_parallel_request.sh --profile compose GET /serverinfo/version net-check` を走らせ、`artifacts/parity-manual/network/<RUN_ID>/post-restart/` にログを保存。
+
+### 9.6 依存関係と再開条件
+- Docker port-forward が復旧し `curl`/`tcpdump` で正常応答が得られるまで、`PHASE2_PROGRESS.md` には「ネットワーク復旧ブロッカー: helper コンテナ必須」と記録し、直接ホストからの parity 実行・本番反映を禁止する。
+- 復旧完了後は本章の手順番号と証跡パスを `PHASE2_PROGRESS.md`・`DOC_STATUS.md` に追記し、helper/socat 運用を停止する。
 
 ## 3. GUI なしでの並列キャプチャ実行
 

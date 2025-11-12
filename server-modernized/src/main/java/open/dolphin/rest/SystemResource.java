@@ -117,34 +117,12 @@ public class SystemResource extends AbstractResource {
     @Path("/activity/{param}")
     @Produces(MediaType.APPLICATION_JSON)
     public List<ActivityModel> getActivities(@PathParam("param") String param) {
-        
-        if (param == null || param.isBlank()) {
-            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("rawParam", param)));
-            throw new BadRequestException("param must not be empty");
-        }
 
-        String[] params = param.split(CAMMA);
-        if (params.length < 3) {
-            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("rawParam", param)));
-            throw new BadRequestException("param must contain year, month, count");
-        }
+        ActivityQueryRequest requestParams = parseActivityRequest(param);
 
-        int requestedYear;
-        int requestedMonth;
-        int monthsRequested;
-        try {
-            requestedYear = Integer.parseInt(params[0]);
-            requestedMonth = Integer.parseInt(params[1]);
-            monthsRequested = Integer.parseInt(params[2]);
-        } catch (NumberFormatException ex) {
-            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("rawParam", param)));
-            throw new BadRequestException("param must be numeric", ex);
-        }
-
-        if (monthsRequested < 1) {
-            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("invalid_parameter", Map.of("monthsRequested", monthsRequested)));
-            throw new BadRequestException("count must be >= 1");
-        }
+        int requestedYear = requestParams.year();
+        int requestedMonth = requestParams.month();
+        int monthsRequested = requestParams.monthsRequested();
 
         String remoteUser = resolveRemoteUser();
         if (remoteUser == null) {
@@ -308,6 +286,45 @@ public class SystemResource extends AbstractResource {
     Response r = target.request().post( Entity.entity(entity, MediaType.MULTIPART_FORM_DATA_TYPE));
      */
 
+    private ActivityQueryRequest parseActivityRequest(String rawParam) {
+        if (rawParam == null || rawParam.isBlank()) {
+            throw invalidActivityRequest("param must not be empty", rawParam, null);
+        }
+
+        String[] params = rawParam.split(CAMMA);
+        if (params.length < 3) {
+            throw invalidActivityRequest("param must contain year, month, count", rawParam, null);
+        }
+
+        int requestedYear;
+        int requestedMonth;
+        int monthsRequested;
+        try {
+            requestedYear = Integer.parseInt(params[0]);
+            requestedMonth = Integer.parseInt(params[1]);
+            monthsRequested = Integer.parseInt(params[2]);
+        } catch (NumberFormatException ex) {
+            throw invalidActivityRequest("param must be numeric", rawParam, ex);
+        }
+
+        if (monthsRequested < 1) {
+            throw invalidActivityRequest("count must be >= 1", rawParam, null);
+        }
+
+        return new ActivityQueryRequest(requestedYear, requestedMonth, monthsRequested);
+    }
+
+    private BadRequestException invalidActivityRequest(String message, String rawParam, Exception cause) {
+        if (LOGGER.isWarnEnabled()) {
+            if (cause != null) {
+                LOGGER.warn("SYSTEM_ACTIVITY_SUMMARY invalid param {}: {}", rawParam, message, cause);
+            } else {
+                LOGGER.warn("SYSTEM_ACTIVITY_SUMMARY invalid param {}: {}", rawParam, message);
+            }
+        }
+        return cause == null ? new BadRequestException(message) : new BadRequestException(message, cause);
+    }
+
     private Map<String, Object> failureDetails(String reason, Map<String, Object> extras) {
         Map<String, Object> details = new HashMap<>();
         details.put("status", "failed");
@@ -424,5 +441,8 @@ public class SystemResource extends AbstractResource {
 
     private String resolveRemoteUser() {
         return httpServletRequest != null ? httpServletRequest.getRemoteUser() : null;
+    }
+
+    private record ActivityQueryRequest(int year, int month, int monthsRequested) {
     }
 }

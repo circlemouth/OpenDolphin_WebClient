@@ -2,6 +2,8 @@ package open.dolphin.infomodel;
 
 import java.util.Date;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * StampTreeModel
@@ -57,6 +59,7 @@ public class StampTreeModel extends InfoModel implements IStampTreeModel,java.io
     
     @Column(nullable=false)
     @Lob
+    @JdbcTypeCode(SqlTypes.BINARY)
     private byte[] treeBytes;
     
 //minagawa^ 排他制御のための versionStr

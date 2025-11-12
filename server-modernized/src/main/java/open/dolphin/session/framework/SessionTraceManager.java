@@ -55,6 +55,32 @@ public class SessionTraceManager {
         }
     }
 
+    public void putAttribute(String key, String value) {
+        if (key == null || key.isBlank()) {
+            return;
+        }
+        SessionTraceContext context = current();
+        if (context == null) {
+            return;
+        }
+        SessionTraceContext updated = context.withAttribute(key, value);
+        current.set(updated);
+        if (LOGGER.isDebugEnabled()) {
+            LOGGER.debug("Session trace attribute set: {}={} traceId={}", key, value, updated.getTraceId());
+        }
+    }
+
+    public String getAttribute(String key) {
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+        SessionTraceContext context = current();
+        if (context == null) {
+            return null;
+        }
+        return context.getAttribute(key);
+    }
+
     public void clear() {
         current.remove();
         restoreMdc();

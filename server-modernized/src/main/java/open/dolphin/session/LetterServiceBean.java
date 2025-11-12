@@ -6,10 +6,14 @@ import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.LetterDate;
 import open.dolphin.infomodel.LetterItem;
 import open.dolphin.infomodel.LetterModule;
+import open.dolphin.infomodel.IInfoModel;
+import open.dolphin.infomodel.KarteBean;
+import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.LetterText;
 import open.dolphin.session.framework.SessionOperation;
 import org.slf4j.Logger;
@@ -41,6 +45,9 @@ public class LetterServiceBean {
 
     
     public long saveOrUpdateLetter(LetterModule model) {
+
+        KarteBean resolvedKarte = resolveKarteReference(model);
+        model.setKarteBean(resolvedKarte);
 
         // 保存
         em.persist(model);
@@ -122,6 +129,107 @@ public class LetterServiceBean {
     }
 
     
+    private KarteBean resolveKarteReference(LetterModule model) {
+        KarteBean resolved = tryResolveKarte(model);
+        if (resolved == null) {
+            throw new IllegalStateException(String.format("Unable to resolve Karte for patientId=%s (karteId=%s)",
+                    model.getPatientId(),
+                    model.getKarteBean()!=null ? model.getKarteBean().getId() : "n/a"));
+        }
+        return resolved;
+    }
+
+    private KarteBean tryResolveKarte(LetterModule model) {
+        KarteBean payloadKarte = model.getKarteBean();
+        KarteBean byId = findKarteById(payloadKarte);
+        if (byId != null) {
+            return byId;
+        }
+
+        KarteBean byPatientPk = findKarteByPatientModel(payloadKarte != null ? payloadKarte.getPatientModel() : null);
+        if (byPatientPk != null) {
+            return byPatientPk;
+        }
+
+        return findKarteByIdentifiers(model);
+    }
+
+    private KarteBean findKarteById(KarteBean candidate) {
+        if (candidate == null) {
+            return null;
+        }
+        long karteId = candidate.getId();
+        if (karteId <= 0) {
+            return null;
+        }
+        KarteBean managed = em.find(KarteBean.class, karteId);
+        if (managed == null) {
+            LOGGER.warn("Referenced KarteBean id={} not found; falling back to patientId search.", karteId);
+        }
+        return managed;
+    }
+
+    private KarteBean findKarteByPatientModel(PatientModel patient) {
+        if (patient == null) {
+            return null;
+        }
+        if (patient.getId() > 0) {
+            List<KarteBean> hits = em.createQuery("select k from KarteBean k where k.patient.id = :patientPk", KarteBean.class)
+                                     .setParameter("patientPk", patient.getId())
+                                     .setMaxResults(1)
+                                     .getResultList();
+            if (!hits.isEmpty()) {
+                return hits.get(0);
+            }
+        }
+        return findKarteByIdentifiers(patient.getFacilityId(), patient.getPatientId());
+    }
+
+    private KarteBean findKarteByIdentifiers(LetterModule model) {
+        return findKarteByIdentifiers(resolveFacilityId(model), model.getPatientId());
+    }
+
+    private KarteBean findKarteByIdentifiers(String facilityId, String patientIdentifier) {
+        if (patientIdentifier == null || patientIdentifier.isBlank()) {
+            return null;
+        }
+        String normalizedPid = patientIdentifier.trim();
+        String resolvedFacility = facilityId;
+        int compositeIdx = normalizedPid.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (compositeIdx > 0) {
+            resolvedFacility = normalizedPid.substring(0, compositeIdx);
+            normalizedPid = normalizedPid.substring(compositeIdx + 1);
+        }
+
+        StringBuilder jpql = new StringBuilder("select k from KarteBean k where k.patient.patientId = :pid");
+        if (resolvedFacility != null && !resolvedFacility.isBlank()) {
+            jpql.append(" and k.patient.facilityId = :fid");
+        } else {
+            jpql.append(" order by k.id");
+        }
+
+        TypedQuery<KarteBean> query = em.createQuery(jpql.toString(), KarteBean.class)
+                                        .setParameter("pid", normalizedPid);
+        if (resolvedFacility != null && !resolvedFacility.isBlank()) {
+            query.setParameter("fid", resolvedFacility);
+        } else {
+            query.setMaxResults(1);
+        }
+        List<KarteBean> hits = query.getResultList();
+        return hits.isEmpty() ? null : hits.get(0);
+    }
+
+    private String resolveFacilityId(LetterModule model) {
+        if (model.getUserModel()!=null && model.getUserModel().getFacilityModel()!=null) {
+            return model.getUserModel().getFacilityModel().getFacilityId();
+        }
+        KarteBean payloadKarte = model.getKarteBean();
+        if (payloadKarte!=null && payloadKarte.getPatientModel()!=null) {
+            return payloadKarte.getPatientModel().getFacilityId();
+        }
+        return null;
+    }
+
     public List<LetterModule> getLetterList(long karteId) {
 
         List<LetterModule> list = (List<LetterModule>)

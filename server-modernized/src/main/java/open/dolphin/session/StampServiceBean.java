@@ -1,13 +1,18 @@
 package open.dolphin.session;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
+import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.framework.SessionOperation;
@@ -22,13 +27,13 @@ import open.dolphin.session.framework.SessionOperation;
 @SessionOperation
 public class StampServiceBean {
 
+    private static final Logger LOGGER = Logger.getLogger(StampServiceBean.class.getName());
     private static final String QUERY_TREE_BY_USER_PK = "from StampTreeModel s where s.user.id=:userPK";
     private static final String QUERY_SUBSCRIBED_BY_USER_PK = "from SubscribedTreeModel s where s.user.id=:userPK";
     private static final String QUERY_LOCAL_PUBLISHED_TREE = "from PublishedTreeModel p where p.publishType=:fid";
     private static final String QUERY_PUBLIC_TREE = "from PublishedTreeModel p where p.publishType='global'";
     private static final String QUERY_PUBLISHED_TREE_BY_ID = "from PublishedTreeModel p where p.id=:id";
     private static final String QUERY_SUBSCRIBED_BY_USER_PK_TREE_ID = "from SubscribedTreeModel s where s.user.id=:userPK and s.treeId=:treeId";
-    private static final String EXCEPTION_FIRST_COMMIT_WIN = "First Commit Win Exception";
 
     private static final String USER_PK = "userPK";
     private static final String FID = "fid";
@@ -38,93 +43,110 @@ public class StampServiceBean {
     @PersistenceContext
     private EntityManager em;
     
-    private int getNextVersion(String holdVersion, String dbVersion) {
-        
-        int newVersion = -1;
-        
-        if (holdVersion!=null && dbVersion!=null) {
-            // 先勝ち 保持しているVersion=DB Version
-            if (holdVersion.equals(dbVersion)) {
-                newVersion = Integer.parseInt(holdVersion)+1;   // +1
-            }
-        } else if (holdVersion==null && dbVersion!=null) {
-            // あってはいけない
-            
-        } else if (holdVersion!=null && dbVersion==null) {
-            // あってはいけない
-            
-        } else if (holdVersion==null && dbVersion==null) {
-            // 両方とも存在しないケース: 新規にTreeが保存される時
-            newVersion = 0;
-        }
-        
-        return newVersion;
-    }
-
     /**
      * user個人のStampTreeを保存/更新する。
      * @param model 保存する StampTree
      * @return id
      */
     public long putTree(StampTreeModel model) {
-        
-        int vesion;
-        
-        try {        
-            StampTreeModel exist =  (StampTreeModel)
-                    em.createQuery(QUERY_TREE_BY_USER_PK)
-                      .setParameter(USER_PK, model.getUserModel().getId())
-                      .getSingleResult();
-            
-            vesion = getNextVersion(model.getVersionNumber(), exist.getVersionNumber());
-            
-        } catch (NoResultException e) {
-            vesion = 0; 
-        } 
-        
-        if (vesion>=0) {
-            // 保存
-            model.setVersionNumber(String.valueOf(vesion));
-            StampTreeModel saveOrUpdate = em.merge(model);
-            return saveOrUpdate.getId();
-        } else {
-            throw new RuntimeException(EXCEPTION_FIRST_COMMIT_WIN);
-        }
+        StampTreeModel saved = persistPersonalTree(model);
+        return saved.getId();
     }
     
     // pk,versionNumber
     public String syncTree(StampTreeModel model) {
-        
-        int vesion;
-        
-        try {        
-            StampTreeModel exist =  (StampTreeModel)
-                    em.createQuery(QUERY_TREE_BY_USER_PK)
-                      .setParameter(USER_PK, model.getUserModel().getId())
-                      .getSingleResult();
-            
-            vesion = getNextVersion(model.getVersionNumber(), exist.getVersionNumber());
-            
-        } catch (NoResultException e) {
-            vesion = 0; 
-        } 
-        
-        if (vesion>=0) {
-            // 保存
-            model.setVersionNumber(String.valueOf(vesion));
-            StampTreeModel saveOrUpdate = em.merge(model);
-            StringBuilder sb = new StringBuilder();
-            sb.append(String.valueOf(saveOrUpdate.getId())).append(",").append(saveOrUpdate.getVersionNumber());
-            return sb.toString();
-            
-        } else {
-            throw new RuntimeException(EXCEPTION_FIRST_COMMIT_WIN);
-        }
+        StampTreeModel saved = persistPersonalTree(model);
+        StringBuilder sb = new StringBuilder();
+        sb.append(String.valueOf(saved.getId())).append(",").append(saved.getVersionNumber());
+        return sb.toString();
     }
     
     // pk,versionNumber
     public void forceSyncTree(StampTreeModel model) {
+        ensureTreeBytes(model);
         em.merge(model);
+    }
+
+    private StampTreeModel persistPersonalTree(StampTreeModel model) {
+        requireUser(model);
+        ensureTreeBytes(model);
+
+        StampTreeModel existing = findPersonalTree(model.getUserModel().getId(), true);
+        if (existing == null) {
+            model.setVersionNumber(sanitizeInitialVersion(model.getVersionNumber()));
+            return em.merge(model);
+        }
+
+        copyIdentity(existing, model);
+        String requestedVersion = model.getVersionNumber();
+        String dbVersion = existing.getVersionNumber();
+        if (requestedVersion == null || !requestedVersion.equals(dbVersion)) {
+            logVersionMismatch(model.getUserModel().getId(), requestedVersion, dbVersion);
+        }
+        model.setVersionNumber(String.valueOf(nextVersion(dbVersion)));
+        return em.merge(model);
+    }
+
+    private StampTreeModel findPersonalTree(long userPk, boolean lock) {
+        try {
+            TypedQuery<StampTreeModel> query = em.createQuery(QUERY_TREE_BY_USER_PK, StampTreeModel.class)
+                    .setParameter(USER_PK, userPk);
+            if (lock) {
+                query.setLockMode(LockModeType.PESSIMISTIC_WRITE);
+            }
+            return query.getSingleResult();
+        } catch (NoResultException e) {
+            return null;
+        }
+    }
+
+    private void ensureTreeBytes(StampTreeModel model) {
+        if (model == null) {
+            return;
+        }
+        if ((model.getTreeBytes() == null || model.getTreeBytes().length == 0) && model.getTreeXml() != null) {
+            model.setTreeBytes(model.getTreeXml().getBytes(StandardCharsets.UTF_8));
+        }
+    }
+
+    private void copyIdentity(StampTreeModel existing, StampTreeModel target) {
+        target.setId(existing.getId());
+        target.setUserModel(existing.getUserModel());
+    }
+
+    private void requireUser(StampTreeModel model) {
+        if (model == null || model.getUserModel() == null || model.getUserModel().getId() == 0) {
+            throw new IllegalArgumentException("StampTreeModel.userModel is required");
+        }
+    }
+
+    private int nextVersion(String dbVersion) {
+        int base = 0;
+        if (dbVersion != null) {
+            try {
+                base = Integer.parseInt(dbVersion);
+            } catch (NumberFormatException e) {
+                LOGGER.log(Level.FINE, "Invalid version format {0}; resetting to 0", dbVersion);
+                base = 0;
+            }
+        }
+        return base + 1;
+    }
+
+    private String sanitizeInitialVersion(String version) {
+        if (version == null) {
+            return "0";
+        }
+        try {
+            int parsed = Integer.parseInt(version);
+            return parsed < 0 ? "0" : String.valueOf(parsed);
+        } catch (NumberFormatException e) {
+            return "0";
+        }
+    }
+
+    private void logVersionMismatch(long userPk, String requested, String current) {
+        LOGGER.log(Level.INFO, () -> String.format("StampTree version desync detected [userPk=%d, payloadVersion=%s, dbVersion=%s]", userPk, requested, current));
     }
 
     /**
@@ -206,46 +228,19 @@ public class StampServiceBean {
     // version
     public String updatePublishedTree(StampTreeHolder h) {
 
-        // 個人Tree
-        StampTreeModel st = (StampTreeModel)h.getPersonalTree();
-        
-        // 公開Tree
-        PublishedTreeModel pt = (PublishedTreeModel)h.getSubscribedList().get(0);
-        
-        //-----------------------------------------------------------------------
-        // 個人Treeがsyncできないといけない
-        //-----------------------------------------------------------------------
-        int vesion;
-        try {        
-            StampTreeModel exist =  (StampTreeModel)
-                    em.createQuery(QUERY_TREE_BY_USER_PK)
-                      .setParameter(USER_PK, st.getUserModel().getId())
-                      .getSingleResult();
-            
-            vesion = getNextVersion(st.getVersionNumber(), exist.getVersionNumber());
-            
-        } catch (NoResultException e) {
-            vesion = 0; 
-        } 
-        
-        if (vesion>=0) {
-            // 保存
-            st.setVersionNumber(String.valueOf(vesion));
-            StampTreeModel saveOrUpdate = em.merge(st);
-            
-            if (pt.getId()==0L) {
-                pt.setId(st.getId());
-                em.persist(pt);
-            } else {
-                em.merge(pt);
-            }
-        
-            // versionNum
-            return saveOrUpdate.getVersionNumber();
-            
+        StampTreeModel personal = (StampTreeModel) h.getPersonalTree();
+        PublishedTreeModel published = (PublishedTreeModel) h.getSubscribedList().get(0);
+
+        StampTreeModel saved = persistPersonalTree(personal);
+
+        if (published.getId() == 0L) {
+            published.setId(saved.getId());
+            em.persist(published);
         } else {
-            throw new RuntimeException(EXCEPTION_FIRST_COMMIT_WIN);
+            em.merge(published);
         }
+
+        return saved.getVersionNumber();
     }
 
     /**
@@ -254,44 +249,17 @@ public class StampServiceBean {
      * @return VersionNumber
      */
     public String cancelPublishedTree(StampTreeModel st) {
-        
-        //-----------------------------------------------------------------------
-        // 個人Treeがsyncできないといけない
-        //-----------------------------------------------------------------------
-        int vesion;
-        try {        
-            StampTreeModel exist =  (StampTreeModel)
-                    em.createQuery(QUERY_TREE_BY_USER_PK)
-                      .setParameter(USER_PK, st.getUserModel().getId())
-                      .getSingleResult();
-            
-            vesion = getNextVersion(st.getVersionNumber(), exist.getVersionNumber());
-            
-        } catch (NoResultException e) {
-            vesion = 0; 
-        } 
-        
-        if (vesion>=0) {
-            // 保存
-            st.setVersionNumber(String.valueOf(vesion));
-            StampTreeModel saveOrUpdate = em.merge(st);
-            
-            //------------------------
-            // 公開Treeを削除する
-            //------------------------
-            List<PublishedTreeModel> list = em.createQuery(QUERY_PUBLISHED_TREE_BY_ID)
-                                              .setParameter(ID, st.getId())
-                                              .getResultList();
-            for (PublishedTreeModel m : list) {
-                em.remove(m);
-            }
-        
-            // versionNum
-            return saveOrUpdate.getVersionNumber();
-            
-        } else {
-            throw new RuntimeException(EXCEPTION_FIRST_COMMIT_WIN);
+
+        StampTreeModel saved = persistPersonalTree(st);
+
+        List<PublishedTreeModel> list = em.createQuery(QUERY_PUBLISHED_TREE_BY_ID)
+                                          .setParameter(ID, saved.getId())
+                                          .getResultList();
+        for (PublishedTreeModel m : list) {
+            em.remove(m);
         }
+
+        return saved.getVersionNumber();
     }
 
     /**

@@ -7,8 +7,10 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import jakarta.annotation.Resource;
 import jakarta.enterprise.concurrent.ManagedScheduledExecutorService;
@@ -25,6 +27,8 @@ import jakarta.jms.Session;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import open.dolphin.audit.AuditEventEnvelope;
+import open.dolphin.audit.AuditTrailService;
 import open.dolphin.infomodel.AttachmentModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
@@ -40,6 +44,9 @@ import open.dolphin.infomodel.UserModel;
 import open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames;
 import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.session.framework.SessionOperation;
+import open.dolphin.session.framework.SessionTraceAttributes;
+import open.dolphin.session.framework.SessionTraceContext;
+import open.dolphin.session.framework.SessionTraceManager;
 import open.dolphin.touch.converter.IOSHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -95,6 +102,12 @@ public class ScheduleServiceBean {
     @Inject
     private MessagingGateway messagingGateway;
 
+    @Inject
+    private AuditTrailService auditTrailService;
+
+    @Inject
+    private SessionTraceManager traceManager;
+
     @Resource(lookup = ConcurrencyResourceNames.DEFAULT_SCHEDULER)
     private ManagedScheduledExecutorService scheduler;
     
@@ -108,66 +121,88 @@ public class ScheduleServiceBean {
     
     public List<PatientVisitModel> getPvt(String fid, String did, String unassigned, String date) {
         
-        List<PatientVisitModel> result;
-        
-        if (did==null && unassigned==null) {
-            result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DATE)
-                                  .setParameter("fid", fid)
-                                  .setParameter("date", date+"%")
-                                  .getResultList();
-        } else {
-            result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DID_DATE)
-                                  .setParameter("fid", fid)
-                                  .setParameter("did", did)
-                                  .setParameter("unassigned", unassigned)
-                                  .setParameter("date", date+"%")
-                                  .getResultList();
-        }
+        Map<String, Object> auditDetails = new HashMap<>();
+        auditDetails.put("facilityId", fid);
+        auditDetails.put("doctorId", did);
+        auditDetails.put("unassignedDoctor", unassigned);
+        auditDetails.put("date", date);
 
-        int len = result.size();
+        try {
+            List<PatientVisitModel> result;
 
-        if (len == 0) {
-            return result;
-        }
-        
-        // Dateへ変換
-        Date startDate = dateFromString(date);
-
-        // 来院情報と患者は ManyToOne の関係である
-        for (int i = 0; i < len; i++) {
-            
-            PatientVisitModel pvt = result.get(i);
-            PatientModel patient = pvt.getPatientModel();
-
-            // 患者の健康保険を取得する
-            List<HealthInsuranceModel> insurances = (List<HealthInsuranceModel>)em.createQuery(QUERY_INSURANCE_BY_PATIENT_ID)
-            .setParameter("id", patient.getId()).getResultList();
-            patient.setHealthInsurances(insurances);
-            
-            List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
-                                  .setParameter("patientPk", patient.getId())
-                                  .getResultList();
-            KarteBean karte = kartes.get(0);
-            
-            // この日のカルテが存在するか
-            List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
-                                                 .setParameter("karteId", karte.getId())
-                                                 .setParameter("started", startDate)
-                                                 .getResultList();
-            if (list!=null && !list.isEmpty()) {
-                pvt.setLastDocDate(startDate);
+            if (did==null && unassigned==null) {
+                result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DATE)
+                                      .setParameter("fid", fid)
+                                      .setParameter("date", date+"%")
+                                      .getResultList();
+            } else {
+                result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DID_DATE)
+                                      .setParameter("fid", fid)
+                                      .setParameter("did", did)
+                                      .setParameter("unassigned", unassigned)
+                                      .setParameter("date", date+"%")
+                                      .getResultList();
             }
-        }
 
-        return result;
+            int len = result.size();
+
+            if (len != 0) {
+                // Dateへ変換
+                Date startDate = dateFromString(date);
+
+                // 来院情報と患者は ManyToOne の関係である
+                for (int i = 0; i < len; i++) {
+
+                    PatientVisitModel pvt = result.get(i);
+                    PatientModel patient = pvt.getPatientModel();
+
+                    // 患者の健康保険を取得する
+                    List<HealthInsuranceModel> insurances = (List<HealthInsuranceModel>)em.createQuery(QUERY_INSURANCE_BY_PATIENT_ID)
+                    .setParameter("id", patient.getId()).getResultList();
+                    patient.setHealthInsurances(insurances);
+                    
+                    List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
+                                          .setParameter("patientPk", patient.getId())
+                                          .getResultList();
+                    KarteBean karte = kartes.get(0);
+                    
+                    // この日のカルテが存在するか
+                    List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
+                                                         .setParameter("karteId", karte.getId())
+                                                         .setParameter("started", startDate)
+                                                         .getResultList();
+                    if (list!=null && !list.isEmpty()) {
+                        pvt.setLastDocDate(startDate);
+                    }
+                }
+            }
+
+            auditDetails.put("resultCount", len);
+            writeScheduleAudit("SCHEDULE_FETCH", auditDetails, null, null);
+            return result;
+        } catch (RuntimeException ex) {
+            writeScheduleAudit("SCHEDULE_FETCH", auditDetails, ex, null);
+            throw ex;
+        }
     }
     
     public int makeScheduleAndSend(long pvtPK, long userPK, Date startDate, boolean send) {
         
+        Map<String, Object> auditDetails = new HashMap<>();
+        auditDetails.put("pvtPk", pvtPK);
+        auditDetails.put("userPk", userPK);
+        auditDetails.put("sendClaim", send);
+        auditDetails.put("startDate", startDate);
+        String auditPatientId = null;
+
         try {
             // 受付情報を取得する
             PatientVisitModel pvt = (PatientVisitModel)em.find(PatientVisitModel.class, pvtPK);
             PatientModel patient = pvt.getPatientModel();
+            auditPatientId = patient != null ? patient.getPatientId() : null;
+            if (auditPatientId != null) {
+                auditDetails.put("patientId", auditPatientId);
+            }
 
             // 患者の健康保険を取得する
             List<HealthInsuranceModel> insurances = (List<HealthInsuranceModel>)em.createQuery(QUERY_INSURANCE_BY_PATIENT_ID)
@@ -368,9 +403,15 @@ public class ScheduleServiceBean {
                 dispatchClaimAsync(schedule);
             }
             
+            auditDetails.put("karteId", karte.getId());
+            auditDetails.put("documentId", schedule.getId());
+            auditDetails.put("patientPk", patient.getId());
+            writeScheduleAudit("SCHEDULE_CREATE", auditDetails, null, auditPatientId);
             return 1;
             
         } catch (Exception e) {
+            writeScheduleAudit("SCHEDULE_CREATE", auditDetails, e, auditPatientId);
+            LOGGER.error("Failed to create schedule entry", e);
             e.printStackTrace(System.err);
         }
         
@@ -378,33 +419,60 @@ public class ScheduleServiceBean {
     }
     
     public int removePvt(long pvtPK, long ptPK, Date startDate) {
-        // 受付咲くジョン
-        PatientVisitModel exist = (PatientVisitModel)em.find(PatientVisitModel.class, new Long(pvtPK));
-        em.remove(exist);
-        
-        // 患者のカルテを取得する
-        List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
-                              .setParameter("patientPk", ptPK)
-                              .getResultList();
-        KarteBean karte = kartes.get(0);
-        
-        // 当日のドキュメントを検索
-        List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
-                                                 .setParameter("karteId", karte.getId())
-                                                 .setParameter("started", startDate)
-                                                 .getResultList();
-        if (list.isEmpty()) {
-            return 1;
+        Map<String, Object> auditDetails = new HashMap<>();
+        auditDetails.put("pvtPk", pvtPK);
+        auditDetails.put("patientPk", ptPK);
+        auditDetails.put("startDate", startDate);
+        auditDetails.put("pvtDeletedCount", 0);
+        auditDetails.put("documentsDeletedCount", 0);
+        String auditPatientId = null;
+
+        try {
+            // 受付咲くジョン
+            PatientVisitModel exist = (PatientVisitModel)em.find(PatientVisitModel.class, new Long(pvtPK));
+            if (exist != null) {
+                auditPatientId = exist.getPatientModel() != null ? exist.getPatientModel().getPatientId() : null;
+                auditDetails.put("pvtDeletedCount", 1);
+                if (auditPatientId != null) {
+                    auditDetails.put("patientId", auditPatientId);
+                }
+                em.remove(exist);
+            }
+            
+            // 患者のカルテを取得する
+            List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
+                                  .setParameter("patientPk", ptPK)
+                                  .getResultList();
+            KarteBean karte = kartes.get(0);
+            
+            // 当日のドキュメントを検索
+            List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
+                                                     .setParameter("karteId", karte.getId())
+                                                     .setParameter("started", startDate)
+                                                     .getResultList();
+            if (list.isEmpty()) {
+                auditDetails.put("documentsDeletedCount", 0);
+                auditDetails.put("documentsDeletedStatus", "noDocumentsForStartDate");
+                writeScheduleAudit("SCHEDULE_DELETE", auditDetails, null, auditPatientId);
+                return 1;
+            }
+            
+            // それを削除
+            int documentsDeleted = 0;
+            for (DocumentModel d : list) {
+                List<String> l = deleteDocument(d.getId());
+                documentsDeleted += l.size();
+            }
+            auditDetails.put("documentsDeletedCount", documentsDeleted);
+            if (documentsDeleted == 0) {
+                auditDetails.put("documentsDeletedStatus", "documentsAlreadyDeleted");
+            }
+            writeScheduleAudit("SCHEDULE_DELETE", auditDetails, null, auditPatientId);
+            return documentsDeleted + 1;
+        } catch (RuntimeException ex) {
+            writeScheduleAudit("SCHEDULE_DELETE", auditDetails, ex, auditPatientId);
+            throw ex;
         }
-        
-        // それを削除
-        int cnt=1;
-        for (DocumentModel d : list) {
-            List<String> l = deleteDocument(d.getId());
-            cnt+=l.size();
-        }
-        
-        return cnt;
     }
 
     private void dispatchClaimAsync(DocumentModel document) {
@@ -510,5 +578,111 @@ public class ScheduleServiceBean {
         } catch (Exception e) {           
         }
         return null;
+    }
+
+    private void writeScheduleAudit(String action, Map<String, Object> details, Throwable error, String patientId) {
+        if (auditTrailService == null) {
+            return;
+        }
+        String previousPatient = setPatientContext(patientId);
+        try {
+            AuditEventEnvelope.Builder builder = newAuditBuilder(action, "ScheduleServiceBean");
+            builder.details(details == null ? Map.of() : details);
+            if (error != null) {
+                builder.failure(error);
+            }
+            auditTrailService.write(builder.build());
+        } finally {
+            restorePatientContext(previousPatient);
+        }
+    }
+
+    private AuditEventEnvelope.Builder newAuditBuilder(String action, String resource) {
+        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, resource);
+        SessionTraceContext context = traceManager != null ? traceManager.current() : null;
+        String actorId = resolveActorId(context);
+        builder.actorId(actorId);
+        builder.actorDisplayName(resolveActorDisplayName(actorId));
+        builder.actorRole(context != null ? context.getActorRole() : null);
+        builder.facilityId(resolveFacilityId(actorId));
+        String traceId = resolveTraceId(context);
+        builder.traceId(traceId);
+        builder.requestId(resolveRequestId(context, traceId));
+        builder.patientId(resolvePatientId(context));
+        builder.component(context != null ? context.getAttribute(SessionTraceAttributes.COMPONENT) : null);
+        builder.operation(context != null ? context.getOperation() : null);
+        return builder;
+    }
+
+    private String resolveActorId(SessionTraceContext context) {
+        if (context == null) {
+            return "system";
+        }
+        String actorId = context.getAttribute(SessionTraceAttributes.ACTOR_ID);
+        return actorId == null || actorId.isBlank() ? "system" : actorId;
+    }
+
+    private String resolveActorDisplayName(String actorId) {
+        if (actorId == null) {
+            return "system";
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx >= 0 && idx + 1 < actorId.length()) {
+            return actorId.substring(idx + 1);
+        }
+        return actorId;
+    }
+
+    private String resolveFacilityId(String actorId) {
+        if (actorId == null) {
+            return null;
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx <= 0) {
+            return null;
+        }
+        return actorId.substring(0, idx);
+    }
+
+    private String resolveTraceId(SessionTraceContext context) {
+        if (context != null && context.getTraceId() != null && !context.getTraceId().isBlank()) {
+            return context.getTraceId();
+        }
+        return UUID.randomUUID().toString();
+    }
+
+    private String resolveRequestId(SessionTraceContext context, String traceId) {
+        if (context != null) {
+            String requestId = context.getAttribute(SessionTraceAttributes.REQUEST_ID);
+            if (requestId != null && !requestId.isBlank()) {
+                return requestId;
+            }
+        }
+        return traceId;
+    }
+
+    private String resolvePatientId(SessionTraceContext context) {
+        if (context == null) {
+            return "N/A";
+        }
+        String patient = context.getAttribute(SessionTraceAttributes.PATIENT_ID);
+        return patient == null || patient.isBlank() ? "N/A" : patient;
+    }
+
+    private String setPatientContext(String patientId) {
+        if (traceManager == null) {
+            return null;
+        }
+        String normalized = (patientId == null || patientId.isBlank()) ? null : patientId;
+        String previous = traceManager.getAttribute(SessionTraceAttributes.PATIENT_ID);
+        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, normalized);
+        return previous;
+    }
+
+    private void restorePatientContext(String previousPatientId) {
+        if (traceManager == null) {
+            return;
+        }
+        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, previousPatientId);
     }
 }

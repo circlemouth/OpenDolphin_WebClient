@@ -10,6 +10,7 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.IInfoModel;
+import open.dolphin.rest.LogFilter;
 
 /**
  * Centralised facility authorization helper for Touch endpoints.
@@ -21,6 +22,9 @@ public class TouchAuthHandler {
 
     private static final Logger LOGGER = Logger.getLogger(TouchAuthHandler.class.getName());
     private static final String ANONYMOUS_PRINCIPAL = "anonymous";
+    private static final String HEADER_USER_NAME = "userName";
+    private static final String LEGACY_FACILITY_HEADER = "facilityId";
+    private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
 
     /**
      * Ensures the X-Facility-Id header is present and matches the authenticated user.
@@ -58,6 +62,10 @@ public class TouchAuthHandler {
         String remoteFacilityRaw = resolveRemoteFacility(request);
         String remoteFacility = normalize(remoteFacilityRaw);
         String expected = normalize(facilityId);
+        if (remoteFacility == null) {
+            throw failure(Response.Status.UNAUTHORIZED, endpoint,
+                    () -> "remote facility unavailable for facility=" + facilityId);
+        }
         if (remoteFacility != null && expected != null && !remoteFacility.equals(expected)) {
             throw failure(Response.Status.FORBIDDEN, endpoint,
                     () -> "facility mismatch expected=" + expected + " remote=" + remoteFacilityRaw);
@@ -74,17 +82,24 @@ public class TouchAuthHandler {
         if (request == null) {
             return null;
         }
-        String remoteUser = request.getRemoteUser();
-        if (remoteUser == null || remoteUser.isEmpty() || ANONYMOUS_PRINCIPAL.equalsIgnoreCase(remoteUser.trim())) {
-            LOGGER.log(Level.FINE, "Remote user not available for Touch request");
-            return null;
+        String remoteUser = sanitizeRemoteUser(request.getRemoteUser());
+        if (remoteUser == null) {
+            remoteUser = sanitizeRemoteUser(request.getHeader(HEADER_USER_NAME));
         }
-        int separator = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
-        if (separator <= 0) {
+        if (remoteUser != null) {
+            int separator = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+            if (separator > 0) {
+                return remoteUser.substring(0, separator);
+            }
             LOGGER.log(Level.FINE, "Remote user does not contain facility separator: {0}", remoteUser);
-            return null;
+        } else {
+            LOGGER.log(Level.FINE, "Remote user not available for Touch request");
         }
-        return remoteUser.substring(0, separator);
+        String fallback = resolveFacilityHeader(request);
+        if (fallback != null) {
+            logFacilityFallback(request, fallback);
+        }
+        return fallback;
     }
 
     private WebApplicationException failure(Response.Status status, String endpoint, String message) {
@@ -102,10 +117,13 @@ public class TouchAuthHandler {
         if (LOGGER.isLoggable(Level.FINE)) {
             LOGGER.fine(builder.toString());
         }
-        Response response = Response.status(status)
+        Response.ResponseBuilder responseBuilder = Response.status(status)
                 .type(MediaType.TEXT_PLAIN_TYPE)
-                .entity(builder.toString())
-                .build();
+                .entity(builder.toString());
+        if (Response.Status.UNAUTHORIZED.equals(status)) {
+            responseBuilder.header("WWW-Authenticate", AUTH_CHALLENGE);
+        }
+        Response response = responseBuilder.build();
         return new WebApplicationException(response);
     }
 
@@ -115,5 +133,33 @@ public class TouchAuthHandler {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed.toUpperCase(Locale.ROOT);
+    }
+
+    private String resolveFacilityHeader(HttpServletRequest request) {
+        String value = normalize(request.getHeader(FACILITY_HEADER));
+        if (value != null) {
+            return value;
+        }
+        return normalize(request.getHeader(LEGACY_FACILITY_HEADER));
+    }
+
+    private String sanitizeRemoteUser(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        if (trimmed.isEmpty() || ANONYMOUS_PRINCIPAL.equalsIgnoreCase(trimmed)) {
+            return null;
+        }
+        return trimmed;
+    }
+
+    private void logFacilityFallback(HttpServletRequest request, String facilityId) {
+        if (!LOGGER.isLoggable(Level.FINE)) {
+            return;
+        }
+        Object traceId = request != null ? request.getAttribute(LogFilter.TRACE_ID_ATTRIBUTE) : null;
+        LOGGER.log(Level.FINE, "Fallback facility header detected: {0}, traceId={1}",
+                new Object[]{facilityId, traceId});
     }
 }

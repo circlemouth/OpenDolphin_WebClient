@@ -1,0 +1,1435 @@
+diff --git a/server-modernized/src/main/java/open/dolphin/rest/LogFilter.java b/server-modernized/src/main/java/open/dolphin/rest/LogFilter.java
+index be5c57e8..aeb444b0 100644
+--- a/server-modernized/src/main/java/open/dolphin/rest/LogFilter.java
++++ b/server-modernized/src/main/java/open/dolphin/rest/LogFilter.java
+@@ -7,15 +7,17 @@ import java.util.Optional;
+ import java.util.UUID;
+ import java.util.logging.Level;
+ import java.util.logging.Logger;
+-import jakarta.inject.Inject;
+-import jakarta.servlet.*;
+-import jakarta.servlet.annotation.WebFilter;
+-import jakarta.servlet.http.HttpServletRequest;
+-import jakarta.servlet.http.HttpServletResponse;
+-import jakarta.security.enterprise.SecurityContext;
+-import open.dolphin.mbean.UserCache;
+-import open.dolphin.session.UserServiceBean;
+-import org.jboss.logmanager.MDC;
++import jakarta.inject.Inject;
++import jakarta.servlet.*;
++import jakarta.servlet.annotation.WebFilter;
++import jakarta.servlet.http.HttpServletRequest;
++import jakarta.servlet.http.HttpServletResponse;
++import jakarta.security.enterprise.SecurityContext;
++import open.dolphin.infomodel.IInfoModel;
++import open.dolphin.mbean.UserCache;
++import open.dolphin.session.UserServiceBean;
++import open.dolphin.session.framework.SessionTraceAttributes;
++import org.jboss.logmanager.MDC;
+ 
+ /**
+  *
+@@ -25,13 +27,16 @@ import org.jboss.logmanager.MDC;
+ public class LogFilter implements Filter {
+ 
+     private static final Logger SECURITY_LOGGER = Logger.getLogger(LogFilter.class.getName());
+-    private static final String USER_NAME = "userName";
+-    private static final String PASSWORD = "password";
+-    private static final String UNAUTHORIZED_USER = "Unauthorized user: ";
++    private static final String USER_NAME = "userName";
++    private static final String PASSWORD = "password";
++    private static final String UNAUTHORIZED_USER = "Unauthorized user: ";
+     private static final String TRACE_ID_HEADER = "X-Trace-Id";
+     public static final String TRACE_ID_ATTRIBUTE = LogFilter.class.getName() + ".TRACE_ID";
+     private static final String MDC_TRACE_ID_KEY = "traceId";
+     private static final String ANONYMOUS_PRINCIPAL = "anonymous";
++    private static final String FACILITY_HEADER = "X-Facility-Id";
++    private static final String LEGACY_FACILITY_HEADER = "facilityId";
++    private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
+ 
+     private static final String SYSAD_USER_ID = "1.3.6.1.4.1.9414.10.1:dolphin";
+     private static final String SYSAD_PASSWORD = "36cdf8b887a5cffc78dcd5c08991b993";
+@@ -62,41 +67,56 @@ public class LogFilter implements Filter {
+         HttpServletRequest req = (HttpServletRequest)request;
+         HttpServletResponse res = (HttpServletResponse) response;
+ 
+-        String traceId = resolveTraceId(req);
+-        req.setAttribute(TRACE_ID_ATTRIBUTE, traceId);
+-        res.setHeader(TRACE_ID_HEADER, traceId);
+-        Object previousTraceId = MDC.put(MDC_TRACE_ID_KEY, traceId);
+-
++        String traceId = resolveTraceId(req);
++        req.setAttribute(TRACE_ID_ATTRIBUTE, traceId);
++        res.setHeader(TRACE_ID_HEADER, traceId);
++        MdcSnapshot traceIdSnapshot = applyMdcValue(MDC_TRACE_ID_KEY, traceId);
++        MdcSnapshot remoteUserSnapshot = null;
++
+         try {
+-            boolean identityTokenRequest = isIdentityTokenRequest(req);
++            if (isIdentityTokenRequest(req)) {
++                chain.doFilter(request, response);
++                return;
++            }
+ 
+             String headerUser = headerAuthEnabled ? safeHeader(req, USER_NAME) : null;
+             String headerPassword = headerAuthEnabled ? safeHeader(req, PASSWORD) : null;
+             Optional<String> principalUser = resolvePrincipalUser();
+ 
+             String effectiveUser = principalUser.orElse(headerUser);
+-            boolean authentication = principalUser.isPresent() || identityTokenRequest;
++            boolean authenticated = principalUser.isPresent();
+ 
+-            if (!authentication && headerAuthEnabled) {
+-                authentication = authenticateWithHeaders(req, headerUser, headerPassword);
+-            } else if (!authentication) {
++            if (!authenticated && headerAuthEnabled) {
++                authenticated = authenticateWithHeaders(req, headerUser, headerPassword);
++                if (authenticated) {
++                    effectiveUser = headerUser;
++                }
++            } else if (!authenticated) {
+                 SECURITY_LOGGER.warning(() -> "Header-based authentication is disabled; rejecting " + req.getRequestURI());
+             }
+ 
+-            if (!authentication) {
+-                String requestURI = req.getRequestURI();
+-                String msg = UNAUTHORIZED_USER + String.valueOf(effectiveUser) + ": " + requestURI + " traceId=" + traceId;
+-                Logger.getLogger("open.dolphin").warning(msg);
+-                res.sendError(HttpServletResponse.SC_FORBIDDEN);
+-                return;
+-            }
+-
+-            BlockWrapper wrapper = new BlockWrapper(req);
+-            wrapper.setRemoteUser(effectiveUser);
++            String candidateUser = principalUser.orElse(headerUser);
++
++            if (!authenticated) {
++                logUnauthorized(req, candidateUser, traceId);
++                sendUnauthorized(res);
++                return;
++            }
++
++            String resolvedUser = resolveEffectiveUser(effectiveUser, headerUser, req);
++            if (resolvedUser == null) {
++                logUnauthorized(req, candidateUser, traceId);
++                sendUnauthorized(res);
++                return;
++            }
++
++            BlockWrapper wrapper = new BlockWrapper(req);
++            wrapper.setRemoteUser(resolvedUser);
++            remoteUserSnapshot = applyMdcValue(SessionTraceAttributes.ACTOR_ID_MDC_KEY, resolvedUser);
+ 
+             StringBuilder sb = new StringBuilder();
+             sb.append(wrapper.getRemoteAddr()).append(" ");
+-            sb.append(wrapper.getShortUser()).append(" ");
++            sb.append(wrapper.getShortUser()).append(" ");
+             sb.append(wrapper.getMethod()).append(" ");
+ //minagawa^ VisitTouch logを分ける        
+             String uri = wrapper.getRequestURIForLog();
+@@ -109,11 +129,12 @@ public class LogFilter implements Filter {
+             }
+ //minagawa 
+ 
+-            chain.doFilter(wrapper, response);
+-        } finally {
+-            restorePreviousTraceId(previousTraceId);
+-        }
+-    }
++            chain.doFilter(wrapper, response);
++        } finally {
++            restoreMdcValue(traceIdSnapshot);
++            restoreMdcValue(remoteUserSnapshot);
++        }
++    }
+ 
+     @Override
+     public void destroy() {
+@@ -217,22 +238,129 @@ public class LogFilter implements Filter {
+         return UUID.randomUUID().toString();
+     }
+ 
+-    private void restorePreviousTraceId(Object previousTraceId) {
+-        if (previousTraceId == null) {
+-            MDC.remove(MDC_TRACE_ID_KEY);
+-        } else {
+-            MDC.put(MDC_TRACE_ID_KEY, previousTraceId.toString());
+-        }
+-    }
+-
+-    private String safeHeader(HttpServletRequest req, String headerName) {
+-        String value = req.getHeader(headerName);
+-        if (value == null) {
+-            return null;
+-        }
+-        return value.trim();
+-    }
+-
++    private MdcSnapshot applyMdcValue(String key, String value) {
++        Object previousJboss = MDC.get(key);
++        String previousSlf4j = org.slf4j.MDC.get(key);
++        if (value == null || value.isBlank()) {
++            MDC.remove(key);
++            org.slf4j.MDC.remove(key);
++        } else {
++            MDC.put(key, value);
++            org.slf4j.MDC.put(key, value);
++        }
++        return new MdcSnapshot(key, previousJboss, previousSlf4j);
++    }
++
++    private void restoreMdcValue(MdcSnapshot snapshot) {
++        if (snapshot == null) {
++            return;
++        }
++        if (snapshot.previousJboss == null) {
++            MDC.remove(snapshot.key);
++        } else {
++            MDC.put(snapshot.key, snapshot.previousJboss.toString());
++        }
++        if (snapshot.previousSlf4j == null) {
++            org.slf4j.MDC.remove(snapshot.key);
++        } else {
++            org.slf4j.MDC.put(snapshot.key, snapshot.previousSlf4j);
++        }
++    }
++
++    private static final class MdcSnapshot {
++        private final String key;
++        private final Object previousJboss;
++        private final String previousSlf4j;
++
++        private MdcSnapshot(String key, Object previousJboss, String previousSlf4j) {
++            this.key = key;
++            this.previousJboss = previousJboss;
++            this.previousSlf4j = previousSlf4j;
++        }
++    }
++
++    private void logUnauthorized(HttpServletRequest req, String user, String traceId) {
++        StringBuilder sbd = new StringBuilder(UNAUTHORIZED_USER);
++        sbd.append(user != null ? user : "unknown");
++        sbd.append(": ").append(req.getRequestURI());
++        if (traceId != null && !traceId.isBlank()) {
++            sbd.append(" traceId=").append(traceId);
++        }
++        Logger.getLogger("open.dolphin").warning(sbd.toString());
++    }
++
++    private String resolveEffectiveUser(String effectiveUser, String headerUser, HttpServletRequest request) {
++        String normalizedEffective = normalize(effectiveUser);
++        if (isCompositePrincipal(normalizedEffective)) {
++            return normalizedEffective;
++        }
++
++        String normalizedHeader = normalize(headerUser);
++        if (isCompositePrincipal(normalizedHeader)) {
++            return normalizedHeader;
++        }
++
++        String facilityHeader = resolveFacilityHeader(request);
++        if (facilityHeader != null) {
++            String userSegment = firstNonBlank(extractUserSegment(normalizedEffective), extractUserSegment(normalizedHeader));
++            if (userSegment != null) {
++                if (SECURITY_LOGGER.isLoggable(Level.FINE)) {
++                    SECURITY_LOGGER.fine(() -> "Synthesised principal from facility header " + facilityHeader);
++                }
++                return facilityHeader + IInfoModel.COMPOSITE_KEY_MAKER + userSegment;
++            }
++        }
++
++        return null;
++    }
++
++    private void sendUnauthorized(HttpServletResponse response) throws IOException {
++        response.setHeader("WWW-Authenticate", AUTH_CHALLENGE);
++        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
++    }
++
++    private String normalize(String value) {
++        if (value == null) {
++            return null;
++        }
++        String trimmed = value.trim();
++        return trimmed.isEmpty() ? null : trimmed;
++    }
++
++    private boolean isBlank(String value) {
++        return value == null || value.trim().isEmpty();
++    }
++
++    private String resolveFacilityHeader(HttpServletRequest request) {
++        if (request == null) {
++            return null;
++        }
++        String override = normalize(request.getHeader(FACILITY_HEADER));
++        if (override != null) {
++            return override;
++        }
++        return normalize(request.getHeader(LEGACY_FACILITY_HEADER));
++    }
++
++    private String extractUserSegment(String candidate) {
++        if (candidate == null) {
++            return null;
++        }
++        int separator = candidate.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
++        if (separator >= 0 && separator + 1 < candidate.length()) {
++            return candidate.substring(separator + 1);
++        }
++        return candidate;
++    }
++
++    private String safeHeader(HttpServletRequest req, String headerName) {
++        String value = req.getHeader(headerName);
++        if (value == null) {
++            return null;
++        }
++        return value.trim();
++    }
++
+     private boolean isIdentityTokenRequest(HttpServletRequest request) {
+         String uri = request.getRequestURI();
+         if (uri == null) {
+@@ -244,4 +372,11 @@ public class LogFilter implements Filter {
+     private boolean isAnonymousPrincipal(String principalName) {
+         return principalName != null && ANONYMOUS_PRINCIPAL.equalsIgnoreCase(principalName.trim());
+     }
++
++    private boolean isCompositePrincipal(String candidate) {
++        if (candidate == null) {
++            return false;
++        }
++        return candidate.contains(IInfoModel.COMPOSITE_KEY_MAKER);
++    }
+ }
+diff --git a/server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java b/server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java
+index 0f22b4d5..910116bd 100644
+--- a/server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java
++++ b/server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java
+@@ -1,30 +1,32 @@
+-package open.dolphin.security.audit;
+-
+-import com.fasterxml.jackson.core.JsonProcessingException;
+-import com.fasterxml.jackson.databind.ObjectMapper;
+-import jakarta.ejb.Stateless;
+-import jakarta.persistence.EntityManager;
+-import jakarta.persistence.LockModeType;
+-import jakarta.persistence.PersistenceContext;
+-import java.nio.charset.StandardCharsets;
+-import java.security.MessageDigest;
+-import java.security.NoSuchAlgorithmException;
+-import java.time.Instant;
+-import java.util.HexFormat;
+-import java.util.Map;
+-import open.dolphin.infomodel.AuditEvent;
+-
+-/**
+- * 改ざん検知付きの監査ログを記録するサービス。
+- */
+-@Stateless
+-public class AuditTrailService {
+-
+-    @PersistenceContext
+-    private EntityManager em;
+-
+-    private final ObjectMapper objectMapper = new ObjectMapper();
+-
++package open.dolphin.security.audit;
++
++import com.fasterxml.jackson.core.JsonProcessingException;
++import com.fasterxml.jackson.databind.ObjectMapper;
++import jakarta.ejb.Stateless;
++import jakarta.persistence.EntityManager;
++import jakarta.persistence.PersistenceContext;
++import jakarta.transaction.Transactional;
++import java.nio.charset.StandardCharsets;
++import java.security.MessageDigest;
++import java.security.NoSuchAlgorithmException;
++import java.time.Instant;
++import java.util.HexFormat;
++import java.util.Map;
++import open.dolphin.audit.AuditEventEnvelope;
++import open.dolphin.infomodel.AuditEvent;
++
++/**
++ * 改ざん検知付きの監査ログを記録するサービス。
++ */
++@Stateless
++@Transactional(Transactional.TxType.REQUIRES_NEW)
++public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
++
++    @PersistenceContext
++    private EntityManager em;
++
++    private final ObjectMapper objectMapper = new ObjectMapper();
++
+     public AuditEvent record(AuditEventPayload payload) {
+         Instant now = Instant.now();
+         String previousHash = em.createQuery("select a.eventHash from AuditEvent a order by a.eventTime desc", String.class)
+@@ -52,12 +54,36 @@ public class AuditTrailService {
+         event.setPreviousHash(previousHash);
+         event.setEventHash(hash(previousHash + payloadHash + now.toEpochMilli() + safe(payload.getActorId())));
+ 
+-        em.persist(event);
+-        return event;
+-    }
+-
+-    private String serializePayload(Map<String, Object> details) {
+-        if (details == null || details.isEmpty()) {
++        em.persist(event);
++        return event;
++    }
++
++    @Override
++    public AuditEventEnvelope write(AuditEventEnvelope envelope) {
++        AuditEventPayload payload = new AuditEventPayload();
++        payload.setAction(envelope.getAction());
++        payload.setResource(envelope.getResource());
++        payload.setActorId(envelope.getActorId());
++        payload.setActorDisplayName(envelope.getActorDisplayName());
++        payload.setActorRole(envelope.getActorRole());
++        payload.setPatientId(envelope.getPatientId());
++        payload.setRequestId(determineRequestId(envelope));
++        payload.setIpAddress(envelope.getIpAddress());
++        payload.setUserAgent(envelope.getUserAgent());
++        payload.setDetails(envelope.getDetails());
++        record(payload);
++        return envelope;
++    }
++
++    private String determineRequestId(AuditEventEnvelope envelope) {
++        if (envelope.getRequestId() != null && !envelope.getRequestId().isBlank()) {
++            return envelope.getRequestId();
++        }
++        return envelope.getTraceId();
++    }
++
++    private String serializePayload(Map<String, Object> details) {
++        if (details == null || details.isEmpty()) {
+             return "{}";
+         }
+         try {
+diff --git a/server-modernized/src/main/java/open/dolphin/session/AppoServiceBean.java b/server-modernized/src/main/java/open/dolphin/session/AppoServiceBean.java
+index b55605f9..8e3adeea 100644
+--- a/server-modernized/src/main/java/open/dolphin/session/AppoServiceBean.java
++++ b/server-modernized/src/main/java/open/dolphin/session/AppoServiceBean.java
+@@ -1,14 +1,24 @@
+ package open.dolphin.session;
+ 
+-import java.util.ArrayList;
+-import java.util.List;
+-import jakarta.enterprise.context.ApplicationScoped;
+-import jakarta.inject.Named;
+-import jakarta.persistence.EntityManager;
+-import jakarta.persistence.PersistenceContext;
+-import jakarta.transaction.Transactional;
+-import open.dolphin.session.framework.SessionOperation;
+-import open.dolphin.infomodel.AppointmentModel;
++import java.util.ArrayList;
++import java.util.HashMap;
++import java.util.List;
++import java.util.Map;
++import java.util.UUID;
++import jakarta.enterprise.context.ApplicationScoped;
++import jakarta.inject.Inject;
++import jakarta.inject.Named;
++import jakarta.persistence.EntityManager;
++import jakarta.persistence.PersistenceContext;
++import jakarta.transaction.Transactional;
++import open.dolphin.audit.AuditEventEnvelope;
++import open.dolphin.audit.AuditTrailService;
++import open.dolphin.infomodel.AppointmentModel;
++import open.dolphin.infomodel.IInfoModel;
++import open.dolphin.session.framework.SessionOperation;
++import open.dolphin.session.framework.SessionTraceAttributes;
++import open.dolphin.session.framework.SessionTraceContext;
++import open.dolphin.session.framework.SessionTraceManager;
+ 
+ /**
+  *
+@@ -25,45 +35,81 @@ public class AppoServiceBean {
+     private static final String FROM_DATE = "fromDate";
+     private static final String TO_DATE = "toDate";
+ 
+-    @PersistenceContext
+-    private EntityManager em;
+-
+-
+-    public int putAppointments(List<AppointmentModel> list) {
+-
+-        int cnt = 0;
+-
+-        for (AppointmentModel model : list) {
+-
+-            int state = model.getState();
+-            String appoName = model.getName();
+-
+-            if (state == AppointmentModel.TT_NEW) {
+-                // 新規予約
+-                 em.persist(model);
+-                cnt++;
+-
+-            } else if (state == AppointmentModel.TT_REPLACE && appoName != null) {
+-                // 変更された予約
+-                em.merge(model);
+-                cnt++;
+-
+-            } else if (state == AppointmentModel.TT_REPLACE && appoName == null) {
+-                // 取り消された予約
+-                AppointmentModel target = (AppointmentModel)em.find(AppointmentModel.class, model.getId());
+-                em.remove(target);
+-                cnt++;
+-            }
+-        }
+-        return cnt;
+-    }
++    @PersistenceContext
++    private EntityManager em;
++
++    @Inject
++    private AuditTrailService auditTrailService;
++
++    @Inject
++    private SessionTraceManager traceManager;
++
++    public int putAppointments(List<AppointmentModel> list) {
++
++        List<AppointmentModel> appointments = list == null ? List.of() : list;
++        Map<String, Object> auditDetails = new HashMap<>();
++        auditDetails.put("requestedCount", appointments.size());
++
++        String patientId = resolveAppointmentsPatientId(appointments);
++        if (patientId != null) {
++            auditDetails.put("patientId", patientId);
++        }
++        String previousPatientContext = setPatientContext(patientId);
++
++        int cnt = 0;
++        int created = 0;
++        int updated = 0;
++        int deleted = 0;
++
++        try {
++            for (AppointmentModel model : appointments) {
++
++                int state = model.getState();
++                String appoName = model.getName();
++
++                if (state == AppointmentModel.TT_NEW) {
++                    em.persist(model);
++                    cnt++;
++                    created++;
++
++                } else if (state == AppointmentModel.TT_REPLACE && appoName != null) {
++                    em.merge(model);
++                    cnt++;
++                    updated++;
++
++                } else if (state == AppointmentModel.TT_REPLACE && appoName == null) {
++                    AppointmentModel target = (AppointmentModel) em.find(AppointmentModel.class, model.getId());
++                    em.remove(target);
++                    cnt++;
++                    deleted++;
++                }
++            }
++        } catch (RuntimeException ex) {
++            auditDetails.put("createdCount", created);
++            auditDetails.put("updatedCount", updated);
++            auditDetails.put("deletedCount", deleted);
++            auditDetails.put("appliedCount", cnt);
++            writeAppointmentAudit(auditDetails, ex);
++            restorePatientContext(previousPatientContext);
++            throw ex;
++        }
++
++        auditDetails.put("createdCount", created);
++        auditDetails.put("updatedCount", updated);
++        auditDetails.put("deletedCount", deleted);
++        auditDetails.put("appliedCount", cnt);
++        writeAppointmentAudit(auditDetails, null);
++        restorePatientContext(previousPatientContext);
++
++        return cnt;
++    }
+ 
+     /**
+      * 予約を検索する。
+      * @param spec 検索仕様
+      * @return 予約の Collection
+      */
+-    public List<List> getAppointmentList(long karteId, List fromDate, List toDate) {
++    public List<List> getAppointmentList(long karteId, List fromDate, List toDate) {
+ 
+         // 抽出期間は別けられている
+         int len = fromDate.size();
+@@ -80,6 +126,130 @@ public class AppoServiceBean {
+             ret.add(c);
+         }
+ 
+-        return ret;
+-    }
+-}
++        return ret;
++    }
++}
++
++    private void writeAppointmentAudit(Map<String, Object> details, Throwable error) {
++        if (auditTrailService == null) {
++            return;
++        }
++        AuditEventEnvelope.Builder builder = newAuditBuilder("APPOINTMENT_MUTATION", "AppointmentModel");
++        builder.details(details == null ? Map.of() : details);
++        if (error != null) {
++            builder.failure(error);
++        }
++        auditTrailService.write(builder.build());
++    }
++
++    private AuditEventEnvelope.Builder newAuditBuilder(String action, String resource) {
++        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, resource);
++        SessionTraceContext context = traceManager != null ? traceManager.current() : null;
++        String actorId = resolveActorId(context);
++        builder.actorId(actorId);
++        builder.actorDisplayName(resolveActorDisplayName(actorId));
++        builder.actorRole(context != null ? context.getActorRole() : null);
++        builder.facilityId(resolveFacilityId(actorId));
++        String traceId = resolveTraceId(context);
++        builder.traceId(traceId);
++        builder.requestId(resolveRequestId(context, traceId));
++        builder.patientId(resolvePatientId(context));
++        builder.component(context != null ? context.getAttribute(SessionTraceAttributes.COMPONENT) : null);
++        builder.operation(context != null ? context.getOperation() : null);
++        return builder;
++    }
++
++    private String resolveActorId(SessionTraceContext context) {
++        if (context == null) {
++            return "system";
++        }
++        String actorId = context.getAttribute(SessionTraceAttributes.ACTOR_ID);
++        return actorId == null || actorId.isBlank() ? "system" : actorId;
++    }
++
++    private String resolveActorDisplayName(String actorId) {
++        if (actorId == null) {
++            return "system";
++        }
++        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
++        if (idx >= 0 && idx + 1 < actorId.length()) {
++            return actorId.substring(idx + 1);
++        }
++        return actorId;
++    }
++
++    private String resolveFacilityId(String actorId) {
++        if (actorId == null) {
++            return null;
++        }
++        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
++        if (idx <= 0) {
++            return null;
++        }
++        return actorId.substring(0, idx);
++    }
++
++    private String resolveTraceId(SessionTraceContext context) {
++        if (context != null && context.getTraceId() != null && !context.getTraceId().isBlank()) {
++            return context.getTraceId();
++        }
++        return UUID.randomUUID().toString();
++    }
++
++    private String resolveRequestId(SessionTraceContext context, String traceId) {
++        if (context != null) {
++            String requestId = context.getAttribute(SessionTraceAttributes.REQUEST_ID);
++            if (requestId != null && !requestId.isBlank()) {
++                return requestId;
++            }
++        }
++        return traceId;
++    }
++
++    private String resolvePatientId(SessionTraceContext context) {
++        if (context == null) {
++            return "N/A";
++        }
++        String patient = context.getAttribute(SessionTraceAttributes.PATIENT_ID);
++        return patient == null || patient.isBlank() ? "N/A" : patient;
++    }
++
++    private String resolveAppointmentsPatientId(List<AppointmentModel> appointments) {
++        if (appointments == null || appointments.isEmpty()) {
++            return null;
++        }
++        String candidate = null;
++        for (AppointmentModel model : appointments) {
++            if (model == null) {
++                continue;
++            }
++            String patientId = model.getPatientId();
++            if (patientId == null || patientId.isBlank()) {
++                continue;
++            }
++            if (candidate == null) {
++                candidate = patientId;
++            } else if (!candidate.equals(patientId)) {
++                return "MULTIPLE";
++            }
++        }
++        return candidate;
++    }
++
++    private String setPatientContext(String patientId) {
++        if (traceManager == null) {
++            return null;
++        }
++        String normalized = (patientId == null || patientId.isBlank()) ? null : patientId;
++        String previous = traceManager.getAttribute(SessionTraceAttributes.PATIENT_ID);
++        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, normalized);
++        return previous;
++    }
++
++    private void restorePatientContext(String previousPatientId) {
++        if (traceManager == null) {
++            return;
++        }
++        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, previousPatientId);
++    }
++}
+diff --git a/server-modernized/src/main/java/open/dolphin/session/ScheduleServiceBean.java b/server-modernized/src/main/java/open/dolphin/session/ScheduleServiceBean.java
+index 4a98836a..bb5cef84 100644
+--- a/server-modernized/src/main/java/open/dolphin/session/ScheduleServiceBean.java
++++ b/server-modernized/src/main/java/open/dolphin/session/ScheduleServiceBean.java
+@@ -7,27 +7,31 @@ import java.text.SimpleDateFormat;
+ import java.util.ArrayList;
+ import java.util.Collection;
+ import java.util.Date;
+-import java.util.Iterator;
+-import java.util.List;
+-import java.util.UUID;
+-import jakarta.annotation.Resource;
+-import jakarta.enterprise.concurrent.ManagedScheduledExecutorService;
+-import jakarta.enterprise.context.ApplicationScoped;
+-import jakarta.inject.Inject;
+-import jakarta.inject.Named;
++import java.util.HashMap;
++import java.util.Iterator;
++import java.util.List;
++import java.util.Map;
++import java.util.UUID;
++import jakarta.annotation.Resource;
++import jakarta.enterprise.concurrent.ManagedScheduledExecutorService;
++import jakarta.enterprise.context.ApplicationScoped;
++import jakarta.inject.Inject;
++import jakarta.inject.Named;
+ import jakarta.jms.Connection;
+ import jakarta.jms.ConnectionFactory;
+ import jakarta.jms.JMSException;
+ import jakarta.jms.MessageProducer;
+ import jakarta.jms.ObjectMessage;
+ //import jakarta.jms.QueueSession;
+-import jakarta.jms.Session;
+-import jakarta.persistence.EntityManager;
+-import jakarta.persistence.PersistenceContext;
+-import jakarta.transaction.Transactional;
+-import open.dolphin.infomodel.AttachmentModel;
+-import open.dolphin.infomodel.DocumentModel;
+-import open.dolphin.infomodel.HealthInsuranceModel;
++import jakarta.jms.Session;
++import jakarta.persistence.EntityManager;
++import jakarta.persistence.PersistenceContext;
++import jakarta.transaction.Transactional;
++import open.dolphin.audit.AuditEventEnvelope;
++import open.dolphin.audit.AuditTrailService;
++import open.dolphin.infomodel.AttachmentModel;
++import open.dolphin.infomodel.DocumentModel;
++import open.dolphin.infomodel.HealthInsuranceModel;
+ import open.dolphin.infomodel.IInfoModel;
+ import open.dolphin.infomodel.KarteBean;
+ import open.dolphin.infomodel.ModuleModel;
+@@ -38,9 +42,12 @@ import open.dolphin.infomodel.ProgressCourse;
+ import open.dolphin.infomodel.SchemaModel;
+ import open.dolphin.infomodel.UserModel;
+ import open.dolphin.infrastructure.concurrent.ConcurrencyResourceNames;
+-import open.dolphin.msg.gateway.MessagingGateway;
+-import open.dolphin.session.framework.SessionOperation;
+-import open.dolphin.touch.converter.IOSHelper;
++import open.dolphin.msg.gateway.MessagingGateway;
++import open.dolphin.session.framework.SessionOperation;
++import open.dolphin.session.framework.SessionTraceAttributes;
++import open.dolphin.session.framework.SessionTraceContext;
++import open.dolphin.session.framework.SessionTraceManager;
++import open.dolphin.touch.converter.IOSHelper;
+ import org.slf4j.Logger;
+ import org.slf4j.LoggerFactory;
+ 
+@@ -92,11 +99,17 @@ public class ScheduleServiceBean {
+     @PersistenceContext
+     private EntityManager em;
+ 
+-    @Inject
+-    private MessagingGateway messagingGateway;
+-
+-    @Resource(lookup = ConcurrencyResourceNames.DEFAULT_SCHEDULER)
+-    private ManagedScheduledExecutorService scheduler;
++    @Inject
++    private MessagingGateway messagingGateway;
++
++    @Inject
++    private AuditTrailService auditTrailService;
++
++    @Inject
++    private SessionTraceManager traceManager;
++
++    @Resource(lookup = ConcurrencyResourceNames.DEFAULT_SCHEDULER)
++    private ManagedScheduledExecutorService scheduler;
+     
+ //s.oh^ 2014/02/21 Claim送信方法の変更
+     //@Resource(mappedName = "java:/JmsXA")
+@@ -106,68 +119,90 @@ public class ScheduleServiceBean {
+     //private jakarta.jms.Queue queue;
+ //s.oh$
+     
+-    public List<PatientVisitModel> getPvt(String fid, String did, String unassigned, String date) {
+-        
+-        List<PatientVisitModel> result;
+-        
+-        if (did==null && unassigned==null) {
+-            result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DATE)
+-                                  .setParameter("fid", fid)
+-                                  .setParameter("date", date+"%")
+-                                  .getResultList();
+-        } else {
+-            result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DID_DATE)
+-                                  .setParameter("fid", fid)
+-                                  .setParameter("did", did)
+-                                  .setParameter("unassigned", unassigned)
+-                                  .setParameter("date", date+"%")
+-                                  .getResultList();
+-        }
+-
+-        int len = result.size();
+-
+-        if (len == 0) {
+-            return result;
+-        }
+-        
+-        // Dateへ変換
+-        Date startDate = dateFromString(date);
+-
+-        // 来院情報と患者は ManyToOne の関係である
+-        for (int i = 0; i < len; i++) {
+-            
+-            PatientVisitModel pvt = result.get(i);
+-            PatientModel patient = pvt.getPatientModel();
+-
+-            // 患者の健康保険を取得する
+-            List<HealthInsuranceModel> insurances = (List<HealthInsuranceModel>)em.createQuery(QUERY_INSURANCE_BY_PATIENT_ID)
+-            .setParameter("id", patient.getId()).getResultList();
+-            patient.setHealthInsurances(insurances);
+-            
+-            List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
+-                                  .setParameter("patientPk", patient.getId())
+-                                  .getResultList();
+-            KarteBean karte = kartes.get(0);
+-            
+-            // この日のカルテが存在するか
+-            List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
+-                                                 .setParameter("karteId", karte.getId())
+-                                                 .setParameter("started", startDate)
+-                                                 .getResultList();
+-            if (list!=null && !list.isEmpty()) {
+-                pvt.setLastDocDate(startDate);
+-            }
+-        }
+-
+-        return result;
+-    }
++    public List<PatientVisitModel> getPvt(String fid, String did, String unassigned, String date) {
++        
++        Map<String, Object> auditDetails = new HashMap<>();
++        auditDetails.put("facilityId", fid);
++        auditDetails.put("doctorId", did);
++        auditDetails.put("unassignedDoctor", unassigned);
++        auditDetails.put("date", date);
++
++        try {
++            List<PatientVisitModel> result;
++
++            if (did==null && unassigned==null) {
++                result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DATE)
++                                      .setParameter("fid", fid)
++                                      .setParameter("date", date+"%")
++                                      .getResultList();
++            } else {
++                result = (List<PatientVisitModel>) em.createQuery(QUERY_PVT_BY_FID_DID_DATE)
++                                      .setParameter("fid", fid)
++                                      .setParameter("did", did)
++                                      .setParameter("unassigned", unassigned)
++                                      .setParameter("date", date+"%")
++                                      .getResultList();
++            }
++
++            int len = result.size();
++
++            if (len != 0) {
++                // Dateへ変換
++                Date startDate = dateFromString(date);
++
++                // 来院情報と患者は ManyToOne の関係である
++                for (int i = 0; i < len; i++) {
++
++                    PatientVisitModel pvt = result.get(i);
++                    PatientModel patient = pvt.getPatientModel();
++
++                    // 患者の健康保険を取得する
++                    List<HealthInsuranceModel> insurances = (List<HealthInsuranceModel>)em.createQuery(QUERY_INSURANCE_BY_PATIENT_ID)
++                    .setParameter("id", patient.getId()).getResultList();
++                    patient.setHealthInsurances(insurances);
++                    
++                    List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
++                                          .setParameter("patientPk", patient.getId())
++                                          .getResultList();
++                    KarteBean karte = kartes.get(0);
++                    
++                    // この日のカルテが存在するか
++                    List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
++                                                         .setParameter("karteId", karte.getId())
++                                                         .setParameter("started", startDate)
++                                                         .getResultList();
++                    if (list!=null && !list.isEmpty()) {
++                        pvt.setLastDocDate(startDate);
++                    }
++                }
++            }
++
++            auditDetails.put("resultCount", len);
++            writeScheduleAudit("SCHEDULE_FETCH", auditDetails, null, null);
++            return result;
++        } catch (RuntimeException ex) {
++            writeScheduleAudit("SCHEDULE_FETCH", auditDetails, ex, null);
++            throw ex;
++        }
++    }
+     
+-    public int makeScheduleAndSend(long pvtPK, long userPK, Date startDate, boolean send) {
+-        
+-        try {
+-            // 受付情報を取得する
+-            PatientVisitModel pvt = (PatientVisitModel)em.find(PatientVisitModel.class, pvtPK);
+-            PatientModel patient = pvt.getPatientModel();
++    public int makeScheduleAndSend(long pvtPK, long userPK, Date startDate, boolean send) {
++        
++        Map<String, Object> auditDetails = new HashMap<>();
++        auditDetails.put("pvtPk", pvtPK);
++        auditDetails.put("userPk", userPK);
++        auditDetails.put("sendClaim", send);
++        auditDetails.put("startDate", startDate);
++        String auditPatientId = null;
++
++        try {
++            // 受付情報を取得する
++            PatientVisitModel pvt = (PatientVisitModel)em.find(PatientVisitModel.class, pvtPK);
++            PatientModel patient = pvt.getPatientModel();
++            auditPatientId = patient != null ? patient.getPatientId() : null;
++            if (auditPatientId != null) {
++                auditDetails.put("patientId", auditPatientId);
++            }
+ 
+             // 患者の健康保険を取得する
+             List<HealthInsuranceModel> insurances = (List<HealthInsuranceModel>)em.createQuery(QUERY_INSURANCE_BY_PATIENT_ID)
+@@ -363,49 +398,82 @@ public class ScheduleServiceBean {
+             em.persist(schedule);
+             
+             // CLAIM送信
+-            if (send) {
+-                schedule.toDetuch();
+-                dispatchClaimAsync(schedule);
+-            }
+-            
+-            return 1;
+-            
+-        } catch (Exception e) {
+-            e.printStackTrace(System.err);
+-        }
+-        
+-        return 0;
+-    }
+-    
+-    public int removePvt(long pvtPK, long ptPK, Date startDate) {
+-        // 受付咲くジョン
+-        PatientVisitModel exist = (PatientVisitModel)em.find(PatientVisitModel.class, new Long(pvtPK));
+-        em.remove(exist);
+-        
+-        // 患者のカルテを取得する
+-        List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
+-                              .setParameter("patientPk", ptPK)
+-                              .getResultList();
+-        KarteBean karte = kartes.get(0);
+-        
+-        // 当日のドキュメントを検索
+-        List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
+-                                                 .setParameter("karteId", karte.getId())
+-                                                 .setParameter("started", startDate)
+-                                                 .getResultList();
+-        if (list.isEmpty()) {
+-            return 1;
+-        }
+-        
+-        // それを削除
+-        int cnt=1;
+-        for (DocumentModel d : list) {
+-            List<String> l = deleteDocument(d.getId());
+-            cnt+=l.size();
+-        }
+-        
+-        return cnt;
+-    }
++            if (send) {
++                schedule.toDetuch();
++                dispatchClaimAsync(schedule);
++            }
++            
++            auditDetails.put("karteId", karte.getId());
++            auditDetails.put("documentId", schedule.getId());
++            auditDetails.put("patientPk", patient.getId());
++            writeScheduleAudit("SCHEDULE_CREATE", auditDetails, null, auditPatientId);
++            return 1;
++            
++        } catch (Exception e) {
++            writeScheduleAudit("SCHEDULE_CREATE", auditDetails, e, auditPatientId);
++            LOGGER.error("Failed to create schedule entry", e);
++            e.printStackTrace(System.err);
++        }
++        
++        return 0;
++    }
++    
++    public int removePvt(long pvtPK, long ptPK, Date startDate) {
++        Map<String, Object> auditDetails = new HashMap<>();
++        auditDetails.put("pvtPk", pvtPK);
++        auditDetails.put("patientPk", ptPK);
++        auditDetails.put("startDate", startDate);
++        auditDetails.put("pvtDeletedCount", 0);
++        auditDetails.put("documentsDeletedCount", 0);
++        String auditPatientId = null;
++
++        try {
++            // 受付咲くジョン
++            PatientVisitModel exist = (PatientVisitModel)em.find(PatientVisitModel.class, new Long(pvtPK));
++            if (exist != null) {
++                auditPatientId = exist.getPatientModel() != null ? exist.getPatientModel().getPatientId() : null;
++                auditDetails.put("pvtDeletedCount", 1);
++                if (auditPatientId != null) {
++                    auditDetails.put("patientId", auditPatientId);
++                }
++                em.remove(exist);
++            }
++            
++            // 患者のカルテを取得する
++            List<KarteBean> kartes = em.createQuery(QUERY_KARTE)
++                                  .setParameter("patientPk", ptPK)
++                                  .getResultList();
++            KarteBean karte = kartes.get(0);
++            
++            // 当日のドキュメントを検索
++            List<DocumentModel> list = (List<DocumentModel>)em.createQuery(QUERY_DOCUMENT_BY_KARTEID_STARTDATE)
++                                                     .setParameter("karteId", karte.getId())
++                                                     .setParameter("started", startDate)
++                                                     .getResultList();
++            if (list.isEmpty()) {
++                auditDetails.put("documentsDeletedCount", 0);
++                auditDetails.put("documentsDeletedStatus", "noDocumentsForStartDate");
++                writeScheduleAudit("SCHEDULE_DELETE", auditDetails, null, auditPatientId);
++                return 1;
++            }
++            
++            // それを削除
++            int documentsDeleted = 0;
++            for (DocumentModel d : list) {
++                List<String> l = deleteDocument(d.getId());
++                documentsDeleted += l.size();
++            }
++            auditDetails.put("documentsDeletedCount", documentsDeleted);
++            if (documentsDeleted == 0) {
++                auditDetails.put("documentsDeletedStatus", "documentsAlreadyDeleted");
++            }
++            writeScheduleAudit("SCHEDULE_DELETE", auditDetails, null, auditPatientId);
++            return documentsDeleted + 1;
++        } catch (RuntimeException ex) {
++            writeScheduleAudit("SCHEDULE_DELETE", auditDetails, ex, auditPatientId);
++            throw ex;
++        }
++    }
+ 
+     private void dispatchClaimAsync(DocumentModel document) {
+         Runnable task = () -> messagingGateway.dispatchClaim(document);
+@@ -503,12 +571,118 @@ public class ScheduleServiceBean {
+         return list;
+     }
+     
+-    private Date dateFromString(String str) {
+-        try {
+-            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+-            return sdf.parse(str);
+-        } catch (Exception e) {           
+-        }
+-        return null;
+-    }
+-}
++    private Date dateFromString(String str) {
++        try {
++            SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
++            return sdf.parse(str);
++        } catch (Exception e) {           
++        }
++        return null;
++    }
++
++    private void writeScheduleAudit(String action, Map<String, Object> details, Throwable error, String patientId) {
++        if (auditTrailService == null) {
++            return;
++        }
++        String previousPatient = setPatientContext(patientId);
++        try {
++            AuditEventEnvelope.Builder builder = newAuditBuilder(action, "ScheduleServiceBean");
++            builder.details(details == null ? Map.of() : details);
++            if (error != null) {
++                builder.failure(error);
++            }
++            auditTrailService.write(builder.build());
++        } finally {
++            restorePatientContext(previousPatient);
++        }
++    }
++
++    private AuditEventEnvelope.Builder newAuditBuilder(String action, String resource) {
++        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, resource);
++        SessionTraceContext context = traceManager != null ? traceManager.current() : null;
++        String actorId = resolveActorId(context);
++        builder.actorId(actorId);
++        builder.actorDisplayName(resolveActorDisplayName(actorId));
++        builder.actorRole(context != null ? context.getActorRole() : null);
++        builder.facilityId(resolveFacilityId(actorId));
++        String traceId = resolveTraceId(context);
++        builder.traceId(traceId);
++        builder.requestId(resolveRequestId(context, traceId));
++        builder.patientId(resolvePatientId(context));
++        builder.component(context != null ? context.getAttribute(SessionTraceAttributes.COMPONENT) : null);
++        builder.operation(context != null ? context.getOperation() : null);
++        return builder;
++    }
++
++    private String resolveActorId(SessionTraceContext context) {
++        if (context == null) {
++            return "system";
++        }
++        String actorId = context.getAttribute(SessionTraceAttributes.ACTOR_ID);
++        return actorId == null || actorId.isBlank() ? "system" : actorId;
++    }
++
++    private String resolveActorDisplayName(String actorId) {
++        if (actorId == null) {
++            return "system";
++        }
++        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
++        if (idx >= 0 && idx + 1 < actorId.length()) {
++            return actorId.substring(idx + 1);
++        }
++        return actorId;
++    }
++
++    private String resolveFacilityId(String actorId) {
++        if (actorId == null) {
++            return null;
++        }
++        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
++        if (idx <= 0) {
++            return null;
++        }
++        return actorId.substring(0, idx);
++    }
++
++    private String resolveTraceId(SessionTraceContext context) {
++        if (context != null && context.getTraceId() != null && !context.getTraceId().isBlank()) {
++            return context.getTraceId();
++        }
++        return UUID.randomUUID().toString();
++    }
++
++    private String resolveRequestId(SessionTraceContext context, String traceId) {
++        if (context != null) {
++            String requestId = context.getAttribute(SessionTraceAttributes.REQUEST_ID);
++            if (requestId != null && !requestId.isBlank()) {
++                return requestId;
++            }
++        }
++        return traceId;
++    }
++
++    private String resolvePatientId(SessionTraceContext context) {
++        if (context == null) {
++            return "N/A";
++        }
++        String patient = context.getAttribute(SessionTraceAttributes.PATIENT_ID);
++        return patient == null || patient.isBlank() ? "N/A" : patient;
++    }
++
++    private String setPatientContext(String patientId) {
++        if (traceManager == null) {
++            return null;
++        }
++        String normalized = (patientId == null || patientId.isBlank()) ? null : patientId;
++        String previous = traceManager.getAttribute(SessionTraceAttributes.PATIENT_ID);
++        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, normalized);
++        return previous;
++    }
++
++    private void restorePatientContext(String previousPatientId) {
++        if (traceManager == null) {
++            return;
++        }
++        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, previousPatientId);
++    }
++}
+diff --git a/server-modernized/src/main/java/open/dolphin/session/framework/SessionOperationInterceptor.java b/server-modernized/src/main/java/open/dolphin/session/framework/SessionOperationInterceptor.java
+index 6cf35754..2d72fa43 100644
+--- a/server-modernized/src/main/java/open/dolphin/session/framework/SessionOperationInterceptor.java
++++ b/server-modernized/src/main/java/open/dolphin/session/framework/SessionOperationInterceptor.java
+@@ -1,15 +1,16 @@
+ package open.dolphin.session.framework;
+ 
+-import jakarta.annotation.Priority;
+-import jakarta.inject.Inject;
+-import jakarta.interceptor.AroundInvoke;
+-import jakarta.interceptor.Interceptor;
+-import jakarta.interceptor.InvocationContext;
+-import java.util.HashMap;
+-import java.util.Map;
+-import org.slf4j.Logger;
+-import org.slf4j.LoggerFactory;
+-import org.jboss.logmanager.MDC;
++import jakarta.annotation.Priority;
++import jakarta.inject.Inject;
++import jakarta.interceptor.AroundInvoke;
++import jakarta.interceptor.Interceptor;
++import jakarta.interceptor.InvocationContext;
++import java.util.HashMap;
++import java.util.Map;
++import open.dolphin.infomodel.IInfoModel;
++import org.slf4j.Logger;
++import org.slf4j.LoggerFactory;
++import org.jboss.logmanager.MDC;
+ 
+ @SessionOperation
+ @Interceptor
+@@ -27,11 +28,13 @@ public class SessionOperationInterceptor {
+         boolean newContext = existing == null;
+         SessionTraceContext context = existing;
+ 
+-        if (newContext) {
+-            Map<String, String> attributes = new HashMap<>();
+-            attributes.put("component", ctx.getTarget().getClass().getSimpleName());
+-            context = traceManager.start(operationName(ctx), attributes, currentHttpTraceId());
+-        }
++        if (newContext) {
++            Map<String, String> attributes = new HashMap<>();
++            attributes.put(SessionTraceAttributes.COMPONENT, ctx.getTarget().getClass().getSimpleName());
++            String traceId = currentHttpTraceId();
++            enrichHttpAttributes(attributes, traceId);
++            context = traceManager.start(operationName(ctx), attributes, traceId);
++        }
+ 
+         try {
+             return ctx.proceed();
+@@ -61,11 +64,11 @@ public class SessionOperationInterceptor {
+         }
+     }
+ 
+-    private String operationName(InvocationContext ctx) {
+-        return ctx.getTarget().getClass().getName() + '#' + ctx.getMethod().getName();
+-    }
+-
+-    private String currentHttpTraceId() {
++    private String operationName(InvocationContext ctx) {
++        return ctx.getTarget().getClass().getName() + '#' + ctx.getMethod().getName();
++    }
++
++    private String currentHttpTraceId() {
+         Object fromJboss = MDC.get("traceId");
+         if (fromJboss instanceof String traceId && !traceId.isBlank()) {
+             return traceId;
+@@ -73,7 +76,44 @@ public class SessionOperationInterceptor {
+         String fromSlf4j = org.slf4j.MDC.get("traceId");
+         if (fromSlf4j != null && !fromSlf4j.isBlank()) {
+             return fromSlf4j;
+-        }
+-        return null;
+-    }
+-}
++        }
++        return null;
++    }
++
++    private void enrichHttpAttributes(Map<String, String> attributes, String traceId) {
++        String actorId = currentActorId();
++        if (actorId != null) {
++            attributes.put(SessionTraceAttributes.ACTOR_ID, actorId);
++            String facilityId = extractFacilityId(actorId);
++            if (facilityId != null) {
++                attributes.put(SessionTraceAttributes.FACILITY_ID, facilityId);
++            }
++        }
++        if (traceId != null && !traceId.isBlank()) {
++            attributes.put(SessionTraceAttributes.REQUEST_ID, traceId);
++        }
++    }
++
++    private String currentActorId() {
++        Object fromJboss = MDC.get(SessionTraceAttributes.ACTOR_ID_MDC_KEY);
++        if (fromJboss instanceof String actor && !actor.isBlank()) {
++            return actor;
++        }
++        String fromSlf4j = org.slf4j.MDC.get(SessionTraceAttributes.ACTOR_ID_MDC_KEY);
++        if (fromSlf4j != null && !fromSlf4j.isBlank()) {
++            return fromSlf4j;
++        }
++        return null;
++    }
++
++    private String extractFacilityId(String actorId) {
++        if (actorId == null) {
++            return null;
++        }
++        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
++        if (idx <= 0) {
++            return null;
++        }
++        return actorId.substring(0, idx);
++    }
++}
+diff --git a/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceContext.java b/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceContext.java
+index 5a071ab0..57d76649 100644
+--- a/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceContext.java
++++ b/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceContext.java
+@@ -38,24 +38,44 @@ public final class SessionTraceContext {
+         return operation;
+     }
+ 
+-    public Map<String, String> getAttributes() {
+-        if (attributes.isEmpty()) {
+-            return attributes;
+-        }
+-        return Collections.unmodifiableMap(new HashMap<>(attributes));
+-    }
++    public Map<String, String> getAttributes() {
++        if (attributes.isEmpty()) {
++            return attributes;
++        }
++        return Collections.unmodifiableMap(new HashMap<>(attributes));
++    }
++
++    public String getAttribute(String key) {
++        if (key == null || key.isBlank()) {
++            return null;
++        }
++        return attributes.get(key);
++    }
+ 
+     public String getActorRole() {
+         return attributes.get(ATTRIBUTE_ACTOR_ROLE);
+     }
+ 
+-    public SessionTraceContext withActorRole(String actorRole) {
+-        Map<String, String> updated = new HashMap<>(attributes);
+-        if (actorRole == null || actorRole.isBlank()) {
+-            updated.remove(ATTRIBUTE_ACTOR_ROLE);
+-        } else {
+-            updated.put(ATTRIBUTE_ACTOR_ROLE, actorRole);
+-        }
+-        return new SessionTraceContext(traceId, startedAt, operation, updated);
+-    }
+-}
++    public SessionTraceContext withActorRole(String actorRole) {
++        Map<String, String> updated = new HashMap<>(attributes);
++        if (actorRole == null || actorRole.isBlank()) {
++            updated.remove(ATTRIBUTE_ACTOR_ROLE);
++        } else {
++            updated.put(ATTRIBUTE_ACTOR_ROLE, actorRole);
++        }
++        return new SessionTraceContext(traceId, startedAt, operation, updated);
++    }
++
++    public SessionTraceContext withAttribute(String key, String value) {
++        if (key == null || key.isBlank()) {
++            return this;
++        }
++        Map<String, String> updated = new HashMap<>(attributes);
++        if (value == null || value.isBlank()) {
++            updated.remove(key);
++        } else {
++            updated.put(key, value);
++        }
++        return new SessionTraceContext(traceId, startedAt, operation, updated);
++    }
++}
+diff --git a/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceManager.java b/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceManager.java
+index 14f08c22..9644bf8e 100644
+--- a/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceManager.java
++++ b/server-modernized/src/main/java/open/dolphin/session/framework/SessionTraceManager.java
+@@ -43,17 +43,43 @@ public class SessionTraceManager {
+         return current.get();
+     }
+ 
+-    public void setActorRole(String actorRole) {
+-        SessionTraceContext context = current();
+-        if (context == null) {
+-            return;
+-        }
+-        SessionTraceContext updated = context.withActorRole(actorRole);
+-        current.set(updated);
+-        if (LOGGER.isDebugEnabled()) {
+-            LOGGER.debug("Session trace actor role set: {} traceId={}", actorRole, updated.getTraceId());
+-        }
+-    }
++    public void setActorRole(String actorRole) {
++        SessionTraceContext context = current();
++        if (context == null) {
++            return;
++        }
++        SessionTraceContext updated = context.withActorRole(actorRole);
++        current.set(updated);
++        if (LOGGER.isDebugEnabled()) {
++            LOGGER.debug("Session trace actor role set: {} traceId={}", actorRole, updated.getTraceId());
++        }
++    }
++
++    public void putAttribute(String key, String value) {
++        if (key == null || key.isBlank()) {
++            return;
++        }
++        SessionTraceContext context = current();
++        if (context == null) {
++            return;
++        }
++        SessionTraceContext updated = context.withAttribute(key, value);
++        current.set(updated);
++        if (LOGGER.isDebugEnabled()) {
++            LOGGER.debug("Session trace attribute set: {}={} traceId={}", key, value, updated.getTraceId());
++        }
++    }
++
++    public String getAttribute(String key) {
++        if (key == null || key.isBlank()) {
++            return null;
++        }
++        SessionTraceContext context = current();
++        if (context == null) {
++            return null;
++        }
++        return context.getAttribute(key);
++    }
+ 
+     public void clear() {
+         current.remove();

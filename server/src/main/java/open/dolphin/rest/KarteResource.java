@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import open.dolphin.converter.*;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.KarteServiceBean;
@@ -47,7 +48,10 @@ public class KarteResource extends AbstractResource {
         
         String fid = getRemoteFacility(servletReq.getRemoteUser());
         KarteBean bean = karteServiceBean.getKarte(fid, pid, fromDate);
-        
+        if (bean == null) {
+            throw internalError("Karte result is empty");
+        }
+
         KarteBeanConverter conv = new KarteBeanConverter();
         conv.setModel(bean);
         
@@ -65,6 +69,9 @@ public class KarteResource extends AbstractResource {
         Date fromDate = parseDate(params[1]);
         
         KarteBean bean = karteServiceBean.getKarte(patientPK, fromDate);
+        if (bean == null) {
+            throw internalError("Karte result is empty");
+        }
 
         KarteBeanConverter conv = new KarteBeanConverter();
         conv.setModel(bean);
@@ -736,4 +743,12 @@ public class KarteResource extends AbstractResource {
         return conv;
     }
 //s.oh$
+
+    private WebApplicationException internalError(String message) {
+        Response response = Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(message)
+                .type(MediaType.TEXT_PLAIN)
+                .build();
+        return new WebApplicationException(response);
+    }
 }

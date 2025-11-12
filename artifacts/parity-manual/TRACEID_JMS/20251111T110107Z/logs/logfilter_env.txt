@@ -1,0 +1,1 @@
+LOGFILTER env vars not present (docker compose exec server printenv | rg LOGFILTER)
