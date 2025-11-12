@@ -22,6 +22,8 @@
         <class>open.dolphin.infomodel.NLaboModule</class>
         <class>open.dolphin.infomodel.NLaboItem</class>
         <class>open.dolphin.infomodel.StampTreeModel</class>
+        <class>open.dolphin.infomodel.PublishedTreeModel</class>
+        <class>open.dolphin.infomodel.SubscribedTreeModel</class>
         <class>open.dolphin.infomodel.DocumentModel</class>
         <class>open.dolphin.infomodel.ModuleModel</class>
         <class>open.dolphin.infomodel.SchemaModel</class>

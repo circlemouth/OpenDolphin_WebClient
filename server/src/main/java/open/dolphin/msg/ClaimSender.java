@@ -5,6 +5,7 @@ import java.io.*;
 import java.net.Socket;
 import java.util.Collection;
 import java.util.Date;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.*;
 import org.apache.velocity.VelocityContext;
@@ -19,6 +20,8 @@ import org.apache.velocity.app.Velocity;
  * @author kazushi Minagawa.
  */
 public class ClaimSender {
+
+    private static final Logger CLAIM_LOGGER = Logger.getLogger("dolphin.claim");
     
     private static final int EOT = 0x04;
     private static final int ACK = 0x06;
@@ -33,9 +36,10 @@ public class ClaimSender {
     private int port;
     private String enc;
     
-    private boolean DEBUG;
+    private final boolean DEBUG;
 
     public ClaimSender() {
+        DEBUG = CLAIM_LOGGER.isLoggable(Level.FINE);
     }
     
     public ClaimSender(String host, int port, String enc) {
@@ -43,9 +47,6 @@ public class ClaimSender {
         this.host = host;
         this.port = port;
         this.enc = enc;
-//minagawa^ CLAIM log        
-        DEBUG = Logger.getLogger("dolphin.claim").getLevel().equals(java.util.logging.Level.FINE);
-//minagawa$        
     }
 
     /**

@@ -1,0 +1,1 @@
+pfctl -sr could not be inspected because sudo password is required in this environment.

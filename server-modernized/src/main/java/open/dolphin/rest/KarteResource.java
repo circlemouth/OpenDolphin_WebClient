@@ -10,6 +10,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import open.dolphin.converter.*;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.KarteServiceBean;
@@ -24,6 +25,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
  */
 @Path("/karte")
 public class KarteResource extends AbstractResource {
+
+    private static final String HEADER_FACILITY = "X-Facility-Id";
+    private static final String HEADER_FACILITY_LEGACY = "facilityId";
 
     @Inject
     private KarteServiceBean karteServiceBean;
@@ -44,14 +48,11 @@ public class KarteResource extends AbstractResource {
         String[] params = param.split(CAMMA);
         String pid = params[0];
         Date fromDate = parseDate(params[1]);
-        
-        String fid = getRemoteFacility(servletReq.getRemoteUser());
+
+        String fid = resolveFacilityId(servletReq);
         KarteBean bean = karteServiceBean.getKarte(fid, pid, fromDate);
-        
-        KarteBeanConverter conv = new KarteBeanConverter();
-        conv.setModel(bean);
-        
-        return conv;
+
+        return toConverter(bean, "pid lookup");
     }
 
     @GET
@@ -65,11 +66,7 @@ public class KarteResource extends AbstractResource {
         Date fromDate = parseDate(params[1]);
         
         KarteBean bean = karteServiceBean.getKarte(patientPK, fromDate);
-
-        KarteBeanConverter conv = new KarteBeanConverter();
-        conv.setModel(bean);
-        
-        return conv;
+        return toConverter(bean, "patient lookup");
     }
 
     //-------------------------------------------------------
@@ -736,4 +733,61 @@ public class KarteResource extends AbstractResource {
         return conv;
     }
 //s.oh$
+
+    private KarteBeanConverter toConverter(KarteBean bean, String context) {
+        if (bean == null) {
+            throw internalError("Karte result is empty: " + context);
+        }
+        KarteBeanConverter conv = new KarteBeanConverter();
+        conv.setModel(bean);
+        return conv;
+    }
+
+    private String resolveFacilityId(HttpServletRequest request) {
+        String remoteUser = request != null ? request.getRemoteUser() : null;
+        String facility = getRemoteFacility(remoteUser);
+        boolean missingSeparator = remoteUser == null || remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) < 0;
+        if (missingSeparator || facility == null || facility.isBlank()) {
+            facility = firstNonBlank(facility, headerFacility(request));
+        }
+        if (facility == null || facility.isBlank()) {
+            throw internalError("Facility identifier is not available");
+        }
+        return facility;
+    }
+
+    private String headerFacility(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String override = request.getHeader(HEADER_FACILITY);
+        if (override != null && !override.trim().isEmpty()) {
+            return override.trim();
+        }
+        String legacy = request.getHeader(HEADER_FACILITY_LEGACY);
+        if (legacy != null && !legacy.trim().isEmpty()) {
+            return legacy.trim();
+        }
+        return null;
+    }
+
+    private String firstNonBlank(String... candidates) {
+        if (candidates == null) {
+            return null;
+        }
+        for (String candidate : candidates) {
+            if (candidate != null && !candidate.trim().isEmpty()) {
+                return candidate.trim();
+            }
+        }
+        return null;
+    }
+
+    private WebApplicationException internalError(String message) {
+        Response response = Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+                .entity(message)
+                .type(MediaType.TEXT_PLAIN)
+                .build();
+        return new WebApplicationException(response);
+    }
 }

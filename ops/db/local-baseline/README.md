@@ -15,3 +15,17 @@
 - 上記ユーザーに `d_roles` の `system-administrator` 権限を付与。
 
 > **注意**: 医療機関や患者の実データは含まれていません。必要に応じて `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` で紹介している JSONL インポート手順や `ops/tests/api-smoke-test` の CLI を併用してください。
+
+## Stamp Tree OID キャスト再適用
+
+`stamp_tree_oid_cast.sql` は `d_stamp_tree.treebytes` 列が `oid` 型になっている環境で、`bytea` 経由の ORM 永続化を許可するための関数＆暗黙キャストを再登録するスクリプトです。Legacy / Modernized いずれの Postgres でも同じ内容を実行します。
+
+```bash
+docker exec -i -e PGPASSWORD=opendolphin opendolphin-postgres \
+  psql -U opendolphin -d opendolphin \
+  -f /workspace/ops/db/local-baseline/stamp_tree_oid_cast.sql
+
+docker exec -i -e PGPASSWORD=opendolphin opendolphin-postgres-modernized \
+  psql -U opendolphin -d opendolphin_modern \
+  -f /workspace/ops/db/local-baseline/stamp_tree_oid_cast.sql
+```

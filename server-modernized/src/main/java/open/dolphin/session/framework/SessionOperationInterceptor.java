@@ -7,6 +7,7 @@ import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
 import java.util.HashMap;
 import java.util.Map;
+import open.dolphin.infomodel.IInfoModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.jboss.logmanager.MDC;
@@ -29,8 +30,10 @@ public class SessionOperationInterceptor {
 
         if (newContext) {
             Map<String, String> attributes = new HashMap<>();
-            attributes.put("component", ctx.getTarget().getClass().getSimpleName());
-            context = traceManager.start(operationName(ctx), attributes, currentHttpTraceId());
+            attributes.put(SessionTraceAttributes.COMPONENT, ctx.getTarget().getClass().getSimpleName());
+            String traceId = currentHttpTraceId();
+            enrichHttpAttributes(attributes, traceId);
+            context = traceManager.start(operationName(ctx), attributes, traceId);
         }
 
         try {
@@ -75,5 +78,42 @@ public class SessionOperationInterceptor {
             return fromSlf4j;
         }
         return null;
+    }
+
+    private void enrichHttpAttributes(Map<String, String> attributes, String traceId) {
+        String actorId = currentActorId();
+        if (actorId != null) {
+            attributes.put(SessionTraceAttributes.ACTOR_ID, actorId);
+            String facilityId = extractFacilityId(actorId);
+            if (facilityId != null) {
+                attributes.put(SessionTraceAttributes.FACILITY_ID, facilityId);
+            }
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            attributes.put(SessionTraceAttributes.REQUEST_ID, traceId);
+        }
+    }
+
+    private String currentActorId() {
+        Object fromJboss = MDC.get(SessionTraceAttributes.ACTOR_ID_MDC_KEY);
+        if (fromJboss instanceof String actor && !actor.isBlank()) {
+            return actor;
+        }
+        String fromSlf4j = org.slf4j.MDC.get(SessionTraceAttributes.ACTOR_ID_MDC_KEY);
+        if (fromSlf4j != null && !fromSlf4j.isBlank()) {
+            return fromSlf4j;
+        }
+        return null;
+    }
+
+    private String extractFacilityId(String actorId) {
+        if (actorId == null) {
+            return null;
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx <= 0) {
+            return null;
+        }
+        return actorId.substring(0, idx);
     }
 }

@@ -16,7 +16,9 @@ import javax.servlet.http.HttpServletRequest;
 import javax.ws.rs.*;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 import open.dolphin.infomodel.ActivityModel;
+import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.RoleModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.session.AccountSummary;
@@ -70,42 +72,104 @@ public class SystemResource extends AbstractResource {
     @Path("/activity/{param}")
     @Produces(MediaType.APPLICATION_JSON)
     public List<ActivityModel> getActivities(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
-        
-        // Parameters
-        String[] params = param.split(CAMMA);
-        int year = Integer.parseInt(params[0]);     // 集計起点年
-        int month = Integer.parseInt(params[1]);    // 集計起点月
-        int count = Integer.parseInt(params[2]);    // 過去何ヶ月
-        
-        String fid = getRemoteFacility(servletReq.getRemoteUser());
-        
-        ActivityModel[] array = new ActivityModel[count+1]; // +1=total
-        
+        ActivityRequest request = parseActivityRequest(param);
+
+        String remoteUser = servletReq != null ? servletReq.getRemoteUser() : null;
+        if (remoteUser == null || remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) < 0) {
+            throw unauthorized("Remote user not available");
+        }
+
+        String fid = getRemoteFacility(remoteUser);
+
+        ActivityModel[] array = new ActivityModel[request.count + 1]; // +1=total
+
+        int year = request.year;
+        int month = request.month;
+
         // ex month=5,past=-3 -> 3,4,5
         GregorianCalendar gcFirst = new GregorianCalendar(year, month, 1);
         int numDays = gcFirst.getActualMaximum(Calendar.DAY_OF_MONTH);
-        
-        int index = array.length-2;
-        while (true) {
-            GregorianCalendar gcLast = new GregorianCalendar(year, month, numDays, 23,59,59);
-            ActivityModel am = systemServiceBean.countActivities(fid, gcFirst.getTime(), gcLast.getTime());
-            array[index]=am;
-            
+
+        int index = array.length - 2;
+        while (index >= 0) {
+            GregorianCalendar gcLast = new GregorianCalendar(year, month, numDays, 23, 59, 59);
+            ActivityModel am = requireActivity(systemServiceBean.countActivities(fid, gcFirst.getTime(), gcLast.getTime()));
+            array[index] = am;
+
             index--;
-            if (index < 0) {
-                break;
-            }
             gcFirst.add(Calendar.MONTH, -1);
             year = gcFirst.get(Calendar.YEAR);
             month = gcFirst.get(Calendar.MONTH);
             numDays = gcFirst.getActualMaximum(Calendar.DAY_OF_MONTH);
         }
-        
+
         // 総数
-        ActivityModel am = systemServiceBean.countTotalActivities(fid);
-        array[array.length-1] =am;
-        
+        ActivityModel total = requireActivity(systemServiceBean.countTotalActivities(fid));
+        array[array.length - 1] = total;
+
         return Arrays.asList(array);
+    }
+
+    private ActivityModel requireActivity(ActivityModel model) {
+        if (model == null) {
+            throw internalError("Activity aggregation unavailable");
+        }
+        return model;
+    }
+
+    private ActivityRequest parseActivityRequest(String rawParam) {
+        if (rawParam == null || rawParam.trim().isEmpty()) {
+            throw badRequest("param must not be empty");
+        }
+
+        String[] params = rawParam.split(CAMMA);
+        if (params.length < 3) {
+            throw badRequest("param must contain year, month, count");
+        }
+
+        try {
+            int year = Integer.parseInt(params[0]);
+            int month = Integer.parseInt(params[1]);
+            int count = Integer.parseInt(params[2]);
+            if (count < 1) {
+                throw badRequest("count must be >= 1");
+            }
+            return new ActivityRequest(year, month, count);
+        } catch (NumberFormatException e) {
+            throw badRequest("param must be numeric");
+        }
+    }
+
+    private WebApplicationException badRequest(String message) {
+        return buildException(Response.Status.BAD_REQUEST, message);
+    }
+
+    private WebApplicationException unauthorized(String message) {
+        return buildException(Response.Status.UNAUTHORIZED, message);
+    }
+
+    private WebApplicationException internalError(String message) {
+        return buildException(Response.Status.INTERNAL_SERVER_ERROR, message);
+    }
+
+    private WebApplicationException buildException(Response.Status status, String message) {
+        Response response = Response.status(status)
+                .entity(message)
+                .type(MediaType.TEXT_PLAIN)
+                .build();
+        return new WebApplicationException(response);
+    }
+
+    private static final class ActivityRequest {
+        private final int year;
+        private final int month;
+        private final int count;
+
+        private ActivityRequest(int year, int month, int count) {
+            this.year = year;
+            this.month = month;
+            this.count = count;
+        }
     }
     
 //s.oh^ 2014/07/08 クラウド0対応

@@ -20,6 +20,8 @@ package open.dolphin.infomodel;
 
 import java.util.Date;
 import jakarta.persistence.*;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * PublishedTreeModel
@@ -72,6 +74,7 @@ public class PublishedTreeModel extends InfoModel implements IStampTreeModel, ja
     
     @Column(nullable=false)
     @Lob
+    @JdbcTypeCode(SqlTypes.BINARY)
     private byte[] treeBytes;
     
     // 更新した日

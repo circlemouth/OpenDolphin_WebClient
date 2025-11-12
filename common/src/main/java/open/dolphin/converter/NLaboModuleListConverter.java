@@ -1,6 +1,7 @@
 package open.dolphin.converter;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.NLaboModule;
@@ -18,7 +19,7 @@ public class NLaboModuleListConverter implements IInfoModelConverter {
         
         List<NLaboModule> list = model.getList();
         if (list==null || list.isEmpty()) {
-            return null;
+            return Collections.emptyList();
         }
         
         List<NLaboModuleConverter> ret = new ArrayList<NLaboModuleConverter>();

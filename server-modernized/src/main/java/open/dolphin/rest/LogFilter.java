@@ -13,8 +13,10 @@ import jakarta.servlet.annotation.WebFilter;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.security.enterprise.SecurityContext;
+import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.mbean.UserCache;
 import open.dolphin.session.UserServiceBean;
+import open.dolphin.session.framework.SessionTraceAttributes;
 import org.jboss.logmanager.MDC;
 
 /**
@@ -32,6 +34,9 @@ public class LogFilter implements Filter {
     public static final String TRACE_ID_ATTRIBUTE = LogFilter.class.getName() + ".TRACE_ID";
     private static final String MDC_TRACE_ID_KEY = "traceId";
     private static final String ANONYMOUS_PRINCIPAL = "anonymous";
+    private static final String FACILITY_HEADER = "X-Facility-Id";
+    private static final String LEGACY_FACILITY_HEADER = "facilityId";
+    private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
 
     private static final String SYSAD_USER_ID = "1.3.6.1.4.1.9414.10.1:dolphin";
     private static final String SYSAD_PASSWORD = "36cdf8b887a5cffc78dcd5c08991b993";
@@ -65,34 +70,49 @@ public class LogFilter implements Filter {
         String traceId = resolveTraceId(req);
         req.setAttribute(TRACE_ID_ATTRIBUTE, traceId);
         res.setHeader(TRACE_ID_HEADER, traceId);
-        Object previousTraceId = MDC.put(MDC_TRACE_ID_KEY, traceId);
+        MdcSnapshot traceIdSnapshot = applyMdcValue(MDC_TRACE_ID_KEY, traceId);
+        MdcSnapshot remoteUserSnapshot = null;
 
         try {
-            boolean identityTokenRequest = isIdentityTokenRequest(req);
+            if (isIdentityTokenRequest(req)) {
+                chain.doFilter(request, response);
+                return;
+            }
 
             String headerUser = headerAuthEnabled ? safeHeader(req, USER_NAME) : null;
             String headerPassword = headerAuthEnabled ? safeHeader(req, PASSWORD) : null;
             Optional<String> principalUser = resolvePrincipalUser();
 
             String effectiveUser = principalUser.orElse(headerUser);
-            boolean authentication = principalUser.isPresent() || identityTokenRequest;
+            boolean authenticated = principalUser.isPresent();
 
-            if (!authentication && headerAuthEnabled) {
-                authentication = authenticateWithHeaders(req, headerUser, headerPassword);
-            } else if (!authentication) {
+            if (!authenticated && headerAuthEnabled) {
+                authenticated = authenticateWithHeaders(req, headerUser, headerPassword);
+                if (authenticated) {
+                    effectiveUser = headerUser;
+                }
+            } else if (!authenticated) {
                 SECURITY_LOGGER.warning(() -> "Header-based authentication is disabled; rejecting " + req.getRequestURI());
             }
 
-            if (!authentication) {
-                String requestURI = req.getRequestURI();
-                String msg = UNAUTHORIZED_USER + String.valueOf(effectiveUser) + ": " + requestURI + " traceId=" + traceId;
-                Logger.getLogger("open.dolphin").warning(msg);
-                res.sendError(HttpServletResponse.SC_FORBIDDEN);
+            String candidateUser = principalUser.orElse(headerUser);
+
+            if (!authenticated) {
+                logUnauthorized(req, candidateUser, traceId);
+                sendUnauthorized(res);
+                return;
+            }
+
+            String resolvedUser = resolveEffectiveUser(effectiveUser, headerUser, req);
+            if (resolvedUser == null) {
+                logUnauthorized(req, candidateUser, traceId);
+                sendUnauthorized(res);
                 return;
             }
 
             BlockWrapper wrapper = new BlockWrapper(req);
-            wrapper.setRemoteUser(effectiveUser);
+            wrapper.setRemoteUser(resolvedUser);
+            remoteUserSnapshot = applyMdcValue(SessionTraceAttributes.ACTOR_ID_MDC_KEY, resolvedUser);
 
             StringBuilder sb = new StringBuilder();
             sb.append(wrapper.getRemoteAddr()).append(" ");
@@ -111,7 +131,8 @@ public class LogFilter implements Filter {
 
             chain.doFilter(wrapper, response);
         } finally {
-            restorePreviousTraceId(previousTraceId);
+            restoreMdcValue(traceIdSnapshot);
+            restoreMdcValue(remoteUserSnapshot);
         }
     }
 
@@ -217,12 +238,119 @@ public class LogFilter implements Filter {
         return UUID.randomUUID().toString();
     }
 
-    private void restorePreviousTraceId(Object previousTraceId) {
-        if (previousTraceId == null) {
-            MDC.remove(MDC_TRACE_ID_KEY);
+    private MdcSnapshot applyMdcValue(String key, String value) {
+        Object previousJboss = MDC.get(key);
+        String previousSlf4j = org.slf4j.MDC.get(key);
+        if (value == null || value.isBlank()) {
+            MDC.remove(key);
+            org.slf4j.MDC.remove(key);
         } else {
-            MDC.put(MDC_TRACE_ID_KEY, previousTraceId.toString());
+            MDC.put(key, value);
+            org.slf4j.MDC.put(key, value);
         }
+        return new MdcSnapshot(key, previousJboss, previousSlf4j);
+    }
+
+    private void restoreMdcValue(MdcSnapshot snapshot) {
+        if (snapshot == null) {
+            return;
+        }
+        if (snapshot.previousJboss == null) {
+            MDC.remove(snapshot.key);
+        } else {
+            MDC.put(snapshot.key, snapshot.previousJboss.toString());
+        }
+        if (snapshot.previousSlf4j == null) {
+            org.slf4j.MDC.remove(snapshot.key);
+        } else {
+            org.slf4j.MDC.put(snapshot.key, snapshot.previousSlf4j);
+        }
+    }
+
+    private static final class MdcSnapshot {
+        private final String key;
+        private final Object previousJboss;
+        private final String previousSlf4j;
+
+        private MdcSnapshot(String key, Object previousJboss, String previousSlf4j) {
+            this.key = key;
+            this.previousJboss = previousJboss;
+            this.previousSlf4j = previousSlf4j;
+        }
+    }
+
+    private void logUnauthorized(HttpServletRequest req, String user, String traceId) {
+        StringBuilder sbd = new StringBuilder(UNAUTHORIZED_USER);
+        sbd.append(user != null ? user : "unknown");
+        sbd.append(": ").append(req.getRequestURI());
+        if (traceId != null && !traceId.isBlank()) {
+            sbd.append(" traceId=").append(traceId);
+        }
+        Logger.getLogger("open.dolphin").warning(sbd.toString());
+    }
+
+    private String resolveEffectiveUser(String effectiveUser, String headerUser, HttpServletRequest request) {
+        String normalizedEffective = normalize(effectiveUser);
+        if (isCompositePrincipal(normalizedEffective)) {
+            return normalizedEffective;
+        }
+
+        String normalizedHeader = normalize(headerUser);
+        if (isCompositePrincipal(normalizedHeader)) {
+            return normalizedHeader;
+        }
+
+        String facilityHeader = resolveFacilityHeader(request);
+        if (facilityHeader != null) {
+            String userSegment = firstNonBlank(extractUserSegment(normalizedEffective), extractUserSegment(normalizedHeader));
+            if (userSegment != null) {
+                if (SECURITY_LOGGER.isLoggable(Level.FINE)) {
+                    SECURITY_LOGGER.fine(() -> "Synthesised principal from facility header " + facilityHeader);
+                }
+                return facilityHeader + IInfoModel.COMPOSITE_KEY_MAKER + userSegment;
+            }
+        }
+
+        return null;
+    }
+
+    private void sendUnauthorized(HttpServletResponse response) throws IOException {
+        response.setHeader("WWW-Authenticate", AUTH_CHALLENGE);
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+    }
+
+    private String normalize(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    private String resolveFacilityHeader(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String override = normalize(request.getHeader(FACILITY_HEADER));
+        if (override != null) {
+            return override;
+        }
+        return normalize(request.getHeader(LEGACY_FACILITY_HEADER));
+    }
+
+    private String extractUserSegment(String candidate) {
+        if (candidate == null) {
+            return null;
+        }
+        int separator = candidate.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (separator >= 0 && separator + 1 < candidate.length()) {
+            return candidate.substring(separator + 1);
+        }
+        return candidate;
     }
 
     private String safeHeader(HttpServletRequest req, String headerName) {
@@ -243,5 +371,12 @@ public class LogFilter implements Filter {
 
     private boolean isAnonymousPrincipal(String principalName) {
         return principalName != null && ANONYMOUS_PRINCIPAL.equalsIgnoreCase(principalName.trim());
+    }
+
+    private boolean isCompositePrincipal(String candidate) {
+        if (candidate == null) {
+            return false;
+        }
+        return candidate.contains(IInfoModel.COMPOSITE_KEY_MAKER);
     }
 }

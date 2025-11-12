@@ -4,21 +4,23 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.ejb.Stateless;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.LockModeType;
 import jakarta.persistence.PersistenceContext;
+import jakarta.transaction.Transactional;
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.time.Instant;
 import java.util.HexFormat;
 import java.util.Map;
+import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.AuditEvent;
 
 /**
  * 改ざん検知付きの監査ログを記録するサービス。
  */
 @Stateless
-public class AuditTrailService {
+@Transactional(Transactional.TxType.REQUIRES_NEW)
+public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
 
     @PersistenceContext
     private EntityManager em;
@@ -54,6 +56,30 @@ public class AuditTrailService {
 
         em.persist(event);
         return event;
+    }
+
+    @Override
+    public AuditEventEnvelope write(AuditEventEnvelope envelope) {
+        AuditEventPayload payload = new AuditEventPayload();
+        payload.setAction(envelope.getAction());
+        payload.setResource(envelope.getResource());
+        payload.setActorId(envelope.getActorId());
+        payload.setActorDisplayName(envelope.getActorDisplayName());
+        payload.setActorRole(envelope.getActorRole());
+        payload.setPatientId(envelope.getPatientId());
+        payload.setRequestId(determineRequestId(envelope));
+        payload.setIpAddress(envelope.getIpAddress());
+        payload.setUserAgent(envelope.getUserAgent());
+        payload.setDetails(envelope.getDetails());
+        record(payload);
+        return envelope;
+    }
+
+    private String determineRequestId(AuditEventEnvelope envelope) {
+        if (envelope.getRequestId() != null && !envelope.getRequestId().isBlank()) {
+            return envelope.getRequestId();
+        }
+        return envelope.getTraceId();
     }
 
     private String serializePayload(Map<String, Object> details) {

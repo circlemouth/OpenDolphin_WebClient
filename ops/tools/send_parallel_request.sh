@@ -5,6 +5,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 PROFILE_NAME=""
 PROFILE_FILE="${SEND_PARALLEL_REQUEST_PROFILE_FILE:-${SCRIPT_DIR}/send_parallel_request.profile.env.sample}"
+TRACE_RUN_ID="${TRACE_RUN_ID:-}"
 
 usage() {
   cat <<'USAGE'
@@ -30,6 +31,8 @@ config モード:
   --profile NAME         `send_parallel_request.profile.env.sample` を `MODERNIZED_TARGET_PROFILE=NAME`
                          で読み込み、BASE_URL_* などの環境変数を一括設定する。
   --profile-file FILE    --profile で使用するテンプレートファイルを指定する（省略時は ops/tools 配下）。
+  --run-id RUN_ID        `tmp/trace_http_*.headers` などに含まれる `{{RUN_ID}}` プレースホルダーへ適用する
+                         文字列を指定する（例: 20251111TtracefixZ）。未指定時は `TRACE_RUN_ID` 環境変数を利用。
 
 環境変数:
   BASE_URL_LEGACY   旧サーバーのベース URL (default: http://localhost:8080)
@@ -121,9 +124,24 @@ run_config_mode() {
         unset PARITY_BODY_FILE || true
       fi
       local extra_args=(--loop "$LOOP_COUNT" --loop-sleep "$LOOP_SLEEP")
+      if [[ -n "$TRACE_RUN_ID" ]]; then
+        extra_args+=(--run-id "$TRACE_RUN_ID")
+      fi
       "$SCRIPT_PATH" "${extra_args[@]}" "$method" "$request_path" "${request_id:-}"
     )
   done
+}
+
+render_header_template() {
+  local header_line="$1"
+  if [[ "$header_line" == *"{{RUN_ID}}"* ]]; then
+    if [[ -z "$TRACE_RUN_ID" ]]; then
+      printf '[ERROR] header line requires {{RUN_ID}} but TRACE_RUN_ID is not set. Use --run-id or export TRACE_RUN_ID.\n' >&2
+      exit 1
+    fi
+    header_line="${header_line//\{\{RUN_ID\}\}/$TRACE_RUN_ID}"
+  fi
+  printf '%s' "$header_line"
 }
 
 CONFIG_FILE=""
@@ -177,6 +195,14 @@ while [[ $# -gt 0 ]]; do
         exit 1
       fi
       PROFILE_FILE="$2"
+      shift 2
+      ;;
+    --run-id)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      TRACE_RUN_ID="$2"
       shift 2
       ;;
     -h|--help)
@@ -240,6 +266,7 @@ if [[ -n "${PARITY_HEADER_FILE:-}" && -f "$PARITY_HEADER_FILE" ]]; then
   while IFS= read -r header_line; do
     [[ -z "$header_line" ]] && continue
     [[ "$header_line" =~ ^[[:space:]]*# ]] && continue
+    header_line="$(render_header_template "$header_line")"
     HEADER_ARGS+=(-H "$header_line")
   done <"$PARITY_HEADER_FILE"
 fi

@@ -3,6 +3,7 @@ package open.dolphin.converter;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.util.Objects;
 import open.dolphin.infomodel.*;
 
 /**
@@ -111,6 +112,6 @@ public final class KarteBeanConverter implements IInfoModelConverter {
 
     @Override
     public void setModel(IInfoModel m) {
-        this.model = (KarteBean)m;
+        this.model = (KarteBean) Objects.requireNonNull(m, "KarteBeanConverter requires model");
     }
 }

@@ -3,6 +3,7 @@
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.logging.Logger;
+import javax.servlet.http.HttpServletRequest;
 import open.dolphin.infomodel.IInfoModel;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -16,6 +17,7 @@ public class AbstractResource {
 
     protected static final String CAMMA = ",";
     protected static final boolean DEBUG = false;
+    private static final String TRACE_ID_HEADER = "X-Trace-Id";
 
     protected Date parseDate(String source) {
         try {
@@ -31,7 +33,13 @@ public class AbstractResource {
     }
 
     protected static String getRemoteFacility(String remoteUser) {
+        if (remoteUser == null) {
+            return null;
+        }
         int index = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (index < 0) {
+            return remoteUser;
+        }
         return remoteUser.substring(0, index);
     }
 
@@ -50,5 +58,23 @@ public class AbstractResource {
         mapper.configure(SerializationConfig.Feature.WRITE_NULL_MAP_VALUES, false);
         mapper.configure(SerializationConfig.Feature.FAIL_ON_EMPTY_BEANS, false);
         return mapper;
+    }
+
+    protected String resolveTraceId(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        Object attribute = request.getAttribute(LogFilter.TRACE_ID_ATTRIBUTE);
+        if (attribute instanceof String) {
+            String value = (String) attribute;
+            if (!value.isEmpty()) {
+                return value;
+            }
+        }
+        String fromHeader = request.getHeader(TRACE_ID_HEADER);
+        if (fromHeader != null && !fromHeader.isEmpty()) {
+            return fromHeader.trim();
+        }
+        return null;
     }
 }

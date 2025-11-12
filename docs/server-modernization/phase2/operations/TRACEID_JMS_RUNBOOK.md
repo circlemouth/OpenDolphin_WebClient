@@ -32,6 +32,8 @@
 > `docker run --rm --network legacy-vs-modern_default -v "$PWD":/workspace -w /workspace mcr.microsoft.com/devcontainers/base:jammy bash -lc 'PARITY_HEADER_FILE=... PARITY_OUTPUT_DIR=... ops/tools/send_parallel_request.sh --profile modernized-dev ...'`  
 > これにより `opendolphin-server(-modernized-dev)` というコンテナ名をそのまま使用できる（RUN_ID=`20251110T122644Z` で確認）。
 
+> **運用指示 (2025-11-12)**: `docker compose --profile modernized-dev` で立ち上げたホストが `localhost:9080` へ到達しない間は、上記 helper コンテナ経由で Claim/JMS を取得すること。**ホスト↔9080 が復旧するまで helper で運用**し、`PARITY_HEADER_FILE=tmp/claim-tests/claim_<RUN_ID>.headers` / `PARITY_BODY_FILE=tmp/claim-tests/send_claim_success_<RUN_ID>.json` を helper 側から参照する。
+
 ---
 
 ## 3. トレース ID 付き HTTP 実行
@@ -100,6 +102,44 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 
 すべてのログは `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/` 以下に置き、HTTP 応答 (`trace_http_*/{legacy,modern}/`) との紐付けを保つ。
 
+### 4.1 Legacy JMS チェックリスト（message-count=0L の整理）
+
+- **現象**: Legacy WildFly 10 の `jms.queue.dolphinQueue` は `consumer-count=0` / `messages-added=0L` のまま（RUN_ID=`20251111TstampfixZ3` 時点の `artifacts/parity-manual/stamp/20251111TstampfixZ3/logs/jms_dolphinQueue_read-resource_legacy.txt` 参照）。スタンプ PUT/GET を実行しても Legacy サーバーは同期処理で完結するため JMS へ publish されず、queue depth も増えない。一方 Modernized 側は `consumer-count=15` / `messages-added=4L` / `message-count=0L` で、`StampServiceBean` からの enqueue が `logs/jms_dolphinQueue_read-resource.txt` に記録される。
+- **目的**: `message-count=0L` をエラーではなく「Legacy server は MessagingGateway を経由していない」既知事象として扱えるよう、証跡化と backlog 管理を統一する。
+- **手順**:
+  1. helper コンテナまたはホストから `docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml exec opendolphin-server /opt/jboss/wildfly/bin/jboss-cli.sh --connect --commands='/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)' > artifacts/parity-manual/<case>/<RUN_ID>/logs/jms_dolphinQueue_read-resource_legacy.txt` を実行し、`consumer-count`, `messages-added`, `message-count` を採取する。
+     - `localhost:8080` へ到達できない状況では helper コンテナから CLI を実行する。テンプレート:
+       ```bash
+       RUN_ID=20251112T090930Z
+       CASE=stamp
+       docker compose --profile modernized-dev run --rm helper bash -lc '
+         set -euo pipefail
+         cd /workspace
+         docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml exec opendolphin-server \
+           /opt/jboss/wildfly/bin/jboss-cli.sh \
+           --connect --commands="/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)" \
+           > artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/logs/jms_dolphinQueue_read-resource_legacy.txt
+       '
+       ```
+       helper は `legacy-vs-modern_default` ネットワークに常時参加しているため、追加の `docker network connect` は不要。`RUN_ID` と `CASE` を差し替えれば artifacts 直下に保管できる。
+  2. 同じコマンドを `opendolphin-server-modernized-dev` に対して実行し、`.../logs/jms_dolphinQueue_read-resource.txt` に保存する。Modern 側では `messages-added` が PUT 実行直後に増分して `message-count=0L` へ戻る（即時 drain）点をコメントで残す。
+     - Modern 側も helper コンテナ経由に統一すれば、ホスト OS の Docker ソケット権限や `/var/run/docker.sock` マウント不要で `docker compose exec` を再利用できる。
+  3. 取得した 2 ファイルを `git diff` で比較し、Legacy=0L / Modern=>0L の差を `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4-2 残課題、および `PHASE2_PROGRESS.md` backlog へ転記する。
+  4. `consumer-count=0` が続く場合は、Legacy 側で JMS MDB を起動していないことを示す補足コメント（例: `# Legacy queue stays idle; no MessageDrivenBean registered in WildFly10 profile`）を `logs/jms_dolphinQueue_read-resource_legacy.txt` の末尾に追記する。
+  5. **ログ閲覧・現状確認**: `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/jms_dolphinQueue_read-resource_legacy.txt` を `rg -n 'messages|consumer'` や `less -N` で開き、`# Legacy queue stays idle …` コメントと `messages-added=0L`, `consumer-count=0` がセットで残っていることを確認する。同フォルダに `jms_dolphinQueue_read-resource.txt`（Modern）を並べ、`diff -u logs/jms_dolphinQueue_read-resource_legacy.txt logs/jms_dolphinQueue_read-resource.txt` で `messages-added` の増分が説明できる状態を維持する。
+  6. **StampSenderMDB 再起動コマンド（指示が出るまで実行禁止）**: `messages-added` が 0L のまま変化しない場合は、マネージャーのみ以下 CLI コマンドで Legacy WildFly の MDB を停止→起動する。実行ログは `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/legacy_mdb_restart.log` に保存し、ワーカーはコマンド列挙のみ行う。
+     ```bash
+     # Manager only / do-not-run メモ
+     docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml exec opendolphin-server \
+       /opt/jboss/wildfly/bin/jboss-cli.sh --connect <<'EOF' | tee artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/logs/legacy_mdb_restart.log
+     /deployment=opendolphin.war/subsystem=ejb3/message-driven-bean=StampSenderMDB:stop
+     /deployment=opendolphin.war/subsystem=ejb3/message-driven-bean=StampSenderMDB:start
+     EOF
+     ```
+     - 再起動後は `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/{before,after}_jms_dolphinQueue_read-resource_legacy.txt` を採取し、`messages-added` の変化と `consumer-count` が 1 以上へ戻るかを追跡する。
+  7. **standalone-full.xml の JMS 設定差分確認（閲覧のみ）**: Legacy WildFly が参照する `/opt/jboss/wildfly/standalone/configuration/standalone-full.xml` を `docker compose exec opendolphin-server cat ... | rg -n 'dolphinQueue\|StampSender'` で抜粋し、`server/standalone-full.xml` へ保存したローカルコピーと diff を取得する。`messaging-activemq` セクションと `jms-queue name="dolphinQueue"`、`pooled-connection-factory` を事前に確認し、`server/src/main/resources/META-INF/ejb-jar.xml`（StampSenderMDB の `activation-config-property` 設定）との齟齬が無いかを Appendix へリンクする。
+- **期待アウトプット**: すべての RUN_ID で `logs/jms_dolphinQueue_read-resource{,_legacy}.txt` が対になっており、`messages-added` の差分と `consumer-count` の有無をもって Legacy JMS 未実装の根拠とする。Stamp parity 以外（Appo/Schedule/Lab/Letter）の REST ケースでも同じ形式で before/after を採取し、`message-count=0L` が続いても「JMS 未到達」ではなく「JMS 未接続」の証跡であることを記録する。
+
 ---
 
 ## 5. Audit/JMS ルート強化の設計準備
@@ -116,6 +156,24 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 - JMS 連携への影響を整理するため、`ops/tools/jms-probe.sh --dump` の結果から `open.dolphin.traceId` プロパティ有無を確認し、未付与のケースは `TRACE_PROPAGATION_CHECK.md §8` に列挙する。fallback 設計では `MessagingGateway` への投入直前で `TouchRequestContext` を再評価し、null のままの場合は `TouchRequestContextFallback`（新規 DTO）を JMS ヘッダーへ書き込む手順を Runbook に明記する。
 
 ### 5.3 `d_audit_event_id_seq` 再採番プロトコル
+> **2025-11-11 追記**: `ops/db/local-baseline/reset_d_audit_event_seq.sql` を `psql` から実行すれば、バックアップ／LOCK／`setval`／検証行挿入／ログ採取までを 1 コマンドで完了できる。  
+> 例:  
+> ```bash
+> RUN_ID=${RUN_ID:-20251111TrestfixZ}
+> mkdir -p artifacts/parity-manual/db/${RUN_ID}/{modern,legacy}
+> docker exec opendolphin-postgres-modernized bash -lc '
+>   cd /workspace
+>   psql -U opendolphin -d opendolphin_modern \
+>     -v audit_event_backup_file="/tmp/d_audit_event_before_seq_reset_${RUN_ID}.csv" \
+>     -v audit_event_validation_log="/tmp/d_audit_event_seq_validation_${RUN_ID}.txt" \
+>     -v audit_event_status_log="/tmp/d_audit_event_seq_status_${RUN_ID}.txt" \
+>     -f ops/db/local-baseline/reset_d_audit_event_seq.sql
+> '
+> docker cp opendolphin-postgres-modernized:/tmp/d_audit_event_before_seq_reset_${RUN_ID}.csv artifacts/parity-manual/db/${RUN_ID}/modern/audit_event_backup.csv
+> docker cp opendolphin-postgres-modernized:/tmp/d_audit_event_seq_validation_${RUN_ID}.txt artifacts/parity-manual/db/${RUN_ID}/modern/audit_event_validation_log.txt
+> docker cp opendolphin-postgres-modernized:/tmp/d_audit_event_seq_status_${RUN_ID}.txt artifacts/parity-manual/db/${RUN_ID}/modern/audit_event_status_log.txt
+> ```  
+> Legacy 側も同じ手順で取得し、コピー先を `artifacts/parity-manual/db/${RUN_ID}/legacy/` 以下の `audit_event_*` ファイルに揃える。最新 RUN_ID を `TRACE_PROPAGATION_CHECK.md` / `PHASE2_PROGRESS.md` にも記載し、Evidence 名称を統一する。以下は従来フロー（参考用）。
 1. **事前バックアップ**
    - `docker exec opendolphin-postgres-modernized bash -lc "psql -U opendolphin -d opendolphin_modern -c \"\\copy (select * from d_audit_event order by id) to '/tmp/d_audit_event_before_seq_reset.csv' csv header\""`
    - `docker cp opendolphin-postgres-modernized:/tmp/d_audit_event_before_seq_reset.csv artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/` に退避。legacy 側も同様のファイルを取得して diff を取る。
@@ -133,7 +191,78 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 
 この節の内容を `TRACE_PROPAGATION_CHECK.md` / `PHASE2_PROGRESS.md` / `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` の関連タスクにリンクし、「Audit/JMS ルート強化：設計準備完了、実装待ち」ステータスの根拠とする。
 
+### 5.4 RUN_ID=20251111TrestfixZ Audit/JMS 採取ログ
+- **シーケンス整合性**: Legacy/Modern 両方の Postgres コンテナで `reset_d_audit_event_seq.sql` の処理を手動再現し、`\copy` バックアップ → `LOCK` → `setval` → `SEQ_SMOKE` 検証まで完了。生成物は `artifacts/parity-manual/db/20251111TrestfixZ/{legacy,modern}/audit_event_{backup.csv,status_log.txt,validation_log.txt}` としてコピー済みで、`d_audit_event_seq_status_20251111TrestfixZ.txt` には補正後の `max_id` / `last_value` が記録されている。
+- **rest_error 3 ケース**: `rest_error_{letter_fk,lab_empty,stamp_data_exception}` を `TRACE_RUN_ID=20251111TrestfixZ`・`--profile modernized-dev` で helper コンテナ実行し、HTTP/Evidence を `artifacts/parity-manual/{letter,lab,stamp}/20251111TrestfixZ/` へ格納。各ディレクトリの `logs/` 配下に `legacy_trace_http.log` / `modern_trace_http.log` / `d_audit_event_{legacy,modern}.txt` / `d_audit_event_{letter|lab|stamp}.tsv` / `d_audit_event_latest.tsv` / `jms_dolphinQueue_read-resource.txt` をまとめ、`message-count=0L`, `messages-added=0L` が変化しないことも記録した。Stamp については `TRACE_RUN_ID=20251111TstampfixZ3`（helper コンテナ + `BASE_URL_{LEGACY,MODERN}=http://opendolphin-{server,server-modernized-dev}:8080/openDolphin/resources`）で再取得し、`ops/db/local-baseline/stamp_tree_oid_cast.sql` と Modern DB の `d_subscribed_tree` を適用したうえで Legacy/Modern=200 + Audit/JMS（TraceId=`parity-stamp-20251111TstampfixZ3`）を確認済み（証跡: `artifacts/parity-manual/stamp/20251111TstampfixZ3/`）。
+- **JMS claim_send 試行**: `tmp/claim-tests/claim_20251111TrestfixZ.headers`（`X-Trace-Id: trace-jms-20251111TrestfixZ`, `X-Run-Id` / `X-Claim-Debug` 付き）と `tmp/claim-tests/send_claim_success.json` を用い、helper コンテナから `PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/20251111TrestfixZ/claim_send` で再送。結果は Legacy=401 / Modern=403 のままで `claim_send/http/{legacy,modern}/meta.json` に保存され、CLI 出力は `logs/send_parallel_request.log` に追記した。JMS キューは `logs/jms_dolphinQueue_read-resource.before.txt` → `logs/jms_dolphinQueue_read-resource.txt` でどちらも `message-count=0L`, `messages-added=0L` を示し、`logs/d_audit_event_claim.tsv` も 2025-11-10 の既存 `EHT_CLAIM_SEND` 1 行のみとなっている。
+- **残課題**: `sendClaim` が 401/403 で止まる理由（Legacy: Basic 認証, Modern: WildFly セキュリティドメイン）の切り分けと、JMS メトリクスに変化が出た RUN_ID の取得が引き続き必要。次回はヘッダー差し替え・ORCA 側資格情報の再確認後、`messages-added>0L` に変化したタイミングを `PHASE2_PROGRESS.md` / `TRACE_PROPAGATION_CHECK.md` / 本節へ追記する。
+
+### 5.5 RUN_ID=20251111TstampfixZ3（StampTree parity）
+- **実行概要**: helper コンテナ（`mcr.microsoft.com/devcontainers/base:jammy`）を `--network legacy-vs-modern_default` で起動し、`BASE_URL_{LEGACY,MODERN}=http://opendolphin-{server,server-modernized-dev}:8080/openDolphin/resources` / `PARITY_HEADER_FILE=tmp/parity-headers/stamp_20251111TstampfixZ3.headers` / `TRACE_RUN_ID=20251111TstampfixZ3` で `ops/tools/send_parallel_request.sh PUT /stamp/tree` を送信。PUT 前に GET `/stamp/tree/9001` を取得して payload（versionNumber=11 / treeBytes）を同期し、Evidence は `artifacts/parity-manual/stamp/20251111TstampfixZ3/{stamp_tree_user9001,PUT_stamp_tree,rest_error_stamp_data_exception}` に集約した。
+- **DB 調整**: Legacy/Modern Postgres へ `ops/db/local-baseline/stamp_tree_oid_cast.sql` を適用し、Modern 側には欠損していた `d_subscribed_tree`（id, treeId, user_id）を新規作成。作業ログは `logs/d_stamp_tree_cast_migration.txt` と `logs/d_subscribed_tree_migration.txt` に追記した。
+- **Audit/JMS**: Legacy/Modern とも `logs/d_audit_event_stamp_{legacy,modern}.tsv` に TraceId=`parity-stamp-20251111TstampfixZ3` の `STAMP_TREE_PUT` が残り、`logs/jms_dolphinQueue_read-resource*.txt` で `messages-added=4L`, `message-count=0L` を確認。`rest_error_scenarios.manual.csv` / README.manual.md / `PHASE2_PROGRESS.md` / `notes/domain-transaction-parity.md` / `DOC_STATUS.md` / `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` も同 RUN_ID へ更新済み。
+
+
+### 5.6 RUN_ID=20251111TclaimfixZ3 Claim/JMS 完了ログ
+- **sendClaim 移植とシーケンス正式化**: 2025-11-12 に Legacy 側 `server/src/main/java/open/dolphin/adm20/rest/EHTResource.java` へ `/20/adm/eht/sendClaim` を移植し、Modern 側と同等の JMS/Audit ルートを復元した。これに伴い `IDocInfo` の保険モデル null ガードと `ClaimSender` の `Logger` 初期化を null-safe 化し、Modern 側も `common/src/main/java/open/dolphin/infomodel/AuditEvent.java` を `@SequenceGenerator` で揃えた。シーケンス補正は公式保存先である `ops/db/local-baseline/reset_d_audit_event_seq_batch.sql` を Legacy/Modern 両 Postgres へ投入し、`artifacts/parity-manual/db/20251111TclaimfixZ3/{legacy,modern}/audit_event_{backup.csv,status_log.txt,validation_log.txt}` に証跡を残した（SEQ_SMOKE=Legacy:13, Modern:73）。
+- **Claim 送信**: helper コンテナ（`--network legacy-vs-modern_default`）で `PARITY_HEADER_FILE=tmp/claim-tests/claim_20251111TclaimfixZ3.headers`・`PARITY_BODY_FILE=tmp/claim-tests/send_claim_success_20251111TclaimfixZ3.json`・`TRACE_RUN_ID=20251111TclaimfixZ3` を指定し `ops/tools/send_parallel_request.sh --profile compose PUT /20/adm/eht/sendClaim claim_send` を実行。Legacy/Modern とも `HTTP/1.1 200` となり、Evidence は `TRACEID_JMS/20251111TclaimfixZ3/claim_send/claim_send/{legacy,modern}/` および `logs/send_parallel_request.log` に保存した。
+- **JMS / Audit**: `jboss-cli :read-resource(include-runtime=true,recursive=true)` を前後で採取し、`logs/jms_dolphinQueue_read-resource.before.txt` → `after.txt` で `messages-added=4L→5L` / `message-count=0L` を確認。`d_audit_event` は `TRACEID_JMS/20251111TclaimfixZ3/logs/d_audit_event_claim.tsv` に `id=80/79/78` の `EHT_CLAIM_SEND` が追記され、RUN 実行時刻（2025-11-12 08:37 JST）と一致する。DLQ 流入や `delivering-count` の増加はなし。TraceId 差分は `scripts/diff_d_audit_event_claim.sh 20251111TclaimfixZ3 20251111TclaimfixZ2` で確認し、結果を `artifacts/parity-manual/TRACEID_JMS/20251111TclaimfixZ3/README.md` に記録する。
+
+#### RUN_ID=20251111TclaimfixZ Claim/JMS 再取得（2025-11-12 JST）
+- **`reset_d_audit_event_seq.sql` の適用**: `ops/db/local-baseline/reset_d_audit_event_seq_batch.sql`（`/tmp` に `d_audit_event_before_seq_reset_${RUN_ID}.csv` などを直接書き出す tee 無し版）を `docker exec opendolphin-postgres{,-modernized}` で流し、Legacy/Modern それぞれ `audit_event_{backup.csv,status_log.txt,validation_log.txt}` を `artifacts/parity-manual/db/20251111TclaimfixZ/{legacy,modern}/` へ取得。`setval(..., next_id, true)` 後に `SEQ_SMOKE` 行が `id=67`（Modern）/`id=7`（Legacy）で採番できることを確認した。
+- **helper コンテナ経由の HTTP**: `docker run --network legacy-vs-modern_default mcr.microsoft.com/devcontainers/base:jammy` 内で `BASE_URL_LEGACY=http://server:8080/...`, `BASE_URL_MODERN=http://server-modernized-dev:8080/...`, `TRACE_RUN_ID=trace-jms-20251111TclaimfixZ` を指定し `ops/tools/send_parallel_request.sh --profile modernized-dev PUT /20/adm/eht/sendClaim claim_send` を実行。`claim_send/http/{legacy,modern}/headers.txt` にはどちらも `HTTP/1.1 401 Unauthorized` と `WWW-Authenticate: Basic realm="OpenDolphin"` が保存され、Modern 側は `Strict-Transport-Security`／`Content-Security-Policy` など追加ヘッダーも確認できた。
+- **JMS / Audit 採取**: 事前後で `logs/jms_dolphinQueue_read-resource.before.txt` / `.../jms_dolphinQueue_read-resource.txt` を更新したが、`message-count=0L`, `messages-added=0L`, `delivering-count=0` のまま変化なし。`logs/d_audit_event_claim.tsv` も 2025-11-10 05:18 JST の `EHT_CLAIM_SEND` 既存 1 行のみで、新規 `trace-jms-20251111TclaimfixZ` 行は出力されなかった。
+
+#### RUN_ID=20251111TclaimfixZ2 Claim/JMS 再検証（2025-11-12 JST）
+- **ヘッダー整備 / Audit シーケンス再取得**: Legacy/Modern 共通で `userName=1.3.6.1.4.1.9414.72.103:doctor1`、`password=632080fabdb968f9ac4f31fb55104648`、`Authorization: Basic RjAwMTptYW5hZ2VyMDE6cGFzc3dvcmQ=` に置き換えた `tmp/claim-tests/claim_20251111TclaimfixZ2.headers` と、`send_claim_success_20251111TclaimfixZ2.json`（RUN_ID 文字列のみ更新）を作成。`ops/db/local-baseline/reset_d_audit_event_seq_batch.sql` は `docker exec opendolphin-postgres{,-modernized}` で適用し、`artifacts/parity-manual/db/20251111TclaimfixZ2/{legacy,modern}/audit_event_{backup.csv,status_log.txt,validation_log.txt}` へ証跡を保存した。検証 INSERT は Legacy=ID9 / Modern=ID69 で通過。
+- **HTTP 応答**: helper コンテナ (`buildpack-deps:curl`) から `docker run --network legacy-vs-modern_default ... ops/tools/send_parallel_request.sh --profile compose PUT /20/adm/eht/sendClaim claim_send` を実行。Basic 認証が通るようになったものの、Legacy 側は `/20/adm/eht/sendClaim` が見つからず `HTTP/1.1 404 Not Found` のまま（`claim_send/claim_send/legacy/headers.txt`）。Modern 側は JMS enqueue 直後に `d_audit_event` へ書き込むタイミングで `ERROR: duplicate key value violates unique constraint "d_audit_event_pkey" (id=59)` が発生し `HTTP/1.1 500 Internal Server Error`（`claim_send/claim_send/modern/{headers.txt,response.json}`）。
+- **JMS / Audit の実測値**: 実行前後で `logs/jms_dolphinQueue_read-resource.{before,after}.txt` を採取したところ、`messages-added` が `2L → 3L` へ増加し JMS 側で 1 件は受理された一方、`message-count`/`delivering-count` は 0 のまま（即時処理で積み残し無し）。`logs/d_audit_event_claim.tsv` には引き続き 2025-11-10 の `EHT_CLAIM_SEND`（id=1）と 06:31 JST の成功試行（id=56）のみが出力され、今回 RUN_ID 向けの `EHT_CLAIM_SEND` 行は生成されなかった。
+- **既知のブロッカー**: Legacy 404 は `/20/adm/eht/sendClaim` 実装未対応が原因。Modern 側は `AuditTrailService#record` が同一 PK を払い出してしまう（`d_audit_event_pkey` 衝突）ため、200 応答と `d_audit_event` 追記が成立しない。`messages-added>0L` は満たせたが、Audit 連鎖の復旧と Legacy 側のエンドポイント整備が完了するまで RUN_ID=`20251111TclaimfixZ2` は証跡ドラフト扱いとする。
+- **フォローアップ**: Legacy/Modern とも 401 応答を得つつ `X-Trace-Id` が維持された点は確認できたが、JMS/Audit 連携は依然未発火。次 RUN では Basic 認証ヘッダーの整合性と ORCA 側 credential の再確認、`logs/jms_dolphinQueue_read-resource.txt` で `messages-added>0L` を記録したタイミングの証跡化（`PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/<next>/claim_send`）を最優先で実施する。
+
+### 5.5 StampTree REST（フォローアップ完了）
+- **コード差分の前提**: `server` / `server-modernized` 双方に `persistPersonalTree` + `LockModeType.PESSIMISTIC_WRITE`、`StampTreeModelConverter` の bytea 変換、`StampResource` の AuditTrail 連携を導入済み。RUN_ID=`20251111TstampfixZ3` では helper コンテナから GET→payload 同期→PUT の順に実行し、`rest_error_stamp_data_exception` も同 payload で 200/200 を確認した。
+- **Audit/JMS 採取**: Legacy/Modern いずれも `ops/db/local-baseline/stamp_tree_oid_cast.sql` / `reset_d_audit_event_seq.sql` を適用したうえで `logs/d_audit_event_stamp_{legacy,modern}.tsv` に TraceId=`parity-stamp-20251111TstampfixZ3` を記録。`logs/jms_dolphinQueue_read-resource*.txt` では `messages-added=4L`, `message-count=0L` を確認し、GET `/stamp/tree/9001` も `d_subscribed_tree` 作成で 500 → 200 へ回復した。
+- **今後のフォロー**: Stamp parity は RUN_ID=`20251111TstampfixZ3` を最新基準とし、後続タスクは Letter FK/JMS・Lab DTO/Audit・Claim JMS の証跡更新に移行する。
+
+#### 参考: RUN_ID=20251111T110107Z（0L 調査ログ）
+- `artifacts/parity-manual/TRACEID_JMS/20251111T110107Z/logs/jms_dolphinQueue_read-resource.txt` では `message-count=0L` / `messages-added=0L` のまま 15 コンシューマーがぶら下がっており、Queue へ投入する API を実行していなかったことが原因である。
+- 同 RUN_ID の `logs/send_parallel_request.log` には `trace_http_{400,401,500}` しか記録されていない。`logs/legacy_trace_http.log` / `logs/modern_trace_http.log` も同 3 ケースのみで、JMS 発火ケースが存在しないことを裏付けている。
+- そのため `logs/d_audit_event_latest.tsv` も `SYSTEM_ACTIVITY_SUMMARY` のみ増加し、`EHT_CLAIM_SEND` の最新行は 2025-11-10 05:18 (+09:00) に留まった。
+
+#### 再取得前のチェックリスト（RUN_ID=`TRACE_RUN_ID`）
+- [ ] **ヘッダー差し替え**: `tmp/claim-tests/claim_${RUN_ID}.headers` を `cp tmp/claim-tests/claim_TEMPLATE.headers tmp/claim-tests/claim_${RUN_ID}.headers` で複製し、`X-Trace-Id: trace-jms-${RUN_ID}` / `X-Run-Id: ${RUN_ID}` / `X-Claim-Debug: enabled` を追記する。`PARITY_HEADER_FILE` / `TRACE_RUN_ID` を `ops/tests/api-smoke-test/README.manual.md` の手順と揃える。
+- [ ] **payload 更新**: `tmp/claim-tests/send_claim_success.json` の `issuerUUID` / `memo` / `labtestOrderNumber` / `docId` / bundle `memo` 内に残っている旧 RUN_ID（例: `20251111TrestfixZ`）を `RUN_ID` へ置換し、`d_audit_event.request_id` にも同じ Trace ID が入るよう整合させる。
+- [ ] **シーケンス正常化**: Legacy/Modernized 両方の Postgres コンテナで `ops/db/local-baseline/reset_d_audit_event_seq.sql` を実行し、`artifacts/parity-manual/db/${RUN_ID}/{legacy,modern}/audit_event_{backup.csv,validation_log.txt,status_log.txt}` を取得する。`logs/d_audit_event_latest.tsv` で `EHT_CLAIM_SEND` が 2025-11-10 05:18 JST 以前で止まっていないか確認する。
+- [ ] **事前メトリクス取得**: `/subsystem=messaging-activemq/.../dolphinQueue:read-resource` を事前取得して `logs/jms_dolphinQueue_read-resource.before.txt` に保存し、`message-count` / `messages-added` が 0L の初期値であることを明示する。
+- [ ] **API 実行計画**: `PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/${RUN_ID}` を作成し、`ops/tools/send_parallel_request.sh --profile modernized-dev PUT /20/adm/eht/sendClaim` を 1 回送出する。CLI 実行ログ（`logs/send_parallel_request.log`）と HTTP ファイル群は `claim_send/` サブディレクトリへ整理する。
+- [ ] **証跡リンク更新**: 取得後に `PHASE2_PROGRESS.md` 2025-11-11 節、`TRACE_PROPAGATION_CHECK.md §6`、`docs/web-client/planning/phase2/DOC_STATUS.md` の対象行へ RUN_ID と Evidence パスを追記し、`message-count` / `messages-added` に差分が出たことを明記する。
+
 ---
+
+### 5.5 Appo/Schedule チェックリスト（手順整備のみ）
+
+`docs/server-modernization/phase2/notes/domain-transaction-parity.md §3` および `PHASE2_PROGRESS.md` の Appo/Schedule 節で整理されている通り、`@SessionOperation` は HTTP 200 まで達しても `AuditTrailService` 連携が欠落しており、`d_audit_event` と JMS Queue が空のままになっている。以下のチェックリストで HTTP/Audit/JMS の期待値と証跡テンプレートを明確化し、改修後すぐに再取得できる状態を維持する。
+
+| ケース | HTTP 期待値 | AuditTrail 期待値 | JMS 期待値 | 証跡テンプレ |
+| --- | --- | --- | --- | --- |
+| `PUT /appo` | Legacy/Modernized とも 200（`{"response":1}`）。`/tmp/reseed_appo.sql` で `id=8001` を復元してから実行。 | Legacy/Modernized の `d_audit_event` に `APPOINTMENT_DELETE`（仮称）を 1 行記録。現状は `SYSTEM_ACTIVITY_SUMMARY` のみなので、RUN_ID メモへ「Audit/JMS 空（SessionOperation→AuditTrailService 未連携）」と明記。 | `message-count` / `messages-added` が +1 になることを `logs/jms_dolphinQueue_read-resource.{before,after}.txt` で確認。現状は 0L 継続。 | `artifacts/parity-manual/appo/<RUN_ID>/` 配下に `headers/`, `http/`, `logs/d_audit_event_{legacy,modern}.txt`, `logs/jms_dolphinQueue_read-resource.{before,after}.txt` を保存。 |
+| `GET /schedule/pvt/<DATE>` | Legacy/Modernized とも 200。Modernized 側は `{"list":null}` から `list` に 1 件以上（例: `架空 花子`）が復帰することがゴール。 | `d_audit_event` に `SCHEDULE_FETCH`（仮称）を 1 行記録。現状は `remoteUser=anonymous` 継続のため 0 行。 | JMS は enqueue されない想定だが、`consumer-count` と `messages-added` が変化しないことを証跡として残す。 | `artifacts/parity-manual/schedule/<RUN_ID>/` に HTTP/headers/JMS/Audit ログを集約し、`logs/schedule_trace_context.log` へ `SessionOperationInterceptor` → `AuditTrailService` 呼び出し有無を記録。 |
+
+#### 実行計画（helper コンテナ + `--profile compose`）
+1. `RUN_ID=${RUN_ID:-20251115TappoSchedPlanZ}` を定義し、`PARITY_HEADER_FILE=tmp/parity-headers/{appo|schedule}_${RUN_ID}.headers` をテンプレートから複製。`X-Trace-Id` / `X-Run-Id` / 認証ヘッダーを更新し、`PARITY_OUTPUT_DIR=artifacts/parity-manual/{appo|schedule}/${RUN_ID}` を作成。
+2. helper コンテナをホスト Docker に接続し、`localhost:{8080,9080}` へアクセスできるよう `--network host`（WSL の場合は `--add-host host.docker.internal:host-gateway`）を指定。例:  
+   ```bash
+   docker run --rm --network host -v "$PWD":/workspace -w /workspace mcr.microsoft.com/devcontainers/base:jammy \
+     bash -lc 'set -eu
+       RUN_ID=${RUN_ID:-20251115TappoSchedPlanZ}
+       export PARITY_HEADER_FILE=tmp/parity-headers/appo_${RUN_ID}.headers
+       export PARITY_OUTPUT_DIR=artifacts/parity-manual/appo/${RUN_ID}
+       ops/tools/send_parallel_request.sh --profile compose PUT /appo
+     '
+   ```
+3. 同じ手順で Schedule を取得する。`PARITY_HEADER_FILE=tmp/parity-headers/schedule_${RUN_ID}.headers`、`PARITY_OUTPUT_DIR=artifacts/parity-manual/schedule/${RUN_ID}` を指定し、`ops/tools/send_parallel_request.sh --profile compose GET /schedule/pvt/2025-11-09`（日付は最新シードに合わせて調整）を実行計画として記録。
+4. 現時点では **実行せず**、`AuditTrailService` 連携や `SessionOperationInterceptor` cleanup が完了した時点で再走する。RUN_ID 確定後に `PHASE2_PROGRESS.md` / `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` / `DOC_STATUS.md` の備考を更新し、証跡は前表のパスへ保存する。
 
 ## 6. 失敗時のフォールバック
 
@@ -144,6 +273,22 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 | Legacy 側 WildFly ビルド失敗 (`org.wildfly.extension.micrometer`) | Legacy イメージが Micrometer 拡張を含まない。 | Legacy ビルド時は `ops/legacy-server/docker/configure-wildfly.cli` から該当拡張を外すか、Legacy 側の Trace 取得を後回しにする。 |
 
 ---
+
+### 5.7 Legacy JMS 再起動テンプレ整備（2025-11-12 追記）
+- `scripts/jms/legacy_mdb_restart_template.sh` に StampSenderMDB の stop/start を `docker compose exec opendolphin-server /opt/jboss/wildfly/bin/jboss-cli.sh --commands='…'` で実行するコメントテンプレを格納した。**実行はマネージャー指示下のみ**とし、RUN_ID を `TRACEID_JMS_RUNBOOK` と同じ UTC 文字列で揃える。
+- Run ID ごとの証跡ディレクトリを `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/` に掘り、`legacy_mdb_restart.log` に stop/start/read-resource の順で CLI 出力を追記。`before_jms_dolphinQueue_read-resource(_legacy).txt` / `after_*.txt` を同階層へ保存し、`messages-added`, `message-count`, `consumer-count`, `consumer-created-count` をコメントでメモする。
+- 再起動直後は `LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md §3.4` を参照し、`docker compose cp opendolphin-server:/opt/jboss/wildfly/standalone/configuration/standalone-full.xml artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/standalone-full_${RUN_ID}.xml` と `docker compose cp opendolphin-server:/opt/jboss/wildfly/standalone/deployments/opendolphin.war/WEB-INF/ejb-jar.xml artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/ejb-jar_${RUN_ID}.xml` を取得。ローカルにコピーしたファイルは `diff -u artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/standalone-full_${RUN_ID}_before.xml artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/config/standalone-full_${RUN_ID}_after.xml` のように差分化し、`StampSenderMDB` の `destinationLookup`, `acknowledgeMode`, `maxSession` が変わっていないことを確認する。
+- `server.log` は `artifacts/parity-manual/TRACEID_JMS/${RUN_ID}/logs/server.log` へコピーし、`StampSenderMDB Stopping` / `Starting` 行の UTC タイムスタンプを `domain-transaction-parity.md Appendix A.6` の参照表へ反映する。`legacy_mdb_restart.log` に記録したコマンドと server.log の時刻差を 1 分以内に収めることを acceptance とし、乖離が大きい場合は docker compose exec の再実行を控えて原因を整理する。
+
+### 5.8 Letter/Lab 監査チェックリスト（rest_error parity）
+
+| Case ID | API | RUN_ID テンプレ | ヘッダーテンプレ | 証跡保存先 | 期待 HTTP | Audit/JMS チェック |
+| --- | --- | --- | --- | --- | --- | --- |
+| `rest_error_letter_fk` | `PUT /odletter/letter` | `20251111TrestfixZ`（`TRACE_RUN_ID={{RUN_ID}}`） | `tmp/parity-headers/letter_<RUN_ID>.headers` ＋ `PARITY_BODY_FILE=tmp/parity-letter/letter_put_payload.json` | `artifacts/parity-manual/letter/<RUN_ID>/` | Legacy/Modern=200 | ① `logs/d_audit_event_letter_{legacy,modern}.tsv` に `LETTER_MUTATION` / `TraceId=parity-letter-<RUN_ID>` を 1 行以上追加 ② `logs/jms_dolphinQueue_read-resource{,_legacy}.{before,after}.txt` で `messages-added` +1（Legacy は 0L 維持でもコメント必須）。|
+| `rest_error_lab_empty` | `GET /lab/module/WEB1001,0,5` | `20251111TrestfixZ`（`TRACE_RUN_ID={{RUN_ID}}`） | `tmp/parity-headers/lab_<RUN_ID>.headers` | `artifacts/parity-manual/lab/<RUN_ID>/` | Legacy/Modern=200（`{"list":[]}` 基準） | ① `logs/d_audit_event_lab_{legacy,modern}.tsv` に `LAB_MODULE_FETCH`（`details.resultCount` を list 長と同期）を追加 ② JMS は通常 0L のため `messages-added` の差分 0 を `logs/jms_dolphinQueue_read-resource*.txt` に明記。|
+
+- どちらのケースも **現状は TODO（Audit/JMS 未取得）** であり、`ops/tests/api-smoke-test/rest_error_scenarios.manual.csv` の `letter_lab_audit_status` 列と連動させて進捗を管理する。RUN 実行時は `PARITY_OUTPUT_DIR=artifacts/parity-manual/{letter,lab}/<RUN_ID>` を先に作成し、HTTP (`{legacy,modern}/headers.txt`), `meta.json`, `response.json`, `logs/send_parallel_request.log` を同一ディレクトリに揃える。
+- `RUN_ID` 命名規則は Letter/Lab 共通で UTC ベースの `YYYYMMDDThhmmssZ` を使用し、TraceId は `parity-letter-<RUN_ID>` / `parity-lab-<RUN_ID>` 形式に統一する。Audit を取得できたら `domain-transaction-parity.md §4` と本表の `期待 HTTP`/`Audit/JMS` 列を「完了」へ書き換え、`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4-2 の Letter/Lab 行をクローズする。
 
 ## 7. 証跡の保存と報告
 
@@ -160,3 +305,73 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 - `docs/server-modernization/phase2/PHASE2_PROGRESS.md`
 - `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md`
 - RUN_ID=`20251110T221659Z`（`artifacts/parity-manual/TRACEID_JMS/20251110T221659Z/`）の Compose 実行ログでは、Modernized 側に `traceId=trace-http-*` WARN / Legacy 側に LogFilter NPE を再確認。`logs/d_audit_event_trace-http-*.sql` は 0 行、`jms_dolphinQueue_read-resource.txt` は `messages-added=0L` だったため、JMS 伝搬や AuditTrail Trace ID が未達の場合の記録例として参照する。
+
+---
+
+## Appendix A. StampTree GET variations（helper + `--profile compose`）
+
+### A.1 準備フロー
+- RUN_ID を variation ごとに割り当て（例: public=`20251111TstampfixZ4`, shared=`20251111TstampfixZ5`, published=`20251111TstampfixZ6`）、「`tmp/parity-headers/stamp_tree_<variation>.headers` → `tmp/parity-headers/stamp_tree_<variation>_<RUN_ID>.headers`」で複製する。
+- `perl -0pi -e 's/{{RUN_ID}}/<RUN_ID>/g' tmp/parity-headers/stamp_tree_<variation>_<RUN_ID>.headers` で `X-Trace-Id: parity-stamp-tree-<variation>-<RUN_ID>` を埋め込み、`PARITY_OUTPUT_DIR=artifacts/parity-manual/stamp/<RUN_ID>` を作成して `logs/` を先に掘っておく。
+- helper から `docker exec opendolphin-server{,-modernized-dev}` を叩く想定で、`logs/jms_dolphinQueue_read-resource{,_legacy}.{before,txt}` と `logs/d_audit_event_stamp_<variation>_{legacy,modern}.tsv` の出力先を決めておく（Appendix A.3 のコマンドを参照）。
+
+### A.2 helper 実行例（9020 問題回避）
+Docker ホスト（WSL/裸 Linux）で 9080/TCP が塞がっている間は helper コンテナを `--network host` で起動し、`--profile compose` から localhost:8080/9080 経由でアクセスする。
+
+```bash
+RUN_ID=${RUN_ID:-20251111TstampfixZ4}
+VARIATION=${VARIATION:-public}
+docker run --rm --network host \
+  -v "$PWD":/workspace -w /workspace \
+  mcr.microsoft.com/devcontainers/base:jammy \
+  bash -lc "set -euo pipefail
+    export PARITY_HEADER_FILE=tmp/parity-headers/stamp_tree_${VARIATION}_${RUN_ID}.headers
+    export PARITY_OUTPUT_DIR=artifacts/parity-manual/stamp/${RUN_ID}
+    export TRACE_RUN_ID=${RUN_ID}
+    ./ops/tools/send_parallel_request.sh --profile compose GET /stamp/tree/9001/${VARIATION} stamp_tree_${VARIATION}
+  "
+```
+
+> **メモ:** `VARIATION` は `public` / `shared` / `published` を切り替えて 3 回実行する。`stamp_tree_<variation>/<legacy|modern>/` に `headers.txt` / `meta.json` / `response.json` が生成されるので、`artifacts/parity-manual/stamp/<RUN_ID>/stamp_tree_<variation>/` ごとに Run ID を分ける。
+
+### A.3 JMS / Audit 採取コマンド
+1. **JMS before/after**（Legacy, Modern 共通）  
+   ```bash
+   # before
+   docker exec opendolphin-server \
+     /opt/jboss/wildfly/bin/jboss-cli.sh --connect \
+     --commands='/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)' \
+     > artifacts/parity-manual/stamp/${RUN_ID}/logs/jms_dolphinQueue_read-resource_legacy.before.txt
+   docker exec opendolphin-server-modernized-dev \
+     /opt/jboss/wildfly/bin/jboss-cli.sh --connect \
+     --commands='/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)' \
+     > artifacts/parity-manual/stamp/${RUN_ID}/logs/jms_dolphinQueue_read-resource.before.txt
+   # after
+   docker exec opendolphin-server \
+     /opt/jboss/wildfly/bin/jboss-cli.sh --connect \
+     --commands='/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)' \
+     > artifacts/parity-manual/stamp/${RUN_ID}/logs/jms_dolphinQueue_read-resource_legacy.txt
+   docker exec opendolphin-server-modernized-dev \
+     /opt/jboss/wildfly/bin/jboss-cli.sh --connect \
+     --commands='/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)' \
+     > artifacts/parity-manual/stamp/${RUN_ID}/logs/jms_dolphinQueue_read-resource.txt
+   ```
+   `messages-added` の差分と Legacy `message-count=0L` をコメントに残す。
+
+2. **Audit (`d_audit_event`)**  
+   ```bash
+   docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml exec -T db \
+     psql -U opendolphin -d opendolphin -f - \
+     < tmp/d_audit_event_stamp.sql \
+     > artifacts/parity-manual/stamp/${RUN_ID}/logs/d_audit_event_stamp_${VARIATION}_legacy.tsv
+   docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml exec -T db-modernized \
+     psql -U opendolphin -d opendolphin_modern -f - \
+     < tmp/d_audit_event_stamp.sql \
+     > artifacts/parity-manual/stamp/${RUN_ID}/logs/d_audit_event_stamp_${VARIATION}_modern.tsv
+   ```
+   出力 TSV に `TraceId=parity-stamp-tree-<variation>-<RUN_ID>` を含む行が追加されたことを確認し、`domain-transaction-parity.md` Appendix A.5 と `PHASE2_PROGRESS.md` の該当節へリンクする。
+
+3. **報告テンプレ**  
+   - (a) HTTP Legacy/Modern のステータス  
+   - (b) Audit/JMS の引用パス (`artifacts/parity-manual/stamp/<RUN_ID>/...`)  
+   - (c) 追加課題（Audit 未記録や JMS 変化無しなど）は `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4-2 と `PHASE2_PROGRESS.md` backlog に記載。

@@ -1,5 +1,6 @@
 package open.dolphin.converter;
 
+import java.nio.charset.StandardCharsets;
 import java.util.Date;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.StampTreeModel;
@@ -82,5 +83,15 @@ public final class StampTreeModelConverter implements IInfoModelConverter {
     @Override
     public void setModel(IInfoModel model) {
         this.model = (StampTreeModel)model;
+        ensureTreeBytes();
+    }
+
+    private void ensureTreeBytes() {
+        if (model == null) {
+            return;
+        }
+        if ((model.getTreeBytes() == null || model.getTreeBytes().length == 0) && model.getTreeXml() != null) {
+            model.setTreeBytes(model.getTreeXml().getBytes(StandardCharsets.UTF_8));
+        }
     }
 }

@@ -45,6 +45,13 @@ public final class SessionTraceContext {
         return Collections.unmodifiableMap(new HashMap<>(attributes));
     }
 
+    public String getAttribute(String key) {
+        if (key == null || key.isBlank()) {
+            return null;
+        }
+        return attributes.get(key);
+    }
+
     public String getActorRole() {
         return attributes.get(ATTRIBUTE_ACTOR_ROLE);
     }
@@ -55,6 +62,19 @@ public final class SessionTraceContext {
             updated.remove(ATTRIBUTE_ACTOR_ROLE);
         } else {
             updated.put(ATTRIBUTE_ACTOR_ROLE, actorRole);
+        }
+        return new SessionTraceContext(traceId, startedAt, operation, updated);
+    }
+
+    public SessionTraceContext withAttribute(String key, String value) {
+        if (key == null || key.isBlank()) {
+            return this;
+        }
+        Map<String, String> updated = new HashMap<>(attributes);
+        if (value == null || value.isBlank()) {
+            updated.remove(key);
+        } else {
+            updated.put(key, value);
         }
         return new SessionTraceContext(traceId, startedAt, operation, updated);
     }
