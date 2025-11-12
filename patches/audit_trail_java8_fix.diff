@@ -1,0 +1,75 @@
+diff --git a/common/src/main/java/open/dolphin/audit/AuditEventEnvelope.java b/common/src/main/java/open/dolphin/audit/AuditEventEnvelope.java
+index 367bbb12..fc0c01ee 100644
+--- a/common/src/main/java/open/dolphin/audit/AuditEventEnvelope.java
++++ b/common/src/main/java/open/dolphin/audit/AuditEventEnvelope.java
+@@ -263,16 +263,20 @@ public final class AuditEventEnvelope implements Serializable {
+         }
+ 
+         public AuditEventEnvelope build() {
+-            if (actorId == null || actorId.isBlank()) {
++            if (isNullOrBlank(actorId)) {
+                 throw new IllegalStateException("actorId must be provided for audit events");
+             }
+-            if (traceId == null || traceId.isBlank()) {
++            if (isNullOrBlank(traceId)) {
+                 throw new IllegalStateException("traceId must be provided for audit events");
+             }
+-            if (requestId == null || requestId.isBlank()) {
++            if (isNullOrBlank(requestId)) {
+                 requestId = traceId;
+             }
+             return new AuditEventEnvelope(this);
+         }
++
++        private static boolean isNullOrBlank(String value) {
++            return value == null || value.trim().isEmpty();
++        }
+     }
+ }
+diff --git a/common/src/main/java/open/dolphin/audit/AuditTrailService.java b/common/src/main/java/open/dolphin/audit/AuditTrailService.java
+index ac616397..4119896d 100644
+--- a/common/src/main/java/open/dolphin/audit/AuditTrailService.java
++++ b/common/src/main/java/open/dolphin/audit/AuditTrailService.java
+@@ -1,5 +1,6 @@
+ package open.dolphin.audit;
+ 
++import java.util.Collections;
+ import java.util.Map;
+ import java.util.UUID;
+ 
+@@ -25,14 +26,18 @@ public interface AuditTrailService {
+         return write(systemEnvelope(action, resource, details, error));
+     }
+ 
+-    private AuditEventEnvelope systemEnvelope(String action, String resource, Map<String, Object> details, Throwable error) {
+-        Map<String, Object> safeDetails = details == null ? Map.of() : details;
++    default AuditEventEnvelope systemEnvelope(String action, String resource, Map<String, Object> details, Throwable error) {
++        String safeAction = requireNonBlank(action, "action");
++        String safeResource = requireNonBlank(resource, "resource");
++        Map<String, Object> safeDetails = details == null ? Collections.emptyMap() : details;
++        String actorId = requireNonBlank("system", "actorId");
+         String requestId = UUID.randomUUID().toString();
+-        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, resource)
+-                .actorId("system")
++        String traceId = requireNonBlank(requestId, "traceId");
++        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(safeAction, safeResource)
++                .actorId(actorId)
+                 .actorDisplayName("system")
+                 .requestId(requestId)
+-                .traceId(requestId)
++                .traceId(traceId)
+                 .patientId("N/A")
+                 .details(safeDetails);
+         if (error != null) {
+@@ -40,4 +45,11 @@ public interface AuditTrailService {
+         }
+         return builder.build();
+     }
++
++    static String requireNonBlank(String value, String fieldName) {
++        if (value == null || value.trim().isEmpty()) {
++            throw new IllegalArgumentException(fieldName + " must not be blank");
++        }
++        return value;
++    }
+ }

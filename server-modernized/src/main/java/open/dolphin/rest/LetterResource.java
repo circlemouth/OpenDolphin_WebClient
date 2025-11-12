@@ -25,6 +25,7 @@ import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
+import open.dolphin.session.framework.SessionOperation;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -52,6 +53,7 @@ public class LetterResource extends AbstractResource {
     public LetterResource() {
     }
 
+    @SessionOperation
     @PUT
     @Path("/letter")
     @Consumes(MediaType.APPLICATION_JSON)

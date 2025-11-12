@@ -1,5 +1,12 @@
 # Letter/Lab Audit 実装計画（フェーズ4-2）
 
+> **Status: DONE（RUN_ID=`20251115TletterAuditZ1` / `20251115TlabAuditZ1`, 2025-11-12）** — Modernized 側で `LETTER_CREATE` / `LAB_TEST_READ` を `d_audit_event` + JMS に記録済み。Legacy は Audit/JMS 未連携（Lab は seed 未適用で 404）であることを Evidence と Runbook に明記し、後続タスクへ引き継いだ。
+
+## 実行結果サマリ
+- helper コンテナ + `ops/tools/send_parallel_request.sh --profile modernized-dev` で `rest_error_{letter,lab}_audit` を実行。`artifacts/parity-manual/{letter,lab}/20251115T*/` に HTTP/Audit/JMS/CLI ログを集約。
+- `server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java` を CDI 化し、`SessionAuditDispatcher` から `AuditEventEnvelope` を JMS へ publish。`LetterServiceBean` / `NLabServiceBean` は `recordLetterMutation` / `recordLabAudit` を新設して Trace 属性・details を整備。
+- Modern `d_audit_event` では `LETTER_CREATE`（id=82）/`LAB_TEST_READ`（id=84）が TraceId=`trace-letter-audit-20251115TletterAuditZ1` / `trace-lab-audit-20251115TlabAuditZ1` で確認でき、`logs/jms_dolphinQueue_read-resource.{before,after}.txt` の `messages-added` は 0L→1L→2L。Legacy 分は Known Issue（Audit 未連携／seed 未適用）として Evidence に記録した。
+
 ## 背景
 - RUN_ID=`20251111TrestfixZ` の `PUT /odletter/letter` / `GET /lab/module/WEB1001,0,5` は HTTP 200 だが、`artifacts/parity-manual/{letter,lab}/20251111TrestfixZ/logs/{d_audit_event_latest.tsv,jms_dolphinQueue_read-resource*.txt}` が空のまま。
 - `LetterServiceBean#saveOrUpdateLetter` は `resolveKarteReference` により FK を解決できるようになったが、監査呼び出しがなく TraceId を残せない。`DocInfoModel.sendClaim=true` 時に JMS も 0L のまま早期 return している。

@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
+ARG WAR_BASENAME=opendolphin-server
+
 FROM maven:3.9.6-eclipse-temurin-8 AS build
+ARG WAR_BASENAME
 WORKDIR /workspace
 
 COPY pom.xml ./
@@ -54,15 +57,22 @@ JAVA
 RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
-RUN mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package && \
-    mv server/target/opendolphin-server-*.war server/target/opendolphin-server.war
+RUN set -eux; \
+    mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package; \
+    WAR_DIR=server/target; \
+    WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
+    if [ ! -f "${WAR_FILE}" ]; then \
+        FIRST_WAR=$(ls "${WAR_DIR}"/*.war | head -n 1); \
+        mv "${FIRST_WAR}" "${WAR_FILE}"; \
+    fi
 
 FROM jboss/wildfly:10.1.0.Final
+ARG WAR_BASENAME
 ENV JBOSS_HOME=/opt/jboss/wildfly \
     WILDFLY_HOME=/opt/jboss/wildfly
 
 USER root
-COPY --from=build /workspace/server/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
+COPY --from=build /workspace/server/target/${WAR_BASENAME}.war ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
 COPY --from=build /root/.m2/repository/javax/jms/javax.jms-api/2.0.1/javax.jms-api-2.0.1.jar /opt/jboss/javax-jms-api.jar
@@ -75,7 +85,7 @@ RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
     mv /opt/jboss/javax-jms-api.jar /opt/jboss/tmp/WEB-INF/lib/ && \
     cd /opt/jboss/tmp && \
-    jar uf ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war -C /opt/jboss/tmp WEB-INF && \
+    jar uf ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war -C /opt/jboss/tmp WEB-INF && \
     rm -rf /opt/jboss/tmp
 
 RUN ${WILDFLY_HOME}/bin/jboss-cli.sh --file=/opt/jboss/configure-wildfly.cli && \

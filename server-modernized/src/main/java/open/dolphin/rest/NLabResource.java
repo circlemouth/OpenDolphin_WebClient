@@ -15,6 +15,7 @@ import open.dolphin.converter.PatientLiteListConverter;
 import open.dolphin.converter.PatientModelConverter;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.NLabServiceBean;
+import open.dolphin.session.framework.SessionOperation;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -32,6 +33,7 @@ public class NLabResource extends AbstractResource {
     public NLabResource() {
     }
 
+    @SessionOperation
     @GET
     @Path("/module/{param}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -71,6 +73,7 @@ public class NLabResource extends AbstractResource {
     }
 //s.oh$
 
+    @SessionOperation
     @GET
     @Path("/item/{param}")
     @Produces(MediaType.APPLICATION_JSON)
@@ -117,6 +120,7 @@ public class NLabResource extends AbstractResource {
         return conv;
     }
 
+    @SessionOperation
     @POST
     @Path("/module")
     @Consumes(MediaType.APPLICATION_JSON)
@@ -147,6 +151,7 @@ public class NLabResource extends AbstractResource {
     }
 
     // ラボデータの削除 2013/06/24    
+    @SessionOperation
     @DELETE
     @Path("/module/{param}")
     public void unsubscribeTrees(@PathParam("param") String param) {

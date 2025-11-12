@@ -1,0 +1,9 @@
+# RUN_ID_PLACEHOLDER=20251113TstampPublicPlanZ1 （例: 20251111TstampfixZ5）
+# Endpoint: GET /stamp/tree/{facility}/shared
+# 使用手順: cp tmp/parity-headers/stamp_tree_shared_TEMPLATE.headers tmp/parity-headers/stamp_tree_shared_<RUN_ID>.headers && perl -0pi -e 's/20251113TstampPublicPlanZ1/<RUN_ID>/g'
+userName: 9001:doctor1
+password: 632080fabdb968f9ac4f31fb55104648
+clientUUID: trace-session-client
+facilityId: 9001
+X-Trace-Id: parity-stamp-tree-shared-20251113TstampPublicPlanZ1
+Accept: application/json

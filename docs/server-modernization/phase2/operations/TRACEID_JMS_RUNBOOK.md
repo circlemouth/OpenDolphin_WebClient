@@ -198,6 +198,7 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 - **残課題**: `sendClaim` が 401/403 で止まる理由（Legacy: Basic 認証, Modern: WildFly セキュリティドメイン）の切り分けと、JMS メトリクスに変化が出た RUN_ID の取得が引き続き必要。次回はヘッダー差し替え・ORCA 側資格情報の再確認後、`messages-added>0L` に変化したタイミングを `PHASE2_PROGRESS.md` / `TRACE_PROPAGATION_CHECK.md` / 本節へ追記する。
 
 ### 5.5 RUN_ID=20251111TstampfixZ3（StampTree parity）
+> **補足:** Legacy ビルドで `LOGGER.log(Level, () -> "...", ex)` を呼び出していた `StampResource` / `StampServiceBean` のバックポート差分は `patches/legacy_stamp_logger_fix.diff` に保存済み。`mvn -f pom.server-classic.xml -pl server -am -Plegacy-wildfly10 -DskipTests package` のレスキューログは `artifacts/parity-manual/build/legacy_war_missing/mvn-package-stamp-logger.log` を参照。
 - **実行概要**: helper コンテナ（`mcr.microsoft.com/devcontainers/base:jammy`）を `--network legacy-vs-modern_default` で起動し、`BASE_URL_{LEGACY,MODERN}=http://opendolphin-{server,server-modernized-dev}:8080/openDolphin/resources` / `PARITY_HEADER_FILE=tmp/parity-headers/stamp_20251111TstampfixZ3.headers` / `TRACE_RUN_ID=20251111TstampfixZ3` で `ops/tools/send_parallel_request.sh PUT /stamp/tree` を送信。PUT 前に GET `/stamp/tree/9001` を取得して payload（versionNumber=11 / treeBytes）を同期し、Evidence は `artifacts/parity-manual/stamp/20251111TstampfixZ3/{stamp_tree_user9001,PUT_stamp_tree,rest_error_stamp_data_exception}` に集約した。
 - **DB 調整**: Legacy/Modern Postgres へ `ops/db/local-baseline/stamp_tree_oid_cast.sql` を適用し、Modern 側には欠損していた `d_subscribed_tree`（id, treeId, user_id）を新規作成。作業ログは `logs/d_stamp_tree_cast_migration.txt` と `logs/d_subscribed_tree_migration.txt` に追記した。
 - **Audit/JMS**: Legacy/Modern とも `logs/d_audit_event_stamp_{legacy,modern}.tsv` に TraceId=`parity-stamp-20251111TstampfixZ3` の `STAMP_TREE_PUT` が残り、`logs/jms_dolphinQueue_read-resource*.txt` で `messages-added=4L`, `message-count=0L` を確認。`rest_error_scenarios.manual.csv` / README.manual.md / `PHASE2_PROGRESS.md` / `notes/domain-transaction-parity.md` / `DOC_STATUS.md` / `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` も同 RUN_ID へ更新済み。
@@ -284,11 +285,11 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 
 | Case ID | API | RUN_ID テンプレ | ヘッダーテンプレ | 証跡保存先 | 期待 HTTP | Audit/JMS チェック |
 | --- | --- | --- | --- | --- | --- | --- |
-| `rest_error_letter_fk` | `PUT /odletter/letter` | `20251111TrestfixZ`（`TRACE_RUN_ID={{RUN_ID}}`） | `tmp/parity-headers/letter_<RUN_ID>.headers` ＋ `PARITY_BODY_FILE=tmp/parity-letter/letter_put_payload.json` | `artifacts/parity-manual/letter/<RUN_ID>/` | Legacy/Modern=200 | ① `logs/d_audit_event_letter_{legacy,modern}.tsv` に `LETTER_MUTATION` / `TraceId=parity-letter-<RUN_ID>` を 1 行以上追加 ② `logs/jms_dolphinQueue_read-resource{,_legacy}.{before,after}.txt` で `messages-added` +1（Legacy は 0L 維持でもコメント必須）。|
-| `rest_error_lab_empty` | `GET /lab/module/WEB1001,0,5` | `20251111TrestfixZ`（`TRACE_RUN_ID={{RUN_ID}}`） | `tmp/parity-headers/lab_<RUN_ID>.headers` | `artifacts/parity-manual/lab/<RUN_ID>/` | Legacy/Modern=200（`{"list":[]}` 基準） | ① `logs/d_audit_event_lab_{legacy,modern}.tsv` に `LAB_MODULE_FETCH`（`details.resultCount` を list 長と同期）を追加 ② JMS は通常 0L のため `messages-added` の差分 0 を `logs/jms_dolphinQueue_read-resource*.txt` に明記。|
+| `rest_error_letter_audit` | `PUT /odletter/letter` | `20251115TletterAuditZ1`（`TRACE_RUN_ID={{RUN_ID}}`） | `tmp/parity-headers/letter_<RUN_ID>.headers` ＋ `PARITY_BODY_FILE=tmp/parity-letter/letter_put_payload.json` | `artifacts/parity-manual/letter/<RUN_ID>/` | Legacy=200（ID=18） / Modern=200（ID=-38） | ① Modern `logs/d_audit_event_letter_modern.tsv` に `LETTER_CREATE` が TraceId=`trace-letter-audit-<RUN_ID>` で追加される ② Modern `logs/jms_dolphinQueue_read-resource.{before,after}.txt` の `messages-added` が 0L→1L。Legacy は Audit/JMS 0 行を Known Issue として Evidence に記録。|
+| `rest_error_lab_audit` | `GET /lab/module/WEB1001,0,5` | `20251115TlabAuditZ1`（`TRACE_RUN_ID={{RUN_ID}}`） | `tmp/parity-headers/lab_<RUN_ID>.headers` | `artifacts/parity-manual/lab/<RUN_ID>/` | Legacy=404（seed 未適用） / Modern=200（`{"list":[]}`） | ① Modern `logs/d_audit_event_lab_modern.tsv` に `LAB_TEST_READ`（`patientId`/`labCode`/`resultCount`）が追記される ② Modern `messages-added` が 1L→2L。Legacy seed を適用した RUN では 200/200 を目指す。|
 
-- どちらのケースも **現状は TODO（Audit/JMS 未取得）** であり、`ops/tests/api-smoke-test/rest_error_scenarios.manual.csv` の `letter_lab_audit_status` 列と連動させて進捗を管理する。RUN 実行時は `PARITY_OUTPUT_DIR=artifacts/parity-manual/{letter,lab}/<RUN_ID>` を先に作成し、HTTP (`{legacy,modern}/headers.txt`), `meta.json`, `response.json`, `logs/send_parallel_request.log` を同一ディレクトリに揃える。
-- `RUN_ID` 命名規則は Letter/Lab 共通で UTC ベースの `YYYYMMDDThhmmssZ` を使用し、TraceId は `parity-letter-<RUN_ID>` / `parity-lab-<RUN_ID>` 形式に統一する。Audit を取得できたら `domain-transaction-parity.md §4` と本表の `期待 HTTP`/`Audit/JMS` 列を「完了」へ書き換え、`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4-2 の Letter/Lab 行をクローズする。
+- いずれのケースも **RUN_ID=`20251115TletterAuditZ1` / `20251115TlabAuditZ1` で Audit/JMS 取得済み**。`ops/tests/api-smoke-test/rest_error_scenarios.manual.csv` の `letter_lab_audit_status` 列に DONE を記載し、`PARITY_OUTPUT_DIR=artifacts/parity-manual/{letter,lab}/<RUN_ID>` 配下に HTTP/Audit/JMS/CLI ログを集約した。
+- `RUN_ID` 命名規則は Letter/Lab 共通で UTC ベースの `YYYYMMDDThhmmssZ` を使用し、TraceId は `trace-letter-audit-<RUN_ID>` / `trace-lab-audit-<RUN_ID>` 形式に統一する。Legacy seed 適用後の再取得（Lab=404→200）を行う場合も同じプレフィックスを継承する。
 
 ## 7. 証跡の保存と報告
 
@@ -375,3 +376,51 @@ docker run --rm --network host \
    - (a) HTTP Legacy/Modern のステータス  
    - (b) Audit/JMS の引用パス (`artifacts/parity-manual/stamp/<RUN_ID>/...`)  
    - (c) 追加課題（Audit 未記録や JMS 変化無しなど）は `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4-2 と `PHASE2_PROGRESS.md` backlog に記載。
+
+-### A.4 Stamp 公開 GET RUN テンプレ（RUN_ID=`20251113TstampPublicPlanZ1` / `Z1` / `20251113TstampPublishedPlanZ1`）
+- `seed`: `ops/db/local-baseline/stamp_public_seed.sql` を Legacy/Modern DB に適用（`docker exec -i opendolphin-postgres{,-modernized} psql -U opendolphin -d {opendolphin|opendolphin_modern} < ops/db/local-baseline/stamp_public_seed.sql`）。同スクリプトは facility=`9001` / user=`9001:doctor1` / `d_roles` を `NOT EXISTS` で補完するため、`publishType in ('9001','9002','global')` と購読サンプルが揃う。結果を `artifacts/parity-manual/stamp/20251113TstampPublicPlanZ1/logs/seed_stamp_public_{legacy,modern}.log` に保存。
+- `headers`: `tmp/parity-headers/stamp_tree_{public,shared,published}_20251113TstampPublicPlanZ1.headers`（`userName=9001:doctor1`, `facilityId=9001`, `X-Trace-Id=parity-stamp-tree-<variation>-20251113Tstamp<Variation>PlanZ1`）を使用。将来 RUN_ID を差し替える場合は `perl -0pi -e 's/20251113TstampPublicPlanZ1/<新 RUN_ID>/g' ...` で一括置換する。
+- `helper` 実行例:
+  ```bash
+  RUN_ID=20251113TstampPublicPlanZ1
+  VARIATION=${VARIATION:-public}
+  docker run --rm --network legacy-vs-modern_default \
+    -v "$PWD":/workspace -w /workspace \
+    mcr.microsoft.com/devcontainers/base:jammy \
+    bash -lc "set -euo pipefail
+      export PARITY_HEADER_FILE=tmp/parity-headers/stamp_tree_${VARIATION}_${RUN_ID}.headers
+      export PARITY_OUTPUT_DIR=artifacts/parity-manual/stamp/${RUN_ID}
+      export TRACE_RUN_ID=${RUN_ID}
+      ./ops/tools/send_parallel_request.sh --profile modernized-dev GET /stamp/tree/9001/${VARIATION} stamp_tree_${VARIATION}
+    "
+  ```
+- `証跡`: `artifacts/parity-manual/stamp/20251113Tstamp<Variation>PlanZ1/` に Legacy/Modern の HTTP/headers/meta と `logs/d_audit_event_stamp_<variation>_{legacy,modern}.tsv`（`STAMP_TREE_<VIS>_GET`, `resultCount={2,1,3}`）, `logs/jms_dolphinQueue_read-resource{,_legacy}.{before,after}.txt`, `logs/send_parallel_request.log` を集約。`docs/server-modernization/phase2/notes/domain-transaction-parity.md` Appendix A.5 / `PHASE2_PROGRESS.md` / `patches/stamp_get_public_plan.md` へ RUN_ID をリンクする。facility ミスマッチ検証用には `RUN_ID=20251113TstampPublicPlanZ4` を割り当て、`/stamp/tree/9002/public`（403）実行後の WARN ログを `artifacts/parity-manual/stamp/20251113TstampPublicPlanZ4/logs/{legacy,modern}_warn.log` に保存する。
+
+### A.5 Appo/Schedule Audit/JMS 再取得テンプレ（RUN_ID=`20251115TappoSchedPlanZ`）
+
+1. **準備**
+   - `tmp/reseed_appo.sql` を Legacy/Modern DB へコピーして `docker exec opendolphin-postgres{,-modernized} psql -U opendolphin -d {opendolphin|opendolphin_modern} -f /tmp/reseed_appo.sql` を実行し、`d_appo id=8001` を復元してから CLI を叩く。
+   - ヘッダー: `cp tmp/parity-headers/appo_20251111T070532Z.headers tmp/parity-headers/appo_${RUN_ID}.headers`（schedule 版も同様）→ `perl -0pi -e 's/TRACE_ID_PLACEHOLDER/trace-audit-appo-${RUN_ID}/'` で `X-Trace-Id` と `X-Run-Id` を差し替える。`PARITY_OUTPUT_DIR=artifacts/parity-manual/{appo,schedule}/${RUN_ID}` を事前に作成し、`logs/` ディレクトリも掘っておく。
+2. **helper 実行例（docker network 内でコンテナ名直接参照）**
+   ```bash
+   RUN_ID=${RUN_ID:-20251115TappoSchedPlanZ}
+   docker run --rm --network legacy-vs-modern_default \
+     -v "$PWD":/workspace -w /workspace mcr.microsoft.com/devcontainers/base:jammy \
+     bash -lc "set -euo pipefail
+       export PARITY_HEADER_FILE=tmp/parity-headers/appo_${RUN_ID}.headers
+       export PARITY_BODY_FILE=ops/tests/api-smoke-test/payloads/appo_cancel_sample.json
+       export PARITY_OUTPUT_DIR=artifacts/parity-manual/appo/${RUN_ID}
+       ops/tools/send_parallel_request.sh --profile modernized-dev PUT /appo rest_audit_appo_trace
+       export PARITY_HEADER_FILE=tmp/parity-headers/schedule_${RUN_ID}.headers
+       unset PARITY_BODY_FILE
+       export PARITY_OUTPUT_DIR=artifacts/parity-manual/schedule/${RUN_ID}
+       ops/tools/send_parallel_request.sh --profile modernized-dev GET /schedule/pvt/2025-11-09 rest_audit_schedule_trace
+     "
+   ```
+3. **JMS / Audit 採取**
+   - `docker exec opendolphin-server{,-modernized-dev} /opt/jboss/wildfly/bin/jboss-cli.sh --connect --commands='/subsystem=messaging-activemq/server=default/jms-queue=dolphinQueue:read-resource(include-runtime=true)' > artifacts/parity-manual/{appo|schedule}/${RUN_ID}/logs/jms_dolphinQueue_read-resource{,_legacy}.{before,after}.txt`
+   - `docker exec opendolphin-postgres{,-modernized} sh -c "psql -U opendolphin -d {opendolphin|opendolphin_modern} -c \"\\copy (select id,event_time,action,resource,actor_id,request_id,patient_id from d_audit_event where request_id='trace-audit-{appo|schedule}-${RUN_ID}' order by id desc) to STDOUT with csv header\"" > artifacts/parity-manual/{appo|schedule}/${RUN_ID}/logs/d_audit_event_{legacy,modern}.tsv`
+4. **期待値 / 証跡**
+   - Appo: Legacy/Modern `HTTP 200` (`response:1`), Modern JMS `messages-added` が 1 増分（例: 4L→5L）、Legacy は 0L 継続。`d_audit_event_modern.tsv` に `APPOINTMENT_MUTATION` success/failure が TraceId=`trace-audit-appo-${RUN_ID}` で複数行追加される。
+   - Schedule: Legacy/Modern `HTTP 200`（`架空 花子` 1 件）、`d_audit_event` に `SCHEDULE_FETCH` が 1 行ずつ。JMS は enqueue しないため `messages-added` は before/after で変化なし。
+   - Evidence は `artifacts/parity-manual/{appo,schedule}/${RUN_ID}/` へ HTTP/headers/meta/JMS/Audit/README をまとめ、`docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` / `PHASE2_PROGRESS.md` / `rest_error_scenarios.manual.csv` の該当行へ RUN_ID リンクを追記する。

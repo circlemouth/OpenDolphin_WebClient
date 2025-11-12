@@ -7,7 +7,7 @@
 
 ## Quick Facts
 - **Tech stack**: Java 8 (legacy `server/`) + Java EE 7 / WildFly 10、および Java 17 (`server-modernized/`) + Jakarta EE 8 / WildFly 26 LTS。
-- **Modules**: `common` (shared models), `server` (REST + EJB), `server-modernized` (Jakarta EE 8 / WildFly 26 移行版), `client` (Swing desktop).
+- **Modules**: `common` (shared models), `server` (REST + EJB), `server-modernized` (Jakarta EE 8 / WildFly 26 移行版), `client` (Swing desktop)。`common` は Legacy/Modernized サーバーと Swing が同一 JAR（`opendolphin-common-2.7.1.jar`）を共有し、モダナイズ側のみ `jakarta-no-persistence` 実行で併産する `-jakarta` classifier 版を読む仕組み。DTO/JPQL パリティ維持のため `common` を複製しない方針を厳守する。
 - **Manual deps**: `ext_lib/AppleJavaExtensions.jar`, `ext_lib/iTextAsian.jar` must live in local Maven repo.
 
 ## Repository Layout
@@ -24,7 +24,7 @@
   1. Install manual jars (`iTextAsian`, `AppleJavaExtensions`).
   2. `mvn clean package` at repo root (produces `server/target/opendolphin-server.war` & `client/target/OpenDolphin.jar`).
 - WildFly plugin config in `server-modernized/pom.xml` uses environment-aware propertiesと `settings.xml` の `<server>` 定義で管理資格情報を外部化済み。既存 `server/pom.xml` に残るハードコード値は参照のみで、従来環境のビルドは Docker Compose の `server` サービスで賄う。
-- Manual install commands:
+- Manual install commands (run once per環境。`mvn` Reactor で `opendolphin:itext-font` や `com.apple:AppleJavaExtensions` が見つからない場合も同コマンドで復旧可能):
   ```bash
   mvn install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
   mvn install:install-file -Dfile=ext_lib/AppleJavaExtensions.jar -DgroupId=com.apple -DartifactId=AppleJavaExtensions -Dversion=1.6 -Dpackaging=jar

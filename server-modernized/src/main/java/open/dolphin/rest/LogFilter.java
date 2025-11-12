@@ -2,7 +2,9 @@ package open.dolphin.rest;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
@@ -99,14 +101,16 @@ public class LogFilter implements Filter {
 
             if (!authenticated) {
                 logUnauthorized(req, candidateUser, traceId);
-                sendUnauthorized(res);
+                sendUnauthorized(req, res, "unauthorized", "Authentication required",
+                        unauthorizedDetails(candidateUser, "authentication_failed"));
                 return;
             }
 
             String resolvedUser = resolveEffectiveUser(effectiveUser, headerUser, req);
             if (resolvedUser == null) {
                 logUnauthorized(req, candidateUser, traceId);
-                sendUnauthorized(res);
+                sendUnauthorized(req, res, "unauthorized", "Authenticated user is not associated with a facility",
+                        unauthorizedDetails(candidateUser, "principal_unresolved"));
                 return;
             }
 
@@ -314,9 +318,10 @@ public class LogFilter implements Filter {
         return null;
     }
 
-    private void sendUnauthorized(HttpServletResponse response) throws IOException {
+    private void sendUnauthorized(HttpServletRequest request, HttpServletResponse response, String errorCode,
+            String message, Map<String, Object> details) throws IOException {
         response.setHeader("WWW-Authenticate", AUTH_CHALLENGE);
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        AbstractResource.writeRestError(request, response, HttpServletResponse.SC_UNAUTHORIZED, errorCode, message, details);
     }
 
     private String normalize(String value) {
@@ -378,5 +383,14 @@ public class LogFilter implements Filter {
             return false;
         }
         return candidate.contains(IInfoModel.COMPOSITE_KEY_MAKER);
+    }
+
+    private Map<String, Object> unauthorizedDetails(String principal, String reason) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("reason", reason);
+        if (principal != null && !principal.isBlank()) {
+            details.put("principal", principal);
+        }
+        return details;
     }
 }

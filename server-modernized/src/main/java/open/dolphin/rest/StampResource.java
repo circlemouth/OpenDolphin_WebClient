@@ -4,8 +4,10 @@ import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -16,6 +18,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import open.dolphin.converter.PublishedTreeListConverter;
 import open.dolphin.converter.StampListConverter;
 import open.dolphin.converter.StampModelConverter;
@@ -74,6 +77,27 @@ public class StampResource extends AbstractResource {
         conv.setModel(result);
 
         return conv;
+    }
+
+    @GET
+    @Path("/tree/{facility}/{visibility}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public PublishedTreeListConverter getFacilityStampTrees(@PathParam("facility") String facility,
+            @PathParam("visibility") String visibility) {
+
+        StampTreeVisibility resolvedVisibility = StampTreeVisibility.from(visibility);
+        if (resolvedVisibility == null) {
+            LOGGER.log(Level.WARNING, "Unsupported stamp tree visibility {0} [traceId={1}]",
+                    new Object[]{visibility, resolveTraceId(httpServletRequest)});
+            throw badVisibilityError(visibility);
+        }
+
+        String action = resolvedVisibility.getAuditAction();
+        String normalizedFacility = validateFacilityAccess(facility, resolvedVisibility);
+        List<PublishedTreeModel> models = fetchPublishedTrees(resolvedVisibility, normalizedFacility);
+        PublishedTreeListConverter converter = toPublishedTreeResponse(models);
+        recordStampTreeReadAudit(action, normalizedFacility, resolvedVisibility.getSegment(), models);
+        return converter;
     }
 
     @PUT
@@ -382,6 +406,124 @@ public class StampResource extends AbstractResource {
         auditTrailService.record(payload);
     }
 
+    private void recordStampTreeReadAudit(String action, String facilityId, String visibility, List<PublishedTreeModel> models) {
+        if (auditTrailService == null) {
+            return;
+        }
+        try {
+            AuditEventPayload payload = createBaseAuditPayload(action);
+            Map<String, Object> details = new HashMap<>();
+            details.put("facilityId", facilityId);
+            details.put("visibility", visibility);
+            details.put("resultCount", models != null ? models.size() : 0);
+            enrichUserDetails(details);
+            enrichTraceDetails(details);
+            payload.setDetails(details);
+            auditTrailService.record(payload);
+        } catch (Exception ex) {
+            LOGGER.log(Level.FINE, "Failed to write stamp tree read audit for action " + action, ex);
+        }
+    }
+
+    private List<PublishedTreeModel> fetchPublishedTrees(StampTreeVisibility visibility, String facilityId) {
+        List<PublishedTreeModel> result;
+        switch (visibility) {
+            case PUBLIC:
+                result = stampServiceBean.getPublicTrees();
+                break;
+            case SHARED:
+                result = stampServiceBean.getSharedTrees(facilityId);
+                break;
+            case PUBLISHED:
+            default:
+                result = stampServiceBean.getFacilityPublishedTrees(facilityId);
+                break;
+        }
+        return result != null ? result : Collections.emptyList();
+    }
+
+    private PublishedTreeListConverter toPublishedTreeResponse(List<PublishedTreeModel> models) {
+        PublishedTreeList list = new PublishedTreeList();
+        list.setList(models != null ? models : Collections.emptyList());
+        PublishedTreeListConverter conv = new PublishedTreeListConverter();
+        conv.setModel(list);
+        return conv;
+    }
+
+    private String validateFacilityAccess(String requestedFacility, StampTreeVisibility visibility) {
+        String normalized = requestedFacility != null ? requestedFacility.trim() : null;
+        String visibilitySegment = visibility.getSegment();
+        if (normalized == null || normalized.isEmpty()) {
+            throw invalidFacilityError("Facility identifier must not be empty", normalized, visibilitySegment);
+        }
+        String remoteUser = resolveRemoteUser();
+        if (remoteUser == null || remoteUser.isEmpty()) {
+            logAccessWarning("remote_user_missing", normalized, visibilitySegment, null);
+            throw unauthorizedFacilityError("Remote user is not authenticated", normalized, visibilitySegment);
+        }
+        boolean admin = httpServletRequest != null && httpServletRequest.isUserInRole("ADMIN");
+        if (!admin) {
+            String facilityOfUser = getRemoteFacility(remoteUser);
+            if (facilityOfUser == null || facilityOfUser.isEmpty()) {
+                logAccessWarning("user_facility_missing", normalized, visibilitySegment, remoteUser);
+                throw unauthorizedFacilityError("Authenticated user is not associated with a facility", normalized, visibilitySegment);
+            }
+            if (!facilityOfUser.equals(normalized)) {
+                logAccessWarning("facility_mismatch", normalized, visibilitySegment, remoteUser);
+                throw forbiddenFacilityError("Requested facility does not match authenticated facility", normalized, visibilitySegment);
+            }
+        }
+        return normalized;
+    }
+
+    private void logAccessWarning(String reason, String facilityId, String visibility, String remoteUser) {
+        LOGGER.log(Level.WARNING,
+                "Stamp tree access blocked [traceId={0}, reason={1}, facilityId={2}, visibility={3}, remoteUser={4}]",
+                new Object[]{resolveTraceId(httpServletRequest), reason, facilityId, visibility, remoteUser});
+    }
+
+    private WebApplicationException badVisibilityError(String visibility) {
+        String value = visibility == null ? "" : visibility;
+        return buildErrorResponse(Response.Status.BAD_REQUEST, "bad_visibility",
+                "Unsupported visibility: " + value, null, value);
+    }
+
+    private WebApplicationException invalidFacilityError(String message, String facilityId, String visibility) {
+        return buildErrorResponse(Response.Status.BAD_REQUEST, "invalid_facility", message, facilityId, visibility);
+    }
+
+    private WebApplicationException unauthorizedFacilityError(String message, String facilityId, String visibility) {
+        return buildErrorResponse(Response.Status.UNAUTHORIZED, "unauthorized", message, facilityId, visibility);
+    }
+
+    private WebApplicationException forbiddenFacilityError(String message, String facilityId, String visibility) {
+        return buildErrorResponse(Response.Status.FORBIDDEN, "forbidden", message, facilityId, visibility);
+    }
+
+    private WebApplicationException buildErrorResponse(Response.Status status, String errorCode, String message,
+            String facilityId, String visibility) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("error", errorCode);
+        body.put("message", message);
+        body.put("status", status.getStatusCode());
+        String traceId = resolveTraceId(httpServletRequest);
+        if (traceId != null && !traceId.isEmpty()) {
+            body.put("traceId", traceId);
+        }
+        body.put("path", resolveResourcePath());
+        if (facilityId != null && !facilityId.isEmpty()) {
+            body.put("facilityId", facilityId);
+        }
+        if (visibility != null && !visibility.isEmpty()) {
+            body.put("visibility", visibility);
+        }
+        Response response = Response.status(status)
+                .entity(body)
+                .type(MediaType.APPLICATION_JSON)
+                .build();
+        return new WebApplicationException(response);
+    }
+
     private void recordStampTreeAudit(String action, StampTreeModel model, String status, String treeId, String persistedVersion, String reason) {
         if (auditTrailService == null) {
             return;
@@ -418,7 +560,15 @@ public class StampResource extends AbstractResource {
     private void logStampTreeFailure(String action, StampTreeModel model, RuntimeException e) {
         String traceId = resolveTraceId(httpServletRequest);
         Long userPk = model != null && model.getUserModel() != null ? model.getUserModel().getId() : null;
-        LOGGER.log(Level.WARNING, e, () -> String.format("Stamp tree %s failed [traceId=%s, userPk=%s, version=%s]", action, traceId, userPk, model != null ? model.getVersionNumber() : null));
+        LOGGER.log(Level.WARNING, formatStampTreeFailureMessage(action, traceId, userPk, model), e);
+    }
+
+    private String formatStampTreeFailureMessage(String action, String traceId, Long userPk, StampTreeModel model) {
+        return String.format("Stamp tree %s failed [traceId=%s, userPk=%s, version=%s]",
+                action,
+                traceId,
+                userPk,
+                model != null ? model.getVersionNumber() : null);
     }
 
     private StampTreeModel deserializeStampTree(String json) throws IOException {
@@ -532,5 +682,40 @@ public class StampResource extends AbstractResource {
 
     private String resolveRemoteUser() {
         return httpServletRequest != null ? httpServletRequest.getRemoteUser() : null;
+    }
+
+    private enum StampTreeVisibility {
+        PUBLIC("public", "STAMP_TREE_PUBLIC_GET"),
+        SHARED("shared", "STAMP_TREE_SHARED_GET"),
+        PUBLISHED("published", "STAMP_TREE_PUBLISHED_GET");
+
+        private final String segment;
+        private final String auditAction;
+
+        StampTreeVisibility(String segment, String auditAction) {
+            this.segment = segment;
+            this.auditAction = auditAction;
+        }
+
+        String getSegment() {
+            return segment;
+        }
+
+        String getAuditAction() {
+            return auditAction;
+        }
+
+        static StampTreeVisibility from(String rawVisibility) {
+            if (rawVisibility == null) {
+                return null;
+            }
+            String normalized = rawVisibility.trim().toLowerCase(Locale.ROOT);
+            for (StampTreeVisibility candidate : values()) {
+                if (candidate.segment.equals(normalized)) {
+                    return candidate;
+                }
+            }
+            return null;
+        }
     }
 }

@@ -1,5 +1,6 @@
 package open.dolphin.audit;
 
+import java.util.Collections;
 import java.util.Map;
 import java.util.UUID;
 
@@ -25,19 +26,30 @@ public interface AuditTrailService {
         return write(systemEnvelope(action, resource, details, error));
     }
 
-    private AuditEventEnvelope systemEnvelope(String action, String resource, Map<String, Object> details, Throwable error) {
-        Map<String, Object> safeDetails = details == null ? Map.of() : details;
+    default AuditEventEnvelope systemEnvelope(String action, String resource, Map<String, Object> details, Throwable error) {
+        String safeAction = requireNonBlank(action, "action");
+        String safeResource = requireNonBlank(resource, "resource");
+        Map<String, Object> safeDetails = details == null ? Collections.emptyMap() : details;
+        String actorId = requireNonBlank("system", "actorId");
         String requestId = UUID.randomUUID().toString();
-        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, resource)
-                .actorId("system")
+        String traceId = requireNonBlank(requestId, "traceId");
+        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(safeAction, safeResource)
+                .actorId(actorId)
                 .actorDisplayName("system")
                 .requestId(requestId)
-                .traceId(requestId)
+                .traceId(traceId)
                 .patientId("N/A")
                 .details(safeDetails);
         if (error != null) {
             builder.failure(error);
         }
         return builder.build();
+    }
+
+    static String requireNonBlank(String value, String fieldName) {
+        if (value == null || value.trim().isEmpty()) {
+            throw new IllegalArgumentException(fieldName + " must not be blank");
+        }
+        return value;
     }
 }

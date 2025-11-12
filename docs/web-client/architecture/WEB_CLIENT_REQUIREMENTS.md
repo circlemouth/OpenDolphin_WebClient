@@ -41,6 +41,12 @@
 - F9: スタンプ（診療行為テンプレート）の閲覧・検索・挿入をサポートする。必要に応じて `/stamp` 系 API を利用。
 - F10: ORCA 入力セットをスタンプとして取り込み、カルテへ反映できること（`/orca/inputset` 等）。
 
+#### 公開/共有タブ運用要件（Stamp 公開系 GET）
+- **施設切替ガード**: Stamp 管理センターの「公開」「共有」タブは、ログインユーザーの `FacilityModel.facilityId`（seed では `9001`、ユーザー ID=`9001:doctor1`）をデフォルトとしてロードする。`UserModel.roles` に `ADMIN` を含む場合のみ施設セレクタを表示し、他施設へ切り替えた際は `GET /stamp/tree/{facility}/{public|shared|published}` を facility 単位で再呼び出して結果をキャッシュする。非 ADMIN にはセレクタを非表示にし、ローカル施設分のみ読み取り可能とする。
+- **権限別操作**: 公開セットの新規公開・取消（`PUT /stamp/published/tree` / `PUT /stamp/published/cancel`）および他施設ビューは ADMIN 限定。一般ユーザーが実行できるのは公開カタログの閲覧と、自身の施設に対する購読操作（`PUT /stamp/subscribed/tree` / `DELETE /stamp/subscribed/tree/{ids}`）のみとする。facility と URL が不一致の場合はサーバーが 403 を返し、UI はトーストで通知する。
+- **購読状態の表示**: 各 PublishedTree には `subscriptionState ∈ {subscribed, notSubscribed, pending}` を表示し、購読済み ID リストを REST 応答から復元する。`GET /stamp/tree/{facility}/shared` の `resultCount` で購読タブを描画し、購読／購読解除 API 応答が返るまで `pending` を表示して重複操作を防ぐ。
+- **UI/REST 選択肢の明示**: `/stamp/tree/{facility}/{visibility}` が Legacy/Modern 双方で 200（RUN_ID=`20251113Tstamp{Public,Shared,Published}PlanZ1`）となったため、UI は REST 案を既定とする。`docs/server-modernization/phase2/notes/domain-transaction-parity.md` Appendix A.5 とリンクし、旧 `GET /stamp/published/tree` ベースの UI 差し替え案は Archive 予定として整理する。
+
 ### 5.5 ORCA 連携
 - F11: 点数マスター検索 UI を提供し、`/orca/tensu/*` エンドポイントから取得した結果を表示・選択できる。
 - F12: 病名マスター、一般名検索など ORCA 関連 API を同様に利用できること。
@@ -290,9 +296,20 @@
 - **`PUT /stamp/subscribed/tree`**, **`DELETE /stamp/subscribed/tree/{ids}`**
   - 公開スタンプ購読設定。
 - **`GET /stamp/id/{id}`**, **`GET /stamp/list/{ids}`**（レスポンス: `StampModel` / `StampList`）
+- **`GET /stamp/tree/{facility}/{public|shared|published}`**（Legacy/Modern 共通）: facility と `remoteUser` の facility 部分が一致した場合のみ 200 を返し、`PublishedTreeList` を JSON で返却する。RUN_ID=`20251113Tstamp{Public,Shared,Published}PlanZ1` の HTTP/監査証跡は `artifacts/parity-manual/stamp/20251113Tstamp<Variation>PlanZ1/` に保存。facility 不一致は 403 + WARN ログ（`reason=facility_mismatch`）となる。
   - 個別スタンプの取得。スタンプ内容（モジュール、ClaimItem）を含む。
 - **`POST /stamp/id`**, **`POST /stamp/list`**, **`DELETE /stamp/id/{id}`** 等
   - スタンプの追加・削除（ユーザー個別のスタンプ管理）。
+
+**Stamp 公開/共有タブで参照する API 一覧（2025-11-12 更新）**
+
+| タブ/操作 | HTTP/パス | 用途 | 実装状況 |
+| --- | --- | --- | --- |
+| 公開カタログ（選択肢A） | `GET /stamp/published/tree` | ログイン施設＋グローバルの PublishedTree をまとめて取得し、UI が施設フィルタを適用する。 | ✅ Legacy/Modernized 実装済み。UI差し替え時の既定ルート。
+| 公開カタログ（選択肢B） | `GET /stamp/tree/{facility}/public` | 施設パス引数で公開セットのみを返し、サーバー側で facility 認可を行う。 | 🔄 Appendix A.5 で設計中。REST 新設案のメイン対象。
+| 共有タブ購読一覧（選択肢A） | `PUT /stamp/subscribed/tree`, `DELETE /stamp/subscribed/tree/{ids}` | UI が購読リクエスト応答（ID リスト）をキャッシュし、購読状態の切替を制御。 | ✅ 書き込みは実装済み。購読状態取得は UI キャッシュで補完。
+| 共有タブ購読一覧（選択肢B） | `GET /stamp/tree/{facility}/shared` または `GET /stamp/subscribed/tree`（新設） | サーバーが `SubscribedTreeModel` を返し、購読リストを正規化する。 | 🔄 要件定義中。REST 新設案と同時に実装。
+| 公開セット管理 | `PUT /stamp/published/tree`, `PUT /stamp/published/cancel` | ADMIN が公開セットを登録／取消し、UI へ結果を反映する。 | ✅ 既存 API 利用。UI では ADMIN 操作のみ活性化。 |
 
 ### 14.7 ラボ・検査（`NLabResource`）
 - **`GET /lab/module/{patientId,first,max}`**（レスポンス: `NLaboModuleList`）

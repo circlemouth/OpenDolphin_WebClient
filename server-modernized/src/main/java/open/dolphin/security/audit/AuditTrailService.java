@@ -2,7 +2,7 @@ package open.dolphin.security.audit;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import jakarta.ejb.Stateless;
+import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
@@ -18,7 +18,7 @@ import open.dolphin.infomodel.AuditEvent;
 /**
  * 改ざん検知付きの監査ログを記録するサービス。
  */
-@Stateless
+@ApplicationScoped
 @Transactional(Transactional.TxType.REQUIRES_NEW)
 public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
 

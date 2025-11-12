@@ -1,6 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
+ARG WAR_BASENAME=opendolphin-server
+
 FROM maven:3.9.6-eclipse-temurin-17 AS build
+ARG WAR_BASENAME
 WORKDIR /workspace
 
 COPY pom.xml ./
@@ -53,10 +56,17 @@ JAVA
 RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
-RUN mvn -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package && \
-    mv server-modernized/target/opendolphin-server-*.war server-modernized/target/opendolphin-server.war
+RUN set -eux; \
+    mvn -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package; \
+    WAR_DIR=server-modernized/target; \
+    WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
+    if [ ! -f "${WAR_FILE}" ]; then \
+        FIRST_WAR=$(ls "${WAR_DIR}"/*.war | head -n 1); \
+        mv "${FIRST_WAR}" "${WAR_FILE}"; \
+    fi
 
 FROM quay.io/wildfly/wildfly:33.0.2.Final-jdk17
+ARG WAR_BASENAME
 ENV JBOSS_HOME=/opt/jboss/wildfly \
     WILDFLY_HOME=/opt/jboss/wildfly
 
@@ -65,7 +75,7 @@ RUN mkdir -p /usr/share/fonts/opendolphin
 COPY ops/assets/fonts/NotoSansCJKjp-Regular.otf /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
 RUN chmod 644 /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
 ENV OPENDOLPHIN_REPORT_FONT_PATH=/usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
-COPY --from=build /workspace/server-modernized/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
+COPY --from=build /workspace/server-modernized/target/${WAR_BASENAME}.war ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
 RUN mkdir -p /opt/jboss/config
@@ -84,7 +94,7 @@ EOF
 RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
     cd /opt/jboss/tmp && \
-    jar uf ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war -C /opt/jboss/tmp WEB-INF && \
+    jar uf ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war -C /opt/jboss/tmp WEB-INF && \
     rm -rf /opt/jboss/tmp
 
 # Manual check (Ops-CLI): run `docker build -f ops/modernized-server/docker/Dockerfile .` and ensure the JBoss CLI log shows configure-wildfly.cli finishing with `outcome => success`

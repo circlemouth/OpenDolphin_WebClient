@@ -2,6 +2,8 @@ package open.dolphin.rest;
 
 import java.io.IOException;
 import java.security.Principal;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.UUID;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -79,14 +81,16 @@ public class LogFilter implements Filter {
 
             if (!authenticated) {
                 logUnauthorized(req, candidate, traceId);
-                sendUnauthorized(res);
+                sendUnauthorized(req, res, "unauthorized", "Authentication required",
+                        unauthorizedDetails(candidate, "authentication_failed"));
                 return;
             }
 
             effectiveUser = resolveEffectiveUser(effectiveUser, headerUser, req);
             if (effectiveUser == null) {
                 logUnauthorized(req, candidate, traceId);
-                sendUnauthorized(res);
+                sendUnauthorized(req, res, "unauthorized", "Authenticated user is not associated with a facility",
+                        unauthorizedDetails(candidate, "principal_unresolved"));
                 return;
             }
 
@@ -111,7 +115,8 @@ public class LogFilter implements Filter {
             return false;
         }
 
-        boolean authenticated = password.equals(userCache.getMap().get(userName));
+        String cachedPassword = userCache.getMap().get(userName);
+        boolean authenticated = cachedPassword != null && cachedPassword.equals(password);
         if (authenticated) {
             return true;
         }
@@ -223,9 +228,10 @@ public class LogFilter implements Filter {
         return null;
     }
 
-    private void sendUnauthorized(HttpServletResponse response) throws IOException {
+    private void sendUnauthorized(HttpServletRequest request, HttpServletResponse response, String errorCode,
+            String message, Map<String, Object> details) throws IOException {
         response.setHeader("WWW-Authenticate", AUTH_CHALLENGE);
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED);
+        AbstractResource.writeRestError(request, response, HttpServletResponse.SC_UNAUTHORIZED, errorCode, message, details);
     }
 
     private String normalize(String value) {
@@ -272,5 +278,14 @@ public class LogFilter implements Filter {
             }
         }
         return null;
+    }
+
+    private Map<String, Object> unauthorizedDetails(String principal, String reason) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("reason", reason);
+        if (principal != null && !principal.isEmpty()) {
+            details.put("principal", principal);
+        }
+        return details;
     }
 }

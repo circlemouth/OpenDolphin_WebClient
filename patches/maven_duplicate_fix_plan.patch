@@ -1,0 +1,358 @@
+diff --git a/docs/server-modernization/phase2/PHASE2_PROGRESS.md b/docs/server-modernization/phase2/PHASE2_PROGRESS.md
+index 82189768..2d198e2e 100644
+--- a/docs/server-modernization/phase2/PHASE2_PROGRESS.md
++++ b/docs/server-modernization/phase2/PHASE2_PROGRESS.md
+@@ -9,6 +9,11 @@
+ - 依存タスク: `TRACE_PROPAGATION_CHECK` 再取得、`domain-transaction-parity` Gate、`ops/tools/send_parallel_request.sh --profile compose` を使う全テスト。復旧が完了し `PHASE2_PROGRESS.md` へ「helper 非依存」ステータスを追記するまで再開不可。
+ - Legacy JMS queue は RUN_ID=`20251111TstampfixZ3` 以降も `messages-added=0L`（Legacy）／`consumer-count=0` のまま。`TRACEID_JMS_RUNBOOK.md` §4.1 と `LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md` §3.4 を更新済み。**次アクション: `StampSenderMDB` 再起動 → `messages-added` 変化確認 → `standalone-full.xml` / `server/src/main/resources/META-INF/ejb-jar.xml` の JMS 設定整合性チェック**。再起動手順はマネージャーのみ実行し、ログは `artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/{legacy_mdb_restart,server.log}` へ保存する。
+ 
++## 2025-11-12 追記: Maven DuplicateProjectException 調査（担当: Build）
++- ステータス: **実装中**。`mvn -pl server-modernized -DskipTests help:effective-pom` をルート `pom.xml` から実行すると `Project "opendolphin:opendolphin-server:2.7.1" is duplicated in the reactor` で即時停止する問題を再現し、ログを `artifacts/parity-manual/build/duplicate_project/mvn-help-effective-pom.log` に保存した。ArtifactId リネーム後の再実行ログは `artifacts/parity-manual/build/duplicate_project/mvn-help-effective-pom.fix.log` として追記中。
++- 重複原因は `server/pom.xml` と `server-modernized/pom.xml` が同一 artifactId (`opendolphin-server`) を宣言したまま単一リアクターに登録されている点。詳細メモは `docs/server-modernization/phase2/notes/domain-transaction-parity.md §3.5` を参照。
++- 修正案（Modernized 側 artifactId のリネーム vs 専用リアクター分離）は `patches/maven_duplicate_fix_plan.md` に整理中。決定後に `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ1 行を「対応中」→「完了」へ更新し、CI・Docker 手順の影響範囲を反映させる。
++
+ ## 2026-06-15 追記: フェーズ4 Docker ブロッカー共有（担当: Codex）
+ - WSL2 側で Docker Desktop を導入しておらず、`scripts/start_legacy_modernized.sh start --build` / `docker compose` 系コマンドがすべて `docker: not found` で停止するため、フェーズ4（JPQL/TX、予約・紹介状 REST、SessionOperation、adm10/20、HealthInsuranceModel）のタスクを一時停止。`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` の対象行へ「WSL2 Docker 未導入のため一時停止（2026-06-15）」を記載してブロッカー理由を明示した。
+ - 直近 RUN_ID（20251110T070638Z）以降は HTTP/JMS/DB の追加証跡が取得できておらず、`ops/tools/send_parallel_request.sh --profile compose` による再実行や `docker compose exec db-* psql` での監査ログ採取も実施できない。DB 復旧 Runbook／JMS 検証／`trace_http_*` 収集はいったん Mac 側へ引き継ぐ。
+diff --git a/docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md b/docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md
+index a603294b..ebd7fbc4 100644
+--- a/docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md
++++ b/docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md
+@@ -46,6 +46,7 @@ server-modernized モジュールのデバッグ状況を把握するための
+ - [x] `mvn -pl server-modernized -am clean verify -DskipTests` を実行し、ビルド警告および Jakarta 依存差分を記録する（備考: 2025-11-06 `mvn -f server-modernized/pom.xml clean verify -DskipTests` 実行。`Base64Utils` / `Long(long)` / `Character(char)` などの非推奨 API 警告を確認済み。**指針: 非推奨 API 対応は開発完了後の課題として別途チケット化する**）
+ - [x] `META-INF/persistence.xml` など Jakarta EE 10 対応設定をレビューし、スキーマ不一致を洗い出す（備考: `persistence.xml` は 3.1、`ejb-jar.xml` は 4.0 スキーマで整合。データソース/hibernate プロパティに不一致なし）
+ - [x] 共通モジュール（`common/`）との互換性確認を実施し、DTO/エンティティの差分一覧を作成する（備考: `notes/common-dto-diff-A-M.md` と `notes/common-dto-diff-N-Z.md` で Legacy との差分・新規 DTO・リスク評価を整理。PHR 系フィールド追加、FirstEncounter 系削除、監査/2FA/ケアプラン新規 DTO、Hibernate 6 の CLOB 対応などフォローアップ課題を抽出済み）
++- [ ] Maven duplicate 解消（実装中）: ルート `mvn -pl server-modernized -DskipTests help:effective-pom` が `Project "opendolphin:opendolphin-server:2.7.1" is duplicated in the reactor` で停止。再現ログは `artifacts/parity-manual/build/duplicate_project/mvn-help-effective-pom.log`、ArtifactId リネーム後の再実行ログは `artifacts/parity-manual/build/duplicate_project/mvn-help-effective-pom.fix.log`。原因と修正案は `docs/server-modernization/phase2/notes/domain-transaction-parity.md §3.5` および `patches/maven_duplicate_fix_plan.md` に整理中。Legacy/Modernized で artifactId 衝突を避ける実装案のローリングデプロイを進行させている。
+ 
+ ## フェーズ2: 静的解析・コードマッピング
+ 
+diff --git a/docs/server-modernization/phase2/notes/domain-transaction-parity.md b/docs/server-modernization/phase2/notes/domain-transaction-parity.md
+index 5d1e56e5..ef76b69c 100644
+--- a/docs/server-modernization/phase2/notes/domain-transaction-parity.md
++++ b/docs/server-modernization/phase2/notes/domain-transaction-parity.md
+@@ -163,6 +163,13 @@
+ - JMS 側で `AuditEventEnvelope` を受信した後のシンク（外部 SIEM, DataLake など）が未定。暫定的には `MessageSender#handleAuditEvent` で `LOGGER.info("AUDIT_EVENT [traceId=...]")` を残すだけとし、実運用シナリオはフェーズ5の Observability Gate で詰める。
+ - Legacy 側も同じ `dispatcher` を適用しないと parity が崩れるため、`server/src/main/java/open/dolphin/session/AppoServiceBean` ほかにも `@SessionOperation` 相当の AOP を追加するか、少なくとも `d_audit_event` と JMS の取得スクリプトで「Legacy は空のままで良い」条件を再定義する必要がある。
+ 
++### 3.5 Maven DuplicateProjectException 調査（2025-11-12）
++- ステータス: **実装中**。`mvn -pl server-modernized -DskipTests help:effective-pom`（ルート `pom.xml` を起点）で `Project "opendolphin:opendolphin-server:2.7.1" is duplicated in the reactor` が即時発生することを再現し、コンソール全文を `artifacts/parity-manual/build/duplicate_project/mvn-help-effective-pom.log` へ保存済み。Modernized 側の artifactId を `opendolphin-server-modernized` へ更新した後、同コマンドを再実行した結果ログを `artifacts/parity-manual/build/duplicate_project/mvn-help-effective-pom.fix.log` として追記した。
++- ルートアグリゲータ `pom.xml:15-20` が `<modules>` に `server` と `server-modernized` を同居させており、双方の `pom` が同じ GAV (`groupId=opendolphin`, `artifactId=opendolphin-server`, `version=2.7.1`) を宣言している（`server/pom.xml:14`, `server-modernized/pom.xml:14`）。`pom.server-modernized.xml` も同じ親定義を共有するため、`-pl server-modernized` を付けてもスキャン段階で重複検出される。
++- 2025-11-12 18:00 JST: Modernized モジュールを `opendolphin-server-modernized` へリネームし、`server-modernized/pom.xml` に `<build><finalName>opendolphin-server</finalName></build>` を追加。ルート `pom.xml`／`pom.server-modernized.xml` の `dependencyManagement` へ新 GAV を登録し、`mvn -pl server-modernized ...` での依存解決を分離した。Docker/Compose ビルド（`ops/{legacy,modernized}-server/docker/Dockerfile`, `scripts/start_legacy_modernized.sh`）は `WAR_BASENAME=opendolphin-server` へ依存させ、最終成果物名 `opendolphin-server.war` を維持する形に書き換え済み。
++- 原因は「Legacy/Modernized WAR が同じ artifactId を名乗りつつ、単一リアクターに同時登録されている」点にあり、Maven の ProjectId（GAV）が一意にならない限り help/validate/compile すべてが停止する。Legacy 用 WAR 名を維持しつつ GAV の衝突だけを避ける必要がある。
++- 対応方針ドラフトは `patches/maven_duplicate_fix_plan.md` で整理予定。`server-modernized` を `opendolphin-server-modernized`（artifactId）へリネームし、`pom.xml` の依存管理／`docker`・`scripts/start_legacy_modernized.sh`／`ops/tests/*` で参照する WAR 名を `<finalName>opendolphin-server</finalName>` などで互換に保つ案と、Modernized 系を専用リアクター（`pom.server-modernized.xml`）に完全分離してルートからは除外する案の 2 系統を比較する。
++
+ ### trace_http 再取得結果（RUN_ID=20251111TtracefixZ）
+ - 2025-11-11 01:16 JST に helper コンテナ（`buildpack-deps:curl`）から compose プロファイルを実行し、`PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/20251111TtracefixZ` に `trace_http_{400,401,500}` を保存。`trace_http_200` は RUN_ID=`20251111T091717Z` を継続利用。
+ - Legacy 400=400 (`param must contain ...`), 401=401（HTML `Unauthorized`）, 500=500（`Karte result is empty`）。Modernized 400=500（`RollbackException`）, 401=403（`Forbidden`）, 500=500（`Karte result is empty: pid lookup`）。`legacy_trace_http.log` / `modern_trace_http.log` に `trace-http-*-20251111TtracefixZ` が記録されているが、`d_audit_event_latest.tsv` は旧 RUN（ID=54/55）のままで JMS も 0 件。
+@@ -312,6 +319,33 @@ helper コンテナ（`mcr.microsoft.com/devcontainers/base:jammy`）を `--netw
+ | `GET /stamp/tree/9001/shared` | 20251111TstampfixZ5 | `404 / 404`（Legacy/Modern どちらも `Not Found` で終端） | `logs/d_audit_event_stamp_shared_{legacy,modern}.tsv` は旧 PUT 証跡のみ、`logs/jms_dolphinQueue_read-resource*.txt` も before/after で差分なし（Modern `messages-added=5L → 5L`）。 | HTTP: `artifacts/parity-manual/stamp/20251111TstampfixZ5/stamp_tree_shared/{legacy,modern}/`。**要対応:** 共有カタログ用の REST 仕様を確認し、`shared` variation が参照すべき API（`/stamp/subscribed/tree` など）を再定義する。 |
+ | `GET /stamp/tree/9001/published` | 20251111TstampfixZ6 | `404 / 404` | `logs/d_audit_event_stamp_published_{legacy,modern}.tsv` に TraceId 未記録。JMS は Modern `messages-added=5L`、Legacy `messages-added=0L` で一定。 | HTTP: `artifacts/parity-manual/stamp/20251111TstampfixZ6/stamp_tree_published/{legacy,modern}/`。**要対応:** `@GET /stamp/published/tree` 既存実装との紐付けを整理し、`/stamp/tree/9001/published` へ 301 or alias を張るか、クライアント側ヘッダー／URL を正規ルートへ修正する。 |
+ 
++##### Appendix A.5 追補: Published/Subscribed seed 投入手順
++
++1. Legacy/Modern 双方の Postgres に `ops/db/local-baseline/stamp_public_seed.sql` を流し、facility=9001/9002/`global` の `d_published_tree` と相互 `d_subscribed_tree` を生成する。
++   ```bash
++   docker exec -i -e PGPASSWORD=opendolphin opendolphin-postgres \
++     psql -U opendolphin -d opendolphin \
++     -f /workspace/ops/db/local-baseline/stamp_public_seed.sql
++   docker exec -i -e PGPASSWORD=opendolphin opendolphin-postgres-modernized \
++     psql -U opendolphin -d opendolphin_modern \
++     -f /workspace/ops/db/local-baseline/stamp_public_seed.sql
++   ```
++2. `SELECT publishType, COUNT(*) FROM d_published_tree WHERE publishType IN ('9001','9002','global') GROUP BY publishType;` と `SELECT treeId, COUNT(*) FROM d_subscribed_tree WHERE treeId IN (65001,65002) GROUP BY treeId;` を実行し、少なくとも各 1 行が入ったことを確認する。`d_subscribed_tree` が無い DB では `CREATE TABLE`（Appendix A.4 で実施済み）を先に適用する。
++3. seed 適用結果を `artifacts/parity-manual/stamp/20251113TstampPublicPlanZ1/logs/` に `seed_stamp_public_{legacy,modern}.log` という名前で保存し、次回の GET 実行証跡と同じ RUN_ID でまとめる。`DOC_STATUS.md` の `domain-transaction-parity.md` 行に「stamp_public_seed 反映済み (2025-11-12)」を追記し、棚卸しで Dormant に落とさないよう注意する。
++
++上記 seed が入っていない場合は `/stamp/tree/{facility}/{public|shared|published}` が 200 を返せないため、RUN_ID=`20251113TstampPublicPlanZ1` 以降の証跡採取は無効扱いとする。
++
++`docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md` §5.4「公開/共有タブ運用要件」に UI 前提を集約し、以下の比較表で UI 差し替え案 / REST 追加案の影響を整理する。
++
++#### UI差し替え vs REST追加 比較（Appendix A.5 リンク）
++
++| 観点 | UI差し替え（選択肢A） | REST追加（選択肢B） | サーバー/運用ノート |
++| --- | --- | --- | --- |
++| 施設切替 | `Stamp管理センター` に ADMIN 限定の施設セレクタを実装し、`GET /stamp/published/tree` 応答を UI で施設別にフィルタリング。`PublishedTreeList` キャッシュを facilityId キーで保持し、切替毎にリロードを強制。 | `GET /stamp/tree/{facility}/{public|published}` を追加し、facilityId をサーバーで評価。UI は facilityId を URL パラメータ化するだけで済み、レスポンスは単一施設分。 | どちらの案でも TraceId は `parity-stamp-tree-<visibility>-<RUN_ID>` を再利用し、Appendix A.3 Runbook の証跡採取を踏襲。 |
++| ADMIN 権限 | UI レイヤーで ADMIN 以外に施設セレクタ／公開操作を表示しない。購読ボタンは常に有効で、非 ADMIN でもローカル施設に限定。 | `StampResource` で `@RolesAllowed("ADMIN")` を活用し、facility と remoteUser の不一致時に 403 を返す。UI は表示制御のみ行い、通信エラーを管理者権限不足として表示。 | 認可失敗は `AuditTrailService` に `result=forbidden` を記録する必要があり、`TRACEID_JMS_RUNBOOK.md` §4 へ手順を追記する。 |
++| 購読状態（共有タブ） | UI が `PUT /stamp/subscribed/tree` / `DELETE /stamp/subscribed/tree/{ids}` 応答の ID リストをキャッシュし、`GET /stamp/published/tree` 結果に `subscriptionState` を合成。`pending` 状態はクライアントのみで管理。 | `GET /stamp/tree/{facility}/shared` もしくは `GET /stamp/subscribed/tree` を追加し、`SubscribedTreeModel` で購読状態を返却。UI はレスポンスの `subscribedTreeIds` をそのまま表示し、`pending` なしで済む。 | DAO へ `getSharedTrees(fid)` を追加し、`d_subscribed_tree` から直接読み取る。監査は `STAMP_TREE_SHARED_GET` を新設。 |
++| 証跡・ドキュメント | UI 要件とキャッシュ挙動を `docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md` と `docs/web-client/ux/KARTE_SCREEN_LAYOUT_GUIDE.md`（更新予定）へ追記。 | REST 実装が完了したら `domain-transaction-parity.md` Appendix A.5、`TRACEID_JMS_RUNBOOK.md`、`patches/stamp_get_public_plan.md` の RUN_ID テンプレを再生成。 | どちらの案でも `PHASE2_PROGRESS.md` backlog にスケジュールと担当を記載し、DOC_STATUS から両ファイルを参照する。 |
++
+ #### Legacy 仕様 vs Modern 実装（現状 404 差分）
+ 
+ | Variation | Legacy 仕様（URL / 認可 / レスポンス） | Modern 実装の現状 | 差分と次ステップ |
+diff --git a/ops/legacy-server/docker/Dockerfile b/ops/legacy-server/docker/Dockerfile
+index b7f168b1..839b8db7 100644
+--- a/ops/legacy-server/docker/Dockerfile
++++ b/ops/legacy-server/docker/Dockerfile
+@@ -1,7 +1,10 @@
+-# syntax=docker/dockerfile:1.7
+-
++# syntax=docker/dockerfile:1.7
++
++ARG WAR_BASENAME=opendolphin-server
++
+ FROM maven:3.9.6-eclipse-temurin-8 AS build
+-WORKDIR /workspace
++ARG WAR_BASENAME
++WORKDIR /workspace
+ 
+ COPY pom.xml ./
+ RUN sed '/<module>server-modernized<\/module>/d' pom.xml > pom.server-classic.xml
+@@ -54,15 +57,22 @@ JAVA
+ RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
+ RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
+ 
+-RUN mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package && \
+-    mv server/target/opendolphin-server-*.war server/target/opendolphin-server.war
+-
+-FROM jboss/wildfly:10.1.0.Final
+-ENV JBOSS_HOME=/opt/jboss/wildfly \
+-    WILDFLY_HOME=/opt/jboss/wildfly
++RUN set -eux; \
++    mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package; \
++    WAR_DIR=server/target; \
++    WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
++    if [ ! -f "${WAR_FILE}" ]; then \
++        FIRST_WAR="$(ls "${WAR_DIR}"/*.war | head -n 1)"; \
++        mv "${FIRST_WAR}" "${WAR_FILE}"; \
++    fi
++
++FROM jboss/wildfly:10.1.0.Final
++ARG WAR_BASENAME
++ENV JBOSS_HOME=/opt/jboss/wildfly \
++    WILDFLY_HOME=/opt/jboss/wildfly
+ 
+ USER root
+-COPY --from=build /workspace/server/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
++COPY --from=build /workspace/server/target/${WAR_BASENAME}.war ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war
+ COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
+ COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
+ COPY --from=build /root/.m2/repository/javax/jms/javax.jms-api/2.0.1/javax.jms-api-2.0.1.jar /opt/jboss/javax-jms-api.jar
+@@ -75,7 +85,7 @@ RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
+     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
+     mv /opt/jboss/javax-jms-api.jar /opt/jboss/tmp/WEB-INF/lib/ && \
+     cd /opt/jboss/tmp && \
+-    jar uf ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war -C /opt/jboss/tmp WEB-INF && \
++    jar uf ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war -C /opt/jboss/tmp WEB-INF && \
+     rm -rf /opt/jboss/tmp
+ 
+ RUN ${WILDFLY_HOME}/bin/jboss-cli.sh --file=/opt/jboss/configure-wildfly.cli && \
+diff --git a/ops/modernized-server/docker/Dockerfile b/ops/modernized-server/docker/Dockerfile
+index 5e2ae3a5..d278e6dc 100644
+--- a/ops/modernized-server/docker/Dockerfile
++++ b/ops/modernized-server/docker/Dockerfile
+@@ -1,7 +1,10 @@
+-# syntax=docker/dockerfile:1.7
+-
+-FROM maven:3.9.6-eclipse-temurin-17 AS build
+-WORKDIR /workspace
++# syntax=docker/dockerfile:1.7
++
++ARG WAR_BASENAME=opendolphin-server
++
++FROM maven:3.9.6-eclipse-temurin-17 AS build
++ARG WAR_BASENAME
++WORKDIR /workspace
+ 
+ COPY pom.xml ./
+ RUN grep -v '<module>server</module>' pom.xml | grep -v '<module>client</module>' > pom.server-modernized.xml
+@@ -53,19 +56,26 @@ JAVA
+ RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
+ RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
+ 
+-RUN mvn -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package && \
+-    mv server-modernized/target/opendolphin-server-*.war server-modernized/target/opendolphin-server.war
+-
+-FROM quay.io/wildfly/wildfly:33.0.2.Final-jdk17
+-ENV JBOSS_HOME=/opt/jboss/wildfly \
+-    WILDFLY_HOME=/opt/jboss/wildfly
++RUN set -eux; \
++    mvn -f pom.server-modernized.xml -s /tmp/maven-settings.xml -B -pl server-modernized -am -DskipTests package; \
++    WAR_DIR=server-modernized/target; \
++    WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
++    if [ ! -f "${WAR_FILE}" ]; then \
++        FIRST_WAR="$(ls "${WAR_DIR}"/*.war | head -n 1)"; \
++        mv "${FIRST_WAR}" "${WAR_FILE}"; \
++    fi
++
++FROM quay.io/wildfly/wildfly:33.0.2.Final-jdk17
++ARG WAR_BASENAME
++ENV JBOSS_HOME=/opt/jboss/wildfly \
++    WILDFLY_HOME=/opt/jboss/wildfly
+ 
+ USER root
+ RUN mkdir -p /usr/share/fonts/opendolphin
+ COPY ops/assets/fonts/NotoSansCJKjp-Regular.otf /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+ RUN chmod 644 /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+ ENV OPENDOLPHIN_REPORT_FONT_PATH=/usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+-COPY --from=build /workspace/server-modernized/target/opendolphin-server.war ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
++COPY --from=build /workspace/server-modernized/target/${WAR_BASENAME}.war ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war
+ COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
+ COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
+ RUN mkdir -p /opt/jboss/config
+@@ -84,7 +94,7 @@ EOF
+ RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
+     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
+     cd /opt/jboss/tmp && \
+-    jar uf ${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war -C /opt/jboss/tmp WEB-INF && \
++    jar uf ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war -C /opt/jboss/tmp WEB-INF && \
+     rm -rf /opt/jboss/tmp
+ 
+ # Manual check (Ops-CLI): run `docker build -f ops/modernized-server/docker/Dockerfile .` and ensure the JBoss CLI log shows configure-wildfly.cli finishing with `outcome => success`
+diff --git a/pom.server-modernized.xml b/pom.server-modernized.xml
+index 80e63a3c..65f10438 100644
+--- a/pom.server-modernized.xml
++++ b/pom.server-modernized.xml
+@@ -12,9 +12,32 @@
+     <module>reporting</module>
+     <module>server-modernized</module>
+   </modules>
+-
+-  <repositories>
+-    <repository>
++
++  <dependencyManagement>
++    <dependencies>
++      <dependency>
++        <groupId>opendolphin</groupId>
++        <artifactId>opendolphin-common</artifactId>
++        <version>${project.version}</version>
++        <type>jar</type>
++      </dependency>
++      <dependency>
++        <groupId>opendolphin</groupId>
++        <artifactId>opendolphin-reporting</artifactId>
++        <version>${project.version}</version>
++        <type>jar</type>
++      </dependency>
++      <dependency>
++        <groupId>opendolphin</groupId>
++        <artifactId>opendolphin-server-modernized</artifactId>
++        <version>${project.version}</version>
++        <type>war</type>
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
++
++  <repositories>
++    <repository>
+       <id>jboss-public</id>
+       <name>JBoss Public Repository Group</name>
+       <url>https://repository.jboss.org/nexus/content/groups/public-jboss/</url>
+diff --git a/pom.xml b/pom.xml
+index 7e674075..a3939b6d 100644
+--- a/pom.xml
++++ b/pom.xml
+@@ -38,14 +38,20 @@
+         <version>${project.version}</version>
+         <type>jar</type>
+       </dependency>
+-      <dependency>
+-        <groupId>opendolphin</groupId>
+-        <artifactId>opendolphin-server</artifactId>
+-        <version>${project.version}</version>
+-        <type>war</type>
+-      </dependency>
+-    </dependencies>
+-  </dependencyManagement>
++      <dependency>
++        <groupId>opendolphin</groupId>
++        <artifactId>opendolphin-server</artifactId>
++        <version>${project.version}</version>
++        <type>war</type>
++      </dependency>
++      <dependency>
++        <groupId>opendolphin</groupId>
++        <artifactId>opendolphin-server-modernized</artifactId>
++        <version>${project.version}</version>
++        <type>war</type>
++      </dependency>
++    </dependencies>
++  </dependencyManagement>
+ 
+   <build>
+     <pluginManagement>
+diff --git a/scripts/start_legacy_modernized.sh b/scripts/start_legacy_modernized.sh
+index a6207cd9..8e037bb4 100755
+--- a/scripts/start_legacy_modernized.sh
++++ b/scripts/start_legacy_modernized.sh
+@@ -22,6 +22,7 @@ COMPOSE_FILES=(
+ )
+ LEGACY_RELATIVE_DIR="tmp/legacy-compose"
+ LEGACY_ABS_DIR="${REPO_ROOT}/${LEGACY_RELATIVE_DIR}"
++LEGACY_WAR_NAME="opendolphin-server"
+ 
+ error() {
+   printf '[ERROR] %s\n' "$*" >&2
+@@ -99,7 +100,10 @@ CLI
+   cat >"${LEGACY_ABS_DIR}/Dockerfile.legacy" <<EOF
+ # syntax=docker/dockerfile:1.7
+ 
++ARG WAR_BASENAME=${LEGACY_WAR_NAME}
++
+ FROM maven:3.9.6-eclipse-temurin-17 AS build
++ARG WAR_BASENAME
+ WORKDIR /workspace
+ 
+ COPY pom.xml ./
+@@ -154,10 +158,17 @@ JAVA
+ RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hibernate-core-5.0.10.Final.jar -d /tmp/hbcompat/classes /tmp/hbcompat/src/org/hibernate/type/StringClobType.java
+ RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
+ 
+-RUN mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -Plegacy-wildfly10 -DskipTests -Dmaven.test.skip=true package && \
+-    mv server/target/opendolphin-server-*.war server/target/opendolphin-server.war
++RUN set -eux; \
++    mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -Plegacy-wildfly10 -DskipTests -Dmaven.test.skip=true package; \
++    WAR_DIR=server/target; \
++    WAR_FILE="\${WAR_DIR}/\${WAR_BASENAME}.war"; \
++    if [ ! -f "\${WAR_FILE}" ]; then \
++        FIRST_WAR="\$(ls \"\${WAR_DIR}\"/*.war | head -n 1)"; \
++        mv "\${FIRST_WAR}" "\${WAR_FILE}"; \
++    fi
+ 
+ FROM jboss/wildfly:10.1.0.Final
++ARG WAR_BASENAME
+ ENV JBOSS_HOME=/opt/jboss/wildfly \
+     WILDFLY_HOME=/opt/jboss/wildfly
+ 
+@@ -166,7 +177,7 @@ RUN mkdir -p /usr/share/fonts/opendolphin
+ COPY ops/assets/fonts/NotoSansCJKjp-Regular.otf /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+ RUN chmod 644 /usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+ ENV OPENDOLPHIN_REPORT_FONT_PATH=/usr/share/fonts/opendolphin/NotoSansCJKjp-Regular.otf
+-COPY --from=build /workspace/server/target/opendolphin-server.war \${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war
++COPY --from=build /workspace/server/target/\${WAR_BASENAME}.war \${WILDFLY_HOME}/standalone/deployments/\${WAR_BASENAME}.war
+ COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
+ COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
+ COPY --from=build /root/.m2/repository/javax/jms/javax.jms-api/2.0.1/javax.jms-api-2.0.1.jar /opt/jboss/javax-jms-api.jar
+@@ -179,7 +190,7 @@ RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
+     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
+     mv /opt/jboss/javax-jms-api.jar /opt/jboss/tmp/WEB-INF/lib/ && \
+     cd /opt/jboss/tmp && \
+-    jar uf \${WILDFLY_HOME}/standalone/deployments/opendolphin-server.war -C /opt/jboss/tmp WEB-INF && \
++    jar uf \${WILDFLY_HOME}/standalone/deployments/\${WAR_BASENAME}.war -C /opt/jboss/tmp WEB-INF && \
+     rm -rf /opt/jboss/tmp
+ 
+ RUN \${WILDFLY_HOME}/bin/jboss-cli.sh --file=/opt/jboss/configure-wildfly.cli && \
+diff --git a/server-modernized/pom.xml b/server-modernized/pom.xml
+index 2f388511..61eec948 100644
+--- a/server-modernized/pom.xml
++++ b/server-modernized/pom.xml
+@@ -11,7 +11,7 @@
+         <groupId>opendolphin</groupId>
+         <version>2.7.1</version>
+     </parent>
+-    <artifactId>opendolphin-server</artifactId>
++    <artifactId>opendolphin-server-modernized</artifactId>
+     <packaging>war</packaging>
+ 
+     <properties>
+@@ -310,8 +310,9 @@
+     </dependencies>
+ 
+     <version>2.7.1</version>
+-    <build>
+-        <resources>
++    <build>
++        <finalName>opendolphin-server</finalName>
++        <resources>
+             <resource>
+                 <directory>src/main/resources</directory>
+             </resource>

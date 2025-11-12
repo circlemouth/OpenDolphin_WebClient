@@ -18,6 +18,7 @@
 ### 観測結果
 - JPQL → SQL 変換結果は alias 文字列以外に差異なし。`hibernate.show_sql` を双方で有効化したことで `scripts/jpql_trace_compare.sh` による差分確認が可能になった。
 - Legacy 側の `LogFilter` には traceId の埋め込みが無く、HTTP ログと SQL ログの突合には `X-Trace-Id` ヘッダーを別途控えておく必要がある。モダナイズ側は `traceId=<value>` が自動ログ出力される。
+- 2025-11-12: Legacy WAR リネーム処理の `ls "server/target"/*.war` が文字列扱いになっていた問題を `patches/legacy_war_rename_fix.diff` で修正し、`artifacts/parity-manual/build/legacy_war_missing/start_legacy_modernized_fix.log` に `+ WAR_DIR=server/target` → `+ FIRST_WAR=server/target/opendolphin-server-2.7.1.war` → `+ mv ...` の実行証跡を採取済み。Dockerfile / `scripts/start_legacy_modernized.sh` の両方で同じ quoting を採用したため、人手検証と CI ビルド結果が乖離しない。
 
 ### 残課題 / 次アクション
 1. Checklist #49〜#50, #73〜#74 に対応する `KarteServiceBean`, `PatientServiceBean`, `PVTServiceBean` 等の JPQL を同手順で採取する。少なくとも `/chart/WEB1001/summary`, `/chart-events`, `/pvt/*` 系を追加で叩くため、サンプルデータ投入が必要。
@@ -28,6 +29,23 @@
    - **TouchRequestContext fallback**: `server-modernized/src/main/java/open/dolphin/touch/support/TouchRequestContextExtractor.java` と `TouchRequestContext` に facility 未指定時のフォールバック（`remoteUser` が `doctor1` のみでも `facilityId` 列を復元）を追加し、コメントで fallback ロジックと `X-Trace-Id` 採番位置を明記する。`rest_error_unauthorized`（`trace_http_401`）を `ops/tests/api-smoke-test/headers/trace-session.headers` から `password` 行を削除したヘッダーで再走し、`artifacts/parity-manual/TRACEID_JMS/20251110T221659Z/trace_http_401/` の 500 → 401 化と JMS 発火を確認する。
    - **`d_audit_event_id_seq` 再採番手順**: `ops/db/local-baseline/reset_d_audit_event_seq.sql`（新規）で `\copy d_audit_event to '/tmp/d_audit_event_before_seq_reset.csv' csv header` → `select coalesce(max(id),0)+1` → `setval('d_audit_event_id_seq', next_id, true)` → `insert into d_audit_event (...) values (default,'SEQ_SMOKE',...) returning id` を一括実行できるようにする。結果は `artifacts/parity-manual/db/20251111T062323Z/karte_id_check.txt` と同じディレクトリに `d_audit_event_seq_validation.txt` を追加し、`rest_error_internal`（`trace_http_500`）の再実行で Audit/JMS が連番になることを確認する。 **2025-11-11 更新:** スクリプト側で `:audit_event_status_log` への `min/max/count/next_id` 出力と `LOCK TABLE d_audit_event IN EXCLUSIVE MODE` を自動化済みなので、Runbook §5.3(2)(3) の採取ログはコマンド 1 本で揃う。
    - **テスト / 証跡更新**: 上記 3 件を反映後、`ops/tests/api-smoke-test/rest_error_scenarios.manual.csv` の `rest_error_*` ケースで `expected_status` を最新化し、`artifacts/parity-manual/TRACEID_JMS/<new RUN_ID>/` と `artifacts/parity-manual/db/<new RUN_ID>/` に HTTP/JMS/SQL/`logs/jms_dolphinQueue_read-resource.txt` を保存する。`TRACE_PROPAGATION_CHECK.md` と `PHASE2_PROGRESS.md` の TODO にも同じ差分候補を転記しておく。
+
+## 共通モジュール運用方針（2025-11-12 更新）
+
+### 背景
+- `opendolphin-common` は Legacy サーバー（Java EE 7/WildFly 10）、Modernized サーバー（Jakarta EE 8/WildFly 26）、Swing クライアントの 3 系統が同一 jar を参照する前提で構成されている。
+- Parity 証跡（本ドキュメントおよび `scripts/jpql_trace_compare.sh`）では DTO/JPA メタデータに差異があると比較が破綻するため、共通モジュールを複製しないこと自体が JPQL/SQL 同一性検証の前提条件になる。
+- `common/pom.xml` の `jakarta-no-persistence` 実行 ID は `opendolphin-common-<version>-jakarta.jar` を併産し、Modernized 側は legacy と同じクラス構成を維持したまま Jakarta 名前空間へ差し替えられる。
+
+### 方針
+1. **単一ソース／単一バイナリ維持**: `common/src/main/java` の InfoModel・Converter を 1 つの Git 管理単位として保持し、Legacy/Modernized/Swing/Web のいずれも「同じ JAR を再配布する」ルールを明示的に維持する。
+2. **分類子付き配布を標準化**: Modernized サーバーは `-jakarta` classifier 付き JAR を `server-modernized/pom.xml` から取得し、Legacy + Swing は classifier なしを利用する。両者の差分は `persistence.xml` の有無に限定し、DTO/エンティティ/値オブジェクトのコードは完全一致させる。
+3. **参照窓口の一本化**: Web クライアント／モダナイズ双方の開発者説明は本節と `docs/web-client/architecture/REPOSITORY_OVERVIEW.md`（Modules セクション）に集約し、質疑はこれらを一次回答とする。
+
+### 期待効果と運用メリット
+- **DTO パリティ保証**: Swing/Web/REST すべてが `open.dolphin.infomodel.*` を同バージョンでシリアライズするため、DTO 差分による 500 やシリアライズ失敗を防ぎ、`PatientModel`/`DocumentModel` のフィールド追加が同時に展開される。
+- **JPQL/SQL 比較の省力化**: Legacy/Modernized の JPA メタモデルが揃うことで、JPQL→SQL の差分が alias やヒントに限定され、本ドキュメントの観測結果を根拠に説明しやすくなる。
+- **jar 管理コスト削減**: `ext_lib/` への複製や Maven 座標変更なしに `opendolphin-common-2.7.1.jar` と `-jakarta` を Artifactory/ローカルリポジトリへ配布できる。
 
 ## 2. Trace Harness（Checklist #49/#73/#74）
 
@@ -163,6 +181,35 @@
 - JMS 側で `AuditEventEnvelope` を受信した後のシンク（外部 SIEM, DataLake など）が未定。暫定的には `MessageSender#handleAuditEvent` で `LOGGER.info("AUDIT_EVENT [traceId=...]")` を残すだけとし、実運用シナリオはフェーズ5の Observability Gate で詰める。
 - Legacy 側も同じ `dispatcher` を適用しないと parity が崩れるため、`server/src/main/java/open/dolphin/session/AppoServiceBean` ほかにも `@SessionOperation` 相当の AOP を追加するか、少なくとも `d_audit_event` と JMS の取得スクリプトで「Legacy は空のままで良い」条件を再定義する必要がある。
 
+#### Java8 互換対応（2025-11-12 夜間追加）
+- `opendolphin-common` を JDK 8 で個別ビルドできるよう、`AuditTrailService` が持っていた `private` インターフェースメソッドを `default systemEnvelope(...)` へ置き換え、`Map.of()` 依存を `Collections.emptyMap()` へ差し替えた。必須フィールド検証は `requireNonBlank` を通じて default メソッド側で先に弾き、従来どおり `writeSuccess`/`writeFailure` から一貫したエンベロープを返す。
+- `AuditEventEnvelope.Builder#build` の `String#isBlank()` 依存を排除し、Java 8 互換の `isNullOrBlank` ヘルパーへ差し替えた。actorId/traceId の必須チェックは `AuditTrailService` からの生成段階でもう一度バリデートし、他レイヤー（Appo/Schedule 等）で Builder を直に呼ぶ場合でも従来例外を維持できるようにしている。
+- フィックス差分は `patches/audit_trail_java8_fix.diff` に保存し、`mvn -rf :opendolphin-common -DskipTests compile` の結果を `artifacts/parity-manual/build/audit_trail_java8_fix/mvn-compile.log` へ採取済み。今後 `common` 単体を Java 8 で再ビルドする際は同 RUN_ID を再利用し、ログが更新されたら本節と `PHASE2_PROGRESS.md` を同期させる。
+
+#### 実機確認（RUN_ID=`20251115TappoSchedPlanZ`）
+- helper コンテナ + `--profile modernized-dev` で `rest_audit_{appo,schedule}_trace` を実行し、`tmp/reseed_appo.sql` による `d_appo id=8001` 復元を組み合わせて監査/JMS を採取。
+- Appo: `SessionAuditDispatcher` が `AuditTrailService#write` の戻り値を JMS `java:/queue/dolphin` へ publish し、Modern `d_audit_event` に `APPOINTMENT_MUTATION`（成功/失敗）が `actor_id=1.3.6.1.4.1.9414.72.103:doctor1`, `request_id=trace-audit-appo-20251115TappoSchedPlanZ` 付きで 4 行追記。JMS は `messages-added=4L→5L` を `artifacts/parity-manual/appo/20251115TappoSchedPlanZ/logs/jms_dolphinQueue_read-resource*.txt` で確認。
+- Schedule: `GET /schedule/pvt/2025-11-09` が Legacy/Modern とも 200 かつ `SCHEDULE_FETCH` 監査 1 行ずつを記録。JMS enqueue は発生せず、`messages-added` は before/after で変化 0（証跡: `artifacts/parity-manual/schedule/20251115TappoSchedPlanZ/logs/jms_dolphinQueue_read-resource*.txt`）。
+
+### 3.5 Maven DuplicateProjectException 調査（2025-11-12）
+- ステータス: **Maven package 成功（再ビルド前）**。`mvn -f pom.server-modernized.xml -pl server-modernized -am package -DskipTests` を 2025-11-12 15:45 JST に再実行し、ログ（`artifacts/parity-manual/build/duplicate_project/mvn-package-server-modernized.log`）と `ls -l server-modernized/target` の結果を同ディレクトリへ保存した。`server-modernized/target/opendolphin-server.war` のタイムスタンプが同時刻で更新されているため、WAR 生成まで通過したことを確認済み。
+- `AppoServiceBean.java`（`server-modernized/src/main/java/open/dolphin/session/AppoServiceBean.java`）の `getAppointmentList` 終了後に余分な `}` が残り、クラス外へ補助メソッドが溢れていたため Java 17 で「暗黙的に宣言されたクラス」扱いとなっていた。不要な閉じ波括弧を除去し、再ビルドでコンパイルが通ることを確認済み（`git diff server-modernized/src/main/java/open/dolphin/session/AppoServiceBean.java` 参照）。
+- ルートアグリゲータ `pom.xml:15-20` が `<modules>` に `server` と `server-modernized` を同居させており、双方の `pom` が同じ GAV (`groupId=opendolphin`, `artifactId=opendolphin-server`, `version=2.7.1`) を宣言している（`server/pom.xml:14`, `server-modernized/pom.xml:14`）。`pom.server-modernized.xml` も同じ親定義を共有するため、`-pl server-modernized` を付けてもスキャン段階で重複検出される。
+- 2025-11-12 18:00 JST: Modernized モジュールを `opendolphin-server-modernized` へリネームし、`server-modernized/pom.xml` に `<build><finalName>opendolphin-server</finalName></build>` を追加。ルート `pom.xml`／`pom.server-modernized.xml` の `dependencyManagement` へ新 GAV を登録し、`mvn -pl server-modernized ...` での依存解決を分離した。Docker/Compose ビルド（`ops/{legacy,modernized}-server/docker/Dockerfile`, `scripts/start_legacy_modernized.sh`）は `WAR_BASENAME=opendolphin-server` へ依存させ、最終成果物名 `opendolphin-server.war` を維持する形に書き換え済み。
+- 原因は「Legacy/Modernized WAR が同じ artifactId を名乗りつつ、単一リアクターに同時登録されている」点にあり、Maven の ProjectId（GAV）が一意にならない限り help/validate/compile すべてが停止する。Legacy 用 WAR 名を維持しつつ GAV の衝突だけを避ける必要がある。
+- 対応方針ドラフトは `patches/maven_duplicate_fix_plan.md` で整理予定。`server-modernized` を `opendolphin-server-modernized`（artifactId）へリネームし、`pom.xml` の依存管理／`docker`・`scripts/start_legacy_modernized.sh`／`ops/tests/*` で参照する WAR 名を `<finalName>opendolphin-server</finalName>` などで互換に保つ案と、Modernized 系を専用リアクター（`pom.server-modernized.xml`）に完全分離してルートからは除外する案の 2 系統を比較する。
+- Java 8 互換検証や `:opendolphin-common` 単体リビルド時は `mvn -pl :opendolphin-common -am -DskipTests compile` で範囲を限定し、Reactor が `opendolphin:itext-font`／`com.apple:AppleJavaExtensions` を解決できない場合は `ext_lib/` にある manual JAR を `mvn install:install-file ...`（`docs/web-client/architecture/REPOSITORY_OVERVIEW.md` Build & Toolchain 節参照）でローカル登録してから再実行する。
+
+#### Legacy WAR 未生成の原因整理（RUN_ID=`legacy_war_missing`, 2025-11-12）
+- 事象: `scripts/start_legacy_modernized.sh start --build` で Legacy 側の multi-stage build (`server build 20/20`) が `maven-compiler-plugin:2.3.2:compile` で停止し、`server/target/opendolphin-server-*.war` が作成されず Docker が `mv server/target/opendolphin-server-*.war ...` へ到達しない。BuildKit ログは `tmp/start_legacy_modernized_20251111TclaimfixZ3.log` に保存済み。
+- エラー1: `AuditTrailService`（`server/src/main/java/open/dolphin/security/audit/AuditTrailService.java:30`）で `TypedQuery<String>` が解決できず `interface TypedQuery` が見つからない。Legacy プロファイル（`pom.server-classic.xml` + `-Plegacy-wildfly10`）は `javaee-web-api:7.0` だけに依存しており、BuildKit レイヤーでは `javax.persistence-api` がクラスパスに入らない。2025-11-12 20:29 JST 時点で `server/pom.xml` へ `javax.persistence:javax.persistence-api:2.2`（scope=provided）を追加し、`mvn -f pom.server-classic.xml -pl server -am -Plegacy-wildfly10 -DskipTests package` が成功すること（`artifacts/parity-manual/build/legacy_war_missing/mvn-package-server.fix.log`）と `dependency:tree -Dincludes=javax.persistence:javax.persistence-api` に同依存が表示されること（`artifacts/parity-manual/build/legacy_war_missing/mvn-deptree-server.fix.log`）を確認済み。
+- エラー2（解消済, 2025-11-12 22:10 JST）: `StampResource.java` / `StampServiceBean.java` が `LOGGER.log(Level, () -> "...", exception)` など Java 9 以降のサプライヤー版シグネチャを呼び出していたため、Legacy ビルド（`source/target=1.8`）で `maven-compiler-plugin:2.3.2` がコンパイルに失敗していた。両クラスへ `formatStampTreeFailureMessage` / `formatVersionMismatchMessage` を追加して `LOGGER.log(Level, message, ex)` 形式へ戻し、Legacy/Modernized の双方を同一ロジックに揃えた。差分は `patches/legacy_stamp_logger_fix.diff` に保存し、`mvn -f pom.server-classic.xml -pl server -am -Plegacy-wildfly10 -DskipTests package` の再実行ログを `artifacts/parity-manual/build/legacy_war_missing/mvn-package-stamp-logger.log` へ追記済み。`server/target/opendolphin-server-2.7.1.war` の更新時刻とハッシュは `artifacts/parity-manual/build/legacy_war_missing/server-target-ls.txt` で確認できる。
+- 切り分け: 手元で `sed '/<module>server-modernized<\/module>/d' pom.xml > pom.server-classic.xml` を再生成し、`mvn -f pom.server-classic.xml -pl server -am -Plegacy-wildfly10 -DskipTests package` を実行したところ `server/target/opendolphin-server-2.7.1.war` が生成された（`artifacts/parity-manual/build/legacy_war_missing/mvn-package-server.log`、`server-target-ls.txt`）。`server/pom.xml` は `<finalName>` を定義していないため成果物は `opendolphin-server-2.7.1.war` となり、Dockerfile 内の `WAR_BASENAME=opendolphin-server` は `mv ... *.war -> opendolphin-server.war` で吸収できることを確認した。
+- ToDo:
+  1. [x] `server/pom.xml` に `javax.persistence-api` を追加 → Legacy build stage で `TypedQuery` が必ず解決される状態にし、再度 `scripts/start_legacy_modernized.sh start --build` を実行して `artifacts/parity-manual/build/legacy_war_missing/` に成功ログを追記（`mvn-package-server.fix.log`, `mvn-deptree-server.fix.log`）。
+  2. [x] `StampResource` / `StampServiceBean` の `LOGGER.log` 呼び出しを Java 8 互換に戻したパッチを `patches/legacy_stamp_logger_fix.diff` として保存し、`docs/server-modernization/phase2/operations/TRACEID_JMS_RUNBOOK.md` から参照できるようにする（旧ファイル名 `stamp_audit_java8_fix.diff` を廃止）。
+  3. [ ] Legacy build 成功後は `artifacts/parity-manual/build/legacy_war_missing/README.md`（未作成）に「再現条件・証跡ファイル一覧・WAR 名が変わらない理由（`WAR_BASENAME` + rename）」をまとめ、`PHASE2_PROGRESS.md` と本節でリンクする。
+
 ### trace_http 再取得結果（RUN_ID=20251111TtracefixZ）
 - 2025-11-11 01:16 JST に helper コンテナ（`buildpack-deps:curl`）から compose プロファイルを実行し、`PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/20251111TtracefixZ` に `trace_http_{400,401,500}` を保存。`trace_http_200` は RUN_ID=`20251111T091717Z` を継続利用。
 - Legacy 400=400 (`param must contain ...`), 401=401（HTML `Unauthorized`）, 500=500（`Karte result is empty`）。Modernized 400=500（`RollbackException`）, 401=403（`Forbidden`）, 500=500（`Karte result is empty: pid lookup`）。`legacy_trace_http.log` / `modern_trace_http.log` に `trace-http-*-20251111TtracefixZ` が記録されているが、`d_audit_event_latest.tsv` は旧 RUN（ID=54/55）のままで JMS も 0 件。
@@ -198,11 +245,19 @@
 | --- | --- | --- | --- | --- |
 | `PUT /appo` (`AppoServiceBean#putAppointments`) | 200（`response=1`） | 200（`response=1`） | `d_audit_event` は両環境とも空、JMS 発火なし。 | `tmp/reseed_appo.sql` を Runbook に常設したので、TraceId 付き監査/JMS を SessionOperation から送出できるよう実装を継続。 |
 | `GET /schedule/pvt/2025-11-09` (`ScheduleServiceBean`) | 200（`list` に `架空 花子` 1 件） | 200（同 `架空 花子` 1 件） | Legacy/Modern 共に `SYSTEM_ACTIVITY_SUMMARY` のみ。 | Elytron/JACC で `remoteUser` は復旧したが AuditTrail がゼロのまま。`d_audit_event` 記録を優先度高で対応。 |
-| `PUT /odletter/letter` (`LetterServiceBean`) | 200 （ID=18） | 200（ID=-38） | Audit/JMS なし（`d_audit_event_{legacy,modern}.txt` は空）。 | **2025-11-11:** RUN_ID=`20251111T110107Z`（`artifacts/parity-manual/letter/20251111T110107Z/`）で FK エラーは解消したが監査・JMS は未到達。`TRACE_PROPAGATION_CHECK.md §7` に新証跡を追記済み。 |
-| `GET /lab/module/WEB1001,0,5` (`NLabServiceBean`) | 200（`{"list":[]}`） | 200（`{"list":[]}`） | Legacy/Modern 共に `SYSTEM_ACTIVITY_SUMMARY` のみ。 | **2025-11-11:** `NLaboModuleListConverter` の空配列対応と `d_nlabo_*` seed 揃えにより DTO ギャップを解消。RUN_ID=`20251111T110107Z`（`artifacts/parity-manual/lab/20251111T110107Z/`）を Evidence に更新。 |
+| `PUT /odletter/letter` (`LetterServiceBean`) | 200 （ID=18） | 200（ID=-38） | Legacy: `d_audit_event` 空 / JMS 0L → 0L。Modern: `LETTER_CREATE` が TraceId=`trace-letter-audit-<RUN_ID>` で記録され `messages-added` が 0L→1L。 | **2025-11-12:** RUN_ID=`20251115TletterAuditZ1`（`artifacts/parity-manual/letter/20251115TletterAuditZ1/`）で `SessionAuditDispatcher` により Audit→JMS 連携を確認。`logs/d_audit_event_letter_modern.tsv` では `mutationType=create`・`karteId`・`consultantHospital` 等の details を保持。Legacy は `AuditTrailService` 未連携のため引き続きゼロ。 |
+| `GET /lab/module/WEB1001,0,5` (`NLabServiceBean`) | 404（seed 未適用時） | 200（`{"list":[]}`） | Legacy: 監査/JMS 0 行。Modern: `LAB_TEST_READ` が TraceId=`trace-lab-audit-<RUN_ID>` で記録され `messages-added` が 1L→2L。 | **2025-11-12:** RUN_ID=`20251115TlabAuditZ1`（`artifacts/parity-manual/lab/20251115TlabAuditZ1/`）で CRUD パスに `SessionAuditDispatcher` を導入。details には `patientId`/`facilityId`/`labCode`/`resultCount` を格納。Legacy 側は `d_nlabo_module` seed 未適用のため 404 挙動を Evidence に記載し、シード投入後の再取得を TODO に残す。 |
 | `PUT /stamp/tree` (`StampServiceBean`) | 200（`stamp_tree_payload.json` を GET `/stamp/tree/9001` の最新版へ同期し、`ops/db/local-baseline/stamp_tree_oid_cast.sql` を Legacy DB へ適用した状態で Audit/JMS も記録）。 | 200（`d_subscribed_tree` 作成＋`bytea_to_oid` 再適用＋`StampServiceBean#persistPersonalTree` ロックで `UnknownEntity`/500 を解消。`StampResource` WARN ログに version desync を残しつつ Audit/JMS を同じ TraceId で記録）。 | Legacy/Modern: `logs/d_audit_event_stamp_{legacy,modern}.tsv` で `STAMP_TREE_PUT`（TraceId=`parity-stamp-20251111TstampfixZ3`）を確認。Modern `logs/jms_dolphinQueue_read-resource.txt` は `messages-added=4L`, `message-count=0L`。Legacy JMS も `read-resource(include-runtime=true)` で 0 件キューを維持。 | RUN_ID=`20251111TstampfixZ3`（`artifacts/parity-manual/stamp/20251111TstampfixZ3/`）を新基準とし、`rest_error_stamp_data_exception` の期待値・ヘッダー類（`tmp/parity-headers/stamp_20251111TstampfixZ3.headers`）を更新済み。 |
 
-**Letter/Lab 監査現況（2025-11-12 JST）**: RUN_ID=`20251111TrestfixZ`/`20251111T110107Z` の HTTP はいずれも 200 を維持しているが、`artifacts/parity-manual/{letter,lab}/20251111TrestfixZ/logs/{d_audit_event_latest.tsv,jms_dolphinQueue_read-resource*.txt}` に記録された `messages-added=0L` / `d_audit_event` 空状態が続いている。Letter 側は `LetterServiceBean#saveOrUpdateLetter` → `DocInfoModel#setKarteBean` で一時的に発生した `FK_DOC_INFO_KARTE_ID` 例外を `TRACE_PROPAGATION_CHECK.md §7` の再現ログ付きで潰したものの、`sendClaim` 経路が `AuditTrailService#write` に到達する前に早期 return しており TraceId 連携が未完了である。Lab 側も `NLabServiceBean#getModule` が `NLaboModuleListConverter` の空 DTO（`{"list":[]}`）を返すだけで、DTO 生成時に `AuditEventPayload` を積むコードが存在しないため JMS が 0L のままになる。Audit/JMS を復旧するには (1) Letter では FK 例外防止で追加した reseed＆`doc_info_letters` リレーション修正を恒久化したうえで `LetterAuditHelper#recordSendClaim` を呼ぶ、(2) Lab では DTO を seed で 1 件以上返す or `details.resultCount=0` でも `AuditTrailService#write` を起動する、という 2 段構えが必要。これら未収束タスクを §4 の Backlog に留め、次 RUN では `artifacts/parity-manual/{letter,lab}/<RUN_ID>/` 以下に HTTP + Audit + JMS の 3 点セットを追加する。
+**Letter/Lab 監査結果（2025-11-12 JST）**
+- RUN_ID=`20251115TletterAuditZ1`: `SessionAuditDispatcher` 経由で Modern `d_audit_event` に `LETTER_CREATE`（id=82, TraceId=`trace-letter-audit-20251115TletterAuditZ1`）を追加し、`logs/jms_dolphinQueue_read-resource.{before,after}.txt` の `messages-added` が 0L→1L。Legacy は Audit/JMS が未連携のため 0 行で維持し、Evidence に Known Issue として記録。
+- RUN_ID=`20251115TlabAuditZ1`: Modern `LAB_TEST_READ`（id=84, `patientId=WEB1001`, `resultCount=0`）を記録し、`messages-added` が 1L→2L。Legacy は `d_nlabo_module` seed 未適用のため 404 応答だが、再取得条件を README / rest_error CSV に明記して Evidence に差分理由を残した。
+
+- **実装ハイライト**
+  - `server-modernized/src/main/java/open/dolphin/security/audit/AuditTrailService.java` を CDI (`@ApplicationScoped + @Transactional(REQUIRES_NEW)`) 化し、`SessionAuditDispatcher` からそのまま Audit→JMS を連鎖できるようにした。
+  - `LetterServiceBean` / `NLabServiceBean` に `recordLetterMutation` / `recordLabAudit` を追加し、`SessionTraceManager` から `actorId`/`facilityId`/`patientId` を必ず補完したうえで `SessionAuditDispatcher` を呼び出す。details には `mutationType`, `itemCount`, `labCode`, `resultCount` など監査に必要なフィールドを格納。
+  - `LetterResource#putLetter` / `NLabResource` に `@SessionOperation` を付与し、REST 呼び出し単位で TraceId・actorId を確実に初期化する。
+  - `MessageSender` は `AuditEventEnvelope` を JMS から受信した場合でも action/outcome を INFO ログへ記録し、診断を容易にした。
 
 - **実装ステップ（呼び出し位置・データ補完・JMS 連携）**
   - **LetterServiceBean（PUT /odletter/letter）**: `server-modernized/src/main/java/open/dolphin/session/LetterServiceBean.java` の `saveOrUpdateLetter` 終了直前で `AuditTrailService` を呼び出し、`linkId` > 0 の場合は `LETTER_UPDATE`、新規作成時は `LETTER_CREATE` として `AuditEventEnvelope` を生成する。`resolveKarteReference` 済みの `karteId` / `patientId` / `letterType` / `consultantHospital` / `sendClaim` フラグ（DocInfoModel とのリレーションから補完）を `details` へ格納し、`SessionTraceManager` から取得した `traceId`・`actorId`・`operation` を `SessionAuditDispatcher`（次フェーズ導入予定）に渡せるよう `auditTrailService.write(...)` の戻り `AuditEventEnvelope` を保持する。
@@ -302,30 +357,56 @@ RUN_ID=`20251111TstampfixZ3` の HTTP / headers / meta / `logs/*` は `artifacts
 | 20251111TstampfixZ2 | `tmp/parity-letter/stamp_tree_payload.json` を GET 結果へ同期（versionNumber=4）し、Legacy 側だけ先に PUT 200 + Audit を確認。 | `tmp/parity-letter/stamp_tree_payload.json`, `artifacts/parity-manual/stamp/20251111TstampfixZ2/{stamp_tree_user9001,PUT_stamp_tree}/` | Modern は `d_subscribed_tree` 欠如により GET 500 のまま。payload diff（`git diff`) で version/treeBytes のみ更新されていることを確認。 |
 | 20251111TstampfixZ3 | `ops/db/local-baseline/stamp_tree_oid_cast.sql` を Legacy/Modern 両 DB に適用し、Modern DB に `d_subscribed_tree` を新設後、payload を versionNumber=11 で再生成→PUT 200 / Audit/JMS 200 を取得。 | `artifacts/parity-manual/stamp/20251111TstampfixZ3/logs/d_stamp_tree_cast_migration.txt`, `artifacts/parity-manual/stamp/20251111TstampfixZ3/logs/d_subscribed_tree_migration.txt`, `artifacts/parity-manual/stamp/20251111TstampfixZ3/stamp_tree_user9001/{legacy,modern}/response.json` | `artifacts/parity-manual/stamp/20251111TstampfixZ3/logs/jms_dolphinQueue_read-resource{,_legacy}.txt` に `messages-added=4L`（Modern）/`0L`（Legacy）を記録し、Legacy JMS が message-count=0L である既知事象として Runbook §4.1 へリンク。 |
 
-### A.5 StampTree GET variations 実行結果（RUN_ID=`20251111TstampfixZ4`〜`Z6`）
+### A.5 StampTree GET variations 実行結果（RUN_ID=`20251113TstampPublicPlanZ1` / `20251113TstampSharedPlanZ1` / `20251113TstampPublishedPlanZ1`）
 
-helper コンテナ（`mcr.microsoft.com/devcontainers/base:jammy`）を `--network host` で起動し、`./ops/tools/send_parallel_request.sh --profile compose GET /stamp/tree/9001/<variation>` を順番に実行した。全ケースで HTTP は 404 となり、`StampResource` に `/{facility}/{public|shared|published}` パスが未実装であることが確認できた。TRACE/JMS/Audit ログは Appendix A.3（Runbook）手順どおり `artifacts/parity-manual/stamp/<RUN_ID>/logs/` へ保存済み。
+helper コンテナ（`mcr.microsoft.com/devcontainers/base:jammy`, `--network legacy-vs-modern_default`）で `./ops/tools/send_parallel_request.sh --profile modernized-dev GET /stamp/tree/9001/<variation>` を実行。Legacy/Modern とも 200 を返し、`PublishedTreeList`・Audit・JMS を `artifacts/parity-manual/stamp/20251113Tstamp<Variation>PlanZ1/` に集約した。
 
-| Variation | RUN_ID | HTTP Legacy / Modern | Audit / JMS 所見 | 証跡 & Next Action |
+| Variation | RUN_ID | HTTP Legacy / Modern | Audit / JMS 所見 | 証跡 |
 | --- | --- | --- | --- | --- |
-| `GET /stamp/tree/9001/public` | 20251111TstampfixZ4 | `404 / 404`（Content-Length 0、`X-Trace-Id: parity-stamp-tree-public-20251111TstampfixZ4` は応答に残るがサービス未登録） | `logs/d_audit_event_stamp_public_{legacy,modern}.tsv` は既存 `STAMP_TREE_PUT` のみで `parity-stamp-tree-public-*` 行なし。`logs/jms_dolphinQueue_read-resource{,_legacy}.{before,}` は Modern `messages-added=5L` / Legacy `messages-added=0L` で変化無し。 | HTTP: `artifacts/parity-manual/stamp/20251111TstampfixZ4/stamp_tree_public/{legacy,modern}/`。JMS/Audit: `.../logs/`。**要対応:** `StampResource` へ `/stamp/tree/{facility}/public` ルートを追加するか、正しい既存エンドポイント（例: `/stamp/published/tree`）へリクエストを差し替える設計判断が必要。 |
-| `GET /stamp/tree/9001/shared` | 20251111TstampfixZ5 | `404 / 404`（Legacy/Modern どちらも `Not Found` で終端） | `logs/d_audit_event_stamp_shared_{legacy,modern}.tsv` は旧 PUT 証跡のみ、`logs/jms_dolphinQueue_read-resource*.txt` も before/after で差分なし（Modern `messages-added=5L → 5L`）。 | HTTP: `artifacts/parity-manual/stamp/20251111TstampfixZ5/stamp_tree_shared/{legacy,modern}/`。**要対応:** 共有カタログ用の REST 仕様を確認し、`shared` variation が参照すべき API（`/stamp/subscribed/tree` など）を再定義する。 |
-| `GET /stamp/tree/9001/published` | 20251111TstampfixZ6 | `404 / 404` | `logs/d_audit_event_stamp_published_{legacy,modern}.tsv` に TraceId 未記録。JMS は Modern `messages-added=5L`、Legacy `messages-added=0L` で一定。 | HTTP: `artifacts/parity-manual/stamp/20251111TstampfixZ6/stamp_tree_published/{legacy,modern}/`。**要対応:** `@GET /stamp/published/tree` 既存実装との紐付けを整理し、`/stamp/tree/9001/published` へ 301 or alias を張るか、クライアント側ヘッダー／URL を正規ルートへ修正する。 |
+| `GET /stamp/tree/9001/public` | 20251113TstampPublicPlanZ1 | `200 / 200`（facility=9001 + global の 2 件） | `logs/d_audit_event_stamp_public_{legacy,modern}.tsv` に `STAMP_TREE_PUBLIC_GET`（`facilityId=9001`, `resultCount=2`, `traceId=parity-stamp-tree-public-20251113TstampPublicPlanZ1`）。JMS は read-only（`messages-added` 変化なし）。 | `artifacts/parity-manual/stamp/20251113TstampPublicPlanZ1/` |
+| `GET /stamp/tree/9001/shared` | 20251113TstampSharedPlanZ1 | `200 / 200`（共有スタンプ 1 件） | `d_audit_event_stamp_shared_{legacy,modern}.tsv` に `resultCount=1` が追加。JMS before/after 差分なし。 | `artifacts/parity-manual/stamp/20251113TstampSharedPlanZ1/` |
+| `GET /stamp/tree/9001/published` | 20251113TstampPublishedPlanZ1 | `200 / 200`（local + global = 3 件） | `d_audit_event_stamp_published_{legacy,modern}.tsv` に `STAMP_TREE_PUBLISHED_GET` を記録。JMS は read-only。 | `artifacts/parity-manual/stamp/20251113TstampPublishedPlanZ1/` |
+
+> **facility ミスマッチ検証**: RUN_ID=`20251113TstampPublicPlanZ4` で `GET /stamp/tree/9002/public` を実行したところ、Legacy/Modern とも `403 Forbidden`。WARN ログは `artifacts/parity-manual/stamp/20251113TstampPublicPlanZ4/logs/{legacy,modern}_warn.log` に保存し、`reason=facility_mismatch`, `facilityId=9002`, `remoteUser=9001:doctor1` を確認。
+
+##### Appendix A.5 追補: Published/Subscribed seed 投入手順
+
+1. Legacy/Modern 双方の Postgres に `ops/db/local-baseline/stamp_public_seed.sql` を流す。スクリプト内で facility=`9001` / user=`9001:doctor1` / `d_roles` を `NOT EXISTS` で補完した上で、facility=9001/9002/`global` の `d_published_tree` と相互 `d_subscribed_tree` を生成する。
+   ```bash
+   docker exec -i -e PGPASSWORD=opendolphin opendolphin-postgres \
+     psql -U opendolphin -d opendolphin \
+     -f /workspace/ops/db/local-baseline/stamp_public_seed.sql
+   docker exec -i -e PGPASSWORD=opendolphin opendolphin-postgres-modernized \
+     psql -U opendolphin -d opendolphin_modern \
+     -f /workspace/ops/db/local-baseline/stamp_public_seed.sql
+   ```
+2. `SELECT publishType, COUNT(*) FROM d_published_tree WHERE publishType IN ('9001','9002','global') GROUP BY publishType;` と `SELECT treeId, COUNT(*) FROM d_subscribed_tree WHERE treeId IN (65001,65002) GROUP BY treeId;` を実行し、少なくとも各 1 行が入ったことを確認する。`d_subscribed_tree` が無い DB では `CREATE TABLE`（Appendix A.4 で実施済み）を先に適用する。
+3. seed 適用結果を `artifacts/parity-manual/stamp/20251113TstampPublicPlanZ1/logs/` に `seed_stamp_public_{legacy,modern}.log` という名前で保存し、公開系 GET 証跡と同じ RUN_ID でまとめる。`DOC_STATUS.md` の該当行に seed 反映日を記載して棚卸し対象から外さないようにする。
+
+上記 seed が入っていない場合は `/stamp/tree/{facility}/{public|shared|published}` が 200 を返せないため、RUN_ID=`20251113TstampPublicPlanZ1` 以降の証跡採取は無効扱いとする。
+
+> **2025-11-12 更新 (RUN_ID=`20251113TstampPublicPlanZ1`)**  
+> - Legacy/Modern 双方で `docker exec -i ... psql -U opendolphin -d {opendolphin|opendolphin_modern} < ops/db/local-baseline/stamp_public_seed.sql` を実行し、`seed_stamp_public_{legacy,modern}.log` に結果を保存。Modern 側には `d_published_tree` が存在しなかったため、同スクリプトで DDL（PK/FK/index）を再適用してから seed した。
+> - ヘッダー: `tmp/parity-headers/stamp_tree_{public,shared,published}_20251113TstampPublicPlanZ1.headers`（`userName=9001:doctor1`, `facilityId=9001`, `X-Trace-Id=parity-stamp-tree-<variation>-20251113Tstamp<Variation>PlanZ1`）。`TRACE_RUN_ID=20251113Tstamp<Variation>PlanZ1` / `PARITY_OUTPUT_DIR=artifacts/parity-manual/stamp/20251113Tstamp<Variation>PlanZ1` を Appendix A.4（TRACEID_JMS_RUNBOOK）にも同期済み。
+
+`docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md` §5.4「公開/共有タブ運用要件」に UI 前提を集約し、以下の比較表で UI 差し替え案 / REST 追加案の影響を整理する。
+
+#### UI差し替え vs REST追加 比較（Appendix A.5 リンク）
+
+| 観点 | UI差し替え（選択肢A） | REST追加（選択肢B） | サーバー/運用ノート |
+| --- | --- | --- | --- |
+| 施設切替 | `Stamp管理センター` に ADMIN 限定の施設セレクタを実装し、`GET /stamp/published/tree` 応答を UI で施設別にフィルタリング。`PublishedTreeList` キャッシュを facilityId キーで保持し、切替毎にリロードを強制。 | `GET /stamp/tree/{facility}/{public|published}` を追加し、facilityId をサーバーで評価。UI は facilityId を URL パラメータ化するだけで済み、レスポンスは単一施設分。 | どちらの案でも TraceId は `parity-stamp-tree-<visibility>-<RUN_ID>` を再利用し、Appendix A.3 Runbook の証跡採取を踏襲。 |
+| ADMIN 権限 | UI レイヤーで ADMIN 以外に施設セレクタ／公開操作を表示しない。購読ボタンは常に有効で、非 ADMIN でもローカル施設に限定。 | `StampResource` で `@RolesAllowed("ADMIN")` を活用し、facility と remoteUser の不一致時に 403 を返す。UI は表示制御のみ行い、通信エラーを管理者権限不足として表示。 | 認可失敗は `AuditTrailService` に `result=forbidden` を記録する必要があり、`TRACEID_JMS_RUNBOOK.md` §4 へ手順を追記する。 |
+| 購読状態（共有タブ） | UI が `PUT /stamp/subscribed/tree` / `DELETE /stamp/subscribed/tree/{ids}` 応答の ID リストをキャッシュし、`GET /stamp/published/tree` 結果に `subscriptionState` を合成。`pending` 状態はクライアントのみで管理。 | `GET /stamp/tree/{facility}/shared` もしくは `GET /stamp/subscribed/tree` を追加し、`SubscribedTreeModel` で購読状態を返却。UI はレスポンスの `subscribedTreeIds` をそのまま表示し、`pending` なしで済む。 | DAO へ `getSharedTrees(fid)` を追加し、`d_subscribed_tree` から直接読み取る。監査は `STAMP_TREE_SHARED_GET` を新設。 |
+| 証跡・ドキュメント | UI 要件とキャッシュ挙動を `docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md` と `docs/web-client/ux/KARTE_SCREEN_LAYOUT_GUIDE.md`（更新予定）へ追記。 | REST 実装が完了したら `domain-transaction-parity.md` Appendix A.5、`TRACEID_JMS_RUNBOOK.md`、`patches/stamp_get_public_plan.md` の RUN_ID テンプレを再生成。 | どちらの案でも `PHASE2_PROGRESS.md` backlog にスケジュールと担当を記載し、DOC_STATUS から両ファイルを参照する。 |
 
 #### Legacy 仕様 vs Modern 実装（現状 404 差分）
 
 | Variation | Legacy 仕様（URL / 認可 / レスポンス） | Modern 実装の現状 | 差分と次ステップ |
 | --- | --- | --- | --- |
-| `public` | `GET /stamp/published/tree` が施設 ID ごとの公開スタンプを `PublishedTreeList` として返却する（`docs/server/LEGACY_REST_API_INVENTORY.md` §5, `docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md` §14.6）。アクセス時は `LogFilter` が `userName` / `password` ヘッダー（MD5 済み、`ops/tests/api-smoke-test/README.manual.md` 手順）と `facilityId` を検証し、Principal が取れない場合のみヘッダーフォールバックが使われる（`docs/server-modernization/phase2/notes/security-elytron-migration.md` §1）。 | Jakarta 版 `StampResource` も `/stamp/published/tree` を提供しているが、`/stamp/tree/{facility}/public` ルートは Legacy/Modern いずれにも存在せず、本 variation のリクエストは JAX-RS 404 で終わる（同 Appendix A.5 実測）。 | UI が「公開ツリー=published API」を参照するよう `GET` ルートを切り替えるか、`/stamp/tree/{facility}/public` を新規実装してリモートユーザー facility とパス facility の整合チェック＋403 フォールバックを実装する案を比較する。後者を実装する場合は `StampServiceBean#getPublishedTrees(fid)` が `publishType` で facility を持つ前提を利用できる（`STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md` §3.3）。 |
-| `shared` | Legacy で共有リストは購読テーブル（`SubscribedTreeModel`）を `PUT /stamp/subscribed/tree` で登録／`DELETE /stamp/subscribed/tree/{ids}` で解除するのみで、GET は `PublishedTreeList` を再利用する運用（`docs/server/LEGACY_REST_API_INVENTORY.md` §5, `STAMP_LETTER_MML_ORCA_ALIGNMENT_PLAN.md` §3.1）。ヘッダ認証は `LogFilter` 要件に準拠。 | Modernized も `subscribeTrees/unsubscribeTrees` のみ実装済みで、`/stamp/tree/{facility}/shared` GET は 404。購読状態の確認は POST 応答（カンマ区切り ID）を UI 側にキャッシュする前提になっている。 | `shared` variation の HTTP 200 を得るには (1) UI から既存の `/stamp/subscribed/tree` フローを叩き直し、購読リスト表示をクライアント側で完結させる、または (2) `SubscribedTreeModel` を返す GET API を新設し、既存 CLI/JMS 監視を更新する——のどちらかを決定する必要がある。 |
-| `published` | Legacy UI では「公開カタログ」タブも `GET /stamp/published/tree` を再利用し、施設公開分と全体公開分を `PublishedTreeList` 内で区別する（`docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md` §14.6）。認可・レスポンスは `public` variation と同一。 | `StampResource` 側の実装は存在するが、Web クライアントが `/stamp/tree/{facility}/published` へリクエストしているため、Legacy/Modern 双方で 404 を返す。Audit/JMS も動かないためトレーサビリティが欠落している。 | `public` variation と同じく、UI を `/stamp/published/tree` に切り替える場合は「施設 ID フィルタ + 公開範囲トグル」をフロント側で実装し直す。サーバーで alias を作る場合は facility/path 整合チェック・Audit/JMS 記録を実装し Appendix 完了条件（200 + TraceId）で再取得する。 |
-
-#### TODO: `/stamp/tree/{facility}/{visibility}` 実装準備（`patches/stamp_get_public_plan.md` ベース）
-
-- [ ] **Resource 層:** Legacy/Modernized 双方の `StampResource` へ `@GET @Path("/tree/{facility}/{visibility}")` を追加し、`@PathParam("visibility")` を `public/shared/published` へ限定。NG 値は 400（`Bad visibility`）、空 facility は 400、`remoteUser` が `facility@user` 形式で一致しない場合は `httpServletRequest.isUserInRole("ADMIN")` のみ 403 を回避できるようにする。レスポンスは `PublishedTreeListConverter` で JSON 化し、`X-Trace-Id` を Appendix A.3 の命名ルール（`parity-stamp-tree-<visibility>-<RUN_ID>`）に合わせる。
-- [ ] **Service / DAO:** `StampServiceBean` に `getFacilityPublishedTrees(String fid)`, `getPublicTrees()`, `getSharedTrees(String fid)` を追加し、既存 JPQL 定数（`QUERY_PUBLIC_TREE` / `QUERY_LOCAL_PUBLISHED_TREE`）を再利用して facility 公開＋global 公開をマージする。`shared` variation では `publishType=fid` 固定・結果件数を Resource 層へ返却して後述の監査ログに載せる。
-- [ ] **Session / Audit / JMS:** Modernized は `SessionTraceManager#executeWithStampAuditContext`、Legacy は `executeWithStampAuditContext` を経由して `AuditTrailService` へ `STAMP_TREE_PUBLIC_GET` / `STAMP_TREE_SHARED_GET` / `STAMP_TREE_PUBLISHED_GET` を記録し、`details={'facility':fid,'visibility':..., 'resultCount':n}` を格納する。読み取り系のため JMS enqueue は発生させず、`TRACEID_JMS_RUNBOOK.md` Appendix A に「before/after ログで `messages-added` が不変であることを証跡化する」手順を追記する。
-- [ ] **UI / 依存整理:** `/stamp/published/tree` へ差し替える UI 案と新規 REST 実装案を `PHASE2_PROGRESS.md` backlog 行・`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4-2 備考に明記し、決定後に RUN_ID=`20251113TstampPublicPlanZ1` 以降で 200 + Audit/JMS 証跡を再取得する。UI が facility フィルタ／公開範囲トグルを担う場合は `docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md` へ変更理由と参照手順を記録する。
+| `public` | `GET /stamp/published/tree` が施設 ID ごとの公開スタンプを `PublishedTreeList` で返却（`docs/server/LEGACY_REST_API_INVENTORY.md` §5, `docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md` §14.6）。アクセス時は `LogFilter` が `userName` / `password` / `facilityId` ヘッダーを検証し、Principal が取れない場合のみヘッダーフォールバックを使用（`docs/server-modernization/phase2/notes/security-elytron-migration.md` §1）。 | Legacy/Modern とも `/stamp/tree/{facility}/public` を実装済みで、`RUN_ID=20251113TstampPublicPlanZ1` では 200 + Audit/JMS を記録。facility ミスマッチ時は 403 + WARN（`RUN_ID=20251113TstampPublicPlanZ4`）。 | Web クライアントは facility 切替時に `/stamp/tree/{facility}/public` を呼び出し、403 を UI で通知。`/stamp/published/tree` はレガシー用としてしばらく維持。 |
+| `shared` | 共有リストは購読テーブル（`SubscribedTreeModel`）を `PUT /stamp/subscribed/tree` / `DELETE /stamp/subscribed/tree/{ids}` で更新し、UI が `PublishedTreeList` と合成していた。 | `/stamp/tree/{facility}/shared` を実装し、`RUN_ID=20251113TstampSharedPlanZ1` で 200 / Audit 記録を確認。`StampServiceBean#getSharedTrees(fid)` が `publishType=fid` を直接参照する。 | UI は `/stamp/tree/{facility}/shared` の `resultCount` をそのまま描画し、購読状態の合成・pending 管理を削減。 |
+| `published` | Legacy UI は `GET /stamp/published/tree` を再利用し、facility 公開分と全体公開分を `PublishedTreeList` 内で判別する。 | `/stamp/tree/{facility}/published` を追加し、`RUN_ID=20251113TstampPublishedPlanZ1` で 200 / Audit を取得。`getFacilityPublishedTrees(fid)` が shared + public をマージ。 | UI は facility 切替時に `/stamp/tree/{facility}/published` を呼び、`/stamp/published/tree` はレガシー備えとして保持。 |
 
 ### A.6 Legacy JMS 設定参照ポイント（StampSenderMDB 再起動前チェック）
 

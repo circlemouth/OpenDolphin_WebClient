@@ -1,14 +1,22 @@
  package open.dolphin.rest;
 
-import java.text.SimpleDateFormat;
-import java.util.Date;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import jakarta.servlet.http.HttpServletRequest;
-import open.dolphin.infomodel.IInfoModel;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import java.io.IOException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.Objects;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import open.dolphin.infomodel.IInfoModel;
 
 /**
  *
@@ -62,6 +70,10 @@ public class AbstractResource {
     }
 
     protected String resolveTraceId(HttpServletRequest request) {
+        return resolveTraceIdValue(request);
+    }
+
+    public static String resolveTraceIdValue(HttpServletRequest request) {
         if (request == null) {
             return null;
         }
@@ -74,5 +86,66 @@ public class AbstractResource {
             return fromHeader.trim();
         }
         return null;
+    }
+
+    public static WebApplicationException restError(HttpServletRequest request, Response.Status status,
+            String errorCode, String message) {
+        return restError(request, status, errorCode, message, null, null);
+    }
+
+    public static WebApplicationException restError(HttpServletRequest request, Response.Status status,
+            String errorCode, String message, Map<String, ?> details, Throwable cause) {
+        Objects.requireNonNull(status, "status");
+        Objects.requireNonNull(errorCode, "errorCode");
+        Map<String, Object> body = buildErrorBody(request, status.getStatusCode(), errorCode, message, details);
+        Response response = Response.status(status)
+                .type(MediaType.APPLICATION_JSON_TYPE)
+                .entity(body)
+                .build();
+        return cause == null ? new WebApplicationException(message, response)
+                : new WebApplicationException(message, cause, response);
+    }
+
+    public static void writeRestError(HttpServletRequest request, HttpServletResponse response, int status,
+            String errorCode, String message, Map<String, ?> details) throws IOException {
+        if (response == null) {
+            return;
+        }
+        if (!response.isCommitted()) {
+            response.resetBuffer();
+        }
+        response.setStatus(status);
+        response.setContentType(MediaType.APPLICATION_JSON);
+        response.setCharacterEncoding("UTF-8");
+        Map<String, Object> body = buildErrorBody(request, status, errorCode, message, details);
+        getSerializeMapper().writeValue(response.getOutputStream(), body);
+    }
+
+    private static Map<String, Object> buildErrorBody(HttpServletRequest request, int status, String errorCode,
+            String message, Map<String, ?> details) {
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("error", errorCode);
+        if (message != null && !message.isBlank()) {
+            body.put("message", message);
+        }
+        body.put("status", status);
+        String traceId = resolveTraceIdValue(request);
+        if (traceId != null && !traceId.isBlank()) {
+            body.put("traceId", traceId);
+        }
+        if (request != null) {
+            String path = request.getRequestURI();
+            if (path != null && !path.isBlank()) {
+                body.put("path", path);
+            }
+        }
+        if (details != null) {
+            details.forEach((key, value) -> {
+                if (key != null && value != null) {
+                    body.put(key, value);
+                }
+            });
+        }
+        return body;
     }
 }
