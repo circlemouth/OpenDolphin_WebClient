@@ -42,3 +42,30 @@
 ## 5. 未収束事項
 - Legacy コンテナは ARM ホストでの amd64 エミュレーションにより長時間稼働しない。安定取得が必要な場合は `docker buildx build --platform linux/arm64/v8` で ARM 版イメージを生成するか、CI 側 x86 ノードで帳票 API を先に実装してから差分比較する。
 - `/reporting/karte` が 404 のままでは Checklist #84 を完了にできないため、REST 実装とテンプレート拡充が完了するまで同チェックを未完了ステータスで維持する。
+
+## 6. `/reporting/karte` 復旧手順案（2025-11-12 更新）
+
+### 6.1 フォント配置と Docker イメージ差分
+- `ops/modernized-server/docker/Dockerfile` に `RUN mkdir -p /opt/jboss/fonts && cp files/fonts/*.ttf /opt/jboss/fonts/` を追加し、`HeiseiKakuGo-W5`（ゴシック）、`HeiseiMincho-W3`（明朝）、`IPAexGothic/IPAexMincho` を同梱する。Legacy でも同手順を行い、両環境でフォントセットを揃える。
+- `ops/modernized-server/docker/files/fonts/README.md`（新規予定）に配置基準（商用可否、ライセンス、ファイル名）を記載し、`docs/server-modernization/phase2/operations/LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md` から参照する。
+- 既存コンテナを再ビルドできない間は、`docker cp fonts/*.ttf server-modernized-dev:/opt/jboss/fonts/` で暫定配置し、WildFly CLI から `module add --name=com.opendolphin.fonts --resources=/opt/jboss/fonts/IPAexGothic.ttf --dependencies=sun.jdk` を実行したのち `jboss-deployment-structure.xml` へ `com.opendolphin.fonts` を追加して classloader から参照させる。
+
+### 6.2 `PdfDocumentWriter` 設定の見直し
+- 現状: `server-modernized/src/main/java/open/dolphin/reporting/PdfDocumentWriter.java` で `BaseFont.createFont(...)` に `BaseFont.NOT_EMBEDDED` が指定されており、日本語帳票でもフォントが埋め込まれない。
+- 対応案:
+  1. `PdfDocumentWriter#loadFont`（新設）で「メインフォント（IPAex ゴシック）」「フォールバック（明朝）」をロードし、`PdfRenderer` から `PdfDocumentWriter` へ `ReportContext#locale` を渡して切替。
+  2. `BaseFont.createFont(fontPath, BaseFont.IDENTITY_H, BaseFont.EMBEDDED, true, ... )` に変更し、`PdfWriter#setViewerPreferences(PdfWriter.PDFX32000)` で埋め込み必須モードを有効化。
+  3. `docs/server-modernization/reporting/LOCALE_REVIEW_CHECKLIST.md` に「フォント差し替え時の pdffonts / diff-pdf / pdftotext 取得手順」を追記し、`artifacts/parity-manual/reporting_karte_<locale>/<RUN_ID>/` に `pdffonts.txt` を保存する。
+
+### 6.3 CLI テストフロー（再実行計画）
+1. `load_config.sh` に倣い、`ops/tests/storage/...` と同じスタイルで `ops/tools/send_parallel_request.sh --profile compose --headers tmp/reporting.headers POST /reporting/karte tmp/reporting_karte_payload_ja.json` を実行するシェル（新規 `ops/tests/reporting/karte_cli.sh` を想定）を用意する。
+2. 実行結果（HTTP ステータス、`X-Report-*` ヘッダー、PDF バイナリ）を `artifacts/parity-manual/reporting_karte_{ja,en}/<RUN_ID>/` に保存し、`pdffonts` / `pdftotext -layout` / `diff-pdf --output-diff` を同ディレクトリへ出力。
+3. CLI から 404 が返った場合は `docker compose exec server-modernized-dev /opt/jboss/wildfly/bin/jboss-cli.sh --connect "deployment-info"` を実行し、WAR が `open.dolphin.rest.ReportingResource` を含むビルドかどうかを即座に確認する（`jar tf /opt/jboss/wildfly/standalone/deployments/opendolphin-server.war | grep ReportingResource`）。
+4. Legacy も同じフローを実施し、ARM ホストで stop した場合は `docker-compose.legacy.yml` の `platform: linux/amd64` 指定をコメントアウトし、ローカルビルド済み ARM イメージを参照する。
+
+### 6.4 既存 `ReportingResource` 実装との差分整理
+| 項目 | 現状 (`server(-modernized)/src/main/java/open/dolphin/rest/ReportingResource.java`) | 復旧案で追加する内容 |
+| --- | --- | --- |
+| パス/登録 | クラスは `@Path("/reporting")` で存在し、`server-modernized/src/main/webapp/WEB-INF/web.xml` に `open.dolphin.rest.ReportingResource` が列挙されている。ただし Phase7 で運用中のコンテナは 2025-10-31 ビルドを使用しており、新しい WAR がデプロイされていないため `/reporting/karte` へアクセスすると 404 になる。 | `docker compose -f docker-compose.modernized.dev.yml exec server-modernized-dev ls /opt/jboss/wildfly/standalone/deployments` で使用中 WAR を確認し、`mvn -f pom.server-modernized.xml package` → `docker compose build server-modernized-dev` を行えるタイミングで差し替える。再ビルド不可期間中は `jboss-cli` の `undeploy/deploy` で WAR をホットスワップする。 |
+| フォント・テンプレ | 現状テンプレートは `patient_summary_{ja_JP,en_US}.vm` のみで、`PdfDocumentWriter` も非埋め込み。 | §6.1/6.2 のフォント配置に加え、`reporting/templates/receipt_export_{ja_JP,en_US}.vm` を拡充し、`ReportingPayload` へ `documentType` を追加してテンプレ切替を制御する。 |
+| CLI 証跡 | 404 のため `artifacts/parity-manual/reporting_karte_*` は空。 | §6.3 の CLI を実行し、`X-Report-Template` / `X-Report-Locale` ヘッダーと PDF バイナリを保存したうえで `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` #84 を Close できる状態にする。 |

@@ -4,8 +4,6 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
-import jakarta.ws.rs.BadRequestException;
-import jakarta.ws.rs.NotAuthorizedException;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -14,6 +12,8 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
 import java.io.IOException;
 import java.util.Arrays;
 import java.util.Calendar;
@@ -126,11 +126,22 @@ public class SystemResource extends AbstractResource {
 
         String remoteUser = resolveRemoteUser();
         if (remoteUser == null) {
-            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("anonymous_user", Map.of()));
-            throw new NotAuthorizedException("Remote user not available");
+            Map<String, Object> extras = new HashMap<>();
+            extras.put("requestParam", param);
+            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("remote_user_missing", extras));
+            throw restError(httpServletRequest, Response.Status.UNAUTHORIZED, "remote_user_missing",
+                    "Remote user is not available", extras, null);
         }
 
-        String fid = getRemoteFacility(remoteUser);
+        String fid = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) >= 0 ? getRemoteFacility(remoteUser) : null;
+        if (fid == null || fid.isBlank()) {
+            Map<String, Object> extras = new HashMap<>();
+            extras.put("remoteUser", remoteUser);
+            extras.put("requestParam", param);
+            recordAudit("SYSTEM_ACTIVITY_SUMMARY", failureDetails("facility_missing", extras));
+            throw restError(httpServletRequest, Response.Status.UNAUTHORIZED, "facility_missing",
+                    "Authenticated user is not associated with a facility", extras, null);
+        }
 
         ActivityModel[] array = new ActivityModel[monthsRequested + 1]; // +1=total
 
@@ -314,7 +325,7 @@ public class SystemResource extends AbstractResource {
         return new ActivityQueryRequest(requestedYear, requestedMonth, monthsRequested);
     }
 
-    private BadRequestException invalidActivityRequest(String message, String rawParam, Exception cause) {
+    private WebApplicationException invalidActivityRequest(String message, String rawParam, Exception cause) {
         if (LOGGER.isWarnEnabled()) {
             if (cause != null) {
                 LOGGER.warn("SYSTEM_ACTIVITY_SUMMARY invalid param {}: {}", rawParam, message, cause);
@@ -322,7 +333,10 @@ public class SystemResource extends AbstractResource {
                 LOGGER.warn("SYSTEM_ACTIVITY_SUMMARY invalid param {}: {}", rawParam, message);
             }
         }
-        return cause == null ? new BadRequestException(message) : new BadRequestException(message, cause);
+        Map<String, Object> extras = new HashMap<>();
+        extras.put("requestParam", rawParam);
+        extras.put("reason", "invalid_activity_param");
+        return restError(httpServletRequest, Response.Status.BAD_REQUEST, "invalid_activity_param", message, extras, cause);
     }
 
     private Map<String, Object> failureDetails(String reason, Map<String, Object> extras) {

@@ -1,0 +1,29 @@
+diff --git a/scripts/start_legacy_modernized.sh b/scripts/start_legacy_modernized.sh
+@@ -161,7 +161,7 @@ RUN set -eux; \
+     WAR_DIR=server/target; \
+     WAR_FILE="\${WAR_DIR}/\${WAR_BASENAME}.war"; \
+     if [ ! -f "\${WAR_FILE}" ]; then \
+-        FIRST_WAR="\$(ls \"\${WAR_DIR}\"/*.war | head -n 1)"; \
++        FIRST_WAR=\$(ls "\${WAR_DIR}"/*.war | head -n 1); \
+         mv "\${FIRST_WAR}" "\${WAR_FILE}"; \
+     fi
+
+diff --git a/ops/legacy-server/docker/Dockerfile b/ops/legacy-server/docker/Dockerfile
+@@ -60,7 +60,7 @@ RUN set -eux; \
+     WAR_DIR=server/target; \
+     WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
+     if [ ! -f "${WAR_FILE}" ]; then \
+-        FIRST_WAR="$(ls "${WAR_DIR}"/*.war | head -n 1)"; \
++        FIRST_WAR=$(ls "${WAR_DIR}"/*.war | head -n 1); \
+         mv "${FIRST_WAR}" "${WAR_FILE}"; \
+     fi
+
+diff --git a/ops/modernized-server/docker/Dockerfile b/ops/modernized-server/docker/Dockerfile
+@@ -60,7 +60,7 @@ RUN set -eux; \
+     WAR_DIR=server-modernized/target; \
+     WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
+     if [ ! -f "${WAR_FILE}" ]; then \
+-        FIRST_WAR="$(ls "${WAR_DIR}"/*.war | head -n 1)"; \
++        FIRST_WAR=$(ls "${WAR_DIR}"/*.war | head -n 1); \
+         mv "${FIRST_WAR}" "${WAR_FILE}"; \
+     fi

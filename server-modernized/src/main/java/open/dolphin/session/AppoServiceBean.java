@@ -12,13 +12,13 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import open.dolphin.audit.AuditEventEnvelope;
-import open.dolphin.audit.AuditTrailService;
 import open.dolphin.infomodel.AppointmentModel;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.session.framework.SessionTraceAttributes;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 
 /**
  *
@@ -39,7 +39,7 @@ public class AppoServiceBean {
     private EntityManager em;
 
     @Inject
-    private AuditTrailService auditTrailService;
+    private SessionAuditDispatcher sessionAuditDispatcher;
 
     @Inject
     private SessionTraceManager traceManager;
@@ -61,6 +61,7 @@ public class AppoServiceBean {
         int updated = 0;
         int deleted = 0;
 
+        RuntimeException failure = null;
         try {
             for (AppointmentModel model : appointments) {
 
@@ -85,21 +86,16 @@ public class AppoServiceBean {
                 }
             }
         } catch (RuntimeException ex) {
+            failure = ex;
+            throw ex;
+        } finally {
             auditDetails.put("createdCount", created);
             auditDetails.put("updatedCount", updated);
             auditDetails.put("deletedCount", deleted);
             auditDetails.put("appliedCount", cnt);
-            writeAppointmentAudit(auditDetails, ex);
+            writeAppointmentAudit(auditDetails, failure);
             restorePatientContext(previousPatientContext);
-            throw ex;
         }
-
-        auditDetails.put("createdCount", created);
-        auditDetails.put("updatedCount", updated);
-        auditDetails.put("deletedCount", deleted);
-        auditDetails.put("appliedCount", cnt);
-        writeAppointmentAudit(auditDetails, null);
-        restorePatientContext(previousPatientContext);
 
         return cnt;
     }
@@ -128,10 +124,9 @@ public class AppoServiceBean {
 
         return ret;
     }
-}
 
     private void writeAppointmentAudit(Map<String, Object> details, Throwable error) {
-        if (auditTrailService == null) {
+        if (sessionAuditDispatcher == null) {
             return;
         }
         AuditEventEnvelope.Builder builder = newAuditBuilder("APPOINTMENT_MUTATION", "AppointmentModel");
@@ -139,7 +134,7 @@ public class AppoServiceBean {
         if (error != null) {
             builder.failure(error);
         }
-        auditTrailService.write(builder.build());
+        sessionAuditDispatcher.dispatch(builder.build());
     }
 
     private AuditEventEnvelope.Builder newAuditBuilder(String action, String resource) {

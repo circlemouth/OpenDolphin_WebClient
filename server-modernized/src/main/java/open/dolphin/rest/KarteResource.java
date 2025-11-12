@@ -3,7 +3,9 @@ package open.dolphin.rest;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -52,13 +54,13 @@ public class KarteResource extends AbstractResource {
         String fid = resolveFacilityId(servletReq);
         KarteBean bean = karteServiceBean.getKarte(fid, pid, fromDate);
 
-        return toConverter(bean, "pid lookup");
+        return toConverter(servletReq, bean, "pid_lookup");
     }
 
     @GET
     @Path("/{param}")
     @Produces(MediaType.APPLICATION_JSON)
-    public KarteBeanConverter getKarte(@PathParam("param") String param) {
+    public KarteBeanConverter getKarte(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
 
         debug(param);
         String[] params = param.split(CAMMA);
@@ -66,7 +68,7 @@ public class KarteResource extends AbstractResource {
         Date fromDate = parseDate(params[1]);
         
         KarteBean bean = karteServiceBean.getKarte(patientPK, fromDate);
-        return toConverter(bean, "patient lookup");
+        return toConverter(servletReq, bean, "patient_lookup");
     }
 
     //-------------------------------------------------------
@@ -734,9 +736,12 @@ public class KarteResource extends AbstractResource {
     }
 //s.oh$
 
-    private KarteBeanConverter toConverter(KarteBean bean, String context) {
+    private KarteBeanConverter toConverter(HttpServletRequest request, KarteBean bean, String context) {
         if (bean == null) {
-            throw internalError("Karte result is empty: " + context);
+            Map<String, Object> extras = new HashMap<>();
+            extras.put("context", context);
+            throw AbstractResource.restError(request, Response.Status.INTERNAL_SERVER_ERROR, "karte_lookup_failed",
+                    "Karte result is empty", extras, null);
         }
         KarteBeanConverter conv = new KarteBeanConverter();
         conv.setModel(bean);
@@ -745,13 +750,18 @@ public class KarteResource extends AbstractResource {
 
     private String resolveFacilityId(HttpServletRequest request) {
         String remoteUser = request != null ? request.getRemoteUser() : null;
-        String facility = getRemoteFacility(remoteUser);
-        boolean missingSeparator = remoteUser == null || remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) < 0;
-        if (missingSeparator || facility == null || facility.isBlank()) {
-            facility = firstNonBlank(facility, headerFacility(request));
+        boolean hasSeparator = remoteUser != null && remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) >= 0;
+        String facility = hasSeparator ? getRemoteFacility(remoteUser) : null;
+        String headerFacility = headerFacility(request);
+        if (facility == null || facility.isBlank()) {
+            facility = firstNonBlank(facility, headerFacility);
         }
         if (facility == null || facility.isBlank()) {
-            throw internalError("Facility identifier is not available");
+            Map<String, Object> extras = new HashMap<>();
+            extras.put("remoteUser", remoteUser);
+            extras.put("headerFacility", headerFacility);
+            throw AbstractResource.restError(request, Response.Status.UNAUTHORIZED, "facility_missing",
+                    "Facility identifier is not available", extras, null);
         }
         return facility;
     }
@@ -783,11 +793,4 @@ public class KarteResource extends AbstractResource {
         return null;
     }
 
-    private WebApplicationException internalError(String message) {
-        Response response = Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                .entity(message)
-                .type(MediaType.TEXT_PLAIN)
-                .build();
-        return new WebApplicationException(response);
-    }
 }

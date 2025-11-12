@@ -8,7 +8,9 @@ import java.io.InputStreamReader;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -33,9 +35,12 @@ import org.codehaus.jackson.map.ObjectMapper;
  */
 @Path("/dolphin")
 public class SystemResource extends AbstractResource {
-    
+
     @Inject
     private SystemServiceBean systemServiceBean;
+
+    @Context
+    private HttpServletRequest httpServletRequest;
 
     /** Creates a new instance of SystemResource */
     public SystemResource() {
@@ -74,12 +79,24 @@ public class SystemResource extends AbstractResource {
     public List<ActivityModel> getActivities(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
         ActivityRequest request = parseActivityRequest(param);
 
-        String remoteUser = servletReq != null ? servletReq.getRemoteUser() : null;
-        if (remoteUser == null || remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) < 0) {
-            throw unauthorized("Remote user not available");
+        HttpServletRequest activeRequest = servletReq != null ? servletReq : httpServletRequest;
+        String remoteUser = activeRequest != null ? activeRequest.getRemoteUser() : null;
+        if (remoteUser == null) {
+            Map<String, Object> extras = new HashMap<>();
+            extras.put("requestParam", param);
+            throw restError(activeRequest, Response.Status.UNAUTHORIZED, "remote_user_missing",
+                    "Remote user not available", extras, null);
         }
 
-        String fid = getRemoteFacility(remoteUser);
+        boolean hasSeparator = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) >= 0;
+        String fid = hasSeparator ? getRemoteFacility(remoteUser) : null;
+        if (fid == null || fid.isEmpty()) {
+            Map<String, Object> extras = new HashMap<>();
+            extras.put("remoteUser", remoteUser);
+            extras.put("requestParam", param);
+            throw restError(activeRequest, Response.Status.UNAUTHORIZED, "facility_missing",
+                    "Authenticated user is not associated with a facility", extras, null);
+        }
 
         ActivityModel[] array = new ActivityModel[request.count + 1]; // +1=total
 
@@ -112,19 +129,24 @@ public class SystemResource extends AbstractResource {
 
     private ActivityModel requireActivity(ActivityModel model) {
         if (model == null) {
-            throw internalError("Activity aggregation unavailable");
+            return missingActivity();
         }
         return model;
     }
 
+    private ActivityModel missingActivity() {
+        throw restError(httpServletRequest, Response.Status.INTERNAL_SERVER_ERROR,
+                "activity_aggregation_unavailable", "Activity aggregation unavailable", null, null);
+    }
+
     private ActivityRequest parseActivityRequest(String rawParam) {
         if (rawParam == null || rawParam.trim().isEmpty()) {
-            throw badRequest("param must not be empty");
+            throw invalidActivityRequest("param must not be empty", rawParam);
         }
 
         String[] params = rawParam.split(CAMMA);
         if (params.length < 3) {
-            throw badRequest("param must contain year, month, count");
+            throw invalidActivityRequest("param must contain year, month, count", rawParam);
         }
 
         try {
@@ -132,32 +154,19 @@ public class SystemResource extends AbstractResource {
             int month = Integer.parseInt(params[1]);
             int count = Integer.parseInt(params[2]);
             if (count < 1) {
-                throw badRequest("count must be >= 1");
+                throw invalidActivityRequest("count must be >= 1", rawParam);
             }
             return new ActivityRequest(year, month, count);
         } catch (NumberFormatException e) {
-            throw badRequest("param must be numeric");
+            throw invalidActivityRequest("param must be numeric", rawParam);
         }
     }
 
-    private WebApplicationException badRequest(String message) {
-        return buildException(Response.Status.BAD_REQUEST, message);
-    }
-
-    private WebApplicationException unauthorized(String message) {
-        return buildException(Response.Status.UNAUTHORIZED, message);
-    }
-
-    private WebApplicationException internalError(String message) {
-        return buildException(Response.Status.INTERNAL_SERVER_ERROR, message);
-    }
-
-    private WebApplicationException buildException(Response.Status status, String message) {
-        Response response = Response.status(status)
-                .entity(message)
-                .type(MediaType.TEXT_PLAIN)
-                .build();
-        return new WebApplicationException(response);
+    private WebApplicationException invalidActivityRequest(String message, String rawParam) {
+        Map<String, Object> extras = new HashMap<>();
+        extras.put("requestParam", rawParam);
+        extras.put("reason", "invalid_activity_param");
+        return restError(httpServletRequest, Response.Status.BAD_REQUEST, "invalid_activity_param", message, extras, null);
     }
 
     private static final class ActivityRequest {

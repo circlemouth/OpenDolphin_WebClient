@@ -10,6 +10,7 @@ import jakarta.jms.ObjectMessage;
 import java.io.BufferedReader;
 import java.io.StringReader;
 import java.util.Collection;
+import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.ActivityModel;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.DocumentModel;
@@ -73,9 +74,19 @@ public class MessageSender implements MessageListener {
             handleAccountSummary(summary, traceId);
         } else if (payload instanceof ActivityModel[] activities) {
             handleActivityReport(activities, traceId);
+        } else if (payload instanceof AuditEventEnvelope envelope) {
+            handleAuditEvent(envelope, traceId);
         } else {
             LOGGER.warn("Unsupported payload received on JMS queue: {}", payload.getClass().getName());
         }
+    }
+
+    private void handleAuditEvent(AuditEventEnvelope envelope, String traceId) {
+        LOGGER.info("Audit envelope drained from JMS queue [traceId={}, action={}, resource={}, outcome={}]",
+                traceId,
+                envelope.getAction(),
+                envelope.getResource(),
+                envelope.getOutcome());
     }
 
     private void handleDocument(DocumentModel document, String traceId) throws Exception {

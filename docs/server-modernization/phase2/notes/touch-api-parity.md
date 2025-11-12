@@ -174,3 +174,28 @@
 2. Modernized DB に `d_audit_event_seq` が存在することを確認。欠落していれば `POSTGRES_BASELINE_RESTORE.md` の SQL を適用し、Flyway に組み込む検討を進める。
 3. `/dolphin/activity/2025,04` の JPQL (`AuditEvent`) および `/touch/user/...` の facility 判定を修正し、4xx/5xx 期待ステータスへ戻す。修正後は本節の artifacts を更新する。
 4. `/karte/pid/INVALID,%5Bdate%5D` は Legacy/Modernized で期待コードが揃っていないため、Legacy 側 `KarteServiceBean` の例外ハンドリングも含めて差分を整理する。
+
+## 12. 2025-11-15 base_readonly / Touch parity 再採取（RUN_ID=20251115TapiparityZ1）
+
+- **実行コマンド**  
+  1. `BASE_URL_LEGACY=http://localhost:8080/openDolphin/resources BASE_URL_MODERN=http://localhost:9080/openDolphin/resources ops/tests/api-smoke-test/run.sh --scenario base_readonly --run-id 20251115TapiparityZ1 --dual`  
+  2. `PARITY_OUTPUT_DIR=tmp/parity-touch/20251115TapiparityZ1 BASE_URL_LEGACY=... BASE_URL_MODERN=... ops/tools/send_parallel_request.sh --config scripts/api_parity_targets.touch.json`  
+  3. `LEGACY_API_BASE=... MODERN_API_BASE=... python3 scripts/api_parity_response_check.py --config tmp/parity-touch/20251115TapiparityZ1/api_targets.json > tmp/parity-touch/20251115TapiparityZ1/diff.txt`
+- **Smoke 結果（`artifacts/parity-manual/smoke/20251115TapiparityZ1/`）**  
+  | Case ID | Legacy | Modernized | 備考 |
+  | --- | --- | --- | --- |
+  | `base_readonly_dolphin` | 401 / HTML `Unauthorized` | 401 / HTML `Unauthorized` | ヘッダー差分: Modernized は `Referrer-Policy` `Content-Security-Policy` `Strict-Transport-Security` `X-Content-Type-Options` を追加し、Legacy は `Server` `X-Powered-By` を露出。証跡: `legacy/base_readonly_dolphin/headers.txt`, `modernized/.../headers.txt`. |
+  | `base_readonly_serverinfo` | 401 | 401 | 応答本文は同一 (`<html>...Unauthorized</html>`); Modernized のみ追加セキュリティヘッダー。 |
+  | `base_readonly_patient_list` | 401 | 401 | `response.json` は両系統とも HTML エラー、CSV 取得不可。 |
+  ※ `meta.json` で全ケースの status/time を記録済み。
+- **Touch parity キャプチャ（`tmp/parity-touch/20251115TapiparityZ1/`）**  
+  - `touch_sendPackage_javaTime` / `touch_document_admFlag` / `touch_mkdocument_performFlag` は Legacy/Modernized とも 401（`meta.json` 参照）。本文はすべて `Unauthorized` HTML、`diff.txt` では `[PASS] ... Body text matches.` として同一挙動であることのみ確認できた。  
+  - 401 のため JSON ボディ比較は実施不可。今後は `d_users` / `d_patient` を復旧させて 200 応答を取得し、`compare: "json"` へ戻す。
+- **Root cause**  
+  - `artifacts/parity-manual/smoke/20251115TapiparityZ1/logs/legacy_server_tail.log` に `HHH000262: Table not found: d_users / d_patient / d_stamp ...` が多数出力され、Legacy DB が初期化されていないことを確認。  
+  - `artifacts/parity-manual/smoke/20251115TapiparityZ1/logs/modern_server_tail.log` でも `WFLYCTL0013 ... Failed services` および `org.postgresql.util.PSQLException: ERROR: relation "d_patient_memo" does not exist` が繰り返し出力され、Modernized でも同じくシード欠落で Weld 起動に失敗している。  
+  - 上記により Basic 認証がユーザー検索前で失敗し、全 API が 401 で停止。`docs/server-modernization/phase2/operations/POSTGRES_BASELINE_RESTORE.md` の合成ベースライン投入から再実施が必要。
+- **TODO**  
+  1. Docker オペレーターに `d_users/d_patient/d_stamp/d_diagnosis` のシード投入と `open_dolphin-server.war` のデプロイ成功 (`WFLYSRV0026` を緑化) を依頼する。  
+  2. 施設 `1.3.6.1.4.1.9414.72.103` の doctor1/admin アカウントがログイン可能になったら `base_readonly` ＋ Touch parity を同 RUN_ID で再取得し、`tmp/parity-touch/20251115TapiparityZ1` の `compare: "text"` を `compare: "json"` へ差し戻す。  
+  3. 再取得後は `docs/web-client/planning/phase2/DOC_STATUS.md` の Testing セクションを `Recovered` へ更新し、Checklist フェーズ9のモダナイズ API parity 行をクローズする。

@@ -17,18 +17,10 @@ import jakarta.enterprise.concurrent.ManagedScheduledExecutorService;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
-import jakarta.jms.Connection;
-import jakarta.jms.ConnectionFactory;
-import jakarta.jms.JMSException;
-import jakarta.jms.MessageProducer;
-import jakarta.jms.ObjectMessage;
-//import jakarta.jms.QueueSession;
-import jakarta.jms.Session;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import open.dolphin.audit.AuditEventEnvelope;
-import open.dolphin.audit.AuditTrailService;
 import open.dolphin.infomodel.AttachmentModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
@@ -47,6 +39,7 @@ import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.session.framework.SessionTraceAttributes;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.touch.converter.IOSHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -103,7 +96,7 @@ public class ScheduleServiceBean {
     private MessagingGateway messagingGateway;
 
     @Inject
-    private AuditTrailService auditTrailService;
+    private SessionAuditDispatcher sessionAuditDispatcher;
 
     @Inject
     private SessionTraceManager traceManager;
@@ -127,6 +120,7 @@ public class ScheduleServiceBean {
         auditDetails.put("unassignedDoctor", unassigned);
         auditDetails.put("date", date);
 
+        RuntimeException failure = null;
         try {
             List<PatientVisitModel> result;
 
@@ -178,11 +172,12 @@ public class ScheduleServiceBean {
             }
 
             auditDetails.put("resultCount", len);
-            writeScheduleAudit("SCHEDULE_FETCH", auditDetails, null, null);
             return result;
         } catch (RuntimeException ex) {
-            writeScheduleAudit("SCHEDULE_FETCH", auditDetails, ex, null);
+            failure = ex;
             throw ex;
+        } finally {
+            writeScheduleAudit("SCHEDULE_FETCH", auditDetails, failure, null);
         }
     }
     
@@ -195,6 +190,7 @@ public class ScheduleServiceBean {
         auditDetails.put("startDate", startDate);
         String auditPatientId = null;
 
+        Exception failure = null;
         try {
             // 受付情報を取得する
             PatientVisitModel pvt = (PatientVisitModel)em.find(PatientVisitModel.class, pvtPK);
@@ -406,16 +402,16 @@ public class ScheduleServiceBean {
             auditDetails.put("karteId", karte.getId());
             auditDetails.put("documentId", schedule.getId());
             auditDetails.put("patientPk", patient.getId());
-            writeScheduleAudit("SCHEDULE_CREATE", auditDetails, null, auditPatientId);
             return 1;
             
         } catch (Exception e) {
-            writeScheduleAudit("SCHEDULE_CREATE", auditDetails, e, auditPatientId);
+            failure = e;
             LOGGER.error("Failed to create schedule entry", e);
             e.printStackTrace(System.err);
+            return 0;
+        } finally {
+            writeScheduleAudit("SCHEDULE_CREATE", auditDetails, failure, auditPatientId);
         }
-        
-        return 0;
     }
     
     public int removePvt(long pvtPK, long ptPK, Date startDate) {
@@ -427,6 +423,7 @@ public class ScheduleServiceBean {
         auditDetails.put("documentsDeletedCount", 0);
         String auditPatientId = null;
 
+        RuntimeException failure = null;
         try {
             // 受付咲くジョン
             PatientVisitModel exist = (PatientVisitModel)em.find(PatientVisitModel.class, new Long(pvtPK));
@@ -453,7 +450,6 @@ public class ScheduleServiceBean {
             if (list.isEmpty()) {
                 auditDetails.put("documentsDeletedCount", 0);
                 auditDetails.put("documentsDeletedStatus", "noDocumentsForStartDate");
-                writeScheduleAudit("SCHEDULE_DELETE", auditDetails, null, auditPatientId);
                 return 1;
             }
             
@@ -467,11 +463,12 @@ public class ScheduleServiceBean {
             if (documentsDeleted == 0) {
                 auditDetails.put("documentsDeletedStatus", "documentsAlreadyDeleted");
             }
-            writeScheduleAudit("SCHEDULE_DELETE", auditDetails, null, auditPatientId);
             return documentsDeleted + 1;
         } catch (RuntimeException ex) {
-            writeScheduleAudit("SCHEDULE_DELETE", auditDetails, ex, auditPatientId);
+            failure = ex;
             throw ex;
+        } finally {
+            writeScheduleAudit("SCHEDULE_DELETE", auditDetails, failure, auditPatientId);
         }
     }
 
@@ -581,7 +578,7 @@ public class ScheduleServiceBean {
     }
 
     private void writeScheduleAudit(String action, Map<String, Object> details, Throwable error, String patientId) {
-        if (auditTrailService == null) {
+        if (sessionAuditDispatcher == null) {
             return;
         }
         String previousPatient = setPatientContext(patientId);
@@ -591,7 +588,7 @@ public class ScheduleServiceBean {
             if (error != null) {
                 builder.failure(error);
             }
-            auditTrailService.write(builder.build());
+            sessionAuditDispatcher.dispatch(builder.build());
         } finally {
             restorePatientContext(previousPatient);
         }

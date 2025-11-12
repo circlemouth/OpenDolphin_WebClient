@@ -1,0 +1,10 @@
+HTTP/1.1 401 Unauthorized
+Connection: keep-alive
+WWW-Authenticate: Basic realm="OpenDolphin"
+X-Powered-By: Undertow/1
+Server: WildFly/10
+Content-Type: text/html;charset=UTF-8
+Content-Length: 71
+X-Trace-Id: dd3b8817-d72f-4678-b658-d378705e4d01
+Date: Wed, 12 Nov 2025 13:38:14 GMT
+

@@ -263,16 +263,20 @@ public final class AuditEventEnvelope implements Serializable {
         }
 
         public AuditEventEnvelope build() {
-            if (actorId == null || actorId.isBlank()) {
+            if (isNullOrBlank(actorId)) {
                 throw new IllegalStateException("actorId must be provided for audit events");
             }
-            if (traceId == null || traceId.isBlank()) {
+            if (isNullOrBlank(traceId)) {
                 throw new IllegalStateException("traceId must be provided for audit events");
             }
-            if (requestId == null || requestId.isBlank()) {
+            if (isNullOrBlank(requestId)) {
                 requestId = traceId;
             }
             return new AuditEventEnvelope(this);
+        }
+
+        private static boolean isNullOrBlank(String value) {
+            return value == null || value.trim().isEmpty();
         }
     }
 }

@@ -2,15 +2,26 @@ package open.dolphin.session;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.UUID;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
+import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.*;
 import open.dolphin.session.framework.SessionOperation;
+import open.dolphin.session.framework.SessionTraceAttributes;
+import open.dolphin.session.framework.SessionTraceContext;
+import open.dolphin.session.framework.SessionTraceManager;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -49,6 +60,12 @@ public class NLabServiceBean {
     @PersistenceContext
     private EntityManager em;
 
+    @Inject
+    private SessionAuditDispatcher sessionAuditDispatcher;
+
+    @Inject
+    private SessionTraceManager traceManager;
+
     
     public List<PatientLiteModel> getConstrainedPatients(String fid, List<String>idList) {
 
@@ -79,6 +96,11 @@ public class NLabServiceBean {
 
     
     public PatientModel create(String fid, NLaboModule module) {
+
+        String fidPidBeforeNormalization = fid != null && module != null ? fid + ":" + module.getPatientId() : null;
+        String previousPatientContext = setPatientContext(extractPatientId(fidPidBeforeNormalization));
+        final String action = "LAB_TEST_CREATE";
+        try {
 
         String pid = module.getPatientId();
 
@@ -162,7 +184,21 @@ public class NLabServiceBean {
         // 永続化する
         em.persist(module);
 
+        recordLabAudit(action, fidPidBeforeNormalization != null ? fidPidBeforeNormalization : module.getPatientId(),
+                module != null ? module.getLaboCenterCode() : null,
+                module != null && module.getItems() != null ? module.getItems().size() : 0,
+                null,
+                buildModuleDetails(module));
         return patient;
+        } catch (RuntimeException ex) {
+            recordLabAudit(action, fidPidBeforeNormalization, module != null ? module.getLaboCenterCode() : null,
+                    module != null && module.getItems() != null ? module.getItems().size() : 0,
+                    ex,
+                    buildModuleDetails(module));
+            throw ex;
+        } finally {
+            restorePatientContext(previousPatientContext);
+        }
     }
 
 
@@ -176,36 +212,43 @@ public class NLabServiceBean {
     
     public List<NLaboModule> getLaboTest(String fidPid, int firstResult, int maxResult) {
 
-        //String fidPid = SessionHelper.getQualifiedPid(ctx, patientId);
+        final String action = "LAB_TEST_READ";
+        String previousPatientContext = setPatientContext(extractPatientId(fidPid));
+        try {
+            List<NLaboModule> ret = (List<NLaboModule>)
+                            em.createQuery(QUERY_MODULE_BY_FIDPID)
+                              .setParameter(FIDPID, fidPid)
+                              .setFirstResult(firstResult)
+                              .setMaxResults(maxResult)
+                              .getResultList();
 
-        //
-        // 検体採取日の降順で返す
-        //
-        List<NLaboModule> ret = (List<NLaboModule>)
-                        em.createQuery(QUERY_MODULE_BY_FIDPID)
-                          .setParameter(FIDPID, fidPid)
-                          .setFirstResult(firstResult)
-                          .setMaxResults(maxResult)
-                          .getResultList();
+            for (NLaboModule m : ret) {
 
-        for (NLaboModule m : ret) {
+                if (m.getReportFormat()!=null && m.getReportFormat().equals(WOLF)) {
+                    List<NLaboItem> items = (List<NLaboItem>)
+                                    em.createQuery(QUERY_ITEM_BY_MID_ORDERBY_SORTKEY)
+                                      .setParameter(MID, m.getId())
+                                      .getResultList();
+                    m.setItems(items);
 
-            if (m.getReportFormat()!=null && m.getReportFormat().equals(WOLF)) {
-                List<NLaboItem> items = (List<NLaboItem>)
-                                em.createQuery(QUERY_ITEM_BY_MID_ORDERBY_SORTKEY)
-                                  .setParameter(MID, m.getId())
-                                  .getResultList();
-                m.setItems(items);
-
-            } else {
-                List<NLaboItem> items = (List<NLaboItem>)
-                                em.createQuery(QUERY_ITEM_BY_MID)
-                                  .setParameter(MID, m.getId())
-                                  .getResultList();
-                m.setItems(items);
+                } else {
+                    List<NLaboItem> items = (List<NLaboItem>)
+                                    em.createQuery(QUERY_ITEM_BY_MID)
+                                      .setParameter(MID, m.getId())
+                                      .getResultList();
+                    m.setItems(items);
+                }
             }
+
+            recordLabAudit(action, fidPid, joinLabCodes(ret), ret.size(), null,
+                    buildReadDetails(firstResult, maxResult));
+            return ret;
+        } catch (RuntimeException ex) {
+            recordLabAudit(action, fidPid, null, 0, ex, buildReadDetails(firstResult, maxResult));
+            throw ex;
+        } finally {
+            restorePatientContext(previousPatientContext);
         }
-        return ret;
     }
     
 //s.oh^ 2013/09/18 ラボデータの高速化
@@ -229,25 +272,244 @@ public class NLabServiceBean {
     
     public List<NLaboItem> getLaboTestItem(String fidPid, int firstResult, int maxResult, String itemCode) {
 
-        //String fidPid = SessionHelper.getQualifiedPid(ctx, patientId);
+        final String action = "LAB_TEST_READ";
+        String previousPatientContext = setPatientContext(extractPatientId(fidPid));
+        try {
+            List<NLaboItem> ret = (List<NLaboItem>)
+                            em.createQuery(QUERY_ITEM_BY_FIDPID_ITEMCODE)
+                              .setParameter(FIDPID, fidPid)
+                              .setParameter(ITEM_CODE, itemCode)
+                              .setFirstResult(firstResult)
+                              .setMaxResults(maxResult)
+                              .getResultList();
 
-        List<NLaboItem> ret = (List<NLaboItem>)
-                        em.createQuery(QUERY_ITEM_BY_FIDPID_ITEMCODE)
-                          .setParameter(FIDPID, fidPid)
-                          .setParameter(ITEM_CODE, itemCode)
-                          .setFirstResult(firstResult)
-                          .setMaxResults(maxResult)
-                          .getResultList();
-
-        return ret;
+            recordLabAudit(action, fidPid, itemCode, ret.size(), null,
+                    buildItemReadDetails(firstResult, maxResult, itemCode));
+            return ret;
+        } catch (RuntimeException ex) {
+            recordLabAudit(action, fidPid, itemCode, 0, ex,
+                    buildItemReadDetails(firstResult, maxResult, itemCode));
+            throw ex;
+        } finally {
+            restorePatientContext(previousPatientContext);
+        }
     }
    
     // ラボデータの削除 2013/06/24
     public int deleteLabTest(long id) {
-        //Logger.getLogger("open.dolphin").info("Lab module to detele is " + id);
+        final String action = "LAB_TEST_DELETE";
         NLaboModule target = em.find(NLaboModule.class,id);
-        em.remove(target);
-        LOGGER.info("Lab module deleted {}", id);
-        return 1;
+        String fidPid = target != null ? target.getPatientId() : null;
+        String previousPatientContext = setPatientContext(extractPatientId(fidPid));
+        try {
+            if (target == null) {
+                IllegalArgumentException ex = new IllegalArgumentException("Lab module not found: " + id);
+                recordLabAudit(action, null, null, 0, ex, moduleIdDetails(id));
+                throw ex;
+            }
+            em.remove(target);
+            LOGGER.info("Lab module deleted {}", id);
+            recordLabAudit(action, fidPid, target.getLaboCenterCode(),
+                    target.getItems() != null ? target.getItems().size() : 0,
+                    null, moduleIdDetails(id));
+            return 1;
+        } catch (RuntimeException ex) {
+            recordLabAudit(action, fidPid, target != null ? target.getLaboCenterCode() : null,
+                    target != null && target.getItems() != null ? target.getItems().size() : 0,
+                    ex, moduleIdDetails(id));
+            throw ex;
+        } finally {
+            restorePatientContext(previousPatientContext);
+        }
+    }
+
+    private void recordLabAudit(String action, String fidPid, String labCode, int resultCount, Throwable error, Map<String, Object> extraDetails) {
+        if (sessionAuditDispatcher == null) {
+            return;
+        }
+        try {
+            AuditEventEnvelope.Builder builder = newLabAuditBuilder(action);
+            String patientId = extractPatientId(fidPid);
+            builder.patientId(patientId != null ? patientId : resolveContextPatientId());
+            Map<String, Object> details = new HashMap<>();
+            details.put("fidPid", fidPid);
+            details.put("facilityId", extractFacilityId(fidPid));
+            details.put("patientId", patientId);
+            details.put("labCode", labCode);
+            details.put("resultCount", resultCount);
+            if (extraDetails != null) {
+                details.putAll(extraDetails);
+            }
+            builder.details(details);
+            if (error != null) {
+                builder.failure(error);
+            }
+            sessionAuditDispatcher.dispatch(builder.build());
+        } catch (IllegalStateException ex) {
+            LOGGER.warn("Failed to dispatch lab audit event [action={}]: {}", action, ex.getMessage());
+        }
+    }
+
+    private AuditEventEnvelope.Builder newLabAuditBuilder(String action) {
+        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, "NLabServiceBean");
+        SessionTraceContext context = traceManager != null ? traceManager.current() : null;
+        String actorId = resolveActorId(context);
+        builder.actorId(actorId);
+        builder.actorDisplayName(resolveActorDisplayName(actorId));
+        builder.actorRole(context != null ? context.getActorRole() : null);
+        builder.facilityId(resolveFacilityId(actorId));
+        String traceId = resolveTraceId(context);
+        builder.traceId(traceId);
+        builder.requestId(resolveRequestId(context, traceId));
+        builder.component(context != null ? context.getAttribute(SessionTraceAttributes.COMPONENT) : null);
+        builder.operation(context != null ? context.getOperation() : null);
+        return builder;
+    }
+
+    private String resolveActorId(SessionTraceContext context) {
+        if (context == null) {
+            return "system";
+        }
+        String actorId = context.getAttribute(SessionTraceAttributes.ACTOR_ID);
+        return actorId == null || actorId.isBlank() ? "system" : actorId;
+    }
+
+    private String resolveActorDisplayName(String actorId) {
+        if (actorId == null) {
+            return "system";
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx >= 0 && idx + 1 < actorId.length()) {
+            return actorId.substring(idx + 1);
+        }
+        return actorId;
+    }
+
+    private String resolveFacilityId(String actorId) {
+        if (actorId == null) {
+            return null;
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx <= 0) {
+            return null;
+        }
+        return actorId.substring(0, idx);
+    }
+
+    private String resolveTraceId(SessionTraceContext context) {
+        if (context != null && context.getTraceId() != null && !context.getTraceId().isBlank()) {
+            return context.getTraceId();
+        }
+        return UUID.randomUUID().toString();
+    }
+
+    private String resolveRequestId(SessionTraceContext context, String traceId) {
+        if (context != null) {
+            String requestId = context.getAttribute(SessionTraceAttributes.REQUEST_ID);
+            if (requestId != null && !requestId.isBlank()) {
+                return requestId;
+            }
+        }
+        return traceId;
+    }
+
+    private String resolveContextPatientId() {
+        if (traceManager == null) {
+            return "N/A";
+        }
+        SessionTraceContext context = traceManager.current();
+        if (context == null) {
+            return "N/A";
+        }
+        String patient = context.getAttribute(SessionTraceAttributes.PATIENT_ID);
+        return patient == null || patient.isBlank() ? "N/A" : patient;
+    }
+
+    private Map<String, Object> buildReadDetails(int firstResult, int maxResult) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("firstResult", firstResult);
+        details.put("maxResult", maxResult);
+        return details;
+    }
+
+    private Map<String, Object> buildItemReadDetails(int firstResult, int maxResult, String itemCode) {
+        Map<String, Object> details = buildReadDetails(firstResult, maxResult);
+        details.put("itemCode", itemCode);
+        return details;
+    }
+
+    private Map<String, Object> buildModuleDetails(NLaboModule module) {
+        Map<String, Object> details = new HashMap<>();
+        if (module != null) {
+            details.put("sampleDate", module.getSampleDate());
+            details.put("moduleKey", module.getModuleKey());
+            details.put("laboModuleId", module.getId());
+        }
+        return details;
+    }
+
+    private Map<String, Object> moduleIdDetails(long id) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("moduleId", id);
+        return details;
+    }
+
+    private String joinLabCodes(List<NLaboModule> modules) {
+        if (modules == null || modules.isEmpty()) {
+            return null;
+        }
+        Set<String> codes = new LinkedHashSet<>();
+        for (NLaboModule module : modules) {
+            if (module == null) {
+                continue;
+            }
+            String code = module.getLaboCenterCode();
+            if (code != null && !code.isBlank()) {
+                codes.add(code);
+            }
+        }
+        if (codes.isEmpty()) {
+            return null;
+        }
+        return String.join(",", codes);
+    }
+
+    private String extractFacilityId(String fidPid) {
+        if (fidPid == null) {
+            return null;
+        }
+        int idx = fidPid.indexOf(':');
+        if (idx <= 0) {
+            return null;
+        }
+        return fidPid.substring(0, idx);
+    }
+
+    private String extractPatientId(String fidPid) {
+        if (fidPid == null) {
+            return null;
+        }
+        int idx = fidPid.indexOf(':');
+        if (idx < 0 || idx + 1 >= fidPid.length()) {
+            return fidPid;
+        }
+        return fidPid.substring(idx + 1);
+    }
+
+    private String setPatientContext(String patientId) {
+        if (traceManager == null) {
+            return null;
+        }
+        String normalized = (patientId == null || patientId.isBlank()) ? null : patientId;
+        String previous = traceManager.getAttribute(SessionTraceAttributes.PATIENT_ID);
+        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, normalized);
+        return previous;
+    }
+
+    private void restorePatientContext(String previousPatientId) {
+        if (traceManager == null) {
+            return;
+        }
+        traceManager.putAttribute(SessionTraceAttributes.PATIENT_ID, previousPatientId);
     }
 }

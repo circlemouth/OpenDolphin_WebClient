@@ -11,7 +11,7 @@
         <groupId>opendolphin</groupId>
         <version>2.7.1</version>
     </parent>
-    <artifactId>opendolphin-server</artifactId>
+    <artifactId>opendolphin-server-modernized</artifactId>
     <packaging>war</packaging>
 
     <properties>
@@ -311,6 +311,7 @@
 
     <version>2.7.1</version>
     <build>
+        <finalName>opendolphin-server</finalName>
         <resources>
             <resource>
                 <directory>src/main/resources</directory>

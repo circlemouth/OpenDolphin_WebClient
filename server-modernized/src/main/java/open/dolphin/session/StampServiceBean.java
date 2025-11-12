@@ -146,7 +146,14 @@ public class StampServiceBean {
     }
 
     private void logVersionMismatch(long userPk, String requested, String current) {
-        LOGGER.log(Level.INFO, () -> String.format("StampTree version desync detected [userPk=%d, payloadVersion=%s, dbVersion=%s]", userPk, requested, current));
+        LOGGER.log(Level.INFO, formatVersionMismatchMessage(userPk, requested, current));
+    }
+
+    private String formatVersionMismatchMessage(long userPk, String requested, String current) {
+        return String.format("StampTree version desync detected [userPk=%d, payloadVersion=%s, dbVersion=%s]",
+                userPk,
+                requested,
+                current);
     }
 
     /**
@@ -268,25 +275,34 @@ public class StampServiceBean {
      */
     
     public List<PublishedTreeModel> getPublishedTrees(String fid) {
+        return getFacilityPublishedTrees(fid);
+    }
 
-        // ログインユーザの施設IDを取得する
-        //String fid = SessionHelper.getCallersFacilityId(ctx);
+    public List<PublishedTreeModel> getFacilityPublishedTrees(String facilityId) {
+        List<PublishedTreeModel> combined = new ArrayList<>();
+        String normalized = facilityId != null ? facilityId.trim() : null;
+        if (normalized != null && !normalized.isEmpty()) {
+            combined.addAll(getSharedTrees(normalized));
+        }
+        combined.addAll(getPublicTrees());
+        return combined;
+    }
 
-        List<PublishedTreeModel> ret = new ArrayList<PublishedTreeModel>();
+    public List<PublishedTreeModel> getPublicTrees() {
+        List<PublishedTreeModel> publics = em.createQuery(QUERY_PUBLIC_TREE, PublishedTreeModel.class)
+                .getResultList();
+        return new ArrayList<>(publics);
+    }
 
-        // local に公開されているTreeを取得する
-        // publishType=施設ID
-        List locals = em.createQuery(QUERY_LOCAL_PUBLISHED_TREE)
-        .setParameter(FID, fid)
-        .getResultList();
-        ret.addAll((List<PublishedTreeModel>) locals);
-
-        // パブリックTeeを取得する
-        List publics = em.createQuery(QUERY_PUBLIC_TREE)
-        .getResultList();
-        ret.addAll((List<PublishedTreeModel>) publics);
-
-        return ret;
+    public List<PublishedTreeModel> getSharedTrees(String facilityId) {
+        String normalized = facilityId != null ? facilityId.trim() : null;
+        if (normalized == null || normalized.isEmpty()) {
+            return new ArrayList<>();
+        }
+        List<PublishedTreeModel> locals = em.createQuery(QUERY_LOCAL_PUBLISHED_TREE, PublishedTreeModel.class)
+                .setParameter(FID, normalized)
+                .getResultList();
+        return new ArrayList<>(locals);
     }
 
     /**

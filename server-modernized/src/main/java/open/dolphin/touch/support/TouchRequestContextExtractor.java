@@ -1,12 +1,17 @@
 package open.dolphin.touch.support;
 
 import jakarta.servlet.http.HttpServletRequest;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.Response;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.rest.LogFilter;
+import open.dolphin.rest.AbstractResource;
 
 /**
  * {@link HttpServletRequest} から Touch 系 API に必要な文脈情報を抽出する。
@@ -47,6 +52,13 @@ public final class TouchRequestContextExtractor {
         PathPrincipal pathPrincipal = extractPrincipalFromPath(request);
         String facilityHeader = firstNonBlank(resolveFacilityHeader(request), pathPrincipal.facilityId());
 
+        Map<String, Object> context = new HashMap<>();
+        context.put("facilityHeader", facilityHeader);
+        context.put("pathFacility", pathPrincipal.facilityId());
+        context.put("pathUser", pathPrincipal.userId());
+        context.put("headerUser", headerUser);
+        context.put("remoteCandidate", remoteCandidate);
+
         String remoteUser = compositeOrNull(remoteCandidate);
         if (remoteUser == null) {
             remoteUser = compositeOrNull(headerUser);
@@ -68,7 +80,8 @@ public final class TouchRequestContextExtractor {
         }
 
         if (remoteUser == null) {
-            throw new IllegalStateException("Remote user is not available.");
+            throw identityError(request, Response.Status.UNAUTHORIZED, "remote_user_missing",
+                    "Remote user is not available.", context);
         }
 
         int separator = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
@@ -78,7 +91,9 @@ public final class TouchRequestContextExtractor {
                 separator = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
                 logFallback("Augmented remote user with facility header", facilityHeader, remoteUser);
             } else {
-                throw new IllegalStateException("Remote user does not contain facility separator.");
+                context.put("remoteUser", remoteUser);
+                throw identityError(request, Response.Status.UNAUTHORIZED, "remote_user_missing_separator",
+                        "Remote user does not contain facility separator.", context);
             }
         }
 
@@ -102,7 +117,11 @@ public final class TouchRequestContextExtractor {
         }
 
         if (facilityId == null || facilityId.isBlank() || userId == null || userId.isBlank()) {
-            throw new IllegalStateException("Remote user is not available.");
+            context.put("remoteUser", remoteUser);
+            context.put("facilityId", facilityId);
+            context.put("userId", userId);
+            throw identityError(request, Response.Status.UNAUTHORIZED, "remote_user_incomplete",
+                    "Remote user is not available.", context);
         }
 
         return new RemoteIdentity(remoteUser, facilityId, userId);
@@ -223,6 +242,11 @@ public final class TouchRequestContextExtractor {
 
     private record PathPrincipal(String facilityId, String userId) {
         private static final PathPrincipal EMPTY = new PathPrincipal(null, null);
+    }
+
+    private static WebApplicationException identityError(HttpServletRequest request, Response.Status status,
+            String errorCode, String message, Map<String, Object> details) {
+        return AbstractResource.restError(request, status, errorCode, message, details, null);
     }
 }
 
