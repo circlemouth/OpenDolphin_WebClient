@@ -1,8 +1,11 @@
 package open.dolphin.infomodel;
 
 import java.io.Serializable;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import javax.swing.ImageIcon;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * カルテのアタッチメント（文書や画像）クラス。
@@ -24,8 +27,8 @@ public class AttachmentModel extends KarteEntryBean implements Serializable,java
     private String extension;
     private String memo; 
     
-    @Lob
-    @Column(nullable=false)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(nullable=false, columnDefinition = "bytea")
     private byte[] bytes;   // data
     
     @ManyToOne
@@ -33,6 +36,7 @@ public class AttachmentModel extends KarteEntryBean implements Serializable,java
     private DocumentModel document;
     
     @Transient
+    @JsonIgnore
     private ImageIcon icon; // icon
     
     @Transient

@@ -22,6 +22,7 @@
     <jakarta.jakartaee-api.version>10.0.0</jakarta.jakartaee-api.version>
     <hibernate.orm.version>6.4.4.Final</hibernate.orm.version>
     <commons.codec.version>1.17.1</commons.codec.version>
+    <jackson.annotations.version>2.17.1</jackson.annotations.version>
   </properties>
 
   <dependencies>
@@ -35,6 +36,12 @@
       <groupId>commons-codec</groupId>
       <artifactId>commons-codec</artifactId>
       <version>${commons.codec.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-annotations</artifactId>
+      <version>${jackson.annotations.version}</version>
+      <optional>true</optional>
     </dependency>
     <dependency>
       <groupId>jakarta.platform</groupId>

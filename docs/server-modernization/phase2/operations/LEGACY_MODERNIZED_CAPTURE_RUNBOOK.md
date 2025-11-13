@@ -1,5 +1,7 @@
 # Legacy / Modernized 並列キャプチャ Runbook
 
+> **方針**: Legacy サーバーは電子カルテ機能の参照用であり、運用予定はない。Modernized サーバーは新 Web クライアントとの連携だけを必須条件とし、旧クライアント互換は対象外。以下の手順は Modernized×Web クライアント連携の安定化を最優先とし、Legacy での再現は比較が必要な場合のみ実施する。特に Gate 判定は Modernized 側の成功だけで完了とする。
+
 - 更新日: 2025-11-07
 - 担当: Worker #1 (Codex)
 - 対象: チェックリスト #25（Codex 向け環境構築スクリプト検証）/#26（docker-compose 依存関係明文化）の Gate
@@ -13,7 +15,7 @@
   - `setup_codex_env_unix_nonroot.log`: LF 変換済みコピーを root 未使用で実行し、root 権限必須エラーを確認
   - `compose_services.txt` / `compose_profiles.txt`: `docker compose -f docker-compose.yml -f docker-compose.modernized.dev.yml config --services/--profiles` の CLI 出力
 - **環境変数テンプレ**: `ops/tools/send_parallel_request.profile.env.sample`
-- **DB ベースライン Gate**: `docs/server-modernization/phase2/operations/POSTGRES_BASELINE_RESTORE.md`（節 6）および `artifacts/parity-manual/db-restore/20251109T200035Z/`（`psql -h localhost ...`, `flyway info`, README）を参照し、キャプチャ手順に入る前の必須 Gate とする。
+- **DB ベースライン Gate**: `docs/server-modernization/phase2/operations/POSTGRES_BASELINE_RESTORE.md`（節 6）および最新証跡 `artifacts/parity-manual/db-restore/20251119TbaselineFixZ1/`（`docker exec ... psql` fallback、`pg_dump --schema-only` 代替、`flyway/flyway:10.17 info`, README）を参照し、キャプチャ手順に入る前の必須 Gate とする。旧ログ `artifacts/parity-manual/db-restore/20251109T200035Z/` も比較用途で保持。
 - **PK 揃え済み→再取得待ち**: `ops/db/local-baseline/local_synthetic_seed.sql` で `WEB1001` の `d_karte.id=10` を固定し、`docker exec opendolphin-postgres-modernized psql -c "INSERT ..."`→`DELETE id=6`→`SELECT setval('opendolphin.hibernate_sequence',10,true);` で Modern DB を調整済み。Legacy/Modern 双方の `d_karte` を `docker exec opendolphin-postgres(-modernized) psql -c "SELECT id, patientId ..."` で採取し、結果は `artifacts/parity-manual/db/20251111T062323Z/karte_id_check.txt` に保存した。Docker 再デプロイと parity RUN_ID 更新は後続タスク。
 
 ## 1. 前提条件と権限
@@ -121,6 +123,67 @@
   2. **Seed 再投入**: Legacy (`db`)/Modernized (`db-modernized`) の両 Postgres に `psql -f ops/db/local-baseline/local_synthetic_seed.sql` を流し込み、`id=8` の紹介状、`id=9101/9201/9202` のラボデータ、`id=9` のスタンプツリーを復元する。  
   3. **再デプロイと parity 取得**: `scripts/start_legacy_modernized.sh down && start --build` → `ops/tools/send_parallel_request.sh --profile compose --case {letter,lab,stamp}` の順に再実行して証跡を更新する。Docker コンテナの再起動や send_parallel_request の実行自体はホスト担当者が行うため、開発コンテナ内ではファイル更新と手順書作成に留め、次担当者へ「再デプロイ待ち」である旨を共有する。  
 - 上記が完了するまで `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md`・`docs/server-modernization/phase2/PHASE2_PROGRESS.md`・`docs/server-modernization/phase2/notes/domain-transaction-parity.md` には「Flyway/seed 追加を実施、Docker 再デプロイ待ち」と明記し、Docker 側の適用が完了したら RUN_ID を更新する。
+
+### 2.5 Diagnosis Seed Refresh Gate（診断監査・Claim parity）
+
+- `POST /karte/diagnosis/claim` をトリガーに `d_audit_event`／JMS／HTTP を採取するタスクでは、**キャプチャ前に毎回 `tmp/diagnosis_seed.sql` を Legacy / Modernized 双方へ再投入すること**。`F001/doctor1` の患者・カルテ・診断エントリと `hibernate_sequence`／`opendolphin.d_diagnosis_seq` を既知レンジ（>=9002000）へ戻し、監査ログの欠損や ID 衝突を防止する。代表的な証跡: `artifacts/parity-manual/messaging/20251118TdiagnosisAuditZ2/`（RUN_ID=`20251118TdiagnosisAuditZ2`）。
+1. **Legacy reseed**  
+   ```bash
+   docker exec -i opendolphin-postgres bash -lc '
+     set -euo pipefail
+     cd /workspace
+     psql -U opendolphin -d opendolphin -f tmp/diagnosis_seed.sql \
+       | tee artifacts/parity-manual/messaging/${RUN_ID:-diagnosis_seed}/logs/legacy_diagnosis_seed.log
+   '
+   ```
+   - `tee` 出力を `artifacts/parity-manual/messaging/<case>/<RUN_ID>/logs/` へ保存し、`d_patient/d_karte/d_diagnosis` の初期化行数と `setval` 実行結果を記録する。
+2. **Modernized reseed**  
+   ```bash
+   docker exec -i opendolphin-postgres-modernized bash -lc '
+     set -euo pipefail
+     cd /workspace
+     psql -U opendolphin -d opendolphin -f tmp/diagnosis_seed.sql \
+       | tee artifacts/parity-manual/messaging/${RUN_ID:-diagnosis_seed}/logs/modern_diagnosis_seed.log
+   '
+   ```
+   - Modernized 側でも `d_audit_event` の `actor_id` / `patient_id` が Legacy と一致することを後段の取得結果で確認する。
+3. **整合性チェック**  
+   reseed 後に `docker exec opendolphin-postgres psql -U opendolphin -d opendolphin -c "SELECT id, diagnosis_code, started, status FROM d_diagnosis ORDER BY id DESC LIMIT 3;"` を実行し、`9002***` レンジへの更新と `status=F`（固定値）を記録する。Modernized でも同クエリを実行し、差分があれば Runbook へ記録する。併せて `SELECT last_value FROM hibernate_sequence;` / `SELECT last_value FROM opendolphin.d_diagnosis_seq;` を両環境で採取し、`>=9002000` を Gate 通過条件とする。
+4. **Gate 閉塞条件**  
+   `tmp/diagnosis_seed.sql` の適用ログと整合性チェック結果を `PHASE2_PROGRESS.md` および作業チケットへリンクしない限り、本 Gate を閉じて次フェーズ（診断監査取得）へ進めない。`TRACE_RUN_ID` ごとに再実施し、未実施の場合は `artifacts/parity-manual/messaging/<RUN_ID>/README.md` へ TODO を明記する。
+5. **helper ラッパーで診断 Claim を送信**  
+   reseed 直後に `ops/tools/helper_send_parallel_request.sh` を使用して `/karte/diagnosis/claim` を投入する。helper サービスは `docker-compose.modernized.dev.yml` の `profiles: [modernized-dev]` に定義されており、`mcr.microsoft.com/devcontainers/base:jammy` イメージを `/workspace` へマウントしたまま待機している。`COMPOSE_FILE=docker-compose.modernized.dev.yml` をセットしてラッパーを呼び出すと `docker compose --profile modernized-dev run --rm helper ...` が内部で実行され、`TRACE_RUN_ID` / `PARITY_OUTPUT_DIR` を自動採番する。RUN_ID を固定したい場合は `TRACE_RUN_ID` もしくは `TRACE_RUN_SUFFIX` を明示する。
+   ```bash
+   PARITY_HEADER_FILE=tmp/parity-headers/diagnosis_TEMPLATE.headers \
+   PARITY_BODY_FILE=tmp/claim-tests/send_diagnosis_success.json \
+   TRACE_RUN_ID=${TRACE_RUN_ID:-20251118TdiagnosisAuditZ2} \
+     ops/tools/helper_send_parallel_request.sh \
+       --helper-case messaging -- \
+       --profile compose POST /karte/diagnosis/claim messaging_diagnosis
+   ```
+   - 出力は `artifacts/parity-manual/messaging/<TRACE_RUN_ID>/` 配下に `legacy|modern` / `logs/` を自動作成して保存される。`--helper-case` で `messaging` 以外の case を切り替え可能。
+   - helper 実行ログには決定した RUN_ID が表示されるため、後続の `d_audit_event` 取得や README 記載では同じ値を使用する。
+   - Compose ファイルから helper サービスが外れている場合や別環境でテストする場合は、自動的に `docker run --rm --network legacy-vs-modern_default -v "$PWD":/workspace mcr.microsoft.com/devcontainers/base:jammy ...` へフォールバックする。ネットワーク名・イメージは `HELPER_FALLBACK_NETWORK` / `HELPER_FALLBACK_IMAGE` で上書き可能。
+   - 疎通確認のみを行いたい場合は `HELPER_INNER_COMMAND=echo ops/tools/helper_send_parallel_request.sh -- helper_compose_ok` のように `HELPER_INNER_COMMAND` を差し替え、RUN_ID=`20251119ThelperComposeEchoZ1`（compose 経路）や `20251119ThelperFallbackEchoZ1`（フォールバック経路）のログを参考に CLI 実行可否だけを確認する。
+6. **`d_audit_event` を TraceId で採取**  
+   helper 実行時の `X-Trace-Id`（例: `parity-diagnosis-send-${TRACE_RUN_ID}`）で Legacy / Modernized 双方の監査行を抽出し、Gate 2.5 の証跡をクローズする。
+   ```bash
+   TRACE_RUN_ID=${TRACE_RUN_ID:-20251118TdiagnosisAuditZ2}
+   TRACE_ID="parity-diagnosis-send-${TRACE_RUN_ID}"
+   for target in opendolphin-postgres opendolphin-postgres-modernized; do
+     LABEL=$([[ "$target" == opendolphin-postgres ]] && echo legacy || echo modern)
+     docker exec -i "$target" bash -lc "
+       set -euo pipefail
+       cd /workspace
+       psql -U opendolphin -d opendolphin \
+         -F '\t' -A \
+         -c \"SELECT id, trace_id, actor_id, patient_id, event_type, created FROM d_audit_event WHERE trace_id='${TRACE_ID}' ORDER BY id\" \
+         > artifacts/parity-manual/messaging/${TRACE_RUN_ID}/logs/d_audit_event_diagnosis_${LABEL}.tsv
+     "
+   done
+   ```
+   - Legacy/Modernized で採取した TSV を README と Runbook にリンクし、`actor_id`／`patient_id`／`event_type` の一致を Gate 完了条件として記録する。
+   - `tmp/diagnosis_seed.sql` → helper → `d_audit_event` の 3 ステップは 1 RUN_ID 内で連続実行し、欠けた場合は `artifacts/parity-manual/messaging/<RUN_ID>/README.md` に TODO として残す。
 
 ## 3. GUI なしでの並列キャプチャ実行
 
@@ -301,6 +364,10 @@ docker run --rm --network legacy-vs-modern_default \
 | `compose_services.txt` | Compose で管理するサービス一覧 | `docker compose ... config --services` |
 | `compose_profiles.txt` | Compose で定義されている profile（`modernized`） | `docker compose ... config --profiles` |
 
+- **担当割当表**: ORCA API ごとの優先度と推奨担当ロールは `assets/orca-api-assignments.md` に集約しているため、証跡採取時は該当ロールのワーカーへタスクを割り当ててから RUN_ID を採番する。
+
+並列検証では、`assets/orca-api-assignments.md` の P0（受付/予約/カルテ系: #1-18, #22, #27, #33, #35-37, #41-53）を受付・診療チームで先行し、P1（マスタ/入院・会計系: #7, #11, #19-26, #29-31, #34, #38-40, #47）を入院/会計/マスタ担当が追随、P2（バックオフィス/帳票系: #28, #32, #42-44）をバッチで確認する。各チームは担当範囲を GitHub Issue と RUN_ID ログへ明記し、重複実行を避ける。
+
 必要に応じて `docker compose logs`, `docker compose inspect`, `ops/tools/send_parallel_request.sh --config ...` の結果も同一ディレクトリへ追記し、`PHASE2_PROGRESS.md` に証跡パスを記録する。
 
 ## 6. 既知の制約と注意事項
@@ -324,7 +391,7 @@ docker run --rm --network legacy-vs-modern_default \
 - 事象の判定基準: `curl -v http://localhost:9080/openDolphin/resources/serverinfo/jamri` が 20〜120 秒待ちで 0 byte 応答、`tcpdump -i lo0 port 9080` が握手＋ACK のみを記録しアプリデータが戻らない、pf で 9080 関連ルールがヒットしないこと。
 
 ### 8.1 helper コンテナ経由での CLI 実行（必須運用）
-1. `docker compose --profile modernized-dev up -d helper` を起動済みであることを確認（または `docker run --rm --network legacy-vs-modern_default buildpack-deps:curl ...` を単発利用）。
+1. `docker compose --profile modernized-dev up -d helper` を起動済みであることを確認。スタック構成に helper サービスが含まれていないホストでは `ops/tools/helper_send_parallel_request.sh` が自動的に `docker run --rm --network legacy-vs-modern_default -v "$PWD":/workspace mcr.microsoft.com/devcontainers/base:jammy ...` へフォールバックするため、手動で `docker run ... buildpack-deps:curl` を叩くのは例外時のみ。フォールバック確認用には `HELPER_INNER_COMMAND=echo TRACE_RUN_ID=20251119ThelperFallbackEchoZ1 ops/tools/helper_send_parallel_request.sh --helper-case helper-tests --helper-service helper-missing -- helper_fallback_ok` を実行し、`helper` サービス経由（RUN_ID=`20251119ThelperComposeEchoZ1`）とのログ差分を README に記録済み。
 2. 以下のように Base URL をコンテナ名に切り替えて parity CLI を実行する。
    ```bash
    RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)
@@ -347,6 +414,20 @@ docker run --rm --network legacy-vs-modern_default \
 ### 8.3 証跡と監査
 - 9080 障害時に採取した curl/tcpdump/pf ログは `artifacts/parity-manual/network/<RUN_ID>/` へ保存し、`README.txt` に取得方法・時刻・所見を残す。次回 RUN で事象が再発した場合は同ディレクトリへ追記して比較する。
 - helper/socat 経路を使ったまま本番操作を行う場合、手順書・作業チケットに「helper コンテナ経由アクセス必須」「Docker port-forward 復旧待ち」と明記し、恒久対策完了後に切り戻す。
+
+### 8.4 `env-status-check.sh` による 8080/9080 ヘルスチェック自動化
+1. RUN_ID（例: `RUN_ID=20251118TenvCheckZ1`）を宣言し、以下を実行する。Legacy/Modernized への curl、`docker compose ps`、`server`/`server-modernized-dev` ログ採取が一括で `artifacts/parity-manual/env-status/<RUN_ID>/` に保存される。  
+   ```bash
+   RUN_ID=20251118TenvCheckZ1
+   ops/tools/env-status-check.sh \
+     --run-id "$RUN_ID" \
+     --legacy-note "jamri.code 未設定のため 200 でも空ボディ" \
+     --modern-note "port-forward recovered on host" \
+     --log-target server \
+     --log-target server-modernized-dev
+   ```
+2. スクリプトは `userName: 9001:doctor1` / `password: doctor2025` ヘッダーで `/serverinfo/jamri` を問い合わせ、成功時は `legacy|modern.{headers,body,meta}.json`、失敗時は `*.curl.log` にタイムアウトや 4xx/5xx を残す。`--skip-legacy` / `--skip-modern` で片系のみ確認、`--max-time` で timeout 条件を調整可能。
+3. 9080 が固まっている場合は本節 8.1/8.2 の helper/socat へ切り替える前に必ずスクリプトでエビデンスを採取し、`meta.json` の `notes` に「helper 経由へ切替」「port-forward 再登録待ち」等を追記する。復旧後も同一 RUN_ID で再実行することで `modern.meta.json` を同フォルダ内に補完できる。
 
 ## 9. 恒久復旧手順（Docker Desktop 再起動／pf pass 追記／VPN 切替）
 

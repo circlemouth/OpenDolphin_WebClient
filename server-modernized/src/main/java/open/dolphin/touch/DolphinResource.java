@@ -21,6 +21,7 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
 import static open.dolphin.rest.AbstractResource.getRemoteFacility;
+import static open.dolphin.rest.AbstractResource.resolveTraceIdValue;
 import open.dolphin.infomodel.*;
 import open.dolphin.touch.TouchAuthHandler;
 import open.dolphin.touch.dto.DolphinDocumentResponses.ClaimBundleDto;
@@ -653,7 +654,13 @@ public class DolphinResource extends AbstractResource {
         payload.setAction(action);
         payload.setResource(resource);
         payload.setPatientId(null);
-        payload.setRequestId(requestId != null ? requestId : UUID.randomUUID().toString());
+        String resolvedRequestId = requestId != null ? requestId : UUID.randomUUID().toString();
+        payload.setRequestId(resolvedRequestId);
+        String traceId = resolveTraceIdValue(servletRequest);
+        if (traceId == null || traceId.isBlank()) {
+            traceId = resolvedRequestId;
+        }
+        payload.setTraceId(traceId);
         if (servletRequest != null) {
             payload.setIpAddress(servletRequest.getRemoteAddr());
             payload.setUserAgent(servletRequest.getHeader("User-Agent"));

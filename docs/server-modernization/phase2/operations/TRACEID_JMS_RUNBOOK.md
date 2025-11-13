@@ -1,6 +1,6 @@
 # TRACEID_JMS_RUNBOOK（Trace ID × JMS 伝搬検証手順）
 
-`@SessionOperation` で開始したトレース ID が REST → セッションサービス → JMS → 監査ログまで一貫して伝搬するかを CLI だけで確認するための手順書。`TRACE_PROPAGATION_CHECK.md` の証跡作成や `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ8のタスクを実施する際、本 Runbook を参照して共通フローでログを採取する。
+`@SessionOperation` で開始したトレース ID が REST → セッションサービス → JMS → 監査ログまで一貫して伝搬するかを CLI だけで確認するための手順書。`TRACE_PROPAGATION_CHECK.md` の証跡作成や `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ8のタスクを実施する際、本 Runbook を参照して共通フローでログを採取する。Modernized サーバーと新 Web クライアントの連携が完了すれば Gate 達成とし、Legacy サーバーは比較ログを取得したい場合のみ参照する。
 
 ---
 
@@ -43,18 +43,11 @@
 | Case ID | API | 期待ステータス | ベースヘッダー | 備考 |
 | --- | --- | --- | --- | --- |
 | `trace_http_200` | `GET /serverinfo/jamri` | 200 | `ops/tests/api-smoke-test/headers/trace-anonymous.headers` | `X-Trace-Id: trace-http-200` のみで可。 |
-| `trace_http_400` | `GET /dolphin/activity/2025,04` | 400 | `ops/tests/api-smoke-test/headers/trace-session.headers` | 3 番目のパラメータが欠落した BadRequest ケース。`X-Trace-Id` を `trace-http-400` に書き換える。 |
-| `trace_http_401` | `GET /touch/user/doctor1,...` | 401 | `trace-session.headers` から `password` 行を削除したコピー | 認証ヘッダー欠落で 401 を狙う。`X-Trace-Id: trace-http-401`。 |
-| `trace_http_500` | `GET /karte/pid/INVALID,%5Bdate%5D` | 500 | `trace-session.headers` | 無効 PID で `NumberFormatException` を誘発。`X-Trace-Id: trace-http-500`。 |
+| `trace_http_400` | `GET /dolphin/activity/2025,04` | 400 | `tmp/trace_http_400.headers` | `trace-session.headers` をベースに `password: doctor2025` と `X-Trace-Id: trace-http-400-{{RUN_ID}}` を設定済み。 |
+| `trace_http_401` | `GET /touch/user/doctor1,...` | 401 | `tmp/trace_http_401.headers` | `trace-session.headers` から `password` 行のみ削除したバージョン。`X-Trace-Id: trace-http-401-{{RUN_ID}}`。 |
+| `trace_http_500` | `GET /karte/pid/INVALID,%5Bdate%5D` | 500 | `tmp/trace_http_500.headers` | `trace_http_400` と同じ構成で `X-Trace-Id: trace-http-500-{{RUN_ID}}`。 |
 
-例: 401 用ヘッダーを生成
-
-```bash
-mkdir -p tmp/trace-headers
-grep -v '^password' ops/tests/api-smoke-test/headers/trace-session.headers \
-  | sed 's/trace-session-placeholder/trace-http-401/' \
-  > tmp/trace-headers/trace_http_401.headers
-```
+> **補足:** `tmp/trace_http_{200,400,401,500}.headers` の `{{RUN_ID}}` プレースホルダは `TRACE_RUN_ID` 環境変数で自動置換される。Legacy の Basic 認証は平文パスワード `doctor2025` を期待するため、`tmp/trace_http_400.headers` / `tmp/trace_http_500.headers` も平文で保持している。
 
 ### 3.2 CLI 実行テンプレ
 
@@ -74,10 +67,10 @@ run_case() {
 }
 
 log "[INFO] RUN_ID=${RUN_ID}"
-run_case ops/tests/api-smoke-test/headers/trace-anonymous.headers GET /serverinfo/jamri trace_http_200
-run_case tmp/trace-headers/trace_http_400.headers GET '/dolphin/activity/2025,04' trace_http_400
-run_case tmp/trace-headers/trace_http_401.headers GET '/touch/user/doctor1,1.3.6.1.4.1.9414.72.103,dolphin' trace_http_401
-run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdate%5D' trace_http_500
+run_case tmp/trace_http_200.headers GET /serverinfo/jamri trace_http_200
+run_case tmp/trace_http_400.headers GET '/dolphin/activity/2025,04' trace_http_400
+run_case tmp/trace_http_401.headers GET '/touch/user/doctor1,1.3.6.1.4.1.9414.72.103,dolphin' trace_http_401
+run_case tmp/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdate%5D' trace_http_500
 ```
 
 > `--include-trace --tags trace_http` のようなショートカットは現状未実装のため、上記のようにケースごとにコマンドを呼び出す。
@@ -154,6 +147,12 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 - 対象クラス: `open.dolphin.touch.support.TouchRequestContextExtractor` / `TouchRequestContext` / `touch.session.*ServiceBean`。`TouchRequestContextExtractor#from(HttpServletRequest)` が `null` を返した際でも `SessionTraceManager` と JMS プロパティへ Trace ID を継続させるため、HTTP ヘッダー（`X-Trace-Id`）と `LogFilter` で解決した principal を fallback として受け取る設計を書く。
 - CLI 検証では `touch/user/doctor1,...` を 401/403 で失敗させた RUN_ID を利用し、`artifacts/parity-manual/TRACEID_JMS/<RUN_ID>/logs/touch_request_context.txt` に以下情報を保存する: (1) `TouchRequestContextExtractor` の DEBUG ログ、(2) fallback が発火した証跡（例: `TouchRequestContext fallback principal=doctor1@F001 traceId=trace-http-401`）。
 - JMS 連携への影響を整理するため、`ops/tools/jms-probe.sh --dump` の結果から `open.dolphin.traceId` プロパティ有無を確認し、未付与のケースは `TRACE_PROPAGATION_CHECK.md §8` に列挙する。fallback 設計では `MessagingGateway` への投入直前で `TouchRequestContext` を再評価し、null のままの場合は `TouchRequestContextFallback`（新規 DTO）を JMS ヘッダーへ書き込む手順を Runbook に明記する。
+
+### 5.3 `d_audit_event.trace_id` 列の追加
+- サーバー/Legacy 双方の `d_audit_event` に Trace ID を永続化するため、Flyway では `server-modernized/tools/flyway/sql/V0227__audit_event_trace_id.sql` を新設し、`ops/db/local-baseline/reset_d_audit_event_seq*.sql` の INSERT 文にも `trace_id` 列を追加した。
+- compose 環境を再現する際は、Flyway 適用前でも以下コマンドで列を追加しておく:  
+  `docker exec opendolphin-postgres{-modernized} psql -U opendolphin -d opendolphin{_modern} -c "ALTER TABLE d_audit_event ADD COLUMN IF NOT EXISTS trace_id VARCHAR(64);"`
+- 以後の Trace Harness では `SELECT event_time,action,trace_id,request_id FROM d_audit_event WHERE trace_id='trace-http-400-<RUN_ID>';` を `logs/d_audit_event_trace_http_*.sql` に保存し、0 行であっても「列は存在するが AuditTrail へ到達していない」ことを明示する。Legacy 側の照会結果は `..._legacy.sql` へ分けて置き、Checklist #120 の審査に流用する。
 
 ### 5.3 `d_audit_event_id_seq` 再採番プロトコル
 > **2025-11-11 追記**: `ops/db/local-baseline/reset_d_audit_event_seq.sql` を `psql` から実行すれば、バックアップ／LOCK／`setval`／検証行挿入／ログ採取までを 1 コマンドで完了できる。  
@@ -306,6 +305,7 @@ run_case tmp/trace-headers/trace_http_500.headers GET '/karte/pid/INVALID,%5Bdat
 - `docs/server-modernization/phase2/PHASE2_PROGRESS.md`
 - `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md`
 - RUN_ID=`20251110T221659Z`（`artifacts/parity-manual/TRACEID_JMS/20251110T221659Z/`）の Compose 実行ログでは、Modernized 側に `traceId=trace-http-*` WARN / Legacy 側に LogFilter NPE を再確認。`logs/d_audit_event_trace-http-*.sql` は 0 行、`jms_dolphinQueue_read-resource.txt` は `messages-added=0L` だったため、JMS 伝搬や AuditTrail Trace ID が未達の場合の記録例として参照する。
+- RUN_ID=`20251117TtraceAuditZ1`（`artifacts/parity-manual/TRACEID_JMS/20251117TtraceAuditZ1/`）では、401 ケースで `REST_UNAUTHORIZED_GUARD` が `d_audit_event_trace_http_401.sql` に 3 行残り、Modernized queue `messages-added=9L` / Legacy 0L のギャップを `logs/jms_dolphinQueue_read-resource{,_legacy}.txt` に保存。`TRACE_PROPAGATION_CHECK.md` §8.5・`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ8-1 にもリンク済み。
 
 ---
 
@@ -424,3 +424,25 @@ docker run --rm --network host \
    - Appo: Legacy/Modern `HTTP 200` (`response:1`), Modern JMS `messages-added` が 1 増分（例: 4L→5L）、Legacy は 0L 継続。`d_audit_event_modern.tsv` に `APPOINTMENT_MUTATION` success/failure が TraceId=`trace-audit-appo-${RUN_ID}` で複数行追加される。
    - Schedule: Legacy/Modern `HTTP 200`（`架空 花子` 1 件）、`d_audit_event` に `SCHEDULE_FETCH` が 1 行ずつ。JMS は enqueue しないため `messages-added` は before/after で変化なし。
    - Evidence は `artifacts/parity-manual/{appo,schedule}/${RUN_ID}/` へ HTTP/headers/meta/JMS/Audit/README をまとめ、`docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md` / `PHASE2_PROGRESS.md` / `rest_error_scenarios.manual.csv` の該当行へ RUN_ID リンクを追記する。
+
+##### Appendix A.6 Factor2 / Messaging backlog（RUN_ID=`20251118Tfactor2ParityZ2`, `20251112TmessagingDiagZ1`）
+
+- **Factor2 TOTP (`/20/adm/factor2/totp/registration`)**  
+  - ヘッダー: `tmp/parity-headers/factor2_totp_registration_TEMPLATE.headers`（`userName=1.3.6.1.4.1.9414.72.103:admin`, `password=admin2025`, `TRACE_RUN_ID=20251118Tfactor2ParityZ2`）、ペイロード: `tmp/factor2/totp_registration_payload.json`。  
+  - 結果: Legacy=404（WildFly10 側は Factor2 REST を公開していないため既知）、Modern=200。`artifacts/parity-manual/factor2/20251118Tfactor2ParityZ2/` に HTTP/headers/meta、`logs/send_parallel_request.log`、`logs/jms_dolphinQueue_read-resource{,_legacy}.{before,after}.txt`（Modern `messages-added`=23L→26L）、`logs/d_audit_event_factor2_{modern,legacy}.tsv` を保存。`SessionAuditDispatcher` 経由で `TOTP_REGISTER_INIT` が `d_audit_event` に記録され、`d_factor2_credential` / `d_factor2_challenge` CSV で副作用も採取済み。レスポンスの `secret` および `provisioningUri` は README で `***masked***` に置換すること。  
+- **Factor2 FIDO (`/20/adm/factor2/fido2/{registration,assertion}/options`)**  
+  - ヘッダー: `tmp/parity-headers/factor2_fido_{registration,assertion}_TEMPLATE.headers`（同 `TRACE_RUN_ID`）、ペイロード: `tmp/factor2/fido_{registration,assertion}_options_payload.json`。  
+  - 結果: Legacy=404（未公開 API）、Modern=200。`logs/d_audit_event_factor2_modern.tsv` に `FIDO2_{REGISTER,ASSERT}_INIT` が 1 行ずつ残り、JMS は TOTP と合算で +3 件 enqueue。Modern 側は `d_factor2_challenge` に registration/assertion チャレンジを生成し、Legacy は Audit/JMS 変化なし。Evidence/README は上記 TOTP と同ディレクトリを参照。
+- **Claim / Diagnosis / MML dispatch**  
+  - ヘッダー: `tmp/parity-headers/{claim,diagnosis,mml}_TEMPLATE.headers`（`TRACE_RUN_ID` を同一値で差し込み、Diagnosis の `Accept` は `text/plain`）。ボディは `tmp/claim-tests/send_{claim,diagnosis}_success.json` と `tmp/mml-tests/send_mml_success.json` を使用。  
+  - RUN_ID=`20251118TmessagingParityZ2`（2025-11-13 JST）: Claim=Legacy/Modern 200、Diagnosis=Legacy 500 / Modern 200、MML=Legacy 404 / Modern 200。Modern 側の `messages-added` は 26L→28L となり、`artifacts/parity-manual/messaging/20251118TmessagingParityZ2/logs/` に HTTP・JMS before/after・`d_audit_event_{claim,mml}_modern.tsv`（Diagnosis は未記録）を保存。  
+  - RUN_ID=`20251118TdiagnosisLegacyZ1`（2025-11-13 JST）: Legacy diagnosis を 200 で再取得。手順は (1) `tmp/diagnosis_seed.sql` を Legacy Postgres へ投入して `d_patient`/`d_karte`/`d_letter_module` を整備、(2) `docker exec opendolphin-server /opt/jboss/wildfly/bin/jboss-cli.sh --connect --commands="/subsystem=logging/logger=dolphin.claim:add(level=INFO)"` で `DiagnosisSender` の NPE を抑止、(3) helper コンテナから `ops/tools/send_parallel_request.sh --profile modernized-dev POST /karte/diagnosis/claim messaging_diagnosis` を実行。Legacy=200（`response=9002004`）、Modern=200。Legacy JMS は 0L→0L のまま（サーバー直送）、Modern は `messages-added=5L→6L`。`artifacts/parity-manual/messaging/20251118TdiagnosisLegacyZ1/` に HTTP/headers/meta/JMS/Audit TSV/`legacy_server.log` を保存。  
+  - RUN_ID=`20251118TdiagnosisAuditZ2`（2025-11-13 JST）: Legacy/Modern 両コンテナへ WAR をホットデプロイ後、`--profile compose` で `POST /karte/diagnosis/claim` を再取得。`tmp/diagnosis_seed.sql` を毎回再投入したうえで CLI を叩き、`artifacts/parity-manual/messaging/20251118TdiagnosisAuditZ2/logs/d_audit_event_diagnosis_{legacy,modern}.tsv` に TraceId=`parity-diagnosis-send-20251118TdiagnosisAuditZ2` の `EHT_DIAGNOSIS_CREATE` が記録されることを確認。Legacy/Modern とも HTTP 200 で `response=9002***`、JMS は変化なし（直送仕様）。
+  - RUN_ID=`20251112TmessagingDiagZ1`: Legacy=404、Modern=400（Claim）、406（Diagnosis）、500（MML）。`artifacts/parity-manual/messaging/20251112TmessagingDiagZ1/logs/modern_server.log` に `RESTEASY-JACKSON000100: Duplicate field IDocInfo.admFlag` と `MmlResource.sendMmlPayload` 失敗ログを保存。  
+  - ToDo: Legacy/Modern 共通で診断監査 (`d_audit_event` に `EHT_DIAGNOSIS_*`) が未実装のため、CLI では TSV が空。`TRACEID_JMS` フロー完了後に Listener 実装と playback を追加する。
+
+##### Appendix A.7 Lab module GET（RUN_ID=`20251112TlabReportZ1`）
+
+- ヘッダー: `tmp/parity-headers/lab_report_TEMPLATE.headers`（`userName=1.3.6.1.4.1.9414.72.103:doctor1`, `password=doctor2025`, `TRACE_RUN_ID=20251112TlabReportZ1`）。  
+- 実行例: `docker run --rm --network legacy-vs-modern_default -v "$PWD":/workspace -w /workspace mcr.microsoft.com/devcontainers/base:jammy bash -lc 'set -euo pipefail; export PARITY_HEADER_FILE=tmp/parity-headers/lab_report_TEMPLATE.headers; export PARITY_OUTPUT_DIR=artifacts/parity-manual/lab/20251112TlabReportZ1; export TRACE_RUN_ID=20251112TlabReportZ1; ops/tools/send_parallel_request.sh --profile modernized-dev GET /lab/module/WEB1001,0,5 lab_module_fetch'`  
+- 証跡: `artifacts/parity-manual/lab/20251112TlabReportZ1/` に HTTP/headers/meta, `logs/send_parallel_request.log`, `logs/jms_dolphinQueue_read-resource{,_legacy}.{before,after}.txt`, `logs/d_audit_event_lab_{legacy,modern}.tsv` を保存。Modern 側は `messages-added=10L→12L` を記録し、`LAB_TEST_READ` / `REST_UNAUTHORIZED_GUARD` が TraceId ごとに `d_audit_event` へ残る。Legacy は 200 応答だが audit/JMS は従来通り空（想定外動作として checklist へ記述）。

@@ -1,12 +1,14 @@
 package open.dolphin.touch.converter;
 
 import open.dolphin.infomodel.*;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 /**
  * IDocument
  *
  * @author Minagawa,Kazushi. Digital Globe, Inc.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class IMKDocument implements java.io.Serializable {
     
     private String key;

@@ -1,3 +1,4 @@
+# Deprecated: use tmp/reporting-headers/doctor.headers
 userName: doctor1
 password: dolphin
 clientUUID: reporting-cli

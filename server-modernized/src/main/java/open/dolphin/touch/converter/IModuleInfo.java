@@ -1,12 +1,15 @@
 package open.dolphin.touch.converter;
 
 import open.dolphin.infomodel.ModuleInfoBean;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * Stamp 及び Module の属性を保持するクラス。
  *
  * @author Kazushi Minagawa, Digital Globe, Inc.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class IModuleInfo implements java.io.Serializable {
     
     // 名称
@@ -20,6 +23,10 @@ public class IModuleInfo implements java.io.Serializable {
     
     // 実態
     private String entity;
+
+    // 実施/中止フラグ
+    @JsonProperty("performFlag")
+    private String performFlag;
     
     public IModuleInfo() {
     }
@@ -55,12 +62,21 @@ public class IModuleInfo implements java.io.Serializable {
     public void setEntity(String entity) {
         this.entity = entity;
     }
+
+    public String getPerformFlag() {
+        return performFlag;
+    }
+
+    public void setPerformFlag(String performFlag) {
+        this.performFlag = performFlag;
+    }
     
     public void fromModel(ModuleInfoBean model) {
         this.setStampName(model.getStampName());
         this.setStampRole(model.getStampRole());
         this.setEntity(model.getEntity());
         this.setStampNumber(model.getStampNumber());
+        this.setPerformFlag(model.getPerformFlag());
     }
     
     public ModuleInfoBean toModel() {
@@ -69,6 +85,7 @@ public class IModuleInfo implements java.io.Serializable {
         ret.setStampRole(this.getStampRole());
         ret.setEntity(this.getEntity());
         ret.setStampNumber(this.getStampNumber());
+        ret.setPerformFlag(this.getPerformFlag());
         return ret;
     }
 }

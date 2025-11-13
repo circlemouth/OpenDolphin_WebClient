@@ -14,9 +14,11 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.IInfoModel;
+import open.dolphin.infomodel.DiagnosisSendWrapper;
 
 /**
  *
@@ -119,6 +121,44 @@ public class AbstractResource {
         response.setCharacterEncoding("UTF-8");
         Map<String, Object> body = buildErrorBody(request, status, errorCode, message, details);
         getSerializeMapper().writeValue(response.getOutputStream(), body);
+    }
+
+    protected void populateDiagnosisAuditMetadata(HttpServletRequest request,
+            DiagnosisSendWrapper wrapper,
+            String resourcePath) {
+        if (wrapper == null) {
+            return;
+        }
+        if (request != null) {
+            wrapper.setRemoteUser(request.getRemoteUser());
+            String traceId = resolveTraceId(request);
+            if (traceId != null && !traceId.isBlank()) {
+                wrapper.setTraceId(traceId);
+            }
+            String requestIdHeader = request.getHeader("X-Request-Id");
+            if (requestIdHeader != null && !requestIdHeader.isBlank()) {
+                wrapper.setRequestId(requestIdHeader.trim());
+            }
+            if (resourcePath == null || resourcePath.isBlank()) {
+                wrapper.setAuditResource(request.getRequestURI());
+            }
+        }
+        if (resourcePath != null && !resourcePath.isBlank()) {
+            wrapper.setAuditResource(resourcePath);
+        }
+        if (wrapper.getTraceId() == null || wrapper.getTraceId().isBlank()) {
+            String fallback = resolveTraceId(request);
+            if (fallback != null && !fallback.isBlank()) {
+                wrapper.setTraceId(fallback);
+            }
+        }
+        if (wrapper.getRequestId() == null || wrapper.getRequestId().isBlank()) {
+            String fallback = wrapper.getTraceId();
+            if (fallback == null || fallback.isBlank()) {
+                fallback = UUID.randomUUID().toString();
+            }
+            wrapper.setRequestId(fallback);
+        }
     }
 
     private static Map<String, Object> buildErrorBody(HttpServletRequest request, int status, String errorCode,

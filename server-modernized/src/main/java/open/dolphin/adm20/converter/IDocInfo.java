@@ -1,5 +1,6 @@
 package open.dolphin.adm20.converter;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import open.dolphin.infomodel.DocInfoModel;
 
 /**
@@ -8,6 +9,7 @@ import open.dolphin.infomodel.DocInfoModel;
  * @author Minagawa,Kazushi. Digital Globe, Inc.
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class IDocInfo implements java.io.Serializable {
     
     // DocumentModel.id
@@ -21,6 +23,10 @@ public class IDocInfo implements java.io.Serializable {
     
     // 文書種別
     private String docType;
+
+//minagawa^ inpatient flag
+    private String admFlag;
+//minagawa$
     
     // タイトル
     private String title;
@@ -142,10 +148,6 @@ public class IDocInfo implements java.io.Serializable {
 //minagawa^ EHT add    
     private String status;
     
-//minagawa^ 入院対応    
-    private String admFlag;
-//minagawa$  
-
     public String getStatus() {
         return status;
     }
@@ -185,6 +187,14 @@ public class IDocInfo implements java.io.Serializable {
 
     public void setDocType(String docType) {
         this.docType = docType;
+    }
+
+    public String getAdmFlag() {
+        return admFlag;
+    }
+
+    public void setAdmFlag(String admFlag) {
+        this.admFlag = admFlag;
     }
 
     public String getTitle() {
@@ -363,6 +373,9 @@ public class IDocInfo implements java.io.Serializable {
     }
 
     public IPVTHealthInsurance getPvtHealthInsuranceModel() {
+        if (pvtHealthInsurance == null) {
+            pvtHealthInsurance = new IPVTHealthInsurance();
+        }
         return pvtHealthInsurance;
     }
 
@@ -488,6 +501,7 @@ public class IDocInfo implements java.io.Serializable {
         this.setParentPk(model.getParentPk());
         this.setDocId(model.getDocId());
         this.setDocType(model.getDocType());
+        this.setAdmFlag(model.getAdmFlag());
         this.setTitle(model.getTitle());
         this.setPurpose(model.getPurpose());
         
@@ -561,6 +575,7 @@ public class IDocInfo implements java.io.Serializable {
         ret.setParentPk(this.getParentPk());
         ret.setDocId(this.getDocId());
         ret.setDocType(this.getDocType());
+        ret.setAdmFlag(this.getAdmFlag());
         ret.setTitle(this.getTitle());
         ret.setPurpose(this.getPurpose());
         
@@ -627,12 +642,5 @@ public class IDocInfo implements java.io.Serializable {
         
         return ret;
     }
-
-    public String getAdmFlag() {
-        return admFlag;
-    }
-
-    public void setAdmFlag(String admFlag) {
-        this.admFlag = admFlag;
-    }
 }
+

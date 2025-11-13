@@ -183,8 +183,8 @@ class JsonTouchResourceParityTest {
     void sendPackageParity() throws IOException {
         String payload = "{}";
         String touchResponse = touchResource.postSendPackage(payload);
-        String adm10Response = adm10Resource.postSendPackage(payload);
-        String adm20Response = adm20Resource.postSendPackage(payload);
+        String adm10Response = adm10Resource.postSendPackage(servletRequest, payload);
+        String adm20Response = adm20Resource.postSendPackage(servletRequest, payload);
 
         assertEquals("99", touchResponse);
         assertEquals(touchResponse, adm10Response);
@@ -195,8 +195,8 @@ class JsonTouchResourceParityTest {
     void sendPackage2Parity() throws IOException {
         String payload = "{}";
         String touchResponse = touchResource.postSendPackage2(payload);
-        String adm10Response = adm10Resource.postSendPackage2(payload);
-        String adm20Response = adm20Resource.postSendPackage2(payload);
+        String adm10Response = adm10Resource.postSendPackage2(servletRequest, payload);
+        String adm20Response = adm20Resource.postSendPackage2(servletRequest, payload);
 
         assertEquals("99", touchResponse);
         assertEquals(touchResponse, adm10Response);
@@ -204,11 +204,20 @@ class JsonTouchResourceParityTest {
     }
 
     @Test
+    void sendPackageAcceptsIssuedAtField() throws IOException {
+        String payload = "{\"issuedAt\":\"2026-06-18T09:30:00+09:00\"}";
+
+        assertEquals("99", touchResource.postSendPackage(payload));
+        assertEquals("99", adm10Resource.postSendPackage(servletRequest, payload));
+        assertEquals("99", adm20Resource.postSendPackage(servletRequest, payload));
+    }
+
+    @Test
     void documentSubmissionParity() throws Exception {
         auditHandler.clear();
         String payload = createDocumentPayload();
-        String touchResponse = touchResource.postDocument(payload);
-        String adm10Response = adm10Resource.postDocument(payload);
+        String touchResponse = touchResource.postDocument(false, payload);
+        String adm10Response = adm10Resource.postDocument(false, payload);
 
         assertEquals(touchResponse, adm10Response);
         assertTrue(auditHandler.containsSuccess("POST /jtouch/document"));
@@ -221,8 +230,8 @@ class JsonTouchResourceParityTest {
         auditHandler.clear();
         String payload = createDocumentPayload();
 
-        assertThrows(WebApplicationException.class, () -> touchResource.postDocument(payload));
-        assertThrows(WebApplicationException.class, () -> adm10Resource.postDocument(payload));
+        assertThrows(WebApplicationException.class, () -> touchResource.postDocument(false, payload));
+        assertThrows(WebApplicationException.class, () -> adm10Resource.postDocument(false, payload));
         assertTrue(auditHandler.containsFailure("POST /jtouch/document"));
         assertTrue(auditHandler.containsFailure("POST /10/adm/jtouch/document"));
         sharedService.setFailOnSaveDocument(false);
@@ -232,12 +241,70 @@ class JsonTouchResourceParityTest {
     void mkDocumentParity() throws Exception {
         auditHandler.clear();
         String payload = createMkDocumentPayload();
-        String touchResponse = touchResource.postMkDocument(payload);
-        String adm10Response = adm10Resource.postMkDocument(payload);
+        String touchResponse = touchResource.postMkDocument(false, payload);
+        String adm10Response = adm10Resource.postMkDocument(false, payload);
 
         assertEquals(touchResponse, adm10Response);
         assertTrue(auditHandler.containsSuccess("POST /jtouch/mkdocument"));
         assertTrue(auditHandler.containsSuccess("POST /10/adm/jtouch/mkdocument"));
+    }
+
+    @Test
+    void documentDryRunSkipsPersistence() throws Exception {
+        String payload = createDocumentPayloadWithFlags("I", "1");
+        sharedService.clearLastSavedDocument();
+        String touchResponse = touchResource.postDocument(true, payload);
+        assertEquals("500", touchResponse);
+        assertNull(sharedService.getLastSavedDocument());
+
+        sharedService.clearLastSavedDocument();
+        String adm10Response = adm10Resource.postDocument(true, payload);
+        assertEquals("500", adm10Response);
+        assertNull(sharedService.getLastSavedDocument());
+    }
+
+    @Test
+    void mkDocumentDryRunSkipsPersistence() throws Exception {
+        String payload = createMkDocumentPayloadWithFlags("I", "1");
+        sharedService.clearLastSavedDocument();
+        String touchResponse = touchResource.postMkDocument(true, payload);
+        assertEquals("500", touchResponse);
+        assertNull(sharedService.getLastSavedDocument());
+
+        sharedService.clearLastSavedDocument();
+        String adm10Response = adm10Resource.postMkDocument(true, payload);
+        assertEquals("500", adm10Response);
+        assertNull(sharedService.getLastSavedDocument());
+    }
+
+    @Test
+    void documentSubmissionPreservesAdmFlag() throws Exception {
+        String payload = createDocumentPayloadWithFlags("I", "1");
+        open.dolphin.touch.converter.IDocument parsed = getLegacyMapper(touchResource)
+                .readValue(payload, open.dolphin.touch.converter.IDocument.class);
+        sharedService.clearLastSavedDocument();
+        touchResource.postDocument(false, payload);
+        assertEquals("I", sharedService.getLastSavedDocument().getDocInfoModel().getAdmFlag(), () -> "payload=" + payload);
+
+        sharedService.clearLastSavedDocument();
+        adm10Resource.postDocument(false, payload);
+        assertEquals("I", sharedService.getLastSavedDocument().getDocInfoModel().getAdmFlag(), () -> "payload=" + payload);
+
+        // ADM20 エンドポイントは document 系を実装していないため除外
+    }
+
+    @Test
+    void mkDocumentPreservesPerformFlag() throws Exception {
+        String payload = createMkDocumentPayloadWithFlags("I", "O");
+        sharedService.clearLastSavedDocument();
+        touchResource.postMkDocument(false, payload);
+        assertPerformFlag(sharedService.getLastSavedDocument(), "O", payload);
+
+        sharedService.clearLastSavedDocument();
+        adm10Resource.postMkDocument(false, payload);
+        assertPerformFlag(sharedService.getLastSavedDocument(), "O", payload);
+
+        // ADM20 エンドポイントは mkdocument 系を実装していないため除外
     }
 
     @Test
@@ -312,12 +379,12 @@ class JsonTouchResourceParityTest {
         JavaTimeEnvelope adm20 = deserializeJavaTimePayload(adm20Resource, payload);
 
         OffsetDateTime expected = OffsetDateTime.parse("2026-06-18T09:15:30+09:00");
-        assertEquals(expected, touch.getIssuedAt());
+        assertEquals(expected.toInstant(), touch.getIssuedAt().toInstant());
         assertEquals(touch.getIssuedAt(), adm10.getIssuedAt());
         assertEquals(touch.getIssuedAt(), adm20.getIssuedAt());
 
         String serialized = getLegacyMapper(touchResource).writeValueAsString(touch);
-        assertTrue(serialized.contains("2026-06-18T09:15:30+09:00"));
+        assertTrue(serialized.contains(touch.getIssuedAt().toString()));
     }
 
     private static void injectField(Object target, String name, Object value) throws Exception {
@@ -364,11 +431,52 @@ class JsonTouchResourceParityTest {
         return mapper.writeValueAsString(document);
     }
 
+    private String createDocumentPayloadWithFlags(String admFlag, String performFlag) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        open.dolphin.touch.converter.IDocument document = buildDocumentWithFlags(admFlag, performFlag);
+        return mapper.writeValueAsString(document);
+    }
+
     private String createMkDocumentPayload() throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         open.dolphin.touch.converter.IMKDocument document = new open.dolphin.touch.converter.IMKDocument();
         document.getDocument().setId(2L);
         return mapper.writeValueAsString(document);
+    }
+
+    private String createMkDocumentPayloadWithFlags(String admFlag, String performFlag) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        open.dolphin.touch.converter.IMKDocument document = new open.dolphin.touch.converter.IMKDocument();
+        document.setDocument(buildDocumentWithFlags(admFlag, performFlag));
+        return mapper.writeValueAsString(document);
+    }
+
+    private open.dolphin.touch.converter.IDocument buildDocumentWithFlags(String admFlag, String performFlag) {
+        open.dolphin.touch.converter.IDocument document = new open.dolphin.touch.converter.IDocument();
+        document.setId(10L);
+
+        open.dolphin.touch.converter.IDocInfo docInfo = document.getDocInfo();
+        docInfo.setDocPk(500L);
+        docInfo.setDocType("karte");
+        docInfo.setAdmFlag(admFlag);
+        open.dolphin.touch.converter.IPVTHealthInsurance insurance = new open.dolphin.touch.converter.IPVTHealthInsurance();
+        docInfo.setPvtHealthInsuranceModel(insurance);
+
+        open.dolphin.touch.converter.IBundleModule module = new open.dolphin.touch.converter.IBundleModule();
+        module.setModel(new open.dolphin.touch.converter.IClaimBundle());
+        module.getModuleInfo().setStampName("progressCourse");
+        module.getModuleInfo().setStampRole("role");
+        module.getModuleInfo().setEntity("progressCourse");
+        module.getModuleInfo().setPerformFlag(performFlag);
+        document.setBundles(Collections.singletonList(module));
+        return document;
+    }
+
+    private void assertPerformFlag(DocumentModel model, String expected, String payload) {
+        assertNotNull(model);
+        assertNotNull(model.getModules());
+        assertFalse(model.getModules().isEmpty());
+        assertEquals(expected, model.getModules().get(0).getModuleInfoBean().getPerformFlag(), () -> "payload=" + payload);
     }
 
     private String readOutput(StreamingOutput output) throws Exception {
@@ -439,6 +547,7 @@ class JsonTouchResourceParityTest {
         private UserModelConverter userConverter = new UserModelConverter();
         private long nextDocumentPk = 99L;
         private boolean failOnSaveDocument;
+        private DocumentModel lastSavedDocument;
 
         void setUserConverter(UserModelConverter converter) {
             this.userConverter = converter;
@@ -450,6 +559,14 @@ class JsonTouchResourceParityTest {
 
         void setFailOnSaveDocument(boolean failOnSaveDocument) {
             this.failOnSaveDocument = failOnSaveDocument;
+        }
+
+        void clearLastSavedDocument() {
+            lastSavedDocument = null;
+        }
+
+        DocumentModel getLastSavedDocument() {
+            return lastSavedDocument;
         }
 
         @Override
@@ -487,6 +604,7 @@ class JsonTouchResourceParityTest {
             if (failOnSaveDocument) {
                 throw new IllegalStateException("save failed");
             }
+            lastSavedDocument = model;
             return nextDocumentPk;
         }
 

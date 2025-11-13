@@ -1,0 +1,9 @@
+### 日本語カルテ帳票 (patient_summary)
+POST http://localhost:9080/openDolphin/resources/reporting/karte
+userName: doctor1
+password: dolphin
+clientUUID: reporting-cli
+facilityId: 1.3.6.1.4.1.9414.72.103
+Content-Type: application/json
+
+< ../../../tmp/reporting_karte_payload_ja.json

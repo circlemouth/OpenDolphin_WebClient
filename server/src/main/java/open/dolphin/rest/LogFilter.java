@@ -13,6 +13,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.mbean.UserCache;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.UserServiceBean;
 
 /**
@@ -43,6 +45,9 @@ public class LogFilter implements Filter {
     @Inject
     private UserCache userCache;
 
+    @Inject
+    private AuditTrailService auditTrailService;
+
     @Override
     public void init(FilterConfig filterConfig) throws ServletException {
     }
@@ -72,15 +77,18 @@ public class LogFilter implements Filter {
             if (principalUser != null) {
                 effectiveUser = principalUser;
                 authenticated = true;
-            } else if (authenticateWithHeaders(req, headerUser, headerPassword)) {
+            } else if (hasCredentialHeaders(headerUser, headerPassword) && authenticateWithHeaders(req, headerUser, headerPassword)) {
                 effectiveUser = headerUser;
                 authenticated = true;
+            } else if (!hasCredentialHeaders(headerUser, headerPassword)) {
+                SECURITY_LOGGER.fine(() -> "Missing credentials headers for request " + req.getRequestURI());
             }
 
             String candidate = headerUser != null ? headerUser : principalUser;
 
             if (!authenticated) {
                 logUnauthorized(req, candidate, traceId);
+                recordUnauthorizedAudit(req, traceId, candidate, "authentication_failed", HttpServletResponse.SC_UNAUTHORIZED);
                 sendUnauthorized(req, res, "unauthorized", "Authentication required",
                         unauthorizedDetails(candidate, "authentication_failed"));
                 return;
@@ -89,6 +97,7 @@ public class LogFilter implements Filter {
             effectiveUser = resolveEffectiveUser(effectiveUser, headerUser, req);
             if (effectiveUser == null) {
                 logUnauthorized(req, candidate, traceId);
+                recordUnauthorizedAudit(req, traceId, candidate, "principal_unresolved", HttpServletResponse.SC_UNAUTHORIZED);
                 sendUnauthorized(req, res, "unauthorized", "Authenticated user is not associated with a facility",
                         unauthorizedDetails(candidate, "principal_unresolved"));
                 return;
@@ -110,8 +119,7 @@ public class LogFilter implements Filter {
     }
 
     private boolean authenticateWithHeaders(HttpServletRequest req, String userName, String password) {
-        if (isBlank(userName) || isBlank(password)) {
-            SECURITY_LOGGER.fine(() -> "Missing credentials headers for request " + req.getRequestURI());
+        if (!hasCredentialHeaders(userName, password)) {
             return false;
         }
 
@@ -126,11 +134,20 @@ public class LogFilter implements Filter {
             return true;
         }
 
-        authenticated = userService.authenticate(userName, password);
+        try {
+            authenticated = userService.authenticate(userName, password);
+        } catch (RuntimeException ex) {
+            SECURITY_LOGGER.log(java.util.logging.Level.FINE, "Header authentication failed for " + req.getRequestURI(), ex);
+            return false;
+        }
         if (authenticated) {
             userCache.getMap().put(userName, password);
         }
         return authenticated;
+    }
+
+    private boolean hasCredentialHeaders(String userName, String password) {
+        return !isBlank(userName) && !isBlank(password);
     }
 
     private void logAccess(BlockWrapper wrapper, String traceId) {
@@ -287,5 +304,40 @@ public class LogFilter implements Filter {
             details.put("principal", principal);
         }
         return details;
+    }
+
+    private void recordUnauthorizedAudit(HttpServletRequest request,
+            String traceId,
+            String principal,
+            String reason,
+            int statusCode) {
+        if (auditTrailService == null) {
+            return;
+        }
+        AuditEventPayload payload = new AuditEventPayload();
+        payload.setAction("REST_UNAUTHORIZED_GUARD");
+        payload.setResource(request != null ? request.getRequestURI() : "/resources");
+        String actorId = principal == null || principal.isEmpty() ? "anonymous" : principal;
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(principal);
+        payload.setActorRole("SYSTEM");
+        payload.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        payload.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        String effectiveTrace = (traceId == null || traceId.isEmpty()) ? UUID.randomUUID().toString() : traceId;
+        payload.setRequestId(effectiveTrace);
+        payload.setTraceId(effectiveTrace);
+        Map<String, Object> details = new HashMap<>();
+        details.put("status", "failed");
+        details.put("reason", reason);
+        details.put("httpStatus", statusCode);
+        String facilityHeader = resolveFacilityHeader(request);
+        if (facilityHeader != null) {
+            details.put("facilityId", facilityHeader);
+        }
+        if (principal != null && !principal.isEmpty()) {
+            details.put("principal", principal);
+        }
+        payload.setDetails(details);
+        auditTrailService.record(payload);
     }
 }

@@ -1,0 +1,25 @@
+{
+  "acceptreq": {
+    "Request_Number": "01",
+    "Patient_ID": "00000002",
+    "WholeName": "山田太郎",
+    "Acceptance_Push": "1",
+    "Acceptance_Date": "2025-11-13",
+    "Acceptance_Time": "10:30:00",
+    "Department_Code": "01",
+    "Physician_Code": "00001",
+    "Medical_Information": "外来",
+    "HealthInsurance_Information": {
+      "Insurance_Combination_Number": "0061",
+      "InsuranceProvider_Class": "006",
+      "InsuranceProvider_Number": "06123456",
+      "InsuranceProvider_WholeName": "全国健康保険協会",
+      "HealthInsuredPerson_Symbol": "ＡＢ",
+      "HealthInsuredPerson_Number": "１２３４５６７",
+      "HealthInsuredPerson_Branch_Number": "00",
+      "RelationToInsuredPerson": "1",
+      "Certificate_StartDate": "2025-04-01",
+      "Certificate_ExpiredDate": "2026-03-31"
+    }
+  }
+}

@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Properties;
 import java.util.UUID;
 import java.util.logging.Level;
+import javax.ejb.EJB;
 import javax.ejb.Stateless;
 import javax.inject.Named;
 import javax.persistence.EntityManager;
@@ -39,6 +40,7 @@ import open.dolphin.infomodel.UserModel;
 import open.dolphin.msg.ClaimSender;
 import open.dolphin.msg.DiagnosisSender;
 import open.dolphin.adm20.converter.IOSHelper;
+import open.dolphin.session.audit.DiagnosisAuditRecorder;
 //import org.jboss.logging.Logger;
 
 /**
@@ -87,6 +89,9 @@ public class ADM20_AdmissionServiceBean {
     
     @PersistenceContext
     private EntityManager em;
+
+    @EJB
+    private DiagnosisAuditRecorder diagnosisAuditRecorder;
     
     public KarteBean getKarte(long ptPK) {
         // Karte
@@ -692,45 +697,28 @@ public class ADM20_AdmissionServiceBean {
      * @return 新規病名のPKリスト
      */
     public List<Long> postPutSendDiagnosis(DiagnosisSendWrapper wrapper) {
-        
-//minagawa^ LSC 1.4 傷病名の削除 2013/06/24
-        int cnt = 0;
-        
-        // 削除
-        if (wrapper.getDeletedDiagnosis()!=null) {
-            
-            List<RegisteredDiagnosisModel> deletedList = wrapper.getDeletedDiagnosis();
-            
+
+        List<RegisteredDiagnosisModel> deletedList = wrapper.getDeletedDiagnosis();
+        if (deletedList != null) {
             for (RegisteredDiagnosisModel bean : deletedList) {
-                // ORCAの病名をインポート、Dolphinに登録しないで削除==0Lを除く
-                if (bean.getId()!=0L) {
-                    RegisteredDiagnosisModel delete = (RegisteredDiagnosisModel)em.find(RegisteredDiagnosisModel.class, bean.getId());
+                if (bean.getId() != 0L) {
+                    RegisteredDiagnosisModel delete = em.find(RegisteredDiagnosisModel.class, bean.getId());
                     em.remove(delete);
-                    cnt++;
                 }
             }
         }
-//minagawa$        
-        
-        // 更新
-        if (wrapper.getUpdatedDiagnosis()!=null) {
-            
-            //int cnt = 0;
-            List<RegisteredDiagnosisModel> updateList = wrapper.getUpdatedDiagnosis();
-            
-            for (RegisteredDiagnosisModel bean : updateList) {
+
+        List<RegisteredDiagnosisModel> updatedList = wrapper.getUpdatedDiagnosis();
+        if (updatedList != null) {
+            for (RegisteredDiagnosisModel bean : updatedList) {
                 em.merge(bean);
-                cnt++;
             }
         }
-        
-        // 永続化
-        List<Long> ret = new ArrayList<>(3);
-        if (wrapper.getAddedDiagnosis()!=null) {
-            
-            List<RegisteredDiagnosisModel> addList = wrapper.getAddedDiagnosis();
-            
-            for (RegisteredDiagnosisModel bean : addList) {
+
+        List<RegisteredDiagnosisModel> addedList = wrapper.getAddedDiagnosis();
+        List<Long> ret = new ArrayList<>(addedList != null ? addedList.size() : 0);
+        if (addedList != null) {
+            for (RegisteredDiagnosisModel bean : addedList) {
                 em.persist(bean);
                 ret.add(bean.getId());
             }
@@ -801,6 +789,9 @@ public class ADM20_AdmissionServiceBean {
             }
         }
         
+        diagnosisAuditRecorder.recordCreate(wrapper, addedList, ret);
+        diagnosisAuditRecorder.recordUpdate(wrapper, updatedList);
+
         return ret;
     }
     

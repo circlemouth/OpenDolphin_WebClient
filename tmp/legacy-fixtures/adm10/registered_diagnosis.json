@@ -1,41 +1,4 @@
-[ {
-  "id" : 3100,
-  "confirmed" : "2025-02-14 00:00:00.000",
-  "started" : "2025-02-10 00:00:00.000",
-  "ended" : "2025-03-01 00:00:00.000",
-  "recorded" : "2025-02-15 09:30:00.000",
-  "linkId" : 9001,
-  "linkRelation" : "parent",
-  "status" : "Final",
-  "diagnosis" : "季節性アレルギー性鼻炎",
-  "diagnosisCode" : "J30.4",
-  "diagnosisCodeSystem" : "ICD10",
-  "category" : "main",
-  "categoryDesc" : "主病名",
-  "categoryCodeSys" : "local",
-  "outcome" : "observing",
-  "outcomeDesc" : "経過観察",
-  "outcomeCodeSys" : "legacy",
-  "firstEncounterDate" : "2024-02-01",
-  "relatedHealthInsurance" : "uuid-001"
-}, {
-  "id" : 3101,
-  "confirmed" : "2025-05-02 00:00:00.000",
-  "started" : "2025-05-01 00:00:00.000",
-  "ended" : "2025-07-15 00:00:00.000",
-  "recorded" : "2025-05-02 10:15:00.000",
-  "linkId" : 9002,
-  "linkRelation" : "child",
-  "status" : "Final",
-  "diagnosis" : "鉄欠乏性貧血",
-  "diagnosisCode" : "D50.9",
-  "diagnosisCodeSystem" : "ICD10",
-  "category" : "subs",
-  "categoryDesc" : "疑い",
-  "categoryCodeSys" : "local",
-  "outcome" : "in_treatment",
-  "outcomeDesc" : "治療中",
-  "outcomeCodeSys" : "legacy",
-  "firstEncounterDate" : "2025-05-01",
-  "relatedHealthInsurance" : "uuid-001"
-} ]
+{
+  "movedTo": "ops/tests/fixtures/adm/adm10/registered_diagnosis.json",
+  "note": "2025-11-12: Fixture moved under ops/tests/fixtures/adm for AdmConverterSnapshotTest."
+}

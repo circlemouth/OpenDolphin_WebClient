@@ -1,27 +1,38 @@
 {
   "defaults": {
-    "header_file": "ops/tests/api-smoke-test/headers/legacy-default.headers"
+    "header_file": "ops/tests/api-smoke-test/headers/legacy-json.headers"
   },
   "targets": [
     {
       "id": "touch_sendPackage_javaTime",
       "name": "POST /touch/sendPackage (JavaTime)",
       "method": "POST",
-      "path": "/touch/sendPackage",
+      "path": "/jtouch/sendPackage",
       "body_file": "ops/tests/api-smoke-test/payloads/javatime_touch_sendPackage.json"
     },
     {
       "id": "touch_document_admFlag",
       "name": "POST /touch/document (admFlag)",
       "method": "POST",
-      "path": "/touch/document",
+      "path": "/jtouch/document",
+      "query": {"dryRun": "true"},
       "body_file": "scripts/api_parity_payloads/touch_document_sample.json"
+    },
+    {
+      "id": "touch_document_full",
+      "name": "POST /touch/document (full, non-dry-run)",
+      "method": "POST",
+      "path": "/jtouch/document",
+      "compare": "status",
+      "expected_status": 200,
+      "body_file": "tmp/parity-touch/payloads/touch_document_full.json"
     },
     {
       "id": "touch_mkdocument_performFlag",
       "name": "POST /touch/mkdocument (performFlag)",
       "method": "POST",
-      "path": "/touch/mkdocument",
+      "path": "/jtouch/mkdocument",
+      "query": {"dryRun": "true"},
       "body_file": "scripts/api_parity_payloads/touch_mkdocument_sample.json"
     }
   ]

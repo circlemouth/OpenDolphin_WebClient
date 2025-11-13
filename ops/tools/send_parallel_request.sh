@@ -6,6 +6,7 @@ SCRIPT_PATH="${SCRIPT_DIR}/$(basename "${BASH_SOURCE[0]}")"
 PROFILE_NAME=""
 PROFILE_FILE="${SEND_PARALLEL_REQUEST_PROFILE_FILE:-${SCRIPT_DIR}/send_parallel_request.profile.env.sample}"
 TRACE_RUN_ID="${TRACE_RUN_ID:-}"
+TARGETS="dual"
 
 usage() {
   cat <<'USAGE'
@@ -33,6 +34,7 @@ config モード:
   --profile-file FILE    --profile で使用するテンプレートファイルを指定する（省略時は ops/tools 配下）。
   --run-id RUN_ID        `tmp/trace_http_*.headers` などに含まれる `{{RUN_ID}}` プレースホルダーへ適用する
                          文字列を指定する（例: 20251111TtracefixZ）。未指定時は `TRACE_RUN_ID` 環境変数を利用。
+  --targets MODE         同期対象を指定する（dual|modern|legacy, default=dual）
 
 環境変数:
   BASE_URL_LEGACY   旧サーバーのベース URL (default: http://localhost:8080)
@@ -205,6 +207,22 @@ while [[ $# -gt 0 ]]; do
       TRACE_RUN_ID="$2"
       shift 2
       ;;
+    --targets)
+      if [[ $# -lt 2 ]]; then
+        usage >&2
+        exit 1
+      fi
+      case "$2" in
+        dual|modern|legacy)
+          TARGETS="$2"
+          ;;
+        *)
+          printf '[ERROR] --targets には dual|modern|legacy のいずれかを指定してください\n' >&2
+          exit 1
+          ;;
+      esac
+      shift 2
+      ;;
     -h|--help)
       usage
       exit 0
@@ -331,8 +349,12 @@ META
 
 run_iteration() {
   local iteration_request_id="$1"
-  send_request legacy "$BASE_URL_LEGACY" "$iteration_request_id"
-  send_request modern "$BASE_URL_MODERN" "$iteration_request_id"
+  if [[ "$TARGETS" != "modern" ]]; then
+    send_request legacy "$BASE_URL_LEGACY" "$iteration_request_id"
+  fi
+  if [[ "$TARGETS" != "legacy" ]]; then
+    send_request modern "$BASE_URL_MODERN" "$iteration_request_id"
+  fi
 }
 
 if [[ "$LOOP_COUNT" -le 1 ]]; then

@@ -1,0 +1,12 @@
+services:
+  otel-collector:
+    image: otel/opentelemetry-collector-contrib:0.101.0
+    container_name: opendolphin-otel-collector
+    command: ["--config=/etc/otelcol/config.yaml"]
+    profiles:
+      - otlp
+    volumes:
+      - ./ops/monitoring/otel-collector-config.yaml:/etc/otelcol/config.yaml:ro
+    ports:
+      - "4318:4318"
+      - "9464:9464"

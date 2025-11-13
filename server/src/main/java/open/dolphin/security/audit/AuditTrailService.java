@@ -46,6 +46,7 @@ public class AuditTrailService {
         event.setResource(payload.getResource());
         event.setPatientId(payload.getPatientId());
         event.setRequestId(payload.getRequestId());
+        event.setTraceId(determineTraceId(payload));
         event.setIpAddress(payload.getIpAddress());
         event.setUserAgent(payload.getUserAgent());
         event.setPayload(serializedPayload);
@@ -80,5 +81,12 @@ public class AuditTrailService {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private String determineTraceId(AuditEventPayload payload) {
+        if (payload.getTraceId() != null && !payload.getTraceId().isEmpty()) {
+            return payload.getTraceId();
+        }
+        return payload.getRequestId();
     }
 }

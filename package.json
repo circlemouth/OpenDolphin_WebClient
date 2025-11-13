@@ -1,4 +1,9 @@
 {
+  "scripts": {
+    "lint:orca-matrix": "node scripts/tools/orca-api-matrix-validator.js",
+    "orca-snippets:dry": "node scripts/tools/orca-curl-snippets.js --dry-run",
+    "orca-weekly": "node scripts/tools/orca-weekly-report.js"
+  },
   "dependencies": {
     "codex": "^0.2.3"
   }

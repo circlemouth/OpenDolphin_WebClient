@@ -10,6 +10,14 @@
 
 6. 取得結果と課題は `docs/server-modernization/phase2/notes/test-data-inventory.md` と `PHASE2_PROGRESS.md` に反映する。
 
+## ライセンス API シナリオ（`--scenario license`）
+
+1. `tmp/license/system_license_post_body.txt` に投入するデバイス UID を 1 行で記述する（既存 UID を再利用する場合もそのまま上書きせず使用してよい）。`ops/tests/api-smoke-test/configs/system_license_post.config` が POST リクエストのボディ／ヘッダー参照先としてこのファイルを読み込む。
+2. `ops/tests/api-smoke-test/run.sh --scenario license --run-id <RUN_ID> --profile modernized-dev` のように実行する。`RUN_ID` はヘッダー内 `{{RUN_ID}}`（`headers/sysad-license.headers`）および成果物ディレクトリ名に反映され、同一 RUN で `POST /dolphin/license` → `GET /dolphin/license` → `GET /system/license` の順で採取される。
+3. 出力は `artifacts/parity-manual/smoke/<RUN_ID>/{legacy,modernized}/license_*` に保存される。期待される応答は `artifacts/parity-manual/license/20251118TlicenseDeployZ1/{post,get,get-system}/` を参照し、`POST`=200（body `0`）、`GET /dolphin/license`=405、`GET /system/license`=404 であることを確認する。
+4. 差異が出た場合は `docs/server-modernization/phase2/notes/license-config-check.md` の再取得手順を踏襲し、追加証跡パスを README 末尾の Appendix や `DOC_STATUS.md` へ追記する。
+5. **CI シナリオ実行済み（RUN_ID=`20251119TlicenseScenarioZ1`）**: helper コンテナ（`docker run --rm --network legacy-vs-modern_default -v "$PWD":/workspace mcr.microsoft.com/devcontainers/base:jammy`）から `ops/tests/api-smoke-test/run.sh --scenario license --profile modernized-dev --run-id 20251119TlicenseScenarioZ1` を実行し、`artifacts/parity-manual/license/20251119TlicenseScenarioZ1/{post,get,get-system}/` 以下に Legacy/Modern の `headers.txt` / `meta.json` / `response.json` を保存済み。`20251118TlicenseDeployZ1` と比較し、`X-Trace-Id`・`Date`・`time_total` 以外の差分が無いこと（POST=200, GET=405, GET-system=404）を確認した。
+
 ## JavaTime 手動ケースの準備
 
 1. `ops/tests/api-smoke-test/headers/javatime-stage.headers.template` を Stage 用の Bearer トークンで編集し、同じディレクトリに `javatime-stage.headers` という名前で保存する（`.gitignore` 済みのためトークンはリポジトリへ反映されない）。  

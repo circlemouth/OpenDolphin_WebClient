@@ -35,4 +35,11 @@ else
     /subsystem=logging/logger=open.dolphin:add(level=INFO)
 end-if
 
+# Ensure Logger.getLogger("dolphin.claim") has a concrete level to avoid NPEs.
+if (outcome == success) of /subsystem=logging/logger=dolphin.claim:read-resource()
+    /subsystem=logging/logger=dolphin.claim:write-attribute(name=level,value=INFO)
+else
+    /subsystem=logging/logger=dolphin.claim:add(level=INFO)
+end-if
+
 stop-embedded-server

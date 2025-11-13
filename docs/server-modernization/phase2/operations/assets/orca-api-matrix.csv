@@ -1,0 +1,54 @@
+No,URL,Method/Class,用途,優先度,確認観点
+1,/api01rv2/patientgetv2,GET id,患者基本情報取得,P0,既存患者と Web クライアント表示の差分を突合
+2,/orca14/appointmodv2,POST class=01/02,予約登録/取消,P0,予約操作が ORCA と Web 双方に反映されること
+3,/api21/medicalmodv2,POST class=01-03,診療行為（中途）登録,P0,診療行為の登録/削除/変更が一致
+4,/orca11/acceptmodv2,POST class=01/02,受付登録/取消,P0,受付一覧の即時更新と件数一致
+5,/api01rv2/acceptlstv2,POST class=01-03,受付一覧取得,P0,日付/状態フィルタ結果が一致
+6,/api01rv2/appointlstv2,POST class=01,予約一覧取得,P0,予約画面とレスポンスが一致し遅延なし
+7,/orca102/medicatonmodv2,POST class=01-04,点数マスタ同期,P1,マスタ同期タスクが失敗しないこと
+8,/api01rv2/patientlst1v2,POST class=01/02,患者番号一覧,P0,差分同期ジョブへ正常取り込み
+9,/api01rv2/patientlst2v2,POST class=01,複数患者情報取得,P0,バッチ同期で文字化けが起きないこと
+10,/api01rv2/patientlst3v2,POST class=01,氏名検索,P0,かな検索結果が UI と一致
+11,/api01rv2/system01lstv2,POST class=01-07,システム管理情報,P1,診療科/職員などのマスタ整合性
+12,/api01rv2/medicalgetv2,POST class=01-04,診療行為取得,P0,カルテ履歴とレスポンスが一致
+13,/api01rv2/diseasegetv2,POST class=01,患者病名情報取得,P0,病名一覧が重複なく同期
+14,/orca12/patientmodv2,POST class=01-04,患者登録/更新/削除,P0,登録→再取得の往復で差異が無い
+15,/api01rv2/appointlst2v2,POST class=01,患者単位予約一覧,P0,患者詳細タブと一致
+16,/api01rv2/acsimulatev2,POST class=01,請求金額試算,P0,金額試算が一致しタイムアウトしない
+17,/orca25/subjectivesv2,POST class=01/02,症状詳記登録/削除,P0,カルテ記録と重複無く同期
+18,/api01rv2/visitptlstv2,POST,来院患者一覧,P0,来院ウィジェットに即時反映
+19,/api01rv2/hsconfbasev2,POST,入院基本情報,P1,ベッド管理との整合
+20,/api01rv2/hsconfwardv2,POST,病棟/病室マスタ,P1,病棟マスタ同期
+21,/api01rv2/tmedicalgetv2,POST,中途終了患者一覧,P1,カルテ一覧表示と一致
+22,/api01rv2/insprogetv2,POST,保険者一覧,P0,保険マスタ同期
+23,/api01rv2/hsmealv2,POST,入院食事情報,P1,入院管理画面と一致
+24,/api01rv2/hsptevalv2,POST,医療区分・ADL 点数,P1,看護必要度画面へ反映
+25,/api01rv2/hsptinfv2,POST,入院患者基本情報,P1,ベッド一覧の患者情報と突合
+26,/api01rv2/hsacsimulatev2,POST,退院時仮計算,P1,退院会計の概算と一致
+27,/api01rv2/incomeinfv2,POST,収納情報,P0,会計画面の収納履歴と一致
+28,/api01rv2/systeminfv2,POST,システム情報,P2,環境差分が無いこと
+29,/orca31/hsptinfmodv2,POST,入退院登録,P1,入退院登録が二重反映すること
+30,/orca31/hsacctmodv2,POST,外泊・食事登録（会計照会）,P1,入院会計ビューへ反映
+31,/orca32/hsptevalmodv2,POST,医療区分登録,P1,ADL 登録が最新値で保持
+32,/orca101/manageusersv2,POST,ユーザー管理,P2,ユーザー同期と設定整合
+33,/orca21/medicalsetv2,POST,診療セット登録,P0,スタンプ同期に反映
+34,/orca31/birthdeliveryv2,POST,出産育児一時金,P1,レセ電文へ正しく出力
+35,/api01rv2/patientlst6v2,POST,全保険組合せ一覧,P0,患者登録画面と一致
+36,/orca22/diseasev2,POST,患者病名登録,P0,病名 CRUD の整合
+37,/orca22/diseasev3,POST,患者病名登録2,P0,v2 との差異把握とフィールド整合
+38,/orca31/hsacctmodv2,POST,入院会計作成,P1,会計作成が重複しない
+39,/orca31/hspmmv2,POST,入院会計未作成チェック,P1,アラートと同期
+40,/orca31/hsacctmodv2,POST,室料差額登録,P1,差額ベッド料が請求へ反映
+41,/api01rv2/pusheventgetv2,POST,PUSH 通知,P0,通知センターに表示
+42,/orca42/receiptprintv3,POST,帳票印刷ジョブ,P2,PDF が正常生成
+43,/orca51/masterlastupdatev3,POST,マスタ最終更新日,P2,キャッシュ更新条件に利用
+44,/api01rv2/system01dailyv2,POST,基本情報取得（daily）,P2,日次基本情報がダッシュボードに反映
+45,/api01rv2/patientlst7v2,POST,患者メモ取得,P0,カルテメモと一致
+46,/api21/medicalmodv23,POST,初診算定日登録,P0,レセプト初診算定日へ反映
+47,/orca36/hsfindv3,POST,入院患者照会,P1,入院患者一覧と一致
+48,/api01rv2/contraindicationcheckv2,POST,薬剤併用禁忌チェック,P0,重大判定時に UI が遮断
+49,/api01rv2/insuranceinf1v2,POST,保険・公費一覧,P0,保険タブと一致
+50,/api01rv2/subjectiveslstv2,POST,症状詳記取得,P0,カルテ表示と一致
+51,/api01rv2/patientlst8v2,POST,旧姓履歴取得,P1,患者属性表示へ反映
+52,/api01rv2/medicationgetv2,POST,診療コード内容取得,P0,コード検索候補と一致
+53,/orca06/patientmemomodv2,POST,患者メモ CRUD,P0,双方向同期を確認

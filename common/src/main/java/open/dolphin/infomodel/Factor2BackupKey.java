@@ -16,7 +16,7 @@ import jakarta.persistence.Table;
 @Table(name = "d_factor2_backupkey")
 public class Factor2BackupKey implements Serializable {
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
     
     private long userPK;

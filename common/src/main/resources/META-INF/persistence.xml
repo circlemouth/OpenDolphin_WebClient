@@ -8,6 +8,11 @@
     <jta-data-source>java:jboss/datasources/PostgresDS</jta-data-source>
     <!--<jta-data-source>java:jboss/datasources/DerbyDS</jta-data-source>-->
     <class>open.dolphin.infomodel.PHRKey</class>
+    <class>open.dolphin.infomodel.Factor2Device</class>
+    <class>open.dolphin.infomodel.Factor2Code</class>
+    <class>open.dolphin.infomodel.Factor2Credential</class>
+    <class>open.dolphin.infomodel.Factor2Challenge</class>
+    <class>open.dolphin.infomodel.Factor2BackupKey</class>
     <exclude-unlisted-classes>false</exclude-unlisted-classes>
     <properties>
       <property name="hibernate.hbm2ddl.auto" value="update"/>

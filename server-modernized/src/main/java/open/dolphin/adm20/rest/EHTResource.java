@@ -1742,6 +1742,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         } else {
             payload.setRequestId(UUID.randomUUID().toString());
         }
+        String traceId = resolveTraceId(servletReq);
+        if (traceId == null || traceId.isBlank()) {
+            traceId = payload.getRequestId();
+        }
+        payload.setTraceId(traceId);
         payload.setDetails(details);
         auditTrailService.record(payload);
     }

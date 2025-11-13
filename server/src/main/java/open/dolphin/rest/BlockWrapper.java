@@ -43,6 +43,9 @@ public final class BlockWrapper extends HttpServletRequestWrapper {
     public String getRequestURIForLog() {
         // /openDolphin/resources/
         String ret = getRequestURI();
+        if (ret == null || ret.length() <= 22) {
+            return ret != null ? ret : "";
+        }
         return ret.substring(22);
     }
 }

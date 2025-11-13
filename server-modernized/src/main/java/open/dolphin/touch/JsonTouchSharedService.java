@@ -22,6 +22,7 @@ import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.DocumentModel;
+import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
 import open.dolphin.infomodel.PVTPublicInsuranceItemModel;
 import open.dolphin.infomodel.PatientModel;
@@ -102,6 +103,34 @@ public class JsonTouchSharedService {
 
     public int countPatients(String facilityId) {
         return iPhoneService.countPatients(facilityId);
+    }
+
+    public UserModel findUserModel(String userId) {
+        if (userId == null || userId.isEmpty()) {
+            return null;
+        }
+        try {
+            return iPhoneService.getUserById(userId);
+        } catch (RuntimeException ex) {
+            LOGGER.log(Level.WARNING, "Failed to load user {0}", userId);
+            return null;
+        }
+    }
+
+    public KarteBean findKarteByPatient(String facilityId, String patientId) {
+        if (facilityId == null || facilityId.isEmpty() || patientId == null || patientId.isEmpty()) {
+            return null;
+        }
+        try {
+            PatientModel patient = iPhoneService.getPatientById(facilityId, patientId);
+            if (patient == null) {
+                return null;
+            }
+            return karteService.getKarte(patient.getId(), null);
+        } catch (RuntimeException ex) {
+            LOGGER.log(Level.WARNING, "Failed to load karte for facility {0}, patient {1}", new Object[]{facilityId, patientId});
+            return null;
+        }
     }
 
     public List<String> getPatientsWithKana(String facilityId, int first, int max) {

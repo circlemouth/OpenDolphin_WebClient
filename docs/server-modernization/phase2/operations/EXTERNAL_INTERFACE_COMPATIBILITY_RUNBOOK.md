@@ -294,6 +294,7 @@
    - `docker-compose.yml` / `docker-compose.modernized.dev.yml` は `orca-weborca`（外部名: `jma-receipt-docker-for-ubuntu-2204_default`）ネットワークを external として宣言済み。WebORCA Compose を先に起動し、このネットワークが存在する状態で `docker compose up` すると `opendolphin-server` / `opendolphin-server-modernized[-dev]` が自動で参加する。  
    - 既存コンテナをネットワークへ後付けする場合のみ、従来どおり `docker network connect jma-receipt-docker-for-ubuntu-2204_default <container>` を実行する。  
    - ネットワークへ接続できない場合は `docker network inspect jma-receipt-docker-for-ubuntu-2204_default` で状態を確認し、存在しなければ WebORCA Compose を起動するか `docker network create --driver bridge jma-receipt-docker-for-ubuntu-2204_default` でプレースホルダを作成する。
+   - API 仕様・パラメータの参照は `operations/assets/orca-api-spec/README.md` を起点とする。`orca-api-matrix.with-spec.csv` から対象 API の `SpecSlug` を特定し、`raw/<slug>.md` を参照することでオンライン接続なしでも公式ドキュメントにアクセスできる。
 5. **`custom.properties` の設定**  
    - `ops/shared/docker/custom.properties` に ORCA 連携用の値を追記してから `docker compose build` を再実行する。最低限以下を設定する。  
      ```properties
@@ -392,6 +393,29 @@
    ```
 3. `jq --sort-keys` や `git diff --no-index legacy-demo-firstVisitors.json modern-demo-firstVisitors.json` で差分を確認し、差異がなければログとして保存する。他 14 エンドポイントも同様に採取し、`fixtures/demoresourceasp/*` との比較結果を添付すること。
 4. Postman Collection は `ops/postman/DemoResourceAsp.postman_collection.json` に雛形を追加済み。環境ごとに `{{baseUrl}}` を切り替えて実行し、レスポンス履歴を Runbook へ添付する。 |
+
+### 4.5 ORCA API 有効化トリアージ（2025-11-13 追加）
+
+| ID | 対象カテゴリ | ステータス | 備考 |
+| --- | --- | --- | --- |
+| ORCA-API-ENABLE-20251113 | WebORCA `/api21` `/orca31` `/orca06` POST 405 | Open | API 有効化情報：`docs/server-modernization/phase2/notes/orca-api-field-validation.md` §6（システム管理サイトでの API キー／証明書確認、push-exchanger / onshi / CLAIM Receiver `config.yml` の `:api_server`/`:api_path`/`:use_weborca` 再点検、`X-Hybridmode` でのモード判定手順）を参照。405 発生時は (1) API キー・証明書の期限、(2) `config.yml` の `:api_path` が `/api/api21/*` へ向いているか、(3) Hybrid 応急措置モードに落ちていないかを evidence として残す。必要に応じて ORCA 側に `receipt_route` / `API_ENABLE_*` の公開手順問い合わせを Escalate。 |
+
+#### /api/apiXX プレフィックス結果（2025-11-13, RUN_ID=`20251113TorcaApiPrefixW37`）
+
+- 実施目的: `/api21/*` では `405 Method Not Allowed` となる既知事象に対し、`/api/apiXX/*` プレフィックスで別ハンドラが呼ばれるか確認し、Runbook §4.5 の証跡を補強する。
+- 証跡: `artifacts/orca-connectivity/20251113T015626Z/api-prefix-test/`（ヘッダー: `_headers.txt`, 本文: `_body.json`）。
+- 条件: `docker run --rm --network jma-receipt-docker-for-ubuntu-2204_default curlimages/curl:8.7.1` を使用。`Content-Type: application/json; charset=Shift_JIS` とし、`tmp/orca-api-payloads/*_payload.json` を `--data-binary` で送信（`assets/..._request.json` をそのまま送ると WebORCA 側で XML 変換処理が panic し応答が落ちるため）。
+
+| エンドポイント | HTTP | Allow | 所見 | Evidence |
+| --- | --- | --- | --- | --- |
+| `POST /api/api21/medicalmodv2?class=01` | 200 (`Api_Result=10`) | なし | REST ハンドラが応答し `Api_Result_Message="患者番号に該当する患者が存在しません"`。`X-Hybridmode: normal`。患者レコード未投入だが API 自体は動作。 | `.../api21_medicalmodv2_{headers,body}` |
+| `POST /api/api11/acceptmodv2?class=01` | 404 | なし | WebORCA が `{"message":"APIが存在しません"}` を返却し、`/api/api11` ルートは未公開。 | `.../api11_acceptmodv2_{headers,body}` |
+| `POST /api/api14/appointmodv2?class=01` | 404 | なし | `acceptmodv2` 同様に 404。`Allow` ヘッダーも返らず、メソッド情報は得られず。 | `.../api14_appointmodv2_{headers,body}` |
+
+- 所見: `/api/api21/*` のみ Basic 認証後に REST ハンドラへ到達し 200 応答を取得。`/api/api11` と `/api/api14` は 404 で API 未公開のまま。`Allow` ヘッダーが空であるため、WebORCA 側の公開可否は管理ツール設定の確認が必要。405 ルートの切替検証が完了したため、今後は ORCA API Enable (ID=ORCA-API-ENABLE-20251113) の対処方針に沿ってキーパラメータの棚卸しを継続する。
+  - 追加資料: `docs/server-modernization/phase2/operations/assets/orca-api-spec/README.md`（firecrawl オフライン仕様）、`manifest.json`（slug マッピング）、`orca-api-matrix.with-spec.csv`（優先度マトリクス連携）。
+
+- **2025-11-13 14:48 JST（RUN_ID=`20251113TorcaApi21LogW55`）**: `export PATIENT_ID_TEST=0000001` を設定したうえで `curl -u ormaster:change_me -H 'Content-Type: application/xml; charset=UTF-8' --data-binary @tmp/orca-api-payloads/03_medicalmodv2_payload.xml http://localhost:8000/api/api21/medicalmodv2?class=01` を実行。HTTP 200 でも `Api_Result=10` が継続し、`/opt/jma/weborca/log/{http.log,orca_http.log}` の tail（`artifacts/orca-connectivity/20251113T054823Z/api21_logtrace/{http_log_tail.txt,orca_http_log_tail.txt}`）には `API-:orca  ormaster medicalmodv2 ORAPI021S1V2 false` から `DestroyContext` までのイベントのみが出力された。`tbl_ptinf` や患者検索 SQL 行は一切出現せず、WebORCA 側で Patient_ID 参照そのものが行われていないことが再確認できた。
 
 ## 6. 更新フロー
 

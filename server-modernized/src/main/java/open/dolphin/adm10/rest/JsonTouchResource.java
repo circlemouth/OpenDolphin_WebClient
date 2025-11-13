@@ -33,6 +33,8 @@ import open.dolphin.adm10.converter.IMKDocument;
 import open.dolphin.adm10.converter.IMKDocument2;
 import open.dolphin.converter.StringListConverter;
 import open.dolphin.converter.UserModelConverter;
+import open.dolphin.infomodel.DiagnosisSendWrapper;
+import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.PatientList;
 import open.dolphin.infomodel.PatientModel;
@@ -171,16 +173,20 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage(String json) {
+    public String postSendPackage(@Context HttpServletRequest servletReq, String json) {
         final String endpoint = "POST /10/adm/jtouch/sendPackage";
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
             ObjectMapper mapper = legacyTouchMapper;
             ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+            DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
+            if (wrapper != null) {
+                populateDiagnosisAuditMetadata(servletReq, wrapper, "/10/adm/jtouch/sendPackage");
+            }
 
             long retPk = sharedService.processSendPackageElements(
                     pkg != null ? pkg.documentModel() : null,
-                    pkg != null ? pkg.diagnosisSendWrapperModel() : null,
+                    wrapper,
                     pkg != null ? pkg.deletedDiagnsis() : null,
                     pkg != null ? pkg.chartEventModel() : null);
             JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
@@ -194,16 +200,20 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage2(String json) {
+    public String postSendPackage2(@Context HttpServletRequest servletReq, String json) {
         final String endpoint = "POST /10/adm/jtouch/sendPackage2";
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
             ObjectMapper mapper = legacyTouchMapper;
             ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+            DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
+            if (wrapper != null) {
+                populateDiagnosisAuditMetadata(servletReq, wrapper, "/10/adm/jtouch/sendPackage2");
+            }
 
             long retPk = sharedService.processSendPackageElements(
                     pkg != null ? pkg.documentModel() : null,
-                    pkg != null ? pkg.diagnosisSendWrapperModel() : null,
+                    wrapper,
                     pkg != null ? pkg.deletedDiagnsis() : null,
                     pkg != null ? pkg.chartEventModel() : null);
             JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
@@ -217,32 +227,32 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/document")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postDocument(String json) {
-        return handleDocumentPayload("POST /10/adm/jtouch/document", json, IDocument.class, IDocument::toModel);
+    public String postDocument(@QueryParam("dryRun") @DefaultValue("false") boolean dryRun, String json) {
+        return handleDocumentPayload("POST /10/adm/jtouch/document", json, IDocument.class, IDocument::toModel, dryRun);
     }
 
     @POST
     @Path("/document2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postDocument2(String json) {
-        return handleDocumentPayload("POST /10/adm/jtouch/document2", json, IDocument2.class, IDocument2::toModel);
+    public String postDocument2(@QueryParam("dryRun") @DefaultValue("false") boolean dryRun, String json) {
+        return handleDocumentPayload("POST /10/adm/jtouch/document2", json, IDocument2.class, IDocument2::toModel, dryRun);
     }
 
     @POST
     @Path("/mkdocument")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postMkDocument(String json) {
-        return handleDocumentPayload("POST /10/adm/jtouch/mkdocument", json, IMKDocument.class, IMKDocument::toModel);
+    public String postMkDocument(@QueryParam("dryRun") @DefaultValue("false") boolean dryRun, String json) {
+        return handleDocumentPayload("POST /10/adm/jtouch/mkdocument", json, IMKDocument.class, IMKDocument::toModel, dryRun);
     }
 
     @POST
     @Path("/mkdocument2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postMkDocument2(String json) {
-        return handleDocumentPayload("POST /10/adm/jtouch/mkdocument2", json, IMKDocument2.class, IMKDocument2::toModel);
+    public String postMkDocument2(@QueryParam("dryRun") @DefaultValue("false") boolean dryRun, String json) {
+        return handleDocumentPayload("POST /10/adm/jtouch/mkdocument2", json, IMKDocument2.class, IMKDocument2::toModel, dryRun);
     }
 
 ////minagawa^
@@ -429,18 +439,31 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         };
     }
     
-    private <T> String handleDocumentPayload(String endpoint, String json, Class<T> payloadType, Function<T, DocumentModel> converter) {
+    private <T> String handleDocumentPayload(String endpoint, String json, Class<T> payloadType, Function<T, DocumentModel> converter, boolean dryRun) {
         final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
         try {
             ObjectMapper mapper = legacyTouchMapper;
             T payload = mapper.readValue(json, payloadType);
             DocumentModel model = converter.apply(payload);
-            long pk = sharedService.saveDocument(model);
-            JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + pk);
+            long pk = dryRun ? resolveDryRunDocumentPk(model) : sharedService.saveDocument(model);
+            JsonTouchAuditLogger.success(endpoint, traceId,
+                    () -> dryRun ? "dryRun=true,documentPk=" + pk : "documentPk=" + pk);
             return String.valueOf(pk);
         } catch (IOException | RuntimeException e) {
             throw JsonTouchAuditLogger.failure(LOGGER, endpoint, traceId, e);
         }
+    }
+
+    private long resolveDryRunDocumentPk(DocumentModel model) {
+        if (model == null) {
+            return 0L;
+        }
+        DocInfoModel info = model.getDocInfoModel();
+        if (info != null && info.getDocPk() > 0L) {
+            return info.getDocPk();
+        }
+        long id = model.getId();
+        return id > 0L ? id : 0L;
     }
 
     // srycdのListからカンマ区切りの文字列を作る

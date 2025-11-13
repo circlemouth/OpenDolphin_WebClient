@@ -199,3 +199,46 @@
   1. Docker オペレーターに `d_users/d_patient/d_stamp/d_diagnosis` のシード投入と `open_dolphin-server.war` のデプロイ成功 (`WFLYSRV0026` を緑化) を依頼する。  
   2. 施設 `1.3.6.1.4.1.9414.72.103` の doctor1/admin アカウントがログイン可能になったら `base_readonly` ＋ Touch parity を同 RUN_ID で再取得し、`tmp/parity-touch/20251115TapiparityZ1` の `compare: "text"` を `compare: "json"` へ差し戻す。  
   3. 再取得後は `docs/web-client/planning/phase2/DOC_STATUS.md` の Testing セクションを `Recovered` へ更新し、Checklist フェーズ9のモダナイズ API parity 行をクローズする。
+
+## 13. 2025-11-12 base_readonly / Touch parity 再取得（RUN_ID=20251116TapiparityZ2）
+
+- **実行コマンド**  
+  1. `docker exec opendolphin-postgres* psql < tmp/sql/local_seed_base.sql` で Legacy/Modernized 双方へローカル合成ベースラインを再投入。`artifacts/parity-manual/db-restore/20251116TapiparityZ2/{legacy_seed.log,modern_seed.log}` に証跡を保存し、`d_users` の doctor1/`9001:doctor1` を平文パスワードへ戻した。  
+  2. `BASE_URL_{LEGACY,MODERN}=http://localhost:{8080,9080}/openDolphin/resources ops/tests/api-smoke-test/run.sh --scenario base_readonly --dual --run-id 20251116TapiparityZ2`  
+  3. `PARITY_OUTPUT_DIR=tmp/parity-touch/20251116TapiparityZ2 TRACE_RUN_ID=20251116TapiparityZ2 ops/tools/send_parallel_request.sh --config scripts/api_parity_targets.touch.json --profile compose`（※ config を `/jtouch/*` へ更新し、`ops/tests/api-smoke-test/headers/legacy-json.headers` で `Content-Type: application/json` を追加）  
+  4. `LEGACY_API_BASE=... MODERN_API_BASE=... python3 scripts/api_parity_response_check.py --config tmp/parity-touch/20251116TapiparityZ2/api_targets.json > tmp/parity-touch/20251116TapiparityZ2/diff.txt`
+
+- **Smoke 結果（`artifacts/parity-manual/smoke/20251116TapiparityZ2/`）**  
+  | Case ID | Legacy | Modernized | 備考 |
+  | --- | --- | --- | --- |
+  | `base_readonly_dolphin` | 200 / `Hellow, Dolphin` | 200 / `Hellow, Dolphin` | ヘッダー: Legacy は `Server`/`X-Powered-By` を露出、Modernized は `Referrer-Policy` `CSP` `HSTS` `X-Content-Type-Options` のみ。証跡: `.../legacy/base_readonly_dolphin/headers.txt` と `.../modernized/base_readonly_dolphin/headers.txt`。 |
+  | `base_readonly_serverinfo` | 200 / 空ボディ | 200 / 空ボディ | レイテンシ差異のみ。 |
+  | `base_readonly_patient_list` | 200 / patientId リスト | 200 / patientId リスト | `metadata.json` にケース一覧を記録。 |
+
+- **Touch parity キャプチャ（`tmp/parity-touch/20251116TapiparityZ2/`）**  
+  - `/jtouch/sendPackage`: Modernized は `0` を返し 200、Legacy は `content-type: application/json` を付与しても `org.codehaus.jackson.map.exc.UnrecognizedPropertyException: issuedAt` で 500。ログ: `artifacts/parity-manual/smoke/20251116TapiparityZ2/logs/legacy_server.log`。  
+  - `/jtouch/document`, `/jtouch/mkdocument`: Legacy/Modernized とも `Unrecognized field "admFlag"/"performFlag"` で 500。`IDocInfo` / `IMKDocument` に新フィールドが未実装のため JSON 比較へ進めず。ログ: `.../logs/{legacy,modern}_server.log`。  
+  - `tmp/parity-touch/20251116TapiparityZ2/diff.txt` は 3 ケースとも `[FAIL] ... Status mismatch (expected 200, legacy=500, modern=200/500)` を出力。200 カバレッジの gate は継続ブロック中。
+
+- **判明した課題 / 次アクション**  
+  1. Legacy `JsonTouchResource` の `ISendPackage` が `issuedAt` を受け取れないため、`org.codehaus.jackson` 側でも `FAIL_ON_UNKNOWN_PROPERTIES=false` を設定するか DTO を拡張する。Modernized は `com.fasterxml.jackson.databind.DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES=false` が効いており 200 応答を返せている。  
+  2. `IDocInfo` / `IMKDocument`（Legacy/Modernized 両方）へ `admFlag` / `performFlag` を追加し、`DocInfoModel` / `ModuleModel` への伝播を有効化するまでは JSON 比較に到達しない。  
+  3. `scripts/api_parity_targets.touch.json` は `/jtouch/*` かつ `Content-Type: application/json` を必須とする前提へ更新済み。`README` 反映および REST ドキュメント系へも `/jtouch` への揃え込みが必要。
+
+- **フォローアップ（2025-11-13 RUN_ID=20251117TtouchParityZ3）**  
+  1. Legacy／Modernized／ADM10 いずれの `JsonTouchResource` でも `?dryRun=true` を許可し、JSON→DTO 変換までは実行しつつ `KarteServiceBean#addDocument` をスキップできるようにした。`scripts/api_parity_targets.touch.json` も `touch_document_admFlag` / `touch_mkdocument_performFlag` で `"query": {"dryRun":"true"}` を指定。  
+  2. DTO 側は `ISendPackage`・`IDocInfo`・`IModuleInfo`・`IMKDocument` へ `@JsonIgnoreProperties(ignoreUnknown=true)` と `@JsonProperty` を追加し、Jackson1/2 の双方で `issuedAt` / `admFlag` / `performFlag` を確実に受け付けるよう統一。`server-modernized/src/test/java/open/dolphin/touch/JsonTouchResourceParityTest` へ `dryRun` のユニットテストを追加し、CI でリグレッション検知できるようにした。  
+  3. `PARITY_OUTPUT_DIR=tmp/parity-touch/20251117TtouchParityZ3 TRACE_RUN_ID=20251117TtouchParityZ3 ops/tools/send_parallel_request.sh --config scripts/api_parity_targets.touch.json --profile compose` 実行後、`LEGACY_API_BASE=... MODERN_API_BASE=... python3 scripts/api_parity_response_check.py --config tmp/parity-touch/20251117TtouchParityZ3/api_targets.resolved.json` を実行。`diff.txt` は `[PASS]` ×3 で全ケース一致、証跡は `tmp/parity-touch/20251117TtouchParityZ3/` に保存済み。  
+  4. これにより `/jtouch/sendPackage` / `/document?dryRun=true` / `/mkdocument?dryRun=true` はすべて 200 応答となり、API parity Gate を PASS へ戻せた。今後本番データでドキュメント登録を伴う検証を行う場合は `dryRun` を付けずに実行すること。
+
+## 14. 2025-11-13 Touch parity 非 dry-run（RUN_ID=20251118TtouchParityZ4）
+
+- **背景**: `dryRun=false` で `/jtouch/{document,mkdocument}` を叩くと Legacy/Modernized 双方で `d_module.beanbytes` への INSERT が `column "beanbytes" is of type bytea but expression is of type bigint` で 500 となり、本番同等の保存パスを比較できなかった。`ModuleModel` は Hibernate から OID Large Object として扱われていたため、DB 側を `bytea` ではなく `oid` へ揃える必要があった。  
+- **DB 調整**  
+  1. `tmp/sql/touch_document_full_seed.sql` を新設し、`ALTER TABLE {opendolphin,public}.d_module ALTER COLUMN beanbytes TYPE oid USING lo_from_bytea(...)` と `hibernate_sequence/d_document_seq/d_module_seq` の再採番をまとめて実行できるようにした。  
+  2. Legacy/Modernized 両 DB で `docker exec opendolphin-postgres{,-modernized} psql -U opendolphin < tmp/sql/touch_document_full_seed.sql` を流し、`\\d opendolphin.d_module` で型が `oid` へ変わったことを確認。  
+- **非 dry-run parity 実行**  
+  1. ホストから Modernized 9080 へ直接到達できないため、`docker run --network legacy-vs-modern_default -v $PWD:/work -w /work mcr.microsoft.com/devcontainers/base:jammy ...` の helper コンテナ内で `PARITY_OUTPUT_DIR=tmp/parity-touch/20251118TtouchParityZ4 TRACE_RUN_ID=20251118TtouchParityZ4 BASE_URL_{LEGACY,MODERN}=http://opendolphin-server{,-modernized-dev}:8080/openDolphin/resources TOUCH_DRY_RUN=false ops/tools/send_parallel_request.sh --profile compose --config scripts/api_parity_targets.touch.json --run-id 20251118TtouchParityZ4` を実行。`touch_document_full` を含む 4 ケースがすべて 200 となり HTTP キャプチャを `tmp/parity-touch/20251118TtouchParityZ4/` に保存。  
+  2. 同じ helper ネットワーク内で `python3 scripts/api_parity_response_check.py --config tmp/parity-touch/20251118TtouchParityZ4/api_targets.resolved.json` を実行（`LEGACY_API_BASE=http://opendolphin-server:8080/openDolphin/resources`, `MODERN_API_BASE=http://opendolphin-server-modernized-dev:8080/openDolphin/resources`）。出力は `tmp/parity-touch/20251118TtouchParityZ4/diff.txt` にリダイレクトし、`[PASS]` ×4 を確認。  
+- **証跡**: `tmp/parity-touch/20251118TtouchParityZ4/`（HTTP/headers/meta + `diff.txt`）、アーカイブは `artifacts/parity-manual/touch/20251118TtouchParityZ4/`。non-dry-run JSON 本体は `tmp/parity-touch/payloads/touch_document_full.json` に維持し、RUN_ID を `docInfo.docId` と freeText に含めて追跡できるようにした。  
+- **今後**: `d_module` 以外の LOB 列は従来どおり `bytea` を維持する。`touch_document_full_seed.sql` は今後の手動再現でも `beanbytes` 型差異を自動修復できるよう Phase2 Runbook へリンクした。dryRun との差分チェックを行う際は、本節 RUN_ID を API parity Gate のベースラインとして扱う。 

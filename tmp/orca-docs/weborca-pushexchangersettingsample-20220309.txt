@@ -1,0 +1,87 @@
+WebORCA push-exchanger サンプル
+(サーバ証明書入替対応)
+本番環境
+push-exchanger config.yml
+--:ws_server:
+wss://weborca.cloud.orcamo.jp/ws
+:api_user:
+ormaster
+:api_key:
+xxxxxxx
+:api_server:
+weborca.cloud.orcamo.jp
+:api_port:
+443
+:use_ssl:
+true
+:ca_cert:
+"C:/Program Files (x86)/push-exchanger/certs/root.crt"
+:cert:
+"C:/Program Files (x86)/push-exchanger/certs/clientXXXX.crt"
+:cert_key:
+"C:/Program Files (x86)/push-exchanger/certs/clientXXXX.pem"
+:passphrase:
+証明書パスワード
+:use_weborca:
+true
+:log_file:
+"C:/Program Files (x86)/push-exchanger/log/push-exchanger.log.txt"
+:log_level:
+debug
+:plugin_load_path:
+- "C:/Program Files (x86)/push-exchanger/plugin"
+※ca_cert のファイルは https://ftp.orca.med.or.jp/pub/data/weborca/root.crt よりダウ
+ンロードしてください。
+※設定ファイルの記述に日本語を含まないようにしてください。
+
+※ca_cert、cert、cert_key、log_file、plugin_load_path のパス区切りは / で記載してくだ
+さい。
+※api_key は日レセクラウド(ginbee)とは値が異なります。
+システム管理サイトより確認して設定をおこなってください。
+※ca_cert、cert、cert_key のパスは適宜環境に合わせてください。
+
+1
+
+デモ環境
+push-exchanger config.yml
+--:ws_server:
+wss://demo-weborca.cloud.orcamo.jp/ws
+:api_user:
+ormaster
+:api_key:
+xxxxxxx
+:api_server:
+demo-weborca.cloud.orcamo.jp
+:api_port:
+443
+:use_ssl:
+true
+:ca_cert:
+"C:/Program Files (x86)/push-exchanger/certs/root.crt"
+:cert:
+"C:/Program Files (x86)/push-exchanger/certs/clientXXXX.crt"
+:cert_key:
+"C:/Program Files (x86)/push-exchanger/certs/clientXXXX.pem"
+:passphrase:
+証明書パスワード
+:use_weborca:
+true
+:log_file:
+"C:/Program Files (x86)/push-exchanger/log/push-exchanger.log.txt"
+:log_level:
+debug
+:plugin_load_path:
+- "C:/Program Files (x86)/push-exchanger/plugin"
+※ca_cert のファイルは https://ftp.orca.med.or.jp/pub/data/weborca/root.crt よりダウ
+ンロードしてください。
+※設定ファイルの記述に日本語を含まないようにしてください。
+
+※ca_cert、cert、cert_key、log_file、plugin_load_path のパス区切りは / で記載してくだ
+さい。
+※api_key は日レセクラウド(ginbee)とは値が異なります。
+システム管理サイトより確認して設定をおこなってください。
+※ca_cert、cert、cert_key のパスは適宜環境に合わせてください。
+
+2
+
+

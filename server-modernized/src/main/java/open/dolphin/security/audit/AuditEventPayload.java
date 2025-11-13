@@ -16,6 +16,7 @@ public class AuditEventPayload {
     private String resource;
     private String patientId;
     private String requestId;
+    private String traceId;
     private String ipAddress;
     private String userAgent;
     private Map<String, Object> details;
@@ -74,6 +75,14 @@ public class AuditEventPayload {
 
     public void setRequestId(String requestId) {
         this.requestId = requestId;
+    }
+
+    public String getTraceId() {
+        return traceId;
+    }
+
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
     }
 
     public String getIpAddress() {

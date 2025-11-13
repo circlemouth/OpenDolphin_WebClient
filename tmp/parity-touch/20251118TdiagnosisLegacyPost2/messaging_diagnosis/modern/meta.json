@@ -1,0 +1,9 @@
+{
+  "method": "POST",
+  "path": "/karte/diagnosis/claim",
+  "base_url": "http://127.0.0.1:1",
+  "request_id": "messaging_diagnosis",
+  "status_code": 000,
+  "time_total": "0.000184",
+  "exit_code": 7
+}

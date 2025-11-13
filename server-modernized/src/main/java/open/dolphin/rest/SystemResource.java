@@ -30,8 +30,11 @@ import open.dolphin.infomodel.RoleModel;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.session.AccountSummary;
 import open.dolphin.session.SystemServiceBean;
+import open.dolphin.session.framework.SessionOperation;
+import open.dolphin.session.framework.SessionTraceAttributes;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
 import open.dolphin.system.license.LicenseRepository;
@@ -43,7 +46,8 @@ import org.slf4j.LoggerFactory;
  *
  * @author kazushi
  */
-@Path("/dolphin")
+@Path("/{scope : dolphin|system}")
+@SessionOperation
 public class SystemResource extends AbstractResource {
     
     private static final Logger LOGGER = LoggerFactory.getLogger(SystemResource.class);
@@ -53,6 +57,9 @@ public class SystemResource extends AbstractResource {
 
     @Inject
     private AuditTrailService auditTrailService;
+
+    @Inject
+    private SessionAuditDispatcher sessionAuditDispatcher;
 
     @Inject
     private SessionTraceManager sessionTraceManager;
@@ -143,6 +150,8 @@ public class SystemResource extends AbstractResource {
                     "Authenticated user is not associated with a facility", extras, null);
         }
 
+        ensureTraceContextAttributes(remoteUser, fid);
+
         ActivityModel[] array = new ActivityModel[monthsRequested + 1]; // +1=total
 
         int year = requestedYear;
@@ -188,10 +197,9 @@ public class SystemResource extends AbstractResource {
     @Path("/license")
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    public String checkLicense(String uid) {
+    public String checkLicense(@PathParam("scope") String scope, String uid) {
         
-        Map<String, Object> base = new HashMap<>();
-        base.put("uid", uid);
+        Map<String, Object> base = licenseAuditBase(scope, uid);
 
         Properties config;
         try {
@@ -350,18 +358,29 @@ public class SystemResource extends AbstractResource {
     }
 
     private void recordAudit(String action, Map<String, Object> details) {
-        if (auditTrailService == null) {
-            return;
-        }
         AuditEventPayload payload = createBaseAuditPayload(action);
         Map<String, Object> enriched = new HashMap<>();
         if (details != null) {
             enriched.putAll(details);
         }
         enrichRemoteUserDetails(enriched);
-        enrichTraceDetails(enriched);
+        String traceId = enrichTraceDetails(enriched);
+        attachTraceCorrelation(payload, enriched, traceId);
         payload.setDetails(enriched);
-        auditTrailService.record(payload);
+        dispatchAudit(payload);
+    }
+
+    private void dispatchAudit(AuditEventPayload payload) {
+        if (payload == null) {
+            return;
+        }
+        if (sessionAuditDispatcher != null) {
+            sessionAuditDispatcher.record(payload);
+            return;
+        }
+        if (auditTrailService != null) {
+            auditTrailService.record(payload);
+        }
     }
 
     private AuditEventPayload createBaseAuditPayload(String action) {
@@ -373,7 +392,11 @@ public class SystemResource extends AbstractResource {
         payload.setAction(action);
         payload.setResource(resolveResourcePath());
         String traceId = resolveTraceId(httpServletRequest);
-        payload.setRequestId(traceId != null ? traceId : resolveRequestId());
+        if (traceId == null || traceId.isBlank()) {
+            traceId = resolveRequestId();
+        }
+        payload.setRequestId(traceId);
+        payload.setTraceId(traceId);
         payload.setIpAddress(resolveIpAddress());
         payload.setUserAgent(resolveUserAgent());
         return payload;
@@ -392,28 +415,85 @@ public class SystemResource extends AbstractResource {
             details.put("remoteUser", remoteUser);
             int idx = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
             if (idx > 0) {
-                details.put("facilityId", remoteUser.substring(0, idx));
+                String facilityId = remoteUser.substring(0, idx);
+                details.put("facilityId", facilityId);
                 if (idx + 1 < remoteUser.length()) {
                     details.put("userId", remoteUser.substring(idx + 1));
                 }
+                ensureTraceContextAttributes(remoteUser, facilityId);
+            } else {
+                ensureTraceContextAttributes(remoteUser, null);
             }
         }
     }
 
-    private void enrichTraceDetails(Map<String, Object> details) {
-        boolean traceCaptured = false;
+    private String enrichTraceDetails(Map<String, Object> details) {
+        String traceId = null;
         if (sessionTraceManager != null) {
             SessionTraceContext context = sessionTraceManager.current();
             if (context != null) {
-                details.put("traceId", context.getTraceId());
+                traceId = context.getTraceId();
                 details.put("sessionOperation", context.getOperation());
-                traceCaptured = true;
             }
         }
-        if (!traceCaptured) {
-            String traceId = resolveTraceId(httpServletRequest);
-            if (traceId != null) {
+        if (traceId == null || traceId.isBlank()) {
+            traceId = resolveTraceId(httpServletRequest);
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+        }
+        return traceId;
+    }
+
+    private void attachTraceCorrelation(AuditEventPayload payload, Map<String, Object> details, String candidateTraceId) {
+        String traceId = candidateTraceId;
+        if ((traceId == null || traceId.isBlank()) && sessionTraceManager != null) {
+            SessionTraceContext context = sessionTraceManager.current();
+            if (context != null && context.getTraceId() != null && !context.getTraceId().isBlank()) {
+                traceId = context.getTraceId();
+            }
+        }
+        if (traceId == null || traceId.isBlank()) {
+            traceId = resolveTraceId(httpServletRequest);
+        }
+        if (traceId == null || traceId.isBlank()) {
+            traceId = payload.getRequestId();
+        }
+        if (traceId == null || traceId.isBlank()) {
+            traceId = resolveRequestId();
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            payload.setTraceId(traceId);
+            if (payload.getRequestId() == null || payload.getRequestId().isBlank()) {
+                payload.setRequestId(traceId);
+            }
+            if (details != null && !details.containsKey("traceId")) {
                 details.put("traceId", traceId);
+            }
+        }
+    }
+
+    private void ensureTraceContextAttributes(String remoteUser, String facilityId) {
+        if (sessionTraceManager == null) {
+            return;
+        }
+        if (remoteUser != null && !remoteUser.isBlank()) {
+            String existingActor = sessionTraceManager.getAttribute(SessionTraceAttributes.ACTOR_ID);
+            if (existingActor == null || existingActor.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.ACTOR_ID, remoteUser);
+            }
+        }
+        if (facilityId != null && !facilityId.isBlank()) {
+            String existingFacility = sessionTraceManager.getAttribute(SessionTraceAttributes.FACILITY_ID);
+            if (existingFacility == null || existingFacility.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.FACILITY_ID, facilityId);
+            }
+        }
+        String traceId = resolveTraceId(httpServletRequest);
+        if (traceId != null && !traceId.isBlank()) {
+            String existingRequest = sessionTraceManager.getAttribute(SessionTraceAttributes.REQUEST_ID);
+            if (existingRequest == null || existingRequest.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.REQUEST_ID, traceId);
             }
         }
     }
@@ -455,6 +535,15 @@ public class SystemResource extends AbstractResource {
 
     private String resolveRemoteUser() {
         return httpServletRequest != null ? httpServletRequest.getRemoteUser() : null;
+    }
+
+    private Map<String, Object> licenseAuditBase(String scope, String uid) {
+        Map<String, Object> base = new HashMap<>();
+        base.put("uid", uid);
+        if (scope != null && !scope.isBlank()) {
+            base.put("scope", scope);
+        }
+        return base;
     }
 
     private record ActivityQueryRequest(int year, int month, int monthsRequested) {

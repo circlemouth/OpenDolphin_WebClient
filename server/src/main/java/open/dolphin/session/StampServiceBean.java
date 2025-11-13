@@ -228,7 +228,9 @@ public class StampServiceBean {
         payload.setActorRole(context.getActorRole());
         payload.setAction(action);
         payload.setResource(defaultResourcePath(context));
-        payload.setRequestId(coalesce(context.getTraceId(), context.getRequestId()));
+        String resolvedTraceId = coalesce(context.getTraceId(), context.getRequestId());
+        payload.setRequestId(resolvedTraceId);
+        payload.setTraceId(resolvedTraceId);
         payload.setIpAddress(context.getIpAddress());
         payload.setUserAgent(context.getUserAgent());
         return payload;

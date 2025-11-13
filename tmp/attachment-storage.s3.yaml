@@ -1,0 +1,24 @@
+# storage.type: s3
+# storage.s3.bucket: opendolphin-attachments
+# storage.s3.region: ap-northeast-1
+# storage.s3.basePath: clinics/${FACILITY_ID}/documents
+# storage.s3.accessKey: opendolphin
+# storage.s3.secretKey: opendolphin-secret
+storage:
+  type: s3
+  database:
+    lobTable: d_attachment
+  s3:
+    bucket: opendolphin-attachments
+    region: ap-northeast-1
+    endpoint: http://minio:9000
+    basePath: clinics/${FACILITY_ID}/documents
+    forcePathStyle: true
+    serverSideEncryption: AES256
+    kmsKeyId: null
+    multipartUploadThresholdMb: 64
+    accessKey: opendolphin
+    secretKey: opendolphin-secret
+    lifecycle:
+      transitionToStandardIaAfterDays: 30
+      expireAfterDays: 3650

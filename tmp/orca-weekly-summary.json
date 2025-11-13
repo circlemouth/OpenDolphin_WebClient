@@ -1,0 +1,25 @@
+{
+  "generatedAt": "2025-11-13T01:24:00.201Z",
+  "progress": {
+    "path": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+    "latestOrcaEvidence": {
+      "label": "W19",
+      "date": "2025-11-18",
+      "runId": "20251118T120000Z",
+      "summary": "ORCA 接続テンプレートを RUN_ID 付きディレクトリへコピーし、`node scripts/tools/orca-artifacts-namer.js artifacts/orca-connectivity` の通過ログ（`namer_check.log`）まで採取して命名ポリシー順守を確認。各ファイルに placeholder 出力を 1 行ずつ加え、次週以降の再取得準備を Evidence として残した。Evidence: [artifacts/orca-connectivity/20251118T120000Z/](../../../artifacts/orca-connectivity/20251118T120000Z/)。",
+      "headingRaw": "W19（2025-11-18, RUN_ID=`20251118T120000Z`）"
+    }
+  },
+  "docStatus": {
+    "path": "docs/web-client/planning/phase2/DOC_STATUS.md",
+    "latestWeeklyRow": {
+      "weekRange": "W21 (2025-11-12〜2025-11-18)",
+      "owner": "Codex",
+      "summary": "`PHASE2_PROGRESS.md` の ORCA テンプレ節へ W18/W19 RUN_ID と Evidence パスを紐付け、`docs/web-client/README.md` ORCA セクションに「直近週次: 2025-11-13 (W21)」を追加してハブ同期を確認。週次棚卸しテーブル（本行）で進捗ログと依存ドキュメントの整合性を更新。",
+      "nextAction": "W22 で 9080 port-forward 復旧後に Modernized 側 200 応答を含む ORCA 実測（`artifacts/orca-connectivity/<新RUN_ID>/`）を採取し、PHASE2_PROGRESS / DOC_STATUS / README を再同期。",
+      "weekLabel": "W21",
+      "startDate": "2025-11-12",
+      "endDate": "2025-11-18"
+    }
+  }
+}

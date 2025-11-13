@@ -1,0 +1,11 @@
+HTTP/1.1 200 OK
+Referrer-Policy: no-referrer
+Content-Security-Policy: default-src 'self'
+X-Trace-Id: cdbdf276-a7bf-44e2-b0e7-ccdc01fd4e49
+Date: Wed, 12 Nov 2025 23:03:10 GMT
+Connection: keep-alive
+Strict-Transport-Security: max-age=63072000; includeSubDomains
+X-Content-Type-Options: nosniff
+Content-Type: text/plain;charset=UTF-8
+Content-Length: 1
+

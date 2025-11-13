@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+cat <<'JSON'
+{
+  "data": {
+    "data": {
+      "license.key": "DUMMY-KEY-2025",
+      "license.secret": "DUMMY-SECRET-2025",
+      "license.uid_seed": "UIDSEEDMOCK",
+      "rotated_at": "2025-10-31T12:00:00Z"
+    }
+  }
+}
+JSON

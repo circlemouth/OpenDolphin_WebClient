@@ -20,10 +20,8 @@ public class IModuleInfo implements java.io.Serializable {
     
     // 実態
     private String entity;
-    
-////minagawa^ 入院対応
-//    private String performFlag;
-////minagawa$    
+
+    private String performFlag;
     
     public IModuleInfo() {
     }
@@ -65,9 +63,7 @@ public class IModuleInfo implements java.io.Serializable {
         this.setStampRole(model.getStampRole());
         this.setEntity(model.getEntity());
         this.setStampNumber(model.getStampNumber());
-////minagawa^ 入院対応
-//        this.setPerformFlag(model.getPerformFlag());
-////minagawa$          
+        this.setPerformFlag(model.getPerformFlag());
     }
     
     public ModuleInfoBean toModel() {
@@ -76,17 +72,15 @@ public class IModuleInfo implements java.io.Serializable {
         ret.setStampRole(this.getStampRole());
         ret.setEntity(this.getEntity());
         ret.setStampNumber(this.getStampNumber());
-////minagawa^ 入院対応
-//        ret.setPerformFlag(this.getPerformFlag());
-////minagawa$           
+        ret.setPerformFlag(this.getPerformFlag());
         return ret;
     }
 
-//    public String getPerformFlag() {
-//        return performFlag;
-//    }
-//
-//    public void setPerformFlag(String performFlag) {
-//        this.performFlag = performFlag;
-//    }
+    public String getPerformFlag() {
+        return performFlag;
+    }
+
+    public void setPerformFlag(String performFlag) {
+        this.performFlag = performFlag;
+    }
 }

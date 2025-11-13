@@ -1,16 +1,20 @@
 package open.dolphin.touch;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.HashMap;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.rest.LogFilter;
+import open.dolphin.touch.support.TouchFailureAuditLogger;
 
 /**
  * Centralised facility authorization helper for Touch endpoints.
@@ -26,6 +30,9 @@ public class TouchAuthHandler {
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
     private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
 
+    @Inject
+    TouchFailureAuditLogger failureAuditLogger;
+
     /**
      * Ensures the X-Facility-Id header is present and matches the authenticated user.
      *
@@ -37,11 +44,19 @@ public class TouchAuthHandler {
         Objects.requireNonNull(request, "request must not be null");
         String headerValue = normalize(request.getHeader(FACILITY_HEADER));
         if (headerValue == null) {
+            recordAuthorizationFailure(request, endpoint, Response.Status.BAD_REQUEST,
+                    "missing_facility_header",
+                    Map.of("headerFacility", null));
             throw failure(Response.Status.BAD_REQUEST, endpoint, "missing X-Facility-Id header");
         }
         String remoteFacilityRaw = resolveRemoteFacility(request);
         String remoteFacility = normalize(remoteFacilityRaw);
         if (remoteFacility != null && !remoteFacility.equals(headerValue)) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("headerFacility", headerValue);
+            details.put("remoteFacility", remoteFacilityRaw);
+            recordAuthorizationFailure(request, endpoint, Response.Status.FORBIDDEN,
+                    "facility_mismatch_header", details);
             throw failure(Response.Status.FORBIDDEN, endpoint,
                     () -> "facility mismatch header=" + headerValue + " remote=" + remoteFacilityRaw);
         }
@@ -63,10 +78,19 @@ public class TouchAuthHandler {
         String remoteFacility = normalize(remoteFacilityRaw);
         String expected = normalize(facilityId);
         if (remoteFacility == null) {
+            recordAuthorizationFailure(request, endpoint, Response.Status.UNAUTHORIZED,
+                    "remote_facility_missing",
+                    Map.of("facilityId", facilityId));
             throw failure(Response.Status.UNAUTHORIZED, endpoint,
                     () -> "remote facility unavailable for facility=" + facilityId);
         }
         if (remoteFacility != null && expected != null && !remoteFacility.equals(expected)) {
+            Map<String, Object> details = new HashMap<>();
+            details.put("expectedFacility", expected);
+            details.put("remoteFacility", remoteFacilityRaw);
+            details.put("facilityId", facilityId);
+            recordAuthorizationFailure(request, endpoint, Response.Status.FORBIDDEN,
+                    "facility_mismatch_remote", details);
             throw failure(Response.Status.FORBIDDEN, endpoint,
                     () -> "facility mismatch expected=" + expected + " remote=" + remoteFacilityRaw);
         }
@@ -125,6 +149,28 @@ public class TouchAuthHandler {
         }
         Response response = responseBuilder.build();
         return new WebApplicationException(response);
+    }
+
+    private void recordAuthorizationFailure(HttpServletRequest request,
+                                            String endpoint,
+                                            Response.Status status,
+                                            String errorCode,
+                                            Map<String, Object> details) {
+        if (failureAuditLogger == null) {
+            return;
+        }
+        Map<String, Object> enriched = new HashMap<>();
+        if (details != null) {
+            enriched.putAll(details);
+        }
+        if (endpoint != null) {
+            enriched.put("endpoint", endpoint);
+        }
+        String principal = sanitizeRemoteUser(request != null ? request.getRemoteUser() : null);
+        if (principal == null && request != null) {
+            principal = sanitizeRemoteUser(request.getHeader(HEADER_USER_NAME));
+        }
+        failureAuditLogger.recordAuthorizationFailure(request, endpoint, status, errorCode, null, enriched, principal);
     }
 
     private String normalize(String value) {

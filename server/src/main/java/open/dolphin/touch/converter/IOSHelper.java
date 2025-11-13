@@ -8,6 +8,12 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.time.Instant;
+import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.Date;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -55,9 +61,32 @@ public class IOSHelper {
             try {
                 ret = new SimpleDateFormat(IOS_DATE_FORMAT_OLD).parse(dateStr);
             } catch (ParseException ex) {
+                ret = parseIso8601(dateStr);
             }
         }
         return ret;
+    }
+
+    private static Date parseIso8601(String value) {
+        if (value == null) {
+            return null;
+        }
+        try {
+            OffsetDateTime odt = OffsetDateTime.parse(value, DateTimeFormatter.ISO_OFFSET_DATE_TIME);
+            return Date.from(odt.toInstant());
+        } catch (DateTimeParseException ignored) {
+        }
+        try {
+            Instant instant = Instant.parse(value);
+            return Date.from(instant);
+        } catch (DateTimeParseException ignored) {
+        }
+        try {
+            LocalDateTime ldt = LocalDateTime.parse(value, DateTimeFormatter.ISO_LOCAL_DATE_TIME);
+            return Date.from(ldt.atZone(ZoneId.systemDefault()).toInstant());
+        } catch (DateTimeParseException ignored) {
+        }
+        return null;
     }
     
     public static String toDateStr(Date d) {

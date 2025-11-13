@@ -15,6 +15,7 @@ import open.dolphin.adm20.converter.IPatientModel;
 import open.dolphin.adm20.converter.ISendPackage;
 import open.dolphin.adm20.converter.IVisitPackage;
 import open.dolphin.converter.StringListConverter;
+import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.PatientList;
 import open.dolphin.infomodel.StringList;
 import open.dolphin.touch.JsonTouchSharedService;
@@ -130,15 +131,17 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage(String json) throws IOException {
-        
-        //System.err.println(json);
-        
+    public String postSendPackage(@Context HttpServletRequest servletReq, String json) throws IOException {
+
         ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
-        
+        DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
+        if (wrapper != null) {
+            populateDiagnosisAuditMetadata(servletReq, wrapper, "/20/adm/jtouch/sendPackage");
+        }
+
         long retPk = sharedService.processSendPackageElements(
                 pkg != null ? pkg.documentModel() : null,
-                pkg != null ? pkg.diagnosisSendWrapperModel() : null,
+                wrapper,
                 pkg != null ? pkg.deletedDiagnsis() : null,
                 pkg != null ? pkg.chartEventModel() : null);
         return String.valueOf(retPk);
@@ -149,13 +152,17 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage2(String json) throws IOException {
-        
+    public String postSendPackage2(@Context HttpServletRequest servletReq, String json) throws IOException {
+
         ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
-        
+        DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
+        if (wrapper != null) {
+            populateDiagnosisAuditMetadata(servletReq, wrapper, "/20/adm/jtouch/sendPackage2");
+        }
+
         long retPk = sharedService.processSendPackageElements(
                 pkg != null ? pkg.documentModel() : null,
-                pkg != null ? pkg.diagnosisSendWrapperModel() : null,
+                wrapper,
                 pkg != null ? pkg.deletedDiagnsis() : null,
                 pkg != null ? pkg.chartEventModel() : null);
         return String.valueOf(retPk);

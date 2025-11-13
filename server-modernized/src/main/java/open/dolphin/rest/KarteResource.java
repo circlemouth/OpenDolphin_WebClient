@@ -369,12 +369,14 @@ public class KarteResource extends AbstractResource {
     @Path("/diagnosis/claim")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postPutSendDiagnosis(String json) throws IOException {
-        
+    public String postPutSendDiagnosis(@Context HttpServletRequest servletReq, String json) throws IOException {
+
         ObjectMapper mapper = new ObjectMapper();
         // 2013/06/24
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         DiagnosisSendWrapper wrapper = mapper.readValue(json, DiagnosisSendWrapper.class);
+
+        populateDiagnosisAuditMetadata(servletReq, wrapper, "/karte/diagnosis/claim");
 
         List<Long> result = karteServiceBean.postPutSendDiagnosis(wrapper);
 

@@ -32,6 +32,9 @@ public final class PdfDocumentWriter {
     private static final String FONT_PROPERTY = "opendolphin.reporting.font";
     private static final String FONT_ENV = "OPENDOLPHIN_REPORT_FONT_PATH";
     private static final String[] DEFAULT_FONT_PATHS = new String[] {
+        "/opt/fonts/NotoSansCJKjp-Regular.otf",
+        "/opt/fonts/NotoSansJP-Regular.otf",
+        "/opt/fonts/NotoSansJP-Regular.ttf",
         "/usr/share/fonts/opentype/noto/NotoSansCJKjp-Regular.otf",
         "/usr/share/fonts/opentype/noto/NotoSansJP-Regular.otf",
         "/usr/share/fonts/truetype/noto/NotoSansCJKjp-Regular.otf",
@@ -48,7 +51,9 @@ public final class PdfDocumentWriter {
             Files.createDirectories(outputPath.getParent());
         }
         Document document = new Document(PageSize.A4, 36, 36, 54, 54);
-        try (OutputStream outputStream = Files.newOutputStream(outputPath)) {
+        OutputStream outputStream = null;
+        try {
+            outputStream = Files.newOutputStream(outputPath);
             PdfWriter.getInstance(document, outputStream);
             document.open();
             BaseFont baseFont = createBaseFont();
@@ -61,6 +66,13 @@ public final class PdfDocumentWriter {
         } finally {
             if (document.isOpen()) {
                 document.close();
+            }
+            if (outputStream != null) {
+                try {
+                    outputStream.close();
+                } catch (IOException ex) {
+                    LOGGER.log(Level.WARNING, "Failed to close PDF output stream", ex);
+                }
             }
         }
     }
@@ -153,12 +165,12 @@ public final class PdfDocumentWriter {
                 LOGGER.log(Level.FINER, "Font load error", ex);
             }
         }
-        LOGGER.warning(() -> "Falling back to non-embedded HeiseiKakuGo-W5. Install Noto Sans CJK and set "
-                + FONT_ENV + " or " + FONT_PROPERTY + " to embed fonts.");
+        LOGGER.warning(() -> "Falling back to bundled HeiseiKakuGo-W5. Install Noto Sans CJK and set "
+                + FONT_ENV + " or " + FONT_PROPERTY + " to embed fonts from /opt/fonts.");
         try {
-            return BaseFont.createFont("HeiseiKakuGo-W5", "UniJIS-UCS2-H", BaseFont.NOT_EMBEDDED);
+            return BaseFont.createFont("HeiseiKakuGo-W5", "UniJIS-UCS2-H", BaseFont.EMBEDDED);
         } catch (DocumentException | IOException ex) {
-            return BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.NOT_EMBEDDED);
+            return BaseFont.createFont(BaseFont.HELVETICA, BaseFont.WINANSI, BaseFont.EMBEDDED);
         }
     }
 

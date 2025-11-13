@@ -6,12 +6,14 @@ import java.util.Date;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.Objects;
+import java.util.UUID;
 import java.util.logging.Logger;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.IInfoModel;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.map.SerializationConfig;
@@ -66,6 +68,44 @@ public class AbstractResource {
         mapper.configure(SerializationConfig.Feature.WRITE_NULL_MAP_VALUES, false);
         mapper.configure(SerializationConfig.Feature.FAIL_ON_EMPTY_BEANS, false);
         return mapper;
+    }
+
+    protected void populateDiagnosisAuditMetadata(HttpServletRequest request,
+            DiagnosisSendWrapper wrapper,
+            String resourcePath) {
+        if (wrapper == null) {
+            return;
+        }
+        if (request != null) {
+            wrapper.setRemoteUser(request.getRemoteUser());
+            String traceId = resolveTraceId(request);
+            if (traceId != null && !traceId.isEmpty()) {
+                wrapper.setTraceId(traceId);
+            }
+            String requestIdHeader = request.getHeader("X-Request-Id");
+            if (requestIdHeader != null && !requestIdHeader.isEmpty()) {
+                wrapper.setRequestId(requestIdHeader);
+            }
+            if (resourcePath == null || resourcePath.isEmpty()) {
+                wrapper.setAuditResource(request.getRequestURI());
+            }
+        }
+        if (resourcePath != null && !resourcePath.isEmpty()) {
+            wrapper.setAuditResource(resourcePath);
+        }
+        if (wrapper.getTraceId() == null || wrapper.getTraceId().isEmpty()) {
+            String fallbackTrace = resolveTraceId(request);
+            if (fallbackTrace != null && !fallbackTrace.isEmpty()) {
+                wrapper.setTraceId(fallbackTrace);
+            }
+        }
+        if (wrapper.getRequestId() == null || wrapper.getRequestId().isEmpty()) {
+            String fallback = wrapper.getTraceId();
+            if (fallback == null || fallback.isEmpty()) {
+                fallback = UUID.randomUUID().toString();
+            }
+            wrapper.setRequestId(fallback);
+        }
     }
 
     protected String resolveTraceId(HttpServletRequest request) {

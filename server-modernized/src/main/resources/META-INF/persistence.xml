@@ -27,11 +27,19 @@
         <class>open.dolphin.infomodel.DocumentModel</class>
         <class>open.dolphin.infomodel.ModuleModel</class>
         <class>open.dolphin.infomodel.SchemaModel</class>
+        <class>open.dolphin.infomodel.ObservationModel</class>
+        <class>open.dolphin.infomodel.PatientMemoModel</class>
         <class>open.dolphin.infomodel.AttachmentModel</class>
+        <class>open.dolphin.infomodel.Factor2Device</class>
+        <class>open.dolphin.infomodel.Factor2Code</class>
+        <class>open.dolphin.infomodel.Factor2Credential</class>
+        <class>open.dolphin.infomodel.Factor2Challenge</class>
+        <class>open.dolphin.infomodel.Factor2BackupKey</class>
         <class>open.dolphin.infomodel.AuditEvent</class>
         <properties>
             <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
+            <property name="hibernate.jdbc.use_streams_for_lob" value="false"/>
             <property name="hibernate.jdbc.lob.non_contextual_creation" value="true"/>
             <property name="hibernate.enable_lazy_load_no_trans" value="false"/>
             <property name="hibernate.temp.use_jdbc_metadata_defaults" value="false"/>

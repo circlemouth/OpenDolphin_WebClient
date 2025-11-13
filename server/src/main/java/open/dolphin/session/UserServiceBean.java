@@ -37,6 +37,10 @@ public class UserServiceBean {
     
     public boolean authenticate(String userName, String password) {
 
+        if (userName == null || password == null) {
+            return false;
+        }
+
         boolean ret = false;
 
         try {
@@ -44,7 +48,8 @@ public class UserServiceBean {
                 em.createQuery(QUERY_USER_BY_UID)
                   .setParameter(UID, userName)
                   .getSingleResult();
-            if (user.getPassword().equals(password)) {
+            String storedPassword = user.getPassword();
+            if (storedPassword != null && storedPassword.equals(password)) {
                 ret = true;
             }
 

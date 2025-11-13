@@ -19,6 +19,8 @@ public class ISendPackage {
     
     private List<String> deletedDiagnosis;
 
+    private String issuedAt;
+
     public IChartEvent getChartEvent() {
         return chartEvent;
     }
@@ -49,6 +51,14 @@ public class ISendPackage {
 
     public void setDeletedDiagnosis(List<String> deletedDiagnosis) {
         this.deletedDiagnosis = deletedDiagnosis;
+    }
+
+    public String getIssuedAt() {
+        return issuedAt;
+    }
+
+    public void setIssuedAt(String issuedAt) {
+        this.issuedAt = issuedAt;
     }
     
     public ChartEventModel chartEventModel() {

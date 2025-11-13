@@ -223,14 +223,14 @@ JMS queue は今回もヒットなし（`messages-added=0L`, `message-count=0L`�
 ### 8.1 JMS / Audit / Trace
 - `logs/jms_dolphinQueue_read-resource.txt`：`messages-added=1L`, `message-count=0L`, `delivering-count=0`。Trace Harness 4 ケースでは JMS 送信が発生せず Queue 指標は初期値。
 - `logs/jms_DLQ_list-messages.txt`：空配列。DLQ 流入なし。
-- `logs/d_audit_event_trace-http-*.sql`：全て 0 行。`information_schema.columns` にも `trace_id` 列が存在しないため、監査ログから Trace ID を突合できない現状を明文化。
+- `logs/d_audit_event_trace-http-*.sql`：2025-11-10 RUN では全て 0 行かつ `information_schema.columns` に `trace_id` が無かったため突合不能だった。2025-11-12 RUN（`20251116TtracePropagationZ1`）で `V0227__audit_event_trace_id.sql` を導入し `ALTER TABLE ... ADD COLUMN trace_id` を dev DB に適用済みだが、`trace_http_{200,400,401,500}` の監査レコードは依然 0 行である。
 - `logs/modern_trace_http.log`：helper コンテナ経由のアクセス (`172.23.0.7`) とホスト (`192.168.65.1`) の両方で `traceId=trace-http-*` を確認。Legacy 側は未実装。
 
 ### 8.2 課題とフォローアップ
 1. **Legacy LogFilter 防御不足** — `LogFilter` で `password` が null の場合に 500 へ落ちるため、匿名や 401 ケースを再現できない。`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` #94 にブロッカーとして追記。
 2. **Touch 系の例外共通化不足** — `TouchRequestContextExtractor` による `IllegalStateException` / `Unauthorized user` が 403/500 を引き起こし、401 ハーネスが成立しない。`AbstractResource#getRemoteFacility` との乖離を解消しつつ、`UserServiceBean#authenticate` の facility 判定と `LogFilter` null チェックを緩和して `@SessionOperation` が確実に JMS/Audit まで届く経路を確保する。
 3. **KarteBeanConverter null-safe 化** — `trace_http_500` が 400 で終了する要因。`domain-transaction-parity.md §3` に記載済みの `PatientVisitModel` 追加 / `KarteBeanConverter` 修正を優先度高で対応。
-4. **監査ログ拡張** — Trace Harness で収集した `d_audit_event` が空のため、`TRACEID_JMS_RUNBOOK.md` §4.2 に `trace_id` カラム追加案と `psql` 検証結果（0 行）を追記する。
+4. **監査ログ拡張** — `trace_id` カラム追加（`V0227__audit_event_trace_id.sql` および `ops/db/local-baseline/reset_d_audit_event_seq*.sql`）は完了したが、`trace_http_*` の監査レコードは 0 行のまま。`TRACEID_JMS_RUNBOOK.md` §4.2 に `ALTER TABLE ... ADD COLUMN trace_id` 手順と `20251116TtracePropagationZ1` の検証結果（0 行）を追記した。
 5. **Docs 反映** — 本 RUN_ID を `PHASE2_PROGRESS.md`・`DOC_STATUS.md`（`TRACE_PROPAGATION_CHECK.md` 行）・`SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ8-1/8-2 備考へリンク済み。以後の再取得では本節の表を更新し、Legacy/Modern 両系統で 200/400/401/500 の想定値に到達するまで差分管理を続ける。
 
 ### 8.3 2025-11-10 22:16Z 追記（RUN_ID=20251110T221659Z / `--profile compose`）
@@ -238,6 +238,34 @@ JMS queue は今回もヒットなし（`messages-added=0L`, `message-count=0L`�
 - `logs/jms_dolphinQueue_read-resource.txt` は `messages-added=0L`, `message-count=0L`, `delivering-count=0` を維持し、`logs/jms_DLQ_list-messages.txt` も空配列。GET ベースの Trace Harness では JMS へ進まないため、次回は Claim/Touch 送信系でモニタを更新する必要がある。
 - `logs/modern_trace_http.log` に `Unauthorized user: {null|doctor1} ... traceId=trace-http-*` の WARN が並び、Touch/EHT サービスでも `SessionOperation` が動作していることを実証。Legacy 側 `logs/legacy_trace_http.log` は空で、auth 層に `traceId` を残す改修が未着手。
 - 403 化により `trace_http_{400,401,500}` が想定ステータスへ到達していない点、`LogFilter#password.equals` NPE が残っている点を `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` #72 と `PHASE2_PROGRESS.md` 2025-11-10 節へ追記事項として共有した。
+
+### 8.4 2025-11-12 14:20Z: helper Trace Harness（RUN_ID=20251116TtracePropagationZ1）
+- helper コンテナ（`mcr.microsoft.com/devcontainers/base:jammy`）から `TRACE_RUN_ID=20251116TtracePropagationZ1` を与えて `tmp/trace_http_{200,400,401,500}.headers` を送出。`trace_http_{200,400,500}` は平文パスワード `doctor2025` に差し替え、`trace_http_401` は password 行を削除した。
+- 証跡: `artifacts/parity-manual/TRACEID_JMS/20251116TtracePropagationZ1/trace_http_*/{legacy,modern}/`、`logs/{send_parallel_request,modern_trace_http,legacy_trace_http,modern_logfilter,jms_dolphinQueue_read-resource*.txt,d_audit_event_trace_http_*.sql}`。
+
+| Case | Legacy (`opendolphin-server:8080`) | Modernized (`opendolphin-server-modernized-dev:8080`) | ハイライト |
+| --- | --- | --- | --- |
+| `trace_http_200` | 200 / 空ボディ | 200 / 空ボディ | Jamri ハートビート。`logs/modern_trace_http.log` に `trace-http-200-20251116TtracePropagationZ1` が 2 行出力。 |
+| `trace_http_400` | 400 / `invalid_activity_param` | 400 / `invalid_activity_param` | `SystemResource#getActivities` の BadRequest が JSON 400 に揃った。Trace ID はヘッダー + レスポンスの両方で確認。 |
+| `trace_http_401` | 401 / `authentication_failed` | 401 / `authentication_failed` | password 欠落ヘッダーで 401 を誘発。Touch 経路はまだ JMS/Audit へ達していないため、HTTP と WildFly WARN で TraceId を突合。 |
+| `trace_http_500` | 500 / `karte_lookup_failed` | 500 / `karte_lookup_failed` | `KarteResource` の Null 例外を 500 JSON に変換。`context=pid_lookup` と TraceId が REST 応答に残る。 |
+
+- **JMS/Audit**: Modernized queue は `messages-added=6L`・`message-count=0L`（`logs/jms_dolphinQueue_read-resource.txt`）、Legacy queue は `messages-added=0L` のまま。`d_audit_event_trace_http_*.sql` と `..._legacy.sql` は全て 0 行で、AuditTrail 呼び出し未達が継続。`logs/d_audit_event_seq_status.txt` で `last_value` / `is_called` も据え置きであることを記録した。
+- **ログ**: `logs/modern_logfilter.log` には `LogFilter header fallback is enabled` と `Unauthorized user: ... traceId=trace-http-401-...` が出力され、`logs/legacy_trace_http.log` でも Legacy `open.dolphin` カテゴリが TraceId を残すようになった。Helper コンテナ実行ログは `logs/send_parallel_request.log` に 8 行で保存している。
+
+### 8.5 2025-11-13 06:30Z: helper Trace Harness（RUN_ID=20251117TtraceAuditZ1）
+- Modernized `opendolphin-server.war` をローカルで `mvn -pl server-modernized -DskipTests package` し、稼働中コンテナへ直接上書き (`docker cp .../opendolphin-server.war opendolphin-server-modernized-dev:/opt/jboss/wildfly/...`)。同タイミングで `SessionOperationInterceptor` に `WebApplicationException` バイパスを追加して 400/401 のレスポンスを 500 へ格上げしないようにした。
+- helper コンテナ（`--network legacy-vs-modern_default`）から `tmp/trace_http_{200,400,401,500}.headers` を実行。証跡は `artifacts/parity-manual/TRACEID_JMS/20251117TtraceAuditZ1/trace_http_*/{legacy,modern}/` と `logs/{send_parallel_request,modern_trace_http,legacy_trace_http,modern_logfilter,jms_dolphinQueue_read-resource{,_legacy}.txt,d_audit_event_trace_http_*.sql}`。
+
+| Case | Legacy (`opendolphin-server:8080`) | Modernized (`opendolphin-server-modernized-dev:8080`) | ハイライト |
+| --- | --- | --- | --- |
+| `trace_http_200` | 200 / 空ボディ | 200 / 空ボディ | 既定の Jamri ハートビート。TRACE ID はレスポンスヘッダーと `logs/modern_trace_http.log` の両方に残る。 |
+| `trace_http_400` | 400 / `invalid_activity_param` | 400 / `invalid_activity_param` | `SessionOperationInterceptor` の修正により BadRequest が 500 へ昇格しなくなった。Legacy も 400 に整列。 |
+| `trace_http_401` | 401 / `authentication_failed` | 401 / `authentication_failed` | 新実装した `REST_UNAUTHORIZED_GUARD`（`SessionAuditDispatcher.record`) が `d_audit_event_trace_http_401.sql` に 3 行残り、TraceId/actorId/requestId が永続化された。 |
+| `trace_http_500` | 500 / `karte_lookup_failed` | 500 / `karte_lookup_failed` | 既知の `KarteBeanConverter` null 例外。TraceId/エラー詳細は REST 応答・WildFly ログに記録され、監査は未到達。 |
+
+- **JMS/Audit**: Modernized queue は `messages-added=9L`・`message-count=0L` (`logs/jms_dolphinQueue_read-resource.txt`)、Legacy queue は `messages-added=0L` (`..._legacy.txt`) のまま。`d_audit_event_trace_http_401.sql` のみ `REST_UNAUTHORIZED_GUARD` が 3 行、その他 `trace_http_{200,400,500}` は 0 行で、401 以外の経路に AuditTrail 呼び出しを流し込む作業が残る。`logs/d_audit_event_seq_status.txt` には Modernized `max(id)` とシーケンス値を記録。
+- **ログ**: `logs/modern_logfilter.log` で 401 時に `Unauthorized user` と `TraceId` が WARN 出力され、Legacy 側 `logs/legacy_trace_http.log` にも traceId が可視化された。送信コマンドは `logs/send_parallel_request.log`（8 行）に保存。
 
 =======
 ## 6. 2025-11-10: SessionOperation Trace Harness（RUN_ID=20251110T002045Z）

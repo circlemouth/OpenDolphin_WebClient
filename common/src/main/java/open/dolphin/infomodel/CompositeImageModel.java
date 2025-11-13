@@ -1,6 +1,7 @@
 package open.dolphin.infomodel;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.swing.ImageIcon;
 
 /**
@@ -30,6 +31,7 @@ public class CompositeImageModel extends KarteEntryBean implements java.io.Seria
     private int imageNumber;
     
     @Transient
+    @JsonIgnore
     private ImageIcon icon;
     
     @Lob

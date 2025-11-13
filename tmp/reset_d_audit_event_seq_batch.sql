@@ -32,6 +32,7 @@ WITH inserted AS (
         resource,
         patient_id,
         request_id,
+        trace_id,
         ip_address,
         user_agent,
         payload_hash,
@@ -46,6 +47,7 @@ WITH inserted AS (
         'SEQ_SMOKE',
         '{"path":"/internal/seq-check"}',
         NULL,
+        'trace-seq-smoke',
         'trace-seq-smoke',
         '127.0.0.1',
         'reset_d_audit_event_seq.sql',
@@ -71,4 +73,3 @@ FROM d_audit_event
 WHERE action = 'SEQ_SMOKE'
 ORDER BY event_time DESC
 LIMIT 5;
-

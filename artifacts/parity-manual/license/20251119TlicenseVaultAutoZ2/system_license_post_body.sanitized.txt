@@ -1,0 +1,2 @@
+# 実投入時は <license.uid_seed>-20251119TlicenseVaultAutoZ2 の形式で 1 行に UID を記載
+<uuid>-20251119TlicenseVaultAutoZ2

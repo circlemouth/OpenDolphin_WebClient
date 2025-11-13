@@ -1,0 +1,8 @@
+userName: 1.3.6.1.4.1.9414.72.103:admin
+password: admin2025
+clientUUID: parity-factor2-cli
+facilityId: 1.3.6.1.4.1.9414.72.103
+factor2-mode: admin
+Content-Type: application/json
+Accept: application/json
+X-Trace-Id: parity-factor2-totp-verification-{{RUN_ID}}

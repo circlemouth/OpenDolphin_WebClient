@@ -4,11 +4,14 @@ import java.util.List;
 import open.dolphin.infomodel.ChartEventModel;
 import open.dolphin.infomodel.DiagnosisSendWrapper;
 import open.dolphin.infomodel.DocumentModel;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  *
  * @author kazushi Minagawa
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ISendPackage {
     
     private IChartEvent chartEvent;
@@ -18,6 +21,10 @@ public class ISendPackage {
     private IDiagnosisSendWrapper diagnosisSendWrapper;
     
     private List<String> deletedDiagnosis;
+
+    // ISO8601 で送信される Touch クライアントの送信時刻
+    @JsonProperty("issuedAt")
+    private String issuedAt;
 
     public IChartEvent getChartEvent() {
         return chartEvent;
@@ -49,6 +56,14 @@ public class ISendPackage {
 
     public void setDeletedDiagnosis(List<String> deletedDiagnosis) {
         this.deletedDiagnosis = deletedDiagnosis;
+    }
+
+    public String getIssuedAt() {
+        return issuedAt;
+    }
+
+    public void setIssuedAt(String issuedAt) {
+        this.issuedAt = issuedAt;
     }
     
     public ChartEventModel chartEventModel() {

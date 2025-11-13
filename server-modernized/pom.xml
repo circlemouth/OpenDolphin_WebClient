@@ -102,20 +102,30 @@
                 <artifactId>bcpkix-jdk18on</artifactId>
                 <version>${bouncycastle.version}</version>
             </dependency>
+            <dependency>
+                <groupId>opendolphin</groupId>
+                <artifactId>opendolphin-reporting</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>opendolphin</groupId>
+                <artifactId>opendolphin-common</artifactId>
+                <classifier>jakarta</classifier>
+                <version>${project.version}</version>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
     <dependencies>
+        <!-- Shared OpenDolphin modules -->
         <dependency>
             <groupId>opendolphin</groupId>
             <artifactId>opendolphin-reporting</artifactId>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>opendolphin</groupId>
             <artifactId>opendolphin-common</artifactId>
             <classifier>jakarta</classifier>
-            <version>${project.version}</version>
         </dependency>
         <dependency>
             <groupId>jakarta.platform</groupId>
@@ -342,6 +352,17 @@
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-surefire-plugin</artifactId>
                 <version>3.1.2</version>
+                <configuration>
+                    <includes>
+                        <include>**/*Test.java</include>
+                        <include>**/*Tests.java</include>
+                        <include>**/*TestCase.java</include>
+                        <include>**/AdmConverterSnapshotTest.java</include>
+                    </includes>
+                    <systemPropertyVariables>
+                        <adm.snapshot.fixtureDir>${project.basedir}/../ops/tests/fixtures/adm</adm.snapshot.fixtureDir>
+                    </systemPropertyVariables>
+                </configuration>
             </plugin>
             <plugin>
                 <groupId>org.wildfly.plugins</groupId>

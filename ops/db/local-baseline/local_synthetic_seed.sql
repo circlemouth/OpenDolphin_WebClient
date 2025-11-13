@@ -63,6 +63,34 @@ CREATE SEQUENCE IF NOT EXISTS d_letter_module_seq
     NO MAXVALUE
     CACHE 1;
 
+CREATE SEQUENCE IF NOT EXISTS d_document_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS d_module_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS d_image_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
+CREATE SEQUENCE IF NOT EXISTS d_attachment_seq
+    START WITH 1
+    INCREMENT BY 1
+    NO MINVALUE
+    NO MAXVALUE
+    CACHE 1;
+
 CREATE TABLE IF NOT EXISTS d_letter_module (
     id BIGINT NOT NULL DEFAULT nextval('d_letter_module_seq'),
     confirmed TIMESTAMP WITHOUT TIME ZONE NOT NULL,
@@ -629,7 +657,7 @@ WITH web_patient_seed AS (
     ) VALUES (
         (SELECT id FROM web_patient_seed),
         '1.3.6.1.4.1.9414.72.103',
-        '1.3.6.1.4.1.9414.72.103:WEB1001',
+        'WEB1001',
         '青木',
         '太郎',
         '青木 太郎',

@@ -33,7 +33,7 @@ import org.codehaus.jackson.map.ObjectMapper;
  *
  * @author kazushi
  */
-@Path("/dolphin")
+@Path("/{scope : dolphin|system}")
 public class SystemResource extends AbstractResource {
 
     @Inject
@@ -186,7 +186,7 @@ public class SystemResource extends AbstractResource {
     @Path("/license")
     @Consumes(MediaType.TEXT_PLAIN)
     @Produces(MediaType.TEXT_PLAIN)
-    public String checkLicense(String uid) throws IOException {
+    public String checkLicense(@PathParam("scope") String scope, String uid) throws IOException {
         
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationConfig.Feature.FAIL_ON_UNKNOWN_PROPERTIES, false);
