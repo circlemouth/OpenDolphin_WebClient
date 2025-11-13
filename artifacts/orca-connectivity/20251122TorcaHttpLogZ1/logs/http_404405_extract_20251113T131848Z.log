@@ -1,0 +1,19 @@
+63:2025-11-13T13:18:48Z 2025/11/13 20:29:22 Auth Error:401   
+65:2025-11-13T13:18:48Z 2025/11/13 20:32:01 Auth Error:401   
+67:2025-11-13T13:18:48Z 2025/11/13 21:20:48 Auth Error:401   
+68:2025-11-13T13:18:48Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:35046 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc001564050 <nil> [] map[]}
+69:2025-11-13T13:18:48Z 2025/11/13 21:21:49 Auth Error:401   
+71:2025-11-13T13:18:48Z 2025/11/13 21:22:05 Auth Error:401   
+199:2025-11-13T13:18:49Z 2025/11/13 21:42:31 Auth Error:401   
+201:2025-11-13T13:18:49Z 2025/11/13 21:42:53 Auth Error:401   
+203:2025-11-13T13:18:49Z 2025/11/13 21:43:06 System Error:404    code=404, message=Not Found
+215:2025-11-13T13:18:49Z 2025/11/13 21:56:26 System Error:405    code=405, message=Method Not Allowed
+227:2025-11-13T13:18:49Z 2025/11/13 21:56:31 System Error:405    code=405, message=Method Not Allowed
+239:2025-11-13T13:18:49Z 2025/11/13 21:57:50 System Error:405    code=405, message=Method Not Allowed
+251:2025-11-13T13:18:49Z 2025/11/13 21:58:48 System Error:405    code=405, message=Method Not Allowed
+373:2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6b3JtYXN0ZXI=] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:44705 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc001564050 <nil> [] map[]}
+374:2025-11-13T13:18:49Z 2025/11/13 22:11:20 Auth Error:401   
+375:2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6Y2hhbmdlX21l] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:31961 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc001564050 <nil> [] map[]}
+376:2025-11-13T13:18:49Z 2025/11/13 22:15:13 System Error:404    code=404, message=Not Found
+388:2025-11-13T13:18:49Z 2025/11/13 22:18:23 Auth Error:401   
+390:2025-11-13T13:18:49Z 2025/11/13 22:18:34 System Error:404    code=404, message=Not Found

@@ -1,17 +1,4 @@
 {
-  "itemCode" : "TP",
-  "itemName" : "総蛋白",
-  "normalValue" : "6.5-8.0",
-  "unit" : "g/dL",
-  "results" : [ {
-    "sampleDate" : "2025-06-15",
-    "value" : "6.6",
-    "comment1" : "軽度低下",
-    "comment2" : "栄養指導中"
-  }, {
-    "sampleDate" : "2025-08-02",
-    "value" : "7.1",
-    "comment1" : "基準範囲",
-    "comment2" : "経過良好"
-  } ]
+  "movedTo": "ops/tests/fixtures/adm/adm10/labo_item.json",
+  "note": "2025-11-12: Fixture moved under ops/tests/fixtures/adm for AdmConverterSnapshotTest."
 }

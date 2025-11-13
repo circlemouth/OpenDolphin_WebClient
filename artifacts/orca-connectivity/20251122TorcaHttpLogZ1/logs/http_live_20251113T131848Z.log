@@ -1,0 +1,400 @@
+2025-11-13T13:18:48Z libcob:destroy_context
+2025-11-13T13:18:48Z libcob:create_context
+2025-11-13T13:18:48Z libcob:update_context
+2025-11-13T13:18:48Z cob_init start
+2025-11-13T13:18:48Z cob_init end
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z * accept start*
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z MDCRES-OBJECT not low_value
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z * accept end  *
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z 2025/11/13 20:03:21 API-:orca  ormaster medicalmodv2 ORAPI021S1V2 false api:87ms tot:91ms 
+2025-11-13T13:18:48Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:48Z 2025/11/13 20:03:21 DestroyContext: false
+2025-11-13T13:18:48Z libcob:cancel_context
+2025-11-13T13:18:48Z libcob:create_context
+2025-11-13T13:18:48Z libcob:update_context
+2025-11-13T13:18:48Z cob_init start
+2025-11-13T13:18:48Z cob_init end
+2025-11-13T13:18:48Z ************************
+2025-11-13T13:18:48Z * system01_manage start*
+2025-11-13T13:18:48Z ************************
+2025-11-13T13:18:48Z SYS01REQ-OBJECT not low_value
+2025-11-13T13:18:48Z PHYSRES-OBJECT not low_value
+2025-11-13T13:18:48Z XMLWRITE OK      = +000000000
+2025-11-13T13:18:48Z ***********************
+2025-11-13T13:18:48Z * system01_manage end *
+2025-11-13T13:18:48Z ***********************
+2025-11-13T13:18:48Z 2025/11/13 20:04:15 API-:orca  ormaster system01lstv2 ORAPI101R1V2 false api:20ms tot:26ms 
+2025-11-13T13:18:48Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:48Z 2025/11/13 20:04:15 DestroyContext: false
+2025-11-13T13:18:48Z libcob:cancel_context
+2025-11-13T13:18:48Z libcob:create_context
+2025-11-13T13:18:48Z libcob:update_context
+2025-11-13T13:18:48Z cob_init start
+2025-11-13T13:18:48Z cob_init end
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z * accept start*
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z MDCRES-OBJECT not low_value
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z * accept end  *
+2025-11-13T13:18:48Z ***************
+2025-11-13T13:18:48Z 2025/11/13 20:05:41 API-:orca  ormaster medicalmodv2 ORAPI021S1V2 false api:27ms tot:31ms 
+2025-11-13T13:18:48Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:48Z 2025/11/13 20:05:41 DestroyContext: false
+2025-11-13T13:18:48Z libcob:cancel_context
+2025-11-13T13:18:48Z libcob:update_context
+2025-11-13T13:18:48Z ************************
+2025-11-13T13:18:48Z * system01_manage start*
+2025-11-13T13:18:48Z ************************
+2025-11-13T13:18:48Z SYS01REQ-OBJECT not low_value
+2025-11-13T13:18:48Z PHYSRES-OBJECT not low_value
+2025-11-13T13:18:48Z XMLWRITE OK      = +000000000
+2025-11-13T13:18:48Z ***********************
+2025-11-13T13:18:48Z * system01_manage end *
+2025-11-13T13:18:48Z ***********************
+2025-11-13T13:18:48Z 2025/11/13 20:07:53 API-:orca  ormaster system01lstv2 ORAPI101R1V2 false api:16ms tot:19ms 
+2025-11-13T13:18:48Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:48Z 2025/11/13 20:07:53 DestroyContext: false
+2025-11-13T13:18:48Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:35107 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc005536050 <nil> [] map[]}
+2025-11-13T13:18:48Z 2025/11/13 20:29:22 Auth Error:401   
+2025-11-13T13:18:48Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:17514 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc005536140 <nil> [] map[]}
+2025-11-13T13:18:48Z 2025/11/13 20:32:01 Auth Error:401   
+2025-11-13T13:18:48Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:52735 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc005536050 <nil> [] map[]}
+2025-11-13T13:18:48Z 2025/11/13 21:20:48 Auth Error:401   
+2025-11-13T13:18:48Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:35046 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc001564050 <nil> [] map[]}
+2025-11-13T13:18:48Z 2025/11/13 21:21:49 Auth Error:401   
+2025-11-13T13:18:48Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:22347 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc0002120a0 <nil> [] map[]}
+2025-11-13T13:18:48Z 2025/11/13 21:22:05 Auth Error:401   
+2025-11-13T13:18:48Z libcob:cancel_context
+2025-11-13T13:18:48Z libcob:destroy_context
+2025-11-13T13:18:48Z libcob:destroy_context
+2025-11-13T13:18:48Z libcob:destroy_context
+2025-11-13T13:18:48Z libcob:create_context
+2025-11-13T13:18:48Z libcob:update_context
+2025-11-13T13:18:48Z cob_init start
+2025-11-13T13:18:48Z cob_init end
+2025-11-13T13:18:48Z 310-SPASET SPA-MOTOPG:
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:33:10.58 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:33:10.59 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:48Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:48Z DBVERSION-CHK P1
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:33:10.66 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z 2025/11/13 21:33:10 Websocket subscribe: orca RsqGwb8597R3ShKmeZaQHm
+2025-11-13T13:18:48Z 2025/11/13 21:33:29 RPC-:orca  ormaster M00 send_event CLICKED B06 tot:28ms app:15ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:31 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:32ms app:29ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:33 RPC-:orca  ormaster M95 send_event SELECT SYSLIST tot:32ms app:30ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:35 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:11ms app:9ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:35 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:12ms app:11ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:39 RPC-:orca  ormaster M95 send_event CLICKED B10 tot:3ms app:1ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:40 RPC-:orca  ormaster M95 send_event CLICKED B12 tot:21ms app:16ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:42 RPC-:orca  ormaster M95 send_event SELECT SYSLIST tot:37ms app:34ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:42 RPC-:orca  ormaster M95 send_event SELECT SYSLIST tot:1ms app:0ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:42 RPC-:orca  ormaster M95 send_event SELECT SYSLIST tot:1ms app:0ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:45 RPC-:orca  ormaster M95 send_event ACTIVATE RENNUM tot:2ms app:0ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:47 RPC-:orca  ormaster M95 send_event ACTIVATE DRCD tot:3ms app:1ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:48 RPC-:orca  ormaster M95 send_event CLICKED B10 tot:9ms app:8ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:52 RPC-:orca  ormaster M95 send_event CLICKED B12 tot:46ms app:40ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:54 RPC-:orca  ormaster M95 send_event SELECT SYSLIST tot:17ms app:14ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:57 RPC-:orca  ormaster M95 send_event ACTIVATE RENNUM tot:5ms app:1ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:33:59 RPC-:orca  ormaster M95 send_event CLICKED B10 tot:6ms app:3ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:34:03 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:4ms app:2ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:34:04 RPC-:orca  ormaster MID1 send_event CLICKED B12 tot:11ms app:9ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:34:05 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:10ms app:8ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:34:07 RPC-:orca  ormaster M95 send_event SELECT SYSLIST tot:17ms app:16ms  sts:200
+2025-11-13T13:18:48Z 310-SPASET SPA-MOTOPG:M95     .
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:34:10.41 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:34:10.42 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:48Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:48Z DBVERSION-CHK P1
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:34:10.42 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z 2025/11/13 21:34:10 RPC-:orca  ormaster M95 send_event CLICKED B01 tot:52ms app:51ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:36:56 RPC-:orca  ormaster M00 send_event CLICKED B06 tot:15ms app:13ms  sts:200
+2025-11-13T13:18:48Z 2025/11/13 21:36:57 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:13ms app:12ms  sts:200
+2025-11-13T13:18:48Z 310-SPASET SPA-MOTOPG:M95     .
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:37:03.48 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:37:03.49 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:48Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:48Z DBVERSION-CHK P1
+2025-11-13T13:18:48Z ORCSJOB ST =CHK## 2025/11/13 21:37:03.55 
+2025-11-13T13:18:48Z ORCSJOB ED =+001##
+2025-11-13T13:18:48Z 2025/11/13 21:37:03 RPC-:orca  ormaster M95 send_event CLICKED B01 tot:117ms app:105ms  sts:200
+2025-11-13T13:18:48Z libcob:create_context
+2025-11-13T13:18:48Z libcob:update_context
+2025-11-13T13:18:48Z cob_init start
+2025-11-13T13:18:48Z cob_init end
+2025-11-13T13:18:48Z ************************
+2025-11-13T13:18:48Z * system01_manage start*
+2025-11-13T13:18:49Z ************************
+2025-11-13T13:18:49Z SYS01REQ-OBJECT not low_value
+2025-11-13T13:18:49Z PHYSRES-OBJECT not low_value
+2025-11-13T13:18:49Z XMLWRITE OK      = +000000000
+2025-11-13T13:18:49Z ***********************
+2025-11-13T13:18:49Z * system01_manage end *
+2025-11-13T13:18:49Z ***********************
+2025-11-13T13:18:49Z 2025/11/13 21:39:32 API-:orca  ormaster system01lstv2 ORAPI101R1V2 false api:25ms tot:30ms 
+2025-11-13T13:18:49Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:49Z 2025/11/13 21:39:32 DestroyContext: false
+2025-11-13T13:18:49Z libcob:cancel_context
+2025-11-13T13:18:49Z libcob:create_context
+2025-11-13T13:18:49Z libcob:update_context
+2025-11-13T13:18:49Z cob_init start
+2025-11-13T13:18:49Z cob_init end
+2025-11-13T13:18:49Z ************************
+2025-11-13T13:18:49Z * system01_manage start*
+2025-11-13T13:18:49Z ************************
+2025-11-13T13:18:49Z SYS01REQ-OBJECT not low_value
+2025-11-13T13:18:49Z PHYSRES-OBJECT not low_value
+2025-11-13T13:18:49Z XMLWRITE OK      = +000000000
+2025-11-13T13:18:49Z ***********************
+2025-11-13T13:18:49Z * system01_manage end *
+2025-11-13T13:18:49Z ***********************
+2025-11-13T13:18:49Z 2025/11/13 21:39:44 API-:orca  ormaster system01lstv2 ORAPI101R1V2 false api:28ms tot:32ms 
+2025-11-13T13:18:49Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:49Z 2025/11/13 21:39:44 DestroyContext: false
+2025-11-13T13:18:49Z libcob:cancel_context
+2025-11-13T13:18:49Z libcob:create_context
+2025-11-13T13:18:49Z libcob:update_context
+2025-11-13T13:18:49Z cob_init start
+2025-11-13T13:18:49Z cob_init end
+2025-11-13T13:18:49Z ************************
+2025-11-13T13:18:49Z * system01_manage start*
+2025-11-13T13:18:49Z ************************
+2025-11-13T13:18:49Z SYS01REQ-OBJECT not low_value
+2025-11-13T13:18:49Z PHYSRES-OBJECT not low_value
+2025-11-13T13:18:49Z XMLWRITE OK      = +000000000
+2025-11-13T13:18:49Z ***********************
+2025-11-13T13:18:49Z * system01_manage end *
+2025-11-13T13:18:49Z ***********************
+2025-11-13T13:18:49Z 2025/11/13 21:39:49 API-:orca  ormaster system01lstv2 ORAPI101R1V2 false api:19ms tot:22ms 
+2025-11-13T13:18:49Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:49Z 2025/11/13 21:39:49 DestroyContext: false
+2025-11-13T13:18:49Z libcob:cancel_context
+2025-11-13T13:18:49Z libcob:update_context
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z * accept start*
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z MDCRES-OBJECT not low_value
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z * accept end  *
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z 2025/11/13 21:40:50 API-:orca  ormaster medicalmodv2 ORAPI021S1V2 false api:36ms tot:39ms 
+2025-11-13T13:18:49Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:49Z 2025/11/13 21:40:50 DestroyContext: false
+2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[application/json] User-Agent:[handbook-worker/1.0]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:26902 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc0001e2140 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 21:42:31 Auth Error:401   
+2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[application/json] Authorization:[Basic b3JtYXN0ZXI6b3JtYXN0ZXI=] User-Agent:[handbook-worker/1.0]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:48595 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc005536050 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 21:42:53 Auth Error:401   
+2025-11-13T13:18:49Z &{GET /api11/unknown HTTP/1.1 1 1 map[Accept:[application/json] User-Agent:[handbook-worker/1.0]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:17515 /api11/unknown <nil> <nil> <nil>  0xc0019862d0 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 21:43:06 System Error:404    code=404, message=Not Found
+2025-11-13T13:18:49Z web.ErrorHandler
+2025-11-13T13:18:49Z 	/home/orcauser/develop/weborca-main/20251024-1/internal/web/error.go:73
+2025-11-13T13:18:49Z github.com/labstack/echo/v4.(*Echo).ServeHTTP
+2025-11-13T13:18:49Z 	/home/orcauser/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:669
+2025-11-13T13:18:49Z net/http.serverHandler.ServeHTTP
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:3210
+2025-11-13T13:18:49Z net/http.(*conn).serve
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:2092
+2025-11-13T13:18:49Z runtime.goexit
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/runtime/asm_amd64.s:1700
+2025-11-13T13:18:49Z &{POST /orca101/manageusersv2 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6Y2hhbmdlX21l] Content-Length:[630] Content-Type:[application/xml; charset=UTF-8] User-Agent:[curl/7.81.0]] 0xc006482080 <nil> 630 [] false localhost:8000 map[] map[] <nil> map[] 127.0.0.1:60934 /orca101/manageusersv2 <nil> <nil> <nil>  0xc005536050 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 21:56:26 System Error:405    code=405, message=Method Not Allowed
+2025-11-13T13:18:49Z web.ErrorHandler
+2025-11-13T13:18:49Z 	/home/orcauser/develop/weborca-main/20251024-1/internal/web/error.go:73
+2025-11-13T13:18:49Z github.com/labstack/echo/v4.(*Echo).ServeHTTP
+2025-11-13T13:18:49Z 	/home/orcauser/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:669
+2025-11-13T13:18:49Z net/http.serverHandler.ServeHTTP
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:3210
+2025-11-13T13:18:49Z net/http.(*conn).serve
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:2092
+2025-11-13T13:18:49Z runtime.goexit
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/runtime/asm_amd64.s:1700
+2025-11-13T13:18:49Z &{POST /orca101/manageusersv2 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6Y2hhbmdlX21l] Content-Length:[630] Content-Type:[application/xml; charset=UTF-8] User-Agent:[curl/7.81.0]] 0xc0017f20c0 <nil> 630 [] false localhost:8000 map[] map[] <nil> map[] 127.0.0.1:43486 /orca101/manageusersv2 <nil> <nil> <nil>  0xc0001e2190 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 21:56:31 System Error:405    code=405, message=Method Not Allowed
+2025-11-13T13:18:49Z web.ErrorHandler
+2025-11-13T13:18:49Z 	/home/orcauser/develop/weborca-main/20251024-1/internal/web/error.go:73
+2025-11-13T13:18:49Z github.com/labstack/echo/v4.(*Echo).ServeHTTP
+2025-11-13T13:18:49Z 	/home/orcauser/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:669
+2025-11-13T13:18:49Z net/http.serverHandler.ServeHTTP
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:3210
+2025-11-13T13:18:49Z net/http.(*conn).serve
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:2092
+2025-11-13T13:18:49Z runtime.goexit
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/runtime/asm_amd64.s:1700
+2025-11-13T13:18:49Z &{POST /orca101/manageusersv2 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6Y2hhbmdlX21l] Content-Length:[655] Content-Type:[application/xml; charset=UTF-8] User-Agent:[curl/7.81.0]] 0xc0064821c0 <nil> 655 [] false localhost:8000 map[] map[] <nil> map[] 127.0.0.1:43410 /orca101/manageusersv2 <nil> <nil> <nil>  0xc005536140 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 21:57:50 System Error:405    code=405, message=Method Not Allowed
+2025-11-13T13:18:49Z web.ErrorHandler
+2025-11-13T13:18:49Z 	/home/orcauser/develop/weborca-main/20251024-1/internal/web/error.go:73
+2025-11-13T13:18:49Z github.com/labstack/echo/v4.(*Echo).ServeHTTP
+2025-11-13T13:18:49Z 	/home/orcauser/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:669
+2025-11-13T13:18:49Z net/http.serverHandler.ServeHTTP
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:3210
+2025-11-13T13:18:49Z net/http.(*conn).serve
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:2092
+2025-11-13T13:18:49Z runtime.goexit
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/runtime/asm_amd64.s:1700
+2025-11-13T13:18:49Z &{POST /orca101/manageusersv2 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6Y2hhbmdlX21l] Content-Length:[318] Content-Type:[application/xml; charset=UTF-8] User-Agent:[curl/7.81.0]] 0xc006482080 <nil> 318 [] false localhost:8000 map[] map[] <nil> map[] 127.0.0.1:57844 /orca101/manageusersv2 <nil> <nil> <nil>  0xc005536050 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 21:58:48 System Error:405    code=405, message=Method Not Allowed
+2025-11-13T13:18:49Z web.ErrorHandler
+2025-11-13T13:18:49Z 	/home/orcauser/develop/weborca-main/20251024-1/internal/web/error.go:73
+2025-11-13T13:18:49Z github.com/labstack/echo/v4.(*Echo).ServeHTTP
+2025-11-13T13:18:49Z 	/home/orcauser/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:669
+2025-11-13T13:18:49Z net/http.serverHandler.ServeHTTP
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:3210
+2025-11-13T13:18:49Z net/http.(*conn).serve
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:2092
+2025-11-13T13:18:49Z runtime.goexit
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/runtime/asm_amd64.s:1700
+2025-11-13T13:18:49Z libcob:cancel_context
+2025-11-13T13:18:49Z libcob:destroy_context
+2025-11-13T13:18:49Z libcob:destroy_context
+2025-11-13T13:18:49Z libcob:destroy_context
+2025-11-13T13:18:49Z libcob:create_context
+2025-11-13T13:18:49Z libcob:update_context
+2025-11-13T13:18:49Z cob_init start
+2025-11-13T13:18:49Z cob_init end
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z * accept start*
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z MDCRES-OBJECT not low_value
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z * accept end  *
+2025-11-13T13:18:49Z ***************
+2025-11-13T13:18:49Z 2025/11/13 22:03:07 API-:orca  ormaster medicalmodv2 ORAPI021S1V2 false api:59ms tot:70ms 
+2025-11-13T13:18:49Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:49Z 2025/11/13 22:03:07 DestroyContext: false
+2025-11-13T13:18:49Z 2025/11/13 22:05:36 Websocket ReadError: orca websocket: close 1001 (going away)
+2025-11-13T13:18:49Z 2025/11/13 22:05:36 Websocket Closed: orca RsqGwb8597R3ShKmeZaQHm
+2025-11-13T13:18:49Z libcob:cancel_context
+2025-11-13T13:18:49Z libcob:create_context
+2025-11-13T13:18:49Z libcob:update_context
+2025-11-13T13:18:49Z cob_init start
+2025-11-13T13:18:49Z cob_init end
+2025-11-13T13:18:49Z 310-SPASET SPA-MOTOPG:
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:05:53.13 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:05:53.13 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:49Z DBVERSION-CHK P1
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:05:53.15 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z 2025/11/13 22:05:53 Websocket subscribe: orca JA5XcYAJpHzWXBmtt9LrCW
+2025-11-13T13:18:49Z 2025/11/13 22:05:55 RPC-:orca  ormaster M00 send_event CLICKED B06 tot:22ms app:19ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:05:56 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:20ms app:19ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:05:57 RPC-:orca  ormaster M95 send_event SELECT SYSLIST tot:15ms app:14ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:05:59 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:2ms app:0ms  sts:200
+2025-11-13T13:18:49Z 310-SPASET SPA-MOTOPG:M95     .
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:01.18 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:01.18 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:49Z DBVERSION-CHK P1
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:01.19 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z 2025/11/13 22:06:01 RPC-:orca  ormaster M95 send_event CLICKED B01 tot:53ms app:50ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:06:02 RPC-:orca  ormaster M00 send_event CLICKED B08 tot:26ms app:22ms  sts:200
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:05.04 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z 310-SPASET SPA-MOTOPG:XG04    .
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:05.08 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:05.09 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:49Z DBVERSION-CHK P1
+2025-11-13T13:18:49Z 2025/11/13 22:06:05 RPC-:orca  ormaster XG04 send_event CLICKED B01 tot:69ms app:66ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:06:06 RPC-:orca  ormaster M00 send_event CLICKED B12 tot:1ms app:0ms  sts:200
+2025-11-13T13:18:49Z 310-SPASET SPA-MOTOPG:MVER    .
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:08.31 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:08.31 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:49Z DBVERSION-CHK P1
+2025-11-13T13:18:49Z 2025/11/13 22:06:08 RPC-:orca  ormaster MVER send_event CLICKED B12 tot:41ms app:40ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:06:11 RPC-:orca  ormaster M00 send_event CLICKED B06 tot:13ms app:12ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:06:13 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:16ms app:15ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:06:13 RPC-:orca  ormaster M95 send_event SWITCH nt1 tot:2ms app:0ms  sts:200
+2025-11-13T13:18:49Z 310-SPASET SPA-MOTOPG:M95     .
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:16.04 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:16.04 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:49Z DBVERSION-CHK P1
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:16.07 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z 2025/11/13 22:06:16 RPC-:orca  ormaster M95 send_event CLICKED B01 tot:65ms app:63ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:06:17 RPC-:orca  ormaster M00 send_event CLICKED B06 tot:19ms app:18ms  sts:200
+2025-11-13T13:18:49Z 310-SPASET SPA-MOTOPG:M95     .
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:19.61 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:19.62 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/version
+2025-11-13T13:18:49Z cob_file_open: /opt/jma/weborca/app/doc/dbversion
+2025-11-13T13:18:49Z DBVERSION-CHK P1
+2025-11-13T13:18:49Z ORCSJOB ST =CHK## 2025/11/13 22:06:19.63 
+2025-11-13T13:18:49Z ORCSJOB ED =+001##
+2025-11-13T13:18:49Z 2025/11/13 22:06:19 RPC-:orca  ormaster M95 send_event CLICKED B01 tot:42ms app:40ms  sts:200
+2025-11-13T13:18:49Z 2025/11/13 22:06:24 end_session-:orca JA5XcYAJpHzWXBmtt9LrCW
+2025-11-13T13:18:49Z ==== ORCGSESEND
+2025-11-13T13:18:49Z M00                                                             
+2025-11-13T13:18:49Z SELNUM                                                          
+2025-11-13T13:18:49Z                                                                 
+2025-11-13T13:18:49Z JA5XcYAJpHzWXBmtt9LrCW                                          
+2025-11-13T13:18:49Z ormaster        
+2025-11-13T13:18:49Z FETCH=+000000001
+2025-11-13T13:18:49Z DestroySessionWithWS: ormaster
+2025-11-13T13:18:49Z 2025/11/13 22:06:24 DestroyContext: false
+2025-11-13T13:18:49Z 2025/11/13 22:06:24 Websocket ReadError: orca read tcp 172.21.0.4:8000->172.217.161.36:19571: use of closed network connection
+2025-11-13T13:18:49Z 2025/11/13 22:06:24 Websocket Closed: orca JA5XcYAJpHzWXBmtt9LrCW
+2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6b3JtYXN0ZXI=] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:44705 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc001564050 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 22:11:20 Auth Error:401   
+2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6Y2hhbmdlX21l] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:31961 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc001564050 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 22:15:13 System Error:404    code=404, message=Not Found
+2025-11-13T13:18:49Z web.ErrorHandler
+2025-11-13T13:18:49Z 	/home/orcauser/develop/weborca-main/20251024-1/internal/web/error.go:73
+2025-11-13T13:18:49Z github.com/labstack/echo/v4.(*Echo).ServeHTTP
+2025-11-13T13:18:49Z 	/home/orcauser/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:669
+2025-11-13T13:18:49Z net/http.serverHandler.ServeHTTP
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:3210
+2025-11-13T13:18:49Z net/http.(*conn).serve
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:2092
+2025-11-13T13:18:49Z runtime.goexit
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/runtime/asm_amd64.s:1700
+2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:25637 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc0002120a0 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 22:18:23 Auth Error:401   
+2025-11-13T13:18:49Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] Authorization:[Basic b3JtYXN0ZXI6Y2hhbmdlX21l] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:37203 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc0002121e0 <nil> [] map[]}
+2025-11-13T13:18:49Z 2025/11/13 22:18:34 System Error:404    code=404, message=Not Found
+2025-11-13T13:18:49Z web.ErrorHandler
+2025-11-13T13:18:49Z 	/home/orcauser/develop/weborca-main/20251024-1/internal/web/error.go:73
+2025-11-13T13:18:49Z github.com/labstack/echo/v4.(*Echo).ServeHTTP
+2025-11-13T13:18:49Z 	/home/orcauser/go/pkg/mod/github.com/labstack/echo/v4@v4.13.4/echo.go:669
+2025-11-13T13:18:49Z net/http.serverHandler.ServeHTTP
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:3210
+2025-11-13T13:18:49Z net/http.(*conn).serve
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/net/http/server.go:2092
+2025-11-13T13:18:49Z runtime.goexit
+2025-11-13T13:18:49Z 	/usr/lib/go-1.23/src/runtime/asm_amd64.s:1700

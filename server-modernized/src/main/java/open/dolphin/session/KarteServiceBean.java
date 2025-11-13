@@ -14,6 +14,7 @@ import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.gateway.MessagingGateway;
+import open.dolphin.session.audit.DiagnosisAuditRecorder;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.storage.attachment.AttachmentStorageManager;
 import org.slf4j.Logger;
@@ -110,6 +111,9 @@ public class KarteServiceBean {
 
     @Inject
     private AttachmentStorageManager attachmentStorageManager;
+
+    @Inject
+    private DiagnosisAuditRecorder diagnosisAuditRecorder;
 
 //s.oh^ 2014/02/21 Claim送信方法の変更
     //@Resource(mappedName = "java:/JmsXA")
@@ -482,8 +486,19 @@ public class KarteServiceBean {
      */
     public long addDocument(DocumentModel document) {
 
-        // 永続化する
-        em.persist(document);
+        LOGGER.info("addDocument request id={}, docId={}",
+                document.getId(),
+                document.getDocInfoModel() != null ? document.getDocInfoModel().getDocId() : "null");
+
+        if (document.getId() <= 0) {
+            Number seqValue = (Number) em
+                    .createNativeQuery("SELECT nextval('opendolphin.hibernate_sequence')")
+                    .getSingleResult();
+            document.setId(seqValue.longValue());
+        }
+        LOGGER.info("addDocument assigned seq id={}", document.getId());
+
+        document = em.merge(document);
         attachmentStorageManager.persistExternalAssets(document.getAttachment());
         attachmentStorageManager.persistExternalAssets(document.getAttachment());
 
@@ -889,47 +904,30 @@ public class KarteServiceBean {
      * @return 新規病名のPKリスト
      */
     public List<Long> postPutSendDiagnosis(DiagnosisSendWrapper wrapper) {
-        
-//minagawa^ LSC 1.4 傷病名の削除 2013/06/24
-        int cnt = 0;
-        
-        // 削除
-        if (wrapper.getDeletedDiagnosis()!=null) {
-            
-            List<RegisteredDiagnosisModel> deletedList = wrapper.getDeletedDiagnosis();
-            
+
+        List<RegisteredDiagnosisModel> deletedList = wrapper.getDeletedDiagnosis();
+        if (deletedList != null) {
             for (RegisteredDiagnosisModel bean : deletedList) {
-                // ORCAの病名をインポート、Dolphinに登録しないで削除==0Lを除く
-                if (bean.getId()!=0L) {
-                    RegisteredDiagnosisModel delete = (RegisteredDiagnosisModel)em.find(RegisteredDiagnosisModel.class, bean.getId());
+                if (bean.getId() != 0L) {
+                    RegisteredDiagnosisModel delete = em.find(RegisteredDiagnosisModel.class, bean.getId());
                     em.remove(delete);
-                    cnt++;
                 }
             }
         }
-//minagawa$        
-        
-        // 更新
-        if (wrapper.getUpdatedDiagnosis()!=null) {
-            
-            //int cnt = 0;
-            List<RegisteredDiagnosisModel> updateList = wrapper.getUpdatedDiagnosis();
-            
-            for (RegisteredDiagnosisModel bean : updateList) {
+
+        List<RegisteredDiagnosisModel> updatedList = wrapper.getUpdatedDiagnosis();
+        if (updatedList != null) {
+            for (RegisteredDiagnosisModel bean : updatedList) {
                 em.merge(bean);
-                cnt++;
             }
         }
-        
-        // 永続化
-        List<Long> ret = new ArrayList<>(3);
-        if (wrapper.getAddedDiagnosis()!=null) {
-            
-            List<RegisteredDiagnosisModel> addList = wrapper.getAddedDiagnosis();
-            
-            for (RegisteredDiagnosisModel bean : addList) {
+
+        List<RegisteredDiagnosisModel> addedList = wrapper.getAddedDiagnosis();
+        List<Long> ret = new ArrayList<>(addedList != null ? addedList.size() : 0);
+        if (addedList != null) {
+            for (RegisteredDiagnosisModel bean : addedList) {
                 em.persist(bean);
-                ret.add(new Long(bean.getId()));
+                ret.add(bean.getId());
             }
         }
         
@@ -940,6 +938,9 @@ public class KarteServiceBean {
 //s.oh^ 2014/01/23 ORCAとの接続対応
             messagingGateway.dispatchDiagnosis(wrapper);
         }
+
+        diagnosisAuditRecorder.recordCreate(wrapper, addedList, ret);
+        diagnosisAuditRecorder.recordUpdate(wrapper, updatedList);
 
         return ret;
     }

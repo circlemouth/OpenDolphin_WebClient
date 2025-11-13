@@ -1,0 +1,47 @@
+receivers:
+  otlp:
+    protocols:
+      http:
+        endpoint: 0.0.0.0:4318
+
+processors:
+  metricstransform/rename_deployment_label:
+    transforms:
+      - include: .*
+        match_type: regexp
+        operations:
+          - action: update_label
+            label: deployment
+            new_label: deployment_source
+  resource/deployment_env:
+    attributes:
+      - key: deployment
+        value: local-dev
+        action: upsert
+  batch:
+    timeout: 10s
+    send_batch_size: 1024
+
+exporters:
+  prometheus:
+    endpoint: 0.0.0.0:9464
+    namespace: opendolphin
+    const_labels:
+      deployment: local-dev
+  logging:
+    loglevel: info
+
+extensions:
+  health_check:
+    endpoint: 0.0.0.0:13133
+
+service:
+  telemetry:
+    logs:
+      level: info
+  extensions: [health_check]
+  pipelines:
+    metrics:
+      receivers: [otlp]
+      processors: [metricstransform/rename_deployment_label, resource/deployment_env, batch]
+      exporters: [prometheus, logging]

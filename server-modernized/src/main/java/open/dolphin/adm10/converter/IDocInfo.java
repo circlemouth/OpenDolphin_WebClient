@@ -21,6 +21,8 @@ public class IDocInfo implements java.io.Serializable {
     
     // 文書種別
     private String docType;
+
+    private String admFlag;
     
     // タイトル
     private String title;
@@ -185,6 +187,14 @@ public class IDocInfo implements java.io.Serializable {
 
     public void setDocType(String docType) {
         this.docType = docType;
+    }
+
+    public String getAdmFlag() {
+        return admFlag;
+    }
+
+    public void setAdmFlag(String admFlag) {
+        this.admFlag = admFlag;
     }
 
     public String getTitle() {
@@ -363,6 +373,9 @@ public class IDocInfo implements java.io.Serializable {
     }
 
     public IPVTHealthInsurance getPvtHealthInsuranceModel() {
+        if (pvtHealthInsurance == null) {
+            pvtHealthInsurance = new IPVTHealthInsurance();
+        }
         return pvtHealthInsurance;
     }
 
@@ -488,6 +501,7 @@ public class IDocInfo implements java.io.Serializable {
         this.setParentPk(model.getParentPk());
         this.setDocId(model.getDocId());
         this.setDocType(model.getDocType());
+        this.setAdmFlag(model.getAdmFlag());
         this.setTitle(model.getTitle());
         this.setPurpose(model.getPurpose());
         
@@ -561,6 +575,7 @@ public class IDocInfo implements java.io.Serializable {
         ret.setParentPk(this.getParentPk());
         ret.setDocId(this.getDocId());
         ret.setDocType(this.getDocType());
+        ret.setAdmFlag(this.getAdmFlag());
         ret.setTitle(this.getTitle());
         ret.setPurpose(this.getPurpose());
         

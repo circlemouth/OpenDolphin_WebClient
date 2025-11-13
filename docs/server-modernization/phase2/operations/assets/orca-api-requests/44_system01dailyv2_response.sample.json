@@ -1,0 +1,29 @@
+// API 44 /api01rv2/system01dailyv2 (日次基本情報) 応答例
+{
+  "xmlio2": {
+    "system01dailyres": {
+      "Information_Date": "2025-11-12",
+      "Information_Time": "09:15:00",
+      "Api_Result": "0000",
+      "Api_Result_Message": "正常終了",
+      "Target_Date": "2025-11-12",
+      "Facility_Information": {
+        "Medical_Organization_Code": "1234567",
+        "Medical_Organization_Name": "青空クリニック",
+        "Director": "院長 山本"
+      },
+      "Doctor_Information": [
+        {
+          "Doctor_Code": "1001",
+          "Doctor_Name": "佐藤医師",
+          "Department_Code": "01"
+        },
+        {
+          "Doctor_Code": "1002",
+          "Doctor_Name": "田中医師",
+          "Department_Code": "02"
+        }
+      ]
+    }
+  }
+}

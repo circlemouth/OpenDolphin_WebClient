@@ -1,0 +1,21 @@
+環境変数:COB_LIBRARY_PATHが設定されていません
+環境変数:HTTP_PORTが設定されていません
+環境変数:HTTP_HOSTが設定されていません
+環境変数:STORAGE_PATHが設定されていません
+環境変数:DBNAMEが設定されていません
+環境変数:DBPORTが設定されていません
+環境変数:DBHOSTが設定されていません
+環境変数:DBUSERが設定されていません
+環境変数:COB_LIBRARY_PATHが設定されていません
+環境変数:STORAGE_PATHが設定されていません
+
+   ____    __
+  / __/___/ /  ___
+ / _// __/ _ \/ _ \
+/___/\__/_//_/\___/ v4.13.4
+High performance, minimalist Go web framework
+https://echo.labstack.com
+____________________________________O/_______
+                                    O\
+{"time":"2025-11-13T12:31:21.313676759+09:00","level":"FATAL","prefix":"echo","file":"web.go","line":"321","message":"listen tcp :8000: bind: address already in use"}
+jma-receipt-docker-orca-1

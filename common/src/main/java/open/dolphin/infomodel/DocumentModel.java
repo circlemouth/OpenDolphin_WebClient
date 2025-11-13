@@ -20,13 +20,13 @@ public class DocumentModel extends KarteEntryBean
     @Embedded
     private DocInfoModel docInfo;
     
-    @OneToMany(mappedBy="document", cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    @OneToMany(mappedBy="document", cascade={CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     private List<ModuleModel> modules;
     
-    @OneToMany(mappedBy="document", cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    @OneToMany(mappedBy="document", cascade={CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     private List<SchemaModel> schema;
     
-    @OneToMany(mappedBy="document", cascade={CascadeType.PERSIST, CascadeType.REMOVE})
+    @OneToMany(mappedBy="document", cascade={CascadeType.PERSIST, CascadeType.MERGE, CascadeType.REMOVE})
     private List<AttachmentModel> attachment;
 
     /**

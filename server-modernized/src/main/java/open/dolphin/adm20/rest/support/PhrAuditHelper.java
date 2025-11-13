@@ -4,9 +4,10 @@ import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Optional;
+import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
 
@@ -18,6 +19,9 @@ public class PhrAuditHelper {
 
     @Inject
     AuditTrailService auditTrailService;
+
+    @Inject
+    SessionAuditDispatcher sessionAuditDispatcher;
 
     @Inject
     SessionTraceManager sessionTraceManager;
@@ -43,7 +47,7 @@ public class PhrAuditHelper {
                         String status,
                         String reason,
                         Map<String, Object> additionalDetails) {
-        if (auditTrailService == null) {
+        if (sessionAuditDispatcher == null && auditTrailService == null) {
             return;
         }
         AuditEventPayload payload = new AuditEventPayload();
@@ -53,6 +57,7 @@ public class PhrAuditHelper {
             payload.setAction(action);
             payload.setResource(context.requestUri());
             payload.setRequestId(context.requestId());
+            payload.setTraceId(context.traceId());
             payload.setIpAddress(context.clientIp());
             payload.setUserAgent(context.userAgent());
             payload.setPatientId(patientId);
@@ -60,15 +65,52 @@ public class PhrAuditHelper {
             payload.setAction(action);
             payload.setResource("/20/adm/phr");
         }
-        payload.setDetails(buildDetails(context, status, reason, additionalDetails));
-        Optional.ofNullable(sessionTraceManager)
-                .map(SessionTraceManager::current)
-                .ifPresent(trace -> {
-                    Map<String, Object> details = payload.getDetails();
-                    details.putIfAbsent("traceId", trace.getTraceId());
-                    details.putIfAbsent("sessionOperation", trace.getOperation());
-                });
-        auditTrailService.record(payload);
+        Map<String, Object> details = buildDetails(context, status, reason, additionalDetails);
+        attachTraceDetails(details, context);
+        payload.setDetails(details);
+        ensureTraceIdentifiers(payload, details);
+        dispatch(payload, status, reason);
+    }
+
+    private void dispatch(AuditEventPayload payload, String status, String reason) {
+        if (sessionAuditDispatcher != null) {
+            AuditEventEnvelope.Outcome outcome = "failed".equalsIgnoreCase(status)
+                    ? AuditEventEnvelope.Outcome.FAILURE
+                    : AuditEventEnvelope.Outcome.SUCCESS;
+            sessionAuditDispatcher.record(payload, outcome, reason, null);
+        } else if (auditTrailService != null) {
+            auditTrailService.record(payload);
+        }
+    }
+
+    private void ensureTraceIdentifiers(AuditEventPayload payload, Map<String, Object> details) {
+        if (payload.getRequestId() == null || payload.getRequestId().isBlank()) {
+            payload.setRequestId(payload.getTraceId());
+        }
+        if (payload.getTraceId() == null || payload.getTraceId().isBlank()) {
+            Object trace = details != null ? details.get("traceId") : null;
+            if (trace instanceof String traceId && !traceId.isBlank()) {
+                payload.setTraceId(traceId);
+            } else {
+                payload.setTraceId(payload.getRequestId());
+            }
+        }
+    }
+
+    private void attachTraceDetails(Map<String, Object> details, PhrRequestContext context) {
+        if (details == null) {
+            return;
+        }
+        if (context != null && context.traceId() != null) {
+            details.putIfAbsent("traceId", context.traceId());
+        }
+        if (sessionTraceManager != null) {
+            SessionTraceContext trace = sessionTraceManager.current();
+            if (trace != null) {
+                details.putIfAbsent("traceId", trace.getTraceId());
+                details.putIfAbsent("sessionOperation", trace.getOperation());
+            }
+        }
     }
 
     private Map<String, Object> buildDetails(PhrRequestContext context,

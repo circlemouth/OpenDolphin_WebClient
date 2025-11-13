@@ -24,8 +24,13 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
+import java.util.Set;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javax.inject.Inject;
@@ -82,6 +87,8 @@ import open.dolphin.infomodel.PatientVisitModel;
 import open.orca.rest.ORCAConnection;
 import org.codehaus.jackson.map.DeserializationConfig;
 import org.codehaus.jackson.map.ObjectMapper;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 
 /**
  *
@@ -120,6 +127,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     
     @Inject
     private ChartEventServiceBean eventServiceBean;
+
+    @Inject
+    private SessionAuditDispatcher sessionAuditDispatcher;
     
     //@Inject
     //private AdmissionSessionBean admissionSessionBean;
@@ -438,14 +448,29 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
+                Set<Long> karteIds = new HashSet<>();
+                List<String> diagnosisCodes = new ArrayList<>(list.length);
                 for (IRegisteredDiagnosis ir : list) {
                     RegisteredDiagnosisModel model = ir.toModel();
                     ehtService.addDiagnosis(model);
                     cnt++;
+                    if (ir.getKarteBean() != null) {
+                        karteIds.add(ir.getKarteBean().getId());
+                    }
+                    if (ir.getDiagnosisCode() != null) {
+                        diagnosisCodes.add(ir.getDiagnosisCode());
+                    }
                 }
                 
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+
+                Map<String, Object> details = new HashMap<>();
+                if (!diagnosisCodes.isEmpty()) {
+                    details.put("diagnosisCodes", diagnosisCodes);
+                }
+                details.put("payloadCount", cnt);
+                recordDiagnosisAuditEvent("EHT_DIAGNOSIS_CREATE", joinKarteIds(karteIds), details);
 
             }
         };
@@ -465,14 +490,28 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 IRegisteredDiagnosis[] list = mapper.readValue(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
+                Set<Long> karteIds = new HashSet<>();
+                List<Long> diagnosisIds = new ArrayList<>(list.length);
                 for (IRegisteredDiagnosis ir : list) {
                     RegisteredDiagnosisModel model = ir.toModel();
                     ehtService.updateDiagnosis(model);
                     cnt++;
+                    if (ir.getKarteBean() != null) {
+                        karteIds.add(ir.getKarteBean().getId());
+                    }
+                    if (ir.getId() > 0) {
+                        diagnosisIds.add(ir.getId());
+                    }
                 }
                       
                 mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
+                Map<String, Object> details = new HashMap<>();
+                if (!diagnosisIds.isEmpty()) {
+                    details.put("updatedDiagnosisIds", diagnosisIds);
+                }
+                details.put("affectedRows", cnt);
+                recordDiagnosisAuditEvent("EHT_DIAGNOSIS_UPDATE", joinKarteIds(karteIds), details);
                 
             }
         };
@@ -1127,6 +1166,89 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             sb.append(addSingleQuote(srycd));
         }
         return sb.toString();
+    }
+
+    private void recordDiagnosisAuditEvent(String action, String patientId, Map<String, Object> extraDetails) {
+        if (sessionAuditDispatcher == null) {
+            return;
+        }
+        AuditEventPayload payload = new AuditEventPayload();
+        String actorId = resolveActorId();
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(actorId);
+        if (servletReq != null && servletReq.isUserInRole("ADMIN")) {
+            payload.setActorRole("ADMIN");
+        }
+        payload.setAction(action);
+        payload.setResource("/20/adm/eht/diagnosis");
+        payload.setPatientId(patientId);
+        payload.setIpAddress(servletReq != null ? servletReq.getRemoteAddr() : null);
+        payload.setUserAgent(servletReq != null ? servletReq.getHeader("User-Agent") : null);
+        String requestId = resolveRequestId();
+        payload.setRequestId(requestId);
+        String traceId = resolveTraceId(servletReq);
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = requestId;
+        }
+        payload.setTraceId(traceId);
+        payload.setDetails(prepareAuditDetails(extraDetails));
+        sessionAuditDispatcher.record(payload);
+    }
+
+    private Map<String, Object> prepareAuditDetails(Map<String, Object> extraDetails) {
+        Map<String, Object> details = new HashMap<>();
+        if (extraDetails != null && !extraDetails.isEmpty()) {
+            details.putAll(extraDetails);
+        }
+        if (servletReq != null) {
+            String remoteUser = servletReq.getRemoteUser();
+            if (remoteUser != null && !remoteUser.isEmpty()) {
+                details.putIfAbsent("remoteUser", remoteUser);
+                String facilityId = getRemoteFacility(remoteUser);
+                if (facilityId != null) {
+                    details.putIfAbsent("facilityId", facilityId);
+                }
+            }
+        }
+        return details;
+    }
+
+    private String resolveActorId() {
+        if (servletReq == null) {
+            return "anonymous";
+        }
+        String remoteUser = servletReq.getRemoteUser();
+        return remoteUser != null ? remoteUser : "anonymous";
+    }
+
+    private String resolveRequestId() {
+        if (servletReq == null) {
+            return UUID.randomUUID().toString();
+        }
+        String header = servletReq.getHeader("X-Request-Id");
+        if (header != null && !header.isEmpty()) {
+            return header.trim();
+        }
+        return UUID.randomUUID().toString();
+    }
+
+    private String joinKarteIds(Set<Long> karteIds) {
+        if (karteIds == null || karteIds.isEmpty()) {
+            return null;
+        }
+        StringBuilder builder = new StringBuilder();
+        boolean first = true;
+        for (Long id : karteIds) {
+            if (id == null) {
+                continue;
+            }
+            if (!first) {
+                builder.append(',');
+            }
+            builder.append(id);
+            first = false;
+        }
+        return builder.length() == 0 ? null : builder.toString();
     }
     
     private String addSingleQuote(String str) {

@@ -6,9 +6,10 @@ import jakarta.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
-import open.dolphin.infomodel.AuditEvent;
+import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.session.framework.SessionTraceContext;
 import open.dolphin.session.framework.SessionTraceManager;
 
@@ -22,13 +23,16 @@ public class TouchAuditHelper {
     AuditTrailService auditTrailService;
 
     @Inject
+    SessionAuditDispatcher sessionAuditDispatcher;
+
+    @Inject
     SessionTraceManager sessionTraceManager;
 
-    public Optional<AuditEvent> record(TouchRequestContext context,
-                                       String action,
-                                       String resource,
-                                       Map<String, Object> additionalDetails) {
-        if (auditTrailService == null || context == null) {
+    public Optional<AuditEventEnvelope> record(TouchRequestContext context,
+                                               String action,
+                                               String resource,
+                                               Map<String, Object> additionalDetails) {
+        if ((sessionAuditDispatcher == null && auditTrailService == null) || context == null) {
             return Optional.empty();
         }
         AuditEventPayload payload = new AuditEventPayload();
@@ -38,10 +42,15 @@ public class TouchAuditHelper {
         payload.setAction(action);
         payload.setResource(resource);
         payload.setRequestId(context.traceId());
+        payload.setTraceId(context.traceId());
         payload.setIpAddress(context.clientIp());
         payload.setUserAgent(context.userAgent());
         payload.setDetails(mergeDetails(context, additionalDetails));
-        return Optional.ofNullable(auditTrailService.record(payload));
+        if (sessionAuditDispatcher != null) {
+            return Optional.of(sessionAuditDispatcher.record(payload));
+        }
+        auditTrailService.record(payload);
+        return Optional.empty();
     }
 
     private String determineRole() {

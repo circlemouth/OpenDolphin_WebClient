@@ -22,6 +22,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`../server-modernization/phase2/INDEX.md`](../server-modernization/phase2/INDEX.md): Phase2 ドキュメントのナビゲーション（foundation/domains/operations/notes を集約）。
 - `docs/server-modernization/security/3_7-security-compliance.md`: Phase 3.7 セキュリティ・コンプライアンス実装まとめ（2FA 監査ログ `status` フラグと AES キー要件見直し）。
 - `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md`: デバッグ観点のチェックリスト。ブロッカー調査時は `SERVER_MODERNIZED_STARTUP_BLOCKERS.md` を合わせて参照。
+- `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`: 2025-11-12 追加。WebORCA サブモジュールとモダナイズ版サーバー間の疎通チェック、`claim.host` 設定、53 API の検証マトリクス、Evidence 保存ルールを集約。2025-11-12 追記: `scripts/tools/orca-curl-snippets.js` で cURL 実行例を自動生成し、`tmp/orca-curl-snippets.txt` を Runbook §4 の接続確認タスクで参照する。2025-11-13 追記: Runbook §4.9 に `--dry-run` / `npm run orca-snippets:dry` の利用法と `artifacts/orca-connectivity/validation/<UTC>/snippets_dry.log` での証跡化手順を追加。棚卸し状況は `planning/phase2/DOC_STATUS.md` 内「モダナイズ/外部連携（ORCA）」セクションを参照し、同セクション直下の週次棚卸しテーブルで W17 以降の進捗を記録する。直近週次: 2025-11-18 (W21) / RUN_ID=`20251118T120000Z`。週次欄を更新する際は `npm run orca-weekly` の出力（`tmp/orca-weekly-summary.{json,md}`）を貼り付け、RUN_ID/日付を README・PHASE2_PROGRESS・DOC_STATUS へ同時反映すること。
 - 旧サーバーとモダナイズ版の REST API インベントリはそれぞれ [`../server/LEGACY_REST_API_INVENTORY.md`](../server/LEGACY_REST_API_INVENTORY.md) と [`../server-modernization/MODERNIZED_REST_API_INVENTORY.md`](../server-modernization/MODERNIZED_REST_API_INVENTORY.md) を使用。
 
 ### 4. 臨床・機能ガイド

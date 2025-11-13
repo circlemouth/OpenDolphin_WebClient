@@ -19,13 +19,13 @@ public class ModuleModel extends KarteEntryBean
     @Transient
     private IInfoModel model;
     
-    @Lob
-    @Column(nullable=false)
-    private byte[] beanBytes;
-    
     @ManyToOne
     @JoinColumn(name="doc_id", nullable=false)
     private DocumentModel document;
+
+    @Lob
+    @Column(nullable=false)
+    private byte[] beanBytes;
     
     /**
      * ModuleModelオブジェクトを生成する。

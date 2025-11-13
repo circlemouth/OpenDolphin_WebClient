@@ -246,6 +246,7 @@ public final class TouchRequestContextExtractor {
 
     private static WebApplicationException identityError(HttpServletRequest request, Response.Status status,
             String errorCode, String message, Map<String, Object> details) {
+        TouchAuditEvents.recordIdentityFailure(request, status, errorCode, message, details);
         return AbstractResource.restError(request, status, errorCode, message, details, null);
     }
 }

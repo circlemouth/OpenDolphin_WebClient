@@ -1,6 +1,7 @@
 package open.dolphin.infomodel;
 
 import jakarta.persistence.*;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import javax.swing.ImageIcon;
 
 /**
@@ -33,6 +34,7 @@ public class SchemaModel extends KarteEntryBean
     private String fileName;
     
     @Transient
+    @JsonIgnore
     private ImageIcon icon;
     
     @Transient

@@ -7,6 +7,13 @@
     <provider>org.hibernate.jpa.HibernatePersistenceProvider</provider>
     <jta-data-source>java:jboss/datasources/PostgresDS</jta-data-source>
     <exclude-unlisted-classes>false</exclude-unlisted-classes>
+    <class>open.dolphin.infomodel.Factor2Device</class>
+    <class>open.dolphin.infomodel.Factor2Code</class>
+    <class>open.dolphin.infomodel.Factor2Credential</class>
+    <class>open.dolphin.infomodel.Factor2Challenge</class>
+    <class>open.dolphin.infomodel.Factor2BackupKey</class>
+    <class>open.dolphin.infomodel.ObservationModel</class>
+    <class>open.dolphin.infomodel.PatientMemoModel</class>
     <properties>
       <property name="hibernate.hbm2ddl.auto" value="update"/>
       <property name="hibernate.show_sql" value="true"/>

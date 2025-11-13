@@ -1,6 +1,8 @@
 package open.dolphin.touch.converter;
 
 import open.dolphin.infomodel.DocInfoModel;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonProperty;
 
 /**
  * DocInfoModel
@@ -8,6 +10,7 @@ import open.dolphin.infomodel.DocInfoModel;
  * @author Minagawa,Kazushi. Digital Globe, Inc.
  *
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class IDocInfo implements java.io.Serializable {
     
     // DocumentModel.id
@@ -20,7 +23,12 @@ public class IDocInfo implements java.io.Serializable {
     private String docId;
     
     // 文書種別
+    @JsonProperty("docType")
     private String docType;
+
+    // 外来/入院/在宅フラグ
+    @JsonProperty("admFlag")
+    private String admFlag;
     
     // タイトル
     private String title;
@@ -181,6 +189,14 @@ public class IDocInfo implements java.io.Serializable {
 
     public void setDocType(String docType) {
         this.docType = docType;
+    }
+
+    public String getAdmFlag() {
+        return admFlag;
+    }
+
+    public void setAdmFlag(String admFlag) {
+        this.admFlag = admFlag;
     }
 
     public String getTitle() {
@@ -359,6 +375,9 @@ public class IDocInfo implements java.io.Serializable {
     }
 
     public IPVTHealthInsurance getPvtHealthInsuranceModel() {
+        if (pvtHealthInsurance == null) {
+            pvtHealthInsurance = new IPVTHealthInsurance();
+        }
         return pvtHealthInsurance;
     }
 
@@ -484,6 +503,7 @@ public class IDocInfo implements java.io.Serializable {
         this.setParentPk(model.getParentPk());
         this.setDocId(model.getDocId());
         this.setDocType(model.getDocType());
+        this.setAdmFlag(model.getAdmFlag());
         this.setTitle(model.getTitle());
         this.setPurpose(model.getPurpose());
         
@@ -553,6 +573,7 @@ public class IDocInfo implements java.io.Serializable {
         ret.setParentPk(this.getParentPk());
         ret.setDocId(this.getDocId());
         ret.setDocType(this.getDocType());
+        ret.setAdmFlag(this.getAdmFlag());
         ret.setTitle(this.getTitle());
         ret.setPurpose(this.getPurpose());
         

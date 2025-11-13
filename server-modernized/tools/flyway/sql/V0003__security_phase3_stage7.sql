@@ -45,6 +45,7 @@ CREATE TABLE IF NOT EXISTS d_audit_event (
     resource VARCHAR(255),
     patient_id VARCHAR(64),
     request_id VARCHAR(64),
+    trace_id VARCHAR(64),
     ip_address VARCHAR(64),
     user_agent VARCHAR(512),
     payload_hash VARCHAR(128) NOT NULL,
@@ -55,6 +56,7 @@ CREATE TABLE IF NOT EXISTS d_audit_event (
 
 CREATE INDEX IF NOT EXISTS idx_audit_event_time ON d_audit_event(event_time);
 CREATE INDEX IF NOT EXISTS idx_audit_event_action ON d_audit_event(action);
+CREATE INDEX IF NOT EXISTS idx_audit_event_trace_id ON d_audit_event(trace_id);
 
 CREATE TABLE IF NOT EXISTS d_third_party_disclosure (
     id BIGSERIAL PRIMARY KEY,

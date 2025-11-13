@@ -269,7 +269,12 @@ public class StampResource extends AbstractResource {
         }
         payload.setAction(action);
         payload.setResource(resolveResourcePath());
-        payload.setRequestId(resolveRequestId());
+        String traceId = resolveTraceId(httpServletRequest);
+        if (traceId == null || traceId.isEmpty()) {
+            traceId = resolveRequestId();
+        }
+        payload.setRequestId(traceId);
+        payload.setTraceId(traceId);
         payload.setIpAddress(resolveIpAddress());
         payload.setUserAgent(resolveUserAgent());
         return payload;

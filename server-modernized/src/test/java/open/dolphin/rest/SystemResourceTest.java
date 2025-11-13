@@ -38,6 +38,7 @@ class SystemResourceTest extends RuntimeDelegateTestSupport {
 
     private static final String REMOTE_USER = "F001:manager01";
     private static final String REQUEST_ID = "req-001";
+    private static final String LICENSE_SCOPE = "dolphin";
 
     @Mock
     private SystemServiceBean systemServiceBean;
@@ -224,7 +225,7 @@ class SystemResourceTest extends RuntimeDelegateTestSupport {
         licenseRepository.setProperty("license.max", "2");
         licenseRepository.setProperty("license.uid1", "ABC");
 
-        String result = resource.checkLicense("XYZ");
+        String result = resource.checkLicense(LICENSE_SCOPE, "XYZ");
 
         assertThat(result).isEqualTo("0");
         assertThat(licenseRepository.getProperty("license.uid2")).isEqualTo("XYZ");
@@ -240,7 +241,7 @@ class SystemResourceTest extends RuntimeDelegateTestSupport {
         licenseRepository.setProperty("license.max", "2");
         licenseRepository.setProperty("license.uid1", "XYZ");
 
-        String result = resource.checkLicense("XYZ");
+        String result = resource.checkLicense(LICENSE_SCOPE, "XYZ");
 
         assertThat(result).isEqualTo("0");
         verify(auditTrailService).record(auditCaptor.capture());
@@ -255,7 +256,7 @@ class SystemResourceTest extends RuntimeDelegateTestSupport {
         licenseRepository.setProperty("license.max", "1");
         licenseRepository.setProperty("license.uid1", "A");
 
-        String result = resource.checkLicense("B");
+        String result = resource.checkLicense(LICENSE_SCOPE, "B");
 
         assertThat(result).isEqualTo("4");
         verify(auditTrailService).record(auditCaptor.capture());
@@ -269,7 +270,7 @@ class SystemResourceTest extends RuntimeDelegateTestSupport {
         when(httpServletRequest.getRequestURI()).thenReturn("/dolphin/license");
         licenseRepository.failOnLoad();
 
-        String result = resource.checkLicense("XYZ");
+        String result = resource.checkLicense(LICENSE_SCOPE, "XYZ");
 
         assertThat(result).isEqualTo("2");
         verify(auditTrailService).record(auditCaptor.capture());
@@ -284,7 +285,7 @@ class SystemResourceTest extends RuntimeDelegateTestSupport {
         licenseRepository.setProperty("license.max", "2");
         licenseRepository.failOnStore();
 
-        String result = resource.checkLicense("XYZ");
+        String result = resource.checkLicense(LICENSE_SCOPE, "XYZ");
 
         assertThat(result).isEqualTo("3");
         verify(auditTrailService).record(auditCaptor.capture());

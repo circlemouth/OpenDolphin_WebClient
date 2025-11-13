@@ -1,0 +1,4 @@
+ schemaname | viewname 
+------------+----------
+(0 rows)
+

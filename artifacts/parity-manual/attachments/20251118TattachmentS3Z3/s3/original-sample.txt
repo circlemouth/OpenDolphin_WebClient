@@ -1,0 +1,2 @@
+Attachment storage regression payload.
+Line 2 for deterministic hashing.

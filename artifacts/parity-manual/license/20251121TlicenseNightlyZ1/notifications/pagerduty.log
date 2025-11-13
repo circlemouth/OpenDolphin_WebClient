@@ -1,0 +1,3 @@
+# PagerDuty notification (auto)
+status=not_triggered
+reason=gate_passed

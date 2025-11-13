@@ -5,6 +5,7 @@ import jakarta.inject.Inject;
 import jakarta.interceptor.AroundInvoke;
 import jakarta.interceptor.Interceptor;
 import jakarta.interceptor.InvocationContext;
+import jakarta.ws.rs.WebApplicationException;
 import java.util.HashMap;
 import java.util.Map;
 import open.dolphin.infomodel.IInfoModel;
@@ -38,6 +39,8 @@ public class SessionOperationInterceptor {
 
         try {
             return ctx.proceed();
+        } catch (WebApplicationException webEx) {
+            throw webEx;
         } catch (Exception ex) {
             SessionServiceException wrapped = wrapException(ex, context);
             logException(wrapped);

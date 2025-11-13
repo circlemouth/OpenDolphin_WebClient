@@ -1,0 +1,17 @@
+# storage.type: database
+storage:
+  type: database
+  database:
+    lobTable: d_attachment
+  s3:
+    bucket: opendolphin-attachments
+    region: ap-northeast-1
+    endpoint: http://minio:9000
+    basePath: clinics/${FACILITY_ID}/documents
+    forcePathStyle: true
+    serverSideEncryption: AES256
+    kmsKeyId: null
+    multipartUploadThresholdMb: 64
+    lifecycle:
+      transitionToStandardIaAfterDays: 30
+      expireAfterDays: 3650

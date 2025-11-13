@@ -60,10 +60,22 @@ public class DiagnosisSendWrapper extends InfoModel implements Serializable {
     
     // 更新された（転帰等）病名のリスト
     private List<RegisteredDiagnosisModel> updatedDiagnosis;
-    
+
 //mianagawa^ LSC 1.4 傷病名の削除 2013/06/24
     // 削除された病名リスト
     private List<RegisteredDiagnosisModel> deletedDiagnosis;
+
+    // 監査用トレース ID（REST ヘッダー X-Trace-Id を伝播）
+    private String traceId;
+
+    // 監査用リクエスト ID（X-Request-Id があれば優先）
+    private String requestId;
+
+    // 認証済みユーザー（facility:user 形式）
+    private String remoteUser;
+
+    // 監査対象リソースパス（例: /karte/diagnosis/claim）
+    private String auditResource;
     
     public List<RegisteredDiagnosisModel> getDeletedDiagnosis() {
         return deletedDiagnosis;
@@ -73,6 +85,38 @@ public class DiagnosisSendWrapper extends InfoModel implements Serializable {
         this.deletedDiagnosis = deletedDiagnosis;
     }
 //minagawa$    
+
+    public String getTraceId() {
+        return traceId;
+    }
+
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
+    }
+
+    public String getRequestId() {
+        return requestId;
+    }
+
+    public void setRequestId(String requestId) {
+        this.requestId = requestId;
+    }
+
+    public String getRemoteUser() {
+        return remoteUser;
+    }
+
+    public void setRemoteUser(String remoteUser) {
+        this.remoteUser = remoteUser;
+    }
+
+    public String getAuditResource() {
+        return auditResource;
+    }
+
+    public void setAuditResource(String auditResource) {
+        this.auditResource = auditResource;
+    }
     
     public String getConfirmDate() {
         return confirmDate;

@@ -115,3 +115,30 @@ sequenceDiagram
 - **再デプロイ手順**: `COMPOSE_FILE=docker-compose.yml:ops/base/docker-compose.yml:docker-compose.modernized.dev.yml docker compose build server-modernized-dev` の後、`./scripts/start_legacy_modernized.sh start` を実行して Legacy/Modernized 並列環境を再生成。以降の HTTP 再現は `PARITY_HEADER_FILE=tmp/claim-tests/diagnosis.headers`, `PARITY_BODY_FILE=tmp/claim-tests/send_diagnosis_success.json`, `PARITY_OUTPUT_DIR=artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/20251109T231845Z/diagnosis_claim` として `./ops/tools/send_parallel_request.sh --profile compose POST /karte/diagnosis/claim 20251109T231900Z_DIAGNOSIS` を直接ホストから実行（ヘルパーコンテナ経路はフォールバック手段として README に残しつつ、今回の run では不要だった）。
 - **HTTP/JMS/DB 結果**: Legacy=403（従来）、Modernized=200 / 238ms。`logs/jms_dolphinQueue_read-resource.txt` に `messages-added=1L`, `message-count=0L`, `delivering-count=0` が記録され、`logs/jms_DLQ_list-messages.txt` は空配列で DLQ への流入が消滅。`db/d_diagnosis_tail.txt` では ID=-47 の行が新規挿入され、`karte_id=2001` の登録が 2 件になった（`d_diagnosis_seq` 初期化不足により負値スタートだが、データが書き込まれた点を優先評価）。`logs/docker_logs_opendolphin-server-modernized-dev.txt:349` に `MessageSender Processing Diagnosis JMS message` が出力されている。
 - **フォローアップ**: (1) `d_diagnosis_seq` の現在値を正の主キーに再設定し、今後の INSERT が負値にならないよう DB タスクへ引き継ぐ。(2) `/karte/diagnosis/claim` のレスポンスが空 JSON のままなので、呼び出し側 UI で成否を判別できるよう仕様化する。(3) CLAIM/MML も含めた 3 リクエストを `send_parallel_request` からワンショットで回す Gate を `LEGACY_MODERNIZED_CAPTURE_RUNBOOK.md` に組み込み、`CLAIM_DIAGNOSIS_FIX/README.md` では最新実測（`20251109T231845Z`）を起点に DLQ/DB 監視サマリを更新する。
+
+### 8.6 2025-11-13 Legacy 診断 200 化（RUN_ID=`20251118TdiagnosisLegacyZ1`）
+| リクエスト | Legacy | Modernized | JMS / DB 観測 | 証跡 |
+| --- | --- | --- | --- | --- |
+| `POST /karte/diagnosis/claim` (`messaging_diagnosis`) | **200**, `response=9002004` | 200, 0.15s | Legacy: `messages-added`/`message-count` とも 0L（サーバー直送）。Modern: `messages-added=5L→6L` で enqueue 成功。`opendolphin.d_diagnosis` に `id=9002004` が追加され、シード行 `9001001` と合わせて 2 件を保持。`d_audit_event` は双方空（監査未実装）。 | `artifacts/parity-manual/messaging/20251118TdiagnosisLegacyZ1/`（HTTP, headers, meta, JMS, audit TSV, Legacy/Modern server logs） |
+
+**前提調整**
+1. `tmp/diagnosis_seed.sql` を Legacy Postgres へ投入し、`d_patient`/`d_karte`/`d_letter_module` の最低限データと診断シード行（`id=9001001`）を作成。`hibernate_sequence` と `opendolphin.d_diagnosis_seq` を `>=9002000` に揃えて ID 衝突を防止。
+2. `docker exec opendolphin-server /opt/jboss/wildfly/bin/jboss-cli.sh --connect --commands="/subsystem=logging/logger=dolphin.claim:add(level=INFO)"`（`tmp/configure-wildfly.legacy.cli` にも追記済み）で `Logger.getLogger("dolphin.claim").getLevel()` が null を返さないよう設定。これにより `DiagnosisSender` の NPE が解消される。
+3. ヘッダープロファイルは `tmp/parity-headers/diagnosis_TEMPLATE.headers` をそのまま使用し、helper コンテナで `ops/tools/send_parallel_request.sh --profile modernized-dev POST /karte/diagnosis/claim messaging_diagnosis` を実行して Legacy/Modern の HTTP, headers, meta を同一 RUN_ID で採取。
+
+**観測結果**
+- Legacy WildFly ログには `DiagnosisSendWrapper message has received. Sending ORCA will start(Not Que).` → `DiagnosisSender` がトレース ID 付きで送信した INFO が並び、例外出力なし（`artifacts/.../logs/legacy_server.log`）。
+- JMS (`jms.queue.dolphinQueue`) は Legacy before/after でカウンタ変化なし、Modern は `messages-added` が +1、`message-count=0L` のまま（同期完了）。
+- `d_audit_event` には今回も行が追加されず、監査ギャップは継続。`TRACEID_JMS_RUNBOOK Appendix A.6` と Checklist に「診断監査実装 pending」として残タスクを移管。
+- レスポンス本文が `9002004`（挿入済み診断の PK 群）となり、UI 側もテキスト比較で成功判定が可能になった。
+
+- **TODO**: Legacy 側で `EHT_DIAGNOSIS_*` 監査を記録する Listener を整備し、`d_audit_event` に traceId ごとの結果を残す。Modern 側は既に JMS + Audit が揃っているため、Legacy との比較用に同 TSV を Runbook へ取り込む。
+
+## 7. RUN_ID=`20251118TmessagingParityZ2`（2025-11-13 JST）再取得サマリ
+- **アーティファクト**: `artifacts/parity-manual/messaging/20251118TmessagingParityZ2/`（HTTP/headers/meta/response, `logs/send_parallel_request.log`, JMS before/after, `d_audit_event_*.tsv`, `modern_server.log`）。
+- **Claim (`PUT /20/adm/eht/sendClaim`)**: Legacy=200 / Modernized=200。Modern 側の `messages-added` が 26L→28L に増加し、`d_audit_event` へ `EHT_CLAIM_SEND` が 1 行追記された。
+- **Diagnosis (`POST /karte/diagnosis/claim`)**: `tmp/parity-headers/diagnosis_TEMPLATE.headers` の `Accept` を `text/plain` へ修正したうえで helper コンテナから実行。Modernized は 200＋JMS enqueue（`messages-added` カウンタの増分に含まれる）を記録したが、Legacy は 500（既存データ不整合）で停止。`d_audit_event` には両環境とも診断送信の新規行が無く、監査対象外である点を残課題として整理。
+- **Diagnosis audit fix (`RUN_ID=20251118TdiagnosisAuditZ2`)**: Legacy/Modern の WAR に audit hook を追加してから `--profile compose` で再取得し、`artifacts/parity-manual/messaging/20251118TdiagnosisAuditZ2/` に HTTP/headers/meta と `logs/d_audit_event_diagnosis_{legacy,modern}.tsv` を保存。TraceId=`parity-diagnosis-send-20251118TdiagnosisAuditZ2` の `EHT_DIAGNOSIS_CREATE` が両 DB へ記録され、Appendix A.6 / Checklist / PHASE2_PROGRESS の残課題を解消。
+- **MML (`PUT /mml/send`)**: Legacy=404（未実装）、Modernized=200。`MmlResource.sendMmlPayload` が `ISendPackage` を復号できることを `modern_server.log` と `d_audit_event_mml_modern.tsv` で確認。
+- **Accept ヘッダー整備**: Diagnosis テンプレートの `Accept` を `text/plain` へ揃え、`ops/tools/send_parallel_request.sh` で 406 を招いていた条件不一致を解消した。
+- **残課題**: Legacy `POST /karte/diagnosis/claim` の 500 と診断監査の未整備は Checklist/Future Work に転記し、`TRACEID_JMS_RUNBOOK.md` Appendix A.6 へ RUN_ID と差分を追記済み。

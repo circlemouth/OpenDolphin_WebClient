@@ -11,12 +11,16 @@ import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.sse.Sse;
 import jakarta.ws.rs.sse.SseEventSink;
+import open.dolphin.session.framework.SessionOperation;
+import open.dolphin.session.framework.SessionTraceAttributes;
+import open.dolphin.session.framework.SessionTraceManager;
 import open.dolphin.session.support.ChartEventSessionKeys;
 
 /**
  * SSE endpoint for chart event notifications.
  */
 @Path("/chart-events")
+@SessionOperation
 public class ChartEventStreamResource extends AbstractResource {
 
     @Inject
@@ -24,6 +28,9 @@ public class ChartEventStreamResource extends AbstractResource {
 
     @Context
     private HttpServletRequest servletRequest;
+
+    @Inject
+    private SessionTraceManager sessionTraceManager;
 
     @GET
     @Produces(MediaType.SERVER_SENT_EVENTS)
@@ -48,6 +55,32 @@ public class ChartEventStreamResource extends AbstractResource {
         }
 
         String fid = getRemoteFacility(remoteUser);
+        ensureTraceAttributes(remoteUser, fid);
         sseSupport.register(fid, clientUUID, sse, eventSink, lastEventId);
+    }
+
+    private void ensureTraceAttributes(String remoteUser, String facilityId) {
+        if (sessionTraceManager == null) {
+            return;
+        }
+        if (remoteUser != null && !remoteUser.isBlank()) {
+            String existingActor = sessionTraceManager.getAttribute(SessionTraceAttributes.ACTOR_ID);
+            if (existingActor == null || existingActor.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.ACTOR_ID, remoteUser);
+            }
+        }
+        if (facilityId != null && !facilityId.isBlank()) {
+            String existingFacility = sessionTraceManager.getAttribute(SessionTraceAttributes.FACILITY_ID);
+            if (existingFacility == null || existingFacility.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.FACILITY_ID, facilityId);
+            }
+        }
+        String traceId = resolveTraceId(servletRequest);
+        if (traceId != null && !traceId.isBlank()) {
+            String existingRequest = sessionTraceManager.getAttribute(SessionTraceAttributes.REQUEST_ID);
+            if (existingRequest == null || existingRequest.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.REQUEST_ID, traceId);
+            }
+        }
     }
 }

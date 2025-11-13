@@ -1,0 +1,1 @@
+event=failure traceId=45fef2b0-0a21-4ff4-89b6-c83686a135b8 endpoint=POST /jtouch/mkdocument Session layer failure in open.dolphin.session.KarteServiceBean$Proxy$_$$_WeldSubclass#addDocument

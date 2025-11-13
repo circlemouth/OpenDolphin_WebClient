@@ -1,0 +1,6 @@
+# doctor1 user for reporting CLI. Copy when running inside helper container.
+userName: 1.3.6.1.4.1.9414.72.103:doctor1
+password: doctor2025
+clientUUID: reporting-cli
+facilityId: 1.3.6.1.4.1.9414.72.103
+Content-Type: application/json

@@ -154,7 +154,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage(String json) throws IOException {
+    public String postSendPackage(@Context HttpServletRequest servletReq, String json) throws IOException {
         
         //System.err.println(json);
         
@@ -185,6 +185,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         // 病名Wrapper
         DiagnosisSendWrapper wrapper = pkg.diagnosisSendWrapperModel();
         if (wrapper!=null) {
+            populateDiagnosisAuditMetadata(servletReq, wrapper, "/20/adm/jtouch/sendPackage");
             karteService.postPutSendDiagnosis(wrapper);
         }
         
@@ -212,7 +213,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage2")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage2(String json) throws IOException {
+    public String postSendPackage2(@Context HttpServletRequest servletReq, String json) throws IOException {
         
         ObjectMapper mapper = new ObjectMapper();
         ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
@@ -228,6 +229,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
         // 病名Wrapper
         DiagnosisSendWrapper wrapper = pkg.diagnosisSendWrapperModel();
         if (wrapper!=null) {
+            populateDiagnosisAuditMetadata(servletReq, wrapper, "/20/adm/jtouch/sendPackage2");
             karteService.postPutSendDiagnosis(wrapper);
         }
         

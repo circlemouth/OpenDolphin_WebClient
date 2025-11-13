@@ -8,7 +8,13 @@ import jakarta.jms.JMSContext;
 import jakarta.jms.ObjectMessage;
 import jakarta.jms.Queue;
 import jakarta.transaction.Transactional;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import open.dolphin.audit.AuditEventEnvelope;
+import open.dolphin.audit.AuditEventEnvelope.Outcome;
 import open.dolphin.msg.gateway.MessagingHeaders;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,6 +48,24 @@ public class SessionAuditDispatcher {
         return persisted;
     }
 
+    public AuditEventEnvelope record(AuditEventPayload payload) {
+        return record(payload, null, null, null);
+    }
+
+    public AuditEventEnvelope record(AuditEventPayload payload, Outcome overrideOutcome, String errorCode, String errorMessage) {
+        if (payload == null) {
+            throw new IllegalArgumentException("AuditEventPayload must not be null");
+        }
+        AuditEventEnvelope.Builder builder = buildEnvelopeFromPayload(payload);
+        if (overrideOutcome != null) {
+            builder.outcome(overrideOutcome);
+        }
+        if (errorCode != null || errorMessage != null) {
+            builder.error(errorCode, errorMessage);
+        }
+        return dispatch(builder.build());
+    }
+
     private void publishToJms(AuditEventEnvelope envelope) {
         if (connectionFactory == null || dolphinQueue == null) {
             LOGGER.debug("JMS resources unavailable; skipping audit JMS publish [action={}, traceId={}]", envelope.getAction(), envelope.getTraceId());
@@ -59,5 +83,61 @@ public class SessionAuditDispatcher {
         } catch (Exception ex) {
             LOGGER.warn("Failed to publish audit envelope to JMS [traceId={}]", envelope.getTraceId(), ex);
         }
+    }
+
+    private AuditEventEnvelope.Builder buildEnvelopeFromPayload(AuditEventPayload payload) {
+        String action = optional(payload.getAction()).orElse("UNSPECIFIED_ACTION");
+        String resource = optional(payload.getResource()).orElse("/resources");
+        String requestId = optional(payload.getRequestId()).orElseGet(() -> optional(payload.getTraceId()).orElse(UUID.randomUUID().toString()));
+        String traceId = optional(payload.getTraceId()).orElse(requestId);
+
+        AuditEventEnvelope.Builder builder = AuditEventEnvelope.builder(action, resource)
+                .requestId(requestId)
+                .traceId(traceId)
+                .actorId(payload.getActorId())
+                .actorDisplayName(payload.getActorDisplayName())
+                .actorRole(payload.getActorRole())
+                .ipAddress(payload.getIpAddress())
+                .userAgent(payload.getUserAgent())
+                .patientId(payload.getPatientId())
+                .details(cloneDetails(payload.getDetails()));
+
+        Map<String, Object> details = payload.getDetails();
+        resolveFacility(details).ifPresent(builder::facilityId);
+        determineOutcome(details).ifPresent(builder::outcome);
+        return builder;
+    }
+
+    private Optional<Outcome> determineOutcome(Map<String, Object> details) {
+        if (details == null) {
+            return Optional.empty();
+        }
+        Object status = details.get("status");
+        if (status instanceof String statusText && "failed".equalsIgnoreCase(statusText)) {
+            return Optional.of(Outcome.FAILURE);
+        }
+        return Optional.empty();
+    }
+
+    private Optional<String> resolveFacility(Map<String, Object> details) {
+        if (details == null) {
+            return Optional.empty();
+        }
+        Object facility = details.get("facilityId");
+        if (facility instanceof String value && !value.isBlank()) {
+            return Optional.of(value);
+        }
+        return Optional.empty();
+    }
+
+    private Map<String, Object> cloneDetails(Map<String, Object> details) {
+        if (details == null) {
+            return Collections.emptyMap();
+        }
+        return new HashMap<>(details);
+    }
+
+    private Optional<String> optional(String value) {
+        return value == null || value.isBlank() ? Optional.empty() : Optional.of(value);
     }
 }

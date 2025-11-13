@@ -79,7 +79,7 @@ import open.dolphin.adm20.dto.TotpVerificationRequest;
 import open.dolphin.adm20.dto.TotpVerificationResponse;
 import open.dolphin.security.SecondFactorSecurityConfig;
 import open.dolphin.security.audit.AuditEventPayload;
-import open.dolphin.security.audit.AuditTrailService;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 import open.dolphin.security.totp.TotpRegistrationResult;
 
 
@@ -102,7 +102,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
     private SecondFactorSecurityConfig secondFactorSecurityConfig;
 
     @Inject
-    private AuditTrailService auditTrailService;
+    private SessionAuditDispatcher sessionAuditDispatcher;
 
     @Context
     private HttpServletRequest httpRequest;
@@ -277,7 +277,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
     @Path("/sendPackage")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
-    public String postSendPackage(String json) throws IOException {
+    public String postSendPackage(@Context HttpServletRequest servletReq, String json) throws IOException {
         
         //System.err.println(json);
         
@@ -308,6 +308,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         // 病名Wrapper
         DiagnosisSendWrapper wrapper = pkg.diagnosisSendWrapperModel();
         if (wrapper!=null) {
+            populateDiagnosisAuditMetadata(servletReq, wrapper, "/20/adm/sendPackage");
             admissionService.postPutSendDiagnosis(wrapper);
         }
         
@@ -1027,8 +1028,17 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             payload.setIpAddress(httpRequest.getRemoteAddr());
             payload.setUserAgent(httpRequest.getHeader("User-Agent"));
             payload.setRequestId(Optional.ofNullable(httpRequest.getHeader("X-Request-Id")).orElse(UUID.randomUUID().toString()));
+        } else {
+            payload.setRequestId(UUID.randomUUID().toString());
         }
-        auditTrailService.record(payload);
+        String traceId = resolveTraceId(httpRequest);
+        if (traceId == null || traceId.isBlank()) {
+            traceId = payload.getRequestId();
+        }
+        payload.setTraceId(traceId);
+        if (sessionAuditDispatcher != null) {
+            sessionAuditDispatcher.record(payload);
+        }
     }
 
     private void recordAuditFailure(String action, String resource, long userPk, String reason, Throwable error) {

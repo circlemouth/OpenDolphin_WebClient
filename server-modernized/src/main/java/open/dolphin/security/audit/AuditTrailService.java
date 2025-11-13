@@ -47,6 +47,7 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
         event.setResource(payload.getResource());
         event.setPatientId(payload.getPatientId());
         event.setRequestId(payload.getRequestId());
+        event.setTraceId(determineTraceId(payload));
         event.setIpAddress(payload.getIpAddress());
         event.setUserAgent(payload.getUserAgent());
         event.setPayload(serializedPayload);
@@ -55,6 +56,8 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
         event.setEventHash(hash(previousHash + payloadHash + now.toEpochMilli() + safe(payload.getActorId())));
 
         em.persist(event);
+        em.flush();
+        backfillTraceAndPayload(event.getId(), event.getTraceId(), serializedPayload);
         return event;
     }
 
@@ -68,6 +71,7 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
         payload.setActorRole(envelope.getActorRole());
         payload.setPatientId(envelope.getPatientId());
         payload.setRequestId(determineRequestId(envelope));
+        payload.setTraceId(determineTraceId(envelope));
         payload.setIpAddress(envelope.getIpAddress());
         payload.setUserAgent(envelope.getUserAgent());
         payload.setDetails(envelope.getDetails());
@@ -80,6 +84,20 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
             return envelope.getRequestId();
         }
         return envelope.getTraceId();
+    }
+
+    private String determineTraceId(AuditEventEnvelope envelope) {
+        if (envelope.getTraceId() != null && !envelope.getTraceId().isBlank()) {
+            return envelope.getTraceId();
+        }
+        return envelope.getRequestId();
+    }
+
+    private String determineTraceId(AuditEventPayload payload) {
+        if (payload.getTraceId() != null && !payload.getTraceId().isBlank()) {
+            return payload.getTraceId();
+        }
+        return payload.getRequestId();
     }
 
     private String serializePayload(Map<String, Object> details) {
@@ -105,5 +123,16 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
 
     private String safe(String value) {
         return value == null ? "" : value;
+    }
+
+    private void backfillTraceAndPayload(Long id, String traceId, String serializedPayload) {
+        if (id == null) {
+            return;
+        }
+        em.createNativeQuery("update d_audit_event set trace_id = :traceId, payload = :payload where id = :id")
+                .setParameter("traceId", traceId)
+                .setParameter("payload", serializedPayload)
+                .setParameter("id", id)
+                .executeUpdate();
     }
 }

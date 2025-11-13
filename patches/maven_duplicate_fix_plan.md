@@ -29,3 +29,7 @@
 - **ドキュメント/Runbook**: `docs/server-modernization/phase2/notes/domain-transaction-parity.md §3.5`, `SERVER_MODERNIZED_DEBUG_CHECKLIST.md`, `PHASE2_PROGRESS.md` へ今回のブロッカーと対処計画を明記済み。修正実装後は同セクションを「解消済み」に更新し、`DOC_STATUS.md` に成果物リンクを追加する。
 - **互換性試験**: ArtifactId 変更後は `ops/tools/send_parallel_request.sh` や WildFly ベースの deploy スクリプトで WAR を再配置できるかを再検証し、`artifacts/parity-manual/build/duplicate_project/` に再発防止ログを残す。
 
+## 2025-11-12 実施ログ（RUN_ID=`20251116TreactorFixZ1`）
+- ルート `pom.xml`／`pom.server-modernized.xml`／`server-modernized/pom.xml` の `<modules>` / `<artifactId>` を再点検し、Legacy=`opendolphin-server`、Modernized=`opendolphin-server-modernized` で GAV が重複しないことを確認。`server-modernized/pom.xml` では `<build><finalName>opendolphin-server</finalName>` により WAR 名互換を維持。
+- `mvn -f pom.server-modernized.xml -pl server-modernized -am help:effective-pom -DskipTests` → `... package -DskipTests` を実行し、DuplicateProjectException が発生しないことを `artifacts/parity-manual/build/duplicate_project/20251116TreactorFixZ1/{help_effective_pom.log,mvn_package.log}` で証跡化。`server-modernized-target-ls.txt` に WAR/静的解析成果物の一覧を保存。
+- `docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md`、`.../PHASE2_PROGRESS.md`、`.../notes/domain-transaction-parity.md §3.5`、`docs/web-client/planning/phase2/DOC_STATUS.md` を同 RUN_ID で更新し、Build/CI 手順では常に `-f pom.server-modernized.xml -pl server-modernized -am <goal> -DskipTests` を使うよう記載。今後同症状が再発した場合は本 RUN_ID を参照して help:effective-pom を再取得する。

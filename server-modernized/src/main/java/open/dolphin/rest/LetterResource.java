@@ -171,7 +171,11 @@ public class LetterResource extends AbstractResource {
         payload.setAction(action);
         payload.setResource(resolveResourcePath());
         String traceId = resolveTraceId(httpServletRequest);
-        payload.setRequestId(traceId != null ? traceId : resolveRequestId());
+        if (traceId == null || traceId.isBlank()) {
+            traceId = resolveRequestId();
+        }
+        payload.setRequestId(traceId);
+        payload.setTraceId(traceId);
         payload.setIpAddress(resolveIpAddress());
         payload.setUserAgent(resolveUserAgent());
         return payload;

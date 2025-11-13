@@ -47,6 +47,9 @@ public class AuditEvent implements Serializable {
     @Column(name = "request_id", length = 64)
     private String requestId;
 
+    @Column(name = "trace_id", length = 64)
+    private String traceId;
+
     @Column(name = "ip_address", length = 64)
     private String ipAddress;
 
@@ -136,6 +139,14 @@ public class AuditEvent implements Serializable {
 
     public void setRequestId(String requestId) {
         this.requestId = requestId;
+    }
+
+    public String getTraceId() {
+        return traceId;
+    }
+
+    public void setTraceId(String traceId) {
+        this.traceId = traceId;
     }
 
     public String getIpAddress() {

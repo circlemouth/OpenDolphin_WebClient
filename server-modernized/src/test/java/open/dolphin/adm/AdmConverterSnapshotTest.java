@@ -46,7 +46,8 @@ import org.junit.jupiter.api.Test;
  */
 class AdmConverterSnapshotTest {
 
-    private static final Path SNAPSHOT_BASE = Paths.get("..", "tmp", "legacy-fixtures");
+    private static final String SNAPSHOT_BASE_PROPERTY = "adm.snapshot.fixtureDir";
+    private static final Path SNAPSHOT_BASE = resolveSnapshotBase();
     private static final Path ARTIFACT_BASE = Paths.get("..", "artifacts", "parity-manual", "adm-snapshots");
     private static final boolean UPDATE_SNAPSHOTS = Boolean.getBoolean("adm.snapshot.update");
     private static final DateTimeFormatter TIMESTAMP_FORMAT = new DateTimeFormatterBuilder()
@@ -88,6 +89,14 @@ class AdmConverterSnapshotTest {
         for (SnapshotTarget target : SnapshotTarget.values()) {
             assertSnapshotMatches(scenario, target);
         }
+    }
+
+    private static Path resolveSnapshotBase() {
+        String configured = System.getProperty(SNAPSHOT_BASE_PROPERTY);
+        if (configured != null && !configured.isBlank()) {
+            return Paths.get(configured);
+        }
+        return Paths.get("..", "ops", "tests", "fixtures", "adm");
     }
 
     private void assertSnapshotMatches(ConverterScenario scenario, SnapshotTarget target) throws Exception {
