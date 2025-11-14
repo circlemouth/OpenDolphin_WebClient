@@ -17,6 +17,7 @@ import java.util.Date;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
+import open.dolphin.adm20.dto.PhrExportJobResponse;
 import open.dolphin.adm20.dto.PhrExportRequest;
 import open.dolphin.adm20.export.PhrExportConfig;
 import open.dolphin.adm20.export.PhrExportJobManager;
@@ -25,7 +26,6 @@ import open.dolphin.adm20.export.PhrExportStorageFactory;
 import open.dolphin.adm20.export.SignedUrlService;
 import open.dolphin.adm20.rest.PHRResource;
 import open.dolphin.adm20.rest.support.PhrAuditHelper;
-import open.dolphin.adm20.session.AMD20_PHRServiceBean;
 import open.dolphin.adm20.session.PHRAsyncJobServiceBean;
 import open.dolphin.adm20.support.PhrDataAssembler;
 import open.dolphin.infomodel.PHRAsyncJob;
@@ -47,9 +47,6 @@ class PHRResourceTest extends RuntimeDelegateTestSupport {
 
     @InjectMocks
     private PHRResource resource;
-
-    @Mock
-    private AMD20_PHRServiceBean phrServiceBean;
 
     @Mock
     private PhrDataAssembler dataAssembler;
@@ -94,6 +91,7 @@ class PHRResourceTest extends RuntimeDelegateTestSupport {
         lenient().when(httpRequest.getAttribute(anyString())).thenReturn(TRACE_ID);
         lenient().when(httpRequest.getRequestURI()).thenReturn("/resources/20/adm/phr/export");
         lenient().when(exportConfig.getTokenTtlSeconds()).thenReturn(300L);
+        lenient().when(exportConfig.getStorageType()).thenReturn(PhrExportConfig.StorageType.FILESYSTEM);
     }
 
     @AfterEach
@@ -176,6 +174,59 @@ class PHRResourceTest extends RuntimeDelegateTestSupport {
     }
 
     @Test
+    void getExportStatus_fallsBackWhenSignedUrlIsNull() {
+        UUID jobId = UUID.randomUUID();
+        PHRAsyncJob job = succeededJob(jobId);
+        when(asyncJobService.find(jobId)).thenReturn(job);
+        when(signedUrlService.createSignedUrl(anyString(), anyString(), anyLong())).thenReturn(null);
+
+        Response response = resource.getExportStatus(jobId.toString());
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        PhrExportJobResponse body = (PhrExportJobResponse) response.getEntity();
+        assertThat(body.getDownloadUrl()).isEqualTo("/resources/20/adm/phr/export/" + jobId + "/artifact");
+        verify(auditHelper).recordFailure(any(),
+                eq("PHR_SIGNED_URL_NULL_FALLBACK"),
+                isNull(),
+                eq("null_result"),
+                argThat(details -> "RESTEASY".equals(details.get("signedUrlIssuer"))
+                        && "FILESYSTEM".equals(details.get("storageType"))
+                        && "phr-container".equals(details.get("bandwidthProfile"))
+                        && Long.valueOf(300L).equals(details.get("signedUrlTtlSeconds"))
+                        && ("/resources/20/adm/phr/export/" + jobId + "/artifact").equals(details.get("downloadUrl"))
+                        && "alias/opd/phr-export".equals(details.get("kmsKeyAlias"))));
+    }
+
+    @Test
+    void getExportStatus_recordsIssueFailedWhenSignedUrlThrowsException() {
+        UUID jobId = UUID.randomUUID();
+        PHRAsyncJob job = succeededJob(jobId);
+        when(asyncJobService.find(jobId)).thenReturn(job);
+        when(signedUrlService.createSignedUrl(anyString(), anyString(), anyLong()))
+                .thenThrow(new IllegalStateException("PHR_EXPORT_SIGNING_SECRET missing"));
+
+        Response response = resource.getExportStatus(jobId.toString());
+
+        assertThat(response.getStatus()).isEqualTo(200);
+        PhrExportJobResponse body = (PhrExportJobResponse) response.getEntity();
+        String fallbackUrl = "/resources/20/adm/phr/export/" + jobId + "/artifact";
+        assertThat(body.getDownloadUrl()).isEqualTo(fallbackUrl);
+        verify(auditHelper).recordFailure(any(),
+                eq("PHR_SIGNED_URL_ISSUE_FAILED"),
+                isNull(),
+                eq("IllegalStateException"),
+                argThat(details -> "RESTEASY".equals(details.get("signedUrlIssuer"))
+                        && fallbackUrl.equals(details.get("artifactPath"))
+                        && "PHR_EXPORT_SIGNING_SECRET missing".equals(details.get("message"))));
+        verify(auditHelper).recordFailure(any(),
+                eq("PHR_SIGNED_URL_NULL_FALLBACK"),
+                isNull(),
+                eq("signed_url_unavailable"),
+                argThat(details -> fallbackUrl.equals(details.get("downloadUrl"))
+                        && "signed_url_unavailable".equals(details.get("fallbackReason"))));
+    }
+
+    @Test
     void downloadArtifact_throwsForbiddenWhenSignatureInvalid() {
         UUID jobId = UUID.randomUUID();
         PHRAsyncJob job = new PHRAsyncJob();
@@ -224,5 +275,15 @@ class PHRResourceTest extends RuntimeDelegateTestSupport {
         Field field = target.getClass().getDeclaredField(fieldName);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private static PHRAsyncJob succeededJob(UUID jobId) {
+        PHRAsyncJob job = new PHRAsyncJob();
+        job.setJobId(jobId);
+        job.setFacilityId("F001");
+        job.setState(PHRAsyncJob.State.SUCCEEDED);
+        job.setResultUri("artifact.zip");
+        job.setProgress(100);
+        return job;
     }
 }

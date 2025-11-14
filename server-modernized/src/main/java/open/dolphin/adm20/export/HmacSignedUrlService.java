@@ -18,8 +18,8 @@ public class HmacSignedUrlService implements SignedUrlService {
 
     @Override
     public String createSignedUrl(String basePath, String facilityId, long ttlSeconds) {
-        long expires = Instant.now().getEpochSecond() + ttlSeconds;
-        String signature = sign(basePath, facilityId, expires);
+        long expires = Instant.now().getEpochSecond() + requirePositiveTtl(ttlSeconds);
+        String signature = sign(basePath, facilityId, expires, requireSigningSecret());
         return basePath + "?expires=" + expires + "&token=" + signature;
     }
 
@@ -28,21 +28,39 @@ public class HmacSignedUrlService implements SignedUrlService {
         if (Instant.now().getEpochSecond() > expiresEpochSeconds) {
             return false;
         }
-        String expected = sign(basePath, facilityId, expiresEpochSeconds);
+        String expected = sign(basePath, facilityId, expiresEpochSeconds, requireSigningSecret());
         return constantTimeEquals(expected, token);
     }
 
-    private String sign(String basePath, String facilityId, long expires) {
+    private String sign(String basePath, String facilityId, long expires, String secret) {
         String payload = basePath + "|" + facilityId + "|" + expires;
         try {
             Mac mac = Mac.getInstance(HMAC_ALGORITHM);
-            SecretKeySpec keySpec = new SecretKeySpec(config.getSigningSecret().getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
+            SecretKeySpec keySpec = new SecretKeySpec(secret.getBytes(StandardCharsets.UTF_8), HMAC_ALGORITHM);
             mac.init(keySpec);
             byte[] digest = mac.doFinal(payload.getBytes(StandardCharsets.UTF_8));
             return Base64.getUrlEncoder().withoutPadding().encodeToString(digest);
         } catch (Exception ex) {
             throw new IllegalStateException("Failed to sign URL", ex);
         }
+    }
+
+    private long requirePositiveTtl(long ttlSeconds) {
+        if (ttlSeconds <= 0) {
+            throw new IllegalStateException("Signed URL TTL must be greater than zero.");
+        }
+        return ttlSeconds;
+    }
+
+    private String requireSigningSecret() {
+        if (config == null) {
+            throw new IllegalStateException("PhrExportConfig is not available.");
+        }
+        String secret = config.getSigningSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException("PHR_EXPORT_SIGNING_SECRET is not configured.");
+        }
+        return secret;
     }
 
     private boolean constantTimeEquals(String a, String b) {

@@ -4,7 +4,8 @@
 ## リポジトリ概要
 - `client/`: 既存 Swing クライアントと共通ライブラリ。Java/Swing 資産で、参照のみ。
 - `docs/`: 設計・要件ドキュメント。Web クライアント関連は `docs/web-client/README.md` をナビゲーションハブとする。
-- サーバーモダナイズに関する資料は `docs/server-modernization/phase2/README.md` を起点に辿る。
+- サーバーモダナイズに関する資料は `docs/server-modernization/phase2/INDEX.md` を起点に辿る。
+- 領域別マネージャーの割当と参照先は `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` で管理し、同ファイルから各チェックリスト（ORCA 接続 / ORCA PHR / ORCA Sprint2 / Web クライアント UX / Server Foundation）へ移動できる。
 - `common/`, `ext_lib/`: 共有ユーティリティおよび外部ライブラリ。
 - `server/`: 既存サーバー実装。**サーバースクリプトは絶対に触らないこと。**
 
@@ -22,6 +23,7 @@
 
 ## ドキュメント整理・保存ルール
 - Web クライアント側の資料は `docs/web-client/README.md`、サーバーモダナイズ側は `docs/server-modernization/phase2/INDEX.md` を必ず起点とし、リンクを追加したら棚卸し台帳 `docs/web-client/planning/phase2/DOC_STATUS.md` のステータスを更新する。
+- 領域別マネージャー割当は `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` に集約されている。ワーカーは着手前に該当領域のチェックリスト（例: `PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md`, `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`, `PHASE2_SERVER_FOUNDATION_MANAGER_CHECKLIST.md`）を確認し、完了後は同チェックリストと DOC_STATUS を必ず同期させる。
 - 参照頻度が低下した資料は `DOC_STATUS.md` で Dormant/Archive に区分し、Archive 判定になったら `docs/archive/<YYYYQn>/`（例: `docs/archive/2025Q4/`）へ移動する。移動元ファイルにはスタブとアーカイブ先リンクを残すこと。
 - サーバー系タスクで作成する Runbook や計画書は `docs/server-modernization/phase2/(foundation|domains|operations|notes)/` 配下へ保存する。クライアント系タスクは `docs/web-client/(architecture|features|guides|operations|ux)/` を使用し、`LEGACY_INTEGRATION_CHECKS.md` など既存カテゴリに追記する。
 - マネージャーが `【ワーカー指示】` を出す場合は、指示内に保存先ディレクトリを明記し、サーバー系・クライアント系の成果物が衝突しないようディレクトリを分ける。ワーカーは `【ワーカー報告】` と合わせて保存先パスと `DOC_STATUS.md` への反映状況を報告する。
@@ -29,6 +31,9 @@
 
 ## タスク分担と役割
 - 作業量が大きいと判断したタスクではマネージャーとして対応し、必要なワーカー数を検討したうえでタスクを分割する。
+- マネージャーは自分のタスクをdocs/managerdocs以下で整理し、指示内容や把握している内容を含めて進捗状況をチェックボックス形式のドキュメントにまとめ、常に最新の進捗状況が反映されるように適宜修正する。
+- `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` に掲載されている領域（ORCA 接続 / ORCA PHR ギャップ / ORCA Sprint2 / Web クライアント UX・Features / Server Foundation）それぞれに対応するマネージャーチェックリストを参照し、【ワーカー指示】内で必ず該当ドキュメントを明示する。新しい領域を追加する場合は同ファイルへ行を追加してからチェックリストを作成する。
+- 現行の必読チェックリスト: `PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md`, `PHASE2_ORCA_PHR_GAP_MANAGER_CHECKLIST.md`, `PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md`, `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`, `PHASE2_SERVER_FOUNDATION_MANAGER_CHECKLIST.md`。タスク完了後は各チェックボックスと `DOC_STATUS.md` の該当行をセットで更新し、必要に応じてログ/証跡パスを追記する。
 - マネージャーがタスクを割り振る際は、ワーカーが指示内で発見した問題の原因を自律的に切り分け・修正して完遂できるよう、前提条件や期待するアウトプットを明示する。
 - 分担作業を指示する場合は、ワーカーが自立して作業できる粒度を見極め、担当範囲が重複せず依存関係が最小になるよう調整する。
 - 各ワーカーには担当範囲が重複しないよう十分配慮した明快なプロンプトを用意し、成果物と着手手順が即座に把握できる記述とする。また、ワーカーが無駄にコンテキストを消費せずにすむようにタスク立案段階で収集した情報はワーカー指示に詳細に含めること。

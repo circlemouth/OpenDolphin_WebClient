@@ -203,25 +203,25 @@
 ※ 上記以外にも `/orca/tensu/point/` や `/orca/claim/` 系の補助エンドポイントが存在するため、要件変更時はソース全体を確認すること。
 
 ### PHRResource (`/20/adm/phr`)
-| HTTP | パス | 主な処理 | 備考 |
-| --- | --- | --- | --- |
-| GET | `/20/adm/phr/accessKey/{accessKey}` | アクセスキーから PHRKey 取得 | 施設 ID を突合し、存在しない場合は TouchErrorResponse 付き 404。監査ログ `PHR_ACCESS_KEY_FETCH` を記録。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L104-L150】 |
-| GET | `/20/adm/phr/patient/{patientId}` | 患者 ID から PHRKey 取得 | `PHRKey#dateToString` で日付整形後に返却。施設不一致は 403 と監査 `facility_mismatch`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L152-L190】 |
-| PUT | `/20/adm/phr/accessKey` | PHRKey 登録/更新 | JSON を `PHRKey` にバインドし、登録時は remote facility を強制。監査 `PHR_ACCESS_KEY_UPSERT` を出力。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L167-L204】 |
-| GET | `/20/adm/phr/{facilityId,patientId,...}` | PHR データバンドル取得 | `PhrDataAssembler` で文書/検査を組み立てた `PHRContainer` を返却。`docSince`/`labSince`/SMS 返信先を含む。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L380-L438】 |
-| GET | `/20/adm/phr/allergy/{patientId}` | アレルギー一覧テキスト出力 | `AllergyModel` を改行区切りで返却。監査 `PHR_ALLERGY_TEXT` を出力。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L206-L243】 |
-| GET | `/20/adm/phr/disease/{patientId}` | 病名一覧テキスト出力 | 未登録時は固定メッセージを返却。監査 `PHR_DISEASE_TEXT`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L244-L276】 |
-| GET | `/20/adm/phr/medication/{patientId}` | 直近処方テキスト出力 | `ClaimBundle` を復元し数量/用法を整形。監査 `PHR_MEDICATION_TEXT`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L278-L300】 |
-| GET | `/20/adm/phr/labtest/{patientId}` | 直近検査結果テキスト出力 | 検体日付を `normalizeSampleDate2` で整形。監査 `PHR_LABTEST_TEXT`。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L302-L323】 |
-| GET | `/20/adm/phr/abnormal/{patientId}` | 異常値テキスト出力 | 異常項目が無い場合は「異常値はありません。」を返却。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L325-L347】 |
-| GET | `/20/adm/phr/image/{patientId}` | PHR 画像取得 | `SchemaModel#getJpegByte` をストリーム転送し、存在しなければ 404。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L348-L379】 |
-| POST | `/20/adm/phr/identityToken` | Layer ID トークン発行 | `IdentityService#getIdentityToken` 呼び出し結果を返却し失敗時は TouchErrorResponse を使用。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L439-L460】 |
-| POST | `/20/adm/phr/export` | PHR データ非同期出力ジョブ作成 | `PhrExportJobManager#submit` でジョブ作成・監査 `PHR_EXPORT_REQUEST` を記録。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L462-L501】 |
-| GET | `/20/adm/phr/status/{jobId}` | PHR ジョブ状態取得 | `PHRAsyncJob` を参照し、完了時は署名付き `downloadUrl` を生成。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L503-L526】 |
-| DELETE | `/20/adm/phr/status/{jobId}` | PHR ジョブ取消 | `PHRAsyncJobServiceBean#cancel` で PENDING ジョブを `CANCELLED` へ遷移。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L528-L565】 |
-| GET | `/20/adm/phr/export/{jobId}/artifact` | 成果物ダウンロード | HMAC 署名を検証しファイルシステムから ZIP をストリーム配信。【F:server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java†L567-L626】 |
+- ADM20 側で PHR 連携の責務を担うが、2025-11-14 時点では RESTEasy へのリソース登録が保留となっており Legacy API 11 件が未公開。`PhrRequestContextExtractor` や `PhrAuditHelper` は用意済みのため、各エンドポイントごとに監査 ID・施設整合チェック・署名付き応答ルールを整理してから公開する必要がある。
 
-> 非同期エクスポート系エンドポイント（`POST /20/adm/phr/export`、`GET /20/adm/phr/status/{jobId}` など）は現時点で実装が存在しない。`PhrExportJobManager` や `PHRAsyncJobServiceBean` は用意されているが、REST エンドポイント・ジョブワーカーが未実装なため運用不可。
+#### 欠落エンドポイント整理 (2025-11-14)
+
+| ID | HTTP | パス | レガシー機能 | 必要なモダナイズ側モジュール | 優先度 / 前提条件 | 備考 |
+| --- | --- | --- | --- | --- | --- | --- |
+| PHR-01 | GET | `/20/adm/phr/abnormal/{patientId}` | 直近検査から異常値のみを抽出しテキスト出力。 | `PhrDataAssembler`（`PHRContainer` → 異常値 DTO）+ `AMD20_PHRServiceBean` + `PhrAuditHelper` | P0（患者公開情報）。`TouchRequestContextExtractor` による facility / traceId 必須、監査イベント `PHR_ABNORMAL_TEXT` 追加が前提。 | `web.xml` context-param `touch.phr.requiredHeaders`（`X-Facility-Id`, `X-Touch-TraceId`）必須 |
+| PHR-02 | PUT | `/20/adm/phr/accessKey` | PHRKey を登録・更新し患者と施設を紐付け。 | `AMD20_PHRServiceBean` + `PhrRequestContextExtractor` + `PhrAuditHelper` | P0（外部利用鍵管理）。`phr_access_key` Flyway 適用と `X-Facility-Id` ヘッダー必須化が条件。 | 同上 |
+| PHR-03 | GET | `/20/adm/phr/accessKey/{accessKey}` | アクセスキー末尾照合で PHRKey を検索。 | `PhrDataAssembler` + `PhrAuditHelper` + `TouchErrorResponse` | P0。アクセスキー suffix マスクと facility 一致検証、`PHR_ACCESS_KEY_FETCH` 監査 ID 整備が必要。 | 同上 |
+| PHR-04 | GET | `/20/adm/phr/allergy/{patientId}` | アレルギー一覧をテキスト列挙。 | `PhrDataAssembler`（`AllergyModel` → 文字列）+ `PhrAuditHelper` | P1。`PHR_ALLERGY_TEXT` 監査とエンコーディング変換、`Shift_JIS` 回避のため UTF-8 固定化が前提。 | 同上 |
+| PHR-05 | GET | `/20/adm/phr/disease/{patientId}` | 継続傷病名一覧をテキスト返却。 | `PhrDataAssembler` + `PhrAuditHelper` | P1。Legacy 固定メッセージとの差分検証と多言語対応ポリシー確定が必要。 | 同上 |
+| PHR-06 | POST | `/20/adm/phr/identityToken` | Layer ID 認証トークン発行。 | `IdentityService` + `PhrRequestContextExtractor` + `PhrAuditHelper` | P0（PHR 認証）。Layer ID クライアント証明書格納と `IdentityService` シークレット注入が必須。 | 同上 |
+| PHR-07 | GET | `/20/adm/phr/image/{patientId}` | Schema 画像を JPEG ストリーミング。 | `PhrDataAssembler` + `SchemaModel` ストリーマ + `TouchErrorResponse` | P1。`Cache-Control: no-store` と大容量スロットリング設計、`/resources` 登録が前提。 | 同上 |
+| PHR-08 | GET | `/20/adm/phr/labtest/{patientId}` | 直近検査結果をテキスト整形して返却。 | `AMD20_PHRServiceBean` + `PhrDataAssembler` + `PhrAuditHelper` | P1。`normalizeSampleDate2` の Jakarta 互換実装とラボ件数フィルタ（docSince/labSince）の設計が必要。 | 同上 |
+| PHR-09 | GET | `/20/adm/phr/medication/{patientId}` | 直近処方の用法・数量をテキスト表示。 | `PhrDataAssembler`（`ClaimBundle` 復元）+ `PhrAuditHelper` | P1。`BundleDolphin` → JSON 変換と禁忌語置換ロジックを `TouchMedicationFormatter` へ抽出する前提。 | 同上 |
+| PHR-10 | GET | `/20/adm/phr/patient/{patientId}` | 患者 ID から PHRKey を取得。 | `PhrDataAssembler` + `PhrRequestContextExtractor` + `PhrAuditHelper` | P0。施設整合と `PHR_ACCESS_KEY_FETCH_BY_PATIENT` 監査、患者不在時 404 雛形が必要。 | 同上 |
+| PHR-11 | GET | `/20/adm/phr/{facilityId,patientId,...}` | 文書・検査・連絡先を束ねた `PHRContainer` を返却。 | `PhrDataAssembler` + `PhrDataAssembler#assemble()` + `SignedUrlService`（SMS 連絡先） | P0（PHR 本体）。`docSince`/`labSince` クエリの設計、`PHRContainer` の Jackson DTO 化、署名付き URL 発行のための `PHR_EXPORT_CONFIG` 設定が前提。 | 同上 |
+
+> 備考: `PhrExportJobManager`/`PHRAsyncJobServiceBean` を利用する `/20/adm/phr/export*` 系は別タスク `PHR-EXPORT-TRACK` で管理中。まずは PHR-01〜11 の RESTEasy 登録と監査ログ整備を完了させ、その後にエクスポート API を復活させる。
 
 ## 5. 管理・受付バックエンド (ADM10/ADM20)
 
@@ -266,8 +266,60 @@
 ### DolphinResource / DolphinResourceASP (`/touch`)
 - スマートデバイス向けカルテビューア。カルテ文書・患者情報・検査結果・スタンプツリー取得、`POST /touch/idocument` / `/touch/idocument2` によるカルテ登録を提供。【F:server-modernized/src/main/java/open/dolphin/touch/DolphinResource.java†L24-L428】【F:server-modernized/src/main/java/open/dolphin/touch/DolphinResourceASP.java†L24-L1436】
 
+> **2025-11-14 再登録**: `server-modernized/src/main/webapp/WEB-INF/web.xml` の `resteasy.resources` へ `open.dolphin.touch.DolphinResourceASP` を再追加し、Touch 系 ASP エンドポイントも RESTEasy 配下に戻した（Task-A）。web.xml への依存が増えるため、以降の差分検証では該当ファイル差分を必ずレビューする。
+>
+> **2025-11-14 ギャップ棚卸し**: Legacy XML 応答／Touch 専用 DTO への置換・監査拡充は未完了。`TouchPatientResource`/`TouchStampResource`/`TouchUserResource` 等の新実装に統合し、ヘッダー検証・JSON 応答へ揃える必要がある。
+
+#### 欠落エンドポイント整理 (2025-11-14)
+
+| ID | HTTP | パス | レガシー機能 | 必要なモダナイズ側モジュール | 優先度 / 前提条件 |
+| --- | --- | --- | --- | --- | --- |
+| Dolphin-01 | GET | `/touch/document/progressCourse/{param}` | カルテ経過記録の閲覧。 | `DolphinResource` + `TouchModuleService`（ProgressCourse DTO）+ `DolphinTouchAuditLogger` | P0（診療フロー）。`TouchAuthHandler` で `X-Access-Reason` を必須化し、監査イベント `TOUCH_PROGRESS_COURSE_VIEW` を定義。 |
+| Dolphin-02 | POST | `/touch/idocument` | Progress/soap 等カルテ保存。 | `KarteServiceBean` + `TouchDocumentConverter (IDocument)` + `TouchAuditHelper` | P0。JTA トランザクション復活とエラーマッピング統一、電子署名/JMS 連携の前提を整理。 |
+| Dolphin-03 | POST | `/touch/idocument2` | IDocument2 形式でのカルテ保存。 | `KarteServiceBean` + `TouchDocumentConverter (IDocument2)` + `TouchAuditHelper` | P0。`FreeText`/`ProgressCourse` モジュール変換を統一し、`Trace-Id` の透過を保証。 |
+| Dolphin-04 | GET | `/touch/item/laboItem/{param}` | 単項目ラボの推移取得。 | `TouchModuleService#getLaboGraph` + `TouchResponseCache` | P1。10 秒 TTL キャッシュと `X-Facility-Id` 検証、Micrometer 計測が必須。 |
+| Dolphin-05 | GET | `/touch/module/diagnosis/{param}` | 診断モジュール取得。 | `TouchModuleService#getDiagnoses` + `TouchAuditHelper` | P1。ページング API を QueryParam 化し、診断リスト DTO を JSON Schema 化。 |
+| Dolphin-06 | GET | `/touch/module/laboTest/{param}` | ラボモジュール取得。 | `TouchModuleService#getLaboModules` + `TouchRequestContextExtractor` | P1。施設ヘッダーと患者 ID 整合、`labSince` オプションの設計が前提。 |
+| Dolphin-07 | GET | `/touch/module/rp/{param}` | 処方モジュール取得。 | `TouchModuleService#getRpModules` + `IOSHelper` | P1。RP 多剤表示用 DTO を確定し、旧端末向け `numDays` 等の互換性を確保。 |
+| Dolphin-08 | GET | `/touch/module/schema/{param}` | スキーマ画像取得。 | `TouchModuleService#getSchema` + `SchemaModel` ストリーマ | P1。Base64 応答 or `image/jpeg` 直送の選択、`Cache-Control: no-store` 設計が必要。 |
+| Dolphin-09 | GET | `/touch/module/{param}` | 任意 entity のモジュール取得。 | `TouchModuleService#getModules` + `TouchRequestContextExtractor` | P1。`entity`/`firstResult`/`maxResult` を QueryParam 化し、監査項目を entity 別に記録。 |
+| Dolphin-10 | GET | `/touch/patient/firstVisitors/{param}` | 初診患者一覧取得。 | `TouchPatientService#getFirstVisitors` + `TouchAuditHelper` | P1。`consentToken` ヘッダー必須＋来院シナリオの seed データ整備。 |
+| Dolphin-11 | GET | `/touch/patient/visit/{param}` | 来院履歴取得。 | `TouchPatientService#getVisitList` + `TouchRequestContextExtractor` | P0（受付画面）。offset/limit/sort QueryParam 実装と `facilityMismatch` 403 の標準化が必要。 |
+| Dolphin-12 | GET | `/touch/patient/visitLast/{param}` | 最終来院情報取得。 | `TouchPatientService#getLastVisit` + `TouchAuditHelper` | P1。FHIR/AuditEvent 連携と 0 件時のレスポンス仕様策定が前提。 |
+| Dolphin-13 | GET | `/touch/patient/visitRange/{param}` | 期間指定で来院履歴取得。 | `TouchPatientService#getVisitRange` + `TouchRequestContextExtractor` | P1。`from/to` バリデーションと 31 日超リクエストのレート制御が必要。 |
+| Dolphin-14 | GET | `/touch/patient/{pk}` | 患者基本情報取得。 | `TouchPatientService#getPatientByPk` + `TouchAuditHelper` | P0。`X-Consent-Token` と `Trace-Id` を必須にし、監査 `TOUCH_PATIENT_PROFILE_VIEW` を活用。 |
+| Dolphin-15 | GET | `/touch/patientPackage/{pk}` | 患者パッケージ取得。 | `TouchPatientService#getPatientPackage` + `JsonTouchSharedService` + `IOSHelper` | P0。アレルギー・保険 DTO を JSON 化し、機微ログを redact するガイドラインが必要。 |
+| Dolphin-16 | GET | `/touch/patients/name/{param}` | 氏名検索。 | `TouchPatientService#searchPatientsByName` + `KanjiHelper` + `TouchAuditHelper` | P1。Facility ガード・かな/漢字正規化・検索ログの匿名化が必須。 |
+| Dolphin-17 | GET | `/touch/stamp/{param}` | スタンプ取得。 | `TouchStampService#getStamp` + `TouchResponseCache` | P1。`X-Stamp-Revision` キャッシュキーと監査 `TOUCH_STAMP_FETCH` の整備が前提。 |
+| Dolphin-18 | GET | `/touch/stampTree/{param}` | スタンプツリー取得。 | `TouchStampService#getStampTree` + `TouchResponseCache` | P1。公開/共有/施設別ツリーのキャッシュ分割と 5MB 超データの分割配信設計が必要。 |
+| Dolphin-19 | GET | `/touch/user/{param}` | Touch ユーザー認証。 | `TouchUserService#getUser` + `TouchAuthHandler` + `DolphinTouchAuditLogger` | P0（ログイン）。`X-Device-Id` を含むヘッダー整合・2FA 状態確認・監査 `TOUCH_USER_AUTH` が前提。 |
+
 ### DemoResource / DemoResourceASP (`/demo`)
 - デモモード用エンドポイント。`GET /demo/patient/{pk}` や `GET /demo/module/{param}` など、`/touch` 相当の読み取り専用 API を提供。【F:server-modernized/src/main/java/open/dolphin/touch/DemoResource.java†L24-L347】【F:server-modernized/src/main/java/open/dolphin/touch/DemoResourceASP.java†L24-L1440】
+
+> **2025-11-14 再登録**: `web.xml` へ `open.dolphin.touch.DemoResourceASP` を再追加し、デモ環境固定値 `touch.demo.fixedFacilityId=1.3.6.1.4.1.9414.2.100` を context-param で配布。DemoResource 系エンドポイントは該当パラメータを参照して Facility 強制の設計レビューを行うこと。
+>
+> **2025-11-14 ギャップ棚卸し**: Demo テナントの XML レスポンスが Legacy クラス（`open.dolphin.touch.DemoResourceASP`）のまま。モダナイズ済みの `Touch*` サービスを流用して JSON 応答へ統一する必要がある。
+
+#### 欠落エンドポイント整理 (2025-11-14)
+
+| ID | HTTP | パス | レガシー機能 | 必要なモダナイズ側モジュール | 優先度 / 前提条件 |
+| --- | --- | --- | --- | --- | --- |
+| Demo-01 | GET | `/demo/document/progressCourse/{param}` | デモカルテの経過記録 XML を返し、看護業務フローを再現。 | `TouchModuleService`（ProgressCourse DTO 化）+ `TouchRequestContextExtractor` + `TouchAuditHelper` | P2（デモカルテ）。Demo テナント専用 DB と `X-Demo-Mode` ヘッダーを必須化し、監査を Demo 名前空間へ分離。 |
+| Demo-02 | GET | `/demo/item/laboItem/{param}` | 単項目ラボトレンドを返却しグラフ表示を再現。 | `TouchModuleService#getLaboGraph` + `IPhoneServiceBean`（demo フィクスチャ） + `TouchResponseCache` | P2（デモ検査）。ラボサンプルデータ投入と 10 秒 TTL キャッシュ設定、`facilityId=2.100` 固定を前提。 |
+| Demo-03 | GET | `/demo/module/diagnosis/{param}` | 登録診断のページング取得。 | `TouchModuleService#getDiagnoses` + `TouchAuditHelper` | P2。診断 DTO を JSON 化し、デモ医師ロールのみアクセス許可。 |
+| Demo-04 | GET | `/demo/module/laboTest/{param}` | 検査結果モジュール一覧を返却。 | `TouchModuleService#getLaboModules` + `TouchRequestContextExtractor` | P2。ラボ施設 ID の固定化と無効患者リクエスト時 404 応答が前提。 |
+| Demo-05 | GET | `/demo/module/rp/{param}` | 処方モジュールを返却。 | `TouchModuleService#getRpModules` + `IOSHelper` | P2。RP 多剤テストデータの整備と `BundleDolphin` → JSON 変換確認が必要。 |
+| Demo-06 | GET | `/demo/module/schema/{param}` | スキーマ画像を Base64 で返却。 | `TouchModuleService#getSchema` + `SchemaModel` ストリーマ + `Cache-Control` | P2。Schema バイナリを 5MB 以下に圧縮し、`no-store`/帯域制限の設定が必要。 |
+| Demo-07 | GET | `/demo/module/{param}` | 任意 entity のモジュール（観察値等）取得。 | `TouchModuleService#getModules` + `TouchRequestContextExtractor` | P2。entity ごとの UI 表示テストに用いるため、Demo DTO を JSON Schema 化。 |
+| Demo-08 | GET | `/demo/patient/firstVisitors/{param}` | 初診患者一覧を返却。 | `TouchPatientService#getFirstVisitors` + `JsonTouchSharedService` + `TouchAuditHelper` | P2（デモ受付）。Demo facility=2.100 に縛り、監査イベント `DEMO_FIRST_VISITORS` を追加。 |
+| Demo-09 | GET | `/demo/patient/visit/{param}` | 来院履歴を返却。 | `TouchPatientService#getVisitList` + `TouchRequestContextExtractor` | P2。Mock PVT データ投入と offset/limit クエリの検証が前提。 |
+| Demo-10 | GET | `/demo/patient/visitLast/{param}` | 最終来院情報を返却。 | `TouchPatientService#getLastVisit` + `TouchAuditHelper` | P2。最終来院日時を固定 seed から生成し、ログで区別。 |
+| Demo-11 | GET | `/demo/patient/visitRange/{param}` | 期間指定の来院履歴を返却。 | `TouchPatientService#getVisitRange` + `TouchRequestContextExtractor` | P2。期間フィルタ検証用のサンプルデータを追加、`from/to` クエリの妥当性チェックが必要。 |
+| Demo-12 | GET | `/demo/patient/{pk}` | 患者基本情報を取得。 | `TouchPatientService#getPatientByPk` + `TouchRequestContextExtractor` + `TouchAuditHelper` | P2。`Trace-Id` と Demo consent トークンを強制し、患者不一致時のダミー応答を定義。 |
+| Demo-13 | GET | `/demo/patientPackage/{pk}` | 患者パッケージ（患者＋保険＋アレルギー）取得。 | `TouchPatientService#getPatientPackage` + `JsonTouchSharedService` + `IOSHelper` | P2。保険・公費のデモデータを固定 seed で投入し、署名済み consent のみ許可。 |
+| Demo-14 | GET | `/demo/patients/name/{param}` | 氏名検索で患者リストを返却。 | `TouchPatientService#searchPatientsByName` + `KanjiHelper` + `TouchAuditHelper` | P2。かな/漢字の Normalization ロジックを Demo 検索要件へ合わせ、ログを Demo 名前空間に振り分け。 |
+| Demo-15 | GET | `/demo/user/{param}` | デモユーザーの資格情報を返却。 | `TouchUserService#getUser` + `TouchAuthHandler` + `TouchAuditHelper` | P2（ログインデモ）。Demo アカウント `ehrTouch` のみ許可、Basic 認証失敗時のレスポンスを固定化。 |
 
 ### JsonTouchResource (`/touch/jtouch`)
 - `/touch/jtouch` 系は JSON ベースの軽量 API として患者検索、受付パッケージ取得、スタンプ取得などを提供。【F:server-modernized/src/main/java/open/dolphin/touch/JsonTouchResource.java†L69-L488】

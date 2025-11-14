@@ -68,6 +68,15 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
 
     private static final Logger LOGGER = Logger.getLogger(PHRResource.class.getName());
     private static final String TRACE_ID_ATTRIBUTE = open.dolphin.rest.LogFilter.class.getName() + ".TRACE_ID";
+    private static final long DEFAULT_SIGNED_URL_TTL_SECONDS = 300L;
+    private static final String SIGNED_URL_ISSUER = "RESTEASY";
+    private static final String SIGNED_URL_BANDWIDTH_PROFILE = "phr-container";
+    private static final String SIGNED_URL_KMS_KEY_ALIAS = "alias/opd/phr-export";
+    private static final String SIGNED_URL_SUCCESS_ACTION = "PHR_SIGNED_URL_ISSUED";
+    private static final String SIGNED_URL_FALLBACK_ACTION = "PHR_SIGNED_URL_NULL_FALLBACK";
+    private static final String SIGNED_URL_FAILURE_ACTION = "PHR_SIGNED_URL_ISSUE_FAILED";
+    private static final String SIGNED_URL_FALLBACK_REASON_NULL = "null_result";
+    private static final String SIGNED_URL_FALLBACK_REASON_UNAVAILABLE = "signed_url_unavailable";
 
     private final ObjectMapper objectMapper = new ObjectMapper();
 
@@ -865,10 +874,93 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     private PhrExportJobResponse toJobResponse(PhrRequestContext ctx, PHRAsyncJob job, boolean includeSignedUrl) {
         PhrExportJobResponse response = PhrExportJobResponse.from(job);
         if (includeSignedUrl && job.getState() == PHRAsyncJob.State.SUCCEEDED && job.getResultUri() != null) {
-            long ttlSeconds = exportConfig != null ? exportConfig.getTokenTtlSeconds() : 300L;
             String basePath = buildArtifactPath(job.getJobId());
-            response.setDownloadUrl(signedUrlService.createSignedUrl(basePath, ctx.facilityId(), ttlSeconds));
+            long ttlSeconds = DEFAULT_SIGNED_URL_TTL_SECONDS;
+            try {
+                ttlSeconds = resolveSignedUrlTtlSeconds();
+                String signedUrl = createSignedDownloadUrl(basePath, ctx.facilityId(), ttlSeconds);
+                if (signedUrl != null && !signedUrl.isBlank()) {
+                    response.setDownloadUrl(signedUrl);
+                    Map<String, Object> details = signedUrlDetails(job, basePath, ttlSeconds);
+                    details.put("downloadUrl", signedUrl);
+                    auditSuccess(ctx, SIGNED_URL_SUCCESS_ACTION, null, details);
+                } else {
+                    response.setDownloadUrl(basePath);
+                    auditSignedUrlFallback(ctx, job, basePath, ttlSeconds, SIGNED_URL_FALLBACK_REASON_NULL, null);
+                }
+            } catch (Exception ex) {
+                response.setDownloadUrl(basePath);
+                auditSignedUrlIssueFailed(ctx, job, basePath, ttlSeconds, ex);
+            }
         }
         return response;
+    }
+
+    private String createSignedDownloadUrl(String basePath, String facilityId, long ttlSeconds) {
+        if (signedUrlService == null) {
+            throw new IllegalStateException("SignedUrlService is not available.");
+        }
+        return signedUrlService.createSignedUrl(basePath, facilityId, ttlSeconds);
+    }
+
+    private long resolveSignedUrlTtlSeconds() {
+        if (exportConfig == null) {
+            throw new IllegalStateException("PhrExportConfig is not available.");
+        }
+        long ttlSeconds = exportConfig.getTokenTtlSeconds();
+        if (ttlSeconds <= 0) {
+            throw new IllegalStateException("PHR_EXPORT_TOKEN_TTL_SECONDS must be greater than zero.");
+        }
+        return ttlSeconds;
+    }
+
+    private Map<String, Object> signedUrlDetails(PHRAsyncJob job, String basePath, long ttlSeconds) {
+        Map<String, Object> details = new HashMap<>();
+        details.put("jobId", job.getJobId().toString());
+        details.put("facilityId", job.getFacilityId());
+        details.put("resultUri", job.getResultUri());
+        details.put("artifactPath", basePath);
+        details.put("signedUrlIssuer", SIGNED_URL_ISSUER);
+        details.put("storageType", resolveStorageType());
+        details.put("signedUrlTtlSeconds", ttlSeconds);
+        details.put("bandwidthProfile", SIGNED_URL_BANDWIDTH_PROFILE);
+        details.put("kmsKeyAlias", SIGNED_URL_KMS_KEY_ALIAS);
+        return details;
+    }
+
+    private String resolveStorageType() {
+        if (exportConfig == null || exportConfig.getStorageType() == null) {
+            return "UNKNOWN";
+        }
+        return exportConfig.getStorageType().name();
+    }
+
+    private void auditSignedUrlFallback(PhrRequestContext ctx,
+            PHRAsyncJob job,
+            String basePath,
+            long ttlSeconds,
+            String reason,
+            String message) {
+        Map<String, Object> fallbackDetails = signedUrlDetails(job, basePath, ttlSeconds);
+        fallbackDetails.put("fallbackReason", reason);
+        fallbackDetails.put("downloadUrl", basePath);
+        if (message != null && !message.isBlank()) {
+            fallbackDetails.put("message", message);
+        }
+        auditFailure(ctx, SIGNED_URL_FALLBACK_ACTION, null, reason, fallbackDetails);
+    }
+
+    private void auditSignedUrlIssueFailed(PhrRequestContext ctx,
+            PHRAsyncJob job,
+            String basePath,
+            long ttlSeconds,
+            Exception ex) {
+        Map<String, Object> failureDetails = signedUrlDetails(job, basePath, ttlSeconds);
+        failureDetails.put("exception", ex.getClass().getSimpleName());
+        if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
+            failureDetails.put("message", ex.getMessage());
+        }
+        auditFailure(ctx, SIGNED_URL_FAILURE_ACTION, null, ex.getClass().getSimpleName(), failureDetails);
+        auditSignedUrlFallback(ctx, job, basePath, ttlSeconds, SIGNED_URL_FALLBACK_REASON_UNAVAILABLE, ex.getMessage());
     }
 }

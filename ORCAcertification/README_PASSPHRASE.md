@@ -6,19 +6,20 @@
 | ファイル | 用途 | 備考 |
 | --- | --- | --- |
 | `103867__JP_u00001294_client3948.p12` | WebORCA クラウド本番向けクライアント証明書（PKCS#12） | Windows 配下でも扱えるよう平文で配置。取り扱い時は `chmod 600` を徹底する。 |
-| `新規 テキスト ドキュメント.txt` | PKCS#12 パスフレーズ／接続 URL／443 番ポート／施設ログイン ID（`jimu6482`）／ORCAMO ID／API キーをまとめたメモ | 1 行目=Base URL、3 行目=port、5 行目=施設ログイン/PKCS#12 pass、8 行目以降に `ORCAMO ID:` と `APIキー:` が続く。値の更新はこのファイルのみを編集する。 |
+| `新規 テキスト ドキュメント.txt` | PKCS#12 パスフレーズ／接続 URL／443 番ポート／施設ログイン ID（`jimu6482`）／ORCAMO ID／API キーをまとめたメモ | 1 行目=Base URL、3 行目=port、5 行目=施設ログイン ID（※BASIC 認証ユーザー）、8 行目以降に `ORCAMO ID:`（契約 ID）と `APIキー:`、最終行に `PKCS#12パスフレーズ:` が並ぶ。値の更新はこのファイルのみを編集する。 |
 
 > **開発端末での利用に限定**: クラウド本番との疎通検証に使う開発環境のみで参照し、商用/共有ストレージへはコピーしない。暗号化は不要だが、利用後は `unset ORCA_PROD_*` を必ず実行する。
 
 ## 2. 取得例（環境変数）
 ```bash
 export ORCA_PROD_CERT=ORCAcertification/103867__JP_u00001294_client3948.p12
-export ORCA_PROD_CERT_PASS="$(sed -n '5p' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d '\r\n')"
-export ORCA_PROD_BASIC_USER="$(rg -o 'ORCAMO ID:(.*)' -r '$1' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d ' ')"
+export ORCA_PROD_CERT_PASS="$(rg -o 'PKCS#12パスフレーズ:(.*)' -r '$1' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d ' ')"
+export ORCA_PROD_BASIC_USER="$(sed -n '5p' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d '\r\n')"   # jimu6482
 export ORCA_PROD_BASIC_KEY="$(rg -o 'APIキー:(.*)' -r '$1' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d ' ')"
 ```
 - `rg` が使えない環境では `awk -F ':' '/APIキー/{print $2}'` 等でも可。
 - CLI history への漏洩を避けるため `set +o history` を有効化してから export する。
+- OpenSSL 3.x（macOS など）では RC2-40 がデフォルト無効化のため、PKCS#12 を展開するときは `-provider legacy -provider default` を付与する。
 
 ## 3. `curl --cert-type P12` の呼び出し
 証跡採取時は Runbook 記載のコマンドに以下のように組み込む。

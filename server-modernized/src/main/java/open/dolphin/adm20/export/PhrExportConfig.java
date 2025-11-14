@@ -5,7 +5,6 @@ import jakarta.enterprise.context.ApplicationScoped;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Locale;
-import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,10 +72,10 @@ public class PhrExportConfig {
     private String resolveSigningSecret() {
         String secret = resolveProperty(SIGNING_SECRET_KEY, SIGNING_SECRET_ENV, null);
         if (secret == null || secret.isBlank()) {
-            secret = UUID.randomUUID().toString().replace("-", "");
-            LOGGER.warning("phr-export.signing.secret is not configured. Generated ephemeral secret; tokens will rotate on restart.");
+            LOGGER.warning("phr-export.signing.secret is not configured.");
+            return null;
         }
-        return secret;
+        return secret.trim();
     }
 
     private long resolveLongProperty(String key, String envKey, long defaultValue) {

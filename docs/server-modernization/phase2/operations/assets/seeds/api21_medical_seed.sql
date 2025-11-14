@@ -1,8 +1,14 @@
 -- Seed: API21 medical patient (8 桁患者番号 `00000001`)
--- 適用コマンド例:
---   docker exec -i jma-receipt-docker-for-ubuntu-2204-orca-1 \
---     psql -U orca -d orca \
---     < docs/server-modernization/phase2/operations/assets/seeds/api21_medical_seed.sql
+-- 利用制限（2025-11-15 更新）:
+--   * WebORCA 本番は既存データ参照を優先し、本ファイルによる seed 投入は Ops から明示的な許可が出た場合のみ実施する。
+--   * P0 API RUN の通常フローでは seed を投入しないため、欠落データを確認した場合は `DOC_STATUS.md` と ORCA 週次ログへ報告して RUN を延期する。
+--   * 下記手順はアーカイブ目的の備忘録として保持し、実行時は `ORCA_CONNECTIVITY_VALIDATION.md` 最新版と Ops ガイドラインに従うこと。
+-- 適用手順（WebORCA クラウド本番のみ / ローカル ORCA コンテナは禁止）:
+--   1. `ORCAcertification/` 配下の PKCS#12 と Basic 情報を読み込み、`ORCA_CONNECTIVITY_VALIDATION.md` §4.4 の手順で
+--      WebORCA 本番 (`https://weborca.cloud.orcamo.jp:443`) へ到達できる `psql` 経路を準備する。
+--   2. Ops 指定の bastion もしくは TLS トンネル上で `psql "sslmode=verify-full ..."` を実行し、
+--      `\i docs/server-modernization/phase2/operations/assets/seeds/api21_medical_seed.sql` で投入する。
+--   3. `docker/orca/jma-receipt-docker` などローカル WebORCA コンテナを起動して `docker exec ... psql` を実行する手順は廃止済み。
 -- Evidence: `artifacts/orca-connectivity/20251113TorcaSeed7DigitZ1/seed_psql.log`
 -- 再投入時の注意:
 --   * hospnum=1, ptid=1 の患者/保険/公費レコードを DELETE → INSERT で置き換えるため、既存データをバックアップしてから実行する。
