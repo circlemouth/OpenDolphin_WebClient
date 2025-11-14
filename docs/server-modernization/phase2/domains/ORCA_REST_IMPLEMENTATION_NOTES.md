@@ -59,3 +59,74 @@
 - `docs/server-modernization/phase2/operations/ORCA_API_STATUS.md` 2.3 節の REST ラッパー行へ Phase2 Sprint2 / Runbook 参照を明記済み。開発前に `RN_ID` を `ORCA_CONNECTIVITY_VALIDATION.md` §4.2〜§4.4（予約・請求）および §4.3〜§4.4（患者・症状）に沿って取得し、`logs/<date>-orca-connectivity.md` に記録する。
 - 疎通確認コマンドは `curl --cert-type P12` による公式 ORCA 参照のみを使用。`ORCAcertification/` 配下の証明書・Basic 認証情報を共有し、`assets/orca-api-requests/*.json` のテンプレから JSON/XML を生成する。
 - DTO 追加やエンドポイント実装後は `docs/web-client/planning/phase2/DOC_STATUS.md` 更新、および `SERVER_MODERNIZATION_PLAN.md` Backlog の関連チケットへ進捗を反映する。
+
+## 6. Sprint2 エンドポイント設計詳細
+
+### 6.1 共通ガードレール（Resource / Service / DTO）
+- **Resource 責務**: 新旧 ORCA ラッパーは `open.dolphin.rest.OrcaResource` 配下に `@POST` メソッドとして集約し、`AbstractResource` を継承して `jakarta.ws.rs` 系アノテーションへ統一する。`@Context HttpServletRequest` で `X-Trace-Id` を受け取り、`rest-api-modernization.md` §2 の方針どおり Jakarta 依存 (`jakarta.inject.Inject`, `jakarta.ws.rs.core.Response`) を使用する。
+- **Service 責務**: Resource 層は ORCA リクエスト変換と応答整形のみを担い、業務ロジックは従来の `AppoServiceBean` / `PVTServiceBean` / `PatientServiceBean` / `ChartEventServiceBean` / `ClaimSender` に委譲する。必要な場合は `OrcaAppointmentFacade` や `OrcaPatientSyncFacade` のような薄い Facade を `server-modernized` に追加し、DTO ↔ InfoModel のマッピングを集中管理する。
+- **DTO 責務**: `open.dolphin.rest.dto.orca` 配下に Sprint2 のリクエスト/レスポンス DTO を全て配置し、`rest-api-modernization.md` §3 のシリアライザ設定に合わせて `jackson-databind 2.17` でシリアライズする。ORCA 生データ（Shift_JIS JSON/XML）は DTO へ取り込む前に `OrcaApi` 側で UTF-8 に再デコードする。
+- **例外処理**: ORCA HTTP エラー／`Api_Result != "0000"` は `OrcaGatewayException` へ正規化し、`ExceptionMapper<OrcaGatewayException>` で HTTP 424（ORCA 応答不整合）、429（ORCA 側 4097／レート制限）、504（タイムアウト）など REST レイヤーの意味を付与する。監査用に `AuditTrailService` へ `status=failed` を記録し、レスポンス JSON には `apiResult`, `orcaMessage`, `traceId` を含める。
+- **Shift_JIS / Serializer**: ORCA 側とは `Content-Type: application/json; charset=Shift_JIS` を固定し、`OrcaConnect` 内で `Charset.forName("MS932")` を使って変換。Resource 層では UTF-8 JSON を `application/json` で返却し、`AbstractResource#getSerializeMapper` の `FAIL_ON_UNKNOWN_PROPERTIES=false` / `WRITE_DATES_AS_TIMESTAMPS=false` 設定を継承する。
+- **テスト導線**: すべての Sprint2 エンドポイントは `ORCA_CONNECTIVITY_VALIDATION.md` §4.3（P0 予約〜受付）と §4.4（患者同期・症状）を準拠テストとし、curl 証跡は `ORCA_API_STATUS.md` の Matrix 行へ RUN_ID 付きでリンクする。
+
+### 6.2 API ごとの設計ノート
+#### <a id="appointlstv2-matrix-no6"></a> appointlstv2（Matrix No.6）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/appointlst.md`](../operations/assets/orca-api-spec/raw/appointlst.md)。`Appointment_Time` / `Appointment_Information` の Shift_JIS フィールドと `Api_Result` パターンを踏まえる。
+- **モダナイズ REST URI**: `POST /orca/appointments/list`（`OrcaResource#listAppointments`）。`@Consumes(MediaType.APPLICATION_JSON)` / `@Produces(MediaType.APPLICATION_JSON)` で 1 日分の予約一覧を返却。
+- **Service/DTO 変更点**: `OrcaAppointmentListRequest/Response` を `open.dolphin.rest.dto.orca` へ追加し、`AppoServiceBean.putAppointments` を再利用してローカルキャッシュへ自動同期。`OrcaApi#appointlstv2` を追加して `OrcaConnect` が Shift_JIS 送受信を処理する。
+- **テスト/Runbook 連携**: `ORCA_CONNECTIVITY_VALIDATION.md` §4.3 の P0-2 手順で curl 証跡を取得し、`ORCA_API_STATUS.md` 2.1 行に RUN_ID を追記。`logs/<date>-orca-connectivity.md` の `P0_appointlstv2` ディレクトリと突き合わせる。
+
+#### <a id="appointlst2v2-matrix-no15"></a> appointlst2v2（Matrix No.15）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/appointlst2.md`](../operations/assets/orca-api-spec/raw/appointlst2.md)。患者別予約検索の `Patient_ID` / `Base_Date` 条件を順守。
+- **モダナイズ REST URI**: `POST /orca/appointments/patient`。`patientId` と `baseDate` で抽出し、`reservations[].visitStatus` を計算して返す。
+- **Service/DTO 変更点**: `PatientAppointmentListRequest/Response` DTO を新設し、`AppoServiceBean` に `diffReservationsForPatient` ヘルパーを追加。ORCA 応答から `visitStatus` / `cancelFlag` を再構築し、Web クライアントへ 1 件単位の更新通知を出す。
+- **テスト/Runbook 連携**: `ORCA_CONNECTIVITY_VALIDATION.md` §4.3（追加ケース）へ患者別テンプレを追記し、`ORCA_API_STATUS.md` に P1 範囲として `Api_Result`/`Detailed_Result` を記録。RUN_ID は `P0_appointlst2v2` で統一。
+
+#### <a id="acsimulatev2-matrix-no16"></a> acsimulatev2（Matrix No.16）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/acsimulate.md`](../operations/assets/orca-api-spec/raw/acsimulate.md)。`Ac_Simulate_Result` の金額配列、`Api_Result` エラーコード一覧を参照。
+- **モダナイズ REST URI**: `POST /orca/billing/estimate`。カルテ側の `BillingSimulationRequest` を受け、ORCA から得た見積りを返却。
+- **Service/DTO 変更点**: `BillingSimulationRequest/Response` DTO を `ClaimSender` と共有し、`ClaimSender` に試算モードを追加 (`ClaimSender#acsimulate` → `OrcaApi#acsimulatev2`)。`warnings[]` には ORCA の `Detailed_Result` を格納し、`ClaimBundle` 生成エラーは `OrcaGatewayException` で 422 を返す。
+- **テスト/Runbook 連携**: Runbook §4.3 の任意 API セットへ `acsimulate` テンプレを追加し、`PHASE2_PROGRESS.md` の ORCA 欄で RUN_ID を管理。`logs/<date>-orca-connectivity.md` `P1_acsimulatev2` の `Api_Result` を必ず貼付。
+
+#### <a id="visitptlstv2-matrix-no18"></a> visitptlstv2（Matrix No.18）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/visitpatient.md`](../operations/assets/orca-api-spec/raw/visitpatient.md)。`request_Number=01/02` の切り替えと `Visit_Patient_Information` 配列を参照。
+- **モダナイズ REST URI**: `POST /orca/visits/list`。`visitDate` と `requestNumber` を受け、来院一覧を返却。
+- **Service/DTO 変更点**: `VisitPatientListRequest/Response` DTO を定義し、`PVTServiceBean.addPvt` を呼び出して `PatientVisitModel` キャッシュを更新。保険組合せ不足時は `PatientServiceBean` の `mergeInsuranceFromVisit` を呼ぶ。
+- **テスト/Runbook 連携**: Runbook §4.3 の P0-4 ステップに visit API を追加し、`logs/<date>...` の `P0_visitptlstv2` ディレクトリへ HTTP 証跡を保存。`ORCA_API_STATUS.md` 2.1 表の Matrix No.18 に RUN_ID を追記する。
+
+#### <a id="patientlst1v2-matrix-no8"></a> patientlst1v2（Matrix No.8）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/patientidlist.md`](../operations/assets/orca-api-spec/raw/patientidlist.md)。期間指定で `Patient_ID` 群を取得。
+- **モダナイズ REST URI**: `POST /orca/patients/id-list`。`baseStartDate` / `baseEndDate`（90 日以内）と `includeTestPatient` をパラメータ化。
+- **Service/DTO 変更点**: `PatientIdBatchRequest/Response` を作成し、`PatientServiceBean.scheduleOrcaSync` で差分同期キュー（`syncTicketId`）を登録。`Api_Result=0001`（対象なし）は HTTP 204 へ変換。
+- **テスト/Runbook 連携**: Runbook §4.4(1) に ID リスト取得手順を記載し、`ORCA_API_STATUS.md` 2.2 節へ日付範囲と RUN_ID を追加。証跡は `logs/<date>-orca-connectivity.md#patientlst1v2` と同期。
+
+#### <a id="patientlst2v2-matrix-no9"></a> patientlst2v2（Matrix No.9）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/patientlist.md`](../operations/assets/orca-api-spec/raw/patientlist.md)。複数 ID の患者基本情報／保険配列の返却仕様を参照。
+- **モダナイズ REST URI**: `POST /orca/patients/batch`。最大 200 件の `patientIds[]` と `continuationToken` を受付。
+- **Service/DTO 変更点**: `PatientListBatchRequest/Response` を実装し、`PatientServiceBean#mergeOrcaPatient`（新設）で upsert。`HealthInsuranceModel` の差し替えは `includeInsurance` フラグ判断。
+- **テスト/Runbook 連携**: Runbook §4.4(2) へバッチ取得を追加し、`logs/.../patientlst2v2` の `Api_Result` と `Patient_Count` を記録。`ORCA_API_STATUS.md` Matrix No.9 に反映。
+
+#### <a id="patientlst3v2-matrix-no10"></a> patientlst3v2（Matrix No.10）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/patientshimei.md`](../operations/assets/orca-api-spec/raw/patientshimei.md)。氏名／カナ検索条件、`Option_Mode` の意味を参照。
+- **モダナイズ REST URI**: `POST /orca/patients/name-search`。`fuzzyMode=prefix|suffix|partial` で ORCA の `Option_Mode` を切替。
+- **Service/DTO 変更点**: `PatientNameSearchRequest/Response` DTO を追加し、`PatientServiceBean.searchPatientsByKeyword` を呼び出して ORCA→ローカル両方のヒット件数を返却。受信結果は `PatientLiteDTO` に変換して Web クライアント検索へ表示。
+- **テスト/Runbook 連携**: Runbook §4.4(3) へ検索テンプレを追加し、`logs/.../patientlst3v2` に検索語と `Api_Result` を控える。`ORCA_API_STATUS.md` Matrix No.10 に RUN_ID を追加。
+
+#### <a id="patientlst6v2-matrix-no14"></a> patientlst6v2（Matrix No.14）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/insurancecombi.md`](../operations/assets/orca-api-spec/raw/insurancecombi.md)。保険組合せ (`Insurance_Combination_Information`) と適用期間を参照。
+- **モダナイズ REST URI**: `POST /orca/insurance/combinations`。`patientId`＋日付範囲でフィルタし、1 年超は 422。
+- **Service/DTO 変更点**: `InsuranceCombinationRequest/Response` DTO を実装し、`PatientServiceBean.mergeInsuranceHistory` を通じて `HealthInsuranceModel` 履歴テーブルを更新。保険番号が欠落した場合は HTTP 400 を返す。
+- **テスト/Runbook 連携**: Runbook §4.4(4) に保険組合せの curl 例を追記し、`logs/.../patientlst6v2` で `Combination_Mode`・件数を証跡化。`ORCA_API_STATUS.md` Matrix No.14 に RUN_ID を紐付け。
+
+#### <a id="patientmodv2-matrix-no17"></a> patientmodv2（Matrix No.17）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/patientmod.md`](../operations/assets/orca-api-spec/raw/patientmod.md)。`mode=01/02/03` の操作と `Patient_Information` の必須項目を参照。
+- **モダナイズ REST URI**: `POST /orca/patient/mutation`。`operation=create|update|delete` を `mode` へマッピングし、結果を即時返却。
+- **Service/DTO 変更点**: `PatientMutationRequest/Response` DTO を作成し、`PatientServiceBean` に `applyOrcaMutation`（操作別 upsert/delete）を追加。成功時は `AuditTrailService` へ `ORCA_PATIENT_MUTATION` イベントを発火し、失敗時は 409 を返却。ORCA 側の `Warning_Message` は `warnings[]` として返却。
+- **テスト/Runbook 連携**: Runbook §4.4(5) で mutation API はシミュレーションのみ（本番では POST 禁止）と記載し、`ORCA_API_STATUS.md` では Evidence 行に 405/禁止理由を残す。検証は Sandbox データで 1 回だけ行い、RUN_ID=`P1_patientmodv2` を付与。
+
+#### <a id="subjectivesv2-matrix-no35"></a> subjectivesv2（Matrix No.35）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/subjectives.md`](../operations/assets/orca-api-spec/raw/subjectives.md)。`Subjectives_Information` の最大文字数や `Detailed_Result` の警告を参照。
+- **モダナイズ REST URI**: `POST /orca/chart/subjectives`。`body`（1,000 文字以内）と `soapCategory`、担当医コードを受けて症状詳記を登録。
+- **Service/DTO 変更点**: `SubjectiveEntryRequest/Response` DTO を新設し、`KarteServiceBean` が ORCA 応答を保存後 `ChartEventServiceBean` で `SUBJECTIVE_IMPORT` SSE を送信。Shift_JIS 変換は共通ヘルパー `OrcaSubjectiveMapper` で行う。
+- **テスト/Runbook 連携**: Runbook §4.4(6) に `subjectivesv2` テンプレ（本番書き込み禁止のため dry-run）の取得とログ化手順を追加し、`logs/.../subjectivesv2` へ 405/Api_Result 証跡を残す。`ORCA_API_STATUS.md` Matrix No.35 にも 405 証跡を掲載して書き込み禁止を明示する。

@@ -1,5 +1,10 @@
 # ORCA API フィールド検証メモ（W13）
 
+## 0. 運用前提（2025-11-14 更新）
+- ORCA 連携検証は WebORCA 本番（`https://weborca.cloud.orcamo.jp:443`）のみを対象とし、ローカル WebORCA コンテナやデータ挿入は実施しない。
+- `assets/seeds/*.sql` や本メモで言及する「seed」は **過去に想定したデータ条件の記録** であり、現在は参照専用。データが欠落している場合は Runbook `ORCA_CONNECTIVITY_VALIDATION.md` §4.3 の手順で欠落報告を残し、Ops/マネージャーへ共有する。
+- API 別のテンプレやコード表は現状のレスポンスを理解するために保持し、既存データで再現できない項目は Evidence として記録するだけに留める。
+
 ## 1. 背景
 - 指示 W13「不確定フィールド API の仕様突合」に基づき、推測ベースで作成していたテンプレート（`docs/server-modernization/phase2/operations/assets/orca-api-requests/*.json`）を公式仕様で裏付ける。
 - 対象 API: `/orca31/hspmmv2`, `/api01rv2/system01dailyv2`, `/api21/medicalmodv23`, `/orca06/patientmemomodv2`。

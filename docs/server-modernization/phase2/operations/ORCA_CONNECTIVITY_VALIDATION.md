@@ -95,7 +95,7 @@ curl --cert-type P12 \
      --trace-ascii "artifacts/orca-connectivity/${RUN_ID}/inpatient/${API_ID}/trace.log"
 ```
 
-`artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` には `request.xml` / `response.xml` / `trace.log` を揃え、`notes/orca-api-field-validation.md` §3 の seed 記録とリンクさせる。
+`artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` には `request.xml` / `response.xml` / `trace.log` を揃え、`notes/orca-api-field-validation.md` §3 の seed 記録（現在は参照専用・追加投入禁止）とリンクさせる。
 
 ### 3.5 監査・権限チェック
 
@@ -104,18 +104,21 @@ curl --cert-type P12 \
 - `artifacts/` へ保存する際はキー・パスフレーズをマスクし、必要に応じて `<SECRET>` プレースホルダを記載。
 - 入院 API のリクエスト/レスポンスは `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` へ集約し、患者 ID・保険者番号など PHI は `mask.txt` に置換ルールを添えてから共有する（`git add` 禁止で artifacts のまま保存）。
 
-### 3.6 Push／帳票／患者メモの追加準備
+> **運用メモ（2025-11-14 更新）**  
+> WebORCA 本番に対しては既存データの読み取り・照会のみを行い、新規患者・予約・会計データの seed 挿入やローカル WebORCA コンテナの再構築は実施しない。対象データが欠落している場合は Runbook §4.3 と `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` へ「欠落記録」を残し、Ops/マネージャー報告に切り替える。
+
+### 3.6 Push／帳票／患者メモの追加準備（参照専用）
 
 | 対象 API | 追加で必要なもの | 補足 |
 | --- | --- | --- |
-| `/api01rv2/pusheventgetv2` / `/orca42/receiptprintv3` | push-exchanger（帳票通知受信）、`/blobapi` へアクセスできるホスト、`print002` イベント用のサンプルデータ | `manifest.json` No.41/42。`artifacts/orca-connectivity/<RUN_ID>/push/` に `pusheventgetv2_request.json` / `pusheventgetv2_response.json` を保存し、PUSH 通知ペイロードも `push/print002_*.json` として残す。 |
-| `/orca51/masterlastupdatev3` / `/api01rv2/insuranceinf1v2` | `system01dailyv2` と同じ証跡テンプレ (`Content-Type: application/xml; charset=UTF-8`) | キャッシュの TTL を測るため `system01dailyv2` → `masterlastupdatev3` → `insuranceinf1v2` の順で 1 回ずつ実行。レスポンスは `weborca-prod/masterlastupdatev3.*` などへ保存。 |
-| `/api01rv2/patientlst7v2` / `/orca06/patientmemomodv2` | 患者メモ seed（ORCA UI で作成）と `Memo_Mode`・`Memo_Class` の制約整理 | `patientmemomodv2` が 405 のため取得のみ先行する。`notes/orca-api-field-validation.md` §3.3 に依存関係とテンプレをまとめた。 |
-| `/orca31/hspmmv2` / `/orca31/hsacctmodv2` | 入院会計 seed（No.38）と `Perform_Month`（YYYY-MM）入力値 | `logs/2025-11-13-orca-connectivity.md` の `uncertain-api/` に 405 証跡のみ存在。seed SQL を `artifacts/orca-connectivity/templates/` に準備してから再検証する。 |
+| `/api01rv2/pusheventgetv2` / `/orca42/receiptprintv3` | push-exchanger（帳票通知受信）、`/blobapi` 参照権限、既存の `print002` 通知記録 | `manifest.json` No.41/42。通知が存在しない場合は seed を追加せず、Ops へ運用調整を依頼する。照会できたイベントのみ `artifacts/orca-connectivity/<RUN_ID>/push/` へ保存。 |
+| `/orca51/masterlastupdatev3` / `/api01rv2/insuranceinf1v2` | `system01dailyv2` 証跡テンプレと同一。既存キャッシュで十分かを確認 | TTL 測定のため `system01dailyv2` → `masterlastupdatev3` → `insuranceinf1v2` の順番で 1 回ずつ実行する。欠落マスタは seed ではなく Ops 連携で復旧可否を判断。 |
+| `/api01rv2/patientlst7v2` / `/orca06/patientmemomodv2` | ORCA UI で既に登録されている患者メモ、`Memo_Mode` / `Memo_Class` の制約整理 | `patientmemomodv2` は POST 禁止（405）のため取得のみ先行。メモが存在しなくても seed で補完せず、`notes/orca-api-field-validation.md` §3.3 とログへ欠落情報を記録する。 |
+| `/orca31/hspmmv2` / `/orca31/hsacctmodv2` | 既存の入院会計データと `Perform_Month` の参照結果 | `logs/2025-11-13-orca-connectivity.md` の `uncertain-api/` に 405 証跡のみ存在。入院データが存在しない場合は `seed SQL` に頼らず「データ欠落」として報告し、Ops に復旧可否を確認する。 |
 
-> これらの API は `orca-api-matrix` No.39-53 に含まれている。RUN_ID を採番したら `notes/orca-api-field-validation.md` §3 と `ORCA_API_STATUS.md` §2.4 に反映すること。
+> これらの API は `orca-api-matrix` No.39-53 に含まれている。RUN_ID を採番したら `notes/orca-api-field-validation.md` §3 と `ORCA_API_STATUS.md` §2.4 に反映すること（seed 参照は履歴としてのみ扱う）。
 
-No.19-38 で作成した XML テンプレの証跡は `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` 以下にまとめ、Push/帳票/患者メモ系は `push/` や `memo/` サブディレクトリと同じ粒度で保持する。`notes/orca-api-field-validation.md` §3 の seed 行に成果物パスを追記すること。
+No.19-38 で作成した XML テンプレの証跡は `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` 以下にまとめ、Push/帳票/患者メモ系は `push/` や `memo/` サブディレクトリと同じ粒度で保持する。`notes/orca-api-field-validation.md` §3 の seed 行は「過去に想定したデータ条件」の記録として残し、実運用では欠落状況と証跡パスのみを追記する。
 
 ## 4. 検証フェーズ
 
@@ -144,18 +147,158 @@ curl --silent --show-error --cert-type P12 \
 - Modernized サーバーが WebORCA クラウドへリーチできる状態で `curl http://server-modernized-dev:8080/openDolphin/resources/serverinfo/claim/conn -u <admin>` を実行し、レスポンス JSON を `artifacts/.../serverinfo_claim_conn.json` に保存。
 - `claim.conn=server` 以外（例: `fail`）が返った場合は `ops/shared/docker/custom.properties` と `ops/modernized-server/docker/custom.properties` の `claim.*` 差分を `diff -u` で取得し Evidence へ添付。
 
-### 4.3 P0 API セット
+### 4.3 P0/PHR API セット
 
-| # | エンドポイント | 目的 | 成功条件 | 保存ファイル |
-|---|---|---|---|---|
-| 1 | `POST /api01rv2/patientgetv2` | 患者基本情報参照 | HTTP 200 / `Api_Result=00` / Patient_ID が返る | `P0_patientgetv2/request.http` / `response.http` |
-| 2 | `POST /api01rv2/appointlstv2` | 予約一覧参照 | HTTP 200 / `Api_Result=00` / 受付有無が判る | `P0_appointlstv2/...` |
-| 3 | `POST /api01rv2/acceptlstv2` | 当日受付参照 | HTTP 200 / `Api_Result=00`（受付なしは `Api_Result=21`） | `P0_acceptlstv2/...` |
-| 4 | `POST /orca14/appointmodv2` | 予約登録（※実行禁止） | シミュレーションのみ。curl テンプレ生成までで止める | `P0_appointmodv2/template.md` |
-| 5 | `GET /api21/medicalmodv2` | 診療明細参照 | HTTP 200 / `Api_Result=00` | `P0_medicalmodv2/...` |
+`RUN_ID=20251113TorcaP0OpsZ1/Z2`（`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md`）では #1-#4 が 404/405、`RUN_ID=20251113TorcaProdCertZ1` で `acceptlstv2` が HTTP 200 (`Api_Result=21→00`) となった。一方 `RUN_ID=20251114TorcaHttpLogZ1` は WSL 側 DNS 制限で `curl: (6) Could not resolve host` → `Allow` ヘッダー未採取に終わっている。次回は `C:\Users\<user>\.wslconfig` の `generateResolvConf=false` 設定と `/etc/resolv.conf` の手動管理を前提に、Windows 側の PowerShell もしくは VPN 許可済み Linux ホストで再取得する。PHR 系 API（PHR-01〜11）は RUN_ID=`20251114TphrEvidenceZ1` をテンプレ RUN として扱い、P0 API と同じ成果物構造（`httpdump/`, `trace/`, `logs/`, `serverinfo/` 等）で保存する。
+
+> **2025-11-15 運用更新**
+> - WebORCA 本番は日常診療で常時稼働しているため、API もしくは UI から既存データを参照できれば RUN の前提条件を満たすとみなす。新たな seed 注入や UI 強制登録は行わない。
+> - RUN 着手前に `psql`（読み取り専用）、ORCA UI、既存 API を用いて患者 00000001、医師 00001、保険 06123456、当日受付/直近予約/診療行為など対象データが存在するかを確認し、結果を `artifacts/orca-connectivity/<RUN_ID>/data-check/` へ保存する。
+> - 必須データが欠落していた場合は seed 投入を諦め、欠落テーブルと確認日時を `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` と `DOC_STATUS.md` モダナイズ/外部連携行に追記して Ops/マネージャーへ報告する。
+
+| # | エンドポイント | 目的 | 成功条件 | 保存ファイル | 次回 RUN_ID | データ確認ポイント | 証跡保存パス | 想定課題 |
+|---|---|---|---|---|---|---|---|---|
+| 1 | `POST /api01rv2/patientgetv2` | 患者基本情報参照 | HTTP 404 を再取得して `Allow: GET` を記録（ORCA 本番では GET 未公開のため NG 証跡がゴール） | `P0_patientgetv2/request.http` / `response.http` | `20251115TorcaPatient404Z1` | なし（GET 404 の再現のみ） | `artifacts/orca-connectivity/20251115TorcaPatient404Z1/httpdump/patientgetv2/` | DNS/PKCS#12 読み込みが途切れると 404 以前に `curl: (6)/(58)` で停止するため、WSL DNS fix と `ORCA_PROD_CERT_PASS` の再確認必須 |
+| 2 | `POST /api01rv2/appointlstv2` | 予約一覧参照 | HTTP 200 / `Api_Result=00` / `Appointment_Information[]` に予約が並ぶ | `[RUN_ID=20251115TorcaAppointLstZ1] httpdump/appointlstv2/{request,response}.http`、`trace/appointlstv2_trace.log`、`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md#appointlstv2`（ServerInfoResource=claim.conn=server を同 RUN_ID で記録） | `20251115TorcaAppointLstZ1` | 予約照会 API もしくは ORCA UI で Department=01 / Physician=00001 の最新予約が存在することを確認し、スクリーンショットや `SELECT` 結果を `data-check/appointlstv2.*` として保存。欠落時は seed 投入を行わず報告して RUN を保留。 | `artifacts/orca-connectivity/20251115TorcaAppointLstZ1/httpdump/appointlstv2/` `artifacts/.../trace/appointlstv2_*.log` | `appointmodv2` が 405 のため API で新規予約は作れない。既存予約の日付・担当医がリクエストと一致するかを RUN 前に点検する |
+| 3 | `POST /api01rv2/acceptlstv2` | 当日受付参照 | HTTP 200 / `Api_Result=00`（受付なしは `Api_Result=21`） | `[RUN_ID=20251115TorcaAcceptLstDataZ1] weborca-prod/acceptlstv2.{headers,json}`、`trace/acceptlstv2_trace.log`、`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md#acceptlstv2`＋`artifacts/.../serverinfo_claim_conn.json` | `20251115TorcaAcceptLstDataZ1` | `psql` で `tbl_uketuke` の直近日レコード（患者 00000001 / 医師 00001 / 保険 06123456）を確認し、取得できた SQL を `data-check/acceptlstv2.sql` に保存。該当レコードが無ければ欠落報告を記録して RUN を延期。 | `artifacts/orca-connectivity/20251115TorcaAcceptLstDataZ1/weborca-prod/acceptlstv2.*` | 受付レコードが空でも `Api_Result=21` で正常。`Api_Result=13` 等が出た場合は証跡と共に Ops へエスカレートする |
+| 4 | `POST /orca14/appointmodv2` | 予約登録（※実行禁止、405 証跡収集のみ） | `Allow: OPTIONS, GET` を含む HTTP 405 を記録 | `[RUN_ID=20251115TorcaAppointMod405Z1] httpdump/orca14_appointmodv2/{request,response}.http`、`trace/appointmodv2_trace.log`、`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md#appointmodv2`（Allow ヘッダー全文と ServerInfoResource を追記） | `20251115TorcaAppointMod405Z1` | リクエストに含む患者/医師/保険コードが既存データに存在するかを `SELECT` で確認し、`data-check/appointmodv2.sql` に結果を保存。存在しない場合は seed ではなく「データ欠落」として報告。 | `artifacts/orca-connectivity/20251115TorcaAppointMod405Z1/httpdump/orca14_appointmodv2/` `.../trace/appointmodv2_*.log` | ORCA 本番が POST を拒否するため 405 継続想定。`Allow` を取得できたかで成功判定し、DNS/証明書で失敗した場合は RUN_ID を再採番 |
+| 5 | `GET /api21/medicalmodv2` | 診療明細参照 | HTTP 405（`/orca21/...` 直打ち）+ `/api/api21/medicalmodv2` で 200/`Api_Result=14` を並行取得 | `[RUN_ID=20251115TorcaMedical405Z1] httpdump/api21_medicalmodv2/{request,response}.http`、`httpdump/api_api21_medicalmodv2/{request,response}.http`、`trace/medicalmodv2_trace.log`、`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md#medicalmodv2`（ServerInfoResource=claim.conn=server の確認と 405/200 両系統の `Allow` 記録） | `20251115TorcaMedical405Z1` | `tbl_sryact` や `tbl_receipt` から直近の診療行為が存在するかを `SELECT` し、照会結果を `data-check/medicalmodv2.sql` へ保存。医事データが欠落している場合は RUN を延期し Ops へ通知。 | `artifacts/orca-connectivity/20251115TorcaMedical405Z1/httpdump/api21_medicalmodv2/` `.../httpdump/api_api21_medicalmodv2/` | Route 405 が継続中。診療行為が無くても Api_Result=14 は想定内。HTTP 405/200 の Allow 差分と合わせて Evidence を整理する |
+| 6 | `POST /orca11/acceptmodv2` | 受付登録（POST は 405 のままなので証跡取得） | `Allow: OPTIONS, GET` 付き HTTP 405 | `P0_acceptmodv2/request.http` / `response.http` | `20251115TorcaAcceptMod405Z1` | `acceptlstv2` と同じ患者/保険/受付データがあることを `SELECT` で確認し、欠落時は seed ではなく運用報告。確認結果は `data-check/acceptmodv2.sql` に保存する。 | `artifacts/orca-connectivity/20251115TorcaAcceptMod405Z1/httpdump/orca11_acceptmodv2/` `.../trace/acceptmodv2_*.log` | `/orca11` の POST が閉鎖されているため 405 継続。`curl` 失敗時は 405 以前の TLS/Basic 認証ログも保存し、`ORCA_HTTP_404405_HANDBOOK.md` §1-§3 を併用する |
 
 - `node scripts/tools/orca-curl-snippets.js` を `ORCA_BASE_URL=https://weborca.cloud.orcamo.jp` として実行し、生成されたスニペットを `artifacts/.../snippets/` に保存。
 - 実行後は `httpdump/<api>/request.http`／`response.http` を残し、`Allow` や `WWW-Authenticate` をヘッダーごと証跡に含める。
+
+#### 4.3.2 RUN_ID 再取得計画（P0 appoint/medical/accept 系）
+
+- **`RUN_ID=20251115TorcaAppointLstZ1`**（予約一覧）
+  ```bash
+  RUN_ID=20251115TorcaAppointLstZ1
+  mkdir -p "artifacts/orca-connectivity/${RUN_ID}/httpdump/appointlstv2" "artifacts/orca-connectivity/${RUN_ID}/trace"
+  curl --silent --show-error --cert-type P12 \
+       --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
+       -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
+       -H 'Content-Type: application/json; charset=Shift_JIS' \
+       -X POST --data-binary '@docs/server-modernization/phase2/operations/assets/orca-api-requests/06_appointlstv2_request.json' \
+       'https://weborca.cloud.orcamo.jp/api/api01rv2/appointlstv2?class=01' \
+       -D artifacts/orca-connectivity/${RUN_ID}/httpdump/appointlstv2/response.headers \
+       -o artifacts/orca-connectivity/${RUN_ID}/httpdump/appointlstv2/response.json \
+       --trace-ascii artifacts/orca-connectivity/${RUN_ID}/trace/appointlstv2_trace.log
+  ```
+- **`RUN_ID=20251115TorcaAppointMod405Z1`**（予約登録 405 Evidence）
+  ```bash
+  RUN_ID=20251115TorcaAppointMod405Z1
+  mkdir -p "artifacts/orca-connectivity/${RUN_ID}/httpdump/orca14_appointmodv2" "artifacts/orca-connectivity/${RUN_ID}/trace"
+  curl --silent --show-error --cert-type P12 \
+       --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
+       -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
+       -H 'Content-Type: application/json; charset=Shift_JIS' \
+       -X POST --data-binary '@docs/server-modernization/phase2/operations/assets/orca-api-requests/02_appointmodv2_request.json' \
+       'https://weborca.cloud.orcamo.jp/orca14/appointmodv2?class=01' \
+       -D artifacts/orca-connectivity/${RUN_ID}/httpdump/orca14_appointmodv2/response.headers \
+       -o artifacts/orca-connectivity/${RUN_ID}/httpdump/orca14_appointmodv2/response.json \
+       --trace-ascii artifacts/orca-connectivity/${RUN_ID}/trace/appointmodv2_trace.log
+  ```
+- **`RUN_ID=20251115TorcaMedical405Z1`**（診療登録 405 + `/api/api21` 200 取得）
+  ```bash
+  RUN_ID=20251115TorcaMedical405Z1
+  mkdir -p "artifacts/orca-connectivity/${RUN_ID}/httpdump/api21_medicalmodv2" "artifacts/orca-connectivity/${RUN_ID}/trace"
+  curl --silent --show-error --cert-type P12 \
+       --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
+       -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
+       -H 'Content-Type: application/json; charset=Shift_JIS' \
+       -X POST --data-binary '@docs/server-modernization/phase2/operations/assets/orca-api-requests/03_medicalmodv2_request.json' \
+       'https://weborca.cloud.orcamo.jp/api21/medicalmodv2?class=01' \
+       -D artifacts/orca-connectivity/${RUN_ID}/httpdump/api21_medicalmodv2/response.headers \
+       -o artifacts/orca-connectivity/${RUN_ID}/httpdump/api21_medicalmodv2/response.json \
+       --trace-ascii artifacts/orca-connectivity/${RUN_ID}/trace/medicalmodv2_trace.log
+  # `/api/api21/medicalmodv2` でも同 RUN_ID で `httpdump/api_api21_medicalmodv2/` を作成し 200/Api_Result を取得する
+  ```
+- **`RUN_ID=20251115TorcaAcceptMod405Z1`**（受付登録 405 Evidence）
+  ```bash
+  RUN_ID=20251115TorcaAcceptMod405Z1
+  mkdir -p "artifacts/orca-connectivity/${RUN_ID}/httpdump/orca11_acceptmodv2" "artifacts/orca-connectivity/${RUN_ID}/trace"
+  curl --silent --show-error --cert-type P12 \
+       --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
+       -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
+       -H 'Content-Type: application/json; charset=Shift_JIS' \
+       -X POST --data-binary '@docs/server-modernization/phase2/operations/assets/orca-api-requests/04_acceptmodv2_request.json' \
+       'https://weborca.cloud.orcamo.jp/orca11/acceptmodv2?class=01' \
+       -D artifacts/orca-connectivity/${RUN_ID}/httpdump/orca11_acceptmodv2/response.headers \
+       -o artifacts/orca-connectivity/${RUN_ID}/httpdump/orca11_acceptmodv2/response.json \
+       --trace-ascii artifacts/orca-connectivity/${RUN_ID}/trace/acceptmodv2_trace.log
+  ```
+
+各 `curl` は `ORCA_HTTP_404405_HANDBOOK.md` §0-§3 のチェックリスト（`openssl s_client` / `dns/` 証跡）とセットで実行し、終了後に `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` へ `RUN_ID`, `HTTP`, `Api_Result`, `Allow` を貼り付ける。
+
+#### 4.3.2 PHR シーケンス証跡テンプレ
+
+- 目的: `docs/server-modernization/phase2/domains/PHR_RESTEASY_IMPLEMENTATION_PLAN.md`（Phase-A〜F）と ORCA 週次レビューを直結させるため、PHR-01〜11 のテスト観点／ヘッダー要件／ServerInfoResource チェック／Evidence 保存場所を標準化する。
+- RUN_ID: `RUN_ID=20251114TphrEvidenceZ1` を初期テンプレとして発行し、以後は `RUN_ID=YYYYMMDDTorcaPHRSeqZ#` で複製する。`scripts/orca_prepare_next_run.sh ${RUN_ID}` → `cp -R artifacts/orca-connectivity/TEMPLATE/phr-seq artifacts/orca-connectivity/${RUN_ID}/` → `touch artifacts/orca-connectivity/${RUN_ID}/README.md` で構成を作り、`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md#phr-連携テンプレ` に RUN_ID を記録する。
+- ディレクトリ: `httpdump/`, `trace/`, `logs/`, `serverinfo/`, `screenshots/`, `wildfly/`, `todo/` を必須とし、`ServerInfoResource`（`serverinfo/claim_conn.json`）と `WildFly server.log` 抜粋を各 RUN_ID で保存する。PHR API のスクリーンショット（`screenshots/phr-XX_response.png`）は ORCA 週次の即席レビュー用に取得し、差戻し事項は `todo/PHR-XX.md` へ列記する。
+- ヘッダー: すべての PHR リクエストで `X-Facility-Id`, `X-Touch-TraceId`（=RUN_ID）, `X-Access-Reason`, `X-Consent-Token`（必要時）を送信し、欠落時は 401/403 を Evidence に残す。`touch.phr.requiredHeaders` と Runbook の要件が矛盾しないよう `server-modernized/src/main/webapp/WEB-INF/web.xml` を参照。
+- テンプレ: `artifacts/orca-connectivity/TEMPLATE/phr-seq/README.md` に CLI 雛形・命名規則・スクリーンショットルール・`curl --trace-ascii` 保存要件を記載（本タスクで整備）。Runbook 改訂時は README と本節を同時更新する。
+
+| フェーズ | ID / API | 主な検証観点 | 必須ヘッダー / ServerInfo チェック | 保存先テンプレ（`artifacts/orca-connectivity/${RUN_ID}/...`） |
+| --- | --- | --- | --- | --- |
+| Phase-A: キー管理 | PHR-02 `PUT /20/adm/phr/accessKey` | `phr_access_key` Flyway 適用と upsert、`PHR_ACCESS_KEY_UPSERT` 監査 ID | `X-Facility-Id`, `X-Touch-TraceId`, `ServerInfoResource`=server, `logs/phr_access_key.log` に hash と Api_Result を追記 | `phr-seq/10_key-management/PHR-02_{request,response}.http`, `trace/phr-02_accesskey.log`, `serverinfo/claim_conn.json` |
+|  | PHR-03 `GET /20/adm/phr/accessKey/{accessKey}` | 末尾4桁検索と mask、Facility mismatch 403 | 同上 + `X-Access-Reason`（key-lookup）を必須、`logs/phr_accesskey_lookup.md` で `PHR_ACCESS_KEY_FETCH` を記録 | `phr-seq/10_key-management/PHR-03_*` |
+|  | PHR-10 `GET /20/adm/phr/patient/{patientId}` | 患者→鍵逆引き、404 ハンドリング | `X-Facility-Id`, `X-Touch-TraceId`, ServerInfo=server | `phr-seq/10_key-management/PHR-10_*` |
+| Phase-B: 閲覧 | PHR-01 `GET /20/adm/phr/abnormal/{patientId}` | UTF-8 固定・`docSince` フィルタ・`PHR_ABNORMAL_TEXT` 監査 | `X-Facility-Id`, `X-Touch-TraceId`, `X-Access-Reason=abnormal-view`、ServerInfo=server | `phr-seq/20_view-text/abnormal/`（request/response/httpdump, `screenshots/phr-01_response.png`） |
+|  | PHR-04 `GET /allergy/{patientId}` | 多言語テキスト崩れ、`PHR_ALLERGY_TEXT` | 同上 | `phr-seq/20_view-text/allergy/` |
+|  | PHR-05 `GET /disease/{patientId}` | 既往症テキスト、`PHR_DISEASE_TEXT` | 同上 | `phr-seq/20_view-text/disease/` |
+|  | PHR-08 `GET /labtest/{patientId}` | `docSince/labSince` の QueryParam / `PHR_LABTEST_TEXT` | 同上。`logs/phr_labtest_summary.md` に Api_Result と件数。 | `phr-seq/20_view-text/labtest/` |
+|  | PHR-09 `GET /medication/{patientId}` | `TouchMedicationFormatter` 抽出、禁忌語置換、`PHR_MEDICATION_TEXT` | `X-Facility-Id`, `X-Touch-TraceId`, `X-Access-Reason=medication-view`、ServerInfo=server | `phr-seq/20_view-text/medication/` + `screenshots/phr-09_medication.png` |
+| Phase-C: Layer ID | PHR-06 `POST /identityToken` | Layer ID Secrets, `PHR_LAYER_ID_TOKEN_ISSUE`, `X-Consent-Token` | `X-Facility-Id`, `X-Touch-TraceId`, `X-Access-Reason=layer-id`, `X-Consent-Token`, ServerInfo=server, `wildfly/identityToken.log` に Secrets チェック結果 | `phr-seq/30_layer-id/identityToken/{request,response}.http`, `trace/phr-06_identityToken_trace.log` |
+| Phase-D: 画像 | PHR-07 `GET /image/{patientId}` | `Cache-Control: no-store`, 帯域スロットリング (`bandwidth-policy.properties: X-Image-Burst-Limit=200MB/5min, X-Image-Max-Size=5MB`), `PHR_SCHEMA_IMAGE_STREAM` | `X-Facility-Id`, `X-Touch-TraceId`, ServerInfo=server, `screenshots/phr-07_image.png` でプレビューを残す。`wildfly/phr_image_download.log` に `throttleDecision` を残す。 | `phr-seq/40_image/image/{headers,response}.http`, `trace/phr-07_image_trace.log`, `wildfly/phr_image_download.log` |
+| Phase-E: PHRContainer | PHR-11 `GET /{facilityId,patientId,...}` | `docSince`/`labSince`、`PHR_CONTAINER_FETCH`, `SignedUrlService`（Vault `kv/.../phr/container`, TTL=300s, 1-download, `storageType=S3`） | `X-Facility-Id`, `X-Touch-TraceId`, `X-Access-Reason=container-export`, ServerInfo=server, `logs/phr_container_summary.md` へ Api_Result と `signedUrlIssuer`, `storageType`, `ttlSeconds` を残す | `phr-seq/50_container/container/{request,response}.json`, `screenshots/phr-11_container.png`, `trace/phr-11_container_trace.log`, `todo/phr-11_signedurl.md` |
+| Phase-F: Export Track | `/20/adm/phr/export*` | `PHR-EXPORT-TRACK` 依存、Blocker/担当者メモのみ | `X-Facility-Id`, `X-Touch-TraceId`, ServerInfo=server, `todo/export-track.md` に Blocker 記録 | `phr-seq/60_export-track/README.md` |
+
+> 備考（PHR-06/07/11 Ready 条件）
+> - **RUN_ID**: `docs/server-modernization/phase2/operations/logs/2025-11-18-phr-layerid-ready.md` に RUN_ID=`20251118TphrLayerPrepZ1` を記録し、Layer ID cert import / 画像帯域 policy / Signed URL secrets の承認証跡を集約済み。今後の PHR 実測は当ログを参照して Pending→Ready へ更新済みであることを明示する。
+> - **Layer ID (PHR-06)**: Vault `kv/modernized-server/phr/layer-id` の `PHR_LAYER_ID_CLIENT_ID/SECRET/CERT_P12_B64/ALIAS` は 2025-11-18 08:40 JST Ops 承認済。`ops/check-secrets.sh --profile phr-layer-id` がグリーンでない場合は RUN_ID を再採番し 401 証跡だけを保存する。Ready 条件: keystore import + `PHR_LAYER_ID_CERT_SHA256` 確認済。
+> - **画像帯域 (PHR-07)**: `bandwidth-policy.properties` へ `X-Image-Burst-Limit=200MB/5min`, `X-Image-Max-Size=5MB` を投入し、Payara `mime-mapping` PR (#ops-network-20251118) が承認された。Ready 条件: ORCA 実測で `Cache-Control: no-store` と帯域ログが取得できること。Pending が発生した場合は `wildfly/phr_image_download.log` の throttle 行を Evidence に残す。
+> - **Signed URL / Container (PHR-11)**: `kv/modernized-server/phr/container` に `PHR_SIGNING_KEY_ID=phr-container-20251118`, `PHR_SIGNING_KEY_SECRET`, `PHR_EXPORT_SIGNING_SECRET`, `PHR_EXPORT_STORAGE_TYPE=S3` を格納。`ops/check-secrets.sh --profile phr-export` で TTL=300s/1-download/https-only を検証済。Ready 条件: `SignedUrlService` e2e で `storageType=S3`, `kmsKey=alias/opd/phr-export` が監査ログに出力されること。Pending が残る場合は NULL フォールバック + 理由を `todo/phr-11_signedurl.md` に記載。
+> - **Ops 連絡先**: Layer ID = @OpsLead（#ops-secrets）、画像帯域 = @OpsNetwork（#ops-infra）、Signed URL = @OpsSec（#ops-secrets）。進捗は `2025-11-18-phr-layerid-ready.md` で日別に更新し、次回 ORCA 週次（2025-11-18 09:30 JST）で報告。
+> - **残タスク/Pending**: RUN_ID=`20251119TorcaPHRSeqZ1` で Phase-C/D/E の curl 実測を再設定（2025-11-19 10:00 JST 締切）。未完の場合は `ORCA_CONNECTIVITY_VALIDATION.md` §4.3.2 テンプレ TODO に遅延理由を記載する。
+
+各 PHR 実行後は `docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md#phr-連携テンプレ` へ `[RUN_ID=20251114TphrEvidenceZ1] PHR-0X ...` のサマリを貼り付け、`PHASE2_PROGRESS.md` の ORCA 週次欄／`docs/web-client/planning/phase2/DOC_STATUS.md` W22 行「主な変更」に RUN_ID と更新資料（Runbook/ログ/テンプレ）を反映する。
+
+**curl --cert-type P12 雛形（PHR 共通）**
+
+```bash
+RUN_ID=20251115TorcaPHRSeqZ1
+API_PATH="/20/adm/phr/identityToken"
+curl --silent --show-error --cert-type P12 \
+     --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
+     -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
+     -H "Content-Type: application/json; charset=UTF-8" \
+     -H "Accept: application/json" \
+     -H "X-Facility-Id: ${TOUCH_FACILITY_ID}" \
+     -H "X-Touch-TraceId: ${RUN_ID}" \
+     -H "X-Access-Reason: care-plan-review" \
+     -H "X-Consent-Token: ${TOUCH_CONSENT_TOKEN:-na}" \
+     --data-binary @payloads/phr_identityToken_request.json \
+     "https://weborca.cloud.orcamo.jp${API_PATH}" \
+     -D "artifacts/orca-connectivity/${RUN_ID}/phr-seq/httpdump$(echo ${API_PATH} | tr '/' '_')/response.headers" \
+     -o "artifacts/orca-connectivity/${RUN_ID}/phr-seq/httpdump$(echo ${API_PATH} | tr '/' '_')/response.json" \
+     --trace-ascii "artifacts/orca-connectivity/${RUN_ID}/phr-seq/trace$(echo ${API_PATH} | tr '/' '_')_${RUN_ID}.log"
+```
+
+- `X-Facility-Id` / `X-Touch-TraceId` は `touch.phr.requiredHeaders`（Task-A）で必須。`X-Access-Reason` と `X-Consent-Token` は Touch 共通監査で推奨。TraceId には RUN_ID を再利用し、`d_audit_event.trace_id` と突合させる。
+
+**PHR_* 監査イベント チェックリスト**
+
+1. `audit/logs/phr_audit_extract.sql` で `event_id LIKE 'PHR_%' AND trace_id=:RUN_ID` を抽出。
+2. すべて取得できれば OK。欠けたイベントは `docs/server-modernization/phase2/operations/logs/2025-11-14-phr-evidence-template.md#pending-risks` に列挙し、レビューで要承認にする。
+
+| カテゴリ | 期待イベント ID | 備考 |
+| --- | --- | --- |
+| キー管理 | `PHR_ACCESS_KEY_UPSERT`, `PHR_ACCESS_KEY_FETCH`, `PHR_ACCESS_KEY_FETCH_FAILED`, `PHR_ACCESS_KEY_FETCH_BY_PATIENT` | Flyway 適用前後で `_FAILED` が出るかを記録。 |
+| 閲覧テキスト | `PHR_ABNORMAL_TEXT`, `PHR_ALLERGY_TEXT`, `PHR_DISEASE_TEXT`, `PHR_LABTEST_TEXT`, `PHR_MEDICATION_TEXT` | `docSince/labSince` の値と `payloads/*.json` を一致させる。 |
+| Layer ID | `PHR_LAYER_ID_TOKEN_ISSUE`, `PHR_LAYER_ID_CERT_MISSING` | 証明書欠落再現時も RUN_ID を分けて採取。 |
+| 画像・コンテナ | `PHR_SCHEMA_IMAGE_STREAM`, `PHR_SCHEMA_IMAGE_STREAM_FAILED`, `PHR_CONTAINER_FETCH`, `PHR_SIGNED_URL_ISSUED`, `PHR_SIGNED_URL_ACL_DENY` | 画像サイズ (`wc -c schema_image.bin`) と Signed URL TTL を README へ併記。 |
+
+- 実施後は `docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md` にドラフトリンクを残し、ORCA 週次（次回 2025-11-18 09:30 JST）で優先度承認・実測報告を行う。
 
 ### 4.4 WebORCA クラウド接続（2025-11-14 更新）
 
@@ -163,9 +306,9 @@ curl --silent --show-error --cert-type P12 \
 2. `scripts/orca_prepare_next_run.sh ${RUN_ID}` を実行してテンプレフォルダを初期化。
 3. `curl --cert-type P12` 実行時は `--trace-ascii` を併用し、TLS ハンドシェイクを `trace_${api}.log` として保存。
 4. `ServerInfoResource` と同じターミナルで `ORCA_PROD_*` を `env` 表示しないよう `set +o history` / `set +o histexpand` を利用。共有する必要がある場合は `<MASKED>` 表記で置き換える。
-5. `system01dailyv2` → `masterlastupdatev3` → `insuranceinf1v2` の順で 1 回ずつ実行し、`weborca-prod/<api>.{headers,json}` に保存（いずれも XML/UTF-8 で送信）。
-6. Push/帳票/患者メモ系（No.41/42/45/53）を実施する場合は §3.6 のテンプレを使い、`push/` や `memo/` ディレクトリにリクエスト・PUSH ペイロード・`blobapi` 取得ログをまとめる。
-7. 成功時は `PHASE2_PROGRESS.md` に `RUN_ID`, `HTTP`, `Api_Result`, `証跡パス`, `実施 API` を追記。失敗時は原因（証明書期限, ネットワーク, 認証失敗等）と次アクションを明記。
+5. `system01dailyv2` → `masterlastupdatev3` → `insuranceinf1v2` の順で 1 回ずつ実行し、毎回 `[RUN_ID=<...>]` を `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md#<api>` へ追記する。レスポンスは `artifacts/orca-connectivity/${RUN_ID}/weborca-prod/<api>.{headers,json}` + `trace/<api>_trace.log` に保存し、`--trace-ascii` の出力で TLS/Allow/WWW-Authenticate を拾う（XML/UTF-8 で送信）。PHR 週次テンプレ（RUN_ID=`20251114TphrEvidenceZ1`）を展開する場合は、このステップ完了後に `phr-seq/10_key-management` の `ServerInfoResource`／`system01dailyv2` レポートをコピーして基礎証跡とする。
+6. Push/帳票/患者メモ系（No.41/42/45/53）や PHR シーケンスを実施する場合は §3.6 / §4.3.2 のテンプレを使い、`artifacts/orca-connectivity/${RUN_ID}/httpdump/<api>/` `phr-seq/` `trace/` `screenshots/` へリクエスト・PUSH ペイロード・`blobapi` 取得ログ・`ServerInfoResource` を保存する。`Allow` や `WWW-Authenticate` が返った場合は headers ごと証跡へ残し、テンプレ README の TODO 欄へ転記する。
+7. 成功時は `PHASE2_PROGRESS.md` に `RUN_ID`, `HTTP`, `Api_Result`, `証跡パス`, `実施 API`、`ServerInfoResource` の判定（`artifacts/.../serverinfo_claim_conn.json`）を追記し、`logs/<date>-orca-connectivity.md#serverinfo` にも同 RUN_ID で結果を残す。PHR 証跡を収集した場合は `logs/<date>-orca-connectivity.md#phr-連携テンプレ` へ `[RUN_ID=20251114TphrEvidenceZ1] PHR-0X ...` を追加し、失敗時は原因（証明書期限, ネットワーク, 認証失敗等）と次アクションを明記。
 
 ### 4.5 HTTP 401/403/404/405 トリアージ
 
@@ -194,18 +337,18 @@ curl --silent --show-error --cert-type P12 \
 | No | API | ステータス | Evidence / 次アクション |
 | --- | --- | --- | --- |
 | 39 | `/orca31/hspmmv2` | `HTTP 405 (Allow GET)` | RUN_ID=`20251113T002806Z`（`artifacts/.../uncertain-api/39_hspmmv2_response.txt`）。ORCA route 開放が必要。`notes/orca-api-field-validation.md` §3.1。 |
-| 40 | `/orca31/hsacctmodv2`（室料差額） | RUN 未実施（seed 未整備） | manifest slug=`hospsagaku`。入院会計 seed と No.38/39 復旧後に `Request_Number=3` で再検証。 |
-| 41 | `/api01rv2/pusheventgetv2` | RUN 未実施（push-exchanger 必須） | `logs/2025-11-13...` に履歴なし。`ORCA_API_STATUS.md` §2.4 / `notes` §3.2 参照。push-exchanger + print002 seed を準備。 |
+| 40 | `/orca31/hsacctmodv2`（室料差額） | RUN 未実施（既存入院データ欠落） | manifest slug=`hospsagaku`。WebORCA 本番に室料差額データが存在しないため保留。復旧完了までは欠落ログのみ更新し、seed を投入しない。 |
+| 41 | `/api01rv2/pusheventgetv2` | RUN 未実施（push-exchanger 必須） | `logs/2025-11-13...` に履歴なし。`ORCA_API_STATUS.md` §2.4 / `notes` §3.2 参照。print002 通知が既存環境で確認できた時点で検証する（seed 追加は禁止）。 |
 | 42 | `/orca42/receiptprintv3` | RUN 未実施（PUSH/Blob 運用未整備） | `push/print002` を受け取る運用を §3.6 へ追加。帳票テンプレは `assets/orca-api-requests/42_receipt_printv3_request.json` を参照。 |
 | 43 | `/orca51/masterlastupdatev3` | RUN 未実施（system daily の付帯チェック） | `system01dailyv2` 後に 1 回だけ呼び、`weborca-prod/masterlastupdatev3.*` に結果を保存する。`ORCA_API_STATUS.md` §2.4。 |
 | 44 | `/api01rv2/system01dailyv2` | `HTTP 200 / Api_Result=00`（UTF-8） | RUN_ID=`20251113T002806Z`。Shift_JIS は `Api_Result=91` のためテンプレを UTF-8 に統一。 |
 | 45 | `/api01rv2/patientlst7v2` | RUN 未実施（memomodv2 依存） | `patientmemomodv2` 405 のため内容を確認できない。`notes/orca-api-field-validation.md` §3.3。 |
 | 46 | `/api21/medicalmodv23` | `HTTP 405 (Allow: GET)` | RUN_ID=`20251113T002806Z`。route 開放依頼中。テンプレは XML `<medicalv2req3>`. |
-| 47 | `/orca36/hsfindv3` | RUN 未実施（入院 seed 不足） | Admission_Date 条件を満たす患者が居らず未着手。No.38/39 seed と合わせて再計画。 |
-| 48 | `/api01rv2/contraindicationcheckv2` | RUN 未実施（薬剤履歴 seed 不足） | `Check_Term` / `Medication_Information[]` を送る XML テンプレのみ整備。薬剤検索機能着手時に実行。 |
+| 47 | `/orca36/hsfindv3` | RUN 未実施（既存入院データ欠落） | Admission_Date 条件を満たす患者が居らず未着手。入院データが揃い次第に再測し、それまでは欠落状況をログへ追記する。 |
+| 48 | `/api01rv2/contraindicationcheckv2` | RUN 未実施（薬剤履歴データ欠落） | `Check_Term` / `Medication_Information[]` の XML は準備済み。薬剤履歴が取得できたタイミングで実行し、seed 追加は行わない。 |
 | 49 | `/api01rv2/insuranceinf1v2` | RUN 未実施（初期キャッシュ未取得） | `Base_Date` を当日で 1 回取得し、`weborca-prod/insuranceinf1v2.*` に保存する TODO を §4.4 に追加。 |
 | 50 | `/api01rv2/subjectiveslstv2` | RUN 未実施（症状詳記 UI 未定） | Request_Number=01-03 の仕様整理は完了。カルテ UI 実装時に実行。 |
-| 51 | `/api01rv2/patientlst8v2` | RUN 未実施（旧姓 seed 無し） | サンプル患者を ORCA DB へ投入後に `/api01rv2/patientlst8v2` を実行する。`notes` §3.4。 |
+| 51 | `/api01rv2/patientlst8v2` | RUN 未実施（旧姓データ欠落） | 旧姓履歴を持つ患者が WebORCA 本番に存在しないため保留。復旧後に `/api01rv2/patientlst8v2` を実行し、それまでは欠落記録のみ更新する。 |
 | 52 | `/api01rv2/medicationgetv2` | RUN 未実施（2024-11 追加 API） | 診療コード検索の必須 API。`ORCA_API_STATUS.md` §2.4 参照。`ORCA_CONNECTIVITY_VALIDATION.md` に手順を追加済み。 |
 | 53 | `/orca06/patientmemomodv2` | `HTTP 405 (Allow: GET)` | RUN_ID=`20251113T002806Z`。memo CRUD は ORCA route 復旧待ち。`notes` §3.3。 |
 

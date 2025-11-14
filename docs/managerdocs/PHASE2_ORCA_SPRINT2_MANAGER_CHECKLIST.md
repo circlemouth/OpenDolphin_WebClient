@@ -1,0 +1,47 @@
+# Phase2 ORCA Sprint2 マネージャー作業チェックリスト（2025-11-19）
+
+## 1. 背景
+- Sprint2 設計情報は `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6 を一次情報として整備済み。
+- `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から上記節へアンカーされ、`DOC_STATUS.md` 行 25 にも Active 記録あり。
+- 現在のマネージャー指示は、ORCA ラッパー実装／Runbook 連携／進捗台帳の同期を確実にすることが目的。
+- 2025-11-19 時点では PHR Phase-C/D/E RUN_ID=`20251119TorcaPHRSeqZ1` が PKCS#12 パスを更新済みで HTTPS 疎通まで成功。ORCA 本番 `/20/adm/phr/*` が未開放のため HTTP 405/404 となり、Modernized REST 実装で 200/403＋監査を取得する計画へ切替。`DOC_STATUS.md` W22 行と `docs/server-modernization/phase2/operations/logs/2025-11-19-phr-seq-phaseCDE.md` に新しい Pending を記載済。Sprint2 側でもタスクC（棚卸し）で該当 Blocker との整合を確認する。
+
+## 2. 進行タスク一覧
+- [x] **タスクA: Sprint2 アンカー反映** — `API_PARITY_MATRIX.md` と `PHASE2_PROGRESS.md` の ORCA 行を Sprint2 設計アンカーへ差し替える。完了条件: 両ファイルから §6 各 API へ直接ジャンプでき、`DOC_STATUS.md` 備考に「アンカー更新済（2025-11-14）」追記。（完了: 2025-11-14 / RUN_ID=NA）
+  - [ ] `API_PARITY_MATRIX.md` の Matrix No.18/8/9/10/14/17/35 等へ `Sprint2設計` リンク追記。
+  - [ ] `PHASE2_PROGRESS.md` ORCA セクションへ「参照: ORCA_REST_IMPLEMENTATION_NOTES §6」脚注追加。
+  - [ ] `DOC_STATUS.md` 行 25 の備考へタスク完了メモを反映。
+- [x] **タスクB: RUN_ID タグ＋証跡テンプレ整備** — `ORCA_API_STATUS.md` に RUN_ID を明示し、`ORCA_CONNECTIVITY_VALIDATION.md` §4.3/§4.4 を Sprint2 証跡テンプレと同期。完了条件: 全対象 API に `[RUN_ID=...]` 表記と証跡パス、Runbook 表に保存ファイル指示と RUN_ID 記入欄を追加、`DOC_STATUS.md` に反映メモ。（完了: 2025-11-14 / RUN_ID=テンプレ）
+  - [ ] `ORCA_API_STATUS.md` Matrix 行へ RUN_ID と `logs/...` 参照を追記。
+  - [ ] `ORCA_CONNECTIVITY_VALIDATION.md` §4.3/§4.4 表・手順へ `httpdump/`, `trace`, `RUN_ID` 記入欄などを補強。
+  - [ ] `DOC_STATUS.md` 備考へ「RUN_ID タグ整備 / テンプレ同期済」追記。
+- [ ] **タスクC: DOC_STATUS 運用チェック** — 上記更新を棚卸し台帳とドキュメントハブへ反映。完了条件: `DOC_STATUS.md` 行 25 が最新日付・担当者・反映内容を保持し、`MODERNIZED_API_DOCUMENTATION_GUIDE.md` §5 の運用ルールに準拠したメモを残す。
+- [ ] `DOC_STATUS.md` 行 25: ステータス Active / 最終レビュー 2025-11-14 / 備考へ具体的更新内容列挙。（タスクA/B反映済、タスクCで最終整合予定）
+  - [ ] `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §5 へ今回の棚卸し結果メモ（必要な場合）。
+  - [ ] `docs/web-client/README.md` ORCA リンク整合チェック（必要時更新）。
+  - [ ] 2025-11-19 追記: `DOC_STATUS.md` W22 行（ORCA PHR タスク）に登録された RUN_ID=`20251119TorcaPHRSeqZ1` の新ステータス（PKCS#12 OK / HTTP 405/404, Modernized REST 実装待ち）を確認し、行 25 の備考へ「PHR Modernized 実装待ち」旨を明記。
+
+## 3. 進捗更新テンプレ（ワーカー報告）
+- `【ワーカー報告】` に以下を必ず含める。
+  1. 更新ファイル一覧（例: `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`）。
+  2. 関連 RUN_ID（ドキュメントのみの場合は `RUN_ID=NA` と明記）。
+  3. 証跡パス（`logs/...`, `artifacts/...`, diff スクリーンショット等）。
+  4. 未完了項目/フォローアップ（例: 次回 RUN_ID 採取予定）。
+
+## 4. 今後の運用
+- タスクA/B/C のステータスが変わるたび本ファイルのチェックボックスを更新し、次アクションを追記する。
+- 新規タスクが派生した場合は本節に追加し、`DOC_STATUS.md` 行 25 の備考と整合を保つ。
+- 週次棚卸しでこのチェックリストを確認し、必要に応じてログ取得計画やサポート問い合わせ（`PHASE2_PROGRESS.md` W39）へリンクを張る。
+
+## 5. 参照ドキュメントマップ
+| 種別 | ドキュメント | 役割 / 更新トリガ |
+| --- | --- | --- |
+| 設計一次情報 | `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6 | Sprint2 API スコープと DTO。タスクA実施時は必ず該当節を更新。 |
+| パリティ管理 | `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` | 1:1 対応状況と Matrix No.。リンク整備後も数値が変わったら再集計。 |
+| Runbook / 証跡 | `docs/server-modernization/phase2/operations/ORCA_API_STATUS.md`<br/>`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` | RUN_ID 表と Runbook。タスクBで RUN_ID 記入欄を同期。 |
+| ドキュメントハブ | `docs/server-modernization/phase2/operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2/§5 | API ドキュメント集約と運用ルール。タスクCで §5 の棚卸しメモを更新。 |
+| 棚卸し / クロスリンク | `docs/web-client/planning/phase2/DOC_STATUS.md` 行 25<br/>`docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` | Sprint2 行のステータスとマネージャー割当表。更新時は両方を同期。 |
+
+> 表に載っていない資料を参照する場合は、追加後に `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` と本ファイルの双方を更新し、チェックボックスへコメントを残す。
+
+> 最終更新: 2025-11-19 / 担当: Codex（Phase2 ORCA 連携マネージャー）

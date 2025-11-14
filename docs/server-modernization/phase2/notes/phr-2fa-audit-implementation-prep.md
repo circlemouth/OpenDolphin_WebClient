@@ -5,6 +5,14 @@
 - 参照元: `common-dto-diff-N-Z.md` のギャップ整理、`EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の既存手順。
 - 成果物: チケット化にそのまま転用できる要件定義、想定担当/依存関係、受入条件。
 
+## Task-E（2025-11-18）Secrets/Vault 更新状況 — RUN_ID=20251118TphrLayerPrepZ1
+
+| 項目 | Vault / 設定 | 承認ステータス | 備考 |
+| --- | --- | --- | --- |
+| Layer ID cert / client secrets | `kv/modernized-server/phr/layer-id` に `PHR_LAYER_ID_CLIENT_ID`, `PHR_LAYER_ID_CLIENT_SECRET`, `PHR_LAYER_ID_CERT_P12_B64`, `PHR_LAYER_ID_CERT_ALIAS=phr-layerid-20251118` を格納。`ops/check-secrets.sh --profile phr-layer-id` へ `LAYER_ID_CERT_ALIAS` と `PHR_LAYER_ID_CERT_SHA256` を追加。 | Ops（@OpsLead, 2025-11-18 08:40 JST）と Security がダブルサイン。Payara `domain.xml` へ keystore import→`identityToken` Timer により 200/401 ハンドリングを再確認。 | RUN_ID=`20251118TphrLayerPrepZ1` で `vault kv get .../phr/layer-id` を行い、Base64 長を 6,148 byte（P12 2048bit）に統一。欠損時は `PHR_LAYER_ID_CERT_MISSING` をトリガーするフェールファスト仕様を `IdentityService` 側へ転記済み。 |
+| PHR_EXPORT_SIGNING_SECRET / SignedUrlService | `kv/modernized-server/phr/container` に `PHR_SIGNING_KEY_ID=phr-container-20251118`, `PHR_SIGNING_KEY_SECRET`（64 hex, 2026-05-31 ローテーション予定）, `PHR_EXPORT_SIGNING_SECRET` を格納。`SignedUrlService` は `allowedSchemes=https`, `defaultTtlSeconds=300` でロック。 | OpsSec（@OpsSec, 2025-11-18 09:05 JST）承認、Product が TTL 300s/1-download 制限へ合意。`SEC-OPS-002` の `--profile phr-export` がグリーン。 | `PHR_CONTAINER_FETCH` → `PHR_SIGNED_URL_ISSUED` 監査に `signedUrlIssuer=RESTEASY`, `storageType=S3` を出力する追加仕様を Phase-E 表へ転記。NULL 返却基準も `SignedUrlService` README に記載。 |
+| PHR_EXPORT_STORAGE_TYPE / S3/IAM | Stage/Prod は `PHR_EXPORT_STORAGE_TYPE=S3` 固定。`PHR_EXPORT_S3_BUCKET=opd-phr-export-prod`, `PHR_EXPORT_S3_REGION=ap-northeast-1`, `PHR_EXPORT_S3_PREFIX=facility/{facilityId}/jobs/`, `PHR_EXPORT_S3_KMS_KEY=alias/opd/phr-export`。IAM ロール `arn:aws:iam::<redacted>:role/phr-export-uploader` へ `s3:GetObject/PutObject/DeleteObject/GetObjectVersion/ListBucket` を許可。 | OpsStorage（@OpsNetwork, 2025-11-18 09:20 JST）と Infrastructure が承認。`PHR_EXPORT_STORAGE_TYPE=FILESYSTEM` は Dev 限定で残すが、CI/Stage/Prod では S3 未設定時に `ops/check-secrets.sh` が失敗するよう更新。 | `S3PhrExportStorage` 実装タスクで必要な `bandwidth-policy.properties` 参照値 (`max-download-burst=50MB/s`, `signed-url-ttl=300`) を `PHR_RESTEASY_IMPLEMENTATION_PLAN.md` フェーズE/F へ追加済。CloudTrail/Server-Side Encryption の定期検証（週次）を Ops Runbook へ追記。 |
+
 ## チケット草案サマリー
 
 | チケット案 | 優先度 | 作業ブロック（Owner 想定） | 主な受入条件 | 備考 |

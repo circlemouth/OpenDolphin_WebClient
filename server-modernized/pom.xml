@@ -361,6 +361,7 @@
                     </includes>
                     <systemPropertyVariables>
                         <adm.snapshot.fixtureDir>${project.basedir}/../ops/tests/fixtures/adm</adm.snapshot.fixtureDir>
+                        <net.bytebuddy.experimental>true</net.bytebuddy.experimental>
                     </systemPropertyVariables>
                 </configuration>
             </plugin>
