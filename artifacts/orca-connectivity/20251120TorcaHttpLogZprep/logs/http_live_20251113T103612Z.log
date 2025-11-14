@@ -1082,3 +1082,5 @@
 2025-11-13T14:13:29Z 2025/11/13 23:13:29 RPC-:orca  ormaster M95 send_event CLICKED B12 tot:148ms app:144ms  sts:200
 2025-11-13T14:13:46Z 2025/11/13 23:13:46 RPC-:orca  ormaster M00 send_event ACTIVATE SELNUM tot:9ms app:8ms  sts:200
 2025-11-13T14:13:47Z 2025/11/13 23:13:47 RPC-:orca  ormaster MERR send_event CLICKED B01 tot:4ms app:1ms  sts:200
+2025-11-13T14:37:39Z 2025/11/13 23:37:39 Websocket ReadError: orca websocket: close 1001 (going away)
+2025-11-13T14:37:39Z 2025/11/13 23:37:39 Websocket Closed: orca fjRZyT5pXda68L5w7CW3h6

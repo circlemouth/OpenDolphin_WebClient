@@ -17,14 +17,12 @@ server-modernized モジュールのデバッグ状況を把握するための�
 - Legacy/Modernized 並列キャプチャ環境の構築 Runbook を `docs/server-modernization/phase2/operations/` に整備し、`PHASE2_PROGRESS.md` へリンクと更新日時を記録するまで他フェーズのステータスを「完了」にしない。
 - 新規や更新した Runbook／スクリプトの保存先を本ファイルの備考欄に必ず記載し、証跡（ログ・diff・ハッシュなど）は `artifacts/parity-manual/` 配下に時刻付きフォルダで保管する。
 
-### 2025-11-08 追記: WebORCA テストコンテナの通信確認
+### 2025-11-14 追記: WebORCA クラウド接続の標準手順
 
-- `docker/orca/jma-receipt-docker`（`circlemouth/jma-receipt-docker-for-Ubuntu-22.04`）をサブモジュールとして追加し、ORCA ⇔ Legacy/Modernized サーバーの通信テスト用サンドボックスとして運用する。
-- 既存の `jma-receipt-docker-for-ubuntu-2204-orca-1` / `...-db-1` が稼働している場合は再起動せず、`curl http://localhost:8000/` と `docker run --network jma-receipt-docker-for-ubuntu-2204_default curlimages/curl:8.7.1 http://orca:8000/` でヘルスチェックを実施する。応答ステータスは `200` を確認済み。
-- OpenDolphin 側コンテナを `docker network connect jma-receipt-docker-for-ubuntu-2204_default <container>` で ORCA ネットワークへ接続し、`ops/shared/docker/custom.properties` に `claim.host=orca` / `claim.send.port=8000` / `claim.send.encoding=MS932` を設定してから再ビルドする。`ServerInfoResource` (`/serverinfo/claim/conn`) で `server` が返ることを以て接続完了とみなす。
-- 証跡: `artifacts/orca-connectivity/20251108T075913Z/`（ホスト/ネットワーク両方の `curl` 結果と `docker logs` 抜粋）。Runbook 追記は `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md#44-weborca-テストコンテナ2025-11-08-追加` を参照。
-- `docker ps --format '{{.ID}} {{.Image}} {{.Names}} {{.Status}}'`（2025-11-08T07:49Z 実行）で `jma-receipt-docker-for-ubuntu-2204-{orca,db}-1` が稼働中であることを確認済み。結果は `artifacts/orca-connectivity/20251108T075913Z/docker_ps_20251108T0749.log` に保存し、ORCA 接続系デバッグの前提条件として参照する。
-- API 呼び出し仕様はネットワーク遮断時でも確認できるよう `docs/server-modernization/phase2/operations/assets/orca-api-spec/README.md` に集約した。WebORCA 関連チケットを割り当てる際は、対象 API の `SpecSlug`／`LocalSpec` を `orca-api-matrix.with-spec.csv` から参照し、Runbook の証跡リンクとセットで提示する。
+- ORCA 連携検証は WebORCA クラウド本番（`https://weborca.cloud.orcamo.jp:443`）を唯一の接続先とし、`ORCAcertification/` に格納された PKCS#12＋Basic 情報を `curl --cert-type P12` で利用する。ローカル WebORCA コンテナは停止・更新とも禁止。
+- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.send.port`, `claim.scheme`, `claim.send.encoding` を WebORCA クラウド向けに揃え、`/serverinfo/claim/conn` が `server` へ戻るまで再ビルドする。
+- TLS/Basic ハンドシェイクは `openssl s_client` と `curl --cert-type P12` のヘッダー/レスポンスを `artifacts/orca-connectivity/<RUN_ID>/weborca-prod/` に保存し、RUN_ID は `2025MMDDTorcaProdCertZ#` を採番。証跡テンプレと詳細は `operations/ORCA_CONNECTIVITY_VALIDATION.md#44-weborca-クラウド接続2025-11-14-更新` に従う。
+- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md#44-weborca-クラウド接続2025-11-14-更新` へヘルスチェック手順・環境変数テンプレを統一し、`PHASE2_PROGRESS.md` と `operations/logs/<date>-orca-connectivity.md` へ RUN_ID／結果／証跡パスを必ず報告する。
 
 ### 2025-11-08 追記: Ops/DBA 発行プロセス先送りに伴う再プランニング
 

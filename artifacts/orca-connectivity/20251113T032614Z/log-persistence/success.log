@@ -1,6 +1,4 @@
-[UTC 2025-11-13T03:26:14Z] WebORCA log persistence override completed.
-1. Copied docker/orca/jma-receipt-docker/docker-compose.override.yml.example to docker-compose.override.yml and enabled bind mount ./logs/orca:/opt/jma/weborca/log.
-2. Created host log dir via `mkdir -p docker/orca/jma-receipt-docker/logs/orca`.
-3. Recreated container with `docker compose up -d --force-recreate orca` (platform warning expected on arm64 host).
-4. Verified LOGDIR by `docker exec jma-receipt-docker-orca-1 grep LOGDIR /opt/jma/weborca/app/etc/jma-receipt.env` -> LOGDIR=/opt/jma/weborca/log.
-5. Host log mount populated under docker/orca/jma-receipt-docker/logs/orca.
+[UTC 2025-11-13T03:26:14Z] Local WebORCA log persistence workstream is retired.
+1. 2025-11-14 以降は WebORCA クラウド本番 (`https://weborca.cloud.orcamo.jp:443`) の証跡のみを取得し、ローカル WebORCA コンテナのログ永続化手順は使用しない。
+2. 旧成果物（`docker-compose.override.yml` や `logs/orca/`）は参照用に `artifacts/orca-connectivity/20251113T032614Z/` へ残し、Runbook §4.2 からは削除済み。
+3. ログ採取は `curl --cert-type P12` / `openssl s_client` / `ServerInfoResource` を中心に行い、証跡は `artifacts/orca-connectivity/<RUN_ID>/weborca-prod/` へ保存すること。
