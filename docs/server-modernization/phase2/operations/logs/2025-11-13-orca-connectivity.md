@@ -65,3 +65,14 @@
 | `/orca11/acceptmodv2` | HTTP 405（Allow: OPTIONS, GET）再現。 | 同上 (`curl: (6)`), `httpdump/acceptmodv2/` に DNS 失敗を保存。 |
 
 > メモ: `http_404405_extract_<api>_<UTC>.log` は空ファイルで作成済み。オンライン環境で再実行する際は同 RUN_ID を用いず、新規 RUN_ID を採番すること。
+
+### 5.2 WSL DNS 恒久設定と疎通確認（2025-11-14 追記、RUN_ID=`20251114TorcaHttpLogZ1`）
+
+1. Windows 側 `C:\\Users\\marug\\.wslconfig` に `[network] generateResolvConf = false` が定義されていることを確認し、WSL 再起動後も `/etc/resolv.conf` が自動再生成されない状態に維持した。
+2. `cat /etc/resolv.conf` で自動生成コメントのみが残っていたため、`/mnt/c/Windows/System32/wsl.exe -u root` で `rm -f /etc/resolv.conf` → `printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' > /etc/resolv.conf` を実施し、手動で Google / Cloudflare DNS を設定した。`chattr +i /etc/resolv.conf` は `Operation not supported while reading flags`（WSL2 ext4.vhdx では不可）だったため、`.wslconfig` による自動生成停止と手動ファイル管理の組み合わせを必須手順として運用する。
+3. DNS 解決ログは `artifacts/orca-connectivity/20251114TorcaHttpLogZ1/dns/` に保存した。
+   - `nslookup_after_fix.log`: `Server: 8.8.8.8` / `Address: 8.8.8.8#53` を経由して `weborca.cloud.orcamo.jp → 35.76.144.148 / 54.178.230.126` を取得。
+   - `dig_after_fix.log`: TTL=57 秒の A レコード 2 件を取得し、`SERVER: 8.8.8.8#53` と一致することを確認。
+   - `ping_after_fix.log`: `ping -c 1 35.76.144.148` は ICMP 応答なし（100% packet loss）だったが、外部到達を判定する目的では `nslookup` / `dig` の応答を根拠とする。ICMP を遮断している可能性があるため、今後も ping 結果のみで到達可否を判断しない。
+4. DNS 設定後に `curl --cert-type P12 --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" -u ... -I https://weborca.cloud.orcamo.jp/api/api01rv2/system01dailyv2` を再試行したが、`curl: (58) could not parse PKCS12 file ... mac verify failure`（`artifacts/.../httpdump/system01dailyv2/curl_head_after_fix.log`）で TLS 以前に失敗した。エラーは未解決の PKCS#12 パスフレーズ問題に起因しており、DNS 解決は `curl` 起動前の証明書読み込み段階とは切り離される。証跡には `curl` の進行バーと OpenSSL エラーを保存した。
+5. 後続タスク: (a) PKCS#12 パス再収集、(b) `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §1 へ WSL `.wslconfig + /etc/resolv.conf` 前提の記載を追加済み、(c) `ORCA_HTTP_404405_HANDBOOK.md` §1.1 の DNS 前提にも同内容を追記済み。

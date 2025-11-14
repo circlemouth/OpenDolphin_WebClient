@@ -20,7 +20,7 @@
 | 認証情報 | `ORCAcertification/103867__JP_u00001294_client3948.p12` と `ORCAcertification/新規 テキスト ドキュメント.txt`（ORCAMO ID, API キー, PKCS#12 パスフレーズを平文で格納）。ファイルの値をそのまま `ORCA_PROD_*` へ export し、作業後は必ず `unset ORCA_PROD_*`。 |
 | モダナイズ版サーバー | `opendolphin-server-modernized-dev`（WildFly 27）。`ops/shared/docker/custom.properties` および `ops/modernized-server/docker/custom.properties` に `claim.host=weborca.cloud.orcamo.jp` / `claim.send.port=443` / `claim.conn=server` / `claim.send.encoding=MS932` を設定し、`claim.scheme=https`（または `claim.useSsl=true`）を有効化してから再ビルドする。 |
 | ネットワーク | 作業端末から `weborca.cloud.orcamo.jp:443` への outbound HTTPS が許可されていること。社内ネットワークで制限されている場合は VPN または許可済みホストへ切り替える。|
-| DNS | 作業開始前にホスト OS で `Resolve-DnsName weborca.cloud.orcamo.jp`（Windows）や `nslookup`/`dig` を実行し、A レコード（例: `35.76.144.148`, `54.178.230.126`）を取得できることを確認する。WSL や閉域網では DNS 解決が失敗し `curl: (6)` となるため、成功結果を `artifacts/orca-connectivity/<RUN_ID>/dns/resolve_dnsname_<UTC>.log` へ記録しておく。 |
+| DNS | 作業開始前にホスト OS で `Resolve-DnsName weborca.cloud.orcamo.jp`（Windows）や `nslookup`/`dig` を実行し、A レコード（例: `35.76.144.148`, `54.178.230.126`）を取得できることを確認する。WSL2 を利用する場合は Windows 側 `.wslconfig` に `generateResolvConf=false` を追加し、WSL 内では `/etc/resolv.conf` を手動管理（例: `nameserver 8.8.8.8` と `1.1.1.1` を記述）する。`chattr +i` がサポートされない環境でも `.wslconfig` による自動生成停止で上書きを防ぎ、`artifacts/orca-connectivity/<RUN_ID>/dns/` へ `nslookup`/`dig`/`ping` 証跡を保存する。 |
 | データ | WebORCA 本番の実データが返却されるため、参照系 API のみ実行し、登録/更新/削除 API は禁止。必要に応じて `docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md` の RUN_ID 証跡を参照する。 |
 
 ## 2. 実施フロー概要

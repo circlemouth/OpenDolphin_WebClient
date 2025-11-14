@@ -75,7 +75,7 @@ Web クライアントおよびサーバーモダナイズで参照する資料�
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / 次アクション |
 | --- | --- | --- | --- | --- |
 | [`docs/server-modernization/phase2/SERVER_MODERNIZED_STARTUP_BLOCKERS.md`](../../../server-modernization/phase2/SERVER_MODERNIZED_STARTUP_BLOCKERS.md) | モダナイズ運用 | Active | 2025-11-09 | 2025-11-09 更新: ORCA ネットワークの `db` alias が `DB_HOST` を上書きする衝突を Appendix 化し、Compose/CLI 差分テンプレと `jboss-cli` 証跡リンクを整理済。Blocking Issue 継続監視（優先度タグ付完了）。 |
-| [`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`](../../../server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md) | モダナイズ/外部連携 | Active | 2025-11-22 | §1 の前提条件に DNS 到達性チェック（`Resolve-DnsName weborca.cloud.orcamo.jp`）を追加し、§3.4 の手順から `README_PASSPHRASE.md` 参照と `--cert` 引数の設定を明文化。 |
+| [`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`](../../../server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md) | モダナイズ/外部連携 | Active | 2025-11-25 | §1 DNS 前提へ「Windows `.wslconfig` で `generateResolvConf=false` を指定し、WSL の `/etc/resolv.conf` を手動管理 → `artifacts/orca-connectivity/<RUN_ID>/dns/` へ nslookup/dig/ping 証跡を保存」という必須手順を追記し、WSL DNS 断対策を Runbook に反映。 |
 
 ## 今後のタスク
 - [ ] 2025-11-15 までに `DTO diff` を CSV 化し Archive へ移動。
