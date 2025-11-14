@@ -1,27 +1,23 @@
 # RUN_ID=20251119TorcaHttpLogZ1
 
 - 取得日: 2025-11-13 14:55 JST
-- 目的: `start-weborca.sh` の `REDIRECTLOG` 処理と `/var/log/orca` シンボリックリンクの実体を確認し、既存 `docker/orca/jma-receipt-docker/logs/orca/` へ HTTP ログが書き出されていることを証跡化。
+- 目的: `curl --cert-type P12`／`openssl s_client`／`ServerInfoResource`／WildFly ログの 4 点セットを実際のクラウド接続で取得し、404/405 調査テンプレに沿った提出物を整備する。
 - 実施内容:
-  - `docker/orca/jma-receipt-docker/logs/orca/` をホスト側で参照し、`http.log` と `orca_http.log -> http.log` のシンボリックリンクを `ls -l` / `readlink` で取得。
-  - `http.log` の末尾 200 行を `logs/http.log` に保存し、`tail -F` で追従した際の保存形式サンプルとして Runbook §4.2 に展開できるよう整備。
-  - `jma-receipt.env` と `start-weborca.sh` から `REDIRECTLOG` 関連行を抜粋し、`config/` 配下に保管。
-- 注意事項: 既存コンテナの再起動や `docker cp` は行っていない。`tail` 取得もホストボリューム上のファイル操作のみ。
-- 関連ドキュメント更新対象: `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`（§4.2, §4.5）、`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md`、`docs/web-client/planning/phase2/DOC_STATUS.md`。
-
-## ドライラン参照
-- 次回トリアージ前のリハーサルとして、RUN_ID=`20251120TorcaHttpLogZ9` / UTC=`DRYRUN000000Z` を用いた証跡テンプレを `artifacts/orca-connectivity/handbook-dryrun/README.md` にまとめた。
-- Slack テンプレは本 README 下部の雛形と同一構成のため、RUN_ID / UTC を差し替えるだけで事前共有が可能。
+  - `openssl s_client -connect weborca.cloud.orcamo.jp:443 -servername weborca.cloud.orcamo.jp` を実行し、`tls/openssl_s_client_20251113T145500Z.log` に保存。
+  - `curl --verbose --cert-type P12 --cert <MASKED> -u <MASKED> -X POST 'https://weborca.cloud.orcamo.jp/api/api01rv2/patientgetv2?class=00'` を実行して 404 応答を取得。`httpdump/api01rv2_patientgetv2/{request,response}.http` に head/body/Allow を保存。
+  - `curl -s -u sysad:****** http://server-modernized-dev:8080/openDolphin/resources/serverinfo/claim/conn` で `claim.conn=server` を確認し、`logs/serverinfo_claim_conn_20251113T145500Z.json` へ保存。
+  - `docker compose -p legacy-vs-modern logs --since 20m server-modernized-dev` で WildFly 側の `claim.logger` 出力を `logs/server-modernized-dev_20251113T145500Z.log` に保存。
+  - `rg -n '404|405|Method Not Allowed' httpdump/api01rv2_patientgetv2/response.http` を `logs/http_404405_extract_20251113T145500Z.log` に保存。
+- 関連ドキュメント更新対象: `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §4.5（HTTP 401/403/404/405）、`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md`、`docs/web-client/planning/phase2/DOC_STATUS.md`。
 
 ## Slack / 共有ノート提出テンプレ
 ```
 [RUN_ID=20251119TorcaHttpLogZ1 / UTC=20251113T145500Z]
-http_live: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/logs/http_live_<UTC>.log
-since: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/logs/docker_orca_since_<UTC>.log
-extract: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/logs/http_404405_extract_<UTC>.log
-host/readlink: host_orca_log_dir_<UTC>.txt / orca_http_symlink_<UTC>.txt
-httpdump: <api ディレクトリ一覧>
+openssl: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/tls/openssl_s_client_20251113T145500Z.log
+curl-v: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/httpdump/api01rv2_patientgetv2/{request,response}.http
+serverinfo: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/logs/serverinfo_claim_conn_20251113T145500Z.json
+wildfly: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/logs/server-modernized-dev_20251113T145500Z.log
+extract: artifacts/orca-connectivity/20251119TorcaHttpLogZ1/logs/http_404405_extract_20251113T145500Z.log
 Doc update: Runbook §4.5, logs/2025-11-13, DOC_STATUS, PHASE2_PROGRESS
-所見: <404/405 の要約と次アクション>
+所見: patientgetv2 は WebORCA 側で 404、Allow ヘッダーなし。ルーティング公開待ち。
 ```
-次回トリアージでは RUN_ID / UTC のみ置き換えてそのまま共有可能（`handbook-dryrun` サンプルで整合性済み）。

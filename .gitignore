@@ -20,3 +20,6 @@ web-client/.env.*
 # Local-only documentation with credentials
 docs/web-client/operations/mac-dev-login.local.md
 ops/tests/api-smoke-test/headers/javatime-stage.headers
+
+# ORCA certification files
+ORCAcertification/

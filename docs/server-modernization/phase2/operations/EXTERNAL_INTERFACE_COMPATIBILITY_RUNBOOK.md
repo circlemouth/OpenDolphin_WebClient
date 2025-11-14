@@ -270,129 +270,27 @@
    - すべての出力が ISO8601 である場合は `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日欄へ「JavaTime 監視 OK」と記入し、Grafana/Loki/Elastic のスクリーンショットを Evidence へ添付。  
    - 差分が見つかった場合は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead → Security/Compliance の順で連絡し、詳細は `notes/touch-api-parity.md` §9 の手順に従う。
 
-### 4.4 WebORCA テストコンテナ（2025-11-08 追加）
+### 4.4 WebORCA クラウド接続（2025-11-14 更新）
 
-1. **サブモジュール取得**  
-   `docker/orca/jma-receipt-docker` は WebORCA（ORCA Web 版）を Ubuntu 22.04 ベースで再現する Compose 構成。まだ取得していない場合は以下で初期化する。  
+1. **接続先と資格情報**  
+   - 検証対象は `https://weborca.cloud.orcamo.jp:443`（CN=`*.cloud.orcamo.jp`）。ローカル WebORCA コンテナは廃止した。  
+   - クライアント証明書（PKCS#12）と Basic 認証情報は `ORCAcertification/` 配下に集約されている。ファイル権限を 0700/0600 に保ち、`.gitignore` 対象であることを確認。  
+   - `ORCA_PROD_CERT`, `ORCA_PROD_CERT_PASS`, `ORCA_PROD_BASIC_USER`, `ORCA_PROD_BASIC_KEY` を環境変数に読み込み、作業後は必ず `unset` する。
    ```bash
-   git submodule update --init docker/orca/jma-receipt-docker
+   export ORCA_PROD_CERT=ORCAcertification/103867__JP_u00001294_client3948.p12
+   export ORCA_PROD_CERT_PASS="$(cat ORCAcertification/使用目的不明：使用停止/ORCA\ 証明証パスワード.txt)"
+   export ORCA_PROD_BASIC_USER="$(rg -o 'ORCAMO ID:(.*)' -r '$1' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d ' ')"
+   export ORCA_PROD_BASIC_KEY="$(rg -o 'APIキー:(.*)' -r '$1' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d ' ')"
    ```
-2. **起動**  
-   - 既定でホスト 8000/TCP を公開する。別の WebORCA が同ポートを使用している場合は既存コンテナを流用するか、`docker-compose.override.yml` に `ports: ["18000:8000"]` などを記載して上書きする。  
-   - Apple Silicon では `DOCKER_DEFAULT_PLATFORM=linux/amd64` を付与してビルドする。  
-   ```bash
-   cd docker/orca/jma-receipt-docker
-   DOCKER_DEFAULT_PLATFORM=linux/amd64 \
-   ORMASTER_PASS='ormaster' docker compose up -d --build
-   ```
-   - 既に `jma-receipt-docker-for-ubuntu-2204-orca-1` が起動済みの場合は上記コマンドは不要。状態を確認するだけで良い。
-3. **ヘルスチェック**  
-   - ホストからの応答: `curl -s -o /dev/null -w "%{http_code}" http://localhost:8000/` が `200` を返すこと。  
-   - コンテナ同士の疎通: `docker run --rm --network jma-receipt-docker-for-ubuntu-2204_default curlimages/curl:8.7.1 -s -o /dev/null -w "%{http_code}" http://orca:8000/` を実行して `200` を確認。  
-   - ログは `docker logs jma-receipt-docker-for-ubuntu-2204-orca-1 --tail 200` で取得し、証跡（例: `artifacts/orca-connectivity/20251108T075913Z/`）へ保管する。
-4. **OpenDolphin コンテナとのネットワーク共有**  
-   - `docker-compose.yml` / `docker-compose.modernized.dev.yml` は `orca-weborca`（外部名: `jma-receipt-docker-for-ubuntu-2204_default`）ネットワークを external として宣言済み。WebORCA Compose を先に起動し、このネットワークが存在する状態で `docker compose up` すると `opendolphin-server` / `opendolphin-server-modernized[-dev]` が自動で参加する。  
-   - 既存コンテナをネットワークへ後付けする場合のみ、従来どおり `docker network connect jma-receipt-docker-for-ubuntu-2204_default <container>` を実行する。  
-   - ネットワークへ接続できない場合は `docker network inspect jma-receipt-docker-for-ubuntu-2204_default` で状態を確認し、存在しなければ WebORCA Compose を起動するか `docker network create --driver bridge jma-receipt-docker-for-ubuntu-2204_default` でプレースホルダを作成する。
-   - API 仕様・パラメータの参照は `operations/assets/orca-api-spec/README.md` を起点とする。`orca-api-matrix.with-spec.csv` から対象 API の `SpecSlug` を特定し、`raw/<slug>.md` を参照することでオンライン接続なしでも公式ドキュメントにアクセスできる。
-5. **`custom.properties` の設定**  
-   - `ops/shared/docker/custom.properties` に ORCA 連携用の値を追記してから `docker compose build` を再実行する。最低限以下を設定する。  
-     ```properties
-     claim.host=orca
-     claim.send.port=8000
-     claim.send.encoding=MS932
-     ```  
-   - `claim.conn=server`（既定値）と合わせて `ServerInfoResource` / `OrcaResource` が ORCA ホストを正しく解決することを確認する。
-6. **通信確認**  
-   - Legacy/Modernized いずれかのサーバーから `curl -s http://localhost:8080/openDolphin/resources/serverinfo/claim/conn` を実行し `server` が返ること。  
-   - `ops/tools/send_parallel_request.sh POST /orca/interaction ...` のように ORCA エンドポイントを叩き、`artifacts/parity-manual/<ID>/` に Legacy/Modernized 両方のレスポンスを保存する。  
-   - 問題が発生した場合は `docker logs jma-receipt-docker-for-ubuntu-2204-orca-1` と `server.log` をペアで添付し、`PHASE2_PROGRESS.md` へリンクを記録する。
-7. **停止**  
-   - 利用終了後は `docker compose down`（または `docker compose -p jma-receipt-docker-for-ubuntu-2204 down`）で後片付けし、永続ボリュームが不要であれば `docker volume rm jma-receipt-docker-for-ubuntu-2204_pg_data jma-receipt-docker-for-ubuntu-2204_orca_state` を実行する。
-
-#### Gate #44: MmlSenderBeanSmokeTest 安定実行（2025-11-09 更新）
-
-1. **フィクスチャ確認**  
-   - `tmp/mml-tests/send_mml_success.json` と `tmp/mml-tests/mml.headers` が存在し、`docInfo.sendMml=true`・`encoding=Shift_JIS` になるよう整備されていることをチェックする。  
-   - `claim.host` など ORCA 向け設定は不要だが、`tmp/mml-tests/` を更新した場合は `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/<UTC>/mml_send/` にも反映させる。
-2. **テスト実行**  
-   ```bash
-   cd server-modernized
-   mvn -Dtest=MmlSenderBeanSmokeTest test | tee ../tmp/mvn-mml.log
-   ```  
-   - `Tests run: 1, Failures: 0, Errors: 0` を Gate 通過条件とする。ログ例: `tmp/mvn-mml.log`（2025-11-09 版）。
-3. **判定基準**  
-   - `MmlDispatchResult` の `encoding` が `SHIFT_JIS`（大文字化して比較）であること。  
-   - `payload` / `sha256` / `byteLength` がすべて非 null・非空であること。  
-   - `documentId` がフィクスチャの `docInfo.docId` と一致すること。  
-   - 失敗した場合は `server-modernized/src/test/java/open/dolphin/session/MmlSenderBeanSmokeTest.java` にログ出力を追加し、`tmp/mml-tests` 側の不備かコード不整合かを切り分ける。
-4. **証跡保存**  
-   - `tmp/mvn-mml.log` を `artifacts/parity-manual/CLAIM_DIAGNOSIS_FIX/<UTC>/maven/MmlSenderBeanSmokeTest.log` へ複製し、`docs/server-modernization/phase2/notes/messaging-parity-check.md` §8.1 からリンクする。  
-   - Gate #44 のチェック欄へ「run:YYYY-MM-DD」「result:pass/fail」「log:tmp/mvn-mml.log」を追記する。
-
-## 5. 切替手順（サンプル）
-
-1. **準備日 (T-7)**  
-   - パリティマトリクス更新、Smoke テスト、監査ログの確認を完了させる。  
-   - DNS TTL、ロードバランサの設定変更案を作成し、承認を得る。
-2. **前日 (T-1)**  
-   - 最新バックアップ（DB ダンプ・添付ファイル・設定）を取得。  
-   - モダナイズ版をステージング環境で再実行し、最終確認。
-3. **当日 (T0)**  
-   - 旧サーバーをリードオンリー（必要なら）へ切り替え、DB スナップショットを取得。  
-   - モダナイズ版を本番環境へデプロイし、ヘルスチェック `/health` `/metrics` を確認。  
-   - DNS／ロードバランサの向き先をモダナイズ版へ変更。
-4. **切替後監視 (T0+1h〜)**  
-   - Micrometer メトリクス (`wildfly_undertow_request_count_total{server,http_listener}`, `wildfly_request_controller_active_requests`, `wildfly_datasources_pool_active_count{data_source}` 等) と監査ログを監視し、エラー率やレスポンス遅延を確認。`rate(wildfly_undertow_error_count_total[5m]) / rate(wildfly_undertow_request_count_total[5m]) > 0.05` を PagerDuty Critical、`wildfly_datasources_pool_available_count{data_source="ORCADS"} < 5` が 2 分継続したら Warning、`wildfly_request_controller_active_requests > 64` が 3 分続いたら Slack #server-modernized-alerts へ通知する。  
-   - `/actuator/{health,metrics,prometheus}` が 200 を返すことを `curl` で確認し、ログを Evidence へ保存する。WildFly 33 では Prometheus レジストリ用のサブリソースが存在しないため、管理ポート (9990) の `/metrics` `/metrics/application` を基準にしつつ、Undertow 逆プロキシでアプリケーションポート (`http://localhost:9080/actuator/*`) へ転送する。ホスト/ポートを変更する場合は `MICROMETER_MANAGEMENT_HOST` / `MICROMETER_MANAGEMENT_PORT` で上書きする。  
-   - 外部システム（ORCA、SMS、帳票）の担当者と連携し、サンプル取引が成功しているかを確認。
-5. **フォールバック**  
-   - 致命的な差分が発生した場合の手順を事前に定義（DNS 戻し、DB ロールバックなど）。  
-   - `ops/modernized-server/docker-compose` で旧サーバーを即時復旧できるようにする。
-
-## 5. 検証ログ（2025-11-03 更新）
-
-| ID | 日時 | 内容 | ステータス | メモ |
-| --- | --- | --- | --- | --- |
-| OBS-ACTUATOR-20251108-01 | 2025-11-08 | `scripts/start_wildfly_headless.sh start --build`（modernized のみ）で `/actuator/{health,metrics,prometheus}` を取得したが、Micrometer CDI 二重登録により `HTTP/1.1 503 Service Unavailable`。証跡: `artifacts/parity-manual/observability/20251108T063106Z/`（README, wildfly_start.log, actuator_*.log, send_parallel_request 出力）。 | Done | Legacy プロファイルが含まれず `curl: (7)`。Modernized `/dolphin` は 404 だが Micrometer エラーカウンタ/レイテンシは取得可。フォローアップ: 成功ケース採取。 |
-| OBS-ACTUATOR-20251108-02 | 2025-11-08 | `scripts/start_legacy_modernized.sh start --build` で legacy/modernized/両 DB を起動し、`PARITY_HEADER_FILE=ops/tests/api-smoke-test/headers/sysad-actuator.headers` で `ops/tools/send_parallel_request.sh --profile compose --loop 5 GET /dolphin` を実行。`curl -i http://localhost:9080/actuator/{health,metrics,prometheus}` と `curl -i http://localhost:9995/metrics/application` を取得。証跡: `artifacts/parity-manual/observability/20251108T074657Z-success/`。 | Done | Legacy/Modernized とも `HTTP 200`。`mvn -f pom.server-modernized.xml -pl server-modernized -am package -DskipTests` → `jar tf ... | grep WEB-INF/jboss-deployment-structure.xml` で Micrometer 除外ファイルの恒久化を確認し、2025-11-08T10:32:44+09:00 の Grafana/PagerDuty 本番反映ログを `docs/server-modernization/phase2/operations/logs/2025-11-08-pagerduty-observability.txt` へ記録（残課題なし）。 |
-| OBS-ACTUATOR-20251108-03 | 2025-11-08 | `scripts/start_wildfly_headless.sh --env-file <profile> start --` を 4 パターン（baseline / `MODERNIZED_POSTGRES_PASSWORD` 欠落 / `FACTOR2_AES_KEY_B64` 欠落 / SYSAD header 欠落）で再実行し、`ops/tests/api-smoke-test/headers/sysad-actuator.headers` を用いて `/actuator/{health,prometheus}` の疎通を採取。証跡: `artifacts/parity-manual/secrets/20251108T204806Z/README.md` 以下。 | WIP | DB 秘密情報欠落時の `PSQLException` と `opendolphin_db_*` メトリクスを取得済み。FACTOR2/SYSAD は Compose 既定値が空文字をマスクするため要件未達。`ops-observability-plan.md` の Secrets マトリクスに改善策を記載。 |
-| SECRETS-CHECK-20260607-01 | 2026-06-07 | `ops/check-secrets.sh` で 2FA/PHR Secrets 検査フローをドライラン（FILESYSTEM モード、ダミー値）し、CI 失敗条件と通知ルールを追記。 | Done | `PHR_EXPORT_STORAGE_TYPE=FILESYSTEM` のため S3 変数は警告のみ。S3 版はステージングに Secrets 投入後に再検証予定。 |
-| AUDIT-CHAIN-VERIFY-20260607-01 | 2026-06-07 | `SELECT event_time, previous_hash, event_hash ...` によるハッシュチェーン手動検証と PagerDuty 通知ドライラン計画 | ⚠️ Blocked | ローカル環境で `d_audit_event` が空のため SQL 実行結果が得られず。Stage DB リストア後に再実施し、異常ケースを手動で挿入してジョブ想定動作を確認する。 |
-| TOUCH-AUDIT-20251106-01 | 2025-11-06 | `/touch/*` 監査ログの actorRole 連携確認、および `/touch/patient/{pk}` XML 応答の Jakarta 移行後フォーマット差分確認 | Pending | `SessionTraceContext#setActorRole` 追加により Touch API の `TouchAuditHelper` が役割を取得可能。`DolphinResource` が患者詳細 XML を分離実装したため、旧サーバーとの比較テストを `TOUCH_XML_COMPAT` ケースへ追加予定。 |
-| JSONTOUCH-PARITY-20251103-01 | 2025-11-03 | `/10/adm/jtouch/*` 16 エンドポイントのレスポンス互換性確認 | Done | `JsonTouchResourceParityTest`（user/patient/search/count/kana/visitPackage/sendPackage）と Worker E レポート §1.2 に従い、adm10/touch/adm20 実装の出力差分が無いことを確認。2026-05-27 時点で document 系も Jakarta 実装へ移管済み。 |
-| JSONTOUCH-PARITY-20260527-01 | 2026-05-27 | `/10/adm/jtouch/document*`／`/interaction`／`/stamp*` の正常・異常系および監査ログ比較 | ⚠️ Blocked | `JsonTouchResourceParityTest` を 17 ケースへ拡張（document/mkdocument/interaction/stamp の正常/異常＋監査ログ）し IDE で成功を確認。`mvn -pl server-modernized test` は DuplicateProjectException（`opendolphin:opendolphin-server:2.7.1` 重複）で失敗するため、root POM の重複定義解消と CI パイプライン整備をフォロー。 |
-| PHR-PARITY-20251103-01 | 2025-11-03 | PHR アクセスキー／データバンドル／テキスト出力系の互換テスト | Done | Worker E レポート §1.3 の `curl` サンプルおよび Jackson Streaming 検証で 11 エンドポイントの 1:1 対応を確認し、`API_PARITY_MATRIX.md` を `[x]` 更新。 |
-| PVT2-PARITY-20251103-01 | 2025-11-03 | `/pvt2` POST/GET のモダナイズ実装と単体テスト証跡確認 | Done | `PVTResource2Test#postPvt_assignsFacilityAndPatientRelations`／`#getPvtList_wrapsServiceResultInConverter` で facility・保険紐付けと `PatientVisitListConverter` のラップを検証。マトリクス該当行を `[x]` 化済み。 |
-| PVT2-PARITY-20251103-02 | 2026-05-27 | `/pvt2/{pvtPK}` DELETE のテスト整備 | Done | `PVTResource2Test#deletePvt_removesVisitForAuthenticatedFacility`／`#deletePvt_throwsWhenFacilityDoesNotOwnVisit` を追加し、`PVTServiceBean#removePvt` の facility 引数と `ChartEventServiceBean#getPvtList` の副作用（リスト削除／施設不一致例外）を証跡化。API マトリクス・Phase2 進捗を更新済み。 |
-| SYS-PARITY-20251104-01 | 2025-11-04 | `/dolphin` 系 5 エンドポイントの統合テスト／監査証跡整備 | Done | `SystemResourceTest`（hellowDolphin/addFacilityAdmin/getActivities/sendCloudZeroMail/checkLicense）で正常系＋異常系（集計パラメータ不正、サービス例外、ライセンス読込/書込失敗、上限超過）をモック検証。監査ログは `AuditTrailService` キャプチャで成功/失敗分岐を確認。`mvn` は未導入のため CI で `mvn -pl server-modernized test -Dtest=SystemResourceTest` を実行しログ取得すること。 |
-| TOUCH-DOC-20251104-01 | 2025-11-04 | `/touch/document/progressCourse`／`/touch/idocument(2)` モダナイズ検証 | Pending | `DolphinResourceDocumentTest` を追加し、JSON 応答・施設不一致・バリデーション異常をカバー。`DolphinTouchAuditLogger` と `TouchErrorResponse` で監査ログ／エラー構造を統一。ローカル環境に Maven が無く `mvn -pl server-modernized test -Dtest=DolphinResourceDocumentTest` は未実行のため、CI 導入後に実行ログと `d_audit_event` 追跡を記録する。 |
-| STAMP-AUDIT-20251103-01 | 2025-11-03 | `StampResource` 削除 API の監査ログ強化。`StampResourceTest`（成功／404／一括失敗）を追加。 | Pending | ローカル環境に Maven が無くテスト未実行。CI で `mvn -f server-modernized/pom.xml test` 実行後、ステージ環境の `d_audit_event` で `STAMP_DELETE_*` エントリを確認する。キャッシュ無効化連携は Worker C が担当。 |
-| LETTER-AUDIT-20251103-01 | 2025-11-03 | `LetterResource` 取得/削除の 404 ハンドリングと監査ログ記録。`LetterResourceTest` を追加。 | Pending | Maven 不在によりテスト未実行。ステージ環境で `d_audit_event.action=LETTER_DELETE` を確認するタスクを継続。 |
-| ORCA-COMPAT-20251103-01 | 2025-11-03 | `PUT /orca/interaction` Jakarta 実装を旧コードと比較し差分なしであることを確認。 | Open | ORCA テスト DB 未接続。接続環境が整い次第、旧／新サーバーの応答 JSON を比較し、本ランブックへ結果を追記する。 |
-| DEMO-ASP-20251103-01 | 2025-11-04 | DemoResourceASP JSON パリティ検証 (`DemoResourceAsp`/`DemoAspResponses`) | Done | `ModuleModel` import／`BundleDolphin#setOrderName`／コメント互換／ヘッダー＆監査整備を反映し、`DemoResourceAspTest` で 15 エンドポイントの正常・異常系を `fixtures/demoresourceasp/*` と比較。Docker ローカルでは `curl` 比較手順を Runbook に追記済み。ローカルに Maven が無いため `mvn -f pom.server-modernized.xml test -Dtest=DemoResourceAspTest` は未実行（CI 導入後にログ添付予定）。 |
-
-### DEMO-ASP-20251104-01 比較チェック（curl サンプル）
-1. 旧環境を `docker compose -f docker-compose.yml up -d legacy-server` で起動し、モダナイズ版は `docker compose -f docker-compose.modernized.dev.yml up -d modernized-server` で起動する。
-2. 同一認証ヘッダーを付与してサンプルレスポンスを採取する。
-   ```bash
-   curl -s \
-     -H "userName=2.100:ehrTouch" \
-     -H "password=098f6bcd4621d373cade4e832627b4f6" \
-     -H "clientUUID=11111111-1111-1111-1111-111111111111" \
-     http://legacy.local:8080/opendolphin/api/demo/patient/firstVisitors/2.100,0,20 \
-     | jq '.' > legacy-demo-firstVisitors.json
-
-   curl -s \
-     -H "userName=2.100:ehrTouch" \
-     -H "password=098f6bcd4621d373cade4e832627b4f6" \
-     -H "clientUUID=11111111-1111-1111-1111-111111111111" \
-     -H "X-Facility-Id=2.100" \
-     http://modernized.local:8080/opendolphin/api/demo/patient/firstVisitors/2.100,0,20 \
-     | jq '.' > modern-demo-firstVisitors.json
-   ```
-3. `jq --sort-keys` や `git diff --no-index legacy-demo-firstVisitors.json modern-demo-firstVisitors.json` で差分を確認し、差異がなければログとして保存する。他 14 エンドポイントも同様に採取し、`fixtures/demoresourceasp/*` との比較結果を添付すること。
-4. Postman Collection は `ops/postman/DemoResourceAsp.postman_collection.json` に雛形を追加済み。環境ごとに `{{baseUrl}}` を切り替えて実行し、レスポンス履歴を Runbook へ添付する。 |
+2. **ヘルスチェック**  
+   - `openssl s_client -connect weborca.cloud.orcamo.jp:443 -servername weborca.cloud.orcamo.jp` を実行し、証明書チェーンと Protocol を `artifacts/orca-connectivity/<RUN_ID>/tls/openssl_s_client.log` に保存。  
+   - `curl --cert-type P12 --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" -X POST 'https://weborca.cloud.orcamo.jp/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、HTTP/`Api_Result` を `weborca-prod/system01dailyv2.{headers,json}` に保存する。
+3. **モダナイズ版サーバー設定**  
+   - `ops/shared/docker/custom.properties` などの `claim.host`, `claim.send.port`, `claim.scheme`, `claim.send.encoding` を WebORCA クラウド向けに更新し、`/serverinfo/claim/conn` が `server` を返すことを確認。  
+   - `ServerInfoResource` のレスポンスを `artifacts/orca-connectivity/<RUN_ID>/serverinfo_claim_conn.json` として記録。
+4. **Evidence と報告**  
+   - `artifacts/orca-connectivity/<RUN_ID>/weborca-prod/` に `request.http` / `response.http` / `trace.log` を保存し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` からリンク。  
+   - 詳細手順は `ORCA_CONNECTIVITY_VALIDATION.md#44-weborca-クラウド接続2025-11-14-更新` を参照し、`PHASE2_PROGRESS.md` の ORCA セクションに RUN_ID／結果／証跡を追記する。
 
 ### 4.5 ORCA API 有効化トリアージ（2025-11-13 追加）
 

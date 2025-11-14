@@ -24,6 +24,7 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 - [`operations/ORCA_CONNECTIVITY_VALIDATION.md`](operations/ORCA_CONNECTIVITY_VALIDATION.md): WebORCA コンテナとモダナイズ版サーバー間の疎通確認・API 検証タスクを標準化したチェックリスト。
 - [`operations/assets/orca-api-spec/README.md`](operations/assets/orca-api-spec/README.md): firecrawl で取得した ORCA API 公式仕様のオフラインコピーとメタデータ、`orca-api-matrix` との突合表。
 - [`operations/assets/orca-tec-index/README.md`](operations/assets/orca-tec-index/README.md): 技術情報ハブ（帳票・CLAIM・MONTSUQI・カスタマイズ留意事項など）を firecrawl で Markdown 化したオフラインコピー。
+- [`operations/assets/orca-use-guides/README.md`](operations/assets/orca-use-guides/README.md): `/receipt/use/` 配下の運用ガイド（例: glserver SSL クライアント認証設定）を firecrawl で保全したアーカイブ。
 - [`operations/TRACE_PROPAGATION_CHECK.md`](operations/TRACE_PROPAGATION_CHECK.md): `ops/tools/send_parallel_request.sh --profile <compose|modernized-dev>` による `trace_http_*` / `trace-{schedule,appo}-jpql` 採取ログと RUN_ID 別の環境変数・コマンド。最新 RUN_ID=`20251110T070638Z` の `curl (7)` ブロッカーと `@SessionOperation` 静的解析メモを含む。
 - [`operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md`](operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md): Micrometer 観点のギャップ整理。
 
