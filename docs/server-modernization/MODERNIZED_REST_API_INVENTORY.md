@@ -279,7 +279,34 @@
 - `/touch/user/{param}` は `TouchUserResource` へ移行し、`userName/password` ヘッダー検証・施設 ID 正規化・S3 Secret マスクを実施。監査は `TOUCH_USER_LOOKUP` に統一。【F:server-modernized/src/main/java/open/dolphin/touch/user/TouchUserResource.java†L13-L34】【F:server-modernized/src/main/java/open/dolphin/touch/user/TouchUserService.java†L24-L154】
 - ユニットテスト: `TouchPatientServiceTest`・`TouchStampServiceTest`・`TouchUserServiceTest` で consent／キャッシュ／ヘッダー突合を自動化（いずれも Maven 未導入環境のため CI 実行待ち）。【F:server-modernized/src/test/java/open/dolphin/touch/patient/TouchPatientServiceTest.java†L1-L112】【F:server-modernized/src/test/java/open/dolphin/touch/stamp/TouchStampServiceTest.java†L1-L73】【F:server-modernized/src/test/java/open/dolphin/touch/user/TouchUserServiceTest.java†L1-L110】
 
-## 7. リアルタイム配信とモダナイズ特有の注意点
+## 7. ORCA API ラッパー整備状況（Matrix No.6-18, 33-37）
+
+`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` および `phase2/operations/assets/orca-api-spec/orca-api-matrix.with-spec.csv` と突き合わせた、ORCA API ラッパーの最新状況。`GET /orca/disease/{import|active}` を除き、ここに記載した API は現状モダナイズ版サーバーに REST ラッパーが存在しない。
+
+| No | 優先度 | ORCA API | モダナイズ REST | 状況 | 備考 |
+| --- | --- | --- | --- | --- | --- |
+| 6 | P0 | `/api01rv2/appointlstv2` | なし | 未実装 | 日別予約一覧。`OrcaResource` に `/orca/appoint*` が無いため予約ウィジェットは ORCA 直呼び。Phase2 Sprint2 で `POST /orca/appointments/list` を追加予定（API_PARITY_MATRIX.md「ORCA ラッパー計画」参照）。 |
+| 7 | P1 | `/orca102/medicatonmodv2` | なし | 未実装 | 点数マスタ同期 API。既存 REST は `GET /orca/tensu/*` のみ。Phase2 Sprint3 で POST ラッパー＋ MasterImport を再構成予定。 |
+| 8 | P0 | `/api01rv2/patientlst1v2` | なし | 未実装 | 患者番号一括取得。`PatientResource` は単件検索のみで、差分同期は ORCA API 直呼び。 |
+| 9 | P0 | `/api01rv2/patientlst2v2` | なし | 未実装 | 複数患者情報取得。同上でバッチ用 REST が無い。 |
+| 10 | P0 | `/api01rv2/patientlst3v2` | なし | 未実装 | 氏名検索。Web クライアントの仮名検索要件は現状 ORCA API 直叩き。 |
+| 11 | P1 | `/api01rv2/system01lstv2` | なし | 未実装 | システム管理情報。`ServerInfoResource` は施設・CLAIM 設定のみで職員/診療科一覧を返せない。 |
+| 12 | P0 | `/api01rv2/medicalgetv2` | なし | 未実装 | 診療行為取得。カルテ API はモダナイズ DB のみ参照。 |
+| 13 | P0 | `/api01rv2/diseasegetv2` | `GET /orca/disease/import/{pid}` | 部分実装 | import/active GET は存在するが、`Api_Result` など ORCA プロトコル項目を返さない。Phase2 Sprint2 でレスポンス整形と RUN_ID 証跡を追加。 |
+| 14 | P0 | `/orca12/patientmodv2` | なし | 未実装 | 患者登録/更新/削除。モダナイズ DB 更新にしかフックが無い。 |
+| 15 | P0 | `/api01rv2/appointlst2v2` | なし | 未実装 | 患者単位予約一覧。AppoResource は自院 DB のみ参照。 |
+| 16 | P0 | `/api01rv2/acsimulatev2` | なし | 未実装 | 請求試算。`ClaimSender` での請求送信とは別経路。 |
+| 17 | P0 | `/orca25/subjectivesv2` | なし | 未実装 | 症状詳記（SOAP 詳細）登録。 |
+| 18 | P0 | `/api01rv2/visitptlstv2` | なし | 未実装 | 来院患者一覧。 |
+| 33 | P0 | `/orca21/medicalsetv2` | なし | 未実装 | 診療セット登録。`GET /orca/inputset` のみ提供中。 |
+| 34 | P1 | `/orca31/birthdeliveryv2` | なし | 未実装 | 出産育児一時金連携。 |
+| 35 | P0 | `/api01rv2/patientlst6v2` | なし | 未実装 | 全保険組合せ返却。 |
+| 36 | P0 | `/orca22/diseasev2` | なし | 未実装 | 病名登録 v2。 |
+| 37 | P0 | `/orca22/diseasev3` | なし | 未実装 | 病名登録 v3。 |
+
+> **メモ**: 各 API の DTO・依存サービス・リリースターゲットは `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` の「ORCA ラッパー計画」節に詳細を記載する。
+
+## 8. リアルタイム配信とモダナイズ特有の注意点
 
 - SSE によるチャートイベント配信は `GET /chart-events` で開始し、`clientUUID` と `Last-Event-ID` をヘッダーで指定する。サーバーは `ChartEventSseSupport` を通じて再接続時の差分配送を行う。【F:server-modernized/src/main/java/open/dolphin/rest/ChartEventStreamResource.java†L18-L48】
 - 旧ロングポーリング API (`/chartEvent/subscribe` と `/chartEvent/dispatch`) は互換性維持のため残置されており、将来的に段階的廃止予定。新旧クライアントが混在する期間は SSE と REST の双方を監視する。

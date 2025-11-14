@@ -45,3 +45,23 @@
 
 - RUN_ID を増分（`20251113TorcaProdCertZ2` など）で採番し、`scripts/orca_prepare_next_run.sh <RUN_ID>` を実行してテンプレフォルダを複製。
 - `ORCA_PROD_*` をセット → `openssl s_client` → `curl --cert-type P12` → `rg -n 'Api_Result' response.http` → `ServerInfoResource` の順で 30 分以内に収集できる。Slack 報告テンプレは `docs/server-modernization/phase2/operations/logs/ORCA_HTTP_404405_HANDBOOK.md` §5 を参照。
+
+## 5. RUN_ID=`20251114TorcaHttpLogZ1`（P0 API 404/405 証跡再取得）
+
+- 実施日時: 2025-11-14 20:11 JST（UTC `20251114T111158Z`）
+- 対象: `/api01rv2/patientgetv2`, `/orca14/appointmodv2`, `/api21/medicalmodv2`, `/orca11/acceptmodv2`
+- 証跡: `artifacts/orca-connectivity/20251114TorcaHttpLogZ1/{tls,httpdump,trace,logs}/`
+- 手順: `ORCAcertification/` から `ORCA_PROD_*` を export → `openssl s_client` → `curl --cert-type P12 --trace-ascii`（API ごとにテンプレ JSON を送信）→ `rg` で `Allow` 等を抽出。`ORCA_HTTP_404405_HANDBOOK.md` §0-§3 のチェックリストに従い `request.http` / `response.http` / `trace/*.log` を初期化した。
+- 端末側ネットワークポリシー（approval policy=never × network access restricted）のため `weborca.cloud.orcamo.jp` が名前解決できず、HTTP 404/405 応答は未取得。DNS エラーも証跡として保存し、次回オンライン環境での再試行が必要。
+
+### 5.1 取得結果
+
+| 対象 | 期待状態 | 実測値 / 所見 |
+| --- | --- | --- |
+| TLS (`openssl s_client`) | CN=`*.cloud.orcamo.jp` の証明書鎖と TLSv1.2 を再確認し、`tls/openssl_s_client_<UTC>.log` へ保存。 | `openssl s_client -connect weborca.cloud.orcamo.jp:443` → `BIO_lookup_ex: system lib ... Name or service not known (errno=90)`。DNS 段階で失敗したためサーバー証明書の取得に至らず。一方でホスト OS（Windows PowerShell）から `Resolve-DnsName weborca.cloud.orcamo.jp` を実行すると `35.76.144.148` / `54.178.230.126` が即時に返ることを `artifacts/orca-connectivity/20251114TorcaHttpLogZ1/dns/resolve_dnsname_20251114T112555Z.log` へ採取済みであり、DNS 失敗は WSL 等ネットワーク制限端末に限定されることを確認。 |
+| `/api01rv2/patientgetv2` | HTTP 404（Allow: GET）再現と `Allow` 抜粋。 | `curl: (6) Could not resolve host: weborca.cloud.orcamo.jp`。`httpdump/patientgetv2/request.http` に `curl --verbose` の DNS エラーを保存。Response/Allow ヘッダーは未取得。 |
+| `/orca14/appointmodv2` | HTTP 405（Allow: OPTIONS, GET）再現。 | 同上 (`curl: (6)`), `httpdump/appointmodv2/` に DNS エラーを保存。 |
+| `/api21/medicalmodv2` | HTTP 405 + `Api_Result` 抽出。 | 同上 (`curl: (6)`), `Allow` / `Api_Result` は得られず。`trace/medicalmodv2_<UTC>.log` に DNS 失敗ログのみ記録。 |
+| `/orca11/acceptmodv2` | HTTP 405（Allow: OPTIONS, GET）再現。 | 同上 (`curl: (6)`), `httpdump/acceptmodv2/` に DNS 失敗を保存。 |
+
+> メモ: `http_404405_extract_<api>_<UTC>.log` は空ファイルで作成済み。オンライン環境で再実行する際は同 RUN_ID を用いず、新規 RUN_ID を採番すること。

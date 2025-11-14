@@ -2,12 +2,36 @@
 
 > 2025-11-14 更新: ローカル WebORCA コンテナではなく WebORCA クラウド本番（`https://weborca.cloud.orcamo.jp:443`）を対象とする。旧ローカル手順はアーカイブ済み。
 
+## 0. 参照資料とプレースホルダ
+- 公式仕様は `docs/server-modernization/phase2/operations/assets/orca-api-spec/manifest.json` および `raw/*.md`（例: [`patientget`](../assets/orca-api-spec/raw/patientget.md)、[`appointmod`](../assets/orca-api-spec/raw/appointmod.md)、[`medicalmod`](../assets/orca-api-spec/raw/medicalmod.md)、[`acceptmod`](../assets/orca-api-spec/raw/acceptmod.md)）を根拠とする。
+- リクエスト雛形は `../assets/orca-api-requests/` 配下（`01_patientgetv2_request.json` など）を用いる。
+- 認証情報は `ORCAcertification/` に平文で集約している。`103867__JP_u00001294_client3948.p12`（PKCS#12）と `新規 テキスト ドキュメント.txt`（接続 URL / port / Basic 認証 / API キー / PKCS#12 パスフレーズ）を参照し、値をそのまま `ORCA_PROD_*` へ export する。再暗号化やサポート問い合わせは不要。
+  - `ORCAcertification/README_PASSPHRASE.md` にファイル構成と読み取り手順を整理した。特に PKCS#12 のパスフレーズは `sed -n '5p' ... | tr -d '\r\n'` で取得し、`curl --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}"` 形式で渡す。
+- `RUN_ID` や証跡ルートは以下のプレースホルダで宣言してから操作を開始する。`{{RUN_ID}}` は実行時の ID へ差し替える。
+  ```bash
+  export RUN_ID={{RUN_ID}}
+  export UTC_TAG=$(date -u +%Y%m%dT%H%M%SZ)
+  export EVIDENCE_ROOT="artifacts/orca-connectivity/${RUN_ID}"
+  mkdir -p "${EVIDENCE_ROOT}"/{httpdump,logs,tls,trace}
+  ```
+
 ## 1. RUN_ID / UTC_TAG 命名
 - RUN_ID: `YYYYMMDDTorcaHttpLogZ#`（例: `20251120TorcaHttpLogZ2`）。本番疎通ログは `TorcaProdCertZ#` としてもよいが、404/405 調査は `TorcaHttpLogZ#` で統一。
 - UTC_TAG: `date -u +%Y%m%dT%H%M%SZ` で取得（例: `UTC_TAG=20251120T031500Z`）。
 - Evidence ルート: `artifacts/orca-connectivity/${RUN_ID}/`。`logs/`, `httpdump/`, `trace/`, `tls/` を配下に作成する。
 
+### 1.1 再疎通前提（RUN_ID 引用）
+logs/2025-11-13-orca-connectivity.md（RUN_ID=`20251113TorcaProdCertZ1`）と `PHASE2_PROGRESS.md` W18/W21 記述を根拠に、再疎通前の必須条件を整理した。
+
+| 前提 | 内容 | RUN_ID / 証跡 |
+| --- | --- | --- |
+| TLS / Basic 認証と証跡 | `ORCAcertification/103867__JP_u00001294_client3948.p12` と同ディレクトリの Basic 情報を `ORCA_PROD_CERT*` / `ORCA_PROD_BASIC_*` へ取り込み、`curl --cert-type P12` を使う（`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md` §1-2, RUN_ID=`20251113TorcaProdCertZ1`）。取得物は `artifacts/orca-connectivity/20251113TorcaProdCertZ1/weborca-prod/` に保存済み。以後も 600 権限と `unset ORCA_PROD_*` を徹底する。 | `RUN_ID=20251113TorcaProdCertZ1`（logs/2025-11-13-orca-connectivity.md） |
+| 医師 / 受付 seed | `PHASE2_PROGRESS.md` W18（RUN_ID=`20251113TorcaP0OpsZ1`）で `acceptlstv2` が `Api_Result=13`（ドクタ未登録）になったため、W21（RUN_ID=`20251113TorcaP0OpsZ2`）で `Physician_Code=00001` を投入済み。医師・受付ダミーを維持し、`system01lstv2`/`acceptlstv2` の JSON を `artifacts/orca-connectivity/20251113T012013Z/P0_retry/` へ保存した流れを再現する。必要に応じて `RUN_ID=20251113TorcaDoctorManualW60` の seed 手順を参照する。 | `PHASE2_PROGRESS.md` W18/W21（RUN_ID=`20251113TorcaP0OpsZ1/Z2`） |
+| 接続先（WebORCA 本番） | ルート開放は WebORCA 本番環境ですでに完了している。以降は `https://weborca.cloud.orcamo.jp:443` を唯一の接続先とし、`curl --cert-type P12` で直接検証する。追加のサポート問い合わせは不要。差異を確認したら `artifacts/orca-connectivity/<RUN_ID>/httpdump/` に証跡を保存する。 | `RUN_ID=20251113TorcaProdCertZ1` 以降の httpdump |
+| DNS 可用性 | 事前にホスト OS から `Resolve-DnsName weborca.cloud.orcamo.jp`（または `nslookup`）を実行し、外部 DNS で名前解決できるネットワークであることを確認する。WSL や社内 VPN により DNS が遮断されると `curl: (6)` で失敗する。確認結果は `artifacts/orca-connectivity/<RUN_ID>/dns/resolve_dnsname_<UTC>.log` 等に保存する。 | 例: `artifacts/orca-connectivity/20251114TorcaHttpLogZ1/dns/resolve_dnsname_20251114T112555Z.log`（PowerShell で 2 つの A レコードを確認） |
+
 ## 2. 標準取得コマンド
+`manifest.json` と `raw/*.md` に従い、JSON 系 API では `Content-Type: application/json; charset=Shift_JIS`／`Accept: application/json`、XML 系では `Content-Type: application/xml; charset=UTF-8`／`Accept: application/xml` を必ず送る。全リクエストは HTTP Basic（`-u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}"`）とクライアント証明書で認証する。
 1. **TLS/証明書**  
    ```bash
    openssl s_client -connect weborca.cloud.orcamo.jp:443 -servername weborca.cloud.orcamo.jp \
@@ -18,6 +42,7 @@
    curl --verbose --show-error --cert-type P12 \
         --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
         -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
+        -H 'Accept: application/json' \
         -H 'Content-Type: application/json; charset=Shift_JIS' \
         -X POST --data-binary '@/tmp/orca_request.json' \
         "https://weborca.cloud.orcamo.jp${API_PATH}" \
@@ -92,3 +117,7 @@ Doc update: Runbook §4.5, logs/<date>, DOC_STATUS, PHASE2_PROGRESS
 6. **報告** — §5 テンプレを用い、Runbook／PHASE2_PROGRESS／DOC_STATUS の更新状況を明記。
 
 > 参考: `artifacts/orca-connectivity/20251119TorcaHttpLogZ1/`（本番接続で 405 を再現したログ一式）。
+
+## 8. ORCA サポート問い合わせ（任意）
+- 404/405 は WebORCA 本番で再現しながら自己閉ループで解析する。ルート開放依頼は不要であり、`questions/RECEIPT_ROUTE_REQUEST.md` は過去の記録としてのみ保管する。
+- どうしてもベンダー確認が必要になった場合のみテンプレを参照し、Slack には「Support escalation (任意)」として記録する。その際も `artifacts/orca-connectivity/<RUN_ID>/httpdump/` の証跡を必ず添付する。

@@ -71,6 +71,14 @@
   - バックアップ & 復元訓練（RTO/RPO 設定）。
 - 成果物：監査ログ PoC、Retention ジョブ、バックアップ Runbook、アクセステストレポート。
 
+#### Phase 2 Backlog: ORCA REST ラッパー
+| タスクID | 内容 | 優先度 | 検証手順 |
+| --- | --- | --- | --- |
+| ORCA-REST-01 | Matrix No.6/15/16/18（`appointlst*`, `acsimulate`, `visitptlst`）を `POST /orca/appointments/list`, `/orca/appointments/patient`, `/orca/billing/estimate`, `/orca/visits/list` として OrcaResource に追加。DTO: `OrcaAppointmentListRequest/Response`, `PatientAppointmentListRequest`, `BillingSimulationRequest/Response`, `VisitPatientListRequest/Response`。依存: `OrcaConnect`, `AppoServiceBean`, `ClaimSender`, `PVTServiceBean`。設計詳細: `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` / `API_PARITY_MATRIX.md` §「ORCA-REST-01」。 | P0 | `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §4.2〜§4.4（接続＋リクエスト送信）と §5.1（P0 API マトリクス）を順守し、`assets/orca-api-requests/P0_*` の JSON で `RUN_ID=2025YYMMDDTorcaRestWrapZ#` を記録。 |
+| ORCA-REST-02 | Matrix No.8/9/10/14/17/35（`patientlst*`, `patientmod`, `patientlst6`, `subjectives`）を `POST /orca/patients/id-list`, `/orca/patients/batch`, `/orca/patients/name-search`, `/orca/patient/mutation`, `/orca/insurance/combinations`, `/orca/chart/subjectives` として実装し、DTO: `PatientIdBatchRequest`, `PatientListBatchRequest`, `PatientNameSearchRequest`, `PatientMutationRequest`, `InsuranceCombinationRequest`, `SubjectiveEntryRequest` を `PatientServiceBean`＋`HealthInsuranceModel`＋`AuditTrailService`＋`ChartEventServiceBean` 経由で処理する。設計詳細: `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` / `API_PARITY_MATRIX.md` §「ORCA-REST-02」。 | P0 | Runbook 前提（同上 §4.3／§4.4／§5.1）に従い、`logs/20YYMMDD-orca-connectivity.md` へ差分を追記し `assets/orca-api-requests` のサンプルを更新。 |
+| ORCA-REST-03 | Matrix No.11/12/13/36/37（`system01lst`, `medicalget`, `diseaseget`, `disease{v2,v3}`）を `POST /orca/system/management`, `/orca/medical/records`, `GET /orca/disease/import/{pid}` 拡張, `POST /orca/disease`, `POST /orca/disease/v3` でカバー。DTO: `SystemMasterSnapshot`, `MedicalGetRequest/Response`, `OrcaDiseaseImportResponse`, `DiseaseMutation{V2,V3}Request`。依存: `SystemServiceBean`, `KarteServiceBean`, `RegisteredDiagnosisModel`, `AuditTrailService`。 | P0 | `ORCA_CONNECTIVITY_VALIDATION.md` §4.4（P0/P1 API 順序）＋ §5.1（システム系）の Runbook 手順で Mongo/DB 更新を伴わない疎通証跡を取得。 |
+| ORCA-REST-04 | Matrix No.7/33/34（`medicatonmod`, `medicalset`, `birthdelivery`）を `POST /orca/tensu/sync`, `/orca/medical-sets`, `/orca/birth-delivery` として追加し、DTO: `MedicationModRequest`, `MedicalSetMutationRequest`, `BirthDeliveryRequest` を `TensuListConverter`, `StampServiceBean`, `AdmissionResource` へ橋渡し。 | P1 | Runbook §4.5（P1/入院 API）と §5.2（P1 テーブル）を参照し、405 証跡＋ORCA support エスカレーション記録を `logs/` に残す。 |
+
 ### Phase 3（6週間）：電子署名・プライバシー権利対応・準備リリース
 - 目的：署名が必要な文書、個人情報の権利行使対応、第三者提供記録など残りの必須要件を完了させる。
 - 主要タスク
