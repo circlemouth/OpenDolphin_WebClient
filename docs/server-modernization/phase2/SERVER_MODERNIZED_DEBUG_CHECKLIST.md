@@ -17,12 +17,12 @@ server-modernized モジュールのデバッグ状況を把握するための�
 - Legacy/Modernized 並列キャプチャ環境の構築 Runbook を `docs/server-modernization/phase2/operations/` に整備し、`PHASE2_PROGRESS.md` へリンクと更新日時を記録するまで他フェーズのステータスを「完了」にしない。
 - 新規や更新した Runbook／スクリプトの保存先を本ファイルの備考欄に必ず記載し、証跡（ログ・diff・ハッシュなど）は `artifacts/parity-manual/` 配下に時刻付きフォルダで保管する。
 
-### 2025-11-14 追記: WebORCA クラウド接続の標準手順
+### 2025-11-19 追記: WebORCA トライアル接続と CRUD ログ方針
 
-- ORCA 連携検証は WebORCA クラウド本番（`https://weborca.cloud.orcamo.jp:443`）を唯一の接続先とし、`ORCAcertification/` に格納された PKCS#12＋Basic 情報を `curl --cert-type P12` で利用する。ローカル WebORCA コンテナは停止・更新とも禁止。
-- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.send.port`, `claim.scheme`, `claim.send.encoding` を WebORCA クラウド向けに揃え、`/serverinfo/claim/conn` が `server` へ戻るまで再ビルドする。
-- TLS/Basic ハンドシェイクは `openssl s_client` と `curl --cert-type P12` のヘッダー/レスポンスを `artifacts/orca-connectivity/<RUN_ID>/weborca-prod/` に保存し、RUN_ID は `2025MMDDTorcaProdCertZ#` を採番。証跡テンプレと詳細は `operations/ORCA_CONNECTIVITY_VALIDATION.md#44-weborca-クラウド接続2025-11-14-更新` に従う。
-- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md#44-weborca-クラウド接続2025-11-14-更新` へヘルスチェック手順・環境変数テンプレを統一し、`PHASE2_PROGRESS.md` と `operations/logs/<date>-orca-connectivity.md` へ RUN_ID／結果／証跡パスを必ず報告する。
+- ORCA 連携検証の接続先を **WebORCA トライアルサーバー**（`https://weborca-trial.orca.med.or.jp/`）へ切り替え、Basic 認証 `trial/weborcatrial` のみで疎通させる。`ORCAcertification/` 配下の PKCS#12、`curl --cert-type P12`、`weborca.cloud.orcamo.jp` へのアクセス記述はアーカイブ済みとし、参照時は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を根拠にする。
+- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.scheme`, `claim.send.encoding` は Trial 向けの HTTP Basic 前提へ更新する。`/serverinfo/claim/conn` の疎通確認は `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/api/system01dailyv2?class=01` など Basic のみで再取得する。
+- Trial 環境では「新規登録／更新／削除 OK（トライアル環境でのみ）」と定義し、CRUD を行った際は `RUN_ID=YYYYMMDDTorcaTrialCrudZ#` を採番して `artifacts/orca-connectivity/<RUN_ID>/trial/` に `httpdump/trace/ui` を保存する。ログサマリは `docs/server-modernization/phase2/operations/logs/2025-11-19-orca-trial-crud.md` および `ORCA_HTTP_404405_HANDBOOK.md#trial-crud-logging` に追記して監査可能にする。
+- `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の ORCA 節へ「2025-11-19: WebORCA Trial + CRUD」段落を追加し、Basic 認証手順と CRUD ログ手順を統一する。`PHASE2_PROGRESS.md` / `ORCA_API_STATUS.md` / `DOC_STATUS.md` の ORCA 行には「2025-11-19 trial 切替＋CRUD 許可」を同日付で反映する。
 
 ### 2025-11-08 追記: Ops/DBA 発行プロセス先送りに伴う再プランニング
 

@@ -15,7 +15,7 @@
 ## 作業方針
 - モダナイズ版サーバーは Web クライアント連携を唯一の必須要件とし、Legacy クライアント互換は求めない。Legacy サーバーは仕様参照・比較検証のためにのみ起動してよいが、稼働維持を目的とした作業は禁止する。
 - 変更対象は Web クライアント開発に必要なフロントエンド資産とドキュメントのみとし、`server/` 配下のコード・スクリプトには手を加えない。
-- ORCA 連携検証は WebORCA クラウド本番（`https://weborca.cloud.orcamo.jp:443`）を唯一の接続先とし、`ORCAcertification/` 配下のクライアント証明書と Basic 情報を用いて `curl --cert-type P12` で実施する。ローカル WebORCA コンテナは起動・更新とも禁止。
+- ORCA 連携検証は WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp/`、ユーザー `trial` / パスワード `weborcatrial`）を唯一の接続先とし、公開アカウントで Basic 認証／UI 操作を行う。`ORCAcertification/` 配下の証明書や本番接続手順はアーカイブ扱いとし、`curl --cert-type P12` を使った本番アクセスは禁止。ローカル WebORCA コンテナは起動・更新とも禁止。
 - 必要な資料は `docs/web-client/README.md` から辿り、更新時は同 README に概要と保存場所を追記する。
 - タスク遂行時は `docs/web-client/planning/phase*/` 配下のフェーズ計画に従い、進捗や決定事項をドキュメントへ反映する。
 - 機能や UI 実装を行う際は、暫定版ではなく実運用を前提とした完成度（業務フローに即した操作性・アクセシビリティ・例外処理まで含む）で仕上げること。利用者視点で本番投入できる品質を常に確保する。

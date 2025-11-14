@@ -1,45 +1,46 @@
-# ORCA 接続検証ログ (予定 RUN_ID=20251115TorcaAppointLstZ1 / 20251115TorcaAppointMod405Z1 / 20251115TorcaMedical405Z1 / 20251115TorcaAcceptMod405Z1)
+# ORCA 接続検証ログ (RUN_ID=20251115TorcaTrialCrudZ1 / 20251115TorcaTrialAppointZ1 / 20251115TorcaTrialAcceptZ1)
 
-- 予定日: 2025-11-15 10:00 JST（オンライン回線確保済みの Windows ホストで実施）
-- 目的: 2025-11-13 実測で 404/405 となった P0 API（予約一覧/予約登録/診療登録/受付登録）の RUN_ID を再取得し、`artifacts/orca-connectivity/<RUN_ID>/httpdump/` に 200/404/405 証跡を整備する。
-- 事前方針: WebORCA 本番の既存データを参照できれば正常稼働とみなし、欠落データが見つかった場合は seed を投入せず Ops へ報告する。
-- 参照ドキュメント: `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md#43-p0-api-セット`、`ORCA_HTTP_404405_HANDBOOK.md`
+- 予定日: 2025-11-15 10:00 JST（WebORCA トライアルサーバー向け。Windows ホスト + VPN 経由）
+- 目的: WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp`）で CRUD 許可前提の Runbook を実走し、Basic 認証 `trial/weborcatrial` と `trial/` 配下の証跡ディレクトリを標準化する。
+- 参照ドキュメント: `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §1〜§4、`assets/orca-trialsite/raw/trialsite.md`（公式トライアル情報）。
+- コメント: CRUD 実施時は `artifacts/orca-connectivity/<RUN_ID>/data-check/<api>.md` へ before/after と操作理由を必ず記録し、ログテンプレ上でもチェックボックス化する。DOC_STATUS 更新はタスク4が担当するため本タスクでは実施しない。
 
-## 1. 予定 RUN_ID と担当
-| RUN_ID | API | 目的/期待応答 | データ確認 / 事前準備 | 証跡保存パス |
+## 1. RUN_ID と担当スコープ
+| RUN_ID | API / 操作 | 目的・期待応答 | CRUD / ログ要件 | 証跡保存パス |
 | --- | --- | --- | --- | --- |
-| `20251115TorcaAppointLstZ1` | `/api01rv2/appointlstv2` | HTTP 200 / `Api_Result=00`（予約一覧） | ORCA UI で Department=01 / Physician=00001 の最新予約を確認し、スクリーンショットと `SELECT` ログを `data-check/appointlstv2.*` に保存。欠落時は RUN を延期し Ops へ報告。 | `artifacts/orca-connectivity/20251115TorcaAppointLstZ1/httpdump/appointlstv2/` + `trace/appointlstv2_trace.log` |
-| `20251115TorcaAppointMod405Z1` | `/orca14/appointmodv2` | POST 405 + `Allow: OPTIONS, GET` | リクエストボディで使用する患者/医師/保険コードが ORCA DB に存在するか `SELECT`。存在しない場合でも seed は追加せず、「欠落」レポートを `data-check/appointmodv2.sql` として残す。 | `artifacts/orca-connectivity/20251115TorcaAppointMod405Z1/httpdump/orca14_appointmodv2/` |
-| `20251115TorcaMedical405Z1` | `/api21/medicalmodv2`（直打ち 405） / `/api/api21/medicalmodv2`（200 / `Api_Result=14`） | 診療登録ルート閉鎖証跡と API プレフィックス結果を同 RUN_ID で保存 | `tbl_sryact` 等から直近の診療行為が存在するか読み取り SQL を実行し、`data-check/medicalmodv2.sql` へ保存。欠落時は seed 投入せず Ops へ報告。 | `artifacts/orca-connectivity/20251115TorcaMedical405Z1/httpdump/{api21_medicalmodv2,api_api21_medicalmodv2}/` |
-| `20251115TorcaAcceptMod405Z1` | `/orca11/acceptmodv2` | POST 405 + `Allow: OPTIONS, GET` | `tbl_uketuke` と `acceptlstv2` のレスポンスで患者 00000001 の受付が存在するか確認し、`data-check/acceptmodv2.sql` へ記録。存在しなければ seed 追加は行わず報告。 | `artifacts/orca-connectivity/20251115TorcaAcceptMod405Z1/httpdump/orca11_acceptmodv2/` |
+| `20251115TorcaTrialCrudZ1` | `/api/api01rv2/system01dailyv2`（参照） | HTTP 200 / `Api_Result=00`。TLS/BASIC ハンドシェイク確認 | `trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得。`data-check/system01dailyv2.md` に日時と結果を記録。 | `artifacts/orca-connectivity/20251115TorcaTrialCrudZ1/{dns,tls,trial,trace}` |
+| `20251115TorcaTrialAppointZ1` | `/api01rv2/appointlstv2`（参照） + `/orca14/appointmodv2`（CRUD） | 既存予約取得 + 予約登録/更新/削除を 1 ケースずつ実施し `appointlstv2` で確認 | CRUD 実施都度 `data-check/appointmodv2.md` に before/after（予約番号・診療科・日時）を追記。削除時は戻し不要か判定。 | `artifacts/orca-connectivity/20251115TorcaTrialAppointZ1/trial/{appointlstv2,appointmodv2}/` + `screenshots/appoint_{before,after}.png` |
+| `20251115TorcaTrialAcceptZ1` | `/api01rv2/acceptlstv2`（参照） + `/orca11/acceptmodv2`（CRUD） | 当日受付参照 + 受付登録/取消の動作確認 | `data-check/acceptmodv2.md` に受付番号・患者 ID・実施理由を記載。受付なしの場合も `acceptlstv2` の `Api_Result=21` を記録。 | `artifacts/orca-connectivity/20251115TorcaTrialAcceptZ1/trial/{acceptlstv2,acceptmodv2}/` |
 
-## 2. DNS / TLS 事前チェック
-1. Windows 側 `C:\Users\Hayato\.wslconfig` に `generateResolvConf=false` が設定されていることを確認し、WSL 再起動後も `/etc/resolv.conf` が手動管理状態を維持しているか点検する。
-2. `Resolve-DnsName weborca.cloud.orcamo.jp` → `35.76.144.148 / 54.178.230.126` を取得して `artifacts/orca-connectivity/<RUN_ID>/dns/resolve_dnsname_<UTC>.log` に保存。
-3. `openssl s_client -connect weborca.cloud.orcamo.jp:443 -servername weborca.cloud.orcamo.jp` を実行し、CN=`*.cloud.orcamo.jp` / TLSv1.2 を `tls/openssl_s_client_<UTC>.log` へ格納。
-4. `ORCA_PROD_CERT` パスフレーズが `curl --cert-type P12` で通ることを `system01dailyv2` の HEAD リクエスト（`curl --head ...`）で確認し、`curl: (58)` 発生時はログを `httpdump/system01dailyv2/` へ保存してから再開。
+## 2. DNS / TLS / 環境準備
+1. `Resolve-DnsName weborca-trial.orca.med.or.jp`（Windows）または `dig weborca-trial.orca.med.or.jp`（WSL）を実行し、`artifacts/orca-connectivity/20251115TorcaTrialCrudZ1/dns/resolve.log` に保存。
+2. `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、SNI/TLS 証跡を `tls/openssl_s_client.log` へ保存。
+3. `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host=weborca-trial.orca.med.or.jp` / `claim.send.port=443` / `claim.scheme=https` / `claim.conn=server` を再確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に格納。
+4. プロキシ越しの場合は `HTTPS_PROXY` を設定したうえで `curl --verbose -u trial:weborcatrial --head https://weborca-trial.orca.med.or.jp/` を実行し、Basic 認証が透過していることを `trial/head.log` に保存。
 
-## 3. `curl` 雛形
+## 3. curl 雛形（試験用）
 ```bash
-export ORCA_PROD_CERT="ORCAcertification/103867__JP_u00001294_client3948.p12"
-export ORCA_PROD_CERT_PASS=$(cat ORCAcertification/新規\ テキスト\ ドキュメント.txt | grep CERT_PASS | cut -d'=' -f2)
-export ORCA_PROD_BASIC_USER=$(cat ORCAcertification/新規\ テキスト\ ドキュメント.txt | grep BASIC_USER | cut -d'=' -f2)
-export ORCA_PROD_BASIC_KEY=$(cat ORCAcertification/新規\ テキスト\ ドキュメント.txt | grep BASIC_KEY | cut -d'=' -f2)
-RUN_ID=20251115TorcaAppointLstZ1
-mkdir -p artifacts/orca-connectivity/${RUN_ID}/{httpdump,trace,dns,tls}
-curl --silent --show-error --cert-type P12 \
-     --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
-     -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
+export ORCA_TRIAL_USER=trial
+export ORCA_TRIAL_PASS=weborcatrial
+RUN_ID=20251115TorcaTrialAppointZ1
+mkdir -p "artifacts/orca-connectivity/${RUN_ID}/trial/appointmodv2" \
+         "artifacts/orca-connectivity/${RUN_ID}/trace" \
+         "artifacts/orca-connectivity/${RUN_ID}/data-check"
+curl --silent --show-error \
+     -u "${ORCA_TRIAL_USER}:${ORCA_TRIAL_PASS}" \
      -H 'Content-Type: application/json; charset=Shift_JIS' \
-     -X POST --data-binary '@/tmp/request.json' \
-     'https://weborca.cloud.orcamo.jp/api/api01rv2/appointlstv2?class=01' \
-     -D artifacts/orca-connectivity/${RUN_ID}/httpdump/appointlstv2/response.headers \
-     -o artifacts/orca-connectivity/${RUN_ID}/httpdump/appointlstv2/response.json \
-     --trace-ascii artifacts/orca-connectivity/${RUN_ID}/trace/appointlstv2_trace.log
+     -X POST --data-binary '@docs/server-modernization/phase2/operations/assets/orca-api-requests/02_appointmodv2_request.json' \
+     'https://weborca-trial.orca.med.or.jp/orca14/appointmodv2?class=01' \
+     -D "artifacts/orca-connectivity/${RUN_ID}/trial/appointmodv2/response.headers" \
+     -o "artifacts/orca-connectivity/${RUN_ID}/trial/appointmodv2/response.json" \
+     --trace-ascii "artifacts/orca-connectivity/${RUN_ID}/trace/appointmodv2.trace"
 ```
+- 参照 API（`appointlstv2`, `acceptlstv2`）も同 RUN_ID で取得し、`data-check/appointlstv2.md` / `data-check/acceptlstv2.md` に before/after を記載する。
+- CRUD 実施時は ORCA UI のスクリーンショットを `screenshots/<api>_<before|after>.png` に保存し、ログテンプレにリンクする。
 
-## 4. 実施メモ（実行後に追記）
-- [ ] `RUN_ID=20251115TorcaAppointLstZ1` HTTP/`Api_Result`、予約件数
-- [ ] `RUN_ID=20251115TorcaAppointMod405Z1` 405 `Allow` ヘッダー
-- [ ] `RUN_ID=20251115TorcaMedical405Z1` 405/200 両経路
-- [ ] `RUN_ID=20251115TorcaAcceptMod405Z1` 405 `Allow` / trace
+## 4. 実施メモ（完了後チェック）
+- [ ] `20251115TorcaTrialCrudZ1`：DNS/TLS/ServerInfoResource、`system01dailyv2`、`data-check/system01dailyv2.md`
+- [ ] `20251115TorcaTrialAppointZ1`：`appointlstv2` 参照結果、`appointmodv2` CRUD、`data-check/appointmodv2.md`
+- [ ] `20251115TorcaTrialAcceptZ1`：`acceptlstv2` 参照結果、`acceptmodv2` CRUD、`data-check/acceptmodv2.md`
+- [ ] CRUD 実施ログを `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §4.3 の表へ反映（Allow: trial/ディレクトリ記法確認）
+- [ ] `artifacts/orca-connectivity/README.md` を更新し、各 RUN_ID の証跡パス・スクリーンショットの場所・未対応リスクを追記

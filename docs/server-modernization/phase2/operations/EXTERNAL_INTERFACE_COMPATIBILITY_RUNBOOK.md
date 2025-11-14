@@ -270,27 +270,21 @@
    - すべての出力が ISO8601 である場合は `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日欄へ「JavaTime 監視 OK」と記入し、Grafana/Loki/Elastic のスクリーンショットを Evidence へ添付。  
    - 差分が見つかった場合は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead → Security/Compliance の順で連絡し、詳細は `notes/touch-api-parity.md` §9 の手順に従う。
 
-### 4.4 WebORCA クラウド接続（2025-11-14 更新）
+### 4.4 WebORCA トライアル接続（2025-11-15 更新）
 
 1. **接続先と資格情報**  
-   - 検証対象は `https://weborca.cloud.orcamo.jp:443`（CN=`*.cloud.orcamo.jp`）。ローカル WebORCA コンテナは廃止した。  
-   - クライアント証明書（PKCS#12）と Basic 認証情報は `ORCAcertification/` 配下に集約されている。ファイル権限を 0700/0600 に保ち、`.gitignore` 対象であることを確認。  
-   - `ORCA_PROD_CERT`, `ORCA_PROD_CERT_PASS`, `ORCA_PROD_BASIC_USER`, `ORCA_PROD_BASIC_KEY` を環境変数に読み込み、作業後は必ず `unset` する。
-   ```bash
-   export ORCA_PROD_CERT=ORCAcertification/103867__JP_u00001294_client3948.p12
-   export ORCA_PROD_CERT_PASS="$(cat ORCAcertification/使用目的不明：使用停止/ORCA\ 証明証パスワード.txt)"
-   export ORCA_PROD_BASIC_USER="$(rg -o 'ORCAMO ID:(.*)' -r '$1' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d ' ')"
-   export ORCA_PROD_BASIC_KEY="$(rg -o 'APIキー:(.*)' -r '$1' ORCAcertification/'新規 テキスト ドキュメント.txt' | tr -d ' ')"
-   ```
+   - 検証対象は `https://weborca-trial.orca.med.or.jp:443`。ローカル WebORCA コンテナや旧クラウドホスト向けルートはアーカイブ済み。  
+   - 認証は HTTP Basic `trial/weborcatrial` のみ。公式情報は `assets/orca-trialsite/raw/trialsite.md` を参照し、利用不可機能（CLAIM 送信・CSV 生成など）を把握してから作業する。  
+   - Evidence へコマンドを記録する際は `--user <MASKED>` などマスク表記を使い、生の資格情報は履歴に残さない。
 2. **ヘルスチェック**  
-   - `openssl s_client -connect weborca.cloud.orcamo.jp:443 -servername weborca.cloud.orcamo.jp` を実行し、証明書チェーンと Protocol を `artifacts/orca-connectivity/<RUN_ID>/tls/openssl_s_client.log` に保存。  
-   - `curl --cert-type P12 --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" -X POST 'https://weborca.cloud.orcamo.jp/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、HTTP/`Api_Result` を `weborca-prod/system01dailyv2.{headers,json}` に保存する。
+   - `dig weborca-trial.orca.med.or.jp` と `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、結果を `artifacts/orca-connectivity/<RUN_ID>/dns/` と `tls/` に保存する。  
+   - `curl -u "trial:weborcatrial" -H 'Content-Type: application/json; charset=Shift_JIS' -X POST 'https://weborca-trial.orca.med.or.jp/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、`trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得する。
 3. **モダナイズ版サーバー設定**  
-   - `ops/shared/docker/custom.properties` などの `claim.host`, `claim.send.port`, `claim.scheme`, `claim.send.encoding` を WebORCA クラウド向けに更新し、`/serverinfo/claim/conn` が `server` を返すことを確認。  
-   - `ServerInfoResource` のレスポンスを `artifacts/orca-connectivity/<RUN_ID>/serverinfo_claim_conn.json` として記録。
+   - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host=weborca-trial.orca.med.or.jp`, `claim.send.port=443`, `claim.scheme=https`, `claim.conn=server`, `claim.send.encoding=MS932` を確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に保存。  
+   - CRUD を実行する場合は Runbook §4.3 を参照し、`artifacts/orca-connectivity/<RUN_ID>/data-check/` に before/after と操作理由を残す。
 4. **Evidence と報告**  
-   - `artifacts/orca-connectivity/<RUN_ID>/weborca-prod/` に `request.http` / `response.http` / `trace.log` を保存し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` からリンク。  
-   - 詳細手順は `ORCA_CONNECTIVITY_VALIDATION.md#44-weborca-クラウド接続2025-11-14-更新` を参照し、`PHASE2_PROGRESS.md` の ORCA セクションに RUN_ID／結果／証跡を追記する。
+   - `trial/` ディレクトリ構成（例: `trial/appointmodv2/{request,response}.http`、`trace/appointmodv2.trace`、`screenshots/appoint_before.png`）を統一し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` からリンクする。  
+   - `docs/web-client/planning/phase2/DOC_STATUS.md` と `PHASE2_PROGRESS.md` にはトライアル方針・RUN_ID・CRUD 内容を記載し、Blocker は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順に連絡する。
 
 ### 4.5 ORCA API 有効化トリアージ（2025-11-13 追加）
 

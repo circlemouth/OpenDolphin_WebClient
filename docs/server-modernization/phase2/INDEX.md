@@ -21,7 +21,7 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 - [`operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md`](operations/SERVER_MODERNIZED_STARTUP_BLOCKERS.md): WildFly 起動阻害要因リスト。
 - [`operations/WORKER0_MESSAGING_BACKLOG.md`](operations/WORKER0_MESSAGING_BACKLOG.md): JMS 設定バックログ（セクション6へ統合済み。スタブのみ保持）。
 - [`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`](operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md): 外部インタフェース整合性チェック手順。
-- [`operations/ORCA_CONNECTIVITY_VALIDATION.md`](operations/ORCA_CONNECTIVITY_VALIDATION.md): WebORCA 本番（`https://weborca.cloud.orcamo.jp:443`）との疎通確認と証跡取得を標準化したチェックリスト。ローカル WebORCA コンテナや seed 挿入手順は 2025-11 以降利用しない。
+- [`operations/ORCA_CONNECTIVITY_VALIDATION.md`](operations/ORCA_CONNECTIVITY_VALIDATION.md): WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp`, BASIC `trial/weborcatrial`）向けの CRUD 手順と証跡取得チェックリスト。「新規登録／更新／削除 OK（トライアル環境でのみ）」表記、`curl -u trial:weborcatrial ...` コマンド、`docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` 参照ルール、`logs/*-orca-trial-crud.md` への書込みログを標準化している。
 - [`operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md`](operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md): モダナイズ版サーバーおよび ORCA 連携 API の資料配置と現状をまとめたナビゲーションガイド（2025-11-14 作成）。
 - [`operations/assets/orca-api-spec/README.md`](operations/assets/orca-api-spec/README.md): firecrawl で取得した ORCA API 公式仕様のオフラインコピーとメタデータ、`orca-api-matrix` との突合表。
 - [`operations/assets/orca-tec-index/README.md`](operations/assets/orca-tec-index/README.md): 技術情報ハブ（帳票・CLAIM・MONTSUQI・カスタマイズ留意事項など）を firecrawl で Markdown 化したオフラインコピー。

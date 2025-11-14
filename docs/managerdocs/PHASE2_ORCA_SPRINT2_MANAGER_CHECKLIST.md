@@ -4,7 +4,7 @@
 - Sprint2 設計情報は `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6 を一次情報として整備済み。
 - `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から上記節へアンカーされ、`DOC_STATUS.md` 行 25 にも Active 記録あり。
 - 現在のマネージャー指示は、ORCA ラッパー実装／Runbook 連携／進捗台帳の同期を確実にすることが目的。
-- 2025-11-19 時点では PHR Phase-C/D/E RUN_ID=`20251119TorcaPHRSeqZ1` が PKCS#12 パスを更新済みで HTTPS 疎通まで成功。ORCA 本番 `/20/adm/phr/*` が未開放のため HTTP 405/404 となり、Modernized REST 実装で 200/403＋監査を取得する計画へ切替。`DOC_STATUS.md` W22 行と `docs/server-modernization/phase2/operations/logs/2025-11-19-phr-seq-phaseCDE.md` に新しい Pending を記載済。Sprint2 側でもタスクC（棚卸し）で該当 Blocker との整合を確認する。
+- 2025-11-20 時点では PHR Phase-C/D/E RUN_ID=`20251121TrialPHRSeqZ1` を WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp`, BASIC `trial/weborcatrial`）で再定義済。公式案内は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を参照し、「新規登録／更新／削除 OK（トライアル環境でのみ）」＋ CRUD ログ採取を前提とする。証跡は `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` / `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/` に集約されており、Sprint2 側でもタスクC（棚卸し）で `DOC_STATUS.md` W22 行との整合を確認する。
 
 ## 2. 進行タスク一覧
 - [x] **タスクA: Sprint2 アンカー反映** — `API_PARITY_MATRIX.md` と `PHASE2_PROGRESS.md` の ORCA 行を Sprint2 設計アンカーへ差し替える。完了条件: 両ファイルから §6 各 API へ直接ジャンプでき、`DOC_STATUS.md` 備考に「アンカー更新済（2025-11-14）」追記。（完了: 2025-11-14 / RUN_ID=NA）
@@ -19,7 +19,7 @@
 - [ ] `DOC_STATUS.md` 行 25: ステータス Active / 最終レビュー 2025-11-14 / 備考へ具体的更新内容列挙。（タスクA/B反映済、タスクCで最終整合予定）
   - [ ] `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §5 へ今回の棚卸し結果メモ（必要な場合）。
   - [ ] `docs/web-client/README.md` ORCA リンク整合チェック（必要時更新）。
-  - [ ] 2025-11-19 追記: `DOC_STATUS.md` W22 行（ORCA PHR タスク）に登録された RUN_ID=`20251119TorcaPHRSeqZ1` の新ステータス（PKCS#12 OK / HTTP 405/404, Modernized REST 実装待ち）を確認し、行 25 の備考へ「PHR Modernized 実装待ち」旨を明記。
+- [ ] 2025-11-20 追記: `DOC_STATUS.md` W22 行（ORCA PHR タスク）に登録された RUN_ID=`20251121TrialPHRSeqZ1`（Trial CRUD ベース）のステータスと `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` を突合し、「新規登録／更新／削除 OK（トライアル環境でのみ）」表記と CRUD ログ反映可否を確認。行 25 の備考へ Trial 切替と残課題を明記。
 
 ## 3. 進捗更新テンプレ（ワーカー報告）
 - `【ワーカー報告】` に以下を必ず含める。
