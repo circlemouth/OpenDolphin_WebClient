@@ -1,5 +1,25 @@
 # Phase2 ORCA Connectivity Run マネージャーチェックリスト（Trial サーバー重視プラン）
 
+> **参照開始順**
+> 1. `AGENTS.md`
+> 2. `docs/web-client/README.md`（Web Client Hub）
+> 3. `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`
+> 4. `docs/managerdocs/PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md`
+>
+> **報告テンプレ（RUN_ID / 証跡パス / DOC_STATUS 行）**
+> - RUN_ID: `RUN_ID=<ID>`（ドキュメントのみは `RUN_ID=NA`）
+> - 証跡パス: `docs/server-modernization/phase2/operations/logs/...`, `artifacts/orca-connectivity/<RUN_ID>/...` など保存先を列挙
+> - DOC_STATUS 行: `docs/web-client/planning/phase2/DOC_STATUS.md`「モダナイズ/外部連携（ORCA 接続）」行の更新内容
+>
+> **Archive 移行チェック（担当: Codex, 期限: 2025-11-29）**
+> - [ ] Dormant 判定記録（棚卸し済メモを残す）
+> - [ ] `docs/archive/2025Q4/` への移行とスタブ差し替え
+> - [ ] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考へアーカイブ結果を反映
+>
+> **開発端末手順の現行/Legacy 判定**
+> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Trial 接続資格情報の参照用）
+> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化時は上記チェックも更新）
+
 ## 1. 背景と基本方針
 - 接続先は WebORCA トライアルサーバー `https://weborca-trial.orca.med.or.jp` のみ。Basic 認証 `trial/weborcatrial` を共通で利用し、firecrawl で取得した公式 API 仕様（`docs/server-modernization/phase2/operations/assets/orca-api-spec/raw/*.md`。例: `acceptancelst.md`, `appointmod.md`, `acceptmod.md`, `medicalmod.md`）に基づき、トライアル上で提供されている API を XML payload で実行する。
 - トライアル環境の制約・利用不可機能は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md`（Snapshot 2025-11-19）を唯一の根拠とし、「お使いいただけない機能一覧」に記されている項目のみ Blocker として扱う。それ以外の API／業務機能はすべて正常に利用できる状態へ整える。

@@ -12,8 +12,8 @@
 | モダナイズ方針 | [`docs/server-modernization/rest-api-modernization.md`](../../rest-api-modernization.md) | OpenAPI 整備方針、Jakarta 置換ポリシー、SSE など新機能設計。 | 新しい設計決定（JWT/FIDO2 など）を行ったら §5 以降へ追記し、下記マトリクスへリンクする。
 | パリティ管理 | [`docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md`](../domains/API_PARITY_MATRIX.md) | レガシー vs モダナイズの 1:1 対応状況。件数集計とリソース別進捗を保持。 | 2025-11-03 集計。証跡が揃い次第、◎/△/✖ を更新する。差分が多い場合は `MODERNIZED_REST_API_INVENTORY` もセットで更新。
 | ORCA ラッパー設計 | [`docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md`](../domains/ORCA_REST_IMPLEMENTATION_NOTES.md) | ORCA-REST-01/02 スプリントの API スコープ、DTO 追加、サービス側フック整理。 | Sprint2 用のソース・DTO 追加時はここでタスク番号（ORCA-REST-01/02）と Runbook 参照を更新。
-| ORCA API 実測ステータス | [`docs/server-modernization/phase2/operations/ORCA_API_STATUS.md`](ORCA_API_STATUS.md) | WebORCA 本番 API の疎通結果・RUN_ID・差異メモ。P0/P1 の進捗を記録。 | 日次で curl 証跡を採取したら表に追記。404/405 など異常は `logs/ORCA_HTTP_404405_HANDBOOK.md` と連携。
-| 接続手順/Runbook | [`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`](ORCA_CONNECTIVITY_VALIDATION.md) | WebORCA 本番との疎通チェック手順、証跡保存ルール、RUN_ID 採番。 | 2025-11-14 更新。手順変更や RUN_ID 追加時はここを最優先で更新し、ログへのリンクを追記する。
+| ORCA API 実測ステータス | [`docs/server-modernization/phase2/operations/ORCA_API_STATUS.md`](ORCA_API_STATUS.md) | WebORCA トライアル API の結果表。手順はすべて Single Playbook（下行）へ委譲。 | 差分 RUN_ID を追記し、各行から Playbook §0 への参照を付ける。
+| 接続手順/Runbook | [`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`](ORCA_CONNECTIVITY_VALIDATION.md) | **Single Playbook**。RUN_ID 発行テンプレ（§0.1）、Evidence/ログ保存（§0.2）、`tmp/orca-weekly-summary.*` 貼り付け位置（§0.3）、curl 雛形（§0.4）を含む。 | 手順変更や RUN_ID 追加時はここを最優先で更新し、他ドキュメントはリンクのみ維持する。
 | 実測ログ | `docs/server-modernization/phase2/operations/logs/<DATE>-orca-connectivity.md`（例: [`2025-11-13-orca-connectivity.md`](logs/2025-11-13-orca-connectivity.md)） | 各 RUN_ID ごとの証跡・所見・課題。 | Runbook §4 のタスク完了後に必ず新規ファイルを作成。証跡パス・Api_Result・フォローアップを明記する。
 | 公式仕様アーカイブ | [`docs/server-modernization/phase2/operations/assets/orca-api-spec/README.md`](assets/orca-api-spec/README.md) | firecrawl で取得した公式 ORCA API 仕様のローカルコピー。`manifest.json` と `orca-api-matrix` の紐付けを提供。 | `assets/orca-api-spec/raw/*.md` を更新したら manifest を再生成し、ORCA_API_STATUS.md の spec 列を最新化。|
 
@@ -24,6 +24,8 @@
 - `MODERNIZED_REST_API_INVENTORY.md` では 17 リソースカテゴリ（User/System/ServerInfo/Patient/...）を掲載。各リソース表の「備考」欄にソースファイル行番号を記載済みのため、実装調査は当該リンクから IDE でジャンプできる。
 
 ### 3.2 ORCA 連携／新機能の位置付け
+
+> RUN_ID テンプレ（例: `RUN_ID=20251120TrialCrudPrepZ1`）、Evidence 保存フロー、`tmp/orca-weekly-summary.*` の貼り付け位置、curl 雛形は `ORCA_CONNECTIVITY_VALIDATION.md` §0.1-§0.4 を参照。以下の API 状況表では RUN_ID と差分のみを記載する。
 - ORCA REST ラッパー Sprint2（ORCA-REST-01/02）は予約・請求試算・患者同期 API を Jakarta REST で提供する計画。対象 API は `appointlstv2`, `appointlst2v2`, `acsimulatev2`, `visitptlstv2`, `patientlst1/2/3/6v2`, `patientmodv2`, `subjectivesv2` などで、詳細設計（Resource/Service/DTO 責務・Shift_JIS/例外処理・Runbook 紐付け）は [`ORCA_REST_IMPLEMENTATION_NOTES.md` Sprint2 節](../domains/ORCA_REST_IMPLEMENTATION_NOTES.md#6-sprint2-エンドポイント設計詳細) に集約した。DTO 群は `open.dolphin.rest.dto.orca` に追加し、`AppoServiceBean`, `PatientServiceBean`, `ChartEventServiceBean` との連携を定義済み。
 - SSE 化/認証ガイドラインなどの横断要件は `rest-api-modernization.md` §2-§5 に記載。JWT/TOTP/FIDO2 の要件や SSE 再接続要件は Web クライアント実装前に参照する。
 

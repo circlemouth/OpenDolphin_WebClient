@@ -7,7 +7,7 @@
 
 > **【重要】**
 > このドキュメントは、モダナイズが**完了した**APIのみを掲載しています。
-> `legacy-server-modernization-checklist.md` の注記にある通り、まだ多数のAPIが未移植の状態です。開発に着手する際は、必ず新旧のAPIインベントリを比較し、移植対象かどうかを確認してください。
+> `legacy-server-modernization-checklist.md`（Archive: `docs/archive/2025Q4/server-modernization/legacy-server-modernization-checklist.md`）の注記にある通り、まだ多数のAPIが未移植の状態です。開発に着手する際は、必ず新旧のAPIインベントリを比較し、移植対象かどうかを確認してください。
 
 ## 1. 認証・施設・システム情報
 

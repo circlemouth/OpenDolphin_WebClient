@@ -60,7 +60,7 @@
   SELECT column_name FROM information_schema.columns WHERE table_name = 'd_module' AND column_name = 'performflag';
   ```
   - 欠損が判明した環境では `server-modernized/tools/flyway/sql/V0221__doc_module_flag_columns.sql` を適用し、`VARCHAR(1)` で両カラムを作成する。マイグレーション適用後に再度上記 SQL で結果を確認し、本ランブックの検証ログへ記録する。
-  - 値の初期化ポリシー（例: 外来 `'V'`, 実施 `'P'`）は環境ごとに異なるため、必要に応じて `docs/server-modernization/phase2/notes/common-dto-diff-A-M.md` の補足と Ops 判断を参照して実データ更新を行う。
+  - 値の初期化ポリシー（例: 外来 `'V'`, 実施 `'P'`）は環境ごとに異なるため、必要に応じて `docs/archive/2025Q4/server-modernization/phase2/notes/common-dto-diff-A-M.md` の補足と Ops 判断を参照して実データ更新を行う。
 - 添付ファイルや PDF など外部ストレージを利用するプロジェクトでは、`server-modernized/config/attachment-storage.sample.yaml` を参照し、S3 互換設定を旧環境と合わせる。
 - 監査ログテーブル `d_audit_event` および支援テーブル（`d_audit_detail` 等）が旧サーバーと同じインデックス構成か確認する。
 

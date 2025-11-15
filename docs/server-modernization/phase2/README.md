@@ -21,7 +21,7 @@ phase2/
 - `domains/` 配下  
   認証 (`AUTH_SECURITY_COMPARISON.md`)、カルテ閲覧 (`JAKARTA_EE10_CHARTS_VIEW_IMPACT.md`)、カルテ CRUD (`KARTE_ORDER_JAKARTA_STATUS.md`)、予約通知 (`RESERVATION_BATCH_MIGRATION_NOTES.md`)、外部連携 (`EXTERNAL_INTEGRATION_JAKARTA_STATUS.md`) など、領域ごとの調査結果。
 - `operations/` 配下  
-  Micrometer 移行・WildFly 設定 (`WILDFLY33_MICROMETER_OPERATIONS_GAP.md`) や JMS 再導入メモ (`WORKER0_MESSAGING_BACKLOG.md`)。
+  Micrometer 移行・WildFly 設定 (`WILDFLY33_MICROMETER_OPERATIONS_GAP.md`) や JMS 再導入メモ (`WORKER0_MESSAGING_BACKLOG.md` / Archive: `../archive/2025Q4/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md`)。
 
 ## 新規外部リポジトリ（2025-11-06 追記）
 
