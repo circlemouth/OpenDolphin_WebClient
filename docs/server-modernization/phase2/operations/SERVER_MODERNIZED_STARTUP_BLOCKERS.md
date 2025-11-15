@@ -83,5 +83,5 @@
 ## 今後の管理
 
 - 上記 4 項目が揃っているかを CI / 運用チェックリストへ組み込み、欠落時はビルド段階で検知できるようにする。
-- JMS と Concurrency の設定は `WORKER0_MESSAGING_BACKLOG.md` のタスクと連動しているため、完了後に同ドキュメントのステータスを更新すること。
+- JMS と Concurrency の設定は `WORKER0_MESSAGING_BACKLOG.md`（Archive: `../../archive/2025Q4/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md`）のタスクと連動しているため、完了後に同ドキュメントのステータスを更新すること。
 - Secrets 配布や CLI 実行結果に不明点が残る場合は、`docs/server-modernization/phase2/foundation/IMPACT_MATRIX.md` の担当者セクションへ質問・メモを追記する。

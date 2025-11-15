@@ -6,6 +6,8 @@
 - 利用不可機能: プログラム・マスタ更新、CLAIM通信、プリンタ出力、レセプト一括/電算/CSV などの一括処理が無効化（本文「お使いいただけない機能等」参照）。
 - 初期データ: 医療機関コード `1234567`、医療法人オルカクリニック、患者番号桁数 5、`doctor1` 他の職員 ID などが `システムの設定情報` に列挙される。
 
+> 本 Snapshot Summary は `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §0-§1 から参照されるため、接続情報や CRUD 方針を更新する場合は本節を先に編集してから Playbook を同期する。
+
 ---
 
 ![ORCA PROJECT 日本医師会総合政策研究機構／日レセご紹介サイト](https://jma-receipt.jp/img/common/head_logo.gif)

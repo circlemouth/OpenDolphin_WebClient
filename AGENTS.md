@@ -9,11 +9,20 @@
 - `common/`, `ext_lib/`: 共有ユーティリティおよび外部ライブラリ。
 - `server/`: 既存サーバー実装。**サーバースクリプトは絶対に触らないこと。**
 
+## Phase2 ガバナンス必読チェーン
+
+> **Phase2 ガバナンス必読チェーン / 接続・RUN 運用共通ルール**  
+> 1. `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各領域チェックリストの順で参照・更新し、同一 RUN_ID を連携する。  
+> 2. WebORCA 接続先は `https://weborca-trial.orca.med.or.jp/`（BASIC 認証 `trial` / `weborcatrial`）のみとし、他環境や `curl --cert-type P12` を使った本番アクセスは禁止。  
+> 3. RUN_ID は `YYYYMMDDThhmmssZ` 形式を採用し、指示・README・DOC_STATUS・ログ・証跡ディレクトリのすべてで同一値を共有する。観点ごとに派生 RUN_ID を使う場合は親 RUN_ID を明示し、ログ先頭と備考欄へ併記する。  
+> 4. DOC_STATUS 更新は (a) 最終コミット確認 → (b) Active/Dormant/Archive 判定 → (c) 備考に RUN_ID / 証跡パスを追記 → (d) ハブドキュメントへ同日付反映、の順で行い、完了報告前にチェック。  
+> 5. Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。
+
 ## プロジェクト目的
-本プロジェクトの目的は電子カルテの Web クライアントと、それと連携するモダナイズ版サーバーを本番品質で構築・安定運用させること。Legacy サーバー/クライアントは **参照用アーカイブ** であり、運用予定はない。ロードマップ・マイルストーン・UX 指針は `docs/web-client/README.md` および `docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md` を参照する。
+本プロジェクトの目的は電子カルテの Web クライアントと、それと連携するモダナイズ版サーバーを本番品質で構築・安定運用させること。Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。ロードマップ・マイルストーン・UX 指針は `docs/web-client/README.md` および `docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md` を参照する。
 
 ## 作業方針
-- モダナイズ版サーバーは Web クライアント連携を唯一の必須要件とし、Legacy クライアント互換は求めない。Legacy サーバーは仕様参照・比較検証のためにのみ起動してよいが、稼働維持を目的とした作業は禁止する。
+- モダナイズ版サーバーは Web クライアント連携を唯一の必須要件とし、Legacy クライアント互換は求めない。Legacy サーバーは参照専用アーカイブ扱いで、仕様参照・比較検証のためにのみ起動可（保守・稼働維持は禁止）。
 - 変更対象は Web クライアント開発に必要なフロントエンド資産とドキュメントのみとし、`server/` 配下のコード・スクリプトには手を加えない。
 - ORCA 連携検証は WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp/`、ユーザー `trial` / パスワード `weborcatrial`）を唯一の接続先とし、公開アカウントで Basic 認証／UI 操作を行う。`ORCAcertification/` 配下の証明書や本番接続手順はアーカイブ扱いとし、`curl --cert-type P12` を使った本番アクセスは禁止。ローカル WebORCA コンテナは起動・更新とも禁止。
 - 必要な資料は `docs/web-client/README.md` から辿り、更新時は同 README に概要と保存場所を追記する。

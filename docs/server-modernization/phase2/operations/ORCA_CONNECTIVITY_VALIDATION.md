@@ -1,18 +1,79 @@
-# ORCA 接続検証タスクリスト
+# ORCA 接続 Single Playbook（WebORCA Trial）
 
 - 作成日: 2025-11-19（WebORCA トライアルサーバー運用へ切り替え）
 - 対象: `https://weborca-trial.orca.med.or.jp/` で提供される WebORCA トライアルサーバーと、`docker-compose.modernized.dev.yml`（または `scripts/start_legacy_modernized.sh`）で起動するモダナイズ版 OpenDolphin サーバー。
-- 目的: 公開トライアル環境を用いた疎通・API 呼び出しを標準化し、必要な資格情報を全て公開アカウント（`trial` / `weborcatrial`）へ統一する。
+- 目的: 公開トライアル環境での疎通・API 呼び出し・CRUD 証跡取得を単一 Runbook に集約し、RUN_ID 発行／ログ保存／週次棚卸しのやり方を一本化する。
 - 参照: [ORCA API 公式仕様](https://www.orca.med.or.jp/receipt/tec/api/overview.html) / [オフラインコピー](assets/orca-api-spec/README.md) / [技術情報ハブ（帳票・CLAIM・MONTSUQI 等）](assets/orca-tec-index/README.md)
 
-> **方針**: ORCA 連携は Modernized サーバー × 新 Web クライアントの業務フロー維持を唯一の目的とし、ローカル Docker コンテナでの WebORCA 再現は廃止した。Legacy サーバーは比較用の read-only 参照に限る。
+> **Single Playbook ルール**: ORCA 接続に関する手順は本ドキュメントに一本化する。他ドキュメント（`ORCA_API_STATUS.md`, `MODERNIZED_API_DOCUMENTATION_GUIDE.md` など）は本 Playbook へのリンクと差分サマリのみを掲載する。
 >
 > **2025-11-19 更新**: 本番資格情報および `ORCAcertification/` ディレクトリはアーカイブ扱いとし、WebORCA トライアルサーバーのみを接続先とする。Basic 認証は公開アカウント `trial/weborcatrial` を利用し、`curl --cert-type P12` や PKCS#12 証明書は使用しない。
 >
 > **成果物**
-> 1. `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` に RUN_ID／所見／使用証跡を追記。
-> 2. `artifacts/orca-connectivity/<UTC>/` にトライアルサーバーへの `curl` リクエスト・レスポンス（ヘッダー/本文）と `ServerInfoResource` 結果、DNS/TLS ログを保存。
-> 3. `docs/web-client/planning/phase2/DOC_STATUS.md` の ORCA 連携欄を Active に更新し、後続担当へ必要な証跡パスを共有。
+> 1. `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` に RUN_ID／所見／Evidence パスを追記。
+> 2. `artifacts/orca-connectivity/<RUN_ID>/` にトライアルサーバーへの `curl` リクエスト・レスポンス（ヘッダー/本文）と `ServerInfoResource` 結果、DNS/TLS ログ、`tmp/orca-weekly-summary.*` 実行ログを保存。
+> 3. `docs/web-client/planning/phase2/DOC_STATUS.md` の ORCA 連携欄と週次棚卸し欄を Active に更新し、後続担当へ必要な証跡パスを共有。
+
+## 0. Single Playbook 運用ルール
+
+- 本節を基点に RUN_ID 発行、ログ保存、週次棚卸し（`tmp/orca-weekly-summary.*`）の貼り付け位置を定義する。`ORCA_API_STATUS.md`/`MODERNIZED_API_DOCUMENTATION_GUIDE.md` は本節の参照だけを記載し、手順を複製しない。
+- Trial サーバーの接続情報・CRUD 可否・利用不可機能は `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` を一次情報とし、本節と §1 の記述が乖離した場合は Snapshot を更新してから本 Playbook を修正する。
+
+### 0.1 RUN_ID 発行テンプレ
+
+1. RUN_ID は `YYYYMMDD` + 目的語 + `Z#` で命名する。例: `RUN_ID=20251120TrialCrudPrepZ1`（Trial CRUD 事前チェック 1 件目）。
+2. 予約語: `TrialCrud`, `TrialAppoint`, `TrialAccept`, `TrialMedical`, `TrialHttpLog`, `TrialWeekly` などタスク種別が判別できる語を使用する。
+3. 発行手順:
+   ```bash
+   export RUN_ID=20251120TrialCrudPrepZ1
+   export EVIDENCE_ROOT="artifacts/orca-connectivity/${RUN_ID}"
+   mkdir -p "${EVIDENCE_ROOT}/"{dns,tls,trial,trace,data-check}
+   rsync -a artifacts/orca-connectivity/TEMPLATE/ "${EVIDENCE_ROOT}/"
+   ```
+4. `artifacts/orca-connectivity/TEMPLATE/00_README.md` の命名ルールも参照し、`node scripts/tools/orca-artifacts-namer.js artifacts/orca-connectivity` で違反がないことを確認する。
+
+### 0.2 ログ保存とリンク統一
+
+1. 実施日ごとのサマリは `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` に記載し、各 RUN_ID を表形式で整理する（例: `logs/2025-11-15-orca-connectivity.md`）。
+2. 実測ログの保存先は必ず `artifacts/orca-connectivity/<RUN_ID>/` 配下とし、`dns/`, `tls/`, `trial/<api>/`, `trace/`, `data-check/`, `screenshots/` を RUN_ID 単位で揃える。
+3. 差分サマリを他ドキュメントへ記載する場合は「`ORCA_CONNECTIVITY_VALIDATION.md` §0 を参照」と明記し、手順本文を複製しない。特に `ORCA_API_STATUS.md` は最新ステータス表のみを残し、実施手順は本 Playbook へ誘導する。
+4. `artifacts/orca-connectivity/<RUN_ID>/README.md` を Evidence 目次として更新し、DNS/TLS ログや CRUD 実施結果を列挙する。
+
+### 0.3 `tmp/orca-weekly-summary.*` の貼り付け位置
+
+1. `npm run orca-weekly` 実行後、`tmp/orca-weekly-summary.json` と `tmp/orca-weekly-summary.md` が生成される。
+2. Markdown 版を以下 3 か所へ貼り付けて同期する。
+   - `docs/web-client/planning/phase2/DOC_STATUS.md` の「モダナイズ/外部連携（ORCA）」週次テーブル（備考欄に RUN_ID・Evidence パス）。
+   - `docs/web-client/README.md` ORCA セクションの「直近週次」行。
+   - `docs/server-modernization/phase2/PHASE2_PROGRESS.md` ORCA 行の週次欄。
+3. JSON 版と CLI 標準出力は `artifacts/orca-connectivity/validation/<RUN_ID>/weekly_summary.log` へ貼り付け、`RUN_ID`＝`YYYYMMDDTrialWeeklyZ#` を合わせて記録する。
+
+### 0.4 curl サンプル（Basic 認証）
+
+`MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から引用する cURL 雛形を本節で一元管理する。Basic 認証／UTF-8/Shift_JIS ヘッダー／Evidence 保存ルールを以下に示す。
+
+```bash
+export ORCA_TRIAL_USER=trial
+export ORCA_TRIAL_PASS=weborcatrial
+export RUN_ID=20251120TrialCrudPrepZ1
+EVIDENCE_ROOT="artifacts/orca-connectivity/${RUN_ID}"
+mkdir -p "${EVIDENCE_ROOT}/trial/system01dailyv2" \
+         "${EVIDENCE_ROOT}/trace" \
+         "${EVIDENCE_ROOT}/data-check"
+curl --silent --show-error \
+     -u "${ORCA_TRIAL_USER}:${ORCA_TRIAL_PASS}" \
+     -H 'Content-Type: application/json; charset=Shift_JIS' \
+     -X POST --data-binary \
+       '@docs/server-modernization/phase2/operations/assets/orca-api-requests/01_system01dailyv2_request.json' \
+     'https://weborca-trial.orca.med.or.jp/api/api01rv2/system01dailyv2?class=00' \
+     -D "${EVIDENCE_ROOT}/trial/system01dailyv2/response.headers" \
+     -o "${EVIDENCE_ROOT}/trial/system01dailyv2/response.json" \
+     --trace-ascii "${EVIDENCE_ROOT}/trace/system01dailyv2.trace"
+```
+
+- 参照 API（`acceptlstv2`, `appointlstv2`, etc.）も同じ RUN_ID/ディレクトリ構成で保存する。
+- CRUD 操作を伴う場合は `data-check/<api>.md` に before/after と戻し手順を必ず記録する。
+- 追加の `curl` テンプレが必要になった場合も本節を更新し、他ファイルは本節へのリンクだけを残す。
 
 ## 1. スコープと前提条件
 
@@ -20,10 +81,14 @@
 | --- | --- |
 | WebORCA 接続先 | `https://weborca-trial.orca.med.or.jp/`（CN=`weborca-trial.orca.med.or.jp`）。公開トライアル環境のため TLS クライアント証明書は不要、HTTP Basic のみでアクセスする。 |
 | 認証情報 | ユーザー `trial` / パスワード `weborcatrial`（公式トライアルサイトで公開済み）。追加の API キーや PKCS#12 証明書は不要。|
+| CRUD 方針（Trial） | `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` で「一部の管理業務を除き自由にお使いいただけます」と明記。トライアル環境限定で新規登録／更新／削除 OK、操作内容は必ずログ化して戻し方を記録する。|
+| 利用不可機能 | Snapshot Summary 記載の通り、プログラム/マスタ更新、CLAIM 通信、プリンタ直接出力、レセプト一括/電算/CSV などは無効化されている。検証対象から除外し、`tmp/orca-weekly-summary.md` の週次欄にも「利用不可機能変更なし」と明記する。|
 | モダナイズ版サーバー | `opendolphin-server-modernized-dev`（WildFly 27）。`ops/shared/docker/custom.properties` および `ops/modernized-server/docker/custom.properties` に `claim.host=weborca-trial.orca.med.or.jp` / `claim.send.port=443` / `claim.conn=server` / `claim.send.encoding=MS932` / `claim.scheme=https` を設定してから再ビルドする。 |
 | ネットワーク | 作業端末から `weborca-trial.orca.med.or.jp:443` への outbound HTTPS が許可されていること。社内ネットワークで制限されている場合は VPN または許可済みホストへ切り替える。|
 | DNS | 作業開始前にホスト OS で `Resolve-DnsName weborca-trial.orca.med.or.jp`（Windows）や `nslookup`/`dig` を実行し、A レコードを取得できることを確認する。WSL2 を利用する場合は Windows 側 `.wslconfig` に `generateResolvConf=false` を追加し、WSL 内では `/etc/resolv.conf` を手動管理する。`artifacts/orca-connectivity/<RUN_ID>/dns/` へ `nslookup`/`dig`/`ping` 証跡を保存する。 |
 | データ | トライアル環境は週次でリセットされ、公開初期データ（患者 00001〜、医療機関=オルカクリニック 等）が常に投入される。登録内容は誰でも参照できるため、個人情報の投入は禁止。参照系 API を主に実行し、書き込み系は UI 操作確認の範囲に留める。 |
+
+> Snapshot Summary との同期: `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` を更新したら必ず本表も更新し、逆に本表へ追記したい事項が出た場合は Snapshot を先に更新してから本 Playbook へ反映する。
 
 ## 2. 実施フロー概要
 
@@ -147,21 +212,7 @@ No.19-38 で作成した XML テンプレの証跡は `artifacts/orca-connectivi
 
 1. `RUN_ID={{YYYYMMDD}}TorcaTrialCrudZ#` を採番し、`artifacts/orca-connectivity/${RUN_ID}/{dns,tls,trial,trace,data-check}` を作成する。
 2. `dig weborca-trial.orca.med.or.jp`（macOS/Linux）または `Resolve-DnsName weborca-trial.orca.med.or.jp`（Windows）で A レコードを取得し、出力を `dns/resolve.log` に保存する。併せて `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、TLS 交渉結果を `tls/openssl_s_client.log` へ記録する。
-3. Basic 認証で `system01dailyv2` を 1 回実行し、HTTP/TLS の成功を確認する。
-```bash
-export ORCA_TRIAL_USER=trial
-export ORCA_TRIAL_PASS=weborcatrial
-RUN_ID=20251115TorcaTrialCrudZ1
-mkdir -p "artifacts/orca-connectivity/${RUN_ID}/trial" "artifacts/orca-connectivity/${RUN_ID}/trace"
-curl --silent --show-error \
-     -u "${ORCA_TRIAL_USER}:${ORCA_TRIAL_PASS}" \
-     -H 'Content-Type: application/json; charset=Shift_JIS' \
-     -X POST --data-binary '@docs/server-modernization/phase2/operations/assets/orca-api-requests/01_system01dailyv2_request.json' \
-     'https://weborca-trial.orca.med.or.jp/api/api01rv2/system01dailyv2?class=00' \
-     -D "artifacts/orca-connectivity/${RUN_ID}/trial/system01dailyv2.headers" \
-     -o "artifacts/orca-connectivity/${RUN_ID}/trial/system01dailyv2.json" \
-     --trace-ascii "artifacts/orca-connectivity/${RUN_ID}/trace/system01dailyv2.trace"
-```
+3. Basic 認証で `system01dailyv2` を 1 回実行し、HTTP/TLS の成功を確認する（`curl` 雛形は §0.4 を参照）。
 4. `Api_Result=00` を確認し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` へ `RUN_ID`／HTTP／`Api_Result`／証跡パスを追記する。
 
 ### 4.2 ServerInfoResource による `claim.conn` 確認

@@ -1,5 +1,26 @@
 # Phase2 ORCA Demo/Dolphin/PHR ギャチE�E対応�Eネ�EジャーチェチE��リスト！E025-11-20�E�E
 
+> **参照開始順**
+> 1. `AGENTS.md`
+> 2. `docs/web-client/README.md`（Web Client Hub）
+> 3. `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md`
+> 4. `docs/managerdocs/PHASE2_ORCA_PHR_GAP_MANAGER_CHECKLIST.md`
+>
+> **報告テンプレ（RUN_ID / 証跡パス / DOC_STATUS 行）**
+> - RUN_ID: `RUN_ID=<ID>`（ドキュメントのみは `RUN_ID=NA`）
+> - 証跡パス: `docs/server-modernization/phase2/operations/logs/...`, `artifacts/orca-connectivity/<RUN_ID>/...` 等を列挙
+> - DOC_STATUS 行: `docs/web-client/planning/phase2/DOC_STATUS.md`「モダナイズ/外部連携（ORCA PHR ギャップ）」行の更新内容
+>
+> **Archive 移行チェック（担当: Codex, 期限: 2025-11-29）**
+> - [ ] Dormant 判定と根拠記録
+> - [ ] `docs/archive/2025Q4/` への移行とスタブ整備
+> - [ ] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考をアーカイブ情報で更新
+>
+> **開発端末手順の現行/Legacy 判定**
+> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Trial CRUD 再検証時に参照）
+> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化判定時にチェックを付与）
+
+
 ## 1. 背景
 - DemoResourceASP / DolphinResourceASP / PHRResource の欠落 API 棚卸し！EMODERNIZED_REST_API_INVENTORY.md:205-224,266-317` と `API_PARITY_MATRIX.md:105-322`�E�およ�E `DOC_STATUS.md` W22 行�E WebORCA トライアルサーバ�E基準へ更新済、E
 - ORCA 連携はトライアル環墁E��Ehttps://weborca-trial.orca.med.or.jp`, BASIC `trial/weborcatrial`�E��Eみを接続�Eとし、「新規登録�E�更新�E�削除 OK�E�トライアル環墁E��のみ�E�」表記と CRUD ログ採取を忁E��とする。�E式案�E・制限事頁E�E `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を唯一の参�E允E��し、該当節を引用して Blocker を整琁E��る、E

@@ -2,7 +2,7 @@
 
 ## 概要
 - 目的: PHR エクスポートの S3 永続化、Secrets 自動検査、監査ハッシュ検証の自動化、第三者提供記録 API の実装着手に向けたチケット草案と作業ブロックを整理する。
-- 参照元: `common-dto-diff-N-Z.md` のギャップ整理、`EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の既存手順。
+- 参照元: `common-dto-diff-N-Z.md`（Archive: `../archive/2025Q4/server-modernization/phase2/notes/common-dto-diff-N-Z.md`）のギャップ整理、`EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の既存手順。
 - 成果物: チケット化にそのまま転用できる要件定義、想定担当/依存関係、受入条件。
 
 ## Task-E（2025-11-18）Secrets/Vault 更新状況 — RUN_ID=20251118TphrLayerPrepZ1

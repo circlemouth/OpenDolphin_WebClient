@@ -1,7 +1,9 @@
 # ORCA Connectivity Evidence Template
 
+> RUN_ID 命名・Evidence 運用は `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §0.1-§0.2（Single Playbook）を参照。本テンプレは同 Playbook で定義された構成を実際のディレクトリへ反映するための雛形。
+
 ## RUN_ID / タイムスタンプ命名ルール
-- Evidence ディレクトリは `RUN_ID=YYYYMMDDThhmmssZ`（UTC、例: `20251112T090000Z`）で作成する。
+- Evidence ディレクトリは `RUN_ID=YYYYMMDDThhmmssZ`（UTC、例: `20251112T090000Z`）で作成する。Trial CRUD など手動採番を行う場合も Single Playbook §0.1 の命名ルール（例: `RUN_ID=20251120TrialCrudPrepZ1`）と整合させる。
 - 推奨手順:
   1. `export RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)`
   2. `mkdir -p artifacts/orca-connectivity/${RUN_ID}`

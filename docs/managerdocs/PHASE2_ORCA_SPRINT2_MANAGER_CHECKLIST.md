@@ -1,5 +1,25 @@
 # Phase2 ORCA Sprint2 マネージャー作業チェックリスト（2025-11-19）
 
+> **参照開始順**
+> 1. `AGENTS.md`
+> 2. `docs/web-client/README.md`（Web Client Hub）
+> 3. `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6
+> 4. `docs/managerdocs/PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md`
+>
+> **報告テンプレ（RUN_ID / 証跡パス / DOC_STATUS 行）**
+> - RUN_ID: `RUN_ID=<ID>`（ドキュメントのみは `RUN_ID=NA`）
+> - 証跡パス: `docs/server-modernization/phase2/domains/...`, `docs/server-modernization/phase2/operations/logs/...`, `artifacts/...` など
+> - DOC_STATUS 行: `docs/web-client/planning/phase2/DOC_STATUS.md`「モダナイズ/外部連携（ORCA Sprint2）」行の更新内容
+>
+> **Archive 移行チェック（担当: Codex, 期限: 2025-11-29）**
+> - [ ] Dormant 判定ログ
+> - [ ] `docs/archive/2025Q4/` へ移行しスタブ差替
+> - [ ] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考へアーカイブ記録
+>
+> **開発端末手順の現行/Legacy 判定**
+> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Sprint2 CRUD 手順の前提確認）
+> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化判断時にチェック）
+
 ## 1. 背景
 - Sprint2 設計情報は `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6 を一次情報として整備済み。
 - `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から上記節へアンカーされ、`DOC_STATUS.md` 行 25 にも Active 記録あり。

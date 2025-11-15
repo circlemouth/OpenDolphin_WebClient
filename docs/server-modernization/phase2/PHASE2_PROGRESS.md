@@ -669,7 +669,7 @@
 - 📝 Ops ランブックへ `information_schema.columns` による `admflag`／`performflag` 列存在チェックと不足時の `ALTER TABLE` 追加手順を追記。コンバータ更新＋XML 再生成テスト、Bean の複製漏れ修正、Flyway マイグレーション有無の Ops への確認をフォローアップタスクとして登録する。
 
 ## 2026-06-06 追記: PHR / 監査 / 2FA 実装計画整理（担当: Codex）
-- ✅ `docs/server-modernization/phase2/notes/common-dto-diff-N-Z.md` に PHR 非同期ジョブ・第三者提供記録・2FA DTO の実装計画と優先度付きギャップ一覧を追記し、Flyway／Secrets／監査の整合性確認ステップを明文化した。
+- ✅ `docs/archive/2025Q4/server-modernization/phase2/notes/common-dto-diff-N-Z.md` に PHR 非同期ジョブ・第三者提供記録・2FA DTO の実装計画と優先度付きギャップ一覧を追記し、Flyway／Secrets／監査の整合性確認ステップを明文化した。
 - ✅ `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の 検証フロー 4-7 に「2FA / 監査 / Secrets チェック」を追加し、`d_factor2_*` および `d_audit_event` の Flyway 適用確認、Secrets 検査、監査ハッシュ検証の手順を Runbook 化した。
 - 📝 S3 PHR ストレージ実装可否の判断、`PHR_EXPORT_SIGNING_SECRET` の Secrets 管理方針、`ops/check-secrets.sh` への必須キー追加、Micrometer 監視項目整備をチケット化し Phase2 backlog に登録する。
 - ⚠️ 現状は CI で `AdmissionResourceFactor2Test` やハッシュチェーン検証が走っておらず、手動チェックに依存している。Maven 実行環境整備と nightly 実行フローを Ops/QA と調整する必要がある。
@@ -677,16 +677,16 @@
 ## 2026-06-06 追記: Touch FirstEncounterModel 統合対応（担当: Codex）
 - ✅ `server-modernized/src/main/java/open/dolphin/touch/session/IPhoneServiceBean` から `FirstEncounter0/1Model` 参照を除去し、`FirstEncounterModel` へのクエリ一本化と `getFirstEncounterModels`／`getLatestFirstEncounter` を追加。
 - ✅ `common/src/main/java/open/dolphin/infomodel/FirstEncounterModel` に `docType` 列を読み取り専用で公開し、シングルテーブル継承メタデータを整理。`beanBytes` の取り扱いは既存ロジックを継承。
-- ✅ `docs/server-modernization/phase2/notes/common-dto-diff-A-M.md` に Touch REST API／クライアント依存／`d_first_encounter` の影響と互換性確認手順を追記。
+- ✅ `docs/archive/2025Q4/server-modernization/phase2/notes/common-dto-diff-A-M.md` に Touch REST API／クライアント依存／`d_first_encounter` の影響と互換性確認手順を追記。
 - 📝 互換性確認フロー: ① モダナイズ環境で `SELECT docType, COUNT(*) FROM d_first_encounter GROUP BY docType;` を実行し Legacy 由来の docType 値（`FirstEncounter0Model` 等）を確認。② Touch サービスから代表レコードの `beanBytes` を `IOSHelper.xmlDecode` でデコードし、既存クライアントが解釈できることを確かめる。③ Touch REST API に docType フィルタを公開する際は UI/クライアント仕様書へ docType 一覧とリクエスト例を追記する。
 
 ## 2026-06-05 追記: Common DTO A〜M 差分棚卸し（担当: Codex）
-- ✅ `docs/server-modernization/phase2/notes/common-dto-diff-A-M.md` を新設し、Jakarta 版と Legacy (`e17c06d8`) の差分をクラス別に整理。新規 DTO（監査ログ / 2FA / CarePlan）と Legacy 未収録 DTO を把握した。
+- ✅ `docs/archive/2025Q4/server-modernization/phase2/notes/common-dto-diff-A-M.md` を新設し、Jakarta 版と Legacy (`e17c06d8`) の差分をクラス別に整理。新規 DTO（監査ログ / 2FA / CarePlan）と Legacy 未収録 DTO を把握した。
 - ⚠️ `FirstEncounter0/1/2Model` が Jakarta 版から削除されている一方、`server/src/main/java/open/dolphin/touch/session/IPhoneServiceBean` で引き続き参照されており、Touch 系ビルドが成立しない。代替 DTO（`FirstEncounterModel`）へのリファクタ or Touch API の廃止可否を決定する必要あり。
 - 📝 `ClaimItem` / `DocInfoModel` / `ModuleInfoBean` に追加したフィールドの DB スキーマ（Flyway 適用）と Legacy サーバーでの互換性確認、`IInfoModel` 定数削除に伴う利用箇所洗い替えを継続する。
 
 ## 2026-06-04 追記: Common DTO N〜Z 差分棚卸し（担当: Codex）
-- ✅ `docs/server-modernization/phase2/notes/common-dto-diff-N-Z.md` を新設し、Legacy（`upstream/master`）との差分を Jakarta 置換状況 / フィールド追加 / 新規 DTO ごとに整理。`PHRAsyncJob` や `ThirdPartyDisclosureRecord` などの新設エンティティを含めた互換性影響と優先度付きフォローアップを記録した。
+- ✅ `docs/archive/2025Q4/server-modernization/phase2/notes/common-dto-diff-N-Z.md` を新設し、Legacy（`upstream/master`）との差分を Jakarta 置換状況 / フィールド追加 / 新規 DTO ごとに整理。`PHRAsyncJob` や `ThirdPartyDisclosureRecord` などの新設エンティティを含めた互換性影響と優先度付きフォローアップを記録した。
 - ✅ `PHRBundle` の `facilityNumber` 追加や `PHRClaimItem` の用法・投与量フィールド拡張、Hibernate 6 への `@JdbcTypeCode(SqlTypes.CLOB)` 置換など、Legacy 実装との不整合点を棚卸し。`OrcaAnalyze`/`CacheUtil`/`LegacyBase64` など周辺コンバータ・ユーティリティの Jakarta 対応も併せて一覧化した。
 - 📝 フォローアップとして (1) PHR 出力スキーマと旧クライアントの互換検証、(2) `phr_async_job` Flyway 適用状況の自動チェック、(3) 第三者提供記録の実装計画策定、(4) Jakarta Mail 依存のビルド確認を進める。
 
@@ -723,7 +723,7 @@
 
 ## 2026-06-03 追記: WildFly 33 運用ランブック整理（担当: Worker S4）
 - ✅ `docs/web-client/operations/LOCAL_BACKEND_DOCKER.md` にモダナイズ版起動前チェックリストを新設し、Worker S1 の Secrets 配布手順／Worker S3 の検証スクリプト／JMS・Concurrency リソース確認を連携させた。
-- ✅ `docs/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md` へ JMS 設定完了証跡と CLI／`verify_startup.sh` を用いた検証フローを追記し、ログ保存場所とフェールオーバーテストの手順を明文化。
+- ✅ `docs/archive/2025Q4/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md` へ JMS 設定完了証跡と CLI／`verify_startup.sh` を用いた検証フローを追記し、ログ保存場所とフェールオーバーテストの手順を明文化。
 - ✅ `docs/server-modernization/phase2/operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md` に Concurrency リソース整備済みである旨と `executor.*` メトリクス監視のフォローアップタスクを追加。
 - 📝 本メモを更新し、Documentation Runbook の進捗を記録。
 
