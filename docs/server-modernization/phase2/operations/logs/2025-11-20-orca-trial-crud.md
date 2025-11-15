@@ -2,6 +2,21 @@
 
 > WebORCA トライアルへの接続検証・CRUD 実測は本ファイルへ記録。RUN_ID は `20251120TrialConnectivityWSLZ1` で固定し、DNS/TLS/CRUD の証跡を `artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/` へ保存する。HTTP ステータス／`Api_Result`／エラーメッセージを併記し、DOC_STATUS 行 79-84 へリンク。
 
+- RUN_ID: `20251115T134513Z`
+  - 操作: 2025-11-15 22:50 JST（Codex CLI on macOS、Chrome なし）で `nslookup` → `openssl s_client` → `curl -vv -u trial:weborcatrial ... --data-binary @payloads/*_trial.xml` を順に実施。`artifacts/orca-connectivity/20251115T134513Z/{dns,tls}` へ `nslookup_2025-11-15T22:50:38+09:00.txt`（CNAME=`weborca-trial1.japaneast.cloudapp.azure.com`, A=172.192.77.103）と `openssl_s_client_2025-11-15T22:50:42+09:00.txt`（`*.orca.med.or.jp`, TLSv1.2, Sectigo CA）を保存。
+  - CRUD: `/api01rv2/acceptlstv2`（HTTP200, `Api_Result=13` ドクター未登録）、`/api01rv2/appointlstv2`（HTTP200, `Api_Result=12` ドクター未登録）、`/api/api21/medicalmodv2`（HTTP200, `Api_Result=10` 該当患者なし）を XML で送信し、`artifacts/.../crud/{acceptlst,appointlst,medicalmod}/{payload.xml,response.{headers,xml},curl.log}` に証跡を格納。UI へは `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/` の HTML を `ui/login.html` に保存しつつ、GUI がないためスクリーンショット取得は未実施。
+  - カバレッジ: `artifacts/.../coverage/coverage_matrix.md` を作成し、firecrawl 仕様 60 件を `Trial 提供=51` / `Trial 非提供=9` に分類。`acceptancelst` / `appointlst` / `medicalmod` の Status を `Executed (curl XML)` に更新し、Blocked 行では `trialsite.md#limit` を根拠に `report_print` 等を除外。
+  - Blocker: doctor/patient seed 欠落（`Api_Result=13/12/10`）を `artifacts/.../blocked/README.md` に整理し、GUI で `Physician_Code=0001` / `Patient_ID=00000001` を再登録できない限り解消できない旨を記録。`coverage_matrix` の `Trial 非提供` 行はプリンタ出力/マスタ更新/CLAIM 通信禁止（trialsite.md#limit）を引用。
+  - DOC_STATUS / Checklist: `docs/managerdocs/PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md` タスクA〜E と `docs/web-client/planning/phase2/DOC_STATUS.md` 行 71-75,79-84 を RUN_ID=`20251115T134513Z`、Evidence パス、および Blocker 所見で更新予定。
+
+- RUN_ID: `20251115TrialConnectivityCodexZ1`
+  - 操作: 2025-11-15 22:45-23:10 JST、Codex CLI（GUI なし / macOS sandbox）で `nslookup` → `openssl s_client` → `curl -vv -u trial:weborcatrial --data-binary @payloads/*.xml` を順に実行。UI は開けないため `data-check/README.md` に「CLI 制約」を記録し、GUI 端末取得待ちを明記。
+  - DNS/TLS: `dns/nslookup_2025-11-15T13-48-30Z.txt`（CNAME=`weborca-trial1.japaneast.cloudapp.azure.com`, A=`172.192.77.103`）と `tls/openssl_s_client_2025-11-15T13-48-52Z.txt`（`*.orca.med.or.jp`, TLSv1.2, Sectigo）を保存。
+  - CRUD: `/api01rv2/acceptlstv2`（HTTP200, `Api_Result=13` ドクター未登録）/`/api01rv2/appointlstv2`（HTTP200, `Api_Result=12`）/`/api/api21/medicalmodv2`（HTTP200, `Api_Result=14`）のレスポンスを `crud/<api>/response_2025-11-15T13-49-41Z.xml`, `response_2025-11-15T13-52-14Z.xml` に保存。`/orca11/acceptmodv2` と `/orca14/appointmodv2` は `HTTP/1.1 405 Method Not Allowed`（Allow=OPTIONS,GET）で POST 拒否。
+  - カバレッジ/Blocker: `coverage/coverage_matrix.md` で firecrawl 仕様 79 件を Trial 提供/非提供へ仕分けし、`blocked/README.md` に HTTP 405 API（acceptmod/appointmod）と trialsite#limit §1-§4 を根拠にした機能ブロック（report_print/systemkanri/userkanri）を追記。Doctor seed 不足 (`Physician_Code=0001`) は「データギャップ」として同 README に記載。
+  - 証跡: `artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/{00_README.md,data-check/,dns/,tls/,crud/,coverage/coverage_matrix.md,blocked/README.md}`。`node scripts/tools/orca-artifacts-namer.js artifacts/orca-connectivity` を実行し、現行 RUN_ID 命名とスクリプトの乖離（UTC タイムスタンプ強制）を Issue 化予定。
+  - ドキュメント: `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §4.3 へ doctor seed フォローアップと coverage/blocked 連携手順を追記。`PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md` タスクA〜E と `docs/web-client/planning/phase2/DOC_STATUS.md`（行 95-96）を本 RUN_ID と Evidence パスで更新。
+
 - RUN_ID: `20251120TrialConnectivityWSLZ1`
   - 操作: 2025-11-15 08:52 JST の WSL2 (Ubuntu 24.04.3 LTS) 上の `trial/weborcatrial` Basic 認証で `nslookup`（08:52:40） + `openssl s_client`（08:52:44）による事前チェックを完了後、`curl -vv`（stderr/stdout を tee へまとめて `crud/.../curl.log`）で `/api01rv2/acceptlstv2`（POST、`Api_Result=91`）と `/20/adm/phr/phaseA`（GET、404）を実行し、リクエスト/ステータス/ボディを含む証跡を収集。
   - 2025-11-15 14:37 JST に DNS/TLS を再取得し、`dns/nslookup_2025-11-15T14:37:34+09:00.txt`（`172.192.77.103` 応答）と `tls/openssl_s_client_2025-11-15T14:37:39+09:00.txt`（`*.orca.med.or.jp` 証明書・TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384）を追加。`trialsite` Snapshot (2025-11-19) の「トライアルサーバーのみ接続可」を引用し README/log へ周知済み。
