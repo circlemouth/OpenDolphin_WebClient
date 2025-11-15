@@ -174,15 +174,18 @@ curl --silent --show-error \
 - 参照系（system/accept/patient/appointment）と CRUD 系（予約登録・受付登録・診療明細操作）を全て WebORCA トライアルサーバーで実行する。`assets/orca-trialsite/raw/trialsite.md` を参照し、利用不可機能を事前確認する。
 - CRUD 操作は「トライアル環境限定で新規登録／更新／削除 OK」。実施した内容は `artifacts/orca-connectivity/<RUN_ID>/data-check/<api>.md` と `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` の Checklist へ記録し、対象 ID・操作内容・戻し方を明示する。
 - `ORCAcertification/` 配下の PKCS#12 や非公開資格情報はアーカイブ扱い。接続は `trial/weborcatrial` の Basic 認証のみを利用する。
+- Trial HTTP 要件: `curl -vv -u trial:weborcatrial -H 'Accept: application/xml' -H 'Content-Type: application/xml' --data-binary @payloads/<api>_trial.xml https://weborca-trial.orca.med.or.jp/<path>` を共通フォーマットとし、`payloads/*.xml` は firecrawl 取得済み仕様（slug=`appointlst`,`appointmod`,`acceptancelst`,`acceptmod`,`medicalmod` 等）と整合させた XML を送信する。証跡にはリクエスト XML とレスポンス XML を `crud/<api>/` に保存する。
+- `trialsite.md`「お使いいただけない機能一覧」に記載の API（例: `/20/adm/phr/*`）や POST 未解放エンドポイント（`/orca14/appointmodv2` 等）は Blocker=`TrialLocalOnly` として Runbook / Checklist / ログへ引用付きで記載し、ローカル ORCA（ORMaster 認証）に切り替える再開条件（doctor seed 復旧＋POST 解放）を示す。
+- ORMaster 前提 API（`/api/api21/medicalmodv2`, `/orca11/acceptmodv2` など）はトライアルサーバーで `Api_Result=10/13/14` となるため、`curl -vv -u ormaster:ormaster ... --data-binary @payloads/<api>_trial.xml http://localhost:8000/...` でローカル ORCA 実測を行い、トライアル結果は Blocker として残す。
 
 | # | エンドポイント | 種別 | 成功条件 | 証跡/ログ | CRUD 記録ポイント |
 | --- | --- | --- | --- | --- | --- |
 | 1 | `POST /api01rv2/patientgetv2` | 参照 | HTTP 200 / `Api_Result=00` で患者 `00001` の基本情報を取得 | `trial/patientgetv2.{headers,json}`, `trace/patientgetv2.trace` | `data-check/patientgetv2.md` に照会条件と取得件数を記載 |
 | 2 | `POST /api01rv2/appointlstv2` | 参照 | HTTP 200 で `Appointment_Information` が返る | `trial/appointlstv2.{headers,json}`、`screenshots/appointlstv2.png` | `data-check/appointlstv2.md` に UI との突合結果 |
 | 3 | `POST /api01rv2/acceptlstv2` | 参照 | HTTP 200 / `Api_Result=00`（受付が無い場合は `21`） | `trial/acceptlstv2.{headers,json}` | `data-check/acceptlstv2.md` に当日受付件数を記録 |
-| 4 | `POST /orca14/appointmodv2` | 新規・更新・削除 | HTTP 200 / `Api_Result=00`。登録/更新した予約が `appointlstv2` で確認できる | `trial/appointmodv2/{request,response}.http`, `trace/appointmodv2.trace` | `data-check/appointmodv2.md` に予約番号・変更内容・撤回操作を記載 |
-| 5 | `POST /api/api21/medicalmodv2` | 診療明細 CRUD | HTTP 200 / `Api_Result=00` または `14`。参照時は `Medical_Information` が取得できる | `trial/api21_medicalmodv2.{headers,json}`、`trace/medicalmodv2.trace` | `data-check/medicalmodv2.md` に患者番号・診療 ID・操作目的 |
-| 6 | `POST /orca11/acceptmodv2` | 受付 CRUD | HTTP 200 / `Api_Result=00`。削除時は `Delete_Flg=1` を確認 | `trial/acceptmodv2/{request,response}.http`, `trace/acceptmodv2.trace` | `data-check/acceptmodv2.md` に受付番号・操作種別・戻し要否 |
+| 4 | `POST /orca14/appointmodv2` | 新規・更新・削除 | (Trial) HTTP 405 `Allow: OPTIONS, GET`。Blocker=`TrialLocalOnly`。ローカル ORCA では HTTP 200 / `Api_Result=00` となり予約が `appointlstv2` で確認できる | Trial: `crud/appointmodv2/http405/{request,response}.http`。Local: `curl -vv -u ormaster:ormaster ... --data-binary @payloads/appointmod_trial.xml http://localhost:8000/orca14/appointmodv2?class=01` と `trace/appointmodv2.trace` | `data-check/appointmodv2.md` に予約番号・変更内容・撤回操作を記載し、Blocker と再開条件（ローカル ORCA 起動許可＋doctor seed 復旧）を追記 |
+| 5 | `POST /api/api21/medicalmodv2` | 診療明細 CRUD | Trial: HTTP 200 でも `Api_Result=10/14`（患者/ドクター欠落）。Local: HTTP 200 / `Api_Result=00` で `Medical_Information` が取得できる | `crud/medicalmodv2/{request,response}.xml`（`payloads/medical_update_trial.xml`）と `trace/medicalmodv2.trace` | `data-check/medicalmodv2.md` に患者番号・診療 ID・操作目的。Trial では Blocker=`TrialLocalOnly (ORMaster)` を記載 |
+| 6 | `POST /orca11/acceptmodv2` | 受付 CRUD | Trial: HTTP 200 / `Api_Result=10/13`。Local: HTTP 200 / `Api_Result=00` & `Delete_Flg=1` を確認 | `crud/acceptmodv2/{request,response}.xml`（`payloads/acceptmod_trial.xml`）、`trace/acceptmodv2.trace` | `data-check/acceptmodv2.md` に受付番号・操作種別・戻し要否。Trial 側は Blocker=`TrialLocalOnly` に分類 |
 
 - 書き込み前後で `acceptlstv2` や `appointlstv2` を取得し、`data-check` に before/after を保存する。ログディレクトリは `artifacts/orca-connectivity/<RUN_ID>/trial/<api>/` へ統一し、`trace/` と `screenshots/` も同じ RUN_ID で揃える。
 
