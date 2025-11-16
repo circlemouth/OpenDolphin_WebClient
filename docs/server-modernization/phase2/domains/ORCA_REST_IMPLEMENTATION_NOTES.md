@@ -130,3 +130,33 @@
 - **モダナイズ REST URI**: `POST /orca/chart/subjectives`。`body`（1,000 文字以内）と `soapCategory`、担当医コードを受けて症状詳記を登録。
 - **Service/DTO 変更点**: `SubjectiveEntryRequest/Response` DTO を新設し、`KarteServiceBean` が ORCA 応答を保存後 `ChartEventServiceBean` で `SUBJECTIVE_IMPORT` SSE を送信。Shift_JIS 変換は共通ヘルパー `OrcaSubjectiveMapper` で行う。
 - **テスト/Runbook 連携**: Runbook §4.4(6) に `subjectivesv2` テンプレ（本番書き込み禁止のため dry-run）の取得とログ化手順を追加し、`logs/.../subjectivesv2` へ 405/Api_Result 証跡を残す。`ORCA_API_STATUS.md` Matrix No.35 にも 405 証跡を掲載して書き込み禁止を明示する。
+
+#### <a id="appointmodv2-matrix-no2"></a> appointmodv2（Matrix No.2）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/appointmod.md`](../operations/assets/orca-api-spec/raw/appointmod.md)。`Appointment_Date/Time`、`Appointment_Information`、`Patient_Information`、`Api_Warning_Message` の扱いを参照。
+- **モダナイズ REST URI**: `POST /orca/appointments/mutation`。`requestNumber`（01=登録/02=取消/03=新規患者の番号割当）、`appointmentDate`、`appointmentTime`、`departmentCode`、`physicianCode`、`medicalInformation`、`appointmentInformation`、`patient` サマリ、`note` を JSON で受け付け、レスポンスへ `appointmentId`、`warnings`、`rawXml` を格納する。
+- **Service/DTO 変更点**: `AppointmentMutationRequest/Response` と `OrcaAppointmentMutationFacade` を `server-modernized` へ追加し、ORCA XML を Shift_JIS で送信 → 応答の `Appointment_Information` を `AppointmentModel` へ写経 → `AppoServiceBean#putAppointments` と `AuditTrailService` で来院予定キャッシュと監査を同期する。新規患者（requestNumber=03）の場合は `PatientServiceBean` へ患者番号の確定を委譲し、ORCA へ再送するリトライ導線を確保する。
+- **テスト/Runbook 連携**: WebORCA Trial は POST `/orca14/appointmodv2` を 405（Allow: OPTIONS, GET）で遮断するため CRUD 実測不可。RUN_ID=`20251116T164200Z` では firecrawl 仕様と DTO 差分のみを証跡化し、`artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/blocked/README.md` の `TrialLocalOnly` 行と同じ扱いにする旨をログへ記録する。
+
+#### <a id="acceptmodv2-matrix-no4"></a> acceptmodv2（Matrix No.4）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/acceptmod.md`](../operations/assets/orca-api-spec/raw/acceptmod.md)。`Request_Number=01-03`、受付 ID と患者番号の突合、`Api_Warning_Message` の再現条件を参照。
+- **モダナイズ REST URI**: `POST /orca/visits/mutation`。`requestNumber`、`acceptId`、`acceptDate`、`acceptTime`、`departmentCode`、`physicianCode`、`medicalInformation`、`insurance` 配列、`userId` を JSON で受け付け、レスポンスは `visitStatus`、`warnings`、`pvt` サマリを返却する。
+- **Service/DTO 変更点**: `VisitMutationRequest/Response` と `OrcaVisitMutationFacade` を介して ORCA XML を送受信し、応答結果を `PVTServiceBean#addPvt`／`PVTServiceBean#rollbackPvt` に流し込む。受付登録時は自動で `ChartEventServiceBean` へ `VISIT_ACCEPTED` イベントを発行し、取消時は `VisitHistoryService` で履歴を残す。`NewPatientPatch` が送られた場合は `PatientServiceBean#mergeTemporaryPatient` を呼び出し、患者番号確定を支援する。
+- **テスト/Runbook 連携**: Trial 環境は `/orca11/acceptmodv2` も 405 応答となるため、RUN_ID=`20251116T164200Z` の検証ログでは「Trial通信不可だが実装完了（仕様ベース）」タグと `trialsite.md#limit` 引用のみを残す。`ORCA_CONNECTIVITY_VALIDATION.md` §4.3 の P0-1 テンプレへは `curl` 例の代わりに `blocked/README.md` 参照を記載する。
+
+#### <a id="system01lstv2-matrix-no11"></a> system01lstv2（Matrix No.11）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/systemkanri.md`](../operations/assets/orca-api-spec/raw/systemkanri.md)。`class=01-07` と `Request_Number` の併用、診療科／職員／医療機関基本情報／入金方法／診療内容／患者状態コメントのレイアウトを参照。
+- **モダナイズ REST URI**: `POST /orca/system/management`。`requestNumber` もしくは `class`（01:診療科、02:職員、03:医療機関基本、04:診療内容、05:入金方法、06:診療内容グループ、07:患者状態コメント）を指定し、`baseDate`、`doctorFilters` などをオプションで渡す。
+- **Service/DTO 変更点**: `SystemMasterSnapshotRequest/Response` DTO を追加し、`SystemServiceBean` と `ServerInfoResource` で持つキャッシュへ `departments[]`, `staff[]`, `facility`, `paymentMethods[]`, `patientStatus[]` を突き合わせて反映する。診療科や職員コードは `SystemMasterSyncService`（新設）で ID 冪等性を検証し、`AuditTrailService` に `SYSTEM_MASTER_SNAPSHOT` イベントを記録する。
+- **テスト/Runbook 連携**: WebORCA Trial では管理メニュー自体が閉じられているため、本 RUN_ID の証跡は firecrawl 仕様／DTO 定義に限定。`ORCA_API_STATUS.md` Matrix No.11 と `coverage/coverage_matrix.md` の `Trial非提供(機能制限)` 行へ `Trial通信不可だが実装完了（RUN_ID=20251116T164200Z, 仕様ベース）` を追記し、実接続はローカル ORMaster 環境が復旧してから行う。
+
+#### <a id="manageusersv2-matrix-no32"></a> manageusersv2（Matrix No.32）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/userkanri.md`](../operations/assets/orca-api-spec/raw/userkanri.md)。`Request_Number=01-04`、`Menu_Item_Information`、管理者権限の戻り値を参照。
+- **モダナイズ REST URI**: `POST /orca/system/users`。`requestNumber`、`userId`、`password`（ハッシュ）、`facilityId`、`groupNumber`、`menuPrivileges[]`、`staffInfo` を JSON で受け付け、レスポンスで `menuItems[]`・`administratorPrivilege` を返却する。
+- **Service/DTO 変更点**: `OrcaUserManagementRequest/Response` を `open.dolphin.rest.dto.orca` へ追加し、`UserServiceBean`／`SystemServiceBean` での職員同期と `AuditTrailService` への `USER_MUTATION` 記録を同時に行う。登録/更新時は `MenuItemPrivilege` DTO を既存 `RoleModel` へマッピングし、削除時は `UserCleanupService`（新設）で Web クラ側キャッシュを整理する。
+- **テスト/Runbook 連携**: Trial ではシステム管理［1010 職員情報］が参照のみのため `manageusersv2` も POST 不能。RUN_ID=`20251116T164200Z` では firecrawl 仕様と DTO スキーマ定義を `docs/server-modernization/phase2/operations/logs/20251116T164200Z-orca-sprint2.md` へ添付し、実配線はクラウド ORMaster 環境の許可待ちとする。
+
+#### <a id="receiptprintv3-matrix-no42"></a> receiptprintv3（Matrix No.42）
+- **ORCA spec 参照**: [`../operations/assets/orca-api-spec/raw/report_print.md`](../operations/assets/orca-api-spec/raw/report_print.md)。`Form_ID`、`Print_Mode=PDF`、`Data_Id`／`print002` PUSH、`/blobapi/<Data_Id>` 取得手順を参照。
+- **モダナイズ REST URI**: `POST /orca/report/print`。`formId`（`shohosen`, `okusuri_techo`, `karte_no1` など 10 種類）、`printMode`（`PUSH` or `PDF`）、`patientId`、`karteId`、`documentBytes`、`options`（差し込み情報/書式/紙サイズ）を受け付け、レスポンスには `dataId` と `downloadUrl`（`/blobapi/{dataId}`）を返却する。
+- **Service/DTO 変更点**: `ReportPrintJobRequest/Response` と `ReportPrintJobService` を新設し、ORCA から戻る `Data_Id` を `BlobService` へ登録 → `ReportQueue` にジョブを積み、`push-exchanger` が `print002` イベントを受けてプリンタ／ダウンロードへ接続できるようにする。PDF 直接取得モードでは `BlobProxyResource` で `zip` を公開し、`Data_Id` の TTL を `ReportArchiveRepository` に記録する。
+- **テスト/Runbook 連携**: trialsite §4 の制限により帳票印刷はトライアル環境で禁止されている。RUN_ID=`20251116T164200Z` では DTO/処理フローのみ更新し、`ORCA_API_STATUS.md` Matrix No.42 と `logs/20251116T164200Z-orca-sprint2.md` に「Trial通信不可だが実装完了（仕様ベース）」タグを残す。push-exchanger／`/blobapi` の統合テストはローカル ORMaster インスタンスまたは顧客環境での再開待ち。

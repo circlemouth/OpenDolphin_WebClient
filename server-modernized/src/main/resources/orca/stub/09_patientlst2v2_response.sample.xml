@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <patientlst2res>
+    <Information_Date>2025-11-12</Information_Date>
+    <Information_Time>10:07:45</Information_Time>
+    <Api_Result>0000</Api_Result>
+    <Api_Result_Message>正常終了</Api_Result_Message>
+    <Reskey>sample-patientlst2v2</Reskey>
+    <Target_Patient_Count>2</Target_Patient_Count>
+    <Patient_Information>
+      <Patient_ID>000001</Patient_ID>
+      <WholeName>山田太郎</WholeName>
+      <WholeName_inKana>ヤマダタロウ</WholeName_inKana>
+      <BirthDate>1975-04-01</BirthDate>
+      <Sex>1</Sex>
+      <Home_Address_Information>
+        <Address_ZipCode>1510053</Address_ZipCode>
+        <WholeAddress1>東京都渋谷区代々木1-1-1</WholeAddress1>
+      </Home_Address_Information>
+      <Outpatient_Class>1</Outpatient_Class>
+      <HealthInsurance_Information>
+        <InsuranceProvider_Class>1</InsuranceProvider_Class>
+        <InsuranceProvider_Number>06123456</InsuranceProvider_Number>
+        <InsuranceProvider_WholeName>全国健康保険協会</InsuranceProvider_WholeName>
+        <Insurance_Combination_Number>0001</Insurance_Combination_Number>
+      </HealthInsurance_Information>
+    </Patient_Information>
+    <Patient_Information>
+      <Patient_ID>000002</Patient_ID>
+      <WholeName>佐々木花子</WholeName>
+      <WholeName_inKana>ササキハナコ</WholeName_inKana>
+      <BirthDate>1980-08-12</BirthDate>
+      <Sex>2</Sex>
+      <Home_Address_Information>
+        <Address_ZipCode>1510053</Address_ZipCode>
+        <WholeAddress1>東京都渋谷区代々木1-1-2</WholeAddress1>
+      </Home_Address_Information>
+      <Outpatient_Class>1</Outpatient_Class>
+      <HealthInsurance_Information>
+        <InsuranceProvider_Class>1</InsuranceProvider_Class>
+        <InsuranceProvider_Number>06123456</InsuranceProvider_Number>
+        <InsuranceProvider_WholeName>全国健康保険協会</InsuranceProvider_WholeName>
+        <Insurance_Combination_Number>0002</Insurance_Combination_Number>
+      </HealthInsurance_Information>
+    </Patient_Information>
+  </patientlst2res>
+</xmlio2>

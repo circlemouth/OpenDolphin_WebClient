@@ -28,6 +28,8 @@
 - すべての書込みは `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` (もしくは最新日付の Trial CRUD ログ) と `artifacts/orca-connectivity/<RUN_ID>/crud/` へ保存し、`DOC_STATUS.md` W22 行および `PHASE2_PROGRESS.md` W22 セクションへ反映する。
 - PHR Phase-A〜F の RUN_ID は `20251121TrialPHRSeqZ1` へ統合。旧 PKCS#12 / ORCAcertification 系 Runbook はアーカイブ済とし、参照する場合は「参照アーカイブ（更新不可）」注記を付ける。
 
+> RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
+
 ## 2. 進行タスク一覧
 - [x] **Task-A: ASP リソース再登録 + 認証ヘッダー/Context-Param 設定)** 完了 (2025-11-14 / RUN_ID=20251114TaspCtxZ1)。トライアル環境 CRUD 方針をヘッダー要件に追記し、`MODERNIZED_API_DOCUMENTATION_GUIDE.md`・`MODERNIZED_REST_API_INVENTORY.md`・`DOC_STATUS.md` へ反映。
   - [x] `web.xml` へ Demo/Dolphin/PHR サーブレットの context-param を登録し、`trial/weborcatrial` 想定の BASIC 認証・`X-Facility-Id` 等を明記。
@@ -46,6 +48,7 @@
   - [x] RUN_ID 発行と `scripts/orca_prepare_next_run.sh` 実行でテンプレート初期化 (`artifacts/orca-connectivity/20251121TrialPHRSeqZ1/README.md`, `crud/PHR_PHASE_AB/`, `logs/curl_summary.log`)。
   - [x] `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/phaseA` などを実行し、HTTP404/405 (`{"Code":404/405,...}`) と placeholder スクリーンショットを `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/crud/PHR_PHASE_AB/` へ保存。未提供機能は `trialsite.md` Snapshot 行2-7 を引用し Blocker=`TrialEndpointMissing` としてログ化。
   - [x] `DOC_STATUS.md` W22 行と `PHASE2_PROGRESS.md` に Phase-A/B Trial 実測結果と Blocker を反映。
+  - [ ] Final validation (Production/ORMaster): RUN_ID=`20251116T173000Z` で `/20/adm/phr/phase{A,B}` を `curl -vv -u ormaster:ormaster --data-binary @payloads/phr_phase_ab_prod.xml https://ormaster.orca.med.or.jp/20/adm/phr/phaseA` へ切替え、`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md#phr-phase-ab` に DNS/TLS/CRUD ログを集約。完了後に Task-D チェックボックスと DOC_STATUS（W22）を同日更新。
 - [ ] **Task-E: Secrets/Context 検証** 進行率 70% (RUN_ID=20251121TrialPHRSeqZ1-CTX)。トライアル環境では PKCS#12/MtLS を使用せず BASIC 認証のみであることを確認し、`serverinfo/claim_conn.json` と `wildfly/phr_*.log` へ反映する。
   - [x] Modernized server を `docker-compose.modernized.dev.yml` で起動し、`serverinfo/claim_conn.json` へ Trial 接続設定を保存。
   - [x] `wildfly/phr_20251121TrialPHRSeqZ1-CTX.log` に BASIC 認証での CRUD 実行ログ (`PHR_ALLERGY_TEXT`, `PHR_LABTEST_TEXT` など) が出力されることを確認し、HTTP200/500 応答とともに `artifacts/orca-connectivity/20251121TrialPHRSeqZ1-CTX/{crud,wildfly}` へ保存。
@@ -55,14 +58,17 @@
   - [x] RUN_ID テンプレート展開、`artifacts/orca-connectivity/20251121TrialPHRSeqZ1/{crud/httpdump/trace}` を生成。
   - [ ] `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/phr06` などを実行し、レスポンスと UI 反映を記録。未サポートの場合は `trialsite.md#limit` 引用の対応案をログ化。
   - [ ] `PHASE2_PROGRESS.md` / `DOC_STATUS.md` W22 行へ Trial 実測状況と CRUD ログのパスを同期。
+  - [ ] Final validation (Production/ORMaster): `/20/adm/phr/phase{C,D,E}` を RUN_ID=`20251116T173000Z` 配下で本番接続し、`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md#phr-phase-cde` に `curl -vv -u ormaster:ormaster ...` 証跡（DNS/TLS/HTTPdump）を追加。完了日に Task-F と DOC_STATUS を同期。
 - [x] **Task-G: PHRContainer DTO & Fallback テストレビュー** 完了 (RUN_ID=20251121TtaskGImplZ1)。DTO 注釈のフォールバック・監査ログ要件を Trial CRUD 方針に合わせて更新。
   - [x] `common/src/main/java/open/dolphin/infomodel/PHRContainer.java` へ `@JsonInclude` 等を追加し、Trial CRUD との整合を確認。
   - [x] `PHRResource#toJobResponse` / `HmacSignedUrlService` で Trial ベースの Secrets fail-fast + 監査出力を実装。
   - [x] `PHRResourceTest` へ Trial 認証前提のテストケースを追加。
 - [ ] **Task-I: Trial Blocker 週次エスカレーションパック** (RUN_ID=NA)。Trialsite 行117-142と Task-D/F 実測ログを束ね、週次レビュー向け資料と Blocker 緩和方針 (Modernized Task-H) を整理する。
   - [x] `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-escalation.md` を作成し、(1) `/20/adm/phr/*` Trial 遮断一覧、(2) ORCA 開放設定、(3) Modernized 暫定対応 (Task-H)、(4) エスカレーション論点を記載。
+  - [x] `docs/server-modernization/phase2/operations/logs/20251116T164400Z-status-sync.md`（本指示 RUN_ID）へ Worker-A/B 成果（RUN_ID=`20251121TrialPHRSeqZ1-{A/B,CDE}`、Blocker=`TrialEndpointMissing`/`TrialLocalOnly`、ステータス「Trial再実測完了」/「Trial通信不可だが実装済」）と DOC_STATUS / Checklist 更新行を集約。
   - [x] `docs/web-client/planning/phase2/DOC_STATUS.md` W22 行へ Task-I の参照リンク・RUN_ID=NA を追記し、ORCA 週次資料へ転送。
   - [ ] 週次レビュー後に ORCA 側の回答（開放可否/スケジュール）と Modernized Task-H 承認状況を追記し、チェックボックスを更新。
+  - [ ] Final validation hand-off: RUN_ID=`20251116T173000Z` の `docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md#manager-ops` へ ORMaster 切替条件（資格情報、DNS/TLS 証跡、`curl -vv -u ormaster:ormaster ...` コマンド、責任者）を追記し、週次資料と連携する。
   - [x] DOC_STATUS 連携済 (W22 TaskI 行に RUN_ID=NA / `2025-11-21-phr-escalation.md` リンクを追記, 2025-11-21)。
   - [ ] 週次レビュー反映待ち (2025-11-22 ORCA 週次で回答を取得後に更新)。
 

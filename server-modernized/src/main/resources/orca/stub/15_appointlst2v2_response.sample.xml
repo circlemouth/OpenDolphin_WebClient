@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <appointlst2res>
+    <Information_Date>2025-11-12</Information_Date>
+    <Information_Time>10:10:30</Information_Time>
+    <Api_Result>0000</Api_Result>
+    <Api_Result_Message>正常終了</Api_Result_Message>
+    <Reskey>sample-appointlst2v2</Reskey>
+    <Base_Date>2025-11-12</Base_Date>
+    <Patient_Information>
+      <Patient_ID>000001</Patient_ID>
+      <WholeName>山田太郎</WholeName>
+      <WholeName_inKana>ヤマダタロウ</WholeName_inKana>
+      <BirthDate>1975-04-01</BirthDate>
+      <Sex>1</Sex>
+    </Patient_Information>
+    <Appointlst_Information>
+      <Appointment_Date>2025-11-13</Appointment_Date>
+      <Appointment_Time>10:30:00</Appointment_Time>
+      <Medical_Information>内科再診</Medical_Information>
+      <Department_Code>01</Department_Code>
+      <Department_WholeName>内科</Department_WholeName>
+      <Physician_Code>1001</Physician_Code>
+      <Physician_WholeName>佐藤医師</Physician_WholeName>
+      <Visit_Information>来院予定</Visit_Information>
+      <Appointment_Id>AP-20251113-001</Appointment_Id>
+      <Appointment_Note>採血あり</Appointment_Note>
+    </Appointlst_Information>
+  </appointlst2res>
+</xmlio2>

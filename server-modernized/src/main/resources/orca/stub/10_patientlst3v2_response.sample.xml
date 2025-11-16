@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <patientlst2res>
+    <Information_Date>2025-11-12</Information_Date>
+    <Information_Time>10:08:00</Information_Time>
+    <Api_Result>0000</Api_Result>
+    <Api_Result_Message>正常終了</Api_Result_Message>
+    <Reskey>sample-patientlst3v2</Reskey>
+    <Target_Patient_Count>1</Target_Patient_Count>
+    <Patient_Information>
+      <Patient_ID>000001</Patient_ID>
+      <WholeName>山田太郎</WholeName>
+      <WholeName_inKana>ヤマダタロウ</WholeName_inKana>
+      <BirthDate>1975-04-01</BirthDate>
+      <Sex>1</Sex>
+      <Home_Address_Information>
+        <WholeAddress1>東京都渋谷区代々木1-1-1</WholeAddress1>
+      </Home_Address_Information>
+    </Patient_Information>
+  </patientlst2res>
+</xmlio2>

@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <visitptlst01res>
+    <Information_Date>2025-11-12</Information_Date>
+    <Information_Time>10:12:00</Information_Time>
+    <Api_Result>0000</Api_Result>
+    <Api_Result_Message>正常終了</Api_Result_Message>
+    <Reskey>sample-visitptlstv2</Reskey>
+    <Visit_Date>2025-11-12</Visit_Date>
+    <Visit_List_Information>
+      <Department_Code>01</Department_Code>
+      <Department_Name>内科</Department_Name>
+      <Physician_Code>1001</Physician_Code>
+      <Physician_WholeName>佐藤医師</Physician_WholeName>
+      <Voucher_Number>20251112001</Voucher_Number>
+      <Sequential_Number>1</Sequential_Number>
+      <Insurance_Combination_Number>0001</Insurance_Combination_Number>
+      <Update_Date>2025-11-12</Update_Date>
+      <Update_Time>09:00:30</Update_Time>
+      <Patient_Information>
+        <Patient_ID>000001</Patient_ID>
+        <WholeName>山田太郎</WholeName>
+        <WholeName_inKana>ヤマダタロウ</WholeName_inKana>
+        <BirthDate>1975-04-01</BirthDate>
+        <Sex>1</Sex>
+      </Patient_Information>
+    </Visit_List_Information>
+  </visitptlst01res>
+</xmlio2>

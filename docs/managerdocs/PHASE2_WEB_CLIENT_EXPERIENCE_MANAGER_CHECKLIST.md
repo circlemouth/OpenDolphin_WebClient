@@ -38,7 +38,7 @@
 
 ## 3. タスクボード
 - [ ] **タスクA: ハブ/棚卸し同期（担当A）**
-  - [ ] `docs/web-client/README.md` のカテゴリ一覧を最新化し、追加・更新した資料へ必ずリンクを追記する。
+  - [x] `docs/web-client/README.md` のカテゴリ一覧を最新化し、追加・更新した資料へ必ずリンクを追記する。（2025-11-16 RUN_ID=`20251116T170500Z`: `ux/API_SURFACE_AND_AUDIT_GUIDE.md` を追記）
   - [ ] `planning/phase2/DOC_STATUS.md` の Web クライアント行（README / architecture 系）を確認し、最終レビュー日と担当者を 2025-11 週次へ更新。
   - [ ] `README` に追加したリンクを `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` の Web クライアント行にも反映。
   - [ ] 【完了報告必須】更新内容・参照した行番号・RUN_ID（該当なしなら `RUN_ID=NA`）を記載。
@@ -52,6 +52,7 @@
   - [ ] `features/PHASE3_STAMP_AND_ORCA.md` と ORCA 関連 Runbook の整合を確認し、ORCA 側の変更が UI に波及する場合は ORCA マネージャーと連携してタスクを再割当。
   - [ ] 新規ドキュメントを作成した場合は `docs/web-client/features/README.md` が無いため、本チェックリスト §2 と README の該当カテゴリへリンクを追加。
 - [ ] **タスクD: 運用手順と環境整備（担当D）**
+  - [x] Web クライアント Ops task の結果を ORCA/Server マネージャーへ共有する場合は、本チェックリストのタスクD欄に参照先を追記。→ 2025-11-16 RUN_ID=`20251116T170500Z` の UI サーフェス同期ログ（`docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md`）を登録。
   - [ ] `operations/LOCAL_BACKEND_DOCKER.md` と `operations/mac-dev-login.local.md` の内容が一致しているか確認し、Secrets/認証情報の取り扱い手順を明記。
   - [ ] `operations/DEV_MSW_MOCKS.md` / `LEGACY_INTEGRATION_CHECKS.md` / `TEST_SERVER_DEPLOY.md` の手順で不足しているログ保存先や証跡をチェックし、必要に応じて `docs/server-modernization/phase2/operations/logs/` や `artifacts/` へのリンクを追加。
   - [ ] Web クライアント Ops task の結果を ORCA/Server マネージャーへ共有する場合は、本チェックリストのタスクD欄に参照先を追記。

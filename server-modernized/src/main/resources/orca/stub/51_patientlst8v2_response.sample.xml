@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <patientlst8res>
+    <Information_Date>2025-11-12</Information_Date>
+    <Information_Time>09:15:00</Information_Time>
+    <Api_Result>0000</Api_Result>
+    <Api_Result_Message>正常終了</Api_Result_Message>
+    <Reskey>patientlst8</Reskey>
+    <Patient_Information>
+      <Patient_ID>000020</Patient_ID>
+      <WholeName>中村葵</WholeName>
+      <WholeName_inKana>ナカムラアオイ</WholeName_inKana>
+      <NickName>葵</NickName>
+      <BirthDate>1988-07-02</BirthDate>
+      <Sex>2</Sex>
+    </Patient_Information>
+    <Former_Name_Information>
+      <ChangeDate>2020-04-01</ChangeDate>
+      <WholeName>鈴木葵</WholeName>
+      <WholeName_inKana>スズキアオイ</WholeName_inKana>
+      <NickName></NickName>
+    </Former_Name_Information>
+  </patientlst8res>
+</xmlio2>

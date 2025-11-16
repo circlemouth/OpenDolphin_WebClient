@@ -17,6 +17,14 @@
   - 証跡: `artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/{00_README.md,data-check/,dns/,tls/,crud/,coverage/coverage_matrix.md,blocked/README.md}`。`node scripts/tools/orca-artifacts-namer.js artifacts/orca-connectivity` を実行し、現行 RUN_ID 命名とスクリプトの乖離（UTC タイムスタンプ強制）を Issue 化予定。
   - ドキュメント: `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §4.3 へ doctor seed フォローアップと coverage/blocked 連携手順を追記。`PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md` タスクA〜E と `docs/web-client/planning/phase2/DOC_STATUS.md`（行 95-96）を本 RUN_ID と Evidence パスで更新。
 
+- RUN_ID: `20251116T164300Z`
+  - 操作: 2025-11-16 11:04-11:06 JST に Codex CLI (macOS, GUI 無し) で `nslookup` → `openssl s_client` → `curl -vv -u trial:weborcatrial -H 'Accept: application/xml' -H 'Content-Type: application/xml' --data-binary @payloads/*.xml` を順に実施。`artifacts/orca-connectivity/20251116T164300Z/{dns,tls,crud,coverage,blocked}` を新設し、Trial 再測 RUN_ID を証跡化。
+  - DNS/TLS: `dns/nslookup_2025-11-16T02-04-36Z.txt`（CNAME `weborca-trial1.japaneast.cloudapp.azure.com`, A `172.192.77.103`）と `tls/openssl_s_client_2025-11-16T02-04-43Z.txt`（`*.orca.med.or.jp`, TLSv1.2, Sectigo, Cipher=ECDHE-RSA-AES256-GCM-SHA384）を採取。
+  - CRUD: `crud/acceptlstv2`（HTTP200, `Api_Result=13` ドクター不足）/`crud/appointlstv2`（HTTP200, `Api_Result=12` ドクター不足）/`crud/medicalmodv2`（HTTP200, `Api_Result=10` 患者不足）を `response_2025-11-16T02-05-26Z.xml` へ保存。`crud/acceptmodv2` と `crud/appointmodv2` は引き続き `HTTP/1.1 405 Method Not Allowed`（`Allow: OPTIONS, GET`）。`curl_*.log` へ TLS/HTTP ハンドシェイクを残し、ヘッダー/レスポンス/リクエスト XML を同ディレクトリに配置。
+  - カバレッジ: `coverage/coverage_matrix.md` をコピーし RUN_ID を更新。Trial 提供 API のうち再測済み 3 本を「Trial提供(再実測)」に書き換え、`report_print`/`systemkanri`/`userkanri`/`acceptmod`/`appointmod` を「仕様実装済／Trial不可」ラベルへ統一。Evidence: `artifacts/orca-connectivity/20251116T164300Z/coverage/coverage_matrix.md`。
+  - Blocker: `blocked/README.md` を RUN_ID 版に作り直し、(1) HTTP405 管理 API（acceptmod/appointmod）は TrialLocalOnly, (2) trialsite#limit の帳票/管理 API は「仕様実装済／Trial不可」, (3) Doctor/Patient seed 不足はデータギャップとして整理。
+  - DOC_STATUS / Checklist: `docs/web-client/planning/phase2/DOC_STATUS.md`（ORCA 週次テーブル + ORCA_CONNECTIVITY_VALIDATION 行）と `PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md` タスクC/D を RUN_ID=`20251116T164300Z`、Evidence パス、Blocker更新内容で反映。
+
 - RUN_ID: `20251120TrialConnectivityWSLZ1`
 - RUN_ID: `20251121TrialPHRSeqZ1-CTX`
   - 対象: 【Task-E】Secrets/Context 検証（Modernized WildFly）。`1.3.6.1.4.1.9414.72.103:admin` を DB に再登録したうえで BASIC 認証のみで接続し、`serverinfo/claim_conn.json` と `wildfly/phr_*.log` の整合を確認。
