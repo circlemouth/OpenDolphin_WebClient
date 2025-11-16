@@ -1,8 +1,25 @@
 ﻿# 未整備 REST API 対応 UI 配置計画 (2026-05-27)
 
 - 2026-05-27 (Codex): 調査結果を反映し、実装済み API の扱いと残課題を更新。
+- 2025-11-16 (RUN_ID=20251116T170500Z, Worker-D): REST API インベントリと UI ロードマップを同期し、ページ名/ロール/フェーズの対応表と監査ログ方針を追記。
 
 本資料では、`planning/WEB_VS_ONPRE_CHECKLIST.md` の REST API 比較表で未対応 (`×` または `△`) と判定されたエンドポイントに対し、Web クライアント上のどこに UI を配置し、どのフェーズで実装するかの方針を整理する。オンプレ（Swing）クライアントの画面構成との対応関係を明示し、実装時の責務分担と情報アーキテクチャを明確化することが目的である。
+
+## 0. UI 配置サマリ（RUN_ID=20251116T170500Z）
+
+| API グループ | 代表 API | ページ / コンポーネント | ロール | フェーズ | 補足 |
+| --- | --- | --- | --- | --- | --- |
+| ユーザー / 施設設定 | `/user*`, `/user/facility`, `/dolphin/*`, `/serverinfo/*` | [UserAdministrationPage](../../web-client/src/features/administration/pages/UserAdministrationPage.tsx) / [SystemPreferencesPage](../../web-client/src/features/administration/pages/SystemPreferencesPage.tsx) | SystemAdmin / Ops | 5（一部 6） | CRUD, ライセンス、Cloud Zero、Facility 情報を Administration グループへ集約し、監査ログは `docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md` へリンク。 |
+| 受付・来院・受付メモ | `/patient/pvt*`, `/pvt*`, `/pvt2*`, `/patient/documents/status` | [ReceptionPage](../../web-client/src/features/reception/pages/ReceptionPage.tsx) / [VisitManagementDialog](../../web-client/src/features/reception/components/VisitManagementDialog.tsx) | Reception Clerk / Lead | 4 | 受付カード＋詳細ドロワで CRUD、Legacy API は VisitManagementDialog「詳細操作」タブに隔離。 |
+| 患者データ出力・件数確認 | `/patient/all`, `/patient/custom/*`, `/patient/count/*` | [PatientDataExportPage](../../web-client/src/features/administration/pages/PatientDataExportPage.tsx) | SystemAdmin | 6 | エクスポート権限を Administration > Patient Export に限定し、監査は audit フック経由で送信。 |
+| 予約・カルテ連動 | `/schedule/pvt*`, `/schedule/document`, `/appo` | [FacilitySchedulePage](../../web-client/src/features/schedule/pages/FacilitySchedulePage.tsx) | Reception Lead | 5 | 予約詳細ダイアログでカルテ生成/削除/一括更新。`RUN_ID=20251116T170500Z` の証跡を operations ログに保存。 |
+| カルテ / 文書 / 請求 | `/karte/docinfo*`, `/karte/documents`, `/karte/document`, `/karte/diagnosis`, `/karte/observations`, `/karte/claim` | [ChartsPage](../../web-client/src/features/charts/pages/ChartsPage.tsx)（DocumentTimelinePanel, DiagnosisPanel, ObservationPanel, ClaimAdjustmentPanel） | Physician / Billing | 5〜6 | ChartsPage 三カラム構成で完結。UI 変更時は `ux/CHART_UI_GUIDE_INDEX.md` と本表を同 RUN_ID で更新。 |
+| ラボ・添付・証明書 | `/lab/module`, `/karte/attachment`, `/letter/*`, `/mml/*` | [LabResultsPanel](../../web-client/src/features/charts/components/LabResultsPanel.tsx) / [ImageViewerOverlay](../../web-client/src/features/charts/components/layout/ImageViewerOverlay.tsx) / [MedicalCertificatesPanel](../../web-client/src/features/charts/components/MedicalCertificatesPanel.tsx) | Physician / Lab | 5〜6 | ラボ結果と診断書 UI の監査要件を `docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md` に反映。 |
+| スタンプ & ORCA セット | `/stamp/*`, `/orca/inputset`, `/orca/stamp` | [StampManagementPage](../../web-client/src/features/administration/pages/StampManagementPage.tsx) | Physician / Admin | 6 | 公開/購読/同期/削除を Administration グループに集約し、RUN_ID ごとのエビデンスを `artifacts/stamp-management/` に保存。 |
+| ORCA マスター / 禁忌 | `/orca/tensu/*`, `/orca/disease/*`, `/orca/interaction`, `/orca/general` | [OrcaOrderPanel](../../web-client/src/features/charts/components/OrcaOrderPanel.tsx) / [DiagnosisPanel](../../web-client/src/features/charts/components/DiagnosisPanel.tsx) | Physician | 4〜5 | カルテ右ペインで検索・禁忌チェックを提供。Timeout 対策は `useRestClient` でキャンセル制御。 |
+| リアルタイム監視 / 監査 | `/chartEvent/*` | [AppShell](../../web-client/src/app/layout/AppShell.tsx) / [ReplayGapProvider](../../web-client/src/features/replay-gap/ReplayGapContext.tsx) | All | 4〜6 | SSE 監視と `chart-events.replay-gap` の監査ログ送出を共通化。UX 要件は `docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md` を参照。 |
+
+> 上表を更新した場合は `docs/web-client/architecture/REST_API_INVENTORY.md`、`docs/web-client/README.md`、`docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md` の該当節を同じ RUN_ID で同期すること。
 
 ## 1. 認証・システム管理系 API
 

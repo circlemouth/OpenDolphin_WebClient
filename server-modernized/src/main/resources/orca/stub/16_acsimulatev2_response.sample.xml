@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <acsimulateres>
+    <Information_Date>2025-11-12</Information_Date>
+    <Information_Time>10:11:00</Information_Time>
+    <Api_Result>0000</Api_Result>
+    <Api_Result_Message>正常終了</Api_Result_Message>
+    <Reskey>sample-acsimulatev2</Reskey>
+    <Perform_Date>2025-11-12</Perform_Date>
+    <Department_Code>01</Department_Code>
+    <Department_Name>内科</Department_Name>
+    <Patient_Information>
+      <Patient_ID>000001</Patient_ID>
+      <WholeName>山田太郎</WholeName>
+      <WholeName_inKana>ヤマダタロウ</WholeName_inKana>
+      <BirthDate>1975-04-01</BirthDate>
+      <Sex>1</Sex>
+      <Ac_Point_Information>
+        <Ac_Ttl_Point>450</Ac_Ttl_Point>
+        <Ac_Point_Detail>
+          <AC_Point_Name>基本診療料</AC_Point_Name>
+          <AC_Point>270</AC_Point>
+        </Ac_Point_Detail>
+        <Ac_Point_Detail>
+          <AC_Point_Name>投薬</AC_Point_Name>
+          <AC_Point>180</AC_Point>
+        </Ac_Point_Detail>
+      </Ac_Point_Information>
+    </Patient_Information>
+  </acsimulateres>
+</xmlio2>

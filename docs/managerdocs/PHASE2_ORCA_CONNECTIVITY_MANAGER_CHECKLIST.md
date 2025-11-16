@@ -45,12 +45,14 @@
   - Endpoint が HTTP 404/405 を返した場合も Trial サーバー結果としてログ化し、タスクDへ Blocker として引き継ぐ（ローカル ORCA での再検証は行わない）。
   - 実績: `artifacts/orca-connectivity/20251115T134513Z/dns/nslookup_2025-11-15T22:50:38+09:00.txt`, `tls/openssl_s_client_2025-11-15T22:50:42+09:00.txt` で DNS/TLS 正常性を採取。`crud/{acceptlst,appointlst,medicalmod}/` に XML ペイロード・レスポンス・`curl.log` を保存し、`Api_Result={13,12,10}`（doctor/patient seed 欠落）を `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` へ記録。UI HTML (`ui/login.html`) も CLI で保存済み。
   - 実績: `artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/{dns/nslookup_2025-11-15T13-48-30Z.txt,tls/openssl_s_client_2025-11-15T13-48-52Z.txt}` で事前チェックを取得し、`crud/acceptlstv2`（`Api_Result=13`）, `crud/appointlstv2`（`Api_Result=12`）, `crud/medicalmodv2`（`Api_Result=14`）, `crud/acceptmodv2`/`crud/appointmodv2`（HTTP405, Allow=OPTIONS,GET）を保存。すべて `logs/2025-11-20-orca-trial-crud.md` RUN_ID セクションへ反映。
+  - 実績: RUN_ID=`20251116T164300Z`。`dns/nslookup_2025-11-16T02-04-36Z.txt` / `tls/openssl_s_client_2025-11-16T02-04-43Z.txt` を採取後、`curl -vv -u trial:weborcatrial --data-binary @payloads/{acceptlst,appointlst,medicalmod,acceptmod,appointmod}_trial.xml` を再実測。`acceptlstv2`=HTTP200/`Api_Result=13`, `appointlstv2`=HTTP200/`Api_Result=12`, `medicalmodv2`=HTTP200/`Api_Result=10`, `acceptmodv2`/`appointmodv2`=HTTP405 (Allow=OPTIONS,GET)。証跡は `artifacts/orca-connectivity/20251116T164300Z/crud/<api>/` と `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` に保存。
 
 - [x] **タスクD: Trial 非提供（Blocker）管理**  
   - trialsite「お使いいただけない機能一覧」および firecrawl 仕様の未提供記載を根拠に、Trial 上で利用できない API 一覧を `artifacts/orca-connectivity/<RUN_ID>/blocked/README.md` にまとめる。
   - Blocker 登録時は (1) Endpoint, (2) HTTP ステータス／メッセージ, (3) 引用した trialsite 節 or firecrawl 節, (4) 再開条件（「Trial サーバー側で提供開始」など）をログと DOC_STATUS に記載する。
   - 実績: `artifacts/orca-connectivity/20251115T134513Z/blocked/README.md` に `TrialSeedMissing`（doctor/patient seed 欠落）と `TrialLocalOnly`（`/orca11`,`/orca14` POST 未開放, `report_print` 等の禁止 API）を整理。各行に HTTP ステータス/Api_Result・`trialsite.md#limit` 引用・再開条件（GUI で seed 再投入 or trialsite 機能開放）を付記し、ログ + DOC_STATUS 備考にリンクした。
   - 実績: `artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/blocked/README.md` へ HTTP405 API と trialsite 由来の禁止機能（帳票・システム管理）を追記し、「データギャップ」欄に doctor seed 不足（`Api_Result=12/13/14`）を登録。再開条件（GUI seed 補完 or trialsite 開放）を明示してログ・DOC_STATUS と同期。
+  - 実績: RUN_ID=`20251116T164300Z`。`blocked/README.md` を RUN_ID 版へ差し替え、HTTP405 API と trialsite 禁止 API（report_print/systemkanri/userkanri）を「仕様実装済／Trial不可」ステータスに更新。`acceptlstv2`/`appointlstv2`/`medicalmodv2` の `Api_Result=13/12/10` を「データギャップ」に再掲し、Evidence（`crud/*/response_2025-11-16T02-05-26Z.xml`）とともにログ/DOC_STATUS へ連携。
 
 - [x] **タスクE: ドキュメント整備・棚卸し**  
   - `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §4.3 に Trial サーバー前提の手順／Blocker 対応を追記し、firecrawl 仕様との突合状態を明記。

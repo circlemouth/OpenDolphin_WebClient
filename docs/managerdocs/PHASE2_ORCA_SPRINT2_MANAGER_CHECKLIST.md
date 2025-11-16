@@ -35,8 +35,8 @@
   - [ ] `ORCA_API_STATUS.md` Matrix 行へ RUN_ID と `logs/...` 参照を追記。
   - [ ] `ORCA_CONNECTIVITY_VALIDATION.md` §4.3/§4.4 表・手順へ `httpdump/`, `trace`, `RUN_ID` 記入欄などを補強。
   - [ ] `DOC_STATUS.md` 備考へ「RUN_ID タグ整備 / テンプレ同期済」追記。
-- [ ] **タスクC: DOC_STATUS 運用チェック** — 上記更新を棚卸し台帳とドキュメントハブへ反映。完了条件: `DOC_STATUS.md` 行 25 が最新日付・担当者・反映内容を保持し、`MODERNIZED_API_DOCUMENTATION_GUIDE.md` §5 の運用ルールに準拠したメモを残す。
-- [ ] `DOC_STATUS.md` 行 25: ステータス Active / 最終レビュー 2025-11-14 / 備考へ具体的更新内容列挙。（タスクA/B反映済、タスクCで最終整合予定）
+- [x] **タスクC: DOC_STATUS 運用チェック** — 2025-11-16 (RUN_ID=`20251116T170500Z`) に Web クライアント UI サーフェス更新を反映し、`DOC_STATUS.md` 行 25 / `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §5 に本ログ（`docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md`）と REST_API_INVENTORY UI ステータス列の整備を記録。
+- [x] `DOC_STATUS.md` 行 25: ステータス Active / 最終レビュー **2025-11-16** / 備考へ「RUN_ID=20251116T170500Z, evidence=docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md, REST_API_INVENTORY UI ステータス列と API_UI_GAP §0 追加」を追記済み。
   - [ ] `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §5 へ今回の棚卸し結果メモ（必要な場合）。
   - [ ] `docs/web-client/README.md` ORCA リンク整合チェック（必要時更新）。
 - [ ] 2025-11-20 追記: `DOC_STATUS.md` W22 行（ORCA PHR タスク）に登録された RUN_ID=`20251121TrialPHRSeqZ1`（Trial CRUD ベース）のステータスと `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` を突合し、「新規登録／更新／削除 OK（トライアル環境でのみ）」表記と CRUD ログ反映可否を確認。行 25 の備考へ Trial 切替と残課題を明記。

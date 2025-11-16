@@ -26,6 +26,9 @@
 ### 3.2 ORCA 連携／新機能の位置付け
 
 > RUN_ID テンプレ（例: `RUN_ID=20251120TrialCrudPrepZ1`）、Evidence 保存フロー、`tmp/orca-weekly-summary.*` の貼り付け位置、curl 雛形は `ORCA_CONNECTIVITY_VALIDATION.md` §0.1-§0.4 を参照。以下の API 状況表では RUN_ID と差分のみを記載する。
+> RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
+- **Spec-based API 記録手順**: `[Spec-based]` ラベルを付けた API は `coverage/coverage_matrix.md`・`blocked/README.md`・`ORCA_API_STATUS.md` の 3 点セットを同日に更新し、`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` の該当節へ final validation（Production/ORMaster での `curl -vv -u ormaster:ormaster ...` 実測予定）を追記する。DNS/TLS 証跡フォルダと `operations/logs/<RUN_ID>-prod-validation.md` のリンクを備考に記録する。
+- **最終確認 RUN_ID の登録先**: 本番/ORMaster 通信検証が完了したら、`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md`（雛形: `logs/<date>-orca-prod-validation.md`）を更新し、同じ RUN_ID を `DOC_STATUS`（W22 ORCA 行）、`ORCA_CONNECTIVITY_VALIDATION.md` Blocker 行、`ORCA_API_STATUS.md` Spec 列へ反映する。
 - ORCA REST ラッパー Sprint2（ORCA-REST-01/02）は予約・請求試算・患者同期 API を Jakarta REST で提供する計画。対象 API は `appointlstv2`, `appointlst2v2`, `acsimulatev2`, `visitptlstv2`, `patientlst1/2/3/6v2`, `patientmodv2`, `subjectivesv2` などで、詳細設計（Resource/Service/DTO 責務・Shift_JIS/例外処理・Runbook 紐付け）は [`ORCA_REST_IMPLEMENTATION_NOTES.md` Sprint2 節](../domains/ORCA_REST_IMPLEMENTATION_NOTES.md#6-sprint2-エンドポイント設計詳細) に集約した。DTO 群は `open.dolphin.rest.dto.orca` に追加し、`AppoServiceBean`, `PatientServiceBean`, `ChartEventServiceBean` との連携を定義済み。
 - SSE 化/認証ガイドラインなどの横断要件は `rest-api-modernization.md` §2-§5 に記載。JWT/TOTP/FIDO2 の要件や SSE 再接続要件は Web クライアント実装前に参照する。
 

@@ -49,6 +49,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
   - 2025-11-01 (担当: Codex): DocumentTimelinePanel 安定化とエラーメッセージ整備の観点を追記し、タイムラインの状態遷移とフィードバック設計を整理。
   - 2025-11-01 (追記): AppShell コンテンツ領域の `contentMaxWidth` 制限撤廃と、患者一覧/受付一覧/ChartsPage がウィンドウ幅へ追従するレイアウト更新を反映。
 - [`ux/KARTE_SCREEN_IMPLEMENTATION.md`](ux/KARTE_SCREEN_IMPLEMENTATION.md): 最新カルテ画面の構造・ショートカット・レスポンシブ仕様。
+- [`ux/API_SURFACE_AND_AUDIT_GUIDE.md`](ux/API_SURFACE_AND_AUDIT_GUIDE.md): Reception / Administration / Charts 各ページでの API 呼び出し導線と監査ログ必須項目を RUN_ID ごとに整理。`docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md` とのリンク規約もここに集約する。
 
 - [`operations/RECEPTION_WEB_CLIENT_MANUAL.md`](operations/RECEPTION_WEB_CLIENT_MANUAL.md): 受付担当者向け研修計画と運用手順。2026-06-14 (Worker O) `chart-events.replay-gap` 通知 UI のワイヤーフレーム、状態遷移図、Web/Touch 擬似コード、監査・再取得フローを追記。2026-06-14 (Worker T) Touch 向け `ReplayGapState` 詳細・ローカル通知・監査ペイロード・UI モックを追加し、iOS/Android 擬似コードを更新。
 - [`operations/RELEASE_NOTES_DRAFT.md`](operations/RELEASE_NOTES_DRAFT.md): リリース判定用の文書系差分・検証結果の草案（2025-11-03 新設: Worker F）。
