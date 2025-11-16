@@ -58,7 +58,7 @@ public class OrcaResource {
             ="select kanritbl from tbl_syskanri where kanricd='1001'";
     
     private static final String QUERY_TENSU_BY_SHINKU
-            = "select srycd,name,kananame,tensikibetu,ten,nyugaitekkbn,routekkbn,srysyukbn,hospsrykbn,yukostymd,yukoedymd from tbl_tensu where srysyukbn ~ ? and yukostymd<= ? and yukoedymd>=?";
+            = "select srycd,name,kananame,taniname,tensikibetu,ten,nyugaitekkbn,routekkbn,srysyukbn,hospsrykbn,ykzkbn,yakkakjncd,yukostymd,yukoedymd from tbl_tensu where srysyukbn ~ ? and yukostymd<= ? and yukoedymd>=?";
 
     private static final String QUERY_TENSU_BY_NAME
             = "select srycd,name,kananame,taniname,tensikibetu,ten,nyugaitekkbn,routekkbn,srysyukbn,hospsrykbn,ykzkbn,yakkakjncd,yukostymd,yukoedymd from tbl_tensu where (name ~ ? or kananame ~ ?) and yukostymd<= ? and yukoedymd>=?";
@@ -299,14 +299,17 @@ public class OrcaResource {
                 t.setSrycd(rs.getString(1));
                 t.setName(rs.getString(2));
                 t.setKananame(rs.getString(3));
-                t.setTensikibetu(rs.getString(4));
-                t.setTen(rs.getString(5));
-                t.setNyugaitekkbn(rs.getString(6));
-                t.setRoutekkbn(rs.getString(7));
-                t.setSrysyukbn(rs.getString(8));
-                t.setHospsrykbn(rs.getString(9));
-                t.setYukostymd(rs.getString(10));
-                t.setYukoedymd(rs.getString(11));
+                t.setTaniname(rs.getString(4));
+                t.setTensikibetu(rs.getString(5));
+                t.setTen(rs.getString(6));
+                t.setNyugaitekkbn(rs.getString(7));
+                t.setRoutekkbn(rs.getString(8));
+                t.setSrysyukbn(rs.getString(9));
+                t.setHospsrykbn(rs.getString(10));
+                t.setYkzkbn(rs.getString(11));
+                t.setYakkakjncd(rs.getString(12));
+                t.setYukostymd(rs.getString(13));
+                t.setYukoedymd(rs.getString(14));
                 list.add(t);
             }
 
@@ -836,7 +839,7 @@ public class OrcaResource {
             sb.append(HOSP_NUM);
             sb.append(" and ");
         } 
-        sb.append("inputcd like 'P%' or inputcd like 'S%' order by inputcd");
+        sb.append("(inputcd like 'P%' or inputcd like 'S%') order by inputcd");
         
         String sql = sb.toString();
         debug(sql);
@@ -952,9 +955,12 @@ public class OrcaResource {
         String[] params = param.split(CAMMA);
         String setCd = params[0]; // stampId=setCd; セットコード
         String stampName = params[1];
+        String visitDateParam = params.length >= 3 ? params[2] : null;
+        String effectiveDate = resolveEffectiveDate(visitDateParam);
         debug("OrcaResource: getStamp");
         debug("setCd = " + setCd);
         debug("stampName = " + stampName);
+        debug("effectiveDate = " + effectiveDate);
         
         int hospnum = -1;
         if (true) {
@@ -982,10 +988,10 @@ public class OrcaResource {
         // order by yukoedymd desc を追加 ^
         StringBuilder sb2 = new StringBuilder();
         if (true) {
-            sb2.append("select srysyukbn,name,taniname,ykzkbn from tbl_tensu where hospnum=? and srycd=? order by yukoedymd desc");
+            sb2.append("select srysyukbn,name,taniname,ykzkbn from tbl_tensu where hospnum=? and srycd=? and yukostymd<=? and yukoedymd>=? order by yukoedymd desc");
             sql2 = sb2.toString();
         } else {
-            sb2.append("select srysyukbn,name,taniname,ykzkbn from tbl_tensu where srycd=? order by yukoedymd desc");
+            sb2.append("select srysyukbn,name,taniname,ykzkbn from tbl_tensu where srycd=? and yukostymd<=? and yukoedymd>=? order by yukoedymd desc");
             sql2 = sb2.toString();
         }
         
@@ -1009,11 +1015,7 @@ public class OrcaResource {
             
             ArrayList<OrcaInputSet> list = new ArrayList<OrcaInputSet>();
                 
-//s.oh^ 2014/04/01 ORCAセット有効期限対応
-            SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
-            String strtoday = sdf.format(new Date());
-            int today = Integer.parseInt(strtoday);
-//s.oh$
+            int today = Integer.parseInt(effectiveDate);
 
             while (rs.next()) {
                
@@ -1049,11 +1051,16 @@ public class OrcaResource {
                 String stred = rs.getString(5);
                 debug("st = " + strst);
                 debug("ed = " + stred);
-                int st = Integer.parseInt(strst);
-                int ed = Integer.parseInt(stred);
-                if(st <= today && today <= ed) {
-                    list.add(inputSet);
-                }else{
+                if (strst == null || stred == null) {
+                    continue;
+                }
+                try {
+                    int st = Integer.parseInt(strst);
+                    int ed = Integer.parseInt(stred);
+                    if (st <= today && today <= ed) {
+                        list.add(inputSet);
+                    }
+                } catch (NumberFormatException nf) {
                     continue;
                 }
 //s.oh$
@@ -1090,8 +1097,12 @@ public class OrcaResource {
                         if (hospnum > 0) {
                             ps2.setInt(1, hospnum);
                             ps2.setString(2, inputcd);
+                            ps2.setString(3, effectiveDate);
+                            ps2.setString(4, effectiveDate);
                         } else {
                             ps2.setString(1, inputcd);
+                            ps2.setString(2, effectiveDate);
+                            ps2.setString(3, effectiveDate);
                         }
                         debug(ps2.toString());
                     
@@ -1307,6 +1318,18 @@ public class OrcaResource {
         }
         
         return null; 
+    }
+
+    private String resolveEffectiveDate(String visitDateParam) {
+        String candidate = visitDateParam != null ? visitDateParam.trim() : "";
+        if (!candidate.isEmpty()) {
+            String digits = candidate.replaceAll("[^0-9]", "");
+            if (digits.length() >= 8) {
+                return digits.substring(0, 8);
+            }
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyyMMdd");
+        return sdf.format(new Date());
     }
     
     /**

@@ -260,6 +260,33 @@
    ```
    - `jq -r '.issuedAt' artifacts/parity-manual/JAVATIME_TOUCH_001/*/response.json` で Legacy/Modern を比較し、差分があればファイルごと `tmp/java-time/diffs/` に保存。  
    - 監査イベント（`action=TOUCH_SENDPACKAGE*`）を `psql` で追跡し、`payload` 内の `bundleList[].startedAt` `completedAt` も ISO8601 であることを確認する。
+
+### 4.4 MML Letter/Labtest パリティ確認（2025-11-16 RUN_ID=20251116T210500Z-E3）
+
+> 目的: `/mml/letter{list,json}` および `/mml/labtest{list,json}` の Legacy/Modernized パリティを証跡化し、EXT-03（紹介状/MML）ギャップをクローズする。
+
+1. **準備**  
+   - `server/src/main/java/open/dolphin/rest/MmlResource.java` および `server-modernized/src/main/java/open/dolphin/rest/MmlResource.java` を確認し、対象 4 メソッドが 1:1 で移植されていることを確認。  
+   - Legacy レスポンス参照: `tmp/parity-letter/letter_get_legacy.json`（Letter JSON）、`artifacts/parity-manual/lab/20251112TlabReportZ1/lab_module_fetch/{legacy,modern}/response.json`、`ops/tests/fixtures/adm/adm10/labo_item.json`。  
+   - 証跡格納先: `artifacts/external-interface/mml/<RUN_ID>/{letter_list,letter_json,labtest_list,labtest_json}/`。本 RUN では `README.md` を作成し差分分析メモを格納済み。
+2. **実測取得手順（Docker ブロッカー解除後に実施）**  
+   ```bash
+   export BASE_URL_LEGACY=http://legacy.local:8080/openDolphin/resources
+   export BASE_URL_MODERN=http://modern.local:9080/openDolphin/resources
+   export PARITY_HEADER_FILE=tmp/parity-headers/mml_TEMPLATE.headers
+   ./ops/tools/send_parallel_request.sh GET /mml/letter/list/1.3.6.1.4.1.9414.72.103 MML_LETTER_LIST
+   ./ops/tools/send_parallel_request.sh GET /mml/letter/json/8 MML_LETTER_JSON
+   ./ops/tools/send_parallel_request.sh GET /mml/labtest/list/1.3.6.1.4.1.9414.72.103 MML_LABTEST_LIST
+   ./ops/tools/send_parallel_request.sh GET /mml/labtest/json/90010001 MML_LABTEST_JSON
+   ```  
+   - 取得ファイルを `artifacts/external-interface/mml/<RUN_ID>/<endpoint>/{legacy,modern}/response.json` として保存。  
+   - `diff -u legacy/response.json modern/response.json > .../<endpoint>.diff` を生成し、差分が無いことを証跡化。  
+   - CSV (`list`) エンドポイントは `legacy.txt` / `modern.txt` で ID 並びも比較。
+3. **完了条件**  
+   - 4 エンドポイントすべてで Legacy/Modernized 応答と diff ファイルが `artifacts/external-interface/mml/<RUN_ID>/` に揃っている。  
+   - `docs/server-modernization/phase2/operations/logs/<RUN_ID>-mml.md` に取得手順・結果が追記済み。  
+   - `docs/server-modernization/phase2/notes/external-api-gap-20251116T111329Z.md` EXT-03 行と `DOC_STATUS` W22 備考が `[証跡取得済]` に更新されている。  
+   - 監査 ID（`LETTER_EXPORT_*`, `LABTEST_EXPORT_*`）の実装確認が完了し、AuditTrail で 200 応答が検証されている。
 5. **ops/tests/api-smoke-test 連携**  
    - `PARITY_OUTPUT_DIR=artifacts/parity-manual/java-time` として `./ops/tools/send_parallel_request.sh` を再実行し、`README.manual.md` 手順に沿って差分を `diff -u` で取得。  
    - `test_config.manual.csv` へ `JAVATIME_ORCA_001` / `JAVATIME_TOUCH_001` を追記済みの場合は該当 ID を使用し、レポートを `PHASE2_PROGRESS.md` と `notes/worker-directives-20260614.md` へリンクする。`headers/javatime-stage.headers.template` を Stage トークン込みで複製したファイルを `PARITY_HEADER_FILE` に指定する。  
@@ -270,7 +297,7 @@
    - すべての出力が ISO8601 である場合は `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日欄へ「JavaTime 監視 OK」と記入し、Grafana/Loki/Elastic のスクリーンショットを Evidence へ添付。  
    - 差分が見つかった場合は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead → Security/Compliance の順で連絡し、詳細は `notes/touch-api-parity.md` §9 の手順に従う。
 
-### 4.4 WebORCA トライアル接続（2025-11-15 更新）
+### 4.5 WebORCA トライアル接続（2025-11-15 更新）
 
 1. **接続先と資格情報**  
    - 検証対象は `https://weborca-trial.orca.med.or.jp:443`。ローカル WebORCA コンテナや旧クラウドホスト向けルートはアーカイブ済み。  
@@ -286,7 +313,7 @@
    - `trial/` ディレクトリ構成（例: `trial/appointmodv2/{request,response}.http`、`trace/appointmodv2.trace`、`screenshots/appoint_before.png`）を統一し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` からリンクする。  
    - `docs/web-client/planning/phase2/DOC_STATUS.md` と `PHASE2_PROGRESS.md` にはトライアル方針・RUN_ID・CRUD 内容を記載し、Blocker は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順に連絡する。
 
-### 4.5 ORCA API 有効化トリアージ（2025-11-13 追加）
+### 4.6 ORCA API 有効化トリアージ（2025-11-13 追加）
 
 | ID | 対象カテゴリ | ステータス | 備考 |
 | --- | --- | --- | --- |

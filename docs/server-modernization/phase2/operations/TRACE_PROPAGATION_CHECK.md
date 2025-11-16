@@ -119,7 +119,27 @@ TODO / 対応案:
 - いずれのケースも Docker 再ビルド／WildFly 差し替えが完了するまで未検証。検証後は本節と §7 の表を実測値で上書きし、`rest_error_scenarios.manual.csv` の Evidence パスを最新 RUN_ID へ更新する。
 - Evidence ステータス: Legacy 側の `trace_http_{400,401,500}` は 2025-11-11 時点でパッチ完了（`TRACEID_JMS/20251111T091717Z/trace_http_*` 参照）だが、Modernized 側は `TouchRequestContextExtractor` fallback と `KarteBeanConverter` null-safe 化が設計中のため 403/400 が続いている。Docker 再ビルド完了までは「Legacy 修正済み・Modernized 対応設計中」のまま Evidence 欄へ明記し、RUN 差し替え時に 400/401/500 の日志を更新する。
 
-## 7. 2025-11-11 01:16JST: Trace Harness 再取得（RUN_ID=20251111TtracefixZ）
+## 7. Trace Harness 再取得ログ（401/500 監査フォロー）
+
+### 7.1 2025-11-16 15:12Z: Trace Propagation delta（RUN_ID=20251116TtracePropagationZ1 / 20251117TtraceAuditZ1）
+
+- 証跡: `artifacts/parity-manual/TRACEID_JMS/20251116TtracePropagationZ1/`, `artifacts/parity-manual/TRACEID_JMS/20251117TtraceAuditZ1/`, `docs/server-modernization/phase2/operations/logs/20251116T210500Z-C-jms-probe.md`
+- JMS queue は `messages-added=6L→9L`, `message-count=0L` で即時 ACK される一方、`logs/d_audit_event_latest.tsv` は 11/11 取得分（total=43）から更新が無い。401/500 例外は AuditTrail に記録されず、SessionAuditDispatcher も起動していない。
+- `docs/server-modernization/phase2/operations/logs/20251116T210500Z-C-jms-probe.md` によると、`ops/tools/jms-probe.sh` RUN（20251108T210639Z）由来の Claim 送信は `open.dolphin.traceId` プロパティ名で AMQ139012 を発生させ、fallback 直後に 500（`claimHelper.vm` 不在）へ遷移した。Trace Harness では JMS headers が `X-Trace-Id` で届くため、プロダクション実装を `MessagingHeaders.TRACE_ID` に揃える必要がある。
+
+| Case / Trace ID | Legacy (status) | Modernized (status) | 監査 / セッション観測 | 証跡 |
+| --- | --- | --- | --- | --- |
+| `trace_http_200` | 200 (`TRACEID_JMS/20251111T091717Z` 流用) | 200 | JMS `messages-added` 増分あり。`d_audit_event` は 43 件据え置き。 | `TRACEID_JMS/20251116TtracePropagationZ1/trace_http_200/` |
+| `trace_http_400` | 400 (`param must contain year, month, count`) | 500 (`RollbackException`) | Audit 行・JMS 追加ともに 0 件。`SystemResource#getActivities` が再び Rollback。 | `TRACEID_JMS/20251116TtracePropagationZ1/trace_http_400/`, `TRACEID_JMS/20251116TtracePropagationZ1/logs/modern_trace_http.log` |
+| `trace_http_401` | 401 + `WWW-Authenticate` | 403（`Forbidden`） | `LogFilter` は `Unauthorized user ... traceId=...` を WARN 出力するが AuditTrail 行なし。 | `TRACEID_JMS/20251116TtracePropagationZ1/trace_http_401/` |
+| `trace_http_500` | 500 (`Karte result is empty`) | 500 (`pid lookup`) | 500 同士で揃ったが `SessionAuditDispatcher` 未発火。 | `TRACEID_JMS/20251117TtraceAuditZ1/trace_http_500/` |
+
+**ブロッカー更新（2025-11-16）**
+1. **401/500 監査欠落**: `LogFilter` レベルで 4xx/5xx 応答を捕捉し、`SessionAuditDispatcher.record(...)` に `traceId` / `httpStatus` / `reason` を載せる実装を追加（`server-modernized/src/main/java/open/dolphin/rest/LogFilter.java` へ `REST_ERROR_RESPONSE` 監査を実装済）。次 RUN で `d_audit_event` 追加行を確認する。
+2. **JMS Property 名**: `MessagingGateway` が `open.dolphin.traceId` を JMS property に利用しているため Artemis が拒否。`MessagingHeaders.TRACE_ID = \"X-Trace-Id\"` に統一し、`ops/tools/jms-probe.sh` の次 RUN で `messages-added` > 0 / `d_audit_event` > 43 を両立させる。
+3. **Fallback Template**: Claim fallback 500（`claimHelper.vm`）で監査が止まる。`common-claim` のテンプレ配置と Velocity classpath を compose に揃える。完了までは `trace_http_{400,401,500}` の Audit 欄へ「JMS Trace OK / Audit NG」を明記する。
+
+### 7.2 2025-11-11 01:16JST: Trace Harness 再取得（RUN_ID=20251111TtracefixZ）
 
 - `./scripts/start_legacy_modernized.sh start --build` 後、compose プロファイルを helper コンテナ経由で実行。`BASE_URL_{LEGACY,MODERN}` に `http://opendolphin-server:8080/openDolphin/resources` / `http://opendolphin-server-modernized-dev:8080/openDolphin/resources` を明示し、`PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/20251111TtracefixZ` へ保存した。
 - HTTP 証跡: `trace_http_{400,401,500}/{legacy,modern}/headers.txt,response.json,meta.json`。ログ: `logs/send_parallel_request.log`, `logs/legacy_trace_http.log`, `logs/modern_trace_http.log`, `logs/logfilter_env.txt`, `logs/d_audit_event_latest.tsv`, `logs/jms_dolphinQueue_read-resource.txt`。`trace_http_200` は前 RUN_ID=`20251111T091717Z` の記録を継続利用。
@@ -141,7 +161,7 @@ JMS queue は今回もヒットなし（`messages-added=0L`, `message-count=0L`�
 - **2025-11-12 RUN_ID=`20251111TclaimfixZ3` Claim/JMS 完了**: Legacy `/20/adm/eht/sendClaim` を実装し、`IDocInfo` の保険モデル null ガードと `ClaimSender` の Logger 初期化を補強したうえで helper コンテナから `PUT /20/adm/eht/sendClaim` を再送。`artifacts/parity-manual/TRACEID_JMS/20251111TclaimfixZ3/claim_send/claim_send/{legacy,modern}/` には双方 200 の HTTP 証跡が保存され、`logs/send_parallel_request.log` でも 200/200 を確認。Modern 側は `jboss-cli ...:read-resource(include-runtime=true)` で `messages-added=4L→5L` / `message-count=0L` を記録し、`logs/d_audit_event_claim.tsv` には `id=80/79/78` の `EHT_CLAIM_SEND` が追記された。Legacy/Modern 両 DB のシーケンスログは `artifacts/parity-manual/db/20251111TclaimfixZ3/{legacy,modern}/audit_event_{backup.csv,status_log.txt,validation_log.txt}` に保管済み。
 : Basic 認証ヘッダーを `1.3.6.1.4.1.9414.72.103:doctor1`＋MD5 パスワードに差し替えて helper コンテナから再送（`artifacts/parity-manual/TRACEID_JMS/20251111TclaimfixZ2/claim_send/claim_send/{legacy,modern}/`）。Legacy は `/20/adm/eht/sendClaim` が未実装のため `HTTP/1.1 404`、Modern は `AuditTrailService#record` が `d_audit_event_pkey`（id=59）と衝突して `HTTP/1.1 500`。それでも JMS 側は `messages-added=2L→3L`（`message-count=0L`）と増分が記録された一方、`logs/d_audit_event_claim.tsv` には新規 `EHT_CLAIM_SEND` は出力されず、既存 ID=56（06:31 JST 成功分）が最新のまま。Legacy エンドポイント実装と `d_audit_event` PK 衝突の解消が完了するまで TraceId→JMS→Audit の貫通証跡は確定できない。
 
-## 7. 2025-11-10 07:06Z: Trace Harness 再取得（RUN_ID=20251110T070638Z）
+### 7.3 2025-11-10 07:06Z: Trace Harness 再取得（RUN_ID=20251110T070638Z）
 
 - `PARITY_OUTPUT_DIR=artifacts/parity-manual/TRACEID_JMS/${RUN_ID}` を設定し、`tmp/trace-headers/trace_*.headers` / `ops/tests/api-smoke-test/payloads/appo_cancel_sample.json` を用意した上で各ケースを `ops/tools/send_parallel_request.sh --profile compose` で再実行。
 - HTTP 証跡は `artifacts/parity-manual/TRACEID_JMS/20251110T070638Z/trace_*/{legacy,modern}/` に保存されたが、いずれも `curl: (7) Failed to connect to localhost port {8080,9080}` で失敗し `meta.json` は `status_code=000`, `exit_code=7` を記録。

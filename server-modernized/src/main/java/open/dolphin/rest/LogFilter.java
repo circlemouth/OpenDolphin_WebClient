@@ -42,6 +42,7 @@ public class LogFilter implements Filter {
     private static final String FACILITY_HEADER = "X-Facility-Id";
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
     private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
+    private static final String ERROR_AUDIT_RECORDED_ATTR = LogFilter.class.getName() + ".ERROR_AUDIT_RECORDED";
 
     private static final String SYSAD_USER_ID = "1.3.6.1.4.1.9414.10.1:dolphin";
     private static final String SYSAD_PASSWORD = "36cdf8b887a5cffc78dcd5c08991b993";
@@ -80,6 +81,7 @@ public class LogFilter implements Filter {
         res.setHeader(TRACE_ID_HEADER, traceId);
         MdcSnapshot traceIdSnapshot = applyMdcValue(MDC_TRACE_ID_KEY, traceId);
         MdcSnapshot remoteUserSnapshot = null;
+        BlockWrapper wrapper = null;
 
         try {
             if (isIdentityTokenRequest(req)) {
@@ -122,7 +124,7 @@ public class LogFilter implements Filter {
                 return;
             }
 
-            BlockWrapper wrapper = new BlockWrapper(req);
+            wrapper = new BlockWrapper(req);
             wrapper.setRemoteUser(resolvedUser);
             remoteUserSnapshot = applyMdcValue(SessionTraceAttributes.ACTOR_ID_MDC_KEY, resolvedUser);
 
@@ -142,6 +144,13 @@ public class LogFilter implements Filter {
 //minagawa 
 
             chain.doFilter(wrapper, response);
+            maybeRecordErrorAudit(wrapper, res, null);
+        } catch (IOException | ServletException ex) {
+            maybeRecordErrorAudit(wrapper != null ? wrapper : req, res, ex);
+            throw ex;
+        } catch (RuntimeException ex) {
+            maybeRecordErrorAudit(wrapper != null ? wrapper : req, res, ex);
+            throw ex;
         } finally {
             restoreMdcValue(traceIdSnapshot);
             restoreMdcValue(remoteUserSnapshot);
@@ -435,5 +444,64 @@ public class LogFilter implements Filter {
         }
         payload.setDetails(details);
         sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE, reason, null);
+        if (request != null) {
+            request.setAttribute(ERROR_AUDIT_RECORDED_ATTR, Boolean.TRUE);
+        }
+    }
+
+    private void maybeRecordErrorAudit(HttpServletRequest request, HttpServletResponse response, Throwable failure) {
+        if (sessionAuditDispatcher == null || request == null) {
+            return;
+        }
+        if (Boolean.TRUE.equals(request.getAttribute(ERROR_AUDIT_RECORDED_ATTR))) {
+            return;
+        }
+        int status = resolveErrorStatus(response);
+        if (status < HttpServletResponse.SC_BAD_REQUEST) {
+            return;
+        }
+        AuditEventPayload payload = new AuditEventPayload();
+        String resource = request.getRequestURI();
+        payload.setAction("REST_ERROR_RESPONSE");
+        payload.setResource(resource != null ? resource : "/resources");
+        String actorId = request.getRemoteUser();
+        if (actorId == null || actorId.isBlank()) {
+            actorId = ANONYMOUS_PRINCIPAL;
+        }
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(actorId);
+        payload.setActorRole("SYSTEM");
+        payload.setIpAddress(request.getRemoteAddr());
+        payload.setUserAgent(request.getHeader("User-Agent"));
+        String traceId = resolveTraceId(request);
+        if (traceId == null || traceId.isBlank()) {
+            traceId = UUID.randomUUID().toString();
+        }
+        payload.setRequestId(traceId);
+        payload.setTraceId(traceId);
+        Map<String, Object> details = new HashMap<>();
+        details.put("status", "failed");
+        details.put("httpStatus", status);
+        String facilityHeader = resolveFacilityHeader(request);
+        if (facilityHeader != null) {
+            details.put("facilityId", facilityHeader);
+        }
+        if (failure != null) {
+            details.put("exception", failure.getClass().getName());
+            if (failure.getMessage() != null && !failure.getMessage().isBlank()) {
+                details.put("exceptionMessage", failure.getMessage());
+            }
+        }
+        payload.setDetails(details);
+        sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE, "http_" + status,
+                failure != null ? failure.getMessage() : null);
+        request.setAttribute(ERROR_AUDIT_RECORDED_ATTR, Boolean.TRUE);
+    }
+
+    private int resolveErrorStatus(HttpServletResponse response) {
+        if (response != null && response.getStatus() > 0) {
+            return response.getStatus();
+        }
+        return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
     }
 }

@@ -64,6 +64,21 @@ const formatOrcaDate = (inputDate?: Date): string => {
   return `${year}${month}${day}`;
 };
 
+const toOrcaDateParam = (value?: string | Date | null): string | null => {
+  if (!value) {
+    return null;
+  }
+  if (value instanceof Date) {
+    return Number.isNaN(value.getTime()) ? null : formatOrcaDate(value);
+  }
+  const digitsOnly = value.replace(/\D/g, '');
+  if (digitsOnly.length >= 8) {
+    return digitsOnly.slice(0, 8);
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : formatOrcaDate(parsed);
+};
+
 const mapTensuMaster = (entry: RawTensuMaster): TensuMasterEntry | null => {
   const code = entry.srycd?.trim();
   const name = entry.name?.trim();
@@ -248,13 +263,22 @@ const mapModuleModel = (entry: ModuleModelPayload): ModuleModelPayload | null =>
   };
 };
 
-export const fetchOrcaOrderModules = async (code: string, name: string): Promise<ModuleModelPayload[]> => {
+export const fetchOrcaOrderModules = async (
+  code: string,
+  name: string,
+  options?: { visitDate?: string | Date | null },
+): Promise<ModuleModelPayload[]> => {
   const trimmedCode = code.trim();
   const trimmedName = name.trim();
   if (!trimmedCode || !trimmedName) {
     return [];
   }
-  const endpoint = `/orca/stamp/${encodeURIComponent(trimmedCode)},${encodeURIComponent(trimmedName)}`;
+  const parts = [trimmedCode, trimmedName];
+  const visitDateToken = toOrcaDateParam(options?.visitDate);
+  if (visitDateToken) {
+    parts.push(visitDateToken);
+  }
+  const endpoint = `/orca/stamp/${parts.map((part) => encodeURIComponent(part)).join(',')}`;
   const response = await httpClient.get<ModuleListPayload>(endpoint);
   const payload = response.data;
   if (!payload?.list) {

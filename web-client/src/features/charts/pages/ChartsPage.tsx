@@ -3771,7 +3771,9 @@ export const ChartsPage = () => {
       if (!isLockedByMe) {
         throw new Error('診察を開始してからオーダを追加してください');
       }
-      const modules = await fetchOrcaOrderModules(code, name);
+      const modules = await fetchOrcaOrderModules(code, name, {
+        visitDate: selectedVisit?.visitDate ?? undefined,
+      });
       if (modules.length === 0) {
         throw new Error('ORCA から診療行為を取得できませんでした');
       }
@@ -3807,7 +3809,7 @@ export const ChartsPage = () => {
       });
       setSaveError(null);
     },
-    [isLockedByMe, registerOrderModules],
+    [isLockedByMe, registerOrderModules, selectedVisit?.visitDate],
   );
 
   const searchResults = useMemo<ChartSearchResultItem[]>(() => {

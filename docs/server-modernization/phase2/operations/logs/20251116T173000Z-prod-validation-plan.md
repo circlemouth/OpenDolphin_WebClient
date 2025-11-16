@@ -18,10 +18,12 @@
 - 手順: `curl -vv -u ormaster:ormaster --data-binary @payloads/appointmod_prod.xml https://ormaster.orca.med.or.jp/orca14/appointmodv2?class=01`。
 - 証跡: `artifacts/orca-connectivity/20251116T173000Z/crud/appointmodv2/`（request/response, UI screenshot）。
 - 完了後: `ORCA_API_STATUS.md` Matrix No.2 Spec 列 / `MODERNIZED_REST_API_INVENTORY.md` No.2 / DOC_STATUS を更新。
+- 進捗 (2025-11-16 RUN_ID=`20251116T210500Z-E2`): Trial では `HTTP/1.1 405 Method Not Allowed`（`artifacts/orca-connectivity/20251116T210500Z-E2/appointmodv2/trial/`）。ORMaster は `nslookup ormaster.orca.med.or.jp` が `NXDOMAIN` のため未到達。詳細は `docs/server-modernization/phase2/operations/logs/20251116T210500Z-E2-appointmod.md`。
 
 ### <a id="acceptmodv2"></a>`/orca11/acceptmodv2`
 - 手順: `curl -vv -u ormaster:ormaster --data-binary @payloads/acceptmod_prod.xml https://ormaster.orca.med.or.jp/orca11/acceptmodv2?class=01`。
 - 証跡: `crud/acceptmodv2/` + `blocked/README.md#acceptmodv2` を「解除」に切替。
+- 進捗 (2025-11-16 RUN_ID=`20251116T210500Z-E2`): Trial は `HTTP/1.1 405 Method Not Allowed`（`artifacts/orca-connectivity/20251116T210500Z-E2/acceptmodv2/trial/`）。ORMaster への DNS 解決ができず `curl: (6)`。詳細は `docs/server-modernization/phase2/operations/logs/20251116T210500Z-E2-acceptmod.md`。
 
 ### <a id="appointlstv2"></a>`/api01rv2/appointlstv2`
 - Trial 参照のみの JSON を ORMaster `/api01rv2/appointlstv2` で再計測し、予約 CRUD 後の反映差分を `Δtimestamp.md` に追記。

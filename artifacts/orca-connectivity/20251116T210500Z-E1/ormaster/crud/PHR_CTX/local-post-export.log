@@ -1,0 +1,33 @@
+* Host localhost:9080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+*   Trying [::1]:9080...
+* Connected to localhost (::1) port 9080
+* Server auth using Basic with user 'F001'
+> POST /openDolphin/resources/20/adm/phr/export HTTP/1.1
+> Host: localhost:9080
+> Authorization: Basic RjAwMTptYW5hZ2VyMDE6cGFzc3dvcmQ=
+> User-Agent: curl/8.7.1
+> Accept: application/json
+> Content-Type: application/json
+> X-Trace-Id: 20251121TrialPHRSeqZ1-CTX-local
+> Content-Length: 78
+> 
+} [78 bytes data]
+* upload completely sent off: 78 bytes
+< HTTP/1.1 401 Unauthorized
+< Referrer-Policy: no-referrer
+< Content-Security-Policy: default-src 'self'
+< X-Trace-Id: 20251121TrialPHRSeqZ1-CTX-local
+< Date: Sun, 16 Nov 2025 00:55:24 GMT
+< Connection: keep-alive
+* Authentication problem. Ignoring this.
+< WWW-Authenticate: Basic realm="OpenDolphin"
+< Strict-Transport-Security: max-age=63072000; includeSubDomains
+< X-Content-Type-Options: nosniff
+< Content-Type: application/json;charset=UTF-8
+< Content-Length: 200
+< 
+{ [200 bytes data]
+* Connection #0 to host localhost left intact
+{"error":"unauthorized","message":"Authentication required","status":401,"traceId":"20251121TrialPHRSeqZ1-CTX-local","path":"/openDolphin/resources/20/adm/phr/export","reason":"authentication_failed"}
