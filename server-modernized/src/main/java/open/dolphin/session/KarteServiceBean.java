@@ -4,16 +4,26 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.time.Instant;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.function.Consumer;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import jakarta.persistence.PersistenceContext;
+import jakarta.persistence.TypedQuery;
 import jakarta.transaction.Transactional;
+import open.dolphin.converter.ModuleModelConverter;
 import open.dolphin.infomodel.*;
 import open.dolphin.msg.gateway.MessagingGateway;
+import open.dolphin.rest.dto.RoutineMedicationResponse;
+import open.dolphin.rest.dto.RpHistoryDrugResponse;
+import open.dolphin.rest.dto.RpHistoryEntryResponse;
+import open.dolphin.rest.dto.UserPropertyResponse;
 import open.dolphin.session.audit.DiagnosisAuditRecorder;
 import open.dolphin.session.framework.SessionOperation;
 import open.dolphin.storage.attachment.AttachmentStorageManager;
@@ -31,6 +41,8 @@ import org.slf4j.LoggerFactory;
 public class KarteServiceBean {
 
     private static final Logger LOGGER = LoggerFactory.getLogger(KarteServiceBean.class);
+    private static final DateTimeFormatter ISO_INSTANT_FORMATTER = DateTimeFormatter.ISO_INSTANT;
+    private static final DateTimeFormatter ISO_DATE_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd").withZone(ZoneOffset.UTC);
     
     // parameters
     private static final String PATIENT_PK = "patientPk";
@@ -50,10 +62,13 @@ public class KarteServiceBean {
     private static final String QUERY_PATIENT_VISIT = "from PatientVisitModel p where p.patient.id=:patientPk and p.pvtDate >= :fromDate and p.status!=64";
     private static final String QUERY_DOC_INFO = "from DocumentModel d where d.karte.id=:karteId and d.started >= :fromDate and (d.status='F' or d.status='T')";
     private static final String QUERY_PATIENT_MEMO = "from PatientMemoModel p where p.karte.id=:karteId";
+    private static final String QUERY_USER_BY_USER_ID = "from UserModel u where u.userId=:userId";
 
     private static final String QUERY_DOCUMENT_INCLUDE_MODIFIED = "from DocumentModel d where d.karte.id=:karteId and d.started >= :fromDate and d.status !='D'";
     private static final String QUERY_DOCUMENT = "from DocumentModel d where d.karte.id=:karteId and d.started >= :fromDate and (d.status='F' or d.status='T')";
     private static final String QUERY_DOCUMENT_BY_LINK_ID = "from DocumentModel d where d.linkId=:id";
+    private static final String QUERY_DOCUMENT_IDS_WITH_MED_ENTITY =
+            "select distinct d.id from DocumentModel d join d.modules m where d.karte.id=:karteId and d.status in ('F','T') and m.moduleInfo.entity=:entity order by d.started desc";
 
 //s.oh^ 2014/07/29 スタンプ／シェーマ／添付のソート
     //private static final String QUERY_MODULE_BY_DOC_ID = "from ModuleModel m where m.document.id=:id";
@@ -500,7 +515,6 @@ public class KarteServiceBean {
 
         document = em.merge(document);
         attachmentStorageManager.persistExternalAssets(document.getAttachment());
-        attachmentStorageManager.persistExternalAssets(document.getAttachment());
 
         // ID
         long id = document.getId();
@@ -556,6 +570,141 @@ public class KarteServiceBean {
         sendDocument(document);
         
         return id;
+    }
+
+    public long updateDocument(DocumentModel document) {
+
+        if (document.getId() <= 0) {
+            throw new IllegalArgumentException("Document id is required for update");
+        }
+
+        DocumentModel current = em.find(DocumentModel.class, document.getId());
+        if (current == null) {
+            throw new IllegalArgumentException("Document not found: " + document.getId());
+        }
+
+        removeMissingModules(current.getModules(), document.getModules());
+        removeMissingSchemas(current.getSchema(), document.getSchema());
+        removeMissingAttachments(current.getAttachment(), document.getAttachment());
+
+        DocumentModel merged = em.merge(document);
+        attachmentStorageManager.persistExternalAssets(merged.getAttachment());
+        return merged.getId();
+    }
+
+    public List<RoutineMedicationResponse> getRoutineMedications(long karteId, int firstResult, int maxResults) {
+
+        if (karteId <= 0) {
+            return Collections.emptyList();
+        }
+        int safeFirst = Math.max(firstResult, 0);
+        int safeMax = maxResults > 0 ? maxResults : 50;
+
+        List<Long> docIds = em.createQuery(QUERY_DOCUMENT_IDS_WITH_MED_ENTITY, Long.class)
+                .setParameter(KARTE_ID, karteId)
+                .setParameter(ENTITY, IInfoModel.ENTITY_MED_ORDER)
+                .setFirstResult(safeFirst)
+                .setMaxResults(safeMax)
+                .getResultList();
+        if (docIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<DocumentModel> documents = fetchDocumentsWithModules(docIds);
+        documents.sort(Comparator.comparing(DocumentModel::getStarted, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+
+        List<RoutineMedicationResponse> responses = new ArrayList<>();
+        for (DocumentModel document : documents) {
+            List<ModuleModel> medModules = filterMedModules(document.getModules());
+            if (medModules.isEmpty()) {
+                continue;
+            }
+            responses.add(new RoutineMedicationResponse(
+                    document.getId(),
+                    determineRoutineName(document, medModules),
+                    determineRoutineMemo(medModules),
+                    document.getDocInfoModel() != null ? document.getDocInfoModel().getDocType() : null,
+                    formatIso(document.getConfirmed() != null ? document.getConfirmed() : document.getRecorded()),
+                    convertModules(medModules)
+            ));
+        }
+        return responses;
+    }
+
+    public List<RpHistoryEntryResponse> getRpHistory(long karteId, Date fromDate, Date toDateExclusive, boolean lastOnly) {
+
+        if (karteId <= 0) {
+            return Collections.emptyList();
+        }
+
+        StringBuilder jpql = new StringBuilder("select distinct d.id from DocumentModel d join d.modules m ")
+                .append("where d.karte.id=:karteId and d.status in ('F','T') and m.moduleInfo.entity=:entity");
+        if (fromDate != null) {
+            jpql.append(" and d.started >= :fromDate");
+        }
+        if (toDateExclusive != null) {
+            jpql.append(" and d.started < :toDate");
+        }
+        jpql.append(" order by d.started desc");
+
+        TypedQuery<Long> query = em.createQuery(jpql.toString(), Long.class)
+                .setParameter(KARTE_ID, karteId)
+                .setParameter(ENTITY, IInfoModel.ENTITY_MED_ORDER);
+        if (fromDate != null) {
+            query.setParameter(FROM_DATE, fromDate);
+        }
+        if (toDateExclusive != null) {
+            query.setParameter(TO_DATE, toDateExclusive);
+        }
+
+        List<Long> docIds = query.getResultList();
+        if (docIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+
+        List<DocumentModel> documents = fetchDocumentsWithModules(docIds);
+        documents.sort(Comparator.comparing(DocumentModel::getStarted, Comparator.nullsLast(Comparator.naturalOrder())).reversed());
+
+        Map<String, RpHistoryEntryResponse> grouped = new LinkedHashMap<>();
+        for (DocumentModel document : documents) {
+            List<ModuleModel> medModules = filterMedModules(document.getModules());
+            if (medModules.isEmpty()) {
+                continue;
+            }
+            List<RpHistoryDrugResponse> drugs = toRpHistoryDrugs(medModules);
+            if (drugs.isEmpty()) {
+                continue;
+            }
+            String issuedDate = formatDateOnly(
+                    firstNonNull(document.getConfirmed(), document.getStarted(), document.getRecorded()));
+            if (lastOnly && issuedDate != null && grouped.containsKey(issuedDate)) {
+                continue;
+            }
+            RpHistoryEntryResponse entry = new RpHistoryEntryResponse(
+                    issuedDate,
+                    document.getDocInfoModel() != null ? document.getDocInfoModel().getTitle() : null,
+                    drugs
+            );
+            grouped.put(issuedDate != null ? issuedDate : UUID.randomUUID().toString(), entry);
+        }
+
+        return new ArrayList<>(grouped.values());
+    }
+
+    public List<UserPropertyResponse> getUserProperties(String userId) {
+
+        if (userId == null || userId.isBlank()) {
+            return Collections.emptyList();
+        }
+
+        try {
+            UserModel user = em.createQuery(QUERY_USER_BY_USER_ID, UserModel.class)
+                    .setParameter("userId", userId)
+                    .getSingleResult();
+            return buildUserPropertyResponses(user);
+        } catch (NoResultException ex) {
+            return Collections.emptyList();
+        }
     }
 
     public long addDocumentAndUpdatePVTState(DocumentModel document, long pvtPK, int state) {
@@ -1375,4 +1524,233 @@ public class KarteServiceBean {
         return null;
     }
 //s.oh$
+
+    private List<DocumentModel> fetchDocumentsWithModules(List<Long> docIds) {
+        if (docIds == null || docIds.isEmpty()) {
+            return Collections.emptyList();
+        }
+        return em.createQuery("select distinct d from DocumentModel d left join fetch d.modules m where d.id in :ids",
+                DocumentModel.class)
+                .setParameter("ids", docIds)
+                .getResultList();
+    }
+
+    private List<ModuleModel> filterMedModules(List<ModuleModel> modules) {
+        if (modules == null || modules.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ModuleModel> filtered = new ArrayList<>();
+        for (ModuleModel module : modules) {
+            if (module != null && module.getModuleInfoBean() != null
+                    && IInfoModel.ENTITY_MED_ORDER.equals(module.getModuleInfoBean().getEntity())) {
+                filtered.add(module);
+            }
+        }
+        return filtered;
+    }
+
+    private String determineRoutineName(DocumentModel document, List<ModuleModel> modules) {
+        String title = document.getDocInfoModel() != null ? document.getDocInfoModel().getTitle() : null;
+        if (hasText(title)) {
+            return title.trim();
+        }
+        for (ModuleModel module : modules) {
+            ModuleInfoBean info = module.getModuleInfoBean();
+            if (info != null && hasText(info.getStampName())) {
+                return info.getStampName().trim();
+            }
+        }
+        return "Document #" + document.getId();
+    }
+
+    private String determineRoutineMemo(List<ModuleModel> modules) {
+        for (ModuleModel module : modules) {
+            ModuleInfoBean info = module.getModuleInfoBean();
+            if (info != null && hasText(info.getStampMemo())) {
+                return info.getStampMemo().trim();
+            }
+        }
+        return null;
+    }
+
+    private List<ModuleModelConverter> convertModules(List<ModuleModel> modules) {
+        if (modules == null || modules.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<ModuleModelConverter> converters = new ArrayList<>(modules.size());
+        for (ModuleModel module : modules) {
+            ModuleModelConverter converter = new ModuleModelConverter();
+            converter.setModel(module);
+            converters.add(converter);
+        }
+        return converters;
+    }
+
+    private String formatIso(Date date) {
+        if (date == null) {
+            return null;
+        }
+        Instant instant = date.toInstant();
+        return ISO_INSTANT_FORMATTER.format(instant);
+    }
+
+    private String formatDateOnly(Date date) {
+        if (date == null) {
+            return null;
+        }
+        return ISO_DATE_FORMATTER.format(date.toInstant());
+    }
+
+    private Date firstNonNull(Date... candidates) {
+        if (candidates == null) {
+            return null;
+        }
+        for (Date candidate : candidates) {
+            if (candidate != null) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private List<RpHistoryDrugResponse> toRpHistoryDrugs(List<ModuleModel> modules) {
+        if (modules == null || modules.isEmpty()) {
+            return Collections.emptyList();
+        }
+        List<RpHistoryDrugResponse> responses = new ArrayList<>();
+        for (ModuleModel module : modules) {
+            BundleDolphin bundle = decodeBundle(module);
+            if (bundle == null || bundle.getClaimItem() == null) {
+                continue;
+            }
+            for (ClaimItem item : bundle.getClaimItem()) {
+                responses.add(new RpHistoryDrugResponse(
+                        item != null ? item.getCode() : null,
+                        item != null ? item.getClassCode() : null,
+                        item != null ? item.getName() : null,
+                        buildAmount(item),
+                        item != null ? item.getDose() : null,
+                        bundle.getAdmin(),
+                        bundle.getBundleNumber(),
+                        firstNonBlank(item != null ? item.getMemo() : null, bundle.getMemo(), bundle.getAdminMemo())
+                ));
+            }
+        }
+        return responses;
+    }
+
+    private BundleDolphin decodeBundle(ModuleModel module) {
+        if (module == null || module.getBeanBytes() == null) {
+            return null;
+        }
+        try {
+            Object decoded = ModelUtils.xmlDecode(module.getBeanBytes());
+            if (decoded instanceof BundleDolphin) {
+                return (BundleDolphin) decoded;
+            }
+        } catch (Exception ex) {
+            LOGGER.debug("Failed to decode module {}", module.getId(), ex);
+        }
+        return null;
+    }
+
+    private String buildAmount(ClaimItem item) {
+        if (item == null) {
+            return null;
+        }
+        String number = item.getNumber();
+        if (!hasText(number)) {
+            return null;
+        }
+        StringBuilder sb = new StringBuilder(number.trim());
+        if (hasText(item.getUnit())) {
+            sb.append(item.getUnit().trim());
+        }
+        return sb.toString();
+    }
+
+    private String firstNonBlank(String... values) {
+        if (values == null) {
+            return null;
+        }
+        for (String value : values) {
+            if (hasText(value)) {
+                return value.trim();
+            }
+        }
+        return null;
+    }
+
+    private boolean hasText(String value) {
+        return value != null && !value.trim().isEmpty();
+    }
+
+    private List<UserPropertyResponse> buildUserPropertyResponses(UserModel user) {
+        List<UserPropertyResponse> responses = new ArrayList<>();
+        long seq = 1L;
+        String updatedAt = formatIso(user.getRegisteredDate());
+
+        if (hasText(user.getCommonName())) {
+            responses.add(new UserPropertyResponse(seq++, "担当医", user.getCommonName().trim(), null, "プロフィール", updatedAt));
+        }
+        if (user.getDepartmentModel() != null && hasText(user.getDepartmentModel().getDepartmentDesc())) {
+            responses.add(new UserPropertyResponse(seq++, "診療科", user.getDepartmentModel().getDepartmentDesc().trim(),
+                    null, "プロフィール", updatedAt));
+        }
+        if (hasText(user.getOrcaId())) {
+            responses.add(new UserPropertyResponse(seq++, "ORCA ID", user.getOrcaId().trim(),
+                    "ORCA 連携で使用するユーザーコード", "システム", updatedAt));
+        }
+        if (hasText(user.getMemo())) {
+            responses.add(new UserPropertyResponse(seq++, "ユーザーメモ", user.getMemo().trim(), null, "メモ", updatedAt));
+        }
+        return responses;
+    }
+
+    private void removeMissingModules(List<ModuleModel> existing, List<ModuleModel> incoming) {
+        removeMissingChildren(existing, incoming, module -> em.remove(em.contains(module) ? module : em.merge(module)));
+    }
+
+    private void removeMissingSchemas(List<SchemaModel> existing, List<SchemaModel> incoming) {
+        removeMissingChildren(existing, incoming, schema -> em.remove(em.contains(schema) ? schema : em.merge(schema)));
+    }
+
+    private void removeMissingAttachments(List<AttachmentModel> existing, List<AttachmentModel> incoming) {
+        removeMissingChildren(existing, incoming, attachment -> {
+            attachmentStorageManager.deleteExternalAsset(attachment);
+            em.remove(em.contains(attachment) ? attachment : em.merge(attachment));
+        });
+    }
+
+    private <T extends KarteEntryBean> void removeMissingChildren(List<T> existing,
+                                                                  List<T> incoming,
+                                                                  Consumer<T> remover) {
+        if (existing == null || existing.isEmpty()) {
+            return;
+        }
+        Set<Long> incomingIds = collectIncomingIds(incoming);
+        List<T> snapshot = new ArrayList<>(existing);
+        for (T child : snapshot) {
+            long id = child.getId();
+            boolean shouldRemove = id > 0 && (incomingIds.isEmpty() || !incomingIds.contains(id));
+            if (shouldRemove) {
+                remover.accept(child);
+                existing.remove(child);
+            }
+        }
+    }
+
+    private <T extends KarteEntryBean> Set<Long> collectIncomingIds(List<T> incoming) {
+        if (incoming == null || incoming.isEmpty()) {
+            return Collections.emptySet();
+        }
+        Set<Long> ids = new HashSet<>();
+        for (T child : incoming) {
+            if (child != null && child.getId() > 0) {
+                ids.add(child.getId());
+            }
+        }
+        return ids;
+    }
+
 }

@@ -1,0 +1,12 @@
+2025-11-21 10:45 JST Phase-A/B Trial再測 (Basic trial:weborcatrial)
+Phase-A register (PUT /accessKey): HTTP 405 {"Code":405,"Message":"code=405, message=Method Not Allowed"}
+Phase-A update (GET /accessKey/{key}): HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-A delete (DELETE /accessKey/{key}): HTTP 405 {"Code":405,"Message":"code=405, message=Method Not Allowed"}
+Phase-A patient lookup (GET /patient/{id}): HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-B abnormal text: HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-B allergy text: HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-B disease text: HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-B labtest text: HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-B medication text: HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-A landing (GET /20/adm/phr/phaseA): HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}
+Phase-B landing (GET /20/adm/phr/phaseB): HTTP 404 {"Code":404,"Message":"code=404, message=Not Found"}

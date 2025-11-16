@@ -1,0 +1,79 @@
+*   Trying 172.192.77.103:443...
+* Connected to weborca-trial.orca.med.or.jp (172.192.77.103) port 443 (#0)
+* ALPN, offering h2
+* ALPN, offering http/1.1
+*  CAfile: /etc/pki/tls/certs/ca-bundle.crt
+* TLSv1.0 (OUT), TLS header, Certificate Status (22):
+} [5 bytes data]
+* TLSv1.3 (OUT), TLS handshake, Client hello (1):
+} [512 bytes data]
+* TLSv1.2 (IN), TLS header, Certificate Status (22):
+{ [5 bytes data]
+* TLSv1.3 (IN), TLS handshake, Server hello (2):
+{ [112 bytes data]
+* TLSv1.2 (IN), TLS header, Certificate Status (22):
+{ [5 bytes data]
+* TLSv1.2 (IN), TLS handshake, Certificate (11):
+{ [5164 bytes data]
+* TLSv1.2 (IN), TLS header, Certificate Status (22):
+{ [5 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server key exchange (12):
+{ [300 bytes data]
+* TLSv1.2 (IN), TLS header, Certificate Status (22):
+{ [5 bytes data]
+* TLSv1.2 (IN), TLS handshake, Server finished (14):
+{ [4 bytes data]
+* TLSv1.2 (OUT), TLS header, Certificate Status (22):
+} [5 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
+} [37 bytes data]
+* TLSv1.2 (OUT), TLS header, Finished (20):
+} [5 bytes data]
+* TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
+} [1 bytes data]
+* TLSv1.2 (OUT), TLS header, Certificate Status (22):
+} [5 bytes data]
+* TLSv1.2 (OUT), TLS handshake, Finished (20):
+} [16 bytes data]
+* TLSv1.2 (IN), TLS header, Finished (20):
+{ [5 bytes data]
+* TLSv1.2 (IN), TLS header, Certificate Status (22):
+{ [5 bytes data]
+* TLSv1.2 (IN), TLS handshake, Finished (20):
+{ [16 bytes data]
+* SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384
+* ALPN, server accepted to use http/1.1
+* Server certificate:
+*  subject: C=JP; ST=Tokyo; O=ORCA Management Organization Co., Ltd.; CN=*.orca.med.or.jp
+*  start date: May 21 00:00:00 2025 GMT
+*  expire date: Jun 21 23:59:59 2026 GMT
+*  subjectAltName: host "weborca-trial.orca.med.or.jp" matched cert's "*.orca.med.or.jp"
+*  issuer: C=GB; O=Sectigo Limited; CN=Sectigo Public Server Authentication CA OV R36
+*  SSL certificate verify ok.
+* Server auth using Basic with user 'trial'
+* TLSv1.2 (OUT), TLS header, Unknown (23):
+} [5 bytes data]
+> POST /20/adm/phr/export HTTP/1.1
+> Host: weborca-trial.orca.med.or.jp
+> Authorization: Basic dHJpYWw6d2Vib3JjYXRyaWFs
+> User-Agent: curl/7.76.1
+> Accept: application/json
+> Content-Type: application/json
+> X-Trace-Id: 20251121TrialPHRSeqZ1-CTX-export
+> Content-Length: 78
+> 
+} [78 bytes data]
+* TLSv1.2 (IN), TLS header, Unknown (23):
+{ [5 bytes data]
+* Mark bundle as not supporting multiuse
+< HTTP/1.1 405 Method Not Allowed
+< Server: nginx/1.18.0 (Ubuntu)
+< Date: Sun, 16 Nov 2025 00:54:09 GMT
+< Content-Type: application/json
+< Content-Length: 62
+< Connection: keep-alive
+< Allow: OPTIONS, GET
+< 
+{ [62 bytes data]
+* Connection #0 to host weborca-trial.orca.med.or.jp left intact
+{"Code":405,"Message":"code=405, message=Method Not Allowed"}

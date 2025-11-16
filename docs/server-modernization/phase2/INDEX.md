@@ -43,6 +43,7 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 - [`notes/static-analysis-plan.md`](notes/static-analysis-plan.md): 静的解析導入メモ（Ops Runbook へ移管予定）。
 - [`notes/static-analysis-findings.md`](notes/static-analysis-findings.md): ワーニング一覧と対応状況。
 - [`notes/domain-transaction-parity.md`](notes/domain-transaction-parity.md): フェーズ4-1 `Karte/Patient/Schedule/Appo` の TX 境界・JPQL 差分・RUN_ID=`20251109T201157Z`/`20251110T002451Z` アーカイブおよび `d_audit_event` 採取 TODO を記録。
+- [`notes/karte-clinical-review-20251116T152300Z.md`](notes/karte-clinical-review-20251116T152300Z.md): カルテ保存・SafetySummary 関連の未実装 API/バグ調査（RUN_ID=`20251116T152300Z`）。`PUT /karte/document` 不在、Masuda 系 API 欠如、画像 API の `@PathParam` 不整合、添付外部ストレージ二重アップロードを整理。
 
 ## 運用ルール
 1. サーバー資料を更新したら `docs/web-client/README.md` に概要を追記し、Web クライアント側にも影響があるかを判断する。

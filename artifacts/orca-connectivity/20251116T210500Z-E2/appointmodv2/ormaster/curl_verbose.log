@@ -1,0 +1,5 @@
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0* Could not resolve host: ormaster.orca.med.or.jp
+* Closing connection
+curl: (6) Could not resolve host: ormaster.orca.med.or.jp

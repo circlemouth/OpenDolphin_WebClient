@@ -1,6 +1,9 @@
 package open.dolphin.rest;
 
 import java.io.IOException;
+import java.time.LocalDate;
+import java.time.ZoneOffset;
+import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
@@ -15,6 +18,9 @@ import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import open.dolphin.converter.*;
 import open.dolphin.infomodel.*;
+import open.dolphin.rest.dto.RoutineMedicationResponse;
+import open.dolphin.rest.dto.RpHistoryEntryResponse;
+import open.dolphin.rest.dto.UserPropertyResponse;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.session.PVTServiceBean;
 import com.fasterxml.jackson.databind.DeserializationFeature;
@@ -134,42 +140,34 @@ public class KarteResource extends AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.TEXT_PLAIN)
     public String postDocument(String json) throws IOException {
-        
+
         System.err.println(json);
-        
-        // Karte 保存 ddl.putKarte()
+
         ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         DocumentModel document = mapper.readValue(json, DocumentModel.class);
-
-        // 関係を構築する
-        List<ModuleModel> modules = document.getModules();
-        if (modules!=null && modules.size()>0) {
-            for (ModuleModel m : modules) {
-                m.setDocumentModel(document);
-            }
-        }
-        // Schemaとの関係を構築する
-        List<SchemaModel> schemas = document.getSchema();
-        if (schemas!=null && schemas.size()>0) {
-            for (SchemaModel m : schemas) {
-                m.setDocumentModel(document);
-            }
-        }
-        // Attachmentとの関係を構築する
-        List<AttachmentModel> attachments = document.getAttachment();
-        if (attachments!=null && attachments.size()>0) {
-            for (AttachmentModel m : attachments) {
-                m.setDocumentModel(document);
-            }
-        }
+        populateDocumentRelations(document);
 
         long result = karteServiceBean.addDocument(document);
         String pkStr = String.valueOf(result);
         debug(pkStr);
 
         return pkStr;
+    }
+
+    @PUT
+    @Path("/document")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Produces(MediaType.TEXT_PLAIN)
+    public String putDocument(String json) throws IOException {
+
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        DocumentModel document = mapper.readValue(json, DocumentModel.class);
+        populateDocumentRelations(document);
+
+        long result = karteServiceBean.updateDocument(document);
+        return String.valueOf(result);
     }
 
     @POST
@@ -183,31 +181,9 @@ public class KarteResource extends AbstractResource {
         int state = Integer.parseInt(params[1]);
 
         ObjectMapper mapper = new ObjectMapper();
-        // 2013/06/24
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         DocumentModel document = mapper.readValue(json, DocumentModel.class);
-        
-        // 関係を構築する
-        List<ModuleModel> modules = document.getModules();
-        if (modules!=null && modules.size()>0) {
-            for (ModuleModel m : modules) {
-                m.setDocumentModel(document);
-            }
-        }
-        // Schemaとの関係を構築する
-        List<SchemaModel> schemas = document.getSchema();
-        if (schemas!=null && schemas.size()>0) {
-            for (SchemaModel m : schemas) {
-                m.setDocumentModel(document);
-            }
-        }
-        // Attachmentとの関係を構築する
-        List<AttachmentModel> attachments = document.getAttachment();
-        if (attachments!=null && attachments.size()>0) {
-            for (AttachmentModel m : attachments) {
-                m.setDocumentModel(document);
-            }
-        }
+        populateDocumentRelations(document);
 
         long result = karteServiceBean.addDocument(document);
         String pkStr = String.valueOf(result);
@@ -254,6 +230,36 @@ public class KarteResource extends AbstractResource {
         StringListConverter conv = new StringListConverter();
         conv.setModel(strList);
         return conv;
+    }
+
+    @GET
+    @Path("/routineMed/list/{karteId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<RoutineMedicationResponse> getRoutineMedications(@PathParam("karteId") long karteId,
+                                                                 @DefaultValue("0") @QueryParam("firstResult") int firstResult,
+                                                                 @DefaultValue("50") @QueryParam("maxResults") int maxResults) {
+        int safeFirst = Math.max(firstResult, 0);
+        int safeMax = maxResults > 0 ? Math.min(maxResults, 200) : 50;
+        return karteServiceBean.getRoutineMedications(karteId, safeFirst, safeMax);
+    }
+
+    @GET
+    @Path("/rpHistory/list/{karteId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<RpHistoryEntryResponse> getRpHistory(@PathParam("karteId") long karteId,
+                                                     @QueryParam("fromDate") String fromDate,
+                                                     @QueryParam("toDate") String toDate,
+                                                     @DefaultValue("false") @QueryParam("lastOnly") boolean lastOnly) {
+        Date from = parseDateAtStart(fromDate);
+        Date toExclusive = parseDateExclusiveEnd(toDate);
+        return karteServiceBean.getRpHistory(karteId, from, toExclusive, lastOnly);
+    }
+
+    @GET
+    @Path("/userProperty/{userId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<UserPropertyResponse> getUserProperties(@PathParam("userId") String userId) {
+        return karteServiceBean.getUserProperties(userId);
     }
 
     //-------------------------------------------------------
@@ -326,7 +332,7 @@ public class KarteResource extends AbstractResource {
     @GET
     @Path("/image/{id}")
     @Produces(MediaType.APPLICATION_JSON)
-    public SchemaModelConverter getImage(@PathParam("param") String idStr) {
+    public SchemaModelConverter getImage(@PathParam("id") String idStr) {
 
         debug(idStr);
         long karteId = Long.parseLong(idStr);
@@ -793,6 +799,54 @@ public class KarteResource extends AbstractResource {
             }
         }
         return null;
+    }
+
+    private Date parseDateAtStart(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            LocalDate localDate = LocalDate.parse(value.trim());
+            return Date.from(localDate.atStartOfDay(ZoneOffset.UTC).toInstant());
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    private Date parseDateExclusiveEnd(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        try {
+            LocalDate next = LocalDate.parse(value.trim()).plusDays(1);
+            return Date.from(next.atStartOfDay(ZoneOffset.UTC).toInstant());
+        } catch (DateTimeParseException ex) {
+            return null;
+        }
+    }
+
+    private void populateDocumentRelations(DocumentModel document) {
+        if (document == null) {
+            return;
+        }
+        List<ModuleModel> modules = document.getModules();
+        if (modules != null) {
+            for (ModuleModel module : modules) {
+                module.setDocumentModel(document);
+            }
+        }
+        List<SchemaModel> schemas = document.getSchema();
+        if (schemas != null) {
+            for (SchemaModel schemaModel : schemas) {
+                schemaModel.setDocumentModel(document);
+            }
+        }
+        List<AttachmentModel> attachments = document.getAttachment();
+        if (attachments != null) {
+            for (AttachmentModel attachmentModel : attachments) {
+                attachmentModel.setDocumentModel(document);
+            }
+        }
     }
 
 }
