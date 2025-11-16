@@ -2,26 +2,9 @@ import { formatRestTimestamp } from '@/features/charts/utils/rest-timestamp';
 import { httpClient } from '@/libs/http';
 import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
 
-export interface RawAppointmentResource {
-  id?: number;
-  state?: number;
-  date?: string;
-  name?: string | null;
-  memo?: string | null;
-  patientId?: string;
-  karteBean?: { id?: number } | null;
-}
-
-export interface RawAppoListResource {
-  list?: RawAppointmentResource[] | null;
-}
-
-export interface RawAppoListListResource {
-  list?: RawAppoListResource[] | null;
-}
-
 export interface AppointmentSummary {
   id: number;
+  externalId?: string | null;
   dateTime: string;
   name: string;
   memo?: string | null;
@@ -30,44 +13,87 @@ export interface AppointmentSummary {
   state: number;
 }
 
+interface OrcaAppointmentSlot {
+  appointmentDate?: string | null;
+  appointmentTime?: string | null;
+  appointmentId?: string | null;
+  medicalInformation?: string | null;
+  appointmentInformation?: string | null;
+  appointmentNote?: string | null;
+  visitInformation?: string | null;
+  departmentName?: string | null;
+  patient?: {
+    patientId?: string | null;
+    wholeName?: string | null;
+  };
+}
+
+interface OrcaAppointmentListResponse {
+  slots?: OrcaAppointmentSlot[] | null;
+}
+
 const APPOINTMENT_STATE_NEW = 1;
 const APPOINTMENT_STATE_REPLACE = 3;
 
-const parseDateTime = (value: string | undefined): string | null => {
-  if (!value) {
+const buildAppointmentDatePayload = (date: Date): string =>
+  formatRestTimestamp(date).slice(0, 10);
+
+const buildAppointmentRangePayload = (from: Date, to: Date) => ({
+  fromDate: buildAppointmentDatePayload(from),
+  toDate: buildAppointmentDatePayload(to),
+  appointmentDate: buildAppointmentDatePayload(from),
+});
+
+const composeOrcaDateTime = (date?: string | null, time?: string | null): string | null => {
+  if (!date) {
     return null;
   }
-  const trimmed = value.trim();
-  if (!trimmed) {
-    return null;
-  }
-  const normalized = trimmed.includes('T') ? trimmed : trimmed.replace(' ', 'T');
-  const withZone = /([+-]\d{2}:?\d{2}|Z)$/i.test(normalized) ? normalized : `${normalized}+09:00`;
-  const parsed = new Date(withZone);
+  const normalizedDate = date.trim();
+  const normalizedTime = (time ?? '').trim() || '00:00:00';
+  const isoCandidate =
+    normalizedTime.length === 5 ? `${normalizedTime}:00` : normalizedTime.length === 8 ? normalizedTime : '00:00:00';
+  const timestamp = `${normalizedDate}T${isoCandidate}+09:00`;
+  const parsed = new Date(timestamp);
   if (Number.isNaN(parsed.getTime())) {
     return null;
   }
   return formatRestTimestamp(parsed);
 };
 
-const transformAppointment = (
-  raw: RawAppointmentResource,
-  fallbackKarteId: number,
+const hashStringId = (value: string): number => {
+  let hash = 0;
+  for (let i = 0; i < value.length; i += 1) {
+    hash = (hash << 5) - hash + value.charCodeAt(i);
+    hash |= 0;
+  }
+  const result = Math.abs(hash);
+  return result === 0 ? 1 : result;
+};
+
+const transformOrcaSlot = (
+  slot: OrcaAppointmentSlot,
+  karteId: number,
 ): AppointmentSummary | null => {
-  const id = raw.id ?? 0;
-  const dateTime = parseDateTime(raw.date);
-  const patientId = raw.patientId?.trim() ?? '';
-  if (!id || !dateTime || !patientId) {
+  const dateTime = composeOrcaDateTime(slot.appointmentDate ?? null, slot.appointmentTime ?? null);
+  const patientId = slot.patient?.patientId?.trim() ?? '';
+  if (!dateTime || !patientId) {
     return null;
   }
+  const rawId = slot.appointmentId?.trim() || `${patientId}:${dateTime}`;
   return {
-    id,
+    id: hashStringId(rawId),
+    externalId: slot.appointmentId ?? null,
     dateTime,
-    name: raw.name?.trim() ?? '',
-    memo: raw.memo ?? null,
+    name:
+      slot.medicalInformation?.trim() ||
+      slot.appointmentInformation?.trim() ||
+      slot.visitInformation?.trim() ||
+      slot.departmentName?.trim() ||
+      '予約',
+    memo: slot.appointmentNote ?? null,
     patientId,
-    karteId: raw.karteBean?.id ?? fallbackKarteId,
-    state: raw.state ?? 0,
+    karteId,
+    state: APPOINTMENT_STATE_NEW,
   };
 };
 
@@ -81,19 +107,15 @@ export const fetchAppointments = async (
   params: FetchAppointmentsParams,
 ): Promise<AppointmentSummary[]> => {
   const { karteId, from, to } = params;
-  const endpoint = `/karte/appo/${encodeURIComponent(
-    `${karteId},${formatRestTimestamp(from)},${formatRestTimestamp(to)}`,
-  )}`;
-
   return measureApiPerformance(
     PERFORMANCE_METRICS.reception.appointments.fetch,
-    `GET ${endpoint}`,
+    'POST /orca/appointments/list',
     async () => {
-      const response = await httpClient.get<RawAppoListListResource>(endpoint);
-      const groups = response.data?.list ?? [];
-      const flattened = groups.flatMap((group) => group.list ?? []);
-      return flattened
-        .map((entry) => transformAppointment(entry, karteId))
+      const payload = buildAppointmentRangePayload(from, to);
+      const response = await httpClient.post<OrcaAppointmentListResponse>('/orca/appointments/list', payload);
+      const slots = response.data?.slots ?? [];
+      return slots
+        .map((slot) => transformOrcaSlot(slot, karteId))
         .filter((entry): entry is AppointmentSummary => Boolean(entry))
         .sort((a, b) => a.dateTime.localeCompare(b.dateTime));
     },
@@ -105,10 +127,17 @@ export type AppointmentCommandAction = 'create' | 'update' | 'cancel';
 
 export interface AppointmentCommand {
   id?: number;
+  externalId?: string | null;
   scheduledAt: Date;
   name: string | null;
   memo?: string | null;
   patientId: string;
+  patientName?: string | null;
+  patientKana?: string | null;
+  birthDate?: string | null;
+  sex?: string | null;
+  departmentCode?: string | null;
+  physicianCode?: string | null;
   karteId: number;
   userModelId: number;
   userId: string;
@@ -116,56 +145,54 @@ export interface AppointmentCommand {
   action: AppointmentCommandAction;
 }
 
-interface AppointmentPayload {
-  id?: number;
-  state: number;
-  date: string;
-  name: string | null;
-  memo: string | null;
-  patientId: string;
-  confirmed: string;
-  started: string;
-  recorded: string;
-  ended: null;
-  linkId: number;
-  linkRelation: null;
-  status: string;
-  userModel: {
-    id: number;
-    userId: string;
+interface OrcaAppointmentMutationPayload {
+  requestNumber: string;
+  appointmentId?: string | null;
+  appointmentDate: string;
+  appointmentTime: string;
+  appointmentInformation?: string | null;
+  appointmentNote?: string | null;
+  medicalInformation?: string | null;
+  duplicateMode?: string | null;
+  patient: {
+    patientId: string;
+    wholeName?: string | null;
+    wholeNameKana?: string | null;
+    birthDate?: string | null;
+    sex?: string | null;
   };
-  karteBean: {
-    id: number;
-  };
+  departmentCode?: string | null;
+  physicianCode?: string | null;
 }
 
-const buildAppointmentPayload = (command: AppointmentCommand): AppointmentPayload => {
-  const timestamp = formatRestTimestamp(new Date());
-  const scheduled = formatRestTimestamp(command.scheduledAt);
-  const state = command.action === 'create' ? APPOINTMENT_STATE_NEW : APPOINTMENT_STATE_REPLACE;
-  const name = command.action === 'cancel' ? null : command.name;
-  const memo = command.action === 'cancel' ? null : command.memo ?? null;
+const padTwoDigits = (value: number): string => value.toString().padStart(2, '0');
 
+const formatOrcaTime = (date: Date): string => {
+  const hours = padTwoDigits(date.getHours());
+  const minutes = padTwoDigits(date.getMinutes());
+  const seconds = padTwoDigits(date.getSeconds());
+  return `${hours}:${minutes}:${seconds}`;
+};
+
+const buildMutationPayload = (command: AppointmentCommand): OrcaAppointmentMutationPayload => {
+  const requestNumber = command.action === 'cancel' ? '02' : '01';
   return {
-    id: command.id,
-    state,
-    date: scheduled,
-    name,
-    memo,
-    patientId: command.patientId,
-    confirmed: timestamp,
-    started: timestamp,
-    recorded: timestamp,
-    ended: null,
-    linkId: 0,
-    linkRelation: null,
-    status: 'F',
-    userModel: {
-      id: command.userModelId,
-      userId: `${command.facilityId}:${command.userId}`,
-    },
-    karteBean: {
-      id: command.karteId,
+    requestNumber,
+    appointmentId: command.externalId ?? (command.id ? String(command.id) : null),
+    appointmentDate: buildAppointmentDatePayload(command.scheduledAt),
+    appointmentTime: formatOrcaTime(command.scheduledAt),
+    appointmentInformation: command.name ?? undefined,
+    appointmentNote: command.memo ?? undefined,
+    medicalInformation: '00',
+    duplicateMode: '0',
+    departmentCode: command.departmentCode ?? undefined,
+    physicianCode: command.physicianCode ?? undefined,
+    patient: {
+      patientId: command.patientId,
+      wholeName: command.patientName ?? undefined,
+      wholeNameKana: command.patientKana ?? undefined,
+      birthDate: command.birthDate ?? undefined,
+      sex: command.sex ?? undefined,
     },
   };
 };
@@ -175,15 +202,14 @@ export const saveAppointments = async (commands: AppointmentCommand[]): Promise<
     return;
   }
 
-  const payload = {
-    list: commands.map(buildAppointmentPayload),
-  };
-
   await measureApiPerformance(
     PERFORMANCE_METRICS.reception.appointments.save,
-    'PUT /appo',
+    'POST /orca/appointments/mutation',
     async () => {
-      await httpClient.put<string>('/appo', payload);
+      for (const command of commands) {
+        const payload = buildMutationPayload(command);
+        await httpClient.post('/orca/appointments/mutation', payload);
+      }
     },
     {
       count: commands.length,

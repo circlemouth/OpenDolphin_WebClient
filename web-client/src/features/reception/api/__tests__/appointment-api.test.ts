@@ -14,6 +14,7 @@ vi.mock('@/libs/http', async () => {
     ...actual,
     httpClient: {
       get: vi.fn(),
+      post: vi.fn(),
       put: vi.fn(),
     },
   };
@@ -30,19 +31,28 @@ vi.mock('@/libs/monitoring', async () => {
 describe('appointment-api', () => {
   beforeEach(() => {
     vi.mocked(httpClient.get).mockReset();
+    vi.mocked(httpClient.post).mockReset();
     vi.mocked(httpClient.put).mockReset();
     vi.mocked(measureApiPerformance).mockClear();
   });
 
-  it('fetches appointments and flattens nested lists', async () => {
-    vi.mocked(httpClient.get).mockResolvedValue({
+  it('fetches appointments using the ORCA wrapper', async () => {
+    vi.mocked(httpClient.post).mockResolvedValue({
       data: {
-        list: [
+        slots: [
           {
-            list: [
-              { id: 1, date: '2026-05-01T10:00:00+09:00', name: '検査', patientId: '0001', state: 1, karteBean: { id: 200 } },
-              { id: 2, date: '2026-05-02T09:30:00+09:00', name: '診察', patientId: '0001', state: 3 },
-            ],
+            appointmentDate: '2026-05-01',
+            appointmentTime: '10:00:00',
+            appointmentId: 'AP-01',
+            medicalInformation: '検査',
+            patient: { patientId: '0001' },
+          },
+          {
+            appointmentDate: '2026-05-02',
+            appointmentTime: '09:30:00',
+            appointmentId: 'AP-02',
+            appointmentInformation: '診察',
+            patient: { patientId: '0001' },
           },
         ],
       },
@@ -53,12 +63,13 @@ describe('appointment-api', () => {
 
     const result = await fetchAppointments({ karteId: 200, from, to });
 
-    expect(httpClient.get).toHaveBeenCalledWith(
-      '/karte/appo/200%2C2026-04-01%2000%3A00%3A00%2C2026-06-01%2000%3A00%3A00',
-    );
+    expect(httpClient.post).toHaveBeenCalledWith('/orca/appointments/list', {
+      appointmentDate: '2026-04-01',
+      fromDate: '2026-04-01',
+      toDate: '2026-06-01',
+    });
     expect(result).toHaveLength(2);
     expect(result[0]).toMatchObject({
-      id: 1,
       name: '検査',
       patientId: '0001',
       karteId: 200,
@@ -66,64 +77,44 @@ describe('appointment-api', () => {
     expect(result[0].dateTime).toBe('2026-05-01 10:00:00');
   });
 
-  it('sends appointment payload with metadata on save', async () => {
-    vi.mocked(httpClient.put).mockResolvedValue({ data: '1' } as never);
-    vi.useFakeTimers();
-    vi.setSystemTime(new Date('2026-05-09T01:23:45+09:00'));
+  it('sends appointment mutation payloads on save', async () => {
+    vi.mocked(httpClient.post).mockResolvedValue({ data: {} } as never);
 
-    try {
-      const command: AppointmentCommand = {
-        action: 'create',
-        facilityId: 'FAC001',
-        userId: 'doctor01',
-        userModelId: 42,
-        karteId: 200,
-        patientId: '0001',
-        scheduledAt: new Date('2026-05-10T09:00:00+09:00'),
-        name: '定期検査',
-        memo: '事前に絶食',
-      };
+    const command: AppointmentCommand = {
+      action: 'create',
+      facilityId: 'FAC001',
+      userId: 'doctor01',
+      userModelId: 42,
+      karteId: 200,
+      patientId: '0001',
+      patientName: '山田太郎',
+      patientKana: 'ヤマダタロウ',
+      scheduledAt: new Date('2026-05-10T09:00:00+09:00'),
+      name: '定期検査',
+      memo: '事前に絶食',
+    };
 
-      await saveAppointments([command]);
+    await saveAppointments([command]);
 
-      expect(httpClient.put).toHaveBeenCalledTimes(1);
-      const [endpoint, payload] = vi.mocked(httpClient.put).mock.calls[0];
-      expect(endpoint).toBe('/appo');
-
-      const expectedAuditTimestamp = '2026-05-09 01:23:45';
-      const expectedScheduleTimestamp = '2026-05-10 09:00:00';
-
-      expect(payload).toMatchObject({
-        list: [
-          expect.objectContaining({
-            state: 1,
-            name: '定期検査',
-            memo: '事前に絶食',
-            patientId: '0001',
-            karteBean: { id: 200 },
-            userModel: { id: 42, userId: 'FAC001:doctor01' },
-            date: expectedScheduleTimestamp,
-            confirmed: expectedAuditTimestamp,
-            started: expectedAuditTimestamp,
-            recorded: expectedAuditTimestamp,
-            status: 'F',
-            linkId: 0,
-            linkRelation: null,
-            ended: null,
-          }),
-        ],
-      });
-    } finally {
-      vi.useRealTimers();
-    }
+    expect(httpClient.post).toHaveBeenCalledWith(
+      '/orca/appointments/mutation',
+      expect.objectContaining({
+        requestNumber: '01',
+        appointmentDate: '2026-05-10',
+        appointmentTime: '09:00:00',
+        appointmentInformation: '定期検査',
+        patient: expect.objectContaining({ patientId: '0001', wholeName: '山田太郎' }),
+      }),
+    );
   });
 
-  it('marks command as replace when updating or cancelling', async () => {
-    vi.mocked(httpClient.put).mockResolvedValue({ data: '1' } as never);
+  it('switches requestNumber for update and cancel actions', async () => {
+    vi.mocked(httpClient.post).mockResolvedValue({ data: {} } as never);
 
     const update: AppointmentCommand = {
       action: 'update',
       id: 55,
+      externalId: 'AP-55',
       facilityId: 'FAC001',
       userId: 'doctor01',
       userModelId: 42,
@@ -137,6 +128,7 @@ describe('appointment-api', () => {
     const cancel: AppointmentCommand = {
       action: 'cancel',
       id: 77,
+      externalId: 'AP-77',
       facilityId: 'FAC001',
       userId: 'doctor01',
       userModelId: 42,
@@ -149,15 +141,21 @@ describe('appointment-api', () => {
 
     await saveAppointments([update, cancel]);
 
-    const [, payload] = vi.mocked(httpClient.put).mock.calls[0];
-    const list = (payload as {
-      list: Array<{ state: number; name: string | null; memo: string | null }>;
-    }).list;
-
-    expect(list[0].state).toBe(3);
-    expect(list[0].name).toBe('再診');
-    expect(list[1].state).toBe(3);
-    expect(list[1].name).toBeNull();
-    expect(list[1].memo).toBeNull();
+    expect(httpClient.post).toHaveBeenNthCalledWith(
+      1,
+      '/orca/appointments/mutation',
+      expect.objectContaining({
+        requestNumber: '01',
+        appointmentId: 'AP-55',
+      }),
+    );
+    expect(httpClient.post).toHaveBeenNthCalledWith(
+      2,
+      '/orca/appointments/mutation',
+      expect.objectContaining({
+        requestNumber: '02',
+        appointmentId: 'AP-77',
+      }),
+    );
   });
 });

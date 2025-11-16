@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<xmlio2>
+  <acceptres>
+    <Information_Date>2025-11-16</Information_Date>
+    <Information_Time>09:00:02</Information_Time>
+    <Api_Result>0000</Api_Result>
+    <Api_Result_Message>正常終了</Api_Result_Message>
+    <Reskey>sample-acceptmodv2</Reskey>
+    <Acceptance_Date>2025-11-16</Acceptance_Date>
+    <Acceptance_Time>09:00:00</Acceptance_Time>
+    <Acceptance_Id>A20251116001</Acceptance_Id>
+    <Department_Code>01</Department_Code>
+    <Department_WholeName>内科</Department_WholeName>
+    <Physician_Code>1001</Physician_Code>
+    <Physician_WholeName>佐藤医師</Physician_WholeName>
+    <Medical_Information>外来</Medical_Information>
+    <Patient_Information>
+      <Patient_ID>000001</Patient_ID>
+      <WholeName>山田太郎</WholeName>
+      <WholeName_inKana>ヤマダタロウ</WholeName_inKana>
+      <BirthDate>1975-04-01</BirthDate>
+      <Sex>1</Sex>
+    </Patient_Information>
+    <Medical_Info>
+      <Appointment_Date>2025-11-20</Appointment_Date>
+      <Visit_Number>20251116001</Visit_Number>
+    </Medical_Info>
+  </acceptres>
+</xmlio2>

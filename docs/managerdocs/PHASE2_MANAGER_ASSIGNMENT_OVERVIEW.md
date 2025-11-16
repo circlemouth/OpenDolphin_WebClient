@@ -29,7 +29,7 @@
 
 | 週次 | 担当領域 | 備考 |
 | --- | --- | --- |
-| W22 | ORCA Demo/Dolphin/PHR ギャップ | `DOC_STATUS.md` W22 Kickoff 行に Trial CRUD Archive 進捗を追記し、`docs/server-modernization/phase2/operations/logs/2025-11-14-phr-plan.md` を Dormant（RUN_ID=NA, 判定日 2025-11-21）→ `docs/archive/2025Q4/server-modernization/phase2/operations/logs/2025-11-14-phr-plan.md` へ移動。元ファイルは Archive Stub（復活条件/参照リンク付き）として残し、PHR Gap 領域の棚卸し結果（追加アーカイブ対象なし）をチェックリストに共有。 |
+| W22 | ORCA Demo/Dolphin/PHR ギャップ | `DOC_STATUS.md` W22 行に 4 本の派生 RUN（`20251116T210500Z-{E1,E2,E3}` / `…-E2` / `…-E3`）を追記し、PHR REST 証跡、予約/受付 Trial 実測、MML Runbook 更新を `docs/server-modernization/phase2/notes/external-api-gap-20251116T111329Z.md` / `MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` と同期。Archive 済みテンプレ (`2025-11-14-phr-plan.md`) は `docs/archive/2025Q4/...` へ移し、残課題（Trial 404/405 解除、ORMaster DNS/FW、MML 実測）を備考に保持。 |
 
 > **メモ**: 追加でマネージャーを任命する場合は、本表の該当機能領域（ORCA 通信 or Web クライアント通信）を明示し、対応するサブ領域行を追加してから `DOC_STATUS.md` へ Active 行を登録してください。
 

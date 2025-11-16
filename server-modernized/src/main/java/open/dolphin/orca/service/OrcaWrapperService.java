@@ -2,10 +2,13 @@ package open.dolphin.orca.service;
 
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import java.time.LocalDate;
 import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.converter.OrcaXmlMapper;
 import open.dolphin.orca.transport.OrcaEndpoint;
 import open.dolphin.orca.transport.OrcaTransport;
+import open.dolphin.rest.dto.orca.AppointmentMutationRequest;
+import open.dolphin.rest.dto.orca.AppointmentMutationResponse;
 import open.dolphin.rest.dto.orca.BillingSimulationRequest;
 import open.dolphin.rest.dto.orca.BillingSimulationResponse;
 import open.dolphin.rest.dto.orca.FormerNameHistoryRequest;
@@ -23,6 +26,8 @@ import open.dolphin.rest.dto.orca.PatientIdListRequest;
 import open.dolphin.rest.dto.orca.PatientIdListResponse;
 import open.dolphin.rest.dto.orca.PatientNameSearchRequest;
 import open.dolphin.rest.dto.orca.PatientSearchResponse;
+import open.dolphin.rest.dto.orca.VisitMutationRequest;
+import open.dolphin.rest.dto.orca.VisitMutationResponse;
 import open.dolphin.rest.dto.orca.VisitPatientListRequest;
 import open.dolphin.rest.dto.orca.VisitPatientListResponse;
 
@@ -46,10 +51,34 @@ public class OrcaWrapperService {
 
     public OrcaAppointmentListResponse getAppointmentList(OrcaAppointmentListRequest request) {
         ensureNotNull(request, "appointment request");
-        String xml = transport.invoke(OrcaEndpoint.APPOINTMENT_LIST, "");
-        OrcaAppointmentListResponse response = mapper.toAppointmentList(xml);
-        enrich(response);
-        return response;
+        LocalDate from = coalesce(request.getFromDate(), request.getAppointmentDate(), LocalDate.now());
+        LocalDate to = coalesce(request.getToDate(), request.getAppointmentDate(), from);
+        if (to.isBefore(from)) {
+            to = from;
+        }
+        OrcaAppointmentListResponse aggregate = null;
+        for (LocalDate cursor = from; !cursor.isAfter(to); cursor = cursor.plusDays(1)) {
+            String payload = buildAppointmentListPayload(cursor, request);
+            String xml = transport.invoke(OrcaEndpoint.APPOINTMENT_LIST, payload);
+            OrcaAppointmentListResponse daily = mapper.toAppointmentList(xml);
+            if (aggregate == null) {
+                aggregate = daily;
+            } else if (daily != null) {
+                aggregate.getSlots().addAll(daily.getSlots());
+            }
+        }
+        if (aggregate == null) {
+            aggregate = new OrcaAppointmentListResponse();
+            aggregate.setApiResult("00");
+            aggregate.setApiResultMessage("No data");
+        }
+        if (from.equals(to)) {
+            aggregate.setAppointmentDate(from.toString());
+        } else {
+            aggregate.setAppointmentDate(from + "/" + to);
+        }
+        enrich(aggregate);
+        return aggregate;
     }
 
     public PatientAppointmentListResponse getPatientAppointments(PatientAppointmentListRequest request) {
@@ -117,6 +146,22 @@ public class OrcaWrapperService {
         return response;
     }
 
+    public AppointmentMutationResponse mutateAppointment(AppointmentMutationRequest request) {
+        ensureNotNull(request, "appointment mutation request");
+        String xml = transport.invoke(OrcaEndpoint.APPOINTMENT_MUTATION, "");
+        AppointmentMutationResponse response = mapper.toAppointmentMutation(xml);
+        enrich(response);
+        return response;
+    }
+
+    public VisitMutationResponse mutateVisit(VisitMutationRequest request) {
+        ensureNotNull(request, "visit mutation request");
+        String xml = transport.invoke(OrcaEndpoint.ACCEPTANCE_MUTATION, "");
+        VisitMutationResponse response = mapper.toVisitMutation(xml);
+        enrich(response);
+        return response;
+    }
+
     private void enrich(OrcaApiResponse response) {
         if (response != null) {
             response.setRunId(RUN_ID);
@@ -128,5 +173,34 @@ public class OrcaWrapperService {
         if (target == null) {
             throw new OrcaGatewayException(label + " must not be null");
         }
+    }
+
+    private LocalDate coalesce(LocalDate... values) {
+        if (values == null) {
+            return LocalDate.now();
+        }
+        for (LocalDate value : values) {
+            if (value != null) {
+                return value;
+            }
+        }
+        return LocalDate.now();
+    }
+
+    private String buildAppointmentListPayload(LocalDate date, OrcaAppointmentListRequest request) {
+        StringBuilder builder = new StringBuilder();
+        builder.append("<!-- orca-meta: path=")
+                .append(OrcaEndpoint.APPOINTMENT_LIST.getPath())
+                .append(" method=POST query=class=01 -->");
+        builder.append("<data><appointlstreq>");
+        builder.append("<Appointment_Date>").append(date).append("</Appointment_Date>");
+        if (request.getMedicalInformation() != null) {
+            builder.append("<Medical_Information>").append(request.getMedicalInformation()).append("</Medical_Information>");
+        }
+        if (request.getPhysicianCode() != null) {
+            builder.append("<Physician_Code>").append(request.getPhysicianCode()).append("</Physician_Code>");
+        }
+        builder.append("</appointlstreq></data>");
+        return builder.toString();
     }
 }

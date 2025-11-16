@@ -35,12 +35,12 @@
 ## 4. 外部 API（PHR/予約/紹介状）
 | ID | 課題 | 必要対応 | 根拠 |
 | --- | --- | --- | --- |
-| EXT-01 | PHR REST リソースが Spec-based で止まっている | `phr_access_key` Flyway 適用、Layer ID secrets、監査 ID を整備し Trial/ORMaster 両方で CRUD 証跡を取得。 | `external-api-gap-20251116T111329Z.md` |
-| EXT-02 | 予約／受付ラッパーの Trial 実測不足 | `docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` に沿って appointmodv2 / acceptmodv2 を実測し Blocker を解除。 | 同上 |
-| EXT-03 | 紹介状／MML API 証跡欠落 | `/mml/letter*`, `/mml/labtest*` の差分ログを採取し、Runbook/DOC_STATUS にリンク。 | 同上 |
+| EXT-01 | PHR REST リソースが Spec-based で止まっている | `phr_access_key` Flyway 適用、Layer ID secrets、監査 ID を整備し Trial/ORMaster 両方で CRUD 証跡を取得。RUN_ID=`20251116T210500Z-E1` で Flyway/Secrets 監査と 404/405 証跡を集約済（証跡: `operations/logs/20251116T210500Z-E1-phr.md`, `artifacts/orca-connectivity/20251116T210500Z-E1/`）。ORMaster seed/DNS 復旧後に 200 応答を採取し Spec-based を解除する。 | `external-api-gap-20251116T111329Z.md` §2.1, `DOC_STATUS.md` W22 |
+| EXT-02 | 予約／受付ラッパーの Trial 実測不足 | モダナイズ REST（appointments/visits mutation）を実装済（RUN_ID=`20251116T134343Z`）。Trial で curl 実測し (`operations/logs/20251116T210500Z-E2-appointmod.md` 等、`artifacts/orca-connectivity/20251116T210500Z-E2/`)、HTTP405 / ORMaster DNS NXDOMAIN を記録。Ops による DNS/FW 開放後に 200 応答を取得し、`ORCA_API_STATUS.md` / `RESERVATION_BATCH_MIGRATION_NOTES.md` の before/after を更新する。 | `external-api-gap-20251116T111329Z.md` §2.2, `DOC_STATUS.md` W22 |
+| EXT-03 | 紹介状／MML API 証跡欠落 | Jakarta Persistence (`persistence.xml`), parity headers (`tmp/parity-headers/mml_TEMPLATE.headers`), Runbook Sec.4.4 を RUN_ID=`20251116T134354Z` で更新し、`artifacts/external-interface/mml/20251116T134354Z/` に証跡構造を定義。Docker/ORMaster 解放後に `send_parallel_request.sh` で Legacy/Modernized の `/mml/letter{list,json}`, `/mml/labtest{list,json}` を取得し diff を保存、LabSeedMissing Blocker を解消して [証跡取得済] へ更新する。 | `external-api-gap-20251116T111329Z.md` §2.3, `operations/logs/20251116T134354Z-mml.md`, `DOC_STATUS.md` W22 |
 
 ## 5. 次アクション（ワーカー指示案）
 1. **Worker-A（カルテ担当）**: KRT-01〜04 を実装。`docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md` を進捗ログとして更新。  
 2. **Worker-B（ORCAスタンプ/点数）**: ORCA-01〜03 を `/orca` リソースで対応し、同 RUN_ID の ops/logs に SQL 修正とテスト結果を記載。  
 3. **Worker-C（Messaging/Audit/Ops）**: MSG-01, AUD-01/02, OPS-01 を担当し、Trace/Audit Runbook と mac-dev-login ドキュメントを更新。  
-4. **Worker-D（外部 API）**: EXT-01〜03 の実装計画を立て、`external-api-gap-20251116T111329Z.md` に進捗を追記。
+4. **Worker-D（外部 API）**: EXT-01〜03 の実装/証跡取得を継続。E1/E2/E3 RUN（`20251116T210500Z-{E1,E2,E3}`）の成果を `external-api-gap-20251116T111329Z.md` と DOC_STATUS に反映しつつ、ORMaster 環境復旧後に CRUD 実測・diff 取得を完了させる。

@@ -20,6 +20,9 @@
         <class>open.dolphin.infomodel.PatientVisitModel</class>
         <class>open.dolphin.infomodel.AppointmentModel</class>
         <class>open.dolphin.infomodel.LetterModule</class>
+        <class>open.dolphin.infomodel.LetterItem</class>
+        <class>open.dolphin.infomodel.LetterText</class>
+        <class>open.dolphin.infomodel.LetterDate</class>
         <class>open.dolphin.infomodel.NLaboModule</class>
         <class>open.dolphin.infomodel.NLaboItem</class>
         <class>open.dolphin.infomodel.StampTreeModel</class>

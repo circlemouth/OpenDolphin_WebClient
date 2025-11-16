@@ -261,19 +261,21 @@
    - `jq -r '.issuedAt' artifacts/parity-manual/JAVATIME_TOUCH_001/*/response.json` で Legacy/Modern を比較し、差分があればファイルごと `tmp/java-time/diffs/` に保存。  
    - 監査イベント（`action=TOUCH_SENDPACKAGE*`）を `psql` で追跡し、`payload` 内の `bundleList[].startedAt` `completedAt` も ISO8601 であることを確認する。
 
-### 4.4 MML Letter/Labtest パリティ確認（2025-11-16 RUN_ID=20251116T210500Z-E3）
+### 4.4 MML Letter/Labtest パリティ確認（2025-11-16 RUN_ID=20251116T134354Z）
 
 > 目的: `/mml/letter{list,json}` および `/mml/labtest{list,json}` の Legacy/Modernized パリティを証跡化し、EXT-03（紹介状/MML）ギャップをクローズする。
 
 1. **準備**  
    - `server/src/main/java/open/dolphin/rest/MmlResource.java` および `server-modernized/src/main/java/open/dolphin/rest/MmlResource.java` を確認し、対象 4 メソッドが 1:1 で移植されていることを確認。  
    - Legacy レスポンス参照: `tmp/parity-letter/letter_get_legacy.json`（Letter JSON）、`artifacts/parity-manual/lab/20251112TlabReportZ1/lab_module_fetch/{legacy,modern}/response.json`、`ops/tests/fixtures/adm/adm10/labo_item.json`。  
-   - 証跡格納先: `artifacts/external-interface/mml/<RUN_ID>/{letter_list,letter_json,labtest_list,labtest_json}/`。本 RUN では `README.md` を作成し差分分析メモを格納済み。
+   - 証跡格納先: `artifacts/external-interface/mml/<RUN_ID>/{letter_list,letter_json,labtest_list,labtest_json}/`。RUN_ID=`20251116T134354Z` では README とディレクトリを初期化済み。
+   - 認証ヘッダー: `tmp/parity-headers/mml_TEMPLATE.headers`（`password: 632080...` は `doctor2025` の MD5）。RUN_ID ごとに `cp tmp/parity-headers/mml_TEMPLATE.headers tmp/parity-headers/mml_<RUN_ID>.headers` し、`PARITY_HEADER_FILE` へ設定する。`X-Facility-Id` を削除しないこと。
 2. **実測取得手順（Docker ブロッカー解除後に実施）**  
    ```bash
    export BASE_URL_LEGACY=http://legacy.local:8080/openDolphin/resources
    export BASE_URL_MODERN=http://modern.local:9080/openDolphin/resources
-   export PARITY_HEADER_FILE=tmp/parity-headers/mml_TEMPLATE.headers
+   export PARITY_HEADER_FILE=tmp/parity-headers/mml_${RUN_ID}.headers
+   cp tmp/parity-headers/mml_TEMPLATE.headers "$PARITY_HEADER_FILE"
    ./ops/tools/send_parallel_request.sh GET /mml/letter/list/1.3.6.1.4.1.9414.72.103 MML_LETTER_LIST
    ./ops/tools/send_parallel_request.sh GET /mml/letter/json/8 MML_LETTER_JSON
    ./ops/tools/send_parallel_request.sh GET /mml/labtest/list/1.3.6.1.4.1.9414.72.103 MML_LABTEST_LIST
@@ -284,7 +286,7 @@
    - CSV (`list`) エンドポイントは `legacy.txt` / `modern.txt` で ID 並びも比較。
 3. **完了条件**  
    - 4 エンドポイントすべてで Legacy/Modernized 応答と diff ファイルが `artifacts/external-interface/mml/<RUN_ID>/` に揃っている。  
-   - `docs/server-modernization/phase2/operations/logs/<RUN_ID>-mml.md` に取得手順・結果が追記済み。  
+   - `docs/server-modernization/phase2/operations/logs/<RUN_ID>-mml.md`（例: `20251116T134354Z-mml.md`）に取得手順・結果が追記済み。  
    - `docs/server-modernization/phase2/notes/external-api-gap-20251116T111329Z.md` EXT-03 行と `DOC_STATUS` W22 備考が `[証跡取得済]` に更新されている。  
    - 監査 ID（`LETTER_EXPORT_*`, `LABTEST_EXPORT_*`）の実装確認が完了し、AuditTrail で 200 応答が検証されている。
 5. **ops/tests/api-smoke-test 連携**  
