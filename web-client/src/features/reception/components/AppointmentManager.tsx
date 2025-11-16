@@ -541,7 +541,7 @@ export const AppointmentManager = ({
     return true;
   };
 
-  const buildCommand = (action: 'create' | 'update' | 'cancel'): AppointmentCommand | null => {
+  const buildCommand = (action: 'create' | 'update' | 'cancel', source?: AppointmentSummary | null): AppointmentCommand | null => {
     if (!ensureUserContext()) {
       return null;
     }
@@ -551,11 +551,18 @@ export const AppointmentManager = ({
       return null;
     }
     return {
-      id: action === 'create' ? undefined : form.id ?? undefined,
+      id: source?.id ?? form.id ?? undefined,
+      externalId: source?.externalId ?? undefined,
       scheduledAt: scheduled,
       name: action === 'cancel' ? null : form.name.trim(),
       memo: action === 'cancel' ? null : form.memo.trim(),
       patientId: visit.patientId,
+      patientName: visit.fullName,
+      patientKana: visit.kanaName ?? null,
+      birthDate: visit.birthday ?? null,
+      sex: visit.gender ?? null,
+      departmentCode: visit.departmentCode ?? null,
+      physicianCode: visit.doctorId ?? null,
       karteId: karteId!,
       userModelId: userModelId!,
       userId,
@@ -569,7 +576,8 @@ export const AppointmentManager = ({
     if (!validateForm()) {
       return;
     }
-    const command = buildCommand(form.id ? 'update' : 'create');
+    const current = form.id ? appointments.find((appointment) => appointment.id === form.id) ?? null : null;
+    const command = buildCommand(form.id ? 'update' : 'create', current);
     if (!command) {
       return;
     }
@@ -589,18 +597,7 @@ export const AppointmentManager = ({
     }
     setInfoMessage(null);
     setFormError(null);
-    const command: AppointmentCommand = {
-      id: appointment.id,
-      scheduledAt: new Date(appointment.dateTime),
-      name: null,
-      memo: null,
-      patientId: appointment.patientId,
-      karteId: appointment.karteId,
-      userModelId: userModelId!,
-      userId,
-      facilityId,
-      action: 'cancel',
-    };
+    const command = buildCommand('cancel', appointment);
     try {
       await saveMutation.mutateAsync([command]);
       setInfoMessage('予約を取り消しました。');
@@ -650,10 +647,17 @@ export const AppointmentManager = ({
       );
       const command: AppointmentCommand = {
         id: reminderTarget.id,
+        externalId: reminderTarget.externalId ?? null,
         scheduledAt: new Date(reminderTarget.dateTime),
         name: reminderTarget.name,
         memo: appendReminderLog(reminderTarget.memo, entry),
         patientId: reminderTarget.patientId,
+        patientName: visit.fullName,
+        patientKana: visit.kanaName ?? null,
+        birthDate: visit.birthday ?? null,
+        sex: visit.gender ?? null,
+        departmentCode: visit.departmentCode ?? null,
+        physicianCode: visit.doctorId ?? null,
         karteId,
         userModelId,
         userId,

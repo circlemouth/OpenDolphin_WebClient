@@ -72,6 +72,18 @@
   - [x] DOC_STATUS 連携済 (W22 TaskI 行に RUN_ID=NA / `2025-11-21-phr-escalation.md` リンクを追記, 2025-11-21)。
   - [ ] 週次レビュー反映待ち (2025-11-22 ORCA 週次で回答を取得後に更新)。
 
+### 進捗アップデート（2025-11-16 RUN_ID=`20251116T210500Z-E{1,2,3}`）
+- [ ] **Task-J: PHR REST Flyway/Secrets 整備 + Trial/Modernized 証跡** (RUN_ID=`20251116T210500Z-E1`, 担当: Worker-E1)  
+  - Trial/Modernized CRUD ログ・Flyway/Secrets 監査を `docs/server-modernization/phase2/operations/logs/20251116T210500Z-E1-phr.md` と `artifacts/orca-connectivity/20251116T210500Z-E1/` に集約済。Trial 起動不可のため 404/405 証跡を引用。  
+  - **残課題**: ORMaster doctor/patient seed 復旧後に `/20/adm/phr/*` を再実測し、Spec-based を解除。PHR_EXPORT_STORAGE_TYPE=S3 前提の Secrets 追記および audit dump (`audit/phr_audit_extract.sql`) を次 RUN で取得する。
+- [ ] **Task-K: 予約/受付ラッパー Trial/ORMaster 実測** (RUN_ID=`20251116T210500Z-E2`, 担当: Worker-E2)  
+  - `/orca14/appointmodv2`, `/orca11/acceptmodv2` の Trial HTTP405 / ORMaster DNS NXDOMAIN を `docs/server-modernization/phase2/operations/logs/20251116T210500Z-E2-appointmod.md` 等に記録し、`artifacts/orca-connectivity/20251116T210500Z-E2/` へ curl/ DNS 証跡を保存。  
+  - **2025-11-16 Update (RUN_ID=`20251116T134343Z`)**: モダナイズ REST (`POST /orca/appointments/mutation`, `POST /orca/visits/mutation`) と Web クライアント予約 UI の呼び出しを実装。証跡スタブを `docs/server-modernization/phase2/operations/logs/20251116T134343Z-{appointmod,acceptmod}.md` および `artifacts/orca-connectivity/20251116T134343Z/` に追加。CLI sandbox のネットワークが restricted であるため Trial CRUD は未実施。  
+  - **残課題**: Ops チームによる ORMaster DNS/FW 開放後に 200 応答を取得し [Spec-based] を解除。UI before/after 証跡と SSE/Managed Executor 手順を `RESERVATION_BATCH_MIGRATION_NOTES.md` へ追記する。
+- [ ] **Task-L: 紹介状 / MML API 証跡テンプレート** (RUN_ID=`20251116T210500Z-E3` → `20251116T134354Z`, 担当: Worker-E3)  
+  - `artifacts/external-interface/mml/20251116T210500Z-E3/`（コード比較）に続き、`20251116T134354Z` で Jakarta Persistence (`LetterItem/Text/Date`) 登録、`tmp/parity-headers/mml_TEMPLATE.headers` の MD5 パスワード化、`artifacts/external-interface/mml/20251116T134354Z/README.md`、`docs/server-modernization/phase2/operations/logs/20251116T134354Z-mml.md` を整備。Runbook §4.4 のヘッダー手順も更新済。  
+  - **残課題**: Docker/ORMaster 操作解禁後に `send_parallel_request.sh` で Legacy/Modernized の `/mml/letter{list,json}`, `/mml/labtest{list,json}` を取得し、diff を保存して [証跡取得済] へ移行する。`labtest` 系は DB シード欠如 (`LabSeedMissing`) を解消してから採取。LETTER/LABTEST Export 監査 ID の有効化も次 RUN で確認する。
+
 ## 3. DOC_STATUS 反映ルール
 - タスク完了時は `docs/web-client/planning/phase2/DOC_STATUS.md`「モダナイズ/外部連携 (ORCA)」の W22 行に以下を更新する。
   - `主な変更`: 完了タスク名 (RUN_ID・更新ファイル・CRUD ログパス) (例: `Task-D (RUN_ID=20251121TrialPHRSeqZ1-A/B) crud/phr_phase_ab/ 更新`)。

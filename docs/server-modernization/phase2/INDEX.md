@@ -35,7 +35,7 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 - [`operations/assets/orca-api-spec/README.md`](operations/assets/orca-api-spec/README.md): firecrawl で取得した ORCA API 公式仕様のオフラインコピーとメタデータ、`orca-api-matrix` との突合表。
 - [`operations/assets/orca-tec-index/README.md`](operations/assets/orca-tec-index/README.md): 技術情報ハブ（帳票・CLAIM・MONTSUQI・カスタマイズ留意事項など）を firecrawl で Markdown 化したオフラインコピー。
 - [`operations/assets/orca-use-guides/README.md`](operations/assets/orca-use-guides/README.md): `/receipt/use/` 配下の運用ガイド（例: glserver SSL クライアント認証設定）を firecrawl で保全したアーカイブ。
-- [`operations/TRACE_PROPAGATION_CHECK.md`](operations/TRACE_PROPAGATION_CHECK.md): `ops/tools/send_parallel_request.sh --profile <compose|modernized-dev>` による `trace_http_*` / `trace-{schedule,appo}-jpql` 採取ログと RUN_ID 別の環境変数・コマンド。最新 RUN_ID=`20251110T070638Z` の `curl (7)` ブロッカーと `@SessionOperation` 静的解析メモを含む。
+- [`operations/TRACE_PROPAGATION_CHECK.md`](operations/TRACE_PROPAGATION_CHECK.md): `ops/tools/send_parallel_request.sh --profile <compose|modernized-dev>` による `trace_http_*` / `trace-{schedule,appo}-jpql` 採取ログと RUN_ID 別の環境変数・コマンド。最新 RUN_ID=`20251116T210500Z-C` で JMS probe／LogFilter 改修後の Trace 伝播状況と 4xx/5xx 監査ブロッカーを更新。
 - [`operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md`](operations/WILDFLY33_MICROMETER_OPERATIONS_GAP.md): Micrometer 観点のギャップ整理。
 
 ## 調査メモ・ノート（Notes）
@@ -44,6 +44,10 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 - [`notes/static-analysis-findings.md`](notes/static-analysis-findings.md): ワーニング一覧と対応状況。
 - [`notes/domain-transaction-parity.md`](notes/domain-transaction-parity.md): フェーズ4-1 `Karte/Patient/Schedule/Appo` の TX 境界・JPQL 差分・RUN_ID=`20251109T201157Z`/`20251110T002451Z` アーカイブおよび `d_audit_event` 採取 TODO を記録。
 - [`notes/karte-clinical-review-20251116T152300Z.md`](notes/karte-clinical-review-20251116T152300Z.md): カルテ保存・SafetySummary 関連の未実装 API/バグ調査（RUN_ID=`20251116T152300Z`）。`PUT /karte/document` 不在、Masuda 系 API 欠如、画像 API の `@PathParam` 不整合、添付外部ストレージ二重アップロードを整理。
+- [`notes/ORCA_WEB_CLIENT_API_RELATIONSHIP.md`](notes/ORCA_WEB_CLIENT_API_RELATIONSHIP.md): Legacy サーバー視点の Web クライアント ↔ ORCA 連携整理（RUN_ID=`20251116T101200Z`）。病名送信/取り込み・マスタ参照のデータフローと `custom.properties` 依存を明文化。
+- [`notes/ORCA_WEB_CLIENT_API_RELATIONSHIP_MODERNIZED.md`](notes/ORCA_WEB_CLIENT_API_RELATIONSHIP_MODERNIZED.md): モダナイズ版サーバー視点の ORCA 連携（RUN_ID=`20251116T105500Z`）。`MessagingGateway`/JMS/MDB の挙動、Trace-ID 監査連携、最新ギャップ修正を集約。
+- [`notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md`](notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md): RUN_ID=`20251116T210500Z`。カルテ/API ギャップ、ORCA マスタ修正、Messaging/Audit、PHR/予約/紹介状など外部 API の残課題と担当ワーカー指示を一覧化。
+- [`notes/external-api-gap-20251116T111329Z.md`](notes/external-api-gap-20251116T111329Z.md): ORCA PHR/予約/紹介状ラッパーの Spec-based 状況と Trial/ORMaster 証跡、RUN_ID=`20251116T111329Z` および派生 RUN（E1/E2/E3）の進捗を記録。
 
 ## 運用ルール
 1. サーバー資料を更新したら `docs/web-client/README.md` に概要を追記し、Web クライアント側にも影響があるかを判断する。

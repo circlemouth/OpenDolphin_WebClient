@@ -42,6 +42,7 @@
                 open.dolphin.rest.ReportingResource,
                 open.orca.rest.OrcaResource,
                 open.dolphin.orca.rest.OrcaAppointmentResource,
+                open.dolphin.orca.rest.OrcaVisitResource,
                 open.dolphin.orca.rest.OrcaPatientBatchResource,
                 open.dolphin.touch.JsonTouchResource,
                 open.dolphin.touch.DolphinResource,
