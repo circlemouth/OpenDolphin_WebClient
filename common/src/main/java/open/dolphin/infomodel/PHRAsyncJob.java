@@ -10,6 +10,8 @@ import jakarta.persistence.Table;
 import java.io.Serializable;
 import java.time.OffsetDateTime;
 import java.util.UUID;
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
 
 /**
  * Asynchronous PHR export job entity.
@@ -37,6 +39,7 @@ public class PHRAsyncJob implements Serializable {
     @Column(name = "facility_id", nullable = false, length = 32)
     private String facilityId;
 
+    @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "patient_scope", nullable = false, columnDefinition = "jsonb")
     private String patientScope;
 

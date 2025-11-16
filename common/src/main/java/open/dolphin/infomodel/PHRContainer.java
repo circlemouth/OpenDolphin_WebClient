@@ -1,6 +1,7 @@
 package open.dolphin.infomodel;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
@@ -34,6 +35,6 @@ public class PHRContainer implements java.io.Serializable {
 
     private static <T> List<T> normalize(List<T> source, String fieldName) {
         Objects.requireNonNull(source, fieldName + " must not be null");
-        return source.isEmpty() ? Collections.emptyList() : List.copyOf(source);
+        return source.isEmpty() ? Collections.emptyList() : Collections.unmodifiableList(new ArrayList<>(source));
     }
 }
