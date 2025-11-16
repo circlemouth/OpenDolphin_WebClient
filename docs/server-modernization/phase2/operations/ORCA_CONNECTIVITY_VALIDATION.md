@@ -249,6 +249,7 @@ No.19-38 で作成した XML テンプレの証跡は `artifacts/orca-connectivi
 - RUN_ID=`YYYYMMDDTorcaPHRSeqZ#` を払い出し、`artifacts/orca-connectivity/TEMPLATE/phr-seq` をコピーして使用する。
 - `audit/logs/phr_audit_extract.sql` で `event_id LIKE 'PHR_%'` を抽出し、`logs/phr_audit_${RUN_ID}.sql` として保存する。欠落イベントは `docs/server-modernization/phase2/operations/logs/2025-11-14-phr-evidence-template.md#pending-risks` へ転記する。
 - HTTP 証跡は `trial/phr/<api>.{headers,json}`、UI 証跡は `screenshots/phr-XX.png` にまとめ、`ServerInfoResource` の JSON を並記する。
+- Modernized 開発環境での Secrets/Context チェックは RUN_ID=`20251121TrialPHRSeqZ1-CTX` を参照。`1.3.6.1.4.1.9414.72.103:admin` ユーザーを BASIC 認証で登録し、`serverinfo/claim_conn.json`（body=`server`）/SHA256、および `wildfly/phr_20251121TrialPHRSeqZ1-CTX.log` に出力された `PHR_*_TEXT` 監査を証跡化した。`PHRResource` の SignedUrl フォールバックは `PHRKey`/`PHRAsyncJob` が PersistenceUnit 未登録のため `UnknownEntityException` で停止することが判明しており、`docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md#4-task-e-secretscontext-再検証-run_id20251121trialphrseqz1-ctx` に Blocker を記録した。
 
 ### 4.5 HTTP 401/403/404/405 トリアージ
 

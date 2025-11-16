@@ -1,59 +1,31 @@
 # AGENTS README
-作業をするにあたり、明示的に指示された場合を除き、Pythonスクリプトの実行は禁止する
+- Python スクリプトの実行は禁止（明示指示がある場合のみ例外）。
+- 本プロジェクトの目的は「Web クライアント × モダナイズ版サーバー」を本番品質で連携させること。Legacy 資産は参照専用。
 
-## リポジトリ概要
-- `client/`: 既存 Swing クライアントと共通ライブラリ。Java/Swing 資産で、参照のみ。
-- `docs/`: 設計・要件ドキュメント。Web クライアント関連は `docs/web-client/README.md` をナビゲーションハブとする。
-- サーバーモダナイズに関する資料は `docs/server-modernization/phase2/INDEX.md` を起点に辿る。
-- 領域別マネージャーの割当と参照先は `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` で管理し、同ファイルから各チェックリスト（ORCA 接続 / ORCA PHR / ORCA Sprint2 / Web クライアント UX / Server Foundation）へ移動できる。
-- `common/`, `ext_lib/`: 共有ユーティリティおよび外部ライブラリ。
-- `server/`: 既存サーバー実装。**サーバースクリプトは絶対に触らないこと。**
+## 1. 守るべき制約（高速開発でも削れないもの）
+- `server/` 配下やサーバースクリプトを変更しない。触れるのは Web クライアント資産と関連ドキュメントのみ。
+- Legacy サーバー/クライアントは差分検証目的で一時起動してもよいが、保守や運用作業は禁止。
+- ORCA 連携は WebORCA トライアル (`https://weborca-trial.orca.med.or.jp/`, `trial/weborcatrial`) だけを使用。`curl --cert-type P12`、本番証明書、ローカル WebORCA コンテナは禁止。ログは公開アカウント操作で取得する。
+- 参照専用: `client/`, `common/`, `ext_lib/` の Legacy 資産。更新はしない。
 
-## Phase2 ガバナンス必読チェーン
+## 2. Phase2 オペレーション最小セット
+1. **参照チェーン**: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各 manager checklist。新タスクはこの順で確認する。
+2. **RUN_ID**: `YYYYMMDDThhmmssZ` を必ず採番し、指示・README・DOC_STATUS・ログ・証跡ディレクトリで同じ値を使う。派生 RUN_ID を作る場合は親 RUN_ID を明示する。
+3. **DOC_STATUS**: `docs/web-client/planning/phase2/DOC_STATUS.md` の棚卸し手順に従って更新し、備考に RUN_ID / 証跡パスを追記したら同日付でハブ文書へ反映する。
+4. **証跡**: ORCA やサーバー操作ログは `docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md` へ。Web クライアント側の手順書からリンクできるようにする。
 
-> **Phase2 ガバナンス必読チェーン / 接続・RUN 運用共通ルール**  
-> 1. `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各領域チェックリストの順で参照・更新し、同一 RUN_ID を連携する。  
-> 2. WebORCA 接続先は `https://weborca-trial.orca.med.or.jp/`（BASIC 認証 `trial` / `weborcatrial`）のみとし、他環境や `curl --cert-type P12` を使った本番アクセスは禁止。  
-> 3. RUN_ID は `YYYYMMDDThhmmssZ` 形式を採用し、指示・README・DOC_STATUS・ログ・証跡ディレクトリのすべてで同一値を共有する。観点ごとに派生 RUN_ID を使う場合は親 RUN_ID を明示し、ログ先頭と備考欄へ併記する。  
-> 4. DOC_STATUS 更新は (a) 最終コミット確認 → (b) Active/Dormant/Archive 判定 → (c) 備考に RUN_ID / 証跡パスを追記 → (d) ハブドキュメントへ同日付反映、の順で行い、完了報告前にチェック。  
-> 5. Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。
+## 3. 役割別ハブ（参照時間を短縮）
+- Web クライアント設計・UX: `docs/web-client/README.md` を入口に `architecture/`, `features/`, `ux/`, `operations/` へ遷移。
+- サーバーモダナイズと ORCA 連携: `docs/server-modernization/phase2/INDEX.md` から `foundation/`, `domains/`, `operations/`, `notes/` を辿る。
+- 領域別マネージャー/ワーカー指示テンプレ: `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` と各 `PHASE2_*_MANAGER_CHECKLIST.md`。
 
-## プロジェクト目的
-本プロジェクトの目的は電子カルテの Web クライアントと、それと連携するモダナイズ版サーバーを本番品質で構築・安定運用させること。Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。ロードマップ・マイルストーン・UX 指針は `docs/web-client/README.md` および `docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md` を参照する。
+## 4. タスク着手チェックリスト
+1. `docs/web-client/planning/phase*/` の該当計画でゴールと依存を確認。フェーズゲートは維持するが、実作業は領域別チェックリスト単位で進めてよい。
+2. UI/UX を触る場合は `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` から関連ガイドを必読。カルテ画面 (`ChartsPage` など) 変更時は監査・レイアウト要件を反映する。
+3. ORCA 接続や API を扱う場合は `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` / `ORCA_API_STATUS.md` / `MODERNIZED_API_DOCUMENTATION_GUIDE.md` を参照し、RUN_ID ログを残す。
 
-## 作業方針
-- モダナイズ版サーバーは Web クライアント連携を唯一の必須要件とし、Legacy クライアント互換は求めない。Legacy サーバーは参照専用アーカイブ扱いで、仕様参照・比較検証のためにのみ起動可（保守・稼働維持は禁止）。
-- 変更対象は Web クライアント開発に必要なフロントエンド資産とドキュメントのみとし、`server/` 配下のコード・スクリプトには手を加えない。
-- ORCA 連携検証は WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp/`、ユーザー `trial` / パスワード `weborcatrial`）を唯一の接続先とし、公開アカウントで Basic 認証／UI 操作を行う。`ORCAcertification/` 配下の証明書や本番接続手順はアーカイブ扱いとし、`curl --cert-type P12` を使った本番アクセスは禁止。ローカル WebORCA コンテナは起動・更新とも禁止。
-- 必要な資料は `docs/web-client/README.md` から辿り、更新時は同 README に概要と保存場所を追記する。
-- タスク遂行時は `docs/web-client/planning/phase*/` 配下のフェーズ計画に従い、進捗や決定事項をドキュメントへ反映する。
-- 機能や UI 実装を行う際は、暫定版ではなく実運用を前提とした完成度（業務フローに即した操作性・アクセシビリティ・例外処理まで含む）で仕上げること。利用者視点で本番投入できる品質を常に確保する。
-- カルテ UI（`ChartsPage` などカルテ画面に関係するフロントエンド）を変更するタスクでは、作業前に必ず `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` を確認し、同ファイルからリンクされるレイアウト・ワークフロー・監査要件を踏まえて設計・実装・ドキュメント更新を行うこと。
+## 5. 連絡ルール
+- マネージャー → ワーカー指示: `【ワーカー指示】` を接頭にし、担当領域・参照チェーン・更新必須ドキュメント・RUN_ID を明記。
+- ワーカー → マネージャー報告: `【ワーカー報告】` を接頭にし、実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID をセットで報告。
 
-## ドキュメント整理・保存ルール
-- Web クライアント側の資料は `docs/web-client/README.md`、サーバーモダナイズ側は `docs/server-modernization/phase2/INDEX.md` を必ず起点とし、リンクを追加したら棚卸し台帳 `docs/web-client/planning/phase2/DOC_STATUS.md` のステータスを更新する。
-- 領域別マネージャー割当は `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` に集約されている。ワーカーは着手前に該当領域のチェックリスト（例: `PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md`, `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`, `PHASE2_SERVER_FOUNDATION_MANAGER_CHECKLIST.md`）を確認し、完了後は同チェックリストと DOC_STATUS を必ず同期させる。
-- 参照頻度が低下した資料は `DOC_STATUS.md` で Dormant/Archive に区分し、Archive 判定になったら `docs/archive/<YYYYQn>/`（例: `docs/archive/2025Q4/`）へ移動する。移動元ファイルにはスタブとアーカイブ先リンクを残すこと。
-- サーバー系タスクで作成する Runbook や計画書は `docs/server-modernization/phase2/(foundation|domains|operations|notes)/` 配下へ保存する。クライアント系タスクは `docs/web-client/(architecture|features|guides|operations|ux)/` を使用し、`LEGACY_INTEGRATION_CHECKS.md` など既存カテゴリに追記する。
-- マネージャーが `【ワーカー指示】` を出す場合は、指示内に保存先ディレクトリを明記し、サーバー系・クライアント系の成果物が衝突しないようディレクトリを分ける。ワーカーは `【ワーカー報告】` と合わせて保存先パスと `DOC_STATUS.md` への反映状況を報告する。
-- サーバーとクライアントの検証タスクを並列で行う際は、ログやスクリーンショットを `docs/server-modernization/phase2/operations/logs/` に日付付きで保存し、Web クライアント側の手順書（例: `docs/web-client/operations/LEGACY_INTEGRATION_CHECKS.md`）から参照できるようにする。
-
-## タスク分担と役割
-- 作業量が大きいと判断したタスクではマネージャーとして対応し、必要なワーカー数を検討したうえでタスクを分割する。
-- マネージャーは自分のタスクをdocs/managerdocs以下で整理し、指示内容や把握している内容を含めて進捗状況をチェックボックス形式のドキュメントにまとめ、常に最新の進捗状況が反映されるように適宜修正する。
-- `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` に掲載されている領域（ORCA 接続 / ORCA PHR ギャップ / ORCA Sprint2 / Web クライアント UX・Features / Server Foundation）それぞれに対応するマネージャーチェックリストを参照し、【ワーカー指示】内で必ず該当ドキュメントを明示する。新しい領域を追加する場合は同ファイルへ行を追加してからチェックリストを作成する。
-- 現行の必読チェックリスト: `PHASE2_ORCA_CONNECTIVITY_MANAGER_CHECKLIST.md`, `PHASE2_ORCA_PHR_GAP_MANAGER_CHECKLIST.md`, `PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md`, `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`, `PHASE2_SERVER_FOUNDATION_MANAGER_CHECKLIST.md`。タスク完了後は各チェックボックスと `DOC_STATUS.md` の該当行をセットで更新し、必要に応じてログ/証跡パスを追記する。
-- マネージャーがタスクを割り振る際は、ワーカーが指示内で発見した問題の原因を自律的に切り分け・修正して完遂できるよう、前提条件や期待するアウトプットを明示する。
-- 分担作業を指示する場合は、ワーカーが自立して作業できる粒度を見極め、担当範囲が重複せず依存関係が最小になるよう調整する。
-- 各ワーカーには担当範囲が重複しないよう十分配慮した明快なプロンプトを用意し、成果物と着手手順が即座に把握できる記述とする。また、ワーカーが無駄にコンテキストを消費せずにすむようにタスク立案段階で収集した情報はワーカー指示に詳細に含めること。
-- マネージャーからワーカーへの指示には共通の接頭語 `【ワーカー指示】` を用い、ワーカーからの報告には `【ワーカー報告】` を用いる。
-- `【ワーカー指示】` と明示されたタスクを受けた場合は、指示内容に沿って自律的に課題を解決する姿勢を持ち、Docker コンテナの再構築や停止は明示的な指示がある場合を除いて行わない。完了後は `【ワーカー報告】` でマネージャーへ結果を返す。
-
-
-### サーバースクリプト関連作業について
-- 原則として `server/` 配下のスクリプト変更は行わないが、関係者からの明示的な依頼等で例外的に修正を行う場合は、変更後に Docker Compose を用いて旧来版サーバーまたはモダナイズ版サーバーを起動し、ヘルスチェックエンドポイントへのアクセスで応答を確認すること。
-- テスト手順の詳細は `docs/web-client/operations/TEST_SERVER_DEPLOY.md` を参照し、記載された設定調整・ビルド・起動・ヘルスチェックをすべて実施して結果を記録すること。
-
-## コミュニケーション
-- すべての返答・コメントは日本語で行うこと。
-- 仕様不明点がある場合は該当ドキュメントへメモを残し、関係者確認を取ってから実装を進める。
+この 5 セクションで高速開発に必要な最小ルールを完結させ、詳細や履歴は各ハブドキュメントでメンテナンスする。

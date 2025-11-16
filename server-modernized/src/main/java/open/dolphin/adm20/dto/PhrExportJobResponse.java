@@ -12,9 +12,9 @@ public class PhrExportJobResponse {
     private UUID jobId;
     private String state;
     private int progress;
-    private OffsetDateTime queuedAt;
-    private OffsetDateTime startedAt;
-    private OffsetDateTime finishedAt;
+    private String queuedAt;
+    private String startedAt;
+    private String finishedAt;
     private String downloadUrl;
     private String errorCode;
     private String errorMessage;
@@ -24,12 +24,16 @@ public class PhrExportJobResponse {
         response.setJobId(job.getJobId());
         response.setState(job.getState().name());
         response.setProgress(job.getProgress());
-        response.setQueuedAt(job.getQueuedAt());
-        response.setStartedAt(job.getStartedAt());
-        response.setFinishedAt(job.getFinishedAt());
+        response.setQueuedAt(format(job.getQueuedAt()));
+        response.setStartedAt(format(job.getStartedAt()));
+        response.setFinishedAt(format(job.getFinishedAt()));
         response.setErrorCode(job.getErrorCode());
         response.setErrorMessage(job.getErrorMessage());
         return response;
+    }
+
+    private static String format(OffsetDateTime value) {
+        return value != null ? value.toString() : null;
     }
 
     public UUID getJobId() {
@@ -56,27 +60,27 @@ public class PhrExportJobResponse {
         this.progress = progress;
     }
 
-    public OffsetDateTime getQueuedAt() {
+    public String getQueuedAt() {
         return queuedAt;
     }
 
-    public void setQueuedAt(OffsetDateTime queuedAt) {
+    public void setQueuedAt(String queuedAt) {
         this.queuedAt = queuedAt;
     }
 
-    public OffsetDateTime getStartedAt() {
+    public String getStartedAt() {
         return startedAt;
     }
 
-    public void setStartedAt(OffsetDateTime startedAt) {
+    public void setStartedAt(String startedAt) {
         this.startedAt = startedAt;
     }
 
-    public OffsetDateTime getFinishedAt() {
+    public String getFinishedAt() {
         return finishedAt;
     }
 
-    public void setFinishedAt(OffsetDateTime finishedAt) {
+    public void setFinishedAt(String finishedAt) {
         this.finishedAt = finishedAt;
     }
 
