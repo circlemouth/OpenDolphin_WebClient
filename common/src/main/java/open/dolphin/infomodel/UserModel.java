@@ -3,6 +3,7 @@ package open.dolphin.infomodel;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
+import java.text.SimpleDateFormat;
 import jakarta.persistence.*;
 
 /**
@@ -220,6 +221,14 @@ public class UserModel extends InfoModel implements java.io.Serializable {
     
     public void setRegisteredDate(Date registeredDate) {
         this.registeredDate = registeredDate;
+    }
+
+    public String getRegisteredDateAsString() {
+        if (registeredDate == null) {
+            return null;
+        }
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+        return sdf.format(registeredDate);
     }
 
     public String getEmail() {
