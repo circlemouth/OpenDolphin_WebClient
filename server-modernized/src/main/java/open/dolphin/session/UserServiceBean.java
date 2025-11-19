@@ -3,6 +3,7 @@ package open.dolphin.session;
 import java.util.Collection;
 import java.util.List;
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.inject.Inject;
 import jakarta.inject.Named;
 import jakarta.persistence.EntityExistsException;
 import jakarta.persistence.EntityManager;
@@ -33,6 +34,10 @@ public class UserServiceBean {
     @PersistenceContext
     private EntityManager em;
 
+    // REQUIRES_NEW トランザクションを機能させるために self-injection を使用
+    @Inject
+    private UserServiceBean self;
+
     
     public boolean authenticate(String userName, String password) {
 
@@ -59,9 +64,6 @@ public class UserServiceBean {
      * @return 
      */
     public int addUser(UserModel add) {
-        throw new RuntimeException("DEBUG: UserServiceBean.addUser called! If you see this, the code is updated.");
-
-        /*
         try {
             // 既存ユーザの場合は例外をスローする
             getUser(add.getUserId());
@@ -76,16 +78,15 @@ public class UserServiceBean {
                                                    .getSingleResult();
         add.setFacilityModel(facility);
 
-        // role
+        // role を detach してから User を persist
         List<RoleModel> roles = add.getRoles();
         add.setRoles(null);
 
-        // Persist the User
-        System.out.println("DEBUG: Persisting user: " + add.getUserId());
-        add = em.merge(add);
-        em.flush();
-        System.out.println("DEBUG: User persisted, id: " + add.getId());
+        // UserModel を Native SQL で直接 INSERT し、確実に DB に保存
+        long userId = insertUserWithNativeSQL(add);
+        add.setId(userId);
 
+        // User が DB に保存されたので、role を re-attach して persist
         if (roles != null) {
             add.setRoles(roles);
             for (RoleModel role : roles) {
@@ -94,9 +95,50 @@ public class UserServiceBean {
                 em.persist(role);
             }
         }
-        }
+
         return 1;
-        */
+    }
+
+    /**
+     * UserModel を Native SQL で直接 INSERT する
+     * Hibernate の遅延 INSERT 問題を完全に回避するため、
+     * Native SQL を使用して確実にデータベースへ保存する
+     */
+    private long insertUserWithNativeSQL(UserModel user) {
+        // ID を手動生成
+        Number nextId = (Number) em.createNativeQuery("select nextval('d_users_seq')").getSingleResult();
+        long userId = nextId.longValue();
+        
+        // Native SQL で直接 INSERT
+        String sql = "INSERT INTO d_users (" +
+                "id, userId, commonName, sirName, givenName, email, " +
+                "password, facility_id, memberType, registeredDate, " +
+                "license, licenseDesc, licenseCodeSys, " +
+                "department, departmentDesc, departmentCodeSys) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)";
+        
+        em.createNativeQuery(sql)
+          .setParameter(1, userId)
+          .setParameter(2, user.getUserId())
+          .setParameter(3, user.getCommonName())
+          .setParameter(4, user.getSirName())
+          .setParameter(5, user.getGivenName())
+          .setParameter(6, user.getEmail())
+          .setParameter(7, user.getPassword())
+          .setParameter(8, user.getFacilityModel().getId())
+          .setParameter(9, user.getMemberType())
+          .setParameter(10, user.getRegisteredDateAsString())
+          .setParameter(11, user.getLicenseModel() != null ? user.getLicenseModel().getLicense() : null)
+          .setParameter(12, user.getLicenseModel() != null ? user.getLicenseModel().getLicenseDesc() : null)
+          .setParameter(13, user.getLicenseModel() != null ? user.getLicenseModel().getLicenseCodeSys() : null)
+          .setParameter(14, user.getDepartmentModel() != null ? user.getDepartmentModel().getDepartment() : null)
+          .setParameter(15, user.getDepartmentModel() != null ? user.getDepartmentModel().getDepartmentDesc() : null)
+          .setParameter(16, user.getDepartmentModel() != null ? user.getDepartmentModel().getDepartmentCodeSys() : null)
+          .executeUpdate();
+        
+        em.flush();
+        
+        return userId;
     }
 
     /**

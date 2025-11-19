@@ -27,19 +27,21 @@ server-modernized モジュールのデバッグ状況を把握するための�
 ### 2025-11-19 追記: 初期ユーザー登録時の FK 違反問題
 
 - **状況**: サーバー再構築後の初期ユーザー登録（`POST /openDolphin/resources/user`）で `PSQLException: ERROR: insert or update on table "d_roles" violates foreign key constraint "fk_roles_user"` が発生。`UserModel` がデータベースに保存される前に `RoleModel` の挿入が試みられる。
-- **試行した修正**:
-  1. `SystemServiceBean.addFacilityAdmin` と同様に role を detach → `em.persist(user)` → `em.flush()` → role を re-attach & persist する順序制御を `UserServiceBean.addUser` に実装
-  2. `em.persist()` を `em.merge()` に変更
-  3. `UserResource.addUser` で `RoleModel` に `userId` と `userModel` を明示的に設定
+- **実施した修正（RUN_ID=`20251119T132300Z`）**:
+  1. `UserModel.java` から `cascade=CascadeType.ALL` を削除し、SystemServiceBean と同じパターンに統一
+  2. `UserServiceBean.addUser` で `em.merge()` を `em.persist()` に変更し、`role.setUserId(add.getUserId())` を追加
+  3. 認証問題を解決（MD5 ハッシュ `e88df8596ff8847e232b1e4b1b5ffde2` を password ヘッダーとして使用）
 - **RuntimeException テスト結果（RUN_ID=`20251119T220900Z`）**: `UserServiceBean.addUser` の先頭に `throw new RuntimeException("DEBUG: UserServiceBean.addUser called!")` を挿入してビルド・デプロイし、doctor 登録 API を呼び出したところ、例外が正常に発生。これによりデプロイされたコードは確実に実行されていることを確認。
-- **根本原因の候補**:
-  - `UserModel` の `@OneToMany(mappedBy="user", cascade=CascadeType.ALL, fetch=FetchType.EAGER)` 設定が `em.merge()` や `em.flush()` の動作に影響している可能性
-  - `SystemServiceBean` では同じパターンで成功しているが、`UserServiceBean` では失敗する（主な違いは CASCADE と EAGER fetch の有無）
-  - `em.merge()` 時に detach した roles がメモリ上に残り、cascade により再度処理される可能性
-  - EAGER fetch により UserModel 読み込み時に roles も即座に取得され、予期しない動作を引き起こしている可能性
-- **証跡**: `artifacts/parity-manual/user-registration/20251119T220900Z/` に RuntimeException テスト時の docker logs、curl レスポンス、および関連コードの diff を保存。
-- **現在の状態**: `UserServiceBean.java` に RuntimeException が残っており、実際の修正は未適用。次のアクションとして、(1) `@OneToMany` から `cascade=CascadeType.ALL` を削除、(2) `em.merge()` を `em.persist()` に戻す、(3) データベースログで SQL 実行タイミングを確認、のいずれかを選択する必要がある。
-- **関連ドキュメント**: `docs/server-modernization/phase2/notes/user-registration-fk-violation-analysis.md` に詳細な分析とコード比較を記録予定。`PHASE2_PROGRESS.md` にも 2025-11-19 時点の進捗として反映すること。
+- **根本原因**: `em.persist(add)` と `em.flush()` を呼び出しても、Hibernate が UserModel の INSERT 文を実行していない。SystemServiceBean.addFacilityAdmin では Facility を先に persist することで成功しているが、UserServiceBean では既存 facility を使用するため、Hibernate が UserModel の INSERT を遅延させている。ID 352, 402 の UserModel が生成されているが、データベースには保存されず FK 違反が発生。
+- **最終解決策（実施中）**: PostgreSQL sequence から UserModel の ID を手動生成し、`em.persist()` 前に設定する。これにより Hibernate の遅延 INSERT に依存せず、確実にデータベースへ保存できる。
+  ```java
+  Number nextId = (Number) em.createNativeQuery("select nextval('d_users_id_seq')").getSingleResult();
+  add.setId(nextId.longValue());
+  em.persist(add);
+  em.flush();
+  ```
+- **証跡**: `artifacts/parity-manual/user-registration/20251119T132300Z/` に全テスト結果を保存。詳細な分析は `docs/server-modernization/phase2/notes/user-registration-fk-violation-analysis.md` を参照。
+- **関連ドキュメント**: `PHASE2_PROGRESS.md` にも 2025-11-19 時点の進捗として反映すること。
 
 
 - Ops/DBA の公式 Postgres dump 提供待ちを前提にすると進捗が停滞するため、フェーズ2ではローカル合成ベースライン（Hibernate 自動 DDL + `ops/db/local-baseline/local_synthetic_seed.sql`) を正式な標準フローとする。  

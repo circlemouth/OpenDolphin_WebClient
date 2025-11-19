@@ -54,7 +54,7 @@ public class UserModel extends InfoModel implements java.io.Serializable {
     @JoinColumn(name="facility_id", nullable=false)
     private FacilityModel facility;
     
-    @OneToMany(mappedBy="user", cascade=CascadeType.ALL, fetch=FetchType.EAGER)
+    @OneToMany(mappedBy="user", fetch=FetchType.EAGER)
     private List<RoleModel> roles;
 
     private String orcaId;

@@ -1,0 +1,28 @@
+{
+    "userId": "1.3.6.1.4.1.9414.72.203:doctortest3",
+    "password": "doctor2025",
+    "sirName": "テスト",
+    "givenName": "太郎",
+    "commonName": "テスト 太郎",
+    "email": "doctortest3@example.com",
+    "memberType": "PERSON",
+    "registeredDate": "2025-11-19",
+    "facilityModel": {
+        "facilityId": "1.3.6.1.4.1.9414.72.203"
+    },
+    "licenseModel": {
+        "license": "doctor",
+        "licenseDesc": "医師",
+        "licenseCodeSys": "MML0026"
+    },
+    "departmentModel": {
+        "department": "内科",
+        "departmentDesc": "内科",
+        "departmentCodeSys": "MML0028"
+    },
+    "roles": [
+        {
+            "role": "user"
+        }
+    ]
+}
