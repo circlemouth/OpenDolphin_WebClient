@@ -42,6 +42,7 @@ server-modernized モジュールのデバッグ状況を把握するための�
   ```
 - **証跡**: `artifacts/parity-manual/user-registration/20251119T132300Z/` に全テスト結果を保存。詳細な分析は `docs/server-modernization/phase2/notes/user-registration-fk-violation-analysis.md` を参照。
 - **関連ドキュメント**: `PHASE2_PROGRESS.md` にも 2025-11-19 時点の進捗として反映すること。
+- **ビルドエラー修正（RUN_ID=`20251120T081900Z`）**: FK違反修正で追加した `insertUserWithNativeSQL` が `UserModel#getRegisteredDateAsString` を呼び出していたが、同メソッドが未定義だったためビルド失敗。`common/src/main/java/open/dolphin/infomodel/UserModel.java` にヘルパーメソッドを追加し、`./scripts/start_legacy_modernized.sh start --build` でビルド成功と `/actuator/health` 200 OK を確認した。
 
 
 - Ops/DBA の公式 Postgres dump 提供待ちを前提にすると進捗が停滞するため、フェーズ2ではローカル合成ベースライン（Hibernate 自動 DDL + `ops/db/local-baseline/local_synthetic_seed.sql`) を正式な標準フローとする。  
