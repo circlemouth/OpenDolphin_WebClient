@@ -59,15 +59,44 @@ public class UserServiceBean {
      * @return 
      */
     public int addUser(UserModel add) {
+        throw new RuntimeException("DEBUG: UserServiceBean.addUser called! If you see this, the code is updated.");
 
+        /*
         try {
             // 既存ユーザの場合は例外をスローする
             getUser(add.getUserId());
             throw new EntityExistsException();
         } catch (NoResultException e) {
         }
-        em.persist(add);
+
+        // 施設IDからFacilityModelを取得して設定する
+        String fid = add.getFacilityModel().getFacilityId();
+        FacilityModel facility = (FacilityModel) em.createQuery("from FacilityModel f where f.facilityId = :fid")
+                                                   .setParameter("fid", fid)
+                                                   .getSingleResult();
+        add.setFacilityModel(facility);
+
+        // role
+        List<RoleModel> roles = add.getRoles();
+        add.setRoles(null);
+
+        // Persist the User
+        System.out.println("DEBUG: Persisting user: " + add.getUserId());
+        add = em.merge(add);
+        em.flush();
+        System.out.println("DEBUG: User persisted, id: " + add.getId());
+
+        if (roles != null) {
+            add.setRoles(roles);
+            for (RoleModel role : roles) {
+                role.setUserModel(add);
+                role.setUserId(add.getUserId());
+                em.persist(role);
+            }
+        }
+        }
         return 1;
+        */
     }
 
     /**
