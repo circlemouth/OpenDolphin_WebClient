@@ -61,6 +61,33 @@ public class DiagnosisSender {
     }
 
     /**
+     * CLAIM送信を行う。
+     * @param wrapper 送信するDocuentModel
+     * @throws Exception 
+     */
+    public void send(DiagnosisSendWrapper wrapper) throws Exception {
+        
+//s.oh^ 2013/12/10 傷病名のCLAIM送信する／しない
+        Properties config = new Properties();
+        StringBuilder sbPath = new StringBuilder();
+        sbPath.append(System.getProperty("jboss.home.dir"));
+        sbPath.append(File.separator);
+        sbPath.append("custom.properties");
+        File f = new File(sbPath.toString());
+        FileInputStream fin = new FileInputStream(f);
+        InputStreamReader isr = new InputStreamReader(fin, "JISAutoDetect");
+        config.load(isr);
+        isr.close();
+        String claimSend = config.getProperty("diagnosis.claim.send");
+        if(claimSend != null && claimSend.equals("false")) {
+            return;
+        }
+//s.oh$
+        
+        // 新規病名
+        List<RegisteredDiagnosisModel> addedDiagnosis = wrapper.getAddedDiagnosis();
+        
+        // 更新病名
         List<RegisteredDiagnosisModel> updatedDiagnosis = wrapper.getUpdatedDiagnosis();
         
 //minagawa^ LSC 1.4 傷病名の削除 2013/06/24

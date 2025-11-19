@@ -129,7 +129,7 @@ public class AuditTrailService implements open.dolphin.audit.AuditTrailService {
         if (id == null) {
             return;
         }
-        em.createNativeQuery("update d_audit_event set trace_id = :traceId, payload = :payload where id = :id")
+        em.createQuery("update AuditEvent a set a.traceId = :traceId, a.payload = :payload where a.id = :id")
                 .setParameter("traceId", traceId)
                 .setParameter("payload", serializedPayload)
                 .setParameter("id", id)
