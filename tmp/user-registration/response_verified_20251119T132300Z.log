@@ -1,0 +1,34 @@
+Note: Unnecessary use of -X or --request, POST is already inferred.
+* Host localhost:9080 was resolved.
+* IPv6: ::1
+* IPv4: 127.0.0.1
+  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
+                                 Dload  Upload   Total   Spent    Left  Speed
+  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying [::1]:9080...
+* Connected to localhost (::1) port 9080
+> POST /openDolphin/resources/user HTTP/1.1
+> Host: localhost:9080
+> User-Agent: curl/8.7.1
+> Accept: */*
+> Content-Type: application/json
+> userName: 1.3.6.1.4.1.9414.72.203:admin
+> password: e88df8596ff8847e232b1e4b1b5ffde2
+> Content-Length: 668
+> 
+} [668 bytes data]
+* upload completely sent off: 668 bytes
+< HTTP/1.1 500 Internal Server Error
+< Referrer-Policy: no-referrer
+< Content-Security-Policy: default-src 'self'
+< X-Trace-Id: 4037ecb3-6751-4bf1-9a01-3c28acab9c69
+< Date: Wed, 19 Nov 2025 13:43:36 GMT
+< Connection: keep-alive
+< Strict-Transport-Security: max-age=63072000; includeSubDomains
+< X-Content-Type-Options: nosniff
+< Content-Type: text/plain;charset=UTF-8
+< Content-Length: 92
+< 
+{ [92 bytes data]
+100   760  100    92  100   668    914   6637 --:--:-- --:--:-- --:--:--  7600
+* Connection #0 to host localhost left intact
+Session layer failure in open.dolphin.session.UserServiceBean$Proxy$_$$_WeldSubclass#addUser
