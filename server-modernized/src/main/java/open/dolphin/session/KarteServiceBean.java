@@ -23,6 +23,7 @@ import open.dolphin.msg.gateway.MessagingGateway;
 import open.dolphin.rest.dto.RoutineMedicationResponse;
 import open.dolphin.rest.dto.RpHistoryDrugResponse;
 import open.dolphin.rest.dto.RpHistoryEntryResponse;
+import open.dolphin.rest.dto.SafetySummaryResponse;
 import open.dolphin.rest.dto.UserPropertyResponse;
 import open.dolphin.session.audit.DiagnosisAuditRecorder;
 import open.dolphin.session.framework.SessionOperation;
@@ -705,6 +706,40 @@ public class KarteServiceBean {
         } catch (NoResultException ex) {
             return Collections.emptyList();
         }
+    }
+
+    public SafetySummaryResponse getSafetySummary(long karteId) {
+        if (karteId <= 0) {
+            return new SafetySummaryResponse(Collections.emptyList(), Collections.emptyList(), Collections.emptyList());
+        }
+
+        // 1. Allergies
+        List<ObservationModel> observations = em.createQuery(QUERY_ALLERGY, ObservationModel.class)
+                .setParameter(KARTE_ID, karteId)
+                .getResultList();
+        
+        List<AllergyModel> allergies = new ArrayList<>();
+        if (observations != null) {
+            for (ObservationModel observation : observations) {
+                AllergyModel allergy = new AllergyModel();
+                allergy.setObservationId(observation.getId());
+                allergy.setFactor(observation.getPhenomenon());
+                allergy.setSeverity(observation.getCategoryValue());
+                allergy.setIdentifiedDate(observation.confirmDateAsString());
+                allergy.setMemo(observation.getMemo());
+                allergies.add(allergy);
+            }
+        }
+
+        // 2. Active Diagnoses
+        List<RegisteredDiagnosisModel> diagnoses = em.createQuery(QUERY_DIAGNOSIS_BY_KARTE_ACTIVEONLY, RegisteredDiagnosisModel.class)
+                .setParameter(KARTE_ID, karteId)
+                .getResultList();
+
+        // 3. Routine Meds
+        List<RoutineMedicationResponse> routineMeds = getRoutineMedications(karteId, 0, 50);
+
+        return new SafetySummaryResponse(allergies, diagnoses, routineMeds);
     }
 
     public long addDocumentAndUpdatePVTState(DocumentModel document, long pvtPK, int state) {

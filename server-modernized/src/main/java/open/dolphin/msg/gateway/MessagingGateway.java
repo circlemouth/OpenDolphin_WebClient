@@ -62,6 +62,10 @@ public class MessagingGateway {
             LOGGER.fine("Diagnosis dispatch skipped because server-side messaging is disabled or incomplete.");
             return;
         }
+        if (!settings.diagnosisClaimSend()) {
+            LOGGER.fine("Diagnosis dispatch skipped because diagnosis.claim.send is false.");
+            return;
+        }
         String traceId = currentTraceId();
         ExternalServiceAuditLogger.logDiagnosisRequest(traceId, wrapper, settings);
         if (enqueue(wrapper, traceId, PAYLOAD_TYPE_DIAGNOSIS)) {

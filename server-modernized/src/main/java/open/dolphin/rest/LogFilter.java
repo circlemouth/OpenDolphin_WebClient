@@ -457,6 +457,12 @@ public class LogFilter implements Filter {
             return;
         }
         int status = resolveErrorStatus(response);
+        // If an exception occurred but the response status is still success (e.g. 200),
+        // treat it as an Internal Server Error (500) to ensure it gets audited.
+        if (failure != null && status < HttpServletResponse.SC_BAD_REQUEST) {
+            status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+        }
+
         if (status < HttpServletResponse.SC_BAD_REQUEST) {
             return;
         }

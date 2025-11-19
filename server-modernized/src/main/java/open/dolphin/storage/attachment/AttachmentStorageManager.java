@@ -7,8 +7,12 @@ import java.util.Objects;
 import java.util.Optional;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import jakarta.annotation.Resource;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Status;
+import jakarta.transaction.Synchronization;
+import jakarta.transaction.TransactionSynchronizationRegistry;
 import open.dolphin.infomodel.AttachmentModel;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -36,6 +40,9 @@ public class AttachmentStorageManager {
 
     @Inject
     AttachmentStorageConfigLoader configLoader;
+
+    @Resource
+    private TransactionSynchronizationRegistry registry;
 
     private AttachmentStorageSettings settings;
     private AttachmentKeyResolver keyResolver;
@@ -121,6 +128,12 @@ public class AttachmentStorageManager {
     }
 
     private void uploadToS3(AttachmentModel attachment) {
+        // Idempotency check: if already uploaded to S3, skip
+        if ("s3".equals(attachment.getLocation()) && attachment.getUri() != null && !attachment.getUri().isBlank()) {
+            LOGGER.debug("Attachment {} is already in S3 ({}); skipping upload.", attachment.getId(), attachment.getUri());
+            return;
+        }
+
         byte[] bytes = attachment.getBytes();
         if (bytes == null || bytes.length == 0) {
             LOGGER.debug("Attachment {} has no binary payload; skip upload", attachment.getId());
@@ -142,10 +155,41 @@ public class AttachmentStorageManager {
 
         try {
             s3Client.putObject(builder.build(), RequestBody.fromBytes(bytes));
-            attachment.setUri(String.format("s3://%s/%s", s3Settings.getBucket(), key));
+            String s3Uri = String.format("s3://%s/%s", s3Settings.getBucket(), key);
+            attachment.setUri(s3Uri);
             attachment.setLocation("s3");
+
+            // Register rollback hook
+            registerRollbackHook(attachment);
+
         } catch (Exception ex) {
             throw new AttachmentStorageException("Failed to upload attachment to S3: " + key, ex);
+        }
+    }
+
+    private void registerRollbackHook(AttachmentModel attachment) {
+        if (registry == null) {
+            LOGGER.warn("TransactionSynchronizationRegistry is not available. Rollback for S3 upload {} cannot be guaranteed.", attachment.getUri());
+            return;
+        }
+
+        try {
+            registry.registerInterposedSynchronization(new Synchronization() {
+                @Override
+                public void beforeCompletion() {
+                    // No action needed
+                }
+
+                @Override
+                public void afterCompletion(int status) {
+                    if (status != Status.STATUS_COMMITTED) {
+                        LOGGER.info("Transaction rolled back. Deleting S3 object: {}", attachment.getUri());
+                        deleteExternalAsset(attachment);
+                    }
+                }
+            });
+        } catch (Exception e) {
+            LOGGER.warn("Failed to register synchronization for attachment {}: {}", attachment.getId(), e.getMessage());
         }
     }
 

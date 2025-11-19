@@ -113,6 +113,10 @@ public class MessageSender implements MessageListener {
             LOGGER.warn("Diagnosis send skipped because claim settings are incomplete [traceId={}]", traceId);
             return;
         }
+        if (!settings.diagnosisClaimSend()) {
+            LOGGER.info("Diagnosis send skipped because diagnosis.claim.send is false [traceId={}]", traceId);
+            return;
+        }
         LOGGER.info("Processing Diagnosis JMS message [traceId={}]", traceId);
         ExternalServiceAuditLogger.logDiagnosisRequest(traceId, wrapper, settings);
         try {
