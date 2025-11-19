@@ -12,6 +12,7 @@ COPY common ./common
 COPY server ./server
 COPY client ./client
 COPY ext_lib ./ext_lib
+COPY reporting ./reporting
 COPY ops/shared/docker/settings.xml /tmp/maven-settings.xml
 
 RUN mvn -N -f pom.server-classic.xml -s /tmp/maven-settings.xml -B install:install-file -Dfile=ext_lib/iTextAsian.jar -DgroupId=opendolphin -DartifactId=itext-font -Dversion=1.0 -Dpackaging=jar
@@ -58,7 +59,7 @@ RUN javac -cp /root/.m2/repository/org/hibernate/hibernate-core/5.0.10.Final/hib
 RUN jar cf /tmp/hbcompat/string-clob-type-compat.jar -C /tmp/hbcompat/classes .
 
 RUN set -eux; \
-    mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -pl server -am -DskipTests package; \
+    mvn -f pom.server-classic.xml -s /tmp/maven-settings.xml -B -Plegacy-wildfly10 -pl server -am -DskipTests package; \
     WAR_DIR=server/target; \
     WAR_FILE="${WAR_DIR}/${WAR_BASENAME}.war"; \
     if [ ! -f "${WAR_FILE}" ]; then \

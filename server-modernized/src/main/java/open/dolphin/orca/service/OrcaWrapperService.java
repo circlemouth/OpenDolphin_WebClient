@@ -43,6 +43,14 @@ public class OrcaWrapperService {
     private final OrcaTransport transport;
     private final OrcaXmlMapper mapper;
 
+    /**
+     * No-args constructor for CDI proxying.
+     */
+    protected OrcaWrapperService() {
+        this.transport = null;
+        this.mapper = null;
+    }
+
     @Inject
     public OrcaWrapperService(OrcaTransport transport, OrcaXmlMapper mapper) {
         this.transport = transport;
