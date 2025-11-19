@@ -22,6 +22,8 @@ public class MessagingConfig {
     private static final String CLAIM_ENCODING = "claim.send.encoding";
     private static final String DOLPHIN_FACILITY = "dolphin.facilityId";
 
+    private static final String DIAGNOSIS_CLAIM_SEND = "diagnosis.claim.send";
+
     private volatile ClaimSettings cachedClaimSettings;
 
     public ClaimSettings claimSettings() {
@@ -39,7 +41,13 @@ public class MessagingConfig {
         int port = parsePort(properties.getProperty(CLAIM_PORT));
         String encoding = properties.getProperty(CLAIM_ENCODING, "SHIFT_JIS");
         String facilityId = properties.getProperty(DOLPHIN_FACILITY);
-        ClaimSettings settings = new ClaimSettings(serverSide, host, port, encoding, facilityId);
+        
+        // Default to true if not specified, to match typical behavior, or false if safer?
+        // Legacy DiagnosisSender checked if it equals "false", so default is true.
+        String diagSendStr = properties.getProperty(DIAGNOSIS_CLAIM_SEND);
+        boolean diagnosisClaimSend = !"false".equalsIgnoreCase(diagSendStr);
+
+        ClaimSettings settings = new ClaimSettings(serverSide, host, port, encoding, facilityId, diagnosisClaimSend);
         cachedClaimSettings = settings;
         return settings;
     }
@@ -98,7 +106,7 @@ public class MessagingConfig {
         }
     }
 
-    public record ClaimSettings(boolean serverSideSend, String host, int port, String encoding, String facilityId) {
+    public record ClaimSettings(boolean serverSideSend, String host, int port, String encoding, String facilityId, boolean diagnosisClaimSend) {
 
         public boolean isReady() {
             return serverSideSend && host != null && !host.isBlank() && port > 0;

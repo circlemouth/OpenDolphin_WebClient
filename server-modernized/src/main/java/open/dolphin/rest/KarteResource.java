@@ -20,6 +20,7 @@ import open.dolphin.converter.*;
 import open.dolphin.infomodel.*;
 import open.dolphin.rest.dto.RoutineMedicationResponse;
 import open.dolphin.rest.dto.RpHistoryEntryResponse;
+import open.dolphin.rest.dto.SafetySummaryResponse;
 import open.dolphin.rest.dto.UserPropertyResponse;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.session.PVTServiceBean;
@@ -241,6 +242,13 @@ public class KarteResource extends AbstractResource {
         int safeFirst = Math.max(firstResult, 0);
         int safeMax = maxResults > 0 ? Math.min(maxResults, 200) : 50;
         return karteServiceBean.getRoutineMedications(karteId, safeFirst, safeMax);
+    }
+
+    @GET
+    @Path("/safety/{karteId}")
+    @Produces(MediaType.APPLICATION_JSON)
+    public SafetySummaryResponse getSafetySummary(@PathParam("karteId") long karteId) {
+        return karteServiceBean.getSafetySummary(karteId);
     }
 
     @GET
