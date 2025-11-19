@@ -24,7 +24,23 @@ server-modernized モジュールのデバッグ状況を把握するための�
 - Trial 環境では「新規登録／更新／削除 OK（トライアル環境でのみ）」と定義し、CRUD を行った際は `RUN_ID=YYYYMMDDTorcaTrialCrudZ#` を採番して `artifacts/orca-connectivity/<RUN_ID>/trial/` に `httpdump/trace/ui` を保存する。ログサマリは `docs/server-modernization/phase2/operations/logs/2025-11-19-orca-trial-crud.md` および `ORCA_HTTP_404405_HANDBOOK.md#trial-crud-logging` に追記して監査可能にする。
 - `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の ORCA 節へ「2025-11-19: WebORCA Trial + CRUD」段落を追加し、Basic 認証手順と CRUD ログ手順を統一する。`PHASE2_PROGRESS.md` / `ORCA_API_STATUS.md` / `DOC_STATUS.md` の ORCA 行には「2025-11-19 trial 切替＋CRUD 許可」を同日付で反映する。
 
-### 2025-11-08 追記: Ops/DBA 発行プロセス先送りに伴う再プランニング
+### 2025-11-19 追記: 初期ユーザー登録時の FK 違反問題
+
+- **状況**: サーバー再構築後の初期ユーザー登録（`POST /openDolphin/resources/user`）で `PSQLException: ERROR: insert or update on table "d_roles" violates foreign key constraint "fk_roles_user"` が発生。`UserModel` がデータベースに保存される前に `RoleModel` の挿入が試みられる。
+- **試行した修正**:
+  1. `SystemServiceBean.addFacilityAdmin` と同様に role を detach → `em.persist(user)` → `em.flush()` → role を re-attach & persist する順序制御を `UserServiceBean.addUser` に実装
+  2. `em.persist()` を `em.merge()` に変更
+  3. `UserResource.addUser` で `RoleModel` に `userId` と `userModel` を明示的に設定
+- **RuntimeException テスト結果（RUN_ID=`20251119T220900Z`）**: `UserServiceBean.addUser` の先頭に `throw new RuntimeException("DEBUG: UserServiceBean.addUser called!")` を挿入してビルド・デプロイし、doctor 登録 API を呼び出したところ、例外が正常に発生。これによりデプロイされたコードは確実に実行されていることを確認。
+- **根本原因の候補**:
+  - `UserModel` の `@OneToMany(mappedBy="user", cascade=CascadeType.ALL, fetch=FetchType.EAGER)` 設定が `em.merge()` や `em.flush()` の動作に影響している可能性
+  - `SystemServiceBean` では同じパターンで成功しているが、`UserServiceBean` では失敗する（主な違いは CASCADE と EAGER fetch の有無）
+  - `em.merge()` 時に detach した roles がメモリ上に残り、cascade により再度処理される可能性
+  - EAGER fetch により UserModel 読み込み時に roles も即座に取得され、予期しない動作を引き起こしている可能性
+- **証跡**: `artifacts/parity-manual/user-registration/20251119T220900Z/` に RuntimeException テスト時の docker logs、curl レスポンス、および関連コードの diff を保存。
+- **現在の状態**: `UserServiceBean.java` に RuntimeException が残っており、実際の修正は未適用。次のアクションとして、(1) `@OneToMany` から `cascade=CascadeType.ALL` を削除、(2) `em.merge()` を `em.persist()` に戻す、(3) データベースログで SQL 実行タイミングを確認、のいずれかを選択する必要がある。
+- **関連ドキュメント**: `docs/server-modernization/phase2/notes/user-registration-fk-violation-analysis.md` に詳細な分析とコード比較を記録予定。`PHASE2_PROGRESS.md` にも 2025-11-19 時点の進捗として反映すること。
+
 
 - Ops/DBA の公式 Postgres dump 提供待ちを前提にすると進捗が停滞するため、フェーズ2ではローカル合成ベースライン（Hibernate 自動 DDL + `ops/db/local-baseline/local_synthetic_seed.sql`) を正式な標準フローとする。  
 - これに伴い `【Deferred-Ops/DBA】` プレフィックスを廃止し、過去に Deferred としていたタスクもローカルシード上で即時実行できるように整理した。`PHASE2_PROGRESS.md` からも Deferred ステータスを削除し、通常トラッキングへ戻すこと。  

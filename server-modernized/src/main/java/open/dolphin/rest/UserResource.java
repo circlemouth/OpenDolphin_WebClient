@@ -101,12 +101,17 @@ public class UserResource extends AbstractResource {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         UserModel model = mapper.readValue(json, UserModel.class);
 
+        if (model.getFacilityModel() == null) {
+            open.dolphin.infomodel.FacilityModel facilityModel = new open.dolphin.infomodel.FacilityModel();
+            model.setFacilityModel(facilityModel);
+        }
         model.getFacilityModel().setFacilityId(fid);
 
         // 関係を構築する
         List<RoleModel> roles = model.getRoles();
         for (RoleModel role : roles) {
             role.setUserModel(model);
+            role.setUserId(model.getUserId());
         }
 
         int result = userServiceBean.addUser(model);

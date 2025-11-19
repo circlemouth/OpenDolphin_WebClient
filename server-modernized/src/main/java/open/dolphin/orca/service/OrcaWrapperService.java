@@ -46,7 +46,7 @@ public class OrcaWrapperService {
     /**
      * No-args constructor for CDI proxying.
      */
-    protected OrcaWrapperService() {
+    public OrcaWrapperService() {
         this.transport = null;
         this.mapper = null;
     }

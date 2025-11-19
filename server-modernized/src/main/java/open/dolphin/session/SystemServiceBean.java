@@ -84,7 +84,7 @@ public class SystemServiceBean {
     public AccountSummary addFacilityAdmin(UserModel user) {
 
         // シーケンサから次の施設番号を得る
-        java.math.BigInteger nextId = (java.math.BigInteger)em.createNativeQuery(QUERY_NEXT_FID).getSingleResult();
+        Number nextId = (Number)em.createNativeQuery(QUERY_NEXT_FID).getSingleResult();
         Long nextFnum = new Long(nextId.longValue());
 
         // 施設OIDを生成する  base.next
@@ -119,17 +119,23 @@ public class SystemServiceBean {
         user.setUserId(sb.toString());
 
         // role
-        Collection<RoleModel> roles = user.getRoles();
+        List<RoleModel> roles = user.getRoles();
+        user.setRoles(null);
+
+        // Persist the User
+        // Role には User から CascadeType.ALL が設定されているが、
+        // 順序制御のために手動で保存する
+        em.persist(user);
+        em.flush();
+
         if (roles != null) {
+            user.setRoles(roles);
             for (RoleModel role : roles) {
                 role.setUserModel(user);
                 role.setUserId(user.getUserId());
+                em.persist(role);
             }
         }
-
-        // Persist the User
-        // Role には User から CascadeType.ALL が設定されている
-        em.persist(user);
 
         //-----------------------------------
         // 評価ユーザなのでデモ用の患者を生成する
