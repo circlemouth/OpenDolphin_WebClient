@@ -95,12 +95,12 @@
     "id": "task-yaml-spqpu7-src-modernized-s",
     "name": "[modernized server connect plan] 02_モダナイズ開発環境とCI整備\n期間: 11/24 09:00 - 11/27 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 🛠️ モダナイズ開発環境と CI 整備\n\n- docker-compose.modernized.dev.yml ベースで開発用環境を再構成し、環境差異をドキュメント化。\n- CI でのビルド・単体テスト・lint を安定化し、失敗時の再現手順を README へ追記。\n- 秘匿情報の取り扱いを再点検し、.env ひな型を更新（差分はドキュメントのみ、サーバー資産は無改変）。\n\nYAML ID: src/modernized_server/02_モダナイズ開発環境とCI整備.md",
     "model": "YAML App",
-    "status": "running",
+    "status": "completed",
     "importance": "high",
     "urgency": "medium",
     "createdAt": "2025-11-20T05:20:59.031Z",
-    "updatedAt": "2025-11-20T05:28:06.253Z",
-    "requiresTerminal": true,
+    "updatedAt": "2025-11-20T05:49:21.049Z",
+    "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-spqpu7-src-modernized-s",
     "baseBranch": "main",
@@ -139,15 +139,62 @@
     "description": "# 🛠️ モダナイズ開発環境と CI 整備\n\n- docker-compose.modernized.dev.yml ベースで開発用環境を再構成し、環境差異をドキュメント化。\n- CI でのビルド・単体テスト・lint を安定化し、失敗時の再現手順を README へ追記。\n- 秘匿情報の取り扱いを再点検し、.env ひな型を更新（差分はドキュメントのみ、サーバー資産は無改変）。"
   },
   {
+    "id": "task-yaml-7lgk3g-src-modernized-s",
+    "name": "[modernized server connect plan] 06_WEBORCA_trial接続性検証\n期間: 11/28 09:00 - 12/02 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 🌐 WEBORCA trial 接続性検証\n\n- ORCA_CONNECTIVITY_VALIDATION.md に従い、`https://weborca-trial.orca.med.or.jp/` (`trial/weborcatrial`) のみで疎通確認。\n- P12 証明書や本番証明書は使用せず、公開アカウント操作のみでログを取得し RUN_ID 付で保存。\n- タイムアウト・リトライ・TLS 設定のパラメータを調整し、失敗ケースを再現できる手順を残す。\n\nYAML ID: src/modernized_server/06_WEBORCA_trial接続性検証.md",
+    "model": "YAML App",
+    "status": "running",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-11-20T05:50:46.865Z",
+    "updatedAt": "2025-11-20T05:50:50.483Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-7lgk3g-src-modernized-s",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-modernized-server-connect-plan-b53b4b6d37::src/modernized_server/06_WEBORCA_trial接続性検証.md",
+      "appId": "custom-app-modernized-server-connect-plan-b53b4b6d37",
+      "datasetLabel": "modernized server connect plan",
+      "pathId": "src/modernized_server/06_WEBORCA_trial接続性検証.md",
+      "fileName": "modernized-server-connect-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/modernized-server-connect-plan.yaml",
+      "addedAt": "2025-11-20T05:50:46.843Z"
+    },
+    "labels": [
+      "modernized server connect plan",
+      "src / modernized_server"
+    ],
+    "dependencies": [
+      "task-yaml-spqpu7-src-modernized-s"
+    ],
+    "schedule": {
+      "startMs": 1764288000000,
+      "endMs": 1764633600000,
+      "durationDays": 4
+    },
+    "category": "src / modernized_server",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 🌐 WEBORCA trial 接続性検証\n\n- ORCA_CONNECTIVITY_VALIDATION.md に従い、`https://weborca-trial.orca.med.or.jp/` (`trial/weborcatrial`) のみで疎通確認。\n- P12 証明書や本番証明書は使用せず、公開アカウント操作のみでログを取得し RUN_ID 付で保存。\n- タイムアウト・リトライ・TLS 設定のパラメータを調整し、失敗ケースを再現できる手順を残す。"
+  },
+  {
     "id": "task-yaml-1cwkywj-src-modernized-s",
     "name": "[modernized server connect plan] 03_API契約最終化と設計更新\n期間: 11/27 09:00 - 11/30 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 📑 API 契約最終化と設計更新\n\n- MODERNIZED_API_DOCUMENTATION_GUIDE に沿って REST 契約を更新し、breaking change を排除。\n- Web クライアントが利用する認可/セッション仕様を再整理し、エラーコードを統一。\n- ドメイン別の OpenAPI 断片を整備し、モジュール境界を明文化。\n\nYAML ID: src/modernized_server/03_API契約最終化と設計更新.md",
     "model": "YAML App",
-    "status": "pending",
+    "status": "running",
     "importance": "high",
     "urgency": "medium",
-    "createdAt": "2025-11-20T05:28:28.741Z",
-    "updatedAt": "2025-11-20T05:28:28.741Z",
-    "requiresTerminal": false,
+    "createdAt": "2025-11-20T05:53:14.106Z",
+    "updatedAt": "2025-11-20T05:53:17.153Z",
+    "requiresTerminal": true,
     "createWorktree": false,
     "branchName": "task/task-yaml-1cwkywj-src-modernized-s",
     "baseBranch": "main",
@@ -166,7 +213,7 @@
       "pathId": "src/modernized_server/03_API契約最終化と設計更新.md",
       "fileName": "modernized-server-connect-plan.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/modernized-server-connect-plan.yaml",
-      "addedAt": "2025-11-20T05:28:27.158Z"
+      "addedAt": "2025-11-20T05:53:13.805Z"
     },
     "labels": [
       "modernized server connect plan",
