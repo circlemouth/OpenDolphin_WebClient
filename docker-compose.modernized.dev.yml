@@ -76,7 +76,6 @@ services:
       - ./ops/modernized-server/config/attachment-storage.dev.yaml:/opt/jboss/config/attachment-storage.yaml:ro
     networks:
       - default
-      - orca-weborca
     healthcheck:
       test:
         [
@@ -133,8 +132,3 @@ services:
 volumes:
   postgres-data-modernized:
   minio-data:
-
-networks:
-  orca-weborca:
-    external: true
-    name: jma-receipt-docker-for-ubuntu-2204_default
