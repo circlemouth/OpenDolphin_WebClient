@@ -370,6 +370,49 @@ const WorkspaceStack = styled.div`
   gap: 12px;
 `;
 
+const WorkspaceToolbar = styled(SurfaceCard)`
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 12px clamp(10px, 1.2vw, 16px);
+  background: ${({ theme }) => theme.palette.surface};
+  box-shadow: ${({ theme }) => theme.elevation.level2};
+`;
+
+const WorkspaceViewTabs = styled.div`
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+`;
+
+const WorkspaceTabButton = styled.button<{ $active: boolean }>`
+  border: 1px solid
+    ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.borderDefault)};
+  background: ${({ theme, $active }) => ($active ? theme.palette.accent : theme.palette.surfaceMuted)};
+  color: ${({ theme, $active }) => ($active ? theme.palette.primaryStrong : theme.palette.text)};
+  border-radius: ${({ theme }) => theme.radius.sm};
+  padding: 8px 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 120ms ease, border-color 120ms ease;
+
+  &:hover {
+    background: ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.surfaceStrong)};
+    color: ${({ theme, $active }) => ($active ? theme.palette.onPrimary : theme.palette.text)};
+  }
+`;
+
+const WorkspaceBody = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+`;
+
 const RightRail = styled.div`
   grid-area: right;
   width: min(100%, var(--charts-right-rail-width, 264px));
@@ -1256,6 +1299,8 @@ type MedicalCertificatesPanelProps = ComponentProps<typeof import('@/features/ch
 type SchemaEditorPanelProps = ComponentProps<typeof import('@/features/charts/components/SchemaEditorPanel').SchemaEditorPanel>;
 type ClaimAdjustmentPanelProps = ComponentProps<typeof import('@/features/charts/components/ClaimAdjustmentPanel').ClaimAdjustmentPanel>;
 
+type WorkspaceView = 'note' | 'summary' | 'observe';
+
 interface WorkSurfaceNoteProps {
   title: string;
   onTitleChange: (value: string) => void;
@@ -1273,6 +1318,8 @@ interface WorkSurfaceColumnProps {
   careMap: CareMapProps;
   diagnosis: DiagnosisProps;
   observation: ObservationProps;
+  activeView: WorkspaceView;
+  onViewChange: (view: WorkspaceView) => void;
 }
 
 const WorkSurfaceColumn = ({
@@ -1283,6 +1330,8 @@ const WorkSurfaceColumn = ({
   careMap,
   diagnosis,
   observation,
+  activeView,
+  onViewChange,
 }: WorkSurfaceColumnProps) => (
   <CentralColumn>
     <CentralScroll>
@@ -1301,29 +1350,51 @@ const WorkSurfaceColumn = ({
           </SurfaceCard>
         ) : null}
 
-        <SurfaceCard tone="muted">
-          <Stack gap={12}>
+        <WorkspaceToolbar>
+          <WorkspaceViewTabs role="tablist" aria-label="カルテ作業ビュー切替">
+            {[
+              { id: 'note' as WorkspaceView, label: '記録入力' },
+              { id: 'summary' as WorkspaceView, label: 'サマリ/計画' },
+              { id: 'observe' as WorkspaceView, label: '観察・経過' },
+            ].map((item) => (
+              <WorkspaceTabButton
+                key={item.id}
+                type="button"
+                role="tab"
+                aria-selected={activeView === item.id}
+                aria-pressed={activeView === item.id}
+                $active={activeView === item.id}
+                onClick={() => onViewChange(item.id)}
+              >
+                {item.label}
+              </WorkspaceTabButton>
+            ))}
+          </WorkspaceViewTabs>
+          <div style={{ minWidth: 0 }}>
             <TextField
               label="タイトル"
               placeholder="例: 再診 / 高血圧"
               value={noteProps.title}
               onChange={(event) => noteProps.onTitleChange(event.currentTarget.value)}
             />
-            <Button type="button" onClick={noteProps.onSave} disabled={noteProps.saveDisabled}>
-              保存して終了
-            </Button>
-            {noteProps.saveError ? <InlineError>{noteProps.saveError}</InlineError> : null}
-            {noteProps.lockError ? <InlineError>{noteProps.lockError}</InlineError> : null}
-          </Stack>
-        </SurfaceCard>
+          </div>
+          <Button type="button" onClick={noteProps.onSave} disabled={noteProps.saveDisabled}>
+            保存して終了
+          </Button>
+        </WorkspaceToolbar>
+        {noteProps.saveError ? <InlineError>{noteProps.saveError}</InlineError> : null}
+        {noteProps.lockError ? <InlineError>{noteProps.lockError}</InlineError> : null}
 
-        <WorkSurface {...workSurface} />
-
-        <SupplementGrid>
-          <CareMapPanel {...careMap} />
-          <DiagnosisPanel {...diagnosis} />
-          <ObservationPanel {...observation} />
-        </SupplementGrid>
+        <WorkspaceBody>
+          {activeView === 'note' ? <WorkSurface {...workSurface} /> : null}
+          {activeView === 'summary' ? (
+            <SupplementGrid>
+              <CareMapPanel {...careMap} />
+              <DiagnosisPanel {...diagnosis} />
+            </SupplementGrid>
+          ) : null}
+          {activeView === 'observe' ? <ObservationPanel {...observation} /> : null}
+        </WorkspaceBody>
       </WorkspaceStack>
     </CentralScroll>
   </CentralColumn>
@@ -1509,6 +1580,7 @@ export const ChartsPage = () => {
   const [consultationStartAt, setConsultationStartAt] = useState<number | null>(null);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [activeSection, setActiveSection] = useState<SoapSection>('subjective');
+  const [workspaceView, setWorkspaceView] = useState<WorkspaceView>('note');
   const [planCards, setPlanCards] = useState<PlanComposerCard[]>([]);
   const previousPlanCardsRef = useRef<PlanComposerCard[] | null>(null);
   const [focusedPlanCardId, setFocusedPlanCardId] = useState<string | null>(null);
@@ -1643,6 +1715,9 @@ export const ChartsPage = () => {
     }
     return visits.find((visit) => visit.visitId === selectedVisitId) ?? null;
   }, [selectedVisitId, visits]);
+  useEffect(() => {
+    setWorkspaceView('note');
+  }, [selectedVisit?.visitId]);
   const visitNotFound = Boolean(selectedVisitId && !selectedVisit && !visitsQuery.isLoading);
 
   const insuranceOptions = useMemo<ParsedHealthInsurance[]>(() => extractInsuranceOptions(selectedVisit), [selectedVisit]);
@@ -4587,6 +4662,8 @@ export const ChartsPage = () => {
             careMap={careMapProps}
             diagnosis={diagnosisProps}
             observation={observationProps}
+            activeView={workspaceView}
+            onViewChange={setWorkspaceView}
           />
         ) : (
           <CentralColumn>
