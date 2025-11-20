@@ -1,5 +1,8 @@
 .DS_Store
 
+# Temporary worktrees
+.worktrees/
+
 # Maven build artifacts
 /common/target/
 /server/target/

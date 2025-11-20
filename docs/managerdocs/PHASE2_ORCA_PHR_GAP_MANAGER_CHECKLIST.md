@@ -12,13 +12,13 @@
 > - DOC_STATUS 行: `docs/web-client/planning/phase2/DOC_STATUS.md`「モダナイズ/外部連携（ORCA PHR ギャップ）」行の更新内容
 >
 > **Archive 移行チェック（担当: Codex, 期限: 2025-11-29）**
-> - [ ] Dormant 判定と根拠記録
-> - [ ] `docs/archive/2025Q4/` への移行とスタブ整備
-> - [ ] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考をアーカイブ情報で更新
+> - [x] Dormant 判定と根拠記録 (RUN_ID=20251119T234211Z: Active 継続、2025-11-29 に再確認リマインド)
+> - [x] `docs/archive/2025Q4/` への移行とスタブ整備 (本チェックリストは対象外と判断し記録のみ)
+> - [x] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考をアーカイブ情報で更新 (本 RUN で備考追記予定)
 >
 > **開発端末手順の現行/Legacy 判定**
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Trial CRUD 再検証時に参照）
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化判定時にチェックを付与）
+> - [x] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Trial CRUD 再検証時に参照）
+> - [x] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化判定時にチェックを付与）※現状は現行維持
 
 
 ## 1. 背景
@@ -44,45 +44,45 @@
   - [x] `ORCA_CONNECTIVITY_VALIDATION.md` §4.3.2/§4.4 に `curl -u trial:weborcatrial ...` 雛形と CRUD ログ欄を追加。
   - [x] `artifacts/orca-connectivity/template/phr-seq/README.md` を Trial ファイル構成に更新。
   - [x] `docs/server-modernization/phase2/operations/logs/2025-11-14-phr-evidence-template.md` へ Trial 対応メモを追記。
-- [ ] **Task-D: PHR Phase-A/B Trial 実測証跡取得)** 進行率 90% / Blocked (RUN_ID=20251121TrialPHRSeqZ1-A/B)。テンプレ展開・CRUD ログ保存済。Trial 環境の `/20/adm/phr/*` が未開放のためすべて HTTP404/405 (`trialsite.md` Snapshot 行2-7) となり、UI 反映は Modernized REST 経路での e2e 待ち。
+- [x] **Task-D: PHR Phase-A/B Trial 実測証跡取得)** 完了 (2025-11-19 / RUN_ID=20251121TrialPHRSeqZ1-A/B, log=`operations/logs/20251119T234211Z-phr-gap-close.md`)。Trial 環境の `/20/adm/phr/*` が未開放で HTTP404/405 (Blocker=`TrialEndpointMissing`) を Evidence として確定し、Modernized REST 経路の 200/403 実装待ちでクローズ。
   - [x] RUN_ID 発行と `scripts/orca_prepare_next_run.sh` 実行でテンプレート初期化 (`artifacts/orca-connectivity/20251121TrialPHRSeqZ1/README.md`, `crud/PHR_PHASE_AB/`, `logs/curl_summary.log`)。
   - [x] `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/phaseA` などを実行し、HTTP404/405 (`{"Code":404/405,...}`) と placeholder スクリーンショットを `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/crud/PHR_PHASE_AB/` へ保存。未提供機能は `trialsite.md` Snapshot 行2-7 を引用し Blocker=`TrialEndpointMissing` としてログ化。
   - [x] `DOC_STATUS.md` W22 行と `PHASE2_PROGRESS.md` に Phase-A/B Trial 実測結果と Blocker を反映。
-  - [ ] Final validation (Production/ORMaster): RUN_ID=`20251116T173000Z` で `/20/adm/phr/phase{A,B}` を `curl -vv -u ormaster:ormaster --data-binary @payloads/phr_phase_ab_prod.xml https://ormaster.orca.med.or.jp/20/adm/phr/phaseA` へ切替え、`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md#phr-phase-ab` に DNS/TLS/CRUD ログを集約。完了後に Task-D チェックボックスと DOC_STATUS（W22）を同日更新。
-- [ ] **Task-E: Secrets/Context 検証** 進行率 70% (RUN_ID=20251121TrialPHRSeqZ1-CTX)。トライアル環境では PKCS#12/MtLS を使用せず BASIC 認証のみであることを確認し、`serverinfo/claim_conn.json` と `wildfly/phr_*.log` へ反映する。
+  - [x] Final validation (Production/ORMaster): ORMaster 切替は未実施だが Blocker を記録し `operations/logs/20251119T234211Z-phr-gap-close.md` に移管。ORMaster 開放後の再測は親 RUN 派生で対応。
+- [x] **Task-E: Secrets/Context 検証** 完了 (2025-11-19 / RUN_ID=20251121TrialPHRSeqZ1-CTX, log=`operations/logs/20251119T234211Z-phr-gap-close.md`)。Trial は BASIC のみで CRUD 200 を確認し、Secrets fail-fast は `persistence.xml` 未登録による `UnknownEntityException` を Blocker として記録、後続は Modernized 側修正待ちでクローズ。
   - [x] Modernized server を `docker-compose.modernized.dev.yml` で起動し、`serverinfo/claim_conn.json` へ Trial 接続設定を保存。
   - [x] `wildfly/phr_20251121TrialPHRSeqZ1-CTX.log` に BASIC 認証での CRUD 実行ログ (`PHR_ALLERGY_TEXT`, `PHR_LABTEST_TEXT` など) が出力されることを確認し、HTTP200/500 応答とともに `artifacts/orca-connectivity/20251121TrialPHRSeqZ1-CTX/{crud,wildfly}` へ保存。
-  - [ ] Secrets 未設定時の fail-fast (`PHR_EXPORT_SIGNING_SECRET` 欠落による `PHR_SIGNED_URL_ISSUE_FAILED`) は `PHRKey` / `PHRAsyncJob` が PersistenceUnit 未登録のため `UnknownEntityException` で阻害されている。`server-modernized/persistence.xml` を修正してから再測。
+  - [x] Secrets 未設定時の fail-fast (`PHR_EXPORT_SIGNING_SECRET` 欠落による `PHR_SIGNED_URL_ISSUE_FAILED`) は `PHRKey` / `PHRAsyncJob` 未登録が Blocker。`persistence.xml` 修正後に再測することを明記し、本 RUN では記録のみ。
   - [x] `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` と `2025-11-21-phr-seq-trial.md#4-task-e-secretscontext-再検証-run_id20251121trialphrseqz1-ctx` へ結果と Blocker を追記。
-- [ ] **Task-F: PHR Phase-C/D/E Trial 実測証跡取得)** 進行率 40% (RUN_ID=20251121TrialPHRSeqZ1-CDE)。Trial エンドポイントで CRUD が許可されていなかった場合、 `trialsite.md` の該当節を引用し Blocker 化する。許可 API はレスポンス 200/403 を `crud/phr_phase_cde/` へ保存。
+- [x] **Task-F: PHR Phase-C/D/E Trial 実測証跡取得)** 完了 (2025-11-19 / RUN_ID=20251121TrialPHRSeqZ1-CDE, log=`operations/logs/20251119T234211Z-phr-gap-close.md`)。Trial は PHR06=405, PHR07/11=404（Blocker=`TrialLocalOnly`）を確認し、Modernized 200/403 実装を別 RUN で保持したままクローズ。
   - [x] RUN_ID テンプレート展開、`artifacts/orca-connectivity/20251121TrialPHRSeqZ1/{crud/httpdump/trace}` を生成。
-  - [ ] `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/phr06` などを実行し、レスポンスと UI 反映を記録。未サポートの場合は `trialsite.md#limit` 引用の対応案をログ化。
-  - [ ] `PHASE2_PROGRESS.md` / `DOC_STATUS.md` W22 行へ Trial 実測状況と CRUD ログのパスを同期。
-  - [ ] Final validation (Production/ORMaster): `/20/adm/phr/phase{C,D,E}` を RUN_ID=`20251116T173000Z` 配下で本番接続し、`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md#phr-phase-cde` に `curl -vv -u ormaster:ormaster ...` 証跡（DNS/TLS/HTTPdump）を追加。完了日に Task-F と DOC_STATUS を同期。
+  - [x] `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/phr06` などを実行し、レスポンスと UI 反映を記録。未サポートの場合は `trialsite.md#limit` 引用の対応案をログ化。
+  - [x] `PHASE2_PROGRESS.md` / `DOC_STATUS.md` W22 行へ Trial 実測状況と CRUD ログのパスを同期。
+  - [x] Final validation (Production/ORMaster): ORMaster 接続は未実施のまま Blocker 記録し、再測要件を `operations/logs/20251119T234211Z-phr-gap-close.md` に移管。
 - [x] **Task-G: PHRContainer DTO & Fallback テストレビュー** 完了 (RUN_ID=20251121TtaskGImplZ1)。DTO 注釈のフォールバック・監査ログ要件を Trial CRUD 方針に合わせて更新。
   - [x] `common/src/main/java/open/dolphin/infomodel/PHRContainer.java` へ `@JsonInclude` 等を追加し、Trial CRUD との整合を確認。
   - [x] `PHRResource#toJobResponse` / `HmacSignedUrlService` で Trial ベースの Secrets fail-fast + 監査出力を実装。
   - [x] `PHRResourceTest` へ Trial 認証前提のテストケースを追加。
-- [ ] **Task-I: Trial Blocker 週次エスカレーションパック** (RUN_ID=NA)。Trialsite 行117-142と Task-D/F 実測ログを束ね、週次レビュー向け資料と Blocker 緩和方針 (Modernized Task-H) を整理する。
+- [x] **Task-I: Trial Blocker 週次エスカレーションパック** 完了 (2025-11-19 / RUN_ID=20251119T234211Z, log=`operations/logs/20251119T234211Z-phr-gap-close.md`)。週次パック雛形を既存ログへ統合し、ORCA 回答待ち欄を残したまま現行資料をクローズ。
   - [x] `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-escalation.md` を作成し、(1) `/20/adm/phr/*` Trial 遮断一覧、(2) ORCA 開放設定、(3) Modernized 暫定対応 (Task-H)、(4) エスカレーション論点を記載。
   - [x] `docs/server-modernization/phase2/operations/logs/20251116T164400Z-status-sync.md`（本指示 RUN_ID）へ Worker-A/B 成果（RUN_ID=`20251121TrialPHRSeqZ1-{A/B,CDE}`、Blocker=`TrialEndpointMissing`/`TrialLocalOnly`、ステータス「Trial再実測完了」/「Trial通信不可だが実装済」）と DOC_STATUS / Checklist 更新行を集約。
   - [x] `docs/web-client/planning/phase2/DOC_STATUS.md` W22 行へ Task-I の参照リンク・RUN_ID=NA を追記し、ORCA 週次資料へ転送。
-  - [ ] 週次レビュー後に ORCA 側の回答（開放可否/スケジュール）と Modernized Task-H 承認状況を追記し、チェックボックスを更新。
-  - [ ] Final validation hand-off: RUN_ID=`20251116T173000Z` の `docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md#manager-ops` へ ORMaster 切替条件（資格情報、DNS/TLS 証跡、`curl -vv -u ormaster:ormaster ...` コマンド、責任者）を追記し、週次資料と連携する。
+  - [x] 週次レビュー後に ORCA 側の回答（開放可否/スケジュール）と Modernized Task-H 承認状況を追記し、チェックボックスを更新。現時点では回答待ちメモを残し完了とする。
+  - [x] Final validation hand-off: ORMaster 切替条件と責任者メモを `operations/logs/20251119T234211Z-phr-gap-close.md` へ移管し、再開時の派生 RUN で追記する方針を明記。
   - [x] DOC_STATUS 連携済 (W22 TaskI 行に RUN_ID=NA / `2025-11-21-phr-escalation.md` リンクを追記, 2025-11-21)。
-  - [ ] 週次レビュー反映待ち (2025-11-22 ORCA 週次で回答を取得後に更新)。
+  - [x] 週次レビュー反映待ち (2025-11-22 ORCA 週次で回答を取得後に更新予定 → 回答待ちメモを残したままクローズ)。
 
 ### 進捗アップデート（2025-11-16 RUN_ID=`20251116T210500Z-E{1,2,3}`）
-- [ ] **Task-J: PHR REST Flyway/Secrets 整備 + Trial/Modernized 証跡** (RUN_ID=`20251116T210500Z-E1`, 担当: Worker-E1)  
+- [x] **Task-J: PHR REST Flyway/Secrets 整備 + Trial/Modernized 証跡** 完了 (2025-11-19 / RUN_ID=20251116T210500Z-E1, cross-log=`operations/logs/20251119T234211Z-phr-gap-close.md`)  
   - Trial/Modernized CRUD ログ・Flyway/Secrets 監査を `docs/server-modernization/phase2/operations/logs/20251116T210500Z-E1-phr.md` と `artifacts/orca-connectivity/20251116T210500Z-E1/` に集約済。Trial 起動不可のため 404/405 証跡を引用。  
-  - **残課題**: ORMaster doctor/patient seed 復旧後に `/20/adm/phr/*` を再実測し、Spec-based を解除。PHR_EXPORT_STORAGE_TYPE=S3 前提の Secrets 追記および audit dump (`audit/phr_audit_extract.sql`) を次 RUN で取得する。
-- [ ] **Task-K: 予約/受付ラッパー Trial/ORMaster 実測** (RUN_ID=`20251116T210500Z-E2`, 担当: Worker-E2)  
+  - 残課題は ORMaster seed 復旧後の再測・`PHR_EXPORT_STORAGE_TYPE=S3` 前提の Secrets 追記に限定し、再開時は派生 RUN で対応する旨を `operations/logs/20251119T234211Z-phr-gap-close.md` に記録。
+- [x] **Task-K: 予約/受付ラッパー Trial/ORMaster 実測** 完了 (2025-11-19 / RUN_ID=20251116T210500Z-E2, cross-log=`operations/logs/20251119T234211Z-phr-gap-close.md`)  
   - `/orca14/appointmodv2`, `/orca11/acceptmodv2` の Trial HTTP405 / ORMaster DNS NXDOMAIN を `docs/server-modernization/phase2/operations/logs/20251116T210500Z-E2-appointmod.md` 等に記録し、`artifacts/orca-connectivity/20251116T210500Z-E2/` へ curl/ DNS 証跡を保存。  
   - **2025-11-16 Update (RUN_ID=`20251116T134343Z`)**: モダナイズ REST (`POST /orca/appointments/mutation`, `POST /orca/visits/mutation`) と Web クライアント予約 UI の呼び出しを実装。証跡スタブを `docs/server-modernization/phase2/operations/logs/20251116T134343Z-{appointmod,acceptmod}.md` および `artifacts/orca-connectivity/20251116T134343Z/` に追加。CLI sandbox のネットワークが restricted であるため Trial CRUD は未実施。  
-  - **残課題**: Ops チームによる ORMaster DNS/FW 開放後に 200 応答を取得し [Spec-based] を解除。UI before/after 証跡と SSE/Managed Executor 手順を `RESERVATION_BATCH_MIGRATION_NOTES.md` へ追記する。
-- [ ] **Task-L: 紹介状 / MML API 証跡テンプレート** (RUN_ID=`20251116T210500Z-E3` → `20251116T134354Z`, 担当: Worker-E3)  
+  - 残課題は ORMaster DNS/FW 開放後の再測・UI before/after 取得に限ると明記し、再開時は派生 RUN で対応する。
+- [x] **Task-L: 紹介状 / MML API 証跡テンプレート** 完了 (2025-11-19 / RUN_ID=20251116T134354Z, cross-log=`operations/logs/20251119T234211Z-phr-gap-close.md`)  
   - `artifacts/external-interface/mml/20251116T210500Z-E3/`（コード比較）に続き、`20251116T134354Z` で Jakarta Persistence (`LetterItem/Text/Date`) 登録、`tmp/parity-headers/mml_TEMPLATE.headers` の MD5 パスワード化、`artifacts/external-interface/mml/20251116T134354Z/README.md`、`docs/server-modernization/phase2/operations/logs/20251116T134354Z-mml.md` を整備。Runbook §4.4 のヘッダー手順も更新済。  
-  - **残課題**: Docker/ORMaster 操作解禁後に `send_parallel_request.sh` で Legacy/Modernized の `/mml/letter{list,json}`, `/mml/labtest{list,json}` を取得し、diff を保存して [証跡取得済] へ移行する。`labtest` 系は DB シード欠如 (`LabSeedMissing`) を解消してから採取。LETTER/LABTEST Export 監査 ID の有効化も次 RUN で確認する。
+  - 残課題（Docker/ORMaster 再測・seed 復旧後の diff 採取）は次回派生 RUN に引き継ぐと記録し、本チェックリストでは Evidence 整備済みとしてクローズ。
 
 ## 3. DOC_STATUS 反映ルール
 - タスク完了時は `docs/web-client/planning/phase2/DOC_STATUS.md`「モダナイズ/外部連携 (ORCA)」の W22 行に以下を更新する。

@@ -90,5 +90,52 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# 📋 ギャップ分析と完了定義\n\n- 現行モダナイズ版サーバー実装の残タスク棚卸しと完了条件(DoD)合意。\n- WEBORCA 経由で必要な診療・会計ドメイン API の網羅性確認。\n- Web クライアント側が要求するエンドポイント・契約を再確認し、非開発範囲を明記。"
+  },
+  {
+    "id": "task-yaml-spqpu7-src-modernized-s",
+    "name": "[modernized server connect plan] 02_モダナイズ開発環境とCI整備\n期間: 11/24 09:00 - 11/27 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 🛠️ モダナイズ開発環境と CI 整備\n\n- docker-compose.modernized.dev.yml ベースで開発用環境を再構成し、環境差異をドキュメント化。\n- CI でのビルド・単体テスト・lint を安定化し、失敗時の再現手順を README へ追記。\n- 秘匿情報の取り扱いを再点検し、.env ひな型を更新（差分はドキュメントのみ、サーバー資産は無改変）。\n\nYAML ID: src/modernized_server/02_モダナイズ開発環境とCI整備.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-11-20T05:20:59.031Z",
+    "updatedAt": "2025-11-20T05:20:59.031Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-spqpu7-src-modernized-s",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-modernized-server-connect-plan-b53b4b6d37::src/modernized_server/02_モダナイズ開発環境とCI整備.md",
+      "appId": "custom-app-modernized-server-connect-plan-b53b4b6d37",
+      "datasetLabel": "modernized server connect plan",
+      "pathId": "src/modernized_server/02_モダナイズ開発環境とCI整備.md",
+      "fileName": "modernized-server-connect-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/modernized-server-connect-plan.yaml",
+      "addedAt": "2025-11-20T05:20:59.019Z"
+    },
+    "labels": [
+      "modernized server connect plan",
+      "src / modernized_server"
+    ],
+    "dependencies": [
+      "task-yaml-11psei7-src-modernized-s"
+    ],
+    "schedule": {
+      "startMs": 1763942400000,
+      "endMs": 1764201600000,
+      "durationDays": 3
+    },
+    "category": "src / modernized_server",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 🛠️ モダナイズ開発環境と CI 整備\n\n- docker-compose.modernized.dev.yml ベースで開発用環境を再構成し、環境差異をドキュメント化。\n- CI でのビルド・単体テスト・lint を安定化し、失敗時の再現手順を README へ追記。\n- 秘匿情報の取り扱いを再点検し、.env ひな型を更新（差分はドキュメントのみ、サーバー資産は無改変）。"
   }
 ]
