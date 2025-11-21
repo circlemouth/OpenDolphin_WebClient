@@ -9,7 +9,7 @@
 ## 1. 目的
 
 1. Web クライアント側の UX シナリオとサーバー側の API/Runbook を同一 RUN_ID で結び、手戻りなく検証ログを残す。
-2. WebORCA 接続は `https://weborca-trial.orca.med.or.jp/`（BASIC 認証 `trial` / `weborcatrial`）のみを利用し、他環境や `curl --cert-type P12` を含む本番経路は遮断する方針を文書化する。
+2. WebORCA 接続は開発用の非公開エンドポイントを使用し、具体値は `docs/web-client/operations/mac-dev-login.local.md` を参照する。WebORCA トライアルや `curl --cert-type P12` を含む本番経路は遮断する方針を文書化する。
 3. DOC_STATUS と各チェックリストで共有される「Phase2 必読チェーン」を具体的な成果物（配線図・契約表・Runbook 紐付け）に落とし込む。
 
 ## 2. 三者接続図
@@ -28,7 +28,7 @@
 └──────────────┬────────────────┘
                │ ORCA Adapter (Trial専用) / JMS fallback 禁止
 ┌──────────────▼────────────────┐
-│ WebORCA Trial (`https://weborca-trial.orca.med.or.jp/`) │
+│ WebORCA Dev (接続情報は mac-dev-login.local.md を参照) │
 │ - BASIC: trial/weborcatrial                             │
 │ - CRUD: 新規/更新/削除 OK（Trial のみ）                  │
 └──────────────────────────────────────────────┘

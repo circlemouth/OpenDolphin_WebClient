@@ -1215,7 +1215,7 @@ ORCA 接続検証を実施した際は、以下テンプレをそのまま貼り
 - **課題**: Legacy 8080 を compose プロジェクトへ再結合するか、`--skip-legacy` 実行時の docker logs 添付を正式ルール化する。OTLP 設定変更後の Micrometer ダッシュボードで `deployment` ラベルを `deployment_source` へ切り替える検討を継続。
 
 ## 2025-11-22 追記: ORCA HTTP 404/405 テンプレ本番適用（担当: Codex）
-- **RUN_ID=`20251121TorcaHttpLogZ1`／`20251122TorcaHttpLogZ1`**: `scripts/orca_prepare_next_run.sh` でテンプレ展開後、Handbook §7 の tail -F／docker logs --since／rg 抜粋／httpdump／Slack 報告を実施。Basic 無しは 401、`curl -u ormaster:change_me` は 404 まで進む挙動を `httpdump/api01rv2_patientgetv2{,_basic}/response.http` と `http_live_20251113T131848Z.log` に記録し、Echo panic stacktrace を `echo_panic_stacktrace.txt` へ抽出した。
+- **RUN_ID=`20251121TorcaHttpLogZ1`／`20251122TorcaHttpLogZ1`**: `scripts/orca_prepare_next_run.sh` でテンプレ展開後、Handbook §7 の tail -F／docker logs --since／rg 抜粋／httpdump／Slack 報告を実施。Basic 無しは 401、`curl -u <DEV_ORCA_BASIC>` は 404 まで進む挙動を `httpdump/api01rv2_patientgetv2{,_basic}/response.http` と `http_live_20251113T131848Z.log` に記録し、Echo panic stacktrace を `echo_panic_stacktrace.txt` へ抽出した（接続先・認証詳細は `mac-dev-login.local.md` 参照）。
 - **設定整理**: `receipt_route.ini`／`online.env`／`jma-receipt.env` の更新手順と Basic 運用ポリシーをログ台帳へ追記し、docker restart だけで反映できることを明文化。`docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md` と `PHASE2_PROGRESS.md` ORCA節を更新し、次アクション（API_ENABLE, Basic 認証の公式キー取得など）を明示した。
 - **次ステップ**: ORCA サポートからの `API_ENABLE_*`／Basic 情報を受領後、設定ファイルを正式値に差し替えて再テスト。`orca_http.log` から panic stacktrace を継続採取するか Go Echo 側の handler を調査する。
 

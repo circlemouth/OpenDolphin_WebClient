@@ -1,4 +1,4 @@
-﻿> 【2025-11-21 更新】以降の ORCA 接続はすべて http://100.102.17.40:8000（Basic: ormaster/change_me）を利用する。本番環境ではなく仮想データに対する CRUD を含め全 API 操作を許可する。過去のトライアル URL 記載箇所も本接続先に読み替えること。
+﻿> 【2025-11-21 更新】以降の ORCA 接続は、接続先・認証情報を機微扱いとし `docs/web-client/operations/mac-dev-login.local.md` を参照する。WebORCA トライアル (`https://weborca-trial.orca.med.or.jp`) は利用しない。仮想データに対する CRUD を含め全 API 操作を許可する。過去のトライアル URL 記載箇所は本運用に読み替えること。
 # ORCA 謗･邯・Single Playbook・・ebORCA Trial・・
 - 2025-11-21 エラー採取 RUN（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）で下記を確認: 成功=HTTP200/`Api_Result=00`（`POST /api01rv2/system01dailyv2?class=00`）、誤パスワード=HTTP401 JSON、未登録患者=HTTP404 JSON（`GET /api01rv2/patientgetv2?id=999999`）、`/actuator/health`=HTTP404。Authorization はすべて `<MASKED>`。証跡: `artifacts/error-audit/20251121T153300Z/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#5-子-run-20251121t153300z-実測ログ親20251120t193040z`。
 - 2025-11-21 業務系エラー採取 RUN（RUN_ID=`20251121ErrorMatrixZ1`, 親=`20251120T193040Z`）で下記を確認: `system01dailyv2` Request_Number=99 → HTTP200/`Api_Result=91`、`acceptlstv2` Acceptance_Date=2000-01-01 & Physician_Code=99999 → HTTP200/`Api_Result=13`、`/api/api21/medicalmodv2` Patient_ID=999999 → HTTP200/`Api_Result=10`。Authorization は `<MASKED>` 済み。証跡: `artifacts/error-audit/20251121ErrorMatrixZ1/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#6-子-run-20251121errormatrixz1-実測ログ親20251120t193040z`。
@@ -205,4 +205,3 @@ No.19-38 縺ｧ菴懈・縺励◆ XML 繝・Φ繝励Ξ縺ｮ險ｼ霍｡縺ｯ `
 ---
 
 - `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` 繝輔ぉ繝ｼ繧ｺ 4・・RCA 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ・峨→ `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md#weborca-trial` 縺ｫ譛ｬ繧ｿ繧ｹ繧ｯ繝ｪ繧ｹ繝医・隕∫ｴ・ｒ蜿肴丐縺吶ｋ縺薙→縲・- 譌ｧ WebORCA 繧ｳ繝ｳ繝・リ謇矩・ｄ譛ｬ逡ｪ繝帙せ繝亥髄縺第焔鬆・・縺吶∋縺ｦ繧｢繝ｼ繧ｫ繧､繝匁ｸ医∩縲ょｿ・ｦ√↓蠢懊§縺ｦ `docs/archive/2025Q4/` 縺ｮ螻･豁ｴ縺ｮ縺ｿ蜿ら・縺吶ｋ縲・
-

@@ -8,7 +8,7 @@
 ## 1. 守るべき制約（高速開発でも削れないもの）
 - `server/` 配下やサーバースクリプトを変更しない。触れるのは Web クライアント資産と関連ドキュメントのみ。
 - Legacy サーバー/クライアントは差分検証目的で一時起動してもよいが、保守や運用作業は禁止。
-- ORCA 連携は WebORCA トライアル (`https://weborca-trial.orca.med.or.jp/`, `trial/weborcatrial`) を使用、もしくは指示されたアドレス宛のdockerコンテナ宛の通信は許可する。。`curl --cert-type P12`、本番証明書、は禁止。ログは公開アカウント操作で取得する。
+- ORCA 連携の接続先・認証情報は機微扱いとし、開発用設定は `docs/web-client/operations/mac-dev-login.local.md` を参照する。WebORCA トライアルや本番経路、`curl --cert-type P12` の利用は禁止。ログは公開アカウント操作で取得する。
 - 参照専用: `client/`, `common/`, `ext_lib/` の Legacy 資産。更新はしない。
 
 ## 2. Phase2 オペレーション最小セット

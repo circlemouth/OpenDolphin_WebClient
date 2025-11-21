@@ -1,6 +1,6 @@
 # ORCA connectivity log (RUN_ID=20251121SeedFixZ1)
 
-- 対象: `http://100.102.17.40:8000`（Basic `ormaster/change_me`）。平文 HTTP、TLS なし。
+- 対象: 開発用 ORCA（詳細は `docs/web-client/operations/mac-dev-login.local.md` 参照）。平文 HTTP、TLS なし。
 - 目的: ドクターコード `0001` と患者 `00000001` 登録後に `acceptlstv2` / `appointlstv2` / `medicalmodv2` を `Api_Result=00` で再取得する。
 - 証跡: `artifacts/orca-connectivity/20251121SeedFixZ1/{crud,trace,blocked,README.md}`（Basic 認証は curl ログに出力せず）。
 
