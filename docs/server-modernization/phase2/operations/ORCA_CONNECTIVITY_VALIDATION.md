@@ -48,19 +48,19 @@ curl --silent --show-error \
      --trace-ascii "${EVIDENCE_ROOT}/trace/system01dailyv2.trace"
 ```
 
-- 蜿ら・ API・・acceptlstv2`, `appointlstv2`, etc.・峨ｂ蜷後§ RUN_ID/繝・ぅ繝ｬ繧ｯ繝医Μ讒区・縺ｧ菫晏ｭ倥☆繧九・- CRUD 謫堺ｽ懊ｒ莨ｴ縺・ｴ蜷医・ `data-check/<api>.md` 縺ｫ before/after 縺ｨ謌ｻ縺玲焔鬆・ｒ蠢・★險倬鹸縺吶ｋ縲・- 霑ｽ蜉縺ｮ `curl` 繝・Φ繝励Ξ縺悟ｿ・ｦ√↓縺ｪ縺｣縺溷ｴ蜷医ｂ譛ｬ遽繧呈峩譁ｰ縺励∽ｻ悶ヵ繧｡繧､繝ｫ縺ｯ譛ｬ遽縺ｸ縺ｮ繝ｪ繝ｳ繧ｯ縺縺代ｒ谿九☆縲・
+- 蜿ら・ API・・acceptlstv2`, `appointlstv2`, etc.・峨ｂ蜷後§ RUN_ID/繝・ぅ繝ｬ繧ｯ繝医Μ讒区・縺ｧ菫晏ｭ倥☆繧九・- CRUD 謫堺ｽ懊ｒ莨ｴ縺・ｴ蜷医・ `data-check/<api>.md` 縺ｫ before/after 縺ｨ謌ｻ縺玲焔鬆・ｒ蠢・★險倬鹸縺吶ｋ縲・- 霑ｽ蜉縺ｮ `curl` 繝・Φ繝励Ξ縺悟ｿ・ｦ√↓縺ｪ縺｣縺溷ｴ蜷医・b譛ｬ遽繧呈峩譁ｰ縺励∽ｻ悶ヵ繧｡繧､繝ｫ縺ｯ譛ｬ遽縺ｸ縺ｮ繝ｪ繝ｳ繧ｯ縺縺代ｒ谿九☆縲・
 ## 1. 繧ｹ繧ｳ繝ｼ繝励→蜑肴署譚｡莉ｶ
 
-| 鬆・岼 | 蜀・ｮｹ |
+| 項目 | 内容 |
 | --- | --- |
-| WebORCA 謗･邯壼・ | `https://weborca-trial.orca.med.or.jp/`・・N=`weborca-trial.orca.med.or.jp`・峨ょ・髢九ヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・・縺溘ａ TLS 繧ｯ繝ｩ繧､繧｢繝ｳ繝郁ｨｼ譏取嶌縺ｯ荳崎ｦ√？TTP Basic 縺ｮ縺ｿ縺ｧ繧｢繧ｯ繧ｻ繧ｹ縺吶ｋ縲・|
-| 隱崎ｨｼ諠・ｱ | 繝ｦ繝ｼ繧ｶ繝ｼ `trial` / 繝代せ繝ｯ繝ｼ繝・`weborcatrial`・亥・蠑上ヨ繝ｩ繧､繧｢繝ｫ繧ｵ繧､繝医〒蜈ｬ髢区ｸ医∩・峨りｿｽ蜉縺ｮ API 繧ｭ繝ｼ繧・PKCS#12 險ｼ譏取嶌縺ｯ荳崎ｦ√・
-| CRUD 譁ｹ驥晢ｼ・rial・・| `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` 縺ｧ縲御ｸ驛ｨ縺ｮ邂｡逅・･ｭ蜍吶ｒ髯､縺崎・逕ｱ縺ｫ縺贋ｽｿ縺・＞縺溘□縺代∪縺吶阪→譏手ｨ倥ゅヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・剞螳壹〒譁ｰ隕冗匳骭ｲ・乗峩譁ｰ・丞炎髯､ OK縲∵桃菴懷・螳ｹ縺ｯ蠢・★繝ｭ繧ｰ蛹悶＠縺ｦ謌ｻ縺玲婿繧定ｨ倬鹸縺吶ｋ縲・
-| 蛻ｩ逕ｨ荳榊庄讖溯・ | Snapshot Summary 險倩ｼ峨・騾壹ｊ縲√・繝ｭ繧ｰ繝ｩ繝/繝槭せ繧ｿ譖ｴ譁ｰ縲，LAIM 騾壻ｿ｡縲√・繝ｪ繝ｳ繧ｿ逶ｴ謗･蜃ｺ蜉帙√Ξ繧ｻ繝励ヨ荳諡ｬ/髮ｻ邂・CSV 縺ｪ縺ｩ縺ｯ辟｡蜉ｹ蛹悶＆繧後※縺・ｋ縲よ､懆ｨｼ蟇ｾ雎｡縺九ｉ髯､螟悶＠縲～tmp/orca-weekly-summary.md` 縺ｮ騾ｱ谺｡谺・↓繧ゅ悟茜逕ｨ荳榊庄讖溯・螟画峩縺ｪ縺励阪→譏手ｨ倥☆繧九・
-| 繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・ | `opendolphin-server-modernized-dev`・・ildFly 27・峨Ａops/shared/docker/custom.properties` 縺翫ｈ縺ｳ `ops/modernized-server/docker/custom.properties` 縺ｫ `claim.host=weborca-trial.orca.med.or.jp` / `claim.send.port=443` / `claim.conn=server` / `claim.send.encoding=MS932` / `claim.scheme=https` 繧定ｨｭ螳壹＠縺ｦ縺九ｉ蜀阪ン繝ｫ繝峨☆繧九・|
-| 繝阪ャ繝医Ρ繝ｼ繧ｯ | 菴懈･ｭ遶ｯ譛ｫ縺九ｉ `weborca-trial.orca.med.or.jp:443` 縺ｸ縺ｮ outbound HTTPS 縺瑚ｨｱ蜿ｯ縺輔ｌ縺ｦ縺・ｋ縺薙→縲ら､ｾ蜀・ロ繝・ヨ繝ｯ繝ｼ繧ｯ縺ｧ蛻ｶ髯舌＆繧後※縺・ｋ蝣ｴ蜷医・ VPN 縺ｾ縺溘・險ｱ蜿ｯ貂医∩繝帙せ繝医∈蛻・ｊ譖ｿ縺医ｋ縲・
-| DNS | 菴懈･ｭ髢句ｧ句燕縺ｫ繝帙せ繝・OS 縺ｧ `Resolve-DnsName weborca-trial.orca.med.or.jp`・・indows・峨ｄ `nslookup`/`dig` 繧貞ｮ溯｡後＠縲、 繝ｬ繧ｳ繝ｼ繝峨ｒ蜿門ｾ励〒縺阪ｋ縺薙→繧堤｢ｺ隱阪☆繧九８SL2 繧貞茜逕ｨ縺吶ｋ蝣ｴ蜷医・ Windows 蛛ｴ `.wslconfig` 縺ｫ `generateResolvConf=false` 繧定ｿｽ蜉縺励仝SL 蜀・〒縺ｯ `/etc/resolv.conf` 繧呈焔蜍慕ｮ｡逅・☆繧九Ａartifacts/orca-connectivity/<RUN_ID>/dns/` 縺ｸ `nslookup`/`dig`/`ping` 險ｼ霍｡繧剃ｿ晏ｭ倥☆繧九・|
-| 繝・・繧ｿ | 繝医Λ繧､繧｢繝ｫ迺ｰ蠅・・騾ｱ谺｡縺ｧ繝ｪ繧ｻ繝・ヨ縺輔ｌ縲∝・髢句・譛溘ョ繝ｼ繧ｿ・域ぅ閠・00001縲懊∝現逋よｩ滄未=繧ｪ繝ｫ繧ｫ繧ｯ繝ｪ繝九ャ繧ｯ 遲会ｼ峨′蟶ｸ縺ｫ謚募・縺輔ｌ繧九ら匳骭ｲ蜀・ｮｹ縺ｯ隱ｰ縺ｧ繧ょ盾辣ｧ縺ｧ縺阪ｋ縺溘ａ縲∝倶ｺｺ諠・ｱ縺ｮ謚募・縺ｯ遖∵ｭ｢縲ょ盾辣ｧ邉ｻ API 繧剃ｸｻ縺ｫ螳溯｡後＠縲∵嶌縺崎ｾｼ縺ｿ邉ｻ縺ｯ UI 謫堺ｽ懃｢ｺ隱阪・遽・峇縺ｫ逡吶ａ繧九・|
+| WebORCA 接続先 | `http://100.102.17.40:8000` (Mac Dev ORCA)。本番相当の検証環境として使用。 |
+| 認証情報 | ユーザー `ormaster` / パスワード `change_me` (詳細は `mac-dev-login.local.md`)。 |
+| CRUD 方針 | 仮想データに対する全 CRUD 操作を許可。`receipt_route.ini` で POST が許可されていることが前提 (現状 405 のため要設定変更)。 |
+| 利用不可機能 | 特になし (構成による)。 |
+| モダナイズ版サーバー | `opendolphin-server-modernized-dev` (WildFly 27)。`ops/shared/docker/custom.properties` および `ops/modernized-server/docker/custom.properties` に `claim.host=100.102.17.40` / `claim.send.port=8000` / `claim.conn=server` / `claim.send.encoding=MS932` / `claim.scheme=http` を設定してから再ビルドする。 |
+| ネットワーク | 作業端末から `100.102.17.40:8000` への HTTP 通信が許可されていること。 |
+| DNS | IP 指定のため名前解決は不要。 |
+| データ | 開発用データ。CRUD 操作はログに残すが、トライアルのような週次リセットはないため、テスト後のデータクリーンアップを推奨。 |
 
 > Snapshot Summary 縺ｨ縺ｮ蜷梧悄: `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` 繧呈峩譁ｰ縺励◆繧牙ｿ・★譛ｬ陦ｨ繧よ峩譁ｰ縺励・・↓譛ｬ陦ｨ縺ｸ霑ｽ險倥＠縺溘＞莠矩・′蜃ｺ縺溷ｴ蜷医・ Snapshot 繧貞・縺ｫ譖ｴ譁ｰ縺励※縺九ｉ譛ｬ Playbook 縺ｸ蜿肴丐縺吶ｋ縲・
 ## 2. 螳滓命繝輔Ο繝ｼ讎りｦ・
@@ -68,25 +68,24 @@ curl --silent --show-error \
 ## 3. 貅門ｙ繝√ぉ繝・け繝ｪ繧ｹ繝・
 ### 3.1 繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・雉・ｼ諠・ｱ
 
-| 鬆・岼 | 蛟､ | 蜿ら・蜈・|
+| 項目 | 値 | 参照先 |
 | --- | --- | --- |
-| 繝吶・繧ｹ URL | `https://weborca-trial.orca.med.or.jp/` | [譌･繝ｬ繧ｻ繧剃ｽ馴ｨ転(assets/orca-trialsite/raw/trialsite.md#縺願ｩｦ縺励し繝ｼ繝舌・謗･邯壽ｳ・ |
-| UI 繝ｭ繧ｰ繧､繝ｳ | 繝ｦ繝ｼ繧ｶ繝ｼ `trial` / 繝代せ繝ｯ繝ｼ繝・`weborcatrial` | 蜷御ｸ奇ｼ亥・蠑丞・髢句､・・|
-| API 隱崎ｨｼ | HTTP Basic `trial:weborcatrial` | `curl -u trial:weborcatrial ...` 縺ｧ蛻ｩ逕ｨ |
-| 蛻晄悄繝・・繧ｿ | 謔｣閠・分蜿ｷ `00001`縲彖00011` 縺ｪ縺ｩ | [逋ｻ骭ｲ縺輔ｌ縺ｦ縺・ｋ蛻晄悄繝・・繧ｿ](assets/orca-trialsite/raw/trialsite.md#逋ｻ骭ｲ縺輔ｌ縺ｦ縺・ｋ蛻晄悄繝・・繧ｿ) |
-| 蛻ｩ逕ｨ荳榊庄讖溯・ | CLAIM 騾∽ｿ｡ / CSV 蜃ｺ蜉・/ 繝励Ο繧ｰ繝ｩ繝譖ｴ譁ｰ 遲・| [縺贋ｽｿ縺・＞縺溘□縺代↑縺・ｩ溯・遲云(assets/orca-trialsite/raw/trialsite.md#縺贋ｽｿ縺・＞縺溘□縺代↑縺・ｩ溯・遲・ |
+| ベース URL | `http://100.102.17.40:8000` | `mac-dev-login.local.md` |
+| UI ログイン | ユーザー `ormaster` / パスワード `change_me` | 同上 |
+| API 認証 | HTTP Basic `ormaster:change_me` | `curl -u ormaster:change_me ...` で利用 |
+| 初期データ | 開発環境依存 | - |
+| 利用不可機能 | 特になし | - |
 
 > 繝医Λ繧､繧｢繝ｫ迺ｰ蠅・・騾ｱ谺｡縺ｧ繝ｪ繧ｻ繝・ヨ縺輔ｌ繧九◆繧√∵､懆ｨｼ逶ｮ逧・〒縺ｮ謔｣閠・匳骭ｲ繝ｻ莠育ｴ・ｽ懈・繝ｻ險ｺ逋ょ炎髯､縺ｪ縺ｩ縺ｮ CRUD 謫堺ｽ懊′險ｱ蜿ｯ縺輔ｌ繧九ゆｽ懈･ｭ蠕後・ `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` 縺ｫ螳滓命蜀・ｮｹ繧定ｨ倬鹸縺励∝・迴ｾ縺ｫ蠢・ｦ√↑蜈･蜉帛､繧呈ｮ九☆縺薙→縲・
 ### 3.2 繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・險ｭ螳・
-- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` 縺ｮ蜷・`claim.*` 繧剃ｻ･荳九∈謠・∴繧九ょｷｮ蛻・・ Evidence 縺ｫ菫晏ｭ倥＠縲～ServerInfoResource` 縺ｮ邨先棡縺ｨ荳邱偵↓謠仙・縺吶ｋ縲・  - `claim.conn=server`
-  - `claim.host=weborca-trial.orca.med.or.jp`
-  - `claim.send.port=443`
-  - `claim.scheme=https`・医∪縺溘・ `claim.useSsl=true`・・  - `claim.send.encoding=MS932`
+- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` の各 `claim.*` を以下へ書き換える。差分は Evidence に保存し、`ServerInfoResource` の結果と一列に掲載する。
+  - `claim.conn=server`
+  - `claim.host=100.102.17.40`
+  - `claim.send.port=8000`
+  - `claim.scheme=http` (または `claim.useSsl=false`)
+  - `claim.send.encoding=MS932`
 - `docker compose`・医∪縺溘・ `scripts/start_legacy_modernized.sh`・峨〒繝｢繝繝翫う繧ｺ蛛ｴ繧貞・襍ｷ蜍輔＠縲～/serverinfo/claim/conn` 縺・`server` 縺ｸ謌ｻ繧九％縺ｨ繧堤｢ｺ隱阪・egacy 繧ｵ繝ｼ繝舌・縺ｯ蠢・ｦ√↓蠢懊§縺ｦ read-only 縺ｧ荳ｦ陦瑚ｵｷ蜍輔☆繧九・
 ### 3.3 繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｨ繧ｯ繝ｩ繧､繧｢繝ｳ繝育ｫｯ譛ｫ
-
-- `dig weborca-trial.orca.med.or.jp` / `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` 繧貞ｮ溯｡後＠縲√い繧ｦ繝医ヰ繧ｦ繝ｳ繝・HTTPS 縺瑚ｨｱ蜿ｯ縺輔ｌ縺ｦ縺・ｋ縺薙→繧堤｢ｺ隱阪りｨｼ霍｡縺ｯ `artifacts/orca-connectivity/<UTC>/tls/openssl_s_client.log` 縺ｪ縺ｩ縺ｸ菫晏ｭ倥・- 繝励Ο繧ｭ繧ｷ雜翫＠縺ｮ蝣ｴ蜷医・ `HTTPS_PROXY`・汁NO_PROXY` 繧堤腸蠅・､画焚縺ｧ螳夂ｾｩ縺励～curl` 縺・Basic 隱崎ｨｼ繧呈ｭ｣縺励￥騾∽ｿ｡縺ｧ縺阪ｋ縺・`curl --verbose -u trial:weborcatrial --head` 縺ｧ讀懆ｨｼ縺吶ｋ縲・- 菴懈･ｭ PC 荳翫・ `~/.curlrc` 縺ｫ菴呵ｨ医↑ `insecure` 繧・`proxy` 縺梧ｮ九▲縺ｦ縺・↑縺・°繧堤｢ｺ隱阪らｫｶ蜷医′縺ゅｋ蝣ｴ蜷医・荳譎ら噪縺ｫ蛻･ `curlrc` 繧剃ｽｿ逕ｨ縺吶ｋ縲・
-### 3.4 CLI 繝・・繝ｫ縺ｨ繝・Φ繝励Ξ
 
 | 繝・・繝ｫ | 逶ｮ逧・| 繧ｳ繝槭Φ繝我ｾ・|
 | --- | --- | --- |
