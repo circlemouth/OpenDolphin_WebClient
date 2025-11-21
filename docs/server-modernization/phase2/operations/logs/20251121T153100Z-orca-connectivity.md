@@ -1,8 +1,8 @@
 # ORCA connectivity baseline (RUN_ID=20251121T153100Z)
 
-- 対象: `http://100.102.17.40:8000`（Basic `ormaster/change_me`, plain HTTP）で DNS/TLS/CRUD を再取得。証跡: `artifacts/orca-connectivity/20251121T153100Z/{dns,tls,crud,trace,blocked}`。Basic ヘッダーは trace/curl ログ内で `Authorization: Basic **masked**` に置換。
-- DNS: `nslookup 100.102.17.40` → `40.17.102.100.in-addr.arpa name = clinic-evox2.tail3cf51b.ts.net.`（`dns/nslookup_2025-11-21T06-42-01Z.txt`）。
-- TLS: `openssl s_client -connect 100.102.17.40:8000` は `wrong version number`（HTTP 想定、`tls/openssl_s_client_2025-11-21T06-42-36Z.txt`）。TLS 証明書は提供されず。
+- 対象: 開発用 ORCA（詳細は `docs/web-client/operations/mac-dev-login.local.md` を参照、plain HTTP）で DNS/TLS/CRUD を再取得。証跡: `artifacts/orca-connectivity/20251121T153100Z/{dns,tls,crud,trace,blocked}`。Basic ヘッダーは trace/curl ログ内で `Authorization: Basic **masked**` に置換。
+- DNS: `nslookup <REDACTED_DEV_ORCA_HOST>` → `40.17.102.100.in-addr.arpa name = clinic-evox2.tail3cf51b.ts.net.`（`dns/nslookup_2025-11-21T06-42-01Z.txt`）。
+- TLS: `openssl s_client -connect <REDACTED_DEV_ORCA_HOST>:8000` は `wrong version number`（HTTP 想定、`tls/openssl_s_client_2025-11-21T06-42-36Z.txt`）。TLS 証明書は提供されず。
 
 ## CRUD 実行結果（POST）
 

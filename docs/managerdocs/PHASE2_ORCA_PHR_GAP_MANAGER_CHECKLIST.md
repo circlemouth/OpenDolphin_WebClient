@@ -22,13 +22,13 @@
 
 
 ## 1. 背景
-- DemoResourceASP / DolphinResourceASP / PHRResource の欠落 API 棚卸し (`MODERNIZED_REST_API_INVENTORY.md:205-224,266-317` と `API_PARITY_MATRIX.md:105-322`) および `DOC_STATUS.md` W22 行を WebORCA トライアルサーバ基準へ更新済。
-- ORCA 連携はトライアル環境 (`https://weborca-trial.orca.med.or.jp`, BASIC `trial/weborcatrial`) のみを接続可とし、「新規登録・更新・削除 OK (トライアル環境のみ)」表記と CRUD ログ採取を必須とする。公式サイト・制限事項は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を唯一の参照元とし、該当節を引用して Blocker を整理する。
-- **Trial サーバ仕様**: firecrawl 取得の API 仕様が trialsite で "利用できない" もしくは "不明" となる場合の代替手段として、トライアルサーバで実際に CRUD を実行し、その挙動を Blocker として記録する。
-- すべての書込みは `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` (もしくは最新日付の Trial CRUD ログ) と `artifacts/orca-connectivity/<RUN_ID>/crud/` へ保存し、`DOC_STATUS.md` W22 行および `PHASE2_PROGRESS.md` W22 セクションへ反映する。
-- PHR Phase-A〜F の RUN_ID は `20251121TrialPHRSeqZ1` へ統合。旧 PKCS#12 / ORCAcertification 系 Runbook はアーカイブ済とし、参照する場合は「参照アーカイブ（更新不可）」注記を付ける。
+- DemoResourceASP / DolphinResourceASP / PHRResource の欠落 API 棚卸し (`MODERNIZED_REST_API_INVENTORY.md:205-224,266-317` と `API_PARITY_MATRIX.md:105-322`) および `DOC_STATUS.md` W22 行を、接続情報非公開のまま（開発用は `mac-dev-login.local.md` 参照）順次読み替え中。
+- ORCA 連携は開発用接続先のみ使用可。WebORCA トライアルは使用しない。CRUD ログ採取を必須とし、接続先・認証は `docs/web-client/operations/mac-dev-login.local.md` にのみ記載する。
+- **開発サーバ仕様**: 具体値は mac-dev-login.local.md を参照。実測 CRUD を Blocker/証跡として記録する。
+- すべての書込みは `docs/server-modernization/phase2/operations/logs/<RUN_ID>-orca-dev-crud.md` と `artifacts/orca-connectivity/<RUN_ID>/crud/` へ保存し、`DOC_STATUS.md` W22 行および `PHASE2_PROGRESS.md` W22 セクションへ反映する。
+- PHR Phase-A〜F の過去 RUN_ID (`20251121TrialPHRSeqZ1` など) はアーカイブ扱い。参照時は「trial 実測（非現行）」注記を付け、必要なら開発接続先で再測して差し替える。
 
-> RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
+> RUN_ID=`20251116T173000Z`: （履歴）Trial サーバー遮断期間の Spec-based 実装メモ。**現行は開発接続先（mac-dev-login.local.md 参照）で再測し、結果を新 RUN_ID で記録する。** 検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
 
 ## 2. 進行タスク一覧
 - [x] **Task-A: ASP リソース再登録 + 認証ヘッダー/Context-Param 設定)** 完了 (2025-11-14 / RUN_ID=20251114TaspCtxZ1)。トライアル環境 CRUD 方針をヘッダー要件に追記し、`MODERNIZED_API_DOCUMENTATION_GUIDE.md`・`MODERNIZED_REST_API_INVENTORY.md`・`DOC_STATUS.md` へ反映。

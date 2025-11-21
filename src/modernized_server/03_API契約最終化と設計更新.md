@@ -60,7 +60,7 @@
 - OpenAPI 断片のスキーマ重複が増えるリスクがあるため、共通 `components` を優先的に整備し、スキーマ差分は Evidence ログで管理する。
 - 認可/セッションの要件変更が UI に影響するため、`API_UI_GAP_ANALYSIS.md` と `PHASE2_SYSTEMS_ALIGNMENT.md` を同時更新できる見積もりを確保する。
 ## 進捗メモ（2025-11-21, RUN_ID=20251121T153200Z）
-- 接続先 http://100.102.17.40:8000 で parity 再測。cceptlstv2=200/13、ppointlstv2=200/12、medicalmodv2=200/10、cceptmodv2/appointmodv2/patientmemomodv2/receiptprintv3=405 (Allow: OPTIONS, GET)。
+- 接続先 <DEV_ORCA_HOST> で parity 再測。cceptlstv2=200/13、ppointlstv2=200/12、medicalmodv2=200/10、cceptmodv2/appointmodv2/patientmemomodv2/receiptprintv3=405 (Allow: OPTIONS, GET)。
 - Evidence: rtifacts/orca-connectivity/20251121T153200Z/{crud,coverage,blocked}。ログ: docs/server-modernization/phase2/operations/logs/20251121T153200Z-api-contract.md。
 - API_PARITY_MATRIX.md / MODERNIZED_REST_API_INVENTORY.md / ORCA_REST_IMPLEMENTATION_NOTES.md へ RUN_ID 反映済み。DOC_STATUS ORCA 行も更新済み。
 - 残課題: doctor/patient seed を投入した再測で Api_Result=00 を取得すること、POST 405 系の route 開放確認。

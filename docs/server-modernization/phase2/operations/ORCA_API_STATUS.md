@@ -3,7 +3,7 @@
 > 接続手順・RUN_ID 発行・CRUD ログ運用は `ORCA_CONNECTIVITY_VALIDATION.md` §0 を参照。`tmp/orca-weekly-summary.*` の貼り付け位置や curl 雛形も同 Playbook のみを一次情報とする。
 > RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
 
-### 新 ORCA（100.102.17.40:8000）エラーマッピング（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）
+### 新 ORCA（接続情報は mac-dev-login.local.md を参照）エラーマッピング（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）
 - 証跡: `artifacts/error-audit/20251121T153300Z/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#5-子-run-20251121t153300z-実測ログ親20251120t193040z`。Authorization は `<MASKED>` 済み。
 - 取得ケースと code/message/blocker → Api_Result/Api_Error 対応:
   - 成功: `POST /api01rv2/system01dailyv2?class=00`（HTTP200, `Api_Result=00/Api_Result_Message=処理終了`）→ `code=ORCA.SYSTEM01DAILY.OK`, `blocker=[]`。
