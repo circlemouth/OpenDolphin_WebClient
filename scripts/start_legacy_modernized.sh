@@ -23,6 +23,11 @@ COMPOSE_FILES=(
 LEGACY_RELATIVE_DIR="tmp/legacy-compose"
 LEGACY_ABS_DIR="${REPO_ROOT}/${LEGACY_RELATIVE_DIR}"
 LEGACY_WAR_NAME="opendolphin-server"
+MODERNIZED_WILDFLY_CONTAINER="${MODERNIZED_WILDFLY_CONTAINER:-opendolphin-server-modernized-dev}"
+MODERNIZED_WILDFLY_CLI_PATH="/opt/jboss/wildfly/x-client-compat.cli"
+X_CLIENT_COMPAT_CLI="${SCRIPT_DIR}/compat/x-client-compat.cli"
+COMPAT_WAIT_ATTEMPTS="${COMPAT_WAIT_ATTEMPTS:-30}"
+COMPAT_WAIT_INTERVAL="${COMPAT_WAIT_INTERVAL:-2}"
 
 error() {
   printf '[ERROR] %s\n' "$*" >&2
@@ -223,6 +228,52 @@ YAML
   printf '%s\n' "${override_file}"
 }
 
+wait_for_container_ready() {
+  local container_name="$1"
+  local max_attempts="${2:-$COMPAT_WAIT_ATTEMPTS}"
+  local interval="${3:-$COMPAT_WAIT_INTERVAL}"
+
+  for ((attempt = 1; attempt <= max_attempts; attempt++)); do
+    local health
+    health="$(docker inspect -f '{{.State.Health.Status}}' "${container_name}" 2>/dev/null || true)"
+    if [[ "${health}" == "healthy" ]]; then
+      return 0
+    fi
+    if [[ "${health}" == "unhealthy" ]]; then
+      error "コンテナ ${container_name} のヘルスチェックが unhealthy です。"
+      return 1
+    fi
+
+    local running
+    running="$(docker inspect -f '{{.State.Running}}' "${container_name}" 2>/dev/null || true)"
+    if [[ "${running}" == "true" && -z "${health}" ]]; then
+      return 0
+    fi
+
+    sleep "${interval}"
+  done
+
+  error "コンテナ ${container_name} の起動待ちがタイムアウトしました (${max_attempts} 回試行)。"
+  return 1
+}
+
+apply_x_client_compat_filter() {
+  if [[ ! -f "${X_CLIENT_COMPAT_CLI}" ]]; then
+    error "X-Client-Compat CLI ファイルが見つかりません: ${X_CLIENT_COMPAT_CLI}"
+    return 1
+  fi
+
+  if ! docker inspect "${MODERNIZED_WILDFLY_CONTAINER}" >/dev/null 2>&1; then
+    error "コンテナ ${MODERNIZED_WILDFLY_CONTAINER} が存在しません。start コマンドの compose up 完了後に確認してください。"
+    return 1
+  fi
+
+  wait_for_container_ready "${MODERNIZED_WILDFLY_CONTAINER}"
+
+  docker cp "${X_CLIENT_COMPAT_CLI}" "${MODERNIZED_WILDFLY_CONTAINER}:${MODERNIZED_WILDFLY_CLI_PATH}"
+  docker exec "${MODERNIZED_WILDFLY_CONTAINER}" /opt/jboss/wildfly/bin/jboss-cli.sh -c "--file=${MODERNIZED_WILDFLY_CLI_PATH}"
+}
+
 compose() {
   "${DOCKER_COMPOSE[@]}" \
     --project-name "${PROJECT_NAME}" \
@@ -276,6 +327,7 @@ main() {
       else
         compose up -d "${SERVICES[@]}"
       fi
+      apply_x_client_compat_filter
       ;;
     stop)
       compose stop "${SERVICES[@]}"

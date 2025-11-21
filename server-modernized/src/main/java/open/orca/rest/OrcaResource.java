@@ -92,6 +92,40 @@ public class OrcaResource {
 //minagawa$
     
     private boolean DEBUG;
+
+    private static String[] splitParamSafely(String param) {
+        return param != null ? param.split(CAMMA) : new String[0];
+    }
+
+    private static String pickParam(String[] params, int index) {
+        if (params == null || index < 0 || index >= params.length) {
+            return null;
+        }
+        return params[index];
+    }
+
+    private String defaultNow(String candidate) {
+        if (candidate != null && !candidate.isBlank()) {
+            return candidate;
+        }
+        return new SimpleDateFormat("yyyyMMdd").format(new Date());
+    }
+
+    private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(value);
+    }
+
+    private TensuListConverter toTensuConverter(List<TensuMaster> list) {
+        TensuList wrapper = new TensuList();
+        wrapper.setList(list != null ? list : new ArrayList<>());
+
+        TensuListConverter conv = new TensuListConverter();
+        conv.setModel(wrapper);
+        return conv;
+    }
     
     //masuda^
     //ORCAのデータベースバージョンとhospNumを取得する
@@ -263,9 +297,13 @@ public class OrcaResource {
     public TensuListConverter getTensutensuByShinku(@PathParam("param") String param) {
 
         // パラメーターを取得する
-        String[] params = param.split(CAMMA);
-        String shinku = params[0];
-        String now = params[1];
+        String[] params = splitParamSafely(param);
+        String shinku = pickParam(params, 0);
+        String now = defaultNow(pickParam(params, 1));
+
+        if (shinku == null || shinku.isBlank()) {
+            return toTensuConverter(new ArrayList<>());
+        }
         
         if (!shinku.startsWith("^")) {
             shinku = "^" + shinku;
@@ -343,10 +381,14 @@ public class OrcaResource {
     public TensuListConverter getTensuMasterByName(@PathParam("param") String param) {
         
         // パラメーターを取得する
-        String[] params = param.split(CAMMA);
-        String name = params[0];
-        String now = params[1];
-        boolean partialMatch = Boolean.parseBoolean(params[2]);
+        String[] params = splitParamSafely(param);
+        String name = pickParam(params, 0);
+        String now = defaultNow(pickParam(params, 1));
+        boolean partialMatch = parseBooleanOrDefault(pickParam(params, 2), true);
+
+        if (name == null || name.isBlank()) {
+            return toTensuConverter(new ArrayList<>());
+        }
 
         // 結果を格納するリスト
         ArrayList<TensuMaster> list = new ArrayList<TensuMaster>();
@@ -431,9 +473,13 @@ public class OrcaResource {
     public TensuListConverter getTensuMasterByCode(@PathParam("param") String param) {
         
         // パラメーターを取得する
-        String[] params = param.split(CAMMA);
-        String regExp = params[0];
-        String now = params[1];
+        String[] params = splitParamSafely(param);
+        String regExp = pickParam(params, 0);
+        String now = defaultNow(pickParam(params, 1));
+
+        if (regExp == null || regExp.isBlank()) {
+            return toTensuConverter(new ArrayList<>());
+        }
 
         // 結果を格納するリスト
         ArrayList<TensuMaster> list = new ArrayList<TensuMaster>();
@@ -507,9 +553,13 @@ public class OrcaResource {
     public TensuListConverter getTensuMasterByTen(@PathParam("param") String param) {
         
         // パラメーターを取得する
-        String[] params = param.split(CAMMA);
-        String ten = params[0];
-        String now = params[1];
+        String[] params = splitParamSafely(param);
+        String ten = pickParam(params, 0);
+        String now = defaultNow(pickParam(params, 1));
+
+        if (ten == null || ten.isBlank()) {
+            return toTensuConverter(new ArrayList<>());
+        }
 
         // 結果を格納するリスト
         ArrayList<TensuMaster> list = new ArrayList<TensuMaster>();

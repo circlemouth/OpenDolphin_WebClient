@@ -1,4 +1,4 @@
-# 08_Web クライアント向け API 安定化
+# 08_Web クライアント向け API 安定化　✓
 
 - RUN_ID: `20251120T191203Z`
 - 期間: 2025-12-08 09:00 〜 2025-12-12 09:00 (JST)
@@ -67,3 +67,9 @@
 - SLA 基準が UI ガイド側で更新された場合の差分検知遅延リスク → `CHART_UI_GUIDE_INDEX.md` 更新日付を計測ログに記載し、差分を確認してから計測する。
 - ORCA Trial 依存の API は 404/405 のままになる可能性 → Trial 前提の Blocker を明記し、Modernized 側でのフォールバック（仕様ベース実装/モック）を準備する。
 - 計測環境差によるばらつき → 同一 RUN_ID でパラメータ（回数・並列度・ネットワーク条件）を固定し、中央値/90p を採用して比較する。
+
+## 進捗メモ（RUN_ID=20251120T191203Z）
+- API 利用/SLA 整理: `REST_API_INVENTORY.md`・`API_UI_GAP_ANALYSIS.md` から Charts/Reception/Administration/ORCA 主要 API を抽出し、SLA は `WEB_CLIENT_REQUIREMENTS.md`（基本 3s、ORCA 5s）と `process/ROADMAP.md`（ロングポーリング 55s×5 回）を暫定値として紐付け。詳細は `docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md#1-web-クライアント利用-api-と-sla-紐付け計測対象` を参照。
+- 互換レイヤー方針: `PUT /karte/document` vs `/karte/document/{id}`、ChartEvent LP/SSE 併存、ORCA stub の `apiResult`、User roles/facility 欠落補完、`DELETE /pvt*` 戻り値差異について `X-Client-Compat` で切替可能なマッピング（デフォルト値・ロールバック手順付き）を整理。
+- ベンチマーク: modernized-dev で `send_parallel_request.sh --targets modern --loop 3` を実行し、docinfo 13.2/50.9ms・tensu 11.6/66.6ms・pvtList 5.0/5.1ms・user 10.2/21.5ms（いずれも 200）を再計測。pvtList は seed→再起動で list 返却を確認し、起動後 seed の場合は `/pvt2` POST ウォームアップで復旧できる手順依存を README/ログへ記録。
+- テスト/モック: バックワード互換シナリオ (`charts-docinfo`, `reception-pvtlist`, `admin-user-profile`, `orca-tensu-name`) を `artifacts/api-stability/20251120T191203Z/schemas/` へ追加。MSW 用 `apiStabilityHandlers` を `artifacts/api-stability/20251120T191203Z/mocks/` に配置し、クライアントが即利用可能な形で共有。

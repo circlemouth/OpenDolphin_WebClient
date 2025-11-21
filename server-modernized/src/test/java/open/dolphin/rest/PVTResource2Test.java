@@ -195,6 +195,11 @@ class PVTResource2Test extends RuntimeDelegateTestSupport {
             return pvtLists.computeIfAbsent(fid, key -> new ArrayList<>());
         }
 
+        @Override
+        public void ensureInitialized() {
+            // テストではコンテキスト初期化を行わない
+        }
+
         void setPvtList(String facilityId, List<PatientVisitModel> visits) {
             pvtLists.put(facilityId, visits);
         }

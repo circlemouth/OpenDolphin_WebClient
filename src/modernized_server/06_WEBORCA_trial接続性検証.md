@@ -67,3 +67,8 @@
 - GUI 端末が確保できない場合、UI 証跡は「未取得（CLI 制約）」としてログに明記し、API 実測を優先する。
 - trialsite 禁止 API（帳票/システム管理等）や doctor/patient seed 不足による `Api_Result=12/13/14` が継続する可能性がある。再開条件（GUI seed 補完 or trialsite 側開放）を Blocker に必ず記載する。
 - サーバー資産や本番証明書を触らないよう、作業コマンドはすべて README/Runbook に準拠した `curl` ベースで実施する。
+## 進捗メモ（2025-11-21, RUN_ID=20251121T153100Z）
+- 接続先 http://100.102.17.40:8000 で CRUD 再採取。system01dailyv2=200/00、cceptlstv2=200/13、ppointlstv2=200/12、medicalmodv2=200/10、cceptmodv2/appointmodv2=405。
+- patientmodv2 で Patient_ID=00001 を登録（RUN_ID=20251121SeedFixZ1）。doctor seed 未登録のため ccept/appoint/medical は引き続き 12/13/14/10。
+- Evidence: rtifacts/orca-connectivity/20251121T153100Z/...、rtifacts/orca-connectivity/20251121SeedFixZ1/...。ログ: docs/server-modernization/phase2/operations/logs/20251121T153100Z-orca-connectivity.md / .../20251121SeedFixZ1-orca-connectivity.md。
+- 残課題: doctor 0001 登録手段の特定と seed 投入、POST 405 系（/orca11 /orca14 /orca06 /orca42）の開放確認。

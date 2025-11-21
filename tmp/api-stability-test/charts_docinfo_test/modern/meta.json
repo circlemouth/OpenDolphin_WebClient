@@ -1,0 +1,9 @@
+{
+  "method": "GET",
+  "path": "/karte/docinfo/12345?from=2024-01-01&includeModified=true",
+  "base_url": "http://opendolphin-server-modernized-dev:8080/openDolphin/resources",
+  "request_id": "charts_docinfo_test",
+  "status_code": 401,
+  "time_total": "0.019482",
+  "exit_code": 0
+}

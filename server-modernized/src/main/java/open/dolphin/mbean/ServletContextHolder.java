@@ -88,4 +88,14 @@ public class ServletContextHolder {
     public GregorianCalendar getTomorrow() {
         return tomorrow;
     }
+
+    /**
+     * today/tomorrow が未設定の場合のみ初期化する。
+     * アプリ起動順序によって setToday が呼ばれないケースのフォールバック。
+     */
+    public synchronized void ensureDateInitialized() {
+        if (today == null || tomorrow == null) {
+            setToday();
+        }
+    }
 }

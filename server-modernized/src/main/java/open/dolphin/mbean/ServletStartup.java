@@ -38,6 +38,9 @@ public class ServletStartup {
     private ChartEventServiceBean eventServiceBean;
 
     @Inject
+    private ServletContextHolder contextHolder;
+
+    @Inject
     private SystemServiceBean systemServiceBean;
 
     private ScheduledFuture<?> midnightRefreshTask;
@@ -45,7 +48,8 @@ public class ServletStartup {
 
     @PostConstruct
     public void init() {
-        eventServiceBean.start();
+        contextHolder.ensureDateInitialized();
+        eventServiceBean.ensureInitialized();
         if (scheduler == null) {
             LOGGER.warning("ManagedScheduledExecutorService is not available. Timed jobs will not be executed.");
             return;

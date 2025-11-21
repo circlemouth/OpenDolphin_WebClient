@@ -9,6 +9,7 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
@@ -83,23 +84,79 @@ public class KarteResource extends AbstractResource {
     @GET
     @Path("/docinfo/{param}")
     @Produces(MediaType.APPLICATION_JSON)
-    public DocInfoListConverter getDocumentList(@PathParam("param") String param) {
+    public DocInfoListConverter getDocumentList(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
 
         debug(param);
-        String[] params = param.split(CAMMA);
-        long karteId = Long.parseLong(params[0]);
-        Date fromDate = parseDate(params[1]);
-        boolean includeModified = Boolean.parseBoolean(params[2]);
+        String[] params = param != null ? param.split(CAMMA) : new String[0];
+        Long karteId = parseLongSafely(params, 0);
 
-        List<DocInfoModel> result = karteServiceBean.getDocumentList(karteId, fromDate, includeModified);
+        String fromParam = firstNonEmpty(params, 1, servletReq != null ? servletReq.getParameter("from") : null);
+        Date fromDate = parseFlexibleDate(fromParam);
+
+        String includeModifiedParam =
+                firstNonEmpty(params, 2, servletReq != null ? servletReq.getParameter("includeModified") : null);
+        boolean includeModified = parseBooleanOrDefault(includeModifiedParam, false);
+
+        List<DocInfoModel> result = new ArrayList<>();
+        if (karteId != null) {
+            List<DocInfoModel> fetched = karteServiceBean.getDocumentList(karteId, fromDate, includeModified);
+            if (fetched != null) {
+                result.addAll(fetched);
+            }
+        }
 
         DocInfoList wrapper = new DocInfoList();
         wrapper.setList(result);
-        
+
         DocInfoListConverter conv = new DocInfoListConverter();
         conv.setModel(wrapper);
 
         return conv;
+    }
+
+    private static String firstNonEmpty(String[] params, int index, String fallback) {
+        String candidate = (params != null && params.length > index) ? params[index] : null;
+        if (candidate != null && !candidate.isBlank()) {
+            return candidate;
+        }
+        return (fallback != null && !fallback.isBlank()) ? fallback : null;
+    }
+
+    private static Long parseLongSafely(String[] params, int index) {
+        String candidate = (params != null && params.length > index) ? params[index] : null;
+        if (candidate == null || candidate.isBlank()) {
+            return null;
+        }
+        try {
+            return Long.parseLong(candidate);
+        } catch (NumberFormatException e) {
+            Logger.getLogger(KarteResource.class.getName()).log(Level.WARNING, "Failed to parse long: " + candidate, e);
+            return null;
+        }
+    }
+
+    private boolean parseBooleanOrDefault(String value, boolean defaultValue) {
+        if (value == null || value.isBlank()) {
+            return defaultValue;
+        }
+        return Boolean.parseBoolean(value);
+    }
+
+    private Date parseFlexibleDate(String value) {
+        if (value == null || value.isBlank()) {
+            return null;
+        }
+        Date parsed = parseDate(value);
+        if (parsed != null) {
+            return parsed;
+        }
+        try {
+            LocalDate localDate = LocalDate.parse(value);
+            return Date.from(localDate.atStartOfDay().toInstant(ZoneOffset.UTC));
+        } catch (DateTimeParseException e) {
+            Logger.getLogger(KarteResource.class.getName()).log(Level.WARNING, "Failed to parse date: " + value, e);
+            return null;
+        }
     }
 
     @GET

@@ -107,6 +107,7 @@ public class PVTResource2 extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public PatientVisitListConverter getPvtList() {
         
+        eventServiceBean.ensureInitialized();
         String fid = getRemoteFacility(servletReq.getRemoteUser());
         List<PatientVisitModel> model = eventServiceBean.getPvtList(fid);
         

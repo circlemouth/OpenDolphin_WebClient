@@ -1,0 +1,11 @@
+if (outcome != success) of /subsystem=undertow/configuration=filter/response-header=X-Client-Compat:read-resource()
+    /subsystem=undertow/configuration=filter/response-header=X-Client-Compat:add(header-name=X-Client-Compat, header-value=legacy)
+else
+    /subsystem=undertow/configuration=filter/response-header=X-Client-Compat:write-attribute(name=header-value, value=legacy)
+end-if
+
+if (outcome != success) of /subsystem=undertow/server=default-server/host=default-host/filter-ref=X-Client-Compat:read-resource()
+    /subsystem=undertow/server=default-server/host=default-host/filter-ref=X-Client-Compat:add()
+end-if
+
+:reload

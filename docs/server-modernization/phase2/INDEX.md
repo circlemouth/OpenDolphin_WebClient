@@ -11,6 +11,8 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 > 4. DOC_STATUS 更新は (a) 最終コミット確認 → (b) Active/Dormant/Archive 判定 → (c) 備考に RUN_ID / 証跡パスを追記 → (d) ハブドキュメントへ同日付反映、の順で行い、完了報告前にチェック。  
 > 5. Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。
 
+最終棚卸し更新: 2025-11-21（RUN_ID=`20251120T191203Z`）。`docs/web-client/planning/phase2/DOC_STATUS.md` と本 INDEX・Web クライアント Hub を同日付で同期済み。
+
 ## ブロッカー共有（2026-06-15）
 - WSL2 環境には Docker Desktop が導入されておらず、`scripts/start_legacy_modernized.sh start --build` / `docker compose` が実行できないためフェーズ4（JPQL/TX、予約/紹介状 REST、SessionOperation、adm10/20、HealthInsuranceModel）が一時停止中。詳細は `PHASE2_PROGRESS.md#2026-06-15-追記-フェーズ4-docker-ブロッカー共有担当-codex` と `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4節を参照。
 - 再開条件: Docker Desktop を導入して対象ディストリで WSL Integration を有効化し、`./scripts/start_legacy_modernized.sh down && ./scripts/start_legacy_modernized.sh start --build` が成功、かつ Legacy/Modernized 両 `/actuator/health` が 200 を返すことを証跡化すること。条件達成後にフェーズ4タスクの再開とドキュメント更新を行う。
@@ -31,6 +33,7 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 - [`operations/WORKER0_MESSAGING_BACKLOG.md`](operations/WORKER0_MESSAGING_BACKLOG.md): JMS 設定バックログ（2025Q4 Archive: `../archive/2025Q4/server-modernization/phase2/operations/WORKER0_MESSAGING_BACKLOG.md`。セクション6へ統合済み）。
 - [`operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md`](operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md): 外部インタフェース整合性チェック手順。
 - [`operations/ORCA_CONNECTIVITY_VALIDATION.md`](operations/ORCA_CONNECTIVITY_VALIDATION.md): WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp`, BASIC `trial/weborcatrial`）向けの CRUD 手順と証跡取得チェックリスト。「新規登録／更新／削除 OK（トライアル環境でのみ）」表記、`curl -u trial:weborcatrial ...` コマンド、`docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` 参照ルール、`logs/*-orca-trial-crud.md` への書込みログを標準化している。
+- [`operations/logs/20240215T093000Z-error-audit.md`](operations/logs/20240215T093000Z-error-audit.md): RUN_ID=`20240215T093000Z`（親=`20251120T193040Z`）。ORCA Trial 障害時の trace_http_401/500・metrics・httpdump 採取チェックと Blocker 記入欄を整備。証跡: `artifacts/error-audit/20240215T093000Z/`。
 - [`operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md`](operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md): モダナイズ版サーバーおよび ORCA 連携 API の資料配置と現状をまとめたナビゲーションガイド（2025-11-14 作成）。
 - [`operations/assets/orca-api-spec/README.md`](operations/assets/orca-api-spec/README.md): firecrawl で取得した ORCA API 公式仕様のオフラインコピーとメタデータ、`orca-api-matrix` との突合表。
 - [`operations/assets/orca-tec-index/README.md`](operations/assets/orca-tec-index/README.md): 技術情報ハブ（帳票・CLAIM・MONTSUQI・カスタマイズ留意事項など）を firecrawl で Markdown 化したオフラインコピー。
