@@ -1,57 +1,34 @@
-# ORCA 接続 Single Playbook（WebORCA Trial）
+﻿> 【2025-11-21 更新】以降の ORCA 接続はすべて http://100.102.17.40:8000（Basic: ormaster/change_me）を利用する。本番環境ではなく仮想データに対する CRUD を含め全 API 操作を許可する。過去のトライアル URL 記載箇所も本接続先に読み替えること。
+# ORCA 謗･邯・Single Playbook・・ebORCA Trial・・
+- 2025-11-21 エラー採取 RUN（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）で下記を確認: 成功=HTTP200/`Api_Result=00`（`POST /api01rv2/system01dailyv2?class=00`）、誤パスワード=HTTP401 JSON、未登録患者=HTTP404 JSON（`GET /api01rv2/patientgetv2?id=999999`）、`/actuator/health`=HTTP404。Authorization はすべて `<MASKED>`。証跡: `artifacts/error-audit/20251121T153300Z/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#5-子-run-20251121t153300z-実測ログ親20251120t193040z`。
+- 2025-11-21 業務系エラー採取 RUN（RUN_ID=`20251121ErrorMatrixZ1`, 親=`20251120T193040Z`）で下記を確認: `system01dailyv2` Request_Number=99 → HTTP200/`Api_Result=91`、`acceptlstv2` Acceptance_Date=2000-01-01 & Physician_Code=99999 → HTTP200/`Api_Result=13`、`/api/api21/medicalmodv2` Patient_ID=999999 → HTTP200/`Api_Result=10`。Authorization は `<MASKED>` 済み。証跡: `artifacts/error-audit/20251121ErrorMatrixZ1/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#6-子-run-20251121errormatrixz1-実測ログ親20251120t193040z`。
+- 菴懈・譌･: 2025-11-19・・ebORCA 繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・驕狗畑縺ｸ蛻・ｊ譖ｿ縺茨ｼ・- 蟇ｾ雎｡: `https://weborca-trial.orca.med.or.jp/` 縺ｧ謠蝉ｾ帙＆繧後ｋ WebORCA 繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・縺ｨ縲～docker-compose.modernized.dev.yml`・医∪縺溘・ `scripts/start_legacy_modernized.sh`・峨〒襍ｷ蜍輔☆繧九Δ繝繝翫う繧ｺ迚・OpenDolphin 繧ｵ繝ｼ繝舌・縲・- 逶ｮ逧・ 蜈ｬ髢九ヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・〒縺ｮ逍朱壹・API 蜻ｼ縺ｳ蜃ｺ縺励・CRUD 險ｼ霍｡蜿門ｾ励ｒ蜊倅ｸ Runbook 縺ｫ髮・ｴ・＠縲ヽUN_ID 逋ｺ陦鯉ｼ上Ο繧ｰ菫晏ｭ假ｼ城ｱ谺｡譽壼査縺励・繧・ｊ譁ｹ繧剃ｸ譛ｬ蛹悶☆繧九・- 蜿ら・: [ORCA API 蜈ｬ蠑丈ｻ墓ｧ肋(https://www.orca.med.or.jp/receipt/tec/api/overview.html) / [繧ｪ繝輔Λ繧､繝ｳ繧ｳ繝斐・](assets/orca-api-spec/README.md) / [謚陦捺ュ蝣ｱ繝上ヶ・亥ｸｳ逾ｨ繝ｻCLAIM繝ｻMONTSUQI 遲会ｼ云(assets/orca-tec-index/README.md)
 
-- 作成日: 2025-11-19（WebORCA トライアルサーバー運用へ切り替え）
-- 対象: `https://weborca-trial.orca.med.or.jp/` で提供される WebORCA トライアルサーバーと、`docker-compose.modernized.dev.yml`（または `scripts/start_legacy_modernized.sh`）で起動するモダナイズ版 OpenDolphin サーバー。
-- 目的: 公開トライアル環境での疎通・API 呼び出し・CRUD 証跡取得を単一 Runbook に集約し、RUN_ID 発行／ログ保存／週次棚卸しのやり方を一本化する。
-- 参照: [ORCA API 公式仕様](https://www.orca.med.or.jp/receipt/tec/api/overview.html) / [オフラインコピー](assets/orca-api-spec/README.md) / [技術情報ハブ（帳票・CLAIM・MONTSUQI 等）](assets/orca-tec-index/README.md)
+> **Single Playbook 繝ｫ繝ｼ繝ｫ**: ORCA 謗･邯壹↓髢｢縺吶ｋ謇矩・・譛ｬ繝峨く繝･繝｡繝ｳ繝医↓荳譛ｬ蛹悶☆繧九ゆｻ悶ラ繧ｭ繝･繝｡繝ｳ繝茨ｼ・ORCA_API_STATUS.md`, `MODERNIZED_API_DOCUMENTATION_GUIDE.md` 縺ｪ縺ｩ・峨・譛ｬ Playbook 縺ｸ縺ｮ繝ｪ繝ｳ繧ｯ縺ｨ蟾ｮ蛻・し繝槭Μ縺ｮ縺ｿ繧呈軸霈峨☆繧九・>
+> **2025-11-19 譖ｴ譁ｰ**: 譛ｬ逡ｪ雉・ｼ諠・ｱ縺翫ｈ縺ｳ `ORCAcertification/` 繝・ぅ繝ｬ繧ｯ繝医Μ縺ｯ繧｢繝ｼ繧ｫ繧､繝匁桶縺・→縺励仝ebORCA 繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・縺ｮ縺ｿ繧呈磁邯壼・縺ｨ縺吶ｋ縲・asic 隱崎ｨｼ縺ｯ蜈ｬ髢九い繧ｫ繧ｦ繝ｳ繝・`trial/weborcatrial` 繧貞茜逕ｨ縺励～curl --cert-type P12` 繧・PKCS#12 險ｼ譏取嶌縺ｯ菴ｿ逕ｨ縺励↑縺・・>
+> **謌先棡迚ｩ**
+> 1. `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` 縺ｫ RUN_ID・乗園隕具ｼ拾vidence 繝代せ繧定ｿｽ險倥・> 2. `artifacts/orca-connectivity/<RUN_ID>/` 縺ｫ繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・縺ｸ縺ｮ `curl` 繝ｪ繧ｯ繧ｨ繧ｹ繝医・繝ｬ繧ｹ繝昴Φ繧ｹ・医・繝・ム繝ｼ/譛ｬ譁・ｼ峨→ `ServerInfoResource` 邨先棡縲．NS/TLS 繝ｭ繧ｰ縲～tmp/orca-weekly-summary.*` 螳溯｡後Ο繧ｰ繧剃ｿ晏ｭ倥・> 3. `docs/web-client/planning/phase2/DOC_STATUS.md` 縺ｮ ORCA 騾｣謳ｺ谺・→騾ｱ谺｡譽壼査縺玲ｬ・ｒ Active 縺ｫ譖ｴ譁ｰ縺励∝ｾ檎ｶ壽球蠖薙∈蠢・ｦ√↑險ｼ霍｡繝代せ繧貞・譛峨・
+## 0. Single Playbook 驕狗畑繝ｫ繝ｼ繝ｫ
 
-> **Single Playbook ルール**: ORCA 接続に関する手順は本ドキュメントに一本化する。他ドキュメント（`ORCA_API_STATUS.md`, `MODERNIZED_API_DOCUMENTATION_GUIDE.md` など）は本 Playbook へのリンクと差分サマリのみを掲載する。
->
-> **2025-11-19 更新**: 本番資格情報および `ORCAcertification/` ディレクトリはアーカイブ扱いとし、WebORCA トライアルサーバーのみを接続先とする。Basic 認証は公開アカウント `trial/weborcatrial` を利用し、`curl --cert-type P12` や PKCS#12 証明書は使用しない。
->
-> **成果物**
-> 1. `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` に RUN_ID／所見／Evidence パスを追記。
-> 2. `artifacts/orca-connectivity/<RUN_ID>/` にトライアルサーバーへの `curl` リクエスト・レスポンス（ヘッダー/本文）と `ServerInfoResource` 結果、DNS/TLS ログ、`tmp/orca-weekly-summary.*` 実行ログを保存。
-> 3. `docs/web-client/planning/phase2/DOC_STATUS.md` の ORCA 連携欄と週次棚卸し欄を Active に更新し、後続担当へ必要な証跡パスを共有。
+- 譛ｬ遽繧貞渕轤ｹ縺ｫ RUN_ID 逋ｺ陦後√Ο繧ｰ菫晏ｭ倥・ｱ谺｡譽壼査縺暦ｼ・tmp/orca-weekly-summary.*`・峨・雋ｼ繧贋ｻ倥￠菴咲ｽｮ繧貞ｮ夂ｾｩ縺吶ｋ縲ＡORCA_API_STATUS.md`/`MODERNIZED_API_DOCUMENTATION_GUIDE.md` 縺ｯ譛ｬ遽縺ｮ蜿ら・縺縺代ｒ險倩ｼ峨＠縲∵焔鬆・ｒ隍・｣ｽ縺励↑縺・・- Trial 繧ｵ繝ｼ繝舌・縺ｮ謗･邯壽ュ蝣ｱ繝ｻCRUD 蜿ｯ蜷ｦ繝ｻ蛻ｩ逕ｨ荳榊庄讖溯・縺ｯ `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` 繧剃ｸ谺｡諠・ｱ縺ｨ縺励∵悽遽縺ｨ ﾂｧ1 縺ｮ險倩ｿｰ縺御ｹ夜屬縺励◆蝣ｴ蜷医・ Snapshot 繧呈峩譁ｰ縺励※縺九ｉ譛ｬ Playbook 繧剃ｿｮ豁｣縺吶ｋ縲・
+### 0.1 RUN_ID 逋ｺ陦後ユ繝ｳ繝励Ξ
 
-## 0. Single Playbook 運用ルール
-
-- 本節を基点に RUN_ID 発行、ログ保存、週次棚卸し（`tmp/orca-weekly-summary.*`）の貼り付け位置を定義する。`ORCA_API_STATUS.md`/`MODERNIZED_API_DOCUMENTATION_GUIDE.md` は本節の参照だけを記載し、手順を複製しない。
-- Trial サーバーの接続情報・CRUD 可否・利用不可機能は `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` を一次情報とし、本節と §1 の記述が乖離した場合は Snapshot を更新してから本 Playbook を修正する。
-
-### 0.1 RUN_ID 発行テンプレ
-
-1. RUN_ID は `YYYYMMDD` + 目的語 + `Z#` で命名する。例: `RUN_ID=20251120TrialCrudPrepZ1`（Trial CRUD 事前チェック 1 件目）。
-2. 予約語: `TrialCrud`, `TrialAppoint`, `TrialAccept`, `TrialMedical`, `TrialHttpLog`, `TrialWeekly` などタスク種別が判別できる語を使用する。
-3. 発行手順:
+1. RUN_ID 縺ｯ `YYYYMMDD` + 逶ｮ逧・ｪ・+ `Z#` 縺ｧ蜻ｽ蜷阪☆繧九ゆｾ・ `RUN_ID=20251120TrialCrudPrepZ1`・・rial CRUD 莠句燕繝√ぉ繝・け 1 莉ｶ逶ｮ・峨・2. 莠育ｴ・ｪ・ `TrialCrud`, `TrialAppoint`, `TrialAccept`, `TrialMedical`, `TrialHttpLog`, `TrialWeekly` 縺ｪ縺ｩ繧ｿ繧ｹ繧ｯ遞ｮ蛻･縺悟愛蛻･縺ｧ縺阪ｋ隱槭ｒ菴ｿ逕ｨ縺吶ｋ縲・3. 逋ｺ陦梧焔鬆・
    ```bash
    export RUN_ID=20251120TrialCrudPrepZ1
    export EVIDENCE_ROOT="artifacts/orca-connectivity/${RUN_ID}"
    mkdir -p "${EVIDENCE_ROOT}/"{dns,tls,trial,trace,data-check}
    rsync -a artifacts/orca-connectivity/TEMPLATE/ "${EVIDENCE_ROOT}/"
    ```
-4. `artifacts/orca-connectivity/TEMPLATE/00_README.md` の命名ルールも参照し、`node scripts/tools/orca-artifacts-namer.js artifacts/orca-connectivity` で違反がないことを確認する。
+4. `artifacts/orca-connectivity/TEMPLATE/00_README.md` 縺ｮ蜻ｽ蜷阪Ν繝ｼ繝ｫ繧ょ盾辣ｧ縺励～node scripts/tools/orca-artifacts-namer.js artifacts/orca-connectivity` 縺ｧ驕募渚縺後↑縺・％縺ｨ繧堤｢ｺ隱阪☆繧九・
+### 0.2 繝ｭ繧ｰ菫晏ｭ倥→繝ｪ繝ｳ繧ｯ邨ｱ荳
 
-### 0.2 ログ保存とリンク統一
+1. 螳滓命譌･縺斐→縺ｮ繧ｵ繝槭Μ縺ｯ `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` 縺ｫ險倩ｼ峨＠縲∝推 RUN_ID 繧定｡ｨ蠖｢蠑上〒謨ｴ逅・☆繧具ｼ井ｾ・ `logs/2025-11-15-orca-connectivity.md`・峨・2. 螳滓ｸｬ繝ｭ繧ｰ縺ｮ菫晏ｭ伜・縺ｯ蠢・★ `artifacts/orca-connectivity/<RUN_ID>/` 驟堺ｸ九→縺励～dns/`, `tls/`, `trial/<api>/`, `trace/`, `data-check/`, `screenshots/` 繧・RUN_ID 蜊倅ｽ阪〒謠・∴繧九・3. 蟾ｮ蛻・し繝槭Μ繧剃ｻ悶ラ繧ｭ繝･繝｡繝ｳ繝医∈險倩ｼ峨☆繧句ｴ蜷医・縲形ORCA_CONNECTIVITY_VALIDATION.md` ﾂｧ0 繧貞盾辣ｧ縲阪→譏手ｨ倥＠縲∵焔鬆・悽譁・ｒ隍・｣ｽ縺励↑縺・ら音縺ｫ `ORCA_API_STATUS.md` 縺ｯ譛譁ｰ繧ｹ繝・・繧ｿ繧ｹ陦ｨ縺ｮ縺ｿ繧呈ｮ九＠縲∝ｮ滓命謇矩・・譛ｬ Playbook 縺ｸ隱伜ｰ弱☆繧九・4. `artifacts/orca-connectivity/<RUN_ID>/README.md` 繧・Evidence 逶ｮ谺｡縺ｨ縺励※譖ｴ譁ｰ縺励．NS/TLS 繝ｭ繧ｰ繧・CRUD 螳滓命邨先棡繧貞・謖吶☆繧九・
+### 0.3 `tmp/orca-weekly-summary.*` 縺ｮ雋ｼ繧贋ｻ倥￠菴咲ｽｮ
 
-1. 実施日ごとのサマリは `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` に記載し、各 RUN_ID を表形式で整理する（例: `logs/2025-11-15-orca-connectivity.md`）。
-2. 実測ログの保存先は必ず `artifacts/orca-connectivity/<RUN_ID>/` 配下とし、`dns/`, `tls/`, `trial/<api>/`, `trace/`, `data-check/`, `screenshots/` を RUN_ID 単位で揃える。
-3. 差分サマリを他ドキュメントへ記載する場合は「`ORCA_CONNECTIVITY_VALIDATION.md` §0 を参照」と明記し、手順本文を複製しない。特に `ORCA_API_STATUS.md` は最新ステータス表のみを残し、実施手順は本 Playbook へ誘導する。
-4. `artifacts/orca-connectivity/<RUN_ID>/README.md` を Evidence 目次として更新し、DNS/TLS ログや CRUD 実施結果を列挙する。
-
-### 0.3 `tmp/orca-weekly-summary.*` の貼り付け位置
-
-1. `npm run orca-weekly` 実行後、`tmp/orca-weekly-summary.json` と `tmp/orca-weekly-summary.md` が生成される。
-2. Markdown 版を以下 3 か所へ貼り付けて同期する。
-   - `docs/web-client/planning/phase2/DOC_STATUS.md` の「モダナイズ/外部連携（ORCA）」週次テーブル（備考欄に RUN_ID・Evidence パス）。
-   - `docs/web-client/README.md` ORCA セクションの「直近週次」行。
-   - `docs/server-modernization/phase2/PHASE2_PROGRESS.md` ORCA 行の週次欄。
-3. JSON 版と CLI 標準出力は `artifacts/orca-connectivity/validation/<RUN_ID>/weekly_summary.log` へ貼り付け、`RUN_ID`＝`YYYYMMDDTrialWeeklyZ#` を合わせて記録する。
-
-### 0.4 curl サンプル（Basic 認証）
-
-`MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から引用する cURL 雛形を本節で一元管理する。Basic 認証／UTF-8/Shift_JIS ヘッダー／Evidence 保存ルールを以下に示す。
-
+1. `npm run orca-weekly` 螳溯｡悟ｾ後～tmp/orca-weekly-summary.json` 縺ｨ `tmp/orca-weekly-summary.md` 縺檎函謌舌＆繧後ｋ縲・2. Markdown 迚医ｒ莉･荳・3 縺区園縺ｸ雋ｼ繧贋ｻ倥￠縺ｦ蜷梧悄縺吶ｋ縲・   - `docs/web-client/planning/phase2/DOC_STATUS.md` 縺ｮ縲後Δ繝繝翫う繧ｺ/螟夜Κ騾｣謳ｺ・・RCA・峨埼ｱ谺｡繝・・繝悶Ν・亥ｙ閠・ｬ・↓ RUN_ID繝ｻEvidence 繝代せ・峨・   - `docs/web-client/README.md` ORCA 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ縺ｮ縲檎峩霑鷹ｱ谺｡縲崎｡後・   - `docs/server-modernization/phase2/PHASE2_PROGRESS.md` ORCA 陦後・騾ｱ谺｡谺・・3. JSON 迚医→ CLI 讓呎ｺ門・蜉帙・ `artifacts/orca-connectivity/validation/<RUN_ID>/weekly_summary.log` 縺ｸ雋ｼ繧贋ｻ倥￠縲～RUN_ID`・拜YYYYMMDDTrialWeeklyZ#` 繧貞粋繧上○縺ｦ險倬鹸縺吶ｋ縲・
+### 0.4 curl 繧ｵ繝ｳ繝励Ν・・asic 隱崎ｨｼ・・
+`MODERNIZED_API_DOCUMENTATION_GUIDE.md` ﾂｧ3.2 縺九ｉ蠑慕畑縺吶ｋ cURL 髮帛ｽ｢繧呈悽遽縺ｧ荳蜈・ｮ｡逅・☆繧九・asic 隱崎ｨｼ・酋TF-8/Shift_JIS 繝倥ャ繝繝ｼ・拾vidence 菫晏ｭ倥Ν繝ｼ繝ｫ繧剃ｻ･荳九↓遉ｺ縺吶・
 ```bash
 export ORCA_TRIAL_USER=trial
 export ORCA_TRIAL_PASS=weborcatrial
@@ -71,75 +48,54 @@ curl --silent --show-error \
      --trace-ascii "${EVIDENCE_ROOT}/trace/system01dailyv2.trace"
 ```
 
-- 参照 API（`acceptlstv2`, `appointlstv2`, etc.）も同じ RUN_ID/ディレクトリ構成で保存する。
-- CRUD 操作を伴う場合は `data-check/<api>.md` に before/after と戻し手順を必ず記録する。
-- 追加の `curl` テンプレが必要になった場合も本節を更新し、他ファイルは本節へのリンクだけを残す。
+- 蜿ら・ API・・acceptlstv2`, `appointlstv2`, etc.・峨ｂ蜷後§ RUN_ID/繝・ぅ繝ｬ繧ｯ繝医Μ讒区・縺ｧ菫晏ｭ倥☆繧九・- CRUD 謫堺ｽ懊ｒ莨ｴ縺・ｴ蜷医・ `data-check/<api>.md` 縺ｫ before/after 縺ｨ謌ｻ縺玲焔鬆・ｒ蠢・★險倬鹸縺吶ｋ縲・- 霑ｽ蜉縺ｮ `curl` 繝・Φ繝励Ξ縺悟ｿ・ｦ√↓縺ｪ縺｣縺溷ｴ蜷医ｂ譛ｬ遽繧呈峩譁ｰ縺励∽ｻ悶ヵ繧｡繧､繝ｫ縺ｯ譛ｬ遽縺ｸ縺ｮ繝ｪ繝ｳ繧ｯ縺縺代ｒ谿九☆縲・
+## 1. 繧ｹ繧ｳ繝ｼ繝励→蜑肴署譚｡莉ｶ
 
-## 1. スコープと前提条件
-
-| 項目 | 内容 |
+| 鬆・岼 | 蜀・ｮｹ |
 | --- | --- |
-| WebORCA 接続先 | `https://weborca-trial.orca.med.or.jp/`（CN=`weborca-trial.orca.med.or.jp`）。公開トライアル環境のため TLS クライアント証明書は不要、HTTP Basic のみでアクセスする。 |
-| 認証情報 | ユーザー `trial` / パスワード `weborcatrial`（公式トライアルサイトで公開済み）。追加の API キーや PKCS#12 証明書は不要。|
-| CRUD 方針（Trial） | `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` で「一部の管理業務を除き自由にお使いいただけます」と明記。トライアル環境限定で新規登録／更新／削除 OK、操作内容は必ずログ化して戻し方を記録する。|
-| 利用不可機能 | Snapshot Summary 記載の通り、プログラム/マスタ更新、CLAIM 通信、プリンタ直接出力、レセプト一括/電算/CSV などは無効化されている。検証対象から除外し、`tmp/orca-weekly-summary.md` の週次欄にも「利用不可機能変更なし」と明記する。|
-| モダナイズ版サーバー | `opendolphin-server-modernized-dev`（WildFly 27）。`ops/shared/docker/custom.properties` および `ops/modernized-server/docker/custom.properties` に `claim.host=weborca-trial.orca.med.or.jp` / `claim.send.port=443` / `claim.conn=server` / `claim.send.encoding=MS932` / `claim.scheme=https` を設定してから再ビルドする。 |
-| ネットワーク | 作業端末から `weborca-trial.orca.med.or.jp:443` への outbound HTTPS が許可されていること。社内ネットワークで制限されている場合は VPN または許可済みホストへ切り替える。|
-| DNS | 作業開始前にホスト OS で `Resolve-DnsName weborca-trial.orca.med.or.jp`（Windows）や `nslookup`/`dig` を実行し、A レコードを取得できることを確認する。WSL2 を利用する場合は Windows 側 `.wslconfig` に `generateResolvConf=false` を追加し、WSL 内では `/etc/resolv.conf` を手動管理する。`artifacts/orca-connectivity/<RUN_ID>/dns/` へ `nslookup`/`dig`/`ping` 証跡を保存する。 |
-| データ | トライアル環境は週次でリセットされ、公開初期データ（患者 00001〜、医療機関=オルカクリニック 等）が常に投入される。登録内容は誰でも参照できるため、個人情報の投入は禁止。参照系 API を主に実行し、書き込み系は UI 操作確認の範囲に留める。 |
+| WebORCA 謗･邯壼・ | `https://weborca-trial.orca.med.or.jp/`・・N=`weborca-trial.orca.med.or.jp`・峨ょ・髢九ヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・・縺溘ａ TLS 繧ｯ繝ｩ繧､繧｢繝ｳ繝郁ｨｼ譏取嶌縺ｯ荳崎ｦ√？TTP Basic 縺ｮ縺ｿ縺ｧ繧｢繧ｯ繧ｻ繧ｹ縺吶ｋ縲・|
+| 隱崎ｨｼ諠・ｱ | 繝ｦ繝ｼ繧ｶ繝ｼ `trial` / 繝代せ繝ｯ繝ｼ繝・`weborcatrial`・亥・蠑上ヨ繝ｩ繧､繧｢繝ｫ繧ｵ繧､繝医〒蜈ｬ髢区ｸ医∩・峨りｿｽ蜉縺ｮ API 繧ｭ繝ｼ繧・PKCS#12 險ｼ譏取嶌縺ｯ荳崎ｦ√・
+| CRUD 譁ｹ驥晢ｼ・rial・・| `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` 縺ｧ縲御ｸ驛ｨ縺ｮ邂｡逅・･ｭ蜍吶ｒ髯､縺崎・逕ｱ縺ｫ縺贋ｽｿ縺・＞縺溘□縺代∪縺吶阪→譏手ｨ倥ゅヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・剞螳壹〒譁ｰ隕冗匳骭ｲ・乗峩譁ｰ・丞炎髯､ OK縲∵桃菴懷・螳ｹ縺ｯ蠢・★繝ｭ繧ｰ蛹悶＠縺ｦ謌ｻ縺玲婿繧定ｨ倬鹸縺吶ｋ縲・
+| 蛻ｩ逕ｨ荳榊庄讖溯・ | Snapshot Summary 險倩ｼ峨・騾壹ｊ縲√・繝ｭ繧ｰ繝ｩ繝/繝槭せ繧ｿ譖ｴ譁ｰ縲，LAIM 騾壻ｿ｡縲√・繝ｪ繝ｳ繧ｿ逶ｴ謗･蜃ｺ蜉帙√Ξ繧ｻ繝励ヨ荳諡ｬ/髮ｻ邂・CSV 縺ｪ縺ｩ縺ｯ辟｡蜉ｹ蛹悶＆繧後※縺・ｋ縲よ､懆ｨｼ蟇ｾ雎｡縺九ｉ髯､螟悶＠縲～tmp/orca-weekly-summary.md` 縺ｮ騾ｱ谺｡谺・↓繧ゅ悟茜逕ｨ荳榊庄讖溯・螟画峩縺ｪ縺励阪→譏手ｨ倥☆繧九・
+| 繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・ | `opendolphin-server-modernized-dev`・・ildFly 27・峨Ａops/shared/docker/custom.properties` 縺翫ｈ縺ｳ `ops/modernized-server/docker/custom.properties` 縺ｫ `claim.host=weborca-trial.orca.med.or.jp` / `claim.send.port=443` / `claim.conn=server` / `claim.send.encoding=MS932` / `claim.scheme=https` 繧定ｨｭ螳壹＠縺ｦ縺九ｉ蜀阪ン繝ｫ繝峨☆繧九・|
+| 繝阪ャ繝医Ρ繝ｼ繧ｯ | 菴懈･ｭ遶ｯ譛ｫ縺九ｉ `weborca-trial.orca.med.or.jp:443` 縺ｸ縺ｮ outbound HTTPS 縺瑚ｨｱ蜿ｯ縺輔ｌ縺ｦ縺・ｋ縺薙→縲ら､ｾ蜀・ロ繝・ヨ繝ｯ繝ｼ繧ｯ縺ｧ蛻ｶ髯舌＆繧後※縺・ｋ蝣ｴ蜷医・ VPN 縺ｾ縺溘・險ｱ蜿ｯ貂医∩繝帙せ繝医∈蛻・ｊ譖ｿ縺医ｋ縲・
+| DNS | 菴懈･ｭ髢句ｧ句燕縺ｫ繝帙せ繝・OS 縺ｧ `Resolve-DnsName weborca-trial.orca.med.or.jp`・・indows・峨ｄ `nslookup`/`dig` 繧貞ｮ溯｡後＠縲、 繝ｬ繧ｳ繝ｼ繝峨ｒ蜿門ｾ励〒縺阪ｋ縺薙→繧堤｢ｺ隱阪☆繧九８SL2 繧貞茜逕ｨ縺吶ｋ蝣ｴ蜷医・ Windows 蛛ｴ `.wslconfig` 縺ｫ `generateResolvConf=false` 繧定ｿｽ蜉縺励仝SL 蜀・〒縺ｯ `/etc/resolv.conf` 繧呈焔蜍慕ｮ｡逅・☆繧九Ａartifacts/orca-connectivity/<RUN_ID>/dns/` 縺ｸ `nslookup`/`dig`/`ping` 險ｼ霍｡繧剃ｿ晏ｭ倥☆繧九・|
+| 繝・・繧ｿ | 繝医Λ繧､繧｢繝ｫ迺ｰ蠅・・騾ｱ谺｡縺ｧ繝ｪ繧ｻ繝・ヨ縺輔ｌ縲∝・髢句・譛溘ョ繝ｼ繧ｿ・域ぅ閠・00001縲懊∝現逋よｩ滄未=繧ｪ繝ｫ繧ｫ繧ｯ繝ｪ繝九ャ繧ｯ 遲会ｼ峨′蟶ｸ縺ｫ謚募・縺輔ｌ繧九ら匳骭ｲ蜀・ｮｹ縺ｯ隱ｰ縺ｧ繧ょ盾辣ｧ縺ｧ縺阪ｋ縺溘ａ縲∝倶ｺｺ諠・ｱ縺ｮ謚募・縺ｯ遖∵ｭ｢縲ょ盾辣ｧ邉ｻ API 繧剃ｸｻ縺ｫ螳溯｡後＠縲∵嶌縺崎ｾｼ縺ｿ邉ｻ縺ｯ UI 謫堺ｽ懃｢ｺ隱阪・遽・峇縺ｫ逡吶ａ繧九・|
 
-> Snapshot Summary との同期: `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` を更新したら必ず本表も更新し、逆に本表へ追記したい事項が出た場合は Snapshot を先に更新してから本 Playbook へ反映する。
+> Snapshot Summary 縺ｨ縺ｮ蜷梧悄: `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` 繧呈峩譁ｰ縺励◆繧牙ｿ・★譛ｬ陦ｨ繧よ峩譁ｰ縺励・・↓譛ｬ陦ｨ縺ｸ霑ｽ險倥＠縺溘＞莠矩・′蜃ｺ縺溷ｴ蜷医・ Snapshot 繧貞・縺ｫ譖ｴ譁ｰ縺励※縺九ｉ譛ｬ Playbook 縺ｸ蜿肴丐縺吶ｋ縲・
+## 2. 螳滓命繝輔Ο繝ｼ讎りｦ・
+1. **繝医Λ繧､繧｢繝ｫ諠・ｱ縺ｮ遒ｺ隱・*: `assets/orca-trialsite/README.md` 繧貞盾辣ｧ縺励∝茜逕ｨ蛻ｶ髯舌・蛻晄悄繝・・繧ｿ繝ｻ繝ｭ繧ｰ繧､繝ｳ諠・ｱ繧呈滑謠｡縺吶ｋ縲・2. **繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・險ｭ螳・*: `claim.*` 邉ｻ繝励Ο繝代ユ繧｣繧偵ヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・髄縺代↓譖ｴ譁ｰ縺励～ServerInfoResource` 縺ｧ `claim.conn=server` 繧貞叙蠕励〒縺阪ｋ繧医≧縺ｫ縺吶ｋ縲・3. **謗･邯夂｢ｺ隱・*: `curl -u trial:weborcatrial` 縺ｧ `/api/api01rv2/system01dailyv2` 縺ｪ縺ｩ read-only API 繧貞ｮ溯｡後＠縲？TTP 200 / `Api_Result=00` 繧定ｨｼ霍｡蛹悶・4. **API 讀懆ｨｼ**: P0・・atient, accept, appoint・峨°繧蛾・↓ `node scripts/tools/orca-curl-snippets.js` 縺ｮ蜃ｺ蜉帙ｒ菴ｿ縺｣縺ｦ螳溯｡後＠縲～artifacts/orca-connectivity/<UTC>/P0_*` 縺ｸ菫晏ｭ倥ょｿ・ｦ√↓蠢懊§縺ｦ P1 莉･髯阪ｂ霑ｽ蜉縲・5. **邨先棡謨ｴ逅・*: `PHASE2_PROGRESS.md` 縺ｮ ORCA 谺・→ `docs/web-client/planning/phase2/DOC_STATUS.md` 繧呈峩譁ｰ縺励∝､ｱ謨玲凾縺ｯ `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` 縺ｮ繧ｨ繧ｹ繧ｫ繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ謇矩・↓蠕薙≧縲・
+## 3. 貅門ｙ繝√ぉ繝・け繝ｪ繧ｹ繝・
+### 3.1 繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・雉・ｼ諠・ｱ
 
-## 2. 実施フロー概要
-
-1. **トライアル情報の確認**: `assets/orca-trialsite/README.md` を参照し、利用制限・初期データ・ログイン情報を把握する。
-2. **モダナイズ版サーバー設定**: `claim.*` 系プロパティをトライアル環境向けに更新し、`ServerInfoResource` で `claim.conn=server` を取得できるようにする。
-3. **接続確認**: `curl -u trial:weborcatrial` で `/api/api01rv2/system01dailyv2` など read-only API を実行し、HTTP 200 / `Api_Result=00` を証跡化。
-4. **API 検証**: P0（patient, accept, appoint）から順に `node scripts/tools/orca-curl-snippets.js` の出力を使って実行し、`artifacts/orca-connectivity/<UTC>/P0_*` へ保存。必要に応じて P1 以降も追加。
-5. **結果整理**: `PHASE2_PROGRESS.md` の ORCA 欄と `docs/web-client/planning/phase2/DOC_STATUS.md` を更新し、失敗時は `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` のエスカレーション手順に従う。
-
-## 3. 準備チェックリスト
-
-### 3.1 トライアルサーバー資格情報
-
-| 項目 | 値 | 参照先 |
+| 鬆・岼 | 蛟､ | 蜿ら・蜈・|
 | --- | --- | --- |
-| ベース URL | `https://weborca-trial.orca.med.or.jp/` | [日レセを体験](assets/orca-trialsite/raw/trialsite.md#お試しサーバの接続法) |
-| UI ログイン | ユーザー `trial` / パスワード `weborcatrial` | 同上（公式公開値） |
-| API 認証 | HTTP Basic `trial:weborcatrial` | `curl -u trial:weborcatrial ...` で利用 |
-| 初期データ | 患者番号 `00001`〜`00011` など | [登録されている初期データ](assets/orca-trialsite/raw/trialsite.md#登録されている初期データ) |
-| 利用不可機能 | CLAIM 送信 / CSV 出力 / プログラム更新 等 | [お使いいただけない機能等](assets/orca-trialsite/raw/trialsite.md#お使いいただけない機能等) |
+| 繝吶・繧ｹ URL | `https://weborca-trial.orca.med.or.jp/` | [譌･繝ｬ繧ｻ繧剃ｽ馴ｨ転(assets/orca-trialsite/raw/trialsite.md#縺願ｩｦ縺励し繝ｼ繝舌・謗･邯壽ｳ・ |
+| UI 繝ｭ繧ｰ繧､繝ｳ | 繝ｦ繝ｼ繧ｶ繝ｼ `trial` / 繝代せ繝ｯ繝ｼ繝・`weborcatrial` | 蜷御ｸ奇ｼ亥・蠑丞・髢句､・・|
+| API 隱崎ｨｼ | HTTP Basic `trial:weborcatrial` | `curl -u trial:weborcatrial ...` 縺ｧ蛻ｩ逕ｨ |
+| 蛻晄悄繝・・繧ｿ | 謔｣閠・分蜿ｷ `00001`縲彖00011` 縺ｪ縺ｩ | [逋ｻ骭ｲ縺輔ｌ縺ｦ縺・ｋ蛻晄悄繝・・繧ｿ](assets/orca-trialsite/raw/trialsite.md#逋ｻ骭ｲ縺輔ｌ縺ｦ縺・ｋ蛻晄悄繝・・繧ｿ) |
+| 蛻ｩ逕ｨ荳榊庄讖溯・ | CLAIM 騾∽ｿ｡ / CSV 蜃ｺ蜉・/ 繝励Ο繧ｰ繝ｩ繝譖ｴ譁ｰ 遲・| [縺贋ｽｿ縺・＞縺溘□縺代↑縺・ｩ溯・遲云(assets/orca-trialsite/raw/trialsite.md#縺贋ｽｿ縺・＞縺溘□縺代↑縺・ｩ溯・遲・ |
 
-> トライアル環境は週次でリセットされるため、検証目的での患者登録・予約作成・診療削除などの CRUD 操作が許可される。作業後は `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` に実施内容を記録し、再現に必要な入力値を残すこと。
-
-### 3.2 モダナイズ版サーバー設定
-
-- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` の各 `claim.*` を以下へ揃える。差分は Evidence に保存し、`ServerInfoResource` の結果と一緒に提出する。
-  - `claim.conn=server`
+> 繝医Λ繧､繧｢繝ｫ迺ｰ蠅・・騾ｱ谺｡縺ｧ繝ｪ繧ｻ繝・ヨ縺輔ｌ繧九◆繧√∵､懆ｨｼ逶ｮ逧・〒縺ｮ謔｣閠・匳骭ｲ繝ｻ莠育ｴ・ｽ懈・繝ｻ險ｺ逋ょ炎髯､縺ｪ縺ｩ縺ｮ CRUD 謫堺ｽ懊′險ｱ蜿ｯ縺輔ｌ繧九ゆｽ懈･ｭ蠕後・ `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` 縺ｫ螳滓命蜀・ｮｹ繧定ｨ倬鹸縺励∝・迴ｾ縺ｫ蠢・ｦ√↑蜈･蜉帛､繧呈ｮ九☆縺薙→縲・
+### 3.2 繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・險ｭ螳・
+- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` 縺ｮ蜷・`claim.*` 繧剃ｻ･荳九∈謠・∴繧九ょｷｮ蛻・・ Evidence 縺ｫ菫晏ｭ倥＠縲～ServerInfoResource` 縺ｮ邨先棡縺ｨ荳邱偵↓謠仙・縺吶ｋ縲・  - `claim.conn=server`
   - `claim.host=weborca-trial.orca.med.or.jp`
   - `claim.send.port=443`
-  - `claim.scheme=https`（または `claim.useSsl=true`）
-  - `claim.send.encoding=MS932`
-- `docker compose`（または `scripts/start_legacy_modernized.sh`）でモダナイズ側を再起動し、`/serverinfo/claim/conn` が `server` へ戻ることを確認。Legacy サーバーは必要に応じて read-only で並行起動する。
+  - `claim.scheme=https`・医∪縺溘・ `claim.useSsl=true`・・  - `claim.send.encoding=MS932`
+- `docker compose`・医∪縺溘・ `scripts/start_legacy_modernized.sh`・峨〒繝｢繝繝翫う繧ｺ蛛ｴ繧貞・襍ｷ蜍輔＠縲～/serverinfo/claim/conn` 縺・`server` 縺ｸ謌ｻ繧九％縺ｨ繧堤｢ｺ隱阪・egacy 繧ｵ繝ｼ繝舌・縺ｯ蠢・ｦ√↓蠢懊§縺ｦ read-only 縺ｧ荳ｦ陦瑚ｵｷ蜍輔☆繧九・
+### 3.3 繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｨ繧ｯ繝ｩ繧､繧｢繝ｳ繝育ｫｯ譛ｫ
 
-### 3.3 ネットワークとクライアント端末
+- `dig weborca-trial.orca.med.or.jp` / `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` 繧貞ｮ溯｡後＠縲√い繧ｦ繝医ヰ繧ｦ繝ｳ繝・HTTPS 縺瑚ｨｱ蜿ｯ縺輔ｌ縺ｦ縺・ｋ縺薙→繧堤｢ｺ隱阪りｨｼ霍｡縺ｯ `artifacts/orca-connectivity/<UTC>/tls/openssl_s_client.log` 縺ｪ縺ｩ縺ｸ菫晏ｭ倥・- 繝励Ο繧ｭ繧ｷ雜翫＠縺ｮ蝣ｴ蜷医・ `HTTPS_PROXY`・汁NO_PROXY` 繧堤腸蠅・､画焚縺ｧ螳夂ｾｩ縺励～curl` 縺・Basic 隱崎ｨｼ繧呈ｭ｣縺励￥騾∽ｿ｡縺ｧ縺阪ｋ縺・`curl --verbose -u trial:weborcatrial --head` 縺ｧ讀懆ｨｼ縺吶ｋ縲・- 菴懈･ｭ PC 荳翫・ `~/.curlrc` 縺ｫ菴呵ｨ医↑ `insecure` 繧・`proxy` 縺梧ｮ九▲縺ｦ縺・↑縺・°繧堤｢ｺ隱阪らｫｶ蜷医′縺ゅｋ蝣ｴ蜷医・荳譎ら噪縺ｫ蛻･ `curlrc` 繧剃ｽｿ逕ｨ縺吶ｋ縲・
+### 3.4 CLI 繝・・繝ｫ縺ｨ繝・Φ繝励Ξ
 
-- `dig weborca-trial.orca.med.or.jp` / `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、アウトバウンド HTTPS が許可されていることを確認。証跡は `artifacts/orca-connectivity/<UTC>/tls/openssl_s_client.log` などへ保存。
-- プロキシ越しの場合は `HTTPS_PROXY`／`NO_PROXY` を環境変数で定義し、`curl` が Basic 認証を正しく送信できるか `curl --verbose -u trial:weborcatrial --head` で検証する。
-- 作業 PC 上の `~/.curlrc` に余計な `insecure` や `proxy` が残っていないかを確認。競合がある場合は一時的に別 `curlrc` を使用する。
-
-### 3.4 CLI ツールとテンプレ
-
-| ツール | 目的 | コマンド例 |
+| 繝・・繝ｫ | 逶ｮ逧・| 繧ｳ繝槭Φ繝我ｾ・|
 | --- | --- | --- |
-| `node scripts/tools/orca-curl-snippets.js` | API ごとの curl コマンド生成 | `ORCA_BASE_URL=https://weborca-trial.orca.med.or.jp node scripts/tools/orca-curl-snippets.js --scenario p0` |
-| `ops/tools/send_parallel_request.sh` | Modernized サーバー経由の API 呼び出しを再現 | `ORCA_TRIAL_USER=trial ORCA_TRIAL_PASS=weborcatrial PARITY_OUTPUT_DIR=artifacts/orca-connectivity/<UTC>/parallel ./ops/tools/send_parallel_request.sh --profile modernized-orca` |
-| `curl`（Basic 認証） | 直接 API 実行・ヘッダー採取 | `curl -u "trial:weborcatrial" -H 'Content-Type: application/json; charset=Shift_JIS' ...` |
+| `node scripts/tools/orca-curl-snippets.js` | API 縺斐→縺ｮ curl 繧ｳ繝槭Φ繝臥函謌・| `ORCA_BASE_URL=https://weborca-trial.orca.med.or.jp node scripts/tools/orca-curl-snippets.js --scenario p0` |
+| `ops/tools/send_parallel_request.sh` | Modernized 繧ｵ繝ｼ繝舌・邨檎罰縺ｮ API 蜻ｼ縺ｳ蜃ｺ縺励ｒ蜀咲樟 | `ORCA_TRIAL_USER=trial ORCA_TRIAL_PASS=weborcatrial PARITY_OUTPUT_DIR=artifacts/orca-connectivity/<UTC>/parallel ./ops/tools/send_parallel_request.sh --profile modernized-orca` |
+| `curl`・・asic 隱崎ｨｼ・・| 逶ｴ謗･ API 螳溯｡後・繝倥ャ繝繝ｼ謗｡蜿・| `curl -u "trial:weborcatrial" -H 'Content-Type: application/json; charset=Shift_JIS' ...` |
 
-テンプレ Evidence は `artifacts/orca-connectivity/TEMPLATE/` を `cp -R` してから実施し、`README.md` に実行条件を追記する。
-
-`docs/server-modernization/phase2/operations/assets/orca-api-requests/xml/` には No.19-38（入院・保険・会計）の UTF-8 テンプレを配置した。`RUN_ID={{YYYYMMDD}}TorcaTrialZ1` のように採番したうえで、例えば入院患者一覧（#21）は以下のように収集する。
-
+繝・Φ繝励Ξ Evidence 縺ｯ `artifacts/orca-connectivity/TEMPLATE/` 繧・`cp -R` 縺励※縺九ｉ螳滓命縺励～README.md` 縺ｫ螳溯｡梧擅莉ｶ繧定ｿｽ險倥☆繧九・
+`docs/server-modernization/phase2/operations/assets/orca-api-requests/xml/` 縺ｫ縺ｯ No.19-38・亥・髯｢繝ｻ菫晞匱繝ｻ莨夊ｨ茨ｼ峨・ UTF-8 繝・Φ繝励Ξ繧帝・鄂ｮ縺励◆縲ＡRUN_ID={{YYYYMMDD}}TorcaTrialZ1` 縺ｮ繧医≧縺ｫ謗｡逡ｪ縺励◆縺・∴縺ｧ縲∽ｾ九∴縺ｰ蜈･髯｢謔｣閠・ｸ隕ｧ・・21・峨・莉･荳九・繧医≧縺ｫ蜿朱寔縺吶ｋ縲・
 ```bash
 API_ID=21_tmedicalgetv2
 mkdir -p "artifacts/orca-connectivity/${RUN_ID}/inpatient/${API_ID}"
@@ -153,170 +109,100 @@ curl -u "${ORCA_TRIAL_USER}:${ORCA_TRIAL_PASS}" \
      --trace-ascii "artifacts/orca-connectivity/${RUN_ID}/inpatient/${API_ID}/trace.log"
 ```
 
-新規データを登録する場合は、同ディレクトリに `insert.log`（実行コマンド／UI 操作メモ）や `before_after.sql` を保存し、削除時は対象患者番号・予約番号・診療 ID を明記する。週次リセットでデータは初期化されるが、作業内容は必ずログへ記録する。
-
-### 3.2 モダナイズ版サーバー設定
-
-- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` に定義する `claim.*` はすべて WebORCA トライアル向けの下記値に統一する。差分は Evidence に保存し、`ServerInfoResource` の JSON と並べて提出する。
-  - `claim.conn=server`
+譁ｰ隕上ョ繝ｼ繧ｿ繧堤匳骭ｲ縺吶ｋ蝣ｴ蜷医・縲∝酔繝・ぅ繝ｬ繧ｯ繝医Μ縺ｫ `insert.log`・亥ｮ溯｡後さ繝槭Φ繝会ｼ酋I 謫堺ｽ懊Γ繝｢・峨ｄ `before_after.sql` 繧剃ｿ晏ｭ倥＠縲∝炎髯､譎ゅ・蟇ｾ雎｡謔｣閠・分蜿ｷ繝ｻ莠育ｴ・分蜿ｷ繝ｻ險ｺ逋・ID 繧呈・險倥☆繧九るｱ谺｡繝ｪ繧ｻ繝・ヨ縺ｧ繝・・繧ｿ縺ｯ蛻晄悄蛹悶＆繧後ｋ縺後∽ｽ懈･ｭ蜀・ｮｹ縺ｯ蠢・★繝ｭ繧ｰ縺ｸ險倬鹸縺吶ｋ縲・
+### 3.2 繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・險ｭ螳・
+- `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` 縺ｫ螳夂ｾｩ縺吶ｋ `claim.*` 縺ｯ縺吶∋縺ｦ WebORCA 繝医Λ繧､繧｢繝ｫ蜷代￠縺ｮ荳玖ｨ伜､縺ｫ邨ｱ荳縺吶ｋ縲ょｷｮ蛻・・ Evidence 縺ｫ菫晏ｭ倥＠縲～ServerInfoResource` 縺ｮ JSON 縺ｨ荳ｦ縺ｹ縺ｦ謠仙・縺吶ｋ縲・  - `claim.conn=server`
   - `claim.host=weborca-trial.orca.med.or.jp`
   - `claim.send.port=443`
-  - `claim.scheme=https`（`claim.useSsl=true` でも可）
-  - `claim.send.encoding=MS932`
-- `docker compose`（または `scripts/start_legacy_modernized.sh`）でモダナイズ側を再起動し、`/serverinfo/claim/conn` が `server` を返すことを確認する。Legacy サーバーは read-only 参照のみで並行起動してもよい。
+  - `claim.scheme=https`・・claim.useSsl=true` 縺ｧ繧ょ庄・・  - `claim.send.encoding=MS932`
+- `docker compose`・医∪縺溘・ `scripts/start_legacy_modernized.sh`・峨〒繝｢繝繝翫う繧ｺ蛛ｴ繧貞・襍ｷ蜍輔＠縲～/serverinfo/claim/conn` 縺・`server` 繧定ｿ斐☆縺薙→繧堤｢ｺ隱阪☆繧九・egacy 繧ｵ繝ｼ繝舌・縺ｯ read-only 蜿ら・縺ｮ縺ｿ縺ｧ荳ｦ陦瑚ｵｷ蜍輔＠縺ｦ繧ゅｈ縺・・
+### 3.3 繝阪ャ繝医Ρ繝ｼ繧ｯ縺ｨ繧ｯ繝ｩ繧､繧｢繝ｳ繝育ｫｯ譛ｫ
 
-### 3.3 ネットワークとクライアント端末
+- `dig weborca-trial.orca.med.or.jp` / `nslookup weborca-trial.orca.med.or.jp` / `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` 繧貞ｮ溯｡後＠縲√い繧ｦ繝医ヰ繧ｦ繝ｳ繝・HTTPS 縺ｨ SNI 縺悟撫鬘後↑縺・％縺ｨ繧堤｢ｺ隱阪☆繧九りｨｼ霍｡縺ｯ `artifacts/orca-connectivity/<RUN_ID>/dns/` `.../tls/` 縺ｸ菫晏ｭ倥☆繧九・- 繝励Ο繧ｭ繧ｷ雜翫＠縺ｮ蝣ｴ蜷医・ `HTTPS_PROXY`・汁NO_PROXY` 繧堤腸蠅・､画焚縺ｧ螳夂ｾｩ縺励～curl --verbose -u trial:weborcatrial --head https://weborca-trial.orca.med.or.jp/` 縺ｧ Basic 隱崎ｨｼ縺碁城℃縺ｧ縺阪ｋ縺狗｢ｺ隱阪☆繧九・- 菴懈･ｭ遶ｯ譛ｫ縺ｮ `~/.curlrc` 縺ｫ `insecure` 繧・`proxy` 縺梧ｮ九▲縺ｦ縺・↑縺・°繝√ぉ繝・け縺励∝ｿ・ｦ√↑繧我ｸ譎ら噪縺ｪ `CURL_HOME` 繧堤畑諢上＠縺ｦ螳溯｡後☆繧九・
+### 3.4 CLI 繝・・繝ｫ縺ｨ繝・Φ繝励Ξ
 
-- `dig weborca-trial.orca.med.or.jp` / `nslookup weborca-trial.orca.med.or.jp` / `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、アウトバウンド HTTPS と SNI が問題ないことを確認する。証跡は `artifacts/orca-connectivity/<RUN_ID>/dns/` `.../tls/` へ保存する。
-- プロキシ越しの場合は `HTTPS_PROXY`／`NO_PROXY` を環境変数で定義し、`curl --verbose -u trial:weborcatrial --head https://weborca-trial.orca.med.or.jp/` で Basic 認証が透過できるか確認する。
-- 作業端末の `~/.curlrc` に `insecure` や `proxy` が残っていないかチェックし、必要なら一時的な `CURL_HOME` を用意して実行する。
-
-### 3.4 CLI ツールとテンプレ
-
-| ツール | 目的 | コマンド例 |
+| 繝・・繝ｫ | 逶ｮ逧・| 繧ｳ繝槭Φ繝我ｾ・|
 | --- | --- | --- |
-| `node scripts/tools/orca-curl-snippets.js` | API ごとの curl コマンド生成 | `ORCA_BASE_URL=https://weborca-trial.orca.med.or.jp ORCA_BASIC_USER=trial ORCA_BASIC_PASS=weborcatrial node scripts/tools/orca-curl-snippets.js --scenario p0` |
-| `ops/tools/send_parallel_request.sh` | Modernized サーバー経由の API 呼び出しを再現 | `ORCA_TRIAL_USER=trial ORCA_TRIAL_PASS=weborcatrial PARITY_OUTPUT_DIR=artifacts/orca-connectivity/<RUN_ID>/parallel ./ops/tools/send_parallel_request.sh --profile modernized-orca` |
-| `curl`（Basic 認証） | 直接 API 実行・ヘッダー採取 | `curl -u "trial:weborcatrial" -H 'Content-Type: application/json; charset=Shift_JIS' ...` |
+| `node scripts/tools/orca-curl-snippets.js` | API 縺斐→縺ｮ curl 繧ｳ繝槭Φ繝臥函謌・| `ORCA_BASE_URL=https://weborca-trial.orca.med.or.jp ORCA_BASIC_USER=trial ORCA_BASIC_PASS=weborcatrial node scripts/tools/orca-curl-snippets.js --scenario p0` |
+| `ops/tools/send_parallel_request.sh` | Modernized 繧ｵ繝ｼ繝舌・邨檎罰縺ｮ API 蜻ｼ縺ｳ蜃ｺ縺励ｒ蜀咲樟 | `ORCA_TRIAL_USER=trial ORCA_TRIAL_PASS=weborcatrial PARITY_OUTPUT_DIR=artifacts/orca-connectivity/<RUN_ID>/parallel ./ops/tools/send_parallel_request.sh --profile modernized-orca` |
+| `curl`・・asic 隱崎ｨｼ・・| 逶ｴ謗･ API 螳溯｡後・繝倥ャ繝繝ｼ謗｡蜿・| `curl -u "trial:weborcatrial" -H 'Content-Type: application/json; charset=Shift_JIS' ...` |
 
-テンプレ Evidence は `artifacts/orca-connectivity/TEMPLATE/` を `cp -R` してから実施し、`README.md` に実行条件（利用 API・ログ出力先・CRUD 実施有無）を追記する。
+繝・Φ繝励Ξ Evidence 縺ｯ `artifacts/orca-connectivity/TEMPLATE/` 繧・`cp -R` 縺励※縺九ｉ螳滓命縺励～README.md` 縺ｫ螳溯｡梧擅莉ｶ・亥茜逕ｨ API繝ｻ繝ｭ繧ｰ蜃ｺ蜉帛・繝ｻCRUD 螳滓命譛臥┌・峨ｒ霑ｽ險倥☆繧九・
+`docs/server-modernization/phase2/operations/assets/orca-api-requests/xml/` 驟堺ｸ九・繝ｪ繧ｯ繧ｨ繧ｹ繝磯屁蠖｢縺ｯ縲悟盾閠・い繝ｼ繧ｫ繧､繝悶阪→縺励※菫晏ｭ倥＠縺ｦ縺・ｋ縲ょｿ・ｦ√↓蠢懊§縺ｦ `ORCA_TRIAL_USER`・汁ORCA_TRIAL_PASS` 繧貞茜逕ｨ縺励◆ Basic 隱崎ｨｼ縺ｧ蜀榊茜逕ｨ縺ｧ縺阪ｋ縺後∵兜蜈･繝・・繧ｿ繧貞､画峩縺励◆蝣ｴ蜷医・縲後ヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・〒螳滓命縲阪恵efore/after 繝ｭ繧ｰ菫晏ｭ俶ｸ医∩縲阪→譏手ｨ倥＠縺・`data-check/*.md` 繧呈ｮ九☆縲・
+### 3.5 逶｣譟ｻ繝ｻ讓ｩ髯舌メ繧ｧ繝・け
 
-`docs/server-modernization/phase2/operations/assets/orca-api-requests/xml/` 配下のリクエスト雛形は「参考アーカイブ」として保存している。必要に応じて `ORCA_TRIAL_USER`／`ORCA_TRIAL_PASS` を利用した Basic 認証で再利用できるが、投入データを変更した場合は「トライアル環境で実施」「before/after ログ保存済み」と明記した `data-check/*.md` を残す。
-
-### 3.5 監査・権限チェック
-
-- PKCS#12 と Basic 情報は作業者ローカルのみで保持し、リポジトリやログへ貼り付け禁止。
-- `history` に `trial:weborcatrial` など資格情報が残った場合は `history -d <line>` で削除し、必要なら `unset ORCA_TRIAL_PASS` を実行。
-- `artifacts/` へ保存する際はキー・パスフレーズをマスクし、必要に応じて `<SECRET>` プレースホルダを記載。
-- 入院 API のリクエスト/レスポンスは `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` へ集約し、患者 ID・保険者番号など PHI は `mask.txt` に置換ルールを添えてから共有する（`git add` 禁止で artifacts のまま保存）。
-
-> **運用メモ（2025-11-15 更新）**  
-> 接続先は常に WebORCA トライアルサーバーとし、CRUD を実施する場合でも「トライアル環境である」「操作内容をログ化済み」であることを Runbook §4.3 と `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` に必ず記載する。ローカル WebORCA コンテナやアーカイブ済み seed の再構築は禁止。
-
-### 3.6 Push／帳票／患者メモの追加準備（参照専用）
-
-| 対象 API | 追加で必要なもの | 補足 |
+- PKCS#12 縺ｨ Basic 諠・ｱ縺ｯ菴懈･ｭ閠・Ο繝ｼ繧ｫ繝ｫ縺ｮ縺ｿ縺ｧ菫晄戟縺励√Μ繝昴ず繝医Μ繧・Ο繧ｰ縺ｸ雋ｼ繧贋ｻ倥￠遖∵ｭ｢縲・- `history` 縺ｫ `trial:weborcatrial` 縺ｪ縺ｩ雉・ｼ諠・ｱ縺梧ｮ九▲縺溷ｴ蜷医・ `history -d <line>` 縺ｧ蜑企勁縺励∝ｿ・ｦ√↑繧・`unset ORCA_TRIAL_PASS` 繧貞ｮ溯｡後・- `artifacts/` 縺ｸ菫晏ｭ倥☆繧矩圀縺ｯ繧ｭ繝ｼ繝ｻ繝代せ繝輔Ξ繝ｼ繧ｺ繧偵・繧ｹ繧ｯ縺励∝ｿ・ｦ√↓蠢懊§縺ｦ `<SECRET>` 繝励Ξ繝ｼ繧ｹ繝帙Ν繝繧定ｨ倩ｼ峨・- 蜈･髯｢ API 縺ｮ繝ｪ繧ｯ繧ｨ繧ｹ繝・繝ｬ繧ｹ繝昴Φ繧ｹ縺ｯ `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` 縺ｸ髮・ｴ・＠縲∵ぅ閠・ID繝ｻ菫晞匱閠・分蜿ｷ縺ｪ縺ｩ PHI 縺ｯ `mask.txt` 縺ｫ鄂ｮ謠帙Ν繝ｼ繝ｫ繧呈ｷｻ縺医※縺九ｉ蜈ｱ譛峨☆繧具ｼ・git add` 遖∵ｭ｢縺ｧ artifacts 縺ｮ縺ｾ縺ｾ菫晏ｭ假ｼ峨・
+> **驕狗畑繝｡繝｢・・025-11-15 譖ｴ譁ｰ・・*  
+> 謗･邯壼・縺ｯ蟶ｸ縺ｫ WebORCA 繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・縺ｨ縺励，RUD 繧貞ｮ滓命縺吶ｋ蝣ｴ蜷医〒繧ゅ後ヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・〒縺ゅｋ縲阪梧桃菴懷・螳ｹ繧偵Ο繧ｰ蛹匁ｸ医∩縲阪〒縺ゅｋ縺薙→繧・Runbook ﾂｧ4.3 縺ｨ `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` 縺ｫ蠢・★險倩ｼ峨☆繧九ゅΟ繝ｼ繧ｫ繝ｫ WebORCA 繧ｳ繝ｳ繝・リ繧・い繝ｼ繧ｫ繧､繝匁ｸ医∩ seed 縺ｮ蜀肴ｧ狗ｯ峨・遖∵ｭ｢縲・
+### 3.6 Push・丞ｸｳ逾ｨ・乗ぅ閠・Γ繝｢縺ｮ霑ｽ蜉貅門ｙ・亥盾辣ｧ蟆ら畑・・
+| 蟇ｾ雎｡ API | 霑ｽ蜉縺ｧ蠢・ｦ√↑繧ゅ・ | 陬懆ｶｳ |
 | --- | --- | --- |
-| `/api01rv2/pusheventgetv2` / `/orca42/receiptprintv3` | push-exchanger（帳票通知受信）、`/blobapi` 参照権限、既存の `print002` 通知記録 | `manifest.json` No.41/42。通知が存在しない場合は seed を追加せず、Ops へ運用調整を依頼する。照会できたイベントのみ `artifacts/orca-connectivity/<RUN_ID>/push/` へ保存。 |
-| `/orca51/masterlastupdatev3` / `/api01rv2/insuranceinf1v2` | `system01dailyv2` 証跡テンプレと同一。既存キャッシュで十分かを確認 | TTL 測定のため `system01dailyv2` → `masterlastupdatev3` → `insuranceinf1v2` の順番で 1 回ずつ実行する。欠落マスタは seed ではなく Ops 連携で復旧可否を判断。 |
-| `/api01rv2/patientlst7v2` / `/orca06/patientmemomodv2` | ORCA UI で既に登録されている患者メモ、`Memo_Mode` / `Memo_Class` の制約整理 | `patientmemomodv2` は POST 禁止（405）のため取得のみ先行。メモが存在しなくても seed で補完せず、`notes/orca-api-field-validation.md` §3.3 とログへ欠落情報を記録する。 |
-| `/orca31/hspmmv2` / `/orca31/hsacctmodv2` | 既存の入院会計データと `Perform_Month` の参照結果 | `logs/2025-11-13-orca-connectivity.md` の `uncertain-api/` に 405 証跡のみ存在。入院データが存在しない場合は `seed SQL` に頼らず「データ欠落」として報告し、Ops に復旧可否を確認する。 |
+| `/api01rv2/pusheventgetv2` / `/orca42/receiptprintv3` | push-exchanger・亥ｸｳ逾ｨ騾夂衍蜿嶺ｿ｡・峨～/blobapi` 蜿ら・讓ｩ髯舌∵里蟄倥・ `print002` 騾夂衍險倬鹸 | `manifest.json` No.41/42縲る夂衍縺悟ｭ伜惠縺励↑縺・ｴ蜷医・ seed 繧定ｿｽ蜉縺帙★縲＾ps 縺ｸ驕狗畑隱ｿ謨ｴ繧剃ｾ晞ｼ縺吶ｋ縲ら・莨壹〒縺阪◆繧､繝吶Φ繝医・縺ｿ `artifacts/orca-connectivity/<RUN_ID>/push/` 縺ｸ菫晏ｭ倥・|
+| `/orca51/masterlastupdatev3` / `/api01rv2/insuranceinf1v2` | `system01dailyv2` 險ｼ霍｡繝・Φ繝励Ξ縺ｨ蜷御ｸ縲よ里蟄倥く繝｣繝・す繝･縺ｧ蜊∝・縺九ｒ遒ｺ隱・| TTL 貂ｬ螳壹・縺溘ａ `system01dailyv2` 竊・`masterlastupdatev3` 竊・`insuranceinf1v2` 縺ｮ鬆・分縺ｧ 1 蝗槭★縺､螳溯｡後☆繧九よｬ關ｽ繝槭せ繧ｿ縺ｯ seed 縺ｧ縺ｯ縺ｪ縺・Ops 騾｣謳ｺ縺ｧ蠕ｩ譌ｧ蜿ｯ蜷ｦ繧貞愛譁ｭ縲・|
+| `/api01rv2/patientlst7v2` / `/orca06/patientmemomodv2` | ORCA UI 縺ｧ譌｢縺ｫ逋ｻ骭ｲ縺輔ｌ縺ｦ縺・ｋ謔｣閠・Γ繝｢縲～Memo_Mode` / `Memo_Class` 縺ｮ蛻ｶ邏・紛逅・| `patientmemomodv2` 縺ｯ POST 遖∵ｭ｢・・05・峨・縺溘ａ蜿門ｾ励・縺ｿ蜈郁｡後ゅΓ繝｢縺悟ｭ伜惠縺励↑縺上※繧・seed 縺ｧ陬懷ｮ後○縺壹～notes/orca-api-field-validation.md` ﾂｧ3.3 縺ｨ繝ｭ繧ｰ縺ｸ谺關ｽ諠・ｱ繧定ｨ倬鹸縺吶ｋ縲・|
+| `/orca31/hspmmv2` / `/orca31/hsacctmodv2` | 譌｢蟄倥・蜈･髯｢莨夊ｨ医ョ繝ｼ繧ｿ縺ｨ `Perform_Month` 縺ｮ蜿ら・邨先棡 | `logs/2025-11-13-orca-connectivity.md` 縺ｮ `uncertain-api/` 縺ｫ 405 險ｼ霍｡縺ｮ縺ｿ蟄伜惠縲ょ・髯｢繝・・繧ｿ縺悟ｭ伜惠縺励↑縺・ｴ蜷医・ `seed SQL` 縺ｫ鬆ｼ繧峨★縲後ョ繝ｼ繧ｿ谺關ｽ縲阪→縺励※蝣ｱ蜻翫＠縲＾ps 縺ｫ蠕ｩ譌ｧ蜿ｯ蜷ｦ繧堤｢ｺ隱阪☆繧九・|
 
-> これらの API は `orca-api-matrix` No.39-53 に含まれている。RUN_ID を採番したら `notes/orca-api-field-validation.md` §3 と `ORCA_API_STATUS.md` §2.4 に反映すること（seed 参照は履歴としてのみ扱う）。
+> 縺薙ｌ繧峨・ API 縺ｯ `orca-api-matrix` No.39-53 縺ｫ蜷ｫ縺ｾ繧後※縺・ｋ縲３UN_ID 繧呈治逡ｪ縺励◆繧・`notes/orca-api-field-validation.md` ﾂｧ3 縺ｨ `ORCA_API_STATUS.md` ﾂｧ2.4 縺ｫ蜿肴丐縺吶ｋ縺薙→・・eed 蜿ら・縺ｯ螻･豁ｴ縺ｨ縺励※縺ｮ縺ｿ謇ｱ縺・ｼ峨・
+No.19-38 縺ｧ菴懈・縺励◆ XML 繝・Φ繝励Ξ縺ｮ險ｼ霍｡縺ｯ `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` 莉･荳九↓縺ｾ縺ｨ繧√￣ush/蟶ｳ逾ｨ/謔｣閠・Γ繝｢邉ｻ縺ｯ `push/` 繧・`memo/` 繧ｵ繝悶ョ繧｣繝ｬ繧ｯ繝医Μ縺ｨ蜷後§邊貞ｺｦ縺ｧ菫晄戟縺吶ｋ縲Ａnotes/orca-api-field-validation.md` ﾂｧ3 縺ｮ seed 陦後・縲碁℃蜴ｻ縺ｫ諠ｳ螳壹＠縺溘ョ繝ｼ繧ｿ譚｡莉ｶ縲阪・險倬鹸縺ｨ縺励※谿九＠縲∝ｮ滄°逕ｨ縺ｧ縺ｯ谺關ｽ迥ｶ豕√→險ｼ霍｡繝代せ縺ｮ縺ｿ繧定ｿｽ險倥☆繧九・
+## 4. 讀懆ｨｼ繝輔ぉ繝ｼ繧ｺ
 
-No.19-38 で作成した XML テンプレの証跡は `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` 以下にまとめ、Push/帳票/患者メモ系は `push/` や `memo/` サブディレクトリと同じ粒度で保持する。`notes/orca-api-field-validation.md` §3 の seed 行は「過去に想定したデータ条件」の記録として残し、実運用では欠落状況と証跡パスのみを追記する。
+### 4.1 TLS/BASIC 繝上Φ繝峨す繧ｧ繧､繧ｯ
 
-## 4. 検証フェーズ
+1. `RUN_ID={{YYYYMMDD}}TorcaTrialCrudZ#` 繧呈治逡ｪ縺励～artifacts/orca-connectivity/${RUN_ID}/{dns,tls,trial,trace,data-check}` 繧剃ｽ懈・縺吶ｋ縲・2. `dig weborca-trial.orca.med.or.jp`・・acOS/Linux・峨∪縺溘・ `Resolve-DnsName weborca-trial.orca.med.or.jp`・・indows・峨〒 A 繝ｬ繧ｳ繝ｼ繝峨ｒ蜿門ｾ励＠縲∝・蜉帙ｒ `dns/resolve.log` 縺ｫ菫晏ｭ倥☆繧九ゆｽｵ縺帙※ `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` 繧貞ｮ溯｡後＠縲ゝLS 莠､貂臥ｵ先棡繧・`tls/openssl_s_client.log` 縺ｸ險倬鹸縺吶ｋ縲・3. Basic 隱崎ｨｼ縺ｧ `system01dailyv2` 繧・1 蝗槫ｮ溯｡後＠縲？TTP/TLS 縺ｮ謌仙粥繧堤｢ｺ隱阪☆繧具ｼ・curl` 髮帛ｽ｢縺ｯ ﾂｧ0.4 繧貞盾辣ｧ・峨・4. `Api_Result=00` 繧堤｢ｺ隱阪＠縲～docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` 縺ｸ `RUN_ID`・秋TTP・汁Api_Result`・剰ｨｼ霍｡繝代せ繧定ｿｽ險倥☆繧九・
+### 4.2 ServerInfoResource 縺ｫ繧医ｋ `claim.conn` 遒ｺ隱・
+- `curl http://server-modernized-dev:8080/openDolphin/resources/serverinfo/claim/conn -u <admin>` 繧貞ｮ溯｡後＠縲√Ξ繧ｹ繝昴Φ繧ｹ繧・`artifacts/<RUN_ID>/serverinfo/claim_conn.json` 縺ｸ菫晏ｭ倥☆繧九・- `claim.conn=server` 莉･螟悶′霑斐▲縺溷ｴ蜷医・ `ops/shared/docker/custom.properties` 縺ｪ縺ｩ縺ｮ `claim.*` 繧剃ｿｮ豁｣縺励∝・蜿門ｾ励＠縺溷ｷｮ蛻・ｒ Evidence 縺ｫ谿九☆縲・
+### 4.3 P0 + CRUD API 繧ｻ繝・ヨ
 
-### 4.1 TLS/BASIC ハンドシェイク
-
-1. `RUN_ID={{YYYYMMDD}}TorcaTrialCrudZ#` を採番し、`artifacts/orca-connectivity/${RUN_ID}/{dns,tls,trial,trace,data-check}` を作成する。
-2. `dig weborca-trial.orca.med.or.jp`（macOS/Linux）または `Resolve-DnsName weborca-trial.orca.med.or.jp`（Windows）で A レコードを取得し、出力を `dns/resolve.log` に保存する。併せて `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、TLS 交渉結果を `tls/openssl_s_client.log` へ記録する。
-3. Basic 認証で `system01dailyv2` を 1 回実行し、HTTP/TLS の成功を確認する（`curl` 雛形は §0.4 を参照）。
-4. `Api_Result=00` を確認し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` へ `RUN_ID`／HTTP／`Api_Result`／証跡パスを追記する。
-
-### 4.2 ServerInfoResource による `claim.conn` 確認
-
-- `curl http://server-modernized-dev:8080/openDolphin/resources/serverinfo/claim/conn -u <admin>` を実行し、レスポンスを `artifacts/<RUN_ID>/serverinfo/claim_conn.json` へ保存する。
-- `claim.conn=server` 以外が返った場合は `ops/shared/docker/custom.properties` などの `claim.*` を修正し、再取得した差分を Evidence に残す。
-
-### 4.3 P0 + CRUD API セット
-
-> RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
-
-- 参照系（system/accept/patient/appointment）と CRUD 系（予約登録・受付登録・診療明細操作）を全て WebORCA トライアルサーバーで実行する。`assets/orca-trialsite/raw/trialsite.md` を参照し、利用不可機能を事前確認する。
-- CRUD 操作は「トライアル環境限定で新規登録／更新／削除 OK」。実施した内容は `artifacts/orca-connectivity/<RUN_ID>/data-check/<api>.md` と `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` の Checklist へ記録し、対象 ID・操作内容・戻し方を明示する。
-- `ORCAcertification/` 配下の PKCS#12 や非公開資格情報はアーカイブ扱い。接続は `trial/weborcatrial` の Basic 認証のみを利用する。
-- Trial HTTP 要件: `curl -vv -u trial:weborcatrial -H 'Accept: application/xml' -H 'Content-Type: application/xml' --data-binary @payloads/<api>_trial.xml https://weborca-trial.orca.med.or.jp/<path>` を共通フォーマットとし、`payloads/*.xml` は firecrawl 取得済み仕様（slug=`appointlst`,`appointmod`,`acceptancelst`,`acceptmod`,`medicalmod` 等）と整合させた XML を送信する。証跡にはリクエスト XML とレスポンス XML を `crud/<api>/` に保存する。
-- `trialsite.md`「お使いいただけない機能一覧」に記載の API（例: `/20/adm/phr/*`）や POST 未解放エンドポイント（`/orca14/appointmodv2` 等）は Blocker=`TrialLocalOnly` として Runbook / Checklist / ログへ引用付きで記載し、ローカル ORCA（ORMaster 認証）に切り替える再開条件（doctor seed 復旧＋POST 解放）を示す。
-- Blocker を付与した API については RUN_ID=`20251116T173000Z` の `docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` に従い、final validation を Production/ORMaster 接続（`curl -vv -u ormaster:ormaster --data-binary @payloads/<api>_prod.xml https://ormaster.orca.med.or.jp/<path>`）で実施する。DNS/TLS（`nslookup`, `openssl s_client`）証跡と Basic 認証ログをセットで取得し、`operations/logs/<RUN_ID>-prod-validation.md` にリンクするまで Blocker を維持する。
-- Doctor seed / データギャップ: Trial で HTTP200 かつ `Api_Result=12/13/14` が返る場合は `data-check/` と `crud/<api>/` にレスポンス XML を保存し、`assets/orca-trialsite/raw/trialsite.md#sample` に記載の seed（患者 5 桁 `00001`, 医師 `0001` など）との差異を `blocked/README.md` の「データギャップ」欄へ転記。GUI 端末がない場合は CLI 実測日時・再開条件を `data-check/README.md` に必ず記録する。
-- カバレッジ更新: CRUD 実測後に `coverage/coverage_matrix.md` を再生成し、firecrawl 仕様スラッグを「Trial 提供(実測/未実測)」「Trial 非提供(trialsite#limit または HTTP404/405)」へ分類する。同じ集計結果を `docs/server-modernization/phase2/operations/logs/<date>-orca-trial-crud.md` と `DOC_STATUS` 備考欄に貼り付け、`blocked/README.md` と証跡パスを同期させる。
-- ORMaster 前提 API（`/api/api21/medicalmodv2`, `/orca11/acceptmodv2` など）はトライアルサーバーで `Api_Result=10/13/14` となるため、`curl -vv -u ormaster:ormaster ... --data-binary @payloads/<api>_trial.xml http://localhost:8000/...` でローカル ORCA 実測を行い、トライアル結果は Blocker として残す。
-- 2025-11-15 実測（RUN_ID=`20251115T134513Z`）: Codex CLI から DNS/TLS（`nslookup_2025-11-15T22:50:38+09:00.txt`, `openssl_s_client_2025-11-15T22:50:42+09:00.txt`）と `/api01rv2/acceptlstv2`（HTTP200/`Api_Result=13`）、`/api01rv2/appointlstv2`（HTTP200/`Api_Result=12`）、`/api/api21/medicalmodv2`（HTTP200/`Api_Result=10`）を取得。Evidence は `artifacts/orca-connectivity/20251115T134513Z/{dns,tls,crud,coverage,blocked}` および `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` に記録し、doctor/patient seed 欠落を Blocker=`TrialSeedMissing` として管理中。
-- 2025-11-15 実測（RUN_ID=`20251115TrialConnectivityCodexZ1`）: 同 CLI 環境で `nslookup_2025-11-15T13-48-30Z.txt` / `openssl_s_client_2025-11-15T13-48-52Z.txt` を取得し、`/api01rv2/acceptlstv2`（HTTP200/`Api_Result=13`）、`/api01rv2/appointlstv2`（HTTP200/`Api_Result=12`）、`/api/api21/medicalmodv2`（HTTP200/`Api_Result=14`）を XML 送信。`/orca11/acceptmodv2` と `/orca14/appointmodv2` は `HTTP/1.1 405 Method Not Allowed` だったため Blocker=`TrialLocalOnly` として `blocked/README.md` と `coverage/coverage_matrix.md` へ登録。Evidence: `artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/{dns,tls,data-check,crud,coverage,blocked}`、ログ: `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md`。
-- 2025-11-16 実測（RUN_ID=`20251116T164300Z`）: `nslookup_2025-11-16T02-04-36Z.txt`（CNAME=`weborca-trial1.japaneast.cloudapp.azure.com`）, `openssl_s_client_2025-11-16T02-04-43Z.txt`（`*.orca.med.or.jp`, TLSv1.2, Cipher=ECDHE-RSA-AES256-GCM-SHA384）を取得し、`curl -vv -u trial:weborcatrial --data-binary @payloads/{acceptlst,appointlst,medicalmod,acceptmod,appointmod}_trial.xml` を再実行。`/api01rv2/acceptlstv2`=`HTTP200/Api_Result=13`, `/api01rv2/appointlstv2`=`HTTP200/Api_Result=12`, `/api/api21/medicalmodv2`=`HTTP200/Api_Result=10`、書込み系（`/orca11/acceptmodv2`, `/orca14/appointmodv2`）は引き続き `HTTP/1.1 405 Method Not Allowed (Allow=OPTIONS,GET)`。`coverage/coverage_matrix.md` は RUN_ID 付きにコピーし、Trial 禁止 API（report_print/systemkanri/userkanri/acceptmod/appointmod）を「仕様実装済／Trial不可」ラベルへ変更。`blocked/README.md` も RUN_ID 版に更新し、Doctor/Patient seed 不足をデータギャップとして残した。Evidence: `artifacts/orca-connectivity/20251116T164300Z/{dns,tls,crud,coverage,blocked}`。
-- 2025-11-16 カバレッジ整理（RUN_ID=`20251116T170500Z`）: Matrix No.2/4（`appointmodv2`,`acceptmodv2`）について Trial POST が継続して `HTTP/1.1 405 Method Not Allowed` で拒否されることを確認。CRUD 実測をスキップし、`artifacts/orca-connectivity/20251116T170500Z/coverage/coverage_matrix.md` に `[Spec-based]` ラベルを付与、根拠と Blocker を `artifacts/orca-connectivity/20251116T170500Z/blocked/README.md#http-405管理業務系-post-封鎖`（trialsite §1）へ集約した。ログ: `docs/server-modernization/phase2/operations/logs/20251116T170500Z-coverage.md`。
-
-| # | エンドポイント | 種別 | 成功条件 | 証跡/ログ | CRUD 記録ポイント |
+> RUN_ID=`20251116T173000Z`: Trial 繧ｵ繝ｼ繝舌・縺ｧ POST/PHR API 縺檎ｦ∵ｭ｢縺輔ｌ縺ｦ縺・ｋ髢薙・ Spec-based 螳溯｣・→縺励※謇ｱ縺・∵怙邨よｮｵ髫弱〒 ORMaster・乗悽逡ｪ繧ｵ繝ｼ繝舌・謗･邯壹↓蛻・ｊ譖ｿ縺医※騾壻ｿ｡讀懆ｨｼ繧定｡後≧縲よ､懆ｨｼ螳御ｺ・ｾ後↓ DOC_STATUS・蹴unbook・就PI_STATUS 繧貞酔譌･譖ｴ譁ｰ縺吶ｋ縲・
+- 蜿ら・邉ｻ・・ystem/accept/patient/appointment・峨→ CRUD 邉ｻ・井ｺ育ｴ・匳骭ｲ繝ｻ蜿嶺ｻ倡匳骭ｲ繝ｻ險ｺ逋よ・邏ｰ謫堺ｽ懶ｼ峨ｒ蜈ｨ縺ｦ WebORCA 繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・縺ｧ螳溯｡後☆繧九Ａassets/orca-trialsite/raw/trialsite.md` 繧貞盾辣ｧ縺励∝茜逕ｨ荳榊庄讖溯・繧剃ｺ句燕遒ｺ隱阪☆繧九・- CRUD 謫堺ｽ懊・縲後ヨ繝ｩ繧､繧｢繝ｫ迺ｰ蠅・剞螳壹〒譁ｰ隕冗匳骭ｲ・乗峩譁ｰ・丞炎髯､ OK縲阪ょｮ滓命縺励◆蜀・ｮｹ縺ｯ `artifacts/orca-connectivity/<RUN_ID>/data-check/<api>.md` 縺ｨ `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` 縺ｮ Checklist 縺ｸ險倬鹸縺励∝ｯｾ雎｡ ID繝ｻ謫堺ｽ懷・螳ｹ繝ｻ謌ｻ縺玲婿繧呈・遉ｺ縺吶ｋ縲・- `ORCAcertification/` 驟堺ｸ九・ PKCS#12 繧・撼蜈ｬ髢玖ｳ・ｼ諠・ｱ縺ｯ繧｢繝ｼ繧ｫ繧､繝匁桶縺・よ磁邯壹・ `trial/weborcatrial` 縺ｮ Basic 隱崎ｨｼ縺ｮ縺ｿ繧貞茜逕ｨ縺吶ｋ縲・- Trial HTTP 隕∽ｻｶ: `curl -vv -u trial:weborcatrial -H 'Accept: application/xml' -H 'Content-Type: application/xml' --data-binary @payloads/<api>_trial.xml https://weborca-trial.orca.med.or.jp/<path>` 繧貞・騾壹ヵ繧ｩ繝ｼ繝槭ャ繝医→縺励～payloads/*.xml` 縺ｯ firecrawl 蜿門ｾ玲ｸ医∩莉墓ｧ假ｼ・lug=`appointlst`,`appointmod`,`acceptancelst`,`acceptmod`,`medicalmod` 遲会ｼ峨→謨ｴ蜷医＆縺帙◆ XML 繧帝∽ｿ｡縺吶ｋ縲りｨｼ霍｡縺ｫ縺ｯ繝ｪ繧ｯ繧ｨ繧ｹ繝・XML 縺ｨ繝ｬ繧ｹ繝昴Φ繧ｹ XML 繧・`crud/<api>/` 縺ｫ菫晏ｭ倥☆繧九・- `trialsite.md`縲後♀菴ｿ縺・＞縺溘□縺代↑縺・ｩ溯・荳隕ｧ縲阪↓險倩ｼ峨・ API・井ｾ・ `/20/adm/phr/*`・峨ｄ POST 譛ｪ隗｣謾ｾ繧ｨ繝ｳ繝峨・繧､繝ｳ繝茨ｼ・/orca14/appointmodv2` 遲会ｼ峨・ Blocker=`TrialLocalOnly` 縺ｨ縺励※ Runbook / Checklist / 繝ｭ繧ｰ縺ｸ蠑慕畑莉倥″縺ｧ險倩ｼ峨＠縲√Ο繝ｼ繧ｫ繝ｫ ORCA・・RMaster 隱崎ｨｼ・峨↓蛻・ｊ譖ｿ縺医ｋ蜀埼幕譚｡莉ｶ・・octor seed 蠕ｩ譌ｧ・輝OST 隗｣謾ｾ・峨ｒ遉ｺ縺吶・- Blocker 繧剃ｻ倅ｸ弱＠縺・API 縺ｫ縺､縺・※縺ｯ RUN_ID=`20251116T173000Z` 縺ｮ `docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` 縺ｫ蠕薙＞縲’inal validation 繧・Production/ORMaster 謗･邯夲ｼ・curl -vv -u ormaster:ormaster --data-binary @payloads/<api>_prod.xml https://ormaster.orca.med.or.jp/<path>`・峨〒螳滓命縺吶ｋ縲・NS/TLS・・nslookup`, `openssl s_client`・芽ｨｼ霍｡縺ｨ Basic 隱崎ｨｼ繝ｭ繧ｰ繧偵そ繝・ヨ縺ｧ蜿門ｾ励＠縲～operations/logs/<RUN_ID>-prod-validation.md` 縺ｫ繝ｪ繝ｳ繧ｯ縺吶ｋ縺ｾ縺ｧ Blocker 繧堤ｶｭ謖√☆繧九・- Doctor seed / 繝・・繧ｿ繧ｮ繝｣繝・・: Trial 縺ｧ HTTP200 縺九▽ `Api_Result=12/13/14` 縺瑚ｿ斐ｋ蝣ｴ蜷医・ `data-check/` 縺ｨ `crud/<api>/` 縺ｫ繝ｬ繧ｹ繝昴Φ繧ｹ XML 繧剃ｿ晏ｭ倥＠縲～assets/orca-trialsite/raw/trialsite.md#sample` 縺ｫ險倩ｼ峨・ seed・域ぅ閠・5 譯・`00001`, 蛹ｻ蟶ｫ `0001` 縺ｪ縺ｩ・峨→縺ｮ蟾ｮ逡ｰ繧・`blocked/README.md` 縺ｮ縲後ョ繝ｼ繧ｿ繧ｮ繝｣繝・・縲肴ｬ・∈霆｢險倥・UI 遶ｯ譛ｫ縺後↑縺・ｴ蜷医・ CLI 螳滓ｸｬ譌･譎ゅ・蜀埼幕譚｡莉ｶ繧・`data-check/README.md` 縺ｫ蠢・★險倬鹸縺吶ｋ縲・- 繧ｫ繝舌Ξ繝・ず譖ｴ譁ｰ: CRUD 螳滓ｸｬ蠕後↓ `coverage/coverage_matrix.md` 繧貞・逕滓・縺励’irecrawl 莉墓ｧ倥せ繝ｩ繝・げ繧偵卦rial 謠蝉ｾ・螳滓ｸｬ/譛ｪ螳滓ｸｬ)縲阪卦rial 髱樊署萓・trialsite#limit 縺ｾ縺溘・ HTTP404/405)縲阪∈蛻・｡槭☆繧九ょ酔縺倬寔險育ｵ先棡繧・`docs/server-modernization/phase2/operations/logs/<date>-orca-trial-crud.md` 縺ｨ `DOC_STATUS` 蛯呵・ｬ・↓雋ｼ繧贋ｻ倥￠縲～blocked/README.md` 縺ｨ險ｼ霍｡繝代せ繧貞酔譛溘＆縺帙ｋ縲・- ORMaster 蜑肴署 API・・/api/api21/medicalmodv2`, `/orca11/acceptmodv2` 縺ｪ縺ｩ・峨・繝医Λ繧､繧｢繝ｫ繧ｵ繝ｼ繝舌・縺ｧ `Api_Result=10/13/14` 縺ｨ縺ｪ繧九◆繧√～curl -vv -u ormaster:ormaster ... --data-binary @payloads/<api>_trial.xml http://localhost:8000/...` 縺ｧ繝ｭ繝ｼ繧ｫ繝ｫ ORCA 螳滓ｸｬ繧定｡後＞縲√ヨ繝ｩ繧､繧｢繝ｫ邨先棡縺ｯ Blocker 縺ｨ縺励※谿九☆縲・- 2025-11-15 螳滓ｸｬ・・UN_ID=`20251115T134513Z`・・ Codex CLI 縺九ｉ DNS/TLS・・nslookup_2025-11-15T22:50:38+09:00.txt`, `openssl_s_client_2025-11-15T22:50:42+09:00.txt`・峨→ `/api01rv2/acceptlstv2`・・TTP200/`Api_Result=13`・峨～/api01rv2/appointlstv2`・・TTP200/`Api_Result=12`・峨～/api/api21/medicalmodv2`・・TTP200/`Api_Result=10`・峨ｒ蜿門ｾ励・vidence 縺ｯ `artifacts/orca-connectivity/20251115T134513Z/{dns,tls,crud,coverage,blocked}` 縺翫ｈ縺ｳ `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` 縺ｫ險倬鹸縺励‥octor/patient seed 谺關ｽ繧・Blocker=`TrialSeedMissing` 縺ｨ縺励※邂｡逅・ｸｭ縲・- 2025-11-15 螳滓ｸｬ・・UN_ID=`20251115TrialConnectivityCodexZ1`・・ 蜷・CLI 迺ｰ蠅・〒 `nslookup_2025-11-15T13-48-30Z.txt` / `openssl_s_client_2025-11-15T13-48-52Z.txt` 繧貞叙蠕励＠縲～/api01rv2/acceptlstv2`・・TTP200/`Api_Result=13`・峨～/api01rv2/appointlstv2`・・TTP200/`Api_Result=12`・峨～/api/api21/medicalmodv2`・・TTP200/`Api_Result=14`・峨ｒ XML 騾∽ｿ｡縲Ａ/orca11/acceptmodv2` 縺ｨ `/orca14/appointmodv2` 縺ｯ `HTTP/1.1 405 Method Not Allowed` 縺縺｣縺溘◆繧・Blocker=`TrialLocalOnly` 縺ｨ縺励※ `blocked/README.md` 縺ｨ `coverage/coverage_matrix.md` 縺ｸ逋ｻ骭ｲ縲・vidence: `artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/{dns,tls,data-check,crud,coverage,blocked}`縲√Ο繧ｰ: `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md`縲・- 2025-11-16 螳滓ｸｬ・・UN_ID=`20251116T164300Z`・・ `nslookup_2025-11-16T02-04-36Z.txt`・・NAME=`weborca-trial1.japaneast.cloudapp.azure.com`・・ `openssl_s_client_2025-11-16T02-04-43Z.txt`・・*.orca.med.or.jp`, TLSv1.2, Cipher=ECDHE-RSA-AES256-GCM-SHA384・峨ｒ蜿門ｾ励＠縲～curl -vv -u trial:weborcatrial --data-binary @payloads/{acceptlst,appointlst,medicalmod,acceptmod,appointmod}_trial.xml` 繧貞・螳溯｡後Ａ/api01rv2/acceptlstv2`=`HTTP200/Api_Result=13`, `/api01rv2/appointlstv2`=`HTTP200/Api_Result=12`, `/api/api21/medicalmodv2`=`HTTP200/Api_Result=10`縲∵嶌霎ｼ縺ｿ邉ｻ・・/orca11/acceptmodv2`, `/orca14/appointmodv2`・峨・蠑輔″邯壹″ `HTTP/1.1 405 Method Not Allowed (Allow=OPTIONS,GET)`縲Ａcoverage/coverage_matrix.md` 縺ｯ RUN_ID 莉倥″縺ｫ繧ｳ繝斐・縺励ゝrial 遖∵ｭ｢ API・・eport_print/systemkanri/userkanri/acceptmod/appointmod・峨ｒ縲御ｻ墓ｧ伜ｮ溯｣・ｸ茨ｼ週rial荳榊庄縲阪Λ繝吶Ν縺ｸ螟画峩縲Ａblocked/README.md` 繧・RUN_ID 迚医↓譖ｴ譁ｰ縺励．octor/Patient seed 荳崎ｶｳ繧偵ョ繝ｼ繧ｿ繧ｮ繝｣繝・・縺ｨ縺励※谿九＠縺溘・vidence: `artifacts/orca-connectivity/20251116T164300Z/{dns,tls,crud,coverage,blocked}`縲・- 2025-11-16 繧ｫ繝舌Ξ繝・ず謨ｴ逅・ｼ・UN_ID=`20251116T170500Z`・・ Matrix No.2/4・・appointmodv2`,`acceptmodv2`・峨↓縺､縺・※ Trial POST 縺檎ｶ咏ｶ壹＠縺ｦ `HTTP/1.1 405 Method Not Allowed` 縺ｧ諡貞凄縺輔ｌ繧九％縺ｨ繧堤｢ｺ隱阪・RUD 螳滓ｸｬ繧偵せ繧ｭ繝・・縺励～artifacts/orca-connectivity/20251116T170500Z/coverage/coverage_matrix.md` 縺ｫ `[Spec-based]` 繝ｩ繝吶Ν繧剃ｻ倅ｸ弱∵ｹ諡縺ｨ Blocker 繧・`artifacts/orca-connectivity/20251116T170500Z/blocked/README.md#http-405邂｡逅・･ｭ蜍咏ｳｻ-post-蟆・事`・・rialsite ﾂｧ1・峨∈髮・ｴ・＠縺溘ゅΟ繧ｰ: `docs/server-modernization/phase2/operations/logs/20251116T170500Z-coverage.md`縲・
+| # | 繧ｨ繝ｳ繝峨・繧､繝ｳ繝・| 遞ｮ蛻･ | 謌仙粥譚｡莉ｶ | 險ｼ霍｡/繝ｭ繧ｰ | CRUD 險倬鹸繝昴う繝ｳ繝・|
 | --- | --- | --- | --- | --- | --- |
-| 1 | `POST /api01rv2/patientgetv2` | 参照 | HTTP 200 / `Api_Result=00` で患者 `00001` の基本情報を取得 | `trial/patientgetv2.{headers,json}`, `trace/patientgetv2.trace` | `data-check/patientgetv2.md` に照会条件と取得件数を記載 |
-| 2 | `POST /api01rv2/appointlstv2` | 参照 | HTTP 200 で `Appointment_Information` が返る（20251115 RUN は doctor seed 欠落で `Api_Result=12`。GUI から医師 `0001` を再登録後に再測定） | `trial/appointlstv2.{headers,json}`、`screenshots/appointlstv2.png` | `data-check/appointlstv2.md` に UI との突合結果と不足 seed を記録 |
-| 3 | `POST /api01rv2/acceptlstv2` | 参照 | HTTP 200 / `Api_Result=00`（20251115 RUN は doctor seed 欠落で `Api_Result=13`。受付 seed 復旧後に `21`→`00` を確認） | `trial/acceptlstv2.{headers,json}` | `data-check/acceptlstv2.md` に当日受付件数と Blocker 所見を記録 |
-| 4 | `POST /orca14/appointmodv2` | 新規・更新・削除 | (Trial) HTTP 405 `Allow: OPTIONS, GET`。Blocker=`TrialLocalOnly`。ローカル ORCA では HTTP 200 / `Api_Result=00` となり予約が `appointlstv2` で確認できる | Trial: `crud/appointmodv2/http405/{request,response}.http`。Local: `curl -vv -u ormaster:ormaster ... --data-binary @payloads/appointmod_trial.xml http://localhost:8000/orca14/appointmodv2?class=01` と `trace/appointmodv2.trace` | `data-check/appointmodv2.md` に予約番号・変更内容・撤回操作を記載し、Blocker と再開条件（ローカル ORCA 起動許可＋doctor seed 復旧）を追記 |
-| 5 | `POST /api/api21/medicalmodv2` | 診療明細 CRUD | Trial: HTTP 200 でも `Api_Result=10/14`（20251115 RUN は患者 `00000001` 不在で `Api_Result=10`）。Local: HTTP 200 / `Api_Result=00` で `Medical_Information` が取得できる | `crud/medicalmodv2/{request,response}.xml`（`payloads/medical_update_trial.xml`）と `trace/medicalmodv2.trace` | `data-check/medicalmodv2.md` に患者番号・診療 ID・操作目的。Trial では Blocker=`TrialSeedMissing`（doctor/patient seed 復旧後に再測定）を記載 |
-| 6 | `POST /orca11/acceptmodv2` | 受付 CRUD | Trial: HTTP 200 / `Api_Result=10/13`。Local: HTTP 200 / `Api_Result=00` & `Delete_Flg=1` を確認 | `crud/acceptmodv2/{request,response}.xml`（`payloads/acceptmod_trial.xml`）、`trace/acceptmodv2.trace` | `data-check/acceptmodv2.md` に受付番号・操作種別・戻し要否。Trial 側は Blocker=`TrialLocalOnly` に分類 |
+| 1 | `POST /api01rv2/patientgetv2` | 蜿ら・ | HTTP 200 / `Api_Result=00` 縺ｧ謔｣閠・`00001` 縺ｮ蝓ｺ譛ｬ諠・ｱ繧貞叙蠕・| `trial/patientgetv2.{headers,json}`, `trace/patientgetv2.trace` | `data-check/patientgetv2.md` 縺ｫ辣ｧ莨壽擅莉ｶ縺ｨ蜿門ｾ嶺ｻｶ謨ｰ繧定ｨ倩ｼ・|
+| 2 | `POST /api01rv2/appointlstv2` | 蜿ら・ | HTTP 200 縺ｧ `Appointment_Information` 縺瑚ｿ斐ｋ・・0251115 RUN 縺ｯ doctor seed 谺關ｽ縺ｧ `Api_Result=12`縲・UI 縺九ｉ蛹ｻ蟶ｫ `0001` 繧貞・逋ｻ骭ｲ蠕後↓蜀肴ｸｬ螳夲ｼ・| `trial/appointlstv2.{headers,json}`縲～screenshots/appointlstv2.png` | `data-check/appointlstv2.md` 縺ｫ UI 縺ｨ縺ｮ遯∝粋邨先棡縺ｨ荳崎ｶｳ seed 繧定ｨ倬鹸 |
+| 3 | `POST /api01rv2/acceptlstv2` | 蜿ら・ | HTTP 200 / `Api_Result=00`・・0251115 RUN 縺ｯ doctor seed 谺關ｽ縺ｧ `Api_Result=13`縲ょ女莉・seed 蠕ｩ譌ｧ蠕後↓ `21`竊蛋00` 繧堤｢ｺ隱搾ｼ・| `trial/acceptlstv2.{headers,json}` | `data-check/acceptlstv2.md` 縺ｫ蠖捺律蜿嶺ｻ倅ｻｶ謨ｰ縺ｨ Blocker 謇隕九ｒ險倬鹸 |
+| 4 | `POST /orca14/appointmodv2` | 譁ｰ隕上・譖ｴ譁ｰ繝ｻ蜑企勁 | (Trial) HTTP 405 `Allow: OPTIONS, GET`縲・locker=`TrialLocalOnly`縲ゅΟ繝ｼ繧ｫ繝ｫ ORCA 縺ｧ縺ｯ HTTP 200 / `Api_Result=00` 縺ｨ縺ｪ繧贋ｺ育ｴ・′ `appointlstv2` 縺ｧ遒ｺ隱阪〒縺阪ｋ | Trial: `crud/appointmodv2/http405/{request,response}.http`縲・ocal: `curl -vv -u ormaster:ormaster ... --data-binary @payloads/appointmod_trial.xml http://localhost:8000/orca14/appointmodv2?class=01` 縺ｨ `trace/appointmodv2.trace` | `data-check/appointmodv2.md` 縺ｫ莠育ｴ・分蜿ｷ繝ｻ螟画峩蜀・ｮｹ繝ｻ謦､蝗樊桃菴懊ｒ險倩ｼ峨＠縲。locker 縺ｨ蜀埼幕譚｡莉ｶ・医Ο繝ｼ繧ｫ繝ｫ ORCA 襍ｷ蜍戊ｨｱ蜿ｯ・掬octor seed 蠕ｩ譌ｧ・峨ｒ霑ｽ險・|
+| 5 | `POST /api/api21/medicalmodv2` | 險ｺ逋よ・邏ｰ CRUD | Trial: HTTP 200 縺ｧ繧・`Api_Result=10/14`・・0251115 RUN 縺ｯ謔｣閠・`00000001` 荳榊惠縺ｧ `Api_Result=10`・峨・ocal: HTTP 200 / `Api_Result=00` 縺ｧ `Medical_Information` 縺悟叙蠕励〒縺阪ｋ | `crud/medicalmodv2/{request,response}.xml`・・payloads/medical_update_trial.xml`・峨→ `trace/medicalmodv2.trace` | `data-check/medicalmodv2.md` 縺ｫ謔｣閠・分蜿ｷ繝ｻ險ｺ逋・ID繝ｻ謫堺ｽ懃岼逧・５rial 縺ｧ縺ｯ Blocker=`TrialSeedMissing`・・octor/patient seed 蠕ｩ譌ｧ蠕後↓蜀肴ｸｬ螳夲ｼ峨ｒ險倩ｼ・|
+| 6 | `POST /orca11/acceptmodv2` | 蜿嶺ｻ・CRUD | Trial: HTTP 200 / `Api_Result=10/13`縲・ocal: HTTP 200 / `Api_Result=00` & `Delete_Flg=1` 繧堤｢ｺ隱・| `crud/acceptmodv2/{request,response}.xml`・・payloads/acceptmod_trial.xml`・峨～trace/acceptmodv2.trace` | `data-check/acceptmodv2.md` 縺ｫ蜿嶺ｻ倡分蜿ｷ繝ｻ謫堺ｽ懃ｨｮ蛻･繝ｻ謌ｻ縺苓ｦ∝凄縲５rial 蛛ｴ縺ｯ Blocker=`TrialLocalOnly` 縺ｫ蛻・｡・|
 
-- 書き込み前後で `acceptlstv2` や `appointlstv2` を取得し、`data-check` に before/after を保存する。ログディレクトリは `artifacts/orca-connectivity/<RUN_ID>/trial/<api>/` へ統一し、`trace/` と `screenshots/` も同じ RUN_ID で揃える。
+- 譖ｸ縺崎ｾｼ縺ｿ蜑榊ｾ後〒 `acceptlstv2` 繧・`appointlstv2` 繧貞叙蠕励＠縲～data-check` 縺ｫ before/after 繧剃ｿ晏ｭ倥☆繧九ゅΟ繧ｰ繝・ぅ繝ｬ繧ｯ繝医Μ縺ｯ `artifacts/orca-connectivity/<RUN_ID>/trial/<api>/` 縺ｸ邨ｱ荳縺励～trace/` 縺ｨ `screenshots/` 繧ょ酔縺・RUN_ID 縺ｧ謠・∴繧九・
+### 4.4 PHR 繧ｷ繝ｼ繧ｱ繝ｳ繧ｹ險ｼ霍｡繝・Φ繝励Ξ
 
-### 4.4 PHR シーケンス証跡テンプレ
+> RUN_ID=`20251116T173000Z`: Trial 繧ｵ繝ｼ繝舌・縺ｧ POST/PHR API 縺檎ｦ∵ｭ｢縺輔ｌ縺ｦ縺・ｋ髢薙・ Spec-based 螳溯｣・→縺励※謇ｱ縺・∵怙邨よｮｵ髫弱〒 ORMaster・乗悽逡ｪ繧ｵ繝ｼ繝舌・謗･邯壹↓蛻・ｊ譖ｿ縺医※騾壻ｿ｡讀懆ｨｼ繧定｡後≧縲よ､懆ｨｼ螳御ｺ・ｾ後↓ DOC_STATUS・蹴unbook・就PI_STATUS 繧貞酔譌･譖ｴ譁ｰ縺吶ｋ縲・
+- RUN_ID=`YYYYMMDDTorcaPHRSeqZ#` 繧呈鴛縺・・縺励～artifacts/orca-connectivity/TEMPLATE/phr-seq` 繧偵さ繝斐・縺励※菴ｿ逕ｨ縺吶ｋ縲・- `audit/logs/phr_audit_extract.sql` 縺ｧ `event_id LIKE 'PHR_%'` 繧呈歓蜃ｺ縺励～logs/phr_audit_${RUN_ID}.sql` 縺ｨ縺励※菫晏ｭ倥☆繧九よｬ關ｽ繧､繝吶Φ繝医・ `docs/server-modernization/phase2/operations/logs/2025-11-14-phr-evidence-template.md#pending-risks` 縺ｸ霆｢險倥☆繧九・- HTTP 險ｼ霍｡縺ｯ `trial/phr/<api>.{headers,json}`縲ゞI 險ｼ霍｡縺ｯ `screenshots/phr-XX.png` 縺ｫ縺ｾ縺ｨ繧√～ServerInfoResource` 縺ｮ JSON 繧剃ｸｦ險倥☆繧九・- Modernized 髢狗匱迺ｰ蠅・〒縺ｮ Secrets/Context 繝√ぉ繝・け縺ｯ RUN_ID=`20251121TrialPHRSeqZ1-CTX` 繧貞盾辣ｧ縲Ａ1.3.6.1.4.1.9414.72.103:admin` 繝ｦ繝ｼ繧ｶ繝ｼ繧・BASIC 隱崎ｨｼ縺ｧ逋ｻ骭ｲ縺励～serverinfo/claim_conn.json`・・ody=`server`・・SHA256縲√♀繧医・ `wildfly/phr_20251121TrialPHRSeqZ1-CTX.log` 縺ｫ蜃ｺ蜉帙＆繧後◆ `PHR_*_TEXT` 逶｣譟ｻ繧定ｨｼ霍｡蛹悶＠縺溘ＡPHRResource` 縺ｮ SignedUrl 繝輔か繝ｼ繝ｫ繝舌ャ繧ｯ縺ｯ `PHRKey`/`PHRAsyncJob` 縺・PersistenceUnit 譛ｪ逋ｻ骭ｲ縺ｮ縺溘ａ `UnknownEntityException` 縺ｧ蛛懈ｭ｢縺吶ｋ縺薙→縺悟愛譏弱＠縺ｦ縺翫ｊ縲～docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md#4-task-e-secretscontext-蜀肴､懆ｨｼ-run_id20251121trialphrseqz1-ctx` 縺ｫ Blocker 繧定ｨ倬鹸縺励◆縲・- 2025-11-16 繧ｫ繝舌Ξ繝・ず謨ｴ逅・ｼ・UN_ID=`20251116T170500Z`・・ Matrix No.11/32/42・・system01lstv2`,`manageusersv2`,`receiptprintv3`・峨・ Trial UI 縺ｧ邂｡逅・Γ繝九Η繝ｼ・丞ｸｳ逾ｨ蜃ｺ蜉帙′蟆・事縺輔ｌ縺ｦ縺・ｋ縺溘ａ CRUD 螳滓ｸｬ荳榊庄縲ょ推 API 繧・`[Spec-based]` 縺ｨ縺励※ `artifacts/orca-connectivity/20251116T170500Z/coverage/coverage_matrix.md`・汁blocked/README.md#{system01lstv2,manageusersv2,receiptprintv3}` 縺ｫ逋ｻ骭ｲ縺励∵ｹ諡繧・`docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md#縺贋ｽｿ縺・＞縺溘□縺代↑縺・ｩ溯・遲荏 ﾂｧ1/ﾂｧ4 縺ｸ繝ｪ繝ｳ繧ｯ縲ゅΟ繝ｼ繧ｫ繝ｫ ORMaster・育ｮ｡逅・API 隗｣謾ｾ + push-exchanger・峨ｒ蜀榊叙蠕励☆繧九∪縺ｧ譛ｬ繧ｹ繝・・繧ｿ繧ｹ繧堤ｶｭ謖√☆繧九・- PHR Trial 螳滓ｸｬ縺ｧ縺ｯ `curl -vv -u trial:weborcatrial .../20/adm/phr/*` 縺・404/405 縺ｨ縺ｪ繧九◆繧√ヽUN_ID=`20251116T173000Z` 縺ｧ final validation 繧・ORMaster・乗悽逡ｪ繧ｵ繝ｼ繝舌・縺ｸ蛻・ｊ譖ｿ縺医ｋ險育判繧・`docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` 縺ｫ險倩ｼ峨☆繧九Ａcurl -vv -u ormaster:ormaster --data-binary @payloads/phr_phase_<x>_prod.xml https://ormaster.orca.med.or.jp/20/adm/phr/<phase>` 縺ｨ DNS/TLS 險ｼ霍｡縲～operations/logs/<RUN_ID>-prod-validation.md` 縺ｸ縺ｮ繝ｭ繧ｰ繝ｪ繝ｳ繧ｯ繧貞叙蠕励＠縺滓凾轤ｹ縺ｧ Blocker 繧定ｧ｣髯､縺励￣HR checklist・蹴unbook・就PI_STATUS 繧貞酔譌･莉倥〒譖ｴ譁ｰ縺吶ｋ縲・
+### 4.5 HTTP 401/403/404/405 繝医Μ繧｢繝ｼ繧ｸ
 
-> RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
+- Basic 隱崎ｨｼ縺ｧ縺ｮ蜀咲樟繝ｭ繧ｰ・・curl -v -u trial:weborcatrial ...`・峨～openssl s_client`縲～dns/` 險ｼ霍｡縲～ServerInfoResource` 繧呈怙菴朱剞縺ｮ繧ｻ繝・ヨ縺ｨ縺吶ｋ縲・- 405 繧・404 繧貞叙蠕励＠縺溷ｴ蜷医・ `docs/server-modernization/phase2/operations/logs/ORCA_HTTP_404405_HANDBOOK.md` 縺ｮ繝輔か繝ｼ繝槭ャ繝医〒 `httpdump/{api}/request.http` `response.http` 繧剃ｿ晏ｭ倥＠縲～logs/<date>-orca-connectivity.md` 縺ｸ `縲占ｪｿ譟ｻ縲疏 繝悶Ο繝・け繧定ｿｽ險倥☆繧九・- 繧ｨ繝ｩ繝ｼ縺檎ｶ咏ｶ壹☆繧句ｴ蜷医・ `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` 縺ｮ WebORCA 遽・・asic 隱崎ｨｼ迚茨ｼ峨↓蠕薙＞縲ヾlack 竊・PagerDuty 竊・Backend Lead 縺ｮ鬆・〒繧ｨ繧ｹ繧ｫ繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ縺吶ｋ縲・
+### 4.6 蝣ｱ蜻翫→繧ｨ繧ｹ繧ｫ繝ｬ繝ｼ繧ｷ繝ｧ繝ｳ
 
-- RUN_ID=`YYYYMMDDTorcaPHRSeqZ#` を払い出し、`artifacts/orca-connectivity/TEMPLATE/phr-seq` をコピーして使用する。
-- `audit/logs/phr_audit_extract.sql` で `event_id LIKE 'PHR_%'` を抽出し、`logs/phr_audit_${RUN_ID}.sql` として保存する。欠落イベントは `docs/server-modernization/phase2/operations/logs/2025-11-14-phr-evidence-template.md#pending-risks` へ転記する。
-- HTTP 証跡は `trial/phr/<api>.{headers,json}`、UI 証跡は `screenshots/phr-XX.png` にまとめ、`ServerInfoResource` の JSON を並記する。
-- Modernized 開発環境での Secrets/Context チェックは RUN_ID=`20251121TrialPHRSeqZ1-CTX` を参照。`1.3.6.1.4.1.9414.72.103:admin` ユーザーを BASIC 認証で登録し、`serverinfo/claim_conn.json`（body=`server`）/SHA256、および `wildfly/phr_20251121TrialPHRSeqZ1-CTX.log` に出力された `PHR_*_TEXT` 監査を証跡化した。`PHRResource` の SignedUrl フォールバックは `PHRKey`/`PHRAsyncJob` が PersistenceUnit 未登録のため `UnknownEntityException` で停止することが判明しており、`docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md#4-task-e-secretscontext-再検証-run_id20251121trialphrseqz1-ctx` に Blocker を記録した。
-- 2025-11-16 カバレッジ整理（RUN_ID=`20251116T170500Z`）: Matrix No.11/32/42（`system01lstv2`,`manageusersv2`,`receiptprintv3`）は Trial UI で管理メニュー／帳票出力が封鎖されているため CRUD 実測不可。各 API を `[Spec-based]` として `artifacts/orca-connectivity/20251116T170500Z/coverage/coverage_matrix.md`／`blocked/README.md#{system01lstv2,manageusersv2,receiptprintv3}` に登録し、根拠を `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md#お使いいただけない機能等` §1/§4 へリンク。ローカル ORMaster（管理 API 解放 + push-exchanger）を再取得するまで本ステータスを維持する。
-- PHR Trial 実測では `curl -vv -u trial:weborcatrial .../20/adm/phr/*` が 404/405 となるため、RUN_ID=`20251116T173000Z` で final validation を ORMaster／本番サーバーへ切り替える計画を `docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` に記載する。`curl -vv -u ormaster:ormaster --data-binary @payloads/phr_phase_<x>_prod.xml https://ormaster.orca.med.or.jp/20/adm/phr/<phase>` と DNS/TLS 証跡、`operations/logs/<RUN_ID>-prod-validation.md` へのログリンクを取得した時点で Blocker を解除し、PHR checklist／Runbook／API_STATUS を同日付で更新する。
-
-### 4.5 HTTP 401/403/404/405 トリアージ
-
-- Basic 認証での再現ログ（`curl -v -u trial:weborcatrial ...`）、`openssl s_client`、`dns/` 証跡、`ServerInfoResource` を最低限のセットとする。
-- 405 や 404 を取得した場合は `docs/server-modernization/phase2/operations/logs/ORCA_HTTP_404405_HANDBOOK.md` のフォーマットで `httpdump/{api}/request.http` `response.http` を保存し、`logs/<date>-orca-connectivity.md` へ `【調査】` ブロックを追記する。
-- エラーが継続する場合は `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の WebORCA 節（Basic 認証版）に従い、Slack → PagerDuty → Backend Lead の順でエスカレーションする。
-
-### 4.6 報告とエスカレーション
-
-1. `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` の RUN_ID 表を更新し、CRUD 実施内容と証跡パスを記載する。
-2. `artifacts/orca-connectivity/<RUN_ID>/README.md` に TLS/DNS 証跡、実行 API、CRUD の before/after、ログ保存先を列挙する。
-3. `docs/web-client/planning/phase2/DOC_STATUS.md` の ORCA 接続欄をタスク担当へリレーし、必要なら `docs/server-modernization/phase2/operations/logs/2025-11-15-orca-connectivity.md` へ補足メモを追加する。
-4. Blocker 発生時は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順で報告し、`logs/<date>-orca-connectivity.md` には `【連絡】` ブロックで経緯を残す。
-
-## 5. API 検証マトリクス
-- `docs/server-modernization/phase2/operations/assets/orca-api-matrix.with-spec.csv` を最新化し、`Priority=P0/P1/P2` ごとの実施状況を `checkedAt` 列で管理する。
-- 備考欄に付与するタグ例（`※環境設定要確認`, `※UTF-8必須` など）は `notes/orca-api-field-validation.md` の指示に従う。`npm run lint:orca-matrix` で警告が出た場合は修正完了まで RUN_ID を `NG` にしておく。
-- API ごとの担当ロールは `operations/assets/orca-api-assignments.md` を参照し、`PHASE2_PROGRESS.md` と突き合わせる。
-
-### 5.1 Matrix No.39-53（システム／通知／特殊 API）
-
-| No | API | ステータス | Evidence / 次アクション |
+1. `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` 縺ｮ RUN_ID 陦ｨ繧呈峩譁ｰ縺励，RUD 螳滓命蜀・ｮｹ縺ｨ險ｼ霍｡繝代せ繧定ｨ倩ｼ峨☆繧九・2. `artifacts/orca-connectivity/<RUN_ID>/README.md` 縺ｫ TLS/DNS 險ｼ霍｡縲∝ｮ溯｡・API縲，RUD 縺ｮ before/after縲√Ο繧ｰ菫晏ｭ伜・繧貞・謖吶☆繧九・3. `docs/web-client/planning/phase2/DOC_STATUS.md` 縺ｮ ORCA 謗･邯壽ｬ・ｒ繧ｿ繧ｹ繧ｯ諡・ｽ薙∈繝ｪ繝ｬ繝ｼ縺励∝ｿ・ｦ√↑繧・`docs/server-modernization/phase2/operations/logs/2025-11-15-orca-connectivity.md` 縺ｸ陬懆ｶｳ繝｡繝｢繧定ｿｽ蜉縺吶ｋ縲・4. Blocker 逋ｺ逕滓凾縺ｯ Slack `#server-modernized-alerts` 竊・PagerDuty 竊・Backend Lead 縺ｮ鬆・〒蝣ｱ蜻翫＠縲～logs/<date>-orca-connectivity.md` 縺ｫ縺ｯ `縲宣｣邨｡縲疏 繝悶Ο繝・け縺ｧ邨檎ｷｯ繧呈ｮ九☆縲・
+## 5. API 讀懆ｨｼ繝槭ヨ繝ｪ繧ｯ繧ｹ
+- `docs/server-modernization/phase2/operations/assets/orca-api-matrix.with-spec.csv` 繧呈怙譁ｰ蛹悶＠縲～Priority=P0/P1/P2` 縺斐→縺ｮ螳滓命迥ｶ豕√ｒ `checkedAt` 蛻励〒邂｡逅・☆繧九・- 蛯呵・ｬ・↓莉倅ｸ弱☆繧九ち繧ｰ萓具ｼ・窶ｻ迺ｰ蠅・ｨｭ螳夊ｦ∫｢ｺ隱港, `窶ｻUTF-8蠢・・ 縺ｪ縺ｩ・峨・ `notes/orca-api-field-validation.md` 縺ｮ謖・､ｺ縺ｫ蠕薙≧縲Ａnpm run lint:orca-matrix` 縺ｧ隴ｦ蜻翫′蜃ｺ縺溷ｴ蜷医・菫ｮ豁｣螳御ｺ・∪縺ｧ RUN_ID 繧・`NG` 縺ｫ縺励※縺翫￥縲・- API 縺斐→縺ｮ諡・ｽ薙Ο繝ｼ繝ｫ縺ｯ `operations/assets/orca-api-assignments.md` 繧貞盾辣ｧ縺励～PHASE2_PROGRESS.md` 縺ｨ遯√″蜷医ｏ縺帙ｋ縲・
+### 5.1 Matrix No.39-53・医す繧ｹ繝・Β・城夂衍・冗音谿・API・・
+| No | API | 繧ｹ繝・・繧ｿ繧ｹ | Evidence / 谺｡繧｢繧ｯ繧ｷ繝ｧ繝ｳ |
 | --- | --- | --- | --- |
-| 39 | `/orca31/hspmmv2` | `HTTP 405 (Allow GET)` | RUN_ID=`20251113T002806Z`（`artifacts/.../uncertain-api/39_hspmmv2_response.txt`）。ORCA route 開放が必要。`notes/orca-api-field-validation.md` §3.1。 |
-| 40 | `/orca31/hsacctmodv2`（室料差額） | RUN 未実施（既存入院データ欠落） | manifest slug=`hospsagaku`。WebORCA 本番に室料差額データが存在しないため保留。復旧完了までは欠落ログのみ更新し、seed を投入しない。 |
-| 41 | `/api01rv2/pusheventgetv2` | RUN 未実施（push-exchanger 必須） | `logs/2025-11-13...` に履歴なし。`ORCA_API_STATUS.md` §2.4 / `notes` §3.2 参照。print002 通知が既存環境で確認できた時点で検証する（seed 追加は禁止）。 |
-| 42 | `/orca42/receiptprintv3` | RUN 未実施（PUSH/Blob 運用未整備） | `push/print002` を受け取る運用を §3.6 へ追加。帳票テンプレは `assets/orca-api-requests/42_receipt_printv3_request.json` を参照。 |
-| 43 | `/orca51/masterlastupdatev3` | RUN 未実施（system daily の付帯チェック） | `system01dailyv2` 後に 1 回だけ呼び、`trial/masterlastupdatev3.*` に結果を保存する。`ORCA_API_STATUS.md` §2.4。 |
-| 44 | `/api01rv2/system01dailyv2` | `HTTP 200 / Api_Result=00`（UTF-8） | RUN_ID=`20251113T002806Z`。Shift_JIS は `Api_Result=91` のためテンプレを UTF-8 に統一。 |
-| 45 | `/api01rv2/patientlst7v2` | RUN 未実施（memomodv2 依存） | `patientmemomodv2` 405 のため内容を確認できない。`notes/orca-api-field-validation.md` §3.3。 |
-| 46 | `/api21/medicalmodv23` | `HTTP 405 (Allow: GET)` | RUN_ID=`20251113T002806Z`。route 開放依頼中。テンプレは XML `<medicalv2req3>`. |
-| 47 | `/orca36/hsfindv3` | RUN 未実施（既存入院データ欠落） | Admission_Date 条件を満たす患者が居らず未着手。入院データが揃い次第に再測し、それまでは欠落状況をログへ追記する。 |
-| 48 | `/api01rv2/contraindicationcheckv2` | RUN 未実施（薬剤履歴データ欠落） | `Check_Term` / `Medication_Information[]` の XML は準備済み。薬剤履歴が取得できたタイミングで実行し、seed 追加は行わない。 |
-| 49 | `/api01rv2/insuranceinf1v2` | RUN 未実施（初期キャッシュ未取得） | `Base_Date` を当日で 1 回取得し、`trial/insuranceinf1v2.*` に保存する TODO を §4.4 に追加。 |
-| 50 | `/api01rv2/subjectiveslstv2` | RUN 未実施（症状詳記 UI 未定） | Request_Number=01-03 の仕様整理は完了。カルテ UI 実装時に実行。 |
-| 51 | `/api01rv2/patientlst8v2` | RUN 未実施（旧姓データ欠落） | 旧姓履歴を持つ患者が WebORCA 本番に存在しないため保留。復旧後に `/api01rv2/patientlst8v2` を実行し、それまでは欠落記録のみ更新する。 |
-| 52 | `/api01rv2/medicationgetv2` | RUN 未実施（2024-11 追加 API） | 診療コード検索の必須 API。`ORCA_API_STATUS.md` §2.4 参照。`ORCA_CONNECTIVITY_VALIDATION.md` に手順を追加済み。 |
-| 53 | `/orca06/patientmemomodv2` | `HTTP 405 (Allow: GET)` | RUN_ID=`20251113T002806Z`。memo CRUD は ORCA route 復旧待ち。`notes` §3.3。 |
+| 39 | `/orca31/hspmmv2` | `HTTP 405 (Allow GET)` | RUN_ID=`20251113T002806Z`・・artifacts/.../uncertain-api/39_hspmmv2_response.txt`・峨０RCA route 髢区叛縺悟ｿ・ｦ√Ａnotes/orca-api-field-validation.md` ﾂｧ3.1縲・|
+| 40 | `/orca31/hsacctmodv2`・亥ｮ､譁吝ｷｮ鬘搾ｼ・| RUN 譛ｪ螳滓命・域里蟄伜・髯｢繝・・繧ｿ谺關ｽ・・| manifest slug=`hospsagaku`縲８ebORCA 譛ｬ逡ｪ縺ｫ螳､譁吝ｷｮ鬘阪ョ繝ｼ繧ｿ縺悟ｭ伜惠縺励↑縺・◆繧∽ｿ晉蕗縲ょｾｩ譌ｧ螳御ｺ・∪縺ｧ縺ｯ谺關ｽ繝ｭ繧ｰ縺ｮ縺ｿ譖ｴ譁ｰ縺励《eed 繧呈兜蜈･縺励↑縺・・|
+| 41 | `/api01rv2/pusheventgetv2` | RUN 譛ｪ螳滓命・・ush-exchanger 蠢・茨ｼ・| `logs/2025-11-13...` 縺ｫ螻･豁ｴ縺ｪ縺励ＡORCA_API_STATUS.md` ﾂｧ2.4 / `notes` ﾂｧ3.2 蜿ら・縲Ｑrint002 騾夂衍縺梧里蟄倡腸蠅・〒遒ｺ隱阪〒縺阪◆譎らせ縺ｧ讀懆ｨｼ縺吶ｋ・・eed 霑ｽ蜉縺ｯ遖∵ｭ｢・峨・|
+| 42 | `/orca42/receiptprintv3` | RUN 譛ｪ螳滓命・・USH/Blob 驕狗畑譛ｪ謨ｴ蛯呻ｼ・| `push/print002` 繧貞女縺大叙繧矩°逕ｨ繧・ﾂｧ3.6 縺ｸ霑ｽ蜉縲ょｸｳ逾ｨ繝・Φ繝励Ξ縺ｯ `assets/orca-api-requests/42_receipt_printv3_request.json` 繧貞盾辣ｧ縲・|
+| 43 | `/orca51/masterlastupdatev3` | RUN 譛ｪ螳滓命・・ystem daily 縺ｮ莉伜ｸｯ繝√ぉ繝・け・・| `system01dailyv2` 蠕後↓ 1 蝗槭□縺大他縺ｳ縲～trial/masterlastupdatev3.*` 縺ｫ邨先棡繧剃ｿ晏ｭ倥☆繧九ＡORCA_API_STATUS.md` ﾂｧ2.4縲・|
+| 44 | `/api01rv2/system01dailyv2` | `HTTP 200 / Api_Result=00`・・TF-8・・| RUN_ID=`20251113T002806Z`縲４hift_JIS 縺ｯ `Api_Result=91` 縺ｮ縺溘ａ繝・Φ繝励Ξ繧・UTF-8 縺ｫ邨ｱ荳縲・|
+| 45 | `/api01rv2/patientlst7v2` | RUN 譛ｪ螳滓命・・emomodv2 萓晏ｭ假ｼ・| `patientmemomodv2` 405 縺ｮ縺溘ａ蜀・ｮｹ繧堤｢ｺ隱阪〒縺阪↑縺・Ａnotes/orca-api-field-validation.md` ﾂｧ3.3縲・|
+| 46 | `/api21/medicalmodv23` | `HTTP 405 (Allow: GET)` | RUN_ID=`20251113T002806Z`縲Ｓoute 髢区叛萓晞ｼ荳ｭ縲ゅユ繝ｳ繝励Ξ縺ｯ XML `<medicalv2req3>`. |
+| 47 | `/orca36/hsfindv3` | RUN 譛ｪ螳滓命・域里蟄伜・髯｢繝・・繧ｿ谺關ｽ・・| Admission_Date 譚｡莉ｶ繧呈ｺ縺溘☆謔｣閠・′螻・ｉ縺壽悴逹謇九ょ・髯｢繝・・繧ｿ縺梧純縺・ｬ｡隨ｬ縺ｫ蜀肴ｸｬ縺励√◎繧後∪縺ｧ縺ｯ谺關ｽ迥ｶ豕√ｒ繝ｭ繧ｰ縺ｸ霑ｽ險倥☆繧九・|
+| 48 | `/api01rv2/contraindicationcheckv2` | RUN 譛ｪ螳滓命・郁脈蜑､螻･豁ｴ繝・・繧ｿ谺關ｽ・・| `Check_Term` / `Medication_Information[]` 縺ｮ XML 縺ｯ貅門ｙ貂医∩縲り脈蜑､螻･豁ｴ縺悟叙蠕励〒縺阪◆繧ｿ繧､繝溘Φ繧ｰ縺ｧ螳溯｡後＠縲《eed 霑ｽ蜉縺ｯ陦後ｏ縺ｪ縺・・|
+| 49 | `/api01rv2/insuranceinf1v2` | RUN 譛ｪ螳滓命・亥・譛溘く繝｣繝・す繝･譛ｪ蜿門ｾ暦ｼ・| `Base_Date` 繧貞ｽ捺律縺ｧ 1 蝗槫叙蠕励＠縲～trial/insuranceinf1v2.*` 縺ｫ菫晏ｭ倥☆繧・TODO 繧・ﾂｧ4.4 縺ｫ霑ｽ蜉縲・|
+| 50 | `/api01rv2/subjectiveslstv2` | RUN 譛ｪ螳滓命・育裸迥ｶ隧ｳ險・UI 譛ｪ螳夲ｼ・| Request_Number=01-03 縺ｮ莉墓ｧ俶紛逅・・螳御ｺ・ゅき繝ｫ繝・UI 螳溯｣・凾縺ｫ螳溯｡後・|
+| 51 | `/api01rv2/patientlst8v2` | RUN 譛ｪ螳滓命・域立蟋薙ョ繝ｼ繧ｿ谺關ｽ・・| 譌ｧ蟋灘ｱ･豁ｴ繧呈戟縺､謔｣閠・′ WebORCA 譛ｬ逡ｪ縺ｫ蟄伜惠縺励↑縺・◆繧∽ｿ晉蕗縲ょｾｩ譌ｧ蠕後↓ `/api01rv2/patientlst8v2` 繧貞ｮ溯｡後＠縲√◎繧後∪縺ｧ縺ｯ谺關ｽ險倬鹸縺ｮ縺ｿ譖ｴ譁ｰ縺吶ｋ縲・|
+| 52 | `/api01rv2/medicationgetv2` | RUN 譛ｪ螳滓命・・024-11 霑ｽ蜉 API・・| 險ｺ逋ゅさ繝ｼ繝画､懃ｴ｢縺ｮ蠢・・API縲ＡORCA_API_STATUS.md` ﾂｧ2.4 蜿ら・縲ＡORCA_CONNECTIVITY_VALIDATION.md` 縺ｫ謇矩・ｒ霑ｽ蜉貂医∩縲・|
+| 53 | `/orca06/patientmemomodv2` | `HTTP 405 (Allow: GET)` | RUN_ID=`20251113T002806Z`縲Ｎemo CRUD 縺ｯ ORCA route 蠕ｩ譌ｧ蠕・■縲Ａnotes` ﾂｧ3.3縲・|
 
-## 6. ログおよび Evidence ルール
+## 6. 繝ｭ繧ｰ縺翫ｈ縺ｳ Evidence 繝ｫ繝ｼ繝ｫ
 
-1. **CLI 出力**: `curl`, `openssl s_client`, `ServerInfoResource`, `node scripts/tools/orca-curl-snippets.js` のログはすべて `artifacts/orca-connectivity/<UTC>/` に保存。ファイル名例: `01_tls_handshake.log`, `02_acceptlstv2_request.http`, `02_acceptlstv2_response.http`。
-2. **テンプレ Evidence**: `artifacts/orca-connectivity/TEMPLATE/` をコピーした直後に `README.md` へ `RUN_ID`, `UTC`, 使用した Basic 認証（`trial/weborcatrial`）と CRUD 実施有無を追記する。
-3. **ドキュメントリンク**: `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日欄と本 Runbook の該当セクションを双方向リンクにする。
-4. **通知**: 失敗時は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順に連絡。
-5. **Archive**: 30 日以上参照しないログは `docs/archive/<YYYYQn>/orcaconnect/` へ移し、元ファイルにはスタブと移動先リンクを残す。
-6. **命名ルール**: Evidence ディレクトリは UTC タイムスタンプ（`YYYYMMDDThhmmssZ`）を用いる。命名チェックは `node scripts/tools/orca-artifacts-namer.js` で行い、0 以外の終了コードは再実行禁止。
-7. **秘匿情報のマスキング**: `request.http` に資格情報を含めない。curl コマンドは `--user <MASKED>` 形式で保管し、実行時のみ `env` から展開する。
+1. **CLI 蜃ｺ蜉・*: `curl`, `openssl s_client`, `ServerInfoResource`, `node scripts/tools/orca-curl-snippets.js` 縺ｮ繝ｭ繧ｰ縺ｯ縺吶∋縺ｦ `artifacts/orca-connectivity/<UTC>/` 縺ｫ菫晏ｭ倥ゅヵ繧｡繧､繝ｫ蜷堺ｾ・ `01_tls_handshake.log`, `02_acceptlstv2_request.http`, `02_acceptlstv2_response.http`縲・2. **繝・Φ繝励Ξ Evidence**: `artifacts/orca-connectivity/TEMPLATE/` 繧偵さ繝斐・縺励◆逶ｴ蠕後↓ `README.md` 縺ｸ `RUN_ID`, `UTC`, 菴ｿ逕ｨ縺励◆ Basic 隱崎ｨｼ・・trial/weborcatrial`・峨→ CRUD 螳滓命譛臥┌繧定ｿｽ險倥☆繧九・3. **繝峨く繝･繝｡繝ｳ繝医Μ繝ｳ繧ｯ**: `docs/server-modernization/phase2/PHASE2_PROGRESS.md` 縺ｮ蠖捺律谺・→譛ｬ Runbook 縺ｮ隧ｲ蠖薙そ繧ｯ繧ｷ繝ｧ繝ｳ繧貞曙譁ｹ蜷代Μ繝ｳ繧ｯ縺ｫ縺吶ｋ縲・4. **騾夂衍**: 螟ｱ謨玲凾縺ｯ Slack `#server-modernized-alerts` 竊・PagerDuty 竊・Backend Lead 縺ｮ鬆・↓騾｣邨｡縲・5. **Archive**: 30 譌･莉･荳雁盾辣ｧ縺励↑縺・Ο繧ｰ縺ｯ `docs/archive/<YYYYQn>/orcaconnect/` 縺ｸ遘ｻ縺励∝・繝輔ぃ繧､繝ｫ縺ｫ縺ｯ繧ｹ繧ｿ繝悶→遘ｻ蜍募・繝ｪ繝ｳ繧ｯ繧呈ｮ九☆縲・6. **蜻ｽ蜷阪Ν繝ｼ繝ｫ**: Evidence 繝・ぅ繝ｬ繧ｯ繝医Μ縺ｯ UTC 繧ｿ繧､繝繧ｹ繧ｿ繝ｳ繝暦ｼ・YYYYMMDDThhmmssZ`・峨ｒ逕ｨ縺・ｋ縲ょ多蜷阪メ繧ｧ繝・け縺ｯ `node scripts/tools/orca-artifacts-namer.js` 縺ｧ陦後＞縲・ 莉･螟悶・邨ゆｺ・さ繝ｼ繝峨・蜀榊ｮ溯｡檎ｦ∵ｭ｢縲・7. **遘伜諺諠・ｱ縺ｮ繝槭せ繧ｭ繝ｳ繧ｰ**: `request.http` 縺ｫ雉・ｼ諠・ｱ繧貞性繧√↑縺・Ｄurl 繧ｳ繝槭Φ繝峨・ `--user <MASKED>` 蠖｢蠑上〒菫晉ｮ｡縺励∝ｮ溯｡梧凾縺ｮ縺ｿ `env` 縺九ｉ螻暮幕縺吶ｋ縲・
+## 7. WebORCA 繝医Λ繧､繧｢繝ｫ驕狗畑繝｡繝｢
 
-## 7. WebORCA トライアル運用メモ
-
-1. **利用範囲**: `https://weborca-trial.orca.med.or.jp/` のみを接続先とし、CRUD を実施した場合は必ず `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` と `artifacts/.../data-check/` に操作内容・対象 ID・戻し有無を記録する。
-2. **資格情報の扱い**: Basic 認証は公開アカウント `trial/weborcatrial` を使用する。履歴や Evidence には `<MASKED>` 表記を用い、`curl -u "trial:weborcatrial"` のまま保存しない。
-3. **テンプレ更新**: `docs/web-client/planning/phase2/DOC_STATUS.md` にトライアル方針へ切り替えた旨と証跡パスを記載し、`docs/server-modernization/phase2/operations/logs/2025-11-15-orca-connectivity.md` の RUN_ID 表を最新化する。
-4. **安全ガード**: ローカル WebORCA コンテナの再構築や `ORCAcertification/` 配下の PKCS#12 はアーカイブ扱いとする。必要な資料は `assets/orca-trialsite/raw/trialsite.md` から辿り、利用不可機能を参照して作業範囲を決める。
-5. **報告**: Blocker や CRUD 失敗時は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順で共有し、Runbook §4.6 の流れでログへ `【連絡】` ブロックを追加する。
-
+1. **蛻ｩ逕ｨ遽・峇**: `https://weborca-trial.orca.med.or.jp/` 縺ｮ縺ｿ繧呈磁邯壼・縺ｨ縺励，RUD 繧貞ｮ滓命縺励◆蝣ｴ蜷医・蠢・★ `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` 縺ｨ `artifacts/.../data-check/` 縺ｫ謫堺ｽ懷・螳ｹ繝ｻ蟇ｾ雎｡ ID繝ｻ謌ｻ縺玲怏辟｡繧定ｨ倬鹸縺吶ｋ縲・2. **雉・ｼ諠・ｱ縺ｮ謇ｱ縺・*: Basic 隱崎ｨｼ縺ｯ蜈ｬ髢九い繧ｫ繧ｦ繝ｳ繝・`trial/weborcatrial` 繧剃ｽｿ逕ｨ縺吶ｋ縲ょｱ･豁ｴ繧・Evidence 縺ｫ縺ｯ `<MASKED>` 陦ｨ險倥ｒ逕ｨ縺・～curl -u "trial:weborcatrial"` 縺ｮ縺ｾ縺ｾ菫晏ｭ倥＠縺ｪ縺・・3. **繝・Φ繝励Ξ譖ｴ譁ｰ**: `docs/web-client/planning/phase2/DOC_STATUS.md` 縺ｫ繝医Λ繧､繧｢繝ｫ譁ｹ驥昴∈蛻・ｊ譖ｿ縺医◆譌ｨ縺ｨ險ｼ霍｡繝代せ繧定ｨ倩ｼ峨＠縲～docs/server-modernization/phase2/operations/logs/2025-11-15-orca-connectivity.md` 縺ｮ RUN_ID 陦ｨ繧呈怙譁ｰ蛹悶☆繧九・4. **螳牙・繧ｬ繝ｼ繝・*: 繝ｭ繝ｼ繧ｫ繝ｫ WebORCA 繧ｳ繝ｳ繝・リ縺ｮ蜀肴ｧ狗ｯ峨ｄ `ORCAcertification/` 驟堺ｸ九・ PKCS#12 縺ｯ繧｢繝ｼ繧ｫ繧､繝匁桶縺・→縺吶ｋ縲ょｿ・ｦ√↑雉・侭縺ｯ `assets/orca-trialsite/raw/trialsite.md` 縺九ｉ霎ｿ繧翫∝茜逕ｨ荳榊庄讖溯・繧貞盾辣ｧ縺励※菴懈･ｭ遽・峇繧呈ｱｺ繧√ｋ縲・5. **蝣ｱ蜻・*: Blocker 繧・CRUD 螟ｱ謨玲凾縺ｯ Slack `#server-modernized-alerts` 竊・PagerDuty 竊・Backend Lead 縺ｮ鬆・〒蜈ｱ譛峨＠縲ヽunbook ﾂｧ4.6 縺ｮ豬√ｌ縺ｧ繝ｭ繧ｰ縺ｸ `縲宣｣邨｡縲疏 繝悶Ο繝・け繧定ｿｽ蜉縺吶ｋ縲・
 ---
 
-- `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ 4（ORCA セクション）と `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md#weborca-trial` に本タスクリストの要約を反映すること。
-- 旧 WebORCA コンテナ手順や本番ホスト向け手順はすべてアーカイブ済み。必要に応じて `docs/archive/2025Q4/` の履歴のみ参照する。
+- `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` 繝輔ぉ繝ｼ繧ｺ 4・・RCA 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ・峨→ `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md#weborca-trial` 縺ｫ譛ｬ繧ｿ繧ｹ繧ｯ繝ｪ繧ｹ繝医・隕∫ｴ・ｒ蜿肴丐縺吶ｋ縺薙→縲・- 譌ｧ WebORCA 繧ｳ繝ｳ繝・リ謇矩・ｄ譛ｬ逡ｪ繝帙せ繝亥髄縺第焔鬆・・縺吶∋縺ｦ繧｢繝ｼ繧ｫ繧､繝匁ｸ医∩縲ょｿ・ｦ√↓蠢懊§縺ｦ `docs/archive/2025Q4/` 縺ｮ螻･豁ｴ縺ｮ縺ｿ蜿ら・縺吶ｋ縲・
+

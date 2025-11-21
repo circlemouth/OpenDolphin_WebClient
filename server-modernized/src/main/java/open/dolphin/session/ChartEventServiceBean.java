@@ -22,6 +22,8 @@ import open.dolphin.session.support.ChartEventStreamPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.concurrent.atomic.AtomicBoolean;
+
 /**
  * ChartEventServiceBean
  * @author masuda, Masuda Naika
@@ -45,6 +47,8 @@ public class ChartEventServiceBean {
     private EntityManager em;
     
     private boolean DEBUG = false;
+    private final AtomicBoolean initialized = new AtomicBoolean(false);
+    private final Object initLock = new Object();
     
 
     public void notifyEvent(ChartEventModel evt) {
@@ -302,8 +306,29 @@ public class ChartEventServiceBean {
 
     public void start() {
         log("ChartEventServiceBean: start did call");
-        setupServerUUID();
-        initializePvtList();
+        ensureInitialized();
+    }
+
+    /**
+     * ServletStartup が呼ばれないケースでもコンテキストの初期化を保証する。
+     */
+    public void ensureInitialized() {
+        if (initialized.get()) {
+            contextHolder.ensureDateInitialized();
+            return;
+        }
+
+        synchronized (initLock) {
+            if (initialized.get()) {
+                contextHolder.ensureDateInitialized();
+                return;
+            }
+
+            contextHolder.ensureDateInitialized();
+            setupServerUUID();
+            initializePvtList();
+            initialized.set(true);
+        }
     }
     
     // serverUUIDを設定する
@@ -316,7 +341,7 @@ public class ChartEventServiceBean {
     // 起動後最初のPvtListを作る
     private void initializePvtList() {
 
-        contextHolder.setToday();
+        contextHolder.ensureDateInitialized();
         
         // サーバーの「今日」で管理する
         final SimpleDateFormat frmt = new SimpleDateFormat(IInfoModel.DATE_WITHOUT_TIME);

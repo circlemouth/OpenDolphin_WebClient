@@ -75,6 +75,8 @@ public class PVTServiceBean {
      */
     public int addPvt(PatientVisitModel pvt) {
 
+        eventServiceBean.ensureInitialized();
+
         // CLAIM 送信の場合 facilityID がデータベースに登録されているものと異なる場合がある
         // 施設IDを認証にパスしたユーザの施設IDに設定する。
         String fid = pvt.getFacilityId();

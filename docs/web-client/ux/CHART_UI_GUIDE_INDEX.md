@@ -45,6 +45,7 @@ Web クライアントのカルテ UI（`ChartsPage` 配下）の仕様・構成
   - カルテ保存・排他制御・監査ログの UI 側要件。UI 改修で監査計測やイベント送出を変更する場合は必ず反映が必要です。
 - [`operations/RECEPTION_WEB_CLIENT_MANUAL.md#64-ui-ワイヤーフレームと通知バリアント`](../operations/RECEPTION_WEB_CLIENT_MANUAL.md#64-ui-%E3%83%AF%E3%82%A4%E3%83%A4%E3%83%BC%E3%83%95%E3%83%AC%E3%83%BC%E3%83%A0%E3%81%A8%E9%80%9A%E7%9F%A5%E3%83%90%E3%83%AA%E3%82%A2%E3%83%B3%E3%83%88)
   - `chart-events.replay-gap` を受信した際のトースト/バナー/再取得ボタン構成、状態遷移（Idle→GapDetected→Reloading→Recovered/Retry）、Web/Touch 向け擬似コードをまとめた最新仕様。2026-06-14 追記で Touch 向け `ReplayGapState` 詳細・監査ペイロード・ローカル通知（Worker T）を掲載。ChartsPage の患者ヘッダーに同じ UX を適用する際は必ず参照すること。
+- ChartEvent SSE/LP フェールバック SLA: ChartsPage / ReceptionPage は SSE (`GET /chart-events`) を優先し、接続不可時は Legacy ロングポーリング (`GET /chartEvent/subscribe`) へ自動ダウンシフトする。LP のタイムアウトは 55 秒、最大 5 回リトライ（約 5 分）。SSE で `chart-events.replay-gap` を受信した場合は Last-Event-ID を維持した再接続とフルリロードを促すバナーを出す。詳細は `operations/logs/20251120T191203Z-api-stability.md` を参照。
 
 ### DocumentTimeline 安定化メモ（2025-11-01、担当: Codex）
 - **カテゴリ切替の自動復元**: `DocumentTimelinePanel` は利用可能なカテゴリがゼロになった場合でも直近の有効カテゴリへフォールバックし、常にイベントが 1 件以上選択された状態を維持する。
@@ -63,3 +64,6 @@ Web クライアントのカルテ UI（`ChartsPage` 配下）の仕様・構成
 ---
 
 > **運用メモ**: カルテ UI に関する質問や仕様調整が必要な場合は、該当ドキュメントへコメントを追加し、関係者への確認フローを確保した上で開発を進めてください。
+
+## 備考
+- RUN_ID=20251120T191203Z / 証跡: `docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md`（ChartEvent SSE/LP フェールバック SLA 追記）
