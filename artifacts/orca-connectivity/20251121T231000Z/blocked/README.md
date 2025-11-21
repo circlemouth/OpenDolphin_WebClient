@@ -1,15 +1,27 @@
 # Blocked summary (RUN_ID=20251121T231000Z)
 
-- 2025-11-21T14:38Z `patientgetv2?id=00001` は HTTP200 / `Api_Result=00` で患者データ取得済み（`crud/patientgetv2/response_20251121T143808Z.xml`）。患者 `00001` は登録済み。
-- 同時刻に `acceptlstv2` は `Api_Result=21`（受付なし, `crud/acceptlstv2/response_20251121T143851Z.xml`）、`appointlstv2` も `Api_Result=21`（予約なし, `crud/appointlstv2/response_20251121T143931Z.xml`）。医師コード `00001`, 科 `01` を指定してもデータなし。
-- `medicalmodv2` は `Api_Result=14`（ドクターが存在しません, `crud/medicalmodv2/response_20251121T144026Z.xml`）。患者は存在するが医師マスタ不足で診療行為登録不可。
-- `/orca11/acceptmodv2` と `/orca14/appointmodv2` は POST でいずれも HTTP 405（Allow=`OPTIONS, GET`。headers `_20251121T144107Z.txt`, `_20251121T144146Z.txt`）。POST 開放は未反映。
-- 以前観測の通り、ORCA 側の route/`API_ENABLE` 設定には触れられず、GUI も未使用。把握済みの 405/マスタ欠落状態が継続している。
-- Physician_Code=`0000` / Department_Code=`01` を再確認したところ、`acceptlstv2` は `Api_Result=13`（ドクターが存在しません, `crud/acceptlstv2/response_20251121T150054Z.xml`）、`appointlstv2` は `Api_Result=12`（ドクターが存在しません, `crud/appointlstv2/response_20251121T150138Z.xml`）、`medicalmodv2` も `Api_Result=14`（`crud/medicalmodv2/response_20251121T150200Z.xml`）。医師コード `0000` も未登録と判定。
-- 2025-11-21T15:13–15:15Z に Physician_Code=`0001` / `00011` で `acceptlstv2` / `appointlstv2` / `medicalmodv2` を再実行したが、すべて `curl: (52) Empty reply from server` で HTTP/Api_Result を取得できず（trace: `trace/*_{0001,00011}_*.trace`）。サーバ側で無応答状態になっており、医師マスタ有無の追加確認は未完了。
-- 提示された system01lstv2（Request_Number=02, class=02）でドクター一覧を取得しようとしたが、同様に `curl: (52) Empty reply from server`（trace: `trace/system01lstv2_20251121T152438Z.trace`）。doctor list を API から取得できない状態。
-- 2025-11-21T15:29Z 再起動後リトライ（Physician_Code=`0001`/`00011` + system01lstv2 doctor list）でも、すべて `curl: (52) Empty reply from server` で応答なし（例: `trace/acceptlstv2_0001_20251121T152912Z.trace`, `trace/medicalmodv2_00011_20251121T152912Z.trace`, `trace/system01lstv2_20251121T152438Z.trace`）。ブラウザは応答するが API POST は無返答のまま。
+## 現状
+- 患者 `00001`: GET `/api/api01rv2/patientgetv2?id=00001` で HTTP200 / Api_Result=00（`crud/patientgetv2/response_api_*.xml`）。登録済み。
+- Dr一覧: POST `/api/api01rv2/system01lstv2?class=02` (Request_Number=02) で Api_Result=00。Drコード `10000`, `10001` を取得（`crud/system01lstv2/response_class02_20251121T153320Z.xml`）。
+- 受付/予約/診療行為（型属性付きXML、Patient_ID無しで受付・予約）  
+  - acceptlstv2 `/api/api01rv2/acceptlstv2?class=01`: Dr=10000 → Api_Result=00、Dr=10001 → Api_Result=21（受付なし）  
+  - appointlstv2 `/api/api01rv2/appointlstv2?class=01`: Dr=10000/10001 → Api_Result=21（予約なし）  
+  - medicalmodv2 `/api/api21/medicalmodv2?class=01`: Dr=10000/10001 → Api_Result=22（登録対象なし）  
+    Evidence: `crud/*/response_typed_*_20251121T222556Z.xml`, trace `trace/*typed_*_20251121T222556Z.trace`
+- 以前の `curl: (52) Empty reply from server` は、XML2 の型属性欠落＋不要フィールド挿入（Patient_ID を受付/予約に含めたこと）が原因と判明。正しいXMLに修正後は解消。
+- `/orca11/acceptmodv2` `/orca14/appointmodv2` は依然 POST 405 (Allow=OPTIONS, GET)。ルート未開放。
 
-## 必要な seed / 対応案
-- `tbl_list_doctor` 等へ Physician_Code=`00001`, Department_Code=`01` の医師マスタを投入し、POST 405 を解消後に `acceptlstv2` → `appointlstv2` → `medicalmodv2` を再測する。
-- 医師 seed 完了後、患者 `00001` を使って受付/予約/診療行為の Api_Result=00 を採取し、Evidence を同 RUN_ID 配下に追記する。
+## 正解手順（後続向け）
+1) patientgetv2: **GET** `/api/api01rv2/patientgetv2?id=00001`
+2) system01lstv2: **POST** `/api/api01rv2/system01lstv2?class=02` (Request_Number=02) で Dr を取得
+3) acceptlstv2 / appointlstv2: **POST** `/api/api01rv2/<api>?class=01`  
+   - XML2形式、各要素に `type="string"`、配列/recordに `type="record"` を付与  
+   - Patient_ID は入れない（スキーマ外）  
+   - Medical_Information は `01`（外来）でOK
+4) medicalmodv2: **POST** `/api/api21/medicalmodv2?class=01`、XML2形式で型属性必須
+5) 全保存物は `artifacts/orca-connectivity/20251121T231000Z/crud|trace` に置き、Authorization は `<MASKED>`。
+
+## 残課題 / seed
+- 診療行為で Api_Result=22（登録対象なし）のため、受付・オーダ等のデータ投入後に再測し 00 を取得する。
+- acceptmodv2 / appointmodv2 の POST 解放は未対応。route / API_ENABLE を開放後に再測。
+
