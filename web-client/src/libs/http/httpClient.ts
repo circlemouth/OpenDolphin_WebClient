@@ -1,7 +1,11 @@
 import axios, { AxiosHeaders } from 'axios';
+import { context, SpanStatusCode, trace, type Span } from '@opentelemetry/api';
 
 import { getCsrfToken, refreshCsrfToken, shouldAttachCsrfHeader } from '@/libs/security';
 import type { AuthHeaders } from '@/libs/auth/auth-headers';
+import { generateRequestId } from './request-id';
+import { pushTraceNotice } from '@/observability/traceNotifications';
+import { updateTraceContext } from '@/observability/traceContext';
 
 type AuthHeaderProvider = () => AuthHeaders | null | Promise<AuthHeaders | null>;
 
@@ -35,6 +39,10 @@ declare module 'axios' {
     metadata?: {
       startTime?: number;
       retryCount?: number;
+      rootSpan?: Span;
+      attemptSpan?: Span;
+      traceparent?: string;
+      requestId?: string;
     };
   }
 }
@@ -43,6 +51,17 @@ const baseURL = import.meta.env.VITE_API_BASE_URL ?? '/api';
 const timeout = Number.parseInt(import.meta.env.VITE_HTTP_TIMEOUT_MS ?? '10000', 10);
 const maxRetries = Number.parseInt(import.meta.env.VITE_HTTP_MAX_RETRIES ?? '1', 10);
 const auditExclusionPattern = /\/audit\/logs$/;
+const shouldLogBaseUrl = (import.meta.env.VITE_HTTP_LOG_BASEURL ?? 'true').toLowerCase() !== 'false';
+
+const tracer = trace.getTracer('open-dolphin-web-client');
+
+const endSpanSafely = (span?: Span | null, status?: SpanStatusCode, message?: string) => {
+  if (!span) return;
+  if (status) {
+    span.setStatus({ code: status, message });
+  }
+  span.end();
+};
 
 export const httpClient = axios.create({
   baseURL,
@@ -77,6 +96,36 @@ httpClient.interceptors.request.use(async (config) => {
     mergedHeaders.set(existingHeaders);
   }
 
+  const parentSpan = config.metadata.rootSpan ?? tracer.startSpan(`HTTP ${config.method?.toUpperCase() ?? 'GET'}`, {
+    attributes: {
+      'http.method': config.method?.toUpperCase(),
+      'http.url': config.url ?? baseURL,
+    },
+  });
+  config.metadata.rootSpan = parentSpan;
+
+  const requestContext = trace.setSpan(context.active(), parentSpan);
+  const attemptSpan = tracer.startSpan('http.request.attempt', {
+    attributes: {
+      'http.method': config.method?.toUpperCase(),
+      'http.url': config.url ?? baseURL,
+      'http.retry_count': config.metadata.retryCount ?? 0,
+    },
+  }, requestContext);
+  config.metadata.attemptSpan = attemptSpan;
+
+  const spanContext = attemptSpan.spanContext();
+  const traceparent = `00-${spanContext.traceId}-${spanContext.spanId}-01`;
+  config.metadata.traceparent = traceparent;
+
+  const requestId = config.metadata.requestId ?? generateRequestId();
+  config.metadata.requestId = requestId;
+
+  mergedHeaders.set({
+    traceparent,
+    'x-request-id': requestId,
+  });
+
   if (shouldAttachCsrfHeader(config.method)) {
     const token = getCsrfToken();
     if (token) {
@@ -87,8 +136,16 @@ httpClient.interceptors.request.use(async (config) => {
   config.headers = mergedHeaders;
 
   if (import.meta.env.DEV) {
-    console.debug(`[HTTP] ${config.method?.toUpperCase() ?? 'GET'} ${config.url}`, config);
+    const debugConfig = shouldLogBaseUrl ? config : { ...config, baseURL: '[redacted]' };
+    console.debug(`[HTTP] ${config.method?.toUpperCase() ?? 'GET'} ${config.url}`, debugConfig);
   }
+
+  updateTraceContext({
+    traceId: spanContext.traceId,
+    spanId: spanContext.spanId,
+    requestId,
+    source: 'http-request',
+  });
 
   if (!auditExclusionPattern.test(config.url ?? '')) {
     auditLogger?.({
@@ -140,6 +197,17 @@ httpClient.interceptors.response.use(
         });
       }
     }
+
+    if (response.config.metadata?.attemptSpan) {
+      response.config.metadata.attemptSpan.setAttribute('http.status_code', response.status);
+      endSpanSafely(response.config.metadata.attemptSpan, SpanStatusCode.OK);
+    }
+    if (response.config.metadata?.rootSpan) {
+      response.config.metadata.rootSpan.setAttribute('http.status_code', response.status);
+      response.config.metadata.rootSpan.setAttribute('http.retry_count', response.config.metadata.retryCount ?? 0);
+      endSpanSafely(response.config.metadata.rootSpan, SpanStatusCode.OK);
+    }
+
     return response;
   },
   async (error) => {
@@ -150,6 +218,17 @@ httpClient.interceptors.response.use(
           : undefined;
         if (error.response?.status === 419 || error.response?.headers?.['x-csrf-refresh'] === 'required') {
           refreshCsrfToken();
+        }
+        if (error.config.metadata?.attemptSpan) {
+          error.config.metadata.attemptSpan.setAttribute('http.status_code', error.response?.status ?? 0);
+          error.config.metadata.attemptSpan.recordException(error);
+          endSpanSafely(error.config.metadata.attemptSpan, SpanStatusCode.ERROR, error.message);
+        }
+        if (error.config.metadata?.rootSpan) {
+          error.config.metadata.rootSpan.setAttribute('http.status_code', error.response?.status ?? 0);
+          error.config.metadata.rootSpan.recordException(error);
+          error.config.metadata.rootSpan.setAttribute('http.retry_count', error.config.metadata.retryCount ?? 0);
+          endSpanSafely(error.config.metadata.rootSpan, SpanStatusCode.ERROR, error.message);
         }
         if (!auditExclusionPattern.test(error.config.url ?? '')) {
           auditLogger?.({
@@ -162,6 +241,22 @@ httpClient.interceptors.response.use(
             error,
           });
         }
+
+        const traceId = error.config.metadata?.attemptSpan?.spanContext().traceId
+          ?? error.config.metadata?.rootSpan?.spanContext().traceId;
+        updateTraceContext({
+          traceId,
+          requestId: error.config.metadata?.requestId,
+          source: 'http-request',
+        });
+        pushTraceNotice({
+          severity: 'error',
+          message: error.response?.data?.message ?? 'サーバーでエラーが発生しました。時間をおいて再試行してください。',
+          statusCode: error.response?.status,
+          url: error.config.url,
+          traceId,
+          requestId: error.config.metadata?.requestId,
+        });
       }
       return Promise.reject(error);
     }
@@ -173,6 +268,12 @@ httpClient.interceptors.response.use(
     const elapsed = config.metadata.startTime ? Date.now() - config.metadata.startTime : undefined;
     if (error.response?.status === 419 || error.response?.headers?.['x-csrf-refresh'] === 'required') {
       refreshCsrfToken();
+    }
+
+    if (config.metadata.attemptSpan) {
+      config.metadata.attemptSpan.setAttribute('http.status_code', error.response?.status ?? 0);
+      config.metadata.attemptSpan.recordException(error);
+      endSpanSafely(config.metadata.attemptSpan, SpanStatusCode.ERROR, error.message);
     }
 
     if (!auditExclusionPattern.test(config.url ?? '')) {
@@ -188,10 +289,33 @@ httpClient.interceptors.response.use(
     }
 
     if (retryCount >= maxRetries) {
+      if (config.metadata.rootSpan) {
+        config.metadata.rootSpan.recordException(error);
+        config.metadata.rootSpan.setAttribute('http.retry_count', retryCount);
+        config.metadata.rootSpan.setAttribute('http.status_code', error.response?.status ?? 0);
+        endSpanSafely(config.metadata.rootSpan, SpanStatusCode.ERROR, error.message);
+      }
+      const traceId = config.metadata.attemptSpan?.spanContext().traceId
+        ?? config.metadata.rootSpan?.spanContext().traceId;
+      updateTraceContext({
+        traceId,
+        requestId: config.metadata.requestId,
+        source: 'http-request',
+      });
+      pushTraceNotice({
+        severity: 'error',
+        message: error.response?.data?.message ?? '再試行後も応答が得られませんでした。',
+        statusCode: error.response?.status,
+        url: config.url,
+        traceId,
+        requestId: config.metadata.requestId,
+      });
       return Promise.reject(error);
     }
 
     config.metadata.retryCount = retryCount + 1;
+    config.metadata.startTime = Date.now();
+    config.metadata.traceparent = undefined;
 
     const backoff = Math.min(1000 * 2 ** retryCount, 4000);
     await new Promise((resolve) => setTimeout(resolve, backoff));

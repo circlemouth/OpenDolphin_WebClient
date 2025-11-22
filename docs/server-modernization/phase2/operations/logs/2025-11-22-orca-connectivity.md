@@ -28,3 +28,17 @@
 ## Next Steps
 - Update `receipt_route.ini` on the target server (`100.102.17.40`) to enable POST for `orca11`, `orca14`, etc.
 - Continue using this server as the standard connection target as requested.
+
+## Analysis vs Official Documentation (2025-11-22)
+The user provided the official "ORCA API 予約 (appointmodv2)" documentation.
+- **Official Spec**:
+  - Method: `POST`
+  - URL: `/orca14/appointmodv2?class=01`
+  - Content-Type: `application/xml`
+- **Current Request**:
+  - We are sending exactly this: `POST /orca14/appointmodv2?class=01` with `Content-Type: application/xml`.
+- **Discrepancy**:
+  - The server returns `405 Method Not Allowed` (Allow: OPTIONS, GET).
+  - This confirms the issue is **server-side configuration**, specifically the `receipt_route.ini` (or `jma-receipt.conf`) restricting allowed methods for these API groups.
+  - The documentation proves that `POST` is the correct and intended method for this endpoint.
+
