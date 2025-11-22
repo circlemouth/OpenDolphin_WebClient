@@ -70,6 +70,9 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 3. 実装タスクは `process/` 配下の計画ドキュメント（フェーズ別ロードマップ/差分チェックリスト/API ギャップ分析）に従って進める。
 4. UI/UX 検討時は `ux/` ディレクトリ、機能仕様は `features/`・`guides/` を参照し、更新時は本 README にも反映する。
 
+## Vite Stage 起動（Vite 6.4 以降）
+- Vite 6.4 以降は `npm run dev:stage --https` が非対応。Stage 向け開発サーバーは `VITE_API_BASE_URL= VITE_DISABLE_MSW=1 npx vite --host --mode stage --port 4173 --clearScreen false` を使用し、MSW/Service Worker を無効化して実サーバー接続する。
+
 ## DocumentTimeline 安定化と開発モック手順（2025-11-01 追記、担当: Codex）
 - `ux/CHART_UI_GUIDE_INDEX.md` / `ux/ONE_SCREEN_LAYOUT_GUIDE.md` / `ux/KARTE_SCREEN_IMPLEMENTATION.md` に、カテゴリ切替時のイベント再選択・詳細パネルの同期・エラートーン（情報/警告/危険/中立）を明文化。カルテ左レールの DocumentTimeline 改修時はこれらの要件に従う。
 - Web クライアント開発では、Vite 開発サーバー起動時に MSW が自動登録され、Charts Page 用の `/api/karte/docinfo/*` `/api/pvt2/pvtList` `/api/chartEvent/*` をモックする。詳細手順は `web-client/README.md#開発モックmswとバックエンド切替` を参照。

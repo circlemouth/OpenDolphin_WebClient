@@ -42,6 +42,11 @@ cp .env.sample .env.local # 環境に応じて API エンドポイント等を�
 3. 以前にモックを起動していた場合は、ブラウザの DevTools → Application → Service Workers から `mockServiceWorker` を Unregister（もしくはコンソールで `navigator.serviceWorker.getRegistrations().then(regs => regs.forEach(reg => reg.unregister()))` を実行）。
 4. 接続先を切り替えたら、再度 `ChartsPage` のタイムラインが API レスポンスで更新されること、エラー時に実 API のメッセージが `InlineFeedback` に反映されることを確認。
 
+### Stage 接続手順
+1. `.env.stage.example` をコピーして `.env.stage` を作成し、Stage 用の `VITE_API_BASE_URL` / `VITE_AUDIT_ENDPOINT` / `VITE_HTTP_TIMEOUT_MS` / `VITE_HTTP_MAX_RETRIES` を入力する（MSW 無効化は `VITE_DISABLE_MSW=1` 既定）。
+2. `npm run dev:stage` を実行して HTTPS 開発サーバーを起動する（`--env-file .env.stage` で Stage 向け環境変数を読み込み、MSW を無効化）。
+3. ブラウザで https://localhost:4173 を開き、Stage API への疎通を確認する。自己署名証明書を受け入れる必要がある場合はブラウザで明示許可する。
+
 ### DocumentTimeline 安定化の確認ポイント
 - カテゴリトグルを切り替えても最新イベントが自動でフォーカスされ、詳細ペインと参照カルテが同期する。
 - 取得失敗時は API からのメッセージがそのまま赤背景で表示される（`resolveErrorMessage`）。網羅されていない例外はデフォルト文言「イベントの取得に失敗しました。」で通知。

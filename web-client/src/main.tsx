@@ -4,16 +4,24 @@ import { createRoot } from 'react-dom/client';
 import { App } from '@/app/App';
 import { initializeAuditTrail } from '@/libs/audit';
 import { initializeSecurityPolicies } from '@/libs/security';
+import { initializeOtel } from '@/observability/otelClient';
 
-const enableMocking = async () => {
+const isTruthyEnvFlag = (value: string | undefined) => value === '1' || value?.toLowerCase() === 'true';
+
+const enableMocking = async (): Promise<boolean> => {
   if (!import.meta.env.DEV) {
-    return;
+    return false;
+  }
+
+  if (isTruthyEnvFlag(import.meta.env.VITE_DISABLE_MSW)) {
+    console.info('[MSW] 環境変数によりモックを無効化します。');
+    return false;
   }
 
   const supportsServiceWorker = typeof window !== 'undefined' && 'serviceWorker' in navigator;
   if (!supportsServiceWorker) {
     console.info('[MSW] このブラウザは Service Worker に未対応のためモックを無効化します。');
-    return;
+    return false;
   }
 
   const hostname = window.location.hostname;
@@ -22,7 +30,7 @@ const enableMocking = async () => {
 
   if (!window.isSecureContext && !isHttpLocalhost) {
     console.info('[MSW] 非セキュアコンテキストのためモックを無効化します。');
-    return;
+    return false;
   }
 
   try {
@@ -35,25 +43,28 @@ const enableMocking = async () => {
       },
     });
     console.info('[MSW] 開発用モックを有効化しました。');
+    return true;
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     if (/SSL certificate error/i.test(message)) {
       console.warn('[MSW] セルフサイン証明書の検証に失敗したためモックを無効化しました。');
-      return;
+      return false;
     }
     console.error('[MSW] モックの初期化に失敗しました。', error);
+    return false;
   }
 };
 
 const bootstrap = async () => {
+  initializeOtel();
   initializeSecurityPolicies();
   initializeAuditTrail();
 
-  await enableMocking();
+  const mswEnabled = await enableMocking();
 
   createRoot(document.getElementById('root')!).render(
     <StrictMode>
-      <App />
+      <App mswEnabled={mswEnabled} />
     </StrictMode>,
   );
 };
