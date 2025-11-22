@@ -63,4 +63,6 @@
 - Python 禁止のため自動化は shell/curl/既存 ops ツールに限定する。
 
 ## 進捗メモ（RUN_ID=20251120T131731Z）
-- 着手準備完了。ログ雛形と証跡パスを確保済み。自動化シナリオ設計と CRUD 実測を次ステップで実施する。
+- 完了 (2025-11-22): 結合テスト実施完了。
+- 実施ログ: `docs/server-modernization/phase2/operations/logs/20251122T132337Z-orca-connectivity.md`
+- 結果: 主要ドメイン (受付/予約/診療/患者) の CRUD 成功 (HTTP 200)。制約事項は `ORCA_API_STATUS.md` に反映済み。
