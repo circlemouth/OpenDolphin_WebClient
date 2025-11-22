@@ -1,6 +1,6 @@
 # ORCA HTTP 404/405 トリアージ ワーカーハンドブック
 
-> 2025-11-19 更新: 404/405 調査と CRUD 実測は **WebORCA トライアルサーバー**（`https://weborca-trial.orca.med.or.jp/`）＋ Basic 認証 `trial/weborcatrial` を前提とする。旧ローカル／weborca.cloud.orcamo.jp／`curl --cert-type P12` の手順はアーカイブ済み。
+> 2025-11-19 更新: 404/405 調査と CRUD 実測は **開発用 ORCA サーバー**（`mac-dev-login.local.md` 参照）＋ 同ファイル記載の Basic 認証を前提とする。旧ローカル／weborca.cloud.orcamo.jp／`curl --cert-type P12` の手順はアーカイブ済み。
 
 ## 0. 参照資料とプレースホルダ
 - 公式仕様: `docs/server-modernization/phase2/operations/assets/orca-api-spec/manifest.json` および `raw/*.md`（例: [`patientget`](../assets/orca-api-spec/raw/patientget.md)、[`appointmod`](../assets/orca-api-spec/raw/appointmod.md)、[`medicalmod`](../assets/orca-api-spec/raw/medicalmod.md)、[`acceptmod`](../assets/orca-api-spec/raw/acceptmod.md)）。
@@ -21,17 +21,17 @@
 ### 1.1 再疎通前提（RUN_ID 引用）
 | 前提 | 内容 | RUN_ID / 証跡 |
 | --- | --- | --- |
-| Basic 認証と TLS | `curl -u trial:weborcatrial` の単独認証で疎通する。`openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` と `curl -u trial:weborcatrial 'https://weborca-trial.orca.med.or.jp/api/system01dailyv2?class=01'` を実行し、`artifacts/orca-connectivity/<RUN_ID>/tls/openssl_s_client_<UTC>.log` と `httpdump/system01dailyv2/` を保存する。 | `RUN_ID=20251119TorcaHttpLogZ1`（予定） |
+| Basic 認証と TLS | `curl -u user:pass` の単独認証で疎通する。`openssl s_client -connect <HOST>:<PORT> -servername <HOST>` と `curl -u user:pass '<URL>/api/system01dailyv2?class=01'` を実行し、`artifacts/orca-connectivity/<RUN_ID>/tls/openssl_s_client_<UTC>.log` と `httpdump/system01dailyv2/` を保存する。 | `RUN_ID=20251119TorcaHttpLogZ1`（予定） |
 | Trial CRUD データ管理 | 追加した患者/受付/予約/入院情報は Trial UI で確認し、`docs/server-modernization/phase2/operations/logs/2025-11-19-orca-trial-crud.md` へ「新規登録／更新／削除 OK（Trial 限定）」のログを残す。`assets/seeds/*.sql` は参考アーカイブであり、実データ投入は行わない。 | `RUN_ID=20251119TorcaTrialCrudZ#`（所在: `artifacts/.../trial/`） |
-| 接続先 | 404/405 調査も CRUD も `https://weborca-trial.orca.med.or.jp` を唯一の接続先とする。`API_PATH` の前に `/api` or `/orcaXX` を付け忘れない。Evidence は `artifacts/orca-connectivity/<RUN_ID>/httpdump/` に集約する。 | Trial 切替メモ: `docs/web-client/planning/phase2/DOC_STATUS.md` ORCA 行 |
-| DNS 可用性 | `nslookup weborca-trial.orca.med.or.jp` で名前解決できることを確認し、WSL2 などでは `/etc/resolv.conf` を固定する。ログは `artifacts/.../dns/` へ保存し、`curl: (6)` の際は DNS 設定を報告する。 | 例: `artifacts/orca-connectivity/20251119TorcaHttpLogZ1/dns/nslookup.log` |
+| 接続先 | 404/405 調査も CRUD も `mac-dev-login.local.md` 記載の URL を唯一の接続先とする。`API_PATH` の前に `/api` or `/orcaXX` を付け忘れない。Evidence は `artifacts/orca-connectivity/<RUN_ID>/httpdump/` に集約する。 | Trial 切替メモ: `docs/web-client/planning/phase2/DOC_STATUS.md` ORCA 行 |
+| DNS 可用性 | `nslookup <HOST>` で名前解決できることを確認し、WSL2 などでは `/etc/resolv.conf` を固定する。ログは `artifacts/.../dns/` へ保存し、`curl: (6)` の際は DNS 設定を報告する。 | 例: `artifacts/orca-connectivity/20251119TorcaHttpLogZ1/dns/nslookup.log` |
 | CRUD ログ連携 | Trial CRUD を実施した RUN_ID は `ORCA_API_STATUS.md`、`PHASE2_PROGRESS.md`、`docs/web-client/planning/phase2/DOC_STATUS.md` の ORCA 節にも反映する。Evidence パスは `docs/server-modernization/phase2/operations/logs/2025-11-19-orca-trial-crud.md` から辿れるようにする。 | `RUN_ID=20251119TorcaTrialCrudZ#` |
 
 ## 2. 標準取得コマンド
 1. **openssl s_client**  
    ```bash
-   openssl s_client -connect weborca-trial.orca.med.or.jp:443 \
-     -servername weborca-trial.orca.med.or.jp \
+   openssl s_client -connect <HOST>:<PORT> \
+     -servername <HOST> \
      > "${EVIDENCE_ROOT}/tls/openssl_s_client_${UTC_TAG}.log" 2>&1
    ```
 2. **curl -v (リクエスト/レスポンス)**  
@@ -41,7 +41,7 @@
         -H 'Accept: application/json' \
         -H 'Content-Type: application/json; charset=Shift_JIS' \
         -X POST --data-binary '@/tmp/orca_request.json' \
-        "https://weborca-trial.orca.med.or.jp${API_PATH}" \
+        "<URL>${API_PATH}" \
         > "${EVIDENCE_ROOT}/httpdump/${API_SLUG}/response.http" 2> \
         "${EVIDENCE_ROOT}/httpdump/${API_SLUG}/request.http"
    ```

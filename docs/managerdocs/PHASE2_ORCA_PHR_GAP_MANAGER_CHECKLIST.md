@@ -37,16 +37,16 @@
   - [x] `MODERNIZED_REST_API_INVENTORY.md` PHR 欄に `assets/orca-trialsite` 参照箇所を明示。
   - [x] `DOC_STATUS.md` W22 行へ Task-A 完了メモと Trial 対応済を記録。
 - [x] **Task-B: PHR-EXPORT-TRACK 基準の PHR 実装の計画)** 完了 (2025-11-14 / RUN_ID=20251114TphrPlanZ1)。Trial CRUD 方針と RUN_ID 命名を `PHR_RESTEASY_IMPLEMENTATION_PLAN.md` に反映し、Export Track の Blocker をトライアル観点で整理。
-  - [x] フェーズ別シーケンス表へ `curl -u trial:weborcatrial` コマンド例とログ採取欄を追加。
+  - [x] フェーズ別シーケンス表へ `curl -u user:pass` コマンド例とログ採取欄を追加。
   - [x] `API_PARITY_MATRIX.md` PHR 行に Trial 方針／RUN_ID 名を追記。
   - [x] `DOC_STATUS.md` W22 行と `logs/2025-11-14-phr-plan.md` に CRUD ログ要件を記録。
 - [x] **Task-C: ORCA 週次向け PHR 証跡テンプレート整備)** 完了 (2025-11-14 / RUN_ID=20251114TphrEvidenceZ1)。テンプレート内のコマンド例と証跡格納ルールを Trial 仕様へ改訂。
-  - [x] `ORCA_CONNECTIVITY_VALIDATION.md` §4.3.2/§4.4 に `curl -u trial:weborcatrial ...` 雛形と CRUD ログ欄を追加。
+  - [x] `ORCA_CONNECTIVITY_VALIDATION.md` §4.3.2/§4.4 に `curl -u user:pass ...` 雛形と CRUD ログ欄を追加。
   - [x] `artifacts/orca-connectivity/template/phr-seq/README.md` を Trial ファイル構成に更新。
   - [x] `docs/server-modernization/phase2/operations/logs/2025-11-14-phr-evidence-template.md` へ Trial 対応メモを追記。
 - [x] **Task-D: PHR Phase-A/B Trial 実測証跡取得)** 完了 (2025-11-19 / RUN_ID=20251121TrialPHRSeqZ1-A/B, log=`operations/logs/20251119T234211Z-phr-gap-close.md`)。Trial 環境の `/20/adm/phr/*` が未開放で HTTP404/405 (Blocker=`TrialEndpointMissing`) を Evidence として確定し、Modernized REST 経路の 200/403 実装待ちでクローズ。
   - [x] RUN_ID 発行と `scripts/orca_prepare_next_run.sh` 実行でテンプレート初期化 (`artifacts/orca-connectivity/20251121TrialPHRSeqZ1/README.md`, `crud/PHR_PHASE_AB/`, `logs/curl_summary.log`)。
-  - [x] `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/phaseA` などを実行し、HTTP404/405 (`{"Code":404/405,...}`) と placeholder スクリーンショットを `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/crud/PHR_PHASE_AB/` へ保存。未提供機能は `trialsite.md` Snapshot 行2-7 を引用し Blocker=`TrialEndpointMissing` としてログ化。
+  - [x] `curl -u user:pass <URL>/20/adm/phr/phaseA` などを実行し、HTTP404/405 (`{"Code":404/405,...}`) と placeholder スクリーンショットを `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/crud/PHR_PHASE_AB/` へ保存。未提供機能は `trialsite.md` Snapshot 行2-7 を引用し Blocker=`TrialEndpointMissing` としてログ化。
   - [x] `DOC_STATUS.md` W22 行と `PHASE2_PROGRESS.md` に Phase-A/B Trial 実測結果と Blocker を反映。
   - [x] Final validation (Production/ORMaster): ORMaster 切替は未実施だが Blocker を記録し `operations/logs/20251119T234211Z-phr-gap-close.md` に移管。ORMaster 開放後の再測は親 RUN 派生で対応。
 - [x] **Task-E: Secrets/Context 検証** 完了 (2025-11-19 / RUN_ID=20251121TrialPHRSeqZ1-CTX, log=`operations/logs/20251119T234211Z-phr-gap-close.md`)。Trial は BASIC のみで CRUD 200 を確認し、Secrets fail-fast は `persistence.xml` 未登録による `UnknownEntityException` を Blocker として記録、後続は Modernized 側修正待ちでクローズ。
@@ -56,7 +56,7 @@
   - [x] `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` と `2025-11-21-phr-seq-trial.md#4-task-e-secretscontext-再検証-run_id20251121trialphrseqz1-ctx` へ結果と Blocker を追記。
 - [x] **Task-F: PHR Phase-C/D/E Trial 実測証跡取得)** 完了 (2025-11-19 / RUN_ID=20251121TrialPHRSeqZ1-CDE, log=`operations/logs/20251119T234211Z-phr-gap-close.md`)。Trial は PHR06=405, PHR07/11=404（Blocker=`TrialLocalOnly`）を確認し、Modernized 200/403 実装を別 RUN で保持したままクローズ。
   - [x] RUN_ID テンプレート展開、`artifacts/orca-connectivity/20251121TrialPHRSeqZ1/{crud/httpdump/trace}` を生成。
-  - [x] `curl -u trial:weborcatrial https://weborca-trial.orca.med.or.jp/20/adm/phr/phr06` などを実行し、レスポンスと UI 反映を記録。未サポートの場合は `trialsite.md#limit` 引用の対応案をログ化。
+  - [x] `curl -u user:pass <URL>/20/adm/phr/phr06` などを実行し、レスポンスと UI 反映を記録。未サポートの場合は `trialsite.md#limit` 引用の対応案をログ化。
   - [x] `PHASE2_PROGRESS.md` / `DOC_STATUS.md` W22 行へ Trial 実測状況と CRUD ログのパスを同期。
   - [x] Final validation (Production/ORMaster): ORMaster 接続は未実施のまま Blocker 記録し、再測要件を `operations/logs/20251119T234211Z-phr-gap-close.md` に移管。
 - [x] **Task-G: PHRContainer DTO & Fallback テストレビュー** 完了 (RUN_ID=20251121TtaskGImplZ1)。DTO 注釈のフォールバック・監査ログ要件を Trial CRUD 方針に合わせて更新。

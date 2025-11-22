@@ -3,7 +3,7 @@
 ## 0. 参照チェーンと前提
 - 本メモは `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各 ORCA マネージャーチェックリストの順で確認した上で、Legacy サーバー実装（`server/src/main/java`）を調査した結果を整理している。RUN_ID は `20251116T101200Z` で固定し、追加ログや証跡が発生する場合も同じ ID を使う。
 - 調査対象は Web クライアントが呼び出す旧サーバー REST（`open.dolphin.rest.*`）と ORCA ラッパー（`open.orca.rest.OrcaResource`）。Legacy サーバー／クライアント資産は参照専用であり、ソースコードの読み取りのみ実施した。
-- ORCA 連携は `custom.properties` の `claim.conn=server` を前提としたサーバー直結モードを分析した。トライアル接続は `https://weborca-trial.orca.med.or.jp/`（`trial/weborcatrial`）のみ許可されているため、本メモでも他環境は扱わない。
+- ORCA 連携は `custom.properties` の `claim.conn=server` を前提としたサーバー直結モードを分析した。接続は開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）のみ許可されているため、本メモでも他環境は扱わない。
 
 ## 1. 接続構成（custom.properties / ORCAConnection）
 - `open.orca.rest.OrcaResource` は起動時に `custom.properties` を読み、JMARI・`rp.default.inout`・`claim.conn` に応じて ORCA 病院番号（`tbl_syskanri` 1001）と DB バージョン（`tbl_dbkanri` ORCADB00）を取得して以降の ORCA DB クエリに使う。`claim.conn=client` の場合は ORCA DB との直結を中断する設計。`server/src/main/java/open/orca/rest/OrcaResource.java:96`。

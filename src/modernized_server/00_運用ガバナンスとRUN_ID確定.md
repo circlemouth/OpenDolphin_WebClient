@@ -15,7 +15,7 @@
 - `server/` 配下およびサーバースクリプトの変更は禁止。
 - Legacy 資産（`client/`, `common/`, `ext_lib/`）は参照のみ。更新不可。
 - Python スクリプトの実行は禁止（明示指示がある場合のみ例外）。
-- ORCA 接続先は WebORCA トライアル `https://weborca-trial.orca.med.or.jp/`（BASIC 認証 `trial` / `weborcatrial`）のみ。`curl --cert-type P12` や本番証明書の使用禁止。
+- ORCA 接続先は開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）のみ。`curl --cert-type P12` や本番証明書の使用禁止。
 
 ## 3. DOC_STATUS 棚卸し計画
 - 実施予定: 2025-11-20T15:00Z（JST=11/21 00:00）／リカバリー枠: 2025-11-20T23:00Z。

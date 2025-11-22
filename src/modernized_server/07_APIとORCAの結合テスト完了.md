@@ -16,7 +16,7 @@
 ## 禁止事項 / 前提
 - `server/` 配下やサーバースクリプトの変更は禁止。Legacy 資産（`client/`, `common/`, `ext_lib/`）は参照のみ。
 - Python スクリプト実行は禁止（明示指示がある場合のみ例外）。自動化は `curl` / shell のみで行う。
-- ORCA 接続は WebORCA トライアル `https://weborca-trial.orca.med.or.jp/`（BASIC=`trial`/`weborcatrial`）に限定。P12 証明書や本番経路、ローカル ORCA コンテナ、`curl --cert-type P12` は使用しない。
+- ORCA 接続は開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）に限定。P12 証明書や本番経路、ローカル ORCA コンテナ、`curl --cert-type P12` は使用しない。
 - RUN_ID は `20251120T131731Z` で統一し、ログ・証跡・DOC_STATUS・報告草案で同一値を使う。
 
 ## ゴール

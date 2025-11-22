@@ -1,0 +1,78 @@
+== Info:   Trying 100.102.17.40:8000...
+== Info: Connected to 100.102.17.40 (100.102.17.40) port 8000
+== Info: Server auth using Basic with user 'ormaster'
+=> Send header, 224 bytes (0xe0)
+0000: POST /api01rv2/system01lstv2?class=06 HTTP/1.1
+0030: Host: 100.102.17.40:8000
+004a: Authorization: Basic b3JtYXN0ZXI6Y2hhbmdlX21l
+0079: User-Agent: curl/8.5.0
+0091: Accept: application/xml
+00aa: Content-Type: application/xml
+00c9: Content-Length: 221
+00de: 
+=> Send data, 221 bytes (0xdd)
+0000: <?xml version="1.0" encoding="UTF-8"?>.<data>.  <system01_manage
+0040: req type="record">.    <Request_Number type="string">06</Request
+0080: _Number>.    <Base_Date type="string">2025-11-22</Base_Date>.  <
+00c0: /system01_managereq>.</data>.
+<= Recv header, 17 bytes (0x11)
+0000: HTTP/1.1 200 OK
+<= Recv header, 46 bytes (0x2e)
+0000: Content-Type: application/xml; charset=UTF-8
+<= Recv header, 22 bytes (0x16)
+0000: X-Hybridmode: normal
+<= Recv header, 37 bytes (0x25)
+0000: Date: Sat, 22 Nov 2025 05:16:20 GMT
+<= Recv header, 28 bytes (0x1c)
+0000: Transfer-Encoding: chunked
+<= Recv header, 2 bytes (0x2)
+0000: 
+<= Recv data, 2048 bytes (0x800)
+0000: <?xml version="1.0" encoding="UTF-8"?>.<xmlio2>.<medicalinfres t
+0040: ype="record">.<Information_Date type="string">2025-11-22</Inform
+0080: ation_Date>.<Information_Time type="string">14:16:20</Informatio
+00c0: n_Time>.<Api_Result type="string">00</Api_Result>.<Api_Result_Me
+0100: ssage type="string">............</Api_Result_Message>.<Reskey ty
+0140: pe="string">Patient Info</Reskey>.<Base_Date type="string">2025-
+0180: 11-22</Base_Date>.<Medicalinf_Information type="array">.<Medical
+01c0: inf_Information_child type="record">.<Medical_Information type="
+0200: string">01</Medical_Information>.<Medical_Information_Name type=
+0240: "string">......</Medical_Information_Name>.<Medical_Information_
+0280: Name2 type="string">.........</Medical_Information_Name2>.</Medi
+02c0: calinf_Information_child>.<Medicalinf_Information_child type="re
+0300: cord">.<Medical_Information type="string">02</Medical_Informatio
+0340: n>.<Medical_Information_Name type="string">.........</Medical_In
+0380: formation_Name>.<Medical_Information_Name2 type="string">.......
+03c0: ..</Medical_Information_Name2>.</Medicalinf_Information_child>.<
+0400: Medicalinf_Information_child type="record">.<Medical_Information
+0440:  type="string">03</Medical_Information>.<Medical_Information_Nam
+0480: e type="string">............</Medical_Information_Name>.<Medical
+04c0: _Information_Name2 type="string">.........</Medical_Information_
+0500: Name2>.</Medicalinf_Information_child>.<Medicalinf_Information_c
+0540: hild type="record">.<Medical_Information type="string">04</Medic
+0580: al_Information>.<Medical_Information_Name type="string">........
+05c0: ....</Medical_Information_Name>.<Medical_Information_Name2 type=
+0600: "string">......</Medical_Information_Name2>.</Medicalinf_Informa
+0640: tion_child>.<Medicalinf_Information_child type="record">.<Medica
+0680: l_Information type="string">05</Medical_Information>.<Medical_In
+06c0: formation_Name type="string">...........................</Medica
+0700: l_Information_Name>.<Medical_Information_Name2 type="string">...
+0740: .........</Medical_Information_Name2>.</Medicalinf_Information_c
+0780: hild>.<Medicalinf_Information_child type="record">.<Medical_Info
+07c0: rmation type="string">06</Medical_Information>.<Medical_Informat
+<= Recv data, 833 bytes (0x341)
+0000: ion_Name type="string">............</Medical_Information_Name>.<
+0040: Medical_Information_Name2 type="string">............</Medical_In
+0080: formation_Name2>.</Medicalinf_Information_child>.<Medicalinf_Inf
+00c0: ormation_child type="record">.<Medical_Information type="string"
+0100: >07</Medical_Information>.<Medical_Information_Name type="string
+0140: ">............</Medical_Information_Name>.<Medical_Information_N
+0180: ame2 type="string">............</Medical_Information_Name2>.</Me
+01c0: dicalinf_Information_child>.<Medicalinf_Information_child type="
+0200: record">.<Medical_Information type="string">99</Medical_Informat
+0240: ion>.<Medical_Information_Name type="string">............</Medic
+0280: al_Information_Name>.<Medical_Information_Name2 type="string">..
+02c0: ................</Medical_Information_Name2>.</Medicalinf_Inform
+0300: ation_child>.</Medicalinf_Information>.</medicalinfres>.</xmlio2
+0340: >
+== Info: Connection #0 to host 100.102.17.40 left intact

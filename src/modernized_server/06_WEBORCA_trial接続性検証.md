@@ -16,16 +16,16 @@
 ## 禁止事項 / 前提
 - `server/` 配下やサーバースクリプトを変更しない。Legacy 資産（`client/` `common/` `ext_lib/`）は参照のみ。
 - Python スクリプトは実行禁止（明示指示がある場合のみ例外）。
-- ORCA 接続は WebORCA トライアル `https://weborca-trial.orca.med.or.jp/`（BASIC=`trial`/`weborcatrial`）のみ。P12 証明書・本番証明書・ローカル ORCA コンテナ・`curl --cert-type P12` は使用しない。
+- ORCA 接続は `docs/web-client/operations/mac-dev-login.local.md` に記載された開発用 ORCA サーバーのみ。P12 証明書・本番証明書・ローカル ORCA コンテナ・`curl --cert-type P12` は使用しない。
 - RUN_ID は本メモ記載の `20251120T055301Z` に統一し、ログ・証跡・DOC_STATUS で同じ値を使う。
 
 ## ゴール
-- `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` に沿って、WebORCA トライアル環境で DNS/TLS/CRUD の疎通を再検証し、成功・失敗双方の再現手順を整理する。
+- `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` に沿って、開発用 ORCA 環境で DNS/TLS/CRUD の疎通を再検証し、成功・失敗双方の再現手順を整理する。
 - タイムアウト・リトライ・TLS 設定をパラメータ化し、HTTP 40x/5xx など失敗ケースを意図的に再現できる状態を確立する。
 - 取得した証跡を RUN_ID 付きでログ・アーティファクトへ保存し、DOC_STATUS とマネージャーチェックリストへ反映可能にする。
 
 ## スコープ / 非スコープ
-- スコープ: WebORCA トライアルでの DNS/TLS 事前確認、`curl -u trial:weborcatrial --data-binary @payloads/*.xml` による CRUD 実測、タイムアウト/リトライ/TLS オプションの検証、証跡ログ整備。
+- スコープ: 開発用 ORCA での DNS/TLS 事前確認、`curl -u user:pass --data-binary @payloads/*.xml` による CRUD 実測、タイムアウト/リトライ/TLS オプションの検証、証跡ログ整備。
 - 非スコープ: 本番 ORCA へのアクセス、サーバーコードや構成ファイルの変更、Legacy 資産の更新、Docker/WildFly の再構築。
 
 ## 期待アウトプット（DoD）
@@ -38,12 +38,12 @@
 ## タスク分解
 - **A. 事前確認と RUN_ID 共有**
   - 参照チェーンを再確認し、RUN_ID と証跡保存先をログ冒頭に記載。
-  - DNS/TLS 事前チェック: `nslookup weborca-trial.orca.med.or.jp` / `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を採取し `artifacts/.../{dns,tls}` へ保存。
+  - DNS/TLS 事前チェック: `nslookup <HOST>` / `openssl s_client -connect <HOST>:<PORT> -servername <HOST>` を採取し `artifacts/.../{dns,tls}` へ保存（接続先は `mac-dev-login.local.md` 参照）。
 - **B. タイムアウト/リトライ/TLS パラメータ設計**
   - `curl` の `--max-time`, `--connect-timeout`, `--retry`, `--retry-delay`, `--retry-all-errors`, `--ciphers` などを組み合わせ、成功/失敗を再現できるパラメータセットを設計。
   - セットごとの期待結果と実測結果を `logs/20251120T055301Z-orca-trial-connectivity.md` に表形式で記載。
 - **C. CRUD 実測（成功系 + 失敗系）**
-  - `ORCA_CONNECTIVITY_VALIDATION.md` の手順に従い、代表 API（例: `acceptlstv2`, `appointlstv2`, `medicalmodv2`, `acceptmodv2`, `appointmodv2`）を `curl -vv -u trial:weborcatrial --data-binary @payloads/<api>_trial.xml` で送信。
+  - `ORCA_CONNECTIVITY_VALIDATION.md` の手順に従い、代表 API（例: `acceptlstv2`, `appointlstv2`, `medicalmodv2`, `acceptmodv2`, `appointmodv2`）を `curl -vv -u user:pass --data-binary @payloads/<api>_trial.xml` で送信。
   - HTTP200/Api_Result 成功ケースと、シード不足や HTTP405 を含む失敗ケースの両方を取得し、レスポンス XML・ヘッダーを `artifacts/.../crud/<api>/` へ保存。
 - **D. 失敗再現手順と Blocker 整理**
   - タイムアウト/HTTP405/Api_Result=12/13/14 などの失敗を再現した手順を手順化し、リトライ条件と期待挙動を明記。

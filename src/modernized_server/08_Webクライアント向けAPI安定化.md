@@ -16,7 +16,7 @@
 ## 禁止事項 / 前提
 - `server/` 配下の変更は禁止。Legacy 資産（`client/` `common/` `ext_lib/`）は参照のみ。
 - Python スクリプトの実行は禁止（明示指示がある場合のみ例外）。
-- WebORCA 接続が必要な検証は `https://weborca-trial.orca.med.or.jp/`（BASIC=`trial` / `weborcatrial`）に限定し、P12 証明書・本番証明書・ローカル ORCA コンテナは使用しない。
+- WebORCA 接続が必要な検証は開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）に限定し、P12 証明書・本番証明書・ローカル ORCA コンテナは使用しない。
 - RUN_ID は本タスクの `20251120T191203Z` に統一し、ログ・証跡・DOC_STATUS へ同一値で記録する。
 - フロントエンド（Web クライアント）の UI 改修はスコープ外。互換レイヤーはモダナイズ版サーバー側で提供する。
 

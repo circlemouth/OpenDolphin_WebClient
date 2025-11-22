@@ -39,6 +39,7 @@
 3. **レスポンス形式**: 旧サーバー互換のため `application/octet-stream`／Shift_JIS CSV 等のコンテンツタイプは従来通り維持し、JSON のキー順序や日付フォーマットを変更しない。  
 4. **外部依存**: Claim 電文、ラボ連携、SMS などの外部システム向け出力は同じキュー/HTTP 先へ配送されるようルーティングを揃える。`external-integrations` 配下の手順に従う。  
 5. **監査証跡**: ログ、監査イベント、トレース ID を旧サーバーと同じ保管先（DB／ログ転送）へ送出する。Micrometer メトリクスは追加されても構わないが既存ログ出力を削除しない。
+6. **ID 体系**: 医師コード・患者番号などの桁数/体系は ORCA 設定に従う。8 桁患者番号を要求する場合は ORCA 側の管理連番設定変更が前提で、モダナイズ側は ORCA 付与値をそのまま採用する。
 
 ## 3. 設定手順
 
@@ -302,14 +303,14 @@
 ### 4.5 WebORCA トライアル接続（2025-11-15 更新）
 
 1. **接続先と資格情報**  
-   - 検証対象は `https://weborca-trial.orca.med.or.jp:443`。ローカル WebORCA コンテナや旧クラウドホスト向けルートはアーカイブ済み。  
-   - 認証は HTTP Basic `trial/weborcatrial` のみ。公式情報は `assets/orca-trialsite/raw/trialsite.md` を参照し、利用不可機能（CLAIM 送信・CSV 生成など）を把握してから作業する。  
+   - 検証対象は `docs/web-client/operations/mac-dev-login.local.md` に記載された開発用 ORCA サーバー。
+   - 認証は HTTP Basic のみ。公式情報は `assets/orca-trialsite/raw/trialsite.md` を参照し、利用不可機能（CLAIM 送信・CSV 生成など）を把握してから作業する。  
    - Evidence へコマンドを記録する際は `--user <MASKED>` などマスク表記を使い、生の資格情報は履歴に残さない。
 2. **ヘルスチェック**  
-   - `dig weborca-trial.orca.med.or.jp` と `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を実行し、結果を `artifacts/orca-connectivity/<RUN_ID>/dns/` と `tls/` に保存する。  
-   - `curl -u "trial:weborcatrial" -H 'Content-Type: application/json; charset=Shift_JIS' -X POST 'https://weborca-trial.orca.med.or.jp/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、`trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得する。
+   - `dig <HOST>` と `openssl s_client -connect <HOST>:<PORT> -servername <HOST>` を実行し、結果を `artifacts/orca-connectivity/<RUN_ID>/dns/` と `tls/` に保存する。  
+   - `curl -u "user:pass" -H 'Content-Type: application/json; charset=Shift_JIS' -X POST '<URL>/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、`trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得する（接続情報は `mac-dev-login.local.md` 参照）。
 3. **モダナイズ版サーバー設定**  
-   - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host=weborca-trial.orca.med.or.jp`, `claim.send.port=443`, `claim.scheme=https`, `claim.conn=server`, `claim.send.encoding=MS932` を確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に保存。  
+   - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.send.port`, `claim.scheme`, `claim.conn=server`, `claim.send.encoding=MS932` を確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に保存（値は `mac-dev-login.local.md` 参照）。  
    - CRUD を実行する場合は Runbook §4.3 を参照し、`artifacts/orca-connectivity/<RUN_ID>/data-check/` に before/after と操作理由を残す。
 4. **Evidence と報告**  
    - `trial/` ディレクトリ構成（例: `trial/appointmodv2/{request,response}.http`、`trace/appointmodv2.trace`、`screenshots/appoint_before.png`）を統一し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` からリンクする。  
