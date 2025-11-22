@@ -29,6 +29,8 @@ cat tmp/firecrawl_jma_trialsite.json \
 > Python/Perl は禁止されているため、`bash + curl + jq` のみで取得している。
 
 ## 公開内容サマリ（2025-11-14 時点）
+> **注意**: 本ドキュメントは参考情報です。実際の開発・検証接続先は `docs/web-client/operations/mac-dev-login.local.md` を参照してください。以下の接続情報はアーカイブとして残されていますが、使用しないでください。
+
 - **接続先・資格情報**: Chrome で `https://weborca-trial.orca.med.or.jp/` へアクセスし、ユーザー `trial` / パスワード `weborcatrial` を入力するとマスターメニューが開く。
 - **想定環境**: 1024×768 以上の解像度、Chrome ブラウザが必須。Windows 10/11 と macOS 11〜15 で動作確認済みと記載。
 - **データ取扱い注意**: サーバーは一般公開され、登録データは誰でも閲覧可能。管理者による定期全消去あり。実在患者/医療機関情報の入力は禁止。

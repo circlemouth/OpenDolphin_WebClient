@@ -14,7 +14,7 @@
 
 ## スコープ / 非スコープ
 - スコープ: モダナイズ版サーバーと Web クライアント間の REST 契約ドキュメント更新、OpenAPI 断片の整備、認可/セッション仕様とエラーコードの再整理。
-- 非スコープ: `server/` 配下やサーバースクリプトの改修、Legacy `client/` `common/` `ext_lib/` の更新、Python スクリプト実行、WebORCA トライアル (`https://weborca-trial.orca.med.or.jp/`, BASIC=`trial`/`weborcatrial`) 以外への接続。
+- 非スコープ: `server/` 配下やサーバースクリプトの改修、Legacy `client/` `common/` `ext_lib/` の更新、Python スクリプト実行、開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）以外への接続。
 
 ## ゴール
 - `MODERNIZED_API_DOCUMENTATION_GUIDE` に沿って REST 契約の最新状態を整理し、破壊的変更を排除した合意版を提示する。

@@ -24,7 +24,7 @@
 - Sprint2 設計情報は `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6 を一次情報として整備済み。
 - `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から上記節へアンカーされ、`DOC_STATUS.md` 行 25 にも Active 記録あり。
 - 現在のマネージャー指示は、ORCA ラッパー実装／Runbook 連携／進捗台帳の同期を確実にすることが目的。
-- 2025-11-20 時点では PHR Phase-C/D/E RUN_ID=`20251121TrialPHRSeqZ1` を WebORCA トライアルサーバー（`https://weborca-trial.orca.med.or.jp`, BASIC `trial/weborcatrial`）で再定義済。公式案内は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を参照し、「新規登録／更新／削除 OK（トライアル環境でのみ）」＋ CRUD ログ採取を前提とする。証跡は `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` / `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/` に集約されており、Sprint2 側でもタスクC（棚卸し）で `DOC_STATUS.md` W22 行との整合を確認する。
+- 2025-11-20 時点では PHR Phase-C/D/E RUN_ID=`20251121TrialPHRSeqZ1` を開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）で再定義済。公式案内は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を参照し、「新規登録／更新／削除 OK」＋ CRUD ログ採取を前提とする。証跡は `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` / `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/` に集約されており、Sprint2 側でもタスクC（棚卸し）で `DOC_STATUS.md` W22 行との整合を確認する。
 
 ## 2. 進行タスク一覧
 - [x] **タスクA: Sprint2 アンカー反映** — `API_PARITY_MATRIX.md` と `PHASE2_PROGRESS.md` の ORCA 行を Sprint2 設計アンカーへ差し替える。完了条件: 両ファイルから §6 各 API へ直接ジャンプでき、`DOC_STATUS.md` 備考に「アンカー更新済（2025-11-14）」追記。（完了: 2025-11-14 / RUN_ID=NA）

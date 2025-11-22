@@ -1,0 +1,109 @@
+== Info:   Trying 100.102.17.40:8000...
+== Info: Connected to 100.102.17.40 (100.102.17.40) port 8000
+== Info: Server auth using Basic with user 'ormaster'
+=> Send header, 225 bytes (0xe1)
+0000: POST /api/api21/medicalmodv2?class=01 HTTP/1.1
+0030: Host: 100.102.17.40:8000
+004a: Authorization: Basic b3JtYXN0ZXI6Y2hhbmdlX21l
+0079: User-Agent: curl/8.5.0
+0091: Accept: application/xml
+00aa: Content-Type: application/xml
+00c9: Content-Length: 2914
+00df: 
+=> Send data, 2914 bytes (0xb62)
+0000: <?xml version="1.0" encoding="UTF-8"?>.<!-- orca-meta:.path=/api
+0040: /api21/medicalmodv2.method=POST.query=class=01.content-type=appl
+0080: ication/xml; charset=UTF-8.-->.<data>.  <medicalreq>.    <Reques
+00c0: t_Number>01</Request_Number>.    <InOut>O</InOut>.    <Patient_I
+0100: D>00005</Patient_ID>.    <Perform_Date>2025-11-22</Perform_Date>
+0140: .    <Perform_Time>16:00:00</Perform_Time>.    <Medical_Uid></Me
+0180: dical_Uid>.    <Medical_Push>1</Medical_Push>.    <Patient_Infor
+01c0: mation type="record">.      <Patient_ID type="string">00005</Pat
+0200: ient_ID>.      <WholeName type="string">..................</Whol
+0240: eName>.      <WholeName_inKana type="string">...................
+0280: .....</WholeName_inKana>.      <BirthDate type="string">1980-01-
+02c0: 01</BirthDate>.      <Sex type="string">1</Sex>.    </Patient_In
+0300: formation>.    <Diagnosis_Information type="record">.      <Depa
+0340: rtment_Code type="string">01</Department_Code>.      <Physician_
+0380: Code type="string">10000</Physician_Code>.      <HealthInsurance
+03c0: _Information type="record">.        <Insurance_Combination_Numbe
+0400: r type="string">0001</Insurance_Combination_Number>.        <Ins
+0440: uranceProvider_Class type="string">060</InsuranceProvider_Class>
+0480: .        <InsuranceProvider_Number type="string">138057</Insuran
+04c0: ceProvider_Number>.        <HealthInsuredPerson_Symbol type="str
+0500: ing">......</HealthInsuredPerson_Symbol>.        <HealthInsuredP
+0540: erson_Number type="string">.....................</HealthInsuredP
+0580: erson_Number>.        <HealthInsuredPerson_Branch_Number type="s
+05c0: tring">00</HealthInsuredPerson_Branch_Number>.        <RelationT
+0600: oInsuredPerson type="string">1</RelationToInsuredPerson>.      <
+0640: /HealthInsurance_Information>.      <Medical_Information type="a
+0680: rray">.        <Medical_Information_child type="record">.       
+06c0:    <Medical_Class type="string">210</Medical_Class>.          <M
+0700: edical_Class_Name type="string">............</Medical_Class_Name
+0740: >.          <Medical_Class_Number type="string">1</Medical_Class
+0780: _Number>.          <Medication_info type="array">.            <M
+07c0: edication_info_child type="record">.              <Medication_Co
+0800: de type="string">620001402</Medication_Code>.              <Medi
+0840: cation_Name type="string">...............</Medication_Name>.    
+0880:           <Medication_Number type="string">1</Medication_Number>
+08c0: .            </Medication_info_child>.          </Medication_inf
+0900: o>.        </Medical_Information_child>.      </Medical_Informat
+0940: ion>.      <Disease_Information type="array">.        <Disease_I
+0980: nformation_child type="record">.          <Disease_Code type="st
+09c0: ring">8841239</Disease_Code>.          <Disease_Name type="strin
+0a00: g">......</Disease_Name>.          <Disease_Category type="strin
+0a40: g">1</Disease_Category>.          <Disease_SuspectedFlag type="s
+0a80: tring">0</Disease_SuspectedFlag>.          <Disease_StartDate ty
+0ac0: pe="string">2025-11-15</Disease_StartDate>.        </Disease_Inf
+0b00: ormation_child>.      </Disease_Information>.    </Diagnosis_Inf
+0b40: ormation>.  </medicalreq>.</data>.
+<= Recv header, 17 bytes (0x11)
+0000: HTTP/1.1 200 OK
+<= Recv header, 46 bytes (0x2e)
+0000: Content-Type: application/xml; charset=UTF-8
+<= Recv header, 22 bytes (0x16)
+0000: X-Hybridmode: normal
+<= Recv header, 37 bytes (0x25)
+0000: Date: Sat, 22 Nov 2025 05:18:01 GMT
+<= Recv header, 28 bytes (0x1c)
+0000: Transfer-Encoding: chunked
+<= Recv header, 2 bytes (0x2)
+0000: 
+<= Recv data, 2048 bytes (0x800)
+0000: <?xml version="1.0" encoding="UTF-8"?>.<xmlio2>.<medicalres type
+0040: ="record">.<Information_Date type="string">2025-11-22</Informati
+0080: on_Date>.<Information_Time type="string">14:18:01</Information_T
+00c0: ime>.<Api_Result type="string">20</Api_Result>.<Api_Result_Messa
+0100: ge type="string">...............................................
+0140: ...............................</Api_Result_Message>.<Request_Nu
+0180: mber type="string">01</Request_Number>.<Reskey type="string">Med
+01c0: ical Info</Reskey>.<Perform_Date type="string">2025-11-22</Perfo
+0200: rm_Date>.<Perform_Time type="string">16:00:00</Perform_Time>.<De
+0240: partment_Code type="string">01</Department_Code>.<Department_Nam
+0280: e type="string">......</Department_Name>.<Physician_Code type="s
+02c0: tring">10000</Physician_Code>.<Physician_WholeName type="string"
+0300: >..................</Physician_WholeName>.<Patient_Information t
+0340: ype="record">.<Patient_ID type="string">00005</Patient_ID>.<Whol
+0380: eName type="string">..................</WholeName>.<WholeName_in
+03c0: Kana type="string">........................</WholeName_inKana>.<
+0400: BirthDate type="string">1980-01-01</BirthDate>.<Sex type="string
+0440: ">1</Sex>.<HealthInsurance_Information type="record">.<Insurance
+0480: _Combination_Number type="string">0001</Insurance_Combination_Nu
+04c0: mber>.<InsuranceProvider_Class type="string">060</InsuranceProvi
+0500: der_Class>.<InsuranceProvider_Number type="string">138057</Insur
+0540: anceProvider_Number>.<InsuranceProvider_WholeName type="string">
+0580: ......</InsuranceProvider_WholeName>.<HealthInsuredPerson_Symbol
+05c0:  type="string">......</HealthInsuredPerson_Symbol>.<HealthInsure
+0600: dPerson_Number type="string">.....................</HealthInsure
+0640: dPerson_Number>.<HealthInsuredPerson_Assistance type="string">3<
+0680: /HealthInsuredPerson_Assistance>.<RelationToInsuredPerson type="
+06c0: string">1</RelationToInsuredPerson>.<Certificate_StartDate type=
+0700: "string">2025-01-01</Certificate_StartDate>.<Certificate_Expired
+0740: Date type="string">9999-12-31</Certificate_ExpiredDate>.</Health
+0780: Insurance_Information>.</Patient_Information>.<Medical_Message_I
+07c0: nformation type="record">.<Medical_Result type="string">03</Medi
+<= Recv data, 187 bytes (0xbb)
+0000: cal_Result>.<Medical_Result_Message type="string">..............
+0040: ...........................................</Medical_Result_Mess
+0080: age>.</Medical_Message_Information>.</medicalres>.</xmlio2>
+== Info: Connection #0 to host 100.102.17.40 left intact

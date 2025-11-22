@@ -3,8 +3,9 @@ RUN_ID=`20251116T210500Z-B`（親 RUN_ID=`20251116T193200Z`）
 
 ## 0. 参照チェーン / 前提
 - 本調査は Phase2 ガバナンス必読チェーン（`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各 ORCA マネージャーチェックリスト）に従い、**モダナイズ版サーバー実装**（`server-modernized/src/main/java`）を対象に実施した。
-- ORCA 連携環境は WebORCA トライアル (`https://weborca-trial.orca.med.or.jp/`, BASIC `trial/weborcatrial`) のみを想定。`custom.properties` で `claim.conn=server` かつ `claim.host/claim.send.port` が設定されていることを前提に記載している。
+- ORCA 連携環境は開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）のみを想定。`custom.properties` で `claim.conn=server` かつ `claim.host/claim.send.port` が設定されていることを前提に記載している。
 - Legacy 調査メモ（`ORCA_WEB_CLIENT_API_RELATIONSHIP.md`）とは別ドキュメントとして保存し、モダナイズ固有の JMS/Messaging 差分を中心に整理した。
+- 医師コード・患者番号など ID 体系は **ORCA 仕様に従う**。8 桁患者番号を要求する場合は ORCA 側の管理連番設定変更が前提であり、モダナイズ側は ORCA 付与値に順応する。
 
 ## 1. Web クライアントが叩く REST エンドポイント
 | HTTP API | 実装箇所 | 役割 / 改訂点 |
