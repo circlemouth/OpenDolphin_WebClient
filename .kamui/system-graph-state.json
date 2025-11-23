@@ -4575,7 +4575,6 @@
     ".gitmodules",
     ".kamui/apps/icons/modern-server-plan.svg",
     ".kamui/apps/icons/modernized-server-connect-plan.svg",
-    ".kamui/apps/modernized-server-connect-plan.yaml",
     ".kamui/gantte/test.yaml",
     ".kamui/model-versions-cache.json",
     ".kamui/prompt/merge-prompt.txt",
@@ -4679,6 +4678,7 @@
     "artifacts/api-stability/20251120T191203Z/schemas/charts-docinfo.json",
     "artifacts/api-stability/20251120T191203Z/schemas/orca-tensu-name.json",
     "artifacts/api-stability/20251120T191203Z/schemas/reception-pvtlist.json",
+    "artifacts/api-stability/20251123T130134Z/README.md",
     "artifacts/e2e-connect/20251122T071146Z/README.md",
     "artifacts/e2e-connect/20251122T071146Z/fallback/README.md",
     "artifacts/e2e-connect/20251122T071146Z/har/README.md",
@@ -11312,6 +11312,7 @@
     "docs/server-modernization/phase2/operations/logs/20251122T071146Z-metrics.md",
     "docs/server-modernization/phase2/operations/logs/20251122T071146Z-tracing.md",
     "docs/server-modernization/phase2/operations/logs/20251122T132337Z-orca-connectivity.md",
+    "docs/server-modernization/phase2/operations/logs/20251123T130134Z-webclient-api-compat.md",
     "docs/server-modernization/phase2/operations/logs/20251123T213145Z-run-id-chain.md",
     "docs/server-modernization/phase2/operations/logs/ORCA_HTTP_404405_HANDBOOK.md",
     "docs/server-modernization/phase2/operations/logs/TEMPLATE-orca-config-review.md",
@@ -13421,6 +13422,7 @@
     "src/modernized_server/09_統合E2E接続確認（Webクライアント連携）.md",
     "src/modernized_server/10_オブザーバビリティと運用運転.md",
     "src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md",
+    "src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md",
     "tmp/Dockerfile.legacy.jdk17",
     "tmp/DocumentMappingDebug.class",
     "tmp/DocumentMappingDebug.java",
@@ -14174,16 +14176,16 @@
   },
   "gitHistoryState": {
     "selectedTimelineIndex": 1,
-    "activeCommitHash": null,
+    "activeCommitHash": "d4330a3d0fc0e6a170811932eb1a4e0e181599c7",
     "entries": [
       {
         "type": "live",
         "label": "現在のコードベース",
         "files": [],
         "branch": "master",
-        "targetCommitHash": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+        "targetCommitHash": "12322ac93d819fdf74e52add318c694ef20fcebf",
         "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
-        "timestamp": 1763903715110,
+        "timestamp": 1763903942665,
         "lane": 0,
         "branchLabel": "master",
         "branchTags": [
@@ -14194,47 +14196,240 @@
         "index": 0
       },
       {
+        "type": "commit",
+        "label": "On master: temp-current-after-pop2",
+        "commit": {
+          "hash": "d4330a3d0fc0e6a170811932eb1a4e0e181599c7",
+          "subject": "On master: temp-current-after-pop2",
+          "author": "circlemouth",
+          "timestamp": 1763903873,
+          "parents": [
+            "12322ac93d819fdf74e52add318c694ef20fcebf",
+            "54b4f1ad8c60989a8b129d8797f424d75e479422",
+            "22011a824ddca804892f10f3d505ab684efa418e"
+          ],
+          "parent": "12322ac93d819fdf74e52add318c694ef20fcebf",
+          "refs": "refs/stash",
+          "branches": [
+            "refs/stash"
+          ]
+        },
+        "commitHash": "d4330a3d0fc0e6a170811932eb1a4e0e181599c7",
+        "lane": 1,
+        "parentLinks": [
+          {
+            "hash": "12322ac93d819fdf74e52add318c694ef20fcebf",
+            "lane": 0
+          },
+          {
+            "hash": "54b4f1ad8c60989a8b129d8797f424d75e479422",
+            "lane": 1
+          },
+          {
+            "hash": "22011a824ddca804892f10f3d505ab684efa418e",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "refs/stash",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "refs/stash"
+        ],
+        "index": 1
+      },
+      {
+        "type": "commit",
+        "label": "index on master: 12322ac9 Merge branch 'task-yaml-qsrtp8-src…",
+        "commit": {
+          "hash": "54b4f1ad8c60989a8b129d8797f424d75e479422",
+          "subject": "index on master: 12322ac9 Merge branch 'task-yaml-qsrtp8-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763903873,
+          "parents": [
+            "12322ac93d819fdf74e52add318c694ef20fcebf"
+          ],
+          "parent": "12322ac93d819fdf74e52add318c694ef20fcebf",
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "54b4f1ad8c60989a8b129d8797f424d75e479422",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "12322ac93d819fdf74e52add318c694ef20fcebf",
+            "lane": 0
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 2
+      },
+      {
+        "type": "commit",
+        "label": "untracked files on master: 12322ac9 Merge branch 'task-yaml-…",
+        "commit": {
+          "hash": "22011a824ddca804892f10f3d505ab684efa418e",
+          "subject": "untracked files on master: 12322ac9 Merge branch 'task-yaml-qsrtp8-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763903873,
+          "parents": [],
+          "parent": null,
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "22011a824ddca804892f10f3d505ab684efa418e",
+        "lane": 0,
+        "parentLinks": [],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 3
+      },
+      {
         "type": "unstaged",
-        "label": "未ステージ (14)",
+        "label": "未ステージ (6)",
         "files": [
-          ".kamui/prompt/merge-prompt.txt",
-          ".kamui/system-graph-state.json",
-          ".kamui/tasks-state.json",
-          "docs/web-client/README.md",
-          "docs/web-client/planning/phase2/DOC_STATUS.md",
           ".kamui/apps/icons/modernized-bridge-ui-plan.svg",
           ".kamui/apps/icons/webclient-sync-ui-plan.svg",
           ".kamui/apps/webclient-sync-ui-plan.yaml",
           ".kamui/manager/202511232131_eval_task-1763901129082-266549.html",
           ".kamui/manager/202511232131_eval_task-1763901133752-0b600e.html",
-          ".kamui/prompt/stop-prompt.txt",
-          "artifacts/api-stability/20251123T130134Z/README.md",
-          "docs/server-modernization/phase2/operations/logs/20251123T130134Z-webclient-api-compat.md",
-          "src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md"
+          ".kamui/prompt/stop-prompt.txt"
         ],
         "branch": "master",
-        "targetCommitHash": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+        "targetCommitHash": "12322ac93d819fdf74e52add318c694ef20fcebf",
         "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
-        "timestamp": 1763903715110,
+        "timestamp": 1763903942665,
         "sortOrder": 0,
         "lane": 0,
         "branchColor": "#4f85e8",
-        "index": 1
+        "index": 4
       },
       {
         "type": "staged",
-        "label": "ステージ済み (1)",
+        "label": "ステージ済み (5)",
         "files": [
-          "kamui/model-versions-cache.json"
+          ".kamui/model-versions-cache.json",
+          ".kamui/prompt/merge-prompt.txt",
+          ".kamui/system-graph-state.json",
+          ".kamui/tasks-state.json",
+          "docs/web-client/README.md"
         ],
         "branch": "master",
-        "targetCommitHash": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+        "targetCommitHash": "12322ac93d819fdf74e52add318c694ef20fcebf",
         "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
-        "timestamp": 1763903715110,
+        "timestamp": 1763903942665,
         "sortOrder": 1,
         "lane": 0,
         "branchColor": "#4f85e8",
-        "index": 2
+        "index": 5
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task-yaml-qsrtp8-src-webclient-mo'",
+        "commit": {
+          "hash": "12322ac93d819fdf74e52add318c694ef20fcebf",
+          "subject": "Merge branch 'task-yaml-qsrtp8-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763903830,
+          "parents": [
+            "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+            "bd32197275245ba00b77f601cbc020bc13b36b70"
+          ],
+          "parent": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+          "refs": "HEAD -> master",
+          "branches": [
+            "HEAD -> master",
+            "master"
+          ]
+        },
+        "commitHash": "12322ac93d819fdf74e52add318c694ef20fcebf",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+            "lane": 0
+          },
+          {
+            "hash": "bd32197275245ba00b77f601cbc020bc13b36b70",
+            "lane": 3
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "master"
+        ],
+        "worktrees": [
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+            "head": "12322ac93d819fdf74e52add318c694ef20fcebf",
+            "branch": "master",
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+            "lane": 0
+          }
+        ],
+        "index": 6
+      },
+      {
+        "type": "commit",
+        "label": "Add webclient API compatibility docs and update status",
+        "commit": {
+          "hash": "bd32197275245ba00b77f601cbc020bc13b36b70",
+          "subject": "Add webclient API compatibility docs and update status",
+          "author": "circlemouth",
+          "timestamp": 1763903774,
+          "parents": [
+            "dcbde76928680f02484960e0e811151275222134"
+          ],
+          "parent": "dcbde76928680f02484960e0e811151275222134",
+          "refs": "task-yaml-qsrtp8-src-webclient-mo",
+          "branches": [
+            "task-yaml-qsrtp8-src-webclient-mo"
+          ]
+        },
+        "commitHash": "bd32197275245ba00b77f601cbc020bc13b36b70",
+        "lane": 2,
+        "parentLinks": [
+          {
+            "hash": "dcbde76928680f02484960e0e811151275222134",
+            "lane": 3
+          }
+        ],
+        "primaryBranchName": "task-yaml-qsrtp8-src-webclient-mo",
+        "branchColor": "#e84f4f",
+        "branchTags": [],
+        "worktrees": [
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
+            "head": "bd32197275245ba00b77f601cbc020bc13b36b70",
+            "branch": "task-yaml-qsrtp8-src-webclient-mo",
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
+            "lane": 2
+          }
+        ],
+        "index": 7
+      },
+      {
+        "type": "anchor",
+        "label": "[実行中] [webclient sync ui plan] 01_API互…",
+        "branch": "task-yaml-qsrtp8-src-webclient-mo",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
+        "parentCommitHash": "bd32197275245ba00b77f601cbc020bc13b36b70",
+        "lane": 2,
+        "isMerged": false,
+        "mergeCommitHash": null,
+        "statusChildren": [],
+        "isDefaultWorktree": false,
+        "renderMode": "node",
+        "shouldHide": false,
+        "tagLabel": "task-yaml-qsrtp8-src-webclient-mo",
+        "taskId": "task-yaml-qsrtp8-src-webclient-mo",
+        "taskStatus": "running",
+        "taskStatusLabel": "実行中",
+        "taskName": "[webclient sync ui plan] 01_API互換レイヤー再確認とギャップ整理\n期間: 11/25 09:00 - 11/27 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 📑 API 互換レイヤー再確認とギャップ整理\n\n- `src/modernized_server/08_Webクライアント向けAPI安定化.md` の互換方針を再読し、Web クライアントが依存するエンドポイントの破壊的変更吸収策（パラメータ/レスポンス変換・feature flag）を最新化する。\n- `docs/web-client/architecture/REST_API_INVENTORY.md` と `process/API_UI_GAP_ANALYSIS.md` を突き合わせ、残りの差分（型/値域/エラーコード）を列挙して DoD を明示する。\n- `artifacts/api-stability/` 既存モックの再利用可否を判定し、足りないケースは追加作成方針を決める。\n\nYAML ID: src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md",
+        "tooltip": "タスク: [webclient sync ui plan] 01_API互換レイヤー再確認とギャップ整理\n期間: 11/25 09:00 - 11/27 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 📑 API 互換レイヤー再確認とギャップ整理\n\n- `src/modernized_server/08_Webクライアント向けAPI安定化.md` の互換方針を再読し、Web クライアントが依存するエンドポイントの破壊的変更吸収策（パラメータ/レスポンス変換・feature flag）を最新化する。\n- `docs/web-client/architecture/REST_API_INVENTORY.md` と `process/API_UI_GAP_ANALYSIS.md` を突き合わせ、残りの差分（型/値域/エラーコード）を列挙して DoD を明示する。\n- `artifacts/api-stability/` 既存モックの再利用可否を判定し、足りないケースは追加作成方針を決める。\n\nYAML ID: src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md\nステータス: 実行中\nID: task-yaml-qsrtp8-src-webclient-mo\nBranch: task-yaml-qsrtp8-src-webclient-mo\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
+        "branchColor": "#e84f4f",
+        "index": 8
       },
       {
         "type": "commit",
@@ -14249,11 +14444,8 @@
             "f2d9366eb6d5b4f1500fd1e121010a05d2970509"
           ],
           "parent": "726c4efefe716283d91564bf4c0ac2df0fd51ffe",
-          "refs": "HEAD -> master",
-          "branches": [
-            "HEAD -> master",
-            "master"
-          ]
+          "refs": "",
+          "branches": []
         },
         "commitHash": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
         "lane": 0,
@@ -14264,24 +14456,12 @@
           },
           {
             "hash": "f2d9366eb6d5b4f1500fd1e121010a05d2970509",
-            "lane": 1
+            "lane": 4
           }
         ],
-        "primaryBranchName": "main",
         "branchColor": "#4f85e8",
-        "branchTags": [
-          "master"
-        ],
-        "worktrees": [
-          {
-            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
-            "head": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
-            "branch": "master",
-            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
-            "lane": 0
-          }
-        ],
-        "index": 3
+        "branchTags": [],
+        "index": 9
       },
       {
         "type": "commit",
@@ -14303,12 +14483,12 @@
         "parentLinks": [
           {
             "hash": "dcbde76928680f02484960e0e811151275222134",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 4
+        "index": 10
       },
       {
         "type": "commit",
@@ -14328,11 +14508,11 @@
           ]
         },
         "commitHash": "f2d9366eb6d5b4f1500fd1e121010a05d2970509",
-        "lane": 1,
+        "lane": 3,
         "parentLinks": [
           {
             "hash": "dcbde76928680f02484960e0e811151275222134",
-            "lane": 0
+            "lane": 3
           }
         ],
         "primaryBranchName": "task-yaml-1xh113s-src-webclient-mo",
@@ -14344,10 +14524,10 @@
             "head": "f2d9366eb6d5b4f1500fd1e121010a05d2970509",
             "branch": "task-yaml-1xh113s-src-webclient-mo",
             "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-1xh113s-src-webclient-mo",
-            "lane": 1
+            "lane": 3
           }
         ],
-        "index": 5
+        "index": 11
       },
       {
         "type": "anchor",
@@ -14355,7 +14535,7 @@
         "branch": "task-yaml-1xh113s-src-webclient-mo",
         "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-1xh113s-src-webclient-mo",
         "parentCommitHash": "f2d9366eb6d5b4f1500fd1e121010a05d2970509",
-        "lane": 1,
+        "lane": 3,
         "isMerged": false,
         "mergeCommitHash": null,
         "statusChildren": [],
@@ -14369,29 +14549,7 @@
         "taskName": "[webclient sync ui plan] 00_RUN_IDと参照チェーン確定\n期間: 11/24 09:00 - 11/25 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 🗂️ RUN_ID と参照チェーン確定\n\n- RUN_ID を `20251123T213145Z` で統一し、`AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → PHASE2 Manager Overview → 各チェックリスト` の参照チェーンを再確認する。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の該当行へ備考追記する下書きを用意し、証跡パスのドラフトも同 RUN_ID で揃える。\n- 禁止事項（Python 実行禁止、`server/` 配下・Legacy 資産非改変、ORCA 本番/Trial 経路禁止）を再確認し、作業メンバーへ共有する。\n\nYAML ID: src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md",
         "tooltip": "タスク: [webclient sync ui plan] 00_RUN_IDと参照チェーン確定\n期間: 11/24 09:00 - 11/25 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 🗂️ RUN_ID と参照チェーン確定\n\n- RUN_ID を `20251123T213145Z` で統一し、`AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → PHASE2 Manager Overview → 各チェックリスト` の参照チェーンを再確認する。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の該当行へ備考追記する下書きを用意し、証跡パスのドラフトも同 RUN_ID で揃える。\n- 禁止事項（Python 実行禁止、`server/` 配下・Legacy 資産非改変、ORCA 本番/Trial 経路禁止）を再確認し、作業メンバーへ共有する。\n\nYAML ID: src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md\nステータス: 完了\nID: task-yaml-1xh113s-src-webclient-mo\nBranch: task-yaml-1xh113s-src-webclient-mo\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-1xh113s-src-webclient-mo",
         "branchColor": "#4fe84f",
-        "index": 6
-      },
-      {
-        "type": "anchor",
-        "label": "[実行中] [webclient sync ui plan] 01_API互…",
-        "branch": "task-yaml-qsrtp8-src-webclient-mo",
-        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
-        "parentCommitHash": "dcbde76928680f02484960e0e811151275222134",
-        "lane": 12,
-        "isMerged": false,
-        "mergeCommitHash": null,
-        "statusChildren": [],
-        "isDefaultWorktree": false,
-        "renderMode": "node",
-        "shouldHide": false,
-        "tagLabel": "task-yaml-qsrtp8-src-webclient-mo",
-        "taskId": "task-yaml-qsrtp8-src-webclient-mo",
-        "taskStatus": "running",
-        "taskStatusLabel": "実行中",
-        "taskName": "[webclient sync ui plan] 01_API互換レイヤー再確認とギャップ整理\n期間: 11/25 09:00 - 11/27 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 📑 API 互換レイヤー再確認とギャップ整理\n\n- `src/modernized_server/08_Webクライアント向けAPI安定化.md` の互換方針を再読し、Web クライアントが依存するエンドポイントの破壊的変更吸収策（パラメータ/レスポンス変換・feature flag）を最新化する。\n- `docs/web-client/architecture/REST_API_INVENTORY.md` と `process/API_UI_GAP_ANALYSIS.md` を突き合わせ、残りの差分（型/値域/エラーコード）を列挙して DoD を明示する。\n- `artifacts/api-stability/` 既存モックの再利用可否を判定し、足りないケースは追加作成方針を決める。\n\nYAML ID: src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md",
-        "tooltip": "タスク: [webclient sync ui plan] 01_API互換レイヤー再確認とギャップ整理\n期間: 11/25 09:00 - 11/27 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 📑 API 互換レイヤー再確認とギャップ整理\n\n- `src/modernized_server/08_Webクライアント向けAPI安定化.md` の互換方針を再読し、Web クライアントが依存するエンドポイントの破壊的変更吸収策（パラメータ/レスポンス変換・feature flag）を最新化する。\n- `docs/web-client/architecture/REST_API_INVENTORY.md` と `process/API_UI_GAP_ANALYSIS.md` を突き合わせ、残りの差分（型/値域/エラーコード）を列挙して DoD を明示する。\n- `artifacts/api-stability/` 既存モックの再利用可否を判定し、足りないケースは追加作成方針を決める。\n\nYAML ID: src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md\nステータス: 実行中\nID: task-yaml-qsrtp8-src-webclient-mo\nBranch: task-yaml-qsrtp8-src-webclient-mo\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
-        "branchColor": "#e84f4f",
-        "index": 7
+        "index": 12
       },
       {
         "type": "commit",
@@ -14405,11 +14563,10 @@
             "9e6549d264e27f448a354c6ce9b7b4dbd8fb6926"
           ],
           "parent": "9e6549d264e27f448a354c6ce9b7b4dbd8fb6926",
-          "refs": "origin/master, origin/HEAD, task-yaml-qsrtp8-src-webclient-mo, task-1763901133752-0b600e",
+          "refs": "origin/master, origin/HEAD, task-1763901133752-0b600e",
           "branches": [
             "origin/master",
             "origin/HEAD",
-            "task-yaml-qsrtp8-src-webclient-mo",
             "task-1763901133752-0b600e"
           ]
         },
@@ -14418,7 +14575,7 @@
         "parentLinks": [
           {
             "hash": "9e6549d264e27f448a354c6ce9b7b4dbd8fb6926",
-            "lane": 0
+            "lane": 3
           }
         ],
         "primaryBranchName": "main",
@@ -14426,16 +14583,7 @@
         "branchTags": [
           "task-1763901133752-0b600e"
         ],
-        "worktrees": [
-          {
-            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
-            "head": "dcbde76928680f02484960e0e811151275222134",
-            "branch": "task-yaml-qsrtp8-src-webclient-mo",
-            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-qsrtp8-src-webclient-mo",
-            "lane": 12
-          }
-        ],
-        "index": 8
+        "index": 13
       },
       {
         "type": "commit",
@@ -14457,12 +14605,12 @@
         "parentLinks": [
           {
             "hash": "d3f1a7cf553f8a43b8b2271fe8449cff718cdd25",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 9
+        "index": 14
       },
       {
         "type": "commit",
@@ -14484,12 +14632,12 @@
         "parentLinks": [
           {
             "hash": "c5a96be165ab775b6207b95dc3ee10cfaf59d4ac",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 10
+        "index": 15
       },
       {
         "type": "commit",
@@ -14512,16 +14660,16 @@
         "parentLinks": [
           {
             "hash": "e01e6ca65d6936890167ce9122bba60fa5b92a79",
-            "lane": 0
+            "lane": 3
           },
           {
             "hash": "45bf021d3061149b32f7cc04e7ad1c1fc238cb7e",
-            "lane": 2
+            "lane": 5
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 11
+        "index": 16
       },
       {
         "type": "commit",
@@ -14541,11 +14689,11 @@
           ]
         },
         "commitHash": "45bf021d3061149b32f7cc04e7ad1c1fc238cb7e",
-        "lane": 2,
+        "lane": 4,
         "parentLinks": [
           {
             "hash": "e01e6ca65d6936890167ce9122bba60fa5b92a79",
-            "lane": 0
+            "lane": 3
           }
         ],
         "primaryBranchName": "task-yaml-1xao46t-src-modernized-s",
@@ -14557,10 +14705,10 @@
             "head": "45bf021d3061149b32f7cc04e7ad1c1fc238cb7e",
             "branch": "task-yaml-1xao46t-src-modernized-s",
             "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-1xao46t-src-modernized-s",
-            "lane": 2
+            "lane": 4
           }
         ],
-        "index": 12
+        "index": 17
       },
       {
         "type": "anchor",
@@ -14568,7 +14716,7 @@
         "branch": "task-yaml-1xao46t-src-modernized-s",
         "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-1xao46t-src-modernized-s",
         "parentCommitHash": "45bf021d3061149b32f7cc04e7ad1c1fc238cb7e",
-        "lane": 2,
+        "lane": 4,
         "isMerged": false,
         "mergeCommitHash": null,
         "statusChildren": [],
@@ -14582,7 +14730,7 @@
         "taskName": "[modernized server connect plan] 09_統合E2E接続確認（Webクライアント連携）\n期間: 12/12 09:00 - 12/17 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# ✅ 統合 E2E 接続確認（Web クライアント連携）\n\n- 開発中 Web クライアントを対象に、認証・主要業務フロー・エラーハンドリングの E2E を実行。\n- クライアント側改修は含めず、サーバー側で解決できる項目とクライアント連携チームへのエスカレーション項目を仕分け。\n- 成果を `docs/server-modernization/phase2/operations/logs/20251120T131731Z-e2e.md` に記録し、依存タスクへ共有。\n\nYAML ID: src/modernized_server/09_統合E2E接続確認（Webクライアント連携）.md",
         "tooltip": "タスク: [modernized server connect plan] 09_統合E2E接続確認（Webクライアント連携）\n期間: 12/12 09:00 - 12/17 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# ✅ 統合 E2E 接続確認（Web クライアント連携）\n\n- 開発中 Web クライアントを対象に、認証・主要業務フロー・エラーハンドリングの E2E を実行。\n- クライアント側改修は含めず、サーバー側で解決できる項目とクライアント連携チームへのエスカレーション項目を仕分け。\n- 成果を `docs/server-modernization/phase2/operations/logs/20251120T131731Z-e2e.md` に記録し、依存タスクへ共有。\n\nYAML ID: src/modernized_server/09_統合E2E接続確認（Webクライアント連携）.md\nステータス: 完了\nID: task-yaml-1xao46t-src-modernized-s\nBranch: task-yaml-1xao46t-src-modernized-s\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-1xao46t-src-modernized-s",
         "branchColor": "#e84f4f",
-        "index": 13
+        "index": 18
       },
       {
         "type": "commit",
@@ -14604,12 +14752,12 @@
         "parentLinks": [
           {
             "hash": "3778cf64a70ad38349c2ee4f6bf25b0aaacc971f",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 14
+        "index": 19
       },
       {
         "type": "commit",
@@ -14631,12 +14779,12 @@
         "parentLinks": [
           {
             "hash": "3ce0ec689461084c9db54a8717f9878228883f37",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 15
+        "index": 20
       },
       {
         "type": "commit",
@@ -14658,12 +14806,12 @@
         "parentLinks": [
           {
             "hash": "5121115b759228c92f79bd8aa4f324bc453c573a",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 16
+        "index": 21
       },
       {
         "type": "commit",
@@ -14685,12 +14833,12 @@
         "parentLinks": [
           {
             "hash": "2acc5c1aebff058cfd8b8ed789d07c2c7dc56d84",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 17
+        "index": 22
       },
       {
         "type": "commit",
@@ -14712,12 +14860,12 @@
         "parentLinks": [
           {
             "hash": "9ae4a9530959acb7260cc36af92b3ab5aee69e0f",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 18
+        "index": 23
       },
       {
         "type": "commit",
@@ -14739,12 +14887,12 @@
         "parentLinks": [
           {
             "hash": "fd7363c1b097768451fad1516ba27c94cdfb2548",
-            "lane": 0
+            "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 19
+        "index": 24
       },
       {
         "type": "commit",
@@ -14767,105 +14915,16 @@
         "parentLinks": [
           {
             "hash": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
-            "lane": 0
+            "lane": 3
           },
           {
             "hash": "933a93c1428320e95c01ae7ef000803ebb9a4a99",
-            "lane": 3
-          }
-        ],
-        "branchColor": "#4f85e8",
-        "branchTags": [],
-        "index": 20
-      },
-      {
-        "type": "commit",
-        "label": "On master: pre-merge-temp",
-        "commit": {
-          "hash": "c71aa2731b6b902936cbf3bb07bfc5c3f39d4a0e",
-          "subject": "On master: pre-merge-temp",
-          "author": "circlemouth",
-          "timestamp": 1763732069,
-          "parents": [
-            "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
-            "086ca83d5f5638339566dd45e8797fe375bb93f5",
-            "2b2e8a7c6245433becc1184ff395c6b62e44065f"
-          ],
-          "parent": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
-          "refs": "refs/stash",
-          "branches": [
-            "refs/stash"
-          ]
-        },
-        "commitHash": "c71aa2731b6b902936cbf3bb07bfc5c3f39d4a0e",
-        "lane": 3,
-        "parentLinks": [
-          {
-            "hash": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
-            "lane": 0
-          },
-          {
-            "hash": "086ca83d5f5638339566dd45e8797fe375bb93f5",
-            "lane": 5
-          },
-          {
-            "hash": "2b2e8a7c6245433becc1184ff395c6b62e44065f",
             "lane": 6
           }
         ],
-        "primaryBranchName": "refs/stash",
-        "branchColor": "#4f85e8",
-        "branchTags": [
-          "refs/stash"
-        ],
-        "index": 21
-      },
-      {
-        "type": "commit",
-        "label": "index on master: e324b7c2 Merge branch 'task-yaml-8rm4nf-src…",
-        "commit": {
-          "hash": "086ca83d5f5638339566dd45e8797fe375bb93f5",
-          "subject": "index on master: e324b7c2 Merge branch 'task-yaml-8rm4nf-src-modernized-s'",
-          "author": "circlemouth",
-          "timestamp": 1763732069,
-          "parents": [
-            "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26"
-          ],
-          "parent": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
-          "refs": "",
-          "branches": []
-        },
-        "commitHash": "086ca83d5f5638339566dd45e8797fe375bb93f5",
-        "lane": 0,
-        "parentLinks": [
-          {
-            "hash": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
-            "lane": 0
-          }
-        ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 22
-      },
-      {
-        "type": "commit",
-        "label": "untracked files on master: e324b7c2 Merge branch 'task-yaml-…",
-        "commit": {
-          "hash": "2b2e8a7c6245433becc1184ff395c6b62e44065f",
-          "subject": "untracked files on master: e324b7c2 Merge branch 'task-yaml-8rm4nf-src-modernized-s'",
-          "author": "circlemouth",
-          "timestamp": 1763732069,
-          "parents": [],
-          "parent": null,
-          "refs": "",
-          "branches": []
-        },
-        "commitHash": "2b2e8a7c6245433becc1184ff395c6b62e44065f",
-        "lane": 0,
-        "parentLinks": [],
-        "branchColor": "#4f85e8",
-        "branchTags": [],
-        "index": 23
+        "index": 25
       },
       {
         "type": "commit",
@@ -14885,11 +14944,11 @@
           ]
         },
         "commitHash": "933a93c1428320e95c01ae7ef000803ebb9a4a99",
-        "lane": 4,
+        "lane": 5,
         "parentLinks": [
           {
             "hash": "9fa9727bd2b766a58283fa2b4cd899da4503dadf",
-            "lane": 3
+            "lane": 6
           }
         ],
         "primaryBranchName": "task-yaml-18pcer5-src-modernized-s",
@@ -14901,10 +14960,10 @@
             "head": "933a93c1428320e95c01ae7ef000803ebb9a4a99",
             "branch": "task-yaml-18pcer5-src-modernized-s",
             "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-18pcer5-src-modernized-s",
-            "lane": 4
+            "lane": 5
           }
         ],
-        "index": 24
+        "index": 26
       },
       {
         "type": "anchor",
@@ -14912,7 +14971,7 @@
         "branch": "task-yaml-18pcer5-src-modernized-s",
         "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-18pcer5-src-modernized-s",
         "parentCommitHash": "933a93c1428320e95c01ae7ef000803ebb9a4a99",
-        "lane": 4,
+        "lane": 5,
         "isMerged": false,
         "mergeCommitHash": null,
         "statusChildren": [],
@@ -14926,7 +14985,7 @@
         "taskName": "[modernized server connect plan] 10_オブザーバビリティと運用運転\n期間: 12/09 09:00 - 12/13 09:00 / 優先度: medium / 緊急度: low / エージェント: gemini cli\n\n# 🔍 オブザーバビリティと運用運転\n\n- メトリクス/ログ/トレースの出力先と保持期間を定義し、閾値アラートを設定。\n- 障害対応 runbook を作成し、運用ハンドオフ時のチェックリストを整備。\n- 監査ログと合わせてデータ保持ポリシーを docs/server-modernization/phase2/operations/logs/ に RUN_ID 付きで残す。\n\nYAML ID: src/modernized_server/10_オブザーバビリティと運用運転.md",
         "tooltip": "タスク: [modernized server connect plan] 10_オブザーバビリティと運用運転\n期間: 12/09 09:00 - 12/13 09:00 / 優先度: medium / 緊急度: low / エージェント: gemini cli\n\n# 🔍 オブザーバビリティと運用運転\n\n- メトリクス/ログ/トレースの出力先と保持期間を定義し、閾値アラートを設定。\n- 障害対応 runbook を作成し、運用ハンドオフ時のチェックリストを整備。\n- 監査ログと合わせてデータ保持ポリシーを docs/server-modernization/phase2/operations/logs/ に RUN_ID 付きで残す。\n\nYAML ID: src/modernized_server/10_オブザーバビリティと運用運転.md\nステータス: 完了\nID: task-yaml-18pcer5-src-modernized-s\nBranch: task-yaml-18pcer5-src-modernized-s\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-18pcer5-src-modernized-s",
         "branchColor": "#e84f7f",
-        "index": 25
+        "index": 27
       },
       {
         "type": "commit",
@@ -14949,7 +15008,7 @@
         "parentLinks": [
           {
             "hash": "baabfd8be9625fd9ac20d9c4357095fc7ef7d3a0",
-            "lane": 0
+            "lane": 3
           },
           {
             "hash": "3d63714f5db128b206bcd868b94a1c92dba87cd2",
@@ -14958,7 +15017,7 @@
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 26
+        "index": 28
       },
       {
         "type": "commit",
@@ -14980,12 +15039,12 @@
         "parentLinks": [
           {
             "hash": "9fa9727bd2b766a58283fa2b4cd899da4503dadf",
-            "lane": 3
+            "lane": 6
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 27
+        "index": 29
       },
       {
         "type": "commit",
@@ -15005,11 +15064,11 @@
           ]
         },
         "commitHash": "3d63714f5db128b206bcd868b94a1c92dba87cd2",
-        "lane": 5,
+        "lane": 6,
         "parentLinks": [
           {
             "hash": "9fa9727bd2b766a58283fa2b4cd899da4503dadf",
-            "lane": 3
+            "lane": 6
           }
         ],
         "primaryBranchName": "task-yaml-8rm4nf-src-modernized-s",
@@ -15021,10 +15080,10 @@
             "head": "3d63714f5db128b206bcd868b94a1c92dba87cd2",
             "branch": "task-yaml-8rm4nf-src-modernized-s",
             "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-8rm4nf-src-modernized-s",
-            "lane": 5
+            "lane": 6
           }
         ],
-        "index": 28
+        "index": 30
       },
       {
         "type": "anchor",
@@ -15032,7 +15091,7 @@
         "branch": "task-yaml-8rm4nf-src-modernized-s",
         "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-8rm4nf-src-modernized-s",
         "parentCommitHash": "3d63714f5db128b206bcd868b94a1c92dba87cd2",
-        "lane": 5,
+        "lane": 6,
         "isMerged": false,
         "mergeCommitHash": null,
         "statusChildren": [],
@@ -15046,7 +15105,7 @@
         "taskName": "[modernized server connect plan] 07_APIとORCAの結合テスト完了\n期間: 12/08 09:00 - 12/13 09:00 / 優先度: high / 緊急度: low / エージェント: cursor cli\n\n# 🔗 API と ORCA の結合テスト完了\n\n- ドメイン別に代表シナリオを自動化し、WebORCA trial で成功/失敗パターンを網羅。\n- ORCA_API_STATUS.md に基づき、エンドポイントごとの制約・既知課題を一覧化し、ワーカー報告草案を作成。\n- テストログを `docs/server-modernization/phase2/operations/logs/20251120T131731Z-orca-tests.md` に保存し、DOC_STATUS 備考へ連携。\n\nYAML ID: src/modernized_server/07_APIとORCAの結合テスト完了.md",
         "tooltip": "タスク: [modernized server connect plan] 07_APIとORCAの結合テスト完了\n期間: 12/08 09:00 - 12/13 09:00 / 優先度: high / 緊急度: low / エージェント: cursor cli\n\n# 🔗 API と ORCA の結合テスト完了\n\n- ドメイン別に代表シナリオを自動化し、WebORCA trial で成功/失敗パターンを網羅。\n- ORCA_API_STATUS.md に基づき、エンドポイントごとの制約・既知課題を一覧化し、ワーカー報告草案を作成。\n- テストログを `docs/server-modernization/phase2/operations/logs/20251120T131731Z-orca-tests.md` に保存し、DOC_STATUS 備考へ連携。\n\nYAML ID: src/modernized_server/07_APIとORCAの結合テスト完了.md\nステータス: 完了\nID: task-yaml-8rm4nf-src-modernized-s\nBranch: task-yaml-8rm4nf-src-modernized-s\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-8rm4nf-src-modernized-s",
         "branchColor": "#4fe8b8",
-        "index": 29
+        "index": 31
       },
       {
         "type": "commit",
@@ -15068,12 +15127,12 @@
         "parentLinks": [
           {
             "hash": "1827d4ae207a194723c30d852c17006e1d375c82",
-            "lane": 3
+            "lane": 6
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 30
+        "index": 32
       },
       {
         "type": "commit",
@@ -15095,12 +15154,12 @@
         "parentLinks": [
           {
             "hash": "c9317e0bf248f5fc62fc0deedc00b8009d97d73d",
-            "lane": 3
+            "lane": 6
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 31
+        "index": 33
       },
       {
         "type": "commit",
@@ -15120,7 +15179,7 @@
           ]
         },
         "commitHash": "8cda5fdef3c20b6f81572809f33bc267d7262976",
-        "lane": 6,
+        "lane": 7,
         "parentLinks": [
           {
             "hash": "a31490e06294ef030a215bb23c7857abad24c7b9",
@@ -15132,7 +15191,7 @@
         "branchTags": [
           "feature/20251120T112800Z-ui-placeholder"
         ],
-        "index": 32
+        "index": 34
       },
       {
         "type": "commit",
@@ -15155,7 +15214,7 @@
         "parentLinks": [
           {
             "hash": "f6cf27b04a8d467b1b1895c46f39054626118a09",
-            "lane": 3
+            "lane": 6
           },
           {
             "hash": "9d5bd73b550c47d98bff9e41e96ad74ba35e46dc",
@@ -15164,7 +15223,7 @@
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 33
+        "index": 35
       },
       {
         "type": "commit",
@@ -15184,11 +15243,11 @@
           ]
         },
         "commitHash": "9d5bd73b550c47d98bff9e41e96ad74ba35e46dc",
-        "lane": 7,
+        "lane": 8,
         "parentLinks": [
           {
             "hash": "f6cf27b04a8d467b1b1895c46f39054626118a09",
-            "lane": 3
+            "lane": 6
           }
         ],
         "primaryBranchName": "task-yaml-x5oem4-src-modernized-s",
@@ -15196,7 +15255,7 @@
         "branchTags": [
           "task-yaml-x5oem4-src-modernized-s"
         ],
-        "index": 34
+        "index": 36
       },
       {
         "type": "commit",
@@ -15223,7 +15282,7 @@
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 35
+        "index": 37
       },
       {
         "type": "commit",
@@ -15246,7 +15305,7 @@
         "parentLinks": [
           {
             "hash": "f5398dfb45b53e903a2a16210bd3bc7d54695cc6",
-            "lane": 3
+            "lane": 6
           },
           {
             "hash": "b731e4836c77bad4d9db99dfe790b3ccf17c6b62",
@@ -15255,7 +15314,7 @@
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 36
+        "index": 38
       },
       {
         "type": "commit",
@@ -15275,11 +15334,11 @@
           ]
         },
         "commitHash": "b731e4836c77bad4d9db99dfe790b3ccf17c6b62",
-        "lane": 8,
+        "lane": 9,
         "parentLinks": [
           {
             "hash": "f5398dfb45b53e903a2a16210bd3bc7d54695cc6",
-            "lane": 3
+            "lane": 6
           }
         ],
         "primaryBranchName": "task-yaml-1y9h0hm-src-modernized-s",
@@ -15287,7 +15346,7 @@
         "branchTags": [
           "task-yaml-1y9h0hm-src-modernized-s"
         ],
-        "index": 37
+        "index": 39
       },
       {
         "type": "commit",
@@ -15309,12 +15368,12 @@
         "parentLinks": [
           {
             "hash": "f5398dfb45b53e903a2a16210bd3bc7d54695cc6",
-            "lane": 3
+            "lane": 6
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 38
+        "index": 40
       },
       {
         "type": "commit",
@@ -15336,12 +15395,12 @@
         "parentLinks": [
           {
             "hash": "74cf92577b026d1745ead9e85eec87fae2695d61",
-            "lane": 3
+            "lane": 6
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 39
+        "index": 41
       },
       {
         "type": "commit",
@@ -15364,7 +15423,7 @@
         "parentLinks": [
           {
             "hash": "dfdb3f5de4f0c57c63b1b53f9cb7951100877b4c",
-            "lane": 3
+            "lane": 6
           },
           {
             "hash": "cf275afa93196c7356fa8e11006880e71d72f55a",
@@ -15373,7 +15432,7 @@
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 40
+        "index": 42
       },
       {
         "type": "commit",
@@ -15395,12 +15454,12 @@
         "parentLinks": [
           {
             "hash": "eebbf8d7835c1bbf2581a832170b33d1d34c661d",
-            "lane": 3
+            "lane": 6
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 41
+        "index": 43
       },
       {
         "type": "commit",
@@ -15422,12 +15481,12 @@
         "parentLinks": [
           {
             "hash": "1df4a7d961aa733439edb8dfb32fe6920341fb51",
-            "lane": 3
+            "lane": 6
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 42
+        "index": 44
       },
       {
         "type": "commit",
@@ -15447,7 +15506,7 @@
           ]
         },
         "commitHash": "cf275afa93196c7356fa8e11006880e71d72f55a",
-        "lane": 9,
+        "lane": 10,
         "parentLinks": [
           {
             "hash": "d444813e1d87a1ffee72f5a5721893eab1560dfc",
@@ -15459,7 +15518,7 @@
         "branchTags": [
           "task/yaml-14k6eby-src-modernized-s"
         ],
-        "index": 43
+        "index": 45
       },
       {
         "type": "commit",
@@ -15482,7 +15541,7 @@
         "parentLinks": [
           {
             "hash": "a1fb4f4bfff6ccefa22bd5bf52c883afce8620f5",
-            "lane": 3
+            "lane": 6
           },
           {
             "hash": "c16df554b6c39f1885d14aa57a836cdd85d38c38",
@@ -15491,7 +15550,7 @@
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 44
+        "index": 46
       },
       {
         "type": "commit",
@@ -15513,12 +15572,273 @@
         "parentLinks": [
           {
             "hash": "2ff9d6dff8693ef46cde68cf77a625ed29ef7191",
+            "lane": 6
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 47
+      },
+      {
+        "type": "commit",
+        "label": "On master: temp-current-after-pop",
+        "commit": {
+          "hash": "0ea9d05891265672edf33b83afa509044ae9e260",
+          "subject": "On master: temp-current-after-pop",
+          "author": "circlemouth",
+          "timestamp": 1763903849,
+          "parents": [
+            "12322ac93d819fdf74e52add318c694ef20fcebf",
+            "faa198af89dc3f84ac4a340e6dab00d90890e1ae",
+            "03adea387987457305a576a174507fa1a9ce4117"
+          ],
+          "parent": "12322ac93d819fdf74e52add318c694ef20fcebf",
+          "refs": "refs/stash",
+          "branches": [
+            "refs/stash"
+          ]
+        },
+        "commitHash": "0ea9d05891265672edf33b83afa509044ae9e260",
+        "lane": 1,
+        "parentLinks": [
+          {
+            "hash": "12322ac93d819fdf74e52add318c694ef20fcebf",
+            "lane": 0
+          },
+          {
+            "hash": "faa198af89dc3f84ac4a340e6dab00d90890e1ae",
+            "lane": 14
+          },
+          {
+            "hash": "03adea387987457305a576a174507fa1a9ce4117",
+            "lane": 15
+          }
+        ],
+        "primaryBranchName": "refs/stash",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 48
+      },
+      {
+        "type": "commit",
+        "label": "index on master: 12322ac9 Merge branch 'task-yaml-qsrtp8-src…",
+        "commit": {
+          "hash": "faa198af89dc3f84ac4a340e6dab00d90890e1ae",
+          "subject": "index on master: 12322ac9 Merge branch 'task-yaml-qsrtp8-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763903849,
+          "parents": [
+            "12322ac93d819fdf74e52add318c694ef20fcebf"
+          ],
+          "parent": "12322ac93d819fdf74e52add318c694ef20fcebf",
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "faa198af89dc3f84ac4a340e6dab00d90890e1ae",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "12322ac93d819fdf74e52add318c694ef20fcebf",
+            "lane": 0
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 49
+      },
+      {
+        "type": "commit",
+        "label": "untracked files on master: 12322ac9 Merge branch 'task-yaml-…",
+        "commit": {
+          "hash": "03adea387987457305a576a174507fa1a9ce4117",
+          "subject": "untracked files on master: 12322ac9 Merge branch 'task-yaml-qsrtp8-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763903849,
+          "parents": [],
+          "parent": null,
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "03adea387987457305a576a174507fa1a9ce4117",
+        "lane": 0,
+        "parentLinks": [],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 50
+      },
+      {
+        "type": "commit",
+        "label": "On master: temp-stash-before-merge",
+        "commit": {
+          "hash": "3a89dc7f0373e6ca3c5593d5f5d1abbf581019b4",
+          "subject": "On master: temp-stash-before-merge",
+          "author": "circlemouth",
+          "timestamp": 1763903807,
+          "parents": [
+            "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+            "bf583debe8e76f35a6889c1483d04781ba815541",
+            "89d0bdc66fdc0afbdde972681777c92d71bd6a58"
+          ],
+          "parent": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+          "refs": "refs/stash",
+          "branches": [
+            "refs/stash"
+          ]
+        },
+        "commitHash": "3a89dc7f0373e6ca3c5593d5f5d1abbf581019b4",
+        "lane": 1,
+        "parentLinks": [
+          {
+            "hash": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+            "lane": 0
+          },
+          {
+            "hash": "bf583debe8e76f35a6889c1483d04781ba815541",
+            "lane": 17
+          },
+          {
+            "hash": "89d0bdc66fdc0afbdde972681777c92d71bd6a58",
+            "lane": 18
+          }
+        ],
+        "primaryBranchName": "refs/stash",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 51
+      },
+      {
+        "type": "commit",
+        "label": "index on master: 53aecfd5 Merge branch 'task-yaml-1xh113s-sr…",
+        "commit": {
+          "hash": "bf583debe8e76f35a6889c1483d04781ba815541",
+          "subject": "index on master: 53aecfd5 Merge branch 'task-yaml-1xh113s-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763903807,
+          "parents": [
+            "53aecfd5ff2032c14b7612d4c26a6b6c605e411e"
+          ],
+          "parent": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "bf583debe8e76f35a6889c1483d04781ba815541",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "53aecfd5ff2032c14b7612d4c26a6b6c605e411e",
+            "lane": 0
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 52
+      },
+      {
+        "type": "commit",
+        "label": "untracked files on master: 53aecfd5 Merge branch 'task-yaml-…",
+        "commit": {
+          "hash": "89d0bdc66fdc0afbdde972681777c92d71bd6a58",
+          "subject": "untracked files on master: 53aecfd5 Merge branch 'task-yaml-1xh113s-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763903807,
+          "parents": [],
+          "parent": null,
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "89d0bdc66fdc0afbdde972681777c92d71bd6a58",
+        "lane": 0,
+        "parentLinks": [],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 53
+      },
+      {
+        "type": "commit",
+        "label": "On master: pre-merge-temp",
+        "commit": {
+          "hash": "c71aa2731b6b902936cbf3bb07bfc5c3f39d4a0e",
+          "subject": "On master: pre-merge-temp",
+          "author": "circlemouth",
+          "timestamp": 1763732069,
+          "parents": [
+            "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
+            "086ca83d5f5638339566dd45e8797fe375bb93f5",
+            "2b2e8a7c6245433becc1184ff395c6b62e44065f"
+          ],
+          "parent": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
+          "refs": "refs/stash",
+          "branches": [
+            "refs/stash"
+          ]
+        },
+        "commitHash": "c71aa2731b6b902936cbf3bb07bfc5c3f39d4a0e",
+        "lane": 1,
+        "parentLinks": [
+          {
+            "hash": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
+            "lane": 3
+          },
+          {
+            "hash": "086ca83d5f5638339566dd45e8797fe375bb93f5",
+            "lane": 20
+          },
+          {
+            "hash": "2b2e8a7c6245433becc1184ff395c6b62e44065f",
+            "lane": 21
+          }
+        ],
+        "primaryBranchName": "refs/stash",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 54
+      },
+      {
+        "type": "commit",
+        "label": "index on master: e324b7c2 Merge branch 'task-yaml-8rm4nf-src…",
+        "commit": {
+          "hash": "086ca83d5f5638339566dd45e8797fe375bb93f5",
+          "subject": "index on master: e324b7c2 Merge branch 'task-yaml-8rm4nf-src-modernized-s'",
+          "author": "circlemouth",
+          "timestamp": 1763732069,
+          "parents": [
+            "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26"
+          ],
+          "parent": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "086ca83d5f5638339566dd45e8797fe375bb93f5",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "e324b7c2bf0a0060ab8f1d88f7530b0a651d8f26",
             "lane": 3
           }
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 45
+        "index": 55
+      },
+      {
+        "type": "commit",
+        "label": "untracked files on master: e324b7c2 Merge branch 'task-yaml-…",
+        "commit": {
+          "hash": "2b2e8a7c6245433becc1184ff395c6b62e44065f",
+          "subject": "untracked files on master: e324b7c2 Merge branch 'task-yaml-8rm4nf-src-modernized-s'",
+          "author": "circlemouth",
+          "timestamp": 1763732069,
+          "parents": [],
+          "parent": null,
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "2b2e8a7c6245433becc1184ff395c6b62e44065f",
+        "lane": 0,
+        "parentLinks": [],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 56
       },
       {
         "type": "commit",
@@ -15534,11 +15854,18 @@
           "parent": "1c580bb4ce01475e24871096ee2d0d87885fbb9e",
           "refs": "task-yaml-1cwkywj-src-modernized-s",
           "branches": [
-            "task-yaml-1cwkywj-src-modernized-s"
+            "task-yaml-1cwkywj-src-modernized-s",
+            "task-yaml-1xh113s-src-webclient-mo",
+            "task-yaml-qsrtp8-src-webclient-mo",
+            "task-yaml-18pcer5-src-modernized-s",
+            "task-yaml-x5oem4-src-modernized-s",
+            "task-yaml-8rm4nf-src-modernized-s",
+            "task-yaml-1xao46t-src-modernized-s",
+            "task-yaml-1y9h0hm-src-modernized-s"
           ]
         },
         "commitHash": "c16df554b6c39f1885d14aa57a836cdd85d38c38",
-        "lane": 10,
+        "lane": 11,
         "parentLinks": [
           {
             "hash": "1c580bb4ce01475e24871096ee2d0d87885fbb9e",
@@ -15550,7 +15877,7 @@
         "branchTags": [
           "task-yaml-1cwkywj-src-modernized-s"
         ],
-        "index": 46
+        "index": 57
       },
       {
         "type": "commit",
@@ -15566,23 +15893,36 @@
           ],
           "parent": "9e63e09769fc57f0d4cfae86eab85c7ba4513f91",
           "refs": "",
-          "branches": []
+          "branches": [
+            "task-yaml-1xh113s-src-webclient-mo",
+            "master",
+            "task-yaml-1xao46t-src-modernized-s",
+            "task-yaml-18pcer5-src-modernized-s",
+            "task-yaml-8rm4nf-src-modernized-s",
+            "task-yaml-1y9h0hm-src-modernized-s",
+            "task-yaml-x5oem4-src-modernized-s",
+            "task-yaml-qsrtp8-src-webclient-mo",
+            "task-yaml-7lgk3g-src-modernized-s"
+          ]
         },
         "commitHash": "2ff9d6dff8693ef46cde68cf77a625ed29ef7191",
         "lane": 0,
         "parentLinks": [
           {
             "hash": "9e63e09769fc57f0d4cfae86eab85c7ba4513f91",
-            "lane": 3
+            "lane": 6
           },
           {
             "hash": "0ab007ba70d21b30a4f618179a950f1c9876743f",
-            "lane": 13
+            "lane": 22
           }
         ],
+        "primaryBranchName": "main",
         "branchColor": "#4f85e8",
-        "branchTags": [],
-        "index": 47
+        "branchTags": [
+          "task-yaml-7lgk3g-src-modernized-s"
+        ],
+        "index": 58
       },
       {
         "type": "commit",
@@ -15609,7 +15949,7 @@
         ],
         "branchColor": "#4f85e8",
         "branchTags": [],
-        "index": 48
+        "index": 59
       },
       {
         "type": "commit",
@@ -15630,13 +15970,13 @@
             "task-yaml-1xao46t-src-modernized-s",
             "task-yaml-18pcer5-src-modernized-s",
             "task-yaml-8rm4nf-src-modernized-s",
-            "task-yaml-x5oem4-src-modernized-s",
             "task-yaml-1y9h0hm-src-modernized-s",
+            "task-yaml-x5oem4-src-modernized-s",
             "task-yaml-qsrtp8-src-webclient-mo"
           ]
         },
         "commitHash": "0ab007ba70d21b30a4f618179a950f1c9876743f",
-        "lane": 11,
+        "lane": 12,
         "parentLinks": [
           {
             "hash": "1c580bb4ce01475e24871096ee2d0d87885fbb9e",
@@ -15645,10 +15985,8 @@
         ],
         "primaryBranchName": "task-yaml-7lgk3g-src-modernized-s",
         "branchColor": "#4f85e8",
-        "branchTags": [
-          "task-yaml-7lgk3g-src-modernized-s"
-        ],
-        "index": 49
+        "branchTags": [],
+        "index": 60
       },
       {
         "type": "commit",
@@ -15687,7 +16025,7 @@
           },
           {
             "hash": "6250a48b0ceeeabdd2bfba3afd7426c4d7dd8834",
-            "lane": 14
+            "lane": 23
           }
         ],
         "primaryBranchName": "main",
@@ -15695,7 +16033,7 @@
         "branchTags": [
           "task-yaml-spqpu7-src-modernized-s"
         ],
-        "index": 50
+        "index": 61
       },
       {
         "type": "commit",
@@ -15734,17 +16072,17 @@
         "primaryBranchName": "task-yaml-spqpu7-src-modernized-s",
         "branchColor": "#e84f7f",
         "branchTags": [],
-        "index": 51
+        "index": 62
       },
       {
         "type": "empty",
         "label": "初期状態 (初回コミット以前)",
         "files": [],
         "marker": "pre-history",
-        "index": 52
+        "index": 63
       }
     ]
   },
   "projectRoot": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
-  "savedAt": 1763903716289
+  "savedAt": 1763903946283
 }
