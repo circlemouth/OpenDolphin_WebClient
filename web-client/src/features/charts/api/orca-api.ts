@@ -1,6 +1,3 @@
-import { httpClient } from '@/libs/http';
-import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
-
 import type {
   DiseaseMasterEntry,
   DrugInteractionEntry,
@@ -9,6 +6,19 @@ import type {
 } from '@/features/charts/types/orca';
 import { determineInteractionSeverity } from '@/features/charts/utils/interactionSeverity';
 import type { ModuleListPayload, ModuleModelPayload } from '@/features/charts/types/module';
+import { httpClient } from '@/libs/http';
+import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
+import type {
+  AddressMasterEntry,
+  DosageInstructionMaster,
+  DrugClassificationMaster,
+  EtensuMasterEntry,
+  InsurerMaster,
+  LabClassificationMaster,
+  MinimumDrugPriceEntry,
+  OrcaMasterListResponse,
+  SpecialEquipmentMaster,
+} from '@/types/orca';
 
 interface RawTensuMaster {
   srycd?: string | null;
@@ -56,6 +66,92 @@ interface RawDrugInteractionListResponse {
   list?: RawDrugInteraction[] | null;
 }
 
+interface RawDrugClassificationMaster {
+  classCode?: string | null;
+  className?: string | null;
+  kanaName?: string | null;
+  categoryCode?: string | null;
+  parentClassCode?: string | null;
+  isLeaf?: boolean | string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+}
+
+interface RawMinimumDrugPriceEntry {
+  srycd?: string | null;
+  drugName?: string | null;
+  kanaName?: string | null;
+  price?: number | string | null;
+  unit?: string | null;
+  priceType?: string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  reference?: MinimumDrugPriceEntry['reference'] | null;
+}
+
+interface RawDosageInstructionMaster {
+  youhouCode?: string | null;
+  youhouName?: string | null;
+  timingCode?: string | null;
+  routeCode?: string | null;
+  daysLimit?: number | string | null;
+  dosePerDay?: number | string | null;
+  comment?: string | null;
+}
+
+interface RawSpecialEquipmentMaster {
+  materialCode?: string | null;
+  materialName?: string | null;
+  category?: string | null;
+  insuranceType?: string | null;
+  unit?: string | null;
+  price?: number | string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  maker?: string | null;
+}
+
+interface RawLabClassificationMaster {
+  kensaCode?: string | null;
+  kensaName?: string | null;
+  sampleType?: string | null;
+  departmentCode?: string | null;
+  classification?: string | null;
+  insuranceCategory?: string | null;
+}
+
+interface RawInsurerMaster {
+  insurerNumber?: string | null;
+  insurerName?: string | null;
+  insurerKana?: string | null;
+  prefectureCode?: string | null;
+  address?: string | null;
+  phone?: string | null;
+  insurerType?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
+}
+
+interface RawEtensuMasterEntry {
+  etensuCategory?: string | null;
+  medicalFeeCode?: string | null;
+  name?: string | null;
+  points?: number | string | null;
+  startDate?: string | null;
+  endDate?: string | null;
+  note?: string | null;
+}
+
+interface RawAddressMasterEntry {
+  zipCode?: string | null;
+  prefectureCode?: string | null;
+  city?: string | null;
+  town?: string | null;
+  kana?: string | null;
+  roman?: string | null;
+  fullAddress?: string | null;
+}
+
 const formatOrcaDate = (inputDate?: Date): string => {
   const date = inputDate ?? new Date();
   const year = date.getFullYear();
@@ -77,6 +173,17 @@ const toOrcaDateParam = (value?: string | Date | null): string | null => {
   }
   const parsed = new Date(value);
   return Number.isNaN(parsed.getTime()) ? null : formatOrcaDate(parsed);
+};
+
+const toNullableNumber = (value: unknown): number | null => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? value : null;
+  }
+  if (typeof value === 'string') {
+    const parsed = Number.parseFloat(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
+  return null;
 };
 
 const mapTensuMaster = (entry: RawTensuMaster): TensuMasterEntry | null => {
@@ -135,6 +242,169 @@ const mapDrugInteraction = (entry: RawDrugInteraction): DrugInteractionEntry | n
       symptomCode: entry.syojyoucd ?? undefined,
       symptomDescription: entry.sskijo ?? undefined,
     }),
+  };
+};
+
+const mapDrugClassification = (entry: RawDrugClassificationMaster): DrugClassificationMaster | null => {
+  const classCode = entry.classCode?.trim();
+  const className = entry.className?.trim();
+  if (!classCode || !className) {
+    return null;
+  }
+
+  const isLeafValue = entry.isLeaf;
+
+  return {
+    classCode,
+    className,
+    kanaName: entry.kanaName ?? undefined,
+    categoryCode: entry.categoryCode ?? undefined,
+    parentClassCode: entry.parentClassCode ?? undefined,
+    isLeaf:
+      typeof isLeafValue === 'boolean'
+        ? isLeafValue
+        : isLeafValue != null
+          ? ['1', 'true', 'TRUE'].includes(String(isLeafValue))
+          : undefined,
+    startDate: entry.startDate ?? undefined,
+    endDate: entry.endDate ?? undefined,
+  };
+};
+
+const mapMinimumDrugPrice = (entry: RawMinimumDrugPriceEntry): MinimumDrugPriceEntry | null => {
+  const srycd = entry.srycd?.trim();
+  const drugName = entry.drugName?.trim();
+  if (!srycd || !drugName) {
+    return null;
+  }
+
+  return {
+    srycd,
+    drugName,
+    kanaName: entry.kanaName ?? undefined,
+    price: toNullableNumber(entry.price),
+    unit: entry.unit ?? undefined,
+    priceType: entry.priceType ?? undefined,
+    startDate: entry.startDate ?? undefined,
+    endDate: entry.endDate ?? undefined,
+    reference: entry.reference ?? undefined,
+  };
+};
+
+const mapDosageInstruction = (entry: RawDosageInstructionMaster): DosageInstructionMaster | null => {
+  const code = entry.youhouCode?.trim();
+  const name = entry.youhouName?.trim();
+  if (!code || !name) {
+    return null;
+  }
+
+  const daysLimit = toNullableNumber(entry.daysLimit);
+  const dosePerDay = toNullableNumber(entry.dosePerDay);
+
+  return {
+    youhouCode: code,
+    youhouName: name,
+    timingCode: entry.timingCode ?? undefined,
+    routeCode: entry.routeCode ?? undefined,
+    daysLimit: daysLimit ?? undefined,
+    dosePerDay: dosePerDay ?? undefined,
+    comment: entry.comment ?? undefined,
+  };
+};
+
+const mapSpecialEquipment = (entry: RawSpecialEquipmentMaster): SpecialEquipmentMaster | null => {
+  const materialCode = entry.materialCode?.trim();
+  const materialName = entry.materialName?.trim();
+  if (!materialCode || !materialName) {
+    return null;
+  }
+
+  return {
+    materialCode,
+    materialName,
+    category: entry.category ?? undefined,
+    insuranceType: entry.insuranceType ?? undefined,
+    unit: entry.unit ?? undefined,
+    price: toNullableNumber(entry.price),
+    startDate: entry.startDate ?? undefined,
+    endDate: entry.endDate ?? undefined,
+    maker: entry.maker ?? undefined,
+  };
+};
+
+const mapLabClassification = (entry: RawLabClassificationMaster): LabClassificationMaster | null => {
+  const kensaCode = entry.kensaCode?.trim();
+  const kensaName = entry.kensaName?.trim();
+  if (!kensaCode || !kensaName) {
+    return null;
+  }
+
+  return {
+    kensaCode,
+    kensaName,
+    sampleType: entry.sampleType ?? undefined,
+    departmentCode: entry.departmentCode ?? undefined,
+    classification: entry.classification ?? undefined,
+    insuranceCategory: entry.insuranceCategory ?? undefined,
+  };
+};
+
+const mapInsurer = (entry: RawInsurerMaster): InsurerMaster | null => {
+  const insurerNumber = entry.insurerNumber?.trim();
+  const insurerName = entry.insurerName?.trim();
+  if (!insurerNumber || !insurerName) {
+    return null;
+  }
+
+  return {
+    insurerNumber,
+    insurerName,
+    insurerKana: entry.insurerKana ?? undefined,
+    prefectureCode: entry.prefectureCode ?? undefined,
+    address: entry.address ?? undefined,
+    phone: entry.phone ?? undefined,
+    insurerType: entry.insurerType ?? undefined,
+    validFrom: entry.validFrom ?? undefined,
+    validTo: entry.validTo ?? undefined,
+  };
+};
+
+const mapEtensuMaster = (entry: RawEtensuMasterEntry): EtensuMasterEntry | null => {
+  const etensuCategory = entry.etensuCategory?.trim();
+  const medicalFeeCode = entry.medicalFeeCode?.trim();
+  const name = entry.name?.trim();
+  const points = toNullableNumber(entry.points);
+
+  if (!etensuCategory || !medicalFeeCode || !name || points === null) {
+    return null;
+  }
+
+  return {
+    etensuCategory,
+    medicalFeeCode,
+    name,
+    points,
+    startDate: entry.startDate ?? undefined,
+    endDate: entry.endDate ?? undefined,
+    note: entry.note ?? undefined,
+  };
+};
+
+const mapAddressMaster = (entry: RawAddressMasterEntry): AddressMasterEntry | null => {
+  const zipCode = entry.zipCode?.trim();
+  const fullAddress = entry.fullAddress?.trim();
+  if (!zipCode && !fullAddress) {
+    return null;
+  }
+
+  return {
+    zipCode: zipCode ?? undefined,
+    prefectureCode: entry.prefectureCode ?? undefined,
+    city: entry.city ?? undefined,
+    town: entry.town ?? undefined,
+    kana: entry.kana ?? undefined,
+    roman: entry.roman ?? undefined,
+    fullAddress: fullAddress ?? undefined,
   };
 };
 
@@ -285,4 +555,176 @@ export const fetchOrcaOrderModules = async (
     return [];
   }
   return payload.list.map(mapModuleModel).filter((module): module is ModuleModelPayload => Boolean(module));
+};
+
+export const fetchDrugClassifications = async (): Promise<DrugClassificationMaster[]> => {
+  const endpoint = '/orca/master/generic-class';
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawDrugClassificationMaster>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list
+        .map(mapDrugClassification)
+        .filter((item): item is DrugClassificationMaster => Boolean(item));
+    },
+  );
+};
+
+export const searchTensuByPointRange = async (
+  range: { min?: number | null; max?: number | null; date?: Date | null },
+): Promise<TensuMasterEntry[]> => {
+  const sanitizePoint = (value?: number | null): number | null => {
+    if (value === null || value === undefined) {
+      return null;
+    }
+    if (Number.isNaN(value) || !Number.isFinite(value)) {
+      return null;
+    }
+    const floored = Math.floor(value);
+    if (floored < 0 || floored > 9999) {
+      return null;
+    }
+    return floored;
+  };
+
+  const minValue = sanitizePoint(range.min);
+  const maxValue = sanitizePoint(range.max);
+
+  if (minValue === null && maxValue === null) {
+    return [];
+  }
+
+  if (minValue !== null && maxValue !== null && minValue > maxValue) {
+    return [];
+  }
+
+  const rangeToken =
+    minValue !== null && maxValue !== null
+      ? `${minValue}-${maxValue}`
+      : `${minValue ?? maxValue}`;
+  const dateToken = toOrcaDateParam(range.date ?? null);
+  const endpoint = `/orca/tensu/ten/${encodeURIComponent(
+    dateToken ? `${rangeToken},${dateToken}` : rangeToken,
+  )}/`;
+
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<RawTensuListResponse>(endpoint);
+      const list = response.data?.list ?? [];
+      return list.map(mapTensuMaster).filter((item): item is TensuMasterEntry => Boolean(item));
+    },
+    {
+      min: minValue ?? undefined,
+      max: maxValue ?? undefined,
+      date: range.date ?? undefined,
+    },
+  );
+};
+
+export const fetchMinimumDrugPrices = async (): Promise<MinimumDrugPriceEntry[]> => {
+  const endpoint = '/orca/master/generic-price';
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawMinimumDrugPriceEntry>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list
+        .map(mapMinimumDrugPrice)
+        .filter((item): item is MinimumDrugPriceEntry => Boolean(item));
+    },
+  );
+};
+
+export const fetchDosageInstructions = async (): Promise<DosageInstructionMaster[]> => {
+  const endpoint = '/orca/master/youhou';
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawDosageInstructionMaster>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list
+        .map(mapDosageInstruction)
+        .filter((item): item is DosageInstructionMaster => Boolean(item));
+    },
+  );
+};
+
+export const fetchSpecialEquipments = async (): Promise<SpecialEquipmentMaster[]> => {
+  const endpoint = '/orca/master/material';
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawSpecialEquipmentMaster>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list
+        .map(mapSpecialEquipment)
+        .filter((item): item is SpecialEquipmentMaster => Boolean(item));
+    },
+  );
+};
+
+export const fetchLabClassifications = async (): Promise<LabClassificationMaster[]> => {
+  const endpoint = '/orca/master/kensa-sort';
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawLabClassificationMaster>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list
+        .map(mapLabClassification)
+        .filter((item): item is LabClassificationMaster => Boolean(item));
+    },
+  );
+};
+
+export const fetchInsurers = async (): Promise<InsurerMaster[]> => {
+  const endpoint = '/orca/master/hokenja';
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawInsurerMaster>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list.map(mapInsurer).filter((item): item is InsurerMaster => Boolean(item));
+    },
+  );
+};
+
+export const fetchEtensuMasters = async (): Promise<EtensuMasterEntry[]> => {
+  const endpoint = '/orca/master/etensu';
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawEtensuMasterEntry>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list.map(mapEtensuMaster).filter((item): item is EtensuMasterEntry => Boolean(item));
+    },
+  );
+};
+
+export const lookupAddressMaster = async (zipcode: string): Promise<AddressMasterEntry[]> => {
+  const normalized = zipcode.trim();
+  if (!normalized) {
+    return [];
+  }
+  const endpoint = `/orca/master/address?zipcode=${encodeURIComponent(normalized)}`;
+  return measureApiPerformance(
+    PERFORMANCE_METRICS.orca.master.search,
+    `GET ${endpoint}`,
+    async () => {
+      const response = await httpClient.get<OrcaMasterListResponse<RawAddressMasterEntry>>(endpoint);
+      const list = response.data?.list ?? [];
+      return list.map(mapAddressMaster).filter((item): item is AddressMasterEntry => Boolean(item));
+    },
+    { zipcode: normalized },
+  );
 };

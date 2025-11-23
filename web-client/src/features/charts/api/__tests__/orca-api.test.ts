@@ -6,6 +6,7 @@ import {
   lookupGeneralName,
   searchDiseaseByName,
   searchTensuByName,
+  searchTensuByPointRange,
 } from '@/features/charts/api/orca-api';
 
 vi.mock('@/libs/http', async () => {
@@ -77,6 +78,38 @@ describe('orca-api', () => {
       point: 12.5,
       routeFlag: undefined,
     });
+  });
+
+  it('fetches tensu entries by point range with optional date', async () => {
+    vi.mocked(httpClient.get).mockResolvedValue({
+      data: { list: [{ srycd: '001', name: '初診料', ten: '50' }] },
+    } as never);
+
+    const result = await searchTensuByPointRange({ min: 50, max: 100, date: new Date('2026-05-01') });
+    const endpoint = `/orca/tensu/ten/${encodeURIComponent('50-100,20260501')}/`;
+
+    expect(httpClient.get).toHaveBeenCalledWith(endpoint);
+    expect(result).toEqual([
+      {
+        code: '001',
+        name: '初診料',
+        kana: undefined,
+        unitName: undefined,
+        point: 50,
+        startDate: undefined,
+        endDate: undefined,
+        yakkaCode: undefined,
+        inpatientFlag: undefined,
+        routeFlag: undefined,
+        categoryFlag: undefined,
+      },
+    ]);
+  });
+
+  it('returns empty array when point range is invalid', async () => {
+    await expect(searchTensuByPointRange({ min: null, max: null })).resolves.toEqual([]);
+    await expect(searchTensuByPointRange({ min: 200, max: 100 })).resolves.toEqual([]);
+    expect(httpClient.get).not.toHaveBeenCalled();
   });
 
   it('fetches disease master entries and filters invalid payloads', async () => {

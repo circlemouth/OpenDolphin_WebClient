@@ -86,7 +86,7 @@ export const chartHandlers = [
     // lp-only フラグ: Legacy の LP 優先。AbortSignal 受信時は 499 相当を返す。
     try {
       await waitWithAbort(LP_POLL_DELAY_MS, request.signal);
-    } catch (error) {
+    } catch {
       return HttpResponse.json({ reason: 'client aborted' }, { status: 499 });
     }
 

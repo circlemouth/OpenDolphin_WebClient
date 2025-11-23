@@ -8,7 +8,12 @@ import type {
   GeneralNameEntry,
   TensuMasterEntry,
 } from '@/features/charts/types/orca';
-import { useDiseaseSearch, useGeneralNameLookup, useTensuSearch } from '@/features/charts/hooks/useOrcaMasterSearch';
+import {
+  useDiseaseSearch,
+  useGeneralNameLookup,
+  useTensuPointSearch,
+  useTensuSearch,
+} from '@/features/charts/hooks/useOrcaMasterSearch';
 import { useInteractionCheck } from '@/features/charts/hooks/useInteractionCheck';
 import type { DecisionSupportMessage } from '@/features/charts/types/decision-support';
 import { recordOperationEvent } from '@/libs/audit';
@@ -91,6 +96,18 @@ const InlineError = styled.p`
   font-size: 0.9rem;
 `;
 
+const FilterBadge = styled.span`
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  background: ${({ theme }) => theme.palette.surfaceMuted};
+  color: ${({ theme }) => theme.palette.text};
+  font-size: 0.85rem;
+  border: 1px solid ${({ theme }) => theme.palette.border};
+`;
+
 type OrcaSearchMode = 'tensu' | 'disease' | 'general';
 
 type Selection = {
@@ -157,6 +174,10 @@ export const OrcaOrderPanel = ({
   const [tensuResults, setTensuResults] = useState<TensuMasterEntry[]>([]);
   const [diseaseResults, setDiseaseResults] = useState<DiseaseMasterEntry[]>([]);
   const [generalResult, setGeneralResult] = useState<GeneralNameEntry | null>(null);
+  const [pointMin, setPointMin] = useState('0');
+  const [pointMax, setPointMax] = useState('300');
+  const [effectiveDate, setEffectiveDate] = useState('');
+  const [pointError, setPointError] = useState<string | null>(null);
   const [lastSearchMode, setLastSearchMode] = useState<OrcaSearchMode>('tensu');
   const [searchError, setSearchError] = useState<string | null>(null);
   const [existingSelections, setExistingSelections] = useState<Selection[]>([]);
@@ -166,6 +187,7 @@ export const OrcaOrderPanel = ({
   const [pendingCode, setPendingCode] = useState<string | null>(null);
 
   const tensuSearch = useTensuSearch();
+  const tensuPointSearch = useTensuPointSearch();
   const diseaseSearch = useDiseaseSearch();
   const generalLookup = useGeneralNameLookup();
   const interactionCheck = useInteractionCheck();
@@ -175,6 +197,24 @@ export const OrcaOrderPanel = ({
     setDiseaseResults([]);
     setGeneralResult(null);
     setSearchError(null);
+    setPointError(null);
+  };
+
+  const parsePointInput = (value: string) => {
+    const numeric = Number.parseFloat(value);
+    if (Number.isNaN(numeric) || !Number.isFinite(numeric)) {
+      return null;
+    }
+    const clamped = Math.max(0, Math.min(9999, Math.floor(numeric)));
+    return clamped;
+  };
+
+  const buildEffectiveDate = () => {
+    if (!effectiveDate) {
+      return null;
+    }
+    const parsed = new Date(effectiveDate);
+    return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
   const handleSearch = async () => {
@@ -210,6 +250,49 @@ export const OrcaOrderPanel = ({
     } catch (error) {
       console.error('ORCA マスター検索に失敗しました', error);
       setSearchError('検索中にエラーが発生しました。時間をおいて再試行してください');
+    }
+  };
+
+  const handlePointSearch = async () => {
+    const minValue = parsePointInput(pointMin);
+    const maxValue = parsePointInput(pointMax);
+    const dateValue = buildEffectiveDate();
+
+    if (minValue === null && maxValue === null) {
+      setPointError('点数帯を入力してください（0〜9999）');
+      return;
+    }
+    if (minValue !== null && maxValue !== null && minValue > maxValue) {
+      setPointError('下限が上限を超えています');
+      return;
+    }
+
+    setPointError(null);
+    setLastSearchMode('tensu');
+    resetResults();
+
+    try {
+      const results = await tensuPointSearch.mutateAsync({ min: minValue, max: maxValue, date: dateValue });
+      setTensuResults(results);
+      if (results.length === 0) {
+        setSearchError('該当する診療行為が見つかりませんでした');
+      }
+    } catch (error) {
+      console.error('ORCA 点数帯検索に失敗しました', error);
+      setSearchError('検索中にエラーが発生しました。時間をおいて再試行してください');
+    }
+  };
+
+  const applyPointPreset = (preset: { min: number | null; max: number | null }) => {
+    if (preset.min !== null) {
+      setPointMin(String(preset.min));
+    } else {
+      setPointMin('');
+    }
+    if (preset.max !== null) {
+      setPointMax(String(preset.max));
+    } else {
+      setPointMax('');
     }
   };
 
@@ -422,11 +505,81 @@ export const OrcaOrderPanel = ({
               type="button"
               variant="secondary"
               onClick={handleSearch}
-              isLoading={tensuSearch.isPending || diseaseSearch.isPending || generalLookup.isPending}
+              isLoading={
+                tensuSearch.isPending || diseaseSearch.isPending || generalLookup.isPending || tensuPointSearch.isPending
+              }
             >
               検索
             </Button>
           </Stack>
+          {mode === 'tensu' ? (
+            <SurfaceCard tone="muted">
+              <Stack gap={12}>
+                <div style={{ fontWeight: 700, fontSize: '0.95rem' }}>点数帯フィルタ（/orca/tensu/ten）</div>
+                <Stack direction="row" gap={12} wrap>
+                  <TextField
+                    label="点数下限"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={9999}
+                    value={pointMin}
+                    onChange={(event) => setPointMin(event.currentTarget.value)}
+                    errorMessage={pointError ?? undefined}
+                  />
+                  <TextField
+                    label="点数上限"
+                    type="number"
+                    inputMode="numeric"
+                    min={0}
+                    max={9999}
+                    value={pointMax}
+                    onChange={(event) => setPointMax(event.currentTarget.value)}
+                  />
+                  <TextField
+                    label="評価日 (任意)"
+                    type="date"
+                    value={effectiveDate}
+                    onChange={(event) => setEffectiveDate(event.currentTarget.value)}
+                    description="未指定時は本日扱い"
+                  />
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handlePointSearch}
+                    disabled={disabled}
+                    isLoading={tensuPointSearch.isPending}
+                  >
+                    点数帯で検索
+                  </Button>
+                </Stack>
+                <ToggleRow>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => applyPointPreset({ min: null, max: 50 })}>
+                    50 点以下
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => applyPointPreset({ min: 50, max: 100 })}>
+                    50–100 点
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => applyPointPreset({ min: 100, max: 300 })}>
+                    100–300 点
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => applyPointPreset({ min: 300, max: null })}>
+                    300 点以上
+                  </Button>
+                </ToggleRow>
+                <ToggleRow>
+                  {parsePointInput(pointMin) !== null || parsePointInput(pointMax) !== null ? (
+                    <FilterBadge>
+                      点数帯:{' '}
+                      {parsePointInput(pointMin) ?? '-'}–{parsePointInput(pointMax) ?? '上限なし'}
+                      点
+                    </FilterBadge>
+                  ) : null}
+                  {effectiveDate ? <FilterBadge>評価日: {effectiveDate}</FilterBadge> : null}
+                </ToggleRow>
+              </Stack>
+            </SurfaceCard>
+          ) : null}
           {searchError ? <InlineError>{searchError}</InlineError> : null}
         </SectionHeader>
 
