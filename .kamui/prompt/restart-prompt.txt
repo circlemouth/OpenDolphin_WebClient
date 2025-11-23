@@ -1,1 +1,1 @@
-rs
+Ctrl+C
