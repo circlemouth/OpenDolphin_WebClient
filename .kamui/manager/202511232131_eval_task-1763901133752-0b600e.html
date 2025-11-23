@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート task-1763901133752-0b600e</title>
+    <style>
+      body {font-family:"Hiragino Sans","Noto Sans JP",system-ui,-apple-system,BlinkMacSystemFont,sans-serif;line-height:1.6;margin:24px;background-color:#e9f0f2;color:#1f2a30;}
+      .monitor-wrapper{max-width:1180px;margin:0 auto;padding:32px;background:#ffffff;border:1px solid #c4d3d7;}
+      .monitor-header{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
+      .monitor-title{font-size:26px;font-weight:700;letter-spacing:0.04em;color:#1f2a30;}
+      .scoreboard{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;}
+      .score-card{background:#eef3f4;border:1px solid #c4d3d7;padding:12px;border-radius:10px;}
+      .score-card h2{margin:0;font-size:15px;display:flex;justify-content:space-between;align-items:center;}
+      .score-value{font-size:24px;font-weight:700;}
+      .badge-best{color:#b45309;}
+      .radar{width:260px;height:260px;margin:8px auto;display:block;}
+      table.monitor-report{width:100%;border-collapse:collapse;table-layout:fixed;background:#ffffff;border:1px solid #c4d3d7;}
+      col.timestamp-column{width:170px;}
+      col.agent-column{width:calc((100% - 170px)/3);}
+      th,td{border:1px solid #c4d3d7;padding:12px;vertical-align:top;background:#ffffff;}
+      th{background:#d8e6e9;text-align:left;font-size:13px;font-weight:600;letter-spacing:0.05em;text-transform:uppercase;color:#2c3a40;}
+      tbody tr:nth-child(even) td{background-color:#eef3f4;}
+      .status-badge{display:inline-block;font-size:10px;font-weight:600;letter-spacing:0.02em;padding:1px 6px;background:#d8e6e9;border:1px solid #b8c9cd;color:#1f2a30;white-space:nowrap;line-height:1.3;vertical-align:top;}
+      .status-badge--in-progress{background:#fef3cd;border-color:#f0e5a5;}
+      .status-badge--not-started{background:#e3edf0;border-color:#cdd9dd;}
+      .status-badge--completed{background:#c3d4d8;border-color:#aabfc5;}
+      .agent-meta{display:block;margin-bottom:6px;line-height:1.5;}
+      .agent-meta .status-badge{margin-right:6px;}
+      details summary{list-style:none;cursor:pointer;font-weight:600;font-size:12px;}
+      pre{white-space:pre-wrap;word-break:break-word;margin:0;font-size:12px;line-height:1.55;color:#1f2a30;background:#f2f6f7;border:1px solid #c4d3d7;padding:12px;}
+      .snapshot-summary{margin-bottom:6px;font-weight:500;color:#2c3a40;}
+      .best-note{font-weight:700;color:#b45309;}
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート（ガントチャート比較）</h1>
+        <p class="monitor-description">タスク task-1763901129082-266549 / task-1763901133752-0b600e と master(新規ガント) の3ワークツリーを比較。指標6種×100点=計600点で採点。</p>
+      </header>
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>task-1763901129082-266549 <span class="score-value">479/600</span></h2>
+          <div>メダル: 🥈（実装妥当性 B+）</div>
+        </div>
+        <div class="score-card">
+          <h2>task-1763901133752-0b600e <span class="score-value">522/600</span></h2>
+          <div>メダル: 🏆（最優秀 / 実装妥当性 A）</div>
+        </div>
+        <div class="score-card">
+          <h2>master-modernized-bridge-ui-plan <span class="score-value">496/600</span></h2>
+          <div>メダル: 🥉（実装妥当性 B）</div>
+        </div>
+      </div>
+      <div class="scoreboard">
+        <div class="score-card">
+          <svg class="radar" viewBox="0 0 260 260" aria-label="radar-1763901129082-266549">
+            <polygon points="130,40 207,82 205,165 130,203 74,162 66,93" fill="rgba(12,87,155,0.15)" stroke="#0c579b" stroke-width="2"/>
+            <text x="130" y="20" text-anchor="middle" font-size="10">計画網羅性85</text>
+            <text x="230" y="92" font-size="10">依存一貫性80</text>
+            <text x="222" y="182" font-size="10">スケジュール78</text>
+            <text x="130" y="247" text-anchor="middle" font-size="10">範囲整合82</text>
+            <text x="20" y="182" font-size="10">リスク72</text>
+            <text x="18" y="92" font-size="10">表示適正82</text>
+          </svg>
+        </div>
+        <div class="score-card">
+          <svg class="radar" viewBox="0 0 260 260" aria-label="radar-1763901133752-0b600e">
+            <polygon points="130,49 199,90 197,169 130,211 68,166 61,90" fill="rgba(16,133,80,0.18)" stroke="#108550" stroke-width="2"/>
+            <text x="130" y="20" text-anchor="middle" font-size="10">計画網羅性90</text>
+            <text x="230" y="92" font-size="10">依存一貫性88</text>
+            <text x="222" y="182" font-size="10">スケジュール86</text>
+            <text x="130" y="247" text-anchor="middle" font-size="10">範囲整合90</text>
+            <text x="20" y="182" font-size="10">リスク80</text>
+            <text x="18" y="92" font-size="10">表示適正88</text>
+          </svg>
+        </div>
+        <div class="score-card">
+          <svg class="radar" viewBox="0 0 260 260" aria-label="radar-master">
+            <polygon points="130,55 195,92 195,168 130,207 71,164 71,92" fill="rgba(180,109,21,0.16)" stroke="#b46d15" stroke-width="2"/>
+            <text x="130" y="20" text-anchor="middle" font-size="10">計画網羅性83</text>
+            <text x="230" y="92" font-size="10">依存一貫性84</text>
+            <text x="222" y="182" font-size="10">スケジュール84</text>
+            <text x="130" y="247" text-anchor="middle" font-size="10">範囲整合85</text>
+            <text x="20" y="182" font-size="10">リスク76</text>
+            <text x="18" y="92" font-size="10">表示適正84</text>
+          </svg>
+        </div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1763901129082-266549</th>
+            <th>task-1763901133752-0b600e</th>
+            <th>master-modernized-bridge-ui-plan</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-11-23 21:31</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--not-started">未着手多</span><span class="agent-label">modernized_server / web_client / release の三章で依存線明瞭。開始日がday単位で短期。</span></div>
+              <details class="snapshot-details"><summary>評価詳細</summary><pre>
+強み: サーバーとUI双方のタスク列挙、RUN_IDやログ配置の言及で証跡意識あり。
+弱み: 進捗・優先度バランスがやや不均等（Highが多くクリティカルパス長）。日次粒度で現実期間が短め。
+コミット状況: 未コミット（.kamui/apps/modernized-bridge-ui-plan.yaml, icons）。
+              </pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--not-started">未着手多</span><span class="agent-label">API互換→MSW無効→E2E→UIブラッシュアップ→DOC_STATUS の流れが明確。</span></div>
+              <details class="snapshot-details"><summary>評価詳細</summary><pre>
+強み: web-client側の実務導線（MSW無効化、VITE設定、TraceId表示）まで具体。依存・日程が週単位で現実的。
+弱み: リスクと証跡パスの明文化がやや薄い。
+コミット状況: 未コミット（.kamui/apps/webclient-sync-ui-plan.yaml, icons）。
+              </pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--in-progress">作成済</span><span class="agent-label">RUN_ID確定→API差分→疎通→互換設計→UI改修→E2E→リリースと一貫。</span></div>
+              <details class="snapshot-details"><summary>評価詳細</summary><pre>
+強み: モダナイズサーバー文書を踏まえ、UIブラッシュアップと接続検証を同列で管理。showDependencies有効で可視性良好。
+弱み: リスク/証跡タスクが1エントリに集約され、具体的なログパス指示が不足。
+コミット状況: 未コミット（.kamui/apps/modernized-bridge-ui-plan.yaml, icons）。
+              </pre></details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="best-note">最優秀: task-1763901133752-0b600e（理由: web-clientの実運用ステップと互換レイヤーの整合が最も具体的で、依存・期間設定も現実的）。</p>
+      <p>成果物リンク: <code>.worktrees/task-1763901129082-266549/.kamui/apps/modernized-bridge-ui-plan.yaml</code> / <code>.worktrees/task-1763901133752-0b600e/.kamui/apps/webclient-sync-ui-plan.yaml</code> / <code>.kamui/apps/modernized-bridge-ui-plan.yaml</code></p>
+    </div>
+  </body>
+</html>

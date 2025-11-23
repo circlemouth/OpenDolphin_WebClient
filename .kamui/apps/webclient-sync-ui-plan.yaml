@@ -1,0 +1,200 @@
+ganttConfig:
+  defaultView: week
+  startDate: 2025-11-24
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  webclient_modernized_bridge:
+    00_RUN_IDと参照チェーン確定.md:
+      content: |-
+        # 🗂️ RUN_ID と参照チェーン確定
+
+        - RUN_ID を `20251123T213145Z` で統一し、`AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → PHASE2 Manager Overview → 各チェックリスト` の参照チェーンを再確認する。
+        - `docs/web-client/planning/phase2/DOC_STATUS.md` の該当行へ備考追記する下書きを用意し、証跡パスのドラフトも同 RUN_ID で揃える。
+        - 禁止事項（Python 実行禁止、`server/` 配下・Legacy 資産非改変、ORCA 本番/Trial 経路禁止）を再確認し、作業メンバーへ共有する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: "codex"
+      api: []
+      dependency: []
+      schedule:
+        start: 2025-11-24T00:00:00.000Z
+        days: 1
+    01_API互換レイヤー再確認とギャップ整理.md:
+      content: |-
+        # 📑 API 互換レイヤー再確認とギャップ整理
+
+        - `src/modernized_server/08_Webクライアント向けAPI安定化.md` の互換方針を再読し、Web クライアントが依存するエンドポイントの破壊的変更吸収策（パラメータ/レスポンス変換・feature flag）を最新化する。
+        - `docs/web-client/architecture/REST_API_INVENTORY.md` と `process/API_UI_GAP_ANALYSIS.md` を突き合わせ、残りの差分（型/値域/エラーコード）を列挙して DoD を明示する。
+        - `artifacts/api-stability/` 既存モックの再利用可否を判定し、足りないケースは追加作成方針を決める。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: "claude code"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md
+      schedule:
+        start: 2025-11-25T00:00:00.000Z
+        days: 2
+    02_接続基盤セットアップ（MSW無効化とVITE_DEV_PROXY_TARGET設定）.md:
+      content: |-
+        # 🔌 接続基盤セットアップ（MSW 無効化と VITE_DEV_PROXY_TARGET 設定）
+
+        - `docs/web-client/README.md#開発モックmswとバックエンド切替` を踏まえ、Stage 接続時の MSW/Service Worker 無効化手順と `VITE_DEV_PROXY_TARGET`/`.env.stage` の設定を整理し、実行コマンドをテンプレート化する。
+        - `src/modernized_server/09_統合E2E接続確認（Webクライアント連携）.md` に沿って、開発用 ORCA 接続情報（`operations/mac-dev-login.local.md`）の参照ポイントを明記する。
+        - 接続先未設定ガードや TraceId バナーが表示されることを確認するための手動チェックリストを作る。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: "gemini cli"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md
+      schedule:
+        start: 2025-11-25T00:00:00.000Z
+        days: 1
+    03_E2E接続ドライラン（認証・受付・カルテ・ORCAラッパー）.md:
+      content: |-
+        # ✅ E2E 接続ドライラン（認証・受付・カルテ・ORCA ラッパー）
+
+        - `src/modernized_server/09_統合E2E接続確認（Webクライアント連携）.md` のマトリクスをベースに、MSW 無効状態で認証/受付/カルテ閲覧/CLAIM 送信を最小セットで実測し、Pass/Fail/Blocked を判定する。
+        - HAR/HTTP dump/サーバーログ/スクリーンショットを `artifacts/e2e-connect/20251123T213145Z/` に保存し、機微情報はマスキングする。
+        - Stage 接続先が未決定の場合は Blocker として記録し、必要な接続情報一覧を Ops/SRE へリクエストする。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: "gemini cli"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md
+        - src/webclient_modernized_bridge/02_接続基盤セットアップ（MSW無効化とVITE_DEV_PROXY_TARGET設定）.md
+      schedule:
+        start: 2025-11-26T00:00:00.000Z
+        days: 2
+    04_UIブラッシュアップ要件整理（Charts/Reception軸）.md:
+      content: |-
+        # 🎨 UI ブラッシュアップ要件整理（Charts / Reception 軸）
+
+        - `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` と `ux/ONE_SCREEN_LAYOUT_GUIDE.md` を参照し、E2E 実測で顕在化した UI ギャップ（レスポンシブ、状態フィードバック、TraceId 表示）を列挙する。
+        - `operations/RECEPTION_WEB_CLIENT_MANUAL.md` の受付 UX 更新点とサーバー挙動の差分を確認し、クライアント側で対応すべき改善要求を整理する。
+        - ブラッシュアップの優先度と DoD（監査・アクセシビリティ要件含む）を決め、次タスクで実装対象を確定する。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: "codex"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/03_E2E接続ドライラン（認証・受付・カルテ・ORCAラッパー）.md
+      schedule:
+        start: 2025-11-26T12:00:00.000Z
+        days: 1
+    05_UIブラッシュアップ実装とデザインシステム適用.md:
+      content: |-
+        # ✨ UI ブラッシュアップ実装とデザインシステム適用
+
+        - 受付一覧・カルテ画面のフィードバック UI（TraceId コピー、再試行ボタン、フォームバリデーション）を `design-system/ALPHA_COMPONENTS.md` に沿って実装/調整する。
+        - レイアウト調整（ワイド画面追従、左レール/右ペインの折りたたみ条件、アクセシビリティ対応）を `ux/KARTE_SCREEN_IMPLEMENTATION.md` の指針で見直す。
+        - 実装差分を `features/RECEPTION_SCHEDULE_AND_SUMMARY.md` など該当仕様書へ反映し、スクリーンショットを `artifacts/ui-brushup/20251123T213145Z/` に保存する。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: "codex"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/04_UIブラッシュアップ要件整理（Charts/Reception軸）.md
+      schedule:
+        start: 2025-11-27T00:00:00.000Z
+        days: 3
+    06_観測性と監査ログ突合.md:
+      content: |-
+        # 🔍 観測性と監査ログ突合
+
+        - `src/modernized_server/10_オブザーバビリティと運用運転.md` と `docs/server-modernization/phase2/operations/logs/20251122T071146Z-tracing.md` を参照し、Web クライアント UI の TraceId 表示とサーバーログ/`d_audit_event` との突合を実施する。
+        - ネットワーク遮断→復帰時のリトライ挙動（SSE/ポーリング）を確認し、UI 上の通知と TraceId の継承が保持されることを証跡化する。
+        - TLS/証跡の保存場所を `artifacts/observability/20251123T213145Z/` に集約し、機微情報をマスクする。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: "claude code"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/03_E2E接続ドライラン（認証・受付・カルテ・ORCAラッパー）.md
+      schedule:
+        start: 2025-11-28T00:00:00.000Z
+        days: 1
+    07_DOC_STATUS反映と引き継ぎ.md:
+      content: |-
+        # 📝 DOC_STATUS 反映と引き継ぎ
+
+        - `docs/web-client/planning/phase2/DOC_STATUS.md` へ RUN_ID=`20251123T213145Z` を備考追記し、`docs/web-client/README.md`・`docs/server-modernization/phase2/INDEX.md` に同日付でリンクを反映する。
+        - E2E/ブラッシュアップ成果と残課題を `docs/server-modernization/phase2/operations/logs/20251123T213145Z-e2e.md`（新規）へサマリ化し、証跡ディレクトリを参照可能にする。
+        - マネージャー報告テンプレ（【ワーカー報告】形式）を草稿し、次 RUN に引き継ぐ。
+      priority: Low
+      status: not_started
+      progress: 0
+      agent: "codex"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/05_UIブラッシュアップ実装とデザインシステム適用.md
+        - src/webclient_modernized_bridge/06_観測性と監査ログ突合.md
+      schedule:
+        start: 2025-11-29T00:00:00.000Z
+        days: 1

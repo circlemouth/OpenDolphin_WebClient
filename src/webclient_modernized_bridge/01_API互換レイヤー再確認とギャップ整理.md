@@ -1,4 +1,4 @@
-# 01_API互換レイヤー再確認とギャップ整理
+# 01_API互換レイヤー再確認とギャップ整理　✓
 
 - RUN_ID: `20251123T130134Z`
 - 期間: 2025-11-25 09:00 〜 2025-11-27 09:00 (JST)
@@ -22,6 +22,9 @@
 - 互換フラグと変換方針は 08 章のドラフトをベースに継続。`X-Client-Compat` で切り替える 5 本（doc update, LP only, ORCA trial 正規化, delete strict, roles/facility 補完）をそのまま維持する方針で合意。
 - `REST_API_INVENTORY` と `API_UI_GAP_ANALYSIS` を突き合わせ、未吸収 or UI 未移植の差分を 6 項目に整理（下表）。DoD は「互換マッピング仕様をログに記載し、必要モック/期待値を追加してクライアントが即時検証できる状態」に設定。
 - `artifacts/api-stability/20251120T191203Z` の MSW/期待値/ベンチマークは再利用可と判断。追加すべきモックは `/karte/modules`, `/karte/images`, `/chartEvent/dispatch`（LP/SSE デグレ再現）, `/stamp/tree/sync` の 4 ケース。新規アーティファクトは本 RUN_ID で `artifacts/api-stability/20251123T130134Z/` を掘り、必要分のみ追加する計画。
+- Worker-B (RUN_ID=`20251123T130134Z-B`) で Charts/Stamp/Image/ChartEvent UI のモック期待値ドラフトを追加。`artifacts/api-stability/20251123T130134Z/mocks/` に stamps-sync / chartEvent-delete / images-placeholder / modules-placeholder を配置し、実サーバー切替は `VITE_DISABLE_MSW=1` + preview 起動のみ記述して接続は未実施。
+- Worker-C (RUN_ID=`20251123T130134Z-C`) で 4 モックを MSW へ組込み、互換フラグコメントを追記（lp-only/strict-delete/attachment placeholder/no-op sync）。LP は 55s×5 回→204、SSE は 1 イベント + `retry:3000`。`artifacts/api-stability/20251123T130134Z/schemas/` にレスポンス JSON を追加し、実サーバー検証手順をログへ記載。
+- 2025-11-23 (Worker-A, RUN_ID=20251123T130134Z-A): 差分 6 件を再確認し、互換レイヤー影響を「API名/HTTP/Scope/UI影響/推奨モック or 実サーバー経路」で整理してログへ追記。フラグ設定は現行維持（doc update / lp-only / orca-trial / strict-delete / no-op sync / attachment placeholder）。
 
 ## 差分と吸収策（最新版ギャップ表）
 | 領域 | ギャップ内容 | 必要な互換レイヤー/flag | DoD |
