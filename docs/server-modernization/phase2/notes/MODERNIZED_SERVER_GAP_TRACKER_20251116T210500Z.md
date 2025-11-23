@@ -23,6 +23,10 @@
 | ORCA-01 | `/orca/inputset` の WHERE 句に括弧がなく S% の hospnum フィルタが欠落 | SQL を `(inputcd like 'P%' or inputcd like 'S%')` で括り、両方に `hospnum=?` を適用。 | `…193200Z-orca-stamp-tensu.md` |
 | ORCA-02 | `/orca/stamp/{setCd,name}` が診療日指定不可 | パラメータに `date` を追加し、`tbl_inputset` の有効期間チェックを呼び出し元で指定できるようにする。 | 同上 |
 | ORCA-03 | `/orca/tensu/shinku` が必要列を返却しない | `TensuMaster` の `taniname`, `ykzkbn`, `yakkakjncd` などをレスポンスに含め、`/tensu/name` との整合を取る。 | 同上 |
+| ORCA-05 | 薬剤・特定器材・検査分類マスタ（例: `TBL_GENERIC_CLASS`, `TBL_GENERIC_PRICE`, `TBL_MATERIAL_*`, `TBL_KENSASORT`）を返す REST が不存在 | 薬効/用法/材料/検査分類コードを返却する新規 REST を追加し、DTO/Schema に分類・最低薬価・用法コードを含める。ステータス=Open、オーナー=Worker-B、ETA=2025-12-06 | `docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md` |
+| ORCA-06 | 保険者・住所マスタ（`TBL_HKNJAINF`, `TBL_ADRS` 等）を REST で提供していない | 保険者コード・住所コード体系を返却する API を新設し、資格確認/住所補完の UI で利用できるようにする。ステータス=Open、オーナー=Worker-B、ETA=2025-12-06 | 同上 |
+| ORCA-07 | ORCA DB 接続が `custom.properties` 直指定で DataSource/Secrets 化されていない | `ORCAConnection` を DataSource 化し Secrets 管理へ移行、環境切替と資格情報ローテの監査を可能にする。ステータス=Open、オーナー=Worker-B、ETA=2025-12-06 | 同上 |
+| ORCA-08 | 電子点数表（`TBL_ETENSU_1~5`）を返す REST が不存在 | 電子点数表を返す新規 REST を追加し、点数改定・将来日計算に必要な告示日/適用開始日/区分/点数を DTO/Schema に含める。ステータス=Open、オーナー=Worker-B（暫定）、ETA=2025-12-20 | `docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md#orca-08-電子点数表-rest-設計たたき台run_id20251123t135709z` |
 
 ## 3. Messaging / 監査 / RUN ガバナンス
 | ID | 課題 | 対応方針 | 根拠 |

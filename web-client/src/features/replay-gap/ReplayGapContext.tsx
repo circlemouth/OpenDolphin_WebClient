@@ -7,13 +7,7 @@ import { useAuth } from '@/libs/auth';
 import { fetchChartsPatientList, fetchPatientVisits } from '@/features/charts/api/patient-visit-api';
 import { patientVisitsQueryKey } from '@/features/charts/hooks/usePatientVisits';
 import { sendReplayGapAudit, type ReplayGapAuditPayload, type ReplayGapAuditPlatform } from '@/features/replay-gap/replayGapAudit';
-import {
-  replayGapInitialState,
-  useReplayGapController,
-  type ReplayGapPhase,
-  type ReplayGapReloadMode,
-  type ReplayGapState,
-} from '@/features/replay-gap/useReplayGapController';
+import { useReplayGapController, type ReplayGapReloadMode, type ReplayGapState } from '@/features/replay-gap/useReplayGapController';
 
 interface ParsedSseEvent {
   id?: string;
@@ -72,7 +66,6 @@ const readEventStream = async (
   const decoder = new TextDecoder('utf-8');
   let buffer = '';
   try {
-    // eslint-disable-next-line no-constant-condition
     while (true) {
       const { value, done } = await reader.read();
       if (done) {
@@ -127,6 +120,7 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
   const attemptsRef = useRef(0);
   const gapDetectedAtRef = useRef<string | undefined>(undefined);
   const lastGapSizeRef = useRef<number | undefined>(undefined);
+  const clientUuid = session?.credentials?.clientUuid;
 
   const sendAudit = useCallback(
     async (mode: ReplayGapReloadMode, status: 'success' | 'failure', errorCode?: number) => {
@@ -156,7 +150,7 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
         status,
         attempts: attemptsRef.current,
         lastEventId: lastEventIdRef.current,
-        clientUuid: session?.credentials.clientUuid,
+        clientUuid,
         lastErrorCode: errorCode,
         gapSize: lastGapSizeRef.current,
         gapDetectedAt: gapDetectedAtRef.current,
@@ -174,7 +168,7 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
         console.error('Replay gap audit を 3 回試行しましたが送信できませんでした。', error);
       }
     },
-    [session?.credentials.clientUuid],
+    [clientUuid],
   );
 
   const runReload = useCallback(
@@ -190,7 +184,7 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
         try {
           const { visits, sequence, gapSize } = await (async () => {
             try {
-              return await fetchChartsPatientList({ clientUuid: session?.credentials.clientUuid });
+              return await fetchChartsPatientList({ clientUuid });
             } catch (error) {
               if (axios.isAxiosError(error) && error.response?.status === 404) {
                 const fallbackVisits = await fetchPatientVisits();
@@ -219,7 +213,7 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
       ongoingReloadRef.current = task;
       return task;
     },
-    [completeReload, failReload, queryClient, sendAudit, startReload, state.attempts, state.phase],
+    [clientUuid, completeReload, failReload, queryClient, sendAudit, startReload, state.attempts, state.phase],
   );
 
   const handleReplayGapEvent = useCallback(() => {
@@ -310,6 +304,8 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
   return <ReplayGapContext.Provider value={value}>{children}</ReplayGapContext.Provider>;
 };
 
+// Fast refresh 例外: フックは別ファイルへ分離するほどでもないためここでのみ許可
+// eslint-disable-next-line react-refresh/only-export-components
 export const useReplayGapContext = () => {
   const context = useContext(ReplayGapContext);
   if (!context) {

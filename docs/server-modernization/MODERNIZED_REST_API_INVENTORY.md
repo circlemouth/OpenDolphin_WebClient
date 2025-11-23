@@ -183,6 +183,7 @@
 
 ### OrcaResource (`/orca`)
 主に ORCA マスタ・病名・スタンプ連携を担う大規模リソース。代表的なパスは以下の通り。
+マスタ未提供分の REST 追加検討時は、ORCA DB 定義書のオフラインアーカイブ（`docs/server-modernization/phase2/operations/assets/orca-db-schema/README.md`）を参照し、正式版（2024-04-26）を基本に項目・型を確認すること。
 
 | HTTP | パス | 主な処理 | 備考 |
 | --- | --- | --- | --- |
@@ -201,6 +202,20 @@
 | GET | `/orca/deptinfo` | 診療科情報一覧 | `OrcaServiceBean#getDeptInfo`。【F:server-modernized/src/main/java/open/orca/rest/OrcaResource.java†L1729-L1786】 |
 
 ※ 上記以外にも `/orca/tensu/point/` や `/orca/claim/` 系の補助エンドポイントが存在するため、要件変更時はソース全体を確認すること。
+
+#### ORCA-08: ORCA マスタ系（Spec-based / MSW 実装済み、UI 実装中）
+- RUN_ID=`20251123T135709Z`。サーバー実装は未着手だが、web-client 側で MSW フィクスチャ＋型定義は実装済み（`web-client/src/mocks/fixtures/orcaMaster.ts` ほか）。OrcaOrderPanel の UI 連携は ORCA-04 backlog として実装中。証跡: `docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md`（artifact スキーマ: `artifacts/api-stability/20251123T130134Z/schemas/orca-master-*.json`）。
+
+| HTTP | パス | 主な処理 | 備考 |
+| --- | --- | --- | --- |
+| GET | `/orca/master/address?zip=` | 郵便番号から住所 1 件を返却。未一致時は 200/空 body。 | レスポンス想定: `zipCode/prefectureCode/city/town/kana/roman/fullAddress`。Spec-based（MSW 返却済み、UI 実装中）。RUN_ID=`20251123T135709Z`。 |
+| GET | `/orca/master/etensu?category=&keyword=&effective=` | 電子点数表を list + `totalCount` + `fetchedAt` で返却。 | DTO: `category/medicalFeeCode/name/points/startDate/endDate/note`。keyword 前方一致、空 keyword で全件。Spec-based（MSW 返却済み）。 |
+| GET | `/orca/master/generic-class?keyword=&facility=&effective=` | 薬剤分類ツリーを取得。 | DTO: `classCode/className/kanaName/categoryCode/parentClassCode/isLeaf/startDate/endDate`。facility/effective は透過。Spec-based（MSW 返却済み）。 |
+| GET | `/orca/master/generic-price?srycd=&effective=` | 薬価（単一）を返却。未一致時は price=null。 | DTO: `price/unit/priceType/reference{yukostymd,yukoedymd,source}`。404 非採用。Spec-based（MSW 返却済み）。 |
+| GET | `/orca/master/hokenja?pref=&keyword=&effective=` | 保険者検索（名称/カナ部分一致）。 | DTO: `insurerNumber/name/kana/prefectureCode/address/phone/insurerType/validFrom/validTo`。Spec-based（MSW 返却済み）。 |
+| GET | `/orca/master/kensa-sort?keyword=&effective=` | 検査分類マスタ取得。 | DTO: `kensaCode/kensaName/sampleType/departmentCode/classification/insuranceCategory`。Spec-based（MSW 返却済み）。 |
+| GET | `/orca/master/material?keyword=&effective=` | 特定器材マスタ取得。 | DTO: `materialCode/name/category/insuranceType/unit/price/startDate/endDate/maker`（price 0 許容）。Spec-based（MSW 返却済み）。 |
+| GET | `/orca/master/youhou?keyword=&effective=` | 用法マスタ取得。 | DTO: `youhouCode/name/timingCode/routeCode/daysLimit/dosePerDay/comment`。Spec-based（MSW 返却済み）。 |
 
 ### PHRResource (`/20/adm/phr`)
 - ADM20 側で PHR 連携の責務を担うが、2025-11-14 時点では RESTEasy へのリソース登録が保留となっており Legacy API 11 件が未公開。`PhrRequestContextExtractor` や `PhrAuditHelper` は用意済みのため、各エンドポイントごとに監査 ID・施設整合チェック・署名付き応答ルールを整理してから公開する必要がある。

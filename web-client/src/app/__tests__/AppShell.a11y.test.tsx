@@ -1,8 +1,9 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { axe } from 'vitest-axe';
 import { render } from '@testing-library/react';
 import { MemoryRouter, Route, Routes } from 'react-router-dom';
 import { ThemeProvider } from '@emotion/react';
+import type { ReactNode } from 'react';
 
 import { AppShell } from '@/app/layout/AppShell';
 import { AuthContext } from '@/libs/auth/auth-context';
@@ -10,6 +11,20 @@ import { createAuthHeaders } from '@/libs/auth/auth-headers';
 import type { AuthContextValue, AuthSession } from '@/libs/auth/auth-types';
 import { appTheme } from '@/styles/theme';
 import { GlobalStyle } from '@/styles/GlobalStyle';
+import { replayGapInitialState } from '@/features/replay-gap/useReplayGapController';
+
+vi.mock('@/features/replay-gap/ReplayGapContext', () => ({
+  useReplayGapContext: () => ({
+    state: replayGapInitialState,
+    retry: vi.fn().mockResolvedValue(undefined),
+    dismiss: vi.fn(),
+    runbookHref: '',
+    supportHref: '',
+    isReloading: false,
+    showSupportLink: false,
+  }),
+  ReplayGapProvider: ({ children }: { children: ReactNode }) => children,
+}));
 
 const mockSession: AuthSession = {
   credentials: {

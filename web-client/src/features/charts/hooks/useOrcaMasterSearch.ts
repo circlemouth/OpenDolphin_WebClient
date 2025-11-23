@@ -4,6 +4,7 @@ import {
   lookupGeneralName,
   searchDiseaseByName,
   searchTensuByName,
+  searchTensuByPointRange,
   type TensuSearchOptions,
 } from '@/features/charts/api/orca-api';
 import type { DiseaseMasterEntry, GeneralNameEntry, TensuMasterEntry } from '@/features/charts/types/orca';
@@ -11,6 +12,11 @@ import type { DiseaseMasterEntry, GeneralNameEntry, TensuMasterEntry } from '@/f
 export const useTensuSearch = () =>
   useMutation<TensuMasterEntry[], Error, { keyword: string; options?: TensuSearchOptions }>({
     mutationFn: async ({ keyword, options }) => searchTensuByName(keyword, options),
+  });
+
+export const useTensuPointSearch = () =>
+  useMutation<TensuMasterEntry[], Error, { min?: number | null; max?: number | null; date?: Date | null }>({
+    mutationFn: async ({ min, max, date }) => searchTensuByPointRange({ min, max, date }),
   });
 
 export const useDiseaseSearch = () =>

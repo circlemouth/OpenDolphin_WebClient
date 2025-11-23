@@ -59,6 +59,8 @@
 | 設計一次情報 | `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6 | Sprint2 API スコープと DTO。タスクA実施時は必ず該当節を更新。 |
 | パリティ管理 | `docs/server-modernization/phase2/domains/API_PARITY_MATRIX.md` | 1:1 対応状況と Matrix No.。リンク整備後も数値が変わったら再集計。 |
 | Runbook / 証跡 | `docs/server-modernization/phase2/operations/ORCA_API_STATUS.md`<br/>`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` | RUN_ID 表と Runbook。タスクBで RUN_ID 記入欄を同期。 |
+| マスターデータギャップ | `docs/server-modernized/phase2/verification/00_ORCA_MASTER_DATA_GAP_REPORT.md`<br/>`docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md`<br/>`docs/server-modernization/phase2/notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` | ORCA-05〜08 の根拠と ETA/オーナー管理。REST 追加や UI 影響確認時に参照。 |
+| Stub / 型スケルトン | `artifacts/api-stability/20251123T130134Z/schemas/`<br/>`web-client/src/types/orca.ts` | ORCA-05〜08 用の fixture / 型スタブ。実装・実測後に差し替え、`API_PARITY_MATRIX.md` と整合を取る。 |
 | ドキュメントハブ | `docs/server-modernization/phase2/operations/MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2/§5 | API ドキュメント集約と運用ルール。タスクCで §5 の棚卸しメモを更新。 |
 | 棚卸し / クロスリンク | `docs/web-client/planning/phase2/DOC_STATUS.md` 行 25<br/>`docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` | Sprint2 行のステータスとマネージャー割当表。更新時は両方を同期。 |
 

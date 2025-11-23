@@ -86,3 +86,8 @@ Web クライアントのオーダー入力機能をサポートするために�
 4.  **テストと監査:**
     *   追加マスタの REST について MSW/fixture を用意し、`artifacts/api-stability/20251123T130134Z/` に期待値を格納。
     *   `/orca/interaction` など既存 API も含め SLA 計測と監査ログを追加し、障害時ロールバック手順を明記。
+
+## 5. 参照資料
+
+* ORCA データベーステーブル定義書（firecrawl 取得・オフライン参照可）: `docs/server-modernization/phase2/operations/assets/orca-db-schema/README.md`（正式版 2024-04-26 を基本参照。長期収載品選定療養の追加カラム確認時のみ 2024-09-25 速報版を併用）。
+* 取得ファイル一覧: `docs/server-modernization/phase2/operations/assets/orca-db-schema/manifest.json`（`raw/*.pdf` / `raw/*.md` のローカルパスと版を明記）。

@@ -2,94 +2,64 @@
   {
     "id": "task-yaml-qsrtp8-src-webclient-mo",
     "name": "[webclient sync ui plan] 01_API互換レイヤー再確認とギャップ整理\n期間: 11/25 09:00 - 11/27 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 📑 API 互換レイヤー再確認とギャップ整理\n\n- `src/modernized_server/08_Webクライアント向けAPI安定化.md` の互換方針を再読し、Web クライアントが依存するエンドポイントの破壊的変更吸収策（パラメータ/レスポンス変換・feature flag）を最新化する。\n- `docs/web-client/architecture/REST_API_INVENTORY.md` と `process/API_UI_GAP_ANALYSIS.md` を突き合わせ、残りの差分（型/値域/エラーコード）を列挙して DoD を明示する。\n- `artifacts/api-stability/` 既存モックの再利用可否を判定し、足りないケースは追加作成方針を決める。\n\nYAML ID: src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md",
-    "model": "YAML App",
+    "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
     "urgency": "high",
+    "branchName": "task/task-yaml-qsrtp8-src-webclient-mo",
+    "baseBranch": "main",
+    "worktreePath": null,
+    "createWorktree": false,
     "createdAt": "2025-11-23T12:57:57.311Z",
     "updatedAt": "2025-11-23T13:20:31.872Z",
     "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-qsrtp8-src-webclient-mo",
-    "baseBranch": "main",
-    "useTmux": false,
+    "bookmarked": false,
     "aiCompetitionEntry": false,
     "aiCompetitionResult": null,
     "aiCompetitionGroupId": null,
     "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-sync-ui-plan-1595b38132::src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md",
-      "appId": "custom-app-webclient-sync-ui-plan-1595b38132",
-      "datasetLabel": "webclient sync ui plan",
-      "pathId": "src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md",
-      "fileName": "webclient-sync-ui-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-sync-ui-plan.yaml",
-      "addedAt": "2025-11-23T12:57:56.881Z"
-    },
-    "labels": [
-      "webclient sync ui plan",
-      "src / webclient_modernized_bridge"
-    ],
+    "autoEvaluationNotBefore": null,
+    "useTmux": false,
+    "taskType": "yaml-plan",
+    "modelId": null,
+    "latestVersion": null,
+    "currentVersion": null,
+    "installSteps": [],
+    "installCommand": null,
+    "createdAutomatically": false,
     "dependencies": [
       "task-yaml-1xh113s-src-webclient-mo"
-    ],
-    "schedule": {
-      "startMs": 1764028800000,
-      "endMs": 1764201600000,
-      "durationDays": 2
-    },
-    "category": "src / webclient_modernized_bridge",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 📑 API 互換レイヤー再確認とギャップ整理\n\n- `src/modernized_server/08_Webクライアント向けAPI安定化.md` の互換方針を再読し、Web クライアントが依存するエンドポイントの破壊的変更吸収策（パラメータ/レスポンス変換・feature flag）を最新化する。\n- `docs/web-client/architecture/REST_API_INVENTORY.md` と `process/API_UI_GAP_ANALYSIS.md` を突き合わせ、残りの差分（型/値域/エラーコード）を列挙して DoD を明示する。\n- `artifacts/api-stability/` 既存モックの再利用可否を判定し、足りないケースは追加作成方針を決める。"
+    ]
   },
   {
     "id": "task-yaml-1xh113s-src-webclient-mo",
     "name": "[webclient sync ui plan] 00_RUN_IDと参照チェーン確定\n期間: 11/24 09:00 - 11/25 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 🗂️ RUN_ID と参照チェーン確定\n\n- RUN_ID を `20251123T213145Z` で統一し、`AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → PHASE2 Manager Overview → 各チェックリスト` の参照チェーンを再確認する。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の該当行へ備考追記する下書きを用意し、証跡パスのドラフトも同 RUN_ID で揃える。\n- 禁止事項（Python 実行禁止、`server/` 配下・Legacy 資産非改変、ORCA 本番/Trial 経路禁止）を再確認し、作業メンバーへ共有する。\n\nYAML ID: src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md",
-    "model": "YAML App",
+    "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
     "urgency": "high",
+    "branchName": "task/task-yaml-1xh113s-src-webclient-mo",
+    "baseBranch": "main",
+    "worktreePath": null,
+    "createWorktree": false,
     "createdAt": "2025-11-23T12:57:57.230Z",
     "updatedAt": "2025-11-23T13:08:27.609Z",
     "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1xh113s-src-webclient-mo",
-    "baseBranch": "main",
-    "useTmux": false,
+    "bookmarked": false,
     "aiCompetitionEntry": false,
     "aiCompetitionResult": null,
     "aiCompetitionGroupId": null,
     "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-sync-ui-plan-1595b38132::src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md",
-      "appId": "custom-app-webclient-sync-ui-plan-1595b38132",
-      "datasetLabel": "webclient sync ui plan",
-      "pathId": "src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md",
-      "fileName": "webclient-sync-ui-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-sync-ui-plan.yaml",
-      "addedAt": "2025-11-23T12:57:56.879Z"
-    },
-    "labels": [
-      "webclient sync ui plan",
-      "src / webclient_modernized_bridge"
-    ],
-    "dependencies": [],
-    "schedule": {
-      "startMs": 1763942400000,
-      "endMs": 1764028800000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_modernized_bridge",
+    "autoEvaluationNotBefore": null,
+    "useTmux": false,
     "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 🗂️ RUN_ID と参照チェーン確定\n\n- RUN_ID を `20251123T213145Z` で統一し、`AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → PHASE2 Manager Overview → 各チェックリスト` の参照チェーンを再確認する。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の該当行へ備考追記する下書きを用意し、証跡パスのドラフトも同 RUN_ID で揃える。\n- 禁止事項（Python 実行禁止、`server/` 配下・Legacy 資産非改変、ORCA 本番/Trial 経路禁止）を再確認し、作業メンバーへ共有する。"
+    "modelId": null,
+    "latestVersion": null,
+    "currentVersion": null,
+    "installSteps": [],
+    "installCommand": null,
+    "createdAutomatically": false,
+    "dependencies": []
   },
   {
     "id": "task-yaml-1xao46t-src-modernized-s",
@@ -446,15 +416,47 @@
   {
     "id": "task-yaml-w9jyfd-src-webclient-mo",
     "name": "[webclient gap bridge plan] 02_ORCAマスターデータギャップ報告精査\n期間: 11/24 09:00 - 11/25 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n## ORCAマスターデータ重大ギャップ精査\n- `docs/server-modernized/phase2/verification/00_ORCA_MASTER_DATA_GAP_REPORT.md` の指摘内容を再読・要約。\n- UI/Sync 影響箇所と API 側不足フィールド・コード体系の抜けをリスト化。\n- 証跡: RUN_ID ログに抜粋と優先度判定を残す。\n\nYAML ID: src/webclient_modernized_bridge/02_ORCAマスターデータギャップ報告精査.md",
-    "model": "YAML App",
+    "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
     "urgency": "high",
+    "branchName": "task/task-yaml-w9jyfd-src-webclient-mo",
+    "baseBranch": "main",
+    "worktreePath": null,
+    "createWorktree": false,
     "createdAt": "2025-11-23T13:51:45.935Z",
     "updatedAt": "2025-11-23T14:15:46.288Z",
     "requiresTerminal": false,
+    "bookmarked": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "autoEvaluationNotBefore": null,
+    "useTmux": false,
+    "taskType": "yaml-plan",
+    "modelId": null,
+    "latestVersion": null,
+    "currentVersion": null,
+    "installSteps": [],
+    "installCommand": null,
+    "createdAutomatically": false,
+    "dependencies": [
+      "task-yaml-5jf7z8-src-webclient-mo"
+    ]
+  },
+  {
+    "id": "task-yaml-1vs4s8m-src-webclient-mo",
+    "name": "[webclient gap bridge plan] 03_ギャップ解消方針とUI影響分析\n期間: 11/25 09:00 - 11/26 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n## 解消方針策定とUI影響分析\n- マスターデータ不足を解消するための暫定データ供給/キャッシュ/バリデーション方針を案出。\n- カルテ/予約/請求 UI への項目影響、監査ログ要件を踏まえた変更規模を見積もる。\n- UI/UX ガイド (`docs/web-client/ux/CHART_UI_GUIDE_INDEX.md`) に照らし、入力制約とエラーハンドリング方針を更新。\n\nYAML ID: src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+    "model": "YAML App",
+    "status": "running",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-11-23T22:42:16.401Z",
+    "updatedAt": "2025-11-23T22:42:25.273Z",
+    "requiresTerminal": true,
     "createWorktree": false,
-    "branchName": "task/task-yaml-w9jyfd-src-webclient-mo",
+    "branchName": "task/task-yaml-1vs4s8m-src-webclient-mo",
     "baseBranch": "main",
     "useTmux": false,
     "aiCompetitionEntry": false,
@@ -465,29 +467,29 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-webclient-gap-bridge-plan-b709a68a54::src/webclient_modernized_bridge/02_ORCAマスターデータギャップ報告精査.md",
+      "key": "custom-app-webclient-gap-bridge-plan-b709a68a54::src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
       "appId": "custom-app-webclient-gap-bridge-plan-b709a68a54",
       "datasetLabel": "webclient gap bridge plan",
-      "pathId": "src/webclient_modernized_bridge/02_ORCAマスターデータギャップ報告精査.md",
+      "pathId": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
       "fileName": "webclient-gap-bridge-plan.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-gap-bridge-plan.yaml",
-      "addedAt": "2025-11-23T13:51:45.769Z"
+      "addedAt": "2025-11-23T22:42:16.386Z"
     },
     "labels": [
       "webclient gap bridge plan",
       "src / webclient_modernized_bridge"
     ],
     "dependencies": [
-      "task-yaml-5jf7z8-src-webclient-mo"
+      "task-yaml-w9jyfd-src-webclient-mo"
     ],
     "schedule": {
-      "startMs": 1763942400000,
-      "endMs": 1764028800000,
+      "startMs": 1764028800000,
+      "endMs": 1764115200000,
       "durationDays": 1
     },
     "category": "src / webclient_modernized_bridge",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "## ORCAマスターデータ重大ギャップ精査\n- `docs/server-modernized/phase2/verification/00_ORCA_MASTER_DATA_GAP_REPORT.md` の指摘内容を再読・要約。\n- UI/Sync 影響箇所と API 側不足フィールド・コード体系の抜けをリスト化。\n- 証跡: RUN_ID ログに抜粋と優先度判定を残す。"
+    "description": "## 解消方針策定とUI影響分析\n- マスターデータ不足を解消するための暫定データ供給/キャッシュ/バリデーション方針を案出。\n- カルテ/予約/請求 UI への項目影響、監査ログ要件を踏まえた変更規模を見積もる。\n- UI/UX ガイド (`docs/web-client/ux/CHART_UI_GUIDE_INDEX.md`) に照らし、入力制約とエラーハンドリング方針を更新。"
   }
 ]

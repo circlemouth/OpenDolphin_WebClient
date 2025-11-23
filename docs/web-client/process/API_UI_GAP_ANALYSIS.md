@@ -62,6 +62,16 @@
 | `/orca/tensu/shinku` / `/orca/tensu/code` / `/orca/disease/import` / `/orca/disease/active` | `OrcaOrderPanel` に「詳細マスター」ドロップダウンを追加し、検索絞り込みから呼び出す。 | フェーズ4 | キャッシュ戦略（localStorage 禁止）を HTTP クライアントに設定。 |
 | `/mml` 系 | `ChartsPage` のカルテタイムラインヘッダに「MML エクスポート」ボタンを追加し、エクスポート設定モーダルで選択項目とフォーマットを指定。 | フェーズ6 | Zip ダウンロード完了後に監査ログを送出。 |
 
+**Web クライアント差分（RUN_ID=20251123T135709Z、対応状況: MSW/設計済み、UI実装中）**: ORCA-04 `/orca/tensu/ten` は API 提供済みだが OrcaOrderPanel に点数帯フィルタ UI が未実装。Phase5 backlog とし、実装時は `docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md` と `notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` の ORCA-04/05〜07 連携を参照する。  
+**OrcaOrderPanel 点数帯フィルタ実装方針メモ（RUN_ID=20251123T135709Z）**:  
+- 目的: `/orca/tensu/ten/{param}/` により点数値（ten）の範囲検索を行い、処置・薬剤のコスト帯で絞り込む。`param` は `min-max` 形式（例: `50-150`）または単一値（例: `200`）。第2要素に `yyyymmdd` を付与すると評価日を上書きできる（サーバー側 `defaultNow()` で当日補完）。
+- 画面配置: OrcaOrderPanel の「詳細フィルタ」セクションに数値レンジスライダー + ダブル入力ボックスを追加。デフォルトは `0–300` 点、ショートカットボタン（50以下・50–100・100–300・300以上）を用意し、選択時に下限/上限を自動入力。結果は既存の名称/コード検索結果と同じリストを再利用し、検索条件バッジとして「点数帯: 50–100 点」「評価日: YYYY/MM/DD」を表示。
+- 必要データ（レスポンス項目）: `srycd`（点数コード）、`name/kananame/taniname`（表示名称）、`ten`（点数）、`tensikibetu`（種別: 医科/歯科等）、`nyugaitekkbn`（入外区分）、`routekkbn`（院内/院外）、`srysyukbn`（診療種別）、`hospsrykbn`（入院区分）、`ykzkbn`（薬剤区分）、`yakkakjncd`（薬価基準コード）、`yukostymd`/`yukoedymd`（有効期間）。表示には name + ten + 種別バッジを使用し、ソートは `ten` 昇順で実装。
+- クエリ組み立て案: `min`/`max` の両方入力時は `min-max`、片側のみ時は単一値として送信。評価日を指定した場合は `"${min}-${max},${yyyymmdd}"` 形式で連結し、空欄時は当日と同等。入力バリデーションは 0–9999 の整数（小数は切り捨て）で、min > max の場合は UI でエラーバッジを出しリクエスト送信を抑止。
+- 既存型/MSW との結線: `web-client/src/types/orca.ts` の `TensuMaster` 系定義（`srycd/name/ten/...`）をそのまま利用し、検索 hook を `features/charts/api/orca-api.ts` に `fetchTensuByTen(param: string)` として追加する想定。MSW では既存の `/orca/tensu/name` 用フィクスチャを流用し、`ten` でフィルタしたリストを返すダミーハンドラを追加するだけで UI 実装をデバッグ可能（本タスクではハンドラ追加は行わない）。
+- 依存 API / UI 結合: 点数値検索結果を OrcaOrderPanel のスタンプ生成フロー（`createOrderStamp`）へ渡すため、既存の名称/コード検索と同じ `OrcaSearchResult` 型にマッピングする。禁忌チェック（`PUT /orca/interaction`）に渡す際は `srycd` と `ykzkbn` を使用するため、レスポンスから同値を保持する。キャッシュは React Query で `['orca','tensu','ten',min,max,effectiveDate]` キーを採用し、名称検索とは別キーでキャッシュ汚染を防ぐ。
+**MSW実装済み（RUN_ID=20251123T135709Z）**: `/orca/master/{address,etensu,generic-class,generic-price,hokenja,kensa-sort,material,youhou}` の MSW フィクスチャ/ハンドラを追加（`web-client/src/mocks/fixtures/orcaMaster.ts`, `web-client/src/mocks/handlers/orcaMasterHandlers.ts`, `handlers/index.ts` へ合流）。型は `src/types/orca.ts` にリストレスポンス共通ラッパーと各エントリを追加。`cd web-client && npm run lint -- --max-warnings=0 --no-cache` でエラー 0 を確認（SSE ReplayGap 既存キャッシュ警告を解消）。UI 側は ORCA-04 の点数帯フィルタ実装を進行中で、MSW 返却を利用しながら OrcaOrderPanel へ組み込む予定（本タスクでは UI 未完）。
+
 ## 6. 実装上の共通指針
 
 1. **ナビゲーション構造**: 管理者向け機能は左カラムナビの新グループ「Administration」に集約し、一般ユーザーには表示しない。受付・カルテ関連は既存ページへカード／タブ追加で統合する。
