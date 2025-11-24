@@ -51,6 +51,9 @@
   - [ ] `features/*.md` を API/UI ギャップ表（`process/API_UI_GAP_ANALYSIS.md`）と突合し、未反映の仕様差分や API 対応状況を補完。
   - [ ] `features/PHASE3_STAMP_AND_ORCA.md` と ORCA 関連 Runbook の整合を確認し、ORCA 側の変更が UI に波及する場合は ORCA マネージャーと連携してタスクを再割当。
   - [ ] 新規ドキュメントを作成した場合は `docs/web-client/features/README.md` が無いため、本チェックリスト §2 と README の該当カテゴリへリンクを追加。
+  - [ ] マスターデータ補完ブリッジ（04計画）: 契約テスト結果を `#SP3` に添付し、リスク「完了条件」列に記載の監査メタ完了条件を確認。
+  - [ ] SP3 ハッシュ・監査ログを `docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md#SP3` に添付（完了日: ____ / 証跡: ____）。
+  - [ ] SP4 ハッシュ比較結果・E2E ログを `docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md#SP4` に添付（完了日: ____ / 証跡: ____）。
 - [ ] **タスクD: 運用手順と環境整備（担当D）**
   - [x] Web クライアント Ops task の結果を ORCA/Server マネージャーへ共有する場合は、本チェックリストのタスクD欄に参照先を追記。→ 2025-11-16 RUN_ID=`20251116T170500Z` の UI サーフェス同期ログ（`docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md`）を登録。
   - [ ] `operations/LOCAL_BACKEND_DOCKER.md` と `operations/mac-dev-login.local.md` の内容が一致しているか確認し、Secrets/認証情報の取り扱い手順を明記。
