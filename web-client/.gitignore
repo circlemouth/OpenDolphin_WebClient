@@ -25,3 +25,6 @@ dist-ssr
 
 # ORCA certification files
 ORCAcertification/
+
+# Generated types
+src/generated/orca-master.ts

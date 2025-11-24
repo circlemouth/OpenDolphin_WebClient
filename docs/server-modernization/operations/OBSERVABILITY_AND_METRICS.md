@@ -172,6 +172,20 @@ JavaTimeModule 適用後は監査ログ（`d_audit_event.payload`）と ORCA 連
   ```
   パネルの Transform で `Add field from calculation` → `to_unix_timestamp(issued_at_iso)` を設定すると、時刻形式が崩れた行は `NaN` になり即座に検知できる。ステージ環境で日次スポットチェック、プロダクションで 15 分毎アラート（`WHEN count(isnan(issued_at_epoch)) > 0`）を設定し、Runbook §4.3 の手順で追跡する。
 
+### 1.6 ORCA-05/06/08 マスターAPI アラート（RUN_ID=`20251124T133000Z`）
+
+- 目的: ORCA マスター系 REST（ORCA-05/06/08）の SLA 監視を Prometheus/Alertmanager で即時検知し、release-plan §3–5 のロールバック判定に使う。
+- ルール配置: `docs/server-modernization/phase2/operations/assets/observability/orca-master-alerts.yaml` を envsubst 後に Prometheus ルール / Alertmanager ルートへ適用（手順は同ディレクトリ README 参照）。
+- しきい値（ORCA_CONNECTIVITY_VALIDATION.md §7 と整合）  
+  - 5xx rate > 2% を 5 分継続 → Critical（PagerDuty）  
+  - P99 > 3s を 10 分継続 → Critical（PagerDuty）  
+  - missingMaster > 0.5% を 5 分継続 → Warning（メール）  
+  - cacheHit < 80% を 15 分継続 → Warning（メール）  
+  - audit_missing > 0.1% を 5 分継続 → Warning（メール / 要監査抑止判定）  
+- メトリクス前提: `opendolphin_api_request_total` / `opendolphin_api_error_total` / `opendolphin_api_request_duration_seconds_bucket`（path ラベルに `/orca/(master|tensu)`）、`missing_master` / `cache_hit` ラベル化、`opendolphin_api_audit_missing_total`（ログ派生可）。
+- 通知経路: Critical → PagerDuty `orca-master` サービス、Warning → `ORCA_ALERT_EMAILS`（ops/dev）。Slack 連携は PD 側でハンドル。
+- 運用: ステージで 24h burn-in 後に本番適用。発報時は `docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md` の RUN セクションへ証跡を追加し、release-plan §5 の手順でロールバック可否を判断する。
+
 ## 2. WildFly Micrometer サブシステム設定
 
 `ops/legacy-server/docker/configure-wildfly.cli` に Micrometer 用の設定ブロックを追加した。既存環境へ適用する場合は Management CLI で本スクリプトを再実行するか、Docker イメージを再ビルドする。サブシステム設定の要点は以下の通り。 citeturn1search0turn1search6

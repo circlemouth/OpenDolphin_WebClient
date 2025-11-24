@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useState } from 'react';
+import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
+import axios from 'axios';
 import styled from '@emotion/styled';
 
 import { Button, Stack, StatusBadge, SurfaceCard, TextField } from '@/components';
@@ -18,6 +19,9 @@ import { useInteractionCheck } from '@/features/charts/hooks/useInteractionCheck
 import type { DecisionSupportMessage } from '@/features/charts/types/decision-support';
 import { recordOperationEvent } from '@/libs/audit';
 import { shouldBlockOrderBySeverity } from '@/features/charts/utils/interactionSeverity';
+import { OrcaValidationError } from '@/features/charts/utils/orcaMasterValidation';
+
+const RUN_ID = '20251124T210000Z';
 
 const SectionHeader = styled.header`
   display: flex;
@@ -108,11 +112,93 @@ const FilterBadge = styled.span`
   border: 1px solid ${({ theme }) => theme.palette.border};
 `;
 
+const SkipLink = styled.a`
+  position: absolute;
+  left: -999px;
+  top: auto;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+
+  &:focus-visible {
+    left: 0;
+    top: 0;
+    width: auto;
+    height: auto;
+    padding: 8px 12px;
+    background: ${({ theme }) => theme.palette.surfaceStrong};
+    color: ${({ theme }) => theme.palette.text};
+    z-index: 10;
+    border-radius: ${({ theme }) => theme.radius.md};
+    box-shadow: 0 0 0 3px ${({ theme }) => theme.palette.primary};
+  }
+`;
+
+const AlertBanner = styled.div<{ $tone: 'warning' | 'error' }>`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  border-left: 4px solid
+    ${({ theme, $tone }) => ($tone === 'warning' ? theme.palette.warning : theme.palette.danger)};
+  background: ${({ theme, $tone }) =>
+    $tone === 'warning' ? theme.palette.surfaceMuted : theme.palette.surfaceStrong};
+  color: ${({ theme }) => theme.palette.text};
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.palette.primary};
+    outline-offset: 2px;
+  }
+`;
+
+const ResultsTable = styled.table`
+  width: 100%;
+  border-collapse: collapse;
+  border: 1px solid ${({ theme }) => theme.palette.border};
+  border-radius: ${({ theme }) => theme.radius.md};
+  overflow: hidden;
+`;
+
+const TableHeaderCell = styled.th`
+  text-align: left;
+  padding: 10px;
+  background: ${({ theme }) => theme.palette.surfaceMuted};
+  color: ${({ theme }) => theme.palette.text};
+  font-weight: 700;
+  border-bottom: 1px solid ${({ theme }) => theme.palette.border};
+`;
+
+const TableCell = styled.td`
+  padding: 10px;
+  border-bottom: 1px solid ${({ theme }) => theme.palette.border};
+  vertical-align: top;
+`;
+
+const TableRow = styled.tr`
+  &:nth-of-type(even) {
+    background: ${({ theme }) => theme.palette.surfaceMuted};
+  }
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.palette.primary};
+    outline-offset: -2px;
+  }
+`;
+
 type OrcaSearchMode = 'tensu' | 'disease' | 'general';
 
 type Selection = {
   code: string;
   name: string;
+};
+
+type AlertState = {
+  tone: 'warning' | 'error';
+  message: string;
+  description?: string;
+  subtype?: 'validation' | 'rateLimit';
+  retryAfterSec?: number | null;
 };
 
 type OrcaOrderPanelProps = {
@@ -179,12 +265,16 @@ export const OrcaOrderPanel = ({
   const [effectiveDate, setEffectiveDate] = useState('');
   const [pointError, setPointError] = useState<string | null>(null);
   const [lastSearchMode, setLastSearchMode] = useState<OrcaSearchMode>('tensu');
-  const [searchError, setSearchError] = useState<string | null>(null);
   const [existingSelections, setExistingSelections] = useState<Selection[]>([]);
   const [candidateSelections, setCandidateSelections] = useState<Selection[]>([]);
   const [showMinorAlerts, setShowMinorAlerts] = useState(false);
   const [orderError, setOrderError] = useState<string | null>(null);
   const [pendingCode, setPendingCode] = useState<string | null>(null);
+  const [alertState, setAlertState] = useState<AlertState | null>(null);
+  const [retrySeconds, setRetrySeconds] = useState<number | null>(null);
+  const resultsRegionId = useId();
+  const retryDescriptionId = useId();
+  const resultsRef = useRef<HTMLDivElement>(null);
 
   const tensuSearch = useTensuSearch();
   const tensuPointSearch = useTensuPointSearch();
@@ -192,12 +282,22 @@ export const OrcaOrderPanel = ({
   const generalLookup = useGeneralNameLookup();
   const interactionCheck = useInteractionCheck();
 
+  const setAlert = (next: AlertState | null) => {
+    setAlertState(next);
+    if (next?.subtype === 'rateLimit') {
+      const retry = next.retryAfterSec ?? 10;
+      setRetrySeconds(retry);
+    } else {
+      setRetrySeconds(null);
+    }
+  };
+
   const resetResults = () => {
     setTensuResults([]);
     setDiseaseResults([]);
     setGeneralResult(null);
-    setSearchError(null);
     setPointError(null);
+    setAlert(null);
   };
 
   const parsePointInput = (value: string) => {
@@ -217,10 +317,11 @@ export const OrcaOrderPanel = ({
     return Number.isNaN(parsed.getTime()) ? null : parsed;
   };
 
-  const handleSearch = async () => {
+  const handleSearch = async (event?: FormEvent) => {
+    event?.preventDefault();
     const trimmed = keyword.trim();
     if (!trimmed) {
-      setSearchError('検索キーワードを入力してください');
+      setAlert({ tone: 'error', message: '検索キーワードを入力してください', subtype: 'validation' });
       return;
     }
 
@@ -232,24 +333,58 @@ export const OrcaOrderPanel = ({
         const results = await tensuSearch.mutateAsync({ keyword: trimmed, options: { partialMatch } });
         setTensuResults(results);
         if (results.length === 0) {
-          setSearchError('該当する診療行為が見つかりませんでした');
+          setAlert({ tone: 'warning', message: '該当する診療行為が見つかりませんでした' });
+        } else {
+          setAlert(null);
         }
       } else if (mode === 'disease') {
         const results = await diseaseSearch.mutateAsync({ keyword: trimmed, options: { partialMatch } });
         setDiseaseResults(results);
         if (results.length === 0) {
-          setSearchError('該当する傷病名が見つかりませんでした');
+          setAlert({ tone: 'warning', message: '該当する傷病名が見つかりませんでした' });
+        } else {
+          setAlert(null);
         }
       } else {
         const result = await generalLookup.mutateAsync({ code: trimmed });
         setGeneralResult(result);
         if (!result) {
-          setSearchError('一般名を特定できませんでした');
+          setAlert({ tone: 'warning', message: '一般名を特定できませんでした' });
+        } else {
+          setAlert(null);
         }
       }
     } catch (error) {
       console.error('ORCA マスター検索に失敗しました', error);
-      setSearchError('検索中にエラーが発生しました。時間をおいて再試行してください');
+      if (error instanceof OrcaValidationError) {
+        setAlert({ tone: 'error', message: error.userMessage, subtype: 'validation' });
+        return;
+      }
+      if (axios.isAxiosError(error) && error.response?.status === 422) {
+        const message =
+          (error.response.data as { error?: { message?: string } })?.error?.message ??
+          '入力値を確認してください';
+        setAlert({ tone: 'error', message, subtype: 'validation' });
+        return;
+      }
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        const retryAfterHeader = error.response.headers?.['retry-after'];
+        const retryAfter = Number.isFinite(Number.parseInt(String(retryAfterHeader ?? ''), 10))
+          ? Number.parseInt(String(retryAfterHeader), 10)
+          : 10;
+        setAlert({
+          tone: 'error',
+          message: 'リクエストが集中しています。少し待ってから再試行してください。',
+          description: `あと ${retryAfter} 秒で再試行できます`,
+          subtype: 'rateLimit',
+          retryAfterSec: retryAfter,
+        });
+        return;
+      }
+      setAlert({
+        tone: 'error',
+        message: '検索中にエラーが発生しました。時間をおいて再試行してください',
+      });
     }
   };
 
@@ -260,10 +395,12 @@ export const OrcaOrderPanel = ({
 
     if (minValue === null && maxValue === null) {
       setPointError('点数帯を入力してください（0〜9999）');
+      setAlert({ tone: 'error', message: '点数帯を入力してください（0〜9999）', subtype: 'validation' });
       return;
     }
     if (minValue !== null && maxValue !== null && minValue > maxValue) {
       setPointError('下限が上限を超えています');
+      setAlert({ tone: 'error', message: '点数下限が上限を超えています', subtype: 'validation' });
       return;
     }
 
@@ -275,11 +412,27 @@ export const OrcaOrderPanel = ({
       const results = await tensuPointSearch.mutateAsync({ min: minValue, max: maxValue, date: dateValue });
       setTensuResults(results);
       if (results.length === 0) {
-        setSearchError('該当する診療行為が見つかりませんでした');
+        setAlert({ tone: 'warning', message: '該当する診療行為が見つかりませんでした' });
+      } else {
+        setAlert(null);
       }
     } catch (error) {
       console.error('ORCA 点数帯検索に失敗しました', error);
-      setSearchError('検索中にエラーが発生しました。時間をおいて再試行してください');
+      if (axios.isAxiosError(error) && error.response?.status === 429) {
+        const retryAfterHeader = error.response.headers?.['retry-after'];
+        const retryAfter = Number.isFinite(Number.parseInt(String(retryAfterHeader ?? ''), 10))
+          ? Number.parseInt(String(retryAfterHeader), 10)
+          : 10;
+        setAlert({
+          tone: 'error',
+          message: 'アクセスが集中しています。少し待ってから再試行してください。',
+          description: `あと ${retryAfter} 秒で再試行できます`,
+          subtype: 'rateLimit',
+          retryAfterSec: retryAfter,
+        });
+        return;
+      }
+      setAlert({ tone: 'error', message: '検索中にエラーが発生しました。時間をおいて再試行してください' });
     }
   };
 
@@ -353,71 +506,134 @@ export const OrcaOrderPanel = ({
   };
 
   const renderSearchResults = () => {
-    if (lastSearchMode === 'tensu') {
-      return tensuResults.map((entry) => (
-        <ResultCard key={entry.code}>
-          <ResultTitle>
-            {entry.code} / {entry.name}
-          </ResultTitle>
-          <ResultMeta>{formatTensuMeta(entry)}</ResultMeta>
-          <ToggleRow>
-            {onCreateOrder ? (
-              <Button
-                type="button"
-                size="sm"
-                variant="primary"
-                onClick={() => void handleCreateOrder({ code: entry.code, name: entry.name })}
-                disabled={disabled || pendingCode === entry.code}
-                isLoading={pendingCode === entry.code}
-              >
-                カルテに追加
-              </Button>
-            ) : null}
-            <Button
-              type="button"
-              size="sm"
-              variant="secondary"
-              onClick={() => addSelection('candidate', { code: entry.code, name: entry.name })}
-              disabled={disabled}
-            >
-              追加予定に入れる
-            </Button>
-            <Button
-              type="button"
-              size="sm"
-              variant="ghost"
-              onClick={() => addSelection('existing', { code: entry.code, name: entry.name })}
-            >
-              既存処方に追加
-            </Button>
-          </ToggleRow>
-        </ResultCard>
-      ));
+    if (lastSearchMode === 'tensu' && tensuResults.length > 0) {
+      return (
+        <ResultsTable role="table" aria-label="診療行為検索結果" data-test-id="orca-results-table">
+          <thead role="rowgroup">
+            <tr role="row">
+              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-code">
+                コード
+              </TableHeaderCell>
+              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-name">
+                名称
+              </TableHeaderCell>
+              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-detail">
+                詳細
+              </TableHeaderCell>
+              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-actions">
+                操作
+              </TableHeaderCell>
+            </tr>
+          </thead>
+          <tbody role="rowgroup">
+            {tensuResults.map((entry) => (
+              <TableRow key={entry.code} role="row" tabIndex={0}>
+                <TableCell role="cell">{entry.code}</TableCell>
+                <TableCell role="cell">{entry.name}</TableCell>
+                <TableCell role="cell">{formatTensuMeta(entry) || '—'}</TableCell>
+                <TableCell role="cell">
+                  <Stack direction="row" gap={8} wrap>
+                    {onCreateOrder ? (
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="primary"
+                        onClick={() => void handleCreateOrder({ code: entry.code, name: entry.name })}
+                        disabled={disabled || pendingCode === entry.code}
+                        isLoading={pendingCode === entry.code}
+                        aria-label={`コード ${entry.code} をカルテに追加`}
+                      >
+                        カルテに追加
+                      </Button>
+                    ) : null}
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={() => addSelection('candidate', { code: entry.code, name: entry.name })}
+                      disabled={disabled}
+                      aria-label={`コード ${entry.code} を追加予定に入れる`}
+                    >
+                      追加予定に入れる
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="ghost"
+                      onClick={() => addSelection('existing', { code: entry.code, name: entry.name })}
+                      aria-label={`コード ${entry.code} を既存処方に追加`}
+                    >
+                      既存処方に追加
+                    </Button>
+                  </Stack>
+                </TableCell>
+              </TableRow>
+            ))}
+          </tbody>
+        </ResultsTable>
+      );
     }
-    if (lastSearchMode === 'disease') {
-      return diseaseResults.map((entry) => (
-        <ResultCard key={entry.code}>
-          <ResultTitle>
-            {entry.code} / {entry.name}
-          </ResultTitle>
-          <ResultMeta>{formatDiseaseMeta(entry)}</ResultMeta>
-        </ResultCard>
-      ));
+    if (lastSearchMode === 'disease' && diseaseResults.length > 0) {
+      return (
+        <ResultsTable role="table" aria-label="傷病名検索結果">
+          <thead role="rowgroup">
+            <tr role="row">
+              <TableHeaderCell scope="col" aria-sort="none">
+                コード
+              </TableHeaderCell>
+              <TableHeaderCell scope="col" aria-sort="none">
+                名称
+              </TableHeaderCell>
+              <TableHeaderCell scope="col" aria-sort="none">
+                詳細
+              </TableHeaderCell>
+            </tr>
+          </thead>
+          <tbody role="rowgroup">
+            {diseaseResults.map((entry) => (
+              <TableRow key={entry.code} role="row" tabIndex={0}>
+                <TableCell role="cell">{entry.code}</TableCell>
+                <TableCell role="cell">{entry.name}</TableCell>
+                <TableCell role="cell">{formatDiseaseMeta(entry) || '—'}</TableCell>
+              </TableRow>
+            ))}
+          </tbody>
+        </ResultsTable>
+      );
     }
     if (generalResult) {
       return (
-        <ResultCard key={generalResult.code}>
-          <ResultTitle>
-            {generalResult.code} / {generalResult.name}
-          </ResultTitle>
-          <ResultMeta>ORCA 一般名コード照合結果</ResultMeta>
-        </ResultCard>
+        <ResultsTable role="table" aria-label="一般名コード照合結果">
+          <thead role="rowgroup">
+            <tr role="row">
+              <TableHeaderCell scope="col" aria-sort="none">
+                コード
+              </TableHeaderCell>
+              <TableHeaderCell scope="col" aria-sort="none">
+                名称
+              </TableHeaderCell>
+              <TableHeaderCell scope="col" aria-sort="none">
+                詳細
+              </TableHeaderCell>
+            </tr>
+          </thead>
+          <tbody role="rowgroup">
+            <TableRow role="row" tabIndex={0}>
+              <TableCell role="cell">{generalResult.code}</TableCell>
+              <TableCell role="cell">{generalResult.name}</TableCell>
+              <TableCell role="cell">ORCA 一般名コード照合結果</TableCell>
+            </TableRow>
+          </tbody>
+        </ResultsTable>
       );
     }
     return null;
   };
 
   const renderedResults = renderSearchResults();
+
+  const isSearching =
+    tensuSearch.isPending || diseaseSearch.isPending || generalLookup.isPending || tensuPointSearch.isPending;
 
   const visibleInteractions = useMemo(() => {
     if (!interactionCheck.data) {
@@ -436,6 +652,21 @@ export const OrcaOrderPanel = ({
   const totalAlerts = interactionCheck.data?.length ?? 0;
   const hasCriticalAlerts = criticalAlertCount > 0;
   const nonCriticalCount = totalAlerts - criticalAlertCount;
+
+  useEffect(() => {
+    if (alertState?.subtype !== 'rateLimit') return;
+    if (retrySeconds === null || retrySeconds <= 0) return;
+    const timer = window.setTimeout(() => {
+      setRetrySeconds((prev) => (prev && prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => window.clearTimeout(timer);
+  }, [alertState?.subtype, retrySeconds]);
+
+  useEffect(() => {
+    if ((tensuResults.length > 0 || diseaseResults.length > 0 || generalResult) && resultsRef.current) {
+      resultsRef.current.focus();
+    }
+  }, [tensuResults.length, diseaseResults.length, generalResult]);
 
   useEffect(() => {
     if (!onDecisionSupportUpdate) {
@@ -463,6 +694,9 @@ export const OrcaOrderPanel = ({
 
   return (
     <SurfaceCard>
+      <SkipLink href={`#${resultsRegionId}`} data-test-id="orca-skip-results">
+        ORCA マスター検索結果へスキップ
+      </SkipLink>
       <Stack gap={16}>
         <SectionHeader>
           <div>
@@ -479,6 +713,7 @@ export const OrcaOrderPanel = ({
                 size="sm"
                 variant={mode === value ? 'primary' : 'ghost'}
                 onClick={() => setMode(value)}
+                aria-pressed={mode === value}
               >
                 {value === 'tensu' ? '診療行為' : value === 'disease' ? '傷病名' : '一般名'}
               </Button>
@@ -489,29 +724,39 @@ export const OrcaOrderPanel = ({
                 size="sm"
                 variant={partialMatch ? 'secondary' : 'ghost'}
                 onClick={() => setPartialMatch((prev) => !prev)}
+                aria-pressed={partialMatch}
               >
                 {partialMatch ? '部分一致検索' : '前方一致検索'}
               </Button>
             ) : null}
           </ToggleRow>
-          <Stack direction="row" gap={12} wrap>
-            <TextField
-              label={mode === 'general' ? '一般名コード' : '検索キーワード'}
-              placeholder={mode === 'general' ? '例: 6134004' : '名称・カナ・コード'}
-              value={keyword}
-              onChange={(event) => setKeyword(event.currentTarget.value)}
-            />
-            <Button
-              type="button"
-              variant="secondary"
-              onClick={handleSearch}
-              isLoading={
-                tensuSearch.isPending || diseaseSearch.isPending || generalLookup.isPending || tensuPointSearch.isPending
-              }
-            >
-              検索
-            </Button>
-          </Stack>
+          <form
+            role="search"
+            aria-label="ORCA マスター検索"
+            data-test-id="orca-search-form"
+            onSubmit={(event) => void handleSearch(event)}
+          >
+            <Stack direction="row" gap={12} wrap>
+              <TextField
+                label={mode === 'general' ? '一般名コード' : '検索キーワード'}
+                aria-label={mode === 'general' ? '一般名コード検索キーワード' : 'ORCA マスター検索キーワード'}
+                placeholder={mode === 'general' ? '例: 6134004' : '名称・カナ・コード'}
+                value={keyword}
+                required
+                data-test-id="orca-search-input"
+                onChange={(event) => setKeyword(event.currentTarget.value)}
+              />
+              <Button
+                type="submit"
+                variant="secondary"
+                aria-label="ORCA マスターを検索"
+                isLoading={isSearching}
+                data-test-id="orca-search-submit"
+              >
+                検索
+              </Button>
+            </Stack>
+          </form>
           {mode === 'tensu' ? (
             <SurfaceCard tone="muted">
               <Stack gap={12}>
@@ -526,6 +771,7 @@ export const OrcaOrderPanel = ({
                     value={pointMin}
                     onChange={(event) => setPointMin(event.currentTarget.value)}
                     errorMessage={pointError ?? undefined}
+                    aria-label="点数下限"
                   />
                   <TextField
                     label="点数上限"
@@ -535,6 +781,7 @@ export const OrcaOrderPanel = ({
                     max={9999}
                     value={pointMax}
                     onChange={(event) => setPointMax(event.currentTarget.value)}
+                    aria-label="点数上限"
                   />
                   <TextField
                     label="評価日 (任意)"
@@ -542,6 +789,7 @@ export const OrcaOrderPanel = ({
                     value={effectiveDate}
                     onChange={(event) => setEffectiveDate(event.currentTarget.value)}
                     description="未指定時は本日扱い"
+                    aria-label="評価日"
                   />
                   <Button
                     type="button"
@@ -580,10 +828,60 @@ export const OrcaOrderPanel = ({
               </Stack>
             </SurfaceCard>
           ) : null}
-          {searchError ? <InlineError>{searchError}</InlineError> : null}
         </SectionHeader>
 
-        {renderedResults ? <ResultList>{renderedResults}</ResultList> : null}
+        {alertState ? (
+          <AlertBanner
+            $tone={alertState.tone}
+            role="alert"
+            aria-live="assertive"
+            data-run-id={RUN_ID}
+            tabIndex={-1}
+            aria-describedby={alertState.subtype === 'rateLimit' ? retryDescriptionId : undefined}
+            data-test-id="orca-alert-banner"
+          >
+            <strong>{alertState.tone === 'warning' ? '警告' : 'エラー'}</strong>
+            <span>{alertState.message}</span>
+            {alertState.description || alertState.subtype === 'rateLimit' ? (
+              <span
+                id={alertState.subtype === 'rateLimit' ? retryDescriptionId : undefined}
+                data-test-id={alertState.subtype === 'rateLimit' ? 'orca-rate-limit-countdown' : undefined}
+              >
+                {alertState.subtype === 'rateLimit'
+                  ? `あと ${retrySeconds ?? alertState.retryAfterSec ?? 0} 秒で再試行できます`
+                  : alertState.description}
+              </span>
+            ) : null}
+            {alertState.subtype === 'rateLimit' ? (
+              <div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={() => void handleSearch()}
+                  disabled={isSearching || (retrySeconds ?? alertState.retryAfterSec ?? 0) > 0}
+                  aria-describedby={retryDescriptionId}
+                  data-test-id="orca-rate-limit-retry"
+                >
+                  再試行
+                </Button>
+              </div>
+            ) : null}
+          </AlertBanner>
+        ) : null}
+
+        <div
+          id={resultsRegionId}
+          ref={resultsRef}
+          tabIndex={-1}
+          role="region"
+          aria-label="ORCA マスター検索結果"
+          aria-busy={isSearching}
+          aria-live="polite"
+          data-test-id="orca-results-region"
+        >
+          {renderedResults ?? <InlineMessage>検索結果がここに表示されます。</InlineMessage>}
+        </div>
 
         {orderError && onCreateOrder ? <InlineError>{orderError}</InlineError> : null}
 

@@ -598,6 +598,9 @@ export const AppointmentManager = ({
     setInfoMessage(null);
     setFormError(null);
     const command = buildCommand('cancel', appointment);
+    if (!command) {
+      return;
+    }
     try {
       await saveMutation.mutateAsync([command]);
       setInfoMessage('予約を取り消しました。');

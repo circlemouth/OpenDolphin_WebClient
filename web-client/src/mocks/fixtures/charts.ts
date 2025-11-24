@@ -26,12 +26,12 @@ const samplePatientVisit: RawPatientVisit = {
     reserve1: '緊急連絡先: 090-1234-5678',
     reserve2: '薬剤アレルギー: ペニシリン',
     memo: '定期的に胸部圧迫感あり。',
-    ownerUUID: null,
+    ownerUUID: '00000000-0000-0000-0000-000000000001',
     healthInsurances: [
       {
         id: 93001,
         beanBytes:
-          '<PVTHealthInsuranceModel><uuid>c3af0491-8e3e-4a01-aacf-4bc29d0a1d9c</uuid><insuranceClass>社保本人</insuranceClass><insuranceClassCode>01</insuranceClassCode><insuranceNumber>1234567</insuranceNumber><clientGroup>12</clientGroup><clientNumber>3456</clientNumber><startDate>2024-04-01</startDate></PVTHealthInsuranceModel>',
+          'PFBWVEhlYWx0aEluc3VyYW5jZU1vZGVsPjx1dWlkPmMzYWYwNDkxLThlM2UtNGEwMS1hYWNmLTRiYzI5ZDBhMWQ5YzwvdXVpZD48aW5zdXJhbmNlQ2xhc3M+56S+5L+d5pys5Lq6PC9pbnN1cmFuY2VDbGFzcz48aW5zdXJhbmNlQ2xhc3NDb2RlPjAxPC9pbnN1cmFuY2VDbGFzc0NvZGU+PGluc3VyYW5jZU51bWJlcj4xMjM0NTY3PC9pbnN1cmFuY2VOdW1iZXI+PGNsaWVudEdyb3VwPjEyPC9jbGllbnRHcm91cD48Y2xpZW50TnVtYmVyPjM0NTY8L2NsaWVudE51bWJlcj48c3RhcnREYXRlPjIwMjQtMDQtMDE8L3N0YXJ0RGF0ZT48L1BWVEhlYWx0aEluc3VyYW5jZU1vZGVsPg==',
       },
     ],
   },

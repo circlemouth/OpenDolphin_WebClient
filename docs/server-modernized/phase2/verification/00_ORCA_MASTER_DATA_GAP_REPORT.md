@@ -19,6 +19,10 @@
 
 一方で、薬剤分類・最低薬価・用法・特定器材・保険者・住所など多くの ORCA マスタは依然として未提供であり、薬剤 UI/リハ/材料オーダー・資格確認系の要件を満たさない。従って重大ギャップは継続する。
 
+### 2025-11-24 追記（RUN_ID=`20251124T073245Z`）
+- Web クライアント側で ORCA-05/06/08 の DTO/型拡張と API スケルトン（`web-client/src/types/orca.ts`, `web-client/src/features/charts/api/orca-api.ts`）を追加し、ORCA DB 定義書に準拠した必須列・監査メタ（dataSource/cacheHit/missingMaster/fallbackUsed/version/runId）を明示。
+- サーバー側 REST 追加の設計メモを `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` / `docs/server-modernization/phase2/notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` に追記し、オーナー=Worker-B（暫定）、優先度=P1、ETA=ORCA-05/06=2025-12-06、ORCA-08=2025-12-20 と設定。
+
 ## 2. 検証結果
 
 ### 2.1. データベース接続（直接アクセス）

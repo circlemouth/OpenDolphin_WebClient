@@ -1,10 +1,16 @@
+import fs from 'node:fs';
 import path from 'node:path';
+import { randomUUID } from 'node:crypto';
 
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import basicSsl from '@vitejs/plugin-basic-ssl';
 
 const apiProxyTarget = process.env.VITE_DEV_PROXY_TARGET ?? 'http://localhost:8080/openDolphin/resources';
+const useHttps = process.env.VITE_DEV_USE_HTTPS !== '0';
+const httpsOption = useHttps ? {} : false;
+const runId = process.env.VITE_RUM_RUN_ID ?? process.env.RUN_ID ?? '20251124T200000Z';
+const rumOutputDir = path.resolve(__dirname, `../artifacts/perf/orca-master/${runId}/rum`);
 
 const apiProxy = {
   '/api': {
@@ -17,15 +23,55 @@ const apiProxy = {
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [react(), basicSsl()],
+  plugins: [
+    react(),
+    basicSsl(),
+    {
+      name: 'preview-perf-log-sink',
+      configurePreviewServer(previewServer) {
+        previewServer.middlewares.use('/__perf-log', (req, res) => {
+          if (req.method !== 'POST') {
+            res.statusCode = 405;
+            res.end('Method Not Allowed');
+            return;
+          }
+
+          let body = '';
+          req.on('data', (chunk) => {
+            body += chunk.toString();
+          });
+
+          req.on('end', () => {
+            try {
+              fs.mkdirSync(rumOutputDir, { recursive: true });
+              const timestamp = new Date().toISOString().replace(/[:]/g, '').replace(/\..+/, 'Z');
+              const filename = path.join(rumOutputDir, `${timestamp}-${process.pid}-${randomUUID()}.json`);
+              fs.writeFileSync(filename, body || '{}', 'utf8');
+              // Keep console noise minimal but traceable when needed.
+              console.info('[perf-log] saved', path.basename(filename));
+            } catch (error) {
+              console.error('[perf-log] failed to persist log', error);
+            }
+
+            res.statusCode = 204;
+            res.end();
+          });
+        });
+      },
+    },
+  ],
   server: {
-    https: {},
+    // 開発計測時に自己署名証明書で LHCI が落ちないよう HTTP に切替可能にする
+    https: httpsOption,
     strictPort: true,
     proxy: { ...apiProxy },
   },
   preview: {
-    https: {},
+    https: httpsOption,
     proxy: { ...apiProxy },
+  },
+  build: {
+    rollupOptions: {},
   },
   resolve: {
     alias: {

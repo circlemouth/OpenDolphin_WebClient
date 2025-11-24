@@ -185,6 +185,7 @@
 ### OrcaResource (`/orca`)
 主に ORCA マスタ・病名・スタンプ連携を担う大規模リソース。代表的なパスは以下の通り。
 マスタ未提供分の REST 追加検討時は、ORCA DB 定義書のオフラインアーカイブ（`docs/server-modernization/phase2/operations/assets/orca-db-schema/README.md`）を参照し、正式版（2024-04-26）を基本に項目・型を確認すること。
+- 接続備考（RUN_ID=`20251124T080000Z`）: ORCA JDBC は `custom.properties` 直読みから DataSource/Vault 管理へ移行するドラフトを `MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md#orca-07` に記載。REST 実測時も env 経由の DS (`java:/datasources/OrcaDb`) を優先し、`custom.properties` はフォールバック扱いとする。
 
 | HTTP | パス | 主な処理 | 備考 |
 | --- | --- | --- | --- |
@@ -206,17 +207,31 @@
 
 #### ORCA-08: ORCA マスタ系（Spec-based / MSW 実装済み、UI 実装中）
 - RUN_ID=`20251123T135709Z`。サーバー実装は未着手だが、web-client 側で MSW フィクスチャ＋型定義は実装済み（`web-client/src/mocks/fixtures/orcaMaster.ts` ほか）。OrcaOrderPanel の UI 連携は ORCA-04 backlog として実装中。証跡: `docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md`（artifact スキーマ: `artifacts/api-stability/20251123T130134Z/schemas/orca-master-*.json`）。
+- 2025-11-24 追記（RUN_ID=`20251124T073245Z`）: ORCA DB 定義書（正式版 2024-04-26）に沿った項目セットと監査メタを確定。サーバー実装オーナー=Worker-B（暫定）、優先度=P1。ETA: ORCA-05/06=2025-12-06, ORCA-08=2025-12-20。クライアント側は DTO 拡張と Bridge スケルトンを用意済み（`src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md` / `web-client/src/types/orca.ts` / `web-client/src/features/charts/api/orca-api.ts`）。
+- 2025-11-24 追記（RUN_ID=`20251124T090500Z`, 親=`20251124T000000Z`）: ORCA-05/06/08 の OpenAPI 断片 draft（paths/components/例レス、監査メタ付き）を `docs/server-modernization/phase2/operations/assets/openapi/orca-master-orca05-06-08-draft.yaml` に追加。web-client 型生成の暫定パイプライン案を同ディレクトリ `README.md` に記載（pnpm dlx openapi-typescript, 出力先 `web-client/src/generated/orca-master.ts`）。サーバー実装着手時は本 draft を基に正式版へ昇格させる。
 
-| HTTP | パス | 主な処理 | 備考 |
-| --- | --- | --- | --- |
-| GET | `/orca/master/address?zip=` | 郵便番号から住所 1 件を返却。未一致時は 200/空 body。 | レスポンス想定: `zipCode/prefectureCode/city/town/kana/roman/fullAddress`。Spec-based（MSW 返却済み、UI 実装中）。RUN_ID=`20251123T135709Z`。 |
-| GET | `/orca/master/etensu?category=&keyword=&effective=` | 電子点数表を list + `totalCount` + `fetchedAt` で返却。 | DTO: `category/medicalFeeCode/name/points/startDate/endDate/note`。keyword 前方一致、空 keyword で全件。Spec-based（MSW 返却済み）。 |
-| GET | `/orca/master/generic-class?keyword=&facility=&effective=` | 薬剤分類ツリーを取得。 | DTO: `classCode/className/kanaName/categoryCode/parentClassCode/isLeaf/startDate/endDate`。facility/effective は透過。Spec-based（MSW 返却済み）。 |
-| GET | `/orca/master/generic-price?srycd=&effective=` | 薬価（単一）を返却。未一致時は price=null。 | DTO: `price/unit/priceType/reference{yukostymd,yukoedymd,source}`。404 非採用。Spec-based（MSW 返却済み）。 |
-| GET | `/orca/master/hokenja?pref=&keyword=&effective=` | 保険者検索（名称/カナ部分一致）。 | DTO: `insurerNumber/name/kana/prefectureCode/address/phone/insurerType/validFrom/validTo`。Spec-based（MSW 返却済み）。 |
-| GET | `/orca/master/kensa-sort?keyword=&effective=` | 検査分類マスタ取得。 | DTO: `kensaCode/kensaName/sampleType/departmentCode/classification/insuranceCategory`。Spec-based（MSW 返却済み）。 |
-| GET | `/orca/master/material?keyword=&effective=` | 特定器材マスタ取得。 | DTO: `materialCode/name/category/insuranceType/unit/price/startDate/endDate/maker`（price 0 許容）。Spec-based（MSW 返却済み）。 |
-| GET | `/orca/master/youhou?keyword=&effective=` | 用法マスタ取得。 | DTO: `youhouCode/name/timingCode/routeCode/daysLimit/dosePerDay/comment`。Spec-based（MSW 返却済み）。 |
+##### ORCA-08 電子点数表 REST 仕様草案（RUN_ID=`20251124T080000Z`, 親=`20251124T000000Z`）
+- エンドポイント案: `GET /orca/tensu/etensu/{srycd}`（必須: 診療行為コード）。クエリ: `asOf=YYYYMMDD`（既定=当日）、`tensuVersion`（点数表版、JMA 公表版の文字列）、`includeConflicts=true|false`。`404` は存在なし、`410` は有効期間外、`206` は部分的欠落（off/sample のみ）を返す。
+- レスポンス骨子（共通メタ付き DTO）:
+  - `srycd`, `effectiveFrom`=`YUKOSTYMD`, `effectiveTo`=`YUKOEDYMD`, `version`=`tensuVersion`, `changedAt`=`CHGYMD`, `dataSource`=`TBL_ETENSU_*`, `runId`.
+  - `bundling`: `TBL_ETENSU_1` の `H_TANI{1..3}` / `H_GROUP{1..3}` を配列で返却（unit=`day|month|same|week|surgery` などコード値はそのまま numeric で保持）、`nGroup`=`N_GROUP`, `countConstraint`=`C_KAISU`.
+  - `bundlingMembers`: `TBL_ETENSU_2` と `TBL_ETENSU_2_JMA` を統合し、`groupCode`=`H_GROUP`, `srycd`, `specialCondition`=`TOKUREI` を列挙。`exclusions` は `TBL_ETENSU_2_OFF` を `excluded=true` として付与。
+  - `specimens`: `TBL_ETENSU_2_SAMPLE` の `sampleCode`=`SAMPLECD`, `seq`=`RENNUM`。
+  - `conflicts`: `TBL_ETENSU_3_{1..4}` を `scope=day|month|same|week`、`leftSrycd`=`SRYCD1`, `rightSrycd`=`SRYCD2`, `rule`=`HAIHAN`, `specialCondition`=`TOKUREI` として返却。
+  - `additions`: `TBL_ETENSU_4` の `nGroup`, `srycd`, `additionCode`=`KASAN`。
+  - `calcUnits`: `TBL_ETENSU_5` の `unitCode`=`TANICD`, `unitName`=`TANINAME`, `maxCount`=`KAISU`, `specialCondition`=`TOKUREI`。
+- 監査・フェイルセーフ: 取得時は `asOf` と `version` をリクエスト/レスポンス両方に含め、欠落テーブルがある場合は `partial=true` と `missingTables` を返す。ORCA DB とキャッシュの整合が崩れた場合は HTTP 503 + `retryAfter` を返却する。
+
+| HTTP | パス | 主な処理 | 備考 | 実装状況 |
+| --- | --- | --- | --- | --- |
+| GET | `/orca/master/address?zip=` | 郵便番号から住所 1 件を返却。未一致時は 200/空 body。 | OpenAPI 正式版は 404 `MASTER_ADDRESS_NOT_FOUND` も規定。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-06） |
+| GET | `/orca/master/hokenja?pref=&keyword=&effective=` | 保険者検索（名称/カナ部分一致）。 | `totalCount+items[]` でページング。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-06） |
+| GET | `/orca/master/generic-class?keyword=&effective=&page=&pageSize=` | 薬剤分類ツリー取得。 | `DrugMasterEntry` + 監査メタ必須。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
+| GET | `/orca/master/generic-price?srycd=&effective=` | 薬価（単一）を返却。未一致時は price=null。 | 404 非採用、200 + null を明記。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
+| GET | `/orca/master/youhou?keyword=&effective=` | 用法マスタ取得。 | 配列返却、監査メタ必須。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
+| GET | `/orca/master/material?keyword=&effective=` | 特定器材マスタ取得。 | price 0 許容、ページング対応。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
+| GET | `/orca/master/kensa-sort?keyword=&effective=` | 検査分類マスタ取得。 | `kensaSort` 必須、監査メタ必須。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
+| GET | `/orca/tensu/etensu?keyword=&category=&asOf=&tensuVersion=&page=&pageSize=` | 電子点数表検索。 | `totalCount+items[]`、404 は `TENSU_NOT_FOUND`。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-20, ORCA-08） |
 
 ### PHRResource (`/20/adm/phr`)
 - ADM20 側で PHR 連携の責務を担うが、2025-11-14 時点では RESTEasy へのリソース登録が保留となっており Legacy API 11 件が未公開。`PhrRequestContextExtractor` や `PhrAuditHelper` は用意済みのため、各エンドポイントごとに監査 ID・施設整合チェック・署名付き応答ルールを整理してから公開する必要がある。

@@ -1,3 +1,4 @@
+import axios from 'axios';
 import type {
   DiseaseMasterEntry,
   DrugInteractionEntry,
@@ -8,6 +9,7 @@ import { determineInteractionSeverity } from '@/features/charts/utils/interactio
 import type { ModuleListPayload, ModuleModelPayload } from '@/features/charts/types/module';
 import { httpClient } from '@/libs/http';
 import { measureApiPerformance, PERFORMANCE_METRICS } from '@/libs/monitoring';
+import { OrcaValidationError, validateOrcaCode } from '@/features/charts/utils/orcaMasterValidation';
 import type {
   AddressMasterEntry,
   DosageInstructionMaster,
@@ -17,6 +19,10 @@ import type {
   LabClassificationMaster,
   MinimumDrugPriceEntry,
   OrcaMasterListResponse,
+  Orca05MasterRecord,
+  Orca06InsurerAddressRecord,
+  Orca08EtensuRecord,
+  OrcaMasterSource,
   SpecialEquipmentMaster,
 } from '@/types/orca';
 
@@ -75,6 +81,9 @@ interface RawDrugClassificationMaster {
   isLeaf?: boolean | string | null;
   startDate?: string | null;
   endDate?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
+  version?: string | null;
 }
 
 interface RawMinimumDrugPriceEntry {
@@ -87,6 +96,9 @@ interface RawMinimumDrugPriceEntry {
   startDate?: string | null;
   endDate?: string | null;
   reference?: MinimumDrugPriceEntry['reference'] | null;
+  validFrom?: string | null;
+  validTo?: string | null;
+  version?: string | null;
 }
 
 interface RawDosageInstructionMaster {
@@ -97,18 +109,25 @@ interface RawDosageInstructionMaster {
   daysLimit?: number | string | null;
   dosePerDay?: number | string | null;
   comment?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
+  version?: string | null;
 }
 
 interface RawSpecialEquipmentMaster {
   materialCode?: string | null;
   materialName?: string | null;
   category?: string | null;
+  materialCategory?: string | null;
   insuranceType?: string | null;
   unit?: string | null;
   price?: number | string | null;
   startDate?: string | null;
   endDate?: string | null;
   maker?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
+  version?: string | null;
 }
 
 interface RawLabClassificationMaster {
@@ -118,18 +137,28 @@ interface RawLabClassificationMaster {
   departmentCode?: string | null;
   classification?: string | null;
   insuranceCategory?: string | null;
+  validFrom?: string | null;
+  validTo?: string | null;
+  version?: string | null;
 }
 
 interface RawInsurerMaster {
   insurerNumber?: string | null;
   insurerName?: string | null;
   insurerKana?: string | null;
+  payerRatio?: number | string | null;
+  payerType?: string | null;
   prefectureCode?: string | null;
+  prefCode?: string | null;
+  cityCode?: string | null;
+  zip?: string | null;
+  addressLine?: string | null;
   address?: string | null;
   phone?: string | null;
   insurerType?: string | null;
   validFrom?: string | null;
   validTo?: string | null;
+  version?: string | null;
 }
 
 interface RawEtensuMasterEntry {
@@ -140,16 +169,25 @@ interface RawEtensuMasterEntry {
   startDate?: string | null;
   endDate?: string | null;
   note?: string | null;
+  kubun?: string | null;
+  unit?: string | null;
+  category?: string | null;
+  tensuVersion?: string | null;
+  version?: string | null;
 }
 
 interface RawAddressMasterEntry {
   zipCode?: string | null;
+  zip?: string | null;
   prefectureCode?: string | null;
+  prefCode?: string | null;
   city?: string | null;
+  cityCode?: string | null;
   town?: string | null;
   kana?: string | null;
   roman?: string | null;
   fullAddress?: string | null;
+  version?: string | null;
 }
 
 const formatOrcaDate = (inputDate?: Date): string => {
@@ -268,6 +306,9 @@ const mapDrugClassification = (entry: RawDrugClassificationMaster): DrugClassifi
           : undefined,
     startDate: entry.startDate ?? undefined,
     endDate: entry.endDate ?? undefined,
+    validFrom: entry.validFrom ?? entry.startDate ?? undefined,
+    validTo: entry.validTo ?? entry.endDate ?? undefined,
+    version: entry.version ?? undefined,
   };
 };
 
@@ -287,6 +328,9 @@ const mapMinimumDrugPrice = (entry: RawMinimumDrugPriceEntry): MinimumDrugPriceE
     priceType: entry.priceType ?? undefined,
     startDate: entry.startDate ?? undefined,
     endDate: entry.endDate ?? undefined,
+    validFrom: entry.validFrom ?? entry.startDate ?? undefined,
+    validTo: entry.validTo ?? entry.endDate ?? undefined,
+    version: entry.version ?? undefined,
     reference: entry.reference ?? undefined,
   };
 };
@@ -309,6 +353,9 @@ const mapDosageInstruction = (entry: RawDosageInstructionMaster): DosageInstruct
     daysLimit: daysLimit ?? undefined,
     dosePerDay: dosePerDay ?? undefined,
     comment: entry.comment ?? undefined,
+    validFrom: entry.validFrom ?? undefined,
+    validTo: entry.validTo ?? undefined,
+    version: entry.version ?? undefined,
   };
 };
 
@@ -323,12 +370,16 @@ const mapSpecialEquipment = (entry: RawSpecialEquipmentMaster): SpecialEquipment
     materialCode,
     materialName,
     category: entry.category ?? undefined,
+    materialCategory: entry.materialCategory ?? entry.category ?? undefined,
     insuranceType: entry.insuranceType ?? undefined,
     unit: entry.unit ?? undefined,
     price: toNullableNumber(entry.price),
     startDate: entry.startDate ?? undefined,
     endDate: entry.endDate ?? undefined,
     maker: entry.maker ?? undefined,
+    validFrom: entry.validFrom ?? entry.startDate ?? undefined,
+    validTo: entry.validTo ?? entry.endDate ?? undefined,
+    version: entry.version ?? undefined,
   };
 };
 
@@ -346,6 +397,9 @@ const mapLabClassification = (entry: RawLabClassificationMaster): LabClassificat
     departmentCode: entry.departmentCode ?? undefined,
     classification: entry.classification ?? undefined,
     insuranceCategory: entry.insuranceCategory ?? undefined,
+    validFrom: entry.validFrom ?? undefined,
+    validTo: entry.validTo ?? undefined,
+    version: entry.version ?? undefined,
   };
 };
 
@@ -360,12 +414,19 @@ const mapInsurer = (entry: RawInsurerMaster): InsurerMaster | null => {
     insurerNumber,
     insurerName,
     insurerKana: entry.insurerKana ?? undefined,
-    prefectureCode: entry.prefectureCode ?? undefined,
+    prefectureCode: entry.prefectureCode ?? entry.prefCode ?? undefined,
+    prefCode: entry.prefCode ?? entry.prefectureCode ?? undefined,
+    cityCode: entry.cityCode ?? undefined,
+    zip: entry.zip ?? undefined,
+    addressLine: entry.addressLine ?? undefined,
     address: entry.address ?? undefined,
     phone: entry.phone ?? undefined,
     insurerType: entry.insurerType ?? undefined,
+    payerRatio: toNullableNumber(entry.payerRatio),
+    payerType: entry.payerType ?? undefined,
     validFrom: entry.validFrom ?? undefined,
     validTo: entry.validTo ?? undefined,
+    version: entry.version ?? undefined,
   };
 };
 
@@ -381,12 +442,19 @@ const mapEtensuMaster = (entry: RawEtensuMasterEntry): EtensuMasterEntry | null 
 
   return {
     etensuCategory,
+    category: entry.category ?? etensuCategory,
     medicalFeeCode,
+    tensuCode: medicalFeeCode,
     name,
     points,
+    tanka: points,
+    unit: entry.unit ?? undefined,
+    kubun: entry.kubun ?? undefined,
     startDate: entry.startDate ?? undefined,
     endDate: entry.endDate ?? undefined,
     note: entry.note ?? undefined,
+    tensuVersion: entry.tensuVersion ?? undefined,
+    version: entry.version ?? undefined,
   };
 };
 
@@ -398,13 +466,17 @@ const mapAddressMaster = (entry: RawAddressMasterEntry): AddressMasterEntry | nu
   }
 
   return {
-    zipCode: zipCode ?? undefined,
-    prefectureCode: entry.prefectureCode ?? undefined,
+    zipCode: zipCode ?? entry.zip ?? undefined,
+    zip: entry.zip ?? zipCode ?? undefined,
+    prefectureCode: entry.prefectureCode ?? entry.prefCode ?? undefined,
+    prefCode: entry.prefCode ?? entry.prefectureCode ?? undefined,
     city: entry.city ?? undefined,
+    cityCode: entry.cityCode ?? undefined,
     town: entry.town ?? undefined,
     kana: entry.kana ?? undefined,
     roman: entry.roman ?? undefined,
     fullAddress: fullAddress ?? undefined,
+    version: entry.version ?? undefined,
   };
 };
 
@@ -712,19 +784,83 @@ export const fetchEtensuMasters = async (): Promise<EtensuMasterEntry[]> => {
 };
 
 export const lookupAddressMaster = async (zipcode: string): Promise<AddressMasterEntry[]> => {
-  const normalized = zipcode.trim();
-  if (!normalized) {
-    return [];
+  const { ok, normalized, error } = validateOrcaCode('zip', zipcode);
+  if (!ok || !normalized) {
+    throw error ?? new OrcaValidationError('zip', zipcode);
   }
-  const endpoint = `/orca/master/address?zipcode=${encodeURIComponent(normalized)}`;
+  const endpoint = `/orca/master/address?zip=${encodeURIComponent(normalized)}`;
   return measureApiPerformance(
     PERFORMANCE_METRICS.orca.master.search,
     `GET ${endpoint}`,
     async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawAddressMasterEntry>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list.map(mapAddressMaster).filter((item): item is AddressMasterEntry => Boolean(item));
+      try {
+        const response = await httpClient.get<OrcaMasterListResponse<RawAddressMasterEntry>>(endpoint);
+        const list = response.data?.list ?? [];
+        return list.map(mapAddressMaster).filter((item): item is AddressMasterEntry => Boolean(item));
+      } catch (requestError) {
+        if (axios.isAxiosError(requestError) && requestError.response?.status === 422) {
+          const runId = (requestError.response.data as { runId?: string })?.runId;
+          throw new OrcaValidationError('zip', normalized, { runId });
+        }
+        throw requestError;
+      }
     },
     { zipcode: normalized },
   );
+};
+
+// --- Bridge スケルトン（ORCA-05/06/08 REST 提供待ち） ---
+
+export interface OrcaMasterFetchOptions {
+  runId?: string;
+  sourceHint?: OrcaMasterSource;
+  version?: string;
+}
+
+export const fetchOrca05BridgeMasters = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<Orca05MasterRecord>> => {
+  // TODO: 実 REST 実装後に `/orca/master/{generic-class|generic-price|youhou|material|kensa-sort}` を呼び出す
+  return {
+    list: [],
+    totalCount: 0,
+    fetchedAt: new Date().toISOString(),
+    dataSource: options?.sourceHint ?? 'mock',
+    fallbackUsed: true,
+    missingMaster: true,
+    runId: options?.runId,
+    version: options?.version,
+  };
+};
+
+export const fetchOrca06BridgeMasters = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<Orca06InsurerAddressRecord>> => {
+  // TODO: 実 REST 実装後に `/orca/master/hokenja` `/orca/master/address` を呼び出す
+  return {
+    list: [],
+    totalCount: 0,
+    fetchedAt: new Date().toISOString(),
+    dataSource: options?.sourceHint ?? 'mock',
+    fallbackUsed: true,
+    missingMaster: true,
+    runId: options?.runId,
+    version: options?.version,
+  };
+};
+
+export const fetchOrca08BridgeMasters = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<Orca08EtensuRecord>> => {
+  // TODO: 実 REST 実装後に `/orca/master/etensu` を呼び出す
+  return {
+    list: [],
+    totalCount: 0,
+    fetchedAt: new Date().toISOString(),
+    dataSource: options?.sourceHint ?? 'mock',
+    fallbackUsed: true,
+    missingMaster: true,
+    runId: options?.runId,
+    version: options?.version,
+  };
 };

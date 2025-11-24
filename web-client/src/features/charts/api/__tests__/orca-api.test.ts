@@ -3,11 +3,13 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { httpClient } from '@/libs/http';
 import {
   checkDrugInteractions,
+  lookupAddressMaster,
   lookupGeneralName,
   searchDiseaseByName,
   searchTensuByName,
   searchTensuByPointRange,
 } from '@/features/charts/api/orca-api';
+import { OrcaValidationError } from '@/features/charts/utils/orcaMasterValidation';
 
 vi.mock('@/libs/http', async () => {
   const actual = await vi.importActual<typeof import('@/libs/http')>('@/libs/http');
@@ -173,6 +175,23 @@ describe('orca-api', () => {
         severity: 'critical',
       },
     ]);
+  });
+
+  it('throws validation error when zipcode format is invalid', async () => {
+    await expect(lookupAddressMaster('123-45')).rejects.toBeInstanceOf(OrcaValidationError);
+    expect(httpClient.get).not.toHaveBeenCalled();
+  });
+
+  it('wraps server 422 as OrcaValidationError with audit meta', async () => {
+    vi.mocked(httpClient.get).mockRejectedValue({
+      isAxiosError: true,
+      response: { status: 422, data: { runId: '20251124T170000Z' } },
+    } as never);
+
+    await expect(lookupAddressMaster('1234567')).rejects.toMatchObject({
+      meta: expect.objectContaining({ validationError: true, runId: '20251124T170000Z', missingMaster: false }),
+      userMessage: expect.stringContaining('郵便番号'),
+    });
   });
 });
 
