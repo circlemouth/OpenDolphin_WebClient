@@ -80,3 +80,8 @@
 - API: `searchTensuByPointRange` を新設し、ポイント範囲 + 任意日付を ORCA 日付形式に変換して呼び出す。React Query 用フック `useTensuPointSearch` を追加。
 - MSW: `/orca/tensu/ten/:param/` ハンドラを追加。`tensuMasterFixtureList`（4 件）を点数でフィルタしてレスポンスを生成し、UI デバッグに利用可能。
 - テスト/静的解析: `cd web-client && npm run typecheck -- --pretty false`、`cd web-client && npm run lint -- --max-warnings=0 --no-cache` ともに成功（エラー/警告 0）。
+
+## 追加メモ（2025-11-23 23:45 JST / RUN_ID=20251123T135709Z）
+- 対応: `src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md` に暫定データ利用時の監査・ログ要件（画面別 audit/logValidationError フィールド）を追加。対象イベント: Charts 検索/保存、Reception 予約 CRUD/保険資格確認、Claim 再計算・再送、トーン表示切替。共通フィールドに `runId`, `dataSource`, `cacheHit`, `masterType`, `screenId`, `patientId`, `staffId`, `timestamp` を明記。
+- テレメトリ指針: MSW→実サーバー切替時に `dataSourceTransition (msw→server)` を記録し、Feature flag ロールバックでも同メタを送出するよう明文化。
+- 影響範囲: Web クライアント UI のログ送出のみでサーバー変更なし。DOC_STATUS は未更新。
