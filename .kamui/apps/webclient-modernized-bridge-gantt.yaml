@@ -1,0 +1,215 @@
+ganttConfig:
+  defaultView: week
+  startDate: 2025-11-24
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  webclient_modernized_bridge:
+    00_RUN_IDと参照チェーン確定.md:
+      content: |-
+        # 00 RUN_IDと参照チェーン確定
+
+        - RUN_ID=`20251124T000000Z` を全ログ/ドキュメントで統一し、参照チェーン（AGENTS.md → docs/web-client/README.md → phase2 INDEX → manager overview → 本系列）を固定。
+        - サーバー資産非改変・Python 禁止・ORCA 接続先を mac-dev に限定するガバナンスを全関係者へ共有。
+        - DOC_STATUS 棚卸しの更新手順と証跡パスを確認済み。
+      priority: High
+      status: completed
+      progress: 100
+      agent: "codex"
+      api: []
+      dependency: []
+      schedule:
+        start: 2025-11-22T00:00:00.000Z
+        days: 1
+    01_API互換レイヤー再確認とギャップ整理.md:
+      content: |-
+        # 01 API互換レイヤー再確認とギャップ整理
+
+        - モダナイズ版サーバー提供 API と Web クライアント利用エンドポイントを棚卸し、 ORCA_API_STATUS の Matrix No.1-53 を UI 機能にマッピング。
+        - MSW / snapshot / server の経路差分（レスポンス shape・必須フィールド欠落）を洗い出し、監査必須フィールド一覧を更新。
+        - 例外経路: `/api01rv2/system01dailyv2`, `/api01rv2/patientgetv2`, `/orca14/appointmodv2`, `/orca12/patientmodv2`, `/orca21/medicalmodv2` 系の CRUD 到達可否を明記。
+      priority: High
+      status: completed
+      progress: 100
+      agent: "claude code"
+      api: ["/api01rv2/*", "/orca14/appointmodv2", "/orca12/patientmodv2", "/orca21/medicalmodv2"]
+      dependency:
+        - src/webclient_modernized_bridge/00_RUN_IDと参照チェーン確定.md
+      schedule:
+        start: 2025-11-22T09:00:00.000Z
+        days: 2
+    02_ORCAマスターデータギャップ報告精査.md:
+      content: |-
+        # 02 ORCAマスターデータギャップ報告精査
+
+        - ORCA-05/06/08 で未提供のフィールドを特定し、UI 依存度・保存ブロック条件を整理。
+        - スナップショット/固定コード/モックのフォールバック条件と監査 `dataSourceTransition` を定義。
+        - キャッシュ TTL, version 差し替え手順, 監査メタ付与箇所を一覧化。
+      priority: High
+      status: completed
+      progress: 100
+      agent: "gemini cli"
+      api: ["ORCA-05", "ORCA-06", "ORCA-08"]
+      dependency:
+        - src/webclient_modernized_bridge/01_API互換レイヤー再確認とギャップ整理.md
+      schedule:
+        start: 2025-11-23T00:00:00.000Z
+        days: 1
+    03_ギャップ解消方針とUI影響分析.md:
+      content: |-
+        # 03 ギャップ解消方針とUI影響分析
+
+        - Charts/Reception/Claim それぞれの UI で不足マスタ・監査メタ・警告表示の差分を洗い出し、最優先補填箇所を決定。
+        - MSW→server 切替時の UX（バナー・トースト）と React Query 再取得ルールを定義。
+        - DOC_STATUS への反映案と evidence パスを起票。
+      priority: Medium
+      status: completed
+      progress: 100
+      agent: "codex"
+      api: ["/orca/master/*", "/orca/tensu/*"]
+      dependency:
+        - src/webclient_modernized_bridge/02_ORCAマスターデータギャップ報告精査.md
+      schedule:
+        start: 2025-11-23T09:00:00.000Z
+        days: 1
+    04_マスターデータ補完ブリッジ実装計画.md:
+      content: |-
+        # 04 マスターデータ補完ブリッジ実装計画
+
+        - `resolveMasterSource`/`fetchOrcaMaster` の仕様確定と監査フィールド (dataSource, dataSourceTransition, cacheHit, missingMaster, fallbackUsed) の送出ポイント固定。
+        - React Query TTL=5分、snapshot 差し替えとロールバック、同期ジョブ (`bridge-sync`) の運用フローをドラフト。
+        - ORCA-05/06/08 の最小必須列を型として固定し、警告バナー/保存ブロック条件を UI 別に列挙。
+      priority: Medium
+      status: in_progress
+      progress: 45
+      agent: "gemini cli"
+      api: ["/orca/master/address", "/orca/master/hokenja", "/orca/master/generic-price", "/orca/tensu/*"]
+      dependency:
+        - src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md
+      schedule:
+        start: 2025-11-24T00:00:00.000Z
+        end: 2025-11-27T00:00:00.000Z
+    05_APIサーフェス網羅マッピングとUI欠落検知.md:
+      content: |-
+        # 05 APIサーフェス網羅マッピングとUI欠落検知
+
+        - ORCA_API_STATUS Matrix 1-53 をエンドポイントごとに UI/機能へ紐付け、未実装 UI や spec 乖離をタグ付け。
+        - CRUD 可否・証跡パス・Spec-based 実装箇所を一覧化し、MSW / snapshot / server 切替時の挙動差をガントチャートに反映。
+        - 出力: `src/webclient_modernized_bridge/api_ui_coverage.csv`（UI 実装有無・監査必須フィールド・モダナイズ版サーバー提供有無）。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: "claude code"
+      api: ["/api01rv2/*", "/orca1*/**", "/orca2*/**", "/orca3*/**", "/20/adm/phr/*"]
+      dependency:
+        - src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md
+      schedule:
+        start: 2025-11-27T00:00:00.000Z
+        days: 2
+    06_UIブリッジ実装とFeatureFlag切替.md:
+      content: |-
+        # 06 UIブリッジ実装と Feature Flag 切替
+
+        - Charts/Reception/Claim の fetch フックへ source resolver を組み込み、`WEB_ORCA_MASTER_SOURCE` / `VITE_DISABLE_MSW` の切替で `dataSourceTransition` が送出されることを確認。
+        - UI 未実装エンドポイントに対して placeholder / read-only 表示を追加し、監査メタと警告バナーを統一トーンで実装。
+        - 主要 CRUD (acceptmodv2/appointmodv2/medicalmodv2/patientmodv2) のエラーハンドリングをサーバー仕様に合わせて修正。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: "codex"
+      api: ["/orca11/acceptmodv2", "/orca14/appointmodv2", "/orca21/medicalmodv2", "/orca12/patientmodv2"]
+      dependency:
+        - src/webclient_modernized_bridge/05_APIサーフェス網羅マッピングとUI欠落検知.md
+      schedule:
+        start: 2025-11-29T00:00:00.000Z
+        days: 3
+    07_契約テストと監査メタ検証.md:
+      content: |-
+        # 07 契約テストと監査メタ検証
+
+        - MSW ↔ server のスキーマ差分 / 件数差分を契約テストで実施し、必須フィールド欠落を FAIL 判定に固定。
+        - `dataSource`/`dataSourceTransition`/`cacheHit`/`missingMaster`/`fallbackUsed` が全主要シナリオで送出されることを E2E + ログで確認。
+        - ハッシュ比較 (`artifacts/api-stability/20251124T000000Z/master-sync/<DATE>/hashes`) を自動生成し、乖離時は UI 警告とロールバック手順を発火。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: "cursor cli"
+      api: ["/api01rv2/patientgetv2", "/orca11/acceptlstv2", "/orca21/medicalmodv2", "/orca/master/*"]
+      dependency:
+        - src/webclient_modernized_bridge/06_UIブリッジ実装とFeatureFlag切替.md
+      schedule:
+        start: 2025-12-02T00:00:00.000Z
+        days: 3
+    08_DOC_STATUS反映とワーカー報告.md:
+      content: |-
+        # 08 DOC_STATUS反映とワーカー報告
+
+        - DOC_STATUS の Web クライアント/連携 行に RUN_ID・証跡ログ・ハッシュファイルパスを追記し、managerdocs 参照チェーンへ同日反映。
+        - `docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-master-bridge-plan.md` に契約テスト結果・差分理由・ロールバック有無を記録。
+        - ワーカー報告（【ワーカー報告】）テンプレに沿って成果・未完・次のアクションをまとめ、Slack 通知草案を添付。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: "codex"
+      api: []
+      dependency:
+        - src/webclient_modernized_bridge/07_契約テストと監査メタ検証.md
+      schedule:
+        start: 2025-12-04T00:00:00.000Z
+        days: 1

@@ -1,23 +1,31 @@
-import { Suspense } from 'react';
+import { Suspense, lazy } from 'react';
 import { Navigate, Route, createBrowserRouter, createRoutesFromElements } from 'react-router-dom';
 
 import { AppShell } from '@/app/layout/AppShell';
-import { LoginPage } from '@/features/auth/pages/LoginPage';
-import { PatientsPage } from '@/features/patients/pages/PatientsPage';
-import { ReceptionPage } from '@/features/reception/pages/ReceptionPage';
-import { ChartsPage } from '@/features/charts/pages/ChartsPage';
-import { FacilitySchedulePage } from '@/features/schedule/pages/FacilitySchedulePage';
-import { UserAdministrationPage } from '@/features/administration/pages/UserAdministrationPage';
-import { SystemPreferencesPage } from '@/features/administration/pages/SystemPreferencesPage';
-import { StampManagementPage } from '@/features/administration/pages/StampManagementPage';
-import { PatientDataExportPage } from '@/features/administration/pages/PatientDataExportPage';
 import { RequireAuth, RequireRole } from '@/libs/auth';
+
+const LoginPage = lazy(() => import('@/features/auth/pages/LoginPage').then((mod) => ({ default: mod.LoginPage })));
+const PatientsPage = lazy(() => import('@/features/patients/pages/PatientsPage').then((mod) => ({ default: mod.PatientsPage })));
+const ReceptionPage = lazy(() => import('@/features/reception/pages/ReceptionPage').then((mod) => ({ default: mod.ReceptionPage })));
+const ChartsPage = lazy(() => import('@/features/charts/pages/ChartsPage').then((mod) => ({ default: mod.ChartsPage })));
+const FacilitySchedulePage = lazy(() => import('@/features/schedule/pages/FacilitySchedulePage').then((mod) => ({ default: mod.FacilitySchedulePage })));
+const UserAdministrationPage = lazy(() => import('@/features/administration/pages/UserAdministrationPage').then((mod) => ({ default: mod.UserAdministrationPage })));
+const SystemPreferencesPage = lazy(() => import('@/features/administration/pages/SystemPreferencesPage').then((mod) => ({ default: mod.SystemPreferencesPage })));
+const StampManagementPage = lazy(() => import('@/features/administration/pages/StampManagementPage').then((mod) => ({ default: mod.StampManagementPage })));
+const PatientDataExportPage = lazy(() => import('@/features/administration/pages/PatientDataExportPage').then((mod) => ({ default: mod.PatientDataExportPage })));
 
 export const createAppRouter = () =>
   createBrowserRouter(
     createRoutesFromElements(
       <Route>
-        <Route path="/login" element={<LoginPage />} />
+        <Route
+          path="/login"
+          element={
+            <Suspense fallback={<div>ロード中...</div>}>
+              <LoginPage />
+            </Suspense>
+          }
+        />
         <Route path="/" element={<RequireAuth><AppShell /></RequireAuth>}>
           <Route index element={<Navigate to="/reception" replace />} />
           <Route

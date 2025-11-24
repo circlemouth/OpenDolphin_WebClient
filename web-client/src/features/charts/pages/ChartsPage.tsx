@@ -392,7 +392,7 @@ const WorkspaceViewTabs = styled.div`
 
 const WorkspaceTabButton = styled.button<{ $active: boolean }>`
   border: 1px solid
-    ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.borderDefault)};
+    ${({ theme, $active }) => ($active ? theme.palette.primary : theme.palette.border)};
   background: ${({ theme, $active }) => ($active ? theme.palette.accent : theme.palette.surfaceMuted)};
   color: ${({ theme, $active }) => ($active ? theme.palette.primaryStrong : theme.palette.text)};
   border-radius: ${({ theme }) => theme.radius.sm};

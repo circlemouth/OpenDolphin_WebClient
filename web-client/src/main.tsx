@@ -2,9 +2,6 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 
 import { App } from '@/app/App';
-import { initializeAuditTrail } from '@/libs/audit';
-import { initializeSecurityPolicies } from '@/libs/security';
-import { initializeOtel } from '@/observability/otelClient';
 
 const isTruthyEnvFlag = (value: string | undefined) => value === '1' || value?.toLowerCase() === 'true';
 
@@ -56,9 +53,20 @@ const enableMocking = async (): Promise<boolean> => {
 };
 
 const bootstrap = async () => {
-  initializeOtel();
-  initializeSecurityPolicies();
-  initializeAuditTrail();
+  if (isTruthyEnvFlag(import.meta.env.VITE_ENABLE_TELEMETRY)) {
+    const { initializeOtel } = await import('@/observability/otelClient');
+    initializeOtel();
+  }
+
+  if (!isTruthyEnvFlag(import.meta.env.VITE_DISABLE_SECURITY)) {
+    const { initializeSecurityPolicies } = await import('@/libs/security');
+    initializeSecurityPolicies();
+  }
+
+  if (!isTruthyEnvFlag(import.meta.env.VITE_DISABLE_AUDIT)) {
+    const { initializeAuditTrail } = await import('@/libs/audit');
+    initializeAuditTrail();
+  }
 
   const mswEnabled = await enableMocking();
 

@@ -35,5 +35,7 @@ export const dismissTraceNotice = (id: string) => {
 export const subscribeTraceNotices = (listener: NoticeListener) => {
   listeners.add(listener);
   listener(queue);
-  return () => listeners.delete(listener);
+  return () => {
+    listeners.delete(listener);
+  };
 };

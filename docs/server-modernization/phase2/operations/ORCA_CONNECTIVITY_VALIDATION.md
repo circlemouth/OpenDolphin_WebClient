@@ -218,6 +218,64 @@ No.19-38 で作成した XML テンプレートの確認は `artifacts/orca-conn
 2. **テンプレート Evidence**: `artifacts/orca-connectivity/TEMPLATE/` をコピーした直後に `README.md` へ `RUN_ID`, `UTC`, 使用した Basic 認証（`mac-dev-login.local.md` 参照）と CRUD 実施有無を追記する。
 3. **ドキュメントリンク**: `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日項と本 Runbook の該当セクションを双方方向リンクにする。
 4. **通知**: 失敗時は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順に連絡。
+
+## 7. 監査・SLA計測（RUN_ID=`20251124T111500Z`, 親=`20251124T000000Z`）
+
+- **性能目標（P99, payload 上限, 想定同時接続）**
+  - ORCA-05 (`/orca/master/{generic-class|generic-price|material|kensa-sort}`): P99≤1.2s（キャッシュヒット時 0.6s 以内）、最大ペイロード 3MB、同時 30 リクエストを想定。
+  - ORCA-06 (`/orca/master/{hokenja|address}`): P99≤1.0s（キャッシュヒット時 0.5s 以内）、最大ペイロード 2MB、同時 30 リクエスト。
+  - ORCA-08 (`/orca/tensu/{ten|etensu}`): P99≤1.8s（キャッシュヒット時 0.9s 以内）、最大ペイロード 5MB、同時 20 リクエスト。
+  - 計測観点: P50/P95/P99、バックエンド DB 時間、キャッシュヒット率、直近 5 分のエラー率、レスポンスサイズ、圧縮有無。
+
+- **負荷試験シナリオ（キャッシュ/索引案を前提）**
+  - キャッシュヒット: 住所/保険者コードで同一キーを 30 並列、ETag 付き 304 応答を確認。
+  - キャッシュミス: `asOf` を未来日にずらし、初回フェッチ時の P99 と DB 所要時間を計測。
+  - 地域コードフィルタ: `/orca/master/address?pref=01&city=札幌` の trgm インデックス有効性を確認（部分一致 10 並列）。
+  - 点数表レンジ: `/orca/tensu/ten?min=110000000&max=110000200` を 10 並列で実行し、`srycd+kbn+ymd_start` インデックスのスキャン計画を取得。
+  - 大型レスポンス: `/orca/tensu/etensu/{srycd}` 連続 50 件を pre-warm した後、`stale-while-revalidate` の再フェッチ挙動を確認。
+
+- **監査・可観測性（必須ログ項目）**
+  - `runId`, `dataSource`（live/cache/snapshot）, `cacheHit`, `missingMaster`, `fallbackUsed`, `snapshotVersion`, `version`, `fetchedAt`。
+  - SQL 実行時間（ms）、DB ヒット有無、レコード件数、payload size（bytes）。
+  - 呼び出し元 `facilityId` / `userId`、呼び出しモジュール（charts/reception/billing）、クライアント `traceId`。 
+  - エラー分類: 4xx（validation, missing-master, not-found-range）, 5xx（db-timeout, cache-layer, upstream-orca）, timeout（client/server 別）。
+  - 監査出力先: Web クライアントは front 監査ログ（`ux/API_SURFACE_AND_AUDIT_GUIDE.md` 準拠）へ `runId/cacheHit/missingMaster/fallbackUsed/fetchedAt` を送出し、サーバー側は `d_audit_event` に Trace-ID 付きで保存。
+
+### 7.1 必須ログ項目 ↔ ベンチメトリクス対応（RUN_ID=`20251124T120000Z`）
+| ログ項目 | ベンチ出力/計測ポイント | 備考 |
+| --- | --- | --- |
+| `runId` | k6 `tags.runId` / autocannon `x-run-id` ヘッダ | bench.config の `runId` を統一する |
+| `dataSource` | レスポンスヘッダ `X-Orca-Data-Source` → k6 メタまたは Trend | live/cache/snapshot を明示 |
+| `cacheHit` | レスポンスヘッダ `X-Orca-Cache-Hit` を k6 `check` と Tag へ反映 | 304 応答は強制 true |
+| `missingMaster` | 4xx/404 時ヘッダ `X-Orca-Missing-Master` / Body flag → k6 check | 404 でも監査行を残す |
+| `fallbackUsed` | ヘッダ `X-Orca-Fallback` → k6 check/Trend | スナップショット/擬似マスタ使用時 |
+| `fetchedAt` | ヘッダ `Date` or `X-Fetched-At` → k6 Trend（ミリ秒換算） | サーバー時計ずれ検知用 |
+| `SQL時間` | ヘッダ `X-Orca-Db-Time` (ms) → k6 Trend `db_time_ms` | DB 遅延を分離 |
+| `件数` | ヘッダ `X-Orca-Row-Count` → k6 Trend `row_count` | paging TotalCount も記録 |
+| `facility` | `X-ORCA-Facility` 送信値を k6 tag / autocannon header に固定 | マルチ施設キャッシュ分離 |
+| `user` | `X-ORCA-User` 送信値を k6 tag / autocannon header に固定 | 監査 actor と突合 |
+| P99 / RPS / error率 | k6 `http_req_duration` / `http_reqs` / `http_req_failed` | アラート閾値表と連動 |
+| payload size | レスポンス `Content-Length` → Trend `payload_bytes` | 5MB 超検知 |
+
+- **アラート初期値（Prometheus / Grafana 想定）**
+  - P99 latency: ORCA-05/06 で 2.0s 超が 5 分平均継続、ORCA-08 で 3.0s 超が 5 分継続で Warning。
+  - エラー率: `5xx_rate > 1%` または `4xx_validation > 5%` を 5 分平均で Warning、`5xx_rate > 3%` で Critical。
+  - キャッシュヒット率: ORCA-05/06 <80%、ORCA-08 <70% が 10 分継続で Warning（キャッシュ/ETag 設定漏れ検知）。
+  - ペイロード異常: 連続 3 回 5MB 超または gzip 無効を検知した場合に Info アラート。
+
+### 7.2 アラート閾値（初期値、Prometheus 例）
+| 種別 | Warning | Critical | 備考 |
+| --- | --- | --- | --- |
+| P99 latency (ORCA-05/06) | `histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{api=~\"ORCA-05|ORCA-06\"}[5m])) > 2.0` | 連続 10 分で 2.5 以上 | キャッシュヒットは 0.6/0.5s 目標 |
+| P99 latency (ORCA-08) | `histogram_quantile(0.99, rate(http_request_duration_seconds_bucket{api=\"ORCA-08\"}[5m])) > 3.0` | 10 分で 3.5 以上 | 大型レスポンス対策 |
+| 5xx rate | `sum(rate(http_requests_total{status=~\"5..\"}[5m])) / sum(rate(http_requests_total[5m])) > 0.01` | >0.03 | Gateway/DB timeout 含む |
+| 4xx validation | `sum(rate(http_requests_total{status=~\"4..\",error=\"validation\"}[5m])) / sum(rate(http_requests_total[5m])) > 0.05` | >0.10 | missing-master は別途集計 |
+| Cache hit ratio | `1 - (misses / (hits+misses)) < 0.8` (ORCA-05/06) / `<0.7` (ORCA-08) | 15 分以上継続 | ETag/TTL 設定漏れ検知 |
+| Payload size | `max_over_time(response_bytes_sum[5m]) > 5e6` 3 回連続 | n/a | gzip 無効も Info 通知 |
+
+- **運用ノート**
+  - ベンチ結果・グラフは `artifacts/api-stability/<RUN_ID>/benchmarks/` へ保存し、本節にリンクする。
+  - 監査ログ項目の欠落や閾値変更は本節で更新し、`docs/server-modernization/operations/OBSERVABILITY_AND_METRICS.md` にも同日付で反映する。
 5. **Archive**: 30 日以上参照しないログは `docs/archive/<YYYYQn>/orcaconnect/` へ移し、元ファイルにはスタブと移動分リンクを残す。
 6. **命名ルール**: Evidence ディレクトリは UTC タイムスタンプ（`YYYYMMDDThhmmssZ`）を用いる。命名チェックは `node scripts/tools/orca-artifacts-namer.js` で行う。 以外の終了コードは再実行禁止。
 7. **機密情報のマスキング**: `request.http` に資格情報を含めない。curl コマンドの `--user <MASKED>` 形式で保管し、実行時のみ `env` から展開する。

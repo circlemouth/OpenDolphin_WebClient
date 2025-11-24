@@ -50,11 +50,15 @@ const InputShell = styled.span<{ $hasError: boolean }>`
 
 const StyledInput = styled.input`
   border: none;
-  outline: none;
   flex: 1;
   background: transparent;
   font-size: 1rem;
   color: ${({ theme }) => theme.palette.text};
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.palette.primary};
+    outline-offset: 2px;
+  }
 
   &::placeholder {
     color: ${({ theme }) => theme.palette.textMuted};
