@@ -448,15 +448,47 @@
   {
     "id": "task-yaml-1vs4s8m-src-webclient-mo",
     "name": "[webclient gap bridge plan] 03_ギャップ解消方針とUI影響分析\n期間: 11/25 09:00 - 11/26 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n## 解消方針策定とUI影響分析\n- マスターデータ不足を解消するための暫定データ供給/キャッシュ/バリデーション方針を案出。\n- カルテ/予約/請求 UI への項目影響、監査ログ要件を踏まえた変更規模を見積もる。\n- UI/UX ガイド (`docs/web-client/ux/CHART_UI_GUIDE_INDEX.md`) に照らし、入力制約とエラーハンドリング方針を更新。\n\nYAML ID: src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
-    "model": "YAML App",
-    "status": "running",
+    "model": "Codex CLI",
+    "status": "completed",
     "importance": "high",
     "urgency": "high",
+    "branchName": "task/task-yaml-1vs4s8m-src-webclient-mo",
+    "baseBranch": "main",
+    "worktreePath": null,
+    "createWorktree": false,
     "createdAt": "2025-11-23T22:42:16.401Z",
-    "updatedAt": "2025-11-23T22:42:25.273Z",
+    "updatedAt": "2025-11-24T02:09:20.538Z",
+    "requiresTerminal": false,
+    "bookmarked": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "autoEvaluationNotBefore": null,
+    "useTmux": false,
+    "taskType": "yaml-plan",
+    "modelId": null,
+    "latestVersion": null,
+    "currentVersion": null,
+    "installSteps": [],
+    "installCommand": null,
+    "createdAutomatically": false,
+    "dependencies": [
+      "task-yaml-w9jyfd-src-webclient-mo"
+    ]
+  },
+  {
+    "id": "task-yaml-1adisab-src-webclient-mo",
+    "name": "[webclient gap bridge plan] 04_マスターデータ補完ブリッジ実装計画\n期間: 11/26 09:00 - 11/27 09:00 / 優先度: medium / 緊急度: high / エージェント: gemini cli\n\n## ブリッジ実装計画\n- 追加取得が必要なマスターデータ API/同期ジョブを洗い出し、webclient_modernized_bridge での補完レイヤー設計を定義。\n- ORCA 連携手順書 (`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`) の制約を守った運用案を提示。\n- スプリント粒度で実装タスクに分解し、見積もりを更新。\n\nYAML ID: src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+    "model": "YAML App",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "high",
+    "createdAt": "2025-11-24T02:14:09.490Z",
+    "updatedAt": "2025-11-24T02:14:21.679Z",
     "requiresTerminal": true,
     "createWorktree": false,
-    "branchName": "task/task-yaml-1vs4s8m-src-webclient-mo",
+    "branchName": "task/task-yaml-1adisab-src-webclient-mo",
     "baseBranch": "main",
     "useTmux": false,
     "aiCompetitionEntry": false,
@@ -467,29 +499,29 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-webclient-gap-bridge-plan-b709a68a54::src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+      "key": "custom-app-webclient-gap-bridge-plan-b709a68a54::src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
       "appId": "custom-app-webclient-gap-bridge-plan-b709a68a54",
       "datasetLabel": "webclient gap bridge plan",
-      "pathId": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+      "pathId": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
       "fileName": "webclient-gap-bridge-plan.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-gap-bridge-plan.yaml",
-      "addedAt": "2025-11-23T22:42:16.386Z"
+      "addedAt": "2025-11-24T02:14:09.358Z"
     },
     "labels": [
       "webclient gap bridge plan",
       "src / webclient_modernized_bridge"
     ],
     "dependencies": [
-      "task-yaml-w9jyfd-src-webclient-mo"
+      "task-yaml-1vs4s8m-src-webclient-mo"
     ],
     "schedule": {
-      "startMs": 1764028800000,
-      "endMs": 1764115200000,
+      "startMs": 1764115200000,
+      "endMs": 1764201600000,
       "durationDays": 1
     },
     "category": "src / webclient_modernized_bridge",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "## 解消方針策定とUI影響分析\n- マスターデータ不足を解消するための暫定データ供給/キャッシュ/バリデーション方針を案出。\n- カルテ/予約/請求 UI への項目影響、監査ログ要件を踏まえた変更規模を見積もる。\n- UI/UX ガイド (`docs/web-client/ux/CHART_UI_GUIDE_INDEX.md`) に照らし、入力制約とエラーハンドリング方針を更新。"
+    "description": "## ブリッジ実装計画\n- 追加取得が必要なマスターデータ API/同期ジョブを洗い出し、webclient_modernized_bridge での補完レイヤー設計を定義。\n- ORCA 連携手順書 (`docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md`) の制約を守った運用案を提示。\n- スプリント粒度で実装タスクに分解し、見積もりを更新。"
   }
 ]
