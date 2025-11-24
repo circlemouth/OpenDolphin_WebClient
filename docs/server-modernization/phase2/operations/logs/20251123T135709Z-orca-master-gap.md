@@ -83,3 +83,14 @@
 - RUN_ID=`20251123T135709Z`。ORCA-08 マスタ系のステータスを「Spec-based / MSW 実装済み、UI 実装中」として `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` に更新。MSW 返却済みであること、UI 連携（ORCA-04 点数帯フィルタ）が進行中であることを明記。
 - `docs/web-client/process/API_UI_GAP_ANALYSIS.md` の Web クライアント差分を「対応状況: MSW/設計済み、UI実装中」とし、MSW 返却を利用して UI 実装を継続する旨を追記。
 - `src/webclient_modernized_bridge/02_ORCAマスターデータギャップ報告精査.md` のギャップ表に「対応状況」列を追加し、ORCA-04 を「MSW/設計済み、UI実装中」、ORCA-05/06/07 を「未着手」、ORCA-08 を「MSW 実装済み（web-client）、サーバー未実装」と明示。
+
+## 11. 2025-11-23 追記 (ワーカー1: フラグ設計 & 実API切替手順)
+- RUN_ID=`20251123T135709Z`。`src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md` のロードマップ節に ORCA-04/08 実API切替向けフラグ案と手順を追記。
+- フラグ: ビルド時 env `WEB_ORCA_MASTER_SOURCE`（`msw`/`server`）。ランタイム override は診療セッション限定の localStorage キーで許容し、永続保存は禁止。
+- 切替手順: ステージングで msw↔server を往復し、`data-source` バッジと監査ログを比較。差分（必須キー/型/件数/空データ時挙動/ステータスコード200固定）を契約テストで検出。問題時は runtime override で即 msw へロールバックする条件を明記。
+
+## 12. 作業ログ（UI監査配線確認メモ追記）
+- 担当: Codex
+- 開始: 2025-11-24 08:20:39 JST
+- 対象: `src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md` 監査・ログ要件節（UI実装側フィールド配線チェックリスト追加、RUN_ID=`20251123T135709Z`）
+- 完了: 2025-11-24 08:21:20 JST ／ 監査配線チェックリストを 2-1-1 節に追加（画面別に audit 呼び出し箇所・必須項目・未確認を明記、実装変更なし）

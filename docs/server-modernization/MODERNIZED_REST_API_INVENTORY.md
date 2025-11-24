@@ -4,6 +4,7 @@
 - 対象: `server-modernized/src/main/java/open/dolphin/**` および `open/orca/rest` に実装されている Jakarta EE ベースのモダナイズ版サーバー API。
 - 前提: 現行実装は旧サーバー互換のため `userName` / `password(MD5)` / `clientUUID` ヘッダーを引き続き要求し、施設 ID はアプリケーションサーバーの `RemoteUser` から解決する。JSON シリアライザは Jackson 2.x だが、戻り値の多くは後方互換のため `application/octet-stream` を指定している。
 - 注意: 本一覧はモダナイズ工程で Jakarta API へ移行済みの REST リソースを網羅する。仕様更新時は当ファイルと `docs/server-modernization/rest-api-modernization.md` の整合を保つこと。
+- 補足: ORCA モダナイズ REST（/orca/master/*, /orca/tensu/*）の最新サマリは `src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md` §8（RUN_ID=`20251123T135709Z`）を参照。
 
 > **【重要】**
 > このドキュメントは、モダナイズが**完了した**APIのみを掲載しています。
