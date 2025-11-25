@@ -13,8 +13,8 @@ import type {
 
 type TensuMasterFixture = {
   srycd: string;
-  tensuVersion?: string;
   name: string;
+  tensuVersion?: string;
   kananame?: string;
   taniname?: string;
   ten: string;
@@ -26,16 +26,19 @@ type TensuMasterFixture = {
   yukoedymd?: string;
 };
 
+const RUN_ID = '20251124T073245Z';
+const SNAPSHOT_VERSION = '2025-11-23';
+const RESPONSE_VERSION = '20251123';
+const FETCHED_AT = '2025-11-23T13:57:09Z';
+
 const auditMeta = {
   dataSource: 'snapshot' as const,
-  runId: '20251124T090000Z',
-  snapshotVersion: '2025-11-23',
+  runId: RUN_ID,
+  snapshotVersion: SNAPSHOT_VERSION,
   cacheHit: false,
   missingMaster: false,
   fallbackUsed: false,
 };
-
-const responseVersion = '20251123';
 
 export const addressMasterFixture: AddressMasterEntry = {
   ...auditMeta,
@@ -47,7 +50,7 @@ export const addressMasterFixture: AddressMasterEntry = {
   kana: 'ﾁﾖﾀﾞｸ ﾁﾖﾀﾞ',
   roman: 'Chiyoda-ku Chiyoda',
   fullAddress: '東京都千代田区千代田',
-  version: responseVersion,
+  version: RESPONSE_VERSION,
 };
 
 export const drugClassificationMasterResponse: DrugClassificationMasterResponse = {
@@ -65,12 +68,12 @@ export const drugClassificationMasterResponse: DrugClassificationMasterResponse 
       endDate: '99999999',
       validFrom: '20240401',
       validTo: '99999999',
-      version: responseVersion,
+      version: RESPONSE_VERSION,
     },
   ],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const minimumDrugPriceFixture: MinimumDrugPriceEntry = {
@@ -85,7 +88,7 @@ export const minimumDrugPriceFixture: MinimumDrugPriceEntry = {
   endDate: '99999999',
   validFrom: '20240401',
   validTo: '99999999',
-  version: responseVersion,
+  version: RESPONSE_VERSION,
   reference: {
     yukostymd: '20240401',
     yukoedymd: '99999999',
@@ -97,8 +100,8 @@ export const minimumDrugPriceResponse: MinimumDrugPriceResponse = {
   ...auditMeta,
   list: [minimumDrugPriceFixture],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const dosageInstructionMasterResponse: DosageInstructionMasterResponse = {
@@ -113,12 +116,12 @@ export const dosageInstructionMasterResponse: DosageInstructionMasterResponse = 
       daysLimit: 14,
       dosePerDay: 3,
       comment: 'TBL_YOUHOU 標準コードを採用',
-      version: responseVersion,
+      version: RESPONSE_VERSION,
     },
   ],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const specialEquipmentMasterResponse: SpecialEquipmentMasterResponse = {
@@ -137,12 +140,12 @@ export const specialEquipmentMasterResponse: SpecialEquipmentMasterResponse = {
       maker: 'ExampleMed',
       validFrom: '20240401',
       validTo: '99999999',
-      version: responseVersion,
+      version: RESPONSE_VERSION,
     },
   ],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const labClassificationMasterResponse: LabClassificationMasterResponse = {
@@ -156,12 +159,12 @@ export const labClassificationMasterResponse: LabClassificationMasterResponse = 
       departmentCode: '01',
       classification: '検体検査',
       insuranceCategory: 'SYOKAN',
-      version: responseVersion,
+      version: RESPONSE_VERSION,
     },
   ],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const insurerMasterResponse: InsurerMasterResponse = {
@@ -179,12 +182,12 @@ export const insurerMasterResponse: InsurerMasterResponse = {
       insurerType: '組合健保',
       validFrom: '20240401',
       validTo: '99999999',
-      version: responseVersion,
+      version: RESPONSE_VERSION,
     },
   ],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const addressMasterResponse: OrcaMasterListResponse<AddressMasterEntry> = {
@@ -200,12 +203,12 @@ export const addressMasterResponse: OrcaMasterListResponse<AddressMasterEntry> =
       kana: addressMasterFixture.kana,
       roman: addressMasterFixture.roman,
       fullAddress: addressMasterFixture.fullAddress,
-      version: responseVersion,
+      version: RESPONSE_VERSION,
     },
   ],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const etensuMasterResponse: EtensuMasterResponse = {
@@ -222,13 +225,13 @@ export const etensuMasterResponse: EtensuMasterResponse = {
       startDate: '20240401',
       endDate: '99999999',
       note: 'TBL_ETENSU_1 を前提にしたダミー',
-      tensuVersion: '2025-11-23',
-      version: responseVersion,
+      tensuVersion: SNAPSHOT_VERSION,
+      version: RESPONSE_VERSION,
     },
   ],
   totalCount: 1,
-  fetchedAt: '2025-11-23T13:57:09Z',
-  version: responseVersion,
+  fetchedAt: FETCHED_AT,
+  version: RESPONSE_VERSION,
 };
 
 export const validationErrorFixtures = {
@@ -263,56 +266,12 @@ export const validationErrorFixtures = {
 
 export const tensuMasterFixtureList: TensuMasterFixture[] = [
   {
-    srycd: '1100001',
-    tensuVersion: '2025-11-23',
-    name: '初診料（外来）',
-    kananame: 'ｼｮｼﾝﾘｮｳ',
-    taniname: '回',
+    srycd: 'D001',
+    tensuVersion: SNAPSHOT_VERSION,
+    name: '初診料（電子点数表）',
     ten: '288',
-    ykzkbn: '1',
-    nyugaitekkbn: '0',
-    routekkbn: 'I',
-    srysyukbn: 'SY',
     yukostymd: '20240401',
     yukoedymd: '99999999',
-  },
-  {
-    srycd: '1120002',
-    tensuVersion: '2025-11-23',
-    name: '再診料（外来）',
-    ten: '73',
-    ykzkbn: '1',
-    nyugaitekkbn: '0',
-    routekkbn: 'I',
-    srysyukbn: 'SY',
-    yukostymd: '20240401',
-    yukoedymd: '99999999',
-  },
-  {
-    srycd: '6200001',
-    tensuVersion: '2025-11-23',
-    name: 'アセトアミノフェン錠200mg',
-    kananame: 'ｱｾﾄｱﾐﾉﾌｪﾝ',
-    taniname: '錠',
-    ten: '52',
-    ykzkbn: '2',
-    nyugaitekkbn: '0',
-    routekkbn: 'O',
-    srysyukbn: 'YK',
-    yukoedymd: '99999999',
-  },
-  {
-    srycd: '9200005',
-    tensuVersion: '2025-11-23',
-    name: '注射薬 500mg',
-    taniname: '本',
-    ten: '310',
-    ykzkbn: '2',
-    nyugaitekkbn: '1',
-    routekkbn: 'I',
-    srysyukbn: 'YK',
-    yukostymd: '20240401',
-    yukoedymd: '20261231',
   },
 ];
 
@@ -342,14 +301,14 @@ export const buildTensuByPointResponse = (min?: number | null, max?: number | nu
       yukostymd: entry.yukostymd,
       yukoedymd: entry.yukoedymd,
       ...auditMeta,
-      version: responseVersion,
+      version: RESPONSE_VERSION,
     }));
 
   return {
     ...auditMeta,
     list,
     totalCount: list.length,
-    fetchedAt: '2025-11-23T13:57:09Z',
-    version: responseVersion,
+    fetchedAt: FETCHED_AT,
+    version: RESPONSE_VERSION,
   };
 };

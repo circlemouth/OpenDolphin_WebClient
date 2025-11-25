@@ -1,4 +1,6 @@
-export interface TensuMasterEntry {
+import type { OrcaMasterAuditMeta } from '@/types/orca';
+
+export interface TensuMasterEntry extends OrcaMasterAuditMeta {
   code: string;
   name: string;
   kana?: string;
@@ -12,7 +14,7 @@ export interface TensuMasterEntry {
   categoryFlag?: string;
 }
 
-export interface DiseaseMasterEntry {
+export interface DiseaseMasterEntry extends OrcaMasterAuditMeta {
   code: string;
   name: string;
   kana?: string;
@@ -20,7 +22,7 @@ export interface DiseaseMasterEntry {
   validUntil?: string | null;
 }
 
-export interface GeneralNameEntry {
+export interface GeneralNameEntry extends OrcaMasterAuditMeta {
   code: string;
   name: string;
 }

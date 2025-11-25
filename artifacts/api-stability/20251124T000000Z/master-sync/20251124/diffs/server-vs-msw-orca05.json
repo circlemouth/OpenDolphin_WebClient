@@ -1,0 +1,27 @@
+{
+  "mswHashStored": "13832d8f5e091145073ff1c26ac2cef085f766ad50d4bebef665c514692e40a2",
+  "mswHashComputed": "13832d8f5e091145073ff1c26ac2cef085f766ad50d4bebef665c514692e40a2",
+  "serverHash": "5c38f4029ee950fbc825b8d8d602188097c8f7ca27278026ba01bec38f294922",
+  "hashMatchStored": true,
+  "hashMatchComputed": false,
+  "counts": {
+    "msw": 5,
+    "server": 4,
+    "delta": -1
+  },
+  "totals": {
+    "msw": 970,
+    "server": 970
+  },
+  "auditSummary": {
+    "serverDataSource": [
+      "snapshot"
+    ],
+    "serverMissingMaster": [
+      false
+    ],
+    "serverFallbackUsed": [
+      false
+    ]
+  }
+}
