@@ -11,6 +11,7 @@ import { TraceNoticeCenter } from '@/components';
 import { GlobalStyle } from '@/styles/GlobalStyle';
 import { appTheme } from '@/styles/theme';
 import { createAppRouter } from './router';
+import { ORCA_MASTER_FETCH_TTL_MS } from '@/features/charts/api/orca-source-resolver';
 
 const WarningBanner = styled.div`
   position: sticky;
@@ -40,7 +41,8 @@ const queryClient = new QueryClient({
       retry: 2,
       retryDelay: (attempt) => Math.min(1000 * attempt, 5000),
       refetchOnWindowFocus: false,
-      staleTime: 1000 * 30,
+      staleTime: ORCA_MASTER_FETCH_TTL_MS,
+      cacheTime: ORCA_MASTER_FETCH_TTL_MS * 2,
     },
     mutations: {
       retry: 1,
