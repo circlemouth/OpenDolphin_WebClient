@@ -1,4 +1,4 @@
-import { type FormEvent, useEffect, useId, useMemo, useRef, useState } from 'react';
+import { type FormEvent, type ReactNode, useEffect, useId, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import styled from '@emotion/styled';
 
@@ -21,8 +21,7 @@ import type { DecisionSupportMessage } from '@/features/charts/types/decision-su
 import { recordOperationEvent } from '@/libs/audit';
 import { shouldBlockOrderBySeverity } from '@/features/charts/utils/interactionSeverity';
 import { OrcaValidationError } from '@/features/charts/utils/orcaMasterValidation';
-
-const RUN_ID = '20251124T210000Z';
+import { ORCA_MASTER_RUN_ID, ORCA_MASTER_SNAPSHOT_VERSION } from '@/features/charts/api/orca-source-resolver';
 
 const SectionHeader = styled.header`
   display: flex;
@@ -111,6 +110,17 @@ const FilterBadge = styled.span`
   color: ${({ theme }) => theme.palette.text};
   font-size: 0.85rem;
   border: 1px solid ${({ theme }) => theme.palette.border};
+`;
+
+const DataSourceBadgeRow = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 12px;
+`;
+
+const DataSourceBanner = styled(AlertBanner)`
+  margin-bottom: 12px;
 `;
 
 const SkipLink = styled.a`
@@ -276,6 +286,97 @@ export const OrcaOrderPanel = ({
   const resultsRegionId = useId();
   const retryDescriptionId = useId();
   const resultsRef = useRef<HTMLDivElement>(null);
+
+  const activeAuditMeta = useMemo<OrcaMasterAuditMeta | null>(() => {
+    if (lastSearchMode === 'tensu') {
+      return tensuResults;
+    }
+    if (lastSearchMode === 'disease') {
+      return diseaseResults;
+    }
+    if (lastSearchMode === 'general') {
+      return generalResult;
+    }
+    return null;
+  }, [lastSearchMode, tensuResults, diseaseResults, generalResult]);
+
+  const renderDataSourceBadges = (meta: OrcaMasterAuditMeta | null) => {
+    if (!meta) {
+      return null;
+    }
+    const runId = meta.runId ?? ORCA_MASTER_RUN_ID;
+    const snapshotLabel = meta.snapshotVersion ?? ORCA_MASTER_SNAPSHOT_VERSION ?? 'unknown';
+    const sourceLabel = meta.dataSource ?? 'unknown';
+    return (
+      <DataSourceBadgeRow data-test-id="orca-data-source-badges">
+        <FilterBadge>データ: {sourceLabel}</FilterBadge>
+        <FilterBadge>cacheHit: {meta.cacheHit ? 'true' : 'false'}</FilterBadge>
+        <FilterBadge>missingMaster: {meta.missingMaster ? 'true' : 'false'}</FilterBadge>
+        <FilterBadge>fallbackUsed: {meta.fallbackUsed ? 'true' : 'false'}</FilterBadge>
+        <FilterBadge>runId: {runId}</FilterBadge>
+        <FilterBadge>snapshot: {snapshotLabel}</FilterBadge>
+      </DataSourceBadgeRow>
+    );
+  };
+
+  const renderDataSourceWarning = (meta: OrcaMasterAuditMeta | null) => {
+    if (!meta) {
+      return null;
+    }
+    const runId = meta.runId ?? ORCA_MASTER_RUN_ID;
+    const hydrateTransition = meta.dataSourceTransition;
+    const transition =
+      hydrateTransition && hydrateTransition.from
+        ? `${hydrateTransition.from}→${hydrateTransition.to ?? meta.dataSource ?? 'unknown'}`
+        : 'なし';
+
+    if (meta.missingMaster || meta.fallbackUsed) {
+      const reasons = [];
+      if (meta.missingMaster) {
+        reasons.push('マスターに必須項目欠落');
+      }
+      if (meta.fallbackUsed) {
+        reasons.push('フォールバック経路');
+      }
+      return (
+        <DataSourceBanner
+          $tone="warning"
+          role="status"
+          aria-live="polite"
+          data-test-id="orca-data-warning"
+          data-run-id={runId}
+        >
+          <strong>暫定データ適用中</strong>
+          <span>{`${reasons.join('・')} のため、実 API での再取得後にデータを再確認してください。`}</span>
+        </DataSourceBanner>
+      );
+    }
+
+    if (meta.dataSource && meta.dataSource !== 'server') {
+      return (
+        <DataSourceBanner
+          $tone="warning"
+          role="status"
+          aria-live="polite"
+          data-test-id="orca-data-warning"
+          data-run-id={runId}
+        >
+          <strong>接続経路: {meta.dataSource}</strong>
+          <span>{`切替履歴: ${transition}`}</span>
+        </DataSourceBanner>
+      );
+    }
+
+    return null;
+  };
+
+  const wrapWithMeta = (content: ReactNode) => (
+    <>
+      {renderDataSourceBadges(activeAuditMeta)}
+      {renderDataSourceWarning(activeAuditMeta)}
+      {content}
+    </>
+  );
 
   const tensuSearch = useTensuSearch();
   const tensuPointSearch = useTensuPointSearch();
@@ -550,7 +651,7 @@ export const OrcaOrderPanel = ({
 
   const renderSearchResults = () => {
     if (lastSearchMode === 'tensu' && tensuList.length > 0) {
-      return (
+      return wrapWithMeta(
         <Stack gap={8}>
           <ResultsTable role="table" aria-label="診療行為検索結果" data-test-id="orca-results-table">
             <thead role="rowgroup">
@@ -616,11 +717,11 @@ export const OrcaOrderPanel = ({
             </tbody>
           </ResultsTable>
           {renderAuditMeta(tensuResults)}
-        </Stack>
+        </Stack>,
       );
     }
     if (lastSearchMode === 'disease' && diseaseList.length > 0) {
-      return (
+      return wrapWithMeta(
         <Stack gap={8}>
           <ResultsTable role="table" aria-label="傷病名検索結果">
             <thead role="rowgroup">
@@ -647,11 +748,11 @@ export const OrcaOrderPanel = ({
             </tbody>
           </ResultsTable>
           {renderAuditMeta(diseaseResults)}
-        </Stack>
+        </Stack>,
       );
     }
     if (generalList[0]) {
-      return (
+      return wrapWithMeta(
         <Stack gap={8}>
           <ResultsTable role="table" aria-label="一般名コード照合結果">
             <thead role="rowgroup">
@@ -676,7 +777,7 @@ export const OrcaOrderPanel = ({
             </tbody>
           </ResultsTable>
           {renderAuditMeta(generalResult)}
-        </Stack>
+        </Stack>,
       );
     }
     return null;
@@ -887,7 +988,7 @@ export const OrcaOrderPanel = ({
             $tone={alertState.tone}
             role="alert"
             aria-live="assertive"
-            data-run-id={RUN_ID}
+            data-run-id={ORCA_MASTER_RUN_ID}
             tabIndex={-1}
             aria-describedby={alertState.subtype === 'rateLimit' ? retryDescriptionId : undefined}
             data-test-id="orca-alert-banner"

@@ -88,9 +88,12 @@ export async function expectAuditMeta(actual: Partial<AuditMeta>, expected: Part
 }
 
 export async function recordPerfLog(page: Page, label: string) {
-  await page.evaluate((name, id) => {
-    (window as any).__ORCA_E2E_PERF__ = { label: name, runId: id, ts: Date.now() };
-  }, label, runId);
+  await page.evaluate(
+    ({ label: name, runId: id }) => {
+      (window as any).__ORCA_E2E_PERF__ = { label: name, runId: id, ts: Date.now() };
+    },
+    { label, runId },
+  );
 }
 
 export async function seedAuthSession(page: Page) {

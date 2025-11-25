@@ -16,7 +16,8 @@
     "msw:init": "msw init public --save",
     "preview": "vite preview",
     "storybook": "storybook dev -p 6006",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "bridge-sync": "node ../scripts/bridge-sync.mjs --run-id 20251124T073245Z --date 20251124 --source msw"
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",

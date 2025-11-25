@@ -7,6 +7,16 @@ export interface OrcaSourceResolverResult extends OrcaMasterAuditMeta {
   attemptOrder: OrcaMasterSource[];
 }
 
+const ORCA_MASTER_ENV_RUN_ID =
+  import.meta.env.VITE_ORCA_MASTER_BRIDGE_RUN_ID ??
+  import.meta.env.VITE_ORCA_MASTER_RUN_ID ??
+  import.meta.env.VITE_RUN_ID ??
+  '20251124T073245Z';
+const ORCA_MASTER_ENV_SNAPSHOT_VERSION = import.meta.env.VITE_ORCA_MASTER_SNAPSHOT_VERSION;
+
+export const ORCA_MASTER_RUN_ID = ORCA_MASTER_ENV_RUN_ID;
+export const ORCA_MASTER_SNAPSHOT_VERSION = ORCA_MASTER_ENV_SNAPSHOT_VERSION;
+
 const isTruthyFlag = (value?: string) => value === '1' || value?.toLowerCase() === 'true';
 
 const normalizeSource = (value?: string | null): OrcaMasterSource | null => {
@@ -42,8 +52,9 @@ export const getOrcaMasterBridgeBaseUrl = () =>
 
 export const resolveOrcaMasterSource = (
   _masterType: OrcaMasterType,
-  options?: { sourceHint?: OrcaMasterSource | null; previousSource?: OrcaMasterSource | null },
+  options?: { sourceHint?: OrcaMasterSource | null; previousSource?: OrcaMasterSource | null; runId?: string },
 ): OrcaSourceResolverResult => {
+  const runId = options?.runId ?? ORCA_MASTER_ENV_RUN_ID;
   const mswEnabled = !isTruthyFlag(import.meta.env.VITE_DISABLE_MSW);
   const baseOrder: OrcaMasterSource[] = mswEnabled ? ['mock', 'snapshot', 'server'] : ['snapshot', 'server'];
   const requested = resolveRequestedSource(options?.sourceHint);
@@ -61,6 +72,8 @@ export const resolveOrcaMasterSource = (
     cacheHit: false,
     fallbackUsed: false,
     missingMaster: false,
+    runId,
+    snapshotVersion: ORCA_MASTER_ENV_SNAPSHOT_VERSION,
   };
 
   if (!mswEnabled && initialSource === 'mock') {

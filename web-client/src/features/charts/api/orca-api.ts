@@ -1152,6 +1152,7 @@ export interface OrcaMasterFetchOptions {
   zip?: string;
   keyword?: string;
   pref?: string;
+  snapshotVersion?: string | null;
 }
 
 const extractAuditMeta = (
@@ -1510,7 +1511,7 @@ const buildOrca08ResponseFromSources = (
   };
 };
 
-const buildFallbackResponse = <T>(
+-const buildFallbackResponse = <T>(
   dataSource: OrcaMasterSource,
   options?: OrcaMasterFetchOptions,
 ): OrcaMasterListResponse<T> => ({
@@ -1523,6 +1524,7 @@ const buildFallbackResponse = <T>(
   missingMaster: true,
   runId: options?.runId,
   version: options?.version,
+  snapshotVersion: options?.snapshotVersion ?? undefined,
 });
 
 const fetchOrca05FromSource = async (
@@ -1693,6 +1695,12 @@ const fetchWithResolver = async <T>(
     previousSource: options?.previousSource ?? null,
   });
 
+  const mergedOptions: OrcaMasterFetchOptions = {
+    ...options,
+    runId: resolution.runId ?? options?.runId,
+    snapshotVersion: resolution.snapshotVersion ?? options?.snapshotVersion,
+  };
+
   let dataSourceTransition = resolution.dataSourceTransition;
   let fallbackUsed = resolution.fallbackUsed ?? false;
 
@@ -1700,12 +1708,14 @@ const fetchWithResolver = async <T>(
     const source = resolution.attemptOrder[i];
     if (source === 'fallback') {
       return {
-        ...buildFallbackResponse<T>('fallback', options),
+        ...buildFallbackResponse<T>('fallback', mergedOptions),
         dataSourceTransition,
+        runId: mergedOptions.runId,
+        snapshotVersion: resolution.snapshotVersion,
       };
     }
     try {
-      const response = await fetcher(source, options);
+      const response = await fetcher(source, mergedOptions);
       const missingMaster = response.missingMaster ?? response.list.length === 0;
       const effectiveFallbackUsed =
         fallbackUsed || response.fallbackUsed === true || source !== resolution.dataSource;
@@ -1728,8 +1738,9 @@ const fetchWithResolver = async <T>(
         dataSourceTransition: finalTransition,
         fallbackUsed: effectiveFallbackUsed,
         missingMaster,
-        runId: response.runId ?? options?.runId,
+        runId: response.runId ?? mergedOptions.runId,
         version: response.version ?? options?.version,
+        snapshotVersion: response.snapshotVersion ?? resolution.snapshotVersion,
       };
     } catch (error) {
       if (error instanceof OrcaValidationError) {
@@ -1745,8 +1756,10 @@ const fetchWithResolver = async <T>(
   }
 
   return {
-    ...buildFallbackResponse<T>('fallback', options),
+    ...buildFallbackResponse<T>('fallback', mergedOptions),
     dataSourceTransition,
+    runId: mergedOptions.runId,
+    snapshotVersion: resolution.snapshotVersion,
   };
 };
 
