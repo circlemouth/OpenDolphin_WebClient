@@ -1,0 +1,82 @@
+import type { OrcaMasterAuditMeta, OrcaMasterSource } from '@/types/orca';
+
+type OrcaMasterType = 'ORCA05' | 'ORCA06' | 'ORCA08' | string;
+
+export interface OrcaSourceResolverResult extends OrcaMasterAuditMeta {
+  dataSource: OrcaMasterSource;
+  attemptOrder: OrcaMasterSource[];
+}
+
+const isTruthyFlag = (value?: string) => value === '1' || value?.toLowerCase() === 'true';
+
+const normalizeSource = (value?: string | null): OrcaMasterSource | null => {
+  if (!value) return null;
+  const lowered = value.toLowerCase();
+  if (lowered === 'msw' || lowered === 'mock') return 'mock';
+  if (lowered === 'snapshot') return 'snapshot';
+  if (lowered === 'server') return 'server';
+  if (lowered === 'fallback') return 'fallback';
+  return null;
+};
+
+const readSessionOverride = (): OrcaMasterSource | null => {
+  if (typeof sessionStorage === 'undefined') {
+    return null;
+  }
+  const raw = sessionStorage.getItem('orcaMasterSource');
+  return normalizeSource(raw);
+};
+
+const resolveRequestedSource = (hint?: OrcaMasterSource | null): OrcaMasterSource => {
+  const sessionOverride = readSessionOverride();
+  const envSource = normalizeSource(import.meta.env.WEB_ORCA_MASTER_SOURCE) ?? 'mock';
+  return hint ?? sessionOverride ?? envSource;
+};
+
+export const ORCA_MASTER_FETCH_TTL_MS = 1000 * 60 * 5;
+export const ORCA_MASTER_SNAPSHOT_TTL_MS = 1000 * 60 * 60 * 24;
+export const ORCA_MASTER_ADDRESS_SNAPSHOT_TTL_MS = 1000 * 60 * 60 * 24 * 7;
+
+export const getOrcaMasterBridgeBaseUrl = () =>
+  import.meta.env.VITE_ORCA_MASTER_BRIDGE ?? import.meta.env.VITE_API_BASE_URL ?? '/api';
+
+export const resolveOrcaMasterSource = (
+  _masterType: OrcaMasterType,
+  options?: { sourceHint?: OrcaMasterSource | null; previousSource?: OrcaMasterSource | null },
+): OrcaSourceResolverResult => {
+  const mswEnabled = !isTruthyFlag(import.meta.env.VITE_DISABLE_MSW);
+  const baseOrder: OrcaMasterSource[] = mswEnabled ? ['mock', 'snapshot', 'server'] : ['snapshot', 'server'];
+  const requested = resolveRequestedSource(options?.sourceHint);
+  const initialSource = baseOrder.includes(requested) ? requested : baseOrder[0];
+
+  const fallbackOrder =
+    initialSource === 'server' && mswEnabled
+      ? ['snapshot', 'mock']
+      : baseOrder.filter((src) => src !== initialSource);
+  const attemptOrder: OrcaMasterSource[] = [initialSource, ...fallbackOrder, 'fallback'];
+  const result: OrcaSourceResolverResult = {
+    dataSource: initialSource,
+    attemptOrder,
+    dataSourceTransition: undefined,
+    cacheHit: false,
+    fallbackUsed: false,
+    missingMaster: false,
+  };
+
+  if (!mswEnabled && initialSource === 'mock') {
+    result.dataSource = 'snapshot';
+    result.attemptOrder = ['snapshot', ...baseOrder.filter((src) => src !== 'snapshot'), 'fallback'];
+    result.fallbackUsed = true;
+    result.dataSourceTransition = { from: 'mock', to: 'snapshot', reason: 'msw_disabled' };
+  }
+
+  if (options?.previousSource && options.previousSource !== result.dataSource) {
+    result.dataSourceTransition = {
+      from: options.previousSource,
+      to: result.dataSource,
+      reason: options.sourceHint ? 'hint_applied' : 'auto',
+    };
+  }
+
+  return result;
+};

@@ -22,9 +22,21 @@ import type {
   Orca05MasterRecord,
   Orca06InsurerAddressRecord,
   Orca08EtensuRecord,
+  OrcaMasterAuditMeta,
   OrcaMasterSource,
   SpecialEquipmentMaster,
 } from '@/types/orca';
+import {
+  addressMasterResponse,
+  dosageInstructionMasterResponse,
+  drugClassificationMasterResponse,
+  etensuMasterResponse,
+  insurerMasterResponse,
+  labClassificationMasterResponse,
+  minimumDrugPriceResponse,
+  specialEquipmentMasterResponse,
+} from '@/mocks/fixtures/orcaMaster';
+import { getOrcaMasterBridgeBaseUrl, resolveOrcaMasterSource } from './orca-source-resolver';
 
 interface RawTensuMaster {
   srycd?: string | null;
@@ -483,7 +495,7 @@ const mapAddressMaster = (entry: RawAddressMasterEntry): AddressMasterEntry | nu
 const buildParam = (parts: (string | number | boolean)[]) =>
   encodeURIComponent(parts.map((part) => String(part)).join(','));
 
-export interface TensuSearchOptions {
+export interface TensuSearchOptions extends OrcaMasterFetchOptions {
   partialMatch?: boolean;
   date?: Date;
 }
@@ -491,37 +503,90 @@ export interface TensuSearchOptions {
 export const searchTensuByName = async (
   keyword: string,
   options?: TensuSearchOptions,
-): Promise<TensuMasterEntry[]> => {
+): Promise<OrcaMasterListResponse<TensuMasterEntry>> => {
   const trimmed = keyword.trim();
   if (!trimmed) {
-    return [];
+    return {
+      list: [],
+      totalCount: 0,
+      fetchedAt: new Date().toISOString(),
+      dataSource: options?.sourceHint ?? 'fallback',
+      cacheHit: false,
+      missingMaster: true,
+      fallbackUsed: false,
+      runId: options?.runId,
+      snapshotVersion: undefined,
+      version: options?.version,
+    };
   }
-  const now = formatOrcaDate(options?.date);
+  const base = await fetchOrca08BridgeMasters(options);
+  const normalizedDate = toOrcaDateParam(options?.date ?? null);
   const partial = options?.partialMatch ?? true;
-  const endpoint = `/orca/tensu/name/${buildParam([trimmed, now, partial])}/`;
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<RawTensuListResponse>(endpoint);
-      const list = response.data?.list ?? [];
-      return list.map(mapTensuMaster).filter((item): item is TensuMasterEntry => Boolean(item));
-    },
-    {
-      keyword: trimmed,
-      partial,
-      date: options?.date?.toISOString(),
-    },
-  );
+  const normalizedKeyword = trimmed.toLowerCase();
+  const filtered = base.list.filter((entry) => {
+    const name = entry.name?.toLowerCase() ?? '';
+    const matchesKeyword = partial ? name.includes(normalizedKeyword) : name.startsWith(normalizedKeyword);
+    if (!matchesKeyword) return false;
+    if (!normalizedDate) return true;
+    const starts = entry.startDate ?? '00000000';
+    const ends = entry.endDate ?? '99999999';
+    return starts <= normalizedDate && normalizedDate <= ends;
+  });
+
+  const list = filtered
+    .map((entry) => ({
+      code: entry.tensuCode ?? entry.medicalFeeCode ?? '',
+      name: entry.name,
+      kana: undefined,
+      unitName: entry.unit,
+      point: entry.tanka ?? entry.points ?? null,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
+      routeFlag: undefined,
+      inpatientFlag: undefined,
+      categoryFlag: entry.category,
+      dataSource: entry.dataSource ?? base.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? base.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? base.cacheHit,
+      missingMaster: entry.missingMaster ?? base.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? base.fallbackUsed,
+      runId: entry.runId ?? base.runId,
+      snapshotVersion: entry.snapshotVersion ?? base.snapshotVersion,
+      version: entry.version ?? base.version,
+    }))
+    .filter((item): item is TensuMasterEntry => Boolean(item.code) && Boolean(item.name));
+
+  return {
+    list,
+    totalCount: list.length,
+    fetchedAt: base.fetchedAt,
+    version: base.version,
+    dataSource: base.dataSource,
+    dataSourceTransition: base.dataSourceTransition,
+    cacheHit: base.cacheHit ?? false,
+    missingMaster: base.missingMaster ?? list.length === 0,
+    fallbackUsed: base.fallbackUsed ?? false,
+    runId: base.runId,
+    snapshotVersion: base.snapshotVersion,
+  };
 };
 
 export const searchDiseaseByName = async (
   keyword: string,
-  options?: { partialMatch?: boolean; date?: Date },
-): Promise<DiseaseMasterEntry[]> => {
+  options?: { partialMatch?: boolean; date?: Date; runId?: string },
+): Promise<OrcaMasterListResponse<DiseaseMasterEntry>> => {
   const trimmed = keyword.trim();
   if (!trimmed) {
-    return [];
+    return {
+      list: [],
+      totalCount: 0,
+      fetchedAt: new Date().toISOString(),
+      dataSource: 'fallback',
+      cacheHit: false,
+      missingMaster: true,
+      fallbackUsed: false,
+      runId: options?.runId,
+    };
   }
   const now = formatOrcaDate(options?.date);
   const partial = options?.partialMatch ?? true;
@@ -531,8 +596,19 @@ export const searchDiseaseByName = async (
     `GET ${endpoint}`,
     async () => {
       const response = await httpClient.get<RawDiseaseListResponse>(endpoint);
-      const list = response.data?.list ?? [];
-      return list.map(mapDiseaseEntry).filter((item): item is DiseaseMasterEntry => Boolean(item));
+      const list = (response.data?.list ?? [])
+        .map(mapDiseaseEntry)
+        .filter((item): item is DiseaseMasterEntry => Boolean(item));
+      return {
+        list,
+        totalCount: list.length,
+        fetchedAt: new Date().toISOString(),
+        dataSource: 'server',
+        cacheHit: false,
+        missingMaster: list.length === 0,
+        fallbackUsed: false,
+        runId: options?.runId,
+      };
     },
     {
       keyword: trimmed,
@@ -542,10 +618,22 @@ export const searchDiseaseByName = async (
   );
 };
 
-export const lookupGeneralName = async (code: string): Promise<GeneralNameEntry | null> => {
+export const lookupGeneralName = async (
+  code: string,
+  options?: { runId?: string },
+): Promise<OrcaMasterListResponse<GeneralNameEntry>> => {
   const trimmed = code.trim();
   if (!trimmed) {
-    return null;
+    return {
+      list: [],
+      totalCount: 0,
+      fetchedAt: new Date().toISOString(),
+      dataSource: 'fallback',
+      cacheHit: false,
+      missingMaster: true,
+      fallbackUsed: false,
+      runId: options?.runId,
+    };
   }
   const endpoint = `/orca/general/${encodeURIComponent(trimmed)}`;
   return measureApiPerformance(
@@ -554,12 +642,28 @@ export const lookupGeneralName = async (code: string): Promise<GeneralNameEntry 
     async () => {
       const response = await httpClient.get<RawGeneralNameResponse>(endpoint);
       const payload = response.data;
-      if (!payload?.code || !payload.name) {
-        return null;
-      }
+      const entry =
+        payload?.code && payload.name
+          ? ({
+              code: payload.code,
+              name: payload.name,
+              dataSource: 'server',
+              cacheHit: false,
+              missingMaster: false,
+              fallbackUsed: false,
+              runId: options?.runId,
+            } satisfies GeneralNameEntry)
+          : null;
+      const list = entry ? [entry] : [];
       return {
-        code: payload.code,
-        name: payload.name,
+        list,
+        totalCount: list.length,
+        fetchedAt: new Date().toISOString(),
+        dataSource: 'server',
+        cacheHit: false,
+        missingMaster: list.length === 0,
+        fallbackUsed: false,
+        runId: options?.runId,
       };
     },
     { keyword: trimmed },
@@ -629,24 +733,41 @@ export const fetchOrcaOrderModules = async (
   return payload.list.map(mapModuleModel).filter((module): module is ModuleModelPayload => Boolean(module));
 };
 
-export const fetchDrugClassifications = async (): Promise<DrugClassificationMaster[]> => {
-  const endpoint = '/orca/master/generic-class';
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawDrugClassificationMaster>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list
-        .map(mapDrugClassification)
-        .filter((item): item is DrugClassificationMaster => Boolean(item));
-    },
-  );
+export const fetchDrugClassifications = async (): Promise<OrcaMasterListResponse<DrugClassificationMaster>> => {
+  const response = await fetchOrca05BridgeMasters();
+  const list = response.list
+    .filter((entry) => entry.masterType === 'drugClassification')
+    .map((entry) => ({
+      classCode: entry.code,
+      className: entry.name,
+      kanaName: undefined,
+      categoryCode: entry.category,
+      parentClassCode: undefined,
+      isLeaf: undefined,
+      validFrom: entry.validFrom,
+      validTo: entry.validTo,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is DrugClassificationMaster => Boolean(item.classCode) && Boolean(item.className));
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
 export const searchTensuByPointRange = async (
-  range: { min?: number | null; max?: number | null; date?: Date | null },
-): Promise<TensuMasterEntry[]> => {
+  range: { min?: number | null; max?: number | null; date?: Date | null } & OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<TensuMasterEntry>> => {
   const sanitizePoint = (value?: number | null): number | null => {
     if (value === null || value === undefined) {
       return null;
@@ -665,202 +786,981 @@ export const searchTensuByPointRange = async (
   const maxValue = sanitizePoint(range.max);
 
   if (minValue === null && maxValue === null) {
-    return [];
+    return {
+      list: [],
+      totalCount: 0,
+      fetchedAt: new Date().toISOString(),
+      dataSource: range.sourceHint ?? 'fallback',
+      cacheHit: false,
+      missingMaster: true,
+      fallbackUsed: false,
+      runId: range.runId,
+      version: range.version,
+    };
   }
 
   if (minValue !== null && maxValue !== null && minValue > maxValue) {
-    return [];
+    return {
+      list: [],
+      totalCount: 0,
+      fetchedAt: new Date().toISOString(),
+      dataSource: range.sourceHint ?? 'fallback',
+      cacheHit: false,
+      missingMaster: true,
+      fallbackUsed: false,
+      runId: range.runId,
+      version: range.version,
+    };
   }
 
-  const rangeToken =
-    minValue !== null && maxValue !== null
-      ? `${minValue}-${maxValue}`
-      : `${minValue ?? maxValue}`;
+  const base = await fetchOrca08BridgeMasters(range);
   const dateToken = toOrcaDateParam(range.date ?? null);
-  const endpoint = `/orca/tensu/ten/${encodeURIComponent(
-    dateToken ? `${rangeToken},${dateToken}` : rangeToken,
-  )}/`;
+  const filtered = base.list.filter((entry) => {
+    const point = entry.tanka ?? entry.points;
+    const withinRange =
+      (minValue === null || (point ?? 0) >= minValue) && (maxValue === null || (point ?? 0) <= maxValue);
+    if (!withinRange) return false;
+    if (!dateToken) return true;
+    const starts = entry.startDate ?? '00000000';
+    const ends = entry.endDate ?? '99999999';
+    return starts <= dateToken && dateToken <= ends;
+  });
 
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<RawTensuListResponse>(endpoint);
-      const list = response.data?.list ?? [];
-      return list.map(mapTensuMaster).filter((item): item is TensuMasterEntry => Boolean(item));
-    },
-    {
-      min: minValue ?? undefined,
-      max: maxValue ?? undefined,
-      date: range.date ?? undefined,
-    },
-  );
+  const list = filtered
+    .map((entry) => ({
+      code: entry.tensuCode ?? entry.medicalFeeCode ?? '',
+      name: entry.name,
+      kana: undefined,
+      unitName: entry.unit,
+      point: entry.tanka ?? entry.points ?? null,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
+      routeFlag: undefined,
+      inpatientFlag: undefined,
+      categoryFlag: entry.category,
+      dataSource: entry.dataSource ?? base.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? base.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? base.cacheHit,
+      missingMaster: entry.missingMaster ?? base.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? base.fallbackUsed,
+      runId: entry.runId ?? base.runId,
+      snapshotVersion: entry.snapshotVersion ?? base.snapshotVersion,
+      version: entry.version ?? base.version,
+    }))
+    .filter((item): item is TensuMasterEntry => Boolean(item.code) && Boolean(item.name));
+
+  return {
+    list,
+    totalCount: list.length,
+    fetchedAt: base.fetchedAt,
+    version: base.version,
+    dataSource: base.dataSource,
+    dataSourceTransition: base.dataSourceTransition,
+    cacheHit: base.cacheHit ?? false,
+    missingMaster: base.missingMaster ?? list.length === 0,
+    fallbackUsed: base.fallbackUsed ?? false,
+    runId: base.runId,
+    snapshotVersion: base.snapshotVersion,
+  };
 };
 
-export const fetchMinimumDrugPrices = async (): Promise<MinimumDrugPriceEntry[]> => {
-  const endpoint = '/orca/master/generic-price';
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawMinimumDrugPriceEntry>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list
-        .map(mapMinimumDrugPrice)
-        .filter((item): item is MinimumDrugPriceEntry => Boolean(item));
-    },
-  );
+export const fetchMinimumDrugPrices = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<MinimumDrugPriceEntry>> => {
+  const response = await fetchOrca05BridgeMasters(options);
+  const list = response.list
+    .filter((entry) => entry.masterType === 'minimumDrugPrice')
+    .map((entry) => ({
+      srycd: entry.code,
+      drugName: entry.name,
+      kanaName: entry.kanaName,
+      price: entry.minPrice ?? null,
+      unit: entry.unit,
+      priceType: entry.priceType,
+      startDate: entry.validFrom,
+      endDate: entry.validTo,
+      reference: entry.reference,
+      validFrom: entry.validFrom,
+      validTo: entry.validTo,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is MinimumDrugPriceEntry => Boolean(item.srycd) && Boolean(item.drugName));
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
-export const fetchDosageInstructions = async (): Promise<DosageInstructionMaster[]> => {
-  const endpoint = '/orca/master/youhou';
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawDosageInstructionMaster>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list
-        .map(mapDosageInstruction)
-        .filter((item): item is DosageInstructionMaster => Boolean(item));
-    },
-  );
+export const fetchDosageInstructions = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<DosageInstructionMaster>> => {
+  const response = await fetchOrca05BridgeMasters(options);
+  const list = response.list
+    .filter((entry) => entry.masterType === 'dosageInstruction')
+    .map((entry) => ({
+      youhouCode: entry.youhouCode ?? entry.code,
+      youhouName: entry.name,
+      timingCode: entry.timingCode ?? undefined,
+      routeCode: entry.routeCode ?? undefined,
+      daysLimit: entry.daysLimit ?? undefined,
+      dosePerDay: entry.dosePerDay ?? undefined,
+      comment: entry.comment,
+      validFrom: entry.validFrom,
+      validTo: entry.validTo,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is DosageInstructionMaster => Boolean(item.youhouCode) && Boolean(item.youhouName));
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
-export const fetchSpecialEquipments = async (): Promise<SpecialEquipmentMaster[]> => {
-  const endpoint = '/orca/master/material';
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawSpecialEquipmentMaster>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list
-        .map(mapSpecialEquipment)
-        .filter((item): item is SpecialEquipmentMaster => Boolean(item));
-    },
-  );
+export const fetchSpecialEquipments = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<SpecialEquipmentMaster>> => {
+  const response = await fetchOrca05BridgeMasters(options);
+  const list = response.list
+    .filter((entry) => entry.masterType === 'specialEquipment')
+    .map((entry) => ({
+      materialCode: entry.code,
+      materialName: entry.name,
+      category: entry.category,
+      materialCategory: entry.materialCategory,
+      insuranceType: entry.insuranceType,
+      unit: entry.unit,
+      price: entry.minPrice ?? null,
+      startDate: entry.validFrom,
+      endDate: entry.validTo,
+      maker: entry.maker,
+      validFrom: entry.validFrom,
+      validTo: entry.validTo,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is SpecialEquipmentMaster => Boolean(item.materialCode) && Boolean(item.materialName));
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
-export const fetchLabClassifications = async (): Promise<LabClassificationMaster[]> => {
-  const endpoint = '/orca/master/kensa-sort';
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawLabClassificationMaster>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list
-        .map(mapLabClassification)
-        .filter((item): item is LabClassificationMaster => Boolean(item));
-    },
-  );
+export const fetchLabClassifications = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<LabClassificationMaster>> => {
+  const response = await fetchOrca05BridgeMasters(options);
+  const list = response.list
+    .filter((entry) => entry.masterType === 'labClassification')
+    .map((entry) => ({
+      kensaCode: entry.code,
+      kensaName: entry.name,
+      sampleType: entry.sampleType,
+      departmentCode: entry.departmentCode,
+      classification: entry.category,
+      insuranceCategory: entry.category,
+      validFrom: entry.validFrom,
+      validTo: entry.validTo,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is LabClassificationMaster => Boolean(item.kensaCode) && Boolean(item.kensaName));
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
-export const fetchInsurers = async (): Promise<InsurerMaster[]> => {
-  const endpoint = '/orca/master/hokenja';
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawInsurerMaster>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list.map(mapInsurer).filter((item): item is InsurerMaster => Boolean(item));
-    },
-  );
+export const fetchInsurers = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<InsurerMaster>> => {
+  const response = await fetchOrca06BridgeMasters(options);
+  const list = response.list
+    .filter((entry) => entry.recordType === 'insurer')
+    .map((entry) => ({
+      insurerNumber: entry.payerCode,
+      insurerName: entry.payerName,
+      insurerKana: entry.kana,
+      payerRatio: entry.payerRatio,
+      payerType: entry.payerType,
+      insurerType: entry.payerType,
+      prefCode: entry.prefCode,
+      cityCode: entry.cityCode,
+      zip: entry.zip,
+      addressLine: entry.addressLine,
+      address: entry.addressLine,
+      phone: undefined,
+      validFrom: undefined,
+      validTo: undefined,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is InsurerMaster => Boolean(item.insurerNumber) && Boolean(item.insurerName));
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
-export const fetchEtensuMasters = async (): Promise<EtensuMasterEntry[]> => {
-  const endpoint = '/orca/master/etensu';
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      const response = await httpClient.get<OrcaMasterListResponse<RawEtensuMasterEntry>>(endpoint);
-      const list = response.data?.list ?? [];
-      return list.map(mapEtensuMaster).filter((item): item is EtensuMasterEntry => Boolean(item));
-    },
-  );
+export const fetchEtensuMasters = async (
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<EtensuMasterEntry>> => {
+  const response = await fetchOrca08BridgeMasters(options);
+  const list = response.list
+    .map((entry) => ({
+      etensuCategory: entry.etensuCategory ?? entry.category ?? '',
+      category: entry.category,
+      medicalFeeCode: entry.medicalFeeCode ?? entry.tensuCode ?? '',
+      tensuCode: entry.tensuCode ?? entry.medicalFeeCode ?? '',
+      name: entry.name,
+      points: entry.tanka ?? entry.points ?? 0,
+      tanka: entry.tanka ?? entry.points,
+      unit: entry.unit,
+      kubun: entry.kubun,
+      startDate: entry.startDate,
+      endDate: entry.endDate,
+      note: entry.note,
+      tensuVersion: entry.tensuVersion,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is EtensuMasterEntry => Boolean(item.tensuCode) && Boolean(item.name));
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
-export const lookupAddressMaster = async (zipcode: string): Promise<AddressMasterEntry[]> => {
+export const lookupAddressMaster = async (
+  zipcode: string,
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<AddressMasterEntry>> => {
   const { ok, normalized, error } = validateOrcaCode('zip', zipcode);
   if (!ok || !normalized) {
     throw error ?? new OrcaValidationError('zip', zipcode);
   }
-  const endpoint = `/orca/master/address?zip=${encodeURIComponent(normalized)}`;
-  return measureApiPerformance(
-    PERFORMANCE_METRICS.orca.master.search,
-    `GET ${endpoint}`,
-    async () => {
-      try {
-        const response = await httpClient.get<OrcaMasterListResponse<RawAddressMasterEntry>>(endpoint);
-        const list = response.data?.list ?? [];
-        return list.map(mapAddressMaster).filter((item): item is AddressMasterEntry => Boolean(item));
-      } catch (requestError) {
-        if (axios.isAxiosError(requestError) && requestError.response?.status === 422) {
-          const runId = (requestError.response.data as { runId?: string })?.runId;
-          throw new OrcaValidationError('zip', normalized, { runId });
-        }
-        throw requestError;
-      }
-    },
-    { zipcode: normalized },
-  );
+
+  const response = await fetchOrca06BridgeMasters({ ...options, zip: normalized });
+  const list = response.list
+    .filter((entry) => entry.recordType === 'address')
+    .filter((entry) => {
+      const zip = entry.zip ?? entry.payerCode;
+      return zip ? zip === normalized : true;
+    })
+    .map((entry) => ({
+      zipCode: entry.zip ?? entry.payerCode,
+      zip: entry.zip ?? entry.payerCode,
+      prefectureCode: entry.prefCode,
+      prefCode: entry.prefCode,
+      city: entry.city,
+      cityCode: entry.cityCode,
+      town: entry.town,
+      kana: entry.kana,
+      roman: entry.roman,
+      fullAddress: entry.addressLine ?? entry.payerName,
+      version: entry.version,
+      dataSource: entry.dataSource ?? response.dataSource,
+      dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
+      cacheHit: entry.cacheHit ?? response.cacheHit,
+      missingMaster: entry.missingMaster ?? response.missingMaster,
+      fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed,
+      runId: entry.runId ?? response.runId,
+      snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+    }))
+    .filter((item): item is AddressMasterEntry => Boolean(item.zip) && Boolean(item.fullAddress));
+
+  if (list.length === 0 && response.missingMaster && response.dataSource === 'server') {
+    throw new OrcaValidationError('zip', normalized, {
+      runId: response.runId,
+      snapshotVersion: response.snapshotVersion,
+      missingMaster: response.missingMaster,
+      cacheHit: response.cacheHit,
+      fallbackUsed: response.fallbackUsed,
+    });
+  }
+
+  return {
+    ...response,
+    list,
+    totalCount: list.length,
+    missingMaster: response.missingMaster ?? list.length === 0,
+  };
 };
 
-// --- Bridge スケルトン（ORCA-05/06/08 REST 提供待ち） ---
+// --- Bridge 実装（runtime source resolver / httpClient ベース） ---
 
 export interface OrcaMasterFetchOptions {
   runId?: string;
   sourceHint?: OrcaMasterSource;
   version?: string;
+  previousSource?: OrcaMasterSource;
+  zip?: string;
+  keyword?: string;
+  pref?: string;
 }
+
+const extractAuditMeta = (
+  payload?: Partial<OrcaMasterListResponse<unknown>>,
+): (OrcaMasterAuditMeta & { version?: string; fetchedAt?: string; totalCount?: number }) => ({
+  dataSource: payload?.dataSource,
+  dataSourceTransition: payload?.dataSourceTransition,
+  cacheHit: payload?.cacheHit,
+  missingMaster: payload?.missingMaster,
+  fallbackUsed: payload?.fallbackUsed,
+  runId: payload?.runId,
+  snapshotVersion: payload?.snapshotVersion,
+  version: payload?.version,
+  fetchedAt: payload?.fetchedAt,
+  totalCount: payload?.totalCount,
+});
+
+const mergeEntryMeta = (
+  entryMeta: OrcaMasterAuditMeta | undefined,
+  baseMeta: OrcaMasterAuditMeta | undefined,
+  dataSource: OrcaMasterSource,
+): OrcaMasterAuditMeta => ({
+  dataSource: entryMeta?.dataSource ?? baseMeta?.dataSource ?? dataSource,
+  dataSourceTransition: entryMeta?.dataSourceTransition ?? baseMeta?.dataSourceTransition,
+  cacheHit: entryMeta?.cacheHit ?? baseMeta?.cacheHit ?? false,
+  missingMaster: entryMeta?.missingMaster ?? baseMeta?.missingMaster,
+  fallbackUsed: entryMeta?.fallbackUsed ?? baseMeta?.fallbackUsed ?? false,
+  runId: entryMeta?.runId ?? baseMeta?.runId,
+  snapshotVersion: entryMeta?.snapshotVersion ?? baseMeta?.snapshotVersion,
+});
+
+const selectPrimaryMeta = (
+  ...metas: (ReturnType<typeof extractAuditMeta> | undefined)[]
+): ReturnType<typeof extractAuditMeta> | undefined => metas.find((meta) => Boolean(meta));
+
+const cloneResponseWithSource = <T extends OrcaMasterAuditMeta>(
+  response: OrcaMasterListResponse<T>,
+  dataSource: OrcaMasterSource,
+): OrcaMasterListResponse<T> => ({
+  ...response,
+  dataSource,
+  dataSourceTransition: response.dataSourceTransition,
+  cacheHit: response.cacheHit ?? false,
+  fallbackUsed: response.fallbackUsed ?? false,
+  missingMaster: response.missingMaster ?? response.list.length === 0,
+  list: response.list.map((entry) => ({
+    ...entry,
+    dataSource,
+    cacheHit: entry.cacheHit ?? response.cacheHit ?? false,
+    fallbackUsed: entry.fallbackUsed ?? response.fallbackUsed ?? false,
+    missingMaster: entry.missingMaster ?? response.missingMaster,
+    runId: entry.runId ?? response.runId,
+    snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
+  })),
+});
+
+const fetchMasterListWithMapper = async <TRaw, TMapped extends OrcaMasterAuditMeta>(
+  endpoint: string,
+  mapper: (entry: TRaw) => TMapped | null,
+  options?: { baseURL?: string; params?: Record<string, unknown> },
+): Promise<OrcaMasterListResponse<TMapped>> => {
+  const response = await httpClient.get<OrcaMasterListResponse<TRaw>>(endpoint, options);
+  const baseMeta = extractAuditMeta(response.data);
+  const list = (response.data?.list ?? [])
+    .map(mapper)
+    .filter((item): item is TMapped => Boolean(item))
+    .map((item) => ({
+      ...item,
+      dataSource: item.dataSource ?? baseMeta.dataSource,
+      dataSourceTransition: item.dataSourceTransition ?? baseMeta.dataSourceTransition,
+      cacheHit: item.cacheHit ?? baseMeta.cacheHit ?? false,
+      missingMaster: item.missingMaster ?? baseMeta.missingMaster,
+      fallbackUsed: item.fallbackUsed ?? baseMeta.fallbackUsed ?? false,
+      runId: item.runId ?? baseMeta.runId,
+      snapshotVersion: item.snapshotVersion ?? baseMeta.snapshotVersion,
+    }));
+
+  return {
+    list,
+    totalCount: response.data?.totalCount ?? list.length,
+    fetchedAt: response.data?.fetchedAt ?? new Date().toISOString(),
+    dataSource: baseMeta.dataSource,
+    dataSourceTransition: baseMeta.dataSourceTransition,
+    cacheHit: baseMeta.cacheHit ?? false,
+    missingMaster: baseMeta.missingMaster ?? list.length === 0,
+    fallbackUsed: baseMeta.fallbackUsed ?? false,
+    runId: baseMeta.runId,
+    snapshotVersion: baseMeta.snapshotVersion,
+    version: response.data?.version,
+  };
+};
+
+const buildOrca05ResponseFromSources = (
+  sources: {
+    drugClasses?: OrcaMasterListResponse<DrugClassificationMaster>;
+    minimumPrices?: OrcaMasterListResponse<MinimumDrugPriceEntry>;
+    dosageInstructions?: OrcaMasterListResponse<DosageInstructionMaster>;
+    specialEquipments?: OrcaMasterListResponse<SpecialEquipmentMaster>;
+    labClassifications?: OrcaMasterListResponse<LabClassificationMaster>;
+  },
+  dataSource: OrcaMasterSource,
+): OrcaMasterListResponse<Orca05MasterRecord> => {
+  const primaryMeta = selectPrimaryMeta(
+    sources.drugClasses && extractAuditMeta(sources.drugClasses),
+    sources.minimumPrices && extractAuditMeta(sources.minimumPrices),
+    sources.dosageInstructions && extractAuditMeta(sources.dosageInstructions),
+    sources.specialEquipments && extractAuditMeta(sources.specialEquipments),
+    sources.labClassifications && extractAuditMeta(sources.labClassifications),
+  );
+
+  const records: Orca05MasterRecord[] = [];
+
+  const metaFrom = (entry?: OrcaMasterAuditMeta) => mergeEntryMeta(entry, primaryMeta, dataSource);
+
+  (sources.drugClasses?.list ?? []).forEach((entry) => {
+    records.push({
+      ...metaFrom(entry),
+      masterType: 'drugClassification',
+      code: entry.classCode,
+      name: entry.className,
+      category: entry.categoryCode ?? entry.parentClassCode,
+      unit: undefined,
+      minPrice: null,
+      youhouCode: undefined,
+      materialCategory: undefined,
+      kensaSort: undefined,
+      validFrom: entry.validFrom ?? entry.startDate,
+      validTo: entry.validTo ?? entry.endDate,
+      version: entry.version,
+      kanaName: entry.kanaName,
+    });
+  });
+
+  (sources.minimumPrices?.list ?? []).forEach((entry) => {
+    records.push({
+      ...metaFrom(entry),
+      masterType: 'minimumDrugPrice',
+      code: entry.srycd,
+      name: entry.drugName,
+      category: entry.priceType ?? 'generic-price',
+      unit: entry.unit,
+      minPrice: entry.price ?? null,
+      youhouCode: undefined,
+      materialCategory: undefined,
+      kensaSort: undefined,
+      validFrom: entry.validFrom ?? entry.startDate,
+      validTo: entry.validTo ?? entry.endDate,
+      version: entry.version,
+      kanaName: entry.kanaName,
+      priceType: entry.priceType ?? undefined,
+      reference: entry.reference,
+    });
+  });
+
+  (sources.dosageInstructions?.list ?? []).forEach((entry) => {
+    records.push({
+      ...metaFrom(entry),
+      masterType: 'dosageInstruction',
+      code: entry.youhouCode,
+      name: entry.youhouName,
+      category: 'dosage',
+      unit: undefined,
+      minPrice: null,
+      youhouCode: entry.youhouCode,
+      materialCategory: undefined,
+      kensaSort: undefined,
+      validFrom: entry.validFrom,
+      validTo: entry.validTo,
+      version: entry.version,
+      timingCode: entry.timingCode,
+      routeCode: entry.routeCode,
+      daysLimit: entry.daysLimit ?? null,
+      dosePerDay: entry.dosePerDay ?? null,
+      comment: entry.comment,
+    });
+  });
+
+  (sources.specialEquipments?.list ?? []).forEach((entry) => {
+    records.push({
+      ...metaFrom(entry),
+      masterType: 'specialEquipment',
+      code: entry.materialCode,
+      name: entry.materialName,
+      category: entry.category ?? 'material',
+      unit: entry.unit,
+      minPrice: entry.price ?? null,
+      youhouCode: undefined,
+      materialCategory: entry.materialCategory ?? entry.category,
+      kensaSort: undefined,
+      validFrom: entry.validFrom ?? entry.startDate,
+      validTo: entry.validTo ?? entry.endDate,
+      version: entry.version,
+      insuranceType: entry.insuranceType,
+      maker: entry.maker,
+    });
+  });
+
+  (sources.labClassifications?.list ?? []).forEach((entry) => {
+    records.push({
+      ...metaFrom(entry),
+      masterType: 'labClassification',
+      code: entry.kensaCode,
+      name: entry.kensaName,
+      category: entry.classification ?? entry.insuranceCategory ?? 'kensa',
+      unit: undefined,
+      minPrice: null,
+      youhouCode: undefined,
+      materialCategory: undefined,
+      kensaSort: entry.kensaCode,
+      validFrom: entry.validFrom,
+      validTo: entry.validTo,
+      version: entry.version,
+      sampleType: entry.sampleType,
+      departmentCode: entry.departmentCode,
+    });
+  });
+
+  const fetchedAt = primaryMeta?.fetchedAt ?? new Date().toISOString();
+  const version = primaryMeta?.version;
+  const cacheHit = primaryMeta?.cacheHit ?? false;
+  const missingMaster = primaryMeta?.missingMaster ?? records.length === 0;
+  const fallbackUsed = primaryMeta?.fallbackUsed ?? false;
+  const runId = primaryMeta?.runId;
+  const snapshotVersion = primaryMeta?.snapshotVersion;
+  const dataSourceTransition = primaryMeta?.dataSourceTransition;
+
+  return {
+    list: records,
+    totalCount: records.length,
+    fetchedAt,
+    version,
+    dataSource,
+    dataSourceTransition,
+    cacheHit,
+    missingMaster,
+    fallbackUsed,
+    runId,
+    snapshotVersion,
+  };
+};
+
+const buildOrca06ResponseFromSources = (
+  sources: {
+    insurers?: OrcaMasterListResponse<InsurerMaster>;
+    addresses?: OrcaMasterListResponse<AddressMasterEntry>;
+  },
+  dataSource: OrcaMasterSource,
+): OrcaMasterListResponse<Orca06InsurerAddressRecord> => {
+  const primaryMeta = selectPrimaryMeta(
+    sources.insurers && extractAuditMeta(sources.insurers),
+    sources.addresses && extractAuditMeta(sources.addresses),
+  );
+  const metaFrom = (entry?: OrcaMasterAuditMeta) => mergeEntryMeta(entry, primaryMeta, dataSource);
+  const records: Orca06InsurerAddressRecord[] = [];
+
+  (sources.insurers?.list ?? []).forEach((entry) => {
+    records.push({
+      ...metaFrom(entry),
+      recordType: 'insurer',
+      payerCode: entry.insurerNumber,
+      payerName: entry.insurerName,
+      payerType: entry.insurerType ?? entry.payerType,
+      payerRatio: entry.payerRatio,
+      prefCode: entry.prefCode ?? entry.prefectureCode,
+      cityCode: entry.cityCode,
+      zip: entry.zip,
+      addressLine: entry.addressLine ?? entry.address,
+      city: entry.address,
+      town: undefined,
+      kana: entry.insurerKana,
+      version: entry.version,
+    });
+  });
+
+  (sources.addresses?.list ?? []).forEach((entry) => {
+    const payerCode = entry.zip ?? entry.zipCode;
+    const payerName =
+      entry.fullAddress ?? [entry.prefectureCode, entry.city, entry.town].filter(Boolean).join(' ');
+    if (!payerCode && !payerName) {
+      return;
+    }
+    records.push({
+      ...metaFrom(entry),
+      recordType: 'address',
+      payerCode: payerCode ?? 'address',
+      payerName: payerName || payerCode || 'address',
+      payerType: undefined,
+      payerRatio: undefined,
+      prefCode: entry.prefCode ?? entry.prefectureCode,
+      cityCode: entry.cityCode,
+      zip: entry.zip ?? entry.zipCode,
+      addressLine: entry.fullAddress ?? undefined,
+      city: entry.city,
+      town: entry.town,
+      kana: entry.kana,
+      roman: entry.roman,
+      version: entry.version,
+    });
+  });
+
+  const fetchedAt = primaryMeta?.fetchedAt ?? new Date().toISOString();
+  const version = primaryMeta?.version;
+  const cacheHit = primaryMeta?.cacheHit ?? false;
+  const missingMaster = primaryMeta?.missingMaster ?? records.length === 0;
+  const fallbackUsed = primaryMeta?.fallbackUsed ?? false;
+  const runId = primaryMeta?.runId;
+  const snapshotVersion = primaryMeta?.snapshotVersion;
+  const dataSourceTransition = primaryMeta?.dataSourceTransition;
+
+  return {
+    list: records,
+    totalCount: records.length,
+    fetchedAt,
+    version,
+    dataSource,
+    dataSourceTransition,
+    cacheHit,
+    missingMaster,
+    fallbackUsed,
+    runId,
+    snapshotVersion,
+  };
+};
+
+const buildOrca08ResponseFromSources = (
+  source: OrcaMasterListResponse<EtensuMasterEntry>,
+  dataSource: OrcaMasterSource,
+): OrcaMasterListResponse<Orca08EtensuRecord> => {
+  const meta = extractAuditMeta(source);
+  const records: Orca08EtensuRecord[] = source.list.map((entry) => ({
+    ...mergeEntryMeta(entry, meta, dataSource),
+    tensuCode: entry.tensuCode ?? entry.medicalFeeCode ?? '',
+    name: entry.name,
+    kubun: entry.kubun,
+    tanka: entry.tanka ?? entry.points,
+    unit: entry.unit,
+    category: entry.category,
+    startDate: entry.startDate,
+    endDate: entry.endDate,
+    tensuVersion: entry.tensuVersion,
+    version: entry.version,
+  }));
+
+  return {
+    list: records,
+    totalCount: records.length,
+    fetchedAt: source.fetchedAt,
+    version: source.version,
+    dataSource,
+    dataSourceTransition: meta.dataSourceTransition,
+    cacheHit: meta.cacheHit ?? false,
+    missingMaster: meta.missingMaster ?? records.length === 0,
+    fallbackUsed: meta.fallbackUsed ?? false,
+    runId: meta.runId,
+    snapshotVersion: meta.snapshotVersion,
+  };
+};
+
+const buildFallbackResponse = <T>(
+  dataSource: OrcaMasterSource,
+  options?: OrcaMasterFetchOptions,
+): OrcaMasterListResponse<T> => ({
+  list: [],
+  totalCount: 0,
+  fetchedAt: new Date().toISOString(),
+  dataSource,
+  cacheHit: false,
+  fallbackUsed: true,
+  missingMaster: true,
+  runId: options?.runId,
+  version: options?.version,
+});
+
+const fetchOrca05FromSource = async (
+  source: OrcaMasterSource,
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<Orca05MasterRecord>> => {
+  if (source === 'server') {
+    const baseURL = getOrcaMasterBridgeBaseUrl();
+    const [drugClasses, minimumPrices, dosageInstructions, specialEquipments, labClassifications] =
+      await Promise.all([
+        fetchMasterListWithMapper('/orca/master/generic-class', mapDrugClassification, { baseURL }),
+        fetchMasterListWithMapper('/orca/master/generic-price', mapMinimumDrugPrice, { baseURL }),
+        fetchMasterListWithMapper('/orca/master/youhou', mapDosageInstruction, { baseURL }),
+        fetchMasterListWithMapper('/orca/master/material', mapSpecialEquipment, { baseURL }),
+        fetchMasterListWithMapper('/orca/master/kensa-sort', mapLabClassification, { baseURL }),
+      ]);
+    return buildOrca05ResponseFromSources(
+      { drugClasses, minimumPrices, dosageInstructions, specialEquipments, labClassifications },
+      'server',
+    );
+  }
+
+  if (source === 'snapshot') {
+    return buildOrca05ResponseFromSources(
+      {
+        drugClasses: cloneResponseWithSource(drugClassificationMasterResponse, 'snapshot'),
+        minimumPrices: cloneResponseWithSource(minimumDrugPriceResponse, 'snapshot'),
+        dosageInstructions: cloneResponseWithSource(dosageInstructionMasterResponse, 'snapshot'),
+        specialEquipments: cloneResponseWithSource(specialEquipmentMasterResponse, 'snapshot'),
+        labClassifications: cloneResponseWithSource(labClassificationMasterResponse, 'snapshot'),
+      },
+      'snapshot',
+    );
+  }
+
+  if (source === 'mock') {
+    return buildOrca05ResponseFromSources(
+      {
+        drugClasses: cloneResponseWithSource(drugClassificationMasterResponse, 'mock'),
+        minimumPrices: cloneResponseWithSource(minimumDrugPriceResponse, 'mock'),
+        dosageInstructions: cloneResponseWithSource(dosageInstructionMasterResponse, 'mock'),
+        specialEquipments: cloneResponseWithSource(specialEquipmentMasterResponse, 'mock'),
+        labClassifications: cloneResponseWithSource(labClassificationMasterResponse, 'mock'),
+      },
+      'mock',
+    );
+  }
+
+  return buildFallbackResponse('fallback');
+};
+
+const DEFAULT_ADDRESS_LOOKUP_ZIP = addressMasterResponse.list[0]?.zipCode ?? '1000001';
+
+const fetchOrca06FromSource = async (
+  source: OrcaMasterSource,
+  options?: OrcaMasterFetchOptions & { zip?: string; keyword?: string; pref?: string },
+): Promise<OrcaMasterListResponse<Orca06InsurerAddressRecord>> => {
+  if (source === 'server') {
+    try {
+      const baseURL = getOrcaMasterBridgeBaseUrl();
+      const zip = options?.zip ?? DEFAULT_ADDRESS_LOOKUP_ZIP;
+      const [insurers, addresses] = await Promise.all([
+        fetchMasterListWithMapper('/orca/master/hokenja', mapInsurer, {
+          baseURL,
+          params: options?.pref ? { pref: options.pref, keyword: options.keyword } : undefined,
+        }),
+        fetchMasterListWithMapper('/orca/master/address', mapAddressMaster, {
+          baseURL,
+          params: { zip },
+        }),
+      ]);
+      return buildOrca06ResponseFromSources({ insurers, addresses }, 'server');
+    } catch (error) {
+      if (axios.isAxiosError(error) && error.response?.status === 422) {
+        const runId = (error.response.data as { runId?: string })?.runId;
+        throw new OrcaValidationError('zip', options?.zip ?? '', { runId });
+      }
+      throw error;
+    }
+  }
+
+  if (source === 'snapshot') {
+    const addresses = cloneResponseWithSource(addressMasterResponse, 'snapshot');
+    const filteredAddresses =
+      options?.zip && addresses.list.length > 0
+        ? (() => {
+            const filtered = addresses.list.filter((entry) => {
+              const zip = entry.zip ?? entry.zipCode;
+              return zip ? zip === options.zip : false;
+            });
+            return {
+              ...addresses,
+              list: filtered,
+              totalCount: filtered.length,
+              missingMaster: addresses.missingMaster ?? filtered.length === 0,
+            };
+          })()
+        : addresses;
+    return buildOrca06ResponseFromSources(
+      {
+        insurers: cloneResponseWithSource(insurerMasterResponse, 'snapshot'),
+        addresses: filteredAddresses,
+      },
+      'snapshot',
+    );
+  }
+
+  if (source === 'mock') {
+    const addresses = cloneResponseWithSource(addressMasterResponse, 'mock');
+    const filteredAddresses =
+      options?.zip && addresses.list.length > 0
+        ? (() => {
+            const filtered = addresses.list.filter((entry) => {
+              const zip = entry.zip ?? entry.zipCode;
+              return zip ? zip === options.zip : false;
+            });
+            return {
+              ...addresses,
+              list: filtered,
+              totalCount: filtered.length,
+              missingMaster: addresses.missingMaster ?? filtered.length === 0,
+            };
+          })()
+        : addresses;
+    return buildOrca06ResponseFromSources(
+      {
+        insurers: cloneResponseWithSource(insurerMasterResponse, 'mock'),
+        addresses: filteredAddresses,
+      },
+      'mock',
+    );
+  }
+
+  return buildFallbackResponse('fallback');
+};
+
+const fetchOrca08FromSource = async (
+  source: OrcaMasterSource,
+  _options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<Orca08EtensuRecord>> => {
+  if (source === 'server') {
+    const baseURL = getOrcaMasterBridgeBaseUrl();
+    const raw = await fetchMasterListWithMapper('/orca/master/etensu', mapEtensuMaster, { baseURL });
+    return buildOrca08ResponseFromSources(raw, 'server');
+  }
+
+  if (source === 'snapshot') {
+    return buildOrca08ResponseFromSources(
+      cloneResponseWithSource(etensuMasterResponse, 'snapshot'),
+      'snapshot',
+    );
+  }
+
+  if (source === 'mock') {
+    return buildOrca08ResponseFromSources(cloneResponseWithSource(etensuMasterResponse, 'mock'), 'mock');
+  }
+
+  return buildFallbackResponse('fallback');
+};
+
+const fetchWithResolver = async <T>(
+  masterType: string,
+  fetcher: (source: OrcaMasterSource, options?: OrcaMasterFetchOptions) => Promise<OrcaMasterListResponse<T>>,
+  options?: OrcaMasterFetchOptions,
+): Promise<OrcaMasterListResponse<T>> => {
+  const resolution = resolveOrcaMasterSource(masterType, {
+    sourceHint: options?.sourceHint ?? null,
+    previousSource: options?.previousSource ?? null,
+  });
+
+  let dataSourceTransition = resolution.dataSourceTransition;
+  let fallbackUsed = resolution.fallbackUsed ?? false;
+
+  for (let i = 0; i < resolution.attemptOrder.length; i += 1) {
+    const source = resolution.attemptOrder[i];
+    if (source === 'fallback') {
+      return {
+        ...buildFallbackResponse<T>('fallback', options),
+        dataSourceTransition,
+      };
+    }
+    try {
+      const response = await fetcher(source, options);
+      const missingMaster = response.missingMaster ?? response.list.length === 0;
+      const effectiveFallbackUsed =
+        fallbackUsed || response.fallbackUsed === true || source !== resolution.dataSource;
+
+      const finalTransition =
+        dataSourceTransition
+        ?? (source !== resolution.dataSource
+          ? { from: resolution.dataSource, to: source, reason: 'fallback' }
+          : response.dataSourceTransition);
+
+      if (missingMaster && i + 1 < resolution.attemptOrder.length) {
+        dataSourceTransition = { from: source, to: resolution.attemptOrder[i + 1], reason: 'empty_fallback' };
+        fallbackUsed = true;
+        continue;
+      }
+
+      return {
+        ...response,
+        dataSource: source,
+        dataSourceTransition: finalTransition,
+        fallbackUsed: effectiveFallbackUsed,
+        missingMaster,
+        runId: response.runId ?? options?.runId,
+        version: response.version ?? options?.version,
+      };
+    } catch (error) {
+      if (error instanceof OrcaValidationError) {
+        throw error;
+      }
+      fallbackUsed = true;
+      dataSourceTransition = {
+        from: source,
+        to: resolution.attemptOrder[i + 1] ?? 'fallback',
+        reason: 'error_fallback',
+      };
+    }
+  }
+
+  return {
+    ...buildFallbackResponse<T>('fallback', options),
+    dataSourceTransition,
+  };
+};
 
 export const fetchOrca05BridgeMasters = async (
   options?: OrcaMasterFetchOptions,
-): Promise<OrcaMasterListResponse<Orca05MasterRecord>> => {
-  // TODO: 実 REST 実装後に `/orca/master/{generic-class|generic-price|youhou|material|kensa-sort}` を呼び出す
-  return {
-    list: [],
-    totalCount: 0,
-    fetchedAt: new Date().toISOString(),
-    dataSource: options?.sourceHint ?? 'mock',
-    fallbackUsed: true,
-    missingMaster: true,
-    runId: options?.runId,
-    version: options?.version,
-  };
-};
+): Promise<OrcaMasterListResponse<Orca05MasterRecord>> =>
+  fetchWithResolver<Orca05MasterRecord>('ORCA05', fetchOrca05FromSource, options);
 
 export const fetchOrca06BridgeMasters = async (
   options?: OrcaMasterFetchOptions,
-): Promise<OrcaMasterListResponse<Orca06InsurerAddressRecord>> => {
-  // TODO: 実 REST 実装後に `/orca/master/hokenja` `/orca/master/address` を呼び出す
-  return {
-    list: [],
-    totalCount: 0,
-    fetchedAt: new Date().toISOString(),
-    dataSource: options?.sourceHint ?? 'mock',
-    fallbackUsed: true,
-    missingMaster: true,
-    runId: options?.runId,
-    version: options?.version,
-  };
-};
+): Promise<OrcaMasterListResponse<Orca06InsurerAddressRecord>> =>
+  fetchWithResolver<Orca06InsurerAddressRecord>('ORCA06', fetchOrca06FromSource, options);
 
 export const fetchOrca08BridgeMasters = async (
   options?: OrcaMasterFetchOptions,
-): Promise<OrcaMasterListResponse<Orca08EtensuRecord>> => {
-  // TODO: 実 REST 実装後に `/orca/master/etensu` を呼び出す
-  return {
-    list: [],
-    totalCount: 0,
-    fetchedAt: new Date().toISOString(),
-    dataSource: options?.sourceHint ?? 'mock',
-    fallbackUsed: true,
-    missingMaster: true,
-    runId: options?.runId,
-    version: options?.version,
-  };
-};
+): Promise<OrcaMasterListResponse<Orca08EtensuRecord>> =>
+  fetchWithResolver<Orca08EtensuRecord>('ORCA08', fetchOrca08FromSource, options);

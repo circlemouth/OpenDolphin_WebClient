@@ -1,3 +1,5 @@
+// @vitest-environment node
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { httpClient } from '@/libs/http';
@@ -8,8 +10,11 @@ import {
   searchDiseaseByName,
   searchTensuByName,
   searchTensuByPointRange,
+  fetchOrca08BridgeMasters,
 } from '@/features/charts/api/orca-api';
 import { OrcaValidationError } from '@/features/charts/utils/orcaMasterValidation';
+import { resolveOrcaMasterSource } from '@/features/charts/api/orca-source-resolver';
+import { etensuMasterResponse } from '@/mocks/fixtures/orcaMaster';
 
 vi.mock('@/libs/http', async () => {
   const actual = await vi.importActual<typeof import('@/libs/http')>('@/libs/http');
@@ -40,77 +45,72 @@ describe('orca-api', () => {
     vi.mocked(httpClient.put).mockReset();
   });
 
-  it('returns empty array when search keyword is blank', async () => {
-    await expect(searchTensuByName('   ')).resolves.toEqual([]);
+  it('returns empty response when search keyword is blank', async () => {
+    const tensu = await searchTensuByName('   ');
+    expect(tensu.list).toEqual([]);
+    expect(tensu.missingMaster).toBe(true);
     expect(httpClient.get).not.toHaveBeenCalled();
 
-    await expect(searchDiseaseByName('')).resolves.toEqual([]);
-    expect(httpClient.get).not.toHaveBeenCalled();
+    const disease = await searchDiseaseByName('');
+    expect(disease.list).toEqual([]);
+    expect(disease.missingMaster).toBe(true);
   });
 
-  it('fetches and maps tensu master entries', async () => {
-    const date = new Date('2026-04-01T00:00:00Z');
+  it('fetches and maps tensu master entries with audit meta', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({
       data: {
         list: [
-          {
-            srycd: '123456',
-            name: '内服薬',
-            kananame: 'ナイフギャク',
-            taniname: '回',
-            ten: '12.5',
-            nyugaitekkbn: '0',
-          },
-          {
-            srycd: null,
-            name: '無効データ',
-          },
+          { etensuCategory: '1', medicalFeeCode: '123456', name: '内服薬', points: 12.5, unit: '回' },
+          { etensuCategory: '1', medicalFeeCode: null, name: '無効データ', points: 10 },
         ],
+        dataSource: 'server',
+        cacheHit: false,
+        missingMaster: false,
+        fallbackUsed: false,
+        runId: 'RUN-SERVER',
       },
     } as never);
 
-    const endpoint = `/orca/tensu/name/${encodeURIComponent('内服薬,20260401,false')}/`;
-    const result = await searchTensuByName('内服薬', { partialMatch: false, date });
+    const result = await searchTensuByName('内服薬', { partialMatch: false, sourceHint: 'server' });
 
-    expect(httpClient.get).toHaveBeenCalledWith(endpoint);
-    expect(result).toHaveLength(1);
-    expect(result[0]).toMatchObject({
-      code: '123456',
-      name: '内服薬',
-      point: 12.5,
-      routeFlag: undefined,
-    });
+    expect(httpClient.get).toHaveBeenCalledWith('/orca/master/etensu', { baseURL: expect.any(String) });
+    expect(result.list).toHaveLength(1);
+    expect(result.dataSource).toBe('server');
+    expect(result.list[0]).toMatchObject({ code: '123456', name: '内服薬', point: 12.5 });
+    expect(result.runId).toBe('RUN-SERVER');
   });
 
   it('fetches tensu entries by point range with optional date', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({
-      data: { list: [{ srycd: '001', name: '初診料', ten: '50' }] },
+      data: {
+        list: [{ etensuCategory: '1', medicalFeeCode: '001', name: '初診料', points: 50, startDate: '20250101' }],
+        dataSource: 'server',
+      },
     } as never);
 
-    const result = await searchTensuByPointRange({ min: 50, max: 100, date: new Date('2026-05-01') });
-    const endpoint = `/orca/tensu/ten/${encodeURIComponent('50-100,20260501')}/`;
+    const result = await searchTensuByPointRange({
+      min: 50,
+      max: 100,
+      date: new Date('2026-05-01'),
+      sourceHint: 'server',
+    });
 
-    expect(httpClient.get).toHaveBeenCalledWith(endpoint);
-    expect(result).toEqual([
-      {
+    expect(httpClient.get).toHaveBeenCalledWith('/orca/master/etensu', { baseURL: expect.any(String) });
+    expect(result.list).toEqual([
+      expect.objectContaining({
         code: '001',
         name: '初診料',
-        kana: undefined,
-        unitName: undefined,
         point: 50,
-        startDate: undefined,
-        endDate: undefined,
-        yakkaCode: undefined,
-        inpatientFlag: undefined,
-        routeFlag: undefined,
-        categoryFlag: undefined,
-      },
+      }),
     ]);
+    expect(result.missingMaster).toBe(false);
   });
 
-  it('returns empty array when point range is invalid', async () => {
-    await expect(searchTensuByPointRange({ min: null, max: null })).resolves.toEqual([]);
-    await expect(searchTensuByPointRange({ min: 200, max: 100 })).resolves.toEqual([]);
+  it('returns empty response when point range is invalid', async () => {
+    const empty = await searchTensuByPointRange({ min: null, max: null });
+    const reversed = await searchTensuByPointRange({ min: 200, max: 100 });
+    expect(empty.list).toEqual([]);
+    expect(reversed.list).toEqual([]);
     expect(httpClient.get).not.toHaveBeenCalled();
   });
 
@@ -128,23 +128,27 @@ describe('orca-api', () => {
     const result = await searchDiseaseByName('感冒', { date: new Date('2026-04-24T12:00:00Z') });
 
     expect(httpClient.get).toHaveBeenCalledWith(endpoint);
-    expect(result).toEqual([
+    expect(result.list).toEqual([
       { code: 'A001', name: '感冒', icd10: 'J00', validUntil: '2026-12-31', kana: undefined },
     ]);
+    expect(result.dataSource).toBe('server');
   });
 
-  it('looks up general name codes and returns null for incomplete payloads', async () => {
+  it('looks up general name codes and returns empty list for incomplete payloads', async () => {
     vi.mocked(httpClient.get).mockResolvedValue({ data: { code: '6134004', name: 'アセトアミノフェン' } } as never);
 
-    await expect(lookupGeneralName('   ')).resolves.toBeNull();
+    const blank = await lookupGeneralName('   ');
+    expect(blank.list).toEqual([]);
     expect(httpClient.get).not.toHaveBeenCalled();
 
     const result = await lookupGeneralName('6134004');
     expect(httpClient.get).toHaveBeenCalledWith('/orca/general/6134004');
-    expect(result).toEqual({ code: '6134004', name: 'アセトアミノフェン' });
+    expect(result.list[0]).toMatchObject({ code: '6134004', name: 'アセトアミノフェン' });
 
     vi.mocked(httpClient.get).mockResolvedValue({ data: { code: null, name: null } } as never);
-    await expect(lookupGeneralName('6134004')).resolves.toBeNull();
+    const missing = await lookupGeneralName('6134004');
+    expect(missing.list).toEqual([]);
+    expect(missing.missingMaster).toBe(true);
   });
 
   it('skips interaction checks when either list is empty', async () => {
@@ -183,14 +187,77 @@ describe('orca-api', () => {
   });
 
   it('wraps server 422 as OrcaValidationError with audit meta', async () => {
-    vi.mocked(httpClient.get).mockRejectedValue({
-      isAxiosError: true,
-      response: { status: 422, data: { runId: '20251124T170000Z' } },
-    } as never);
+    vi.mocked(httpClient.get).mockImplementation(async (url: string) => {
+      if (url.includes('/address')) {
+        throw {
+          isAxiosError: true,
+          response: { status: 422, data: { runId: '20251124T170000Z' } },
+        };
+      }
+      return { data: { list: [] } } as never;
+    });
 
-    await expect(lookupAddressMaster('1234567')).rejects.toMatchObject({
+    await expect(lookupAddressMaster('1234567', { sourceHint: 'server' })).rejects.toMatchObject({
       meta: expect.objectContaining({ validationError: true, runId: '20251124T170000Z', missingMaster: false }),
       userMessage: expect.stringContaining('郵便番号'),
+    });
+  });
+
+  it('resolves source hint and previous source for bridge fetches', () => {
+    const result = resolveOrcaMasterSource('ORCA08', { sourceHint: 'snapshot', previousSource: 'mock' });
+    expect(result.dataSource).toBe('snapshot');
+    expect(result.dataSourceTransition).toEqual({ from: 'mock', to: 'snapshot', reason: 'hint_applied' });
+    expect(result.attemptOrder[0]).toBe('snapshot');
+  });
+
+  it('falls back to snapshot when server bridge fetch fails', async () => {
+    vi.mocked(httpClient.get).mockRejectedValueOnce(new Error('network down'));
+
+    const response = await fetchOrca08BridgeMasters({ sourceHint: 'server' });
+
+    expect(httpClient.get).toHaveBeenCalled();
+    expect(response.dataSource).toBe('snapshot');
+    expect(response.fallbackUsed).toBe(true);
+    expect(response.missingMaster).toBe(false);
+    expect(response.list).toHaveLength(etensuMasterResponse.list.length);
+  });
+
+  it('returns server data with audit meta when bridge fetch succeeds', async () => {
+    vi.mocked(httpClient.get).mockResolvedValueOnce({
+      data: {
+        list: [
+          {
+            etensuCategory: '1',
+            medicalFeeCode: '100001',
+            name: '初診料',
+            points: 50,
+            startDate: '20250101',
+            endDate: '99999999',
+            tensuVersion: '2025-01',
+          },
+        ],
+        totalCount: 1,
+        fetchedAt: '2025-01-01T00:00:00Z',
+        dataSource: 'server',
+        cacheHit: true,
+        missingMaster: false,
+        fallbackUsed: false,
+        runId: 'RUN-SERVER',
+        snapshotVersion: '2025-01',
+        version: '20250101',
+      },
+    } as never);
+
+    const response = await fetchOrca08BridgeMasters({ sourceHint: 'server' });
+
+    expect(response.dataSource).toBe('server');
+    expect(response.cacheHit).toBe(true);
+    expect(response.runId).toBe('RUN-SERVER');
+    expect(response.list[0]).toMatchObject({
+      tensuCode: '100001',
+      name: '初診料',
+      tanka: 50,
+      tensuVersion: '2025-01',
     });
   });
 });

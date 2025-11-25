@@ -166,6 +166,12 @@ export type EtensuMasterResponse = OrcaMasterListResponse<EtensuMasterEntry>;
 
 // ORCA-05 集約 DTO（薬剤分類・最低薬価・用法・特定器材・検査分類）
 export interface Orca05MasterRecord extends OrcaMasterAuditMeta {
+  masterType:
+    | 'drugClassification'
+    | 'minimumDrugPrice'
+    | 'dosageInstruction'
+    | 'specialEquipment'
+    | 'labClassification';
   code: string;
   name: string;
   category?: string;
@@ -177,10 +183,23 @@ export interface Orca05MasterRecord extends OrcaMasterAuditMeta {
   validFrom?: string;
   validTo?: string;
   version?: string;
+  kanaName?: string;
+  priceType?: string;
+  reference?: MinimumDrugPriceEntry['reference'];
+  timingCode?: string;
+  routeCode?: string;
+  daysLimit?: number | null;
+  dosePerDay?: number | null;
+  comment?: string;
+  insuranceType?: string;
+  maker?: string;
+  sampleType?: string;
+  departmentCode?: string;
 }
 
 // ORCA-06（保険者・住所）統合 DTO
 export interface Orca06InsurerAddressRecord extends OrcaMasterAuditMeta {
+  recordType: 'insurer' | 'address';
   payerCode: string;
   payerName: string;
   payerType?: string;
@@ -189,6 +208,10 @@ export interface Orca06InsurerAddressRecord extends OrcaMasterAuditMeta {
   cityCode?: string;
   zip?: string;
   addressLine?: string;
+  city?: string;
+  town?: string;
+  kana?: string;
+  roman?: string;
   version?: string;
 }
 

@@ -9,6 +9,7 @@ import type {
   GeneralNameEntry,
   TensuMasterEntry,
 } from '@/features/charts/types/orca';
+import type { OrcaMasterAuditMeta, OrcaMasterListResponse } from '@/types/orca';
 import {
   useDiseaseSearch,
   useGeneralNameLookup,
@@ -257,9 +258,9 @@ export const OrcaOrderPanel = ({
   const [mode, setMode] = useState<OrcaSearchMode>(initialMode);
   const [keyword, setKeyword] = useState('');
   const [partialMatch, setPartialMatch] = useState(true);
-  const [tensuResults, setTensuResults] = useState<TensuMasterEntry[]>([]);
-  const [diseaseResults, setDiseaseResults] = useState<DiseaseMasterEntry[]>([]);
-  const [generalResult, setGeneralResult] = useState<GeneralNameEntry | null>(null);
+  const [tensuResults, setTensuResults] = useState<OrcaMasterListResponse<TensuMasterEntry> | null>(null);
+  const [diseaseResults, setDiseaseResults] = useState<OrcaMasterListResponse<DiseaseMasterEntry> | null>(null);
+  const [generalResult, setGeneralResult] = useState<OrcaMasterListResponse<GeneralNameEntry> | null>(null);
   const [pointMin, setPointMin] = useState('0');
   const [pointMax, setPointMax] = useState('300');
   const [effectiveDate, setEffectiveDate] = useState('');
@@ -282,6 +283,10 @@ export const OrcaOrderPanel = ({
   const generalLookup = useGeneralNameLookup();
   const interactionCheck = useInteractionCheck();
 
+  const tensuList = tensuResults?.list ?? [];
+  const diseaseList = diseaseResults?.list ?? [];
+  const generalList = generalResult?.list ?? [];
+
   const setAlert = (next: AlertState | null) => {
     setAlertState(next);
     if (next?.subtype === 'rateLimit') {
@@ -293,8 +298,8 @@ export const OrcaOrderPanel = ({
   };
 
   const resetResults = () => {
-    setTensuResults([]);
-    setDiseaseResults([]);
+    setTensuResults(null);
+    setDiseaseResults(null);
     setGeneralResult(null);
     setPointError(null);
     setAlert(null);
@@ -332,7 +337,8 @@ export const OrcaOrderPanel = ({
       if (mode === 'tensu') {
         const results = await tensuSearch.mutateAsync({ keyword: trimmed, options: { partialMatch } });
         setTensuResults(results);
-        if (results.length === 0) {
+        logSearchMeta(results, 'tensu_search');
+        if (results.list.length === 0) {
           setAlert({ tone: 'warning', message: '該当する診療行為が見つかりませんでした' });
         } else {
           setAlert(null);
@@ -340,7 +346,8 @@ export const OrcaOrderPanel = ({
       } else if (mode === 'disease') {
         const results = await diseaseSearch.mutateAsync({ keyword: trimmed, options: { partialMatch } });
         setDiseaseResults(results);
-        if (results.length === 0) {
+        logSearchMeta(results, 'disease_search');
+        if (results.list.length === 0) {
           setAlert({ tone: 'warning', message: '該当する傷病名が見つかりませんでした' });
         } else {
           setAlert(null);
@@ -348,7 +355,8 @@ export const OrcaOrderPanel = ({
       } else {
         const result = await generalLookup.mutateAsync({ code: trimmed });
         setGeneralResult(result);
-        if (!result) {
+        logSearchMeta(result, 'general_name_lookup');
+        if (!result.list[0]) {
           setAlert({ tone: 'warning', message: '一般名を特定できませんでした' });
         } else {
           setAlert(null);
@@ -409,9 +417,14 @@ export const OrcaOrderPanel = ({
     resetResults();
 
     try {
-      const results = await tensuPointSearch.mutateAsync({ min: minValue, max: maxValue, date: dateValue });
+      const results = await tensuPointSearch.mutateAsync({
+        min: minValue,
+        max: maxValue,
+        date: dateValue,
+      });
       setTensuResults(results);
-      if (results.length === 0) {
+      logSearchMeta(results, 'tensu_point_search');
+      if (results.list.length === 0) {
         setAlert({ tone: 'warning', message: '該当する診療行為が見つかりませんでした' });
       } else {
         setAlert(null);
@@ -505,57 +518,88 @@ export const OrcaOrderPanel = ({
     }
   };
 
+  const renderAuditMeta = (meta?: OrcaMasterAuditMeta | null) => {
+    if (!meta) return null;
+    const transition =
+      meta.dataSourceTransition && meta.dataSourceTransition.from
+        ? `${meta.dataSourceTransition.from ?? 'unknown'}→${meta.dataSourceTransition.to ?? 'unknown'}`
+        : 'none';
+    return (
+      <ResultMeta>
+        dataSource: {meta.dataSource ?? 'unknown'} / transition: {transition} / cacheHit:{' '}
+        {meta.cacheHit ? 'true' : 'false'} / missingMaster: {meta.missingMaster ? 'true' : 'false'} / fallbackUsed:{' '}
+        {meta.fallbackUsed ? 'true' : 'false'}
+        {meta.runId ? ` / runId: ${meta.runId}` : ''}
+        {meta.snapshotVersion ? ` / snapshot: ${meta.snapshotVersion}` : ''}
+      </ResultMeta>
+    );
+  };
+
+  const logSearchMeta = (meta: OrcaMasterAuditMeta | null, target: string) => {
+    if (!meta) return;
+    recordOperationEvent('orca', 'info', target, 'ORCA マスター検索メタ', {
+      dataSource: meta.dataSource,
+      dataSourceTransition: meta.dataSourceTransition,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      runId: meta.runId,
+      snapshotVersion: meta.snapshotVersion,
+    });
+  };
+
   const renderSearchResults = () => {
-    if (lastSearchMode === 'tensu' && tensuResults.length > 0) {
+    if (lastSearchMode === 'tensu' && tensuList.length > 0) {
       return (
-        <ResultsTable role="table" aria-label="診療行為検索結果" data-test-id="orca-results-table">
-          <thead role="rowgroup">
-            <tr role="row">
-              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-code">
-                コード
-              </TableHeaderCell>
-              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-name">
-                名称
-              </TableHeaderCell>
-              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-detail">
-                詳細
-              </TableHeaderCell>
-              <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-actions">
-                操作
-              </TableHeaderCell>
-            </tr>
-          </thead>
-          <tbody role="rowgroup">
-            {tensuResults.map((entry) => (
-              <TableRow key={entry.code} role="row" tabIndex={0}>
-                <TableCell role="cell">{entry.code}</TableCell>
-                <TableCell role="cell">{entry.name}</TableCell>
-                <TableCell role="cell">{formatTensuMeta(entry) || '—'}</TableCell>
-                <TableCell role="cell">
-                  <Stack direction="row" gap={8} wrap>
-                    {onCreateOrder ? (
+        <Stack gap={8}>
+          <ResultsTable role="table" aria-label="診療行為検索結果" data-test-id="orca-results-table">
+            <thead role="rowgroup">
+              <tr role="row">
+                <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-code">
+                  コード
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-name">
+                  名称
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-detail">
+                  詳細
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" aria-sort="none" data-test-id="orca-col-actions">
+                  操作
+                </TableHeaderCell>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              {tensuList.map((entry) => (
+                <TableRow key={entry.code} role="row" tabIndex={0}>
+                  <TableCell role="cell">{entry.code}</TableCell>
+                  <TableCell role="cell">{entry.name}</TableCell>
+                  <TableCell role="cell">{formatTensuMeta(entry) || '—'}</TableCell>
+                  <TableCell role="cell">
+                    <Stack direction="row" gap={8} wrap>
+                      {onCreateOrder ? (
+                        <Button
+                          type="button"
+                          size="sm"
+                          variant="primary"
+                          onClick={() => void handleCreateOrder({ code: entry.code, name: entry.name })}
+                          disabled={disabled || pendingCode === entry.code}
+                          isLoading={pendingCode === entry.code}
+                          aria-label={`コード ${entry.code} をカルテに追加`}
+                        >
+                          カルテに追加
+                        </Button>
+                      ) : null}
                       <Button
                         type="button"
                         size="sm"
-                        variant="primary"
-                        onClick={() => void handleCreateOrder({ code: entry.code, name: entry.name })}
-                        disabled={disabled || pendingCode === entry.code}
-                        isLoading={pendingCode === entry.code}
-                        aria-label={`コード ${entry.code} をカルテに追加`}
+                        variant="secondary"
+                        onClick={() => addSelection('candidate', { code: entry.code, name: entry.name })}
+                        disabled={disabled}
+                        aria-label={`コード ${entry.code} を追加予定に入れる`}
                       >
-                        カルテに追加
+                        追加予定に入れる
                       </Button>
-                    ) : null}
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onClick={() => addSelection('candidate', { code: entry.code, name: entry.name })}
-                      disabled={disabled}
-                      aria-label={`コード ${entry.code} を追加予定に入れる`}
-                    >
-                      追加予定に入れる
-                    </Button>
                     <Button
                       type="button"
                       size="sm"
@@ -568,63 +612,71 @@ export const OrcaOrderPanel = ({
                   </Stack>
                 </TableCell>
               </TableRow>
-            ))}
-          </tbody>
-        </ResultsTable>
+              ))}
+            </tbody>
+          </ResultsTable>
+          {renderAuditMeta(tensuResults)}
+        </Stack>
       );
     }
-    if (lastSearchMode === 'disease' && diseaseResults.length > 0) {
+    if (lastSearchMode === 'disease' && diseaseList.length > 0) {
       return (
-        <ResultsTable role="table" aria-label="傷病名検索結果">
-          <thead role="rowgroup">
-            <tr role="row">
-              <TableHeaderCell scope="col" aria-sort="none">
-                コード
-              </TableHeaderCell>
-              <TableHeaderCell scope="col" aria-sort="none">
-                名称
-              </TableHeaderCell>
-              <TableHeaderCell scope="col" aria-sort="none">
-                詳細
-              </TableHeaderCell>
-            </tr>
-          </thead>
-          <tbody role="rowgroup">
-            {diseaseResults.map((entry) => (
-              <TableRow key={entry.code} role="row" tabIndex={0}>
-                <TableCell role="cell">{entry.code}</TableCell>
-                <TableCell role="cell">{entry.name}</TableCell>
-                <TableCell role="cell">{formatDiseaseMeta(entry) || '—'}</TableCell>
+        <Stack gap={8}>
+          <ResultsTable role="table" aria-label="傷病名検索結果">
+            <thead role="rowgroup">
+              <tr role="row">
+                <TableHeaderCell scope="col" aria-sort="none">
+                  コード
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" aria-sort="none">
+                  名称
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" aria-sort="none">
+                  詳細
+                </TableHeaderCell>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              {diseaseList.map((entry) => (
+                <TableRow key={entry.code} role="row" tabIndex={0}>
+                  <TableCell role="cell">{entry.code}</TableCell>
+                  <TableCell role="cell">{entry.name}</TableCell>
+                  <TableCell role="cell">{formatDiseaseMeta(entry) || '—'}</TableCell>
+                </TableRow>
+              ))}
+            </tbody>
+          </ResultsTable>
+          {renderAuditMeta(diseaseResults)}
+        </Stack>
+      );
+    }
+    if (generalList[0]) {
+      return (
+        <Stack gap={8}>
+          <ResultsTable role="table" aria-label="一般名コード照合結果">
+            <thead role="rowgroup">
+              <tr role="row">
+                <TableHeaderCell scope="col" aria-sort="none">
+                  コード
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" aria-sort="none">
+                  名称
+                </TableHeaderCell>
+                <TableHeaderCell scope="col" aria-sort="none">
+                  詳細
+                </TableHeaderCell>
+              </tr>
+            </thead>
+            <tbody role="rowgroup">
+              <TableRow role="row" tabIndex={0}>
+                <TableCell role="cell">{generalList[0]?.code}</TableCell>
+                <TableCell role="cell">{generalList[0]?.name}</TableCell>
+                <TableCell role="cell">ORCA 一般名コード照合結果</TableCell>
               </TableRow>
-            ))}
-          </tbody>
-        </ResultsTable>
-      );
-    }
-    if (generalResult) {
-      return (
-        <ResultsTable role="table" aria-label="一般名コード照合結果">
-          <thead role="rowgroup">
-            <tr role="row">
-              <TableHeaderCell scope="col" aria-sort="none">
-                コード
-              </TableHeaderCell>
-              <TableHeaderCell scope="col" aria-sort="none">
-                名称
-              </TableHeaderCell>
-              <TableHeaderCell scope="col" aria-sort="none">
-                詳細
-              </TableHeaderCell>
-            </tr>
-          </thead>
-          <tbody role="rowgroup">
-            <TableRow role="row" tabIndex={0}>
-              <TableCell role="cell">{generalResult.code}</TableCell>
-              <TableCell role="cell">{generalResult.name}</TableCell>
-              <TableCell role="cell">ORCA 一般名コード照合結果</TableCell>
-            </TableRow>
-          </tbody>
-        </ResultsTable>
+            </tbody>
+          </ResultsTable>
+          {renderAuditMeta(generalResult)}
+        </Stack>
       );
     }
     return null;
@@ -663,10 +715,10 @@ export const OrcaOrderPanel = ({
   }, [alertState?.subtype, retrySeconds]);
 
   useEffect(() => {
-    if ((tensuResults.length > 0 || diseaseResults.length > 0 || generalResult) && resultsRef.current) {
+    if ((tensuList.length > 0 || diseaseList.length > 0 || generalList.length > 0) && resultsRef.current) {
       resultsRef.current.focus();
     }
-  }, [tensuResults.length, diseaseResults.length, generalResult]);
+  }, [tensuList.length, diseaseList.length, generalList.length]);
 
   useEffect(() => {
     if (!onDecisionSupportUpdate) {
