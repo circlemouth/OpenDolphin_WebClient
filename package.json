@@ -3,7 +3,8 @@
     "lint:orca-matrix": "node scripts/tools/orca-api-matrix-validator.js",
     "orca-snippets:dry": "node scripts/tools/orca-curl-snippets.js --dry-run",
     "orca-weekly": "node scripts/tools/orca-weekly-report.js",
-    "e2e:orca-master": "npx playwright test tests/e2e/orca-master.spec.ts"
+    "e2e:orca-master": "npx playwright test tests/e2e/orca-master.spec.ts",
+    "e2e:smoke": "node scripts/e2e-smoke-runner.mjs"
   },
   "dependencies": {
     "codex": "^0.2.3"

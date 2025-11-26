@@ -1,4 +1,9 @@
 # ORCA ↔ モダナイズ版サーバー API 差異サマリ（2025-11-22 Mac Dev ORCA 切替）
+## ORCA マスター API (/api/orca/master/*) 状況（RUN_ID=`20251124T073245Z`）
+- 対象: `/api/orca/master/{generic-class,generic-price,youhou,material,kensa-sort,hokenja,address}` (GET, JSON), Basic ヘッダー認証（`userName: 1.3.6.1.4.1.9414.70.1:admin`, `password: 21232f297a57a5a743894a0e4a801fc3`）。環境側は `ORCA_MASTER_BRIDGE_ENABLED=true`、`ORCA_MASTER_AUTH_MODE=basic` を想定。
+- 現状: 2025-11-26 12:24 JST 再デプロイ済み（docker compose build/up, port=8000）。`/api/orca/master` 7 本（+ etensu）を Basic ヘッダーで再実行し HTTP200/JSON（dataSource=server, runId=20251124T073245Z, version=20251124）。証跡: docs/server-modernization/phase2/operations/logs/20251124T073245Z-orca-master-server.md。
+- 期待フィールド: 全エンドポイントで `code`/`name`/区分ラベル/`validFrom`/`validTo`/`version` を返却。薬剤系は最低薬価・用法・特定器材・検査区分、保険者は区分/負担率、住所は都道府県・市区町村・郵便番号などを JSON に含める。
+
 
 > 接続手順・RUN_ID 発行・CRUD ログ運用は `ORCA_CONNECTIVITY_VALIDATION.md` §0 を参照。`tmp/orca-weekly-summary.*` の貼り付け位置や curl 雛形も同 Playbook のみを一次情報とする。
 > RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
