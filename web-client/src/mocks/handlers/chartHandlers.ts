@@ -1,6 +1,14 @@
 import { HttpResponse, http } from 'msw';
 
-import { chartsPatientListFixture, docInfoListFixture, patientVisitListFixture } from '@/mocks/fixtures/charts';
+import {
+  chartsPatientListFixture,
+  docInfoListFixture,
+  freeDocumentFixture,
+  karteSummaryFixture,
+  labModuleListFixture,
+  patientDetailFixture,
+  patientVisitListFixture,
+} from '@/mocks/fixtures/charts';
 import {
   chartEventLongPollPayload,
   chartEventSseData,
@@ -68,6 +76,10 @@ let lpPollCount = 0;
 export const chartHandlers = [
   http.get('/api/pvt2/pvtList', () => HttpResponse.json(patientVisitListFixture)),
   http.get('/api/charts/patientList', () => HttpResponse.json(chartsPatientListFixture)),
+  http.get('/api/patient/id/:patientId', () => HttpResponse.json(patientDetailFixture)),
+  http.get('/api/karte/pid/:params', () => HttpResponse.json(karteSummaryFixture)),
+  http.get('/api/karte/freedocument/:patientId', () => HttpResponse.json(freeDocumentFixture)),
+  http.get('/api/lab/module/:params', () => HttpResponse.json(labModuleListFixture)),
   // lp-only フラグ時は LP を優先し、SSE をバイパスする
   http.get('/api/chart-events', ({ request }) => {
     const compatFlags = parseCompatFlags(request.headers.get('x-client-compat'));

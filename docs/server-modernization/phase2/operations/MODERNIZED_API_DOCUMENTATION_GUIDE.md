@@ -47,6 +47,21 @@
 - RUN_ID `20251114TorcaHttpLogZ1` は DNS 解決不可→HTTP 405/404 証跡再取得タスク。`ORCA_CONNECTIVITY_VALIDATION.md` §4.4 にも反映済み。
 - 接続作業は `ORCA_CONNECTIVITY_VALIDATION.md` §1-§4 の順で進め、完了後は必ず `docs/server-modernization/phase2/operations/logs/<DATE>-orca-connectivity.md` へ RUN_ID・結果・課題を記録する。
 
+### 4.3 ORCA マスター API (/api/orca/master/*) 進捗（RUN_ID=`20251124T073245Z`）
+- 認証: Basic ヘッダー `userName: 1.3.6.1.4.1.9414.70.1:admin`、`password: 21232f297a57a5a743894a0e4a801fc3`。`ORCA_MASTER_BRIDGE_ENABLED=true` / `ORCA_MASTER_AUTH_MODE=basic` 前提。
+- 現状: 2025-11-26 12:24 JST に `docker compose -f docker-compose.modernized.dev.yml build server-modernized-dev` → `MODERNIZED_APP_HTTP_PORT=8000 docker compose ... up -d server-modernized-dev` で再デプロイし、`/openDolphin/resources/api/orca/master/{generic-class,generic-price,youhou,material,kensa-sort,hokenja,address}`（+ `/etensu`）が Basic 認証で HTTP200/JSON（`dataSource=server`、`runId=20251124T073245Z`、`version=20251124`）を返すことを確認。証跡: `docs/server-modernization/phase2/operations/logs/20251124T073245Z-orca-master-server.md`。
+- 期待スキーマ: すべて JSON 200 応答で `version` と有効期間を含める。薬剤系は最低薬価・用法・特定器材・検査区分を、保険者は区分/負担率を、住所は都道府県・市区町村・郵便番号を返す。
+
+| Path | 必須フィールド例 | 備考 |
+| --- | --- | --- |
+| `/api/orca/master/generic-class` | `code,name,category,validFrom,validTo,version` | 分類コード/名称と有効期間を最小セットとして返す。 |
+| `/api/orca/master/generic-price` | `code,name,minPrice,unit,validFrom,validTo,version,youhouCode` | 最低薬価と単位、用法コードを必須とし、算定用の版管理に利用。 |
+| `/api/orca/master/youhou` | `code,name,category,validFrom,validTo,version` | 用法コードと名称。 |
+| `/api/orca/master/material` | `code,name,materialCategory,validFrom,validTo,version` | 特定器材の区分を `materialCategory` に含める。 |
+| `/api/orca/master/kensa-sort` | `code,name,category,validFrom,validTo,version` | 検査区分コード。 |
+| `/api/orca/master/hokenja` | `payerCode,payerName,payerType,payerRatio,validFrom,validTo,version` | 区分と負担率を明示し、空レス時も version を返す。 |
+| `/api/orca/master/address` | `prefCode,cityCode,zip,addressLine,validFrom,validTo,version` | 都道府県・市区町村・郵便番号を必須とし、テキスト住所も返却。 |
+
 ## 5. 運用ルールと更新フロー
 1. サーバー系資料を更新した場合は `docs/server-modernization/phase2/INDEX.md` と `docs/web-client/README.md` 双方へリンクを追加し、Web クライアント側影響を記載する（本ガイド追加も同様）。
 2. `docs/web-client/planning/phase2/DOC_STATUS.md` の「モダナイズ/外部連携（ORCA）」行に本ガイドのステータスを記入し、Runbook やログとの整合を毎週確認する。

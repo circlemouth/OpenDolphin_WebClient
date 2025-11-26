@@ -41,6 +41,7 @@
                 open.dolphin.rest.ServerInfoResource,
                 open.dolphin.rest.ReportingResource,
                 open.orca.rest.OrcaResource,
+                open.orca.rest.OrcaMasterResource,
                 open.dolphin.orca.rest.OrcaAppointmentResource,
                 open.dolphin.orca.rest.OrcaVisitResource,
                 open.dolphin.orca.rest.OrcaPatientBatchResource,
