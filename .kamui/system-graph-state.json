@@ -5,8 +5,8 @@
   "graphRenderingMode": "media",
   "linkDisplayMode": "all",
   "graphStats": {
-    "totalNodes": 2,
-    "folders": 2,
+    "totalNodes": 1,
+    "folders": 1,
     "files": 0,
     "images": 0,
     "videos": 0,
@@ -23,995 +23,14 @@
   "directoryTree": {
     "name": "OpenDolphin_WebClient",
     "type": "directory",
-    "path": "OpenDolphin_WebClient",
-    "children": [
-      {
-        "name": ".devcontainer",
-        "type": "directory",
-        "path": ".devcontainer",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": ".github",
-        "type": "directory",
-        "path": ".github",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": ".kamui",
-        "type": "directory",
-        "path": ".kamui",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": ".vscode",
-        "type": "directory",
-        "path": ".vscode",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": ".worktrees",
-        "type": "directory",
-        "path": ".worktrees",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": "artifacts",
-        "type": "directory",
-        "path": "artifacts",
-        "children": [
-          {
-            "name": "api-stability",
-            "type": "directory",
-            "path": "artifacts/api-stability",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "ci-dryrun",
-            "type": "directory",
-            "path": "artifacts/ci-dryrun",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "e2e",
-            "type": "directory",
-            "path": "artifacts/e2e",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "e2e-connect",
-            "type": "directory",
-            "path": "artifacts/e2e-connect",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "error-audit",
-            "type": "directory",
-            "path": "artifacts/error-audit",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "external-interface",
-            "type": "directory",
-            "path": "artifacts/external-interface",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "mac-dev-login",
-            "type": "directory",
-            "path": "artifacts/mac-dev-login",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "manual",
-            "type": "directory",
-            "path": "artifacts/manual",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "observability",
-            "type": "directory",
-            "path": "artifacts/observability",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "orca-connectivity",
-            "type": "directory",
-            "path": "artifacts/orca-connectivity",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "parity-manual",
-            "type": "directory",
-            "path": "artifacts/parity-manual",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "perf",
-            "type": "directory",
-            "path": "artifacts/perf",
-            "children": [],
-            "hasMore": true
-          }
-        ]
-      },
-      {
-        "name": "ci",
-        "type": "directory",
-        "path": "ci",
-        "children": [
-          {
-            "name": "jenkins",
-            "type": "directory",
-            "path": "ci/jenkins",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "client",
-        "type": "directory",
-        "path": "client",
-        "children": [
-          {
-            "name": "src",
-            "type": "directory",
-            "path": "client/src",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "target",
-            "type": "directory",
-            "path": "client/target",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "common",
-        "type": "directory",
-        "path": "common",
-        "children": [
-          {
-            "name": "src",
-            "type": "directory",
-            "path": "common/src",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "target",
-            "type": "directory",
-            "path": "common/target",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "docker",
-        "type": "directory",
-        "path": "docker",
-        "children": [
-          {
-            "name": "orca",
-            "type": "directory",
-            "path": "docker/orca",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "output",
-            "type": "directory",
-            "path": "docker/output",
-            "children": [],
-            "hasMore": true
-          }
-        ]
-      },
-      {
-        "name": "docs",
-        "type": "directory",
-        "path": "docs",
-        "children": [
-          {
-            "name": "archive",
-            "type": "directory",
-            "path": "docs/archive",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "managerdocs",
-            "type": "directory",
-            "path": "docs/managerdocs",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "server",
-            "type": "directory",
-            "path": "docs/server",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "server-modernization",
-            "type": "directory",
-            "path": "docs/server-modernization",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "server-modernized",
-            "type": "directory",
-            "path": "docs/server-modernized",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "web-client",
-            "type": "directory",
-            "path": "docs/web-client",
-            "children": [],
-            "hasMore": true
-          }
-        ]
-      },
-      {
-        "name": "ext_lib",
-        "type": "directory",
-        "path": "ext_lib",
-        "children": [
-          {
-            "name": "OpenDolphin-ORCA-OQS",
-            "type": "directory",
-            "path": "ext_lib/OpenDolphin-ORCA-OQS",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "node_modules",
-        "type": "directory",
-        "path": "node_modules",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": "ops",
-        "type": "directory",
-        "path": "ops",
-        "children": [
-          {
-            "name": "analytics",
-            "type": "directory",
-            "path": "ops/analytics",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "assets",
-            "type": "directory",
-            "path": "ops/assets",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "base",
-            "type": "directory",
-            "path": "ops/base",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "db",
-            "type": "directory",
-            "path": "ops/db",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "legacy-server",
-            "type": "directory",
-            "path": "ops/legacy-server",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "modernized-server",
-            "type": "directory",
-            "path": "ops/modernized-server",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "monitoring",
-            "type": "directory",
-            "path": "ops/monitoring",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "postman",
-            "type": "directory",
-            "path": "ops/postman",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "shared",
-            "type": "directory",
-            "path": "ops/shared",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "tests",
-            "type": "directory",
-            "path": "ops/tests",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "tools",
-            "type": "directory",
-            "path": "ops/tools",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "ORCAcertification",
-        "type": "directory",
-        "path": "ORCAcertification",
-        "children": []
-      },
-      {
-        "name": "patches",
-        "type": "directory",
-        "path": "patches",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": "payloads",
-        "type": "directory",
-        "path": "payloads",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": "questions",
-        "type": "directory",
-        "path": "questions",
-        "children": [],
-        "hasMore": true
-      },
-      {
-        "name": "reporting",
-        "type": "directory",
-        "path": "reporting",
-        "children": [
-          {
-            "name": "src",
-            "type": "directory",
-            "path": "reporting/src",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "target",
-            "type": "directory",
-            "path": "reporting/target",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "scripts",
-        "type": "directory",
-        "path": "scripts",
-        "children": [
-          {
-            "name": "api_parity_payloads",
-            "type": "directory",
-            "path": "scripts/api_parity_payloads",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "compat",
-            "type": "directory",
-            "path": "scripts/compat",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "jms",
-            "type": "directory",
-            "path": "scripts/jms",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "tools",
-            "type": "directory",
-            "path": "scripts/tools",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "server",
-        "type": "directory",
-        "path": "server",
-        "children": [
-          {
-            "name": "server",
-            "type": "directory",
-            "path": "server/server",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "src",
-            "type": "directory",
-            "path": "server/src",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "target",
-            "type": "directory",
-            "path": "server/target",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "server-modernized",
-        "type": "directory",
-        "path": "server-modernized",
-        "children": [
-          {
-            "name": "config",
-            "type": "directory",
-            "path": "server-modernized/config",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "reporting",
-            "type": "directory",
-            "path": "server-modernized/reporting",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "src",
-            "type": "directory",
-            "path": "server-modernized/src",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "target",
-            "type": "directory",
-            "path": "server-modernized/target",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "tools",
-            "type": "directory",
-            "path": "server-modernized/tools",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "src",
-        "type": "directory",
-        "path": "src",
-        "children": [
-          {
-            "name": "modernized_server",
-            "type": "directory",
-            "path": "src/modernized_server",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "webclient_modernized_bridge",
-            "type": "directory",
-            "path": "src/webclient_modernized_bridge",
-            "children": [],
-            "hasMore": true
-          }
-        ]
-      },
-      {
-        "name": "test-results",
-        "type": "directory",
-        "path": "test-results",
-        "children": []
-      },
-      {
-        "name": "tests",
-        "type": "directory",
-        "path": "tests",
-        "children": [
-          {
-            "name": "e2e",
-            "type": "directory",
-            "path": "tests/e2e",
-            "children": [],
-            "hasMore": true
-          }
-        ]
-      },
-      {
-        "name": "tmp",
-        "type": "directory",
-        "path": "tmp",
-        "children": [
-          {
-            "name": "api-stability-test",
-            "type": "directory",
-            "path": "tmp/api-stability-test",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "attachment-mode",
-            "type": "directory",
-            "path": "tmp/attachment-mode",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "claim-tests",
-            "type": "directory",
-            "path": "tmp/claim-tests",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "factor2",
-            "type": "directory",
-            "path": "tmp/factor2",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "fakebin",
-            "type": "directory",
-            "path": "tmp/fakebin",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "java-time",
-            "type": "directory",
-            "path": "tmp/java-time",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "legacy-fixtures",
-            "type": "directory",
-            "path": "tmp/legacy-fixtures",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "license",
-            "type": "directory",
-            "path": "tmp/license",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "local-bin",
-            "type": "directory",
-            "path": "tmp/local-bin",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "manual-audit",
-            "type": "directory",
-            "path": "tmp/manual-audit",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "mml-tests",
-            "type": "directory",
-            "path": "tmp/mml-tests",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "npm-cache",
-            "type": "directory",
-            "path": "tmp/npm-cache",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "orca-api-payloads",
-            "type": "directory",
-            "path": "tmp/orca-api-payloads",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "orca-db-schema",
-            "type": "directory",
-            "path": "tmp/orca-db-schema",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "orca-docs",
-            "type": "directory",
-            "path": "tmp/orca-docs",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "parity-headers",
-            "type": "directory",
-            "path": "tmp/parity-headers",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "parity-letter",
-            "type": "directory",
-            "path": "tmp/parity-letter",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "parity-touch",
-            "type": "directory",
-            "path": "tmp/parity-touch",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "patch-legacy",
-            "type": "directory",
-            "path": "tmp/patch-legacy",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "playwright-libs",
-            "type": "directory",
-            "path": "tmp/playwright-libs",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "reporting-headers",
-            "type": "directory",
-            "path": "tmp/reporting-headers",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "rest-error-headers",
-            "type": "directory",
-            "path": "tmp/rest-error-headers",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "secrets-repro",
-            "type": "directory",
-            "path": "tmp/secrets-repro",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "sql",
-            "type": "directory",
-            "path": "tmp/sql",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "trace",
-            "type": "directory",
-            "path": "tmp/trace",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "trace-headers",
-            "type": "directory",
-            "path": "tmp/trace-headers",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "trace-review",
-            "type": "directory",
-            "path": "tmp/trace-review",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "user-registration",
-            "type": "directory",
-            "path": "tmp/user-registration",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": "web-client",
-        "type": "directory",
-        "path": "web-client",
-        "children": [
-          {
-            "name": "artifacts",
-            "type": "directory",
-            "path": "web-client/artifacts",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "public",
-            "type": "directory",
-            "path": "web-client/public",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "scripts",
-            "type": "directory",
-            "path": "web-client/scripts",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "src",
-            "type": "directory",
-            "path": "web-client/src",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "test-results",
-            "type": "directory",
-            "path": "web-client/test-results",
-            "children": [],
-            "hasMore": true
-          },
-          {
-            "name": "tmp",
-            "type": "directory",
-            "path": "web-client/tmp",
-            "children": [],
-            "hasMore": true
-          }
-        ],
-        "hasMore": true
-      },
-      {
-        "name": ".dockerignore",
-        "type": "file",
-        "path": ".dockerignore"
-      },
-      {
-        "name": ".DS_Store",
-        "type": "file",
-        "path": ".DS_Store"
-      },
-      {
-        "name": ".env",
-        "type": "file",
-        "path": ".env"
-      },
-      {
-        "name": ".env.example",
-        "type": "file",
-        "path": ".env.example"
-      },
-      {
-        "name": ".env.modernized",
-        "type": "file",
-        "path": ".env.modernized"
-      },
-      {
-        "name": ".env.sample",
-        "type": "file",
-        "path": ".env.sample"
-      },
-      {
-        "name": ".gitattributes",
-        "type": "file",
-        "path": ".gitattributes"
-      },
-      {
-        "name": ".gitignore",
-        "type": "file",
-        "path": ".gitignore"
-      },
-      {
-        "name": ".gitmodules",
-        "type": "file",
-        "path": ".gitmodules"
-      },
-      {
-        "name": "AGENTS.md",
-        "type": "file",
-        "path": "AGENTS.md"
-      },
-      {
-        "name": "build",
-        "type": "file",
-        "path": "build"
-      },
-      {
-        "name": "CACHED",
-        "type": "file",
-        "path": "CACHED"
-      },
-      {
-        "name": "docker-compose.modernized.dev.yml",
-        "type": "file",
-        "path": "docker-compose.modernized.dev.yml"
-      },
-      {
-        "name": "docker-compose.yml",
-        "type": "file",
-        "path": "docker-compose.yml"
-      },
-      {
-        "name": "facility.json",
-        "type": "file",
-        "path": "facility.json"
-      },
-      {
-        "name": "fallback",
-        "type": "file",
-        "path": "fallback"
-      },
-      {
-        "name": "GEMINI.md",
-        "type": "file",
-        "path": "GEMINI.md"
-      },
-      {
-        "name": "Jenkinsfile",
-        "type": "file",
-        "path": "Jenkinsfile"
-      },
-      {
-        "name": "LICENSE",
-        "type": "file",
-        "path": "LICENSE"
-      },
-      {
-        "name": "package-lock.json",
-        "type": "file",
-        "path": "package-lock.json"
-      },
-      {
-        "name": "package.json",
-        "type": "file",
-        "path": "package.json"
-      },
-      {
-        "name": "payload.json",
-        "type": "file",
-        "path": "payload.json"
-      },
-      {
-        "name": "playwright.config.ts",
-        "type": "file",
-        "path": "playwright.config.ts"
-      },
-      {
-        "name": "pom.server-classic.xml",
-        "type": "file",
-        "path": "pom.server-classic.xml"
-      },
-      {
-        "name": "pom.server-modernized.xml",
-        "type": "file",
-        "path": "pom.server-modernized.xml"
-      },
-      {
-        "name": "pom.xml",
-        "type": "file",
-        "path": "pom.xml"
-      },
-      {
-        "name": "README.md",
-        "type": "file",
-        "path": "README.md"
-      },
-      {
-        "name": "server_error_logs.txt",
-        "type": "file",
-        "path": "server_error_logs.txt"
-      },
-      {
-        "name": "server_full_logs.txt",
-        "type": "file",
-        "path": "server_full_logs.txt"
-      },
-      {
-        "name": "server_latest_logs.txt",
-        "type": "file",
-        "path": "server_latest_logs.txt"
-      },
-      {
-        "name": "server_logs_2.txt",
-        "type": "file",
-        "path": "server_logs_2.txt"
-      },
-      {
-        "name": "server_logs.txt",
-        "type": "file",
-        "path": "server_logs.txt"
-      },
-      {
-        "name": "server.log",
-        "type": "file",
-        "path": "server.log"
-      }
-    ]
+    "children": []
   },
   "graphData": {
     "nodes": [
       {
-        "id": "workspace",
-        "name": "workspace",
-        "path": "workspace",
+        "id": "OpenDolphin_WebClient",
+        "name": "OpenDolphin_WebClient",
+        "path": "OpenDolphin_WebClient",
         "type": "directory",
         "lines": 0,
         "val": 14,
@@ -1023,43 +42,15 @@
         "highlighted": false,
         "parentPath": null,
         "childFileCount": 0,
-        "x": 7.061910830836997,
-        "y": 13.751200904013626,
-        "z": -6.545243026222346,
-        "vx": 2.9778502051908993e-24,
-        "vy": 7.940933880509065e-24,
-        "vz": -1.9852334701272663e-24
-      },
-      {
-        "id": "workspace/src",
-        "name": "src",
-        "path": "workspace/src",
-        "type": "directory",
-        "lines": 0,
-        "val": 14,
-        "color": "#4d515a",
-        "baseColor": "#4ec9b0",
-        "originalColor": "#4ec9b0",
-        "defaultGlow": 0.18,
-        "glowIntensity": 0.18,
-        "highlighted": false,
-        "parentPath": "workspace",
-        "childFileCount": 0,
-        "x": -7.061910830836997,
-        "y": -13.751200904013626,
-        "z": 6.545243026222346,
-        "vx": -2.9778502051908993e-24,
-        "vy": -7.940933880509065e-24,
-        "vz": 1.9852334701272663e-24
+        "x": 1359.2812794272731,
+        "y": -6216.19625401829,
+        "z": 2640.8197621334207,
+        "vx": 750.6085517199258,
+        "vy": -1831.1220147065499,
+        "vz": 740.2329650871395
       }
     ],
-    "links": [
-      {
-        "source": "workspace",
-        "target": "workspace/src",
-        "type": "tree"
-      }
-    ]
+    "links": []
   },
   "trackedFiles": [
     ".devcontainer/README.md",
@@ -1090,6 +81,9 @@
     ".kamui/gantte/test.yaml",
     ".kamui/manager/202511232131_eval_task-1763901129082-266549.html",
     ".kamui/manager/202511232131_eval_task-1763901133752-0b600e.html",
+    ".kamui/manager/202511271019_eval_task-1764205656539-be8244.html",
+    ".kamui/manager/202511271218_eval_task-1764212937811-25c985.html",
+    ".kamui/manager/202511271221_eval_task-1764213140138-853159.html",
     ".kamui/model-versions-cache.json",
     ".kamui/prompt/merge-prompt.txt",
     ".kamui/prompt/restart-prompt.txt",
@@ -8107,6 +7101,7 @@
     "docs/web-client/architecture/REST_API_INVENTORY.md",
     "docs/web-client/architecture/SERVER_MODERNIZATION_PLAN.md",
     "docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md",
+    "docs/web-client/architecture/ui-api-mapping.md",
     "docs/web-client/design-system/ALPHA_COMPONENTS.md",
     "docs/web-client/design-system/THEME_TOKEN_MEMO_20260506.md",
     "docs/web-client/features/CARE_MAP_TIMELINE.md",
@@ -8143,8 +7138,11 @@
     "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
     "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
     "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+    "docs/web-client/ux/charts-claim-ui-policy.md",
+    "docs/web-client/ux/patients-admin-ui-policy.md",
     "docs/web-client/ux/performance/orca-master-fcp-improvement.md",
     "docs/web-client/ux/performance/orca-master-performance-plan.md",
+    "docs/web-client/ux/reception-schedule-ui-policy.md",
     "ext_lib/AppleJavaExtensions.jar",
     "ext_lib/OpenDolphin-ORCA-OQS",
     "ext_lib/iTextAsian.jar",
@@ -12734,44 +11732,3927 @@
     "selectedPath": null
   },
   "directoryTreeMeta": {
-    "mode": "summary",
-    "maxDepthApplied": 2,
-    "maxEntriesPerDirectory": 200,
-    "isPartial": true
+    "mode": "full",
+    "maxDepthApplied": 10,
+    "maxEntriesPerDirectory": 0,
+    "isPartial": false
   },
   "gitHistoryMeta": {
-    "mode": "summary",
-    "isPartial": true,
-    "heavyComputationSkipped": true
+    "mode": "full",
+    "isPartial": false,
+    "branchPulse": {
+      "generatedAt": 1764238936818,
+      "targets": [
+        "master",
+        "task-1764232253923-fe2331",
+        "task-1764232258705-4a7b6e",
+        "task-yaml-g58y0t-src-webclient-mod",
+        "main",
+        "task/task-1764220478751-a06136",
+        "task/task-1764213058790-94a0b2",
+        "task/task-1764212937811-25c985",
+        "task/yaml-13tbwys-src-webclient-mo",
+        "task/yaml-1adisab-src-webclient-mo",
+        "task-yaml-w9jyfd-src-webclient-mo",
+        "task-yaml-7ssxuk-src-webclient-mo",
+        "task-yaml-qsrtp8-src-webclient-mo",
+        "task-yaml-1xh113s-src-webclient-mo",
+        "task-yaml-1xao46t-src-modernized-s",
+        "task-yaml-18pcer5-src-modernized-s",
+        "task-yaml-8rm4nf-src-modernized-s",
+        "task-yaml-x5oem4-src-modernized-s",
+        "task-yaml-1y9h0hm-src-modernized-s",
+        "task/yaml-14k6eby-src-modernized-s",
+        "task-yaml-1cwkywj-src-modernized-s",
+        "task-yaml-7lgk3g-src-modernized-s",
+        "task-yaml-spqpu7-src-modernized-s",
+        "task-yaml-11psei7-src-modernized-s",
+        "task-1763613140-ui-overhaul",
+        "task/runid-20251120-governance",
+        "circlemouth/codex/verify-server_modernized_debug_checklist-content",
+        "circlemouth/codex/add-delete-tests-for-pvtservicebean",
+        "circlemouth/codex/refactor-jsontouchresource-endpoints",
+        "circlemouth/codex/replace-logger-with-org.slf4j-pdeqvr",
+        "circlemouth/codex/replace-javax.naming.initialcontext-with-jakarta.naming.init",
+        "circlemouth/codex/remove-jboss-annotations-from-messagesender",
+        "circlemouth/codex/add-jndi-name-property-configuration",
+        "circlemouth/codex/organize-code-and-documentation-structure",
+        "circlemouth/codex/3.7",
+        "circlemouth/codex/review-and-fix-phase-3.5-implementation",
+        "circlemouth/codex-63w566",
+        "circlemouth/codex/review-and-fix-server-modernization-phase-3.3",
+        "circlemouth/codex/review-and-fix-stage-3.2-of-server-modernization-plan",
+        "circlemouth/codex/review-and-fix-server-modernization-plan-3.1",
+        "circlemouth/codex/address-coding-tasks-for-phase-3.8",
+        "circlemouth/codex/3.6",
+        "circlemouth/codex/3.43.5",
+        "circlemouth/codex-kbtb0n",
+        "circlemouth/codex-tb2zhv",
+        "circlemouth/codex/add-server-modernized-to-root-project-modules",
+        "circlemouth/codex/complete-server-modernization-phase-3.2",
+        "circlemouth/codex/3.1",
+        "circlemouth/codex/create-modernization-plan-for-server",
+        "circlemouth/codex/clarify-code-change-policy-for-modernization",
+        "circlemouth/codex/ui",
+        "circlemouth/codex/consolidate-and-clean-up-documentation",
+        "circlemouth/codex/implement-half-of-unimplemented-api-and-ui-vjqpz9",
+        "circlemouth/codex/organize-ui-placement-for-unrefined-apis",
+        "circlemouth/codex/list-all-implemented-apis-for-on-prem-client",
+        "circlemouth/codex/improve-caremap-functionality-in-web-client",
+        "circlemouth/codex/compare-on-premise-and-web-client-features",
+        "circlemouth/codex/implement-checkboxes-for-missing-web-client-features",
+        "circlemouth/codex/implement-missing-features-list-for-web-client",
+        "circlemouth/codex/implement-missing-features-for-web-client",
+        "circlemouth/codex/compare-on-prem-and-web-client-features",
+        "circlemouth/codex/implement-web-client-for-checklist",
+        "circlemouth/codex/implement-web-client-for-checklist-completion",
+        "circlemouth/codex/implement-web-client-completion",
+        "circlemouth/codex/add-comparison-features-documentation",
+        "circlemouth/codex/add-feature-comparison-documentation-epdfe8",
+        "circlemouth/codex/document-implementation-of-functional-ui",
+        "circlemouth/codex/compare-web-client-with-on-premise-client",
+        "circlemouth/codex/add-order-management-functionality-to-patient-chart",
+        "circlemouth/codex/create-ui-layout-for-medical-chart",
+        "circlemouth/codex/list-required-server-side-input-fields",
+        "circlemouth/codex/deploy-test-server-and-document-setup-jssqh1",
+        "circlemouth/codex/complete-phase-4-tasks",
+        "circlemouth/codex/complete-phase-3-tasks",
+        "circlemouth/codex/develop-half-of-phase-3",
+        "circlemouth/codex/2-3tr0l4",
+        "circlemouth/codex/complete-half-of-phase-2-work",
+        "circlemouth/codex/complete-phase-1-of-development-documentation",
+        "dolphin-dev/dolphin-dev-patch-develop",
+        "MasudaNaika/master"
+      ],
+      "statsByBranch": {
+        "master": {
+          "branch": "master",
+          "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "baseRef": "origin/master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 0,
+            "fileCount": 0
+          },
+          "upstream": null
+        },
+        "task-1764232253923-fe2331": {
+          "branch": "task-1764232253923-fe2331",
+          "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 0,
+            "fileCount": 0
+          },
+          "upstream": null
+        },
+        "task-1764232258705-4a7b6e": {
+          "branch": "task-1764232258705-4a7b6e",
+          "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 0,
+            "fileCount": 0
+          },
+          "upstream": null
+        },
+        "task-yaml-g58y0t-src-webclient-mod": {
+          "branch": "task-yaml-g58y0t-src-webclient-mod",
+          "head": "65dff59867e025bfdc5175f1c5b40ee4f29bc216",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "65dff59867e025bfdc5175f1c5b40ee4f29bc216",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 11,
+            "fileCount": 10
+          },
+          "upstream": null
+        },
+        "task/task-1764212937811-25c985": {
+          "branch": "task/task-1764212937811-25c985",
+          "head": "09d970073a4f9b6ae519240d1f5188bb42400280",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "09d970073a4f9b6ae519240d1f5188bb42400280",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 9,
+            "fileCount": 9
+          },
+          "upstream": null
+        },
+        "task/task-1764213058790-94a0b2": {
+          "branch": "task/task-1764213058790-94a0b2",
+          "head": "d26cac219a99b7bde99c63300e0e69091fe6d468",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "d26cac219a99b7bde99c63300e0e69091fe6d468",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 9,
+            "fileCount": 9
+          },
+          "upstream": null
+        },
+        "task/task-1764220478751-a06136": {
+          "branch": "task/task-1764220478751-a06136",
+          "head": "2b1cd670f4b65067aff1fe7696e238a75f2ea192",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "2b1cd670f4b65067aff1fe7696e238a75f2ea192",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 9,
+            "fileCount": 9
+          },
+          "upstream": null
+        },
+        "task/yaml-13tbwys-src-webclient-mo": {
+          "branch": "task/yaml-13tbwys-src-webclient-mo",
+          "head": "fbc2aecf69b0fd0affc37f1b3bd56405f9b31f34",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "fbc2aecf69b0fd0affc37f1b3bd56405f9b31f34",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 23,
+            "fileCount": 5650
+          },
+          "upstream": null
+        },
+        "task/yaml-1adisab-src-webclient-mo": {
+          "branch": "task/yaml-1adisab-src-webclient-mo",
+          "head": "c0e8bea9fd3d55a13e490a488a1101368f09c3ee",
+          "baseRef": "master",
+          "baseHead": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "mergeBase": "c0e8bea9fd3d55a13e490a488a1101368f09c3ee",
+          "divergence": {
+            "aheadCount": 0,
+            "fileCount": 0
+          },
+          "baseline": {
+            "aheadCount": 0,
+            "behindCount": 27,
+            "fileCount": 5650
+          },
+          "upstream": null
+        }
+      }
+    }
   },
   "gitHistoryState": {
     "selectedTimelineIndex": 1,
-    "activeCommitHash": null,
+    "activeCommitHash": "def4567ghi",
     "entries": [
       {
         "type": "live",
         "label": "現在のコードベース",
         "files": [],
-        "branch": null,
-        "targetCommitHash": null,
-        "worktreePath": null,
-        "timestamp": 1764205334361,
+        "branch": "master",
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+        "timestamp": 1764238972925,
         "lane": 0,
-        "branchLabel": null,
-        "branchTags": [],
+        "branchLabel": "master",
+        "branchTags": [
+          "master"
+        ],
         "isDefaultWorktree": true,
         "branchColor": "#4f85e8",
         "index": 0
+      },
+      {
+        "type": "commit",
+        "label": "Improve analytics",
+        "commit": {
+          "hash": "def4567ghi",
+          "subject": "Improve analytics",
+          "author": "KAMUI",
+          "timestamp": 1764229384,
+          "parents": [
+            "cde3456fgh"
+          ],
+          "parent": "cde3456fgh",
+          "branches": []
+        },
+        "commitHash": "def4567ghi",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "cde3456fgh",
+            "lane": 0
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 1
+      },
+      {
+        "type": "unstaged",
+        "label": "未ステージ (31)",
+        "files": [
+          "reporting/target/classes/open/dolphin/reporting/PdfDocumentWriter.class",
+          "reporting/target/classes/open/dolphin/reporting/PdfRenderer.class",
+          "reporting/target/classes/open/dolphin/reporting/PdfRendererKt.class",
+          "reporting/target/classes/open/dolphin/reporting/PdfSigningService.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportContext$Builder.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportContext.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportDate.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportDateTime.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportLocales.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportPatient.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportSummaryItem.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportTemplateEngine.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportingEngine$RenderingContext.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportingEngine.class",
+          "reporting/target/classes/open/dolphin/reporting/ReportingResult.class",
+          "reporting/target/classes/open/dolphin/reporting/SigningConfig$Builder.class",
+          "reporting/target/classes/open/dolphin/reporting/SigningConfig.class",
+          "reporting/target/classes/open/dolphin/reporting/api/ReportingPatientPayload.class",
+          "reporting/target/classes/open/dolphin/reporting/api/ReportingPayload.class",
+          "reporting/target/classes/open/dolphin/reporting/api/ReportingSigningPayload.class",
+          "reporting/target/classes/open/dolphin/reporting/api/ReportingSummaryItemPayload.class",
+          "reporting/target/classes/reporting/glossary/en-us.csv",
+          "reporting/target/classes/reporting/templates/common/footer.vm",
+          "reporting/target/classes/reporting/templates/common/header.vm",
+          "reporting/target/classes/reporting/templates/common/karte_helpers.vm",
+          "reporting/target/classes/reporting/templates/patient_summary_en_US.vm",
+          "reporting/target/classes/reporting/templates/patient_summary_ja_JP.vm",
+          "reporting/target/classes/reporting/templates/receipt_export_en_US.vm",
+          "reporting/target/classes/reporting/templates/receipt_export_ja_JP.vm",
+          ".kamui/manager/202511271835_eval_task-1764232253923-fe2331.html",
+          ".kamui/manager/202511271910_eval_task-1764232253923-fe2331.html"
+        ],
+        "branch": "master",
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+        "timestamp": 1764238972925,
+        "sortOrder": 0,
+        "lane": 0,
+        "branchColor": "#4f85e8",
+        "index": 2
+      },
+      {
+        "type": "staged",
+        "label": "ステージ済み (1)",
+        "files": [
+          "kamui/system-graph-state.json"
+        ],
+        "branch": "master",
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+        "timestamp": 1764238972925,
+        "sortOrder": 1,
+        "lane": 0,
+        "branchColor": "#4f85e8",
+        "index": 3
+      },
+      {
+        "type": "unstaged",
+        "label": "未ステージ [null] (35)",
+        "files": [
+          "GEMINI.md",
+          "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+          "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+          "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+          "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+          "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+          "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+          "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+          "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+          "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+          "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+          "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+          "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+          "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+          "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+          "docs/web-client/README.md",
+          "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+          "docs/web-client/planning/phase2/DOC_STATUS.md",
+          "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+          "docs/web-client/process/ROADMAP.md",
+          "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+          "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+          "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+          "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+          "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+          "docs/web-client/ux/patients-admin-ui-policy.md",
+          "patches/stamp_get_public_plan.md",
+          "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+          "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+          "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+          "docs/web-client/ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md",
+          "docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md",
+          "docs/web-client/ux/legacy/KARTE_SCREEN_IMPLEMENTATION.md",
+          "docs/web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md",
+          "docs/web-client/ux/ux-documentation-plan.md"
+        ],
+        "branch": null,
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+        "timestamp": 1764238935026,
+        "sortOrder": 0,
+        "lane": 0,
+        "branchColor": "#4f85e8",
+        "index": 4
+      },
+      {
+        "type": "staged",
+        "label": "ステージ済み [null] (1)",
+        "files": [
+          "GENTS.md"
+        ],
+        "branch": null,
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+        "timestamp": 1764238935026,
+        "sortOrder": 1,
+        "lane": 0,
+        "branchColor": "#4f85e8",
+        "index": 5
+      },
+      {
+        "type": "unstaged",
+        "label": "未ステージ [task-1764232253923-fe2331] (43)",
+        "files": [
+          ".kamui/apps/webclient-sync-ui-plan.yaml",
+          ".kamui/system-graph-state.json",
+          "AGENTS.md",
+          "GEMINI.md",
+          "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+          "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+          "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+          "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+          "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+          "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+          "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+          "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+          "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+          "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+          "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+          "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+          "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+          "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+          "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+          "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+          "docs/web-client/README.md",
+          "docs/web-client/operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md",
+          "docs/web-client/operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md",
+          "docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md",
+          "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+          "docs/web-client/planning/phase2/DOC_STATUS.md",
+          "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+          "docs/web-client/process/ROADMAP.md",
+          "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+          "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+          "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+          "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+          "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+          "docs/web-client/ux/charts-claim-ui-policy.md",
+          "docs/web-client/ux/patients-admin-ui-policy.md",
+          "docs/web-client/ux/performance/orca-master-fcp-improvement.md",
+          "docs/web-client/ux/performance/orca-master-performance-plan.md",
+          "docs/web-client/ux/reception-schedule-ui-policy.md",
+          "patches/maven_duplicate_fix_plan.patch",
+          "patches/stamp_get_public_plan.md",
+          "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+          "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+          "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md"
+        ],
+        "branch": "task-1764232253923-fe2331",
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+        "timestamp": 1764238935184,
+        "sortOrder": 0,
+        "lane": 3,
+        "branchColor": "#4fe8b8",
+        "index": 6
+      },
+      {
+        "type": "staged",
+        "label": "ステージ済み [task-1764232253923-fe2331] (1)",
+        "files": [
+          "kamui/apps/modernized-server-connect-plan.yaml"
+        ],
+        "branch": "task-1764232253923-fe2331",
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+        "timestamp": 1764238935184,
+        "sortOrder": 1,
+        "lane": 3,
+        "branchColor": "#4fe8b8",
+        "index": 7
+      },
+      {
+        "type": "unstaged",
+        "label": "未ステージ [task-1764232258705-4a7b6e] (33)",
+        "files": [
+          "GEMINI.md",
+          "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+          "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+          "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+          "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+          "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+          "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+          "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+          "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+          "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+          "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+          "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+          "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+          "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+          "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+          "docs/web-client/README.md",
+          "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+          "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+          "docs/web-client/process/ROADMAP.md",
+          "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+          "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+          "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+          "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+          "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+          "docs/web-client/ux/charts-claim-ui-policy.md",
+          "docs/web-client/ux/patients-admin-ui-policy.md",
+          "docs/web-client/ux/reception-schedule-ui-policy.md",
+          "patches/maven_duplicate_fix_plan.patch",
+          "patches/stamp_get_public_plan.md",
+          "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+          "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+          "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+          "docs/web-client/ux/management-ui-guide.md"
+        ],
+        "branch": "task-1764232258705-4a7b6e",
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+        "timestamp": 1764238935246,
+        "sortOrder": 0,
+        "lane": 2,
+        "branchColor": "#e8a84f",
+        "index": 8
+      },
+      {
+        "type": "staged",
+        "label": "ステージ済み [task-1764232258705-4a7b6e] (1)",
+        "files": [
+          "GENTS.md"
+        ],
+        "branch": "task-1764232258705-4a7b6e",
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+        "timestamp": 1764238935246,
+        "sortOrder": 1,
+        "lane": 2,
+        "branchColor": "#e8a84f",
+        "index": 9
+      },
+      {
+        "type": "unstaged",
+        "label": "未ステージ [null] (34)",
+        "files": [
+          "GEMINI.md",
+          "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+          "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+          "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+          "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+          "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+          "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+          "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+          "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+          "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+          "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+          "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+          "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+          "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+          "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+          "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+          "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+          "docs/web-client/README.md",
+          "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+          "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+          "docs/web-client/process/ROADMAP.md",
+          "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+          "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+          "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+          "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+          "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+          "docs/web-client/ux/charts-claim-ui-policy.md",
+          "docs/web-client/ux/patients-admin-ui-policy.md",
+          "docs/web-client/ux/reception-schedule-ui-policy.md",
+          "patches/maven_duplicate_fix_plan.patch",
+          "patches/stamp_get_public_plan.md",
+          "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+          "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+          "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md"
+        ],
+        "branch": null,
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+        "timestamp": 1764238935450,
+        "sortOrder": 0,
+        "lane": 0,
+        "branchColor": "#4f85e8",
+        "index": 10
+      },
+      {
+        "type": "staged",
+        "label": "ステージ済み [null] (1)",
+        "files": [
+          "GENTS.md"
+        ],
+        "branch": null,
+        "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+        "timestamp": 1764238935450,
+        "sortOrder": 1,
+        "lane": 0,
+        "branchColor": "#4f85e8",
+        "index": 11
+      },
+      {
+        "type": "anchor",
+        "label": "[task-1764232251496-d8f056]",
+        "branch": null,
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+        "parentCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "lane": 0,
+        "isMerged": false,
+        "mergeCommitHash": null,
+        "statusChildren": [
+          {
+            "type": "unstaged",
+            "label": "未ステージ [null] (35)",
+            "files": [
+              "GEMINI.md",
+              "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+              "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+              "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+              "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+              "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+              "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+              "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+              "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+              "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+              "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+              "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+              "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+              "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+              "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+              "docs/web-client/README.md",
+              "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+              "docs/web-client/planning/phase2/DOC_STATUS.md",
+              "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+              "docs/web-client/process/ROADMAP.md",
+              "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+              "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+              "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+              "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+              "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+              "docs/web-client/ux/patients-admin-ui-policy.md",
+              "patches/stamp_get_public_plan.md",
+              "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+              "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+              "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+              "docs/web-client/ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md",
+              "docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md",
+              "docs/web-client/ux/legacy/KARTE_SCREEN_IMPLEMENTATION.md",
+              "docs/web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md",
+              "docs/web-client/ux/ux-documentation-plan.md"
+            ],
+            "branch": null,
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+            "timestamp": 1764238935026,
+            "sortOrder": 0,
+            "lane": 0,
+            "branchColor": "#4f85e8",
+            "index": 4
+          },
+          {
+            "type": "staged",
+            "label": "ステージ済み [null] (1)",
+            "files": [
+              "GENTS.md"
+            ],
+            "branch": null,
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+            "timestamp": 1764238935026,
+            "sortOrder": 1,
+            "lane": 0,
+            "branchColor": "#4f85e8",
+            "index": 5
+          }
+        ],
+        "isDefaultWorktree": false,
+        "renderMode": "node",
+        "shouldHide": false,
+        "tagLabel": null,
+        "taskId": "task-1764232251496-d8f056",
+        "taskStatus": null,
+        "taskStatusLabel": null,
+        "taskName": null,
+        "tooltip": "ID: task-1764232251496-d8f056\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+        "branchColor": "#4f85e8",
+        "index": 12
+      },
+      {
+        "type": "anchor",
+        "label": "[task-1764232253923-fe2331]",
+        "branch": "task-1764232253923-fe2331",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+        "parentCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "lane": 3,
+        "isMerged": false,
+        "mergeCommitHash": null,
+        "statusChildren": [
+          {
+            "type": "unstaged",
+            "label": "未ステージ [task-1764232253923-fe2331] (43)",
+            "files": [
+              ".kamui/apps/webclient-sync-ui-plan.yaml",
+              ".kamui/system-graph-state.json",
+              "AGENTS.md",
+              "GEMINI.md",
+              "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+              "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+              "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+              "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+              "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+              "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+              "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+              "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+              "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+              "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+              "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+              "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+              "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+              "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+              "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+              "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+              "docs/web-client/README.md",
+              "docs/web-client/operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md",
+              "docs/web-client/operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md",
+              "docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md",
+              "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+              "docs/web-client/planning/phase2/DOC_STATUS.md",
+              "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+              "docs/web-client/process/ROADMAP.md",
+              "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+              "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+              "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+              "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+              "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+              "docs/web-client/ux/charts-claim-ui-policy.md",
+              "docs/web-client/ux/patients-admin-ui-policy.md",
+              "docs/web-client/ux/performance/orca-master-fcp-improvement.md",
+              "docs/web-client/ux/performance/orca-master-performance-plan.md",
+              "docs/web-client/ux/reception-schedule-ui-policy.md",
+              "patches/maven_duplicate_fix_plan.patch",
+              "patches/stamp_get_public_plan.md",
+              "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+              "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+              "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md"
+            ],
+            "branch": "task-1764232253923-fe2331",
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+            "timestamp": 1764238935184,
+            "sortOrder": 0,
+            "lane": 3,
+            "branchColor": "#4fe8b8",
+            "index": 6
+          },
+          {
+            "type": "staged",
+            "label": "ステージ済み [task-1764232253923-fe2331] (1)",
+            "files": [
+              "kamui/apps/modernized-server-connect-plan.yaml"
+            ],
+            "branch": "task-1764232253923-fe2331",
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+            "timestamp": 1764238935184,
+            "sortOrder": 1,
+            "lane": 3,
+            "branchColor": "#4fe8b8",
+            "index": 7
+          }
+        ],
+        "isDefaultWorktree": false,
+        "renderMode": "node",
+        "shouldHide": false,
+        "tagLabel": "task-1764232253923-fe2331",
+        "taskId": "task-1764232253923-fe2331",
+        "taskStatus": null,
+        "taskStatusLabel": null,
+        "taskName": null,
+        "tooltip": "ID: task-1764232253923-fe2331\nBranch: task-1764232253923-fe2331\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+        "branchColor": "#4fe8b8",
+        "index": 13
+      },
+      {
+        "type": "anchor",
+        "label": "[task-1764232258705-4a7b6e]",
+        "branch": "task-1764232258705-4a7b6e",
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+        "parentCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "lane": 2,
+        "isMerged": false,
+        "mergeCommitHash": null,
+        "statusChildren": [
+          {
+            "type": "unstaged",
+            "label": "未ステージ [task-1764232258705-4a7b6e] (33)",
+            "files": [
+              "GEMINI.md",
+              "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+              "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+              "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+              "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+              "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+              "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+              "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+              "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+              "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+              "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+              "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+              "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+              "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+              "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+              "docs/web-client/README.md",
+              "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+              "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+              "docs/web-client/process/ROADMAP.md",
+              "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+              "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+              "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+              "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+              "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+              "docs/web-client/ux/charts-claim-ui-policy.md",
+              "docs/web-client/ux/patients-admin-ui-policy.md",
+              "docs/web-client/ux/reception-schedule-ui-policy.md",
+              "patches/maven_duplicate_fix_plan.patch",
+              "patches/stamp_get_public_plan.md",
+              "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+              "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+              "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+              "docs/web-client/ux/management-ui-guide.md"
+            ],
+            "branch": "task-1764232258705-4a7b6e",
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+            "timestamp": 1764238935246,
+            "sortOrder": 0,
+            "lane": 2,
+            "branchColor": "#e8a84f",
+            "index": 8
+          },
+          {
+            "type": "staged",
+            "label": "ステージ済み [task-1764232258705-4a7b6e] (1)",
+            "files": [
+              "GENTS.md"
+            ],
+            "branch": "task-1764232258705-4a7b6e",
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+            "timestamp": 1764238935246,
+            "sortOrder": 1,
+            "lane": 2,
+            "branchColor": "#e8a84f",
+            "index": 9
+          }
+        ],
+        "isDefaultWorktree": false,
+        "renderMode": "node",
+        "shouldHide": false,
+        "tagLabel": "task-1764232258705-4a7b6e",
+        "taskId": "task-1764232258705-4a7b6e",
+        "taskStatus": null,
+        "taskStatusLabel": null,
+        "taskName": null,
+        "tooltip": "ID: task-1764232258705-4a7b6e\nBranch: task-1764232258705-4a7b6e\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+        "branchColor": "#e8a84f",
+        "index": 14
+      },
+      {
+        "type": "anchor",
+        "label": "[task-1764232261091-ac580a]",
+        "branch": null,
+        "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+        "parentCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "lane": 0,
+        "isMerged": false,
+        "mergeCommitHash": null,
+        "statusChildren": [
+          {
+            "type": "unstaged",
+            "label": "未ステージ [null] (34)",
+            "files": [
+              "GEMINI.md",
+              "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+              "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+              "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+              "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+              "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+              "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+              "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+              "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+              "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+              "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+              "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+              "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+              "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+              "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+              "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+              "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+              "docs/web-client/README.md",
+              "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+              "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+              "docs/web-client/process/ROADMAP.md",
+              "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+              "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+              "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+              "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+              "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+              "docs/web-client/ux/charts-claim-ui-policy.md",
+              "docs/web-client/ux/patients-admin-ui-policy.md",
+              "docs/web-client/ux/reception-schedule-ui-policy.md",
+              "patches/maven_duplicate_fix_plan.patch",
+              "patches/stamp_get_public_plan.md",
+              "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+              "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+              "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md"
+            ],
+            "branch": null,
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+            "timestamp": 1764238935450,
+            "sortOrder": 0,
+            "lane": 0,
+            "branchColor": "#4f85e8",
+            "index": 10
+          },
+          {
+            "type": "staged",
+            "label": "ステージ済み [null] (1)",
+            "files": [
+              "GENTS.md"
+            ],
+            "branch": null,
+            "targetCommitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "worktreePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+            "timestamp": 1764238935450,
+            "sortOrder": 1,
+            "lane": 0,
+            "branchColor": "#4f85e8",
+            "index": 11
+          }
+        ],
+        "isDefaultWorktree": false,
+        "renderMode": "node",
+        "shouldHide": false,
+        "tagLabel": null,
+        "taskId": "task-1764232261091-ac580a",
+        "taskStatus": null,
+        "taskStatusLabel": null,
+        "taskName": null,
+        "tooltip": "ID: task-1764232261091-ac580a\nWorktree: Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+        "branchColor": "#4f85e8",
+        "index": 15
+      },
+      {
+        "type": "commit",
+        "label": "webクライアントUIプランニング#",
+        "commit": {
+          "hash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+          "subject": "webクライアントUIプランニング#",
+          "author": "circlemouth",
+          "timestamp": 1764224606,
+          "parents": [
+            "db941ae67617a84bb68e3019cf15f1d0104bbd1e"
+          ],
+          "parent": "db941ae67617a84bb68e3019cf15f1d0104bbd1e",
+          "refs": "HEAD -> master, origin/master, origin/HEAD, task-1764232258705-4a7b6e, task-1764232253923-fe2331",
+          "branches": [
+            "HEAD -> master",
+            "origin/master",
+            "origin/HEAD",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "master"
+          ]
+        },
+        "commitHash": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "db941ae67617a84bb68e3019cf15f1d0104bbd1e",
+            "lane": 1
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "master"
+        ],
+        "worktrees": [
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+            "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "branch": "master",
+            "isMerged": false,
+            "mergeCommitHash": null,
+            "status": {
+              "staged": [
+                {
+                  "path": "kamui/system-graph-state.json",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "kamui/system-graph-state.json",
+                  "timestamp": 1764238934882
+                }
+              ],
+              "unstaged": [
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/PdfDocumentWriter.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/PdfDocumentWriter.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/PdfRenderer.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/PdfRenderer.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/PdfRendererKt.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/PdfRendererKt.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/PdfSigningService.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/PdfSigningService.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportContext$Builder.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportContext$Builder.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportContext.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportContext.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportDate.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportDate.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportDateTime.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportDateTime.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportLocales.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportLocales.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportPatient.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportPatient.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportSummaryItem.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportSummaryItem.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportTemplateEngine.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportTemplateEngine.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportingEngine$RenderingContext.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportingEngine$RenderingContext.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportingEngine.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportingEngine.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/ReportingResult.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/ReportingResult.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/SigningConfig$Builder.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/SigningConfig$Builder.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/SigningConfig.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/SigningConfig.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/api/ReportingPatientPayload.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/api/ReportingPatientPayload.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/api/ReportingPayload.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/api/ReportingPayload.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/api/ReportingSigningPayload.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/api/ReportingSigningPayload.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/open/dolphin/reporting/api/ReportingSummaryItemPayload.class",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/open/dolphin/reporting/api/ReportingSummaryItemPayload.class",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/glossary/en-us.csv",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/glossary/en-us.csv",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/templates/common/footer.vm",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/templates/common/footer.vm",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/templates/common/header.vm",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/templates/common/header.vm",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/templates/common/karte_helpers.vm",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/templates/common/karte_helpers.vm",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/templates/patient_summary_en_US.vm",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/templates/patient_summary_en_US.vm",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/templates/patient_summary_ja_JP.vm",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/templates/patient_summary_ja_JP.vm",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/templates/receipt_export_en_US.vm",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/templates/receipt_export_en_US.vm",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": "reporting/target/classes/reporting/templates/receipt_export_ja_JP.vm",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "reporting/target/classes/reporting/templates/receipt_export_ja_JP.vm",
+                  "timestamp": 1764238934882
+                }
+              ],
+              "untracked": [
+                {
+                  "path": ".kamui/manager/202511271835_eval_task-1764232253923-fe2331.html",
+                  "status": "untracked",
+                  "rawPath": ".kamui/manager/202511271835_eval_task-1764232253923-fe2331.html",
+                  "timestamp": 1764238934882
+                },
+                {
+                  "path": ".kamui/manager/202511271910_eval_task-1764232253923-fe2331.html",
+                  "status": "untracked",
+                  "rawPath": ".kamui/manager/202511271910_eval_task-1764232253923-fe2331.html",
+                  "timestamp": 1764238934882
+                }
+              ],
+              "capturedAt": 1764238934882
+            },
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+            "lane": 0
+          },
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+            "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "detached": true,
+            "isMerged": false,
+            "mergeCommitHash": null,
+            "status": {
+              "staged": [
+                {
+                  "path": "GENTS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "GENTS.md",
+                  "timestamp": 1764238935026
+                }
+              ],
+              "unstaged": [
+                {
+                  "path": "GEMINI.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "GEMINI.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/README.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/README.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/planning/phase2/DOC_STATUS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/planning/phase2/DOC_STATUS.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/process/ROADMAP.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/ROADMAP.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "patches/stamp_get_public_plan.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "patches/stamp_get_public_plan.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "timestamp": 1764238935026
+                }
+              ],
+              "untracked": [
+                {
+                  "path": "docs/web-client/ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "status": "untracked",
+                  "rawPath": "docs/web-client/ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md",
+                  "status": "untracked",
+                  "rawPath": "docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/legacy/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "status": "untracked",
+                  "rawPath": "docs/web-client/ux/legacy/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "status": "untracked",
+                  "rawPath": "docs/web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "timestamp": 1764238935026
+                },
+                {
+                  "path": "docs/web-client/ux/ux-documentation-plan.md",
+                  "status": "untracked",
+                  "rawPath": "docs/web-client/ux/ux-documentation-plan.md",
+                  "timestamp": 1764238935026
+                }
+              ],
+              "capturedAt": 1764238935026
+            },
+            "branch": null,
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232251496-d8f056",
+            "lane": 0
+          },
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+            "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "branch": "task-1764232253923-fe2331",
+            "isMerged": false,
+            "mergeCommitHash": null,
+            "status": {
+              "staged": [
+                {
+                  "path": "kamui/apps/modernized-server-connect-plan.yaml",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "kamui/apps/modernized-server-connect-plan.yaml",
+                  "timestamp": 1764238935184
+                }
+              ],
+              "unstaged": [
+                {
+                  "path": ".kamui/apps/webclient-sync-ui-plan.yaml",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": ".kamui/apps/webclient-sync-ui-plan.yaml",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": ".kamui/system-graph-state.json",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": ".kamui/system-graph-state.json",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "AGENTS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "AGENTS.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "GEMINI.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "GEMINI.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/README.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/README.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/operations/CHARTS_LEFT_RAIL_TIMELINE_FIX.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/operations/CHARTS_PATIENT_HEADER_BUTTON_FIX.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/planning/phase2/DOC_STATUS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/planning/phase2/DOC_STATUS.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/process/ROADMAP.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/ROADMAP.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/charts-claim-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/charts-claim-ui-policy.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/performance/orca-master-fcp-improvement.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/performance/orca-master-fcp-improvement.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/performance/orca-master-performance-plan.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/performance/orca-master-performance-plan.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "docs/web-client/ux/reception-schedule-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/reception-schedule-ui-policy.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "patches/maven_duplicate_fix_plan.patch",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "patches/maven_duplicate_fix_plan.patch",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "patches/stamp_get_public_plan.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "patches/stamp_get_public_plan.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "timestamp": 1764238935184
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "timestamp": 1764238935184
+                }
+              ],
+              "untracked": [],
+              "capturedAt": 1764238935184
+            },
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232253923-fe2331",
+            "lane": 3
+          },
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+            "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "branch": "task-1764232258705-4a7b6e",
+            "isMerged": false,
+            "mergeCommitHash": null,
+            "status": {
+              "staged": [
+                {
+                  "path": "GENTS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "GENTS.md",
+                  "timestamp": 1764238935246
+                }
+              ],
+              "unstaged": [
+                {
+                  "path": "GEMINI.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "GEMINI.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/README.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/README.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/process/ROADMAP.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/ROADMAP.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/charts-claim-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/charts-claim-ui-policy.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "docs/web-client/ux/reception-schedule-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/reception-schedule-ui-policy.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "patches/maven_duplicate_fix_plan.patch",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "patches/maven_duplicate_fix_plan.patch",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "patches/stamp_get_public_plan.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "patches/stamp_get_public_plan.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "timestamp": 1764238935246
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "timestamp": 1764238935246
+                }
+              ],
+              "untracked": [
+                {
+                  "path": "docs/web-client/ux/management-ui-guide.md",
+                  "status": "untracked",
+                  "rawPath": "docs/web-client/ux/management-ui-guide.md",
+                  "timestamp": 1764238935246
+                }
+              ],
+              "capturedAt": 1764238935246
+            },
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232258705-4a7b6e",
+            "lane": 2
+          },
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+            "head": "d20809bc9eaba1c5bf20cbe97d54b8c20f21ae75",
+            "detached": true,
+            "isMerged": false,
+            "mergeCommitHash": null,
+            "status": {
+              "staged": [
+                {
+                  "path": "GENTS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "GENTS.md",
+                  "timestamp": 1764238935450
+                }
+              ],
+              "unstaged": [
+                {
+                  "path": "GEMINI.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "GEMINI.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "artifacts/api-stability/20251123T130134Z/mocks/chartEvent-delete.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/PHASE2_PROGRESS.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/DEMO_RESOURCE_ASP_MIGRATION.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/domains/JAKARTA_EE10_CHARTS_VIEW_IMPACT.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/assets/orca-db-schema/error-fallback-test-matrix.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/README.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/README.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/planning/phase0/PHASE0_DELIVERABLES.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/API_UI_GAP_ANALYSIS.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/process/ROADMAP.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/process/ROADMAP.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/CHART_UI_GUIDE_INDEX.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/KARTE_SCREEN_IMPLEMENTATION.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "originalPath": null,
+                  "status": "deleted",
+                  "rawPath": "docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/accessibility/orca-master-a11y-plan.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/charts-claim-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/charts-claim-ui-policy.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/patients-admin-ui-policy.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "docs/web-client/ux/reception-schedule-ui-policy.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "docs/web-client/ux/reception-schedule-ui-policy.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "patches/maven_duplicate_fix_plan.patch",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "patches/maven_duplicate_fix_plan.patch",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "patches/stamp_get_public_plan.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "patches/stamp_get_public_plan.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/modernized_server/08_Webクライアント向けAPI安定化.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/03_ギャップ解消方針とUI影響分析.md",
+                  "timestamp": 1764238935450
+                },
+                {
+                  "path": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "originalPath": null,
+                  "status": "modified",
+                  "rawPath": "src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md",
+                  "timestamp": 1764238935450
+                }
+              ],
+              "untracked": [],
+              "capturedAt": 1764238935450
+            },
+            "branch": null,
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1764232261091-ac580a",
+            "lane": 0
+          }
+        ],
+        "index": 16
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task/task-1764220478751-a06136'",
+        "commit": {
+          "hash": "db941ae67617a84bb68e3019cf15f1d0104bbd1e",
+          "subject": "Merge branch 'task/task-1764220478751-a06136'",
+          "author": "circlemouth",
+          "timestamp": 1764223008,
+          "parents": [
+            "ef394ca52bad14cb2fdd2a805898677f6e239edc",
+            "2b1cd670f4b65067aff1fe7696e238a75f2ea192"
+          ],
+          "parent": "ef394ca52bad14cb2fdd2a805898677f6e239edc",
+          "refs": "",
+          "branches": [
+            "master",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "task/task-1764220478751-a06136"
+          ]
+        },
+        "commitHash": "db941ae67617a84bb68e3019cf15f1d0104bbd1e",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "ef394ca52bad14cb2fdd2a805898677f6e239edc",
+            "lane": 1
+          },
+          {
+            "hash": "2b1cd670f4b65067aff1fe7696e238a75f2ea192",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task/task-1764220478751-a06136"
+        ],
+        "index": 17
+      },
+      {
+        "type": "commit",
+        "label": "Update .kamui tasks state",
+        "commit": {
+          "hash": "ef394ca52bad14cb2fdd2a805898677f6e239edc",
+          "subject": "Update .kamui tasks state",
+          "author": "circlemouth",
+          "timestamp": 1764222998,
+          "parents": [
+            "69707bcb22a4aa9b2fb3ec7c25c2127c440570f0"
+          ],
+          "parent": "69707bcb22a4aa9b2fb3ec7c25c2127c440570f0",
+          "refs": "",
+          "branches": [
+            "master",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "ef394ca52bad14cb2fdd2a805898677f6e239edc",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "69707bcb22a4aa9b2fb3ec7c25c2127c440570f0",
+            "lane": 1
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 18
+      },
+      {
+        "type": "commit",
+        "label": "Add reception schedule UI policy",
+        "commit": {
+          "hash": "2b1cd670f4b65067aff1fe7696e238a75f2ea192",
+          "subject": "Add reception schedule UI policy",
+          "author": "circlemouth",
+          "timestamp": 1764222950,
+          "parents": [
+            "a7aae47604bd11722e5e1dbfb870c104b183cf1f"
+          ],
+          "parent": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+          "refs": "task/task-1764220478751-a06136",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "2b1cd670f4b65067aff1fe7696e238a75f2ea192",
+        "lane": 1,
+        "parentLinks": [
+          {
+            "hash": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task/task-1764220478751-a06136",
+        "branchColor": "#4fe8b8",
+        "branchTags": [],
+        "index": 19
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task/task-1764213058790-94a0b2'",
+        "commit": {
+          "hash": "69707bcb22a4aa9b2fb3ec7c25c2127c440570f0",
+          "subject": "Merge branch 'task/task-1764213058790-94a0b2'",
+          "author": "circlemouth",
+          "timestamp": 1764221978,
+          "parents": [
+            "118ea2460ccbd1e4cd5d791c796136e133db33b9",
+            "d26cac219a99b7bde99c63300e0e69091fe6d468"
+          ],
+          "parent": "118ea2460ccbd1e4cd5d791c796136e133db33b9",
+          "refs": "",
+          "branches": [
+            "master",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "task/task-1764213058790-94a0b2"
+          ]
+        },
+        "commitHash": "69707bcb22a4aa9b2fb3ec7c25c2127c440570f0",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "118ea2460ccbd1e4cd5d791c796136e133db33b9",
+            "lane": 1
+          },
+          {
+            "hash": "d26cac219a99b7bde99c63300e0e69091fe6d468",
+            "lane": 3
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task/task-1764213058790-94a0b2"
+        ],
+        "index": 20
+      },
+      {
+        "type": "commit",
+        "label": "chore: update tasks state",
+        "commit": {
+          "hash": "118ea2460ccbd1e4cd5d791c796136e133db33b9",
+          "subject": "chore: update tasks state",
+          "author": "circlemouth",
+          "timestamp": 1764221868,
+          "parents": [
+            "6cc8f9119a3842a4365f5cc5f7ab2da4550d6c55"
+          ],
+          "parent": "6cc8f9119a3842a4365f5cc5f7ab2da4550d6c55",
+          "refs": "",
+          "branches": [
+            "master",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "118ea2460ccbd1e4cd5d791c796136e133db33b9",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "6cc8f9119a3842a4365f5cc5f7ab2da4550d6c55",
+            "lane": 1
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 21
+      },
+      {
+        "type": "commit",
+        "label": "docs: add charts claim UI policy",
+        "commit": {
+          "hash": "d26cac219a99b7bde99c63300e0e69091fe6d468",
+          "subject": "docs: add charts claim UI policy",
+          "author": "circlemouth",
+          "timestamp": 1764221783,
+          "parents": [
+            "a7aae47604bd11722e5e1dbfb870c104b183cf1f"
+          ],
+          "parent": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+          "refs": "task/task-1764213058790-94a0b2",
+          "branches": [
+            "task/task-1764213058790-94a0b2",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "d26cac219a99b7bde99c63300e0e69091fe6d468",
+        "lane": 4,
+        "parentLinks": [
+          {
+            "hash": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task/task-1764213058790-94a0b2",
+        "branchColor": "#e8a84f",
+        "branchTags": [],
+        "index": 22
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task/task-1764212937811-25c985'",
+        "commit": {
+          "hash": "6cc8f9119a3842a4365f5cc5f7ab2da4550d6c55",
+          "subject": "Merge branch 'task/task-1764212937811-25c985'",
+          "author": "circlemouth",
+          "timestamp": 1764221501,
+          "parents": [
+            "8d5b9e55b96531ef2add3ace49f253b143c93a83",
+            "09d970073a4f9b6ae519240d1f5188bb42400280"
+          ],
+          "parent": "8d5b9e55b96531ef2add3ace49f253b143c93a83",
+          "refs": "",
+          "branches": [
+            "master",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "task/task-1764212937811-25c985"
+          ]
+        },
+        "commitHash": "6cc8f9119a3842a4365f5cc5f7ab2da4550d6c55",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "8d5b9e55b96531ef2add3ace49f253b143c93a83",
+            "lane": 1
+          },
+          {
+            "hash": "09d970073a4f9b6ae519240d1f5188bb42400280",
+            "lane": 4
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task/task-1764212937811-25c985"
+        ],
+        "index": 23
+      },
+      {
+        "type": "commit",
+        "label": "chore: update kamui tasks state",
+        "commit": {
+          "hash": "8d5b9e55b96531ef2add3ace49f253b143c93a83",
+          "subject": "chore: update kamui tasks state",
+          "author": "circlemouth",
+          "timestamp": 1764221474,
+          "parents": [
+            "a7aae47604bd11722e5e1dbfb870c104b183cf1f"
+          ],
+          "parent": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+          "refs": "",
+          "branches": [
+            "master",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "8d5b9e55b96531ef2add3ace49f253b143c93a83",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 24
+      },
+      {
+        "type": "commit",
+        "label": "docs: add patients admin ui policy",
+        "commit": {
+          "hash": "09d970073a4f9b6ae519240d1f5188bb42400280",
+          "subject": "docs: add patients admin ui policy",
+          "author": "circlemouth",
+          "timestamp": 1764221424,
+          "parents": [
+            "a7aae47604bd11722e5e1dbfb870c104b183cf1f"
+          ],
+          "parent": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+          "refs": "task/task-1764212937811-25c985",
+          "branches": [
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "09d970073a4f9b6ae519240d1f5188bb42400280",
+        "lane": 5,
+        "parentLinks": [
+          {
+            "hash": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task/task-1764212937811-25c985",
+        "branchColor": "#b84fe8",
+        "branchTags": [],
+        "index": 25
+      },
+      {
+        "type": "commit",
+        "label": "Integrate 3D graph",
+        "commit": {
+          "hash": "cde3456fgh",
+          "subject": "Integrate 3D graph",
+          "author": "KAMUI",
+          "timestamp": 1764214984,
+          "parents": [
+            "bcd2345efg"
+          ],
+          "parent": "bcd2345efg",
+          "branches": []
+        },
+        "commitHash": "cde3456fgh",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "bcd2345efg",
+            "lane": 0
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 26
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task-yaml-g58y0t-src-webclient-mod'",
+        "commit": {
+          "hash": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+          "subject": "Merge branch 'task-yaml-g58y0t-src-webclient-mod'",
+          "author": "circlemouth",
+          "timestamp": 1764211889,
+          "parents": [
+            "351765f69270eca7ec120d28e06fc850385dc7ce",
+            "65dff59867e025bfdc5175f1c5b40ee4f29bc216"
+          ],
+          "parent": "351765f69270eca7ec120d28e06fc850385dc7ce",
+          "refs": "task/task-1764220516769-631873, task/task-1764220502235-56d29b, task/task-1764220483395-13b3b5, task/task-1764213140138-853159, task/task-1764213133447-4572e5, task/task-1764213133399-6c10cb, task/task-1764213097721-01373f, task/task-1764213097494-cf5d58, task/task-1764213078964-73abb0, task/task-1764213063399-512954, task/task-1764212968883-7c0ed3, task/task-1764212942197-614f5c",
+          "branches": [
+            "task/task-1764220516769-631873",
+            "task/task-1764220502235-56d29b",
+            "task/task-1764220483395-13b3b5",
+            "task/task-1764213140138-853159",
+            "task/task-1764213133447-4572e5",
+            "task/task-1764213133399-6c10cb",
+            "task/task-1764213097721-01373f",
+            "task/task-1764213097494-cf5d58",
+            "task/task-1764213078964-73abb0",
+            "task/task-1764213063399-512954",
+            "task/task-1764212968883-7c0ed3",
+            "task/task-1764212942197-614f5c",
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "task-yaml-g58y0t-src-webclient-mod"
+          ]
+        },
+        "commitHash": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "351765f69270eca7ec120d28e06fc850385dc7ce",
+            "lane": 2
+          },
+          {
+            "hash": "65dff59867e025bfdc5175f1c5b40ee4f29bc216",
+            "lane": 5
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task-yaml-g58y0t-src-webclient-mod",
+          "task/task-1764212942197-614f5c",
+          "task/task-1764212968883-7c0ed3",
+          "task/task-1764213063399-512954",
+          "task/task-1764213078964-73abb0",
+          "task/task-1764213097494-cf5d58",
+          "task/task-1764213097721-01373f",
+          "task/task-1764213133399-6c10cb",
+          "task/task-1764213133447-4572e5",
+          "task/task-1764213140138-853159",
+          "task/task-1764220483395-13b3b5",
+          "task/task-1764220502235-56d29b",
+          "task/task-1764220516769-631873"
+        ],
+        "index": 27
+      },
+      {
+        "type": "commit",
+        "label": "Document UI <-> API mapping",
+        "commit": {
+          "hash": "65dff59867e025bfdc5175f1c5b40ee4f29bc216",
+          "subject": "Document UI <-> API mapping",
+          "author": "circlemouth",
+          "timestamp": 1764211860,
+          "parents": [
+            "351765f69270eca7ec120d28e06fc850385dc7ce"
+          ],
+          "parent": "351765f69270eca7ec120d28e06fc850385dc7ce",
+          "refs": "task-yaml-g58y0t-src-webclient-mod",
+          "branches": [
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764220478751-a06136",
+            "task/task-1764213058790-94a0b2",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "65dff59867e025bfdc5175f1c5b40ee4f29bc216",
+        "lane": 6,
+        "parentLinks": [
+          {
+            "hash": "351765f69270eca7ec120d28e06fc850385dc7ce",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task-yaml-g58y0t-src-webclient-mod",
+        "branchColor": "#e84f7f",
+        "branchTags": [],
+        "worktrees": [
+          {
+            "path": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-g58y0t-src-webclient-mo",
+            "head": "65dff59867e025bfdc5175f1c5b40ee4f29bc216",
+            "branch": "task-yaml-g58y0t-src-webclient-mod",
+            "isMerged": true,
+            "mergeCommitHash": "a7aae47604bd11722e5e1dbfb870c104b183cf1f",
+            "status": {
+              "staged": [],
+              "unstaged": [],
+              "untracked": [],
+              "capturedAt": 1764238935559
+            },
+            "normalizedPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-yaml-g58y0t-src-webclient-mo",
+            "lane": 6
+          }
+        ],
+        "index": 28
+      },
+      {
+        "type": "commit",
+        "label": "clean",
+        "commit": {
+          "hash": "351765f69270eca7ec120d28e06fc850385dc7ce",
+          "subject": "clean",
+          "author": "circlemouth",
+          "timestamp": 1764210730,
+          "parents": [
+            "40eb5c56d7d244cf078b46178df7152480487621"
+          ],
+          "parent": "40eb5c56d7d244cf078b46178df7152480487621",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "351765f69270eca7ec120d28e06fc850385dc7ce",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "40eb5c56d7d244cf078b46178df7152480487621",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 29
+      },
+      {
+        "type": "commit",
+        "label": "chore: persist tasks state",
+        "commit": {
+          "hash": "40eb5c56d7d244cf078b46178df7152480487621",
+          "subject": "chore: persist tasks state",
+          "author": "circlemouth",
+          "timestamp": 1764209621,
+          "parents": [
+            "970cc80ab60200700642f6c5b23dc3b4e6671d62"
+          ],
+          "parent": "970cc80ab60200700642f6c5b23dc3b4e6671d62",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "40eb5c56d7d244cf078b46178df7152480487621",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "970cc80ab60200700642f6c5b23dc3b4e6671d62",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 30
+      },
+      {
+        "type": "commit",
+        "label": "chore: expand UI plan policy",
+        "commit": {
+          "hash": "970cc80ab60200700642f6c5b23dc3b4e6671d62",
+          "subject": "chore: expand UI plan policy",
+          "author": "circlemouth",
+          "timestamp": 1764209600,
+          "parents": [
+            "5cbf201d20f5d0de0fb53786487d267ea3193216"
+          ],
+          "parent": "5cbf201d20f5d0de0fb53786487d267ea3193216",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "970cc80ab60200700642f6c5b23dc3b4e6671d62",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "5cbf201d20f5d0de0fb53786487d267ea3193216",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 31
+      },
+      {
+        "type": "commit",
+        "label": "04semicomp",
+        "commit": {
+          "hash": "5cbf201d20f5d0de0fb53786487d267ea3193216",
+          "subject": "04semicomp",
+          "author": "circlemouth",
+          "timestamp": 1764205299,
+          "parents": [
+            "15a877387da7c9b716c2d25c822c2d0931a81e41"
+          ],
+          "parent": "15a877387da7c9b716c2d25c822c2d0931a81e41",
+          "refs": "task-1764205661052-95bef4, task-1764205656539-be8244",
+          "branches": [
+            "task-1764205661052-95bef4",
+            "task-1764205656539-be8244",
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "5cbf201d20f5d0de0fb53786487d267ea3193216",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "15a877387da7c9b716c2d25c822c2d0931a81e41",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task-1764205656539-be8244",
+          "task-1764205661052-95bef4"
+        ],
+        "index": 32
+      },
+      {
+        "type": "commit",
+        "label": "Add taskboard UI",
+        "commit": {
+          "hash": "bcd2345efg",
+          "subject": "Add taskboard UI",
+          "author": "KAMUI",
+          "timestamp": 1764193384,
+          "parents": [
+            "abc1234def"
+          ],
+          "parent": "abc1234def",
+          "branches": []
+        },
+        "commitHash": "bcd2345efg",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "abc1234def",
+            "lane": 0
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 33
+      },
+      {
+        "type": "commit",
+        "label": "tes",
+        "commit": {
+          "hash": "15a877387da7c9b716c2d25c822c2d0931a81e41",
+          "subject": "tes",
+          "author": "circlemouth",
+          "timestamp": 1764161124,
+          "parents": [
+            "f88fc42368c4a845fa68ff72bb63e272ea2604bd"
+          ],
+          "parent": "f88fc42368c4a845fa68ff72bb63e272ea2604bd",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "15a877387da7c9b716c2d25c822c2d0931a81e41",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "f88fc42368c4a845fa68ff72bb63e272ea2604bd",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 34
+      },
+      {
+        "type": "commit",
+        "label": "Initial commit",
+        "commit": {
+          "hash": "abc1234def",
+          "subject": "Initial commit",
+          "author": "KAMUI",
+          "timestamp": 1764150184,
+          "parents": [],
+          "parent": null,
+          "branches": []
+        },
+        "commitHash": "abc1234def",
+        "lane": 0,
+        "parentLinks": [],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 35
+      },
+      {
+        "type": "commit",
+        "label": "test",
+        "commit": {
+          "hash": "f88fc42368c4a845fa68ff72bb63e272ea2604bd",
+          "subject": "test",
+          "author": "circlemouth",
+          "timestamp": 1764113602,
+          "parents": [
+            "68fad510587c249628183b5420f62faec275e7fd"
+          ],
+          "parent": "68fad510587c249628183b5420f62faec275e7fd",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "f88fc42368c4a845fa68ff72bb63e272ea2604bd",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "68fad510587c249628183b5420f62faec275e7fd",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 36
+      },
+      {
+        "type": "commit",
+        "label": "fix",
+        "commit": {
+          "hash": "68fad510587c249628183b5420f62faec275e7fd",
+          "subject": "fix",
+          "author": "circlemouth",
+          "timestamp": 1764105396,
+          "parents": [
+            "10958bf25a677240e055e5e7d628951202876e1d"
+          ],
+          "parent": "10958bf25a677240e055e5e7d628951202876e1d",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "68fad510587c249628183b5420f62faec275e7fd",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "10958bf25a677240e055e5e7d628951202876e1d",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 37
+      },
+      {
+        "type": "commit",
+        "label": "04update",
+        "commit": {
+          "hash": "10958bf25a677240e055e5e7d628951202876e1d",
+          "subject": "04update",
+          "author": "circlemouth",
+          "timestamp": 1764052066,
+          "parents": [
+            "bd068c3fc6fd36ab1df67e3b66d748c940155c91"
+          ],
+          "parent": "bd068c3fc6fd36ab1df67e3b66d748c940155c91",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "10958bf25a677240e055e5e7d628951202876e1d",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "bd068c3fc6fd36ab1df67e3b66d748c940155c91",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 38
+      },
+      {
+        "type": "commit",
+        "label": "04実装中",
+        "commit": {
+          "hash": "bd068c3fc6fd36ab1df67e3b66d748c940155c91",
+          "subject": "04実装中",
+          "author": "circlemouth",
+          "timestamp": 1763994283,
+          "parents": [
+            "3d96610d44e59d322434de3c3ebbd490df84b026"
+          ],
+          "parent": "3d96610d44e59d322434de3c3ebbd490df84b026",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "bd068c3fc6fd36ab1df67e3b66d748c940155c91",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "3d96610d44e59d322434de3c3ebbd490df84b026",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 39
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task/yaml-13tbwys-src-webclient-mo'",
+        "commit": {
+          "hash": "3d96610d44e59d322434de3c3ebbd490df84b026",
+          "subject": "Merge branch 'task/yaml-13tbwys-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763969245,
+          "parents": [
+            "0493a01fe43ccfd14ccef53cc28bc30a0aacd88a",
+            "fbc2aecf69b0fd0affc37f1b3bd56405f9b31f34"
+          ],
+          "parent": "0493a01fe43ccfd14ccef53cc28bc30a0aacd88a",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "task/yaml-13tbwys-src-webclient-mo"
+          ]
+        },
+        "commitHash": "3d96610d44e59d322434de3c3ebbd490df84b026",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "0493a01fe43ccfd14ccef53cc28bc30a0aacd88a",
+            "lane": 2
+          },
+          {
+            "hash": "fbc2aecf69b0fd0affc37f1b3bd56405f9b31f34",
+            "lane": 6
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task/yaml-13tbwys-src-webclient-mo"
+        ],
+        "index": 40
+      },
+      {
+        "type": "commit",
+        "label": "Kamui状態ファイルの更新",
+        "commit": {
+          "hash": "0493a01fe43ccfd14ccef53cc28bc30a0aacd88a",
+          "subject": "Kamui状態ファイルの更新",
+          "author": "circlemouth",
+          "timestamp": 1763969240,
+          "parents": [
+            "e91d1d5ee0afef52996f06f82667e558c89de981"
+          ],
+          "parent": "e91d1d5ee0afef52996f06f82667e558c89de981",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "0493a01fe43ccfd14ccef53cc28bc30a0aacd88a",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "e91d1d5ee0afef52996f06f82667e558c89de981",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 41
+      },
+      {
+        "type": "commit",
+        "label": "ブリッジ計画の期間・スプリント日程を前倒し",
+        "commit": {
+          "hash": "fbc2aecf69b0fd0affc37f1b3bd56405f9b31f34",
+          "subject": "ブリッジ計画の期間・スプリント日程を前倒し",
+          "author": "circlemouth",
+          "timestamp": 1763969222,
+          "parents": [
+            "e91d1d5ee0afef52996f06f82667e558c89de981"
+          ],
+          "parent": "e91d1d5ee0afef52996f06f82667e558c89de981",
+          "refs": "task/yaml-13tbwys-src-webclient-mo",
+          "branches": [
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/task-1764220478751-a06136",
+            "task/task-1764213058790-94a0b2",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "fbc2aecf69b0fd0affc37f1b3bd56405f9b31f34",
+        "lane": 7,
+        "parentLinks": [
+          {
+            "hash": "e91d1d5ee0afef52996f06f82667e558c89de981",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task/yaml-13tbwys-src-webclient-mo",
+        "branchColor": "#b84fe8",
+        "branchTags": [],
+        "index": 42
+      },
+      {
+        "type": "commit",
+        "label": "04",
+        "commit": {
+          "hash": "e91d1d5ee0afef52996f06f82667e558c89de981",
+          "subject": "04",
+          "author": "circlemouth",
+          "timestamp": 1763966521,
+          "parents": [
+            "2fd859782ac91d99c42e6345646055f1116ace4b"
+          ],
+          "parent": "2fd859782ac91d99c42e6345646055f1116ace4b",
+          "refs": "task-1763970552587-bea070, task-1763966846517-7e63da",
+          "branches": [
+            "task-1763970552587-bea070",
+            "task-1763966846517-7e63da",
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "e91d1d5ee0afef52996f06f82667e558c89de981",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "2fd859782ac91d99c42e6345646055f1116ace4b",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task-1763966846517-7e63da",
+          "task-1763970552587-bea070"
+        ],
+        "index": 43
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task/yaml-1adisab-src-webclient-mo'",
+        "commit": {
+          "hash": "2fd859782ac91d99c42e6345646055f1116ace4b",
+          "subject": "Merge branch 'task/yaml-1adisab-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763951281,
+          "parents": [
+            "284eb6e0404d444eb6b0f0a251b85a40b1c59174",
+            "c0e8bea9fd3d55a13e490a488a1101368f09c3ee"
+          ],
+          "parent": "284eb6e0404d444eb6b0f0a251b85a40b1c59174",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "task/yaml-1adisab-src-webclient-mo"
+          ]
+        },
+        "commitHash": "2fd859782ac91d99c42e6345646055f1116ace4b",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "284eb6e0404d444eb6b0f0a251b85a40b1c59174",
+            "lane": 2
+          },
+          {
+            "hash": "c0e8bea9fd3d55a13e490a488a1101368f09c3ee",
+            "lane": 7
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task/yaml-1adisab-src-webclient-mo"
+        ],
+        "index": 44
+      },
+      {
+        "type": "commit",
+        "label": "kamui タスク状態を更新",
+        "commit": {
+          "hash": "284eb6e0404d444eb6b0f0a251b85a40b1c59174",
+          "subject": "kamui タスク状態を更新",
+          "author": "circlemouth",
+          "timestamp": 1763951278,
+          "parents": [
+            "2a014924d00dbbfdfee7c6eefd86504bff67af69"
+          ],
+          "parent": "2a014924d00dbbfdfee7c6eefd86504bff67af69",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "284eb6e0404d444eb6b0f0a251b85a40b1c59174",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "2a014924d00dbbfdfee7c6eefd86504bff67af69",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 45
+      },
+      {
+        "type": "commit",
+        "label": "RUN_ID=20251124T021734Z マスターデータ補完ブリッジ計画を追加",
+        "commit": {
+          "hash": "c0e8bea9fd3d55a13e490a488a1101368f09c3ee",
+          "subject": "RUN_ID=20251124T021734Z マスターデータ補完ブリッジ計画を追加",
+          "author": "circlemouth",
+          "timestamp": 1763951260,
+          "parents": [
+            "2a014924d00dbbfdfee7c6eefd86504bff67af69"
+          ],
+          "parent": "2a014924d00dbbfdfee7c6eefd86504bff67af69",
+          "refs": "task/yaml-1adisab-src-webclient-mo",
+          "branches": [
+            "task/yaml-1adisab-src-webclient-mo",
+            "task/task-1764220478751-a06136",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "c0e8bea9fd3d55a13e490a488a1101368f09c3ee",
+        "lane": 8,
+        "parentLinks": [
+          {
+            "hash": "2a014924d00dbbfdfee7c6eefd86504bff67af69",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task/yaml-1adisab-src-webclient-mo",
+        "branchColor": "#e84f4f",
+        "branchTags": [],
+        "index": 46
+      },
+      {
+        "type": "commit",
+        "label": "03#",
+        "commit": {
+          "hash": "2a014924d00dbbfdfee7c6eefd86504bff67af69",
+          "subject": "03#",
+          "author": "circlemouth",
+          "timestamp": 1763949920,
+          "parents": [
+            "fa7e6386f8f92bf7c1017b595438b32a51c750c3"
+          ],
+          "parent": "fa7e6386f8f92bf7c1017b595438b32a51c750c3",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "2a014924d00dbbfdfee7c6eefd86504bff67af69",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "fa7e6386f8f92bf7c1017b595438b32a51c750c3",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 47
+      },
+      {
+        "type": "commit",
+        "label": "Add master data bridge plan and update DOC_STATUS",
+        "commit": {
+          "hash": "fa7e6386f8f92bf7c1017b595438b32a51c750c3",
+          "subject": "Add master data bridge plan and update DOC_STATUS",
+          "author": "circlemouth",
+          "timestamp": 1763938759,
+          "parents": [
+            "6f55ec41335abb6424d05280590fe9f9e832b3b5",
+            "14b192963b29bfe01abb46345bee2cacf129581a"
+          ],
+          "parent": "6f55ec41335abb6424d05280590fe9f9e832b3b5",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "fa7e6386f8f92bf7c1017b595438b32a51c750c3",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "6f55ec41335abb6424d05280590fe9f9e832b3b5",
+            "lane": 2
+          },
+          {
+            "hash": "14b192963b29bfe01abb46345bee2cacf129581a",
+            "lane": 8
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 48
+      },
+      {
+        "type": "commit",
+        "label": "dev",
+        "commit": {
+          "hash": "6f55ec41335abb6424d05280590fe9f9e832b3b5",
+          "subject": "dev",
+          "author": "circlemouth",
+          "timestamp": 1763938575,
+          "parents": [
+            "c064516627672efa680c49ad5b9c2e7cadb8a3b4"
+          ],
+          "parent": "c064516627672efa680c49ad5b9c2e7cadb8a3b4",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "6f55ec41335abb6424d05280590fe9f9e832b3b5",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "c064516627672efa680c49ad5b9c2e7cadb8a3b4",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 49
+      },
+      {
+        "type": "commit",
+        "label": "マスターデータ暫定方針とUI影響計画を追加",
+        "commit": {
+          "hash": "14b192963b29bfe01abb46345bee2cacf129581a",
+          "subject": "マスターデータ暫定方針とUI影響計画を追加",
+          "author": "circlemouth",
+          "timestamp": 1763938527,
+          "parents": [
+            "c064516627672efa680c49ad5b9c2e7cadb8a3b4"
+          ],
+          "parent": "c064516627672efa680c49ad5b9c2e7cadb8a3b4",
+          "refs": "task/yaml-1vs4s8m-src-webclient-mo",
+          "branches": [
+            "task/yaml-1vs4s8m-src-webclient-mo",
+            "task/task-1764220478751-a06136",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "14b192963b29bfe01abb46345bee2cacf129581a",
+        "lane": 9,
+        "parentLinks": [
+          {
+            "hash": "c064516627672efa680c49ad5b9c2e7cadb8a3b4",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task/yaml-1vs4s8m-src-webclient-mo",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task/yaml-1vs4s8m-src-webclient-mo"
+        ],
+        "index": 50
+      },
+      {
+        "type": "commit",
+        "label": "fix",
+        "commit": {
+          "hash": "c064516627672efa680c49ad5b9c2e7cadb8a3b4",
+          "subject": "fix",
+          "author": "circlemouth",
+          "timestamp": 1763907636,
+          "parents": [
+            "188066a2534e5245731647813aecd16f8d45c315"
+          ],
+          "parent": "188066a2534e5245731647813aecd16f8d45c315",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "c064516627672efa680c49ad5b9c2e7cadb8a3b4",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "188066a2534e5245731647813aecd16f8d45c315",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 51
+      },
+      {
+        "type": "commit",
+        "label": "Merge branch 'task-yaml-w9jyfd-src-webclient-mo'",
+        "commit": {
+          "hash": "188066a2534e5245731647813aecd16f8d45c315",
+          "subject": "Merge branch 'task-yaml-w9jyfd-src-webclient-mo'",
+          "author": "circlemouth",
+          "timestamp": 1763907145,
+          "parents": [
+            "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+            "14789387785f72ec8769aca1e435da90e7bef437"
+          ],
+          "parent": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331",
+            "task-yaml-w9jyfd-src-webclient-mo"
+          ]
+        },
+        "commitHash": "188066a2534e5245731647813aecd16f8d45c315",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+            "lane": 2
+          },
+          {
+            "hash": "14789387785f72ec8769aca1e435da90e7bef437",
+            "lane": 9
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [
+          "task-yaml-w9jyfd-src-webclient-mo"
+        ],
+        "index": 52
+      },
+      {
+        "type": "commit",
+        "label": "On master: pre-merge-master-local",
+        "commit": {
+          "hash": "437bab2bb9c4c6ceecdaa86d3e1815083d323cae",
+          "subject": "On master: pre-merge-master-local",
+          "author": "circlemouth",
+          "timestamp": 1763907139,
+          "parents": [
+            "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+            "5a52ffeb95ea2c7375c38a4ecb3470b1dda7eba8",
+            "7ef722e5e0c043d9733e0f02dc20a8b2b28e2930"
+          ],
+          "parent": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+          "refs": "refs/stash",
+          "branches": [
+            "refs/stash"
+          ]
+        },
+        "commitHash": "437bab2bb9c4c6ceecdaa86d3e1815083d323cae",
+        "lane": 10,
+        "parentLinks": [
+          {
+            "hash": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+            "lane": 2
+          },
+          {
+            "hash": "5a52ffeb95ea2c7375c38a4ecb3470b1dda7eba8",
+            "lane": 11
+          },
+          {
+            "hash": "7ef722e5e0c043d9733e0f02dc20a8b2b28e2930",
+            "lane": 12
+          }
+        ],
+        "primaryBranchName": "refs/stash",
+        "branchColor": "#e84f7f",
+        "branchTags": [
+          "refs/stash"
+        ],
+        "index": 53
+      },
+      {
+        "type": "commit",
+        "label": "index on master: 226d125f fix",
+        "commit": {
+          "hash": "5a52ffeb95ea2c7375c38a4ecb3470b1dda7eba8",
+          "subject": "index on master: 226d125f fix",
+          "author": "circlemouth",
+          "timestamp": 1763907139,
+          "parents": [
+            "226d125ff86f6482a6fc5063cccb90d98f911a2d"
+          ],
+          "parent": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "5a52ffeb95ea2c7375c38a4ecb3470b1dda7eba8",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+            "lane": 2
+          }
+        ],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 54
+      },
+      {
+        "type": "commit",
+        "label": "untracked files on master: 226d125f fix",
+        "commit": {
+          "hash": "7ef722e5e0c043d9733e0f02dc20a8b2b28e2930",
+          "subject": "untracked files on master: 226d125f fix",
+          "author": "circlemouth",
+          "timestamp": 1763907139,
+          "parents": [],
+          "parent": null,
+          "refs": "",
+          "branches": []
+        },
+        "commitHash": "7ef722e5e0c043d9733e0f02dc20a8b2b28e2930",
+        "lane": 0,
+        "parentLinks": [],
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 55
+      },
+      {
+        "type": "commit",
+        "label": "Add ORCA master data gap follow-up and bridge summary",
+        "commit": {
+          "hash": "14789387785f72ec8769aca1e435da90e7bef437",
+          "subject": "Add ORCA master data gap follow-up and bridge summary",
+          "author": "circlemouth",
+          "timestamp": 1763907049,
+          "parents": [
+            "226d125ff86f6482a6fc5063cccb90d98f911a2d"
+          ],
+          "parent": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+          "refs": "",
+          "branches": [
+            "task-yaml-w9jyfd-src-webclient-mo",
+            "task/task-1764220478751-a06136",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "14789387785f72ec8769aca1e435da90e7bef437",
+        "lane": 11,
+        "parentLinks": [
+          {
+            "hash": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "task-yaml-w9jyfd-src-webclient-mo",
+        "branchColor": "#b84fe8",
+        "branchTags": [],
+        "index": 56
+      },
+      {
+        "type": "commit",
+        "label": "fix",
+        "commit": {
+          "hash": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+          "subject": "fix",
+          "author": "circlemouth",
+          "timestamp": 1763906539,
+          "parents": [
+            "af22c7040a264d90c909f8e4d356dee599b27bfa"
+          ],
+          "parent": "af22c7040a264d90c909f8e4d356dee599b27bfa",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "226d125ff86f6482a6fc5063cccb90d98f911a2d",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "af22c7040a264d90c909f8e4d356dee599b27bfa",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 57
+      },
+      {
+        "type": "commit",
+        "label": "Add ORCA master data gap report (20251123T130134Z)",
+        "commit": {
+          "hash": "af22c7040a264d90c909f8e4d356dee599b27bfa",
+          "subject": "Add ORCA master data gap report (20251123T130134Z)",
+          "author": "circlemouth",
+          "timestamp": 1763906520,
+          "parents": [
+            "d170fecbfc8e915d8b7564aaff52ce33b8a95835"
+          ],
+          "parent": "d170fecbfc8e915d8b7564aaff52ce33b8a95835",
+          "refs": "",
+          "branches": [
+            "task/task-1764220478751-a06136",
+            "master",
+            "task/task-1764213058790-94a0b2",
+            "task/yaml-13tbwys-src-webclient-mo",
+            "task/yaml-1adisab-src-webclient-mo",
+            "task-yaml-g58y0t-src-webclient-mod",
+            "task/task-1764212937811-25c985",
+            "task-1764232258705-4a7b6e",
+            "task-1764232253923-fe2331"
+          ]
+        },
+        "commitHash": "af22c7040a264d90c909f8e4d356dee599b27bfa",
+        "lane": 0,
+        "parentLinks": [
+          {
+            "hash": "d170fecbfc8e915d8b7564aaff52ce33b8a95835",
+            "lane": 2
+          }
+        ],
+        "primaryBranchName": "main",
+        "branchColor": "#4f85e8",
+        "branchTags": [],
+        "index": 58
       },
       {
         "type": "empty",
         "label": "初期状態 (初回コミット以前)",
         "files": [],
         "marker": "pre-history",
-        "index": 1
+        "index": 59
       }
     ]
   },
   "projectRoot": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
-  "savedAt": 1764205348114
+  "savedAt": 1764238975954
 }

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート — Web クライアント UX ドキュメント統合（更新）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .score-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+      }
+      .score-pill {
+        border: 1px solid #b0c3c9;
+        background: #f4fbff;
+        border-radius: 12px;
+        padding: 12px 16px;
+        min-width: 200px;
+        box-shadow: 0 2px 4px rgba(31, 42, 48, 0.1);
+      }
+      .score-pill .score-title {
+        font-size: 13px;
+        color: #1f2a30;
+        display: block;
+        margin-bottom: 4px;
+      }
+      .score-pill .score-value {
+        font-size: 16px;
+        font-weight: 700;
+        color: #0a4c6b;
+      }
+      .monitor-report,
+      .hex-chart {
+        display: flex;
+        flex-direction: column;
+      }
+      .monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 160px;
+      }
+      col.agent-column {
+        width: calc((100% - 160px) / 4);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        text-align: left;
+      }
+      th {
+        background: #d8e6e9;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      td {
+        font-size: 13px;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2f4050;
+      }
+      .hex-chart {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 6px;
+        justify-content: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart span {
+        width: 108px;
+        height: 60px;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        background: #cfe0e7;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.2;
+      }
+      .hex-chart span strong {
+        font-size: 12px;
+      }
+      .hex-chart span .value {
+        font-size: 11px;
+        margin-top: 4px;
+        color: #08324d;
+        font-weight: 600;
+      }
+      .metric-reasons {
+        list-style: none;
+        padding-left: 0;
+        margin: 0 0 12px;
+        font-size: 12.5px;
+        line-height: 1.4;
+        color: #1f2a30;
+      }
+      .metric-reasons li + li {
+        margin-top: 6px;
+      }
+      .commit-note {
+        font-size: 12px;
+        background: #f5f8fa;
+        border: 1px solid #d1e0e6;
+        padding: 8px;
+        border-radius: 6px;
+        margin-bottom: 6px;
+        color: #1f2a30;
+      }
+      .deliverable {
+        font-size: 12px;
+        color: #0a4c6b;
+        margin: 0 0 6px;
+      }
+      .deliverable code {
+        background: #eef6fb;
+        padding: 2px 4px;
+        border-radius: 4px;
+      }
+      .worktree-note {
+        margin-top: 18px;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .worktree-note ul {
+        margin: 6px 0 0 18px;
+      }
+      .best-note {
+        margin-top: 18px;
+        padding: 12px;
+        border: 1px solid #7eb1c4;
+        background: #eef7fb;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Web クライアント UX ドキュメント統合の評価（補足）</h1>
+        <p class="monitor-description">docs/web-client/ux/reception-schedule-ui-policy.md、patients-admin-ui-policy.md、charts-claim-ui-policy.md を中心に README / DOC_STATUS / AGENTS の参照チェーンを検証し、欠損とされた worktree を 1764232253923 で補完したうえで、最も優れた成果を選定しました。</p>
+        <div class="score-summary">
+          <div class="score-pill">
+            <span class="score-title">Agent task-1764232251496-d8f056</span>
+            <span class="score-value">553/600 🏆</span>
+          </div>
+          <div class="score-pill">
+            <span class="score-title">Agent task-1764232253923-fe2331</span>
+            <span class="score-value">547/600 🥇</span>
+          </div>
+          <div class="score-pill">
+            <span class="score-title">Agent task-1764232258705-4a7b6e</span>
+            <span class="score-value">540/600 🥈</span>
+          </div>
+          <div class="score-pill">
+            <span class="score-title">Agent task-1764232261091-ac580a</span>
+            <span class="score-value">532/600 🥉</span>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1764232251496-d8f056</th>
+            <th>Agent task-1764232253923-fe2331</th>
+            <th>Agent task-1764232258705-4a7b6e</th>
+            <th>Agent task-1764232261091-ac580a</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-11-27 19:10 JST</td>
+            <td>
+              <div class="hex-chart">
+                <span><strong>実用性</strong><span class="value">93点</span></span>
+                <span><strong>機能網羅性</strong><span class="value">90点</span></span>
+                <span><strong>構造</strong><span class="value">91点</span></span>
+                <span><strong>追跡性</strong><span class="value">94点</span></span>
+                <span><strong>ガバナンス</strong><span class="value">92点</span></span>
+                <span><strong>次工程</strong><span class="value">93点</span></span>
+              </div>
+              <ul class="metric-reasons">
+                <li><strong>実用性:</strong> README と DOC_STATUS の API/UX セクションを更新し、3 つの新方針を参照する経路を整備。</li>
+                <li><strong>機能網羅性:</strong> DOC_STATUS で RUN_ID/証跡付きで全ポリシーを網羅。</li>
+                <li><strong>構造:</strong> README に旧ガイドとの共存構造を維持しつつ、新しい UX ハブへの導線を追加。</li>
+                <li><strong>追跡性:</strong> 既存 logs & artifacts へのリンクを README・DOC_STATUS の備考に明示。</li>
+                <li><strong>ガバナンス:</strong> AGENTS が定義する READ→DOC→manager の連鎖を守る形で文書を整理。</li>
+                <li><strong>次工程:</strong> README・DOC_STATUS で次のレビュー/検証タスクを織り交ぜ、実装への引継ぎが容易。</li>
+              </ul>
+              <p class="commit-note">Evidence: README＆DOC_STATUS更新は commits <code>69707bcb</code> / <code>2b1cd670</code> にて実施。</p>
+              <p class="deliverable"><code>.worktrees/task-1764232251496-d8f056/docs/web-client/README.md</code><br /><code>.worktrees/task-1764232251496-d8f056/docs/web-client/planning/phase2/DOC_STATUS.md</code></p>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <span><strong>実用性</strong><span class="value">92点</span></span>
+                <span><strong>機能網羅性</strong><span class="value">94点</span></span>
+                <span><strong>構造</strong><span class="value">91点</span></span>
+                <span><strong>追跡性</strong><span class="value">90点</span></span>
+                <span><strong>ガバナンス</strong><span class="value">88点</span></span>
+                <span><strong>次工程</strong><span class="value">92点</span></span>
+              </div>
+              <ul class="metric-reasons">
+                <li><strong>実用性:</strong> Reception/Schedule に必要な components/API/tooltip/log を表形式で整理。</li>
+                <li><strong>機能網羅性:</strong> 画面構造・TooltipFields・バナー/再取得/ログ設計・チェックリストを網羅。</li>
+                <li><strong>構造:</strong> 表＋段落＋チェックリストのテンプレで参照性が高い。</li>
+                <li><strong>追跡性:</strong> artifacts/e2e や docs/server-modernization の logs へのリンクで検証痕跡を記録。</li>
+                <li><strong>ガバナンス:</strong> README・DOC_STATUS との参照チェーンを踏襲。</li>
+                <li><strong>次工程:</strong> TooltipFields と監査トレーサビリティの実装 / QA への指示を明記。</li>
+              </ul>
+              <p class="commit-note">Evidence: Reception doc added commit <code>2b1cd670</code>.</p>
+              <p class="deliverable"><code>.worktrees/task-1764232253923-fe2331/docs/web-client/ux/reception-schedule-ui-policy.md</code></p>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <span><strong>実用性</strong><span class="value">90点</span></span>
+                <span><strong>機能網羅性</strong><span class="value">91点</span></span>
+                <span><strong>構造</strong><span class="value">89点</span></span>
+                <span><strong>追跡性</strong><span class="value">90点</span></span>
+                <span><strong>ガバナンス</strong><span class="value">89点</span></span>
+                <span><strong>次工程</strong><span class="value">91点</span></span>
+              </div>
+              <ul class="metric-reasons">
+                <li><strong>実用性:</strong> Patients/Administration 並列比較で UI・API・権限・ステータスを可視化。</li>
+                <li><strong>機能網羅性:</strong> ORCA master/PHR ブリッジ、保存前チェック、トーン記述を含む。
+</li>
+                <li><strong>構造:</strong> 節ごとに画面単位で情報整理。</li>
+                <li><strong>追跡性:</strong> logs/artifacts へのリンク、DOC_STATUS との同期も確認。</li>
+                <li><strong>ガバナンス:</strong> Tone ガイド整合を management guide とリンク。</li>
+                <li><strong>次工程:</strong> Checklist/警告/監査の記述で QA を引き継げる。</li>
+              </ul>
+              <p class="commit-note">Evidence: commit <code>09d97007</code> adds doc; DOC_STATUS sync via <code>69707bcb</code>.</p>
+              <p class="deliverable"><code>.worktrees/task-1764232258705-4a7b6e/docs/web-client/ux/patients-admin-ui-policy.md</code></p>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <span><strong>実用性</strong><span class="value">89点</span></span>
+                <span><strong>機能網羅性</strong><span class="value">90点</span></span>
+                <span><strong>構造</strong><span class="value">88点</span></span>
+                <span><strong>追跡性</strong><span class="value">88点</span></span>
+                <span><strong>ガバナンス</strong><span class="value">87点</span></span>
+                <span><strong>次工程</strong><span class="value">90点</span></span>
+              </div>
+              <ul class="metric-reasons">
+                <li><strong>実用性:</strong> ChartsPage の docinfo/labo/orca/letter 依存と guard ルールを具体化。</li>
+                <li><strong>機能網羅性:</strong> Guard rules、React Query ポリシー、API エラー、artifact リンクを一覧。</li>
+                <li><strong>構造:</strong> セクション構成＋API/証跡一覧で大規模内容を整理。</li>
+                <li><strong>追跡性:</strong> logs/artifacts（20251124T000000Z etc） へのリンク。</li>
+                <li><strong>ガバナンス:</strong> RUN_ID に基づき DOC_STATUS へ整合。
+</li>
+                <li><strong>次工程:</strong> API+artifacts 対応表が QA/レビューを支援。</li>
+              </ul>
+              <p class="commit-note">Evidence: charts doc commit <code>d26cac21</code>; DOC_STATUS addition via <code>69707bcb</code>.</p>
+              <p class="deliverable"><code>.worktrees/task-1764232261091-ac580a/docs/web-client/ux/charts-claim-ui-policy.md</code></p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <section class="best-note">
+        <strong>最優秀成果物（Best Pick）:</strong>
+        <p>最もスコアの高い README/DOC_STATUS 更新をベースとした <code>task-1764232251496-d8f056</code> をベストと選定し、AGENTS→README→DOC_STATUS→UX policy の参照チェーンが最も明確に整備されている点を評価しました。</p>
+      </section>
+      <section class="worktree-note">
+        <strong>Worktree deliverables（ランク順）:</strong>
+        <ul>
+          <li>.worktrees/task-1764232251496-d8f056：README & DOC_STATUS の整備（ベスト）</li>
+          <li>.worktrees/task-1764232253923-fe2331：Reception/Schedule UX 方針</li>
+          <li>.worktrees/task-1764232258705-4a7b6e：Patients/Admin UX 方針</li>
+          <li>.worktrees/task-1764232261091-ac580a：Charts & Claim UI 方針</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>
