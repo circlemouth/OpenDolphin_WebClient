@@ -27,3 +27,6 @@ ops/tests/api-smoke-test/headers/javatime-stage.headers
 # ORCA certification files
 ORCAcertification/*
 !ORCAcertification/README_PASSPHRASE.md
+
+# Build artifacts and temporary files
+build/

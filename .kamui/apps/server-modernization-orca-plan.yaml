@@ -1,0 +1,244 @@
+ganttConfig:
+  defaultView: week
+  startDate: 2025-11-20
+  showFilters: true
+labels:
+  dayNames: [Mon, Tue, Wed, Thu, Fri, Sat, Sun]
+  priorities:
+    High: High
+    Medium: Medium
+    Low: Low
+  statuses:
+    completed: completed
+    in_progress: in_progress
+    not_started: not_started
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  server_modernization:
+    scope_and_design:
+      run_id-and-scope.md:
+        content: |-
+          - 目的: モダナイズ版サーバーのORCA連携スコープ確定とRUN_ID採番/展開方針を整理する。
+          - 成果物: RUN_ID紐づけの指示・ハブ文書更新計画、依存一覧、リスク覚書。
+          - 判定基準: ハブ文書とDOC_STATUS更新手順が合意されていること。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies: []
+        schedule:
+          start: 2025-11-20T00:00:00Z
+          days: 1
+      api-contract-and-mapping.md:
+        content: |-
+          - 目的: ORCA公開API仕様とモダナイズ版サーバーで提供する契約の差分を洗い出し、I/Oマッピング表を確定する。
+          - 成果物: エンドポイント一覧、必須フィールド/Validationルール、モックレスポンス案。
+          - 判定基準: ステークホルダー承認済みのAPI契約書があること。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/scope_and_design/run_id-and-scope.md
+        schedule:
+          start: 2025-11-21T00:00:00Z
+          days: 2
+    connectivity:
+      orca-trial-connectivity.md:
+        content: |-
+          - 目的: WebORCAトライアル環境(trial/weborcatrial)への到達性とTLS/証跡取得手順を確立する。
+          - 成果物: 接続確認ログ、使用証跡パス、失敗時のリトライ手順。
+          - 判定基準: 安定してAPI疎通が取れることを確認しRUN_ID付証跡が残ること。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/scope_and_design/run_id-and-scope.md
+        schedule:
+          start: 2025-11-22T00:00:00Z
+          days: 1
+      auth-session-module.md:
+        content: |-
+          - 目的: ORCAトライアルAPIの認証・セッション/トークン管理をモダナイズ版サーバーに実装。
+          - 成果物: セッション確立/更新/失効フロー、リトライと失敗検知、監査ログ項目。
+          - 判定基準: 疎通試験で安定してトークン管理が機能し、例外パスがログに残ること。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/scope_and_design/api-contract-and-mapping.md
+          - src/server_modernization/connectivity/orca-trial-connectivity.md
+        schedule:
+          start: 2025-11-23T00:00:00Z
+          days: 3
+      request-response-adapter.md:
+        content: |-
+          - 目的: ORCA特有のリクエスト/レスポンス形をモダナイズ版サーバーの内部DTOに変換するアダプター層を実装。
+          - 成果物: パラメータ正規化・コード体系変換・エラーマッピング。
+          - 判定基準: 主要ユースケースで損失なく往復変換でき、単体テストが網羅されている。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/connectivity/auth-session-module.md
+        schedule:
+          start: 2025-11-26T00:00:00Z
+          days: 3
+    features:
+      patient-demographics.md:
+        content: |-
+          - 目的: 患者基本情報取得/更新のAPIをモダナイズ版サーバーに実装しORCAと同期。
+          - 成果物: エンドポイント、DTO、バリデーション、監査ログ。
+          - 判定基準: ORCA実データで正しく取得/更新が往復できる。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/connectivity/request-response-adapter.md
+        schedule:
+          start: 2025-11-29T00:00:00Z
+          days: 2
+      billing-claim-endpoints.md:
+        content: |-
+          - 目的: 受付・請求・レセ電準備系のAPIを実装し、ORCAトライアルと連携。
+          - 成果物: 受付登録/会計/請求送信エンドポイントとエラーハンドリング。
+          - 判定基準: シナリオテストで主要フローが無停止で通る。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/connectivity/request-response-adapter.md
+          - src/server_modernization/features/patient-demographics.md
+        schedule:
+          start: 2025-11-29T00:00:00Z
+          days: 4
+    quality_and_ops:
+      logging-and-audit.md:
+        content: |-
+          - 目的: 監査ログ・統一エラーハンドリングを実装し、ORCA連携の可観測性を高める。
+          - 成果物: 構造化ログ/トレーシングID/失敗時の再送ルール。
+          - 判定基準: 主要エラーが再現時にログへ正確に記録される。
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/features/billing-claim-endpoints.md
+        schedule:
+          start: 2025-12-03T00:00:00Z
+          days: 2
+      performance-capacity-test.md:
+        content: |-
+          - 目的: 想定同時接続/リクエスト量での性能・容量テストを実施しボトルネックを洗出す。
+          - 成果物: 負荷テストレポート、改善バックログ。
+          - 判定基準: SLO達成もしくは対応策合意。
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/features/billing-claim-endpoints.md
+        schedule:
+          start: 2025-12-05T00:00:00Z
+          days: 2
+      security-review.md:
+        content: |-
+          - 目的: 認証・ログ・データ取り扱いの脆弱性レビューと是正。
+          - 成果物: セキュリティレビュー票、是正チケット。
+          - 判定基準: 重大リスクがゼロまたは承認済み例外のみ。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/quality_and_ops/logging-and-audit.md
+        schedule:
+          start: 2025-12-07T00:00:00Z
+          days: 2
+      ci-automation.md:
+        content: |-
+          - 目的: ORCA連携機能の自動テスト/リント/契約テストをCIに組み込む。
+          - 成果物: CIパイプライン定義、モック/スタブ設定。
+          - 判定基準: MR時に必須チェックが自動実行され合格する。
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/quality_and_ops/logging-and-audit.md
+        schedule:
+          start: 2025-12-09T00:00:00Z
+          days: 2
+      integration-test-orca.md:
+        content: |-
+          - 目的: モダナイズサーバーとリモートORCA間の結合テストをシナリオ別に実施。
+          - 成果物: テストケース・証跡・既知課題一覧。
+          - 判定基準: クリティカル欠陥なしで主要シナリオが通過。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/features/billing-claim-endpoints.md
+          - src/server_modernization/quality_and_ops/logging-and-audit.md
+        schedule:
+          start: 2025-12-11T00:00:00Z
+          days: 2
+      e2e-webclient-handshake.md:
+        content: |-
+          - 目的: 開発中Webクライアントを用いた接続確認（手前までの疎通）を実施し、モダナイズサーバー経由でORCAへ到達することを確認。
+          - 成果物: シナリオ実行ログ、課題リスト、回避策。
+          - 判定基準: 代表的な閲覧/登録フローが成功し、既知課題が記録される。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/quality_and_ops/integration-test-orca.md
+        schedule:
+          start: 2025-12-13T00:00:00Z
+          days: 2
+      release-go-no-go.md:
+        content: |-
+          - 目的: リスク/残課題/手順を集約し、本番リリース可否（ORCA連携側）を判定。
+          - 成果物: Go/No-Go判定、残課題バックログ、ロールバック手順。
+          - 判定基準: 承認者サインオフとハブ文書反映が完了。
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependencies:
+          - src/server_modernization/quality_and_ops/security-review.md
+          - src/server_modernization/quality_and_ops/ci-automation.md
+          - src/server_modernization/quality_and_ops/e2e-webclient-handshake.md
+        schedule:
+          start: 2025-12-15T00:00:00Z
+          days: 2
