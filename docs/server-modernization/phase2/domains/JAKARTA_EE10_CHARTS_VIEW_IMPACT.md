@@ -38,7 +38,7 @@
 ### 2.3 アクセシビリティ・監査要件
 
 - Web クライアントは `httpClient` でリクエスト／レスポンス監査ログを送出（`web-client/src/libs/http/httpClient.ts:1-160`）し、`userName`・`password` ヘッダは `createAuthHeaders` で組み立てています（`auth-headers.ts:33-61`）。Jakarta Servlet 6 でもヘッダ名の取り扱いは不変ですが、`LogFilter`（`server-modernized/src/main/java/open/dolphin/rest/LogFilter.java:24-90`）が `HttpServletRequestWrapper` を使って `remoteUser` を設定しているため、Jakarta 版 API でのセキュリティ・リスナー干渉を検証する必要があります。
-- 監査ログ出力は MicroProfile Metrics 連携（`RequestMetricsFilter.java:19-76`）に依存しており、WildFly 33 では非推奨。Micrometer への移行を行わない場合、アクセス監査メトリクスが欠落しアクセシビリティ改善計画（`docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` の監査要件）に抵触します。
+- 監査ログ出力は MicroProfile Metrics 連携（`RequestMetricsFilter.java:19-76`）に依存しており、WildFly 33 では非推奨。Micrometer への移行を行わない場合、アクセス監査メトリクスが欠落しアクセシビリティ改善計画（`docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md` の監査要件）に抵触します。
 
 ## 3. 境界シナリオとリスク分析
 
@@ -62,4 +62,4 @@
 ## 5. ドキュメント連携メモ
 
 - 本メモで新たに顕在化した課題（Micrometer 化、`common` モジュールの Java 17 化）は `JAKARTA_EE10_GAP_LIST.md`・`IMPACT_MATRIX.md` の既存項目と重複するため、優先度や担当者の更新は Worker 0 と調整のうえ実施する。
-- 実装着手時には `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` で定義された監査・レイアウト要件を再確認し、UI 側への影響（例: ドキュメントページング時の空状態表示）を同ガイドへ追記すること。
+- 実装着手時には `docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md` で定義された監査・レイアウト要件を再確認し、UI 側への影響（例: ドキュメントページング時の空状態表示）を同ガイドへ追記すること。

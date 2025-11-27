@@ -239,7 +239,7 @@ No.19-38 で作成した XML テンプレートの確認は `artifacts/orca-conn
   - SQL 実行時間（ms）、DB ヒット有無、レコード件数、payload size（bytes）。
   - 呼び出し元 `facilityId` / `userId`、呼び出しモジュール（charts/reception/billing）、クライアント `traceId`。 
   - エラー分類: 4xx（validation, missing-master, not-found-range）, 5xx（db-timeout, cache-layer, upstream-orca）, timeout（client/server 別）。
-  - 監査出力先: Web クライアントは front 監査ログ（`ux/API_SURFACE_AND_AUDIT_GUIDE.md` 準拠）へ `runId/cacheHit/missingMaster/fallbackUsed/fetchedAt` を送出し、サーバー側は `d_audit_event` に Trace-ID 付きで保存。
+  - 監査出力先: Web クライアントは front 監査ログ（`ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md` 準拠）へ `runId/cacheHit/missingMaster/fallbackUsed/fetchedAt` を送出し、サーバー側は `d_audit_event` に Trace-ID 付きで保存。
 
 ### 7.1 必須ログ項目 ↔ ベンチメトリクス対応（RUN_ID=`20251124T120000Z`）
 | ログ項目 | ベンチ出力/計測ポイント | 備考 |

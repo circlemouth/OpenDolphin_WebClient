@@ -3,7 +3,7 @@
 ## 前提条件 / 参照リスト
 - **Seed SQL**: `facility=9001/9002` の PublishedTree/SubscribedTree を事前投入するため、[`ops/db/local-baseline/stamp_public_seed.sql`](../ops/db/local-baseline/stamp_public_seed.sql) を Legacy/Modern Postgres へ適用しておく（`domain-transaction-parity.md` Appendix A.5 参照）。
 - **AuditTrailService 連携**: `STAMP_TREE_*_GET` の監査/AuditTrailService 実装は [`docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md`](../docs/server-modernization/phase2/SERVER_MODERNIZED_DEBUG_CHECKLIST.md) と [`TRACEID_JMS_RUNBOOK.md`](../docs/server-modernization/phase2/operations/TRACEID_JMS_RUNBOOK.md) Appendix A の手順を満たす必要がある。`SessionAuditDispatcher` 設計メモと Runbook を同時に更新し、200 応答でも `d_audit_event` が空にならないよう検証する。
-- **UI 仕様**: 公開/共有タブの UX・ADMIN 権限・購読状態のマッピングは [`docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md`](../docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md#54-スタンプ管理センター) と `docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md` の Stamp セクションに従う。REST 実装を選択した場合でも UI 側で facility セレクタや状態バッジを正しく表示する前提でテストケースを定義する。
+- **UI 仕様**: 公開/共有タブの UX・ADMIN 権限・購読状態のマッピングは [`docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md`](../docs/web-client/architecture/WEB_CLIENT_REQUIREMENTS.md#54-スタンプ管理センター) と `docs/web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md` の Stamp セクションに従う。REST 実装を選択した場合でも UI 側で facility セレクタや状態バッジを正しく表示する前提でテストケースを定義する。
 
 ## 背景整理
 - RUN_ID=`20251111TstampfixZ4`〜`Z6`（`artifacts/parity-manual/stamp/20251111TstampfixZ{4,5,6}/`）で `/stamp/tree/9001/{public,shared,published}` を叩いた結果、Legacy / Modernized ともに `HTTP/1.1 404`（Content-Length 0, `X-Trace-Id` のみ返却）となり、アプリ層まで処理が届いていないことを確認済み。

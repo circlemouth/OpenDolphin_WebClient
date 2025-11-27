@@ -26,5 +26,5 @@
 3. サーバーが LP のみを実装している場合、MSW 側の `lp-only` フラグと実挙動の差分（再接続回数・タイムアウト値）をログへ記録する。
 
 ## 残課題
-- `ux/CHART_UI_GUIDE_INDEX.md` に記載の再接続 UX（トースト/Badge）とイベントペイロードの型を突合し、`schemas/chart-event.json` を別途追加する。
+- `ux/legacy/CHART_UI_GUIDE_INDEX.md` に記載の再接続 UX（トースト/Badge）とイベントペイロードの型を突合し、`schemas/chart-event.json` を別途追加する。
 - 複数タブ開時の SSE 競合（`EventSource` 多重接続）を再現するテストケースは未整備。 

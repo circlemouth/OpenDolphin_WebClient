@@ -3,7 +3,7 @@
 > **参照開始順**
 > 1. `AGENTS.md`
 > 2. `docs/web-client/README.md`（Web Client Hub）
-> 3. `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` → `ux/ONE_SCREEN_LAYOUT_GUIDE.md` → `ux/KARTE_SCREEN_IMPLEMENTATION.md`
+> 3. `docs/web-client/ux/ux-documentation-plan.md` → `ux/reception-schedule-ui-policy.md` / `ux/patients-admin-ui-policy.md` / `ux/charts-claim-ui-policy.md`（`ux/legacy/` は背景資料）
 > 4. `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`
 >
 > **報告テンプレ（RUN_ID / 証跡パス / DOC_STATUS 行）**
@@ -22,7 +22,7 @@
 
 ## 1. 背景
 - Web クライアント関連資料は `docs/web-client/README.md` をハブとして「architecture / process / features / operations / ux / design-system」に整理されている。最新の棚卸しは `planning/phase2/DOC_STATUS.md`（Active 行: README, REPOSITORY_OVERVIEW, WEB_CLIENT_REQUIREMENTS, SERVER_MODERNIZATION_PLAN など）で管理。
-- カルテ UI 変更時は `ux/CHART_UI_GUIDE_INDEX.md` → `ux/ONE_SCREEN_LAYOUT_GUIDE.md` → `ux/KARTE_SCREEN_IMPLEMENTATION.md` の順で要件を確認する。ChartsPage 系のタスクは AGENTS.md でも同様の参照が必須。
+- カルテ UI 変更時は `docs/web-client/ux/ux-documentation-plan.md` → `ux/charts-claim-ui-policy.md` を起点に、legacy な `ux/legacy/CHART_UI_GUIDE_INDEX.md` / `ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md` / `ux/legacy/KARTE_SCREEN_IMPLEMENTATION.md` を補足で参照する。ChartsPage 系タスクは AGENTS.md の参照ルールも順守する。
 - Features カテゴリには CareMap/Lab/予約/証明書など業務別ガイドがあり、UI 改修や API 仕様変更時は関連ファイルをすべて更新する必要がある。
 - Operations カテゴリ（`LOCAL_BACKEND_DOCKER.md`, `mac-dev-login.local.md`, `LEGACY_INTEGRATION_CHECKS.md`, `TEST_SERVER_DEPLOY.md` 等）はワーカーの環境構築・検証手順の基盤。証跡や secrets の取り扱いは各 Runbook に準拠。
 
@@ -32,18 +32,18 @@
 | ハブ & 棚卸し | `docs/web-client/README.md` / `planning/phase2/DOC_STATUS.md` | 全資料ナビゲーションと Active/Dormant/Archive 管理。 | README: 2025-11-07 / DOC_STATUS: 2025-11-07 |
 | アーキテクチャ | `architecture/REPOSITORY_OVERVIEW.md`<br/>`architecture/WEB_CLIENT_REQUIREMENTS.md`<br/>`architecture/SERVER_MODERNIZATION_PLAN.md` | リポジトリ構成・機能/非機能要件・サーバー計画。 | 2025-11-12 / 2025-11-12 / 2025-11-15 |
 | プロセス | `process/ROADMAP.md`<br/>`process/SWING_PARITY_CHECKLIST.md`<br/>`process/API_UI_GAP_ANALYSIS.md`<br/>`process/SECURITY_AND_QUALITY_IMPROVEMENTS.md` | マイルストーンと UI/API ギャップ、セキュリティ改善。 | 2025-11-05〜11-12 |
-| UX & デザイン | `ux/CHART_UI_GUIDE_INDEX.md`<br/>`ux/ONE_SCREEN_LAYOUT_GUIDE.md`<br/>`ux/KARTE_SCREEN_IMPLEMENTATION.md`<br/>`design-system/ALPHA_COMPONENTS.md` | ChartsPage レイアウト、レール比率、コンポーネント設計。 | 2025-11-01 / 2025-11-01 / 2025-11-01 / 2025-11-04 |
+| UX & デザイン | `ux/ux-documentation-plan.md` → `ux/reception-schedule-ui-policy.md` / `ux/patients-admin-ui-policy.md` / `ux/charts-claim-ui-policy.md`（legacy: `ux/legacy/CHART_UI_GUIDE_INDEX.md` / `ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md` / `ux/legacy/KARTE_SCREEN_IMPLEMENTATION.md`）<br/>`design-system/ALPHA_COMPONENTS.md` | ChartsPage レイアウト、レール比率、コンポーネント設計。 | 2025-11-01 / 2025-11-01 / 2025-11-01 / 2025-11-04 |
 | 機能別ガイド | `features/CARE_MAP_TIMELINE.md`<br/>`features/RECEPTION_SCHEDULE_AND_SUMMARY.md`<br/>`features/FACILITY_SCHEDULE_VIEW.md`<br/>`features/LAB_RESULTS_VIEWER.md`<br/>`features/ORDER_ENTRY_DATA_GUIDE.md`<br/>`features/MEDICAL_CERTIFICATES_AND_SCHEMA.md`<br/>`features/PHASE3_STAMP_AND_ORCA.md` | CareMap／受付／予約／検査／オーダ／文書／スタンプの仕様。 | 2025-11-01〜11-08 |
 | 運用・手順 | `operations/LOCAL_BACKEND_DOCKER.md`<br/>`operations/mac-dev-login.local.md`<br/>`operations/CAREMAP_ATTACHMENT_MIGRATION.md`<br/>`operations/DEV_MSW_MOCKS.md`<br/>`operations/LEGACY_INTEGRATION_CHECKS.md`<br/>`operations/TEST_SERVER_DEPLOY.md` | ローカル環境、ログイン情報、MSW モック、統合・テスト手順。 | 2025-11-06〜11-13 |
 
 ## 3. タスクボード
 - [ ] **タスクA: ハブ/棚卸し同期（担当A）**
-  - [x] `docs/web-client/README.md` のカテゴリ一覧を最新化し、追加・更新した資料へ必ずリンクを追記する。（2025-11-16 RUN_ID=`20251116T170500Z`: `ux/API_SURFACE_AND_AUDIT_GUIDE.md` を追記）
+  - [x] `docs/web-client/README.md` のカテゴリ一覧を最新化し、追加・更新した資料へ必ずリンクを追記する。（2025-11-16 RUN_ID=`20251116T170500Z`: `ux/ux-documentation-plan.md` を追記し、legacy `ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md` を補足参照に追加）
   - [ ] `planning/phase2/DOC_STATUS.md` の Web クライアント行（README / architecture 系）を確認し、最終レビュー日と担当者を 2025-11 週次へ更新。
   - [ ] `README` に追加したリンクを `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` の Web クライアント行にも反映。
   - [ ] 【完了報告必須】更新内容・参照した行番号・RUN_ID（該当なしなら `RUN_ID=NA`）を記載。
 - [ ] **タスクB: UX / ChartsPage 要件精査（担当B）**
-  - [ ] `ux/CHART_UI_GUIDE_INDEX.md` → `ONE_SCREEN_LAYOUT_GUIDE.md` → `KARTE_SCREEN_IMPLEMENTATION.md` の順に確認し、レイアウト変更や新規ガイドが必要な場合はチェックリストへタスクを追加。
+  - [ ] `ux/ux-documentation-plan.md` → `ux/charts-claim-ui-policy.md` の順に確認し、レイアウト変更や新規ガイドが必要な場合はチェックリストへタスクを追加。（legacy 資料: `ux/legacy/CHART_UI_GUIDE_INDEX.md` / `ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md` / `ux/legacy/KARTE_SCREEN_IMPLEMENTATION.md`）
   - [ ] `features/CARE_MAP_TIMELINE.md` と `design-system/ALPHA_COMPONENTS.md` を突合し、DocumentTimeline や SafetySummaryCard など共通コンポーネントの状態管理が一致しているか確認。
   - [ ] ChartsPage 関連の作業をワーカーへ渡す際は、AGENTS.md で指定された UX 資料を参照済みかどうかをチェックし、【ワーカー指示】内に参照順序を記載。
   - [ ] 進捗は `DOC_STATUS.md` の「モダナイズ/カルテ UX」行（未作成の場合は行を追加）に残す。

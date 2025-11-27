@@ -2,7 +2,7 @@
 
 Web クライアントが REST API を呼び出す導線をページ単位で整理し、監査ログやレイアウト上のガードをまとめたガイド。`docs/web-client/architecture/REST_API_INVENTORY.md` の UI ステータス列と同期し、Reception/Admin/Charts 各領域で「どのロールがどの UI から API を実行するか」を即時に確認できるようにする。
 
-- 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md` → `docs/web-client/architecture/REST_API_INVENTORY.md` → `docs/web-client/process/API_UI_GAP_ANALYSIS.md`
+- 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/web-client/ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md` → `docs/web-client/architecture/REST_API_INVENTORY.md` → `docs/web-client/process/API_UI_GAP_ANALYSIS.md`
 - RUN_ID=`20251116T170500Z` の成果は `docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md` に証跡化し、DOC_STATUS 備考へ同一 ID で記載する。
 
 ## 1. ページ別 API / ロール / 監査マッピング
@@ -28,7 +28,7 @@ Web クライアントが REST API を呼び出す導線をページ単位で整
 
 ## 3. レイアウト & アクセシビリティ要件
 
-- **ReceptionPage**: VisitSidebar の API 呼び出し結果は `aria-live="polite"` で読み上げ、受付カード削除時は `role="status"` を持つ行に結果を表示する。詳細は `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` §4 を参照。
+- **ReceptionPage**: VisitSidebar の API 呼び出し結果は `aria-live="polite"` で読み上げ、受付カード削除時は `role="status"` を持つ行に結果を表示する。詳細は `docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md` §4 を参照。
 - **SystemPreferencesPage**: ライセンス/Cloud Zero カードは `SurfaceCard` の `tone="warning"` を用い、`aria-describedby` に RUN_ID と証跡パスを紐付ける。これにより Ops が監査対象を特定しやすくなる。
 - **ChartsPage**: DocumentTimelinePanel の編集ダイアログは常に元文書タイトルを `aria-label` に含め、`PUT /karte/document` で失敗した場合でも焦点を失わないよう `focus-trap` を維持する。
 - **PatientDataExportPage**: ダウンロードボタンには `data-audit-intent="export"` を付与し、スクリーンリーダー向けに「RUN_ID=... で出力」の説明を追加する。
@@ -41,4 +41,4 @@ Web クライアントが REST API を呼び出す導線をページ単位で整
 
 ---
 
-> 本ガイドは `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` の姉妹ドキュメントであり、Administration と Reception Page の監査要求に特化している。今後 API 実装範囲が広がった場合は、表へ行を追加し、関連する features/operations ドキュメントと同時に更新すること。
+> 本ガイドは `docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md` の姉妹ドキュメントであり、Administration と Reception Page の監査要求に特化している。今後 API 実装範囲が広がった場合は、表へ行を追加し、関連する features/operations ドキュメントと同時に更新すること。
