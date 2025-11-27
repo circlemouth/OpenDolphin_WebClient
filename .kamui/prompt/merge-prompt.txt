@@ -1,4 +1,4 @@
-以下の手順でmainブランチへのマージを実行してください：
+以下の手順でmasterブランチへのマージを実行してください：
 
 1. 現在の作業をコミット
    - git add . でステージング
@@ -6,13 +6,12 @@
 - 現在のディレクトリを確認
 
 2. リポジトリのルートディレクトリに移動
-   - cd /Users/motokidaisuke/kamui-space-time-editor
 
-3. mainブランチにチェックアウトしてマージ
+
+3. masterブランチにチェックアウトしてマージ
    - git checkout main
    - git merge --no-ff task/元々いたディレクトリのタスクID
 
 実際のコマンド例：
 git add . && git commit -m "適切なコミットメッセージ" && 適切なディレクトリに移動 && git checkout master && git merge --no-ff task/元々いたディレクトリのタスクID
-
-マージする時はmainにあるステージングか未ステージの.kamui/tasks-state.jsonのmainの方を先にコミットしてからマージ作業すること
+マージする時はmasterにあるステージングか未ステージの.kamui/tasks-state.jsonのmainの方を先にコミットしてからマージ作業すること
