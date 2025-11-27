@@ -1,47 +1,14 @@
 [
   {
-    "id": "task-1764213133399-6c10cb",
-    "name": "🔍Monitor: [webclient modernized bridge gantt] 06_ChartsとClaim UI構成方針\n期間: 11/29 09:00 - 12/02 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 06 Charts と Claim UI構成方針\n\n- `ChartsPage` 上のタイムライン、診断/文書/検査パネル、Claim フォームに対して必須データ（docinfo, labo, orca）を一覧化し、MSW/サーバー切替での `dataSourceTransition`・`cacheHit` 表示ルールを決める。\n- API接続: `doc-info-api.ts`, `labo-api.ts`, `orca-api.ts`, `letter-api.ts` に対して `resolveMasterSource` の注入ルールとエラーパス（placeholder, toast, read-only）を定義。\n- UI操作: バナー/モーダル/カードの状態管理を React Query の `staleTime`・`onError` で統一し、監査メタ・警告文言・ログ出力度を記載。\n- Deliverable: `docs/web-client/ux/charts-claim-ui-policy.md` にコンポーネント毎のガードルールと、API名・artifact パスを parallel list で掲載。\n\nYAML ID: src/webclient_modernized_bridge/06_ChartsとClaim UI構成方針.md",
-    "model": "codex",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-11-27T03:12:13.399Z",
-    "updatedAt": "2025-11-27T03:12:13.399Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1764213133399-6c10cb",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1764213058790-zr1kvhh1",
-    "aiCompetitionGroupName": "[webclient modernized bridge gantt] 06_ChartsとClaim UI構成方針\n期間: 11/29 09:00 - 12/02 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 06 Charts と Claim UI構成方針\n\n- `ChartsPage` 上のタイムライン、診断/文書/検査パネル、Claim フォームに対して必須データ（docinfo, labo, orca）を一覧化し、MSW/サーバー切替での `dataSourceTransition`・`cacheHit` 表示ルールを決める。\n- API接続: `doc-info-api.ts`, `labo-api.ts`, `orca-api.ts`, `letter-api.ts` に対して `resolveMasterSource` の注入ルールとエラーパス（placeholder, toast, read-only）を定義。\n- UI操作: バナー/モーダル/カードの状態管理を React Query の `staleTime`・`onError` で統一し、監査メタ・警告文言・ログ出力度を記載。\n- Deliverable: `docs/web-client/ux/charts-claim-ui-policy.md` にコンポーネント毎のガードルールと、API名・artifact パスを parallel list で掲載。\n\nYAML ID: src/webclient_modernized_bridge/06_ChartsとClaim UI構成方針.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1764213058790-94a0b2"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "ユーザーの観点からたった実用性と機能網羅性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1764213118790,
-    "worktreePath": ".worktrees/task-1764213133399-6c10cb"
-  },
-  {
     "id": "task-1764213058790-94a0b2",
     "name": "CodexCLI1: [webclient modernized bridge gantt] 06_ChartsとClaim UI構成方針\n期間: 11/29 09:00 - 12/02 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 06 Charts と Claim UI構成方針\n\n- `ChartsPage` 上のタイムライン、診断/文書/検査パネル、Claim フォームに対して必須データ（docinfo, labo, orca）を一覧化し、MSW/サーバー切替での `dataSourceTransition`・`cacheHit` 表示ルールを決める。\n- API接続: `doc-info-api.ts`, `labo-api.ts`, `orca-api.ts`, `letter-api.ts` に対して `resolveMasterSource` の注入ルールとエラーパス（placeholder, toast, read-only）を定義。\n- UI操作: バナー/モーダル/カードの状態管理を React Query の `staleTime`・`onError` で統一し、監査メタ・警告文言・ログ出力度を記載。\n- Deliverable: `docs/web-client/ux/charts-claim-ui-policy.md` にコンポーネント毎のガードルールと、API名・artifact パスを parallel list で掲載。\n\nYAML ID: src/webclient_modernized_bridge/06_ChartsとClaim UI構成方針.md",
     "model": "Codex CLI",
-    "status": "working",
+    "status": "completed",
     "importance": "medium",
     "urgency": "medium",
     "createdAt": "2025-11-27T03:10:58.790Z",
-    "updatedAt": "2025-11-27T05:03:09.646Z",
-    "requiresTerminal": true,
+    "updatedAt": "2025-11-27T05:43:27.502Z",
+    "requiresTerminal": false,
     "createWorktree": true,
     "branchName": "task/task-1764213058790-94a0b2",
     "baseBranch": "master",
@@ -53,7 +20,7 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1764213058790-94a0b2",
+    "worktreePath": null,
     "medal": "gold"
   },
   {
