@@ -145,71 +145,94 @@ src:
       schedule:
         start: 2025-11-24T00:00:00.000Z
         end: 2025-11-27T00:00:00.000Z
-    05_APIサーフェス網羅マッピングとUI欠落検知.md:
+    05_UI構成確認とAPI接続マッピング.md:
       content: |-
-        # 05 APIサーフェス網羅マッピングとUI欠落検知
+        # 05 UI構成確認とAPI接続マッピング
 
-        - ORCA_API_STATUS Matrix 1-53 をエンドポイントごとに UI/機能へ紐付け、未実装 UI や spec 乖離をタグ付け。
-        - CRUD 可否・証跡パス・Spec-based 実装箇所を一覧化し、MSW / snapshot / server 切替時の挙動差をガントチャートに反映。
-        - 出力: `src/webclient_modernized_bridge/api_ui_coverage.csv`（UI 実装有無・監査必須フィールド・モダナイズ版サーバー提供有無）。
+        - `web-client/src/app/router.tsx` から `SidebarContext`/`AppShell` までのルーティングとレイアウト構成を俯瞰し、Charts/Reception/Schedule/Patients/Administration に割り当てられた `features` コードの責務を明文化。
+        - `web-client/src/libs/http/httpClient.ts`、`auth/auth-service.ts`、MSW ハンドラー、`resolveMasterSource` など Web ←→ API 接続ポイントを洗い出し、各画面で利用する Endpoint（例: `/api01rv2/*`, `/orca*/**`）との対応表を作成。
+        - UI 再利用コンポーネント（Stack/SurfaceCard/StatusBadge 等）のプロパティと、APIレスポンスからのデータ注入箇所を整理し、画面横断で一貫した優先度・進捗・監査表示のルール案を完成。
+        - 出力: `docs/web-client/architecture/ui-api-mapping.md`（画面 / コンポーネント / API / 管理要件の一覧）に RUN_ID とリンク。
       priority: High
       status: not_started
       progress: 0
-      agent: "claude code"
-      api: ["/api01rv2/*", "/orca1*/**", "/orca2*/**", "/orca3*/**", "/20/adm/phr/*"]
+      agent: "codex"
+      api: ["/api01rv2/*", "/orca*/**"]
       dependency:
         - src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md
       schedule:
         start: 2025-11-27T00:00:00.000Z
         days: 2
-    06_UIブリッジ実装とFeatureFlag切替.md:
+    06_ChartsとClaim UI構成方針.md:
       content: |-
-        # 06 UIブリッジ実装と Feature Flag 切替
+        # 06 Charts と Claim UI構成方針
 
-        - Charts/Reception/Claim の fetch フックへ source resolver を組み込み、`WEB_ORCA_MASTER_SOURCE` / `VITE_DISABLE_MSW` の切替で `dataSourceTransition` が送出されることを確認。
-        - UI 未実装エンドポイントに対して placeholder / read-only 表示を追加し、監査メタと警告バナーを統一トーンで実装。
-        - 主要 CRUD (acceptmodv2/appointmodv2/medicalmodv2/patientmodv2) のエラーハンドリングをサーバー仕様に合わせて修正。
+        - `ChartsPage` 上のタイムライン、診断/文書/検査パネル、Claim フォームに対して必須データ（docinfo, labo, orca）を一覧化し、MSW/サーバー切替での `dataSourceTransition`・`cacheHit` 表示ルールを決める。
+        - API接続: `doc-info-api.ts`, `labo-api.ts`, `orca-api.ts`, `letter-api.ts` に対して `resolveMasterSource` の注入ルールとエラーパス（placeholder, toast, read-only）を定義。
+        - UI操作: バナー/モーダル/カードの状態管理を React Query の `staleTime`・`onError` で統一し、監査メタ・警告文言・ログ出力度を記載。
+        - Deliverable: `docs/web-client/ux/charts-claim-ui-policy.md` にコンポーネント毎のガードルールと、API名・artifact パスを parallel list で掲載。
       priority: High
       status: not_started
       progress: 0
-      agent: "codex"
-      api: ["/orca11/acceptmodv2", "/orca14/appointmodv2", "/orca21/medicalmodv2", "/orca12/patientmodv2"]
+      agent: "claude code"
+      api: ["/orca/*", "/api01rv2/docinfo/*", "/api01rv2/labo/*", "/orca21/medicalmodv2"]
       dependency:
-        - src/webclient_modernized_bridge/05_APIサーフェス網羅マッピングとUI欠落検知.md
+        - src/webclient_modernized_bridge/05_UI構成確認とAPI接続マッピング.md
       schedule:
         start: 2025-11-29T00:00:00.000Z
         days: 3
-    07_契約テストと監査メタ検証.md:
+    07_ReceptionとSchedule UI構成方針.md:
       content: |-
-        # 07 契約テストと監査メタ検証
+        # 07 Reception と Schedule UI構成方針
 
-        - MSW ↔ server のスキーマ差分 / 件数差分を契約テストで実施し、必須フィールド欠落を FAIL 判定に固定。
-        - `dataSource`/`dataSourceTransition`/`cacheHit`/`missingMaster`/`fallbackUsed` が全主要シナリオで送出されることを E2E + ログで確認。
-        - ハッシュ比較 (`artifacts/api-stability/20251124T000000Z/master-sync/<DATE>/hashes`) を自動生成し、乖離時は UI 警告とロールバック手順を発火。
+        - 受付/スケジュール画面の key コンポーネント（AppointmentManager, FacilitySchedulePage, ColumnConfigurator）を列挙し、それぞれが依存する API（appointment, visit, schedule-document, facility-schedule）と master/ORCA データをマッピング。
+        - 画面単位での依存関係を可視化し、`VITE_DEV_PROXY_TARGET` での MSW とサーバーの切替時に発生する `progress`/`status` 更新を `TooltipFields` に沿って統一。
+        - 管理 UX: 入力制御、バナー、再取得トリガー、ログ出力の責務分離を設計し、`useReceptionActions` などの hooks で `dataSourceTransition` を外部通知。
+        - Deliverable: `docs/web-client/ux/reception-schedule-ui-policy.md` に画面別方針と parallel checklist を記載。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: "gemini cli"
+      api: ["/api01rv2/appointment/*", "/api01rv2/visit/*", "/api01rv2/schedule-document/*", "/api01rv2/facility-schedule/*"]
+      dependency:
+        - src/webclient_modernized_bridge/05_UI構成確認とAPI接続マッピング.md
+      schedule:
+        start: 2025-11-29T00:00:00.000Z
+        days: 3
+    08_PatientsとAdministration UI構成方針.md:
+      content: |-
+        # 08 Patients と Administration UI構成方針
+
+        - `PatientsPage`・`PatientEditorPanel`・`UserAdministrationPage` などの管理画面について、患者検索・患者詳細・ユーザー管理 API を中心とした UI 要件とデータ権限を整理。
+        - ORCA master source 連携: 患者詳細/カルテ更新での `orca-master` 呼び出しと `phr-api.ts`/`patient-api.ts` の bridging 設計を定義し、保存前のチェックリストと警告 UI を明記する。
+        - 管理性向上: 画面ごとのステータスバッジ/トースト/バナーのトーンと `docs/web-client/ux/management-ui-guide.md` との一致を確認。
+        - Deliverable: `docs/web-client/ux/patients-admin-ui-policy.md` に parallel で比較できる構成表を追加。
       priority: Medium
       status: not_started
       progress: 0
-      agent: "cursor cli"
-      api: ["/api01rv2/patientgetv2", "/orca11/acceptlstv2", "/orca21/medicalmodv2", "/orca/master/*"]
+      agent: "codex"
+      api: ["/api01rv2/patient/*", "/api01rv2/system01dailyv2", "/20/adm/phr/*", "/orca/master/*"]
       dependency:
-        - src/webclient_modernized_bridge/06_UIブリッジ実装とFeatureFlag切替.md
+        - src/webclient_modernized_bridge/05_UI構成確認とAPI接続マッピング.md
       schedule:
-        start: 2025-12-02T00:00:00.000Z
+        start: 2025-11-29T00:00:00.000Z
         days: 3
-    08_DOC_STATUS反映とワーカー報告.md:
+    09_DOC_STATUS反映とワーカー報告.md:
       content: |-
-        # 08 DOC_STATUS反映とワーカー報告
+        # 09 DOC_STATUS反映とワーカー報告
 
-        - DOC_STATUS の Web クライアント/連携 行に RUN_ID・証跡ログ・ハッシュファイルパスを追記し、managerdocs 参照チェーンへ同日反映。
-        - `docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-master-bridge-plan.md` に契約テスト結果・差分理由・ロールバック有無を記録。
-        - ワーカー報告（【ワーカー報告】）テンプレに沿って成果・未完・次のアクションをまとめ、Slack 通知草案を添付。
+        - DOC_STATUS の Web クライアント/連携 行に RUN_ID・証跡ログ・UIポリシー資料へのリンクを追記し、`AGENTS.md` で参照チェーンを再確認。
+        - `docs/server-modernization/phase2/operations/logs/20251127T000000Z-webclient-master-bridge-plan.md` に並列 UI 検討の成果・未完・依存 API としてまとめ、RUN_ID を明記。
+        - ワーカー報告テンプレ（【ワーカー報告】）でブリッジ計画・screen policy・次フェーズへの引継ぎを整理し、Slack通知案も添付。
       priority: Medium
       status: not_started
       progress: 0
       agent: "codex"
       api: []
       dependency:
-        - src/webclient_modernized_bridge/07_契約テストと監査メタ検証.md
+        - src/webclient_modernized_bridge/06_ChartsとClaim UI構成方針.md
+        - src/webclient_modernized_bridge/07_ReceptionとSchedule UI構成方針.md
+        - src/webclient_modernized_bridge/08_PatientsとAdministration UI構成方針.md
       schedule:
-        start: 2025-12-04T00:00:00.000Z
+        start: 2025-12-02T00:00:00.000Z
         days: 1
