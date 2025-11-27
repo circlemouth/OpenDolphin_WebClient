@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Reception/Schedule UI Policy 評価報告</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 0;
+        background-color: #f3f6f8;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+      }
+      .monitor-header {
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 4px 0 16px;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 12px;
+      }
+      .score-card {
+        flex: 1;
+        border: 1px solid #a6c3d1;
+        border-radius: 10px;
+        padding: 16px;
+        background: #eef7fb;
+      }
+      .score-label {
+        display: block;
+        font-weight: 600;
+        color: #25516a;
+      }
+      .score-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #0b476e;
+      }
+      .score-note {
+        margin: 8px 0 0;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .report-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 24px;
+      }
+      .report-column {
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        border-radius: 16px;
+        padding: 20px;
+      }
+      .report-column h2 {
+        margin-top: 0;
+        font-size: 18px;
+        color: #1f2a30;
+      }
+      .hexagon-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .hexagon {
+        position: relative;
+        width: 100%;
+        min-height: 90px;
+        background: #e8f2f7;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 8px;
+        text-align: center;
+        font-size: 12px;
+        color: #0f3846;
+        border: 1px solid #b7d0db;
+      }
+      .hex-label {
+        font-weight: 600;
+      }
+      .hex-value {
+        margin-top: 6px;
+        font-weight: 700;
+        font-size: 16px;
+      }
+      .column-summary {
+        font-size: 13px;
+        color: #1f2a30;
+        margin-top: 0;
+      }
+      .metric-reasons {
+        margin: 12px 0 0;
+        padding-left: 18px;
+        color: #1f2a30;
+        font-size: 13px;
+      }
+      .metric-reasons li {
+        margin-bottom: 6px;
+      }
+      .worktree-link {
+        margin-top: 12px;
+        font-size: 12px;
+        color: #25516a;
+      }
+      .worktree-link a {
+        color: #0b4775;
+      }
+      footer {
+        margin-top: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 20px;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      footer p {
+        margin: 0 0 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Reception/Schedule UI Policy 評価報告</h1>
+        <p class="monitor-description">
+          docs/web-client/ux/reception-schedule-ui-policy.md を起点に、3ワークツリー（task-1764273844001-11f383～task-1764273984920-468528）への実装差分
+          を観測し、操作性／観測性／ドキュメント指示への順守状況を評価しました。
+        </p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <span class="score-label">AI評価エージェント（task-1764273844001-11f383 ~ task-1764273984920-468528）</span>
+            <span class="score-value">525 / 600 🏆</span>
+            <p class="score-note">TooltipFields と StatusBadge を一貫して導入し、進捗／経路／RUN_ID の観測性を確保しつつ、統合テストや policy ドキュメントの明文化で微調整余地。</p>
+          </div>
+        </div>
+      </header>
+      <div class="report-grid">
+        <section class="report-column">
+          <h2>AI task-1764273844001-11f383</h2>
+          <div class="hexagon-grid">
+            <article class="hexagon">
+              <span class="hex-label">コード品質</span>
+              <span class="hex-value">88点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">機能実装</span>
+              <span class="hex-value">90点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">UX信頼性</span>
+              <span class="hex-value">85点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">観測性</span>
+              <span class="hex-value">92点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">ポリシー順守</span>
+              <span class="hex-value">88点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">QAカバレッジ</span>
+              <span class="hex-value">82点</span>
+            </article>
+          </div>
+          <p class="column-summary">
+            git diff は ColumnConfigurator/Receptio­nPage/FacilitySchedulePage と新規 tooltipFields／logUiState を含み、Layout/StatusBadge で
+            progress/status/runId をバナーと aria-label に反映。git log は c5a4de46（Save worktree changes for merge to master）でワークツリー状態を確認。
+          </p>
+          <ul class="metric-reasons">
+            <li><strong>コード品質:</strong> useMemo で選択集合と TooltipFields を安定化、logUiState のログ構造も抽出されておりコードの一貫性が向上。</li>
+            <li><strong>機能実装:</strong> 受付一覧に TooltipInfoRow を挿入し、status/progress/runId を明示して policy の key コンポーネント要件を満たす。</li>
+            <li><strong>UX信頼性:</strong> ColumnConfigurator の aria-label に status を渡し、最低1列制約は logUiState で追跡したので REST UI に安定性を追加。</li>
+            <li><strong>観測性:</strong> APP_RUN_ID 定義と TooltipFields 生成（progress default、dataSourceTransition 付き）で audit メタを統一的に供給。</li>
+            <li><strong>ポリシー順守:</strong> docs/reception-schedule-ui-policy.md にある progress/status 共有モデルに沿って、バナー＋ステータス通知を実装。</li>
+            <li><strong>QAカバレッジ:</strong> UI に新たな状態表示を追加したが、現時点で専用テストはなく追加検証が望ましい。</li>
+          </ul>
+          <p class="worktree-link">
+            成果物: <a href="../.worktrees/task-1764273844001-11f383">.worktrees/task-1764273844001-11f383</a> / policy: <a href="../docs/web-client/ux/reception-schedule-ui-policy.md">docs/.../reception-schedule-ui-policy.md</a>
+          </p>
+        </section>
+        <section class="report-column">
+          <h2>AI task-1764273849753-ac16f9</h2>
+          <div class="hexagon-grid">
+            <article class="hexagon">
+              <span class="hex-label">コード品質</span>
+              <span class="hex-value">85点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">機能実装</span>
+              <span class="hex-value">87点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">UX信頼性</span>
+              <span class="hex-value">83点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">観測性</span>
+              <span class="hex-value">90点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">ポリシー順守</span>
+              <span class="hex-value">86点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">QAカバレッジ</span>
+              <span class="hex-value">88点</span>
+            </article>
+          </div>
+          <p class="column-summary">
+            git diff には useTooltipFields フックと appendTooltipMetadata, AppointmentManager/ReceptionPage の TooltipBanner 追加、FacilitySchedulePage への metadata 付与、テストの tooltipFields 拡張が含まれる。
+          </p>
+          <ul class="metric-reasons">
+            <li><strong>コード品質:</strong> hook と metadata 補完関数で progress を呼び出し元に引き戻し、再レンダリング負荷の少ない useMemo/useCallback も選択済。</li>
+            <li><strong>機能実装:</strong> AppointmentManager に TooltipBanner を挿入し、saveMutation の pending を progress に直結させて policy で示された badge/ログ構造と併せて可視化。</li>
+            <li><strong>UX信頼性:</strong> ColumnConfigurator の aria-label で tooltip の status 補強、reception banner で progress 文字列を表示し操作全体の追跡を強化。</li>
+            <li><strong>観測性:</strong> recordOperationEvent に mergeTooltipMetadata を活用し、操作ログに必ず RUN_ID/status/progress/dataSourceTransition を載せる仕組みを再利用可能に。</li>
+            <li><strong>ポリシー順守:</strong> docs の指示どおり、appointment/schedule mutation で status/progress が tooltip に戻るよう hooks から制御し、dataSourceTransition も metadata 経路に含めている。</li>
+            <li><strong>QAカバレッジ:</strong> AppointmentManager の既存テストに tooltipFields を注入して再利用できるようにし、UI change に伴う regression を抑制。</li>
+          </ul>
+          <p class="worktree-link">
+            成果物: <a href="../.worktrees/task-1764273849753-ac16f9">.worktrees/task-1764273849753-ac16f9</a>
+          </p>
+        </section>
+        <section class="report-column">
+          <h2>AI task-1764273984920-468528</h2>
+          <div class="hexagon-grid">
+            <article class="hexagon">
+              <span class="hex-label">コード品質</span>
+              <span class="hex-value">90点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">機能実装</span>
+              <span class="hex-value">92点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">UX信頼性</span>
+              <span class="hex-value">90点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">観測性</span>
+              <span class="hex-value">93点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">ポリシー順守</span>
+              <span class="hex-value">88点</span>
+            </article>
+            <article class="hexagon">
+              <span class="hex-label">QAカバレッジ</span>
+              <span class="hex-value">80点</span>
+            </article>
+          </div>
+          <p class="column-summary">
+            git diff では libs/tooltipFields と StatusBadge の tooltip 連動、ReceptionPage/FacilitySchedulePage の StatusBanner および refresher に metadata 注入が主で、dataSourceTransition フォーマット関数も追加されている。
+          </p>
+          <ul class="metric-reasons">
+            <li><strong>コード品質:</strong> libs/tooltipFields で status/runId/transition の共通処理を一元化し、StatusBadge では describeTooltipFields をtitle/aria-label に適用。</li>
+            <li><strong>機能実装:</strong> Reception/Schedule に StatusBanner を追加し、RUN_ID/進捗/経路を一目で示す UI を実装して policy で想定される観測バナーを具現化。</li>
+            <li><strong>UX信頼性:</strong> 手動更新ボタンは handleReceptionRefresh/handleRefetch で metadata 付き recordOperationEvent になり、各 badge で dataSourceTransition の詳細 tooltip 付き状態が提供される。</li>
+            <li><strong>観測性:</strong> getDataSourceStatus で msw/server/proxy 判定を central に保管し、各ページの dataSourceTransition 表記と cache/missing flags にも言及。</li>
+            <li><strong>ポリシー順守:</strong> docs の requirement に沿って gate された `progress/status/dataSourceTransition` を UI と操作ログの両方で共有。</li>
+            <li><strong>QAカバレッジ:</strong> 主要な UI change に対する automated test の追加が未実施なので、残りの regression coverage を残す。</li>
+          </ul>
+          <p class="worktree-link">
+            成果物: <a href="../.worktrees/task-1764273984920-468528">.worktrees/task-1764273984920-468528</a>
+          </p>
+        </section>
+      </div>
+      <footer>
+        <p>比較: task-1764273844001 が tooltipFields 生成と ColumnConfigurator の統合、task-1764273849753 が hooks 経由の metadata 追加、task-1764273984920 が libs/StatusBadge へ展開し、順次 docs/reception-schedule-ui-policy の progress/status/dataSourceTransition 要件を埋めています。</p>
+        <p>監査: 3 ワークツリーとも git log c5a4de46 を起点に diff を観測し、HEAD から master へのマージ準備段階の状態。評価では各 git diff を参照しながら進捗・安定性を確認しました。</p>
+        <p>成果物リンク: <a href="../docs/web-client/ux/reception-schedule-ui-policy.md">Policy doc</a> / <a href="../.worktrees/task-1764273844001-11f383">task-1764273844001-11f383</a> / <a href="../.worktrees/task-1764273849753-ac16f9">task-1764273849753-ac16f9</a> / <a href="../.worktrees/task-1764273984920-468528">task-1764273984920-468528</a></p>
+      </footer>
+    </div>
+  </body>
+</html>
