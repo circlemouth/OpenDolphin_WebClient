@@ -16,6 +16,7 @@ import {
 import { ScheduleReservationDialog } from '@/features/schedule/components/ScheduleReservationDialog';
 import { useAuth } from '@/libs/auth';
 import { recordOperationEvent } from '@/libs/audit';
+import { formatDataSourceTransition, getDataSourceStatus, type TooltipFields } from '@/libs/tooltipFields';
 import { hasOpenBit } from '@/features/charts/utils/visit-state';
 
 const PageContainer = styled.div`
@@ -316,6 +317,41 @@ export const FacilitySchedulePage = () => {
   }, [entries]);
 
   const numberFormatter = useMemo(() => new Intl.NumberFormat('ja-JP'), []);
+  const dataSourceStatus = useMemo(() => getDataSourceStatus(), []);
+  const progressState = scheduleQuery.isPending ? 'initializing' : scheduleQuery.isFetching ? 'fetching' : 'synced';
+  const {
+    status: dataSourceLabel,
+    runId,
+    dataSourceTransition,
+    cacheHit,
+    missingMaster,
+    fallbackUsed,
+  } = dataSourceStatus;
+  const scheduleTooltipFields = useMemo<TooltipFields>(
+    () => ({
+      progress: progressState,
+      status: dataSourceLabel,
+      runId,
+      dataSourceTransition,
+      cacheHit,
+      missingMaster,
+      fallbackUsed,
+    }),
+    [progressState, dataSourceLabel, runId, dataSourceTransition, cacheHit, missingMaster, fallbackUsed],
+  );
+  const dataSourceDisplayLabel =
+    dataSourceLabel === 'server'
+      ? '実API / Server'
+      : dataSourceLabel === 'proxy'
+      ? '開発 Proxy'
+      : 'MSW 模擬データ';
+  const dataSourceTone =
+    dataSourceLabel === 'server'
+      ? 'info'
+      : dataSourceLabel === 'proxy'
+      ? 'warning'
+      : 'success';
+  const transitionLabel = formatDataSourceTransition(dataSourceTransition);
 
   useEffect(() => {
     if (!pageNotice) {
@@ -341,6 +377,19 @@ export const FacilitySchedulePage = () => {
     setDialogFeedback(null);
     setDialogError(null);
   }, []);
+
+  const handleRefetch = useCallback(() => {
+    recordOperationEvent(
+      'schedule',
+      'info',
+      'facility_schedule_refetch',
+      '施設スケジュールを再取得しました',
+      {
+        ...scheduleTooltipFields,
+      },
+    );
+    void scheduleQuery.refetch();
+  }, [scheduleQuery.refetch, scheduleTooltipFields]);
 
   const handleOpenReservation = useCallback(
     (entry: FacilityScheduleEntry) => {
@@ -600,12 +649,24 @@ export const FacilitySchedulePage = () => {
               {doctorFilter !== 'all' ? ` / 担当医: ${doctorFilter}` : ''}
             </InlineMessage>
             {pageNotice ? <NoticeMessage role="status">{pageNotice}</NoticeMessage> : null}
+            <InlineMessage role="status">
+              <StatusBadge tone={dataSourceTone} tooltipFields={scheduleTooltipFields}>
+                {dataSourceDisplayLabel}
+              </StatusBadge>
+              <span style={{ marginLeft: 8 }}>
+                RUN_ID: {scheduleTooltipFields.runId ?? '未設定'}
+              </span>
+              {transitionLabel ? (
+                <span style={{ marginLeft: 8 }}>経路: {transitionLabel}</span>
+              ) : null}
+              <span style={{ marginLeft: 8 }}>進捗: {scheduleTooltipFields.progress}</span>
+            </InlineMessage>
           </div>
           <Button
             type="button"
             variant="secondary"
             size="sm"
-            onClick={() => scheduleQuery.refetch()}
+            onClick={handleRefetch}
             isLoading={scheduleQuery.isFetching}
           >
             再読み込み
@@ -655,7 +716,9 @@ export const FacilitySchedulePage = () => {
                         <div style={{ fontSize: '0.8rem', color: '#64748b' }}>{entry.departmentName ?? '---'}</div>
                       </TableCell>
                       <TableCell>
-                        <StatusBadge tone={statusTones[status]}>{statusLabels[status]}</StatusBadge>
+                        <StatusBadge tone={statusTones[status]} tooltipFields={scheduleTooltipFields}>
+                          {statusLabels[status]}
+                        </StatusBadge>
                       </TableCell>
                       <TableCell>
                         <div>{entry.memo ?? '---'}</div>
