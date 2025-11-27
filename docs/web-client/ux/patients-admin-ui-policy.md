@@ -30,6 +30,8 @@
 - `phr-api` 側では `PhrKeyUpsertPayload` の `facilityId`/`patientId`/`accessKey` が必須かつ `registeredString` が ISO 19 文字であるかを検証し、不正な値は `warning` toast + `StatusBadge tone='danger'` で `UserAdministrationPage` へ返す。
 - ORCA master を使う `PatientEditorPanel` では `fetchOrcaMaster` の `dataSource` 変化（MSW→snapshot→server）を `StatusBadge` で表示し、`dataSourceTransition` が server 以外に巻き戻った場合は `warning` バナー/トーストで「最新 master 取得にリトライ中」と通知し、`docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md` の `warning banner tone` 管理と一致させる。
 
+- 20251127T170500Z: `PatientEditorPanel` は `SurfaceCard` + `StatusBadge` で ORCA master readiness を可視化し、住所・保険情報（保険者番号/記号/番号/区分コード）が揃うまでは保存ボタンを無効化して `warning` バナーを表示することで masterRequiredFields の整備を強制します。実装証跡: `web-client/src/features/patients/components/PatientEditorPanel.tsx`。DOC_STATUS（Phase2 Planning/UX 行）と README の RUN_ID セクションにも本 RUN を追記してください。
+
 ## 4. 管理性向上のトーンとメッセージ整合
 - `StatusBadge` の tone（`danger`=即時注意 / `warning`=注意 / `info`=正常）は `docs/web-client/architecture/ui-api-mapping.md` で定義されたコンポーネント標準と同様。`PatientEditorPanel` でも `StatusBadge` を `SurfaceCard` ヘッダーに置くことで患者ステータスを色相で伝える。
 - トースト/バナーは `docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md` にあるカテゴリ分け `neutral/info/warning/danger` を踏襲し、`management-ui-guide` に従って `warning` バナーは ORCA master fallback ・ `danger` toast は保存エラーと紐づける。Badge/Toast/Banner は同じ `tone` を共有することで監査ログとの整合性を保つ。
