@@ -217,14 +217,18 @@ export interface Orca06InsurerAddressRecord extends OrcaMasterAuditMeta {
 
 // ORCA-08 電子点数表 DTO（REST 提供予定スキーマ）
 export interface Orca08EtensuRecord extends OrcaMasterAuditMeta {
+  etensuCategory?: string;
+  medicalFeeCode?: string;
   tensuCode: string;
   name: string;
   kubun?: string;
   tanka?: number | null;
   unit?: string;
   category?: string;
+  points?: number | null;
   startDate?: string;
   endDate?: string;
   tensuVersion?: string;
   version?: string;
+  note?: string;
 }

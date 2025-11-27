@@ -1,7 +1,6 @@
 // @vitest-environment node
 
 import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
-import { http } from 'msw';
 import { setupServer } from 'msw/node';
 import { z } from 'zod';
 
@@ -13,13 +12,7 @@ import {
 } from '@/mocks/fixtures/orcaMaster';
 import { orcaMasterHandlers } from '@/mocks/handlers/orcaMasterHandlers';
 
-const host = 'http://localhost';
-const hostedHandlers = orcaMasterHandlers.map((handler) => {
-  const method = (handler.info?.method ?? 'GET').toLowerCase();
-  const handlerFactory = (http as Record<string, typeof http.get>)[method] ?? http.get;
-  return handlerFactory(`${host}${handler.info?.path ?? ''}`, handler.resolver);
-});
-const server = setupServer(...hostedHandlers);
+const server = setupServer(...orcaMasterHandlers);
 const capturedUrls: string[] = [];
 server.events.on('request:start', ({ request }) => {
   capturedUrls.push(request.url);

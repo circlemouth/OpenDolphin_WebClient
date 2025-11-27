@@ -37,9 +37,12 @@ const readSessionOverride = (): OrcaMasterSource | null => {
   return normalizeSource(raw);
 };
 
+const DEFAULT_ORCA_SOURCE: OrcaMasterSource = 'mock';
+const FALLBACK_SOURCE: OrcaMasterSource = 'fallback';
+
 const resolveRequestedSource = (hint?: OrcaMasterSource | null): OrcaMasterSource => {
   const sessionOverride = readSessionOverride();
-  const envSource = normalizeSource(import.meta.env.WEB_ORCA_MASTER_SOURCE) ?? 'mock';
+  const envSource = normalizeSource(import.meta.env.WEB_ORCA_MASTER_SOURCE) ?? DEFAULT_ORCA_SOURCE;
   return hint ?? sessionOverride ?? envSource;
 };
 
@@ -60,11 +63,11 @@ export const resolveOrcaMasterSource = (
   const requested = resolveRequestedSource(options?.sourceHint);
   const initialSource = baseOrder.includes(requested) ? requested : baseOrder[0];
 
-  const fallbackOrder =
+  const fallbackOrder: OrcaMasterSource[] =
     initialSource === 'server' && mswEnabled
       ? ['snapshot', 'mock']
       : baseOrder.filter((src) => src !== initialSource);
-  const attemptOrder: OrcaMasterSource[] = [initialSource, ...fallbackOrder, 'fallback'];
+  const attemptOrder: OrcaMasterSource[] = [initialSource, ...fallbackOrder, FALLBACK_SOURCE];
   const result: OrcaSourceResolverResult = {
     dataSource: initialSource,
     attemptOrder,
@@ -78,7 +81,7 @@ export const resolveOrcaMasterSource = (
 
   if (!mswEnabled && initialSource === 'mock') {
     result.dataSource = 'snapshot';
-    result.attemptOrder = ['snapshot', ...baseOrder.filter((src) => src !== 'snapshot'), 'fallback'];
+    result.attemptOrder = ['snapshot', ...baseOrder.filter((src) => src !== 'snapshot'), FALLBACK_SOURCE];
     result.fallbackUsed = true;
     result.dataSourceTransition = { from: 'mock', to: 'snapshot', reason: 'msw_disabled' };
   }

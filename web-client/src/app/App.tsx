@@ -37,13 +37,13 @@ interface AppProps {
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: {
-      retry: 2,
-      retryDelay: (attempt) => Math.min(1000 * attempt, 5000),
-      refetchOnWindowFocus: false,
-      staleTime: ORCA_MASTER_FETCH_TTL_MS,
-      cacheTime: ORCA_MASTER_FETCH_TTL_MS * 2,
-    },
+      queries: {
+        retry: 2,
+        retryDelay: (attempt) => Math.min(1000 * attempt, 5000),
+        refetchOnWindowFocus: false,
+        staleTime: ORCA_MASTER_FETCH_TTL_MS,
+        gcTime: ORCA_MASTER_FETCH_TTL_MS * 2,
+      },
     mutations: {
       retry: 1,
     },

@@ -7,7 +7,7 @@
 - 文字化け防止: 日本語ドキュメントは UTF-8(BOMなし)で保存する。PowerShell での書き込みは `-Encoding UTF8`/`UTF8NoBOM` を用い、既存エンコーディングを壊さないこと。
 
 ## 1. 守るべき制約（高速開発でも削れないもの）
-- `server/` 配下やサーバースクリプトを変更しない。触れるのは Web クライアント資産と関連ドキュメントのみ。
+- `server/` 配下にある旧来のサーバースクリプトを変更しない。触れるのは Web クライアント資産と関連ドキュメントのみ。
 - Legacy サーバー/クライアントは差分検証目的で一時起動してもよいが、保守や運用作業は禁止。
 - ORCA 連携の接続先・認証情報は機微扱いとし、開発用設定は `docs/web-client/operations/mac-dev-login.local.md` を参照する。WebORCA トライアルや本番経路、`curl --cert-type P12` の利用は禁止。ログは公開アカウント操作で取得する。
 - 参照専用: `client/`, `common/`, `ext_lib/` の Legacy 資産。更新はしない。
@@ -27,6 +27,7 @@
 1. `docs/web-client/planning/phase*/` の該当計画でゴールと依存を確認。フェーズゲートは維持するが、実作業は領域別チェックリスト単位で進めてよい。
 2. UI/UX を触る場合は `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` から関連ガイドを必読。カルテ画面 (`ChartsPage` など) 変更時は監査・レイアウト要件を反映する。
 3. ORCA 接続や API を扱う場合は `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` / `ORCA_API_STATUS.md` / `MODERNIZED_API_DOCUMENTATION_GUIDE.md` を参照し、RUN_ID ログを残す。
+4. Stage/Preview 環境での再検証（`VITE_DISABLE_MSW=1`＋`VITE_DEV_PROXY_TARGET`＋Playwright/curl）の実行は、マネージャーが環境権限を確認したうえで許可し、実施・未実施の状態と理由を証跡ログ・DOC_STATUSの RUN_ID 行に明記する。
 
 ## 5. 連絡ルール
 - マネージャー → ワーカー指示: `【ワーカー指示】` を接頭にし、担当領域・参照チェーン・更新必須ドキュメント・RUN_ID を明記。
