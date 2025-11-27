@@ -15,7 +15,7 @@
 - **要件レビュー**: `architecture/WEB_CLIENT_REQUIREMENTS.md` 全章の確認を完了。未決事項は患者登録の運用整理と CLAIM 自費判定 (`DocInfoModel.isSendClaim`) の初期値確認。
 - **REST API インベントリ**: 主要 REST エンドポイントを用途・ガード条件・検討事項付きで整理（`architecture/REST_API_INVENTORY.md`）。フェーズ 1 以降の HTTP クライアント設計と SDK 化の基礎資料となる。
 - **患者ジャーニー**: 初診・再診・自由診療の 3 パターンで受付→診療→会計までを洗い出し、カルテと ORCA の接続ポイントを明確化。
-- **ワイヤーフレーム計画**: `ux/ONE_SCREEN_LAYOUT_GUIDE.md` の 22/56/22 レイアウト比率を基準に Figma でローファイ→ハイファイを進めるスケジュールを策定。患者安全アラートと右レール密度は後続フェーズで評価する。
+- **ワイヤーフレーム計画**: `ux/ux-documentation-plan.md`→`ux/charts-claim-ui-policy.md` を参照し、22/56/22 レイアウト比率と右レール折りたたみ基準を Figma でローファイ→ハイファイに落とし込む。詳細な寸法や Swing 版比較は `ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md` を補足資料として保持し、患者安全アラートと右レール密度を後続フェーズで評価する。
 - **リスク整理**: 患者登録の重複防止、ORCA API レイテンシの UX 対応、監査ログ抽出条件のドキュメント化を課題として継続管理。
 
 ## フェーズ 1 詳細

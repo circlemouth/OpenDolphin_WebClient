@@ -12,7 +12,7 @@
 - Legacy も同じ制約だったが、Web クライアントではカルテ再編集が UI に組み込まれており、終端が 404/405 になる。`POST /karte/document` を流用すると新規版を作ってしまうため、差分更新 API を早急に実装する必要がある。
 
 ### 2. SafetySummary／Masuda サポート用エンドポイント欠如
-- UX ガイドでは SafetySummaryCard / MasudaSupportPanel が `GET /karte/routineMed/list`、`/karte/rpHistory/list`、`/karte/userProperty/{userId}` を利用する前提（`docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md:90`、`web-client/src/features/charts/api/masuda-api.ts:61-101`）。
+- UX ガイドでは SafetySummaryCard / MasudaSupportPanel が `GET /karte/routineMed/list`、`/karte/rpHistory/list`、`/karte/userProperty/{userId}` を利用する前提（`docs/web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md:90`、`web-client/src/features/charts/api/masuda-api.ts:61-101`）。
 - モダナイズ版 REST API インベントリ（`docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md:72-110`）には上記パスが一切列挙されておらず、`server-modernized/src/main/java/open/dolphin/rest` 配下にも該当 `@Path` 実装が存在しない。
 - 現状 Web クライアントの SafetySummary は例外を握り潰して空データ表示になるだけで、Legacy Swing で提供していた現用薬・処方履歴の参照が行えない。Masuda 系 API の Jakarta/JPA 実装と DTO を追加する必要がある。
 
@@ -35,5 +35,5 @@
 ## 実装ログ（RUN_ID=20251116T210500Z-A / Worker-A）
 - `PUT /karte/document` を追加し、`server-modernized/src/main/java/open/dolphin/rest/KarteResource.java` で POST/PUT 共通の関連構築ヘルパーを導入。`KarteServiceBean#updateDocument` では差分削除（モジュール/シェーマ/添付）と添付 S3 アップロードを 1 回に統合し、既存エントリ不在時は `IllegalArgumentException` を返すようにした。
 - SafetySummary/Masuda 向けに `RoutineMedicationResponse` / `RpHistoryEntryResponse` / `UserPropertyResponse` DTO を新設し、`GET /karte/routineMed.list`・`/karte/rpHistory.list`・`/karte/userProperty/{userId}` をモダナイズ側へ実装。`BundleMed` の `ClaimItem` から RP 構造を復元し、React Query が参照する `moduleInfoBean`・`moduleList` も `ModuleModelConverter` でシリアライズ。
-- `/karte/image/{id}` の `@PathParam` 名不一致を修正し、Masuda API を `docs/web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md` の要件どおり Web クライアントから利用できるようルーティングを整備。
+- `/karte/image/{id}` の `@PathParam` 名不一致を修正し、Masuda API を `docs/web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md` の要件どおり Web クライアントから利用できるようルーティングを整備。
 - 検証: `mvn -pl server-modernized -DskipTests test`（REST モジュールのコンパイル・静的解析のみ）に通過。`npm run lint -- --max-warnings=0`（web-client）実行済みログなし → 今回は Java 修正のみのため対象外。詳細は `docs/server-modernization/phase2/operations/logs/20251116T210500Z-A-karte-worker.md` を参照。

@@ -29,7 +29,7 @@
 ## 2025-11-23 UI警告トーン準拠確認（WorkerB）
 - 開始: 2025-11-23T23:20:51Z / 完了: 2025-11-23T23:24:00Z / 担当: ワーカーB / RUN_ID=20251123T135709Z
 - 対象: warning バナー/バッジのトーン運用（UI影響章 §2「UI 影響ディープダイブ」）
-- 実施: `CHART_UI_GUIDE_INDEX.md` を再確認した上で、UI影響章の暫定データ警告仕様を文言抜粋で確認。該当箇所では「InlineFeedback tone=warning + alert-triangle + aria-live=\"polite\" で暫定データを明示し、オーダ一覧に暫定バッジを付与」「保険/住所・算定でも warning バナーで暫定マスター利用を告知」と記載され、ガイドのトーン規則（neutral/info/warning/danger）に整合。
+- 実施: `ux/legacy/CHART_UI_GUIDE_INDEX.md` を再確認した上で、UI影響章の暫定データ警告仕様を文言抜粋で確認。該当箇所では「InlineFeedback tone=warning + alert-triangle + aria-live=\"polite\" で暫定データを明示し、オーダ一覧に暫定バッジを付与」「保険/住所・算定でも warning バナーで暫定マスター利用を告知」と記載され、ガイドのトーン規則（neutral/info/warning/danger）に整合。
 - 証跡（文言抜粋）: 「InlineFeedback `tone=warning` `icon=alert-triangle` `aria-live=\"polite\"` で『暫定データで表示中（ORCA-05）』を表示し、オーダ一覧に `暫定` バッジを付与。」（03_ギャップ解消方針とUI影響分析.md, ORCA-05 行）
 - 備考: CHART_UI_GUIDE 参照済み。スクリーンショット不要（文言抜粋でトーン準拠確認）。
 

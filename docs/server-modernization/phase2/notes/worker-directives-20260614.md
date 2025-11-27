@@ -130,7 +130,7 @@
 - 残課題: (1) 本番トラフィックに合わせた `retained` 閾値の再調整と Alertmanager しきい値の本番確認、(2) Web/Touch クライアント UI で `chart-events.replay-gap` をユーザー通知へマッピングする実装検討。
 
 【ワーカー報告】（2026-06-14 Worker O）
-- 資料: `docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md#6-chart-eventsreplay-gap-受信時のリロード-ux` にワイヤーフレーム、状態遷移図、Reception/Charts 共通の TypeScript 擬似コード、Touch(iOS/Android) SSE 改修案を追記。`docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` と `docs/web-client/README.md` から参照リンクを追加。
+- 資料: `docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md#6-chart-eventsreplay-gap-受信時のリロード-ux` にワイヤーフレーム、状態遷移図、Reception/Charts 共通の TypeScript 擬似コード、Touch(iOS/Android) SSE 改修案を追記。`docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md` と `docs/web-client/README.md` から参照リンクを追加。
 - フロー整理: トースト＋ヘッダーバナー＋再取得 CTA の 3 段構え通知、`/rest/pvt2/pvtList` 自動リロード、`ReceptionReloadAudit` / `TouchReloadAudit` 記録、3 回失敗時の Ops エスカレーション導線を仕様化。
 - 今後のフロント実装タスク:
   1. `web-client/src/features/reception/hooks/useReceptionReplayGap.ts`（新設予定）で擬似コードを実装し、`ReceptionToastStore` / `ReplayGapBanner` を連動させる。
@@ -156,7 +156,7 @@
 - 背景: Web UI 側の `chart-events.replay-gap` 通知は実装済みだが、Touch(iOS/Android) では SSE 受信後の再取得・UI 表示・監査送信が未対応。
 - 目的: Touch アプリへ `ReplayGapState` を導入し、バナー／CTA／ローカル通知／API 再取得／`TouchReloadAudit` 送信まで一貫したリカバリ体験を提供する。
 - 手順:
-  1. `docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md` と `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` を参照し、Touch 版の状態遷移・UI 要件を整理する。
+  1. `docs/web-client/operations/RECEPTION_WEB_CLIENT_MANUAL.md` と `docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md` を参照し、Touch 版の状態遷移・UI 要件を整理する。
   2. SSE クライアント（iOS: `URLSession`/Combine, Android: `OkHttp`/`EventSourceListener`）へ `chart-events.replay-gap` ハンドラを追加し、`ReplayGapState` を保有する ViewModel/Store へディスパッチする設計を固める。
   3. UI: 黄色バナー＋再取得 CTA、手動/自動切替、3 回失敗でローカル通知・Ops Runbook 導線を提示。VoiceOver/TalkBack 要件も反映する。
   4. API: `/rest/pvt2/pvtList`（もしくは Touch 専用来院リスト API）を再取得して `chartEvents.reset(sequence)`、完了時に `ReceptionReloadAudit` 相当の `TouchReloadAudit` を `mode`/`platform` 付きで送信する。

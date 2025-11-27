@@ -38,7 +38,7 @@
 | API-07 空配列 (ORCA-08 範囲外) | MSW: 空配列返却 | 200, cacheHit=true, missingMaster=false, fallbackUsed=false, UI で警告 | 未実施 | P2 |
 
 ## 3. テストケース網羅表（UI レイヤ）
-UI は Charts/受付/算定で確認。期待表示は `CHART_UI_GUIDE_INDEX.md` の tone=warning に準拠。
+UI は Charts/受付/算定で確認。期待表示は `ux/legacy/CHART_UI_GUIDE_INDEX.md` の tone=warning に準拠。
 
 | ID | 画面/機能 | トリガー | 期待 UI 表示 | 期待監査メタ | カバレッジ | 優先度 |
 | --- | --- | --- | --- | --- | --- | --- |

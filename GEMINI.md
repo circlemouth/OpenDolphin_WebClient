@@ -22,7 +22,7 @@
 
 ## 4. タスク着手チェックリスト
 1. `docs/web-client/planning/phase*/` の該当計画でゴールと依存を確認。フェーズゲートは維持するが、実作業は領域別チェックリスト単位で進めてよい。
-2. UI/UX を触る場合は `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md` から関連ガイドを必読。カルテ画面 (`ChartsPage` など) 変更時は監査・レイアウト要件を反映する。
+2. UI/UX を触る場合は `docs/web-client/ux/ux-documentation-plan.md` を出発点とし、対象領域のポリシー（`reception-schedule-ui-policy.md`、`patients-admin-ui-policy.md`、`charts-claim-ui-policy.md`）を必読。`ux/legacy/CHART_UI_GUIDE_INDEX.md` は履歴/資料として補足参照とする。
 3. ORCA 接続や API を扱う場合は `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` / `ORCA_API_STATUS.md` / `MODERNIZED_API_DOCUMENTATION_GUIDE.md` を参照し、RUN_ID ログを残す。
 
 ## 5. 連絡ルール

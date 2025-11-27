@@ -51,8 +51,8 @@
 - RUN_ID 表示: バナーと主要ボタンの `data-run-id="20251124T203000Z"` が反映され、監査ログと一致しているか。
 
 ## 5. 参照
-- `docs/web-client/ux/CHART_UI_GUIDE_INDEX.md`
-- `docs/web-client/ux/API_SURFACE_AND_AUDIT_GUIDE.md`（監査・RUN_ID 表示要件）
+- `docs/web-client/ux/legacy/CHART_UI_GUIDE_INDEX.md`
+- `docs/web-client/ux/legacy/API_SURFACE_AND_AUDIT_GUIDE.md`（監査・RUN_ID 表示要件）
 - `docs/web-client/design-system/ALPHA_COMPONENTS.md`（トーン/コントラスト指針）
 
 更新日: 2025-11-24 / 担当: Codex / RUN_ID=`20251124T203000Z`（親=`20251124T000000Z`）

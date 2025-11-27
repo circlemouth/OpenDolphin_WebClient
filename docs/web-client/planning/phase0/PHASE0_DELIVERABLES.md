@@ -35,7 +35,7 @@
 4. 会計へは自費メニューを JSON で渡し領収書出力を依頼。
 
 ## 4. ワイヤーフレーム制作計画
-- 手法: Figma ローファイ → ハイファイ。1画面完結レイアウトを `ONE_SCREEN_LAYOUT_GUIDE.md` の比率（22/56/22）で再現。
+- 手法: Figma ローファイ → ハイファイ。1画面完結レイアウトの 22/56/22 比率は `ux/ux-documentation-plan.md` → `ux/charts-claim-ui-policy.md` で再確認し、詳細な寸法は `ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md` を補足資料とする。
 - スケジュール案:
   - 2025-11-04: ローファイ草案（ヘッダ/レール構成）
   - 2025-11-08: ワークショップでフィードバック取得

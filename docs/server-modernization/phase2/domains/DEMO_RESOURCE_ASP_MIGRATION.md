@@ -5,7 +5,7 @@
 ## 1. 背景とスコープ
 - 目的: 旧 ASP サーバー (`server/src/main/java/open/dolphin/touch/DemoResourceASP.java`) に残存するデモ用 15 エンドポイントをモダナイズ版サーバーへ等価移植し、デモシナリオを維持する。
 - 適用範囲: `/demo/*` 配下の読み取り系 API（患者リスト・来院情報・カルテ/オーダ・検査・スタンプ・スキーマ・ユーザー情報）。書き込み API は対象外。
-- 準拠資料: `../../server-api-inventory.yaml`, `../../server-api-inventory.md`, `../../MODERNIZED_REST_API_INVENTORY.md`, `../../../web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md`。
+- 準拠資料: `../../server-api-inventory.yaml`, `../../server-api-inventory.md`, `../../MODERNIZED_REST_API_INVENTORY.md`, `../../../web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md`。
 
 ## 2. 旧 ASP 実装のデータローディング仕様
 ### 2.1 共通仕様
@@ -139,7 +139,7 @@
 - `../../server-api-inventory.yaml` / `../../server-api-inventory.md`: レガシー API 定義。
 - `../../MODERNIZED_REST_API_INVENTORY.md`: モダナイズ版 REST 在庫。
 - `../../../web-client/README.md`: Web クライアント側の導線。
-- `../../../web-client/ux/ONE_SCREEN_LAYOUT_GUIDE.md`: レイアウトガイドライン。
+- `../../../web-client/ux/legacy/ONE_SCREEN_LAYOUT_GUIDE.md`: レイアウトガイドライン。
 
 ## 9. 再点検で判明した課題 (2025-11-03)
 - **ビルドエラー**: `DemoResourceAsp` が `ModuleModel` を import しておらずクラス全体がコンパイル不能（server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java:20-65,398-400）。`server-modernized/pom.server-modernized.xml` のビルドフェーズではこの時点で失敗するため、他エンドポイントの検証へ到達できない。
