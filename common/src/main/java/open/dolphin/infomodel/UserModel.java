@@ -3,7 +3,9 @@ package open.dolphin.infomodel;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.text.SimpleDateFormat;
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.format.DateTimeFormatter;
 import jakarta.persistence.*;
 
 /**
@@ -15,6 +17,9 @@ import jakarta.persistence.*;
 @Entity
 @Table(name="d_users")
 public class UserModel extends InfoModel implements java.io.Serializable {
+    
+    private static final ZoneId DEFAULT_ZONE = ZoneId.systemDefault();
+    private static final DateTimeFormatter REGISTERED_DATE_FORMATTER = DateTimeFormatter.ISO_LOCAL_DATE;
     
     @Id @GeneratedValue(strategy=GenerationType.AUTO)
     private long id;
@@ -227,8 +232,8 @@ public class UserModel extends InfoModel implements java.io.Serializable {
         if (registeredDate == null) {
             return null;
         }
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
-        return sdf.format(registeredDate);
+        LocalDate localDate = registeredDate.toInstant().atZone(DEFAULT_ZONE).toLocalDate();
+        return REGISTERED_DATE_FORMATTER.format(localDate);
     }
 
     public String getEmail() {

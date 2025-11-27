@@ -119,6 +119,24 @@ const DataSourceBadgeRow = styled.div`
   margin-bottom: 12px;
 `;
 
+const AlertBanner = styled.div<{ $tone: 'warning' | 'error' }>`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  border-left: 4px solid
+    ${({ theme, $tone }) => ($tone === 'warning' ? theme.palette.warning : theme.palette.danger)};
+  background: ${({ theme, $tone }) =>
+    $tone === 'warning' ? theme.palette.surfaceMuted : theme.palette.surfaceStrong};
+  color: ${({ theme }) => theme.palette.text};
+
+  &:focus-visible {
+    outline: 2px solid ${({ theme }) => theme.palette.primary};
+    outline-offset: 2px;
+  }
+`;
+
 const DataSourceBanner = styled(AlertBanner)`
   margin-bottom: 12px;
 `;
@@ -142,24 +160,6 @@ const SkipLink = styled.a`
     z-index: 10;
     border-radius: ${({ theme }) => theme.radius.md};
     box-shadow: 0 0 0 3px ${({ theme }) => theme.palette.primary};
-  }
-`;
-
-const AlertBanner = styled.div<{ $tone: 'warning' | 'error' }>`
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 12px 14px;
-  border-radius: ${({ theme }) => theme.radius.md};
-  border-left: 4px solid
-    ${({ theme, $tone }) => ($tone === 'warning' ? theme.palette.warning : theme.palette.danger)};
-  background: ${({ theme, $tone }) =>
-    $tone === 'warning' ? theme.palette.surfaceMuted : theme.palette.surfaceStrong};
-  color: ${({ theme }) => theme.palette.text};
-
-  &:focus-visible {
-    outline: 2px solid ${({ theme }) => theme.palette.primary};
-    outline-offset: 2px;
   }
 `;
 
@@ -518,11 +518,11 @@ export const OrcaOrderPanel = ({
     resetResults();
 
     try {
-      const results = await tensuPointSearch.mutateAsync({
-        min: minValue,
-        max: maxValue,
-        date: dateValue,
-      });
+        const results = await tensuPointSearch.mutateAsync({
+          min: minValue,
+          max: maxValue,
+          date: dateValue ?? undefined,
+        });
       setTensuResults(results);
       logSearchMeta(results, 'tensu_point_search');
       if (results.list.length === 0) {

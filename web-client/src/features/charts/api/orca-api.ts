@@ -38,24 +38,6 @@ import {
 } from '@/mocks/fixtures/orcaMaster';
 import { getOrcaMasterBridgeBaseUrl, resolveOrcaMasterSource } from './orca-source-resolver';
 
-interface RawTensuMaster {
-  srycd?: string | null;
-  name?: string | null;
-  kananame?: string | null;
-  taniname?: string | null;
-  ten?: string | null;
-  ykzkbn?: string | null;
-  nyugaitekkbn?: string | null;
-  routekkbn?: string | null;
-  srysyukbn?: string | null;
-  yukostymd?: string | null;
-  yukoedymd?: string | null;
-}
-
-interface RawTensuListResponse {
-  list?: RawTensuMaster[] | null;
-}
-
 interface RawDiseaseEntry {
   code?: string | null;
   name?: string | null;
@@ -234,30 +216,6 @@ const toNullableNumber = (value: unknown): number | null => {
     return Number.isFinite(parsed) ? parsed : null;
   }
   return null;
-};
-
-const mapTensuMaster = (entry: RawTensuMaster): TensuMasterEntry | null => {
-  const code = entry.srycd?.trim();
-  const name = entry.name?.trim();
-  if (!code || !name) {
-    return null;
-  }
-
-  const point = entry.ten ? Number.parseFloat(entry.ten) : null;
-
-  return {
-    code,
-    name,
-    kana: entry.kananame ?? undefined,
-    unitName: entry.taniname ?? undefined,
-    point: Number.isFinite(point ?? NaN) ? point : null,
-    startDate: entry.yukostymd ?? undefined,
-    endDate: entry.yukoedymd ?? undefined,
-    yakkaCode: entry.ykzkbn ?? undefined,
-    inpatientFlag: entry.nyugaitekkbn ?? undefined,
-    routeFlag: entry.routekkbn ?? undefined,
-    categoryFlag: entry.srysyukbn ?? undefined,
-  };
 };
 
 const mapDiseaseEntry = (entry: RawDiseaseEntry): DiseaseMasterEntry | null => {
@@ -537,13 +495,11 @@ export const searchTensuByName = async (
     .map((entry) => ({
       code: entry.tensuCode ?? entry.medicalFeeCode ?? '',
       name: entry.name,
-      kana: undefined,
       unitName: entry.unit,
       point: entry.tanka ?? entry.points ?? null,
       startDate: entry.startDate,
       endDate: entry.endDate,
-      routeFlag: undefined,
-      inpatientFlag: undefined,
+      yakkaCode: entry.category,
       categoryFlag: entry.category,
       dataSource: entry.dataSource ?? base.dataSource,
       dataSourceTransition: entry.dataSourceTransition ?? base.dataSourceTransition,
@@ -552,9 +508,8 @@ export const searchTensuByName = async (
       fallbackUsed: entry.fallbackUsed ?? base.fallbackUsed,
       runId: entry.runId ?? base.runId,
       snapshotVersion: entry.snapshotVersion ?? base.snapshotVersion,
-      version: entry.version ?? base.version,
-    }))
-    .filter((item): item is TensuMasterEntry => Boolean(item.code) && Boolean(item.name));
+    }) satisfies TensuMasterEntry)
+    .filter((item) => Boolean(item.code) && Boolean(item.name));
 
   return {
     list,
@@ -740,13 +695,9 @@ export const fetchDrugClassifications = async (): Promise<OrcaMasterListResponse
     .map((entry) => ({
       classCode: entry.code,
       className: entry.name,
-      kanaName: undefined,
       categoryCode: entry.category,
-      parentClassCode: undefined,
-      isLeaf: undefined,
       validFrom: entry.validFrom,
       validTo: entry.validTo,
-      version: entry.version,
       dataSource: entry.dataSource ?? response.dataSource,
       dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
       cacheHit: entry.cacheHit ?? response.cacheHit,
@@ -755,7 +706,7 @@ export const fetchDrugClassifications = async (): Promise<OrcaMasterListResponse
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is DrugClassificationMaster => Boolean(item.classCode) && Boolean(item.className));
+    .filter((item) => Boolean(item.classCode) && Boolean(item.className));
 
   return {
     ...response,
@@ -830,13 +781,11 @@ export const searchTensuByPointRange = async (
     .map((entry) => ({
       code: entry.tensuCode ?? entry.medicalFeeCode ?? '',
       name: entry.name,
-      kana: undefined,
       unitName: entry.unit,
       point: entry.tanka ?? entry.points ?? null,
       startDate: entry.startDate,
       endDate: entry.endDate,
-      routeFlag: undefined,
-      inpatientFlag: undefined,
+      yakkaCode: entry.category,
       categoryFlag: entry.category,
       dataSource: entry.dataSource ?? base.dataSource,
       dataSourceTransition: entry.dataSourceTransition ?? base.dataSourceTransition,
@@ -845,9 +794,8 @@ export const searchTensuByPointRange = async (
       fallbackUsed: entry.fallbackUsed ?? base.fallbackUsed,
       runId: entry.runId ?? base.runId,
       snapshotVersion: entry.snapshotVersion ?? base.snapshotVersion,
-      version: entry.version ?? base.version,
-    }))
-    .filter((item): item is TensuMasterEntry => Boolean(item.code) && Boolean(item.name));
+    }) satisfies TensuMasterEntry)
+    .filter((item) => Boolean(item.code) && Boolean(item.name));
 
   return {
     list,
@@ -882,7 +830,6 @@ export const fetchMinimumDrugPrices = async (
       reference: entry.reference,
       validFrom: entry.validFrom,
       validTo: entry.validTo,
-      version: entry.version,
       dataSource: entry.dataSource ?? response.dataSource,
       dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
       cacheHit: entry.cacheHit ?? response.cacheHit,
@@ -891,7 +838,7 @@ export const fetchMinimumDrugPrices = async (
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is MinimumDrugPriceEntry => Boolean(item.srycd) && Boolean(item.drugName));
+    .filter((item) => Boolean(item.srycd) && Boolean(item.drugName));
 
   return {
     ...response,
@@ -926,7 +873,7 @@ export const fetchDosageInstructions = async (
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is DosageInstructionMaster => Boolean(item.youhouCode) && Boolean(item.youhouName));
+    .filter((item) => Boolean(item.youhouCode) && Boolean(item.youhouName));
 
   return {
     ...response,
@@ -964,7 +911,7 @@ export const fetchSpecialEquipments = async (
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is SpecialEquipmentMaster => Boolean(item.materialCode) && Boolean(item.materialName));
+    .filter((item) => Boolean(item.materialCode) && Boolean(item.materialName));
 
   return {
     ...response,
@@ -998,7 +945,7 @@ export const fetchLabClassifications = async (
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is LabClassificationMaster => Boolean(item.kensaCode) && Boolean(item.kensaName));
+    .filter((item) => Boolean(item.kensaCode) && Boolean(item.kensaName));
 
   return {
     ...response,
@@ -1026,9 +973,6 @@ export const fetchInsurers = async (
       zip: entry.zip,
       addressLine: entry.addressLine,
       address: entry.addressLine,
-      phone: undefined,
-      validFrom: undefined,
-      validTo: undefined,
       version: entry.version,
       dataSource: entry.dataSource ?? response.dataSource,
       dataSourceTransition: entry.dataSourceTransition ?? response.dataSourceTransition,
@@ -1038,7 +982,7 @@ export const fetchInsurers = async (
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is InsurerMaster => Boolean(item.insurerNumber) && Boolean(item.insurerName));
+    .filter((item) => Boolean(item.insurerNumber) && Boolean(item.insurerName));
 
   return {
     ...response,
@@ -1060,7 +1004,7 @@ export const fetchEtensuMasters = async (
       tensuCode: entry.tensuCode ?? entry.medicalFeeCode ?? '',
       name: entry.name,
       points: entry.tanka ?? entry.points ?? 0,
-      tanka: entry.tanka ?? entry.points,
+      tanka: entry.tanka ?? entry.points ?? undefined,
       unit: entry.unit,
       kubun: entry.kubun,
       startDate: entry.startDate,
@@ -1076,7 +1020,7 @@ export const fetchEtensuMasters = async (
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is EtensuMasterEntry => Boolean(item.tensuCode) && Boolean(item.name));
+    .filter((item) => Boolean(item.tensuCode) && Boolean(item.name));
 
   return {
     ...response,
@@ -1122,7 +1066,7 @@ export const lookupAddressMaster = async (
       runId: entry.runId ?? response.runId,
       snapshotVersion: entry.snapshotVersion ?? response.snapshotVersion,
     }))
-    .filter((item): item is AddressMasterEntry => Boolean(item.zip) && Boolean(item.fullAddress));
+    .filter((item) => Boolean(item.zip) && Boolean(item.fullAddress));
 
   if (list.length === 0 && response.missingMaster && response.dataSource === 'server') {
     throw new OrcaValidationError('zip', normalized, {
@@ -1274,11 +1218,6 @@ const buildOrca05ResponseFromSources = (
       code: entry.classCode,
       name: entry.className,
       category: entry.categoryCode ?? entry.parentClassCode,
-      unit: undefined,
-      minPrice: null,
-      youhouCode: undefined,
-      materialCategory: undefined,
-      kensaSort: undefined,
       validFrom: entry.validFrom ?? entry.startDate,
       validTo: entry.validTo ?? entry.endDate,
       version: entry.version,
@@ -1295,9 +1234,6 @@ const buildOrca05ResponseFromSources = (
       category: entry.priceType ?? 'generic-price',
       unit: entry.unit,
       minPrice: entry.price ?? null,
-      youhouCode: undefined,
-      materialCategory: undefined,
-      kensaSort: undefined,
       validFrom: entry.validFrom ?? entry.startDate,
       validTo: entry.validTo ?? entry.endDate,
       version: entry.version,
@@ -1314,11 +1250,7 @@ const buildOrca05ResponseFromSources = (
       code: entry.youhouCode,
       name: entry.youhouName,
       category: 'dosage',
-      unit: undefined,
-      minPrice: null,
       youhouCode: entry.youhouCode,
-      materialCategory: undefined,
-      kensaSort: undefined,
       validFrom: entry.validFrom,
       validTo: entry.validTo,
       version: entry.version,
@@ -1339,9 +1271,7 @@ const buildOrca05ResponseFromSources = (
       category: entry.category ?? 'material',
       unit: entry.unit,
       minPrice: entry.price ?? null,
-      youhouCode: undefined,
       materialCategory: entry.materialCategory ?? entry.category,
-      kensaSort: undefined,
       validFrom: entry.validFrom ?? entry.startDate,
       validTo: entry.validTo ?? entry.endDate,
       version: entry.version,
@@ -1357,10 +1287,6 @@ const buildOrca05ResponseFromSources = (
       code: entry.kensaCode,
       name: entry.kensaName,
       category: entry.classification ?? entry.insuranceCategory ?? 'kensa',
-      unit: undefined,
-      minPrice: null,
-      youhouCode: undefined,
-      materialCategory: undefined,
       kensaSort: entry.kensaCode,
       validFrom: entry.validFrom,
       validTo: entry.validTo,
@@ -1421,7 +1347,6 @@ const buildOrca06ResponseFromSources = (
       zip: entry.zip,
       addressLine: entry.addressLine ?? entry.address,
       city: entry.address,
-      town: undefined,
       kana: entry.insurerKana,
       version: entry.version,
     });
@@ -1439,8 +1364,6 @@ const buildOrca06ResponseFromSources = (
       recordType: 'address',
       payerCode: payerCode ?? 'address',
       payerName: payerName || payerCode || 'address',
-      payerType: undefined,
-      payerRatio: undefined,
       prefCode: entry.prefCode ?? entry.prefectureCode,
       cityCode: entry.cityCode,
       zip: entry.zip ?? entry.zipCode,
@@ -1511,7 +1434,7 @@ const buildOrca08ResponseFromSources = (
   };
 };
 
--const buildFallbackResponse = <T>(
+const buildFallbackResponse = <T>(
   dataSource: OrcaMasterSource,
   options?: OrcaMasterFetchOptions,
 ): OrcaMasterListResponse<T> => ({
@@ -1531,6 +1454,7 @@ const fetchOrca05FromSource = async (
   source: OrcaMasterSource,
   options?: OrcaMasterFetchOptions,
 ): Promise<OrcaMasterListResponse<Orca05MasterRecord>> => {
+  void options;
   if (source === 'server') {
     const baseURL = getOrcaMasterBridgeBaseUrl();
     const [drugClasses, minimumPrices, dosageInstructions, specialEquipments, labClassifications] =

@@ -1,17 +1,29 @@
 package open.orca.rest;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.databind.JavaType;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.type.TypeFactory;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 import java.time.Instant;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.Response.Status;
+import jakarta.ws.rs.core.UriInfo;
 
 /**
  * ORCA master endpoints for the modernized server.
@@ -23,263 +35,484 @@ public class OrcaMasterResource {
 
     private static final String DEFAULT_USERNAME = "1.3.6.1.4.1.9414.70.1:admin";
     private static final String DEFAULT_PASSWORD = "21232f297a57a5a743894a0e4a801fc3";
-    private static final String RUN_ID = "20251124T073245Z";
-    private static final String VERSION = "20251124";
+    private static final String RUN_ID = "20251126T150000Z";
+    private static final String VERSION = "20251126";
     private static final String DATA_SOURCE = "server";
+    private static final java.nio.file.Path SNAPSHOT_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "master-snapshots");
+    private static final java.nio.file.Path MSW_FIXTURE_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "msw-fixture");
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+
+    private enum DataOrigin {
+        SNAPSHOT,
+        MSW_FIXTURE,
+        FALLBACK
+    }
+
+    private static final class LoadedResult<T extends AuditFields> {
+        final List<T> entries;
+        final String snapshotVersion;
+        final DataOrigin origin;
+
+        LoadedResult(List<T> entries, String snapshotVersion, DataOrigin origin) {
+            this.entries = entries;
+            this.snapshotVersion = snapshotVersion;
+            this.origin = origin;
+        }
+    }
 
     @GET
     @Path("/api/orca/master/generic-class")
-    public Response getGenericClass(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getGenericClass(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo
+    ) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<DrugClassificationEntry> list = new ArrayList<>();
-        list.add(withMeta(new DrugClassificationEntry(
-                "211",
-                "降圧薬",
-                "ｺｳｱﾂﾔｸ",
-                "generic",
-                "21",
-                true,
-                "20240401",
-                "99991231"
-        )));
-        list.add(withMeta(new DrugClassificationEntry(
-                "21101",
-                "ACE 阻害薬",
-                "ACEｿｶﾞｲﾔｸ",
-                "generic",
-                "211",
-                true,
-                "20240401",
-                "99991231"
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                DrugClassificationEntry.class,
+                "generic-class/orca_master_generic-class_response.json",
+                "orca-master-generic-class.json",
+                params,
+                genericClassFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/generic-class")
-    public Response getGenericClassAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getGenericClass(userName, password);
+    public Response getGenericClassAlias(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo
+    ) {
+        return getGenericClass(userName, password, uriInfo);
     }
 
     @GET
     @Path("/api/orca/master/generic-price")
-    public Response getGenericPrice(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getGenericPrice(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo
+    ) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<MinimumDrugPriceEntry> list = new ArrayList<>();
-        list.add(withMeta(new MinimumDrugPriceEntry(
-                "610008123",
-                "アムロジピン錠 5mg",
-                "ｱﾑﾛｼﾞﾋﾟﾝ5mg",
-                12.5,
-                "TAB",
-                "generic-price",
-                "Y003",
-                "20240401",
-                "99991231",
-                new Reference("20240401", "99991231", "TBL_GENERIC_PRICE")
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                MinimumDrugPriceEntry.class,
+                "generic-price/orca_master_generic-price_response.json",
+                "orca-master-generic-price.json",
+                params,
+                genericPriceFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/generic-price")
-    public Response getGenericPriceAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getGenericPrice(userName, password);
+    public Response getGenericPriceAlias(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo
+    ) {
+        return getGenericPrice(userName, password, uriInfo);
     }
 
     @GET
     @Path("/api/orca/master/youhou")
-    public Response getYouhou(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getYouhou(@HeaderParam("userName") String userName,
+                              @HeaderParam("password") String password,
+                              @Context UriInfo uriInfo) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<DosageInstructionEntry> list = new ArrayList<>();
-        list.add(withMeta(new DosageInstructionEntry(
-                "10",
-                "1日1回 朝食後",
-                "01",
-                "PO",
-                1,
-                1,
-                null,
-                "20240401",
-                "99991231"
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                DosageInstructionEntry.class,
+                "youhou/orca_master_youhou_response.json",
+                "orca-master-youhou.json",
+                params,
+                youhouFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/youhou")
-    public Response getYouhouAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getYouhou(userName, password);
+    public Response getYouhouAlias(@HeaderParam("userName") String userName,
+                                   @HeaderParam("password") String password,
+                                   @Context UriInfo uriInfo) {
+        return getYouhou(userName, password, uriInfo);
     }
 
     @GET
     @Path("/api/orca/master/material")
-    public Response getMaterial(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getMaterial(@HeaderParam("userName") String userName,
+                                @HeaderParam("password") String password,
+                                @Context UriInfo uriInfo) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<SpecialEquipmentEntry> list = new ArrayList<>();
-        list.add(withMeta(new SpecialEquipmentEntry(
-                "5001001",
-                "注射器 2.5mL",
-                "特定器材",
-                "A1",
-                "SYOKAN",
-                "EA",
-                35.0,
-                "20240401",
-                "20250331",
-                "ExampleMed"
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                SpecialEquipmentEntry.class,
+                "material/orca_master_material_response.json",
+                "orca-master-material.json",
+                params,
+                materialFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/material")
-    public Response getMaterialAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getMaterial(userName, password);
+    public Response getMaterialAlias(@HeaderParam("userName") String userName,
+                                     @HeaderParam("password") String password,
+                                     @Context UriInfo uriInfo) {
+        return getMaterial(userName, password, uriInfo);
     }
 
     @GET
     @Path("/api/orca/master/kensa-sort")
-    public Response getKensaSort(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getKensaSort(@HeaderParam("userName") String userName,
+                                 @HeaderParam("password") String password,
+                                 @Context UriInfo uriInfo) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<LabClassificationEntry> list = new ArrayList<>();
-        list.add(withMeta(new LabClassificationEntry(
-                "1101",
-                "血液検査",
-                "WB",
-                "検査分類",
-                "SYOKAN",
-                "lab",
-                "01",
-                "20240401",
-                "99991231"
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                LabClassificationEntry.class,
+                "kensa-sort/orca_master_kensa-sort_response.json",
+                "orca-master-kensa-sort.json",
+                params,
+                kensaSortFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/kensa-sort")
-    public Response getKensaSortAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getKensaSort(userName, password);
+    public Response getKensaSortAlias(@HeaderParam("userName") String userName,
+                                      @HeaderParam("password") String password,
+                                      @Context UriInfo uriInfo) {
+        return getKensaSort(userName, password, uriInfo);
     }
 
     @GET
     @Path("/api/orca/master/hokenja")
-    public Response getHokenja(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getHokenja(@HeaderParam("userName") String userName,
+                               @HeaderParam("password") String password,
+                               @Context UriInfo uriInfo) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<InsurerEntry> list = new ArrayList<>();
-        list.add(withMeta(new InsurerEntry(
-                "06123456",
-                "札幌市国民健康保険",
-                "ｻｯﾎﾟﾛｼｺｸﾎ",
-                0.7,
-                "national_health",
-                "01",
-                "01100",
-                "0600001",
-                "北海道札幌市中央区北一条西2",
-                "011-123-4567"
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                InsurerEntry.class,
+                "hokenja/orca_master_hokenja_response.json",
+                "orca-master-hokenja.json",
+                params,
+                hokenjaFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/hokenja")
-    public Response getHokenjaAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getHokenja(userName, password);
+    public Response getHokenjaAlias(@HeaderParam("userName") String userName,
+                                    @HeaderParam("password") String password,
+                                    @Context UriInfo uriInfo) {
+        return getHokenja(userName, password, uriInfo);
     }
 
     @GET
     @Path("/api/orca/master/address")
-    public Response getAddress(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getAddress(@HeaderParam("userName") String userName,
+                               @HeaderParam("password") String password,
+                               @Context UriInfo uriInfo) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<AddressEntry> list = new ArrayList<>();
-        list.add(withMeta(new AddressEntry(
-                "1000001",
-                "13",
-                "13101",
-                "千代田区",
-                "千代田",
-                "ﾁﾖﾀﾞｸ ﾁﾖﾀﾞ",
-                "Chiyoda-ku Chiyoda",
-                "東京都千代田区千代田"
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                AddressEntry.class,
+                "address/orca_master_address_response.json",
+                "orca-master-address.json",
+                params,
+                addressFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/address")
-    public Response getAddressAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getAddress(userName, password);
+    public Response getAddressAlias(@HeaderParam("userName") String userName,
+                                    @HeaderParam("password") String password,
+                                    @Context UriInfo uriInfo) {
+        return getAddress(userName, password, uriInfo);
     }
 
     @GET
     @Path("/api/orca/master/etensu")
-    public Response getEtensu(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
+    public Response getEtensu(@HeaderParam("userName") String userName,
+                              @HeaderParam("password") String password,
+                              @Context UriInfo uriInfo) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
         }
-
-        List<TensuEntry> list = new ArrayList<>();
-        list.add(withMeta(new TensuEntry(
-                "1",
-                "D001",
-                "初診料",
-                288.0,
-                "visit",
-                "診察",
-                "11",
-                "20240401",
-                "99991231",
-                "202404"
-        )));
-
-        return Response.ok(wrap(list)).build();
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        return respondWithMasterList(
+                TensuEntry.class,
+                "etensu/orca_tensu_ten_response.json",
+                "orca-tensu-ten.json",
+                params,
+                etensuFilter(params)
+        );
     }
 
     @GET
     @Path("/orca/master/etensu")
-    public Response getEtensuAlias(@HeaderParam("userName") String userName, @HeaderParam("password") String password) {
-        return getEtensu(userName, password);
+    public Response getEtensuAlias(@HeaderParam("userName") String userName,
+                                   @HeaderParam("password") String password,
+                                   @Context UriInfo uriInfo) {
+        return getEtensu(userName, password, uriInfo);
+    }
+
+    private <T extends AuditFields> Response respondWithMasterList(
+            Class<T> entryType,
+            String snapshotRelativePath,
+            String fixtureFileName,
+            MultivaluedMap<String, String> params,
+            Predicate<T> matcher
+    ) {
+        final LoadedResult<T> loaded = loadEntries(entryType, snapshotRelativePath, fixtureFileName);
+        final List<T> normalized = new ArrayList<>(loaded.entries);
+        final List<T> filtered = matcher == null
+                ? normalized
+                : normalized.stream().filter(matcher).collect(Collectors.toList());
+        final int limit = parsePositiveInt(params, "limit");
+        final List<T> limited = (limit > 0 && filtered.size() > limit)
+                ? new ArrayList<>(filtered.subList(0, limit))
+                : filtered;
+        final String transition = transitionForOrigin(loaded.origin);
+        final MasterListResponse<T> response = new MasterListResponse<>();
+        applyBaseMeta(response, loaded.origin, loaded.snapshotVersion, transition);
+        response.list = limited;
+        response.totalCount = limited.size();
+        response.fetchedAt = Instant.now().toString();
+        response.cacheHit = Boolean.FALSE;
+        response.missingMaster = limited.isEmpty();
+        response.fallbackUsed = loaded.origin != DataOrigin.SNAPSHOT;
+        limited.forEach(entry -> applyBaseMeta(entry, loaded.origin, loaded.snapshotVersion, transition));
+        return Response.ok(response).build();
+    }
+
+    private <T extends AuditFields> LoadedResult<T> loadEntries(
+            Class<T> entryType,
+            String snapshotRelativePath,
+            String fixtureFileName
+    ) {
+        final MasterListResponse<T> snapshot = tryReadResponse(entryType, SNAPSHOT_ROOT.resolve(snapshotRelativePath));
+        if (snapshot != null) {
+            return new LoadedResult<>(safeList(snapshot.list), snapshot.snapshotVersion, DataOrigin.SNAPSHOT);
+        }
+        final MasterListResponse<T> fixture = tryReadResponse(entryType, MSW_FIXTURE_ROOT.resolve(fixtureFileName));
+        if (fixture != null) {
+            return new LoadedResult<>(safeList(fixture.list), fixture.snapshotVersion, DataOrigin.MSW_FIXTURE);
+        }
+        return new LoadedResult<>(Collections.emptyList(), null, DataOrigin.FALLBACK);
+    }
+
+    private <T extends AuditFields> MasterListResponse<T> tryReadResponse(Class<T> entryType, java.nio.file.Path file) {
+        if (Files.notExists(file)) {
+            return null;
+        }
+        try {
+            final JavaType type = TypeFactory.defaultInstance().constructParametricType(MasterListResponse.class, entryType);
+            return OBJECT_MAPPER.readValue(file.toFile(), type);
+        } catch (IOException e) {
+            return null;
+        }
+    }
+
+    private <T extends AuditFields> List<T> safeList(List<T> source) {
+        return source == null ? Collections.emptyList() : source;
+    }
+
+    private int parsePositiveInt(MultivaluedMap<String, String> params, String key) {
+        final String raw = getFirstValue(params, key);
+        if (raw == null) {
+            return -1;
+        }
+        try {
+            final int parsed = Integer.parseInt(raw);
+            return parsed > 0 ? parsed : -1;
+        } catch (NumberFormatException e) {
+            return -1;
+        }
+    }
+
+    private String transitionForOrigin(DataOrigin origin) {
+        switch (origin) {
+            case SNAPSHOT:
+                return "server->snapshot";
+            case MSW_FIXTURE:
+                return "server->msw-fixture";
+            default:
+                return "server->fallback";
+        }
+    }
+
+    private Predicate<DrugClassificationEntry> genericClassFilter(MultivaluedMap<String, String> params) {
+        final String keyword = getFirstValue(params, "keyword", "className", "q");
+        final String classCode = getFirstValue(params, "classCode");
+        final String category = getFirstValue(params, "categoryCode");
+        return entry -> {
+            if (classCode != null && !classCode.equals(entry.classCode)) {
+                return false;
+            }
+            if (category != null && !category.equals(entry.categoryCode)) {
+                return false;
+            }
+            return keyword == null || matchesKeyword(entry.className, keyword) || matchesKeyword(entry.kanaName, keyword);
+        };
+    }
+
+    private Predicate<MinimumDrugPriceEntry> genericPriceFilter(MultivaluedMap<String, String> params) {
+        final String keyword = getFirstValue(params, "keyword", "drugName", "kanaName");
+        final String srycd = getFirstValue(params, "srycd");
+        return entry -> {
+            if (srycd != null && !srycd.equals(entry.srycd)) {
+                return false;
+            }
+            return keyword == null || matchesKeyword(entry.drugName, keyword) || matchesKeyword(entry.kanaName, keyword);
+        };
+    }
+
+    private Predicate<DosageInstructionEntry> youhouFilter(MultivaluedMap<String, String> params) {
+        final String keyword = getFirstValue(params, "keyword", "youhouName", "comment");
+        final String code = getFirstValue(params, "youhouCode");
+        return entry -> {
+            if (code != null && !code.equals(entry.youhouCode)) {
+                return false;
+            }
+            return keyword == null || matchesKeyword(entry.youhouName, keyword) || matchesKeyword(entry.comment, keyword);
+        };
+    }
+
+    private Predicate<SpecialEquipmentEntry> materialFilter(MultivaluedMap<String, String> params) {
+        final String keyword = getFirstValue(params, "keyword", "materialName");
+        final String category = getFirstValue(params, "category");
+        final String code = getFirstValue(params, "materialCode");
+        return entry -> {
+            if (category != null && !category.equals(entry.category)) {
+                return false;
+            }
+            if (code != null && !code.equals(entry.materialCode)) {
+                return false;
+            }
+            return keyword == null || matchesKeyword(entry.materialName, keyword);
+        };
+    }
+
+    private Predicate<LabClassificationEntry> kensaSortFilter(MultivaluedMap<String, String> params) {
+        final String keyword = getFirstValue(params, "keyword", "kensaName");
+        final String code = getFirstValue(params, "kensaCode");
+        return entry -> {
+            if (code != null && !code.equals(entry.kensaCode)) {
+                return false;
+            }
+            return keyword == null || matchesKeyword(entry.kensaName, keyword);
+        };
+    }
+
+    private Predicate<InsurerEntry> hokenjaFilter(MultivaluedMap<String, String> params) {
+        final String keyword = getFirstValue(params, "keyword", "insurerName");
+        final String pref = getFirstValue(params, "pref", "prefCode", "prefectureCode");
+        final String payerCode = getFirstValue(params, "payerCode", "insurerNumber");
+        return entry -> {
+            if (pref != null && !pref.equals(entry.prefCode) && !pref.equals(entry.prefectureCode)) {
+                return false;
+            }
+            if (payerCode != null && !payerCode.equals(entry.insurerNumber)) {
+                return false;
+            }
+            return keyword == null || matchesKeyword(entry.insurerName, keyword);
+        };
+    }
+
+    private Predicate<AddressEntry> addressFilter(MultivaluedMap<String, String> params) {
+        final String zip = getFirstValue(params, "zip", "zipCode");
+        final String pref = getFirstValue(params, "pref", "prefCode", "prefectureCode");
+        return entry -> {
+            if (zip != null && !zip.equals(entry.zip) && !zip.equals(entry.zipCode)) {
+                return false;
+            }
+            if (pref != null && !pref.equals(entry.prefCode) && !pref.equals(entry.prefectureCode)) {
+                return false;
+            }
+            return true;
+        };
+    }
+
+    private Predicate<TensuEntry> etensuFilter(MultivaluedMap<String, String> params) {
+        final Double minValue = parseDouble(getFirstValue(params, "min", "minValue"));
+        final Double maxValue = parseDouble(getFirstValue(params, "max", "maxValue"));
+        final String keyword = getFirstValue(params, "keyword", "name");
+        return entry -> {
+            if (minValue != null && entry.points != null && entry.points < minValue) {
+                return false;
+            }
+            if (maxValue != null && entry.points != null && entry.points > maxValue) {
+                return false;
+            }
+            return keyword == null || matchesKeyword(entry.name, keyword);
+        };
+    }
+
+    private String getFirstValue(MultivaluedMap<String, String> params, String... keys) {
+        if (params == null) {
+            return null;
+        }
+        for (String key : keys) {
+            final List<String> values = params.get(key);
+            if (values != null && !values.isEmpty()) {
+                final String value = values.get(0);
+                if (value != null && !value.isBlank()) {
+                    return value;
+                }
+            }
+        }
+        return null;
+    }
+
+    private boolean matchesKeyword(String value, String keyword) {
+        if (value == null || keyword == null) {
+            return false;
+        }
+        return value.toLowerCase().contains(keyword.toLowerCase());
+    }
+
+    private Double parseDouble(String raw) {
+        if (raw == null) {
+            return null;
+        }
+        try {
+            return Double.parseDouble(raw);
+        } catch (NumberFormatException e) {
+            return null;
+        }
     }
 
     private boolean isAuthorized(String userName, String password) {
-        String expectedUser = firstNonBlank(
+        final String expectedUser = firstNonBlank(
                 System.getenv("ORCA_MASTER_BASIC_USER"),
                 System.getProperty("ORCA_MASTER_BASIC_USER"),
-                DEFAULT_USERNAME);
-        String expectedPassword = firstNonBlank(
+                DEFAULT_USERNAME
+        );
+        final String expectedPassword = firstNonBlank(
                 System.getenv("ORCA_MASTER_BASIC_PASSWORD"),
                 System.getProperty("ORCA_MASTER_BASIC_PASSWORD"),
-                DEFAULT_PASSWORD);
+                DEFAULT_PASSWORD
+        );
         return Objects.equals(expectedUser, userName) && Objects.equals(expectedPassword, password);
     }
 
@@ -289,28 +522,15 @@ public class OrcaMasterResource {
                 .build();
     }
 
-    private <T extends AuditFields> MasterListResponse<T> wrap(List<T> items) {
-        MasterListResponse<T> response = new MasterListResponse<>();
-        applyBaseMeta(response);
-        response.list = items;
-        response.totalCount = items.size();
-        response.fetchedAt = Instant.now().toString();
-        return response;
-    }
-
-    private <T extends AuditFields> T withMeta(T entry) {
-        applyBaseMeta(entry);
-        return entry;
-    }
-
-    private void applyBaseMeta(AuditFields target) {
+    private void applyBaseMeta(AuditFields target, DataOrigin origin, String snapshotVersion, String transition) {
         target.dataSource = DATA_SOURCE;
         target.cacheHit = Boolean.FALSE;
         target.missingMaster = Boolean.FALSE;
-        target.fallbackUsed = Boolean.FALSE;
+        target.fallbackUsed = origin != DataOrigin.SNAPSHOT;
         target.runId = RUN_ID;
-        target.snapshotVersion = null;
+        target.snapshotVersion = snapshotVersion;
         target.version = VERSION;
+        target.dataSourceTransition = transition;
     }
 
     private String firstNonBlank(String... candidates) {
