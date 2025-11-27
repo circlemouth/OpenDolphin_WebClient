@@ -188,6 +188,21 @@ VITE_DEV_PROXY_TARGET=http://localhost:8080/openDolphin/resources npm run dev --
 
 ブラウザで `https://localhost:5173` を開き、医師アカウント `1.3.6.1.4.1.9414.72.103:doctor1`（パスワード `doctor2025`）などでログインできることを確認する。
 
+## Web クライアント（Vite）を Docker で起動する
+
+ローカル PC に Node.js を導入せずに Web クライアントを開発したい場合は、リポジトリ直下の `docker-compose.web-client.yml` を利用する。バックエンド（`docker compose up -d`）を起動済みにしたうえで、以下を実行する。
+
+```bash
+# 初回は --build を付与してイメージを作成
+docker compose -f docker-compose.web-client.yml up --build
+```
+
+- デフォルトポートは `WEB_CLIENT_DEV_PORT`（既定 5173）。ポート衝突時は `.env` またはシェルで `export WEB_CLIENT_DEV_PORT=5174` のように上書きする。
+- `VITE_DEV_PROXY_TARGET` は既定で `http://host.docker.internal:8080/openDolphin/resources` を参照する。Linux で `host.docker.internal` が解決できない場合は、`VITE_DEV_PROXY_TARGET=http://172.17.0.1:8080/openDolphin/resources` のように Docker ブリッジアドレスへ切り替える。
+- `VITE_DISABLE_MSW=1` を渡すとコンテナ内でもモックを無効化できる。`VITE_DEV_USE_HTTPS=1` で自己署名証明書モードを有効化可能。
+- ホットリロードのために `./web-client` をボリュームマウントし、`node_modules` のみ名前付きボリュームでキャッシュしている。初回起動時はコンテナが `npm install` を実行し、2 回目以降は差分が速やかに反映される。
+- 終了は `Ctrl+C`、もしくは別ターミナルで `docker compose -f docker-compose.web-client.yml down` を実行する。
+
 ## テスト患者データ投入（2025-11-02 登録済み）
 
 `POST /openDolphin/resources/patient` に管理者資格情報を付与してリクエストすると、施設内のテスト患者を一括登録できる。以下の 10 件を挿入済み（施設 `1.3.6.1.4.1.9414.72.103`）。

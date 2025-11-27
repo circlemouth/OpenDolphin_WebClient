@@ -1,0 +1,27 @@
+services:
+  web-client:
+    build:
+      context: ./web-client
+      dockerfile: Dockerfile.dev
+    container_name: opendolphin-web-client
+    environment:
+      VITE_DEV_PROXY_TARGET: ${VITE_DEV_PROXY_TARGET:-http://host.docker.internal:8080/openDolphin/resources}
+      VITE_DEV_USE_HTTPS: ${VITE_DEV_USE_HTTPS:-0}
+      VITE_DISABLE_MSW: ${VITE_DISABLE_MSW:-0}
+      VITE_ENABLE_TELEMETRY: ${VITE_ENABLE_TELEMETRY:-0}
+      VITE_DISABLE_SECURITY: ${VITE_DISABLE_SECURITY:-0}
+      VITE_DISABLE_AUDIT: ${VITE_DISABLE_AUDIT:-0}
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
+    volumes:
+      - ./web-client:/app
+      - web-client-node_modules:/app/node_modules
+    ports:
+      - "${WEB_CLIENT_DEV_PORT:-5173}:5173"
+    command: >-
+      sh -c "npm install && npm run dev -- --host 0.0.0.0 --port 5173 --strictPort"
+    stdin_open: true
+    tty: true
+
+volumes:
+  web-client-node_modules:
+    driver: local

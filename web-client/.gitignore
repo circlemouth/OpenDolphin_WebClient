@@ -28,3 +28,6 @@ ORCAcertification/
 
 # Generated types
 src/generated/orca-master.ts
+
+# Test results
+test-results/

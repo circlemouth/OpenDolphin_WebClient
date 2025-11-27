@@ -13,10 +13,6 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 
 最終棚卸し更新: 2025-11-21（RUN_ID=`20251120T191203Z`）。`docs/web-client/planning/phase2/DOC_STATUS.md` と本 INDEX・Web クライアント Hub を同日付で同期済み。
 
-## ブロッカー共有（2026-06-15）
-- WSL2 環境には Docker Desktop が導入されておらず、`scripts/start_legacy_modernized.sh start --build` / `docker compose` が実行できないためフェーズ4（JPQL/TX、予約/紹介状 REST、SessionOperation、adm10/20、HealthInsuranceModel）が一時停止中。詳細は `PHASE2_PROGRESS.md#2026-06-15-追記-フェーズ4-docker-ブロッカー共有担当-codex` と `SERVER_MODERNIZED_DEBUG_CHECKLIST.md` フェーズ4節を参照。
-- 再開条件: Docker Desktop を導入して対象ディストリで WSL Integration を有効化し、`./scripts/start_legacy_modernized.sh down && ./scripts/start_legacy_modernized.sh start --build` が成功、かつ Legacy/Modernized 両 `/actuator/health` が 200 を返すことを証跡化すること。条件達成後にフェーズ4タスクの再開とドキュメント更新を行う。
-
 ## 基礎資料（Foundation）
 - [`foundation/JAKARTA_EE10_GAP_LIST.md`](foundation/JAKARTA_EE10_GAP_LIST.md): Jakarta EE 10 への移行ギャップ一覧。
 - [`foundation/DEPENDENCY_UPDATE_PLAN.md`](foundation/DEPENDENCY_UPDATE_PLAN.md): BOM/依存更新計画。
