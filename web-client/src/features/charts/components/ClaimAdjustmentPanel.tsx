@@ -3,6 +3,8 @@ import { useMutation } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 
 import { Button, SelectField, SurfaceCard, TextArea, TextField } from '@/components';
+import { formatDateTime, getStatusTone } from '@/features/charts/components/document-timeline-utils';
+import { MetadataBadgeRow, MetadataBadge } from '@/features/charts/components/shared/MetadataBadges';
 import { searchModules, sendClaimDocument } from '@/features/charts/api/claim-api';
 import { fetchDocumentsByIds } from '@/features/charts/api/doc-info-api';
 import type { DocInfoSummary, DocumentModelPayload } from '@/features/charts/types/doc';
@@ -178,6 +180,11 @@ export const ClaimAdjustmentPanel = ({
       })),
     ],
     [docInfos],
+  );
+
+  const selectedDocInfo = useMemo(
+    () => docInfos.find((doc) => doc.docPk === selectedDocPk) ?? null,
+    [docInfos, selectedDocPk],
   );
 
   const moduleSearchMutation = useMutation({
@@ -379,6 +386,29 @@ export const ClaimAdjustmentPanel = ({
             readOnly
           />
         </FieldGrid>
+        {selectedDocInfo ? (
+          <MetadataBadgeRow>
+            <MetadataBadge $tone={getStatusTone(selectedDocInfo.status)}>
+              ステータス: {selectedDocInfo.status ?? '---'}
+            </MetadataBadge>
+            <MetadataBadge>文書ID: {selectedDocInfo.docId}</MetadataBadge>
+            <MetadataBadge>バージョン: {selectedDocInfo.versionNumber ?? '―'}</MetadataBadge>
+            <MetadataBadge $tone="info">
+              確定: {formatDateTime(selectedDocInfo.confirmDate ?? selectedDocInfo.firstConfirmDate ?? null)}
+            </MetadataBadge>
+            <MetadataBadge $tone="info">
+              更新: {formatDateTime(selectedDocInfo.updatedAt ?? selectedDocInfo.recordedAt ?? null)}
+            </MetadataBadge>
+            <MetadataBadge $tone={selectedDocInfo.sendClaim ? 'info' : 'warning'}>
+              CLAIM: {selectedDocInfo.sendClaim ? '送信済み' : '未送信'}
+            </MetadataBadge>
+            <MetadataBadge>
+              保険: {selectedDocInfo.healthInsuranceDesc ?? selectedDocInfo.healthInsurance ?? '―'}
+            </MetadataBadge>
+          </MetadataBadgeRow>
+        ) : (
+          <InlineMessage>CLAIM 再送信対象の文書を選ぶと監査情報が表示されます。</InlineMessage>
+        )}
         <TextArea
           label="送信メモ"
           placeholder="送信理由や補足事項をメモできます（任意）"

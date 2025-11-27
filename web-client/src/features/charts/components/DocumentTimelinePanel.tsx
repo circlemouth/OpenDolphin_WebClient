@@ -12,6 +12,10 @@ import {
   resolveErrorMessage,
 } from '@/features/charts/components/document-timeline-utils';
 import {
+  MetadataBadge,
+  MetadataBadgeRow,
+} from '@/features/charts/components/shared/MetadataBadges';
+import {
   TIMELINE_EVENT_CATEGORIES,
   TIMELINE_EVENT_META,
   filterTimelineEvents,
@@ -446,6 +450,22 @@ export const DocumentTimelinePanel = ({
       }
       return (
         <>
+          <MetadataBadgeRow>
+            <MetadataBadge $tone={getStatusTone(selectedDocumentDetail.docInfoModel?.status)}>
+              ステータス: {selectedDocumentDetail.docInfoModel?.status ?? '---'}
+            </MetadataBadge>
+            <MetadataBadge>文書ID: {selectedDocumentDetail.docInfoModel?.docId}</MetadataBadge>
+            <MetadataBadge>バージョン: {selectedDocumentDetail.docInfoModel?.versionNumber ?? '―'}</MetadataBadge>
+            <MetadataBadge $tone="info">
+              確定: {formatDateTime(selectedDocumentDetail.docInfoModel?.confirmDate ?? selectedDocumentDetail.docInfoModel?.firstConfirmDate ?? null)}
+            </MetadataBadge>
+            <MetadataBadge $tone="info">
+              更新: {formatDateTime(selectedDocumentDetail.docInfoModel?.updatedAt ?? selectedDocumentDetail.docInfoModel?.recordedAt ?? null)}
+            </MetadataBadge>
+            <MetadataBadge $tone={selectedDocumentDetail.docInfoModel?.sendClaim ? 'info' : 'warning'}>
+              CLAIM: {selectedDocumentDetail.docInfoModel?.sendClaim ? '送信済み' : '未送信'}
+            </MetadataBadge>
+          </MetadataBadgeRow>
           <DetailSection>
             <DetailHeading>カルテ基本情報</DetailHeading>
             <DetailList>
