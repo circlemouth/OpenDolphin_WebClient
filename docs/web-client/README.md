@@ -20,6 +20,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`architecture/WEB_CLIENT_REQUIREMENTS.md`](architecture/WEB_CLIENT_REQUIREMENTS.md): 機能・非機能・セキュリティ要件。
 - [`architecture/PHASE2_SYSTEMS_ALIGNMENT.md`](architecture/PHASE2_SYSTEMS_ALIGNMENT.md): Phase2 の三者接続図/API 契約/Runbook 連携/証跡保存先を RUN_ID=`20251115T143200Z` でまとめたドラフト。UX マネージャー主導で更新し、DOC_STATUS Active 行と同期。
 - [`architecture/REST_API_INVENTORY.md`](architecture/REST_API_INVENTORY.md): Web クライアントが利用する REST API 一覧と留意点。
+- [`architecture/ui-api-mapping.md`](architecture/ui-api-mapping.md): ルーティング/画面/コンポーネントごとに REST・ORCA 接続と優先度/監査ルールを RUN_ID=`20251127T120000Z` で整理。
 - [`../server/LEGACY_REST_API_INVENTORY.md`](../server/LEGACY_REST_API_INVENTORY.md): 旧サーバーの REST エンドポイント参照表（クライアント互換確認用）。
 - サーバー API のモダナイズ資料（`MODERNIZED_REST_API_INVENTORY.md` や Persistence/Reporting など）は [Server Modernization Phase2 Index](../server-modernization/phase2/INDEX.md) から辿る。
 
