@@ -1,6 +1,7 @@
 import styled from '@emotion/styled';
 import type { HTMLAttributes } from 'react';
 
+import { describeTooltipFields, type TooltipFields } from '@/libs/tooltipFields';
 import type { PaletteToken } from '@/styles/theme';
 
 export type StatusTone = 'info' | 'success' | 'warning' | 'danger' | 'neutral';
@@ -39,8 +40,22 @@ const StyledBadge = styled.span<{ $tone: StatusTone; $size: StatusBadgeSize }>`
 export interface StatusBadgeProps extends HTMLAttributes<HTMLSpanElement> {
   tone?: StatusTone;
   size?: StatusBadgeSize;
+  tooltipFields?: TooltipFields;
 }
 
-export const StatusBadge = ({ tone = 'neutral', size = 'md', ...props }: StatusBadgeProps) => (
-  <StyledBadge $tone={tone} $size={size} {...props} />
-);
+export const StatusBadge = (
+  { tone = 'neutral', size = 'md', tooltipFields, ...props }: StatusBadgeProps,
+) => {
+  const tooltipSummary = tooltipFields ? describeTooltipFields(tooltipFields) : undefined;
+  const ariaLabelValue = props['aria-label'] ?? tooltipSummary;
+
+  return (
+    <StyledBadge
+      $tone={tone}
+      $size={size}
+      {...props}
+      title={props.title ?? tooltipSummary}
+      aria-label={ariaLabelValue}
+    />
+  );
+};

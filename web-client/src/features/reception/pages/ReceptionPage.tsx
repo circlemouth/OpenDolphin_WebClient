@@ -42,6 +42,7 @@ import type {
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { normalizeGender } from '@/features/patients/utils/normalize-gender';
 import { recordOperationEvent } from '@/libs/audit';
+import { formatDataSourceTransition, getDataSourceStatus, type TooltipFields } from '@/libs/tooltipFields';
 import {
   ReceptionSidebarContent,
   type ReceptionSidebarTab,
@@ -201,6 +202,25 @@ const GroupEmpty = styled.div`
   font-size: 0.9rem;
   color: ${({ theme }) => theme.palette.textMuted};
   text-align: center;
+`;
+
+
+const StatusBanner = styled.div`
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: ${({ theme }) => theme.radius.md};
+  border: 1px solid ${({ theme }) => theme.palette.border};
+  background: ${({ theme }) => theme.palette.surfaceStrong};
+`;
+
+const StatusBannerMeta = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  font-size: 0.85rem;
+  color: ${({ theme }) => theme.palette.textMuted};
 `;
 
 const ReplayGapSkeletonStack = styled.div`
@@ -1077,6 +1097,65 @@ export const ReceptionPage = () => {
 
   const isReceptionLoading = visitsQuery.isPending;
   const isReceptionRefreshing = visitsQuery.isFetching && !visitsQuery.isPending;
+  const receptionProgressState = isReceptionLoading
+    ? 'initializing'
+    : isReceptionRefreshing
+    ? 'refreshing'
+    : 'synced';
+  const receptionDataSourceStatus = useMemo(() => getDataSourceStatus(), []);
+  const {
+    status: receptionDataSourceLabel,
+    runId: receptionRunId,
+    dataSourceTransition: receptionTransition,
+    cacheHit: receptionCacheHit,
+    missingMaster: receptionMissingMaster,
+    fallbackUsed: receptionFallbackUsed,
+  } = receptionDataSourceStatus;
+  const receptionTooltipFields = useMemo<TooltipFields>(
+    () => ({
+      progress: receptionProgressState,
+      status: receptionDataSourceLabel,
+      runId: receptionRunId,
+      dataSourceTransition: receptionTransition,
+      cacheHit: receptionCacheHit,
+      missingMaster: receptionMissingMaster,
+      fallbackUsed: receptionFallbackUsed,
+    }),
+    [
+      receptionProgressState,
+      receptionDataSourceLabel,
+      receptionRunId,
+      receptionTransition,
+      receptionCacheHit,
+      receptionMissingMaster,
+      receptionFallbackUsed,
+    ],
+  );
+  const receptionStatusTone =
+    receptionDataSourceLabel === 'server'
+      ? 'info'
+      : receptionDataSourceLabel === 'proxy'
+      ? 'warning'
+      : 'success';
+  const receptionStatusLabel =
+    receptionDataSourceLabel === 'server'
+      ? '実API経路'
+      : receptionDataSourceLabel === 'proxy'
+      ? '開発 Proxy 経路'
+      : 'MSW フィクスチャ';
+  const receptionTransitionLabel = formatDataSourceTransition(receptionTransition);
+  const handleReceptionRefresh = useCallback(() => {
+    recordOperationEvent(
+      'reception',
+      'info',
+      'reception_refresh',
+      '受付情報を再取得しました',
+      {
+        ...receptionTooltipFields,
+      },
+    );
+    void visitsQuery.refetch();
+  }, [receptionTooltipFields, visitsQuery.refetch]);
   const scheduleKarteId = scheduleTarget?.patientPk ?? null;
 
   const visitStateMutation = useMutation({
@@ -1486,17 +1565,23 @@ export const ReceptionPage = () => {
       const doctorInfo =
         [visit.doctorName?.trim(), visit.doctorId?.trim()].filter(Boolean).join(' / ') || '---';
       const statusBadge = visit.ownerUuid ? (
-        <StatusBadge tone="info">診察中</StatusBadge>
+        <StatusBadge tone="info" tooltipFields={receptionTooltipFields}>
+          診察中
+        </StatusBadge>
       ) : isCalling ? (
-        <StatusBadge tone="warning">呼出済み</StatusBadge>
+        <StatusBadge tone="warning" tooltipFields={receptionTooltipFields}>
+          呼出済み
+        </StatusBadge>
       ) : (
-        <StatusBadge tone="neutral">待機中</StatusBadge>
+        <StatusBadge tone="neutral" tooltipFields={receptionTooltipFields}>
+          待機中
+        </StatusBadge>
       );
 
       const badges: JSX.Element[] = [];
       if (temporaryDocumentPatientIds.has(visit.patientId)) {
         badges.push(
-          <StatusBadge key="document" tone="danger">
+          <StatusBadge key="document" tone="danger" tooltipFields={receptionTooltipFields}>
             仮保存カルテあり
           </StatusBadge>,
         );
@@ -1504,13 +1589,13 @@ export const ReceptionPage = () => {
       if (isColumnVisible('owner')) {
         if (isOwnedByMe) {
           badges.push(
-            <StatusBadge key="owner-self" tone="success">
+            <StatusBadge key="owner-self" tone="success" tooltipFields={receptionTooltipFields}>
               自端末で編集中
             </StatusBadge>,
           );
         } else if (isOwnedByOther) {
           badges.push(
-            <StatusBadge key="owner-other" tone="danger">
+            <StatusBadge key="owner-other" tone="danger" tooltipFields={receptionTooltipFields}>
               他端末で編集中
             </StatusBadge>,
           );
@@ -1519,7 +1604,7 @@ export const ReceptionPage = () => {
       if (isColumnVisible('safetyNotes') && !visit.ownerUuid && visit.safetyNotes?.length) {
         visit.safetyNotes.forEach((note) => {
           badges.push(
-            <StatusBadge key={`note-${note}`} tone="warning">
+            <StatusBadge key={`note-${note}`} tone="warning" tooltipFields={receptionTooltipFields}>
               {note}
             </StatusBadge>,
           );
@@ -1681,6 +1766,16 @@ export const ReceptionPage = () => {
 
   return (
     <PageContainer>
+      <StatusBanner role="status" aria-live="polite">
+        <StatusBadge tone={receptionStatusTone} tooltipFields={receptionTooltipFields}>
+          {receptionStatusLabel}
+        </StatusBadge>
+        <StatusBannerMeta>
+          <span>RUN_ID: {receptionTooltipFields.runId ?? '未設定'}</span>
+          <span>進捗: {receptionTooltipFields.progress}</span>
+          {receptionTransitionLabel ? <span>経路: {receptionTransitionLabel}</span> : null}
+        </StatusBannerMeta>
+      </StatusBanner>
       <ContentGrid>
         <ReceptionColumn tone="muted">
           <ColumnHeader>
@@ -1699,9 +1794,7 @@ export const ReceptionPage = () => {
             <Button
               type="button"
               variant="ghost"
-              onClick={() => {
-                void visitsQuery.refetch();
-              }}
+              onClick={handleReceptionRefresh}
               disabled={visitsQuery.isFetching}
             >
               {isReceptionRefreshing ? '更新中…' : '受付情報を再取得'}
