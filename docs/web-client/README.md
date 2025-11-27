@@ -52,6 +52,7 @@ Web クライアントに関する設計・要件・運用資料を集約した�
 - [`ux/CHART_UI_GUIDE_INDEX.md`](ux/CHART_UI_GUIDE_INDEX.md): カルテ UI 関連資料の集約。改修前に必ず参照すること。
   - 2025-11-01 (担当: Codex): DocumentTimelinePanel 安定化とエラーメッセージ整備の観点を追記し、タイムラインの状態遷移とフィードバック設計を整理。
   - 2025-11-01 (追記): AppShell コンテンツ領域の `contentMaxWidth` 制限撤廃と、患者一覧/受付一覧/ChartsPage がウィンドウ幅へ追従するレイアウト更新を反映。
+  - 2025-11-27 (RUN_ID=`20251127T124500Z`): タイムライン・補助パネル・Claim フォームの docinfo/labo/orca/letter データ依存、および `dataSourceTransition`/`cacheHit` 表示・React Query / toast・placeholder・read-only ガードを整理した新規方針（証跡: `docs/server-modernization/phase2/operations/logs/20251120T191203Z-api-stability.md`・`docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md#SP4`・`docs/server-modernization/phase2/operations/logs/20251116T210500Z-E3-mml.md`）。
 - [`ux/KARTE_SCREEN_IMPLEMENTATION.md`](ux/KARTE_SCREEN_IMPLEMENTATION.md): 最新カルテ画面の構造・ショートカット・レスポンシブ仕様。
 - [`ux/API_SURFACE_AND_AUDIT_GUIDE.md`](ux/API_SURFACE_AND_AUDIT_GUIDE.md): Reception / Administration / Charts 各ページでの API 呼び出し導線と監査ログ必須項目を RUN_ID ごとに整理。`docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md` とのリンク規約もここに集約する。
 
