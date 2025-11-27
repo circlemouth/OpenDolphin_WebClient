@@ -87,7 +87,7 @@ const InsuranceGrid = styled.div`
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 `;
 
-const FeedbackMessage = styled.div<{ $tone: 'success' | 'error' | 'info' }>`
+const FeedbackMessage = styled.div<{ $tone: 'success' | 'error' | 'info' | 'warning' }>`
   border-radius: ${({ theme }) => theme.radius.sm};
   padding: 10px 12px;
   font-size: 0.85rem;
@@ -99,6 +99,9 @@ const FeedbackMessage = styled.div<{ $tone: 'success' | 'error' | 'info' }>`
     if ($tone === 'error') {
       return theme.palette.dangerSubtle;
     }
+    if ($tone === 'warning') {
+      return theme.palette.warningMuted;
+    }
     return theme.palette.surfaceMuted;
   }};
   color: ${({ theme, $tone }) => {
@@ -107,6 +110,9 @@ const FeedbackMessage = styled.div<{ $tone: 'success' | 'error' | 'info' }>`
     }
     if ($tone === 'error') {
       return theme.palette.danger;
+    }
+    if ($tone === 'warning') {
+      return theme.palette.warning;
     }
     return theme.palette.text;
   }};
@@ -170,6 +176,77 @@ const formatDisplayDate = (value?: string | null) => {
   }
 };
 
+type MasterStatusInput = {
+  patientId?: string;
+  fullName?: string;
+  zipCode?: string;
+  address?: string;
+  healthInsurances?: PatientEditorFormValues['healthInsurances'];
+};
+
+type MasterStatusReport = {
+  missingMaster: boolean;
+  tone: 'info' | 'warning' | 'danger';
+  label: string;
+  summary: string;
+  issues: string[];
+};
+
+const evaluateMasterStatus = (values: MasterStatusInput): MasterStatusReport => {
+  const trimValue = (value?: string) => (value?.trim() || '').trim();
+  const zipCode = trimValue(values.zipCode);
+  const address = trimValue(values.address);
+  const hasAddress = Boolean(zipCode && address);
+
+  const insuranceList = values.healthInsurances ?? [];
+  const insuranceComplete = insuranceList.some((entry) => {
+    const classCode = trimValue(entry.classCode);
+    const insuranceNumber = trimValue(entry.insuranceNumber);
+    const clientGroup = trimValue(entry.clientGroup);
+    const clientNumber = trimValue(entry.clientNumber);
+    return Boolean(classCode && insuranceNumber && clientGroup && clientNumber);
+  });
+
+  const addressIssues: string[] = [];
+  const insuranceIssues: string[] = [];
+
+  if (!hasAddress) {
+    addressIssues.push('住所/郵便番号');
+  }
+
+  if (!insuranceList.length) {
+    insuranceIssues.push('健康保険情報（保険者番号・記号・番号・区分コード）');
+  } else if (!insuranceComplete) {
+    insuranceIssues.push('保険者番号・記号・番号・区分コードを全て入力してください');
+  }
+
+  const issues = [...addressIssues, ...insuranceIssues];
+  const missingMaster = issues.length > 0;
+  const tone: MasterStatusReport['tone'] = missingMaster
+    ? insuranceIssues.length > 0
+      ? 'danger'
+      : 'warning'
+    : 'info';
+
+  const label = tone === 'danger'
+    ? 'ORCAマスター情報が未完了です'
+    : tone === 'warning'
+    ? 'ORCAマスター情報の確認が必要です'
+    : 'ORCAマスター情報は揃っています';
+
+  const summary = missingMaster
+    ? `不足: ${issues.join('、')}`
+    : '必須フィールドがすべて入力されており、ORCAマスター連携が行えます。';
+
+  return {
+    missingMaster,
+    tone,
+    label,
+    summary,
+    issues,
+  };
+};
+
 interface PatientEditorPanelProps {
   mode: PatientUpsertMode;
   patientId: string | null;
@@ -207,6 +284,7 @@ export const PatientEditorPanel = ({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<PatientEditorFormInput, undefined, PatientEditorFormValues>({
     mode: 'onBlur',
@@ -217,6 +295,15 @@ export const PatientEditorPanel = ({
   const { fields: insuranceFields, append, remove } = useFieldArray({
     control,
     name: 'healthInsurances',
+  });
+
+  const watchedFormValues = watch();
+  const masterStatus = evaluateMasterStatus({
+    patientId: watchedFormValues.patientId,
+    fullName: watchedFormValues.fullName,
+    zipCode: watchedFormValues.zipCode,
+    address: watchedFormValues.address,
+    healthInsurances: watchedFormValues.healthInsurances,
   });
 
   const insuranceMetaRef = useRef<Record<string, InsuranceMeta>>({});
@@ -407,6 +494,15 @@ export const PatientEditorPanel = ({
       return;
     }
 
+    const masterCheck = evaluateMasterStatus(values);
+    if (masterCheck.missingMaster) {
+      setFeedback({
+        tone: 'error',
+        message: `ORCAマスターに必要な情報（${masterCheck.issues.join('、')}）が不足しているため保存できません。`,
+      });
+      return;
+    }
+
     setFeedback({ tone: 'info', message: mode === 'create' ? '患者情報を登録しています…' : '患者情報を更新しています…' });
     try {
       const payload = buildUpsertPayload(values);
@@ -541,165 +637,194 @@ export const PatientEditorPanel = ({
       ) : !isEditorExpanded ? (
         <SubtleText>編集が必要な場合は「編集フォームを開く」を選択してください。</SubtleText>
       ) : (
-        <form onSubmit={handleSave}>
-          <Stack gap={20}>
-            <FieldGrid $layout={layout}>
-              <TextField
-                label="患者ID"
-                placeholder="000001"
-                errorMessage={errors.patientId?.message}
-                disabled={mode === 'update' || readOnly('basic')}
-                {...register('patientId')}
-              />
-              <TextField
-                label="氏名"
-                placeholder="山田 太郎"
-                errorMessage={errors.fullName?.message}
-                disabled={readOnly('basic')}
-                {...register('fullName')}
-              />
-              <TextField
-                label="カナ氏名"
-                placeholder="ヤマダ タロウ"
-                errorMessage={errors.kanaName?.message}
-                disabled={readOnly('basic')}
-                {...register('kanaName')}
-              />
-              <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-                <span style={{ fontWeight: 600, color: '#334155' }}>性別</span>
-                <select
-                  {...register('gender')}
-                  disabled={readOnly('basic')}
-                  style={{
-                    padding: '0.6rem 0.75rem',
-                    borderRadius: '8px',
-                    border: '1px solid #CBD5F5',
-                    fontSize: '0.95rem',
-                    background: readOnly('basic') ? '#f4f4f5' : '#fff',
-                  }}
-                >
-                  {genderOptions.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                {errors.gender?.message ? (
-                  <span style={{ color: '#dc2626', fontSize: '0.8rem' }} role="alert">
-                    {errors.gender.message}
-                  </span>
-                ) : null}
-              </label>
-              <TextField
-                type="date"
-                label="生年月日"
-                errorMessage={errors.birthday?.message}
-                disabled={readOnly('basic')}
-                {...register('birthday')}
-              />
-            </FieldGrid>
-
-            <FieldGrid $layout={layout}>
-              <TextField
-                label="電話番号"
-                placeholder="03-1234-5678"
-                errorMessage={errors.telephone?.message}
-                disabled={readOnly('contact')}
-                {...register('telephone')}
-              />
-              <TextField
-                label="携帯番号"
-                placeholder="090-1234-5678"
-                errorMessage={errors.mobilePhone?.message}
-                disabled={readOnly('contact')}
-                {...register('mobilePhone')}
-              />
-              <TextField
-                label="メールアドレス"
-                type="email"
-                placeholder="user@example.com"
-                errorMessage={errors.email?.message}
-                disabled={readOnly('contact')}
-                {...register('email')}
-              />
-              <TextField
-                label="郵便番号"
-                placeholder="100-0001"
-                errorMessage={errors.zipCode?.message}
-                disabled={readOnly('contact')}
-                {...register('zipCode')}
-              />
-              <TextField
-                label="住所"
-                placeholder="東京都千代田区千代田1-1"
-                errorMessage={errors.address?.message}
-                disabled={readOnly('contact')}
-                {...register('address')}
-              />
-            </FieldGrid>
-
-            <FieldGrid $layout={layout}>
-              <TextArea
-                label="患者メモ"
-                rows={3}
-                errorMessage={errors.memo?.message}
-                disabled={readOnly('notes')}
-                {...register('memo')}
-              />
-              <TextArea
-                label="安全情報メモ"
-                rows={3}
-                description="スタッフ用の注意事項を入力"
-                errorMessage={errors.appMemo?.message}
-                disabled={readOnly('notes')}
-                {...register('appMemo')}
-              />
-            </FieldGrid>
-
-            <FieldGrid $layout={layout}>
-              <TextField label="予備1" disabled={readOnly('notes')} {...register('reserve1')} />
-              <TextField label="予備2" disabled={readOnly('notes')} {...register('reserve2')} />
-              <TextField label="予備3" disabled={readOnly('notes')} {...register('reserve3')} />
-              <TextField label="予備4" disabled={readOnly('notes')} {...register('reserve4')} />
-              <TextField label="予備5" disabled={readOnly('notes')} {...register('reserve5')} />
-              <TextField label="予備6" disabled={readOnly('notes')} {...register('reserve6')} />
-            </FieldGrid>
-
-            <Stack gap={12}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
-                <strong>健康保険</strong>
-                {readOnly('insurance') ? null : (
-                  <Button type="button" variant="ghost" size="sm" onClick={handleAddInsurance}>
-                    行を追加
-                  </Button>
-                )}
+        <>
+          <SurfaceCard tone="muted" padding="md">
+            <Stack gap={8}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                <StatusBadge tone={masterStatus.tone}>{masterStatus.label}</StatusBadge>
+                <SubtleText>{masterStatus.summary}</SubtleText>
               </div>
-              {renderInsuranceForms()}
-            </Stack>
-
-            {mode === 'create' && onToggleAutoCreateReception ? (
-              <CheckboxLabel>
-                <CheckboxInput
-                  type="checkbox"
-                  checked={Boolean(autoCreateReceptionEnabled)}
-                  onChange={(event) => onToggleAutoCreateReception(event.currentTarget.checked)}
-                />
-                登録後にこの患者で受付を作成する
-              </CheckboxLabel>
-            ) : null}
-
-            <Stack direction="row" gap={12} style={{ flexWrap: 'wrap' }}>
-              <Button type="submit" variant="primary" isLoading={patientUpsert.isPending}>
-                保存する
-              </Button>
-              {mode === 'update' && !detailQuery.isFetching ? (
-                <Button type="button" variant="secondary" onClick={() => detailQuery.refetch()}>
-                  最新情報を再取得
-                </Button>
+              {masterStatus.issues.length ? (
+                <ul style={{ margin: 0, paddingLeft: '1.2rem' }}>
+                  {masterStatus.issues.map((issue) => (
+                    <li key={issue} style={{ lineHeight: 1.4 }}>
+                      {issue}
+                    </li>
+                  ))}
+                </ul>
               ) : null}
             </Stack>
-          </Stack>
-        </form>
+          </SurfaceCard>
+          {masterStatus.missingMaster ? (
+            <FeedbackMessage $tone="warning">
+              ORCAマスター連携に必要な情報（{masterStatus.issues.join('、')}）が揃うまで保存できません。
+            </FeedbackMessage>
+          ) : null}
+          <form onSubmit={handleSave}>
+            <Stack gap={20}>
+              <FieldGrid $layout={layout}>
+                <TextField
+                  label="患者ID"
+                  placeholder="000001"
+                  errorMessage={errors.patientId?.message}
+                  disabled={mode === 'update' || readOnly('basic')}
+                  {...register('patientId')}
+                />
+                <TextField
+                  label="氏名"
+                  placeholder="山田 太郎"
+                  errorMessage={errors.fullName?.message}
+                  disabled={readOnly('basic')}
+                  {...register('fullName')}
+                />
+                <TextField
+                  label="カナ氏名"
+                  placeholder="ヤマダ タロウ"
+                  errorMessage={errors.kanaName?.message}
+                  disabled={readOnly('basic')}
+                  {...register('kanaName')}
+                />
+                <label style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <span style={{ fontWeight: 600, color: '#334155' }}>性別</span>
+                  <select
+                    {...register('gender')}
+                    disabled={readOnly('basic')}
+                    style={{
+                      padding: '0.6rem 0.75rem',
+                      borderRadius: '8px',
+                      border: '1px solid #CBD5F5',
+                      fontSize: '0.95rem',
+                      background: readOnly('basic') ? '#f4f4f5' : '#fff',
+                    }}
+                  >
+                    {genderOptions.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {option.label}
+                      </option>
+                    ))}
+                  </select>
+                  {errors.gender?.message ? (
+                    <span style={{ color: '#dc2626', fontSize: '0.8rem' }} role="alert">
+                      {errors.gender.message}
+                    </span>
+                  ) : null}
+                </label>
+                <TextField
+                  type="date"
+                  label="生年月日"
+                  errorMessage={errors.birthday?.message}
+                  disabled={readOnly('basic')}
+                  {...register('birthday')}
+                />
+              </FieldGrid>
+
+              <FieldGrid $layout={layout}>
+                <TextField
+                  label="電話番号"
+                  placeholder="03-1234-5678"
+                  errorMessage={errors.telephone?.message}
+                  disabled={readOnly('contact')}
+                  {...register('telephone')}
+                />
+                <TextField
+                  label="携帯番号"
+                  placeholder="090-1234-5678"
+                  errorMessage={errors.mobilePhone?.message}
+                  disabled={readOnly('contact')}
+                  {...register('mobilePhone')}
+                />
+                <TextField
+                  label="メールアドレス"
+                  type="email"
+                  placeholder="user@example.com"
+                  errorMessage={errors.email?.message}
+                  disabled={readOnly('contact')}
+                  {...register('email')}
+                />
+                <TextField
+                  label="郵便番号"
+                  placeholder="100-0001"
+                  errorMessage={errors.zipCode?.message}
+                  disabled={readOnly('contact')}
+                  {...register('zipCode')}
+                />
+                <TextField
+                  label="住所"
+                  placeholder="東京都千代田区千代田1-1"
+                  errorMessage={errors.address?.message}
+                  disabled={readOnly('contact')}
+                  {...register('address')}
+                />
+              </FieldGrid>
+
+              <FieldGrid $layout={layout}>
+                <TextArea
+                  label="患者メモ"
+                  rows={3}
+                  errorMessage={errors.memo?.message}
+                  disabled={readOnly('notes')}
+                  {...register('memo')}
+                />
+                <TextArea
+                  label="安全情報メモ"
+                  rows={3}
+                  description="スタッフ用の注意事項を入力"
+                  errorMessage={errors.appMemo?.message}
+                  disabled={readOnly('notes')}
+                  {...register('appMemo')}
+                />
+              </FieldGrid>
+
+              <FieldGrid $layout={layout}>
+                <TextField label="予備1" disabled={readOnly('notes')} {...register('reserve1')} />
+                <TextField label="予備2" disabled={readOnly('notes')} {...register('reserve2')} />
+                <TextField label="予備3" disabled={readOnly('notes')} {...register('reserve3')} />
+                <TextField label="予備4" disabled={readOnly('notes')} {...register('reserve4')} />
+                <TextField label="予備5" disabled={readOnly('notes')} {...register('reserve5')} />
+                <TextField label="予備6" disabled={readOnly('notes')} {...register('reserve6')} />
+              </FieldGrid>
+
+              <Stack gap={12}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '8px' }}>
+                  <strong>健康保険</strong>
+                  {readOnly('insurance') ? null : (
+                    <Button type="button" variant="ghost" size="sm" onClick={handleAddInsurance}>
+                      行を追加
+                    </Button>
+                  )}
+                </div>
+                {renderInsuranceForms()}
+              </Stack>
+
+              {mode === 'create' && onToggleAutoCreateReception ? (
+                <CheckboxLabel>
+                  <CheckboxInput
+                    type="checkbox"
+                    checked={Boolean(autoCreateReceptionEnabled)}
+                    onChange={(event) => onToggleAutoCreateReception(event.currentTarget.checked)}
+                  />
+                  登録後にこの患者で受付を作成する
+                </CheckboxLabel>
+              ) : null}
+
+              <Stack direction="row" gap={12} style={{ flexWrap: 'wrap' }}>
+                <Button
+                  type="submit"
+                  variant="primary"
+                  isLoading={patientUpsert.isPending}
+                  disabled={patientUpsert.isPending || masterStatus.missingMaster}
+                >
+                  保存する
+                </Button>
+                {mode === 'update' && !detailQuery.isFetching ? (
+                  <Button type="button" variant="secondary" onClick={() => detailQuery.refetch()}>
+                    最新情報を再取得
+                  </Button>
+                ) : null}
+              </Stack>
+            </Stack>
+          </form>
+        </>
       )}
 
       {feedback ? <FeedbackMessage $tone={feedback.tone}>{feedback.message}</FeedbackMessage> : null}
