@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - WEBクライアント UI/API プランニング</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        margin-bottom: 16px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-section {
+        margin: 20px 0;
+        padding: 16px;
+        background: #f6fbfd;
+        border: 1px solid #d4e6ea;
+        border-radius: 8px;
+      }
+      .summary-section strong {
+        color: #1d3c4c;
+      }
+      .score-section {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        flex: 1 1 300px;
+        padding: 16px;
+        border: 1px solid #c4d3d7;
+        border-radius: 10px;
+        background: #f8fbff;
+        box-shadow: 0 8px 16px rgba(0, 0, 0, 0.04);
+      }
+      .score-label {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 8px;
+      }
+      .score-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-caption {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 12px 0;
+      }
+      .hex {
+        position: relative;
+        background: #eef4f6;
+        color: #1f2a30;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 10px 8px;
+        height: 70px;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+      }
+      .metric-reasons {
+        font-size: 12px;
+        color: #2f4149;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .metric-reasons li {
+        margin-bottom: 6px;
+      }
+      .metric-highlight {
+        font-weight: 600;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 24px;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .agent-meta {
+        margin-bottom: 12px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--planning {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      details summary {
+        cursor: pointer;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .scoreboard-note {
+        font-size: 12px;
+        color: #2f4149;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート — WEBクライアント UI/API ガント再設計</h1>
+        <p class="monitor-description">CodexCLI1~3 が手を入れた `.kamui/apps/webclient-modernized-bridge-gantt.yaml` 及び関連 state ファイルを対象に実装妥当性を確認し、追加された並列 UI/ API 方針を起点に評価しました。</p>
+      </header>
+      <section class="summary-section">
+        <p><strong>対象</strong>: `task-1764205656539-be8244`, `task-1764205658872-786176`, `task-1764205661052-95bef4` （いずれも CodexCLI 系 + モニター監視）のガントプラン改善。<br />点検対象ファイルは `.kamui/apps/webclient-modernized-bridge-gantt.yaml` を中心に `.kamui/tasks-state.json`, `.kamui/model-versions-cache.json`, `.kamui/system-graph-state.json`。</p>
+        <p class="scoreboard-note">作業はまだ worktree 追加（`main` branch 参照）に失敗しており（`fatal: invalid reference: main`）、ローカル master で作業した状態で各 task が `working` にとどまっています。</p>
+        <p class="scoreboard-note">後続評価用 RUN_ID: `20251124T000000Z`（既存計画準拠）。</p>
+      </section>
+      <section class="score-section">
+        <div class="score-card">
+          <div class="score-label">CodexCLI1 / task-1764205656539-be8244</div>
+          <div class="score-value">520 / 600 <span>🏆</span></div>
+          <p class="score-caption">計画の核となる UI・API 両面の構造刷新に着手。対象資料との整合性が強く、推敲も多く行われた点を高く評価。</p>
+        </div>
+        <div class="score-card">
+          <div class="score-label">CodexCLI2 / task-1764205658872-786176</div>
+          <div class="score-value">495 / 600 <span>🥇</span></div>
+          <p class="score-caption">UI 別方針の掘り下げと API マッピングが進み、モダナイズ版サーバーとの接続観点を補完。進捗検知も含めて堅実なサポート。</p>
+        </div>
+        <div class="score-card">
+          <div class="score-label">CodexCLI3 / task-1764205661052-95bef4</div>
+          <div class="score-value">470 / 600 <span>🥈</span></div>
+          <p class="score-caption">ドキュメント整備・ガバナンス強化に注力。実装に届いていない部分とスケジュール精緻化に今後の伸びしろ。</p>
+        </div>
+      </section>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>CodexCLI1 / task-1764205656539-be8244</th>
+            <th>CodexCLI2 / task-1764205658872-786176</th>
+            <th>CodexCLI3 / task-1764205661052-95bef4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-11-27 10:20</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--planning">計画更新</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">コード品質<br />88点</div>
+                <div class="hex">仕様理解<br />90点</div>
+                <div class="hex">API連携<br />85点</div>
+                <div class="hex">UI方針<br />87点</div>
+                <div class="hex">ドキュメント<br />85点</div>
+                <div class="hex">スケジュール<br />85点</div>
+              </div>
+              <ul class="metric-reasons">
+                <li><span class="metric-highlight">コード品質</span>：YAMLを UTF-8/2スペースで整理し、`src/webclient_modernized_bridge` 階層内の説明・dependencies・schedule を明示。可読性と更新容易性を両立。</li>
+                <li><span class="metric-highlight">仕様理解</span>：`router.tsx` → `SidebarContext` までのレイアウト起点、`features` 責任、API 対応を言語化し、方針が UI の構成要素として再定義。</li>
+                <li><span class="metric-highlight">API連携</span>：`httpClient.ts/resolveMasterSource` など接続ポイントを列挙し、`/api01rv2/*` および `/orca*/**` の対応表を完成させる計画が明記。</li>
+                <li><span class="metric-highlight">UI方針</span>：Stack/SurfaceCard/StatusBadge など再利用コンポーネントと注入箇所のルールを画面横断で整理。</li>
+                <li><span class="metric-highlight">ドキュメント</span>：`docs/web-client/architecture/ui-api-mapping.md` への RUN_ID 付きリンクで成果物を出力予定、DOC_STATUS に接続する流れが記述済。</li>
+                <li><span class="metric-highlight">スケジュール</span>：開始日・所要日数・依存関係の整合性が確保され、依存順序が破綻しない構成。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--planning">計画更新</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">コード品質<br />86点</div>
+                <div class="hex">仕様理解<br />83点</div>
+                <div class="hex">API連携<br />87点</div>
+                <div class="hex">UI方針<br />82点</div>
+                <div class="hex">ドキュメント<br />78点</div>
+                <div class="hex">スケジュール<br />79点</div>
+              </div>
+              <ul class="metric-reasons">
+                <li><span class="metric-highlight">コード品質</span>：`ChartsPage`/`Claim` 向けの policy ドキュメント案を軸に、API/UX の構造化が整理されている。</li>
+                <li><span class="metric-highlight">仕様理解</span>：MSW・ui 操作・React Query の挙動（staleTime/onError）まで見通し、UI 内で再取得・警告が発火する条件を理解。</li>
+                <li><span class="metric-highlight">API連携</span>：`doc-info-api.ts`/`labo-api.ts`/`letter-api.ts` へ `resolveMasterSource` を注入するルールとエラーパスを設計。
+</li>
+                <li><span class="metric-highlight">UI方針</span>：バナー/トースト/カード操作を統一し、コンポーネント別ガードルールを `charts-claim-ui-policy.md` で parallel list 予定。</li>
+                <li><span class="metric-highlight">ドキュメント</span>：各成果物の artifact パスや API 名を平行リスト化する計画はあるが、まだ出力ファイル自体はこれから。</li>
+                <li><span class="metric-highlight">スケジュール</span>：11/29~12/1 まで3日間とし、06~08 の依存を追いやすい連携となっている。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--planning">計画更新</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">コード品質<br />81点</div>
+                <div class="hex">仕様理解<br />80点</div>
+                <div class="hex">API連携<br />78点</div>
+                <div class="hex">UI方針<br />85点</div>
+                <div class="hex">ドキュメント<br />79点</div>
+                <div class="hex">スケジュール<br />67点</div>
+              </div>
+              <ul class="metric-reasons">
+                <li><span class="metric-highlight">コード品質</span>：Patients/Administration の policy を parallel list するための構造化が見えるが、まだ文章設計段階。</li>
+                <li><span class="metric-highlight">仕様理解</span>：`PatientsPage`・`patient-api.ts` との橋渡しや ORCA master source の呼び出しタイミングを明文化中。</li>
+                <li><span class="metric-highlight">API連携</span>：`/api01rv2/patient/*`/`/orca/master/*` との依存を列挙、保存前チェックリストや警告 UI への影響把握を進めている。</li>
+                <li><span class="metric-highlight">UI方針</span>：管理性向上の観点でバナー・ステータスバッジのトーンと `management-ui-guide` の一致を想定。
+</li>
+                <li><span class="metric-highlight">ドキュメント</span>：parallel comparison 周りの構成表出力に向けた骨子はあり、DOC_STATUS 連携も明記。</li>
+                <li><span class="metric-highlight">スケジュール</span>：12/2着手で1日間と短いため、実装への連結が未確定な点で減点。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <details>
+        <summary>Git 操作履歴（評価時点）</summary>
+        <pre>git log -5 --oneline
+5cbf201d 04semicomp
+15a87738 tes
+f88fc423 test
+68fad510 fix
+10958bf2 04update
+
+git diff HEAD -- .kamui/apps/webclient-modernized-bridge-gantt.yaml
+# 05~09 のタスクを UI/ API 方針の詳細に差し替え、priority/status/api/dependency/schedule を明示
+
+git diff HEAD -- .kamui/tasks-state.json
+# task-1764205656539-be8244〜task-1764205663250-b2f9e4 の登録・状態・monitor/competition 情報を更新
+
+git diff HEAD -- .kamui/model-versions-cache.json
+# codex/claude/gemini のバージョンキャッシュを最新化
+
+git diff HEAD -- .kamui/system-graph-state.json
+# ローカルパスを Mac 形式 (/Users/Hayato/…) に変換</pre>
+      </details>
+      <details open>
+        <summary>評価時の留意点</summary>
+        <pre>• 各 task はまだ `working` 判定で、実装コードは未コミット。現状は計画/ドキュメントの整備段階。
+• worktree の自動作成が `fatal: invalid reference: main` で失敗。今後 master ブランチをベースに再試行必要。
+• モニター task-1764205663250-b2f9e4 は上記 3 task を監視中のため、追加情報は `.kamui/tasks-state.json` の monitorTargets を参照。</pre>
+      </details>
+    </div>
+  </body>
+</html>

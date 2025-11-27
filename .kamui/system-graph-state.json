@@ -1,8 +1,8 @@
 {
   "schemaVersion": 1,
-  "projectPath": "C:/Users/marug/Documents/OpenDolphin_WebClient",
+  "projectPath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
   "projectRootName": "OpenDolphin_WebClient",
-  "graphRenderingMode": "normal",
+  "graphRenderingMode": "media",
   "linkDisplayMode": "all",
   "graphStats": {
     "totalNodes": 2,
@@ -54,6 +54,13 @@
         "hasMore": true
       },
       {
+        "name": ".worktrees",
+        "type": "directory",
+        "path": ".worktrees",
+        "children": [],
+        "hasMore": true
+      },
+      {
         "name": "artifacts",
         "type": "directory",
         "path": "artifacts",
@@ -61,84 +68,84 @@
           {
             "name": "api-stability",
             "type": "directory",
-            "path": "artifacts\\api-stability",
+            "path": "artifacts/api-stability",
             "children": [],
             "hasMore": true
           },
           {
             "name": "ci-dryrun",
             "type": "directory",
-            "path": "artifacts\\ci-dryrun",
+            "path": "artifacts/ci-dryrun",
             "children": [],
             "hasMore": true
           },
           {
             "name": "e2e",
             "type": "directory",
-            "path": "artifacts\\e2e",
+            "path": "artifacts/e2e",
             "children": [],
             "hasMore": true
           },
           {
             "name": "e2e-connect",
             "type": "directory",
-            "path": "artifacts\\e2e-connect",
+            "path": "artifacts/e2e-connect",
             "children": [],
             "hasMore": true
           },
           {
             "name": "error-audit",
             "type": "directory",
-            "path": "artifacts\\error-audit",
+            "path": "artifacts/error-audit",
             "children": [],
             "hasMore": true
           },
           {
             "name": "external-interface",
             "type": "directory",
-            "path": "artifacts\\external-interface",
+            "path": "artifacts/external-interface",
             "children": [],
             "hasMore": true
           },
           {
             "name": "mac-dev-login",
             "type": "directory",
-            "path": "artifacts\\mac-dev-login",
+            "path": "artifacts/mac-dev-login",
             "children": [],
             "hasMore": true
           },
           {
             "name": "manual",
             "type": "directory",
-            "path": "artifacts\\manual",
+            "path": "artifacts/manual",
             "children": [],
             "hasMore": true
           },
           {
             "name": "observability",
             "type": "directory",
-            "path": "artifacts\\observability",
+            "path": "artifacts/observability",
             "children": [],
             "hasMore": true
           },
           {
             "name": "orca-connectivity",
             "type": "directory",
-            "path": "artifacts\\orca-connectivity",
+            "path": "artifacts/orca-connectivity",
             "children": [],
             "hasMore": true
           },
           {
             "name": "parity-manual",
             "type": "directory",
-            "path": "artifacts\\parity-manual",
+            "path": "artifacts/parity-manual",
             "children": [],
             "hasMore": true
           },
           {
             "name": "perf",
             "type": "directory",
-            "path": "artifacts\\perf",
+            "path": "artifacts/perf",
             "children": [],
             "hasMore": true
           }
@@ -152,7 +159,7 @@
           {
             "name": "jenkins",
             "type": "directory",
-            "path": "ci\\jenkins",
+            "path": "ci/jenkins",
             "children": [],
             "hasMore": true
           }
@@ -167,14 +174,14 @@
           {
             "name": "src",
             "type": "directory",
-            "path": "client\\src",
+            "path": "client/src",
             "children": [],
             "hasMore": true
           },
           {
             "name": "target",
             "type": "directory",
-            "path": "client\\target",
+            "path": "client/target",
             "children": [],
             "hasMore": true
           }
@@ -189,14 +196,14 @@
           {
             "name": "src",
             "type": "directory",
-            "path": "common\\src",
+            "path": "common/src",
             "children": [],
             "hasMore": true
           },
           {
             "name": "target",
             "type": "directory",
-            "path": "common\\target",
+            "path": "common/target",
             "children": [],
             "hasMore": true
           }
@@ -211,7 +218,14 @@
           {
             "name": "orca",
             "type": "directory",
-            "path": "docker\\orca",
+            "path": "docker/orca",
+            "children": [],
+            "hasMore": true
+          },
+          {
+            "name": "output",
+            "type": "directory",
+            "path": "docker/output",
             "children": [],
             "hasMore": true
           }
@@ -225,42 +239,42 @@
           {
             "name": "archive",
             "type": "directory",
-            "path": "docs\\archive",
+            "path": "docs/archive",
             "children": [],
             "hasMore": true
           },
           {
             "name": "managerdocs",
             "type": "directory",
-            "path": "docs\\managerdocs",
+            "path": "docs/managerdocs",
             "children": [],
             "hasMore": true
           },
           {
             "name": "server",
             "type": "directory",
-            "path": "docs\\server",
+            "path": "docs/server",
             "children": [],
             "hasMore": true
           },
           {
             "name": "server-modernization",
             "type": "directory",
-            "path": "docs\\server-modernization",
+            "path": "docs/server-modernization",
             "children": [],
             "hasMore": true
           },
           {
             "name": "server-modernized",
             "type": "directory",
-            "path": "docs\\server-modernized",
+            "path": "docs/server-modernized",
             "children": [],
             "hasMore": true
           },
           {
             "name": "web-client",
             "type": "directory",
-            "path": "docs\\web-client",
+            "path": "docs/web-client",
             "children": [],
             "hasMore": true
           }
@@ -274,7 +288,7 @@
           {
             "name": "OpenDolphin-ORCA-OQS",
             "type": "directory",
-            "path": "ext_lib\\OpenDolphin-ORCA-OQS",
+            "path": "ext_lib/OpenDolphin-ORCA-OQS",
             "children": [],
             "hasMore": true
           }
@@ -296,77 +310,77 @@
           {
             "name": "analytics",
             "type": "directory",
-            "path": "ops\\analytics",
+            "path": "ops/analytics",
             "children": [],
             "hasMore": true
           },
           {
             "name": "assets",
             "type": "directory",
-            "path": "ops\\assets",
+            "path": "ops/assets",
             "children": [],
             "hasMore": true
           },
           {
             "name": "base",
             "type": "directory",
-            "path": "ops\\base",
+            "path": "ops/base",
             "children": [],
             "hasMore": true
           },
           {
             "name": "db",
             "type": "directory",
-            "path": "ops\\db",
+            "path": "ops/db",
             "children": [],
             "hasMore": true
           },
           {
             "name": "legacy-server",
             "type": "directory",
-            "path": "ops\\legacy-server",
+            "path": "ops/legacy-server",
             "children": [],
             "hasMore": true
           },
           {
             "name": "modernized-server",
             "type": "directory",
-            "path": "ops\\modernized-server",
+            "path": "ops/modernized-server",
             "children": [],
             "hasMore": true
           },
           {
             "name": "monitoring",
             "type": "directory",
-            "path": "ops\\monitoring",
+            "path": "ops/monitoring",
             "children": [],
             "hasMore": true
           },
           {
             "name": "postman",
             "type": "directory",
-            "path": "ops\\postman",
+            "path": "ops/postman",
             "children": [],
             "hasMore": true
           },
           {
             "name": "shared",
             "type": "directory",
-            "path": "ops\\shared",
+            "path": "ops/shared",
             "children": [],
             "hasMore": true
           },
           {
             "name": "tests",
             "type": "directory",
-            "path": "ops\\tests",
+            "path": "ops/tests",
             "children": [],
             "hasMore": true
           },
           {
             "name": "tools",
             "type": "directory",
-            "path": "ops\\tools",
+            "path": "ops/tools",
             "children": [],
             "hasMore": true
           }
@@ -377,8 +391,7 @@
         "name": "ORCAcertification",
         "type": "directory",
         "path": "ORCAcertification",
-        "children": [],
-        "hasMore": true
+        "children": []
       },
       {
         "name": "patches",
@@ -409,14 +422,14 @@
           {
             "name": "src",
             "type": "directory",
-            "path": "reporting\\src",
+            "path": "reporting/src",
             "children": [],
             "hasMore": true
           },
           {
             "name": "target",
             "type": "directory",
-            "path": "reporting\\target",
+            "path": "reporting/target",
             "children": [],
             "hasMore": true
           }
@@ -431,28 +444,28 @@
           {
             "name": "api_parity_payloads",
             "type": "directory",
-            "path": "scripts\\api_parity_payloads",
+            "path": "scripts/api_parity_payloads",
             "children": [],
             "hasMore": true
           },
           {
             "name": "compat",
             "type": "directory",
-            "path": "scripts\\compat",
+            "path": "scripts/compat",
             "children": [],
             "hasMore": true
           },
           {
             "name": "jms",
             "type": "directory",
-            "path": "scripts\\jms",
+            "path": "scripts/jms",
             "children": [],
             "hasMore": true
           },
           {
             "name": "tools",
             "type": "directory",
-            "path": "scripts\\tools",
+            "path": "scripts/tools",
             "children": [],
             "hasMore": true
           }
@@ -467,21 +480,21 @@
           {
             "name": "server",
             "type": "directory",
-            "path": "server\\server",
+            "path": "server/server",
             "children": [],
             "hasMore": true
           },
           {
             "name": "src",
             "type": "directory",
-            "path": "server\\src",
+            "path": "server/src",
             "children": [],
             "hasMore": true
           },
           {
             "name": "target",
             "type": "directory",
-            "path": "server\\target",
+            "path": "server/target",
             "children": [],
             "hasMore": true
           }
@@ -496,35 +509,35 @@
           {
             "name": "config",
             "type": "directory",
-            "path": "server-modernized\\config",
+            "path": "server-modernized/config",
             "children": [],
             "hasMore": true
           },
           {
             "name": "reporting",
             "type": "directory",
-            "path": "server-modernized\\reporting",
+            "path": "server-modernized/reporting",
             "children": [],
             "hasMore": true
           },
           {
             "name": "src",
             "type": "directory",
-            "path": "server-modernized\\src",
+            "path": "server-modernized/src",
             "children": [],
             "hasMore": true
           },
           {
             "name": "target",
             "type": "directory",
-            "path": "server-modernized\\target",
+            "path": "server-modernized/target",
             "children": [],
             "hasMore": true
           },
           {
             "name": "tools",
             "type": "directory",
-            "path": "server-modernized\\tools",
+            "path": "server-modernized/tools",
             "children": [],
             "hasMore": true
           }
@@ -537,23 +550,16 @@
         "path": "src",
         "children": [
           {
-            "name": "features",
-            "type": "directory",
-            "path": "src\\features",
-            "children": [],
-            "hasMore": true
-          },
-          {
             "name": "modernized_server",
             "type": "directory",
-            "path": "src\\modernized_server",
+            "path": "src/modernized_server",
             "children": [],
             "hasMore": true
           },
           {
             "name": "webclient_modernized_bridge",
             "type": "directory",
-            "path": "src\\webclient_modernized_bridge",
+            "path": "src/webclient_modernized_bridge",
             "children": [],
             "hasMore": true
           }
@@ -563,15 +569,7 @@
         "name": "test-results",
         "type": "directory",
         "path": "test-results",
-        "children": [
-          {
-            "name": "tests-e2e-orca-master-brid-bc038-dge-ORCA-master-audit-smoke",
-            "type": "directory",
-            "path": "test-results\\tests-e2e-orca-master-brid-bc038-dge-ORCA-master-audit-smoke",
-            "children": [],
-            "hasMore": true
-          }
-        ]
+        "children": []
       },
       {
         "name": "tests",
@@ -581,7 +579,7 @@
           {
             "name": "e2e",
             "type": "directory",
-            "path": "tests\\e2e",
+            "path": "tests/e2e",
             "children": [],
             "hasMore": true
           }
@@ -595,189 +593,196 @@
           {
             "name": "api-stability-test",
             "type": "directory",
-            "path": "tmp\\api-stability-test",
+            "path": "tmp/api-stability-test",
             "children": [],
             "hasMore": true
           },
           {
             "name": "attachment-mode",
             "type": "directory",
-            "path": "tmp\\attachment-mode",
+            "path": "tmp/attachment-mode",
             "children": [],
             "hasMore": true
           },
           {
             "name": "claim-tests",
             "type": "directory",
-            "path": "tmp\\claim-tests",
+            "path": "tmp/claim-tests",
             "children": [],
             "hasMore": true
           },
           {
             "name": "factor2",
             "type": "directory",
-            "path": "tmp\\factor2",
+            "path": "tmp/factor2",
             "children": [],
             "hasMore": true
           },
           {
             "name": "fakebin",
             "type": "directory",
-            "path": "tmp\\fakebin",
+            "path": "tmp/fakebin",
             "children": [],
             "hasMore": true
           },
           {
             "name": "java-time",
             "type": "directory",
-            "path": "tmp\\java-time",
+            "path": "tmp/java-time",
             "children": [],
             "hasMore": true
           },
           {
             "name": "legacy-fixtures",
             "type": "directory",
-            "path": "tmp\\legacy-fixtures",
+            "path": "tmp/legacy-fixtures",
             "children": [],
             "hasMore": true
           },
           {
             "name": "license",
             "type": "directory",
-            "path": "tmp\\license",
+            "path": "tmp/license",
             "children": [],
             "hasMore": true
           },
           {
             "name": "local-bin",
             "type": "directory",
-            "path": "tmp\\local-bin",
+            "path": "tmp/local-bin",
             "children": [],
             "hasMore": true
           },
           {
             "name": "manual-audit",
             "type": "directory",
-            "path": "tmp\\manual-audit",
+            "path": "tmp/manual-audit",
             "children": [],
             "hasMore": true
           },
           {
             "name": "mml-tests",
             "type": "directory",
-            "path": "tmp\\mml-tests",
+            "path": "tmp/mml-tests",
             "children": [],
             "hasMore": true
           },
           {
             "name": "npm-cache",
             "type": "directory",
-            "path": "tmp\\npm-cache",
+            "path": "tmp/npm-cache",
             "children": [],
             "hasMore": true
           },
           {
             "name": "orca-api-payloads",
             "type": "directory",
-            "path": "tmp\\orca-api-payloads",
+            "path": "tmp/orca-api-payloads",
+            "children": [],
+            "hasMore": true
+          },
+          {
+            "name": "orca-db-schema",
+            "type": "directory",
+            "path": "tmp/orca-db-schema",
             "children": [],
             "hasMore": true
           },
           {
             "name": "orca-docs",
             "type": "directory",
-            "path": "tmp\\orca-docs",
+            "path": "tmp/orca-docs",
             "children": [],
             "hasMore": true
           },
           {
             "name": "parity-headers",
             "type": "directory",
-            "path": "tmp\\parity-headers",
+            "path": "tmp/parity-headers",
             "children": [],
             "hasMore": true
           },
           {
             "name": "parity-letter",
             "type": "directory",
-            "path": "tmp\\parity-letter",
+            "path": "tmp/parity-letter",
             "children": [],
             "hasMore": true
           },
           {
             "name": "parity-touch",
             "type": "directory",
-            "path": "tmp\\parity-touch",
+            "path": "tmp/parity-touch",
             "children": [],
             "hasMore": true
           },
           {
             "name": "patch-legacy",
             "type": "directory",
-            "path": "tmp\\patch-legacy",
+            "path": "tmp/patch-legacy",
             "children": [],
             "hasMore": true
           },
           {
             "name": "playwright-libs",
             "type": "directory",
-            "path": "tmp\\playwright-libs",
+            "path": "tmp/playwright-libs",
             "children": [],
             "hasMore": true
           },
           {
             "name": "reporting-headers",
             "type": "directory",
-            "path": "tmp\\reporting-headers",
+            "path": "tmp/reporting-headers",
             "children": [],
             "hasMore": true
           },
           {
             "name": "rest-error-headers",
             "type": "directory",
-            "path": "tmp\\rest-error-headers",
+            "path": "tmp/rest-error-headers",
             "children": [],
             "hasMore": true
           },
           {
             "name": "secrets-repro",
             "type": "directory",
-            "path": "tmp\\secrets-repro",
+            "path": "tmp/secrets-repro",
             "children": [],
             "hasMore": true
           },
           {
             "name": "sql",
             "type": "directory",
-            "path": "tmp\\sql",
+            "path": "tmp/sql",
             "children": [],
             "hasMore": true
           },
           {
             "name": "trace",
             "type": "directory",
-            "path": "tmp\\trace",
+            "path": "tmp/trace",
             "children": [],
             "hasMore": true
           },
           {
             "name": "trace-headers",
             "type": "directory",
-            "path": "tmp\\trace-headers",
+            "path": "tmp/trace-headers",
             "children": [],
             "hasMore": true
           },
           {
             "name": "trace-review",
             "type": "directory",
-            "path": "tmp\\trace-review",
+            "path": "tmp/trace-review",
             "children": [],
             "hasMore": true
           },
           {
             "name": "user-registration",
             "type": "directory",
-            "path": "tmp\\user-registration",
+            "path": "tmp/user-registration",
             "children": [],
             "hasMore": true
           }
@@ -790,30 +795,44 @@
         "path": "web-client",
         "children": [
           {
+            "name": "artifacts",
+            "type": "directory",
+            "path": "web-client/artifacts",
+            "children": [],
+            "hasMore": true
+          },
+          {
             "name": "public",
             "type": "directory",
-            "path": "web-client\\public",
+            "path": "web-client/public",
             "children": [],
             "hasMore": true
           },
           {
             "name": "scripts",
             "type": "directory",
-            "path": "web-client\\scripts",
+            "path": "web-client/scripts",
             "children": [],
             "hasMore": true
           },
           {
             "name": "src",
             "type": "directory",
-            "path": "web-client\\src",
+            "path": "web-client/src",
             "children": [],
             "hasMore": true
           },
           {
             "name": "test-results",
             "type": "directory",
-            "path": "web-client\\test-results",
+            "path": "web-client/test-results",
+            "children": [],
+            "hasMore": true
+          },
+          {
+            "name": "tmp",
+            "type": "directory",
+            "path": "web-client/tmp",
             "children": [],
             "hasMore": true
           }
@@ -826,9 +845,24 @@
         "path": ".dockerignore"
       },
       {
+        "name": ".DS_Store",
+        "type": "file",
+        "path": ".DS_Store"
+      },
+      {
         "name": ".env",
         "type": "file",
         "path": ".env"
+      },
+      {
+        "name": ".env.example",
+        "type": "file",
+        "path": ".env.example"
+      },
+      {
+        "name": ".env.modernized",
+        "type": "file",
+        "path": ".env.modernized"
       },
       {
         "name": ".env.sample",
@@ -879,6 +913,11 @@
         "name": "facility.json",
         "type": "file",
         "path": "facility.json"
+      },
+      {
+        "name": "fallback",
+        "type": "file",
+        "path": "fallback"
       },
       {
         "name": "GEMINI.md",
@@ -987,9 +1026,9 @@
         "x": 7.061910830836997,
         "y": 13.751200904013626,
         "z": -6.545243026222346,
-        "vx": 1.6263032587282566e-20,
-        "vy": 2.4394548880923847e-20,
-        "vz": -4.0657581468206415e-21
+        "vx": 2.9778502051908993e-24,
+        "vy": 7.940933880509065e-24,
+        "vz": -1.9852334701272663e-24
       },
       {
         "id": "workspace/src",
@@ -1009,9 +1048,9 @@
         "x": -7.061910830836997,
         "y": -13.751200904013626,
         "z": 6.545243026222346,
-        "vx": -1.6263032587282566e-20,
-        "vy": -2.4394548880923847e-20,
-        "vz": 4.0657581468206415e-21
+        "vx": -2.9778502051908993e-24,
+        "vy": -7.940933880509065e-24,
+        "vz": 1.9852334701272663e-24
       }
     ],
     "links": [
@@ -1318,6 +1357,10 @@
     "artifacts/e2e-connect/20251122T071146Z/server-logs/server_latest_logs_excerpt.txt",
     "artifacts/e2e/20251124T000000Z/sp4-main-scenarios.log",
     "artifacts/e2e/20251124T073245Z/sp4-main-scenarios.log",
+    "artifacts/e2e/20251124T073245Z/sp4-runtime-flag.log",
+    "artifacts/e2e/20251126T150000Z/master-bridge-stub-check.log",
+    "artifacts/e2e/20251126T150000Z/playwright-orca-master.log",
+    "artifacts/e2e/20251126T150000Z/stage-preview.log",
     "artifacts/error-audit/20240215T093000Z/README.md",
     "artifacts/error-audit/20240215T093000Z/format/README.md",
     "artifacts/error-audit/20251121ErrorMatrixZ1/README.md",
@@ -2048,16 +2091,13 @@
     "artifacts/orca-connectivity/20251120TorcaHttpLogZprep/logs/orca_http_symlink_20251113T122203Z.txt",
     "artifacts/orca-connectivity/20251120TrialAcceptCrudZ1/README.md",
     "artifacts/orca-connectivity/20251120TrialAcceptCrudZ1/crud/acceptlstv2/curl_class01_2025-11-15T131937+0900.log",
-    "artifacts/orca-connectivity/20251120TrialAcceptCrudZ1/crud/acceptlstv2/curl_class01_xml_2025-11-15T14:37:57+09:00.log",
     "artifacts/orca-connectivity/20251120TrialAcceptCrudZ1/crud/acceptlstv2/curl_class01_xml_2025-11-15T143757+0900.log",
     "artifacts/orca-connectivity/20251120TrialAcceptCrudZ1/crud/acceptlstv2/payload.acceptlst.json",
-    "artifacts/orca-connectivity/20251120TrialAcceptCrudZ1/crud/acceptmodv2/curl_class01_xml_2025-11-15T14:38:13+09:00.log",
     "artifacts/orca-connectivity/20251120TrialAcceptCrudZ1/crud/acceptmodv2/curl_class01_xml_2025-11-15T143813+0900.log",
     "artifacts/orca-connectivity/20251120TrialAppointCrudZ1/README.md",
     "artifacts/orca-connectivity/20251120TrialAppointCrudZ1/crud/appointlstv2/curl_2025-11-15T131126+0900.log",
     "artifacts/orca-connectivity/20251120TrialAppointCrudZ1/crud/appointlstv2/curl_class01_2025-11-15T131156+0900.log",
     "artifacts/orca-connectivity/20251120TrialAppointCrudZ1/crud/appointlstv2/curl_class01_retry_2025-11-15T131858+0900.log",
-    "artifacts/orca-connectivity/20251120TrialAppointCrudZ1/crud/appointlstv2/curl_class01_xml_2025-11-15T14:38:07+09:00.log",
     "artifacts/orca-connectivity/20251120TrialAppointCrudZ1/crud/appointlstv2/curl_class01_xml_2025-11-15T143807+0900.log",
     "artifacts/orca-connectivity/20251120TrialAppointCrudZ1/crud/appointlstv2/payload.appointlst.json",
     "artifacts/orca-connectivity/20251120TrialAppointWriteZ1/README.md",
@@ -2073,11 +2113,9 @@
     "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/crud/phr_phase_a/curl_2025-11-15T131120+0900.log",
     "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/dns/nslookup.txt",
     "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/dns/nslookup_2025-11-15T131052+0900.txt",
-    "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/dns/nslookup_2025-11-15T14:37:34+09:00.txt",
     "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/dns/nslookup_2025-11-15T143734+0900.txt",
     "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/tls/openssl_s_client.txt",
     "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/tls/openssl_s_client_2025-11-15T131103+0900.txt",
-    "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/tls/openssl_s_client_2025-11-15T14:37:39+09:00.txt",
     "artifacts/orca-connectivity/20251120TrialConnectivityWSLZ1/tls/openssl_s_client_2025-11-15T143739+0900.txt",
     "artifacts/orca-connectivity/20251120TrialCrudPrepZ1/README.md",
     "artifacts/orca-connectivity/20251120TrialCrudPrepZ1/crud/README.md",
@@ -7490,6 +7528,7 @@
     "docs/server-modernization/phase2/notes/domain-transaction-parity.md",
     "docs/server-modernization/phase2/notes/external-api-gap-20251116T111329Z.md",
     "docs/server-modernization/phase2/notes/infrastructure-trace-review.md",
+    "docs/server-modernization/phase2/notes/issue-master-bridge-build.md",
     "docs/server-modernization/phase2/notes/karte-clinical-review-20251116T152300Z.md",
     "docs/server-modernization/phase2/notes/karte-clinical-review-20251119T133348Z.md",
     "docs/server-modernization/phase2/notes/karte-clinical-review-20251119T134836Z.md",
@@ -7512,6 +7551,7 @@
     "docs/server-modernization/phase2/notes/worker-directives-20260614.md",
     "docs/server-modernization/phase2/notes/worker-report-MSG-01-20251119T140358Z.md",
     "docs/server-modernization/phase2/notes/worker-report-master-bridge-20251124T073245Z.md",
+    "docs/server-modernization/phase2/notes/worker-report-master-bridge-20251126T150000Z.md",
     "docs/server-modernization/phase2/operations/DEV_ENV_COMPATIBILITY_NOTES.md",
     "docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md",
     "docs/server-modernization/phase2/operations/FACTOR2_RECOVERY_RUNBOOK.md",
@@ -8032,7 +8072,9 @@
     "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-bridge.md",
     "docs/server-modernization/phase2/operations/logs/20251124T000000Z-webclient-master-bridge-plan.md",
     "docs/server-modernization/phase2/operations/logs/20251124T021734Z-webclient-master-bridge-plan.md",
+    "docs/server-modernization/phase2/operations/logs/20251124T073245Z-orca-master-server.md",
     "docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md",
+    "docs/server-modernization/phase2/operations/logs/20251126T150000Z-master-bridge-stub-update.md",
     "docs/server-modernization/phase2/operations/logs/ORCA_HTTP_404405_HANDBOOK.md",
     "docs/server-modernization/phase2/operations/logs/TEMPLATE-orca-config-review.md",
     "docs/server-modernization/phase2/operations/logs/TEMPLATE-orca-http-error.md",
@@ -8107,6 +8149,7 @@
     "ext_lib/OpenDolphin-ORCA-OQS",
     "ext_lib/iTextAsian.jar",
     "facility.json",
+    "fallback",
     "node_modules/.bin/codex",
     "node_modules/.bin/codex.cmd",
     "node_modules/.bin/codex.ps1",
@@ -9897,6 +9940,7 @@
     "scripts/bridge-sync.mjs",
     "scripts/compat/x-client-compat.cli",
     "scripts/diff_d_audit_event_claim.sh",
+    "scripts/e2e-smoke-runner.mjs",
     "scripts/jms/legacy_mdb_restart_template.sh",
     "scripts/jpql_trace_compare.sh",
     "scripts/orca_prepare_next_run.sh",
@@ -10324,6 +10368,7 @@
     "server-modernized/src/main/java/open/dolphin/touch/user/TouchUserResource.java",
     "server-modernized/src/main/java/open/dolphin/touch/user/TouchUserService.java",
     "server-modernized/src/main/java/open/orca/rest/ORCAConnection.java",
+    "server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java",
     "server-modernized/src/main/java/open/orca/rest/OrcaResource.java",
     "server-modernized/src/main/java/open/orca/rest/StringTool.java",
     "server-modernized/src/main/java/open/stamp/seed/CopyStampTreeBuilder.java",
@@ -10692,6 +10737,7 @@
     "test-results/.last-run.json",
     "tests/e2e/README.md",
     "tests/e2e/helpers/orcaMaster.ts",
+    "tests/e2e/orca-master-bridge.smoke.spec.ts",
     "tests/e2e/orca-master.scenarios.md",
     "tests/e2e/orca-master.spec.ts",
     "tmp/Dockerfile.legacy.jdk17",
@@ -12709,7 +12755,7 @@
         "branch": null,
         "targetCommitHash": null,
         "worktreePath": null,
-        "timestamp": 1764156759119,
+        "timestamp": 1764205334361,
         "lane": 0,
         "branchLabel": null,
         "branchTags": [],
@@ -12726,6 +12772,6 @@
       }
     ]
   },
-  "projectRoot": "C:/Users/marug/Documents/OpenDolphin_WebClient",
-  "savedAt": 1764156782380
+  "projectRoot": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient",
+  "savedAt": 1764205348114
 }
