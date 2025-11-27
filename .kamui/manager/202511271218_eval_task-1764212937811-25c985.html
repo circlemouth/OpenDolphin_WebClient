@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - Patients と Administration UI構成方針</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        display: flex;
+        gap: 16px;
+        margin: 16px 0;
+      }
+      .score-card {
+        flex: 1;
+        border: 1px solid #b8c9cd;
+        border-radius: 12px;
+        padding: 12px 16px;
+        background: #f5fbff;
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .score-card span {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .hex-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        margin: 12px 0;
+      }
+      .hexagon {
+        width: 120px;
+        height: 72px;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        background: #f4f7fb;
+        border: 1px solid #c4d8e8;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        font-size: 12px;
+        text-align: center;
+        padding: 6px;
+      }
+      .hexagon strong {
+        display: block;
+        font-size: 13px;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-label {
+        display: block;
+        font-size: 14px;
+        color: #1f2a30;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-details ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #1f2a30;
+        font-size: 13px;
+      }
+      .agent-details li {
+        margin-bottom: 6px;
+      }
+      .deliverables {
+        margin-top: 10px;
+        font-size: 13px;
+      }
+      .deliverables a {
+        color: #1a6fb4;
+        text-decoration: none;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート — Patients と Administration UI構成方針</h1>
+        <p class="monitor-description">実用性と機能網羅性を軸として task-1764212937811-25c985 と task-1764212942197-614f5c の成果を比較評価します。各指標のスコアは 600 点満点（6 指標×100）で算出しています。</p>
+        <div class="score-banner">
+          <div class="score-card">
+            <div>Agent task-1764212937811-25c985</div>
+            <strong>543 / 600 🏆🥇</strong>
+            <span>PatientsPage/Administration 両面の UI 要件と ORCA master ブリッジを並列整理。詳細なチェックリストと tone 一貫性が強み。</span>
+          </div>
+          <div class="score-card">
+            <div>Agent task-1764212942197-614f5c</div>
+            <strong>525 / 600 🥈</strong>
+            <span>UX ガイド整合と RUN_ID 連携、README 連動を含む文書統合で実運用に寄与。ただしツール依存表現の重み付けに余地あり。</span>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1764212937811-25c985</th>
+            <th>Agent task-1764212942197-614f5c</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-11-27 12:18 (JST)</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">Completed</span>
+                <span class="agent-label">RUN_ID=20251127T133000Z。PatientsPage と管理系を並列で整理した文書を作成し、DOC_STATUS に Active 登録。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hexagon"><strong>UI要件</strong><span>92点</span></div>
+                <div class="hexagon"><strong>ORCAブリッジ</strong><span>94点</span></div>
+                <div class="hexagon"><strong>保存前チェック</strong><span>90点</span></div>
+                <div class="hexagon"><strong>データ権限</strong><span>88点</span></div>
+                <div class="hexagon"><strong>文書統合</strong><span>89点</span></div>
+                <div class="hexagon"><strong>証跡連携</strong><span>90点</span></div>
+              </div>
+              <div class="agent-details">
+                <ul>
+                  <li><strong>UI要件カバレッジ:</strong> PatientsPage/PatientEditorPanel の `Stack` や `SurfaceCard` 構成、`RequireAuth` ルーティング、StatusBadge のキャプションまで明示し、Admin 側との対比表を導入。</li>
+                  <li><strong>ORCA/PHSブリッジ設計:</strong> `resolveMasterSource`→`fetchOrcaMaster` の共通チェーン、`missingMaster`・`fallbackUsed` のステータスを StatusBadge/Toast へ反映する仕組みを明文化。</li>
+                  <li><strong>保存前チェック:</strong> `missingMaster`/`tensuCodeMissing`/`healthInsurances.beanBytes` といった必須フィールドを保存前にバリデートし、トーストとバナーを tone で区別。</li>
+                  <li><strong>データ権限:</strong> 患者情報は `RequireAuth`、管理系は `RequireRole(['admin'])` で明確にガードし、Role Badge による権限可視化も記載。</li>
+                  <li><strong>ドキュメント統合:</strong> `DOC_STATUS` に Active エントリを追加し、bridge 設計/UI mapping との参照チェーンを明示。トーンのトラッキング表記も含める。</li>
+                  <li><strong>証跡/ログ:</strong> ORCA master 取得・bridge-sync・warning banner tone を既存 `DOC_STATUS`/`README`/bridge doc へリンク、管理用 `docs/web-client/ux/patients-admin-ui-policy.md` へ証跡を集約。</li>
+                </ul>
+              </div>
+              <div class="deliverables">
+                <div>成果物: <a href="../../.worktrees/task-1764212937811-25c985/docs/web-client/ux/patients-admin-ui-policy.md" target="_blank">docs/web-client/ux/patients-admin-ui-policy.md</a>（Worktree: task-1764212937811-25c985）</div>
+                <div>関連更新: docs/web-client/planning/phase2/DOC_STATUS.md（RUN_ID=20251127T133000Z 追記）。</div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">検証ログ</summary>
+                <pre>git status -sb (task-1764212937811-25c985)
+## task/task-1764212937811-25c985
+ M docs/web-client/planning/phase2/DOC_STATUS.md
+?? docs/web-client/ux/patients-admin-ui-policy.md
+
+git diff docs/web-client/planning/phase2/DOC_STATUS.md
++ Added DOC_STATUS entry pointing to docs/web-client/ux/patients-admin-ui-policy.md with RUN_ID=20251127T133000Z and management UI tone reference.</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">Completed</span>
+                <span class="agent-label">RUN_ID=20251127T031213Z。Patients/Administration UI ガイドを README と DOC_STATUS へ連携し、トーンと保存チェックを整理。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hexagon"><strong>UI要件</strong><span>90点</span></div>
+                <div class="hexagon"><strong>ORCAブリッジ</strong><span>88点</span></div>
+                <div class="hexagon"><strong>保存前チェック</strong><span>87点</span></div>
+                <div class="hexagon"><strong>データ権限</strong><span>86点</span></div>
+                <div class="hexagon"><strong>文書統合</strong><span>90点</span></div>
+                <div class="hexagon"><strong>証跡連携</strong><span>84点</span></div>
+              </div>
+              <div class="agent-details">
+                <ul>
+                  <li><strong>UI要件カバレッジ:</strong> `PatientEditorPanel` での `mapDetailToFormValues` → `buildUpsertPayload` → `patientUpsert.mutateAsync` を説明し、FeedbackBanner/StatusBadge のトーンを明示。</li>
+                  <li><strong>ORCA/PHSブリッジ設計:</strong> `resolutionMasterSource` と `WEB_ORCA_MASTER_SOURCE` を `patient-api`/`phr-api` に通し、master-sync ハッシュや Artifacts のログと連動させる計画。</li>
+                  <li><strong>保存前チェック:</strong> `patientId`/`fullName`/住所/保険データの `trim` と `encodeHealthInsuranceBean` による正規化、`FeedbackBanner` の tone 切り替え構造。</li>
+                  <li><strong>データ権限:</strong> `RequireRole roles=["admin"]` で管理系を制限、PHR アクションに `recordOperationEvent('administration', …)` を盛り込む監査ログ。</li>
+                  <li><strong>ドキュメント統合:</strong> README に新リンクと DOC_STATUS の Active 行追加で UX ガイド群との関係を明記。</li>
+                  <li><strong>証跡/ログ:</strong> `artifacts/api-stability/<RUN_ID>/master-sync` や README に記した RUN_ID で構造化。Documentation から `UserAdministrationPage` の `FeedbackBanner` tone を参照。</li>
+                </ul>
+              </div>
+              <div class="deliverables">
+                <div>成果物: <a href="../../.worktrees/task-1764212942197-614f5c/docs/web-client/ux/patients-admin-ui-policy.md" target="_blank">docs/web-client/ux/patients-admin-ui-policy.md</a>（Worktree: task-1764212942197-614f5c）</div>
+                <div>関連更新: docs/web-client/README.md + docs/web-client/planning/phase2/DOC_STATUS.md（RUN_ID=20251127T031213Z 追記）。</div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">検証ログ</summary>
+                <pre>git status -sb (task-1764212942197-614f5c)
+## task/task-1764212942197-614f5c
+ M docs/web-client/README.md
+ M docs/web-client/planning/phase2/DOC_STATUS.md
+?? docs/web-client/ux/patients-admin-ui-policy.md
+
+git diff docs/web-client/README.md
++ Added README link for the new UX policy doc with RUN_ID=20251127T031213Z.
+
+git diff docs/web-client/planning/phase2/DOC_STATUS.md
++ Added DOC_STATUS entry referencing the UX policy doc with the same RUN_ID.</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
