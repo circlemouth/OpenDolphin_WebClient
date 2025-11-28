@@ -1,0 +1,5 @@
+<footer>
+  <p>Generated at $context.generatedAt.format('yyyy-MM-dd HH:mm')</p>
+</footer>
+</body>
+</html>
