@@ -30,3 +30,7 @@ ORCAcertification/*
 
 # Build artifacts and temporary files
 build/
+
+# Generated dev config
+custom.properties.dev
+docker-compose.override.dev.yml
