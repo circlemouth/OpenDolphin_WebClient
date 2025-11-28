@@ -7,7 +7,6 @@ import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
 import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
-import jakarta.persistence.Lob;
 import jakarta.persistence.SequenceGenerator;
 import jakarta.persistence.Table;
 
@@ -65,8 +64,7 @@ public class AuditEvent implements Serializable {
     @Column(name = "event_hash", length = 128, nullable = false)
     private String eventHash;
 
-    @Lob
-    @Column(name = "payload")
+    @Column(name = "payload", columnDefinition = "text")
     private String payload;
 
     public Long getId() {

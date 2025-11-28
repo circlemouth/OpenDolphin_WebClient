@@ -1,5 +1,7 @@
 BEGIN;
 
+SET search_path = public;
+
 -- Ensure base sequence exists for inserts
 CREATE SEQUENCE IF NOT EXISTS hibernate_sequence
     START WITH 1

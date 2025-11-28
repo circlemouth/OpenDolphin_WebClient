@@ -158,6 +158,8 @@ register_initial_user() {
   local tmp_sql
   tmp_sql=$(mktemp)
   cat > "$tmp_sql" <<EOF
+SET search_path = public;
+
 -- Ensure hibernate_sequence exists and is aligned
 DO \$\$
 DECLARE
