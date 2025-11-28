@@ -1,7 +1,8 @@
 package open.dolphin.orca.service;
 
+import jakarta.annotation.PostConstruct;
 import jakarta.enterprise.context.ApplicationScoped;
-import jakarta.inject.Inject;
+import jakarta.enterprise.inject.spi.CDI;
 import java.time.LocalDate;
 import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.converter.OrcaXmlMapper;
@@ -40,21 +41,32 @@ public class OrcaWrapperService {
     public static final String RUN_ID = "20251116T170500Z";
     public static final String BLOCKER_TAG = "TrialLocalOnly";
 
-    private final OrcaTransport transport;
-    private final OrcaXmlMapper mapper;
+    private OrcaTransport transport;
 
-    /**
-     * No-args constructor for CDI proxying.
-     */
+    private OrcaXmlMapper mapper;
+
     public OrcaWrapperService() {
-        this.transport = null;
-        this.mapper = null;
+        // CDI proxy requires a public no-arg constructor.
     }
 
-    @Inject
+    /**
+     * Constructor for manual instantiation (e.g., tests).
+     */
     public OrcaWrapperService(OrcaTransport transport, OrcaXmlMapper mapper) {
         this.transport = transport;
         this.mapper = mapper;
+    }
+
+    @PostConstruct
+    private void initializeDependencies() {
+        if (transport == null) {
+            transport = CDI.current().select(OrcaTransport.class).get();
+        }
+        if (mapper == null) {
+            mapper = CDI.current().select(OrcaXmlMapper.class).get();
+        }
+        ensureNotNull(transport, "OrcaTransport");
+        ensureNotNull(mapper, "OrcaXmlMapper");
     }
 
     public OrcaAppointmentListResponse getAppointmentList(OrcaAppointmentListRequest request) {

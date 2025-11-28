@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html lang="$context.locale.language">
+<head>
+  <meta charset="UTF-8" />
+  <title>$context.documentTitle</title>
+  <style>
+    body { font-family: 'HeiseiKakuGo-W5', 'Noto Sans JP', 'Hiragino Sans', sans-serif; font-size: 12pt; }
+    h1 { font-size: 16pt; margin-bottom: 0.5rem; }
+    table.summary-table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+    table.summary-table th, table.summary-table td { border: 1px solid #d1d5db; padding: 6px 8px; font-size: 11pt; }
+    table.summary-table th { background-color: #f3f4f6; }
+  </style>
+</head>
+<body>
+<h1>$context.documentTitle</h1>

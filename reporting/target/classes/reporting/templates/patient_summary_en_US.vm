@@ -1,0 +1,7 @@
+#parse("common/header.vm")
+#parse("common/karte_helpers.vm")
+#renderPatientOverview($context)
+
+#renderSummaryList($context)
+
+#parse("common/footer.vm")
