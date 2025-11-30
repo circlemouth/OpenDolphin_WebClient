@@ -1,0 +1,157 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e2]:
+  - link "メインコンテンツへスキップ" [ref=e3] [cursor=pointer]:
+    - /url: "#main-content"
+  - generic [ref=e4]:
+    - banner [ref=e5]:
+      - generic [ref=e6]:
+        - generic [ref=e7]: OpenDolphin Web Client
+        - generic [ref=e8]: フェーズ4 品質・安全性強化
+      - navigation "主要ナビゲーション" [ref=e9]:
+        - generic [ref=e10]:
+          - link "受付一覧" [ref=e11] [cursor=pointer]:
+            - /url: /reception
+          - link "患者一覧" [ref=e12] [cursor=pointer]:
+            - /url: /patients
+          - link "施設スケジュール" [ref=e13] [cursor=pointer]:
+            - /url: /facility-schedule
+          - link "カルテ閲覧" [ref=e14] [cursor=pointer]:
+            - /url: /charts
+      - generic "SSE バッファ使用状況" [ref=e15]:
+        - generic [ref=e16]:
+          - generic [ref=e17]: SSE バッファ
+          - generic [ref=e18]: 0 / 100 件
+        - img "バッファ 0 件使用中" [ref=e19]
+      - generic [ref=e20]:
+        - generic "サインインユーザー情報" [ref=e21]:
+          - generic [ref=e22]: E2E Admin
+          - generic [ref=e23]: 施設 1.3.6.1.4.1.9414.72.103 / ユーザー doctor1
+        - button "通知センター（準備中）" [ref=e24] [cursor=pointer]:
+          - generic [ref=e25]: 通知
+        - button "管理メニュー" [ref=e27] [cursor=pointer]:
+          - generic [ref=e28]: 管理メニュー
+        - button "ログアウト" [ref=e29] [cursor=pointer]:
+          - generic [ref=e30]: ログアウト
+    - main [ref=e33]:
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - heading "施設全体の予約一覧" [level=1] [ref=e36]
+          - paragraph [ref=e37]: 来院予定を日付と担当医ごとに俯瞰し、診療状況を把握します。オンプレ版 PatientSchedule の運用を Web へ統合しました。
+        - generic "表示条件" [ref=e38]:
+          - generic [ref=e39]:
+            - heading "表示条件" [level=2] [ref=e40]
+            - paragraph [ref=e41]: 担当医や状態で絞り込み、受付状況に応じた準備を進められます。
+          - generic [ref=e42]:
+            - generic [ref=e44]:
+              - generic [ref=e46]: 対象日
+              - textbox "対象日" [ref=e48]: 2025-11-29
+            - generic [ref=e49]:
+              - button "前日" [ref=e50] [cursor=pointer]:
+                - generic [ref=e51]: 前日
+              - button "翌日" [ref=e52] [cursor=pointer]:
+                - generic [ref=e53]: 翌日
+              - button "今日" [ref=e54] [cursor=pointer]:
+                - generic [ref=e55]: 今日
+            - generic [ref=e57]:
+              - generic [ref=e59]: 担当医
+              - combobox "担当医" [ref=e61]:
+                - option "すべて" [selected]
+            - generic [ref=e63]:
+              - generic [ref=e65]: 状態
+              - combobox "状態" [ref=e67]:
+                - option "すべて" [selected]
+                - option "予約済み"
+                - option "呼出中"
+                - option "診察中"
+            - generic [ref=e69]:
+              - generic [ref=e71]: キーワード
+              - textbox "キーワード" [ref=e73]:
+                - /placeholder: 氏名 / ID / メモで検索
+            - generic [ref=e74]:
+              - checkbox "担当医のみ" [ref=e75]
+              - text: 担当医のみ
+        - generic [ref=e76]:
+          - generic [ref=e77]:
+            - generic [ref=e78]: 予約件数
+            - strong [ref=e79]: "0"
+          - generic [ref=e80]:
+            - generic [ref=e81]: 予約済み
+            - strong [ref=e82]: "0"
+          - generic [ref=e83]:
+            - generic [ref=e84]: 呼出中
+            - strong [ref=e85]: "0"
+          - generic [ref=e86]:
+            - generic [ref=e87]: 診察中
+            - strong [ref=e88]: "0"
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - heading "予約詳細" [level=2] [ref=e92]
+              - paragraph [ref=e93]: 0 件を表示中
+              - status [ref=e94]:
+                - generic "progress=synced | status=server | runId=local-dev | dataSourceTransition=msw→server (msw_disabled)" [ref=e95]: 実API / Server
+                - generic [ref=e96]: "RUN_ID: local-dev"
+                - generic [ref=e97]: "経路: msw→server (msw_disabled)"
+                - generic [ref=e98]: "進捗: synced"
+            - button "再読み込み" [ref=e99] [cursor=pointer]:
+              - generic [ref=e100]: 再読み込み
+          - table [ref=e102]:
+            - rowgroup [ref=e103]:
+              - row "予定時刻 患者 担当医 / 診療科 状態 メモ・保険 最終カルテ 操作" [ref=e104]:
+                - cell "予定時刻" [ref=e105]
+                - cell "患者" [ref=e106]
+                - cell "担当医 / 診療科" [ref=e107]
+                - cell "状態" [ref=e108]
+                - cell "メモ・保険" [ref=e109]
+                - cell "最終カルテ" [ref=e110]
+                - cell "操作" [ref=e111]
+            - rowgroup [ref=e112]:
+              - row "条件に一致する予約はありません。" [ref=e113]:
+                - cell "条件に一致する予約はありません。" [ref=e114]:
+                  - generic [ref=e115]: 条件に一致する予約はありません。
+  - generic "診断用通知" [ref=e116]:
+    - generic [ref=e117]:
+      - generic [ref=e118]:
+        - generic [ref=e119]: Authentication required
+        - button "通知を閉じる" [ref=e120] [cursor=pointer]: x
+      - generic [ref=e121]:
+        - term [ref=e122]: TraceId
+        - definition [ref=e123]: "00000000000000000000000000000000"
+        - term [ref=e124]: RequestId
+        - definition [ref=e125]: 3e557c0a-b174-4c46-8b18-b8b73fe686b8
+        - term [ref=e126]: Status
+        - definition [ref=e127]: "401"
+        - term [ref=e128]: URL
+        - definition [ref=e129]: /schedule/pvt/2025-11-29
+      - button "TraceId と RequestId をコピー" [ref=e131] [cursor=pointer]: TraceId/RequestId をコピー
+    - generic [ref=e132]:
+      - generic [ref=e133]:
+        - generic [ref=e134]: Authentication required
+        - button "通知を閉じる" [ref=e135] [cursor=pointer]: x
+      - generic [ref=e136]:
+        - term [ref=e137]: TraceId
+        - definition [ref=e138]: "00000000000000000000000000000000"
+        - term [ref=e139]: RequestId
+        - definition [ref=e140]: b3ab9d65-06f6-4fdd-8eaf-58c0cd0757f2
+        - term [ref=e141]: Status
+        - definition [ref=e142]: "401"
+        - term [ref=e143]: URL
+        - definition [ref=e144]: /schedule/pvt/2025-11-29
+      - button "TraceId と RequestId をコピー" [ref=e146] [cursor=pointer]: TraceId/RequestId をコピー
+    - generic [ref=e147]:
+      - generic [ref=e148]:
+        - generic [ref=e149]: Authentication required
+        - button "通知を閉じる" [ref=e150] [cursor=pointer]: x
+      - generic [ref=e151]:
+        - term [ref=e152]: TraceId
+        - definition [ref=e153]: "00000000000000000000000000000000"
+        - term [ref=e154]: RequestId
+        - definition [ref=e155]: 2c6811b0-1d7d-48c8-b0b0-f53babf96044
+        - term [ref=e156]: Status
+        - definition [ref=e157]: "401"
+        - term [ref=e158]: URL
+        - definition [ref=e159]: /schedule/pvt/2025-11-29
+      - button "TraceId と RequestId をコピー" [ref=e161] [cursor=pointer]: TraceId/RequestId をコピー
+```

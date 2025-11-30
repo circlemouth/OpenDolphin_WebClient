@@ -1,12 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# Usage:
+#   WEB_CLIENT_MODE=npm ./setup-modernized-env.sh
+#     → モダナイズ版サーバーは Docker で立ち上げつつ、Web クライアントはローカルの
+#       npm run dev サーバーで起動します。
+#   WEB_CLIENT_MODE=docker ./setup-modernized-env.sh
+#     → これまで通り Web クライアントも Docker コンテナとして立ち上げます。
+#
+# WEB_CLIENT_DEV_HOST / WEB_CLIENT_DEV_PORT で npm モードのホスト/ポートを調整し、
+# WEB_CLIENT_DEV_LOG でログパス、VITE_* 系環境変数で Web クライアントの Vite 設定を
+# 切り替えられます。
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ORCA_INFO_FILE="docs/web-client/operations/mac-dev-login.local.md"
 CUSTOM_PROP_TEMPLATE="ops/shared/docker/custom.properties"
 CUSTOM_PROP_OUTPUT="custom.properties.dev"
 COMPOSE_OVERRIDE_FILE="docker-compose.override.dev.yml"
 LOCAL_SEED_FILE="ops/db/local-baseline/local_synthetic_seed.sql"
-SERVER_HEALTH_URL="http://localhost:9080/openDolphin/resources/dolphin"
+MODERNIZED_APP_HTTP_PORT="${MODERNIZED_APP_HTTP_PORT:-9080}"
+export MODERNIZED_APP_HTTP_PORT
+SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources/dolphin"
 
 ADMIN_USER="1.3.6.1.4.1.9414.10.1:dolphin"
 ADMIN_PASS="36cdf8b887a5cffc78dcd5c08991b993" # dolphin (MD5)
@@ -15,6 +29,24 @@ NEW_USER_ID="dolphindev"
 NEW_USER_PASS="dolphindev"
 NEW_USER_NAME="Dolphin Dev"
 FACILITY_ID="1.3.6.1.4.1.9414.10.1"
+
+WEB_CLIENT_MODE="${WEB_CLIENT_MODE:-docker}"
+WEB_CLIENT_DEV_HOST="${WEB_CLIENT_DEV_HOST:-localhost}"
+WEB_CLIENT_DEV_PORT="${WEB_CLIENT_DEV_PORT:-5173}"
+export WEB_CLIENT_DEV_PORT
+WEB_CLIENT_DEV_LOG="${WEB_CLIENT_DEV_LOG:-tmp/web-client-dev.log}"
+WEB_CLIENT_DEV_LOG_PATH="$WEB_CLIENT_DEV_LOG"
+if [[ "${WEB_CLIENT_DEV_LOG_PATH}" != /* ]]; then
+  WEB_CLIENT_DEV_LOG_PATH="$SCRIPT_DIR/$WEB_CLIENT_DEV_LOG_PATH"
+fi
+WEB_CLIENT_DEV_PID_FILE="${WEB_CLIENT_DEV_PID_FILE:-tmp/web-client-dev.pid}"
+WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources"
+WEB_CLIENT_DEV_PROXY_TARGET="${WEB_CLIENT_DEV_PROXY_TARGET:-$WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT}"
+WEB_CLIENT_DEV_API_BASE="${WEB_CLIENT_DEV_API_BASE:-/api}"
+# ENVs for npm dev server overrides
+WEB_CLIENT_ENV_LOCAL="${WEB_CLIENT_ENV_LOCAL:-$SCRIPT_DIR/web-client/.env.local}"
+# Normalize mode for bash versions without ${var,,}
+WEB_CLIENT_MODE_LOWER="$(printf '%s' "$WEB_CLIENT_MODE" | tr '[:upper:]' '[:lower:]')"
 
 log() {
   echo "[$(date +%H:%M:%S)] $*"
@@ -230,9 +262,110 @@ EOF
   log "User registration SQL executed successfully."
 }
 
-start_web_client() {
-  log "Starting Web Client..."
+stop_existing_web_client_dev_server() {
+  if [[ -f "$WEB_CLIENT_DEV_PID_FILE" ]]; then
+    local existing_pid
+    existing_pid="$(<"$WEB_CLIENT_DEV_PID_FILE" || true)"
+    if [[ -n "$existing_pid" ]] && kill -0 "$existing_pid" >/dev/null 2>&1; then
+      log "Stopping existing Web Client dev server PID $existing_pid..."
+      kill "$existing_pid"
+      for _ in {1..5}; do
+        if kill -0 "$existing_pid" >/dev/null 2>&1; then
+          sleep 1
+          continue
+        fi
+        break
+      done
+      if kill -0 "$existing_pid" >/dev/null 2>&1; then
+        log "Forcing stop of Web Client dev server PID $existing_pid..."
+        kill -9 "$existing_pid"
+      fi
+    fi
+    rm -f "$WEB_CLIENT_DEV_PID_FILE"
+  fi
+
+  if command -v lsof >/dev/null 2>&1; then
+    local port_pids
+    port_pids=$(lsof -t -iTCP:"$WEB_CLIENT_DEV_PORT" -sTCP:LISTEN || true)
+    for pid in $port_pids; do
+      if [[ -n "$pid" ]]; then
+        log "Clearing lingering listener on port $WEB_CLIENT_DEV_PORT (PID $pid)..."
+        kill "$pid" >/dev/null 2>&1 || true
+      fi
+    done
+  else
+    local fallback_pid
+    fallback_pid=$(pgrep -f "npm run dev -- --host .*${WEB_CLIENT_DEV_PORT}" || true)
+    if [[ -n "$fallback_pid" ]]; then
+      log "Killing fallback npm dev process PID $fallback_pid..."
+      kill "$fallback_pid" >/dev/null 2>&1 || true
+    fi
+  fi
+}
+
+start_web_client_docker() {
+  log "Starting Web Client container via docker-compose..."
   docker compose -f docker-compose.web-client.yml up -d
+}
+
+start_web_client_npm() {
+  log "Starting Web Client dev server via npm run dev..."
+  mkdir -p "$(dirname "$WEB_CLIENT_DEV_LOG_PATH")"
+  stop_existing_web_client_dev_server
+
+  local dev_proxy_target="${WEB_CLIENT_DEV_PROXY_TARGET:-$WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT}"
+  local dev_use_https="${VITE_DEV_USE_HTTPS:-0}"
+  local dev_disable_msw="${VITE_DISABLE_MSW:-0}"
+  local dev_enable_telemetry="${VITE_ENABLE_TELEMETRY:-0}"
+  local dev_disable_security="${VITE_DISABLE_SECURITY:-0}"
+  local dev_disable_audit="${VITE_DISABLE_AUDIT:-0}"
+  local dev_api_base_url="${WEB_CLIENT_DEV_API_BASE:-/api}"
+
+  local npm_env_dir="tmp/web-client-vite-env"
+  rm -rf "$npm_env_dir"
+  mkdir -p "$npm_env_dir"
+  cat > "$npm_env_dir/.env" <<EOF
+VITE_API_BASE_URL=$dev_api_base_url
+VITE_HTTP_TIMEOUT_MS=10000
+VITE_HTTP_MAX_RETRIES=2
+VITE_DEV_PROXY_TARGET=$dev_proxy_target
+VITE_DEV_USE_HTTPS=$dev_use_https
+VITE_DISABLE_MSW=$dev_disable_msw
+VITE_ENABLE_TELEMETRY=$dev_enable_telemetry
+VITE_DISABLE_SECURITY=$dev_disable_security
+VITE_DISABLE_AUDIT=$dev_disable_audit
+EOF
+  mkdir -p "$(dirname "$WEB_CLIENT_ENV_LOCAL")"
+  cp "$npm_env_dir/.env" "$WEB_CLIENT_ENV_LOCAL"
+
+  local npm_pid
+  npm_pid=$(
+    cd web-client
+    VITE_DEV_PROXY_TARGET="$dev_proxy_target" \
+      VITE_DEV_USE_HTTPS="$dev_use_https" \
+      VITE_DISABLE_MSW="$dev_disable_msw" \
+      VITE_ENABLE_TELEMETRY="$dev_enable_telemetry" \
+      VITE_DISABLE_SECURITY="$dev_disable_security" \
+      VITE_DISABLE_AUDIT="$dev_disable_audit" \
+      VITE_API_BASE_URL="$dev_api_base_url" \
+      nohup npm run dev -- --host "$WEB_CLIENT_DEV_HOST" --port "$WEB_CLIENT_DEV_PORT" > "$WEB_CLIENT_DEV_LOG_PATH" 2>&1 &
+    printf "%s" "$!"
+  )
+  printf "%s" "$npm_pid" > "$WEB_CLIENT_DEV_PID_FILE"
+
+  log "Web Client dev server PID $npm_pid, logs at $WEB_CLIENT_DEV_LOG_PATH"
+  log "Tail the log via 'tail -f $WEB_CLIENT_DEV_LOG' to watch the dev server output."
+}
+
+start_web_client() {
+  case "$WEB_CLIENT_MODE_LOWER" in
+    npm* | dev*)
+      start_web_client_npm
+      ;;
+    *)
+      start_web_client_docker
+      ;;
+  esac
 }
 
 main() {
@@ -244,7 +377,12 @@ main() {
   apply_baseline_seed
   register_initial_user
   start_web_client
-  log "All set! Web Client is running at http://localhost:5173"
+  if [[ "$WEB_CLIENT_MODE_LOWER" == npm* || "$WEB_CLIENT_MODE_LOWER" == dev* ]]; then
+    log "All set! Web Client dev server is listening at http://${WEB_CLIENT_DEV_HOST}:${WEB_CLIENT_DEV_PORT}"
+    log "Logs: $WEB_CLIENT_DEV_LOG_PATH"
+  else
+    log "All set! Web Client is running at http://localhost:${WEB_CLIENT_DEV_PORT}"
+  fi
   log "Login with User: $NEW_USER_ID / Pass: $NEW_USER_PASS"
 }
 

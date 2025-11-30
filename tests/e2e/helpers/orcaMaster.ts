@@ -21,14 +21,14 @@ const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
 
 export const e2eAuthSession = {
   credentials: {
-    facilityId: '1.3.6.1.4.1.9414.72.101',
-    userId: 'admin',
-    passwordMd5: 'dummy-md5',
+    facilityId: '1.3.6.1.4.1.9414.72.103',
+    userId: 'doctor1',
+    passwordMd5: '632080fabdb968f9ac4f31fb55104648',
     clientUuid: 'e2e-playwright',
   },
   userProfile: {
-    facilityId: '1.3.6.1.4.1.9414.72.101',
-    userId: 'admin',
+    facilityId: '1.3.6.1.4.1.9414.72.103',
+    userId: 'doctor1',
     displayName: 'E2E Admin',
     roles: ['admin'],
   },
@@ -99,6 +99,12 @@ export async function recordPerfLog(page: Page, label: string) {
 export async function seedAuthSession(page: Page) {
   await page.addInitScript(([storageKey, session]) => {
     window.sessionStorage.setItem(storageKey, JSON.stringify(session));
+    if (!(window as unknown as { $RefreshReg$?: unknown }).$RefreshReg$) {
+      (window as unknown & { $RefreshReg$?: () => void }).$RefreshReg$ = () => {};
+    }
+    if (!(window as unknown as { $RefreshSig$?: unknown }).$RefreshSig$) {
+      (window as unknown & { $RefreshSig$?: () => (type: unknown) => unknown }).$RefreshSig$ = () => (type) => type;
+    }
   }, [AUTH_STORAGE_KEY, { ...e2eAuthSession, persistedAt: Date.now() }]);
 }
 

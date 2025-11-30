@@ -12,6 +12,7 @@ import {
   useUsersQuery,
 } from '@/features/administration/hooks/useUsers';
 import type { RoleModel, UserModel } from '@/features/administration/types/user';
+import { AdminRunIdBanner } from '@/features/administration/components/AdminRunIdBanner';
 
 type FormMode = 'create' | 'edit';
 
@@ -536,6 +537,7 @@ export const UserAdministrationPage = () => {
 
   return (
     <>
+      <AdminRunIdBanner />
       <PageGrid>
         <SurfaceCard>
           <Stack gap={16}>

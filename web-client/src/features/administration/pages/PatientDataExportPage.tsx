@@ -9,6 +9,9 @@ import {
   fetchPatientCountByPrefix,
 } from '@/features/administration/api/patient-export-api';
 import type { RawPatientResource } from '@/features/patients/types/patient';
+import { useAuth } from '@/libs/auth';
+import { logAdministrativeAction } from '@/libs/audit';
+import { getCurrentRunId } from '@/libs/runId';
 
 interface FeedbackState {
   tone: 'info' | 'danger';
@@ -121,6 +124,36 @@ const buildCsv = (records: RawPatientResource[]): string => {
     .join('\r\n');
 };
 
+interface ChartPreset {
+  chartId?: string;
+  patientId?: string;
+  patientName?: string;
+  dateRange?: string;
+  query?: string;
+  runId?: string;
+}
+
+const CHART_PRESET_STORAGE_KEY = 'opendolphin:web-client:charts-preset';
+const EXPORT_EVIDENCE = 'docs/server-modernization/phase2/operations/logs/20251129T163000Z-schedule.md#patientdataexport';
+
+const loadChartPreset = (): ChartPreset | null => {
+
+  if (typeof window === 'undefined') {
+    return null;
+  }
+  const raw = window.sessionStorage.getItem(CHART_PRESET_STORAGE_KEY);
+  if (!raw) {
+    return null;
+  }
+  try {
+    return JSON.parse(raw) as ChartPreset;
+  } catch {
+    return null;
+  }
+};
+
+const sanitizeFileSegment = (value: string) => value.replace(/[^a-zA-Z0-9_-]/g, '_') || 'unknown';
+
 const PatientPreviewTable = ({ records }: { records: RawPatientResource[] }) => {
   if (records.length === 0) {
     return <EmptyState>データはまだ取得されていません。</EmptyState>;
@@ -169,6 +202,12 @@ export const PatientDataExportPage = () => {
   const [prefixInput, setPrefixInput] = useState('');
   const [countFeedback, setCountFeedback] = useState<FeedbackState | null>(null);
   const [countResult, setCountResult] = useState<number | null>(null);
+  const { session } = useAuth();
+  const actorId = session?.credentials.userId ?? 'unknown';
+  const facilityId = session?.credentials.facilityId ?? 'unknown';
+  const actorRole = session?.userProfile?.roles?.join(', ') ?? 'unknown';
+  const runId = getCurrentRunId();
+  const [chartPreset, setChartPreset] = useState<ChartPreset | null>(() => loadChartPreset());
 
   const fetchAllMutation = useMutation({
     mutationFn: fetchAllPatients,
@@ -181,6 +220,30 @@ export const PatientDataExportPage = () => {
   });
 
   const totalPatients = patients.length;
+  const facilitySegment = sanitizeFileSegment(facilityId);
+  const composeFileName = (format: 'csv' | 'json') => {
+    const chartSegment = sanitizeFileSegment(chartPreset?.chartId ?? 'all');
+    const dateStamp = new Date().toISOString().slice(0, 10).replace(/-/g, '');
+    return `patient-data-export-${facilitySegment}-${chartSegment}-${dateStamp}-${runId}.${format}`;
+  };
+  const buildExportMetadata = (format: 'csv' | 'json', extras: Record<string, unknown> = {}) => ({
+    runId,
+    format,
+    recordCount: patients.length,
+    chartId: chartPreset?.chartId ?? 'all',
+    chartPatientId: chartPreset?.patientId,
+    chartPatientName: chartPreset?.patientName,
+    query: lastQuery,
+    facilityId,
+    actorId,
+    actorRole,
+    evidencePath: EXPORT_EVIDENCE,
+    ...extras,
+  });
+  const runTooltipFields = useMemo(
+    () => ({ runId, progress: lastQuery ? 'ready' : 'idle' }),
+    [runId, lastQuery],
+  );
   const queryLabel = useMemo(() => {
     if (lastQuery === 'all') {
       return '全件取得結果';
@@ -237,6 +300,49 @@ export const PatientDataExportPage = () => {
     }
   };
 
+  const handleApplyChartPreset = () => {
+    const preset = loadChartPreset();
+    if (!preset) {
+      setFeedback({
+        tone: 'danger',
+        message: 'Charts からのプリセット情報が取得できません。',
+      });
+      logAdministrativeAction(
+        'patient_export_preset_apply_failed',
+        'Charts プリセットの反映に失敗しました',
+        {
+          runId,
+          facilityId,
+          actorId,
+          actorRole,
+          evidencePath: EXPORT_EVIDENCE,
+        },
+        'warning',
+      );
+      return;
+    }
+    setChartPreset(preset);
+    setCustomCondition(preset.query ?? '');
+    setFeedback({
+      tone: 'info',
+      message: `Charts プリセット（${preset.patientName ?? preset.patientId ?? '患者'} / ${preset.dateRange ?? '日付未設定'}）を反映しました。`,
+    });
+    logAdministrativeAction(
+      'patient_export_preset_applied',
+      'Charts プリセットを患者データ出力へ反映しました',
+      {
+        runId,
+        facilityId,
+        actorId,
+        actorRole,
+        chartId: preset.chartId,
+        patientId: preset.patientId,
+        dateRange: preset.dateRange,
+        evidencePath: EXPORT_EVIDENCE,
+      },
+    );
+  };
+
   const handleCountPatients = async () => {
     const trimmed = prefixInput.trim();
     if (!trimmed) {
@@ -267,27 +373,32 @@ export const PatientDataExportPage = () => {
     if (patients.length === 0) {
       return;
     }
-    const blob = new Blob([JSON.stringify(patients, null, 2)], { type: 'application/json' });
+    const metadata = buildExportMetadata('json');
+    const payload = JSON.stringify({ metadata, records: patients }, null, 2);
+    const blob = new Blob([payload], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `patients_${lastQuery ?? 'export'}.json`;
+    anchor.download = composeFileName('json');
     anchor.click();
     URL.revokeObjectURL(url);
+    logAdministrativeAction('patient_data_export_download', 'JSON 形式で患者データをダウンロードしました', metadata);
   };
 
   const handleDownloadCsv = () => {
     if (patients.length === 0) {
       return;
     }
-    const csv = buildCsv(patients);
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const metadata = buildExportMetadata('csv');
+    const csvContent = `# RUN_ID=${runId}\r\n${buildCsv(patients)}`;
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const anchor = document.createElement('a');
     anchor.href = url;
-    anchor.download = `patients_${lastQuery ?? 'export'}.csv`;
+    anchor.download = composeFileName('csv');
     anchor.click();
     URL.revokeObjectURL(url);
+    logAdministrativeAction('patient_data_export_download', 'CSV 形式で患者データをダウンロードしました', metadata);
   };
 
   return (
@@ -317,14 +428,70 @@ export const PatientDataExportPage = () => {
                 {countResult != null ? `${countResult.toLocaleString('ja-JP')} 件` : '未取得'}
               </InfoValue>
             </InfoCard>
+            <InfoCard>
+              <InfoLabel>RUN_ID</InfoLabel>
+              <InfoValue>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontWeight: 600 }} data-run-id={runId}>
+                    {runId}
+                  </span>
+                  <StatusBadge tone="info" tooltipFields={runTooltipFields}>
+                    {lastQuery ? '取得済み' : '未取得'}
+                  </StatusBadge>
+                </div>
+              </InfoValue>
+            </InfoCard>
+            <InfoCard>
+              <InfoLabel>Chartsプリセット</InfoLabel>
+              <InfoValue>
+                {chartPreset ? (
+                  <div style={{ display: 'grid', gap: 4 }}>
+                    <span>
+                      {chartPreset.patientName ?? chartPreset.patientId ?? '患者未選択'} /{' '}
+                      {chartPreset.dateRange ?? '日付未設定'}
+                    </span>
+                    {chartPreset.chartId ? (
+                      <span style={{ fontSize: '0.8rem', color: '#64748b' }}>
+                        Chart ID: {chartPreset.chartId} / RUN_ID: {chartPreset.runId ?? runId}
+                      </span>
+                    ) : null}
+                  </div>
+                ) : (
+                  'Charts 画面からプリセットを取得してください。'
+                )}
+              </InfoValue>
+            </InfoCard>
           </InfoGrid>
           {feedback ? <FeedbackBanner tone={feedback.tone}>{feedback.message}</FeedbackBanner> : null}
           <Stack direction="row" gap={12} wrap>
-            <Button variant="ghost" onClick={handleDownloadCsv} disabled={patients.length === 0}>
+            <Button
+              variant="ghost"
+              onClick={handleDownloadCsv}
+              disabled={patients.length === 0}
+              data-audit-intent="export"
+              data-run-id={runId}
+              aria-label={`RUN_ID=${runId} で患者データCSVをダウンロード`}
+            >
               CSV をダウンロード
             </Button>
-            <Button variant="ghost" onClick={handleDownloadJson} disabled={patients.length === 0}>
+            <Button
+              variant="ghost"
+              onClick={handleDownloadJson}
+              disabled={patients.length === 0}
+              data-audit-intent="export"
+              data-run-id={runId}
+              aria-label={`RUN_ID=${runId} で患者データJSONをダウンロード`}
+            >
               JSON をダウンロード
+            </Button>
+            <Button
+              variant="ghost"
+              onClick={handleApplyChartPreset}
+              data-audit-intent="preset-apply"
+              data-run-id={runId}
+              aria-label={`RUN_ID=${runId} でChartsプリセットを反映`}
+            >
+              Charts からプリセットを適用
             </Button>
           </Stack>
         </Stack>

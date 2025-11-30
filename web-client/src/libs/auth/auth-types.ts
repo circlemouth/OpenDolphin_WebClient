@@ -29,6 +29,7 @@ export interface AuthenticatedUserProfile {
 export interface AuthSession {
   credentials: AuthCredentials;
   userProfile?: AuthenticatedUserProfile;
+  runId?: string;
 }
 
 export interface AuthContextValue {

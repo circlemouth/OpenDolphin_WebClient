@@ -60,6 +60,19 @@
   - [ ] `operations/DEV_MSW_MOCKS.md` / `LEGACY_INTEGRATION_CHECKS.md` / `TEST_SERVER_DEPLOY.md` の手順で不足しているログ保存先や証跡をチェックし、必要に応じて `docs/server-modernization/phase2/operations/logs/` や `artifacts/` へのリンクを追加。
   - [ ] Web クライアント Ops task の結果を ORCA/Server マネージャーへ共有する場合は、本チェックリストのタスクD欄に参照先を追記。
 
+ ## 3a. RUN_ID=20251129T120000Z（Charts 右カラム UX）
+ - `docs/web-client/ux/charts-right-column-ux.md` で DocumentTimeline/WorkSurface/OrderConsole/OrcaOrderPanel の連携と ORCA バナーの `data-run-id`+`aria-live` 表示を実装要件として整理。実装完了時には `docs/server-modernization/phase2/operations/logs/20251129T120000Z-charts.md` へレビュー・メモを追記し、DOC_STATUS `Web クライアント/UX` 行に RUN_ID＋ログパスを加えてからマネージャー報告をまとめる。
+ - 報告では RUN_ID=`20251129T120000Z` と本ログへのリンクを明示し、Implementation/UX チームに連携レビューと Playwright (aria-live warning banner の挙動) を含む検証追加を依頼する。
+ - Implementation/UX チームとの画面レビューで `OrcaOrderPanel` の `DataSourceBanner` が `data-run-id`/`aria-live` を持つ RUN_ID=`20251129T120000Z` 表示済み、`ChartsAdminShortcutCard` と `AdminRunIdBanner` が RUN_ID=`20251129T105243Z` の `data-run-id`/deep-link ボタン(`#charts-status-deep-link`/`#admin-danger-operations`) を共通表示していることを確認。右カラムの show/hide 操作でこれらのカードが collapsed/expanded 両状態で再表示され、Admin バナーは SystemPreferences/UserAdministration の `StatusBadge` と `Button as="a"` deep-link を保持することも確認した。
+- Playwright では右カラムの展開・収縮状態を切り替えたうえで `ChartsAdminShortcutCard` と `AdminRunIdBanner` の `data-run-id`/deep-linkボタンを操作するシナリオを追加検討中。show/hide を含めた検証案と deep-link（`target=_blank`）操作を本チェックリストに記録し、次回 Playwright 実装時のテストケースとして稼働させる予定。
+- **Playwright ケース化計画（DocumentTimeline show/hide＋Adminバナー）**
+- Implementation/UX チームには上記 RUN_ID=`20251129T120000Z`（右カラム ORCA Banner/DocumentTimeline）および RUN_ID=`20251129T105243Z`（ChartsAdminShortcutCard/AdminRunIdBanner）の deep link 設定を共有し、show/hide 切替と deep link 操作が同一 UI/レイアウトで再現されることをレビューで確認してもらう。
+- 下記シナリオを Playwright チケットに記録し、Implementation/UX 共有後に自動化に着手する。
+  - DocumentTimeline 右カラム全体の show/hide 操作：`DocumentTimeline` の表示・折りたたみを切り替えることで `ChartsAdminShortcutCard`/`AdminRunIdBanner` が collapsed/expanded の両状態で再描画されること、および `data-run-id`/`aria-live` 表示が変化（再読み込みの代替）せず維持されることを確認。
+  - `ChartsAdminShortcutCard` と `AdminRunIdBanner` の deep link ボタン（#charts-status-deep-link、#admin-danger-operations）クリック：`target=_blank` で別タブが開き、ログ深リンク先が起動時のステータスを保持している状態を Playwright で要素取得＋遷移停止（`page.wait_for_event("popup")` 等）で検証。
+  - `data-run-id` 情報および `aria-live` 通知（右カラムの ORCA banner / `AdminRunIdBanner` の live region）の表示：ARIA 変更を監視し、Show/Hold や deep link クリックによるフォーカス移動前後の変化が意図通りであることを確認。
+- 今後の Playwright 自動化観点として、deep link の `href` と `target=_blank` の属性を維持しつつログパスを都度最新に差し替える方式（ログリンクが更新されてもテスト側で `data-run-id` から `logs/<RUN_ID>-*.md` を自動判定できる仕組み）をこのチェックリストに追記しておく。
+
 ## 4. 進捗確認ポイント
 - README/DOC_STATUS のリンクと記載内容が一致しているか。
 - ChartsPage/UX ガイドに最新レイアウト・ガード条件が反映されているか。

@@ -1,18 +1,29 @@
-import { createContext, useCallback, useContext, useEffect, useMemo, useRef } from 'react';
-import type { PropsWithChildren } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react';
 import axios from 'axios';
 import { useQueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '@/libs/auth';
 import { fetchChartsPatientList, fetchPatientVisits } from '@/features/charts/api/patient-visit-api';
 import { patientVisitsQueryKey } from '@/features/charts/hooks/usePatientVisits';
-import { sendReplayGapAudit, type ReplayGapAuditPayload, type ReplayGapAuditPlatform } from '@/features/replay-gap/replayGapAudit';
+import {
+  logReplayGapState,
+  sendReplayGapAudit,
+  type ReplayGapAuditPayload,
+  type ReplayGapAuditPlatform,
+} from '@/features/replay-gap/replayGapAudit';
 import { useReplayGapController, type ReplayGapReloadMode, type ReplayGapState } from '@/features/replay-gap/useReplayGapController';
 
 interface ParsedSseEvent {
   id?: string;
   event?: string;
   data?: string;
+}
+
+export interface ReplayGapDetails {
+  sequence?: string | null;
+  gapSize?: number;
+  lastEventId?: string | null;
+  detectedAt?: string;
 }
 
 const RUNBOOK_URL =
@@ -107,6 +118,9 @@ interface ReplayGapContextValue {
   supportHref: string;
   isReloading: boolean;
   showSupportLink: boolean;
+  gapDetails: ReplayGapDetails;
+  clientUuid?: string | null;
+  manualResync: () => Promise<void>;
 }
 
 const ReplayGapContext = createContext<ReplayGapContextValue | null>(null);
@@ -120,6 +134,7 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
   const attemptsRef = useRef(0);
   const gapDetectedAtRef = useRef<string | undefined>(undefined);
   const lastGapSizeRef = useRef<number | undefined>(undefined);
+  const [gapDetails, setGapDetails] = useState<ReplayGapDetails>({});
   const clientUuid = session?.credentials?.clientUuid;
 
   const sendAudit = useCallback(
@@ -171,8 +186,13 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
     [clientUuid],
   );
 
+  interface RunReloadOptions {
+    sequence?: string | null;
+    gapSize?: number | null;
+  }
+
   const runReload = useCallback(
-    async (mode: ReplayGapReloadMode) => {
+    async (mode: ReplayGapReloadMode, options?: RunReloadOptions) => {
       if (ongoingReloadRef.current) {
         return ongoingReloadRef.current;
       }
@@ -184,7 +204,11 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
         try {
           const { visits, sequence, gapSize } = await (async () => {
             try {
-              return await fetchChartsPatientList({ clientUuid });
+              return await fetchChartsPatientList({
+                clientUuid,
+                sequence: options?.sequence ?? undefined,
+                gapSize: options?.gapSize ?? undefined,
+              });
             } catch (error) {
               if (axios.isAxiosError(error) && error.response?.status === 404) {
                 const fallbackVisits = await fetchPatientVisits();
@@ -198,6 +222,13 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
           if (sequence) {
             lastEventIdRef.current = sequence;
           }
+          const resolvedLastEventId = lastEventIdRef.current ?? sequence ?? gapDetails.lastEventId ?? null;
+          setGapDetails((prev) => ({
+            ...prev,
+            gapSize,
+            sequence: sequence ?? prev.sequence,
+            lastEventId: resolvedLastEventId,
+          }));
           completeReload();
           await sendAudit(mode, 'success');
         } catch (error) {
@@ -213,12 +244,40 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
       ongoingReloadRef.current = task;
       return task;
     },
-    [clientUuid, completeReload, failReload, queryClient, sendAudit, startReload, state.attempts, state.phase],
+    [clientUuid, completeReload, failReload, gapDetails, queryClient, sendAudit, startReload, state.attempts, state.phase],
   );
 
+  const manualResync = useCallback(async () => {
+    const recordedAt = new Date().toISOString();
+    void logReplayGapState({
+      action: 'manual-resync',
+      clientUuid,
+      sequence: gapDetails.sequence,
+      gapSize: gapDetails.gapSize,
+      lastEventId: gapDetails.lastEventId,
+      recordedAt,
+      metadata: {
+        runbookHref: RUNBOOK_URL,
+      },
+    }).catch((error) => {
+      console.warn('Manual replay gap state log failed.', error);
+    });
+
+    return runReload('manual', {
+      sequence: gapDetails.sequence ?? undefined,
+      gapSize: typeof gapDetails.gapSize === 'number' ? gapDetails.gapSize : undefined,
+    });
+  }, [clientUuid, gapDetails.gapSize, gapDetails.lastEventId, gapDetails.sequence, runReload]);
+
   const handleReplayGapEvent = useCallback(() => {
+    const detectedAt = new Date().toISOString();
     attemptsRef.current = 0;
-    gapDetectedAtRef.current = new Date().toISOString();
+    gapDetectedAtRef.current = detectedAt;
+    setGapDetails((prev) => ({
+      ...prev,
+      detectedAt,
+      lastEventId: lastEventIdRef.current ?? prev.lastEventId,
+    }));
     markGapDetected();
     void runReload('auto');
   }, [markGapDetected, runReload]);
@@ -297,8 +356,11 @@ export const ReplayGapProvider = ({ children }: PropsWithChildren) => {
       supportHref: `mailto:${SUPPORT_EMAIL}`,
       isReloading: state.phase === 'reloading',
       showSupportLink: state.attempts >= 3 || state.phase === 'escalated',
+      gapDetails,
+      clientUuid,
+      manualResync,
     }),
-    [dismiss, retry, state],
+    [clientUuid, dismiss, gapDetails, manualResync, retry, state],
   );
 
   return <ReplayGapContext.Provider value={value}>{children}</ReplayGapContext.Provider>;

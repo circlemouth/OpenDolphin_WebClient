@@ -23,6 +23,7 @@ import {
 } from '@/features/administration/api/phr-api';
 import type { PhrKeyLookupResult, PhrKeyUpsertPayload, PhrTextType } from '@/features/administration/api/phr-api';
 import type { PhrContainer } from '@/features/administration/types/phr';
+import { AdminRunIdBanner } from '@/features/administration/components/AdminRunIdBanner';
 
 type TabKey = 'basic' | 'license' | 'cloud' | 'phr';
 
@@ -493,6 +494,7 @@ const PhrManagementPanel = ({ facilityId }: PhrManagementPanelProps) => {
 
   return (
     <Stack gap={20}>
+      <AdminRunIdBanner />
       <SurfaceCard>
         <Stack gap={16}>
           <SectionTitle>PHR キー管理</SectionTitle>

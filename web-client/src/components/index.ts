@@ -9,3 +9,4 @@ export * from './SelectField';
 export * from './ReplayGapBanner';
 export * from './ReplayGapToast';
 export * from './TraceNoticeCenter';
+export * from './ChartSyncStatus';

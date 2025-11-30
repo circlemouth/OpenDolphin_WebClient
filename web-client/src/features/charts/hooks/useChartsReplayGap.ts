@@ -1,6 +1,9 @@
 import { useMemo } from 'react';
 
-import { useReplayGapContext } from '@/features/replay-gap/ReplayGapContext';
+import {
+  type ReplayGapDetails,
+  useReplayGapContext,
+} from '@/features/replay-gap/ReplayGapContext';
 
 interface ReplayGapBannerBindings {
   visible: boolean;
@@ -21,6 +24,12 @@ export interface ChartsReplayGapBindings {
   banner: ReplayGapBannerBindings;
   lockEditing: boolean;
   ariaBusy: boolean;
+  gapDetails: ReplayGapDetails;
+  manualResync: () => Promise<void>;
+  manualResyncDisabled: boolean;
+  clientUuid?: string | null;
+  runbookHref: string;
+  supportHref: string;
 }
 
 const resourceLabel = 'カルテ患者一覧';
@@ -61,5 +70,11 @@ export const useChartsReplayGap = (): ChartsReplayGapBindings => {
     banner,
     lockEditing: state.phase === 'reloading' || state.phase === 'retry' || state.phase === 'escalated',
     ariaBusy: isReloading,
+    gapDetails,
+    manualResync,
+    manualResyncDisabled: state.phase === 'reloading',
+    clientUuid,
+    runbookHref,
+    supportHref,
   };
 };

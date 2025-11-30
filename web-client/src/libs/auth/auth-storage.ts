@@ -3,6 +3,7 @@ import type { AuthCredentials, AuthenticatedUserProfile } from '@/libs/auth/auth
 export interface StoredAuthSession {
   credentials: AuthCredentials;
   userProfile?: AuthenticatedUserProfile;
+  runId?: string;
   persistedAt: number;
 }
 
