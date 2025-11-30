@@ -21,6 +21,9 @@ const buildContentSecurityPolicy = () => {
     directives["script-src"].add("'unsafe-inline'");
     directives["connect-src"].add('ws:');
     directives["connect-src"].add('wss:');
+    if (import.meta.env.VITE_DEV_USE_HTTPS !== '1') {
+      directives["connect-src"].add('http:');
+    }
     directives["img-src"].add('blob:');
     directives["worker-src"].add('blob:');
   }

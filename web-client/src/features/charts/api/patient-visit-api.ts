@@ -71,6 +71,8 @@ export interface ChartsPatientListResult {
 
 export interface ChartsPatientListParams {
   clientUuid?: string | null;
+  sequence?: string | null;
+  gapSize?: number | null;
 }
 
 const toOptionalString = (value?: string | number | null) => {
@@ -83,10 +85,20 @@ const toOptionalString = (value?: string | number | null) => {
 export const fetchChartsPatientList = async (
   params?: ChartsPatientListParams,
 ): Promise<ChartsPatientListResult> => {
+  const queryParams: Record<string, string | number> = {};
+  if (params?.clientUuid) {
+    queryParams.clientUUID = params.clientUuid;
+  }
+  if (params?.sequence) {
+    queryParams.sequence = params.sequence;
+  }
+  if (typeof params?.gapSize === 'number') {
+    queryParams.gapSize = params.gapSize;
+  }
   const response = await httpClient.get<PatientVisitListResponse & { sequence?: string | number | null; gapSize?: number | null }>(
     '/charts/patientList',
     {
-      params: params?.clientUuid ? { clientUUID: params.clientUuid } : undefined,
+      params: Object.keys(queryParams).length ? queryParams : undefined,
     },
   );
   const list = response.data?.list ?? [];

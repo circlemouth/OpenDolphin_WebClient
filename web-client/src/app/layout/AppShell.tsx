@@ -3,9 +3,10 @@ import type { KeyboardEvent } from 'react';
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom';
 import styled from '@emotion/styled';
 
-import { Button, ReplayGapBanner, ReplayGapToast } from '@/components';
+import { Button, ReplayGapBanner, ReplayGapToast, SurfaceCard } from '@/components';
 import { useAuth } from '@/libs/auth';
 import { useReceptionReplayGap } from '@/features/reception/hooks/useReceptionReplayGap';
+import { useReplayGapContext } from '@/features/replay-gap/ReplayGapContext';
 import { SidebarContext } from './SidebarContext';
 
 const SkipLink = styled.a`
@@ -167,6 +168,50 @@ const NavItem = styled(NavLink)`
   }
 `;
 
+type SseIndicatorTone = 'info' | 'warning' | 'danger';
+
+const SseStatus = styled.div`
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 220px;
+`;
+
+const SseLabelRow = styled.div`
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.78rem;
+  color: ${({ theme }) => theme.palette.textMuted};
+`;
+
+const SseValue = styled.span`
+  font-weight: 600;
+  color: ${({ theme }) => theme.palette.text};
+`;
+
+const GaugeTrack = styled.div`
+  width: 100%;
+  height: 4px;
+  border-radius: ${({ theme }) => theme.radius.xs};
+  background: ${({ theme }) => theme.palette.surfaceMuted};
+  overflow: hidden;
+`;
+
+const GaugeFill = styled.div<{ $percent: number; $tone: SseIndicatorTone }>`
+  width: ${({ $percent }) => `${$percent}%`};
+  height: 100%;
+  transition: width 0.3s ease, background 0.3s ease;
+  background: ${({ theme, $tone }) => {
+    if ($tone === 'danger') {
+      return theme.palette.danger;
+    }
+    if ($tone === 'warning') {
+      return theme.palette.warning;
+    }
+    return theme.palette.primary;
+  }};
+`;
+
 const AdminMenuWrapper = styled.div`
   position: relative;
 `;
@@ -211,6 +256,54 @@ const AdminMenuItem = styled(NavLink)`
     pointer-events: none;
     opacity: 0.45;
   }
+`;
+
+const FailoverBackdrop = styled.div`
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.65);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  z-index: 60;
+`;
+
+const FailoverDialog = styled(SurfaceCard)`
+  width: min(420px, 100%);
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+`;
+
+const FailoverTitle = styled.h3`
+  margin: 0;
+  font-size: 1.1rem;
+`;
+
+const FailoverBody = styled.p`
+  margin: 0;
+  color: ${({ theme }) => theme.palette.text};
+  font-size: 0.9rem;
+`;
+
+const FailoverActions = styled.div`
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: flex-end;
+`;
+
+const FailoverLinks = styled.div`
+  display: flex;
+  gap: 12px;
+  font-size: 0.82rem;
+`;
+
+const FailoverLink = styled.a`
+  color: ${({ theme }) => theme.palette.primary};
+  text-decoration: underline;
 `;
 
 const ContentRegion = styled.div<{ hasSidebar: boolean }>`
@@ -277,6 +370,16 @@ export const AppShell = () => {
   const [isAdminMenuOpen, setIsAdminMenuOpen] = useState(false);
   const adminMenuId = useId();
 
+  const {
+    state: replayGapState,
+    gapDetails,
+    manualResync,
+    manualResyncDisabled,
+    runbookHref,
+    supportHref,
+  } = useReplayGapContext();
+  const [showFailoverModal, setShowFailoverModal] = useState(false);
+
   const canAccessAdministration = hasRole('admin') || hasRole('manager') || hasRole('system');
 
   const userDisplay = useMemo(() => {
@@ -321,8 +424,31 @@ export const AppShell = () => {
     };
   }, [isAdminMenuOpen]);
 
+  const normalizedGapSize = Math.min(100, Math.max(0, gapDetails.gapSize ?? 0));
+  const gaugeTone: SseIndicatorTone =
+    normalizedGapSize >= 90 ? 'danger' : normalizedGapSize >= 70 ? 'warning' : 'info';
+
+  useEffect(() => {
+    if (normalizedGapSize >= 90 && replayGapState.phase !== 'reloading') {
+      setShowFailoverModal(true);
+      return;
+    }
+    if (normalizedGapSize < 70) {
+      setShowFailoverModal(false);
+    }
+  }, [normalizedGapSize, replayGapState.phase]);
+
   const toggleAdminMenu = () => {
     setIsAdminMenuOpen((prev) => !prev);
+  };
+
+  const handleFailoverClose = () => {
+    setShowFailoverModal(false);
+  };
+
+  const handleFailoverResync = () => {
+    setShowFailoverModal(false);
+    void manualResync();
   };
 
   const handleAdminMenuKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
@@ -368,6 +494,16 @@ export const AppShell = () => {
               </NavItem>
             </NavList>
           </Navigation>
+
+          <SseStatus aria-live="polite" aria-label="SSE バッファ使用状況">
+            <SseLabelRow>
+              <span>SSE バッファ</span>
+              <SseValue>{normalizedGapSize.toFixed(0)} / 100 件</SseValue>
+            </SseLabelRow>
+            <GaugeTrack role="img" aria-label={`バッファ ${normalizedGapSize.toFixed(0)} 件使用中`}>
+              <GaugeFill $percent={normalizedGapSize} $tone={gaugeTone} />
+            </GaugeTrack>
+          </SseStatus>
 
           <HeaderActions>
             <UserProfile aria-label="サインインユーザー情報">
@@ -448,6 +584,32 @@ export const AppShell = () => {
           </Body>
         </SidebarContext.Provider>
       </Shell>
+      {showFailoverModal ? (
+        <FailoverBackdrop role="dialog" aria-modal="true" aria-label="SSE フェールオーバー">
+          <FailoverDialog tone="warning">
+            <FailoverTitle>リアルタイム SSE バッファが逼迫</FailoverTitle>
+            <FailoverBody>
+              SSE バッファの {normalizedGapSize.toFixed(0)} / 100 件が予約されており、チャート同期が遅延しています。Runbook を確認しつつ再取得をお試しください。
+            </FailoverBody>
+            <FailoverActions>
+              <Button variant="danger" size="sm" disabled={manualResyncDisabled} onClick={handleFailoverResync}>
+                {manualResyncDisabled ? '再同期中…' : '手動再取得'}
+              </Button>
+              <Button variant="ghost" size="sm" onClick={handleFailoverClose}>
+                後で閉じる
+              </Button>
+            </FailoverActions>
+            <FailoverLinks>
+              <FailoverLink href={runbookHref} target="_blank" rel="noreferrer">
+                Runbook
+              </FailoverLink>
+              <FailoverLink href={supportHref} target="_blank" rel="noreferrer">
+                Ops 連絡
+              </FailoverLink>
+            </FailoverLinks>
+          </FailoverDialog>
+        </FailoverBackdrop>
+      ) : null}
       <ReplayGapToast
         visible={receptionReplayGap.toast.visible}
         phaseLabel={receptionReplayGap.toast.phaseLabel}

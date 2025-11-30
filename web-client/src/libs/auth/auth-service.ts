@@ -2,6 +2,7 @@ import { httpClient } from '@/libs/http/httpClient';
 import { createAuthHeaders, createClientUuid, hashPasswordMd5 } from '@/libs/auth/auth-headers';
 import { clearAuthSession, loadStoredAuthSession, persistAuthSession } from '@/libs/auth/auth-storage';
 import type { AuthSession, LoginPayload } from '@/libs/auth/auth-types';
+import { getCurrentRunId } from '@/libs/runId';
 
 interface RoleResource {
   role?: string;
@@ -38,6 +39,7 @@ export const restoreAuthSession = (): AuthSession | null => {
   return {
     credentials: stored.credentials,
     userProfile: stored.userProfile,
+    runId: stored.runId,
   };
 };
 
@@ -75,14 +77,17 @@ export const loginWithPassword = async (payload: LoginPayload): Promise<AuthSess
       }
     : undefined;
 
+  const currentRunId = getCurrentRunId();
   const session: AuthSession = {
     credentials,
     userProfile,
+    runId: currentRunId,
   };
 
   persistAuthSession({
     credentials,
     userProfile,
+    runId: currentRunId,
     persistedAt: Date.now(),
   });
 

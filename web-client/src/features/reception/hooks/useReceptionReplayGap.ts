@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 
+import type { ReplayGapDetails } from '@/features/replay-gap/ReplayGapContext';
 import { useReplayGapContext } from '@/features/replay-gap/ReplayGapContext';
 
 interface ReplayGapToastBindings {
@@ -30,6 +31,12 @@ export interface ReceptionReplayGapBindings {
   dimContent: boolean;
   showSkeletons: boolean;
   ariaBusy: boolean;
+  gapDetails: ReplayGapDetails;
+  manualResync: () => Promise<void>;
+  manualResyncDisabled: boolean;
+  clientUuid?: string | null;
+  runbookHref: string;
+  supportHref: string;
 }
 
 const resourceLabel = '受付一覧';
@@ -42,7 +49,18 @@ const formatToastMessage = (phase: string) => {
 };
 
 export const useReceptionReplayGap = (): ReceptionReplayGapBindings => {
-  const { state, retry, dismiss, runbookHref, supportHref, isReloading, showSupportLink } = useReplayGapContext();
+  const {
+    state,
+    retry,
+    dismiss,
+    runbookHref,
+    supportHref,
+    isReloading,
+    showSupportLink,
+    gapDetails,
+    clientUuid,
+    manualResync,
+  } = useReplayGapContext();
 
   const banner = useMemo<ReplayGapBannerBindings>(
     () => ({
@@ -89,5 +107,11 @@ export const useReceptionReplayGap = (): ReceptionReplayGapBindings => {
     dimContent: state.phase === 'detected' || state.phase === 'reloading',
     showSkeletons: state.phase === 'reloading',
     ariaBusy: isReloading,
+    runbookHref,
+    gapDetails,
+    manualResync,
+    manualResyncDisabled: state.phase === 'reloading',
+    clientUuid,
+    supportHref,
   };
 };

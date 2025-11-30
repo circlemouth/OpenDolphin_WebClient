@@ -1,5 +1,6 @@
 import { setHttpAuditLogger } from '@/libs/http';
 import { getCsrfToken } from '@/libs/security';
+import { getCurrentRunId } from '@/libs/runId';
 
 export type AuditCategory =
   | 'http'
@@ -116,6 +117,56 @@ export const recordOperationEvent = (
   metadata?: Record<string, unknown>,
 ) => {
   recordAuditEvent({ category, severity, action, description, metadata });
+};
+
+const ensureRunIdInMetadata = (metadata?: Record<string, unknown>) => ({
+  ...(metadata ?? {}),
+  runId: metadata?.runId ?? getCurrentRunId(),
+});
+
+export const logAdministrativeAction = (
+  action: string,
+  description?: string,
+  metadata?: Record<string, unknown>,
+  severity: AuditSeverity = 'info',
+) => {
+  recordOperationEvent('administration', severity, action, description, ensureRunIdInMetadata(metadata));
+};
+
+export const logScheduleAction = (
+  action: string,
+  description?: string,
+  metadata?: Record<string, unknown>,
+  severity: AuditSeverity = 'info',
+) => {
+  recordOperationEvent('schedule', severity, action, description, ensureRunIdInMetadata(metadata));
+};
+
+export const logChartsAction = (
+  action: string,
+  description?: string,
+  metadata?: Record<string, unknown>,
+  severity: AuditSeverity = 'info',
+) => {
+  recordOperationEvent('chart', severity, action, description, ensureRunIdInMetadata(metadata));
+};
+
+export const logReceptionAction = (
+  action: string,
+  description?: string,
+  metadata?: Record<string, unknown>,
+  severity: AuditSeverity = 'info',
+) => {
+  recordOperationEvent('reception', severity, action, description, ensureRunIdInMetadata(metadata));
+};
+
+export const logDataExport = (
+  action: string,
+  description?: string,
+  metadata?: Record<string, unknown>,
+  severity: AuditSeverity = 'info',
+) => {
+  recordOperationEvent('administration', severity, action, description, ensureRunIdInMetadata(metadata));
 };
 
 export const initializeAuditTrail = () => {

@@ -60,3 +60,43 @@ export const sendReplayGapAudit = async (
     }
   }
 };
+
+export type ReplayGapStateLogAction = 'manual-resync';
+
+export interface ReplayGapStateLogPayload {
+  action: ReplayGapStateLogAction;
+  clientUuid?: string | null;
+  sequence?: string | null;
+  gapSize?: number;
+  lastEventId?: string | null;
+  recordedAt: string;
+  metadata?: {
+    runId?: string;
+    runbookHref?: string;
+    supportHref?: string;
+  };
+}
+
+export const logReplayGapState = async (
+  payload: ReplayGapStateLogPayload,
+  options?: ReplayGapAuditOptions,
+) => {
+  const maxAttempts = options?.maxAttempts ?? 3;
+  const waitFn = options?.wait ?? sleep;
+  const logger = options?.logger ?? console;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    try {
+      await httpClient.post('/audit/logReplayGapState', payload);
+      return;
+    } catch (error) {
+      logger.warn?.('Replay gap state log failed. Retrying...', error);
+      if (attempt === maxAttempts) {
+        logger.error?.('Replay gap state log aborted after max retries.', error);
+        throw error;
+      }
+      const delay = 500 * 2 ** (attempt - 1);
+      await waitFn(delay);
+    }
+  }
+};

@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import styled from '@emotion/styled';
 
 import { Button, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
@@ -9,9 +9,10 @@ import type { PatientUpsertMode } from '@/features/patients/hooks/usePatientUpse
 import { usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import type { PatientDetail, PatientSummary } from '@/features/patients/types/patient';
 import { useVisitHistory } from '@/features/reception/hooks/useVisitHistory';
-import { recordOperationEvent } from '@/libs/audit';
+import { logReceptionAction, recordOperationEvent } from '@/libs/audit';
+import type { AuthSession } from '@/libs/auth/auth-types';
 
-export type ReceptionSidebarTab = 'reception' | 'patient' | 'history';
+export type ReceptionSidebarTab = 'reception' | 'patient' | 'history' | 'danger';
 
 interface CallState {
   pendingId: number | null;
@@ -23,6 +24,7 @@ export interface ReceptionSidebarContentProps {
   visit: PatientVisitSummary | null;
   patientSummary: PatientSummary | null;
   patientId: string | null;
+  session: AuthSession | null;
   activeTab: ReceptionSidebarTab;
   onTabChange: (tab: ReceptionSidebarTab) => void;
   onClose: () => void;
@@ -174,6 +176,45 @@ const Feedback = styled.div<{ $tone: 'info' | 'danger' }>`
   background: ${({ theme, $tone }) =>
     $tone === 'danger' ? theme.palette.dangerSubtle : theme.palette.surfaceMuted};
   color: ${({ theme, $tone }) => ($tone === 'danger' ? theme.palette.danger : theme.palette.text)};
+`;
+
+const DangerPanel = styled(SurfaceCard)`
+  display: grid;
+  gap: 12px;
+`;
+
+const DangerGuide = styled.p`
+  margin: 0;
+  color: ${({ theme }) => theme.palette.textMuted};
+  font-size: 0.9rem;
+`;
+
+const DangerChecklist = styled.div`
+  display: grid;
+  gap: 8px;
+`;
+
+const DangerChecklistItem = styled.label`
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 0.9rem;
+  color: ${({ theme }) => theme.palette.text};
+`;
+
+const DangerChecklistInput = styled.input`
+  margin-top: 3px;
+`;
+
+const DangerButtonRow = styled.div`
+  display: flex;
+  justify-content: flex-end;
+`;
+
+const DangerBadgeRow = styled.div`
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
 `;
 
 const HistoryCard = styled(SurfaceCard)`
@@ -396,6 +437,7 @@ export const ReceptionSidebarContent = ({
   visit,
   patientSummary,
   patientId,
+  session,
   activeTab,
   onTabChange,
   onClose,
@@ -424,6 +466,14 @@ export const ReceptionSidebarContent = ({
 }: ReceptionSidebarContentProps) => {
   const resolvedPatientId =
     patientId ?? patientSummary?.patientId ?? visit?.patientId ?? null;
+
+  const [dangerIntent, setDangerIntent] = useState('');
+  const [dangerCheckedPatient, setDangerCheckedPatient] = useState(false);
+  const [dangerCheckedConfirmation, setDangerCheckedConfirmation] = useState(false);
+  const [dangerLogging, setDangerLogging] = useState(false);
+  const [dangerFeedback, setDangerFeedback] = useState<{ tone: 'info' | 'danger'; message: string } | null>(
+    null,
+  );
 
   const visitReferenceDate = visit?.visitDate ?? patientSummary?.lastVisitDate ?? undefined;
   const visitHistoryQuery = useVisitHistory(resolvedPatientId ?? undefined, visitReferenceDate);
@@ -457,6 +507,17 @@ export const ReceptionSidebarContent = ({
     }
   }, [activeTab, resolvedPatientId, visit, onTabChange]);
 
+  useEffect(() => {
+    setDangerIntent('');
+    setDangerCheckedPatient(false);
+    setDangerCheckedConfirmation(false);
+    setDangerFeedback(null);
+  }, [visit?.visitId]);
+
+  const trimmedDangerIntent = dangerIntent.trim();
+  const isDangerChecklistComplete =
+    dangerCheckedPatient && dangerCheckedConfirmation && trimmedDangerIntent.length > 0;
+
   const handleSelectTab = useCallback(
     (tab: ReceptionSidebarTab) => {
       if (tab === activeTab) {
@@ -481,6 +542,45 @@ export const ReceptionSidebarContent = ({
     });
     onClose();
   }, [onClose, resolvedPatientId, visit]);
+
+  const handleDangerConfirm = useCallback(() => {
+    if (!visit) {
+      return;
+    }
+    if (!isDangerChecklistComplete) {
+      setDangerFeedback({
+        tone: 'danger',
+        message: '2段階確認と操作意図を記入すると Danger 操作を開けます。',
+      });
+      return;
+    }
+    setDangerLogging(true);
+    try {
+      logReceptionAction(
+        'danger_tab_two_step_confirmation',
+        'VisitSidebar Danger タブで二段階確認を完了しました',
+        {
+          visitId: visit.visitId,
+          patientId: visit.patientId,
+          intentMemo: trimmedDangerIntent,
+          evidencePath:
+            'docs/server-modernization/phase2/operations/logs/20251129T150500Z-reception.md',
+          runId: session?.runId,
+        },
+      );
+      setDangerFeedback({
+        tone: 'info',
+        message: '監査ログに意図を記録しました。詳細操作を開いてください。',
+      });
+      onOpenManage(visit);
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : '監査ログの記録に失敗しました。再試行してください。';
+      setDangerFeedback({ tone: 'danger', message });
+    } finally {
+      setDangerLogging(false);
+    }
+  }, [isDangerChecklistComplete, onOpenManage, session?.runId, trimmedDangerIntent, visit]);
 
   const handleToggleCallClick = useCallback(async () => {
     if (!visit) {
@@ -868,11 +968,81 @@ export const ReceptionSidebarContent = ({
     );
   };
 
+  const renderDangerTab = () => {
+    if (!visit) {
+      return (
+        <EmptyState role="note" id={panelId('danger')} aria-labelledby={tabId('danger')}>
+          <strong>受付情報が選択されていません。</strong>
+          <span>Reception 一覧から受付を選択すると危険操作タブが有効になります。</span>
+        </EmptyState>
+      );
+    }
+
+    return (
+      <TabPanel
+        role="tabpanel"
+        id={panelId('danger')}
+        aria-labelledby={tabId('danger')}
+        aria-live="polite"
+      >
+        <DangerPanel tone="danger" padding="lg">
+          <SectionTitle>Danger 操作と監査ログ</SectionTitle>
+          <DangerBadgeRow>
+            <StatusBadge tone="danger">RUN_ID: {session?.runId ?? '未設定'}</StatusBadge>
+            <StatusBadge tone="danger">証跡: 20251129T150500Z</StatusBadge>
+          </DangerBadgeRow>
+          <DangerGuide>
+            Danger タブでは患者情報・意図・監査ログをまとめて再確認し、`logReceptionAction` に RUN_ID を添えて
+            記録します。チェックボックスと意図メモをすべて満たすと詳細操作ダイアログが開きます。
+          </DangerGuide>
+          <DangerChecklist>
+            <DangerChecklistItem>
+              <DangerChecklistInput
+                type="checkbox"
+                checked={dangerCheckedPatient}
+                onChange={(event) => setDangerCheckedPatient(event.currentTarget.checked)}
+              />
+              <span>受付/患者ID・担当医・状態を再確認し、診察中/会計中でないことを確認しました。</span>
+            </DangerChecklistItem>
+            <DangerChecklistItem>
+              <DangerChecklistInput
+                type="checkbox"
+                checked={dangerCheckedConfirmation}
+                onChange={(event) => setDangerCheckedConfirmation(event.currentTarget.checked)}
+              />
+              <span>行おうとしている操作の意図と影響を理解し、関係者に通知済みです。</span>
+            </DangerChecklistItem>
+          </DangerChecklist>
+          <TextArea
+            label="危険操作の意図 (監査ログ用)"
+            value={dangerIntent}
+            onChange={(event) => setDangerIntent(event.currentTarget.value)}
+            rows={3}
+            description="ここに記入した内容が `logReceptionAction` の metadata.intentMemo に含まれます"
+          />
+          {dangerFeedback ? <Feedback $tone={dangerFeedback.tone}>{dangerFeedback.message}</Feedback> : null}
+          <DangerButtonRow>
+            <Button
+              type="button"
+              variant="danger"
+              onClick={handleDangerConfirm}
+              disabled={!isDangerChecklistComplete || dangerLogging}
+              isLoading={dangerLogging}
+            >
+              詳細操作を開く
+            </Button>
+          </DangerButtonRow>
+        </DangerPanel>
+      </TabPanel>
+    );
+  };
+
   const tabs = useMemo(() => {
     const base: { key: ReceptionSidebarTab; label: string; disabled: boolean }[] = [
       { key: 'reception', label: '受付', disabled: !visit },
       { key: 'patient', label: '患者', disabled: false },
       { key: 'history', label: '履歴', disabled: !resolvedPatientId },
+      { key: 'danger', label: 'Danger', disabled: !visit },
     ];
     return base;
   }, [resolvedPatientId, visit]);
@@ -911,7 +1081,9 @@ export const ReceptionSidebarContent = ({
         ? renderReceptionTab()
         : activeTab === 'history'
           ? renderHistoryTab()
-          : renderPatientTab()}
+          : activeTab === 'danger'
+            ? renderDangerTab()
+            : renderPatientTab()}
     </Container>
   );
 };

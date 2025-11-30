@@ -15,7 +15,7 @@ import {
 } from '@/features/schedule/api/schedule-document-api';
 import { ScheduleReservationDialog } from '@/features/schedule/components/ScheduleReservationDialog';
 import { useAuth } from '@/libs/auth';
-import { recordOperationEvent } from '@/libs/audit';
+import { recordOperationEvent, logChartsAction, logScheduleAction } from '@/libs/audit';
 import { formatDataSourceTransition, getDataSourceStatus, type TooltipFields } from '@/libs/tooltipFields';
 import { hasOpenBit } from '@/features/charts/utils/visit-state';
 
@@ -151,6 +151,10 @@ const statusTones: Record<ScheduleStatus, 'neutral' | 'info' | 'warning'> = {
   inProgress: 'warning',
 };
 
+const SCHEDULE_EVIDENCE = 'docs/server-modernization/phase2/operations/logs/20251129T163000Z-schedule.md#facilityschedule';
+const CHART_LINK_EVIDENCE =
+  'docs/server-modernization/phase2/operations/logs/20251129T163000Z-schedule.md#facilityschedule-chart-link';
+
 const formatDateInput = (date: Date) => date.toISOString().slice(0, 10);
 
 const formatTime = (iso: string) => {
@@ -263,6 +267,9 @@ const today = formatDateInput(new Date());
 export const FacilitySchedulePage = () => {
   const navigate = useNavigate();
   const { session } = useAuth();
+  const actorId = session?.credentials.userId ?? 'unknown';
+  const facilityId = session?.credentials.facilityId ?? 'unknown';
+  const actorRole = session?.userProfile?.roles?.join(', ') ?? 'unknown';
   const [selectedDate, setSelectedDate] = useState<string>(today);
   const [doctorFilter, setDoctorFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState<'all' | ScheduleStatus>('all');
@@ -417,9 +424,23 @@ export const FacilitySchedulePage = () => {
   };
 
   const handleOpenChart = (entry: FacilityScheduleEntry) => {
-    if (entry.visitId) {
-      navigate(`/charts/${entry.visitId}`);
+    if (!entry.visitId) {
+      return;
     }
+    logChartsAction(
+      'facility_schedule_chart_link',
+      '施設スケジュールからカルテを開きました',
+      {
+        visitId: entry.visitId,
+        patientId: entry.patientId,
+        runId: scheduleTooltipFields.runId,
+        facilityId,
+        actorId,
+        actorRole,
+        evidencePath: CHART_LINK_EVIDENCE,
+      },
+    );
+    navigate(`/charts/${entry.visitId}`);
   };
 
   type CreateDocumentArgs = {
@@ -448,6 +469,22 @@ export const FacilitySchedulePage = () => {
       const patientLabel = getPatientDisplayName(entry);
       setDialogFeedback('カルテ文書を生成しました。受付一覧を確認してください。');
       setPageNotice(`${patientLabel} の予約からカルテ文書を生成しました。`);
+      logScheduleAction(
+        'schedule_document_create',
+        '予約連動カルテを生成しました',
+        {
+          visitId: entry.visitId,
+          patientId: entry.patientId,
+          scheduleDate,
+          sendClaim,
+          count,
+          runId: scheduleTooltipFields.runId,
+          actorId,
+          actorRole,
+          facilityId,
+          evidencePath: SCHEDULE_EVIDENCE,
+        },
+      );
       recordOperationEvent(
         'reception',
         'info',
@@ -466,6 +503,23 @@ export const FacilitySchedulePage = () => {
     onError: (error, { entry, sendClaim, scheduleDate }) => {
       const message = error instanceof Error ? error.message : String(error);
       setDialogError(`カルテ文書の生成に失敗しました: ${message}`);
+      logScheduleAction(
+        'schedule_document_create',
+        '予約連動カルテの生成に失敗しました',
+        {
+          visitId: entry.visitId,
+          patientId: entry.patientId,
+          scheduleDate,
+          sendClaim,
+          error: message,
+          runId: scheduleTooltipFields.runId,
+          actorId,
+          actorRole,
+          facilityId,
+          evidencePath: SCHEDULE_EVIDENCE,
+        },
+        'warning',
+      );
       recordOperationEvent(
         'reception',
         'warning',
@@ -493,6 +547,22 @@ export const FacilitySchedulePage = () => {
     onSuccess: (_, { entry, scheduleDate }) => {
       const patientLabel = getPatientDisplayName(entry);
       setPageNotice(`${patientLabel} の予約を削除しました。`);
+      logScheduleAction(
+        'schedule_reservation_delete',
+        '施設スケジュールから予約を削除しました',
+        {
+          visitId: entry.visitId,
+          patientId: entry.patientId,
+          scheduleDate,
+          actionType: 'danger-delete',
+          runId: scheduleTooltipFields.runId,
+          actorId,
+          actorRole,
+          facilityId,
+          evidencePath: SCHEDULE_EVIDENCE,
+        },
+        'warning',
+      );
       recordOperationEvent(
         'reception',
         'info',
@@ -510,6 +580,23 @@ export const FacilitySchedulePage = () => {
     onError: (error, { entry, scheduleDate }) => {
       const message = error instanceof Error ? error.message : String(error);
       setDialogError(`予約の削除に失敗しました: ${message}`);
+      logScheduleAction(
+        'schedule_reservation_delete_failed',
+        '施設スケジュールの予約削除に失敗しました',
+        {
+          visitId: entry.visitId,
+          patientId: entry.patientId,
+          scheduleDate,
+          actionType: 'danger-delete',
+          error: message,
+          runId: scheduleTooltipFields.runId,
+          actorId,
+          actorRole,
+          facilityId,
+          evidencePath: SCHEDULE_EVIDENCE,
+        },
+        'warning',
+      );
       recordOperationEvent(
         'reception',
         'warning',
@@ -547,6 +634,9 @@ export const FacilitySchedulePage = () => {
     assignedOnly && !doctorOrcaId
       ? '担当医のみ表示は ORCA 担当医コードが未設定のため無効です。'
       : '担当医や状態で絞り込み、受付状況に応じた準備を進められます。';
+  const activeEntryStatus = selectedEntry ? classifyStatus(selectedEntry) : 'scheduled';
+  const activeStatusLabel = statusLabels[activeEntryStatus];
+  const activeStatusTone = statusTones[activeEntryStatus];
 
   return (
     <PageContainer>
@@ -770,6 +860,9 @@ export const FacilitySchedulePage = () => {
           isCreateDisabled={!userModelId}
           feedbackMessage={dialogFeedback}
           errorMessage={dialogError}
+          runId={scheduleTooltipFields.runId}
+          statusLabel={activeStatusLabel}
+          statusTone={activeStatusTone}
         />
       ) : null}
     </PageContainer>

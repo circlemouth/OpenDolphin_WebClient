@@ -46,7 +46,7 @@ import type { ComponentProps } from 'react';
 const RIGHT_CONSOLE_COLLAPSE_BREAKPOINT = 1000;
 const RIGHT_CONSOLE_AUTO_EXPAND_BREAKPOINT = 1400;
 
-import { Button, ReplayGapBanner, Stack, SurfaceCard, TextArea, TextField } from '@/components';
+import { Button, ChartSyncStatus, ReplayGapBanner, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
 import { recordOperationEvent } from '@/libs/audit';
 import { CareMapPanel } from '@/features/charts/components/CareMapPanel';
 import { DocumentTimelinePanel } from '@/features/charts/components/DocumentTimelinePanel';
@@ -89,6 +89,12 @@ import { usePatientDetail } from '@/features/patients/hooks/usePatientDetail';
 import { patientKarteQueryKey, usePatientKarte } from '@/features/patients/hooks/usePatientKarte';
 import { defaultKarteFromDate, formatRestDate } from '@/features/patients/utils/rest-date';
 import { useAuth } from '@/libs/auth';
+import {
+  ADMIN_CHARTS_LOG_ADMIN_ANCHOR,
+  ADMIN_CHARTS_LOG_CHARTS_ANCHOR,
+  ADMIN_CHARTS_RUN_ID,
+  ADMIN_CHARTS_SYSTEM_PATH,
+} from '@/features/administration/constants/adminChartsSync';
 import { fetchOrcaOrderModules } from '@/features/charts/api/orca-api';
 import { PatientHeaderBar } from '@/features/charts/components/layout/PatientHeaderBar';
 import { ProblemListCard } from '@/features/charts/components/layout/ProblemListCard';
@@ -1412,7 +1418,78 @@ interface OrderResultsColumnProps {
   onHoverExpand: () => void;
   onHoverLeave: () => void;
   consoleProps: OrderConsoleBaseProps;
+  onOpenAdministration: () => void;
 }
+
+const ChartsShortcutCard = styled(SurfaceCard)`
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid ${({ theme }) => theme.palette.primaryStrong};
+  background: ${({ theme }) => theme.palette.surfaceMuted};
+`;
+
+const ChartsShortcutHeader = styled.div`
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+`;
+
+const ChartsShortcutActions = styled(Stack)`
+  width: 100%;
+  flex-wrap: wrap;
+`;
+
+interface ChartsAdminShortcutCardProps {
+  onOpenAdministration: () => void;
+}
+
+const ChartsAdminShortcutCard = ({ onOpenAdministration }: ChartsAdminShortcutCardProps) => (
+  <ChartsShortcutCard
+    data-run-id={ADMIN_CHARTS_RUN_ID}
+    aria-label="Administration RUN_ID shortcut"
+  >
+    <ChartsShortcutHeader>
+      <div>
+        <strong>Administration と Charts の RUN_ID を共有</strong>
+        <p style={{ margin: '4px 0 0', color: '#475569', fontSize: '0.9rem' }}>
+          このカードから SystemPreferences/UserAdministration と同じ RUN_ID=20251129T105243Z のログへ遷移できます。
+        </p>
+      </div>
+      <StatusBadge tone="info" size="sm">
+        {ADMIN_CHARTS_RUN_ID}
+      </StatusBadge>
+    </ChartsShortcutHeader>
+    <ChartsShortcutActions gap={8} direction="row">
+      <Button variant="secondary" size="sm" onClick={onOpenAdministration}>
+        管理画面を開く
+      </Button>
+      <Button
+        as="a"
+        variant="ghost"
+        size="sm"
+        href={ADMIN_CHARTS_LOG_CHARTS_ANCHOR}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Charts ログ (deep link)
+      </Button>
+      <Button
+        as="a"
+        variant="ghost"
+        size="sm"
+        href={ADMIN_CHARTS_LOG_ADMIN_ANCHOR}
+        target="_blank"
+        rel="noreferrer"
+      >
+        Danger 操作ログ
+      </Button>
+    </ChartsShortcutActions>
+  </ChartsShortcutCard>
+);
 
 const OrderResultsColumn = ({
   collapsed,
@@ -1421,16 +1498,20 @@ const OrderResultsColumn = ({
   onHoverExpand,
   onHoverLeave,
   consoleProps,
+  onOpenAdministration,
 }: OrderResultsColumnProps) => (
   <RightRail>
-    <OrderConsole
-      collapsed={collapsed}
-      forceCollapse={forceCollapse}
-      onToggleCollapse={onToggleCollapse}
-      onHoverExpand={onHoverExpand}
-      onHoverLeave={onHoverLeave}
-      {...consoleProps}
-    />
+    <Stack gap={12} style={{ width: '100%', height: '100%', flex: 1 }}>
+      <ChartsAdminShortcutCard onOpenAdministration={onOpenAdministration} />
+      <OrderConsole
+        collapsed={collapsed}
+        forceCollapse={forceCollapse}
+        onToggleCollapse={onToggleCollapse}
+        onHoverExpand={onHoverExpand}
+        onHoverLeave={onHoverLeave}
+        {...consoleProps}
+      />
+    </Stack>
   </RightRail>
 );
 
@@ -4579,6 +4660,14 @@ export const ChartsPage = () => {
       aria-busy={chartsReplayGap.ariaBusy}
     >
       <ReplayGapBanner {...chartsReplayGap.banner} placement="inline" />
+      <ChartSyncStatus
+        gapDetails={chartsReplayGap.gapDetails}
+        manualResync={chartsReplayGap.manualResync}
+        manualResyncDisabled={chartsReplayGap.manualResyncDisabled}
+        clientUuid={chartsReplayGap.clientUuid}
+        runbookHref={chartsReplayGap.runbookHref}
+        supportHref={chartsReplayGap.supportHref}
+      />
       <PatientHeaderBar
         ref={chiefComplaintRef}
         patient={selectedVisit}
@@ -4716,6 +4805,9 @@ export const ChartsPage = () => {
               setRightPaneCollapsed(true);
             }
           }}
+          onOpenAdministration={() =>
+            navigate(`${ADMIN_CHARTS_SYSTEM_PATH}?runId=${ADMIN_CHARTS_RUN_ID}`)
+          }
           consoleProps={orderConsoleProps}
         />
       </ContentGrid>

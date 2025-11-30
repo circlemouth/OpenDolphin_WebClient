@@ -1,3 +1,5 @@
+import { getCurrentRunId } from '@/libs/runId';
+
 export interface DataSourceTransition {
   from?: string;
   to?: string;
@@ -26,16 +28,10 @@ export interface DataSourceStatus {
 
 const isTruthyFlag = (value?: string) => value === '1' || value?.toLowerCase() === 'true';
 
-const getRuntimeRunId = () =>
-  import.meta.env.VITE_RUN_ID ??
-  import.meta.env.VITE_ORCA_MASTER_BRIDGE_RUN_ID ??
-  import.meta.env.VITE_ORCA_MASTER_RUN_ID ??
-  'local-dev';
-
 export const getDataSourceStatus = (): DataSourceStatus => {
   const mswDisabled = isTruthyFlag(import.meta.env.VITE_DISABLE_MSW);
   const proxyTarget = Boolean(import.meta.env.VITE_DEV_PROXY_TARGET);
-  const runId = getRuntimeRunId();
+  const runId = getCurrentRunId();
 
   if (mswDisabled) {
     return {

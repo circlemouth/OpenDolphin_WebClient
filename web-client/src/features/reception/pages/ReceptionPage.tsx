@@ -4,7 +4,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query';
 import styled from '@emotion/styled';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
-import { Button, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
+import { Button, ChartSyncStatus, Stack, StatusBadge, SurfaceCard, TextArea, TextField } from '@/components';
 import { useSidebar } from '@/app/layout/SidebarContext';
 import { patientVisitsQueryKey, usePatientVisits } from '@/features/charts/hooks/usePatientVisits';
 import { hasOpenBit } from '@/features/charts/utils/visit-state';
@@ -1475,6 +1475,7 @@ export const ReceptionPage = () => {
         visit={selectedVisit}
         patientSummary={selectedPatientSummary}
         patientId={selectedPatientId}
+        session={session}
         activeTab={activeSidebarTab}
         onTabChange={setActiveSidebarTab}
         onClose={handleSidebarClose}
@@ -1529,6 +1530,7 @@ export const ReceptionPage = () => {
     selectedVisit,
     setActiveSidebarTab,
     setPatientFormMode,
+    session,
     temporaryDocumentPatientIds,
   ]);
 
@@ -1776,6 +1778,14 @@ export const ReceptionPage = () => {
           {receptionTransitionLabel ? <span>経路: {receptionTransitionLabel}</span> : null}
         </StatusBannerMeta>
       </StatusBanner>
+      <ChartSyncStatus
+        gapDetails={replayGapUi.gapDetails}
+        manualResync={replayGapUi.manualResync}
+        manualResyncDisabled={replayGapUi.manualResyncDisabled}
+        clientUuid={replayGapUi.clientUuid}
+        runbookHref={replayGapUi.runbookHref}
+        supportHref={replayGapUi.supportHref}
+      />
       <ContentGrid>
         <ReceptionColumn tone="muted">
           <ColumnHeader>
