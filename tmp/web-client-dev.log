@@ -6,3 +6,178 @@
   VITE v6.4.1  ready in 143 ms
 
   ➜  Local:   http://localhost:5173/
+2:37:19 PM [vite] (client) page reload src/mocks/browser.ts
+2:37:19 PM [vite] (client) page reload src/mocks/fixtures/apiStability.ts
+2:37:19 PM [vite] (client) page reload src/mocks/fixtures/orcaMaster.ts
+2:37:19 PM [vite] (client) page reload src/mocks/fixtures/charts.ts
+2:37:19 PM [vite] (client) page reload src/mocks/handlers/orcaMasterHandlers.ts
+2:37:19 PM [vite] (client) page reload src/mocks/handlers/chartHandlers.ts
+2:37:19 PM [vite] (client) page reload src/mocks/handlers/scheduleHandlers.ts
+2:37:19 PM [vite] (client) page reload src/mocks/handlers/index.ts
+2:37:19 PM [vite] (client) page reload src/main.tsx
+2:37:19 PM [vite] (client) hmr update /src/app/TraceErrorBoundary.tsx
+2:37:19 PM [vite] (client) hmr update /src/app/App.tsx
+2:37:19 PM [vite] (client) hmr update /src/app/layout/AppShell.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/app/router.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/patients/pages/PatientsPage.tsx, /src/features/patients/components/PatientEditorPanel.tsx, /src/features/charts/pages/ChartsPage.tsx, /src/features/reception/components/ReceptionSidebarContent.tsx, /src/features/charts/components/DiagnosisPanel.tsx, /src/features/charts/components/ObservationPanel.tsx, /src/features/charts/components/ClaimAdjustmentPanel.tsx, /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/replay-gap/ReplayGapContext.tsx, /src/features/charts/pages/ChartsPage.tsx, /src/features/reception/pages/ReceptionPage.tsx, /src/features/reception/components/BarcodeCheckInPanel.tsx, /src/features/patients/pages/PatientsPage.tsx, /src/features/patients/components/PatientEditorPanel.tsx, /src/features/reception/components/ReceptionSidebarContent.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/patients/pages/PatientsPage.tsx, /src/features/patients/components/PatientEditorPanel.tsx, /src/features/reception/pages/ReceptionPage.tsx, /src/features/charts/pages/ChartsPage.tsx, /src/features/reception/components/BarcodeCheckInPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/patients/components/PatientEditorPanel.tsx
+2:37:19 PM [vite] (client) page reload src/features/patients/components/patient-editor.schema.ts
+2:37:19 PM [vite] (client) page reload src/features/patients/hooks/usePatientKarte.ts
+2:37:19 PM [vite] (client) page reload src/features/patients/hooks/usePatientUpsert.ts
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/patients/pages/PatientsPage.tsx, /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/patients/api/karte-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx, /src/features/reception/components/BarcodeCheckInPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/patients/pages/PatientsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/replay-gap/ReplayGapContext.tsx
+2:37:19 PM [vite] (client) page reload src/features/replay-gap/useReplayGapController.ts
+2:37:19 PM [vite] (client) page reload src/features/replay-gap/replayGapAudit.ts
+2:37:19 PM [vite] (client) hmr update /src/features/schedule/components/ScheduleReservationDialog.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/schedule/pages/FacilitySchedulePage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/schedule/pages/FacilitySchedulePage.tsx
+2:37:19 PM [vite] (client) page reload src/features/schedule/api/facility-schedule-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/schedule/pages/FacilitySchedulePage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/auth/pages/LoginPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/layout/WorkSurface.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/DocumentTimelinePanel.tsx, /src/features/charts/components/ClaimAdjustmentPanel.tsx, /src/features/charts/components/SchemaEditorPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/CareMapPanel.tsx, /src/features/reception/components/AppointmentManager.tsx, /src/features/charts/components/MedicalCertificatesPanel.tsx, /src/features/charts/components/SchemaEditorPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/reception/pages/ReceptionPage.tsx, /src/features/reception/components/ReceptionSidebarContent.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/CareMapPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/SchemaEditorPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/MasudaSupportPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/OrderSetPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/StampLibraryPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/MedicalCertificatesPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/layout/WorkSurface.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/SchemaEditorPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/layout/PatientHeaderBar.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/OrcaOrderPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/OrcaOrderPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/MedicalCertificatesPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/DocumentTimelinePanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/LabResultsPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/StampLibraryPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/DocumentTimelinePanel.tsx, /src/features/charts/components/ClaimAdjustmentPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/ObservationPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/MasudaSupportPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/PatientDocumentsPanel.tsx, /src/features/charts/components/OrderSetPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/SafetySummaryCard.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/MiniSummaryDock.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/PatientMemoHistoryDialog.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/UnifiedSearchOverlay.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/WorkSurface.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/ShortcutOverlay.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/ProblemListCard.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/ClinicalReferencePanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/PatientHeaderBar.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/DiffMergeOverlay.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/StatusBar.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/ImageViewerOverlay.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/layout/OrderConsole.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/SchemaEditorPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/charts/components/DiagnosisPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/DocumentTimelinePanel.tsx, /src/features/charts/components/ClaimAdjustmentPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/DiagnosisPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/PatientDocumentsPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/OrderSetPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/ClaimAdjustmentPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/OrcaOrderPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/MedicalCertificatesPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/DocumentTimelinePanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/components/CareMapPanel.tsx
+2:37:19 PM [vite] (client) page reload src/features/charts/hooks/useInteractionCheck.ts
+2:37:19 PM [vite] (client) page reload src/features/charts/hooks/useOrcaMasterSearch.ts
+2:37:19 PM [vite] (client) page reload src/features/charts/hooks/useAttachmentContent.ts
+2:37:19 PM [vite] (client) page reload src/features/charts/hooks/useObservations.ts
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/reception/pages/ReceptionPage.tsx, /src/features/reception/components/BarcodeCheckInPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/charts/hooks/useLaboModules.ts
+2:37:19 PM [vite] (client) page reload src/features/charts/hooks/useDocInfos.ts
+2:37:19 PM [vite] (client) page reload src/features/charts/api/labo-api.ts
+2:37:19 PM [vite] (client) page reload src/features/charts/api/schema-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx, /src/features/reception/components/BarcodeCheckInPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/charts/api/observation-api.ts
+2:37:19 PM [vite] (client) page reload src/features/charts/api/letter-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx, /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/charts/api/stamp-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/charts/api/diagnosis-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/charts/api/attachment-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/charts/api/orca-source-resolver.ts
+2:37:19 PM [vite] (client) hmr update /src/features/charts/pages/ChartsPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/reception/components/BarcodeCheckInPanel.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/reception/components/ColumnConfigurator.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/reception/components/AppointmentManager.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/reception/components/ReceptionSidebarContent.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/reception/components/VisitManagementDialog.tsx
+2:37:19 PM [vite] (client) page reload src/features/reception/hooks/useVisitHistory.ts
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/reception/hooks/useAppointments.ts
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/reception/hooks/useReceptionCheckIn.ts
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/reception/api/visit-detail-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/reception/api/appointment-api.ts
+2:37:19 PM [vite] (client) hmr update /src/features/reception/pages/ReceptionPage.tsx
+2:37:19 PM [vite] (client) page reload src/features/administration/constants/adminChartsSync.ts
+2:37:19 PM [vite] (client) page reload src/observability/traceNotifications.ts
+2:37:19 PM [vite] (client) page reload src/observability/traceContext.ts
+2:37:19 PM [vite] (client) hmr update /src/components/StatusBadge.tsx
+2:37:19 PM [vite] (client) page reload src/libs/security/securityPolicies.ts
+2:37:19 PM [vite] (client) page reload src/libs/security/index.ts
+2:37:19 PM [vite] (client) page reload src/libs/security/csrf.ts
+2:37:19 PM [vite] (client) hmr update /src/libs/auth/RequireRole.tsx
+2:37:19 PM [vite] (client) page reload src/libs/auth/auth-headers.ts
+2:37:19 PM [vite] (client) page reload src/libs/auth/auth-storage.ts
+2:37:19 PM [vite] (client) page reload src/libs/auth/auth-context.tsx
+2:37:19 PM [vite] (client) hmr update /src/libs/auth/RequireAuth.tsx
+2:37:19 PM [vite] (client) page reload src/libs/auth/index.ts
+2:37:19 PM [vite] (client) hmr update /src/libs/auth/AuthProvider.tsx
+2:37:19 PM [vite] (client) page reload src/libs/auth/auth-types.ts
+2:37:19 PM [vite] (client) hmr update /src/libs/auth/AuthProvider.tsx
+2:37:19 PM [vite] (client) page reload src/libs/audit/auditTrail.ts
+2:37:19 PM [vite] (client) page reload src/libs/audit/index.ts
+2:37:19 PM [vite] (client) page reload src/libs/http/request-id.ts
+2:37:19 PM [vite] (client) page reload src/libs/http/index.ts
+2:37:19 PM [vite] (client) page reload src/libs/http/httpClient.ts
+2:37:19 PM [vite] (client) page reload src/libs/runId.ts
+2:37:19 PM [vite] (client) page reload src/libs/monitoring/performanceTracker.ts
+2:37:19 PM [vite] (client) page reload src/libs/monitoring/index.ts
+2:37:19 PM [vite] (client) page reload src/styles/theme.ts
+2:37:19 PM [vite] (client) hmr update /src/styles/GlobalStyle.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/SurfaceCard.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/ControlledTextField.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/Stack.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/ReplayGapBanner.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/StatusBadge.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/TextField.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/ChartSyncStatus.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/ReplayGapToast.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/TraceNoticeCenter.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/SelectField.tsx
+2:37:19 PM [vite] (client) page reload src/components/index.ts
+2:37:19 PM [vite] (client) hmr update /src/components/Button.tsx
+2:37:19 PM [vite] (client) hmr update /src/components/TextArea.tsx
+2:37:48 PM [vite] (client) page reload src/main.tsx
