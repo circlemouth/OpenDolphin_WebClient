@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>スクリーン棚卸 評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        box-shadow: 0 12px 24px rgba(31, 42, 48, 0.12);
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        flex: 1;
+        min-width: 270px;
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 16px;
+        background: linear-gradient(180deg, #ffffff 0%, #f5f8fb 100%);
+        position: relative;
+      }
+      .score-label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #3a4b53;
+        margin-bottom: 8px;
+      }
+      .score-value {
+        font-size: 32px;
+        font-weight: 700;
+        color: #102c51;
+      }
+      .score-medal {
+        font-size: 24px;
+        margin-top: 4px;
+      }
+      .score-note {
+        margin-top: 8px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #c3d4d8;
+        border: 1px solid #aabfc5;
+        color: #1f2a30;
+        border-radius: 4px;
+        line-height: 1.3;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #d1f5db;
+        border-color: #a7e5c3;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: block;
+        font-size: 13px;
+        color: #253240;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(110px, 1fr));
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .hex {
+        background: #f0f6fb;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        padding: 8px;
+        text-align: center;
+        font-size: 11px;
+        color: #1f2a30;
+        box-shadow: inset 0 0 0 1px rgba(31, 42, 48, 0.08);
+      }
+      .hex-score {
+        display: block;
+        margin-top: 4px;
+        font-weight: 700;
+        font-size: 13px;
+      }
+      .indicator-justifications {
+        margin-top: 16px;
+      }
+      .indicator-justifications dt {
+        margin-top: 12px;
+        font-weight: 700;
+      }
+      .indicator-justifications dd {
+        margin: 4px 0 0;
+        margin-left: 0;
+        color: #2c3a40;
+        font-size: 13px;
+      }
+      details summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: #1f2a30;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.45;
+        color: #1f2a30;
+        background: #f4f7fb;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">[webclient screens renovation plan] 画面棚卸 評価</h1>
+        <p class="monitor-description">監視対象 task-1764543338813-a4d625 / task-1764543344089-be316d のコミット歴と差分（RUN_ID=20251201T053420Z の参照チェーン文書化）を再確認し、各 AI の計画性能とドキュメント整備を評価しました。</p>
+      </header>
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-label">claude code / task-1764543338813-a4d625</div>
+          <div class="score-value">536 / 600</div>
+          <div class="score-medal">🏆🥇</div>
+          <p class="score-note">計画・網羅・ドキュメント・トレース・遵守・伝達の6指標合計</p>
+        </div>
+        <div class="score-card">
+          <div class="score-label">claude code / task-1764543344089-be316d</div>
+          <div class="score-value">508 / 600</div>
+          <div class="score-medal">🏆🥈</div>
+          <p class="score-note">同6指標での管理状態とタスク状態更新</p>
+        </div>
+      </section>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1764543338813-a4d625</th>
+            <th>claude code / task-1764543344089-be316d</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-01 07:31</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">RUN_ID=20251201T053420Z を軸に参照チェーンと画面計画を整理し、次アクションと証跡リンクを明記。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex"><span>計画の緻密性</span><span class="hex-score">88点</span></div>
+                <div class="hex"><span>網羅性</span><span class="hex-score">85点</span></div>
+                <div class="hex"><span>ドキュメント</span><span class="hex-score">90点</span></div>
+                <div class="hex"><span>トレース性</span><span class="hex-score">95点</span></div>
+                <div class="hex"><span>遵守性</span><span class="hex-score">92点</span></div>
+                <div class="hex"><span>成果伝達</span><span class="hex-score">86点</span></div>
+              </div>
+              <div class="indicator-justifications">
+                <dl>
+                  <dt>計画の緻密性</dt>
+                  <dd>docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md:1-22 で AGENTS → README → INDEX → マネージャー資料の追跡と画面候補を明示。</dd>
+                  <dt>網羅性</dt>
+                  <dd>同ファイル 11-22 行で Login/Receptions/Chart Entry/Chart Admin のドラフトを振り返り、Patients/Schedule を未計画候補として補完。</dd>
+                  <dt>ドキュメント</dt>
+                  <dd>同 23-37 行に DOC_STATUS/README/マネージャー連携と <code>src/webclient_screens_plan/00_RUN_IDと参照チェーン整理.md:30-37</code> の証跡構成が並び、導線が整理されている。</dd>
+                  <dt>トレース性</dt>
+                  <dd>RUN_ID=20251201T053420Z を明記し、以後の証跡にも同じ ID を再利用するよう求めている。</dd>
+                  <dt>遵守性</dt>
+                  <dd>同 5-28 行で Python 実行禁止、server/ レガシー資産非改変、ORCA 試験制限を再確認し、AGENTS 指示を落とし込む。</dd>
+                  <dt>成果伝達</dt>
+                  <dd>次アクションに README/マネージャー文書/ux ポリシーとのリンク更新を含め、周知と証跡公開を促している。</dd>
+                </dl>
+              </div>
+              <details>
+                <summary class="details-toggle">git diff snapshot</summary>
+                <pre>commit f7ff5c2d Document RUN_ID chain for screen planning
++ docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md
++ src/webclient_screens_plan/00_RUN_IDと参照チェーン整理.md</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">.kamui/tasks-state.json を更新して棚卸しタスクを完了済みと記録し、YAML 起点の依存関係を管理。</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex"><span>計画の緻密性</span><span class="hex-score">82点</span></div>
+                <div class="hex"><span>網羅性</span><span class="hex-score">80点</span></div>
+                <div class="hex"><span>ドキュメント</span><span class="hex-score">88点</span></div>
+                <div class="hex"><span>トレース性</span><span class="hex-score">90点</span></div>
+                <div class="hex"><span>遵守性</span><span class="hex-score">85点</span></div>
+                <div class="hex"><span>成果伝達</span><span class="hex-score">83点</span></div>
+              </div>
+              <div class="indicator-justifications">
+                <dl>
+                  <dt>計画の緻密性</dt>
+                  <dd><code>.kamui/tasks-state.json:3-46</code> で [webclient screens renovation plan] 00_RUN_ID... を completed に切り替え、作業ウィンドウを明示。</dd>
+                  <dt>網羅性</dt>
+                  <dd>同ファイル 36-41 行の schedule/dependency で、次フェーズ（screens 3 文書 / API マッピング）との依存を繋ぎ込み。</dd>
+                  <dt>ドキュメント</dt>
+                  <dd>yamlSource に <code>src/webclient_screens_plan/00_RUN_IDと参照チェーン整理.md</code> を指すことで、実成果とメタ情報が連動。</dd>
+                  <dt>トレース性</dt>
+                  <dd>createdAt/updatedAt のタイムスタンプ（11-12 行）と status=completed を保持し、git log 9f83a7a7 で起票。</dd>
+                  <dt>遵守性</dt>
+                  <dd>requiresTerminal=true / createWorktree=false などで AGENTS の実行制約をファイルで明文化。</dd>
+                  <dt>成果伝達</dt>
+                  <dd>labels/description 部分の本文で参照チェーンと禁止事項を再掲し、監査担当への共有が可能。</dd>
+                </dl>
+              </div>
+              <details>
+                <summary class="details-toggle">git diff snapshot</summary>
+                <pre>commit 9f83a7a7 Mark screens task completed
++ .kamui/tasks-state.json (status/completed + YAML Id metadata)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
