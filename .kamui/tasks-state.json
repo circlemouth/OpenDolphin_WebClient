@@ -1,1 +1,47 @@
-[]
+[
+  {
+    "id": "task-yaml-wrjvz0-src-webclient-sc",
+    "name": "[webclient screens renovation plan] 00_RUN_IDと参照チェーン整理\n期間: 12/01 09:00 - 12/02 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 00 RUN_ID と参照チェーン整理\n\n- RUN_ID=`20251201T053420Z` で AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → manager資料の参照チェーンを統一し、すべての証跡に記録。\n- docs/web-client/planning/phase2/screens 以下に伝えられた 3 本の文書を探索し、存在なしの場合はどの画面で改めて棚卸すべきかを明示する（現状 Login 画面のみのため画面拡張を優先）。\n- web-client 側の制約（Python 実行禁止、server/ を触らない、Legacy 資産は参照専用）と ORCA 接続ルールを再確認し、チームへ展開。\n\nYAML ID: src/webclient_screens_plan/00_RUN_IDと参照チェーン整理.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-11-30T22:22:42.583Z",
+    "updatedAt": "2025-11-30T23:45:00.000Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-wrjvz0-src-webclient-sc",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-screens-renovation-plan-d40c9bd648::src/webclient_screens_plan/00_RUN_IDと参照チェーン整理.md",
+      "appId": "custom-app-webclient-screens-renovation-plan-d40c9bd648",
+      "datasetLabel": "webclient screens renovation plan",
+      "pathId": "src/webclient_screens_plan/00_RUN_IDと参照チェーン整理.md",
+      "fileName": "webclient-screens-renovation-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-screens-renovation-plan.yaml",
+      "addedAt": "2025-11-30T22:22:39.743Z"
+    },
+    "labels": [
+      "webclient screens renovation plan",
+      "src / webclient_screens_plan"
+    ],
+    "dependencies": [],
+    "schedule": {
+      "startMs": 1764547200000,
+      "endMs": 1764633600000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_screens_plan",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 00 RUN_ID と参照チェーン整理\n\n- RUN_ID=`20251201T053420Z` で AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → manager資料の参照チェーンを統一し、すべての証跡に記録。\n- docs/web-client/planning/phase2/screens 以下に伝えられた 3 本の文書を探索し、存在なしの場合はどの画面で改めて棚卸すべきかを明示する（現状 Login 画面のみのため画面拡張を優先）。\n- web-client 側の制約（Python 実行禁止、server/ を触らない、Legacy 資産は参照専用）と ORCA 接続ルールを再確認し、チームへ展開。"
+  }
+]
