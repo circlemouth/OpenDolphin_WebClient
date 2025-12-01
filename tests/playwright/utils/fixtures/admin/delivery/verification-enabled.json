@@ -1,0 +1,8 @@
+{
+  "runId": "20251202T090000Z",
+  "verified": true,
+  "source": "mock",
+  "deliveredAt": "2025-12-02T09:00:10.000Z",
+  "deliveryId": "config-20251202-verified",
+  "note": "x-verify-admin-delivery=1 で検証モードを有効化したレスポンス"
+}

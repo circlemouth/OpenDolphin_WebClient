@@ -3,6 +3,8 @@ import type { ChangeEvent, FormEvent } from 'react';
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 
+import { httpFetch } from './libs/http/httpClient';
+
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
 const toHex = (buffer: ArrayBuffer) => {
@@ -225,13 +227,13 @@ const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
   const passwordMd5 = await hashPasswordMd5(payload.password);
   const clientUuid = createClientUuid(payload.clientUuid);
 
-  const headers = new Headers({
+  const headers: HeadersInit = {
     userName: `${payload.facilityId}:${payload.userId}`,
     password: passwordMd5,
     clientUUID: clientUuid,
-  });
+  };
 
-  const response = await fetch(formatEndpoint(payload.facilityId, payload.userId), {
+  const response = await httpFetch(formatEndpoint(payload.facilityId, payload.userId), {
     method: 'GET',
     headers,
     credentials: 'include',

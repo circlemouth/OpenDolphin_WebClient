@@ -3,14 +3,32 @@
 > **参照開始順**
 > 1. `AGENTS.md`
 > 2. `docs/web-client/README.md`（Web Client Hub）
-> 3. `docs/web-client/ux/ux-documentation-plan.md` → `ux/reception-schedule-ui-policy.md` / `ux/patients-admin-ui-policy.md` / `ux/charts-claim-ui-policy.md`（`ux/legacy/` は背景資料）
-> 4. `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`
+> 3. `docs/server-modernization/phase2/INDEX.md`
+> 4. `docs/web-client/ux/ux-documentation-plan.md` → `ux/reception-schedule-ui-policy.md` / `ux/patients-admin-ui-policy.md` / `ux/charts-claim-ui-policy.md`（`ux/legacy/` は背景資料）
+> 5. `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`
 >
 > **報告テンプレ（RUN_ID / 証跡パス / DOC_STATUS 行）**
 > - RUN_ID: `RUN_ID=<ID>`（ドキュメントのみは `RUN_ID=NA`）
 > - 証跡パス: `docs/web-client/...`, `artifacts/...`, `logs/...`（更新したカテゴリを列挙）
 > - DOC_STATUS 行: `docs/web-client/planning/phase2/DOC_STATUS.md`「Web クライアント UX/Features」行の更新内容
 >
+> RUN_ID=`20251201T053420Z` で参照チェーン（AGENTS→README→Phase2 INDEX→本チェックリスト）を棚卸し済み。証跡: `docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md`。
+> RUN_ID=`20251202T090000Z` で受付/カルテ/管理の screens 棚卸しを開始。証跡: `docs/server-modernization/phase2/operations/logs/20251202T090000Z-screens.md`（README/DOC_STATUS と同期）。
+> RUN_ID=`20251202T090000Z` の棚卸し内容を `docs/web-client/ux/` 配下の UX 草稿（Reception/Charts/Patients+Administration）へ移植済み。証跡ログと同 RUN_ID を保持する。
+> RUN_ID=`20251202T090000Z` で UX 草稿に検証観点・未決事項メモを追記し、README/DOC_STATUS/証跡ログの RUN_ID を同期済み。
+> RUN_ID=`20251202T090000Z` で UX 草稿に Playwright シナリオ案と配信タイミング検証計画を追記し、README/DOC_STATUS/証跡ログと整合。
+> RUN_ID=`20251202T090000Z` で UX 草稿に Playwright 実装準備メモと配信観測計画詳細化を追記し、README/DOC_STATUS/証跡ログへ反映。
+> RUN_ID=`20251202T090000Z` で UX 草稿に Playwright ヘルパー試作案とフラグ設計メモを追加し、README/DOC_STATUS/証跡ログと再同期。
+> RUN_ID=`20251202T090000Z` で UX 草稿に Playwright ヘルパー実装着手とフィクスチャ計画追記を行い、README/DOC_STATUS/証跡ログと再同期。
+> RUN_ID=`20251202T090000Z` で UX 草稿に Playwright 設定フラグと未実装ヘルパーの実装完了を追記し、README/DOC_STATUS/証跡ログと再同期。
+> RUN_ID=`20251202T090000Z` で UX 草稿にヘッダー切替案とヘルパー通し検証準備を追記し、README/DOC_STATUS/証跡ログと再同期。
+> RUN_ID=`20251202T090000Z` で A/B: 管理配信検証計画・ORCA キュー/配信フラグ設計（`docs/web-client/ux/admin-delivery-validation.md`, `docs/web-client/ux/config-toggle-design.md`）と Playwright シナリオ叩き台（`docs/web-client/ux/playwright-scenarios.md`）を追加し、README/DOC_STATUS/証跡ログと RUN_ID を揃えた。
+> RUN_ID=`20251202T090000Z` で A/B のヘッダー付与検証・モック ON/OFF チェックリストと Playwright 前提フラグ（`VITE_USE_MOCK_ORCA_QUEUE` / `VITE_VERIFY_ADMIN_DELIVERY`）を明記し、README/DOC_STATUS/証跡ログと再同期。
+> RUN_ID=`20251202T090000Z` の A/B 実行結果（ヘッダー付与レスポンス差分とモック ON/OFF 切替確認）を Playwright シナリオ草稿へ反映し、README / DOC_STATUS / 証跡ログとあわせて再掲。
+> RUN_ID=`20251202T090000Z` の A/B/C 実行結果として Playwright テスト追加・モック分岐強化・監査ログ正規化を反映し、README / DOC_STATUS / 証跡ログと RUN_ID を再掲。
+> RUN_ID=`20251202T090000Z` で Reception/Charts の ORCA エラー・未紐付・送信キュー遅延バナーの tone/`aria-live`/carry over ルールを統一し、自動/手動更新・ステータス遷移・ロール別可否・監査ログ出力を `docs/web-client/ux/reception-schedule-ui-policy.md` / `docs/web-client/ux/charts-claim-ui-policy.md` に追記。Playwright シナリオへモック ON/OFF（`VITE_USE_MOCK_ORCA_QUEUE`/`VITE_VERIFY_ADMIN_DELIVERY`）でのバナー検証と診療終了解除パスを追加。
+> RUN_ID=`20251202T090000Z` で Patients→Reception 戻り導線（フィルタ保持・保険/自費モード維持・権限ガード）と Administration 配信遅延時の警告/リトライ導線、モック ON/OFF のレスポンス差分・監査ログ項目・ヘッダー有無を UX 草稿へ追記し、README/DOC_STATUS/証跡ログと同期。
+
 > **Archive 移行チェック（担当: Codex, 期限: 2025-11-29）**
 > - [ ] Dormant 判定と根拠リンク
 > - [ ] `docs/archive/2025Q4/` への移動と README / Hub からのリンク差替
