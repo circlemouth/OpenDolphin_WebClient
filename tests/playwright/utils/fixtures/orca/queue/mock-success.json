@@ -1,0 +1,21 @@
+{
+  "runId": "20251202T090000Z",
+  "source": "mock",
+  "verifyAdminDelivery": true,
+  "queue": [
+    {
+      "patientId": "MOCK-001",
+      "status": "pending",
+      "retryable": true,
+      "lastDispatchAt": "2025-12-02T09:00:00.000Z",
+      "headers": ["x-use-mock-orca-queue:1", "x-admin-delivery-verification:enabled"]
+    },
+    {
+      "patientId": "MOCK-002",
+      "status": "delivered",
+      "retryable": false,
+      "lastDispatchAt": "2025-12-02T08:55:00.000Z",
+      "headers": ["x-use-mock-orca-queue:1"]
+    }
+  ]
+}

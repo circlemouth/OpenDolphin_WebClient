@@ -1,0 +1,20 @@
+{
+  "system_admin": {
+    "userId": "admin-e2e",
+    "displayName": "E2E Admin",
+    "roles": ["system_admin", "admin"],
+    "note": "Administration 配信用に設定された管理者ロール"
+  },
+  "reception": {
+    "userId": "reception-e2e",
+    "displayName": "E2E Reception",
+    "roles": ["reception"],
+    "note": "受付/再送ボタン確認用の受付ロール"
+  },
+  "doctor": {
+    "userId": "doctor-e2e",
+    "displayName": "E2E Doctor",
+    "roles": ["doctor"],
+    "note": "診療終了→ORCA 送信キュー投入の検証用ロール"
+  }
+}

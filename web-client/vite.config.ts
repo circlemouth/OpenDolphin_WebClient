@@ -5,6 +5,7 @@ import { randomUUID } from 'node:crypto';
 import { defineConfig } from 'vitest/config';
 import react from '@vitejs/plugin-react';
 import basicSsl from '@vitejs/plugin-basic-ssl';
+import { flaggedMockPlugin } from './plugins/flagged-mock-plugin';
 
 const apiProxyTarget = process.env.VITE_DEV_PROXY_TARGET ?? 'http://localhost:8080/openDolphin/resources';
 const useHttps = process.env.VITE_DEV_USE_HTTPS !== '0';
@@ -26,6 +27,7 @@ export default defineConfig({
   plugins: [
     react(),
     basicSsl(),
+    flaggedMockPlugin(),
     {
       name: 'preview-perf-log-sink',
       configurePreviewServer(previewServer) {

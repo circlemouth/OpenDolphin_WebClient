@@ -1,0 +1,15 @@
+{
+  "runId": "20251202T090000Z",
+  "source": "live",
+  "verifyAdminDelivery": false,
+  "queue": [
+    {
+      "patientId": "LIVE-001",
+      "status": "failed",
+      "retryable": true,
+      "lastDispatchAt": "2025-12-02T08:58:00.000Z",
+      "error": "upstream timeout",
+      "headers": ["x-use-mock-orca-queue:0"]
+    }
+  ]
+}

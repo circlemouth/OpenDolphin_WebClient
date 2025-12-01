@@ -31,8 +31,8 @@
 - 証跡メモ: `docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md`
 - DOC_STATUS 備考案: 「RUN_ID=`20251201T053420Z` で参照チェーンと画面棚卸しを整理、上記証跡ログと同期中。」
 
-## 次アクション
-1. DOC_STATUS の備考行に `RUN_ID=20251201T053420Z` と新規証跡ログへのリンクを追記し、README/INDEX とのリンク整合を確認する。
-2. `docs/web-client/README.md` および関連 manager checklist へ本件 RUN_ID を短くメモし、ガバナンスチェーンの更新状況を記録。
-3. Reception/Chart Entry/Chart Admin に加えて、Patients/Admin や Schedule 系の画面に対する追加ドキュメントも並行で計画し、Phase2 での画面拡張優先リストをチームで固める。
+## 次アクション（2025-12-01 完了済み）
+1. DOC_STATUS 備考に `RUN_ID=20251201T053420Z` と証跡ログ `docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md` を追記し、README/INDEX とのリンク整合を確認済み。
+2. `docs/web-client/README.md` と `docs/server-modernization/phase2/INDEX.md`、`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` へ本件 RUN_ID の参照チェーン更新メモを追加済み。
+3. Reception/Chart Entry/Chart Admin に加え、Patients/Admin/Schedule 系の計画を追加検討する下準備として、参照チェーン整備の完了を証跡に残した。後続の画面優先度整理は別 RUN で実施予定。
 
