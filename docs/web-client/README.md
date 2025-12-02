@@ -4,6 +4,7 @@
 - 本リポジトリ配下で唯一稼働する Web クライアントはログイン画面のみとなっており、`src/LoginScreen.tsx` で既存 API を直接呼び出す形に再構成されています。
 - そのため docs/web-client 以下も最小セットに集約し、不要な機能仕様や UX 施策は削除しました。
 - ドキュメント更新時は `AGENTS.md` が示す Phase2 ガバナンス必読チェーン（`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリスト）を踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記してください。
+- RUN_ID=`20251202T083708Z` で画面別 API マッピングとバージョン整合メモ（`src/webclient_screens_plan/02_画面別 API マッピングとバージョン整合.md`）を更新し、証跡ログ `docs/server-modernization/phase2/operations/logs/20251202T083708Z-api-mapping.md` を連携。orca05 hash/diff 再取得済み（同 RUN_ID）。これらの更新は DOC_STATUS / manager checklist と同期。
 - RUN_ID=`20251201T053420Z` で参照チェーン棚卸しを実施済み。証跡: `docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md`（DOC_STATUS/manager checklist と同期）。
 - RUN_ID=`20251202T090000Z` で受付/カルテ/管理の screens 棚卸しを開始。証跡: `docs/server-modernization/phase2/operations/logs/20251202T090000Z-screens.md`（DOC_STATUS/manager checklist と連動）。
 - RUN_ID=`20251202T090000Z` の棚卸し内容を UX 草稿（`docs/web-client/ux/` 配下）へ移植し、Reception/Charts/Patients+Administration のユースケース・API・遷移・認証前提を整理（証跡ログと同 RUN_ID を保持）。
@@ -29,6 +30,7 @@
 - `docs/web-client/planning/phase2/screens/RECEPTION_SCREEN_PLAN.md` — 受付状況処理画面の空枠設計ドラフト。
 - `docs/web-client/planning/phase2/screens/CHART_ENTRY_SCREEN_PLAN.md` — カルテ記入画面の空枠設計ドラフト。
 - `docs/web-client/planning/phase2/screens/CHART_ADMIN_SCREEN_PLAN.md` — カルテ全般管理画面の空枠設計ドラフト。
+- `src/webclient_screens_plan/02_画面別 API マッピングとバージョン整合.md` — Reception/Charts/Patients/Administration の API 差分・バージョン整合メモ。RUN_ID=`20251202T083708Z`。証跡: `docs/server-modernization/phase2/operations/logs/20251202T083708Z-api-mapping.md`。
 - `docs/web-client/planning/phase2/logs/20251130T120000Z-login-rework.md` — 本対応の証跡ログ。README／DOC_STATUS に書かれた RUN_ID と同一。
 - `docs/web-client/ux/ux-documentation-plan.md` — UX ドラフトの進行管理ハブ。RUN_ID=`20251202T090000Z`。
 - `docs/web-client/ux/reception-schedule-ui-policy.md` — Reception（受付）UX ポリシー草稿。RUN_ID=`20251202T090000Z`。

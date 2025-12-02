@@ -1,13 +1,13 @@
 {
   "mswHashStored": "6d61e0ab37cfcd94065899e44e3ef6bc3f42fb3414a26ccaec8bd8da3a7b9385",
   "mswHashComputed": "6d61e0ab37cfcd94065899e44e3ef6bc3f42fb3414a26ccaec8bd8da3a7b9385",
-  "serverHash": "f739d4c33db1a6dd632cee5f350750e04b49c304e8371ae1c011453ee45d5646",
+  "serverHash": "a067bac7f98ea18a4a06c335c9eea14cb161451f4ec470c5421ced614b38bfe0",
   "hashMatchStored": true,
-  "hashMatchComputed": false,
+  "hashMatchComputed": true,
   "counts": {
     "msw": 5,
-    "server": 4,
-    "delta": -1
+    "server": 5,
+    "delta": 0
   },
   "totals": {
     "msw": 970,
