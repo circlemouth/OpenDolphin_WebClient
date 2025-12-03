@@ -1,0 +1,193 @@
+ganttConfig:
+  defaultView: week
+  startDate: 2025-12-03
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  outpatient_ux_modernization:
+    00_RUN_IDと参照チェーン整理.md:
+      content: |-
+        # 00 RUN_ID と参照チェーン整理
+
+        - RUN_ID=`20251203T222026Z` で AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の参照順を再確認し、証跡はすべて docs/server-modernization/phase2/operations/logs/ に揃える。
+        - docs/web-client/planning/phase2/DOC_STATUS.md の「Web クライアント UX/Features」行に現行 RUN_ID と証跡パス、ステータスを記入し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-run-id-chain.md へのリンクをつける。
+        - Web クライアント開発ルール（Python 禁止、server/ 触らない、Legacy 資産参照のみ）と ORCA 接続制約（docs/web-client/operations/mac-dev-login.local.md で確認）をチームへ共有する準備をする。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency: []
+      schedule:
+        start: 2025-12-03T22:20:26.000Z
+        days: 1
+    01_UXドキュメント要件レビュー.md:
+      content: |-
+        # 01 UX ドキュメント要件レビュー
+
+        - docs/web-client/ux/ux-documentation-plan.md を起点に reception-schedule-ui-policy.md / patients-admin-ui-policy.md / charts-claim-ui-policy.md を読み、外来カルテと受付のトーン、監査・ARIA 要件、レイアウト比率を再整理する。
+        - Legacy 資料（ux/legacy/*）は履歴参照にとどめ、現行で扱う外来シナリオのみにフォーカス。入院向け ORCA API やバナーは本スコープから除外する。
+        - 抽出結果を docs/web-client/ux/ux-documentation-plan.md へ追記し、次段階の設計メモとして artifacts/webclient/ux-notes/<RUN_ID>-ux-review.md を準備。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: claude code
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/00_RUN_IDと参照チェーン整理.md
+      schedule:
+        start: 2025-12-04T00:00:00.000Z
+        days: 2
+    02_外来カルテUXとAPIカバレッジ.md:
+      content: |-
+        # 02 外来カルテ UX と API カバレッジ
+
+        - charts-claim-ui-policy.md をベースに、外来カルテ ChartsPage で表示する DocumentTimeline、OrderConsole、OrcaSummary の状態遷移と aria-live バナーを一覧化し、docs/web-client/ux/reception-schedule-ui-policy.md の片側シナリオと整合させる。
+        - 受付→カルテの導線、保険/自費フィルタ、監査ログの `dataSourceTransition`/`missingMaster`/`fallbackUsed` を UX 観点から整理し、外来 API のみを対象にしたテーブルをつくる（入院 API は `N/A`）。
+        - この UX カバレッジを docs/web-client/ux/ux-documentation-plan.md の該当セクションに上書きし、次の API マッピングタスクへのインプットを artifacts/webclient/ux-notes/<RUN_ID>-charts-ux.md へ記録。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/01_UXドキュメント要件レビュー.md
+      schedule:
+        start: 2025-12-06T00:00:00.000Z
+        days: 3
+    03_モダナイズAPIマッピング.md:
+      content: |-
+        # 03 モダナイズ API マッピング
+
+        - docs/server-modernization/phase2/foundation および docs/web-client/architecture/web-client-api-mapping.md を参照し、Reception/Charts/Patients/Administration で使う `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` のレスポンス shape と `auditEvent` 項目を一覧化。
+        - ORCA の入院用エンドポイント（例: `/orca21/medicalmodv2/inpatient`）は本フェーズで実装しないため、差分表には「外来スコープ外」と明記し、DOC_STATUS の備考に記録。
+        - 差分や不整合があれば docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap.md に記録し、必要に応じて modernized server チームへフィードバック。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/02_外来カルテUXとAPIカバレッジ.md
+      schedule:
+        start: 2025-12-09T00:00:00.000Z
+        days: 2
+    04_WEBクライアント実装とモダナイズ接続.md:
+      content: |-
+        # 04 WEB クライアント実装とモダナイズ接続
+
+        - web-client/src/features/reception と charts 系コンポーネントに docs/web-client/ux/ の監査・トーン要件を反映し、`web-client/src/libs/http/httpClient.ts` から `/api01rv2/claim/outpatient/*` などへ接続するパスを追加。
+        - `resolveMasterSource`/`auth-service.ts` のフローを尊重し、外来 `dataSourceTransition=server` を示すステータスバッジや missingMaster バナーに注記を追記し、今回スコープ外の入院 API はリンクしない。
+        - ORCA 連携のキャッシュ/`cacheHit`/`missingMaster` フラグを外来 UX の文脈で表示し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration.md と `docs/web-client/ux/reception-schedule-ui-policy.md` に実装メモを残す。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md
+      schedule:
+        start: 2025-12-11T00:00:00.000Z
+        days: 4
+    05_デバッグドキュメント整備.md:
+      content: |-
+        # 05 デバッグドキュメント整備
+
+        - WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理。
+        - `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。
+        - 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/04_WEBクライアント実装とモダナイズ接続.md
+      schedule:
+        start: 2025-12-15T00:00:00.000Z
+        days: 2
+    06_STAGE検証とDOC_STATUS反映.md:
+      content: |-
+        # 06 Stage 検証と DOC_STATUS 反映
+
+        - `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://stage.open-dolphin` などの環境で Reception→Charts→Patients の外来フローを検証し、ログとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-stage/ に保存。
+        - Docs/web-client/planning/phase2/DOC_STATUS.md と docs/server-modernization/phase2/operations/logs/<RUN_ID>-stage.md に Stage 検証結果・API シグネチャ変更・バナー表示結果を記録し、`docs/web-client/ux/ux-documentation-plan.md` のステータスも更新。
+        - モダナイズ接続で観測した `warning banner tone=server`/`dataSourceTransition=server` や `missingMaster` の有無を文書化し、`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の「進捗確認ポイント」項目へ証跡追記。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/05_デバッグドキュメント整備.md
+      schedule:
+        start: 2025-12-17T00:00:00.000Z
+        days: 2
