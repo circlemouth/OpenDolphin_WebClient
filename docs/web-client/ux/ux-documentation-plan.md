@@ -28,3 +28,11 @@
 - ORCA エラー共有バナーと病名未紐付警告の tone/aria-live を Reception/Charts で統一し、Playwright ケースの前提を本計画に記録する。
 - Patients からの戻り導線と Administration からの設定配信タイミング（即時/次回リロード）を確認し、監査ログ要件と合わせて各ポリシーに追記する。
 - README / manager checklist で UX 草稿更新を周知し、DOC_STATUS の UX/Features 行に反映済みの旨を維持する。
+
+## 5. 20251203T143858Z 外来 UX 要件レビュー
+- 目的: `docs/web-client/ux/ux-documentation-plan.md` を起点に reception/patients/Charts 各草稿を再読し、外来カルテ・受付のトーン、レイアウト比率、ARIA/監査要件を整理。Legacy 資料（`docs/web-client/ux/legacy/`）は履歴参照のみとし、入院向け ORCA API やバナーは本レビューの対象外とする。
+- フォーカス領域:
+  - Reception: 左レールにステータス別タブ・フィルタ・ソートをまとめ、中核の一覧テーブル（患者ID/受診情報/自費アイコン/メモ）を中心に配置、右パネルで基本情報・直近診療・処方/検査概要を補完。ヘッダー直下のバナー領域に Error=赤/Warning=琥珀/Info=青を統一し、`role=alert` + `aria-live=assertive`（エラー/未紐付/遅延）・`aria-live=polite`（完了/情報）を維持。`data-run-id="20251202T090000Z"` などの識別子でスクリーンリーダーが更新を区別できるようにした carry over ルールを Charts と共有する。
+  - Charts: ヘッダーに患者基本＋受付情報＋保険/自費トグルを掲示し、SOAP/病名/オーダー/結果などのタブを中央に配した 2 カラム構成。右サイドバーには患者メモ・未紐付チェック・ORCA/病名候補を表示し、`aria-live` バナーと Tone を Reception と揃えた上で診療終了→ORCA 送信の狭間に carry over させる。`aria-live=assertive` の遅延/未紐付/エラーは 1 回だけ announce し、二重読み上げを抑える工夫（`aria-atomic=false`、tone フラグ）を盛り込む。ステータス遷移や再送操作は監査ログへ `action/patientId/queueStatus/tone/ariaLive/runId` を記録。
+  - Patients＋Administration: 左メニュー＋右詳細フォームのダッシュボード構成で、Reception からの戻り導線はクエリ＋ローカルストレージでタブ/フィルタ/保険モードを保持。編集後は Reception へ戻れる履歴リンクを残し、権限不足の場合も元の状態に復帰させ監査ログへ拒否理由を記録。Administration の ORCA 設定や配信遅延は Reception/Charts 両方へバナー警告・リトライ導線を提示し、`role=system_admin/管理者` 以外のアクセスを UI 側でブロックするガードを記載する。
+- 次の設計メモ: 上記レビューを artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md に書き出し、Playwright シナリオやデザインメモへの受け渡し準備も視野に入れる。
