@@ -1,24 +1,0 @@
-  % Total    % Received % Xferd  Average Speed   Time    Time     Time  Current
-                                 Dload  Upload   Total   Spent    Left  Speed
-  0     0    0     0    0     0      0      0 --:--:-- --:--:-- --:--:--     0*   Trying 100.102.17.40:8000...
-* Connected to 100.102.17.40 (100.102.17.40) port 8000
-* Server auth using Basic with user 'ormaster'
-> POST /orca11/acceptmodv2?class=01 HTTP/1.1
-> Host: 100.102.17.40:8000
-> Authorization: Basic b3JtYXN0ZXI6Y2hhbmdlX21l
-> User-Agent: curl/8.7.1
-> Accept: */*
-> Content-Type: application/xml
-> Content-Length: 17
-> 
-} [17 bytes data]
-* upload completely sent off: 17 bytes
-< HTTP/1.1 405 Method Not Allowed
-< Allow: OPTIONS, GET
-< Content-Type: application/json
-< Date: Fri, 21 Nov 2025 22:44:54 GMT
-< Content-Length: 62
-< 
-{ [62 bytes data]
-100    79  100    62  100    17   1053    288 --:--:-- --:--:-- --:--:--  1362
-* Connection #0 to host 100.102.17.40 left intact

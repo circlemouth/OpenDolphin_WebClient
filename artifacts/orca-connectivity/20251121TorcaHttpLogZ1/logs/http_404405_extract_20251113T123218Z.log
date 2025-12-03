@@ -1,3 +1,0 @@
-133:2025-11-13T12:34:08Z echo: http: panic serving 127.0.0.1:40404: runtime error: index out of range [-1]
-210:2025-11-13T12:34:08Z 2025/11/13 19:38:04 System Error:405    code=405, message=Method Not Allowed
-357:2025-11-13T12:34:09Z &{GET /api01rv2/patientgetv2?id=000001 HTTP/1.1 1 1 map[Accept:[*/*] User-Agent:[curl/8.7.1]] {} <nil> 0 [] false localhost:8000 map[] map[] <nil> map[] 172.217.161.36:35046 /api01rv2/patientgetv2?id=000001 <nil> <nil> <nil>  0xc001564050 <nil> [] map[]}

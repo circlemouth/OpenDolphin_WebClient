@@ -1,5 +1,7 @@
 # Server Modernization Phase 2 ナビゲーション
 
+> **Legacy/Archive（参照のみ・新規追加禁止, RUN_ID=20251203T203000Z）** Phase2 資料はロールオフ済み。`docs/server-modernization/phase2/PHASE2_DOCS_ROLLOFF.md` を起点に参照し、現行作業は Web クライアント側の README/DOC_STATUS へ誘導する。証跡ログ: `operations/logs/20251203T203000Z-phase2-legacy-mark.md`
+
 Web クライアント開発と並行して進めるモダナイズ作業の資料をフェーズ別に集約。Phase2 以降の情報はここを起点にたどり、更新時は `docs/web-client/planning/phase2/DOC_STATUS.md` にステータスを追記する。
 
 ## Phase2 ガバナンス必読チェーン

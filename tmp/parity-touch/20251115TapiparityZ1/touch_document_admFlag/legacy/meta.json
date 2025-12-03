@@ -1,9 +1,0 @@
-{
-  "method": "POST",
-  "path": "/touch/document",
-  "base_url": "http://localhost:8080/openDolphin/resources",
-  "request_id": "touch_document_admFlag",
-  "status_code": 401,
-  "time_total": "0.040254",
-  "exit_code": 0
-}

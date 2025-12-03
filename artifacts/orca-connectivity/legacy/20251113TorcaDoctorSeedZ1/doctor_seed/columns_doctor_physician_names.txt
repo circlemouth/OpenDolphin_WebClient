@@ -1,0 +1,4 @@
+ table_schema | table_name | column_name 
+--------------+------------+-------------
+(0 rows)
+

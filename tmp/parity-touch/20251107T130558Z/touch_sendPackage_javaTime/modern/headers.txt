@@ -1,7 +1,0 @@
-HTTP/1.1 200 OK
-Content-Type: application/json
-Date: Fri, 07 Nov 2025 13:11:17 GMT
-Connection: keep-alive
-Keep-Alive: timeout=5
-Content-Length: 79
-

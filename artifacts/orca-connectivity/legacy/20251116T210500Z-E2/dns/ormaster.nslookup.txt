@@ -1,0 +1,5 @@
+Server:		100.100.100.100
+Address:	100.100.100.100#53
+
+** server can't find ormaster.orca.med.or.jp: NXDOMAIN
+

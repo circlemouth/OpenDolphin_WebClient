@@ -1,3 +1,0 @@
-volumes:
-  postgres-data:
-    external: false

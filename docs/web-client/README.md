@@ -1,4 +1,5 @@
 # Web クライアント ドキュメントハブ（ログイン専用版）
+> **Phase2 は Legacy 参照専用／現行スコープはログインのみ**（RUN_ID=`20251203T203000Z`）。ロールオフ手順: `docs/server-modernization/phase2/PHASE2_DOCS_ROLLOFF.md`。証跡ログ: `docs/server-modernization/phase2/operations/logs/20251203T203000Z-phase2-legacy-mark.md`
 
 ## 概要
 - 本リポジトリ配下で唯一稼働する Web クライアントはログイン画面のみとなっており、`src/LoginScreen.tsx` で既存 API を直接呼び出す形に再構成されています。

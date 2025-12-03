@@ -1,79 +1,0 @@
-[INFO] Scanning for projects...
-[INFO] ------------------------------------------------------------------------
-[INFO] Reactor Build Order:
-[INFO] 
-[INFO] opendolphin                                                        [pom]
-[INFO] opendolphin-common                                                 [jar]
-[INFO] 
-[INFO] ----------------------< opendolphin:opendolphin >-----------------------
-[INFO] Building opendolphin 2.7.1                                         [1/2]
-[INFO]   from pom.server-modernized.xml
-[INFO] --------------------------------[ pom ]---------------------------------
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-install-plugin/3.1.2/maven-install-plugin-3.1.2.pom
-Progress (1): 774 BProgress (1): 1.8 kBProgress (1): 3.7 kBProgress (1): 7.4 kBProgress (1): 8.5 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/plugins/maven-install-plugin/3.1.2/maven-install-plugin-3.1.2.pom (8.5 kB at 16 kB/s)
-[INFO] 
-[INFO] --- install:3.1.2:install (default-install) @ opendolphin ---
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-util/1.9.18/maven-resolver-util-1.9.18.pom
-Progress (1): 823 BProgress (1): 2.1 kBProgress (1): 2.9 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-util/1.9.18/maven-resolver-util-1.9.18.pom (2.9 kB at 32 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver/1.9.18/maven-resolver-1.9.18.pom
-Progress (1): 751 BProgress (1): 2.3 kBProgress (1): 3.5 kBProgress (1): 8.0 kBProgress (1): 11 kB Progress (1): 14 kBProgress (1): 18 kBProgress (1): 21 kBProgress (1): 22 kB                   Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver/1.9.18/maven-resolver-1.9.18.pom (22 kB at 180 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-api/1.9.18/maven-resolver-api-1.9.18.pom
-Progress (1): 823 BProgress (1): 2.0 kBProgress (1): 2.7 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-api/1.9.18/maven-resolver-api-1.9.18.pom (2.7 kB at 24 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.1/plexus-utils-4.0.1.pom
-Progress (1): 716 BProgress (1): 1.8 kBProgress (1): 3.6 kBProgress (1): 7.8 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.1/plexus-utils-4.0.1.pom (7.8 kB at 133 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus/17/plexus-17.pom
-Progress (1): 693 BProgress (1): 2.5 kBProgress (1): 5.0 kBProgress (1): 8.3 kBProgress (1): 10 kB Progress (1): 11 kBProgress (1): 15 kBProgress (1): 19 kBProgress (1): 21 kBProgress (1): 25 kBProgress (1): 28 kB                   Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus/17/plexus-17.pom (28 kB at 376 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-xml/3.0.0/plexus-xml-3.0.0.pom
-Progress (1): 809 BProgress (1): 1.9 kBProgress (1): 3.7 kB                    Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-xml/3.0.0/plexus-xml-3.0.0.pom (3.7 kB at 87 kB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-util/1.9.18/maven-resolver-util-1.9.18.jar
-Progress (1): 0.9/196 kBProgress (1): 2.3/196 kBProgress (1): 3.6/196 kBProgress (1): 5.0/196 kBProgress (1): 6.4/196 kBProgress (1): 7.7/196 kBProgress (1): 9.1/196 kBProgress (1): 10/196 kB Progress (1): 12/196 kBProgress (1): 13/196 kBProgress (1): 15/196 kBProgress (1): 16/196 kBProgress (1): 17/196 kBProgress (1): 22/196 kBProgress (1): 25/196 kBProgress (1): 29/196 kBProgress (1): 33/196 kBProgress (1): 37/196 kBProgress (1): 41/196 kBProgress (1): 46/196 kBProgress (1): 50/196 kBProgress (1): 54/196 kBProgress (1): 58/196 kBProgress (1): 63/196 kBProgress (1): 67/196 kBProgress (1): 71/196 kBProgress (1): 75/196 kBProgress (1): 80/196 kBProgress (1): 84/196 kBProgress (1): 88/196 kBProgress (1): 92/196 kBProgress (1): 96/196 kBProgress (1): 101/196 kBProgress (1): 105/196 kBProgress (1): 109/196 kBProgress (1): 113/196 kBProgress (1): 118/196 kBProgress (1): 122/196 kBProgress (1): 126/196 kBProgress (1): 130/196 kBProgress (1): 135/196 kBProgress (1): 139/196 kBProgress (1): 143/196 kBProgress (1): 147/196 kBProgress (1): 151/196 kBProgress (1): 156/196 kBProgress (1): 160/196 kBProgress (1): 164/196 kBProgress (1): 168/196 kBProgress (1): 173/196 kBProgress (1): 177/196 kBProgress (1): 181/196 kBProgress (1): 185/196 kBProgress (1): 196 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-util/1.9.18/maven-resolver-util-1.9.18.jar (196 kB at 2.0 MB/s)
-Downloading from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-api/1.9.18/maven-resolver-api-1.9.18.jar
-Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.1/plexus-utils-4.0.1.jar
-Downloading from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-xml/3.0.0/plexus-xml-3.0.0.jar
-Progress (1): 7.7/157 kBProgress (1): 16/157 kB Progress (1): 20/157 kBProgress (1): 37/157 kBProgress (1): 53/157 kBProgress (1): 69/157 kBProgress (1): 86/157 kBProgress (1): 102/157 kBProgress (1): 118/157 kBProgress (1): 135/157 kBProgress (1): 151/157 kBProgress (1): 157 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/apache/maven/resolver/maven-resolver-api/1.9.18/maven-resolver-api-1.9.18.jar (157 kB at 1.5 MB/s)
-Progress (1): 0.9/193 kBProgress (1): 2.3/193 kBProgress (1): 3.7/193 kBProgress (1): 5.0/193 kBProgress (1): 6.4/193 kBProgress (1): 7.8/193 kBProgress (1): 9.1/193 kBProgress (1): 11/193 kB Progress (1): 12/193 kBProgress (1): 13/193 kBProgress (1): 15/193 kBProgress (1): 16/193 kBProgress (1): 17/193 kBProgress (1): 19/193 kBProgress (1): 20/193 kBProgress (1): 20/193 kBProgress (1): 22/193 kBProgress (1): 23/193 kBProgress (1): 24/193 kBProgress (1): 26/193 kBProgress (1): 27/193 kBProgress (1): 28/193 kBProgress (1): 30/193 kBProgress (1): 31/193 kBProgress (1): 32/193 kBProgress (1): 34/193 kBProgress (1): 35/193 kBProgress (1): 37/193 kBProgress (1): 38/193 kBProgress (1): 39/193 kBProgress (1): 41/193 kBProgress (1): 42/193 kBProgress (1): 43/193 kBProgress (1): 45/193 kBProgress (1): 46/193 kBProgress (1): 48/193 kBProgress (1): 49/193 kBProgress (1): 50/193 kBProgress (1): 52/193 kBProgress (1): 53/193 kBProgress (1): 54/193 kBProgress (1): 59/193 kBProgress (1): 63/193 kBProgress (1): 67/193 kBProgress (1): 71/193 kBProgress (1): 76/193 kBProgress (1): 80/193 kBProgress (1): 84/193 kBProgress (1): 88/193 kBProgress (1): 92/193 kBProgress (1): 97/193 kBProgress (1): 101/193 kBProgress (1): 105/193 kBProgress (1): 109/193 kBProgress (1): 114/193 kBProgress (2): 114/193 kB | 0.9/93 kBProgress (2): 114/193 kB | 2.3/93 kBProgress (2): 114/193 kB | 3.7/93 kBProgress (2): 114/193 kB | 5.0/93 kBProgress (2): 114/193 kB | 6.4/93 kBProgress (2): 114/193 kB | 7.8/93 kBProgress (2): 114/193 kB | 9.1/93 kBProgress (2): 114/193 kB | 11/93 kB Progress (2): 114/193 kB | 12/93 kBProgress (2): 114/193 kB | 13/93 kBProgress (2): 114/193 kB | 15/93 kBProgress (2): 114/193 kB | 16/93 kBProgress (2): 114/193 kB | 17/93 kBProgress (2): 114/193 kB | 19/93 kBProgress (2): 114/193 kB | 20/93 kBProgress (2): 118/193 kB | 20/93 kBProgress (2): 122/193 kB | 20/93 kBProgress (2): 126/193 kB | 20/93 kBProgress (2): 126/193 kB | 21/93 kBProgress (2): 126/193 kB | 23/93 kBProgress (2): 126/193 kB | 24/93 kBProgress (2): 126/193 kB | 26/93 kBProgress (2): 126/193 kB | 27/93 kBProgress (2): 126/193 kB | 28/93 kBProgress (2): 126/193 kB | 30/93 kBProgress (2): 126/193 kB | 31/93 kBProgress (2): 126/193 kB | 32/93 kBProgress (2): 126/193 kB | 34/93 kBProgress (2): 126/193 kB | 35/93 kBProgress (2): 126/193 kB | 37/93 kBProgress (2): 126/193 kB | 38/93 kBProgress (2): 126/193 kB | 39/93 kBProgress (2): 126/193 kB | 41/93 kBProgress (2): 126/193 kB | 42/93 kBProgress (2): 126/193 kB | 43/93 kBProgress (2): 126/193 kB | 45/93 kBProgress (2): 126/193 kB | 46/93 kBProgress (2): 126/193 kB | 47/93 kBProgress (2): 126/193 kB | 49/93 kBProgress (2): 126/193 kB | 50/93 kBProgress (2): 126/193 kB | 52/93 kBProgress (2): 126/193 kB | 53/93 kBProgress (2): 126/193 kB | 54/93 kBProgress (2): 126/193 kB | 56/93 kBProgress (2): 126/193 kB | 57/93 kBProgress (2): 126/193 kB | 62/93 kBProgress (2): 126/193 kB | 66/93 kBProgress (2): 126/193 kB | 70/93 kBProgress (2): 126/193 kB | 74/93 kBProgress (2): 126/193 kB | 78/93 kBProgress (2): 126/193 kB | 83/93 kBProgress (2): 126/193 kB | 87/93 kBProgress (2): 126/193 kB | 91/93 kBProgress (2): 126/193 kB | 93 kB                                   Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-xml/3.0.0/plexus-xml-3.0.0.jar (93 kB at 479 kB/s)
-Progress (1): 130/193 kBProgress (1): 135/193 kBProgress (1): 139/193 kBProgress (1): 143/193 kBProgress (1): 147/193 kBProgress (1): 151/193 kBProgress (1): 155/193 kBProgress (1): 160/193 kBProgress (1): 164/193 kBProgress (1): 168/193 kBProgress (1): 172/193 kBProgress (1): 177/193 kBProgress (1): 181/193 kBProgress (1): 185/193 kBProgress (1): 189/193 kBProgress (1): 193 kB                        Downloaded from central: https://repo.maven.apache.org/maven2/org/codehaus/plexus/plexus-utils/4.0.1/plexus-utils-4.0.1.jar (193 kB at 875 kB/s)
-[INFO] Installing /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/pom.server-modernized.xml to /Users/Hayato/.m2/repository/opendolphin/opendolphin/2.7.1/opendolphin-2.7.1.pom
-[INFO] 
-[INFO] -------------------< opendolphin:opendolphin-common >-------------------
-[INFO] Building opendolphin-common 2.7.1                                  [2/2]
-[INFO]   from common/pom.xml
-[INFO] --------------------------------[ jar ]---------------------------------
-[INFO] 
-[INFO] --- resources:3.3.1:resources (default-resources) @ opendolphin-common ---
-[INFO] Copying 1 resource from src/main/resources to target/classes
-[INFO] 
-[INFO] --- compiler:3.11.0:compile (default-compile) @ opendolphin-common ---
-[INFO] Nothing to compile - all classes are up to date
-[INFO] 
-[INFO] --- resources:3.3.1:testResources (default-testResources) @ opendolphin-common ---
-[INFO] skip non existing resourceDirectory /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/common/src/test/resources
-[INFO] 
-[INFO] --- compiler:3.11.0:testCompile (default-testCompile) @ opendolphin-common ---
-[INFO] Nothing to compile - all classes are up to date
-[INFO] 
-[INFO] --- surefire:3.2.5:test (default-test) @ opendolphin-common ---
-[INFO] Tests are skipped.
-[INFO] 
-[INFO] --- jar:3.3.0:jar (default-jar) @ opendolphin-common ---
-[INFO] 
-[INFO] --- jar:3.3.0:jar (jakarta-no-persistence) @ opendolphin-common ---
-[INFO] 
-[INFO] --- build-helper:3.5.0:attach-artifact (attach-jakarta-jar) @ opendolphin-common ---
-[WARNING] artifact opendolphin:opendolphin-common:jar:jakarta:2.7.1 already attached, replace previous instance
-[INFO] 
-[INFO] --- install:3.1.2:install (default-install) @ opendolphin-common ---
-[INFO] Installing /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/common/pom.xml to /Users/Hayato/.m2/repository/opendolphin/opendolphin-common/2.7.1/opendolphin-common-2.7.1.pom
-[INFO] Installing /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/common/target/opendolphin-common-2.7.1.jar to /Users/Hayato/.m2/repository/opendolphin/opendolphin-common/2.7.1/opendolphin-common-2.7.1.jar
-[INFO] Installing /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/common/target/opendolphin-common-2.7.1-jakarta.jar to /Users/Hayato/.m2/repository/opendolphin/opendolphin-common/2.7.1/opendolphin-common-2.7.1-jakarta.jar
-[INFO] ------------------------------------------------------------------------
-[INFO] Reactor Summary for opendolphin 2.7.1:
-[INFO] 
-[INFO] opendolphin ........................................ SUCCESS [  1.586 s]
-[INFO] opendolphin-common ................................. SUCCESS [  0.517 s]
-[INFO] ------------------------------------------------------------------------
-[INFO] BUILD SUCCESS
-[INFO] ------------------------------------------------------------------------
-[INFO] Total time:  2.196 s
-[INFO] Finished at: 2025-11-09T06:33:58+09:00
-[INFO] ------------------------------------------------------------------------

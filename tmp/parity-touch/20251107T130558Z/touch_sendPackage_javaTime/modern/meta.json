@@ -1,8 +1,0 @@
-{
-  "method": "POST",
-  "path": "/touch/sendPackage",
-  "base_url": "http://localhost:18080",
-  "status_code": 200,
-  "time_total": "0.000956",
-  "exit_code": 0
-}
