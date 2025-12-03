@@ -8,7 +8,7 @@
 > 接続手順・RUN_ID 発行・CRUD ログ運用は `ORCA_CONNECTIVITY_VALIDATION.md` §0 を参照。`tmp/orca-weekly-summary.*` の貼り付け位置や curl 雛形も同 Playbook のみを一次情報とする。
 > RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が禁止されている間は Spec-based 実装として扱い、最終段階で ORMaster／本番サーバー接続に切り替えて通信検証を行う。検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
 
-### 新 ORCA（接続情報は mac-dev-login.local.md を参照）エラーマッピング（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）
+### 新 ORCA（接続情報は docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md を参照）エラーマッピング（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）
 - 証跡: `artifacts/error-audit/20251121T153300Z/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#5-子-run-20251121t153300z-実測ログ親20251120t193040z`。Authorization は `<MASKED>` 済み。
 - 取得ケースと code/message/blocker → Api_Result/Api_Error 対応:
   - 成功: `POST /api01rv2/system01dailyv2?class=00`（HTTP200, `Api_Result=00/Api_Result_Message=処理終了`）→ `code=ORCA.SYSTEM01DAILY.OK`, `blocker=[]`。
@@ -25,7 +25,7 @@
 ### 2.1 コア外来 API（Matrix No.1-18）
 | No | ORCA API (class) | 直近期の実測 / RUN_ID | トライアル再検証＆CRUD 可否 | Spec-based until production validation |
 | --- | --- | --- | --- | --- |
-| 1 | `/api01rv2/patientgetv2` (`class=id`) | 2025-11-13 WebORCA 本番で `HTTP 404`（`RUN_ID=20251113TorcaP0OpsZ1/Z2`）。 | 開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）では GET が開放されているため `curl -u user:pass -H 'Accept: application/json' '<URL>/api/api01rv2/patientgetv2?class=00&patientid=000001'` を実行し、レスポンス JSON と `Api_Result` を `artifacts/.../api01rv2_patientgetv2/` に保存する。参照系のみ（CRUD なし）。 | - |
+| 1 | `/api01rv2/patientgetv2` (`class=id`) | 2025-11-13 WebORCA 本番で `HTTP 404`（`RUN_ID=20251113TorcaP0OpsZ1/Z2`）。 | 開発用 ORCA サーバー（`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）では GET が開放されているため `curl -u user:pass -H 'Accept: application/json' '<URL>/api/api01rv2/patientgetv2?class=00&patientid=000001'` を実行し、レスポンス JSON と `Api_Result` を `artifacts/.../api01rv2_patientgetv2/` に保存する。参照系のみ（CRUD なし）。 | - |
 | 2 | `/orca14/appointmodv2` (`class=01/02`) | 2025-11-22 Mac Dev ORCA で `HTTP 200 / Api_Result=00`（Patient_ID=`00005`, Physician_Code=`10000`、`Appointment_Id=00001`）。Evidence: `artifacts/orca-connectivity/20251122T132337Z/crud/appointmodv2/response_20251122T045741Z.xml`。 | Mac Dev 環境では CRUD 実測可能。8 桁 Patient_ID は ORCA 設定変更が前提で、現状は 6 桁運用。 | - |
 | 3 | `/api21/medicalmodv2` (`class=01-03`) | 2025-11-22 Mac Dev ORCA で `HTTP 200 / Api_Result=00` 取得済み（Patient_ID=`00005`, Physician_Code=`10000`）。警告=W02/M05/M01（保険組合せ=0、診療種別未設定、点数マスタ未登録）。Evidence: `artifacts/orca-connectivity/20251122T132337Z/crud/medicalmodv2/response_20251122T045858Z.xml`。 | 診療種別設定と点数マスタ投入後に再実測。警告解消まではモダナイズ側も同警告を透過させる。 | - |
 | 4 | `/orca11/acceptmodv2` (`class=01/02`) | 2025-11-22 Mac Dev ORCA で `HTTP 200 / Api_Result=00`（Patient_ID=`00005`, Physician_Code=`10000`、`Acceptance_Id=00002`）。Evidence: `artifacts/orca-connectivity/20251122T132337Z/crud/acceptmodv2/response_20251122T045705Z.xml`。 | CRUD 実測済み。8 桁 Patient_ID を要求する場合は ORCA 管理連番設定変更が前提。 | - |
