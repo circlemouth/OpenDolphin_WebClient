@@ -16,9 +16,9 @@
 > - [ ] `docs/archive/2025Q4/` への移行とスタブ作成
 > - [ ] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考へアーカイブ結果反映
 >
-> **開発端末手順の現行/Legacy 判定**
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Backend ops 参照時に使用）
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 判断時は DOC_STATUS と同期）
+- **開発端末手順の現行/Legacy 判定**
+- [ ] `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` = 現行手順（Backend ops 参照時に使用）
+- [ ] `mac-dev-login.local.md` は Legacy / Archive 扱いとし、DOC_STATUS と同期
 
 ## 1. 背景
 - Server Modernization Phase2 の資料は `docs/server-modernization/phase2/INDEX.md` を起点に foundation/domains/operations/notes へ展開されている。

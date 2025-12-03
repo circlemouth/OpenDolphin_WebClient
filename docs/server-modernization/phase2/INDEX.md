@@ -8,7 +8,7 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 
 > **Phase2 ガバナンス必読チェーン / 接続・RUN 運用共通ルール**  
 > 1. `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各領域チェックリストの順で参照・更新し、同一 RUN_ID を連携する。  
-> 2. WebORCA 接続先は機微情報として `docs/web-client/operations/mac-dev-login.local.md` を参照する運用とし、WebORCA トライアルや `curl --cert-type P12` を使った本番アクセスは禁止。  
+> 2. WebORCA 接続先は機微情報として `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照し、mac-dev を使った接続手順はアーカイブ扱いとする。WebORCA トライアルや `curl --cert-type P12` を使った本番アクセスは禁止で、証跡は `docs/server-modernization/phase2/operations/logs/20251203T134014Z-orcacertification-only.md` に保存する。  
 > 3. RUN_ID は `YYYYMMDDThhmmssZ` 形式を採用し、指示・README・DOC_STATUS・ログ・証跡ディレクトリのすべてで同一値を共有する。観点ごとに派生 RUN_ID を使う場合は親 RUN_ID を明示し、ログ先頭と備考欄へ併記する。  
 > 4. DOC_STATUS 更新は (a) 最終コミット確認 → (b) Active/Dormant/Archive 判定 → (c) 備考に RUN_ID / 証跡パスを追記 → (d) ハブドキュメントへ同日付反映、の順で行い、完了報告前にチェック。  
 > 5. Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。

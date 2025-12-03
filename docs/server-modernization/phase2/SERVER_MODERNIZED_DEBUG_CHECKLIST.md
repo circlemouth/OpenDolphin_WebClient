@@ -18,8 +18,7 @@ server-modernized モジュールのデバッグ状況を把握するための�
 - 新規や更新した Runbook／スクリプトの保存先を本ファイルの備考欄に必ず記載し、証跡（ログ・diff・ハッシュなど）は `artifacts/parity-manual/` 配下に時刻付きフォルダで保管する。
 
 ### 2025-11-19 追記: WebORCA トライアル接続と CRUD ログ方針
-
-- ORCA 連携検証の接続先を **開発用 ORCA サーバー**（`mac-dev-login.local.md` 参照）へ切り替え、同ファイル記載の Basic 認証のみで疎通させる。`ORCAcertification/` 配下の PKCS#12、`curl --cert-type P12`、`weborca.cloud.orcamo.jp` へのアクセス記述はアーカイブ済みとし、参照時は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を根拠にする。
+- ORCA 連携検証の接続先を **ORCAcertification-only**（`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）へ切り替え、ORCAcertification の PKCS#12/Basic 情報で疎通させる。mac-dev は Archive 扱いとし、`docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` は補足情報として参照する。
 - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.scheme`, `claim.send.encoding` は開発用 ORCA サーバー向けの HTTP Basic 前提へ更新する。`/serverinfo/claim/conn` の疎通確認は `curl -u user:pass <URL>/api/system01dailyv2?class=01` など Basic のみで再取得する。
 - Trial 環境では「新規登録／更新／削除 OK（トライアル環境でのみ）」と定義し、CRUD を行った際は `RUN_ID=YYYYMMDDTorcaTrialCrudZ#` を採番して `artifacts/orca-connectivity/<RUN_ID>/trial/` に `httpdump/trace/ui` を保存する。ログサマリは `docs/server-modernization/phase2/operations/logs/2025-11-19-orca-trial-crud.md` および `ORCA_HTTP_404405_HANDBOOK.md#trial-crud-logging` に追記して監査可能にする。
 - `docs/server-modernization/phase2/operations/EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` の ORCA 節へ「2025-11-19: WebORCA Trial + CRUD」段落を追加し、Basic 認証手順と CRUD ログ手順を統一する。`PHASE2_PROGRESS.md` / `ORCA_API_STATUS.md` / `DOC_STATUS.md` の ORCA 行には「2025-11-19 trial 切替＋CRUD 許可」を同日付で反映する。
