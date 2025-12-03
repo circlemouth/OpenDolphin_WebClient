@@ -22,6 +22,7 @@
 - RUN_ID=`20251202T090000Z` の A/B/C 実行結果として Playwright テスト追加・モック分岐強化・監査ログ正規化を反映し、README / DOC_STATUS / manager checklist / 証跡ログで RUN_ID 整合を再掲。
 - RUN_ID=`20251202T090000Z` で Reception/Charts の ORCA エラー・未紐付・送信キュー遅延バナーの tone/`aria-live`/carry over ルールを統一し、自動/手動更新・ステータス遷移・ロール別可否・監査ログの扱いを `docs/web-client/ux/reception-schedule-ui-policy.md` / `docs/web-client/ux/charts-claim-ui-policy.md` に追記。Playwright シナリオへモック ON/OFF（`VITE_USE_MOCK_ORCA_QUEUE`/`VITE_VERIFY_ADMIN_DELIVERY`）でのバナー検証と診療終了解除パスを追加。
 - RUN_ID=`20251202T090000Z` で Patients→Reception の戻り導線（フィルタ/保険モード保持・権限ガード）、Administration 配信遅延の警告/リトライ導線、モック ON/OFF のレスポンス差分・監査ログ項目・ヘッダー有無を `docs/web-client/ux/patients-admin-ui-policy.md` / `docs/web-client/ux/admin-delivery-validation.md` / `docs/web-client/ux/config-toggle-design.md` に追記し、証跡ログと同期。
+- RUN_ID=`20251203T143858Z` で reception/patients-admin/charts の外来 UX ポリシーを再調査し、tone/レイアウト/ARIA/監査要件を `docs/web-client/ux/ux-documentation-plan.md` に追記。証跡ログ `docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md` と `artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md` を DOC_STATUS/README に反映。
 
 ## 現在のドキュメント一覧（Active）
 - `docs/web-client/README.md`（本ファイル）—ログイン画面再構成のハブ。RUN_ID=`20251130T120000Z`。
