@@ -58,3 +58,29 @@
 - 診療録⇔病名⇔オーダー⇔結果タブの遷移で最後に操作したフィールドへフォーカス復帰し、ライブリージョンが二重読み上げしないか。
 - Reception から渡された保険/自費モードが診療終了まで保持され、オーダー登録や署名時に正しいモードで送信されるか。
 - ORCA 送信エラー/未紐付病名警告が診療終了ボタン押下後すぐに表示され、再送時にメッセージが更新されるまでの遅延を計測する。
+
+## 10. DocumentTimeline・OrderConsole・OrcaSummary の状態と aria-live (RUN_ID=20251203T210000Z)
+
+- 受付画面の `docs/web-client/ux/reception-schedule-ui-policy.md §5` で決めた `Error/Warning=assertive`・`Info=polite` のライブリージョン構成と `role=alert` を、外来 Charts 右ペインの DocumentTimeline/OrderConsole/OrcaSummary でも共通化する。受付から渡される患者ID・保険/自費フラグ・調整中ステータスは `DocumentTimelinePanel` が受け取り、同じ `data-run-id` でスクリーンリーダーが更新を区別できるようにして Reception へ carry over する。
+- `DocumentTimeline` のライブリージョンは `aria-atomic=false` によって前回の読み上げ状態を保持しつつ、赤/琥珀/青の tone を色で切り替える。`missingMaster`/`fallbackUsed`/`dataSourceTransition` の警告は OrderConsole の `DataSourceBanner` から OrcaSummary に展開され、監査ログ（`action/patientId/queueStatus/tone/ariaLive/runId`）へ tone + `aria-live` を透過する。
+
+| 状態 | トリガ・説明 | Tone + aria-live | Reception との整合 |
+| --- | --- | --- | --- |
+| 文書を編集中・履歴ロード直後 | `DocumentTimeline` に過去イベントが描画され、最新イベントが選択済み。 | Info（`aria-live=polite`）、`role=alert` で静的情報を一度だけ読上げ。 | `Reception` の `受付→診療開始` ステータスと同じ `polite` 情報を保持。 |
+| ORCA キュー投入・送信中 | 「診療終了」/「再送」で `DocumentTimeline` が ORCA queue を呼び出し、`Queue` バナーを表示。 | Info（`aria-live=polite`）、`data-run-id` 増分ごとに再読上げ。 | Reception の診察終了タブの `polite` バナーと同期し、再送中トーンを一致させる。 |
+| 送信成功・再送成功 | ORCA から ACK を受け、バナーが緑色で「送信済み」に遷移。 | Info（`aria-live=polite`）、成功メッセージで色を青→緑に変更。 | Reception でも `polite` 完了バナーを表示し、トーンと aria の一致を保証。 |
+| ORCA エラー・未紐付・遅延 | ORCA エラー・未紐付病名・キュー遅延を `OrcaOrderPanel` が受け取り、`tone=error` に切り替える。 | Error/Warning（`aria-live=assertive`）、`aria-atomic=false` で重複読み上げを抑えながら赤/琥珀バナーを表示。 | Reception の `role=alert` エリア（赤または琥珀）へ `assertive` で carry over。 |
+| マスターデータ fallback・`dataSourceTransition` | ORCA マスター取得が `snapshot`/`msw`/`fallback` に遷移し、`missingMaster`/`fallbackUsed`/`dataSourceTransition` を検知。 | Warning（`aria-live=polite`）、`DataSourceBanner` が `dataSourceTransition=server→snapshot` などを更新。 | Reception の warning tone (`polite`) を継承しつつ、主要エラーと混ざらないよう aria-live を分離。 |
+
+- OrderConsole は保険/自費トグル・文書バージョン・ORCA 再送の status を監視し、`DocumentTimeline` へ `insuranceMode`/`patientMode` をそのまま渡す。`FilterBadge` の `missingMaster`/`fallbackUsed`/`dataSourceTransition` は `aria-live=polite` で更新され、監査メタ（`dataSourceTransition.from`/`to`/`reason`）を `audit.logUiState` や `audit.logOrcaQuery` に `action=filterChange` として送出する。
+- OrcaSummary（`DataSourceBanner` + `OrcaStatusList`）は `/resources/api/orca/master/*` の取得結果をもとに `missingMaster`/`fallbackUsed`/`dataSourceTransition` を表示し、同じ値を監査ログ（`dataSourceTransition`/`missingMaster`/`fallbackUsed`）と UI に透過する。`aria-live="polite"` の帯域を使い、繰り返し発生する `missingMaster` 警告でも二重読み上げを避ける。
+
+## 11. 外来 API カバレッジ（入院 API は N/A）
+
+- 受付→カルテ導線、保険/自費フィルタ、監査メタ（`dataSourceTransition`/`missingMaster`/`fallbackUsed`）は外来 API に限定した coverage table にまとめ、次の API マッピング作業へ渡す資料を `artifacts/webclient/ux-notes/20251203T210000Z-charts-ux.md` に残す。
+
+| UXフォーカス | 外来 API | 備考 | 入院 API |
+| --- | --- | --- | --- |
+| 受付→カルテ導線 | `GET /api/pvt2/pvtList`（Reception の一覧取得）＋`GET /api/karte/docinfo/{karteId}`・`GET /api/karte/documents`（DocumentTimeline の描画） | 受付で選んだ患者ID+保険/自費モードを `DocumentTimeline` に渡し、文書ロード・ORCA 再送・`data-run-id` 更新を外来のみで確実化。 | N/A（外来限定検証） |
+| 保険/自費フィルタ | `GET /api/patient/{patientId}` とその保険情報（`healthInsurance` 配列） | `OrderConsole` が `insuranceMode` をトグルし、`DocumentTimeline` 側でも同じフィルタを再現。Receptions のフィルタと同期するため `insuranceMode` クエリを `chart` API に渡す。 | N/A |
+| 監査ログ：`dataSourceTransition`/`missingMaster`/`fallbackUsed` | `GET /resources/orca/master/{generic-class, generic-price, youhou, material, kensa-sort, hokenja, address, etensu}` + audit endpoints | OrcaSummary で `DataSourceBanner` を更新し、`audit.logUiState`/`audit.logOrcaQuery` に meta を添えて `OrcaSummaryPanel` へ流す。これらの meta は外来 API を起点に `dataSourceTransition` の履歴を追跡する。 | N/A |
