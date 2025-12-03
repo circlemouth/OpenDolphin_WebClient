@@ -1,49 +1,25 @@
 [
   {
-    "id": "task-yaml-16uc564-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 01_UXドキュメント要件レビュー\n期間: 12/04 09:00 - 12/06 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 01 UX ドキュメント要件レビュー\n\n- docs/web-client/ux/ux-documentation-plan.md を起点に reception-schedule-ui-policy.md / patients-admin-ui-policy.md / charts-claim-ui-policy.md を読み、外来カルテと受付のトーン、監査・ARIA 要件、レイアウト比率を再整理する。\n- Legacy 資料（ux/legacy/*）は履歴参照にとどめ、現行で扱う外来シナリオのみにフォーカス。入院向け ORCA API やバナーは本スコープから除外する。\n- 抽出結果を docs/web-client/ux/ux-documentation-plan.md へ追記し、次段階の設計メモとして artifacts/webclient/ux-notes/<RUN_ID>-ux-review.md を準備。\n\nYAML ID: src/outpatient_ux_modernization/01_UXドキュメント要件レビュー.md",
-    "model": "YAML App",
-    "status": "running",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-03T14:34:31.781Z",
-    "updatedAt": "2025-12-03T14:34:36.154Z",
+    "id": "task-1764773794467-91d0ee",
+    "name": "CodexCLI1: [webclient ux outpatient modernization plan] 02_外来カルテUXとAPIカバレッジ\n期間: 12/06 09:00 - 12/09 09:00 / 優先度: medium / 緊急度: high / エージェント: gemini cli\n\n# 02 外来カルテ UX と API カバレッジ\n\n- charts-claim-ui-policy.md をベースに、外来カルテ ChartsPage で表示する DocumentTimeline、OrderConsole、OrcaSummary の状態遷移と aria-live バナーを一覧化し、docs/web-client/ux/reception-schedule-ui-policy.md の片側シナリオと整合させる。\n- 受付→カルテの導線、保険/自費フィルタ、監査ログの `dataSourceTransition`/`missingMaster`/`fallbackUsed` を UX 観点から整理し、外来 API のみを対象にしたテーブルをつくる（入院 API は `N/A`）。\n- この UX カバレッジを docs/web-client/ux/ux-documentation-plan.md の該当セクションに上書きし、次の API マッピングタスクへのインプットを artifacts/webclient/ux-notes/<RUN_ID>-charts-ux.md へ記録。\n\nYAML ID: src/outpatient_ux_modernization/02_外来カルテUXとAPIカバレッジ.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-03T14:56:34.467Z",
+    "updatedAt": "2025-12-03T14:56:34.467Z",
     "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-16uc564-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
+    "createWorktree": true,
+    "branchName": "task/task-1764773794467-91d0ee",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
+    "aiCompetitionGroupId": "comp-1764773794466-j8lvthlg",
+    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 02_外来カルテUXとAPIカバレッジ\n期間: 12/06 09:00 - 12/09 09:00 / 優先度: medium / 緊急度: high / エージェント: gemini cli\n\n# 02 外来カルテ UX と API カバレッジ\n\n- charts-claim-ui-policy.md をベースに、外来カルテ ChartsPage で表示する DocumentTimeline、OrderConsole、OrcaSummary の状態遷移と aria-live バナーを一覧化し、docs/web-client/ux/reception-schedule-ui-policy.md の片側シナリオと整合させる。\n- 受付→カルテの導線、保険/自費フィルタ、監査ログの `dataSourceTransition`/`missingMaster`/`fallbackUsed` を UX 観点から整理し、外来 API のみを対象にしたテーブルをつくる（入院 API は `N/A`）。\n- この UX カバレッジを docs/web-client/ux/ux-documentation-plan.md の該当セクションに上書きし、次の API マッピングタスクへのインプットを artifacts/webclient/ux-notes/<RUN_ID>-charts-ux.md へ記録。\n\nYAML ID: src/outpatient_ux_modernization/02_外来カルテUXとAPIカバレッジ.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/01_UXドキュメント要件レビュー.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/01_UXドキュメント要件レビュー.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-03T14:34:31.773Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-5rv6iv-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1764806400000,
-      "endMs": 1764979200000,
-      "durationDays": 2
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 01 UX ドキュメント要件レビュー\n\n- docs/web-client/ux/ux-documentation-plan.md を起点に reception-schedule-ui-policy.md / patients-admin-ui-policy.md / charts-claim-ui-policy.md を読み、外来カルテと受付のトーン、監査・ARIA 要件、レイアウト比率を再整理する。\n- Legacy 資料（ux/legacy/*）は履歴参照にとどめ、現行で扱う外来シナリオのみにフォーカス。入院向け ORCA API やバナーは本スコープから除外する。\n- 抽出結果を docs/web-client/ux/ux-documentation-plan.md へ追記し、次段階の設計メモとして artifacts/webclient/ux-notes/<RUN_ID>-ux-review.md を準備。"
+    "worktreePath": ".worktrees/task-1764773794467-91d0ee"
   }
 ]
