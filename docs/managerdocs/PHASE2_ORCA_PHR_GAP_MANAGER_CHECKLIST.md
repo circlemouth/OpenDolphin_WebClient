@@ -17,18 +17,18 @@
 > - [x] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考をアーカイブ情報で更新 (本 RUN で備考追記予定)
 >
 > **開発端末手順の現行/Legacy 判定**
-> - [x] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Trial CRUD 再検証時に参照）
-> - [x] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化判定時にチェックを付与）※現状は現行維持
+> - [x] `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` = 現行手順（Trial CRUD 再検証時に参照）
+> - [x] `mac-dev-login.local.md` は Legacy/Archive 扱いとし、DOC_STATUS と連携する
 
 
 ## 1. 背景
-- DemoResourceASP / DolphinResourceASP / PHRResource の欠落 API 棚卸し (`MODERNIZED_REST_API_INVENTORY.md:205-224,266-317` と `API_PARITY_MATRIX.md:105-322`) および `DOC_STATUS.md` W22 行を、接続情報非公開のまま（開発用は `mac-dev-login.local.md` 参照）順次読み替え中。
-- ORCA 連携は開発用接続先のみ使用可。WebORCA トライアルは使用しない。CRUD ログ採取を必須とし、接続先・認証は `docs/web-client/operations/mac-dev-login.local.md` にのみ記載する。
-- **開発サーバ仕様**: 具体値は mac-dev-login.local.md を参照。実測 CRUD を Blocker/証跡として記録する。
+- DemoResourceASP / DolphinResourceASP / PHRResource の欠落 API 棚卸し (`MODERNIZED_REST_API_INVENTORY.md:205-224,266-317` と `API_PARITY_MATRIX.md:105-322`) および `DOC_STATUS.md` W22 行を、接続情報非公開のまま（開発用は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）順次読み替え中。
+- ORCA 連携は ORCAcertification-only 接続先のみ使用可。WebORCA トライアルは使用しない。CRUD ログ採取を必須とし、接続先・認証は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載する。
+- **開発サーバ仕様**: 具体値は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照。実測 CRUD を Blocker/証跡として記録する。
 - すべての書込みは `docs/server-modernization/phase2/operations/logs/<RUN_ID>-orca-dev-crud.md` と `artifacts/orca-connectivity/<RUN_ID>/crud/` へ保存し、`DOC_STATUS.md` W22 行および `PHASE2_PROGRESS.md` W22 セクションへ反映する。
 - PHR Phase-A〜F の過去 RUN_ID (`20251121TrialPHRSeqZ1` など) はアーカイブ扱い。参照時は「trial 実測（非現行）」注記を付け、必要なら開発接続先で再測して差し替える。
 
-> RUN_ID=`20251116T173000Z`: （履歴）Trial サーバー遮断期間の Spec-based 実装メモ。**現行は開発接続先（mac-dev-login.local.md 参照）で再測し、結果を新 RUN_ID で記録する。** 検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
+> RUN_ID=`20251116T173000Z`: （履歴）Trial サーバー遮断期間の Spec-based 実装メモ。**現行は ORCAcertification-only 接続（`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）で再測し、結果を新 RUN_ID で記録する。** 検証完了後に DOC_STATUS／Runbook／API_STATUS を同日更新する。
 
 ## 2. 進行タスク一覧
 - [x] **Task-A: ASP リソース再登録 + 認証ヘッダー/Context-Param 設定)** 完了 (2025-11-14 / RUN_ID=20251114TaspCtxZ1)。トライアル環境 CRUD 方針をヘッダー要件に追記し、`MODERNIZED_API_DOCUMENTATION_GUIDE.md`・`MODERNIZED_REST_API_INVENTORY.md`・`DOC_STATUS.md` へ反映。

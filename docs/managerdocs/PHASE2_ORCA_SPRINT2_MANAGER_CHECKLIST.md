@@ -16,15 +16,15 @@
 > - [ ] `docs/archive/2025Q4/` へ移行しスタブ差替
 > - [ ] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考へアーカイブ記録
 >
-> **開発端末手順の現行/Legacy 判定**
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Sprint2 CRUD 手順の前提確認）
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化判断時にチェック）
+- **開発端末手順の現行/Legacy 判定**
+- [ ] `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` = 現行手順（Sprint2 CRUD 手順の前提確認）
+- [ ] `mac-dev-login.local.md` = Legacy / Archive（DOC_STATUS と同期）
 
 ## 1. 背景
 - Sprint2 設計情報は `docs/server-modernization/phase2/domains/ORCA_REST_IMPLEMENTATION_NOTES.md` §6 を一次情報として整備済み。
 - `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から上記節へアンカーされ、`DOC_STATUS.md` 行 25 にも Active 記録あり。
 - 現在のマネージャー指示は、ORCA ラッパー実装／Runbook 連携／進捗台帳の同期を確実にすることが目的。
-- 2025-11-20 時点では PHR Phase-C/D/E RUN_ID=`20251121TrialPHRSeqZ1` を開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）で再定義済。公式案内は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を参照し、「新規登録／更新／削除 OK」＋ CRUD ログ採取を前提とする。証跡は `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` / `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/` に集約されており、Sprint2 側でもタスクC（棚卸し）で `DOC_STATUS.md` W22 行との整合を確認する。
+- 2025-11-20 時点では PHR Phase-C/D/E RUN_ID=`20251121TrialPHRSeqZ1` を ORCAcertification-only 接続（`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）で再定義済。公式案内は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md` を参照し、「新規登録／更新／削除 OK」＋ CRUD ログ採取を前提とする。証跡は `docs/server-modernization/phase2/operations/logs/20251121-phr-seq-trial.md` / `artifacts/orca-connectivity/20251121TrialPHRSeqZ1/` に集約されており、Sprint2 側でもタスクC（棚卸し）で `DOC_STATUS.md` W22 行との整合を確認する。
 
 ## 2. 進行タスク一覧
 - [x] **タスクA: Sprint2 アンカー反映** — `API_PARITY_MATRIX.md` と `PHASE2_PROGRESS.md` の ORCA 行を Sprint2 設計アンカーへ差し替える。完了条件: 両ファイルから §6 各 API へ直接ジャンプでき、`DOC_STATUS.md` 備考に「アンカー更新済（2025-11-14）」追記。（完了: 2025-11-14 / RUN_ID=NA）
