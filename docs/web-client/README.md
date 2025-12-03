@@ -44,6 +44,11 @@
 3. 設計証跡や検証ログを残す際は、`docs/web-client/planning/phase2/logs/` 配下に RUN_ID ベースの Markdown を作成し、DOC_STATUS の備考欄にリンクを添えてください。
 4. README／DOC_STATUS／新規ドキュメントで RUN_ID を共有していない構成や資料は即時 Archive に移行し、必要なら `docs/archive/<YYYYQn>/` に保存してください。
 
+## ORCA 接続の現行方針
+- ORCA 接続は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一の現行ルールとして参照し、mac-dev ログイン手順は既存ログ（例: `docs/server-modernization/phase2/operations/logs/20251203T134014Z-orcacertification-only.md`）を残して Archive 扱いとする。
+- `ORCAcertification/` 配下の正式証明書・資格情報を安全に使用し、Web クライアント／Playwright 側の検証では `VITE_DISABLE_MSW` や `VITE_DEV_PROXY_TARGET` の指示に従って ORCAcertification サーバーへ接続する。
+- ORCA 連携関連の DOC_STATUS、manager checklist、ORCA_API_STATUS などは本セクションの RUN_ID でリンクを張り、新しい接続方針が常に参照できるようにしてください。
+
 ## 参照チェーン
 - `AGENTS.md`（最上位ガバナンス）
 - `docs/web-client/README.md`（本ファイル）

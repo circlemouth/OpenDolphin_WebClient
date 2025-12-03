@@ -16,12 +16,12 @@
 > - [ ] `docs/archive/2025Q4/` への移行とスタブ差し替え
 > - [ ] `PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` / `DOC_STATUS.md` 備考へアーカイブ結果を反映
 >
-> **開発端末手順の現行/Legacy 判定**
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = 現行手順（Trial 接続資格情報の参照用）
-> - [ ] `docs/web-client/operations/mac-dev-login.local.md` = Legacy / Archive（Archive 化時は上記チェックも更新）
+- **開発端末手順の現行/Legacy 判定**
+- [ ] `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` = 現行手順（Trial 接続資格情報の参照用）
+- [ ] `mac-dev-login.local.md` = Legacy / Archive（Archive 化時は DOC_STATUS と同期）
 
 ## 1. 背景と基本方針
-- 接続先は開発用 ORCA サーバー（`mac-dev-login.local.md` 参照）のみ。同ファイル記載の Basic 認証を共通で利用し、firecrawl で取得した公式 API 仕様（`docs/server-modernization/phase2/operations/assets/orca-api-spec/raw/*.md`。例: `acceptancelst.md`, `appointmod.md`, `acceptmod.md`, `medicalmod.md`）に基づき、開発環境上で提供されている API を XML payload で実行する。
+- 接続先は ORCAcertification-only（`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）のみ。同ファイル記載の Basic 認証を共通で利用し、firecrawl で取得した公式 API 仕様（`docs/server-modernization/phase2/operations/assets/orca-api-spec/raw/*.md`。例: `acceptancelst.md`, `appointmod.md`, `acceptmod.md`, `medicalmod.md`）に基づき、開発環境上で提供されている API を XML payload で実行する。
 - トライアル環境の制約・利用不可機能は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md`（Snapshot 2025-11-19）を唯一の根拠とし、「お使いいただけない機能一覧」に記されている項目のみ Blocker として扱う。それ以外の API／業務機能はすべて正常に利用できる状態へ整える。
 - CRUD 証跡は必ず `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` と `artifacts/orca-connectivity/<RUN_ID>/{README.md,dns,tls,crud,ui}` に保存し、`docs/web-client/planning/phase2/DOC_STATUS.md` 行 71-75（モダナイズ/外部連携（ORCA））を更新する。
 - UI スクリーンショットは GUI 端末が確保できた場合のみ任意取得。CLI 環境しか使えない場合は「UI 未取得（CLI 制約）」と記録したうえで API 実測に専念する。
