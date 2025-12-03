@@ -303,14 +303,14 @@
 ### 4.5 WebORCA トライアル接続（2025-11-15 更新）
 
 1. **接続先と資格情報**  
-   - 検証対象は `docs/web-client/operations/mac-dev-login.local.md` に記載された開発用 ORCA サーバー。
+   - 検証対象は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載された開発用 ORCA サーバー。
    - 認証は HTTP Basic のみ。公式情報は `assets/orca-trialsite/raw/trialsite.md` を参照し、利用不可機能（CLAIM 送信・CSV 生成など）を把握してから作業する。  
    - Evidence へコマンドを記録する際は `--user <MASKED>` などマスク表記を使い、生の資格情報は履歴に残さない。
 2. **ヘルスチェック**  
    - `dig <HOST>` と `openssl s_client -connect <HOST>:<PORT> -servername <HOST>` を実行し、結果を `artifacts/orca-connectivity/<RUN_ID>/dns/` と `tls/` に保存する。  
-   - `curl -u "user:pass" -H 'Content-Type: application/json; charset=Shift_JIS' -X POST '<URL>/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、`trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得する（接続情報は `mac-dev-login.local.md` 参照）。
+   - `curl -u "user:pass" -H 'Content-Type: application/json; charset=Shift_JIS' -X POST '<URL>/api/api01rv2/system01dailyv2?class=00' --data-binary '@/tmp/system01dailyv2.json'` を実行し、`trial/system01dailyv2.{headers,json}` と `trace/system01dailyv2.trace` を取得する（接続情報は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）。
 3. **モダナイズ版サーバー設定**  
-   - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.send.port`, `claim.scheme`, `claim.conn=server`, `claim.send.encoding=MS932` を確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に保存（値は `mac-dev-login.local.md` 参照）。  
+   - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` の `claim.host`, `claim.send.port`, `claim.scheme`, `claim.conn=server`, `claim.send.encoding=MS932` を確認し、`ServerInfoResource` の結果を `artifacts/.../serverinfo/claim_conn.json` に保存（値は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）。  
    - CRUD を実行する場合は Runbook §4.3 を参照し、`artifacts/orca-connectivity/<RUN_ID>/data-check/` に before/after と操作理由を残す。
 4. **Evidence と報告**  
    - `trial/` ディレクトリ構成（例: `trial/appointmodv2/{request,response}.http`、`trace/appointmodv2.trace`、`screenshots/appoint_before.png`）を統一し、`docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` からリンクする。  
@@ -337,7 +337,7 @@
 - 所見: `/api/api21/*` のみ Basic 認証後に REST ハンドラへ到達し 200 応答を取得。`/api/api11` と `/api/api14` は 404 で API 未公開のまま。`Allow` ヘッダーが空であるため、WebORCA 側の公開可否は管理ツール設定の確認が必要。405 ルートの切替検証が完了したため、今後は ORCA API Enable (ID=ORCA-API-ENABLE-20251113) の対処方針に沿ってキーパラメータの棚卸しを継続する。
   - 追加資料: `docs/server-modernization/phase2/operations/assets/orca-api-spec/README.md`（firecrawl オフライン仕様）、`manifest.json`（slug マッピング）、`orca-api-matrix.with-spec.csv`（優先度マトリクス連携）。
 
-- **2025-11-13 14:48 JST（RUN_ID=`20251113TorcaApi21LogW55`）**: `export PATIENT_ID_TEST=0000001` を設定したうえで `curl -u <DEV_ORCA_BASIC> -H 'Content-Type: application/xml; charset=UTF-8' --data-binary @tmp/orca-api-payloads/03_medicalmodv2_payload.xml http://localhost:8000/api/api21/medicalmodv2?class=01` を実行。HTTP 200 でも `Api_Result=10` が継続し、`/opt/jma/weborca/log/{http.log,orca_http.log}` の tail（`artifacts/orca-connectivity/20251113T054823Z/api21_logtrace/{http_log_tail.txt,orca_http_log_tail.txt}`）には `API-:orca  ormaster medicalmodv2 ORAPI021S1V2 false` から `DestroyContext` までのイベントのみが出力された。`tbl_ptinf` や患者検索 SQL 行は一切出現せず、WebORCA 側で Patient_ID 参照そのものが行われていないことが再確認できた（接続先・認証詳細は `mac-dev-login.local.md` 参照）。
+- **2025-11-13 14:48 JST（RUN_ID=`20251113TorcaApi21LogW55`）**: `export PATIENT_ID_TEST=0000001` を設定したうえで `curl -u <DEV_ORCA_BASIC> -H 'Content-Type: application/xml; charset=UTF-8' --data-binary @tmp/orca-api-payloads/03_medicalmodv2_payload.xml http://localhost:8000/api/api21/medicalmodv2?class=01` を実行。HTTP 200 でも `Api_Result=10` が継続し、`/opt/jma/weborca/log/{http.log,orca_http.log}` の tail（`artifacts/orca-connectivity/20251113T054823Z/api21_logtrace/{http_log_tail.txt,orca_http_log_tail.txt}`）には `API-:orca  ormaster medicalmodv2 ORAPI021S1V2 false` から `DestroyContext` までのイベントのみが出力された。`tbl_ptinf` や患者検索 SQL 行は一切出現せず、WebORCA 側で Patient_ID 参照そのものが行われていないことが再確認できた（接続先・認証詳細は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）。
 
 ## 6. 更新フロー
 

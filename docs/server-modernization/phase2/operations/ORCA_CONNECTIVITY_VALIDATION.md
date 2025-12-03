@@ -1,16 +1,16 @@
 ﻿```
-> 【2025-11-21 更新】以降の ORCA 接続は、接続先・認証情報を機微扱いとし `docs/web-client/operations/mac-dev-login.local.md` を参照する。WebORCA トライアル (`weborca-trial.orca.med.or.jp`) への直接接続は行わない。仮想データに対する CRUD を含め全 API 操作を許可する。過去のトライアル URL 記載箇所は本運用に読み替えること。
+- 【2025-11-21 更新】以降の ORCA 接続は、接続先・認証情報を機微扱いとし `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照する。WebORCA トライアル (`weborca-trial.orca.med.or.jp`) への直接接続は行わない。仮想データに対する CRUD を含め全 API 操作を許可する。過去のトライアル URL 記載箇所は本運用に読み替えること。
 # ORCA 接続 Single Playbook
 - 2025-11-21 エラー採取 RUN（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）で下記を確認: 成功=HTTP200/`Api_Result=00`（`POST /api01rv2/system01dailyv2?class=00`）、誤パスワード=HTTP401 JSON、未登録患者=HTTP404 JSON（`GET /api01rv2/patientgetv2?id=999999`）、`/actuator/health`=HTTP404。Authorization はすべて `<MASKED>`。証跡: `artifacts/error-audit/20251121T153300Z/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#5-子-run-20251121t153300z-実測ログ親20251120t193040z`。
 - 2025-11-21 業務系エラー採取 RUN（RUN_ID=`20251121ErrorMatrixZ1`, 親=`20251120T193040Z`）で下記を確認: `system01dailyv2` Request_Number=99 → HTTP200/`Api_Result=91`、`acceptlstv2` Acceptance_Date=2000-01-01 & Physician_Code=99999 → HTTP200/`Api_Result=13`、`/api/api21/medicalmodv2` Patient_ID=999999 → HTTP200/`Api_Result=10`。Authorization は `<MASKED>` 済み。証跡: `artifacts/error-audit/20251121ErrorMatrixZ1/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#6-子-run-20251121errormatrixz1-実測ログ親20251120t193040z`。
 - 作成日: 2025-11-19（WebORCA トライアルサーバー運用への切り替え）
-- 対象: `docs/web-client/operations/mac-dev-login.local.md` に記載された開発用 ORCA サーバー（モダナイズ版 OpenDolphin サーバーと連携）。
+- 対象: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載された開発用 ORCA サーバー（モダナイズ版 OpenDolphin サーバーと連携）。
 - 目的: 公開トライアル環境での疎通・API 呼び出し・CRUD 検証知見を単一 Runbook に集約し、RUN_ID 発行／ログ保存／週次棚卸しのやり方を一本化する。
 - 参照: [ORCA API 公式仕様](https://www.orca.med.or.jp/receipt/tec/api/overview.html) / [オフラインコピー](assets/orca-api-spec/README.md) / [技術情報ハブ（帳票・CLAIM・MONTSUQI 等）](assets/orca-tec-index/README.md)
 
 > **Single Playbook の目的**: ORCA 接続に関する知見を本ドキュメントに一本化する。関連ドキュメント（`ORCA_API_STATUS.md`, `MODERNIZED_API_DOCUMENTATION_GUIDE.md` など）は本 Playbook へのリンクと参照情報のみを記載する。
 >
-> **2025-11-19 更新**: 本番資格情報および `ORCAcertification/` ディレクトリはアーカイブ扱いとし、`mac-dev-login.local.md` 記載のサーバーのみを接続先とする。Basic 認証は同ファイル記載のユーザーを使用し、`curl --cert-type P12` や PKCS#12 証明書は使用しない。
+> **2025-11-19 更新**: 本番資格情報および `ORCAcertification/` ディレクトリはアーカイブ扱いとし、`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載のサーバーのみを接続先とする。Basic 認証は同ファイル記載のユーザーを使用し、`curl --cert-type P12` や PKCS#12 証明書は使用しない。
 >
 > **結果物**
 > 1. `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` に RUN_ID と証跡パスを追記。
@@ -49,8 +49,8 @@
 ### 0.4 curl テンプレート（Basic 認証）
 `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §3.2 から引用する cURL 実行例を本項目で統一する。Basic 認証・UTF-8/Shift_JIS 文字コード・Evidence 保存ルールを厳守する。
 ```bash
-export ORCA_TRIAL_USER=<参照: mac-dev-login.local.md>
-export ORCA_TRIAL_PASS=<参照: mac-dev-login.local.md>
+export ORCA_TRIAL_USER=<参照: docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md>
+export ORCA_TRIAL_PASS=<参照: docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md>
 export RUN_ID=20251120TrialCrudPrepZ1
 EVIDENCE_ROOT="artifacts/orca-connectivity/${RUN_ID}"
 mkdir -p "${EVIDENCE_ROOT}/trial/system01dailyv2" \
@@ -61,7 +61,7 @@ curl --silent --show-error \
      -H 'Content-Type: application/json; charset=Shift_JIS' \
      -X POST --data-binary \
        '@docs/server-modernization/phase2/operations/assets/orca-api-requests/01_system01dailyv2_request.json' \
-     '<参照: mac-dev-login.local.md>/api/api01rv2/system01dailyv2?class=00' \
+     '<参照: docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md>/api/api01rv2/system01dailyv2?class=00' \
      -D "${EVIDENCE_ROOT}/trial/system01dailyv2/response.headers" \
      -o "${EVIDENCE_ROOT}/trial/system01dailyv2/response.json" \
      --trace-ascii "${EVIDENCE_ROOT}/trace/system01dailyv2.trace"
@@ -74,18 +74,18 @@ curl --silent --show-error \
 
 | 項目 | 内容 |
 | --- | --- |
-| WebORCA 接続先 | `mac-dev-login.local.md` を参照。本番相当の検証環境として使用。 |
-| 認証情報 | ユーザー / パスワードは `mac-dev-login.local.md` を参照。 |
+| WebORCA 接続先 | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照。本番相当の検証環境として使用。 |
+| 認証情報 | ユーザー / パスワードは `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照。 |
 | CRUD 方針 | 仮想データに対する全 CRUD 操作を許可。`receipt_route.ini` で POST が許可されていることが前提 (現状 405 のため要設定変更)。 |
 | 利用不可機能 | 特になし (構成による)。 |
-| モダナイズ版サーバー | `opendolphin-server-modernized-dev` (WildFly 27)。`ops/shared/docker/custom.properties` および `ops/modernized-server/docker/custom.properties` に `claim.host` / `claim.send.port` / `claim.conn=server` / `claim.send.encoding=MS932` / `claim.scheme` を設定してから再ビルドする（値は `mac-dev-login.local.md` 参照）。 |
+| モダナイズ版サーバー | `opendolphin-server-modernized-dev` (WildFly 27)。`ops/shared/docker/custom.properties` および `ops/modernized-server/docker/custom.properties` に `claim.host` / `claim.send.port` / `claim.conn=server` / `claim.send.encoding=MS932` / `claim.scheme` を設定してから再ビルドする（値は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）。 |
 | ネットワーク | 作業端末から対象 ORCA サーバーへの HTTP 通信が許可されていること。 |
 | DNS | IP 指定のため名前解決は不要。 |
 | データ | 開発用データ。CRUD 操作はログに残すが、トライアルのような週次リセットはないため、テスト後のデータクリーンアップを推奨。 |
 
 > Snapshot Summary との比較: `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` を更新した上で本項目も更新する。もし本項目に追加したい項目が新しく出た場合は Snapshot を先に更新してから本 Playbook へ反映する。
 ## 2. 実施フロー
-1. **トライアル情報・接続情報の確認**: `assets/orca-trialsite/README.md` を参照し、利用制限・初期データ・ログイン情報を把握する。実際の接続先は `mac-dev-login.local.md` に従う。
+1. **トライアル情報・接続情報の確認**: `assets/orca-trialsite/README.md` を参照し、利用制限・初期データ・ログイン情報を把握する。実際の接続先は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に従う。
 2. **モダナイズ版サーバー設定**: `claim.*` 系プロパティを開発用 ORCA 環境向けに更新し、`ServerInfoResource` で `claim.conn=server` を取得できるようにする。
 3. **接続確認**: `curl` で `/api/api01rv2/system01dailyv2` など read-only API を実行し、HTTP 200 / `Api_Result=00` を証跡化。
 4. **API 検証**: P0（patient, accept, appoint）から順に `node scripts/tools/orca-curl-snippets.js` の出力を使い実行し、`artifacts/orca-connectivity/<UTC>/P0_*` へ保存。必要に応じて P1 以降も追加。
@@ -95,9 +95,9 @@ curl --silent --show-error \
 
 | 項目 | 値 | 参照先 |
 | --- | --- | --- |
-| ベース URL | `mac-dev-login.local.md` を参照 | `mac-dev-login.local.md` |
-| UI ログイン | `mac-dev-login.local.md` を参照 | 同上 |
-| API 認証 | `mac-dev-login.local.md` を参照 | `curl -u ...` で利用 |
+| ベース URL | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照 | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` |
+| UI ログイン | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照 | 同上 |
+| API 認証 | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照 | `curl -u ...` で利用 |
 | 初期データ | 開発環境依存 | - |
 | 利用不可機能 | 特になし | - |
 
@@ -105,9 +105,9 @@ curl --silent --show-error \
 ### 3.2 モダナイズ版サーバー設定
 - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` の各 `claim.*` を以下へ書き換える。差分は Evidence に保存し、`ServerInfoResource` の結果と一列に掲載する。
   - `claim.conn=server`
-  - `claim.host=<参照: mac-dev-login.local.md>`
-  - `claim.send.port=<参照: mac-dev-login.local.md>`
-  - `claim.scheme=<参照: mac-dev-login.local.md>`
+  - `claim.host=<参照: docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md>`
+  - `claim.send.port=<参照: docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md>`
+  - `claim.scheme=<参照: docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md>`
   - `claim.send.encoding=MS932`
 - `docker compose` または `scripts/start_legacy_modernized.sh` でモダナイズ版を起動し、`/serverinfo/claim/conn` が `server` を返すことを確認する。Legacy サーバーは read-only 目的のみで起動してもよい。
 ### 3.3 ネットワークとクライアント設定
@@ -159,7 +159,7 @@ No.19-38 で作成した XML テンプレートの確認は `artifacts/orca-conn
 > RUN_ID=`20251116T173000Z`: Trial サーバーで POST/PHR API が利用されている間は Spec-based 実行として扱い、別途 ORMaster・本番相当サーバー接続に切り替えて再検証を行う。再検証後に DOC_STATUS・Runbook・API_STATUS を随時更新する。
 - 参照系（system/accept/patient/appointment）と CRUD 系（予約登録・受付登録・診療明細操作）を全て対象 ORCA サーバーで実行する。`assets/orca-trialsite/raw/trialsite.md` を参照し、使用不可機能を事前確認する。
 - CRUD 操作は「トライアル環境限定で新規登録・更新・削除 OK」。実施した内容は `artifacts/orca-connectivity/<RUN_ID>/data-check/<api>.md` と `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` の Checklist へ記録し、対象 ID・操作内容・戻し方を明示する。
-- `ORCAcertification/` 配下の PKCS#12 や非公開資格情報はアーカイブ扱い。接続は `mac-dev-login.local.md` の Basic 認証のみを使用する。
+- `ORCAcertification/` 配下の PKCS#12 や非公開資格情報はアーカイブ扱い。接続は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` の Basic 認証のみを使用する。
 - Trial HTTP 要件: `curl -vv -u user:pass -H 'Accept: application/xml' -H 'Content-Type: application/xml' --data-binary @payloads/<api>_trial.xml <URL>/<path>` を共通フォーマットとし、`payloads/*.xml` は firecrawl 取得済み仕様（slug=`appointlst`,`appointmod`,`acceptancelst`,`acceptmod`,`medicalmod` 等）と整合させた XML を送信する。証跡にはリクエスト XML とレスポンス XML を `crud/<api>/` に保存する。- `trialsite.md` の「利用できない API」に記載の API（例: `/20/adm/phr/*`）と POST 予約登録イベント（例: `/orca14/appointmodv2` 等）は Blocker=`TrialLocalOnly` として Runbook / Checklist / ログに記載で確認し、ORCA（ORMaster 相当）接続に切り替えて実施可能条件（doctor seed 整備・POST 予約登録）を提示する。- Blocker を解消した API については RUN_ID=`20251116T173000Z` の `docs/server-modernization/phase2/operations/logs/20251116T173000Z-prod-validation-plan.md` に従う。Final validation は Production/ORMaster 接続（例: `curl -vv -u ormaster:ormaster --data-binary @payloads/<api>_prod.xml https://ormaster.orca.med.or.jp/<path>`）で実行する。DNS/TLS（`nslookup`, `openssl s_client`）確認と Basic 認証ログをセットで取得し、`operations/logs/<RUN_ID>-prod-validation.md` にリンクするまで Blocker を解消しない。- Doctor seed / データ不足: Trial で HTTP200 かつ `Api_Result=12/13/14` が返る場合は `data-check/` と `crud/<api>/` にレスポンス XML を保存し、`assets/orca-trialsite/raw/trialsite.md#sample` に記載の seed（例: 患者 5 桁 `00001`, 医師 `0001` など）との重複を `blocked/README.md` の「データ不足」欄に記載。UI 側がなくても CLI 実行時の実施可能条件を `data-check/README.md` に必ず記載する。- カバレッジ更新: CRUD 実行後に `coverage/coverage_matrix.md` を随時更新し、Firecrawl 取得シナリオを「Trial 実行/未実行)」、「Trial 制限（trialsite#limit または HTTP404/405）」へ振り分ける。その実施結果を `docs/server-modernization/phase2/operations/logs/<date>-orca-trial-crud.md` と `DOC_STATUS` 該当欄に棚卸しし、`blocked/README.md` と確認テンプレートを随時更新する。- ORMaster 関連 API（例: `/api/api21/medicalmodv2`, `/orca11/acceptmodv2` など）がトライアルサーバーで `Api_Result=10/13/14` となるため、`curl -vv -u ormaster:ormaster ... --data-binary @payloads/<api>_trial.xml http://localhost:8000/...` でローカル ORCA 実行を行う。トライアル結果は Blocker として扱う。- 2025-11-15 実行（RUN_ID=`20251115T134513Z`）：Codex CLI から DNS/TLS（`nslookup_2025-11-15T22:50:38+09:00.txt`, `openssl_s_client_2025-11-15T22:50:42+09:00.txt`）と `/api01rv2/acceptlstv2`（HTTP200/`Api_Result=13`）、`/api01rv2/appointlstv2`（HTTP200/`Api_Result=12`）、`/api/api21/medicalmodv2`（HTTP200/`Api_Result=10`）を確認。Evidence は `artifacts/orca-connectivity/20251115T134513Z/{dns,tls,crud,coverage,blocked}` および `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` に記録し、doctor/patient seed 不足を Blocker=`TrialSeedMissing` として解消済み。- 2025-11-15 実行（RUN_ID=`20251115TrialConnectivityCodexZ1`）：各 CLI 端末で `nslookup_2025-11-15T13-48-30Z.txt` / `openssl_s_client_2025-11-15T13-48-52Z.txt` を取得し、`/api01rv2/acceptlstv2`（HTTP200/`Api_Result=13`）、`/api01rv2/appointlstv2`（HTTP200/`Api_Result=12`）、`/api/api21/medicalmodv2`（HTTP200/`Api_Result=14`）を XML 送信。`/orca11/acceptmodv2` と `/orca14/appointmodv2` は `HTTP/1.1 405 Method Not Allowed` となったため Blocker=`TrialLocalOnly` として `blocked/README.md` と `coverage/coverage_matrix.md` に追加。Evidence: `artifacts/orca-connectivity/20251115TrialConnectivityCodexZ1/{dns,tls,data-check,crud,coverage,blocked}`、ログ: `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md`。- 2025-11-16 実行（RUN_ID=`20251116T164300Z`）：`nslookup_2025-11-16T02-04-36Z.txt`（NAME=`weborca-trial1.japaneast.cloudapp.azure.com`）、`openssl_s_client_2025-11-16T02-04-43Z.txt`（`*.orca.med.or.jp`, TLSv1.2, Cipher=ECDHE-RSA-AES256-GCM-SHA384）を確認し、`curl -vv -u trial:weborcatrial --data-binary @payloads/{acceptlst,appointlst,medicalmod,acceptmod,appointmod}_trial.xml` を順次実行。`/api01rv2/acceptlstv2`=`HTTP200/Api_Result=13`, `/api01rv2/appointlstv2`=`HTTP200/Api_Result=12`, `/api/api21/medicalmodv2`=`HTTP200/Api_Result=10`。更新系（`/orca11/acceptmodv2`, `/orca14/appointmodv2`）は引き続き `HTTP/1.1 405 Method Not Allowed (Allow=OPTIONS,GET)`。`coverage/coverage_matrix.md` は RUN_ID 単位にコピーし、Trial 利用不可 API（report_print/systemkanri/userkanri/acceptmod/appointmod）を「事前確認済み（Trial制限）」ラベルに割り当て。`blocked/README.md` を RUN_ID 単位に更新し、Doctor/Patient seed 不足をデータ不足として扱った。Evidence: `artifacts/orca-connectivity/20251116T164300Z/{dns,tls,crud,coverage,blocked}`。- 2025-11-16 カバレッジ整理（RUN_ID=`20251116T170500Z`）：Matrix No.2/4（`appointmodv2`,`acceptmodv2`）について Trial POST が許可されて `HTTP/1.1 405 Method Not Allowed` で拒否されることを確認。CRUD 操作をスキップし、`artifacts/orca-connectivity/20251116T170500Z/coverage/coverage_matrix.md` に `[Spec-based]` ラベルを削除。確認結果と Blocker を `artifacts/orca-connectivity/20251116T170500Z/blocked/README.md#http-405解消済み-post-予約`（trialsite §1）へ記載した。ログ: `docs/server-modernization/phase2/operations/logs/20251116T170500Z-coverage.md`。
 | # | イベント・エンドポイント | 種別 | 成功条件 | 証跡/ログ | CRUD 確認プラン |
 | --- | --- | --- | --- | --- | --- |
@@ -215,7 +215,7 @@ No.19-38 で作成した XML テンプレートの確認は `artifacts/orca-conn
 ## 6. ログおよび Evidence 運用ルール
 
 1. **CLI 出力**: `curl`, `openssl s_client`, `ServerInfoResource`, `node scripts/tools/orca-curl-snippets.js` のログはすべて `artifacts/orca-connectivity/<UTC>/` に保存。ファイル名例: `01_tls_handshake.log`, `02_acceptlstv2_request.http`, `02_acceptlstv2_response.http`。
-2. **テンプレート Evidence**: `artifacts/orca-connectivity/TEMPLATE/` をコピーした直後に `README.md` へ `RUN_ID`, `UTC`, 使用した Basic 認証（`mac-dev-login.local.md` 参照）と CRUD 実施有無を追記する。
+2. **テンプレート Evidence**: `artifacts/orca-connectivity/TEMPLATE/` をコピーした直後に `README.md` へ `RUN_ID`, `UTC`, 使用した Basic 認証（`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）と CRUD 実施有無を追記する。
 3. **ドキュメントリンク**: `docs/server-modernization/phase2/PHASE2_PROGRESS.md` の当日項と本 Runbook の該当セクションを双方方向リンクにする。
 4. **通知**: 失敗時は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順に連絡。
 
@@ -281,8 +281,8 @@ No.19-38 で作成した XML テンプレートの確認は `artifacts/orca-conn
 7. **機密情報のマスキング**: `request.http` に資格情報を含めない。curl コマンドの `--user <MASKED>` 形式で保管し、実行時のみ `env` から展開する。
 ## 7. WebORCA トライアル運用メモ
 
-1. **利用範囲**: `mac-dev-login.local.md` 記載の接続先のみを接続可とし、CRUD を実施した場合は必ず `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` と `artifacts/.../data-check/` に操作内容・対象 ID・戻し有無を記録する。
-2. **資格情報の扱い**: Basic 認証は `mac-dev-login.local.md` 記載のユーザーを使用する。履歴や Evidence には `<MASKED>` 表記を用い、`curl -u "user:pass"` のまま保存しない。
+1. **利用範囲**: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載の接続先のみを接続可とし、CRUD を実施した場合は必ず `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` と `artifacts/.../data-check/` に操作内容・対象 ID・戻し有無を記録する。
+2. **資格情報の扱い**: Basic 認証は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載のユーザーを使用する。履歴や Evidence には `<MASKED>` 表記を用い、`curl -u "user:pass"` のまま保存しない。
 3. **テンプレート更新**: `docs/web-client/planning/phase2/DOC_STATUS.md` にトライアル方針へ切り替えた旨と証跡パスを記載し、`docs/server-modernization/phase2/operations/logs/2025-11-15-orca-connectivity.md` の RUN_ID 表を最新化する。
 4. **安全ガード**: ローカル WebORCA コンテナの再構築や `ORCAcertification/` 配下の PKCS#12 はアーカイブ扱いとする。必要な資料は `assets/orca-trialsite/raw/trialsite.md` から辿り、利用不可機能を参照して作業範囲を決める。
 5. **報告**: Blocker や CRUD 失敗時は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順で共有し、Runbook §4.6 の流れでログへ「連絡」ブロックを追加する。
