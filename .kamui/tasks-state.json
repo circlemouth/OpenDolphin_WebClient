@@ -1,50 +1,5 @@
 [
   {
-    "id": "task-yaml-5rv6iv-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 00_RUN_IDと参照チェーン整理\n期間: 12/04 07:20 - 12/05 07:20 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 00 RUN_ID と参照チェーン整理\n\n- RUN_ID=`20251203T222026Z` で AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の参照順を再確認し、証跡はすべて docs/server-modernization/phase2/operations/logs/ に揃える。\n- docs/web-client/planning/phase2/DOC_STATUS.md の「Web クライアント UX/Features」行に現行 RUN_ID と証跡パス、ステータスを記入し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-run-id-chain.md へのリンクをつける。\n- Web クライアント開発ルール（Python 禁止、server/ 触らない、Legacy 資産参照のみ）と ORCA 接続制約（docs/web-client/operations/mac-dev-login.local.md で確認）をチームへ共有する準備をする。\n\nYAML ID: src/outpatient_ux_modernization/00_RUN_IDと参照チェーン整理.md",
-    "model": "YAML App",
-    "status": "running",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-03T13:28:07.494Z",
-    "updatedAt": "2025-12-03T13:28:40.115Z",
-    "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-5rv6iv-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/00_RUN_IDと参照チェーン整理.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/00_RUN_IDと参照チェーン整理.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-03T13:28:07.277Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [],
-    "schedule": {
-      "startMs": 1764800426000,
-      "endMs": 1764886826000,
-      "durationDays": 1
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 00 RUN_ID と参照チェーン整理\n\n- RUN_ID=`20251203T222026Z` で AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の参照順を再確認し、証跡はすべて docs/server-modernization/phase2/operations/logs/ に揃える。\n- docs/web-client/planning/phase2/DOC_STATUS.md の「Web クライアント UX/Features」行に現行 RUN_ID と証跡パス、ステータスを記入し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-run-id-chain.md へのリンクをつける。\n- Web クライアント開発ルール（Python 禁止、server/ 触らない、Legacy 資産参照のみ）と ORCA 接続制約（docs/web-client/operations/mac-dev-login.local.md で確認）をチームへ共有する準備をする。"
-  },
-  {
     "id": "task-yaml-16uc564-src-outpatient-u",
     "name": "[webclient ux outpatient modernization plan] 01_UXドキュメント要件レビュー\n期間: 12/04 09:00 - 12/06 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 01 UX ドキュメント要件レビュー\n\n- docs/web-client/ux/ux-documentation-plan.md を起点に reception-schedule-ui-policy.md / patients-admin-ui-policy.md / charts-claim-ui-policy.md を読み、外来カルテと受付のトーン、監査・ARIA 要件、レイアウト比率を再整理する。\n- Legacy 資料（ux/legacy/*）は履歴参照にとどめ、現行で扱う外来シナリオのみにフォーカス。入院向け ORCA API やバナーは本スコープから除外する。\n- 抽出結果を docs/web-client/ux/ux-documentation-plan.md へ追記し、次段階の設計メモとして artifacts/webclient/ux-notes/<RUN_ID>-ux-review.md を準備。\n\nYAML ID: src/outpatient_ux_modernization/01_UXドキュメント要件レビュー.md",
     "model": "YAML App",
