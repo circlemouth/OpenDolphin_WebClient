@@ -36,3 +36,9 @@
   - Charts: ヘッダーに患者基本＋受付情報＋保険/自費トグルを掲示し、SOAP/病名/オーダー/結果などのタブを中央に配した 2 カラム構成。右サイドバーには患者メモ・未紐付チェック・ORCA/病名候補を表示し、`aria-live` バナーと Tone を Reception と揃えた上で診療終了→ORCA 送信の狭間に carry over させる。`aria-live=assertive` の遅延/未紐付/エラーは 1 回だけ announce し、二重読み上げを抑える工夫（`aria-atomic=false`、tone フラグ）を盛り込む。ステータス遷移や再送操作は監査ログへ `action/patientId/queueStatus/tone/ariaLive/runId` を記録。
   - Patients＋Administration: 左メニュー＋右詳細フォームのダッシュボード構成で、Reception からの戻り導線はクエリ＋ローカルストレージでタブ/フィルタ/保険モードを保持。編集後は Reception へ戻れる履歴リンクを残し、権限不足の場合も元の状態に復帰させ監査ログへ拒否理由を記録。Administration の ORCA 設定や配信遅延は Reception/Charts 両方へバナー警告・リトライ導線を提示し、`role=system_admin/管理者` 以外のアクセスを UI 側でブロックするガードを記載する。
 - 次の設計メモ: 上記レビューを artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md に書き出し、Playwright シナリオやデザインメモへの受け渡し準備も視野に入れる。
+
+## 6. 外来カルテ UX カバレッジ（RUN_ID=20251203T210000Z）
+
+- `docs/web-client/ux/charts-claim-ui-policy.md` に DocumentTimeline/OrderConsole/OrcaSummary の状態遷移と `aria-live` バナーを追加し、受付側のトーン・`role=alert`・保険/自費モード保持の定義と完全に整合させた。また同文書内に外来 API 専用の coverage table（dataSourceTransition/missingMaster/fallbackUsed を含む）を載せ、入院 API については `N/A` と明示して次ステップの API マッピングに狙いを限定した。
+- 本 coverage は `docs/server-modernization/phase2/operations/logs/20251203T210000Z-charts-ux.md` で記録し、次の API マッピングタスクへのインプットを `artifacts/webclient/ux-notes/20251203T210000Z-charts-ux.md` に残した。次のマッピングではこの artifacts を参照して `DocumentTimeline`/`OrcaSummary` の `missingMaster` や `dataSourceTransition` イベントに対応するエンドポイント一覧と監査メタの扱いを固める。
+- `DOC_STATUS` ではこの RUN_ID を `Web クライアント/UX` 行に追記し、証跡に本ログと `artifacts/webclient/ux-notes/20251203T210000Z-charts-ux.md` を並べて記録する予定。次の API マッピング・Playwright a11y 拡張ではこの RUN_ID を参照して `aria-live` 分岐及び `dataSourceTransition` 監査要件の実装状況を追跡すること。
