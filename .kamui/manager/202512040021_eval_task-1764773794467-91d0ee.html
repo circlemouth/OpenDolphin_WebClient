@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: task-1764773794467-91d0ee / task-1764773798264-f23a51</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 4px 0 0;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin: 24px 0;
+      }
+      .score-pill {
+        background: #24455d;
+        color: #ffffff;
+        border-radius: 12px;
+        padding: 14px 16px;
+        min-width: 260px;
+        box-shadow: 0 6px 16px rgba(0, 0, 0, 0.08);
+        font-weight: 600;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .score-pill span {
+        font-size: 0.85rem;
+        font-weight: 500;
+        color: #d9ecf5;
+      }
+      table.monitor-report.evaluation-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 14px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: none;
+        color: #2c3a40;
+      }
+      .column-header {
+        font-size: 1rem;
+        font-weight: 600;
+        margin-bottom: 4px;
+        color: #1f2a30;
+      }
+      .column-subtitle {
+        font-size: 0.9rem;
+        color: #3f5057;
+        margin-bottom: 12px;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+        gap: 12px;
+        margin: 16px 0;
+      }
+      .hexagon {
+        background: linear-gradient(135deg, #0b3e54, #2b6379);
+        color: #f2fbff;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        padding: 16px 6px;
+        height: 90px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 13px;
+      }
+      .hexagon .label {
+        font-weight: 600;
+        margin-bottom: 4px;
+      }
+      .hexagon .score {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .metric-reason p {
+        margin: 6px 0;
+        font-size: 14px;
+        line-height: 1.4;
+      }
+      .metric-reason strong {
+        color: #1f2a30;
+      }
+      .artifact-list {
+        margin: 12px 0;
+        padding-left: 18px;
+      }
+      .artifact-list li {
+        margin-bottom: 6px;
+      }
+      .artifact-list a {
+        color: #1f6f8b;
+        text-decoration: none;
+      }
+      .artifact-list a:hover {
+        text-decoration: underline;
+      }
+      .details-block {
+        margin-top: 12px;
+      }
+      .details-block summary {
+        font-weight: 600;
+        cursor: pointer;
+        color: #1f2a30;
+        margin-bottom: 8px;
+      }
+      .details-block pre {
+        background: #f7fbfd;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        font-size: 13px;
+        line-height: 1.5;
+        margin: 0;
+        overflow-x: auto;
+      }
+      .worktree-note {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .next-actions {
+        margin-top: 12px;
+        font-size: 13px;
+        color: #3f5057;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 20251203T143858Z 外来 UX 要件レビュー</h1>
+        <p class="monitor-description">Git diff とコミットログをもとに、Gemini CLI が投入した `task-1764773794467-91d0ee` / `task-1764773798264-f23a51` の成果を緻密性・網羅性・RUN_ID 観点で比較します。</p>
+      </header>
+      <section class="scoreboard">
+        <div class="score-pill">🏆 550 / 600 - Gemini CLI / task-1764773794467-91d0ee<span>メダル: 🥇 / 評価スコア: 91 / 100</span></div>
+        <div class="score-pill">🥇 544 / 600 - Gemini CLI / task-1764773798264-f23a51<span>メダル: 🥈 / 評価スコア: 90 / 100</span></div>
+      </section>
+      <table class="monitor-report evaluation-report">
+        <colgroup>
+          <col />
+          <col />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Gemini CLI / task-1764773794467-91d0ee</th>
+            <th>Gemini CLI / task-1764773798264-f23a51</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="column-header">20251203T143858Z 外来 UX 要件レビュー</div>
+              <div class="column-subtitle">UX 設計プラン、README、DOC_STATUS、証跡ログを RUN_ID で一括整合</div>
+              <p>Reception / Charts / Patients+Administration ごとの tone、レイアウト比率、ARIA バナー、監査ログの `data-run-id` キャリーオーバーを `docs/web-client/ux/ux-documentation-plan.md` の ##5 に細かく記録し、README / DOC_STATUS / 証跡ログへリンクさせて 20251203T143858Z RUN_ID を再掲。artifacts に起票した観察メモを次フェーズに渡せる形に整えた。</p>
+              <div class="hex-grid">
+                <div class="hexagon"><span class="label">緻密性</span><span class="score">92点</span></div>
+                <div class="hexagon"><span class="label">網羅性</span><span class="score">90点</span></div>
+                <div class="hexagon"><span class="label">RUN_ID 準拠</span><span class="score">95点</span></div>
+                <div class="hexagon"><span class="label">ドキュメント整合</span><span class="score">92点</span></div>
+                <div class="hexagon"><span class="label">証跡／ログ</span><span class="score">89点</span></div>
+                <div class="hexagon"><span class="label">成果記録</span><span class="score">92点</span></div>
+              </div>
+              <div class="metric-reason">
+                <p><strong>緻密性 92点:</strong> Reception、Charts、Patients+Administration の 3 セクションで tone/レイアウト/aria-live の具体ルール（赤/琥珀/青バナー、`role=alert`/`aria-live=assertive`、`aria-atomic=false` の再読み上げ制御、`data-run-id` carry over）の書き出しがあり、実装検討を支える粒度を備える。</p>
+                <p><strong>網羅性 90点:</strong> ドキュメントの観察結果（`artifacts/webclient/ux-notes/...-ux-review.md`）は背景・Reception/Charts/Patients の観察・次アクションまで網羅し、追加 API マッピングや Playwright シナリオへの引き継ぎで不足が生じないことを狙う構成。</p>
+                <p><strong>RUN_ID 準拠 95点:</strong> DOC_STATUS・README・証跡ログに `20251203T143858Z` を明示するだけでなく、AGENTS 参照チェーンを辿る `docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md` も同時に追加し traceability を担保。</p>
+                <p><strong>ドキュメント整合 92点:</strong> README で UX 草稿の更新を告知し、DOC_STATUS 行を RUN_ID と証跡ログリンクで置き換えることで manager checklist との整合を維持。`.kamui/prompt/merge-prompt.txt` や `.kamui/tasks-state.json` もマージガイドライン・ステータスを更新。</p>
+                <p><strong>証跡／ログ 89点:</strong> `docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md` で実施期間・参照チェーン・今後の連携を文書化し、AGENTS が求める docs→logs の直列化を果たす。</p>
+                <p><strong>成果記録 92点:</strong> `artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md` は背景・観察・次アクションを 3 セクションで記録し、次タスク（`artifacts/...-charts-ux.md` など）へのインプットとして十分な素材になる。</p>
+              </div>
+              <details class="details-block">
+                <summary>差分 / コミット (origin/master..task-1764773794467-91d0ee)</summary>
+                <pre>commit 479dd0b Document 20251203T143858Z outpatient UX review
+ - artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md
+ - docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md
+ - docs/web-client/README.md
+ - docs/web-client/planning/phase2/DOC_STATUS.md
+ - docs/web-client/ux/ux-documentation-plan.md
+
+commit f0a3073 Update .kamui task metadata
+ - .kamui/model-versions-cache.json
+ - .kamui/prompt/merge-prompt.txt
+ - .kamui/tasks-state.json</pre>
+              </details>
+              <ul class="artifact-list">
+                <li><a href="../artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md">artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md</a> — 背景・Reception/Charts/Patients の観察と次アクション。</li>
+                <li><a href="../docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md">docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md</a> — 参照チェーンと RUN_ID 記録。</li>
+                <li><a href="../docs/web-client/planning/phase2/DOC_STATUS.md">docs/web-client/planning/phase2/DOC_STATUS.md</a> — UX/Features 行に RUN_ID と証跡リンクを反映。</li>
+                <li><a href="../docs/web-client/ux/ux-documentation-plan.md">docs/web-client/ux/ux-documentation-plan.md</a> — ##5 に外来 UX 改訂を書き出し。</li>
+                <li><a href="../docs/web-client/README.md">docs/web-client/README.md</a> — RUN_ID の整合性を説明するセクションを追加。</li>
+              </ul>
+              <p class="worktree-note">作業ワークツリー: <code>.worktrees/task-1764773794467-91d0ee</code></p>
+              <p class="next-actions">次ステップ: このレビューを `artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md` から `...-charts-ux.md` に落とし込み、DocumentTimeline/OrderConsole/OrcaSummary の状態遷移と ARIA バナーを API カバレッジ表へ展開してください。</p>
+            </td>
+            <td>
+              <div class="column-header">ドキュメント UX / API カバレッジ準備</div>
+              <div class="column-subtitle">DocumentTimeline 等の状態遷移を次フェーズで対照するための土台と捉えた参照整備</div>
+              <p>同じ RUN_ID を使いつつも、本タスクでは DocumentTimeline/OrderConsole/OrcaSummary などの状態遷移・`aria-live` バナーを API カバレッジに落とす作業を俯瞰するフェーズ。現状は観察メモと README/DOC_STATUS への RUN_ID 追記が中心で、具体的な API 表（`missingMaster`/`fallbackUsed`/`dataSourceTransition`）は次段階に持ち越し。</p>
+              <div class="hex-grid">
+                <div class="hexagon"><span class="label">緻密性</span><span class="score">90点</span></div>
+                <div class="hexagon"><span class="label">網羅性</span><span class="score">89点</span></div>
+                <div class="hexagon"><span class="label">RUN_ID 準拠</span><span class="score">94点</span></div>
+                <div class="hexagon"><span class="label">ドキュメント整合</span><span class="score">91点</span></div>
+                <div class="hexagon"><span class="label">証跡／ログ</span><span class="score">88点</span></div>
+                <div class="hexagon"><span class="label">成果記録</span><span class="score">90点</span></div>
+              </div>
+              <div class="metric-reason">
+                <p><strong>緻密性 90点:</strong> ##5 セクションや artifacts では tone/ARIA/監査の傾向を書いており、DocumentTimeline/OrderConsole と OrcaSummary の具体的状態遷移はまだ明文化されていないが、比較検討に必要な情報は揃っている。</p>
+                <p><strong>網羅性 89点:</strong> Reception/Charts/Patients を対象にした観察は網羅的だが、API フィルタ（保険/自費）や監査ログでの `dataSourceTransition` / `missingMaster` / `fallbackUsed` などの記述が未着手なので、次段階の API カバレッジ表が必要。</p>
+                <p><strong>RUN_ID 準拠 94点:</strong> `docs/web-client/README.md`、`DOC_STATUS`、`docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md` が同一 RUN_ID で連携し、コードレビュー用の参照も確保している。</p>
+                <p><strong>ドキュメント整合 91点:</strong> `.kamui/prompt/merge-prompt.txt` で `git checkout master` を明記し、`.kamui/tasks-state.json` でステータス変更を追記したことで、マネージャー/ワーカー間の参照チェーンが崩れない。</p>
+                <p><strong>証跡／ログ 88点:</strong> 証跡ログ/README/UX plan の RUN_ID 追加により履歴は確保されているが、API-specific な監査ログの `missingMaster` 等への言及が今後求められる。</p>
+                <p><strong>成果記録 90点:</strong> 観察メモは `artifacts/...-ux-review.md` にまとまり、次の `artifacts/...-charts-ux.md` や API mapping へのインプットとして必要な要素を含む。</p>
+              </div>
+              <details class="details-block">
+                <summary>差分 / コミット (origin/master..task-1764773798264-f23a51)</summary>
+                <pre>commit 479dd0b Document 20251203T143858Z outpatient UX review
+ - artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md
+ - docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md
+ - docs/web-client/README.md
+ - docs/web-client/planning/phase2/DOC_STATUS.md
+ - docs/web-client/ux/ux-documentation-plan.md
+
+commit f0a3073 Update .kamui task metadata
+ - .kamui/model-versions-cache.json
+ - .kamui/prompt/merge-prompt.txt
+ - .kamui/tasks-state.json</pre>
+              </details>
+              <ul class="artifact-list">
+                <li><a href="../artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md">artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md</a> — API カバレッジ作業に必要な観察記録。</li>
+                <li><a href="../docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md">docs/server-modernization/phase2/operations/logs/20251203T143858Z-outpatient-ux.md</a> — ORCA 参照チェーンと RUN_ID の証跡。</li>
+                <li><a href="../docs/web-client/planning/phase2/DOC_STATUS.md">docs/web-client/planning/phase2/DOC_STATUS.md</a> — UX/Features 行で RUN_ID & リンクを同期。</li>
+                <li><a href="../docs/web-client/ux/ux-documentation-plan.md">docs/web-client/ux/ux-documentation-plan.md</a> — DocumentTimeline 等の観察を導く ##5 を追加。</li>
+                <li><a href="../docs/web-client/README.md">docs/web-client/README.md</a> — UXポリシーと RUN_ID 連携を明記。</li>
+              </ul>
+              <p class="worktree-note">作業ワークツリー: <code>.worktrees/task-1764773798264-f23a51</code></p>
+              <p class="next-actions">次ステップ: `artifacts/webclient/ux-notes/20251203T143858Z-ux-review.md` を参照し、DocumentTimeline/OrderConsole/OrcaSummary の状態遷移と `missingMaster`/`fallbackUsed`/`dataSourceTransition` の UX を昇華させた API カバレッジ表を `artifacts/webclient/ux-notes/20251203T143858Z-charts-ux.md` へ記録してください。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
