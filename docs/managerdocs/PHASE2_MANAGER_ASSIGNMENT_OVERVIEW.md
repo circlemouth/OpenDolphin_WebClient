@@ -2,6 +2,8 @@
 
 本ドキュメントは Web クライアント／モダナイズ版サーバー開発に関わる資料を領域ごとにグルーピングし、担当マネージャーと一次参照先を即座に確認できるようにするための索引です。各領域のマネージャーは、該当チェックリストとここで列挙したドキュメントを常に同期させ、棚卸し台帳 `docs/web-client/planning/phase2/DOC_STATUS.md` に結果を反映してください。
 
+> **Legacy/Archive（参照のみ・新規追加禁止, RUN_ID=`20251203T203000Z`）** Phase2 はロールオフ済み。`docs/server-modernization/phase2/PHASE2_DOCS_ROLLOFF.md` を経由し、現行ワークは Web クライアント README/DOC_STATUS へ誘導。証跡: `docs/server-modernization/phase2/operations/logs/20251203T203000Z-phase2-legacy-mark.md`
+
 ## Phase2 ガバナンス必読チェーン
 
 > **Phase2 ガバナンス必読チェーン / 接続・RUN 運用共通ルール**  

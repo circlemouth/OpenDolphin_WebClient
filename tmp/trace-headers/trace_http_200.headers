@@ -1,6 +1,0 @@
-# RUN_ID_PLACEHOLDER={{RUN_ID}} （例: 20251111TtracefixZ）
-userName: 1.3.6.1.4.1.9414.72.103:doctor1
-password: 632080fabdb968f9ac4f31fb55104648
-clientUUID: trace-session-client
-facilityId: 1.3.6.1.4.1.9414.72.103
-X-Trace-Id: trace-http-200-{{RUN_ID}}

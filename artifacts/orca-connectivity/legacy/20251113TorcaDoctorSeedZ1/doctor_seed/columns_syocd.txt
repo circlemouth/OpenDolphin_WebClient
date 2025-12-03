@@ -1,0 +1,8 @@
+   table_name   
+----------------
+ tbl_labor_sio
+ tbl_labor_sio
+ tbl_ptrsiinf
+ tbl_seikyu_rsi
+(4 rows)
+

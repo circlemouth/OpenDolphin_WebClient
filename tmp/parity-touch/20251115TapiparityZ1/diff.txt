@@ -1,4 +1,0 @@
-[PASS] POST /touch/sendPackage (JavaTime): Body text matches.
-[PASS] POST /touch/document (admFlag): Body text matches.
-[PASS] POST /touch/mkdocument (performFlag): Body text matches.
-Completed 3 target(s) with 0 failure(s).

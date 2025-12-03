@@ -31,6 +31,25 @@ ORCAcertification/*
 # Build artifacts and temporary files
 build/
 
+# Server logs
+server.log
+server_*.log
+server_*_logs.txt
+*.log
+
+# Temporary marker files
+CACHED
+fallback
+Phase2
+
+# Temporary payload files in root
+/payload.json
+
+# Legacy build files (removed, use pom.server-modernized.xml)
+/pom.xml
+/pom.server-classic.xml
+/Jenkinsfile
+
 # Generated dev config
 custom.properties.dev
 docker-compose.override.dev.yml

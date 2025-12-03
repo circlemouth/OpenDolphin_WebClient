@@ -1,9 +1,0 @@
-userName: 1.3.6.1.4.1.9414.72.103:doctor1
-# password=doctor2025 (MD5=632080fabdb968f9ac4f31fb55104648)
-password: 632080fabdb968f9ac4f31fb55104648
-clientUUID: manual-smoke-client
-facilityId: 1.3.6.1.4.1.9414.72.103
-X-Facility-Id: 1.3.6.1.4.1.9414.72.103
-Content-Type: application/json
-Accept: */*
-X-Trace-Id: parity-mml-send-{{RUN_ID}}

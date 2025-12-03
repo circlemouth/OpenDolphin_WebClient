@@ -1,9 +1,0 @@
-userName: doctor1
-password: dolphin
-clientUUID: manual-smoke-client
-facilityId: 1.3.6.1.4.1.9414.72.103
-Content-Type: application/json
-Accept: application/octet-stream
-X-Trace-Id: trace-jms-20251111TclaimfixZ
-X-Run-Id: 20251111TclaimfixZ
-X-Claim-Debug: enabled

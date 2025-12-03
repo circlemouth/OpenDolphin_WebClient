@@ -1,3 +1,0 @@
-timestamp: 2025-11-21T11-26-33Z
-cmd: curl -D headers_2025-11-21T11-26-33Z.txt -o response_2025-11-21T11-26-33Z.xml -u ormaster:******** -H "Accept: application/xml" -H "Content-Type: application/xml" --data-binary @request_2025-11-21T11-25-28Z.xml http://100.102.17.40:8000/orca11/acceptmodv2?class=01
-status: 405

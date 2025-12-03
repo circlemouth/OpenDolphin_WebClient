@@ -1,0 +1,5 @@
+ log_statement 
+---------------
+ none
+(1 row)
+

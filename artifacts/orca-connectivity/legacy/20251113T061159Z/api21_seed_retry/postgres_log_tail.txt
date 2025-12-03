@@ -1,0 +1,1 @@
+postgresql log file not found under /var/log or data directory

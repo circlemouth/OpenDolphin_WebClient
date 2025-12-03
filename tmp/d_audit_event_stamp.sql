@@ -1,1 +1,0 @@
-\copy (SELECT id,event_time,action,resource,request_id,actor_id,actor_role,payload FROM d_audit_event WHERE action LIKE 'STAMP_TREE%' ORDER BY id DESC LIMIT 50) TO STDOUT WITH CSV HEADER DELIMITER E'\t';

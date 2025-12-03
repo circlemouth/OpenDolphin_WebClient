@@ -1,4 +1,0 @@
-{
-  "movedTo": "ops/tests/fixtures/adm/adm10/patient_model.json",
-  "note": "2025-11-12: Fixture moved under ops/tests/fixtures/adm for AdmConverterSnapshotTest."
-}
