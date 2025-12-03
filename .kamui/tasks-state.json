@@ -3,12 +3,12 @@
     "id": "task-yaml-16uc564-src-outpatient-u",
     "name": "[webclient ux outpatient modernization plan] 01_UXドキュメント要件レビュー\n期間: 12/04 09:00 - 12/06 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 01 UX ドキュメント要件レビュー\n\n- docs/web-client/ux/ux-documentation-plan.md を起点に reception-schedule-ui-policy.md / patients-admin-ui-policy.md / charts-claim-ui-policy.md を読み、外来カルテと受付のトーン、監査・ARIA 要件、レイアウト比率を再整理する。\n- Legacy 資料（ux/legacy/*）は履歴参照にとどめ、現行で扱う外来シナリオのみにフォーカス。入院向け ORCA API やバナーは本スコープから除外する。\n- 抽出結果を docs/web-client/ux/ux-documentation-plan.md へ追記し、次段階の設計メモとして artifacts/webclient/ux-notes/<RUN_ID>-ux-review.md を準備。\n\nYAML ID: src/outpatient_ux_modernization/01_UXドキュメント要件レビュー.md",
     "model": "YAML App",
-    "status": "pending",
+    "status": "running",
     "importance": "high",
     "urgency": "high",
-    "createdAt": "2025-12-03T13:28:09.923Z",
-    "updatedAt": "2025-12-03T13:28:09.923Z",
-    "requiresTerminal": false,
+    "createdAt": "2025-12-03T14:34:31.781Z",
+    "updatedAt": "2025-12-03T14:34:36.154Z",
+    "requiresTerminal": true,
     "createWorktree": false,
     "branchName": "task/task-yaml-16uc564-src-outpatient-u",
     "baseBranch": "main",
@@ -27,7 +27,7 @@
       "pathId": "src/outpatient_ux_modernization/01_UXドキュメント要件レビュー.md",
       "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-03T13:28:09.553Z"
+      "addedAt": "2025-12-03T14:34:31.773Z"
     },
     "labels": [
       "webclient ux outpatient modernization plan",

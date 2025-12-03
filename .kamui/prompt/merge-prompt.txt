@@ -9,7 +9,7 @@
 
 
 3. masterブランチにチェックアウトしてマージ
-   - git checkout main
+   - git checkout master
    - git merge --no-ff task/元々いたディレクトリのタスクID
 
 実際のコマンド例：
