@@ -42,3 +42,18 @@
 - `docs/web-client/ux/charts-claim-ui-policy.md` に DocumentTimeline/OrderConsole/OrcaSummary の状態遷移と `aria-live` バナーを追加し、受付側のトーン・`role=alert`・保険/自費モード保持の定義と完全に整合させた。また同文書内に外来 API 専用の coverage table（dataSourceTransition/missingMaster/fallbackUsed を含む）を載せ、入院 API については `N/A` と明示して次ステップの API マッピングに狙いを限定した。
 - 本 coverage は `docs/server-modernization/phase2/operations/logs/20251203T210000Z-charts-ux.md` で記録し、次の API マッピングタスクへのインプットを `artifacts/webclient/ux-notes/20251203T210000Z-charts-ux.md` に残した。次のマッピングではこの artifacts を参照して `DocumentTimeline`/`OrcaSummary` の `missingMaster` や `dataSourceTransition` イベントに対応するエンドポイント一覧と監査メタの扱いを固める。
 - `DOC_STATUS` ではこの RUN_ID を `Web クライアント/UX` 行に追記し、証跡に本ログと `artifacts/webclient/ux-notes/20251203T210000Z-charts-ux.md` を並べて記録する予定。次の API マッピング・Playwright a11y 拡張ではこの RUN_ID を参照して `aria-live` 分岐及び `dataSourceTransition` 監査要件の実装状況を追跡すること。
+
+## 7. API 統合設計フロー（RUN_ID=20251204T120000Z）
+
+- `web-client/src/libs/http/httpClient.ts` に追加した `OUTPATIENT_API_ENDPOINTS` には `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca21/medicalmodv2/outpatient`、`/orca12/patientmodv2/outpatient` を登録し、`docs/web-client/architecture/web-client-api-mapping.md` と同じ表を参照用に保持しています。新しい RUN_ID ではこれらに `runId`/`dataSource`/`cacheHit`/`missingMaster`/`fallbackUsed`/`dataSourceTransition` を全例で `audit.logUiState`/`AuditTrail` に透過し、UX ではバナー/ARIA のトーンと一致させることを前提とします。
+- `resolveMasterSource(masterType)` の `dataSource` 判定は `MSW fixtures` → `snapshot artifacts` → `server ORCA` → `fallback constants` という旗振りで `dataSourceTransition=server` になるケースを図示し、Playwright/Stage の `warning banner tone=server` で `dataSourceTransition` を `auditEvent` と `data-run-id` で観測できるようにします。
+
+```
+(MSW fixtures) --[flags／health fail]--> (snapshot artifacts) --[flag=server + reachable]--> (server ORCA-05/06/08)
+        ^                                              |                                      |
+        |                                              v                                      v
+      [cacheHit=true]                           [dataSourceTransition=server]          [fallbackUsed=true]
+``` 
+
+- `cacheHit` は React Query のキャッシュ命中時に `true` を付与し、強制リフェッチや TTL 経過時に `false` とする。`missingMaster` はスキーマ検証や `resolveMasterSource` が `fallback` を選択したときに `true`、解消したら `false` に戻す。`auditEvent` の `details` は `ORCA_CLAIM_OUTPATIENT` / `ORCA_APPOINTMENT_OUTPATIENT` / `ORCA_MEDICAL_GET` / `ORCA_PATIENT_MUTATION` として `facilityId`/`patientId`／`appointmentId`／`operation` などの業務キーと metadata をすべて含めます（詳細は `docs/server-modernization/phase2/operations/orca-master-sprint-plan.md` を参照）。
+- `docs/web-client/ux/ux-documentation-plan.md` ではこの図を UX/Playwright 検証の前提として使い、DocStatus の「Web クライアント UX/Features」行に RUN_ID `20251204T120000Z` と `docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md` / `artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md` を紐づけます。

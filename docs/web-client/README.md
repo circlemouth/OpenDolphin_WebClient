@@ -35,6 +35,7 @@
 - `src/webclient_screens_plan/02_画面別 API マッピングとバージョン整合.md` — Reception/Charts/Patients/Administration の API 差分・バージョン整合メモ。RUN_ID=`20251202T083708Z`。証跡: `docs/server-modernization/phase2/operations/logs/20251202T083708Z-api-mapping.md`。
 - `docs/web-client/planning/phase2/logs/20251130T120000Z-login-rework.md` — 本対応の証跡ログ。README／DOC_STATUS に書かれた RUN_ID と同一。
 - `docs/web-client/ux/ux-documentation-plan.md` — UX ドラフトの進行管理ハブ。RUN_ID=`20251202T090000Z`。
+- `docs/web-client/architecture/web-client-api-mapping.md` — API 統合設計の一覧と `resolveMasterSource`/監査 metadata 図。RUN_ID=`20251204T120000Z`。証跡: `docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md`・`artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md`。
 - `docs/web-client/ux/reception-schedule-ui-policy.md` — Reception（受付）UX ポリシー草稿。RUN_ID=`20251202T090000Z`。
 - `docs/web-client/ux/charts-claim-ui-policy.md` — Chart Entry/Claim UX ポリシー草稿。RUN_ID=`20251202T090000Z`。
 - `docs/web-client/ux/patients-admin-ui-policy.md` — Patients 管理＋Administration UX ポリシー草稿。RUN_ID=`20251202T090000Z`。
