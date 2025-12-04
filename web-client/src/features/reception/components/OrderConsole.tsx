@@ -1,72 +1,33 @@
-import { useMemo, useState } from 'react';
-
-import type { BannerTone } from './ToneBanner';
-import { ToneBanner } from './ToneBanner';
-import { ResolveMasterBadge, type ResolveMasterSource } from './ResolveMasterBadge';
+import type { ResolveMasterSource } from './ResolveMasterBadge';
 import { CacheHitBadge, MissingMasterBadge } from '../../shared/StatusBadge';
 
 const MASTER_SOURCES: ResolveMasterSource[] = ['mock', 'snapshot', 'server', 'fallback'];
 
-export function OrderConsole() {
-  const [masterSource, setMasterSource] = useState<ResolveMasterSource>('mock');
-  const [missingMaster, setMissingMaster] = useState(true);
-  const [cacheHit, setCacheHit] = useState(false);
-  const [missingMasterNote, setMissingMasterNote] = useState('');
-  const runId = '20251212T090000Z';
-  const patientId = 'PX-2024-001';
-  const receptionId = 'R-20251212-007';
+export interface OrderConsoleProps {
+  masterSource: ResolveMasterSource;
+  missingMaster: boolean;
+  cacheHit: boolean;
+  missingMasterNote: string;
+  runId: string;
+  onMasterSourceChange: (value: ResolveMasterSource) => void;
+  onToggleMissingMaster: () => void;
+  onToggleCacheHit: () => void;
+  onMissingMasterNoteChange: (value: string) => void;
+}
 
-  const tone: BannerTone = useMemo(() => {
-    if (masterSource === 'fallback' || missingMaster) {
-      return 'error';
-    }
-    if (masterSource === 'server') {
-      return 'warning';
-    }
-    if (cacheHit) {
-      return 'info';
-    }
-    return 'warning';
-  }, [masterSource, missingMaster, cacheHit]);
-
-  const summaryMessage = useMemo(() => {
-    if (masterSource === 'server') {
-      return missingMaster
-        ? 'server へ遷移済だが missingMaster=true を監視中。再取得が必要です。'
-        : 'server ソースで tone=server を保持し、ORCA 送信を再試行できます。';
-    }
-    if (masterSource === 'fallback') {
-      return 'server から fallback へ降格。監査 metadata を再確認してください。';
-    }
-    return 'mock/snapshot ソース。データ更新は cacheHit で判断。';
-  }, [masterSource, missingMaster]);
-
-  const nextAction = missingMaster ? 'マスタ再取得' : 'ORCA 再送';
-  const transitionDescription =
-    masterSource === 'server'
-      ? 'snapshot → server （tone=server）'
-      : masterSource === 'fallback'
-        ? 'server → fallback'
-        : masterSource === 'snapshot'
-          ? 'mock → snapshot'
-          : 'mock fixtures';
-
+export function OrderConsole({
+  masterSource,
+  missingMaster,
+  cacheHit,
+  missingMasterNote,
+  runId,
+  onMasterSourceChange,
+  onToggleMissingMaster,
+  onToggleCacheHit,
+  onMissingMasterNoteChange,
+}: OrderConsoleProps) {
   return (
     <section className="order-console">
-      <ToneBanner
-        tone={tone}
-        message={summaryMessage}
-        patientId={patientId}
-        receptionId={receptionId}
-        destination="ORCA queue"
-        nextAction={nextAction}
-        runId={runId}
-      />
-      <ResolveMasterBadge
-        masterSource={masterSource}
-        transitionDescription={transitionDescription}
-        runId={runId}
-      />
       <div className="order-console__grid" data-run-id={runId}>
         <div className="order-console__status-group">
           <CacheHitBadge cacheHit={cacheHit} runId={runId} />
@@ -80,7 +41,7 @@ export function OrderConsole() {
             <select
               id="master-source"
               value={masterSource}
-              onChange={(event) => setMasterSource(event.target.value as ResolveMasterSource)}
+              onChange={(event) => onMasterSourceChange(event.target.value as ResolveMasterSource)}
             >
               {MASTER_SOURCES.map((source) => (
                 <option key={source} value={source}>
@@ -93,14 +54,14 @@ export function OrderConsole() {
             <button
               type="button"
               className="order-console__action"
-              onClick={() => setMissingMaster((prev) => !prev)}
+              onClick={onToggleMissingMaster}
             >
               missingMaster を {missingMaster ? 'false に' : 'true に'}
             </button>
             <button
               type="button"
               className="order-console__action"
-              onClick={() => setCacheHit((prev) => !prev)}
+              onClick={onToggleCacheHit}
             >
               cacheHit を {cacheHit ? 'false に' : 'true に'}
             </button>
@@ -111,15 +72,15 @@ export function OrderConsole() {
           <textarea
             id="missing-master-note"
             value={missingMasterNote}
-            onChange={(event) => setMissingMasterNote(event.target.value)}
-            placeholder="クロスチェックや再送結果を記録" 
+            onChange={(event) => onMissingMasterNoteChange(event.target.value)}
+            placeholder="クロスチェックや再送結果を記録"
             aria-describedby="missing-master-note-description"
           />
           <div
             id="missing-master-note-description"
             className="order-console__note"
             role="status"
-            aria-live="polite"
+            aria-live={missingMaster ? 'assertive' : 'polite'}
           >
             {missingMaster
               ? 'マスタ欠損: ORCA 送信をブロックし tone=server の warning を維持'
