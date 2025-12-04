@@ -58,12 +58,38 @@
 - `cacheHit` は React Query のキャッシュ命中時に `true` を付与し、強制リフェッチや TTL 経過時に `false` とする。`missingMaster` はスキーマ検証や `resolveMasterSource` が `fallback` を選択したときに `true`、解消したら `false` に戻す。`auditEvent` の `details` は `ORCA_CLAIM_OUTPATIENT` / `ORCA_APPOINTMENT_OUTPATIENT` / `ORCA_MEDICAL_GET` / `ORCA_PATIENT_MUTATION` として `facilityId`/`patientId`／`appointmentId`／`operation` などの業務キーと metadata をすべて含めます（詳細は `docs/server-modernization/phase2/operations/orca-master-sprint-plan.md` を参照）。
 - `docs/web-client/ux/ux-documentation-plan.md` ではこの図を UX/Playwright 検証の前提として使い、DocStatus の「Web クライアント UX/Features」行に RUN_ID `20251204T120000Z` と `docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md` / `artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md` を紐づけます。
 
-## 8. 20251204T160000Z Reception UX 設計とステークホルダー同期
+## 8. 接続フロー差分（RUN_ID=20251204T210000Z）
+
+- 接続フロー: `resolveMasterSource` が `dataSourceTransition=server` を返すと `httpClient` の `OUTPATIENT_API_ENDPOINTS` グループ（請求・予約・Medical/Patient modules）に接続し、応答で `cacheHit`/`missingMaster` を `telemetryClient` へ送出して funnel を残す。同じ Telemetry flag は `charts` の Orchestration で受信され、Reception/Charts バナーが `tone=server` に揃うまで `audit.logUiState` の `dataSourceTransition`/`runId` を持たせる。
+- 接続図:
+
+```
+[Reception/Charts orchestration]
+          |  flag=tone=server + dataSourceTransition=server
+          v
+[resolveMasterSource(masterType)]
+          |
+          v
+[httpClient OUTPATIENT_API_ENDPOINTS]
+          | -- dataSourceTransition=server --> /api01rv2/claim/outpatient/* etc.
+          |
+          v
+[server:
+   ORCA-05/06/08 / modernized med/patient services]
+          |
+          +-- telemetry funnel: cacheHit / missingMaster → `telemetryClient`
+          |
+          v
+[Charts/Reception flag processing & audit log]
+```
+- 差分: 04C1 では図示と監査設計までだった `resolveMasterSource` → `httpClient` → `auditEvent` の流れを 04C2 で telemetry funnel まで実装計画に落とし込み、`src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md` と `docs/server-modernization/phase2/operations/logs/20251204T210000Z-integration-implementation.md` に API パス一覧・Telemetry 層のフローを記録した。ただし現在のリポジトリには `web-client/src/libs/telemetry/telemetryClient.ts` および `web-client/src/features/charts` がないため、実コードのファネルログ送出は module が戻ってきてからの対応となる。
+
+## 9. 20251204T160000Z Reception UX 設計とステークホルダー同期
 - 期間: 2025-12-11 09:00 - 2025-12-12 09:00（優先度: high / 緊急度: medium）。Reception/OrderConsole を `tone=server` バナー・`aria-live` 共同ルール・`dataSourceTransition` 監査メタでつなぎ、ステークホルダーとの同期を確実にする定例レビューを実施した。
 - 実施内容: `docs/web-client/ux/reception-schedule-ui-policy.md` に書かれた Reception 一覧/バナー要件を OrderConsole にキャリーオーバーし、`[prefix][ステータス][患者ID/受付ID][送信先][再送可否][次アクション]` という文言構造と Error/Warning/Info の色と `role=alert` + `aria-live` を統一。`src/LEGACY/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md` の `resolveMasterSource(masterType)` helper から `dataSourceTransition` を取り込む監査メタルートを Reception/OrderConsole でも再利用することを確認した。
 - 証跡: `artifacts/webclient/ux-notes/20251204T160000Z-reception-design.md` にスクリーンショット候補とコード参照を整理し、API 依存・監査ステータスを `docs/server-modernization/phase2/operations/logs/20251204T160000Z-reception-design.md` へ記録。DOC_STATUS の Web クライアント UX/Features 行には RUN_ID=`20251204T160000Z` と本ログ/アーティファクトへのリンクを追記する予定。
 
-## 9. 20251211T090000Z Reception UX 設計とステークホルダー同期（04A1準備）
+## 10. 20251211T090000Z Reception UX 設計とステークホルダー同期（04A1準備）
 - 期間: 2025-12-11 09:00 - 2025-12-12 09:00 JST。CodexCLI1 `04A1 WEBクライアント受付UX設計とステークホルダー同期` タスクでは、`docs/web-client/ux/reception-schedule-ui-policy.md` を再読し、Reception/OrderConsole 両面で `tone=server` バナー・`dataSourceTransition` 表現・`resolveMasterSource` 由来の監査メタを共通化してステークホルダー同期資料を整備する。
 - 実施内容: Reception のバナー色/ARIA/文言構造と OrderConsole の `FilterBadge`/`DataSourceBanner` を `tone=server` ルートで合わせつつ、`AuditEvent` と `audit.logUiState` 側に `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を添える設計を確認。`resolveMasterSource(masterType)` の実装図（MSW→snapshot→server→fallback）を `artifacts/webclient/ux-notes/20251211T090000Z-reception-design.md` にまとめ、監査メタと UI トーンを紐づけたコード片も記録する。
 - 証跡: `artifacts/webclient/ux-notes/20251211T090000Z-reception-design.md` にはスクリーンショット候補（Reception header + OrderConsole tone=server バナー）とコード参照を記載し、`docs/server-modernization/phase2/operations/logs/20251211T090000Z-reception-design.md` で API 依存・監査メタ要求・DOC_STATUS/manager checklist への反映計画を記録。`src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md` で RUN_ID と deliverable を整理し、`docs/web-client/planning/phase2/DOC_STATUS.md` `Web クライアント UX/Features` 行に新 RUN_ID を追記する準備を進める。
