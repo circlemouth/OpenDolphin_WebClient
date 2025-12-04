@@ -151,29 +151,6 @@
     "worktreePath": ".worktrees/task-1764839295775-8486a9"
   },
   {
-    "id": "task-1764839300775-e0cdfc",
-    "name": "CodexCLI2: [webclient ux outpatient modernization plan] 04A1_WEBクライアント受付UX設計とステークホルダー同期\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 04A1 WEB クライアント：受付 UX 設計とステークホルダー同期\n\n- docs/web-client/ux/reception-schedule-ui-policy.md を再確認し、tone=server バナーや `dataSourceTransition`／`resolveMasterSource` 表現の方向性を Reception/OrderConsole に合わせた共通トーンとして整理。\n- スクリーンショットや該当コード片を `artifacts/webclient/ux-notes/<RUN_ID>-reception-design.md` にまとめて、docs/web-client/ux/ux-documentation-plan.md の reception セクションに設計の補足を追加。\n- 詰めた要件と API 依存関係は docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-design.md に記録し、DOC_STATUS の Web クライアント UX/Features 行に RUN_ID とログパスを明記する準備を進める。\n\nYAML ID: src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-04T09:08:20.775Z",
-    "updatedAt": "2025-12-04T09:08:20.775Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1764839300775-e0cdfc",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1764839295775-afj0h0rs",
-    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 04A1_WEBクライアント受付UX設計とステークホルダー同期\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 04A1 WEB クライアント：受付 UX 設計とステークホルダー同期\n\n- docs/web-client/ux/reception-schedule-ui-policy.md を再確認し、tone=server バナーや `dataSourceTransition`／`resolveMasterSource` 表現の方向性を Reception/OrderConsole に合わせた共通トーンとして整理。\n- スクリーンショットや該当コード片を `artifacts/webclient/ux-notes/<RUN_ID>-reception-design.md` にまとめて、docs/web-client/ux/ux-documentation-plan.md の reception セクションに設計の補足を追加。\n- 詰めた要件と API 依存関係は docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-design.md に記録し、DOC_STATUS の Web クライアント UX/Features 行に RUN_ID とログパスを明記する準備を進める。\n\nYAML ID: src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1764839300775-e0cdfc"
-  },
-  {
     "id": "task-1764839304845-550b44",
     "name": "🔍Monitor: [webclient ux outpatient modernization plan] 04A1_WEBクライアント受付UX設計とステークホルダー同期\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 04A1 WEB クライアント：受付 UX 設計とステークホルダー同期\n\n- docs/web-client/ux/reception-schedule-ui-policy.md を再確認し、tone=server バナーや `dataSourceTransition`／`resolveMasterSource` 表現の方向性を Reception/OrderConsole に合わせた共通トーンとして整理。\n- スクリーンショットや該当コード片を `artifacts/webclient/ux-notes/<RUN_ID>-reception-design.md` にまとめて、docs/web-client/ux/ux-documentation-plan.md の reception セクションに設計の補足を追加。\n- 詰めた要件と API 依存関係は docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-design.md に記録し、DOC_STATUS の Web クライアント UX/Features 行に RUN_ID とログパスを明記する準備を進める。\n\nYAML ID: src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md",
     "model": "codex",
@@ -311,5 +288,146 @@
     },
     "autoEvaluationNotBefore": 1764841064395,
     "worktreePath": ".worktrees/task-1764841021071-2044f4"
+  },
+  {
+    "id": "task-yaml-y6otrb-src-outpatient-u",
+    "name": "[webclient ux outpatient modernization plan] 04A2_WEBクライアント受付UXコンポーネント実装\n期間: 12/12 09:00 - 12/14 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 04A2 WEB クライアント：受付 UX コンポーネント実装\n\n- `web-client/src/features/reception` の `<ReceptionPage>`／`<OrderConsole>` へ tone=server バナー、`resolveMasterSource` バッジ、`missingMaster` 入力を組み込み、`aria-live` の粒度でステータス変更が支援されるよう調整。\n- Charts や Patients で使っている `missingMaster`・`cacheHit` 表示とトーンを揃え、docs/web-client/ux/reception-schedule-ui-policy.md に実装スクリーンショットと ARIA 調整メモを追加。\n- 実装ポイント・依存 API （`/orca12/patientmodv2/outpatient` などの flag 伝播元）を docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-ux.md に記録し、RUN_ID とパスを DOC_STATUS に追記。\n\nYAML ID: src/outpatient_ux_modernization/04A2_WEBクライアント受付UXコンポーネント実装.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-04T10:34:09.312Z",
+    "updatedAt": "2025-12-04T10:34:09.312Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-y6otrb-src-outpatient-u",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04A2_WEBクライアント受付UXコンポーネント実装.md",
+      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
+      "datasetLabel": "webclient ux outpatient modernization plan",
+      "pathId": "src/outpatient_ux_modernization/04A2_WEBクライアント受付UXコンポーネント実装.md",
+      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
+      "addedAt": "2025-12-04T10:34:09.290Z"
+    },
+    "labels": [
+      "webclient ux outpatient modernization plan",
+      "src / outpatient_ux_modernization"
+    ],
+    "dependencies": [
+      "task-yaml-18soe03-src-outpatient-u"
+    ],
+    "schedule": {
+      "startMs": 1765497600000,
+      "endMs": 1765670400000,
+      "durationDays": 2
+    },
+    "category": "src / outpatient_ux_modernization",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 04A2 WEB クライアント：受付 UX コンポーネント実装\n\n- `web-client/src/features/reception` の `<ReceptionPage>`／`<OrderConsole>` へ tone=server バナー、`resolveMasterSource` バッジ、`missingMaster` 入力を組み込み、`aria-live` の粒度でステータス変更が支援されるよう調整。\n- Charts や Patients で使っている `missingMaster`・`cacheHit` 表示とトーンを揃え、docs/web-client/ux/reception-schedule-ui-policy.md に実装スクリーンショットと ARIA 調整メモを追加。\n- 実装ポイント・依存 API （`/orca12/patientmodv2/outpatient` などの flag 伝播元）を docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-ux.md に記録し、RUN_ID とパスを DOC_STATUS に追記。"
+  },
+  {
+    "id": "task-yaml-1kxcglv-src-outpatient-u",
+    "name": "[webclient ux outpatient modernization plan] 04B2_WEBクライアントChartsPatientsUX実装\n期間: 12/12 09:00 - 12/14 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 04B2 WEB クライアント：Charts/Patients UX 実装\n\n- `web-client/src/features/charts` の `DocumentTimeline`/`OrderConsole`/`OrcaSummary` と `Patients` タブで `missingMaster` バナー＋`dataSourceTransition=server` 表示を整備し、`auth-service` のフラグで tone を切り替える仕組みを追加。\n- ORCA `cacheHit`/`missingMaster` 受信時に `artifacts/webclient/ux-notes/<RUN_ID>-orca-flags.md` へ tone 推移を記録し、docs/web-client/ux/ux-documentation-plan.md へスクリーンショット付きで観察ログを追記。\n- 実装結果は docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に残し、DOC_STATUS と manager checklist への追記を整える。\n\nYAML ID: src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-04T10:34:11.483Z",
+    "updatedAt": "2025-12-04T10:34:11.483Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1kxcglv-src-outpatient-u",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md",
+      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
+      "datasetLabel": "webclient ux outpatient modernization plan",
+      "pathId": "src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md",
+      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
+      "addedAt": "2025-12-04T10:34:11.454Z"
+    },
+    "labels": [
+      "webclient ux outpatient modernization plan",
+      "src / outpatient_ux_modernization"
+    ],
+    "dependencies": [
+      "task-yaml-1n9i17j-src-outpatient-u"
+    ],
+    "schedule": {
+      "startMs": 1765497600000,
+      "endMs": 1765670400000,
+      "durationDays": 2
+    },
+    "category": "src / outpatient_ux_modernization",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 04B2 WEB クライアント：Charts/Patients UX 実装\n\n- `web-client/src/features/charts` の `DocumentTimeline`/`OrderConsole`/`OrcaSummary` と `Patients` タブで `missingMaster` バナー＋`dataSourceTransition=server` 表示を整備し、`auth-service` のフラグで tone を切り替える仕組みを追加。\n- ORCA `cacheHit`/`missingMaster` 受信時に `artifacts/webclient/ux-notes/<RUN_ID>-orca-flags.md` へ tone 推移を記録し、docs/web-client/ux/ux-documentation-plan.md へスクリーンショット付きで観察ログを追記。\n- 実装結果は docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に残し、DOC_STATUS と manager checklist への追記を整える。"
+  },
+  {
+    "id": "task-yaml-d8mer-src-outpatient-u",
+    "name": "[webclient ux outpatient modernization plan] 04C2_WEBクライアントAPI統合実装\n期間: 12/12 09:00 - 12/14 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 04C2 WEB クライアント：API 統合実装\n\n- `web-client/src/libs/http/httpClient.ts` に上記外来エンドポイントをグルーピング登録し、`resolveMasterSource` で `dataSourceTransition=server` を維持しつつ `cacheHit`/`missingMaster` を telemetry へ渡す。\n- `web-client/src/libs/telemetry/telemetryClient.ts` をフックし、`web-client/src/features/charts` の Orchestration で flag 受信時にファネルログを残す。\n- docs/web-client/ux/reception-schedule-ui-policy.md と docs/web-client/ux/ux-documentation-plan.md に接続フロー図と差分を追記し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に計画と API パス一覧を残す。\n\nYAML ID: src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-04T10:34:15.418Z",
+    "updatedAt": "2025-12-04T10:34:15.418Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-d8mer-src-outpatient-u",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md",
+      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
+      "datasetLabel": "webclient ux outpatient modernization plan",
+      "pathId": "src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md",
+      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
+      "addedAt": "2025-12-04T10:34:15.388Z"
+    },
+    "labels": [
+      "webclient ux outpatient modernization plan",
+      "src / outpatient_ux_modernization"
+    ],
+    "dependencies": [
+      "task-yaml-10zwrj1-src-outpatient-u"
+    ],
+    "schedule": {
+      "startMs": 1765497600000,
+      "endMs": 1765670400000,
+      "durationDays": 2
+    },
+    "category": "src / outpatient_ux_modernization",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 04C2 WEB クライアント：API 統合実装\n\n- `web-client/src/libs/http/httpClient.ts` に上記外来エンドポイントをグルーピング登録し、`resolveMasterSource` で `dataSourceTransition=server` を維持しつつ `cacheHit`/`missingMaster` を telemetry へ渡す。\n- `web-client/src/libs/telemetry/telemetryClient.ts` をフックし、`web-client/src/features/charts` の Orchestration で flag 受信時にファネルログを残す。\n- docs/web-client/ux/reception-schedule-ui-policy.md と docs/web-client/ux/ux-documentation-plan.md に接続フロー図と差分を追記し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に計画と API パス一覧を残す。"
   }
 ]
