@@ -1,49 +1,25 @@
 [
   {
-    "id": "task-yaml-9n240t-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 03_モダナイズAPIマッピング\n期間: 12/09 09:00 - 12/11 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ API マッピング\n\n- docs/server-modernization/phase2/foundation および docs/web-client/architecture/web-client-api-mapping.md を参照し、Reception/Charts/Patients/Administration で使う `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` のレスポンス shape と `auditEvent` 項目を一覧化。\n- ORCA の入院用エンドポイント（例: `/orca21/medicalmodv2/inpatient`）は本フェーズで実装しないため、差分表には「外来スコープ外」と明記し、DOC_STATUS の備考に記録。\n- 差分や不整合があれば docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap.md に記録し、必要に応じて modernized server チームへフィードバック。\n\nYAML ID: src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
+    "id": "task-1764830405919-9be2df",
+    "name": "CodexCLI3: [webclient ux outpatient modernization plan] 03_モダナイズAPIマッピング\n期間: 12/09 09:00 - 12/11 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ API マッピング\n\n- docs/server-modernization/phase2/foundation および docs/web-client/architecture/web-client-api-mapping.md を参照し、Reception/Charts/Patients/Administration で使う `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` のレスポンス shape と `auditEvent` 項目を一覧化。\n- ORCA の入院用エンドポイント（例: `/orca21/medicalmodv2/inpatient`）は本フェーズで実装しないため、差分表には「外来スコープ外」と明記し、DOC_STATUS の備考に記録。\n- 差分や不整合があれば docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap.md に記録し、必要に応じて modernized server チームへフィードバック。\n\nYAML ID: src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-03T15:32:13.473Z",
-    "updatedAt": "2025-12-03T15:32:13.473Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-9n240t-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
+    "createdAt": "2025-12-04T06:40:05.919Z",
+    "updatedAt": "2025-12-04T06:40:05.919Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1764830405919-9be2df",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
+    "aiCompetitionGroupId": "comp-1764830382241-fzxmqcy6",
+    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 03_モダナイズAPIマッピング\n期間: 12/09 09:00 - 12/11 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ API マッピング\n\n- docs/server-modernization/phase2/foundation および docs/web-client/architecture/web-client-api-mapping.md を参照し、Reception/Charts/Patients/Administration で使う `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` のレスポンス shape と `auditEvent` 項目を一覧化。\n- ORCA の入院用エンドポイント（例: `/orca21/medicalmodv2/inpatient`）は本フェーズで実装しないため、差分表には「外来スコープ外」と明記し、DOC_STATUS の備考に記録。\n- 差分や不整合があれば docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap.md に記録し、必要に応じて modernized server チームへフィードバック。\n\nYAML ID: src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-03T15:32:13.347Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-1hyluq0-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1765238400000,
-      "endMs": 1765411200000,
-      "durationDays": 2
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 03 モダナイズ API マッピング\n\n- docs/server-modernization/phase2/foundation および docs/web-client/architecture/web-client-api-mapping.md を参照し、Reception/Charts/Patients/Administration で使う `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` のレスポンス shape と `auditEvent` 項目を一覧化。\n- ORCA の入院用エンドポイント（例: `/orca21/medicalmodv2/inpatient`）は本フェーズで実装しないため、差分表には「外来スコープ外」と明記し、DOC_STATUS の備考に記録。\n- 差分や不整合があれば docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap.md に記録し、必要に応じて modernized server チームへフィードバック。"
+    "worktreePath": ".worktrees/task-1764830405919-9be2df"
   }
 ]
