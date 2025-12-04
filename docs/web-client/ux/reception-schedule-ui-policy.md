@@ -84,3 +84,8 @@
 - ReceptionPage/OrderConsole の `tone=server` バナー・`resolveMasterSource` バッジ・`missingMaster` 入力・`missingMaster`/`cacheHit` badge を `artifacts/webclient/ux-notes/20251212T090000Z-reception-ux.md` でスクリーンショット候補（`artifacts/webclient/ux-notes/20251212T090000Z-reception-ux.png`）付きで記録。
 - `role=alert` + `aria-live` を tone 毎に切り替えており、Error/Warning は `assertive`、Info は `polite`、`aria-atomic=false` で連続読み上げを防止。lived region に `data-run-id=20251212T090000Z` を付与し、Charts/Patients に carry-over できるようにした。
 - `missingMaster`/`cacheHit` badge は Reception/Charts/Patients で共通の `status-badge` CSS/ARIA を再利用し、ツールチップや tone が一致することでトーンの整合性を担保。`resolveMasterSource` バッジの `transitionDescription` には snapshot→server/fallback の変化を示す文言を入れ、監査メタと `tone=server` の起点をわかりやすくした。
+
+## 10. 最新実装と記録（RUN_ID=20251204T230000Z）
+- ReceptionPage 直下で `ToneBanner` → `ResolveMasterBadge` とステップ表示し、`missingMaster`/`cacheHit` 表示と `missingMaster` 入力メモを OrderConsole に集約することで `aria-live` の意図を単一箇所に保つ。`missingMaster` ノートは `aria-live=assertive`/`polite` を状態依存で切り替えて、警告のみを強調しつつ再取得時に tone=server を継承。
+- `artifacts/webclient/ux-notes/20251204T230000Z-reception-ux-implementation.md` に props/flag の差分、`artifacts/webclient/ux-notes/20251204T230000Z-reception-ux-implementation.png` で banner/badge/missingMaster 入力のスクリーンショット候補を記録し、`docs/server-modernization/phase2/operations/logs/20251204T230000Z-reception-ux.md` に依存 API（`web-client/src/libs/http/httpClient.ts`／`OUTPATIENT_API_ENDPOINTS` に定義した `/api01rv2/claim/outpatient/*` 等）と `missingMaster` フラグの起点を添えて証跡化。
+- `web-client/src/features/reception/styles.ts` へ `tone-banner`/`resolve-master`/`status-badge` クラスを移し、Charts/Patients でも同じ `status-badge` セレクタを再利用できるようにした点も記録し、DOC_STATUS に RUN_ID と証跡を追加する。
