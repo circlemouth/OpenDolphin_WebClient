@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 16px;
+        background: #fbfeff;
+        box-shadow: 0 6px 12px rgba(31, 42, 48, 0.08);
+      }
+      .score-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .score-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #1f2a30;
+      }
+      .score-value {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-badge {
+        font-size: 13px;
+        font-weight: 600;
+        color: #1f2a30;
+        background: #d8e6e9;
+        border-radius: 999px;
+        padding: 4px 10px;
+        align-self: center;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 8px;
+        margin: 12px 0 16px;
+      }
+      .hexagon {
+        position: relative;
+        padding: 12px 8px;
+        text-align: center;
+        font-size: 12px;
+        line-height: 1.3;
+        background: #eef3f4;
+        border: 1px solid #b8c9cd;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+      }
+      .hexagon span {
+        display: block;
+        font-weight: 600;
+      }
+      .score-links {
+        list-style: none;
+        padding-left: 0;
+        margin: 0;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .score-links li {
+        margin-bottom: 6px;
+      }
+      .score-links a {
+        color: #0e5c91;
+        text-decoration: none;
+      }
+      .score-links code {
+        background: #f5f7f8;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">`task-1764838742660-02e179`（RUN_ID=20251204T120000Z）と `task-1764838746624-88d918`（RUN_ID=20251204T200000Z）の外来 API 統合設計成果を同一指標で比較し、緻密性／網羅性を点数化しています。</p>
+      </header>
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-head">
+            <div class="score-title">Agent `task-1764838742660-02e179`<br /><small>RUN_ID 20251204T120000Z</small></div>
+            <div class="score-value">567 / 600 🏆</div>
+            <div class="score-badge">🥇 95/100</div>
+          </div>
+          <div class="hex-grid">
+            <div class="hexagon"><span>コード品質</span>95点</div>
+            <div class="hexagon"><span>設計/ドキュメント</span>94点</div>
+            <div class="hexagon"><span>監査トレーサビリティ</span>97点</div>
+            <div class="hexagon"><span>UX/QA連携</span>93点</div>
+            <div class="hexagon"><span>実装前提</span>95点</div>
+            <div class="hexagon"><span>ガバナンス</span>93点</div>
+          </div>
+          <ul class="score-links">
+            <li>アーキテクチャ: <a href="../../docs/web-client/architecture/web-client-api-mapping.md">docs/web-client/architecture/web-client-api-mapping.md</a></li>
+            <li>設計ログ: <a href="../../docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md">docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md</a></li>
+            <li>UXメモ: <a href="../../artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md">artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md</a></li>
+            <li>作業ワークツリー: <code>.worktrees/task-1764838742660-02e179</code></li>
+          </ul>
+        </div>
+        <div class="score-card">
+          <div class="score-head">
+            <div class="score-title">Agent `task-1764838746624-88d918`<br /><small>RUN_ID 20251204T200000Z</small></div>
+            <div class="score-value">553 / 600 🏆</div>
+            <div class="score-badge">🥈 92/100</div>
+          </div>
+          <div class="hex-grid">
+            <div class="hexagon"><span>コード品質</span>92点</div>
+            <div class="hexagon"><span>設計/ドキュメント</span>93点</div>
+            <div class="hexagon"><span>監査トレーサビリティ</span>95点</div>
+            <div class="hexagon"><span>UX/QA連携</span>91点</div>
+            <div class="hexagon"><span>実装前提</span>92点</div>
+            <div class="hexagon"><span>ガバナンス</span>90点</div>
+          </div>
+          <ul class="score-links">
+            <li>アーキテクチャ: <a href="../../docs/web-client/architecture/web-client-api-mapping.md">docs/web-client/architecture/web-client-api-mapping.md</a>（20251204T200000Z版）</li>
+            <li>設計ログ: <a href="../../docs/server-modernization/phase2/operations/logs/20251204T200000Z-integration-design.md">docs/server-modernization/phase2/operations/logs/20251204T200000Z-integration-design.md</a></li>
+            <li>UXメモ: <a href="../../artifacts/webclient/ux-notes/20251204T200000Z-integration-design.md">artifacts/webclient/ux-notes/20251204T200000Z-integration-design.md</a></li>
+            <li>作業ワークツリー: <code>.worktrees/task-1764838746624-88d918</code></li>
+          </ul>
+        </div>
+      </section>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>指標</th>
+            <th>Agent `task-1764838742660-02e179`</th>
+            <th>Agent `task-1764838746624-88d918`</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>コード品質</td>
+            <td>`web-client/src/libs/http/httpClient.ts` に `HttpEndpointDefinition`/`OUTPATIENT_API_ENDPOINTS` を導入し、4 つの外来パスに `purpose`・`auditMetadata`・`sourceDocs` を付与。`resolveMasterSource`→`dataSourceTransition`→`auditEvent` のメタデータを型付きで保証してコードの説明責任を高めている。</td>
+            <td>同ファイルで `OutpatientApiMapping` 型と `OUTPATIENT_API_REGISTRY` を定義し、`auditAction`・`notes` を含めて `traceId`/`requestId`/`facilityId` まで列挙。HTTP レイヤーの構造説明と `SessionAuditDispatcher` との接続点をコードコメントで補完している。</td>
+          </tr>
+          <tr>
+            <td>設計/ドキュメント</td>
+            <td>`docs/web-client/architecture/web-client-api-mapping.md` を RUN_ID=20251204T120000Z 版で新設し、`IMPACT_MATRIX`/`orca-master-sprint-plan` を参照しながら `resolveMasterSource` フローと `ORCA_*` アクション対応を表化。UX/QA に優先度と metadata を共通認識として渡せる。</td>
+            <td>同文書を RUN_ID=20251204T200000Z に合わせて書き直し、`dataSourceTransition`/`cacheHit`/`missingMaster`/`fallbackUsed` を必須項目化。`operation`/`patientId` などの業務キーと trace 情報の対応を含めて UX/QA の理解を深めた。</td>
+          </tr>
+          <tr>
+            <td>監査トレーサビリティ</td>
+            <td>`docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md` と GAP ログ `20251204T064209Z-api-gap.md` を新設し、`DOC_STATUS` の `Web クライアント UX/Features` 行に RUN_ID と証跡を記録。外来 API 監査ギャップと `dataSourceTransition=server` ルールの追跡が可能になった。</td>
+            <td>`docs/server-modernization/phase2/operations/logs/20251204T200000Z-integration-design.md` を作成し、DOC_STATUS/README に 20251204T200000Z の log/artifact を連携。`api-gap` ログに残した `SessionAuditDispatcher` 依頼も引き継ぎ、metadata の履歴を継続している。</td>
+          </tr>
+          <tr>
+            <td>UX/QA連携</td>
+            <td>`docs/web-client/ux/ux-documentation-plan.md` に `dataSourceTransition=server` や `warning banner tone=server` などの図解セクションを追加し、Playwright/Stage の検証条件や `cacheHit`/`missingMaster`/`fallbackUsed` の UI 反映を文書化。`artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md` も banner tone の箇条書きを記録。</td>
+            <td>同計画に RUN_ID=20251204T200000Z セクションを追加し、`missingMaster=true` で caution tone、`fallbackUsed=true` で保存ブロック、`tests/e2e/orca-master.spec.ts` への `dataSourceTransition` イベントを示唆。`artifacts/webclient/ux-notes/20251204T200000Z-integration-design.md` が metadata フローを整理。</td>
+          </tr>
+          <tr>
+            <td>実装前提</td>
+            <td>`src/outpatient_ux_modernization/04C1_WEBクライアントAPI統合設計.md` に目的・依存・次アクションを列挙し、httpClient/UX/設計ログ/証跡へのリンクで実装/QA 共有を準備。`dataSourceTransition=server` の `cacheHit`/`missingMaster` 期待値も明示されている。</td>
+            <td>同ファイルを RUN_ID=20251204T200000Z で更新し、`OUTPATIENT_API_REGISTRY` 登録と metadata フロー・UX 図解をまとめて DOC_STATUS/README と連携。警告/監査の実装前提を明文化し、実装チームが優先度を定義できる。</td>
+          </tr>
+          <tr>
+            <td>ガバナンス</td>
+            <td>`docs/web-client/README.md` に 20251204T120000Z の `web-client-api-mapping` を追加し、`DOC_STATUS` も RUN_ID/証跡を追記してマネージャーチェックリストへのリンクを確保。`artifacts`/`log` との紐付けを完了し、ガバナンス要件を満たしている。</td>
+            <td>`README` に 20251204T200000Z の API 統合設計セクションを追加し、DOC_STATUS は log/artifact を並列で記録。UX 計画内で 20251203/20251204 の連続性を示し、報告チェーンを維持できている。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
