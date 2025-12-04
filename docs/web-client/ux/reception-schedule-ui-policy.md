@@ -52,3 +52,7 @@
 - 診察終了タブで ORCA 再送後にバナーへ反映されるまでの遅延とリトライ導線を計測し、フィルタ状態が保持されたままか。
 - Patients から戻る導線で選択タブ・フィルタ・ソートが復元されるか（前画面履歴/専用戻るリンク双方）。
 - 役割ごとのボタン活性・再送可否が role/承認状態に従うことと、操作時に監査ログが残ることを UI＋API でクロスチェックする。
+## 9. 実装スクリーンショットと ARIA メモ（RUN_ID=20251212T090000Z）
+- ReceptionPage/OrderConsole の `tone=server` バナー・`resolveMasterSource` バッジ・`missingMaster` 入力・`missingMaster`/`cacheHit` badge を `artifacts/webclient/ux-notes/20251212T090000Z-reception-ux.md` でスクリーンショット候補（`artifacts/webclient/ux-notes/20251212T090000Z-reception-ux.png`）付きで記録。
+- `role=alert` + `aria-live` を tone 毎に切り替えており、Error/Warning は `assertive`、Info は `polite`、`aria-atomic=false` で連続読み上げを防止。lived region に `data-run-id=20251212T090000Z` を付与し、Charts/Patients に carry-over できるようにした。
+- `missingMaster`/`cacheHit` badge は Reception/Charts/Patients で共通の `status-badge` CSS/ARIA を再利用し、ツールチップや tone が一致することでトーンの整合性を担保。`resolveMasterSource` バッジの `transitionDescription` には snapshot→server/fallback の変化を示す文言を入れ、監査メタと `tone=server` の起点をわかりやすくした。
