@@ -49,7 +49,7 @@
 
 ## 8. 接続フローと差分（RUN_ID=20251204T210000Z）
 
-- 接続フロー: `resolveMasterSource` で `dataSourceTransition=server` になったタイミングで `httpClient` 経由の外来 API (/api01rv2/claim/outpatient/* など) が実行され、キャッシュ命中／未命中フラグ (`cacheHit`/`missingMaster`) が telemetry funnel ログに送出される。Reception/Charts の Orchestration がこの flag を受信したら同じ tone=server バナーを出し、`audit.logUiState` との整合性を検証できるようにする。
+- 接続フロー: `resolveMasterSource` で `dataSourceTransition=server` になったタイミングで `httpClient` 経由の外来 API (/api01rv2/claim/outpatient/* など) が実行され、キャッシュ命中／未命中フラグ (`cacheHit`/`missingMaster`) が `telemetryClient` の `funnels/outpatient`（RUN_ID=`20251205T090000Z`）へ送出される。OrderConsole では `cacheHit` 受信後に `handleOutpatientFlags` を使って `setResolveMasterSource('server')` を呼び出し、Charts Orchestration 側が同じ `tone=server`/`dataSourceTransition` を見るまで `audit.logUiState` を同期する。
 - 接続図 (概要):
 
 ```
@@ -73,7 +73,7 @@
          [Reception / Charts orchestration (flag受信)]
                +--- tone=server banner + `audit.logUiState`
 ```
-- 差分と確認事項: 04C1 では解説/設計資料に止まっていた `resolveMasterSource`/監査 circulation を 04C2 で telemetry 連携と Orchestration flag の漏れなく残すことに落とし込み、`docs/server-modernization/phase2/operations/logs/20251204T210000Z-integration-implementation.md` に API パス一覧と実装予定を証跡化した。ただし現在のリポジトリには `web-client/src/libs/telemetry/telemetryClient.ts` および `web-client/src/features/charts` が欠落しているため、実際のファネルログ出力はこれらの assets が復元されてから対応する必要がある。
+- 差分と確認事項: 04C1 では解説/設計資料に止まっていた `resolveMasterSource`/監査 circulation を 04C2 で telemetry 連携と Orchestration flag の漏れなく残すことに落とし込み、`docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md` に API パス一覧・実装済みコード・telemetry funnel の図を証跡化した。`web-client/src/libs/telemetry/telemetryClient.ts` と `web-client/src/features/charts` を実装して `cacheHit`/`missingMaster` flag の両ステージ（`resolve_master` → `charts_orchestration`）を `funnels/outpatient` に記録し、`setResolveMasterSource('server')` 呼び出しで Reception/Charts の `tone=server` と `dataSourceTransition=server` を同期できている。
 
 ## 9. テスト観点メモ
 - ステータス変更（受付→診療終了）と ORCA 送信結果バナーが `aria-live` で読まれ、tone がエラー/完了で揃うか。
