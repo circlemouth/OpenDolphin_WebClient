@@ -195,8 +195,8 @@ src:
         - ORCA `cacheHit`/`missingMaster` フラグを受け取るタイミングと UI 表示要件を UX ドキュメントと artifacts/webclient/ux-notes/<RUN_ID>-charts-design.md へ整理し、ステージでの観察項目を明記。
         - 設計ログは docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-design.md へ記録し、DOC_STATUS の Web クライアント UX/Features 行にランナーとして RUN_ID とパスを追記する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -252,8 +252,8 @@ src:
         - `resolveMasterSource` が `dataSourceTransition=server` を返すケース、`auditEvent` マッピング、`cacheHit`/`missingMaster` flag の伝播を artifacts/webclient/ux-notes/<RUN_ID>-integration-design.md に整理し、実装の前提を docs/web-client/ux/ux-documentation-plan.md に図示。
         - 設計ログは docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-design.md に記録し、DOC_STATUS の Web クライアント UX/Features 行へ RUN_ID とパスを記入。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api:
         - "/api01rv2/claim/outpatient/*"
