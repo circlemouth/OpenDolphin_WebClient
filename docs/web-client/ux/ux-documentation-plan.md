@@ -45,7 +45,7 @@
 
 ## 7. API 統合設計フロー（RUN_ID=20251204T120000Z）
 
-- `web-client/src/libs/http/httpClient.ts` に追加した `OUTPATIENT_API_ENDPOINTS` には `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca21/medicalmodv2/outpatient`、`/orca12/patientmodv2/outpatient` を登録し、`docs/web-client/architecture/web-client-api-mapping.md` と同じ表を参照用に保持しています。新しい RUN_ID ではこれらに `runId`/`dataSource`/`cacheHit`/`missingMaster`/`fallbackUsed`/`dataSourceTransition` を全例で `audit.logUiState`/`AuditTrail` に透過し、UX ではバナー/ARIA のトーンと一致させることを前提とします。
+- `web-client/src/libs/http/httpClient.ts` に追加した `OUTPATIENT_API_ENDPOINTS` には `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/api01rv2/patient/outpatient/*`、`/orca21/medicalmodv2/outpatient`、`/orca12/patientmodv2/outpatient` を登録し、`docs/web-client/architecture/web-client-api-mapping.md` と同じ表を参照用に保持しています。新しい RUN_ID ではこれらに `runId`/`dataSource`/`cacheHit`/`missingMaster`/`fallbackUsed`/`dataSourceTransition` を全例で `audit.logUiState`/`AuditTrail` に透過し、UX ではバナー/ARIA のトーンと一致させることを前提とします。
 - `resolveMasterSource(masterType)` の `dataSource` 判定は `MSW fixtures` → `snapshot artifacts` → `server ORCA` → `fallback constants` という旗振りで `dataSourceTransition=server` になるケースを図示し、Playwright/Stage の `warning banner tone=server` で `dataSourceTransition` を `auditEvent` と `data-run-id` で観測できるようにします。
 
 ```
@@ -57,6 +57,7 @@
 
 - `cacheHit` は React Query のキャッシュ命中時に `true` を付与し、強制リフェッチや TTL 経過時に `false` とする。`missingMaster` はスキーマ検証や `resolveMasterSource` が `fallback` を選択したときに `true`、解消したら `false` に戻す。`auditEvent` の `details` は `ORCA_CLAIM_OUTPATIENT` / `ORCA_APPOINTMENT_OUTPATIENT` / `ORCA_MEDICAL_GET` / `ORCA_PATIENT_MUTATION` として `facilityId`/`patientId`／`appointmentId`／`operation` などの業務キーと metadata をすべて含めます（詳細は `docs/server-modernization/phase2/operations/orca-master-sprint-plan.md` を参照）。
 - `docs/web-client/ux/ux-documentation-plan.md` ではこの図を UX/Playwright 検証の前提として使い、DocStatus の「Web クライアント UX/Features」行に RUN_ID `20251204T120000Z` と `docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md` / `artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md` を紐づけます。
+- RUN_ID=`20251205T090000Z` では `telemetryClient`/`charts/orchestration`/`OrderConsole` を実装し、`cacheHit`/`missingMaster` フラグが `funnels/outpatient` に送出されるたび `setResolveMasterSource('server')` が呼ばれ、`docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md` に接続図とコード変更を記録しました。
 
 ## 8. 接続フロー差分（RUN_ID=20251204T210000Z）
 
@@ -82,7 +83,7 @@
           v
 [Charts/Reception flag processing & audit log]
 ```
-- 差分: 04C1 では図示と監査設計までだった `resolveMasterSource` → `httpClient` → `auditEvent` の流れを 04C2 で telemetry funnel まで実装計画に落とし込み、`src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md` と `docs/server-modernization/phase2/operations/logs/20251204T210000Z-integration-implementation.md` に API パス一覧・Telemetry 層のフローを記録した。ただし現在のリポジトリには `web-client/src/libs/telemetry/telemetryClient.ts` および `web-client/src/features/charts` がないため、実コードのファネルログ送出は module が戻ってきてからの対応となる。
+- 差分: 04C1 では図示と監査設計までだった `resolveMasterSource` → `httpClient` → `auditEvent` の流れを 04C2 で telemetry funnel まで実装に落とし込み、`src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md` と `docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md` に API パス一覧・Telemetry 層のフローを記録している。`web-client/src/libs/telemetry/telemetryClient.ts` と `web-client/src/features/charts` を実装し、`cacheHit`/`missingMaster` フラグの `resolve_master` → `charts_orchestration` の funnel と `setResolveMasterSource('server')` 呼び出しは RUN_ID=`20251205T090000Z` のログで確認できる。
 
 ## 9. 20251204T160000Z Reception UX 設計とステークホルダー同期
 - 期間: 2025-12-11 09:00 - 2025-12-12 09:00（優先度: high / 緊急度: medium）。Reception/OrderConsole を `tone=server` バナー・`aria-live` 共同ルール・`dataSourceTransition` 監査メタでつなぎ、ステークホルダーとの同期を確実にする定例レビューを実施した。
