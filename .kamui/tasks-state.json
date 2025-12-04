@@ -66,28 +66,5 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1764881936124-139342"
-  },
-  {
-    "id": "task-1764882079942-bfeac8",
-    "name": "CodexCLI1: [webclient ux outpatient modernization plan] 04C2_WEBクライアントAPI統合実装\n期間: 12/05 09:00 - 12/09 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04C2 WEB クライアント：API 統合実装\n\n- 1. `web-client/src/libs/http/httpClient.ts` に `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/api01rv2/patient/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` を `outpatient` グループで登録し、`resolveMasterSource` で `dataSourceTransition=server` を維持する仕組みを明文化する。\n- 2. `web-client/src/libs/telemetry/telemetryClient.ts` へ flag 受信時のファネルログを追加し、`web-client/src/features/charts` 側で `cacheHit`/`missingMaster` が届いたタイミングを telemetry イベントにして `funnels/outpatient` を更新する。\n- 3. `web-client/src/features/charts/orchestration.ts` などで `cacheHit` 受信後に `setResolveMasterSource('server')` を呼ぶようにし、`telemetry` 連携と `dataSourceTransition` 表示が同期している状態を `docs/web-client/ux/reception-schedule-ui-policy.md` と `docs/web-client/ux/ux-documentation-plan.md` に接続フロー図・差分として記録。\n- 4. docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に API パス一覧と参照先（httpClient/telemetry/ChartsOrchestration）を記録し、DOC_STATUS と manager checklist の対応行へ RUN_ID とログパスを明記しておく。\n\nYAML ID: src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-04T21:01:19.942Z",
-    "updatedAt": "2025-12-04T21:01:19.942Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1764882079942-bfeac8",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1764882079942-bgjf9o1v",
-    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 04C2_WEBクライアントAPI統合実装\n期間: 12/05 09:00 - 12/09 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04C2 WEB クライアント：API 統合実装\n\n- 1. `web-client/src/libs/http/httpClient.ts` に `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/api01rv2/patient/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` を `outpatient` グループで登録し、`resolveMasterSource` で `dataSourceTransition=server` を維持する仕組みを明文化する。\n- 2. `web-client/src/libs/telemetry/telemetryClient.ts` へ flag 受信時のファネルログを追加し、`web-client/src/features/charts` 側で `cacheHit`/`missingMaster` が届いたタイミングを telemetry イベントにして `funnels/outpatient` を更新する。\n- 3. `web-client/src/features/charts/orchestration.ts` などで `cacheHit` 受信後に `setResolveMasterSource('server')` を呼ぶようにし、`telemetry` 連携と `dataSourceTransition` 表示が同期している状態を `docs/web-client/ux/reception-schedule-ui-policy.md` と `docs/web-client/ux/ux-documentation-plan.md` に接続フロー図・差分として記録。\n- 4. docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に API パス一覧と参照先（httpClient/telemetry/ChartsOrchestration）を記録し、DOC_STATUS と manager checklist の対応行へ RUN_ID とログパスを明記しておく。\n\nYAML ID: src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1764882079942-bfeac8"
   }
 ]
