@@ -57,3 +57,8 @@
 
 - `cacheHit` は React Query のキャッシュ命中時に `true` を付与し、強制リフェッチや TTL 経過時に `false` とする。`missingMaster` はスキーマ検証や `resolveMasterSource` が `fallback` を選択したときに `true`、解消したら `false` に戻す。`auditEvent` の `details` は `ORCA_CLAIM_OUTPATIENT` / `ORCA_APPOINTMENT_OUTPATIENT` / `ORCA_MEDICAL_GET` / `ORCA_PATIENT_MUTATION` として `facilityId`/`patientId`／`appointmentId`／`operation` などの業務キーと metadata をすべて含めます（詳細は `docs/server-modernization/phase2/operations/orca-master-sprint-plan.md` を参照）。
 - `docs/web-client/ux/ux-documentation-plan.md` ではこの図を UX/Playwright 検証の前提として使い、DocStatus の「Web クライアント UX/Features」行に RUN_ID `20251204T120000Z` と `docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md` / `artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md` を紐づけます。
+
+## 8. 20251204T160000Z Reception UX 設計とステークホルダー同期
+- 期間: 2025-12-11 09:00 - 2025-12-12 09:00（優先度: high / 緊急度: medium）。Reception/OrderConsole を `tone=server` バナー・`aria-live` 共同ルール・`dataSourceTransition` 監査メタでつなぎ、ステークホルダーとの同期を確実にする定例レビューを実施した。
+- 実施内容: `docs/web-client/ux/reception-schedule-ui-policy.md` に書かれた Reception 一覧/バナー要件を OrderConsole にキャリーオーバーし、`[prefix][ステータス][患者ID/受付ID][送信先][再送可否][次アクション]` という文言構造と Error/Warning/Info の色と `role=alert` + `aria-live` を統一。`src/LEGACY/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md` の `resolveMasterSource(masterType)` helper から `dataSourceTransition` を取り込む監査メタルートを Reception/OrderConsole でも再利用することを確認した。
+- 証跡: `artifacts/webclient/ux-notes/20251204T160000Z-reception-design.md` にスクリーンショット候補とコード参照を整理し、API 依存・監査ステータスを `docs/server-modernization/phase2/operations/logs/20251204T160000Z-reception-design.md` へ記録。DOC_STATUS の Web クライアント UX/Features 行には RUN_ID=`20251204T160000Z` と本ログ/アーティファクトへのリンクを追記する予定。
