@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Evaluation Report</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 18px;
+      }
+      .score-entry {
+        flex: 1;
+        min-width: 260px;
+        padding: 14px;
+        border: 1px solid #cdd7dc;
+        border-radius: 8px;
+        background: #f7fbfd;
+        box-shadow: 0 2px 6px rgba(31, 42, 48, 0.08);
+      }
+      .score-label {
+        font-weight: 600;
+        color: #1f2a30;
+        margin-bottom: 6px;
+      }
+      .score-value {
+        font-size: 20px;
+        margin-bottom: 4px;
+      }
+      .score-detail {
+        font-size: 12px;
+        color: #4b5c67;
+      }
+      .methodology {
+        margin-bottom: 24px;
+        padding: 12px 14px;
+        border: 1px solid #d4dfe4;
+        border-radius: 10px;
+        background: #f4f8fb;
+        font-size: 14px;
+        color: #1f2a30;
+      }
+      .evaluation-columns {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+      }
+      .evaluation-card {
+        flex: 1;
+        min-width: 320px;
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 20px;
+        background: #ffffff;
+        box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+      }
+      .card-header {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .card-header small {
+        display: block;
+        font-size: 12px;
+        font-weight: 400;
+        color: #4b5c67;
+      }
+      .card-summary {
+        margin-bottom: 14px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #1f2a30;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .hex {
+        background: linear-gradient(135deg, #2c3a40, #1f2a30);
+        color: #fff;
+        padding: 14px 8px;
+        text-align: center;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+        border-radius: 4px;
+        font-size: 12px;
+      }
+      .metric-name {
+        display: block;
+        font-size: 12px;
+        opacity: 0.9;
+      }
+      .metric-score {
+        font-size: 16px;
+        font-weight: 700;
+        margin-top: 6px;
+      }
+      .metric-reason {
+        font-size: 12px;
+        color: #1f2a30;
+        line-height: 1.4;
+        margin-bottom: 6px;
+      }
+      .evidence,
+      .next-steps {
+        padding-left: 18px;
+        margin: 0 0 12px 0;
+        font-size: 13px;
+        color: #1f2a30;
+        line-height: 1.5;
+      }
+      .evidence li,
+      .next-steps li {
+        margin-bottom: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">04A1 Reception UX 評価レポート</h1>
+        <p class="monitor-description">緻密性と網羅性を軸に、Codex CLI 系エージェントが提出した2つの run を、DOC_STATUS・UX Plan・アーティファクト・ログを照合しながら採点しました。</p>
+      </header>
+      <section class="scoreboard">
+        <div class="score-entry">
+          <div class="score-label">CodexCLI1 · task-1764847483149-bd8977</div>
+          <div class="score-value">🏆🥇 580/600</div>
+          <div class="score-detail">RUN_ID=20251211T090000Z · worktree: .worktrees/task-1764847483149-bd8977</div>
+        </div>
+        <div class="score-entry">
+          <div class="score-label">CodexCLI2 · task-1764847487330-b53d0b</div>
+          <div class="score-value">🥈 540/600</div>
+          <div class="score-detail">RUN_ID=20251204T190000Z · worktree: .worktrees/task-1764847487330-b53d0b</div>
+        </div>
+      </section>
+      <section class="methodology">
+        <p>評価はそれぞれのワークツリーで <code>git diff --cached</code>（task-1764847483149-bd8977）および <code>git diff</code>（task-1764847487330-b53d0b）と <code>git log --oneline</code> を確認し、RUN_ID 20251211T090000Z / 20251204T190000Z に対応するアーティファクト・ログ・ドキュメントの整合性を検証しました。</p>
+        <p>AGENTS → docs/web-client/README → docs/server-modernization/phase2/INDEX → manager checklist という参照チェーンを守りつつ、DOC_STATUS と UX documentation plan のセクションをアップデートし、ステークホルダー向け証跡/次工程を併記する構成です。</p>
+      </section>
+      <div class="evaluation-columns">
+        <article class="evaluation-card">
+          <div class="card-header">CodexCLI1 · task-1764847483149-bd8977<br /><small>RUN_ID=20251211T090000Z Reception UX 設計とステークホルダー同期</small></div>
+          <p class="card-summary">Reception と OrderConsole を <code>tone=server</code> + <code>dataSourceTransition=server</code> で同期させるため、アーティファクト/ログ/ドキュメント/DocStatus を順に揃え、ステークホルダー紐付け（docs/managerdocs）および Stage/Playwright 検証を想定した運用資料を整備しました。</p>
+          <div class="hex-grid">
+            <div class="hex"><span class="metric-name">緻密性</span><span class="metric-score">95点</span></div>
+            <div class="hex"><span class="metric-name">網羅性</span><span class="metric-score">92点</span></div>
+            <div class="hex"><span class="metric-name">トレーサビリティ</span><span class="metric-score">94点</span></div>
+            <div class="hex"><span class="metric-name">証跡整理</span><span class="metric-score">93点</span></div>
+            <div class="hex"><span class="metric-name">次工程準備</span><span class="metric-score">90点</span></div>
+            <div class="hex"><span class="metric-name">ステークホルダ同期</span><span class="metric-score">92点</span></div>
+          </div>
+          <p class="metric-reason"><strong>緻密性 95点:</strong> artifacts/20251211T090000Z にスクリーンショット候補とコード参照、dataSourceTransition の測定計画、Stage/Playwright シナリオが細かく記載され、実装担当者が同期表現を再現できる。 </p>
+          <p class="metric-reason"><strong>網羅性 92点:</strong> operations/logs/20251211T090000Z で API 依存・ORCA監査・resolveMasterSource の流れを網羅し、UX ドキュメントと DOC_STATUS でもステータス・アーティファクト・ドキュメントをセットで並べている。</p>
+          <p class="metric-reason"><strong>トレーサビリティ 94点:</strong> src/outpatient_ux_modernization/04A1... ドキュメントと DOC_STATUS の Web クライアント UX/Features 行に RUN_ID/ログ/アーティファクトリンクを追加し、AGENTS ～ manager checklist までのチェーンを閉じた。</p>
+          <p class="metric-reason"><strong>証跡整理 93点:</strong> artifacts ・logs ・docs（UX documentation plan セクション 9 + DOC_STATUS）と新規 doc が併走し、各ステークホルダーが参照すべき証跡を一望できる。</p>
+          <p class="metric-reason"><strong>次工程準備 90点:</strong> Stage/Preview + Playwright で tone/dataSourceTransition を実測する手順、OrderConsole AuditEvent の field 検証、docs/managerdocs への RUN_ID 共有を具体的に書き出している。</p>
+          <p class="metric-reason"><strong>ステークホルダ同期 92点:</strong> reception-schedule-ui-policy に記載された color/ARIA/文言構造を OrderConsole に再現する計画と、AuditEvent に runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition を添える要件が合致している。</p>
+          <ul class="evidence">
+            <li><code>artifacts/webclient/ux-notes/20251211T090000Z-reception-design.md</code> にスクリーンショット候補、dataSourceTransition 監査メタ、resolveMasterSource フローチャートを整理。</li>
+            <li><code>docs/server-modernization/phase2/operations/logs/20251211T090000Z-reception-design.md</code> で API/ORCA/監査依存と doc → manager checklist へのリンクを列挙。</li>
+            <li><code>docs/web-client/ux/ux-documentation-plan.md</code> のセクション 9 が RUN_ID を明示し、DOC_STATUS の UX/Features 行も同 run を追記。</li>
+            <li><code>src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md</code> で deliverable・スケジュール・参照チェーンを整理し、manager への報告軸をセット。</li>
+          </ul>
+          <ol class="next-steps">
+            <li>Stage/Preview（<code>VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:8000/openDolphin/resources</code>）で tone/dataSourceTransition の連鎖を Playwright/手動で再現し、画像とログを artifacts に保存。</li>
+            <li><code>docs/web-client/ux/reception-schedule-ui-policy.md</code> に OrderConsole での <code>tone=server</code> + AuditEvent の文言構造を追記し、周知済みの tone トーンが筐体間で維持されるようにする。</li>
+            <li>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md へ RUN_ID と証跡パスを転記し、次の検証ラウンドでも同じ証跡 chain を辿れる状態にする。</li>
+          </ol>
+        </article>
+        <article class="evaluation-card">
+          <div class="card-header">CodexCLI2 · task-1764847487330-b53d0b<br /><small>RUN_ID=20251204T190000Z Reception UX 設計とステークホルダー同期</small></div>
+          <p class="card-summary">RUN_ID=20251204T190000Z では reception/OrderConsole 用の tone=server + dataSourceTransition 設計を先行して詰め、artifact・ログ・UX plan・DOC_STATUS を先回りで連携させ、Implementation/QA 向けの Stage/Playwright 事前検証メモを残した。</p>
+          <div class="hex-grid">
+            <div class="hex"><span class="metric-name">緻密性</span><span class="metric-score">91点</span></div>
+            <div class="hex"><span class="metric-name">網羅性</span><span class="metric-score">89点</span></div>
+            <div class="hex"><span class="metric-name">トレーサビリティ</span><span class="metric-score">90点</span></div>
+            <div class="hex"><span class="metric-name">証跡整理</span><span class="metric-score">88点</span></div>
+            <div class="hex"><span class="metric-name">次工程準備</span><span class="metric-score">87点</span></div>
+            <div class="hex"><span class="metric-name">ステークホルダ同期</span><span class="metric-score">89点</span></div>
+          </div>
+          <p class="metric-reason"><strong>緻密性 91点:</strong> artifacts/20251204T190000Z に tone/dataSourceTransition/resolveMasterSource のリファレンスを明記し、OrderConsole 再送 UI と audit.logUiState を具体的に観察対象化。</p>
+          <p class="metric-reason"><strong>網羅性 89点:</strong> operations log で API/ORCA/audit ストリーム、UX plan セクション 8、DOC_STATUS UX 行に run id を追加し、リテラルな実装依存を拾い上げている。</p>
+          <p class="metric-reason"><strong>トレーサビリティ 90点:</strong> src/outpatient_ux_modernization/04A1... と DOC_STATUS の UX 行が run id を明示し、AGENTS → manager checklist までの参照チェーンを完了させている。</p>
+          <p class="metric-reason"><strong>証跡整理 88点:</strong> artifacts/log/doc plan がセットで仕上がり、今後の Implementation/QA や Stage 照合で該当 run を追いやすくなっている。</p>
+          <p class="metric-reason"><strong>次工程準備 87点:</strong> Stage Preview シナリオ（VITE_DISABLE_MSW=1 + VITE_DEV_PROXY_TARGET）とスクリーンショット保存、audit.logUiState に tone/dataSourceTransition を記録する checklist を artifact に記載。</p>
+          <p class="metric-reason"><strong>ステークホルダ同期 89点:</strong> docs/ux/reception-schedule に定義された color/ARIA/文言構造と order console の `tone=server`/`data-run-id` を同期させる要件がログにクリアに列挙されている。</p>
+          <ul class="evidence">
+            <li><code>artifacts/webclient/ux-notes/20251204T190000Z-reception-design.md</code> で tone/dataSourceTransition の観察、Stage Preview 設定、スクリーンショット予定を記録。</li>
+            <li><code>docs/server-modernization/phase2/operations/logs/20251204T190000Z-reception-design.md</code> で API/ORCA/AuditEvent の監査メタ、次ステップ（Stage/Playwright）を明記。</li>
+            <li><code>docs/web-client/ux/ux-documentation-plan.md</code> のセクション 8 と DOC_STATUS の UX 行に RUN_ID とログ/アーティファクトリンクを追記。</li>
+            <li><code>src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md</code> で RUN_ID=20251204T190000Z の deliverable/依存/ステップを整理。</li>
+          </ul>
+          <ol class="next-steps">
+            <li>Stage Preview（<code>VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:8000/openDolphin/resources</code>）で Reception/OrderConsole を再現し、<code>data-run-id=20251204T190000Z</code> 付きの tone=server/OrderConsole 再送をスクリーンショットに保存。</li>
+            <li>保存したスクリーンショットを artifacts/screenshots/20251204T190000Z-*.png に置き、doc/log/artifact にパスを追記して Implementation チームへ共有。</li>
+            <li>Implementation/QA に対して tone=server + dataSourceTransition=server を含む自動化チェックリストを展開し、audit.logUiState へ runId/case の記録を求める。</li>
+          </ol>
+        </article>
+      </div>
+    </div>
+  </body>
+</html>
