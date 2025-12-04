@@ -43,28 +43,5 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1764881557108-a58324"
-  },
-  {
-    "id": "task-1764881936124-139342",
-    "name": "CodexCLI1: [webclient ux outpatient modernization plan] 04B2_WEBクライアントChartsPatientsUX実装\n期間: 12/05 09:00 - 12/09 09:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# 04B2 WEB クライアント：Charts/Patients UX 実装\n\n- 1. `web-client/src/features/charts/DocumentTimeline.tsx` と `OrderConsole.tsx`、`OrcaSummary.tsx`、`Patients` タブのコンポーネント構造をリストアップし、`missingMaster`/`dataSourceTransition=server` の表示箇所と依存 props を artifacts/webclient/ux-notes/<RUN_ID>-charts-ui-audit.md に整理。\n- 2. `auth-service` から受け取る `missingMaster`/`cacheHit` フラグで tone を切り替えるロジックを `DocumentTimeline` と `Patients` タブに追加し、`dataSourceTransition=server` 表示を共通の `ux/charts/tones.ts` に切り出す。\n- 3. `OrcaSummary` と `OrderConsole` の `missingMaster` バナーを `aria-live` 付きで再レンダリングし、Charts/Patients のトーンが reception 側と一致するように `styles`・`options` を合わせる。\n- 4. docs/web-client/ux/ux-documentation-plan.md にスクリーンショットと tone 変化を記載し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に実装ポイント／依存 API を記録、DOC_STATUS と manager checklist の Web クライアント UX/Features 行へ RUN_ID/パスを追加。\n\nYAML ID: src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-04T20:58:56.124Z",
-    "updatedAt": "2025-12-04T20:58:56.124Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1764881936124-139342",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1764881936123-68xi640w",
-    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 04B2_WEBクライアントChartsPatientsUX実装\n期間: 12/05 09:00 - 12/09 09:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# 04B2 WEB クライアント：Charts/Patients UX 実装\n\n- 1. `web-client/src/features/charts/DocumentTimeline.tsx` と `OrderConsole.tsx`、`OrcaSummary.tsx`、`Patients` タブのコンポーネント構造をリストアップし、`missingMaster`/`dataSourceTransition=server` の表示箇所と依存 props を artifacts/webclient/ux-notes/<RUN_ID>-charts-ui-audit.md に整理。\n- 2. `auth-service` から受け取る `missingMaster`/`cacheHit` フラグで tone を切り替えるロジックを `DocumentTimeline` と `Patients` タブに追加し、`dataSourceTransition=server` 表示を共通の `ux/charts/tones.ts` に切り出す。\n- 3. `OrcaSummary` と `OrderConsole` の `missingMaster` バナーを `aria-live` 付きで再レンダリングし、Charts/Patients のトーンが reception 側と一致するように `styles`・`options` を合わせる。\n- 4. docs/web-client/ux/ux-documentation-plan.md にスクリーンショットと tone 変化を記載し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に実装ポイント／依存 API を記録、DOC_STATUS と manager checklist の Web クライアント UX/Features 行へ RUN_ID/パスを追加。\n\nYAML ID: src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1764881936124-139342"
   }
 ]
