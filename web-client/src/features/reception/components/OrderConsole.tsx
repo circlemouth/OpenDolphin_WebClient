@@ -4,6 +4,11 @@ import type { BannerTone } from './ToneBanner';
 import { ToneBanner } from './ToneBanner';
 import { ResolveMasterBadge, type ResolveMasterSource } from './ResolveMasterBadge';
 import { CacheHitBadge, MissingMasterBadge } from '../../shared/StatusBadge';
+import { handleOutpatientFlags } from '../../charts/orchestration';
+import {
+  recordOutpatientFunnel,
+  type OutpatientFlagAttributes,
+} from '../../../libs/telemetry/telemetryClient';
 
 const MASTER_SOURCES: ResolveMasterSource[] = ['mock', 'snapshot', 'server', 'fallback'];
 
@@ -51,6 +56,19 @@ export function OrderConsole() {
           ? 'mock → snapshot'
           : 'mock fixtures';
 
+  const emitTelemetryFlags = (nextCacheHit: boolean, nextMissingMaster: boolean) => {
+    const flags: OutpatientFlagAttributes = {
+      runId,
+      cacheHit: nextCacheHit,
+      missingMaster: nextMissingMaster,
+    };
+    recordOutpatientFunnel('resolve_master', {
+      ...flags,
+      dataSourceTransition: 'server',
+    });
+    handleOutpatientFlags(flags);
+  };
+
   return (
     <section className="order-console">
       <ToneBanner
@@ -93,14 +111,22 @@ export function OrderConsole() {
             <button
               type="button"
               className="order-console__action"
-              onClick={() => setMissingMaster((prev) => !prev)}
+              onClick={() => {
+                const nextMissingMaster = !missingMaster;
+                setMissingMaster(nextMissingMaster);
+                emitTelemetryFlags(cacheHit, nextMissingMaster);
+              }}
             >
               missingMaster を {missingMaster ? 'false に' : 'true に'}
             </button>
             <button
               type="button"
               className="order-console__action"
-              onClick={() => setCacheHit((prev) => !prev)}
+              onClick={() => {
+                const nextCacheHit = !cacheHit;
+                setCacheHit(nextCacheHit);
+                emitTelemetryFlags(nextCacheHit, missingMaster);
+              }}
             >
               cacheHit を {cacheHit ? 'false に' : 'true に'}
             </button>
