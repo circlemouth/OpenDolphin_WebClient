@@ -133,13 +133,124 @@ src:
       schedule:
         start: 2025-12-09T00:00:00.000Z
         days: 2
-    04_WEBクライアント実装とモダナイズ接続.md:
+    04A1_WEBクライアント受付UX設計とステークホルダー同期.md:
       content: |-
-        # 04 WEB クライアント実装とモダナイズ接続
+        # 04A1 WEB クライアント：受付 UX 設計とステークホルダー同期
 
-        - web-client/src/features/reception と charts 系コンポーネントに docs/web-client/ux/ の監査・トーン要件を反映し、`web-client/src/libs/http/httpClient.ts` から `/api01rv2/claim/outpatient/*` などへ接続するパスを追加。
-        - `resolveMasterSource`/`auth-service.ts` のフローを尊重し、外来 `dataSourceTransition=server` を示すステータスバッジや missingMaster バナーに注記を追記し、今回スコープ外の入院 API はリンクしない。
-        - ORCA 連携のキャッシュ/`cacheHit`/`missingMaster` フラグを外来 UX の文脈で表示し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration.md と `docs/web-client/ux/reception-schedule-ui-policy.md` に実装メモを残す。
+        - docs/web-client/ux/reception-schedule-ui-policy.md を再確認し、tone=server バナーや `dataSourceTransition`／`resolveMasterSource` 表現の方向性を Reception/OrderConsole に合わせた共通トーンとして整理。
+        - スクリーンショットや該当コード片を `artifacts/webclient/ux-notes/<RUN_ID>-reception-design.md` にまとめて、docs/web-client/ux/ux-documentation-plan.md の reception セクションに設計の補足を追加。
+        - 詰めた要件と API 依存関係は docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-design.md に記録し、DOC_STATUS の Web クライアント UX/Features 行に RUN_ID とログパスを明記する準備を進める。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md
+      schedule:
+        start: 2025-12-11T00:00:00.000Z
+        days: 1
+    04A2_WEBクライアント受付UXコンポーネント実装.md:
+      content: |-
+        # 04A2 WEB クライアント：受付 UX コンポーネント実装
+
+        - `web-client/src/features/reception` の `<ReceptionPage>`／`<OrderConsole>` へ tone=server バナー、`resolveMasterSource` バッジ、`missingMaster` 入力を組み込み、`aria-live` の粒度でステータス変更が支援されるよう調整。
+        - Charts や Patients で使っている `missingMaster`・`cacheHit` 表示とトーンを揃え、docs/web-client/ux/reception-schedule-ui-policy.md に実装スクリーンショットと ARIA 調整メモを追加。
+        - 実装ポイント・依存 API （`/orca12/patientmodv2/outpatient` などの flag 伝播元）を docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-ux.md に記録し、RUN_ID とパスを DOC_STATUS に追記。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md
+      schedule:
+        start: 2025-12-12T00:00:00.000Z
+        days: 2
+    04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md:
+      content: |-
+        # 04A3 WEB クライアント：受付 UX 検証と DOC_STATUS 反映
+
+        - `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://stage.open-dolphin` の stage 環境で Reception→Charts を再走し、`dataSourceTransition=server` と `missingMaster` バナーが想定どおり表示されるか確認。
+        - ステージ検証のスクリーンショット・ログを artifacts/webclient/e2e/<RUN_ID>-reception/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md へ記録。
+        - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、stage 結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api:
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04A2_WEBクライアント受付UXコンポーネント実装.md
+      schedule:
+        start: 2025-12-14T00:00:00.000Z
+        days: 1
+    04B1_WEBクライアントChartsPatientsUX設計.md:
+      content: |-
+        # 04B1 WEB クライアント：Charts/Patients UX 設計
+
+        - docs/web-client/ux/charts-claim-ui-policy.md と reception-schedule-ui-policy.md を照合し、`DocumentTimeline`／`OrderConsole`／`Patients` で `missingMaster` バナー・`dataSourceTransition=server` のトーンが統一されるようトレーサビリティを整理。
+        - ORCA `cacheHit`/`missingMaster` フラグを受け取るタイミングと UI 表示要件を UX ドキュメントと artifacts/webclient/ux-notes/<RUN_ID>-charts-design.md へ整理し、ステージでの観察項目を明記。
+        - 設計ログは docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-design.md へ記録し、DOC_STATUS の Web クライアント UX/Features 行にランナーとして RUN_ID とパスを追記する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md
+      schedule:
+        start: 2025-12-11T00:00:00.000Z
+        days: 1
+    04B2_WEBクライアントChartsPatientsUX実装.md:
+      content: |-
+        # 04B2 WEB クライアント：Charts/Patients UX 実装
+
+        - `web-client/src/features/charts` の `DocumentTimeline`/`OrderConsole`/`OrcaSummary` と `Patients` タブで `missingMaster` バナー＋`dataSourceTransition=server` 表示を整備し、`auth-service` のフラグで tone を切り替える仕組みを追加。
+        - ORCA `cacheHit`/`missingMaster` 受信時に `artifacts/webclient/ux-notes/<RUN_ID>-orca-flags.md` へ tone 推移を記録し、docs/web-client/ux/ux-documentation-plan.md へスクリーンショット付きで観察ログを追記。
+        - 実装結果は docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に残し、DOC_STATUS と manager checklist への追記を整える。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04B1_WEBクライアントChartsPatientsUX設計.md
+      schedule:
+        start: 2025-12-12T00:00:00.000Z
+        days: 2
+    04B3_WEBクライアントChartsPatientsUX検証.md:
+      content: |-
+        # 04B3 WEB クライアント：Charts/Patients UX 検証
+
+        - Stage 環境で Charts→Patients を走らせ、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md に沿って出ることを確認。
+        - ストーリーボードとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-charts/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナーの観察結果をまとめる。
+        - docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへ検証結果と RUN_ID を記録。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md
+      schedule:
+        start: 2025-12-14T00:00:00.000Z
+        days: 1
+    04C1_WEBクライアントAPI統合設計.md:
+      content: |-
+        # 04C1 WEB クライアント：API 統合設計
+
+        - docs/server-modernization/phase2/foundation と docs/web-client/architecture/web-client-api-mapping.md を参照し、`web-client/src/libs/http/httpClient.ts` に登録する `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/orca21/medicalmodv2/outpatient` などのエンドポイントを一覧化。
+        - `resolveMasterSource` が `dataSourceTransition=server` を返すケース、`auditEvent` マッピング、`cacheHit`/`missingMaster` flag の伝播を artifacts/webclient/ux-notes/<RUN_ID>-integration-design.md に整理し、実装の前提を docs/web-client/ux/ux-documentation-plan.md に図示。
+        - 設計ログは docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-design.md に記録し、DOC_STATUS の Web クライアント UX/Features 行へ RUN_ID とパスを記入。
       priority: High
       status: not_started
       progress: 0
@@ -149,11 +260,56 @@ src:
         - "/api01rv2/appointment/outpatient/*"
         - "/api01rv2/patient/outpatient/*"
         - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
       dependency:
         - src/outpatient_ux_modernization/03_モダナイズAPIマッピング.md
       schedule:
         start: 2025-12-11T00:00:00.000Z
-        days: 4
+        days: 1
+    04C2_WEBクライアントAPI統合実装.md:
+      content: |-
+        # 04C2 WEB クライアント：API 統合実装
+
+        - `web-client/src/libs/http/httpClient.ts` に上記外来エンドポイントをグルーピング登録し、`resolveMasterSource` で `dataSourceTransition=server` を維持しつつ `cacheHit`/`missingMaster` を telemetry へ渡す。
+        - `web-client/src/libs/telemetry/telemetryClient.ts` をフックし、`web-client/src/features/charts` の Orchestration で flag 受信時にファネルログを残す。
+        - docs/web-client/ux/reception-schedule-ui-policy.md と docs/web-client/ux/ux-documentation-plan.md に接続フロー図と差分を追記し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に計画と API パス一覧を残す。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C1_WEBクライアントAPI統合設計.md
+      schedule:
+        start: 2025-12-12T00:00:00.000Z
+        days: 2
+    04C3_WEBクライアントAPI接続検証.md:
+      content: |-
+        # 04C3 WEB クライアント：API 接続検証
+
+        - stage 環境で `/api01rv2/claim/outpatient/*` や `/orca21/medicalmodv2/outpatient` を含む Reception→Charts→Patients のシナリオを実行し、`dataSourceTransition=server`、`cacheHit`/`missingMaster`、`resolveMasterSource` の各表示とファネルログが docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。
+        - artifacts/webclient/e2e/<RUN_ID>-integration/ にログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグの観察結果を記録。
+        - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へ検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md
+      schedule:
+        start: 2025-12-14T00:00:00.000Z
+        days: 1
     05_デバッグドキュメント整備.md:
       content: |-
         # 05 デバッグドキュメント整備
@@ -167,7 +323,9 @@ src:
       agent: codex
       api: []
       dependency:
-        - src/outpatient_ux_modernization/04_WEBクライアント実装とモダナイズ接続.md
+        - src/outpatient_ux_modernization/04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md
+        - src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md
+        - src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md
       schedule:
         start: 2025-12-15T00:00:00.000Z
         days: 2
