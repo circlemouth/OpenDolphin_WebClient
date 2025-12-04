@@ -29,6 +29,7 @@
 > RUN_ID=`20251202T090000Z` の A/B/C 実行結果として Playwright テスト追加・モック分岐強化・監査ログ正規化を反映し、README / DOC_STATUS / 証跡ログと RUN_ID を再掲。
 > RUN_ID=`20251202T090000Z` で Reception/Charts の ORCA エラー・未紐付・送信キュー遅延バナーの tone/`aria-live`/carry over ルールを統一し、自動/手動更新・ステータス遷移・ロール別可否・監査ログ出力を `docs/web-client/ux/reception-schedule-ui-policy.md` / `docs/web-client/ux/charts-claim-ui-policy.md` に追記。Playwright シナリオへモック ON/OFF（`VITE_USE_MOCK_ORCA_QUEUE`/`VITE_VERIFY_ADMIN_DELIVERY`）でのバナー検証と診療終了解除パスを追加。
 > RUN_ID=`20251202T090000Z` で Patients→Reception 戻り導線（フィルタ保持・保険/自費モード維持・権限ガード）と Administration 配信遅延時の警告/リトライ導線、モック ON/OFF のレスポンス差分・監査ログ項目・ヘッダー有無を UX 草稿へ追記し、README/DOC_STATUS/証跡ログと同期。
+> RUN_ID=`20251212T090000Z` で DocumentTimeline/OrderConsole/OrcaSummary/Patients の `missingMaster` → `cacheHit` → `dataSourceTransition=server` tone chain を `auth-service.tone=server` フラグで同期し、`docs/server-modernization/phase2/operations/logs/20251212T090000Z-charts-orca.md`・`artifacts/webclient/ux-notes/20251212T090000Z-orca-flags.md`・`src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md` を README/DOC_STATUS/本チェックリストでリンク整理した。
 
 > **Archive 移行チェック（担当: Codex, 期限: 2025-11-29）**
 > - [ ] Dormant 判定と根拠リンク
