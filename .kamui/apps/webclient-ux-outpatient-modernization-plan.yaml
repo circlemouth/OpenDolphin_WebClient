@@ -85,8 +85,8 @@ src:
         - Legacy 資料（ux/legacy/*）は履歴参照にとどめ、現行で扱う外来シナリオのみにフォーカス。入院向け ORCA API やバナーは本スコープから除外する。
         - 抽出結果を docs/web-client/ux/ux-documentation-plan.md へ追記し、次段階の設計メモとして artifacts/webclient/ux-notes/<RUN_ID>-ux-review.md を準備。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -102,8 +102,8 @@ src:
         - 受付→カルテの導線、保険/自費フィルタ、監査ログの `dataSourceTransition`/`missingMaster`/`fallbackUsed` を UX 観点から整理し、外来 API のみを対象にしたテーブルをつくる（入院 API は `N/A`）。
         - この UX カバレッジを docs/web-client/ux/ux-documentation-plan.md の該当セクションに上書きし、次の API マッピングタスクへのインプットを artifacts/webclient/ux-notes/<RUN_ID>-charts-ux.md へ記録。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
@@ -119,8 +119,8 @@ src:
         - ORCA の入院用エンドポイント（例: `/orca21/medicalmodv2/inpatient`）は本フェーズで実装しないため、差分表には「外来スコープ外」と明記し、DOC_STATUS の備考に記録。
         - 差分や不整合があれば docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap.md に記録し、必要に応じて modernized server チームへフィードバック。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api:
         - "/api01rv2/claim/outpatient/*"
@@ -141,8 +141,8 @@ src:
         - スクリーンショットや該当コード片を `artifacts/webclient/ux-notes/<RUN_ID>-reception-design.md` にまとめて、docs/web-client/ux/ux-documentation-plan.md の reception セクションに設計の補足を追加。
         - 詰めた要件と API 依存関係は docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-design.md に記録し、DOC_STATUS の Web クライアント UX/Features 行に RUN_ID とログパスを明記する準備を進める。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
@@ -154,12 +154,13 @@ src:
       content: |-
         # 04A2 WEB クライアント：受付 UX コンポーネント実装
 
-        - `web-client/src/features/reception` の `<ReceptionPage>`／`<OrderConsole>` へ tone=server バナー、`resolveMasterSource` バッジ、`missingMaster` 入力を組み込み、`aria-live` の粒度でステータス変更が支援されるよう調整。
-        - Charts や Patients で使っている `missingMaster`・`cacheHit` 表示とトーンを揃え、docs/web-client/ux/reception-schedule-ui-policy.md に実装スクリーンショットと ARIA 調整メモを追加。
-        - 実装ポイント・依存 API （`/orca12/patientmodv2/outpatient` などの flag 伝播元）を docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-ux.md に記録し、RUN_ID とパスを DOC_STATUS に追記。
+        - 1. `web-client/src/features/reception/ReceptionPage.tsx` と `OrderConsole.tsx` で tone/`missingMaster`/`resolveMasterSource` の現在の props・フラグを整理し、差分を artifacts/webclient/ux-notes/<RUN_ID>-reception-ux-implementation.md に書き出す。
+        - 2. tone=server バナーと `resolveMasterSource` バッジを段階的に組み込み、`missingMaster` 入力の提示を `OrderConsole` だけに集約して `aria-live` 調整が行いやすい状態とする。
+        - 3. Charts/Patients で使っている `missingMaster`・`cacheHit` 表示とトーン・バッジの共通スタイルを照合し、必要な class/selector を `web-client/src/features/reception/styles.ts` へ移植する。
+        - 4. docs/web-client/ux/reception-schedule-ui-policy.md にスクリーンショットと調整メモを追加し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-ux.md へ依存 API と `missingMaster` flag の起点を記録して DOC_STATUS 反映の準備とする。
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 35
       agent: gemini cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -167,8 +168,8 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04A1_WEBクライアント受付UX設計とステークホルダー同期.md
       schedule:
-        start: 2025-12-12T00:00:00.000Z
-        days: 2
+        start: 2025-12-04T00:00:00.000Z
+        days: 4
     04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md:
       content: |-
         # 04A3 WEB クライアント：受付 UX 検証と DOC_STATUS 反映
@@ -210,12 +211,13 @@ src:
       content: |-
         # 04B2 WEB クライアント：Charts/Patients UX 実装
 
-        - `web-client/src/features/charts` の `DocumentTimeline`/`OrderConsole`/`OrcaSummary` と `Patients` タブで `missingMaster` バナー＋`dataSourceTransition=server` 表示を整備し、`auth-service` のフラグで tone を切り替える仕組みを追加。
-        - ORCA `cacheHit`/`missingMaster` 受信時に `artifacts/webclient/ux-notes/<RUN_ID>-orca-flags.md` へ tone 推移を記録し、docs/web-client/ux/ux-documentation-plan.md へスクリーンショット付きで観察ログを追記。
-        - 実装結果は docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に残し、DOC_STATUS と manager checklist への追記を整える。
+        - 1. `web-client/src/features/charts/DocumentTimeline.tsx` と `OrderConsole.tsx`、`OrcaSummary.tsx`、`Patients` タブのコンポーネント構造をリストアップし、`missingMaster`/`dataSourceTransition=server` の表示箇所と依存 props を artifacts/webclient/ux-notes/<RUN_ID>-charts-ui-audit.md に整理。
+        - 2. `auth-service` から受け取る `missingMaster`/`cacheHit` フラグで tone を切り替えるロジックを `DocumentTimeline` と `Patients` タブに追加し、`dataSourceTransition=server` 表示を共通の `ux/charts/tones.ts` に切り出す。
+        - 3. `OrcaSummary` と `OrderConsole` の `missingMaster` バナーを `aria-live` 付きで再レンダリングし、Charts/Patients のトーンが reception 側と一致するように `styles`・`options` を合わせる。
+        - 4. docs/web-client/ux/ux-documentation-plan.md にスクリーンショットと tone 変化を記載し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に実装ポイント／依存 API を記録、DOC_STATUS と manager checklist の Web クライアント UX/Features 行へ RUN_ID/パスを追加。
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 25
       agent: cursor cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -223,8 +225,8 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04B1_WEBクライアントChartsPatientsUX設計.md
       schedule:
-        start: 2025-12-12T00:00:00.000Z
-        days: 2
+        start: 2025-12-05T00:00:00.000Z
+        days: 4
     04B3_WEBクライアントChartsPatientsUX検証.md:
       content: |-
         # 04B3 WEB クライアント：Charts/Patients UX 検証
@@ -270,12 +272,13 @@ src:
       content: |-
         # 04C2 WEB クライアント：API 統合実装
 
-        - `web-client/src/libs/http/httpClient.ts` に上記外来エンドポイントをグルーピング登録し、`resolveMasterSource` で `dataSourceTransition=server` を維持しつつ `cacheHit`/`missingMaster` を telemetry へ渡す。
-        - `web-client/src/libs/telemetry/telemetryClient.ts` をフックし、`web-client/src/features/charts` の Orchestration で flag 受信時にファネルログを残す。
-        - docs/web-client/ux/reception-schedule-ui-policy.md と docs/web-client/ux/ux-documentation-plan.md に接続フロー図と差分を追記し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に計画と API パス一覧を残す。
+        - 1. `web-client/src/libs/http/httpClient.ts` に `/api01rv2/claim/outpatient/*`、`/api01rv2/appointment/outpatient/*`、`/api01rv2/patient/outpatient/*`、`/orca12/patientmodv2/outpatient`、`/orca21/medicalmodv2/outpatient` を `outpatient` グループで登録し、`resolveMasterSource` で `dataSourceTransition=server` を維持する仕組みを明文化する。
+        - 2. `web-client/src/libs/telemetry/telemetryClient.ts` へ flag 受信時のファネルログを追加し、`web-client/src/features/charts` 側で `cacheHit`/`missingMaster` が届いたタイミングを telemetry イベントにして `funnels/outpatient` を更新する。
+        - 3. `web-client/src/features/charts/orchestration.ts` などで `cacheHit` 受信後に `setResolveMasterSource('server')` を呼ぶようにし、`telemetry` 連携と `dataSourceTransition` 表示が同期している状態を `docs/web-client/ux/reception-schedule-ui-policy.md` と `docs/web-client/ux/ux-documentation-plan.md` に接続フロー図・差分として記録。
+        - 4. docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に API パス一覧と参照先（httpClient/telemetry/ChartsOrchestration）を記録し、DOC_STATUS と manager checklist の対応行へ RUN_ID とログパスを明記しておく。
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 20
       agent: gemini cli
       api:
         - "/api01rv2/claim/outpatient/*"
@@ -286,8 +289,8 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04C1_WEBクライアントAPI統合設計.md
       schedule:
-        start: 2025-12-12T00:00:00.000Z
-        days: 2
+        start: 2025-12-05T00:00:00.000Z
+        days: 4
     04C3_WEBクライアントAPI接続検証.md:
       content: |-
         # 04C3 WEB クライアント：API 接続検証
