@@ -9,6 +9,7 @@
 ## 1. 守るべき制約（高速開発でも削れないもの）
 - `server/` 配下にある旧来のサーバースクリプトを変更しない。触れるのは Web クライアント資産と関連ドキュメントのみ。
 - Legacy サーバー/クライアントは差分検証目的で一時起動してもよいが、保守や運用作業は禁止。
+- `server-modernized/` 配下はモダナイズ版サーバー（本プロジェクトの対象）として、ローカル起動・接続検証を許可する。ただし ORCA 実環境へ中継する設定を有効化する場合は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に従い、RUN_ID 付きで証跡ログへ記録すること。Stage 環境の代替とはみなさず、Stage/Preview 検証は別途実施・記録する。
 - ORCA 連携の接続先・認証情報は機微扱いとし、現行の開発／検証では `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一のルールセットとして参照する。WebORCA トライアルや本番経路の直接アクセス、mac-dev の開発サーバー構成、`curl --cert-type P12` の乱用は行なわず、証跡は `docs/server-modernization/phase2/operations/logs/20251203T134014Z-orcacertification-only.md` へ残す。
 - 参照専用: `client/`, `common/`, `ext_lib/` の Legacy 資産。更新はしない。
 

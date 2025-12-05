@@ -16,4 +16,13 @@ export default defineConfig({
       'x-verify-admin-delivery': verifyAdminDelivery ? '1' : '0',
     },
   },
+  webServer: {
+    command:
+      'cd web-client && VITE_DEV_USE_HTTPS=0 VITE_DISABLE_MSW=0 npm run dev -- --host --port 4173 --clearScreen false',
+    url: 'http://localhost:4173',
+    reuseExistingServer: true,
+    stdout: 'pipe',
+    stderr: 'pipe',
+    timeout: 120_000,
+  },
 });

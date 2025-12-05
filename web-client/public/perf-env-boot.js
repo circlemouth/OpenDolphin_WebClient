@@ -5,7 +5,8 @@
 
   // LHCI (HeadlessChrome) 実行時のみ React DevTools hook を無効化してクラッシュを防ぐ
   const isHeadlessChrome = navigator.userAgent.includes('HeadlessChrome');
-  const disableHook = isHeadlessChrome || window.__LHCI_DISABLE_REACT_DEVTOOLS__ === true;
+  const allowDevtools = window.__ALLOW_REACT_DEVTOOLS__ === true;
+  const disableHook = !allowDevtools && (isHeadlessChrome || window.__LHCI_DISABLE_REACT_DEVTOOLS__ === true);
 
   if (disableHook) {
     Object.defineProperty(window, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {

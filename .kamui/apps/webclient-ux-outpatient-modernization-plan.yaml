@@ -186,8 +186,8 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04A2_WEBクライアント受付UXコンポーネント実装.md
       schedule:
-        start: 2025-12-14T00:00:00.000Z
-        days: 1
+        start: 2025-12-05T00:00:00.000Z
+        days: 2
     04B1_WEBクライアントChartsPatientsUX設計.md:
       content: |-
         # 04B1 WEB クライアント：Charts/Patients UX 設計
@@ -231,12 +231,12 @@ src:
       content: |-
         # 04B3 WEB クライアント：Charts/Patients UX 検証
 
-        - Stage 環境で Charts→Patients を走らせ、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md に沿って出ることを確認。
-        - ストーリーボードとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-charts/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナーの観察結果をまとめる。
-        - docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへ検証結果と RUN_ID を記録。
+        - localhost で起動したモダナイズ版サーバー（例: `docker compose -f docker-compose.modernized.dev.yml up server-modernized-dev` → `http://localhost:9080/openDolphin/resources`）に web クライアントを接続し、Charts→Patients を走らせて `missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md に沿って出ることを確認。
+        - ローカル検証のストーリーボードとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-charts/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナーの観察結果をまとめる（20251205T133848Z Stage 試行は DNS 失敗として記録済み）。
+        - docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 30
       agent: cursor cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -244,8 +244,8 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md
       schedule:
-        start: 2025-12-14T00:00:00.000Z
-        days: 1
+        start: 2025-12-06T00:00:00.000Z
+        days: 2
     04C1_WEBクライアントAPI統合設計.md:
       content: |-
         # 04C1 WEB クライアント：API 統合設計
@@ -295,12 +295,12 @@ src:
       content: |-
         # 04C3 WEB クライアント：API 接続検証
 
-        - stage 環境で `/api01rv2/claim/outpatient/*` や `/orca21/medicalmodv2/outpatient` を含む Reception→Charts→Patients のシナリオを実行し、`dataSourceTransition=server`、`cacheHit`/`missingMaster`、`resolveMasterSource` の各表示とファネルログが docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。
-        - artifacts/webclient/e2e/<RUN_ID>-integration/ にログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグの観察結果を記録。
-        - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へ検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。
+        - モダナイズ版サーバーを localhost（例: `docker compose -f docker-compose.modernized.dev.yml up server-modernized-dev` → `http://localhost:9080/openDolphin/resources`）で起動し、web クライアントを同ホストに向けて Reception→Charts→Patients を実行、`dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。
+        - artifacts/webclient/e2e/<RUN_ID>-integration/ にローカル接続のログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグの観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。
+        - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 20
       agent: gemini cli
       api:
         - "/api01rv2/claim/outpatient/*"
@@ -311,7 +311,7 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md
       schedule:
-        start: 2025-12-14T00:00:00.000Z
+        start: 2025-12-09T00:00:00.000Z
         days: 1
     05_デバッグドキュメント整備.md:
       content: |-
