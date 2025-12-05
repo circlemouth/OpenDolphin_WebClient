@@ -159,8 +159,8 @@ src:
         - 3. Charts/Patients で使っている `missingMaster`・`cacheHit` 表示とトーン・バッジの共通スタイルを照合し、必要な class/selector を `web-client/src/features/reception/styles.ts` へ移植する。
         - 4. docs/web-client/ux/reception-schedule-ui-policy.md にスクリーンショットと調整メモを追加し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-ux.md へ依存 API と `missingMaster` flag の起点を記録して DOC_STATUS 反映の準備とする。
       priority: High
-      status: in_progress
-      progress: 35
+      status: completed
+      progress: 100
       agent: gemini cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -216,8 +216,8 @@ src:
         - 3. `OrcaSummary` と `OrderConsole` の `missingMaster` バナーを `aria-live` 付きで再レンダリングし、Charts/Patients のトーンが reception 側と一致するように `styles`・`options` を合わせる。
         - 4. docs/web-client/ux/ux-documentation-plan.md にスクリーンショットと tone 変化を記載し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md に実装ポイント／依存 API を記録、DOC_STATUS と manager checklist の Web クライアント UX/Features 行へ RUN_ID/パスを追加。
       priority: High
-      status: in_progress
-      progress: 25
+      status: completed
+      progress: 100
       agent: cursor cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -277,8 +277,8 @@ src:
         - 3. `web-client/src/features/charts/orchestration.ts` などで `cacheHit` 受信後に `setResolveMasterSource('server')` を呼ぶようにし、`telemetry` 連携と `dataSourceTransition` 表示が同期している状態を `docs/web-client/ux/reception-schedule-ui-policy.md` と `docs/web-client/ux/ux-documentation-plan.md` に接続フロー図・差分として記録。
         - 4. docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md に API パス一覧と参照先（httpClient/telemetry/ChartsOrchestration）を記録し、DOC_STATUS と manager checklist の対応行へ RUN_ID とログパスを明記しておく。
       priority: High
-      status: in_progress
-      progress: 20
+      status: completed
+      progress: 100
       agent: gemini cli
       api:
         - "/api01rv2/claim/outpatient/*"
