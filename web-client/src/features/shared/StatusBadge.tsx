@@ -1,4 +1,6 @@
 import type { ReactNode } from 'react';
+import { Global } from '@emotion/react';
+import { statusBadgeStyles } from '../reception/styles';
 
 export type BadgeTone = 'info' | 'warning' | 'error' | 'success';
 
@@ -27,23 +29,26 @@ export function StatusBadge({
   runId,
 }: StatusBadgeProps) {
   return (
-    <div
-      className={`status-badge status-badge--${tone}`}
-      role="status"
-      aria-live={ariaLive}
-      data-run-id={runId}
-    >
-      <div className="status-badge__row">
-        <span className="status-badge__label">{label}</span>
-        <strong className="status-badge__value">{value}</strong>
+    <>
+      <Global styles={statusBadgeStyles} />
+      <div
+        className={`status-badge status-badge--${tone}`}
+        role="status"
+        aria-live={ariaLive}
+        data-run-id={runId}
+      >
+        <div className="status-badge__row">
+          <span className="status-badge__label">{label}</span>
+          <strong className="status-badge__value">{value}</strong>
+        </div>
+        {description && (
+          <p className="status-badge__description">
+            <span className="status-badge__tone">{toneLabel[tone]}: </span>
+            {description}
+          </p>
+        )}
       </div>
-      {description && (
-        <p className="status-badge__description">
-          <span className="status-badge__tone">{toneLabel[tone]}: </span>
-          {description}
-        </p>
-      )}
-    </div>
+    </>
   );
 }
 
