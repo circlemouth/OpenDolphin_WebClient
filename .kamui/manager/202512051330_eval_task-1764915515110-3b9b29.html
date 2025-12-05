@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - Charts/Patients UX tone alignment</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-summary {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        flex: 1;
+        min-width: 280px;
+        border: 1px solid #d4dfe4;
+        border-radius: 14px;
+        padding: 16px;
+        background: #f6fbff;
+        box-shadow: 0 4px 20px rgba(15, 23, 42, 0.08);
+      }
+      .score-card__title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        color: #0f172a;
+      }
+      .score-card__value {
+        font-size: 1.6rem;
+        font-weight: 700;
+        margin-top: 4px;
+        color: #0f172a;
+      }
+      .score-card__subtitle {
+        font-size: 0.85rem;
+        color: #475569;
+        margin-top: 6px;
+      }
+      .hex-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-top: 12px;
+      }
+      .hex {
+        width: 138px;
+        height: 76px;
+        background: #e1eef9;
+        clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        gap: 4px;
+        padding: 8px;
+      }
+      .hex-title {
+        font-size: 0.8rem;
+        color: #1f2a30;
+      }
+      .hex-score {
+        font-size: 1.1rem;
+        font-weight: 700;
+      }
+      .indicator-reasons {
+        margin: 12px 0 0;
+        padding-left: 14px;
+        color: #102840;
+      }
+      .indicator-reasons li {
+        margin-bottom: 6px;
+        font-size: 0.9rem;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      code {
+        font-size: 0.89rem;
+        padding: 0 4px;
+        background: #f2f6f8;
+        border-radius: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">Charts/Patients UX tone chain 実装（Codex CLI task-1764915510310-9148f5 および task-1764915515110-3b9b29）を比較し、RUN_ID=20251205T153000Z/20251205T090000Z のコード・ARIA・ドキュメント証跡をまとめました。</p>
+      </header>
+      <div class="score-summary">
+        <section class="score-card">
+          <div class="score-card__title">Codex CLI – task-1764915510310-9148f5</div>
+          <div class="score-card__value">🏆 556/600 (平均 93/100, 🥇)</div>
+          <div class="score-card__subtitle">RUN_ID=20251205T153000Z · .worktrees/task-1764915510310-9148f5</div>
+          <div class="hex-row">
+            <div class="hex"><span class="hex-title">緻密性</span><span class="hex-score">93</span></div>
+            <div class="hex"><span class="hex-title">網羅性</span><span class="hex-score">92</span></div>
+            <div class="hex"><span class="hex-title">アクセシビリティ</span><span class="hex-score">92</span></div>
+            <div class="hex"><span class="hex-title">ドキュメント</span><span class="hex-score">94</span></div>
+            <div class="hex"><span class="hex-title">再現性</span><span class="hex-score">90</span></div>
+            <div class="hex"><span class="hex-title">ガバナンス</span><span class="hex-score">95</span></div>
+          </div>
+          <ul class="indicator-reasons">
+            <li><strong>緻密性:</strong> <code>web-client/src/ux/charts/tones.ts</code> の getChartToneDetails 経由で DocumentTimeline/PatientsTab/OrcaSummary/OrderConsole を同じ tone/message/transitionMeta で再描画し、missingMaster→cacheHit→dataSourceTransition=server を 1:1 の copy で保持。</li>
+            <li><strong>網羅性:</strong> 4つの UI に加えて <code>docs/server-modernization/phase2/operations/logs/20251205T153000Z-charts-orca.md</code> と <code>artifacts/webclient/ux-notes/20251205T153000Z-charts-ui-audit.md</code> で構造と依存を文書化。</li>
+            <li><strong>アクセシビリティ:</strong> ToneBanner に tone 依存の ariaLive、StatusBadge の assertive/polite、DocumentTimeline の region aria-live 属性を揃え、バナーの再レンダ―で screen reader を追従。</li>
+            <li><strong>ドキュメント:</strong> <code>docs/web-client/ux/ux-documentation-plan.md</code> 9.6 でスクリーンショット＋ tone 変化を記載し、<code>docs/web-client/planning/phase2/DOC_STATUS.md</code> と <code>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md</code> に RUN_ID/ログ/アーティファクトを追記。</li>
+            <li><strong>再現性:</strong> Artifact にコンポーネント構造・tone chain を列挙し、ログは AuthService の flags 依存と OrderConsole の aria-live バナーを詳細に説明して他環境で再現可能。</li>
+            <li><strong>ガバナンス:</strong> DOC_STATUS と manager checklist で RUN_ID=20251205T153000Z の証跡リンクを列挙し、監査トレースラインを完結させている。</li>
+          </ul>
+        </section>
+        <section class="score-card">
+          <div class="score-card__title">Codex CLI – task-1764915515110-3b9b29</div>
+          <div class="score-card__value">🏆 524/600 (平均 87/100, 🥈)</div>
+          <div class="score-card__subtitle">RUN_ID=20251205T090000Z · .worktrees/task-1764915515110-3b9b29</div>
+          <div class="hex-row">
+            <div class="hex"><span class="hex-title">緻密性</span><span class="hex-score">88</span></div>
+            <div class="hex"><span class="hex-title">網羅性</span><span class="hex-score">85</span></div>
+            <div class="hex"><span class="hex-title">アクセシビリティ</span><span class="hex-score">88</span></div>
+            <div class="hex"><span class="hex-title">ドキュメント</span><span class="hex-score">86</span></div>
+            <div class="hex"><span class="hex-title">再現性</span><span class="hex-score">87</span></div>
+            <div class="hex"><span class="hex-title">ガバナンス</span><span class="hex-score">90</span></div>
+          </div>
+          <ul class="indicator-reasons">
+            <li><strong>緻密性:</strong> DocumentTimeline/PatientsTab/OrcaSummary で <code>computeChartTone</code>+<code>getTransitionMeta</code> を利用し、OrderConsole に ToneBanner/transition パネルを追加して missingMaster/cashHit/server のトーンを Reception と一致。</li>
+            <li><strong>網羅性:</strong> <code>docs/web-client/ux/ux-documentation-plan.md</code> 9.5、<code>docs/server-modernization/phase2/operations/logs/20251205T090000Z-charts-orca.md</code>、DOC_STATUS/manager checklist の RUN_ID 登録で UI からガバナンスまでカバー。</li>
+            <li><strong>アクセシビリティ:</strong> ToneBanner aria-live、OrderConsole の <code>role="status"</code> パネル、StatusBadge の assertive/polite を組み合わせて読み上げ連携を実装。</li>
+            <li><strong>ドキュメント:</strong> Artifact とログが tone proof を記録し、DOC_STATUS と manager checklist から RUN_ID の証跡を一貫して参照できる構造。</li>
+            <li><strong>再現性:</strong> <code>artifacts/webclient/ux-notes/20251205T090000Z-charts-ui-audit.md</code> に component layout、AuthService フラグの切り替え、OrderConsole の transition panel への tone 切り替えを記載。</li>
+            <li><strong>ガバナンス:</strong> DOC_STATUS の Web Client UX/Features 行で RUN_ID=20251205T090000Z を追加し、manager checklist も同じ RUN_ID と証跡をリンク。</li>
+          </ul>
+        </section>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>観点</th>
+            <th>Codex CLI – task-1764915510310-9148f5</th>
+            <th>Codex CLI – task-1764915515110-3b9b29</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">概要</td>
+            <td>RUN_ID=20251205T153000Z で <code>getChartToneDetails</code> を起点に DocumentTimeline/PatientsTab/OrcaSummary/OrderConsole の ToneBanner と StatusBadge を tone/message/transitionMeta で統一し、missingMaster→cacheHit→dataSourceTransition=server のトーン連鎖を Reception の copy と一致させた。</td>
+            <td>RUN_ID=20251205T090000Z では DocumentTimeline/PatientsTab/OrcaSummary を <code>computeChartTone</code>＋<code>getTransitionMeta</code> で tone を共有し、OrderConsole に transition パネルを追加して dataSourceTransition=server を文言で伝えつつ Reception 側の tone を再現。</td>
+          </tr>
+          <tr>
+            <td class="timestamp">コード変更</td>
+            <td><code>web-client/src/ux/charts/tones.ts</code> へ <code>getChartToneDetails</code> を追加し、上記 4 コンポーネントで tone/message/transitionMeta を再利用。OrderConsole の ToneBanner には <code>ariaLive</code> を tone 依存で設定し、ドキュメントと status badge の carry over を保証。</td>
+            <td><code>web-client/src/features/charts/{DocumentTimeline,PatientsTab,OrcaSummary}</code> で <code>transitionMeta</code> の label/description をバナーとヘッダーに挿入し、<code>web-client/src/features/reception/components/OrderConsole.tsx</code> に transition パネルと ToneBanner を追加。<code>web-client/src/features/reception/styles.ts</code> に tone 別の order-console__transition スタイルを盛り込んで Reception と合わせた。</td>
+          </tr>
+          <tr>
+            <td class="timestamp">ドキュメント/証跡</td>
+            <td><code>docs/server-modernization/phase2/operations/logs/20251205T153000Z-charts-orca.md</code> で実装フロー・依存 API を記録し、<code>artifacts/webclient/ux-notes/20251205T153000Z-charts-ui-audit.md</code> にコンポーネント構造と missingMaster/dataSourceTransition 表示箇所を整理。<code>docs/web-client/ux/ux-documentation-plan.md</code> 9.6、DOC_STATUS、manager checklist に RUN_ID を追記。</td>
+            <td><code>docs/server-modernization/phase2/operations/logs/20251205T090000Z-charts-orca.md</code> と <code>artifacts/webclient/ux-notes/20251205T090000Z-charts-ui-audit.md</code> に tone proof、OrderConsole の aria-live 再アナウンスを記録。<code>docs/web-client/ux/ux-documentation-plan.md</code> 9.5、DOC_STATUS、manager checklist で RUN_ID=20251205T090000Z をリンク。</td>
+          </tr>
+          <tr>
+            <td class="timestamp">再現/次ステップ</td>
+            <td>AuthServiceControls で missingMaster/cacheHit/dataSourceTransition を切り替えて tone banner の再描画を確認。ToneBanner には <code>ariaLive</code> を tone 依存で与え、dataSourceTransition=server の label が DocumentTimeline/Patients/OrcaSummary/OrderConsole で共通表示されることをチェック。</td>
+            <td>Stage 環境で missingMaster→cacheHit→dataSourceTransition=server の順に切り替え、OrderConsole の transition panel と ToneBanner が reception と同じ aria-live で読まれるか検証。<code>reception/styles.ts</code> の tone-specific class で背景色/境界を整えている。</td>
+          </tr>
+          <tr>
+            <td class="timestamp">Worktree</td>
+            <td><code>.worktrees/task-1764915510310-9148f5</code> 上の branch を調査し、変更済みファイルすべてを本 HTML に反映。</td>
+            <td><code>.worktrees/task-1764915515110-3b9b29</code> 上で git diff/log を確認し、Docs/Artifacts のパスを列挙して対照。</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

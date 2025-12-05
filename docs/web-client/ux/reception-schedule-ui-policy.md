@@ -49,7 +49,7 @@
 
 ## 8. 接続フローと差分（RUN_ID=20251204T210000Z）
 
-- 接続フロー: `resolveMasterSource` で `dataSourceTransition=server` になったタイミングで `httpClient` 経由の外来 API (/api01rv2/claim/outpatient/* など) が実行され、キャッシュ命中／未命中フラグ (`cacheHit`/`missingMaster`) が `telemetryClient` の `funnels/outpatient`（RUN_ID=`20251205T090000Z`）へ送出される。OrderConsole では `cacheHit` 受信後に `handleOutpatientFlags` を使って `setResolveMasterSource('server')` を呼び出し、Charts Orchestration 側が同じ `tone=server`/`dataSourceTransition` を見るまで `audit.logUiState` を同期する。
+- 接続フロー: `resolveMasterSource` で `dataSourceTransition=server` になったタイミングで `httpClient` 経由の外来 API (/api01rv2/claim/outpatient/* など) が実行され、キャッシュ命中／未命中フラグ (`cacheHit`/`missingMaster`) が `telemetryClient` の `funnels/outpatient`（RUN_ID=`20251205T150000Z` + `docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md`）へ送出される。AuthServiceProvider は `recordOutpatientFunnel('resolve_master', …)` で最初のステージをキャプチャし、`handleOutpatientFlags` で `charts_orchestration` を記録したタイミングで `setResolveMasterSource('server')` を呼び出して Reception/Charts の `tone=server` + `dataSourceTransition=server` 表示を同期する。
 - 接続図 (概要):
 
 ```
@@ -67,13 +67,16 @@
                v
           [real ORCA / Modernized server]
                |
-               +--- telemetry funnel: cacheHit / missingMaster → `telemetryClient`
-               |
-               v
-         [Reception / Charts orchestration (flag受信)]
-               +--- tone=server banner + `audit.logUiState`
+          +--- telemetry funnel: cacheHit / missingMaster → `telemetryClient` (`resolve_master` stage)
+          |
+          v
+    [AuthServiceProvider → `handleOutpatientFlags` (charts_orchestration)]
+          |
+          v
+     [Reception / Charts orchestration (flag受信)]
+          +--- tone=server banner + `audit.logUiState`
 ```
-- 差分と確認事項: 04C1 では解説/設計資料に止まっていた `resolveMasterSource`/監査 circulation を 04C2 で telemetry 連携と Orchestration flag の漏れなく残すことに落とし込み、`docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md` に API パス一覧・実装済みコード・telemetry funnel の図を証跡化した。`web-client/src/libs/telemetry/telemetryClient.ts` と `web-client/src/features/charts` を実装して `cacheHit`/`missingMaster` flag の両ステージ（`resolve_master` → `charts_orchestration`）を `funnels/outpatient` に記録し、`setResolveMasterSource('server')` 呼び出しで Reception/Charts の `tone=server` と `dataSourceTransition=server` を同期できている。
+- 差分と確認事項: 04C1 では解説/設計資料に止まっていた `resolveMasterSource`/監査 circulation を 04C2 で telemetry 連携と Orchestration flag の漏れなく残すことに落とし込み、`docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md` に API パス一覧・実装済みコード・telemetry funnel の図を証跡化した。`web-client/src/libs/telemetry/telemetryClient.ts` と `web-client/src/features/charts` を実装して `cacheHit`/`missingMaster` flag の双方を `funnels/outpatient` の `resolve_master` → `charts_orchestration` で記録し、`setResolveMasterSource('server')` 呼び出しで Reception/Charts の `tone=server` と `dataSourceTransition=server` を同期できている。
 
 ## 9. テスト観点メモ
 - ステータス変更（受付→診療終了）と ORCA 送信結果バナーが `aria-live` で読まれ、tone がエラー/完了で揃うか。
@@ -89,3 +92,8 @@
 - ReceptionPage 直下で `ToneBanner` → `ResolveMasterBadge` とステップ表示し、`missingMaster`/`cacheHit` 表示と `missingMaster` 入力メモを OrderConsole に集約することで `aria-live` の意図を単一箇所に保つ。`missingMaster` ノートは `aria-live=assertive`/`polite` を状態依存で切り替えて、警告のみを強調しつつ再取得時に tone=server を継承。
 - `artifacts/webclient/ux-notes/20251204T230000Z-reception-ux-implementation.md` に props/flag の差分、`artifacts/webclient/ux-notes/20251204T230000Z-reception-ux-implementation.png` で banner/badge/missingMaster 入力のスクリーンショット候補を記録し、`docs/server-modernization/phase2/operations/logs/20251204T230000Z-reception-ux.md` に依存 API（`web-client/src/libs/http/httpClient.ts`／`OUTPATIENT_API_ENDPOINTS` に定義した `/api01rv2/claim/outpatient/*` 等）と `missingMaster` フラグの起点を添えて証跡化。
 - `web-client/src/features/reception/styles.ts` へ `tone-banner`/`resolve-master`/`status-badge` クラスを移し、Charts/Patients でも同じ `status-badge` セレクタを再利用できるようにした点も記録し、DOC_STATUS に RUN_ID と証跡を追加する。
+
+## 11. Step-by-step status + missingMaster 集約（RUN_ID=20251205T062049Z）
+- OrderConsole の先頭に Step 1 (`ToneBanner` tone=server) → Step 2 (`ResolveMasterBadge` の `resolveMasterSource`) の構造を導入し、`missingMaster`/`cacheHit` バッジと `missingMaster` コメントを OrderConsole に集中。`OrderConsole` が `data-run-id` を `Zone` 全体に供給するため、Charts/Patients への carry-overと `aria-live` 制御（tone banner=role alert、note=role status）を 1 コンポーネントにまとめられる。
+- Artifact: `artifacts/webclient/ux-notes/20251205T062049Z-reception-ux-implementation.md`（props/flag マッピングと段階表示の差分） + Screenshot `artifacts/webclient/ux-notes/20251205T062049Z-reception-ux-implementation.png`（バナー→バッジ→missingMaster note の新しい flow）。依存 doc: `docs/server-modernization/phase2/operations/logs/20251205T062049Z-reception-ux.md`（`httpClient`/`OUTPATIENT_API_ENDPOINTS` + `telemetryClient.recordOutpatientFunnel` から `missingMaster` flag を起点に OrderConsole へ再送）。
+- `StatusBadge` が `web-client/src/features/reception/styles.ts::statusBadgeStyles` を `Global` で注入するようになったため、Charts/Patients/Reception すべての `missingMaster`/`cacheHit` 表示が同一トーン・クラス・ARIA を再利用し、Run ID と `data-source` carry-over を `docs/web-client/planning/phase2/DOC_STATUS.md` `Web クライアント UX/Features` 行・`docs/web-client/README.md` の該当節へ RUN_ID=`20251205T062049Z` + log/artifact/doc のリンクとして反映済み。

@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート：04C3 WEB クライアント API 接続検証</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+        margin: 0;
+        padding: 0;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 24px auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+      }
+      .monitor-header {
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        margin: 0;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        margin-top: 8px;
+        font-size: 14px;
+        color: #293642;
+      }
+      .score-row {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+        gap: 16px;
+        margin-bottom: 32px;
+      }
+      .score-card {
+        background: #f7fbfc;
+        border: 1px solid #cdd9dd;
+        border-radius: 12px;
+        padding: 20px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+      .score-head {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .score-label {
+        font-size: 16px;
+        font-weight: 600;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 18px;
+        font-weight: 700;
+        color: #264653;
+      }
+      .hex-matrix {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+      }
+      .metric {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .hexagon {
+        width: 160px;
+        height: 80px;
+        border-radius: 12px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        color: #fff;
+        font-size: 13px;
+        line-height: 1.2;
+        text-align: center;
+        clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.18);
+      }
+      .hexagon.task1 {
+        background: linear-gradient(135deg, #2a9d8f, #1f7a85);
+      }
+      .hexagon.task2 {
+        background: linear-gradient(135deg, #f07167, #c94e4c);
+      }
+      .metric-reason {
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 24px;
+      }
+      table.monitor-report th,
+      table.monitor-report td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        font-size: 13px;
+      }
+      table.monitor-report th {
+        background: #dfe9ec;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      table.monitor-report colgroup col.label-col {
+        width: 180px;
+      }
+      table.monitor-report colgroup col.agent-col {
+        width: calc((100% - 180px) / 2);
+      }
+      .next-steps {
+        padding: 20px;
+        background: #f1f6f9;
+        border: 1px dashed #a9c8d1;
+        border-radius: 10px;
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      .next-steps strong {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：04C3 WEB クライアント API 接続検証（20251214T090000Z）</h1>
+        <p class="monitor-description">Stage 環境・Reception→Charts→Patients での `dataSourceTransition=server` 外来 API 接続検証タスク（task-1764938188998-538d87 / task-1764938193732-a208ca）を比較し、ドキュメントと証跡の現状および進行度を整理しました。</p>
+      </header>
+      <div class="score-row">
+        <div class="score-card">
+          <div class="score-head">
+            <span class="score-label">Codex CLI task-1764938188998-538d87</span>
+            <span class="score-total">🏆 260 / 600（43 / 100）／メダル: ⚪️</span>
+          </div>
+          <div class="hex-matrix">
+            <div class="metric">
+              <div class="hexagon task1">
+                <strong>文書化/計画</strong>
+                <span>65点</span>
+              </div>
+              <p class="metric-reason">`DOC_STATUS` の 20251214T090000Z 行と `docs/web-client/ux/ux-documentation-plan.md:116-120` で Stage QA 計画を明文化。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task1">
+                <strong>実行/証跡</strong>
+                <span>10点</span>
+              </div>
+              <p class="metric-reason">`artifacts/webclient/e2e/20251214T090000Z-integration/README.md:1-16` には実ファイルがなく、Stage 実行記録が未完。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task1">
+                <strong>ログ/資料</strong>
+                <span>15点</span>
+              </div>
+              <p class="metric-reason">期待ファイル一覧のみで `stage.log` / `telemetry.json` が存在せず、証跡がまだ揃っていない状態。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task1">
+                <strong>透明性</strong>
+                <span>75点</span>
+              </div>
+              <p class="metric-reason">`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md:38` に Stage QA 予定を追記して周知。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task1">
+                <strong>阻害対応</strong>
+                <span>35点</span>
+              </div>
+              <p class="metric-reason">実行が後回しになっているが、ブロッカー説明や権限要件は明記されていない。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task1">
+                <strong>次ステップ</strong>
+                <span>60点</span>
+              </div>
+              <p class="metric-reason">`src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md:1-35` で手順と実行後の更新先（DOC_STATUS / manager checklist）を記載。</p>
+            </div>
+          </div>
+        </div>
+        <div class="score-card">
+          <div class="score-head">
+            <span class="score-label">Codex CLI task-1764938193732-a208ca</span>
+            <span class="score-total">🏆 280 / 600（47 / 100）／メダル: ⚪️</span>
+          </div>
+          <div class="hex-matrix">
+            <div class="metric">
+              <div class="hexagon task2">
+                <strong>文書化/計画</strong>
+                <span>60点</span>
+              </div>
+              <p class="metric-reason">`src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md:1-35` に環境・目的・シナリオ・収集先を定義。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task2">
+                <strong>実行/証跡</strong>
+                <span>5点</span>
+              </div>
+              <p class="metric-reason">`docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md:17-20` で「ORCA 証明書がないため実行できない」と明示。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task2">
+                <strong>ログ/資料</strong>
+                <span>10点</span>
+              </div>
+              <p class="metric-reason">`artifacts/webclient/e2e/20251214T090000Z-integration/README.md:1-16` が placeholder で、実データの流入は待機中。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task2">
+                <strong>透明性</strong>
+                <span>90点</span>
+              </div>
+              <p class="metric-reason">ブロッカーとして Stage ORCA 証明書/接続権限不足を明記しており、状況共有はクリア。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task2">
+                <strong>阻害対応</strong>
+                <span>45点</span>
+              </div>
+              <p class="metric-reason">実行者への引継ぎで `README` から保存ファイルまで手順を記述し、Stage で上書く構成を提示。</p>
+            </div>
+            <div class="metric">
+              <div class="hexagon task2">
+                <strong>次ステップ</strong>
+                <span>70点</span>
+              </div>
+              <p class="metric-reason">Stage 接続 / Playwright / curl / telemetry のセットを 3 つのドキュメント (`src/...`, `docs/...`, `artifacts/...`) で示している。</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="label-col" />
+          <col class="agent-col" />
+          <col class="agent-col" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>指標</th>
+            <th>task-1764938188998-538d87</th>
+            <th>task-1764938193732-a208ca</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>Git / 進行状況</th>
+            <td>HEAD 5788b69d（直前は Reception missingMaster UX の統合）。本タスクには新規コミットがなく、作業はワークツリー上の doc/アーティファクト編集に止まっている。</td>
+            <td>同じく 5788b69d が最新。Stage 実行の差分はコミットされておらず、`git status` に `<code>docs/*</code>` や `<code>artifacts/webclient/e2e/20251214T090000Z-integration/</code>` の未コミット変更が見られる。</td>
+          </tr>
+          <tr>
+            <th>ドキュメント整理</th>
+            <td>`docs/web-client/planning/phase2/DOC_STATUS.md:9` で Stage QA RUN_ID を追加し、`docs/web-client/ux/ux-documentation-plan.md:116-120` で CodexCLI1 04C3 実行概要を記述。</td>
+            <td>`src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md:1-35` で環境・目的・シナリオ・収集先を定義し、`docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md:1-20` で QA 目標と現状を補足。</td>
+          </tr>
+          <tr>
+            <th>実行 / QA</th>
+            <td>Stage run は未実施で、`artifacts/webclient/e2e/20251214T090000Z-integration/README.md:1-16` には想定ファイルのみ。`docs/server-modernization/.../20251214T090000Z-integration-qa.md` もテンプレート記述で実観測はなし。</td>
+            <td>`docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md:17-20` で「Stage ORCA 証明書がないため実行できない」と記載。`stage.log` / `telemetry.json` / スクショは未収集。</td>
+          </tr>
+          <tr>
+            <th>アーティファクト</th>
+            <td>`artifacts/webclient/e2e/20251214T090000Z-integration/README.md` が唯一のファイルで、`stage.log` / `telemetry.json` / スクリーンショット類は存在せず placeholder のまま。</td>
+            <td>同 README に placeholder ルールと今後の保存場所（`stage.log`, `telemetry.json`, `reception-tone.png` など）を記載しており、対象ワーカーに上書きを促すコンテンツ。</td>
+          </tr>
+          <tr>
+            <th>ブロッカー / 次の引継ぎ</th>
+            <td>実行延期理由が明示されていないため、次担当は Stage への接続権限と ORCA 証明書の確保・Runbook (`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`) の確認が必要。</td>
+            <td>Stage ORCA 証明書/接続権限不足を `docs/server-modernization/.../20251214T090000Z-integration-qa.md:17-20` で共有。2025-12-14 09:00 JST 以降、権限を持つエージェントが `artifacts/...` を上書きして成果物と観察値を記録。</td>
+          </tr>
+          <tr>
+            <th>推奨アクション</th>
+            <td>Stage の `VITE_DISABLE_MSW=1` + `VITE_DEV_PROXY_TARGET` セットで Reception→Charts→Patients を実行し、`/api01rv2/claim/outpatient/*` / `/orca21/medicalmodv2/outpatient` への `dataSourceTransition=server` ルートを確認したあと、DOC_STATUS/UX doc/manager checklist を RUN_ID=20251214T090000Z で再同期。</td>
+            <td>Playwright trace か curl で `telemetryClient` funnel と `cacheHit`/`missingMaster`/`resolveMasterSource` を捕捉し、`artifacts/.../stage.log` / `telemetry.json` / スクリーンショットを保存。`docs/server-modernization/.../20251214T090000Z-integration-qa.md` に接続安定性・バナー・telemetry 旗の観察を記録し、管理資料へリンク。</td>
+          </tr>
+        </tbody>
+      </table>
+      <div class="next-steps">
+        <strong>総括と引継ぎ:</strong>
+        この評価時点では両タスクとも Stage での実観測が未完で、`artifacts/webclient/e2e/20251214T090000Z-integration/` と `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` は placeholder です。Stage への ORCA 証明書保持者が 2025-12-14 09:00 JST 以降に実行し、ログ・スクショ・telemetry 旗を蓄積したうえで DOC_STATUS/manager checklist に RUN_ID=`20251214T090000Z` を展開してください。その後、評価結果を反映したこの HTML を再生成して比較できるようにお知らせください。
+      </div>
+    </div>
+  </body>
+</html>
