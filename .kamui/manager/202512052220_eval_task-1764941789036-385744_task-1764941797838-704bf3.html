@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: flex;
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        flex: 1;
+        border: 1px solid #b8c9cd;
+        border-radius: 10px;
+        background: #f0f6fa;
+        padding: 18px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .score-total {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .score-sub {
+        font-size: 16px;
+        color: #0f3b51;
+        font-weight: 600;
+      }
+      .score-note {
+        font-size: 13px;
+        color: #1f2a30;
+        margin-top: 10px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .status-block {
+        margin-bottom: 12px;
+      }
+      .status-block strong {
+        color: #0f3b51;
+      }
+      .hex-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .hex {
+        width: 160px;
+        font-size: 12px;
+      }
+      .hex-shape {
+        width: 90px;
+        height: 70px;
+        background: #d8e6e9;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        color: #1f2a30;
+        margin: 0 auto 6px;
+      }
+      .hex-name {
+        text-align: center;
+        font-weight: 600;
+        margin: 0;
+      }
+      .hex-reason {
+        text-align: center;
+        color: #1f2a30;
+        font-size: 11px;
+        margin: 2px 0 0;
+      }
+      .artifact-list {
+        padding-left: 18px;
+        margin-bottom: 12px;
+      }
+      details summary {
+        cursor: pointer;
+        font-weight: 600;
+        color: #0f3b51;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 8px 0 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f7fbfc;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">監視対象タスク <code>task-1764941789036-385744</code> / <code>task-1764941797838-704bf3</code> のコード・ドキュメント・証跡を git diff と git log で追跡しながら、完了度と残タスクを整理しました。</p>
+      </header>
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>AI task-1764941789036-385744</h2>
+          <div class="score-total">545 / 600 点</div>
+          <div class="score-sub">91 / 100 点 🥈</div>
+          <p class="score-note">2025-12-05 13:38 JST に Stage の Charts→Patients QA を試行し、DNS 障害を検知したうえで全手順とアーティファクトを記録。再実行が残りますが、結果をトラッキングする仕組みを整備済み。</p>
+        </div>
+        <div class="score-card">
+          <h2>AI task-1764941797838-704bf3</h2>
+          <div class="score-total">516 / 600 点</div>
+          <div class="score-sub">86 / 100 点 🥉</div>
+          <p class="score-note">2025-12-14 09:00 JST 以降に Stage 実行を予定した 04B3 検証プランを作成。証跡ログとプレースホルダーアーティファクトを用意し、実行者へ明確な次ステップを投げています。</p>
+        </div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>AI task-1764941789036-385744</th>
+            <th>AI task-1764941797838-704bf3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-05 22:20</td>
+            <td>
+              <div class="status-block">
+                <strong>Stage Charts→Patients QA（RUN_ID=20251205T133848Z）</strong> を Vite/Playwright で起動し、DNS エラーを即時確認したあとで、状況ログ・スクリーンショット・storyboard を <code>artifacts/webclient/e2e/20251205T133848Z-charts/</code> 以下に保存。<code>docs/server-modernization/phase2/operations/logs/20251205T133848Z-charts-qa.md</code> に観察メモを残し、<code>docs/web-client/planning/phase2/DOC_STATUS.md</code> および <code>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md</code> に RUN_ID を追記しました。
+              </div>
+              <div class="hex-metrics">
+                <div class="hex">
+                  <div class="hex-shape">88点</div>
+                  <p class="hex-name">緻密性</p>
+                  <p class="hex-reason">DNS 不能を即時記録し再実行フローを維持。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">85点</div>
+                  <p class="hex-name">網羅性</p>
+                  <p class="hex-reason">DOC_STATUS・マネージャーチェック・ログを網羅。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">95点</div>
+                  <p class="hex-name">ドキュメント</p>
+                  <p class="hex-reason">QAログ/スタイルボード/スクショを明示的に記録。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">90点</div>
+                  <p class="hex-name">進捗報告</p>
+                  <p class="hex-reason">マネージャーチェックと DOC_STATUS に RUN_ID を即反映。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">92点</div>
+                  <p class="hex-name">証跡</p>
+                  <p class="hex-reason">Playwright ログ/Screenshot/storyboard をartifactsで添付。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">95点</div>
+                  <p class="hex-name">次ステップ</p>
+                  <p class="hex-reason">DNS 復旧後の再実行指示と目標を明示。</p>
+                </div>
+              </div>
+              <ul class="artifact-list">
+                <li><code>docs/server-modernization/phase2/operations/logs/20251205T133848Z-charts-qa.md</code>：Stage DNS 問題を中心に観察結果・手順・次アクションを記録。</li>
+                <li><code>artifacts/webclient/e2e/20251205T133848Z-charts/</code>：Playwright スクショ、起動ログ、storyboard の三点セット。</li>
+                <li><code>docs/web-client/planning/phase2/DOC_STATUS.md</code> / <code>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md</code>：RUN_ID=20251205T133848Z を Web クライアント UX/Features セクションへ追記。</li>
+              </ul>
+              <details>
+                <summary>Git diff / log 確認</summary>
+                <pre>git diff --stat
+docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md
+docs/web-client/planning/phase2/DOC_STATUS.md
+docs/server-modernization/phase2/operations/logs/20251205T133848Z-charts-qa.md
+artifacts/webclient/e2e/20251205T133848Z-charts/
+
+git log -1
+HEAD e083abb8 (master)（この作業枝は未コミット変更のみ、共通の master コミットと一致）</pre>
+              </details>
+            </td>
+            <td>
+              <div class="status-block">
+                <strong>04B3 WEBクライアント Charts/Patients UX検証</strong> の手順書を作成し、Stage 2025-12-14 09:00 JST での Reception→Charts→Patients QA を予定。<code>src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md</code> に環境（Stage URL/telemetry/ORCA 証明書）と収集物を整理し、<code>docs/server-modernization/phase2/operations/logs/20251214T090000Z-charts-qa.md</code> + <code>artifacts/webclient/e2e/20251214T090000Z-charts/README.md</code> をプレースホルダーとして配置しました。
+              </div>
+              <div class="hex-metrics">
+                <div class="hex">
+                  <div class="hex-shape">83点</div>
+                  <p class="hex-name">緻密性</p>
+                  <p class="hex-reason">手順書で Stage 環境・telemetry 省察を明示。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">87点</div>
+                  <p class="hex-name">網羅性</p>
+                  <p class="hex-reason">AGENTS → README → DOC_STATUS 参照チェーンを維持。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">95点</div>
+                  <p class="hex-name">ドキュメント</p>
+                  <p class="hex-reason">04B3 doc の目的・観察項目/収集物を詳細化。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">86点</div>
+                  <p class="hex-name">進捗報告</p>
+                  <p class="hex-reason">DOC_STATUS・マネージャーチェックに RUN_ID=20251214T090000Z を先行記載。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">70点</div>
+                  <p class="hex-name">証跡</p>
+                  <p class="hex-reason">プレースホルダー artifact と README のみ、実データなし。</p>
+                </div>
+                <div class="hex">
+                  <div class="hex-shape">95点</div>
+                  <p class="hex-name">次ステップ</p>
+                  <p class="hex-reason">Stage 実行者向けに RUN_ID/PATH を明示し通知。</p>
+                </div>
+              </div>
+              <ul class="artifact-list">
+                <li><code>src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md</code>：目的／環境／収集物の完全プラン。</li>
+                <li><code>docs/server-modernization/phase2/operations/logs/20251214T090000Z-charts-qa.md</code>：検証観点・前提・現状・今後を記載したログ（現時点は実行前のプレースホルダー）。</li>
+                <li><code>artifacts/webclient/e2e/20251214T090000Z-charts/README.md</code>：今後のスクショ・storyboard フォルダ構成のプレースホルダー。</li>
+                <li><code>docs/web-client/planning/phase2/DOC_STATUS.md</code> / <code>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md</code>：RUN_ID=20251214T090000Z と Stage リンクを追加。</li>
+              </ul>
+              <details>
+                <summary>Git diff / log 確認</summary>
+                <pre>git diff --stat
+src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md
+docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md
+docs/web-client/planning/phase2/DOC_STATUS.md
+docs/server-modernization/phase2/operations/logs/20251214T090000Z-charts-qa.md
+artifacts/webclient/e2e/20251214T090000Z-charts/README.md
+
+git log -1
+HEAD e083abb8 (master)（この作業枝は未コミット変更のみ、共通の master コミットと一致）</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
