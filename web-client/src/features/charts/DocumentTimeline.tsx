@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
-import { computeChartTone, getTransitionMeta, type ChartTonePayload } from '../../ux/charts/tones';
+import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 
 const TIMELINE_ENTRIES = [
   { time: '09:05', title: '受付 → Charts 移動', detail: '受付で選択した患者ID／保険モードを受け取り開始。' },
@@ -20,18 +20,7 @@ export function DocumentTimeline() {
     dataSourceTransition: flags.dataSourceTransition,
   };
 
-  const tone = computeChartTone(tonePayload);
-  const transitionMeta = getTransitionMeta(flags.dataSourceTransition);
-
-  const toneMessage = useMemo(() => {
-    if (flags.missingMaster) {
-      return 'missingMaster=true：ORCA queue を一時停止し再取得待ちです。';
-    }
-    if (flags.cacheHit) {
-      return 'cacheHit=true：マスタキャッシュ命中・再送直前の安定状態。';
-    }
-    return transitionMeta.description;
-  }, [flags.cacheHit, flags.missingMaster, transitionMeta.description]);
+  const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
   const entryList = useMemo(
     () =>

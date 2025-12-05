@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
-import { computeChartTone, getTransitionMeta, type ChartTonePayload } from '../../ux/charts/tones';
+import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 
 const PATIENT_ROWS = [
   { patientId: 'PX-2024-001', name: '山田 太郎', insurance: '保険', lastEvent: 'ORCA queue 追加' },
@@ -18,18 +18,7 @@ export function PatientsTab() {
     cacheHit: flags.cacheHit,
     dataSourceTransition: flags.dataSourceTransition,
   };
-  const tone = computeChartTone(tonePayload);
-  const transitionMeta = getTransitionMeta(flags.dataSourceTransition);
-
-  const toneMessage = useMemo(() => {
-    if (flags.missingMaster) {
-      return 'missingMaster=true の更新を Patients 一覧へ伝播しました。';
-    }
-    if (flags.cacheHit) {
-      return 'cacheHit=true でマスタキャッシュを利用中。';
-    }
-    return 'データソースの変化を検知しました。';
-  }, [flags.cacheHit, flags.missingMaster]);
+  const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
   return (
     <section
