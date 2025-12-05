@@ -1,4 +1,8 @@
-import { recordOutpatientFunnel, type OutpatientFlagAttributes } from '../../libs/telemetry/telemetryClient';
+import {
+  recordOutpatientFunnel,
+  type DataSourceTransition,
+  type OutpatientFlagAttributes,
+} from '../../libs/telemetry/telemetryClient';
 
 export type ResolveMasterSource = 'mock' | 'snapshot' | 'server' | 'fallback';
 
@@ -12,12 +16,16 @@ export function setResolveMasterSource(source: ResolveMasterSource) {
   currentResolveMasterSource = source;
 }
 
-export function handleOutpatientFlags(flags: OutpatientFlagAttributes) {
+export type OrchestrationFlagAttributes = OutpatientFlagAttributes & {
+  dataSourceTransition?: DataSourceTransition;
+};
+
+export function handleOutpatientFlags(flags: OrchestrationFlagAttributes) {
   if (flags.cacheHit) {
     setResolveMasterSource('server');
   }
   return recordOutpatientFunnel('charts_orchestration', {
     ...flags,
-    dataSourceTransition: 'server',
+    dataSourceTransition: flags.dataSourceTransition ?? 'server',
   });
 }
