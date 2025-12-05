@@ -58,3 +58,25 @@ export function getTransitionMeta(transition: DataSourceTransition): TransitionM
 export function isServerTransition(transition: DataSourceTransition) {
   return transition === 'server';
 }
+
+export interface ChartToneDetails {
+  tone: ChartTone;
+  message: string;
+  transitionMeta: TransitionMeta;
+}
+
+export function getChartToneDetails(payload: ChartTonePayload): ChartToneDetails {
+  const tone = computeChartTone(payload);
+  const transitionMeta = getTransitionMeta(payload.dataSourceTransition);
+
+  let message: string;
+  if (payload.missingMaster) {
+    message = 'missingMaster=true：ORCA queue を一時停止し再取得待ちです。';
+  } else if (payload.cacheHit) {
+    message = 'cacheHit=true：マスタキャッシュ命中・再送直前の安定状態。';
+  } else {
+    message = transitionMeta.description;
+  }
+
+  return { tone, message, transitionMeta };
+}

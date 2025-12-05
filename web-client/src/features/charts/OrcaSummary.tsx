@@ -3,7 +3,7 @@ import { useMemo } from 'react';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
-import { computeChartTone, getTransitionMeta, type ChartTonePayload } from '../../ux/charts/tones';
+import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 
 export function OrcaSummary() {
   const { flags } = useAuthService();
@@ -12,18 +12,17 @@ export function OrcaSummary() {
     cacheHit: flags.cacheHit,
     dataSourceTransition: flags.dataSourceTransition,
   };
-  const tone = computeChartTone(tonePayload);
-  const transitionMeta = getTransitionMeta(flags.dataSourceTransition);
+  const { tone, message: sharedMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
   const summaryMessage = useMemo(() => {
     if (flags.missingMaster) {
-      return 'OrcaSummary では `missingMaster=true` を警告に変換し、再取得まで tone=server を保持します。';
+      return `${sharedMessage} OrcaSummary は再取得完了まで tone=server を維持します。`;
     }
     if (flags.cacheHit) {
-      return 'キャッシュ命中のためORCA再送を Info tone で示し、`dataSourceTransition=server` を保持。';
+      return `${sharedMessage} ORCA 再送は Info tone で提示し、${transitionMeta.label} を記録します。`;
     }
-    return 'ORCA master の `dataSourceTransition` 情報を監査ログへ再送出します。';
-  }, [flags.cacheHit, flags.missingMaster]);
+    return `${sharedMessage} ${transitionMeta.label} を監査ログへ再送出します。`;
+  }, [flags.cacheHit, flags.missingMaster, sharedMessage, transitionMeta.label]);
 
   return (
     <section
@@ -37,6 +36,7 @@ export function OrcaSummary() {
         message={summaryMessage}
         destination="ORCA master"
         runId={flags.runId}
+        ariaLive={tone === 'info' ? 'polite' : 'assertive'}
       />
       <div className="orca-summary__details">
         <div className="orca-summary__meta">
