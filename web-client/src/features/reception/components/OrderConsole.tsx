@@ -1,5 +1,7 @@
+import { ToneBanner } from './ToneBanner';
 import type { ResolveMasterSource } from './ResolveMasterBadge';
 import { CacheHitBadge, MissingMasterBadge } from '../../shared/StatusBadge';
+import { getChartToneDetails, type ChartTonePayload } from '../../charts/tones';
 
 const MASTER_SOURCES: ResolveMasterSource[] = ['mock', 'snapshot', 'server', 'fallback'];
 
@@ -26,8 +28,23 @@ export function OrderConsole({
   onToggleCacheHit,
   onMissingMasterNoteChange,
 }: OrderConsoleProps) {
+  const tonePayload: ChartTonePayload = {
+    missingMaster,
+    cacheHit,
+    dataSourceTransition: masterSource,
+  };
+  const { tone, message: toneMessage } = getChartToneDetails(tonePayload);
+
   return (
     <section className="order-console">
+      <ToneBanner
+        tone={tone}
+        message={toneMessage}
+        destination="ORCA queue"
+        nextAction={missingMaster ? 'マスタ再取得' : 'ORCA 再送'}
+        runId={runId}
+        ariaLive={tone === 'info' ? 'polite' : 'assertive'}
+      />
       <div className="order-console__grid" data-run-id={runId}>
         <div className="order-console__status-group">
           <CacheHitBadge cacheHit={cacheHit} runId={runId} />
