@@ -25,6 +25,7 @@
 - フィルタやタブ切替後のリロード/オートリロードでもクエリパラメータやストレージに保存した条件が復元されること。
 
 ## 4. 次ステップ
+- Stage Preview/Playwright の reception→Charts チェーンで `dataSourceTransition=server` + `missingMaster` トーンを QA する RUN_ID=`20251205T200000Z` を記録。`docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md` / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.png` （スクリーンショット） / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.log`（補助ログ）を更新したが、`stage.open-dolphin` が DNS で解決できず Stage からの `dataSourceTransition` フラグは取得できないため、同一 RUN_ID を再利用して再検証する必要がある。
 - ORCA エラー共有バナーと病名未紐付警告の tone/aria-live を Reception/Charts で統一し、Playwright ケースの前提を本計画に記録する。
 - Patients からの戻り導線と Administration からの設定配信タイミング（即時/次回リロード）を確認し、監査ログ要件と合わせて各ポリシーに追記する。
 - README / manager checklist で UX 草稿更新を周知し、DOC_STATUS の UX/Features 行に反映済みの旨を維持する。
