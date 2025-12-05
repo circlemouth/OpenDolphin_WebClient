@@ -315,7 +315,7 @@ start_web_client_npm() {
 
   local dev_proxy_target="${WEB_CLIENT_DEV_PROXY_TARGET:-$WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT}"
   local dev_use_https="${VITE_DEV_USE_HTTPS:-0}"
-  local dev_disable_msw="${VITE_DISABLE_MSW:-0}"
+  local dev_disable_msw="${VITE_DISABLE_MSW:-1}"
   local dev_enable_telemetry="${VITE_ENABLE_TELEMETRY:-0}"
   local dev_disable_security="${VITE_DISABLE_SECURITY:-0}"
   local dev_disable_audit="${VITE_DISABLE_AUDIT:-0}"
@@ -385,5 +385,17 @@ main() {
   fi
   log "Login with User: $NEW_USER_ID / Pass: $NEW_USER_PASS"
 }
+
+# ---------------------------------------------------------
+# ログイン情報 (開発用)
+# 施設ID: 1.3.6.1.4.1.9414.10.1
+# ユーザーID: dolphindev
+# パスワード: dolphindev
+#
+# 医師アカウント (既存)
+# 施設ID: 1.3.6.1.4.1.9414.72.103
+# ユーザーID: doctor1
+# パスワード: doctor2025
+# ---------------------------------------------------------
 
 main "$@"
