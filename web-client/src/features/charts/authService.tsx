@@ -1,4 +1,6 @@
-import { createContext, useCallback, useContext, useMemo, useState, type ReactNode } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { handleOutpatientFlags } from './orchestration';
 
 export type DataSourceTransition = 'mock' | 'snapshot' | 'server' | 'fallback';
 
@@ -17,7 +19,7 @@ export interface AuthServiceContextValue {
   bumpRunId: (runId: string) => void;
 }
 
-const AUTH_RUN_ID = '20251205T090000Z';
+const AUTH_RUN_ID = '20251205T150000Z';
 const DEFAULT_FLAGS: AuthServiceFlags = {
   runId: AUTH_RUN_ID,
   missingMaster: true,
@@ -45,6 +47,22 @@ export function AuthServiceProvider({ children }: { children: ReactNode }) {
   const bumpRunId = useCallback((runId: string) => {
     setFlags((prev) => ({ ...prev, runId }));
   }, []);
+
+  useEffect(() => {
+    const flagSnapshot = {
+      runId: flags.runId,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+    };
+    recordOutpatientFunnel('resolve_master', {
+      ...flagSnapshot,
+      dataSourceTransition: flags.dataSourceTransition,
+    });
+    handleOutpatientFlags({
+      ...flagSnapshot,
+      dataSourceTransition: flags.dataSourceTransition,
+    });
+  }, [flags.runId, flags.cacheHit, flags.missingMaster, flags.dataSourceTransition]);
 
   const value = useMemo(
     () => ({ flags, setMissingMaster, setCacheHit, setDataSourceTransition, bumpRunId }),
