@@ -96,6 +96,12 @@
 - `OrderConsole` は `AuthService` context の flag を直接操作し、`resolveMasterSource` の選択が `dataSourceTransition` へ反映されるように `useEffect` で同期。`MissingMasterBadge`/`CacheHitBadge` を context 値で再描画し、`missingMaster` `cacheHit` toggle が reception 全体へ伝播します。
 - 証跡: `artifacts/webclient/ux-notes/20251205T090000Z-charts-ui-audit.md` に各コンポーネント構造と `missingMaster`/`dataSourceTransition` 表示を整理。UI proof と tone change は `docs/server-modernization/phase2/operations/logs/20251205T090000Z-charts-orca.md` でも記録。
 
+## 9.6 20251205T153000Z Charts/Patients tone QA
+- `getChartToneDetails` を起点に DocumentTimeline/PatientsTab/OrcaSummary/OrderConsole の `ToneBanner` を再整備し、`missingMaster=true` の warning から `cacheHit=true` info へ `dataSourceTransition=server` が carry over する tone chain を同一 copy で示すよう調整。`OrderConsole` 内にも `ToneBanner` を埋め込み、`aria-live` の再レンダリングと reception 同等のスタイルを `tone-banner`/`status-badge` から再利用しました。
+- スクリーンショット: DocumentTimeline+Patients header の tone banner（`artifacts/webclient/ux-notes/20251205T153000Z-charts-ui-audit.md` に構成図とトーン変化を記録）。tone change: `missingMaster` → `cacheHit` → `dataSourceTransition=server` へ `tone` を `warning`/`info` で切り替えた描画を描写。
+- 証跡: `artifacts/webclient/ux-notes/20251205T153000Z-charts-ui-audit.md`（コンポーネント構成と `missingMaster`/`dataSourceTransition=server` 表示の依存） + `docs/server-modernization/phase2/operations/logs/20251205T153000Z-charts-orca.md`（実装ポイント + 依存 API）。
+- DOC_STATUS/manager checklist の `Web クライアント UX/Features` 行への RUN_ID=`20251205T153000Z` 追加を完了（ログ/アーティファクト/本 doc へのリンクを再確認）。
+
 ## 10. 20251211T090000Z Reception UX 設計とステークホルダー同期（04A1準備）
 - 期間: 2025-12-11 09:00 - 2025-12-12 09:00 JST。CodexCLI1 `04A1 WEBクライアント受付UX設計とステークホルダー同期` タスクでは、`docs/web-client/ux/reception-schedule-ui-policy.md` を再読し、Reception/OrderConsole 両面で `tone=server` バナー・`dataSourceTransition` 表現・`resolveMasterSource` 由来の監査メタを共通化してステークホルダー同期資料を整備する。
 - 実施内容: Reception のバナー色/ARIA/文言構造と OrderConsole の `FilterBadge`/`DataSourceBanner` を `tone=server` ルートで合わせつつ、`AuditEvent` と `audit.logUiState` 側に `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を添える設計を確認。`resolveMasterSource(masterType)` の実装図（MSW→snapshot→server→fallback）を `artifacts/webclient/ux-notes/20251211T090000Z-reception-design.md` にまとめ、監査メタと UI トーンを紐づけたコード片も記録する。
