@@ -2,16 +2,14 @@ import { Global } from '@emotion/react';
 import { useMemo, useState } from 'react';
 
 import type { BannerTone } from '../components/ToneBanner';
-import { ToneBanner } from '../components/ToneBanner';
 import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
-import { ResolveMasterBadge } from '../components/ResolveMasterBadge';
 import { OrderConsole } from '../components/OrderConsole';
 import { receptionStyles } from '../styles';
 
-const RUN_ID = '20251204T230000Z';
+const RUN_ID = '20251205T062049Z';
 const PATIENT_ID = 'PX-2025-2304-001';
 const RECEPTION_ID = 'R-20251204-003';
-
+const DESTINATION = 'ORCA queue';
 export function ReceptionPage() {
   const [masterSource, setMasterSource] = useState<ResolveMasterSource>('mock');
   const [missingMaster, setMissingMaster] = useState(true);
@@ -65,28 +63,19 @@ export function ReceptionPage() {
             保持することで `aria-live` 調整を単一箇所に集約した UX を実現します。
           </p>
         </section>
-        <section className="reception-page__status" aria-live="polite">
-          <ToneBanner
-            tone={tone}
-            message={summaryMessage}
-            patientId={PATIENT_ID}
-            receptionId={RECEPTION_ID}
-            destination="ORCA queue"
-            nextAction={nextAction}
-            runId={RUN_ID}
-          />
-          <ResolveMasterBadge
-            masterSource={masterSource}
-            transitionDescription={transitionDescription}
-            runId={RUN_ID}
-          />
-        </section>
         <OrderConsole
           masterSource={masterSource}
           missingMaster={missingMaster}
           cacheHit={cacheHit}
           missingMasterNote={missingMasterNote}
           runId={RUN_ID}
+          tone={tone}
+          toneMessage={summaryMessage}
+          patientId={PATIENT_ID}
+          receptionId={RECEPTION_ID}
+          destination={DESTINATION}
+          nextAction={nextAction}
+          transitionDescription={transitionDescription}
           onMasterSourceChange={setMasterSource}
           onToggleMissingMaster={() => setMissingMaster((prev) => !prev)}
           onToggleCacheHit={() => setCacheHit((prev) => !prev)}
@@ -100,15 +89,15 @@ export function ReceptionPage() {
               し、`aria-atomic=false` で二重読み上げを抑えています。
             </li>
             <li>
-              `missingMaster`/`cacheHit` の Update は Chart/Patients でも同じ
-              `status-badge` を再利用し、`role=status` + `data-run-id` で画面横断の carry-over を
-              確認可能にします。
-            </li>
-            <li>
-            `resolveMasterSource` は `runId=20251204T230000Z` を含むバッジで
+            `missingMaster`/`cacheHit` の Update は Chart/Patients でも同じ
+            `status-badge` を再利用し、`role=status` + `data-run-id` で画面横断の carry-over を
+            確認可能にします。
+          </li>
+          <li>
+            `resolveMasterSource` は `runId=20251205T062049Z` を含むバッジで
               `dataSourceTransition=server` を明示し、`missingMaster=false` の瞬間に tone/ARIA を
               `info` → `warning` に昇格させます。
-            </li>
+          </li>
           </ol>
         </section>
       </main>
