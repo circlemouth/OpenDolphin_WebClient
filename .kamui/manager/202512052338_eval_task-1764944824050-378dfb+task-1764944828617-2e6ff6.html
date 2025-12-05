@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート・外来 API 接続検証プレラン</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-collection {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .score-card {
+        border: 1px solid #b0cfe0;
+        padding: 14px;
+        border-radius: 10px;
+        background: #f4fbff;
+      }
+      .score-card__title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 4px;
+      }
+      .score-card__value {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1c4b6e;
+      }
+      .score-card__note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      .monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 160px;
+      }
+      col.agent-column {
+        width: calc((100% - 160px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .indicator-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .indicator-card {
+        border: 1px solid #d7e5ed;
+        border-radius: 12px;
+        padding: 10px;
+        background: #f9fbfd;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 6px;
+        min-height: 150px;
+      }
+      .hex {
+        width: 50px;
+        height: 58px;
+        background: #79adcf;
+        clip-path: polygon(25% 0, 75% 0, 100% 50%, 75% 100%, 25% 100%, 0 50%);
+      }
+      .indicator-title {
+        font-size: 13px;
+        font-weight: 600;
+        text-align: center;
+      }
+      .indicator-desc {
+        font-size: 12px;
+        color: #2f3f47;
+        text-align: center;
+      }
+      .column-summary {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 12px;
+      }
+      .column-links {
+        list-style: none;
+        padding: 0;
+        margin: 12px 0 0;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      .column-links li {
+        margin-bottom: 6px;
+      }
+      .column-links code {
+        background: #f1f6fa;
+        padding: 2px 4px;
+        border-radius: 4px;
+        font-size: 11px;
+        color: #0f5d9d;
+      }
+      .status-note {
+        font-size: 12px;
+        color: #943c3c;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート — 04C3 外来 API 接続検証プレラン</h1>
+        <p class="monitor-description">Stage Reception→Charts→Patients の `dataSourceTransition=server` + tone=server 検証に向けて、2025-12-05 時点でのプレラン準備と文書化状況を gemini CLI が整理した記録を比較評価します。ORCA 証明書/権限不足による未完の実行は 2025-12-14 09:00 JST 以降の再実行を想定しています。</p>
+        <div class="score-collection">
+          <div class="score-card">
+            <div class="score-card__title">gemini CLI / task-1764944824050-378dfb</div>
+            <div class="score-card__value">450 / 600 🥈</div>
+            <div class="score-card__note">RUN_ID=20251214T090000Z の計画・ドキュメントは整備済み。Stage 実行未着手なので「実行」指標が丁寧に補填されると完全対応です。</div>
+          </div>
+          <div class="score-card">
+            <div class="score-card__title">gemini CLI / task-1764944828617-2e6ff6</div>
+            <div class="score-card__value">415 / 600 🥉</div>
+            <div class="score-card__note">RUN_ID=20251205T142909Z でのプレラン記録は残したが ORCA 証明書がなく実測ログ/telemetry は未取得。権限保有者の再実行でスコアは一気に向上します。</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Task 1 — 1764944824050-378dfb</th>
+            <th>Task 2 — 1764944828617-2e6ff6</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-05 23:38</td>
+            <td>
+              <p class="column-summary">20251214T090000Z の Stage API 接続検証計画を文書化し、環境・シナリオ・収集項目・QAログ先・次工程を `src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md:1` ～ `:36` に整理しました。DOC_STATUS/ux-documentation-plan/manager checklist も RUN_ID を含めて同期済みです。</p>
+              <div class="indicator-grid">
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">計画ドキュメント 90点</div>
+                  <p class="indicator-desc">`src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md:1`～`35` で目的・前提・手順・収集対象・次ステップを網羅。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">環境/前提 70点</div>
+                  <p class="indicator-desc">Stage URL、`VITE_DISABLE_MSW=1`、証明書取扱いなどを `:12`～`16` で明記し、実行者の準備負荷を引き下げ。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">証跡チェーン 75点</div>
+                  <p class="indicator-desc">DOC_STATUS `:36`／ux-doc `:117`／manager checklist `:34` で RUN_ID を記録し、後続が同じ reference を追える状態。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">リスク周知 85点</div>
+                  <p class="indicator-desc">`:32`～`36` で ORCA 証明書・権限不足を明記し、Stage 実行が 2025-12-14 09:00 JST 以降であることを通知。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">次ステップ明示 70点</div>
+                  <p class="indicator-desc">`:33`～`36` で placeholder 上書きと QA ログ更新の依頼を明記し、次の agent に TODO を移譲。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">関係者連携 60点</div>
+                  <p class="indicator-desc">GPL: manager checklist `:34` で権限保有者向けに RUN_ID を知らせつつ、未完の status を共有。</p>
+                </div>
+              </div>
+              <ul class="column-links">
+                <li>Stage run plan: <code>src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md:1</code></li>
+                <li>DOC_STATUS 更新: <code>docs/web-client/planning/phase2/DOC_STATUS.md:36</code></li>
+                <li>UX 計画と同期: <code>docs/web-client/ux/ux-documentation-plan.md:117</code></li>
+                <li>マネージャーチェックリスト: <code>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md:34</code></li>
+              </ul>
+            </td>
+            <td>
+              <p class="column-summary">20251205T142909Z の Stage API 接続 QA プレランを試し `docs/server-modernization/phase2/operations/logs/20251205T142909Z-integration-qa.md:1` に状況を記録、placeholder artifacts を `artifacts/webclient/e2e/20251205T142909Z-integration/*` に揃えましたが、ORCA 証明書/権限がなく実測データは未取得です。</p>
+              <div class="indicator-grid">
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">プレラン実行 60点</div>
+                  <p class="indicator-desc">`artifacts/webclient/e2e/20251205T142909Z-integration/stage.log:1` で Stage URL 接続を試したが、TLS 検証で遮断された事象を記録。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">障害報告 85点</div>
+                  <p class="indicator-desc">QA log `:7`～`15` で ORCA 証明書不足と Stage 側の拒否、ORCA_CERTIFICATION_ONLY への照会を記載。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">証跡同期 70点</div>
+                  <p class="indicator-desc">DOC_STATUS `:36` と ux-plan `:117` で RUN_ID=20251205T142909Z の placeholder を追記し、manager checklist `:34` でも備考を展開。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">アーティファクト整備 65点</div>
+                  <p class="indicator-desc">placeholder stage log/telemetry/screenshot (`artifacts/webclient/e2e/20251205T142909Z-integration/*`) を作成、後続が上書きする構造。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">継続指示 70点</div>
+                  <p class="indicator-desc">QA log `:16`～`19` で ORCA 証明書所有者への再実行指示と DOC_STATUS 等への記録を列挙。</p>
+                </div>
+                <div class="indicator-card">
+                  <div class="hex"></div>
+                  <div class="indicator-title">ダウンストリーム準備 65点</div>
+                  <p class="indicator-desc">Placeholder で `artifacts/webclient/e2e/20251205T142909Z-integration/*` を整理し、後続が RUN_ID=20251214T090000Z へ移行しやすい状態。</p>
+                </div>
+              </div>
+              <ul class="column-links">
+                <li>QA ログ: <code>docs/server-modernization/phase2/operations/logs/20251205T142909Z-integration-qa.md:1</code></li>
+                <li>Stage log + telemetry + screenshots: <code>artifacts/webclient/e2e/20251205T142909Z-integration/stage.log:1</code>, <code>artifacts/webclient/e2e/20251205T142909Z-integration/telemetry.json:1</code></li>
+                <li>DOC_STATUS 追記: <code>docs/web-client/planning/phase2/DOC_STATUS.md:36</code></li>
+                <li>UX 計画追記: <code>docs/web-client/ux/ux-documentation-plan.md:117</code></li>
+                <li>Manager checklist 追記: <code>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md:34</code></li>
+              </ul>
+              <p class="status-note">補足: RUN_ID=20251214T090000Z への本番 run は ORCA 証明書/権限者が 2025-12-14 09:00 JST 以降に placeholder を上書きすれば完了します。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
