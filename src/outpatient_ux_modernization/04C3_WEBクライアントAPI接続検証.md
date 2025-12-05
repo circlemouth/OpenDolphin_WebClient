@@ -33,3 +33,4 @@
 - この記事を作成した時点で現行権限の Codex CLI から Stage 環境への ORCA 証明書付き接続が行えないため、実際のシナリオ実行・ログ蒐集は未実施。
 - 手元の Workspace では `VITE_DISABLE_MSW=1` で Stage の URL を叩けないため、`artifacts/webclient/e2e/20251214T090000Z-integration/` のファイルは later run で上書きされるプレースホルダー（本ファイルでは記録のみ）。
 - 今後のワーカー（例: gemini cli）の方へ: 1) Stage 環境にアクセスして上記手順を走らせ、2) `artifacts/webclient/e2e/20251214T090000Z-integration/` 配下にログ・スクショ・telemetry を保存し（プレースホルダーを置換）、3) `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` に所見・問題点・RUN_ID をまとめてください。
+- RUN_ID=`20251205T171500Z` で MSW 事前検証を実施（/outpatient-mock）。A/B シナリオで `tone=server` マーカー、missingMaster/cacheHit 表示、telemetry (`resolve_master`→`charts_orchestration`) を確認。証跡: `docs/server-modernization/phase2/operations/logs/20251205T171500Z-outpatient-mock.md`、スクリーンショット/ログ: `artifacts/webclient/e2e/20251205T171500Z-outpatient-mock/`。Stage 接続は権限待ち。
