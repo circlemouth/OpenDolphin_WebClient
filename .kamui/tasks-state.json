@@ -282,53 +282,6 @@
     "description": "# 04B3 WEB クライアント：Charts/Patients UX 検証\n\n- Stage 環境で Charts→Patients を走らせ、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md に沿って出ることを確認。\n- ストーリーボードとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-charts/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナーの観察結果をまとめる。\n- docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへ検証結果と RUN_ID を記録。"
   },
   {
-    "id": "task-yaml-70588s-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 04C3_WEBクライアントAPI接続検証\n期間: 12/14 09:00 - 12/15 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 04C3 WEB クライアント：API 接続検証\n\n- stage 環境で `/api01rv2/claim/outpatient/*` や `/orca21/medicalmodv2/outpatient` を含む Reception→Charts→Patients のシナリオを実行し、`dataSourceTransition=server`、`cacheHit`/`missingMaster`、`resolveMasterSource` の各表示とファネルログが docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- artifacts/webclient/e2e/<RUN_ID>-integration/ にログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグの観察結果を記録。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へ検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。\n\nYAML ID: src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-05T12:34:30.705Z",
-    "updatedAt": "2025-12-05T12:34:30.705Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-70588s-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-05T12:34:30.681Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-d8mer-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1765670400000,
-      "endMs": 1765756800000,
-      "durationDays": 1
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 04C3 WEB クライアント：API 接続検証\n\n- stage 環境で `/api01rv2/claim/outpatient/*` や `/orca21/medicalmodv2/outpatient` を含む Reception→Charts→Patients のシナリオを実行し、`dataSourceTransition=server`、`cacheHit`/`missingMaster`、`resolveMasterSource` の各表示とファネルログが docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- artifacts/webclient/e2e/<RUN_ID>-integration/ にログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグの観察結果を記録。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へ検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。"
-  },
-  {
     "id": "task-1764938213977-eb689e",
     "name": "🔍Monitor: [webclient ux outpatient modernization plan] 04C3_WEBクライアントAPI接続検証\n期間: 12/14 09:00 - 12/15 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 04C3 WEB クライアント：API 接続検証\n\n- stage 環境で `/api01rv2/claim/outpatient/*` や `/orca21/medicalmodv2/outpatient` を含む Reception→Charts→Patients のシナリオを実行し、`dataSourceTransition=server`、`cacheHit`/`missingMaster`、`resolveMasterSource` の各表示とファネルログが docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- artifacts/webclient/e2e/<RUN_ID>-integration/ にログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグの観察結果を記録。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へ検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。\n\nYAML ID: src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
     "model": "codex",
