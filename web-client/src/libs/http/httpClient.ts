@@ -23,6 +23,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251204T064209Z-api-gap.md',
       'docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md',
+      'docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md',
     ],
   },
   {
@@ -36,6 +37,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
       'docs/server-modernization/phase2/foundation/IMPACT_MATRIX.md',
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md',
+      'docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md',
     ],
   },
   {
@@ -49,6 +51,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
       'docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md',
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md',
+      'docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md',
     ],
   },
   {
@@ -62,6 +65,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251204T064209Z-api-gap.md',
       'docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md',
+      'docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md',
     ],
   },
   {
@@ -74,11 +78,13 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     sourceDocs: [
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md',
+      'docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md',
     ],
   },
 ];
 
 // `resolveMasterSource` が `dataSourceTransition=server` を返す経路ではこの `outpatient` グループを使い、`cacheHit`/`missingMaster` を `telemetryClient` に継承します。
+// RUN_ID=20251205T150000Z の統合実装ではこのパス一覧を経由し、`docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md` へ telemetry funnel を記録しています。
 
 export function httpFetch(input: RequestInfo | URL, init?: RequestInit) {
   // Header flags are applied here to propagate Playwright extraHTTPHeaders.

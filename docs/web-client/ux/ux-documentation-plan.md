@@ -25,6 +25,7 @@
 - フィルタやタブ切替後のリロード/オートリロードでもクエリパラメータやストレージに保存した条件が復元されること。
 
 ## 4. 次ステップ
+- Stage Preview/Playwright の reception→Charts チェーンで `dataSourceTransition=server` + `missingMaster` トーンを QA する RUN_ID=`20251205T200000Z` を記録。`docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md` / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.png` （スクリーンショット） / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.log`（補助ログ）を更新したが、`stage.open-dolphin` が DNS で解決できず Stage からの `dataSourceTransition` フラグは取得できないため、同一 RUN_ID を再利用して再検証する必要がある。
 - ORCA エラー共有バナーと病名未紐付警告の tone/aria-live を Reception/Charts で統一し、Playwright ケースの前提を本計画に記録する。
 - Patients からの戻り導線と Administration からの設定配信タイミング（即時/次回リロード）を確認し、監査ログ要件と合わせて各ポリシーに追記する。
 - README / manager checklist で UX 草稿更新を周知し、DOC_STATUS の UX/Features 行に反映済みの旨を維持する。
@@ -58,6 +59,7 @@
 - `cacheHit` は React Query のキャッシュ命中時に `true` を付与し、強制リフェッチや TTL 経過時に `false` とする。`missingMaster` はスキーマ検証や `resolveMasterSource` が `fallback` を選択したときに `true`、解消したら `false` に戻す。`auditEvent` の `details` は `ORCA_CLAIM_OUTPATIENT` / `ORCA_APPOINTMENT_OUTPATIENT` / `ORCA_MEDICAL_GET` / `ORCA_PATIENT_MUTATION` として `facilityId`/`patientId`／`appointmentId`／`operation` などの業務キーと metadata をすべて含めます（詳細は `docs/server-modernization/phase2/operations/orca-master-sprint-plan.md` を参照）。
 - `docs/web-client/ux/ux-documentation-plan.md` ではこの図を UX/Playwright 検証の前提として使い、DocStatus の「Web クライアント UX/Features」行に RUN_ID `20251204T120000Z` と `docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md` / `artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md` を紐づけます。
 - RUN_ID=`20251205T090000Z` では `telemetryClient`/`charts/orchestration`/`OrderConsole` を実装し、`cacheHit`/`missingMaster` フラグが `funnels/outpatient` に送出されるたび `setResolveMasterSource('server')` が呼ばれ、`docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md` に接続図とコード変更を記録しました。
+- RUN_ID=`20251205T150000Z` では `AuthServiceProvider` に `recordOutpatientFunnel('resolve_master', …)` を追加して `telemetry` funnel を 2 ステージ（resolve_master → charts_orchestration）で記録し、`handleOutpatientFlags` が `dataSourceTransition` を継承するよう調整しつつ `setResolveMasterSource('server')` を `cacheHit` タイミングで実行できるようにした。`docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md` に API パス一覧／telemetry フロー／AuthService 側の同期パターンを記録し、`docs/web-client/ux/reception-schedule-ui-policy.md`・`docs/web-client/ux/ux-documentation-plan.md`・`docs/web-client/planning/phase2/DOC_STATUS.md` へ RUN_ID をリンクさせました。
 
 ## 8. 接続フロー差分（RUN_ID=20251204T210000Z）
 
@@ -96,6 +98,12 @@
 - `OrderConsole` は `AuthService` context の flag を直接操作し、`resolveMasterSource` の選択が `dataSourceTransition` へ反映されるように `useEffect` で同期。`MissingMasterBadge`/`CacheHitBadge` を context 値で再描画し、`missingMaster` `cacheHit` toggle が reception 全体へ伝播します。
 - 証跡: `artifacts/webclient/ux-notes/20251205T090000Z-charts-ui-audit.md` に各コンポーネント構造と `missingMaster`/`dataSourceTransition` 表示を整理。UI proof と tone change は `docs/server-modernization/phase2/operations/logs/20251205T090000Z-charts-orca.md` でも記録。
 
+## 9.6 20251205T153000Z Charts/Patients tone QA
+- `getChartToneDetails` を起点に DocumentTimeline/PatientsTab/OrcaSummary/OrderConsole の `ToneBanner` を再整備し、`missingMaster=true` の warning から `cacheHit=true` info へ `dataSourceTransition=server` が carry over する tone chain を同一 copy で示すよう調整。`OrderConsole` 内にも `ToneBanner` を埋め込み、`aria-live` の再レンダリングと reception 同等のスタイルを `tone-banner`/`status-badge` から再利用しました。
+- スクリーンショット: DocumentTimeline+Patients header の tone banner（`artifacts/webclient/ux-notes/20251205T153000Z-charts-ui-audit.md` に構成図とトーン変化を記録）。tone change: `missingMaster` → `cacheHit` → `dataSourceTransition=server` へ `tone` を `warning`/`info` で切り替えた描画を描写。
+- 証跡: `artifacts/webclient/ux-notes/20251205T153000Z-charts-ui-audit.md`（コンポーネント構成と `missingMaster`/`dataSourceTransition=server` 表示の依存） + `docs/server-modernization/phase2/operations/logs/20251205T153000Z-charts-orca.md`（実装ポイント + 依存 API）。
+- DOC_STATUS/manager checklist の `Web クライアント UX/Features` 行への RUN_ID=`20251205T153000Z` 追加を完了（ログ/アーティファクト/本 doc へのリンクを再確認）。
+
 ## 10. 20251211T090000Z Reception UX 設計とステークホルダー同期（04A1準備）
 - 期間: 2025-12-11 09:00 - 2025-12-12 09:00 JST。CodexCLI1 `04A1 WEBクライアント受付UX設計とステークホルダー同期` タスクでは、`docs/web-client/ux/reception-schedule-ui-policy.md` を再読し、Reception/OrderConsole 両面で `tone=server` バナー・`dataSourceTransition` 表現・`resolveMasterSource` 由来の監査メタを共通化してステークホルダー同期資料を整備する。
 - 実施内容: Reception のバナー色/ARIA/文言構造と OrderConsole の `FilterBadge`/`DataSourceBanner` を `tone=server` ルートで合わせつつ、`AuditEvent` と `audit.logUiState` 側に `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を添える設計を確認。`resolveMasterSource(masterType)` の実装図（MSW→snapshot→server→fallback）を `artifacts/webclient/ux-notes/20251211T090000Z-reception-design.md` にまとめ、監査メタと UI トーンを紐づけたコード片も記録する。
@@ -106,3 +114,7 @@
 - `artifacts/webclient/ux-notes/20251212T090000Z-orca-flags.md` には Stage/Preview (`VITE_DISABLE_MSW=1`, `VITE_DEV_PROXY_TARGET=http://100.102.17.40:8000/openDolphin/resources`) で観測した ORCA `cacheHit`/`missingMaster`/`dataSourceTransition` を記録し、スクリーンショット付きで DocumentTimeline のバナーと OrderConsole/OrcaSummary の `dataSourceTransition=server` を残しています。
 - 本 RUN_ID の動作確認・実装結果は `docs/server-modernization/phase2/operations/logs/20251212T090000Z-charts-orca.md` にログ化済み。DOC_STATUS の `Web クライアント UX/Features` 行には RUN_ID=`20251212T090000Z`・本ログ・artifact (`artifacts/webclient/ux-notes/20251212T090000Z-orca-flags.md`)・doc (`src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md`) を併記しました。
 - 次ステップとして Playwright ケースに `missingMaster` → `cacheHit` → `dataSourceTransition=server` の tone chain を組み込み、`docs/web-client/ux/playwright-scenarios.md` へ `auth-service` flag 切替の前提を追記する予定です。
+## 11. 20251214T090000Z Stage API 接続 QA
+- 目的: Stage 環境で Reception→Charts→Patients を通し、`/api01rv2/claim/outpatient/*` / `/orca21/medicalmodv2/outpatient` が `dataSourceTransition=server` ルートで `tone=server` バナー・`cacheHit`/`missingMaster`/`resolveMasterSource` 表示・telemetry funnel（resolve_master → charts_orchestration）を流すことを確認する。検証観点は `docs/web-client/ux/reception-schedule-ui-policy.md` および本計画の「検証観点」セクションを参照。得られた所見は全て `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` に記録し、`artifacts/webclient/e2e/20251214T090000Z-integration/` へログ・telemetry snapshot・スクリーンショットを保存する。
+- Observed telemetry flags: `cacheHit`/`missingMaster` の transition を Playwright から `telemetryClient.recordOutpatientFunnel('resolve_master', …)` で追い、`tone=server` banner の carry over（Reception → Charts）を `data-run-id=20251214T090000Z` でトレース。Stage の HTTP ログは `stage.log`、telemetry snapshot は `telemetry.json` として `artifacts/webclient/e2e/20251214T090000Z-integration/` に保存される予定。
+- 現状: Codex CLI には Stage ORCA 証明書・接続権限がないため、実行・観測・ログ保存は未完了。Stage run は対象 agent が 2025-12-14 09:00 JST 以降に実施し、`artifacts/webclient/e2e/20251214T090000Z-integration/` および `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` を上書きして成果を記録してください。

@@ -1,6 +1,64 @@
 import { css } from '@emotion/react';
 
+export const statusBadgeStyles = css`
+  .status-badge {
+    border-radius: 16px;
+    padding: 0.65rem 0.85rem;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: #ffffff;
+  }
+
+  .status-badge__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .status-badge__label {
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .status-badge__value {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .status-badge__description {
+    margin: 0.45rem 0 0;
+    font-size: 0.8rem;
+    color: #475569;
+  }
+
+  .status-badge__tone {
+    font-weight: 600;
+  }
+
+  .status-badge--warning {
+    border-color: #facc15;
+    background: #fefce8;
+  }
+
+  .status-badge--error {
+    border-color: #fecaca;
+    background: #fef2f2;
+  }
+
+  .status-badge--info {
+    border-color: #bfdbfe;
+    background: #eff6ff;
+  }
+
+  .status-badge--success {
+    border-color: #34d399;
+    background: #ecfdf5;
+  }
+`;
+
 export const receptionStyles = css`
+  ${statusBadgeStyles}
+
   .reception-page {
     min-height: 100vh;
     padding: 3rem clamp(1rem, 4vw, 2.75rem);
@@ -30,12 +88,6 @@ export const receptionStyles = css`
     line-height: 1.6;
   }
 
-  .reception-page__status {
-    display: flex;
-    flex-direction: column;
-    gap: 1rem;
-  }
-
   .order-console {
     background: #ffffff;
     border-radius: 28px;
@@ -45,6 +97,30 @@ export const receptionStyles = css`
     flex-direction: column;
     gap: 1.25rem;
     box-shadow: 0 20px 60px rgba(15, 23, 42, 0.08);
+  }
+
+  .order-console__status-steps {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .order-console__step {
+    background: #f8fafc;
+    border-radius: 20px;
+    padding: 0.95rem 1.05rem;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .order-console__step-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: #1d4ed8;
   }
 
   .tone-banner {
@@ -186,60 +262,6 @@ export const receptionStyles = css`
     border-radius: 10px;
     padding: 0.65rem;
     border: 1px solid rgba(37, 99, 235, 0.5);
-  }
-
-  .status-badge {
-    border-radius: 16px;
-    padding: 0.65rem 0.85rem;
-    border: 1px solid rgba(148, 163, 184, 0.4);
-    background: #ffffff;
-  }
-
-  .status-badge__row {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    gap: 0.5rem;
-  }
-
-  .status-badge__label {
-    font-size: 0.85rem;
-    color: #475569;
-  }
-
-  .status-badge__value {
-    font-weight: 700;
-    color: #0f172a;
-  }
-
-  .status-badge__description {
-    margin: 0.45rem 0 0;
-    font-size: 0.8rem;
-    color: #475569;
-  }
-
-  .status-badge__tone {
-    font-weight: 600;
-  }
-
-  .status-badge--warning {
-    border-color: #facc15;
-    background: #fefce8;
-  }
-
-  .status-badge--error {
-    border-color: #fecaca;
-    background: #fef2f2;
-  }
-
-  .status-badge--info {
-    border-color: #bfdbfe;
-    background: #eff6ff;
-  }
-
-  .status-badge--success {
-    border-color: #34d399;
-    background: #ecfdf5;
   }
 
   .reception-page__meta {

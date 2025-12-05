@@ -1,15 +1,16 @@
 <#
 .SYNOPSIS
-  繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・縺ｨ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝磯幕逋ｺ迺ｰ蠅・・繧ｻ繝・ヨ繧｢繝・・繧ｹ繧ｯ繝ｪ繝励ヨ
+  モダナイズ版サーバーと Web クライアント開発環境のセットアップスクリプト
 
 .NOTES
-  - Python 螳溯｡檎ｦ∵ｭ｢繝ｫ繝ｼ繝ｫ縺ｫ蠕薙＞縲￣owerShell + Docker Compose 縺ｮ縺ｿ繧剃ｽｿ逕ｨ
-  - ORCA 騾｣謳ｺ繝昴・繝医・ 8000 逡ｪ繧剃ｽｿ逕ｨ縺励↑縺・ｼ育腸蠅・､画焚 ORCA_PORT 縺ｧ荳頑嶌縺榊庄・・  - DB 繧ｷ繝ｼ繝峨・ ops/db/local-baseline/local_synthetic_seed.sql 繧帝←逕ｨ
+  - Python 実行禁止ルールに従い、PowerShell + Docker Compose のみを使用
+  - ORCA 連携ポートは 8000 番を使用しない（環境変数 ORCA_PORT で上書き可能）
+  - DB シードは ops/db/local-baseline/local_synthetic_seed.sql を適用
 #>
 
 $ErrorActionPreference = "Stop"
 
-# --- 險ｭ螳・---
+# --- 設定 ---
 $OrcaInfoFile = "docs/web-client/operations/mac-dev-login.local.md"
 $CustomPropTemplate = "ops/shared/docker/custom.properties"
 $CustomPropOutput = "custom.properties.dev"
@@ -18,23 +19,29 @@ $LocalSeedFile = "ops/db/local-baseline/local_synthetic_seed.sql"
 $ServerHealthUrl = "http://localhost:9080/openDolphin/resources/dolphin"
 $Utf8NoBom = New-Object System.Text.UTF8Encoding $false
 
-# 邂｡逅・・ｪ崎ｨｼ (繧ｷ繧ｹ繝・Β繧｢繧ｫ繧ｦ繝ｳ繝・
+# 管理者認証 (システムアカウント)
 $AdminUser = "1.3.6.1.4.1.9414.10.1:dolphin"
 $AdminPass = "36cdf8b887a5cffc78dcd5c08991b993" # dolphin (MD5)
 
-# 菴懈・縺吶ｋ繝ｦ繝ｼ繧ｶ繝ｼ
+# 作成するユーザー
 $NewUserId = "dolphindev"
-$NewUserPass = "dolphindev" # 蟷ｳ譁・(騾∽ｿ｡譎ゅ↓ MD5 蛹・
+$NewUserPass = "dolphindev" # 平文 (通信時に MD5 化)
 $NewUserName = "Dolphin Dev"
 $FacilityId = "1.3.6.1.4.1.9414.10.1"
 
-# --- 髢｢謨ｰ ---
+# --- 関数 ---
 function Get-MD5Hash {
     param ([string]$InputString)
     $md5 = [System.Security.Cryptography.MD5]::Create()
     $hash = [BitConverter]::ToString($md5.ComputeHash([System.Text.Encoding]::UTF8.GetBytes($InputString)))
     return $hash.Replace("-", "").ToLower()
 }
+
+$WebClientMode = if ($env:WEB_CLIENT_MODE) { $env:WEB_CLIENT_MODE } else { "docker" }
+$WebClientDevHost = if ($env:WEB_CLIENT_DEV_HOST) { $env:WEB_CLIENT_DEV_HOST } else { "localhost" }
+$WebClientDevPort = if ($env:WEB_CLIENT_DEV_PORT) { $env:WEB_CLIENT_DEV_PORT } else { "5173" }
+$WebClientDevProxyTarget = if ($env:WEB_CLIENT_DEV_PROXY_TARGET) { $env:WEB_CLIENT_DEV_PROXY_TARGET } else { "http://localhost:9080/openDolphin/resources" }
+$WebClientDevApiBase = if ($env:WEB_CLIENT_DEV_API_BASE) { $env:WEB_CLIENT_DEV_API_BASE } else { "/api" }
 
 function WriteUtf8NoBom {
     param(
@@ -44,7 +51,7 @@ function WriteUtf8NoBom {
     [System.IO.File]::WriteAllText($Path, $Content, $Utf8NoBom)
 }
 
-# --- 1. ORCA 謗･邯壽ュ蝣ｱ縺ｮ蜿門ｾ・---
+# --- 1. ORCA 接続情報の取得 ---
 Write-Host "Reading ORCA connection info from $OrcaInfoFile..." -ForegroundColor Cyan
 
 $OrcaHost = ""
@@ -66,7 +73,7 @@ if (Test-Path $OrcaInfoFile) {
     Write-Warning "File not found: $OrcaInfoFile"
 }
 
-# 迺ｰ蠅・､画焚縺ｧ荳頑嶌縺搾ｼ・000 逡ｪ遖∵ｭ｢・・if ($env:ORCA_HOST) { $OrcaHost = $env:ORCA_HOST }
+# 環境変数で上書き（8000 番禁止）if ($env:ORCA_HOST) { $OrcaHost = $env:ORCA_HOST }
 if ($env:ORCA_PORT) { $OrcaPort = $env:ORCA_PORT }
 if ($env:ORCA_USER) { $OrcaUser = $env:ORCA_USER }
 if ($env:ORCA_PASS) { $OrcaPass = $env:ORCA_PASS }
@@ -96,7 +103,7 @@ Write-Host "  Host: $OrcaHost"
 Write-Host "  Port: $OrcaPort"
 Write-Host "  User: $OrcaUser"
 
-# --- 2. custom.properties 縺ｮ逕滓・ ---
+# --- 2. custom.properties の生成 ---
 Write-Host "Generating $CustomPropOutput..." -ForegroundColor Cyan
 
 $PropContent = Get-Content $CustomPropTemplate -Raw
@@ -108,7 +115,7 @@ if ($OrcaPass) { $PropContent = $PropContent -replace "claim\.password=.*", "cla
 WriteUtf8NoBom -Path $CustomPropOutput -Content $PropContent
 Write-Host "  Done."
 
-# --- 3. docker-compose.override.dev.yml 縺ｮ逕滓・ ---
+# --- 3. docker-compose.override.dev.yml の生成 ---
 Write-Host "Generating $ComposeOverrideFile..." -ForegroundColor Cyan
 
 $OverrideContent = @"
@@ -121,11 +128,11 @@ services:
 WriteUtf8NoBom -Path $ComposeOverrideFile -Content $OverrideContent
 Write-Host "  Done."
 
-# --- 4. 繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・襍ｷ蜍・---
+# --- 4. モダナイズ版サーバー起動 ---
 Write-Host "Starting Modernized Server..." -ForegroundColor Cyan
 docker compose -f docker-compose.modernized.dev.yml -f $ComposeOverrideFile up -d
 
-# --- 5. 繧ｵ繝ｼ繝舌・襍ｷ蜍募ｾ・■ ---
+# --- 5. サーバー起動待ち ---
 Write-Host "Waiting for server to be healthy..." -ForegroundColor Cyan
 $RetryCount = 0
 $MaxRetries = 60 # 5遘・* 60 = 5蛻・$Succeeded = $false
@@ -151,7 +158,7 @@ if (-not $Succeeded) {
 }
 Write-Host "Server is UP!" -ForegroundColor Green
 
-# --- 6. 繝ｭ繝ｼ繧ｫ繝ｫ蜷域・繝吶・繧ｹ繝ｩ繧､繝ｳ繧ｷ繝ｼ繝峨ｒ驕ｩ逕ｨ ---
+# --- 6. ローカル合成ベースラインシードを適用 ---
 Write-Host "Applying local baseline seed ($LocalSeedFile)..." -ForegroundColor Cyan
 
 if (-not (Test-Path $LocalSeedFile)) {
@@ -170,7 +177,7 @@ try {
     Write-Error "Failed to execute baseline seed: $_"
 }
 
-# --- 7. 蛻晄悄繝ｦ繝ｼ繧ｶ繝ｼ逋ｻ骭ｲ (DB逶ｴ謗･謫堺ｽ・ ---
+# --- 7. 初期ユーザー登録 (DB直接操作) ---
 Write-Host "Registering initial user ($NewUserId) via SQL..." -ForegroundColor Cyan
 
 $NewUserPassHash = Get-MD5Hash $NewUserPass
@@ -257,9 +264,62 @@ try {
     Write-Error "Failed to execute docker command: $_"
 }
 
-# --- 8. Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝郁ｵｷ蜍・---
+# --- 8. Web クライアント起動 ---
 Write-Host "Starting Web Client..." -ForegroundColor Cyan
-docker compose -f docker-compose.web-client.yml up -d
 
-Write-Host "All set! Web Client is running at http://localhost:5173" -ForegroundColor Green
+if ($WebClientMode -match "^(npm|dev)") {
+    # npm モード: ローカルで npm run dev を起動
+    $WebClientDir = Join-Path $PSScriptRoot "web-client"
+    $EnvFile = Join-Path $WebClientDir ".env.local"
+    
+    # .env.local 生成
+    $EnvContent = @"
+VITE_API_BASE_URL=$WebClientDevApiBase
+VITE_HTTP_TIMEOUT_MS=10000
+VITE_HTTP_MAX_RETRIES=2
+VITE_DEV_PROXY_TARGET=$WebClientDevProxyTarget
+VITE_DEV_USE_HTTPS=0
+VITE_DISABLE_MSW=1
+VITE_ENABLE_TELEMETRY=0
+VITE_DISABLE_SECURITY=0
+VITE_DISABLE_AUDIT=0
+"@
+    WriteUtf8NoBom -Path $EnvFile -Content $EnvContent
+    Write-Host "  Generated $EnvFile"
+
+    Write-Host "  Starting npm run dev..."
+    # Start-Process を使用して別プロセスで起動 (Windows/Mac 両対応を意識しつつシンプルに)
+    # 実際にはコンソールを占有しないように非同期起動が望ましいが、PowerShell Core (Mac) での挙動差分を考慮し
+    # ここではユーザーにコマンドを提示して終了するか、Start-Process を試みる。
+    # 確実性を重視し、Mac/Linux (pwsh) では Start-Process が期待通り動かない場合があるため、バックグラウンド演算子 & を使う手もあるが
+    # ここでは .sh との対称性のため Start-Process を使用する。
+
+    $NpmArgs = "run", "dev", "--", "--host", $WebClientDevHost, "--port", $WebClientDevPort
+    if ($IsWindows) {
+        Start-Process -FilePath "npm.cmd" -ArgumentList $NpmArgs -NoNewWindow
+    } else {
+        # Mac/Linux pwsh
+        Start-Process -FilePath "npm" -ArgumentList $NpmArgs
+    }
+    
+    Write-Host "All set! Web Client dev server is starting at http://${WebClientDevHost}:${WebClientDevPort}" -ForegroundColor Green
+} else {
+    # Docker モード
+    docker compose -f docker-compose.web-client.yml up -d
+    Write-Host "All set! Web Client is running at http://localhost:5173" -ForegroundColor Green
+}
+
 Write-Host "Login with User: $NewUserId / Pass: $NewUserPass" -ForegroundColor Green
+
+# ---------------------------------------------------------
+# ログイン情報 (開発用)
+# 施設ID: 1.3.6.1.4.1.9414.10.1
+# ユーザーID: dolphindev
+# パスワード: dolphindev
+#
+# 医師アカウント (既存)
+# 施設ID: 1.3.6.1.4.1.9414.72.103
+# ユーザーID: doctor1
+# パスワード: doctor2025
+# ---------------------------------------------------------
+

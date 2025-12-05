@@ -1,4 +1,7 @@
+import type { BannerTone } from './ToneBanner';
+import { ToneBanner } from './ToneBanner';
 import type { ResolveMasterSource } from './ResolveMasterBadge';
+import { ResolveMasterBadge } from './ResolveMasterBadge';
 import { CacheHitBadge, MissingMasterBadge } from '../../shared/StatusBadge';
 
 const MASTER_SOURCES: ResolveMasterSource[] = ['mock', 'snapshot', 'server', 'fallback'];
@@ -9,6 +12,13 @@ export interface OrderConsoleProps {
   cacheHit: boolean;
   missingMasterNote: string;
   runId: string;
+  tone: BannerTone;
+  toneMessage: string;
+  patientId: string;
+  receptionId: string;
+  destination: string;
+  nextAction: string;
+  transitionDescription: string;
   onMasterSourceChange: (value: ResolveMasterSource) => void;
   onToggleMissingMaster: () => void;
   onToggleCacheHit: () => void;
@@ -21,13 +31,42 @@ export function OrderConsole({
   cacheHit,
   missingMasterNote,
   runId,
+  tone,
+  toneMessage,
+  patientId,
+  receptionId,
+  destination,
+  nextAction,
+  transitionDescription,
   onMasterSourceChange,
   onToggleMissingMaster,
   onToggleCacheHit,
   onMissingMasterNoteChange,
 }: OrderConsoleProps) {
   return (
-    <section className="order-console">
+    <section className="order-console" data-run-id={runId}>
+      <div className="order-console__status-steps" aria-label="tone banner and master source badge">
+        <div className="order-console__step">
+          <span className="order-console__step-label">Step 1: Tone</span>
+          <ToneBanner
+            tone={tone}
+            message={toneMessage}
+            patientId={patientId}
+            receptionId={receptionId}
+            destination={destination}
+            nextAction={nextAction}
+            runId={runId}
+          />
+        </div>
+        <div className="order-console__step">
+          <span className="order-console__step-label">Step 2: Master source</span>
+          <ResolveMasterBadge
+            masterSource={masterSource}
+            transitionDescription={transitionDescription}
+            runId={runId}
+          />
+        </div>
+      </div>
       <div className="order-console__grid" data-run-id={runId}>
         <div className="order-console__status-group">
           <CacheHitBadge cacheHit={cacheHit} runId={runId} />
