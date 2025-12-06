@@ -30,53 +30,6 @@
     "dependencies": []
   },
   {
-    "id": "task-yaml-v2xyzh-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 04A3_WEBクライアント受付UX検証とDOC_STATUS反映\n期間: 12/05 09:00 - 12/07 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04A3 WEB クライアント：受付 UX 検証と DOC_STATUS 反映\n\n- `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動してもらったモダナイズ版サーバー＋ Web クライアントを前提に Reception→Charts を再走し、`dataSourceTransition=server` と `missingMaster` バナーが docs/web-client/ux/reception-schedule-ui-policy.md のトーン要件どおりか確認。\n- ローカル検証のスクリーンショット・ログを artifacts/webclient/e2e/<RUN_ID>-reception/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md へ観察結果を記録（Stage DNS/権限未実施の場合は備考に明記）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、ローカル検証結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。\n\nYAML ID: src/outpatient_ux_modernization/04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-06T10:59:46.070Z",
-    "updatedAt": "2025-12-06T10:59:46.070Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-v2xyzh-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-06T10:59:40.433Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-y6otrb-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1764892800000,
-      "endMs": 1765065600000,
-      "durationDays": 2
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 04A3 WEB クライアント：受付 UX 検証と DOC_STATUS 反映\n\n- `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動してもらったモダナイズ版サーバー＋ Web クライアントを前提に Reception→Charts を再走し、`dataSourceTransition=server` と `missingMaster` バナーが docs/web-client/ux/reception-schedule-ui-policy.md のトーン要件どおりか確認。\n- ローカル検証のスクリーンショット・ログを artifacts/webclient/e2e/<RUN_ID>-reception/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md へ観察結果を記録（Stage DNS/権限未実施の場合は備考に明記）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、ローカル検証結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。"
-  },
-  {
     "id": "task-1765019507664-8ed2c9",
     "name": "CodexCLI3: [webclient ux outpatient modernization plan] 04A3_WEBクライアント受付UX検証とDOC_STATUS反映\n期間: 12/05 09:00 - 12/07 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04A3 WEB クライアント：受付 UX 検証と DOC_STATUS 反映\n\n- `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動してもらったモダナイズ版サーバー＋ Web クライアントを前提に Reception→Charts を再走し、`dataSourceTransition=server` と `missingMaster` バナーが docs/web-client/ux/reception-schedule-ui-policy.md のトーン要件どおりか確認。\n- ローカル検証のスクリーンショット・ログを artifacts/webclient/e2e/<RUN_ID>-reception/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md へ観察結果を記録（Stage DNS/権限未実施の場合は備考に明記）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、ローカル検証結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。\n\nYAML ID: src/outpatient_ux_modernization/04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md",
     "model": "Codex CLI",
@@ -98,78 +51,6 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1765019507664-8ed2c9"
-  },
-  {
-    "id": "task-yaml-5kpxjs-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 04B3_WEBクライアントChartsPatientsUX検証\n期間: 12/06 09:00 - 12/08 09:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# 04B3 WEB クライアント：Charts/Patients UX 検証\n\n- `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動済みのモダナイズ版サーバー＋ Web クライアントを前提に、ログイン → Reception → Charts → Patients の導線を実際にたどり、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md のトーン要件どおりか確認する。\n- ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。\n- docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。\n\nYAML ID: src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-06T11:18:30.461Z",
-    "updatedAt": "2025-12-06T11:18:30.461Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-5kpxjs-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-06T11:18:29.893Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-1kxcglv-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1764979200000,
-      "endMs": 1765152000000,
-      "durationDays": 2
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 04B3 WEB クライアント：Charts/Patients UX 検証\n\n- `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動済みのモダナイズ版サーバー＋ Web クライアントを前提に、ログイン → Reception → Charts → Patients の導線を実際にたどり、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md のトーン要件どおりか確認する。\n- ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。\n- docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。"
-  },
-  {
-    "id": "task-1765019925954-151a8c",
-    "name": "CodexCLI1: [webclient ux outpatient modernization plan] 04B3_WEBクライアントChartsPatientsUX検証\n期間: 12/06 09:00 - 12/08 09:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# 04B3 WEB クライアント：Charts/Patients UX 検証\n\n- `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動済みのモダナイズ版サーバー＋ Web クライアントを前提に、ログイン → Reception → Charts → Patients の導線を実際にたどり、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md のトーン要件どおりか確認する。\n- ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。\n- docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。\n\nYAML ID: src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-06T11:18:45.954Z",
-    "updatedAt": "2025-12-06T11:18:45.954Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765019925954-151a8c",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765019925953-l4lvof00",
-    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 04B3_WEBクライアントChartsPatientsUX検証\n期間: 12/06 09:00 - 12/08 09:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# 04B3 WEB クライアント：Charts/Patients UX 検証\n\n- `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動済みのモダナイズ版サーバー＋ Web クライアントを前提に、ログイン → Reception → Charts → Patients の導線を実際にたどり、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md のトーン要件どおりか確認する。\n- ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。\n- docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。\n\nYAML ID: src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765019925954-151a8c",
-    "medal": "bronze",
-    "aiCompetitionScore": 0
   },
   {
     "id": "task-1765019926354-dd9811",
@@ -232,53 +113,6 @@
     "worktreePath": ".worktrees/task-1765019934650-b60e58"
   },
   {
-    "id": "task-yaml-70588s-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 04C3_WEBクライアントAPI接続検証\n期間: 12/09 09:00 - 12/10 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04C3 WEB クライアント：API 接続検証\n\n- `setup-modernized-env.sh` で起動してもらったモダナイズ版サーバー（http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources を想定）に Web クライアントを接続し、ログイン直後のホーム→Reception→Charts→Patients のシーケンスで `dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- ログイン後ナビゲーションの現状（ヘッダー/サイドバー/タブ切替の遷移可否や遅延）を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。\n\nYAML ID: src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-06T11:22:25.272Z",
-    "updatedAt": "2025-12-06T11:22:25.272Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-70588s-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-06T11:22:24.657Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-d8mer-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1765238400000,
-      "endMs": 1765324800000,
-      "durationDays": 1
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 04C3 WEB クライアント：API 接続検証\n\n- `setup-modernized-env.sh` で起動してもらったモダナイズ版サーバー（http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources を想定）に Web クライアントを接続し、ログイン直後のホーム→Reception→Charts→Patients のシーケンスで `dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- ログイン後ナビゲーションの現状（ヘッダー/サイドバー/タブ切替の遷移可否や遅延）を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。"
-  },
-  {
     "id": "task-1765020161634-fed6c8",
     "name": "CodexCLI1: [webclient ux outpatient modernization plan] 04C3_WEBクライアントAPI接続検証\n期間: 12/09 09:00 - 12/10 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04C3 WEB クライアント：API 接続検証\n\n- `setup-modernized-env.sh` で起動してもらったモダナイズ版サーバー（http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources を想定）に Web クライアントを接続し、ログイン直後のホーム→Reception→Charts→Patients のシーケンスで `dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- ログイン後ナビゲーションの現状（ヘッダー/サイドバー/タブ切替の遷移可否や遅延）を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。\n\nYAML ID: src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
     "model": "Codex CLI",
@@ -300,31 +134,6 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1765020161634-fed6c8",
-    "medal": "none",
-    "aiCompetitionScore": 0
-  },
-  {
-    "id": "task-1765020161826-c0f40e",
-    "name": "CodexCLI2: [webclient ux outpatient modernization plan] 04C3_WEBクライアントAPI接続検証\n期間: 12/09 09:00 - 12/10 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04C3 WEB クライアント：API 接続検証\n\n- `setup-modernized-env.sh` で起動してもらったモダナイズ版サーバー（http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources を想定）に Web クライアントを接続し、ログイン直後のホーム→Reception→Charts→Patients のシーケンスで `dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- ログイン後ナビゲーションの現状（ヘッダー/サイドバー/タブ切替の遷移可否や遅延）を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。\n\nYAML ID: src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-06T11:22:41.826Z",
-    "updatedAt": "2025-12-06T11:22:41.826Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765020161826-c0f40e",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765020161531-ffx1y60r",
-    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 04C3_WEBクライアントAPI接続検証\n期間: 12/09 09:00 - 12/10 09:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 04C3 WEB クライアント：API 接続検証\n\n- `setup-modernized-env.sh` で起動してもらったモダナイズ版サーバー（http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources を想定）に Web クライアントを接続し、ログイン直後のホーム→Reception→Charts→Patients のシーケンスで `dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。\n- ログイン後ナビゲーションの現状（ヘッダー/サイドバー/タブ切替の遷移可否や遅延）を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。\n- docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。\n\nYAML ID: src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765020161826-c0f40e",
     "medal": "none",
     "aiCompetitionScore": 0
   },
@@ -362,5 +171,28 @@
     },
     "autoEvaluationNotBefore": 1765020221531,
     "worktreePath": ".worktrees/task-1765020172883-1681ff"
+  },
+  {
+    "id": "task-1765029837520-bcada0",
+    "name": "CodexCLI1: 対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04A3、04B3、04C3タスクの進捗を確認し、必要な追加作業の追加や作業内容の修正などを組み込んだガントチャートに修正せよ。",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-06T14:03:57.520Z",
+    "updatedAt": "2025-12-06T14:03:57.520Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765029837520-bcada0",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765029837519-pdvh7gbv",
+    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04A3、04B3、04C3タスクの進捗を確認し、必要な追加作業の追加や作業内容の修正などを組み込んだガントチャートに修正せよ。",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1765029837520-bcada0"
   }
 ]
