@@ -175,11 +175,12 @@ src:
         # 04A3 WEB クライアント：受付 UX 検証と DOC_STATUS 反映
 
         - `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動してもらったモダナイズ版サーバー＋ Web クライアントを前提に Reception→Charts を再走し、`dataSourceTransition=server` と `missingMaster` バナーが docs/web-client/ux/reception-schedule-ui-policy.md のトーン要件どおりか確認。
+        - `VITE_DISABLE_MSW=1` での無通信検証と、`missingMaster=false` ケースの aria-live 挙動も確認し、差分があれば `web-client/src/features/reception/OrderConsole.tsx` のログと併せて記録。
         - ローカル検証のスクリーンショット・ログを artifacts/webclient/e2e/<RUN_ID>-reception/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md へ観察結果を記録（Stage DNS/権限未実施の場合は備考に明記）。
         - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、ローカル検証結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 50
       agent: gemini cli
       api:
         - "/api01rv2/patient/outpatient/*"
@@ -232,11 +233,12 @@ src:
         # 04B3 WEB クライアント：Charts/Patients UX 検証
 
         - `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動済みのモダナイズ版サーバー＋ Web クライアントを前提に、ログイン → Reception → Charts → Patients の導線を実際にたどり、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md のトーン要件どおりか確認する。
+        - `Patients` タブで `cacheHit=false` のときに `resolveMasterSource` バナーが消えるかを追加確認し、`OrcaSummary` とトーンの差があれば `styles` 修正案を artifacts/webclient/ux-notes/<RUN_ID>-charts-ui-audit.md に追記。
         - ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。
         - docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。
       priority: High
       status: in_progress
-      progress: 30
+      progress: 45
       agent: cursor cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -245,7 +247,7 @@ src:
         - src/outpatient_ux_modernization/04B2_WEBクライアントChartsPatientsUX実装.md
       schedule:
         start: 2025-12-06T00:00:00.000Z
-        days: 2
+        days: 3
     04C1_WEBクライアントAPI統合設計.md:
       content: |-
         # 04C1 WEB クライアント：API 統合設計
@@ -299,8 +301,8 @@ src:
         - ログイン後ナビゲーションの現状（ヘッダー/サイドバー/タブ切替の遷移可否や遅延）を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。
         - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。
       priority: High
-      status: in_progress
-      progress: 20
+      status: not_started
+      progress: 0
       agent: gemini cli
       api:
         - "/api01rv2/claim/outpatient/*"
@@ -310,9 +312,10 @@ src:
         - "/orca21/medicalmodv2/outpatient"
       dependency:
         - src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md
+        - src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md
       schedule:
-        start: 2025-12-09T00:00:00.000Z
-        days: 1
+        start: 2025-12-10T00:00:00.000Z
+        days: 2
     05_デバッグドキュメント整備.md:
       content: |-
         # 05 デバッグドキュメント整備
