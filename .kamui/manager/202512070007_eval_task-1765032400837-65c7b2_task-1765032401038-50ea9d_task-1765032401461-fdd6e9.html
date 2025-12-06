@@ -1,0 +1,262 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        background: linear-gradient(180deg, #f8fbff 0%, #eef4f7 100%);
+        border: 1px solid #c4d3d7;
+        border-radius: 16px;
+        padding: 14px 16px;
+        box-shadow: 0 8px 24px rgba(31, 42, 48, 0.12);
+      }
+      .score-card__title {
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .score-card__score {
+        font-size: 24px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-card__note { margin: 4px 0 0; color: #475569; }
+      .badge { display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px; }
+      .badge--gold { background: #fff7e6; color: #b45309; }
+      .badge--silver { background: #eef2ff; color: #4338ca; }
+      .badge--bronze { background: #fff3e0; color: #9a3412; }
+      .badge--none { background: #e2e8f0; color: #475569; }
+      .radar-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin: 10px 0 20px; }
+      .radar-card { background: #ffffff; border: 1px solid #c4d3d7; border-radius: 16px; padding: 12px; box-shadow: 0 8px 24px rgba(31,42,48,0.08); }
+      .radar-card h3 { margin: 0 0 6px; font-size: 15px; }
+      .radar-meta { font-size: 12px; color: #475569; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+      .radar { width: 240px; height: 240px; margin: 0 auto; display: block; }
+      .radar text { font-size: 10px; fill: #1f2a30; }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; font-weight: 600; }
+      details[open] summary { margin-bottom: 8px; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px; }
+      .pill { display: inline-block; padding: 2px 10px; border-radius: 999px; background: #eef2ff; color: #1d4ed8; font-size: 11px; border: 1px solid rgba(37,99,235,0.25); }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク「ログイン後の画面遷移と画面間接続」を対象に、3ブランチの実装を比較評価しました。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-card__title">task-1765032400837-65c7b2 <span class="badge badge--gold">🥇 gold</span></div>
+          <div class="score-card__score">🏆 517 / 600 （86/100）</div>
+          <p class="score-card__note">AppRouter でログイン→受付→Charts を一気通貫。RUN_ID をセッション生成し Reception/Charts 双方へ橋渡し。</p>
+        </div>
+        <div class="score-card">
+          <div class="score-card__title">task-1765032401038-50ea9d <span class="badge badge--bronze">🥉 bronze</span></div>
+          <div class="score-card__score">🥉 384 / 600 （64/100）</div>
+          <p class="score-card__note">ワークスペース型ナビと Protected で遷移整理。ただし RUN_ID・tone carry-over が未配線で受付と Charts が分断。</p>
+        </div>
+        <div class="score-card">
+          <div class="score-card__title">task-1765032401461-fdd6e9 <span class="badge badge--none">⚪️ none</span></div>
+          <div class="score-card__score">⚪️ 312 / 600 （52/100）</div>
+          <p class="score-card__note">最小限のガードとナビのみ。Reception/Charts は定数 RUN_ID のまま、画面間連携・テレメトリ渡しが未実装。</p>
+        </div>
+      </section>
+
+      <section class="radar-grid">
+        <div class="radar-card">
+          <h3>task-1765032400837-65c7b2</h3>
+          <div class="radar-meta"><span>六角チャート</span><span class="pill">score 517/600</span></div>
+          <svg class="radar" data-scores="90,88,86,84,87,82"></svg>
+        </div>
+        <div class="radar-card">
+          <h3>task-1765032401038-50ea9d</h3>
+          <div class="radar-meta"><span>六角チャート</span><span class="pill">score 384/600</span></div>
+          <svg class="radar" data-scores="70,60,62,65,63,64"></svg>
+        </div>
+        <div class="radar-card">
+          <h3>task-1765032401461-fdd6e9</h3>
+          <div class="radar-meta"><span>六角チャート</span><span class="pill">score 312/600</span></div>
+          <svg class="radar" data-scores="55,48,52,50,50,57"></svg>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765032400837-65c7b2</th>
+            <th>Agent task-1765032401038-50ea9d</th>
+            <th>Agent task-1765032401461-fdd6e9</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-07 00:08:06</td>
+            <td>
+              <details open>
+                <summary>接続状況と評価</summary>
+                <pre>✅ LoginScreen の onLoginSuccess で session を確立し、AppRouter 経由で /reception へ自動遷移。
+✅ SessionContext から RUN_ID / facilityId / user をトップバー表示し、NavLink で Reception / Charts / Outpatient を直感的に往復。
+✅ ReceptionPage へ runId/patientId/receptionId を props で引き渡し、missingMaster/cacheHit の tone と aria を Charts 側へ carry over。
+✅ ChartsPage が AuthServiceProvider 初期フラグに runId を注入し、DocumentTimeline / OrcaSummary / PatientsTab へ RUN_ID を統一供給。
+⚠️ セッションはメモリのみで永続化なし。実 API 認証との連動や runId のサーバ同期は未実装。
+⚠️ ブランチは未コミットの作業ツリー変更のみ（基底 commit 95804b63 以降の新規 commit なし）。</pre>
+              </details>
+            </td>
+            <td>
+              <details open>
+                <summary>接続状況と評価</summary>
+                <pre>✅ Workspace Home + Protected でログイン後の導線を整理し、Reception / Charts / MSW デモへ遷移可能。
+✅ ナビとサインアウトは機能するが、ユーザーセッションはメモリ保持のみで、ページリロードで喪失。
+❌ ReceptionPage も ChartsWorkspace も runId/missingMaster/cacheHit を受け取らず、受付→Charts のトーン連携が不在。
+❌ AuthServiceProvider の runId はデフォルト固定で、ログイン情報や受付入力を carry-over できていない。
+⚠️ 未コミットの変更のみ。新規 commit は 95804b63 以降なし。</pre>
+              </details>
+            </td>
+            <td>
+              <details open>
+                <summary>接続状況と評価</summary>
+                <pre>✅ AuthProvider + ProtectedRoute で最低限のログインガードとナビゲーションを実装。
+❌ ReceptionPage / ChartsPage いずれも固定 RUN_ID を使用し、ログイン情報・トーン状態の受け渡しが未実装。
+❌ テレメトリ記録や dataSourceTransition 連携も無し。UI も最小で患者フローの一貫体験には未達。
+⚠️ 変更はワークツリーのみで commit 追加はなし（基底 95804b63）。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const LABELS = [
+        'ログイン導線',
+        'RUN_ID/セッション連携',
+        '画面遷移ガード',
+        'UX一貫性',
+        'コード品質',
+        '緻密性・テレメトリ'
+      ];
+
+      document.querySelectorAll('.radar').forEach((svg) => {
+        const scores = (svg.dataset.scores || '').split(',').map((v) => Number(v.trim()));
+        const size = 240;
+        const center = size / 2;
+        const maxR = 90;
+        const step = (Math.PI * 2) / 6;
+        svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+        const createPolygon = (points, opts = {}) => {
+          const p = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          p.setAttribute('points', points.join(' '));
+          Object.entries(opts).forEach(([k, v]) => p.setAttribute(k, v));
+          svg.appendChild(p);
+        };
+
+        // グリッド (3 段階)
+        [0.33, 0.66, 1].forEach((level, idx) => {
+          const pts = Array.from({ length: 6 }, (_, i) => {
+            const angle = -Math.PI / 2 + step * i;
+            const r = maxR * level;
+            return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`;
+          });
+          createPolygon(pts, {
+            fill: 'none',
+            stroke: '#cbd5e1',
+            'stroke-width': idx === 2 ? 1.2 : 0.7,
+            'stroke-dasharray': idx === 2 ? '0' : '4 4',
+          });
+        });
+
+        // スコアポリゴン
+        const scorePts = scores.map((score, i) => {
+          const angle = -Math.PI / 2 + step * i;
+          const r = (Math.max(0, Math.min(100, score)) / 100) * maxR;
+          return `${center + Math.cos(angle) * r},${center + Math.sin(angle) * r}`;
+        });
+        createPolygon(scorePts, {
+          fill: 'rgba(37, 99, 235, 0.18)',
+          stroke: '#2563eb',
+          'stroke-width': 2,
+        });
+
+        // 軸ラベル
+        LABELS.forEach((label, i) => {
+          const angle = -Math.PI / 2 + step * i;
+          const r = maxR + 22;
+          const x = center + Math.cos(angle) * r;
+          const y = center + Math.sin(angle) * r;
+          const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          text.setAttribute('x', x.toString());
+          text.setAttribute('y', y.toString());
+          text.setAttribute('text-anchor', 'middle');
+          text.setAttribute('dominant-baseline', 'middle');
+          text.textContent = `${label}`;
+          svg.appendChild(text);
+        });
+      });
+    </script>
+  </body>
+</html>
