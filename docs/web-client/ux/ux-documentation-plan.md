@@ -25,6 +25,7 @@
 - フィルタやタブ切替後のリロード/オートリロードでもクエリパラメータやストレージに保存した条件が復元されること。
 
 ## 4. 次ステップ
+- RUN_ID=`20251206T111508Z`：`tests/e2e/outpatient-flags.msw.spec.ts` をローカル（MSW preflight）で実行し、Reception→Charts の tone=server／dataSourceTransition=server／missingMaster/cacheHit バナーの `role=alert`＋`aria-live`（warning=assertive、info=polite）を 2 パターン確認。ログ `docs/server-modernization/phase2/operations/logs/20251206T111508Z-reception-qa.md`、スクリーンショット＋dev ログ `artifacts/webclient/e2e/20251206T111508Z-reception/`。Stage/Live 権限は未取得のため、実 API での再測定を別 RUN で追跡する。
 - Stage Preview/Playwright の reception→Charts チェーンで `dataSourceTransition=server` + `missingMaster` トーンを QA する RUN_ID=`20251205T200000Z` を記録。`docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md` / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.png` （スクリーンショット） / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.log`（補助ログ）を更新したが、`stage.open-dolphin` が DNS で解決できず Stage からの `dataSourceTransition` フラグは取得できないため、同一 RUN_ID を再利用して再検証する必要がある。
 - ORCA エラー共有バナーと病名未紐付警告の tone/aria-live を Reception/Charts で統一し、Playwright ケースの前提を本計画に記録する。
 - Patients からの戻り導線と Administration からの設定配信タイミング（即時/次回リロード）を確認し、監査ログ要件と合わせて各ポリシーに追記する。
