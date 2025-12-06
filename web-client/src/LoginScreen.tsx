@@ -60,7 +60,19 @@ interface UserResourceResponse {
   commonName?: string;
 }
 
-export const LoginScreen = () => {
+export type LoginResult = {
+  facilityId: string;
+  userId: string;
+  displayName?: string;
+  commonName?: string;
+  clientUuid: string;
+};
+
+type LoginScreenProps = {
+  onLoginSuccess?: (result: LoginResult) => void;
+};
+
+export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
   const [values, setValues] = useState<LoginFormValues>({
     facilityId: '',
     userId: '',
@@ -70,7 +82,7 @@ export const LoginScreen = () => {
   const [errors, setErrors] = useState<Partial<Record<FieldKey, string>>>({});
   const [status, setStatus] = useState<LoginStatus>('idle');
   const [feedback, setFeedback] = useState<string | null>(null);
-  const [profile, setProfile] = useState<UserResourceResponse | null>(null);
+  const [profile, setProfile] = useState<LoginResult | null>(null);
 
   const isLoading = status === 'loading';
   const isSuccess = status === 'success';
@@ -120,6 +132,7 @@ export const LoginScreen = () => {
       setProfile(result);
       setFeedback('ログインに成功しました。');
       setStatus('success');
+      onLoginSuccess?.(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'ログインに失敗しました。';
       setFeedback(message);
@@ -216,13 +229,6 @@ export const LoginScreen = () => {
   );
 };
 
-type LoginResult = {
-  facilityId: string;
-  userId: string;
-  displayName?: string;
-  commonName?: string;
-};
-
 const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
   const passwordMd5 = await hashPasswordMd5(payload.password);
   const clientUuid = createClientUuid(payload.clientUuid);
@@ -250,5 +256,6 @@ const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
     userId: data.userId ?? payload.userId,
     displayName: data.displayName,
     commonName: data.commonName,
+    clientUuid,
   };
 };
