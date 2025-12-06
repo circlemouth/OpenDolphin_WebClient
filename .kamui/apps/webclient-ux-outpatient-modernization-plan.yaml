@@ -174,9 +174,9 @@ src:
       content: |-
         # 04A3 WEB クライアント：受付 UX 検証と DOC_STATUS 反映
 
-        - `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://stage.open-dolphin` の stage 環境で Reception→Charts を再走し、`dataSourceTransition=server` と `missingMaster` バナーが想定どおり表示されるか確認。
-        - ステージ検証のスクリーンショット・ログを artifacts/webclient/e2e/<RUN_ID>-reception/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md へ記録。
-        - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、stage 結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。
+        - `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動してもらったモダナイズ版サーバー＋ Web クライアントを前提に Reception→Charts を再走し、`dataSourceTransition=server` と `missingMaster` バナーが docs/web-client/ux/reception-schedule-ui-policy.md のトーン要件どおりか確認。
+        - ローカル検証のスクリーンショット・ログを artifacts/webclient/e2e/<RUN_ID>-reception/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md へ観察結果を記録（Stage DNS/権限未実施の場合は備考に明記）。
+        - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、ローカル検証結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。
       priority: High
       status: not_started
       progress: 0
