@@ -6,11 +6,29 @@ import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { OrderConsole } from '../components/OrderConsole';
 import { receptionStyles } from '../styles';
 
+type ReceptionPageProps = {
+  runId?: string;
+  patientId?: string;
+  receptionId?: string;
+  destination?: string;
+  title?: string;
+  description?: string;
+};
+
 const RUN_ID = '20251205T062049Z';
 const PATIENT_ID = 'PX-2025-2304-001';
 const RECEPTION_ID = 'R-20251204-003';
 const DESTINATION = 'ORCA queue';
-export function ReceptionPage() {
+
+export function ReceptionPage({
+  runId = RUN_ID,
+  patientId = PATIENT_ID,
+  receptionId = RECEPTION_ID,
+  destination = DESTINATION,
+  title = 'Reception UX コンポーネント実装',
+  description =
+    '`tone=server` バナーと `resolveMasterSource` バッジを ReceptionPage 直下でステップ的に表示し、OrderConsole に `missingMaster` 入力とメモのみを保持することで `aria-live` 調整を単一箇所に集約した UX を実現します。',
+}: ReceptionPageProps) {
   const [masterSource, setMasterSource] = useState<ResolveMasterSource>('mock');
   const [missingMaster, setMissingMaster] = useState(true);
   const [cacheHit, setCacheHit] = useState(false);
@@ -47,7 +65,7 @@ export function ReceptionPage() {
       ? 'snapshot → server （tone=server）'
       : masterSource === 'fallback'
         ? 'server → fallback'
-        : masterSource === 'snapshot'
+      : masterSource === 'snapshot'
           ? 'mock → snapshot'
           : 'mock fixtures';
 
@@ -56,24 +74,20 @@ export function ReceptionPage() {
       <Global styles={receptionStyles} />
       <main className="reception-page">
         <section className="reception-page__header">
-          <h1>Reception UX コンポーネント実装</h1>
-          <p>
-            `tone=server` バナーと `resolveMasterSource` バッジを ReceptionPage 直下で
-            ステップ的に表示し、OrderConsole に `missingMaster` 入力とメモのみを
-            保持することで `aria-live` 調整を単一箇所に集約した UX を実現します。
-          </p>
+          <h1>{title}</h1>
+          <p>{description}</p>
         </section>
         <OrderConsole
           masterSource={masterSource}
           missingMaster={missingMaster}
           cacheHit={cacheHit}
           missingMasterNote={missingMasterNote}
-          runId={RUN_ID}
+          runId={runId}
           tone={tone}
           toneMessage={summaryMessage}
-          patientId={PATIENT_ID}
-          receptionId={RECEPTION_ID}
-          destination={DESTINATION}
+          patientId={patientId}
+          receptionId={receptionId}
+          destination={destination}
           nextAction={nextAction}
           transitionDescription={transitionDescription}
           onMasterSourceChange={setMasterSource}

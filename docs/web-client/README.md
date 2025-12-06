@@ -5,6 +5,7 @@
 - 本リポジトリ配下で唯一稼働する Web クライアントはログイン画面のみとなっており、`src/LoginScreen.tsx` で既存 API を直接呼び出す形に再構成されています。
 - そのため docs/web-client 以下も最小セットに集約し、不要な機能仕様や UX 施策は削除しました。
 - ドキュメント更新時は `AGENTS.md` が示す Phase2 ガバナンス必読チェーン（`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリスト）を踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記してください。
+- RUN_ID=`20251206T144901Z` でログイン後に Reception / Charts / Outpatient mock へ遷移できる UI シェル（デモ用ナビゲーション）を追加。API スコープは従来どおりログインのみで、接続シェルが RUN_ID を受け継いで tone/banner を確認できる構成。
 - RUN_ID=`20251202T083708Z` で画面別 API マッピングとバージョン整合メモ（`src/webclient_screens_plan/02_画面別 API マッピングとバージョン整合.md`）を更新し、証跡ログ `docs/server-modernization/phase2/operations/logs/20251202T083708Z-api-mapping.md` を連携。orca05 hash/diff 再取得済み（同 RUN_ID）。これらの更新は DOC_STATUS / manager checklist と同期。
 - RUN_ID=`20251201T053420Z` で参照チェーン棚卸しを実施済み。証跡: `docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md`（DOC_STATUS/manager checklist と同期）。
 - RUN_ID=`20251202T090000Z` で受付/カルテ/管理の screens 棚卸しを開始。証跡: `docs/server-modernization/phase2/operations/logs/20251202T090000Z-screens.md`（DOC_STATUS/manager checklist と連動）。
