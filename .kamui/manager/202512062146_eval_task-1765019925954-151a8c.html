@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 04B3 WEBクライアント Charts/Patients UX 検証</title>
+    <style>
+      body {font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30;}
+      .monitor-wrapper {max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7;}
+      .monitor-header {display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px;}
+      .monitor-title {font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30;}
+      .monitor-description {font-size: 14px; color: #3a4b53;}
+      .scoreboard {display:flex; gap:24px; flex-wrap:wrap; margin:16px 0 24px;}
+      .score-card {flex:1 1 320px; padding:16px; border:1px solid #c4d3d7; background:#eef3f4;}
+      .score-card h2 {margin:0 0 8px; font-size:18px; display:flex; align-items:center; gap:8px;}
+      .score-card .total {font-size:32px; font-weight:700;}
+      .medal {font-size:24px;}
+      .hex-chart {width:200px; height:180px; margin:8px 0;}
+      .metric-list {font-size:12px; margin:0; padding-left:16px; line-height:1.4;}
+      table.monitor-report {width:100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7;}
+      col.timestamp-column {width: 160px;}
+      col.agent-column {width: calc((100% - 160px) / 3);}
+      th, td {border: 1px solid #c4d3d7; padding: 12px; vertical-align: top; background-color: #ffffff;}
+      th {background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40;}
+      tbody tr:nth-child(even) td {background-color: #eef3f4;}
+      .status-badge {display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top;}
+      .status-badge--warning {background:#fef3cd; border-color:#f0e5a5;}
+      .status-badge--error {background: #f8d7da; border-color: #f1aeb5;}
+      .status-badge--pending {background: #e3edf0; border-color: #cdd9dd;}
+      .agent-meta {display: block; margin-bottom: 8px; line-height: 1.5;}
+      .agent-meta .status-badge {margin-right: 6px;}
+      .agent-meta .agent-label {display: inline; font-size: 13px; color: #3a4b53;}
+      details {display:block; margin:0;}
+      details summary {list-style:none; cursor:pointer; font-weight:500; font-size:13px;}
+      details[open] summary {margin-bottom:8px;}
+      .details-toggle::before {content: "▶"; font-size:10px; margin-right:6px; transition: transform 160ms ease; display:inline-block;}
+      details[open] .details-toggle::before {transform: rotate(90deg);}
+      pre {white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px;}
+      .summary-box {padding:12px; border:1px solid #c4d3d7; background:#f7fafa; margin-top:12px;}
+      .findings {margin:0; padding-left:16px; font-size:13px;}
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">04B3 WEBクライアント Charts/Patients UX 検証 — 評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765019925954-151a8c・task/task-1765019926155-735e19・task/task-1765019926354-dd9811（いずれも HEAD=58430ef5、未コミットのQAログ/ドキュメント差分を評価）。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>task-1765019925954-151a8c <span class="medal">🥉</span></h2>
+          <div class="total">426 / 600</div>
+          <svg class="hex-chart" viewBox="-100 -90 200 180" data-scores="70,65,70,78,75,68" aria-label="六角形チャート">
+            <polygon points="0,-80 69,-40 69,40 0,80 -69,40 -69,-40" fill="none" stroke="#c4d3d7" stroke-width="2" />
+            <polygon class="fill" points="0,0 0,0 0,0 0,0 0,0 0,0" fill="#5ab0b0" fill-opacity="0.65" stroke="#3b7d7d" stroke-width="1.5" />
+          </svg>
+          <ul class="metric-list">
+            <li>実装整合性 70</li>
+            <li>検証網羅性 65</li>
+            <li>証跡充実度 70</li>
+            <li>手順再現性 78</li>
+            <li>トーン/ARIA適合 75</li>
+            <li>リスク・課題管理 68</li>
+          </ul>
+          <div>Playwright `route.fulfill` で server トーンを模擬し、missingMaster=false/cacheHit=true/dataSourceTransition=server をバナーとバッジで確認。実API未接続だが、再現手順とアーティファクトが揃い Bronze 判定。</div>
+        </div>
+        <div class="score-card">
+          <h2>task-1765019926155-735e19 <span class="medal">⚪️</span></h2>
+          <div class="total">405 / 600</div>
+          <svg class="hex-chart" viewBox="-100 -90 200 180" data-scores="60,55,80,75,65,70" aria-label="六角形チャート">
+            <polygon points="0,-80 69,-40 69,40 0,80 -69,40 -69,-40" fill="none" stroke="#c4d3d7" stroke-width="2" />
+            <polygon class="fill" points="0,0 0,0 0,0 0,0 0,0 0,0" fill="#4a90e2" fill-opacity="0.55" stroke="#2f5f9f" stroke-width="1.5" />
+          </svg>
+          <ul class="metric-list">
+            <li>実装整合性 60</li>
+            <li>検証網羅性 55</li>
+            <li>証跡充実度 80</li>
+            <li>手順再現性 75</li>
+            <li>トーン/ARIA適合 65</li>
+            <li>リスク・課題管理 70</li>
+          </ul>
+          <div>認証 401 のまま OutpatientMock で警告トーンを確認。ログ・DOM 抜粋は豊富だが本番導線未到達のためメダルなし。</div>
+        </div>
+        <div class="score-card">
+          <h2>task-1765019926354-dd9811 <span class="medal">⚪️</span></h2>
+          <div class="total">348 / 600</div>
+          <svg class="hex-chart" viewBox="-100 -90 200 180" data-scores="55,50,60,65,60,58" aria-label="六角形チャート">
+            <polygon points="0,-80 69,-40 69,40 0,80 -69,40 -69,-40" fill="none" stroke="#c4d3d7" stroke-width="2" />
+            <polygon class="fill" points="0,0 0,0 0,0 0,0 0,0 0,0" fill="#d86a6a" fill-opacity="0.55" stroke="#a23f3f" stroke-width="1.5" />
+          </svg>
+          <ul class="metric-list">
+            <li>実装整合性 55</li>
+            <li>検証網羅性 50</li>
+            <li>証跡充実度 60</li>
+            <li>手順再現性 65</li>
+            <li>トーン/ARIA適合 60</li>
+            <li>リスク・課題管理 58</li>
+          </ul>
+          <div>ログインが HTML 応答で失敗し、デモページの警告トーン確認に留まる。tmp/.npm-cache を含む未追跡ファイルが混入し品質リスク。</div>
+        </div>
+      </section>
+
+      <div class="summary-box">
+        <strong>総評:</strong> 3 ブランチともコードコミットはなく、QAログ・ドキュメントのみ更新。実 API で Reception→Charts→Patients を通した検証には至っておらず、認証/プロキシ/HeadlessChrome 制約が共通課題。最も進捗があるのは task-1765019925954-151a8c（モックで server トーンを再現）で Bronze。ほか2件はメダルなし。
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765019925954-151a8c</th>
+            <th>task-1765019926155-735e19</th>
+            <th>task-1765019926354-dd9811</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-06 21:46</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--warning">未コミット</span><span class="agent-label">DOC_STATUS/manager checklist へ RUN_ID=20251206T112050Z を追記。アーティファクト: `artifacts/webclient/e2e/20251206T112050Z-charts/`。</span></div>
+              <ul class="findings">
+                <li>Playwright route.fulfill で ORCA 応答をモックし、cacheHit=true/missingMaster=false/dataSourceTransition=server を ToneBanner・バッジで表示。</li>
+                <li>HeadlessChrome の React DevTools 無効化を init script (`window.__ALLOW_REACT_DEVTOOLS__=true`) で回避。</li>
+                <li>実 API／認証の成功確認は未実施。成果はモックに限定。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分</summary>
+                <pre>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md (+1)
+docs/web-client/planning/phase2/DOC_STATUS.md (+1/-1)
+artifacts/webclient/e2e/20251206T112050Z-charts/ (未追跡)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--warning">未コミット</span><span class="agent-label">RUN_ID=20251206T112049Z の QAログ・スクリーンショットを追加。認証 401 のまま。</span></div>
+              <ul class="findings">
+                <li>OutpatientMock で warning トーン（missingMaster=true/cacheHit=false/dataSourceTransition=server/resolveMasterSource=mock）を確認し、ARIA 抜粋・DOMを保存。</li>
+                <li>ログインが 401（MD5 認証失敗）で本番導線未到達。API 404/401 も未解消。</li>
+                <li>HeadlessChrome では React DevTools hook 無効化により白画面となるため UA 上書きで回避。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分</summary>
+                <pre>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md (+1)
+docs/web-client/planning/phase2/DOC_STATUS.md (+1/-1)
+artifacts/webclient/e2e/20251206T112049Z-charts/ (未追跡)
+src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md (未追跡)
+docs/server-modernization/phase2/operations/logs/20251206T112049Z-charts-qa.md (未追跡)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--warning">未コミット</span><span class="agent-label">RUN_ID=20251206T112108Z を DOC_STATUS/manager checklist に追記。tmp/.npm-cache も未追跡。</span></div>
+              <ul class="findings">
+                <li>Login 応答が HTML で JSON パースエラー、実画面到達不可。デモページ上で警告トーンのみ確認。</li>
+                <li>ToneBanner/StatusBadge 表示をスクリーンショット・summary.json に保存。</li>
+                <li>未追跡の `tmp/.npm-cache/` が混入しておりリポジトリ汚染リスク。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分</summary>
+                <pre>docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md (+1)
+docs/web-client/planning/phase2/DOC_STATUS.md (+2/-1)
+artifacts/webclient/e2e/20251206T112108Z-charts/ (未追跡)
+tmp/.npm-cache/ (未追跡)
+docs/server-modernization/phase2/operations/logs/20251206T112108Z-charts-qa.md (未追跡)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      const maxR = 80;
+      charts.forEach((el) => {
+        const scores = (el.dataset.scores || '').split(',').map(Number);
+        const points = scores.map((v, i) => {
+          const angle = -Math.PI / 2 + (Math.PI / 3) * i;
+          const r = maxR * (v / 100);
+          const x = (r * Math.cos(angle)).toFixed(1);
+          const y = (r * Math.sin(angle)).toFixed(1);
+          return `${x},${y}`;
+        }).join(' ');
+        const fill = el.querySelector('.fill');
+        if (fill && points.trim()) fill.setAttribute('points', points);
+      });
+    </script>
+  </body>
+</html>
