@@ -231,9 +231,9 @@ src:
       content: |-
         # 04B3 WEB クライアント：Charts/Patients UX 検証
 
-        - localhost で起動したモダナイズ版サーバー（例: `docker compose -f docker-compose.modernized.dev.yml up server-modernized-dev` → `http://localhost:9080/openDolphin/resources`）に web クライアントを接続し、Charts→Patients を走らせて `missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md に沿って出ることを確認。
-        - ローカル検証のストーリーボードとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-charts/ に保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナーの観察結果をまとめる（20251205T133848Z Stage 試行は DNS 失敗として記録済み）。
-        - docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。
+        - `setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/ docker いずれも可）で起動済みのモダナイズ版サーバー＋ Web クライアントを前提に、ログイン → Reception → Charts → Patients の導線を実際にたどり、`missingMaster`/`cacheHit` バナーと `dataSourceTransition=server` 表示が docs/web-client/ux/charts-claim-ui-policy.md のトーン要件どおりか確認する。
+        - ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。
+        - docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。
       priority: High
       status: in_progress
       progress: 30
@@ -295,8 +295,8 @@ src:
       content: |-
         # 04C3 WEB クライアント：API 接続検証
 
-        - モダナイズ版サーバーを localhost（例: `docker compose -f docker-compose.modernized.dev.yml up server-modernized-dev` → `http://localhost:9080/openDolphin/resources`）で起動し、web クライアントを同ホストに向けて Reception→Charts→Patients を実行、`dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。
-        - artifacts/webclient/e2e/<RUN_ID>-integration/ にローカル接続のログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグの観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。
+        - `setup-modernized-env.sh` で起動してもらったモダナイズ版サーバー（http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources を想定）に Web クライアントを接続し、ログイン直後のホーム→Reception→Charts→Patients のシーケンスで `dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。
+        - ログイン後ナビゲーションの現状（ヘッダー/サイドバー/タブ切替の遷移可否や遅延）を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録（20251214T090000Z は Stage 権限不足で未実施の placeholder として残置）。
         - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。
       priority: High
       status: in_progress
