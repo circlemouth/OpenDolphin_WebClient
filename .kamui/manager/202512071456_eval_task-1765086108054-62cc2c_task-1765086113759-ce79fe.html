@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .score-banner { display: flex; gap: 16px; align-items: center; padding: 12px 14px; background: #f8fbfc; border: 1px solid #c4d3d7; margin-bottom: 16px; font-weight: 700; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; margin-right: 6px; }
+      .status-badge--good { background: #d6f5df; border-color: #9dd6aa; }
+      .status-badge--warn { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .hex-chart { margin-bottom: 12px; }
+      .metric-list { font-size: 12px; color: #3a4b53; margin-bottom: 12px; line-height: 1.5; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク: 04A3/04B3 ドキュメントの検証環境切替（Stage→ローカルモダナイズ版サーバー）に関する 2 ワークツリー比較</p>
+        <div class="score-banner">合計点 (600点満点):
+          <span>task-1765086108054-62cc2c: 🥉 320 / 600</span>
+          <span>task-1765086113759-ce79fe: ⚪️ 100 / 600</span>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765086108054-62cc2c</th>
+            <th>task-1765086113759-ce79fe</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-07 14:56 JST</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--warn">部分達成</span> ガント更新を反映し、検証環境をローカルモダナイズ版サーバー前提に切替。</div>
+              <div class="hex-chart">
+                <svg width="180" height="150" viewBox="0 0 180 150" aria-label="六角形チャート">
+                  <polygon points="90,10 150,50 150,110 90,150 30,110 30,50" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="90,43 129,61 121,96 90,124 51,96 59,61" fill="#d6f5df" stroke="#9dd6aa" />
+                </svg>
+              </div>
+              <div class="metric-list">
+                要件適合 65 /100；機能合理性 60 /100；緻密性 55 /100；テスト/証跡 35 /100；ドキュメント追従 75 /100；リスク管理 30 /100<br/>合計: 320 /600（🥉）
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分ハイライト</summary>
+                <pre>04A3: Stage 前提の目的/手順を削除し、`setup-modernized-env.sh` でローカル起動→Reception→Charts を検証対象に変更。Stage 接続は別タスクへ委譲。
+04B3: RUN_ID=20251206T112050Z をローカル実接続に再定義。目的・次アクションをローカルモダナイズ版サーバー経由の QA に揃え、Stage/DNS 障害は参考情報に降格。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">改善度と残課題</summary>
+                <pre>- ガントの「ローカルで 04A3/04B3 を検証」に沿った文脈へ修正済み。
+- ただし実測・ログ・DOC_STATUS 更新は未着手のまま。進捗45%のままなので完了条件を満たしていない。
+- リスク: ローカル検証の手順/依存環境（証跡保存先・VITEフラグ）が未検証で、再現性が保証されていない。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--error">未達</span> Stage 前提の旧ガントに留まり、環境切替要求を未反映。</div>
+              <div class="hex-chart">
+                <svg width="180" height="150" viewBox="0 0 180 150" aria-label="六角形チャート">
+                  <polygon points="90,10 150,50 150,110 90,150 30,110 30,50" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="90,70 106,80 100,96 90,104 74,96 80,80" fill="#f8d7da" stroke="#f1aeb5" />
+                </svg>
+              </div>
+              <div class="metric-list">
+                要件適合 25 /100；機能合理性 20 /100；緻密性 20 /100；テスト/証跡 0 /100；ドキュメント追従 15 /100；リスク管理 20 /100<br/>合計: 100 /600（⚪️）
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">現状</summary>
+                <pre>- 04A3/04B3 とも Stage での DNS 不達を前提にした旧タスク記述のまま。
+- ガント指示の「ローカルサーバーで検証」へ切替が未実施。
+- DOC_STATUS/operations log 更新も未着手。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">懸念点</summary>
+                <pre>- 要件不一致: 実行環境が最新計画と逆向き。
+- 進捗誤認リスク: Stage 障害記録が残存し、ローカル検証の必要性が見えない。
+- 証跡欠如: ローカル/Stage いずれも検証ログが未反映でトレーサビリティが取れない。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
