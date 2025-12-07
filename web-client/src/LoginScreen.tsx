@@ -132,6 +132,13 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       setProfile(result);
       setFeedback('ログインに成功しました。');
       setStatus('success');
+      try {
+        localStorage.setItem('devFacilityId', result.facilityId);
+        localStorage.setItem('devUserId', result.userId);
+        localStorage.setItem('devPasswordMd5', await hashPasswordMd5(normalizedValues.password));
+      } catch (storageError) {
+        console.warn('認証情報の保存に失敗しましたが、ログイン処理は継続します。', storageError);
+      }
       onLoginSuccess?.(result);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'ログインに失敗しました。';

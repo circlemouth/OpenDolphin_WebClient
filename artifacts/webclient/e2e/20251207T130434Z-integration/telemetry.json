@@ -1,78 +1,11 @@
 {
-  "msw_on": [
-    {
-      "stage": "resolve_master",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "charts_orchestration",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "resolve_master",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "charts_orchestration",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "resolve_master",
-      "dataSourceTransition": "server",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "charts_orchestration",
-      "dataSourceTransition": "server",
-      "cacheHit": false,
-      "missingMaster": true
-    }
-  ],
-  "msw_off": [
-    {
-      "stage": "resolve_master",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "charts_orchestration",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "resolve_master",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "charts_orchestration",
-      "dataSourceTransition": "snapshot",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "resolve_master",
-      "dataSourceTransition": "server",
-      "cacheHit": false,
-      "missingMaster": true
-    },
-    {
-      "stage": "charts_orchestration",
-      "dataSourceTransition": "server",
-      "cacheHit": false,
-      "missingMaster": true
-    }
-  ]
+  "claimStatus": 404,
+  "claimUrl": "http://localhost:4174/api01rv2/claim/outpatient/mock",
+  "medicalStatus": 404,
+  "medicalUrl": "http://localhost:4174/orca21/medicalmodv2/outpatient"
+}{
+  "claimStatus": 404,
+  "claimUrl": "http://localhost:4173/api01rv2/claim/outpatient/mock",
+  "medicalStatus": 404,
+  "medicalUrl": "http://localhost:4173/orca21/medicalmodv2/outpatient"
 }
