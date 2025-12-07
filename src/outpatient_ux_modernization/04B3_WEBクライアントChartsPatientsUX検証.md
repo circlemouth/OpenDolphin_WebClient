@@ -1,30 +1,28 @@
 # 04B3 WEBクライアントCharts/Patients UX検証
 
-- **RUN_ID=20251206T112050Z（ローカル mock 検証）／20251205T133848Z（Stage 試走・DNS未解決）**。AGENTS→`docs/web-client/README.md`→`docs/server-modernization/phase2/INDEX.md`→`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の参照チェーンに従い、Charts/Patients の `missingMaster`/`cacheHit`/`dataSourceTransition=server` トーンを reception と整合させる QA を進行中。
+- **RUN_ID=20251206T112050Z（ローカルモダナイズ版サーバー接続で実施予定）**。AGENTS→`docs/web-client/README.md`→`docs/server-modernization/phase2/INDEX.md`→`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の参照チェーンに従い、`setup-modernized-env.sh` でローカル起動したモダナイズ版サーバー＋ Web クライアントを使って Charts/Patients の `missingMaster`/`cacheHit`/`dataSourceTransition=server` トーンを reception と整合させる QA を進行中。Stage での検証は 06_STAGE検証タスクへ移管。
 - YAML ID: `src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md`
-- ステータス: in_progress（ガント progress 45%）。Stage 接続復旧待ち。
+- ステータス: in_progress（ガント progress 45%）。ローカル実接続での検証をこれから実施。
 
 ## 1. 目的
-1. Reception→Charts→Patients の導線で `missingMaster`/`cacheHit`/`dataSourceTransition=server` バナーと `resolveMasterSource` 表示が `docs/web-client/ux/charts-claim-ui-policy.md` のトーン要件どおりかを検証する。
-2. Patients タブで `cacheHit=false` → `true` の遷移時に `resolveMasterSource` バナーが消えるかを確認し、`OrcaSummary` とのトーン差分があれば `styles` 修正候補を洗い出す。
-3. 遷移ストーリーボード・スクリーンショットを `artifacts/webclient/e2e/<RUN_ID>-charts/` に残し、operations log と DOC_STATUS へ紐づける。
+1. `setup-modernized-env.sh` で立ち上げたローカルモダナイズ版サーバーに Web クライアントを接続し、Reception→Charts→Patients の導線で `missingMaster`/`cacheHit`/`dataSourceTransition=server` バナーと `resolveMasterSource` 表示が `docs/web-client/ux/charts-claim-ui-policy.md` のトーン要件どおりかを検証する。
+2. Patients タブで `cacheHit=false` → `true` に遷移した際、`resolveMasterSource` バナーが適切に消えるか、`OrcaSummary` とのトーン差分がないかを確認する。
+3. ストーリーボード・スクリーンショットを `artifacts/webclient/e2e/20251206T112050Z-charts/` に残し、operations log と DOC_STATUS に紐づける。
 
 ## 2. 実施結果（現状の進捗）
-- **20251206T112050Z（ローカル Outpatient mock / Playwright route.fulfill）**  
-  - `missingMaster=true` → `cacheHit=true` → `dataSourceTransition=server` のトーン遷移を再現。`DocumentTimeline`・`Patients` で `ToneBanner` が `warning→info` に遷移し、`aria-live` は `assertive→polite` に切替できることを確認。  
-  - 証跡: `artifacts/webclient/e2e/20251206T112050Z-charts/`（01-login-success.png, 02-outpatient-mock-overview.png, 03-reception-tone.png, 04-charts-tone.png, storyboard.md）。operations log は未発行（次アクションで `docs/server-modernization/phase2/operations/logs/20251206T112050Z-charts-qa.md` を作成予定）。
-- **20251205T133848Z（Stage 試走）**  
-  - `stage.open-dolphin` が DNS 解決できず `/api01rv2/claim/outpatient/*` / `/orca21/medicalmodv2/outpatient` へ到達不可。トーンバナーは接続未設定状態のまま。  
-  - 証跡: `artifacts/webclient/e2e/20251205T133848Z-charts/`（charts-stage.png, charts-stage.log, storyboard.md）。operations log `docs/server-modernization/phase2/operations/logs/20251205T133848Z-charts-qa.md` は未作成。
-- 依存タスク: 実装面は 04B2 完了済み（`docs/server-modernization/phase2/operations/logs/20251212T090000Z-charts-orca.md`）。本タスクは検証と DOC_STATUS 反映のみ残存。
+- ローカルモダナイズ版サーバーへの実接続検証: 未実施（ガント切替後に着手予定）。
+- 参考（旧計画の試走）
+  - 20251206T112050Z: Playwright の `route.fulfill` でモックしたローカル検証を実施し、`missingMaster=true` → `cacheHit=true` → `dataSourceTransition=server` のトーン遷移を確認。証跡は `artifacts/webclient/e2e/20251206T112050Z-charts/`（01-login-success.png, 02-outpatient-mock-overview.png, 03-reception-tone.png, 04-charts-tone.png, storyboard.md）。operations log は未発行。
+  - 20251205T133848Z: Stage 試走は DNS 解決不可で到達できず。証跡のみ `artifacts/webclient/e2e/20251205T133848Z-charts/` に保管（本タスクの達成条件外）。
+- 依存タスク: 実装面は 04B2 完了済み（`docs/server-modernization/phase2/operations/logs/20251212T090000Z-charts-orca.md`）。本タスクはローカル実接続での検証と DOC_STATUS 反映が未了。
 
 ## 3. 反映状況
-- `.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml` では status=in_progress / progress=45%。本ドキュメント新規作成で進捗を可視化。
-- DOC_STATUS の Web クライアント UX/Features 行には Stage 試走／ローカル mock の結果が未反映。次アクションで RUN_ID と証跡パスを追記する。
-- Manager checklist（`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`）の該当行も Stage 再実行後に更新予定。
+- `.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml` では status=in_progress / progress=45%（ローカル実接続完了で 100% へ更新予定）。
+- DOC_STATUS の Web クライアント UX/Features 行と `docs/web-client/ux/ux-documentation-plan.md` にはローカル実接続結果が未反映。完了後、RUN_ID と証跡パスを追加する。
+- Manager checklist（`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`）の該当行はローカル QA 完了後に更新する。Stage 分は 06_STAGE検証タスクで扱う。
 
 ## 4. 次のアクション
-1. Stage DNS/ネットワーク復旧後、同 RUN_ID=20251205T133848Z を再利用して Reception→Charts→Patients を再走し、`dataSourceTransition=server` と `missingMaster` バナーを Stage 由来のレスポンスで確認。成功時に operations log を新規作成して上書き可。
-2. ローカル mock 検証分として `docs/server-modernization/phase2/operations/logs/20251206T112050Z-charts-qa.md` を作成し、`artifacts/webclient/e2e/20251206T112050Z-charts/` へのリンク・観測メモを記載。
-3. DOC_STATUS（`docs/web-client/planning/phase2/DOC_STATUS.md`）と UX 計画（`docs/web-client/ux/ux-documentation-plan.md`）へ両 RUN_ID の QA 結果を追記し、ガントの progress を 70–80% へ更新できる状態にする。
-4. Patients タブの `cacheHit=false` で `resolveMasterSource` バナーが残留するケースがあれば、`web-client/src/features/charts/styles.ts` と `ux/charts/tones.ts` の追従修正案を artifacts へ記録し次回スプリントへ引き継ぐ。
+1. `setup-modernized-env.sh` でモダナイズ版サーバー＋ Web クライアントをローカル起動し、Reception→Charts→Patients を実接続で走らせて `missingMaster`/`cacheHit`/`dataSourceTransition=server` の挙動とトーンを確認する。
+2. 検証結果を `artifacts/webclient/e2e/20251206T112050Z-charts/` に追記し、operations log `docs/server-modernization/phase2/operations/logs/20251206T112050Z-charts-qa.md` を作成して条件・観測メモを整理する。
+3. DOC_STATUS（`docs/web-client/planning/phase2/DOC_STATUS.md`）と `docs/web-client/ux/ux-documentation-plan.md` にローカル QA の結果と RUN_ID/証跡パスを反映し、ガント progress を完了相当へ更新する。
+4. Patients タブで `cacheHit=false` 時に `resolveMasterSource` バナーが残留するケースがあれば、`web-client/src/features/charts/styles.ts` と `ux/charts/tones.ts` の修正案を artifacts に追記し次スプリントへ引き継ぐ。
