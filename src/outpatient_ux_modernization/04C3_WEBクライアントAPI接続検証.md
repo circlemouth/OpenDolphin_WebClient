@@ -47,14 +47,13 @@
 - QA メモ: `docs/server-modernization/phase2/operations/logs/20251207T130434Z-integration-qa.md`
 - HAR/console: `artifacts/webclient/e2e/20251207T130434Z-integration/network.har`（msw-off HAR, on/off 版も別ファイル）、`console.txt`
 
-## 6. 現状と次アクション（2025-12-07）
-- 実行状況: ローカルモダナイズ版サーバーに MSW ON/OFF でログインし、Reception→Charts→Outpatient Mock を一巡。`missingMaster=true` / `cacheHit=false` のまま snapshot→server ルートで telemetry が記録され、API の一部は 401/404。
-- 所感: 認可ヘッダー不足の可能性が高く、`cacheHit=true` / `missingMaster=false` の正常系を取得できていない。tone バナーは `missingMaster=true` 継続で表示され、carry-over は確認できた。
+## 6. 現状と次アクション（2025-12-07 更新）
+- 実行状況: ローカルモダナイズ版サーバーに MSW ON/OFF でログインし、`httpFetch` に `userName` / `password(md5)` / `X-Facility-Id` を自動付与。401 は解消したが、`/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` はどちらも 404。`server-modernized` を全文検索したところ、両パスを処理する Controller/Resource/Route が存在せず、`OrcaEndpoint` でも外来 `claim/medicalmodv2` 系は未列挙。dev プロキシ（vite.config.ts）の `/api01rv2` `/orca21` マッピング先にバックエンド実装が無いことが原因と判断。
+- 所感: 現状のモダナイズ版サーバーでは対象エンドポイントが未実装のため、正常系レスポンス（`cacheHit=true` / `missingMaster=false`）は取得不能。
 - 次アクション:
-  - [ ] 認証ヘッダー/シードを見直し、`dataSourceTransition=server` で `missingMaster=false` となるケースを再取得。
-  - [ ] Stage/Preview での再検証は 06_STAGE検証タスクに切り出す。
-  - [ ] 401/404 を返したエンドポイントを特定し、再実行時に `cacheHit=true` まで到達させる。
-  - [ ] 本ドキュメントと QA ログに追記し、正常系取得後に DOC_STATUS を更新。
+  - [ ] どちらの API をどのリソースに実装するか（既存 `/orca/*` ラッパーに追加 vs. 新規 gateway）を決定し、実装計画を立案する。
+  - [ ] 実装後に MSW OFF で再取得し、`cacheHit=true` / `missingMaster=false` の telemetry を採取して本ドキュメント・QA ログ・DOC_STATUS を更新。
+  - [ ] Stage/Preview での再検証は 06_STAGE検証タスクに切り出す（本 RUN ではローカル接続のみ）。
 注意: Stage/Preview への接続は本タスク外。旧 RUN の Stage 前提ログは参考のみで、本 RUN の判断や結果と混同しないこと。
 
 ## 7. 旧計画/参考（Stage 前提、混同禁止）

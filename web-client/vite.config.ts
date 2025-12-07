@@ -18,7 +18,24 @@ const apiProxy = {
     target: apiProxyTarget,
     changeOrigin: true,
     secure: false,
-    rewrite: (path: string) => path.replace(/^\/api\b/, ''),
+    // /api/ にのみマッチさせ、/api01rv2 などは書き換えない。
+    rewrite: (path: string) => path.replace(/^\/api(?=\/|$)/, ''),
+  },
+  // ORCA / 外来 API 群を開発プロキシ経由でモダナイズ版サーバーへ中継する。
+  '/api01rv2': {
+    target: apiProxyTarget,
+    changeOrigin: true,
+    secure: false,
+  },
+  '/orca21': {
+    target: apiProxyTarget,
+    changeOrigin: true,
+    secure: false,
+  },
+  '/orca12': {
+    target: apiProxyTarget,
+    changeOrigin: true,
+    secure: false,
   },
 } as const;
 
