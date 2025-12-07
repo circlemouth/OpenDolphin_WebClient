@@ -1,23 +1,35 @@
 # 04A3 WEBクライアント受付UX検証とDOC_STATUS反映
 
-- **RUN_ID=20251205T200000Z**。AGENTS→`docs/web-client/README.md`→`docs/server-modernization/phase2/INDEX.md`→`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の参照チェーンに従い、`setup-modernized-env.sh`（WEB_CLIENT_MODE=npm/docker いずれも可）でローカル起動したモダナイズ版サーバー＋ Web クライアントを使って Reception→Charts の `tone=server` / `dataSourceTransition=server` / `missingMaster` を検証し、DOC_STATUS／UX ドキュメントへ反映する。Stage 接続は 06_STAGE検証タスクへ委譲。
-- 期間: 2025-12-05 21:55 - 22:05 JST（優先度: high / 緊急度: medium）。
+- **RUN_ID=20251207T062903Z**。AGENTS→`docs/web-client/README.md`→`docs/server-modernization/phase2/INDEX.md`→`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の参照チェーンに従い、ローカル起動したモダナイズ版サーバー＋ Web クライアントで Reception→Charts の `tone=server` / `dataSourceTransition=server` / `missingMaster` を検証し、DOC_STATUS／UX ドキュメントへ反映する。Stage 接続は 06_STAGE検証タスクへ委譲。
+- 期間: 2025-12-07 06:42 - 06:48 UTC（優先度: high / 緊急度: medium）。
 - YAML ID: `src/outpatient_ux_modernization/04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md`
 
 ## 1. 目的
-1. `setup-modernized-env.sh` でローカルのモダナイズ版サーバーを起動し、Reception→Charts のフローを `VITE_DISABLE_MSW=0`（通常接続）で走らせて `dataSourceTransition=server` と `missingMaster` バナーの tone/ARIA 表示が UX ポリシーと一致するか確認する。
-2. `VITE_DISABLE_MSW=1` の無通信モードでも UI が落ちずに fallback 表示できるか、`missingMaster=false` ケースの `aria-live` が `polite` に切り替わるかを確認する。
-3. ローカル検証のスクリーンショット・補助ログを `artifacts/webclient/e2e/20251205T200000Z-reception/` に保存し、`docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md` に手順と観測結果を記録。`docs/web-client/planning/phase2/DOC_STATUS.md` / `docs/web-client/ux/ux-documentation-plan.md` に RUN_ID と証跡を反映する。
+1. `VITE_DISABLE_MSW=0`（通常接続）で Reception→Charts の `dataSourceTransition=server` / `missingMaster` バナーの tone／ARIA が UX ポリシーと一致するか確認する（missingMaster=true / false 両ケース）。
+2. `VITE_DISABLE_MSW=1`（無通信）でも UI がクラッシュせず fallback 表示できるか、`missingMaster=false` 時に `aria-live=polite` へ切り替わることを再確認する。
+3. スクリーンショット・補助ログを `artifacts/webclient/e2e/20251207T062903Z-reception/` に保存し、`docs/server-modernization/phase2/operations/logs/20251207T062903Z-reception-qa.md` に手順と観測結果を記録。`docs/web-client/planning/phase2/DOC_STATUS.md` / `docs/web-client/ux/ux-documentation-plan.md` へ RUN_ID と証跡を反映する。
 
 ## 2. 実施結果
-- ローカルモダナイズ版サーバーでの Reception→Charts 検証は未着手。環境切替（Stage→ローカル）に伴い、旧 Stage 試走結果は参考情報として保持しつつ本タスクの達成条件には含めない。
-- 参考（旧計画: Stage 試走）: `stage.open-dolphin` の DNS が解決できず ORCA/Charts データは取得不可。詳細は `docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md` の旧記録を参照（再検証時に上書き予定）。
+- 通常接続（MSW有効, port 4173）
+  - missingMaster=true: ToneBanner aria-live=assertive（warning）、StatusBadge missingMaster=true / cacheHit=false。telemetry `resolve_master`→`charts_orchestration` に `dataSourceTransition=server` を記録。
+  - missingMaster=false: ToneBanner aria-live=polite（info）、StatusBadge missingMaster=false / cacheHit=true。telemetry 2 ステージで cacheHit=true / missingMaster=false を保持。
+- 無通信（MSW無効, port 4174）
+  - API を abort しても UI は描画を継続し、初期値 missingMaster=true / cacheHit=false / dataSourceTransition=snapshot を warning トーン（aria-live=assertive）で表示。telemetry は発火せず。
+- スクリーンショット・ログ: `artifacts/webclient/e2e/20251207T062903Z-reception/{fulfill-warn.png,fulfill-info.png,fallback-fallback.png,fulfill-results.json,fallback-results.json}`。
+- 詳細ログ: `docs/server-modernization/phase2/operations/logs/20251207T062903Z-reception-qa.md` に手順・観測と既知課題を記載。
+- QA（MSW有効/無効両方）は完了済み（RUN_ID=20251207T062903Z）。
 
 ## 3. 反映内容
-- DOC_STATUS / UX 計画はローカル検証完了後に更新予定（現状は旧 Stage 試走のメモのみ）。RUN_ID と証跡パスはローカル検証ログで上書きする。
-- operations log `docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md` はローカル検証手順と結果を追記・上書きする前提で保持。
+- operations log: `docs/server-modernization/phase2/operations/logs/20251207T062903Z-reception-qa.md` を新規追加。
+- DOC_STATUS「Web クライアント UX/Features」行へ RUN_ID と証跡パスを追記済み。
+- `docs/web-client/ux/ux-documentation-plan.md` の進行メモに本 RUN の完了とガント完了相当を追記。
 
 ## 4. 次のアクション
-1. `setup-modernized-env.sh` でモダナイズ版サーバー＋ Web クライアントをローカル起動し、Reception→Charts を通常接続／`VITE_DISABLE_MSW=1` の両モードで走らせてスクリーンショットとログを取得する。
-2. `artifacts/webclient/e2e/20251205T200000Z-reception/` にキャプチャと補助ログを保存し、operations log（`docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md`）へ検証条件・観測結果を整理して上書き。
-3. DOC_STATUS の Web クライアント UX/Features 行と `docs/web-client/ux/ux-documentation-plan.md` にローカル検証結果と RUN_ID/証跡パスを追記し、ガント progress を完了相当へ更新する。
+1. fallback 時 telemetry 空転への対処方針検討（別 RUN で起票）。依存: `tmp/run-outpatient-ux.mjs` の abort シナリオ、`artifacts/webclient/e2e/20251207T062903Z-reception/fallback-{results.json,fallback.png}` の観測結果。
+2. Stage 接続（06_TASK）を再許可されたタイミングで再実測し、server 実 API での tone/aria-live を突合する。
+
+## 5. 進捗メモ（RUN_ID=20251207T062903Z）
+- 2025-12-07 06:42-06:48 UTC: Reception→Charts の通常接続/無通信 QA 実施、スクリーンショット保存。
+- 2025-12-07 06:50 UTC: operations log 追記（`docs/server-modernization/phase2/operations/logs/20251207T062903Z-reception-qa.md`）。
+- 2025-12-07 06:55 UTC: DOC_STATUS / UX ドキュメントへ反映済み。
+- 残件: fallback telemetry 空転の扱い検討を別 RUN で起票予定（依存ファイルは上記参照）。
