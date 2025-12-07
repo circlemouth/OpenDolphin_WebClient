@@ -1,0 +1,78 @@
+{
+  "msw_on": [
+    {
+      "stage": "resolve_master",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "charts_orchestration",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "resolve_master",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "charts_orchestration",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "resolve_master",
+      "dataSourceTransition": "server",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "charts_orchestration",
+      "dataSourceTransition": "server",
+      "cacheHit": false,
+      "missingMaster": true
+    }
+  ],
+  "msw_off": [
+    {
+      "stage": "resolve_master",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "charts_orchestration",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "resolve_master",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "charts_orchestration",
+      "dataSourceTransition": "snapshot",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "resolve_master",
+      "dataSourceTransition": "server",
+      "cacheHit": false,
+      "missingMaster": true
+    },
+    {
+      "stage": "charts_orchestration",
+      "dataSourceTransition": "server",
+      "cacheHit": false,
+      "missingMaster": true
+    }
+  ]
+}
