@@ -25,10 +25,13 @@
 - フィルタやタブ切替後のリロード/オートリロードでもクエリパラメータやストレージに保存した条件が復元されること。
 
 ## 4. 次ステップ
+- RUN_ID=`20251206T111508Z`：`tests/e2e/outpatient-flags.msw.spec.ts` をローカル（MSW preflight）で実行し、Reception→Charts の tone=server／dataSourceTransition=server／missingMaster/cacheHit バナーの `role=alert`＋`aria-live`（warning=assertive、info=polite）を 2 パターン確認。ログ `docs/server-modernization/phase2/operations/logs/20251206T111508Z-reception-qa.md`、スクリーンショット＋dev ログ `artifacts/webclient/e2e/20251206T111508Z-reception/`。Stage/Live 権限は未取得のため、実 API での再測定を別 RUN で追跡する。
 - Stage Preview/Playwright の reception→Charts チェーンで `dataSourceTransition=server` + `missingMaster` トーンを QA する RUN_ID=`20251205T200000Z` を記録。`docs/server-modernization/phase2/operations/logs/20251205T200000Z-reception-qa.md` / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.png` （スクリーンショット） / `artifacts/webclient/e2e/20251205T200000Z-reception/reception-stage.log`（補助ログ）を更新したが、`stage.open-dolphin` が DNS で解決できず Stage からの `dataSourceTransition` フラグは取得できないため、同一 RUN_ID を再利用して再検証する必要がある。
 - ORCA エラー共有バナーと病名未紐付警告の tone/aria-live を Reception/Charts で統一し、Playwright ケースの前提を本計画に記録する。
 - Patients からの戻り導線と Administration からの設定配信タイミング（即時/次回リロード）を確認し、監査ログ要件と合わせて各ポリシーに追記する。
 - README / manager checklist で UX 草稿更新を周知し、DOC_STATUS の UX/Features 行に反映済みの旨を維持する。
+- RUN_ID=`20251207T062903Z`：ローカル modernized server + web-client (Vite dev) で Reception→Charts を MSW有効/無効の両モードで検証。`tone=server` / `dataSourceTransition=server` のまま missingMaster=true では aria-live=assertive、missingMaster=false では aria-live=polite になることを確認。通信断（MSW無効 + route abort）でも UI は警告トーンで描画継続。証跡: `docs/server-modernization/phase2/operations/logs/20251207T062903Z-reception-qa.md`、スクリーンショット+メタ `artifacts/webclient/e2e/20251207T062903Z-reception/{fulfill-*.png,fallback-*.png,*-results.json}`。本計画ガントは 04A3 を完了扱いに更新。
+- RUN_ID=`20251207T094118Z`：Charts/Patients ローカル実接続 QA（VITE_DISABLE_MSW=1, port 4176）。`/login` で UI ロードが進まず timeout、Charts/Patients 到達前に停止。証跡: `docs/server-modernization/phase2/operations/logs/20251207T094118Z-charts-qa.md`、`artifacts/webclient/e2e/20251207T094118Z-charts/{99-error.png,results.json}`。次 RUN で login 成功→Patients トーンを再測予定。
 
 ## 5. 20251203T143858Z 外来 UX 要件レビュー
 - 目的: `docs/web-client/ux/ux-documentation-plan.md` を起点に reception/patients/Charts 各草稿を再読し、外来カルテ・受付のトーン、レイアウト比率、ARIA/監査要件を整理。Legacy 資料（`docs/web-client/ux/legacy/`）は履歴参照のみとし、入院向け ORCA API やバナーは本レビューの対象外とする。

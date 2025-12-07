@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        padding: 12px 14px;
+        background: #f8fbfc;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 16px;
+        font-weight: 700;
+      }
+      .score-value {
+        font-size: 22px;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .hex-chart { margin-bottom: 12px; }
+      .metric-list { font-size: 12px; color: #3a4b53; margin-bottom: 12px; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク: 04A3/04B3 ドキュメント検証環境をローカルサーバーへ更新する指示に対する実装評価</p>
+        <div class="score-banner">タスク合計点 (600点満点): ❌ 0 / 600 - どちらのブランチも master と同一で要求変更が未反映</div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task/task-1765086108255-b4621b</th>
+            <th>task/task-1765086108054-62cc2c</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-07 14:55 JST</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--error">未達</span> ガント指示「ローカルサーバー検証」への追随なし。</div>
+              <div class="hex-chart">
+                <svg width="180" height="150" viewBox="0 0 180 150" aria-label="六角形チャート">
+                  <polygon points="90,10 150,50 150,110 90,150 30,110 30,50" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="97,80 93.5,73.938 86.5,73.938 83,80 86.5,86.062 93.5,86.062" fill="#f8d7da" stroke="#b08c8c" />
+                </svg>
+              </div>
+              <div class="metric-list">
+                要件適合 0 /100, 機能合理性 0 /100, 緻密性 0 /100, テスト/証跡 0 /100, ドキュメント追従 0 /100, リスク管理 0 /100<br/>合計: 0 /600 🏅⚪️</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分とログ</summary>
+                <pre>git diff --stat master..task/task-1765086108255-b4621b
+(差分なし)
+
+git log --oneline -n 5 task/task-1765086108255-b4621b
+c1cefe15 Merge branch 'task/task-1765032400837-65c7b2'
+eacd0c62 chore: update kamui state before merge
+4a25a340 feat: add login app shell routing to reception and charts demos
+3af19c2b Merge branch 'task/task-1765031508284-c62ef4'
+4de3e9a8 Update kamui state cache
+
+対象ドキュメント（例）:
+src/outpatient_ux_modernization/04A3_WEBクライアント受付UX検証とDOC_STATUS反映.md
+→ Stage 環境での検証前提のまま。最新ガント指示「ローカルサーバーで検証」に未対応。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>- ブランチが master と同一で実装差分が存在せず、要求された環境切替（Stage→ローカル）を反映していない。
+- DOC_STATUS 連携・証跡更新も未実施のためトレーサビリティ確保に至らず。
+- 新規コミットなしのためテスト/検証ログも欠如。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--error">未達</span> 同上、進捗45%記載のまま停滞。</div>
+              <div class="hex-chart">
+                <svg width="180" height="150" viewBox="0 0 180 150" aria-label="六角形チャート">
+                  <polygon points="90,10 150,50 150,110 90,150 30,110 30,50" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="97,80 93.5,73.938 86.5,73.938 83,80 86.5,86.062 93.5,86.062" fill="#f8d7da" stroke="#b08c8c" />
+                </svg>
+              </div>
+              <div class="metric-list">
+                要件適合 0 /100, 機能合理性 0 /100, 緻密性 0 /100, テスト/証跡 0 /100, ドキュメント追従 0 /100, リスク管理 0 /100<br/>合計: 0 /600 🏅⚪️</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分とログ</summary>
+                <pre>git diff --stat master..task/task-1765086108054-62cc2c
+(差分なし)
+
+git log --oneline -n 5 task/task-1765086108054-62cc2c
+c1cefe15 Merge branch 'task/task-1765032400837-65c7b2'
+eacd0c62 chore: update kamui state before merge
+4a25a340 feat: add login app shell routing to reception and charts demos
+3af19c2b Merge branch 'task/task-1765031508284-c62ef4'
+4de3e9a8 Update kamui state cache
+
+対象ドキュメント:
+src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md
+→ Stage 接続復旧待ち/ローカル mock 記載のまま。ガントの「ローカルサーバー検証」へ切替未反映。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>- master と同一でコミット差分なし。ガント更新に基づくローカル検証手順・RUN_ID 反映が未実施。
+- DOC_STATUS や operations log の追記予定が残ったまま進捗なし。
+- エビデンス不足（Stage DNS 未解決のまま）。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

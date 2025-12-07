@@ -29,8 +29,18 @@ const DEFAULT_FLAGS: AuthServiceFlags = {
 
 const AuthServiceContext = createContext<AuthServiceContextValue | null>(null);
 
-export function AuthServiceProvider({ children }: { children: ReactNode }) {
-  const [flags, setFlags] = useState(DEFAULT_FLAGS);
+export function AuthServiceProvider({
+  children,
+  initialFlags,
+}: {
+  children: ReactNode;
+  initialFlags?: Partial<AuthServiceFlags>;
+}) {
+  const [flags, setFlags] = useState<AuthServiceFlags>({
+    ...DEFAULT_FLAGS,
+    ...initialFlags,
+    runId: initialFlags?.runId ?? DEFAULT_FLAGS.runId,
+  });
 
   const setMissingMaster = useCallback((next: boolean) => {
     setFlags((prev) => ({ ...prev, missingMaster: next }));

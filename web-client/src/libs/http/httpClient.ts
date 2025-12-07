@@ -1,5 +1,45 @@
 import { applyHeaderFlagsToInit } from './header-flags';
 
+type StoredAuth = {
+  facilityId: string;
+  userId: string;
+  passwordMd5?: string;
+};
+
+function readStoredAuth(): StoredAuth | null {
+  if (typeof localStorage === 'undefined') {
+    return null;
+  }
+  const facilityId = localStorage.getItem('devFacilityId');
+  const userId = localStorage.getItem('devUserId');
+  const passwordMd5 = localStorage.getItem('devPasswordMd5') ?? undefined;
+  if (!facilityId || !userId) {
+    return null;
+  }
+  return { facilityId, userId, passwordMd5 };
+}
+
+function applyAuthHeaders(init?: RequestInit): RequestInit {
+  const stored = readStoredAuth();
+  if (!stored) {
+    return init ?? {};
+  }
+
+  const headers = new Headers(init?.headers ?? {});
+  // 既存の指定がある場合は尊重し、足りないものだけ補完する。
+  if (!headers.has('userName')) {
+    headers.set('userName', `${stored.facilityId}:${stored.userId}`);
+  }
+  if (!headers.has('password') && stored.passwordMd5) {
+    headers.set('password', stored.passwordMd5);
+  }
+  if (!headers.has('X-Facility-Id')) {
+    headers.set('X-Facility-Id', stored.facilityId);
+  }
+
+  return { ...(init ?? {}), headers };
+}
+
 export type HttpEndpointDefinition = {
   id: string;
   group?: 'outpatient';
@@ -89,6 +129,8 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
 export function httpFetch(input: RequestInfo | URL, init?: RequestInit) {
   // Header flags are applied here to propagate Playwright extraHTTPHeaders.
   // 新しいフラグを追加する場合は header-flags.ts に追記し、この呼び出しで一括適用される前提。
-  const initWithFlags = applyHeaderFlagsToInit(init);
-  return fetch(input, initWithFlags);
+  const initWithFlags = applyHeaderFlagsToInit(applyAuthHeaders(init));
+  // 認証クッキー（JSESSIONID 等）を常に送るため、デフォルトで include を付与する。
+  const credentials = initWithFlags.credentials ?? 'include';
+  return fetch(input, { ...initWithFlags, credentials });
 }
