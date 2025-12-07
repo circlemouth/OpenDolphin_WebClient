@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .totals { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 20px; }
+      .total-card { background: #f5f9fa; border: 1px solid #c4d3d7; padding: 12px 14px; }
+      .total-card h2 { margin: 0 0 6px; font-size: 14px; color: #2c3a40; }
+      .total-score { font-size: 20px; font-weight: 700; }
+      .trophy { font-size: 22px; margin-right: 6px; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-length: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .status-badge--warn { background: #fff3cd; border-color: #f0e3a1; }
+      .status-badge--ok { background: #d7f0e3; border-color: #a8d7bf; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .score-block { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin-bottom: 10px; }
+      .hex-chart svg { width: 140px; height: 140px; }
+      .hex-outline { fill: none; stroke: #c4d3d7; stroke-width: 1.2; }
+      .hex-value { fill: rgba(221, 85, 85, 0.18); stroke: #d95555; stroke-width: 1.4; }
+      .metric-list { list-style: none; padding: 0; margin: 6px 0 0; font-size: 12px; color: #2c3a40; }
+      .metric-list li { margin-bottom: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">04C3 WEBクライアント API接続検証｜評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765020161634-fed6c8, task/task-1765020161826-c0f40e, task/task-1765020161979-2cd556。master (8c4952a) 基準で未コミット差分を評価。</p>
+      </header>
+      <div class="totals">
+        <div class="total-card">
+          <h2>task-1765020161634-fed6c8</h2>
+          <div class="total-score"><span class="trophy">⚪️</span>140 / 600</div>
+          <div>ローカル接続失敗の所見追記と証跡リンク整理のみ。接続目標は未達。</div>
+        </div>
+        <div class="total-card">
+          <h2>task-1765020161826-c0f40e</h2>
+          <div class="total-score"><span class="trophy">⚪️</span>60 / 600</div>
+          <div>PID ファイル削除と未コミット artifacts のみ。実装・文書更新なし。</div>
+        </div>
+        <div class="total-card">
+          <h2>task-1765020161979-2cd556</h2>
+          <div class="total-score"><span class="trophy">🥉</span>240 / 600</div>
+          <div>ローカル接続試行の証跡追加と依存性整理・lint 修正を実施。API 404 により主要検証は未達。</div>
+        </div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1765020161634-fed6c8</th>
+            <th>gemini cli / task-1765020161826-c0f40e</th>
+            <th>gemini cli / task-1765020161979-2cd556</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-06 22:22</td>
+            <td>
+              <div class="score-block">
+                <div class="hex-chart"><svg viewBox="0 0 120 120" aria-label="六角チャート"><polygon class="hex-outline" points="110,60 85,103 35,103 10,60 35,17 85,17" /><polygon class="hex-value" points="60,60 60,60 60,60 60,60 60,60 60,60" /></svg></div>
+                <ul class="metric-list">
+                  <li>コード品質 10</li>
+                  <li>完成度 20</li>
+                  <li>網羅性 25</li>
+                  <li>テスト 0</li>
+                  <li>ドキュメント 75</li>
+                  <li>安定性 10</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warn">未達</span>
+                <span class="agent-label">接続失敗を RUN_ID=20251206T112428Z として DOC_STATUS/UX計画/manager checklist へ追記。tone/telemetry は未検証。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">変更概要</summary>
+                <pre>git diff --stat
+ docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md | 1 +
+ docs/web-client/planning/phase2/DOC_STATUS.md                     | 2 +-
+ docs/web-client/ux/ux-documentation-plan.md                       | 1 +
+ src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md | 1 +
+ 4 files changed, 4 insertions(+), 1 deletion(-)
+
+未追跡: artifacts/webclient/e2e/20251206T112428Z-integration/, tmp/run-outpatient-integration.mjs</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価ポイント</summary>
+                <pre>- 事実記録と証跡リンクは追加できているが、API 404/204 により目的の tone/telemetry 検証は未達。
+- 実装コードへの反映なし。テストなし。
+- 次アクション: モダナイズ版サーバーの `/api01rv2/claim/outpatient` / `/orca21/medicalmodv2/outpatient` 側設定を確認し、再試行結果を追記。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="score-block">
+                <div class="hex-chart"><svg viewBox="0 0 120 120" aria-label="六角チャート"><polygon class="hex-outline" points="110,60 85,103 35,103 10,60 35,17 85,17" /><polygon class="hex-value" points="60,60 60,60 60,60 60,60 60,60 60,60" /></svg></div>
+                <ul class="metric-list">
+                  <li>コード品質 10</li>
+                  <li>完成度 5</li>
+                  <li>網羅性 10</li>
+                  <li>テスト 0</li>
+                  <li>ドキュメント 5</li>
+                  <li>安定性 30</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warn">未達</span>
+                <span class="agent-label">PID ファイル削除のみ。検証ログは未コミット artifacts として残存。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">変更概要</summary>
+                <pre>git diff --stat
+ tmp/web-client-dev.pid | 1 -
+ 1 file changed, 1 deletion(-)
+
+未追跡: artifacts/webclient/e2e/20251206T112426Z-integration/</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価ポイント</summary>
+                <pre>- 実装・ドキュメント更新がなく、接続検証成果が見えない。
+- artifacts はコミットされておらず再現性が低い。
+- 次アクション: 検証ログを文書化し、必要ならコード/設定差分を反映。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="score-block">
+                <div class="hex-chart"><svg viewBox="0 0 120 120" aria-label="六角チャート"><polygon class="hex-outline" points="110,60 85,103 35,103 10,60 35,17 85,17" /><polygon class="hex-value" points="60,60 60,60 60,60 60,60 60,60 60,60" /></svg></div>
+                <ul class="metric-list">
+                  <li>コード品質 40</li>
+                  <li>完成度 35</li>
+                  <li>網羅性 30</li>
+                  <li>テスト 10</li>
+                  <li>ドキュメント 80</li>
+                  <li>安定性 45</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warn">部分達成</span>
+                <span class="agent-label">依存性追加・unused import 削除でビルド健全性を改善。ローカル接続 QA を記録したが API 404 で本来のトーン/telemetry 検証は未達。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">変更概要</summary>
+                <pre>git diff --stat
+ docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md |  1 +
+ docs/web-client/planning/phase2/DOC_STATUS.md                     |  3 ++-
+ docs/web-client/ux/ux-documentation-plan.md                       |  6 ++++++
+ tmp/web-client-dev.pid                                            |  1 -
+ web-client/package-lock.json                                      | 11 +++++++++++
+ web-client/package.json                                           | 17 +++++++++--------
+ web-client/src/features/charts/PatientsTab.tsx                    |  2 --
+ 7 files changed, 29 insertions(+), 12 deletions(-)
+
+未追跡: artifacts/webclient/e2e/20251206T112452Z-integration/</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価ポイント</summary>
+                <pre>- @types/connect 追加で type check の警告を解消する意図は妥当。PatientsTab の未使用 import 削除で lint ノイズ低減。
+- DOC_STATUS / UX 計画 / manager checklist に RUN_ID=20251206T112452Z の接続結果を反映し証跡リンクを明記。
+- ただし API 404 により `dataSourceTransition=server` / `cacheHit` / `missingMaster` / telemetry funnel の観測は未完。UI 変更も無し。
+- テスト未実行・カバレッジ報告なし。artifacts も未コミット。
+- 次アクション: modernized サーバーの API ルート確認と再実行。Playwright/E2E ログをコミットし、ToneBanner carry-over を確認すること。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

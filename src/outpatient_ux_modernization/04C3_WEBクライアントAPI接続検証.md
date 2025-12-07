@@ -1,36 +1,62 @@
-# 04C3 WEBクライアントAPI接続検証（RUN_ID=20251214T090000Z）
+# 04C3 WEBクライアントAPI接続検証（RUN_ID=20251207T130434Z／ローカルモダナイズ接続）
 
-- 期間: 2025-12-14 09:00 - 2025-12-15 09:00（JST）
+- 対象期間: 2025-12-07（JST）以降、ローカル接続で順次実施
 - 優先度: high / 緊急度: medium
-- 関連ドキュメント: `docs/web-client/ux/reception-schedule-ui-policy.md`（tone=server および missingMaster/banner 要件）、`docs/web-client/ux/ux-documentation-plan.md`（検証観点）、`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（接続ポリシー）
+- 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`
+- 関連ポリシー: `docs/web-client/ux/reception-schedule-ui-policy.md`（tone/banner/missingMaster）、`docs/web-client/ux/ux-documentation-plan.md`（検証観点・telemetry）、`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（接続・証跡方針）
 
 ## 1. 目的
-1. Reception→Charts→Patients の一連のステージシナリオで、外来 API（`/api01rv2/claim/outpatient/*`、`/orca21/medicalmodv2/outpatient`）が `dataSourceTransition=server` ルートで稼働し、`tone=server` banner（`docs/web-client/ux/reception-schedule-ui-policy.md` 参照）と `cacheHit`/`missingMaster`/`resolveMasterSource` 表示が一貫していることを確認。
-2. Telemetry funnel に `cacheHit`/`missingMaster`/`resolveMasterSource('server')` イベントを含め、`docs/web-client/ux/ux-documentation-plan.md` で示した telemetry ステージ設計（resolve_master → charts_orchestration）が Stage/Preview 上でも記録されていることを確認。
-3. `artifacts/webclient/e2e/20251214T090000Z-integration/` にステージログ・スクリーンショットを残し、`docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` で接続安定性・バナー表示・telemetry フラグの観測結果を整理。
+1. ローカルで起動中のモダナイズ版サーバー（`http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources`）に Web クライアントを接続し、Reception→Charts→Patients で `tone=server` バナーと `cacheHit`/`missingMaster`/`resolveMasterSource`/`dataSourceTransition` の整合を確認する。
+2. `recordOutpatientFunnel('resolve_master' → 'charts_orchestration')` がローカル接続でも発火し、telemetry で `cacheHit`/`missingMaster`/`resolveMasterSource` を送出することを確認する（`window.datadogRum` 無効時は例外なく stub が動作することを含む）。
+3. MSW ON/OFF で tone・telemetry・バナー表示が一致するかを比較し、結果を `artifacts/webclient/e2e/20251207T130434Z-integration/` に保存する。
+4. Stage/Preview 接続は範囲外とし、必要時は別タスク「06_STAGE検証」で実施することを明記する（旧 RUN / Stage ログは参考のみ）。
 
-## 2. 環境と前提
-- Stage 環境: `VITE_DEV_PROXY_TARGET=http://100.102.17.40:8000/openDolphin/resources`（例）／`VITE_DISABLE_MSW=1` を設定し、実際の ORCA/modernized API を `npx vite preview` または Playwright から叩く。
-- Stage ブラウザ: `http://localhost:4173`（Playwright の `PLAYWRIGHT_BASE_URL` か任意の手動ブラウザ）
-- ORCA 接続: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に従い、証明書を安全に扱いながら接続。実行者はステージ環境へのアクセス権限と証跡出力の手順を確認すること。
-- Telemetry: `web-client/src/libs/telemetry/telemetryClient.ts` で `recordOutpatientFunnel('resolve_master', …)` → `charts_orchestration` が Stage でも実行されるよう `window.datadogRum` / `telem` を有効化。
+## 2. スコープと非スコープ
+- 対象: ローカルモダナイズ版サーバーへの接続検証（既存プロセスを停止・再起動せず、現状起動しているサービスを利用）。
+- 対象外: Stage/Preview 直接接続、mac-dev 経由の接続。本ドキュメントでは手順とローカル観測のみを扱い、Stage 前提のログは「旧計画/参考」に隔離する。
+- オペレーション制約: 「サーバーの再起動や停止はしない」指示に従い、起動中のプロセスを前提とした検証のみを行う。環境変更が必要な場合は別タスクで相談する。
 
-## 3. シナリオ手順
-1. Reception 画面にアクセスし、外来患者を一覧で開く。
-2. 各患者で `dataSourceTransition=server` を返す ORCA/claim への POST をトリガーし、tone=server banner（`docs/web-client/ux/reception-schedule-ui-policy.md` のとおり）と `missingMaster`/`cacheHit` の各表示が互いに矛盾しないかを確認。
-3. `resolveMasterSource('case')` などで `dataSourceTransition=server` に至るフラグ（`missingMaster`=true→false、`cacheHit`=true/false）の変化を観測し、Playwright console か DevTools Network で telemetry funnel events を見る。
-4. Charts へ遷移し、DocumentTimeline/OrderConsole で `cacheHit`/`missingMaster`/`resolveMasterSource` の表示と `tone=server` banner が同一の tonechain で carry over されることを確認。
-5. Patients へ移動し、フィルタや保険モードを保持したまま戻る途中でも telemetry が `resolve_master`→`charts_orchestration` の順序で記録されるか（Request header も含め）を見る。
-6. Playwright や curl で `/api01rv2/claim/outpatient/*` および `/orca21/medicalmodv2/outpatient` を叩き、HTTP レスポンスに `dataSourceTransition=server`/`cacheHit`/`missingMaster` などメタ情報が含まれていることをログする。
+## 3. 環境・前提
+- Web クライアント: `VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources`、`VITE_API_BASE_URL` 同値。`VITE_DISABLE_MSW=1/0` を切り替えて挙動比較。Playwright/手動確認は `http://localhost:4173`（dev）または `npm run preview -- --port 4174`（MSW 無効プレビュー）。
+- サーバー: `setup-modernized-env.sh` もしくは既存起動中のモダナイズ版サーバーを利用。再起動禁止のため、設定変更は実施しない。
+- Telemetry: `web-client/src/libs/telemetry/telemetryClient.ts` の funnel を DevTools network/console で確認。`datadogRum` 非活性時は no-op でエラーが出ないことを確認する。
+- 認証・証跡: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` の運用に従い、秘密情報を扱わない。証跡は RUN_ID で統一する。
 
-## 4. 収集対象
-- Stage log: `artifacts/webclient/e2e/20251214T090000Z-integration/stage.log`（Reception→Charts→Patients の HTTP リクエスト＆telemetry トリガーの断面）。
-- Screenshot: `artifacts/webclient/e2e/20251214T090000Z-integration/reception-tone.png` / `charts-tone.png`（tone=server banner + `resolveMasterSource` badge + funnel step）。
-- Telemetry snapshot: `artifacts/webclient/e2e/20251214T090000Z-integration/telemetry.json`（resolve_master → charts_orchestration で記録された flag set）。
-- QA log: `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` に接続安定性・バナー表示・telemetry flag などの検証メモ。
+## 4. シナリオ
+### 4.1 ベースライン（MSW ON）
+1. Web クライアントを `VITE_DISABLE_MSW=0` で起動し、Reception で `tone=server` バナーと `resolveMasterSource` バッジが表示されることを確認。
+2. Charts/Patients へ遷移し、`missingMaster`/`cacheHit` が Reception と一致して carry-over することを確認。
+3. DevTools console で `resolve_master` → `charts_orchestration` telemetry のペイロードに `cacheHit`/`missingMaster`/`resolveMasterSource` が含まれることを記録。
 
-## 5. 本回の状況
-- この記事を作成した時点で現行権限の Codex CLI から Stage 環境への ORCA 証明書付き接続が行えないため、実際のシナリオ実行・ログ蒐集は未実施。
-- 手元の Workspace では `VITE_DISABLE_MSW=1` で Stage の URL を叩けないため、`artifacts/webclient/e2e/20251214T090000Z-integration/` のファイルは later run で上書きされるプレースホルダー（本ファイルでは記録のみ）。
-- 今後のワーカー（例: gemini cli）の方へ: 1) Stage 環境にアクセスして上記手順を走らせ、2) `artifacts/webclient/e2e/20251214T090000Z-integration/` 配下にログ・スクショ・telemetry を保存し（プレースホルダーを置換）、3) `docs/server-modernization/phase2/operations/logs/20251214T090000Z-integration-qa.md` に所見・問題点・RUN_ID をまとめてください。
-- RUN_ID=`20251205T171500Z` で MSW 事前検証を実施（/outpatient-mock）。A/B シナリオで `tone=server` マーカー、missingMaster/cacheHit 表示、telemetry (`resolve_master`→`charts_orchestration`) を確認。証跡: `docs/server-modernization/phase2/operations/logs/20251205T171500Z-outpatient-mock.md`、スクリーンショット/ログ: `artifacts/webclient/e2e/20251205T171500Z-outpatient-mock/`。Stage 接続は権限待ち。
+### 4.2 実接続（MSW OFF）
+1. `VITE_DISABLE_MSW=1` + `VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources` で起動（サーバーは既存プロセスを利用）。
+2. Reception で `dataSourceTransition=server` のレスポンスを確認し、`tone=server` バナーと `ResolveMaster` バッジの値（`server|case|snapshot`）を記録。
+3. Charts/Patients で `cacheHit=false` や `missingMaster` が遷移するケースを観測し、telemetry の差分を比較。
+4. 必要に応じて `curl http://localhost:9080/openDolphin/resources/api01rv2/claim/outpatient/...` で API 応答の `dataSourceTransition`/`cacheHit`/`missingMaster`/`resolveMasterSource` を取得し、UI 表示と突合。
+
+### 4.3 tone / telemetry 整合チェック
+- `tone=server` が Reception→Charts→Patients で一貫すること。
+- `resolveMasterSource` が UI バッジと telemetry の両方で一致すること。
+- `missingMaster=true` → `cacheHit=true/false` 遷移時にバナーがリセットされず carry-over すること。
+- telemetry funnel で `resolve_master` → `charts_orchestration` の順序が崩れないこと。
+
+## 5. 収集物（RUN_ID=20251207T130434Z）
+- ログ: `artifacts/webclient/e2e/20251207T130434Z-integration/local.log`（MSW ON/OFF の起動ポートと結果を記載）
+- Telemetry: `artifacts/webclient/e2e/20251207T130434Z-integration/telemetry.json`（MSW ON/OFF の `resolve_master`→`charts_orchestration` ログ）
+- スクリーンショット: `artifacts/webclient/e2e/20251207T130434Z-integration/reception-tone.png`, `charts-tone.png`, `patients-tone.png`
+- QA メモ: `docs/server-modernization/phase2/operations/logs/20251207T130434Z-integration-qa.md`
+- HAR/console: `artifacts/webclient/e2e/20251207T130434Z-integration/network.har`（msw-off HAR, on/off 版も別ファイル）、`console.txt`
+
+## 6. 現状と次アクション（2025-12-07 更新）
+- 実行状況: ローカルモダナイズ版サーバーに MSW ON/OFF でログインし、`httpFetch` に `userName` / `password(md5)` / `X-Facility-Id` を自動付与。401 は解消したが、`/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` はどちらも 404。`server-modernized` を全文検索したところ、両パスを処理する Controller/Resource/Route が存在せず、`OrcaEndpoint` でも外来 `claim/medicalmodv2` 系は未列挙。dev プロキシ（vite.config.ts）の `/api01rv2` `/orca21` マッピング先にバックエンド実装が無いことが原因と判断。
+- 所感: 現状のモダナイズ版サーバーでは対象エンドポイントが未実装のため、正常系レスポンス（`cacheHit=true` / `missingMaster=false`）は取得不能。
+- 次アクション:
+  - [ ] どちらの API をどのリソースに実装するか（既存 `/orca/*` ラッパーに追加 vs. 新規 gateway）を決定し、実装計画を立案する。
+  - [ ] 実装後に MSW OFF で再取得し、`cacheHit=true` / `missingMaster=false` の telemetry を採取して本ドキュメント・QA ログ・DOC_STATUS を更新。
+  - [ ] Stage/Preview での再検証は 06_STAGE検証タスクに切り出す（本 RUN ではローカル接続のみ）。
+注意: Stage/Preview への接続は本タスク外。旧 RUN の Stage 前提ログは参考のみで、本 RUN の判断や結果と混同しないこと。
+
+## 7. 旧計画/参考（Stage 前提、混同禁止）
+- RUN_ID=`20251214T090000Z` で Stage 前提の計画を記載していたが、本タスクでは採用しない。ログ・証跡は参考資料としてのみ参照する。
+- Stage 接続試行（参考）: `docs/server-modernization/phase2/operations/logs/20251207T120529Z-integration-qa.md`、`artifacts/webclient/e2e/20251207T120529Z-integration/`（DNS/タイムアウトで未接続）。Stage での再検証は 06_STAGE検証タスクに委譲し、本 RUN の成果とは分離する。
+- MSW 事前検証（参考）: RUN_ID=`20251205T171500Z` `docs/server-modernization/phase2/operations/logs/20251205T171500Z-outpatient-mock.md`、`artifacts/webclient/e2e/20251205T171500Z-outpatient-mock/`。

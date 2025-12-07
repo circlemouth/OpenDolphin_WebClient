@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>04A3 受付UX 評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 5);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--investigating {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--planning {
+        background: #fff4d9;
+        border-color: #f5e8b8;
+      }
+      .status-badge--in-progress {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      /* 評価用追加スタイル */
+      .score-banner {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        color: #1f2a30;
+      }
+      .score-banner .score-emoji {
+        font-size: 20px;
+      }
+      .score-banner .score-total {
+        font-size: 18px;
+        letter-spacing: 0.03em;
+      }
+      .radar {
+        position: relative;
+        width: 100%;
+        height: 180px;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        width: 100%;
+        height: 100%;
+      }
+      .radar polygon.grid {
+        fill: none;
+        stroke: #cdd9dd;
+        stroke-width: 1;
+      }
+      .radar polygon.data {
+        fill: rgba(63, 142, 214, 0.2);
+        stroke: #3f8ed6;
+        stroke-width: 2;
+      }
+      .radar line.axis {
+        stroke: #d8e6e9;
+        stroke-width: 1;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 10px;
+        font-size: 12px;
+        color: #2c3a40;
+        margin-bottom: 10px;
+      }
+      .metric-item {
+        display: flex;
+        justify-content: space-between;
+      }
+      .metric-name {
+        font-weight: 600;
+      }
+      .legend-note {
+        font-size: 11px;
+        color: #5a6a71;
+        margin-bottom: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">04A3 受付UX検証／DOC_STATUS反映 - 評価レポート</h1>
+        <p class="monitor-description">
+          監視対象ブランチ（task-1765018861780-87ff61 / task-1765019507663-133dfa / task-1765019507664-8ed2c9）の最新コミット・未コミット差分を確認し、緻密性と網羅性を6指標で採点しました。600点満点（各指標100点）で集計し、メダルを付与しています。
+        </p>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765018861780-87ff61</th>
+            <th>task-1765019507663-133dfa</th>
+            <th>task-1765019507664-8ed2c9</th>
+            <th>reserved</th>
+            <th>reserved</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-06 20:39 (JST)</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未着手</span>
+                <span class="agent-label">AI: branch holder / 04A3 reception UX</span>
+              </div>
+              <div class="score-banner"><span class="score-emoji">⚪️</span><span class="score-total">0 / 600</span></div>
+              <div class="radar" data-scores="0,0,0,0,0,0"></div>
+              <div class="metric-list">
+                <div class="metric-item"><span class="metric-name">コード品質</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">完成度</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">テスト/証跡</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">ドキュメント</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">プロセス遵守</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">リスク管理</span><span>0</span></div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細</summary>
+                <pre>HEAD 58430ef5 (masterと同一)。未コミット変更なし。04A3要件に関するコード/ドキュメント/証跡が見当たらず、着手実績なしと判断。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">不十分</span>
+                <span class="agent-label">AI: branch holder / 04A3 reception UX</span>
+              </div>
+              <div class="score-banner"><span class="score-emoji">⚪️</span><span class="score-total">35 / 600</span></div>
+              <div class="radar" data-scores="0,0,0,0,15,20"></div>
+              <div class="metric-list">
+                <div class="metric-item"><span class="metric-name">コード品質</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">完成度</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">テスト/証跡</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">ドキュメント</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">プロセス遵守</span><span>15</span></div>
+                <div class="metric-item"><span class="metric-name">リスク管理</span><span>20</span></div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細</summary>
+                <pre>未コミット差分: tmp/web-client-dev.pid のPID入れ替えのみ（35321→20084）。実装・ドキュメント・証跡の追加なし。余分なPIDファイルが残存しており衛生面で減点。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--in-progress">部分完了</span>
+                <span class="agent-label">AI: branch holder / 04A3 reception UX</span>
+              </div>
+              <div class="score-banner"><span class="score-emoji">🥉</span><span class="score-total">340 / 600</span></div>
+              <div class="radar" data-scores="60,45,65,70,60,40"></div>
+              <div class="metric-list">
+                <div class="metric-item"><span class="metric-name">コード品質</span><span>60</span></div>
+                <div class="metric-item"><span class="metric-name">完成度</span><span>45</span></div>
+                <div class="metric-item"><span class="metric-name">テスト/証跡</span><span>65</span></div>
+                <div class="metric-item"><span class="metric-name">ドキュメント</span><span>70</span></div>
+                <div class="metric-item"><span class="metric-name">プロセス遵守</span><span>60</span></div>
+                <div class="metric-item"><span class="metric-name">リスク管理</span><span>40</span></div>
+              </div>
+              <div class="legend-note">RUN_ID=20251206T111543Z のローカル検証ログとDOC_STATUS/UXプラン反映を確認。Stage DNS/権限は未実施。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細</summary>
+                <pre>コミット: 58430ef5 (masterと同一、追加コミットなし)
+未コミット変更:
+- docs/web-client/planning/phase2/DOC_STATUS.md: RUN_ID=20251206T111543Z をUX/Features行に追加。
+- docs/web-client/ux/ux-documentation-plan.md: 次ステップに同RUN_IDのローカルQA結果を追記。
+- tmp/web-client-dev.pid: PID変更。
+- 未追跡 artifacts/webclient/e2e/20251206T111543Z-reception/{reception-charts-missingMaster.(png|log)}。
+- 未追跡 tmp/reception-ux-run.js: PlaywrightでdataSourceTransition=server & missingMaster=trueをスタブしスクリーンショット取得するスクリプト。
+- 未追跡 tmp/npm-cache/（キャッシュ残置）。
+ログ確認:
+  docs/server-modernization/phase2/operations/logs/20251206T111543Z-reception-qa.md にローカルmodernized環境でのtoneバナー確認結果を記載。Stage/Preview未実施と明記。
+所見:
+  ローカルQAとDOC_STATUS更新は実施済みだが、作業が未コミットで、tmp/npm-cache等のノイズが残置。Stage DNS復旧後の再検証・クリーニングが必要。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">—</span>
+                <span class="agent-label">reserved</span>
+              </div>
+              <div class="score-banner"><span class="score-emoji">⚪️</span><span class="score-total">0 / 600</span></div>
+              <div class="radar" data-scores="0,0,0,0,0,0"></div>
+              <div class="metric-list">
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">—</span>
+                <span class="agent-label">reserved</span>
+              </div>
+              <div class="score-banner"><span class="score-emoji">⚪️</span><span class="score-total">0 / 600</span></div>
+              <div class="radar" data-scores="0,0,0,0,0,0"></div>
+              <div class="metric-list">
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+                <div class="metric-item"><span class="metric-name">—</span><span>0</span></div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      // 六角レーダーチャートを描画
+      document.querySelectorAll('.radar').forEach((radar) => {
+        const scores = radar.dataset.scores.split(',').map((s) => Number(s.trim() || '0'));
+        const axes = scores.length;
+        const R = 50;
+        const createPoints = (scale) =>
+          scores
+            .map((score, i) => {
+              const angle = -Math.PI / 2 + (i * 2 * Math.PI) / axes;
+              const r = R * (score / 100) * (scale || 1);
+              const x = (Math.cos(angle) * r).toFixed(1);
+              const y = (Math.sin(angle) * r).toFixed(1);
+              return `${x},${y}`;
+            })
+            .join(' ');
+
+        const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+        svg.setAttribute('viewBox', '-60 -60 120 120');
+
+        // grid hexagons (3 levels)
+        [1 / 3, 2 / 3, 1].forEach((scale) => {
+          const grid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          grid.setAttribute('class', 'grid');
+          grid.setAttribute('points', createPoints(scale));
+          svg.appendChild(grid);
+        });
+
+        // axes lines
+        scores.forEach((_, i) => {
+          const angle = -Math.PI / 2 + (i * 2 * Math.PI) / axes;
+          const x = (Math.cos(angle) * R).toFixed(1);
+          const y = (Math.sin(angle) * R).toFixed(1);
+          const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+          line.setAttribute('class', 'axis');
+          line.setAttribute('x1', '0');
+          line.setAttribute('y1', '0');
+          line.setAttribute('x2', x);
+          line.setAttribute('y2', y);
+          svg.appendChild(line);
+        });
+
+        const dataPoly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        dataPoly.setAttribute('class', 'data');
+        dataPoly.setAttribute('points', createPoints(1));
+        svg.appendChild(dataPoly);
+
+        radar.appendChild(svg);
+      });
+    </script>
+  </body>
+</html>
