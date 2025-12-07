@@ -4,65 +4,161 @@
 - 証跡ログ: [docs/server-modernization/phase2/operations/logs/20251202T090000Z-screens.md](../../server-modernization/phase2/operations/logs/20251202T090000Z-screens.md)
 - 目的: 受付から渡された患者の診療録入力・病名管理・オーダー・結果閲覧・文書生成をブラウザ内で完結させ、診療終了と ORCA 送信を安全に結ぶ。
 
-## 1. 役割とヘッダー
-- 患者基本情報＋受付情報＋注意フラグをヘッダー常時表示し、保険/自費トグルと保存/下書き/診療終了/署名ボタンを配置。
-- 診療終了時に受付ステータス更新と ORCA 送信キュー投入を同一操作で行い、エラーを Reception の診察終了タブへ返す。
-- role に応じて入力/承認権限を分離（看護師は下書き、医師が署名、事務は閲覧中心）。
+---
 
-## 2. タブ構成とユースケース
-- 診療録: SOAP/フリー切替、テンプレ呼出、過去サマリ参照、ショートカットキー、自動保存設定を適用。
-- 病名: 保険病名＋転帰、適用チェック、未紐付オーダー一覧、病名検索結果からの直接登録。
-- オーダー: 処方/注射/検査/処置・指導/リハ/予防接種/文書オーダーのサブタブ。セット呼出/登録、ORCA マスタ候補表示。
-- 結果・履歴: 検査結果、処方/オーダー履歴、病名未紐付ショートカットをまとめ、再オーダーを短縮。
-- 画像(DICOM): 履歴一覧＋ビューア、カルテ貼付リンク生成、必要時に外部ビューアへの遷移も示す。
-- 文書: 診断書・紹介状等の下書き生成、PDF/印刷。カルテ本文との整合をチェックするガードを表示。
-- サマリ: 長期経過・問題リスト・タイムラインを俯瞰し、前回診療からの変化点を強調。
+## 1. 役割とヘッダー（常時表示）
 
-## 3. 右サイドバーとサジェスト
-- 患者メモ（一般/医師専用）を常設し、ARIA live の必要性を検討。
-- 今日のチェック項目（病名未紐付や ORCA エラー警告）、医師お気に入り/病名ベースのオーダー候補を表示。
-- セット/テンプレ/初期表示モードは Administration で設定されたデフォルトを継承する。
+参考画面では、ヘッダーが「患者の取り違え防止」と「操作の起点」を同時に担っていた。Charts でも同じ思想で組む。
 
-## 4. データ・API 前提
-- 診療録/テンプレ/サマリ/患者メモ CRUD の ChartResource。
-- 病名検索・転帰更新・オーダー紐付チェック用の Disease/Order link API。
-- 薬剤/注射/検査/処置/リハ/予防接種/文書オーダーの登録・更新を扱う Order API と、候補表示用 ORCA マスタ参照 API（適用病名チェック含む）。
-- セット管理 API（標準/医師お気に入り/患者・病名サジェスト）。
-- DICOMResource で検査履歴・画像取得・カルテ貼付リンク生成。結果・履歴取得 API（検査結果、処方/オーダー履歴）。
-- 診療終了/署名で受付ステータス更新と ORCA 送信を行うエンドポイント。すべての編集/承認に監査ログを付与。
+ヘッダーは常時表示し、次を一画面で読めるように並べる。
 
-## 5. 遷移・前提
+- **患者基本情報**: 診察券番号、氏名、性別、年齢、生年月日、連絡先（表示可否は権限で制御）
+- **受付情報**: 受付番号、当日/診療科、現在ステータス（受付済/診察中/診療終了など）
+- **注意フラグ**: アレルギー・禁忌・感染・要配慮など（アイコン＋短い文言、クリックで詳細）
+
+操作ボタンは「迷わない順序」で固定配置する。参考画面にある **診察開始 / 閉じる / 更新** の考え方を取り込み、Charts では次に置き換える。
+
+- **診察開始**: 受付ステータスを「診察中」へ。開始時刻を監査ログへ記録。
+- **閉じる**: Reception に戻る（未保存があればガード表示）。
+- **更新**: 画面再読込（後述の「手動更新」と統合してよい）。直前のタブとフォーカスを保持する。
+
+加えて本計画の要件として、**保険/自費トグル**、**保存/下書き**、**診療終了**、**署名・送信（ORCA）** を同じヘッダー領域に置く。権限制御は従来通りで、看護師は下書き中心、医師は署名、事務は閲覧中心とする。
+
+---
+
+## 2. 標準レイアウト（参考画面の取り込み）
+
+参考画面は「左＝病名と履歴」「右＝SOAP 入力」の2ペインが基本だった。Charts でも、日常診療で最も開かれる標準画面（=診療録）をこの構成に寄せる。
+
+### 2.1 左ペイン：病名パネル（常設）
+病名はタブに閉じ込めず、標準画面で常に見える要約として置く。理由は単純で、医師が最も頻繁に“目で確認する”情報だから。
+
+参考画面の病名一覧に見えている列を取り込み、最低限つぎを持つ。
+
+- 主病名フラグ、病名名、疑い（疑い病名）、開始日、転帰・転帰日、診療科、保険/自費の区分
+- 期間フィルタ（例: 当月）と「追加」ボタン（病名登録の入口）
+
+ここは「一覧＝要約」に徹し、詳細編集は病名タブで行う（2ペインを崩さないため）。
+
+### 2.2 左ペイン：履歴パネル（常設＋サブタブ）
+参考画面では履歴が下段にあり、過去カルテを開いて本文や処方を見比べられた。これを Charts の標準体験にする。
+
+履歴パネルは、少なくとも次のサブタブを持つ（参考画面に合わせた呼び名でよい）。
+
+- **過去カルテ**: 日付・時刻・診療科・区分（初診/再診など）の一覧 → クリックでプレビュー
+- **処方歴**: 処方を時系列に並べる（再オーダーへ短絡）
+- **サマリー**: 問題リスト/経過の要点（後述のサマリタブと同じデータを簡易表示）
+- **定期診療**: 定型のセット（定期処方・定期処置）を呼び出す入口
+
+履歴の上部には、参考画面にある「診療科フィルタ」「検索」を置く。目的は、一覧が長くなっても“探し直せる”状態を保つこと。
+
+### 2.3 履歴プレビューと「引き継ぎコピー（Do）」の取り込み
+参考画面の「所見一括Do / 処方一括Do / Do」ボタンは、診療の速度を上げる一方でコピペ事故の温床にもなる。Charts では機能自体は取り込みつつ、安全ガードを足す。
+
+- プレビューは「過去カルテ本文」と「過去処方（またはオーダー）」を別ブロックで表示
+- 「この内容を下書きへコピー」操作を用意し、コピー後は“どこが入ったか”をハイライトする
+- 監査ログに carry-forward を明示する（例: `action=carryForward`, `sourceVisitId`, `targetDocId`）
+
+コピーは常に下書き扱いにし、署名前に医師が確認したことが残る作りにする。
+
+※ 画面右下の問い合わせ用チャットバブルは、実装対象外とする。
+
+### 2.4 右ペイン：SOAP 入力（縦並び）
+参考画面では Free / Subjective / Objective / Assessment / Plan が縦に積まれていた。Charts の診療録入力もこの形を標準にし、1画面で全体を見渡せるようにする。
+
+- 各セクションは独立した入力欄を持ち、保存状態（未保存/保存済み/エラー）を小さく表示
+- 参考画面の導線に合わせ、入力欄は **Shift+Enter で登録**（=そのセクションの保存）を基本ショートカットにする
+- 自動保存は維持しつつ、Shift+Enter は「今この時点を確定した」手触りを与える用途に使う
+
+---
+
+## 3. タブ構成とユースケース（標準2ペインを前提に整理）
+
+標準画面は2ペインだが、業務上は「全画面で集中したい作業」もある。そのときにタブへ逃がす。タブは次の7つを基本とする（名称は暫定）。
+
+| タブ | 何をするか | 標準2ペインとの関係 |
+| --- | --- | --- |
+| 診療録 | SOAP/フリー切替、テンプレ呼出、ショートカット、自動保存 | 標準2ペインの右ペインがこれ |
+| 病名 | 保険病名＋転帰、適用チェック、未紐付オーダー整理 | 左ペインの病名は要約、ここで詳細 |
+| オーダー | 処方/注射/検査/処置・指導/リハ/予防接種/文書オーダー、セット呼出/登録 | 履歴の「処方歴/定期診療」と往復しやすく |
+| 結果・履歴 | 検査結果、処方/オーダー履歴、再オーダー | 左ペイン履歴は“日常用”、ここは“深掘り” |
+| 画像（DICOM） | 履歴一覧＋ビューア、カルテ貼付リンク生成 | 必要時だけ全画面へ |
+| 文書 | 診断書・紹介状等の下書き生成、PDF/印刷、整合チェック | SOAP/病名/オーダーを参照してガード |
+| サマリ | 長期経過・問題リスト・タイムライン俯瞰 | 左ペイン「サマリー」は簡易表示 |
+
+---
+
+## 4. サイドパネルとサジェスト（表示位置を再定義）
+
+従来の「右サイドバー」に入れていた要素は、参考画面の現実（右はSOAPで埋まる）に合わせて配置を組み替える。
+
+- **患者メモ**（一般/医師専用）は、左ペイン上部（病名の下）に折りたたみで常設する
+- **今日のチェック項目**（病名未紐付、ORCA エラー警告など）は、左ペイン履歴の上（一覧の前）に小さく置く
+- **医師お気に入り/病名ベースのオーダー候補**は、オーダータブ内のサジェストとして出す（SOAP右ペインを圧迫しない）
+
+ARIA live の要否は、チェック項目とバナーに限定して検討し、メモ本文の読み上げは原則しない（誤読を避ける）。
+
+---
+
+## 5. データ・API 前提（参考画面で増えた分を追加）
+
+既存の前提に、参考画面から見える「履歴の常設」と「引き継ぎコピー」を足す。
+
+- 診療録/テンプレ/サマリ/患者メモ CRUD: ChartResource
+- 病名検索・転帰更新・オーダー紐付チェック: Disease/Order link API
+- オーダー登録・更新 + ORCA マスタ参照: Order API + ORCA master API（適用病名チェック含む）
+- セット管理: 標準/医師お気に入り/患者・病名サジェスト + 「定期診療」用のセット種別
+- **履歴取得**: 受診一覧（診療科・期間フィルタ、検索）、過去カルテ本文、処方歴、サマリ要約
+- **引き継ぎコピー**: `POST /chart/{docId}/carry-forward` のような専用エンドポイントを設け、コピー範囲（所見/処方/オーダー）を明示して監査ログに残す
+- 診療終了/署名で受付ステータス更新と ORCA 送信: 専用エンドポイント。編集/承認/コピーの全操作に監査ログを付与
+
+---
+
+## 6. 遷移・前提（参考画面の「閉じる」「更新」を取り込む）
+
 - Reception から患者IDと保険/自費モードを受け取り初期化。診療終了後は Reception のステータス「診療終了」と ORCA 送信の成否を同期。
-- role 切替はサーバー配布の `roles/permissions` をガードとして適用し、承認フローを UI 表示と連動させる。
-- DICOM や ORCA マスタが取得不可の場合の fallback UI（警告バナーとリトライ導線）を、RUN_ID=20251202T090000Z の検証対象として記録する。
+- **「閉じる」**は Reception へ戻る操作として扱い、未保存がある場合は保存/破棄のガードを出す。
+- **「更新」**は手動更新の入口として統合し、更新後も直前タブとフォーカスを維持する（入力中の事故を避ける）。
 
-## 6. アラートバナー / ライブリージョン（Charts=Reception 共通）
-- 対象イベント: ORCA 送信エラー/完了、未紐付病名、送信キュー遅延（署名後・再送時）。Reception と同一文言・tone を使い、色は Error=赤、Warning=琥珀、Info=青で統一。
-- `aria-live`: エラー/未紐付/遅延は `assertive`、完了/情報は `polite`。`data-run-id=\"20251202T090000Z\"` と `role=alert` を付け、Reception 診察終了タブへ carry over できるようにする。
-- 文言構造: `[prefix][送信結果 or 未紐付件数][患者ID/受付ID][対象タブ（病名/オーダー/署名）][再送/解除導線]` を固定し、Charts で表示したバナーは Reception へ戻った際に最新状態をミラー表示。
-- 右サイドバーのチェック項目にバナー状態をミラーし、未紐付病名をクリックで病名タブへジャンプ。未紐付は `aria-live=assertive` で 1 回だけ読み上げ、未解決のままタブを離れた場合は再度読み上げない。
-- ログ出力: 署名/診療終了/再送/診療終了解除/未紐付解消の各操作で `action`, `patientId`, `queueStatus`, `tone`, `ariaLive`, `runId=20251202T090000Z` を監査ログに追加し、Playwright の `fetchAuditLog` で検証可能にする。
+---
 
-## 7. ステータス遷移・自動/手動更新・権限制御
-- ステータス遷移: Charts で「診療開始」→「診療終了」→「署名・送信」までを完結させ、結果を Reception に同期。診療終了取り消しは医師/管理者のみ、署名後の ORCA 再送は医師/看護/受付が実施可（管理者はルール変更可）。
-- 自動更新: ORCA キュー/バナー状態を 30s 間隔でポーリングし、診療終了後の遅延を Reception と同じトーンで知らせる。`aria-live` を維持しつつ再読み上げを避けるため `aria-atomic=false` を指定。
-- 手動更新: 「キューを再取得」ボタンで即時リロードし、直前タブ/フォーカスを保持。`manualRefresh=true` を監査ログへ書き出す。
-- 権限制御: role=医師は署名/診療終了/再送、看護は下書き/再送、受付は閲覧と再送、管理者は全操作＋遷移ルール編集。非活性ボタンには権限不足の理由を tooltip で表示。
+## 7. アラートバナー / ライブリージョン（Charts=Reception 共通）
 
-## 8. 次アクション（RUN_ID=20251202T090000Z）
-- ORCA エラー共有バナーと病名未紐付警告の aria-live/tone を Reception と揃え、`ux/ux-documentation-plan.md` で Playwright への引き継ぎ条件を整理する。
-- セット管理 API のデフォルト継承ルール（Administration 側設定→Chart 初期表示）を精査し、管理画面ポリシー側と突合する。
+（既存方針を維持。参考画面取り込みによる変更点は「左ペインのチェック項目にもミラーする」を明文化する。）
 
-## 9. テスト観点メモ
-- 病名/オーダー登録エラーのバナーが `aria-live` で読まれ、タブ遷移時にもフォーカスが逸れず tone が崩れないか。
-- 診療録⇔病名⇔オーダー⇔結果タブの遷移で最後に操作したフィールドへフォーカス復帰し、ライブリージョンが二重読み上げしないか。
-- Reception から渡された保険/自費モードが診療終了まで保持され、オーダー登録や署名時に正しいモードで送信されるか。
-- ORCA 送信エラー/未紐付病名警告が診療終了ボタン押下後すぐに表示され、再送時にメッセージが更新されるまでの遅延を計測する。
+- 対象イベント: ORCA 送信エラー/完了、未紐付病名、送信キュー遅延（署名後・再送時）
+- `aria-live`: エラー/未紐付/遅延は `assertive`、完了/情報は `polite`
+- 文言構造と carry over、監査ログ項目は RUN_ID=20251202T090000Z の定義に従う
+- 左ペイン「今日のチェック項目」にバナー状態をミラーし、未紐付病名クリックで病名タブへジャンプ
+
+---
+
+## 8. ステータス遷移・自動/手動更新・権限制御（更新ボタンの具体化）
+
+- ステータス遷移: Charts で「診療開始」→「診療終了」→「署名・送信」までを完結させ、結果を Reception に同期。
+- 自動更新: ORCA キュー/バナー状態を 30 秒間隔でポーリング。二重読み上げを避けるため `aria-atomic=false`。
+- 手動更新: ヘッダーの「更新」＝手動更新の統一入口とし、必要なら「キューを再取得」など対象別の更新も内部的に呼ぶ。`manualRefresh=true` を監査ログへ。
+- 権限制御: role=医師は署名/診療終了/再送、看護は下書き/再送、受付は閲覧と再送、管理者は全操作＋遷移ルール編集。非活性ボタンは理由を tooltip で説明。
+
+---
+
+## 9. 次アクション（RUN_ID=20251202T090000Z）
+
+- 標準2ペイン（左：病名/履歴、右：SOAP）を前提に、コンポーネント粒度（DiagnosisPanel / HistoryPanel / SoapEditor / CarryForwardDialog）を `ux/ux-documentation-plan.md` に追記する。
+- 引き継ぎコピー（Do相当）の監査ログ仕様（source/target/範囲）を追加し、Playwright で再現できる操作列を決める。
+
+---
 
 ## 10. DocumentTimeline・OrderConsole・OrcaSummary の状態と aria-live (RUN_ID=20251203T210000Z)
 
-- 受付画面の `docs/web-client/ux/reception-schedule-ui-policy.md §5` で決めた `Error/Warning=assertive`・`Info=polite` のライブリージョン構成と `role=alert` を、外来 Charts 右ペインの DocumentTimeline/OrderConsole/OrcaSummary でも共通化する。受付から渡される患者ID・保険/自費フラグ・調整中ステータスは `DocumentTimelinePanel` が受け取り、同じ `data-run-id` でスクリーンリーダーが更新を区別できるようにして Reception へ carry over する。
-- `DocumentTimeline` のライブリージョンは `aria-atomic=false` によって前回の読み上げ状態を保持しつつ、赤/琥珀/青の tone を色で切り替える。`missingMaster`/`fallbackUsed`/`dataSourceTransition` の警告は OrderConsole の `DataSourceBanner` から OrcaSummary に展開され、監査ログ（`action/patientId/queueStatus/tone/ariaLive/runId`）へ tone + `aria-live` を透過する。
+（既存記述を維持しつつ、表示位置を標準2ペインへ合わせる。）
+
+- 受付画面の `docs/web-client/ux/reception-schedule-ui-policy.md §5` で決めた `Error/Warning=assertive`・`Info=polite` のライブリージョン構成と `role=alert` を、外来 Charts のチェック項目（左ペイン上部）とタブ内バナーで共通化する。
+- `DocumentTimeline` は左ペインの履歴（過去カルテ）に相当し、履歴ロード直後や ORCA キュー更新の読み上げ方針は表の定義に従う。
+- OrderConsole はオーダータブ内に置き、左ペインの「処方歴」「定期診療」とショートカット連携する。
+- OrcaSummary はオーダータブの上部（またはサマリタブ）に置き、`missingMaster`/`fallbackUsed`/`dataSourceTransition` を `aria-live="polite"` で更新する。
+
+（下表は既存のまま）
 
 | 状態 | トリガ・説明 | Tone + aria-live | Reception との整合 |
 | --- | --- | --- | --- |
@@ -70,17 +166,18 @@
 | ORCA キュー投入・送信中 | 「診療終了」/「再送」で `DocumentTimeline` が ORCA queue を呼び出し、`Queue` バナーを表示。 | Info（`aria-live=polite`）、`data-run-id` 増分ごとに再読上げ。 | Reception の診察終了タブの `polite` バナーと同期し、再送中トーンを一致させる。 |
 | 送信成功・再送成功 | ORCA から ACK を受け、バナーが緑色で「送信済み」に遷移。 | Info（`aria-live=polite`）、成功メッセージで色を青→緑に変更。 | Reception でも `polite` 完了バナーを表示し、トーンと aria の一致を保証。 |
 | ORCA エラー・未紐付・遅延 | ORCA エラー・未紐付病名・キュー遅延を `OrcaOrderPanel` が受け取り、`tone=error` に切り替える。 | Error/Warning（`aria-live=assertive`）、`aria-atomic=false` で重複読み上げを抑えながら赤/琥珀バナーを表示。 | Reception の `role=alert` エリア（赤または琥珀）へ `assertive` で carry over。 |
-| マスターデータ fallback・`dataSourceTransition` | ORCA マスター取得が `snapshot`/`msw`/`fallback` に遷移し、`missingMaster`/`fallbackUsed`/`dataSourceTransition` を検知。 | Warning（`aria-live=polite`）、`DataSourceBanner` が `dataSourceTransition=server→snapshot` などを更新。 | Reception の warning tone (`polite`) を継承しつつ、主要エラーと混ざらないよう aria-live を分離。 |
+| マスターデータ fallback・`dataSourceTransition` | ORCA マスター取得が `snapshot`/`msw`/`fallback` に遷移し、`missingMaster`/`fallbackUsed`/`dataSourceTransition` を検知。 | Warning（`aria-live=polite`）、`DataSourceBanner` が `dataSourceTransition=server→snapshot`などを更新。 | Reception の warning tone (`polite`) を継承しつつ、主要エラーと混ざらないよう aria-live を分離。 |
 
-- OrderConsole は保険/自費トグル・文書バージョン・ORCA 再送の status を監視し、`DocumentTimeline` へ `insuranceMode`/`patientMode` をそのまま渡す。`FilterBadge` の `missingMaster`/`fallbackUsed`/`dataSourceTransition` は `aria-live=polite` で更新され、監査メタ（`dataSourceTransition.from`/`to`/`reason`）を `audit.logUiState` や `audit.logOrcaQuery` に `action=filterChange` として送出する。
-- OrcaSummary（`DataSourceBanner` + `OrcaStatusList`）は `/resources/api/orca/master/*` の取得結果をもとに `missingMaster`/`fallbackUsed`/`dataSourceTransition` を表示し、同じ値を監査ログ（`dataSourceTransition`/`missingMaster`/`fallbackUsed`）と UI に透過する。`aria-live="polite"` の帯域を使い、繰り返し発生する `missingMaster` 警告でも二重読み上げを避ける。
+---
 
 ## 11. 外来 API カバレッジ（入院 API は N/A）
 
-- 受付→カルテ導線、保険/自費フィルタ、監査メタ（`dataSourceTransition`/`missingMaster`/`fallbackUsed`）は外来 API に限定した coverage table にまとめ、次の API マッピング作業へ渡す資料を `artifacts/webclient/ux-notes/20251203T210000Z-charts-ux.md` に残す。
+（既存記述に「履歴常設」と「引き継ぎコピー」を足す。）
 
 | UXフォーカス | 外来 API | 備考 | 入院 API |
 | --- | --- | --- | --- |
-| 受付→カルテ導線 | `GET /api/pvt2/pvtList`（Reception の一覧取得）＋`GET /api/karte/docinfo/{karteId}`・`GET /api/karte/documents`（DocumentTimeline の描画） | 受付で選んだ患者ID+保険/自費モードを `DocumentTimeline` に渡し、文書ロード・ORCA 再送・`data-run-id` 更新を外来のみで確実化。 | N/A（外来限定検証） |
-| 保険/自費フィルタ | `GET /api/patient/{patientId}` とその保険情報（`healthInsurance` 配列） | `OrderConsole` が `insuranceMode` をトグルし、`DocumentTimeline` 側でも同じフィルタを再現。Receptions のフィルタと同期するため `insuranceMode` クエリを `chart` API に渡す。 | N/A |
-| 監査ログ：`dataSourceTransition`/`missingMaster`/`fallbackUsed` | `GET /resources/orca/master/{generic-class, generic-price, youhou, material, kensa-sort, hokenja, address, etensu}` + audit endpoints | OrcaSummary で `DataSourceBanner` を更新し、`audit.logUiState`/`audit.logOrcaQuery` に meta を添えて `OrcaSummaryPanel` へ流す。これらの meta は外来 API を起点に `dataSourceTransition` の履歴を追跡する。 | N/A |
+| 受付→カルテ導線 | `GET /api/pvt2/pvtList`＋`GET /api/karte/docinfo/{karteId}`・`GET /api/karte/documents` | 受付で選んだ患者ID+保険/自費モードを標準2ペインへ渡す。 | N/A |
+| 履歴（過去カルテ/処方歴/サマリー） | `GET /api/karte/visits?patientId&dept&range`、`GET /api/karte/visit/{visitId}`、`GET /api/karte/prescriptions`、`GET /api/karte/summary` | 左ペイン常設。検索とフィルタをサポート。 | N/A |
+| 引き継ぎコピー（Do相当） | `POST /api/karte/documents/{docId}/carry-forward` | source/target/範囲を監査ログへ。コピーは下書き扱い。 | N/A |
+| 保険/自費フィルタ | `GET /api/patient/{patientId}`（保険情報） | トグルはヘッダーで保持し、オーダーと文書へ透過。 | N/A |
+| 監査ログ：`dataSourceTransition`/`missingMaster`/`fallbackUsed` | ORCA master 系 + audit endpoints | 既存方針のまま。 | N/A |
