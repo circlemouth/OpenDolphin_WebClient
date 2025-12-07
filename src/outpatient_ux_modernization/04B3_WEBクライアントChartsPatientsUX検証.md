@@ -1,39 +1,28 @@
 # 04B3 WEBクライアントCharts/Patients UX検証
 
-- **RUN_ID=20251207T114629Z／ステータス: done**。既存起動中の Vite 開発サーバー（`http://localhost:5173`）へ接続し、Playwright の `route.fulfill` で API をスタブして Charts→Patients のトーン／ARIA／バリデーション／レスポンシブを確認。サーバーの起動・停止や Python 実行は行っていない。
+- **RUN_ID=20251206T112050Z（ローカルモダナイズ版サーバー接続で実施予定）**。AGENTS→`docs/web-client/README.md`→`docs/server-modernization/phase2/INDEX.md`→`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の参照チェーンに従い、`setup-modernized-env.sh` でローカル起動したモダナイズ版サーバー＋ Web クライアントを使って Charts/Patients の `missingMaster`/`cacheHit`/`dataSourceTransition=server` トーンを reception と整合させる QA を進行中。Stage での検証は 06_STAGE検証タスクへ移管。
 - YAML ID: `src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md`
-- 証跡: `artifacts/webclient/e2e/20251207T114629Z-charts-patients/`（スクリーンショット 5 枚＋states.json＋console.log＋login-validation.json＋mobile-metrics.json）、ops ログ `docs/server-modernization/phase2/operations/logs/20251207T114629Z-charts-patients.md`。
+- ステータス: in_progress（ガント progress 60%）。ローカル実接続での検証をこれから実施。
 
 ## 1. 目的
-1. Charts/Patients での `missingMaster` / `cacheHit` / `dataSourceTransition` のトーン、`aria-live`、監査メタ表示を reception と同一ポリシーで確認する。
-2. AuthServiceControls の切替で telemetry（`resolve_master`→`charts_orchestration`）が発火することを確認し、flags 状態を JSON で残す。
-3. ログイン必須フィールドのバリデーション、日本語メッセージ、モバイル幅でのレイアウト崩れ有無を確認する。
+1. `setup-modernized-env.sh` で立ち上げたローカルモダナイズ版サーバーに Web クライアントを接続し、Reception→Charts→Patients の導線で `missingMaster`/`cacheHit`/`dataSourceTransition=server` バナーと `resolveMasterSource` 表示が `docs/web-client/ux/charts-claim-ui-policy.md` のトーン要件どおりかを検証する。
+2. Patients タブで `cacheHit=false` → `true` に遷移した際、`resolveMasterSource` バナーが適切に消えるか、`OrcaSummary` とのトーン差分がないかを確認する。
+3. ストーリーボード・スクリーンショットを `artifacts/webclient/e2e/20251206T112050Z-charts/` に残し、operations log と DOC_STATUS に紐づける。
 
-## 2. 実施結果
-- **環境**: 既存 Vite dev server (`localhost:5173`) を利用。React DevTools preamble エラーを回避するため `context.addInitScript(() => window.__ALLOW_REACT_DEVTOOLS__ = true)` を付与。`/api/user/**`・`/api01rv2/**`・`/orca21/**`・`/orca12/**` を Playwright `route.fulfill` で 200 応答に固定（ORCA 接続なし）。
-- **トーン/ARIA**（states.json）  
-  - デフォルト: `dataSourceTransition=snapshot`、`missingMaster=true`、`cacheHit=false`。ToneBanner/DocumentTimeline/PatientsTab は `aria-live=assertive`、RUN_ID（セッション生成値）`20251207T115505Z`。  
-  - server+cacheHit: missingMaster=false / cacheHit=true / dataSourceTransition=server に切替すると ToneBanner/DocumentTimeline/PatientsTab の `aria-live` が `polite` へ降格、バッジ値更新。  
-  - fallback: missingMaster=true のまま cacheHit=true / dataSourceTransition=fallback では assertive に戻り、ToneBanner 文言は missingMaster 優先で表示。
-- **telemetry**: console.log に `resolve_master` と `charts_orchestration` が各トグルで 2 ステージ出力され、`dataSourceTransition` 値が snapshot→server→fallback と遷移（`artifacts/.../console.log`）。
-- **入力バリデーション**: 未入力で送信すると `施設IDを入力してください。/ユーザーIDを入力してください。/パスワードを入力してください。` を表示（`login-validation.json`＋05-login-validation.png）。MD5 は headless で SubtleCrypto が未サポートのため警告後に CryptoJS へフォールバックすることを確認（console.log）。
-- **レスポンシブ**: 430x900 で 04-charts-mobile.png を採取。nav は wrap する一方、`scrollWidth=457px` / `clientWidth=430px` で横スクロールが発生（mobile-metrics.json）。親コンテナの `padding-inline` 過多と推測。
+## 2. 実施結果（現状の進捗）
+- ローカルモダナイズ版サーバーへの実接続検証: 未実施（ガント切替後に着手予定）。
+- 参考（旧計画の試走）
+  - 20251206T112050Z: Playwright の `route.fulfill` でモックしたローカル検証を実施し、`missingMaster=true` → `cacheHit=true` → `dataSourceTransition=server` のトーン遷移を確認。証跡は `artifacts/webclient/e2e/20251206T112050Z-charts/`（01-login-success.png, 02-outpatient-mock-overview.png, 03-reception-tone.png, 04-charts-tone.png, storyboard.md）。operations log は未発行。
+  - 20251205T133848Z: Stage 試走は DNS 解決不可で到達できず。証跡のみ `artifacts/webclient/e2e/20251205T133848Z-charts/` に保管（本タスクの達成条件外）。
+- 依存タスク: 実装面は 04B2 完了済み（`docs/server-modernization/phase2/operations/logs/20251212T090000Z-charts-orca.md`）。本タスクはローカル実接続での検証と DOC_STATUS 反映が未了。
 
 ## 3. 反映状況
-- `.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml`: 本 RUN_ID 分の progress=100% へ更新予定（計画シート反映のみ残タスクなし）。
-- DOC_STATUS `Web クライアント UX/Features` 行へ RUN_ID と証跡パスを追記済み（2025-12-07 付け）。
-- Manager checklist（`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`）は ops ログ・証跡リンクと RUN_ID を引用して整合可。
+- `.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml` では status=in_progress / progress=60%（ローカル実接続完了で 100% へ更新予定）。
+- DOC_STATUS の Web クライアント UX/Features 行と `docs/web-client/ux/ux-documentation-plan.md` にはローカル実接続結果が未反映。完了後、RUN_ID と証跡パスを追加する。
+- Manager checklist（`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md`）の該当行はローカル QA 完了後に更新する。Stage 分は 06_STAGE検証タスクで扱う。
 
-## 4. 課題/対応策
-- モバイル幅で 27px 程度の横スクロールが残存。次スプリントで `.app-shell__body` もしくは `.charts-page` の `padding-inline` を 16px 以下に縮小、または `overflow-x:hidden` を親に付ける改修を検討。
-- Playwright 実行時に SubtleCrypto が未対応となる環境では MD5 警告が出る。クリティカルではないが、ログノイズ低減のため headless 用 fallback ログレベルを info→debug に落とす案を別チケットで検討。
-
-## 5. 追加証跡
-- スクリーンショット:  
-  - `01-charts-default.png`（snapshot/missingMaster=true/cacheHit=false）  
-  - `02-charts-server-cachehit.png`（server/cacheHit=true/missingMaster=false）  
-  - `03-charts-fallback-missingMaster.png`（fallback/cacheHit=true/missingMaster=true）  
-  - `04-charts-mobile.png`（モバイル幅 430px、横スクロール確認）  
-  - `05-login-validation.png`（未入力バリデーション）
-- JSON/ログ: `states.json`（トーン/ARIAサマリ）、`console.log`（telemetry 出力＋MD5 警告）、`login-validation.json`、`mobile-metrics.json`。
-- ops ログ: `docs/server-modernization/phase2/operations/logs/20251207T114629Z-charts-patients.md`（手順・観測まとめ）。
+## 4. 次のアクション
+1. `setup-modernized-env.sh` でモダナイズ版サーバー＋ Web クライアントをローカル起動し、Reception→Charts→Patients を実接続で走らせて `missingMaster`/`cacheHit`/`dataSourceTransition=server` の挙動とトーンを確認する。
+2. 検証結果を `artifacts/webclient/e2e/20251206T112050Z-charts/` に追記し、operations log `docs/server-modernization/phase2/operations/logs/20251206T112050Z-charts-qa.md` を作成して条件・観測メモを整理する。
+3. DOC_STATUS（`docs/web-client/planning/phase2/DOC_STATUS.md`）と `docs/web-client/ux/ux-documentation-plan.md` にローカル QA の結果と RUN_ID/証跡パスを反映し、ガント progress を完了相当へ更新する。
+4. Patients タブで `cacheHit=false` 時に `resolveMasterSource` バナーが残留するケースがあれば、`web-client/src/features/charts/styles.ts` と `ux/charts/tones.ts` の修正案を artifacts に追記し次スプリントへ引き継ぐ。
