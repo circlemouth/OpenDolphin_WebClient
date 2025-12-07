@@ -180,7 +180,7 @@ src:
         - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行に RUN_ID、ログパス、ローカル検証結果を追記し、docs/web-client/ux/ux-documentation-plan.md の status も更新。
       priority: High
       status: in_progress
-      progress: 50
+      progress: 70
       agent: gemini cli
       api:
         - "/api01rv2/patient/outpatient/*"
@@ -238,7 +238,7 @@ src:
         - docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。
       priority: High
       status: in_progress
-      progress: 45
+      progress: 60
       agent: cursor cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -314,7 +314,7 @@ src:
         - src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md
         - src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md
       schedule:
-        start: 2025-12-10T00:00:00.000Z
+        start: 2025-12-14T00:00:00.000Z
         days: 2
     05_デバッグドキュメント整備.md:
       content: |-
