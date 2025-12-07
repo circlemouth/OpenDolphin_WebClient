@@ -2,7 +2,7 @@
 
 - **RUN_ID=20251206T112050Z（ローカルモダナイズ版サーバー接続で実施予定）**。AGENTS→`docs/web-client/README.md`→`docs/server-modernization/phase2/INDEX.md`→`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の参照チェーンに従い、`setup-modernized-env.sh` でローカル起動したモダナイズ版サーバー＋ Web クライアントを使って Charts/Patients の `missingMaster`/`cacheHit`/`dataSourceTransition=server` トーンを reception と整合させる QA を進行中。Stage での検証は 06_STAGE検証タスクへ移管。
 - YAML ID: `src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md`
-- ステータス: in_progress（ガント progress 45%）。ローカル実接続での検証をこれから実施。
+- ステータス: in_progress（ガント progress 60%）。ローカル実接続での検証をこれから実施。
 
 ## 1. 目的
 1. `setup-modernized-env.sh` で立ち上げたローカルモダナイズ版サーバーに Web クライアントを接続し、Reception→Charts→Patients の導線で `missingMaster`/`cacheHit`/`dataSourceTransition=server` バナーと `resolveMasterSource` 表示が `docs/web-client/ux/charts-claim-ui-policy.md` のトーン要件どおりかを検証する。
