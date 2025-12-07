@@ -30,6 +30,8 @@
 - ORCA エラー共有バナーと病名未紐付警告の tone/aria-live を Reception/Charts で統一し、Playwright ケースの前提を本計画に記録する。
 - Patients からの戻り導線と Administration からの設定配信タイミング（即時/次回リロード）を確認し、監査ログ要件と合わせて各ポリシーに追記する。
 - README / manager checklist で UX 草稿更新を周知し、DOC_STATUS の UX/Features 行に反映済みの旨を維持する。
+- RUN_ID=`20251207T062903Z`：ローカル modernized server + web-client (Vite dev) で Reception→Charts を MSW有効/無効の両モードで検証。`tone=server` / `dataSourceTransition=server` のまま missingMaster=true では aria-live=assertive、missingMaster=false では aria-live=polite になることを確認。通信断（MSW無効 + route abort）でも UI は警告トーンで描画継続。証跡: `docs/server-modernization/phase2/operations/logs/20251207T062903Z-reception-qa.md`、スクリーンショット+メタ `artifacts/webclient/e2e/20251207T062903Z-reception/{fulfill-*.png,fallback-*.png,*-results.json}`。本計画ガントは 04A3 を完了扱いに更新。
+- RUN_ID=`20251207T094118Z`：Charts/Patients ローカル実接続 QA（VITE_DISABLE_MSW=1, port 4176）。`/login` で UI ロードが進まず timeout、Charts/Patients 到達前に停止。証跡: `docs/server-modernization/phase2/operations/logs/20251207T094118Z-charts-qa.md`、`artifacts/webclient/e2e/20251207T094118Z-charts/{99-error.png,results.json}`。次 RUN で login 成功→Patients トーンを再測予定。
 
 ## 5. 20251203T143858Z 外来 UX 要件レビュー
 - 目的: `docs/web-client/ux/ux-documentation-plan.md` を起点に reception/patients/Charts 各草稿を再読し、外来カルテ・受付のトーン、レイアウト比率、ARIA/監査要件を整理。Legacy 資料（`docs/web-client/ux/legacy/`）は履歴参照のみとし、入院向け ORCA API やバナーは本レビューの対象外とする。

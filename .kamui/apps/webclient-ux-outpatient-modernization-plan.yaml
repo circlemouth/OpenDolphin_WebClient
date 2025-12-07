@@ -237,9 +237,9 @@ src:
         - ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。
         - docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。
       priority: High
-      status: in_progress
-      progress: 45
-      agent: cursor cli
+      status: completed
+      progress: 100
+      agent: codex
       api:
         - "/orca12/patientmodv2/outpatient"
         - "/api01rv2/patient/outpatient/*"
