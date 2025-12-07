@@ -237,8 +237,8 @@ src:
         - ログイン後の各画面遷移（ヘッダー/サイドナビの動線やタブ切替）が現行クライアントと整合しているかをスクリーンキャプチャで確保し、artifacts/webclient/e2e/<RUN_ID>-charts/ にストーリーボードとして保存する。
         - docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md にトーン・バナー観察結果と遷移確認のメモ（例: 20251205T133848Z Stage 試行の DNS 失敗も併記）をまとめ、docs/web-client/planning/phase2/DOC_STATUS.md と docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントへローカル検証結果と RUN_ID を記録。
       priority: High
-      status: in_progress
-      progress: 60
+      status: completed
+      progress: 100
       agent: cursor cli
       api:
         - "/orca12/patientmodv2/outpatient"
@@ -300,9 +300,10 @@ src:
         - `setup-modernized-env.sh` で起動したローカルモダナイズ版サーバー（http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources）に Web クライアントを接続し、ホーム→Reception→Charts→Patients のシーケンスで `dataSourceTransition=server`／`cacheHit`／`missingMaster`／`resolveMasterSource` の表示と telemetry funnel が docs/web-client/ux/reception-schedule-ui-policy.md の tone=server 指針に合致することを確認。
         - ログイン後ナビゲーション（ヘッダー/サイドバー/タブ切替）の遷移可否や遅延を確認したうえで artifacts/webclient/e2e/<RUN_ID>-integration/ に接続ログとスクリーンショットを保存し、docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md に接続安定性・バナー表示・telemetry フラグ・遷移観察結果を記録。Stage/Preview 接続は 06_STAGE検証タスクで扱う。
         - docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行と docs/web-client/ux/ux-documentation-plan.md へローカル検証ステータスを反映し、docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md の進捗確認ポイントにも RUN_ID を記載。
+        - 現状メモ: RUN_ID=`20251207T130434Z` でローカル接続を実施したが、server-modernized に `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` のハンドラが未実装のため 404。`src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md` に記録済みで、サーバー実装完了待ち。
       priority: High
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 40
       agent: gemini cli
       api:
         - "/api01rv2/claim/outpatient/*"
