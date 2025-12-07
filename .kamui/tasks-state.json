@@ -1,1 +1,25 @@
-[]
+[
+  {
+    "id": "task-1765150472805-0862ae",
+    "name": "CodexCLI2: 対象ファイル: .kamui\\apps\\webclient-ux-outpatient-modernization-plan.yaml\n\n04B3がおそらく完遂、04C3を実行したが、サーバー側に未実装のAPIがあることが判明した。ログを確認し、05タスクの進行とどちらを優先スべきか検討し、ガントチャートを更新せよ。ここまでの進捗状況も更新すること。",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-07T23:34:32.805Z",
+    "updatedAt": "2025-12-07T23:34:32.805Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765150472805-0862ae",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765150472592-a6d6zpdm",
+    "aiCompetitionGroupName": "対象ファイル: .kamui\\apps\\webclient-ux-outpatient-modernization-plan.yaml\n\n04B3がおそらく完遂、04C3を実行したが、サーバー側に未実装のAPIがあることが判明した。ログを確認し、05タスクの進行とどちらを優先スべきか検討し、ガントチャートを更新せよ。ここまでの進捗状況も更新すること。",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees\\task-1765150472805-0862ae"
+  }
+]
