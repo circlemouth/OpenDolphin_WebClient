@@ -2,48 +2,56 @@
   {
     "id": "task-yaml-jlm513-src-outpatient-u",
     "name": "[webclient ux outpatient modernization plan] 04C4_outpatient_api_gap_implementation\n期間: 12/17 09:00 - 12/19 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 04C4 外来 API ギャップ実装\n\n- 04C3 で 404 だった `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を modernized server に実装し、`web-client/architecture/web-client-api-mapping.md` と telemetry フラグに整合するレスポンスを返すようにする。\n- 実装に合わせて msw/fixtures などクライアント側の契約モックを更新し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-implementation.md` に実装内容とエビデンスを記録する。\n- `resolveMasterSource` / `cacheHit` / `missingMaster` が reception / charts の telemetry ファネルへ正しく流れることを確認する。\n- 実装完了後、RUN_ID を `docs/web-client/planning/phase2/DOC_STATUS.md` に反映する。\n\nYAML ID: src/outpatient_ux_modernization/04C4_outpatient_api_gap_implementation.md",
-    "model": "YAML App",
+    "model": "Codex CLI",
     "status": "pending",
     "importance": "high",
     "urgency": "medium",
+    "branchName": "task/task-yaml-jlm513-src-outpatient-u",
+    "baseBranch": "main",
+    "worktreePath": null,
+    "createWorktree": false,
     "createdAt": "2025-12-08T11:34:41.853Z",
     "updatedAt": "2025-12-08T11:34:41.853Z",
     "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-jlm513-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
+    "bookmarked": false,
     "aiCompetitionEntry": false,
     "aiCompetitionResult": null,
     "aiCompetitionGroupId": null,
     "aiCompetitionGroupName": null,
+    "autoEvaluationNotBefore": null,
+    "useTmux": false,
+    "taskType": "yaml-plan",
+    "modelId": null,
+    "latestVersion": null,
+    "currentVersion": null,
+    "installSteps": [],
+    "installCommand": null,
+    "createdAutomatically": false,
+    "dependencies": [
+      "task-yaml-70588s-src-outpatient-u"
+    ]
+  },
+  {
+    "id": "task-1765237582123-af09ef",
+    "name": "CodexCLI1: 対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C3タスクが完了した。リポジトリのドキュメント等を確認してガントを更新、かつ次以降のタスクに修正が必要ならば修正を入れて。",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-08T23:46:22.123Z",
+    "updatedAt": "2025-12-08T23:46:22.123Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765237582123-af09ef",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765237582074-q7flrpky",
+    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C3タスクが完了した。リポジトリのドキュメント等を確認してガントを更新、かつ次以降のタスクに修正が必要ならば修正を入れて。",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/04C4_outpatient_api_gap_implementation.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/04C4_outpatient_api_gap_implementation.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-08T11:34:41.838Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-70588s-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1765929600000,
-      "endMs": 1766102400000,
-      "durationDays": 2
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 04C4 外来 API ギャップ実装\n\n- 04C3 で 404 だった `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を modernized server に実装し、`web-client/architecture/web-client-api-mapping.md` と telemetry フラグに整合するレスポンスを返すようにする。\n- 実装に合わせて msw/fixtures などクライアント側の契約モックを更新し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-implementation.md` に実装内容とエビデンスを記録する。\n- `resolveMasterSource` / `cacheHit` / `missingMaster` が reception / charts の telemetry ファネルへ正しく流れることを確認する。\n- 実装完了後、RUN_ID を `docs/web-client/planning/phase2/DOC_STATUS.md` に反映する。"
+    "worktreePath": ".worktrees/task-1765237582123-af09ef"
   }
 ]
