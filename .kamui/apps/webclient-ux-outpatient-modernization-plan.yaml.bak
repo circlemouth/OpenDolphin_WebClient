@@ -1,0 +1,381 @@
+﻿ganttConfig:
+  defaultView: week
+  startDate: 2025-12-03
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 譌･
+    - 譛・
+    - 轣ｫ
+    - 豌ｴ
+    - 譛ｨ
+    - 驥・
+    - 蝨・
+  priorities:
+    high: 鬮・
+    medium: 荳ｭ
+    low: 菴・
+  statuses:
+    completed: 螳御ｺ・
+    inProgress: 騾ｲ陦御ｸｭ
+    notStarted: 譛ｪ髢句ｧ・
+  buttons:
+    filter: 繝輔ぅ繝ｫ繧ｿ繝ｼ
+    previousPeriod: 蜑阪∈
+    nextPeriod: 谺｡縺ｸ
+  filterPanel:
+    priorities: 蜆ｪ蜈亥ｺｦ
+    statuses: 繧ｹ繝・・繧ｿ繧ｹ
+    dependencies: 萓晏ｭ倬未菫・
+    showDependencies: 萓晏ｭ倬未菫ゅｒ陦ｨ遉ｺ
+    tasksCount: 繧ｿ繧ｹ繧ｯ謨ｰ
+  tooltipFields:
+    startDate: 髢句ｧ区律
+    duration: 譛滄俣
+    priority: 蜆ｪ蜈亥ｺｦ
+    status: 繧ｹ繝・・繧ｿ繧ｹ
+    progress: 騾ｲ謐・
+    agent: 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・
+    details: 隧ｳ邏ｰ
+    prerequisites: 蜑肴署繧ｿ繧ｹ繧ｯ
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  outpatient_ux_modernization:
+    00_RUN_ID縺ｨ蜿ら・繝√ぉ繝ｼ繝ｳ謨ｴ逅・md:
+      content: |-
+        # 00 RUN_ID 縺ｨ蜿ら・繝√ぉ繝ｼ繝ｳ謨ｴ逅・
+
+        - RUN_ID=`20251203T222026Z` 縺ｧ AGENTS.md 竊・docs/web-client/README.md 竊・docs/server-modernization/phase2/INDEX.md 竊・docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md 縺ｮ蜿ら・鬆・ｒ蜀咲｢ｺ隱阪＠縲∬ｨｼ霍｡縺ｯ縺吶∋縺ｦ docs/server-modernization/phase2/operations/logs/ 縺ｫ謠・∴繧九・
+        - docs/web-client/planning/phase2/DOC_STATUS.md 縺ｮ縲係eb 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features縲崎｡後↓迴ｾ陦・RUN_ID 縺ｨ險ｼ霍｡繝代せ縲√せ繝・・繧ｿ繧ｹ繧定ｨ伜・縺励‥ocs/server-modernization/phase2/operations/logs/<RUN_ID>-run-id-chain.md 縺ｸ縺ｮ繝ｪ繝ｳ繧ｯ繧偵▽縺代ｋ縲・
+        - Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝磯幕逋ｺ繝ｫ繝ｼ繝ｫ・・ython 遖∵ｭ｢縲《erver/ 隗ｦ繧峨↑縺・´egacy 雉・肇蜿ら・縺ｮ縺ｿ・峨→ ORCA 謗･邯壼宛邏・ｼ・ocs/web-client/operations/mac-dev-login.local.md 縺ｧ遒ｺ隱搾ｼ峨ｒ繝√・繝縺ｸ蜈ｱ譛峨☆繧区ｺ門ｙ繧偵☆繧九・
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency: []
+      schedule:
+        start: 2025-12-03T22:20:26.000Z
+        days: 1
+    01_UX繝峨く繝･繝｡繝ｳ繝郁ｦ∽ｻｶ繝ｬ繝薙Η繝ｼ.md:
+      content: |-
+        # 01 UX 繝峨く繝･繝｡繝ｳ繝郁ｦ∽ｻｶ繝ｬ繝薙Η繝ｼ
+
+        - docs/web-client/ux/ux-documentation-plan.md 繧定ｵｷ轤ｹ縺ｫ reception-schedule-ui-policy.md / patients-admin-ui-policy.md / charts-claim-ui-policy.md 繧定ｪｭ縺ｿ縲∝､匁擂繧ｫ繝ｫ繝・→蜿嶺ｻ倥・繝医・繝ｳ縲∫屮譟ｻ繝ｻARIA 隕∽ｻｶ縲√Ξ繧､繧｢繧ｦ繝域ｯ皮紫繧貞・謨ｴ逅・☆繧九・
+        - Legacy 雉・侭・・x/legacy/*・峨・螻･豁ｴ蜿ら・縺ｫ縺ｨ縺ｩ繧√∫樟陦後〒謇ｱ縺・､匁擂繧ｷ繝翫Μ繧ｪ縺ｮ縺ｿ縺ｫ繝輔か繝ｼ繧ｫ繧ｹ縲ょ・髯｢蜷代￠ ORCA API 繧・ヰ繝翫・縺ｯ譛ｬ繧ｹ繧ｳ繝ｼ繝励°繧蛾勁螟悶☆繧九・
+        - 謚ｽ蜃ｺ邨先棡繧・docs/web-client/ux/ux-documentation-plan.md 縺ｸ霑ｽ險倥＠縲∵ｬ｡谿ｵ髫弱・險ｭ險医Γ繝｢縺ｨ縺励※ artifacts/webclient/ux-notes/<RUN_ID>-ux-review.md 繧呈ｺ門ｙ縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: claude code
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/00_RUN_ID縺ｨ蜿ら・繝√ぉ繝ｼ繝ｳ謨ｴ逅・md
+      schedule:
+        start: 2025-12-04T00:00:00.000Z
+        days: 2
+    02_螟匁擂繧ｫ繝ｫ繝・X縺ｨAPI繧ｫ繝舌Ξ繝・ず.md:
+      content: |-
+        # 02 螟匁擂繧ｫ繝ｫ繝・UX 縺ｨ API 繧ｫ繝舌Ξ繝・ず
+
+        - charts-claim-ui-policy.md 繧偵・繝ｼ繧ｹ縺ｫ縲∝､匁擂繧ｫ繝ｫ繝・ChartsPage 縺ｧ陦ｨ遉ｺ縺吶ｋ DocumentTimeline縲＾rderConsole縲＾rcaSummary 縺ｮ迥ｶ諷矩・遘ｻ縺ｨ aria-live 繝舌リ繝ｼ繧剃ｸ隕ｧ蛹悶＠縲‥ocs/web-client/ux/reception-schedule-ui-policy.md 縺ｮ迚・・繧ｷ繝翫Μ繧ｪ縺ｨ謨ｴ蜷医＆縺帙ｋ縲・
+        - 蜿嶺ｻ倪・繧ｫ繝ｫ繝・・蟆守ｷ壹∽ｿ晞匱/閾ｪ雋ｻ繝輔ぅ繝ｫ繧ｿ縲∫屮譟ｻ繝ｭ繧ｰ縺ｮ `dataSourceTransition`/`missingMaster`/`fallbackUsed` 繧・UX 隕ｳ轤ｹ縺九ｉ謨ｴ逅・＠縲∝､匁擂 API 縺ｮ縺ｿ繧貞ｯｾ雎｡縺ｫ縺励◆繝・・繝悶Ν繧偵▽縺上ｋ・亥・髯｢ API 縺ｯ `N/A`・峨・
+        - 縺薙・ UX 繧ｫ繝舌Ξ繝・ず繧・docs/web-client/ux/ux-documentation-plan.md 縺ｮ隧ｲ蠖薙そ繧ｯ繧ｷ繝ｧ繝ｳ縺ｫ荳頑嶌縺阪＠縲∵ｬ｡縺ｮ API 繝槭ャ繝斐Φ繧ｰ繧ｿ繧ｹ繧ｯ縺ｸ縺ｮ繧､繝ｳ繝励ャ繝医ｒ artifacts/webclient/ux-notes/<RUN_ID>-charts-ux.md 縺ｸ險倬鹸縲・
+      priority: Medium
+      status: completed
+      progress: 100
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/01_UX繝峨く繝･繝｡繝ｳ繝郁ｦ∽ｻｶ繝ｬ繝薙Η繝ｼ.md
+      schedule:
+        start: 2025-12-06T00:00:00.000Z
+        days: 3
+    03_繝｢繝繝翫う繧ｺAPI繝槭ャ繝斐Φ繧ｰ.md:
+      content: |-
+        # 03 繝｢繝繝翫う繧ｺ API 繝槭ャ繝斐Φ繧ｰ
+
+        - docs/server-modernization/phase2/foundation 縺翫ｈ縺ｳ docs/web-client/architecture/web-client-api-mapping.md 繧貞盾辣ｧ縺励ヽeception/Charts/Patients/Administration 縺ｧ菴ｿ縺・`/api01rv2/claim/outpatient/*`縲～/api01rv2/appointment/outpatient/*`縲～/orca12/patientmodv2/outpatient`縲～/orca21/medicalmodv2/outpatient` 縺ｮ繝ｬ繧ｹ繝昴Φ繧ｹ shape 縺ｨ `auditEvent` 鬆・岼繧剃ｸ隕ｧ蛹悶・
+        - ORCA 縺ｮ蜈･髯｢逕ｨ繧ｨ繝ｳ繝峨・繧､繝ｳ繝茨ｼ井ｾ・ `/orca21/medicalmodv2/inpatient`・峨・譛ｬ繝輔ぉ繝ｼ繧ｺ縺ｧ螳溯｣・＠縺ｪ縺・◆繧√∝ｷｮ蛻・｡ｨ縺ｫ縺ｯ縲悟､匁擂繧ｹ繧ｳ繝ｼ繝怜､悶阪→譏手ｨ倥＠縲．OC_STATUS 縺ｮ蛯呵・↓險倬鹸縲・
+        - 蟾ｮ蛻・ｄ荳肴紛蜷医′縺ゅｌ縺ｰ docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap.md 縺ｫ險倬鹸縺励∝ｿ・ｦ√↓蠢懊§縺ｦ modernized server 繝√・繝縺ｸ繝輔ぅ繝ｼ繝峨ヰ繝・け縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: cursor cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/02_螟匁擂繧ｫ繝ｫ繝・X縺ｨAPI繧ｫ繝舌Ξ繝・ず.md
+      schedule:
+        start: 2025-12-09T00:00:00.000Z
+        days: 2
+    04A1_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝亥女莉篭X險ｭ險医→繧ｹ繝・・繧ｯ繝帙Ν繝繝ｼ蜷梧悄.md:
+      content: |-
+        # 04A1 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ壼女莉・UX 險ｭ險医→繧ｹ繝・・繧ｯ繝帙Ν繝繝ｼ蜷梧悄
+
+        - docs/web-client/ux/reception-schedule-ui-policy.md 繧貞・遒ｺ隱阪＠縲》one=server 繝舌リ繝ｼ繧・`dataSourceTransition`・汁resolveMasterSource` 陦ｨ迴ｾ縺ｮ譁ｹ蜷第ｧ繧・Reception/OrderConsole 縺ｫ蜷医ｏ縺帙◆蜈ｱ騾壹ヨ繝ｼ繝ｳ縺ｨ縺励※謨ｴ逅・・
+        - 繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ繧・ｩｲ蠖薙さ繝ｼ繝臥援繧・`artifacts/webclient/ux-notes/<RUN_ID>-reception-design.md` 縺ｫ縺ｾ縺ｨ繧√※縲‥ocs/web-client/ux/ux-documentation-plan.md 縺ｮ reception 繧ｻ繧ｯ繧ｷ繝ｧ繝ｳ縺ｫ險ｭ險医・陬懆ｶｳ繧定ｿｽ蜉縲・
+        - 隧ｰ繧√◆隕∽ｻｶ縺ｨ API 萓晏ｭ倬未菫ゅ・ docs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-design.md 縺ｫ險倬鹸縺励．OC_STATUS 縺ｮ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features 陦後↓ RUN_ID 縺ｨ繝ｭ繧ｰ繝代せ繧呈・險倥☆繧区ｺ門ｙ繧帝ｲ繧√ｋ縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/03_繝｢繝繝翫う繧ｺAPI繝槭ャ繝斐Φ繧ｰ.md
+      schedule:
+        start: 2025-12-11T00:00:00.000Z
+        days: 1
+    04A2_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝亥女莉篭X繧ｳ繝ｳ繝昴・繝阪Φ繝亥ｮ溯｣・md:
+      content: |-
+        # 04A2 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ壼女莉・UX 繧ｳ繝ｳ繝昴・繝阪Φ繝亥ｮ溯｣・
+
+        - 1. `web-client/src/features/reception/ReceptionPage.tsx` 縺ｨ `OrderConsole.tsx` 縺ｧ tone/`missingMaster`/`resolveMasterSource` 縺ｮ迴ｾ蝨ｨ縺ｮ props繝ｻ繝輔Λ繧ｰ繧呈紛逅・＠縲∝ｷｮ蛻・ｒ artifacts/webclient/ux-notes/<RUN_ID>-reception-ux-implementation.md 縺ｫ譖ｸ縺榊・縺吶・
+        - 2. tone=server 繝舌リ繝ｼ縺ｨ `resolveMasterSource` 繝舌ャ繧ｸ繧呈ｮｵ髫守噪縺ｫ邨・∩霎ｼ縺ｿ縲～missingMaster` 蜈･蜉帙・謠千､ｺ繧・`OrderConsole` 縺縺代↓髮・ｴ・＠縺ｦ `aria-live` 隱ｿ謨ｴ縺瑚｡後＞繧・☆縺・憾諷九→縺吶ｋ縲・
+        - 3. Charts/Patients 縺ｧ菴ｿ縺｣縺ｦ縺・ｋ `missingMaster`繝ｻ`cacheHit` 陦ｨ遉ｺ縺ｨ繝医・繝ｳ繝ｻ繝舌ャ繧ｸ縺ｮ蜈ｱ騾壹せ繧ｿ繧､繝ｫ繧堤・蜷医＠縲∝ｿ・ｦ√↑ class/selector 繧・`web-client/src/features/reception/styles.ts` 縺ｸ遘ｻ讀阪☆繧九・
+        - 4. docs/web-client/ux/reception-schedule-ui-policy.md 縺ｫ繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ縺ｨ隱ｿ謨ｴ繝｡繝｢繧定ｿｽ蜉縺励‥ocs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-ux.md 縺ｸ萓晏ｭ・API 縺ｨ `missingMaster` flag 縺ｮ襍ｷ轤ｹ繧定ｨ倬鹸縺励※ DOC_STATUS 蜿肴丐縺ｮ貅門ｙ縺ｨ縺吶ｋ縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: gemini cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04A1_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝亥女莉篭X險ｭ險医→繧ｹ繝・・繧ｯ繝帙Ν繝繝ｼ蜷梧悄.md
+      schedule:
+        start: 2025-12-04T00:00:00.000Z
+        days: 4
+    04A3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝亥女莉篭X讀懆ｨｼ縺ｨDOC_STATUS蜿肴丐.md:
+      content: |-
+        # 04A3 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ壼女莉・UX 讀懆ｨｼ縺ｨ DOC_STATUS 蜿肴丐
+
+        - `setup-modernized-env.sh`・・EB_CLIENT_MODE=npm/ docker 縺・★繧後ｂ蜿ｯ・峨〒襍ｷ蜍輔＠縺ｦ繧ゅｉ縺｣縺溘Δ繝繝翫う繧ｺ迚医し繝ｼ繝舌・・・Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝医ｒ蜑肴署縺ｫ Reception竊辰harts 繧貞・襍ｰ縺励～dataSourceTransition=server` 縺ｨ `missingMaster` 繝舌リ繝ｼ縺・docs/web-client/ux/reception-schedule-ui-policy.md 縺ｮ繝医・繝ｳ隕∽ｻｶ縺ｩ縺翫ｊ縺狗｢ｺ隱阪・
+        - `VITE_DISABLE_MSW=1` 縺ｧ縺ｮ辟｡騾壻ｿ｡讀懆ｨｼ縺ｨ縲～missingMaster=false` 繧ｱ繝ｼ繧ｹ縺ｮ aria-live 謖吝虚繧ら｢ｺ隱阪＠縲∝ｷｮ蛻・′縺ゅｌ縺ｰ `web-client/src/features/reception/OrderConsole.tsx` 縺ｮ繝ｭ繧ｰ縺ｨ菴ｵ縺帙※險倬鹸縲・
+        - 繝ｭ繝ｼ繧ｫ繝ｫ讀懆ｨｼ縺ｮ繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ繝ｻ繝ｭ繧ｰ繧・artifacts/webclient/e2e/<RUN_ID>-reception/ 縺ｫ菫晏ｭ倥＠縲‥ocs/server-modernization/phase2/operations/logs/<RUN_ID>-reception-qa.md 縺ｸ隕ｳ蟇溽ｵ先棡繧定ｨ倬鹸・・tage DNS/讓ｩ髯先悴螳滓命縺ｮ蝣ｴ蜷医・蛯呵・↓譏手ｨ假ｼ峨・
+        - docs/web-client/planning/phase2/DOC_STATUS.md 縺ｮ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features 陦後↓ RUN_ID縲√Ο繧ｰ繝代せ縲√Ο繝ｼ繧ｫ繝ｫ讀懆ｨｼ邨先棡繧定ｿｽ險倥＠縲‥ocs/web-client/ux/ux-documentation-plan.md 縺ｮ status 繧よ峩譁ｰ縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: gemini cli
+      api:
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04A2_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝亥女莉篭X繧ｳ繝ｳ繝昴・繝阪Φ繝亥ｮ溯｣・md
+      schedule:
+        start: 2025-12-05T00:00:00.000Z
+        days: 2
+    04B1_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX險ｭ險・md:
+      content: |-
+        # 04B1 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ咾harts/Patients UX 險ｭ險・
+
+        - docs/web-client/ux/charts-claim-ui-policy.md 縺ｨ reception-schedule-ui-policy.md 繧堤・蜷医＠縲～DocumentTimeline`・汁OrderConsole`・汁Patients` 縺ｧ `missingMaster` 繝舌リ繝ｼ繝ｻ`dataSourceTransition=server` 縺ｮ繝医・繝ｳ縺檎ｵｱ荳縺輔ｌ繧九ｈ縺・ヨ繝ｬ繝ｼ繧ｵ繝薙Μ繝・ぅ繧呈紛逅・・
+        - ORCA `cacheHit`/`missingMaster` 繝輔Λ繧ｰ繧貞女縺大叙繧九ち繧､繝溘Φ繧ｰ縺ｨ UI 陦ｨ遉ｺ隕∽ｻｶ繧・UX 繝峨く繝･繝｡繝ｳ繝医→ artifacts/webclient/ux-notes/<RUN_ID>-charts-design.md 縺ｸ謨ｴ逅・＠縲√せ繝・・繧ｸ縺ｧ縺ｮ隕ｳ蟇滄・岼繧呈・險倥・
+        - 險ｭ險医Ο繧ｰ縺ｯ docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-design.md 縺ｸ險倬鹸縺励．OC_STATUS 縺ｮ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features 陦後↓繝ｩ繝ｳ繝翫・縺ｨ縺励※ RUN_ID 縺ｨ繝代せ繧定ｿｽ險倥☆繧九・
+      priority: High
+      status: completed
+      progress: 100
+      agent: cursor cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/03_繝｢繝繝翫う繧ｺAPI繝槭ャ繝斐Φ繧ｰ.md
+      schedule:
+        start: 2025-12-11T00:00:00.000Z
+        days: 1
+    04B2_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX螳溯｣・md:
+      content: |-
+        # 04B2 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ咾harts/Patients UX 螳溯｣・
+
+        - 1. `web-client/src/features/charts/DocumentTimeline.tsx` 縺ｨ `OrderConsole.tsx`縲～OrcaSummary.tsx`縲～Patients` 繧ｿ繝悶・繧ｳ繝ｳ繝昴・繝阪Φ繝域ｧ矩繧偵Μ繧ｹ繝医い繝・・縺励～missingMaster`/`dataSourceTransition=server` 縺ｮ陦ｨ遉ｺ邂・園縺ｨ萓晏ｭ・props 繧・artifacts/webclient/ux-notes/<RUN_ID>-charts-ui-audit.md 縺ｫ謨ｴ逅・・
+        - 2. `auth-service` 縺九ｉ蜿励￠蜿悶ｋ `missingMaster`/`cacheHit` 繝輔Λ繧ｰ縺ｧ tone 繧貞・繧頑崛縺医ｋ繝ｭ繧ｸ繝・け繧・`DocumentTimeline` 縺ｨ `Patients` 繧ｿ繝悶↓霑ｽ蜉縺励～dataSourceTransition=server` 陦ｨ遉ｺ繧貞・騾壹・ `ux/charts/tones.ts` 縺ｫ蛻・ｊ蜃ｺ縺吶・
+        - 3. `OrcaSummary` 縺ｨ `OrderConsole` 縺ｮ `missingMaster` 繝舌リ繝ｼ繧・`aria-live` 莉倥″縺ｧ蜀阪Ξ繝ｳ繝繝ｪ繝ｳ繧ｰ縺励，harts/Patients 縺ｮ繝医・繝ｳ縺・reception 蛛ｴ縺ｨ荳閾ｴ縺吶ｋ繧医≧縺ｫ `styles`繝ｻ`options` 繧貞粋繧上○繧九・
+        - 4. docs/web-client/ux/ux-documentation-plan.md 縺ｫ繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ縺ｨ tone 螟牙喧繧定ｨ倩ｼ峨＠縲‥ocs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-orca.md 縺ｫ螳溯｣・・繧､繝ｳ繝茨ｼ丈ｾ晏ｭ・API 繧定ｨ倬鹸縲．OC_STATUS 縺ｨ manager checklist 縺ｮ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features 陦後∈ RUN_ID/繝代せ繧定ｿｽ蜉縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: cursor cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04B1_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX險ｭ險・md
+      schedule:
+        start: 2025-12-05T00:00:00.000Z
+        days: 4
+    04B3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX讀懆ｨｼ.md:
+      content: |-
+        # 04B3 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ咾harts/Patients UX 讀懆ｨｼ
+
+        - `setup-modernized-env.sh`・・EB_CLIENT_MODE=npm/ docker 縺・★繧後ｂ蜿ｯ・峨〒襍ｷ蜍墓ｸ医∩縺ｮ繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・・・Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝医ｒ蜑肴署縺ｫ縲√Ο繧ｰ繧､繝ｳ 竊・Reception 竊・Charts 竊・Patients 縺ｮ蟆守ｷ壹ｒ螳滄圀縺ｫ縺溘←繧翫～missingMaster`/`cacheHit` 繝舌リ繝ｼ縺ｨ `dataSourceTransition=server` 陦ｨ遉ｺ縺・docs/web-client/ux/charts-claim-ui-policy.md 縺ｮ繝医・繝ｳ隕∽ｻｶ縺ｩ縺翫ｊ縺狗｢ｺ隱阪☆繧九・
+        - `Patients` 繧ｿ繝悶〒 `cacheHit=false` 縺ｮ縺ｨ縺阪↓ `resolveMasterSource` 繝舌リ繝ｼ縺梧ｶ医∴繧九°繧定ｿｽ蜉遒ｺ隱阪＠縲～OrcaSummary` 縺ｨ繝医・繝ｳ縺ｮ蟾ｮ縺後≠繧後・ `styles` 菫ｮ豁｣譯医ｒ artifacts/webclient/ux-notes/<RUN_ID>-charts-ui-audit.md 縺ｫ霑ｽ險倥・
+        - 繝ｭ繧ｰ繧､繝ｳ蠕後・蜷・判髱｢驕ｷ遘ｻ・医・繝・ム繝ｼ/繧ｵ繧､繝峨リ繝薙・蜍慕ｷ壹ｄ繧ｿ繝門・譖ｿ・峨′迴ｾ陦後け繝ｩ繧､繧｢繝ｳ繝医→謨ｴ蜷医＠縺ｦ縺・ｋ縺九ｒ繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｭ繝｣繝励メ繝｣縺ｧ遒ｺ菫昴＠縲∥rtifacts/webclient/e2e/<RUN_ID>-charts/ 縺ｫ繧ｹ繝医・繝ｪ繝ｼ繝懊・繝峨→縺励※菫晏ｭ倥☆繧九・
+        - docs/server-modernization/phase2/operations/logs/<RUN_ID>-charts-qa.md 縺ｫ繝医・繝ｳ繝ｻ繝舌リ繝ｼ隕ｳ蟇溽ｵ先棡縺ｨ驕ｷ遘ｻ遒ｺ隱阪・繝｡繝｢・井ｾ・ 20251205T133848Z Stage 隧ｦ陦後・ DNS 螟ｱ謨励ｂ菴ｵ險假ｼ峨ｒ縺ｾ縺ｨ繧√‥ocs/web-client/planning/phase2/DOC_STATUS.md 縺ｨ docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md 縺ｮ騾ｲ謐礼｢ｺ隱阪・繧､繝ｳ繝医∈繝ｭ繝ｼ繧ｫ繝ｫ讀懆ｨｼ邨先棡縺ｨ RUN_ID 繧定ｨ倬鹸縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: cursor cli
+      api:
+        - "/orca12/patientmodv2/outpatient"
+        - "/api01rv2/patient/outpatient/*"
+      dependency:
+        - src/outpatient_ux_modernization/04B2_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX螳溯｣・md
+      schedule:
+        start: 2025-12-06T00:00:00.000Z
+        days: 3
+    04C1_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI邨ｱ蜷郁ｨｭ險・md:
+      content: |-
+        # 04C1 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ哂PI 邨ｱ蜷郁ｨｭ險・
+
+        - docs/server-modernization/phase2/foundation 縺ｨ docs/web-client/architecture/web-client-api-mapping.md 繧貞盾辣ｧ縺励～web-client/src/libs/http/httpClient.ts` 縺ｫ逋ｻ骭ｲ縺吶ｋ `/api01rv2/claim/outpatient/*`縲～/api01rv2/appointment/outpatient/*`縲～/orca21/medicalmodv2/outpatient` 縺ｪ縺ｩ縺ｮ繧ｨ繝ｳ繝峨・繧､繝ｳ繝医ｒ荳隕ｧ蛹悶・
+        - `resolveMasterSource` 縺・`dataSourceTransition=server` 繧定ｿ斐☆繧ｱ繝ｼ繧ｹ縲～auditEvent` 繝槭ャ繝斐Φ繧ｰ縲～cacheHit`/`missingMaster` flag 縺ｮ莨晄眺繧・artifacts/webclient/ux-notes/<RUN_ID>-integration-design.md 縺ｫ謨ｴ逅・＠縲∝ｮ溯｣・・蜑肴署繧・docs/web-client/ux/ux-documentation-plan.md 縺ｫ蝗ｳ遉ｺ縲・
+        - 險ｭ險医Ο繧ｰ縺ｯ docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-design.md 縺ｫ險倬鹸縺励．OC_STATUS 縺ｮ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features 陦後∈ RUN_ID 縺ｨ繝代せ繧定ｨ伜・縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: gemini cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/03_繝｢繝繝翫う繧ｺAPI繝槭ャ繝斐Φ繧ｰ.md
+      schedule:
+        start: 2025-12-11T00:00:00.000Z
+        days: 1
+    04C2_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI邨ｱ蜷亥ｮ溯｣・md:
+      content: |-
+        # 04C2 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ哂PI 邨ｱ蜷亥ｮ溯｣・
+
+        - 1. `web-client/src/libs/http/httpClient.ts` 縺ｫ `/api01rv2/claim/outpatient/*`縲～/api01rv2/appointment/outpatient/*`縲～/api01rv2/patient/outpatient/*`縲～/orca12/patientmodv2/outpatient`縲～/orca21/medicalmodv2/outpatient` 繧・`outpatient` 繧ｰ繝ｫ繝ｼ繝励〒逋ｻ骭ｲ縺励～resolveMasterSource` 縺ｧ `dataSourceTransition=server` 繧堤ｶｭ謖√☆繧倶ｻ慕ｵ・∩繧呈・譁・喧縺吶ｋ縲・
+        - 2. `web-client/src/libs/telemetry/telemetryClient.ts` 縺ｸ flag 蜿嶺ｿ｡譎ゅ・繝輔ぃ繝阪Ν繝ｭ繧ｰ繧定ｿｽ蜉縺励～web-client/src/features/charts` 蛛ｴ縺ｧ `cacheHit`/`missingMaster` 縺悟ｱ翫＞縺溘ち繧､繝溘Φ繧ｰ繧・telemetry 繧､繝吶Φ繝医↓縺励※ `funnels/outpatient` 繧呈峩譁ｰ縺吶ｋ縲・
+        - 3. `web-client/src/features/charts/orchestration.ts` 縺ｪ縺ｩ縺ｧ `cacheHit` 蜿嶺ｿ｡蠕後↓ `setResolveMasterSource('server')` 繧貞他縺ｶ繧医≧縺ｫ縺励～telemetry` 騾｣謳ｺ縺ｨ `dataSourceTransition` 陦ｨ遉ｺ縺悟酔譛溘＠縺ｦ縺・ｋ迥ｶ諷九ｒ `docs/web-client/ux/reception-schedule-ui-policy.md` 縺ｨ `docs/web-client/ux/ux-documentation-plan.md` 縺ｫ謗･邯壹ヵ繝ｭ繝ｼ蝗ｳ繝ｻ蟾ｮ蛻・→縺励※險倬鹸縲・
+        - 4. docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-implementation.md 縺ｫ API 繝代せ荳隕ｧ縺ｨ蜿ら・蜈茨ｼ・ttpClient/telemetry/ChartsOrchestration・峨ｒ險倬鹸縺励．OC_STATUS 縺ｨ manager checklist 縺ｮ蟇ｾ蠢懆｡後∈ RUN_ID 縺ｨ繝ｭ繧ｰ繝代せ繧呈・險倥＠縺ｦ縺翫￥縲・
+      priority: High
+      status: completed
+      progress: 100
+      agent: gemini cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C1_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI邨ｱ蜷郁ｨｭ險・md
+      schedule:
+        start: 2025-12-05T00:00:00.000Z
+        days: 4
+    04C3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壽､懆ｨｼ.md:
+      content: |-
+        # 04C3 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ哂PI 謗･邯壽､懆ｨｼ
+
+        - `setup-modernized-env.sh` 縺ｧ襍ｷ蜍輔＠縺溘Ο繝ｼ繧ｫ繝ｫ繝｢繝繝翫う繧ｺ迚医し繝ｼ繝舌・・・ttp://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources・峨↓ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝医ｒ謗･邯壹＠縲√・繝ｼ繝竊坦eception竊辰harts竊単atients 縺ｮ繧ｷ繝ｼ繧ｱ繝ｳ繧ｹ縺ｧ `dataSourceTransition=server`・汁cacheHit`・汁missingMaster`・汁resolveMasterSource` 縺ｮ陦ｨ遉ｺ縺ｨ telemetry funnel 縺・docs/web-client/ux/reception-schedule-ui-policy.md 縺ｮ tone=server 謖・・縺ｫ蜷郁・縺吶ｋ縺薙→繧堤｢ｺ隱阪・
+        - 繝ｭ繧ｰ繧､繝ｳ蠕後リ繝薙ご繝ｼ繧ｷ繝ｧ繝ｳ・医・繝・ム繝ｼ/繧ｵ繧､繝峨ヰ繝ｼ/繧ｿ繝門・譖ｿ・峨・驕ｷ遘ｻ蜿ｯ蜷ｦ繧・≦蟒ｶ繧堤｢ｺ隱阪＠縺溘≧縺医〒 artifacts/webclient/e2e/<RUN_ID>-integration/ 縺ｫ謗･邯壹Ο繧ｰ縺ｨ繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ繧剃ｿ晏ｭ倥＠縲‥ocs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-qa.md 縺ｫ謗･邯壼ｮ牙ｮ壽ｧ繝ｻ繝舌リ繝ｼ陦ｨ遉ｺ繝ｻtelemetry 繝輔Λ繧ｰ繝ｻ驕ｷ遘ｻ隕ｳ蟇溽ｵ先棡繧定ｨ倬鹸縲４tage/Preview 謗･邯壹・ 06_STAGE讀懆ｨｼ繧ｿ繧ｹ繧ｯ縺ｧ謇ｱ縺・・
+        - docs/web-client/planning/phase2/DOC_STATUS.md 縺ｮ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features 陦後→ docs/web-client/ux/ux-documentation-plan.md 縺ｸ繝ｭ繝ｼ繧ｫ繝ｫ讀懆ｨｼ繧ｹ繝・・繧ｿ繧ｹ繧貞渚譏縺励‥ocs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md 縺ｮ騾ｲ謐礼｢ｺ隱阪・繧､繝ｳ繝医↓繧・RUN_ID 繧定ｨ倩ｼ峨・
+        - 迴ｾ迥ｶ繝｡繝｢: RUN_ID=`20251207T130434Z` 縺ｧ繝ｭ繝ｼ繧ｫ繝ｫ謗･邯壹ｒ螳滓命縺励◆縺後《erver-modernized 縺ｫ `/api01rv2/claim/outpatient/mock` 縺ｨ `/orca21/medicalmodv2/outpatient` 縺ｮ繝上Φ繝峨Λ縺梧悴螳溯｣・・縺溘ａ 404縲Ａsrc/outpatient_ux_modernization/04C3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壽､懆ｨｼ.md` 縺ｫ險倬鹸貂医∩縺ｧ縲√し繝ｼ繝舌・螳溯｣・ｮ御ｺ・ｾ・■縲・
+      priority: High
+      status: in_progress
+      progress: 40
+      agent: gemini cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/appointment/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca12/patientmodv2/outpatient"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C2_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI邨ｱ蜷亥ｮ溯｣・md
+        - src/outpatient_ux_modernization/04B3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX讀懆ｨｼ.md
+      schedule:
+        start: 2025-12-14T00:00:00.000Z
+        days: 2
+    04C4_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壹未実装API謠冗判.md:
+      content: |-
+        # 04C4 WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝茨ｼ哂PI 謗･邯壹未実装 API 謠冗判
+
+        - 04C3 縺ｮ繝医・繝ｳ繧帝愆峇蜃ｺ縺励◆ `/api01rv2/claim/outpatient/mock` 繝輔Λ繧ｰ縺ｨ `/orca21/medicalmodv2/outpatient` 縺ｮ 404 邨先棡繧貞匱譖ｸ縺励・server-modernized 縺ｧ蜈ｱ蜿ｯ縺励※繧・繝輔ぅ繝ｼ繝峨Ο繝ｼ繧ｫ繝ｫ螟牙喧繧定｡後・譚･蜩√＠縲・
+        - `/api01rv2/claim/outpatient/mock` 縺ｮ mock 繧､繝ｳ繝励Μ繧､繝吶Φ繝医・繝輔Λ繧ｰ繧定｡後・譬ｼ邏阪⊂pi01rv2/claim/outpatient/* 縺ｮ繝医・繝ｳ譁・喧繧呈・蜩∴繧九・
+        - `/orca21/medicalmodv2/outpatient` 縺ｮ縺薙・螳滓命縺励◆謗･邯壹ｒ蜿悶ｊ縺吶ｋ縲ゅ・縺九ｍ縲らtelemetry/monitoring 繧帝ｲ謐励Μ繧､繝吶Φ繝医ｒ螳滓命縺励※繧ょ､ｪ縺励※蜀・勣譚･蜩√＠縲・
+        - docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-api-fix.md 縺ｧ証跡繧呈・縺励※縲√Ο繧ｰ繝代せ繧・docs/web-client/planning/phase2/DOC_STATUS.md 縺九ｉ Web 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features 縺ｮ譁・喧繧定ｿｽ險倥☆繧九・
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api:
+        - "/api01rv2/claim/outpatient/mock"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壽､懆ｨｼ.md
+      schedule:
+        start: 2025-12-16T00:00:00.000Z
+        days: 2
+    05_繝・ヰ繝・げ繝峨く繝･繝｡繝ｳ繝域紛蛯・md:
+      content: |-
+        # 05 繝・ヰ繝・げ繝峨く繝･繝｡繝ｳ繝域紛蛯・
+
+        - WEB 繧ｯ繝ｩ繧､繧｢繝ｳ繝亥ｮ溯｣・ｸｭ縺ｫ逋ｺ隕九＠縺溘ヰ繧ｰ繧・API 蟾ｮ蛻・ｒ docs/web-client/operations/debugging-outpatient-bugs.md 縺ｸ險倬鹸縺励∝・迴ｾ謇矩・・蜀肴磁邯壹メ繧ｧ繝・け繝ｻ蠢・ｦ√↑ observability 繧堤ｰ｡貎斐↓謨ｴ逅・・
+        - `docs/web-client/planning/phase2/DOC_STATUS.md` 縺ｮ縲係eb 繧ｯ繝ｩ繧､繧｢繝ｳ繝・UX/Features縲崎｡後↓ RUN_ID繝ｻ險ｼ霍｡繝代せ繝ｻ譛ｪ隗｣豎ｺ繝舌げ繧定ｿｽ險倥＠縲～docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` 縺ｸ縺ｮ繝ｪ繝ｳ繧ｯ繧剃ｽｵ險倥・
+        - 蠢・ｦ√′縺ゅｌ縺ｰ bugs 繧・`artifacts/webclient/debug/<RUN_ID>-bugs/` 縺ｫ log 繧・HAR 繧偵∪縺ｨ繧√∵ｬ｡蝗槭Ρ繝ｼ繧ｫ繝ｼ蝣ｱ蜻翫・繝・Φ繝励Ξ繧堤畑諢上・
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/outpatient_ux_modernization/04A3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝亥女莉篭X讀懆ｨｼ縺ｨDOC_STATUS蜿肴丐.md
+        - src/outpatient_ux_modernization/04B3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX讀懆ｨｼ.md
+        - src/outpatient_ux_modernization/04C3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壽､懆ｨｼ.md
+        - src/outpatient_ux_modernization/04C4_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壹未実装API謠冗判.md
+      schedule:
+        start: 2025-12-15T00:00:00.000Z
+        days: 2
+    06_STAGE讀懆ｨｼ縺ｨDOC_STATUS蜿肴丐.md:
+      content: |-
+        # 06 Stage 讀懆ｨｼ縺ｨ DOC_STATUS 蜿肴丐
+
+        - `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://stage.open-dolphin` 縺ｪ縺ｩ縺ｮ迺ｰ蠅・〒 Reception竊辰harts竊単atients 縺ｮ螟匁擂繝輔Ο繝ｼ繧呈､懆ｨｼ縺励√Ο繧ｰ縺ｨ繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ繧・artifacts/webclient/e2e/<RUN_ID>-stage/ 縺ｫ菫晏ｭ倥・
+        - Docs/web-client/planning/phase2/DOC_STATUS.md 縺ｨ docs/server-modernization/phase2/operations/logs/<RUN_ID>-stage.md 縺ｫ Stage 讀懆ｨｼ邨先棡繝ｻAPI 繧ｷ繧ｰ繝阪メ繝｣螟画峩繝ｻ繝舌リ繝ｼ陦ｨ遉ｺ邨先棡繧定ｨ倬鹸縺励～docs/web-client/ux/ux-documentation-plan.md` 縺ｮ繧ｹ繝・・繧ｿ繧ｹ繧よ峩譁ｰ縲・
+        - 繝｢繝繝翫う繧ｺ謗･邯壹〒隕ｳ貂ｬ縺励◆ `warning banner tone=server`/`dataSourceTransition=server` 繧・`missingMaster` 縺ｮ譛臥┌繧呈枚譖ｸ蛹悶＠縲～docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 縺ｮ縲碁ｲ謐礼｢ｺ隱阪・繧､繝ｳ繝医埼・岼縺ｸ險ｼ霍｡霑ｽ險倥・
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api:
+        - "/api01rv2/claim/outpatient/*"
+        - "/api01rv2/patient/outpatient/*"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/05_繝・ヰ繝・げ繝峨く繝･繝｡繝ｳ繝域紛蛯・md
+      schedule:
+        start: 2025-12-17T00:00:00.000Z
+        days: 2
+
+
