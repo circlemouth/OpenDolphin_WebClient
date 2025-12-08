@@ -337,6 +337,46 @@ src:
       schedule:
         start: 2025-12-16T00:00:00.000Z
         days: 2
+    04C4_outpatient_api_gap_implementation.md:
+      content: |-
+        # 04C4 Outpatient API gap implementation
+
+        - Implement missing endpoints flagged in 04C3: `/api01rv2/claim/outpatient/mock` and `/orca21/medicalmodv2/outpatient` on the modernized server, wiring responses to match `web-client/architecture/web-client-api-mapping.md` and telemetry flags.
+        - Add contract fixtures/msw mocks for these endpoints to unblock web-client flows and log details in `docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-implementation.md`.
+        - Ensure `resolveMasterSource`/`cacheHit`/`missingMaster` values emit correctly into reception/charts telemetry funnels.
+        - Update `docs/web-client/planning/phase2/DOC_STATUS.md` with RUN_ID once implementation is complete.
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api:
+        - "/api01rv2/claim/outpatient/mock"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壽､懆ｨｼ.md
+        - src/outpatient_ux_modernization/04C4_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壹未実装API謠冗判.md
+      schedule:
+        start: 2025-12-17T00:00:00.000Z
+        days: 2
+    04C5_outpatient_api_gap_retest.md:
+      content: |-
+        # 04C5 Outpatient API gap retest
+
+        - Re-run the 04C3 integration path against `/api01rv2/claim/outpatient/mock` and `/orca21/medicalmodv2/outpatient` with `VITE_DISABLE_MSW=1` to confirm 404s are cleared and telemetry fields populate.
+        - Capture evidence in `artifacts/webclient/e2e/<RUN_ID>-integration-gap-fix/` and server logs in `docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-gap-qa.md`.
+        - Reflect results and RUN_ID in `docs/web-client/planning/phase2/DOC_STATUS.md` and manager checklist.
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api:
+        - "/api01rv2/claim/outpatient/mock"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C4_outpatient_api_gap_implementation.md
+      schedule:
+        start: 2025-12-19T00:00:00.000Z
+        days: 1
     05_繝・ヰ繝・げ繝峨く繝･繝｡繝ｳ繝域紛蛯・md:
       content: |-
         # 05 繝・ヰ繝・げ繝峨く繝･繝｡繝ｳ繝域紛蛯・
@@ -354,6 +394,7 @@ src:
         - src/outpatient_ux_modernization/04B3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・hartsPatientsUX讀懆ｨｼ.md
         - src/outpatient_ux_modernization/04C3_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壽､懆ｨｼ.md
         - src/outpatient_ux_modernization/04C4_WEB繧ｯ繝ｩ繧､繧｢繝ｳ繝・PI謗･邯壹未実装API謠冗判.md
+        - src/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.md
       schedule:
         start: 2025-12-15T00:00:00.000Z
         days: 2
