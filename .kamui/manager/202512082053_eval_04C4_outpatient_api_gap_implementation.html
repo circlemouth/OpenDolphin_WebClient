@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 04C4 外来 API ギャップ実装</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-top: 12px;
+      }
+      .score-card {
+        background: #f5fafc;
+        border: 1px solid #c4d3d7;
+        padding: 12px 14px;
+        border-radius: 6px;
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+      }
+      .score-card strong {
+        font-size: 18px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 5);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .radar-chart {
+        display: grid;
+        grid-template-columns: 180px auto;
+        gap: 8px 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar-chart svg {
+        width: 180px;
+        height: 180px;
+      }
+      .radar-chart .grid-line {
+        fill: none;
+        stroke: #d2dde1;
+        stroke-width: 1;
+      }
+      .radar-chart .value {
+        fill: rgba(86, 147, 184, 0.28);
+        stroke: #2f6b8c;
+        stroke-width: 2;
+      }
+      .radar-labels {
+        font-size: 12px;
+        color: #2c3a40;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 10px;
+      }
+      .snapshot-summary {
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      .issues {
+        margin: 0;
+        padding-left: 16px;
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">外来 API ギャップ実装タスク 評価レポート</h1>
+        <p class="monitor-description">
+          監視対象ブランチの差分・未コミット変更を確認し、機能合理性と緻密性を中心に 6 指標（各 100 点, 合計 600 点）で評価しました。対象: task-1765193693386-353956 / task-1765193693585-a04c25 / task-1765193693184-277a11。時刻: 2025-12-08 20:54 JST
+        </p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <div><strong>🏆🥇 510 / 600</strong>（平均 85点）</div>
+            <div>task-1765193693386-353956</div>
+            <div>stub 実装 + artifacts + DOC_STATUS 連携</div>
+          </div>
+          <div class="score-card">
+            <div><strong>🥈 424 / 600</strong>（平均 71点）</div>
+            <div>task-1765193693585-a04c25</div>
+            <div>mock 実装 + claim/medical ダミー + 監査送出</div>
+          </div>
+          <div class="score-card">
+            <div><strong>🥉 310 / 600</strong>（平均 52点）</div>
+            <div>task-1765193693184-277a11</div>
+            <div>package ずれ + ビルド生成物混入</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765193693386-353956</th>
+            <th>task-1765193693585-a04c25</th>
+            <th>task-1765193693184-277a11</th>
+            <th>余白</th>
+            <th>余白</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-08 20:54</td>
+            <td>
+              <div class="radar-chart" data-radar data-values="86,84,78,68,95,79" data-labels="機能合理性,仕様整合,コード緻密性,テスト/検証,ドキュメント,リスク健全性">
+                <svg viewBox="0 0 160 160">
+                  <g class="grid"></g>
+                  <polygon class="value" points="" />
+                </svg>
+                <div class="radar-labels"></div>
+              </div>
+              <div class="snapshot-summary">実装概要</div>
+              <ul class="issues">
+                <li>新規 REST: `server-modernized/src/main/java/open/dolphin/rest/OutpatientClaimResource.java`, `.../orca/OrcaMedicalModV2Resource.java` で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を stub（runId=20251208T113620Z, cacheHit=false/true, missingMaster=false）。</li>
+                <li>共通 DTO `OutpatientFlagResponse` で telemetry/audit フィールドを整理し、`handleOutpatientFlags` との整合を確保。</li>
+                <li>クライアント側は `web-client/src/features/outpatient/OutpatientMockPage.tsx` の fallback RUN_ID を更新。`artifacts/api-stability/20251208T113620Z/outpatient/*.json` と DOC_STATUS/architecture を同期。</li>
+              </ul>
+              <div class="snapshot-summary">懸念点</div>
+              <ul class="issues">
+                <li>`OutpatientClaimResource` は `recordAudit` を呼ばず audit 永続化なし。telemetry funnel への実送出が不足する可能性。</li>
+                <li>MSW/Playwright 契約更新が未反映（tests や fixtures 変更なし）。integration テストで 404→200 の検証未実施。</li>
+                <li>新規リソースが JAX-RS 構成へ確実に登録されるかの証跡なし（Application/Config 変更なし）。</li>
+              </ul>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="issues">
+                <li>`server-modernized/src/main/java/open/dolphin/rest/OutpatientClaimResource.java`（.worktrees/task-1765193693386-353956）</li>
+                <li>`server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalModV2Resource.java`（同）</li>
+                <li>`artifacts/api-stability/20251208T113620Z/outpatient/claim-outpatient-mock.json` / `medicalmodv2-outpatient.json`（同）</li>
+              </ul>
+            </td>
+            <td>
+              <div class="radar-chart" data-radar data-values="80,78,72,55,74,65" data-labels="機能合理性,仕様整合,コード緻密性,テスト/検証,ドキュメント,リスク健全性">
+                <svg viewBox="0 0 160 160">
+                  <g class="grid"></g>
+                  <polygon class="value" points="" />
+                </svg>
+                <div class="radar-labels"></div>
+              </div>
+              <div class="snapshot-summary">実装概要</div>
+              <ul class="issues">
+                <li>`server-modernized/src/main/java/open/dolphin/rest/orca/OrcaOutpatientResource.java` で 2 エンドポイントを実装。claim/medical ダミーデータを付与し、`SessionAuditDispatcher` に送信。</li>
+                <li>DTO `OutpatientFlagRequest/Response` で telemetry フラグを上書き可能にし、`recordsReturned` を応答に含める設計。</li>
+                <li>テスト `tests/e2e/outpatient-flags.msw.spec.ts` に dataSource/fallbackUsed を追加。実装ログ `docs/server-modernization/phase2/operations/logs/20251208T113659Z-api-gap-implementation.md` を作成。</li>
+              </ul>
+              <div class="snapshot-summary">懸念点</div>
+              <ul class="issues">
+                <li>API マッピング文書や OutpatientMockPage の RUN_ID/fallback 更新が未反映で、クライアント契約との一貫性が部分的。</li>
+                <li>runId=20251208T113659Z と artifacts/DOC_STATUS へのリンク不整合（architecture など未更新）。</li>
+                <li>JAX-RS 登録確認や Playwright 実行結果の証跡なし。binary build 生成物が残存。</li>
+              </ul>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="issues">
+                <li>`server-modernized/src/main/java/open/dolphin/rest/orca/OrcaOutpatientResource.java`（.worktrees/task-1765193693585-a04c25）</li>
+                <li>`server-modernized/src/main/java/open/dolphin/rest/dto/orca/OutpatientFlagRequest.java` / `OutpatientFlagResponse.java`（同）</li>
+                <li>`docs/server-modernization/phase2/operations/logs/20251208T113659Z-api-gap-implementation.md`（同）</li>
+              </ul>
+            </td>
+            <td>
+              <div class="radar-chart" data-radar data-values="62,58,50,40,45,55" data-labels="機能合理性,仕様整合,コード緻密性,テスト/検証,ドキュメント,リスク健全性">
+                <svg viewBox="0 0 160 160">
+                  <g class="grid"></g>
+                  <polygon class="value" points="" />
+                </svg>
+                <div class="radar-labels"></div>
+              </div>
+              <div class="snapshot-summary">実装概要</div>
+              <ul class="issues">
+                <li>`server-modernized/src/main/java/open/orca/rest/OutpatientMockResource.java` を追加し、telemetry フラグを返す簡易 stub。</li>
+                <li>tests/e2e/outpatient-flags.msw.spec.ts へ telemetry フィールドを追加。</li>
+              </ul>
+              <div class="snapshot-summary">懸念点</div>
+              <ul class="issues">
+                <li>パッケージが `open.orca.rest` で既存サーバーのパス（open.dolphin/rest/...）と乖離。JAX-RS スキャン対象外の可能性が高く、実際には 404 のままになるリスク。</li>
+                <li>AuditDispatcher 依存を持つが `requireRemoteUser/Facility` チェックがなく認証抜け。resource path も root 配置で設計ガイド未遵守。</li>
+                <li>`reporting/target/*.class` などビルド生成物が大量に変更/追加されており、コミット対象にしてはいけないバイナリが混入。</li>
+                <li>DOC_STATUS や証跡ログの更新なし。RUN_ID=20251208T113624Z はドキュメント未登録。</li>
+              </ul>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="issues">
+                <li>`server-modernized/src/main/java/open/orca/rest/OutpatientMockResource.java`（.worktrees/task-1765193693184-277a11）</li>
+                <li>`tests/e2e/outpatient-flags.msw.spec.ts`（同）</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">N/A</span>
+                <span class="agent-label">未使用スロット</span>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">N/A</span>
+                <span class="agent-label">未使用スロット</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      document.querySelectorAll('[data-radar]').forEach((chart) => {
+        const values = chart.dataset.values.split(',').map((v) => parseFloat(v.trim()));
+        const labels = chart.dataset.labels.split(',');
+        const svg = chart.querySelector('svg');
+        const gridGroup = svg.querySelector('.grid');
+        const valuePoly = svg.querySelector('.value');
+        const cx = 80;
+        const cy = 80;
+        const max = 70;
+        const toPoint = (ratio, i) => {
+          const angle = -Math.PI / 2 + i * ((Math.PI * 2) / values.length);
+          const r = max * ratio;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          return `${x},${y}`;
+        };
+        gridGroup.innerHTML = [1, 0.66, 0.33]
+          .map((level) => {
+            const pts = values.map((_, i) => toPoint(level, i)).join(' ');
+            return `<polygon class="grid-line" points="${pts}" />`;
+          })
+          .join('');
+        valuePoly.setAttribute(
+          'points',
+          values.map((v, i) => toPoint(v / 100, i)).join(' '),
+        );
+        const labelContainer = chart.querySelector('.radar-labels');
+        labelContainer.innerHTML = labels
+          .map((label, i) => `<div>${label} ${values[i]}点</div>`)
+          .join('');
+      });
+    </script>
+  </body>
+</html>
