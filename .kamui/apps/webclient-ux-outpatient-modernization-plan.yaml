@@ -293,6 +293,25 @@ src:
       schedule:
         start: 2025-12-05T00:00:00.000Z
         days: 4
+    04C25_モダナイズサーバーAPIギャップ実装.md:
+      content: |-
+        # 04C2.5 モダナイズサーバー API ギャップ実装
+
+        - 04C3 で 404 が発生した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を server-modernized 側に追加実装し、レスポンス shape を docs/web-client/architecture/web-client-api-mapping.md と照合する。
+        - `auditEvent`／`cacheHit`／`missingMaster`／`resolveMasterSource` の各フラグを既存アウトパatient API と同一フィールド名で返すことを確認し、contract テストまたは msw/mock と整合する fixtures を用意する。
+        - 実装手順と検証ログを docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-fix.md に記録し、docs/web-client/planning/phase2/DOC_STATUS.md の Web クライアント UX/Features 行備考へ RUN_ID と証跡パスを追記する準備を行う。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api:
+        - "/api01rv2/claim/outpatient/mock"
+        - "/orca21/medicalmodv2/outpatient"
+      dependency:
+        - src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md
+      schedule:
+        start: 2025-12-12T00:00:00.000Z
+        days: 2
     04C3_WEBクライアントAPI接続検証.md:
       content: |-
         # 04C3 WEB クライアント：API 接続検証
@@ -314,6 +333,7 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04C2_WEBクライアントAPI統合実装.md
         - src/outpatient_ux_modernization/04B3_WEBクライアントChartsPatientsUX検証.md
+        - src/outpatient_ux_modernization/04C25_モダナイズサーバーAPIギャップ実装.md
       schedule:
         start: 2025-12-14T00:00:00.000Z
         days: 2
