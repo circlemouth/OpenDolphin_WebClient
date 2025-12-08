@@ -19,6 +19,8 @@
 3. **DOC_STATUS**: `docs/web-client/planning/phase2/DOC_STATUS.md` の棚卸し手順に従って更新し、備考に RUN_ID / 証跡パスを追記したら同日付でハブ文書へ反映する。
 4. **証跡**: ORCA やサーバー操作ログは `docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md` へ。Web クライアント側の手順書からリンクできるようにする。
 
+開発環境においては、モダナイズ版サーバーとWEBクライアントはWEB_CLIENT_MODE=npm ./setup-modernized-env.shで起動され、ログイン情報はsetup-modernized-env.shに記載されたものを使用すること。
+
 ## 3. 役割別ハブ（参照時間を短縮）
 - Web クライアント設計・UX: `docs/web-client/README.md` を入口に `architecture/`, `features/`, `ux/`, `operations/` へ遷移。
 - サーバーモダナイズと ORCA 連携: `docs/server-modernization/phase2/INDEX.md` から `foundation/`, `domains/`, `operations/`, `notes/` を辿る。
