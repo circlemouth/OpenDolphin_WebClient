@@ -1,25 +1,25 @@
 [
   {
-    "id": "task-1765152713592-d9a701",
-    "name": "CodexCLI1: 対象ファイル: .kamui\\apps\\webclient-ux-outpatient-modernization-plan.yaml\n\nガントチャートに、04C3で判明した未実装APIの実装が反映されていないので、反映する修正を加えて",
+    "id": "task-1765170364858-a1c90d",
+    "name": "CodexCLI1: 対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C3タスクで、モダナイズ版サーバーに未実装のAPIがあることが判明した。この組み込タスクを、ガントチャートの適切な位置に組み込め。",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-08T00:11:53.592Z",
-    "updatedAt": "2025-12-08T00:11:53.592Z",
+    "createdAt": "2025-12-08T05:06:04.858Z",
+    "updatedAt": "2025-12-08T05:06:04.858Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1765152713592-d9a701",
+    "branchName": "task/task-1765170364858-a1c90d",
     "baseBranch": "master",
     "useTmux": true,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765152713591-t5swmru4",
-    "aiCompetitionGroupName": "対象ファイル: .kamui\\apps\\webclient-ux-outpatient-modernization-plan.yaml\n\nガントチャートに、04C3で判明した未実装APIの実装が反映されていないので、反映する修正を加えて",
+    "aiCompetitionGroupId": "comp-1765170364429-v0swvdh4",
+    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C3タスクで、モダナイズ版サーバーに未実装のAPIがあることが判明した。この組み込タスクを、ガントチャートの適切な位置に組み込め。",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees\\task-1765152713592-d9a701"
+    "worktreePath": ".worktrees/task-1765170364858-a1c90d"
   }
 ]
