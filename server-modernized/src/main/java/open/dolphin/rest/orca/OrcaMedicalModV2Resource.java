@@ -19,7 +19,7 @@ import open.dolphin.rest.dto.outpatient.OutpatientFlagResponse;
 @Path("/orca21/medicalmodv2")
 public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
 
-    private static final String RUN_ID = "20251208T113620Z";
+    private static final String RUN_ID = "20251208T124645Z";
 
     @POST
     @Path("/outpatient")
@@ -65,6 +65,8 @@ public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
         details.put("missingMaster", response.isMissingMaster());
         details.put("fallbackUsed", response.isFallbackUsed());
         details.put("fetchedAt", response.getFetchedAt());
+        details.put("recordsReturned", response.getRecordsReturned());
+        details.put("telemetryFunnelStage", "charts_orchestration");
         return details;
     }
 

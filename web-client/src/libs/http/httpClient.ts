@@ -59,6 +59,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     purpose: '外来請求バンドル（`claim:information`/`claim:bundle`）を受付・診療向けに取得し、請求バナーと `missingMaster`/`fallbackUsed` を制御する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
     sourceDocs: [
+      'docs/server-modernization/phase2/operations/logs/20251208T124645Z-api-gap-implementation.md',
       'docs/server-modernization/phase2/foundation/IMPACT_MATRIX.md',
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251204T064209Z-api-gap.md',
@@ -88,6 +89,7 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     purpose: 'Charts/DocumentTimeline が表示する外来の Medical record を取得し、`auditEvent` に `recordsReturned`/`outcome` を記録する。',
     auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'recordsReturned'],
     sourceDocs: [
+      'docs/server-modernization/phase2/operations/logs/20251208T124645Z-api-gap-implementation.md',
       'docs/server-modernization/phase2/operations/logs/20251124T073245Z-webclient-master-bridge.md',
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md',
