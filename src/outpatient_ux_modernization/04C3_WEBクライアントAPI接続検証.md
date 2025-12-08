@@ -48,15 +48,10 @@
 - HAR/console: `artifacts/webclient/e2e/20251207T130434Z-integration/network.har`（msw-off HAR, on/off 版も別ファイル）、`console.txt`
 
 ## 6. 現状と次アクション（2025-12-08 更新）
-- 進捗更新: 04C4（RUN_ID=20251208T124645Z）で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` の stub 実装が server-modernized に追加され、`dataSourceTransition/cacheHit/missingMaster/resolveMasterSource/auditEvent` を返す状態になった。証跡: `docs/server-modernization/phase2/operations/logs/20251208T124645Z-api-gap-implementation.md`。
-- 所感: ローカル接続で 404 は解消している前提。MSW OFF での再検証により、UI バナー／telemetry が reception→charts→patients で carry-over するか確認可能な状態。
-- 再検証タスク（このドキュメントを見たワーカー向け手順）
-  1. 環境: server-modernized を 20251208T124645Z 時点の実装に更新または該当ブランチをチェックアウト済みで起動した状態を使う（再起動禁止の場合は現行プロセスで応答に stub が含まれることを curl で事前確認）。
-  2. 起動: `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources npm run dev -- --host --port 4173`（例）。MSW ON との比較は任意だが、差分取得するとギャップ確認が早い。
-  3. 検証シナリオ: Reception → Charts → Patients を通し、`tone=server` バナーと `resolveMasterSource` バッジが `server` で維持されること、`cacheHit`/`missingMaster` が telemetry (`resolve_master`→`charts_orchestration`) に反映されることを DevTools で確認。
-  4. API 実応答確認: `curl http://localhost:9080/openDolphin/resources/api01rv2/claim/outpatient/mock` および `/orca21/medicalmodv2/outpatient` で `recordsReturned` / `dataSourceTransition=server` / `telemetryFunnelStage` が含まれることをローカルログに記録。UI 表示との突合を実施。
-  5. 証跡保存: `artifacts/webclient/e2e/20251208T124645Z-integration-gap/` にスクリーンショットと HAR/console、`docs/server-modernization/phase2/operations/logs/20251208T124645Z-integration-qa.md` に観察結果を追記。必要に応じ `docs/web-client/planning/phase2/DOC_STATUS.md` の Web クライアント UX/Features 行を更新。
-- Stage/Preview: 06_STAGE検証タスクで扱う。ローカル再検証で問題がなければ 04C5（再検証タスク）へ進み、MSW OFF でギャップ解消を確認して DOC_STATUS/manager checklist を更新する。
+- RUN_ID=`20251208T180500Z`: `web.xml` に `open.dolphin.rest.OutpatientClaimResource` / `open.dolphin.rest.orca.OrcaMedicalModV2Resource` を登録し再ビルド。MD5 認証 (facility=dolphindev) で `/api01rv2/claim/outpatient/mock`・`/orca21/medicalmodv2/outpatient` とも **200 OK** を確認（traceId=35e16c4c-3c69-4ea5-adc5-e09916b0785f / 1910d88f-ea86-43bd-9f31-e984e5b1e96a、cacheHit / missingMaster / dataSourceTransition=server を返却）。MSW OFF UI 巡回で tone=server と telemetry `resolve_master`→`charts_orchestration` を取得。証跡: `docs/server-modernization/phase2/operations/logs/20251208T180500Z-integration-qa.md`, `artifacts/webclient/e2e/20251208T180500Z-integration/`。
+- RUN_ID=`20251208T170000Z`/`20251208T163000Z`: 認証・リソース未登録により 401/404 が発生したが、上記修正で解消済み（経緯保持のみ）。
+- 進捗: ローカル接続で 04C3 の目的（tone/telemetry 整合 + API 応答取得）を達成。MSW ON 差分は任意で未実施だが、04C3 の完了条件外とする。
+- 次アクション: Stage/Preview 検証は別タスク（06_STAGE検証）。本 RUN_ID=20251208T180500Z をもってローカル接続検証は完了。
 
 ## 7. 旧計画/参考（Stage 前提、混同禁止）
 - RUN_ID=`20251214T090000Z` で Stage 前提の計画を記載していたが、本タスクでは採用しない。ログ・証跡は参考資料としてのみ参照する。

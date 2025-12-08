@@ -45,8 +45,7 @@ Phase2
 # Temporary payload files in root
 /payload.json
 
-# Legacy build files (removed, use pom.server-modernized.xml)
-/pom.xml
+# Legacy build files (classic only). Keep root pom.xml for modernized builds.
 /pom.server-classic.xml
 /Jenkinsfile
 
