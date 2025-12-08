@@ -2,6 +2,7 @@
 
 - Phase2 foundation の優先領域（`docs/server-modernization/phase2/foundation/IMPACT_MATRIX.md`）を踏まえ、外来/ORCA マスタ連携の接点を `httpClient` 層で一覧化します。
 - `web-client/src/libs/http/httpClient.ts` に新設した `OUTPATIENT_API_ENDPOINTS` 定義は本書のテーブルと同期させ、今後の `resolveMasterSource`/監査メタ・フロー設計で共通参照源として使います。
+- RUN_ID=`20251208T113620Z` で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を server-modernized に stub 実装し、`runId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed` を含む telemetry 応答と `artifacts/api-stability/20251208T113620Z/outpatient/` のフィクスチャを揃えました（証跡: `docs/server-modernization/phase2/operations/logs/20251208T113620Z-api-gap-implementation.md`）。
 
 ## 1. 外来オペレーションで使う主要エンドポイント
 
