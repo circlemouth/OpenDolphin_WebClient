@@ -47,28 +47,28 @@
     "description": "# 04C4 外来 API ギャップ実装\n\n- 04C3 で 404 だった `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を modernized server に実装し、`web-client/architecture/web-client-api-mapping.md` と telemetry フラグに整合するレスポンスを返すようにする。\n- 実装に合わせて msw/fixtures などクライアント側の契約モックを更新し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-implementation.md` に実装内容とエビデンスを記録する。\n- `resolveMasterSource` / `cacheHit` / `missingMaster` が reception / charts の telemetry ファネルへ正しく流れることを確認する。\n- 実装完了後、RUN_ID を `docs/web-client/planning/phase2/DOC_STATUS.md` に反映する。"
   },
   {
-    "id": "task-1765193693386-353956",
+    "id": "task-1765197911895-305b57",
     "name": "CodexCLI2: [webclient ux outpatient modernization plan] 04C4_outpatient_api_gap_implementation\n期間: 12/17 09:00 - 12/19 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 04C4 外来 API ギャップ実装\n\n- 04C3 で 404 だった `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を modernized server に実装し、`web-client/architecture/web-client-api-mapping.md` と telemetry フラグに整合するレスポンスを返すようにする。\n- 実装に合わせて msw/fixtures などクライアント側の契約モックを更新し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-implementation.md` に実装内容とエビデンスを記録する。\n- `resolveMasterSource` / `cacheHit` / `missingMaster` が reception / charts の telemetry ファネルへ正しく流れることを確認する。\n- 実装完了後、RUN_ID を `docs/web-client/planning/phase2/DOC_STATUS.md` に反映する。\n\nYAML ID: src/outpatient_ux_modernization/04C4_outpatient_api_gap_implementation.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-08T11:34:53.386Z",
-    "updatedAt": "2025-12-08T11:34:53.386Z",
+    "createdAt": "2025-12-08T12:45:11.895Z",
+    "updatedAt": "2025-12-08T12:45:11.895Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1765193693386-353956",
+    "branchName": "task/task-1765197911895-305b57",
     "baseBranch": "master",
     "useTmux": true,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765193693184-bxkmbwlo",
+    "aiCompetitionGroupId": "comp-1765197911694-mmyj4qjl",
     "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 04C4_outpatient_api_gap_implementation\n期間: 12/17 09:00 - 12/19 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 04C4 外来 API ギャップ実装\n\n- 04C3 で 404 だった `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を modernized server に実装し、`web-client/architecture/web-client-api-mapping.md` と telemetry フラグに整合するレスポンスを返すようにする。\n- 実装に合わせて msw/fixtures などクライアント側の契約モックを更新し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-implementation.md` に実装内容とエビデンスを記録する。\n- `resolveMasterSource` / `cacheHit` / `missingMaster` が reception / charts の telemetry ファネルへ正しく流れることを確認する。\n- 実装完了後、RUN_ID を `docs/web-client/planning/phase2/DOC_STATUS.md` に反映する。\n\nYAML ID: src/outpatient_ux_modernization/04C4_outpatient_api_gap_implementation.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765193693386-353956",
+    "worktreePath": ".worktrees/task-1765197911895-305b57",
     "medal": "gold",
-    "aiCompetitionScore": 85
+    "aiCompetitionScore": 92
   }
 ]
