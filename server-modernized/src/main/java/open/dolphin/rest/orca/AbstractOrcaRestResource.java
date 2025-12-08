@@ -49,6 +49,16 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
         payload.setActorId(request != null ? request.getRemoteUser() : null);
         payload.setIpAddress(request != null ? request.getRemoteAddr() : null);
         payload.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            payload.setTraceId(traceId);
+        }
+        String requestId = request != null ? request.getHeader("X-Request-Id") : null;
+        if (requestId != null && !requestId.isBlank()) {
+            payload.setRequestId(requestId);
+        } else if (traceId != null && !traceId.isBlank()) {
+            payload.setRequestId(traceId);
+        }
         payload.setDetails(details != null ? new HashMap<>(details) : Map.of());
         sessionAuditDispatcher.record(payload, outcome, null, null);
     }
