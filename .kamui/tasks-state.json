@@ -30,28 +30,5 @@
     "dependencies": [
       "task-yaml-70588s-src-outpatient-u"
     ]
-  },
-  {
-    "id": "task-1765237582123-af09ef",
-    "name": "CodexCLI1: 対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C3タスクが完了した。リポジトリのドキュメント等を確認してガントを更新、かつ次以降のタスクに修正が必要ならば修正を入れて。",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-08T23:46:22.123Z",
-    "updatedAt": "2025-12-08T23:46:22.123Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765237582123-af09ef",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765237582074-q7flrpky",
-    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C3タスクが完了した。リポジトリのドキュメント等を確認してガントを更新、かつ次以降のタスクに修正が必要ならば修正を入れて。",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765237582123-af09ef"
   }
 ]
