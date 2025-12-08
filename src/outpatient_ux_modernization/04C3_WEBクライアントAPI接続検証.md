@@ -47,14 +47,16 @@
 - QA メモ: `docs/server-modernization/phase2/operations/logs/20251207T130434Z-integration-qa.md`
 - HAR/console: `artifacts/webclient/e2e/20251207T130434Z-integration/network.har`（msw-off HAR, on/off 版も別ファイル）、`console.txt`
 
-## 6. 現状と次アクション（2025-12-07 更新）
-- 実行状況: ローカルモダナイズ版サーバーに MSW ON/OFF でログインし、`httpFetch` に `userName` / `password(md5)` / `X-Facility-Id` を自動付与。401 は解消したが、`/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` はどちらも 404。`server-modernized` を全文検索したところ、両パスを処理する Controller/Resource/Route が存在せず、`OrcaEndpoint` でも外来 `claim/medicalmodv2` 系は未列挙。dev プロキシ（vite.config.ts）の `/api01rv2` `/orca21` マッピング先にバックエンド実装が無いことが原因と判断。
-- 所感: 現状のモダナイズ版サーバーでは対象エンドポイントが未実装のため、正常系レスポンス（`cacheHit=true` / `missingMaster=false`）は取得不能。
-- 次アクション:
-  - [ ] どちらの API をどのリソースに実装するか（既存 `/orca/*` ラッパーに追加 vs. 新規 gateway）を決定し、実装計画を立案する。
-  - [ ] 実装後に MSW OFF で再取得し、`cacheHit=true` / `missingMaster=false` の telemetry を採取して本ドキュメント・QA ログ・DOC_STATUS を更新。
-  - [ ] Stage/Preview での再検証は 06_STAGE検証タスクに切り出す（本 RUN ではローカル接続のみ）。
-注意: Stage/Preview への接続は本タスク外。旧 RUN の Stage 前提ログは参考のみで、本 RUN の判断や結果と混同しないこと。
+## 6. 現状と次アクション（2025-12-08 更新）
+- 進捗更新: 04C4（RUN_ID=20251208T124645Z）で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` の stub 実装が server-modernized に追加され、`dataSourceTransition/cacheHit/missingMaster/resolveMasterSource/auditEvent` を返す状態になった。証跡: `docs/server-modernization/phase2/operations/logs/20251208T124645Z-api-gap-implementation.md`。
+- 所感: ローカル接続で 404 は解消している前提。MSW OFF での再検証により、UI バナー／telemetry が reception→charts→patients で carry-over するか確認可能な状態。
+- 再検証タスク（このドキュメントを見たワーカー向け手順）
+  1. 環境: server-modernized を 20251208T124645Z 時点の実装に更新または該当ブランチをチェックアウト済みで起動した状態を使う（再起動禁止の場合は現行プロセスで応答に stub が含まれることを curl で事前確認）。
+  2. 起動: `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources npm run dev -- --host --port 4173`（例）。MSW ON との比較は任意だが、差分取得するとギャップ確認が早い。
+  3. 検証シナリオ: Reception → Charts → Patients を通し、`tone=server` バナーと `resolveMasterSource` バッジが `server` で維持されること、`cacheHit`/`missingMaster` が telemetry (`resolve_master`→`charts_orchestration`) に反映されることを DevTools で確認。
+  4. API 実応答確認: `curl http://localhost:9080/openDolphin/resources/api01rv2/claim/outpatient/mock` および `/orca21/medicalmodv2/outpatient` で `recordsReturned` / `dataSourceTransition=server` / `telemetryFunnelStage` が含まれることをローカルログに記録。UI 表示との突合を実施。
+  5. 証跡保存: `artifacts/webclient/e2e/20251208T124645Z-integration-gap/` にスクリーンショットと HAR/console、`docs/server-modernization/phase2/operations/logs/20251208T124645Z-integration-qa.md` に観察結果を追記。必要に応じ `docs/web-client/planning/phase2/DOC_STATUS.md` の Web クライアント UX/Features 行を更新。
+- Stage/Preview: 06_STAGE検証タスクで扱う。ローカル再検証で問題がなければ 04C5（再検証タスク）へ進み、MSW OFF でギャップ解消を確認して DOC_STATUS/manager checklist を更新する。
 
 ## 7. 旧計画/参考（Stage 前提、混同禁止）
 - RUN_ID=`20251214T090000Z` で Stage 前提の計画を記載していたが、本タスクでは採用しない。ログ・証跡は参考資料としてのみ参照する。
