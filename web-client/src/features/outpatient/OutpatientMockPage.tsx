@@ -34,7 +34,7 @@ const FALLBACK_RUN_ID =
   import.meta.env.VITE_RUM_RUN_ID ??
   // DEV/Playwright 用の暫定キー
   (import.meta.env as Record<string, string | undefined>).VITE_RUN_ID ??
-  '20251208T113620Z';
+  '20251208T124645Z';
 
 const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFlags => ({
   runId: claim.runId ?? medical.runId ?? FALLBACK_RUN_ID,
