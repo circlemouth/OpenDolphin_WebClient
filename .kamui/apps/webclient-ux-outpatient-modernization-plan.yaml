@@ -341,9 +341,10 @@ src:
         # 04C5 外来 API ギャップ再検証
 
         - 期間: 2025-12-19 09:00 - 2025-12-20 18:00 JST（計画） / RUN_ID=`20251209T150000Z`。
-        - `VITE_DISABLE_MSW=1` で Reception→Charts→Patients を再走し、04C4 stub で解消した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が dev proxy 経由（Stage/Preview 含む）でも 200/整合レスポンスになるか確認する。
+        - **本タスク以降（05/06 含む）は localhost のモダナイズ版サーバーを対象とした再検証を基本とし、Stage/Preview は最終工程 06 でのみ確認する。**
+        - `VITE_DISABLE_MSW=1` で Reception→Charts→Patients を再走し、04C4 stub で解消した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が localhost (http://localhost:${MODERNIZED_APP_HTTP_PORT:-9080}/openDolphin/resources) で 200/整合レスポンスになるか確認する。
         - `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` の正/異常系を fixture 切替で再現し、tone/telemetry 差分を `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。
-        - サーバーログを `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` にまとめ、`ORCA_API_STATUS.md` と `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 外来セクションへ影響を反映。`04C3` ドキュメントに 404 解消結果を追記し、DOC_STATUS を更新。
+        - サーバーログを `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` にまとめ、`ORCA_API_STATUS.md` と `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 外来セクションへ影響を反映。`04C3` ドキュメントに 404 解消結果を追記し、DOC_STATUS を更新（Stage/Preview 反映は 06 で実施）。
       priority: High
       status: not_started
       progress: 0
@@ -360,7 +361,7 @@ src:
       content: |-
         # 05 デバッグドキュメント整備
 
-        - 04C5（RUN_ID=`20251209T150000Z`）で残ったギャップや再現困難ケースを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理。
+        - 04C5（RUN_ID=`20251209T150000Z`）で取得した **localhost モダナイズ版サーバー** の検証ログと残ギャップを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理（Stage/Preview は 06 の結果を待つ）。
         - `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。
         - 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。
       priority: Medium
@@ -380,7 +381,7 @@ src:
       content: |-
         # 06 Stage 検証と DOC_STATUS 反映
 
-        - `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://stage.open-dolphin` などの環境で Reception→Charts→Patients の外来フローを検証し、04C5 で収集した tone/telemetry ベースラインと比較しつつログとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-stage/ に保存。
+        - **最終工程としてのみ実施する Stage/Preview 確認。** `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://stage.open-dolphin` などの環境で Reception→Charts→Patients の外来フローを検証し、04C5（localhost ベースライン）で収集した tone/telemetry と比較しつつログとスクリーンショットを artifacts/webclient/e2e/<RUN_ID>-stage/ に保存。
         - Docs/web-client/planning/phase2/DOC_STATUS.md と docs/server-modernization/phase2/operations/logs/<RUN_ID>-stage.md に Stage 検証結果・API シグネチャ変更・バナー表示結果を記録し、`docs/web-client/ux/ux-documentation-plan.md` のステータスも更新。`04C5` の RUN_ID/証跡パスとのリンクを残す。
         - モダナイズ接続で観測した `warning banner tone=server`/`dataSourceTransition=server` や `missingMaster` の有無を文書化し、`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の「進捗確認ポイント」項目へ証跡追記。
       priority: High

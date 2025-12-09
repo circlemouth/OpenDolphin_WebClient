@@ -8,10 +8,10 @@
 
 ## 0. 今回の実施サマリ（2025-12-09 JST）
 - 実施日時: 2025-12-09 18:00-18:12 JST（UTC 09:00-09:12）
-- 環境: `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources`（既存プロセスを使用、再起動なし）
+- 環境: **localhost モダナイズ版サーバーのみ対象** `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources`（既存プロセスを使用、再起動なし）。Stage/Preview は 06 タスクで最終確認。
 - 結果:
   - ローカル modernized サーバー: `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が **HTTP 200**。`runId=20251208T124645Z`, `dataSourceTransition=server`, `cacheHit={false,true}`, `missingMaster=false`, `recordsReturned=1` を返却（traceId=`96e647c3-a8a2-4726-9829-d32edc06f883` / `deb71516-4910-4a3d-8831-58e7617e55fb`）。04C4 stub の 404/401 再発なし。
-  - Stage/Preview dev proxy（100.102.17.40 の 8000/443/8443）: いずれも TCP タイムアウト（curl exit 28, TLS ハンドシェイク未到達）。UI 巡回は未実施。
+  - Stage/Preview dev proxy（100.102.17.40 の 8000/443/8443）: いずれも TCP タイムアウト（curl exit 28, TLS ハンドシェイク未到達）。UI 巡回は未実施（最終工程で再実施）。
 - 証跡: `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md`, `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`（ローカル応答・コマンド・Stage/Preview タイムアウトログ）。
 - 未了: Stage/Preview dev proxy 復旧後に UI tone/telemetry（Reception→Charts→Patients）と HAR/スクショを取得し、`missingMaster`/`cacheHit` 切替の異常系を fixture で再現する。
 
@@ -22,12 +22,12 @@
 
 ## 2. 作業項目
 1. **ローカル再検証 (MSW OFF)**  
-   - `VITE_DISABLE_MSW=1 WEB_CLIENT_MODE=npm` で既存のモダナイズ版サーバーに接続し、Reception→Charts→Patients を通して 04C4 で追加した 2 エンドポイントが 200 応答することを確認。  
+   - `VITE_DISABLE_MSW=1 WEB_CLIENT_MODE=npm` で localhost のモダナイズ版サーバーに接続し、Reception→Charts→Patients を通して 04C4 で追加した 2 エンドポイントが 200 応答することを確認。  
    - `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` をブラウザ Network/HAR で採取し、`artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。  
    - **進捗:** curl で `/api01rv2/claim/outpatient/mock`（cacheHit=false, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z, traceId=96e647c3-a8a2-4726-9829-d32edc06f883）と `/orca21/medicalmodv2/outpatient`（cacheHit=true, missingMaster=false, traceId=deb71516-4910-4a3d-8831-58e7617e55fb）が **200 OK**。UI 巡回・HAR は dev server 起動状態のまま後続取得可。
-2. **dev proxy 経由の疎通確認**  
+2. **dev proxy 経由の疎通確認（最終工程に回す）**  
    - `VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=<Stage or Preview host>` で同じ経路を再走し、stub ではなく実レスポンスでも 404 が解消されているか確認。接続先ホスト・日時・結果を `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` に追記。  
-   - **進捗:** `http://100.102.17.40:8000/openDolphin/resources/{api01rv2/claim/outpatient/mock, orca21/medicalmodv2/outpatient}` はいずれも TCP タイムアウト（curl exit 28, 5s）。`https://100.102.17.40:{443,8443}/` も同様に接続不可。ログ: `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/stage_http_8000*.txt`, `stage_https_{443,8443}.txt`。Stage/Preview ルート未復旧のため UI 巡回は保留。
+   - **進捗:** `http://100.102.17.40:8000/openDolphin/resources/{api01rv2/claim/outpatient/mock, orca21/medicalmodv2/outpatient}` はいずれも TCP タイムアウト（curl exit 28, 5s）。`https://100.102.17.40:{443,8443}/` も同様に接続不可。ログ: `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/stage_http_8000*.txt`, `stage_https_{443,8443}.txt`。**再試行は 06_STAGE検証タスクで実施。**
 3. **異常系・degarde パスの再現**  
    - fixture 切替や dev proxy のレスポンス差で `missingMaster=false/true`, `cacheHit=false` などの組み合わせを確認し、tone/telemetry の差分を `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に追記。  
    - **進捗:** dev proxy 未達のため異常系は未再現。Stage/Preview 復旧後に fixture 切替で `missingMaster`/`cacheHit` 差分を取得予定。ローカル dev server は起動中のため Playwright/手動で追加 HAR を採取可能。
