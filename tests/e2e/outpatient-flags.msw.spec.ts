@@ -3,11 +3,9 @@ import path from 'node:path';
 
 import { test, expect } from '@playwright/test';
 
-import { profile, runId as defaultRunId } from './helpers/orcaMaster';
+import { e2eAuthSession, profile, runId as defaultRunId } from './helpers/orcaMaster';
 
 const runId = process.env.RUN_ID ?? defaultRunId;
-const pagePath = '/outpatient-mock?msw=1';
-
 type Scenario = {
   id: 'A' | 'B';
   description: string;
@@ -30,6 +28,33 @@ const scenarios: Scenario[] = [
   },
 ];
 
+async function loginWithMsw(page: Page) {
+  const { facilityId, userId } = e2eAuthSession.credentials;
+
+  await page.addInitScript(() => {
+    (window as any).__ALLOW_REACT_DEVTOOLS__ = true;
+  });
+
+  await page.route('**/api/user/**', (route) =>
+    route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({
+        facilityId,
+        userId,
+        displayName: 'E2E Admin',
+      }),
+    }),
+  );
+
+  await page.goto('/login?msw=1');
+  await page.getByLabel('施設ID').fill(facilityId);
+  await page.getByLabel('ユーザーID').fill(userId);
+  await page.getByLabel('パスワード').fill('password');
+  await page.getByRole('button', { name: 'ログイン' }).click();
+  await page.waitForURL('**/reception', { timeout: 10_000 });
+}
+
 test.describe('Outpatient flags (MSW preflight)', () => {
   test.skip(profile !== 'msw', 'MSW プロファイル専用（Stage 接続禁止）');
 
@@ -39,12 +64,10 @@ test.describe('Outpatient flags (MSW preflight)', () => {
         runId,
         dataSourceTransition: 'server',
         cacheHit: scenario.cacheHit,
-        missingMaster: scenario.missingMaster,
-      };
+      missingMaster: scenario.missingMaster,
+    };
 
-      await page.addInitScript(() => {
-        (window as any).__ALLOW_REACT_DEVTOOLS__ = true;
-      });
+      await loginWithMsw(page);
 
       await page.route('**/api01rv2/claim/outpatient/**', (route) =>
         route.fulfill({
@@ -61,7 +84,8 @@ test.describe('Outpatient flags (MSW preflight)', () => {
         }),
       );
 
-      await page.goto(pagePath);
+      await page.getByRole('link', { name: 'Outpatient Mock' }).click();
+      await page.waitForURL('**/outpatient-mock**');
       await page.waitForSelector('[data-test-id="outpatient-mock-page"]');
 
       const tone = page.locator('[data-test-id="reception-tone"] .tone-banner');

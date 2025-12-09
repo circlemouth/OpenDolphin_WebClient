@@ -9,7 +9,8 @@ const verifyAdminDelivery = process.env.VITE_VERIFY_ADMIN_DELIVERY === '1';
 
 export default defineConfig({
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:4173',
+    baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'https://localhost:4173',
+    ignoreHTTPSErrors: true,
     // 環境フラグはヘッダー経由でテストアプリに伝播させる（サーバー側で参照する想定）。
     extraHTTPHeaders: {
       'x-use-mock-orca-queue': useMockOrcaQueue ? '1' : '0',
@@ -18,8 +19,9 @@ export default defineConfig({
   },
   webServer: {
     command:
-      'cd web-client && VITE_DEV_USE_HTTPS=0 VITE_DISABLE_MSW=0 npm run dev -- --host --port 4173 --clearScreen false',
-    url: 'http://localhost:4173',
+      'cd web-client && VITE_DEV_USE_HTTPS=1 VITE_DISABLE_MSW=0 npm run dev -- --host --port 4173 --clearScreen false',
+    url: 'https://localhost:4173',
+    ignoreHTTPSErrors: true,
     reuseExistingServer: true,
     stdout: 'pipe',
     stderr: 'pipe',
