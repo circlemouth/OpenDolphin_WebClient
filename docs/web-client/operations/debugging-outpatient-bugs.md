@@ -1,7 +1,7 @@
-# 外来 API デバッグ記録（RUN_ID=20251209T094600Z）
+# 外来 API デバッグ記録（RUN_ID=20251209T150000Z）
 
 - 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル
-- 起点: 04C5 ローカル再検証（RUN_ID=`20251209T150000Z`, parent=`20251209T071955Z`）で得たギャップ/ログを整理し、Web クライアント実装中に遭遇した外来 API のバグ・差分・再現手順を集約する。
+- 起点: 04C5 ローカル再検証（RUN_ID=`20251209T150000Z`）で得たギャップ/ログを整理し、Web クライアント実装中に遭遇した外来 API のバグ・差分・再現手順を集約する。
 - 証跡: `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md`（ローカル 200 / Stage・Preview TCP timeout）、`artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`（curl 応答・タイムアウトログ）。
 
 ## 1. 最新サマリ
@@ -19,12 +19,12 @@
 2. 以下を curl で POST。ヘッダ: `userName=1.3.6.1.4.1.9414.10.1:dolphindev`, `password=MD5(dolphindev)=1cc2f4c06fd32d0a6e2fa33f6e1c9164`, `clientUUID=devclient`, `X-Facility-Id=1.3.6.1.4.1.9414.10.1`。  
    - `.../api01rv2/claim/outpatient/mock`（期待: 200, cacheHit=false, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z）。  
    - `.../orca21/medicalmodv2/outpatient`（期待: 200, cacheHit=true, missingMaster=false, dataSourceTransition=server, runId=20251208T124645Z）。  
-3. Network/HAR を保存する場合は `artifacts/webclient/debug/20251209T094600Z-bugs/` 配下へ配置し、Trace-Id と runId をログに残す。  
+3. Network/HAR を保存する場合は `artifacts/webclient/debug/20251209T150000Z-bugs/` 配下へ配置し、Trace-Id と runId をログに残す。  
 4. UI 確認: Reception→Charts→Patients の遷移で ToneBanner/ResolveMasterBadge に `tone=server` と `dataSourceTransition=server` が表示され、`telemetryClient.funnels/outpatient` が resolve_master→charts_orchestration で 2 段記録されることを確認。
 
 ## 3. 観測ポイント（observability）
 - 必須フィールド: `traceId`, `runId`, `dataSourceTransition`, `cacheHit`, `missingMaster`, `recordsReturned`, `fetchedAt`, `auditEvent.details.telemetryFunnelStage`。  
-- ログ保存先: `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`（既存）または `artifacts/webclient/debug/20251209T094600Z-bugs/`（本 RUN_ID 用）。  
+- ログ保存先: `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`（既存）または `artifacts/webclient/debug/20251209T150000Z-bugs/`（本 RUN_ID 用）。  
 - Telemetry: `recordOutpatientFunnel('resolve_master'| 'charts_orchestration', flags)` が両 API のレスポンス値を反映すること。  
 - 監査: `SessionAuditDispatcher` が `ORCA_CLAIM_OUTPATIENT` を SUCCESS で送出しているか（server-modernized ログ）。
 
@@ -37,4 +37,4 @@
 - 04C5 ローカル検証ログ: `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md`
 - ローカル/Stage curl & 応答: `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`
 - 本 RUN_ID の証跡ログ: `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md`
-- 追加ログ置き場: `artifacts/webclient/debug/20251209T094600Z-bugs/`
+- 追加ログ置き場: `artifacts/webclient/debug/20251209T150000Z-bugs/`
