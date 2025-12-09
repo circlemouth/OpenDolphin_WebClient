@@ -366,8 +366,8 @@ src:
         - `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。
         - 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
