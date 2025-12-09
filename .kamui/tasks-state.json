@@ -118,11 +118,11 @@
     "id": "task-yaml-1bcnpr8-src-modernized-o",
     "name": "[outpatient debug plan] Telemetryフラグ検証\n期間: 12/10 06:00 - 12/11 06:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。\n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetryフラグ検証.md",
     "model": "YAML App",
-    "status": "pending",
+    "status": "completed",
     "importance": "high",
     "urgency": "high",
     "createdAt": "2025-12-09T11:19:56.908Z",
-    "updatedAt": "2025-12-09T11:19:56.908Z",
+    "updatedAt": "2025-12-09T20:35:54.222Z",
     "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-1bcnpr8-src-modernized-o",
@@ -162,26 +162,50 @@
     "description": "# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。"
   },
   {
-    "id": "task-1765310804658-4881d0",
-    "name": "CodexCLI1: [outpatient debug plan] Telemetryフラグ検証\n期間: 12/10 06:00 - 12/11 06:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。\n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetryフラグ検証.md",
-    "model": "Codex CLI",
-    "status": "working",
+    "id": "task-yaml-n5arty-src-modernized-o",
+    "name": "[outpatient debug plan] StagePreview疎通再試行\n期間: 12/10 09:00 - 12/11 09:00 / 優先度: medium / 緊急度: high / エージェント: gemini cli\n\n# Stage/Preview 疎通再試行\n\n- dev proxy 先 (100.102.17.40:8000/443/8443) への curl を RUN_ID 付きで再実行し、TCP timeout 解消を確認。\n- TLS ハンドシェイク可否と HTTP ステータス (401/404) を記録し、差分は `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` に追記予定。\n- UI/HAR を取得できる場合は同じ証跡ディレクトリへ保存。\n\nYAML ID: src/modernized_outpatient_debug/stage-preview/StagePreview疎通再試行.md",
+    "model": "YAML App",
+    "status": "pending",
     "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-09T20:06:44.658Z",
-    "updatedAt": "2025-12-09T20:06:44.658Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765310804658-4881d0",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
+    "urgency": "high",
+    "createdAt": "2025-12-09T20:37:31.543Z",
+    "updatedAt": "2025-12-09T20:37:31.543Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-n5arty-src-modernized-o",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765310804655-sm2e4xsr",
-    "aiCompetitionGroupName": "[outpatient debug plan] Telemetryフラグ検証\n期間: 12/10 06:00 - 12/11 06:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。\n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetryフラグ検証.md",
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765310804658-4881d0"
+    "yamlSource": {
+      "key": "custom-app-outpatient-debug-plan-f91b7530b0::src/modernized_outpatient_debug/stage-preview/StagePreview疎通再試行.md",
+      "appId": "custom-app-outpatient-debug-plan-f91b7530b0",
+      "datasetLabel": "outpatient debug plan",
+      "pathId": "src/modernized_outpatient_debug/stage-preview/StagePreview疎通再試行.md",
+      "fileName": "outpatient-debug-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/outpatient-debug-plan.yaml",
+      "addedAt": "2025-12-09T20:37:30.312Z"
+    },
+    "labels": [
+      "outpatient debug plan",
+      "src / modernized_outpatient_debug / stage-preview"
+    ],
+    "dependencies": [
+      "task-yaml-1bcnpr8-src-modernized-o"
+    ],
+    "schedule": {
+      "startMs": 1765324800000,
+      "endMs": 1765411200000,
+      "durationDays": 1
+    },
+    "category": "src / modernized_outpatient_debug / stage-preview",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# Stage/Preview 疎通再試行\n\n- dev proxy 先 (100.102.17.40:8000/443/8443) への curl を RUN_ID 付きで再実行し、TCP timeout 解消を確認。\n- TLS ハンドシェイク可否と HTTP ステータス (401/404) を記録し、差分は `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` に追記予定。\n- UI/HAR を取得できる場合は同じ証跡ディレクトリへ保存。"
   }
 ]
