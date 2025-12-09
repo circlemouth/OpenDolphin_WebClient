@@ -47,26 +47,76 @@
     "description": "# 04C5 外来 API ギャップ再検証\n\n- 期間: 2025-12-19 09:00 - 2025-12-20 18:00 JST（計画） / RUN_ID=`20251209T150000Z`。\n- `VITE_DISABLE_MSW=1` で Reception→Charts→Patients を再走し、04C4 stub で解消した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が dev proxy 経由（Stage/Preview 含む）でも 200/整合レスポンスになるか確認する。\n- `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` の正/異常系を fixture 切替で再現し、tone/telemetry 差分を `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。\n- サーバーログを `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` にまとめ、`ORCA_API_STATUS.md` と `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 外来セクションへ影響を反映。`04C3` ドキュメントに 404 解消結果を追記し、DOC_STATUS を更新。"
   },
   {
-    "id": "task-1765272387137-c0e499",
-    "name": "CodexCLI1: 対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\nsrc/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.mdも含めて、04C5タスク以降がlocalhostで実行されるサーバーを対象にした作業であることを明示したガントとドキュメントにせよ。stage環境でのチェックは本当の最終段階で、最後に確認する工程とする。",
+    "id": "task-yaml-jf7zez-src-outpatient-u",
+    "name": "[webclient ux outpatient modernization plan] 05_デバッグドキュメント整備\n期間: 12/21 09:00 - 12/23 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 05 デバッグドキュメント整備\n\n- 04C5（RUN_ID=`20251209T150000Z`）で取得した **localhost モダナイズ版サーバー** の検証ログと残ギャップを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理（Stage/Preview は 06 の結果を待つ）。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。\n- 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。\n\nYAML ID: src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-09T09:44:28.722Z",
+    "updatedAt": "2025-12-09T09:44:28.722Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-jf7zez-src-outpatient-u",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
+      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
+      "datasetLabel": "webclient ux outpatient modernization plan",
+      "pathId": "src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
+      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
+      "addedAt": "2025-12-09T09:44:28.638Z"
+    },
+    "labels": [
+      "webclient ux outpatient modernization plan",
+      "src / outpatient_ux_modernization"
+    ],
+    "dependencies": [
+      "task-yaml-v2xyzh-src-outpatient-u",
+      "task-yaml-5kpxjs-src-outpatient-u",
+      "task-yaml-70588s-src-outpatient-u",
+      "task-yaml-ukva5f-src-outpatient-u"
+    ],
+    "schedule": {
+      "startMs": 1766275200000,
+      "endMs": 1766448000000,
+      "durationDays": 2
+    },
+    "category": "src / outpatient_ux_modernization",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 05 デバッグドキュメント整備\n\n- 04C5（RUN_ID=`20251209T150000Z`）で取得した **localhost モダナイズ版サーバー** の検証ログと残ギャップを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理（Stage/Preview は 06 の結果を待つ）。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。\n- 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。"
+  },
+  {
+    "id": "task-1765273477948-9bd4c7",
+    "name": "CodexCLI1: [webclient ux outpatient modernization plan] 05_デバッグドキュメント整備\n期間: 12/21 09:00 - 12/23 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 05 デバッグドキュメント整備\n\n- 04C5（RUN_ID=`20251209T150000Z`）で取得した **localhost モダナイズ版サーバー** の検証ログと残ギャップを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理（Stage/Preview は 06 の結果を待つ）。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。\n- 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。\n\nYAML ID: src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-09T09:26:27.137Z",
-    "updatedAt": "2025-12-09T09:26:27.137Z",
+    "createdAt": "2025-12-09T09:44:37.948Z",
+    "updatedAt": "2025-12-09T09:44:37.948Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1765272387137-c0e499",
+    "branchName": "task/task-1765273477948-9bd4c7",
     "baseBranch": "master",
     "useTmux": true,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765272387136-axkfem5n",
-    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\nsrc/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.mdも含めて、04C5タスク以降がlocalhostで実行されるサーバーを対象にした作業であることを明示したガントとドキュメントにせよ。stage環境でのチェックは本当の最終段階で、最後に確認する工程とする。",
+    "aiCompetitionGroupId": "comp-1765273477947-2s5k0q2j",
+    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 05_デバッグドキュメント整備\n期間: 12/21 09:00 - 12/23 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 05 デバッグドキュメント整備\n\n- 04C5（RUN_ID=`20251209T150000Z`）で取得した **localhost モダナイズ版サーバー** の検証ログと残ギャップを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理（Stage/Preview は 06 の結果を待つ）。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。\n- 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。\n\nYAML ID: src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765272387137-c0e499"
+    "worktreePath": ".worktrees/task-1765273477948-9bd4c7"
   }
 ]
