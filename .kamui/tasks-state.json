@@ -207,5 +207,28 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# Stage/Preview 疎通再試行\n\n- dev proxy 先 (100.102.17.40:8000/443/8443) への curl を RUN_ID 付きで再実行し、TCP timeout 解消を確認。\n- TLS ハンドシェイク可否と HTTP ステータス (401/404) を記録し、差分は `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` に追記予定。\n- UI/HAR を取得できる場合は同じ証跡ディレクトリへ保存。"
+  },
+  {
+    "id": "task-1765314215602-5cf774",
+    "name": "CodexCLI1: 対象ファイル: .kamui/apps/outpatient-debug-plan.yaml\n\ndev proxyの検証段階は省いていい。これは本当のプロジェクトの最後の確認に使うので、それに応じてがんと更新して。",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-09T21:03:35.602Z",
+    "updatedAt": "2025-12-09T21:03:35.602Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765314215602-5cf774",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765314215601-i5i48vdo",
+    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/outpatient-debug-plan.yaml\n\ndev proxyの検証段階は省いていい。これは本当のプロジェクトの最後の確認に使うので、それに応じてがんと更新して。",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1765314215602-5cf774"
   }
 ]
