@@ -321,10 +321,9 @@ src:
       content: |-
         # 04C4 外来 API ギャップ実装
 
-        - 04C3 で 404 だった `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を modernized server に実装し、`web-client/architecture/web-client-api-mapping.md` と telemetry フラグに整合するレスポンスを返すようにする。
-        - 実装に合わせて msw/fixtures などクライアント側の契約モックを更新し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-api-gap-implementation.md` に実装内容とエビデンスを記録する。
-        - `resolveMasterSource` / `cacheHit` / `missingMaster` が reception / charts の telemetry ファネルへ正しく流れることを確認する。
-        - 実装完了後、RUN_ID を `docs/web-client/planning/phase2/DOC_STATUS.md` に反映する。
+        - RUN_ID=`20251208T124645Z` / 期間: 2025-12-17 09:00 - 12-19 09:00 JST。modernized server に `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` の stub を追加し、`OutpatientFlagResponse` で `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster/...` を返す。
+        - MSW/fixtures を RUN_ID に合わせて更新し、契約モックを `artifacts/api-stability/20251208T124645Z/outpatient/` に配置。`web-client/architecture/web-client-api-mapping.md` と DOC_STATUS を同期。
+        - 実データは未接続のため Stage/Preview での実レスポンス検証を後続タスク（04C5/06）に委ね、`docs/server-modernization/phase2/operations/logs/20251208T124645Z-api-gap-implementation.md` に証跡済み。
       priority: High
       status: completed
       progress: 100
@@ -335,15 +334,15 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md
       schedule:
-        start: 2025-12-08T12:46:45.000Z
+        start: 2025-12-17T00:00:00.000Z
         days: 2
     04C5_outpatient_api_gap_retest.md:
       content: |-
         # 04C5 外来 API ギャップ再検証
 
-        - `VITE_DISABLE_MSW=1` で 04C3 と同じ経路（Reception→Charts→Patients）を再実行し、`/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` の 404 解消と telemetry 項目の反映を確認する。
-        - 接続ログとスクリーンショットを `artifacts/webclient/e2e/<RUN_ID>-integration-gap-fix/` に保存し、サーバーログを `docs/server-modernization/phase2/operations/logs/<RUN_ID>-integration-gap-qa.md` に記録する。
-        - 結果と RUN_ID を `docs/web-client/planning/phase2/DOC_STATUS.md` と manager checklist に反映する。
+        - RUN_ID=`20251209T150000Z`。`VITE_DISABLE_MSW=1` で Reception→Charts→Patients を再走し、04C4 stub で解消した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が dev proxy 経由（Stage/Preview 含む）でも 200/整合レスポンスになるか確認する。
+        - `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` の正/異常系を fixture 切替で再現し、tone/telemetry 差分を `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。
+        - サーバーログを `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` にまとめ、`ORCA_API_STATUS.md` と `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 外来セクションへ影響を反映。`04C3` ドキュメントに 404 解消結果を追記し、DOC_STATUS を更新。
       priority: High
       status: not_started
       progress: 0
@@ -354,8 +353,8 @@ src:
       dependency:
         - src/outpatient_ux_modernization/04C4_outpatient_api_gap_implementation.md
       schedule:
-        start: 2025-12-10T00:00:00.000Z
-        days: 1
+        start: 2025-12-19T00:00:00.000Z
+        days: 2
     05_デバッグドキュメント整備.md:
       content: |-
         # 05 デバッグドキュメント整備
@@ -374,7 +373,7 @@ src:
         - src/outpatient_ux_modernization/04C3_WEBクライアントAPI接続検証.md
         - src/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.md
       schedule:
-        start: 2025-12-12T00:00:00.000Z
+        start: 2025-12-21T00:00:00.000Z
         days: 2
     06_STAGE検証とDOC_STATUS反映.md:
       content: |-
@@ -394,5 +393,5 @@ src:
       dependency:
         - src/outpatient_ux_modernization/05_デバッグドキュメント整備.md
       schedule:
-        start: 2025-12-14T00:00:00.000Z
+        start: 2025-12-23T00:00:00.000Z
         days: 2
