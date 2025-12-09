@@ -27,3 +27,8 @@
 ## TODO / フォローアップ
 - Stage/Preview で MSW OFF + dev proxy 経路の実レスポンスを観測し、`resolveMasterSource` の降格パス（missingMaster/cacheHit 変化）を確認する。
 - `ORCA_API_STATUS.md` と manager checklist の外来セクションに本 RUN_ID 反映が必要かを確認。
+
+## 2025-12-09 ドキュメント反映（Stage/Preview dev proxy timeout）
+- `docs/server-modernization/phase2/operations/ORCA_API_STATUS.md` の外来行（`/api21/medicalmodv2`）へ RUN_ID=`20251208T124645Z` の Stage/Preview dev proxy 結果（TCP timeout, audit/runId 未取得, 証跡=`docs/server-modernization/phase2/operations/logs/20251208T124645Z-dev-proxy-validation.md`）を追記。
+- `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` の外来セクションに同内容とスクリーンショットパス（`artifacts/webclient/e2e/20251208T124645Z-stage/outpatient-stage.png`）を展開。
+- `docs/web-client/planning/phase2/DOC_STATUS.md` に本 RUN_ID の反映行を追加し、ORCA_API_STATUS/チェックリスト更新済みであることを明記。
