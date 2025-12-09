@@ -47,26 +47,26 @@
     "description": "# 04C5 外来 API ギャップ再検証\n\n- 期間: 2025-12-19 09:00 - 2025-12-20 18:00 JST（計画） / RUN_ID=`20251209T150000Z`。\n- `VITE_DISABLE_MSW=1` で Reception→Charts→Patients を再走し、04C4 stub で解消した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が dev proxy 経由（Stage/Preview 含む）でも 200/整合レスポンスになるか確認する。\n- `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` の正/異常系を fixture 切替で再現し、tone/telemetry 差分を `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。\n- サーバーログを `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` にまとめ、`ORCA_API_STATUS.md` と `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 外来セクションへ影響を反映。`04C3` ドキュメントに 404 解消結果を追記し、DOC_STATUS を更新。"
   },
   {
-    "id": "task-1765269769152-65a9de",
-    "name": "CodexCLI1: [webclient ux outpatient modernization plan] 04C5_outpatient_api_gap_retest\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 04C5 外来 API ギャップ再検証\n\n- 期間: 2025-12-19 09:00 - 2025-12-20 18:00 JST（計画） / RUN_ID=`20251209T150000Z`。\n- `VITE_DISABLE_MSW=1` で Reception→Charts→Patients を再走し、04C4 stub で解消した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が dev proxy 経由（Stage/Preview 含む）でも 200/整合レスポンスになるか確認する。\n- `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` の正/異常系を fixture 切替で再現し、tone/telemetry 差分を `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。\n- サーバーログを `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` にまとめ、`ORCA_API_STATUS.md` と `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 外来セクションへ影響を反映。`04C3` ドキュメントに 404 解消結果を追記し、DOC_STATUS を更新。\n\nYAML ID: src/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.md",
+    "id": "task-1765272387137-c0e499",
+    "name": "CodexCLI1: 対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\nsrc/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.mdも含めて、04C5タスク以降がlocalhostで実行されるサーバーを対象にした作業であることを明示したガントとドキュメントにせよ。stage環境でのチェックは本当の最終段階で、最後に確認する工程とする。",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-09T08:42:49.152Z",
-    "updatedAt": "2025-12-09T08:42:49.152Z",
+    "createdAt": "2025-12-09T09:26:27.137Z",
+    "updatedAt": "2025-12-09T09:26:27.137Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1765269769152-65a9de",
+    "branchName": "task/task-1765272387137-c0e499",
     "baseBranch": "master",
     "useTmux": true,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765269769151-mouhdgc8",
-    "aiCompetitionGroupName": "[webclient ux outpatient modernization plan] 04C5_outpatient_api_gap_retest\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 04C5 外来 API ギャップ再検証\n\n- 期間: 2025-12-19 09:00 - 2025-12-20 18:00 JST（計画） / RUN_ID=`20251209T150000Z`。\n- `VITE_DISABLE_MSW=1` で Reception→Charts→Patients を再走し、04C4 stub で解消した `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` が dev proxy 経由（Stage/Preview 含む）でも 200/整合レスポンスになるか確認する。\n- `resolveMasterSource/dataSourceTransition/cacheHit/missingMaster` の正/異常系を fixture 切替で再現し、tone/telemetry 差分を `artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/` に保存。\n- サーバーログを `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md` にまとめ、`ORCA_API_STATUS.md` と `PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 外来セクションへ影響を反映。`04C3` ドキュメントに 404 解消結果を追記し、DOC_STATUS を更新。\n\nYAML ID: src/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.md",
+    "aiCompetitionGroupId": "comp-1765272387136-axkfem5n",
+    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\nsrc/outpatient_ux_modernization/04C5_outpatient_api_gap_retest.mdも含めて、04C5タスク以降がlocalhostで実行されるサーバーを対象にした作業であることを明示したガントとドキュメントにせよ。stage環境でのチェックは本当の最終段階で、最後に確認する工程とする。",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765269769152-65a9de"
+    "worktreePath": ".worktrees/task-1765272387137-c0e499"
   }
 ]
