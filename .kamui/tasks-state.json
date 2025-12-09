@@ -23,79 +23,6 @@
     "worktreePath": ".worktrees/task-1765274941848-e607f2"
   },
   {
-    "id": "task-yaml-jf7zez-src-outpatient-u",
-    "name": "[webclient ux outpatient modernization plan] 05_デバッグドキュメント整備\n期間: 12/21 09:00 - 12/23 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 05 デバッグドキュメント整備\n\n- 04C5（RUN_ID=`20251209T150000Z`）で取得した **localhost モダナイズ版サーバー** の検証ログと残ギャップを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理（Stage/Preview は 06 の結果を待つ）。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。\n- 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。\n\nYAML ID: src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-09T10:21:43.994Z",
-    "updatedAt": "2025-12-09T10:21:43.994Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-jf7zez-src-outpatient-u",
-    "baseBranch": "main",
-    "useTmux": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341::src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
-      "appId": "custom-app-webclient-ux-outpatient-modernizatio-7167fdd341",
-      "datasetLabel": "webclient ux outpatient modernization plan",
-      "pathId": "src/outpatient_ux_modernization/05_デバッグドキュメント整備.md",
-      "fileName": "webclient-ux-outpatient-modernization-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-ux-outpatient-modernization-plan.yaml",
-      "addedAt": "2025-12-09T10:21:43.979Z"
-    },
-    "labels": [
-      "webclient ux outpatient modernization plan",
-      "src / outpatient_ux_modernization"
-    ],
-    "dependencies": [
-      "task-yaml-v2xyzh-src-outpatient-u",
-      "task-yaml-5kpxjs-src-outpatient-u",
-      "task-yaml-70588s-src-outpatient-u",
-      "task-yaml-ukva5f-src-outpatient-u"
-    ],
-    "schedule": {
-      "startMs": 1766275200000,
-      "endMs": 1766448000000,
-      "durationDays": 2
-    },
-    "category": "src / outpatient_ux_modernization",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 05 デバッグドキュメント整備\n\n- 04C5（RUN_ID=`20251209T150000Z`）で取得した **localhost モダナイズ版サーバー** の検証ログと残ギャップを起点に、WEB クライアント実装中に発見したバグや API 差分を docs/web-client/operations/debugging-outpatient-bugs.md へ記録し、再現手順・再接続チェック・必要な observability を簡潔に整理（Stage/Preview は 06 の結果を待つ）。\n- `docs/web-client/planning/phase2/DOC_STATUS.md` の「Web クライアント UX/Features」行に RUN_ID・証跡パス・未解決バグを追記し、`docs/server-modernization/phase2/operations/logs/<RUN_ID>-debug.md` へのリンクを併記。04C5 の証跡パスを備考に引き継ぐ。\n- 必要があれば bugs を `artifacts/webclient/debug/<RUN_ID>-bugs/` に log や HAR をまとめ、次回ワーカー報告のテンプレを用意。"
-  },
-  {
-    "id": "task-1765276117086-75e670",
-    "name": "CodexCLI1: ユーザー入力: docs/web-client/operations/debugging-outpatient-bugs.md二記載がある内容に基づき、モダナイズ版サーバーのデバッグ作業を行いたい。\n作成日: 2025-12-09 (火) 19:28:14\n\n次の要件に従って AI ガントチャート用の YAML データセットを準備してください。\n対応できる実行モデルは codex / claude code / gemini cli / cursor cli の4種類のみ。\nリファレンス: .kamui/gantte/test.yaml の構造・章立て・フィールド命名をそのまま踏襲してください。\n1. `.kamui/apps/` に YAML ファイルを1枚生成する（例: `<slug>-plan.yaml`）。\n   - UTF-8 / 2スペースインデント。ルートには `ganttConfig`, `labels`, `filters` を含め、`.kamui/gantte/test.yaml` と同じ構造で実装する。\n   - 各タスクには `content`(Markdown), `priority`, `status`, `progress`, `agent`, `api`, `dependency/dependencies`、さらに `schedule.start`(ISO8601) と `schedule.days` もしくは `schedule.end` を必ず設定する。\n   - 依存関係と時系列が矛盾しないよう調整し、`ganttConfig.filters.showDependencies` を true にしてエッジ表示ができるようにする。\n   - 必要に応じて `src/<area>/...` のような階層を定義し、章ごとのタスク群を整理する。\n2. `.kamui/apps/icons/` に同じ接頭辞の SVG アイコンを1枚生成する（HTMLアプリと同じ命名規則）。\n   - アイコン制作時の注意:\n- 入力キーワード（「docs/web-client/operations/debugging-outpatient-bugs.md二記載がある内容に基づき、モダナイズ版サーバーのデバッグ作業を行いたい。」）の印象をベースに、背景色・アクセント・文字や絵文字を組み合わせた単一のアイコン案をまとめる。\n- アイコンは 256×256px 相当の正方形SVG1枚で作成し、必要に応じて角丸・影・グラデーション等の装飾を加える。\n- HTMLファイルと同じ接頭辞を用い、アイコンは `.kamui/apps/icons/<HTMLファイル名（拡張子除く）>.svg` に保存する前提で構成する。\n- SVG内で用いる色・図形・文字について、それぞれの意図とコントラスト確保の理由を出力に明記する。\n- 他ファイル（apps.json など）は自動変更しない。後で登録しやすいよう、アイコンで使用した色やテキストを出力で整理する。\n\n3. 出力では以下を列挙すること。\n   - 生成する YAML のファイル名/ツリー構成/タスク数/主要な依存関係。\n   - 作成した SVG アイコンのファイル名とデザイン意図（配色・文字・象徴するモチーフ）。\n   - デスクトップ上のガントアプリを開く手順（クリックすると AI ガントレンダリングが実行されること）。\n   - YAML本体（コードブロック形式）と、必要に応じた注意点。",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-09T10:28:37.086Z",
-    "updatedAt": "2025-12-09T11:10:19.152Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765276117086-75e670",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765276117085-f0mwkn1z",
-    "aiCompetitionGroupName": "ユーザー入力: docs/web-client/operations/debugging-outpatient-bugs.md二記載がある内容に基づき、モダナイズ版サーバーのデバッグ作業を行いたい。\n作成日: 2025-12-09 (火) 19:28:14\n\n次の要件に従って AI ガントチャート用の YAML データセットを準備してください。\n対応できる実行モデルは codex / claude code / gemini cli / cursor cli の4種類のみ。\nリファレンス: .kamui/gantte/test.yaml の構造・章立て・フィールド命名をそのまま踏襲してください。\n1. `.kamui/apps/` に YAML ファイルを1枚生成する（例: `<slug>-plan.yaml`）。\n   - UTF-8 / 2スペースインデント。ルートには `ganttConfig`, `labels`, `filters` を含め、`.kamui/gantte/test.yaml` と同じ構造で実装する。\n   - 各タスクには `content`(Markdown), `priority`, `status`, `progress`, `agent`, `api`, `dependency/dependencies`、さらに `schedule.start`(ISO8601) と `schedule.days` もしくは `schedule.end` を必ず設定する。\n   - 依存関係と時系列が矛盾しないよう調整し、`ganttConfig.filters.showDependencies` を true にしてエッジ表示ができるようにする。\n   - 必要に応じて `src/<area>/...` のような階層を定義し、章ごとのタスク群を整理する。\n2. `.kamui/apps/icons/` に同じ接頭辞の SVG アイコンを1枚生成する（HTMLアプリと同じ命名規則）。\n   - アイコン制作時の注意:\n- 入力キーワード（「docs/web-client/operations/debugging-outpatient-bugs.md二記載がある内容に基づき、モダナイズ版サーバーのデバッグ作業を行いたい。」）の印象をベースに、背景色・アクセント・文字や絵文字を組み合わせた単一のアイコン案をまとめる。\n- アイコンは 256×256px 相当の正方形SVG1枚で作成し、必要に応じて角丸・影・グラデーション等の装飾を加える。\n- HTMLファイルと同じ接頭辞を用い、アイコンは `.kamui/apps/icons/<HTMLファイル名（拡張子除く）>.svg` に保存する前提で構成する。\n- SVG内で用いる色・図形・文字について、それぞれの意図とコントラスト確保の理由を出力に明記する。\n- 他ファイル（apps.json など）は自動変更しない。後で登録しやすいよう、アイコンで使用した色やテキストを出力で整理する。\n\n3. 出力では以下を列挙すること。\n   - 生成する YAML のファイル名/ツリー構成/タスク数/主要な依存関係。\n   - 作成した SVG アイコンのファイル名とデザイン意図（配色・文字・象徴するモチーフ）。\n   - デスクトップ上のガントアプリを開く手順（クリックすると AI ガントレンダリングが実行されること）。\n   - YAML本体（コードブロック形式）と、必要に応じた注意点。",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765276117086-75e670"
-  },
-  {
     "id": "task-yaml-24sd5r-src-modernized-o",
     "name": "[outpatient debug plan | task-1765276117086-75e670] RUN_IDセットとハブ確認\n期間: 12/10 04:40 - 12/11 04:40 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID 設定とハブ確認\n\n- RUN_ID を `20251209T192814Z` として全タスクで共有する。\n- 参照チェーン (`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → `docs/web-client/operations/debugging-outpatient-bugs.md`) を再確認し、更新対象と非対象を明確にする。\n- DOC_STATUS 更新方針と証跡パス（`docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` / `artifacts/webclient/debug/20251209T150000Z-bugs/`）をメモ。\n\nYAML ID: src/modernized_outpatient_debug/preparation/RUN_IDセットとハブ確認.md",
     "model": "YAML App",
@@ -139,5 +66,75 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# RUN_ID 設定とハブ確認\n\n- RUN_ID を `20251209T192814Z` として全タスクで共有する。\n- 参照チェーン (`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → `docs/web-client/operations/debugging-outpatient-bugs.md`) を再確認し、更新対象と非対象を明確にする。\n- DOC_STATUS 更新方針と証跡パス（`docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` / `artifacts/webclient/debug/20251209T150000Z-bugs/`）をメモ。"
+  },
+  {
+    "id": "task-1765278762140-504258",
+    "name": "CodexCLI1: [outpatient debug plan | task-1765276117086-75e670] RUN_IDセットとハブ確認\n期間: 12/10 04:40 - 12/11 04:40 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID 設定とハブ確認\n\n- RUN_ID を `20251209T192814Z` として全タスクで共有する。\n- 参照チェーン (`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → `docs/web-client/operations/debugging-outpatient-bugs.md`) を再確認し、更新対象と非対象を明確にする。\n- DOC_STATUS 更新方針と証跡パス（`docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` / `artifacts/webclient/debug/20251209T150000Z-bugs/`）をメモ。\n\nYAML ID: src/modernized_outpatient_debug/preparation/RUN_IDセットとハブ確認.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-09T11:12:42.140Z",
+    "updatedAt": "2025-12-09T11:12:42.140Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765278762140-504258",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765278762132-9pitvip8",
+    "aiCompetitionGroupName": "[outpatient debug plan | task-1765276117086-75e670] RUN_IDセットとハブ確認\n期間: 12/10 04:40 - 12/11 04:40 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID 設定とハブ確認\n\n- RUN_ID を `20251209T192814Z` として全タスクで共有する。\n- 参照チェーン (`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → `docs/web-client/operations/debugging-outpatient-bugs.md`) を再確認し、更新対象と非対象を明確にする。\n- DOC_STATUS 更新方針と証跡パス（`docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` / `artifacts/webclient/debug/20251209T150000Z-bugs/`）をメモ。\n\nYAML ID: src/modernized_outpatient_debug/preparation/RUN_IDセットとハブ確認.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1765278762140-504258"
+  },
+  {
+    "id": "task-yaml-qb750t-src-modernized-o",
+    "name": "[outpatient debug plan] モダナイズ版ローカル再現とHAR取得\n期間: 12/10 05:00 - 12/11 05:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# モダナイズ版ローカル再現と HAR 取得\n\n- 環境: `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` を再実行/確認。\n- curl で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST し、期待レスポンス（200, cacheHit 状態）と traceId/runId を記録。\n- HAR/Network ログを `artifacts/webclient/debug/20251209T150000Z-bugs/` へ保存。\n- server-modernized ログで `SessionAuditDispatcher` の `ORCA_CLAIM_OUTPATIENT` が SUCCESS になっているか確認。\n\nYAML ID: src/modernized_outpatient_debug/local-baseline/モダナイズ版ローカル再現とHAR取得.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-09T11:16:51.839Z",
+    "updatedAt": "2025-12-09T11:16:51.839Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-qb750t-src-modernized-o",
+    "baseBranch": "main",
+    "useTmux": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-outpatient-debug-plan-f91b7530b0::src/modernized_outpatient_debug/local-baseline/モダナイズ版ローカル再現とHAR取得.md",
+      "appId": "custom-app-outpatient-debug-plan-f91b7530b0",
+      "datasetLabel": "outpatient debug plan",
+      "pathId": "src/modernized_outpatient_debug/local-baseline/モダナイズ版ローカル再現とHAR取得.md",
+      "fileName": "outpatient-debug-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/outpatient-debug-plan.yaml",
+      "addedAt": "2025-12-09T11:16:51.816Z"
+    },
+    "labels": [
+      "outpatient debug plan",
+      "src / modernized_outpatient_debug / local-baseline"
+    ],
+    "dependencies": [
+      "task-yaml-n951dg-src-modernized-o"
+    ],
+    "schedule": {
+      "startMs": 1765310400000,
+      "endMs": 1765396800000,
+      "durationDays": 1
+    },
+    "category": "src / modernized_outpatient_debug / local-baseline",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# モダナイズ版ローカル再現と HAR 取得\n\n- 環境: `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` を再実行/確認。\n- curl で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST し、期待レスポンス（200, cacheHit 状態）と traceId/runId を記録。\n- HAR/Network ログを `artifacts/webclient/debug/20251209T150000Z-bugs/` へ保存。\n- server-modernized ログで `SessionAuditDispatcher` の `ORCA_CLAIM_OUTPATIENT` が SUCCESS になっているか確認。"
   }
 ]
