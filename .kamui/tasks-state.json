@@ -209,29 +209,6 @@
     "description": "# missingMaster 異常系注入\n\n- MSW/fixture を用いて `missingMaster=true` `cacheHit=false` を返すモックを注入し、ToneBanner/ResolveMasterBadge/telemetry の変化を Playwright で記録。\n- 生成したログ・スクリーンショットを `artifacts/webclient/debug/20251209T150000Z-bugs/` に格納。\n- 期待との差分を `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` に追記案として整理。"
   },
   {
-    "id": "task-1765314903214-12a38b",
-    "name": "CodexCLI1: [outpatient debug plan] missingMaster異常系注入\n期間: 12/10 10:00 - 12/11 10:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# missingMaster 異常系注入\n\n- MSW/fixture を用いて `missingMaster=true` `cacheHit=false` を返すモックを注入し、ToneBanner/ResolveMasterBadge/telemetry の変化を Playwright で記録。\n- 生成したログ・スクリーンショットを `artifacts/webclient/debug/20251209T150000Z-bugs/` に格納。\n- 期待との差分を `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` に追記案として整理。\n\nYAML ID: src/modernized_outpatient_debug/anomaly-injection/missingMaster異常系注入.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-09T21:15:03.214Z",
-    "updatedAt": "2025-12-09T21:15:03.214Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765314903214-12a38b",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765314903212-2bb4vv9q",
-    "aiCompetitionGroupName": "[outpatient debug plan] missingMaster異常系注入\n期間: 12/10 10:00 - 12/11 10:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# missingMaster 異常系注入\n\n- MSW/fixture を用いて `missingMaster=true` `cacheHit=false` を返すモックを注入し、ToneBanner/ResolveMasterBadge/telemetry の変化を Playwright で記録。\n- 生成したログ・スクリーンショットを `artifacts/webclient/debug/20251209T150000Z-bugs/` に格納。\n- 期待との差分を `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` に追記案として整理。\n\nYAML ID: src/modernized_outpatient_debug/anomaly-injection/missingMaster異常系注入.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765314903214-12a38b"
-  },
-  {
     "id": "task-yaml-gmjzhg-src-modernized-o",
     "name": "[outpatient debug plan] DOC_STATUS更新とワーカー報告\n期間: 12/10 12:00 - 12/11 12:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# DOC_STATUS 更新とワーカー報告\n\n- `docs/web-client/planning/phase2/DOC_STATUS.md` に RUN_ID 行を追記し、備考へ証跡パスを記載。\n- `docs/web-client/operations/debugging-outpatient-bugs.md` の最新差分を反映し、参照チェーンのリンクが生きているか確認。\n- 形式: `【ワーカー報告】実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID` を準備してマネージャーへ共有。\n\nYAML ID: src/modernized_outpatient_debug/reporting/DOC_STATUS更新とワーカー報告.md",
     "model": "YAML App",
@@ -277,5 +254,28 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# DOC_STATUS 更新とワーカー報告\n\n- `docs/web-client/planning/phase2/DOC_STATUS.md` に RUN_ID 行を追記し、備考へ証跡パスを記載。\n- `docs/web-client/operations/debugging-outpatient-bugs.md` の最新差分を反映し、参照チェーンのリンクが生きているか確認。\n- 形式: `【ワーカー報告】実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID` を準備してマネージャーへ共有。"
+  },
+  {
+    "id": "task-1765315640584-8279a9",
+    "name": "CodexCLI1: [outpatient debug plan] DOC_STATUS更新とワーカー報告\n期間: 12/10 12:00 - 12/11 12:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# DOC_STATUS 更新とワーカー報告\n\n- `docs/web-client/planning/phase2/DOC_STATUS.md` に RUN_ID 行を追記し、備考へ証跡パスを記載。\n- `docs/web-client/operations/debugging-outpatient-bugs.md` の最新差分を反映し、参照チェーンのリンクが生きているか確認。\n- 形式: `【ワーカー報告】実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID` を準備してマネージャーへ共有。\n\nYAML ID: src/modernized_outpatient_debug/reporting/DOC_STATUS更新とワーカー報告.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-09T21:27:20.584Z",
+    "updatedAt": "2025-12-09T21:27:20.584Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765315640584-8279a9",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765315640583-60csdtqq",
+    "aiCompetitionGroupName": "[outpatient debug plan] DOC_STATUS更新とワーカー報告\n期間: 12/10 12:00 - 12/11 12:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# DOC_STATUS 更新とワーカー報告\n\n- `docs/web-client/planning/phase2/DOC_STATUS.md` に RUN_ID 行を追記し、備考へ証跡パスを記載。\n- `docs/web-client/operations/debugging-outpatient-bugs.md` の最新差分を反映し、参照チェーンのリンクが生きているか確認。\n- 形式: `【ワーカー報告】実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID` を準備してマネージャーへ共有。\n\nYAML ID: src/modernized_outpatient_debug/reporting/DOC_STATUS更新とワーカー報告.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1765315640584-8279a9"
   }
 ]
