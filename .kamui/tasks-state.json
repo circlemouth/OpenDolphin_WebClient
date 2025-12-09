@@ -115,29 +115,6 @@
     "description": "# モダナイズ版ローカル再現と HAR 取得\n\n- 環境: `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` を再実行/確認。\n- curl で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST し、期待レスポンス（200, cacheHit 状態）と traceId/runId を記録。\n- HAR/Network ログを `artifacts/webclient/debug/20251209T150000Z-bugs/` へ保存。\n- server-modernized ログで `SessionAuditDispatcher` の `ORCA_CLAIM_OUTPATIENT` が SUCCESS になっているか確認。"
   },
   {
-    "id": "task-1765279167861-517461",
-    "name": "CodexCLI1: [outpatient debug plan] モダナイズ版ローカル再現とHAR取得\n期間: 12/10 05:00 - 12/11 05:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# モダナイズ版ローカル再現と HAR 取得\n\n- 環境: `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` を再実行/確認。\n- curl で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST し、期待レスポンス（200, cacheHit 状態）と traceId/runId を記録。\n- HAR/Network ログを `artifacts/webclient/debug/20251209T150000Z-bugs/` へ保存。\n- server-modernized ログで `SessionAuditDispatcher` の `ORCA_CLAIM_OUTPATIENT` が SUCCESS になっているか確認。\n\nYAML ID: src/modernized_outpatient_debug/local-baseline/モダナイズ版ローカル再現とHAR取得.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-09T11:19:27.861Z",
-    "updatedAt": "2025-12-09T11:19:27.861Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765279167861-517461",
-    "baseBranch": "master",
-    "useTmux": true,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765279167853-mnr9ce82",
-    "aiCompetitionGroupName": "[outpatient debug plan] モダナイズ版ローカル再現とHAR取得\n期間: 12/10 05:00 - 12/11 05:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# モダナイズ版ローカル再現と HAR 取得\n\n- 環境: `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` を再実行/確認。\n- curl で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST し、期待レスポンス（200, cacheHit 状態）と traceId/runId を記録。\n- HAR/Network ログを `artifacts/webclient/debug/20251209T150000Z-bugs/` へ保存。\n- server-modernized ログで `SessionAuditDispatcher` の `ORCA_CLAIM_OUTPATIENT` が SUCCESS になっているか確認。\n\nYAML ID: src/modernized_outpatient_debug/local-baseline/モダナイズ版ローカル再現とHAR取得.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765279167861-517461"
-  },
-  {
     "id": "task-yaml-1bcnpr8-src-modernized-o",
     "name": "[outpatient debug plan] Telemetryフラグ検証\n期間: 12/10 06:00 - 12/11 06:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。\n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetryフラグ検証.md",
     "model": "YAML App",
@@ -183,5 +160,28 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。"
+  },
+  {
+    "id": "task-1765310804658-4881d0",
+    "name": "CodexCLI1: [outpatient debug plan] Telemetryフラグ検証\n期間: 12/10 06:00 - 12/11 06:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。\n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetryフラグ検証.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-09T20:06:44.658Z",
+    "updatedAt": "2025-12-09T20:06:44.658Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765310804658-4881d0",
+    "baseBranch": "master",
+    "useTmux": true,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765310804655-sm2e4xsr",
+    "aiCompetitionGroupName": "[outpatient debug plan] Telemetryフラグ検証\n期間: 12/10 06:00 - 12/11 06:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。\n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetryフラグ検証.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1765310804658-4881d0"
   }
 ]
