@@ -34,6 +34,7 @@
 - `docs/web-client/planning/phase2/screens/CHART_ENTRY_SCREEN_PLAN.md` — カルテ記入画面の空枠設計ドラフト。
 - `docs/web-client/planning/phase2/screens/CHART_ADMIN_SCREEN_PLAN.md` — カルテ全般管理画面の空枠設計ドラフト。
 - `src/webclient_screens_plan/02_画面別 API マッピングとバージョン整合.md` — Reception/Charts/Patients/Administration の API 差分・バージョン整合メモ。RUN_ID=`20251202T083708Z`。証跡: `docs/server-modernization/phase2/operations/logs/20251202T083708Z-api-mapping.md`。
+- `docs/web-client/architecture/future-web-client-design.md` — 次期 Web クライアントの画面配置・機能を網羅した設計サマリ。RUN_ID=`20251210T141208Z`。
 - `docs/web-client/planning/phase2/logs/20251130T120000Z-login-rework.md` — 本対応の証跡ログ。README／DOC_STATUS に書かれた RUN_ID と同一。
 - `docs/web-client/ux/ux-documentation-plan.md` — UX ドラフトの進行管理ハブ。RUN_ID=`20251202T090000Z`。
 - `docs/web-client/architecture/web-client-api-mapping.md` — API 統合設計の一覧と `resolveMasterSource`/監査 metadata 図。RUN_ID=`20251204T120000Z`。証跡: `docs/server-modernization/phase2/operations/logs/20251204T120000Z-integration-design.md`・`artifacts/webclient/ux-notes/20251204T120000Z-integration-design.md`。
