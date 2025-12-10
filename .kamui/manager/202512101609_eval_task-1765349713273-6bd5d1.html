@@ -1,0 +1,198 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 4); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before { content: ""; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--investigating { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--planning { background: #fff4d9; border-color: #f5e8b8; }
+      .status-badge--in-progress { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .score-banner { font-size: 18px; font-weight: 700; margin-right: 12px; }
+      .score-row { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; }
+      .radar { width: 220px; height: 200px; margin-bottom: 12px; }
+      .metric-list { margin: 0; padding-left: 18px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">接続スクリプト設計雛形 評価レポート</h1>
+        <p class="monitor-description">タスク概要: setup-modernized-env.sh を前提に ORCAcertification 情報を環境変数経由で安全に受け取り、RUN_ID から証跡を自動生成する接続スクリプト設計。対象ブランチ: task/task-1765349699239-926a3a, task/task-1765349699445-0d9f16。</p>
+        <div class="score-row">
+          <span class="score-banner">🥈 task-1765349699239-926a3a: 452 / 600 (総合 75 / 100)</span>
+          <span class="score-banner">🏆 task-1765349699445-0d9f16: 511 / 600 (総合 85 / 100)</span>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765349699239-926a3a</th>
+            <th>Agent task-1765349699445-0d9f16</th>
+            <th>Agent N/A</th>
+            <th>Agent N/A</th>
+            <th>Agent N/A</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-10 16:09</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未コミット</span>
+                <span class="agent-label">設計メモのみ追加 (未追跡)。コミットなし。</span>
+              </div>
+              <svg class="radar" viewBox="0 0 240 200" aria-label="radar task-1765349699239-926a3a">
+                <polygon points="120,40 170,71.2 174,131.2 120,165.6 71.5,128 68,70" fill="#dbe7fb" stroke="#5b85d7" stroke-width="1.4" opacity="0.8" />
+                <polygon points="120,20 189.3,60 189.3,140 120,180 50.7,140 50.7,60" fill="none" stroke="#aabfc5" stroke-width="1" stroke-dasharray="4 4" />
+              </svg>
+              <ul class="metric-list">
+                <li>要件適合度 75点: RUN_ID 自動生成と環境変数入力は網羅するが、DOC_STATUS 更新や証跡ログの書式は記述のみ。</li>
+                <li>技術的正確性 72点: curl 例と require_env はあるが、エラーハンドリングと引数優先順位が未整理。</li>
+                <li>安全ガード 78点: URL 完全一致と二段階確認を提案、ただし --force の扱いが曖昧。</li>
+                <li>証跡設計 82点: TRACE_ROOT 構成とログ雛形パスを定義。PHI 取り扱いの詳細は未落とし込み。</li>
+                <li>実装具体性 70点: 擬似コード止まりで正規表現バリデーションや dry-run の流れが不足。</li>
+                <li>ドキュメント品質 75点: 参照チェーンを明示するが、未コミットかつ Runbook 連携が未完。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ・差分詳細</summary>
+                <pre>git log -n 5 --oneline:
+ba898c6c Merge branch 'task/task-1765347481884-9f88a4'
+41aa7aae Kamuiタスク状態の更新
+2ddcee7c ORCAcertification棚卸しドキュメント追加
+cefdb80b Merge branch 'task/task-1765346763628-78b88f'
+dd796b41 chore: update kamui state files
+
+未追跡: src/orca_prod_bridge/planning/接続スクリプト設計雛形.md (設計メモのみ)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未コミット</span>
+                <span class="agent-label">設計メモ＋.kamui/tasks-state.json 変更あり。コミットなし。</span>
+              </div>
+              <svg class="radar" viewBox="0 0 240 200" aria-label="radar task-1765349699445-0d9f16">
+                <polygon points="120,29.6 176.8,67.2 178.9,134 120,172 64.6,132 60.4,65.6" fill="#e4f2e2" stroke="#4fa35d" stroke-width="1.4" opacity="0.85" />
+                <polygon points="120,20 189.3,60 189.3,140 120,180 50.7,140 50.7,60" fill="none" stroke="#aabfc5" stroke-width="1" stroke-dasharray="4 4" />
+              </svg>
+              <ul class="metric-list">
+                <li>要件適合度 88点: RUN_ID 必須・正規表現検証や force-target 等、要求を多面的にカバー。</li>
+                <li>技術的正確性 82点: umask/権限設定や curl オプションを具体化。ただし ORCA_CERTIFICATION_ONLY.md 不在に未対応。</li>
+                <li>安全ガード 85点: yes/dry-run/force-target の多段確認を設計。Stage/Preview 混入リスクへ警告。</li>
+                <li>証跡設計 90点: logs/artifacts/tmp を RUN_ID で自動生成し、PHI マスク方針を提示。</li>
+                <li>実装具体性 80点: 擬似コードでフローを明確化するも、ログテンプレート内容と実データマスク手順は未定義。</li>
+                <li>ドキュメント品質 86点: 参照チェーンと前提を整理し、用語も明確。ただしコミットが無く反映未完。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ・差分詳細</summary>
+                <pre>git log -n 5 --oneline:
+ba898c6c Merge branch 'task/task-1765347481884-9f88a4'
+41aa7aae Kamuiタスク状態の更新
+2ddcee7c ORCAcertification棚卸しドキュメント追加
+cefdb80b Merge branch 'task/task-1765346763628-78b88f'
+dd796b41 chore: update kamui state files
+
+git diff (.kamui/tasks-state.json):
++ monitor task-1765349713273-6bd5d1 を追加 (AI competition group, monitorTargets)
+未追跡: src/orca_prod_bridge/planning/接続スクリプト設計雛形.md</pre>
+              </details>
+            </td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">N/A</span><span class="agent-label">ー</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">N/A</span><span class="agent-label">ー</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">N/A</span><span class="agent-label">ー</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
