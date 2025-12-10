@@ -71,8 +71,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: in_progress
-        progress: 40
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-10T00:00:00.000Z
           days: 1
@@ -86,8 +86,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-11T00:00:00.000Z
           days: 1
@@ -102,8 +102,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-11T00:00:00.000Z
           days: 1
