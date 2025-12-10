@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Webクライアント設計ドキュメント評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-overview {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 12px;
+        margin: 8px 0 24px;
+      }
+      .score-card {
+        padding: 12px;
+        border: 1px solid #c4d3d7;
+        background: #f5fafb;
+        border-radius: 6px;
+      }
+      .score-value {
+        font-size: 22px;
+        font-weight: 700;
+        color: #0f2530;
+      }
+      .score-label {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-top: 4px;
+      }
+      .score-medal {
+        font-size: 16px;
+        margin-top: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 160px; }
+      col.agent-column { width: calc((100% - 160px) / 5); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .agent-meta { margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; font-weight: 600; }
+      .radar-wrap { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+      .radar { width: 140px; height: 140px; }
+      .metric-list { list-style: none; padding: 0; margin: 0; font-size: 12px; color: #1f2a30; }
+      .metric-list li { margin-bottom: 4px; }
+      .snapshot-summary { margin-bottom: 8px; font-weight: 600; color: #2c3a40; }
+      .findings { list-style: disc; padding-left: 16px; margin: 0 0 8px; }
+      .findings li { margin-bottom: 4px; font-size: 12px; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; border-radius: 4px; }
+      .status-good { background: #d7f0e5; border-color: #8ac9a8; }
+      .status-warn { background: #fff4d9; border-color: #f5e8b8; }
+      .status-risk { background: #f8d7da; border-color: #f1aeb5; }
+      details summary { cursor: pointer; font-weight: 600; font-size: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Webクライアント設計ドキュメント評価レポート（2025-12-10 23:33 JST）</h1>
+        <p class="monitor-description">対象: 監視タスク5件（task-1765375729794-dbaed4 / task-1765375729595-7291bb / task-1765375729999-c7d0b0 / task-1765375730344-77728a / task-1765375730404-3db9c9）。機能合理性と緻密性を中心に6指標×100点（合計600点）で採点。</p>
+      </header>
+
+      <section class="score-overview">
+        <div class="score-card"><div class="score-value">564 / 600 🏆</div><div class="score-label">task-1765375729794-dbaed4</div><div class="score-medal">🥇 94点</div></div>
+        <div class="score-card"><div class="score-value">536 / 600 🏆</div><div class="score-label">task-1765375729595-7291bb</div><div class="score-medal">🥈 89点</div></div>
+        <div class="score-card"><div class="score-value">506 / 600 🏆</div><div class="score-label">task-1765375729999-c7d0b0</div><div class="score-medal">🥉 84点</div></div>
+        <div class="score-card"><div class="score-value">486 / 600 🏆</div><div class="score-label">task-1765375730344-77728a</div><div class="score-medal">🥉 81点</div></div>
+        <div class="score-card"><div class="score-value">546 / 600 🏆</div><div class="score-label">task-1765375730404-3db9c9</div><div class="score-medal">🥈 91点</div></div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765375729794-dbaed4</th>
+            <th>task-1765375729595-7291bb</th>
+            <th>task-1765375729999-c7d0b0</th>
+            <th>task-1765375730344-77728a</th>
+            <th>task-1765375730404-3db9c9</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-10 23:33</td>
+            <td>
+              <div class="agent-meta"><span class="agent-label">未来設計サマリ (commit: 887657b0)</span></div>
+              <div class="radar-wrap">
+                <svg class="radar" data-values="95,94,95,95,93,92"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 95</li><li>緻密性 94</li><li>画面網羅性 95</li><li>API/監査 95</li><li>A11y/トーン 93</li><li>ガバナンス 92</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">強み</div>
+              <ul class="findings">
+                <li class="status-badge status-good">UI全域の要素配置を表形式で網羅し、Reception→Charts→Patients→Administration→Mockの導線と carry-over 条件を具体化。</li>
+                <li>APIヘッダーに runId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed を統一して送る指針を明示し、telemetry・audit も具体。</li>
+                <li>ARIAロールと tone/badge の運用が全ページで統一され、アクセシビリティと監査の整合が取れている。</li>
+              </ul>
+              <div class="snapshot-summary">懸念/不足</div>
+              <ul class="findings">
+                <li class="status-badge status-warn">患者編集・Administration の入力制約や権限ごとの UI ブロック条件が概略レベルで、実装に落とす際の詳細バリデーションが未記載。</li>
+              </ul>
+              <details><summary>参考差分</summary><pre>変更: docs/web-client/architecture/future-web-client-design.md (+87行)
+README/DOC_STATUS へリンクと RUN_ID=20251210T141208Z 追記。
+</pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="agent-label">次期設計ブループリント (commit: cdb3fcbb)</span></div>
+              <div class="radar-wrap">
+                <svg class="radar" data-values="90,88,90,90,88,90"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 90</li><li>緻密性 88</li><li>画面網羅性 90</li><li>API/監査 90</li><li>A11y/トーン 88</li><li>ガバナンス 90</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">強み</div>
+              <ul class="findings">
+                <li class="status-badge status-good">AppShell と SessionContext/RUN_ID の伝播を中心に IA を整理し、Reception/Charts の carry-over と telemetry funnel を明記。</li>
+                <li>OrderConsole・ToneBanner・ResolveMasterBadge の責務分離が明確で、MSW/Stage/Preview 切替フローも説明。</li>
+              </ul>
+              <div class="snapshot-summary">懸念/不足</div>
+              <ul class="findings">
+                <li class="status-badge status-warn">Patients/Administration の詳細 UI は将来拡張として高レベルに留まり、データフィールドや権限制御の粒度が不足。</li>
+              </ul>
+              <details><summary>参考差分</summary><pre>変更: docs/web-client/architecture/next-web-client-blueprint.md (+87行)
+ログ: docs/web-client/planning/phase2/logs/20251210T141021Z-webclient-blueprint.md 追加。
+README/DOC_STATUS を更新。</pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="agent-label">包括設計案 (commit: d36a59f8)</span></div>
+              <div class="radar-wrap">
+                <svg class="radar" data-values="85,83,86,84,80,88"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 85</li><li>緻密性 83</li><li>画面網羅性 86</li><li>API/監査 84</li><li>A11y/トーン 80</li><li>ガバナンス 88</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">強み</div>
+              <ul class="findings">
+                <li class="status-badge status-good">各画面の主要コンポーネントと操作フローを列挙し、ナビゲーションやトーン統一を明確化。</li>
+                <li>ORCA 接続・環境フラグ・テスト戦略を一体で記述しており、移行ステップも順序立てられている。</li>
+              </ul>
+              <div class="snapshot-summary">懸念/不足</div>
+              <ul class="findings">
+                <li class="status-badge status-warn">トーンと ARIA の具体ルールが簡潔で、carry-over の監査メタ（fallbackUsed など）の扱いが薄い。</li>
+                <li>Patients/Administration の操作条件・入力項目が簡略化され、運用シナリオが読み取りにくい。</li>
+              </ul>
+              <details><summary>参考差分</summary><pre>変更: docs/web-client/architecture/web-client-future-design.md (+110行)
+ログ: docs/web-client/planning/phase2/logs/20251210T141059Z-web-client-future-design.md 追加。
+README/DOC_STATUS を更新。</pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="agent-label">総合設計 (commit: 6e3b5ba4)</span></div>
+              <div class="radar-wrap">
+                <svg class="radar" data-values="82,80,82,80,80,82"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 82</li><li>緻密性 80</li><li>画面網羅性 82</li><li>API/監査 80</li><li>A11y/トーン 80</li><li>ガバナンス 82</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">強み</div>
+              <ul class="findings">
+                <li class="status-badge status-good">共通コンポーネント（ToneBanner/StatusBadge/ResolveMasterBadge）を整理し、Reception→Charts の 2x2 グリッド構成を提示。</li>
+                <li>Settings/Flags 画面を新設する提案があり、環境フラグ再発火の運用を意識。</li>
+              </ul>
+              <div class="snapshot-summary">懸念/不足</div>
+              <ul class="findings">
+                <li class="status-badge status-warn">API マッピングや監査メタの必須項目が簡素で、操作ごとのログ条件が弱い。</li>
+                <li class="status-badge status-warn">Patients/Administration のフィールド定義や権限制御が省略され、実装指針としては密度が不足。</li>
+              </ul>
+              <details><summary>参考差分</summary><pre>変更: docs/web-client/architecture/web-client-future-design.md (+69行)
+ログ: docs/web-client/planning/phase2/logs/20251210T170300Z-web-client-design.md 追加。
+README/DOC_STATUS を更新。</pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="agent-label">包括設計ブループリント (commit: 9a5fc693)</span></div>
+              <div class="radar-wrap">
+                <svg class="radar" data-values="93,92,93,93,90,85"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 93</li><li>緻密性 92</li><li>画面網羅性 93</li><li>API/監査 93</li><li>A11y/トーン 90</li><li>ガバナンス 85</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">強み</div>
+              <ul class="findings">
+                <li class="status-badge status-good">App Shell/共通フラグ/トーン/A11y/監査を一体設計し、Reception/Charts/Patients/Administration/Outpatient Mock 全体を詳細に網羅。</li>
+                <li>パフォーマンス（仮想化・バックオフ）、エラー処理、i18n、テスト自動化まで含めたクロスカット要件が具体。</li>
+              </ul>
+              <div class="snapshot-summary">懸念/不足</div>
+              <ul class="findings">
+                <li class="status-badge status-warn">RUN_ID 記録用の作業ログや DOC_STATUS 追記が無く、ガバナンス遵守の記載が薄い。</li>
+              </ul>
+              <details><summary>参考差分</summary><pre>変更: docs/web-client/architecture/web-client-future-blueprint.md (+71行)
+README/DOC_STATUS にリンク追加（ログ未追加）。
+</pre></details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function() {
+        const metrics = 6;
+        const maxR = 60;
+        document.querySelectorAll('.radar').forEach(svg => {
+          const vals = (svg.dataset.values || '').split(',').map(v => Number(v.trim()) || 0);
+          const ns = 'http://www.w3.org/2000/svg';
+          svg.setAttribute('viewBox', '0 0 160 160');
+          const center = 80;
+          // grid hex
+          [20, 40, 60].forEach(r => {
+            const p = Array.from({ length: metrics }, (_, i) => {
+              const angle = -Math.PI / 2 + (Math.PI * 2 / metrics) * i;
+              const x = center + r * Math.cos(angle);
+              const y = center + r * Math.sin(angle);
+              return `${x},${y}`;
+            }).join(' ');
+            const g = document.createElementNS(ns, 'polygon');
+            g.setAttribute('points', p);
+            g.setAttribute('fill', 'none');
+            g.setAttribute('stroke', '#c4d3d7');
+            g.setAttribute('stroke-width', 1);
+            svg.appendChild(g);
+          });
+          // data polygon
+          const points = vals.map((v, i) => {
+            const angle = -Math.PI / 2 + (Math.PI * 2 / metrics) * i;
+            const r = maxR * (v / 100);
+            const x = center + r * Math.cos(angle);
+            const y = center + r * Math.sin(angle);
+            return `${x},${y}`;
+          }).join(' ');
+          const poly = document.createElementNS(ns, 'polygon');
+          poly.setAttribute('points', points);
+          poly.setAttribute('fill', '#4aa3c7');
+          poly.setAttribute('fill-opacity', '0.25');
+          poly.setAttribute('stroke', '#2b6f8a');
+          poly.setAttribute('stroke-width', 2);
+          svg.appendChild(poly);
+          // vertices dots
+          points.split(' ').forEach(pt => {
+            const [x, y] = pt.split(',').map(Number);
+            const c = document.createElementNS(ns, 'circle');
+            c.setAttribute('cx', x);
+            c.setAttribute('cy', y);
+            c.setAttribute('r', 2.5);
+            c.setAttribute('fill', '#2b6f8a');
+            svg.appendChild(c);
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>

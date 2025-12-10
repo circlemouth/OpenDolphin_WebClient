@@ -120,16 +120,17 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-12T00:00:00.000Z
           days: 2
-      モダナイズ版サーバー起動検証.md:
+      API404事象再現とリクエストトレース取得.md:
         content: |-
-          # モダナイズ版サーバー起動検証
-          - 新スクリプトで server-modernized を起動し、webORCA 本番への TLS ハンドシェイクと API 応答を確認。
-          - ORCA_API_STATUS チェックリストと ORCA_CONNECTIVITY_VALIDATION 手順に沿って結果を記録。
+          # API404 事象再現とリクエストトレース取得
+          - server-modernized 起動手順を再実施し、404 が発生したエンドポイント・HTTP メソッド・パス・クエリを特定する。
+          - access log / application log / Vite 開発プロキシの出力を RUN_ID 付きで operations/logs に保存し、リクエストヘッダー・レスポンスボディをマスキングして添付する。
+          - VITE_DEV_PROXY_TARGET・WEB_CLIENT_MODE など環境変数の値を採取し、証跡にまとめる。
         dependency:
           - src/orca_prod_bridge/implementation/接続スクリプト実装.md
         agent: codex
@@ -138,7 +139,70 @@ src:
         status: not_started
         progress: 0
         schedule:
+          start: 2025-12-13T00:00:00.000Z
+          days: 1
+      ルーティング設定とAPI仕様調査.md:
+        content: |-
+          # ルーティング設定と API 仕様調査
+          - server-modernized のルーティング/コントローラ定義と OpenAPI (docs/server-modernization/phase2/operations/ORCA_API_STATUS.md 等) を突き合わせ、404 の原因となるパスの有無・ベースパス食い違いを確認。
+          - docker-compose.modernized.dev.yml や Vite 開発プロキシ設定におけるリバースプロキシ経路の差分を洗い出す。
+          - API スキーマ変更の履歴がないか git log / changelog を確認し、影響範囲を整理する。
+        dependency:
+          - src/orca_prod_bridge/implementation/API404事象再現とリクエストトレース取得.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-13T00:00:00.000Z
+          days: 1
+      API404修正方針決定と実装.md:
+        content: |-
+          # API404 修正方針決定と実装
+          - 調査結果を元に、server-modernized のルーティング追加/パス修正、または Vite/開発プロキシ設定の経路補正を決定する。
+          - legacy server/ 配下には触れず、server-modernized または Web クライアント設定のみを修正する。
+          - 必要に応じてユニットテスト/インテグレーションテストを追加し、ローカルで動作確認する。
+        dependency:
+          - src/orca_prod_bridge/implementation/ルーティング設定とAPI仕様調査.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
           start: 2025-12-14T00:00:00.000Z
+          days: 2
+      API404回帰テストと証跡反映.md:
+        content: |-
+          # API404 回帰テストと証跡反映
+          - 修正後に server-modernized を再起動し、404 が解消したことを ORCA_CONNECTIVITY_VALIDATION と ORCA_API_STATUS の項目に沿って確認。
+          - operations/logs/<RUN_ID>-*.md に再検証結果を追記し、DOC_STATUS の同 RUN_ID 行に「API404 解消」を記載。
+          - 失敗時のリスクと追加 TODO を整理し、次の WEB クライアント連携確認タスクへ引き継ぐ。
+        dependency:
+          - src/orca_prod_bridge/implementation/API404修正方針決定と実装.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-15T00:00:00.000Z
+          days: 1
+      モダナイズ版サーバー起動検証.md:
+        content: |-
+          # モダナイズ版サーバー起動検証
+          - 新スクリプトで server-modernized を起動し、webORCA 本番への TLS ハンドシェイクと API 応答を確認。
+          - ORCA_API_STATUS チェックリストと ORCA_CONNECTIVITY_VALIDATION 手順に沿って結果を記録。
+        dependency:
+          - src/orca_prod_bridge/implementation/API404回帰テストと証跡反映.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-15T00:00:00.000Z
           days: 1
       WEBクライアント連携確認.md:
         content: |-
@@ -153,7 +217,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-15T00:00:00.000Z
+          start: 2025-12-16T00:00:00.000Z
           days: 1
       証跡ログRUN_ID記録とDOC_STATUS更新.md:
         content: |-
@@ -168,7 +232,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-15T00:00:00.000Z
+          start: 2025-12-16T00:00:00.000Z
           days: 1
       セキュリティレビューと撤収手順.md:
         content: |-
@@ -184,5 +248,5 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-16T00:00:00.000Z
+          start: 2025-12-17T00:00:00.000Z
           days: 1
