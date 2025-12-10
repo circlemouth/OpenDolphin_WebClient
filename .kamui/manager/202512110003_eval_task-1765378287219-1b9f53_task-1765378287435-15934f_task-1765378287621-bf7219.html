@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .score-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 24px; }
+      .score-card { background: #eef3f4; border: 1px solid #c4d3d7; padding: 14px 16px; border-radius: 8px; }
+      .score-card h2 { margin: 0 0 6px; font-size: 15px; letter-spacing: 0.03em; }
+      .score-card .score { font-size: 22px; font-weight: 700; }
+      .score-card .meta { font-size: 12px; color: #3a4b53; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 14px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .status-badge--risk { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--info { background: #d8e6e9; border-color: #b8c9cd; }
+      .agent-meta { display: block; margin-bottom: 10px; line-height: 1.5; }
+      .radar-wrap { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .radar { width: 140px; height: 140px; }
+      .metric-list { font-size: 12px; color: #2c3a40; margin: 0; padding-left: 16px; }
+      .metric-list li { margin-bottom: 2px; }
+      .badge { padding: 2px 6px; border-radius: 6px; font-size: 11px; font-weight: 700; }
+      .badge--gold { background:#ffe9a6; color:#8a6d00; }
+      .badge--silver { background:#e3e6ed; color:#4a5568; }
+      .badge--bronze { background:#f1d3b5; color:#8b4b12; }
+      .badge--none { background:#e5e7eb; color:#374151; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク: [orca prod bridge plan] ルーティング設定とAPI仕様調査（期間: 2025-12-13 09:00 - 12-14 09:00 JST）。server-modernized ルートと ORCA 仕様の突合、プロキシ差分確認、スキーマ履歴調査について3ブランチを比較評価。</p>
+      </header>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <h2>codex / task-1765378287219-1b9f53 <span class="badge badge--bronze">🥉</span></h2>
+          <div class="score">370 / 600</div>
+          <div class="meta">平均 62点・DOCのみ未コミット。ベースパスと未実装ルートの特定は良好。</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1765378287435-15934f <span class="badge badge--silver">🥈</span></h2>
+          <div class="score">453 / 600</div>
+          <div class="meta">平均 76点・プロキシ差分と履歴の掘り下げが最も詳細だが未コミット。</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1765378287621-bf7219 <span class="badge badge--bronze">🥉</span></h2>
+          <div class="score">428 / 600</div>
+          <div class="meta">平均 71点・要点は網羅するが証跡リンクとコミット整備が未完。</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1765378287219-1b9f53</th>
+            <th>codex task-1765378287435-15934f</th>
+            <th>codex task-1765378287621-bf7219</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 00:03</td>
+            <td>
+              <div class="radar-wrap">
+                <svg viewBox="0 0 200 200" class="radar" data-scores="80,70,80,60,60,20">
+                  <polygon points="100,10 173,55 173,145 100,190 27,145 27,55" fill="none" stroke="#cbd5e1" stroke-width="2" />
+                  <polygon class="radar-fill" points="100,10 173,55 173,145 100,190 27,145 27,55" fill="rgba(59,130,246,0.35)" stroke="#3b82f6" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 80</li>
+                  <li>緻密性 70</li>
+                  <li>ルーティング把握 80</li>
+                  <li>プロキシ差分 60</li>
+                  <li>履歴追跡 60</li>
+                  <li>コミット整備 20</li>
+                </ul>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--risk">未コミット</span> 最新コミット: 173d9004 (Merge branch 'task/task-1765375729794-dbaed4').</div>
+              <div class="snapshot-summary">`/api01rv2/acceptlstv2` 未実装とベースパス `/openDolphin/resources` の確認は明確。プロキシ差分や履歴の記述は簡潔で、証跡リンク未記載。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分と成果物</summary>
+                <pre>変更: docs/web-client/planning/phase2/DOC_STATUS.md に RUN_ID=20251210T145607Z の行を追加。
+新規: src/orca_prod_bridge/implementation/ルーティング設定と API 仕様調査.md（RUN_ID=20251210T145607Z）。
+コミットなし・ワークツリーに未追跡ファイル。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="radar-wrap">
+                <svg viewBox="0 0 200 200" class="radar" data-scores="90,88,90,85,80,20">
+                  <polygon points="100,10 173,55 173,145 100,190 27,145 27,55" fill="none" stroke="#cbd5e1" stroke-width="2" />
+                  <polygon class="radar-fill" points="100,10 173,55 173,145 100,190 27,145 27,55" fill="rgba(34,197,94,0.35)" stroke="#22c55e" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 90</li>
+                  <li>緻密性 88</li>
+                  <li>ルーティング把握 90</li>
+                  <li>プロキシ差分 85</li>
+                  <li>履歴追跡 80</li>
+                  <li>コミット整備 20</li>
+                </ul>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--risk">未コミット</span> 最新コミット: 173d9004 (Merge branch 'task/task-1765375729794-dbaed4').</div>
+              <div class="snapshot-summary">三ブランチ中で最も詳細。Vite/Docker プロキシ差分、`/api` リライト、ポート 8080/9080 のずれ、履歴 (818d0247 ほか) を具体的に記載。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分と成果物</summary>
+                <pre>変更: DOC_STATUS に RUN_ID=20251210T145325Z のエントリ追加（webORCA 本番ブリッジ ルーティング調査）。
+新規: src/orca_prod_bridge/implementation/ルーティング設定とAPI仕様調査.md（RUN_ID=20251210T145325Z）。
+コミットなし・ワークツリーに未追跡ファイル。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="radar-wrap">
+                <svg viewBox="0 0 200 200" class="radar" data-scores="85,80,88,80,75,20">
+                  <polygon points="100,10 173,55 173,145 100,190 27,145 27,55" fill="none" stroke="#cbd5e1" stroke-width="2" />
+                  <polygon class="radar-fill" points="100,10 173,55 173,145 100,190 27,145 27,55" fill="rgba(249,115,22,0.35)" stroke="#f97316" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 85</li>
+                  <li>緻密性 80</li>
+                  <li>ルーティング把握 88</li>
+                  <li>プロキシ差分 80</li>
+                  <li>履歴追跡 75</li>
+                  <li>コミット整備 20</li>
+                </ul>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--risk">未コミット</span> 最新コミット: 173d9004 (Merge branch 'task/task-1765375729794-dbaed4').</div>
+              <div class="snapshot-summary">ベースパスと未実装ルートの指摘に加え、`scripts/orca_prod_bridge.sh` の二重 api プレフィックスへの言及あり。証跡ログパスを付記。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分と成果物</summary>
+                <pre>変更: DOC_STATUS に RUN_ID=20251210T145333Z の行を追加（ルーティング/仕様調査）。
+新規: src/orca_prod_bridge/implementation/ルーティング設定と API 仕様調査.md（RUN_ID=20251210T145333Z、証跡ログパス付き）。
+コミットなし・ワークツリーに未追跡ファイル。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      document.querySelectorAll('[data-scores]').forEach((el) => {
+        const scores = el.dataset.scores.split(',').map((n) => Number(n.trim()));
+        const size = 90;
+        const cx = 100, cy = 100;
+        const step = Math.PI / 3;
+        const points = scores.map((s, i) => {
+          const r = size * (s / 100);
+          const angle = -Math.PI / 2 + i * step;
+          const x = cx + r * Math.cos(angle);
+          const y = cy + r * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' ');
+        const poly = el.querySelector('.radar-fill');
+        if (poly) poly.setAttribute('points', points);
+      });
+    </script>
+  </body>
+</html>
