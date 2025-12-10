@@ -1,7 +1,7 @@
-[
+﻿[
   {
     "id": "task-1765274941848-e607f2",
-    "name": "GeminiCLI1: 対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C4、04C5、05タスクの進捗をリポジトリをみて確認し、作業計画を再検討してガントと必要に応じてがんとの各段階に相当するドキュメントを更新せよ。",
+    "name": "GeminiCLI1: 蟇ｾ雎｡繝輔ぃ繧､繝ｫ: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C4縲・4C5縲・5繧ｿ繧ｹ繧ｯ縺ｮ騾ｲ謐励ｒ繝ｪ繝昴ず繝医Μ繧偵∩縺ｦ遒ｺ隱阪＠縲∽ｽ懈･ｭ險育判繧貞・讀懆ｨ弱＠縺ｦ繧ｬ繝ｳ繝医→蠢・ｦ√↓蠢懊§縺ｦ縺後ｓ縺ｨ縺ｮ蜷・ｮｵ髫弱↓逶ｸ蠖薙☆繧九ラ繧ｭ繝･繝｡繝ｳ繝医ｒ譖ｴ譁ｰ縺帙ｈ縲・,
     "model": "Gemini CLI",
     "status": "working",
     "importance": "medium",
@@ -17,7 +17,7 @@
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
     "aiCompetitionGroupId": "comp-1765274941647-jyguxq0b",
-    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C4、04C5、05タスクの進捗をリポジトリをみて確認し、作業計画を再検討してガントと必要に応じてがんとの各段階に相当するドキュメントを更新せよ。",
+    "aiCompetitionGroupName": "蟇ｾ雎｡繝輔ぃ繧､繝ｫ: .kamui/apps/webclient-ux-outpatient-modernization-plan.yaml\n\n04C4縲・4C5縲・5繧ｿ繧ｹ繧ｯ縺ｮ騾ｲ謐励ｒ繝ｪ繝昴ず繝医Μ繧偵∩縺ｦ遒ｺ隱阪＠縲∽ｽ懈･ｭ險育判繧貞・讀懆ｨ弱＠縺ｦ繧ｬ繝ｳ繝医→蠢・ｦ√↓蠢懊§縺ｦ縺後ｓ縺ｨ縺ｮ蜷・ｮｵ髫弱↓逶ｸ蠖薙☆繧九ラ繧ｭ繝･繝｡繝ｳ繝医ｒ譖ｴ譁ｰ縺帙ｈ縲・,
     "autoEvaluationNotBefore": null,
     "useTmux": true,
     "taskType": null,
@@ -31,7 +31,7 @@
   },
   {
     "id": "task-yaml-24sd5r-src-modernized-o",
-    "name": "[outpatient debug plan | task-1765276117086-75e670] RUN_IDセットとハブ確認\n期間: 12/10 04:40 - 12/11 04:40 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID 設定とハブ確認\n\n- RUN_ID を `20251209T192814Z` として全タスクで共有する。\n- 参照チェーン (`AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → `docs/web-client/operations/debugging-outpatient-bugs.md`) を再確認し、更新対象と非対象を明確にする。\n- DOC_STATUS 更新方針と証跡パス（`docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` / `artifacts/webclient/debug/20251209T150000Z-bugs/`）をメモ。\n\nYAML ID: src/modernized_outpatient_debug/preparation/RUN_IDセットとハブ確認.md",
+    "name": "[outpatient debug plan | task-1765276117086-75e670] RUN_ID繧ｻ繝・ヨ縺ｨ繝上ヶ遒ｺ隱構n譛滄俣: 12/10 04:40 - 12/11 04:40 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# RUN_ID 險ｭ螳壹→繝上ヶ遒ｺ隱構n\n- RUN_ID 繧・`20251209T192814Z` 縺ｨ縺励※蜈ｨ繧ｿ繧ｹ繧ｯ縺ｧ蜈ｱ譛峨☆繧九・n- 蜿ら・繝√ぉ繝ｼ繝ｳ (`AGENTS.md` 竊・`docs/web-client/README.md` 竊・`docs/server-modernization/phase2/INDEX.md` 竊・`docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` 竊・`docs/web-client/operations/debugging-outpatient-bugs.md`) 繧貞・遒ｺ隱阪＠縲∵峩譁ｰ蟇ｾ雎｡縺ｨ髱槫ｯｾ雎｡繧呈・遒ｺ縺ｫ縺吶ｋ縲・n- DOC_STATUS 譖ｴ譁ｰ譁ｹ驥昴→險ｼ霍｡繝代せ・・docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` / `artifacts/webclient/debug/20251209T150000Z-bugs/`・峨ｒ繝｡繝｢縲・n\nYAML ID: src/modernized_outpatient_debug/preparation/RUN_ID繧ｻ繝・ヨ縺ｨ繝上ヶ遒ｺ隱・md",
     "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
@@ -61,7 +61,7 @@
   },
   {
     "id": "task-yaml-qb750t-src-modernized-o",
-    "name": "[outpatient debug plan] モダナイズ版ローカル再現とHAR取得\n期間: 12/10 05:00 - 12/11 05:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# モダナイズ版ローカル再現と HAR 取得\n\n- 環境: `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` を再実行/確認。\n- curl で `/api01rv2/claim/outpatient/mock` と `/orca21/medicalmodv2/outpatient` を POST し、期待レスポンス（200, cacheHit 状態）と traceId/runId を記録。\n- HAR/Network ログを `artifacts/webclient/debug/20251209T150000Z-bugs/` へ保存。\n- server-modernized ログで `SessionAuditDispatcher` の `ORCA_CLAIM_OUTPATIENT` が SUCCESS になっているか確認。\n\nYAML ID: src/modernized_outpatient_debug/local-baseline/モダナイズ版ローカル再現とHAR取得.md",
+    "name": "[outpatient debug plan] 繝｢繝繝翫う繧ｺ迚医Ο繝ｼ繧ｫ繝ｫ蜀咲樟縺ｨHAR蜿門ｾ予n譛滄俣: 12/10 05:00 - 12/11 05:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ claude code\n\n# 繝｢繝繝翫う繧ｺ迚医Ο繝ｼ繧ｫ繝ｫ蜀咲樟縺ｨ HAR 蜿門ｾ予n\n- 迺ｰ蠅・ `WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=1 VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources ./setup-modernized-env.sh` 繧貞・螳溯｡・遒ｺ隱阪・n- curl 縺ｧ `/api01rv2/claim/outpatient/mock` 縺ｨ `/orca21/medicalmodv2/outpatient` 繧・POST 縺励∵悄蠕・Ξ繧ｹ繝昴Φ繧ｹ・・00, cacheHit 迥ｶ諷具ｼ峨→ traceId/runId 繧定ｨ倬鹸縲・n- HAR/Network 繝ｭ繧ｰ繧・`artifacts/webclient/debug/20251209T150000Z-bugs/` 縺ｸ菫晏ｭ倥・n- server-modernized 繝ｭ繧ｰ縺ｧ `SessionAuditDispatcher` 縺ｮ `ORCA_CLAIM_OUTPATIENT` 縺・SUCCESS 縺ｫ縺ｪ縺｣縺ｦ縺・ｋ縺狗｢ｺ隱阪・n\nYAML ID: src/modernized_outpatient_debug/local-baseline/繝｢繝繝翫う繧ｺ迚医Ο繝ｼ繧ｫ繝ｫ蜀咲樟縺ｨHAR蜿門ｾ・md",
     "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
@@ -93,7 +93,7 @@
   },
   {
     "id": "task-yaml-1bcnpr8-src-modernized-o",
-    "name": "[outpatient debug plan] Telemetryフラグ検証\n期間: 12/10 06:00 - 12/11 06:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Telemetry フラグ検証\n\n- `telemetryClient.funnels/outpatient` で resolve_master / charts_orchestration の 2 段記録が走るか確認。\n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` が UI 表示とログに揃っているかチェック。\n- ToneBanner / ResolveMasterBadge の表示値が `tone=server` で一致するかをキャプチャ。\n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetryフラグ検証.md",
+    "name": "[outpatient debug plan] Telemetry繝輔Λ繧ｰ讀懆ｨｼ\n譛滄俣: 12/10 06:00 - 12/11 06:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# Telemetry 繝輔Λ繧ｰ讀懆ｨｼ\n\n- `telemetryClient.funnels/outpatient` 縺ｧ resolve_master / charts_orchestration 縺ｮ 2 谿ｵ險倬鹸縺瑚ｵｰ繧九°遒ｺ隱阪・n- `dataSourceTransition`, `cacheHit`, `missingMaster`, `traceId`, `runId` 縺・UI 陦ｨ遉ｺ縺ｨ繝ｭ繧ｰ縺ｫ謠・▲縺ｦ縺・ｋ縺九メ繧ｧ繝・け縲・n- ToneBanner / ResolveMasterBadge 縺ｮ陦ｨ遉ｺ蛟､縺・`tone=server` 縺ｧ荳閾ｴ縺吶ｋ縺九ｒ繧ｭ繝｣繝励メ繝｣縲・n\nYAML ID: src/modernized_outpatient_debug/telemetry/Telemetry繝輔Λ繧ｰ讀懆ｨｼ.md",
     "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
@@ -125,7 +125,7 @@
   },
   {
     "id": "task-yaml-137nub-src-modernized-o",
-    "name": "[outpatient debug plan] missingMaster異常系注入\n期間: 12/10 10:00 - 12/11 10:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# missingMaster 異常系注入\n\n- MSW/fixture を用いて `missingMaster=true` `cacheHit=false` を返すモックを注入し、ToneBanner/ResolveMasterBadge/telemetry の変化を Playwright で記録。\n- 生成したログ・スクリーンショットを `artifacts/webclient/debug/20251209T150000Z-bugs/` に格納。\n- 期待との差分を `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` に追記案として整理。\n\nYAML ID: src/modernized_outpatient_debug/anomaly-injection/missingMaster異常系注入.md",
+    "name": "[outpatient debug plan] missingMaster逡ｰ蟶ｸ邉ｻ豕ｨ蜈･\n譛滄俣: 12/10 10:00 - 12/11 10:00 / 蜆ｪ蜈亥ｺｦ: medium / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ cursor cli\n\n# missingMaster 逡ｰ蟶ｸ邉ｻ豕ｨ蜈･\n\n- MSW/fixture 繧堤畑縺・※ `missingMaster=true` `cacheHit=false` 繧定ｿ斐☆繝｢繝・け繧呈ｳｨ蜈･縺励ゝoneBanner/ResolveMasterBadge/telemetry 縺ｮ螟牙喧繧・Playwright 縺ｧ險倬鹸縲・n- 逕滓・縺励◆繝ｭ繧ｰ繝ｻ繧ｹ繧ｯ繝ｪ繝ｼ繝ｳ繧ｷ繝ｧ繝・ヨ繧・`artifacts/webclient/debug/20251209T150000Z-bugs/` 縺ｫ譬ｼ邏阪・n- 譛溷ｾ・→縺ｮ蟾ｮ蛻・ｒ `docs/server-modernization/phase2/operations/logs/20251209T094600Z-debug.md` 縺ｫ霑ｽ險俶｡医→縺励※謨ｴ逅・・n\nYAML ID: src/modernized_outpatient_debug/anomaly-injection/missingMaster逡ｰ蟶ｸ邉ｻ豕ｨ蜈･.md",
     "model": "Codex CLI",
     "status": "completed",
     "importance": "medium",
@@ -157,7 +157,7 @@
   },
   {
     "id": "task-yaml-xwd6ka-src-modernized-o",
-    "name": "[outpatient debug plan | task-1765344726525-08cc0b] DOC_STATUS更新とワーカー報告\n期間: 12/10 12:00 - 12/11 12:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# DOC_STATUS 更新とワーカー報告\n\n- `docs/web-client/planning/phase2/DOC_STATUS.md` に RUN_ID 行を追記し、備考へ証跡パスを記載。\n- `docs/web-client/operations/debugging-outpatient-bugs.md` の最新差分を反映し、参照チェーンのリンクが生きているか確認。\n- 形式: `【ワーカー報告】実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID` を準備してマネージャーへ共有。\n\nYAML ID: src/modernized_outpatient_debug/reporting/DOC_STATUS更新とワーカー報告.md",
+    "name": "[outpatient debug plan | task-1765344726525-08cc0b] DOC_STATUS譖ｴ譁ｰ縺ｨ繝ｯ繝ｼ繧ｫ繝ｼ蝣ｱ蜻浬n譛滄俣: 12/10 12:00 - 12/11 12:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# DOC_STATUS 譖ｴ譁ｰ縺ｨ繝ｯ繝ｼ繧ｫ繝ｼ蝣ｱ蜻浬n\n- `docs/web-client/planning/phase2/DOC_STATUS.md` 縺ｫ RUN_ID 陦後ｒ霑ｽ險倥＠縲∝ｙ閠・∈險ｼ霍｡繝代せ繧定ｨ倩ｼ峨・n- `docs/web-client/operations/debugging-outpatient-bugs.md` 縺ｮ譛譁ｰ蟾ｮ蛻・ｒ蜿肴丐縺励∝盾辣ｧ繝√ぉ繝ｼ繝ｳ縺ｮ繝ｪ繝ｳ繧ｯ縺檎函縺阪※縺・ｋ縺狗｢ｺ隱阪・n- 蠖｢蠑・ `縲舌Ρ繝ｼ繧ｫ繝ｼ蝣ｱ蜻翫大ｮ滓命蜀・ｮｹ繝ｻ險ｼ霍｡繝代せ繝ｻDOC_STATUS 譖ｴ譁ｰ陦後・RUN_ID` 繧呈ｺ門ｙ縺励※繝槭ロ繝ｼ繧ｸ繝｣繝ｼ縺ｸ蜈ｱ譛峨・n\nYAML ID: src/modernized_outpatient_debug/reporting/DOC_STATUS譖ｴ譁ｰ縺ｨ繝ｯ繝ｼ繧ｫ繝ｼ蝣ｱ蜻・md",
     "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
@@ -189,7 +189,7 @@
   },
   {
     "id": "task-yaml-qxh5ef-src-orca-prod-br",
-    "name": "[orca prod bridge plan] 接続要件整理\n期間: 12/10 09:00 - 12/11 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 接続要件整理\n- ORCAcertification 配下の利用範囲と禁止事項を確認し、必要な RUN_ID 記録ポイントを洗い出す。\n- webORCA 本番宛て接続のゴール、入力・出力データ、想定ログ位置を整理。\n- 参照チェーンと更新すべきドキュメントを決定。\n\nYAML ID: src/orca_prod_bridge/planning/接続要件整理.md",
+    "name": "[orca prod bridge plan] 謗･邯夊ｦ∽ｻｶ謨ｴ逅・n譛滄俣: 12/10 09:00 - 12/11 09:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# 謗･邯夊ｦ∽ｻｶ謨ｴ逅・n- ORCAcertification 驟堺ｸ九・蛻ｩ逕ｨ遽・峇縺ｨ遖∵ｭ｢莠矩・ｒ遒ｺ隱阪＠縲∝ｿ・ｦ√↑ RUN_ID 險倬鹸繝昴う繝ｳ繝医ｒ豢励＞蜃ｺ縺吶・n- webORCA 譛ｬ逡ｪ螳帙※謗･邯壹・繧ｴ繝ｼ繝ｫ縲∝・蜉帙・蜃ｺ蜉帙ョ繝ｼ繧ｿ縲∵Φ螳壹Ο繧ｰ菴咲ｽｮ繧呈紛逅・・n- 蜿ら・繝√ぉ繝ｼ繝ｳ縺ｨ譖ｴ譁ｰ縺吶∋縺阪ラ繧ｭ繝･繝｡繝ｳ繝医ｒ豎ｺ螳壹・n\nYAML ID: src/orca_prod_bridge/planning/謗･邯夊ｦ∽ｻｶ謨ｴ逅・md",
     "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
@@ -219,7 +219,7 @@
   },
   {
     "id": "task-yaml-1hj042n-src-orca-prod-br",
-    "name": "[orca prod bridge plan] ORCAcertification情報棚卸し\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# ORCAcertification 情報棚卸し\n- 既存証跡・証明書・接続先 URL・認証方式を洗い出し、機微情報の保管手順を確認。\n- RUN_ID 記録フォーマットと参照ログ (operations/logs) のパスをひとまとめにする。\n\nYAML ID: src/orca_prod_bridge/planning/ORCAcertification情報棚卸し.md",
+    "name": "[orca prod bridge plan] ORCAcertification諠・ｱ譽壼査縺予n譛滄俣: 12/11 09:00 - 12/12 09:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# ORCAcertification 諠・ｱ譽壼査縺予n- 譌｢蟄倩ｨｼ霍｡繝ｻ險ｼ譏取嶌繝ｻ謗･邯壼・ URL繝ｻ隱崎ｨｼ譁ｹ蠑上ｒ豢励＞蜃ｺ縺励∵ｩ溷ｾｮ諠・ｱ縺ｮ菫晉ｮ｡謇矩・ｒ遒ｺ隱阪・n- RUN_ID 險倬鹸繝輔か繝ｼ繝槭ャ繝医→蜿ら・繝ｭ繧ｰ (operations/logs) 縺ｮ繝代せ繧偵・縺ｨ縺ｾ縺ｨ繧√↓縺吶ｋ縲・n\nYAML ID: src/orca_prod_bridge/planning/ORCAcertification諠・ｱ譽壼査縺・md",
     "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
@@ -251,7 +251,7 @@
   },
   {
     "id": "task-1765347494200-ee9db3",
-    "name": "🔍Monitor: [orca prod bridge plan] ORCAcertification情報棚卸し\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# ORCAcertification 情報棚卸し\n- 既存証跡・証明書・接続先 URL・認証方式を洗い出し、機微情報の保管手順を確認。\n- RUN_ID 記録フォーマットと参照ログ (operations/logs) のパスをひとまとめにする。\n\nYAML ID: src/orca_prod_bridge/planning/ORCAcertification情報棚卸し.md",
+    "name": "剥Monitor: [orca prod bridge plan] ORCAcertification諠・ｱ譽壼査縺予n譛滄俣: 12/11 09:00 - 12/12 09:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# ORCAcertification 諠・ｱ譽壼査縺予n- 譌｢蟄倩ｨｼ霍｡繝ｻ險ｼ譏取嶌繝ｻ謗･邯壼・ URL繝ｻ隱崎ｨｼ譁ｹ蠑上ｒ豢励＞蜃ｺ縺励∵ｩ溷ｾｮ諠・ｱ縺ｮ菫晉ｮ｡謇矩・ｒ遒ｺ隱阪・n- RUN_ID 險倬鹸繝輔か繝ｼ繝槭ャ繝医→蜿ら・繝ｭ繧ｰ (operations/logs) 縺ｮ繝代せ繧偵・縺ｨ縺ｾ縺ｨ繧√↓縺吶ｋ縲・n\nYAML ID: src/orca_prod_bridge/planning/ORCAcertification諠・ｱ譽壼査縺・md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
@@ -267,7 +267,7 @@
     "aiCompetitionEntry": false,
     "aiCompetitionResult": null,
     "aiCompetitionGroupId": "comp-1765347481682-s3ctij2u",
-    "aiCompetitionGroupName": "[orca prod bridge plan] ORCAcertification情報棚卸し\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# ORCAcertification 情報棚卸し\n- 既存証跡・証明書・接続先 URL・認証方式を洗い出し、機微情報の保管手順を確認。\n- RUN_ID 記録フォーマットと参照ログ (operations/logs) のパスをひとまとめにする。\n\nYAML ID: src/orca_prod_bridge/planning/ORCAcertification情報棚卸し.md",
+    "aiCompetitionGroupName": "[orca prod bridge plan] ORCAcertification諠・ｱ譽壼査縺予n譛滄俣: 12/11 09:00 - 12/12 09:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# ORCAcertification 諠・ｱ譽壼査縺予n- 譌｢蟄倩ｨｼ霍｡繝ｻ險ｼ譏取嶌繝ｻ謗･邯壼・ URL繝ｻ隱崎ｨｼ譁ｹ蠑上ｒ豢励＞蜃ｺ縺励∵ｩ溷ｾｮ諠・ｱ縺ｮ菫晉ｮ｡謇矩・ｒ遒ｺ隱阪・n- RUN_ID 險倬鹸繝輔か繝ｼ繝槭ャ繝医→蜿ら・繝ｭ繧ｰ (operations/logs) 縺ｮ繝代せ繧偵・縺ｨ縺ｾ縺ｨ繧√↓縺吶ｋ縲・n\nYAML ID: src/orca_prod_bridge/planning/ORCAcertification諠・ｱ譽壼査縺・md",
     "autoEvaluationNotBefore": 1765347541682,
     "useTmux": true,
     "taskType": null,
@@ -281,7 +281,7 @@
   },
   {
     "id": "task-yaml-1haru1x-src-orca-prod-br",
-    "name": "[orca prod bridge plan] 接続スクリプト設計雛形\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 接続スクリプト設計・雛形\n- setup-modernized-env.sh を前提に、ORCAcertification 情報を環境変数として受け取る設計をまとめる。\n- RUN_ID を引数/環境で受け取り、証跡出力先を自動生成する雛形を書く。\n- 誤用防止のガード (target 確認・確認プロンプト) を設計。\n\nYAML ID: src/orca_prod_bridge/planning/接続スクリプト設計雛形.md",
+    "name": "[orca prod bridge plan] 謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢\n譛滄俣: 12/11 09:00 - 12/12 09:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# 謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險医・髮帛ｽ｢\n- setup-modernized-env.sh 繧貞燕謠舌↓縲＾RCAcertification 諠・ｱ繧堤腸蠅・､画焚縺ｨ縺励※蜿励￠蜿悶ｋ險ｭ險医ｒ縺ｾ縺ｨ繧√ｋ縲・n- RUN_ID 繧貞ｼ墓焚/迺ｰ蠅・〒蜿励￠蜿悶ｊ縲∬ｨｼ霍｡蜃ｺ蜉帛・繧定・蜍慕函謌舌☆繧矩屁蠖｢繧呈嶌縺上・n- 隱､逕ｨ髦ｲ豁｢縺ｮ繧ｬ繝ｼ繝・(target 遒ｺ隱阪・遒ｺ隱阪・繝ｭ繝ｳ繝励ヨ) 繧定ｨｭ險医・n\nYAML ID: src/orca_prod_bridge/planning/謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢.md",
     "model": "YAML App",
     "status": "pending",
     "importance": "high",
@@ -302,10 +302,10 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-orca-prod-bridge-plan-e6cbcd756f::src/orca_prod_bridge/planning/接続スクリプト設計雛形.md",
+      "key": "custom-app-orca-prod-bridge-plan-e6cbcd756f::src/orca_prod_bridge/planning/謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢.md",
       "appId": "custom-app-orca-prod-bridge-plan-e6cbcd756f",
       "datasetLabel": "orca prod bridge plan",
-      "pathId": "src/orca_prod_bridge/planning/接続スクリプト設計雛形.md",
+      "pathId": "src/orca_prod_bridge/planning/謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢.md",
       "fileName": "orca-prod-bridge-plan.yaml",
       "absolutePath": "C:\\Users\\marug\\Documents\\OpenDolphin_WebClient\\.kamui\\apps\\orca-prod-bridge-plan.yaml",
       "addedAt": "2025-12-10T06:54:47.272Z"
@@ -325,11 +325,11 @@
     "category": "src / orca_prod_bridge / planning",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# 接続スクリプト設計・雛形\n- setup-modernized-env.sh を前提に、ORCAcertification 情報を環境変数として受け取る設計をまとめる。\n- RUN_ID を引数/環境で受け取り、証跡出力先を自動生成する雛形を書く。\n- 誤用防止のガード (target 確認・確認プロンプト) を設計。"
+    "description": "# 謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險医・髮帛ｽ｢\n- setup-modernized-env.sh 繧貞燕謠舌↓縲＾RCAcertification 諠・ｱ繧堤腸蠅・､画焚縺ｨ縺励※蜿励￠蜿悶ｋ險ｭ險医ｒ縺ｾ縺ｨ繧√ｋ縲・n- RUN_ID 繧貞ｼ墓焚/迺ｰ蠅・〒蜿励￠蜿悶ｊ縲∬ｨｼ霍｡蜃ｺ蜉帛・繧定・蜍慕函謌舌☆繧矩屁蠖｢繧呈嶌縺上・n- 隱､逕ｨ髦ｲ豁｢縺ｮ繧ｬ繝ｼ繝・(target 遒ｺ隱阪・遒ｺ隱阪・繝ｭ繝ｳ繝励ヨ) 繧定ｨｭ險医・
   },
   {
     "id": "task-1765349699445-0d9f16",
-    "name": "CodexCLI2: [orca prod bridge plan] 接続スクリプト設計雛形\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 接続スクリプト設計・雛形\n- setup-modernized-env.sh を前提に、ORCAcertification 情報を環境変数として受け取る設計をまとめる。\n- RUN_ID を引数/環境で受け取り、証跡出力先を自動生成する雛形を書く。\n- 誤用防止のガード (target 確認・確認プロンプト) を設計。\n\nYAML ID: src/orca_prod_bridge/planning/接続スクリプト設計雛形.md",
+    "name": "CodexCLI2: [orca prod bridge plan] 謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢\n譛滄俣: 12/11 09:00 - 12/12 09:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# 謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險医・髮帛ｽ｢\n- setup-modernized-env.sh 繧貞燕謠舌↓縲＾RCAcertification 諠・ｱ繧堤腸蠅・､画焚縺ｨ縺励※蜿励￠蜿悶ｋ險ｭ險医ｒ縺ｾ縺ｨ繧√ｋ縲・n- RUN_ID 繧貞ｼ墓焚/迺ｰ蠅・〒蜿励￠蜿悶ｊ縲∬ｨｼ霍｡蜃ｺ蜉帛・繧定・蜍慕函謌舌☆繧矩屁蠖｢繧呈嶌縺上・n- 隱､逕ｨ髦ｲ豁｢縺ｮ繧ｬ繝ｼ繝・(target 遒ｺ隱阪・遒ｺ隱阪・繝ｭ繝ｳ繝励ヨ) 繧定ｨｭ險医・n\nYAML ID: src/orca_prod_bridge/planning/謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
@@ -345,10 +345,45 @@
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
     "aiCompetitionGroupId": "comp-1765349699238-ilr1h8y1",
-    "aiCompetitionGroupName": "[orca prod bridge plan] 接続スクリプト設計雛形\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 接続スクリプト設計・雛形\n- setup-modernized-env.sh を前提に、ORCAcertification 情報を環境変数として受け取る設計をまとめる。\n- RUN_ID を引数/環境で受け取り、証跡出力先を自動生成する雛形を書く。\n- 誤用防止のガード (target 確認・確認プロンプト) を設計。\n\nYAML ID: src/orca_prod_bridge/planning/接続スクリプト設計雛形.md",
+    "aiCompetitionGroupName": "[orca prod bridge plan] 謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢\n譛滄俣: 12/11 09:00 - 12/12 09:00 / 蜆ｪ蜈亥ｺｦ: high / 邱頑･蠎ｦ: high / 繧ｨ繝ｼ繧ｸ繧ｧ繝ｳ繝・ codex\n\n# 謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險医・髮帛ｽ｢\n- setup-modernized-env.sh 繧貞燕謠舌↓縲＾RCAcertification 諠・ｱ繧堤腸蠅・､画焚縺ｨ縺励※蜿励￠蜿悶ｋ險ｭ險医ｒ縺ｾ縺ｨ繧√ｋ縲・n- RUN_ID 繧貞ｼ墓焚/迺ｰ蠅・〒蜿励￠蜿悶ｊ縲∬ｨｼ霍｡蜃ｺ蜉帛・繧定・蜍慕函謌舌☆繧矩屁蠖｢繧呈嶌縺上・n- 隱､逕ｨ髦ｲ豁｢縺ｮ繧ｬ繝ｼ繝・(target 遒ｺ隱阪・遒ｺ隱阪・繝ｭ繝ｳ繝励ヨ) 繧定ｨｭ險医・n\nYAML ID: src/orca_prod_bridge/planning/謗･邯壹せ繧ｯ繝ｪ繝励ヨ險ｭ險磯屁蠖｢.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees\\task-1765349699445-0d9f16"
+  },
+  {
+    "id": "task-1765349713273-6bd5d1",
+    "name": "\ud83d\udd0dMonitor: [orca prod bridge plan] \u63a5\u7d9a\u30b9\u30af\u30ea\u30d7\u30c8\u8a2d\u8a08\u96d1\u5f62\n\u671f\u9593: 12/11 09:00 - 12/12 09:00 / \u512a\u5148\u5ea6: high / \u7dca\u6025\u5ea6: high / \u30a8\u30fc\u30b8\u30a7\u30f3\u30c8: codex\n\n# \u63a5\u7d9a\u30b9\u30af\u30ea\u30d7\u30c8\u8a2d\u8a08\u30fb\u96d1\u5f62\n- setup-modernized-env.sh \u3092\u524d\u63d0\u306b\u3001ORCAcertification \u60c5\u5831\u3092\u74b0\u5883\u5909\u6570\u3068\u3057\u3066\u53d7\u3051\u53d6\u308b\u8a2d\u8a08\u3092\u307e\u3068\u3081\u308b\u3002\n- RUN_ID \u3092\u5f15\u6570/\u74b0\u5883\u3067\u53d7\u3051\u53d6\u308a\u3001\u8a3c\u8a3c\u8f38\u51fa\u5148\u3092\u81ea\u52d5\u751f\u6210\u3059\u308b\u96d1\u5f62\u3092\u66f8\u304f\u3002\n- \u8aa4\u7528\u9632\u6b62\u306e\u30ac\u30fc\u30c9 (target \u78ba\u8a8d\u30fb\u78ba\u8a8d\u30d7\u30ed\u30f3\u30d7\u30c8) \u3092\u8a2d\u8a08\u3002\n\nYAML ID: src/orca_prod_bridge/planning/\u63a5\u7d9a\u30b9\u30af\u30ea\u30d7\u30c8\u8a2d\u8a08\u96d1\u5f62.md",
+    "model": "codex",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-10T06:55:13.273Z",
+    "updatedAt": "2025-12-10T06:55:13.273Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765349713273-6bd5d1",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765349699238-ilr1h8y1",
+    "aiCompetitionGroupName": "[orca prod bridge plan] \u63a5\u7d9a\u30b9\u30af\u30ea\u30d7\u30c8\u8a2d\u8a08\u96d1\u5f62\n\u671f\u9593: 12/11 09:00 - 12/12 09:00 / \u512a\u5148\u5ea6: high / \u7dca\u6025\u5ea6: high / \u30a8\u30fc\u30b8\u30a7\u30f3\u30c8: codex\n\n# \u63a5\u7d9a\u30b9\u30af\u30ea\u30d7\u30c8\u8a2d\u8a08\u30fb\u96d1\u5f62\n- setup-modernized-env.sh \u3092\u524d\u63d0\u306b\u3001ORCAcertification \u60c5\u5831\u3092\u74b0\u5883\u5909\u6570\u3068\u3057\u3066\u53d7\u3051\u53d6\u308b\u8a2d\u8a08\u3092\u307e\u3068\u3081\u308b\u3002\n- RUN_ID \u3092\u5f15\u6570/\u74b0\u5883\u3067\u53d7\u3051\u53d6\u308a\u3001\u8a3c\u8a3c\u8f38\u51fa\u5148\u3092\u81ea\u52d5\u751f\u6210\u3059\u308b\u96d1\u5f62\u3092\u66f8\u304f\u3002\n- \u8aa4\u7528\u9632\u6b62\u306e\u30ac\u30fc\u30c9 (target \u78ba\u8a8d\u30fb\u78ba\u8a8d\u30d7\u30ed\u30f3\u30d7\u30c8) \u3092\u8a2d\u8a08\u3002\n\nYAML ID: src/orca_prod_bridge/planning/\u63a5\u7d9a\u30b9\u30af\u30ea\u30d7\u30c8\u8a2d\u8a08\u96d1\u5f62.md",
+    "aiCompetitionMonitor": true,
+    "monitorTargets": [
+      "task-1765349699239-926a3a",
+      "task-1765349699445-0d9f16"
+    ],
+    "scoringConfig": {
+      "auditEnabled": false,
+      "auditPrompt": "",
+      "enabled": true,
+      "prompt": "緻密性、網羅性",
+      "rubric": "medals",
+      "model": "codex"
+    },
+    "autoEvaluationNotBefore": 1765349759238,
+    "worktreePath": "C:\\Users\\marug\\Documents\\OpenDolphin_WebClient\\.worktrees\\task-1765349713273-6bd5d1"
   }
 ]
