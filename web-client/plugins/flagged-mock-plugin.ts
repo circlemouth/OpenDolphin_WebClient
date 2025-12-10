@@ -1,6 +1,7 @@
 import type { IncomingMessage, ServerResponse } from 'node:http';
-import type { NextHandleFunction } from 'connect';
 import type { PluginOption } from 'vite';
+
+type NextHandleFunction = (req: IncomingMessage, res: ServerResponse, next: (err?: unknown) => void) => void;
 
 const runId = process.env.RUN_ID ?? process.env.VITE_RUM_RUN_ID ?? '20251202T090000Z';
 
