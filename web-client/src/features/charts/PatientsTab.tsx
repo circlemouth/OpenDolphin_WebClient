@@ -1,5 +1,3 @@
-import { useMemo } from 'react';
-
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
