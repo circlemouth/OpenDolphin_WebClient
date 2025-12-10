@@ -383,5 +383,40 @@
     },
     "autoEvaluationNotBefore": 1765347541682,
     "worktreePath": ".worktrees\\task-1765347494200-ee9db3"
+  },
+  {
+    "id": "task-1765349713273-6bd5d1",
+    "name": "🔍Monitor: [orca prod bridge plan] 接続スクリプト設計雛形\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 接続スクリプト設計・雛形\n- setup-modernized-env.sh を前提に、ORCAcertification 情報を環境変数として受け取る設計をまとめる。\n- RUN_ID を引数/環境で受け取り、証跡出力先を自動生成する雛形を書く。\n- 誤用防止のガード (target 確認・確認プロンプト) を設計。\n\nYAML ID: src/orca_prod_bridge/planning/接続スクリプト設計雛形.md",
+    "model": "codex",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-10T06:55:13.273Z",
+    "updatedAt": "2025-12-10T06:55:13.273Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765349713273-6bd5d1",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765349699238-ilr1h8y1",
+    "aiCompetitionGroupName": "[orca prod bridge plan] 接続スクリプト設計雛形\n期間: 12/11 09:00 - 12/12 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 接続スクリプト設計・雛形\n- setup-modernized-env.sh を前提に、ORCAcertification 情報を環境変数として受け取る設計をまとめる。\n- RUN_ID を引数/環境で受け取り、証跡出力先を自動生成する雛形を書く。\n- 誤用防止のガード (target 確認・確認プロンプト) を設計。\n\nYAML ID: src/orca_prod_bridge/planning/接続スクリプト設計雛形.md",
+    "aiCompetitionMonitor": true,
+    "monitorTargets": [
+      "task-1765349699239-926a3a",
+      "task-1765349699445-0d9f16"
+    ],
+    "scoringConfig": {
+      "auditEnabled": false,
+      "auditPrompt": "",
+      "enabled": true,
+      "prompt": "緻密性、網羅性",
+      "rubric": "medals",
+      "model": "codex"
+    },
+    "autoEvaluationNotBefore": 1765349759238,
+    "worktreePath": "C:\\Users\\marug\\Documents\\OpenDolphin_WebClient\\.worktrees\\task-1765349713273-6bd5d1"
   }
 ]
