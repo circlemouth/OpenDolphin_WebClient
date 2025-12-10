@@ -1,8 +1,9 @@
-# 外来 API デバッグ記録（RUN_ID=20251209T150000Z）
+# 外来 API デバッグ記録（RUN_ID=20251210T054022Z）
 
 - 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル
+- 最新 RUN_ID=`20251210T054022Z` ではリンク確認と証跡ログの補完のみ実施（検証ステータスは 20251209T150000Z 時点から変化なし）。
 - 起点: 04C5 ローカル再検証（RUN_ID=`20251209T150000Z`）で得たギャップ/ログを整理し、Web クライアント実装中に遭遇した外来 API のバグ・差分・再現手順を集約する。
-- 証跡: `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md`（ローカル 200 / Stage・Preview TCP timeout）、`artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`（curl 応答・タイムアウトログ）。
+- 証跡: `docs/server-modernization/phase2/operations/logs/20251209T150000Z-integration-gap-qa.md`（ローカル 200 / Stage・Preview TCP timeout）、`artifacts/webclient/e2e/20251209T150000Z-integration-gap-fix/`（curl 応答・タイムアウトログ）、`docs/web-client/planning/phase2/logs/20251210T054022Z-outpatient-debug.md`（本 RUN_ID の更新ログ）。
 
 ## 1. 最新サマリ
 - ローカル modernized サーバー（MSW OFF, dev proxy = localhost）:  
