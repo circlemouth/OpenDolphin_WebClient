@@ -118,7 +118,7 @@ src:
     anomaly-injection:
       missingMaster異常系注入.md:
         content: |-
-          # missingMaster 異常系注入
+          # missingMaster 異常系注入（RUN_ID=20251209T211707Z）
 
           - MSW/fixture を用いて `missingMaster=true` `cacheHit=false` を返すモックを注入し、ToneBanner/ResolveMasterBadge/telemetry の変化を Playwright で記録。
           - 生成したログ・スクリーンショットを `artifacts/webclient/debug/20251209T150000Z-bugs/` に格納。
@@ -128,10 +128,10 @@ src:
         agent: cursor cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
-          start: 2025-12-10T01:00:00.000Z
+          start: 2025-12-09T21:00:00.000Z
           days: 0.5
     reporting:
       DOC_STATUS更新とワーカー報告.md:
