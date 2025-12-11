@@ -5,6 +5,7 @@ package open.dolphin.orca.transport;
  */
 public enum OrcaEndpoint {
 
+    ACCEPTANCE_LIST("/api01rv2/acceptlstv2", "orca/stub/05_acceptlstv2_response.sample.xml"),
     APPOINTMENT_LIST("/api01rv2/appointlstv2", "orca/stub/06_appointlstv2_response.sample.xml"),
     PATIENT_APPOINTMENT_LIST("/api01rv2/appointlst2v2", "orca/stub/15_appointlst2v2_response.sample.xml"),
     BILLING_SIMULATION("/api01rv2/acsimulatev2", "orca/stub/16_acsimulatev2_response.sample.xml"),
