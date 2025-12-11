@@ -1,16 +1,16 @@
 [
   {
-    "id": "task-yaml-1fawj2t-src-webclient-mo",
-    "name": "[webclient modernized gantt 20251211] RUN_ID整備と参照チェーン確認\n期間: 12/12 09:00 - 12/13 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID 整備と参照チェーン確認\n\n- RUN_ID を `20251211T172459Z` で統一し、DOC_STATUS/証跡ログへ事前登録する。\n- 参照チェーン（AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → manager checklist）を再確認し、本ガントの適用範囲を明示。\n- Legacy 資産を参照専用に固定し、server-modernized 接続のみを対象にすることを全員に周知。\n\nYAML ID: src/webclient_modernization_phase2/00_governance/RUN_ID整備と参照チェーン確認.md",
+    "id": "task-yaml-1kf21db-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] Chartsデータバインドとタイムライン実装\n期間: 12/16 09:00 - 12/17 21:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# Charts データバインドとタイムライン実装\n\n- Reception からの runId/flags を受け、DocumentTimeline を受付→診療→ORCAキューで実データ表示（missingMaster 行ハイライト含む）。\n- OrcaSummary で `/orca21/medicalmodv2/outpatient` 応答を表示し、cacheHit/missingMaster/fallbackUsed をバッジ化。\n- PatientsTab の検索・詳細タブを API 値でレンダリングし、編集不可条件を tone に連動。\n\nYAML ID: src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
     "model": "YAML App",
     "status": "completed",
     "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-11T08:43:06.168Z",
-    "updatedAt": "2025-12-11T08:47:24.199Z",
+    "urgency": "medium",
+    "createdAt": "2025-12-11T11:33:07.978Z",
+    "updatedAt": "2025-12-11T18:37:59.634Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-1fawj2t-src-webclient-mo",
+    "branchName": "task/task-yaml-1kf21db-src-webclient-mo",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -22,137 +22,69 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/00_governance/RUN_ID整備と参照チェーン確認.md",
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
       "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
       "datasetLabel": "webclient modernized gantt 20251211",
-      "pathId": "src/webclient_modernization_phase2/00_governance/RUN_ID整備と参照チェーン確認.md",
+      "pathId": "src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
       "fileName": "webclient-modernized-gantt-20251211.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
-      "addedAt": "2025-12-11T08:43:06.154Z"
+      "addedAt": "2025-12-11T11:33:07.947Z"
     },
     "labels": [
       "webclient modernized gantt 20251211",
-      "src / webclient_modernization_phase2 / 00_governance"
-    ],
-    "dependencies": [],
-    "schedule": {
-      "startMs": 1765497600000,
-      "endMs": 1765584000000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_modernization_phase2 / 00_governance",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# RUN_ID 整備と参照チェーン確認\n\n- RUN_ID を `20251211T172459Z` で統一し、DOC_STATUS/証跡ログへ事前登録する。\n- 参照チェーン（AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → manager checklist）を再確認し、本ガントの適用範囲を明示。\n- Legacy 資産を参照専用に固定し、server-modernized 接続のみを対象にすることを全員に周知。"
-  },
-  {
-    "id": "task-yaml-ntqook-src-webclient-mo",
-    "name": "[webclient modernized gantt 20251211] AppShell共通化とRUN_ID伝播\n期間: 12/12 15:00 - 12/13 15:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# AppShell 共通化と RUN_ID 伝播\n\n- `AppRouter` と `AuthServiceProvider` を共通化し、runId/missingMaster/cacheHit/dataSourceTransition を単一ソースで保持。\n- Topbar に RUN_ID コピー、左ナビ権限ガード、通知スタック（role=status, aria-live）を組み込み。\n- 現状のログイン＋デモシェル実装をリファクタし、後続画面がフラグを受け取れる状態を完成させる。\n\nYAML ID: src/webclient_modernization_phase2/01_shell_login/AppShell共通化とRUN_ID伝播.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-11T08:47:35.591Z",
-    "updatedAt": "2025-12-11T08:58:52.492Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-ntqook-src-webclient-mo",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/01_shell_login/AppShell共通化とRUN_ID伝播.md",
-      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
-      "datasetLabel": "webclient modernized gantt 20251211",
-      "pathId": "src/webclient_modernization_phase2/01_shell_login/AppShell共通化とRUN_ID伝播.md",
-      "fileName": "webclient-modernized-gantt-20251211.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
-      "addedAt": "2025-12-11T08:47:35.573Z"
-    },
-    "labels": [
-      "webclient modernized gantt 20251211",
-      "src / webclient_modernization_phase2 / 01_shell_login"
+      "src / webclient_modernization_phase2 / 04_charts"
     ],
     "dependencies": [
-      "task-yaml-1fawj2t-src-webclient-mo"
+      "task-yaml-sorro3-src-webclient-mo",
+      "task-yaml-1r4375f-src-webclient-mo"
     ],
     "schedule": {
-      "startMs": 1765519200000,
-      "endMs": 1765605600000,
-      "durationDays": 1
+      "startMs": 1765843200000,
+      "endMs": 1765972800000,
+      "durationDays": 2
     },
-    "category": "src / webclient_modernization_phase2 / 01_shell_login",
+    "category": "src / webclient_modernization_phase2 / 04_charts",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# AppShell 共通化と RUN_ID 伝播\n\n- `AppRouter` と `AuthServiceProvider` を共通化し、runId/missingMaster/cacheHit/dataSourceTransition を単一ソースで保持。\n- Topbar に RUN_ID コピー、左ナビ権限ガード、通知スタック（role=status, aria-live）を組み込み。\n- 現状のログイン＋デモシェル実装をリファクタし、後続画面がフラグを受け取れる状態を完成させる。"
+    "description": "# Charts データバインドとタイムライン実装\n\n- Reception からの runId/flags を受け、DocumentTimeline を受付→診療→ORCAキューで実データ表示（missingMaster 行ハイライト含む）。\n- OrcaSummary で `/orca21/medicalmodv2/outpatient` 応答を表示し、cacheHit/missingMaster/fallbackUsed をバッジ化。\n- PatientsTab の検索・詳細タブを API 値でレンダリングし、編集不可条件を tone に連動。"
   },
   {
-    "id": "task-yaml-gpfyns-src-webclient-mo",
-    "name": "[webclient modernized gantt 20251211] ログイン強化とセッションガード\n期間: 12/13 09:00 - 12/14 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# ログイン強化とセッションガード\n\n- `/user/{facility:user}` GET 認証を正式配線し、MD5 パスワード + clientUUID 検証と失敗時の aria-live=assertive エラー表示を実装。\n- 成功時に runId を発行し SessionContext へ保存、tone/banner/audit に透過。\n- localStorage seed 保存と RUN_ID コピー機能を QA 向けに維持。\n\nYAML ID: src/webclient_modernization_phase2/01_shell_login/ログイン強化とセッションガード.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-11T08:47:41.782Z",
-    "updatedAt": "2025-12-11T09:20:41.344Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-gpfyns-src-webclient-mo",
-    "baseBranch": "main",
-    "useTmux": false,
+    "id": "task-1765450884905-1a07d4",
+    "name": "CodexCLI4: [webclient modernized gantt 20251211] OrderConsoleフラグ連携とトーン統一\n期間: 12/15 21:00 - 12/16 21:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
+    "model": "Codex CLI",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-11T11:01:24.905Z",
+    "updatedAt": "2025-12-11T11:32:23.123Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765450884905-1a07d4",
+    "baseBranch": "master",
+    "useTmux": true,
     "singleMode": false,
-    "aiCompetitionEntry": false,
+    "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
+    "aiCompetitionGroupId": "comp-1765450884300-dr38n83n",
+    "aiCompetitionGroupName": "[webclient modernized gantt 20251211] OrderConsoleフラグ連携とトーン統一\n期間: 12/15 21:00 - 12/16 21:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/01_shell_login/ログイン強化とセッションガード.md",
-      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
-      "datasetLabel": "webclient modernized gantt 20251211",
-      "pathId": "src/webclient_modernization_phase2/01_shell_login/ログイン強化とセッションガード.md",
-      "fileName": "webclient-modernized-gantt-20251211.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
-      "addedAt": "2025-12-11T08:47:41.739Z"
-    },
-    "labels": [
-      "webclient modernized gantt 20251211",
-      "src / webclient_modernization_phase2 / 01_shell_login"
-    ],
-    "dependencies": [
-      "task-yaml-ntqook-src-webclient-mo"
-    ],
-    "schedule": {
-      "startMs": 1765584000000,
-      "endMs": 1765670400000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_modernization_phase2 / 01_shell_login",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# ログイン強化とセッションガード\n\n- `/user/{facility:user}` GET 認証を正式配線し、MD5 パスワード + clientUUID 検証と失敗時の aria-live=assertive エラー表示を実装。\n- 成功時に runId を発行し SessionContext へ保存、tone/banner/audit に透過。\n- localStorage seed 保存と RUN_ID コピー機能を QA 向けに維持。"
+    "worktreePath": ".worktrees/task-1765450884905-1a07d4",
+    "medal": "gold"
   },
   {
-    "id": "task-yaml-1spmuhs-src-webclient-mo",
-    "name": "[webclient modernized gantt 20251211] 左ナビ権限ガードとUX整備\n期間: 12/13 15:00 - 12/14 15:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# 左ナビ権限ガードと UX 整備\n\n- Reception/Charts/Patients/Administration/Outpatient Mock のタブ活性制御と警告バッジを実装。\n- Disabled タブにツールチップと aria-disabled を付与し、権限不足の遷移を防止。\n- Current 実装（デモシェルのみ active）を拡張し、運用想定の導線に合わせる。\n\nYAML ID: src/webclient_modernization_phase2/01_shell_login/左ナビ権限ガードとUX整備.md",
+    "id": "task-yaml-1o1bjza-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] OrderConsoleフラグ連携とトーン統一\n期間: 12/15 21:00 - 12/16 21:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
     "model": "YAML App",
     "status": "completed",
     "importance": "medium",
-    "urgency": "high",
-    "createdAt": "2025-12-11T08:47:50.928Z",
-    "updatedAt": "2025-12-11T09:22:02.472Z",
+    "urgency": "medium",
+    "createdAt": "2025-12-11T11:00:52.376Z",
+    "updatedAt": "2025-12-11T11:32:46.647Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-1spmuhs-src-webclient-mo",
+    "branchName": "task/task-yaml-1o1bjza-src-webclient-mo",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -164,78 +96,30 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/01_shell_login/左ナビ権限ガードとUX整備.md",
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
       "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
       "datasetLabel": "webclient modernized gantt 20251211",
-      "pathId": "src/webclient_modernization_phase2/01_shell_login/左ナビ権限ガードとUX整備.md",
+      "pathId": "src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
       "fileName": "webclient-modernized-gantt-20251211.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
-      "addedAt": "2025-12-11T08:47:50.888Z"
+      "addedAt": "2025-12-11T11:00:52.101Z"
     },
     "labels": [
       "webclient modernized gantt 20251211",
-      "src / webclient_modernization_phase2 / 01_shell_login"
+      "src / webclient_modernization_phase2 / 03_reception"
     ],
     "dependencies": [
-      "task-yaml-ntqook-src-webclient-mo"
+      "task-yaml-sorro3-src-webclient-mo"
     ],
     "schedule": {
-      "startMs": 1765605600000,
-      "endMs": 1765692000000,
+      "startMs": 1765800000000,
+      "endMs": 1765886400000,
       "durationDays": 1
     },
-    "category": "src / webclient_modernization_phase2 / 01_shell_login",
+    "category": "src / webclient_modernization_phase2 / 03_reception",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# 左ナビ権限ガードと UX 整備\n\n- Reception/Charts/Patients/Administration/Outpatient Mock のタブ活性制御と警告バッジを実装。\n- Disabled タブにツールチップと aria-disabled を付与し、権限不足の遷移を防止。\n- Current 実装（デモシェルのみ active）を拡張し、運用想定の導線に合わせる。"
-  },
-  {
-    "id": "task-yaml-1r4375f-src-webclient-mo",
-    "name": "[webclient modernized gantt 20251211] Telemetryと監査メタ統合\n期間: 12/13 21:00 - 12/14 21:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# Telemetry と監査メタ統合\n\n- `telemetryClient.recordOutpatientFunnel` を resolve_master / charts_orchestration の二段で発火し、runId/traceId/cacheHit/missingMaster/dataSourceTransition を全 API 呼び出しへ透過。\n- `audit.logUiState` に主要 UI 操作（トーン変更、送信、保存、設定配信）を記録し、server-modernized ログと突き合わせ。\n- 現状: ログインのみ実 API 接続。ここで全画面に共通のヘッダー/メタ注入を完了させる。\n\nYAML ID: src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-11T08:47:59.564Z",
-    "updatedAt": "2025-12-11T09:59:41.731Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1r4375f-src-webclient-mo",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
-      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
-      "datasetLabel": "webclient modernized gantt 20251211",
-      "pathId": "src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
-      "fileName": "webclient-modernized-gantt-20251211.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
-      "addedAt": "2025-12-11T08:47:59.522Z"
-    },
-    "labels": [
-      "webclient modernized gantt 20251211",
-      "src / webclient_modernization_phase2 / 02_shared_observability"
-    ],
-    "dependencies": [
-      "task-yaml-ntqook-src-webclient-mo"
-    ],
-    "schedule": {
-      "startMs": 1765627200000,
-      "endMs": 1765713600000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_modernization_phase2 / 02_shared_observability",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# Telemetry と監査メタ統合\n\n- `telemetryClient.recordOutpatientFunnel` を resolve_master / charts_orchestration の二段で発火し、runId/traceId/cacheHit/missingMaster/dataSourceTransition を全 API 呼び出しへ透過。\n- `audit.logUiState` に主要 UI 操作（トーン変更、送信、保存、設定配信）を記録し、server-modernized ログと突き合わせ。\n- 現状: ログインのみ実 API 接続。ここで全画面に共通のヘッダー/メタ注入を完了させる。"
+    "description": "# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。"
   },
   {
     "id": "task-yaml-sorro3-src-webclient-mo",
@@ -287,17 +171,17 @@
     "description": "# Reception 検索とリスト API 配線\n\n- `/api01rv2/claim/outpatient/*` と `/api01rv2/appointment/outpatient/*` を React Query で接続し、検索・フィルタ・ソート結果を aria-live=polite で告知。\n- 状態バッジ/件数バッジ/折りたたみ保持を実データで表示し、行ダブルクリックで Charts に runId を carry-over。\n- missingMaster/cacheHit/dataSourceTransition をヘッダーと UI に反映し、現行モック実装を置き換える。"
   },
   {
-    "id": "task-yaml-1o1bjza-src-webclient-mo",
-    "name": "[webclient modernized gantt 20251211] OrderConsoleフラグ連携とトーン統一\n期間: 12/15 21:00 - 12/16 21:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
+    "id": "task-yaml-1r4375f-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] Telemetryと監査メタ統合\n期間: 12/13 21:00 - 12/14 21:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# Telemetry と監査メタ統合\n\n- `telemetryClient.recordOutpatientFunnel` を resolve_master / charts_orchestration の二段で発火し、runId/traceId/cacheHit/missingMaster/dataSourceTransition を全 API 呼び出しへ透過。\n- `audit.logUiState` に主要 UI 操作（トーン変更、送信、保存、設定配信）を記録し、server-modernized ログと突き合わせ。\n- 現状: ログインのみ実 API 接続。ここで全画面に共通のヘッダー/メタ注入を完了させる。\n\nYAML ID: src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
     "model": "YAML App",
     "status": "completed",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-11T11:00:52.376Z",
-    "updatedAt": "2025-12-11T11:32:46.647Z",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-11T08:47:59.564Z",
+    "updatedAt": "2025-12-11T09:59:41.731Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-1o1bjza-src-webclient-mo",
+    "branchName": "task/task-yaml-1r4375f-src-webclient-mo",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -309,103 +193,245 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
       "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
       "datasetLabel": "webclient modernized gantt 20251211",
-      "pathId": "src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
+      "pathId": "src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
       "fileName": "webclient-modernized-gantt-20251211.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
-      "addedAt": "2025-12-11T11:00:52.101Z"
+      "addedAt": "2025-12-11T08:47:59.522Z"
     },
     "labels": [
       "webclient modernized gantt 20251211",
-      "src / webclient_modernization_phase2 / 03_reception"
+      "src / webclient_modernization_phase2 / 02_shared_observability"
     ],
     "dependencies": [
-      "task-yaml-sorro3-src-webclient-mo"
+      "task-yaml-ntqook-src-webclient-mo"
     ],
     "schedule": {
-      "startMs": 1765800000000,
-      "endMs": 1765886400000,
+      "startMs": 1765627200000,
+      "endMs": 1765713600000,
       "durationDays": 1
     },
-    "category": "src / webclient_modernization_phase2 / 03_reception",
+    "category": "src / webclient_modernization_phase2 / 02_shared_observability",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。"
+    "description": "# Telemetry と監査メタ統合\n\n- `telemetryClient.recordOutpatientFunnel` を resolve_master / charts_orchestration の二段で発火し、runId/traceId/cacheHit/missingMaster/dataSourceTransition を全 API 呼び出しへ透過。\n- `audit.logUiState` に主要 UI 操作（トーン変更、送信、保存、設定配信）を記録し、server-modernized ログと突き合わせ。\n- 現状: ログインのみ実 API 接続。ここで全画面に共通のヘッダー/メタ注入を完了させる。"
   },
   {
-    "id": "task-1765450884905-1a07d4",
-    "name": "CodexCLI4: [webclient modernized gantt 20251211] OrderConsoleフラグ連携とトーン統一\n期間: 12/15 21:00 - 12/16 21:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
+    "id": "task-yaml-1spmuhs-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] 左ナビ権限ガードとUX整備\n期間: 12/13 15:00 - 12/14 15:00 / 優先度: medium / 緊急度: high / エージェント: cursor cli\n\n# 左ナビ権限ガードと UX 整備\n\n- Reception/Charts/Patients/Administration/Outpatient Mock のタブ活性制御と警告バッジを実装。\n- Disabled タブにツールチップと aria-disabled を付与し、権限不足の遷移を防止。\n- Current 実装（デモシェルのみ active）を拡張し、運用想定の導線に合わせる。\n\nYAML ID: src/webclient_modernization_phase2/01_shell_login/左ナビ権限ガードとUX整備.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "medium",
+    "urgency": "high",
+    "createdAt": "2025-12-11T08:47:50.928Z",
+    "updatedAt": "2025-12-11T09:22:02.472Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1spmuhs-src-webclient-mo",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/01_shell_login/左ナビ権限ガードとUX整備.md",
+      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
+      "datasetLabel": "webclient modernized gantt 20251211",
+      "pathId": "src/webclient_modernization_phase2/01_shell_login/左ナビ権限ガードとUX整備.md",
+      "fileName": "webclient-modernized-gantt-20251211.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
+      "addedAt": "2025-12-11T08:47:50.888Z"
+    },
+    "labels": [
+      "webclient modernized gantt 20251211",
+      "src / webclient_modernization_phase2 / 01_shell_login"
+    ],
+    "dependencies": [
+      "task-yaml-ntqook-src-webclient-mo"
+    ],
+    "schedule": {
+      "startMs": 1765605600000,
+      "endMs": 1765692000000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_modernization_phase2 / 01_shell_login",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 左ナビ権限ガードと UX 整備\n\n- Reception/Charts/Patients/Administration/Outpatient Mock のタブ活性制御と警告バッジを実装。\n- Disabled タブにツールチップと aria-disabled を付与し、権限不足の遷移を防止。\n- Current 実装（デモシェルのみ active）を拡張し、運用想定の導線に合わせる。"
+  },
+  {
+    "id": "task-yaml-gpfyns-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] ログイン強化とセッションガード\n期間: 12/13 09:00 - 12/14 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# ログイン強化とセッションガード\n\n- `/user/{facility:user}` GET 認証を正式配線し、MD5 パスワード + clientUUID 検証と失敗時の aria-live=assertive エラー表示を実装。\n- 成功時に runId を発行し SessionContext へ保存、tone/banner/audit に透過。\n- localStorage seed 保存と RUN_ID コピー機能を QA 向けに維持。\n\nYAML ID: src/webclient_modernization_phase2/01_shell_login/ログイン強化とセッションガード.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-11T08:47:41.782Z",
+    "updatedAt": "2025-12-11T09:20:41.344Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-gpfyns-src-webclient-mo",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/01_shell_login/ログイン強化とセッションガード.md",
+      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
+      "datasetLabel": "webclient modernized gantt 20251211",
+      "pathId": "src/webclient_modernization_phase2/01_shell_login/ログイン強化とセッションガード.md",
+      "fileName": "webclient-modernized-gantt-20251211.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
+      "addedAt": "2025-12-11T08:47:41.739Z"
+    },
+    "labels": [
+      "webclient modernized gantt 20251211",
+      "src / webclient_modernization_phase2 / 01_shell_login"
+    ],
+    "dependencies": [
+      "task-yaml-ntqook-src-webclient-mo"
+    ],
+    "schedule": {
+      "startMs": 1765584000000,
+      "endMs": 1765670400000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_modernization_phase2 / 01_shell_login",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ログイン強化とセッションガード\n\n- `/user/{facility:user}` GET 認証を正式配線し、MD5 パスワード + clientUUID 検証と失敗時の aria-live=assertive エラー表示を実装。\n- 成功時に runId を発行し SessionContext へ保存、tone/banner/audit に透過。\n- localStorage seed 保存と RUN_ID コピー機能を QA 向けに維持。"
+  },
+  {
+    "id": "task-yaml-ntqook-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] AppShell共通化とRUN_ID伝播\n期間: 12/12 15:00 - 12/13 15:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# AppShell 共通化と RUN_ID 伝播\n\n- `AppRouter` と `AuthServiceProvider` を共通化し、runId/missingMaster/cacheHit/dataSourceTransition を単一ソースで保持。\n- Topbar に RUN_ID コピー、左ナビ権限ガード、通知スタック（role=status, aria-live）を組み込み。\n- 現状のログイン＋デモシェル実装をリファクタし、後続画面がフラグを受け取れる状態を完成させる。\n\nYAML ID: src/webclient_modernization_phase2/01_shell_login/AppShell共通化とRUN_ID伝播.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-11T08:47:35.591Z",
+    "updatedAt": "2025-12-11T08:58:52.492Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-ntqook-src-webclient-mo",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/01_shell_login/AppShell共通化とRUN_ID伝播.md",
+      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
+      "datasetLabel": "webclient modernized gantt 20251211",
+      "pathId": "src/webclient_modernization_phase2/01_shell_login/AppShell共通化とRUN_ID伝播.md",
+      "fileName": "webclient-modernized-gantt-20251211.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
+      "addedAt": "2025-12-11T08:47:35.573Z"
+    },
+    "labels": [
+      "webclient modernized gantt 20251211",
+      "src / webclient_modernization_phase2 / 01_shell_login"
+    ],
+    "dependencies": [
+      "task-yaml-1fawj2t-src-webclient-mo"
+    ],
+    "schedule": {
+      "startMs": 1765519200000,
+      "endMs": 1765605600000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_modernization_phase2 / 01_shell_login",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# AppShell 共通化と RUN_ID 伝播\n\n- `AppRouter` と `AuthServiceProvider` を共通化し、runId/missingMaster/cacheHit/dataSourceTransition を単一ソースで保持。\n- Topbar に RUN_ID コピー、左ナビ権限ガード、通知スタック（role=status, aria-live）を組み込み。\n- 現状のログイン＋デモシェル実装をリファクタし、後続画面がフラグを受け取れる状態を完成させる。"
+  },
+  {
+    "id": "task-yaml-1fawj2t-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] RUN_ID整備と参照チェーン確認\n期間: 12/12 09:00 - 12/13 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# RUN_ID 整備と参照チェーン確認\n\n- RUN_ID を `20251211T172459Z` で統一し、DOC_STATUS/証跡ログへ事前登録する。\n- 参照チェーン（AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → manager checklist）を再確認し、本ガントの適用範囲を明示。\n- Legacy 資産を参照専用に固定し、server-modernized 接続のみを対象にすることを全員に周知。\n\nYAML ID: src/webclient_modernization_phase2/00_governance/RUN_ID整備と参照チェーン確認.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-11T08:43:06.168Z",
+    "updatedAt": "2025-12-11T08:47:24.199Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1fawj2t-src-webclient-mo",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/00_governance/RUN_ID整備と参照チェーン確認.md",
+      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
+      "datasetLabel": "webclient modernized gantt 20251211",
+      "pathId": "src/webclient_modernization_phase2/00_governance/RUN_ID整備と参照チェーン確認.md",
+      "fileName": "webclient-modernized-gantt-20251211.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
+      "addedAt": "2025-12-11T08:43:06.154Z"
+    },
+    "labels": [
+      "webclient modernized gantt 20251211",
+      "src / webclient_modernization_phase2 / 00_governance"
+    ],
+    "dependencies": [],
+    "schedule": {
+      "startMs": 1765497600000,
+      "endMs": 1765584000000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_modernization_phase2 / 00_governance",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# RUN_ID 整備と参照チェーン確認\n\n- RUN_ID を `20251211T172459Z` で統一し、DOC_STATUS/証跡ログへ事前登録する。\n- 参照チェーン（AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → manager checklist）を再確認し、本ガントの適用範囲を明示。\n- Legacy 資産を参照専用に固定し、server-modernized 接続のみを対象にすることを全員に周知。"
+  },
+  {
+    "id": "task-1765454673599-b6efe8",
+    "name": "CodexCLI1: [webclient modernized gantt 20251211] Chartsデータバインドとタイムライン実装\n期間: 12/16 09:00 - 12/17 21:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# Charts データバインドとタイムライン実装\n\n- Reception からの runId/flags を受け、DocumentTimeline を受付→診療→ORCAキューで実データ表示（missingMaster 行ハイライト含む）。\n- OrcaSummary で `/orca21/medicalmodv2/outpatient` 応答を表示し、cacheHit/missingMaster/fallbackUsed をバッジ化。\n- PatientsTab の検索・詳細タブを API 値でレンダリングし、編集不可条件を tone に連動。\n\nYAML ID: src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
     "model": "Codex CLI",
     "status": "running",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-11T11:01:24.905Z",
-    "updatedAt": "2025-12-11T11:32:23.123Z",
+    "createdAt": "2025-12-11T12:04:33.599Z",
+    "updatedAt": "2025-12-11T12:04:52.578Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1765450884905-1a07d4",
+    "branchName": "task/task-1765454673599-b6efe8",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765450884300-dr38n83n",
-    "aiCompetitionGroupName": "[webclient modernized gantt 20251211] OrderConsoleフラグ連携とトーン統一\n期間: 12/15 21:00 - 12/16 21:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# OrderConsole フラグ連携とトーン統一\n\n- resolveMasterSource セレクトと missingMaster/cacheHit トグルを Reception/Charts/Patients へ連動させ、ToneBanner/StatusBadge の文言をトーンポリシーに揃える。\n- note 入力を auditEvent に含め、ARIA（role=alert/aria-live=assertive）を適用。\n- 現状のモック UI を API 応答ベースに置換し、telemetry funnel を表示。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md",
+    "aiCompetitionGroupId": "comp-1765454673599-xa7wblon",
+    "aiCompetitionGroupName": "[webclient modernized gantt 20251211] Chartsデータバインドとタイムライン実装\n期間: 12/16 09:00 - 12/17 21:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# Charts データバインドとタイムライン実装\n\n- Reception からの runId/flags を受け、DocumentTimeline を受付→診療→ORCAキューで実データ表示（missingMaster 行ハイライト含む）。\n- OrcaSummary で `/orca21/medicalmodv2/outpatient` 応答を表示し、cacheHit/missingMaster/fallbackUsed をバッジ化。\n- PatientsTab の検索・詳細タブを API 値でレンダリングし、編集不可条件を tone に連動。\n\nYAML ID: src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765450884905-1a07d4",
-    "medal": "gold"
-  },
-  {
-    "id": "task-yaml-1kf21db-src-webclient-mo",
-    "name": "[webclient modernized gantt 20251211] Chartsデータバインドとタイムライン実装\n期間: 12/16 09:00 - 12/17 21:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# Charts データバインドとタイムライン実装\n\n- Reception からの runId/flags を受け、DocumentTimeline を受付→診療→ORCAキューで実データ表示（missingMaster 行ハイライト含む）。\n- OrcaSummary で `/orca21/medicalmodv2/outpatient` 応答を表示し、cacheHit/missingMaster/fallbackUsed をバッジ化。\n- PatientsTab の検索・詳細タブを API 値でレンダリングし、編集不可条件を tone に連動。\n\nYAML ID: src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-11T11:33:07.978Z",
-    "updatedAt": "2025-12-11T11:33:07.978Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1kf21db-src-webclient-mo",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
-      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
-      "datasetLabel": "webclient modernized gantt 20251211",
-      "pathId": "src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md",
-      "fileName": "webclient-modernized-gantt-20251211.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
-      "addedAt": "2025-12-11T11:33:07.947Z"
-    },
-    "labels": [
-      "webclient modernized gantt 20251211",
-      "src / webclient_modernization_phase2 / 04_charts"
-    ],
-    "dependencies": [
-      "task-yaml-sorro3-src-webclient-mo",
-      "task-yaml-1r4375f-src-webclient-mo"
-    ],
-    "schedule": {
-      "startMs": 1765843200000,
-      "endMs": 1765972800000,
-      "durationDays": 2
-    },
-    "category": "src / webclient_modernization_phase2 / 04_charts",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# Charts データバインドとタイムライン実装\n\n- Reception からの runId/flags を受け、DocumentTimeline を受付→診療→ORCAキューで実データ表示（missingMaster 行ハイライト含む）。\n- OrcaSummary で `/orca21/medicalmodv2/outpatient` 応答を表示し、cacheHit/missingMaster/fallbackUsed をバッジ化。\n- PatientsTab の検索・詳細タブを API 値でレンダリングし、編集不可条件を tone に連動。"
+    "worktreePath": ".worktrees/task-1765454673599-b6efe8",
+    "medal": "gold",
+    "aiCompetitionScore": 87
   }
 ]
