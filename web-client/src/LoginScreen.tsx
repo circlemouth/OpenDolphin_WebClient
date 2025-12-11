@@ -58,6 +58,7 @@ interface UserResourceResponse {
   userId?: string;
   displayName?: string;
   commonName?: string;
+  roles?: string[];
 }
 
 export type LoginResult = {
@@ -66,6 +67,7 @@ export type LoginResult = {
   displayName?: string;
   commonName?: string;
   clientUuid: string;
+  roles?: string[];
 };
 
 type LoginScreenProps = {
@@ -288,5 +290,6 @@ const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
     displayName: data.displayName,
     commonName: data.commonName,
     clientUuid,
+    roles: data.roles ?? ['RECEPTION', 'CHARTS', 'OUTPATIENT'],
   };
 };

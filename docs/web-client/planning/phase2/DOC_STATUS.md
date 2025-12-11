@@ -1,15 +1,16 @@
-# DOC_STATUS（RUN_ID=`20251211T075709Z`）
+# DOC_STATUS（RUN_ID=`20251211T172459Z`）
 
 - 目的: docs/web-client 配下のアクティブ資料を棚卸しし、RUN_ID/証跡/責務を同期させる。参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル。
 - 今回の整理でフル電子カルテ版の実装計画を再定義し、Legacy ログイン専用期の資料は Archive として分離した。
-- 証跡ログ: `docs/web-client/planning/phase2/logs/20251211T075709Z-web-client-plan.md`。
+- Legacy (`client/`, `common/`, `ext_lib/`) は参照専用。接続検証や設定変更の対象は `server-modernized/` のみ。
+- 証跡ログ: `docs/web-client/planning/phase2/logs/20251211T172459Z-runid-governance.md`（事前登録）。
 
 ## Active ドキュメント（2025-12-11 現在）
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / RUN_ID |
 | --- | --- | --- | --- | --- |
-| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-11 | RUN_ID=`20251211T075709Z`。Active 文書と証跡の入口を再構成。 |
+| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-11 | RUN_ID=`20251211T172459Z`。ガバナンスチェーンと適用範囲を再確認。 |
 | `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` | 画面別実装計画 | Active | 2025-12-11 | 新設。画面/機能/ARIA/監査/テレメトリ/ロードマップを統合。 |
-| `docs/web-client/planning/phase2/DOC_STATUS.md` | 棚卸し台帳 | Active | 2025-12-11 | 本ファイル。RUN_ID 同期。 |
+| `docs/web-client/planning/phase2/DOC_STATUS.md` | 棚卸し台帳 | Active | 2025-12-11 | 本ファイル。RUN_ID=`20251211T172459Z`。 |
 | `docs/web-client/architecture/future-web-client-design.md` | 画面配置・機能サマリ | Active | 2025-12-10 | RUN_ID=`20251210T141208Z`。計画書と整合。 |
 | `docs/web-client/architecture/web-client-api-mapping.md` | 外来 API マッピング | Active | 2025-12-08 | RUN_ID=`20251208T124645Z`。OUTPATIENT_API_ENDPOINTS と同期。 |
 | `docs/web-client/ux/reception-schedule-ui-policy.md` | Reception UX ポリシー | Active | 2025-12-12 | RUN_ID=`20251212T090000Z`（他の RUN_ID は本文記載）。 |
@@ -19,7 +20,7 @@
 | `docs/web-client/ux/playwright-scenarios.md` | E2E シナリオ草稿 | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。計画書のテスト章と連携。 |
 | `docs/web-client/ux/ux-documentation-plan.md` | UX 文書進行ハブ | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。 |
 | `docs/web-client/operations/debugging-outpatient-bugs.md` | 外来 API デバッグ記録 | Active | 2025-12-10 | RUN_ID=`20251210T054022Z`。Stage/Preview 再検証 pending。 |
-| `docs/web-client/planning/phase2/logs/20251211T075709Z-web-client-plan.md` | 本更新ログ | Active | 2025-12-11 | RUN_ID=`20251211T075709Z`。 |
+| `docs/web-client/planning/phase2/logs/20251211T172459Z-runid-governance.md` | RUN_ID 整備・参照チェーン確認ログ | Active | 2025-12-11 | RUN_ID=`20251211T172459Z`。本ガントの事前登録。 |
 
 ## Legacy / Archive
 - ログイン専用期（RUN_ID=`20251130T120000Z` 〜 `20251203T203000Z`）の資料は Archive。代表例:

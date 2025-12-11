@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | ログイン強化とセッションガード</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 12px 0 20px;
+      }
+      .scorecard {
+        background: #f7fafc;
+        border: 1px solid #c4d3d7;
+        padding: 14px;
+        border-radius: 10px;
+      }
+      .scorecard h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .scorecard .score {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.03em;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 170px; }
+      col.agent-column { width: calc((100% - 170px) / 4); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .agent-meta { margin-bottom: 10px; line-height: 1.4; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .status-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        border-radius: 10px;
+      }
+      .status-badge--silver { background: #e5ecf6; border-color: #b9c7e7; }
+      .status-badge--bronze { background: #f2e3d0; border-color: #e1c59e; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; font-weight: 600; }
+      details[open] summary { margin-bottom: 10px; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 14px;
+      }
+      .radar {
+        width: 200px;
+        height: 200px;
+        margin-bottom: 8px;
+      }
+      .metrics { font-size: 12px; margin: 0; padding: 0; list-style: none; }
+      .metrics li { margin-bottom: 4px; }
+      .snapshot-summary { margin-bottom: 8px; font-weight: 600; }
+      .pill { display: inline-block; padding: 2px 8px; border-radius: 10px; background: #eef2ff; margin-right: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | ログイン強化とセッションガード</h1>
+        <p class="monitor-description">対象: task/task-1765443573542-394d0f, task/task-1765443573943-1a5a8f, task/task-1765443573743-9082e1（worktree外リポジトリ成果物を参照）。</p>
+      </header>
+      <section class="scoreboard" aria-label="集計スコア">
+        <div class="scorecard">
+          <h3>🥈 codex / task-1765443573542-394d0f</h3>
+          <div class="score">514 / 600</div>
+          <div>総合: 86点相当｜RUN_IDコピー・clientUUID適用・aria-live assertive 完了。</div>
+        </div>
+        <div class="scorecard">
+          <h3>🥈 codex / task-1765443573743-9082e1</h3>
+          <div class="score">480 / 600</div>
+          <div>総合: 80点相当｜シード読込とclientUUID送出は良好、テスト欠如。</div>
+        </div>
+        <div class="scorecard">
+          <h3>🥉 codex / task-1765443573943-1a5a8f</h3>
+          <div class="score">422 / 600</div>
+          <div>総合: 70点相当｜httpClientにclientUUID未適用で要修正。</div>
+        </div>
+      </section>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex<br/>task-1765443573542-394d0f</th>
+            <th>Agent codex<br/>task-1765443573743-9082e1</th>
+            <th>Agent codex<br/>task-1765443573943-1a5a8f</th>
+            <th>Agent spare</th>
+            <th>Agent spare</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 18:18</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--silver">🥈 Silver</span><span class="agent-label">RUN_ID生成を共通化し、MD5+clientUUID送出とコピーUIを追加。</span></div>
+              <svg class="radar" viewBox="0 0 200 200" id="radar-3542" aria-label="六角形チャート"></svg>
+              <ul class="metrics">
+                <li>機能適合度 92: /user 認証にclientUUID &amp; MD5適用、シード保存・失敗時assertive。</li>
+                <li>セキュリティ/認証 88: clientUUIDをhttpClientで自動送出、欠損時の保存例外を捕捉。</li>
+                <li>UX/アクセシビリティ 90: role="alert"/aria-live assertive、RUN_IDコピー通知をrole="status"で表示。</li>
+                <li>ロバスト性 86: localStorage読み込み失敗をtry-catch、コピーAPI非対応時の警告処理。</li>
+                <li>コード品質 88: runIdユーティリティ化、Props型でコピー状態を管理。</li>
+                <li>テスト/検証 70: 実装のみで自動テスト無し。</li>
+              </ul>
+              <p class="snapshot-summary">主な差分</p>
+              <pre>commit 5eae8a50 feat(login): 強化認証とRUN_IDコピー
+- AppRouter: runId生成をlibs/runIdへ分離しコピーUI追加。
+- LoginScreen: ローカルシード読込・clientUUID保存・失敗時aria-live=assertive。
+- httpClient: clientUUIDヘッダを自動付与。
+- app-shell.css: RUN_IDコピー用スタイル追加。</pre>
+              <p class="snapshot-summary">所見</p>
+              <pre>要件充足度高。RUN_IDはSessionに保存されtone/banner側へ透過可能。Clipboard API非対応環境でフォールバックが無い点は軽微。</pre>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--silver">🥈 Silver</span><span class="agent-label">シード読込とclientUUID送出、コピーUIにフィードバックを追加。</span></div>
+              <svg class="radar" viewBox="0 0 200 200" id="radar-3743" aria-label="六角形チャート"></svg>
+              <ul class="metrics">
+                <li>機能適合度 84: シード読込/保存とコピーUIは実装、runId生成は従来ロジック。</li>
+                <li>セキュリティ/認証 82: MD5/UUIDをログインとhttpClient双方で送出。</li>
+                <li>UX/アクセシビリティ 86: エラー時alert+assertive、コピー結果をrole="status"表示。</li>
+                <li>ロバスト性 78: Clipboard API非対応時のフォールバック実装あり。</li>
+                <li>コード品質 82: ロジック分離とpayload型の導入。ただし重複処理が一部残存。</li>
+                <li>テスト/検証 68: テスト無し。</li>
+              </ul>
+              <p class="snapshot-summary">主な差分</p>
+              <pre>commit 890c47fd ログイン強化とRUN_IDコピー対応
+- AppRouter: RUN_IDコピーUIとフィードバック、fallback copy関数。
+- LoginScreen: シード読込、MD5/UUID事前計算、clientUUID保存。
+- httpClient: clientUUIDヘッダ適用。
+- app-shell.css: コピー用ボタン装飾とメッセージ欄。</pre>
+              <p class="snapshot-summary">所見</p>
+              <pre>要件は概ね網羅。runId生成・格納は既存実装依存のためセッション透過は維持。例外処理や重複の整理でさらに安定化余地あり。</pre>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--bronze">🥉 Bronze</span><span class="agent-label">runId発行をLogin側へ移動しコピーUI追加。ただし認証ヘッダが不足。</span></div>
+              <svg class="radar" viewBox="0 0 200 200" id="radar-3943" aria-label="六角形チャート"></svg>
+              <ul class="metrics">
+                <li>機能適合度 78: RUN_ID発行とコピーUIあり。/user応答のfailメッセージ改善。</li>
+                <li>セキュリティ/認証 60: httpClientでclientUUID未送出のため後続APIが要件未達。</li>
+                <li>UX/アクセシビリティ 82: エラー時alert+assertive、コピー結果をstatus表示。</li>
+                <li>ロバスト性 68: Clipboard例外ハンドリングはあるがclientUUID未設定時のfallbackなし。</li>
+                <li>コード品質 74: SessionContextを分離し可読性向上。ただしデッドコード（aria-live on button）が残存。</li>
+                <li>テスト/検証 60: テスト無し。</li>
+              </ul>
+              <p class="snapshot-summary">主な差分</p>
+              <pre>commit 5c49e792 feat: ログイン強化とセッションガード
+- LoginScreen: runId発行(issueRunId)、シード初期値、clientUUID保存。
+- sessionContextを分離、AppRouterはLoginResultをSessionに格納。
+- app-shell.css: RUN_IDコピー装飾。
+※ httpClient に clientUUID 自動付与がなく、MD5+UUID検証要件を満たさない。</pre>
+              <p class="snapshot-summary">改善必須ポイント</p>
+              <pre>- httpClient.applyAuthHeaders に clientUUID の読込・送出を追加すること。
+- Clipboard非対応環境のフォールバック検討。</pre>
+            </td>
+            <td><div class="agent-meta"><span class="status-badge">N/A</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge">N/A</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const radarData = {
+        'radar-3542': [92, 88, 90, 86, 88, 70],
+        'radar-3743': [84, 82, 86, 78, 82, 68],
+        'radar-3943': [78, 60, 82, 68, 74, 60],
+      };
+      const metricLabels = ['機能適合度', 'セキュリティ/認証', 'UX/アクセシビリティ', 'ロバスト性', 'コード品質', 'テスト/検証'];
+      function drawRadar(id, values) {
+        const svg = document.getElementById(id);
+        if (!svg) return;
+        const size = 200, center = size / 2, rMax = 80;
+        const bg = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        const bgPoints = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = Math.PI / 3 * i - Math.PI / 2;
+          const x = center + rMax * Math.cos(angle);
+          const y = center + rMax * Math.sin(angle);
+          bgPoints.push(`${x},${y}`);
+        }
+        bg.setAttribute('points', bgPoints.join(' '));
+        bg.setAttribute('fill', '#eef3f4');
+        bg.setAttribute('stroke', '#c4d3d7');
+        bg.setAttribute('stroke-width', '1');
+        svg.appendChild(bg);
+        const data = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        const pts = values.map((v, i) => {
+          const angle = Math.PI / 3 * i - Math.PI / 2;
+          const r = (v / 100) * rMax;
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          return `${x},${y}`;
+        });
+        data.setAttribute('points', pts.join(' '));
+        data.setAttribute('fill', 'rgba(37,99,235,0.28)');
+        data.setAttribute('stroke', '#2563eb');
+        data.setAttribute('stroke-width', '2');
+        svg.appendChild(data);
+      }
+      Object.entries(radarData).forEach(([id, values]) => drawRadar(id, values));
+    </script>
+  </body>
+</html>

@@ -1,6 +1,6 @@
-# Web クライアント実装計画書（RUN_ID=20251211T075709Z）
+# Web クライアント実装計画書（RUN_ID=20251211T172459Z）
 
-> 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本計画書。証跡ログ: `docs/web-client/planning/phase2/logs/20251211T075709Z-web-client-plan.md`。
+> 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本計画書。証跡ログ: `docs/web-client/planning/phase2/logs/20251211T172459Z-runid-governance.md`。
 > 本計画は **電子カルテとして必要な Reception / Charts / Patients / Administration / 共通基盤** の機能を画面単位で網羅し、`web-client/src` のデバッグ UI と既存 UX/設計ドキュメントを統合した最新版です。
 
 ## 1. 前提・インプット

@@ -1,4 +1,4 @@
-import { useMemo, useState, createContext, useContext, useCallback } from 'react';
+import { useMemo, useState, createContext, useContext } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -14,6 +14,7 @@ import { generateRunId } from './libs/runId';
 import { ChartsPage } from './features/charts/pages/ChartsPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
+import { AuthServiceProvider, useAuthService } from './features/charts/authService';
 import './styles/app-shell.css';
 
 type Session = LoginResult & {
@@ -31,36 +32,19 @@ export function useSession() {
 }
 
 const NAV_LINKS = [
-  { to: '/reception', label: '受付 / トーン連携' },
-  { to: '/charts', label: 'カルテ / Charts' },
-  { to: '/outpatient-mock', label: 'Outpatient Mock' },
+  { to: '/reception', label: '受付 / トーン連携', role: 'RECEPTION' },
+  { to: '/charts', label: 'カルテ / Charts', role: 'CHARTS' },
+  { to: '/outpatient-mock', label: 'Outpatient Mock', role: 'OUTPATIENT' },
 ];
 
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   const handleLoginSuccess = (result: LoginResult) => {
-    setSession({ ...result, runId: generateRunId() });
+    setSession({ ...result, runId: generateRunId(), roles: result.roles ?? ['RECEPTION', 'CHARTS', 'OUTPATIENT'] });
   };
 
   const handleLogout = () => setSession(null);
-
-  const handleCopyRunId = useCallback(async () => {
-    if (!session?.runId) return;
-    try {
-      if (!navigator.clipboard?.writeText) {
-        throw new Error('クリップボード API が利用できません。');
-      }
-      await navigator.clipboard.writeText(session.runId);
-      setCopyStatus('copied');
-    } catch (error) {
-      console.warn('RUN_ID のコピーに失敗しました。', error);
-      setCopyStatus('failed');
-    } finally {
-      setTimeout(() => setCopyStatus('idle'), 2000);
-    }
-  }, [session?.runId]);
 
   return (
     <BrowserRouter>
@@ -72,14 +56,7 @@ export function AppRouter() {
           }
         />
         <Route
-          element={
-            <Protected
-              session={session}
-              onLogout={handleLogout}
-              onCopyRunId={handleCopyRunId}
-              copyStatus={copyStatus}
-            />
-          }
+          element={<Protected session={session} onLogout={handleLogout} />}
         >
           <Route index element={<Navigate to="/reception" replace />} />
           <Route path="/reception" element={<ConnectedReception />} />
@@ -92,17 +69,7 @@ export function AppRouter() {
   );
 }
 
-function Protected({
-  session,
-  onLogout,
-  onCopyRunId,
-  copyStatus,
-}: {
-  session: Session | null;
-  onLogout: () => void;
-  onCopyRunId: () => void;
-  copyStatus: 'idle' | 'copied' | 'failed';
-}) {
+function Protected({ session, onLogout }: { session: Session | null; onLogout: () => void }) {
   const location = useLocation();
   if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -110,26 +77,32 @@ function Protected({
 
   return (
     <SessionContext.Provider value={session}>
-      <AppLayout onLogout={onLogout} onCopyRunId={onCopyRunId} copyStatus={copyStatus} />
+      <AuthServiceProvider initialFlags={{ runId: session.runId }} runId={session.runId}>
+        <AppLayout onLogout={onLogout} />
+      </AuthServiceProvider>
     </SessionContext.Provider>
   );
 }
 
-function AppLayout({
-  onLogout,
-  onCopyRunId,
-  copyStatus,
-}: {
-  onLogout: () => void;
-  onCopyRunId: () => void;
-  copyStatus: 'idle' | 'copied' | 'failed';
-}) {
+function AppLayout({ onLogout }: { onLogout: () => void }) {
   const location = useLocation();
   const session = useSession();
+  const { flags } = useAuthService();
+  const [notices, setNotices] = useState<string[]>([]);
+
+  const handleCopyRunId = async () => {
+    try {
+      await navigator.clipboard.writeText(flags.runId);
+      setNotices((prev) => [`RUN_ID をコピーしました: ${flags.runId}`, ...prev].slice(0, 3));
+    } catch (error) {
+      setNotices((prev) => [`RUN_ID コピーに失敗しました`, ...prev].slice(0, 3));
+      console.error('[AppShell] copy runId failed', error);
+    }
+  };
 
   const navItems = useMemo(
     () =>
-      NAV_LINKS.map((link) => (
+      NAV_LINKS.filter((link) => !session.roles || session.roles.includes(link.role)).map((link) => (
         <NavLink
           key={link.to}
           to={link.to}
@@ -140,7 +113,7 @@ function AppLayout({
           {link.label}
         </NavLink>
       )),
-    [location.pathname],
+    [location.pathname, session.roles],
   );
 
   return (
@@ -158,18 +131,11 @@ function AppLayout({
           <button
             type="button"
             className="app-shell__pill app-shell__pill--copy"
-            onClick={onCopyRunId}
+            onClick={handleCopyRunId}
             title="RUN_ID をコピー"
           >
-            RUN_ID: {session.runId}
+            RUN_ID: {flags.runId}（クリックでコピー）
           </button>
-          <span className="app-shell__pill-note" role="status" aria-live="polite">
-            {copyStatus === 'copied'
-              ? 'RUN_ID をコピーしました。'
-              : copyStatus === 'failed'
-                ? 'RUN_ID のコピーに失敗しました。'
-                : ''}
-          </span>
           <button type="button" className="app-shell__logout" onClick={onLogout}>
             ログアウト
           </button>
@@ -182,6 +148,13 @@ function AppLayout({
 
       <div className="app-shell__body">
         <Outlet />
+      </div>
+      <div className="app-shell__notice-stack" role="status" aria-live="polite">
+        {notices.map((notice, index) => (
+          <div key={`${notice}-${index}`} className="app-shell__notice">
+            {notice}
+          </div>
+        ))}
       </div>
     </div>
   );
