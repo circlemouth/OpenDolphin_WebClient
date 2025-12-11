@@ -19,6 +19,7 @@ import {
 import './patients.css';
 
 const FILTER_STORAGE_KEY = 'patients-filter-state';
+const RECEPTION_FILTER_STORAGE_KEY = 'reception-filter-state';
 
 const DEFAULT_FILTER = {
   keyword: '',
@@ -36,16 +37,19 @@ const toSearchParams = (filters: typeof DEFAULT_FILTER) => {
   return params;
 };
 
+const readStorageJson = (key: string) => {
+  if (typeof localStorage === 'undefined') return null;
+  try {
+    const raw = localStorage.getItem(key);
+    return raw ? (JSON.parse(raw) as Record<string, unknown>) : null;
+  } catch {
+    return null;
+  }
+};
+
 const readFilters = (searchParams: URLSearchParams): typeof DEFAULT_FILTER => {
-  const stored = (() => {
-    if (typeof localStorage === 'undefined') return null;
-    try {
-      const raw = localStorage.getItem(FILTER_STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Partial<typeof DEFAULT_FILTER>) : null;
-    } catch {
-      return null;
-    }
-  })();
+  const receptionStored = readStorageJson(RECEPTION_FILTER_STORAGE_KEY);
+  const patientStored = readStorageJson(FILTER_STORAGE_KEY);
 
   const fromUrl: Partial<typeof DEFAULT_FILTER> = {
     keyword: searchParams.get('kw') ?? undefined,
@@ -54,9 +58,23 @@ const readFilters = (searchParams: URLSearchParams): typeof DEFAULT_FILTER => {
     paymentMode: (searchParams.get('pay') as 'all' | 'insurance' | 'self' | null) ?? undefined,
   };
 
+  const normalizedReception: Partial<typeof DEFAULT_FILTER> = {
+    keyword: (receptionStored?.kw as string | undefined) ?? undefined,
+    department: (receptionStored?.dept as string | undefined) ?? undefined,
+    physician: (receptionStored?.phys as string | undefined) ?? undefined,
+  };
+
+  const normalizedPatients: Partial<typeof DEFAULT_FILTER> = {
+    keyword: (patientStored?.keyword as string | undefined) ?? (patientStored?.kw as string | undefined),
+    department: (patientStored?.department as string | undefined) ?? (patientStored?.dept as string | undefined),
+    physician: (patientStored?.physician as string | undefined) ?? (patientStored?.phys as string | undefined),
+    paymentMode: patientStored?.paymentMode as 'all' | 'insurance' | 'self' | undefined,
+  };
+
   return {
     ...DEFAULT_FILTER,
-    ...stored,
+    ...normalizedReception,
+    ...normalizedPatients,
     ...Object.fromEntries(Object.entries(fromUrl).filter(([, v]) => v !== undefined)),
   } as typeof DEFAULT_FILTER;
 };
@@ -102,6 +120,13 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   useEffect(() => {
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
+      const receptionSnapshot = {
+        ...(readStorageJson(RECEPTION_FILTER_STORAGE_KEY) ?? {}),
+        kw: filters.keyword,
+        dept: filters.department,
+        phys: filters.physician,
+      };
+      localStorage.setItem(RECEPTION_FILTER_STORAGE_KEY, JSON.stringify(receptionSnapshot));
     }
     const params = toSearchParams(filters);
     setSearchParams(params, { replace: true });
@@ -196,11 +221,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       if (result.cacheHit !== undefined) setCacheHit(result.cacheHit);
       if (result.missingMaster !== undefined) setMissingMaster(result.missingMaster);
       if (result.dataSourceTransition) setDataSourceTransition(result.dataSourceTransition);
+      setLastMeta((prev) => ({
+        missingMaster: result.missingMaster ?? prev.missingMaster,
+        fallbackUsed: result.fallbackUsed ?? prev.fallbackUsed,
+        cacheHit: result.cacheHit ?? prev.cacheHit,
+        dataSourceTransition: result.dataSourceTransition ?? prev.dataSourceTransition,
+        runId: result.runId ?? prev.runId,
+      }));
       logAuditEvent({
         runId: result.runId,
         source: 'patient-save',
         cacheHit: result.cacheHit,
         missingMaster: result.missingMaster,
+        fallbackUsed: result.fallbackUsed,
         dataSourceTransition: result.dataSourceTransition,
         payload: {
           auditEvent: result.auditEvent,
@@ -214,16 +247,16 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     },
   });
 
-  const blocking = Boolean(
-    (patientsQuery.data?.missingMaster ?? flags.missingMaster) || (patientsQuery.data?.fallbackUsed ?? false) || lastMeta.fallbackUsed,
-  );
+  const missingMasterFlag = patientsQuery.data?.missingMaster ?? flags.missingMaster ?? lastMeta.missingMaster ?? false;
+  const fallbackUsedFlag = patientsQuery.data?.fallbackUsed ?? lastMeta.fallbackUsed ?? false;
+  const blocking = Boolean(missingMasterFlag || fallbackUsedFlag);
 
   const save = (operation: 'create' | 'update' | 'delete') => {
     if (blocking) {
       setToast({
         tone: 'warning',
         message: 'missingMaster または fallbackUsed が true のため保存をブロックしました',
-        detail: `missingMaster=${patientsQuery.data?.missingMaster ?? flags.missingMaster} / fallbackUsed=${patientsQuery.data?.fallbackUsed ?? lastMeta.fallbackUsed ?? false}`,
+        detail: `missingMaster=${missingMasterFlag} / fallbackUsed=${fallbackUsedFlag}`,
       });
       logUiState({
         action: 'save',
@@ -231,9 +264,9 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         controlId: 'save-blocked',
         runId: flags.runId,
         cacheHit: flags.cacheHit,
-        missingMaster: flags.missingMaster,
+        missingMaster: missingMasterFlag,
         dataSourceTransition: flags.dataSourceTransition,
-        fallbackUsed: patientsQuery.data?.fallbackUsed ?? lastMeta.fallbackUsed,
+        fallbackUsed: fallbackUsedFlag,
       });
       return;
     }
@@ -264,7 +297,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
-  const toneLive = patientsQuery.data?.missingMaster || patientsQuery.data?.fallbackUsed ? 'assertive' : 'polite';
+  const toneLive = missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite';
 
   return (
     <main className="patients-page" data-run-id={flags.runId}>
@@ -278,13 +311,14 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         </div>
         <div className="patients-page__badges">
           <StatusBadge label="runId" value={flags.runId} tone="info" />
-          <StatusBadge label="missingMaster" value={String(flags.missingMaster)} tone={flags.missingMaster ? 'warning' : 'success'} ariaLive={toneLive} />
+          <StatusBadge label="missingMaster" value={String(missingMasterFlag)} tone={missingMasterFlag ? 'warning' : 'success'} ariaLive={toneLive} />
+          <StatusBadge label="fallbackUsed" value={String(fallbackUsedFlag)} tone={fallbackUsedFlag ? 'warning' : 'success'} ariaLive={toneLive} />
           <StatusBadge label="cacheHit" value={String(flags.cacheHit)} tone={flags.cacheHit ? 'success' : 'warning'} />
           <StatusBadge label="dataSourceTransition" value={flags.dataSourceTransition} tone="info" />
         </div>
       </header>
 
-      <ToneBanner tone={tone} message={toneMessage} runId={flags.runId} ariaLive={flags.missingMaster ? 'assertive' : 'polite'} />
+      <ToneBanner tone={tone} message={toneMessage} runId={flags.runId} ariaLive={missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite'} />
 
       <section className="patients-page__filters" aria-label="フィルタ" aria-live="polite">
         <label>
@@ -496,7 +530,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           <div className="patients-page__footnote" role="note">
             <span>dataSourceTransition: {transitionMeta.label}</span>
             <span>cacheHit: {String(flags.cacheHit)}</span>
-            <span>missingMaster: {String(flags.missingMaster)}</span>
+            <span>missingMaster: {String(missingMasterFlag)}</span>
+            <span>fallbackUsed: {String(fallbackUsedFlag)}</span>
           </div>
         </form>
       </section>
