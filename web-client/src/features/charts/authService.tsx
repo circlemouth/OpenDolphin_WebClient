@@ -1,8 +1,11 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react';
+import { logUiState } from '../../libs/audit/auditLogger';
+import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
+import type { DataSourceTransition as ObservabilityDataSourceTransition } from '../../libs/observability/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { handleOutpatientFlags } from './orchestration';
 
-export type DataSourceTransition = 'mock' | 'snapshot' | 'server' | 'fallback';
+export type DataSourceTransition = ObservabilityDataSourceTransition;
 
 export type AuthServiceFlags = {
   runId: string;
@@ -19,7 +22,7 @@ export interface AuthServiceContextValue {
   bumpRunId: (runId: string) => void;
 }
 
-const AUTH_RUN_ID = '20251205T150000Z';
+const AUTH_RUN_ID = getObservabilityMeta().runId ?? '20251205T150000Z';
 const DEFAULT_FLAGS: AuthServiceFlags = {
   runId: AUTH_RUN_ID,
   missingMaster: true,
@@ -64,6 +67,12 @@ export function AuthServiceProvider({
       cacheHit: flags.cacheHit,
       missingMaster: flags.missingMaster,
     };
+    updateObservabilityMeta({
+      runId: flags.runId,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      dataSourceTransition: flags.dataSourceTransition,
+    });
     recordOutpatientFunnel('resolve_master', {
       ...flagSnapshot,
       dataSourceTransition: flags.dataSourceTransition,
@@ -71,6 +80,15 @@ export function AuthServiceProvider({
     handleOutpatientFlags({
       ...flagSnapshot,
       dataSourceTransition: flags.dataSourceTransition,
+    });
+    logUiState({
+      action: 'tone_change',
+      screen: 'charts/auth-service',
+      controlId: 'auth-service-flags',
+      dataSourceTransition: flags.dataSourceTransition,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      runId: flags.runId,
     });
   }, [flags.runId, flags.cacheHit, flags.missingMaster, flags.dataSourceTransition]);
 

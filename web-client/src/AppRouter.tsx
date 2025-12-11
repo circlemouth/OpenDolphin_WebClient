@@ -14,10 +14,9 @@ import { ChartsPage } from './features/charts/pages/ChartsPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import './styles/app-shell.css';
+import { updateObservabilityMeta } from './libs/observability/observability';
 
-type Session = LoginResult & {
-  runId: string;
-};
+type Session = LoginResult;
 
 const SessionContext = createContext<Session | null>(null);
 
@@ -35,16 +34,12 @@ const NAV_LINKS = [
   { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
 
-const generateRunId = () => {
-  const iso = new Date().toISOString().slice(0, 19); // YYYY-MM-DDTHH:mm:ss
-  return iso.replace(/[-:]/g, '') + 'Z';
-};
-
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
 
   const handleLoginSuccess = (result: LoginResult) => {
-    setSession({ ...result, runId: generateRunId() });
+    updateObservabilityMeta({ runId: result.runId });
+    setSession(result);
   };
 
   const handleLogout = () => setSession(null);

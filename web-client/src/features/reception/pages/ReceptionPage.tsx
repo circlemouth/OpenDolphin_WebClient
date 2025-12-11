@@ -1,6 +1,9 @@
 import { Global } from '@emotion/react';
 import { useMemo, useState } from 'react';
 
+import { logUiState } from '../../../libs/audit/auditLogger';
+import { updateObservabilityMeta } from '../../../libs/observability/observability';
+import type { DataSourceTransition } from '../../../libs/observability/types';
 import type { BannerTone } from '../components/ToneBanner';
 import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { OrderConsole } from '../components/OrderConsole';
@@ -69,6 +72,31 @@ export function ReceptionPage({
           ? 'mock → snapshot'
           : 'mock fixtures';
 
+  const emitAudit = (
+    action: 'tone_change' | 'save' | 'config_delivery',
+    controlId: string,
+    nextState?: Partial<{ missingMaster: boolean; cacheHit: boolean; masterSource: ResolveMasterSource }>,
+  ) => {
+    const nextMissing = nextState?.missingMaster ?? missingMaster;
+    const nextCache = nextState?.cacheHit ?? cacheHit;
+    const nextSource = nextState?.masterSource ?? masterSource;
+    updateObservabilityMeta({
+      runId,
+      missingMaster: nextMissing,
+      cacheHit: nextCache,
+      dataSourceTransition: nextSource as DataSourceTransition,
+    });
+    logUiState({
+      action,
+      screen: 'reception/order-console',
+      controlId,
+      runId,
+      missingMaster: nextMissing,
+      cacheHit: nextCache,
+      dataSourceTransition: nextSource as DataSourceTransition,
+    });
+  };
+
   return (
     <>
       <Global styles={receptionStyles} />
@@ -90,10 +118,28 @@ export function ReceptionPage({
           destination={destination}
           nextAction={nextAction}
           transitionDescription={transitionDescription}
-          onMasterSourceChange={setMasterSource}
-          onToggleMissingMaster={() => setMissingMaster((prev) => !prev)}
-          onToggleCacheHit={() => setCacheHit((prev) => !prev)}
-          onMissingMasterNoteChange={setMissingMasterNote}
+          onMasterSourceChange={(value) => {
+            setMasterSource(value);
+            emitAudit('config_delivery', 'master-source', { masterSource: value });
+          }}
+          onToggleMissingMaster={() => {
+            setMissingMaster((prev) => {
+              const next = !prev;
+              emitAudit('tone_change', 'toggle-missing-master', { missingMaster: next });
+              return next;
+            });
+          }}
+          onToggleCacheHit={() => {
+            setCacheHit((prev) => {
+              const next = !prev;
+              emitAudit('tone_change', 'toggle-cache-hit', { cacheHit: next });
+              return next;
+            });
+          }}
+          onMissingMasterNoteChange={(value) => {
+            setMissingMasterNote(value);
+            emitAudit('save', 'missing-master-note');
+          }}
         />
         <section className="reception-page__meta" aria-live="polite">
           <h2>ARIA/Tone 周りの意図</h2>
