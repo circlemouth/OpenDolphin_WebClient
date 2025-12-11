@@ -14,10 +14,23 @@ const queryClient = new QueryClient({
   },
 });
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <QueryClientProvider client={queryClient}>
-      <AppRouter />
-    </QueryClientProvider>
-  </StrictMode>,
-);
+async function bootstrap() {
+  if (typeof window !== 'undefined' && import.meta.env.VITE_DISABLE_MSW !== '1') {
+    try {
+      const { startMockWorker } = await import('./mocks/browser');
+      await startMockWorker();
+    } catch (error) {
+      console.warn('[msw] bootstrap skipped', error);
+    }
+  }
+
+  createRoot(document.getElementById('root')!).render(
+    <StrictMode>
+      <QueryClientProvider client={queryClient}>
+        <AppRouter />
+      </QueryClientProvider>
+    </StrictMode>,
+  );
+}
+
+bootstrap();
