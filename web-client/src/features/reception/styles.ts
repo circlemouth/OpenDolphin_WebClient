@@ -282,9 +282,268 @@ export const receptionStyles = css`
     line-height: 1.7;
   }
 
+  .reception-page__meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+
+  .reception-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    background: #eef2ff;
+    color: #1f2937;
+    border: 1px solid rgba(37, 99, 235, 0.2);
+    font-size: 0.9rem;
+  }
+
+  .reception-search {
+    background: #ffffff;
+    border-radius: 24px;
+    padding: 1.25rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 8px 32px rgba(15, 23, 42, 0.06);
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .reception-search__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .reception-search__row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.75rem;
+  }
+
+  .reception-search__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    font-weight: 600;
+    color: #0f172a;
+    font-size: 0.92rem;
+  }
+
+  .reception-search__field input,
+  .reception-search__field select {
+    width: 100%;
+    border-radius: 12px;
+    border: 1px solid #cbd5e1;
+    padding: 0.55rem 0.75rem;
+    background: #ffffff;
+    font-size: 0.95rem;
+  }
+
+  .reception-search__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .reception-search__button {
+    padding: 0.65rem 1rem;
+    border-radius: 999px;
+    border: 1px solid #1d4ed8;
+    background: #ffffff;
+    color: #1d4ed8;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.08s ease, background 0.2s ease, color 0.2s ease;
+  }
+
+  .reception-search__button.primary {
+    background: #1d4ed8;
+    color: #ffffff;
+  }
+
+  .reception-search__button.ghost:hover {
+    background: #eef2ff;
+  }
+
+  .reception-search__button:active {
+    transform: translateY(1px);
+  }
+
+  .reception-summary {
+    margin: 0;
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .reception-status {
+    margin: 0;
+    color: #475569;
+  }
+
+  .reception-status--error {
+    color: #b91c1c;
+    font-weight: 700;
+  }
+
+  .reception-section {
+    background: #ffffff;
+    border-radius: 20px;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 10px 28px rgba(15, 23, 42, 0.06);
+    overflow: hidden;
+  }
+
+  .reception-section + .reception-section {
+    margin-top: 1rem;
+  }
+
+  .reception-section__header {
+    padding: 1rem 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(90deg, #eef2ff 0%, #ffffff 60%);
+  }
+
+  .reception-section__header h2 {
+    margin: 0;
+    color: #0f172a;
+  }
+
+  .reception-section__count {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    margin-left: 0.75rem;
+    padding: 0.35rem 0.7rem;
+    border-radius: 999px;
+    background: #f1f5f9;
+    color: #0f172a;
+    font-weight: 700;
+  }
+
+  .reception-section__toggle {
+    border: 1px solid #cbd5e1;
+    background: #ffffff;
+    color: #0f172a;
+    border-radius: 12px;
+    padding: 0.45rem 0.85rem;
+    cursor: pointer;
+  }
+
+  .reception-table__wrapper {
+    overflow-x: auto;
+  }
+
+  .reception-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 720px;
+  }
+
+  .reception-table th,
+  .reception-table td {
+    padding: 0.75rem 0.9rem;
+    border-bottom: 1px solid #e2e8f0;
+    text-align: left;
+    color: #0f172a;
+  }
+
+  .reception-table th {
+    background: #f8fafc;
+    font-size: 0.9rem;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #475569;
+  }
+
+  .reception-table tr:hover {
+    background: #f8fafc;
+  }
+
+  .reception-table__empty {
+    text-align: center;
+    color: #475569;
+  }
+
+  .reception-table__time {
+    font-weight: 700;
+  }
+
+  .reception-table__id {
+    color: #475569;
+    display: block;
+  }
+
+  .reception-table__patient strong {
+    display: block;
+  }
+
+  .reception-table__note {
+    color: #1f2937;
+  }
+
+  .reception-table__source {
+    color: #64748b;
+    font-size: 0.8rem;
+  }
+
+  .reception-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    padding: 0.25rem 0.65rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.85rem;
+  }
+
+  .reception-badge--受付中 {
+    background: #eef2ff;
+    color: #1d4ed8;
+  }
+
+  .reception-badge--診療中 {
+    background: #fff7ed;
+    color: #c2410c;
+  }
+
+  .reception-badge--会計待ち {
+    background: #fef9c3;
+    color: #92400e;
+  }
+
+  .reception-badge--会計済み {
+    background: #ecfdf5;
+    color: #047857;
+  }
+
+  .reception-badge--予約 {
+    background: #e0f2fe;
+    color: #075985;
+  }
+
+  .reception-badge--muted {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .reception-table tr:focus-visible {
+    outline: 2px solid #1d4ed8;
+    outline-offset: -2px;
+  }
+
   @media (max-width: 768px) {
     .order-console__action {
       flex: 1 1 100%;
+    }
+
+    .reception-table {
+      min-width: 640px;
     }
   }
 `;
