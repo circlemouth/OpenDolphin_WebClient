@@ -73,8 +73,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: in_progress
-        progress: 20
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-12T00:00:00.000Z
           days: 0.25
@@ -91,8 +91,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: in_progress
-        progress: 35
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-12T06:00:00.000Z
           days: 1
@@ -109,8 +109,8 @@ src:
         api:
           - /user/{facility:user}
         priority: High
-        status: in_progress
-        progress: 30
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-13T00:00:00.000Z
           days: 0.75
@@ -126,8 +126,8 @@ src:
         agent: cursor cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-13T06:00:00.000Z
           days: 0.5
@@ -144,8 +144,8 @@ src:
         agent: gemini cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-13T12:00:00.000Z
           days: 0.5
@@ -165,8 +165,8 @@ src:
           - /api01rv2/claim/outpatient/*
           - /api01rv2/appointment/outpatient/*
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-14T00:00:00.000Z
           days: 2
@@ -182,8 +182,8 @@ src:
         agent: cursor cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-15T12:00:00.000Z
           days: 1
@@ -203,8 +203,8 @@ src:
           - /orca21/medicalmodv2/outpatient
           - /api01rv2/appointment/outpatient/*
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-16T00:00:00.000Z
           days: 1.5
@@ -221,8 +221,8 @@ src:
         api:
           - /orca21/medicalmodv2/outpatient
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-17T12:00:00.000Z
           days: 0.5
@@ -258,8 +258,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-18T00:00:00.000Z
           days: 1
@@ -302,23 +302,6 @@ src:
         schedule:
           start: 2025-12-19T00:00:00.000Z
           days: 1
-      StagePreview実API検証と証跡保存.md:
-        content: |-
-          # Stage/Preview 実 API 検証と証跡保存
-
-          - `VITE_DISABLE_MSW=1` + `VITE_DEV_PROXY_TARGET` でモダナイズ版サーバーに接続し、ORCA_CERTIFICATION_ONLY.md の手順で RUN_ID 付きログを取得。
-          - HAR/trace/audit ログを `docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md` と web-client 証跡に保存。
-          - Stage/Preview の DNS/証明書失敗時は telemetry.reason を収集し、DOC_STATUS 備考に反映。
-        dependency:
-          - src/webclient_modernization_phase2/07_quality_and_ops/PlaywrightE2Eとアクセシビリティ検証.md
-        agent: gemini cli
-        api: []
-        priority: High
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2025-12-20T00:00:00.000Z
-          days: 1
       DOC_STATUS更新とワーカー報告準備.md:
         content: |-
           # DOC_STATUS 更新とワーカー報告準備
@@ -327,7 +310,7 @@ src:
           - README の Active リストへ必要リンクを追加し、証跡ログを `planning/phase2/logs/<RUN_ID>-web-client-plan.md` に追記。
           - 形式 `【ワーカー報告】実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID` を準備してマネージャーへ共有。
         dependency:
-          - src/webclient_modernization_phase2/07_quality_and_ops/StagePreview実API検証と証跡保存.md
+          - src/webclient_modernization_phase2/07_quality_and_ops/PlaywrightE2Eとアクセシビリティ検証.md
         agent: codex
         api: []
         priority: Medium

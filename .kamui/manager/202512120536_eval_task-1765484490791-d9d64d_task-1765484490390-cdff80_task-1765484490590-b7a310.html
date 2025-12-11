@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Patients編集と監査連携 評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 14px;
+        background: #f6fafb;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 20px;
+      }
+      .score-card .score {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .score-card .summary {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 5);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        margin: 8px 0 12px;
+      }
+      .indicator-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .indicator-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Patients編集と監査連携 評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task-1765484490791-d9d64d / task-1765484490390-cdff80 / task-1765484490590-b7a310（各 worktree 独立）。タスク概要: 患者一覧・編集を `/orca12/patientmodv2/outpatient` へ接続し、保存時 auditEvent+runId を送信、missingMaster/fallbackUsed で保存ブロック＆警告、Reception フィルタ復元と URL/localStorage 同期を実装。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>gemini cli / task-1765484490791-d9d64d</h2>
+          <div class="score">513 / 600 🏆🥇</div>
+          <div class="summary">fallbackUsed まで含めた保存ブロックとトースト、runId 自動採番・伝播、Reception 連携を実装。未テストだが実装完了度が最も高い。</div>
+        </div>
+        <div class="score-card">
+          <h2>gemini cli / task-1765484490590-b7a310</h2>
+          <div class="score">478 / 600 🥈</div>
+          <div class="summary">runId 付与と Reception 復元、mutation 応答メタの反映を追加。保存ブロックのトースト文言強化や auditEvent 詳細が未整備。</div>
+        </div>
+        <div class="score-card">
+          <h2>gemini cli / task-1765484490390-cdff80</h2>
+          <div class="score">429 / 600 🥉</div>
+          <div class="summary">エンドポイント切替と保存前 audit ログ追加。fallbackUsed 伝搬や runId 採番・監査メタ同期が不足し、要件適合度は相対的に低い。</div>
+        </div>
+      </section>
+
+      <section>
+        <h3 style="margin: 12px 0 6px; font-size: 18px;">六角形チャート（6指標）</h3>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <div>
+            <div class="hex-chart" data-labels="要件適合,コード品質,安定性,UX/アクセシビリティ,テスト・証跡,コミット粒度" data-scores="95,90,88,90,65,85"></div>
+            <ul class="indicator-list">
+              <li>要件適合 95: fallbackUsed を含む保存ブロック・警告、auditEvent/runId 同梱、Reception 復元が揃う</li>
+              <li>コード品質 90: ストレージ読み出しを関数化し再利用、状態統合の重複減</li>
+              <li>安定性 88: missingMaster/fallbackUsed を lastMeta へ集約し非同期差分を吸収</li>
+              <li>UX/アクセシビリティ 90: aria-live=assertive 切替・トースト文言強化・StatusBadge 追加</li>
+              <li>テスト・証跡 65: テスト・lint 実行記録なし</li>
+              <li>コミット粒度 85: 単一コミットで完結し変更範囲が明瞭</li>
+            </ul>
+          </div>
+          <div>
+            <div class="hex-chart" data-labels="要件適合,コード品質,安定性,UX/アクセシビリティ,テスト・証跡,コミット粒度" data-scores="88,84,82,84,60,80"></div>
+            <ul class="indicator-list">
+              <li>要件適合 88: runId 送信と Reception 復元は実装、保存ブロックの警告/aria 設定が弱い</li>
+              <li>コード品質 84: 既存構造に沿った最小差分、メタ更新の重複が一部残存</li>
+              <li>安定性 82: lastMeta 更新で fallbackUsed を保持するが blocking 判定の冗長性あり</li>
+              <li>UX/アクセシビリティ 84: フィルタ復元はユーザ便益大、warning トーンの明示が未強化</li>
+              <li>テスト・証跡 60: 簡易ログ追加のみで動作検証未記載</li>
+              <li>コミット粒度 80: 1コミットだが docs 追加と実装が混在</li>
+            </ul>
+          </div>
+          <div>
+            <div class="hex-chart" data-labels="要件適合,コード品質,安定性,UX/アクセシビリティ,テスト・証跡,コミット粒度" data-scores="78,76,74,76,55,70"></div>
+            <ul class="indicator-list">
+              <li>要件適合 78: エンドポイント切替と pre-save audit は実施、fallbackUsed 連携と runId 採番が不足</li>
+              <li>コード品質 76: 走査ロジック簡素化、observe meta 未更新など抜けあり</li>
+              <li>安定性 74: API 失敗時のフォールバック削除で再試行経路なし</li>
+              <li>UX/アクセシビリティ 76: Reception 復元と aria-live 保存フォーム追加、警告メッセージは簡易</li>
+              <li>テスト・証跡 55: テスト・ログなし</li>
+              <li>コミット粒度 70: 単一コミットで変更点の粒度は適切</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <table class="monitor-report" aria-label="ブランチ別コミットサマリ">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765484490791-d9d64d</th>
+            <th>Agent task-1765484490590-b7a310</th>
+            <th>Agent task-1765484490390-cdff80</th>
+            <th>Agent N/A</th>
+            <th>Agent N/A</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-12 05:36</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">commit e5864802 feat: patients audit and reception filter sync</span>
+              </div>
+              <div class="snapshot-summary">/orca12/patientmodv2/outpatient への保存時 auditEvent(runId付)送信、missingMaster+fallbackUsed ブロックと警告トースト、Reception フィルタ読み書き同期。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>web-client/src/features/patients/PatientsPage.tsx: fallbackUsed を含む blocking 判定、StatusBadge 追加、reception-filter-state との同期、toneLive assertive 切替
+web-client/src/features/patients/api.ts: runId を generateRunId で採番し fetch/save 両方に付与、auditEvent に patientId/operation/timestamp を含め送信</pre>
+              </details>
+              <div class="agent-meta"><span class="status-badge">成果物リンク</span><span class="agent-label">worktree: .worktrees/task-1765484490791-d9d64d</span></div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">commit 62b7af4b Patients: runId送信と受付フィルタ復元</span>
+              </div>
+              <div class="snapshot-summary">Reception フィルタ復元、runId を患者取得・保存に付与し mutation 応答メタを lastMeta に保持。簡易ログ追加。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>web-client/src/features/patients/PatientsPage.tsx: reception-filter-state 読み出し、queryKey に runId を含め再取得、mutation 結果の fallbackUsed/missingMaster を lastMeta へ保存
+web-client/src/features/patients/api.ts: PatientSearchParams に runId 追加し payload へ転記
+docs/web-client/planning/phase2/logs/20251211T202313Z-patients-audit.md: RUN_ID=20251211T202313Z の実施ログ</pre>
+              </details>
+              <div class="agent-meta"><span class="status-badge">成果物リンク</span><span class="agent-label">worktree: .worktrees/task-1765484490590-b7a310</span></div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">commit 3fb5957f feat(patients): connect outpatient endpoint and audit blocking</span>
+              </div>
+              <div class="snapshot-summary">エンドポイントを本番 `/orca12/patientmodv2/outpatient` の単一路径に固定し、保存前 audit ログを追加。Reception 用 localStorage を保存。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>web-client/src/features/patients/api.ts: patientCandidates 配列を削除し単一エンドポイント化、runId を payload に添付するが採番なし
+web-client/src/features/patients/PatientsPage.tsx: reception-filter-state を保存/読込、保存前 logAuditEvent を追加、aria-live 切替を保存フォームへ適用</pre>
+              </details>
+              <div class="agent-meta"><span class="status-badge">成果物リンク</span><span class="agent-label">worktree: .worktrees/task-1765484490390-cdff80</span></div>
+            </td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">未割当</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">未割当</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      function drawRadar(el) {
+        const scores = (el.dataset.scores || '').split(',').map((v) => Number(v.trim()));
+        const labels = (el.dataset.labels || '').split(',');
+        const size = 180;
+        const R = 70;
+        const cx = size / 2;
+        const cy = size / 2;
+        const toPoint = (score, idx, radius = R) => {
+          const angle = -Math.PI / 2 + (idx * 2 * Math.PI) / 6;
+          const r = (score / 100) * radius;
+          return [cx + r * Math.cos(angle), cy + r * Math.sin(angle)];
+        };
+        const grid = [];
+        for (let level = 0.2; level <= 1.0; level += 0.2) {
+          const pts = Array.from({ length: 6 }, (_, i) => toPoint(100 * level, i)).map((p) => p.join(',')).join(' ');
+          grid.push(`<polygon points="${pts}" fill="none" stroke="#d1dde3" stroke-width="1" />`);
+        }
+        const poly = scores.map((s, i) => toPoint(s, i).join(',')).join(' ');
+        const axes = labels.map((lbl, i) => {
+          const [x, y] = toPoint(100, i, R + 12);
+          const anchor = x >= cx ? 'start' : 'end';
+          return `<text x="${x}" y="${y}" text-anchor="${anchor}" font-size="10" fill="#2c3a40">${lbl} ${scores[i]}点</text>`;
+        });
+        el.innerHTML = `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" role="img" aria-label="六角形チャート">
+          ${grid.join('')}
+          <polygon points="${poly}" fill="rgba(46,164,79,0.2)" stroke="#2ea44f" stroke-width="2" />
+          ${axes.join('')}
+        </svg>`;
+      }
+      document.addEventListener('DOMContentLoaded', () => {
+        document.querySelectorAll('.hex-chart').forEach(drawRadar);
+      });
+    </script>
+  </body>
+</html>
