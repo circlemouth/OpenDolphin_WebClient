@@ -65,8 +65,8 @@ export function MissingMasterBadge({ missingMaster, runId }: MissingMasterBadgeP
       tone={missingMaster ? 'warning' : 'success'}
       description={
         missingMaster
-          ? 'マスターデータ欠損の警告。解消するまで再送を繰り返します。'
-          : 'マスタ取得済み。ORCA 送信結果と tone=server を保持。'
+          ? 'tone=server ｜ マスタ未取得のため ORCA 再送を停止'
+          : 'tone=info ｜ マスタ取得済み、再送を継続'
       }
       ariaLive={missingMaster ? 'assertive' : 'polite'}
       runId={runId}
@@ -85,7 +85,7 @@ export function CacheHitBadge({ cacheHit, runId }: CacheHitBadgeProps) {
       label="cacheHit"
       value={cacheHit ? 'true' : 'false'}
       tone={cacheHit ? 'success' : 'warning'}
-      description={cacheHit ? 'キャッシュ命中: 再取得なし' : '再フェッチが必要です。'}
+      description={cacheHit ? 'cacheHit=true ｜ 再取得不要で ORCA 送信準備完了' : 'cacheHit=false ｜ サーバー再取得または fallback が必要'}
       ariaLive="polite"
       runId={runId}
     />

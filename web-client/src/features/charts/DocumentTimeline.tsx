@@ -4,15 +4,14 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import type { ReceptionEntry } from '../reception/api';
 
-const TIMELINE_ENTRIES = [
-  { time: '09:05', title: '受付 → Charts 移動', detail: '受付で選択した患者ID／保険モードを受け取り開始。' },
-  { time: '09:06', title: '文書履歴取得', detail: 'DocumentTimeline が `medicalrecord` を再描画。' },
-  { time: '09:07', title: 'ORCA Queue 追加', detail: '診療終了後、ORCA queue を生成して再送準備。' },
-  { time: '09:08', title: 'missingMaster チェック', detail: 'missingMaster=true を検知し tone=server バナーを表示。' },
-];
+export interface DocumentTimelineProps {
+  entries?: ReceptionEntry[];
+  auditEvent?: Record<string, unknown>;
+}
 
-export function DocumentTimeline() {
+export function DocumentTimeline({ entries = [], auditEvent }: DocumentTimelineProps) {
   const { flags } = useAuthService();
   const tonePayload: ChartTonePayload = {
     missingMaster: flags.missingMaster,
@@ -22,23 +21,34 @@ export function DocumentTimeline() {
 
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
-  const entryList = useMemo(
-    () =>
-      TIMELINE_ENTRIES.map((entry) => (
-        <article
-          key={entry.time}
-          className={`document-timeline__entry${flags.missingMaster && entry.title.includes('missingMaster') ? ' document-timeline__entry--highlight' : ''}`}
-          data-run-id={flags.runId}
-        >
+  const entryList = useMemo(() => {
+    const source = entries.length > 0 ? entries : [];
+    if (source.length === 0) {
+      return (
+        <article className="document-timeline__entry" data-run-id={flags.runId}>
           <header>
-            <span className="document-timeline__entry-time">{entry.time}</span>
-            <strong>{entry.title}</strong>
+            <span className="document-timeline__entry-time">--:--</span>
+            <strong>外来データ未取得</strong>
           </header>
-          <p>{entry.detail}</p>
+          <p>外来 API 応答を待機しています。受付画面で再取得するか、接続設定を確認してください。</p>
         </article>
-      )),
-    [flags.missingMaster, flags.runId],
-  );
+      );
+    }
+
+    return source.slice(0, 6).map((entry) => (
+      <article
+        key={`${entry.id}-${entry.appointmentTime ?? entry.patientId ?? entry.name ?? ''}`}
+        className={`document-timeline__entry${flags.missingMaster ? ' document-timeline__entry--highlight' : ''}`}
+        data-run-id={flags.runId}
+      >
+        <header>
+          <span className="document-timeline__entry-time">{entry.appointmentTime ?? '---'}</span>
+          <strong>{entry.name ?? '患者未登録'}（{entry.patientId ?? entry.appointmentId ?? 'ID不明'}）</strong>
+        </header>
+        <p>{entry.note ?? 'メモなし'} ｜ 状態: {entry.status} ｜ 診療科: {entry.department ?? '―'}</p>
+      </article>
+    ));
+  }, [entries, flags.missingMaster, flags.runId]);
 
   return (
     <section
@@ -81,6 +91,16 @@ export function DocumentTimeline() {
             <strong>{transitionMeta.label}</strong>
             <p>{transitionMeta.description}</p>
           </div>
+          {auditEvent && (
+            <div className="document-timeline__audit" role="alert" aria-live="assertive">
+              <strong>auditEvent</strong>
+              <p className="document-timeline__audit-text">
+                {Object.entries(auditEvent)
+                  .map(([key, value]) => `${key}: ${String(value)}`)
+                  .join(' ｜ ')}
+              </p>
+            </div>
+          )}
         </div>
       </div>
     </section>
