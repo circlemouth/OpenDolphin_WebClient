@@ -1,5 +1,6 @@
 import { useState } from 'react';
 
+import { logUiState } from '../../libs/audit/auditLogger';
 import { useAuthService, type DataSourceTransition } from './authService';
 
 const TRANSITIONS: DataSourceTransition[] = ['mock', 'snapshot', 'server', 'fallback'];
@@ -7,6 +8,61 @@ const TRANSITIONS: DataSourceTransition[] = ['mock', 'snapshot', 'server', 'fall
 export function AuthServiceControls() {
   const { flags, setMissingMaster, setCacheHit, setDataSourceTransition, bumpRunId } = useAuthService();
   const [draftRunId, setDraftRunId] = useState(flags.runId);
+
+  const handleToggleMissingMaster = () => {
+    const next = !flags.missingMaster;
+    setMissingMaster(next);
+    logUiState({
+      action: 'tone_change',
+      screen: 'charts/auth-service-controls',
+      controlId: 'toggle-missing-master',
+      missingMaster: next,
+      cacheHit: flags.cacheHit,
+      dataSourceTransition: flags.dataSourceTransition,
+      runId: flags.runId,
+    });
+  };
+
+  const handleToggleCacheHit = () => {
+    const next = !flags.cacheHit;
+    setCacheHit(next);
+    logUiState({
+      action: 'tone_change',
+      screen: 'charts/auth-service-controls',
+      controlId: 'toggle-cache-hit',
+      missingMaster: flags.missingMaster,
+      cacheHit: next,
+      dataSourceTransition: flags.dataSourceTransition,
+      runId: flags.runId,
+    });
+  };
+
+  const handleTransitionChange = (value: DataSourceTransition) => {
+    setDataSourceTransition(value);
+    logUiState({
+      action: 'config_delivery',
+      screen: 'charts/auth-service-controls',
+      controlId: 'transition-select',
+      dataSourceTransition: value,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      runId: flags.runId,
+    });
+  };
+
+  const handleRunIdBlur = () => {
+    const nextRunId = draftRunId || flags.runId;
+    bumpRunId(nextRunId);
+    logUiState({
+      action: 'config_delivery',
+      screen: 'charts/auth-service-controls',
+      controlId: 'run-id-input',
+      runId: nextRunId,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      dataSourceTransition: flags.dataSourceTransition,
+    });
+  };
 
   return (
     <section className="auth-service-controls" aria-live="polite" aria-atomic="false">
@@ -19,14 +75,14 @@ export function AuthServiceControls() {
         <button
           type="button"
           className="auth-service-controls__toggle"
-          onClick={() => setMissingMaster(!flags.missingMaster)}
+          onClick={handleToggleMissingMaster}
         >
           missingMaster: {flags.missingMaster ? 'true' : 'false'}
         </button>
         <button
           type="button"
           className="auth-service-controls__toggle"
-          onClick={() => setCacheHit(!flags.cacheHit)}
+          onClick={handleToggleCacheHit}
         >
           cacheHit: {flags.cacheHit ? 'true' : 'false'}
         </button>
@@ -35,7 +91,7 @@ export function AuthServiceControls() {
           <select
             id="transition-select"
             value={flags.dataSourceTransition}
-            onChange={(event) => setDataSourceTransition(event.target.value as DataSourceTransition)}
+            onChange={(event) => handleTransitionChange(event.target.value as DataSourceTransition)}
           >
             {TRANSITIONS.map((value) => (
               <option key={value} value={value}>
@@ -50,7 +106,7 @@ export function AuthServiceControls() {
             id="run-id-input"
             value={draftRunId}
             onChange={(event) => setDraftRunId(event.target.value)}
-            onBlur={() => bumpRunId(draftRunId || flags.runId)}
+            onBlur={handleRunIdBlur}
           />
         </label>
       </div>

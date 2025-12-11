@@ -9,16 +9,18 @@ import {
   type DataSourceTransition,
   type OutpatientFunnelRecord,
 } from '../../libs/telemetry/telemetryClient';
+import { logUiState } from '../../libs/audit/auditLogger';
+import { updateObservabilityMeta } from '../../libs/observability/observability';
 import { handleOutpatientFlags, getResolveMasterSource, type ResolveMasterSource } from '../charts/orchestration';
 import { ResolveMasterBadge } from '../reception/components/ResolveMasterBadge';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { receptionStyles } from '../reception/styles';
 import { CacheHitBadge, MissingMasterBadge } from '../shared/StatusBadge';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
-import { useAuthService } from '../charts/authService';
 
 type FlagEnvelope = {
   runId?: string;
+  traceId?: string;
   cacheHit?: boolean;
   missingMaster?: boolean;
   dataSourceTransition?: DataSourceTransition;
@@ -26,6 +28,7 @@ type FlagEnvelope = {
 
 type ResolvedFlags = {
   runId: string;
+  traceId?: string;
   cacheHit: boolean;
   missingMaster: boolean;
   dataSourceTransition: DataSourceTransition;
@@ -39,15 +42,16 @@ const FALLBACK_RUN_ID =
 
 const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFlags => ({
   runId: claim.runId ?? medical.runId ?? FALLBACK_RUN_ID,
+  traceId: claim.traceId ?? medical.traceId,
   cacheHit: claim.cacheHit ?? medical.cacheHit ?? false,
   missingMaster: claim.missingMaster ?? medical.missingMaster ?? true,
   dataSourceTransition: claim.dataSourceTransition ?? medical.dataSourceTransition ?? 'server',
 });
 
 export function OutpatientMockPage() {
-  const { replaceFlags, bumpRunId } = useAuthService();
   const [flags, setFlags] = useState<ResolvedFlags>({
     runId: FALLBACK_RUN_ID,
+    traceId: undefined,
     cacheHit: false,
     missingMaster: true,
     dataSourceTransition: 'snapshot',
@@ -72,10 +76,13 @@ export function OutpatientMockPage() {
 
         const merged = toResolvedFlags(claimJson, medicalJson);
         setFlags(merged);
-        replaceFlags(merged);
-        if (merged.runId) {
-          bumpRunId(merged.runId);
-        }
+        updateObservabilityMeta({
+          runId: merged.runId,
+          traceId: merged.traceId,
+          cacheHit: merged.cacheHit,
+          missingMaster: merged.missingMaster,
+          dataSourceTransition: merged.dataSourceTransition,
+        });
 
         const resolveRecord = recordOutpatientFunnel('resolve_master', merged);
         const orchestrationRecord = handleOutpatientFlags(merged);
@@ -83,6 +90,16 @@ export function OutpatientMockPage() {
 
         const funnelSnapshot = getOutpatientFunnelLog();
         setTelemetryLog(funnelSnapshot);
+        logUiState({
+          action: 'tone_change',
+          screen: 'outpatient-mock',
+          controlId: 'hydrate-flags',
+          dataSourceTransition: merged.dataSourceTransition,
+          cacheHit: merged.cacheHit,
+          missingMaster: merged.missingMaster,
+          runId: merged.runId,
+          traceId: merged.traceId,
+        });
 
         if (typeof window !== 'undefined') {
           (window as any).__OUTPATIENT_FUNNEL__ = funnelSnapshot;
