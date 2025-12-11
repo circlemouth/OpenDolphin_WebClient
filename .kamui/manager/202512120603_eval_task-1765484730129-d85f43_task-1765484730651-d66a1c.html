@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>MSWシナリオとMockフラグUI刷新 評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fbfc;
+        border-radius: 10px;
+      }
+      .score-card h2 {
+        margin: 0 0 4px;
+        font-size: 18px;
+      }
+      .score-card .total {
+        font-size: 22px;
+        font-weight: 800;
+        margin: 4px 0 12px;
+      }
+      .score-card .badge {
+        display: inline-block;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        padding: 4px 8px;
+        border-radius: 6px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      .radar-wrapper {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+      .radar svg { flex-shrink: 0; }
+      .radar-list { margin: 0; padding-left: 16px; font-size: 12px; }
+      .radar-list li { margin: 2px 0; }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .delta-list { margin: 8px 0 0; padding-left: 16px; font-size: 12px; }
+      .delta-list li { margin: 2px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">MSWシナリオとMockフラグUI刷新 評価レポート</h1>
+        <p class="monitor-description">
+          タスク: webclient modernized gantt 20251211 / MSWシナリオとMockフラグUI刷新。監視対象ブランチ: task-1765484730129-d85f43, task-1765484730651-d66a1c（task-1765484730323-277b97 は差分無しのため評価対象外）。
+        </p>
+      </header>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <h2>Agent task-1765484730651-d66a1c</h2>
+          <div class="total">🥇 511 / 600</div>
+          <div class="badge">最新コミット 97ec9342</div>
+          <div class="radar-wrapper">
+            <div class="radar">
+              <svg width="210" height="200" viewBox="0 0 200 190" aria-label="六角形チャート">
+                <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                <polygon points="100,28 160.7,64.8 158.9,134 100,173.6 51.5,128 40.4,65.6" fill="rgba(46, 164, 79, 0.22)" stroke="#2ea44f" stroke-width="2" />
+              </svg>
+            </div>
+            <ul class="radar-list">
+              <li>要件適合 90点</li>
+              <li>コード品質 88点</li>
+              <li>UX/操作性 85点</li>
+              <li>再利用性 92点</li>
+              <li>テスト網羅 70点</li>
+              <li>堅牢性 86点</li>
+            </ul>
+          </div>
+        </div>
+        <div class="score-card">
+          <h2>Agent task-1765484730129-d85f43</h2>
+          <div class="total">🥉 420 / 600</div>
+          <div class="badge">最新コミット 85c1fe83</div>
+          <div class="radar-wrapper">
+            <div class="radar">
+              <svg width="210" height="200" viewBox="0 0 200 190" aria-label="六角形チャート">
+                <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                <polygon points="100,44 152,70 155.4,132 100,152 58.4,124 51.5,72" fill="rgba(59, 130, 246, 0.18)" stroke="#3b82f6" stroke-width="2" />
+              </svg>
+            </div>
+            <ul class="radar-list">
+              <li>要件適合 70点</li>
+              <li>コード品質 75点</li>
+              <li>UX/操作性 80点</li>
+              <li>再利用性 65点</li>
+              <li>テスト網羅 60点</li>
+              <li>堅牢性 70点</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765484730651-d66a1c</th>
+            <th>Agent task-1765484730129-d85f43</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-12 06:03</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">MSW フィクスチャを fixtures/outpatient へ集約し、handlers/outpatient で Reception / Charts / Patients へ共通給電。VITE_DISABLE_MSW=1 では起動を抑止。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">変更サマリ / 主要ファイル</summary>
+                <ul class="delta-list">
+                  <li>web-client/src/features/outpatient/OutpatientMockPage.tsx: シナリオ選択とフラグ上書きをヘッダに反映、MSW無効時は UI を封印し警告を表示。</li>
+                  <li>web-client/src/main.tsx & mocks/browser.ts: VITE_DISABLE_MSW=1 の場合は worker 起動をスキップし、msw 起動時にシナリオ操作 API を window に公開。</li>
+                  <li>web-client/src/mocks/fixtures/outpatient.ts: reception/medical/patient のサンプルデータと scenario/state 管理、trace 付き JSON ビルダを提供。</li>
+                  <li>web-client/src/mocks/handlers/outpatient.ts: 8 エンドポイントを共通 scenario で応答し、ヘッダ or クエリで scenario/flags を切替。</li>
+                </ul>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価ポイント</summary>
+                <ul class="delta-list">
+                  <li>要件適合: MSW 有効/無効切替、Reception/Charts/Patients のフィクスチャ再利用を実現。</li>
+                  <li>UX/緻密性: UI 文言で MSW 状態を明示し、override ごとに即座に再フェッチ。telemetry リストは空時の案内がない点は軽微な惜しさ。</li>
+                  <li>堅牢性: onUnhandledRequest=bypass で実 API への混入を防止。override リセット/再読み込み時に funnel をクリアし、観測メタを同期。</li>
+                  <li>テスト: 追加の自動テストなし。Playwright 依存の挙動変化を担保する e2e 更新が未実施。</li>
+                </ul>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">懸念・改善余地</summary>
+                <ul class="delta-list">
+                  <li>telemetry 空状態の UX が無く、初回未取得時に無反応に見える。</li>
+                  <li>override に fallbackUsed や runId を渡す術が UI に無い（ハンドラは対応）。</li>
+                  <li>テスト未更新のため regression リスクが残存。</li>
+                </ul>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">OutpatientMock UI を全面刷新し telemetry を画面表示。MSW 無効時の警告とシナリオ封印を実装。fixtures で Reception/Patients のダミーを提供。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">変更サマリ / 主要ファイル</summary>
+                <ul class="delta-list">
+                  <li>web-client/src/features/outpatient/OutpatientMockPage.tsx: scenario 選択・manual flags・dataSourceTransition ラジオ・telemetry log を実装。</li>
+                  <li>web-client/src/mocks/outpatientFixtures.ts: flag シナリオと Reception/Patients サンプルデータを追加。</li>
+                  <li>web-client/src/features/reception/api.ts / patients/api.ts: API レスポンスに観測メタを正規化し、データ欠落時にモックサンプルを返すよう修正。</li>
+                  <li>tests/e2e/outpatient-*.spec.ts: 新 UI 文言に合わせ軽微更新。</li>
+                </ul>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価ポイント</summary>
+                <ul class="delta-list">
+                  <li>UX: MSW 無効時の警告とボタン無効化を導入。telemetry funnel 表示で可視性向上。</li>
+                  <li>再利用性: fixtures を用意し Reception/Patients にフォールバック供給。ただし MSW ハンドラ側への統合が無く、サーバー経路とは分離。</li>
+                  <li>堅牢性: hydrateFromApi で実 API が 500 の場合でもローディング解除するなど最低限の例外対応を実施。</li>
+                  <li>テスト: e2e を最小限修正したのみで、新シナリオ/UI の網羅テストは未追加。</li>
+                </ul>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">懸念・改善余地</summary>
+                <ul class="delta-list">
+                  <li>MSW シナリオを実際のハンドラに連動させておらず、UI 操作とバックエンド挙動が乖離。</li>
+                  <li>telemetry ログを空にリセットするのみで、resolve/charts の時系列検証を自動化する仕組みが不足。</li>
+                  <li>fixtures はクライアントフォールバック専用で、データソース間の一貫性検証に未対応。</li>
+                </ul>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="monitor-description" style="margin-top:16px;">評価マッピング: 600点満点（6指標×100）。🏆>=560 / 🥇>=500 / 🥈>=430 / 🥉>=360 / それ未満は❌。</p>
+      <p class="monitor-description">成果物リンク: <code>branch task/task-1765484730651-d66a1c</code> ・ <code>branch task/task-1765484730129-d85f43</code>（同リポジトリ内別ワークツリー）。</p>
+    </div>
+  </body>
+</html>
