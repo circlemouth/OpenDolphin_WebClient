@@ -1,0 +1,306 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-strip {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        margin: 10px 0 24px;
+      }
+      .score-card {
+        background: linear-gradient(135deg, #dfe9f3, #e8f3ff);
+        border: 1px solid #c4d3d7;
+        padding: 16px 18px;
+        border-radius: 12px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 700;
+        font-size: 20px;
+      }
+      .score-card small {
+        display: block;
+        font-size: 12px;
+        font-weight: 500;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .hex-chart {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin: 12px 0 8px;
+      }
+      .hex {
+        width: 110px;
+        height: 64px;
+        background: #eef3f7;
+        border: 1px solid #c4d3d7;
+        clip-path: polygon(25% 0%, 75% 0%, 100% 50%, 75% 100%, 25% 100%, 0% 50%);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        font-size: 11px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .hex span {
+        font-size: 10px;
+        font-weight: 500;
+        color: #3a4b53;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .findings {
+        margin-top: 6px;
+        padding-left: 16px;
+      }
+      .findings li {
+        margin-bottom: 4px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765409347920-62401a と task/task-1765409348121-dcaa29（双方同一コミット 7b6c3a57）。ORCA prod bridge plan: ルーティング設定と API 仕様調査の成果物を比較評価。</p>
+      </header>
+      <div class="score-strip">
+        <div class="score-card">🥈 488 / 600 <small>codex / task-1765409347920-62401a</small></div>
+        <div class="score-card">🥈 488 / 600 <small>codex / task-1765409348121-dcaa29</small></div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1765409347920-62401a</th>
+            <th>codex task-1765409348121-dcaa29</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 08:37 JST</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了判定</span>
+                <span class="agent-label">ルーティング/APIギャップ調査ログと HAR 証跡を追加。コード修正は型定義と未使用 import の整理に留まる。</span>
+              </div>
+              <div class="hex-chart">
+                <div class="hex">コード品質<br><strong>78</strong><span>型定義微修正のみ</span></div>
+                <div class="hex">緻密性<br><strong>85</strong><span>ルート/ベースパスの突合</span></div>
+                <div class="hex">証跡再現性<br><strong>92</strong><span>HAR+ログ保存</span></div>
+                <div class="hex">影響分析<br><strong>70</strong><span>実装差分の整理不足</span></div>
+                <div class="hex">ドキュメント<br><strong>95</strong><span>詳細な設計/ログ</span></div>
+                <div class="hex">テスト充足<br><strong>68</strong><span>自動テスト無し</span></div>
+              </div>
+              <ul class="findings">
+                <li>調査ログで `/api01rv2/acceptlstv2` 404 の根因を「未実装」と特定。context-root=`/openDolphin` と REST パス `/resources` を明示。</li>
+                <li>Vite プロキシと docker-compose ヘルスチェック経路を照合し、プロキシ設定の問題ではないと結論。</li>
+                <li>ORCA API マトリクスとの不一致（`/api01rv2/acceptlstv2` 未実装、`/orca21/medicalmodv2/outpatient` パス差異）を列挙。</li>
+                <li>HAR で実 API 呼び出しを保存（200/415/401 3 ケース）。`userName`/`Content-Type` 欠落に起因する 415 を検知したが、修正コミットは未反映。</li>
+                <li>コード変更は `flagged-mock-plugin.ts` の型ローカル定義化と `PatientsTab.tsx` の未使用 import 削除のみで、実動作の改善はなし。</li>
+              </ul>
+              <details>
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>コミット列 (origin/master..task):
+7b6c3a57 Merge branch 'task/task-1765405450806-0f0065'
+25d87d87 Update tasks state cache
+ba87928a DOC_STATUS に API 使用インベントリ追記
+d739cdc5 API usage inventory run (HAR 取得)
+9678c55a Merge branch 'task/task-1765378287621-bf7219'
+7f3b0efa chore: update kamui task state
+3be9d8df ORCA routing/API spec gap 調査ログ追加
+173d9004 Merge branch 'task/task-1765375729794-dbaed4'
+887657b0 future web client design summary
+
+主要差分 (origin/master...branch):
+- docs/server-modernization/phase2/operations/logs/20251210T145333Z-routing-and-api-spec.md
+  ベースパス/リソース登録/ORCA API マトリクス差分の整理。
+- docs/server-modernization/phase2/operations/logs/20251210T222542Z-api-usage.md と HAR2本
+  MSW 無効・Vite proxy 経路の実呼び出し証跡を保存。
+- docs/web-client/architecture/future-web-client-design.md
+  次期クライアント IA / tone / telemetry 方針のまとめ。
+- web-client/plugins/flagged-mock-plugin.ts
+  NextHandleFunction をローカル型で定義し connect 依存を削減。
+- web-client/src/features/charts/PatientsTab.tsx
+  未使用 useMemo import を削除。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了判定</span>
+                <span class="agent-label">ブランチ内容は左列と同一（コミット 7b6c3a57 に一致）。評価結果も同じ。</span>
+              </div>
+              <div class="hex-chart">
+                <div class="hex">コード品質<br><strong>78</strong><span>型定義微修正のみ</span></div>
+                <div class="hex">緻密性<br><strong>85</strong><span>ルート/ベースパスの突合</span></div>
+                <div class="hex">証跡再現性<br><strong>92</strong><span>HAR+ログ保存</span></div>
+                <div class="hex">影響分析<br><strong>70</strong><span>実装差分の整理不足</span></div>
+                <div class="hex">ドキュメント<br><strong>95</strong><span>詳細な設計/ログ</span></div>
+                <div class="hex">テスト充足<br><strong>68</strong><span>自動テスト無し</span></div>
+              </div>
+              <ul class="findings">
+                <li>左列と同一差分を保持。タスク重複のため別途の成果差異なし。</li>
+                <li>ORCA API 実装ギャップ指摘は的確だが、API_STATUS などハブ文書への反映は未完了。</li>
+                <li>プロキシ経路の差分洗い出し済みだが、bridge スクリプトのデフォルト `/api/` 二重付与修正は未コミット。</li>
+              </ul>
+              <details>
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>このブランチは task/task-1765409347920-62401a と HEAD が同一のため、コミット/差分内容も同じです。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
