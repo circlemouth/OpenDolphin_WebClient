@@ -64,6 +64,183 @@ export const chartsStyles = css`
     box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
   }
 
+  .charts-card--actions {
+    position: relative;
+    overflow: hidden;
+  }
+
+  .charts-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .charts-actions--locked {
+    border-left: 4px solid #1d4ed8;
+  }
+
+  .charts-actions__header h2 {
+    margin: 0.1rem 0 0.2rem;
+    font-size: 1.25rem;
+  }
+
+  .charts-actions__kicker {
+    margin: 0;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    font-size: 0.78rem;
+    color: #64748b;
+  }
+
+  .charts-actions__status {
+    margin: 0.15rem 0 0;
+    color: #0f172a;
+    font-weight: 600;
+  }
+
+  .charts-actions__meta {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .charts-actions__pill {
+    background: #eef2ff;
+    border: 1px solid rgba(37, 99, 235, 0.25);
+    color: #1d4ed8;
+    padding: 0.35rem 0.75rem;
+    border-radius: 999px;
+    font-size: 0.9rem;
+  }
+
+  .charts-actions__controls {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .charts-actions__button {
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    background: #eff6ff;
+    padding: 0.7rem 0.8rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #0f172a;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+
+  .charts-actions__button:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+    background: #e2e8f0;
+  }
+
+  .charts-actions__button--primary {
+    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 10px 24px rgba(79, 70, 229, 0.25);
+  }
+
+  .charts-actions__button--ghost {
+    background: #fff7ed;
+    border-color: rgba(234, 88, 12, 0.35);
+    color: #9a3412;
+  }
+
+  .charts-actions__button--unlock {
+    background: #ecfdf5;
+    border-color: rgba(16, 185, 129, 0.45);
+    color: #065f46;
+  }
+
+  .charts-actions__skeleton {
+    background: #f8fafc;
+    border: 1px dashed rgba(148, 163, 184, 0.6);
+    border-radius: 14px;
+    padding: 0.9rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.45rem;
+    animation: chartsPulse 1.4s ease-in-out infinite;
+  }
+
+  .charts-actions__skeleton-bar {
+    height: 12px;
+    background: linear-gradient(90deg, #e2e8f0 0%, #cbd5f5 50%, #e2e8f0 100%);
+    border-radius: 999px;
+  }
+
+  .charts-actions__skeleton-bar--short {
+    width: 55%;
+  }
+
+  @keyframes chartsPulse {
+    0% {
+      opacity: 0.7;
+    }
+    50% {
+      opacity: 1;
+    }
+    100% {
+      opacity: 0.7;
+    }
+  }
+
+  .charts-actions__toast {
+    border-radius: 14px;
+    padding: 0.75rem 0.85rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .charts-actions__toast p {
+    margin: 0.2rem 0 0;
+  }
+
+  .charts-actions__toast--success {
+    background: #ecfdf3;
+    border: 1px solid #22c55e;
+    color: #065f46;
+  }
+
+  .charts-actions__toast--warning {
+    background: #fffbeb;
+    border: 1px solid #fbbf24;
+    color: #92400e;
+  }
+
+  .charts-actions__toast--error {
+    background: #fef2f2;
+    border: 1px solid #ef4444;
+    color: #991b1b;
+  }
+
+  .charts-actions__toast--info {
+    background: #eff6ff;
+    border: 1px solid #60a5fa;
+    color: #1d4ed8;
+  }
+
+  .charts-actions__retry {
+    border: none;
+    background: #1d4ed8;
+    color: #fff;
+    border-radius: 10px;
+    padding: 0.45rem 0.7rem;
+    cursor: pointer;
+  }
+
+  .charts-actions__guard {
+    margin: 0;
+    color: #b45309;
+    font-weight: 700;
+  }
+
   .auth-service-controls {
     display: flex;
     flex-direction: column;
