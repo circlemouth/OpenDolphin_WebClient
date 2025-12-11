@@ -1,5 +1,5 @@
 import { httpFetch } from '../../libs/http/httpClient';
-import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
+import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
 import type { DataSourceTransition } from '../../libs/observability/types';
 
 export type PatientRecord = {
@@ -139,13 +139,16 @@ const tryFetchJson = async (paths: string[], body: Record<string, unknown>) => {
 };
 
 export async function fetchPatients(params: PatientSearchParams): Promise<PatientListResponse> {
+  const runId = getObservabilityMeta().runId ?? generateRunId();
   const payload: Record<string, unknown> = {
     keyword: params.keyword,
     departmentCode: params.departmentCode,
     physicianCode: params.physicianCode,
     paymentMode: params.paymentMode,
+    runId,
   };
   Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
+  updateObservabilityMeta({ runId });
 
   const result = await tryFetchJson(patientCandidates, payload);
   const json = (result?.data as Record<string, unknown>) ?? {};
@@ -174,13 +177,20 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
 }
 
 export async function savePatient(payload: PatientMutationPayload): Promise<PatientMutationResult> {
-  const runId = payload.runId ?? getObservabilityMeta().runId;
+  const runId = payload.runId ?? getObservabilityMeta().runId ?? generateRunId();
+  const auditEvent = {
+    operation: payload.operation,
+    runId,
+    patientId: payload.patient.patientId,
+    timestamp: new Date().toISOString(),
+  };
   const body = {
     ...payload.patient,
     operation: payload.operation,
-    auditEvent: { operation: payload.operation, runId, timestamp: new Date().toISOString() },
+    auditEvent,
     runId,
   };
+  updateObservabilityMeta({ runId });
 
   const response = await httpFetch('/orca12/patientmodv2/outpatient', {
     method: 'POST',
