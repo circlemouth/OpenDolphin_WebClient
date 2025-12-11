@@ -4,6 +4,7 @@ type StoredAuth = {
   facilityId: string;
   userId: string;
   passwordMd5?: string;
+  clientUuid?: string;
 };
 
 function readStoredAuth(): StoredAuth | null {
@@ -13,10 +14,11 @@ function readStoredAuth(): StoredAuth | null {
   const facilityId = localStorage.getItem('devFacilityId');
   const userId = localStorage.getItem('devUserId');
   const passwordMd5 = localStorage.getItem('devPasswordMd5') ?? undefined;
+  const clientUuid = localStorage.getItem('devClientUuid') ?? undefined;
   if (!facilityId || !userId) {
     return null;
   }
-  return { facilityId, userId, passwordMd5 };
+  return { facilityId, userId, passwordMd5, clientUuid };
 }
 
 function applyAuthHeaders(init?: RequestInit): RequestInit {
@@ -32,6 +34,9 @@ function applyAuthHeaders(init?: RequestInit): RequestInit {
   }
   if (!headers.has('password') && stored.passwordMd5) {
     headers.set('password', stored.passwordMd5);
+  }
+  if (!headers.has('clientUUID') && stored.clientUuid) {
+    headers.set('clientUUID', stored.clientUuid);
   }
   if (!headers.has('X-Facility-Id')) {
     headers.set('X-Facility-Id', stored.facilityId);

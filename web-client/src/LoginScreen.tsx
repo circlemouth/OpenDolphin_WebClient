@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
@@ -83,6 +83,21 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
   const [status, setStatus] = useState<LoginStatus>('idle');
   const [feedback, setFeedback] = useState<string | null>(null);
   const [profile, setProfile] = useState<LoginResult | null>(null);
+  useEffect(() => {
+    try {
+      const storedFacilityId = localStorage.getItem('devFacilityId') ?? '';
+      const storedUserId = localStorage.getItem('devUserId') ?? '';
+      const storedClientUuid = localStorage.getItem('devClientUuid') ?? '';
+      setValues((prev) => ({
+        ...prev,
+        facilityId: storedFacilityId || prev.facilityId,
+        userId: storedUserId || prev.userId,
+        clientUuid: storedClientUuid || prev.clientUuid,
+      }));
+    } catch (error) {
+      console.warn('ローカルストレージからシードを読み込みできませんでした。', error);
+    }
+  }, []);
 
   const isLoading = status === 'loading';
   const isSuccess = status === 'success';
@@ -136,6 +151,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
         localStorage.setItem('devFacilityId', result.facilityId);
         localStorage.setItem('devUserId', result.userId);
         localStorage.setItem('devPasswordMd5', await hashPasswordMd5(normalizedValues.password));
+        localStorage.setItem('devClientUuid', result.clientUuid);
       } catch (storageError) {
         console.warn('認証情報の保存に失敗しましたが、ログイン処理は継続します。', storageError);
       }
@@ -221,7 +237,12 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
           </div>
 
           {feedback ? (
-            <div className={`status-message ${isSuccess ? 'is-success' : 'is-error'}`} role="status">
+            <div
+              className={`status-message ${isSuccess ? 'is-success' : 'is-error'}`}
+              role={isSuccess ? 'status' : 'alert'}
+              aria-live={isSuccess ? 'polite' : 'assertive'}
+              aria-atomic="true"
+            >
               {feedback}
               {isSuccess && profile ? (
                 <p className="status-message__detail">
@@ -258,6 +279,9 @@ const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
   }
 
   const data = (await response.json()) as UserResourceResponse;
+  if (!data.facilityId && !data.userId) {
+    throw new Error('認証に失敗しました。施設IDまたはユーザーIDを確認してください。');
+  }
   return {
     facilityId: data.facilityId ?? payload.facilityId,
     userId: data.userId ?? payload.userId,
