@@ -173,6 +173,19 @@ export const chartsStyles = css`
     border-color: #34d399;
   }
 
+  .document-timeline__audit {
+    border-radius: 12px;
+    padding: 0.65rem 0.75rem;
+    background: #fef9c3;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+  }
+
+  .document-timeline__audit-text {
+    margin: 0.25rem 0 0;
+    line-height: 1.5;
+  }
+
   .orca-summary {
     display: flex;
     flex-direction: column;
@@ -250,6 +263,35 @@ export const chartsStyles = css`
   .patients-tab__row-status {
     font-size: 0.9rem;
     color: #1d4ed8;
+  }
+
+  .patients-tab__audit {
+    margin-top: 0.25rem;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    background: #fff7ed;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+  }
+
+  .telemetry-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .telemetry-panel__meta {
+    margin: 0;
+    color: #475569;
+  }
+
+  .telemetry-panel__list {
+    margin: 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    color: #0f172a;
   }
 
   @media (max-width: 920px) {

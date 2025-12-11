@@ -3,16 +3,15 @@ import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } fro
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 
-import { logUiState } from '../../../libs/audit/auditLogger';
+import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
 import { updateObservabilityMeta } from '../../../libs/observability/observability';
 import type { DataSourceTransition } from '../../../libs/observability/types';
-import { CacheHitBadge, MissingMasterBadge } from '../../shared/StatusBadge';
-import { ResolveMasterBadge } from '../components/ResolveMasterBadge';
-import { ToneBanner } from '../components/ToneBanner';
+import { OrderConsole } from '../components/OrderConsole';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry, type ReceptionStatus } from '../api';
 import { receptionStyles } from '../styles';
 import { useAuthService } from '../../charts/authService';
 import { getChartToneDetails } from '../../../ux/charts/tones';
+import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 
 type SortKey = 'time' | 'name' | 'department';
 
@@ -49,6 +48,14 @@ const persistCollapseState = (state: Record<ReceptionStatus, boolean>) => {
   } catch {
     // ignore
   }
+};
+
+const toMasterSource = (transition?: DataSourceTransition): ResolveMasterSource => {
+  if (!transition) return 'snapshot';
+  if (transition === 'fallback') return 'fallback';
+  if (transition === 'server') return 'server';
+  if (transition === 'mock') return 'mock';
+  return 'snapshot';
 };
 
 const filterEntries = (
@@ -121,6 +128,7 @@ export function ReceptionPage({
   const [physicianFilter, setPhysicianFilter] = useState('');
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [collapsed, setCollapsed] = useState<Record<ReceptionStatus, boolean>>(loadCollapseState);
+  const [missingMasterNote, setMissingMasterNote] = useState('');
   const summaryRef = useRef<HTMLParagraphElement | null>(null);
   const appliedMeta = useRef<{
     runId?: string;
@@ -128,6 +136,7 @@ export function ReceptionPage({
     missingMaster?: boolean;
     dataSourceTransition?: DataSourceTransition;
   }>({});
+  const lastAuditEventHash = useRef<string>();
 
   const claimQuery = useQuery({
     queryKey: ['outpatient-claim-flags'],
@@ -188,6 +197,30 @@ export function ReceptionPage({
     appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition };
   }, [bumpRunId, mergedMeta, setCacheHit, setDataSourceTransition, setMissingMaster]);
 
+  useEffect(() => {
+    const apiAudit = claimQuery.data?.auditEvent as Record<string, unknown> | undefined;
+    const serialized = apiAudit ? JSON.stringify(apiAudit) : undefined;
+    if (serialized && serialized !== lastAuditEventHash.current) {
+      lastAuditEventHash.current = serialized;
+      const noteFromApi = typeof (apiAudit as Record<string, unknown>)?.missingMasterNote === 'string'
+        ? String((apiAudit as Record<string, unknown>).missingMasterNote)
+        : typeof (apiAudit as Record<string, unknown>)?.note === 'string'
+          ? String((apiAudit as Record<string, unknown>).note)
+          : undefined;
+      if (noteFromApi) {
+        setMissingMasterNote(noteFromApi);
+      }
+      logAuditEvent({
+        runId: mergedMeta.runId,
+        source: 'claim-flags',
+        cacheHit: mergedMeta.cacheHit,
+        missingMaster: mergedMeta.missingMaster,
+        dataSourceTransition: mergedMeta.dataSourceTransition,
+        payload: apiAudit,
+      });
+    }
+  }, [claimQuery.data?.auditEvent, mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster, mergedMeta.runId]);
+
   const entries = appointmentQuery.data?.entries ?? [];
   const filteredEntries = useMemo(
     () => filterEntries(entries, keyword, departmentFilter, physicianFilter),
@@ -223,14 +256,8 @@ export function ReceptionPage({
     [mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster],
   );
   const toneDetails = useMemo(() => getChartToneDetails(tonePayload), [tonePayload]);
-  const masterSource =
-    tonePayload.dataSourceTransition === 'server'
-      ? 'server'
-      : tonePayload.dataSourceTransition === 'fallback'
-        ? 'fallback'
-        : tonePayload.dataSourceTransition === 'mock'
-          ? 'mock'
-          : 'snapshot';
+  const { tone, message: toneMessage, transitionMeta } = toneDetails;
+  const masterSource = toMasterSource(tonePayload.dataSourceTransition);
 
   const handleSearchSubmit = useCallback(
     (event: FormEvent<HTMLFormElement>) => {
@@ -255,6 +282,101 @@ export function ReceptionPage({
     setPhysicianFilter('');
     setSortKey('time');
   }, []);
+
+  const handleMasterSourceChange = useCallback(
+    (value: ResolveMasterSource) => {
+      const transition = value as DataSourceTransition;
+      setDataSourceTransition(transition);
+      logUiState({
+        action: 'config_delivery',
+        screen: 'reception/order-console',
+        controlId: 'resolve-master-source',
+        dataSourceTransition: transition,
+        cacheHit: tonePayload.cacheHit,
+        missingMaster: tonePayload.missingMaster,
+        runId: mergedMeta.runId,
+      });
+      logAuditEvent({
+        runId: mergedMeta.runId,
+        source: 'order-console',
+        cacheHit: tonePayload.cacheHit,
+        missingMaster: tonePayload.missingMaster,
+        dataSourceTransition: transition,
+        payload: { resolveMasterSource: value },
+      });
+    },
+    [mergedMeta.runId, setDataSourceTransition, tonePayload.cacheHit, tonePayload.dataSourceTransition, tonePayload.missingMaster],
+  );
+
+  const handleToggleMissingMaster = useCallback(() => {
+    const next = !tonePayload.missingMaster;
+    setMissingMaster(next);
+    logUiState({
+      action: 'tone_change',
+      screen: 'reception/order-console',
+      controlId: 'toggle-missing-master',
+      dataSourceTransition: tonePayload.dataSourceTransition,
+      cacheHit: tonePayload.cacheHit,
+      missingMaster: next,
+      runId: mergedMeta.runId,
+    });
+    logAuditEvent({
+      runId: mergedMeta.runId,
+      source: 'order-console',
+      note: missingMasterNote,
+      cacheHit: tonePayload.cacheHit,
+      missingMaster: next,
+      dataSourceTransition: tonePayload.dataSourceTransition,
+    });
+  }, [mergedMeta.runId, missingMasterNote, setMissingMaster, tonePayload.cacheHit, tonePayload.dataSourceTransition, tonePayload.missingMaster]);
+
+  const handleToggleCacheHit = useCallback(() => {
+    const next = !tonePayload.cacheHit;
+    setCacheHit(next);
+    logUiState({
+      action: 'tone_change',
+      screen: 'reception/order-console',
+      controlId: 'toggle-cache-hit',
+      dataSourceTransition: tonePayload.dataSourceTransition,
+      cacheHit: next,
+      missingMaster: tonePayload.missingMaster,
+      runId: mergedMeta.runId,
+    });
+    logAuditEvent({
+      runId: mergedMeta.runId,
+      source: 'order-console',
+      note: missingMasterNote,
+      cacheHit: next,
+      missingMaster: tonePayload.missingMaster,
+      dataSourceTransition: tonePayload.dataSourceTransition,
+    });
+  }, [mergedMeta.runId, missingMasterNote, setCacheHit, tonePayload.cacheHit, tonePayload.dataSourceTransition, tonePayload.missingMaster]);
+
+  const handleMissingMasterNoteChange = useCallback(
+    (value: string) => {
+      setMissingMasterNote(value);
+      logUiState({
+        action: 'save',
+        screen: 'reception/order-console',
+        controlId: 'missing-master-note',
+        runId: mergedMeta.runId,
+        dataSourceTransition: tonePayload.dataSourceTransition,
+        cacheHit: tonePayload.cacheHit,
+        missingMaster: tonePayload.missingMaster,
+        details: { missingMasterNote: value },
+      });
+      logAuditEvent({
+        runId: mergedMeta.runId,
+        source: 'order-console-note',
+        note: value,
+        cacheHit: tonePayload.cacheHit,
+        missingMaster: tonePayload.missingMaster,
+        dataSourceTransition: tonePayload.dataSourceTransition,
+        payload: { missingMasterNote: value },
+      });
+    },
+    [mergedMeta.runId, tonePayload.cacheHit, tonePayload.dataSourceTransition, tonePayload.missingMaster],
+  );
 
   const handleRowDoubleClick = useCallback(
     (entry: ReceptionEntry) => {
@@ -298,34 +420,24 @@ export function ReceptionPage({
           </div>
         </section>
 
-        <section className="order-console" aria-label="外来トーン・ステータス">
-          <div className="order-console__status-steps">
-            <div className="order-console__step">
-              <span className="order-console__step-label">Tone</span>
-              <ToneBanner
-                tone={toneDetails.tone}
-                message={toneDetails.message}
-                patientId={patientId}
-                receptionId={receptionId}
-                destination={destination}
-                nextAction={toneDetails.tone === 'error' || mergedMeta.missingMaster ? 'マスタ再取得' : 'ORCA再送'}
-                runId={mergedMeta.runId}
-              />
-            </div>
-            <div className="order-console__step">
-              <span className="order-console__step-label">resolveMasterSource</span>
-              <ResolveMasterBadge
-                masterSource={masterSource}
-                transitionDescription={`dataSourceTransition=${tonePayload.dataSourceTransition}`}
-                runId={mergedMeta.runId}
-              />
-            </div>
-          </div>
-          <div className="order-console__status-group">
-            <CacheHitBadge cacheHit={tonePayload.cacheHit ?? false} runId={mergedMeta.runId} />
-            <MissingMasterBadge missingMaster={tonePayload.missingMaster ?? true} runId={mergedMeta.runId} />
-          </div>
-        </section>
+        <OrderConsole
+          masterSource={masterSource}
+          missingMaster={tonePayload.missingMaster ?? true}
+          cacheHit={tonePayload.cacheHit ?? false}
+          missingMasterNote={missingMasterNote}
+          runId={mergedMeta.runId ?? initialRunId ?? flags.runId}
+          tone={tone}
+          toneMessage={`${toneMessage} ｜ transition=${transitionMeta.label}`}
+          patientId={patientId ?? ''}
+          receptionId={receptionId ?? ''}
+          destination={destination}
+          nextAction={tone === 'error' || mergedMeta.missingMaster ? 'マスタ再取得' : 'ORCA再送'}
+          transitionDescription={transitionMeta.description}
+          onMasterSourceChange={handleMasterSourceChange}
+          onToggleMissingMaster={handleToggleMissingMaster}
+          onToggleCacheHit={handleToggleCacheHit}
+          onMissingMasterNoteChange={handleMissingMasterNoteChange}
+        />
 
         <section className="reception-search" aria-label="検索とフィルタ">
           <form className="reception-search__form" onSubmit={handleSearchSubmit}>
