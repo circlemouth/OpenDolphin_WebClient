@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>API404修正方針決定と実装 — 評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreband { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 22px; }
+      .scorecard { border: 1px solid #c4d3d7; background: #f7fafb; padding: 14px 16px; border-radius: 6px; }
+      .scorecard h2 { margin: 0 0 6px; font-size: 16px; font-weight: 700; }
+      .totalscore { font-size: 22px; font-weight: 800; display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+      .hex-wrap { display: flex; gap: 12px; align-items: center; }
+      .hex-chart { width: 120px; height: 120px; }
+      .metric-list { margin: 0; padding-left: 16px; font-size: 12px; color: #2c3a40; }
+      .metric-list li { margin: 0 0 2px; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 12px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; font-weight: 600; }
+      details[open] summary { margin-bottom: 8px; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; padding: 2px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; border-radius: 3px; }
+      .status-badge--ok { background: #d1e7dd; border-color: #a3cfbb; color: #0f5132; }
+      .status-badge--warn { background: #fff3cd; border-color: #f0e5a5; color: #664d03; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; color: #842029; }
+      .agent-label { font-size: 13px; color: #3a4b53; margin-left: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">API404修正方針決定と実装 — 再評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task-1765410171432-512d45 / task-1765410171684-919162 / task-1765410171835-ded9dc。master と比較し、acceptlstv2 404 解消の実装内容とテストを確認した。</p>
+      </header>
+
+      <div class="scoreband">
+        <div class="scorecard" data-metrics="90,88,85,88,86,84" data-total="521" data-medal="gold">
+          <h2>task-1765410171432-512d45</h2>
+          <div class="totalscore">🏆 521 / 600</div>
+          <div class="hex-wrap">
+            <svg class="hex-chart" viewBox="0 0 120 120" aria-label="六角チャート"></svg>
+            <ul class="metric-list">
+              <li>機能合理性 90</li>
+              <li>緻密性 88</li>
+              <li>テスト網羅 85</li>
+              <li>コード品質 88</li>
+              <li>設計整合 86</li>
+              <li>ドキュメント 84</li>
+            </ul>
+          </div>
+        </div>
+        <div class="scorecard" data-metrics="78,72,75,75,70,70" data-total="440" data-medal="bronze">
+          <h2>task-1765410171684-919162</h2>
+          <div class="totalscore">🥉 440 / 600</div>
+          <div class="hex-wrap">
+            <svg class="hex-chart" viewBox="0 0 120 120" aria-label="六角チャート"></svg>
+            <ul class="metric-list">
+              <li>機能合理性 78</li>
+              <li>緻密性 72</li>
+              <li>テスト網羅 75</li>
+              <li>コード品質 75</li>
+              <li>設計整合 70</li>
+              <li>ドキュメント 70</li>
+            </ul>
+          </div>
+        </div>
+        <div class="scorecard" data-metrics="70,65,55,70,68,72" data-total="400" data-medal="bronze">
+          <h2>task-1765410171835-ded9dc</h2>
+          <div class="totalscore">🥉 400 / 600</div>
+          <div class="hex-wrap">
+            <svg class="hex-chart" viewBox="0 0 120 120" aria-label="六角チャート"></svg>
+            <ul class="metric-list">
+              <li>機能合理性 70</li>
+              <li>緻密性 65</li>
+              <li>テスト網羅 55</li>
+              <li>コード品質 70</li>
+              <li>設計整合 68</li>
+              <li>ドキュメント 72</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765410171432-512d45</th>
+            <th>task-1765410171684-919162</th>
+            <th>task-1765410171835-ded9dc</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 09:03</td>
+            <td>
+              <span class="status-badge status-badge--ok">完了</span>
+              <span class="agent-label">acceptlstv2 を XML スタブで実装、/api/ 二重パスも吸収。Audit + Run-Id 付与、単体テストあり。</span>
+              <details>
+                <summary>差分・コミット</summary>
+                <pre>git log -1 task/task-1765410171432-512d45:
+5e1a3646 fix: acceptlstv2スタブ追加とブリッジ経路修正
+
+主な差分:
+- scripts/orca_prod_bridge.sh のデフォルト API パスを `/api01rv2/acceptlstv2` に修正。
+- OrcaEndpoint に ACCEPTANCE_LIST を追加、スタブ XML も追加。
+- 新リソース open.dolphin.rest.OrcaAcceptanceListResource を追加し、/api01rv2 と /api/api01rv2 の両経路で 200 を返却。Audit/trace 対応。
+- 単体テスト OrcaAcceptanceListResourceTest でルートと監査を検証。
+- DOC_STATUS / 実装メモを RUN_ID=20251210T234513Z で更新。</pre>
+              </details>
+              <details>
+                <summary>評価理由</summary>
+                <pre>- 404 主因のルーティング欠落をリソース登録 + web.xml で解消。誤パスも吸収して回帰リスクを下げた (機能合理性/設計整合)。
+- orcaTransport 経由でスタブ XML を返却し実装置換しやすい構造にしている (コード品質)。
+- Audit に trace/request/runId を記録し検証ログ要件を満たす (緻密性)。
+- JUnit で 2 経路のレスポンス/Audit をカバー (テスト網羅)。
+- スクリプトのデフォルト API パスを修正し、調査ログと DOC_STATUS を更新 (ドキュメント)。</pre>
+              </details>
+            </td>
+            <td>
+              <span class="status-badge status-badge--warn">一部不足</span>
+              <span class="agent-label">/api01rv2 のみ JSON スタブを返却。404 は解消するが /api/api01rv2 の誤経路は未対応、戻り形式も ORCA XML と異なる。</span>
+              <details>
+                <summary>差分・コミット</summary>
+                <pre>git log -1 task/task-1765410171684-919162:
+34ee4a7f Add acceptlstv2 stub endpoint to resolve API404
+
+主な差分:
+- 新リソース open.dolphin.rest.orca.OrcaAcceptanceListResource を追加し JSON stub (Api_Result=21) を返却。
+- Audit 詳細に facilityId などを残し、RUN_ID=20251210T150500Z を埋め込み。
+- 単体テスト OrcaAcceptanceListResourceTest でレスポンスと監査を検証。
+- DOC_STATUS と実装メモを更新。</pre>
+              </details>
+              <details>
+                <summary>評価理由</summary>
+                <pre>- 404 解消は達成。ただし /api/api01rv2/acceptlstv2 の誤経路吸収がなく、本番ブリッジのデフォルトパスを変えない場合 404 が残る (機能合理性▲)。
+- ORCA 本来の XML ではなく JSON を返すため互換性リスクがある (コード品質/設計整合▲)。
+- 単体テストで基本挙動は確認済み (テスト網羅○)。
+- スクリプトや dev proxy 設定への反映なし、残課題の明記も限定的 (ドキュメント▲)。</pre>
+              </details>
+            </td>
+            <td>
+              <span class="status-badge status-badge--warn">一部不足</span>
+              <span class="agent-label">/api01rv2 の JSON スタブを追加し 404 は解消。ただし誤パス未吸収・テストなし・Audit 詳細が簡易。</span>
+              <details>
+                <summary>差分・コミット</summary>
+                <pre>git log -1 task/task-1765410171835-ded9dc:
+92b7c3c0 Add acceptlstv2 stub endpoint to resolve API404
+
+主な差分:
+- 新リソース open.dolphin.rest.orca.OrcaAcceptListV2Resource を追加し、スタブ JSON を返却。
+- スタブファイル orca/stub/05_acceptlstv2_response.sample.json を追加。
+- web.xml にリソースを登録。DOC_STATUS と証跡ログを RUN_ID=20251210T234514Z で追加。
+- ビルドのみ実行 (テスト追加なし)。</pre>
+              </details>
+              <details>
+                <summary>評価理由</summary>
+                <pre>- 404 は解消するが /api/api01rv2/acceptlstv2 は未吸収 (機能合理性▲)。
+- 戻り JSON は ORCA XML 互換でなく、フロント側期待にズレる可能性 (設計整合▲)。
+- セッション監査は行うが記録項目が限定的。単体テストが無く回帰検知に弱い (緻密性/テスト網羅▲)。
+- スクリプト/プロキシ設定への言及なし、残課題はメモに記載 (ドキュメント△)。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top:20px;font-size:13px;color:#2c3a40;">補足: .kamui 配下に既存の未コミット変更がありますが、今回評価対象の3ブランチとは無関係です。</p>
+    </div>
+    <script>
+      // 簡易六角チャート描画
+      document.querySelectorAll('.scorecard').forEach((card) => {
+        const svg = card.querySelector('.hex-chart');
+        const metrics = card.dataset.metrics.split(',').map((n) => parseInt(n.trim(), 10));
+        const radius = 50;
+        const center = { x: 60, y: 60 };
+        const outline = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i - Math.PI / 6; // start flat-top
+          const x = center.x + radius * Math.cos(angle);
+          const y = center.y + radius * Math.sin(angle);
+          outline.push(`${x},${y}`);
+        }
+        const scalePoints = metrics.map((v, i) => {
+          const angle = (Math.PI / 3) * i - Math.PI / 6;
+          const r = (radius * v) / 100;
+          const x = center.x + r * Math.cos(angle);
+          const y = center.y + r * Math.sin(angle);
+          return `${x},${y}`;
+        });
+        svg.innerHTML = `
+          <polygon points="${outline.join(' ')}" fill="#eef3f4" stroke="#c4d3d7" />
+          <polygon points="${scalePoints.join(' ')}" fill="#cfe2ff" stroke="#4b8ef7" />
+        `;
+      });
+    </script>
+  </body>
+</html>
