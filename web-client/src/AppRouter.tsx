@@ -13,12 +13,10 @@ import { LoginScreen, type LoginResult } from './LoginScreen';
 import { ChartsPage } from './features/charts/pages/ChartsPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
-import { AuthServiceProvider, useAuthService } from './features/charts/authService';
 import './styles/app-shell.css';
+import { updateObservabilityMeta } from './libs/observability/observability';
 
-type Session = LoginResult & {
-  runId: string;
-};
+type Session = LoginResult;
 
 const SessionContext = createContext<Session | null>(null);
 
@@ -31,16 +29,17 @@ export function useSession() {
 }
 
 const NAV_LINKS = [
-  { to: '/reception', label: '受付 / トーン連携', role: 'RECEPTION' },
-  { to: '/charts', label: 'カルテ / Charts', role: 'CHARTS' },
-  { to: '/outpatient-mock', label: 'Outpatient Mock', role: 'OUTPATIENT' },
+  { to: '/reception', label: '受付 / トーン連携' },
+  { to: '/charts', label: 'カルテ / Charts' },
+  { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
 
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
 
   const handleLoginSuccess = (result: LoginResult) => {
-    setSession({ ...result, runId: generateRunId(), roles: result.roles ?? ['RECEPTION', 'CHARTS', 'OUTPATIENT'] });
+    updateObservabilityMeta({ runId: result.runId });
+    setSession(result);
   };
 
   const handleLogout = () => setSession(null);
@@ -74,9 +73,7 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
 
   return (
     <SessionContext.Provider value={session}>
-      <AuthServiceProvider initialFlags={{ runId: session.runId }} runId={session.runId}>
-        <AppLayout onLogout={onLogout} />
-      </AuthServiceProvider>
+      <AppLayout onLogout={onLogout} />
     </SessionContext.Provider>
   );
 }
@@ -84,22 +81,10 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
 function AppLayout({ onLogout }: { onLogout: () => void }) {
   const location = useLocation();
   const session = useSession();
-  const { flags } = useAuthService();
-  const [notices, setNotices] = useState<string[]>([]);
-
-  const handleCopyRunId = async () => {
-    try {
-      await navigator.clipboard.writeText(flags.runId);
-      setNotices((prev) => [`RUN_ID をコピーしました: ${flags.runId}`, ...prev].slice(0, 3));
-    } catch (error) {
-      setNotices((prev) => [`RUN_ID コピーに失敗しました`, ...prev].slice(0, 3));
-      console.error('[AppShell] copy runId failed', error);
-    }
-  };
 
   const navItems = useMemo(
     () =>
-      NAV_LINKS.filter((link) => !session.roles || session.roles.includes(link.role)).map((link) => (
+      NAV_LINKS.map((link) => (
         <NavLink
           key={link.to}
           to={link.to}
@@ -110,7 +95,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           {link.label}
         </NavLink>
       )),
-    [location.pathname, session.roles],
+    [location.pathname],
   );
 
   return (
@@ -125,9 +110,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <span className="app-shell__pill">
             ユーザー: {session.displayName ?? session.commonName ?? session.userId}
           </span>
-          <button type="button" className="app-shell__pill app-shell__pill--copy" onClick={handleCopyRunId} title="RUN_ID をコピー">
-            RUN_ID: {flags.runId}（クリックでコピー）
-          </button>
+          <span className="app-shell__pill">RUN_ID: {session.runId}</span>
           <button type="button" className="app-shell__logout" onClick={onLogout}>
             ログアウト
           </button>
@@ -141,39 +124,26 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
       <div className="app-shell__body">
         <Outlet />
       </div>
-      <div className="app-shell__notice-stack" role="status" aria-live="polite">
-        {notices.map((notice, index) => (
-          <div key={`${notice}-${index}`} className="app-shell__notice">
-            {notice}
-          </div>
-        ))}
-      </div>
     </div>
   );
 }
 
 function ConnectedReception() {
   const session = useSession();
-  const { flags, setMissingMaster, setCacheHit, setDataSourceTransition, bumpRunId } = useAuthService();
 
   return (
     <ReceptionPage
-      runId={flags.runId}
+      runId={session.runId}
       patientId={`PX-${session.facilityId}-${session.userId}`}
       receptionId={`R-${session.facilityId}-${session.userId}`}
       destination="ORCA queue"
       title="Reception → Charts トーン連携"
       description="ログインした RUN_ID を受け継ぎ、Reception の missingMaster/cacheHit/dataSourceTransition をそのまま Charts 側へ渡すデモです。"
-      flags={flags}
-      onToggleMissingMaster={() => setMissingMaster(!flags.missingMaster)}
-      onToggleCacheHit={() => setCacheHit(!flags.cacheHit)}
-      onMasterSourceChange={setDataSourceTransition}
-      onRunIdChange={(next) => bumpRunId(next || flags.runId)}
     />
   );
 }
 
 function ConnectedCharts() {
   const session = useSession();
-  return <ChartsPage />;
+  return <ChartsPage runId={session.runId} />;
 }

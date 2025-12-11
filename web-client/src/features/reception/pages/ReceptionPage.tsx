@@ -1,11 +1,13 @@
 import { Global } from '@emotion/react';
 import { useMemo, useState } from 'react';
 
+import { logUiState } from '../../../libs/audit/auditLogger';
+import { updateObservabilityMeta } from '../../../libs/observability/observability';
+import type { DataSourceTransition } from '../../../libs/observability/types';
 import type { BannerTone } from '../components/ToneBanner';
 import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { OrderConsole } from '../components/OrderConsole';
 import { receptionStyles } from '../styles';
-import type { AuthServiceFlags, DataSourceTransition } from '../../charts/authService';
 
 type ReceptionPageProps = {
   runId?: string;
@@ -14,10 +16,6 @@ type ReceptionPageProps = {
   destination?: string;
   title?: string;
   description?: string;
-  flags?: AuthServiceFlags;
-  onToggleMissingMaster?: () => void;
-  onToggleCacheHit?: () => void;
-  onMasterSourceChange?: (next: DataSourceTransition) => void;
 };
 
 const RUN_ID = '20251205T062049Z';
@@ -33,53 +31,71 @@ export function ReceptionPage({
   title = 'Reception UX コンポーネント実装',
   description =
     '`tone=server` バナーと `resolveMasterSource` バッジを ReceptionPage 直下でステップ的に表示し、OrderConsole に `missingMaster` 入力とメモのみを保持することで `aria-live` 調整を単一箇所に集約した UX を実現します。',
-  flags,
-  onToggleCacheHit,
-  onToggleMissingMaster,
-  onMasterSourceChange,
 }: ReceptionPageProps) {
+  const [masterSource, setMasterSource] = useState<ResolveMasterSource>('mock');
+  const [missingMaster, setMissingMaster] = useState(true);
+  const [cacheHit, setCacheHit] = useState(false);
   const [missingMasterNote, setMissingMasterNote] = useState('');
-  const masterSource = flags?.dataSourceTransition ?? 'snapshot';
-  const missingMaster = flags?.missingMaster ?? true;
-  const cacheHit = flags?.cacheHit ?? false;
-  const effectiveRunId = flags?.runId ?? runId;
-  const [localMasterSource, setLocalMasterSource] = useState<ResolveMasterSource>(masterSource);
-  const currentMasterSource = onMasterSourceChange ? masterSource : localMasterSource;
 
   const tone: BannerTone = useMemo(() => {
-    if (currentMasterSource === 'fallback' || missingMaster) {
+    if (masterSource === 'fallback' || missingMaster) {
       return 'error';
     }
-    if (currentMasterSource === 'server') {
+    if (masterSource === 'server') {
       return 'warning';
     }
     if (cacheHit) {
       return 'info';
     }
     return 'warning';
-  }, [currentMasterSource, missingMaster, cacheHit]);
+  }, [masterSource, missingMaster, cacheHit]);
 
   const summaryMessage = useMemo(() => {
-    if (currentMasterSource === 'server') {
+    if (masterSource === 'server') {
       return missingMaster
         ? 'server へ遷移済だが missingMaster=true を監視中。再取得が必要です。'
         : 'server ソースで tone=server を保持し、ORCA 送信を再試行できます。';
     }
-    if (currentMasterSource === 'fallback') {
+    if (masterSource === 'fallback') {
       return 'server から fallback へ降格。監査 metadata を再確認してください。';
     }
     return 'mock/snapshot ソース。データ更新は cacheHit で判断。';
-  }, [currentMasterSource, missingMaster, cacheHit]);
+  }, [masterSource, missingMaster]);
 
   const nextAction = missingMaster ? 'マスタ再取得' : 'ORCA 再送';
   const transitionDescription =
-    currentMasterSource === 'server'
+    masterSource === 'server'
       ? 'snapshot → server （tone=server）'
-      : currentMasterSource === 'fallback'
+      : masterSource === 'fallback'
         ? 'server → fallback'
-      : currentMasterSource === 'snapshot'
+      : masterSource === 'snapshot'
           ? 'mock → snapshot'
           : 'mock fixtures';
+
+  const emitAudit = (
+    action: 'tone_change' | 'save' | 'config_delivery',
+    controlId: string,
+    nextState?: Partial<{ missingMaster: boolean; cacheHit: boolean; masterSource: ResolveMasterSource }>,
+  ) => {
+    const nextMissing = nextState?.missingMaster ?? missingMaster;
+    const nextCache = nextState?.cacheHit ?? cacheHit;
+    const nextSource = nextState?.masterSource ?? masterSource;
+    updateObservabilityMeta({
+      runId,
+      missingMaster: nextMissing,
+      cacheHit: nextCache,
+      dataSourceTransition: nextSource as DataSourceTransition,
+    });
+    logUiState({
+      action,
+      screen: 'reception/order-console',
+      controlId,
+      runId,
+      missingMaster: nextMissing,
+      cacheHit: nextCache,
+      dataSourceTransition: nextSource as DataSourceTransition,
+    });
+  };
 
   return (
     <>
@@ -90,11 +106,11 @@ export function ReceptionPage({
           <p>{description}</p>
         </section>
         <OrderConsole
-          masterSource={currentMasterSource}
+          masterSource={masterSource}
           missingMaster={missingMaster}
           cacheHit={cacheHit}
           missingMasterNote={missingMasterNote}
-          runId={effectiveRunId}
+          runId={runId}
           tone={tone}
           toneMessage={summaryMessage}
           patientId={patientId}
@@ -102,19 +118,28 @@ export function ReceptionPage({
           destination={destination}
           nextAction={nextAction}
           transitionDescription={transitionDescription}
-          onMasterSourceChange={(next) => {
-            onMasterSourceChange?.(next as DataSourceTransition);
-            if (!onMasterSourceChange) {
-              setLocalMasterSource(next as ResolveMasterSource);
-            }
+          onMasterSourceChange={(value) => {
+            setMasterSource(value);
+            emitAudit('config_delivery', 'master-source', { masterSource: value });
           }}
           onToggleMissingMaster={() => {
-            onToggleMissingMaster?.();
+            setMissingMaster((prev) => {
+              const next = !prev;
+              emitAudit('tone_change', 'toggle-missing-master', { missingMaster: next });
+              return next;
+            });
           }}
           onToggleCacheHit={() => {
-            onToggleCacheHit?.();
+            setCacheHit((prev) => {
+              const next = !prev;
+              emitAudit('tone_change', 'toggle-cache-hit', { cacheHit: next });
+              return next;
+            });
           }}
-          onMissingMasterNoteChange={setMissingMasterNote}
+          onMissingMasterNoteChange={(value) => {
+            setMissingMasterNote(value);
+            emitAudit('save', 'missing-master-note');
+          }}
         />
         <section className="reception-page__meta" aria-live="polite">
           <h2>ARIA/Tone 周りの意図</h2>

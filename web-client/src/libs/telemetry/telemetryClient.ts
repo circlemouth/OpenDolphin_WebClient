@@ -1,9 +1,13 @@
-export type DataSourceTransition = 'mock' | 'snapshot' | 'server' | 'fallback';
+import { getObservabilityMeta } from '../observability/observability';
+import type { DataSourceTransition as ObservabilityDataSourceTransition } from '../observability/types';
+
+export type DataSourceTransition = ObservabilityDataSourceTransition;
 
 export type TelemetryFunnelStage = 'resolve_master' | 'charts_orchestration';
 
 export interface OutpatientFunnelPayload {
   runId?: string;
+  traceId?: string;
   cacheHit: boolean;
   missingMaster: boolean;
   dataSourceTransition: DataSourceTransition;
@@ -23,13 +27,15 @@ export function recordOutpatientFunnel(
   stage: TelemetryFunnelStage,
   payload: OutpatientFlagAttributes & Partial<Pick<OutpatientFunnelPayload, 'dataSourceTransition'>>,
 ) {
+  const meta = getObservabilityMeta();
   const record: OutpatientFunnelRecord = {
     stage,
     funnel: 'funnels/outpatient',
-    dataSourceTransition: payload.dataSourceTransition ?? 'server',
-    cacheHit: payload.cacheHit,
-    missingMaster: payload.missingMaster,
-    runId: payload.runId,
+    dataSourceTransition: payload.dataSourceTransition ?? meta.dataSourceTransition ?? 'server',
+    cacheHit: payload.cacheHit ?? meta.cacheHit ?? false,
+    missingMaster: payload.missingMaster ?? meta.missingMaster ?? false,
+    runId: payload.runId ?? meta.runId,
+    traceId: payload.traceId ?? meta.traceId,
     recordedAt: new Date().toISOString(),
   };
   funnelLog.push(record);
