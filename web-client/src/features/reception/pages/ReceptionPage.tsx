@@ -1,7 +1,7 @@
 import { Global } from '@emotion/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
 import { updateObservabilityMeta } from '../../../libs/observability/observability';
@@ -25,6 +25,7 @@ const SECTION_LABEL: Record<ReceptionStatus, string> = {
 };
 
 const COLLAPSE_STORAGE_KEY = 'reception-section-collapses';
+const FILTER_STORAGE_KEY = 'reception-filter-state';
 
 const todayString = () => new Date().toISOString().slice(0, 10);
 
@@ -120,12 +121,13 @@ export function ReceptionPage({
   description = '外来請求/予約 API を React Query で取得し、missingMaster・cacheHit・dataSourceTransition をトーンバナーとリストへ反映します。行をダブルクリックすると同じ RUN_ID で Charts へ遷移します。',
 }: ReceptionPageProps) {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, bumpRunId } = useAuthService();
   const [selectedDate, setSelectedDate] = useState(todayString());
-  const [keyword, setKeyword] = useState('');
-  const [submittedKeyword, setSubmittedKeyword] = useState('');
-  const [departmentFilter, setDepartmentFilter] = useState('');
-  const [physicianFilter, setPhysicianFilter] = useState('');
+  const [keyword, setKeyword] = useState(() => searchParams.get('kw') ?? '');
+  const [submittedKeyword, setSubmittedKeyword] = useState(() => searchParams.get('kw') ?? '');
+  const [departmentFilter, setDepartmentFilter] = useState(() => searchParams.get('dept') ?? '');
+  const [physicianFilter, setPhysicianFilter] = useState(() => searchParams.get('phys') ?? '');
   const [sortKey, setSortKey] = useState<SortKey>('time');
   const [collapsed, setCollapsed] = useState<Record<ReceptionStatus, boolean>>(loadCollapseState);
   const [missingMasterNote, setMissingMasterNote] = useState('');
@@ -159,6 +161,46 @@ export function ReceptionPage({
   useEffect(() => {
     persistCollapseState(collapsed);
   }, [collapsed]);
+
+  useEffect(() => {
+    const stored = (() => {
+      if (typeof localStorage === 'undefined') return null;
+      try {
+        const raw = localStorage.getItem(FILTER_STORAGE_KEY);
+        return raw ? (JSON.parse(raw) as Partial<Record<'kw' | 'dept' | 'phys', string>>) : null;
+      } catch {
+        return null;
+      }
+    })();
+    const fromUrl = {
+      kw: searchParams.get('kw') ?? undefined,
+      dept: searchParams.get('dept') ?? undefined,
+      phys: searchParams.get('phys') ?? undefined,
+    };
+    const merged = { ...(stored ?? {}), ...Object.fromEntries(Object.entries(fromUrl).filter(([, v]) => v !== undefined)) };
+    if (merged.kw !== undefined) {
+      setKeyword(merged.kw);
+      setSubmittedKeyword(merged.kw);
+    }
+    if (merged.dept !== undefined) setDepartmentFilter(merged.dept);
+    if (merged.phys !== undefined) setPhysicianFilter(merged.phys);
+  }, [searchParams]);
+
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (keyword) params.set('kw', keyword);
+    if (departmentFilter) params.set('dept', departmentFilter);
+    if (physicianFilter) params.set('phys', physicianFilter);
+    setSearchParams(params, { replace: true });
+    if (typeof localStorage !== 'undefined') {
+      const snapshot = {
+        kw: keyword,
+        dept: departmentFilter,
+        phys: physicianFilter,
+      };
+      localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(snapshot));
+    }
+  }, [departmentFilter, keyword, physicianFilter, setSearchParams]);
 
   const mergedMeta = useMemo(() => {
     const claim = claimQuery.data;
