@@ -16,6 +16,7 @@ import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import './styles/app-shell.css';
 import { updateObservabilityMeta } from './libs/observability/observability';
 import { AuthServiceProvider } from './features/charts/authService';
+import { PatientsPage } from './features/patients/PatientsPage';
 
 type Session = LoginResult;
 
@@ -32,6 +33,7 @@ export function useSession() {
 const NAV_LINKS = [
   { to: '/reception', label: '受付 / トーン連携' },
   { to: '/charts', label: 'カルテ / Charts' },
+  { to: '/patients', label: '患者管理' },
   { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
 
@@ -58,6 +60,7 @@ export function AppRouter() {
           <Route index element={<Navigate to="/reception" replace />} />
           <Route path="/reception" element={<ConnectedReception />} />
           <Route path="/charts" element={<ConnectedCharts />} />
+          <Route path="/patients" element={<ConnectedPatients />} />
           <Route path="/outpatient-mock" element={<OutpatientMockPage />} />
         </Route>
         <Route path="*" element={<Navigate to={session ? '/reception' : '/login'} replace />} />
@@ -156,4 +159,9 @@ function ConnectedReception() {
 function ConnectedCharts() {
   const session = useSession();
   return <ChartsPage />;
+}
+
+function ConnectedPatients() {
+  const session = useSession();
+  return <PatientsPage runId={session.runId} />;
 }

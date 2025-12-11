@@ -160,7 +160,6 @@
   padding: 0 1.25rem 2rem;
 }
 
-<<<<<<< HEAD
 .app-shell__notice-stack {
   position: fixed;
   right: 12px;
@@ -179,7 +178,8 @@
   border-radius: 12px;
   box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
   font-size: 0.9rem;
-=======
+}
+
 .placeholder-page {
   background: #ffffff;
   border: 1px solid rgba(148, 163, 184, 0.25);
@@ -198,7 +198,6 @@
   color: #334155;
   line-height: 1.6;
 }
-
 .access-denied {
   background: #fef2f2;
   border: 1px solid rgba(239, 68, 68, 0.35);
@@ -221,7 +220,6 @@
   font-weight: 700;
   color: #b91c1c;
   text-decoration: underline;
->>>>>>> task/task-1765443677448-e13eeb
 }
 
 @media (max-width: 720px) {
