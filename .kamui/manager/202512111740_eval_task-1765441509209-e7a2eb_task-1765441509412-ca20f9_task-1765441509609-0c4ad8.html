@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreboard { display: flex; flex-wrap: wrap; gap: 12px; margin: 16px 0 24px; }
+      .score-card { flex: 1 1 32%; min-width: 300px; background: #f7fafb; border: 1px solid #c4d3d7; border-radius: 10px; padding: 12px 14px; }
+      .score-card h3 { margin: 0 0 6px; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+      .score-value { font-size: 22px; font-weight: 800; }
+      .metrics { margin: 8px 0 0; padding-left: 16px; font-size: 12px; color: #334249; line-height: 1.5; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 14px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; }
+      details[open] summary { margin-bottom: 10px; }
+      .details-toggle::before { content: "▶"; font-size: 10px; margin-right: 6px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; padding: 2px 7px; border-radius: 10px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; vertical-align: top; }
+      .agent-label { font-size: 13px; color: #3a4b53; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象ブランチ task-1765441509209-e7a2eb / task-1765441509412-ca20f9 / task-1765441509609-0c4ad8 の最新コミットを確認。作成: 2025-12-11 17:40 JST</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h3>task-1765441509209-e7a2eb <span class="score-value">🥈 512 / 600</span></h3>
+          <ul class="metrics">
+            <li>コード品質 90 / テスト充実度 70</li>
+            <li>UX/画面完成度 85 / 仕様準拠 92</li>
+            <li>進捗 85 / リスク管理 90</li>
+            <li>判定: 緻密な依存と日程。テスト計画が薄い点で減点。</li>
+          </ul>
+        </div>
+        <div class="score-card">
+          <h3>task-1765441509412-ca20f9 <span class="score-value">🥈 500 / 600</span></h3>
+          <ul class="metrics">
+            <li>コード品質 88 / テスト充実度 68</li>
+            <li>UX/画面完成度 84 / 仕様準拠 90</li>
+            <li>進捗 85 / リスク管理 85</li>
+            <li>判定: 章立て網羅。基盤→各画面→E2E→Stage 手順まで接続。</li>
+          </ul>
+        </div>
+        <div class="score-card">
+          <h3>task-1765441509609-0c4ad8 <span class="score-value">🏆 540 / 600</span></h3>
+          <ul class="metrics">
+            <li>コード品質 92 / テスト充実度 78</li>
+            <li>UX/画面完成度 88 / 仕様準拠 92</li>
+            <li>進捗 90 / リスク管理 90</li>
+            <li>判定: ガバナンス→シェル→各画面→OPS まで時系列が緻密。最優秀。</li>
+          </ul>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765441509209-e7a2eb</th>
+            <th>task-1765441509412-ca20f9</th>
+            <th>task-1765441509609-0c4ad8</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 17:40</td>
+            <td>
+              <span class="status-badge">新規ガント</span>
+              <span class="agent-label">web-client-phase2-plan.yaml + アイコン追加。週ビューでシェル/Reception/Charts/Patients/Admin/Mock/QA/Doc を段階化。</span>
+              <details>
+                <summary class="details-toggle">ログ/差分</summary>
+                <pre>最新コミット: e0f5b669 Add web client phase2 gantt plan and icon
+差分: 2 files, 309 insertions
+- .kamui/apps/web-client-phase2-plan.yaml
+- .kamui/apps/icons/web-client-phase2-plan.svg</pre>
+              </details>
+            </td>
+            <td>
+              <span class="status-badge">新規ガント</span>
+              <span class="agent-label">webclient-phase2-implementation-plan.yaml + アイコン。週ビューで基盤→Reception→Charts→Patients/Admin→Mock→E2E→Stage。</span>
+              <details>
+                <summary class="details-toggle">ログ/差分</summary>
+                <pre>最新コミット: e9228977 Add webclient phase2 gantt plan and icon
+差分: 2 files, 327 insertions
+- .kamui/apps/webclient-phase2-implementation-plan.yaml
+- .kamui/apps/icons/webclient-phase2-implementation-plan.svg</pre>
+              </details>
+            </td>
+            <td>
+              <span class="status-badge">新規ガント</span>
+              <span class="agent-label">webclient-modernized-gantt-20251211.yaml + アイコン。日次でRUN_IDガバナンス→シェル/ログイン→Reception→Charts→Patients/Admin→Mock→QA/Stage→DOC。</span>
+              <details>
+                <summary class="details-toggle">ログ/差分</summary>
+                <pre>最新コミット: 7f6e2e2c Add webclient modernized gantt plan and icon
+差分: 2 files, 375 insertions
+- .kamui/apps/webclient-modernized-gantt-20251211.yaml
+- .kamui/apps/icons/webclient-modernized-gantt-20251211.svg</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p style="margin-top:14px;font-size:12px;color:#3a4b53;">未コミット: .kamui/model-versions-cache.json, .kamui/tasks-state.json（既存の管理系変更と判断）。</p>
+    </div>
+  </body>
+</html>
