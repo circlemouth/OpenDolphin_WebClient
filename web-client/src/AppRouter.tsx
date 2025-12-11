@@ -1,4 +1,4 @@
-import { useMemo, useState, createContext, useContext } from 'react';
+import { useMemo, useState, createContext, useContext, type MouseEvent } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -17,11 +17,13 @@ import './styles/app-shell.css';
 import { updateObservabilityMeta } from './libs/observability/observability';
 import { AuthServiceProvider } from './features/charts/authService';
 import { PatientsPage } from './features/patients/PatientsPage';
+import { AdministrationPage } from './features/administration/AdministrationPage';
 
 type Session = LoginResult;
 
 const SessionContext = createContext<Session | null>(null);
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useSession() {
   const context = useContext(SessionContext);
   if (!context) {
@@ -30,10 +32,11 @@ export function useSession() {
   return context;
 }
 
-const NAV_LINKS = [
+const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/reception', label: '受付 / トーン連携' },
   { to: '/charts', label: 'カルテ / Charts' },
   { to: '/patients', label: '患者管理' },
+  { to: '/administration', label: 'Administration 配信', roles: ['system_admin', 'admin', 'system-admin'] },
   { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
 
@@ -58,11 +61,12 @@ export function AppRouter() {
         />
         <Route element={<Protected session={session} onLogout={handleLogout} />}>
           <Route index element={<Navigate to="/reception" replace />} />
-          <Route path="/reception" element={<ConnectedReception />} />
-          <Route path="/charts" element={<ConnectedCharts />} />
-          <Route path="/patients" element={<ConnectedPatients />} />
-          <Route path="/outpatient-mock" element={<OutpatientMockPage />} />
-        </Route>
+        <Route path="/reception" element={<ConnectedReception />} />
+        <Route path="/charts" element={<ConnectedCharts />} />
+        <Route path="/patients" element={<ConnectedPatients />} />
+        <Route path="/administration" element={<ConnectedAdministration />} />
+        <Route path="/outpatient-mock" element={<OutpatientMockPage />} />
+      </Route>
         <Route path="*" element={<Navigate to={session ? '/reception' : '/login'} replace />} />
       </Routes>
     </BrowserRouter>
@@ -97,18 +101,31 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
 
   const navItems = useMemo(
     () =>
-      NAV_LINKS.map((link) => (
-        <NavLink
-          key={link.to}
-          to={link.to}
-          className={({ isActive }) =>
-            `app-shell__nav-link${isActive || location.pathname.startsWith(link.to) ? ' is-active' : ''}`
+      NAV_LINKS.map((link) => {
+        const allowed = !link.roles || link.roles.includes(session.role);
+        const className = ({ isActive }: { isActive: boolean }) =>
+          `app-shell__nav-link${isActive || location.pathname.startsWith(link.to) ? ' is-active' : ''}${
+            allowed ? '' : ' is-disabled'
+          }`;
+        const handleClick = (event: MouseEvent) => {
+          if (!allowed) {
+            event.preventDefault();
           }
-        >
-          {link.label}
-        </NavLink>
-      )),
-    [location.pathname],
+        };
+        return (
+          <NavLink
+            key={link.to}
+            to={allowed ? link.to : '#'}
+            className={className}
+            aria-disabled={!allowed}
+            tabIndex={allowed ? 0 : -1}
+            onClick={handleClick}
+          >
+            {link.label}
+          </NavLink>
+        );
+      }),
+    [location.pathname, session.role],
   );
 
   return (
@@ -123,6 +140,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <span className="app-shell__pill">
             ユーザー: {session.displayName ?? session.commonName ?? session.userId}
           </span>
+          <span className="app-shell__pill">role: {session.role}</span>
           <span className="app-shell__pill">RUN_ID: {session.runId}</span>
           <button type="button" className="app-shell__logout" onClick={onLogout}>
             ログアウト
@@ -157,11 +175,15 @@ function ConnectedReception() {
 }
 
 function ConnectedCharts() {
-  const session = useSession();
   return <ChartsPage />;
 }
 
 function ConnectedPatients() {
   const session = useSession();
   return <PatientsPage runId={session.runId} />;
+}
+
+function ConnectedAdministration() {
+  const session = useSession();
+  return <AdministrationPage runId={session.runId} role={session.role} />;
 }

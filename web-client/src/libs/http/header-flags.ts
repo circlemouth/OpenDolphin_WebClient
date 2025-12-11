@@ -57,6 +57,16 @@ export function resolveHeaderFlags(): HeaderFlags {
   };
 }
 
+export function persistHeaderFlags(partial: Partial<HeaderFlags>) {
+  if (typeof localStorage === 'undefined') return;
+  if (partial.useMockOrcaQueue !== undefined) {
+    localStorage.setItem('useMockOrcaQueue', partial.useMockOrcaQueue ? '1' : '0');
+  }
+  if (partial.verifyAdminDelivery !== undefined) {
+    localStorage.setItem('verifyAdminDelivery', partial.verifyAdminDelivery ? '1' : '0');
+  }
+}
+
 export function applyHeaderFlagsToInit(init?: RequestInit): RequestInit {
   const flags = resolveHeaderFlags();
   const overrides = buildHeaderOverrides(flags);
