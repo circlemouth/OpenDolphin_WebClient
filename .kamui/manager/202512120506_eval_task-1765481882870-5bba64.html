@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート / Administration設定配信とキュー表示</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        padding: 14px;
+        border: 1px solid #c4d3d7;
+        background: #f7fbfc;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+      .score-card strong { font-size: 20px; }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .status-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 4px;
+        color: #1f2a30;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+      }
+      .status-gold { background: #ffe9a7; border-color: #e3c453; }
+      .status-silver { background: #e8ecf1; border-color: #c2c8d2; }
+      .status-bronze { background: #f4e1c7; border-color: #d7b48a; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .snapshot-details summary { cursor: pointer; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .hex-chart {
+        width: 160px;
+        aspect-ratio: 1 / 1;
+        margin: 0 0 12px;
+        clip-path: polygon(50% 0%, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%);
+        background: radial-gradient(circle at 50% 50%, #ffffff 0%, #eef3f4 70%, #d8e6e9 100%);
+        position: relative;
+      }
+      .hex-chart__metrics {
+        position: absolute;
+        inset: 10%;
+        display: grid;
+        grid-template-areas:
+          "a a b b"
+          "f a b c"
+          "f e d c"
+          "f e d d";
+        gap: 4px;
+        font-size: 11px;
+        text-align: center;
+      }
+      .hex-chart__item { padding: 2px 4px; border-radius: 4px; background: rgba(255,255,255,0.8); border: 1px solid #c4d3d7; }
+      .hex-a { grid-area: a; }
+      .hex-b { grid-area: b; }
+      .hex-c { grid-area: c; }
+      .hex-d { grid-area: d; }
+      .hex-e { grid-area: e; }
+      .hex-f { grid-area: f; }
+      .pill { display: inline-block; padding: 2px 6px; margin-right: 6px; background: #eef3f4; border: 1px solid #c4d3d7; font-size: 11px; }
+      .list-tight { margin: 8px 0 0; padding-left: 16px; }
+      .list-tight li { margin-bottom: 4px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート / Administration設定配信とキュー表示</h1>
+        <p class="monitor-description">対象ブランチ: task-1765481861958-b5668d / task-1765481862156-4ff1ae / task-1765481862357-6effd5。保存→broadcast→バナー連携と配信キュー操作を中心に、機能合理性と緻密性を採点。</p>
+      </header>
+
+      <div class="score-grid">
+        <div class="score-card"><div>🏆 540 / 600</div><strong>task-1765481861958-b5668d</strong></div>
+        <div class="score-card"><div>🥈 433 / 600</div><strong>task-1765481862156-4ff1ae</strong></div>
+        <div class="score-card"><div>🥉 405 / 600</div><strong>task-1765481862357-6effd5</strong></div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765481861958-b5668d</th>
+            <th>Agent task-1765481862156-4ff1ae</th>
+            <th>Agent task-1765481862357-6effd5</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 20:07Z</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-gold">🥇 score 92</span> <span class="pill">commit 311e6e28</span></div>
+              <div class="hex-chart"><div class="hex-chart__metrics">
+                <div class="hex-chart__item hex-a">仕様適合 95</div>
+                <div class="hex-chart__item hex-b">機能完備 92</div>
+                <div class="hex-chart__item hex-c">権限制御 88</div>
+                <div class="hex-chart__item hex-d">観測/監査 92</div>
+                <div class="hex-chart__item hex-e">通知UX 90</div>
+                <div class="hex-chart__item hex-f">信頼性 83</div>
+              </div></div>
+              <ul class="list-tight">
+                <li>保存時に localStorage + CustomEvent で broadcast、Reception/Charts のバナー更新が即時反映。</li>
+                <li>ORCA 配信キュー一覧・再送/破棄、遅延>2分で警告バナー表示。system_admin 以外は UI 非活性。</li>
+                <li>admin config/delivery を同時取得しヘッダーフラグを永続化、broadcast と auditLogger を連動。</li>
+                <li>懸念: /administration ルート自体は誰でも開ける（読み取り専用だが 403 返却時の文言なし）。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分抜粋</summary>
+                <pre>web-client/src/features/administration/AdministrationPage.tsx: broadcast 発行とキュー再送/破棄ハンドラを追加
+web-client/src/libs/admin/broadcast.ts: localStorage + CustomEvent での配信通知ハブを実装
+Reception/Charts 両画面に AdminBroadcastBanner を組み込み、遅延バナーを表示</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-silver">🥈 score 78</span> <span class="pill">commit 8f006981</span></div>
+              <div class="hex-chart"><div class="hex-chart__metrics">
+                <div class="hex-chart__item hex-a">仕様適合 80</div>
+                <div class="hex-chart__item hex-b">機能完備 78</div>
+                <div class="hex-chart__item hex-c">権限制御 72</div>
+                <div class="hex-chart__item hex-d">観測/監査 74</div>
+                <div class="hex-chart__item hex-e">通知UX 70</div>
+                <div class="hex-chart__item hex-f">信頼性 59</div>
+              </div></div>
+              <ul class="list-tight">
+                <li>配信フォーム・キュー操作は網羅。ただし保存後の broadcast がなく、Reception/Charts への反映は定期ポーリング頼み。</li>
+                <li>AdminDeliveryNotice が全ロールで /api/admin/config /orca/queue を呼びに行くため、権限なし環境では 403 で無表示になり通知が途絶。</li>
+                <li>ヘッダーフラグの永続化や Observability meta 更新がなく、検証用フラグがリクエストへ伝搬しない。</li>
+                <li>遅延検知は3分超で warning。UX/アクセシビリティは概ね良好。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分抜粋</summary>
+                <pre>AdministrationPage: 配信保存→audit ログのみ、broadcast なし。権限外でもページ遷移可能
+AdminDeliveryNotice: Reception/Charts で admin-config & queue をポーリングしてバナー表示</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-bronze">🥉 score 70</span> <span class="pill">commit 1c63ac32</span></div>
+              <div class="hex-chart"><div class="hex-chart__metrics">
+                <div class="hex-chart__item hex-a">仕様適合 74</div>
+                <div class="hex-chart__item hex-b">機能完備 70</div>
+                <div class="hex-chart__item hex-c">権限制御 65</div>
+                <div class="hex-chart__item hex-d">観測/監査 66</div>
+                <div class="hex-chart__item hex-e">通知UX 68</div>
+                <div class="hex-chart__item hex-f">信頼性 62</div>
+              </div></div>
+              <ul class="list-tight">
+                <li>保存時に CustomEvent broadcast で Reception/Charts にバナー通知する設計は良好。</li>
+                <li>ただし saveAdministrationConfig は HTTP 失敗時でも payload を成功扱いで返すため、配信失敗を検知できず誤報する。</li>
+                <li>admin/config・orca/queue が未実装でもスタブ値を返すため、実際の未配信キューを隠蔽するリスク。</li>
+                <li>nav バッジで設定更新を示すが、非 system_admin でも /administration にアクセスでき編集ボタン押下でエラー表示のみ。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分抜粋</summary>
+                <pre>administration/api.ts: 失敗時に FALLBACK_CONFIG/SAMPLE_QUEUE を返し、PUT 失敗でも success として返却
+adminDeliveryNotice: localStorage + CustomEvent でバナー通知、Reception/Charts に ToneBanner 表示</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

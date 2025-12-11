@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin: 16px 0 8px;
+      }
+      .score-card {
+        background: #f8fbfd;
+        border: 1px solid #c4d3d7;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-size: 15px;
+        font-weight: 600;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--investigating { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--planning { background: #fff4d9; border-color: #f5e8b8; }
+      .status-badge--in-progress { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .status-badge--absent { background: #ececec; border-color: #d6d6d6; color: #555; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .radar { width: 100%; max-width: 220px; height: auto; }
+      .radar polygon.outer { fill: rgba(31, 42, 48, 0.05); stroke: #9fb3b9; stroke-width: 1; }
+      .radar polygon.data { fill: rgba(45, 105, 197, 0.25); stroke: #2d69c5; stroke-width: 1.5; }
+      .metric-list { list-style: none; padding: 0; margin: 8px 0 0; font-size: 13px; color: #243039; }
+      .metric-list li { margin-bottom: 4px; }
+      .issue-list { margin: 8px 0 0; padding-left: 18px; color: #2c3a40; }
+      .issue-list li { margin-bottom: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">ORCA送信・ドラフト・キャンセル制御 評価レポート</h1>
+        <p class="monitor-description">タスク: [webclient modernized gantt 20251211] ORCA送信・ドラフト・キャンセル制御 ／ 監視対象ブランチ: task-1765478723588-eb661c, task-1765478723819-9c575d, task-1765478727090-d29c57</p>
+        <div class="score-summary">
+          <div class="score-card">task-1765478727090-d29c57: 🥉 307 / 600 (51.2%)</div>
+          <div class="score-card">task-1765478723588-eb661c: ❌ 0 / 600 (ブランチ未検出)</div>
+          <div class="score-card">task-1765478723819-9c575d: ❌ 0 / 600 (ブランチ未検出)</div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765478723588-eb661c</th>
+            <th>Agent task-1765478723819-9c575d</th>
+            <th>Agent task-1765478727090-d29c57</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-12 04:07</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未評価</span>
+                <span class="agent-label">Git fetch/prune済だが該当ブランチが存在せず、評価不可。</span>
+              </div>
+              <svg viewBox="0 0 200 180" class="radar" aria-label="指標チャート">
+                <polygon class="outer" points="100.0,10.0 169.3,50.0 169.3,130.0 100.0,170.0 30.7,130.0 30.7,50.0" />
+                <polygon class="data" points="100,90 100,90 100,90 100,90 100,90 100,90" />
+              </svg>
+              <ul class="metric-list">
+                <li>コード品質 0点</li>
+                <li>要件適合度 0点</li>
+                <li>監査/テレメトリ 0点</li>
+                <li>UX/ARIA 0点</li>
+                <li>回帰リスク/テスト 0点</li>
+                <li>ドキュメント整備 0点</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>origin/task-1765478723588-eb661c が存在しないため git log / diff を取得できませんでした。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未評価</span>
+                <span class="agent-label">Git fetch/prune済だが該当ブランチが存在せず、評価不可。</span>
+              </div>
+              <svg viewBox="0 0 200 180" class="radar" aria-label="指標チャート">
+                <polygon class="outer" points="100.0,10.0 169.3,50.0 169.3,130.0 100.0,170.0 30.7,130.0 30.7,50.0" />
+                <polygon class="data" points="100,90 100,90 100,90 100,90 100,90 100,90" />
+              </svg>
+              <ul class="metric-list">
+                <li>コード品質 0点</li>
+                <li>要件適合度 0点</li>
+                <li>監査/テレメトリ 0点</li>
+                <li>UX/ARIA 0点</li>
+                <li>回帰リスク/テスト 0点</li>
+                <li>ドキュメント整備 0点</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>origin/task-1765478723819-9c575d が存在しないため git log / diff を取得できませんでした。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--in-progress">評価完了</span>
+                <span class="agent-label">branch task-1765478727090-d29c57（HEAD=cfc92e1cf32fcfc6b1eb806509aeccacd1b6d284）</span>
+              </div>
+              <svg viewBox="0 0 200 180" class="radar" aria-label="指標チャート">
+                <polygon class="outer" points="100.0,10.0 169.3,50.0 169.3,130.0 100.0,170.0 30.7,130.0 30.7,50.0" />
+                <polygon class="data" points="100.0,40.4 124.2,76.0 148.5,118.0 100.0,134.0 72.3,106.0 68.8,72.0" />
+              </svg>
+              <ul class="metric-list">
+                <li>コード品質 62点</li>
+                <li>要件適合度 35点</li>
+                <li>監査/テレメトリ 70点</li>
+                <li>UX/ARIA 55点</li>
+                <li>回帰リスク/テスト 40点</li>
+                <li>ドキュメント整備 45点</li>
+              </ul>
+              <p class="snapshot-summary">主な所見（要件未達が顕著で🥉評価）</p>
+              <ol class="issue-list">
+                <li><strong>要件未実装:</strong> ORCA送信/診療終了/ドラフト保存/キャンセルのボタン・処理・UIロックが存在せず、missingMaster=true でも送信停止やトースト制御が未実装。</li>
+                <li><strong>fallbackUsed 警告のみ表示:</strong> DocumentTimeline/OrcaSummary にバッジ追加はあるが送信禁止や再送動線は結線されていない。</li>
+                <li><strong>長時間処理のUX不足:</strong> React Queryの読み込み表示は短いテキストのみでスケルトン/トースト/リトライ導線の設計が無い。</li>
+                <li><strong>監査・テレメトリは部分的:</strong> logUiState/logAuditEvent/observabilityヘッダーでフラグ変化は記録するが、送信系イベントの記録がないためファネルの核心が欠落。</li>
+                <li><strong>回帰リスク:</strong> httpFetch が async になり全経路で observability ヘッダーを付与する仕様変更に対しテストなし。影響範囲が広い。</li>
+              </ol>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細 (git log / diff)</summary>
+                <pre>git log origin/master..task-1765478727090-d29c57 (抜粋)
+cfc92e1c chore: update kamui task state (sync)
+7715d62e chore: update kamui task state (post merge)
+ede4c1bb RUN_ID=20251211T120619Z Chartsデータバインド強化
+896e160c OrderConsoleフラグ連携とトーン統一
+abf03613 feat: telemetry/audit メタ統合
+485b49b0 Add reception API client for appointment/claim
+f042f77a Add reception outpatient API wiring with React Query
+
+主な差分 (origin/master...task-1765478727090-d29c57)
+46 files changed, 5179 insertions(+), 585 deletions(-)
+- charts: ChartsPage.tsx, DocumentTimeline.tsx, PatientsTab.tsx, OrcaSummary.tsx に外来API・監査・fallbackUsed表示を追加
+- libs: observability/audit/telemetry/httpClient でヘッダー伝播とメタ記録を実装
+- reception: ReceptionPage.tsx で外来API検索・ダブルクリック遷移・トーン反映を追加
+</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre>主な確認ファイル（本worktree上）
+web-client/src/features/charts/pages/ChartsPage.tsx
+web-client/src/features/charts/DocumentTimeline.tsx
+web-client/src/features/charts/OrcaSummary.tsx
+web-client/src/features/charts/PatientsTab.tsx
+web-client/src/libs/audit/auditLogger.ts
+web-client/src/libs/observability/observability.ts
+web-client/src/features/reception/pages/ReceptionPage.tsx
+</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
