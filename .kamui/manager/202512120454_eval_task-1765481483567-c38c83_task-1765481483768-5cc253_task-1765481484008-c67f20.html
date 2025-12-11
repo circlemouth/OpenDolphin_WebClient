@@ -4,147 +4,34 @@
     <meta charset="utf-8" />
     <title>評価レポート</title>
     <style>
-      body {
-        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-        line-height: 1.6;
-        margin: 24px;
-        background-color: #e9f0f2;
-        color: #1f2a30;
-      }
-      .monitor-wrapper {
-        max-width: 1180px;
-        margin: 0 auto;
-        padding: 32px;
-        background: #ffffff;
-        border: 1px solid #c4d3d7;
-      }
-      .monitor-header {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        margin-bottom: 24px;
-      }
-      .monitor-title {
-        font-size: 26px;
-        font-weight: 700;
-        letter-spacing: 0.04em;
-        color: #1f2a30;
-      }
-      .monitor-description {
-        font-size: 14px;
-        color: #3a4b53;
-      }
-      .totals {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-        gap: 12px;
-        margin-bottom: 16px;
-      }
-      .total-card {
-        border: 1px solid #c4d3d7;
-        border-radius: 14px;
-        padding: 14px 16px;
-        background: #f8fbfc;
-      }
-      .total-score {
-        font-size: 22px;
-        font-weight: 800;
-      }
-      .hex-grid {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-        gap: 16px;
-        margin-bottom: 18px;
-      }
-      .hex-card {
-        border: 1px solid #c4d3d7;
-        border-radius: 14px;
-        padding: 12px 14px;
-        background: #fdfefe;
-      }
-      .hex-title {
-        margin: 0 0 6px;
-        font-weight: 700;
-      }
-      .metrics-list {
-        margin: 6px 0 0;
-        padding-left: 16px;
-        color: #334155;
-        font-size: 13px;
-      }
-      table.monitor-report {
-        width: 100%;
-        border-collapse: collapse;
-        table-layout: fixed;
-        background: #ffffff;
-        border: 1px solid #c4d3d7;
-      }
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 12px; margin-bottom: 16px; }
+      .total-card { border: 1px solid #c4d3d7; border-radius: 14px; padding: 14px 16px; background: #f8fbfc; }
+      .total-score { font-size: 22px; font-weight: 800; }
+      .hex-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px; margin-bottom: 18px; }
+      .hex-card { border: 1px solid #c4d3d7; border-radius: 14px; padding: 12px 14px; background: #fdfefe; }
+      .hex-title { margin: 0 0 6px; font-weight: 700; }
+      .metrics-list { margin: 6px 0 0; padding-left: 16px; color: #334155; font-size: 13px; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
       col.timestamp-column { width: 180px; }
       col.agent-column { width: calc((100% - 180px) / 3); }
-      th, td {
-        border: 1px solid #c4d3d7;
-        padding: 16px;
-        vertical-align: top;
-        background-color: #ffffff;
-      }
-      th {
-        background: #d8e6e9;
-        text-align: left;
-        font-size: 13px;
-        font-weight: 600;
-        letter-spacing: 0.05em;
-        text-transform: uppercase;
-        color: #2c3a40;
-      }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
       tbody tr:nth-child(even) td { background-color: #eef3f4; }
       details { display: block; margin: 0; }
       details summary { list-style: none; }
       details[open] summary { margin-bottom: 12px; }
-      .details-toggle {
-        display: inline-flex;
-        align-items: center;
-        gap: 6px;
-        cursor: pointer;
-        font-weight: 500;
-        font-size: 13px;
-        color: #1f2a30;
-        padding: 0;
-        background: transparent;
-        border: none;
-      }
-      .details-toggle::before {
-        content: "▶";
-        font-size: 10px;
-        transition: transform 160ms ease;
-        display: inline-block;
-      }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
       details[open] .details-toggle::before { transform: rotate(90deg); }
       .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
       .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
-      pre {
-        white-space: pre-wrap;
-        word-break: break-word;
-        margin: 0;
-        font-size: 12px;
-        line-height: 1.55;
-        color: #1f2a30;
-        background: #f2f6f7;
-        border: 1px solid #c4d3d7;
-        padding: 16px;
-      }
-      .status-badge {
-        display: inline-block;
-        font-size: 10px;
-        font-weight: 600;
-        letter-spacing: 0.02em;
-        padding: 1px 6px;
-        background: #d8e6e9;
-        border: 1px solid #b8c9cd;
-        color: #1f2a30;
-        white-space: nowrap;
-        line-height: 1.3;
-        vertical-align: top;
-      }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
       .status-badge--pass { background: #ecfdf3; border-color: #bbf7d0; color: #166534; }
       .status-badge--warn { background: #fff7ed; border-color: #fbbf24; color: #92400e; }
       .status-badge--fail { background: #fef2f2; border-color: #ef4444; color: #991b1b; }
@@ -176,8 +63,8 @@
           <div>task-1765481483567-c38c83（OrcaActionPanel 実装）</div>
         </div>
         <div class="total-card">
-          <div class="total-score">❌ 65 / 600</div>
-          <div>task-1765481483768-5cc253（差分なし・未着手扱い）</div>
+          <div class="total-score">🥉 396 / 600</div>
+          <div>task-1765481483768-5cc253（ChartsActionBar 追加版）</div>
         </div>
       </div>
 
@@ -211,16 +98,16 @@
           </div>
         </div>
         <div class="hex-card">
-          <p class="hex-title">task-1765481483768-5cc253｜平均11点</p>
+          <p class="hex-title">task-1765481483768-5cc253｜平均66点</p>
           <div class="hex-chart-wrapper">
-            <div class="hex-chart" data-values="10,10,10,15,20,0">
+            <div class="hex-chart" data-values="70,65,50,72,78,60">
               <svg viewBox="0 0 120 120">
                 <polygon class="hex-chart__grid" points="60,10 107,35 107,85 60,110 13,85 13,35" />
                 <polygon class="hex-chart__fill" points="60,10 107,35 107,85 60,110 13,85 13,35" />
               </svg>
             </div>
             <div class="metric-labels">
-              <span>機能適合 10</span><span>安全制御 10</span><span>テレメトリ 10</span><span>UX 15</span><span>コード品質 20</span><span>ドキュメント 0</span>
+              <span>機能適合 70</span><span>安全制御 65</span><span>テレメトリ 50</span><span>UX 72</span><span>コード品質 78</span><span>ドキュメント 60</span>
             </div>
           </div>
         </div>
@@ -243,7 +130,7 @@
         </thead>
         <tbody>
           <tr>
-            <td class="timestamp">2025-12-12 04:54</td>
+            <td class="timestamp">2025-12-12 05:05</td>
             <td>
               <div class="agent-meta">
                 <span class="status-badge status-badge--pass">🥈 Silver</span>
@@ -283,13 +170,19 @@
             </td>
             <td>
               <div class="agent-meta">
-                <span class="status-badge status-badge--fail">❌ None</span>
-                <span class="agent-label">master と差分なし。要件未実装。</span>
+                <span class="status-badge status-badge--warn">🥉 Bronze</span>
+                <span class="agent-label">新規 ChartsActionBar を追加し missingMaster ブロックとスケルトン/トースト/リトライを実装。</span>
               </div>
               <details class="snapshot-details">
                 <summary class="details-toggle">ログ/差分概要</summary>
+                <div class="snapshot-summary">commit 58e036f4 「Charts: ORCA送信アクションバー追加」</div>
                 <pre>
-コミット差分: 0。成果物なし。評価不可のためスコア低。
+主な変更: web-client/src/features/charts/ChartsActionBar.tsx, charts/styles.ts, charts/pages/ChartsPage.tsx, auditLogger UiAction へ finish/draft/cancel 追加。
+- missingMaster=true で送信をブロックし警告トースト。fallbackUsed は警告のみで送信可。
+- busyAction 中に UI をロックしスケルトン表示、send かつ cacheHit=false で疑似失敗→再実行ボタン。
+- audit/logUiState へ action/outcome を記録し orchestrator ハンドラに引き渡し。
+不足: テレメトリ（recordOutpatientFunnel 等）を記録しておらず「audit/telemetry 記録」の半分未達。成功後に恒久ロックを保持せず、完了直後に再操作可能で「UI 状態ロック」の要件弱め。長処理は setTimeout 模擬のみ。
+成果物: `web-client/src/features/charts/ChartsActionBar.tsx`, `web-client/src/features/charts/styles.ts`, `web-client/src/features/charts/pages/ChartsPage.tsx`。
                 </pre>
               </details>
             </td>
