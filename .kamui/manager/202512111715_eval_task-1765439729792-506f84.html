@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      .score-card {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 12px 14px;
+        border-radius: 8px;
+        font-weight: 700;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 5); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .chart-block { display: flex; gap: 8px; align-items: center; margin-bottom: 8px; }
+      .chart-block svg { flex: 0 0 120px; }
+      .metric-list { font-size: 12px; color: #2c3a40; line-height: 1.5; }
+      .metric-list div { margin-bottom: 2px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">docs/web-client 配下ドキュメントおよびデバッグ用 Web クライアント内容をレビューし、画面別実装計画の網羅性と緻密性を採点。</p>
+        <div class="scoreboard">
+          <div class="score-card">🏆 550 / 600 — task/task-1765439722050-8bad49</div>
+          <div class="score-card">🥈 515 / 600 — task/task-1765439721451-699554</div>
+          <div class="score-card">🥉 454 / 600 — task/task-1765439721651-c1f8af</div>
+          <div class="score-card">🥉 443 / 600 — task/task-1765439722250-f026e1</div>
+          <div class="score-card">🥉 422 / 600 — task/task-1765439721851-e2adf4</div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765439722050-8bad49</th>
+            <th>task-1765439721451-699554</th>
+            <th>task-1765439721651-c1f8af</th>
+            <th>task-1765439722250-f026e1</th>
+            <th>task-1765439721851-e2adf4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 17:15</td>
+            <td>
+              <div class="chart-block">
+                <svg width="120" height="120" viewBox="0 0 100 100" aria-label="六角形チャート">
+                  <polygon points="50,10 84.6,30 84.6,70 50,90 15.4,70 15.4,30" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="50,12.8 82.6,31.2 81.2,68 50,86.4 18.8,68 18.2,31.6" fill="#4caf50" fill-opacity="0.35" stroke="#2e7d32" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 93</div>
+                  <div>緻密性 94</div>
+                  <div>ドキュメント整合 90</div>
+                  <div>実装準備度 91</div>
+                  <div>A11y/監査 90</div>
+                  <div>RUN_ID運用 92</div>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">評価</span> README/DOC_STATUS を再構成し、新計画書と証跡ログ（20251211T075709Z）をハブ化。画面別仕様・API・ARIA/監査・テレメトリを網羅。</div>
+              <details class="snapshot-details"><summary class="details-toggle">差分・所見</summary><pre>- 追加: planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md（全画面の機能・API・テレメトリ・テスト計画を記載）
+- README: Active/Archive を整理し計画書を入口化、RUN_ID を明示
+- DOC_STATUS: Active セクションを再定義し計画書と証跡ログを同期
+- 証跡ログ: logs/20251211T075709Z-web-client-plan.md を追加
+⚠️ 改善余地: Stage/Preview 検証の具体タスク・所要環境をもう一段ブレークダウンすると実装準備度がさらに向上</pre></details>
+            </td>
+            <td>
+              <div class="chart-block">
+                <svg width="120" height="120" viewBox="0 0 100 100" aria-label="六角形チャート">
+                  <polygon points="50,10 84.6,30 84.6,70 50,90 15.4,70 15.4,30" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="50,14.0 81.8,31.6 77.0,65.6 50,84.0 19.5,67.6 21.6,33.6" fill="#2196f3" fill-opacity="0.30" stroke="#1565c0" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 90</div>
+                  <div>緻密性 92</div>
+                  <div>ドキュメント整合 78</div>
+                  <div>実装準備度 85</div>
+                  <div>A11y/監査 88</div>
+                  <div>RUN_ID運用 82</div>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">評価</span> 統合マスタープラン（20251211T185500Z）を新設し、画面別仕様/監査/テストを詳細化。証跡ログも追加。</div>
+              <details class="snapshot-details"><summary class="details-toggle">差分・所見</summary><pre>- 追加: planning/phase2/WEB_CLIENT_IMPLEMENTATION_MASTER_PLAN.md（Reception/Charts/Patients/Administration の要件を細かく列挙）
+- README: Active リストに計画書と証跡を追記
+- DOC_STATUS: 既存行が Dormant/Archive のまま残存し、Active/Archive の混在が目立つ
+⚠️ 課題: DOC_STATUS の整合性が弱く、Legacy と現行の境界が曖昧。RUN_ID も複数残存</pre></details>
+            </td>
+            <td>
+              <div class="chart-block">
+                <svg width="120" height="120" viewBox="0 0 100 100" aria-label="六角形チャート">
+                  <polygon points="50,10 84.6,30 84.6,70 50,90 15.4,70 15.4,30" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="50,17.2 79.1,33.2 74.3,64.0 50,80.0 23.0,65.6 27.5,37.0" fill="#ff9800" fill-opacity="0.30" stroke="#ef6c00" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 82</div>
+                  <div>緻密性 84</div>
+                  <div>ドキュメント整合 70</div>
+                  <div>実装準備度 75</div>
+                  <div>A11y/監査 78</div>
+                  <div>RUN_ID運用 65</div>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">評価</span> 実装計画書を追加し README/DOC_STATUS にリンク。ただし証跡ログなし。</div>
+              <details class="snapshot-details"><summary class="details-toggle">差分・所見</summary><pre>- 追加: planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md（画面別タスクと検証を列挙）
+- README/DOC_STATUS: 計画書を Active に1行追加
+⚠️ RUN_ID 証跡ログが未作成、Stage/Preview 検証タスクや優先順位の具体度が不足</pre></details>
+            </td>
+            <td>
+              <div class="chart-block">
+                <svg width="120" height="120" viewBox="0 0 100 100" aria-label="六角形チャート">
+                  <polygon points="50,10 84.6,30 84.6,70 50,90 15.4,70 15.4,30" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="50,18.0 78.4,33.6 73.6,63.6 50,79.6 24.0,65.0 27.8,37.2" fill="#9c27b0" fill-opacity="0.28" stroke="#6a1b9a" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 80</div>
+                  <div>緻密性 82</div>
+                  <div>ドキュメント整合 68</div>
+                  <div>実装準備度 74</div>
+                  <div>A11y/監査 75</div>
+                  <div>RUN_ID運用 64</div>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">評価</span> architecture 配下に計画書を新設し README/DOC_STATUS へリンク。</div>
+              <details class="snapshot-details"><summary class="details-toggle">差分・所見</summary><pre>- 追加: architecture/web-client-implementation-plan.md（計画を architecture 階層に配置）
+- README/DOC_STATUS: 計画書リンクと RUN_ID 追加
+⚠️ 計画位置が planning/phase2 と分断され、証跡ログ不在。実装ロードマップの優先度と依存関係が粗い</pre></details>
+            </td>
+            <td>
+              <div class="chart-block">
+                <svg width="120" height="120" viewBox="0 0 100 100" aria-label="六角形チャート">
+                  <polygon points="50,10 84.6,30 84.6,70 50,90 15.4,70 15.4,30" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="50,18.8 77.7,34.0 71.5,62.4 50,78.0 25.1,64.4 29.2,38.0" fill="#607d8b" fill-opacity="0.30" stroke="#455a64" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 78</div>
+                  <div>緻密性 80</div>
+                  <div>ドキュメント整合 62</div>
+                  <div>実装準備度 70</div>
+                  <div>A11y/監査 72</div>
+                  <div>RUN_ID運用 60</div>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">評価</span> 計画書のみ追加。README に軽微なリンク追加。</div>
+              <details class="snapshot-details"><summary class="details-toggle">差分・所見</summary><pre>- 追加: planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md（20251211T075744Z）
+- README: Active リストに1行追記
+⚠️ DOC_STATUS 未更新・証跡ログなし。画面別タスクの優先度・依存・検証フローの具体度が不足</pre></details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
