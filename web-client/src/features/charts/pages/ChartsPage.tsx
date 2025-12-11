@@ -1,27 +1,19 @@
 import { Global } from '@emotion/react';
 
 import { AuthServiceControls } from '../AuthServiceControls';
-import { AuthServiceProvider, useAuthService } from '../authService';
+import { useAuthService } from '../authService';
 import { DocumentTimeline } from '../DocumentTimeline';
 import { OrcaSummary } from '../OrcaSummary';
 import { PatientsTab } from '../PatientsTab';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 
-const DEFAULT_RUN_ID = '20251205T150000Z';
-
-type ChartsPageProps = {
-  runId?: string;
-};
-
-export function ChartsPage({ runId }: ChartsPageProps) {
-  const resolvedRunId = runId ?? DEFAULT_RUN_ID;
-
+export function ChartsPage() {
   return (
-    <AuthServiceProvider initialFlags={{ runId: resolvedRunId }}>
+    <>
       <Global styles={[receptionStyles, chartsStyles]} />
       <ChartsContent />
-    </AuthServiceProvider>
+    </>
   );
 }
 

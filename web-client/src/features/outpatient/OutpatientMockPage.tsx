@@ -15,6 +15,7 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { receptionStyles } from '../reception/styles';
 import { CacheHitBadge, MissingMasterBadge } from '../shared/StatusBadge';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import { useAuthService } from '../charts/authService';
 
 type FlagEnvelope = {
   runId?: string;
@@ -44,6 +45,7 @@ const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFl
 });
 
 export function OutpatientMockPage() {
+  const { replaceFlags, bumpRunId } = useAuthService();
   const [flags, setFlags] = useState<ResolvedFlags>({
     runId: FALLBACK_RUN_ID,
     cacheHit: false,
@@ -70,6 +72,10 @@ export function OutpatientMockPage() {
 
         const merged = toResolvedFlags(claimJson, medicalJson);
         setFlags(merged);
+        replaceFlags(merged);
+        if (merged.runId) {
+          bumpRunId(merged.runId);
+        }
 
         const resolveRecord = recordOutpatientFunnel('resolve_master', merged);
         const orchestrationRecord = handleOutpatientFlags(merged);

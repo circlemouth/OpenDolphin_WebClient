@@ -45,6 +45,14 @@
   font-size: 0.9rem;
   color: #1d4ed8;
 }
+.app-shell__pill.is-clickable {
+  cursor: pointer;
+  transition: box-shadow 0.2s ease, transform 0.1s ease;
+}
+.app-shell__pill.is-clickable:hover {
+  box-shadow: 0 10px 30px rgba(37, 99, 235, 0.2);
+  transform: translateY(-1px);
+}
 
 .app-shell__pill--copy {
   cursor: pointer;
@@ -107,6 +115,26 @@
 
 .app-shell__body {
   padding: 0 1.25rem 2rem;
+}
+
+.app-shell__notice-stack {
+  position: fixed;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-width: min(360px, 90vw);
+  z-index: 120;
+}
+
+.app-shell__notice {
+  background: rgba(15, 23, 42, 0.9);
+  color: #f8fafc;
+  padding: 10px 12px;
+  border-radius: 12px;
+  box-shadow: 0 12px 30px rgba(15, 23, 42, 0.25);
+  font-size: 0.9rem;
 }
 
 @media (max-width: 720px) {
