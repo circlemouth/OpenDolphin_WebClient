@@ -25,6 +25,7 @@
                 open.dolphin.rest.NLabResource,
                 open.dolphin.rest.PVTResource,
                 open.dolphin.rest.PatientResource,
+                open.dolphin.rest.OrcaAcceptanceListResource,
                 open.dolphin.rest.OutpatientClaimResource,
                 open.dolphin.rest.orca.OrcaMedicalResource,
                 open.dolphin.rest.orca.OrcaDiseaseResource,
