@@ -2,14 +2,14 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import type { ReceptionEntry } from '../reception/api';
 
-const PATIENT_ROWS = [
-  { patientId: 'PX-2024-001', name: '山田 太郎', insurance: '保険', lastEvent: 'ORCA queue 追加' },
-  { patientId: 'PX-2024-002', name: '鈴木 花子', insurance: '自費', lastEvent: 'missingMaster 再送待ち' },
-  { patientId: 'PX-2024-003', name: '佐藤 一郎', insurance: '保険', lastEvent: 'cacheHit= true' },
-];
+export interface PatientsTabProps {
+  entries?: ReceptionEntry[];
+  auditEvent?: Record<string, unknown>;
+}
 
-export function PatientsTab() {
+export function PatientsTab({ entries = [], auditEvent }: PatientsTabProps) {
   const { flags } = useAuthService();
   const tonePayload: ChartTonePayload = {
     missingMaster: flags.missingMaster,
@@ -49,19 +49,41 @@ export function PatientsTab() {
         </div>
       </div>
       <div className="patients-tab__table" role="list">
-        {PATIENT_ROWS.map((patient) => (
-          <article key={patient.patientId} className="patients-tab__row" data-run-id={flags.runId}>
+        {entries.length === 0 && (
+          <article className="patients-tab__row" data-run-id={flags.runId}>
             <div className="patients-tab__row-meta">
-              <span className="patients-tab__row-id">{patient.patientId}</span>
-              <strong>{patient.name}</strong>
+              <span className="patients-tab__row-id">患者データなし</span>
+              <strong>外来 API 応答を待機</strong>
             </div>
-            <p className="patients-tab__row-detail">{patient.insurance} | {patient.lastEvent}</p>
+            <p className="patients-tab__row-detail">Reception からの取得結果がまだ届いていません。</p>
+            <span className="patients-tab__row-status">tone={tone}</span>
+          </article>
+        )}
+        {entries.slice(0, 6).map((patient) => (
+          <article key={patient.id} className="patients-tab__row" data-run-id={flags.runId}>
+            <div className="patients-tab__row-meta">
+              <span className="patients-tab__row-id">{patient.patientId ?? patient.appointmentId ?? 'ID不明'}</span>
+              <strong>{patient.name ?? '患者未登録'}</strong>
+            </div>
+            <p className="patients-tab__row-detail">
+              {patient.insurance ?? patient.source} | {patient.note ?? 'メモなし'}
+            </p>
             <span className="patients-tab__row-status">
               {flags.missingMaster ? 'missingMaster 警告' : flags.cacheHit ? 'cacheHit 命中' : 'server route'}
             </span>
           </article>
         ))}
       </div>
+      {auditEvent && (
+        <div className="patients-tab__audit" role="alert" aria-live="assertive">
+          <strong>auditEvent</strong>
+          <p>
+            {Object.entries(auditEvent)
+              .map(([key, value]) => `${key}: ${String(value)}`)
+              .join(' ｜ ')}
+          </p>
+        </div>
+      )}
     </section>
   );
 }

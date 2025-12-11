@@ -54,3 +54,36 @@ export function getUiStateLog() {
 export function clearUiStateLog() {
   uiStateLog.length = 0;
 }
+
+export type AuditEventRecord = {
+  runId?: string;
+  source?: string;
+  note?: string;
+  cacheHit?: boolean;
+  missingMaster?: boolean;
+  dataSourceTransition?: DataSourceTransition;
+  payload?: Record<string, unknown>;
+  timestamp: string;
+};
+
+const auditEventLog: AuditEventRecord[] = [];
+
+export function logAuditEvent(entry: Omit<AuditEventRecord, 'timestamp'>) {
+  const record: AuditEventRecord = { ...entry, timestamp: new Date().toISOString() };
+  auditEventLog.push(record);
+  if (typeof console !== 'undefined') {
+    console.info('[audit] event', record);
+  }
+  if (typeof window !== 'undefined') {
+    (window as any).__AUDIT_EVENTS__ = [...auditEventLog];
+  }
+  return record;
+}
+
+export function getAuditEventLog() {
+  return [...auditEventLog];
+}
+
+export function clearAuditEventLog() {
+  auditEventLog.length = 0;
+}
