@@ -1,13 +1,99 @@
 import { Global } from '@emotion/react';
-import { useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../../libs/audit/auditLogger';
 import { updateObservabilityMeta } from '../../../libs/observability/observability';
 import type { DataSourceTransition } from '../../../libs/observability/types';
-import type { BannerTone } from '../components/ToneBanner';
-import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
-import { OrderConsole } from '../components/OrderConsole';
+import { CacheHitBadge, MissingMasterBadge } from '../../shared/StatusBadge';
+import { ResolveMasterBadge } from '../components/ResolveMasterBadge';
+import { ToneBanner } from '../components/ToneBanner';
+import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry, type ReceptionStatus } from '../api';
 import { receptionStyles } from '../styles';
+import { useAuthService } from '../../charts/authService';
+import { getChartToneDetails } from '../../../ux/charts/tones';
+
+type SortKey = 'time' | 'name' | 'department';
+
+const SECTION_ORDER: ReceptionStatus[] = ['受付中', '診療中', '会計待ち', '会計済み', '予約'];
+const SECTION_LABEL: Record<ReceptionStatus, string> = {
+  受付中: '受付中',
+  診療中: '診療中',
+  会計待ち: '会計待ち',
+  会計済み: '会計済み',
+  予約: '予約',
+};
+
+const COLLAPSE_STORAGE_KEY = 'reception-section-collapses';
+
+const todayString = () => new Date().toISOString().slice(0, 10);
+
+const loadCollapseState = (): Record<ReceptionStatus, boolean> => {
+  if (typeof localStorage === 'undefined') return { 受付中: false, 診療中: false, 会計待ち: false, 会計済み: true, 予約: false };
+  try {
+    const stored = localStorage.getItem(COLLAPSE_STORAGE_KEY);
+    if (stored) {
+      return { 受付中: false, 診療中: false, 会計待ち: false, 会計済み: true, 予約: false, ...(JSON.parse(stored) as Record<ReceptionStatus, boolean>) };
+    }
+  } catch {
+    // ignore broken localStorage value
+  }
+  return { 受付中: false, 診療中: false, 会計待ち: false, 会計済み: true, 予約: false };
+};
+
+const persistCollapseState = (state: Record<ReceptionStatus, boolean>) => {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.setItem(COLLAPSE_STORAGE_KEY, JSON.stringify(state));
+  } catch {
+    // ignore
+  }
+};
+
+const filterEntries = (
+  entries: ReceptionEntry[],
+  keyword: string,
+  department: string,
+  physician: string,
+): ReceptionEntry[] => {
+  const kw = keyword.trim().toLowerCase();
+  return entries.filter((entry) => {
+    const matchesKeyword =
+      kw.length === 0 ||
+      [entry.name, entry.kana, entry.patientId, entry.appointmentId].some((value) =>
+        value?.toLowerCase().includes(kw),
+      );
+    const matchesDept = department ? entry.department === department : true;
+    const matchesPhysician = physician ? entry.physician === physician : true;
+    return matchesKeyword && matchesDept && matchesPhysician;
+  });
+};
+
+const sortEntries = (entries: ReceptionEntry[], sortKey: SortKey) => {
+  const toMinutes = (time?: string) => {
+    if (!time) return Number.MAX_SAFE_INTEGER;
+    const [h, m] = time.split(':').map((v) => Number(v));
+    if (Number.isNaN(h) || Number.isNaN(m)) return Number.MAX_SAFE_INTEGER;
+    return h * 60 + m;
+  };
+
+  return [...entries].sort((a, b) => {
+    if (sortKey === 'time') {
+      return toMinutes(a.appointmentTime) - toMinutes(b.appointmentTime);
+    }
+    if (sortKey === 'department') {
+      return (a.department ?? '').localeCompare(b.department ?? '', 'ja');
+    }
+    return (a.name ?? '').localeCompare(b.name ?? '', 'ja');
+  });
+};
+
+const groupByStatus = (entries: ReceptionEntry[]) =>
+  SECTION_ORDER.map((status) => ({
+    status,
+    items: entries.filter((entry) => entry.status === status),
+  }));
 
 type ReceptionPageProps = {
   runId?: string;
@@ -18,148 +104,390 @@ type ReceptionPageProps = {
   description?: string;
 };
 
-const RUN_ID = '20251205T062049Z';
-const PATIENT_ID = 'PX-2025-2304-001';
-const RECEPTION_ID = 'R-20251204-003';
-const DESTINATION = 'ORCA queue';
-
 export function ReceptionPage({
-  runId = RUN_ID,
-  patientId = PATIENT_ID,
-  receptionId = RECEPTION_ID,
-  destination = DESTINATION,
-  title = 'Reception UX コンポーネント実装',
-  description =
-    '`tone=server` バナーと `resolveMasterSource` バッジを ReceptionPage 直下でステップ的に表示し、OrderConsole に `missingMaster` 入力とメモのみを保持することで `aria-live` 調整を単一箇所に集約した UX を実現します。',
+  runId: initialRunId,
+  patientId,
+  receptionId,
+  destination = 'ORCA queue',
+  title = 'Reception 検索と外来API接続',
+  description = '外来請求/予約 API を React Query で取得し、missingMaster・cacheHit・dataSourceTransition をトーンバナーとリストへ反映します。行をダブルクリックすると同じ RUN_ID で Charts へ遷移します。',
 }: ReceptionPageProps) {
-  const [masterSource, setMasterSource] = useState<ResolveMasterSource>('mock');
-  const [missingMaster, setMissingMaster] = useState(true);
-  const [cacheHit, setCacheHit] = useState(false);
-  const [missingMasterNote, setMissingMasterNote] = useState('');
+  const navigate = useNavigate();
+  const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, bumpRunId } = useAuthService();
+  const [selectedDate, setSelectedDate] = useState(todayString());
+  const [keyword, setKeyword] = useState('');
+  const [submittedKeyword, setSubmittedKeyword] = useState('');
+  const [departmentFilter, setDepartmentFilter] = useState('');
+  const [physicianFilter, setPhysicianFilter] = useState('');
+  const [sortKey, setSortKey] = useState<SortKey>('time');
+  const [collapsed, setCollapsed] = useState<Record<ReceptionStatus, boolean>>(loadCollapseState);
+  const summaryRef = useRef<HTMLParagraphElement | null>(null);
+  const appliedMeta = useRef<{
+    runId?: string;
+    cacheHit?: boolean;
+    missingMaster?: boolean;
+    dataSourceTransition?: DataSourceTransition;
+  }>({});
 
-  const tone: BannerTone = useMemo(() => {
-    if (masterSource === 'fallback' || missingMaster) {
-      return 'error';
-    }
-    if (masterSource === 'server') {
-      return 'warning';
-    }
-    if (cacheHit) {
-      return 'info';
-    }
-    return 'warning';
-  }, [masterSource, missingMaster, cacheHit]);
+  const claimQuery = useQuery({
+    queryKey: ['outpatient-claim-flags'],
+    queryFn: fetchClaimFlags,
+    refetchInterval: 90_000,
+  });
 
-  const summaryMessage = useMemo(() => {
-    if (masterSource === 'server') {
-      return missingMaster
-        ? 'server へ遷移済だが missingMaster=true を監視中。再取得が必要です。'
-        : 'server ソースで tone=server を保持し、ORCA 送信を再試行できます。';
-    }
-    if (masterSource === 'fallback') {
-      return 'server から fallback へ降格。監査 metadata を再確認してください。';
-    }
-    return 'mock/snapshot ソース。データ更新は cacheHit で判断。';
-  }, [masterSource, missingMaster]);
+  const appointmentQuery = useQuery({
+    queryKey: ['outpatient-appointments', selectedDate, submittedKeyword, departmentFilter, physicianFilter],
+    queryFn: () =>
+      fetchAppointmentOutpatients({
+        date: selectedDate,
+        keyword: submittedKeyword,
+        departmentCode: departmentFilter || undefined,
+        physicianCode: physicianFilter || undefined,
+      }),
+    refetchOnWindowFocus: false,
+  });
 
-  const nextAction = missingMaster ? 'マスタ再取得' : 'ORCA 再送';
-  const transitionDescription =
-    masterSource === 'server'
-      ? 'snapshot → server （tone=server）'
-      : masterSource === 'fallback'
-        ? 'server → fallback'
-      : masterSource === 'snapshot'
-          ? 'mock → snapshot'
-          : 'mock fixtures';
+  useEffect(() => {
+    persistCollapseState(collapsed);
+  }, [collapsed]);
 
-  const emitAudit = (
-    action: 'tone_change' | 'save' | 'config_delivery',
-    controlId: string,
-    nextState?: Partial<{ missingMaster: boolean; cacheHit: boolean; masterSource: ResolveMasterSource }>,
-  ) => {
-    const nextMissing = nextState?.missingMaster ?? missingMaster;
-    const nextCache = nextState?.cacheHit ?? cacheHit;
-    const nextSource = nextState?.masterSource ?? masterSource;
-    updateObservabilityMeta({
-      runId,
-      missingMaster: nextMissing,
-      cacheHit: nextCache,
-      dataSourceTransition: nextSource as DataSourceTransition,
-    });
-    logUiState({
-      action,
-      screen: 'reception/order-console',
-      controlId,
-      runId,
-      missingMaster: nextMissing,
-      cacheHit: nextCache,
-      dataSourceTransition: nextSource as DataSourceTransition,
-    });
+  const mergedMeta = useMemo(() => {
+    const claim = claimQuery.data;
+    const appointment = appointmentQuery.data;
+    const run = claim?.runId ?? appointment?.runId ?? initialRunId ?? flags.runId;
+    const missing = claim?.missingMaster ?? appointment?.missingMaster ?? flags.missingMaster;
+    const cache = claim?.cacheHit ?? appointment?.cacheHit ?? flags.cacheHit;
+    const transition = claim?.dataSourceTransition ?? appointment?.dataSourceTransition ?? flags.dataSourceTransition;
+    return {
+      runId: run,
+      missingMaster: missing,
+      cacheHit: cache,
+      dataSourceTransition: transition,
+      fetchedAt: claim?.fetchedAt ?? appointment?.fetchedAt,
+    };
+  }, [appointmentQuery.data, claimQuery.data, flags.cacheHit, flags.dataSourceTransition, flags.missingMaster, flags.runId, initialRunId]);
+
+  useEffect(() => {
+    const { runId, cacheHit, missingMaster, dataSourceTransition } = mergedMeta;
+    const prev = appliedMeta.current;
+    const isChanged =
+      runId !== prev.runId ||
+      cacheHit !== prev.cacheHit ||
+      missingMaster !== prev.missingMaster ||
+      dataSourceTransition !== prev.dataSourceTransition;
+    if (!isChanged) return;
+
+    if (runId) {
+      bumpRunId(runId);
+      updateObservabilityMeta({ runId });
+    }
+    if (cacheHit !== undefined) setCacheHit(cacheHit);
+    if (missingMaster !== undefined) setMissingMaster(missingMaster);
+    if (dataSourceTransition) setDataSourceTransition(dataSourceTransition);
+
+    appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition };
+  }, [bumpRunId, mergedMeta, setCacheHit, setDataSourceTransition, setMissingMaster]);
+
+  const entries = appointmentQuery.data?.entries ?? [];
+  const filteredEntries = useMemo(
+    () => filterEntries(entries, keyword, departmentFilter, physicianFilter),
+    [entries, keyword, departmentFilter, physicianFilter],
+  );
+  const sortedEntries = useMemo(() => sortEntries(filteredEntries, sortKey), [filteredEntries, sortKey]);
+  const grouped = useMemo(() => groupByStatus(sortedEntries), [sortedEntries]);
+
+  const uniqueDepartments = useMemo(
+    () => Array.from(new Set(entries.map((entry) => entry.department).filter(Boolean))) as string[],
+    [entries],
+  );
+  const uniquePhysicians = useMemo(
+    () => Array.from(new Set(entries.map((entry) => entry.physician).filter(Boolean))) as string[],
+    [entries],
+  );
+
+  const summaryText = useMemo(() => {
+    const counts = grouped.map(({ status, items }) => `${status}: ${items.length}件`).join(' / ');
+    return `検索結果 ${sortedEntries.length}件（${counts}）`;
+  }, [grouped, sortedEntries.length]);
+
+  useEffect(() => {
+    summaryRef.current?.focus?.();
+  }, [summaryText]);
+
+  const tonePayload = useMemo(
+    () => ({
+      missingMaster: mergedMeta.missingMaster ?? true,
+      cacheHit: mergedMeta.cacheHit ?? false,
+      dataSourceTransition: mergedMeta.dataSourceTransition ?? 'snapshot',
+    }),
+    [mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster],
+  );
+  const toneDetails = useMemo(() => getChartToneDetails(tonePayload), [tonePayload]);
+  const masterSource =
+    tonePayload.dataSourceTransition === 'server'
+      ? 'server'
+      : tonePayload.dataSourceTransition === 'fallback'
+        ? 'fallback'
+        : tonePayload.dataSourceTransition === 'mock'
+          ? 'mock'
+          : 'snapshot';
+
+  const handleSearchSubmit = useCallback(
+    (event: FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      setSubmittedKeyword(keyword.trim());
+      appointmentQuery.refetch();
+      logUiState({
+        action: 'search',
+        screen: 'reception/list',
+        controlId: 'search-form',
+        runId: mergedMeta.runId,
+        dataSourceTransition: mergedMeta.dataSourceTransition,
+      });
+    },
+    [appointmentQuery, keyword, mergedMeta.dataSourceTransition, mergedMeta.runId],
+  );
+
+  const handleClear = useCallback(() => {
+    setKeyword('');
+    setSubmittedKeyword('');
+    setDepartmentFilter('');
+    setPhysicianFilter('');
+    setSortKey('time');
+  }, []);
+
+  const handleRowDoubleClick = useCallback(
+    (entry: ReceptionEntry) => {
+      const nextRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
+      if (nextRunId) {
+        bumpRunId(nextRunId);
+        updateObservabilityMeta({ runId: nextRunId });
+      }
+      logUiState({
+        action: 'navigate',
+        screen: 'reception/list',
+        controlId: entry.id,
+        runId: nextRunId,
+        dataSourceTransition: mergedMeta.dataSourceTransition,
+        cacheHit: mergedMeta.cacheHit,
+        missingMaster: mergedMeta.missingMaster,
+        patientId: entry.patientId,
+      });
+      navigate('/charts', { state: { patientId: entry.patientId, appointmentId: entry.appointmentId } });
+    },
+    [bumpRunId, flags.runId, initialRunId, mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster, mergedMeta.runId, navigate],
+  );
+
+  const toggleSection = (status: ReceptionStatus) => {
+    setCollapsed((prev) => ({ ...prev, [status]: !prev[status] }));
   };
 
   return (
     <>
       <Global styles={receptionStyles} />
-      <main className="reception-page">
+      <main className="reception-page" data-run-id={mergedMeta.runId}>
         <section className="reception-page__header">
           <h1>{title}</h1>
           <p>{description}</p>
+          <div className="reception-page__meta-bar" role="status" aria-live="polite" data-run-id={mergedMeta.runId}>
+            <span className="reception-pill">RUN_ID: {mergedMeta.runId ?? '未取得'}</span>
+            <span className="reception-pill">dataSourceTransition: {mergedMeta.dataSourceTransition ?? 'snapshot'}</span>
+            <span className="reception-pill">missingMaster: {String(mergedMeta.missingMaster ?? true)}</span>
+            <span className="reception-pill">cacheHit: {String(mergedMeta.cacheHit ?? false)}</span>
+            {mergedMeta.fetchedAt && <span className="reception-pill">fetchedAt: {mergedMeta.fetchedAt}</span>}
+          </div>
         </section>
-        <OrderConsole
-          masterSource={masterSource}
-          missingMaster={missingMaster}
-          cacheHit={cacheHit}
-          missingMasterNote={missingMasterNote}
-          runId={runId}
-          tone={tone}
-          toneMessage={summaryMessage}
-          patientId={patientId}
-          receptionId={receptionId}
-          destination={destination}
-          nextAction={nextAction}
-          transitionDescription={transitionDescription}
-          onMasterSourceChange={(value) => {
-            setMasterSource(value);
-            emitAudit('config_delivery', 'master-source', { masterSource: value });
-          }}
-          onToggleMissingMaster={() => {
-            setMissingMaster((prev) => {
-              const next = !prev;
-              emitAudit('tone_change', 'toggle-missing-master', { missingMaster: next });
-              return next;
-            });
-          }}
-          onToggleCacheHit={() => {
-            setCacheHit((prev) => {
-              const next = !prev;
-              emitAudit('tone_change', 'toggle-cache-hit', { cacheHit: next });
-              return next;
-            });
-          }}
-          onMissingMasterNoteChange={(value) => {
-            setMissingMasterNote(value);
-            emitAudit('save', 'missing-master-note');
-          }}
-        />
-        <section className="reception-page__meta" aria-live="polite">
-          <h2>ARIA/Tone 周りの意図</h2>
-          <ol>
-            <li>
-              `tone=server` は `aria-live` を assertive にして最新ステータスのみ announce
-              し、`aria-atomic=false` で二重読み上げを抑えています。
-            </li>
-            <li>
-            `missingMaster`/`cacheHit` の Update は Chart/Patients でも同じ
-            `status-badge` を再利用し、`role=status` + `data-run-id` で画面横断の carry-over を
-            確認可能にします。
-          </li>
-          <li>
-            `resolveMasterSource` は `runId=20251205T062049Z` を含むバッジで
-              `dataSourceTransition=server` を明示し、`missingMaster=false` の瞬間に tone/ARIA を
-              `info` → `warning` に昇格させます。
-          </li>
-          </ol>
+
+        <section className="order-console" aria-label="外来トーン・ステータス">
+          <div className="order-console__status-steps">
+            <div className="order-console__step">
+              <span className="order-console__step-label">Tone</span>
+              <ToneBanner
+                tone={toneDetails.tone}
+                message={toneDetails.message}
+                patientId={patientId}
+                receptionId={receptionId}
+                destination={destination}
+                nextAction={toneDetails.tone === 'error' || mergedMeta.missingMaster ? 'マスタ再取得' : 'ORCA再送'}
+                runId={mergedMeta.runId}
+              />
+            </div>
+            <div className="order-console__step">
+              <span className="order-console__step-label">resolveMasterSource</span>
+              <ResolveMasterBadge
+                masterSource={masterSource}
+                transitionDescription={`dataSourceTransition=${tonePayload.dataSourceTransition}`}
+                runId={mergedMeta.runId}
+              />
+            </div>
+          </div>
+          <div className="order-console__status-group">
+            <CacheHitBadge cacheHit={tonePayload.cacheHit ?? false} runId={mergedMeta.runId} />
+            <MissingMasterBadge missingMaster={tonePayload.missingMaster ?? true} runId={mergedMeta.runId} />
+          </div>
         </section>
+
+        <section className="reception-search" aria-label="検索とフィルタ">
+          <form className="reception-search__form" onSubmit={handleSearchSubmit}>
+            <div className="reception-search__row">
+              <label className="reception-search__field">
+                <span>日付</span>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(event) => setSelectedDate(event.target.value)}
+                  required
+                />
+              </label>
+              <label className="reception-search__field">
+                <span>検索（患者ID/氏名/カナ）</span>
+                <input
+                  type="search"
+                  value={keyword}
+                  onChange={(event) => setKeyword(event.target.value)}
+                  placeholder="PX-0001 / 山田 / ヤマダ"
+                />
+              </label>
+              <label className="reception-search__field">
+                <span>診療科</span>
+                <select value={departmentFilter} onChange={(event) => setDepartmentFilter(event.target.value)}>
+                  <option value="">すべて</option>
+                  {uniqueDepartments.map((dept) => (
+                    <option key={dept} value={dept}>
+                      {dept}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="reception-search__field">
+                <span>担当医</span>
+                <select value={physicianFilter} onChange={(event) => setPhysicianFilter(event.target.value)}>
+                  <option value="">すべて</option>
+                  {uniquePhysicians.map((physician) => (
+                    <option key={physician} value={physician}>
+                      {physician}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label className="reception-search__field">
+                <span>ソート</span>
+                <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
+                  <option value="time">受付/予約時間</option>
+                  <option value="name">氏名</option>
+                  <option value="department">診療科</option>
+                </select>
+              </label>
+            </div>
+            <div className="reception-search__actions">
+              <button type="submit" className="reception-search__button primary">
+                検索
+              </button>
+              <button type="button" className="reception-search__button ghost" onClick={() => appointmentQuery.refetch()}>
+                再取得
+              </button>
+              <button type="button" className="reception-search__button ghost" onClick={handleClear}>
+                クリア
+              </button>
+            </div>
+          </form>
+          <p className="reception-summary" aria-live="polite" ref={summaryRef} tabIndex={-1}>
+            {summaryText}
+          </p>
+          {appointmentQuery.isLoading && (
+            <p role="status" aria-live="polite" className="reception-status">
+              外来リストを読み込み中…
+            </p>
+          )}
+          {appointmentQuery.isError && (
+            <p role="alert" className="reception-status reception-status--error">
+              外来リストの取得に失敗しました。再取得を試してください。
+            </p>
+          )}
+        </section>
+
+        {grouped.map(({ status, items }) => (
+          <section key={status} className="reception-section" aria-label={`${SECTION_LABEL[status]}リスト`}>
+            <header className="reception-section__header">
+              <div>
+                <h2>{SECTION_LABEL[status]}</h2>
+                <span className="reception-section__count" aria-live="polite">
+                  {items.length} 件
+                </span>
+              </div>
+              <button
+                type="button"
+                className="reception-section__toggle"
+                aria-expanded={!collapsed[status]}
+                onClick={() => toggleSection(status)}
+              >
+                {collapsed[status] ? '開く' : '折りたたむ'}
+              </button>
+            </header>
+            {!collapsed[status] && (
+              <div className="reception-table__wrapper">
+                <table className="reception-table">
+                  <thead>
+                    <tr>
+                      <th scope="col">時間</th>
+                      <th scope="col">患者</th>
+                      <th scope="col">診療科</th>
+                      <th scope="col">担当医</th>
+                      <th scope="col">状態</th>
+                      <th scope="col">メモ</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {items.length === 0 && (
+                      <tr>
+                        <td colSpan={6} className="reception-table__empty">
+                          該当なし
+                        </td>
+                      </tr>
+                    )}
+                    {items.map((entry) => (
+                      <tr
+                        key={entry.id}
+                        tabIndex={0}
+                        onDoubleClick={() => handleRowDoubleClick(entry)}
+                        onKeyDown={(event) => {
+                          if (event.key === 'Enter') {
+                            handleRowDoubleClick(entry);
+                          }
+                        }}
+                        aria-label={`${entry.name ?? '患者'} ${entry.appointmentTime ?? ''} ${entry.department ?? ''}`}
+                      >
+                        <td>
+                          <div className="reception-table__time">{entry.appointmentTime ?? '-'}</div>
+                          <small className="reception-table__id">{entry.appointmentId ?? entry.id}</small>
+                        </td>
+                        <td>
+                          <div className="reception-table__patient">
+                            <strong>{entry.name ?? '未登録'}</strong>
+                            {entry.kana && <small>{entry.kana}</small>}
+                          </div>
+                          {entry.patientId && <small className="reception-table__id">ID: {entry.patientId}</small>}
+                        </td>
+                        <td>{entry.department ?? '-'}</td>
+                        <td>{entry.physician ?? '-'}</td>
+                        <td>
+                          <span className={`reception-badge reception-badge--${status}`}>
+                            {SECTION_LABEL[status]}
+                          </span>
+                          {entry.insurance && <small className="reception-badge reception-badge--muted">{entry.insurance}</small>}
+                        </td>
+                        <td className="reception-table__note">
+                          {entry.note ?? '-'}
+                          <div className="reception-table__source">source: {entry.source}</div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+        ))}
       </main>
     </>
   );
