@@ -1,4 +1,4 @@
-import { useMemo, useState, createContext, useContext } from 'react';
+import { useMemo, useState, createContext, useContext, useCallback } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -10,6 +10,7 @@ import {
 } from 'react-router-dom';
 
 import { LoginScreen, type LoginResult } from './LoginScreen';
+import { generateRunId } from './libs/runId';
 import { ChartsPage } from './features/charts/pages/ChartsPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
@@ -35,19 +36,31 @@ const NAV_LINKS = [
   { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
 
-const generateRunId = () => {
-  const iso = new Date().toISOString().slice(0, 19); // YYYY-MM-DDTHH:mm:ss
-  return iso.replace(/[-:]/g, '') + 'Z';
-};
-
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'failed'>('idle');
 
   const handleLoginSuccess = (result: LoginResult) => {
     setSession({ ...result, runId: generateRunId() });
   };
 
   const handleLogout = () => setSession(null);
+
+  const handleCopyRunId = useCallback(async () => {
+    if (!session?.runId) return;
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('クリップボード API が利用できません。');
+      }
+      await navigator.clipboard.writeText(session.runId);
+      setCopyStatus('copied');
+    } catch (error) {
+      console.warn('RUN_ID のコピーに失敗しました。', error);
+      setCopyStatus('failed');
+    } finally {
+      setTimeout(() => setCopyStatus('idle'), 2000);
+    }
+  }, [session?.runId]);
 
   return (
     <BrowserRouter>
@@ -58,7 +71,16 @@ export function AppRouter() {
             session ? <Navigate to="/reception" replace /> : <LoginScreen onLoginSuccess={handleLoginSuccess} />
           }
         />
-        <Route element={<Protected session={session} onLogout={handleLogout} />}>
+        <Route
+          element={
+            <Protected
+              session={session}
+              onLogout={handleLogout}
+              onCopyRunId={handleCopyRunId}
+              copyStatus={copyStatus}
+            />
+          }
+        >
           <Route index element={<Navigate to="/reception" replace />} />
           <Route path="/reception" element={<ConnectedReception />} />
           <Route path="/charts" element={<ConnectedCharts />} />
@@ -70,7 +92,17 @@ export function AppRouter() {
   );
 }
 
-function Protected({ session, onLogout }: { session: Session | null; onLogout: () => void }) {
+function Protected({
+  session,
+  onLogout,
+  onCopyRunId,
+  copyStatus,
+}: {
+  session: Session | null;
+  onLogout: () => void;
+  onCopyRunId: () => void;
+  copyStatus: 'idle' | 'copied' | 'failed';
+}) {
   const location = useLocation();
   if (!session) {
     return <Navigate to="/login" state={{ from: location }} replace />;
@@ -78,12 +110,20 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
 
   return (
     <SessionContext.Provider value={session}>
-      <AppLayout onLogout={onLogout} />
+      <AppLayout onLogout={onLogout} onCopyRunId={onCopyRunId} copyStatus={copyStatus} />
     </SessionContext.Provider>
   );
 }
 
-function AppLayout({ onLogout }: { onLogout: () => void }) {
+function AppLayout({
+  onLogout,
+  onCopyRunId,
+  copyStatus,
+}: {
+  onLogout: () => void;
+  onCopyRunId: () => void;
+  copyStatus: 'idle' | 'copied' | 'failed';
+}) {
   const location = useLocation();
   const session = useSession();
 
@@ -115,7 +155,21 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <span className="app-shell__pill">
             ユーザー: {session.displayName ?? session.commonName ?? session.userId}
           </span>
-          <span className="app-shell__pill">RUN_ID: {session.runId}</span>
+          <button
+            type="button"
+            className="app-shell__pill app-shell__pill--copy"
+            onClick={onCopyRunId}
+            title="RUN_ID をコピー"
+          >
+            RUN_ID: {session.runId}
+          </button>
+          <span className="app-shell__pill-note" role="status" aria-live="polite">
+            {copyStatus === 'copied'
+              ? 'RUN_ID をコピーしました。'
+              : copyStatus === 'failed'
+                ? 'RUN_ID のコピーに失敗しました。'
+                : ''}
+          </span>
           <button type="button" className="app-shell__logout" onClick={onLogout}>
             ログアウト
           </button>
