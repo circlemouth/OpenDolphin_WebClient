@@ -4,7 +4,7 @@ set -euo pipefail
 DEFAULT_HOST="weborca.cloud.orcamo.jp"
 DEFAULT_PORT="443"
 DEFAULT_SCHEME="https"
-DEFAULT_API_PATH="/api/api01rv2/acceptlstv2?class=01"
+DEFAULT_API_PATH="/api01rv2/acceptlstv2?class=01"
 DEFAULT_METHOD="POST"
 
 usage() {
@@ -13,7 +13,7 @@ Usage: ./scripts/orca_prod_bridge.sh [options]
 
 Options:
   --run-id <id>          Required if RUN_ID is unset (format: YYYYMMDDThhmmssZ)
-  --api-path <path>      API path (defaults to ORCA_PROD_API_PATH or /api/api01rv2/acceptlstv2?class=01)
+  --api-path <path>      API path (defaults to ORCA_PROD_API_PATH or /api01rv2/acceptlstv2?class=01)
   --method <verb>        HTTP method for curl (default: POST)
   --payload <file>       Optional payload file passed via --data-binary @<file>
   --dry-run              Prepare paths/log template only; skip curl
@@ -30,7 +30,7 @@ Environment variables:
   ORCA_PROD_HOST (default: weborca.cloud.orcamo.jp)
   ORCA_PROD_PORT (default: 443)
   ORCA_PROD_SCHEME (default: https)
-  ORCA_PROD_API_PATH (default: /api/api01rv2/acceptlstv2?class=01)
+  ORCA_PROD_API_PATH (default: /api01rv2/acceptlstv2?class=01)
   ORCA_PROD_METHOD (default: POST)
 EOF
 }
