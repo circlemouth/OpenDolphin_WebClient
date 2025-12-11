@@ -15,6 +15,7 @@ import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import './styles/app-shell.css';
 import { updateObservabilityMeta } from './libs/observability/observability';
+import { AuthServiceProvider } from './features/charts/authService';
 
 type Session = LoginResult;
 
@@ -73,7 +74,16 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
 
   return (
     <SessionContext.Provider value={session}>
-      <AppLayout onLogout={onLogout} />
+      <AuthServiceProvider
+        initialFlags={{
+          runId: session.runId,
+          cacheHit: false,
+          missingMaster: true,
+          dataSourceTransition: 'snapshot',
+        }}
+      >
+        <AppLayout onLogout={onLogout} />
+      </AuthServiceProvider>
     </SessionContext.Provider>
   );
 }
@@ -145,5 +155,5 @@ function ConnectedReception() {
 
 function ConnectedCharts() {
   const session = useSession();
-  return <ChartsPage runId={session.runId} />;
+  return <ChartsPage />;
 }
