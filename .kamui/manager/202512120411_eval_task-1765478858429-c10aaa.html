@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>患者編集と監査連携 評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        background: linear-gradient(135deg, #f2fbff 0%, #e3edf0 100%);
+        border: 1px solid #c4d3d7;
+        padding: 14px 16px;
+        border-radius: 10px;
+      }
+      .score-card__label {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 6px;
+      }
+      .score-card__score {
+        font-size: 24px;
+        font-weight: 700;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .score-card__medal {
+        font-size: 13px;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 5); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .hex-chart { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+      .hex-chart svg { width: 120px; height: 120px; }
+      .hex-chart polygon { fill: rgba(38, 132, 189, 0.25); stroke: #2684bd; stroke-width: 2; }
+      .metrics { margin: 0; padding-left: 16px; font-size: 12px; color: #2c3a40; }
+      .metrics li { margin: 2px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">患者編集と監査連携 — 評価レポート</h1>
+        <p class="monitor-description">
+          対象タスク: Patients 編集と監査連携。/orca12/patientmodv2/outpatient 接続、auditEvent 送信、missingMaster/fallbackUsed ブロック、Reception フィルタ復元/同期を評価。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-card__label">task/task-1765478849710-f18aee</div>
+          <div class="score-card__score"><span class="trophy">🏆</span> 538 / 600</div>
+          <div class="score-card__medal">🥇 Gold（換算スコア 90 /100）</div>
+        </div>
+        <div class="score-card">
+          <div class="score-card__label">task/task-1765478850110-a5679a</div>
+          <div class="score-card__score"><span class="trophy">🥉</span> 400 / 600</div>
+          <div class="score-card__medal">🥉 Bronze（換算スコア 67 /100）</div>
+        </div>
+        <div class="score-card">
+          <div class="score-card__label">task/task-1765478849910-313369</div>
+          <div class="score-card__score"><span class="trophy">⚪️</span> 70 / 600</div>
+          <div class="score-card__medal">⚪️ None（換算スコア 12 /100）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task/task-1765478849710-f18aee</th>
+            <th>task/task-1765478850110-a5679a</th>
+            <th>task/task-1765478849910-313369</th>
+            <th>余白</th>
+            <th>余白</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-12 04:11</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完成度 高</span>
+                <span class="agent-label">/orca12/patientmodv2/outpatient 連携、missingMaster/fallback ブロック、フィルタ同期を実装。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート f18aee">
+                  <polygon points="60,15 98.97,37.5 101.14,83.75 60,105 23.15,81.25 21.9,38" />
+                </svg>
+                <ul class="metrics">
+                  <li>API接続 90：POSTで/orca12/patientmodv2/outpatientを呼び出し、フィルタをJSON bodyで送信。</li>
+                  <li>監査連携 90：save時にauditEvent+runIdを付与し logAuditEvent へ記録。</li>
+                  <li>missingMaster制御 95：missingMaster/fallbackUsed検知で保存をブロックし警告トースト(role="alert" aria-live="assertive")を表示。</li>
+                  <li>フィルタ復元 90：kw/dept/phys/payをURL & localStorage同期、Receptionの同キーと互換。</li>
+                  <li>アクセシビリティ 85：ToneBanner/StatusBadgeにaria-live設定、フォームも警告時assertive。</li>
+                  <li>コード品質 88：useAuthService連携・メタ更新が一貫。サンプルデータ混在により実データの欠損検出が鈍る点のみ注意。</li>
+                </ul>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/根拠</summary>
+                <pre>
+- web-client/src/features/patients/api.ts: fetchPatients/savePatient が /orca12/patientmodv2/outpatient (mockフォールバック有) をPOSTし、auditEvent{operation,runId,timestamp}を送信。
+- web-client/src/features/patients/PatientsPage.tsx: missingMaster or fallbackUsed を検知し保存を阻止し警告トースト。ToneBannerとStatusBadgeでトーン表示。フィルタをURL(localStorage)と同期し Reception から復元。
+- web-client/src/features/reception/pages/ReceptionPage.tsx: kw/dept/phys をURL+localStorageへ永続化し Patients へ引き継ぎ。
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">要改善</span>
+                <span class="agent-label">保存時 auditEvent 送信はあるが、取得APIが別エンドポイントで blocking/UI が要件未満。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート a5679a">
+                  <polygon points="60,27.5 90.31,42.5 81.65,72.5 60,100 29.69,77.5 31.86,43.75" />
+                </svg>
+                <ul class="metrics">
+                  <li>API接続 65：一覧取得が /api01rv2/patient/outpatient/list で仕様違い。保存のみ /orca12/patientmodv2/outpatient。</li>
+                  <li>監査連携 70：auditEvent(runId,operation) を送信するが runId の最新反映・サーバ応答の auditEvent 反映なし。</li>
+                  <li>missingMaster制御 50：ボタンを常時disableするのみで警告トースト不発。fallbackUsed更新も未処理。</li>
+                  <li>フィルタ復元 80：filterStorage.ts で localStorage と URL を双方向同期、Reception と整合。</li>
+                  <li>アクセシビリティ 70：aria-live メッセージはあるが assertive トーストなし。</li>
+                  <li>コード品質 65：シンプルだが observability 更新やエラーハンドリングが限定的。</li>
+                </ul>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/根拠</summary>
+                <pre>
+- web-client/src/features/patients/api.ts: 取得先が /api01rv2/patient/outpatient/list。savePatientは /orca12/patientmodv2/outpatient へ auditEvent付きPOST。
+- web-client/src/features/patients/PatientsPage.tsx: blockSave=trueでボタンdisableとなり警告トーストが出ず、fallbackUsed応答を反映しない。
+- web-client/src/features/reception/filterStorage.ts & ReceptionPage.tsx: フィルタ同期は要件に沿うが Patients 側への runId/監査連携は弱い。
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未着手</span>
+                <span class="agent-label">kamui state 更新のみで Patients 要件の実装なし。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート 313369">
+                  <polygon points="60,55 64.33,57.5 60,60 60,65 51.34,65 51.34,55" />
+                </svg>
+                <ul class="metrics">
+                  <li>API接続 10：実装なし。</li>
+                  <li>監査連携 10：実装なし。</li>
+                  <li>missingMaster制御 0：実装なし。</li>
+                  <li>フィルタ復元 10：実装なし。</li>
+                  <li>アクセシビリティ 20：影響なしだが機能未提供。</li>
+                  <li>コード品質 20：kamui state 更新のみ。</li>
+                </ul>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/根拠</summary>
+                <pre>
+- .kamui/tasks-state.json のみ変更。Patients 機能差分なし (master と同一)。
+                </pre>
+              </details>
+            </td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
