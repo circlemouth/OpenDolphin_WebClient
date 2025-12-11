@@ -17,6 +17,12 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { receptionStyles } from '../reception/styles';
 import { CacheHitBadge, MissingMasterBadge } from '../shared/StatusBadge';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import {
+  listOutpatientScenarios,
+  OUTPATIENT_FALLBACK_RUN_ID,
+  type OutpatientScenarioId,
+  type OutpatientFlagSet,
+} from '../../mocks/fixtures/outpatient';
 
 type FlagEnvelope = {
   runId?: string;
@@ -38,7 +44,7 @@ const FALLBACK_RUN_ID =
   import.meta.env.VITE_RUM_RUN_ID ??
   // DEV/Playwright 用の暫定キー
   (import.meta.env as Record<string, string | undefined>).VITE_RUN_ID ??
-  '20251208T124645Z';
+  OUTPATIENT_FALLBACK_RUN_ID;
 
 const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFlags => ({
   runId: claim.runId ?? medical.runId ?? FALLBACK_RUN_ID,
@@ -49,6 +55,10 @@ const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFl
 });
 
 export function OutpatientMockPage() {
+  const mswDisabled = import.meta.env.VITE_DISABLE_MSW === '1';
+  const scenarioOptions = useMemo(() => listOutpatientScenarios(), []);
+  const [scenarioId, setScenarioId] = useState<OutpatientScenarioId>('snapshot-missing-master');
+  const [overrideFlags, setOverrideFlags] = useState<Partial<OutpatientFlagSet>>({});
   const [flags, setFlags] = useState<ResolvedFlags>({
     runId: FALLBACK_RUN_ID,
     traceId: undefined,
@@ -66,9 +76,17 @@ export function OutpatientMockPage() {
 
     const hydrateFlags = async () => {
       try {
+        const headers = new Headers();
+        if (!mswDisabled) {
+          headers.set('x-msw-scenario', scenarioId);
+          if (overrideFlags.cacheHit !== undefined) headers.set('x-msw-cache-hit', overrideFlags.cacheHit ? '1' : '0');
+          if (overrideFlags.missingMaster !== undefined)
+            headers.set('x-msw-missing-master', overrideFlags.missingMaster ? '1' : '0');
+          if (overrideFlags.dataSourceTransition) headers.set('x-msw-transition', overrideFlags.dataSourceTransition);
+        }
         const [claimRes, medicalRes] = await Promise.all([
-          httpFetch('/api01rv2/claim/outpatient/mock', { method: 'POST' }),
-          httpFetch('/orca21/medicalmodv2/outpatient', { method: 'POST' }),
+          httpFetch('/api01rv2/claim/outpatient/mock', { method: 'POST', headers }),
+          httpFetch('/orca21/medicalmodv2/outpatient', { method: 'POST', headers }),
         ]);
         const claimJson = (await claimRes.json().catch(() => ({}))) as FlagEnvelope;
         const medicalJson = (await medicalRes.json().catch(() => ({}))) as FlagEnvelope;
@@ -117,7 +135,7 @@ export function OutpatientMockPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [scenarioId, overrideFlags.cacheHit, overrideFlags.missingMaster, overrideFlags.dataSourceTransition, mswDisabled]);
 
   const tonePayload: ChartTonePayload = {
     missingMaster: flags.missingMaster,
@@ -129,6 +147,44 @@ export function OutpatientMockPage() {
     [tonePayload.cacheHit, tonePayload.dataSourceTransition, tonePayload.missingMaster],
   );
 
+  const handleScenarioChange = (id: OutpatientScenarioId) => {
+    setScenarioId(id);
+    setOverrideFlags({});
+    clearOutpatientFunnelLog();
+    setLoaded(false);
+    logUiState({
+      action: 'scenario_change',
+      screen: 'outpatient-mock',
+      controlId: 'scenario-select',
+      runId: flags.runId,
+      dataSourceTransition: flags.dataSourceTransition,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      details: { scenarioId: id },
+    });
+  };
+
+  const handleOverride = (partial: Partial<OutpatientFlagSet>) => {
+    setOverrideFlags((prev) => ({ ...prev, ...partial }));
+    setLoaded(false);
+    clearOutpatientFunnelLog();
+    logUiState({
+      action: 'scenario_override',
+      screen: 'outpatient-mock',
+      controlId: 'override-flags',
+      runId: flags.runId,
+      dataSourceTransition: partial.dataSourceTransition ?? flags.dataSourceTransition,
+      cacheHit: partial.cacheHit ?? flags.cacheHit,
+      missingMaster: partial.missingMaster ?? flags.missingMaster,
+    });
+  };
+
+  const resetOverrides = () => {
+    setOverrideFlags({});
+    clearOutpatientFunnelLog();
+    setLoaded(false);
+  };
+
   return (
     <>
       <Global styles={receptionStyles} />
@@ -137,8 +193,8 @@ export function OutpatientMockPage() {
           <h1>Outpatient MSW 事前検証 (Reception → Charts)</h1>
           <p>
             `/api01rv2/claim/outpatient/*` と `/orca21/medicalmodv2/outpatient` を MSW/Playwright でモックし、
-            `tone=server` バナーと missingMaster/cacheHit/resolveMasterSource の同期、telemetry funnel
-            の順序（resolve_master → charts_orchestration）を確認するためのデモページです。
+            missingMaster/cacheHit/dataSourceTransition の同期と telemetry funnel（resolve_master → charts_orchestration）を可視化します。
+            VITE_DISABLE_MSW=1 のときは実 API 接続となり、シナリオ切替は無効化されます。
           </p>
           <p className="status-message" role="status" aria-live="polite">
             RUN_ID: <strong>{flags.runId}</strong> ／ dataSourceTransition: <strong>{flags.dataSourceTransition}</strong> ／
@@ -147,7 +203,72 @@ export function OutpatientMockPage() {
             <strong>{masterSource}</strong>
             {!loaded ? '（読込中…）' : ''}
           </p>
+          {mswDisabled ? (
+            <p className="status-message" aria-live="assertive">
+              ⚠️ VITE_DISABLE_MSW=1: 実 API 接続中のためシナリオ切替は無効です。MSW を使う場合はフラグを 0 にして再読込してください。
+            </p>
+          ) : (
+            <p className="status-message" aria-live="polite">
+              MSW モック有効: シナリオ選択・フラグ上書きで Reception/Charts/Patients を同一フィクスチャから給電します。
+            </p>
+          )}
         </section>
+
+        {!mswDisabled && (
+          <section className="order-console" data-test-id="scenario-panel">
+            <div className="order-console__step">
+              <span className="order-console__step-label">シナリオ</span>
+              <select
+                value={scenarioId}
+                onChange={(event) => handleScenarioChange(event.target.value as OutpatientScenarioId)}
+              >
+                {scenarioOptions.map((scenario) => (
+                  <option key={scenario.id} value={scenario.id}>
+                    {scenario.label}
+                  </option>
+                ))}
+              </select>
+              <p className="order-console__note">
+                {scenarioOptions.find((s) => s.id === scenarioId)?.description ?? 'custom'}
+              </p>
+            </div>
+            <div className="order-console__step">
+              <span className="order-console__step-label">フラグ上書き</span>
+              <div className="order-console__status-group" aria-live="polite">
+                <button
+                  type="button"
+                  className="order-console__toggle"
+                  onClick={() => handleOverride({ missingMaster: !flags.missingMaster })}
+                >
+                  missingMaster: {flags.missingMaster ? 'true' : 'false'}
+                </button>
+                <button
+                  type="button"
+                  className="order-console__toggle"
+                  onClick={() => handleOverride({ cacheHit: !flags.cacheHit })}
+                >
+                  cacheHit: {flags.cacheHit ? 'true' : 'false'}
+                </button>
+                <label className="order-console__toggle">
+                  dataSourceTransition:
+                  <select
+                    value={overrideFlags.dataSourceTransition ?? flags.dataSourceTransition}
+                    onChange={(event) => handleOverride({ dataSourceTransition: event.target.value as DataSourceTransition })}
+                  >
+                    {['mock', 'snapshot', 'server', 'fallback'].map((value) => (
+                      <option key={value} value={value}>
+                        {value}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button type="button" className="order-console__toggle" onClick={resetOverrides}>
+                  上書きをリセット
+                </button>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="order-console" data-test-id="reception-section">
           <div className="order-console__step" data-test-id="reception-tone">
