@@ -1,4 +1,5 @@
 import { applyHeaderFlagsToInit } from './header-flags';
+import { applyObservabilityHeaders, captureObservabilityFromResponse } from '../observability/observability';
 
 type StoredAuth = {
   facilityId: string;
@@ -128,11 +129,14 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
 // `resolveMasterSource` が `dataSourceTransition=server` を返す経路ではこの `outpatient` グループを使い、`cacheHit`/`missingMaster` を `telemetryClient` に継承します。
 // RUN_ID=20251205T150000Z の統合実装ではこのパス一覧を経由し、`docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md` へ telemetry funnel を記録しています。
 
-export function httpFetch(input: RequestInfo | URL, init?: RequestInit) {
+export async function httpFetch(input: RequestInfo | URL, init?: RequestInit) {
   // Header flags are applied here to propagate Playwright extraHTTPHeaders.
   // 新しいフラグを追加する場合は header-flags.ts に追記し、この呼び出しで一括適用される前提。
   const initWithFlags = applyHeaderFlagsToInit(applyAuthHeaders(init));
+  const initWithObservability = applyObservabilityHeaders(initWithFlags);
   // 認証クッキー（JSESSIONID 等）を常に送るため、デフォルトで include を付与する。
-  const credentials = initWithFlags.credentials ?? 'include';
-  return fetch(input, { ...initWithFlags, credentials });
+  const credentials = initWithObservability.credentials ?? 'include';
+  const response = await fetch(input, { ...initWithObservability, credentials });
+  captureObservabilityFromResponse(response);
+  return response;
 }

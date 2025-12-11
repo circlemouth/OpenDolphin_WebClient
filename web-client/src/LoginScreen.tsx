@@ -4,6 +4,7 @@ import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 
 import { httpFetch } from './libs/http/httpClient';
+import { generateRunId, updateObservabilityMeta } from './libs/observability/observability';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
@@ -66,6 +67,7 @@ export type LoginResult = {
   displayName?: string;
   commonName?: string;
   clientUuid: string;
+  runId: string;
 };
 
 type LoginScreenProps = {
@@ -128,7 +130,9 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
     setStatus('loading');
 
     try {
-      const result = await performLogin(normalizedValues);
+      const runId = generateRunId();
+      updateObservabilityMeta({ runId, traceId: undefined });
+      const result = await performLogin(normalizedValues, runId);
       setProfile(result);
       setFeedback('ログインに成功しました。');
       setStatus('success');
@@ -236,7 +240,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
   );
 };
 
-const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
+const performLogin = async (payload: LoginFormValues, runId: string): Promise<LoginResult> => {
   const passwordMd5 = await hashPasswordMd5(payload.password);
   const clientUuid = createClientUuid(payload.clientUuid);
 
@@ -244,6 +248,7 @@ const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
     userName: `${payload.facilityId}:${payload.userId}`,
     password: passwordMd5,
     clientUUID: clientUuid,
+    'X-Run-Id': runId,
   };
 
   const response = await httpFetch(formatEndpoint(payload.facilityId, payload.userId), {
@@ -264,5 +269,6 @@ const performLogin = async (payload: LoginFormValues): Promise<LoginResult> => {
     displayName: data.displayName,
     commonName: data.commonName,
     clientUuid,
+    runId,
   };
 };
