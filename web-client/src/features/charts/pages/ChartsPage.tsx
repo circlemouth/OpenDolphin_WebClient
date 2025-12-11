@@ -14,6 +14,8 @@ import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
 import { getAuditEventLog, type AuditEventRecord } from '../../../libs/audit/auditLogger';
 import { fetchOrcaOutpatientSummary } from '../api';
+import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
+import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 
 export function ChartsPage() {
   return (
@@ -38,6 +40,7 @@ function ChartsContent() {
     missingMaster?: boolean;
     dataSourceTransition?: DataSourceTransition;
   }>({});
+  const { broadcast } = useAdminBroadcast();
 
   const claimQuery = useQuery({
     queryKey: ['charts-claim-flags'],
@@ -149,6 +152,7 @@ function ChartsContent() {
           <span className="charts-page__pill">cacheHit: {String(flags.cacheHit)}</span>
         </div>
       </section>
+      <AdminBroadcastBanner broadcast={broadcast} surface="charts" />
 
       <section className="charts-page__grid">
         <div className="charts-card">

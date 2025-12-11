@@ -100,6 +100,7 @@ export function AuthServiceProvider({
   return <AuthServiceContext.Provider value={value}>{children}</AuthServiceContext.Provider>;
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useAuthService() {
   const context = useContext(AuthServiceContext);
   if (!context) {
