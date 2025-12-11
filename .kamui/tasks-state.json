@@ -433,5 +433,102 @@
     "worktreePath": ".worktrees/task-1765454673599-b6efe8",
     "medal": "gold",
     "aiCompetitionScore": 87
+  },
+  {
+    "id": "task-yaml-13inmkl-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] ORCA送信・ドラフト・キャンセル制御\n期間: 12/17 21:00 - 12/18 21:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# ORCA 送信 / ドラフト / キャンセル制御\n\n- missingMaster=true で送信無効化し警告トースト、fallbackUsed 時の警告を追加。\n- ORCA送信・診療終了・ドラフト保存・キャンセルを audit/telemetry に記録し、UI 状態をロックする。\n- 長時間処理にスケルトン＋トーストを追加し、エラーリトライ導線を設計。\n\nYAML ID: src/webclient_modernization_phase2/04_charts/ORCA送信・ドラフト・キャンセル制御.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-11T18:38:25.241Z",
+    "updatedAt": "2025-12-11T18:38:25.241Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-13inmkl-src-webclient-mo",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/04_charts/ORCA送信・ドラフト・キャンセル制御.md",
+      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
+      "datasetLabel": "webclient modernized gantt 20251211",
+      "pathId": "src/webclient_modernization_phase2/04_charts/ORCA送信・ドラフト・キャンセル制御.md",
+      "fileName": "webclient-modernized-gantt-20251211.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
+      "addedAt": "2025-12-11T18:38:24.896Z"
+    },
+    "labels": [
+      "webclient modernized gantt 20251211",
+      "src / webclient_modernization_phase2 / 04_charts"
+    ],
+    "dependencies": [
+      "task-yaml-1kf21db-src-webclient-mo"
+    ],
+    "schedule": {
+      "startMs": 1765972800000,
+      "endMs": 1766059200000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_modernization_phase2 / 04_charts",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA 送信 / ドラフト / キャンセル制御\n\n- missingMaster=true で送信無効化し警告トースト、fallbackUsed 時の警告を追加。\n- ORCA送信・診療終了・ドラフト保存・キャンセルを audit/telemetry に記録し、UI 状態をロックする。\n- 長時間処理にスケルトン＋トーストを追加し、エラーリトライ導線を設計。"
+  },
+  {
+    "id": "task-yaml-1mwjjfg-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] Patients編集と監査連携\n期間: 12/17 09:00 - 12/18 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# Patients 編集と監査連携\n\n- 患者一覧/詳細/編集フォームを `/orca12/patientmodv2/outpatient` に接続し、保存時に auditEvent(operation=create|update|delete) と runId を送信。\n- missingMaster/fallbackUsed true の場合は保存をブロックし、warning トーストと aria-live=assertive を表示。\n- Reception からのフィルタ復元と localStorage/URL 同期を実装。\n\nYAML ID: src/webclient_modernization_phase2/05_patients_admin/Patients編集と監査連携.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-11T18:38:28.664Z",
+    "updatedAt": "2025-12-11T18:38:28.664Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1mwjjfg-src-webclient-mo",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/05_patients_admin/Patients編集と監査連携.md",
+      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
+      "datasetLabel": "webclient modernized gantt 20251211",
+      "pathId": "src/webclient_modernization_phase2/05_patients_admin/Patients編集と監査連携.md",
+      "fileName": "webclient-modernized-gantt-20251211.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
+      "addedAt": "2025-12-11T18:38:28.643Z"
+    },
+    "labels": [
+      "webclient modernized gantt 20251211",
+      "src / webclient_modernization_phase2 / 05_patients_admin"
+    ],
+    "dependencies": [
+      "task-yaml-1o1bjza-src-webclient-mo",
+      "task-yaml-1kf21db-src-webclient-mo"
+    ],
+    "schedule": {
+      "startMs": 1765929600000,
+      "endMs": 1766016000000,
+      "durationDays": 1
+    },
+    "category": "src / webclient_modernization_phase2 / 05_patients_admin",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# Patients 編集と監査連携\n\n- 患者一覧/詳細/編集フォームを `/orca12/patientmodv2/outpatient` に接続し、保存時に auditEvent(operation=create|update|delete) と runId を送信。\n- missingMaster/fallbackUsed true の場合は保存をブロックし、warning トーストと aria-live=assertive を表示。\n- Reception からのフィルタ復元と localStorage/URL 同期を実装。"
   }
 ]
