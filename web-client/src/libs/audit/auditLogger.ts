@@ -1,7 +1,7 @@
 import { getObservabilityMeta, updateObservabilityMeta } from '../observability/observability';
 import type { DataSourceTransition } from '../observability/types';
 
-export type UiAction = 'tone_change' | 'send' | 'save' | 'config_delivery';
+export type UiAction = 'tone_change' | 'send' | 'save' | 'config_delivery' | 'finish' | 'draft' | 'cancel' | 'lock';
 
 export type UiStateLog = {
   action: UiAction;

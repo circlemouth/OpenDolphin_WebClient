@@ -9,6 +9,7 @@ import { DocumentTimeline } from '../DocumentTimeline';
 import { OrcaSummary } from '../OrcaSummary';
 import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
+import { ChartsActionBar } from '../ChartsActionBar';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
@@ -34,6 +35,7 @@ function ChartsContent() {
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | undefined>(navigationState.appointmentId);
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
+  const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
   const appliedMeta = useRef<{
     runId?: string;
     cacheHit?: boolean;
@@ -136,8 +138,14 @@ function ChartsContent() {
     return claimQuery.data?.auditEvent;
   }, [auditEvents, claimQuery.data?.auditEvent]);
 
+  const resolvedRunId = mergedFlags.runId ?? flags.runId;
+  const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
+  const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
+  const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
+  const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? false;
+
   return (
-    <main className="charts-page" data-run-id={flags.runId}>
+    <main className="charts-page" data-run-id={flags.runId} aria-busy={lockState.locked}>
       <section className="charts-page__header">
         <h1>Charts / ORCA トーン連携デモ</h1>
         <p>
@@ -153,6 +161,17 @@ function ChartsContent() {
         </div>
       </section>
       <AdminBroadcastBanner broadcast={broadcast} surface="charts" />
+
+      <div className="charts-card charts-card--actions">
+        <ChartsActionBar
+          runId={resolvedRunId ?? flags.runId}
+          cacheHit={resolvedCacheHit ?? false}
+          missingMaster={resolvedMissingMaster ?? false}
+          dataSourceTransition={resolvedTransition ?? 'snapshot'}
+          fallbackUsed={resolvedFallbackUsed}
+          onLockChange={(locked, reason) => setLockState({ locked, reason })}
+        />
+      </div>
 
       <section className="charts-page__grid">
         <div className="charts-card">
