@@ -10,7 +10,6 @@ import {
 } from 'react-router-dom';
 
 import { LoginScreen, type LoginResult } from './LoginScreen';
-import { generateRunId } from './libs/runId';
 import { ChartsPage } from './features/charts/pages/ChartsPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
@@ -55,9 +54,7 @@ export function AppRouter() {
             session ? <Navigate to="/reception" replace /> : <LoginScreen onLoginSuccess={handleLoginSuccess} />
           }
         />
-        <Route
-          element={<Protected session={session} onLogout={handleLogout} />}
-        >
+        <Route element={<Protected session={session} onLogout={handleLogout} />}>
           <Route index element={<Navigate to="/reception" replace />} />
           <Route path="/reception" element={<ConnectedReception />} />
           <Route path="/charts" element={<ConnectedCharts />} />
@@ -128,12 +125,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <span className="app-shell__pill">
             ユーザー: {session.displayName ?? session.commonName ?? session.userId}
           </span>
-          <button
-            type="button"
-            className="app-shell__pill app-shell__pill--copy"
-            onClick={handleCopyRunId}
-            title="RUN_ID をコピー"
-          >
+          <button type="button" className="app-shell__pill app-shell__pill--copy" onClick={handleCopyRunId} title="RUN_ID をコピー">
             RUN_ID: {flags.runId}（クリックでコピー）
           </button>
           <button type="button" className="app-shell__logout" onClick={onLogout}>
@@ -162,20 +154,26 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
 
 function ConnectedReception() {
   const session = useSession();
+  const { flags, setMissingMaster, setCacheHit, setDataSourceTransition, bumpRunId } = useAuthService();
 
   return (
     <ReceptionPage
-      runId={session.runId}
+      runId={flags.runId}
       patientId={`PX-${session.facilityId}-${session.userId}`}
       receptionId={`R-${session.facilityId}-${session.userId}`}
       destination="ORCA queue"
       title="Reception → Charts トーン連携"
       description="ログインした RUN_ID を受け継ぎ、Reception の missingMaster/cacheHit/dataSourceTransition をそのまま Charts 側へ渡すデモです。"
+      flags={flags}
+      onToggleMissingMaster={() => setMissingMaster(!flags.missingMaster)}
+      onToggleCacheHit={() => setCacheHit(!flags.cacheHit)}
+      onMasterSourceChange={setDataSourceTransition}
+      onRunIdChange={(next) => bumpRunId(next || flags.runId)}
     />
   );
 }
 
 function ConnectedCharts() {
   const session = useSession();
-  return <ChartsPage runId={session.runId} />;
+  return <ChartsPage />;
 }
