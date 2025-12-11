@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - Reception検索とリストAPI配線</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin: 12px 0 8px;
+      }
+      .scorecard {
+        background: #f7fbfc;
+        border: 1px solid #c4d3d7;
+        border-radius: 14px;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 700;
+        color: #0f172a;
+      }
+      .scorecard .trophy {
+        font-size: 22px;
+        margin-right: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 4); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        border-radius: 6px;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .agent-meta { display: block; margin-bottom: 10px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; font-weight: 600; }
+      details[open] summary { margin-bottom: 8px; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; margin-right: 6px; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px; }
+      .radar { width: 100%; max-width: 260px; margin-bottom: 8px; }
+      .radar svg { width: 100%; height: auto; }
+      .metric-list { margin: 0; padding-left: 16px; font-size: 12px; color: #0f172a; }
+      .metric-list li { margin: 2px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Reception検索とリストAPI配線 評価レポート</h1>
+        <p class="monitor-description">外来受付リストのAPI配線タスク（React Query / aria-live / runId carry-over 等）について、4ブランチの完了度を採点しました。</p>
+        <div class="scoreboard">
+          <div class="scorecard"><span><span class="trophy">🏆</span>task-1765447672581-ee063c</span><span>552 / 600</span></div>
+          <div class="scorecard"><span><span class="trophy">🥈</span>task-1765447672781-495a6f</span><span>510 / 600</span></div>
+          <div class="scorecard"><span><span class="trophy">🥉</span>task-1765447672982-acbb94</span><span>369 / 600</span></div>
+          <div class="scorecard"><span><span class="trophy">❌</span>task-1765447673208-aa31e8</span><span>228 / 600</span></div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765447672581-ee063c</th>
+            <th>task-1765447672781-495a6f</th>
+            <th>task-1765447672982-acbb94</th>
+            <th>task-1765447673208-aa31e8</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-11 19:50</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span><span class="agent-label">🥇 93点 / React Queryで予約・請求両APIを多段フェッチ、フィルタ・ソート・折りたたみ・aria-liveを実装。runId carry-overとobservability同期も良好。</span></div>
+              <div class="radar" data-scores="96,92,90,94,92,88"></div>
+              <ul class="metric-list">
+                <li>機能適合度 96: 予約/請求APIをPOSTフェッチし、ステータス別集計・検索・ソートを網羅。</li>
+                <li>実装緻密性 92: tryFetchで複数エンドポイントをフォールバック、ローカルストレージで折りたたみ保持。</li>
+                <li>アクセシビリティ 90: aria-live polite/alert、Enterキー操作、フォーカス移動で画面読み上げを担保。</li>
+                <li>Observability 94: runId/cacheHit/missingMaster/dataSourceTransitionをchartsトーンに連携、bumpRunId。</li>
+                <li>UX整合 92: ToneBanner/ResolveMasterBadge/StatusBadgeをヘッダーに統合し件数バッジ表示。</li>
+                <li>堅牢性 88: フェッチ失敗時の警告表示と再取得ボタンあり。モックfallbackが残る点のみ軽微な懸念。</li>
+              </ul>
+              <details class="snapshot-details"><summary class="details-toggle">コミットと主な差分</summary><pre>git log -1 --oneline: 485b49b0 Add reception API client for appointment/claim
+差分: web-client/src/features/reception/api.ts, ReceptionPage.tsx, styles.ts ほか
+特徴: React Queryで予約/請求を別クエリ取得、localStorage折りたたみ状態、ダブルクリックでCharts遷移(stateでpatientId)。</pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span><span class="agent-label">🥈 85点 / 最低限のAPI配線を実装し、検索フォームと件数バッジ・折りたたみ・ダブルクリック遷移を実装。</span></div>
+              <div class="radar" data-scores="88,84,78,82,80,78"></div>
+              <ul class="metric-list">
+                <li>機能適合度 88: /appointment/outpatient/list と /claim/outpatient/list をPOSTで取得、検索条件とソートを送信。</li>
+                <li>実装緻密性 84: useReceptionOutpatientでflags/tone算出とメタ同期。セクション分割とfold状態保持。</li>
+                <li>アクセシビリティ 78: aria-liveによるリスト更新告知はあるが、キーボード操作はダブルクリック主体。</li>
+                <li>Observability 82: captureObservabilityFromResponseでメタ抽出しUpdate。ただしflagsはレスポンス依存が弱め。</li>
+                <li>UX整合 80: ToneBanner/ResolveMasterBadge/StatusBadge配置。件数バッジあり。</li>
+                <li>堅牢性 78: プレースホルダーデータ無しで空配列を安全処理。エラーハンドリング表示は簡易。</li>
+              </ul>
+              <details class="snapshot-details"><summary class="details-toggle">コミットと主な差分</summary><pre>git log -1 --oneline: 944a4fb8 Reception: wire outpatient APIs via React Query
+差分: ReceptionPage.tsxをフル刷新、api/outpatient.ts＋hook追加、styles拡張、React Query導入(main.tsx)。</pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--warning">部分</span><span class="agent-label">🥉 62点 / React Query導入はあるが請求APIがmock固定・トーン/バッジ連携が不完全。</span></div>
+              <div class="radar" data-scores="70,64,60,58,62,55"></div>
+              <ul class="metric-list">
+                <li>機能適合度 70: 検索フォームとセクション分割はあるが、claimは/mock固定で実データ接続不足。</li>
+                <li>実装緻密性 64: flagsマージとリスト生成はあるがフィルタ/UI整合にばらつき。</li>
+                <li>アクセシビリティ 60: aria-liveはあるが押下操作はダブルクリックのみでキーボード操作不足。</li>
+                <li>Observability 58: runId carry-overはnavigate('/charts')のみでstate未付与、auditingは限定的。</li>
+                <li>UX整合 62: ToneBanner/ResolveMasterBadge/StatusBadgeありだがデザイン・件数表現が簡素。</li>
+                <li>堅牢性 55: エラー表示なし、API失敗時のfallback無し。</li>
+              </ul>
+              <details class="snapshot-details"><summary class="details-toggle">コミットと主な差分</summary><pre>git log -1 --oneline: 97c6b762 feat: wire reception search to outpatient APIs and add react-query
+差分: ReceptionPage.tsxに検索＋リスト生成、main.tsxでQueryClient。claimを/mockにPOSTし、navigate('/charts')のみ。</pre></details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--error">未達</span><span class="agent-label">⚪️ 38点 / 受付リストは表形式だが請求API未接続・runId carry-over/フィルタ未実装で要再作業。</span></div>
+              <div class="radar" data-scores="45,40,38,35,40,30"></div>
+              <ul class="metric-list">
+                <li>機能適合度 45: appointment APIをGET呼び出しのみ。claim側や検索条件送信無し。</li>
+                <li>実装緻密性 40: OrderConsoleロジックを残したままAPI値を上書きするため状態遷移が破綻。</li>
+                <li>アクセシビリティ 38: aria-live表記なし、表はダブルクリックのみでキーボード案内無し。</li>
+                <li>Observability 35: runId取得はあるが更新・carry-overに不足。dataSourceTransition型キャストのみ。</li>
+                <li>UX整合 40: StatusBadge非使用、件数/折りたたみなし。</li>
+                <li>堅牢性 30: エラー処理なし、API失敗時のハンドリング未実装。</li>
+              </ul>
+              <details class="snapshot-details"><summary class="details-toggle">コミットと主な差分</summary><pre>git log -1 --oneline: 27889062 feat(reception): Implement API wiring for search and list
+差分: useOutpatientAppointments追加、ReceptionPageに簡易テーブル表示とnavigate(`/charts/${patientId}?runId=...`)のみ。</pre></details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      // Radar chart renderer for each .radar element. Expects data-scores="s1,s2,...,s6" (0-100)
+      const RADII = 60;
+      const toPoint = (value, index) => {
+        const angle = (Math.PI * 2 * index) / 6 - Math.PI / 2;
+        const r = (value / 100) * RADII;
+        const x = RADII + r * Math.cos(angle);
+        const y = RADII + r * Math.sin(angle);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      };
+      document.querySelectorAll('.radar').forEach((el) => {
+        const scores = (el.dataset.scores || '').split(',').map((v) => Number(v.trim()) || 0);
+        if (scores.length !== 6) return;
+        const polygon = scores.map((v, i) => toPoint(v, i)).join(' ');
+        const axes = Array.from({ length: 6 }, (_, i) => {
+          const p = toPoint(100, i);
+          return `<line x1="${RADII}" y1="${RADII}" x2="${p}" y2="${p.split(',')[1]}" stroke="#cbd5e1" stroke-width="1" />`;
+        }).join('');
+        el.innerHTML = `<svg viewBox="0 0 ${RADII * 2} ${RADII * 2}" role="img" aria-label="六角形チャート"><polygon points="${[0,1,2,3,4,5].map(i=>toPoint(100,i)).join(' ')}" fill="none" stroke="#e2e8f0" stroke-width="1"/><g>${axes}</g><polygon points="${polygon}" fill="rgba(37,99,235,0.18)" stroke="#2563eb" stroke-width="2" /></svg>`;
+      });
+    </script>
+  </body>
+</html>
