@@ -20,6 +20,7 @@
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
 - 証跡ログ: `planning/phase2/logs/20251211T172459Z-runid-governance.md` および `planning/phase2/logs/20251211T172459Z-web-client-plan.md`。過去 RUN_ID は DOC_STATUS を参照。
+- Charts 実装ログ: `planning/phase2/logs/20251211T120619Z-charts-timeline.md`（DocumentTimeline/OrcaSummary/PatientsTab のデータバインド、RUN_ID=`20251211T120619Z`）。
 
 ## 参考（Archive / Legacy）
 - ログイン専用化までの計画・ログ (`planning/phase2/LOGIN_REWORK_PLAN.md`, `planning/phase2/logs/20251130T120000Z-login-rework.md` など) は Archive として保持。詳細は `docs/archive/2025Q4/web-client/legacy-archive.md` と DOC_STATUS の Legacy セクションを参照。

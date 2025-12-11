@@ -114,6 +114,31 @@ export const chartsStyles = css`
     gap: 1rem;
   }
 
+  .document-timeline__section {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .document-timeline__section-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .document-timeline__section-badge {
+    padding: 0.2rem 0.7rem;
+    background: #e0e7ff;
+    color: #1d4ed8;
+    border-radius: 999px;
+    font-weight: 700;
+  }
+
+  .document-timeline__section-count {
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
   .document-timeline__content {
     display: grid;
     grid-template-columns: minmax(220px, 1fr) minmax(200px, 0.9fr);
@@ -186,6 +211,40 @@ export const chartsStyles = css`
     line-height: 1.5;
   }
 
+  .document-timeline__queue {
+    border-radius: 14px;
+    padding: 0.85rem 1rem;
+    background: #f0f9ff;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+
+  .document-timeline__queue-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #0f172a;
+  }
+
+  .document-timeline__queue-runid {
+    color: #1d4ed8;
+    font-size: 0.9rem;
+  }
+
+  .document-timeline__queue-badges {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+  }
+
+  .document-timeline__queue-meta {
+    margin: 0;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
   .orca-summary {
     display: flex;
     flex-direction: column;
@@ -217,6 +276,37 @@ export const chartsStyles = css`
     gap: 0.9rem;
   }
 
+  .patients-tab__controls {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .patients-tab__search {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.9rem;
+    color: #475569;
+  }
+
+  .patients-tab__search input {
+    border-radius: 12px;
+    border: 1px solid #cbd5f5;
+    padding: 0.6rem 0.75rem;
+    min-width: 240px;
+  }
+
+  .patients-tab__edit-guard {
+    padding: 0.45rem 0.75rem;
+    background: #f0f9ff;
+    border: 1px solid rgba(59, 130, 246, 0.25);
+    border-radius: 12px;
+    color: #0f172a;
+  }
+
   .patients-tab__header {
     display: flex;
     justify-content: space-between;
@@ -236,11 +326,30 @@ export const chartsStyles = css`
     gap: 0.6rem;
   }
 
+  .patients-tab__body {
+    display: grid;
+    grid-template-columns: minmax(240px, 0.9fr) minmax(260px, 1fr);
+    gap: 0.8rem;
+  }
+
   .patients-tab__row {
     padding: 0.85rem 1rem;
     border-radius: 14px;
     background: #f8fafc;
     border: 1px solid rgba(148, 163, 184, 0.35);
+    text-align: left;
+    width: 100%;
+    cursor: pointer;
+  }
+
+  .patients-tab__row--selected {
+    border-color: #1d4ed8;
+    box-shadow: 0 8px 22px rgba(59, 130, 246, 0.15);
+  }
+
+  .patients-tab__row:focus-visible {
+    outline: 2px solid #1d4ed8;
+    outline-offset: 2px;
   }
 
   .patients-tab__row-meta {
@@ -263,6 +372,40 @@ export const chartsStyles = css`
   .patients-tab__row-status {
     font-size: 0.9rem;
     color: #1d4ed8;
+  }
+
+  .patients-tab__detail {
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .patients-tab__detail-row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .patients-tab__detail-row input,
+  .patients-tab__detail-row textarea {
+    border-radius: 12px;
+    border: 1px solid #cbd5f5;
+    padding: 0.55rem 0.7rem;
+    font-family: inherit;
+    resize: vertical;
+  }
+
+  .patients-tab__detail-empty {
+    margin: 0;
+    color: #475569;
+  }
+
+  .patients-tab__detail-guard {
+    color: #b45309;
   }
 
   .patients-tab__audit {
@@ -303,6 +446,10 @@ export const chartsStyles = css`
 
     .patients-tab__header {
       flex-direction: column;
+    }
+
+    .patients-tab__body {
+      grid-template-columns: 1fr;
     }
   }
 `;
