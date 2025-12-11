@@ -238,29 +238,78 @@
     "description": "# Telemetry と監査メタ統合\n\n- `telemetryClient.recordOutpatientFunnel` を resolve_master / charts_orchestration の二段で発火し、runId/traceId/cacheHit/missingMaster/dataSourceTransition を全 API 呼び出しへ透過。\n- `audit.logUiState` に主要 UI 操作（トーン変更、送信、保存、設定配信）を記録し、server-modernized ログと突き合わせ。\n- 現状: ログインのみ実 API 接続。ここで全画面に共通のヘッダー/メタ注入を完了させる。"
   },
   {
-    "id": "task-1765443811260-04d247",
-    "name": "CodexCLI3: [webclient modernized gantt 20251211] Telemetryと監査メタ統合\n期間: 12/13 21:00 - 12/14 21:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# Telemetry と監査メタ統合\n\n- `telemetryClient.recordOutpatientFunnel` を resolve_master / charts_orchestration の二段で発火し、runId/traceId/cacheHit/missingMaster/dataSourceTransition を全 API 呼び出しへ透過。\n- `audit.logUiState` に主要 UI 操作（トーン変更、送信、保存、設定配信）を記録し、server-modernized ログと突き合わせ。\n- 現状: ログインのみ実 API 接続。ここで全画面に共通のヘッダー/メタ注入を完了させる。\n\nYAML ID: src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
+    "id": "task-yaml-sorro3-src-webclient-mo",
+    "name": "[webclient modernized gantt 20251211] Reception検索とリストAPI配線\n期間: 12/14 09:00 - 12/16 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# Reception 検索とリスト API 配線\n\n- `/api01rv2/claim/outpatient/*` と `/api01rv2/appointment/outpatient/*` を React Query で接続し、検索・フィルタ・ソート結果を aria-live=polite で告知。\n- 状態バッジ/件数バッジ/折りたたみ保持を実データで表示し、行ダブルクリックで Charts に runId を carry-over。\n- missingMaster/cacheHit/dataSourceTransition をヘッダーと UI に反映し、現行モック実装を置き換える。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/Reception検索とリストAPI配線.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-11T10:07:33.860Z",
+    "updatedAt": "2025-12-11T11:00:36.658Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-sorro3-src-webclient-mo",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe::src/webclient_modernization_phase2/03_reception/Reception検索とリストAPI配線.md",
+      "appId": "custom-app-webclient-modernized-gantt-20251211-eca4e2cdfe",
+      "datasetLabel": "webclient modernized gantt 20251211",
+      "pathId": "src/webclient_modernization_phase2/03_reception/Reception検索とリストAPI配線.md",
+      "fileName": "webclient-modernized-gantt-20251211.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-modernized-gantt-20251211.yaml",
+      "addedAt": "2025-12-11T10:07:33.842Z"
+    },
+    "labels": [
+      "webclient modernized gantt 20251211",
+      "src / webclient_modernization_phase2 / 03_reception"
+    ],
+    "dependencies": [
+      "task-yaml-gpfyns-src-webclient-mo",
+      "task-yaml-1r4375f-src-webclient-mo"
+    ],
+    "schedule": {
+      "startMs": 1765670400000,
+      "endMs": 1765843200000,
+      "durationDays": 2
+    },
+    "category": "src / webclient_modernization_phase2 / 03_reception",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# Reception 検索とリスト API 配線\n\n- `/api01rv2/claim/outpatient/*` と `/api01rv2/appointment/outpatient/*` を React Query で接続し、検索・フィルタ・ソート結果を aria-live=polite で告知。\n- 状態バッジ/件数バッジ/折りたたみ保持を実データで表示し、行ダブルクリックで Charts に runId を carry-over。\n- missingMaster/cacheHit/dataSourceTransition をヘッダーと UI に反映し、現行モック実装を置き換える。"
+  },
+  {
+    "id": "task-1765447672581-ee063c",
+    "name": "CodexCLI1: [webclient modernized gantt 20251211] Reception検索とリストAPI配線\n期間: 12/14 09:00 - 12/16 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# Reception 検索とリスト API 配線\n\n- `/api01rv2/claim/outpatient/*` と `/api01rv2/appointment/outpatient/*` を React Query で接続し、検索・フィルタ・ソート結果を aria-live=polite で告知。\n- 状態バッジ/件数バッジ/折りたたみ保持を実データで表示し、行ダブルクリックで Charts に runId を carry-over。\n- missingMaster/cacheHit/dataSourceTransition をヘッダーと UI に反映し、現行モック実装を置き換える。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/Reception検索とリストAPI配線.md",
     "model": "Codex CLI",
     "status": "running",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-11T09:03:31.260Z",
-    "updatedAt": "2025-12-11T09:03:51.309Z",
+    "createdAt": "2025-12-11T10:07:52.581Z",
+    "updatedAt": "2025-12-11T10:07:57.771Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1765443811260-04d247",
+    "branchName": "task/task-1765447672581-ee063c",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765443810842-rbzrwa8i",
-    "aiCompetitionGroupName": "[webclient modernized gantt 20251211] Telemetryと監査メタ統合\n期間: 12/13 21:00 - 12/14 21:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# Telemetry と監査メタ統合\n\n- `telemetryClient.recordOutpatientFunnel` を resolve_master / charts_orchestration の二段で発火し、runId/traceId/cacheHit/missingMaster/dataSourceTransition を全 API 呼び出しへ透過。\n- `audit.logUiState` に主要 UI 操作（トーン変更、送信、保存、設定配信）を記録し、server-modernized ログと突き合わせ。\n- 現状: ログインのみ実 API 接続。ここで全画面に共通のヘッダー/メタ注入を完了させる。\n\nYAML ID: src/webclient_modernization_phase2/02_shared_observability/Telemetryと監査メタ統合.md",
+    "aiCompetitionGroupId": "comp-1765447672579-e95tn2rk",
+    "aiCompetitionGroupName": "[webclient modernized gantt 20251211] Reception検索とリストAPI配線\n期間: 12/14 09:00 - 12/16 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# Reception 検索とリスト API 配線\n\n- `/api01rv2/claim/outpatient/*` と `/api01rv2/appointment/outpatient/*` を React Query で接続し、検索・フィルタ・ソート結果を aria-live=polite で告知。\n- 状態バッジ/件数バッジ/折りたたみ保持を実データで表示し、行ダブルクリックで Charts に runId を carry-over。\n- missingMaster/cacheHit/dataSourceTransition をヘッダーと UI に反映し、現行モック実装を置き換える。\n\nYAML ID: src/webclient_modernization_phase2/03_reception/Reception検索とリストAPI配線.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765443811260-04d247",
+    "worktreePath": ".worktrees/task-1765447672581-ee063c",
     "medal": "gold",
-    "aiCompetitionScore": 86
+    "aiCompetitionScore": 93
   }
 ]
