@@ -1,12 +1,17 @@
 import { Global } from '@emotion/react';
+import { useEffect, useMemo, useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
 
 import { AuthServiceControls } from '../AuthServiceControls';
 import { useAuthService } from '../authService';
 import { DocumentTimeline } from '../DocumentTimeline';
 import { OrcaSummary } from '../OrcaSummary';
 import { PatientsTab } from '../PatientsTab';
+import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
+import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
+import { getAuditEventLog, type AuditEventRecord } from '../../../libs/audit/auditLogger';
 
 export function ChartsPage() {
   return (
@@ -18,7 +23,45 @@ export function ChartsPage() {
 }
 
 function ChartsContent() {
-  const { flags } = useAuthService();
+  const { flags, setCacheHit, setDataSourceTransition, setMissingMaster, bumpRunId } = useAuthService();
+  const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
+  const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
+
+  const claimQuery = useQuery({
+    queryKey: ['charts-claim-flags'],
+    queryFn: fetchClaimFlags,
+    refetchInterval: 120_000,
+  });
+
+  const appointmentQuery = useQuery({
+    queryKey: ['charts-appointments', today],
+    queryFn: () => fetchAppointmentOutpatients({ date: today }),
+    refetchOnWindowFocus: false,
+  });
+
+  useEffect(() => {
+    const data = claimQuery.data;
+    if (!data) return;
+    if (data.runId) {
+      bumpRunId(data.runId);
+    }
+    if (data.cacheHit !== undefined) setCacheHit(data.cacheHit);
+    if (data.missingMaster !== undefined) setMissingMaster(data.missingMaster);
+    if (data.dataSourceTransition) setDataSourceTransition(data.dataSourceTransition);
+    setAuditEvents(getAuditEventLog());
+  }, [bumpRunId, claimQuery.data, setCacheHit, setDataSourceTransition, setMissingMaster]);
+
+  useEffect(() => {
+    setAuditEvents(getAuditEventLog());
+  }, [flags.cacheHit, flags.dataSourceTransition, flags.missingMaster, flags.runId]);
+
+  const patientEntries: ReceptionEntry[] = appointmentQuery.data?.entries ?? [];
+  const latestAuditEvent = useMemo(() => {
+    if (auditEvents.length > 0) {
+      return auditEvents[auditEvents.length - 1].payload ?? auditEvents[auditEvents.length - 1];
+    }
+    return claimQuery.data?.auditEvent;
+  }, [auditEvents, claimQuery.data?.auditEvent]);
 
   return (
     <main className="charts-page" data-run-id={flags.runId}>
@@ -42,13 +85,16 @@ function ChartsContent() {
           <AuthServiceControls />
         </div>
         <div className="charts-card">
-          <DocumentTimeline />
+          <DocumentTimeline entries={patientEntries} auditEvent={latestAuditEvent as Record<string, unknown> | undefined} />
         </div>
         <div className="charts-card">
           <OrcaSummary />
         </div>
         <div className="charts-card">
-          <PatientsTab />
+          <PatientsTab entries={patientEntries} auditEvent={latestAuditEvent as Record<string, unknown> | undefined} />
+        </div>
+        <div className="charts-card">
+          <TelemetryFunnelPanel />
         </div>
       </section>
     </main>

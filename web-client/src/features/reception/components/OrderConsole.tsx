@@ -47,7 +47,7 @@ export function OrderConsole({
     <section className="order-console" data-run-id={runId}>
       <div className="order-console__status-steps" aria-label="tone banner and master source badge">
         <div className="order-console__step">
-          <span className="order-console__step-label">Step 1: Tone</span>
+          <span className="order-console__step-label">Step 1: Tone (tone=server chain)</span>
           <ToneBanner
             tone={tone}
             message={toneMessage}
@@ -59,7 +59,7 @@ export function OrderConsole({
           />
         </div>
         <div className="order-console__step">
-          <span className="order-console__step-label">Step 2: Master source</span>
+          <span className="order-console__step-label">Step 2: resolveMasterSource</span>
           <ResolveMasterBadge
             masterSource={masterSource}
             transitionDescription={transitionDescription}
@@ -106,7 +106,7 @@ export function OrderConsole({
             </button>
           </div>
           <label htmlFor="missing-master-note" className="order-console__label">
-            missingMaster コメント
+            missingMaster コメント（監査に記録）
           </label>
           <textarea
             id="missing-master-note"
@@ -118,12 +118,12 @@ export function OrderConsole({
           <div
             id="missing-master-note-description"
             className="order-console__note"
-            role="status"
+            role="alert"
             aria-live={missingMaster ? 'assertive' : 'polite'}
           >
             {missingMaster
-              ? 'マスタ欠損: ORCA 送信をブロックし tone=server の warning を維持'
-              : 'マスタ取得済み: ORCA 送信の再開と cacheHit true の組み合わせを sustain'}
+              ? 'マスタ欠損: auditEvent にノートを残し tone=server の warning を維持'
+              : 'マスタ取得済み: auditEvent を info として更新し cacheHit=true と同期'}
           </div>
         </div>
       </div>
