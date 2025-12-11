@@ -1,16 +1,25 @@
-﻿```
-- 【2025-11-21 更新】以降の ORCA 接続は、接続先・認証情報を機微扱いとし `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照する。WebORCA トライアル (`weborca-trial.orca.med.or.jp`) への直接接続は行わない。仮想データに対する CRUD を含め全 API 操作を許可する。過去のトライアル URL 記載箇所は本運用に読み替えること。
-# ORCA 接続 Single Playbook
+﻿# ORCA 接続 Single Playbook
+
+> ⚠️ **【重要】2025-12-11 修正**
+>
+> 本ドキュメントで過去に言及されていた「WebORCA トライアルサーバー」（`weborca-trial.orca.med.or.jp` 等）の記述は **誤り** であり、使用しない。
+>
+> **正式な接続先**: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載された本番環境 (`https://weborca.cloud.orcamo.jp:443`) を唯一の接続先とする。
+>
+> - 接続先・認証情報は `ORCA_CERTIFICATION_ONLY.md` を正として運用する
+> - トライアル環境への接続は一切禁止
+> - 過去ログに残る「トライアル」記述は歴史的経緯のみ。実運用では本番接続処方を適用すること
+
 - 2025-11-21 エラー採取 RUN（RUN_ID=`20251121T153300Z`, 親=`20251120T193040Z`）で下記を確認: 成功=HTTP200/`Api_Result=00`（`POST /api01rv2/system01dailyv2?class=00`）、誤パスワード=HTTP401 JSON、未登録患者=HTTP404 JSON（`GET /api01rv2/patientgetv2?id=999999`）、`/actuator/health`=HTTP404。Authorization はすべて `<MASKED>`。証跡: `artifacts/error-audit/20251121T153300Z/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#5-子-run-20251121t153300z-実測ログ親20251120t193040z`。
 - 2025-11-21 業務系エラー採取 RUN（RUN_ID=`20251121ErrorMatrixZ1`, 親=`20251120T193040Z`）で下記を確認: `system01dailyv2` Request_Number=99 → HTTP200/`Api_Result=91`、`acceptlstv2` Acceptance_Date=2000-01-01 & Physician_Code=99999 → HTTP200/`Api_Result=13`、`/api/api21/medicalmodv2` Patient_ID=999999 → HTTP200/`Api_Result=10`。Authorization は `<MASKED>` 済み。証跡: `artifacts/error-audit/20251121ErrorMatrixZ1/README.md`、ログ: `docs/server-modernization/phase2/operations/logs/20251120T193040Z-error-audit.md#6-子-run-20251121errormatrixz1-実測ログ親20251120t193040z`。
-- 作成日: 2025-11-19（WebORCA トライアルサーバー運用への切り替え）
-- 対象: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載された開発用 ORCA サーバー（モダナイズ版 OpenDolphin サーバーと連携）。
-- 目的: 公開トライアル環境での疎通・API 呼び出し・CRUD 検証知見を単一 Runbook に集約し、RUN_ID 発行／ログ保存／週次棚卸しのやり方を一本化する。
+- 作成日: 2025-11-19
+- 対象: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載された本番 ORCA サーバー（モダナイズ版 OpenDolphin サーバーと連携）。
+- 目的: 本番環境での疎通・API 呼び出し・CRUD 検証知見を単一 Runbook に集約し、RUN_ID 発行／ログ保存／週次棚卸しのやり方を一本化する。
 - 参照: [ORCA API 公式仕様](https://www.orca.med.or.jp/receipt/tec/api/overview.html) / [オフラインコピー](assets/orca-api-spec/README.md) / [技術情報ハブ（帳票・CLAIM・MONTSUQI 等）](assets/orca-tec-index/README.md)
 
 > **Single Playbook の目的**: ORCA 接続に関する知見を本ドキュメントに一本化する。関連ドキュメント（`ORCA_API_STATUS.md`, `MODERNIZED_API_DOCUMENTATION_GUIDE.md` など）は本 Playbook へのリンクと参照情報のみを記載する。
 >
-> **2025-11-19 更新**: 本番資格情報および `ORCAcertification/` ディレクトリはアーカイブ扱いとし、`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載のサーバーのみを接続先とする。Basic 認証は同ファイル記載のユーザーを使用し、`curl --cert-type P12` や PKCS#12 証明書は使用しない。
+> **接続先ポリシー**: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載の本番サーバーのみを接続先とする。認証は同ファイル記載の資格情報を使用する。
 >
 > **結果物**
 > 1. `docs/server-modernization/phase2/operations/logs/<YYYYMMDD>-orca-connectivity.md` に RUN_ID と証跡パスを追記。
@@ -19,7 +28,7 @@
 ## 0. Single Playbook 運用ルール
 
 - 本項目に RUN_ID 発行、ログ保存、週次棚卸しの手順を記載する。`ORCA_API_STATUS.md`/`MODERNIZED_API_DOCUMENTATION_GUIDE.md` は本項目での参照はせず、別途最新化を行う。
-- Trial サーバーの接続情報・CRUD 機能・利用不可機能の事前確認は `assets/orca-trialsite/raw/trialsite.md#snapshot-summary-2025-11-19` を参照情報とし、本項目と §1 の接続先が変更された場合は Snapshot を更新してから本 Playbook を運用する。
+- 接続先は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載された本番環境のみを使用する。
 ### 0.1 RUN_ID 発行テンプレート
 
 1. RUN_ID は `YYYYMMDD` + 目的 + `Z#` で命名する。例: `RUN_ID=20251120TrialCrudPrepZ1`（Trial CRUD 準備 1回目）。
@@ -91,17 +100,16 @@ curl --silent --show-error \
 4. **API 検証**: P0（patient, accept, appoint）から順に `node scripts/tools/orca-curl-snippets.js` の出力を使い実行し、`artifacts/orca-connectivity/<UTC>/P0_*` へ保存。必要に応じて P1 以降も追加。
 5. **結果整理**: `PHASE2_PROGRESS.md` の ORCA 欠と `docs/web-client/planning/phase2/DOC_STATUS.md` を更新し、失敗時は `EXTERNAL_INTERFACE_COMPATIBILITY_RUNBOOK.md` のエスカレーション手順に従う。
 ## 3. 準備チェックリスト
-### 3.1 トライアルサーバー事前情報
+### 3.1 本番サーバー事前情報
 
 | 項目 | 値 | 参照先 |
 | --- | --- | --- |
-| ベース URL | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照 | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` |
-| UI ログイン | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照 | 同上 |
-| API 認証 | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を参照 | `curl -u ...` で利用 |
-| 初期データ | 開発環境依存 | - |
-| 利用不可機能 | 特になし | - |
+| ベース URL | `https://weborca.cloud.orcamo.jp:443` | `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` |
+| API 認証 | PKCS#12 証明書 + Basic 認証 | 同上 §2 参照 |
+| 初期データ | 本番環境依存 | - |
+| 利用不可機能 | 特になし（本番環境のため全機能利用可） | - |
 
-> トライアルサーバーは週次でリセットされるため、毎回接続時の認証・初期データ・利用不可機能・CRUD 操作が保証される。実施後は `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` に実施記録を記録し、本運用に影響がないことを確認する。
+> 本番環境のため、CRUD 操作を実施した場合は必ず `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` に実施記録を記録し、操作内容・対象 ID・結果を明記すること。
 ### 3.2 モダナイズ版サーバー設定
 - `ops/shared/docker/custom.properties` / `ops/modernized-server/docker/custom.properties` / `ops/shared/docker/custom-secret.properties` の各 `claim.*` を以下へ書き換える。差分は Evidence に保存し、`ServerInfoResource` の結果と一列に掲載する。
   - `claim.conn=server`
@@ -131,8 +139,8 @@ curl --silent --show-error \
 - `history` に資格情報が残った場合は `history -d <line>` で削除し、必要なら `unset ORCA_TRIAL_PASS` を実行。
 - `artifacts/` へ保存する際はキー・パスフレーズをマスクし、必要に応じて `<SECRET>` プレースホルダを記載。
 - 入院 API のリクエスト・レスポンスは `artifacts/orca-connectivity/<RUN_ID>/inpatient/<API_ID>/` へ集約し、患者 ID・被保険者番号など PHI は `mask.txt` に置換ルールを添えてから共有する（`git add` 禁止で artifacts のまま保存）。
-> **運用メモ（2025-11-15 更新）**
-> 接続先は常に WebORCA トライアルサーバーとし、CRUD を実施した場合でも必ず「トライアルサーバーである」、「個人情報を含めログ保存」であることと Runbook §4.3 と `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` に必ず記載する。ローカル WebORCA コンテナの再構築や PKCS#12 の取得は禁止。
+> **運用メモ（2025-12-11 更新）**
+> 接続先は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` に記載された本番環境 (`https://weborca.cloud.orcamo.jp:443`) のみを使用する。CRUD を実施した場合は必ず Runbook §4.3 と `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` に記載する。トライアルサーバーへの接続は禁止。
 ### 3.6 Push・帳票・患者メモの追加項目・事前確認と課題
 
 | 項目 API | 追加で利用するもの | 補足 |
@@ -279,12 +287,14 @@ No.19-38 で作成した XML テンプレートの確認は `artifacts/orca-conn
 5. **Archive**: 30 日以上参照しないログは `docs/archive/<YYYYQn>/orcaconnect/` へ移し、元ファイルにはスタブと移動分リンクを残す。
 6. **命名ルール**: Evidence ディレクトリは UTC タイムスタンプ（`YYYYMMDDThhmmssZ`）を用いる。命名チェックは `node scripts/tools/orca-artifacts-namer.js` で行う。 以外の終了コードは再実行禁止。
 7. **機密情報のマスキング**: `request.http` に資格情報を含めない。curl コマンドの `--user <MASKED>` 形式で保管し、実行時のみ `env` から展開する。
-## 7. WebORCA トライアル運用メモ
+## 7. 本番環境接続運用メモ
 
-1. **利用範囲**: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載の接続先のみを接続可とし、CRUD を実施した場合は必ず `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` と `artifacts/.../data-check/` に操作内容・対象 ID・戻し有無を記録する。
-2. **資格情報の扱い**: Basic 認証は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載のユーザーを使用する。履歴や Evidence には `<MASKED>` 表記を用い、`curl -u "user:pass"` のまま保存しない。
-3. **テンプレート更新**: `docs/web-client/planning/phase2/DOC_STATUS.md` にトライアル方針へ切り替えた旨と証跡パスを記載し、`docs/server-modernization/phase2/operations/logs/2025-11-15-orca-connectivity.md` の RUN_ID 表を最新化する。
-4. **安全ガード**: ローカル WebORCA コンテナの再構築や `ORCAcertification/` 配下の PKCS#12 はアーカイブ扱いとする。必要な資料は `assets/orca-trialsite/raw/trialsite.md` から辿り、利用不可機能を参照して作業範囲を決める。
+> ⚠️ 過去に「WebORCA トライアル運用メモ」として記載されていた内容は、本番環境接続処方に統一されました。
+
+1. **利用範囲**: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載の本番接続先 (`https://weborca.cloud.orcamo.jp:443`) のみを接続可とする。CRUD を実施した場合は必ず `docs/server-modernization/phase2/operations/logs/<date>-orca-connectivity.md` と `artifacts/.../data-check/` に操作内容・対象 ID・戻し有無を記録する。
+2. **資格情報の扱い**: 認証は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` §2 記載の PKCS#12 証明書と Basic 認証を使用する。履歴や Evidence には `<MASKED>` 表記を用い、平文で保存しない。
+3. **テンプレート更新**: `docs/web-client/planning/phase2/DOC_STATUS.md` に RUN_ID と証跡パスを記載し、`docs/server-modernization/phase2/operations/logs/` 配下のログを最新化する。
+4. **禁止事項**: WebORCA トライアルサーバーへの接続は禁止。接続先は常に `ORCA_CERTIFICATION_ONLY.md` の本番環境とする。
 5. **報告**: Blocker や CRUD 失敗時は Slack `#server-modernized-alerts` → PagerDuty → Backend Lead の順で共有し、Runbook §4.6 の流れでログへ「連絡」ブロックを追加する。
 ---
 

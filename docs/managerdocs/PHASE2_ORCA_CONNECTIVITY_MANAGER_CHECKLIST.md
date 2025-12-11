@@ -1,4 +1,4 @@
-# Phase2 ORCA Connectivity Run マネージャーチェックリスト（Trial サーバー重視プラン）
+# Phase2 ORCA Connectivity Run マネージャーチェックリスト（本番環境接続プラン）
 
 > **参照開始順**
 > 1. `AGENTS.md`
@@ -21,10 +21,15 @@
 - [ ] `mac-dev-login.local.md` = Legacy / Archive（Archive 化時は DOC_STATUS と同期）
 
 ## 1. 背景と基本方針
-- 接続先は ORCAcertification-only（`docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 参照）のみ。同ファイル記載の Basic 認証を共通で利用し、firecrawl で取得した公式 API 仕様（`docs/server-modernization/phase2/operations/assets/orca-api-spec/raw/*.md`。例: `acceptancelst.md`, `appointmod.md`, `acceptmod.md`, `medicalmod.md`）に基づき、開発環境上で提供されている API を XML payload で実行する。
-- トライアル環境の制約・利用不可機能は `docs/server-modernization/phase2/operations/assets/orca-trialsite/raw/trialsite.md`（Snapshot 2025-11-19）を唯一の根拠とし、「お使いいただけない機能一覧」に記されている項目のみ Blocker として扱う。それ以外の API／業務機能はすべて正常に利用できる状態へ整える。
-- CRUD 証跡は必ず `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` と `artifacts/orca-connectivity/<RUN_ID>/{README.md,dns,tls,crud,ui}` に保存し、`docs/web-client/planning/phase2/DOC_STATUS.md` 行 71-75（モダナイズ/外部連携（ORCA））を更新する。
-- UI スクリーンショットは GUI 端末が確保できた場合のみ任意取得。CLI 環境しか使えない場合は「UI 未取得（CLI 制約）」と記録したうえで API 実測に専念する。
+
+> ⚠️ **【2025-12-11 修正】**
+> 本チェックリストで過去に言及されていた「WebORCA トライアルサーバー」への接続は **禁止** となりました。
+> 接続先は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載の本番環境 (`https://weborca.cloud.orcamo.jp:443`) のみを使用します。
+
+- 接続先は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` 記載の本番サーバーのみ。同ファイル記載の PKCS#12 証明書と Basic 認証を使用し、firecrawl で取得した公式 API 仕様（`docs/server-modernization/phase2/operations/assets/orca-api-spec/raw/*.md`）に基づき、API を XML payload で実行する。
+- トライアルサーバー (`weborca-trial.orca.med.or.jp`) への接続は禁止。過去ログに残る「Trial」記述は歴史的経緯のみであり、実運用では参照しない。
+- CRUD 証跡は必ず `docs/server-modernization/phase2/operations/logs/<RUN_ID>-orcacertification-only.md` と `artifacts/orca-connectivity/<RUN_ID>/` に保存し、`docs/web-client/planning/phase2/DOC_STATUS.md` を更新する。
+- 認証情報は環境変数経由で使用し、ログ・ドキュメントへは `<MASKED>` 表記で保存する。
 
 ## 2. タスクボード
 - [x] **タスクA: seed / データ健全性確認**  
@@ -39,8 +44,10 @@
   - 実績: `artifacts/orca-connectivity/20251115T134513Z/coverage/coverage_matrix.md` へ 60 API を自動整列し、`Trial 提供=51` / `Trial 非提供=9`・`Status={Executed,Planned,Blocked}` を付与。`acceptancelst` / `appointlst` / `medicalmod` 行を `Executed (curl XML)` に設定し、非提供 API は `trialsite.md#limit` を根拠に `Blocked` 扱い。概要を `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` へ追記。
   - 実績: RUN_ID=`20251115TrialConnectivityCodexZ1` で firecrawl 仕様 79 本を `Trial提供(実測/未実測)` / `Trial非提供(trialsite#limit, HTTP405)` に分類し、`coverage/coverage_matrix.md` に Evidence パス込みで出力。Blocker 行へ `report_print/systemkanri/userkanri` と `acceptmod/appointmod`（HTTP405）を追加し、ログ + DOC_STATUS 備考に貼付。
 
-- [x] **タスクC: Trial サーバー CRUD 実測（XML）**  
-  - DNS/TLS 事前確認: `nslookup weborca-trial.orca.med.or.jp` と `openssl s_client -connect weborca-trial.orca.med.or.jp:443 -servername weborca-trial.orca.med.or.jp` を RUN_ID ごとに取得し、`artifacts/.../{dns,tls}` とログへ保存。
+- [x] **タスクC: 本番環境 CRUD 実測（XML）**  
+  - DNS/TLS 事前確認: `openssl s_client -connect weborca.cloud.orcamo.jp:443 -servername weborca.cloud.orcamo.jp` を RUN_ID ごとに取得し、`artifacts/.../{dns,tls}` とログへ保存。
+  - `ORCA_CERTIFICATION_ONLY.md` §4 記載の手順に従って API を実行し、HTTP ステータス、`Api_Result`, レスポンス XML を `artifacts/.../crud/<api>/` に保存してログへ反映する。
+  - 過去の「Trial サーバー」での実測ログは歴史的経緯として参照可能だが、新規実測は必ず本番環境で行う。
   - `curl -vv -u user:pass -H 'Accept: application/xml' -H 'Content-Type: application/xml' --data-binary @payloads/<api>_trial.xml <endpoint>` で firecrawl 仕様に記載された API (例: `/api01rv2/acceptlstv2?class=01`, `/api01rv2/appointlstv2?class=01`, `/api/api21/medicalmodv2?class=01`) を実行。HTTP ステータス、`Api_Result`, `Allow` ヘッダー、レスポンス XML を `artifacts/.../crud/<api>/` に保存し、ログへ反映する。
   - Endpoint が HTTP 404/405 を返した場合も Trial サーバー結果としてログ化し、タスクDへ Blocker として引き継ぐ（ローカル ORCA での再検証は行わない）。
   - 実績: `artifacts/orca-connectivity/20251115T134513Z/dns/nslookup_2025-11-15T22:50:38+09:00.txt`, `tls/openssl_s_client_2025-11-15T22:50:42+09:00.txt` で DNS/TLS 正常性を採取。`crud/{acceptlst,appointlst,medicalmod}/` に XML ペイロード・レスポンス・`curl.log` を保存し、`Api_Result={13,12,10}`（doctor/patient seed 欠落）を `docs/server-modernization/phase2/operations/logs/2025-11-20-orca-trial-crud.md` へ記録。UI HTML (`ui/login.html`) も CLI で保存済み。
