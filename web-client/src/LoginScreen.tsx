@@ -43,6 +43,14 @@ const formatEndpoint = (facilityId: string, userId: string) =>
 
 const normalize = (value: string) => value.trim();
 
+const inferRole = (userId: string, roles?: string[]) => {
+  if (roles && roles.length > 0) return roles[0];
+  const lowered = userId.toLowerCase();
+  if (lowered.includes('admin')) return 'system_admin';
+  if (lowered.includes('doctor')) return 'doctor';
+  return 'reception';
+};
+
 type LoginFormValues = {
   facilityId: string;
   userId: string;
@@ -59,6 +67,7 @@ interface UserResourceResponse {
   userId?: string;
   displayName?: string;
   commonName?: string;
+  roles?: string[];
 }
 
 export type LoginResult = {
@@ -68,6 +77,8 @@ export type LoginResult = {
   commonName?: string;
   clientUuid: string;
   runId: string;
+  role: string;
+  roles?: string[];
 };
 
 type LoginScreenProps = {
@@ -263,6 +274,12 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
   }
 
   const data = (await response.json()) as UserResourceResponse;
+  const resolvedRole = inferRole(payload.userId, data.roles);
+  try {
+    localStorage.setItem('devRole', resolvedRole);
+  } catch {
+    // localStorage が利用できない環境では無視する
+  }
   return {
     facilityId: data.facilityId ?? payload.facilityId,
     userId: data.userId ?? payload.userId,
@@ -270,5 +287,7 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     commonName: data.commonName,
     clientUuid,
     runId,
+    role: resolvedRole,
+    roles: data.roles,
   };
 };
