@@ -1,19 +1,396 @@
+import { useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+
+import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
+import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
+import { updateObservabilityMeta } from '../../libs/observability/observability';
+import { ToneBanner } from '../reception/components/ToneBanner';
+import {
+  discardOrcaQueue,
+  fetchAdminConfig,
+  fetchAdminDelivery,
+  fetchOrcaQueue,
+  retryOrcaQueue,
+  saveAdminConfig,
+  type AdminConfigPayload,
+  type AdminConfigResponse,
+  type OrcaQueueEntry,
+} from './api';
+import './administration.css';
+import { publishAdminBroadcast } from '../../libs/admin/broadcast';
+
 type AdministrationPageProps = {
   runId: string;
+  role?: string;
 };
 
-export function AdministrationPage({ runId }: AdministrationPageProps) {
+type Feedback = { tone: 'success' | 'warning' | 'error' | 'info'; message: string };
+
+const DEFAULT_FORM: AdminConfigPayload = {
+  orcaEndpoint: 'https://localhost:9080/openDolphin/resources',
+  mswEnabled: import.meta.env.VITE_DISABLE_MSW !== '1',
+  useMockOrcaQueue: resolveHeaderFlags().useMockOrcaQueue,
+  verifyAdminDelivery: resolveHeaderFlags().verifyAdminDelivery,
+};
+
+const formatTimeAgo = (iso?: string) => {
+  if (!iso) return '―';
+  const delta = Date.now() - new Date(iso).getTime();
+  const minutes = Math.floor(delta / 60000);
+  if (minutes < 1) return '1分以内';
+  return `${minutes}分前`;
+};
+
+const toStatusClass = (status: string) => {
+  if (status === 'delivered') return 'admin-queue__status admin-queue__status--delivered';
+  if (status === 'failed') return 'admin-queue__status admin-queue__status--failed';
+  return 'admin-queue__status admin-queue__status--pending';
+};
+
+export function AdministrationPage({ runId, role }: AdministrationPageProps) {
+  const isSystemAdmin = role === 'system_admin' || role === 'admin' || role === 'system-admin';
+  const [form, setForm] = useState<AdminConfigPayload>(DEFAULT_FORM);
+  const [feedback, setFeedback] = useState<Feedback | null>(null);
+  const queryClient = useQueryClient();
+
+  const configQuery = useQuery({
+    queryKey: ['admin-config'],
+    queryFn: async () => {
+      const [config, delivery] = await Promise.all([fetchAdminConfig(), fetchAdminDelivery().catch(() => null)]);
+      return (delivery ?? config) as AdminConfigResponse;
+    },
+    staleTime: 60_000,
+  });
+
+  const queueQuery = useQuery({
+    queryKey: ['orca-queue'],
+    queryFn: () => fetchOrcaQueue(),
+    refetchInterval: 60_000,
+  });
+
+  useEffect(() => {
+    const data = configQuery.data;
+    if (!data) return;
+    setForm((prev) => ({
+      ...prev,
+      orcaEndpoint: data.orcaEndpoint || prev.orcaEndpoint,
+      mswEnabled: data.mswEnabled ?? prev.mswEnabled,
+      useMockOrcaQueue: data.useMockOrcaQueue ?? prev.useMockOrcaQueue,
+      verifyAdminDelivery: data.verifyAdminDelivery ?? prev.verifyAdminDelivery,
+    }));
+    persistHeaderFlags({
+      useMockOrcaQueue: data.useMockOrcaQueue,
+      verifyAdminDelivery: data.verifyAdminDelivery,
+    });
+    if (data.runId) {
+      updateObservabilityMeta({ runId: data.runId });
+    }
+  }, [configQuery.data]);
+
+  const configMutation = useMutation({
+    mutationFn: saveAdminConfig,
+    onSuccess: (data) => {
+      setFeedback({ tone: 'success', message: '設定を保存し、配信をブロードキャストしました。' });
+      persistHeaderFlags({
+        useMockOrcaQueue: data.useMockOrcaQueue,
+        verifyAdminDelivery: data.verifyAdminDelivery,
+      });
+      const broadcast = publishAdminBroadcast({
+        runId: data.runId ?? runId,
+        deliveryId: data.deliveryId,
+        deliveryVersion: data.deliveryVersion,
+        deliveredAt: data.deliveredAt,
+        queueMode: data.useMockOrcaQueue ? 'mock' : 'live',
+        verifyAdminDelivery: data.verifyAdminDelivery,
+        note: data.note,
+        source: data.source,
+      });
+      logAuditEvent({
+        runId: data.runId ?? runId,
+        source: 'admin/config',
+        note: data.note ?? 'config saved',
+        payload: { ...form, broadcast },
+      });
+      logUiState({
+        action: 'config_delivery',
+        screen: 'administration',
+        controlId: 'save-config',
+        runId: data.runId ?? runId,
+        dataSourceTransition: undefined,
+      });
+      updateObservabilityMeta({ runId: data.runId ?? runId });
+    },
+    onError: () => {
+      setFeedback({ tone: 'error', message: '保存に失敗しました。再度お試しください。' });
+    },
+  });
+
+  const queueMutation = useMutation({
+    mutationFn: (params: { kind: 'retry' | 'discard'; patientId: string }) => {
+      if (params.kind === 'retry') return retryOrcaQueue(params.patientId);
+      return discardOrcaQueue(params.patientId);
+    },
+    onSuccess: (data, variables) => {
+      queryClient.setQueryData(['orca-queue'], data);
+      publishAdminBroadcast({
+        runId: data.runId ?? runId,
+        deliveryId: variables.patientId,
+        deliveryVersion: data.source,
+        deliveredAt: new Date().toISOString(),
+        queueMode: data.source,
+        verifyAdminDelivery: data.verifyAdminDelivery,
+        note: variables.kind === 'retry' ? '再送完了' : '破棄完了',
+      });
+      logAuditEvent({
+        runId: data.runId ?? runId,
+        source: 'orca/queue',
+        note: variables.kind,
+        payload: { patientId: variables.patientId, queue: data.queue },
+      });
+      setFeedback({
+        tone: 'info',
+        message: variables.kind === 'retry' ? '再送リクエストを送信しました。' : 'キューエントリを破棄しました。',
+      });
+    },
+    onError: () => {
+      setFeedback({ tone: 'error', message: 'キュー操作に失敗しました。' });
+    },
+  });
+
+  const queueEntries: OrcaQueueEntry[] = useMemo(
+    () => queueQuery.data?.queue ?? [],
+    [queueQuery.data?.queue],
+  );
+  const warningEntries = useMemo(
+    () =>
+      queueEntries.filter((entry) => {
+        if (entry.status === 'failed') return true;
+        if (entry.status === 'pending') {
+          if (!entry.lastDispatchAt) return true;
+          const elapsed = Date.now() - new Date(entry.lastDispatchAt).getTime();
+          return elapsed > 120_000;
+        }
+        return false;
+      }),
+    [queueEntries],
+  );
+
+  const handleInputChange = (key: keyof AdminConfigPayload, value: string | boolean) => {
+    setForm((prev) => ({ ...prev, [key]: value }));
+  };
+
+  const handleSave = () => {
+    configMutation.mutate(form);
+  };
+
+  const handleRetry = (patientId: string) => {
+    queueMutation.mutate({ kind: 'retry', patientId });
+  };
+
+  const handleDiscard = (patientId: string) => {
+    queueMutation.mutate({ kind: 'discard', patientId });
+  };
+
+  const latestRunId = configQuery.data?.runId ?? queueQuery.data?.runId ?? runId;
+
   return (
-    <main className="placeholder-page" data-test-id="administration-page">
-      <h1>Administration（設定配信）</h1>
-      <p className="placeholder-page__lead" role="status" aria-live="assertive">
-        この画面はシステム管理者のみアクセス可能です。RUN_ID: <strong>{runId}</strong>
-      </p>
-      <ul className="placeholder-page__list">
-        <li>ORCA 接続設定・MSW/モック切替・配信キューのUIをここに集約します。</li>
-        <li>保存操作は audit / telemetry に runId を付与し、Stage/Preview への配信は証跡必須です。</li>
-        <li>現時点ではプレースホルダーとして権限制御の挙動を示します。</li>
-      </ul>
+    <main className="administration-page" data-test-id="administration-page" data-run-id={latestRunId}>
+      <div className="administration-page__header">
+        <h1>Administration（設定配信）</h1>
+        <p className="administration-page__lead" role="status" aria-live="assertive">
+          管理者が ORCA 接続・MSW トグル・配信フラグを編集し、保存時に broadcast / audit を送ります。RUN_ID:{' '}
+          <strong>{latestRunId}</strong>
+        </p>
+        <div className="administration-page__meta" aria-live="polite">
+          <span className="administration-page__pill">role: {role ?? 'unknown'}</span>
+          <span className="administration-page__pill">配信元: {configQuery.data?.source ?? 'live'}</span>
+          <span className="administration-page__pill">
+            検証フラグ: {form.verifyAdminDelivery ? 'enabled' : 'disabled'}
+          </span>
+          <span className="administration-page__pill">
+            ORCA queue: {form.useMockOrcaQueue ? 'mock (MSW)' : 'live'}
+          </span>
+        </div>
+      </div>
+
+      {warningEntries.length > 0 ? (
+        <ToneBanner
+          tone="warning"
+          message={`未配信・失敗バンドルが ${warningEntries.length} 件あります。再送または破棄を実施してください。`}
+          destination="ORCA queue"
+          runId={latestRunId}
+          nextAction="再送/破棄・再取得"
+        />
+      ) : (
+        <p className="admin-quiet">未配信キューの遅延は検知されていません。</p>
+      )}
+
+      <div className="administration-grid">
+        <section className="administration-card" aria-label="配信設定フォーム">
+          <h2 className="administration-card__title">配信設定</h2>
+          <form className="admin-form" onSubmit={(e) => e.preventDefault()}>
+            <div className="admin-form__field">
+              <label htmlFor="orca-endpoint">ORCA 接続先</label>
+              <input
+                id="orca-endpoint"
+                type="text"
+                value={form.orcaEndpoint}
+                onChange={(event) => handleInputChange('orcaEndpoint', event.target.value)}
+                disabled={!isSystemAdmin}
+              />
+              <p className="admin-quiet">例: https://localhost:9080/openDolphin/resources</p>
+            </div>
+
+            <div className="admin-form__toggles">
+              <div className="admin-toggle">
+                <div className="admin-toggle__label">
+                  <span>MSW（モック）を優先</span>
+                  <span className="admin-toggle__hint">開発時は ON、実 API 検証時は OFF</span>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="MSW（モック）を優先"
+                  checked={form.useMockOrcaQueue}
+                  onChange={(event) => {
+                    const next = event.target.checked;
+                    handleInputChange('useMockOrcaQueue', next);
+                    persistHeaderFlags({ useMockOrcaQueue: next });
+                  }}
+                  disabled={!isSystemAdmin}
+                />
+              </div>
+              <div className="admin-toggle">
+                <div className="admin-toggle__label">
+                  <span>配信検証フラグ</span>
+                  <span className="admin-toggle__hint">ヘッダー x-admin-delivery-verification を付与</span>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="配信検証フラグ"
+                  checked={form.verifyAdminDelivery}
+                  onChange={(event) => {
+                    const next = event.target.checked;
+                    handleInputChange('verifyAdminDelivery', next);
+                    persistHeaderFlags({ verifyAdminDelivery: next });
+                  }}
+                  disabled={!isSystemAdmin}
+                />
+              </div>
+              <div className="admin-toggle">
+                <div className="admin-toggle__label">
+                  <span>MSW ローカルキャッシュ</span>
+                  <span className="admin-toggle__hint">mswEnabled=true で UI モックを許可</span>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="MSW ローカルキャッシュ"
+                  checked={form.mswEnabled}
+                  onChange={(event) => handleInputChange('mswEnabled', event.target.checked)}
+                  disabled={!isSystemAdmin}
+                />
+              </div>
+            </div>
+
+            <div className="admin-actions">
+              <button
+                type="button"
+                className="admin-button admin-button--primary"
+                onClick={handleSave}
+                disabled={!isSystemAdmin || configMutation.isPending}
+              >
+                保存して配信
+              </button>
+              <button
+                type="button"
+                className="admin-button admin-button--secondary"
+                onClick={() => configQuery.refetch()}
+                disabled={configQuery.isFetching}
+              >
+                再取得
+              </button>
+            </div>
+            {feedback ? (
+              <p
+                className="status-message"
+                role="status"
+                aria-live={feedback.tone === 'error' ? 'assertive' : 'polite'}
+              >
+                {feedback.message}
+              </p>
+            ) : null}
+            {configQuery.data?.note ? <p className="admin-note">{configQuery.data.note}</p> : null}
+          </form>
+        </section>
+
+        <section className="administration-card" aria-label="配信ステータス">
+          <h2 className="administration-card__title">配信ステータス</h2>
+          <ul className="placeholder-page__list">
+            <li>deliveryId: {configQuery.data?.deliveryId ?? '―'}</li>
+            <li>deliveryVersion: {configQuery.data?.deliveryVersion ?? '―'}</li>
+            <li>deliveredAt: {configQuery.data?.deliveredAt ?? '―'}</li>
+            <li>verified: {configQuery.data?.verifyAdminDelivery ? 'true' : 'false'}</li>
+          </ul>
+          <p className="admin-note">
+            保存時に broadcast を発行し、Reception/Charts へ「設定更新」バナーを表示します。system_admin 以外は読み取り専用です。
+          </p>
+        </section>
+      </div>
+
+      <section className="administration-card" aria-label="配信キュー一覧">
+        <h2 className="administration-card__title">配信キュー</h2>
+        <p className="admin-quiet">
+          未配信のバンドルを確認し、必要に応じて再送（retry）または破棄します。ヘッダーで queueMode / delivery verification を表示します。
+        </p>
+        <table className="admin-queue">
+          <thead>
+            <tr>
+              <th>patientId</th>
+              <th>status</th>
+              <th>lastDispatch</th>
+              <th>headers</th>
+              <th aria-label="actions">操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {queueEntries.length === 0 ? (
+              <tr>
+                <td colSpan={5}>未配信キューはありません。</td>
+              </tr>
+            ) : (
+              queueEntries.map((entry) => (
+                <tr key={entry.patientId}>
+                  <td>{entry.patientId}</td>
+                  <td>
+                    <span className={toStatusClass(entry.status)}>{entry.status}</span>
+                  </td>
+                  <td>{formatTimeAgo(entry.lastDispatchAt)}</td>
+                  <td>{entry.headers?.join(' / ') ?? '―'}</td>
+                  <td>
+                    <div className="admin-queue__actions">
+                      <button
+                        type="button"
+                        className="admin-button admin-button--secondary"
+                        onClick={() => handleRetry(entry.patientId)}
+                        disabled={!isSystemAdmin || queueMutation.isPending || !entry.retryable}
+                      >
+                        再送
+                      </button>
+                      <button
+                        type="button"
+                        className="admin-button admin-button--danger"
+                        onClick={() => handleDiscard(entry.patientId)}
+                        disabled={!isSystemAdmin || queueMutation.isPending}
+                      >
+                        破棄
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </section>
     </main>
   );
 }

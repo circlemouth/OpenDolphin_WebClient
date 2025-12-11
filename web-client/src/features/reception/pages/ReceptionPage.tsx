@@ -12,6 +12,8 @@ import { receptionStyles } from '../styles';
 import { useAuthService } from '../../charts/authService';
 import { getChartToneDetails } from '../../../ux/charts/tones';
 import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
+import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
+import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 
 type SortKey = 'time' | 'name' | 'department';
 
@@ -122,6 +124,7 @@ export function ReceptionPage({
 }: ReceptionPageProps) {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { broadcast } = useAdminBroadcast();
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, bumpRunId } = useAuthService();
   const [selectedDate, setSelectedDate] = useState(todayString());
   const [keyword, setKeyword] = useState(() => searchParams.get('kw') ?? '');
@@ -450,6 +453,7 @@ export function ReceptionPage({
     <>
       <Global styles={receptionStyles} />
       <main className="reception-page" data-run-id={mergedMeta.runId}>
+        <AdminBroadcastBanner broadcast={broadcast} surface="reception" />
         <section className="reception-page__header">
           <h1>{title}</h1>
           <p>{description}</p>

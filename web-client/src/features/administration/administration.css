@@ -1,0 +1,230 @@
+.administration-page {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 16px;
+  padding: 1.5rem;
+  box-shadow: 0 10px 35px rgba(15, 23, 42, 0.08);
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.administration-page__header {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.administration-page__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.administration-page__pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  background: #eef2ff;
+  color: #1d4ed8;
+  border: 1px solid rgba(37, 99, 235, 0.35);
+  border-radius: 999px;
+  padding: 0.35rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.administration-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.administration-card {
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 14px;
+  padding: 1rem;
+  background: #f8fafc;
+}
+
+.administration-card__title {
+  margin-top: 0;
+  margin-bottom: 0.5rem;
+  font-weight: 800;
+}
+
+.admin-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.admin-form__field {
+  display: grid;
+  gap: 0.35rem;
+}
+
+.admin-form__field label {
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.admin-form__field input[type='text'] {
+  border: 1px solid rgba(148, 163, 184, 0.8);
+  border-radius: 10px;
+  padding: 0.5rem 0.65rem;
+  font-size: 1rem;
+}
+
+.admin-form__toggles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 0.75rem;
+}
+
+.admin-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+}
+
+.admin-toggle__label {
+  display: grid;
+  gap: 0.1rem;
+}
+
+.admin-toggle__hint {
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.admin-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+}
+
+.admin-button {
+  border: none;
+  border-radius: 10px;
+  padding: 0.55rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.05s ease, box-shadow 0.2s ease;
+}
+
+.admin-button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+  box-shadow: none;
+}
+
+.admin-button--primary {
+  background: linear-gradient(90deg, #2563eb, #4f46e5);
+  color: #ffffff;
+  box-shadow: 0 12px 30px rgba(59, 130, 246, 0.3);
+}
+
+.admin-button--secondary {
+  background: #e2e8f0;
+  color: #0f172a;
+}
+
+.admin-button--danger {
+  background: linear-gradient(90deg, #ef4444, #f97316);
+  color: #ffffff;
+  box-shadow: 0 12px 30px rgba(239, 68, 68, 0.25);
+}
+
+.admin-queue {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 0.75rem;
+}
+
+.admin-queue th,
+.admin-queue td {
+  border-bottom: 1px solid rgba(148, 163, 184, 0.3);
+  padding: 0.45rem 0.35rem;
+  text-align: left;
+}
+
+.admin-queue th {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.admin-queue__status {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+.admin-queue__status--pending {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.admin-queue__status--failed {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.admin-queue__status--delivered {
+  background: #d1fae5;
+  color: #047857;
+}
+
+.admin-queue__actions {
+  display: inline-flex;
+  gap: 0.35rem;
+}
+
+.admin-note {
+  background: #e2e8f0;
+  color: #0f172a;
+  border-radius: 12px;
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+}
+
+.admin-alert {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.65rem;
+  align-items: center;
+  border-radius: 12px;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba(234, 179, 8, 0.4);
+  background: #fef9c3;
+}
+
+.admin-alert__tone {
+  font-weight: 800;
+  color: #b45309;
+}
+
+.admin-alert__message {
+  margin: 0;
+  color: #92400e;
+}
+
+.admin-quiet {
+  color: #475569;
+  font-size: 0.9rem;
+}
+
+@media (max-width: 720px) {
+  .administration-page {
+    padding: 1rem;
+  }
+  .admin-form__toggles {
+    grid-template-columns: 1fr;
+  }
+}
