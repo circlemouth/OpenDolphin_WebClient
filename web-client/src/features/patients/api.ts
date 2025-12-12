@@ -138,6 +138,27 @@ const tryFetchJson = async (paths: string[], body: Record<string, unknown>) => {
   return undefined;
 };
 
+const tryPostJson = async (paths: string[], body: Record<string, unknown>) => {
+  let lastFailure: { json?: Record<string, unknown>; status?: number; path?: string } | undefined;
+  for (const path of paths) {
+    try {
+      const response = await httpFetch(path, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+      if (response.ok) {
+        return { ok: true, json, status: response.status, path };
+      }
+      lastFailure = { json, status: response.status, path };
+    } catch (error) {
+      console.warn('[patients] post failed for', path, error);
+    }
+  }
+  return { ok: false, json: lastFailure?.json ?? {}, status: lastFailure?.status, path: lastFailure?.path };
+};
+
 export async function fetchPatients(params: PatientSearchParams): Promise<PatientListResponse> {
   const runId = getObservabilityMeta().runId ?? generateRunId();
   const payload: Record<string, unknown> = {
@@ -192,22 +213,17 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
   };
   updateObservabilityMeta({ runId });
 
-  const response = await httpFetch('/orca12/patientmodv2/outpatient', {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(body),
-  });
-
-  const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
+  const postResult = await tryPostJson(patientCandidates, body);
+  const json = postResult.json ?? {};
   const result: PatientMutationResult = {
-    ok: response.ok,
+    ok: postResult.ok,
     runId: (json.runId as string | undefined) ?? runId,
     cacheHit: normalizeBoolean(json.cacheHit),
     missingMaster: normalizeBoolean(json.missingMaster),
     dataSourceTransition: json.dataSourceTransition as DataSourceTransition | undefined,
     fallbackUsed: normalizeBoolean(json.fallbackUsed),
     auditEvent: (json.auditEvent as Record<string, unknown>) ?? body.auditEvent,
-    message: (json.apiResultMessage as string | undefined) ?? (response.ok ? '保存しました' : '保存に失敗しました'),
+    message: (json.apiResultMessage as string | undefined) ?? (postResult.ok ? '保存しました' : '保存に失敗しました'),
     patient: json.patient as PatientRecord | undefined,
   };
 
