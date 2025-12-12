@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../playwright/fixtures';
 
 import { e2eAuthSession, profile, runId as defaultRunId } from './helpers/orcaMaster';
 

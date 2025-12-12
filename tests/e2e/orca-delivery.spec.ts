@@ -7,7 +7,8 @@ import { AddressInfo } from 'node:net';
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { expect, test, request as playwrightRequest } from '@playwright/test';
+import { expect, test } from '../playwright/fixtures';
+import { request as playwrightRequest } from '@playwright/test';
 
 import { fetchAuditLog, logOrcaQueueStatus } from '../playwright/utils/ui-helpers';
 
