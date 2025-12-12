@@ -6,6 +6,7 @@ import { defineConfig } from '@playwright/test';
 // - VITE_VERIFY_ADMIN_DELIVERY=1 なら Administration 設定配信をテストで検証する。
 const useMockOrcaQueue = process.env.VITE_USE_MOCK_ORCA_QUEUE === '1';
 const verifyAdminDelivery = process.env.VITE_VERIFY_ADMIN_DELIVERY === '1';
+const viteDisableMsw = process.env.VITE_DISABLE_MSW ?? '0';
 
 export default defineConfig({
   use: {
@@ -19,7 +20,7 @@ export default defineConfig({
   },
   webServer: {
     command:
-      'cd web-client && VITE_DEV_USE_HTTPS=1 VITE_DISABLE_MSW=0 npm run dev -- --host --port 4173 --clearScreen false',
+      `cd web-client && VITE_DEV_USE_HTTPS=1 VITE_DISABLE_MSW=${viteDisableMsw} npm run dev -- --host --port 4173 --clearScreen false`,
     url: 'https://localhost:4173',
     ignoreHTTPSErrors: true,
     reuseExistingServer: true,

@@ -4,10 +4,14 @@ on:
   push:
     paths:
       - 'web-client/**'
+      - 'tests/**'
+      - 'playwright.config.ts'
       - '.github/workflows/web-client-ci.yml'
   pull_request:
     paths:
       - 'web-client/**'
+      - 'tests/**'
+      - 'playwright.config.ts'
       - '.github/workflows/web-client-ci.yml'
 
 jobs:
@@ -41,3 +45,44 @@ jobs:
 
       - name: Build Storybook
         run: npm run build-storybook -- --quiet
+
+  playwright-e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: package-lock.json
+
+      - name: Install dependencies (root)
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Set RUN_ID
+        run: echo "RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)" >> $GITHUB_ENV
+
+      - name: Playwright E2E (MSW ON)
+        env:
+          RUN_ID: ${{ env.RUN_ID }}
+          VITE_DISABLE_MSW: '0'
+        run: npx playwright test tests/e2e --reporter=line
+
+      - name: Playwright E2E (MSW OFF)
+        env:
+          RUN_ID: ${{ env.RUN_ID }}
+          VITE_DISABLE_MSW: '1'
+        run: npx playwright test tests/e2e --reporter=line
+
+      - name: Upload E2E artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webclient-e2e-${{ env.RUN_ID }}
+          path: artifacts/webclient/e2e/${{ env.RUN_ID }}
