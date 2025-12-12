@@ -234,6 +234,7 @@ src:
           - 患者一覧/詳細/編集フォームを `/orca12/patientmodv2/outpatient` に接続し、保存時に auditEvent(operation=create|update|delete) と runId を送信。
           - missingMaster/fallbackUsed true の場合は保存をブロックし、warning トーストと aria-live=assertive を表示。
           - Reception からのフィルタ復元と localStorage/URL 同期を実装。
+          - 進捗: API マッピングと画面設計を反映済み。CRUD 配線・audit/aria-live ブロックの実装と検証が残り。
         dependency:
           - src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md
           - src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md
@@ -241,8 +242,8 @@ src:
         api:
           - /orca12/patientmodv2/outpatient
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 40
         schedule:
           start: 2025-12-17T00:00:00.000Z
           days: 1
@@ -271,13 +272,14 @@ src:
           - Outpatient Mock で missingMaster/cacheHit/dataSourceTransition の切替 UI を作り直し、telemetry funnel を画面表示。
           - `VITE_DISABLE_MSW=1` で実 API 接続時は警告を表示し、シナリオ切替を無効化。
           - MSW フィクスチャを Reception/Charts/Patients で再利用できるよう整理。
+          - 進捗: フィクスチャ整理とトグル/UI の再配線を完了。VITE_DISABLE_MSW 警告と再利用導線を実装済み。
         dependency:
           - src/webclient_modernization_phase2/03_reception/Reception検索とリストAPI配線.md
         agent: cursor cli
         api: []
         priority: Low
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-18T12:00:00.000Z
           days: 0.5
@@ -289,6 +291,7 @@ src:
           - Reception→Charts→Patients→Administration の主要フローで tone/banner/aria-live/telemetry を自動確認するシナリオを `ux/playwright-scenarios.md` に沿って追加。
           - MSW ON/OFF の両モードを CI で実行し、スクリーンショットと HAR を artifacts へ保存。
           - A11y チェック（role/aria-*）とランタイムエラーを CI 失敗条件に設定。
+          - RUN_ID=`20251212T054836Z` でシナリオ・CI マトリクスを実装済み。MSW ON/OFF のローカル実行と CI 成果物確認、失敗時の修正が残作業。
         dependency:
           - src/webclient_modernization_phase2/04_charts/ORCA送信・ドラフト・キャンセル制御.md
           - src/webclient_modernization_phase2/05_patients_admin/Patients編集と監査連携.md
@@ -297,8 +300,8 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 70
         schedule:
           start: 2025-12-19T00:00:00.000Z
           days: 1
@@ -314,8 +317,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 30
         schedule:
           start: 2025-12-20T12:00:00.000Z
           days: 0.5
