@@ -1,5 +1,223 @@
 [
   {
+    "id": "task-1765577305848-e647c9",
+    "name": "CodexCLI3: 【ワーカー指示】外来患者基本・保険・来院履歴取得 API 接続実装\n\nRUN_ID: 20251212T143720Z（本ドキュメントと同一）\n参照チェーン: AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md → 該当チェックリスト\n対象: /api01rv2/patient/outpatient/*（セクション1.5）。現状は web-client/src/libs/http/httpClient.ts と MSW モックのみで、実アプリから未呼び出し。\n目的: Reception/Patients/Charts から患者閲覧時に実 API を叩き、runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を UI・audit・observability へ透過させる。\n実装タスク（優先順）:\nPatientsTab/PatientsPage の取得ロジックへ tryFetchJson(['/api01rv2/patient/outpatient', '/api01rv2/patient/outpatient/mock'], payload) を追加し、既存 patientCandidates 呼び出しを置換または統合。\n取得メタの透過: updateObservabilityMeta で runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt を同期。UI バッジ（PatientsTab meta, Charts ヘッダー pill, readOnly 判定）と telemetry recordOutpatientFunnel('patient_fetch') へ反映。\n監査: auditEvent.details に必須キー（runId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt/recordsReturned）をセットし、logUiState(action='patient_fetch', screen='patients') を送る。\nガード: missingMaster または fallbackUsed が true の場合、PatientsTab を readOnly に固定し、案内バナーと aria-live=assertive を表示。5xx/timeout 時は「再取得」導線を提示。\nPlaywright/MSW: tests/e2e/outpatient-*.spec.ts と web-client/src/mocks/fixtures/outpatient.ts に正常／missingMaster／fallbackUsed／timeout の4パターンを追加し、extraHTTPHeaders とレスポンス body の meta を一致させる。\n更新必須ドキュメント:\ndocs/web-client/planning/phase2/DOC_STATUS.md（備考に RUN_ID と更新パスを追記）\ndocs/web-client/README.md（Active 更新履歴へ追加）\n証跡ログ: docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md に実装／検証結果を追記\n制約: Python 実行禁止。server/ 配下の Legacy サーバースクリプトは変更不可。コミット必須（ワークツリー作業ルール）。\n検証: VITE_DISABLE_MSW=1 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh でローカル起動し、curl または Playwright で /api01rv2/patient/outpatient 正常系と missingMaster/fallbackUsed/timeout を確認し HAR を証跡へ保存。",
+    "model": "Codex CLI",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-12T22:08:25.848Z",
+    "updatedAt": "2025-12-12T22:08:30.196Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765577305848-e647c9",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765577305442-iu2hwj0o",
+    "aiCompetitionGroupName": "【ワーカー指示】外来患者基本・保険・来院履歴取得 API 接続実装\n\nRUN_ID: 20251212T143720Z（本ドキュメントと同一）\n参照チェーン: AGENTS.md → docs/web-client/README.md → docs/server-modernization/phase2/INDEX.md → docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md → 該当チェックリスト\n対象: /api01rv2/patient/outpatient/*（セクション1.5）。現状は web-client/src/libs/http/httpClient.ts と MSW モックのみで、実アプリから未呼び出し。\n目的: Reception/Patients/Charts から患者閲覧時に実 API を叩き、runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を UI・audit・observability へ透過させる。\n実装タスク（優先順）:\nPatientsTab/PatientsPage の取得ロジックへ tryFetchJson(['/api01rv2/patient/outpatient', '/api01rv2/patient/outpatient/mock'], payload) を追加し、既存 patientCandidates 呼び出しを置換または統合。\n取得メタの透過: updateObservabilityMeta で runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt を同期。UI バッジ（PatientsTab meta, Charts ヘッダー pill, readOnly 判定）と telemetry recordOutpatientFunnel('patient_fetch') へ反映。\n監査: auditEvent.details に必須キー（runId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed/fetchedAt/recordsReturned）をセットし、logUiState(action='patient_fetch', screen='patients') を送る。\nガード: missingMaster または fallbackUsed が true の場合、PatientsTab を readOnly に固定し、案内バナーと aria-live=assertive を表示。5xx/timeout 時は「再取得」導線を提示。\nPlaywright/MSW: tests/e2e/outpatient-*.spec.ts と web-client/src/mocks/fixtures/outpatient.ts に正常／missingMaster／fallbackUsed／timeout の4パターンを追加し、extraHTTPHeaders とレスポンス body の meta を一致させる。\n更新必須ドキュメント:\ndocs/web-client/planning/phase2/DOC_STATUS.md（備考に RUN_ID と更新パスを追記）\ndocs/web-client/README.md（Active 更新履歴へ追加）\n証跡ログ: docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md に実装／検証結果を追記\n制約: Python 実行禁止。server/ 配下の Legacy サーバースクリプトは変更不可。コミット必須（ワークツリー作業ルール）。\n検証: VITE_DISABLE_MSW=1 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh でローカル起動し、curl または Playwright で /api01rv2/patient/outpatient 正常系と missingMaster/fallbackUsed/timeout を確認し HAR を証跡へ保存。",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1765577305848-e647c9",
+    "medal": "gold",
+    "aiCompetitionScore": 92
+  },
+  {
+    "id": "task-yaml-1cgufxm-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 11_監査ログauditEvent統一\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 11 監査ログ（auditEvent）統一\n\n- Charts の UI 操作を `auditEvent` の語彙に揃え、重要操作（患者切替/送信/終了/印刷/失敗）を “必ず” 記録する。\n- `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を details に統一して透過し、監査ログと UI 表示が乖離しないことを DoD にする。\n- 監査ログの “個人情報” を最小化しつつ、追跡可能性（traceId/requestId）を確保するルールを整備する。\n\nYAML ID: src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-12T21:52:18.409Z",
+    "updatedAt": "2025-12-12T21:52:18.409Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1cgufxm-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-12T21:52:18.395Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / foundation"
+    ],
+    "dependencies": [
+      "task-yaml-1wjwxd-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1766361600000,
+      "endMs": 1766534400000,
+      "durationDays": 2
+    },
+    "category": "src / charts_production_outpatient / foundation",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 11 監査ログ（auditEvent）統一\n\n- Charts の UI 操作を `auditEvent` の語彙に揃え、重要操作（患者切替/送信/終了/印刷/失敗）を “必ず” 記録する。\n- `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を details に統一して透過し、監査ログと UI 表示が乖離しないことを DoD にする。\n- 監査ログの “個人情報” を最小化しつつ、追跡可能性（traceId/requestId）を確保するルールを整備する。"
+  },
+  {
+    "id": "task-yaml-dvnr5t-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 10_セッションと権限ガード整理\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 10 セッションと権限ガード整理\n\n- Charts 内のアクション（診療終了/ORCA送信/患者編集/印刷）を権限でガードし、権限不足は disabled＋理由（ツールチップ/aria-describedby）で提示する。\n- セッション切れ/施設不一致/ユーザー変更時に、Charts の状態（runId、選択患者、ドラフト）を安全に破棄してログアウトへ誘導する。\n- 監査上の “誰が・いつ・どの runId で” を UI に必ず表示できるよう、Topbar/ヘッダの表示要件を確定する。\n\nYAML ID: src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-12T21:52:15.666Z",
+    "updatedAt": "2025-12-12T21:52:15.666Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-dvnr5t-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-12T21:52:15.363Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / foundation"
+    ],
+    "dependencies": [
+      "task-yaml-1wjwxd-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1766361600000,
+      "endMs": 1766534400000,
+      "durationDays": 2
+    },
+    "category": "src / charts_production_outpatient / foundation",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 10 セッションと権限ガード整理\n\n- Charts 内のアクション（診療終了/ORCA送信/患者編集/印刷）を権限でガードし、権限不足は disabled＋理由（ツールチップ/aria-describedby）で提示する。\n- セッション切れ/施設不一致/ユーザー変更時に、Charts の状態（runId、選択患者、ドラフト）を安全に破棄してログアウトへ誘導する。\n- 監査上の “誰が・いつ・どの runId で” を UI に必ず表示できるよう、Topbar/ヘッダの表示要件を確定する。"
+  },
+  {
+    "id": "task-yaml-1wjwxd-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 03_モダナイズ外来API契約テーブル確定\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。\n\nYAML ID: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-12T14:33:54.226Z",
+    "updatedAt": "2025-12-12T21:51:38.446Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1wjwxd-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-12T14:33:53.954Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient"
+    ],
+    "dependencies": [
+      "task-yaml-10bjkhv-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1766102400000,
+      "endMs": 1766275200000,
+      "durationDays": 2
+    },
+    "category": "src / charts_production_outpatient",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。"
+  },
+  {
+    "id": "task-yaml-10bjkhv-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 02_ChartsPage現状棚卸しとギャップ\n期間: 12/17 09:00 - 12/19 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 02 ChartsPage 現状棚卸しとギャップ\n\n- `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` と実装（`web-client/src/features/charts/*`）を突き合わせ、未実装/未統合の UI・フロー・監査項目を列挙する。\n- 重要ギャップを「P0: 運用不可」「P1: 運用に支障」「P2: 品質改善」に分類し、以降タスクの優先度に反映する。\n- Charts に閉じない依存（Reception/Patients/Administration）を “入口/出口” として明示し、責務分離（Chart 内で完結すること/別画面に委譲すること）を決める。\n\nYAML ID: src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-12T13:37:44.533Z",
+    "updatedAt": "2025-12-12T14:33:47.086Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-10bjkhv-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-12T13:37:44.512Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient"
+    ],
+    "dependencies": [
+      "task-yaml-y6z02w-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1765929600000,
+      "endMs": 1766102400000,
+      "durationDays": 2
+    },
+    "category": "src / charts_production_outpatient",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 02 ChartsPage 現状棚卸しとギャップ\n\n- `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` と実装（`web-client/src/features/charts/*`）を突き合わせ、未実装/未統合の UI・フロー・監査項目を列挙する。\n- 重要ギャップを「P0: 運用不可」「P1: 運用に支障」「P2: 品質改善」に分類し、以降タスクの優先度に反映する。\n- Charts に閉じない依存（Reception/Patients/Administration）を “入口/出口” として明示し、責務分離（Chart 内で完結すること/別画面に委譲すること）を決める。"
+  },
+  {
     "id": "task-yaml-y6z02w-src-charts-produ",
     "name": "[webclient charts production outpatient plan] 01_外来機能の完全カバレッジ定義\n期間: 12/16 09:00 - 12/17 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 01 外来機能の完全カバレッジ定義（商用カルテ品質のゴール）\n\n- 「Charts（電子カルテ画面）」を **実運用できる品質** まで引き上げるため、モダナイズ版サーバーの外来機能（予約/請求/外来医療記録/患者更新/設定配信/キュー）の UI カバレッジを “漏れなく” 一覧化する。\n- “市販カルテ相当” の要件として、監査（auditEvent/操作ログ）、アクセシビリティ（ARIA + 重要通知）、運用（障害時表示/再試行/フィクスチャ運用）を Charts の DoD に含める。\n- 本ガントの成果物は「外来: 受付→診療→会計」の経路を Charts 観点で完走できること（Reception からの遷移・患者編集・ORCA送信・状態遷移・印刷/出力）。\n\nYAML ID: src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md",
     "model": "YAML App",
@@ -69,259 +287,5 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null
-  },
-  {
-    "id": "task-yaml-10bjkhv-src-charts-produ",
-    "name": "[webclient charts production outpatient plan] 02_ChartsPage現状棚卸しとギャップ\n期間: 12/17 09:00 - 12/19 09:00 / 優先度: high / 緊急度: medium / エージェント: gemini cli\n\n# 02 ChartsPage 現状棚卸しとギャップ\n\n- `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` と実装（`web-client/src/features/charts/*`）を突き合わせ、未実装/未統合の UI・フロー・監査項目を列挙する。\n- 重要ギャップを「P0: 運用不可」「P1: 運用に支障」「P2: 品質改善」に分類し、以降タスクの優先度に反映する。\n- Charts に閉じない依存（Reception/Patients/Administration）を “入口/出口” として明示し、責務分離（Chart 内で完結すること/別画面に委譲すること）を決める。\n\nYAML ID: src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-12T13:37:44.533Z",
-    "updatedAt": "2025-12-12T14:33:47.086Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-10bjkhv-src-charts-produ",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md",
-      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
-      "datasetLabel": "webclient charts production outpatient plan",
-      "pathId": "src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md",
-      "fileName": "webclient-charts-production-outpatient-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
-      "addedAt": "2025-12-12T13:37:44.512Z"
-    },
-    "labels": [
-      "webclient charts production outpatient plan",
-      "src / charts_production_outpatient"
-    ],
-    "dependencies": [
-      "task-yaml-y6z02w-src-charts-produ"
-    ],
-    "schedule": {
-      "startMs": 1765929600000,
-      "endMs": 1766102400000,
-      "durationDays": 2
-    },
-    "category": "src / charts_production_outpatient",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 02 ChartsPage 現状棚卸しとギャップ\n\n- `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` と実装（`web-client/src/features/charts/*`）を突き合わせ、未実装/未統合の UI・フロー・監査項目を列挙する。\n- 重要ギャップを「P0: 運用不可」「P1: 運用に支障」「P2: 品質改善」に分類し、以降タスクの優先度に反映する。\n- Charts に閉じない依存（Reception/Patients/Administration）を “入口/出口” として明示し、責務分離（Chart 内で完結すること/別画面に委譲すること）を決める。"
-  },
-  {
-    "id": "task-yaml-1wjwxd-src-charts-produ",
-    "name": "[webclient charts production outpatient plan] 03_モダナイズ外来API契約テーブル確定\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。\n\nYAML ID: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-12T14:33:54.226Z",
-    "updatedAt": "2025-12-12T21:51:38.446Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1wjwxd-src-charts-produ",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
-      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
-      "datasetLabel": "webclient charts production outpatient plan",
-      "pathId": "src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
-      "fileName": "webclient-charts-production-outpatient-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
-      "addedAt": "2025-12-12T14:33:53.954Z"
-    },
-    "labels": [
-      "webclient charts production outpatient plan",
-      "src / charts_production_outpatient"
-    ],
-    "dependencies": [
-      "task-yaml-10bjkhv-src-charts-produ"
-    ],
-    "schedule": {
-      "startMs": 1766102400000,
-      "endMs": 1766275200000,
-      "durationDays": 2
-    },
-    "category": "src / charts_production_outpatient",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。"
-  },
-  {
-    "id": "task-1765550135612-4ff09d",
-    "name": "CodexCLI2: [webclient charts production outpatient plan] 03_モダナイズ外来API契約テーブル確定\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。\n\nYAML ID: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-12T14:35:35.612Z",
-    "updatedAt": "2025-12-12T14:35:42.640Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765550135612-4ff09d",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765550135408-jan1yx37",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 03_モダナイズ外来API契約テーブル確定\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。\n\nYAML ID: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765550135612-4ff09d",
-    "medal": "gold",
-    "aiCompetitionScore": 94
-  },
-  {
-    "id": "task-1765550144650-0d7c54",
-    "name": "🔍Monitor: [webclient charts production outpatient plan] 03_モダナイズ外来API契約テーブル確定\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。\n\nYAML ID: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-12T14:35:44.650Z",
-    "updatedAt": "2025-12-12T14:35:49.339Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765550144650-0d7c54",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765550135408-jan1yx37",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 03_モダナイズ外来API契約テーブル確定\n期間: 12/19 09:00 - 12/21 09:00 / 優先度: high / 緊急度: medium / エージェント: cursor cli\n\n# 03 モダナイズ外来 API 契約テーブル確定\n\n- `docs/web-client/architecture/web-client-api-mapping.md` をベースに、Charts が直接/間接に使う外来 API を “呼び出し条件・ヘッダ(runId 等)・監査(details)・UI 表示” まで確定させる。\n- `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。\n- ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。\n\nYAML ID: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1765550135410-25e364",
-      "task-1765550135815-274aee",
-      "task-1765550135612-4ff09d"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1765550195408,
-    "worktreePath": ".worktrees/task-1765550144650-0d7c54"
-  },
-  {
-    "id": "task-yaml-dvnr5t-src-charts-produ",
-    "name": "[webclient charts production outpatient plan] 10_セッションと権限ガード整理\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 10 セッションと権限ガード整理\n\n- Charts 内のアクション（診療終了/ORCA送信/患者編集/印刷）を権限でガードし、権限不足は disabled＋理由（ツールチップ/aria-describedby）で提示する。\n- セッション切れ/施設不一致/ユーザー変更時に、Charts の状態（runId、選択患者、ドラフト）を安全に破棄してログアウトへ誘導する。\n- 監査上の “誰が・いつ・どの runId で” を UI に必ず表示できるよう、Topbar/ヘッダの表示要件を確定する。\n\nYAML ID: src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-12T21:52:15.666Z",
-    "updatedAt": "2025-12-12T21:52:15.666Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-dvnr5t-src-charts-produ",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
-      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
-      "datasetLabel": "webclient charts production outpatient plan",
-      "pathId": "src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
-      "fileName": "webclient-charts-production-outpatient-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
-      "addedAt": "2025-12-12T21:52:15.363Z"
-    },
-    "labels": [
-      "webclient charts production outpatient plan",
-      "src / charts_production_outpatient / foundation"
-    ],
-    "dependencies": [
-      "task-yaml-1wjwxd-src-charts-produ"
-    ],
-    "schedule": {
-      "startMs": 1766361600000,
-      "endMs": 1766534400000,
-      "durationDays": 2
-    },
-    "category": "src / charts_production_outpatient / foundation",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 10 セッションと権限ガード整理\n\n- Charts 内のアクション（診療終了/ORCA送信/患者編集/印刷）を権限でガードし、権限不足は disabled＋理由（ツールチップ/aria-describedby）で提示する。\n- セッション切れ/施設不一致/ユーザー変更時に、Charts の状態（runId、選択患者、ドラフト）を安全に破棄してログアウトへ誘導する。\n- 監査上の “誰が・いつ・どの runId で” を UI に必ず表示できるよう、Topbar/ヘッダの表示要件を確定する。"
-  },
-  {
-    "id": "task-yaml-1cgufxm-src-charts-produ",
-    "name": "[webclient charts production outpatient plan] 11_監査ログauditEvent統一\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 11 監査ログ（auditEvent）統一\n\n- Charts の UI 操作を `auditEvent` の語彙に揃え、重要操作（患者切替/送信/終了/印刷/失敗）を “必ず” 記録する。\n- `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を details に統一して透過し、監査ログと UI 表示が乖離しないことを DoD にする。\n- 監査ログの “個人情報” を最小化しつつ、追跡可能性（traceId/requestId）を確保するルールを整備する。\n\nYAML ID: src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-12T21:52:18.409Z",
-    "updatedAt": "2025-12-12T21:52:18.409Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1cgufxm-src-charts-produ",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
-      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
-      "datasetLabel": "webclient charts production outpatient plan",
-      "pathId": "src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
-      "fileName": "webclient-charts-production-outpatient-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
-      "addedAt": "2025-12-12T21:52:18.395Z"
-    },
-    "labels": [
-      "webclient charts production outpatient plan",
-      "src / charts_production_outpatient / foundation"
-    ],
-    "dependencies": [
-      "task-yaml-1wjwxd-src-charts-produ"
-    ],
-    "schedule": {
-      "startMs": 1766361600000,
-      "endMs": 1766534400000,
-      "durationDays": 2
-    },
-    "category": "src / charts_production_outpatient / foundation",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 11 監査ログ（auditEvent）統一\n\n- Charts の UI 操作を `auditEvent` の語彙に揃え、重要操作（患者切替/送信/終了/印刷/失敗）を “必ず” 記録する。\n- `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を details に統一して透過し、監査ログと UI 表示が乖離しないことを DoD にする。\n- 監査ログの “個人情報” を最小化しつつ、追跡可能性（traceId/requestId）を確保するルールを整備する。"
   }
 ]
