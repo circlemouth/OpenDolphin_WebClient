@@ -1,6 +1,6 @@
 ganttConfig:
   defaultView: week
-  startDate: 2025-12-15
+  startDate: 2025-12-12
   showFilters: true
   filters:
     priorities:
@@ -69,13 +69,13 @@ src:
         - 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ガント。
         - ローカル検証は `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` を前提に、ログイン情報は `setup-modernized-env.sh` 記載のものを使用する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency: []
       schedule:
-        start: 2025-12-15T00:00:00.000Z
+        start: 2025-12-12T13:06:47.000Z
         days: 0.5
     01_外来機能の完全カバレッジ定義.md:
       content: |-
@@ -85,8 +85,8 @@ src:
         - “市販カルテ相当” の要件として、監査（auditEvent/操作ログ）、アクセシビリティ（ARIA + 重要通知）、運用（障害時表示/再試行/フィクスチャ運用）を Charts の DoD に含める。
         - 本ガントの成果物は「外来: 受付→診療→会計」の経路を Charts 観点で完走できること（Reception からの遷移・患者編集・ORCA送信・状態遷移・印刷/出力）。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api:
         - "/api01rv2/claim/outpatient/*"
@@ -99,7 +99,7 @@ src:
       dependency:
         - src/charts_production_outpatient/00_RUN_IDと参照チェーン.md
       schedule:
-        start: 2025-12-16T00:00:00.000Z
+        start: 2025-12-12T13:19:01.000Z
         days: 1
     02_ChartsPage現状棚卸しとギャップ.md:
       content: |-
@@ -109,14 +109,14 @@ src:
         - 重要ギャップを「P0: 運用不可」「P1: 運用に支障」「P2: 品質改善」に分類し、以降タスクの優先度に反映する。
         - Charts に閉じない依存（Reception/Patients/Administration）を “入口/出口” として明示し、責務分離（Chart 内で完結すること/別画面に委譲すること）を決める。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
         - src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md
       schedule:
-        start: 2025-12-17T00:00:00.000Z
+        start: 2025-12-12T14:00:14.000Z
         days: 2
     03_モダナイズ外来API契約テーブル確定.md:
       content: |-
@@ -126,8 +126,8 @@ src:
         - `dataSourceTransition/cacheHit/missingMaster/fallbackUsed/traceId` を UI と auditEvent に **透過** するルールを Charts 観点で固め、エラー時の再試行/ガード（送信不可等）に反映する。
         - ここで確定した契約は以降の Playwright シナリオ/フィクスチャの単一ソースとして扱う。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api:
         - "/api01rv2/claim/outpatient/*"
@@ -137,7 +137,7 @@ src:
       dependency:
         - src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md
       schedule:
-        start: 2025-12-19T00:00:00.000Z
+        start: 2025-12-12T14:37:20.000Z
         days: 2
     foundation:
       10_セッションと権限ガード整理.md:
