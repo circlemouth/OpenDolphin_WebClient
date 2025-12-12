@@ -234,7 +234,7 @@ src:
           - 患者一覧/詳細/編集フォームを `/orca12/patientmodv2/outpatient` に接続し、保存時に auditEvent(operation=create|update|delete) と runId を送信。
           - missingMaster/fallbackUsed true の場合は保存をブロックし、warning トーストと aria-live=assertive を表示。
           - Reception からのフィルタ復元と localStorage/URL 同期を実装。
-          - 進捗: API マッピングと画面設計を反映済み。CRUD 配線・audit/aria-live ブロックの実装と検証が残り。
+          - 進捗: CRUD 配線・audit/aria-live ガード・Reception フィルタ復元/URL 同期まで実装完了（RUN_ID=`20251212T070420Z` で反映）。実 API での保存/更新/削除の通し検証と証跡ログ作成は次タスクへ移管。
         dependency:
           - src/webclient_modernization_phase2/03_reception/OrderConsoleフラグ連携とトーン統一.md
           - src/webclient_modernization_phase2/04_charts/Chartsデータバインドとタイムライン実装.md
@@ -242,8 +242,8 @@ src:
         api:
           - /orca12/patientmodv2/outpatient
         priority: High
-        status: in_progress
-        progress: 40
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-17T00:00:00.000Z
           days: 1
@@ -291,7 +291,7 @@ src:
           - Reception→Charts→Patients→Administration の主要フローで tone/banner/aria-live/telemetry を自動確認するシナリオを `ux/playwright-scenarios.md` に沿って追加。
           - MSW ON/OFF の両モードを CI で実行し、スクリーンショットと HAR を artifacts へ保存。
           - A11y チェック（role/aria-*）とランタイムエラーを CI 失敗条件に設定。
-          - RUN_ID=`20251212T054836Z` でシナリオ・CI マトリクスを実装済み。MSW ON/OFF のローカル実行と CI 成果物確認、失敗時の修正が残作業。
+          - RUN_ID=`20251212T054836Z` でシナリオ・CI マトリクスを実装・ローカル実行（MSW ON/OFF）・成果物確認まで完了。失敗時の修正フローも手順化済み。
         dependency:
           - src/webclient_modernization_phase2/04_charts/ORCA送信・ドラフト・キャンセル制御.md
           - src/webclient_modernization_phase2/05_patients_admin/Patients編集と監査連携.md
@@ -300,11 +300,29 @@ src:
         agent: claude code
         api: []
         priority: High
-        status: in_progress
-        progress: 70
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-19T00:00:00.000Z
           days: 1
+      PatientsCRUD実データ検証と証跡ログ.md:
+        content: |-
+          # Patients CRUD 実データ検証と証跡ログ
+
+          - `Patients編集と監査連携` 完了後の実 API（`VITE_DISABLE_MSW=1`）で、患者の作成/更新/削除が ORCA 側に反映されることを通しで確認。
+          - missingMaster/fallbackUsed ガード・aria-live の警告/成功通知がポリシー通りに出ることを確認。
+          - RUN_ID を採番し、`docs/web-client/planning/phase2/logs/<RUN_ID>-patients-crud-validation.md` に手順/結果/スクショ/注意点を記録、DOC_STATUS と README Active へリンク追加。
+        dependency:
+          - src/webclient_modernization_phase2/05_patients_admin/Patients編集と監査連携.md
+        agent: codex
+        api:
+          - /orca12/patientmodv2/outpatient
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-21T00:00:00.000Z
+          days: 0.5
       DOC_STATUS更新とワーカー報告準備.md:
         content: |-
           # DOC_STATUS 更新とワーカー報告準備
@@ -312,13 +330,14 @@ src:
           - `docs/web-client/planning/phase2/DOC_STATUS.md` の RUN_ID 行を更新し、本ガントと実施タスクを備考に追記。
           - README の Active リストへ必要リンクを追加し、証跡ログを `planning/phase2/logs/<RUN_ID>-web-client-plan.md` に追記。
           - 形式 `【ワーカー報告】実施内容・証跡パス・DOC_STATUS 更新行・RUN_ID` を準備してマネージャーへ共有。
+          - 残作業: Patients CRUD 実データ検証ログの追加と、本ガント更新内容の反映を行ったうえで最終ワーカー報告をまとめる。
         dependency:
           - src/webclient_modernization_phase2/07_quality_and_ops/PlaywrightE2Eとアクセシビリティ検証.md
         agent: codex
         api: []
         priority: Medium
         status: in_progress
-        progress: 30
+        progress: 60
         schedule:
           start: 2025-12-20T12:00:00.000Z
           days: 0.5
