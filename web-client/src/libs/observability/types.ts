@@ -7,4 +7,6 @@ export type ObservabilityMeta = {
   missingMaster?: boolean;
   dataSourceTransition?: DataSourceTransition;
   fallbackUsed?: boolean;
+  fetchedAt?: string;
+  recordsReturned?: number;
 };

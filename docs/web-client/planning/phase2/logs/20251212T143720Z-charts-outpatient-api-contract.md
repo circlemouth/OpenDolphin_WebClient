@@ -14,3 +14,9 @@
 ## 4. 補足（制約順守）
 - Legacy 資産（`client/`, `common/`, `ext_lib/`）および `server/` 配下は変更なし。
 - ORCA 実接続や証明書操作は未実施（ドキュメント更新のみ）。
+
+## 5. 実装・検証（2025-12-12 / RUN_ID=20251212T143720Z）
+- Patients/Charts から `/api01rv2/patient/outpatient` を呼び出す取得ロジックを実装。`runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned` を `observability`・`auditEvent.details`・UI バッジ・Telemetry (`recordOutpatientFunnel('patient_fetch')`)・`logUiState(action='patient_fetch', screen='patients')` へ透過。
+- `missingMaster` または `fallbackUsed` が true の場合、PatientsTab/PatientsPage を readOnly 固定し、aria-live=assertive の案内バナーと保存ブロックを表示。5xx/timeout は再取得ボタンを提示。
+- MSW fixture: `/api01rv2/patient/outpatient` 向けに normal / missingMaster / fallbackUsed / timeout(504) の 4 シナリオを追加し、レスポンスヘッダーと body meta（runId/transition/cacheHit/missingMaster/fallbackUsed/fetchedAt/recordsReturned/status）を一致させた。
+- Playwright: `tests/e2e/outpatient-patient-fetch.msw.spec.ts` を追加し、上記 4 シナリオの UI 透過（バッジ、footnote meta、再取得導線、readOnly ブロック）を検証できるようにした（MSW プロファイル専用）。本コミット時点では実行未実施。
