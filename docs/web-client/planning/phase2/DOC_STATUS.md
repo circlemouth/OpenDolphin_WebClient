@@ -22,11 +22,11 @@
 | `docs/web-client/operations/debugging-outpatient-bugs.md` | 外来 API デバッグ記録 | Active | 2025-12-10 | RUN_ID=`20251210T054022Z`。Stage/Preview 再検証 pending。 |
 | `docs/web-client/planning/phase2/logs/20251211T172459Z-runid-governance.md` | RUN_ID 整備・参照チェーン確認ログ | Active | 2025-12-11 | RUN_ID=`20251211T172459Z`。本ガントの事前登録。 |
 | `docs/web-client/planning/phase2/logs/20251211T120619Z-charts-timeline.md` | Charts データバインド実装ログ | Active | 2025-12-11 | RUN_ID=`20251211T120619Z`。DocumentTimeline/PatientsTab/OrcaSummary のデータバインドと tone 連動メモ。 |
-<<<<<<< HEAD
 | `docs/web-client/planning/phase2/logs/20251211T193942Z-administration-delivery.md` | Administration 配信/キュー実装ログ | Active | 2025-12-11 | RUN_ID=`20251211T193942Z`。設定配信フォーム・キュー再送/破棄・Reception/Charts 通知。 |
-=======
 | `docs/web-client/planning/phase2/logs/20251211T193257Z-charts-action-bar.md` | Charts アクションバー警告・ロック実装ログ | Active | 2025-12-11 | RUN_ID=`20251211T193257Z`。missingMaster/fallbackUsed ガードと `charts_action` テレメトリ追記。 |
->>>>>>> task/task-1765481484008-c67f20
+| `docs/web-client/planning/phase2/logs/20251212T054836Z-playwright-a11y.md` | Playwright E2E + A11y | Active | 2025-12-12 | RUN_ID=`20251212T054836Z`。Reception→Charts→Patients→Administration トーン/aria-live/telemetry 通し検証（MSW ON/OFF、HAR/trace/screenshot 取得）。 |
+| `docs/web-client/planning/phase2/logs/20251212T060744Z-gantt-update.md` | ガント更新（Playwright/A11y残タスク整理） | Active | 2025-12-12 | RUN_ID=`20251212T060744Z`。webclient modernized gantt を最新進捗に反映し、残タスクを列挙。 |
+| `docs/web-client/planning/phase2/logs/20251212T061538Z-gantt-update.md` | ガント更新（Patients/MSW 進捗反映） | Active | 2025-12-12 | RUN_ID=`20251212T061538Z`。Patients 編集タスクを in_progress(40%)、MSW シナリオを completed に更新。 |
 
 ## Legacy / Archive
 - ログイン専用期（RUN_ID=`20251130T120000Z` 〜 `20251203T203000Z`）の資料は Archive。代表例:

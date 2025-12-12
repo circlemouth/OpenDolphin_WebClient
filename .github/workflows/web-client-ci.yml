@@ -41,3 +41,55 @@ jobs:
 
       - name: Build Storybook
         run: npm run build-storybook -- --quiet
+
+  playwright-e2e:
+    needs: build
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        msw_mode: [on, off]
+    env:
+      RUN_ID: ${{ github.run_id }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: web-client/package-lock.json
+
+      - name: Compute RUN_ID
+        run: echo "RUN_ID=$(date -u +\"%Y%m%dT%H%M%SZ\")" >> $GITHUB_ENV
+
+      - name: Install dependencies
+        run: npm ci
+        working-directory: web-client
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+        working-directory: web-client
+
+      - name: Run Playwright E2E (msw-${{ matrix.msw_mode }})
+        run: |
+          MODE=${{ matrix.msw_mode }}
+          if [ "$MODE" = "off" ]; then
+            export PLAYWRIGHT_DISABLE_MSW=1
+            export VITE_DISABLE_MSW=1
+          fi
+          cd web-client
+          RUN_ID=${RUN_ID:-${GITHUB_RUN_ID}} npx playwright test ../tests/e2e/reception-charts-patients-admin.spec.ts --project=chromium --reporter=line
+
+      - name: Ensure artifact directory
+        if: always()
+        run: mkdir -p artifacts/webclient/e2e/${RUN_ID}
+
+      - name: Upload artifacts (msw-${{ matrix.msw_mode }})
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webclient-e2e-${{ matrix.msw_mode }}-${{ env.RUN_ID }}
+          path: artifacts/webclient/e2e/${{ env.RUN_ID }}/

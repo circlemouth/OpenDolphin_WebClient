@@ -1,7 +1,19 @@
-# Playwright シナリオ叩き台（RUN_ID=20251202T090000Z）
+# Playwright シナリオ叩き台（RUN_ID=20251212T054836Z）
 
 - 参照元: [reception-schedule-ui-policy.md](reception-schedule-ui-policy.md)、[charts-claim-ui-policy.md](charts-claim-ui-policy.md)、[patients-admin-ui-policy.md](patients-admin-ui-policy.md)
 - 証跡ログ: [docs/server-modernization/phase2/operations/logs/20251202T090000Z-screens.md](../../server-modernization/phase2/operations/logs/20251202T090000Z-screens.md)
+
+## 新規シナリオ: Reception→Charts→Patients→Administration トーン/ARIA/テレメトリ通し確認（RUN_ID=20251212T054836Z）
+- テストファイル: `tests/e2e/reception-charts-patients-admin.spec.ts`
+- 実行例:
+  - MSW ON: `RUN_ID=20251212T054836Z npx playwright test tests/e2e/reception-charts-patients-admin.spec.ts --project=chromium`
+  - MSW OFF: `RUN_ID=20251212T054836Z PLAYWRIGHT_DISABLE_MSW=1 VITE_DISABLE_MSW=1 npx playwright test tests/e2e/reception-charts-patients-admin.spec.ts --project=chromium`
+- 期待値:
+  - Reception/Charts/Patients/Administration すべてで `data-run-id` を表示し、トーンバナー `aria-live` が tone に応じて `assertive|polite` となること。
+  - Telemetry パネルが `resolve_master` を含むログを `aria-live=polite` で表示すること。
+  - コンソール/`pageerror` を検出した場合にテストを fail させること（ランタイムエラーを CI 失敗条件にする）。
+  - HAR/trace/screenshot を `artifacts/webclient/e2e/<RUN_ID>/flow-msw-{on,off}.{har,png,zip}` に保存し、CI アーティファクトへアップロードする。
+- 備考: MSW OFF 時は Playwright で `/api01rv2/claim/outpatient` `/orca21/medicalmodv2/outpatient` `/orca12/patientmodv2/outpatient` `/api/admin/config|delivery` `/api/orca/queue` をフィクスチャで `dataSourceTransition=server, cacheHit=true, missingMaster=true/false` 応答に差し替え、トーンと `aria-live` を強制的に検証する。
 
 ## Reception
 
@@ -78,13 +90,13 @@
 - アプリ側切替案: `web-client/src/libs/http/header-flags.ts` で env/localStorage ベースのフラグ→ヘッダー変換を追加（TODO: `src/libs/http/httpClient.ts` や fetch ラッパーが見つかり次第、共通ヘッダーに組み込み）。Playwright からのヘッダーは MSW サービスワーカー/サーバー双方で利用できる前提。
 - 開発/プレビューサーバーは `x-use-mock-orca-queue` / `x-verify-admin-delivery` ヘッダーを見て `/api/orca/queue` をモック応答に切替え、管理配信チェックは `/api/admin/config` 系で検証結果を返す（RUN_ID 付与）。例: `RUN_ID=20251202T090000Z VITE_USE_MOCK_ORCA_QUEUE=1 VITE_VERIFY_ADMIN_DELIVERY=1 PLAYWRIGHT_BASE_URL=https://localhost:4173 npx playwright test --project=chromium --grep \"ORCA 送信|Administration 配信\" --reporter=line --timeout=600000`
 
-### モック/実 API 切替チェックリスト（RUN_ID=20251202T090000Z）
+### モック/実 API 切替チェックリスト（RUN_ID=20251212T054836Z）
 - 前提設定例: `VITE_USE_MOCK_ORCA_QUEUE=1`（モック）/`0`（実 API）、`VITE_VERIFY_ADMIN_DELIVERY=1`（配信検証 ON）をそれぞれ Playwright と Vite dev/preview に渡す。extraHTTPHeaders は `x-use-mock-orca-queue` / `x-verify-admin-delivery` を 1/0 で送る。
 - ORCA 送信キュー: `/api/orca/queue?patientId=<ID>` へ GET。モック ON なら `source=mock` と `queue[]` を返し、`x-orca-queue-mode: mock` が付与。OFF なら upstream 実装にフォールスルーし、ヘッダーは `x-orca-queue-mode: live`。監査ログは `fetchAuditLog(request, RUN_ID, { endpoint: 'orca/queue' })` で取得を試み、404 は警告扱い。失敗時リトライ: 再送ボタン/`logOrcaQueueStatus` を再実行し、バナー遷移を測る。
 - Admin 配信チェック: `/api/admin/config`（または `/api/admin/delivery`）へ GET。`VITE_VERIFY_ADMIN_DELIVERY=1` かつヘッダー ON の場合、`runId` と `verified:true` を含む JSON が返り、`x-admin-delivery-verification: enabled` が付く。OFF 時はヘッダー `disabled` でサーバー応答にフォールスルー。監査ログは `fetchAuditLog(request, RUN_ID, { endpoint: 'admin/config' })` で確認し、無ければレスポンスログを保存。失敗時リトライ: 保存後に再読み込み→同エンドポイントを再取得し、ヘッダー/本文の更新を確認する。
 - 共通: 期待ヘッダーが欠落した場合は network log を保存し、`VITE_USE_MOCK_ORCA_QUEUE`/`VITE_VERIFY_ADMIN_DELIVERY` の設定値と extraHTTPHeaders の実送信値を照合する。RUN_ID をレスポンス/ログに残し、差分を明記。
 
-### モックON/OFF差分・微調整案（RUN_ID=20251202T090000Z）
+### モックON/OFF差分・微調整案（RUN_ID=20251212T054836Z）
 - flagged-mock-plugin の分岐漏れ: 既存のヘッダー判定は `/api/orca/queue` のみ。配信確認 `/api/admin/config`（`/delivery` を含む派生）も `x-verify-admin-delivery` を見るよう plugin 条件を追加する TODO を残す（ヘッダーが無視され実 API へ到達し、意図しない監査ログを書き込んでしまうケースあり）。
 - モック OFF 時の遅延: ORCA キュー再送後のバナー更新が 5〜8 秒遅れることがあり、`measureBannerDelay` のタイムアウトを 10 秒へ暫定延長し、遅延が audit に残らない場合は WARN ログを残す。MSW ON 時は 2 秒以内を期待値とする差分をシナリオに明記。
 - 監査ログの応答差異: モックは `[{ at, action, endpoint }]` の配列、実 API は `{ entries: [], nextCursor }`。`fetchAuditLog` 内で配列/オブジェクト両対応の正規化（`entries ?? body`）を追加する TODO をコメントで残す。現状は配列前提で `entries` が無い場合に空扱いとなり、欠損と誤認するため。
