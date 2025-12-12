@@ -1,4 +1,4 @@
-import { test, expect } from '@playwright/test';
+import { test, expect } from '../playwright/fixtures';
 import { gotoOrcaMaster, seedAuthSession, runId as defaultRunId } from './helpers/orcaMaster';
 
 test.use({ ignoreHTTPSErrors: true });

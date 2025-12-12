@@ -1,6 +1,7 @@
 import path from 'path';
 import { existsSync, mkdirSync } from 'fs';
-import { test, expect, type Page } from '@playwright/test';
+import { test, expect } from '../playwright/fixtures';
+import type { Page } from '@playwright/test';
 
 import { baseUrl, runId, seedAuthSession } from './helpers/orcaMaster';
 
