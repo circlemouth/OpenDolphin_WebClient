@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - task-1765550135408</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        padding: 16px;
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+      }
+      .score-card h2 {
+        margin: 0 0 8px 0;
+        font-size: 18px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 800;
+      }
+      .trophy {
+        font-size: 26px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 170px; }
+      col.agent-column { width: calc((100% - 170px) / 3); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .hex-chart { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+      .hex {
+        position: relative;
+        width: 100%;
+        padding-top: 86%;
+        background: #e1ecf0;
+        clip-path: polygon(25% 3%, 75% 3%, 97% 50%, 75% 97%, 25% 97%, 3% 50%);
+        text-align: center;
+        color: #12303c;
+        border: 1px solid #c4d3d7;
+        box-sizing: border-box;
+      }
+      .hex span {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        font-size: 12px;
+        line-height: 1.2;
+        font-weight: 600;
+      }
+      .score-reasons { font-size: 12px; color: #2c3a40; margin: 0 0 8px 0; padding-left: 16px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート（03 モダナイズ外来API契約テーブル確定 / task-1765550135408）</h1>
+        <p class="monitor-description">対象ブランチ: task-1765550135410-25e364, task-1765550135612-4ff09d, task-1765550135815-274aee。機能合理性と緻密性を中心に、コミット内容と差分を評価。</p>
+      </header>
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2><span class="trophy">🏆</span> cursor cli / task-1765550135612-4ff09d</h2>
+          <div class="score-value">562 / 600</div>
+          <div>RUN_ID: 20251212T143720Z</div>
+        </div>
+        <div class="score-card">
+          <h2><span class="trophy">🥈</span> cursor cli / task-1765550135815-274aee</h2>
+          <div class="score-value">511 / 600</div>
+          <div>RUN_ID: 20251212T143736Z</div>
+        </div>
+        <div class="score-card">
+          <h2><span class="trophy">🥉</span> cursor cli / task-1765550135410-25e364</h2>
+          <div class="score-value">500 / 600</div>
+          <div>RUN_ID: 20251212T143729Z</div>
+        </div>
+      </section>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor cli / task-1765550135612-4ff09d</th>
+            <th>cursor cli / task-1765550135815-274aee</th>
+            <th>cursor cli / task-1765550135410-25e364</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-12 23:47</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">Completed</span><span class="agent-label">commit bdbe6dd3 / 4 files</span></div>
+              <div class="hex-chart">
+                <div class="hex"><span>要件適合 95</span></div>
+                <div class="hex"><span>API網羅 96</span></div>
+                <div class="hex"><span>観測/監査 94</span></div>
+                <div class="hex"><span>UIガード 93</span></div>
+                <div class="hex"><span>Playwright 92</span></div>
+                <div class="hex"><span>記述精度 92</span></div>
+              </div>
+              <ul class="score-reasons">
+                <li>web-client-api-mapping と httpClient を参照し、全外来 API を呼び出し条件/ヘッダ/監査/UI/再試行まで粒度一致でテーブル化。</li>
+                <li>runId/traceId/dataSourceTransition/cacheHit/missingMaster/fallbackUsed の透過経路をヘッダ→UI→audit まで明記し、再試行時に traceId 再利用を要求するなど運用性が高い。</li>
+                <li>取得/更新で BLOCK 条件を分け、Playwright フィクスチャの状態組み合わせを具体列挙して単一ソース化を担保。</li>
+                <li>懸念: サーバ側 action 名（ORCA_*）が実装と完全一致するかの裏付けが未記載、実装同期時に再確認が必要。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分・ログ</summary>
+                <pre>README/DOC_STATUS の RUN_ID を 20251212T143720Z に更新
+新規 log: docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md
+新規本体: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md（89 行）
+主要変更点: 観測メタ透過ルール/エラー時再試行/エンドポイント別契約/Playwright適用指針を詳細化</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">Completed</span><span class="agent-label">commit e6cbad66 / 4 files</span></div>
+              <div class="hex-chart">
+                <div class="hex"><span>要件適合 88</span></div>
+                <div class="hex"><span>API網羅 87</span></div>
+                <div class="hex"><span>観測/監査 85</span></div>
+                <div class="hex"><span>UIガード 84</span></div>
+                <div class="hex"><span>Playwright 83</span></div>
+                <div class="hex"><span>記述精度 84</span></div>
+              </div>
+              <ul class="score-reasons">
+                <li>最新更新サマリに外来 API 契約を追加し、契約文書で呼び出し条件/ヘッダ/監査/ガード/Playwright 伝播を整理。</li>
+                <li>ChartsActionBar の擬似 API まで含めた契約表で UI 側 action 名を固定し、traceId 露出や cacheHit 強制リフレッシュなど具体施策を提示。</li>
+                <li>一部で “想定” action 名や payload 形が現実の httpClient/実装と乖離する可能性があり、検証手順や根拠パスの記載が薄い。</li>
+                <li>再試行/ガード条件は網羅的だが、サーバ観測メタの必須キーにデフォルト値を入れる条件などの境界が未定義。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分・ログ</summary>
+                <pre>README/DOC_STATUS の RUN_ID を 20251212T143736Z に更新
+新規 log: docs/web-client/planning/phase2/logs/20251212T143736Z-charts-outpatient-api-contract.md
+新規本体: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md（54 行）
+主要変更点: 全 API の契約表と観測メタ透過ルール、Playwright/MSW への反映、ChartsActionBar 擬似 API を追加</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">Completed</span><span class="agent-label">commit f48942dd / 4 files</span></div>
+              <div class="hex-chart">
+                <div class="hex"><span>要件適合 86</span></div>
+                <div class="hex"><span>API網羅 84</span></div>
+                <div class="hex"><span>観測/監査 83</span></div>
+                <div class="hex"><span>UIガード 82</span></div>
+                <div class="hex"><span>Playwright 82</span></div>
+                <div class="hex"><span>記述精度 83</span></div>
+              </div>
+              <ul class="score-reasons">
+                <li>observability ヘッダと auditEvent 透過ルールを簡潔に表形式で整理し、missingMaster/fallbackUsed の BLOCK 方針を明記。</li>
+                <li>API 契約テーブルで呼び出し条件/ヘッダ/UI反映/再試行を網羅し、traceId 再利用や runId 固定の運用を示した。</li>
+                <li>Playwright 適用ルールは3点に留まり、fixture 状態組み合わせや UI 観測の検証方法が不足。</li>
+                <li>各 API の audit action 名や実装参照パスが曖昧で、httpClient の既存挙動との差分が特定しづらい。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分・ログ</summary>
+                <pre>README/DOC_STATUS の RUN_ID を 20251212T143729Z に更新
+新規 log: docs/web-client/planning/phase2/logs/20251212T143729Z-charts-outpatient-api-contract.md
+新規本体: src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md（52 行）
+主要変更点: 観測メタ透過ルールとエラー時再試行方針を簡潔に整理、5 つの外来 API 契約表を追加</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
