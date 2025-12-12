@@ -3,7 +3,7 @@ import type { DataSourceTransition as ObservabilityDataSourceTransition } from '
 
 export type DataSourceTransition = ObservabilityDataSourceTransition;
 
-export type TelemetryFunnelStage = 'resolve_master' | 'charts_orchestration' | 'charts_action';
+export type TelemetryFunnelStage = 'resolve_master' | 'charts_orchestration' | 'charts_action' | 'patient_fetch';
 
 export interface OutpatientFunnelPayload {
   runId?: string;

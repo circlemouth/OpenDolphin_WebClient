@@ -1,7 +1,7 @@
 import { getObservabilityMeta, updateObservabilityMeta } from '../observability/observability';
 import type { DataSourceTransition } from '../observability/types';
 
-export type UiAction = 'tone_change' | 'send' | 'save' | 'config_delivery' | 'finish' | 'draft' | 'cancel' | 'lock';
+export type UiAction = 'tone_change' | 'send' | 'save' | 'config_delivery' | 'finish' | 'draft' | 'cancel' | 'lock' | 'patient_fetch';
 
 export type UiStateLog = {
   action: UiAction;
@@ -61,6 +61,7 @@ export type AuditEventRecord = {
   note?: string;
   cacheHit?: boolean;
   missingMaster?: boolean;
+  fallbackUsed?: boolean;
   dataSourceTransition?: DataSourceTransition;
   payload?: Record<string, unknown>;
   timestamp: string;
