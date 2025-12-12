@@ -50,6 +50,7 @@ export type AppointmentPayload = {
   missingMaster?: boolean;
   dataSourceTransition?: DataSourceTransition;
   fetchedAt?: string;
+  fallbackUsed?: boolean;
 };
 
 const SAMPLE_APPOINTMENTS: ReceptionEntry[] = [
@@ -264,6 +265,7 @@ export async function fetchAppointmentOutpatients(params: AppointmentQueryParams
     missingMaster: normalizeBoolean(json.missingMaster),
     dataSourceTransition: json.dataSourceTransition,
     fetchedAt: json.fetchedAt,
+    fallbackUsed: normalizeBoolean(json.fallbackUsed),
   };
 
   updateObservabilityMeta({
@@ -271,6 +273,7 @@ export async function fetchAppointmentOutpatients(params: AppointmentQueryParams
     cacheHit: meta.cacheHit,
     missingMaster: meta.missingMaster,
     dataSourceTransition: meta.dataSourceTransition,
+    fallbackUsed: meta.fallbackUsed,
   });
 
   return meta;

@@ -28,7 +28,7 @@ export function ChartsPage() {
 }
 
 function ChartsContent() {
-  const { flags, setCacheHit, setDataSourceTransition, setMissingMaster, bumpRunId } = useAuthService();
+  const { flags, setCacheHit, setDataSourceTransition, setMissingMaster, setFallbackUsed, bumpRunId } = useAuthService();
   const location = useLocation();
   const navigationState = (location.state as { patientId?: string; appointmentId?: string } | null) ?? {};
   const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>(navigationState.patientId);
@@ -41,6 +41,7 @@ function ChartsContent() {
     cacheHit?: boolean;
     missingMaster?: boolean;
     dataSourceTransition?: DataSourceTransition;
+    fallbackUsed?: boolean;
   }>({});
   const { broadcast } = useAdminBroadcast();
 
@@ -93,28 +94,32 @@ function ChartsContent() {
   ]);
 
   useEffect(() => {
-    const { runId, cacheHit, missingMaster, dataSourceTransition } = mergedFlags;
+    const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedFlags;
     const prev = appliedMeta.current;
     const hasRunIdChange = runId && prev.runId !== runId;
     const hasCacheChange = cacheHit !== undefined && cacheHit !== prev.cacheHit;
     const hasMissingChange = missingMaster !== undefined && missingMaster !== prev.missingMaster;
     const hasTransitionChange = dataSourceTransition && dataSourceTransition !== prev.dataSourceTransition;
-    if (!(hasRunIdChange || hasCacheChange || hasMissingChange || hasTransitionChange)) return;
+    const hasFallbackChange = fallbackUsed !== undefined && fallbackUsed !== prev.fallbackUsed;
+    if (!(hasRunIdChange || hasCacheChange || hasMissingChange || hasTransitionChange || hasFallbackChange)) return;
 
     if (runId) bumpRunId(runId);
     if (cacheHit !== undefined) setCacheHit(cacheHit);
     if (missingMaster !== undefined) setMissingMaster(missingMaster);
     if (dataSourceTransition) setDataSourceTransition(dataSourceTransition);
-    appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition };
+    if (fallbackUsed !== undefined) setFallbackUsed(fallbackUsed);
+    appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed };
     setAuditEvents(getAuditEventLog());
   }, [
     bumpRunId,
     mergedFlags.cacheHit,
     mergedFlags.dataSourceTransition,
+    mergedFlags.fallbackUsed,
     mergedFlags.missingMaster,
     mergedFlags.runId,
     setCacheHit,
     setDataSourceTransition,
+    setFallbackUsed,
     setMissingMaster,
   ]);
 
@@ -142,7 +147,7 @@ function ChartsContent() {
   const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
   const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
-  const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? false;
+  const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
 
   return (
     <main className="charts-page" data-run-id={flags.runId} aria-busy={lockState.locked}>
@@ -158,6 +163,7 @@ function ChartsContent() {
           <span className="charts-page__pill">dataSourceTransition: {flags.dataSourceTransition}</span>
           <span className="charts-page__pill">missingMaster: {String(flags.missingMaster)}</span>
           <span className="charts-page__pill">cacheHit: {String(flags.cacheHit)}</span>
+          <span className="charts-page__pill">fallbackUsed: {String(flags.fallbackUsed)}</span>
         </div>
       </section>
       <AdminBroadcastBanner broadcast={broadcast} surface="charts" />

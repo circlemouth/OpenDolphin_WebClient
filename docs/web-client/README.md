@@ -7,6 +7,7 @@
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
 ### 最新更新サマリ（2025-12-12 / RUN_ID=`20251212T143720Z`）
+- Patients/Charts から `/api01rv2/patient/outpatient` を呼び出し、runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を UI・audit・telemetry へ透過。MSW/Playwright に正常・missingMaster・fallbackUsed・timeout の 4 パターンを追加。
 - Charts Production（外来・本番品質）ガント開始にあわせ、参照チェーン起点を追加（起点: `src/charts_production_outpatient/00_RUN_IDと参照チェーン.md`、証跡: `docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`）。
 - Charts 本番外来（受付→診療→会計）を完走するための UI カバレッジ定義を追加（成果物: `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md`、証跡: `docs/web-client/planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`）。
 - ChartsPage の計画→実装ギャップを棚卸し（成果物: `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md`、証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`）。

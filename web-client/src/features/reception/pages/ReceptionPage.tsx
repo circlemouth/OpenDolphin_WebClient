@@ -125,7 +125,7 @@ export function ReceptionPage({
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { broadcast } = useAdminBroadcast();
-  const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, bumpRunId } = useAuthService();
+  const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
   const [selectedDate, setSelectedDate] = useState(todayString());
   const [keyword, setKeyword] = useState(() => searchParams.get('kw') ?? '');
   const [submittedKeyword, setSubmittedKeyword] = useState(() => searchParams.get('kw') ?? '');
@@ -140,6 +140,7 @@ export function ReceptionPage({
     cacheHit?: boolean;
     missingMaster?: boolean;
     dataSourceTransition?: DataSourceTransition;
+    fallbackUsed?: boolean;
   }>({});
   const lastAuditEventHash = useRef<string>();
 
@@ -212,23 +213,35 @@ export function ReceptionPage({
     const missing = claim?.missingMaster ?? appointment?.missingMaster ?? flags.missingMaster;
     const cache = claim?.cacheHit ?? appointment?.cacheHit ?? flags.cacheHit;
     const transition = claim?.dataSourceTransition ?? appointment?.dataSourceTransition ?? flags.dataSourceTransition;
+    const fallbackUsed = claim?.fallbackUsed ?? appointment?.fallbackUsed ?? flags.fallbackUsed;
     return {
       runId: run,
       missingMaster: missing,
       cacheHit: cache,
       dataSourceTransition: transition,
+      fallbackUsed,
       fetchedAt: claim?.fetchedAt ?? appointment?.fetchedAt,
     };
-  }, [appointmentQuery.data, claimQuery.data, flags.cacheHit, flags.dataSourceTransition, flags.missingMaster, flags.runId, initialRunId]);
+  }, [
+    appointmentQuery.data,
+    claimQuery.data,
+    flags.cacheHit,
+    flags.dataSourceTransition,
+    flags.fallbackUsed,
+    flags.missingMaster,
+    flags.runId,
+    initialRunId,
+  ]);
 
   useEffect(() => {
-    const { runId, cacheHit, missingMaster, dataSourceTransition } = mergedMeta;
+    const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedMeta;
     const prev = appliedMeta.current;
     const isChanged =
       runId !== prev.runId ||
       cacheHit !== prev.cacheHit ||
       missingMaster !== prev.missingMaster ||
-      dataSourceTransition !== prev.dataSourceTransition;
+      dataSourceTransition !== prev.dataSourceTransition ||
+      fallbackUsed !== prev.fallbackUsed;
     if (!isChanged) return;
 
     if (runId) {
@@ -238,9 +251,10 @@ export function ReceptionPage({
     if (cacheHit !== undefined) setCacheHit(cacheHit);
     if (missingMaster !== undefined) setMissingMaster(missingMaster);
     if (dataSourceTransition) setDataSourceTransition(dataSourceTransition);
+    if (fallbackUsed !== undefined) setFallbackUsed(fallbackUsed);
 
-    appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition };
-  }, [bumpRunId, mergedMeta, setCacheHit, setDataSourceTransition, setMissingMaster]);
+    appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed };
+  }, [bumpRunId, mergedMeta, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
   useEffect(() => {
     const apiAudit = claimQuery.data?.auditEvent as Record<string, unknown> | undefined;

@@ -12,6 +12,7 @@ export type AuthServiceFlags = {
   missingMaster: boolean;
   cacheHit: boolean;
   dataSourceTransition: DataSourceTransition;
+  fallbackUsed: boolean;
 };
 
 export interface AuthServiceContextValue {
@@ -19,6 +20,7 @@ export interface AuthServiceContextValue {
   setMissingMaster: (next: boolean) => void;
   setCacheHit: (next: boolean) => void;
   setDataSourceTransition: (next: DataSourceTransition) => void;
+  setFallbackUsed: (next: boolean) => void;
   bumpRunId: (runId: string) => void;
 }
 
@@ -28,6 +30,7 @@ const DEFAULT_FLAGS: AuthServiceFlags = {
   missingMaster: true,
   cacheHit: false,
   dataSourceTransition: 'snapshot',
+  fallbackUsed: false,
 };
 
 const AuthServiceContext = createContext<AuthServiceContextValue | null>(null);
@@ -57,6 +60,10 @@ export function AuthServiceProvider({
     setFlags((prev) => ({ ...prev, dataSourceTransition: next }));
   }, []);
 
+  const setFallbackUsed = useCallback((next: boolean) => {
+    setFlags((prev) => ({ ...prev, fallbackUsed: next }));
+  }, []);
+
   const bumpRunId = useCallback((runId: string) => {
     setFlags((prev) => ({ ...prev, runId }));
   }, []);
@@ -66,20 +73,24 @@ export function AuthServiceProvider({
       runId: flags.runId,
       cacheHit: flags.cacheHit,
       missingMaster: flags.missingMaster,
+      fallbackUsed: flags.fallbackUsed,
     };
     updateObservabilityMeta({
       runId: flags.runId,
       cacheHit: flags.cacheHit,
       missingMaster: flags.missingMaster,
       dataSourceTransition: flags.dataSourceTransition,
+      fallbackUsed: flags.fallbackUsed,
     });
     recordOutpatientFunnel('resolve_master', {
       ...flagSnapshot,
       dataSourceTransition: flags.dataSourceTransition,
+      fallbackUsed: flags.fallbackUsed,
     });
     handleOutpatientFlags({
       ...flagSnapshot,
       dataSourceTransition: flags.dataSourceTransition,
+      fallbackUsed: flags.fallbackUsed,
     });
     logUiState({
       action: 'tone_change',
@@ -88,13 +99,14 @@ export function AuthServiceProvider({
       dataSourceTransition: flags.dataSourceTransition,
       cacheHit: flags.cacheHit,
       missingMaster: flags.missingMaster,
+      fallbackUsed: flags.fallbackUsed,
       runId: flags.runId,
     });
-  }, [flags.runId, flags.cacheHit, flags.missingMaster, flags.dataSourceTransition]);
+  }, [flags.runId, flags.cacheHit, flags.missingMaster, flags.dataSourceTransition, flags.fallbackUsed]);
 
   const value = useMemo(
-    () => ({ flags, setMissingMaster, setCacheHit, setDataSourceTransition, bumpRunId }),
-    [flags, bumpRunId, setCacheHit, setDataSourceTransition, setMissingMaster],
+    () => ({ flags, setMissingMaster, setCacheHit, setDataSourceTransition, setFallbackUsed, bumpRunId }),
+    [flags, bumpRunId, setCacheHit, setDataSourceTransition, setMissingMaster, setFallbackUsed],
   );
 
   return <AuthServiceContext.Provider value={value}>{children}</AuthServiceContext.Provider>;

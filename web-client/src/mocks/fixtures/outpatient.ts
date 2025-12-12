@@ -10,9 +10,18 @@ export type OutpatientFlagSet = {
   dataSourceTransition: DataSourceTransition;
   fallbackUsed?: boolean;
   recordsReturned?: number;
+  status?: number;
 };
 
-export type OutpatientScenarioId = 'snapshot-missing-master' | 'cache-hit' | 'server-handoff' | 'fallback';
+export type OutpatientScenarioId =
+  | 'snapshot-missing-master'
+  | 'cache-hit'
+  | 'server-handoff'
+  | 'fallback'
+  | 'patient-normal'
+  | 'patient-missing-master'
+  | 'patient-fallback'
+  | 'patient-timeout';
 
 export type OutpatientScenario = {
   id: OutpatientScenarioId | 'custom';
@@ -21,7 +30,7 @@ export type OutpatientScenario = {
   flags: OutpatientFlagSet;
 };
 
-export const OUTPATIENT_FALLBACK_RUN_ID = '20251208T124645Z';
+export const OUTPATIENT_FALLBACK_RUN_ID = '20251212T143720Z';
 
 export const OUTPATIENT_RECEPTION_ENTRIES: ReceptionEntry[] = [
   {
@@ -122,6 +131,62 @@ const SCENARIOS: OutpatientScenario[] = [
       dataSourceTransition: 'snapshot',
       fallbackUsed: false,
       recordsReturned: OUTPATIENT_RECEPTION_ENTRIES.length,
+    },
+  },
+  {
+    id: 'patient-normal',
+    label: 'patient fetch: normal',
+    description: '患者取得 正常系。dataSourceTransition=server / cacheHit=true / missingMaster=false',
+    flags: {
+      runId: OUTPATIENT_FALLBACK_RUN_ID,
+      cacheHit: true,
+      missingMaster: false,
+      dataSourceTransition: 'server',
+      fallbackUsed: false,
+      recordsReturned: OUTPATIENT_RECEPTION_ENTRIES.length,
+      status: 200,
+    },
+  },
+  {
+    id: 'patient-missing-master',
+    label: 'patient fetch: missingMaster',
+    description: '患者取得 missingMaster=true（編集不可）',
+    flags: {
+      runId: OUTPATIENT_FALLBACK_RUN_ID,
+      cacheHit: false,
+      missingMaster: true,
+      dataSourceTransition: 'server',
+      fallbackUsed: false,
+      recordsReturned: OUTPATIENT_RECEPTION_ENTRIES.length,
+      status: 200,
+    },
+  },
+  {
+    id: 'patient-fallback',
+    label: 'patient fetch: fallbackUsed',
+    description: '患者取得 fallbackUsed=true（snapshot handoff）',
+    flags: {
+      runId: OUTPATIENT_FALLBACK_RUN_ID,
+      cacheHit: false,
+      missingMaster: true,
+      dataSourceTransition: 'fallback',
+      fallbackUsed: true,
+      recordsReturned: OUTPATIENT_RECEPTION_ENTRIES.length,
+      status: 200,
+    },
+  },
+  {
+    id: 'patient-timeout',
+    label: 'patient fetch: timeout/5xx',
+    description: '患者取得 504/タイムアウトを模擬。再取得導線検証用。',
+    flags: {
+      runId: OUTPATIENT_FALLBACK_RUN_ID,
+      cacheHit: false,
+      missingMaster: false,
+      dataSourceTransition: 'server',
+      fallbackUsed: false,
+      recordsReturned: 0,
+      status: 504,
     },
   },
   {
@@ -285,7 +350,7 @@ export function buildAppointmentFixture(flags: OutpatientFlagSet) {
   };
 }
 
-export function buildPatientListFixture(flags: OutpatientFlagSet) {
+export function buildPatientListFixture(flags: OutpatientFlagSet, endpoint = '/api01rv2/patient/outpatient/mock') {
   return {
     patients: OUTPATIENT_PATIENTS,
     runId: flags.runId,
@@ -293,10 +358,22 @@ export function buildPatientListFixture(flags: OutpatientFlagSet) {
     missingMaster: flags.missingMaster,
     dataSourceTransition: flags.dataSourceTransition,
     fallbackUsed: flags.fallbackUsed,
+    fetchedAt: new Date().toISOString(),
+    recordsReturned: flags.recordsReturned ?? OUTPATIENT_PATIENTS.length,
+    status: flags.status ?? 200,
     auditEvent: {
       runId: flags.runId,
-      endpoint: '/orca12/patientmodv2/outpatient',
+      endpoint,
       recordedAt: new Date().toISOString(),
+      details: {
+        runId: flags.runId,
+        dataSourceTransition: flags.dataSourceTransition,
+        cacheHit: flags.cacheHit,
+        missingMaster: flags.missingMaster,
+        fallbackUsed: flags.fallbackUsed,
+        fetchedAt: new Date().toISOString(),
+        recordsReturned: flags.recordsReturned ?? OUTPATIENT_PATIENTS.length,
+      },
     },
   };
 }
