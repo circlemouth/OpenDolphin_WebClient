@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 16px; }
+      .score-card { padding: 16px; border: 1px solid #c4d3d7; background: #f7fbfc; border-radius: 8px; text-align: center; }
+      .score-card h2 { margin: 0 0 8px; font-size: 18px; }
+      .score-card .points { font-size: 26px; font-weight: 800; }
+      .score-card .trophy { font-size: 26px; margin-right: 6px; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 4); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .hex-grid { display: grid; grid-template-columns: repeat(3, minmax(90px, 1fr)); gap: 6px; margin-bottom: 12px; }
+      .hex { position: relative; padding: 12px 8px; background: #e6f0f4; clip-path: polygon(25% 6.7%, 75% 6.7%, 100% 50%, 75% 93.3%, 25% 93.3%, 0 50%); text-align: center; font-weight: 700; color: #1f2a30; }
+      .hex span { display: block; font-size: 11px; font-weight: 600; opacity: 0.85; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">外来患者基本・保険・来院履歴取得 API 接続実装（/api01rv2/patient/outpatient）の3候補ブランチを比較評価しました。runId / meta 透過・監査・UI ガード・テスト整備を軸に採点しています。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>task-1765577305848-e647c9</h2>
+          <div class="points"><span class="trophy">🏆</span>548 / 600</div>
+          <div>メダル: 🥇</div>
+        </div>
+        <div class="score-card">
+          <h2>task-1765577305643-bba5d9</h2>
+          <div class="points"><span class="trophy">🥈</span>487 / 600</div>
+          <div>メダル: 🥈</div>
+        </div>
+        <div class="score-card">
+          <h2>task-1765577305443-bf67de</h2>
+          <div class="points"><span class="trophy">🥉</span>387 / 600</div>
+          <div>メダル: 🥉</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765577305848-e647c9</th>
+            <th>task-1765577305643-bba5d9</th>
+            <th>task-1765577305443-bf67de</th>
+            <th>Agent spare</th>
+            <th>Agent spare</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-12 15:05</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完成</span>
+                <span class="agent-label">最終コミット 31a3f7cc (feat: connect outpatient patient fetch API with observability meta)</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">93<span>機能充足</span></div>
+                <div class="hex">95<span>メタ透過</span></div>
+                <div class="hex">92<span>監査/ログ</span></div>
+                <div class="hex">88<span>UX/アクセシビリティ</span></div>
+                <div class="hex">90<span>テスト整備</span></div>
+                <div class="hex">90<span>保守性</span></div>
+              </div>
+              <div class="snapshot-summary">強み: tryFetchJson二段フォールバック・meta同期・Telemetry/Audit/UI連動が揃い、missingMaster/fallbackUsed時のreadOnly/aria-live提示や再取得導線も実装。Reception/Charts/Patients全域で runId/cacheHit/transition をcarry。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">主要差分</summary>
+                <pre>• web-client/src/features/patients/api.ts: tryFetchJsonで /api01rv2/patient/outpatient → /mock を順次POST。meta(runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned)をupdateObservabilityMeta・recordOutpatientFunnel・logAuditEvent・logUiStateへ透過。
+• PatientsPage: missingMaster/fallbackUsed true で保存ブロック&トースト、ARIA assertiveバナー、再取得ボタン。StatusBadgeで fetchedAt / recordsReturned / endpoint表示。
+• Charts/PatientsTab: flagsにfallbackUsedを追加し dataSourceTransition≠server も readOnly。ToneBanner + StatusBadgeでmeta露出。
+• Mocks/E2E: outpatient fixtures/handlersに normal/missingMaster/fallbackUsed/timeout 4パターン追加、tests/e2e/outpatient-patient-fetch.msw.spec.tsで検証。
+• Docs: DOC_STATUSとActive更新履歴、証跡ログ追記。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">懸念・改善余地</summary>
+                <pre>• 患者保存エラー時のrunId carryが薄く、mutation失敗でもupdateObservabilityMetaを検討余地。
+• PatientsTab readOnly判定がdataSourceTransition != 'server' を固定にしており、要件に応じて緩和可否を確認。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">部分達成</span>
+                <span class="agent-label">最終コミット 69432708 (feat: hook outpatient patient fetch meta)</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">85<span>機能充足</span></div>
+                <div class="hex">82<span>メタ透過</span></div>
+                <div class="hex">78<span>監査/ログ</span></div>
+                <div class="hex">80<span>UX/アクセシビリティ</span></div>
+                <div class="hex">80<span>テスト整備</span></div>
+                <div class="hex">82<span>保守性</span></div>
+              </div>
+              <div class="snapshot-summary">強み: fetchedAt/recordsReturnedをAuthService flagsで共有し、PatientsTabにreadOnlyバナーを追加。Tone/StatusBadge露出と保存ブロックは実装済み。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">主要差分</summary>
+                <pre>• fetchPatientsの候補に /orca12/patientmodv2/outpatient を含めており、取得APIが保存エンドポイントへ誤送信されるリスク。
+• 失敗時にfallbackUsed=trueでthrowするだけで auditEvent/logAuditEvent 未呼び出し。
+• recordOutpatientFunnelは成功時のみ outcome=success、エラー時メトリクス不足。
+• Reception/Charts側への meta carry はあるが dataSourceTransition 判定や fallbackUsed 伝搬が不完全。
+• 患者保存は正常だが fetchedAt/recordsReturned の更新連動なし。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">懸念・改善余地</summary>
+                <pre>• 患者取得エラー時にサンプル補填なし・UIリトライバナーはあるが meta が未更新でトーンずれが発生。
+• auditEvent.details に必須キー（cacheHit等）の付与が弱く、監査要件未充足。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">未充足</span>
+                <span class="agent-label">最終コミット e3b32f65 (feat: wire patient outpatient fetch meta into UI, audit, telemetry)</span>
+              </div>
+              <div class="hex-grid">
+                <div class="hex">70<span>機能充足</span></div>
+                <div class="hex">65<span>メタ透過</span></div>
+                <div class="hex">60<span>監査/ログ</span></div>
+                <div class="hex">68<span>UX/アクセシビリティ</span></div>
+                <div class="hex">60<span>テスト整備</span></div>
+                <div class="hex">64<span>保守性</span></div>
+              </div>
+              <div class="snapshot-summary">強み: runId/cacheHit/missingMaster/fallbackUsedをPatientsTab/PatientsPageへ露出し、保存ブロックやtoneバナーを追加。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">主要差分</summary>
+                <pre>• fetchPatientsが失敗時に即エラーを投げサンプル補填も meta 更新も無し。auditEvent必須キーを logAuditEvent へ送らず UI/Audit 透過が弱い。
+• recordOutpatientFunnel に outcome がなく、telemetry精度が不足。
+• 保存APIも /api01rv2/patient/outpatient を使用し mutateエンドポイントに向けていない。
+• tests/e2e は追加したが missingMaster/fallbackUsed/timeout のパスが不十分で meta 検証が薄い。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">懸念・改善余地</summary>
+                <pre>• missingMaster/fallbackUsed発生時の readOnly 表示はあるが dataSourceTransition ≠ server の扱い未定義。
+• Observability 更新を getObservabilityMeta 値に依存し runId carry が弱い。</pre>
+              </details>
+            </td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
