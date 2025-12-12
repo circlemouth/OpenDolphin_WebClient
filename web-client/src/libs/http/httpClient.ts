@@ -122,7 +122,16 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     method: 'ANY',
     path: '/api01rv2/patient/outpatient/*',
     purpose: 'Reception/Patients 用に患者基本・保険・来院履歴を取得し、`missingMaster`/`cacheHit` を含めた `audit` を生成する。',
-    auditMetadata: ['runId', 'dataSource', 'cacheHit', 'missingMaster', 'fallbackUsed', 'dataSourceTransition', 'fetchedAt'],
+    auditMetadata: [
+      'runId',
+      'dataSource',
+      'cacheHit',
+      'missingMaster',
+      'fallbackUsed',
+      'dataSourceTransition',
+      'fetchedAt',
+      'recordsReturned',
+    ],
     sourceDocs: [
       'docs/web-client/architecture/web-client-api-mapping.md',
       'docs/server-modernization/phase2/operations/logs/20251205T090000Z-integration-implementation.md',

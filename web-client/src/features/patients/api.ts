@@ -1,5 +1,7 @@
+import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { httpFetch } from '../../libs/http/httpClient';
 import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
+import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import type { DataSourceTransition } from '../../libs/observability/types';
 
 export type PatientRecord = {
@@ -30,6 +32,11 @@ export type PatientListResponse = {
   missingMaster?: boolean;
   dataSourceTransition?: DataSourceTransition;
   fallbackUsed?: boolean;
+  fetchedAt?: string;
+  recordsReturned?: number;
+  sourcePath?: string;
+  status?: number;
+  error?: string;
   auditEvent?: Record<string, unknown>;
   raw?: unknown;
 };
@@ -88,7 +95,8 @@ const SAMPLE_PATIENTS: PatientRecord[] = [
   },
 ];
 
-const patientCandidates = ['/orca12/patientmodv2/outpatient', '/orca12/patientmodv2/outpatient/mock'];
+const patientInfoCandidates = ['/api01rv2/patient/outpatient', '/api01rv2/patient/outpatient/mock'];
+const patientMutationCandidates = ['/orca12/patientmodv2/outpatient', '/orca12/patientmodv2/outpatient/mock'];
 
 const normalizeBoolean = (value: unknown) => {
   if (typeof value === 'boolean') return value;
@@ -120,7 +128,22 @@ const parsePatients = (json: any): PatientRecord[] => {
   return list.map(mapOne).filter((patient) => Object.keys(patient).length > 0);
 };
 
-const tryFetchJson = async (paths: string[], body: Record<string, unknown>) => {
+type FetchAttempt =
+  | {
+      data?: Record<string, unknown>;
+      path?: string;
+      status?: number;
+      error?: undefined;
+    }
+  | {
+      data?: undefined;
+      path?: string;
+      status?: number;
+      error: string;
+    };
+
+const tryFetchJson = async (paths: string[], body: Record<string, unknown>): Promise<FetchAttempt | undefined> => {
+  let lastFailure: FetchAttempt | undefined;
   for (const path of paths) {
     try {
       const response = await httpFetch(path, {
@@ -128,14 +151,18 @@ const tryFetchJson = async (paths: string[], body: Record<string, unknown>) => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(body),
       });
-      if (!response.ok) continue;
-      const data = await response.json().catch(() => undefined);
-      return { data, path };
+      const status = response.status;
+      const data = (await response.json().catch(() => undefined)) as Record<string, unknown> | undefined;
+      if (response.ok) {
+        return { data, path, status };
+      }
+      lastFailure = { data, path, status, error: `status ${status}` };
     } catch (error) {
       console.warn('[patients] fetch failed for', path, error);
+      lastFailure = { path, error: error instanceof Error ? error.message : String(error) };
     }
   }
-  return undefined;
+  return lastFailure;
 };
 
 const tryPostJson = async (paths: string[], body: Record<string, unknown>) => {
@@ -171,19 +198,51 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
   Object.keys(payload).forEach((key) => payload[key] === undefined && delete payload[key]);
   updateObservabilityMeta({ runId });
 
-  const result = await tryFetchJson(patientCandidates, payload);
+  const result = await tryFetchJson(patientInfoCandidates, payload);
   const json = (result?.data as Record<string, unknown>) ?? {};
   const patients = parsePatients(json);
+  const resolvedPatients = patients.length > 0 ? patients : result?.error ? [] : SAMPLE_PATIENTS;
+  const recordsReturned =
+    typeof json.recordsReturned === 'number'
+      ? (json.recordsReturned as number)
+      : typeof patients.length === 'number'
+        ? patients.length
+        : undefined;
 
   const meta: PatientListResponse = {
-    patients: patients.length > 0 ? patients : SAMPLE_PATIENTS,
+    patients: resolvedPatients,
     runId: (json.runId as string | undefined) ?? getObservabilityMeta().runId,
     cacheHit: normalizeBoolean(json.cacheHit),
     missingMaster: normalizeBoolean(json.missingMaster),
     dataSourceTransition: json.dataSourceTransition as DataSourceTransition | undefined,
     fallbackUsed: normalizeBoolean(json.fallbackUsed),
+    fetchedAt: typeof json.fetchedAt === 'string' ? (json.fetchedAt as string) : undefined,
+    recordsReturned,
+    sourcePath: result?.path,
+    status: result?.status,
+    error: result?.error,
     auditEvent: (json.auditEvent as Record<string, unknown>) ?? undefined,
     raw: json,
+  };
+
+  const auditDetails = {
+    ...(typeof (meta.auditEvent as Record<string, unknown> | undefined)?.details === 'object'
+      ? ((meta.auditEvent as Record<string, unknown>).details as Record<string, unknown>)
+      : {}),
+    runId: meta.runId,
+    dataSourceTransition: meta.dataSourceTransition,
+    cacheHit: meta.cacheHit,
+    missingMaster: meta.missingMaster,
+    fallbackUsed: meta.fallbackUsed,
+    fetchedAt: meta.fetchedAt,
+    recordsReturned: meta.recordsReturned,
+    sourcePath: meta.sourcePath,
+  };
+
+  meta.auditEvent = {
+    action: (meta.auditEvent as Record<string, unknown> | undefined)?.action ?? 'PATIENT_OUTPATIENT_FETCH',
+    ...((meta.auditEvent as Record<string, unknown>) ?? {}),
+    details: auditDetails,
   };
 
   updateObservabilityMeta({
@@ -192,6 +251,46 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
     missingMaster: meta.missingMaster,
     dataSourceTransition: meta.dataSourceTransition,
     fallbackUsed: meta.fallbackUsed,
+    fetchedAt: meta.fetchedAt,
+    recordsReturned: meta.recordsReturned,
+  });
+
+  recordOutpatientFunnel('patient_fetch', {
+    runId: meta.runId,
+    cacheHit: meta.cacheHit ?? false,
+    missingMaster: meta.missingMaster ?? false,
+    dataSourceTransition: meta.dataSourceTransition ?? 'server',
+    fallbackUsed: meta.fallbackUsed ?? false,
+    action: 'patient_fetch',
+    outcome: meta.error ? 'error' : 'success',
+    note: meta.error ?? meta.sourcePath,
+  });
+
+  logAuditEvent({
+    runId: meta.runId,
+    source: 'patient-fetch',
+    cacheHit: meta.cacheHit,
+    missingMaster: meta.missingMaster,
+    dataSourceTransition: meta.dataSourceTransition,
+    fallbackUsed: meta.fallbackUsed,
+    payload: meta.auditEvent as Record<string, unknown> | undefined,
+  });
+
+  logUiState({
+    action: 'patient_fetch',
+    screen: 'patients',
+    runId: meta.runId,
+    cacheHit: meta.cacheHit,
+    missingMaster: meta.missingMaster,
+    dataSourceTransition: meta.dataSourceTransition,
+    fallbackUsed: meta.fallbackUsed,
+    details: {
+      fetchedAt: meta.fetchedAt,
+      recordsReturned: meta.recordsReturned,
+      endpoint: meta.sourcePath,
+      status: meta.status,
+      error: meta.error,
+    },
   });
 
   return meta;
@@ -213,7 +312,7 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
   };
   updateObservabilityMeta({ runId });
 
-  const postResult = await tryPostJson(patientCandidates, body);
+  const postResult = await tryPostJson(patientMutationCandidates, body);
   const json = postResult.json ?? {};
   const result: PatientMutationResult = {
     ok: postResult.ok,

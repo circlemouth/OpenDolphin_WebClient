@@ -68,7 +68,7 @@ export function PatientsTab({
     onSelectAppointment?.(entry.appointmentId);
   };
 
-  const isReadOnly = flags.missingMaster || flags.dataSourceTransition !== 'server';
+  const isReadOnly = flags.missingMaster || flags.fallbackUsed || flags.dataSourceTransition !== 'server';
 
   useEffect(() => {
     setNoteDraft(selected?.note ?? '');
@@ -87,7 +87,12 @@ export function PatientsTab({
       aria-atomic="false"
       data-run-id={flags.runId}
     >
-      <ToneBanner tone={tone} message={toneMessage} runId={flags.runId} ariaLive={flags.missingMaster ? 'assertive' : 'polite'} />
+      <ToneBanner
+        tone={tone}
+        message={toneMessage}
+        runId={flags.runId}
+        ariaLive={flags.missingMaster || flags.fallbackUsed ? 'assertive' : 'polite'}
+      />
       <div className="patients-tab__header">
         <div>
           <p className="patients-tab__header-label">dataSourceTransition</p>
@@ -106,6 +111,13 @@ export function PatientsTab({
             label="cacheHit"
             value={flags.cacheHit ? 'true' : 'false'}
             tone={flags.cacheHit ? 'success' : 'warning'}
+            runId={flags.runId}
+          />
+          <StatusBadge
+            label="fallbackUsed"
+            value={flags.fallbackUsed ? 'true' : 'false'}
+            tone={flags.fallbackUsed ? 'warning' : 'info'}
+            ariaLive={flags.fallbackUsed ? 'assertive' : 'polite'}
             runId={flags.runId}
           />
         </div>

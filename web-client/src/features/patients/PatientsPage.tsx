@@ -99,14 +99,18 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [form, setForm] = useState<PatientRecord>({});
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastAuditEvent, setLastAuditEvent] = useState<Record<string, unknown> | undefined>();
-  const [lastMeta, setLastMeta] = useState<Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId'>>({
+  const [lastMeta, setLastMeta] = useState<
+    Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
+  >({
     missingMaster: undefined,
     fallbackUsed: undefined,
     cacheHit: undefined,
     dataSourceTransition: undefined,
     runId,
+    fetchedAt: undefined,
+    recordsReturned: undefined,
   });
-  const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, bumpRunId } = useAuthService();
+  const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
 
   useEffect(() => {
     const merged = readFilters(searchParams);
@@ -154,6 +158,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     if (meta.cacheHit !== undefined) setCacheHit(meta.cacheHit);
     if (meta.missingMaster !== undefined) setMissingMaster(meta.missingMaster);
     if (meta.dataSourceTransition) setDataSourceTransition(meta.dataSourceTransition as DataSourceTransition);
+    if (meta.fallbackUsed !== undefined) setFallbackUsed(meta.fallbackUsed);
     setLastAuditEvent(meta.auditEvent);
     setLastMeta({
       missingMaster: meta.missingMaster,
@@ -161,17 +166,27 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       cacheHit: meta.cacheHit,
       dataSourceTransition: meta.dataSourceTransition,
       runId: meta.runId,
+      fetchedAt: meta.fetchedAt,
+      recordsReturned: meta.recordsReturned,
     });
-  }, [bumpRunId, patientsQuery.data, setCacheHit, setDataSourceTransition, setMissingMaster]);
+  }, [bumpRunId, patientsQuery.data, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
   const tonePayload: ChartTonePayload = {
-    missingMaster: flags.missingMaster,
-    cacheHit: flags.cacheHit,
-    dataSourceTransition: flags.dataSourceTransition,
+    missingMaster: resolvedMissingMaster,
+    cacheHit: resolvedCacheHit,
+    dataSourceTransition: resolvedTransition,
   };
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
   const patients = patientsQuery.data?.patients ?? [];
+  const resolvedRunId = patientsQuery.data?.runId ?? flags.runId;
+  const resolvedCacheHit = patientsQuery.data?.cacheHit ?? flags.cacheHit ?? lastMeta.cacheHit ?? false;
+  const resolvedMissingMaster = patientsQuery.data?.missingMaster ?? flags.missingMaster ?? lastMeta.missingMaster ?? false;
+  const resolvedFallbackUsed = patientsQuery.data?.fallbackUsed ?? flags.fallbackUsed ?? lastMeta.fallbackUsed ?? false;
+  const resolvedTransition =
+    patientsQuery.data?.dataSourceTransition ?? flags.dataSourceTransition ?? lastMeta.dataSourceTransition;
+  const resolvedFetchedAt = patientsQuery.data?.fetchedAt ?? lastMeta.fetchedAt;
+  const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
 
   useEffect(() => {
     if (!selectedId && patients[0]) {
@@ -187,10 +202,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       action: 'tone_change',
       screen: 'patients',
       controlId: 'select-patient',
-      runId: flags.runId,
-      cacheHit: flags.cacheHit,
-      missingMaster: flags.missingMaster,
-      dataSourceTransition: flags.dataSourceTransition,
+      runId: resolvedRunId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
       details: { patientId: patient.patientId },
     });
   };
@@ -247,8 +263,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     },
   });
 
-  const missingMasterFlag = patientsQuery.data?.missingMaster ?? flags.missingMaster ?? lastMeta.missingMaster ?? false;
-  const fallbackUsedFlag = patientsQuery.data?.fallbackUsed ?? lastMeta.fallbackUsed ?? false;
+  const missingMasterFlag = resolvedMissingMaster;
+  const fallbackUsedFlag = resolvedFallbackUsed;
   const blocking = Boolean(missingMasterFlag || fallbackUsedFlag);
 
   const save = (operation: 'create' | 'update' | 'delete') => {
@@ -300,25 +316,26 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const toneLive = missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite';
 
   return (
-    <main className="patients-page" data-run-id={flags.runId}>
+    <main className="patients-page" data-run-id={resolvedRunId}>
       <header className="patients-page__header">
         <div>
           <p className="patients-page__kicker">Patients 編集と監査連携</p>
           <h1>患者一覧・編集</h1>
           <p className="patients-page__hint" role="status" aria-live="polite">
-            Reception で選んだフィルタを復元し、/orca12/patientmodv2/outpatient へ保存します。保存時は auditEvent(operation=create|update|delete) と runId を送信します。
+            Reception で選んだフィルタを復元し、/api01rv2/patient/outpatient で閲覧・/orca12/patientmodv2/outpatient で保存します。取得時は runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を透過します。
           </p>
         </div>
         <div className="patients-page__badges">
-          <StatusBadge label="runId" value={flags.runId} tone="info" />
+          <StatusBadge label="runId" value={resolvedRunId ?? ''} tone="info" />
           <StatusBadge label="missingMaster" value={String(missingMasterFlag)} tone={missingMasterFlag ? 'warning' : 'success'} ariaLive={toneLive} />
           <StatusBadge label="fallbackUsed" value={String(fallbackUsedFlag)} tone={fallbackUsedFlag ? 'warning' : 'success'} ariaLive={toneLive} />
-          <StatusBadge label="cacheHit" value={String(flags.cacheHit)} tone={flags.cacheHit ? 'success' : 'warning'} />
-          <StatusBadge label="dataSourceTransition" value={flags.dataSourceTransition} tone="info" />
+          <StatusBadge label="cacheHit" value={String(resolvedCacheHit)} tone={resolvedCacheHit ? 'success' : 'warning'} />
+          <StatusBadge label="dataSourceTransition" value={resolvedTransition ?? 'unknown'} tone="info" />
+          <StatusBadge label="recordsReturned" value={String(resolvedRecordsReturned ?? '―') } tone="info" />
         </div>
       </header>
 
-      <ToneBanner tone={tone} message={toneMessage} runId={flags.runId} ariaLive={missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite'} />
+      <ToneBanner tone={tone} message={toneMessage} runId={resolvedRunId} ariaLive={missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite'} />
 
       <section className="patients-page__filters" aria-label="フィルタ" aria-live="polite">
         <label>
@@ -365,6 +382,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         <button type="button" className="patients-page__filter-link" onClick={() => navigate({ pathname: '/reception', search: location.search })}>
           Reception に戻る
         </button>
+        {(patientsQuery.data?.error || patientsQuery.data?.status?.toString().startsWith('5')) && (
+          <div className="patients-page__retry" role="alert" aria-live="assertive">
+            <p>
+              患者情報の取得に失敗しました（{patientsQuery.data?.status ?? 'timeout'}）。再取得してください。
+            </p>
+            <button type="button" onClick={() => patientsQuery.refetch()}>再取得</button>
+          </div>
+        )}
+        {resolvedFetchedAt && (
+          <p className="patients-page__hint" role="note">
+            fetchedAt: {resolvedFetchedAt} ／ recordsReturned: {resolvedRecordsReturned ?? '―'} ／ endpoint: {patientsQuery.data?.sourcePath ?? 'api01rv2/patient/outpatient'}
+          </p>
+        )}
       </section>
 
       <section className="patients-page__content">
@@ -529,9 +559,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
 
           <div className="patients-page__footnote" role="note">
             <span>dataSourceTransition: {transitionMeta.label}</span>
-            <span>cacheHit: {String(flags.cacheHit)}</span>
+            <span>cacheHit: {String(resolvedCacheHit)}</span>
             <span>missingMaster: {String(missingMasterFlag)}</span>
             <span>fallbackUsed: {String(fallbackUsedFlag)}</span>
+            <span>fetchedAt: {resolvedFetchedAt ?? '―'}</span>
+            <span>recordsReturned: {resolvedRecordsReturned ?? '―'}</span>
           </div>
         </form>
       </section>
