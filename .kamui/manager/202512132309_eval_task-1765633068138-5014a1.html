@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>Charts fetchWithResolver 評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        padding: 16px;
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .score-card .total {
+        font-size: 20px;
+        font-weight: 700;
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+      }
+      .score-card .meta {
+        font-size: 12px;
+        color: #4d6069;
+      }
+      .trophy {
+        font-size: 20px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 160px;
+      }
+      col.agent-column {
+        width: calc((100% - 160px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--issue { background: #f8d7da; border-color: #f1aeb5; color: #7c1f2a; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .hex-chart { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+      .hex { width: 96px; height: 86px; background: linear-gradient(135deg, #d9e7ff, #eef6ff); clip-path: polygon(25% 5%, 75% 5%, 95% 50%, 75% 95%, 25% 95%, 5% 50%); display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; color: #1f2a30; border: 1px solid #b8c9cd; }
+      .hex span.score { font-size: 14px; font-weight: 800; }
+      .issue-list { margin: 0; padding-left: 18px; color: #2c3a40; font-size: 13px; }
+      .issue-list li { margin-bottom: 6px; }
+      .good { color: #0b6a2b; }
+      .bad { color: #b11a1a; }
+      .neutral { color: #3a4b53; }
+      .link { color: #0f5bb5; text-decoration: underline; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Charts fetchWithResolver 評価レポート</h1>
+        <p class="monitor-description">
+          タスク: src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md / 監視ブランチ: task-1765633068538-95af0e, task-1765633068339-8936f2, task-1765633068138-5014a1。最新コミット差分を精査し、機能合理性と緻密性の観点で採点しました。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="total"><span class="trophy">🥉</span>446 / 600</div>
+          <div class="meta">task-1765633068538-95af0e (feat: unify outpatient fetch layer with resolver)</div>
+        </div>
+        <div class="score-card">
+          <div class="total"><span class="trophy">🥇</span>523 / 600</div>
+          <div class="meta">task-1765633068339-8936f2 (Unify outpatient fetch layer with fetchWithResolver)</div>
+        </div>
+        <div class="score-card">
+          <div class="total"><span class="trophy">🥉</span>446 / 600</div>
+          <div class="meta">task-1765633068138-5014a1 (feat: unify outpatient fetchWithResolver layer)</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765633068538-95af0e</th>
+            <th>task-1765633068339-8936f2</th>
+            <th>task-1765633068138-5014a1</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-13 23:09</td>
+            <td>
+              <div class="hex-chart">
+                <div class="hex"><span>コード品質</span><span class="score">65</span></div>
+                <div class="hex"><span>fetch統一</span><span class="score">80</span></div>
+                <div class="hex"><span>キャッシュ/監査</span><span class="score">72</span></div>
+                <div class="hex"><span>DTO集約</span><span class="score">75</span></div>
+                <div class="hex"><span>ロバスト性</span><span class="score">45</span></div>
+                <div class="hex"><span>ドキュ</span><span class="score">78</span></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--issue">重大課題</span>
+                <span class="agent-label">ChartsPage で TDZ 例外が発生し UI が初期レンダーで落ちる。</span>
+              </div>
+              <ul class="issue-list">
+                <li class="bad">`web-client/src/features/charts/pages/ChartsPage.tsx:145-157` で `resolvedRunId` などを宣言前に参照しており、ReferenceError でクエリ結果表示が止まります。</li>
+                <li class="neutral">`fetchWithResolver` は retry/forceRefetch メタを拾って metadata を統一するが、HTTP 全滅時は例外 throw のみでサンプル fallback が無く、Reception/Charts 画面がエラー遷移します。</li>
+                <li class="good">DTO 変換を `outpatientMappers.ts` に集約し、cacheHit/missingMaster をヘッダー/JSON 両方から抽出する設計は明確。</li>
+                <li class="neutral">React Query の `queryClient` を明示渡しするが、`queryFn` に `signal` が通っておらず中断が効かない。</li>
+                <li class="good">DOC_STATUS とログ `docs/web-client/planning/phase2/logs/20251213T135500Z-charts-fetch-with-resolver.md` が更新され、RUN_ID が一貫。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <div class="hex"><span>コード品質</span><span class="score">88</span></div>
+                <div class="hex"><span>fetch統一</span><span class="score">92</span></div>
+                <div class="hex"><span>キャッシュ/監査</span><span class="score">88</span></div>
+                <div class="hex"><span>DTO集約</span><span class="score">90</span></div>
+                <div class="hex"><span>ロバスト性</span><span class="score">80</span></div>
+                <div class="hex"><span>ドキュ</span><span class="score">85</span></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">最優秀</span>
+                <span class="agent-label">fetchWithResolver と DTO/メタ変換を Outpatient ドメインに集約し、キャッシュ/監査連動を UI へ反映。</span>
+              </div>
+              <ul class="issue-list">
+                <li class="good">`web-client/src/features/outpatient/fetchWithResolver.ts` が runId/cacheHit/fallbackUsed を統合し、React Query の retry 回数や cache served 状態をメタに付加。DTO 変換 (`transformers.ts`) も一元化。</li>
+                <li class="good">Charts/Reception の `useQuery` meta に `servedFromCache`/`retryCount` を埋め、Pill・監査イベントと同期。</li>
+                <li class="neutral">HTTP キャンセル用の `context.signal` を httpFetch に渡しておらず、中断不可。fallbackUsed フラグがヘッダー頼みで、ローカルサンプル使用時は false のまま。</li>
+                <li class="good">DOC_STATUS とログ `docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md` が追加され、RUN_ID 記載あり。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <div class="hex"><span>コード品質</span><span class="score">70</span></div>
+                <div class="hex"><span>fetch統一</span><span class="score">86</span></div>
+                <div class="hex"><span>キャッシュ/監査</span><span class="score">78</span></div>
+                <div class="hex"><span>DTO集約</span><span class="score">82</span></div>
+                <div class="hex"><span>ロバスト性</span><span class="score">50</span></div>
+                <div class="hex"><span>ドキュ</span><span class="score">80</span></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--issue">重大課題</span>
+                <span class="agent-label">ChartsPage 初期レンダーで TDZ 例外。fetchWithResolver は堅牢だが UI に反映されない。</span>
+              </div>
+              <ul class="issue-list">
+                <li class="bad">`web-client/src/features/charts/pages/ChartsPage.tsx:147-159` で `resolvedRunId` 等を宣言前に参照し ReferenceError。画面が描画されずキャッシュPill/監査同期も無効。</li>
+                <li class="good">`web-client/src/libs/http/fetchWithResolver.ts` が `resolveMasterSource` と QueryClient 共有を実装し、HTTP ヘッダーと JSON から dataSource/cacheHit を統合。fallbackData もサポート。</li>
+                <li class="neutral">Fallback ブロックが常に `fallbackUsed: true` で missingMaster とみなすため、純粋な「未取得」ケースと区別できない。</li>
+                <li class="good">DOC_STATUS 更新と成果物 `docs/web-client/planning/phase2/logs/20251213T134205Z-charts-fetch-with-resolver.md` が追加され、RUN_ID 記載あり。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
