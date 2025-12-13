@@ -43,6 +43,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
 
   const cacheHitHint = options.queryContext?.meta?.servedFromCache === true ? true : undefined;
   const retryCount = (options.queryContext?.meta?.retryCount as number | undefined) ?? undefined;
+  const abortSignal = options.queryContext?.signal;
   const orderedCandidates = orderCandidates(options.candidates, options.preferredSource);
   const fallbackSource = (options.preferredSource ?? orderedCandidates[0]?.source ?? 'snapshot') as ResolveMasterSource;
 
@@ -60,6 +61,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
           ...(candidate.headers ?? {}),
         },
         body,
+        signal: abortSignal,
       });
 
       const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;

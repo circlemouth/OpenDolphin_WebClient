@@ -103,11 +103,15 @@ export async function fetchAppointmentOutpatients(
 
   const json = result.raw ?? {};
   const entries = parseAppointmentEntries(json);
-  const resolvedEntries = entries.length > 0 ? entries : SAMPLE_APPOINTMENTS;
+  const isFallbackSample = entries.length === 0;
+  const resolvedEntries = isFallbackSample ? SAMPLE_APPOINTMENTS : entries;
   const mergedMeta = mergeOutpatientMeta(json, {
     ...result.meta,
     recordsReturned: entries.length > 0 ? entries.length : undefined,
     resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
+    fallbackUsed:
+      result.meta.fallbackUsed ??
+      (isFallbackSample || result.meta.fromCache === true ? true : undefined),
   });
 
   const payload: AppointmentPayload = attachAppointmentMeta(
