@@ -1,10 +1,11 @@
 import { useEffect, useMemo, useState } from 'react';
 
-import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
+import { logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { recordChartsAuditEvent } from './audit';
 import type { DataSourceTransition } from './authService';
 
-type ChartAction = 'finish' | 'send' | 'draft' | 'cancel';
+type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
 type ToastState = {
   tone: 'success' | 'warning' | 'error' | 'info';
@@ -17,6 +18,7 @@ const ACTION_LABEL: Record<ChartAction, string> = {
   send: 'ORCA送信',
   draft: 'ドラフト保存',
   cancel: 'キャンセル',
+  print: '印刷',
 };
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
@@ -77,18 +79,30 @@ export function ChartsActionBar({
     });
   };
 
-  const logAudit = (action: ChartAction, outcome: 'success' | 'error' | 'blocked', detail?: string) => {
-    logAuditEvent({
-      runId,
-      source: `charts-action-${action}`,
+  const logAudit = (
+    action: ChartAction,
+    outcome: 'success' | 'error' | 'blocked' | 'started',
+    detail?: string,
+    durationMs?: number,
+  ) => {
+    const actionMap: Record<ChartAction, 'ENCOUNTER_CLOSE' | 'ORCA_SEND' | 'DRAFT_SAVE' | 'DRAFT_CANCEL' | 'PRINT_OUTPATIENT'> = {
+      finish: 'ENCOUNTER_CLOSE',
+      send: 'ORCA_SEND',
+      draft: 'DRAFT_SAVE',
+      cancel: 'DRAFT_CANCEL',
+      print: 'PRINT_OUTPATIENT',
+    };
+    recordChartsAuditEvent({
+      action: actionMap[action],
+      outcome,
+      subject: `charts-action-${action}`,
+      note: detail,
+      durationMs,
+      dataSourceTransition,
       cacheHit,
       missingMaster,
-      dataSourceTransition,
-      payload: {
-        outcome,
-        fallbackUsed,
-        detail,
-      },
+      fallbackUsed,
+      runId,
     });
   };
 
@@ -152,6 +166,7 @@ export function ChartsActionBar({
       fallbackUsed,
     });
     logTelemetry(action, 'started');
+    logAudit(action, 'started', undefined);
 
     try {
       const waitMs = action === 'send' ? 1700 : 1100;
@@ -162,14 +177,14 @@ export function ChartsActionBar({
       }
 
       setLockReason(`${ACTION_LABEL[action]}完了。UI をロック中`);
+      const durationMs = Math.round(performance.now() - startedAt);
       setToast({
         tone: 'success',
         message: `${ACTION_LABEL[action]}を完了`,
         detail: `runId=${runId} / transition=${dataSourceTransition}`,
       });
-      const durationMs = Math.round(performance.now() - startedAt);
       logTelemetry(action, 'success', durationMs);
-      logAudit(action, 'success');
+      logAudit(action, 'success', undefined, durationMs);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       setErrorDetail(detail);
@@ -182,11 +197,32 @@ export function ChartsActionBar({
       });
       const durationMs = Math.round(performance.now() - startedAt);
       logTelemetry(action, 'error', durationMs, detail);
-      logAudit(action, 'error', detail);
+      logAudit(action, 'error', detail, durationMs);
     } finally {
       setIsRunning(false);
       setRunningAction(null);
     }
+  };
+
+  const handlePrint = () => {
+    const detail = '印刷はデモ環境: auditEvent のみ記録しました';
+    setToast({
+      tone: 'info',
+      message: '印刷デモを記録',
+      detail,
+    });
+    logAudit('print', fallbackUsed ? 'blocked' : 'success', detail);
+    logUiState({
+      action: 'send',
+      screen: 'charts/action-bar',
+      controlId: 'action-print',
+      runId,
+      cacheHit,
+      missingMaster,
+      dataSourceTransition,
+      fallbackUsed,
+      details: { note: detail, blocked: fallbackUsed },
+    });
   };
 
   const handleUnlock = () => {
@@ -249,6 +285,15 @@ export function ChartsActionBar({
           aria-describedby={missingMaster ? 'charts-actions-blocked' : undefined}
         >
           ORCA 送信
+        </button>
+        <button
+          type="button"
+          className="charts-actions__button"
+          disabled={sendBlocked}
+          onClick={handlePrint}
+          aria-disabled={sendBlocked}
+        >
+          印刷 (監査記録)
         </button>
         <button
           type="button"
