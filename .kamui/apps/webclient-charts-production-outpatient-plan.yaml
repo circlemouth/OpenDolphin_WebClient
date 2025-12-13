@@ -147,9 +147,10 @@ src:
           - Charts 内のアクション（診療終了/ORCA送信/患者編集/印刷）を権限でガードし、権限不足は disabled＋理由（ツールチップ/aria-describedby）で提示する。
           - セッション切れ/施設不一致/ユーザー変更時に、Charts の状態（runId、選択患者、ドラフト）を安全に破棄してログアウトへ誘導する。
           - 監査上の “誰が・いつ・どの runId で” を UI に必ず表示できるよう、Topbar/ヘッダの表示要件を確定する。
+          - RUN_ID=`20251213T000432Z`。証跡: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api:
           - "/user/{facility:user}"
@@ -157,8 +158,8 @@ src:
         dependency:
           - src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md
         schedule:
-          start: 2025-12-22T00:00:00.000Z
-          days: 2
+          start: 2025-12-13T00:04:32.000Z
+          days: 0.5
       11_監査ログauditEvent統一.md:
         content: |-
           # 11 監査ログ（auditEvent）統一
