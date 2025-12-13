@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .trophy { font-size: 22px; font-weight: 800; margin-right: 6px; }
+      .score-big { font-size: 22px; font-weight: 700; color: #1f2a30; }
+      .hex-chart { width: 100%; max-width: 320px; height: 200px; margin-bottom: 12px; }
+      .metric-label { font-size: 11px; fill: #1f2a30; text-anchor: middle; }
+      .metric-score { font-weight: 700; }
+      .pill { display: inline-block; padding: 2px 8px; font-size: 11px; border-radius: 10px; border: 1px solid #c4d3d7; margin-right: 6px; }
+      .issue { margin: 0 0 6px 0; }
+      .snapshot { margin-top: 10px; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 10px; font-size: 12px; }
+      ul { margin: 8px 0 0 16px; padding: 0; }
+      li { margin-bottom: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Charts 外来エラーハンドリング規約（比較評価）</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765631088511-7223b4, task/task-1765631088712-39f1e5, task/task-1765631088908-56f40a。タスク: 12 エラーハンドリングとリトライ規約（YAML ID: src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md）。</p>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor cli / task-1765631088511-7223b4</th>
+            <th>cursor cli / task-1765631088712-39f1e5</th>
+            <th>cursor cli / task-1765631088908-56f40a</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-13 22:25</td>
+            <td>
+              <div class="agent-meta"><span class="trophy">🏆</span><span class="score-big">543 / 600</span>（🥇 91点）</div>
+              <svg class="hex-chart" viewBox="0 0 200 180" aria-label="六角形チャート">
+                <polygon points="100,10 180,55 180,125 100,170 20,125 20,55" fill="#e8f4ff" stroke="#5b8def" stroke-width="2" />
+                <text class="metric-label" x="100" y="28">機能合理性 90</text>
+                <text class="metric-label" x="160" y="70">緻密性 92</text>
+                <text class="metric-label" x="160" y="135">一貫性 90</text>
+                <text class="metric-label" x="100" y="158">実装容易性 88</text>
+                <text class="metric-label" x="40" y="135">監査/テレメトリ 93</text>
+                <text class="metric-label" x="40" y="70">リスク低減 90</text>
+              </svg>
+              <div class="pill">RUN_ID 20251213T121500Z</div><div class="pill">commit 853abb4d</div>
+              <p class="snapshot">Charts API 失敗のトーン/aria/再取得導線を系統化し、missingMaster/fallback ブロックや ErrorBoundary と部分失敗の分担を具体的に規定。監査/telemetry キーの列挙と実装箇所メモまでカバーし、運用視点の再現性が高い。</p>
+              <ul>
+                <li class="issue">強み: 失敗タイプ別の表が具体的（timeout/5xx/4xx/schema）で UI, retry, audit を一列に整理。missingMaster/fallback の解除条件と CTA を明確化。</li>
+                <li class="issue">強み: Telemetry/Audit の必須フィールド、`ToneBanner`/`queryClient.refetchQueries` など実装踏み込みメモあり。</li>
+                <li class="issue">懸念: 自動リトライ上限や cooldown のパラメータは触れているが、実装値の根拠が弱め。</li>
+                <li class="issue">懸念: ErrorBoundary の data-testid 指定以外に fallback UI の文言例が無く、E2E の期待文言が不明。</li>
+              </ul>
+              <p class="snapshot">主要差分: docs/web-client/README.md, DOC_STATUS.md 更新、ログ 20251213T121500Z-charts-error-handling.md 追加、規約本文 12_エラーハンドリングとリトライ規約.md 追加。</p>
+              <p class="snapshot">成果物: src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md（本番外来向けエラーハンドリング規約）。</p>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="trophy">🥈</span><span class="score-big">522 / 600</span>（🥈 87点）</div>
+              <svg class="hex-chart" viewBox="0 0 200 180" aria-label="六角形チャート">
+                <polygon points="100,10 180,55 180,125 100,170 20,125 20,55" fill="#f5f1ff" stroke="#a06cf5" stroke-width="2" />
+                <text class="metric-label" x="100" y="28">機能合理性 88</text>
+                <text class="metric-label" x="160" y="70">緻密性 86</text>
+                <text class="metric-label" x="160" y="135">一貫性 88</text>
+                <text class="metric-label" x="100" y="158">実装容易性 85</text>
+                <text class="metric-label" x="40" y="135">監査/テレメトリ 89</text>
+                <text class="metric-label" x="40" y="70">リスク低減 86</text>
+              </svg>
+              <div class="pill">RUN_ID 20251213T130851Z</div><div class="pill">commit 8bfdf4a7</div>
+              <p class="snapshot">エラーを5系列に分類し ToneBanner/aria/CTA を標準化。missingMaster/fallback ブロックと ErrorBoundary/部分失敗の使い分けを定義し、実装予定コンポーネント（useOutpatientApiError, ToneBanner variant）を提示。</p>
+              <ul>
+                <li class="issue">強み: 5系列分類と CTA 定義が簡潔で読みやすい。block 条件と data 属性指定が示されている。</li>
+                <li class="issue">強み: GET 自動1リトライと POST 手動のみ等の方針が短くまとまる。</li>
+                <li class="issue">懸念: テーブル内の 422/スキーマ不一致は audit 項目が軽く、デバッグ導線が不足。</li>
+                <li class="issue">懸念: ポーリング/手動再取得のバックオフやしきい値記述が簡略で、運用パラメータが不明確。</li>
+              </ul>
+              <p class="snapshot">主要差分: docs/web-client/README.md, DOC_STATUS.md 更新、ログ 20251213T130851Z-charts-error-handling-retry.md 追加、規約本文 12_エラーハンドリングとリトライ規約.md 追加。</p>
+              <p class="snapshot">成果物: src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md（エラー系列統一版）。</p>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="trophy">🥈</span><span class="score-big">504 / 600</span>（🥈 84点）</div>
+              <svg class="hex-chart" viewBox="0 0 200 180" aria-label="六角形チャート">
+                <polygon points="100,10 180,55 180,125 100,170 20,125 20,55" fill="#fff3e8" stroke="#f59b3d" stroke-width="2" />
+                <text class="metric-label" x="100" y="28">機能合理性 85</text>
+                <text class="metric-label" x="160" y="70">緻密性 84</text>
+                <text class="metric-label" x="160" y="135">一貫性 84</text>
+                <text class="metric-label" x="100" y="158">実装容易性 83</text>
+                <text class="metric-label" x="40" y="135">監査/テレメトリ 84</text>
+                <text class="metric-label" x="40" y="70">リスク低減 84</text>
+              </svg>
+              <div class="pill">RUN_ID 20251213T130817Z</div><div class="pill">commit f74a3274</div>
+              <p class="snapshot">ToneBanner＋再取得/戻るの統一、missingMaster/fallback ブロック、Boundary/部分失敗の分離を整理。audit/telemetry を共通フォーマットに揃える方針を示すが、パラメータや実装指針の粒度がやや粗い。</p>
+              <ul>
+                <li class="issue">強み: バナー aria/role 指定や data-reason 付与などアクセシビリティ配慮を明示。</li>
+                <li class="issue">強み: スキーマ不一致時の UI とデバッグ情報コピー導線を含む。</li>
+                <li class="issue">懸念: Retry バックオフ・上限、ポーリング停止条件など数値条件が不足。</li>
+                <li class="issue">懸念: ErrorBoundary の発火条件が広く、パネル部分失敗との境界が曖昧になるリスク。</li>
+              </ul>
+              <p class="snapshot">主要差分: docs/web-client/README.md, DOC_STATUS.md 更新、ログ 20251213T130817Z-charts-error-handling-retry.md 追加、規約本文 12_エラーハンドリングとリトライ規約.md 追加。</p>
+              <p class="snapshot">成果物: src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md（Boundary/部分失敗強調版）。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top:16px; font-size:13px; color:#3a4b53;">総括: 121500Z 版が最も運用導線と監査要件が揃っており、DoD の網羅性が高い。130851Z 版は簡潔で導入しやすいが運用パラメータが薄い。130817Z 版はアクセシビリティ記述が充実する一方でリトライ条件が不足。</p>
+    </div>
+  </body>
+</html>
