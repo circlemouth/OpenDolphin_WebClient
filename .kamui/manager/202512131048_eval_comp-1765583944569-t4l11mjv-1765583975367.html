@@ -1,0 +1,308 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+      }
+      .scorecard {
+        padding: 12px 14px;
+        border: 1px solid #c4d3d7;
+        border-radius: 10px;
+        background: #f7fbfc;
+      }
+      .scorecard__title {
+        font-weight: 700;
+        font-size: 14px;
+        margin-bottom: 4px;
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .scorecard__score {
+        font-size: 22px;
+        font-weight: 800;
+        color: #0f172a;
+      }
+      .scorecard__note {
+        font-size: 12px;
+        color: #475569;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        border-radius: 6px;
+      }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .status-badge--in-progress { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--planning { background: #fff4d9; border-color: #f5e8b8; }
+      .status-badge--ok { background: #d1fae5; border-color: #a7f3d0; }
+      .agent-meta { display: block; margin-bottom: 10px; line-height: 1.5; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .radar { display: flex; gap: 10px; align-items: center; margin-bottom: 10px; }
+      .radar svg { width: 150px; height: 150px; }
+      .radar polygon.base { fill: none; stroke: #c4d3d7; stroke-width: 1; }
+      .radar polygon.value { fill: rgba(14,165,233,0.18); stroke: #0ea5e9; stroke-width: 2; }
+      .radar .metrics { font-size: 12px; line-height: 1.4; }
+      .findings { font-size: 13px; margin: 0; padding-left: 16px; }
+      .findings li { margin-bottom: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">監視対象ブランチ（task/task-1765583944571-bd0000, task/task-1765583944771-c3f813, task/task-1765583944970-c10851）の最新コミットと差分を精査。合計点は6指標×100点の600点満点。</p>
+        <div class="scoreboard">
+          <div class="scorecard">
+            <div class="scorecard__title">task/task-1765583944970-c10851 <span>🏆</span></div>
+            <div class="scorecard__score">549 / 600</div>
+            <div class="scorecard__note">medal: gold / doc整合性と要件充足が高水準</div>
+          </div>
+          <div class="scorecard">
+            <div class="scorecard__title">task/task-1765583944771-c3f813 <span>🥈</span></div>
+            <div class="scorecard__score">437 / 600</div>
+            <div class="scorecard__note">medal: silver / 計画ドキュメントは良好だがRUN_ID同期に揺らぎ</div>
+          </div>
+          <div class="scorecard">
+            <div class="scorecard__title">task/task-1765583944571-bd0000 <span>失格</span></div>
+            <div class="scorecard__score">95 / 600</div>
+            <div class="scorecard__note">UTF-8破損による文字化けで主要UIが読めず要件未達</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765583944571-bd0000</th>
+            <th>Agent task-1765583944771-c3f813</th>
+            <th>Agent task-1765583944970-c10851</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-13 10:48</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">要修正</span>
+                <span class="agent-label">最新コミット: 816e44c9 (Add charts session/permission guard, RUN_ID=20251213T000320Z)</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 150 150" aria-label="六角チャート">
+                  <polygon class="base" points="75,15 126.96,45 126.96,105 75,135 23.04,105 23.04,45" />
+                  <polygon class="value" points="75,60 85.4,69 80.2,78 75,87 72.4,76.5 67.2,70.5" />
+                </svg>
+                <div class="metrics">
+                  <div>要件適合度 25点</div>
+                  <div>コード品質 20点</div>
+                  <div>アクセシビリティ 10点</div>
+                  <div>監査・テレメトリ 20点</div>
+                  <div>ドキュメント整合 5点</div>
+                  <div>リスク管理 15点</div>
+                </div>
+              </div>
+              <ul class="findings">
+                <li>主要UI/ドキュメントが文字化け（例: <code>web-client/src/features/charts/ChartsActionBar.tsx</code>, <code>web-client/src/features/charts/PatientsTab.tsx</code>, <code>docs/web-client/planning/phase2/DOC_STATUS.md</code>）。UTF-8保存ルール違反でラベル・aria-label・ステータスが判読不能。</li>
+                <li>セッションガードは dev 用 localStorage 値の差異で強制発火し、API 401/403 や facility mismatch を検知しないまま <code>bumpRunId(session.runId)</code> を呼ぶだけでログアウト連動なし。選択患者/ドラフト破棄やキャッシュクリア手順も未整備。</li>
+                <li>権限ガードは <code>resolveChartPermissions</code> を導入したが、印刷アクションは実装なし・トースト/タイトルも文字化け、unlock ボタンは guardReason で常時無効化されるなど UX/監査要件を満たさない。テストや Playwright シナリオ追加もなし。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/ログ詳細</summary>
+                <pre>git diff --stat master...task/task-1765583944571-bd0000
+- 9 files changed, 619 insertions(+), 211 deletions(-)
+- 文字化けが全体に波及（DOC_STATUS, ChartsActionBar, PatientsTab など）
+</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--planning">計画ドキュメント</span>
+                <span class="agent-label">最新コミット: 41f3e057 (Add charts session and permission guard plan, RUN_ID=20251213T000446Z)</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 150 150" aria-label="六角チャート">
+                  <polygon class="base" points="75,15 126.96,45 126.96,105 75,135 23.04,105 23.04,45" />
+                  <polygon class="value" points="75,27 111.4,54 111.4,96 75,114 32.4,99.6 38.6,54" />
+                </svg>
+                <div class="metrics">
+                  <div>要件適合度 80点</div>
+                  <div>コード品質 70点</div>
+                  <div>アクセシビリティ 70点</div>
+                  <div>監査・テレメトリ 65点</div>
+                  <div>ドキュメント整合 82点</div>
+                  <div>リスク管理 70点</div>
+                </div>
+              </div>
+              <ul class="findings">
+                <li>セッション/権限ガード方針を整理し、成果物 <code>src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md</code> と証跡ログ <code>docs/web-client/planning/phase2/logs/20251213T000446Z-charts-session-permission.md</code> を追加。</li>
+                <li>README や DOC_STATUS に項目追加はあるが、RUN_ID 見出しが <code>20251212T143720Z</code> のまま、先頭に BOM を含むなどチェーン同期が不完全。</li>
+                <li>実装差分なしのため実装達成度は未評価。次段では RUN_ID の最新化と manager checklist との整合確認が必要。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/ログ詳細</summary>
+                <pre>git diff --stat master...task/task-1765583944771-c3f813
+- docs/web-client/README.md (BOM混入) ほか 4ファイルで計 87行追加/2行削除
+</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--ok">良好</span>
+                <span class="agent-label">最新コミット: 7dcebf5d (Add charts session and permission guard plan, RUN_ID=20251213T000432Z)</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 150 150" aria-label="六角チャート">
+                  <polygon class="base" points="75,15 126.96,45 126.96,105 75,135 23.04,105 23.04,45" />
+                  <polygon class="value" points="75,18 120.73,48.6 121.76,102 75,129 25.18,103.8 28.24,48" />
+                </svg>
+                <div class="metrics">
+                  <div>要件適合度 95点</div>
+                  <div>コード品質 88点</div>
+                  <div>アクセシビリティ 90点</div>
+                  <div>監査・テレメトリ 90点</div>
+                  <div>ドキュメント整合 96点</div>
+                  <div>リスク管理 90点</div>
+                </div>
+              </div>
+              <ul class="findings">
+                <li>RUN_ID を最新化したうえで README, DOC_STATUS, 証跡ログ <code>docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md</code> を同期。計画ドキュメント <code>src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md</code> が整備され、Topbar/権限ガード/セッション破棄の要件が明確。</li>
+                <li>コード差分なしのため実装リスクは発生していないが、次段での実装に向けテレメトリ・監査項目を具体的に書き下している点は評価。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/ログ詳細</summary>
+                <pre>git diff --stat master...task/task-1765583944970-c10851
+- 4 files changed, 126 insertions(+), 9 deletions(-)
+- RUN_ID を 20251213T000432Z に更新し、計画/証跡を追加</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
