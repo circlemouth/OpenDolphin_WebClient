@@ -1,66 +1,81 @@
-import { httpFetch } from '../../libs/http/httpClient';
-import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
-import type { DataSourceTransition } from '../../libs/observability/types';
+import type { QueryFunctionContext } from '@tanstack/react-query';
 
-export type OrcaOutpatientSummary = {
-  runId?: string;
-  dataSourceTransition?: DataSourceTransition;
-  cacheHit?: boolean;
-  missingMaster?: boolean;
-  fallbackUsed?: boolean;
-  fetchedAt?: string;
-  recordsReturned?: number;
-  note?: string;
-  payload?: Record<string, unknown>;
-};
+import { logUiState } from '../../libs/audit/auditLogger';
+import { updateObservabilityMeta } from '../../libs/observability/observability';
+import type { DataSourceTransition, ResolveMasterSource } from '../../libs/observability/types';
+import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { fetchWithResolver } from '../outpatient/fetchWithResolver';
+import { mergeOutpatientMeta } from '../outpatient/transformers';
+import type { OrcaOutpatientSummary } from '../outpatient/types';
+export type { OrcaOutpatientSummary } from '../outpatient/types';
 
-const orcaSummaryCandidates = ['/orca21/medicalmodv2/outpatient'];
+const orcaSummaryCandidates = [
+  { path: '/orca21/medicalmodv2/outpatient', source: 'server' as ResolveMasterSource },
+  { path: '/orca21/medicalmodv2/outpatient/mock', source: 'mock' as ResolveMasterSource },
+];
 
-const normalizeBoolean = (value: unknown) => {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') return value === 'true';
-  return undefined;
-};
+const preferredSource = (): ResolveMasterSource | undefined =>
+  import.meta.env.VITE_DISABLE_MSW === '1' ? 'server' : undefined;
 
-const tryFetchJson = async (paths: string[], body: Record<string, unknown>) => {
-  for (const path of paths) {
-    try {
-      const response = await httpFetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) continue;
-      const data = await response.json().catch(() => undefined);
-      return { data, path };
-    } catch (error) {
-      console.warn('[charts] fetch failed for', path, error);
-    }
-  }
-  return undefined;
-};
+const resolvedDataSource = (transition?: DataSourceTransition, fallback?: ResolveMasterSource): ResolveMasterSource | undefined =>
+  (transition as ResolveMasterSource | undefined) ?? fallback;
 
-export async function fetchOrcaOutpatientSummary(): Promise<OrcaOutpatientSummary> {
-  const result = await tryFetchJson(orcaSummaryCandidates, {});
-  const json = (result?.data as Record<string, unknown>) ?? {};
-  const payload = typeof json === 'object' && json ? json : {};
-  const runId = (payload.runId as string | undefined) ?? getObservabilityMeta().runId;
-  const records = Array.isArray((payload as Record<string, unknown>)?.outpatientList)
-    ? ((payload as Record<string, unknown>).outpatientList as unknown[]).length
+export async function fetchOrcaOutpatientSummary(context?: QueryFunctionContext): Promise<OrcaOutpatientSummary> {
+  const result = await fetchWithResolver({
+    candidates: orcaSummaryCandidates,
+    queryContext: context,
+    preferredSource: preferredSource(),
+    description: 'medical_outpatient_summary',
+  });
+
+  const payload = (result.raw as Record<string, unknown>) ?? {};
+  const recordsReturned = Array.isArray((payload as any)?.outpatientList)
+    ? ((payload as any).outpatientList as unknown[]).length
     : typeof payload.recordsReturned === 'number'
       ? (payload.recordsReturned as number)
       : undefined;
+
+  const meta = mergeOutpatientMeta(payload, {
+    ...result.meta,
+    recordsReturned,
+    resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
+  });
+
   const summary: OrcaOutpatientSummary = {
-    runId,
-    dataSourceTransition: payload.dataSourceTransition as DataSourceTransition | undefined,
-    cacheHit: normalizeBoolean(payload.cacheHit),
-    missingMaster: normalizeBoolean(payload.missingMaster),
-    fallbackUsed: normalizeBoolean(payload.fallbackUsed),
-    fetchedAt: (payload.fetchedAt as string | undefined) ?? (payload.timestamp as string | undefined),
-    recordsReturned: records,
+    ...meta,
     note: typeof payload.apiResultMessage === 'string' ? (payload.apiResultMessage as string) : undefined,
     payload,
   };
+
+  recordOutpatientFunnel('charts_orchestration', {
+    runId: summary.runId,
+    cacheHit: summary.cacheHit ?? result.meta.fromCache ?? false,
+    missingMaster: summary.missingMaster ?? false,
+    dataSourceTransition: summary.dataSourceTransition ?? 'snapshot',
+    fallbackUsed: summary.fallbackUsed ?? false,
+    action: 'medical_fetch',
+    outcome: result.ok ? 'success' : 'error',
+    note: summary.sourcePath,
+  });
+
+  logUiState({
+    action: 'outpatient_fetch',
+    screen: 'charts',
+    runId: summary.runId,
+    cacheHit: summary.cacheHit ?? result.meta.fromCache,
+    missingMaster: summary.missingMaster,
+    dataSourceTransition: summary.dataSourceTransition,
+    fallbackUsed: summary.fallbackUsed,
+    details: {
+      endpoint: summary.sourcePath ?? result.meta.sourcePath,
+      fetchedAt: summary.fetchedAt,
+      recordsReturned: summary.recordsReturned,
+      resolveMasterSource: summary.resolveMasterSource,
+      fromCache: result.meta.fromCache,
+      retryCount: result.meta.retryCount,
+      description: 'medical_outpatient_summary',
+    },
+  });
 
   updateObservabilityMeta({
     runId: summary.runId,
@@ -68,6 +83,8 @@ export async function fetchOrcaOutpatientSummary(): Promise<OrcaOutpatientSummar
     missingMaster: summary.missingMaster,
     dataSourceTransition: summary.dataSourceTransition,
     fallbackUsed: summary.fallbackUsed,
+    fetchedAt: summary.fetchedAt,
+    recordsReturned: summary.recordsReturned,
   });
 
   return summary;

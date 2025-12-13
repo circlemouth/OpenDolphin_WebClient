@@ -1,6 +1,6 @@
 import { Global } from '@emotion/react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
@@ -123,6 +123,7 @@ export function ReceptionPage({
   description = '外来請求/予約 API を React Query で取得し、missingMaster・cacheHit・dataSourceTransition をトーンバナーとリストへ反映します。行をダブルクリックすると同じ RUN_ID で Charts へ遷移します。',
 }: ReceptionPageProps) {
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
   const { broadcast } = useAdminBroadcast();
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
@@ -144,22 +145,36 @@ export function ReceptionPage({
   }>({});
   const lastAuditEventHash = useRef<string>();
 
+  const claimQueryKey = ['outpatient-claim-flags'];
   const claimQuery = useQuery({
-    queryKey: ['outpatient-claim-flags'],
-    queryFn: fetchClaimFlags,
+    queryKey: claimQueryKey,
+    queryFn: (context) => fetchClaimFlags(context),
     refetchInterval: 90_000,
+    staleTime: 90_000,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(claimQueryKey)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(claimQueryKey)?.fetchFailureCount ?? 0,
+    },
   });
 
+  const appointmentQueryKey = ['outpatient-appointments', selectedDate, submittedKeyword, departmentFilter, physicianFilter];
   const appointmentQuery = useQuery({
-    queryKey: ['outpatient-appointments', selectedDate, submittedKeyword, departmentFilter, physicianFilter],
-    queryFn: () =>
-      fetchAppointmentOutpatients({
-        date: selectedDate,
-        keyword: submittedKeyword,
-        departmentCode: departmentFilter || undefined,
-        physicianCode: physicianFilter || undefined,
-      }),
+    queryKey: appointmentQueryKey,
+    queryFn: (context) =>
+      fetchAppointmentOutpatients(
+        {
+          date: selectedDate,
+          keyword: submittedKeyword,
+          departmentCode: departmentFilter || undefined,
+          physicianCode: physicianFilter || undefined,
+        },
+        context,
+      ),
     refetchOnWindowFocus: false,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(appointmentQueryKey)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(appointmentQueryKey)?.fetchFailureCount ?? 0,
+    },
   });
 
   useEffect(() => {
