@@ -1,6 +1,6 @@
 import { Global } from '@emotion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 
 import { AuthServiceControls } from '../AuthServiceControls';
@@ -30,6 +30,7 @@ export function ChartsPage() {
 
 function ChartsContent() {
   const { flags, setCacheHit, setDataSourceTransition, setMissingMaster, setFallbackUsed, bumpRunId } = useAuthService();
+  const queryClient = useQueryClient();
   const location = useLocation();
   const navigationState = (location.state as { patientId?: string; appointmentId?: string } | null) ?? {};
   const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>(navigationState.patientId);
@@ -46,22 +47,39 @@ function ChartsContent() {
   }>({});
   const { broadcast } = useAdminBroadcast();
 
+  const claimQueryKey = ['charts-claim-flags'];
   const claimQuery = useQuery({
-    queryKey: ['charts-claim-flags'],
-    queryFn: fetchClaimFlags,
+    queryKey: claimQueryKey,
+    queryFn: (context) => fetchClaimFlags(context),
     refetchInterval: 120_000,
+    staleTime: 120_000,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(claimQueryKey)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(claimQueryKey)?.fetchFailureCount ?? 0,
+    },
   });
 
+  const appointmentQueryKey = ['charts-appointments', today];
   const appointmentQuery = useQuery({
-    queryKey: ['charts-appointments', today],
-    queryFn: () => fetchAppointmentOutpatients({ date: today }),
+    queryKey: appointmentQueryKey,
+    queryFn: (context) => fetchAppointmentOutpatients({ date: today }, context),
     refetchOnWindowFocus: false,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(appointmentQueryKey)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(appointmentQueryKey)?.fetchFailureCount ?? 0,
+    },
   });
 
+  const orcaSummaryQueryKey = ['orca-outpatient-summary', flags.runId];
   const orcaSummaryQuery = useQuery({
-    queryKey: ['orca-outpatient-summary', flags.runId],
-    queryFn: fetchOrcaOutpatientSummary,
+    queryKey: orcaSummaryQueryKey,
+    queryFn: (context) => fetchOrcaOutpatientSummary(context),
     refetchInterval: 120_000,
+    staleTime: 120_000,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(orcaSummaryQueryKey)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(orcaSummaryQueryKey)?.fetchFailureCount ?? 0,
+    },
   });
 
   const mergedFlags = useMemo(() => {
@@ -97,6 +115,12 @@ function ChartsContent() {
     orcaSummaryQuery.data?.runId,
     orcaSummaryQuery.data?.fallbackUsed,
   ]);
+
+  const resolvedRunId = mergedFlags.runId ?? flags.runId;
+  const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
+  const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
+  const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
+  const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
 
   useEffect(() => {
     const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedFlags;
@@ -154,12 +178,6 @@ function ChartsContent() {
     }
     return mergedFlags.auditEvent;
   }, [auditEvents, mergedFlags.auditEvent, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition]);
-
-  const resolvedRunId = mergedFlags.runId ?? flags.runId;
-  const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
-  const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
-  const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
-  const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
 
   return (
     <main className="charts-page" data-run-id={flags.runId} aria-busy={lockState.locked}>

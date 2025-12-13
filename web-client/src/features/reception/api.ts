@@ -1,56 +1,19 @@
-import { httpFetch } from '../../libs/http/httpClient';
-import { getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
-import type { DataSourceTransition } from '../../libs/observability/types';
+import type { QueryFunctionContext } from '@tanstack/react-query';
 
-export type ReceptionStatus = '受付中' | '診療中' | '会計待ち' | '会計済み' | '予約';
-
-export type ReceptionEntry = {
-  id: string;
-  appointmentId?: string;
-  patientId?: string;
-  name?: string;
-  kana?: string;
-  birthDate?: string;
-  sex?: string;
-  department?: string;
-  physician?: string;
-  appointmentTime?: string;
-  visitDate?: string;
-  status: ReceptionStatus;
-  insurance?: string;
-  note?: string;
-  source: 'slots' | 'reservations' | 'visits' | 'unknown';
-};
-
-export type OutpatientFlagResponse = {
-  runId?: string;
-  dataSourceTransition?: DataSourceTransition;
-  cacheHit?: boolean;
-  missingMaster?: boolean;
-  fallbackUsed?: boolean;
-  fetchedAt?: string;
-  recordsReturned?: number;
-  auditEvent?: Record<string, unknown>;
-};
+import { logUiState } from '../../libs/audit/auditLogger';
+import { updateObservabilityMeta } from '../../libs/observability/observability';
+import type { DataSourceTransition, ResolveMasterSource } from '../../libs/observability/types';
+import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { fetchWithResolver } from '../outpatient/fetchWithResolver';
+import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries } from '../outpatient/transformers';
+import type { AppointmentPayload, OutpatientFlagResponse, ReceptionEntry, ReceptionStatus } from '../outpatient/types';
+export type { ReceptionEntry, ReceptionStatus, OutpatientFlagResponse, AppointmentPayload } from '../outpatient/types';
 
 export type AppointmentQueryParams = {
   date: string;
   keyword?: string;
   departmentCode?: string;
   physicianCode?: string;
-};
-
-export type AppointmentPayload = {
-  entries: ReceptionEntry[];
-  raw: unknown;
-  runId?: string;
-  apiResult?: string;
-  apiResultMessage?: string;
-  cacheHit?: boolean;
-  missingMaster?: boolean;
-  dataSourceTransition?: DataSourceTransition;
-  fetchedAt?: string;
-  fallbackUsed?: boolean;
 };
 
 const SAMPLE_APPOINTMENTS: ReceptionEntry[] = [
@@ -104,202 +67,158 @@ const SAMPLE_APPOINTMENTS: ReceptionEntry[] = [
   },
 ];
 
-const claimCandidates = ['/api01rv2/claim/outpatient/mock', '/api01rv2/claim/outpatient'];
-const appointmentCandidates = [
-  '/api01rv2/appointment/outpatient/list',
-  '/api01rv2/appointment/outpatient',
-  '/api01rv2/appointment/outpatient/mock',
+const claimCandidates = [
+  { path: '/api01rv2/claim/outpatient/mock', source: 'mock' as ResolveMasterSource },
+  { path: '/api01rv2/claim/outpatient', source: 'server' as ResolveMasterSource },
 ];
 
-const normalizeBoolean = (value: unknown) => {
-  if (typeof value === 'boolean') return value;
-  if (typeof value === 'string') return value === 'true';
-  return undefined;
-};
+const appointmentCandidates = [
+  { path: '/api01rv2/appointment/outpatient/list', source: 'server' as ResolveMasterSource },
+  { path: '/api01rv2/appointment/outpatient', source: 'server' as ResolveMasterSource },
+  { path: '/api01rv2/appointment/outpatient/mock', source: 'mock' as ResolveMasterSource },
+];
 
-const deriveStatus = (payload: {
-  visitInformation?: string;
-  updateTime?: string;
-  appointmentDate?: string;
-  appointmentTime?: string;
-}): ReceptionStatus => {
-  const info = payload.visitInformation ?? '';
-  if (info.includes('会計済')) return '会計済み';
-  if (info.includes('会計') || info.includes('精算')) return '会計待ち';
-  if (info.includes('診察') || info.includes('診療') || info.includes('処置')) return '診療中';
-  if (info.includes('予約')) return '予約';
-  if (payload.appointmentDate && payload.appointmentTime) {
-    return '予約';
-  }
-  return '受付中';
-};
+const preferredSource = (): ResolveMasterSource | undefined =>
+  import.meta.env.VITE_DISABLE_MSW === '1' ? 'server' : undefined;
 
-const toDisplayTime = (date?: string, time?: string) => {
-  if (!time) return '';
-  if (time.length === 4) {
-    return `${time.slice(0, 2)}:${time.slice(2)}`;
-  }
-  if (time.length === 6) {
-    return `${time.slice(0, 2)}:${time.slice(2, 4)}`;
-  }
-  if (date && time.includes('T')) {
-    const [, t] = time.split('T');
-    return t?.slice(0, 5) ?? time;
-  }
-  return time;
-};
+const resolvedDataSource = (transition?: DataSourceTransition, fallback?: ResolveMasterSource): ResolveMasterSource | undefined =>
+  (transition as ResolveMasterSource | undefined) ?? fallback;
 
-const buildEntryId = (candidate?: string, fallback?: string) =>
-  candidate?.trim() || fallback || `R-${Math.random().toString(36).slice(2, 8)}`;
-
-const parseAppointmentPayload = (json: any): ReceptionEntry[] => {
-  const entries: ReceptionEntry[] = [];
-
-  const slots: any[] = Array.isArray(json?.slots) ? json.slots : [];
-  slots.forEach((slot, index) => {
-    const patient = slot.patient ?? {};
-    entries.push({
-      id: buildEntryId(slot.appointmentId, `slot-${index}`),
-      appointmentId: slot.appointmentId,
-      patientId: patient.patientId,
-      name: patient.wholeName,
-      kana: patient.wholeNameKana,
-      birthDate: patient.birthDate,
-      sex: patient.sex,
-      department: slot.departmentName ?? slot.departmentCode,
-      physician: slot.physicianName ?? slot.physicianCode,
-      appointmentTime: toDisplayTime(json?.appointmentDate, slot.appointmentTime),
-      status: deriveStatus({ visitInformation: slot.visitInformation, appointmentDate: json?.appointmentDate, appointmentTime: slot.appointmentTime }),
-      note: slot.medicalInformation,
-      source: 'slots',
-    });
+export async function fetchAppointmentOutpatients(
+  params: AppointmentQueryParams,
+  context?: QueryFunctionContext,
+): Promise<AppointmentPayload> {
+  const result = await fetchWithResolver({
+    candidates: appointmentCandidates,
+    body: {
+      appointmentDate: params.date,
+      keyword: params.keyword,
+      departmentCode: params.departmentCode,
+      physicianCode: params.physicianCode,
+    },
+    queryContext: context,
+    preferredSource: preferredSource(),
+    description: 'appointment_outpatient',
   });
 
-  const reservations: any[] = Array.isArray(json?.reservations) ? json.reservations : [];
-  reservations.forEach((reservation, index) => {
-    entries.push({
-      id: buildEntryId(reservation.appointmentId, `reservation-${index}`),
-      appointmentId: reservation.appointmentId,
-      patientId: json?.patient?.patientId,
-      name: json?.patient?.wholeName,
-      kana: json?.patient?.wholeNameKana,
-      birthDate: json?.patient?.birthDate,
-      sex: json?.patient?.sex,
-      department: reservation.departmentName ?? reservation.departmentCode,
-      physician: reservation.physicianName ?? reservation.physicianCode,
-      appointmentTime: toDisplayTime(reservation.appointmentDate, reservation.appointmentTime),
-      status: deriveStatus({
-        visitInformation: reservation.visitInformation,
-        appointmentDate: reservation.appointmentDate,
-        appointmentTime: reservation.appointmentTime,
-      }),
-      note: reservation.appointmentNote,
-      source: 'reservations',
-    });
+  const json = result.raw ?? {};
+  const entries = parseAppointmentEntries(json);
+  const resolvedEntries = entries.length > 0 ? entries : SAMPLE_APPOINTMENTS;
+  const mergedMeta = mergeOutpatientMeta(json, {
+    ...result.meta,
+    recordsReturned: entries.length > 0 ? entries.length : undefined,
+    resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
   });
 
-  const visits: any[] = Array.isArray(json?.visits) ? json.visits : [];
-  visits.forEach((visit, index) => {
-    const patient = visit.patient ?? {};
-    entries.push({
-      id: buildEntryId(visit.voucherNumber, `visit-${index}`),
-      appointmentId: visit.sequentialNumber,
-      patientId: patient.patientId,
-      name: patient.wholeName,
-      kana: patient.wholeNameKana,
-      birthDate: patient.birthDate,
-      sex: patient.sex,
-      department: visit.departmentName ?? visit.departmentCode,
-      physician: visit.physicianName ?? visit.physicianCode,
-      appointmentTime: toDisplayTime(json?.visitDate, visit.updateTime ?? visit.appointmentTime),
-      status: deriveStatus({
-        visitInformation: visit.visitInformation,
-        appointmentDate: json?.visitDate,
-        appointmentTime: visit.updateTime,
-      }),
-      insurance: visit.insuranceCombinationNumber,
-      source: 'visits',
-    });
+  const payload: AppointmentPayload = attachAppointmentMeta(
+    {
+      entries: resolvedEntries,
+      raw: json,
+      apiResult: (json as any).apiResult,
+      apiResultMessage: (json as any).apiResultMessage,
+    },
+    mergedMeta,
+  );
+
+  recordOutpatientFunnel('charts_orchestration', {
+    runId: payload.runId,
+    cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
+    missingMaster: payload.missingMaster ?? false,
+    dataSourceTransition: payload.dataSourceTransition ?? 'snapshot',
+    fallbackUsed: payload.fallbackUsed ?? false,
+    action: 'appointment_fetch',
+    outcome: result.ok ? 'success' : 'error',
+    note: payload.sourcePath,
   });
 
-  return entries;
-};
-
-const tryFetchJson = async (paths: string[], body: Record<string, unknown>) => {
-  for (const path of paths) {
-    try {
-      const response = await httpFetch(path, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      if (!response.ok) continue;
-      const data = await response.json().catch(() => undefined);
-      return { data, path };
-    } catch (error) {
-      console.warn('[reception] fetch failed for', path, error);
-    }
-  }
-  return undefined;
-};
-
-export async function fetchAppointmentOutpatients(params: AppointmentQueryParams): Promise<AppointmentPayload> {
-  const today = params.date;
-  const result = await tryFetchJson(appointmentCandidates, {
-    appointmentDate: today,
-    keyword: params.keyword,
-    departmentCode: params.departmentCode,
-    physicianCode: params.physicianCode,
+  logUiState({
+    action: 'outpatient_fetch',
+    screen: 'reception',
+    runId: payload.runId,
+    cacheHit: payload.cacheHit ?? result.meta.fromCache,
+    missingMaster: payload.missingMaster,
+    dataSourceTransition: payload.dataSourceTransition,
+    fallbackUsed: payload.fallbackUsed,
+    details: {
+      endpoint: payload.sourcePath ?? result.meta.sourcePath,
+      fetchedAt: payload.fetchedAt,
+      recordsReturned: payload.recordsReturned,
+      resolveMasterSource: payload.resolveMasterSource,
+      fromCache: result.meta.fromCache,
+      retryCount: result.meta.retryCount,
+      description: 'appointment_outpatient',
+    },
   });
-
-  const json = result?.data ?? {};
-  const entries = parseAppointmentPayload(json);
-  const runId = json.runId ?? getObservabilityMeta().runId;
-  const meta: AppointmentPayload = {
-    entries: entries.length > 0 ? entries : SAMPLE_APPOINTMENTS,
-    raw: json,
-    runId,
-    apiResult: json.apiResult,
-    apiResultMessage: json.apiResultMessage,
-    cacheHit: normalizeBoolean(json.cacheHit),
-    missingMaster: normalizeBoolean(json.missingMaster),
-    dataSourceTransition: json.dataSourceTransition,
-    fetchedAt: json.fetchedAt,
-    fallbackUsed: normalizeBoolean(json.fallbackUsed),
-  };
 
   updateObservabilityMeta({
-    runId: meta.runId,
-    cacheHit: meta.cacheHit,
-    missingMaster: meta.missingMaster,
-    dataSourceTransition: meta.dataSourceTransition,
-    fallbackUsed: meta.fallbackUsed,
+    runId: payload.runId,
+    cacheHit: payload.cacheHit,
+    missingMaster: payload.missingMaster,
+    dataSourceTransition: payload.dataSourceTransition,
+    fallbackUsed: payload.fallbackUsed,
+    fetchedAt: payload.fetchedAt,
+    recordsReturned: payload.recordsReturned,
   });
 
-  return meta;
+  return payload;
 }
 
-export async function fetchClaimFlags(): Promise<OutpatientFlagResponse> {
-  const result = await tryFetchJson(claimCandidates, {});
-  const json = (result?.data as Record<string, unknown>) ?? {};
-  const flags: OutpatientFlagResponse = {
-    runId: (json.runId as string | undefined) ?? getObservabilityMeta().runId,
-    dataSourceTransition: json.dataSourceTransition as DataSourceTransition | undefined,
-    cacheHit: normalizeBoolean(json.cacheHit),
-    missingMaster: normalizeBoolean(json.missingMaster),
-    fallbackUsed: normalizeBoolean(json.fallbackUsed),
-    fetchedAt: json.fetchedAt as string | undefined,
-    recordsReturned: typeof json.recordsReturned === 'number' ? json.recordsReturned : undefined,
-    auditEvent: (json.auditEvent as Record<string, unknown>) ?? undefined,
-  };
-
-  updateObservabilityMeta({
-    runId: flags.runId,
-    cacheHit: flags.cacheHit,
-    missingMaster: flags.missingMaster,
-    dataSourceTransition: flags.dataSourceTransition,
-    fallbackUsed: flags.fallbackUsed,
+export async function fetchClaimFlags(context?: QueryFunctionContext): Promise<OutpatientFlagResponse> {
+  const result = await fetchWithResolver({
+    candidates: claimCandidates,
+    queryContext: context,
+    preferredSource: preferredSource(),
+    description: 'claim_outpatient',
   });
 
-  return flags;
+  const json = result.raw ?? {};
+  const meta = mergeOutpatientMeta(json, {
+    ...result.meta,
+    recordsReturned: typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : undefined,
+    resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
+  });
+
+  const payload: OutpatientFlagResponse = meta;
+
+  recordOutpatientFunnel('charts_orchestration', {
+    runId: payload.runId,
+    cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
+    missingMaster: payload.missingMaster ?? false,
+    dataSourceTransition: payload.dataSourceTransition ?? 'snapshot',
+    fallbackUsed: payload.fallbackUsed ?? false,
+    action: 'claim_fetch',
+    outcome: result.ok ? 'success' : 'error',
+    note: payload.sourcePath,
+  });
+
+  logUiState({
+    action: 'outpatient_fetch',
+    screen: 'reception',
+    runId: payload.runId,
+    cacheHit: payload.cacheHit ?? result.meta.fromCache,
+    missingMaster: payload.missingMaster,
+    dataSourceTransition: payload.dataSourceTransition,
+    fallbackUsed: payload.fallbackUsed,
+    details: {
+      endpoint: payload.sourcePath ?? result.meta.sourcePath,
+      fetchedAt: payload.fetchedAt,
+      recordsReturned: payload.recordsReturned,
+      resolveMasterSource: payload.resolveMasterSource,
+      fromCache: result.meta.fromCache,
+      retryCount: result.meta.retryCount,
+      description: 'claim_outpatient',
+    },
+  });
+
+  updateObservabilityMeta({
+    runId: payload.runId,
+    cacheHit: payload.cacheHit,
+    missingMaster: payload.missingMaster,
+    dataSourceTransition: payload.dataSourceTransition,
+    fallbackUsed: payload.fallbackUsed,
+    fetchedAt: payload.fetchedAt,
+    recordsReturned: payload.recordsReturned,
+  });
+
+  return payload;
 }
