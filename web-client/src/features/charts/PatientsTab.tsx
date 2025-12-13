@@ -1,8 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
+import { recordChartsAuditEvent } from './audit';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
 
@@ -31,6 +32,7 @@ export function PatientsTab({
   const [keyword, setKeyword] = useState('');
   const [localSelectedId, setLocalSelectedId] = useState<string | undefined>(selectedPatientId);
   const [noteDraft, setNoteDraft] = useState('');
+  const lastAuditPatientId = useRef<string | undefined>();
 
   const filteredEntries = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -58,6 +60,19 @@ export function PatientsTab({
       setLocalSelectedId(fallbackId);
       onSelectPatient?.(fallbackId);
       onSelectAppointment?.(filteredEntries[0].appointmentId);
+      recordChartsAuditEvent({
+        action: 'CHARTS_PATIENT_SWITCH',
+        outcome: 'success',
+        patientId: fallbackId,
+        appointmentId: filteredEntries[0].appointmentId,
+        note: 'auto-select first patient',
+        dataSourceTransition: flags.dataSourceTransition,
+        cacheHit: flags.cacheHit,
+        missingMaster: flags.missingMaster,
+        fallbackUsed: flags.fallbackUsed,
+        runId: flags.runId,
+      });
+      lastAuditPatientId.current = fallbackId;
     }
   }, [filteredEntries, onSelectAppointment, onSelectPatient, selected]);
 
@@ -66,6 +81,21 @@ export function PatientsTab({
     setLocalSelectedId(nextId);
     onSelectPatient?.(nextId);
     onSelectAppointment?.(entry.appointmentId);
+    if (lastAuditPatientId.current !== nextId) {
+      recordChartsAuditEvent({
+        action: 'CHARTS_PATIENT_SWITCH',
+        outcome: 'success',
+        patientId: nextId,
+        appointmentId: entry.appointmentId,
+        note: 'manual switch',
+        dataSourceTransition: flags.dataSourceTransition,
+        cacheHit: flags.cacheHit,
+        missingMaster: flags.missingMaster,
+        fallbackUsed: flags.fallbackUsed,
+        runId: flags.runId,
+      });
+      lastAuditPatientId.current = nextId;
+    }
   };
 
   const isReadOnly = flags.missingMaster || flags.fallbackUsed || flags.dataSourceTransition !== 'server';
