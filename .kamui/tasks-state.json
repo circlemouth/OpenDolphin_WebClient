@@ -284,5 +284,41 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null
+  },
+  {
+    "id": "task-1765583961299-c0aa39",
+    "name": "🔍Monitor: [webclient charts production outpatient plan] 10_セッションと権限ガード整理\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 10 セッションと権限ガード整理\n\n- Charts 内のアクション（診療終了/ORCA送信/患者編集/印刷）を権限でガードし、権限不足は disabled＋理由（ツールチップ/aria-describedby）で提示する。\n- セッション切れ/施設不一致/ユーザー変更時に、Charts の状態（runId、選択患者、ドラフト）を安全に破棄してログアウトへ誘導する。\n- 監査上の “誰が・いつ・どの runId で” を UI に必ず表示できるよう、Topbar/ヘッダの表示要件を確定する。\n\nYAML ID: src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
+    "model": "codex",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-12T23:59:21.299Z",
+    "updatedAt": "2025-12-12T23:59:21.299Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1765583961299-c0aa39",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1765583944569-t4l11mjv",
+    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 10_セッションと権限ガード整理\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 10 セッションと権限ガード整理\n\n- Charts 内のアクション（診療終了/ORCA送信/患者編集/印刷）を権限でガードし、権限不足は disabled＋理由（ツールチップ/aria-describedby）で提示する。\n- セッション切れ/施設不一致/ユーザー変更時に、Charts の状態（runId、選択患者、ドラフト）を安全に破棄してログアウトへ誘導する。\n- 監査上の “誰が・いつ・どの runId で” を UI に必ず表示できるよう、Topbar/ヘッダの表示要件を確定する。\n\nYAML ID: src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md",
+    "aiCompetitionMonitor": true,
+    "monitorTargets": [
+      "task-1765583944771-c3f813",
+      "task-1765583944571-bd0000",
+      "task-1765583944970-c10851"
+    ],
+    "scoringConfig": {
+      "auditEnabled": false,
+      "auditPrompt": "",
+      "enabled": true,
+      "prompt": "緻密性、網羅性",
+      "rubric": "medals",
+      "model": "codex"
+    },
+    "autoEvaluationNotBefore": 1765584004569,
+    "worktreePath": "C:\\Users\\marug\\Documents\\OpenDolphin_WebClient\\.worktrees\\task-1765583961299-c0aa39"
   }
 ]
