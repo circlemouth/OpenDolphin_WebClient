@@ -1,9 +1,9 @@
-# DOC_STATUS（RUN_ID=`20251213T000432Z`）
+# DOC_STATUS（RUN_ID=`20251213T133932Z`）
 
 - 目的: docs/web-client 配下のアクティブ資料を棚卸しし、RUN_ID/証跡/責務を同期させる。参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル。
 - 今回の整理でフル電子カルテ版の実装計画を再定義し、Legacy ログイン専用期の資料は Archive として分離した。
 - Legacy (`client/`, `common/`, `ext_lib/`) は参照専用。接続検証や設定変更の対象は `server-modernized/` のみ。
-- 証跡ログ: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`（セッション/権限ガード整理）、`docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`（外来 API 契約）、`docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`（ChartsPage 棚卸し）、`docs/web-client/planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`（カバレッジ定義）、`docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`（ガント起点）。
+- 証跡ログ: `docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`（fetch レイヤ統一）、`docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`（セッション/権限ガード整理）、`docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`（外来 API 契約）、`docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`（ChartsPage 棚卸し）、`docs/web-client/planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`（カバレッジ定義）、`docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`（ガント起点）。
 
 ## Active ドキュメント（2025-12-13 現在）
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / RUN_ID |
@@ -33,12 +33,14 @@
 | `docs/web-client/planning/phase2/logs/20251213T125127Z-charts-audit-event.md` | Charts 監査ログ統一ログ | Active | 2025-12-13 | RUN_ID=`20251213T125127Z`。auditEvent details 統一、主要操作の記録保証。成果物 `src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md`。 |
 | `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md` | Charts セッション/権限ガード整理ログ | Active | 2025-12-13 | RUN_ID=`20251213T000432Z`。セッション切れ/施設不一致時の破棄・ログアウト誘導、権限別ガードと Topbar 表示要件を確定。成果物 `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md`。 |
 | `docs/web-client/planning/phase2/logs/20251213T121500Z-charts-error-handling.md` | Charts エラー/リトライ規約ログ | Active | 2025-12-13 | RUN_ID=`20251213T121500Z`。外来 API 失敗時の tone/banner/再取得導線と missingMaster/fallback ブロック方針を整理。成果物 `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md`。 |
+| `docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md` | Charts fetch レイヤ統一ログ | Active | 2025-12-13 | RUN_ID=`20251213T133932Z`。fetchWithResolver で外来 API メタを統一し、React Query cacheHit/refetch を UI・audit・telemetry と同期。成果物 `src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md`。 |
 | `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md` | Charts 本番外来カバレッジ定義 | Active | 2025-12-12 | RUN_ID=`20251212T131901Z`。DoD（監査/ARIA/運用）込みで外来 UI カバレッジを一覧化。 |
 | `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` | ChartsPage 棚卸し（計画→実装の差分） | Active | 2025-12-12 | RUN_ID=`20251212T140014Z`。P0/P1/P2 と入口/出口（Reception/Patients/Administration）責務分離案を確定。証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`。 |
 | `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` | Charts 外来 API 契約（監査/透過/再試行ルール） | Active | 2025-12-12 | RUN_ID=`20251212T143720Z`。Playwright/fixture の単一ソースとして API 契約を固定。証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`。 |
 | `src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md` | Charts 監査ログ統一方針 | Active | 2025-12-13 | RUN_ID=`20251213T125127Z`。重要操作の監査記録保証と details 透過ルールを整理。証跡: `docs/web-client/planning/phase2/logs/20251213T125127Z-charts-audit-event.md`。 |
 | `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` | Charts セッション/権限ガード方針 | Active | 2025-12-13 | RUN_ID=`20251213T000432Z`。主要アクションの権限ガード、セッション無効時の破棄/誘導、Topbar/ヘッダーの監査表示を固定。証跡: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`。 |
 | `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` | Charts エラー/リトライ規約 | Active | 2025-12-13 | RUN_ID=`20251213T121500Z`。API 失敗の tone/aria-live/再取得導線と missingMaster/fallback ブロック運用を固定。証跡: `docs/web-client/planning/phase2/logs/20251213T121500Z-charts-error-handling.md`。 |
+| `src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md` | Charts fetch レイヤ統一 | Active | 2025-12-13 | RUN_ID=`20251213T133932Z`。fetchWithResolver で外来 API 呼び出しと meta 透過を統一し、React Query cacheHit/refetch を UI/audit/telemetry と同期。証跡: `docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`。 |
 | `docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md` | Charts Production（外来）ガント開始ログ | Active | 2025-12-12 | RUN_ID=`20251212T130647Z`。ガント起点 `src/charts_production_outpatient/00_RUN_IDと参照チェーン.md` を作成し、参照チェーン/DOC_STATUS/README を同期。 |
 | `src/charts_production_outpatient/00_RUN_IDと参照チェーン.md` | Charts Production（外来）ガント起点 | Active | 2025-12-12 | RUN_ID=`20251212T130647Z`。参照チェーンと起動前提（`WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`）を明記。 |
 
