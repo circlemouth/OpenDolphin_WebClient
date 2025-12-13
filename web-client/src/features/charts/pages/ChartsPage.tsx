@@ -10,6 +10,7 @@ import { OrcaSummary } from '../OrcaSummary';
 import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
+import { normalizeAuditEventLog, normalizeAuditEventPayload } from '../audit';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
@@ -73,8 +74,12 @@ function ChartsContent() {
       orcaSummaryQuery.data?.dataSourceTransition ??
       flags.dataSourceTransition;
     const fallbackUsed = claimQuery.data?.fallbackUsed ?? orcaSummaryQuery.data?.fallbackUsed;
-    const auditEvent = claimQuery.data?.auditEvent;
-    return { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed, auditEvent };
+    const auditMeta = { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed };
+    const auditEvent = normalizeAuditEventPayload(
+      claimQuery.data?.auditEvent as Record<string, unknown> | undefined,
+      auditMeta,
+    );
+    return { ...auditMeta, auditEvent };
   }, [
     claimQuery.data?.auditEvent,
     claimQuery.data?.cacheHit,
@@ -137,11 +142,18 @@ function ChartsContent() {
   }, [patientEntries, selectedAppointmentId, selectedPatientId]);
 
   const latestAuditEvent = useMemo(() => {
+    const auditMeta = {
+      runId: resolvedRunId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
+    };
     if (auditEvents.length > 0) {
-      return auditEvents[auditEvents.length - 1].payload ?? auditEvents[auditEvents.length - 1];
+      return normalizeAuditEventLog(auditEvents[auditEvents.length - 1], auditMeta);
     }
-    return claimQuery.data?.auditEvent;
-  }, [auditEvents, claimQuery.data?.auditEvent]);
+    return mergedFlags.auditEvent;
+  }, [auditEvents, mergedFlags.auditEvent, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition]);
 
   const resolvedRunId = mergedFlags.runId ?? flags.runId;
   const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
