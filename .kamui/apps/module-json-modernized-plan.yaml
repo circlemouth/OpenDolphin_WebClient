@@ -1,6 +1,6 @@
 ganttConfig:
   defaultView: day
-  startDate: 2025-12-15
+  startDate: 2025-12-14
   showFilters: true
   filters:
     priorities:
@@ -63,13 +63,13 @@ src:
           - 参照チェーン遵守とレガシー側非改変を再確認
           - 担当: PM、レビュアー決定
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency: []
         schedule:
-          start: 2025-12-15T00:00:00.000Z
+          start: 2025-12-14T00:00:00.000Z
           days: 1
       ModuleModelフィールド拡張.md:
         content: |-
@@ -78,14 +78,14 @@ src:
           - Getter/Setter 追加と Hibernate 型指定確認
           - Legacy 互換の挙動をレビュー
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
           - src/modernization/module_json/キックオフ_RUN_ID採番.md
         schedule:
-          start: 2025-12-16T00:00:00.000Z
+          start: 2025-12-14T00:00:00.000Z
           days: 1
       Flywayスクリプト追加.md:
         content: |-
@@ -94,14 +94,14 @@ src:
           - beanBytes NOT NULL 制約を解除
           - V0225__alter_module_add_json.sql を作成
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
           - src/modernization/module_json/ModuleModelフィールド拡張.md
         schedule:
-          start: 2025-12-17T00:00:00.000Z
+          start: 2025-12-14T02:00:00.000Z
           days: 1
       ModuleJsonConverter実装.md:
         content: |-
@@ -111,14 +111,14 @@ src:
           - deserialize: beanJson→model を復元
           - 例外処理とロギング方針を決定
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
           - src/modernization/module_json/ModuleModelフィールド拡張.md
         schedule:
-          start: 2025-12-17T00:00:00.000Z
+          start: 2025-12-14T03:00:00.000Z
           days: 1
       KarteServiceBean組み込み.md:
         content: |-
@@ -127,16 +127,16 @@ src:
           - 読込系で deserialize を全モジュールに適用
           - 依存クエリ(QUERY_MODULE_BY_DOC_ID) 全対応を確認
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
           - src/modernization/module_json/ModuleJsonConverter実装.md
           - src/modernization/module_json/Flywayスクリプト追加.md
         schedule:
-          start: 2025-12-18T00:00:00.000Z
-          days: 2
+          start: 2025-12-14T05:00:00.000Z
+          days: 1
       テストとビルド検証.md:
         content: |-
           ## テスト & ビルド検証
@@ -144,14 +144,47 @@ src:
           - 新規環境前提のため移行テストは省略
           - ローカル msw/modernized 環境で smoke 実施
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
           - src/modernization/module_json/KarteServiceBean組み込み.md
         schedule:
-          start: 2025-12-20T00:00:00.000Z
+          start: 2025-12-14T08:00:00.000Z
+          days: 1
+      MSW_OFF_smoke追加.md:
+        content: |-
+          ## MSW OFF スモーク追加
+          - `VITE_DISABLE_MSW=1` で dev サーバーを起動し smoke を追加実行
+          - perf-env-boot.js の DevTools 無効化修正の副作用を確認
+          - beanJson 保存/復元の UI まで到達する軽量ケースを記録
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/modernization/module_json/テストとビルド検証.md
+        schedule:
+          start: 2025-12-15T00:00:00.000Z
+          days: 1
+      UI保存復元確認.md:
+        content: |-
+          ## UI 保存・復元確認
+          - add/updateDocument を UI 経由で実行し beanJson 保存を確認
+          - 同レコード再読込で deserialize が WARN 無しで成功するか確認
+          - 成果を証跡ログと DOC_STATUS 備考へ追記
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/modernization/module_json/KarteServiceBean組み込み.md
+          - src/modernization/module_json/MSW_OFF_smoke追加.md
+        schedule:
+          start: 2025-12-15T01:00:00.000Z
           days: 1
   docs:
     modernization:
@@ -162,14 +195,14 @@ src:
           - server-modernized の開発手順・JSON化仕様を README/operations に反映
           - 証跡ログへのリンクを整理
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api: []
         dependency:
           - src/modernization/module_json/キックオフ_RUN_ID採番.md
         schedule:
-          start: 2025-12-19T00:00:00.000Z
+          start: 2025-12-14T09:00:00.000Z
           days: 1
       リリースノート草案.md:
         content: |-
@@ -178,13 +211,13 @@ src:
           - 残存 beanBytes の扱いと今後の移行計画をメモ
           - QA 結果と既知のリスクをまとめる
         priority: Low
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 70
         agent: claude code
         api: []
         dependency:
           - src/modernization/module_json/テストとビルド検証.md
           - src/docs/modernization/設計と手順書アップデート.md
         schedule:
-          start: 2025-12-21T00:00:00.000Z
+          start: 2025-12-14T09:00:00.000Z
           days: 1
