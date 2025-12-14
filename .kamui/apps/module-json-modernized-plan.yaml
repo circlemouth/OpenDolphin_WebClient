@@ -177,7 +177,7 @@ src:
           - 成果を証跡ログと DOC_STATUS 備考へ追記
         priority: Medium
         status: in_progress
-        progress: 60
+        progress: 80
         agent: codex
         api: []
         dependency:
@@ -193,8 +193,8 @@ src:
           - updateDocument の id<=0 ガードと UI 側採番の整合を設計
           - 再発防止テスト（add→update→GET 正常系）を追加
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -209,8 +209,8 @@ src:
           - UI 側の polymorphic 型情報付与方針とサーバー側フォールバックを比較
           - WARN 無しで round-trip する回帰テストを追加
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
