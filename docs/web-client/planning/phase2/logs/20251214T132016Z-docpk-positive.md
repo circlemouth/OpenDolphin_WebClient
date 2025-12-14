@@ -12,7 +12,9 @@
    - 目的: UI から負の id が渡ってもレスポンス/DB が正数になるようにする。レスポンス整合で UI 側 updateDocument が通る前提を保証。
 3. テストダブル調整
    - `server-modernized/src/test/java/open/dolphin/touch/DolphinResourceDocumentTest.java` の Stub をシーケンス正数採番に合わせて上書き。
-4. updateDocument ガード
+4. add→update→GET 再発防止テスト
+   - `server-modernized/src/test/java/open/dolphin/session/KarteServiceBeanDocPkTest.java` を追加。addDocument で負の id を正数に上書きし docPk を同期すること、同じ PK を使った updateDocument が成功することを検証。
+5. updateDocument ガード
    - id<=0 ガードは維持。addDocument 側で正数化されるため UI は応答 PK をそのまま PUT すれば良い状態へ揃えた。
 
 ## 観測
