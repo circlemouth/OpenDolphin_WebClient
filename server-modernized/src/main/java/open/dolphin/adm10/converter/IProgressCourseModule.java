@@ -1,5 +1,6 @@
 package open.dolphin.adm10.converter;
 
+import open.dolphin.infomodel.ModelUtils;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.ProgressCourse;
 
@@ -87,6 +88,7 @@ public class IProgressCourseModule extends IAbstractModule {
         ret.setModuleInfoBean(this.getModuleInfo().toModel());
         
         ret.setBeanBytes(IOSHelper.toXMLBytes(model.toModel()));
+        ret.setBeanJson(ModelUtils.jsonEncode(model.toModel()));
         
         return ret;
     }
