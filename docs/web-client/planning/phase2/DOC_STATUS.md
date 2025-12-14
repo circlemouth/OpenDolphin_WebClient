@@ -1,6 +1,7 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
-- 本更新 RUN_ID=`20251214T025057Z`（ModuleModel beanJson 並行保存・decode フォールバック対応）。証跡: `docs/server-modernization/phase2/operations/logs/20251214T025057Z-module-model-json.md`。
+- 本更新 RUN_ID=`20251214T031644Z`（ModuleJsonConverter 実装・polymorphic typing 設定）。証跡: `docs/web-client/planning/phase2/logs/20251214T031644Z-module-json-converter.md`。
+- 過去更新 RUN_ID=`20251214T025057Z`（ModuleModel beanJson 並行保存・decode フォールバック対応）。証跡: `docs/server-modernization/phase2/operations/logs/20251214T025057Z-module-model-json.md`。
 
 - 目的: docs/web-client 配下のアクティブ資料を棚卸しし、RUN_ID/証跡/責務を同期させる。参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル。
 - 今回の整理でフル電子カルテ版の実装計画を再定義し、Legacy ログイン専用期の資料は Archive として分離した。
@@ -12,6 +13,7 @@
 | --- | --- | --- | --- | --- |
 | `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。module_json ガント開始を追加し、参照チェーンを最新化。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
+| `src/modernization/module_json/ModuleJsonConverter実装.md` | module_json: Converter 実装 | Active | 2025-12-14 | RUN_ID=`20251214T031644Z`。beanJson 優先/beanBytes フォールバック方針と PTValidator 設定を明文化。証跡 `docs/web-client/planning/phase2/logs/20251214T031644Z-module-json-converter.md`。 |
 | `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` | 画面別実装計画 | Active | 2025-12-11 | 新設。画面/機能/ARIA/監査/テレメトリ/ロードマップを統合。 |
 | `docs/web-client/planning/phase2/DOC_STATUS.md` | 棚卸し台帳 | Active | 2025-12-14 | 本ファイル。RUN_ID=`20251214T022944Z`。module_json ガント行を追加。 |
 | `docs/web-client/architecture/future-web-client-design.md` | 画面配置・機能サマリ | Active | 2025-12-10 | RUN_ID=`20251210T141208Z`。計画書と整合。 |
