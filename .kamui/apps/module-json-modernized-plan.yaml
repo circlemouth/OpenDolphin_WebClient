@@ -160,14 +160,14 @@ src:
           - perf-env-boot.js の DevTools 無効化修正の副作用を確認
           - beanJson 保存/復元の UI まで到達する軽量ケースを記録
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
           - src/modernization/module_json/テストとビルド検証.md
         schedule:
-          start: 2025-12-15T00:00:00.000Z
+          start: 2025-12-14T09:00:00.000Z
           days: 1
       UI保存復元確認.md:
         content: |-
@@ -176,16 +176,48 @@ src:
           - 同レコード再読込で deserialize が WARN 無しで成功するか確認
           - 成果を証跡ログと DOC_STATUS 備考へ追記
         priority: Medium
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 60
         agent: codex
         api: []
         dependency:
           - src/modernization/module_json/KarteServiceBean組み込み.md
           - src/modernization/module_json/MSW_OFF_smoke追加.md
         schedule:
+          start: 2025-12-14T12:30:00.000Z
+          days: 2
+      docPk正数化調査.md:
+        content: |-
+          ## docPk 正数化・updateDocument 修正
+          - addDocument で負の docPk が返る経路を調査（seq 割当後の変換含む）
+          - updateDocument の id<=0 ガードと UI 側採番の整合を設計
+          - 再発防止テスト（add→update→GET 正常系）を追加
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/modernization/module_json/UI保存復元確認.md
+        schedule:
           start: 2025-12-15T01:00:00.000Z
-          days: 1
+          days: 2
+      ModuleJsonConverter型情報フォールバック.md:
+        content: |-
+          ## ModuleJsonConverter 型情報フォールバック
+          - `@class` 無し beanJson で WARN となるパスのハンドリングを整理
+          - UI 側の polymorphic 型情報付与方針とサーバー側フォールバックを比較
+          - WARN 無しで round-trip する回帰テストを追加
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/modernization/module_json/UI保存復元確認.md
+        schedule:
+          start: 2025-12-15T03:00:00.000Z
+          days: 2
   docs:
     modernization:
       設計と手順書アップデート.md:
