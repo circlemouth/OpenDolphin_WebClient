@@ -468,6 +468,7 @@ public class KarteServiceBean {
             .setParameter(ID, id)
             .getResultList();
             document.setModules(modules);
+            decodeModulePayloads(document.getModules());
 
             // SchemaModel を取得する
             List images = em.createQuery(QUERY_SCHEMA_BY_DOC_ID)
@@ -505,6 +506,9 @@ public class KarteServiceBean {
         LOGGER.info("addDocument request id={}, docId={}",
                 document.getId(),
                 document.getDocInfoModel() != null ? document.getDocInfoModel().getDocId() : "null");
+
+        // beanJson 優先保存（beanBytes はフォールバックとして維持）
+        encodeModulePayloads(document.getModules());
 
         if (document.getId() <= 0) {
             Number seqValue = (Number) em
@@ -587,6 +591,9 @@ public class KarteServiceBean {
         removeMissingModules(current.getModules(), document.getModules());
         removeMissingSchemas(current.getSchema(), document.getSchema());
         removeMissingAttachments(current.getAttachment(), document.getAttachment());
+
+        // beanJson 優先保存（beanBytes はフォールバックとして維持）
+        encodeModulePayloads(document.getModules());
 
         DocumentModel merged = em.merge(document);
         attachmentStorageManager.persistExternalAssets(merged.getAttachment());
@@ -743,6 +750,9 @@ public class KarteServiceBean {
     }
 
     public long addDocumentAndUpdatePVTState(DocumentModel document, long pvtPK, int state) {
+
+        // beanJson 優先保存（beanBytes はフォールバックとして維持）
+        encodeModulePayloads(document.getModules());
 
         // 永続化する
         em.persist(document);
@@ -990,6 +1000,7 @@ public class KarteServiceBean {
                     .setParameter(TO_DATE, toDate.get(i))
                     .getResultList();
 
+            decodeModulePayloads(modules);
             ret.add(modules);
         }
 
@@ -1462,6 +1473,7 @@ public class KarteServiceBean {
                     .setParameter("toDate", toDate)
                     .setParameter("entities", entities)
                     .getResultList();
+            decodeModulePayloads(ret);
 //          } else {
 //            // karteIdが指定されていなかったら、施設の指定期間のすべて患者のModuleModelを返す
 //            long fPk = getFacilityPk(fid);
@@ -1514,6 +1526,7 @@ public class KarteServiceBean {
                     .setParameter(ID, id)
                     .getResultList();
                     model.setModules(modules);
+                    decodeModulePayloads(model.getModules());
                 } catch (NoResultException e) {
                     // 患者登録の際にカルテも生成してある
                 }
@@ -1564,10 +1577,14 @@ public class KarteServiceBean {
         if (docIds == null || docIds.isEmpty()) {
             return Collections.emptyList();
         }
-        return em.createQuery("select distinct d from DocumentModel d left join fetch d.modules m where d.id in :ids",
+        List<DocumentModel> documents = em.createQuery("select distinct d from DocumentModel d left join fetch d.modules m where d.id in :ids",
                 DocumentModel.class)
                 .setParameter("ids", docIds)
                 .getResultList();
+        for (DocumentModel document : documents) {
+            decodeModulePayloads(document.getModules());
+        }
+        return documents;
     }
 
     private List<ModuleModel> filterMedModules(List<ModuleModel> modules) {
@@ -1684,6 +1701,38 @@ public class KarteServiceBean {
             LOGGER.debug("Failed to decode module {}", module != null ? module.getId() : null, ex);
         }
         return null;
+    }
+
+    private void encodeModulePayloads(Collection<ModuleModel> modules) {
+        if (modules == null || modules.isEmpty()) {
+            return;
+        }
+        for (ModuleModel module : modules) {
+            if (module == null || module.getModel() == null) {
+                continue;
+            }
+            String json = ModelUtils.jsonEncode(module.getModel());
+            module.setBeanJson(json);
+        }
+    }
+
+    private void decodeModulePayloads(Collection<ModuleModel> modules) {
+        if (modules == null || modules.isEmpty()) {
+            return;
+        }
+        for (ModuleModel module : modules) {
+            if (module == null || module.getModel() != null) {
+                continue;
+            }
+            try {
+                Object decoded = ModelUtils.decodeModule(module);
+                if (decoded instanceof IInfoModel) {
+                    module.setModel((IInfoModel) decoded);
+                }
+            } catch (Exception ex) {
+                LOGGER.warn("Failed to decode module payload id={}", module.getId(), ex);
+            }
+        }
     }
 
     private String buildAmount(ClaimItem item) {
