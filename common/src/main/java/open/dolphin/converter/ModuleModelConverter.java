@@ -92,6 +92,10 @@ public final class ModuleModelConverter implements IInfoModelConverter {
         return model.getBeanBytes();
     }
 
+    public String getBeanJson() {
+        return model.getBeanJson();
+    }
+
     @Override
     public void setModel(IInfoModel m) {
         this.model = (ModuleModel)m;

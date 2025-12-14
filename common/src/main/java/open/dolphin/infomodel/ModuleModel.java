@@ -2,6 +2,9 @@ package open.dolphin.infomodel;
 
 import jakarta.persistence.*;
 
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 
 /**
  * ModuleModel
@@ -24,8 +27,14 @@ public class ModuleModel extends KarteEntryBean
     private DocumentModel document;
 
     @Lob
-    @Column(nullable=false)
+    @JdbcTypeCode(SqlTypes.BINARY)
+    @Column(nullable=true, columnDefinition = "bytea")
     private byte[] beanBytes;
+
+    @Lob
+    @JdbcTypeCode(SqlTypes.CLOB)
+    @Column(name = "beanJson", columnDefinition = "text")
+    private String beanJson;
     
     /**
      * ModuleModelオブジェクトを生成する。
@@ -81,13 +90,21 @@ public class ModuleModel extends KarteEntryBean
     public byte[] getBeanBytes() {
         return beanBytes;
     }
-    
+
     /**
      * モジュールの永続化バイト配列を設定する。
      * @param beanBytes モジュールの永続化バイト配列
      */
     public void setBeanBytes(byte[] beanBytes) {
         this.beanBytes = beanBytes;
+    }
+
+    public String getBeanJson() {
+        return beanJson;
+    }
+
+    public void setBeanJson(String beanJson) {
+        this.beanJson = beanJson;
     }
     
     /**
@@ -122,6 +139,10 @@ public class ModuleModel extends KarteEntryBean
             byte[] dest = new byte[bytes.length];
             System.arraycopy(bytes, 0, dest, 0, bytes.length);
             ret.setBeanBytes(dest);
+        }
+
+        if (beanJson != null) {
+            ret.setBeanJson(beanJson);
         }
 
         if (model!=null) {

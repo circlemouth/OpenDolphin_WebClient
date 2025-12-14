@@ -1675,16 +1675,13 @@ public class KarteServiceBean {
     }
 
     private BundleDolphin decodeBundle(ModuleModel module) {
-        if (module == null || module.getBeanBytes() == null) {
-            return null;
-        }
         try {
-            Object decoded = ModelUtils.xmlDecode(module.getBeanBytes());
+            Object decoded = ModelUtils.decodeModule(module);
             if (decoded instanceof BundleDolphin) {
                 return (BundleDolphin) decoded;
             }
         } catch (Exception ex) {
-            LOGGER.debug("Failed to decode module {}", module.getId(), ex);
+            LOGGER.debug("Failed to decode module {}", module != null ? module.getId() : null, ex);
         }
         return null;
     }
