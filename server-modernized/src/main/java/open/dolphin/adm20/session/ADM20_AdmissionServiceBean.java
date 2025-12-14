@@ -27,6 +27,7 @@ import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.LastDateCount30;
+import open.dolphin.infomodel.ModelUtils;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
 import open.dolphin.infomodel.PatientModel;
@@ -286,6 +287,7 @@ public class ADM20_AdmissionServiceBean {
             // CarePlan to ModuleModel
             ModuleModel module = cm.toModleModel();
             module.setBeanBytes(IOSHelper.toXMLBytes(module.getModel()));
+            module.setBeanJson(ModelUtils.jsonEncode(module.getModel()));
             schedule.addModule(module);
         }
         
@@ -326,6 +328,7 @@ public class ADM20_AdmissionServiceBean {
         soaProgress.setFreeText(sb.toString());
         ModuleModel soaSpecModule = new ModuleModel();
         soaSpecModule.setBeanBytes(IOSHelper.toXMLBytes(soaProgress));
+        soaSpecModule.setBeanJson(ModelUtils.jsonEncode(soaProgress));
         soaSpecModule.setConfirmed(now);
         soaSpecModule.setStarted(startDate);
         soaSpecModule.setRecorded(now);
@@ -359,6 +362,7 @@ public class ADM20_AdmissionServiceBean {
         pProgress.setFreeText(sb.toString());
         ModuleModel pSpecModule = new ModuleModel();
         pSpecModule.setBeanBytes(IOSHelper.toXMLBytes(pProgress));
+        pSpecModule.setBeanJson(ModelUtils.jsonEncode(pProgress));
         pSpecModule.setConfirmed(startDate);
         pSpecModule.setStarted(now);
         pSpecModule.setRecorded(now);

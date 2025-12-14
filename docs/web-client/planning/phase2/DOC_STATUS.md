@@ -1,5 +1,7 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251214T025057Z`（ModuleModel beanJson 並行保存・decode フォールバック対応）。証跡: `docs/server-modernization/phase2/operations/logs/20251214T025057Z-module-model-json.md`。
+
 - 目的: docs/web-client 配下のアクティブ資料を棚卸しし、RUN_ID/証跡/責務を同期させる。参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル。
 - 今回の整理でフル電子カルテ版の実装計画を再定義し、Legacy ログイン専用期の資料は Archive として分離した。
 - Legacy (`client/`, `common/`, `ext_lib/`) は参照専用。接続検証や設定変更の対象は `server-modernized/` のみ。
