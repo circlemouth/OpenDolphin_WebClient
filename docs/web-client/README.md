@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251214T082236Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251214T132418Z`）
 > 2025-12-14 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T123042Z`）
+### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T132418Z`）
+- module_json 型情報フォールバック（RUN_ID=`20251214T132418Z`）。ModuleJsonConverter に non-typed フォールバック mapper を追加し、`@class` 無し beanJson でも WARN 無しで decode できる回帰テストを追加（証跡: `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`）。
 - module_json UI 保存・復元確認（RUN_ID=`20251214T123042Z`）。MSW OFF で addDocument→GET→DB まで beanJson 保存を確認。正の seq 割当ログがあっても返却 docPk が負のままになり updateDocument 失敗 / ModuleJsonConverter が `@class` 無し JSON で WARN（証跡: `docs/web-client/planning/phase2/logs/20251214T123042Z-module-json-ui-save.md`）。
 - module_json JSON 化手順を README / server-modernized Operations に反映し、RUN_ID=`20251214T082236Z` で証跡を整理。新規 Runbook `docs/server-modernization/phase2/operations/MODULE_JSON_DEVELOPMENT.md` を追加し、beanJson 優先・beanBytes フォールバック、polymorphic typing、Flyway `V0225` 前提と検証手順を明文化（証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md`）。
 - module_json ガントの親 RUN=`20251214T022944Z` を維持しつつ、キックオフ・Flyway・Converter・KarteServiceBean 組み込みの各ドキュメント/ログを参照チェーンで統一。
@@ -16,6 +17,7 @@
 
 ## 現在のドキュメント（Active）
 - `src/modernization/module_json/キックオフ_RUN_ID採番.md` — module_json モダナイズ計画ガント起点（RUN_ID=`20251214T022944Z`）。
+- `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` — module_json: 型情報フォールバック（RUN_ID=`20251214T132418Z`）。
 - `src/modernization/module_json/UI保存復元確認.md` — module_json: UI 経路の addDocument 保存/復元（RUN_ID=`20251214T123042Z`）。
 - `src/modernization/module_json/テストとビルド検証.md` — module_json テスト/ビルド/Smoke（RUN_ID=`20251214T084510Z`）。
 - `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` — 画面別実装計画（本更新の中心）。
