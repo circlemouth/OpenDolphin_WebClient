@@ -10,7 +10,6 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -585,46 +584,15 @@ public class ModelUtils implements IInfoModel {
     }
 
     public static String jsonEncode(Object obj) {
-        if (obj == null) {
-            return null;
-        }
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.writeValueAsString(obj);
-        } catch (Exception e) {
-            LOG.warn("Failed to encode module payload to JSON", e);
-        }
-        return null;
+        return ModuleJsonConverter.getInstance().serialize(obj);
     }
 
     public static Object jsonDecode(String json) {
-        if (json == null) {
-            return null;
-        }
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            return mapper.readValue(json, Object.class);
-        } catch (Exception e) {
-            LOG.warn("Failed to decode module payload from JSON", e);
-        }
-        return null;
+        return ModuleJsonConverter.getInstance().deserialize(json);
     }
 
     public static Object decodeModule(ModuleModel module) {
-        if (module == null) {
-            return null;
-        }
-        if (module.getBeanJson() != null) {
-            Object decodedJson = jsonDecode(module.getBeanJson());
-            if (decodedJson != null) {
-                return decodedJson;
-            }
-            LOG.warn("beanJson present but decode failed for module id={}", module.getId());
-        }
-        if (module.getBeanBytes() != null) {
-            return xmlDecode(module.getBeanBytes());
-        }
-        return null;
+        return ModuleJsonConverter.getInstance().decode(module);
     }
     
     public static String convertListLongToStr(List<Long> list){
