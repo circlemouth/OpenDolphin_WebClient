@@ -16,12 +16,13 @@
 - `KarteServiceBean#addDocument` で負の `document.id` を無条件にシーケンス採番へ上書きし、`DocInfoModel.docPk` と同期させてレスポンス整合を保証。
 - `updateDocument` の負数防御を維持しつつ、正の PK が必ず入る前提へ合わせた。
 - テストダブル（`DolphinResourceDocumentTest.StubKarteService`）を正の採番模倣へ更新。
+- add→update→GET の再発防止ユニットテスト `KarteServiceBeanDocPkTest` を追加（mocked EntityManager でシーケンス採番と docPk 同期を確認）。
 
 ## 観測/決定
 - UI から負の docPk が送られても addDocument で正の PK を採番するため、レスポンス/DB は正数で返る。
 - updateDocument は従来通り id<=0 を拒否するが、UI には addDocument 応答をそのまま再利用すればよくなる。
 
 ## 残タスク
-- add→update→GET の再発防止 E2E/IT を server-modernized 側に追加（順次対応）。
+- add→update→GET の E2E/IT を server-modernized 側で補強（UI 経路・MSW OFF での確認）。
 - UI 側の docPk 再利用手順を module_json UX/実装ドキュメントへ反映。
 - DOC_STATUS/README を RUN_ID 同期し、証跡ログを作成する。
