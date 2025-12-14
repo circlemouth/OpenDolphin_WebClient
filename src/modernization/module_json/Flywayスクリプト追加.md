@@ -6,7 +6,7 @@
 
 ## 目的
 - module_json モダナイズで ModuleModel を JSON 併用保存できるようにするため、Flyway マイグレーションを追加する。
-- `d_module` の `beanBytes` NOT NULL 制約を解除し、JSON 用 `beanJson` 列を追加する。
+- `d_module` の `beanBytes` NOT NULL 制約を解除し、JSON 用 `bean_json` 列を追加する。
 
 ## 参照チェーン
 1. `AGENTS.md`
@@ -18,7 +18,7 @@
 ## 作業内容
 - Flyway マイグレーション `V0225__alter_module_add_json.sql` を追加（`server-modernized/tools/flyway/sql` および runtime 用 `server-modernized/src/main/resources/db/migration` に配置）。
   - `beanBytes` の NOT NULL 制約を解除。
-  - `beanJson` 列（TEXT, IF NOT EXISTS）を追加。
+  - `bean_json` 列（TEXT, IF NOT EXISTS）を追加。
 
 ## 証跡
 - `docs/web-client/planning/phase2/logs/20251214T031229Z-module-json-flyway.md`

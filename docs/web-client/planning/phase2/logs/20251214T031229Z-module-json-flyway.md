@@ -8,7 +8,7 @@
 - `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → `src/modernization/module_json/Flywayスクリプト追加.md`
 
 ## 実施内容
-- `d_module.beanBytes` の NOT NULL 制約を解除し、`beanJson` 列を追加する Flyway マイグレーション `V0225__alter_module_add_json.sql` を作成。
+- `d_module.beanBytes` の NOT NULL 制約を解除し、`bean_json` 列を追加する Flyway マイグレーション `V0225__alter_module_add_json.sql` を作成。
 - マイグレーションを CLI 用 `server-modernized/tools/flyway/sql/` と runtime 用 `server-modernized/src/main/resources/db/migration/` の双方へ配置。
 
 ## 変更ファイル
