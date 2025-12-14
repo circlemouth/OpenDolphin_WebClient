@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .score-badge { display: inline-flex; align-items: center; gap: 8px; padding: 10px 14px; background: #f2f6f7; border: 1px solid #c4d3d7; border-radius: 12px; font-weight: 700; font-size: 18px; }
+      .score-badge .medal { font-size: 26px; }
+      .chart-row { display: flex; gap: 16px; flex-wrap: wrap; margin-bottom: 12px; }
+      .radar { width: 220px; height: 220px; }
+      .radar text { font-size: 10px; fill: #1f2a30; }
+      .radar .grid { stroke: #cdd9dd; fill: none; }
+      .radar .area { fill: #5fb0c5; fill-opacity: 0.35; stroke: #2c7a8a; stroke-width: 2; }
+      .section { margin-bottom: 14px; font-size: 13px; }
+      .section strong { display: inline-block; margin-right: 6px; }
+      .list { margin: 0; padding-left: 18px; }
+      .list li { margin-bottom: 6px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">ModuleJsonConverter 型情報フォールバック 評価レポート</h1>
+        <p class="monitor-description">タスク: module_json 型情報フォールバック（期間: 2025-12-15 12:00〜2025-12-17 12:00 JST）。UI 側型付けとサーバー側フォールバックの両アプローチを比較し、WARN なしの round-trip を評価。</p>
+      </header>
+
+      <div class="section"><strong>仕事の概要:</strong> `@class` 無し beanJson を WARN 抑止で復元するフォールバック実装と回帰テスト追加。UI の polymorphic 型情報付与方針との整合を確認。</div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex / task-1765718496635-2d340a</th>
+            <th>Agent codex / task-1765718496838-cf0aba</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-14 22:34</td>
+            <td>
+              <div class="score-badge"><span class="medal">🥇</span>550 / 600</div>
+              <div class="chart-row">
+                <svg class="radar" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon class="grid" points="100,20 169.28,60 169.28,140 100,180 30.72,140 30.72,60" />
+                  <polygon class="grid" points="100,40 154.64,70 154.64,130 100,160 45.36,130 45.36,70" />
+                  <polygon class="grid" points="100,60 140,80 140,120 100,140 60,120 60,80" />
+                  <polygon class="area" points="99.999924,24 162.3538,64 163.73944,136.799926 100,172 34.182176,138 39.03184,64.800071" />
+                  <text x="96" y="12">機能合理性 95</text>
+                  <text x="160" y="52">緻密性 90</text>
+                  <text x="166" y="152">コード品質 92</text>
+                  <text x="96" y="194">テスト 90</text>
+                  <text x="12" y="152">ドキュメント 95</text>
+                  <text x="16" y="52">リスク 88</text>
+                </svg>
+                <div class="section">
+                  <ul class="list">
+                    <li>機能合理性 95: typedMapper + fallbackMapper で WARN を suppress し decode 成功時は debug のみに抑制。</li>
+                    <li>緻密性 90: 2段階 try-catch と suppressed 例外保持で調査性を確保。</li>
+                    <li>コード品質 92: オブジェクトマッパ分離と命名が明確。既存 API 互換を維持。</li>
+                    <li>テスト充実度 90: `decode_plainJsonWithoutClass_usesFallbackMapper` 追加で回帰を自動検証。</li>
+                    <li>ドキュメント 95: README/DOC_STATUS/ログ/設計メモを RUN_ID で一貫更新。</li>
+                    <li>リスク対応 88: WARN 発火条件を最小化しつつ fallback 失敗時のみ WARN へ。</li>
+                  </ul>
+                </div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分・コミット</summary>
+                <pre>df805bff ModuleJsonConverter型情報フォールバック対応 (RUN_ID=20251214T132418Z)
+- typedMapper + fallbackMapper を導入し、型情報なし JSON を Map 復元
+- fallback 成功時は DEBUG、両方失敗時のみ WARN + suppressed
+- 回帰テスト追加、DOC_STATUS/README/証跡ログ/タスクメモを更新</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">主な成果物</summary>
+                <pre>common/src/main/java/open/dolphin/infomodel/ModuleJsonConverter.java
+common/src/test/java/open/dolphin/infomodel/ModuleJsonConverterTest.java
+docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md
+src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md</pre>
+              </details>
+            </td>
+            <td>
+              <div class="score-badge"><span class="medal">🥉</span>433 / 600</div>
+              <div class="chart-row">
+                <svg class="radar" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon class="grid" points="100,20 169.28,60 169.28,140 100,180 30.72,140 30.72,60" />
+                  <polygon class="grid" points="100,40 154.64,70 154.64,130 100,160 45.36,130 45.36,70" />
+                  <polygon class="grid" points="100,60 140,80 140,120 100,140 60,120 60,80" />
+                  <polygon class="area" points="100,37.6 148.4974226119,72 149.883063258,128.8 100,162.4 51.5025773881,128 54.9666790032,74" />
+                  <text x="96" y="12">機能合理性 78</text>
+                  <text x="152" y="52">緻密性 70</text>
+                  <text x="154" y="152">コード品質 72</text>
+                  <text x="96" y="194">テスト 78</text>
+                  <text x="22" y="152">ドキュメント 70</text>
+                  <text x="24" y="52">リスク 65</text>
+                </svg>
+                <div class="section">
+                  <ul class="list">
+                    <li>機能合理性 78: simpleMapper でフォールバックを追加しデコード成功率向上。</li>
+                    <li>緻密性 70: WARN 文言は一次例外のみで fallback 例外は握り潰し、調査性がやや低い。</li>
+                    <li>コード品質 72: serialize/deserialize 分離が不十分で命名と責務が曖昧。</li>
+                    <li>テスト充実度 78: `deserialize_fallbacksToSimpleMap_whenClassPropertyMissing` 追加で Map 復元を確認。</li>
+                    <li>ドキュメント 70: DOC_STATUS 行折り返し崩れ、RUN_ID/証跡リンク未整備の新メモが未追跡。</li>
+                    <li>リスク 65: ブランチに未コミット変更が残存、ログしきい値調整なしで WARN 抑止が不完全。</li>
+                  </ul>
+                </div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分・作業状況</summary>
+                <pre>未コミット変更あり
+- ModuleJsonConverter: simpleMapper 追加、fallback 成功時のログなし・失敗時 WARN は一次例外のまま
+- ModuleJsonConverterTest: @class なし JSON を Map として検証
+- DOC_STATUS 追記に改行崩れが発生、証跡 RUN_ID も未整備
+- 未追跡: src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミットファイル</summary>
+                <pre>common/src/main/java/open/dolphin/infomodel/ModuleJsonConverter.java
+common/src/test/java/open/dolphin/infomodel/ModuleJsonConverterTest.java
+docs/web-client/planning/phase2/DOC_STATUS.md
+src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="section"><strong>成果物リンク:</strong> task-1765718496635-2d340a → `.worktrees/task-1765718496635-2d340a`、task-1765718496838-cf0aba → `.worktrees/task-1765718496838-cf0aba`（異なる worktree 上の成果物に注意）。</div>
+      <div class="section"><strong>総括:</strong> codex/task-1765718496635-2d340a はフォールバック経路と WARN しきい値を整理しテストとドキュメントを完備。codex/task-1765718496838-cf0aba はフォールバック追加とテストは確認できるが未コミット・RUN_ID 記載漏れ・DOC_STATUS 体裁崩れが残り、仕上げ前の状態。</div>
+    </div>
+  </body>
+</html>

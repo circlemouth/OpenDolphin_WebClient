@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin: 16px 0 28px;
+      }
+      .score-card {
+        padding: 16px 20px;
+        background: linear-gradient(135deg, #f4f8fb 0%, #e2edf1 100%);
+        border: 1px solid #c4d3d7;
+        border-radius: 10px;
+      }
+      .score-card h2 {
+        margin: 0 0 4px;
+        font-size: 17px;
+        color: #2c3a40;
+      }
+      .score-big {
+        font-size: 34px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        color: #1f2a30;
+      }
+      .score-note {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-top: 4px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        border-radius: 12px;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--pass {
+        background: #c7efd7;
+        border-color: #9fd8b5;
+      }
+      .status-badge--fail {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+        color: #1f2a30;
+      }
+      details summary::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] summary::before {
+        transform: rotate(90deg);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .hex-wrap {
+        display: flex;
+        gap: 12px;
+        flex-wrap: wrap;
+        margin-bottom: 12px;
+      }
+      .hex {
+        width: 130px;
+        height: 120px;
+        background: radial-gradient(circle at 50% 50%, #f8fcff 0%, #e1edf3 70%);
+        clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 8px;
+        box-sizing: border-box;
+        border: 1px solid #c4d3d7;
+      }
+      .hex span {
+        font-size: 12px;
+        font-weight: 700;
+        color: #2c3a40;
+        line-height: 1.35;
+      }
+      .bullet {
+        margin: 6px 0;
+        padding-left: 0;
+      }
+      .bullet li {
+        margin: 0 0 4px 18px;
+      }
+      .issue {
+        color: #c0392b;
+        font-weight: 600;
+      }
+      .positive {
+        color: #1f7a4d;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">module_json docPk正数化調査 — 評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765718316661-d0971d（コミット済み）, task/task-1765718316864-2e25ac（作業ツリーあり） / 作成: 2025-12-14 22:49 JST</p>
+      </header>
+
+      <div class="score-grid">
+        <div class="score-card">
+          <h2>Agent task-1765718316661-d0971d</h2>
+          <div class="score-big">🥈 510 / 600</div>
+          <div class="score-note">平均 85.0 点（メダル想定: Silver 相当）</div>
+        </div>
+        <div class="score-card">
+          <h2>Agent task-1765718316864-2e25ac</h2>
+          <div class="score-big">❌ 185 / 600</div>
+          <div class="score-note">平均 30.8 点（失格: テスト未整備・コンパイル不整合）</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1765718316661-d0971d</th>
+            <th>Agent task-1765718316864-2e25ac</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pass">レビュー済</span>
+                <span>docPk 正数化コミット（b40cddce）を確認</span>
+              </div>
+              <div class="hex-wrap">
+                <div class="hex"><span>機能合理性<br/>86</span></div>
+                <div class="hex"><span>緻密性<br/>82</span></div>
+                <div class="hex"><span>安全性<br/>78</span></div>
+                <div class="hex"><span>テスト充実<br/>78</span></div>
+                <div class="hex"><span>仕様遵守<br/>88</span></div>
+                <div class="hex"><span>保守性<br/>82</span></div>
+              </div>
+              <p class="positive">良い点</p>
+              <ul class="bullet">
+                <li>`KarteEntryBean` にシーケンスジェネレータを明示追加し、PK 採番を正数固定化（`opendolphin.hibernate_sequence`）。</li>
+                <li>`KarteServiceBean#addDocument` で `id<=0` を検知しシーケンス採番へ上書き、`DocInfoModel.docPk` と同期。レスポンス/DB 一致を担保。</li>
+                <li>テストダブルを正数採番に合わせて更新。証跡ログ・README を RUN_ID=`20251214T132016Z` で反映。</li>
+                <li>新規ユニットテスト `KarteServiceBeanDocPkTest` を追加し、add→update のラウンドトリップで正数 PK と docPk 同期を検証。</li>
+              </ul>
+              <p class="issue">課題・リスク</p>
+              <ul class="bullet">
+                <li>GET 経路・MSW OFF での統合/E2E 確認は未実施（サーバー単体 UT のみ）。</li>
+                <li>シーケンス固定化が他エンティティへ及ぼす影響評価ログが未提出（現状 docPk にフォーカス）。</li>
+              </ul>
+              <details>
+                <summary>主な差分</summary>
+                <pre>common/src/main/java/open/dolphin/infomodel/KarteEntryBean.java: シーケンス指定とAUTO撤廃
+server-modernized/src/main/java/open/dolphin/session/KarteServiceBean.java: addDocumentでid<=0上書き採番、DocInfo同期、updateの防御維持
+server-modernized/src/test/java/open/dolphin/session/KarteServiceBeanDocPkTest.java: add→update 正数PK・docPk同期のUT追加
+server-modernized/src/test/java/open/dolphin/touch/DolphinResourceDocumentTest.java: Stubが正数採番を模倣
+docs/web-client/README.md, docs/web-client/planning/phase2/logs/20251214T132016Z-docpk-positive.md, src/modernization/module_json/docPk正数化調査.md: RUN_ID更新と証跡追記</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--fail">要修正</span>
+                <span>作業ツリーに未コミット変更と新規テストあり</span>
+              </div>
+              <div class="hex-wrap">
+                <div class="hex"><span>機能合理性<br/>40</span></div>
+                <div class="hex"><span>緻密性<br/>30</span></div>
+                <div class="hex"><span>安全性<br/>35</span></div>
+                <div class="hex"><span>テスト充実<br/>25</span></div>
+                <div class="hex"><span>仕様遵守<br/>20</span></div>
+                <div class="hex"><span>保守性<br/>35</span></div>
+              </div>
+              <p class="issue">主な問題</p>
+              <ul class="bullet">
+                <li>`KarteServiceBean` から `encodeModulePayloads/decodeModulePayloads` を除去し、`ModuleJsonConverter` に置換したが、既存の JSON/beanBytes 並存仕様との互換性検証がない。</li>
+                <li>負の docPk を 0 に上書きするだけでシーケンス採番を保証せず、`DocInfoModel.docPk` への同期も未実装。</li>
+                <li>新規テスト `KarteServiceBeanIntegrationTest` が `QUERY_MODULE_BY_DOC_ID`（private 定数）を参照しておりコンパイル不可。モック設定も不十分で CI 失敗が見込まれる。</li>
+                <li>`ModuleJsonConverter` は `activateDefaultTyping` を有効化しており、広域ポリモーフィック読込によるセキュリティ/後方互換リスクあり。</li>
+                <li>未コミットファイルが残存（`ModuleJsonConverter.java`, `KarteServiceBeanIntegrationTest.java`）。</li>
+              </ul>
+              <details>
+                <summary>検出した差分</summary>
+                <pre>server-modernized/src/main/java/open/dolphin/session/KarteServiceBean.java: ModuleJsonConverter注入・JSON変換ロジック差し替え、id<0を0に設定するのみ
+server-modernized/src/main/java/open/dolphin/util/ModuleJsonConverter.java: ObjectMapperでDefaultTypingを有効化
+server-modernized/src/test/java/open/dolphin/session/KarteServiceBeanIntegrationTest.java: Mockitoベースの新規IT（未コンパイル）</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

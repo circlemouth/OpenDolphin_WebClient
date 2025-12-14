@@ -1,0 +1,44 @@
+{
+  "id": 9020,
+  "confirmed": 1765712798000,
+  "started": 1765712798000,
+  "recorded": 1765712798000,
+  "status": "F",
+  "linkId": 0,
+  "docInfoModel": {
+    "docId": "AUTO-BEANJSON2-20251214T091846Z",
+    "docType": "karte",
+    "title": "beanJson auto save",
+    "purpose": "diagnosis",
+    "confirmDate": 1765712798000,
+    "firstConfirmDate": 1765712798000,
+    "department": "01",
+    "departmentDesc": "General",
+    "healthInsurance": "060",
+    "hasImage": false,
+    "hasRp": false,
+    "hasTreatment": false,
+    "hasLaboTest": false,
+    "sendClaim": false
+  },
+  "karteBean": {"id": 91012},
+  "userModel": {"id": 91003},
+  "modules": [
+    {
+      "confirmed": 1765712798000,
+      "started": 1765712798000,
+      "recorded": 1765712798000,
+      "status": "F",
+      "linkId": 0,
+      "moduleInfoBean": {
+        "stampName": "beanJson auto",
+        "stampRole": "p",
+        "stampNumber": 1,
+        "entity": "progressCourse"
+      },
+      "karteBean": {"id": 91012},
+      "userModel": {"id": 91003},
+      "beanJson": "{\"text\":\"bean json auto 20251214T091846Z\"}"
+    }
+  ]
+}
