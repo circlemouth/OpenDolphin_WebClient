@@ -1,7 +1,7 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
 - 本更新 RUN_ID=`20251214T132418Z`（module_json 型情報フォールバック）。証跡: `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`。  
-- 本更新 RUN_ID=`20251214T140106Z`（module_json UI 保存・復元再確認）。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。  
+- 本更新 RUN_ID=`20251214T140106Z`（module_json UI 保存・復元再確認＋負PKクリーニング/ガード方針）。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-guard.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-cleanup.md`。備考: 負の docPk (-41,-42,-43,-45,-46) を削除済み。  
 - 本更新 RUN_ID=`20251214T091846Z`（module_json MSW OFF スモーク追加）。証跡: `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md`。  
 - 本更新 RUN_ID=`20251214T084510Z`（module_json テスト/ビルド検証・smoke 試行）。証跡: `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md` / `docs/server-modernization/phase2/operations/logs/20251214T084510Z-module-json-test-build.md`。
 - 本更新 RUN_ID=`20251214T082236Z`（module_json 設計・手順書アップデート）。証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md` / `docs/server-modernization/phase2/operations/logs/20251214T082236Z-module-json-docs.md`。

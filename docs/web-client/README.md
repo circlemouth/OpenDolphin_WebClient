@@ -6,10 +6,11 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T132418Z`）
+### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T140106Z`）
+- module_json docPk ガード & 負 PK クリーニング（RUN_ID=`20251214T140106Z`）。`d_document/d_module` の負 id を削除し、addDocument 応答 docPk を必ず再利用する UI/テスト方針をログ化。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-guard.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-cleanup.md`。
+- module_json UI 保存・復元再確認（RUN_ID=`20251214T140106Z`）。最新 WAR ビルドで add→update→GET が docPk=9024（正数）となり、beanJson 保存/復元とも WARN 無し。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。
 - module_json 型情報フォールバック（RUN_ID=`20251214T132418Z`）。ModuleJsonConverter に non-typed フォールバック mapper を追加し、`@class` 無し beanJson でも WARN 無しで decode できる回帰テストを追加（証跡: `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`）。
 - module_json docPk 正数化（RUN_ID=`20251214T132016Z`）。JPA の PK 採番を `opendolphin.hibernate_sequence` へ固定し、addDocument で負の id を強制的に正のシーケンス採番へ上書き・DocInfo 同期。UI からの負数 docPk で updateDocument が 500 になる事象を防止。証跡: `docs/web-client/planning/phase2/logs/20251214T132016Z-docpk-positive.md`。
-- module_json UI 保存・復元再確認（RUN_ID=`20251214T140106Z`）。最新 WAR ビルドで add→update→GET が docPk=9024（正数）となり、beanJson 保存/復元とも WARN 無し。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。
 - module_json JSON 化手順を README / server-modernized Operations に反映し、RUN_ID=`20251214T082236Z` で証跡を整理。新規 Runbook `docs/server-modernization/phase2/operations/MODULE_JSON_DEVELOPMENT.md` を追加し、beanJson 優先・beanBytes フォールバック、polymorphic typing、Flyway `V0225` 前提と検証手順を明文化（証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md`）。
 - module_json ガントの親 RUN=`20251214T022944Z` を維持しつつ、キックオフ・Flyway・Converter・KarteServiceBean 組み込みの各ドキュメント/ログを参照チェーンで統一。
 - module_json テスト/ビルド検証（RUN_ID=`20251214T084510Z`）を実施。ModuleJsonConverter 正常系の単体テストを追加し Maven ビルド成功。perf-env-boot.js 修正後に msw smoke 1/1 pass（証跡: `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md`）。
