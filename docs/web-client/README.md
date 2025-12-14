@@ -6,14 +6,17 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T082236Z`）
+### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T123042Z`）
+- module_json UI 保存・復元確認（RUN_ID=`20251214T123042Z`）。MSW OFF で addDocument→GET→DB まで beanJson 保存を確認。docPk が負の場合 updateDocument が 500 になるため採番/ガードのフォローアップが必要（証跡: `docs/web-client/planning/phase2/logs/20251214T123042Z-module-json-ui-save.md`）。
 - module_json JSON 化手順を README / server-modernized Operations に反映し、RUN_ID=`20251214T082236Z` で証跡を整理。新規 Runbook `docs/server-modernization/phase2/operations/MODULE_JSON_DEVELOPMENT.md` を追加し、beanJson 優先・beanBytes フォールバック、polymorphic typing、Flyway `V0225` 前提と検証手順を明文化（証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md`）。
 - module_json ガントの親 RUN=`20251214T022944Z` を維持しつつ、キックオフ・Flyway・Converter・KarteServiceBean 組み込みの各ドキュメント/ログを参照チェーンで統一。
 - module_json テスト/ビルド検証（RUN_ID=`20251214T084510Z`）を実施。ModuleJsonConverter 正常系の単体テストを追加し Maven ビルド成功。perf-env-boot.js 修正後に msw smoke 1/1 pass（証跡: `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md`）。
+- module_json MSW OFF スモークを追加（RUN_ID=`20251214T091846Z`）。`VITE_DISABLE_MSW=1` で dev 起動し、orca-master-bridge smoke 1/1 pass。副作用なし（証跡: `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md`）。beanJson UI までの巡回は今後の軽量ケースで補完予定。
 - Charts 外来の fetch レイヤー統一、エラー/リトライ規約、セッション/権限ガード、API 契約テーブルなど 2025-12-13 までの更新内容は据え置き（次の UI 実装タスク開始待ち）。
 
 ## 現在のドキュメント（Active）
 - `src/modernization/module_json/キックオフ_RUN_ID採番.md` — module_json モダナイズ計画ガント起点（RUN_ID=`20251214T022944Z`）。
+- `src/modernization/module_json/UI保存復元確認.md` — module_json: UI 経路の addDocument 保存/復元（RUN_ID=`20251214T123042Z`）。
 - `src/modernization/module_json/テストとビルド検証.md` — module_json テスト/ビルド/Smoke（RUN_ID=`20251214T084510Z`）。
 - `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` — 画面別実装計画（本更新の中心）。
 - `planning/phase2/DOC_STATUS.md` — 棚卸し台帳（RUN_ID 同期済み）。
@@ -29,6 +32,7 @@
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
 - 証跡ログ: `planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
+- 証跡ログ: `planning/phase2/logs/20251214T123042Z-module-json-ui-save.md` を追加。
 - Charts 実装ログ: `planning/phase2/logs/20251211T120619Z-charts-timeline.md`（DocumentTimeline/OrcaSummary/PatientsTab のデータバインド、RUN_ID=`20251211T120619Z`）。
 
 ## 参考（Archive / Legacy）
