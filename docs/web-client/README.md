@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251214T022944Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251214T082236Z`）
 > 2025-12-14 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,16 +6,10 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T022944Z`）
-- module_json モダナイズ計画をキックオフし、RUN_ID=`20251214T022944Z` を親 RUN として固定。ガント起点 `src/modernization/module_json/キックオフ_RUN_ID採番.md` と証跡ログ `planning/phase2/logs/20251214T022944Z-module-json-kickoff.md` を追加し、Legacy 非改変方針と参照チェーンを明文化。
-- Charts 外来の fetch レイヤーを `fetchWithResolver` へ統一し、React Query の cacheHit/refetch meta と UI/Audit/Telemetry を同期（成果物: `src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md`、証跡: `docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`）。
-- Charts 外来の API 失敗時の tone/banner/aria-live/再取得導線を統一し、`missingMaster=true`/`fallbackUsed=true` で送信・編集・印刷をブロックする規約を追加（成果物: `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md`、証跡: `docs/web-client/planning/phase2/logs/20251213T121500Z-charts-error-handling.md`）。
-- Charts のセッション切れ/施設不一致/ユーザー変更時の破棄・ログアウト誘導、権限別ガード（診療終了/送信/患者編集/印刷）と Topbar 監査表示を整理（成果物: `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md`、証跡: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`）。
-- Patients/Charts から `/api01rv2/patient/outpatient` を呼び出し、runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を UI・audit・telemetry へ透過。MSW/Playwright に正常・missingMaster・fallbackUsed・timeout の 4 パターンを追加。
-- Charts Production（外来・本番品質）ガント開始にあわせ、参照チェーン起点を追加（起点: `src/charts_production_outpatient/00_RUN_IDと参照チェーン.md`、証跡: `docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`）。
-- Charts 本番外来（受付→診療→会計）を完走するための UI カバレッジ定義を追加（成果物: `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md`、証跡: `docs/web-client/planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`）。
-- ChartsPage の計画→実装ギャップを棚卸し（成果物: `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md`、証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`）。
-- Charts が利用する外来 API 契約（ヘッダー・監査・UI 透過・再試行/ガード）を確定し、Playwright/fixture の単一ソースを設定（成果物: `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md`、証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`）。
+### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T082236Z`）
+- module_json JSON 化手順を README / server-modernized Operations に反映し、RUN_ID=`20251214T082236Z` で証跡を整理。新規 Runbook `docs/server-modernization/phase2/operations/MODULE_JSON_DEVELOPMENT.md` を追加し、beanJson 優先・beanBytes フォールバック、polymorphic typing、Flyway `V0225` 前提と検証手順を明文化（証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md`）。
+- module_json ガントの親 RUN=`20251214T022944Z` を維持しつつ、キックオフ・Flyway・Converter・KarteServiceBean 組み込みの各ドキュメント/ログを参照チェーンで統一。
+- Charts 外来の fetch レイヤー統一、エラー/リトライ規約、セッション/権限ガード、API 契約テーブルなど 2025-12-13 までの更新内容は据え置き（次の UI 実装タスク開始待ち）。
 
 ## 現在のドキュメント（Active）
 - `src/modernization/module_json/キックオフ_RUN_ID採番.md` — module_json モダナイズ計画ガント起点（RUN_ID=`20251214T022944Z`）。
@@ -32,7 +26,7 @@
 - `architecture/web-client-api-mapping.md` — 外来 API マッピングと監査メタ（RUN_ID=`20251208T124645Z`）。
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
-- 証跡ログ: `planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
+- 証跡ログ: `planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
 - Charts 実装ログ: `planning/phase2/logs/20251211T120619Z-charts-timeline.md`（DocumentTimeline/OrcaSummary/PatientsTab のデータバインド、RUN_ID=`20251211T120619Z`）。
 
 ## 参考（Archive / Legacy）
