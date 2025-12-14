@@ -8,16 +8,17 @@
 2. 単体テスト追加: `common/src/test/java/open/dolphin/infomodel/ModuleJsonConverterTest.java` を追加し、beanJson 経路の serialize/decode 正常系を Map payload で確認。  
 3. `mvn -pl common test` を実行。全 3 テスト成功（converter 正常系確認含む）。  
 4. `mvn -pl server-modernized -am -DskipTests compile` を実行。モダナイズ版サーバーまでコンパイル成功。  
-5. smoke 試行: `npm --prefix web-client run dev -- --host --port 4173 --strictPort` で Vite dev（msw ON）起動後、`RUN_ID=20251214T084510Z npm run e2e:smoke -- --reporter=line --workers=1 --timeout=60000` を実行。  
-6. smoke 結果: ランタイムエラー `Cannot assign to read only property '__REACT_DEVTOOLS_GLOBAL_HOOK__' of object '#<Window>'` により失敗（Playwright fixture が runtime-errors を検出）。MSW stub 応答は取得済み。アーティファクト: `test-results/tests-e2e-orca-master-brid-bc038-dge-ORCA-master-audit-smoke/{test-failed-1.png,trace.zip}`。  
+5. smoke 試行 (1回目): `npm --prefix web-client run dev -- --host --port 4173 --strictPort` で Vite dev（msw ON）起動後、`RUN_ID=20251214T084510Z npm run e2e:smoke -- --reporter=line --workers=1 --timeout=60000` を実行。`__REACT_DEVTOOLS_GLOBAL_HOOK__` 再定義エラーで失敗。  
+6. 対応: `web-client/public/perf-env-boot.js` の DevTools 無効化処理を setter/no-op 方式に変更し、read-only 例外を防止。  
+7. smoke 再試行 (2回目): 同コマンドで再実行し、1/1 passed (3.2s)。アーティファクト: `artifacts/webclient/e2e/20251214T084510Z/msw-on/har/tests_e2e_orca-master-bridge.smoke.spec.ts___master-bridge_ORCA_master_audit_smoke.har` / `.../screenshots/tests_e2e_orca-master-bridge.smoke.spec.ts___master-bridge_ORCA_master_audit_smoke-0.png`。  
 
 ## 観測/課題
 - dev サーバー起動時に HTTPS 設定が自動付与されるが、Playwright は `ignoreHTTPSErrors: true` のため問題なし。  
-- smoke 失敗は React DevTools hook への書き込みが原因。フィクスチャ初期化（tests/playwright/fixtures.ts）の hook 周りか dev サーバーの devtools 設定見直しが必要。  
+- React DevTools hook 無効化は perf-env-boot.js 側の setter/no-op で吸収。現行の msw ON パスでは再発なし。  
 
 ## 次アクション候補
-- `__REACT_DEVTOOLS_GLOBAL_HOOK__` を扱うガードをフィクスチャへ追加して再実行。  
-- smoke 成功後に MSW ON/OFF 両パスで beanJson 保存/復元の UI 経路確認を追加する。  
+- MSW OFF（`VITE_DISABLE_MSW=1`）で軽量スモークを追加実行し、hook 修正の副作用がないか確認する。  
+- smoke 成功後に beanJson 保存/復元の UI 経路確認を追加する。  
 
 ## 成果物
 - `src/modernization/module_json/テストとビルド検証.md`
