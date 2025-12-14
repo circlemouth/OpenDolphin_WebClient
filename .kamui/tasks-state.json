@@ -588,5 +588,150 @@
     "worktreePath": ".worktrees/task-1765685807100-120c05",
     "medal": "gold",
     "aiCompetitionScore": 89
+  },
+  {
+    "id": "task-yaml-1vnlik8-src-modernizatio",
+    "name": "[module json modernized plan] テストとビルド検証\n期間: 12/20 09:00 - 12/21 09:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n## テスト & ビルド検証\n- 単体/コンパイルチェック、JSON保存・復元の正常系確認\n- 新規環境前提のため移行テストは省略\n- ローカル msw/modernized 環境で smoke 実施\n\nYAML ID: src/modernization/module_json/テストとビルド検証.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-14T08:05:17.299Z",
+    "updatedAt": "2025-12-14T08:05:17.299Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1vnlik8-src-modernizatio",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-module-json-modernized-plan-089a7ae2b1::src/modernization/module_json/テストとビルド検証.md",
+      "appId": "custom-app-module-json-modernized-plan-089a7ae2b1",
+      "datasetLabel": "module json modernized plan",
+      "pathId": "src/modernization/module_json/テストとビルド検証.md",
+      "fileName": "module-json-modernized-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/module-json-modernized-plan.yaml",
+      "addedAt": "2025-12-14T08:05:17.283Z"
+    },
+    "labels": [
+      "module json modernized plan",
+      "src / modernization / module_json"
+    ],
+    "dependencies": [
+      "task-yaml-13c90ta-src-modernizatio"
+    ],
+    "schedule": {
+      "startMs": 1766188800000,
+      "endMs": 1766275200000,
+      "durationDays": 1
+    },
+    "category": "src / modernization / module_json",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "## テスト & ビルド検証\n- 単体/コンパイルチェック、JSON保存・復元の正常系確認\n- 新規環境前提のため移行テストは省略\n- ローカル msw/modernized 環境で smoke 実施"
+  },
+  {
+    "id": "task-yaml-ebm2gd-src-docs-moderni",
+    "name": "[module json modernized plan] 設計と手順書アップデート\n期間: 12/19 09:00 - 12/20 09:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n## ドキュメント更新\n- docs/web-client/planning/phase2/DOC_STATUS.md に RUN_ID 追記\n- server-modernized の開発手順・JSON化仕様を README/operations に反映\n- 証跡ログへのリンクを整理\n\nYAML ID: src/docs/modernization/設計と手順書アップデート.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-14T08:05:23.504Z",
+    "updatedAt": "2025-12-14T08:05:23.504Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-ebm2gd-src-docs-moderni",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-module-json-modernized-plan-089a7ae2b1::src/docs/modernization/設計と手順書アップデート.md",
+      "appId": "custom-app-module-json-modernized-plan-089a7ae2b1",
+      "datasetLabel": "module json modernized plan",
+      "pathId": "src/docs/modernization/設計と手順書アップデート.md",
+      "fileName": "module-json-modernized-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/module-json-modernized-plan.yaml",
+      "addedAt": "2025-12-14T08:05:23.296Z"
+    },
+    "labels": [
+      "module json modernized plan",
+      "src / docs / modernization"
+    ],
+    "dependencies": [
+      "task-yaml-4k8iwx-src-modernizatio"
+    ],
+    "schedule": {
+      "startMs": 1766102400000,
+      "endMs": 1766188800000,
+      "durationDays": 1
+    },
+    "category": "src / docs / modernization",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "## ドキュメント更新\n- docs/web-client/planning/phase2/DOC_STATUS.md に RUN_ID 追記\n- server-modernized の開発手順・JSON化仕様を README/operations に反映\n- 証跡ログへのリンクを整理"
+  },
+  {
+    "id": "task-yaml-1b3wjg4-src-docs-moderni",
+    "name": "[module json modernized plan] リリースノート草案\n期間: 12/21 09:00 - 12/22 09:00 / 優先度: low / 緊急度: medium / エージェント: claude code\n\n## リリースノート草案\n- JSON保存への移行メリットと互換性注意を記載\n- 残存 beanBytes の扱いと今後の移行計画をメモ\n- QA 結果と既知のリスクをまとめる\n\nYAML ID: src/docs/modernization/リリースノート草案.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "low",
+    "urgency": "medium",
+    "createdAt": "2025-12-14T08:05:28.415Z",
+    "updatedAt": "2025-12-14T08:05:28.415Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1b3wjg4-src-docs-moderni",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-module-json-modernized-plan-089a7ae2b1::src/docs/modernization/リリースノート草案.md",
+      "appId": "custom-app-module-json-modernized-plan-089a7ae2b1",
+      "datasetLabel": "module json modernized plan",
+      "pathId": "src/docs/modernization/リリースノート草案.md",
+      "fileName": "module-json-modernized-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/module-json-modernized-plan.yaml",
+      "addedAt": "2025-12-14T08:05:28.335Z"
+    },
+    "labels": [
+      "module json modernized plan",
+      "src / docs / modernization"
+    ],
+    "dependencies": [
+      "task-yaml-1vnlik8-src-modernizatio",
+      "task-yaml-ebm2gd-src-docs-moderni"
+    ],
+    "schedule": {
+      "startMs": 1766275200000,
+      "endMs": 1766361600000,
+      "durationDays": 1
+    },
+    "category": "src / docs / modernization",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "## リリースノート草案\n- JSON保存への移行メリットと互換性注意を記載\n- 残存 beanBytes の扱いと今後の移行計画をメモ\n- QA 結果と既知のリスクをまとめる"
   }
 ]
