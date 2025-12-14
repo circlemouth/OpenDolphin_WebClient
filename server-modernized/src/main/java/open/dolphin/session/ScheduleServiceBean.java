@@ -26,6 +26,7 @@ import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.KarteBean;
+import open.dolphin.infomodel.ModelUtils;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
 import open.dolphin.infomodel.PatientModel;
@@ -270,6 +271,7 @@ public class ScheduleServiceBean {
                     soaProgress.setFreeText(sb.toString());
                     ModuleModel soaSpecModule = new ModuleModel();
                     soaSpecModule.setBeanBytes(IOSHelper.toXMLBytes(soaProgress));
+                    soaSpecModule.setBeanJson(ModelUtils.jsonEncode(soaProgress));
                     soaSpecModule.setConfirmed(latest.getConfirmed());
                     soaSpecModule.setStarted(latest.getStarted());
                     soaSpecModule.setRecorded(latest.getRecorded());
@@ -303,6 +305,7 @@ public class ScheduleServiceBean {
                     pProgress.setFreeText(sb.toString());
                     ModuleModel pSpecModule = new ModuleModel();
                     pSpecModule.setBeanBytes(IOSHelper.toXMLBytes(pProgress));
+                    pSpecModule.setBeanJson(ModelUtils.jsonEncode(pProgress));
                     pSpecModule.setConfirmed(latest.getConfirmed());
                     pSpecModule.setStarted(latest.getStarted());
                     pSpecModule.setRecorded(latest.getRecorded());

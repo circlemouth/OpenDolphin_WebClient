@@ -1,6 +1,7 @@
 package open.dolphin.adm20.converter;
 
 import open.dolphin.infomodel.ClaimBundle;
+import open.dolphin.infomodel.ModelUtils;
 import open.dolphin.infomodel.ModuleModel;
 
 /**
@@ -67,6 +68,7 @@ public class IBundleModule extends IAbstractModule {
         
         ClaimBundle bundle = model.toModel();
         ret.setBeanBytes(IOSHelper.toXMLBytes(bundle));
+        ret.setBeanJson(ModelUtils.jsonEncode(bundle));
         
         return ret;
     }

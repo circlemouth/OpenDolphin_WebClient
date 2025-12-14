@@ -484,6 +484,7 @@ public class IDocument implements java.io.Serializable {
             
             ModuleModel pSpecModule = new ModuleModel();
             pSpecModule.setBeanBytes(IOSHelper.toXMLBytes(pProgress));
+            pSpecModule.setBeanJson(ModelUtils.jsonEncode(pProgress));
             pSpecModule.setConfirmed(infoToSet.getConfirmed());
             pSpecModule.setStarted(infoToSet.getStarted());
             pSpecModule.setRecorded(infoToSet.getRecorded());
@@ -515,6 +516,7 @@ public class IDocument implements java.io.Serializable {
             pProgress.setFreeText(pText);
             ModuleModel pSpecModule = new ModuleModel();
             pSpecModule.setBeanBytes(IOSHelper.toXMLBytes(pProgress));
+            pSpecModule.setBeanJson(ModelUtils.jsonEncode(pProgress));
             pSpecModule.setConfirmed(ret.getConfirmed());
             pSpecModule.setStarted(ret.getStarted());
             pSpecModule.setRecorded(ret.getRecorded());
@@ -736,6 +738,7 @@ public class IDocument implements java.io.Serializable {
             
             ModuleModel pSpecModule = new ModuleModel();
             pSpecModule.setBeanBytes(IOSHelper.toXMLBytes(pProgress));
+            pSpecModule.setBeanJson(ModelUtils.jsonEncode(pProgress));
             pSpecModule.setConfirmed(infoToSet.getConfirmed());
             pSpecModule.setStarted(infoToSet.getStarted());
             pSpecModule.setRecorded(infoToSet.getRecorded());
@@ -767,6 +770,7 @@ public class IDocument implements java.io.Serializable {
             pProgress.setFreeText(pText);
             ModuleModel pSpecModule = new ModuleModel();
             pSpecModule.setBeanBytes(IOSHelper.toXMLBytes(pProgress));
+            pSpecModule.setBeanJson(ModelUtils.jsonEncode(pProgress));
             pSpecModule.setConfirmed(ret.getConfirmed());
             pSpecModule.setStarted(ret.getStarted());
             pSpecModule.setRecorded(ret.getRecorded());
