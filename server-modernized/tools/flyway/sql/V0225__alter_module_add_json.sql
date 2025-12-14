@@ -1,4 +1,4 @@
--- Make d_module.beanBytes nullable and add beanJson column for JSON payloads
+-- Add JSON column for ModuleModel and relax binary constraint
 ALTER TABLE d_module
     ALTER COLUMN beanBytes DROP NOT NULL;
 
