@@ -19,7 +19,8 @@ public final class ModuleJsonConverter {
 
     private static final ModuleJsonConverter INSTANCE = new ModuleJsonConverter();
 
-    private final ObjectMapper mapper;
+    private final ObjectMapper typedMapper;
+    private final ObjectMapper fallbackMapper;
 
     private ModuleJsonConverter() {
         PolymorphicTypeValidator ptv = BasicPolymorphicTypeValidator.builder()
@@ -28,8 +29,12 @@ public final class ModuleJsonConverter {
                 .allowIfSubType("java.time")
                 .build();
 
-        mapper = JsonMapper.builder()
+        typedMapper = JsonMapper.builder()
                 .activateDefaultTyping(ptv, ObjectMapper.DefaultTyping.NON_FINAL, JsonTypeInfo.As.PROPERTY)
+                .findAndAddModules()
+                .build();
+
+        fallbackMapper = JsonMapper.builder()
                 .findAndAddModules()
                 .build();
     }
@@ -46,7 +51,7 @@ public final class ModuleJsonConverter {
             return null;
         }
         try {
-            return mapper.writeValueAsString(payload);
+            return typedMapper.writeValueAsString(payload);
         } catch (JsonProcessingException e) {
             LOG.warn("Failed to serialize module payload to beanJson; keep beanBytes for fallback. type={}"
                     , payload.getClass().getName(), e);
@@ -62,10 +67,17 @@ public final class ModuleJsonConverter {
             return null;
         }
         try {
-            return mapper.readValue(json, Object.class);
+            return typedMapper.readValue(json, Object.class);
         } catch (Exception e) {
-            LOG.warn("Failed to deserialize module payload from beanJson; beanBytes fallback may be used.", e);
-            return null;
+            try {
+                Object fallback = fallbackMapper.readValue(json, Object.class);
+                LOG.debug("Deserialized beanJson without polymorphic type info; fallback mapper used.");
+                return fallback;
+            } catch (Exception fallbackEx) {
+                fallbackEx.addSuppressed(e);
+                LOG.warn("Failed to deserialize module payload from beanJson; beanBytes fallback may be used.", fallbackEx);
+                return null;
+            }
         }
     }
 
