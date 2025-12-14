@@ -10,10 +10,10 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.Query;
 import java.lang.reflect.Field;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.DocumentModel;
+import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.storage.attachment.AttachmentStorageManager;
 import org.junit.jupiter.api.BeforeEach;
@@ -91,10 +91,14 @@ class KarteServiceBeanDocPkTest {
         document.setDocInfoModel(info);
 
         ModuleModel module = new ModuleModel();
-        module.setModel(new HashMap<>()); // jsonEncode target
+        module.setModel(new DummyModel()); // jsonEncode target
 
         document.setModules(List.of(module));
         return document;
+    }
+
+    private static class DummyModel implements IInfoModel {
+        private static final long serialVersionUID = 1L;
     }
 
     private static void setField(Object target, String name, Object value) throws Exception {
