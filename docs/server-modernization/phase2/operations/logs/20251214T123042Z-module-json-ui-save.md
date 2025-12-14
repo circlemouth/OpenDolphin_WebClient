@@ -11,10 +11,16 @@
 4. DB 確認: `opendolphin.d_module` doc_id=-43 の `bean_json` NOT NULL, `beanbytes` NULL。`d_document` は `creator_id=91003 / karte_id=91012`。  
 5. updateDocument 試行: docPk=-43 を PUT したが `IllegalArgumentException: Document id is required for update`（負の PK を拒否）。  
 6. server log / psql 出力を `artifacts/webclient/e2e/20251214T123042Z/module-json-ui/` へ保存。
+7. 正の PK 期待で再試行（Playwright API / ヘッダー直指定）:  
+   - docId=`UIBJPOS20251214T123042Z`、payload から id を外して POST。サーバーログ上は `addDocument assigned seq id=9021` と正のシーケンスが割当されるが、応答/DB の docPk は `-42`（負）。  
+   - `/karte/documents/-42` GET 時、ModuleJsonConverter が `@class` 欠如で WARN（beanJson は `{ "text": ... }` の素直な JSON）。  
+   - PUT `/karte/document` はセッションレイヤで失敗（id<=0 ガード）し、beanJson 更新を完了できず。  
+   - 追加成果物: `artifacts/webclient/e2e/20251214T123042Z/module-json-ui/positive-pk/` に HAR/trace、リクエスト/レスポンス、server.log、DB 抜粋を保存。
 
 ## 観測・メモ
 - beanJson は addDocument→GET→DB で自動保存され、deserialize WARN なし。
 - docPk が負のまま発行されると updateDocument が 500 になる。PK 採番か updateDocument の前提条件整理が必要。
+- docId を 32 文字以下にしても返却 PK が負となり、ModuleJsonConverter は `@class` 無し JSON で WARN を出す。ポリモーフィック型情報を付与するか、UI 側で beanBytes を保持するフォールバック、あるいは正の PK 採番経路の見直しが必要。
 
 ## 成果物
 - Trace/リクエスト/レスポンス/サーバーログ/DB 抜粋: `artifacts/webclient/e2e/20251214T123042Z/module-json-ui/`
