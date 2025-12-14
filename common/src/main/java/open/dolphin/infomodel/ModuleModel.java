@@ -33,7 +33,7 @@ public class ModuleModel extends KarteEntryBean
 
     @Lob
     @JdbcTypeCode(SqlTypes.CLOB)
-    @Column(name = "beanJson", columnDefinition = "text")
+    @Column(name = "bean_json", columnDefinition = "text")
     private String beanJson;
     
     /**

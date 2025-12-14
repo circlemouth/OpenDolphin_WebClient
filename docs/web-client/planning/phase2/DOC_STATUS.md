@@ -14,6 +14,7 @@
 | `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。module_json ガント開始を追加し、参照チェーンを最新化。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
 | `src/modernization/module_json/ModuleJsonConverter実装.md` | module_json: Converter 実装 | Active | 2025-12-14 | RUN_ID=`20251214T031644Z`。beanJson 優先/beanBytes フォールバック方針と PTValidator 設定を明文化。証跡 `docs/web-client/planning/phase2/logs/20251214T031644Z-module-json-converter.md`。 |
+| `src/modernization/module_json/Flywayスクリプト追加.md` | module_json Flyway 追加 | Active | 2025-12-14 | RUN_ID=`20251214T031229Z`（親 `20251214T022944Z`）。証跡 `docs/web-client/planning/phase2/logs/20251214T031229Z-module-json-flyway.md`。 |
 | `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` | 画面別実装計画 | Active | 2025-12-11 | 新設。画面/機能/ARIA/監査/テレメトリ/ロードマップを統合。 |
 | `docs/web-client/planning/phase2/DOC_STATUS.md` | 棚卸し台帳 | Active | 2025-12-14 | 本ファイル。RUN_ID=`20251214T022944Z`。module_json ガント行を追加。 |
 | `docs/web-client/architecture/future-web-client-design.md` | 画面配置・機能サマリ | Active | 2025-12-10 | RUN_ID=`20251210T141208Z`。計画書と整合。 |
