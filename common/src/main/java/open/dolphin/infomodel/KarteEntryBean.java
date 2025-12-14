@@ -11,10 +11,14 @@ import jakarta.persistence.*;
  *
  */
 @MappedSuperclass
+@SequenceGenerator(name = "opendolphin_hibernate_seq",
+        sequenceName = "opendolphin.hibernate_sequence",
+        allocationSize = 1)
 public class KarteEntryBean extends InfoModel implements Comparable {
     
     // PK
-    @Id @GeneratedValue(strategy=GenerationType.AUTO)
+    @Id
+    @GeneratedValue(strategy = GenerationType.SEQUENCE, generator = "opendolphin_hibernate_seq")
     private long id;
     
     // 確定日時
