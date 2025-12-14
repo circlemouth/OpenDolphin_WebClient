@@ -9,10 +9,18 @@
   const disableHook = !allowDevtools && (isHeadlessChrome || window.__LHCI_DISABLE_REACT_DEVTOOLS__ === true);
 
   if (disableHook) {
+    // Headless Chrome (LHCI / Playwright) では React DevTools が
+    // `__REACT_DEVTOOLS_GLOBAL_HOOK__` への再定義を試みて例外になることがある。
+    // getter/setter で undefined を返し、setter は無視することで
+    // 例外を出さずにフックを無効化する。
     Object.defineProperty(window, '__REACT_DEVTOOLS_GLOBAL_HOOK__', {
-      value: undefined,
-      writable: false,
-      configurable: false,
+      get() {
+        return undefined;
+      },
+      set() {
+        // no-op
+      },
+      configurable: true,
     });
   }
 })();
