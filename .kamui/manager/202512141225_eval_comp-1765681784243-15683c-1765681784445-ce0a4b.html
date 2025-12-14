@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #eef3f4;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .score-value {
+        font-size: 24px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+      .score-note {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .agent-meta { display: block; margin-bottom: 12px; line-height: 1.5; }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      details { display: block; margin-top: 10px; }
+      summary { list-style: none; cursor: pointer; font-weight: 600; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 12px; }
+      .radar-wrap { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; flex-wrap: wrap; }
+      .radar-metrics { flex: 1 1 200px; font-size: 12px; }
+      .radar-metrics li { margin-bottom: 4px; }
+      .radar-svg { flex: 0 0 240px; }
+      .metric-label { font-weight: 700; margin-right: 6px; }
+      .link-list { margin: 8px 0 0; padding-left: 16px; }
+      .link-list li { margin-bottom: 4px; }
+      .risk { color: #a94442; font-weight: 700; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート (module_json Flyway スクリプト追加)</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765681784243-15683c, task/task-1765681784445-ce0a4b。タスク内容: d_module へ JSON 列追加・beanBytes の NOT NULL 解除 (V0225__alter_module_add_json.sql)。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1765681784243-15683c</h2>
+          <div class="score-value">🥉 390 / 600 (平均 65点)</div>
+          <div class="score-note">メダル判定: bronze (>=360 bronze, >=480 silver, >=540 gold)。camelCase 列名の仕様逸脱を要修正。</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1765681784445-ce0a4b</h2>
+          <div class="score-value">❌ 110 / 600 (平均 18点)</div>
+          <div class="score-note">メダル判定: none — コミットなし & runtime への適用漏れでタスク未完了。</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1765681784243-15683c</th>
+            <th>codex task-1765681784445-ce0a4b</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-14 12:25 JST</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">評価: 要修正あり</span> Flyway 追加は実装済みだが列名が仕様の「bean_json」から逸脱し、実運用で整合性リスク。</div>
+              <div class="radar-wrap">
+                <svg class="radar-svg" viewBox="0 0 240 240" aria-label="六角形チャート">
+                  <polygon points="120.0,30.0 197.9,75.0 197.9,165.0 120.0,210.0 42.1,165.0 42.1,75.0" fill="none" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon points="120.0,55.2 173.0,89.4 166.8,147.0 120.0,147.0 49.9,160.5 65.4,88.5" fill="#5cb0d1" fill-opacity="0.35" stroke="#2a7fa9" stroke-width="2" />
+                </svg>
+                <ul class="radar-metrics">
+                  <li><span class="metric-label">機能合理性</span>72 — NOT NULL 解除と JSON 列追加を両経路に配置。</li>
+                  <li><span class="metric-label">緻密性</span>68 — IF NOT EXISTS で冪等性確保、デプロイ順の説明なし。</li>
+                  <li><span class="metric-label">仕様遵守</span>60 — 指示は「bean_json」だが実装は「beanJson」。</li>
+                  <li><span class="metric-label">テスト妥当性</span>30 — migrate 未実行、検証ログなし。</li>
+                  <li><span class="metric-label">ドキュメント充実度</span>90 — DOC_STATUS 反映・RUN_ID ログ・作業記録を完備。</li>
+                  <li><span class="metric-label">運用リスク管理</span>70 — runtime/CLI 両方に配置し漏れを抑止、ただし列名不一致が後工程リスク。</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">主な成果物</div>
+              <ul class="link-list">
+                <li>runtime: <code>server-modernized/src/main/resources/db/migration/V0225__alter_module_add_json.sql</code></li>
+                <li>CLI: <code>server-modernized/tools/flyway/sql/V0225__alter_module_add_json.sql</code></li>
+                <li>計画: <code>src/modernization/module_json/Flywayスクリプト追加.md</code></li>
+                <li>証跡: <code>docs/web-client/planning/phase2/logs/20251214T031229Z-module-json-flyway.md</code></li>
+              </ul>
+              <details>
+                <summary>コミット / 差分 詳細</summary>
+                <pre>e97b595e Add Flyway script for module JSON
+- beanBytes の NOT NULL を DROP
+- beanJson TEXT を IF NOT EXISTS で追加（camelCase）
+- DOC_STATUS に新規行追加、RUN_ID=20251214T031229Z 記録
+リスク: 列名が仕様「bean_json」と不一致、アプリ側マッピングとの整合要確認。</pre>
+              </details>
+              <p class="risk">推奨対応: 列名を指示通り snake_case に修正し、migrate 実行結果を operations/logs に記録して再提出。</p>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--error">評価: 未完了</span> コミットがなく、CLI 側のみの未追跡 SQL が残存。</div>
+              <div class="radar-wrap">
+                <svg class="radar-svg" viewBox="0 0 240 240" aria-label="六角形チャート">
+                  <polygon points="120.0,30.0 197.9,75.0 197.9,165.0 120.0,210.0 42.1,165.0 42.1,75.0" fill="none" stroke="#b8c9cd" stroke-width="1" />
+                  <polygon points="120.0,97.5 135.6,111.0 143.4,133.5 120.0,120.0 112.2,124.5 100.5,108.8" fill="#f3a6a6" fill-opacity="0.45" stroke="#cc4c4c" stroke-width="2" />
+                </svg>
+                <ul class="radar-metrics">
+                  <li><span class="metric-label">機能合理性</span>25 — SQL は JSON 追加意図を満たすが CLI のみ。</li>
+                  <li><span class="metric-label">緻密性</span>20 — runtime 反映なし・IF NOT EXISTS なしで失敗リスク。</li>
+                  <li><span class="metric-label">仕様遵守</span>30 — 列名は指示の「bean_json」だが環境配置が未達。</li>
+                  <li><span class="metric-label">テスト妥当性</span>0 — migrate 実行/証跡なし。</li>
+                  <li><span class="metric-label">ドキュメント充実度</span>10 — 作業記録なし。</li>
+                  <li><span class="metric-label">運用リスク管理</span>25 — 未コミットファイルが残存しタスク完遂扱い不可。</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">検出内容</div>
+              <ul class="link-list">
+                <li>未追跡: <code>server-modernized/tools/flyway/sql/V0225__alter_module_add_json.sql</code> (bean_json 追加・NOT NULL 解除)</li>
+                <li>runtime 配置・ドキュメント・RUN_ID 記録が未実施。</li>
+              </ul>
+              <details>
+                <summary>ブランチ状態</summary>
+                <pre>git status -sb
+## task/task-1765681784445-ce0a4b
+?? server-modernized/tools/flyway/sql/V0225__alter_module_add_json.sql
+
+git diff master..task/task-1765681784445-ce0a4b --stat
+(差分なし)</pre>
+              </details>
+              <p class="risk">推奨対応: runtime への同一 SQL 追加、IF NOT EXISTS 等で冪等性確保、RUN_ID 付き証跡とコミット作成。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
