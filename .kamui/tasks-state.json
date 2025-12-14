@@ -517,41 +517,6 @@
     "aiCompetitionScore": 65
   },
   {
-    "id": "task-1765681789221-42b2fd",
-    "name": "🔍Monitor: [module json modernized plan] Flywayスクリプト追加\n期間: 12/17 09:00 - 12/18 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n## Flyway スキーマ変更\n- d_module に bean_json TEXT を追加\n- beanBytes NOT NULL 制約を解除\n- V0225__alter_module_add_json.sql を作成\n\nYAML ID: src/modernization/module_json/Flywayスクリプト追加.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-14T03:09:49.221Z",
-    "updatedAt": "2025-12-14T03:09:51.796Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765681789221-42b2fd",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765681784242-3qjtmf91",
-    "aiCompetitionGroupName": "[module json modernized plan] Flywayスクリプト追加\n期間: 12/17 09:00 - 12/18 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n## Flyway スキーマ変更\n- d_module に bean_json TEXT を追加\n- beanBytes NOT NULL 制約を解除\n- V0225__alter_module_add_json.sql を作成\n\nYAML ID: src/modernization/module_json/Flywayスクリプト追加.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1765681784243-15683c",
-      "task-1765681784445-ce0a4b"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1765681844242,
-    "worktreePath": ".worktrees/task-1765681789221-42b2fd"
-  },
-  {
     "id": "task-1765681798473-ec87c0",
     "name": "GeminiCLI1: [module json modernized plan] ModuleJsonConverter実装\n期間: 12/17 09:00 - 12/18 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n## ModuleJsonConverter 実装\n- ObjectMapper に polymorphic typing を設定\n- serialize: model→beanJson、互換用に beanBytes も維持\n- deserialize: beanJson→model を復元\n- 例外処理とロギング方針を決定\n\nYAML ID: src/modernization/module_json/ModuleJsonConverter実装.md",
     "model": "Gemini CLI",
