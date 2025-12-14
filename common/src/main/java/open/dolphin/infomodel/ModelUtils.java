@@ -10,6 +10,7 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
 import java.util.List;
+import com.fasterxml.jackson.databind.ObjectMapper;
 
 /**
  * InfoModel
@@ -575,6 +576,29 @@ public class ModelUtils implements IInfoModel {
         d.setExceptionListener(el);
         
         return d.readObject();
+    }
+
+    public static Object jsonDecode(String json) {
+        try {
+            ObjectMapper mapper = new ObjectMapper();
+            return mapper.readValue(json, Object.class);
+        } catch (Exception e) {
+            e.printStackTrace(System.err);
+        }
+        return null;
+    }
+
+    public static Object decodeModule(ModuleModel module) {
+        if (module == null) {
+            return null;
+        }
+        if (module.getBeanJson() != null) {
+            return jsonDecode(module.getBeanJson());
+        }
+        if (module.getBeanBytes() != null) {
+            return xmlDecode(module.getBeanBytes());
+        }
+        return null;
     }
     
     public static String convertListLongToStr(List<Long> list){
