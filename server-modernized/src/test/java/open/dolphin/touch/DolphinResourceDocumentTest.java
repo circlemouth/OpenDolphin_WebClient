@@ -165,7 +165,11 @@ public class DolphinResourceDocumentTest extends RuntimeDelegateTestSupport {
         @Override
         public long addDocument(DocumentModel document) {
             this.lastSaved = document;
-            return nextPk;
+            // mimic sequence-positive assignment used in production
+            if (document.getId() <= 0) {
+                document.setId(nextPk);
+            }
+            return document.getId();
         }
     }
 

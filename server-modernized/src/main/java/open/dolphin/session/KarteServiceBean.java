@@ -507,15 +507,22 @@ public class KarteServiceBean {
                 document.getId(),
                 document.getDocInfoModel() != null ? document.getDocInfoModel().getDocId() : "null");
 
-        // beanJson 優先保存（beanBytes はフォールバックとして維持）
-        encodeModulePayloads(document.getModules());
-
+        // 強制的に正の PK を採番する。負の id を持ってきてもここで上書きする。
         if (document.getId() <= 0) {
             Number seqValue = (Number) em
                     .createNativeQuery("SELECT nextval('opendolphin.hibernate_sequence')")
                     .getSingleResult();
             document.setId(seqValue.longValue());
         }
+
+        // DocInfo 側の docPk も同期しておく（レスポンス整合性と UI ガード用）
+        if (document.getDocInfoModel() != null) {
+            document.getDocInfoModel().setDocPk(document.getId());
+        }
+
+        // beanJson 優先保存（beanBytes はフォールバックとして維持）
+        encodeModulePayloads(document.getModules());
+
         LOGGER.info("addDocument assigned seq id={}", document.getId());
 
         document = em.merge(document);
@@ -594,6 +601,11 @@ public class KarteServiceBean {
 
         // beanJson 優先保存（beanBytes はフォールバックとして維持）
         encodeModulePayloads(document.getModules());
+
+        // addDocument で正の採番を保証しているが、念のため update でも防御（UI 側の不整合防止）
+        if (document.getId() <= 0) {
+            throw new IllegalArgumentException("Document id is required for update");
+        }
 
         DocumentModel merged = em.merge(document);
         attachmentStorageManager.persistExternalAssets(merged.getAttachment());
