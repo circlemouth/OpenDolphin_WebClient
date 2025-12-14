@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251214T082236Z`（module_json 設計・手順書アップデート）。証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md` / `docs/server-modernization/phase2/operations/logs/20251214T082236Z-module-json-docs.md`。
 - 本更新 RUN_ID=`20251214T031644Z`（ModuleJsonConverter 実装・polymorphic typing 設定）。証跡: `docs/web-client/planning/phase2/logs/20251214T031644Z-module-json-converter.md`。
 - 過去更新 RUN_ID=`20251214T025057Z`（ModuleModel beanJson 並行保存・decode フォールバック対応）。証跡: `docs/server-modernization/phase2/operations/logs/20251214T025057Z-module-model-json.md`。
 
@@ -11,7 +12,8 @@
 ## Active ドキュメント（2025-12-14 現在）
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / RUN_ID |
 | --- | --- | --- | --- | --- |
-| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。module_json ガント開始を追加し、参照チェーンを最新化。 |
+| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。module_json JSON 化手順への導線を追加し、参照チェーンを更新。 |
+| `src/docs/modernization/設計と手順書アップデート.md` | module_json 設計/手順書更新タスク | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。server-modernized README/operations への JSON 化手順反映と証跡整理。証跡 `planning/phase2/logs/20251214T082236Z-module-json-docs.md`。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
 | `src/modernization/module_json/ModuleJsonConverter実装.md` | module_json: Converter 実装 | Active | 2025-12-14 | RUN_ID=`20251214T031644Z`。beanJson 優先/beanBytes フォールバック方針と PTValidator 設定を明文化。証跡 `docs/web-client/planning/phase2/logs/20251214T031644Z-module-json-converter.md`。 |
 | `src/modernization/module_json/Flywayスクリプト追加.md` | module_json Flyway 追加 | Active | 2025-12-14 | RUN_ID=`20251214T031229Z`（親 `20251214T022944Z`）。証跡 `docs/web-client/planning/phase2/logs/20251214T031229Z-module-json-flyway.md`。 |
