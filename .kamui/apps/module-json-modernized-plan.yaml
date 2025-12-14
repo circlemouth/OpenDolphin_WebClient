@@ -1,0 +1,190 @@
+ganttConfig:
+  defaultView: day
+  startDate: 2025-12-15
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  areas:
+    src/modernization: true
+    src/docs: true
+src:
+  modernization:
+    module_json:
+      キックオフ_RUN_ID採番.md:
+        content: |-
+          ## キックオフ & RUN_ID採番
+          - RUN_IDを発行し、DOC_STATUSと証跡ログの更新方針を共有
+          - 参照チェーン遵守とレガシー側非改変を再確認
+          - 担当: PM、レビュアー決定
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency: []
+        schedule:
+          start: 2025-12-15T00:00:00.000Z
+          days: 1
+      ModuleModelフィールド拡張.md:
+        content: |-
+          ## ModuleModel フィールド拡張
+          - beanBytes を nullable に変更し、beanJson(TEXT) を追加
+          - Getter/Setter 追加と Hibernate 型指定確認
+          - Legacy 互換の挙動をレビュー
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/modernization/module_json/キックオフ_RUN_ID採番.md
+        schedule:
+          start: 2025-12-16T00:00:00.000Z
+          days: 1
+      Flywayスクリプト追加.md:
+        content: |-
+          ## Flyway スキーマ変更
+          - d_module に bean_json TEXT を追加
+          - beanBytes NOT NULL 制約を解除
+          - V0225__alter_module_add_json.sql を作成
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/modernization/module_json/ModuleModelフィールド拡張.md
+        schedule:
+          start: 2025-12-17T00:00:00.000Z
+          days: 1
+      ModuleJsonConverter実装.md:
+        content: |-
+          ## ModuleJsonConverter 実装
+          - ObjectMapper に polymorphic typing を設定
+          - serialize: model→beanJson、互換用に beanBytes も維持
+          - deserialize: beanJson→model を復元
+          - 例外処理とロギング方針を決定
+        priority: High
+        status: not_started
+        progress: 0
+        agent: claude code
+        api: []
+        dependency:
+          - src/modernization/module_json/ModuleModelフィールド拡張.md
+        schedule:
+          start: 2025-12-17T00:00:00.000Z
+          days: 1
+      KarteServiceBean組み込み.md:
+        content: |-
+          ## KarteServiceBean 組み込み
+          - add/updateDocument 保存前に serialize 適用
+          - 読込系で deserialize を全モジュールに適用
+          - 依存クエリ(QUERY_MODULE_BY_DOC_ID) 全対応を確認
+        priority: High
+        status: not_started
+        progress: 0
+        agent: codex
+        api: []
+        dependency:
+          - src/modernization/module_json/ModuleJsonConverter実装.md
+          - src/modernization/module_json/Flywayスクリプト追加.md
+        schedule:
+          start: 2025-12-18T00:00:00.000Z
+          days: 2
+      テストとビルド検証.md:
+        content: |-
+          ## テスト & ビルド検証
+          - 単体/コンパイルチェック、JSON保存・復元の正常系確認
+          - 新規環境前提のため移行テストは省略
+          - ローカル msw/modernized 環境で smoke 実施
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: gemini cli
+        api: []
+        dependency:
+          - src/modernization/module_json/KarteServiceBean組み込み.md
+        schedule:
+          start: 2025-12-20T00:00:00.000Z
+          days: 1
+  docs:
+    modernization:
+      設計と手順書アップデート.md:
+        content: |-
+          ## ドキュメント更新
+          - docs/web-client/planning/phase2/DOC_STATUS.md に RUN_ID 追記
+          - server-modernized の開発手順・JSON化仕様を README/operations に反映
+          - 証跡ログへのリンクを整理
+        priority: Medium
+        status: not_started
+        progress: 0
+        agent: cursor cli
+        api: []
+        dependency:
+          - src/modernization/module_json/キックオフ_RUN_ID採番.md
+        schedule:
+          start: 2025-12-19T00:00:00.000Z
+          days: 1
+      リリースノート草案.md:
+        content: |-
+          ## リリースノート草案
+          - JSON保存への移行メリットと互換性注意を記載
+          - 残存 beanBytes の扱いと今後の移行計画をメモ
+          - QA 結果と既知のリスクをまとめる
+        priority: Low
+        status: not_started
+        progress: 0
+        agent: claude code
+        api: []
+        dependency:
+          - src/modernization/module_json/テストとビルド検証.md
+          - src/docs/modernization/設計と手順書アップデート.md
+        schedule:
+          start: 2025-12-21T00:00:00.000Z
+          days: 1
