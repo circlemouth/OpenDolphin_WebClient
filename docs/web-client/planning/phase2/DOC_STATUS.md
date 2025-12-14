@@ -1,5 +1,7 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251214T123042Z`（module_json UI 保存・復元確認）。証跡: `docs/web-client/planning/phase2/logs/20251214T123042Z-module-json-ui-save.md` / `docs/server-modernization/phase2/operations/logs/20251214T123042Z-module-json-ui-save.md`。  
+- 本更新 RUN_ID=`20251214T091846Z`（module_json MSW OFF スモーク追加）。証跡: `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md`。  
 - 本更新 RUN_ID=`20251214T084510Z`（module_json テスト/ビルド検証・smoke 試行）。証跡: `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md` / `docs/server-modernization/phase2/operations/logs/20251214T084510Z-module-json-test-build.md`。
 - 本更新 RUN_ID=`20251214T082236Z`（module_json 設計・手順書アップデート）。証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md` / `docs/server-modernization/phase2/operations/logs/20251214T082236Z-module-json-docs.md`。
 - 本更新 RUN_ID=`20251214T031644Z`（ModuleJsonConverter 実装・polymorphic typing 設定）。証跡: `docs/web-client/planning/phase2/logs/20251214T031644Z-module-json-converter.md`。
@@ -16,7 +18,9 @@
 | `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。module_json JSON 化手順への導線を追加し、参照チェーンを更新。 |
 | `src/docs/modernization/設計と手順書アップデート.md` | module_json 設計/手順書更新タスク | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。server-modernized README/operations への JSON 化手順反映と証跡整理。証跡 `planning/phase2/logs/20251214T082236Z-module-json-docs.md`。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
+| `src/modernization/module_json/UI保存復元確認.md` | module_json: UI 保存・復元 | Active | 2025-12-14 | RUN_ID=`20251214T123042Z`。addDocument→GET→DB で beanJson 保存を確認。証跡 `planning/phase2/logs/20251214T123042Z-module-json-ui-save.md`。 |
 | `src/modernization/module_json/テストとビルド検証.md` | module_json: テスト/ビルド/Smoke | Active | 2025-12-14 | RUN_ID=`20251214T084510Z`。単体テスト追加・Maven ビルド成功、DevTools hook 無効化を修正し smoke(msw ON) 1/1 pass。証跡 `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md`。 |
+| `src/modernization/module_json/MSW_OFF_smoke追加.md` | module_json: MSW OFF スモーク | Active | 2025-12-14 | RUN_ID=`20251214T091846Z`。MSW OFF で orca-master-bridge smoke 1/1 pass。証跡 `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md`。 |
 | `src/modernization/module_json/ModuleJsonConverter実装.md` | module_json: Converter 実装 | Active | 2025-12-14 | RUN_ID=`20251214T031644Z`。beanJson 優先/beanBytes フォールバック方針と PTValidator 設定を明文化。証跡 `docs/web-client/planning/phase2/logs/20251214T031644Z-module-json-converter.md`。 |
 | `src/modernization/module_json/Flywayスクリプト追加.md` | module_json Flyway 追加 | Active | 2025-12-14 | RUN_ID=`20251214T031229Z`（親 `20251214T022944Z`）。証跡 `docs/web-client/planning/phase2/logs/20251214T031229Z-module-json-flyway.md`。 |
 | `src/modernization/module_json/KarteServiceBean組み込み.md` | module_json: KarteServiceBean 直列化/復元 | Active | 2025-12-14 | RUN_ID=`20251214T041935Z`（親 `20251214T022944Z`）。add/updateDocument 直列化・読込系復元を実装。証跡 `docs/web-client/planning/phase2/logs/20251214T041935Z-module-json-karte-service-bean.md`。 |
@@ -31,7 +35,9 @@
 | `docs/web-client/ux/playwright-scenarios.md` | E2E シナリオ草稿 | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。計画書のテスト章と連携。 |
 | `docs/web-client/ux/ux-documentation-plan.md` | UX 文書進行ハブ | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。 |
 | `docs/web-client/operations/debugging-outpatient-bugs.md` | 外来 API デバッグ記録 | Active | 2025-12-10 | RUN_ID=`20251210T054022Z`。Stage/Preview 再検証 pending。 |
+| `docs/web-client/planning/phase2/logs/20251214T123042Z-module-json-ui-save.md` | module_json UI 保存・復元ログ | Active | 2025-12-14 | RUN_ID=`20251214T123042Z`。addDocument→GET→DB で beanJson 保存、updateDocument が負の PK を拒否する課題あり。サーバー側証跡 `docs/server-modernization/phase2/operations/logs/20251214T123042Z-module-json-ui-save.md`。 |
 | `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md` | module_json テスト/ビルド検証ログ | Active | 2025-12-14 | RUN_ID=`20251214T084510Z`。単体テスト追加・Maven コンパイル成功、perf-env-boot.js 修正後に msw smoke 1/1 pass。 |
+| `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md` | module_json MSW OFF スモークログ | Active | 2025-12-14 | RUN_ID=`20251214T091846Z`。MSW OFF smoke 1/1 pass。beanJson は WAR 再ビルド＋opendolphin スキーマ整合後に `/karte/document` POST→GET→DB まで自動保存を確認（docPk=-45, bean_json NOT NULL）。HAR/trace/screenshot を同 RUN_ID で取得済み。 |
 | `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md` | module_json ガントキックオフ証跡 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。参照チェーン再確認・Legacy 非改変の明文化。成果物 `src/modernization/module_json/キックオフ_RUN_ID採番.md`。 |
 | `docs/web-client/planning/phase2/logs/20251211T172459Z-runid-governance.md` | RUN_ID 整備・参照チェーン確認ログ | Active | 2025-12-11 | RUN_ID=`20251211T172459Z`。本ガントの事前登録。 |
 | `docs/web-client/planning/phase2/logs/20251211T120619Z-charts-timeline.md` | Charts データバインド実装ログ | Active | 2025-12-11 | RUN_ID=`20251211T120619Z`。DocumentTimeline/PatientsTab/OrcaSummary のデータバインドと tone 連動メモ。 |
