@@ -29,4 +29,20 @@ public class ModuleJsonConverterTest {
         assertNotNull("decode should prefer beanJson", decoded);
         assertEquals(payload, decoded);
     }
+
+    @Test
+    public void decode_plainJsonWithoutClass_usesFallbackMapper() throws Exception {
+        ModuleJsonConverter converter = ModuleJsonConverter.getInstance();
+        Map<String, Object> payload = new HashMap<>();
+        payload.put("text", "plain-json");
+
+        String plainJson = new com.fasterxml.jackson.databind.ObjectMapper().writeValueAsString(payload);
+
+        ModuleModel module = new ModuleModel();
+        module.setBeanJson(plainJson);
+
+        Object decoded = converter.decode(module);
+        assertNotNull("decode should succeed even without @class type info", decoded);
+        assertEquals(payload, decoded);
+    }
 }
