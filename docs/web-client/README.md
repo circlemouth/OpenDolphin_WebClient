@@ -7,7 +7,7 @@
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
 ### 最新更新サマリ（2025-12-14 / RUN_ID=`20251214T123042Z`）
-- module_json UI 保存・復元確認（RUN_ID=`20251214T123042Z`）。MSW OFF で addDocument→GET→DB まで beanJson 保存を確認。docPk が負の場合 updateDocument が 500 になるため採番/ガードのフォローアップが必要（証跡: `docs/web-client/planning/phase2/logs/20251214T123042Z-module-json-ui-save.md`）。
+- module_json UI 保存・復元確認（RUN_ID=`20251214T123042Z`）。MSW OFF で addDocument→GET→DB まで beanJson 保存を確認。正の seq 割当ログがあっても返却 docPk が負のままになり updateDocument 失敗 / ModuleJsonConverter が `@class` 無し JSON で WARN（証跡: `docs/web-client/planning/phase2/logs/20251214T123042Z-module-json-ui-save.md`）。
 - module_json JSON 化手順を README / server-modernized Operations に反映し、RUN_ID=`20251214T082236Z` で証跡を整理。新規 Runbook `docs/server-modernization/phase2/operations/MODULE_JSON_DEVELOPMENT.md` を追加し、beanJson 優先・beanBytes フォールバック、polymorphic typing、Flyway `V0225` 前提と検証手順を明文化（証跡: `docs/web-client/planning/phase2/logs/20251214T082236Z-module-json-docs.md`）。
 - module_json ガントの親 RUN=`20251214T022944Z` を維持しつつ、キックオフ・Flyway・Converter・KarteServiceBean 組み込みの各ドキュメント/ログを参照チェーンで統一。
 - module_json テスト/ビルド検証（RUN_ID=`20251214T084510Z`）を実施。ModuleJsonConverter 正常系の単体テストを追加し Maven ビルド成功。perf-env-boot.js 修正後に msw smoke 1/1 pass（証跡: `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md`）。
