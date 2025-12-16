@@ -34,20 +34,36 @@ type ChartsAuditParams = AuditContext & {
   error?: string;
 };
 
+const resolveDataSource = ({
+  dataSourceTransition,
+  cacheHit,
+  fallbackUsed,
+}: {
+  dataSourceTransition?: DataSourceTransition;
+  cacheHit?: boolean;
+  fallbackUsed?: boolean;
+}) => {
+  if (dataSourceTransition) return dataSourceTransition;
+  if (cacheHit) return 'cache';
+  if (fallbackUsed) return 'fallback';
+  return undefined;
+};
+
 const buildDetails = (params: ChartsAuditParams) => {
   const meta = getObservabilityMeta();
+  const cacheHit = params.cacheHit ?? meta.cacheHit ?? false;
+  const missingMaster = params.missingMaster ?? meta.missingMaster ?? false;
+  const fallbackUsed = params.fallbackUsed ?? meta.fallbackUsed ?? false;
+  const dataSourceTransition = params.dataSourceTransition ?? meta.dataSourceTransition;
   return {
     runId: params.runId ?? meta.runId,
     traceId: params.traceId ?? meta.traceId,
     requestId: params.requestId,
-    dataSource:
-      params.dataSourceTransition ??
-      meta.dataSourceTransition ??
-      (meta.cacheHit ? 'cache' : meta.fallbackUsed ? 'fallback' : undefined),
-    dataSourceTransition: params.dataSourceTransition ?? meta.dataSourceTransition,
-    cacheHit: params.cacheHit ?? meta.cacheHit,
-    missingMaster: params.missingMaster ?? meta.missingMaster,
-    fallbackUsed: params.fallbackUsed ?? meta.fallbackUsed,
+    dataSource: resolveDataSource({ dataSourceTransition, cacheHit, fallbackUsed }),
+    dataSourceTransition,
+    cacheHit,
+    missingMaster,
+    fallbackUsed,
     patientId: params.patientId,
     appointmentId: params.appointmentId,
     note: params.note,
@@ -80,24 +96,23 @@ export function normalizeAuditEventPayload(
   if (!auditEvent) return undefined;
   const base = { ...auditEvent };
   const rawDetails = typeof base.details === 'object' && base.details !== null ? base.details : {};
+  const cacheHit =
+    (rawDetails as Record<string, unknown>).cacheHit ?? (rawDetails as Record<string, unknown>).cache ?? meta.cacheHit ?? false;
+  const fallbackUsed =
+    (rawDetails as Record<string, unknown>).fallbackUsed ?? meta.fallbackUsed ?? false;
+  const dataSourceTransition =
+    (rawDetails as Record<string, unknown>).dataSourceTransition ?? meta.dataSourceTransition;
   const mergedDetails = {
     runId: (rawDetails as Record<string, unknown>).runId ?? meta.runId,
     traceId: (rawDetails as Record<string, unknown>).traceId ?? meta.traceId,
     requestId: (rawDetails as Record<string, unknown>).requestId ?? meta.requestId,
     dataSource:
       (rawDetails as Record<string, unknown>).dataSource ??
-      (rawDetails as Record<string, unknown>).dataSourceTransition ??
-      meta.dataSourceTransition,
-    dataSourceTransition:
-      (rawDetails as Record<string, unknown>).dataSourceTransition ?? meta.dataSourceTransition,
-    cacheHit:
-      (rawDetails as Record<string, unknown>).cacheHit ??
-      (rawDetails as Record<string, unknown>).cache ??
-      meta.cacheHit,
-    missingMaster:
-      (rawDetails as Record<string, unknown>).missingMaster ?? meta.missingMaster,
-    fallbackUsed:
-      (rawDetails as Record<string, unknown>).fallbackUsed ?? meta.fallbackUsed,
+      resolveDataSource({ dataSourceTransition, cacheHit, fallbackUsed }),
+    dataSourceTransition,
+    cacheHit,
+    missingMaster: (rawDetails as Record<string, unknown>).missingMaster ?? meta.missingMaster ?? false,
+    fallbackUsed,
     ...rawDetails,
   };
 
