@@ -92,11 +92,13 @@ export function ChartsActionBar({
       cancel: 'DRAFT_CANCEL',
       print: 'PRINT_OUTPATIENT',
     };
+    const normalizedAction = outcome === 'error' ? 'CHARTS_ACTION_FAILURE' : actionMap[action];
     recordChartsAuditEvent({
-      action: actionMap[action],
+      action: normalizedAction,
       outcome,
       subject: `charts-action-${action}`,
       note: detail,
+      error: outcome === 'error' ? detail : undefined,
       durationMs,
       dataSourceTransition,
       cacheHit,
