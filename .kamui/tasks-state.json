@@ -46,31 +46,5 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# 11 監査ログ（auditEvent）統一\n\n- Charts の UI 操作を `auditEvent` の語彙に揃え、重要操作（患者切替/送信/終了/印刷/失敗）を “必ず” 記録する。\n- `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を details に統一して透過し、監査ログと UI 表示が乖離しないことを DoD にする。\n- 監査ログの “個人情報” を最小化しつつ、追跡可能性（traceId/requestId）を確保するルールを整備する。"
-  },
-  {
-    "id": "task-1765876792028-28e53d",
-    "name": "CodexCLI2: [webclient charts production outpatient plan] 11_監査ログauditEvent統一\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 11 監査ログ（auditEvent）統一\n\n- Charts の UI 操作を `auditEvent` の語彙に揃え、重要操作（患者切替/送信/終了/印刷/失敗）を “必ず” 記録する。\n- `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を details に統一して透過し、監査ログと UI 表示が乖離しないことを DoD にする。\n- 監査ログの “個人情報” を最小化しつつ、追跡可能性（traceId/requestId）を確保するルールを整備する。\n\nYAML ID: src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-16T09:19:52.028Z",
-    "updatedAt": "2025-12-16T09:19:55.931Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765876792028-28e53d",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765876791826-slq6y7ll",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 11_監査ログauditEvent統一\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 11 監査ログ（auditEvent）統一\n\n- Charts の UI 操作を `auditEvent` の語彙に揃え、重要操作（患者切替/送信/終了/印刷/失敗）を “必ず” 記録する。\n- `runId/dataSource/cacheHit/missingMaster/fallbackUsed/dataSourceTransition` を details に統一して透過し、監査ログと UI 表示が乖離しないことを DoD にする。\n- 監査ログの “個人情報” を最小化しつつ、追跡可能性（traceId/requestId）を確保するルールを整備する。\n\nYAML ID: src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765876792028-28e53d",
-    "medal": "silver",
-    "aiCompetitionScore": 82
   }
 ]
