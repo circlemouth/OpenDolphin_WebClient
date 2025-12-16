@@ -13,6 +13,14 @@ export type ChartsAuditAction =
 
 export type ChartsAuditOutcome = 'success' | 'error' | 'blocked' | 'started';
 
+export const CRITICAL_CHARTS_ACTIONS: ChartsAuditAction[] = [
+  'CHARTS_PATIENT_SWITCH',
+  'ORCA_SEND',
+  'ENCOUNTER_CLOSE',
+  'PRINT_OUTPATIENT',
+  'CHARTS_ACTION_FAILURE',
+];
+
 type AuditContext = {
   runId?: string;
   traceId?: string;
@@ -32,6 +40,29 @@ type ChartsAuditParams = AuditContext & {
   note?: string;
   durationMs?: number;
   error?: string;
+};
+
+const ALLOWED_DETAIL_KEYS = new Set([
+  'runId',
+  'traceId',
+  'requestId',
+  'dataSource',
+  'dataSourceTransition',
+  'cacheHit',
+  'missingMaster',
+  'fallbackUsed',
+  'patientId',
+  'appointmentId',
+  'note',
+  'durationMs',
+  'error',
+  'subject',
+]);
+
+const sanitizeDetails = (details: Record<string, unknown>) => {
+  return Object.fromEntries(
+    Object.entries(details).filter(([key]) => ALLOWED_DETAIL_KEYS.has(key)),
+  );
 };
 
 const resolveDataSource = ({
@@ -55,7 +86,7 @@ const buildDetails = (params: ChartsAuditParams) => {
   const missingMaster = params.missingMaster ?? meta.missingMaster ?? false;
   const fallbackUsed = params.fallbackUsed ?? meta.fallbackUsed ?? false;
   const dataSourceTransition = params.dataSourceTransition ?? meta.dataSourceTransition;
-  return {
+  return sanitizeDetails({
     runId: params.runId ?? meta.runId,
     traceId: params.traceId ?? meta.traceId,
     requestId: params.requestId,
@@ -69,7 +100,7 @@ const buildDetails = (params: ChartsAuditParams) => {
     note: params.note,
     durationMs: params.durationMs,
     error: params.error,
-  };
+  });
 };
 
 export function recordChartsAuditEvent(params: ChartsAuditParams) {
@@ -116,7 +147,8 @@ export function normalizeAuditEventPayload(
     ...rawDetails,
   };
 
-  return { ...base, runId: base.runId ?? mergedDetails.runId, details: mergedDetails };
+  const sanitizedDetails = sanitizeDetails(mergedDetails);
+  return { ...base, runId: base.runId ?? sanitizedDetails.runId, details: sanitizedDetails };
 }
 
 export function normalizeAuditEventLog(
