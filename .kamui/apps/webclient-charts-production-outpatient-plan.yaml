@@ -68,6 +68,7 @@ src:
         - 本ガントの実行開始時に RUN_ID を `YYYYMMDDThhmmssZ` で採番し、以降の証跡・DOC_STATUS・ログに同一値を使う。
         - 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ガント。
         - ローカル検証は `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` を前提に、ログイン情報は `setup-modernized-env.sh` 記載のものを使用する。
+        - 2025-12-16 進捗確認: `src/modernization/module_json` 配下のタスクを完了済み。Charts ガントで修正が必要な未完了タスクは現時点なし（foundation/11 以降を予定どおり着手）。
       priority: High
       status: completed
       progress: 100
