@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251217T114005Z`（Charts 患者サイドペイン仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T114005Z-charts-patient-sidepane.md`。備考: 患者サイドペインを閲覧中心にし、差分表示・監査導線・履歴導線を整理。
 - 本更新 RUN_ID=`20251217T113616Z`（Charts キーボード操作と ARIA 監査）。証跡: `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md`。備考: キーボード完走・通知 role/aria-live 規約・フォーカストラップ統一・Topbar runId 保全を定義。
 - 本更新 RUN_ID=`20251217T063116Z`（Charts ToneBanner/状態ピル一貫性）。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。備考: Reception と語彙・aria-live を統一し、ピル順序/tooltip/読み上げ抑制を定義。
 - 本更新 RUN_ID=`20251217T060504Z`（Charts シェル UI 最終レイアウト確定）。証跡: `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md`。備考: トップ/アクションバー固定、左30%/右70%基準、画面幅別挙動を定義。
@@ -16,7 +17,7 @@
 - Legacy (`client/`, `common/`, `ext_lib/`) は参照専用。接続検証や設定変更の対象は `server-modernized/` のみ。
 - 証跡ログ: `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`（module_json ガント開始）、`docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`（fetch レイヤ統一）、`docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`（セッション/権限ガード整理）、`docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`（外来 API 契約）、`docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`（ChartsPage 棚卸し）、`docs/web-client/planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`（カバレッジ定義）、`docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`（ガント起点）。
 
-## Active ドキュメント（2025-12-14 現在）
+## Active ドキュメント（2025-12-17 現在）
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / RUN_ID |
 | --- | --- | --- | --- | --- |
 | `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。module_json JSON 化手順への導線を追加し、参照チェーンを更新。 |
@@ -40,6 +41,7 @@
 | `docs/web-client/ux/playwright-scenarios.md` | E2E シナリオ草稿 | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。計画書のテスト章と連携。 |
 | `docs/web-client/ux/ux-documentation-plan.md` | UX 文書進行ハブ | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。 |
 | `docs/web-client/operations/debugging-outpatient-bugs.md` | 外来 API デバッグ記録 | Active | 2025-12-10 | RUN_ID=`20251210T054022Z`。Stage/Preview 再検証 pending。 |
+| `docs/web-client/planning/phase2/logs/20251217T114005Z-charts-patient-sidepane.md` | Charts 患者サイドペイン仕上げログ | Active | 2025-12-17 | RUN_ID=`20251217T114005Z`。閲覧中心化・差分/監査/履歴導線整理の仕様確定。 |
 | `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md` | Charts シェル UI 最終レイアウトログ | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペインのレイアウト確定と幅別挙動を定義。 |
 | `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md` | Charts キーボード操作/ARIA 監査ログ | Active | 2025-12-17 | RUN_ID=`20251217T113616Z`。主要導線のキーボード完走、通知 role/aria-live 規約、モーダル Trap、Topbar runId 保全を定義。成果物 `src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md`。 |
 | `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` | module_json UI 保存・復元ログ | Active | 2025-12-14 | RUN_ID=`20251214T140106Z`。UI 経路の add→update→GET で docPk=9024（正数）となり、beanJson 保存/復元に WARN 無し。サーバー側証跡 `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。 |
@@ -64,6 +66,7 @@
 | `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md` | Charts 本番外来カバレッジ定義 | Active | 2025-12-12 | RUN_ID=`20251212T131901Z`。DoD（監査/ARIA/運用）込みで外来 UI カバレッジを一覧化。 |
 | `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` | ChartsPage 棚卸し（計画→実装の差分） | Active | 2025-12-12 | RUN_ID=`20251212T140014Z`。P0/P1/P2 と入口/出口（Reception/Patients/Administration）責務分離案を確定。証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`。 |
 | `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` | Charts 外来 API 契約（監査/透過/再試行ルール） | Active | 2025-12-12 | RUN_ID=`20251212T143720Z`。Playwright/fixture の単一ソースとして API 契約を固定。証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`。 |
+| `src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md` | 患者サイドペイン閲覧中心化 | Active | 2025-12-17 | RUN_ID=`20251217T114005Z`。差分/監査/履歴導線を整理しガード条件を定義。 |
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |
 | `src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md` | Charts キーボード操作/ARIA 監査 | Active | 2025-12-17 | RUN_ID=`20251217T113616Z`。キーボード完走・通知 aria/live ルール・フォーカストラップ・runId/dataSource 保全を定義。証跡 `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md`。 |
 | `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` | Charts ToneBanner/状態ピル一貫性 | Active | 2025-12-17 | RUN_ID=`20251217T063116Z`。Reception と語彙/aria-live/ピル順序を統一し、読み上げ抑制と tooltip 方針を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。 |
