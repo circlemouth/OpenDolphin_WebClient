@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 24 OrcaSummary（請求/予約）商用仕上げ</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 16px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        background: linear-gradient(145deg, #eef3f4, #d8e6e9);
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        border-radius: 8px;
+      }
+      .score-value {
+        font-size: 24px;
+        font-weight: 800;
+        color: #1f2a30;
+        margin-bottom: 6px;
+      }
+      .score-label {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .chart-wrap { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+      .chart-legend { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 10px; font-size: 12px; color: #2c3a40; }
+      .legend-key { font-weight: 600; color: #1f2a30; }
+      .score-reasons { margin: 0; padding-left: 16px; font-size: 13px; color: #2c3a40; }
+      .score-reasons li { margin-bottom: 6px; }
+      .cta-links { font-size: 12px; color: #2c3a40; margin-top: 8px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート — 24 OrcaSummary（請求/予約）商用レベル仕上げ</h1>
+        <p class="monitor-description">タスク ID: task-1765976560023-cabd90 / task-1765976560223-69555f（エージェント: gemini cli）。請求/予約サマリ仕様ドキュメントの更新内容をレビューし、機能合理性と緻密性を中心に評価しました。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <div class="score-value">496 / 600 🥈</div>
+          <div class="score-label">task-1765976560023-cabd90（RUN_ID=20251217T130500Z, branch worktree）</div>
+        </div>
+        <div class="score-card">
+          <div class="score-value">501 / 600 🥈</div>
+          <div class="score-label">task-1765976560223-69555f（RUN_ID=20251217T130407Z, branch worktree）</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765976560023-cabd90</th>
+            <th>Agent task-1765976560223-69555f</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-17 22:12 JST</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">docs: OrcaSummary請求/予約 商用仕上げ仕様（RUN_ID=20251217T130500Z）。未コミット差分なし。</span>
+              </div>
+              <div class="chart-wrap">
+                <svg width="220" height="210" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,10 177.9,55 177.9,145 100,190 22.1,145 22.1,55" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100.0,20.8 167.0,61.3 170.1,140.5 100.0,173.8 53.2,127.0 29.9,59.5" fill="rgba(52, 152, 219, 0.25)" stroke="#3498db" stroke-width="2" />
+                </svg>
+                <div class="chart-legend">
+                  <div><span class="legend-key">機能合理性</span> 88</div>
+                  <div><span class="legend-key">緻密性</span> 86</div>
+                  <div><span class="legend-key">仕様遵守</span> 90</div>
+                  <div><span class="legend-key">リスク管理</span> 82</div>
+                  <div><span class="legend-key">テスト/証跡</span> 60</div>
+                  <div><span class="legend-key">ドキュ品質</span> 90</div>
+                </div>
+              </div>
+              <p class="snapshot-summary">差分 3 files / 77行追加。DOC_STATUS 追記、計画ログ新設、UX仕様書追加。</p>
+              <ul class="score-reasons">
+                <li>請求/予約サマリの表示粒度、fallbackUsedブロック、2クリック導線、audit/telemetry/data-* まで業務要件に踏み込んで整理しており機能合理性は高い。</li>
+                <li>ARIAトーン、ピル順序、ショートカット、manualRefresh計測など実装指示が具体的で緻密。ただしパフォーマンス測定手段や非同期エラー処理のテスト条件は未定義。</li>
+                <li>RUN_ID/DOC_STATUS/証跡ログのチェーンを遵守し計画文書としての体裁は整っているが、コード実装・Playwright検証は未着手の明記のみでテスト裏付けが不足。</li>
+                <li>同じ成果物ファイルを別RUN_IDで更新しており、並行マージ時のコンフリクトリスクが残る。merge方針の記載や親RUN_ID参照があるとさらに安全。</li>
+              </ul>
+              <div class="cta-links">
+                成果物: src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md（branch task-1765976560023-cabd90）<br/>
+                証跡: docs/web-client/planning/phase2/logs/20251217T130500Z-orca-summary.md
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log --oneline -1
+54996bd8 docs: OrcaSummary請求予約 商用レベル仕上げ (RUN_ID=20251217T130500Z)
+
+git diff --stat fe9dea48..54996bd8
+ docs/web-client/planning/phase2/DOC_STATUS.md      |  1 +
+ .../phase2/logs/20251217T130500Z-orca-summary.md   | 13 +++++
+ ...請求予約_商用レベル仕上げ.md                     | 63 ++++++++++++++++++++++
+ 3 files changed, 77 insertions(+)
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">docs: OrcaSummary商用仕上げ指針追加（RUN_ID=20251217T130407Z）。未コミット差分なし。</span>
+              </div>
+              <div class="chart-wrap">
+                <svg width="220" height="210" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,10 177.9,55 177.9,145 100,190 22.1,145 22.1,55" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100.0,19.0 168.6,60.4 170.9,140.9 100.0,175.6 53.2,127.0 31.4,60.4" fill="rgba(46, 204, 113, 0.25)" stroke="#2ecc71" stroke-width="2" />
+                </svg>
+                <div class="chart-legend">
+                  <div><span class="legend-key">機能合理性</span> 90</div>
+                  <div><span class="legend-key">緻密性</span> 88</div>
+                  <div><span class="legend-key">仕様遵守</span> 91</div>
+                  <div><span class="legend-key">リスク管理</span> 84</div>
+                  <div><span class="legend-key">テスト/証跡</span> 60</div>
+                  <div><span class="legend-key">ドキュ品質</span> 88</div>
+                </div>
+              </div>
+              <p class="snapshot-summary">差分 4 files / 88行追加。READMEとDOC_STATUSに最新更新サマリを反映し、UX仕様と証跡ログを新規追加。</p>
+              <ul class="score-reasons">
+                <li>予約衝突・未収・保険期限切れまで考慮した表示粒度、4つの導線（予約/会計/再取得/新規予約）、fallbackUsed/missingMaster別トーンを提示し業務判断に必要な要素を網羅。</li>
+                <li>状態別トーン・ARIA・ショートカット・ボタンレイアウト（幅別レスポンシブ）まで具体化し、実装指針としての緻密さは高い。</li>
+                <li>DOC_STATUSとREADMEを同RUN_IDで更新し参照チェーンを踏襲。audit/telemetry項目も明記したが、性能目標やエッジケーステストの手順は未記述。</li>
+                <li>実装/テスト未実施であることの注意喚起はあるが、依存する既存仕様との差分やマージ戦略が明文化されておらず並行作業衝突リスクが残る。</li>
+              </ul>
+              <div class="cta-links">
+                成果物: src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md（branch task-1765976560223-69555f）<br/>
+                証跡: docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>git log --oneline -1
+0e5f722b Add OrcaSummary commercial UX guidance
+
+git diff --stat fe9dea48..0e5f722b
+ docs/web-client/README.md                          |  2 +
+ docs/web-client/planning/phase2/DOC_STATUS.md      |  3 +
+ .../phase2/logs/20251217T130407Z-orca-summary.md   | 12 ++++
+ ...請求予約_商用レベル仕上げ.md                     | 71 ++++++++++++++++++++++
+ 4 files changed, 88 insertions(+)
+                </pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
