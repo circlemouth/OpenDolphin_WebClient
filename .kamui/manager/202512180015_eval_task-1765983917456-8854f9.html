@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 16px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 12px;
+        background: #f8fbfc;
+      }
+      .score-card__headline {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-card__total {
+        font-size: 15px;
+        color: #0f172a;
+        font-weight: 700;
+      }
+      .radar-wrap {
+        position: relative;
+        width: 220px;
+        height: 220px;
+        margin: 0 auto;
+      }
+      .radar {
+        width: 220px;
+        height: 220px;
+      }
+      .radar-base {
+        fill: rgba(148, 163, 184, 0.18);
+        stroke: #94a3b8;
+        stroke-width: 1.2;
+      }
+      .radar-data {
+        fill: rgba(59, 130, 246, 0.28);
+        stroke: #2563eb;
+        stroke-width: 2;
+      }
+      .radar-label {
+        font-size: 11px;
+        fill: #0f172a;
+        text-anchor: middle;
+      }
+      .radar-legend {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 12px;
+        color: #334155;
+      }
+      .radar-legend li {
+        margin: 2px 0;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 4);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .totals-banner { padding: 10px 12px; background: #eef3f4; border: 1px solid #c4d3d7; border-radius: 10px; margin-bottom: 12px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">23_DocumentTimeline 商用レベル仕上げ 評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765983892354-fca18f, task/task-1765983892555-5fd86b, task/task-1765983892755-522917, task/task-1765983892954-1ee3ce（未コミットなし）。基準: 機能合理性・緻密性。</p>
+        <div class="totals-banner">スコアは各6指標×100点=600点満点。メダル: 🥇≥540, 🥈≥480, 🥉≥360, ⚪️未達。</div>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <div class="score-card__headline">task-1765983892354-fca18f 🥇</div>
+          <div class="score-card__total">557 / 600 点</div>
+          <div class="radar-wrap">
+            <svg class="radar" viewBox="0 0 200 200" data-scores="[90,96,90,95,95,91]">
+              <polygon class="radar-base" points="" />
+              <polygon class="radar-data" points="" />
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+            </svg>
+          </div>
+          <ul class="radar-legend">
+            <li>コード品質 90点</li>
+            <li>状態可視性 96点</li>
+            <li>失敗復旧 90点</li>
+            <li>データ規模耐性 95点</li>
+            <li>機能適合 95点</li>
+            <li>ドキュメント整合 91点</li>
+          </ul>
+        </div>
+        <div class="score-card">
+          <div class="score-card__headline">task-1765983892954-1ee3ce 🥉</div>
+          <div class="score-card__total">459 / 600 点</div>
+          <div class="radar-wrap">
+            <svg class="radar" viewBox="0 0 200 200" data-scores="[82,75,72,70,82,78]">
+              <polygon class="radar-base" points="" />
+              <polygon class="radar-data" points="" />
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+            </svg>
+          </div>
+          <ul class="radar-legend">
+            <li>コード品質 82点</li>
+            <li>状態可視性 75点</li>
+            <li>失敗復旧 72点</li>
+            <li>データ規模耐性 70点</li>
+            <li>機能適合 82点</li>
+            <li>ドキュメント整合 78点</li>
+          </ul>
+        </div>
+        <div class="score-card">
+          <div class="score-card__headline">task-1765983892555-5fd86b 🥉</div>
+          <div class="score-card__total">374 / 600 点</div>
+          <div class="radar-wrap">
+            <svg class="radar" viewBox="0 0 200 200" data-scores="[60,62,55,50,65,82]">
+              <polygon class="radar-base" points="" />
+              <polygon class="radar-data" points="" />
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+            </svg>
+          </div>
+          <ul class="radar-legend">
+            <li>コード品質 60点</li>
+            <li>状態可視性 62点</li>
+            <li>失敗復旧 55点</li>
+            <li>データ規模耐性 50点</li>
+            <li>機能適合 65点</li>
+            <li>ドキュメント整合 82点</li>
+          </ul>
+        </div>
+        <div class="score-card">
+          <div class="score-card__headline">task-1765983892755-522917 🥉</div>
+          <div class="score-card__total">381 / 600 点</div>
+          <div class="radar-wrap">
+            <svg class="radar" viewBox="0 0 200 200" data-scores="[62,64,55,52,68,80]">
+              <polygon class="radar-base" points="" />
+              <polygon class="radar-data" points="" />
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+              <text class="radar-label" x="0" y="0"></text>
+            </svg>
+          </div>
+          <ul class="radar-legend">
+            <li>コード品質 62点</li>
+            <li>状態可視性 64点</li>
+            <li>失敗復旧 55点</li>
+            <li>データ規模耐性 52点</li>
+            <li>機能適合 68点</li>
+            <li>ドキュメント整合 80点</li>
+          </ul>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765983892354-fca18f</th>
+            <th>task-1765983892954-1ee3ce</th>
+            <th>task-1765983892555-5fd86b</th>
+            <th>task-1765983892755-522917</th>
+            <th>備考</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-18 00:15</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">仮想ウィンドウ32件＋ページングで大量データ耐性を確保。missingMaster強調・次アクション提示・受付→診療→ORCAキューを段階表示し、エラー/再取得/保留をバッジ化。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ/差分</summary>
+                <pre>commit dc8b1c55 Add DocumentTimeline production UX and virtualization
+ファイル: DocumentTimeline.tsx, charts/styles.ts, DOC_STATUS 他
+差分: 434 insertions / 33 deletions
+主な良点:
+- queuePhase( error/retrying/holding/pending ) と deriveNextAction で「次にやること」を明示
+- missingMaster/選択行をハイライトし、ORCAステップの進捗バッジ表示
+- VIRTUAL_WINDOW=32 の仮想化とセクション折りたたみ・ページングで大規模データも破綻しにくい
+- fallbackUsed/cacheHit に応じた再取得 UI と監査情報表示
+留意: rank計算とフィルタで O(n*m) だが現状規模では許容。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">セクション毎5件表示＋「あと◯件」で折りたたみ。missingMaster時の警告はあるがキュー状態/次アクション・ORCA段階表示が未実装。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ/差分</summary>
+                <pre>commit 06b18c21 feat(charts): DocumentTimeline visual improvements and scalability
+差分: DocumentTimeline.tsx, charts/styles.ts
+内容:
+- グループごとに5件表示/展開ボタンで段階ロード
+- missingMaster警告とToneBanner, retry UIは維持
+不足:
+- 受付→診療→ORCAキューの状態遷移可視化なし
+- 失敗/再試行/保留の明示・次アクション提示なし
+- 仮想化は単純な折りたたみのみで視認性・パフォーマンスは限定的。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">商用ガイダンスのドキュメント追加。実装差分はなし。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ/差分</summary>
+                <pre>commit e252b4f1 Add DocumentTimeline commercial guidance
+差分: README, DOC_STATUS, 操作ログ, 仕様メモ
+評価: 手順/ログ整備は良好だが UI/機能改善は未着手。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">商用品質仕様/ログ追加のみ。UI実装なし。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ/差分</summary>
+                <pre>commit 91da81f3 Add DocumentTimeline commercial spec and logging
+差分: README, DOC_STATUS, ログ, 仕様メモ
+評価: 仕様整理は◎、ただし可視化・仮想化の実装が未反映。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">備考</span>
+                <span class="agent-label">4ブランチとも未コミット変更なし。成果物は各 worktree 配下に存在。</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre>task-1765983892354-fca18f: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1765983892354-fca18f
+(task-1765983892954-1ee3ce なども同階層)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const LABELS = ['コード品質', '状態可視性', '失敗復旧', 'データ規模耐性', '機能適合', 'ドキュメント整合'];
+      document.querySelectorAll('.radar').forEach((svg) => {
+        const scores = JSON.parse(svg.getAttribute('data-scores'));
+        const center = 100;
+        const r = 80;
+        const basePts = [];
+        const dataPts = [];
+        for (let i = 0; i < 6; i += 1) {
+          const angle = -Math.PI / 2 + i * ((Math.PI * 2) / 6);
+          const bx = center + r * Math.cos(angle);
+          const by = center + r * Math.sin(angle);
+          basePts.push(`${bx.toFixed(1)},${by.toFixed(1)}`);
+          const radius = r * (scores[i] / 100);
+          const dx = center + radius * Math.cos(angle);
+          const dy = center + radius * Math.sin(angle);
+          dataPts.push(`${dx.toFixed(1)},${dy.toFixed(1)}`);
+          const label = svg.querySelectorAll('.radar-label')[i];
+          if (label) {
+            label.setAttribute('x', center + (r + 12) * Math.cos(angle));
+            label.setAttribute('y', center + (r + 12) * Math.sin(angle) + 4);
+            label.textContent = `${LABELS[i]} ${scores[i]}点`;
+          }
+        }
+        svg.querySelector('.radar-base').setAttribute('points', basePts.join(' '));
+        svg.querySelector('.radar-data').setAttribute('points', dataPts.join(' '));
+      });
+    </script>
+  </body>
+</html>

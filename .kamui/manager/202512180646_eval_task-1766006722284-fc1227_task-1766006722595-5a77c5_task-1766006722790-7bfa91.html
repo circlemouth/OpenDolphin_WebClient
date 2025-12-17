@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 20px; }
+      .score-card { padding: 12px; border: 1px solid #c4d3d7; background: #f6f9fa; border-radius: 6px; }
+      .score-card .total { font-size: 20px; font-weight: 700; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; margin-bottom: 6px; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .hexchart { display: flex; gap: 12px; align-items: center; margin-bottom: 10px; }
+      .hexchart svg { width: 180px; height: 160px; }
+      .metric-list { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 4px 8px; font-size: 11px; color: #2c3a40; }
+      .metric-list span { display: block; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象タスク: [webclient charts production outpatient plan] 34_並行編集とロック表示 — 並行編集/ロック表示のドキュメント実装3ブランチを比較評価（機能合理性・緻密性）。</p>
+        <p class="monitor-description">総括: fc1227 はロックAPI名を暫定扱いに改め、定数化＋リネームタスクを明記しリスクを低減。順位は変わらずだがスコアを微増。</p>
+      </header>
+      <div class="scoreboard">
+        <div class="score-card">
+          <div class="total">🥇 542 / 600</div>
+          <div>task-1766006722284-fc1227（平均90点→91点相当）</div>
+        </div>
+        <div class="score-card">
+          <div class="total">🥈 491 / 600</div>
+          <div>task-1766006722595-5a77c5（平均82点）</div>
+        </div>
+        <div class="score-card">
+          <div class="total">🥉 471 / 600</div>
+          <div>task-1766006722790-7bfa91（平均79点）</div>
+        </div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766006722284-fc1227</th>
+            <th>Agent task-1766006722595-5a77c5</th>
+            <th>Agent task-1766006722790-7bfa91</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-18 06:46</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">completed</span><span class="agent-label">暫定ロックAPI名を明示、定数化とリネームタスクを追加し依存リスクを可視化。</span></div>
+              <div class="hexchart">
+                <svg viewBox="0 0 200 180" aria-label="六角チャート">
+                  <polygon points="100,10 173.2,55 173.2,125 100,170 26.8,125 26.8,55" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="174,90 137,152 66,151 27,90 62,27 135,32" fill="#9fc5d7" fill-opacity="0.68" stroke="#316b89" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <span>機能合理性 92</span>
+                  <span>要件適合 90</span>
+                  <span>具体性/実装 88</span>
+                  <span>UX/ARIA 90</span>
+                  <span>監査/テレメトリ 92</span>
+                  <span>リスク/抜け漏れ 90</span>
+                </div>
+              </div>
+              <div class="snapshot-summary">強み: 二段階ロックとヘッダーピル、監査・Timeline まで具体。暫定名を明記しリネーム計画を追加しリスク軽減。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/コミット</summary>
+                <pre>commit 4a675fd1 docs: mark charts lock API names as provisional and constantize plan
+- ロックメタ/ヘッダーを「名称暫定」と明記し、定数化＋正式仕様後リネームタスクを追記。
+- README / DOC_STATUS にも暫定名とリネーム予定を記載。
+- 証跡ログへ「正式命名後に置換」ステップを追加。
+前回: 0f894d96 docs: add concurrent edit lock plan for charts (RUN_ID=20251217T212718Z)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>- 仮API名依存リスクを定数化と明示タスクで解消し、リスクスコアを+5（85→90）。
+- 実装具体度や監査要件は維持。順位は変わらずトップ。
+- 残課題: server-modernized 正式スキーマ連絡をトリガに rename 実施が必要。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">completed</span><span class="agent-label">楽観ロック+ローカルアドバイザリロック、更新者表示、409/412/強制取得 UX を整理。</span></div>
+              <div class="hexchart">
+                <svg viewBox="0 0 200 180" aria-label="六角チャート">
+                  <polygon points="100,10 173.2,55 173.2,125 100,170 26.8,125 26.8,55" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="168,90 132.8,146.76 68,145.42 32.8,90 67.2,33.24 131.2,35.95" fill="#b6cfe0" fill-opacity="0.65" stroke="#4a7b96" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <span>機能合理性 85</span>
+                  <span>要件適合 82</span>
+                  <span>具体性/実装 80</span>
+                  <span>UX/ARIA 84</span>
+                  <span>監査/テレメトリ 82</span>
+                  <span>リスク/抜け漏れ 78</span>
+                </div>
+              </div>
+              <div class="snapshot-summary">強み: BroadcastChannelによるタブ衝突抑止と If-Match 義務化。弱み: サーバーロック仕様が薄く強制取得時のデータ保護が曖昧。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/コミット</summary>
+                <pre>commit 0cc9d9a6 Add charts concurrent edit lock plan (RUN_ID=20251217T212750Z)
+- README/DOC_STATUS 更新、証跡ログ追加。
+- If-Match 義務化 + アドバイザリロック案、状態テーブル、監査キー提案。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>- ローカル衝突対策と 409/412 UX は良いが、サーバーロックの仕様・強制取得時のデータ保全が不足。
+- リスク/抜け漏れが他案より高いまま。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">completed</span><span class="agent-label">lock API（POST/PUT/DELETE）とロック状態正規化、If-Match 付き衝突ハンドリングを定義。</span></div>
+              <div class="hexchart">
+                <svg viewBox="0 0 200 180" aria-label="六角チャート">
+                  <polygon points="100,10 173.2,55 173.2,125 100,170 26.8,125 26.8,55" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="164,90 131.2,144.02 66.4,148.2 36.8,90 68,34.576 128,41.504" fill="#c5d8e5" fill-opacity="0.65" stroke="#567a92" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <span>機能合理性 80</span>
+                  <span>要件適合 78</span>
+                  <span>具体性/実装 84</span>
+                  <span>UX/ARIA 79</span>
+                  <span>監査/テレメトリ 80</span>
+                  <span>リスク/抜け漏れ 70</span>
+                </div>
+              </div>
+              <div class="snapshot-summary">強み: lock API/TTL/heartbeat/ActionBar disable まで詳細。弱み: 新規API前提で適合検証不足、同一ブラウザ多タブ対策が弱い。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分/コミット</summary>
+                <pre>commit cd072367 Add charts concurrent edit lock workflow (RUN_ID=20251217T212800Z)
+- README/DOC_STATUS 更新、証跡ログ追加。
+- lock API (POST/PUT/DELETE)、lockState 正規化、ActionBar/ToneBanner/Timeline挙動、監査/例外ケースを記述。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>- API定義とテスト観点は具体だが、server-modernized への新規API追加の整合確認なし。
+- ローカル多タブ衝突対策が弱く、リスク評価を据え置き。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="monitor-description" style="margin-top:16px;">成果物パス: src/charts_production_outpatient/workflow/34_並行編集とロック表示.md（各RUN_ID版）、ログ: docs/web-client/planning/phase2/logs/20251217T2127xxZ-*.md。異なる worktree 上の成果物である点に注意。</p>
+    </div>
+  </body>
+</html>

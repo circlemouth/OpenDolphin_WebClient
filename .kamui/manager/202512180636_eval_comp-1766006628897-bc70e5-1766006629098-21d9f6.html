@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 32 ドラフト保存と復元</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        padding: 16px;
+        background: #f7fbfc;
+        border: 1px solid #c4d3d7;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 18px;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 800;
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+      }
+      .score-value span.small {
+        font-size: 16px;
+        font-weight: 600;
+        color: #3a4b53;
+      }
+      .radar-row {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin-bottom: 8px;
+      }
+      .radar {
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        padding: 8px;
+      }
+      .radar svg {
+        width: 100%;
+        height: 220px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--risk { background: #fef3cd; border-color: #f0e5a5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .metric-list { font-size: 13px; margin: 0; padding-left: 16px; }
+      .metric-list li { margin-bottom: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | 32 ドラフト保存と復元（比較）</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1766006628897-bc70e5 と task/task-1766006629098-21d9f6。機能合理性と緻密性を中心に、ドキュメント差分・設計妥当性を評価。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1766006628897-bc70e5</h2>
+          <div class="score-value">🏆 528 / 600 <span class="small">(88/100)</span></div>
+          <p class="monitor-description">facilityId と userId を含むキー束縛と監査詳細が強く、autosave バックオフと missingMaster/fallback ガードも明示。</p>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766006629098-21d9f6</h2>
+          <div class="score-value">🥈 450 / 600 <span class="small">(75/100)</span></div>
+          <p class="monitor-description">ローカル+サーバー二層保存と TTL・Timeline 連携を提示する一方、facility/user のスコープ漏れと 5s autosave/50KB 制約がリスク。</p>
+        </div>
+      </div>
+
+      <div class="radar-row">
+        <div class="radar">
+          <svg id="radarA" viewBox="0 0 240 240"></svg>
+        </div>
+        <div class="radar">
+          <svg id="radarB" viewBox="0 0 240 240"></svg>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1766006628897-bc70e5</th>
+            <th>codex / task-1766006629098-21d9f6</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-18 06:36</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span><span class="agent-label">設計ドキュメント追加のみ（コミット 49b29ae6）。</span></div>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="metric-list">
+                <li>ドキュメント: <code>src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md</code> （RUN_ID=20251217T212600Z）</li>
+                <li>証跡: <code>docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md</code></li>
+                <li>参照チェーン反映: README/DOC_STATUS 更新済み。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span><span class="agent-label">設計ドキュメント追加のみ（コミット 84d7c76e）。</span></div>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="metric-list">
+                <li>ドキュメント: <code>src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md</code> （RUN_ID=20251217T212703Z）</li>
+                <li>証跡: <code>docs/web-client/planning/phase2/logs/20251217T212703Z-charts-draft-recovery.md</code></li>
+                <li>README/DOC_STATUS へ RUN_ID 追記済み。</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">主な評価</td>
+            <td>
+              <ul class="metric-list">
+                <li>機能合理性: facilityId/userId/runId/patientId/receptionId/encounterDate の厳密束縛で取り違え防止が明確。</li>
+                <li>緻密性: autosave 30s→60s→120s バックオフ、missingMaster/fallback guard、audit details (draftKey/contentHash/source/outcome) が揃っている。</li>
+                <li>ガバナンス: 参照チェーン遵守・RUN_ID 記載・監査アクション命名を 11章に合わせている。</li>
+              </ul>
+            </td>
+            <td>
+              <ul class="metric-list">
+                <li>機能合理性: ローカル/サーバー二層保存と復元モーダルの競合解決を提示し、Timeline 連携も明記。</li>
+                <li>緻密性: TTL=72h、draftVersion/etag、サイズ上限、差分保存など運用面を補強。</li>
+                <li>ガバナンス: 参照チェーン・RUN_ID 記載は適合だが、スコープキーに facility/user を含めておらずポリシー逸脱が懸念。</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">リスク/課題</td>
+            <td>
+              <ul class="metric-list">
+                <li>ドラフトを localStorage/React Query にのみ保存し TTL/掃除が未定義のため、長期利用でストレージ肥大と古いドラフト残存リスク。</li>
+                <li>サーバー版ドキュメントとのコンフリクト検出が未具体化（documentRevision 依存を記述するだけ）。</li>
+              </ul>
+            </td>
+            <td>
+              <ul class="metric-list">
+                <li>キーに facilityId/userId を含まず、同一端末の別ログインでドラフトが復元されるリスク。</li>
+                <li>5 秒 autosave と 50KB 上限が実運用の所見量に対し過剰/過少で、負荷と保存失敗を誘発する恐れ。</li>
+                <li>サーバー `draft=true` API と draftVersion/etag が現行契約に存在せず、実装可能性に不確実性。</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">推奨アクション</td>
+            <td>
+              <ul class="metric-list">
+                <li>TTL/掃除ルールを foundation/10 フックに追加し、古いドラフト自動削除を明文化。</li>
+                <li>documentRevision と contentHash の突合アルゴリズムを擬似コードで追記し、競合 UI 条件を明示。</li>
+              </ul>
+            </td>
+            <td>
+              <ul class="metric-list">
+                <li>draftKey に facilityId と userId を追加し、セッション境界を跨ぐ復元を禁止。</li>
+                <li>autosave 間隔を 30s バックオフ型に緩和し、サイズ上限を実測ベースで再設定。</li>
+                <li>サーバー下書き API の有無を DOC_STATUS か 03 章で確認し、不在ならローカル限定にスコープダウンする文言が必要。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const radarData = {
+        radarA: {
+          name: "task-1766006628897-bc70e5",
+          scores: [90, 88, 90, 92, 85, 83],
+        },
+        radarB: {
+          name: "task-1766006629098-21d9f6",
+          scores: [78, 74, 70, 82, 68, 78],
+        },
+      };
+      const labels = [
+        "機能合理性",
+        "緻密性",
+        "ガバナンス順守",
+        "監査/証跡連携",
+        "リスク抑止",
+        "実装実現可能性",
+      ];
+      function drawRadar(id, scores) {
+        const svg = document.getElementById(id);
+        if (!svg) return;
+        const size = 240;
+        const center = size / 2;
+        const maxR = 90;
+        const gridLevels = [0.4, 0.7, 1];
+        // draw grid
+        gridLevels.forEach((level) => {
+          const points = labels.map((_, i) => {
+            const angle = -Math.PI / 2 + (i * 2 * Math.PI) / labels.length;
+            const r = maxR * level;
+            return [center + r * Math.cos(angle), center + r * Math.sin(angle)];
+          });
+          const poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+          poly.setAttribute("points", points.map((p) => p.join(",")).join(" "));
+          poly.setAttribute("fill", "none");
+          poly.setAttribute("stroke", "#c4d3d7");
+          poly.setAttribute("stroke-width", level === 1 ? 1.4 : 1);
+          svg.appendChild(poly);
+        });
+        // labels
+        labels.forEach((label, i) => {
+          const angle = -Math.PI / 2 + (i * 2 * Math.PI) / labels.length;
+          const r = maxR + 18;
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+          text.setAttribute("x", x);
+          text.setAttribute("y", y);
+          text.setAttribute("text-anchor", "middle");
+          text.setAttribute("dominant-baseline", "middle");
+          text.setAttribute("font-size", "11");
+          text.textContent = label;
+          svg.appendChild(text);
+        });
+        // data polygon
+        const dataPoints = scores.map((score, i) => {
+          const angle = -Math.PI / 2 + (i * 2 * Math.PI) / labels.length;
+          const r = maxR * (score / 100);
+          return [center + r * Math.cos(angle), center + r * Math.sin(angle)];
+        });
+        const polygon = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+        polygon.setAttribute("points", dataPoints.map((p) => p.join(",")).join(" "));
+        polygon.setAttribute("fill", "rgba(26, 128, 182, 0.25)");
+        polygon.setAttribute("stroke", "#1a80b6");
+        polygon.setAttribute("stroke-width", "2");
+        svg.appendChild(polygon);
+      }
+      drawRadar("radarA", radarData.radarA.scores);
+      drawRadar("radarB", radarData.radarB.scores);
+    </script>
+  </body>
+</html>
