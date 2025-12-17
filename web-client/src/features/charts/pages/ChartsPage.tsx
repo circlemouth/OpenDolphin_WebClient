@@ -62,9 +62,18 @@ function ChartsContent() {
   });
 
   const appointmentQueryKey = ['charts-appointments', today];
-  const appointmentQuery = useQuery({
+  const appointmentQuery = useInfiniteQuery({
     queryKey: appointmentQueryKey,
-    queryFn: (context) => fetchAppointmentOutpatients({ date: today }, context),
+    queryFn: ({ pageParam = 1, ...context }) =>
+      fetchAppointmentOutpatients({ date: today, page: pageParam, size: 50 }, context),
+    getNextPageParam: (lastPage, allPages) => {
+      if (lastPage.hasNextPage === false) return undefined;
+      if (lastPage.hasNextPage === true) return (lastPage.page ?? allPages.length) + 1;
+      const size = lastPage.size ?? 50;
+      if (lastPage.recordsReturned !== undefined && lastPage.recordsReturned < size) return undefined;
+      return (lastPage.page ?? allPages.length) + 1;
+    },
+    initialPageParam: 1,
     refetchOnWindowFocus: false,
     meta: {
       servedFromCache: !!queryClient.getQueryState(appointmentQueryKey)?.dataUpdatedAt,
@@ -181,7 +190,21 @@ function ChartsContent() {
     setAuditEvents(getAuditEventLog());
   }, [flags.cacheHit, flags.dataSourceTransition, flags.missingMaster, flags.runId]);
 
-  const patientEntries: ReceptionEntry[] = appointmentQuery.data?.entries ?? [];
+  const appointmentPages = appointmentQuery.data?.pages ?? [];
+  const patientEntries: ReceptionEntry[] = useMemo(
+    () => appointmentPages.flatMap((page) => page.entries ?? []),
+    [appointmentPages],
+  );
+  const appointmentRecordsReturned = useMemo(
+    () =>
+      appointmentPages.reduce(
+        (acc, page) => acc + (page.recordsReturned ?? page.entries?.length ?? 0),
+        0,
+      ),
+    [appointmentPages],
+  );
+  const hasNextAppointments =
+    appointmentQuery.hasNextPage ?? appointmentPages.some((page) => page.hasNextPage === true);
   useEffect(() => {
     if (patientEntries.length === 0) return;
     if (selectedPatientId || selectedAppointmentId) return;
@@ -263,6 +286,13 @@ function ChartsContent() {
             }
             isClaimLoading={claimQuery.isFetching}
             onRetryClaim={handleRetryClaim}
+            recordsReturned={appointmentRecordsReturned}
+            hasNextPage={hasNextAppointments}
+            onLoadMore={() => appointmentQuery.fetchNextPage()}
+            isLoadingMore={appointmentQuery.isFetchingNextPage}
+            isInitialLoading={appointmentQuery.isLoading}
+            pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
+            isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
           />
         </div>
         <div className="charts-card">

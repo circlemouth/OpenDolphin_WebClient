@@ -213,6 +213,15 @@ export const mergeOutpatientMeta = (
     typeof raw.recordsReturned === 'number'
       ? (raw.recordsReturned as number)
       : defaults.recordsReturned;
+  const size = typeof raw.size === 'number' ? (raw.size as number) : defaults.size;
+  const page = typeof raw.page === 'number' ? (raw.page as number) : defaults.page;
+  const hasNextPageRaw = typeof raw.hasNextPage === 'boolean' ? (raw.hasNextPage as boolean) : undefined;
+  const hasNextPage =
+    hasNextPageRaw !== undefined
+      ? hasNextPageRaw
+      : size !== undefined && recordsReturned !== undefined
+        ? recordsReturned >= size
+        : defaults.hasNextPage;
 
   return {
     runId: (raw.runId as string | undefined) ?? defaults.runId,
@@ -225,6 +234,9 @@ export const mergeOutpatientMeta = (
     fallbackFlagMissing,
     fetchedAt: (raw.fetchedAt as string | undefined) ?? defaults.fetchedAt,
     recordsReturned,
+    size,
+    page,
+    hasNextPage,
     fromCache: defaults.fromCache,
     retryCount: defaults.retryCount,
     sourcePath: defaults.sourcePath,
