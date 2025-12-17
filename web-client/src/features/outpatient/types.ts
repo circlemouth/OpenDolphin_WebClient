@@ -5,6 +5,7 @@ export type ReceptionStatus = '受付中' | '診療中' | '会計待ち' | '会�
 export type ReceptionEntry = {
   id: string;
   appointmentId?: string;
+  receptionId?: string;
   patientId?: string;
   name?: string;
   kana?: string;

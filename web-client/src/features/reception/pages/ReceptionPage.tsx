@@ -7,6 +7,7 @@ import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
 import { updateObservabilityMeta } from '../../../libs/observability/observability';
 import type { DataSourceTransition } from '../../../libs/observability/types';
 import { OrderConsole } from '../components/OrderConsole';
+import { ToneBanner } from '../components/ToneBanner';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry, type ReceptionStatus } from '../api';
 import { receptionStyles } from '../styles';
 import { useAuthService } from '../../charts/authService';
@@ -205,11 +206,31 @@ export function ReceptionPage({
     if (merged.phys !== undefined) setPhysicianFilter(merged.phys);
   }, [searchParams]);
 
+  const intent = searchParams.get('intent') as 'appointment_change' | 'appointment_cancel' | null;
+  const intentKeyword = searchParams.get('kw') ?? '';
+  const intentParam = intent ?? '';
+  const intentBanner = useMemo(() => {
+    if (!intent) return null;
+    if (intent === 'appointment_cancel') {
+      return {
+        tone: 'warning' as const,
+        message: 'Charts から「予約キャンセル」導線で開きました。対象患者/予約を確認してから操作してください。',
+        nextAction: '予約キャンセル確認',
+      };
+    }
+    return {
+      tone: 'info' as const,
+      message: 'Charts から「予約変更」導線で開きました。対象患者/予約を確認してから操作してください。',
+      nextAction: '予約変更',
+    };
+  }, [intent]);
+
   useEffect(() => {
     const params = new URLSearchParams();
     if (keyword) params.set('kw', keyword);
     if (departmentFilter) params.set('dept', departmentFilter);
     if (physicianFilter) params.set('phys', physicianFilter);
+    if (intentParam) params.set('intent', intentParam);
     setSearchParams(params, { replace: true });
     if (typeof localStorage !== 'undefined') {
       const snapshot = {
@@ -219,7 +240,7 @@ export function ReceptionPage({
       };
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(snapshot));
     }
-  }, [departmentFilter, keyword, physicianFilter, setSearchParams]);
+  }, [departmentFilter, intentParam, keyword, physicianFilter, setSearchParams]);
 
   const mergedMeta = useMemo(() => {
     const claim = claimQuery.data;
@@ -581,6 +602,17 @@ export function ReceptionPage({
           <p className="reception-summary" aria-live="polite" ref={summaryRef} tabIndex={-1}>
             {summaryText}
           </p>
+          {intentBanner && (
+            <ToneBanner
+              tone={intentBanner.tone}
+              message={intentBanner.message}
+              patientId={intentKeyword || undefined}
+              destination="Reception"
+              nextAction={intentBanner.nextAction}
+              runId={flags.runId}
+              ariaLive={intentBanner.tone === 'info' ? 'polite' : 'assertive'}
+            />
+          )}
           {appointmentQuery.isLoading && (
             <p role="status" aria-live="polite" className="reception-status">
               外来リストを読み込み中…

@@ -19,6 +19,7 @@ import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
+import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 
 export function ChartsPage() {
   return (
@@ -205,6 +206,18 @@ function ChartsContent() {
   );
   const hasNextAppointments =
     appointmentQuery.hasNextPage ?? appointmentPages.some((page) => page.hasNextPage === true);
+
+  const appointmentBanner = useMemo(
+    () =>
+      getAppointmentDataBanner({
+        entries: patientEntries,
+        isLoading: appointmentQuery.isLoading,
+        isError: appointmentQuery.isError,
+        error: appointmentQuery.error,
+        date: today,
+      }),
+    [appointmentQuery.error, appointmentQuery.isError, appointmentQuery.isLoading, patientEntries, today],
+  );
   useEffect(() => {
     if (patientEntries.length === 0) return;
     if (selectedPatientId || selectedAppointmentId) return;
@@ -273,6 +286,7 @@ function ChartsContent() {
         <div className="charts-card">
           <DocumentTimeline
             entries={patientEntries}
+            appointmentBanner={appointmentBanner}
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
             selectedPatientId={selectedPatientId}
             selectedAppointmentId={selectedAppointmentId}
@@ -307,6 +321,7 @@ function ChartsContent() {
         <div className="charts-card">
           <PatientsTab
             entries={patientEntries}
+            appointmentBanner={appointmentBanner}
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
             selectedPatientId={selectedPatientId}
             onSelectPatient={setSelectedPatientId}
