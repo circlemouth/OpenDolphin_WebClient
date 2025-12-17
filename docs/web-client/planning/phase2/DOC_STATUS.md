@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251217T063116Z`（Charts ToneBanner/状態ピル一貫性）。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。備考: Reception と語彙・aria-live を統一し、ピル順序/tooltip/読み上げ抑制を定義。
 - 本更新 RUN_ID=`20251217T060504Z`（Charts シェル UI 最終レイアウト確定）。証跡: `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md`。備考: トップ/アクションバー固定、左30%/右70%基準、画面幅別挙動を定義。
 - 本更新 RUN_ID=`20251214T132418Z`（module_json 型情報フォールバック）。証跡: `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`。  
 - 本更新 RUN_ID=`20251214T140106Z`（module_json UI 保存・復元再確認＋負PKクリーニング/ガード方針）。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-guard.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-cleanup.md`。備考: 負の docPk (-41,-42,-43,-45,-46) を削除済み。  
@@ -62,6 +63,7 @@
 | `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` | ChartsPage 棚卸し（計画→実装の差分） | Active | 2025-12-12 | RUN_ID=`20251212T140014Z`。P0/P1/P2 と入口/出口（Reception/Patients/Administration）責務分離案を確定。証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`。 |
 | `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` | Charts 外来 API 契約（監査/透過/再試行ルール） | Active | 2025-12-12 | RUN_ID=`20251212T143720Z`。Playwright/fixture の単一ソースとして API 契約を固定。証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`。 |
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |
+| `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` | Charts ToneBanner/状態ピル一貫性 | Active | 2025-12-17 | RUN_ID=`20251217T063116Z`。Reception と語彙/aria-live/ピル順序を統一し、読み上げ抑制と tooltip 方針を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。 |
 | `src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md` | Charts 監査ログ統一方針 | Active | 2025-12-13 | RUN_ID=`20251213T125127Z`。重要操作の監査記録保証と details 透過ルールを整理。証跡: `docs/web-client/planning/phase2/logs/20251213T125127Z-charts-audit-event.md`。 |
 | `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` | Charts セッション/権限ガード方針 | Active | 2025-12-13 | RUN_ID=`20251213T000432Z`。主要アクションの権限ガード、セッション無効時の破棄/誘導、Topbar/ヘッダーの監査表示を固定。証跡: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`。 |
 | `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` | Charts エラー/リトライ規約 | Active | 2025-12-17 | RUN_ID=`20251217T125828Z`。API 失敗の tone/aria-live/再取得導線と missingMaster/fallback ブロック運用を更新。証跡: `docs/web-client/planning/phase2/logs/20251217T125828Z-charts-error-handling.md`。 |
