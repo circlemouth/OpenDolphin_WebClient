@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T120220Z`）
+### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T233430Z`）
+- Charts ORCA送信フロー（送信前チェック）を実装（RUN_ID=`20251217T233430Z`）。missingMaster/権限不足/未保存ドラフト/通信不安定を列挙して UI で明確にブロックし、送信開始→進行中→成功/失敗・再試行/中断・証跡（runId/traceId/requestId）表示を一貫化。証跡: `docs/web-client/planning/phase2/logs/20251217T233430Z-charts-orca-send-precheck.md` / 成果物: `src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md` / 実装: `web-client/src/features/charts/ChartsActionBar.tsx`。
 - Charts アクセシビリティ自動検査（RUN_ID=`20251217T212939Z`）。ActionBar/ToneBanner の axe 単体テスト＋Playwright `/charts` ページスコープ a11y スキャンを追加し、重大違反フィルター後 0 件。フォーカス順と操作不能理由の読み上げを確認。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md` / 成果物: `src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md` / テスト: `web-client/src/features/charts/__tests__/chartsAccessibility.test.tsx`, `tests/e2e/charts-a11y-page.spec.ts`。
 - DocumentTimeline 商用仕上げ（RUN_ID=`20251217T150614Z`）。受付→診療→ORCA キューを 3 ステップ可視化し、missingMaster/失敗/再取得の nextAction を明示。32件ウィンドウ仮想化＋折りたたみ＋表示件数を追加。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md` / 成果物: `src/charts_production_outpatient/ux/23_DocumentTimeline商用レベル仕上げ.md`。
 - OrcaSummary（請求/予約）商用レベル仕上げ指針を追加（RUN_ID=`20251217T130407Z`）。請求/予約サマリの表示粒度、`dataSourceTransition` の説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md` / 成果物: `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md`。
@@ -35,6 +36,7 @@
 - `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` — ChartsPage の現状棚卸しとギャップ（RUN_ID=`20251212T140014Z`）。
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
 - `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` — 診療開始/終了の状態モデルと終了ガード（RUN_ID=`20251217T120220Z`）。
+- `src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md` — ORCA送信の送信前チェック（送信不可条件の列挙・状態表示・再試行/中断・証跡表示、RUN_ID=`20251217T233430Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
 - `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。
 - `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` — OrcaSummary 請求/予約サマリ商用仕上げ（RUN_ID=`20251217T130407Z`）。
@@ -47,7 +49,7 @@
 - `architecture/web-client-api-mapping.md` — 外来 API マッピングと監査メタ（RUN_ID=`20251208T124645Z`）。
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
-- 証跡ログ: `planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
+- 証跡ログ: `planning/phase2/logs/20251217T233430Z-charts-orca-send-precheck.md`、`planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
 - 証跡ログ: `planning/phase2/logs/20251214T123042Z-module-json-ui-save.md` を追加。
 - Charts 実装ログ: `planning/phase2/logs/20251211T120619Z-charts-timeline.md`（DocumentTimeline/OrcaSummary/PatientsTab のデータバインド、RUN_ID=`20251211T120619Z`）。
 

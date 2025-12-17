@@ -22,6 +22,10 @@ function readStoredAuth(): StoredAuth | null {
   return { facilityId, userId, passwordMd5, clientUuid };
 }
 
+export function hasStoredAuth(): boolean {
+  return readStoredAuth() !== null;
+}
+
 function applyAuthHeaders(init?: RequestInit): RequestInit {
   const stored = readStoredAuth();
   if (!stored) {
