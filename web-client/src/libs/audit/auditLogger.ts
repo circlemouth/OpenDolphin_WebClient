@@ -5,6 +5,7 @@ export type UiAction =
   | 'tone_change'
   | 'send'
   | 'save'
+  | 'print'
   | 'config_delivery'
   | 'finish'
   | 'draft'

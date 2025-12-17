@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
+import { resolveAuditActor, readStoredAuth } from '../../libs/auth/storedAuth';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { recordChartsAuditEvent } from './audit';
 import type { DataSourceTransition } from './authService';
+import type { ReceptionEntry } from '../reception/api';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -29,6 +32,7 @@ export interface ChartsActionBarProps {
   missingMaster: boolean;
   dataSourceTransition: DataSourceTransition;
   fallbackUsed?: boolean;
+  selectedEntry?: ReceptionEntry;
   onLockChange?: (locked: boolean, reason?: string) => void;
 }
 
@@ -38,8 +42,10 @@ export function ChartsActionBar({
   missingMaster,
   dataSourceTransition,
   fallbackUsed = false,
+  selectedEntry,
   onLockChange,
 }: ChartsActionBarProps) {
+  const navigate = useNavigate();
   const [lockReason, setLockReason] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [retryAction, setRetryAction] = useState<ChartAction | null>(null);
@@ -208,16 +214,36 @@ export function ChartsActionBar({
     }
   };
 
-  const handlePrint = () => {
-    const detail = '印刷はデモ環境: auditEvent のみ記録しました';
-    setToast({
-      tone: 'info',
-      message: '印刷デモを記録',
-      detail,
+  const handlePrintExport = () => {
+    if (!selectedEntry) {
+      setToast({ tone: 'warning', message: '患者が未選択です', detail: 'Patients で患者を選択してから出力してください。' });
+      logAudit('print', 'blocked', 'no selectedEntry');
+      return;
+    }
+
+    const actor = resolveAuditActor();
+    const facilityId = readStoredAuth()?.facilityId ?? 'unknown';
+
+    const detail = `印刷プレビューを開きました (actor=${actor})`;
+    setToast({ tone: 'info', message: '印刷/エクスポートを開きました', detail });
+
+    recordChartsAuditEvent({
+      action: 'PRINT_OUTPATIENT',
+      outcome: 'started',
+      subject: 'outpatient-document-preview',
+      note: detail,
+      actor,
+      patientId: selectedEntry.patientId ?? selectedEntry.id,
+      appointmentId: selectedEntry.appointmentId,
+      runId,
+      cacheHit,
+      missingMaster,
+      fallbackUsed,
+      dataSourceTransition,
     });
-    logAudit('print', fallbackUsed ? 'blocked' : 'success', detail);
+
     logUiState({
-      action: 'send',
+      action: 'print',
       screen: 'charts/action-bar',
       controlId: 'action-print',
       runId,
@@ -225,7 +251,20 @@ export function ChartsActionBar({
       missingMaster,
       dataSourceTransition,
       fallbackUsed,
-      details: { note: detail, blocked: fallbackUsed },
+      details: {
+        destination: '/charts/print/outpatient',
+        patientId: selectedEntry.patientId ?? selectedEntry.id,
+        appointmentId: selectedEntry.appointmentId,
+      },
+    });
+
+    navigate('/charts/print/outpatient', {
+      state: {
+        entry: selectedEntry,
+        meta: { runId, cacheHit, missingMaster, fallbackUsed, dataSourceTransition },
+        actor,
+        facilityId,
+      },
     });
   };
 
@@ -298,13 +337,13 @@ export function ChartsActionBar({
           type="button"
           className="charts-actions__button"
           disabled={sendBlocked}
-          onClick={handlePrint}
+          onClick={handlePrintExport}
           aria-disabled={sendBlocked}
           data-disabled-reason={
             sendBlocked ? (missingMaster ? 'missing_master' : fallbackUsed ? 'fallback_used' : isLocked ? 'locked' : undefined) : undefined
           }
         >
-          印刷 (監査記録)
+          印刷/エクスポート
         </button>
         <button
           type="button"

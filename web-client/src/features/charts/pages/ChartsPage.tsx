@@ -195,6 +195,16 @@ function ChartsContent() {
     () => appointmentPages.flatMap((page) => page.entries ?? []),
     [appointmentPages],
   );
+
+  const selectedEntry = useMemo(() => {
+    if (!selectedPatientId && !selectedAppointmentId) return undefined;
+    const byAppointment = selectedAppointmentId
+      ? patientEntries.find((entry) => entry.appointmentId === selectedAppointmentId)
+      : undefined;
+    if (byAppointment) return byAppointment;
+    if (!selectedPatientId) return undefined;
+    return patientEntries.find((entry) => (entry.patientId ?? entry.id) === selectedPatientId);
+  }, [patientEntries, selectedAppointmentId, selectedPatientId]);
   const appointmentRecordsReturned = useMemo(
     () =>
       appointmentPages.reduce(
@@ -262,6 +272,7 @@ function ChartsContent() {
           missingMaster={resolvedMissingMaster ?? false}
           dataSourceTransition={resolvedTransition ?? 'snapshot'}
           fallbackUsed={resolvedFallbackUsed}
+          selectedEntry={selectedEntry}
           onLockChange={(locked, reason) => setLockState({ locked, reason })}
         />
       </div>
