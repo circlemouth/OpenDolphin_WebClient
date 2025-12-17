@@ -31,6 +31,7 @@
 - `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` — ChartsPage の現状棚卸しとギャップ（RUN_ID=`20251212T140014Z`）。
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
+- `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。
 - `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` — Charts セッション/権限ガード方針（RUN_ID=`20251213T000432Z`）。
 - `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` — Charts エラー/リトライ規約（RUN_ID=`20251217T125828Z`）。
 - `src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md` — Charts 外来 fetch レイヤー統一（RUN_ID=`20251213T133932Z`）。
