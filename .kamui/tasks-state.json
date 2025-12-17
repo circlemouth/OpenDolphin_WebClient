@@ -321,5 +321,53 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# 25 患者サイドペイン（基本/保険/履歴）仕上げ\n\n- Charts 内の患者情報表示を “閲覧中心” に揃え、編集は権限と missingMaster によってガードする。\n- 患者基本・保険情報の差分表示（変更前/変更後）と、保存時の監査ログを UI で確認できる導線を用意する。\n- 過去受診/直近受診の参照導線を整理し、患者切替ミスを減らす UI にする。"
+  },
+  {
+    "id": "task-yaml-uty2sh-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 22_ToneBannerと状態Pillの一貫性\n期間: 01/06 09:00 - 01/08 09:00 / 優先度: high / 緊急度: low / エージェント: cursor cli\n\n# 22 ToneBanner と状態 Pill の一貫性\n\n- `tone=server`（dataSourceTransition=server）/warning/error の表現を Charts 全域で統一し、受付（Reception）と同じ語彙で説明する。\n- `cacheHit/missingMaster/fallbackUsed` のバッジ表示と、詳細（tooltip/ヘルプ）を設計して “判断できる情報量” を担保する。\n- 重要度に応じて `aria-live` を切り替え、誤通知/過通知を防ぐ。\n\nYAML ID: src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "low",
+    "createdAt": "2025-12-17T06:21:58.524Z",
+    "updatedAt": "2025-12-17T06:21:58.524Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-uty2sh-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T06:21:58.189Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / ux"
+    ],
+    "dependencies": [
+      "task-yaml-v2iy1d-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1767657600000,
+      "endMs": 1767830400000,
+      "durationDays": 2
+    },
+    "category": "src / charts_production_outpatient / ux",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 22 ToneBanner と状態 Pill の一貫性\n\n- `tone=server`（dataSourceTransition=server）/warning/error の表現を Charts 全域で統一し、受付（Reception）と同じ語彙で説明する。\n- `cacheHit/missingMaster/fallbackUsed` のバッジ表示と、詳細（tooltip/ヘルプ）を設計して “判断できる情報量” を担保する。\n- 重要度に応じて `aria-live` を切り替え、誤通知/過通知を防ぐ。"
   }
 ]
