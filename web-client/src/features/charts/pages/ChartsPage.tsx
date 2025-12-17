@@ -14,10 +14,11 @@ import { normalizeAuditEventLog, normalizeAuditEventPayload } from '../audit';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
-import { getAuditEventLog, type AuditEventRecord } from '../../../libs/audit/auditLogger';
+import { getAuditEventLog, logAuditEvent, type AuditEventRecord } from '../../../libs/audit/auditLogger';
 import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
+import type { ClaimOutpatientPayload } from '../../outpatient/types';
 
 export function ChartsPage() {
   return (
@@ -50,7 +51,7 @@ function ChartsContent() {
   const claimQueryKey = ['charts-claim-flags'];
   const claimQuery = useQuery({
     queryKey: claimQueryKey,
-    queryFn: (context) => fetchClaimFlags(context),
+    queryFn: (context) => fetchClaimFlags(context, { screen: 'charts' }),
     refetchInterval: 120_000,
     staleTime: 120_000,
     meta: {
@@ -121,6 +122,29 @@ function ChartsContent() {
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
   const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
+
+  const handleRetryClaim = () => {
+    logAuditEvent({
+      runId: claimQuery.data?.runId ?? resolvedRunId,
+      cacheHit: claimQuery.data?.cacheHit,
+      missingMaster: claimQuery.data?.missingMaster,
+      fallbackUsed: claimQuery.data?.fallbackUsed,
+      dataSourceTransition: claimQuery.data?.dataSourceTransition ?? resolvedTransition,
+      payload: {
+        action: 'CLAIM_OUTPATIENT_RETRY',
+        outcome: 'started',
+        details: {
+          runId: claimQuery.data?.runId ?? resolvedRunId,
+          dataSourceTransition: claimQuery.data?.dataSourceTransition ?? resolvedTransition,
+          cacheHit: claimQuery.data?.cacheHit,
+          missingMaster: claimQuery.data?.missingMaster,
+          fallbackUsed: claimQuery.data?.fallbackUsed,
+          sourcePath: claimQuery.data?.sourcePath,
+        },
+      },
+    });
+    void claimQuery.refetch();
+  };
 
   useEffect(() => {
     const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedFlags;
@@ -219,11 +243,20 @@ function ChartsContent() {
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
             selectedPatientId={selectedPatientId}
             selectedAppointmentId={selectedAppointmentId}
-            claimFlags={claimQuery.data}
+            claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
+            claimError={
+              claimQuery.isError
+                ? claimQuery.error instanceof Error
+                  ? claimQuery.error
+                  : new Error(String(claimQuery.error))
+                : undefined
+            }
+            isClaimLoading={claimQuery.isFetching}
+            onRetryClaim={handleRetryClaim}
           />
         </div>
         <div className="charts-card">
-          <OrcaSummary summary={orcaSummaryQuery.data} />
+          <OrcaSummary summary={orcaSummaryQuery.data} claim={claimQuery.data as ClaimOutpatientPayload | undefined} />
         </div>
         <div className="charts-card">
           <PatientsTab

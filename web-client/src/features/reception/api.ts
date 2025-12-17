@@ -1,12 +1,18 @@
 import type { QueryFunctionContext } from '@tanstack/react-query';
 
-import { logUiState } from '../../libs/audit/auditLogger';
+import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { updateObservabilityMeta } from '../../libs/observability/observability';
 import type { DataSourceTransition, ResolveMasterSource } from '../../libs/observability/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchWithResolver } from '../outpatient/fetchWithResolver';
-import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries } from '../outpatient/transformers';
-import type { AppointmentPayload, OutpatientFlagResponse, ReceptionEntry, ReceptionStatus } from '../outpatient/types';
+import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries, parseClaimBundles, resolveClaimStatus } from '../outpatient/transformers';
+import type {
+  AppointmentPayload,
+  ClaimOutpatientPayload,
+  OutpatientFlagResponse,
+  ReceptionEntry,
+  ReceptionStatus,
+} from '../outpatient/types';
 export type { ReceptionEntry, ReceptionStatus, OutpatientFlagResponse, AppointmentPayload } from '../outpatient/types';
 
 export type AppointmentQueryParams = {
@@ -167,7 +173,10 @@ export async function fetchAppointmentOutpatients(
   return payload;
 }
 
-export async function fetchClaimFlags(context?: QueryFunctionContext): Promise<OutpatientFlagResponse> {
+export async function fetchClaimFlags(
+  context?: QueryFunctionContext,
+  options: { screen?: 'reception' | 'charts' } = {},
+): Promise<ClaimOutpatientPayload> {
   const result = await fetchWithResolver({
     candidates: claimCandidates,
     queryContext: context,
@@ -176,13 +185,25 @@ export async function fetchClaimFlags(context?: QueryFunctionContext): Promise<O
   });
 
   const json = result.raw ?? {};
+  const bundles = parseClaimBundles(json);
+  const resolvedClaimStatusText =
+    (json as any).claimStatus ?? (json as any).status ?? (json as any).apiResult ?? bundles[0]?.claimStatusText;
+  const metaRecords = typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : bundles.length || undefined;
   const meta = mergeOutpatientMeta(json, {
     ...result.meta,
-    recordsReturned: typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : undefined,
+    recordsReturned: metaRecords,
     resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
   });
 
-  const payload: OutpatientFlagResponse = meta;
+  const payload: ClaimOutpatientPayload = {
+    ...meta,
+    bundles,
+    claimStatus: resolveClaimStatus(resolvedClaimStatusText) ?? bundles[0]?.claimStatus,
+    claimStatusText: typeof resolvedClaimStatusText === 'string' ? resolvedClaimStatusText : bundles[0]?.claimStatusText,
+    raw: json as Record<string, unknown>,
+    apiResult: (json as any).apiResult,
+    apiResultMessage: (json as any).apiResultMessage,
+  };
 
   recordOutpatientFunnel('charts_orchestration', {
     runId: payload.runId,
@@ -197,7 +218,7 @@ export async function fetchClaimFlags(context?: QueryFunctionContext): Promise<O
 
   logUiState({
     action: 'outpatient_fetch',
-    screen: 'reception',
+    screen: options.screen ?? 'reception',
     runId: payload.runId,
     cacheHit: payload.cacheHit ?? result.meta.fromCache,
     missingMaster: payload.missingMaster,
@@ -207,10 +228,42 @@ export async function fetchClaimFlags(context?: QueryFunctionContext): Promise<O
       endpoint: payload.sourcePath ?? result.meta.sourcePath,
       fetchedAt: payload.fetchedAt,
       recordsReturned: payload.recordsReturned,
+      claimBundles: bundles.length,
       resolveMasterSource: payload.resolveMasterSource,
       fromCache: result.meta.fromCache,
       retryCount: result.meta.retryCount,
       description: 'claim_outpatient',
+      claimStatus: payload.claimStatus ?? payload.claimStatusText,
+      apiResult: payload.apiResult,
+      apiResultMessage: payload.apiResultMessage,
+    },
+  });
+
+  logAuditEvent({
+    runId: payload.runId,
+    cacheHit: payload.cacheHit ?? result.meta.fromCache,
+    missingMaster: payload.missingMaster,
+    fallbackUsed: payload.fallbackUsed,
+    dataSourceTransition: payload.dataSourceTransition,
+    payload: {
+      action: 'CLAIM_OUTPATIENT_FETCH',
+      outcome: result.ok ? 'success' : 'error',
+      claimStatus: payload.claimStatus ?? payload.claimStatusText,
+      claimBundles: bundles.length,
+      apiResult: payload.apiResult,
+      apiResultMessage: payload.apiResultMessage,
+      details: {
+        runId: payload.runId,
+        cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
+        missingMaster: payload.missingMaster ?? false,
+        fallbackUsed: payload.fallbackUsed ?? false,
+        dataSourceTransition: payload.dataSourceTransition ?? result.meta.dataSourceTransition,
+        fetchedAt: payload.fetchedAt,
+        recordsReturned: payload.recordsReturned ?? bundles.length,
+        claimBundles: bundles.length,
+        sourcePath: payload.sourcePath ?? result.meta.sourcePath,
+        error: result.ok ? undefined : result.error ?? payload.apiResultMessage,
+      },
     },
   });
 
