@@ -1,18 +1,25 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
-import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import { getChartToneDetails, getTransitionCopy, type ChartTonePayload } from '../../ux/charts/tones';
 import type { OrcaOutpatientSummary } from './api';
-import type { ClaimOutpatientPayload } from '../outpatient/types';
+import type { ClaimOutpatientPayload, ReceptionEntry } from '../outpatient/types';
+import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { logUiState } from '../../libs/audit/auditLogger';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
   claim?: ClaimOutpatientPayload;
+  appointments?: ReceptionEntry[];
+  onRefresh?: () => Promise<void> | void;
+  isRefreshing?: boolean;
 }
 
-export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
+export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRefreshing = false }: OrcaSummaryProps) {
+  const navigate = useNavigate();
   const { flags } = useAuthService();
   const resolvedRunId = summary?.runId ?? claim?.runId ?? flags.runId;
   const resolvedMissingMaster = summary?.missingMaster ?? claim?.missingMaster ?? flags.missingMaster;
@@ -20,12 +27,15 @@ export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
   const resolvedFallbackUsed = summary?.fallbackUsed ?? claim?.fallbackUsed ?? false;
   const resolvedTransition = summary?.dataSourceTransition ?? claim?.dataSourceTransition ?? flags.dataSourceTransition;
   const fallbackFlagMissing = summary?.fallbackFlagMissing ?? claim?.fallbackFlagMissing ?? false;
+  const [perfMeasured, setPerfMeasured] = useState(false);
+  const renderStartedAt = useMemo(() => performance.now(), []);
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
     dataSourceTransition: resolvedTransition ?? 'snapshot',
   };
   const { tone, message: sharedMessage, transitionMeta } = getChartToneDetails(tonePayload);
+  const transitionCopy = getTransitionCopy(resolvedTransition ?? 'snapshot');
 
   const summaryMessage = useMemo(() => {
     if (resolvedMissingMaster) {
@@ -49,12 +59,173 @@ export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
     return entries.map(([key, value]) => `${key}: ${String(value)}`).join(' ｜ ');
   }, [summary?.payload]);
 
+  const claimBundles = claim?.bundles ?? [];
+  const claimTotal = useMemo(
+    () =>
+      claimBundles.reduce((acc, bundle) => {
+        if (typeof bundle.totalClaimAmount === 'number') return acc + bundle.totalClaimAmount;
+        const itemSum = bundle.items?.reduce((sum, item) => sum + (item.amount ?? 0), 0) ?? 0;
+        return acc + itemSum;
+      }, 0),
+    [claimBundles],
+  );
+  const appointmentList = useMemo(() => {
+    const sorted = [...appointments].sort((a, b) => (a.appointmentTime ?? '').localeCompare(b.appointmentTime ?? ''));
+    return sorted.slice(0, 3);
+  }, [appointments]);
+  const hasAppointmentCollision = useMemo(() => {
+    const seen = new Set<string>();
+    return appointmentList.some((entry) => {
+      const key = `${entry.appointmentTime ?? ''}-${entry.department ?? ''}`;
+      if (seen.has(key)) return true;
+      seen.add(key);
+      return false;
+    });
+  }, [appointmentList]);
+
+  const ctaDisabledReason = resolvedFallbackUsed ? 'fallback_used' : resolvedMissingMaster ? 'missing_master' : undefined;
+  const isCtaDisabled = Boolean(ctaDisabledReason);
+
+  const handleNavigate = useCallback(
+    (target: 'reservation' | 'billing' | 'new-appointment') => {
+      const search = new URLSearchParams();
+      search.set('from', 'charts');
+      search.set('runId', resolvedRunId ?? '');
+      search.set('transition', resolvedTransition ?? 'snapshot');
+      if (target === 'reservation') search.set('section', 'appointment');
+      if (target === 'billing') search.set('section', 'billing');
+      if (target === 'new-appointment') search.set('create', '1');
+      navigate(`/reception?${search.toString()}`, {
+        state: { runId: resolvedRunId, dataSourceTransition: resolvedTransition, from: 'charts', manualRefresh: false },
+      });
+      logUiState({
+        action: 'outpatient_fetch',
+        screen: 'charts/orca-summary',
+        controlId: `navigate-${target}`,
+        runId: resolvedRunId,
+        cacheHit: resolvedCacheHit,
+        missingMaster: resolvedMissingMaster,
+        dataSourceTransition: resolvedTransition,
+        fallbackUsed: resolvedFallbackUsed,
+        details: { target, dataSourceTransition: resolvedTransition },
+      });
+      recordOutpatientFunnel('orca_summary', {
+        action: `navigate_${target}`,
+        outcome: 'success',
+        cacheHit: resolvedCacheHit ?? false,
+        missingMaster: resolvedMissingMaster ?? false,
+        dataSourceTransition: resolvedTransition ?? 'snapshot',
+        fallbackUsed: resolvedFallbackUsed ?? false,
+        runId: resolvedRunId,
+        note: `cta:${target}`,
+      });
+    },
+    [navigate, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition],
+  );
+
+  const handleRefresh = useCallback(async () => {
+    if (!onRefresh) return;
+    logUiState({
+      action: 'outpatient_fetch',
+      screen: 'charts/orca-summary',
+      controlId: 'refresh',
+      runId: resolvedRunId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
+      details: { manualRefresh: true },
+    });
+    const started = performance.now();
+    recordOutpatientFunnel('orca_summary', {
+      action: 'manual_refresh',
+      outcome: 'started',
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      runId: resolvedRunId,
+    });
+    try {
+      await onRefresh();
+      recordOutpatientFunnel('orca_summary', {
+        action: 'manual_refresh',
+        outcome: 'success',
+        cacheHit: resolvedCacheHit ?? false,
+        missingMaster: resolvedMissingMaster ?? false,
+        dataSourceTransition: resolvedTransition ?? 'snapshot',
+        fallbackUsed: resolvedFallbackUsed ?? false,
+        runId: resolvedRunId,
+        durationMs: Math.round(performance.now() - started),
+      });
+    } catch (error) {
+      recordOutpatientFunnel('orca_summary', {
+        action: 'manual_refresh',
+        outcome: 'error',
+        cacheHit: resolvedCacheHit ?? false,
+        missingMaster: resolvedMissingMaster ?? false,
+        dataSourceTransition: resolvedTransition ?? 'snapshot',
+        fallbackUsed: resolvedFallbackUsed ?? false,
+        runId: resolvedRunId,
+        note: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }, [onRefresh, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition]);
+
+  useEffect(() => {
+    if (perfMeasured) return;
+    if (!summary && !claim) return;
+    setPerfMeasured(true);
+    recordOutpatientFunnel('orca_summary', {
+      action: 'render',
+      outcome: 'success',
+      durationMs: Math.round(performance.now() - renderStartedAt),
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      runId: resolvedRunId,
+    });
+  }, [
+    claim,
+    perfMeasured,
+    renderStartedAt,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
+    summary,
+  ]);
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      if (!event.altKey) return;
+      if (event.key.toLowerCase() === 'r') {
+        event.preventDefault();
+        void handleRefresh();
+      }
+      if (event.key.toLowerCase() === 'b') {
+        event.preventDefault();
+        handleNavigate('billing');
+      }
+      if (event.key.toLowerCase() === 'a') {
+        event.preventDefault();
+        handleNavigate('reservation');
+      }
+    };
+    window.addEventListener('keydown', handler);
+    return () => window.removeEventListener('keydown', handler);
+  }, [handleNavigate, handleRefresh]);
+
   return (
     <section
       className="orca-summary"
       aria-live={tone === 'info' ? 'polite' : 'assertive'}
       aria-atomic="false"
       data-run-id={resolvedRunId}
+      data-loading-scope="orca-summary"
+      data-test-id="orca-summary"
     >
       <ToneBanner
         tone={tone}
@@ -66,8 +237,8 @@ export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
       <div className="orca-summary__details">
         <div className="orca-summary__meta">
           <p className="orca-summary__meta-label">dataSourceTransition</p>
-          <strong>{transitionMeta.label}</strong>
-          <p>{transitionMeta.description}</p>
+          <strong>{transitionCopy.headline}</strong>
+          <p>{transitionCopy.body}</p>
           <p className="orca-summary__meta-label">recordsReturned</p>
           <strong>{summary?.recordsReturned ?? claim?.recordsReturned ?? '―'}</strong>
           {summary?.fetchedAt && <p className="orca-summary__meta-note">取得: {summary.fetchedAt}</p>}
@@ -113,6 +284,74 @@ export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
             />
           )}
         </div>
+      </div>
+      <div className="orca-summary__cards" aria-live="polite">
+        <div className="orca-summary__card">
+          <header>
+            <strong>請求サマリ</strong>
+            <span className="orca-summary__card-meta">status: {claim?.claimStatus ?? '—'}</span>
+          </header>
+          <ul>
+            <li>総額: {claimTotal > 0 ? `${claimTotal.toLocaleString()} 円` : '—'}</li>
+            <li>請求件数: {claimBundles.length} 件</li>
+            <li>ステータス: {claim?.claimStatusText ?? '—'}</li>
+            <li>recordsReturned: {claim?.recordsReturned ?? summary?.recordsReturned ?? '—'}</li>
+          </ul>
+        </div>
+        <div className="orca-summary__card">
+          <header>
+            <strong>予約サマリ (直近3件)</strong>
+          </header>
+          {appointmentList.length === 0 && <p>予約データを取得中または未取得です。</p>}
+          {appointmentList.length > 0 && (
+            <ul>
+              {appointmentList.map((entry) => (
+                <li key={`${entry.appointmentId ?? entry.patientId ?? entry.appointmentTime ?? Math.random()}`}>
+                  {entry.appointmentTime ?? '--:--'} ｜ {entry.department ?? '科未設定'} ｜ {entry.status} ｜ {entry.name ?? '氏名未設定'}
+                </li>
+              ))}
+            </ul>
+          )}
+          {hasAppointmentCollision && (
+            <p className="orca-summary__warning" data-test-id="orca-summary-warning" role="alert" aria-live="assertive">
+              予約時間が重複しています。オーバーブッキングに注意してください。
+            </p>
+          )}
+        </div>
+        {(resolvedFallbackUsed || resolvedMissingMaster || hasAppointmentCollision) && (
+          <div className="orca-summary__card orca-summary__card--warning" role="alert" aria-live="assertive" data-test-id="orca-summary-warning">
+            <strong>注意</strong>
+            <ul>
+              {resolvedFallbackUsed && <li>計算は暫定（fallbackUsed=true）。会計/予約確定をブロックしています。</li>}
+              {resolvedMissingMaster && <li>マスタ未取得のため送信を停止中。再取得してください。</li>}
+              {hasAppointmentCollision && <li>予約衝突あり。日付・時間を確認してください。</li>}
+            </ul>
+          </div>
+        )}
+      </div>
+      <div className="orca-summary__cta" role="group" aria-label="OrcaSummary アクション">
+        <button
+          type="button"
+          onClick={() => handleNavigate('reservation')}
+          disabled={isCtaDisabled}
+          data-disabled-reason={ctaDisabledReason}
+        >
+          予約へ
+        </button>
+        <button type="button" onClick={() => handleNavigate('billing')} disabled={isCtaDisabled} data-disabled-reason={ctaDisabledReason}>
+          会計へ
+        </button>
+        <button type="button" onClick={handleRefresh} disabled={isRefreshing} data-disabled-reason={isRefreshing ? 'loading' : undefined}>
+          {isRefreshing ? '再取得中…' : '再取得'}
+        </button>
+        <button
+          type="button"
+          onClick={() => handleNavigate('new-appointment')}
+          disabled={isCtaDisabled}
+          data-disabled-reason={ctaDisabledReason}
+        >
+          新規予約
+        </button>
       </div>
       {payloadPreview && (
         <div className="orca-summary__payload" aria-live="polite">

@@ -48,7 +48,7 @@ export function ChartsActionBar({
   const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const isLocked = lockReason !== null || isRunning;
-  const sendBlocked = missingMaster || isLocked;
+  const sendBlocked = missingMaster || fallbackUsed || isLocked;
   const otherBlocked = isLocked;
 
   useEffect(() => {
@@ -61,7 +61,7 @@ export function ChartsActionBar({
     }
     if (lockReason) return lockReason;
     if (missingMaster) return 'missingMaster=true: Reception で master を再取得するまで送信を停止中';
-    if (fallbackUsed) return 'fallbackUsed=true: スナップショット経由、送信前に master を確認してください';
+    if (fallbackUsed) return 'fallbackUsed=true: スナップショット経由、送信をブロック中';
     return 'アクションを選択できます';
   }, [dataSourceTransition, fallbackUsed, isRunning, lockReason, missingMaster, runningAction]);
 
@@ -111,18 +111,20 @@ export function ChartsActionBar({
   const handleAction = async (action: ChartAction) => {
     if (isRunning) return;
 
-    const blockedByMissingMaster =
+    const blockedReason =
       action === 'send' && missingMaster
         ? 'missingMaster=true のため ORCA 送信をブロックしました。Reception で master を解決してから再送してください。'
-        : null;
-    if (blockedByMissingMaster) {
+        : action === 'send' && fallbackUsed
+          ? 'fallbackUsed=true のため ORCA 送信をブロックしました。master 解消後に再取得してください。'
+          : null;
+    if (blockedReason) {
       setToast({
         tone: 'warning',
         message: 'ORCA送信を停止',
-        detail: blockedByMissingMaster,
+        detail: blockedReason,
       });
       setRetryAction(null);
-      logTelemetry(action, 'blocked', undefined, blockedByMissingMaster);
+      logTelemetry(action, 'blocked', undefined, blockedReason);
       logUiState({
         action: 'send',
         screen: 'charts/action-bar',
@@ -132,9 +134,9 @@ export function ChartsActionBar({
         missingMaster,
         dataSourceTransition,
         fallbackUsed,
-        details: { blocked: true, reason: 'missingMaster' },
+        details: { blocked: true, reason: missingMaster ? 'missing_master' : 'fallback_used' },
       });
-      logAudit(action, 'blocked', blockedByMissingMaster);
+      logAudit(action, 'blocked', blockedReason);
       return;
     }
 
@@ -274,6 +276,7 @@ export function ChartsActionBar({
           type="button"
           className="charts-actions__button"
           disabled={otherBlocked}
+          data-disabled-reason={otherBlocked ? (isLocked ? 'locked' : undefined) : undefined}
           onClick={() => handleAction('finish')}
         >
           診療終了
@@ -285,6 +288,9 @@ export function ChartsActionBar({
           onClick={() => handleAction('send')}
           aria-disabled={sendBlocked}
           aria-describedby={missingMaster ? 'charts-actions-blocked' : undefined}
+          data-disabled-reason={
+            sendBlocked ? (missingMaster ? 'missing_master' : fallbackUsed ? 'fallback_used' : isLocked ? 'locked' : undefined) : undefined
+          }
         >
           ORCA 送信
         </button>
@@ -294,6 +300,9 @@ export function ChartsActionBar({
           disabled={sendBlocked}
           onClick={handlePrint}
           aria-disabled={sendBlocked}
+          data-disabled-reason={
+            sendBlocked ? (missingMaster ? 'missing_master' : fallbackUsed ? 'fallback_used' : isLocked ? 'locked' : undefined) : undefined
+          }
         >
           印刷 (監査記録)
         </button>
@@ -301,6 +310,7 @@ export function ChartsActionBar({
           type="button"
           className="charts-actions__button"
           disabled={otherBlocked}
+          data-disabled-reason={otherBlocked ? (isLocked ? 'locked' : undefined) : undefined}
           onClick={() => handleAction('draft')}
         >
           ドラフト保存
@@ -309,6 +319,7 @@ export function ChartsActionBar({
           type="button"
           className="charts-actions__button charts-actions__button--ghost"
           disabled={otherBlocked}
+          data-disabled-reason={otherBlocked ? (isLocked ? 'locked' : undefined) : undefined}
           onClick={() => handleAction('cancel')}
         >
           キャンセル
@@ -326,6 +337,11 @@ export function ChartsActionBar({
       {missingMaster && (
         <p id="charts-actions-blocked" className="charts-actions__guard" role="note" aria-live="assertive">
           missingMaster=true のため ORCA 送信を一時停止しています。Reception で master を解決してください。
+        </p>
+      )}
+      {fallbackUsed && !missingMaster && (
+        <p className="charts-actions__guard" role="note" aria-live="assertive">
+          fallbackUsed=true のため ORCA 送信をブロック中です。マスタ再取得後に再送してください。
         </p>
       )}
 
