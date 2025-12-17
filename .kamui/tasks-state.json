@@ -100,11 +100,11 @@
     "id": "task-yaml-189c65m-src-charts-produ",
     "name": "[webclient charts production outpatient plan] 31_診療開始終了の状態遷移\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 31 診療開始/終了の状態遷移\n\n- 診療開始（Chart open）から診療終了（完了/中止）の状態遷移を明文化し、UI の表示（Timeline/バッジ）と整合させる。\n- “未保存ドラフトあり” や “ORCA送信未完了” を理由に終了を抑止できるようにし、誤操作を防ぐ。\n- 例外系（通信断・タイムアウト）でも状態が壊れない復元戦略を定義する。\n\nYAML ID: src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md",
     "model": "YAML App",
-    "status": "pending",
+    "status": "completed",
     "importance": "high",
     "urgency": "low",
     "createdAt": "2025-12-17T11:34:16.797Z",
-    "updatedAt": "2025-12-17T11:34:16.797Z",
+    "updatedAt": "2025-12-17T12:10:04.220Z",
     "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-189c65m-src-charts-produ",
@@ -145,81 +145,6 @@
     "description": "# 31 診療開始/終了の状態遷移\n\n- 診療開始（Chart open）から診療終了（完了/中止）の状態遷移を明文化し、UI の表示（Timeline/バッジ）と整合させる。\n- “未保存ドラフトあり” や “ORCA送信未完了” を理由に終了を抑止できるようにし、誤操作を防ぐ。\n- 例外系（通信断・タイムアウト）でも状態が壊れない復元戦略を定義する。"
   },
   {
-    "id": "task-yaml-1ml06kb-src-charts-produ",
-    "name": "[webclient charts production outpatient plan] 40_claim_outpatient統合\n期間: 01/06 09:00 - 01/10 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。\n\nYAML ID: src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "low",
-    "createdAt": "2025-12-17T11:34:21.626Z",
-    "updatedAt": "2025-12-17T11:34:21.626Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1ml06kb-src-charts-produ",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
-      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
-      "datasetLabel": "webclient charts production outpatient plan",
-      "pathId": "src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
-      "fileName": "webclient-charts-production-outpatient-plan.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
-      "addedAt": "2025-12-17T11:34:21.619Z"
-    },
-    "labels": [
-      "webclient charts production outpatient plan",
-      "src / charts_production_outpatient / integration"
-    ],
-    "dependencies": [
-      "task-yaml-4cvruz-src-charts-produ",
-      "task-yaml-1nb9snm-src-charts-produ"
-    ],
-    "schedule": {
-      "startMs": 1767657600000,
-      "endMs": 1768003200000,
-      "durationDays": 4
-    },
-    "category": "src / charts_production_outpatient / integration",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。"
-  },
-  {
-    "id": "task-1765971588883-999ed8",
-    "name": "CodexCLI1: [webclient charts production outpatient plan] 31_診療開始終了の状態遷移\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 31 診療開始/終了の状態遷移\n\n- 診療開始（Chart open）から診療終了（完了/中止）の状態遷移を明文化し、UI の表示（Timeline/バッジ）と整合させる。\n- “未保存ドラフトあり” や “ORCA送信未完了” を理由に終了を抑止できるようにし、誤操作を防ぐ。\n- 例外系（通信断・タイムアウト）でも状態が壊れない復元戦略を定義する。\n\nYAML ID: src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-17T11:39:48.883Z",
-    "updatedAt": "2025-12-17T11:39:52.645Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765971588883-999ed8",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765971588879-zx9or8vu",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 31_診療開始終了の状態遷移\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 31 診療開始/終了の状態遷移\n\n- 診療開始（Chart open）から診療終了（完了/中止）の状態遷移を明文化し、UI の表示（Timeline/バッジ）と整合させる。\n- “未保存ドラフトあり” や “ORCA送信未完了” を理由に終了を抑止できるようにし、誤操作を防ぐ。\n- 例外系（通信断・タイムアウト）でも状態が壊れない復元戦略を定義する。\n\nYAML ID: src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765971588883-999ed8",
-    "medal": "gold",
-    "aiCompetitionScore": 90
-  },
-  {
     "id": "task-1765972569986-20be56",
     "name": "CodexCLI2: [webclient charts production outpatient plan] 40_claim_outpatient統合\n期間: 01/06 09:00 - 01/10 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。\n\nYAML ID: src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
     "model": "Codex CLI",
@@ -241,7 +166,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765972569986-20be56"
+    "worktreePath": ".worktrees/task-1765972569986-20be56",
+    "medal": "silver",
+    "aiCompetitionScore": 72
   },
   {
     "id": "task-1765972569702-bc50bd",
@@ -265,67 +192,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765972569702-bc50bd"
-  },
-  {
-    "id": "task-1765972570797-d2f8f0",
-    "name": "CodexCLI3: [webclient charts production outpatient plan] 40_claim_outpatient統合\n期間: 01/06 09:00 - 01/10 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。\n\nYAML ID: src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-17T11:56:10.797Z",
-    "updatedAt": "2025-12-17T11:56:19.042Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765972570797-d2f8f0",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765972569021-yg5w6u4o",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 40_claim_outpatient統合\n期間: 01/06 09:00 - 01/10 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。\n\nYAML ID: src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765972570797-d2f8f0"
-  },
-  {
-    "id": "task-1765972581078-5fa510",
-    "name": "🔍Monitor: [webclient charts production outpatient plan] 40_claim_outpatient統合\n期間: 01/06 09:00 - 01/10 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。\n\nYAML ID: src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-17T11:56:21.078Z",
-    "updatedAt": "2025-12-17T11:56:26.521Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765972581078-5fa510",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765972569021-yg5w6u4o",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 40_claim_outpatient統合\n期間: 01/06 09:00 - 01/10 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。\n\nYAML ID: src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1765972569702-bc50bd",
-      "task-1765972569986-20be56",
-      "task-1765972570797-d2f8f0"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1765972629021,
-    "worktreePath": ".worktrees/task-1765972581078-5fa510"
+    "worktreePath": ".worktrees/task-1765972569702-bc50bd",
+    "medal": "gold",
+    "aiCompetitionScore": 74
   },
   {
     "id": "task-1765971453234-ceb501",
@@ -352,5 +221,150 @@
     "worktreePath": ".worktrees/task-1765971453234-ceb501",
     "medal": "bronze",
     "aiCompetitionScore": 54
+  },
+  {
+    "id": "task-yaml-1ml06kb-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 40_claim_outpatient統合\n期間: 01/06 09:00 - 01/10 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。\n\nYAML ID: src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "low",
+    "createdAt": "2025-12-17T12:10:38.282Z",
+    "updatedAt": "2025-12-17T12:10:38.282Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1ml06kb-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/integration/40_claim_outpatient統合.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T12:10:37.948Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / integration"
+    ],
+    "dependencies": [
+      "task-yaml-4cvruz-src-charts-produ",
+      "task-yaml-1nb9snm-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1767657600000,
+      "endMs": 1768003200000,
+      "durationDays": 4
+    },
+    "category": "src / charts_production_outpatient / integration",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）\n\n- OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。\n- “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。\n- 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。"
+  },
+  {
+    "id": "task-yaml-1f881ev-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 23_DocumentTimeline商用レベル仕上げ\n期間: 01/08 09:00 - 01/12 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 23 DocumentTimeline 商用レベル仕上げ\n\n- 受付→診療→ORCA キューの状態遷移をタイムラインで “迷いなく” 追えるようにし、失敗/再試行/保留の状態を明示する。\n- `missingMaster=true` の行ハイライトと “次にやること” を表示し、送信不可の理由が一目で分かるようにする。\n- 大量データでも破綻しない表示（折りたたみ、仮想化、段階ロード）を導入する。\n\nYAML ID: src/charts_production_outpatient/ux/23_DocumentTimeline商用レベル仕上げ.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "low",
+    "createdAt": "2025-12-17T12:10:53.590Z",
+    "updatedAt": "2025-12-17T12:10:53.590Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1f881ev-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/ux/23_DocumentTimeline商用レベル仕上げ.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/ux/23_DocumentTimeline商用レベル仕上げ.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T12:10:53.551Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / ux"
+    ],
+    "dependencies": [
+      "task-yaml-uty2sh-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1767830400000,
+      "endMs": 1768176000000,
+      "durationDays": 4
+    },
+    "category": "src / charts_production_outpatient / ux",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 23 DocumentTimeline 商用レベル仕上げ\n\n- 受付→診療→ORCA キューの状態遷移をタイムラインで “迷いなく” 追えるようにし、失敗/再試行/保留の状態を明示する。\n- `missingMaster=true` の行ハイライトと “次にやること” を表示し、送信不可の理由が一目で分かるようにする。\n- 大量データでも破綻しない表示（折りたたみ、仮想化、段階ロード）を導入する。"
+  },
+  {
+    "id": "task-yaml-176gqc2-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 24_OrcaSummary_請求予約_商用レベル仕上げ\n期間: 01/08 09:00 - 01/11 09:00 / 優先度: high / 緊急度: low / エージェント: gemini cli\n\n# 24 OrcaSummary（請求/予約）商用レベル仕上げ\n\n- 請求/予約サマリを “診療中の判断に必要な粒度” で表示し、データソースの説明（dataSourceTransition）を添える。\n- `fallbackUsed=true` の場合は警告を強め、計算が暫定であることを明示（業務判断ミス防止）。\n- 関連アクション（予約へ遷移、会計へ、再取得）を UI で自然に辿れるようにする。\n\nYAML ID: src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "low",
+    "createdAt": "2025-12-17T12:10:56.235Z",
+    "updatedAt": "2025-12-17T12:10:56.235Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-176gqc2-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T12:10:56.214Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / ux"
+    ],
+    "dependencies": [
+      "task-yaml-uty2sh-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1767830400000,
+      "endMs": 1768089600000,
+      "durationDays": 3
+    },
+    "category": "src / charts_production_outpatient / ux",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 24 OrcaSummary（請求/予約）商用レベル仕上げ\n\n- 請求/予約サマリを “診療中の判断に必要な粒度” で表示し、データソースの説明（dataSourceTransition）を添える。\n- `fallbackUsed=true` の場合は警告を強め、計算が暫定であることを明示（業務判断ミス防止）。\n- 関連アクション（予約へ遷移、会計へ、再取得）を UI で自然に辿れるようにする。"
   }
 ]
