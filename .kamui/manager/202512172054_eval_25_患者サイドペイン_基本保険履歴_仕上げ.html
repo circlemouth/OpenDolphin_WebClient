@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 25 患者サイドペイン 仕上げ</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .scoreboard { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; margin-bottom: 16px; }
+      .score-card { background: #0f172a; color: #f8fafc; border-radius: 14px; padding: 14px 16px; box-shadow: 0 10px 24px rgba(15,23,42,0.25); display: flex; flex-direction: column; gap: 6px; }
+      .score-card .label { font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: #cbd5e1; }
+      .score-card .value { font-size: 32px; font-weight: 800; display: flex; align-items: baseline; gap: 10px; }
+      .score-card .value .trophy { font-size: 32px; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 160px; }
+      col.agent-column { width: calc((100% - 160px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 14px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 700; letter-spacing: 0.02em; padding: 2px 6px; border-radius: 8px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; cursor: pointer; }
+      details[open] summary { margin-bottom: 10px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 600; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 14px; }
+      .hex-row { display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap: 10px; margin-bottom: 12px; }
+      .hex { position: relative; width: 110px; height: 96px; margin: 0 auto; clip-path: polygon(50% 0, 93% 25%, 93% 75%, 50% 100%, 7% 75%, 7% 25%); display: flex; align-items: center; justify-content: center; flex-direction: column; background: linear-gradient(135deg, #38bdf8, #6366f1); color: #fff; box-shadow: 0 8px 16px rgba(99,102,241,0.25); }
+      .hex span { font-size: 12px; text-align: center; }
+      .hex strong { font-size: 16px; }
+      .issues { margin: 0; padding-left: 16px; color: #1f2a30; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜25 患者サイドペイン（基本/保険/履歴）仕上げ</h1>
+        <p class="monitor-description">対象ブランチ: task-1765971453436-e71b63 / task-1765971453661-76f9a2 / task-1765971453234-ceb501。機能合理性と緻密性を主軸に、コミットと差分を確認しました。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <div class="label">task-1765971453436-e71b63</div>
+          <div class="value"><span class="trophy">🏆</span><span>525 / 600</span></div>
+          <div>平均 88 点（🥇）</div>
+        </div>
+        <div class="score-card">
+          <div class="label">task-1765971453661-76f9a2</div>
+          <div class="value"><span class="trophy">🥈</span><span>382 / 600</span></div>
+          <div>平均 64 点</div>
+        </div>
+        <div class="score-card">
+          <div class="label">task-1765971453234-ceb501</div>
+          <div class="value"><span class="trophy">🥉</span><span>322 / 600</span></div>
+          <div>平均 54 点</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765971453436-e71b63</th>
+            <th>task-1765971453661-76f9a2</th>
+            <th>task-1765971453234-ceb501</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-17 20:54</td>
+            <td>
+              <div class="hex-row">
+                <div class="hex"><span>機能合理性</span><strong>90</strong></div>
+                <div class="hex"><span>緻密性</span><strong>88</strong></div>
+                <div class="hex"><span>UX整合</span><strong>86</strong></div>
+                <div class="hex"><span>ガード/権限</span><strong>84</strong></div>
+                <div class="hex"><span>監査/計測</span><strong>85</strong></div>
+                <div class="hex"><span>ドキュメント</span><strong>92</strong></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">DOC only</span>
+                <span class="agent-label">UX仕様と証跡ログを追加し、RUN_ID を参照チェーンへ反映。</span>
+              </div>
+              <ul class="issues">
+                <li>新規仕様 `25_患者サイドペイン_基本保険履歴_仕上げ.md` が目的・ガード・差分表示・履歴導線を明確化。</li>
+                <li>README/DOC_STATUS を最新 RUN_ID=`20251217T114005Z` で更新。</li>
+                <li>コード差分なしでリスク低。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>01e2243b docs: add patient side pane UX spec (RUN_ID=20251217T114005Z)
+- docs/web-client/README.md に最新サマリを追記
+- docs/web-client/planning/phase2/DOC_STATUS.md に RUN_ID 行を追加
+- src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md 追加
+- 証跡ログ 20251217T114005Z-charts-patient-sidepane.md 追加</pre>
+              </details>
+            </td>
+            <td>
+              <div class="hex-row">
+                <div class="hex"><span>機能合理性</span><strong>70</strong></div>
+                <div class="hex"><span>緻密性</span><strong>60</strong></div>
+                <div class="hex"><span>UX整合</span><strong>65</strong></div>
+                <div class="hex"><span>ガード/権限</span><strong>62</strong></div>
+                <div class="hex"><span>監査/計測</span><strong>70</strong></div>
+                <div class="hex"><span>ドキュメント</span><strong>55</strong></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">コード改修</span>
+                <span class="agent-label">差分表示・履歴導線を PatientsTab に追加したが挙動の粗さあり。</span>
+              </div>
+              <ul class="issues">
+                <li>メモ差分セクションはトグル state を持つが表示が常時2カラムで切替が効かない。</li>
+                <li>「過去受診を開く」ボタンが audit 送信のみで Patients 画面へ遷移しないため導線要件未達。</li>
+                <li>履歴ラベルは `visitDate` フィールド依存（ReceptionEntry に未定義）で常時 "受診履歴未取得" になり得る。</li>
+                <li>保存ボタンは audit ログのみで UI 保存されない旨の表示はあるが、仕様上の差分保存確認導線が不足。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>f485a6bf charts: 患者サイドペインに差分閲覧と履歴導線を追加
+- PatientsTab: diffView state, history ラベル、受診導線ボタン追加
+- audit.ts: PATIENT_PANEL_* アクション追加
+- outpatient types/transformers: fetchedAt 追加
+- styles: diff/segmented/navigator UI 追加</pre>
+              </details>
+            </td>
+            <td>
+              <div class="hex-row">
+                <div class="hex"><span>機能合理性</span><strong>62</strong></div>
+                <div class="hex"><span>緻密性</span><strong>52</strong></div>
+                <div class="hex"><span>UX整合</span><strong>58</strong></div>
+                <div class="hex"><span>ガード/権限</span><strong>50</strong></div>
+                <div class="hex"><span>監査/計測</span><strong>60</strong></div>
+                <div class="hex"><span>ドキュメント</span><strong>40</strong></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">混在改修</span>
+                <span class="agent-label">患者マスタ取得＋差分UIを追加する一方で既存ドキュメントを削除する回帰を含む。</span>
+              </div>
+              <ul class="issues">
+                <li>基本情報表示で年齢表記がテンプレート誤記: `${masterPatient.birthDate}（{age ?? '年齢不明'}歳）` とし、age が出力されない。</li>
+                <li>差分行「電話」の before に `selected.note` を使用し誤カラム比較。</li>
+                <li>keyboard/ARIA 仕様とログを README/DOC_STATUS から削除し、`src/.../ux/21_キーボード操作とARIA監査.md` も削除→ドキュメント欠落の回帰。</li>
+                <li>.kamui/tasks-state.json 等の管理ファイルを変更・過去評価HTMLを削除しており、不要差分の混入リスク。</li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>9c21357b feat: 患者サイドペイン仕上げ RUN_ID=20251217T113914Z
+- PatientsTab: react-query で患者マスタ取得、差分/履歴カードを追加
+- styles: パネル/履歴/差分 UI を追加
+- README・DOC_STATUS から keyboard/ARIA 更新を削除し、関連 UX 文書/ログを削除
+- .kamui キャッシュ/タスクファイルを更新、旧評価HTMLを削除</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
