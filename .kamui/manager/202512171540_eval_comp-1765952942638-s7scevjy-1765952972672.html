@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .score-cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 24px; }
+      .score-card { padding: 14px; border: 1px solid #c4d3d7; background: #f6fafb; border-radius: 8px; }
+      .score-card h2 { margin: 0 0 6px; font-size: 16px; display: flex; align-items: center; gap: 6px; }
+      .score-card .score { font-size: 20px; font-weight: 700; }
+      .score-card .meta { font-size: 12px; color: #3a4b53; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 170px; }
+      col.agent-column { width: calc((100% - 170px) / 3); }
+      th, td { border: 1px solid #c4d3d7; padding: 14px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; margin-right: 6px; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .chart-wrap { display: flex; gap: 10px; align-items: center; margin: 8px 0; }
+      .chart-hex { width: 160px; height: 160px; }
+      .chart-legend { font-size: 11px; color: #1f2a30; }
+      .metric-list { margin: 6px 0 0; padding-left: 16px; font-size: 12px; }
+      .metric-list li { margin-bottom: 4px; }
+      .snapshot-summary { margin: 6px 0; font-weight: 600; color: #2c3a40; }
+      .log { font-size: 12px; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 10px; white-space: pre-wrap; word-break: break-word; margin: 6px 0 0; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">ToneBanner / 状態ピル 一貫性タスク 評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task-1765952942639-70a6ef, task-1765952942839-a2f740, task-1765952943043-70d4e7。最新コミットと差分を精査し、機能合理性と緻密性で採点しました。</p>
+      </header>
+
+      <div class="score-cards">
+        <div class="score-card">
+          <h2>🏆🥇 cursor cli / task-1765952942639-70a6ef</h2>
+          <div class="score">558 / 600</div>
+          <div class="meta">平均 93点・RUN_ID 20251217T063116Z・コミット 387fc70f</div>
+        </div>
+        <div class="score-card">
+          <h2>🥈 cursor cli / task-1765952942839-a2f740</h2>
+          <div class="score">520 / 600</div>
+          <div class="meta">平均 87点・RUN_ID 20251217T063103Z・コミット 57c3d997</div>
+        </div>
+        <div class="score-card">
+          <h2>🥉 cursor cli / task-1765952943043-70d4e7</h2>
+          <div class="score">476 / 600</div>
+          <div class="meta">平均 79点・RUN_ID 20251217T063030Z・コミット ef589349</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor cli — task-1765952942639-70a6ef</th>
+            <th>cursor cli — task-1765952942839-a2f740</th>
+            <th>cursor cli — task-1765952943043-70d4e7</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-17 15:40 JST</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span>未コミットなし。差分は README/DOC_STATUS + RUN_ID ログ + UX 本稿。</div>
+              <div class="chart-wrap">
+                <svg class="chart-hex" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon points="80,20 132,50 132,110 80,140 28,110 28,50" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="80.0,24.2 128.8,51.8 127.8,107.6 80.0,135.8 32.7,107.3 30.6,51.5" fill="#4caf50" fill-opacity="0.25" stroke="#2f8f3a" stroke-width="2" />
+                </svg>
+                <div class="chart-legend">
+                  <div>機能適合 93 / 仕様緻密さ 94 / ARIA 92 / 語彙一貫性 93 / テスト容易性 91 / ドキュメント 95</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">強み: aria-live 抑止とバナー優先の明確化、ピル順序と data-* 透過の統一、解除トリガーを含むブロック条件の明文化。</div>
+              <ul class="metric-list">
+                <li>Reception 語彙・トーンを Charts に移植しつつ、左ペイン mirror を aria-live=off で重複読み上げ回避。</li>
+                <li>missingMaster/fallbackUsed の assertive 通知と解除 polite 通知を 1 回限定で規定、cacheHit の読み上げ抑制も明示。</li>
+                <li>Playwright 観点と data-run-id/data-source-transition 透過で検証容易性が高い。</li>
+              </ul>
+              <div class="snapshot-summary">課題/気付き</div>
+              <ul class="metric-list">
+                <li>テレメトリ送信仕様は触れておらず、監査イベント粒度が未定。</li>
+                <li>CTA 配置や無効条件の具体的 UI 例が無いため、実装時に解釈差異のリスク小。</li>
+              </ul>
+              <div class="log">git log -1: 387fc70f Add charts tone banner and status pill alignment</div>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span>未コミットなし。差分は README/DOC_STATUS + RUN_ID ログ + UX 本稿。</div>
+              <div class="chart-wrap">
+                <svg class="chart-hex" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon points="80,20 132,50 132,110 80,140 28,110 28,50" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="80.0,27.2 125.2,53.9 124.7,105.8 80.0,132.2 36.4,105.2 34.3,53.6" fill="#ffb300" fill-opacity="0.22" stroke="#c97a00" stroke-width="2" />
+                </svg>
+                <div class="chart-legend">
+                  <div>機能適合 88 / 仕様緻密さ 87 / ARIA 86 / 語彙一貫性 87 / テスト容易性 84 / ドキュメント 88</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">強み: canonical コピーセットと Tooltip 1 行定義で実装ブレ低減。ピル並びと aria-live 切替を Reception と合わせる方針が明確。</div>
+              <ul class="metric-list">
+                <li>同値再レンダリング時の aria 発火抑止を規定し、過通知対策を含めている。</li>
+                <li>DoD に Playwright 追加を列挙し、Reception→Charts carry-over を検証項目化。</li>
+              </ul>
+              <div class="snapshot-summary">改善余地</div>
+              <ul class="metric-list">
+                <li>解除時トリガーやボタン活性条件は未記述で、ブロック解除の UX が曖昧。</li>
+                <li>ピル非表示条件/成功トーンの扱いが曖昧で、軽微な実装解釈差が残る。</li>
+              </ul>
+              <div class="log">git log -1: 57c3d997 Add charts tone banner and status pill UX guidance</div>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span>未コミットなし。差分は README/DOC_STATUS + RUN_ID ログ + UX 本稿。</div>
+              <div class="chart-wrap">
+                <svg class="chart-hex" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon points="80,20 132,50 132,110 80,140 28,110 28,50" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="80.0,30.8 121.6,56.0 120.5,103.4 80.0,127.4 41.0,102.5 37.4,55.4" fill="#607d8b" fill-opacity="0.23" stroke="#41535c" stroke-width="2" />
+                </svg>
+                <div class="chart-legend">
+                  <div>機能適合 82 / 仕様緻密さ 80 / ARIA 78 / 語彙一貫性 79 / テスト容易性 75 / ドキュメント 82</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">強み: 語彙固定と CTA 配置、監査ログ送信の基本キーを提示。ピル非表示条件で視覚ノイズ削減を意識。</div>
+              <ul class="metric-list">
+                <li>carry-over で Reception と語尾一致を要求し、コピー齟齬リスクを低減。</li>
+                <li>assertive 発火の cooldown を 5 分としたが根拠が未提示。</li>
+              </ul>
+              <div class="snapshot-summary">改善余地</div>
+              <ul class="metric-list">
+                <li>cacheHit 読み上げ抑止や解除時 polite など精緻な aria ルールが不足。</li>
+                <li>fallbackUsed=false 非表示方針は診療監査観点で情報欠落の懸念が残る。</li>
+                <li>Playwright/テレメトリの DoD が未具体化で検証コストが不明。</li>
+              </ul>
+              <div class="log">git log -1: ef589349 Add ToneBanner and status pill consistency spec (RUN_ID=20251217T063030Z)</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
