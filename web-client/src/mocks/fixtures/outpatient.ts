@@ -279,6 +279,33 @@ export function resetOutpatientScenario() {
 }
 
 export function buildClaimFixture(flags: OutpatientFlagSet) {
+  const claimBundles = [
+    {
+      bundleNumber: 'BND-001',
+      classCode: '110',
+      patientId: OUTPATIENT_RECEPTION_ENTRIES[0]?.patientId,
+      appointmentId: OUTPATIENT_RECEPTION_ENTRIES[0]?.appointmentId,
+      performTime: `${new Date().toISOString().slice(0, 10)}T09:10:00`,
+      claimStatus: flags.missingMaster ? '会計待ち' : '会計済み',
+      claimStatusText: flags.missingMaster ? '会計待ち (master missing)' : '会計済み',
+      totalClaimAmount: 1320,
+      items: [
+        { code: '110001', name: '再診料', number: 1, unit: '回', claimRate: 1, amount: 72 },
+        { code: '110015', name: '明細書発行体制等加算', number: 1, unit: '回', claimRate: 1, amount: 10 },
+      ],
+    },
+    {
+      bundleNumber: 'BND-002',
+      classCode: '120',
+      patientId: OUTPATIENT_RECEPTION_ENTRIES[1]?.patientId,
+      appointmentId: OUTPATIENT_RECEPTION_ENTRIES[1]?.appointmentId,
+      performTime: `${new Date().toISOString().slice(0, 10)}T09:25:00`,
+      claimStatus: '会計待ち',
+      claimStatusText: '会計待ち',
+      totalClaimAmount: 2640,
+      items: [{ code: '120001', name: '処置料', number: 1, unit: '回', claimRate: 1, amount: 2640 }],
+    },
+  ];
   return {
     runId: flags.runId,
     traceId: flags.traceId ?? `trace-${flags.runId}`,
@@ -286,7 +313,14 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
     missingMaster: flags.missingMaster,
     dataSourceTransition: flags.dataSourceTransition,
     fallbackUsed: flags.fallbackUsed,
-    recordsReturned: flags.recordsReturned ?? OUTPATIENT_RECEPTION_ENTRIES.length,
+    recordsReturned: flags.recordsReturned ?? claimBundles.length,
+    claimStatus: flags.missingMaster ? '会計待ち' : '会計済み',
+    claimStatusText: flags.missingMaster ? '会計待ち' : '会計済み',
+    claimBundles,
+    status: flags.status ?? 200,
+    apiResult: flags.status && flags.status >= 400 ? 'error' : 'ok',
+    apiResultMessage:
+      flags.status && flags.status >= 400 ? 'mock claim fetch failure (msw scenario)' : 'mock claim fetch success',
     auditEvent: {
       endpoint: '/api01rv2/claim/outpatient/mock',
       recordedAt: new Date().toISOString(),
@@ -294,6 +328,16 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
       cacheHit: flags.cacheHit,
       missingMaster: flags.missingMaster,
       dataSourceTransition: flags.dataSourceTransition,
+      details: {
+        runId: flags.runId,
+        dataSourceTransition: flags.dataSourceTransition,
+        cacheHit: flags.cacheHit,
+        missingMaster: flags.missingMaster,
+        fallbackUsed: flags.fallbackUsed,
+        fetchedAt: new Date().toISOString(),
+        recordsReturned: flags.recordsReturned ?? claimBundles.length,
+        claimBundles: claimBundles.length,
+      },
     },
   };
 }
