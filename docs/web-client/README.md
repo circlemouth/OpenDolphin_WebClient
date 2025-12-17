@@ -7,6 +7,7 @@
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
 ### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T120220Z`）
+- Charts アクセシビリティ自動検査（RUN_ID=`20251217T212939Z`）。ActionBar/ToneBanner に axe テストを追加し、missingMaster ブロック/通常状態で重大違反 0 件。フォーカス順と操作不能理由の読み上げを確認。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md` / 成果物: `src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md` / テスト: `web-client/src/features/charts/__tests__/chartsAccessibility.test.tsx`。
 - DocumentTimeline 商用仕上げ（RUN_ID=`20251217T150614Z`）。受付→診療→ORCA キューを 3 ステップ可視化し、missingMaster/失敗/再取得の nextAction を明示。32件ウィンドウ仮想化＋折りたたみ＋表示件数を追加。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md` / 成果物: `src/charts_production_outpatient/ux/23_DocumentTimeline商用レベル仕上げ.md`。
 - OrcaSummary（請求/予約）商用レベル仕上げ指針を追加（RUN_ID=`20251217T130407Z`）。請求/予約サマリの表示粒度、`dataSourceTransition` の説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md` / 成果物: `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md`。
 - 診療開始/終了の状態遷移を再定義し、READY_TO_CLOSE を分離。ORCA送信待ちのバックオフ（5s→15s→45s, 最大3回）と終了ガードの disable 理由を固定（RUN_ID=`20251217T120220Z`）。証跡: `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md` / 成果物: `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md`。
@@ -37,6 +38,7 @@
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
 - `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。
 - `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` — OrcaSummary 請求/予約サマリ商用仕上げ（RUN_ID=`20251217T130407Z`）。
+- `src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md` — Charts アクセシビリティ自動/手動監査（RUN_ID=`20251217T212939Z`）。
 - `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` — Charts セッション/権限ガード方針（RUN_ID=`20251213T000432Z`）。
 - `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` — Charts エラー/リトライ規約（RUN_ID=`20251217T125828Z`）。
 - `src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md` — Charts 外来 fetch レイヤー統一（RUN_ID=`20251213T133932Z`）。
