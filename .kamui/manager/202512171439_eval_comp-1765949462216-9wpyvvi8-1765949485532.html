@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-cards {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 12px 0 28px;
+      }
+      .score-card {
+        padding: 18px;
+        border: 1px solid #c4d3d7;
+        background: #f7fbfc;
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+      .score-card h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+      .score-card .score {
+        font-size: 28px;
+        font-weight: 800;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .radar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+      .radar canvas { border: 1px solid #d8e6e9; background: #fafcfd; }
+      .radar-list { font-size: 12px; color: #2c3a40; }
+      .radar-list li { list-style: none; margin: 2px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク「12 エラーハンドリングとリトライ規約」の完了成果を比較評価しました。対象ブランチ: task-1765949462217-a1eba9, task-1765949462419-523f17。</p>
+      </header>
+      <div class="score-cards">
+        <div class="score-card" id="card-a">
+          <h2>task-1765949462217-a1eba9 / 🏆🥇</h2>
+          <div class="score">542 / 600</div>
+          <div>平均90.3点。missingMaster/fallback ブロックと ErrorBoundary 役割の具体化が明確。</div>
+        </div>
+        <div class="score-card" id="card-b">
+          <h2>task-1765949462419-523f17 / 🥈</h2>
+          <div class="score">486 / 600</div>
+          <div>平均81.0点。章間整合を明示したが、回復導線/観測キーの具体性が弱め。</div>
+        </div>
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1765949462217-a1eba9</th>
+            <th>Agent task-1765949462419-523f17</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-17 14:39</td>
+            <td>
+              <div class="radar">
+                <canvas id="radar-a" width="170" height="170" aria-label="六角形チャート A"></canvas>
+                <ul class="radar-list">
+                  <li>機能合理性 92</li>
+                  <li>緻密性 94</li>
+                  <li>整合性 90</li>
+                  <li>実装準備度 88</li>
+                  <li>テスト指針 86</li>
+                  <li>文書品質 92</li>
+                </ul>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span><span class="agent-label">commit 5f11a79e (1 つ前 70662d86)。未コミットなし。</span></div>
+              <div class="snapshot-summary">主な成果</div>
+              <pre>- RUN_ID を `20251217T125828Z` に更新し、README / DOC_STATUS / 証跡ログと同期。
+- 3章/10章との整合を本文で明示し、missingMaster/fallbackUsed ブロック条件と解除条件を具体化。
+- ToneBanner 表示、aria-live、再取得導線、Telemetry/Audit のキー透過を詳細に列挙。
+- ErrorBoundary とパネル内部分失敗の分界、実装箇所メモ（httpClient, ToneBanner, queryClient refetch, e2e 追加）を提示。</pre>
+              <div class="snapshot-summary">評価</div>
+              <pre>機能合理性: missingMaster/fallback ブロックや idempotent 再取得の条件が明確で、運用導線も3手提示。
+緻密性: テレメトリキー・aria属性・data属性まで指定し、テスト観点も4パターン列挙。
+整合性: 03/10 章のRUN_IDと要件を参照し、解除条件= dataSourceTransition=server を明記。
+実装準備度: 実装ファイル/テスト位置を指示し、Handler設計(再取得:refetchQueries)が示されている。
+テスト指針: Playwright 4 パターンと HAR/assertion での data-run-id 利用を提示。
+文書品質: セクション構成が一貫、例文/文言テンプレも備え、読みやすい。</pre>
+            </td>
+            <td>
+              <div class="radar">
+                <canvas id="radar-b" width="170" height="170" aria-label="六角形チャート B"></canvas>
+                <ul class="radar-list">
+                  <li>機能合理性 84</li>
+                  <li>緻密性 82</li>
+                  <li>整合性 86</li>
+                  <li>実装準備度 78</li>
+                  <li>テスト指針 74</li>
+                  <li>文書品質 82</li>
+                </ul>
+              </div>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span><span class="agent-label">commit bbc67969 (1 つ前 70662d86)。未コミットなし。</span></div>
+              <div class="snapshot-summary">主な成果</div>
+              <pre>- RUN_ID を `20251217T125828Z` に更新し、README / DOC_STATUS / 証跡ログを同期。
+- 3章 metadata 透過キーと 10 章セッション無効フローとの整合を強調。
+- missingMaster/fallbackUsed ブロック条件に dataSourceTransition 判定を合わせる旨を明文化。</pre>
+              <div class="snapshot-summary">評価</div>
+              <pre>機能合理性: ブロック/解除条件の再整理は妥当だが、UI 導線の文言例が少なく運用想定が弱い。
+緻密性: トーン/aria-live 以外の観測キーや data 属性指定が省かれ、assertion 観点が不足。
+整合性: 3章/10章とのリンクを明示し、参照チェーンも維持している。
+実装準備度: 実装箇所や handler 指針が書かれておらず、開発者が追加調査を要する。
+テスト指針: E2E 観点が未記載。retry 回数や cooldown など計測軸が曖昧。
+文書品質: 章サマリは簡潔だが、決定サマリが3点のみで読み手の補完が必要。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <p style="margin-top:24px;font-size:12px;color:#3a4b53;">成果物リンク: task-1765949462217-a1eba9 → <code>src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md</code>, <code>docs/web-client/planning/phase2/logs/20251217T125828Z-charts-error-handling.md</code>（別ワークツリー）。<br>task-1765949462419-523f17 → 同名ファイル（別ワークツリー）。</p>
+    </div>
+    <script>
+      const metricsA = [92, 94, 90, 88, 86, 92];
+      const metricsB = [84, 82, 86, 78, 74, 82];
+      const labels = ["機能合理性", "緻密性", "整合性", "実装準備度", "テスト指針", "文書品質"];
+      function renderRadar(id, values, color) {
+        const c = document.getElementById(id);
+        if (!c) return;
+        const ctx = c.getContext('2d');
+        const cx = c.width / 2, cy = c.height / 2, r = 70;
+        ctx.strokeStyle = '#c4d3d7';
+        ctx.lineWidth = 1;
+        // draw grid
+        for (let k = 1; k <= 3; k++) {
+          const rr = (r / 3) * k;
+          ctx.beginPath();
+          for (let i = 0; i < 6; i++) {
+            const angle = (Math.PI / 3) * i - Math.PI / 2;
+            const x = cx + rr * Math.cos(angle);
+            const y = cy + rr * Math.sin(angle);
+            i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+          }
+          ctx.closePath();
+          ctx.stroke();
+        }
+        // axes
+        ctx.strokeStyle = '#d8e6e9';
+        for (let i = 0; i < 6; i++) {
+          const angle = (Math.PI / 3) * i - Math.PI / 2;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + r * Math.cos(angle), cy + r * Math.sin(angle));
+          ctx.stroke();
+        }
+        // polygon
+        ctx.beginPath();
+        values.forEach((v, i) => {
+          const ratio = v / 100;
+          const angle = (Math.PI / 3) * i - Math.PI / 2;
+          const x = cx + r * ratio * Math.cos(angle);
+          const y = cy + r * ratio * Math.sin(angle);
+          i === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        });
+        ctx.closePath();
+        ctx.fillStyle = color + '22';
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2;
+        ctx.fill();
+        ctx.stroke();
+      }
+      renderRadar('radar-a', metricsA, '#1f7a8c');
+      renderRadar('radar-b', metricsB, '#d17b0f');
+    </script>
+  </body>
+</html>
