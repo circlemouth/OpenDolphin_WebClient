@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 import { axe } from 'vitest-axe';
 import { cleanup, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 
 import { ChartsActionBar } from '../ChartsActionBar';
 import { ToneBanner } from '../../reception/components/ToneBanner';
@@ -18,11 +19,13 @@ const baseActionBarProps = {
 describe('Charts accessibility', () => {
   it('Chart action bar exposes disable理由と重大違反なし (missingMaster ブロック時)', async () => {
     const { container } = render(
-      <ChartsActionBar
-        {...baseActionBarProps}
-        missingMaster
-        fallbackUsed={false}
-      />,
+      <MemoryRouter>
+        <ChartsActionBar
+          {...baseActionBarProps}
+          missingMaster
+          fallbackUsed={false}
+        />
+      </MemoryRouter>,
     );
 
     const sendButton = screen.getByRole('button', { name: 'ORCA 送信' });
@@ -35,11 +38,13 @@ describe('Charts accessibility', () => {
 
   it('フォーカス移動順がボタン列の視覚順と一致し、重大違反なし (ロック解除状態)', async () => {
     const { container } = render(
-      <ChartsActionBar
-        {...baseActionBarProps}
-        missingMaster={false}
-        fallbackUsed={false}
-      />,
+      <MemoryRouter>
+        <ChartsActionBar
+          {...baseActionBarProps}
+          missingMaster={false}
+          fallbackUsed={false}
+        />
+      </MemoryRouter>,
     );
     const user = userEvent.setup();
     const tabbables = screen.getAllByRole('button').filter((button) => !button.hasAttribute('disabled'));
