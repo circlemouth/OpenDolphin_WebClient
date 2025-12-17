@@ -37,6 +37,14 @@ export function logUiState(entry: Omit<UiStateLog, 'timestamp'>) {
     ...entry,
     timestamp: new Date().toISOString(),
   };
+  const missing: string[] = [];
+  if (!record.runId) missing.push('runId');
+  if (record.dataSourceTransition === undefined) missing.push('dataSourceTransition');
+  if (record.cacheHit === undefined) missing.push('cacheHit');
+  if (record.missingMaster === undefined) missing.push('missingMaster');
+  if (missing.length > 0 && typeof console !== 'undefined') {
+    console.warn('[audit] UI state schema warning', { missing, record });
+  }
   uiStateLog.push(record);
   // 監査の目視突き合わせ用にブラウザコンソールと window へ露出する。
   if (typeof console !== 'undefined') {

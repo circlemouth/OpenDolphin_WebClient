@@ -3,7 +3,12 @@ import type { DataSourceTransition as ObservabilityDataSourceTransition } from '
 
 export type DataSourceTransition = ObservabilityDataSourceTransition;
 
-export type TelemetryFunnelStage = 'resolve_master' | 'charts_orchestration' | 'charts_action' | 'patient_fetch';
+export type TelemetryFunnelStage =
+  | 'resolve_master'
+  | 'charts_orchestration'
+  | 'charts_action'
+  | 'patient_fetch'
+  | 'orca_summary';
 
 export interface OutpatientFunnelPayload {
   runId?: string;
@@ -65,6 +70,14 @@ export function recordOutpatientFunnel(
     note: payload.note,
     recordedAt: new Date().toISOString(),
   };
+  const missing: string[] = [];
+  if (!record.runId) missing.push('runId');
+  if (record.dataSourceTransition === undefined) missing.push('dataSourceTransition');
+  if (record.cacheHit === undefined) missing.push('cacheHit');
+  if (record.missingMaster === undefined) missing.push('missingMaster');
+  if (missing.length > 0 && typeof console !== 'undefined') {
+    console.warn('[telemetry] recordOutpatientFunnel schema warning', { stage, missing, record });
+  }
   funnelLog.push(record);
   if (typeof console !== 'undefined') {
     console.info('[telemetry] Record outpatient funnel', record);
