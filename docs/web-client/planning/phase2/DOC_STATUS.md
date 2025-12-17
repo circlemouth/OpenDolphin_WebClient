@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251217T130407Z`（OrcaSummary 請求/予約サマリ商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。備考: 請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。
 - 本更新 RUN_ID=`20251217T120220Z`（Charts 診療終了ガード・キュー再取得具体化）。証跡: `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md`。備考: READY_TO_CLOSE を分離し、ORCA送信待ちのバックオフ（5s→15s→45s, max3）と disable 理由固定・info バナー告知を追加。
 - 本更新 RUN_ID=`20251217T114331Z`（Charts 診療開始/終了の状態遷移）。証跡: `docs/web-client/planning/phase2/logs/20251217T114331Z-charts-encounter-state.md`。備考: 診療状態を OPEN/ DIRTY / QUEUE_PENDING / CLOSING / CLOSED / ABORTED に整理し、終了ガードと Timeline/Badge/Audit の一貫性を固定。
 - 本更新 RUN_ID=`20251217T063116Z`（Charts ToneBanner/状態ピル一貫性）。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。備考: Reception と語彙・aria-live を統一し、ピル順序/tooltip/読み上げ抑制を定義。
@@ -41,6 +42,7 @@
 | `docs/web-client/ux/playwright-scenarios.md` | E2E シナリオ草稿 | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。計画書のテスト章と連携。 |
 | `docs/web-client/ux/ux-documentation-plan.md` | UX 文書進行ハブ | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。 |
 | `docs/web-client/operations/debugging-outpatient-bugs.md` | 外来 API デバッグ記録 | Active | 2025-12-10 | RUN_ID=`20251210T054022Z`。Stage/Preview 再検証 pending。 |
+| `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md` | OrcaSummary 請求/予約 UX ログ | Active | 2025-12-17 | RUN_ID=`20251217T130407Z`。請求/予約サマリ粒度、`dataSourceTransition` 説明、`fallbackUsed` 強警告、予約/会計/再取得導線を整理。成果物 `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md`。 |
 | `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md` | Charts 診療終了ガード UX 具体化ログ | Active | 2025-12-17 | RUN_ID=`20251217T120220Z`。READY_TO_CLOSE 分離、ORCAキュー再取得バックオフ、終了 disable 理由固定を追加。成果物 `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md`。 |
 | `docs/web-client/planning/phase2/logs/20251217T114331Z-charts-encounter-state.md` | Charts 診療開始/終了 状態遷移ログ | Active | 2025-12-17 | RUN_ID=`20251217T114331Z`。診療状態モデル（OPEN/ DIRTY / QUEUE_PENDING / CLOSING / CLOSED / ABORTED）と終了ガード・復元方針を整理。成果物 `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md`。 |
 | `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md` | Charts シェル UI 最終レイアウトログ | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペインのレイアウト確定と幅別挙動を定義。 |
@@ -69,6 +71,7 @@
 | `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` | Charts 診療開始/終了 状態モデル | Active | 2025-12-17 | RUN_ID=`20251217T120220Z`（親 `20251217T114331Z`）。READY_TO_CLOSE 追加、送信待ちバックオフと終了ガード理由固定、復元戦略を定義。 |
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |
 | `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` | Charts ToneBanner/状態ピル一貫性 | Active | 2025-12-17 | RUN_ID=`20251217T063116Z`。Reception と語彙/aria-live/ピル順序を統一し、読み上げ抑制と tooltip 方針を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。 |
+| `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` | OrcaSummary 請求/予約サマリ商用仕上げ | Active | 2025-12-17 | RUN_ID=`20251217T130407Z`。請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。 |
 | `src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md` | Charts 監査ログ統一方針 | Active | 2025-12-13 | RUN_ID=`20251213T125127Z`。重要操作の監査記録保証と details 透過ルールを整理。証跡: `docs/web-client/planning/phase2/logs/20251213T125127Z-charts-audit-event.md`。 |
 | `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` | Charts セッション/権限ガード方針 | Active | 2025-12-13 | RUN_ID=`20251213T000432Z`。主要アクションの権限ガード、セッション無効時の破棄/誘導、Topbar/ヘッダーの監査表示を固定。証跡: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`。 |
 | `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` | Charts エラー/リトライ規約 | Active | 2025-12-17 | RUN_ID=`20251217T125828Z`。API 失敗の tone/aria-live/再取得導線と missingMaster/fallback ブロック運用を更新。証跡: `docs/web-client/planning/phase2/logs/20251217T125828Z-charts-error-handling.md`。 |
