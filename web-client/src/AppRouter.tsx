@@ -1,4 +1,4 @@
-import { useMemo, useState, createContext, useContext, type MouseEvent } from 'react';
+import { useEffect, useMemo, useState, createContext, useContext, type MouseEvent } from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -20,6 +20,25 @@ import { PatientsPage } from './features/patients/PatientsPage';
 import { AdministrationPage } from './features/administration/AdministrationPage';
 
 type Session = LoginResult;
+const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
+
+const loadStoredSession = (): Session | null => {
+  try {
+    const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw) as Session;
+  } catch {
+    return null;
+  }
+};
+
+const persistSession = (session: Session) => {
+  try {
+    sessionStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(session));
+  } catch {
+    // storage が使えない環境ではスキップ
+  }
+};
 
 const SessionContext = createContext<Session | null>(null);
 
@@ -46,9 +65,18 @@ export function AppRouter() {
   const handleLoginSuccess = (result: LoginResult) => {
     updateObservabilityMeta({ runId: result.runId });
     setSession(result);
+    persistSession(result);
   };
 
   const handleLogout = () => setSession(null);
+
+  useEffect(() => {
+    const stored = loadStoredSession();
+    if (stored) {
+      setSession(stored);
+      updateObservabilityMeta({ runId: stored.runId });
+    }
+  }, []);
 
   return (
     <BrowserRouter>
