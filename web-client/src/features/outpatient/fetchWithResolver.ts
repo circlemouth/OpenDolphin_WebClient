@@ -74,6 +74,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
         cacheHit: normalizeBoolean(json.cacheHit ?? cacheHitHint ?? after.cacheHit),
         missingMaster: normalizeBoolean(json.missingMaster ?? after.missingMaster),
         fallbackUsed: normalizeBoolean(json.fallbackUsed ?? after.fallbackUsed),
+        fallbackFlagMissing: json.fallbackUsed === undefined ? true : undefined,
         fetchedAt: (json.fetchedAt as string | undefined) ?? after.fetchedAt,
         recordsReturned: typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : undefined,
         fromCache: cacheHitHint,
@@ -128,6 +129,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
     resolveMasterSource: fallbackSource,
     cacheHit: cacheHitHint,
     fromCache: cacheHitHint,
+    fallbackFlagMissing: lastResult?.meta.fallbackFlagMissing,
     retryCount,
     ...(lastResult?.meta ?? {}),
   };

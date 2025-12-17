@@ -28,6 +28,7 @@ export type OutpatientMeta = {
   cacheHit?: boolean;
   missingMaster?: boolean;
   fallbackUsed?: boolean;
+  fallbackFlagMissing?: boolean;
   fetchedAt?: string;
   recordsReturned?: number;
   fromCache?: boolean;
@@ -36,8 +37,6 @@ export type OutpatientMeta = {
   httpStatus?: number;
   auditEvent?: Record<string, unknown>;
 };
-
-export type OutpatientFlagResponse = OutpatientMeta;
 
 export type AppointmentPayload = OutpatientMeta & {
   entries: ReceptionEntry[];
@@ -50,3 +49,38 @@ export type OrcaOutpatientSummary = OutpatientMeta & {
   note?: string;
   payload?: Record<string, unknown>;
 };
+
+export type ClaimBundleItem = {
+  code?: string;
+  tableId?: string;
+  name?: string;
+  number?: number;
+  unit?: string;
+  claimRate?: number;
+  amount?: number;
+};
+
+export type ClaimBundleStatus = '会計待ち' | '会計済み' | '診療中' | '受付中' | '予約';
+
+export type ClaimBundle = {
+  bundleNumber?: string;
+  classCode?: string;
+  patientId?: string;
+  appointmentId?: string;
+  performTime?: string;
+  claimStatusText?: string;
+  claimStatus?: ClaimBundleStatus;
+  totalClaimAmount?: number;
+  items?: ClaimBundleItem[];
+};
+
+export type ClaimOutpatientPayload = OutpatientMeta & {
+  bundles: ClaimBundle[];
+  claimStatus?: ClaimBundleStatus;
+  claimStatusText?: string;
+  raw?: Record<string, unknown>;
+  apiResult?: string;
+  apiResultMessage?: string;
+};
+
+export type OutpatientFlagResponse = ClaimOutpatientPayload;
