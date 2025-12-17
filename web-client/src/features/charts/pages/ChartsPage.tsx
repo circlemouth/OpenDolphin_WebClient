@@ -1,5 +1,5 @@
 import { Global } from '@emotion/react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 
@@ -39,6 +39,7 @@ function ChartsContent() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
+  const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const appliedMeta = useRef<{
     runId?: string;
     cacheHit?: boolean;
@@ -203,6 +204,15 @@ function ChartsContent() {
     return mergedFlags.auditEvent;
   }, [auditEvents, mergedFlags.auditEvent, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition]);
 
+  const handleRefreshSummary = useCallback(async () => {
+    setIsManualRefreshing(true);
+    try {
+      await Promise.all([claimQuery.refetch(), orcaSummaryQuery.refetch(), appointmentQuery.refetch()]);
+    } finally {
+      setIsManualRefreshing(false);
+    }
+  }, [appointmentQuery, claimQuery, orcaSummaryQuery]);
+
   return (
     <main className="charts-page" data-run-id={flags.runId} aria-busy={lockState.locked}>
       <section className="charts-page__header">
@@ -256,7 +266,13 @@ function ChartsContent() {
           />
         </div>
         <div className="charts-card">
-          <OrcaSummary summary={orcaSummaryQuery.data} claim={claimQuery.data as ClaimOutpatientPayload | undefined} />
+          <OrcaSummary
+            summary={orcaSummaryQuery.data}
+            claim={claimQuery.data as ClaimOutpatientPayload | undefined}
+            appointments={patientEntries}
+            onRefresh={handleRefreshSummary}
+            isRefreshing={isManualRefreshing}
+          />
         </div>
         <div className="charts-card">
           <PatientsTab
