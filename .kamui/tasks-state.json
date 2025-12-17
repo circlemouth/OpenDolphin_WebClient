@@ -203,30 +203,6 @@
     "aiCompetitionScore": 93
   },
   {
-    "id": "task-1765951391077-fde6e5",
-    "name": "CodexCLI2: [webclient charts production outpatient plan] 20_ChartsシェルUI最終レイアウト\n期間: 01/02 09:00 - 01/05 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 20 Charts シェル UI 最終レイアウト\n\n- `charts-claim-ui-policy.md` のレイアウト比率・トーン要件に沿って、ヘッダ/アクションバー/左右ペイン/本文の最終レイアウトを確定する。\n- “重要情報（患者・受付ID・保険/自費・runId・dataSourceTransition）” を常時視認できる配置に統一する。\n- 狭い画面/大きい画面の振る舞い（折りたたみ・固定）を確定し、操作回数を最小化する。\n\nYAML ID: src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-17T06:03:11.077Z",
-    "updatedAt": "2025-12-17T06:03:15.871Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765951391077-fde6e5",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765951390854-fu5zxcve",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 20_ChartsシェルUI最終レイアウト\n期間: 01/02 09:00 - 01/05 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 20 Charts シェル UI 最終レイアウト\n\n- `charts-claim-ui-policy.md` のレイアウト比率・トーン要件に沿って、ヘッダ/アクションバー/左右ペイン/本文の最終レイアウトを確定する。\n- “重要情報（患者・受付ID・保険/自費・runId・dataSourceTransition）” を常時視認できる配置に統一する。\n- 狭い画面/大きい画面の振る舞い（折りたたみ・固定）を確定し、操作回数を最小化する。\n\nYAML ID: src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1765951391077-fde6e5"
-  },
-  {
     "id": "task-1765951390902-33c22c",
     "name": "CodexCLI1: [webclient charts production outpatient plan] 20_ChartsシェルUI最終レイアウト\n期間: 01/02 09:00 - 01/05 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 20 Charts シェル UI 最終レイアウト\n\n- `charts-claim-ui-policy.md` のレイアウト比率・トーン要件に沿って、ヘッダ/アクションバー/左右ペイン/本文の最終レイアウトを確定する。\n- “重要情報（患者・受付ID・保険/自費・runId・dataSourceTransition）” を常時視認できる配置に統一する。\n- 狭い画面/大きい画面の振る舞い（折りたたみ・固定）を確定し、操作回数を最小化する。\n\nYAML ID: src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md",
     "model": "Codex CLI",
@@ -251,38 +227,51 @@
     "worktreePath": ".worktrees/task-1765951390902-33c22c"
   },
   {
-    "id": "task-1765951397953-1a1ee5",
-    "name": "🔍Monitor: [webclient charts production outpatient plan] 20_ChartsシェルUI最終レイアウト\n期間: 01/02 09:00 - 01/05 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 20 Charts シェル UI 最終レイアウト\n\n- `charts-claim-ui-policy.md` のレイアウト比率・トーン要件に沿って、ヘッダ/アクションバー/左右ペイン/本文の最終レイアウトを確定する。\n- “重要情報（患者・受付ID・保険/自費・runId・dataSourceTransition）” を常時視認できる配置に統一する。\n- 狭い画面/大きい画面の振る舞い（折りたたみ・固定）を確定し、操作回数を最小化する。\n\nYAML ID: src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-17T06:03:17.953Z",
-    "updatedAt": "2025-12-17T06:03:35.979Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1765951397953-1a1ee5",
-    "baseBranch": "master",
-    "useTmux": true,
+    "id": "task-yaml-jq45fm-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 21_キーボード操作とARIA監査\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 21 キーボード操作と ARIA 監査\n\n- 主要操作（患者切替/タブ移動/検索/送信/印刷）をキーボードで完結できるようにし、フォーカス順を最適化する。\n- ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。\n- モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。\n\nYAML ID: src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "low",
+    "createdAt": "2025-12-17T06:21:15.249Z",
+    "updatedAt": "2025-12-17T06:21:15.249Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-jq45fm-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
     "singleMode": false,
     "aiCompetitionEntry": false,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1765951390854-fu5zxcve",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 20_ChartsシェルUI最終レイアウト\n期間: 01/02 09:00 - 01/05 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 20 Charts シェル UI 最終レイアウト\n\n- `charts-claim-ui-policy.md` のレイアウト比率・トーン要件に沿って、ヘッダ/アクションバー/左右ペイン/本文の最終レイアウトを確定する。\n- “重要情報（患者・受付ID・保険/自費・runId・dataSourceTransition）” を常時視認できる配置に統一する。\n- 狭い画面/大きい画面の振る舞い（折りたたみ・固定）を確定し、操作回数を最小化する。\n\nYAML ID: src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1765951390902-33c22c",
-      "task-1765951391077-fde6e5"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T06:21:12.540Z"
     },
-    "autoEvaluationNotBefore": 1765951450854,
-    "worktreePath": ".worktrees/task-1765951397953-1a1ee5"
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / ux"
+    ],
+    "dependencies": [
+      "task-yaml-v2iy1d-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1767657600000,
+      "endMs": 1767916800000,
+      "durationDays": 3
+    },
+    "category": "src / charts_production_outpatient / ux",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 21 キーボード操作と ARIA 監査\n\n- 主要操作（患者切替/タブ移動/検索/送信/印刷）をキーボードで完結できるようにし、フォーカス順を最適化する。\n- ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。\n- モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。"
   }
 ]
