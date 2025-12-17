@@ -32,6 +32,7 @@
 - `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` — Charts セッション/権限ガード方針（RUN_ID=`20251213T000432Z`）。
 - `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` — Charts エラー/リトライ規約（RUN_ID=`20251217T125828Z`）。
 - `src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md` — Charts 外来 fetch レイヤー統一（RUN_ID=`20251213T133932Z`）。
+- `src/charts_production_outpatient/foundation/14_パフォーマンス予算と計測導入.md` — Charts 初回/患者切替/タイムライン更新の P95 予算と計測導入（RUN_ID=`20251217T060433Z`）。
 - `architecture/future-web-client-design.md` — 次期画面配置と機能サマリ（RUN_ID=`20251210T141208Z`）。
 - `architecture/web-client-api-mapping.md` — 外来 API マッピングと監査メタ（RUN_ID=`20251208T124645Z`）。
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
