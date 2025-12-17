@@ -458,5 +458,201 @@
     "worktreePath": ".worktrees/task-1766006843375-caef8a",
     "medal": "silver",
     "aiCompetitionScore": 92
+  },
+  {
+    "id": "task-yaml-1dv7nq7-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 41_appointment_outpatient統合\n期間: 01/10 09:00 - 01/13 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 41 `/api01rv2/appointment/outpatient/*` 統合（予約/来院）\n\n- 予約一覧/患者別予約/来院中リストを Charts が必要とする形に正規化し、受付ID と紐づく表示を整備する。\n- 予約変更・キャンセル等 “業務で頻発する操作” は Charts からの導線（リンク/遷移）として整備する。\n- 予約データの未取得/不整合時の表示（tone=info/warning）を統一する。\n\nYAML ID: src/charts_production_outpatient/integration/41_appointment_outpatient統合.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "low",
+    "createdAt": "2025-12-17T23:25:56.102Z",
+    "updatedAt": "2025-12-17T23:25:56.102Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1dv7nq7-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/integration/41_appointment_outpatient統合.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/integration/41_appointment_outpatient統合.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T23:25:55.687Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / integration"
+    ],
+    "dependencies": [
+      "task-yaml-1ml06kb-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1768003200000,
+      "endMs": 1768262400000,
+      "durationDays": 3
+    },
+    "category": "src / charts_production_outpatient / integration",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 41 `/api01rv2/appointment/outpatient/*` 統合（予約/来院）\n\n- 予約一覧/患者別予約/来院中リストを Charts が必要とする形に正規化し、受付ID と紐づく表示を整備する。\n- 予約変更・キャンセル等 “業務で頻発する操作” は Charts からの導線（リンク/遷移）として整備する。\n- 予約データの未取得/不整合時の表示（tone=info/warning）を統一する。"
+  },
+  {
+    "id": "task-yaml-8otuxu-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 44_admin_config_deliveryフラグ同期\n期間: 01/10 09:00 - 01/13 09:00 / 優先度: medium / 緊急度: low / エージェント: gemini cli\n\n# 44 `/api/admin/config` `/api/admin/delivery` フラグ同期\n\n- 設定配信（delivery）により、Charts の機能フラグ（表示/送信/マスタソース）を切り替えられるようにする。\n- 設定が “いつ・誰に・どの runId で” 適用されたかを UI と監査ログで追えるようにする。\n- 設定変更が Charts の状態に影響する場合（例: server→fallback）に、ToneBanner で明確に通知する。\n\nYAML ID: src/charts_production_outpatient/integration/44_admin_config_deliveryフラグ同期.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "low",
+    "createdAt": "2025-12-17T23:26:01.808Z",
+    "updatedAt": "2025-12-17T23:26:01.808Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-8otuxu-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/integration/44_admin_config_deliveryフラグ同期.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/integration/44_admin_config_deliveryフラグ同期.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T23:26:01.386Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / integration"
+    ],
+    "dependencies": [
+      "task-yaml-dvnr5t-src-charts-produ",
+      "task-yaml-1nb9snm-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1768003200000,
+      "endMs": 1768262400000,
+      "durationDays": 3
+    },
+    "category": "src / charts_production_outpatient / integration",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 44 `/api/admin/config` `/api/admin/delivery` フラグ同期\n\n- 設定配信（delivery）により、Charts の機能フラグ（表示/送信/マスタソース）を切り替えられるようにする。\n- 設定が “いつ・誰に・どの runId で” 適用されたかを UI と監査ログで追えるようにする。\n- 設定変更が Charts の状態に影響する場合（例: server→fallback）に、ToneBanner で明確に通知する。"
+  },
+  {
+    "id": "task-yaml-9jz4bk-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 33_ORCA送信フロー_送信前チェック\n期間: 01/14 09:00 - 01/18 09:00 / 優先度: high / 緊急度: low / エージェント: cursor cli\n\n# 33 ORCA 送信フロー（送信前チェック）\n\n- `missingMaster=true`/権限不足/未保存ドラフト/通信不安定など “送信不可” の条件を洗い出し、UI で明確にブロックする。\n- 送信開始→進行中→成功/失敗の状態を一貫して表示し、再試行・中断・証跡（traceId/runId）を残す。\n- 送信失敗時は “次にやること（受付へ戻る/再取得/設定確認）” を提示する。\n\nYAML ID: src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "low",
+    "createdAt": "2025-12-17T23:26:18.893Z",
+    "updatedAt": "2025-12-17T23:26:18.893Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-9jz4bk-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T23:26:18.886Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / workflow"
+    ],
+    "dependencies": [
+      "task-yaml-ftkcfk-src-charts-produ",
+      "task-yaml-uty2sh-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1768348800000,
+      "endMs": 1768694400000,
+      "durationDays": 4
+    },
+    "category": "src / charts_production_outpatient / workflow",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 33 ORCA 送信フロー（送信前チェック）\n\n- `missingMaster=true`/権限不足/未保存ドラフト/通信不安定など “送信不可” の条件を洗い出し、UI で明確にブロックする。\n- 送信開始→進行中→成功/失敗の状態を一貫して表示し、再試行・中断・証跡（traceId/runId）を残す。\n- 送信失敗時は “次にやること（受付へ戻る/再取得/設定確認）” を提示する。"
+  },
+  {
+    "id": "task-yaml-n387dq-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 26_印刷_エクスポート_診療文書\n期間: 01/13 09:00 - 01/16 09:00 / 優先度: medium / 緊急度: low / エージェント: claude code\n\n# 26 印刷/エクスポート（診療文書）\n\n- “診療記録の出力” を商用要件として実装し、印刷プレビュー（A4/余白/ヘッダ）とPDF出力を整備する。\n- 監査ログに “誰が・いつ・何を出力したか” を残し、runId と紐づける。\n- 個人情報の取り扱い（画面/印刷）と、出力時の注意喚起（tone=warning）を整備する。\n\nYAML ID: src/charts_production_outpatient/ux/26_印刷_エクスポート_診療文書.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "low",
+    "createdAt": "2025-12-17T23:26:31.607Z",
+    "updatedAt": "2025-12-17T23:26:31.607Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-n387dq-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/ux/26_印刷_エクスポート_診療文書.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/ux/26_印刷_エクスポート_診療文書.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T23:26:31.186Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / ux"
+    ],
+    "dependencies": [
+      "task-yaml-1f881ev-src-charts-produ",
+      "task-yaml-176gqc2-src-charts-produ",
+      "task-yaml-1a65ptm-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1768262400000,
+      "endMs": 1768521600000,
+      "durationDays": 3
+    },
+    "category": "src / charts_production_outpatient / ux",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 26 印刷/エクスポート（診療文書）\n\n- “診療記録の出力” を商用要件として実装し、印刷プレビュー（A4/余白/ヘッダ）とPDF出力を整備する。\n- 監査ログに “誰が・いつ・何を出力したか” を残し、runId と紐づける。\n- 個人情報の取り扱い（画面/印刷）と、出力時の注意喚起（tone=warning）を整備する。"
   }
 ]
