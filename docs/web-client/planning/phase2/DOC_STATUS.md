@@ -1,6 +1,7 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
 - 本更新 RUN_ID=`20251217T130407Z`（OrcaSummary 請求/予約サマリ商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。備考: 請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。
+- 本更新 RUN_ID=`20251217T150614Z`（DocumentTimeline 商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md`。備考: 受付→診療→ORCA 3ステップ可視化、missingMaster 強調、nextAction 表示、仮想化/折りたたみ/表示件数コントロールを追加。
 - 本更新 RUN_ID=`20251217T120220Z`（Charts 診療終了ガード・キュー再取得具体化）。証跡: `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md`。備考: READY_TO_CLOSE を分離し、ORCA送信待ちのバックオフ（5s→15s→45s, max3）と disable 理由固定・info バナー告知を追加。
 - 本更新 RUN_ID=`20251217T114331Z`（Charts 診療開始/終了の状態遷移）。証跡: `docs/web-client/planning/phase2/logs/20251217T114331Z-charts-encounter-state.md`。備考: 診療状態を OPEN/ DIRTY / QUEUE_PENDING / CLOSING / CLOSED / ABORTED に整理し、終了ガードと Timeline/Badge/Audit の一貫性を固定。
 - 本更新 RUN_ID=`20251217T063116Z`（Charts ToneBanner/状態ピル一貫性）。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。備考: Reception と語彙・aria-live を統一し、ピル順序/tooltip/読み上げ抑制を定義。
