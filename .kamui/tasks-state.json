@@ -434,32 +434,6 @@
     "description": "# 21 キーボード操作と ARIA 監査\n\n- 主要操作（患者切替/タブ移動/検索/送信/印刷）をキーボードで完結できるようにし、フォーカス順を最適化する。\n- ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。\n- モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。\n- キーボード操作後も Topbar の `runId`/dataSource 表示が上書きされないことを検証し、RUN_ID を DOC_STATUS・証跡に同一で残す（再宣言や初期化処理での上書きを禁止）。"
   },
   {
-    "id": "task-1766006628897-bc70e5",
-    "name": "CodexCLI1: [webclient charts production outpatient plan] 32_ドラフト保存と復元\n期間: 01/09 09:00 - 01/12 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 32 ドラフト保存と復元\n\n- 送信前の入力（メモ/所見/チェック項目等）をドラフトとして保存し、誤終了やブラウザクラッシュから復元できるようにする。\n- ドラフトの適用範囲（受付ID/患者ID/診療日）を厳密にし、取り違えを防止する。\n- 保存/復元/破棄を監査ログに残し、運用上の追跡を可能にする。\n\nYAML ID: src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-17T21:23:48.897Z",
-    "updatedAt": "2025-12-17T21:23:53.377Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766006628897-bc70e5",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766006628897-w64luon2",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 32_ドラフト保存と復元\n期間: 01/09 09:00 - 01/12 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 32 ドラフト保存と復元\n\n- 送信前の入力（メモ/所見/チェック項目等）をドラフトとして保存し、誤終了やブラウザクラッシュから復元できるようにする。\n- ドラフトの適用範囲（受付ID/患者ID/診療日）を厳密にし、取り違えを防止する。\n- 保存/復元/破棄を監査ログに残し、運用上の追跡を可能にする。\n\nYAML ID: src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766006628897-bc70e5",
-    "medal": "gold",
-    "aiCompetitionScore": 92
-  },
-  {
     "id": "task-1766006843375-caef8a",
     "name": "CodexCLI1: [webclient charts production outpatient plan] 51_アクセシビリティ自動検査と手動監査\n期間: 01/09 09:00 - 01/11 09:00 / 優先度: medium / 緊急度: low / エージェント: gemini cli\n\n# 51 アクセシビリティ：自動検査（axe）＋手動監査\n\n- `aria-live`/`role`/フォーカス順の自動検査を回し、重大違反をゼロにする。\n- スクリーンリーダーでの読み上げを手動確認し、ToneBanner と “操作不能理由” が伝わることを担保する。\n- 監査結果を “直せる粒度” に落とし込み、以降の回帰テストに組み込む。\n\nYAML ID: src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md",
     "model": "Codex CLI",
@@ -483,42 +457,6 @@
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1766006843375-caef8a",
     "medal": "silver",
-    "aiCompetitionScore": 86
-  },
-  {
-    "id": "task-1766006867823-5e3d8e",
-    "name": "🔍Monitor: [webclient charts production outpatient plan] 51_アクセシビリティ自動検査と手動監査\n期間: 01/09 09:00 - 01/11 09:00 / 優先度: medium / 緊急度: low / エージェント: gemini cli\n\n# 51 アクセシビリティ：自動検査（axe）＋手動監査\n\n- `aria-live`/`role`/フォーカス順の自動検査を回し、重大違反をゼロにする。\n- スクリーンリーダーでの読み上げを手動確認し、ToneBanner と “操作不能理由” が伝わることを担保する。\n- 監査結果を “直せる粒度” に落とし込み、以降の回帰テストに組み込む。\n\nYAML ID: src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-17T21:27:47.823Z",
-    "updatedAt": "2025-12-17T21:28:03.688Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766006867823-5e3d8e",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766006843265-88sdev03",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 51_アクセシビリティ自動検査と手動監査\n期間: 01/09 09:00 - 01/11 09:00 / 優先度: medium / 緊急度: low / エージェント: gemini cli\n\n# 51 アクセシビリティ：自動検査（axe）＋手動監査\n\n- `aria-live`/`role`/フォーカス順の自動検査を回し、重大違反をゼロにする。\n- スクリーンリーダーでの読み上げを手動確認し、ToneBanner と “操作不能理由” が伝わることを担保する。\n- 監査結果を “直せる粒度” に落とし込み、以降の回帰テストに組み込む。\n\nYAML ID: src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1766006843538-28be11",
-      "task-1766006843375-caef8a",
-      "task-1766006843775-68e109"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1766006903265,
-    "worktreePath": ".worktrees/task-1766006867823-5e3d8e"
+    "aiCompetitionScore": 92
   }
 ]
