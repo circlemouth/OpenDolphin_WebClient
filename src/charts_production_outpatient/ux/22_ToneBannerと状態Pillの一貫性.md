@@ -54,6 +54,19 @@
 4. 左ペイン「今日のチェック項目」ミラーを `aria-live=off` に変更し、バナーの読み上げのみ残す。代わりに「クリックで対象タブへジャンプ」を強調するラベルを付与。
 5. Playwright 追加観点: missingMaster/fallbackUsed/cacheHit/dataSourceTransition の各遷移で **バナー1回のみ読み上げ**、ピルは無言であることを assertion。`data-run-id`/`data-source-transition` の属性一致も検証。
 
+## 6. テレメトリ・監査イベント粒度（追加決定）
+- **telemetry (funnel) 送信**: ToneBanner 更新時に `charts_orchestration` イベントへ `{runId, transition, missingMaster, fallbackUsed, cacheHit, source='tone_banner', manualRefresh}` を送信。ピルのみ更新のときは送信せず、バナー更新をトリガーとして一度だけ記録する。再取得失敗で値が不変の場合は送信しない（スパム防止）。
+- **監査 (auditEvent/logUiState)**: バナー表示と CTA 実行を分けて記録する。表示時は `action='tone_banner_display'`、CTA クリック時は `action='tone_banner_cta'` とし、どちらも `outcome` と `reason`（missingMaster|fallbackUsed|cacheMiss|transitionChange）を付ける。CTA 失敗時は `outcome=ERROR`＋`retryCount` を必須。これにより受付/Charts 間で粒度を揃える。
+- **Playwright 期待値**: telemetry はバナー更新時のみ 1 イベント、audit は表示/CTA で 1 ずつ。連打しても runId が同一ならイベント数が増えないことを assertion に追加。
+
+## 7. CTA 配置と無効条件の具体例
+- **配置既定**: ToneBanner 本体右端に 1 次 CTA（例: 「再取得」）、左ペイン「今日のチェック項目」では同 CTA をリンクとしてミラー。ActionBar 上の送信系は disable 表示のみで CTA は置かない。
+- **無効条件/文言例**:
+  - missingMaster=true: 送信/署名/再送/印刷ボタンを disable（理由 tooltip: `missingMaster=true: ORCA マスタ未取得。再取得後に有効化されます`）。バナー CTA は「マスタを再取得」。
+  - fallbackUsed=true: 送信系 disable（理由 tooltip: `fallbackUsed=true: snapshot/fallback データ使用中。管理者へ共有し再取得してください`）。バナー CTA は「管理者へ共有」＋「再取得」2 ボタン。
+  - cacheHit=false: ボタンは有効のまま、バナー CTA は「再取得」。`manualRefresh` 押下後 3 秒は aria-live=polite で通知を抑制。
+- **UI 例**: バナー行末に小型プライマリボタン（高さ32px）を1個、必要に応じて隣にゴーストボタン（共有/戻る）。ActionBar ボタンの disable 時は通常色を保ち、tooltip で理由提示のみで色を変えない（誤警告を避ける）。
+
 ## 6. 証跡・同期
 - 証跡ログ: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`
 - DOC_STATUS と README の Active リストに本ドキュメントを追加（RUN_ID を併記）。

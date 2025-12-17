@@ -23,6 +23,11 @@
 4. 左ペイン「今日のチェック項目」は内容ミラーのみで `aria-live=off`。クリックで対象タブへジャンプして判断を速くする。
 5. Playwright 追加観点: バナーが1回だけ読み上げられ、ピルは無言（aria-live=off）で属性が一致することを検証。
 
+## 追加決定（2025-12-17 追記）
+- テレメトリ: ToneBanner 更新時のみ `charts_orchestration` を送信し、payload は `{runId, transition, missingMaster, fallbackUsed, cacheHit, source='tone_banner', manualRefresh}`。不変値では送信しない。
+- 監査粒度: 表示 `action='tone_banner_display'`、CTA 押下 `action='tone_banner_cta'` を分離し、`reason` と `outcome` を必須化。連打しても runId 同一なら 1 回のみ記録。
+- CTA 配置/無効例: バナー右端に再取得（primary 32px）＋必要に応じ共有（ghost）。missingMaster/fallbackUsed 時は送信系 disable＋理由 tooltip を提示、cacheHit=false 時はボタン活性のまま。
+
 ## 次アクション
-- DOC_STATUS と README Active リストへ本成果物を追記（RUN_ID 同期）。
-- ToneBanner/StatusBadge 実装へ `aria-live=off` 受け入れ・tooltip 文言集約を反映し、Charts 各コンポーネントの順序/属性を統一する実装タスクを派生させる。
+- DOC_STATUS と README Active リストへ本成果物を追記済み（RUN_ID 同期済み）。
+- ToneBanner/StatusBadge 実装へ `aria-live=off` 受け入れ・tooltip 文言集約・CTA/disable 例を反映する実装タスクを派生させる。
