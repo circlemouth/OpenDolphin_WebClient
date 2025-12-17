@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251217T120220Z`（Charts 診療終了ガード・キュー再取得具体化）。証跡: `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md`。備考: READY_TO_CLOSE を分離し、ORCA送信待ちのバックオフ（5s→15s→45s, max3）と disable 理由固定・info バナー告知を追加。
 - 本更新 RUN_ID=`20251217T114331Z`（Charts 診療開始/終了の状態遷移）。証跡: `docs/web-client/planning/phase2/logs/20251217T114331Z-charts-encounter-state.md`。備考: 診療状態を OPEN/ DIRTY / QUEUE_PENDING / CLOSING / CLOSED / ABORTED に整理し、終了ガードと Timeline/Badge/Audit の一貫性を固定。
 - 本更新 RUN_ID=`20251217T063116Z`（Charts ToneBanner/状態ピル一貫性）。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。備考: Reception と語彙・aria-live を統一し、ピル順序/tooltip/読み上げ抑制を定義。
 - 本更新 RUN_ID=`20251217T060504Z`（Charts シェル UI 最終レイアウト確定）。証跡: `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md`。備考: トップ/アクションバー固定、左30%/右70%基準、画面幅別挙動を定義。
@@ -40,6 +41,7 @@
 | `docs/web-client/ux/playwright-scenarios.md` | E2E シナリオ草稿 | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。計画書のテスト章と連携。 |
 | `docs/web-client/ux/ux-documentation-plan.md` | UX 文書進行ハブ | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。 |
 | `docs/web-client/operations/debugging-outpatient-bugs.md` | 外来 API デバッグ記録 | Active | 2025-12-10 | RUN_ID=`20251210T054022Z`。Stage/Preview 再検証 pending。 |
+| `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md` | Charts 診療終了ガード UX 具体化ログ | Active | 2025-12-17 | RUN_ID=`20251217T120220Z`。READY_TO_CLOSE 分離、ORCAキュー再取得バックオフ、終了 disable 理由固定を追加。成果物 `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md`。 |
 | `docs/web-client/planning/phase2/logs/20251217T114331Z-charts-encounter-state.md` | Charts 診療開始/終了 状態遷移ログ | Active | 2025-12-17 | RUN_ID=`20251217T114331Z`。診療状態モデル（OPEN/ DIRTY / QUEUE_PENDING / CLOSING / CLOSED / ABORTED）と終了ガード・復元方針を整理。成果物 `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md`。 |
 | `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md` | Charts シェル UI 最終レイアウトログ | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペインのレイアウト確定と幅別挙動を定義。 |
 | `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` | module_json UI 保存・復元ログ | Active | 2025-12-14 | RUN_ID=`20251214T140106Z`。UI 経路の add→update→GET で docPk=9024（正数）となり、beanJson 保存/復元に WARN 無し。サーバー側証跡 `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。 |
@@ -64,7 +66,7 @@
 | `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md` | Charts 本番外来カバレッジ定義 | Active | 2025-12-12 | RUN_ID=`20251212T131901Z`。DoD（監査/ARIA/運用）込みで外来 UI カバレッジを一覧化。 |
 | `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` | ChartsPage 棚卸し（計画→実装の差分） | Active | 2025-12-12 | RUN_ID=`20251212T140014Z`。P0/P1/P2 と入口/出口（Reception/Patients/Administration）責務分離案を確定。証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`。 |
 | `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` | Charts 外来 API 契約（監査/透過/再試行ルール） | Active | 2025-12-12 | RUN_ID=`20251212T143720Z`。Playwright/fixture の単一ソースとして API 契約を固定。証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`。 |
-| `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` | Charts 診療開始/終了 状態モデル | Active | 2025-12-17 | RUN_ID=`20251217T114331Z`。終了ガード（未保存/送信待ち/missingMaster・fallbackUsed/セッション欠損）と Timeline/Pill/Audit 一貫性、復元戦略を定義。 |
+| `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` | Charts 診療開始/終了 状態モデル | Active | 2025-12-17 | RUN_ID=`20251217T120220Z`（親 `20251217T114331Z`）。READY_TO_CLOSE 追加、送信待ちバックオフと終了ガード理由固定、復元戦略を定義。 |
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |
 | `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` | Charts ToneBanner/状態ピル一貫性 | Active | 2025-12-17 | RUN_ID=`20251217T063116Z`。Reception と語彙/aria-live/ピル順序を統一し、読み上げ抑制と tooltip 方針を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。 |
 | `src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md` | Charts 監査ログ統一方針 | Active | 2025-12-13 | RUN_ID=`20251213T125127Z`。重要操作の監査記録保証と details 透過ルールを整理。証跡: `docs/web-client/planning/phase2/logs/20251213T125127Z-charts-audit-event.md`。 |
