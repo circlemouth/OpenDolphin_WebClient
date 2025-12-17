@@ -1,5 +1,13 @@
 import type { DataSourceTransition, ResolveMasterSource } from '../../libs/observability/types';
-import type { AppointmentPayload, OutpatientMeta, ReceptionEntry, ReceptionStatus } from './types';
+import type {
+  AppointmentPayload,
+  ClaimBundle,
+  ClaimBundleItem,
+  ClaimBundleStatus,
+  OutpatientMeta,
+  ReceptionEntry,
+  ReceptionStatus,
+} from './types';
 
 export const normalizeBoolean = (value: unknown): boolean | undefined => {
   if (typeof value === 'boolean') return value;
@@ -41,6 +49,82 @@ const toDisplayTime = (date?: string, time?: string) => {
 
 const buildEntryId = (candidate?: string, fallback?: string) =>
   candidate?.trim() || fallback || `R-${Math.random().toString(36).slice(2, 8)}`;
+
+const toClaimStatus = (statusText?: string): ClaimBundleStatus | undefined => {
+  if (!statusText) return undefined;
+  const normalized = statusText.toLowerCase();
+  if (normalized.includes('済') || normalized.includes('paid') || normalized.includes('完了')) return '会計済み';
+  if (normalized.includes('会計') || normalized.includes('billing') || normalized.includes('精算')) return '会計待ち';
+  if (normalized.includes('診療') || normalized.includes('診察')) return '診療中';
+  if (normalized.includes('受付')) return '受付中';
+  if (normalized.includes('予約')) return '予約';
+  return undefined;
+};
+
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const parseClaimItems = (rawItems: unknown): ClaimBundleItem[] => {
+  if (!Array.isArray(rawItems)) return [];
+  return rawItems.map((item: any) => ({
+    code: item?.code ?? item?.itemCode,
+    tableId: item?.tableId ?? item?.itemTableId,
+    name: item?.name ?? item?.itemName,
+    number: toNumber(item?.number ?? item?.itemNumber),
+    unit: item?.unit ?? item?.itemUnit,
+    claimRate: toNumber(item?.claimRate ?? item?.rate),
+    amount: toNumber(item?.amount ?? item?.price ?? item?.total),
+  }));
+};
+
+const parseBundle = (bundle: any, defaultStatus?: ClaimBundleStatus): ClaimBundle => {
+  const statusText =
+    bundle?.claimStatus ??
+    bundle?.claim_status ??
+    bundle?.status ??
+    bundle?.statusText ??
+    bundle?.bundleStatus ??
+    bundle?.claim?.status;
+  const claimStatus = toClaimStatus(statusText) ?? defaultStatus;
+  return {
+    bundleNumber: bundle?.bundleNumber ?? bundle?.bundle_id ?? bundle?.bundleId ?? bundle?.id,
+    classCode: bundle?.classCode ?? bundle?.class_code ?? bundle?.class,
+    patientId: bundle?.patientId ?? bundle?.patient_id ?? bundle?.patient?.patientId,
+    appointmentId: bundle?.appointmentId ?? bundle?.appointment_id ?? bundle?.sequentialNumber,
+    performTime: bundle?.performTime ?? bundle?.perform_time ?? bundle?.claim?.performTime ?? bundle?.claimPerformTime,
+    claimStatusText: typeof statusText === 'string' ? statusText : undefined,
+    claimStatus,
+    totalClaimAmount: toNumber(bundle?.totalClaimAmount ?? bundle?.totalAmount ?? bundle?.amount ?? bundle?.claimTotal),
+    items: parseClaimItems(bundle?.items ?? bundle?.claimItems ?? bundle?.claim?.items),
+  };
+};
+
+export const parseClaimBundles = (json: any): ClaimBundle[] => {
+  const bundles: any[] =
+    (Array.isArray(json?.claimBundles) && json.claimBundles) ||
+    (Array.isArray(json?.bundles) && json.bundles) ||
+    (Array.isArray(json?.claim?.bundles) && json.claim.bundles) ||
+    (Array.isArray(json?.claim?.bundle) && json.claim.bundle) ||
+    (Array.isArray(json?.claim) && json.claim) ||
+    [];
+  const defaultStatus = toClaimStatus(
+    json?.claimStatus ??
+      json?.claim_status ??
+      json?.status ??
+      json?.claim?.status ??
+      json?.claim?.information?.status ??
+      json?.apiResult,
+  );
+  return bundles.map((bundle) => parseBundle(bundle, defaultStatus));
+};
+
+export const resolveClaimStatus = (statusText?: string) => toClaimStatus(statusText);
 
 export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
   const entries: ReceptionEntry[] = [];

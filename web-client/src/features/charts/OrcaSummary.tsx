@@ -5,18 +5,20 @@ import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { OrcaOutpatientSummary } from './api';
+import type { ClaimOutpatientPayload } from '../outpatient/types';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
+  claim?: ClaimOutpatientPayload;
 }
 
-export function OrcaSummary({ summary }: OrcaSummaryProps) {
+export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
   const { flags } = useAuthService();
-  const resolvedRunId = summary?.runId ?? flags.runId;
-  const resolvedMissingMaster = summary?.missingMaster ?? flags.missingMaster;
-  const resolvedCacheHit = summary?.cacheHit ?? flags.cacheHit;
-  const resolvedFallbackUsed = summary?.fallbackUsed ?? false;
-  const resolvedTransition = summary?.dataSourceTransition ?? flags.dataSourceTransition;
+  const resolvedRunId = summary?.runId ?? claim?.runId ?? flags.runId;
+  const resolvedMissingMaster = summary?.missingMaster ?? claim?.missingMaster ?? flags.missingMaster;
+  const resolvedCacheHit = summary?.cacheHit ?? claim?.cacheHit ?? flags.cacheHit;
+  const resolvedFallbackUsed = summary?.fallbackUsed ?? claim?.fallbackUsed ?? false;
+  const resolvedTransition = summary?.dataSourceTransition ?? claim?.dataSourceTransition ?? flags.dataSourceTransition;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -28,11 +30,14 @@ export function OrcaSummary({ summary }: OrcaSummaryProps) {
     if (resolvedMissingMaster) {
       return `${sharedMessage} OrcaSummary は再取得完了まで tone=server を維持します。`;
     }
+    if (resolvedFallbackUsed) {
+      return `${sharedMessage} 請求バンドルは fallbackUsed=true のため暫定表示です。再取得または ORCA 再送を検討してください。`;
+    }
     if (resolvedCacheHit) {
       return `${sharedMessage} ORCA 再送は Info tone で提示し、${transitionMeta.label} を記録します。`;
     }
     return `${sharedMessage} ${transitionMeta.label} を監査ログへ再送出します。`;
-  }, [resolvedCacheHit, resolvedMissingMaster, sharedMessage, transitionMeta.label]);
+  }, [resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, sharedMessage, transitionMeta.label]);
 
   const payloadPreview = useMemo(() => {
     if (!summary?.payload) return null;
@@ -60,9 +65,16 @@ export function OrcaSummary({ summary }: OrcaSummaryProps) {
           <strong>{transitionMeta.label}</strong>
           <p>{transitionMeta.description}</p>
           <p className="orca-summary__meta-label">recordsReturned</p>
-          <strong>{summary?.recordsReturned ?? '―'}</strong>
+          <strong>{summary?.recordsReturned ?? claim?.recordsReturned ?? '―'}</strong>
           {summary?.fetchedAt && <p className="orca-summary__meta-note">取得: {summary.fetchedAt}</p>}
+          {claim?.fetchedAt && !summary?.fetchedAt && <p className="orca-summary__meta-note">請求取得: {claim.fetchedAt}</p>}
           {summary?.note && <p className="orca-summary__meta-note">メッセージ: {summary.note}</p>}
+          {claim?.claimStatus && (
+            <p className="orca-summary__meta-note">請求ステータス: {claim.claimStatus}（{claim.claimStatusText ?? 'textなし'}）</p>
+          )}
+          {claim?.bundles && claim.bundles.length > 0 && (
+            <p className="orca-summary__meta-note">請求バンドル件数: {claim.bundles.length}</p>
+          )}
         </div>
         <div className="orca-summary__badges">
           <StatusBadge
