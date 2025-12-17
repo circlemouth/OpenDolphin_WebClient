@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251217T212939Z`（Charts アクセシビリティ自動検査＋手動監査）。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md`。備考: axe 重大違反ゼロ、ToneBanner/ActionBar のフォーカス順・操作不能理由読み上げをテスト化。
 - 本更新 RUN_ID=`20251217T130407Z`（OrcaSummary 請求/予約サマリ商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。備考: 請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。
 - 本更新 RUN_ID=`20251217T212600Z`（ドラフト保存と復元 設計追加）。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md`。備考: 受付ID/患者ID/診療日/runId/facilityId/userId でドラフト束縛、localStorage+React Query 二重保存、復元ダイアログ、監査 `DRAFT_SAVE/RESTORE/DISCARD` を定義。
 - 本更新 RUN_ID=`20251217T150614Z`（DocumentTimeline 商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md`。備考: 受付→診療→ORCA 3ステップ可視化、missingMaster 強調、nextAction 表示、仮想化/折りたたみ/表示件数コントロールを追加。
@@ -75,6 +76,7 @@
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |
 | `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` | Charts ToneBanner/状態ピル一貫性 | Active | 2025-12-17 | RUN_ID=`20251217T063116Z`。Reception と語彙/aria-live/ピル順序を統一し、読み上げ抑制と tooltip 方針を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。 |
 | `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` | OrcaSummary 請求/予約サマリ商用仕上げ | Active | 2025-12-17 | RUN_ID=`20251217T130407Z`。請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。 |
+| `src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md` | Charts アクセシビリティ監査 | Active | 2025-12-17 | RUN_ID=`20251217T212939Z`。axe 重大違反 0、ActionBar フォーカス順と操作不能理由読み上げをテスト化。Playwright `/charts` ページ a11y スキャン追加（color-contrast/aria-allowed-role/aria-required-children/label 除外）。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md`。 |
 | `src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md` | Charts 監査ログ統一方針 | Active | 2025-12-13 | RUN_ID=`20251213T125127Z`。重要操作の監査記録保証と details 透過ルールを整理。証跡: `docs/web-client/planning/phase2/logs/20251213T125127Z-charts-audit-event.md`。 |
 | `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` | Charts セッション/権限ガード方針 | Active | 2025-12-13 | RUN_ID=`20251213T000432Z`。主要アクションの権限ガード、セッション無効時の破棄/誘導、Topbar/ヘッダーの監査表示を固定。証跡: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`。 |
 | `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` | Charts エラー/リトライ規約 | Active | 2025-12-17 | RUN_ID=`20251217T125828Z`。API 失敗の tone/aria-live/再取得導線と missingMaster/fallback ブロック運用を更新。証跡: `docs/web-client/planning/phase2/logs/20251217T125828Z-charts-error-handling.md`。 |
