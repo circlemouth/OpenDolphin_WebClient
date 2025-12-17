@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T060504Z`）
+### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T114005Z`）
+- 患者サイドペイン（基本/保険/履歴）を閲覧中心に仕上げ、差分表示＋監査導線＋履歴導線を整理（RUN_ID=`20251217T114005Z`）。証跡: `docs/web-client/planning/phase2/logs/20251217T114005Z-charts-patient-sidepane.md` / 成果物: `src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md`。
 - Charts シェル UI 最終レイアウトを確定（RUN_ID=`20251217T060504Z`）。トップ/アクションバー固定、左30%/右70%基準、重要情報の二重配置、画面幅別挙動（wide/default/medium/narrow）を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md` / 成果物: `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md`。
 - module_json docPk ガード & 負 PK クリーニング（RUN_ID=`20251214T140106Z`）。`d_document/d_module` の負 id を削除し、addDocument 応答 docPk を必ず再利用する UI/テスト方針をログ化。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-guard.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-cleanup.md`。
 - module_json UI 保存・復元再確認（RUN_ID=`20251214T140106Z`）。最新 WAR ビルドで add→update→GET が docPk=9024（正数）となり、beanJson 保存/復元とも WARN 無し。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。
@@ -30,6 +31,7 @@
 - `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md` — Charts 本番外来（受付→診療→会計）カバレッジ定義（RUN_ID=`20251212T131901Z`）。
 - `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` — ChartsPage の現状棚卸しとギャップ（RUN_ID=`20251212T140014Z`）。
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
+- `src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md` — 患者サイドペイン閲覧中心化・差分/監査/履歴導線整理（RUN_ID=`20251217T114005Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
 - `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。
 - `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` — Charts セッション/権限ガード方針（RUN_ID=`20251213T000432Z`）。
