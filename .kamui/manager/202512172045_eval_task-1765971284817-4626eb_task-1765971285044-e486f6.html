@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - Charts キーボード操作と ARIA 監査</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scores {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        background: #f7fafb;
+        border: 1px solid #c4d3d7;
+        padding: 12px 14px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        font-weight: 700;
+        font-size: 18px;
+      }
+      .score-card .label {
+        font-size: 13px;
+        font-weight: 600;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 200px; }
+      col.agent-column { width: calc((100% - 200px) / 2); }
+      th, td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        border-radius: 4px;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--warning { background: #fef3cd; border-color: #f0e5a5; }
+      .radar {
+        width: 160px;
+        height: 160px;
+        margin-bottom: 8px;
+      }
+      .metric-list { font-size: 12px; color: #2c3a40; margin-bottom: 8px; }
+      .metric-list strong { display: inline-block; min-width: 96px; }
+      .bullet { margin: 0 0 8px; font-size: 13px; }
+      .files { font-size: 12px; color: #2c3a40; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">Charts キーボード操作と ARIA 監査 — 評価レポート</h1>
+        <p class="monitor-description">対象ブランチ: task-1765971284817-4626eb / task-1765971285044-e486f6。コミット差分と計画文書を精査し、機能合理性と緻密性を中心に採点。</p>
+      </header>
+
+      <div class="scores">
+        <div class="score-card">
+          <span class="label">codex task-1765971285044-e486f6</span>
+          <span>536 / 600 🏆</span>
+        </div>
+        <div class="score-card">
+          <span class="label">codex task-1765971284817-4626eb</span>
+          <span>476 / 600 🥈</span>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1765971285044-e486f6</th>
+            <th>codex task-1765971284817-4626eb</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-17 20:45 JST</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span> Docs only / 1 commit (14449416)</div>
+              <svg class="radar" viewBox="0 0 140 140" aria-label="六角形チャート">
+                <g stroke="#c4d3d7" stroke-width="1" fill="none">
+                  <polygon points="70,10 120,40 120,100 70,130 20,100 20,40" opacity="0.35" />
+                </g>
+                <polygon fill="#9bd3dd" fill-opacity="0.55" stroke="#3e8fa3" stroke-width="1.5"
+                  points="70,16 115.93,43.6 116.76,97 70,125.2 25.33,95.8 23.24,43" />
+              </svg>
+              <div class="metric-list">
+                <div><strong>機能合理性</strong>90点 — ショートカット/aria-live/フォーカス順の具体運用が明示。</div>
+                <div><strong>緻密性</strong>88点 — runId/dataSource の属性必須化や Backdrop 禁止など細部まで規定。</div>
+                <div><strong>テスト計画</strong>90点 — Playwright/HAR 保存位置や MSW ON/OFF の検証観点を定義。</div>
+                <div><strong>トレーサビリティ</strong>92点 — 参照チェーンと依存文書を RUN_ID 付きで明記。</div>
+                <div><strong>リスク管理</strong>86点 — 重複読み上げ防止や runId 不変性をガードするが実装リスク残存。</div>
+                <div><strong>文書品質</strong>90点 — 用語統一・箇条書きの一貫性が高く、可読。</div>
+              </div>
+              <p class="bullet">◎ 強み: フォーカストラップ/esc/戻り先まで共通仕様を具体化し、data-* 属性を QA 観点に落とし込み。ショートカットと Tab 順の競合を避けるキー割当も明示。</p>
+              <p class="bullet">△ 気になる点: 実装手順や責務分担がコード単位で未提示（例: FocusTrap 実装先、既存モーダル差し替え手順）。エッジケース（多重モーダル/印刷プレビュー中の読み上げ抑制）の扱いは記載なし。</p>
+              <p class="files">対象ファイル: <code>docs/web-client/README.md</code>, <code>docs/web-client/planning/phase2/DOC_STATUS.md</code>, <code>docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md</code>, <code>src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md</code></p>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">完了</span> Docs only / 1 commit (ed480550)</div>
+              <svg class="radar" viewBox="0 0 140 140" aria-label="六角形チャート">
+                <g stroke="#c4d3d7" stroke-width="1" fill="none">
+                  <polygon points="70,10 120,40 120,100 70,130 20,100 20,40" opacity="0.35" />
+                </g>
+                <polygon fill="#d6e7f5" fill-opacity="0.65" stroke="#4f86c6" stroke-width="1.5"
+                  points="70,20.8 110.53,46.6 108.97,92.5 70,121 30.5,92.8 28.43,46" />
+              </svg>
+              <div class="metric-list">
+                <div><strong>機能合理性</strong>82点 — 主要操作とフォーカス順を明示するがアクセラレータの衝突検討が不足。</div>
+                <div><strong>緻密性</strong>78点 — aria-live 優先度や Trap 条件は述べるが属性必須化・例外条件が曖昧。</div>
+                <div><strong>テスト計画</strong>75点 — Playwright 追加を示唆するのみでケース/成果物場所が未定義。</div>
+                <div><strong>トレーサビリティ</strong>85点 — 参照チェーンと RUN_ID を明記し README/DOC_STATUS と連動。</div>
+                <div><strong>リスク管理</strong>76点 — runId 上書き防止を述べるが manualRefresh/連続操作の抑止策は未記述。</div>
+                <div><strong>文書品質</strong>80点 — 端的で読みやすいが、導線別の深掘りが少なく曖昧表現が残る。</div>
+              </div>
+              <p class="bullet">◎ 強み: キーボード完結・role/aria-live の基本方針を簡潔に整理し、Topbar ピルの不変条件を早期に記載。</p>
+              <p class="bullet">△ 気になる点: ショートカット割当の衝突回避・タブ/スクロール復元の詳細、QA 手順、data-* 属性指定が欠落。多重モーダルやダイアログ階層の扱いが抽象的。</p>
+              <p class="files">対象ファイル: <code>docs/web-client/README.md</code>, <code>docs/web-client/planning/phase2/DOC_STATUS.md</code>, <code>docs/web-client/planning/phase2/logs/20251217T113631Z-charts-keyboard-aria.md</code>, <code>src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md</code></p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
