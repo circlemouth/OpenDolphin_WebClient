@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251217T113616Z`（Charts キーボード操作と ARIA 監査）。証跡: `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md`。備考: キーボード完走・通知 role/aria-live 規約・フォーカストラップ統一・Topbar runId 保全を定義。
 - 本更新 RUN_ID=`20251217T063116Z`（Charts ToneBanner/状態ピル一貫性）。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。備考: Reception と語彙・aria-live を統一し、ピル順序/tooltip/読み上げ抑制を定義。
 - 本更新 RUN_ID=`20251217T060504Z`（Charts シェル UI 最終レイアウト確定）。証跡: `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md`。備考: トップ/アクションバー固定、左30%/右70%基準、画面幅別挙動を定義。
 - 本更新 RUN_ID=`20251214T132418Z`（module_json 型情報フォールバック）。証跡: `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`。  
@@ -40,6 +41,7 @@
 | `docs/web-client/ux/ux-documentation-plan.md` | UX 文書進行ハブ | Active | 2025-12-02 | RUN_ID=`20251202T090000Z`。 |
 | `docs/web-client/operations/debugging-outpatient-bugs.md` | 外来 API デバッグ記録 | Active | 2025-12-10 | RUN_ID=`20251210T054022Z`。Stage/Preview 再検証 pending。 |
 | `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md` | Charts シェル UI 最終レイアウトログ | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペインのレイアウト確定と幅別挙動を定義。 |
+| `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md` | Charts キーボード操作/ARIA 監査ログ | Active | 2025-12-17 | RUN_ID=`20251217T113616Z`。主要導線のキーボード完走、通知 role/aria-live 規約、モーダル Trap、Topbar runId 保全を定義。成果物 `src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md`。 |
 | `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` | module_json UI 保存・復元ログ | Active | 2025-12-14 | RUN_ID=`20251214T140106Z`。UI 経路の add→update→GET で docPk=9024（正数）となり、beanJson 保存/復元に WARN 無し。サーバー側証跡 `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。 |
 | `docs/web-client/planning/phase2/logs/20251214T084510Z-module-json-test-build.md` | module_json テスト/ビルド検証ログ | Active | 2025-12-14 | RUN_ID=`20251214T084510Z`。単体テスト追加・Maven コンパイル成功、perf-env-boot.js 修正後に msw smoke 1/1 pass。 |
 | `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md` | module_json MSW OFF スモークログ | Active | 2025-12-14 | RUN_ID=`20251214T091846Z`。MSW OFF smoke 1/1 pass。beanJson は WAR 再ビルド＋opendolphin スキーマ整合後に `/karte/document` POST→GET→DB まで自動保存を確認（docPk=-45, bean_json NOT NULL）。HAR/trace/screenshot を同 RUN_ID で取得済み。 |
@@ -63,6 +65,7 @@
 | `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` | ChartsPage 棚卸し（計画→実装の差分） | Active | 2025-12-12 | RUN_ID=`20251212T140014Z`。P0/P1/P2 と入口/出口（Reception/Patients/Administration）責務分離案を確定。証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`。 |
 | `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` | Charts 外来 API 契約（監査/透過/再試行ルール） | Active | 2025-12-12 | RUN_ID=`20251212T143720Z`。Playwright/fixture の単一ソースとして API 契約を固定。証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`。 |
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |
+| `src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md` | Charts キーボード操作/ARIA 監査 | Active | 2025-12-17 | RUN_ID=`20251217T113616Z`。キーボード完走・通知 aria/live ルール・フォーカストラップ・runId/dataSource 保全を定義。証跡 `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md`。 |
 | `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` | Charts ToneBanner/状態ピル一貫性 | Active | 2025-12-17 | RUN_ID=`20251217T063116Z`。Reception と語彙/aria-live/ピル順序を統一し、読み上げ抑制と tooltip 方針を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。 |
 | `src/charts_production_outpatient/foundation/11_監査ログauditEvent統一.md` | Charts 監査ログ統一方針 | Active | 2025-12-13 | RUN_ID=`20251213T125127Z`。重要操作の監査記録保証と details 透過ルールを整理。証跡: `docs/web-client/planning/phase2/logs/20251213T125127Z-charts-audit-event.md`。 |
 | `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` | Charts セッション/権限ガード方針 | Active | 2025-12-13 | RUN_ID=`20251213T000432Z`。主要アクションの権限ガード、セッション無効時の破棄/誘導、Topbar/ヘッダーの監査表示を固定。証跡: `docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`。 |

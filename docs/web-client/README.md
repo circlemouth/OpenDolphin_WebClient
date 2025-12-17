@@ -8,6 +8,7 @@
 
 ### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T060504Z`）
 - Charts シェル UI 最終レイアウトを確定（RUN_ID=`20251217T060504Z`）。トップ/アクションバー固定、左30%/右70%基準、重要情報の二重配置、画面幅別挙動（wide/default/medium/narrow）を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md` / 成果物: `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md`。
+- Charts キーボード操作と ARIA 監査を策定（RUN_ID=`20251217T113616Z`）。主要導線のキーボード完走、通知の role/aria-live 規約化、モーダルのフォーカストラップ統一、Topbar runId/dataSource の不変確認を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md` / 成果物: `src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md`。
 - module_json docPk ガード & 負 PK クリーニング（RUN_ID=`20251214T140106Z`）。`d_document/d_module` の負 id を削除し、addDocument 応答 docPk を必ず再利用する UI/テスト方針をログ化。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-guard.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-cleanup.md`。
 - module_json UI 保存・復元再確認（RUN_ID=`20251214T140106Z`）。最新 WAR ビルドで add→update→GET が docPk=9024（正数）となり、beanJson 保存/復元とも WARN 無し。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。
 - module_json 型情報フォールバック（RUN_ID=`20251214T132418Z`）。ModuleJsonConverter に non-typed フォールバック mapper を追加し、`@class` 無し beanJson でも WARN 無しで decode できる回帰テストを追加（証跡: `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`）。
@@ -31,6 +32,7 @@
 - `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` — ChartsPage の現状棚卸しとギャップ（RUN_ID=`20251212T140014Z`）。
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
+- `src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md` — Charts キーボード操作/ARIA 監査（RUN_ID=`20251217T113616Z`）。
 - `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。
 - `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` — Charts セッション/権限ガード方針（RUN_ID=`20251213T000432Z`）。
 - `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` — Charts エラー/リトライ規約（RUN_ID=`20251217T125828Z`）。
@@ -42,6 +44,7 @@
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
 - 証跡ログ: `planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
 - 証跡ログ: `planning/phase2/logs/20251214T123042Z-module-json-ui-save.md` を追加。
+- 証跡ログ: `planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md` を追加。
 - Charts 実装ログ: `planning/phase2/logs/20251211T120619Z-charts-timeline.md`（DocumentTimeline/OrcaSummary/PatientsTab のデータバインド、RUN_ID=`20251211T120619Z`）。
 
 ## 参考（Archive / Legacy）
