@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
@@ -20,6 +20,8 @@ export interface DocumentTimelineProps {
 
 const STATUS_ORDER: ReceptionStatus[] = ['受付中', '診療中', '会計待ち', '会計済み', '予約'];
 
+const VIRTUAL_WINDOW = 32;
+
 const resolveReceptionStatusFromClaim = (status?: ClaimBundleStatus): ReceptionStatus | undefined => {
   if (status === '会計待ち' || status === '会計済み') return status;
   if (status === '診療中') return '診療中';
@@ -34,6 +36,47 @@ const pickClaimBundleForEntry = (entry: ReceptionEntry, bundles: ClaimBundle[]) 
       (entry.patientId && bundle.patientId === entry.patientId) ||
       (entry.appointmentId && bundle.appointmentId === entry.appointmentId),
   );
+
+type QueuePhase = 'ok' | 'retrying' | 'holding' | 'error' | 'pending';
+
+const resolveQueuePhase = (options: {
+  missingMaster?: boolean;
+  isClaimLoading?: boolean;
+  claimError?: Error;
+  fallbackUsed?: boolean;
+  cacheHit?: boolean;
+}): QueuePhase => {
+  if (options.claimError) return 'error';
+  if (options.missingMaster) return 'holding';
+  if (options.isClaimLoading) return 'retrying';
+  if (options.fallbackUsed === true || options.cacheHit === false) return 'pending';
+  return 'ok';
+};
+
+const deriveNextAction = (
+  status: ReceptionStatus,
+  queuePhase: QueuePhase,
+  missingMaster?: boolean,
+): string => {
+  if (missingMaster) return 'マスタ再取得を完了してから ORCA 再送を実行';
+  if (queuePhase === 'error') return '請求キューを再取得し、失敗理由を確認';
+  if (queuePhase === 'retrying') return '再取得完了まで待機し、結果を確認';
+  if (queuePhase === 'pending') return 'ORCA キューへの反映を確認してから会計へ進む';
+  switch (status) {
+    case '受付中':
+      return '診療開始を知らせ、受付情報を確定';
+    case '診療中':
+      return 'カルテ保存後に ORCA 送信を実行';
+    case '会計待ち':
+      return '請求金額を確認し会計へ進む';
+    case '会計済み':
+      return '記録を監査ログに同期し終了';
+    case '予約':
+      return '来院時に受付へ変換し、診療へ送る';
+    default:
+      return '状況を確認';
+  }
+};
 
 export function DocumentTimeline({
   entries = [],
@@ -52,6 +95,7 @@ export function DocumentTimeline({
   const resolvedTransition = claimData?.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = claimData?.fallbackUsed ?? false;
   const fallbackFlagMissing = claimData?.fallbackFlagMissing ?? false;
+  const resolvedCacheMiss = resolvedCacheHit === false;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -61,6 +105,14 @@ export function DocumentTimeline({
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
   const claimBundles = claimData?.bundles ?? [];
+
+  const queuePhase = resolveQueuePhase({
+    missingMaster: resolvedMissingMaster,
+    isClaimLoading,
+    claimError,
+    fallbackUsed: resolvedFallbackUsed,
+    cacheHit: resolvedCacheHit,
+  });
 
   const entriesWithClaim = useMemo(() => {
     if (entries.length === 0) return [];
@@ -78,20 +130,70 @@ export function DocumentTimeline({
     });
   }, [claimBundles, entries]);
 
-  const groupedEntries = useMemo(() => {
-    if (entriesWithClaim.length === 0) return [];
-    const rank: Record<ReceptionStatus, number> = Object.fromEntries(STATUS_ORDER.map((s, idx) => [s, idx]));
-    const sorted = [...entriesWithClaim].sort((a, b) => {
+  const rank: Record<ReceptionStatus, number> = useMemo(
+    () => Object.fromEntries(STATUS_ORDER.map((s, idx) => [s, idx])),
+    [],
+  );
+
+  const sortedEntries = useMemo(() => {
+    if (entriesWithClaim.length === 0) return [] as ReceptionEntry[];
+    return [...entriesWithClaim].sort((a, b) => {
       const left = rank[a.status] ?? 99;
       const right = rank[b.status] ?? 99;
       if (left !== right) return left - right;
       return (a.appointmentTime ?? '').localeCompare(b.appointmentTime ?? '');
     });
-    return STATUS_ORDER.map((status) => ({
+  }, [entriesWithClaim, rank]);
+
+  const [windowStart, setWindowStart] = useState(0);
+  const [windowSize, setWindowSize] = useState(VIRTUAL_WINDOW);
+  const totalEntries = sortedEntries.length;
+
+  const selectedIndex = useMemo(() =>
+    sortedEntries.findIndex(
+      (entry) =>
+        (selectedPatientId && entry.patientId === selectedPatientId) ||
+        (selectedAppointmentId && entry.appointmentId === selectedAppointmentId),
+    ),
+  [selectedAppointmentId, selectedPatientId, sortedEntries]);
+
+  useEffect(() => {
+    if (selectedIndex < 0) return;
+    if (selectedIndex < windowStart || selectedIndex >= windowStart + windowSize) {
+      const centeredStart = Math.max(0, selectedIndex - Math.floor(windowSize / 2));
+      setWindowStart(centeredStart);
+    }
+  }, [selectedIndex, windowSize, windowStart]);
+
+  useEffect(() => {
+    if (totalEntries === 0) {
+      setWindowStart(0);
+      return;
+    }
+    if (windowStart >= totalEntries) {
+      setWindowStart(Math.max(0, totalEntries - windowSize));
+    }
+  }, [totalEntries, windowSize, windowStart]);
+
+  const windowedEntries = useMemo(() => {
+    if (totalEntries === 0) return [] as ReceptionEntry[];
+    if (totalEntries <= windowSize) return sortedEntries;
+    return sortedEntries.slice(windowStart, windowStart + windowSize);
+  }, [sortedEntries, totalEntries, windowSize, windowStart]);
+
+  const groupedEntries = useMemo(() =>
+    STATUS_ORDER.map((status) => ({
       status,
-      items: sorted.filter((entry) => entry.status === status),
-    })).filter((section) => section.items.length > 0);
-  }, [entriesWithClaim]);
+      items: windowedEntries.filter((entry) => entry.status === status),
+      total: sortedEntries.filter((entry) => entry.status === status).length,
+    })).filter((section) => section.items.length > 0 || section.total > 0),
+  [sortedEntries, windowedEntries]);
+
+  const [collapsedSections, setCollapsedSections] = useState<Record<ReceptionStatus, boolean>>({});
+
+  const toggleSection = useCallback((status: ReceptionStatus) => {
+    setCollapsedSections((prev) => ({ ...prev, [status]: !prev[status] }));
+  }, []);
 
   const entryList = useMemo(() => {
     if (groupedEntries.length === 0) {
@@ -107,33 +209,117 @@ export function DocumentTimeline({
     }
 
     return groupedEntries.map((section) => (
-      <div key={section.status} className="document-timeline__section">
+      <div key={section.status} className="document-timeline__section" data-total-count={section.total}>
         <div className="document-timeline__section-header">
-          <span className="document-timeline__section-badge">{section.status}</span>
-          <span className="document-timeline__section-count">{section.items.length}件</span>
+          <div className="document-timeline__section-labels">
+            <span className="document-timeline__section-badge">{section.status}</span>
+            <span className="document-timeline__section-count">
+              表示 {section.items.length} / 全 {section.total} 件
+            </span>
+          </div>
+          <button
+            className="document-timeline__toggle"
+            type="button"
+            onClick={() => toggleSection(section.status)}
+            aria-expanded={!collapsedSections[section.status]}
+          >
+            {collapsedSections[section.status] ? '展開' : '折りたたむ'}
+          </button>
         </div>
-        {section.items.slice(0, 4).map((entry) => {
-          const isSelected =
-            (selectedPatientId && entry.patientId === selectedPatientId) ||
-            (selectedAppointmentId && entry.appointmentId === selectedAppointmentId);
-          const shouldHighlight = resolvedMissingMaster || isSelected;
-          return (
-            <article
-              key={`${entry.id}-${entry.appointmentTime ?? entry.patientId ?? entry.name ?? ''}`}
-              className={`document-timeline__entry${shouldHighlight ? ' document-timeline__entry--highlight' : ''}`}
-              data-run-id={resolvedRunId}
-            >
-              <header>
-                <span className="document-timeline__entry-time">{entry.appointmentTime ?? '---'}</span>
-                <strong>{entry.name ?? '患者未登録'}（{entry.patientId ?? entry.appointmentId ?? 'ID不明'}）</strong>
-              </header>
-              <p>{entry.note ?? 'メモなし'} ｜ 状態: {entry.status} ｜ 診療科: {entry.department ?? '―'}</p>
-            </article>
-          );
-        })}
+        {!collapsedSections[section.status] &&
+          section.items.map((entry) => {
+            const isSelected =
+              (selectedPatientId && entry.patientId === selectedPatientId) ||
+              (selectedAppointmentId && entry.appointmentId === selectedAppointmentId);
+            const shouldHighlight = resolvedMissingMaster || isSelected;
+            const bundle = pickClaimBundleForEntry(entry, claimBundles);
+            const nextAction = deriveNextAction(entry.status, queuePhase, resolvedMissingMaster);
+            const bundleStatus = bundle?.claimStatus ?? '診療中';
+            const queueStepStatus: Record<'受付' | '診療' | 'ORCAキュー', 'done' | 'active' | 'blocked' | 'pending'> = {
+              受付: 'done',
+              診療: entry.status === '受付中' || entry.status === '予約' ? 'active' : 'done',
+              ORCAキュー:
+                queuePhase === 'error'
+                  ? 'blocked'
+                  : queuePhase === 'retrying' || queuePhase === 'pending'
+                    ? 'active'
+                    : bundleStatus === '会計待ち' || bundleStatus === '会計済み'
+                      ? 'done'
+                      : 'pending',
+            };
+
+            return (
+              <article
+                key={`${entry.id}-${entry.appointmentTime ?? entry.patientId ?? entry.name ?? ''}`}
+                className={`document-timeline__entry${shouldHighlight ? ' document-timeline__entry--highlight' : ''}`}
+                data-run-id={resolvedRunId}
+              >
+                <header>
+                  <span className="document-timeline__entry-time">{entry.appointmentTime ?? '---'}</span>
+                  <div className="document-timeline__entry-title">
+                    <strong>{entry.name ?? '患者未登録'}（{entry.patientId ?? entry.appointmentId ?? 'ID不明'}）</strong>
+                    <span className="document-timeline__entry-meta">{entry.department ?? '―'} ｜ {entry.status}</span>
+                  </div>
+                  {shouldHighlight && <span className="document-timeline__badge-warning">missingMaster</span>}
+                  {queuePhase === 'error' && <span className="document-timeline__badge-error">再取得待ち</span>}
+                  {queuePhase === 'retrying' && <span className="document-timeline__badge-info">再取得中</span>}
+                </header>
+                <div className="document-timeline__steps" aria-label="受付からORCAまでの進捗">
+                  {(['受付', '診療', 'ORCAキュー'] as const).map((step) => (
+                    <div key={step} className={`document-timeline__step document-timeline__step--${queueStepStatus[step]}`}>
+                      <span className="document-timeline__step-label">{step}</span>
+                    </div>
+                  ))}
+                </div>
+                <p className="document-timeline__entry-note">
+                  {entry.note ?? 'メモなし'} ｜ キュー: {bundle?.claimStatusText ?? bundle?.claimStatus ?? '未取得'}
+                </p>
+                <div className="document-timeline__actions" aria-label="次にやること">
+                  <strong>次にやること:</strong>
+                  <span>{nextAction}</span>
+                </div>
+              </article>
+            );
+          })}
       </div>
     ));
-  }, [groupedEntries, resolvedMissingMaster, resolvedRunId, selectedAppointmentId, selectedPatientId]);
+  }, [
+    claimBundles,
+    collapsedSections,
+    groupedEntries,
+    queuePhase,
+    resolvedMissingMaster,
+    resolvedRunId,
+    selectedAppointmentId,
+    selectedPatientId,
+    toggleSection,
+  ]);
+
+  const moveWindow = useCallback(
+    (direction: 'next' | 'prev' | 'start' | 'all' | 'center') => {
+      if (totalEntries <= windowSize && direction !== 'all') return;
+      if (direction === 'start') {
+        setWindowStart(0);
+        setWindowSize(VIRTUAL_WINDOW);
+        return;
+      }
+      if (direction === 'all') {
+        setWindowStart(0);
+        setWindowSize(totalEntries || VIRTUAL_WINDOW);
+        return;
+      }
+      if (direction === 'center' && selectedIndex >= 0) {
+        setWindowStart(Math.max(0, selectedIndex - Math.floor(windowSize / 2)));
+        return;
+      }
+      if (direction === 'next') {
+        setWindowStart((prev) => Math.min(prev + windowSize, Math.max(0, totalEntries - windowSize)));
+      } else {
+        setWindowStart((prev) => Math.max(0, prev - windowSize));
+      }
+    },
+    [selectedIndex, totalEntries, windowSize],
+  );
 
   return (
     <section
@@ -148,8 +334,33 @@ export function DocumentTimeline({
         message={toneMessage}
         runId={resolvedRunId}
         destination="ORCA Queue"
-        nextAction={resolvedMissingMaster ? 'マスタ再取得' : 'ORCA再送'}
+        nextAction={resolvedMissingMaster ? 'マスタ再取得' : queuePhase === 'error' ? '請求再取得' : 'ORCA再送'}
       />
+      <div className="document-timeline__controls">
+        <div className="document-timeline__control-group" aria-label="表示件数とページング">
+          <button type="button" onClick={() => moveWindow('start')} className="document-timeline__pager">先頭</button>
+          <button type="button" onClick={() => moveWindow('prev')} className="document-timeline__pager">前へ</button>
+          <button type="button" onClick={() => moveWindow('next')} className="document-timeline__pager">次へ</button>
+          <button type="button" onClick={() => moveWindow('center')} className="document-timeline__pager">選択へ</button>
+          <button type="button" onClick={() => moveWindow('all')} className="document-timeline__pager">すべて表示</button>
+          <span className="document-timeline__window-meta">
+            表示 {windowedEntries.length}/{totalEntries} 件
+          </span>
+        </div>
+        <div className="document-timeline__control-group" aria-label="仮想化ウィンドウサイズ">
+          <label>
+            ウィンドウ: 
+            <input
+              type="number"
+              min={8}
+              max={256}
+              step={8}
+              value={windowSize}
+              onChange={(e) => setWindowSize(Math.max(8, Math.min(256, Number(e.target.value))))}
+            />
+          </label>
+        </div>
+      </div>
       {resolvedFallbackUsed && (
         <div className="document-timeline__fallback" role="alert" aria-live="assertive">
           <strong>請求試算は暫定データ（fallbackUsed=true）です。</strong>
