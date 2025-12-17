@@ -236,6 +236,7 @@ export async function fetchClaimFlags(
       claimStatus: payload.claimStatus ?? payload.claimStatusText,
       apiResult: payload.apiResult,
       apiResultMessage: payload.apiResultMessage,
+      fallbackFlagMissing: payload.fallbackFlagMissing,
     },
   });
 
@@ -257,6 +258,7 @@ export async function fetchClaimFlags(
         cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
         missingMaster: payload.missingMaster ?? false,
         fallbackUsed: payload.fallbackUsed ?? false,
+        fallbackFlagMissing: payload.fallbackFlagMissing ?? false,
         dataSourceTransition: payload.dataSourceTransition ?? result.meta.dataSourceTransition,
         fetchedAt: payload.fetchedAt,
         recordsReturned: payload.recordsReturned ?? bundles.length,

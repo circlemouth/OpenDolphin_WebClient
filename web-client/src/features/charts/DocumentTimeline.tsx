@@ -51,6 +51,7 @@ export function DocumentTimeline({
   const resolvedCacheHit = claimData?.cacheHit ?? flags.cacheHit;
   const resolvedTransition = claimData?.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = claimData?.fallbackUsed ?? false;
+  const fallbackFlagMissing = claimData?.fallbackFlagMissing ?? false;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -155,6 +156,12 @@ export function DocumentTimeline({
           <p>最新の請求バンドル取得を優先してください。必要に応じて Reception で再取得してから送信してください。</p>
         </div>
       )}
+      {fallbackFlagMissing && (
+        <div className="document-timeline__fallback" role="alert" aria-live="assertive">
+          <strong>API から fallbackUsed フラグが返却されていません。</strong>
+          <p>サーバー側の telemetry 設定を確認し、fallback 判定を UI/Audit に連携してください。</p>
+        </div>
+      )}
       {claimError && (
         <div className="document-timeline__retry" role="alert" aria-live="assertive">
           <p>請求バンドルの取得に失敗しました: {claimError.message}</p>
@@ -229,8 +236,8 @@ export function DocumentTimeline({
               <div className="document-timeline__queue-meta" aria-live="polite">
                 <strong>請求バンドル ({claimBundles.length}件)</strong>
                 <ul>
-                  {claimBundles.slice(0, 3).map((bundle) => (
-                    <li key={`${bundle.bundleNumber ?? bundle.patientId ?? Math.random()}`}>
+                  {claimBundles.slice(0, 3).map((bundle, idx) => (
+                    <li key={bundle.bundleNumber ?? `${bundle.patientId ?? 'unknown'}-${bundle.appointmentId ?? idx}`}>
                       {bundle.patientId ?? '患者不明'} ｜ {bundle.bundleNumber ?? 'bundle?'} ｜{' '}
                       {bundle.claimStatus ?? '状態不明'}
                     </li>

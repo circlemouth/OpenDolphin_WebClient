@@ -55,6 +55,7 @@ const toClaimStatus = (statusText?: string): ClaimBundleStatus | undefined => {
   const normalized = statusText.toLowerCase();
   if (normalized.includes('済') || normalized.includes('paid') || normalized.includes('完了')) return '会計済み';
   if (normalized.includes('会計') || normalized.includes('billing') || normalized.includes('精算')) return '会計待ち';
+  if (normalized.includes('waiting_payment') || normalized.includes('waiting-payment') || normalized.includes('waiting pay') || normalized.includes('waitingpayment') || normalized.includes('unpaid') || normalized.includes('pending')) return '会計待ち';
   if (normalized.includes('診療') || normalized.includes('診察')) return '診療中';
   if (normalized.includes('受付')) return '受付中';
   if (normalized.includes('予約')) return '予約';
@@ -205,6 +206,8 @@ export const mergeOutpatientMeta = (
 ): OutpatientMeta => {
   const resolvedTransition = (raw.dataSourceTransition as DataSourceTransition | undefined) ?? defaults.dataSourceTransition;
   const resolvedSource = (defaults.resolveMasterSource ?? resolvedTransition) as ResolveMasterSource | undefined;
+  const fallbackFlagMissing =
+    raw.fallbackUsed === undefined && defaults.fallbackUsed === undefined ? true : defaults.fallbackFlagMissing;
 
   const recordsReturned =
     typeof raw.recordsReturned === 'number'
@@ -219,6 +222,7 @@ export const mergeOutpatientMeta = (
     cacheHit: normalizeBoolean(raw.cacheHit ?? defaults.cacheHit),
     missingMaster: normalizeBoolean(raw.missingMaster ?? defaults.missingMaster),
     fallbackUsed: normalizeBoolean(raw.fallbackUsed ?? defaults.fallbackUsed),
+    fallbackFlagMissing,
     fetchedAt: (raw.fetchedAt as string | undefined) ?? defaults.fetchedAt,
     recordsReturned,
     fromCache: defaults.fromCache,
