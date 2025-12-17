@@ -19,6 +19,7 @@ export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
   const resolvedCacheHit = summary?.cacheHit ?? claim?.cacheHit ?? flags.cacheHit;
   const resolvedFallbackUsed = summary?.fallbackUsed ?? claim?.fallbackUsed ?? false;
   const resolvedTransition = summary?.dataSourceTransition ?? claim?.dataSourceTransition ?? flags.dataSourceTransition;
+  const fallbackFlagMissing = summary?.fallbackFlagMissing ?? claim?.fallbackFlagMissing ?? false;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -33,11 +34,14 @@ export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
     if (resolvedFallbackUsed) {
       return `${sharedMessage} 請求バンドルは fallbackUsed=true のため暫定表示です。再取得または ORCA 再送を検討してください。`;
     }
+    if (fallbackFlagMissing) {
+      return `${sharedMessage} fallbackUsed フラグが欠落しています。サーバー応答にフラグを含めてください。`;
+    }
     if (resolvedCacheHit) {
       return `${sharedMessage} ORCA 再送は Info tone で提示し、${transitionMeta.label} を記録します。`;
     }
     return `${sharedMessage} ${transitionMeta.label} を監査ログへ再送出します。`;
-  }, [resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, sharedMessage, transitionMeta.label]);
+  }, [resolvedCacheHit, resolvedFallbackUsed, fallbackFlagMissing, resolvedMissingMaster, sharedMessage, transitionMeta.label]);
 
   const payloadPreview = useMemo(() => {
     if (!summary?.payload) return null;
@@ -99,6 +103,15 @@ export function OrcaSummary({ summary, claim }: OrcaSummaryProps) {
             description={resolvedFallbackUsed ? 'fallbackUsed=true ｜ snapshot/fallback データで処理中' : 'fallback 未使用'}
             runId={resolvedRunId}
           />
+          {fallbackFlagMissing && (
+            <StatusBadge
+              label="fallbackFlagMissing"
+              value="true"
+              tone="warning"
+              description="API 応答に fallbackUsed が含まれていません"
+              runId={resolvedRunId}
+            />
+          )}
         </div>
       </div>
       {payloadPreview && (

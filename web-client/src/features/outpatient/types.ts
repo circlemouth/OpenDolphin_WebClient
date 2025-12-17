@@ -28,6 +28,7 @@ export type OutpatientMeta = {
   cacheHit?: boolean;
   missingMaster?: boolean;
   fallbackUsed?: boolean;
+  fallbackFlagMissing?: boolean;
   fetchedAt?: string;
   recordsReturned?: number;
   fromCache?: boolean;
