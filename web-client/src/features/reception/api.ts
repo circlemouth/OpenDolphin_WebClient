@@ -9,6 +9,8 @@ import { attachAppointmentMeta, mergeOutpatientMeta, parseAppointmentEntries, pa
 import type {
   AppointmentPayload,
   ClaimOutpatientPayload,
+  ClaimQueueEntry,
+  ClaimQueuePhase,
   OutpatientFlagResponse,
   ReceptionEntry,
   ReceptionStatus,
@@ -20,6 +22,8 @@ export type AppointmentQueryParams = {
   keyword?: string;
   departmentCode?: string;
   physicianCode?: string;
+  page?: number;
+  size?: number;
 };
 
 const SAMPLE_APPOINTMENTS: ReceptionEntry[] = [
@@ -90,10 +94,64 @@ const preferredSource = (): ResolveMasterSource | undefined =>
 const resolvedDataSource = (transition?: DataSourceTransition, fallback?: ResolveMasterSource): ResolveMasterSource | undefined =>
   (transition as ResolveMasterSource | undefined) ?? fallback;
 
+const toNumber = (value: unknown): number | undefined => {
+  if (typeof value === 'number') return value;
+  if (typeof value === 'string') {
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : undefined;
+  }
+  return undefined;
+};
+
+const normalizeQueuePhase = (phase?: string): ClaimQueuePhase => {
+  if (!phase) return 'pending';
+  if (phase === 'retry' || phase === 'hold' || phase === 'failed' || phase === 'sent' || phase === 'ack') return phase;
+  if (phase === 'delivered') return 'ack';
+  if (phase === 'queued' || phase === 'waiting') return 'pending';
+  if (phase === 'error') return 'failed';
+  return 'pending';
+};
+
+const toIsoString = (value: unknown): string | undefined => {
+  if (typeof value === 'string') return value;
+  if (typeof value === 'number') {
+    const date = new Date(value);
+    return Number.isNaN(date.getTime()) ? undefined : date.toISOString();
+  }
+  return undefined;
+};
+
+const parseQueueEntries = (json: any): ClaimQueueEntry[] => {
+  const queue: any[] =
+    (Array.isArray(json?.queue) && json.queue) ||
+    (Array.isArray(json?.queueEntries) && json.queueEntries) ||
+    (Array.isArray(json?.queue?.entries) && json.queue.entries) ||
+    [];
+  if (queue.length === 0) return [];
+
+  return queue.map((item, index) => {
+    const phase = normalizeQueuePhase(item?.phase ?? item?.status ?? item?.state);
+    return {
+      id: (item?.id as string | undefined) ?? (item?.requestId as string | undefined) ?? `queue-${index}`,
+      phase,
+      retryCount: toNumber(item?.retryCount ?? item?.retries ?? item?.attempts),
+      nextRetryAt: toIsoString(item?.nextRetryAt ?? item?.nextRetryAtMs ?? item?.retryAt),
+      errorMessage: item?.errorMessage ?? item?.error ?? item?.message,
+      holdReason: item?.holdReason ?? item?.reason,
+      requestId: item?.requestId,
+      patientId: item?.patientId,
+      appointmentId: item?.appointmentId,
+      fallbackUsed: typeof item?.fallbackUsed === 'boolean' ? item.fallbackUsed : undefined,
+    };
+  });
+};
+
 export async function fetchAppointmentOutpatients(
   params: AppointmentQueryParams,
   context?: QueryFunctionContext,
 ): Promise<AppointmentPayload> {
+  const page = params.page ?? 1;
+  const size = params.size ?? 50;
   const result = await fetchWithResolver({
     candidates: appointmentCandidates,
     body: {
@@ -101,6 +159,8 @@ export async function fetchAppointmentOutpatients(
       keyword: params.keyword,
       departmentCode: params.departmentCode,
       physicianCode: params.physicianCode,
+      page,
+      size,
     },
     queryContext: context,
     preferredSource: preferredSource(),
@@ -118,6 +178,8 @@ export async function fetchAppointmentOutpatients(
     fallbackUsed:
       result.meta.fallbackUsed ??
       (isFallbackSample || result.meta.fromCache === true ? true : undefined),
+    page,
+    size,
   });
 
   const payload: AppointmentPayload = attachAppointmentMeta(
@@ -186,6 +248,7 @@ export async function fetchClaimFlags(
 
   const json = result.raw ?? {};
   const bundles = parseClaimBundles(json);
+  const queueEntries = parseQueueEntries(json);
   const resolvedClaimStatusText =
     (json as any).claimStatus ?? (json as any).status ?? (json as any).apiResult ?? bundles[0]?.claimStatusText;
   const metaRecords = typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : bundles.length || undefined;
@@ -200,6 +263,7 @@ export async function fetchClaimFlags(
     bundles,
     claimStatus: resolveClaimStatus(resolvedClaimStatusText) ?? bundles[0]?.claimStatus,
     claimStatusText: typeof resolvedClaimStatusText === 'string' ? resolvedClaimStatusText : bundles[0]?.claimStatusText,
+    queueEntries,
     raw: json as Record<string, unknown>,
     apiResult: (json as any).apiResult,
     apiResultMessage: (json as any).apiResultMessage,
@@ -228,7 +292,9 @@ export async function fetchClaimFlags(
       endpoint: payload.sourcePath ?? result.meta.sourcePath,
       fetchedAt: payload.fetchedAt,
       recordsReturned: payload.recordsReturned,
+       hasNextPage: payload.hasNextPage,
       claimBundles: bundles.length,
+      queueEntries: queueEntries.length,
       resolveMasterSource: payload.resolveMasterSource,
       fromCache: result.meta.fromCache,
       retryCount: result.meta.retryCount,
@@ -262,6 +328,10 @@ export async function fetchClaimFlags(
         dataSourceTransition: payload.dataSourceTransition ?? result.meta.dataSourceTransition,
         fetchedAt: payload.fetchedAt,
         recordsReturned: payload.recordsReturned ?? bundles.length,
+        hasNextPage: payload.hasNextPage,
+        page: payload.page,
+        size: payload.size,
+        queueEntries: queueEntries.length,
         claimBundles: bundles.length,
         sourcePath: payload.sourcePath ?? result.meta.sourcePath,
         error: result.ok ? undefined : result.error ?? payload.apiResultMessage,

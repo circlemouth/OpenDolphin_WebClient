@@ -31,11 +31,29 @@ export type OutpatientMeta = {
   fallbackFlagMissing?: boolean;
   fetchedAt?: string;
   recordsReturned?: number;
+  hasNextPage?: boolean;
+  page?: number;
+  size?: number;
   fromCache?: boolean;
   retryCount?: number;
   sourcePath?: string;
   httpStatus?: number;
   auditEvent?: Record<string, unknown>;
+};
+
+export type ClaimQueuePhase = 'pending' | 'retry' | 'hold' | 'failed' | 'sent' | 'ack';
+
+export type ClaimQueueEntry = {
+  id: string;
+  phase: ClaimQueuePhase;
+  retryCount?: number;
+  nextRetryAt?: string;
+  errorMessage?: string;
+  holdReason?: string;
+  requestId?: string;
+  patientId?: string;
+  appointmentId?: string;
+  fallbackUsed?: boolean;
 };
 
 export type AppointmentPayload = OutpatientMeta & {
@@ -78,6 +96,7 @@ export type ClaimOutpatientPayload = OutpatientMeta & {
   bundles: ClaimBundle[];
   claimStatus?: ClaimBundleStatus;
   claimStatusText?: string;
+  queueEntries?: ClaimQueueEntry[];
   raw?: Record<string, unknown>;
   apiResult?: string;
   apiResultMessage?: string;
