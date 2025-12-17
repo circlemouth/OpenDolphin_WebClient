@@ -273,5 +273,53 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# 21 キーボード操作と ARIA 監査\n\n- 主要操作（患者切替/タブ移動/検索/送信/印刷）をキーボードで完結できるようにし、フォーカス順を最適化する。\n- ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。\n- モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。"
+  },
+  {
+    "id": "task-yaml-1a65ptm-src-charts-produ",
+    "name": "[webclient charts production outpatient plan] 25_患者サイドペイン_基本保険履歴_仕上げ\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 25 患者サイドペイン（基本/保険/履歴）仕上げ\n\n- Charts 内の患者情報表示を “閲覧中心” に揃え、編集は権限と missingMaster によってガードする。\n- 患者基本・保険情報の差分表示（変更前/変更後）と、保存時の監査ログを UI で確認できる導線を用意する。\n- 過去受診/直近受診の参照導線を整理し、患者切替ミスを減らす UI にする。\n\nYAML ID: src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "low",
+    "createdAt": "2025-12-17T06:21:35.264Z",
+    "updatedAt": "2025-12-17T06:21:35.264Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1a65ptm-src-charts-produ",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-charts-production-outpatie-72508e9d7a::src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md",
+      "appId": "custom-app-webclient-charts-production-outpatie-72508e9d7a",
+      "datasetLabel": "webclient charts production outpatient plan",
+      "pathId": "src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md",
+      "fileName": "webclient-charts-production-outpatient-plan.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-charts-production-outpatient-plan.yaml",
+      "addedAt": "2025-12-17T06:21:29.917Z"
+    },
+    "labels": [
+      "webclient charts production outpatient plan",
+      "src / charts_production_outpatient / ux"
+    ],
+    "dependencies": [
+      "task-yaml-v2iy1d-src-charts-produ"
+    ],
+    "schedule": {
+      "startMs": 1767657600000,
+      "endMs": 1767916800000,
+      "durationDays": 3
+    },
+    "category": "src / charts_production_outpatient / ux",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 25 患者サイドペイン（基本/保険/履歴）仕上げ\n\n- Charts 内の患者情報表示を “閲覧中心” に揃え、編集は権限と missingMaster によってガードする。\n- 患者基本・保険情報の差分表示（変更前/変更後）と、保存時の監査ログを UI で確認できる導線を用意する。\n- 過去受診/直近受診の参照導線を整理し、患者切替ミスを減らす UI にする。"
   }
 ]
