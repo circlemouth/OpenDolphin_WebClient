@@ -185,12 +185,14 @@ src:
           - API 失敗（timeout/4xx/5xx/スキーマ不一致）を “運用で困らない” 表示に統一し、再試行/回復導線を明示する。
           - `missingMaster=true` のときは送信・編集をブロックし、ToneBanner（warning/aria-live=assertive）で理由と次アクションを提示する。
           - 画面全体の ErrorBoundary と、パネル単位の “部分失敗” 表示の使い分けを確定する。
+          - 関連ドキュメント（`src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md`、`src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md`、`docs/web-client/planning/phase2/logs/20251217T125828Z-charts-error-handling.md`）の参照リンクを現行名称に更新し、3 章/10 章の要件と本タスクの成果物を整合させる。
         priority: High
         status: not_started
         progress: 0
         agent: cursor cli
         api: []
         dependency:
+          - src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md
           - src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md
         schedule:
           start: 2025-12-24T00:00:00.000Z
