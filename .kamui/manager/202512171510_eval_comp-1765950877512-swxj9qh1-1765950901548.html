@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 2); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .score-header { display: flex; align-items: center; gap: 8px; margin-bottom: 12px; font-weight: 700; font-size: 18px; }
+      .trophy { font-size: 22px; }
+      .hexchart { width: 180px; height: 180px; }
+      .metric-list { margin: 8px 0 0; padding: 0; list-style: none; font-size: 12px; }
+      .metric-list li { display: flex; justify-content: space-between; }
+      .section-title { font-weight: 700; margin-top: 12px; margin-bottom: 6px; }
+      .bullet { margin: 0 0 6px; font-size: 13px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">webclient charts 14 パフォーマンス予算・計測導入 評価レポート</h1>
+        <p class="monitor-description">タスク成果を比較評価。左列: task-1765950877715-178daf（RUN_ID=20251217T060357Z）、右列: task-1765950877513-651528（RUN_ID=20251217T060433Z）。</p>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent gemini cli / task-1765950877715-178daf</th>
+            <th>Agent gemini cli / task-1765950877513-651528</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-17 15:10 JST</td>
+            <td>
+              <div class="score-header"><span class="trophy">🥈</span>合計 524 / 600 点</div>
+              <svg class="hexchart" viewBox="0 0 200 200" data-scores="86,82,88,80,84,90"></svg>
+              <ul class="metric-list">
+                <li>機能合理性 86</li>
+                <li>緻密性 82</li>
+                <li>KPI適合 88</li>
+                <li>UX配慮 80</li>
+                <li>テレメトリ設計 84</li>
+                <li>追跡性 90</li>
+              </ul>
+              <div class="section-title">決定事項カバー</div>
+              <p class="bullet">p75/p95 目標と cacheHit 目標を明示し、ローディング段階表示や non-blocking UI を定義。commit 9c186c5b。</p>
+              <div class="section-title">強み</div>
+              <p class="bullet">計測項目（ttfr/tti/api_latency/render）を telemetry + audit 双方に揃え、runId/traceId ハッシュ化を明記。</p>
+              <div class="section-title">懸念/不足</div>
+              <p class="bullet">警告/違反ラインや Stage/Preview 再計測の具体策が簡略。実装タスクリストは概略に留まる。</p>
+            </td>
+            <td>
+              <div class="score-header"><span class="trophy">🏆</span>合計 549 / 600 点</div>
+              <svg class="hexchart" viewBox="0 0 200 200" data-scores="92,90,94,88,93,92"></svg>
+              <ul class="metric-list">
+                <li>機能合理性 92</li>
+                <li>緻密性 90</li>
+                <li>KPI適合 94</li>
+                <li>UX配慮 88</li>
+                <li>テレメトリ設計 93</li>
+                <li>追跡性 92</li>
+              </ul>
+              <div class="section-title">決定事項カバー</div>
+              <p class="bullet">P95 予算に警告/違反ラインを設定し、ToneBanner 昇格や data-* 属性での可観測性向上を追加。commit 4feb88a7。</p>
+              <div class="section-title">強み</div>
+              <p class="bullet">計測キーと telemetry/audit のキー整合が明確。検証フロー (MSW→dev proxy→Stage) とアラート運用まで記載。</p>
+              <div class="section-title">懸念/不足</div>
+              <p class="bullet">実装コードは未着手。backend スキーマ未決・polyfill確認など依存タスクが残存。</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">補足</td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">completed</span><span class="agent-label">計画ドキュメント追加・DOC_STATUS 更新。</span></div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit 9c186c5b Add charts performance budget plan (RUN_ID=20251217T060357Z)
+- 新規: src/charts_production_outpatient/foundation/14_パフォーマンス予算と計測導入.md
+- ログ: docs/web-client/planning/phase2/logs/20251217T060357Z-charts-performance-budget.md
+- DOC_STATUS 更新（RUN_ID 切替・証跡リンク追記）</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="status-badge status-badge--completed">completed</span><span class="agent-label">計画ドキュメント/README/DOC_STATUS を同期。</span></div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit 4feb88a7 Add charts performance budget plan and log (RUN_ID=20251217T060433Z)
+- 新規: src/charts_production_outpatient/foundation/14_パフォーマンス予算と計測導入.md
+- ログ: docs/web-client/planning/phase2/logs/20251217T060433Z-charts-performance-budget.md
+- README 参照チェーン追加 / DOC_STATUS 行追加</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (() => {
+        function render(svg) {
+          const scores = svg.dataset.scores.split(',').map(Number);
+          const maxR = 80;
+          const center = 100;
+          const angleStep = (Math.PI * 2) / scores.length;
+          const points = scores.map((s, i) => {
+            const r = (s / 100) * maxR;
+            const angle = -Math.PI / 2 + i * angleStep;
+            const x = center + r * Math.cos(angle);
+            const y = center + r * Math.sin(angle);
+            return `${x},${y}`;
+          }).join(' ');
+          svg.innerHTML = `
+            <polygon points="${points}" fill="#6bb4c8" fill-opacity="0.45" stroke="#2e7083" stroke-width="2"></polygon>
+            <circle cx="100" cy="100" r="80" fill="none" stroke="#c4d3d7" stroke-dasharray="4 4"></circle>
+          `;
+        }
+        document.querySelectorAll('svg.hexchart').forEach(render);
+      })();
+    </script>
+  </body>
+</html>
