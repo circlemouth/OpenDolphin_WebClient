@@ -6,12 +6,13 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T212718Z`）
-- 並行編集とロック表示を設計（RUN_ID=`20251217T212718Z`）。同一患者/受付の多重編集を二段階ロック（localStorage + server editLock/ETag）で抑止し、最終更新者/時刻ピルと `CHARTS_EDIT_LOCK`/`CHARTS_CONFLICT` 監査を追加。衝突時は読み取り専用 + 再読込/破棄/強制引き継ぎの 3 択で誤上書きを防ぐ。証跡: `docs/web-client/planning/phase2/logs/20251217T212718Z-charts-concurrent-edit-lock.md` / 成果物: `src/charts_production_outpatient/workflow/34_並行編集とロック表示.md`。
+### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T212600Z`）
 - DocumentTimeline 商用仕上げ（RUN_ID=`20251217T150614Z`）。受付→診療→ORCA キューを 3 ステップ可視化し、missingMaster/失敗/再取得の nextAction を明示。32件ウィンドウ仮想化＋折りたたみ＋表示件数を追加。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md` / 成果物: `src/charts_production_outpatient/ux/23_DocumentTimeline商用レベル仕上げ.md`。
 - OrcaSummary（請求/予約）商用レベル仕上げ指針を追加（RUN_ID=`20251217T130407Z`）。請求/予約サマリの表示粒度、`dataSourceTransition` の説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md` / 成果物: `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md`。
 - 診療開始/終了の状態遷移を再定義し、READY_TO_CLOSE を分離。ORCA送信待ちのバックオフ（5s→15s→45s, 最大3回）と終了ガードの disable 理由を固定（RUN_ID=`20251217T120220Z`）。証跡: `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md` / 成果物: `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md`。
+- ドラフト保存と復元の設計を追加（RUN_ID=`20251217T212600Z`）。受付ID/患者ID/診療日/runId/facilityId/userId でドラフトを束縛し、localStorage+React Query 二重保存、復元ダイアログ、監査 `DRAFT_SAVE/RESTORE/DISCARD` を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md` / 成果物: `src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md`。
 - Charts シェル UI 最終レイアウトを確定（RUN_ID=`20251217T060504Z`）。トップ/アクションバー固定、左30%/右70%基準、重要情報の二重配置、画面幅別挙動（wide/default/medium/narrow）を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T060504Z-charts-shell-ui-layout.md` / 成果物: `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md`。
+- module_json docPk ガード & 負 PK クリーニング（RUN_ID=`20251214T140106Z`）。`d_document/d_module` の負 id を削除し、addDocument 応答 docPk を必ず再利用する UI/テスト方針をログ化。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-guard.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-cleanup.md`。
 - module_json UI 保存・復元再確認（RUN_ID=`20251214T140106Z`）。最新 WAR ビルドで add→update→GET が docPk=9024（正数）となり、beanJson 保存/復元とも WARN 無し。証跡: `docs/web-client/planning/phase2/logs/20251214T140106Z-module-json-ui-save-rerun.md` / `docs/server-modernization/phase2/operations/logs/20251214T140106Z-module-json-ui-save-rerun.md`。
 - module_json 型情報フォールバック（RUN_ID=`20251214T132418Z`）。ModuleJsonConverter に non-typed フォールバック mapper を追加し、`@class` 無し beanJson でも WARN 無しで decode できる回帰テストを追加（証跡: `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`）。
 - module_json docPk 正数化（RUN_ID=`20251214T132016Z`）。JPA の PK 採番を `opendolphin.hibernate_sequence` へ固定し、addDocument で負の id を強制的に正のシーケンス採番へ上書き・DocInfo 同期。UI からの負数 docPk で updateDocument が 500 になる事象を防止。証跡: `docs/web-client/planning/phase2/logs/20251214T132016Z-docpk-positive.md`。
@@ -34,6 +35,7 @@
 - `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` — ChartsPage の現状棚卸しとギャップ（RUN_ID=`20251212T140014Z`）。
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
 - `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` — 診療開始/終了の状態モデルと終了ガード（RUN_ID=`20251217T120220Z`）。
+- `src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md` — ドラフト保存/復元設計（RUN_ID=`20251217T212600Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
 - `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。
 - `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` — OrcaSummary 請求/予約サマリ商用仕上げ（RUN_ID=`20251217T130407Z`）。
