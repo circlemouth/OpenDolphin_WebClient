@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート / 40_claim_outpatient統合</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin: 12px 0 20px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 12px 14px;
+        background: #f7fbfc;
+      }
+      .score-card h3 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+      }
+      .score-card .total {
+        font-size: 22px;
+        font-weight: 800;
+      }
+      .score-card .medal {
+        font-size: 18px;
+      }
+      .score-card small {
+        color: #4b5563;
+      }
+      .chart-grid {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+      .hexchart {
+        width: 120px;
+        height: 120px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 4px;
+      }
+      .status-badge--investigating { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--planning { background: #fff4d9; border-color: #f5e8b8; }
+      .status-badge--in-progress { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .pill {
+        display: inline-block;
+        border-radius: 999px;
+        padding: 2px 8px;
+        font-size: 11px;
+        font-weight: 700;
+        margin-right: 4px;
+      }
+      .pill--good { background: #ecfdf3; color: #14532d; border: 1px solid #bbf7d0; }
+      .pill--risk { background: #fff7ed; color: #9a3412; border: 1px solid #fed7aa; }
+      .pill--issue { background: #fef2f2; color: #991b1b; border: 1px solid #fecdd3; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜40 `/api01rv2/claim/outpatient/*` 統合（請求バンドル）</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1765972569702-bc50bd, task/task-1765972569986-20be56, task/task-1765972570797-d2f8f0。機能合理性と緻密性を 6 指標×100 点（合計 600 点）で採点。</p>
+      </header>
+
+      <div class="scoreboard">
+        <div class="score-card">
+          <h3>🏆🥇 task-1765972569702-bc50bd</h3>
+          <div class="total">445 / 600</div>
+          <small>平均 74 点</small>
+        </div>
+        <div class="score-card">
+          <h3>🥈 task-1765972569986-20be56</h3>
+          <div class="total">433 / 600</div>
+          <small>平均 72 点</small>
+        </div>
+        <div class="score-card">
+          <h3>🥉 task-1765972570797-d2f8f0</h3>
+          <div class="total">370 / 600</div>
+          <small>平均 62 点</small>
+        </div>
+      </div>
+
+      <div class="chart-grid">
+        <svg class="hexchart" viewBox="0 0 120 120" aria-label="task-1765972569702-bc50bd six-metric chart">
+          <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#eef3f4" stroke="#cbd5e1" />
+          <polygon points="60,19 99,38 90,78 60,95 26,80 36,46" fill="#0ea5e9" opacity="0.45" stroke="#0284c7" />
+        </svg>
+        <svg class="hexchart" viewBox="0 0 120 120" aria-label="task-1765972569986-20be56 six-metric chart">
+          <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#eef3f4" stroke="#cbd5e1" />
+          <polygon points="60,21 84,46 95,80 60,103 28,79 34,45" fill="#10b981" opacity="0.45" stroke="#059669" />
+        </svg>
+        <svg class="hexchart" viewBox="0 0 120 120" aria-label="task-1765972570797-d2f8f0 six-metric chart">
+          <polygon points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#eef3f4" stroke="#cbd5e1" />
+          <polygon points="60,27.5 84,46 88,76 60,90 30,78 36,46" fill="#f59e0b" opacity="0.45" stroke="#d97706" />
+        </svg>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>task-1765972569702-bc50bd</th>
+            <th>task-1765972569986-20be56</th>
+            <th>task-1765972570797-d2f8f0</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-17 21:19</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">score 74 / medal 🥇</span>
+              </div>
+              <div class="snapshot-summary">
+                <span class="pill pill--good">監査ログあり</span>
+                <span class="pill pill--risk">fallback判定がAPI flag依存</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細</summary>
+                <pre>
+commit 0d996121 (feat: integrate claim outpatient bundles)
+- ClaimOutpatientPayload に bundles/runId/cacheHit 等を統合し DocumentTimeline/OrcaSummary へ伝播。
+- fetchClaimFlags で bundle 解析 + recordOutpatientFunnel + logAuditEvent(success/error) を実装。
+- ChartsPage から再取得ボタンに監査ログを付けた上で refetch。
+- fallbackUsed 警告と取得失敗リトライをタイムラインに追加。
+懸念:
+- fallbackUsed を provisional から自動判定せず、API が flag を返さないと警告が出ない。
+- claim status マッピングが waiting_payment 等を拾いきれない可能性。
+- bundle list key に Math.random() を使用し再レンダで React key 変更リスク。
+主要変更: web-client/src/features/charts/DocumentTimeline.tsx, OrcaSummary.tsx, charts/pages/ChartsPage.tsx, outpatient/transformers.ts, reception/api.ts, mocks/fixtures/outpatient.ts。
+成果物: src/charts_production_outpatient/integration/40_claim_outpatient統合.md
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">score 72 / medal 🥈</span>
+              </div>
+              <div class="snapshot-summary">
+                <span class="pill pill--good">bundles/provisional 連動</span>
+                <span class="pill pill--risk">監査ログ未実装</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細</summary>
+                <pre>
+commit 00ef4514 (feat: integrate claim outpatient bundles)
+- ClaimOutpatientResponse で bundles, provisional → fallbackUsed 昇格。status=paid/waiting/draft を Reception ステータスへ反映。
+- DocumentTimeline/OrcaSummary で請求ステータスバッジ/金額/暫定警告/再取得ボタンを表示、スタイル追加。
+- mock フィクスチャに claim bundle を追加し recordsReturned/fetchedAt/apiResult を付与。
+懸念:
+- fetchClaimFlags と再取得に logAuditEvent が無く、成功/失敗監査ログ要件を未充足。
+- retry 時の audit trail なし。HTTP エラーは表示されるが outcome 記録が Telemetry のみ。
+- status マッピングは paid/waiting/draft 固定で ORCA 独自表記の網羅性が低い。
+主要変更: DocumentTimeline.tsx, OrcaSummary.tsx, charts/styles.ts, reception/api.ts, outpatient/transformers.ts, types.ts, mocks/fixtures/outpatient.ts。
+成果物: docs/web-client/planning/phase2/logs/20251217T115951Z-claim-outpatient-integration.md
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">score 62 / medal 🥉</span>
+              </div>
+              <div class="snapshot-summary">
+                <span class="pill pill--good">applyClaimBundlesToEntries で会計待ち昇格</span>
+                <span class="pill pill--risk">fallback自動検知なし</span>
+                <span class="pill pill--issue">監査ログ欠落</span>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">詳細</summary>
+                <pre>
+commit ae198ff0 (Add claim outpatient bundle integration)
+- fetchWithResolver / OutpatientMeta に ok/error を持たせ Charts/Claim へ伝搬。
+- applyClaimBundlesToEntries で claimBundles を ReceptionEntry へマージし、billingSummary を算出し表示。
+- DocumentTimeline/OrcaSummary に fallback 警告・再取得ボタン・claim summary を追加。
+懸念:
+- claim bundle パースが claimBundles 配列限定で、bundles/claim.bundle 等に未対応。
+- fallbackUsed は meta flag のみ参照し、provisional 由来を拾えず警告が漏れる。
+- audit 成功/失敗ログなし。新クラスのスタイル追加もなく UI 一貫性に欠ける。
+主要変更: charts/pages/ChartsPage.tsx, outpatient/transformers.ts, reception/api.ts, mocks/fixtures/outpatient.ts, outpatient/fetchWithResolver.ts。
+成果物: docs/web-client/planning/phase2/logs/20251217T115853Z-claim-outpatient-bundle.md
+                </pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
