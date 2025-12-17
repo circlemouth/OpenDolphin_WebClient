@@ -26,57 +26,6 @@ export type AppointmentQueryParams = {
   size?: number;
 };
 
-const SAMPLE_APPOINTMENTS: ReceptionEntry[] = [
-  {
-    id: 'SAMPLE-01',
-    appointmentId: 'APT-2401',
-    patientId: '000001',
-    name: '山田 花子',
-    kana: 'ヤマダ ハナコ',
-    birthDate: '1985-04-12',
-    sex: 'F',
-    department: '内科',
-    physician: '藤井',
-    appointmentTime: '09:10',
-    status: '受付中',
-    insurance: '社保 12',
-    note: '血圧フォロー',
-    source: 'unknown',
-  },
-  {
-    id: 'SAMPLE-02',
-    appointmentId: 'APT-2402',
-    patientId: '000002',
-    name: '佐藤 太郎',
-    kana: 'サトウ タロウ',
-    birthDate: '1978-11-30',
-    sex: 'M',
-    department: '整形',
-    physician: '鈴木',
-    appointmentTime: '09:25',
-    status: '診療中',
-    insurance: '国保 34',
-    note: '膝痛・レントゲン待ち',
-    source: 'unknown',
-  },
-  {
-    id: 'SAMPLE-03',
-    appointmentId: 'APT-2403',
-    patientId: '000003',
-    name: '高橋 光',
-    kana: 'タカハシ ヒカリ',
-    birthDate: '1992-02-01',
-    sex: 'F',
-    department: '小児',
-    physician: '山口',
-    appointmentTime: '10:05',
-    status: '予約',
-    insurance: '自費',
-    note: '健診',
-    source: 'unknown',
-  },
-];
-
 const claimCandidates = [
   { path: '/api01rv2/claim/outpatient/mock', source: 'mock' as ResolveMasterSource },
   { path: '/api01rv2/claim/outpatient', source: 'server' as ResolveMasterSource },
@@ -169,22 +118,17 @@ export async function fetchAppointmentOutpatients(
 
   const json = result.raw ?? {};
   const entries = parseAppointmentEntries(json);
-  const isFallbackSample = entries.length === 0;
-  const resolvedEntries = isFallbackSample ? SAMPLE_APPOINTMENTS : entries;
   const mergedMeta = mergeOutpatientMeta(json, {
     ...result.meta,
-    recordsReturned: entries.length > 0 ? entries.length : undefined,
+    recordsReturned: entries.length,
     resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
-    fallbackUsed:
-      result.meta.fallbackUsed ??
-      (isFallbackSample || result.meta.fromCache === true ? true : undefined),
     page,
     size,
   });
 
   const payload: AppointmentPayload = attachAppointmentMeta(
     {
-      entries: resolvedEntries,
+      entries,
       raw: json,
       apiResult: (json as any).apiResult,
       apiResultMessage: (json as any).apiResultMessage,

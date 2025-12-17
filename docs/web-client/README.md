@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251214T132418Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251217T234312Z`）
 > 2025-12-14 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T120220Z`）
+### 最新更新サマリ（2025-12-17 / RUN_ID=`20251217T234312Z`）
+- 41 `/api01rv2/appointment/outpatient/*` 統合（RUN_ID=`20251217T234312Z`）。予約一覧/患者別予約/来院中リストを Charts 向けに正規化し、`受付ID(receptionId)` 表示と Charts→Reception の導線（予約変更/キャンセル）を追加。予約データの未取得/不整合は `tone=info/warning` で統一。証跡: `src/charts_production_outpatient/integration/logs/20251217T234312Z-appointment-outpatient-integration.md` / 成果物: `src/charts_production_outpatient/integration/41_appointment_outpatient統合.md`。
 - Charts アクセシビリティ自動検査（RUN_ID=`20251217T212939Z`）。ActionBar/ToneBanner の axe 単体テスト＋Playwright `/charts` ページスコープ a11y スキャンを追加し、重大違反フィルター後 0 件。フォーカス順と操作不能理由の読み上げを確認。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md` / 成果物: `src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md` / テスト: `web-client/src/features/charts/__tests__/chartsAccessibility.test.tsx`, `tests/e2e/charts-a11y-page.spec.ts`。
 - DocumentTimeline 商用仕上げ（RUN_ID=`20251217T150614Z`）。受付→診療→ORCA キューを 3 ステップ可視化し、missingMaster/失敗/再取得の nextAction を明示。32件ウィンドウ仮想化＋折りたたみ＋表示件数を追加。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md` / 成果物: `src/charts_production_outpatient/ux/23_DocumentTimeline商用レベル仕上げ.md`。
 - OrcaSummary（請求/予約）商用レベル仕上げ指針を追加（RUN_ID=`20251217T130407Z`）。請求/予約サマリの表示粒度、`dataSourceTransition` の説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md` / 成果物: `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md`。
@@ -34,6 +35,7 @@
 - `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md` — Charts 本番外来（受付→診療→会計）カバレッジ定義（RUN_ID=`20251212T131901Z`）。
 - `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` — ChartsPage の現状棚卸しとギャップ（RUN_ID=`20251212T140014Z`）。
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
+- `src/charts_production_outpatient/integration/41_appointment_outpatient統合.md` — `/api01rv2/appointment/outpatient/*` 統合（予約/来院 正規化＋受付ID＋導線、RUN_ID=`20251217T234312Z`）。
 - `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` — 診療開始/終了の状態モデルと終了ガード（RUN_ID=`20251217T120220Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
 - `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。

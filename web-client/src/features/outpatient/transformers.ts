@@ -47,8 +47,43 @@ const toDisplayTime = (date?: string, time?: string) => {
   return time;
 };
 
-const buildEntryId = (candidate?: string, fallback?: string) =>
-  candidate?.trim() || fallback || `R-${Math.random().toString(36).slice(2, 8)}`;
+const buildEntryId = (candidate?: string, fallback?: string) => candidate?.trim() || fallback || 'unknown';
+
+const sourcePriority: Record<ReceptionEntry['source'], number> = {
+  visits: 3,
+  slots: 2,
+  reservations: 1,
+  unknown: 0,
+};
+
+const buildDedupKey = (entry: ReceptionEntry) => {
+  if (entry.receptionId) return `reception:${entry.receptionId}`;
+  if (entry.appointmentId) return `appointment:${entry.appointmentId}`;
+  if (entry.patientId && entry.appointmentTime) return `patientTime:${entry.patientId}:${entry.appointmentTime}`;
+  return `id:${entry.id}`;
+};
+
+const dedupeEntries = (entries: ReceptionEntry[]) => {
+  const map = new Map<string, ReceptionEntry>();
+  for (const entry of entries) {
+    const key = buildDedupKey(entry);
+    const existing = map.get(key);
+    if (!existing) {
+      map.set(key, entry);
+      continue;
+    }
+    const next =
+      sourcePriority[entry.source] > sourcePriority[existing.source]
+        ? entry
+        : sourcePriority[entry.source] < sourcePriority[existing.source]
+          ? existing
+          : (entry.status === '診療中' || entry.status === '会計待ち' || entry.status === '会計済み') && existing.status === '予約'
+            ? entry
+            : existing;
+    map.set(key, { ...existing, ...next });
+  }
+  return Array.from(map.values());
+};
 
 const toClaimStatus = (statusText?: string): ClaimBundleStatus | undefined => {
   if (!statusText) return undefined;
@@ -136,6 +171,7 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
     entries.push({
       id: buildEntryId(slot.appointmentId, `slot-${index}`),
       appointmentId: slot.appointmentId,
+      receptionId: slot.receptionId ?? slot.voucherNumber ?? slot.reception_id,
       patientId: patient.patientId,
       name: patient.wholeName,
       kana: patient.wholeNameKana,
@@ -152,14 +188,16 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
 
   const reservations: any[] = Array.isArray(json?.reservations) ? json.reservations : [];
   reservations.forEach((reservation, index) => {
+    const patient = reservation.patient ?? json?.patient ?? {};
     entries.push({
       id: buildEntryId(reservation.appointmentId, `reservation-${index}`),
       appointmentId: reservation.appointmentId,
-      patientId: json?.patient?.patientId,
-      name: json?.patient?.wholeName,
-      kana: json?.patient?.wholeNameKana,
-      birthDate: json?.patient?.birthDate,
-      sex: json?.patient?.sex,
+      receptionId: reservation.receptionId ?? reservation.voucherNumber ?? reservation.reception_id,
+      patientId: patient.patientId,
+      name: patient.wholeName,
+      kana: patient.wholeNameKana,
+      birthDate: patient.birthDate,
+      sex: patient.sex,
       department: reservation.departmentName ?? reservation.departmentCode,
       physician: reservation.physicianName ?? reservation.physicianCode,
       appointmentTime: toDisplayTime(reservation.appointmentDate, reservation.appointmentTime),
@@ -176,9 +214,11 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
   const visits: any[] = Array.isArray(json?.visits) ? json.visits : [];
   visits.forEach((visit, index) => {
     const patient = visit.patient ?? {};
+    const receptionId = visit.voucherNumber ?? visit.receptionId ?? visit.reception_id;
     entries.push({
-      id: buildEntryId(visit.voucherNumber, `visit-${index}`),
+      id: buildEntryId(receptionId, `visit-${index}`),
       appointmentId: visit.sequentialNumber,
+      receptionId,
       patientId: patient.patientId,
       name: patient.wholeName,
       kana: patient.wholeNameKana,
@@ -187,6 +227,7 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
       department: visit.departmentName ?? visit.departmentCode,
       physician: visit.physicianName ?? visit.physicianCode,
       appointmentTime: toDisplayTime(json?.visitDate, visit.updateTime ?? visit.appointmentTime),
+      visitDate: visit.visitDate ?? json?.visitDate,
       status: deriveStatus({
         visitInformation: visit.visitInformation,
         appointmentDate: json?.visitDate,
@@ -197,7 +238,7 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
     });
   });
 
-  return entries;
+  return dedupeEntries(entries);
 };
 
 export const mergeOutpatientMeta = (

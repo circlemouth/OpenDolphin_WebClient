@@ -6,9 +6,11 @@ import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry, ReceptionStatus } from '../reception/api';
 import type { ClaimOutpatientPayload, ClaimBundle, ClaimBundleStatus } from '../outpatient/types';
+import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
 
 export interface DocumentTimelineProps {
   entries?: ReceptionEntry[];
+  appointmentBanner?: AppointmentDataBanner | null;
   auditEvent?: Record<string, unknown>;
   selectedPatientId?: string;
   selectedAppointmentId?: string;
@@ -80,6 +82,7 @@ const deriveNextAction = (
 
 export function DocumentTimeline({
   entries = [],
+  appointmentBanner,
   auditEvent,
   selectedPatientId,
   selectedAppointmentId,
@@ -258,7 +261,10 @@ export function DocumentTimeline({
                   <span className="document-timeline__entry-time">{entry.appointmentTime ?? '---'}</span>
                   <div className="document-timeline__entry-title">
                     <strong>{entry.name ?? '患者未登録'}（{entry.patientId ?? entry.appointmentId ?? 'ID不明'}）</strong>
-                    <span className="document-timeline__entry-meta">{entry.department ?? '―'} ｜ {entry.status}</span>
+                    <span className="document-timeline__entry-meta">
+                      {entry.department ?? '―'} ｜ {entry.status}
+                      {entry.receptionId ? ` ｜ 受付ID: ${entry.receptionId}` : ''}
+                    </span>
                   </div>
                   {shouldHighlight && <span className="document-timeline__badge-warning">missingMaster</span>}
                   {queuePhase === 'error' && <span className="document-timeline__badge-error">再取得待ち</span>}
@@ -336,6 +342,16 @@ export function DocumentTimeline({
         destination="ORCA Queue"
         nextAction={resolvedMissingMaster ? 'マスタ再取得' : queuePhase === 'error' ? '請求再取得' : 'ORCA再送'}
       />
+      {appointmentBanner && (
+        <ToneBanner
+          tone={appointmentBanner.tone}
+          message={appointmentBanner.message}
+          runId={resolvedRunId}
+          destination="予約/来院リスト"
+          nextAction="必要に応じて再取得"
+          ariaLive={appointmentBanner.tone === 'info' ? 'polite' : 'assertive'}
+        />
+      )}
       <div className="document-timeline__controls">
         <div className="document-timeline__control-group" aria-label="表示件数とページング">
           <button type="button" onClick={() => moveWindow('start')} className="document-timeline__pager">先頭</button>

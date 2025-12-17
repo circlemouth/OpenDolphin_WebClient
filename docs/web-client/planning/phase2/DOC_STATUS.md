@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251217T234312Z`（41 `/api01rv2/appointment/outpatient/*` 統合：予約/来院 正規化＋受付ID表示＋Charts→Reception導線＋未取得/不整合 tone 統一）。証跡: `src/charts_production_outpatient/integration/logs/20251217T234312Z-appointment-outpatient-integration.md`。備考: サンプル注入を撤廃し、`receptionId` を `visits.voucherNumber` から透過。 
 - 本更新 RUN_ID=`20251217T212939Z`（Charts アクセシビリティ自動検査＋手動監査）。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md`。備考: axe 重大違反ゼロ、ToneBanner/ActionBar のフォーカス順・操作不能理由読み上げをテスト化。
 - 本更新 RUN_ID=`20251217T130407Z`（OrcaSummary 請求/予約サマリ商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。備考: 請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。
 - 本更新 RUN_ID=`20251217T212600Z`（ドラフト保存と復元 設計追加）。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md`。備考: 受付ID/患者ID/診療日/runId/facilityId/userId でドラフト束縛、localStorage+React Query 二重保存、復元ダイアログ、監査 `DRAFT_SAVE/RESTORE/DISCARD` を定義。
@@ -71,6 +72,7 @@
 | `src/charts_production_outpatient/01_外来機能の完全カバレッジ定義.md` | Charts 本番外来カバレッジ定義 | Active | 2025-12-12 | RUN_ID=`20251212T131901Z`。DoD（監査/ARIA/運用）込みで外来 UI カバレッジを一覧化。 |
 | `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` | ChartsPage 棚卸し（計画→実装の差分） | Active | 2025-12-12 | RUN_ID=`20251212T140014Z`。P0/P1/P2 と入口/出口（Reception/Patients/Administration）責務分離案を確定。証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`。 |
 | `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` | Charts 外来 API 契約（監査/透過/再試行ルール） | Active | 2025-12-12 | RUN_ID=`20251212T143720Z`。Playwright/fixture の単一ソースとして API 契約を固定。証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`。 |
+| `src/charts_production_outpatient/integration/41_appointment_outpatient統合.md` | Charts: 予約/来院 API 統合（正規化＋受付ID＋導線） | Active | 2025-12-17 | RUN_ID=`20251217T234312Z`。`/api01rv2/appointment/outpatient/*` の slots/reservations/visits を正規化し、受付ID表示と Charts→Reception 導線、未取得/不整合 tone の統一を追加。証跡: `src/charts_production_outpatient/integration/logs/20251217T234312Z-appointment-outpatient-integration.md`。 |
 | `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` | Charts 診療開始/終了 状態モデル | Active | 2025-12-17 | RUN_ID=`20251217T120220Z`（親 `20251217T114331Z`）。READY_TO_CLOSE 追加、送信待ちバックオフと終了ガード理由固定、復元戦略を定義。 |
 | `src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md` | Charts ドラフト保存/復元 | Active | 2025-12-17 | RUN_ID=`20251217T212600Z`。受付ID/患者ID/診療日/runId/facilityId/userId でドラフト束縛、localStorage+React Query 二重保存、復元ダイアログと監査 `DRAFT_SAVE/RESTORE/DISCARD` を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md`。 |
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |

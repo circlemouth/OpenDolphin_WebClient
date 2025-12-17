@@ -4,6 +4,7 @@ import type { DataSourceTransition } from './authService';
 
 export type ChartsAuditAction =
   | 'CHARTS_PATIENT_SWITCH'
+  | 'CHARTS_NAVIGATE_RECEPTION'
   | 'ORCA_SEND'
   | 'ENCOUNTER_CLOSE'
   | 'DRAFT_SAVE'

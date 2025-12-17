@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
@@ -6,9 +7,11 @@ import { useAuthService } from './authService';
 import { recordChartsAuditEvent } from './audit';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
+import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
 
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
+  appointmentBanner?: AppointmentDataBanner | null;
   auditEvent?: Record<string, unknown>;
   selectedPatientId?: string;
   onSelectPatient?: (patientId?: string) => void;
@@ -17,12 +20,14 @@ export interface PatientsTabProps {
 
 export function PatientsTab({
   entries = [],
+  appointmentBanner,
   auditEvent,
   selectedPatientId,
   onSelectPatient,
   onSelectAppointment,
 }: PatientsTabProps) {
   const { flags } = useAuthService();
+  const navigate = useNavigate();
   const tonePayload: ChartTonePayload = {
     missingMaster: flags.missingMaster,
     cacheHit: flags.cacheHit,
@@ -110,6 +115,26 @@ export function PatientsTab({
     }
   }, [selectedPatientId]);
 
+  const navigateToReception = (intent: 'appointment_change' | 'appointment_cancel') => {
+    const keywordValue = selected?.appointmentId ?? selected?.patientId ?? selected?.receptionId ?? '';
+    const params = new URLSearchParams();
+    if (keywordValue) params.set('kw', keywordValue);
+    params.set('intent', intent);
+    navigate(`/reception?${params.toString()}`);
+    recordChartsAuditEvent({
+      action: 'CHARTS_NAVIGATE_RECEPTION',
+      outcome: 'success',
+      patientId: selected?.patientId ?? localSelectedId,
+      appointmentId: selected?.appointmentId,
+      note: `navigate to reception intent=${intent}`,
+      dataSourceTransition: flags.dataSourceTransition,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      fallbackUsed: flags.fallbackUsed,
+      runId: flags.runId,
+    });
+  };
+
   return (
     <section
       className="patients-tab"
@@ -123,6 +148,16 @@ export function PatientsTab({
         runId={flags.runId}
         ariaLive={flags.missingMaster || flags.fallbackUsed ? 'assertive' : 'polite'}
       />
+      {appointmentBanner && (
+        <ToneBanner
+          tone={appointmentBanner.tone}
+          message={appointmentBanner.message}
+          runId={flags.runId}
+          destination="予約/来院リスト"
+          nextAction="必要に応じて再取得"
+          ariaLive={appointmentBanner.tone === 'info' ? 'polite' : 'assertive'}
+        />
+      )}
       <div className="patients-tab__header">
         <div>
           <p className="patients-tab__header-label">dataSourceTransition</p>
@@ -199,6 +234,7 @@ export function PatientsTab({
                 </div>
                 <p className="patients-tab__row-detail">
                   {patient.insurance ?? patient.source} | {patient.note ?? 'メモなし'}
+                  {patient.receptionId ? ` | 受付ID: ${patient.receptionId}` : ''}
                 </p>
                 <span className="patients-tab__row-status">
                   {flags.missingMaster ? 'missingMaster 警告' : flags.cacheHit ? 'cacheHit 命中' : 'server route'}
@@ -215,6 +251,10 @@ export function PatientsTab({
               <div className="patients-tab__detail-row">
                 <label>患者ID</label>
                 <input value={selected.patientId ?? 'ID不明'} readOnly />
+              </div>
+              <div className="patients-tab__detail-row">
+                <label>受付ID</label>
+                <input value={selected.receptionId ?? '—'} readOnly />
               </div>
               <div className="patients-tab__detail-row">
                 <label>氏名 / カナ</label>
@@ -242,6 +282,18 @@ export function PatientsTab({
                 <label>ステータス</label>
                 <input value={selected.status} readOnly />
                 <input value={selected.appointmentTime ?? '時刻未設定'} readOnly />
+              </div>
+              <div className="patients-tab__detail-row">
+                <label>予約操作</label>
+                <div className="patients-tab__detail-actions">
+                  <button type="button" onClick={() => navigateToReception('appointment_change')}>
+                    予約変更へ（Reception）
+                  </button>
+                  <button type="button" onClick={() => navigateToReception('appointment_cancel')}>
+                    予約キャンセルへ（Reception）
+                  </button>
+                </div>
+                <small className="patients-tab__detail-guard">Charts は導線のみ。操作は Reception 側で実行します。</small>
               </div>
             </>
           )}

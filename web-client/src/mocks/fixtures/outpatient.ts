@@ -52,6 +52,7 @@ export const OUTPATIENT_RECEPTION_ENTRIES: ReceptionEntry[] = [
   {
     id: 'SAMPLE-02',
     appointmentId: 'APT-2402',
+    receptionId: 'RCPT-2402',
     patientId: '000002',
     name: '佐藤 太郎',
     kana: 'サトウ タロウ',
@@ -369,7 +370,7 @@ export function buildAppointmentFixture(flags: OutpatientFlagSet) {
       physicianName: entry.physician,
     })),
     visits: OUTPATIENT_RECEPTION_ENTRIES.filter((entry) => entry.source === 'visits').map((entry) => ({
-      voucherNumber: entry.id,
+      voucherNumber: entry.receptionId ?? entry.id,
       sequentialNumber: entry.appointmentId,
       appointmentTime: entry.appointmentTime?.replace(':', ''),
       updateTime: entry.appointmentTime?.replace(':', ''),
