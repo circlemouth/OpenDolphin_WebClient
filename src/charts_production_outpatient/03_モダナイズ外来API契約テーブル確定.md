@@ -87,3 +87,10 @@
 - `docs/web-client/README.md` — Active リストと最新更新サマリへ追加（RUN_ID=`20251212T143720Z`）。
 - `docs/web-client/planning/phase2/DOC_STATUS.md` — 備考に RUN_ID と本書/ログを追記。
 - `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md` — 本作業の証跡。
+
+---
+
+## 6. documentRevision 取り扱い方針（ドラフト突合用）
+- 現行の契約テーブルには `documentRevision` 項目が存在しないことを確認。クライアント側でフェイクの `documentRevision` を生成・送信することはしない。
+- 方針: 外来記録の保存/更新 API 応答ペイロードに `documentRevision`（整数の連番）と `updatedAt` を追加するようサーバー契約を拡張する。ドラフト突合はこの応答値と `contentHash` を併用する。
+- 契約更新前の暫定措置: UI の競合判定は `contentHash` と `updatedAt` のみで行い、`reason=server_newer` を表示する。契約更新後に Playwright/MSW フィクスチャへ `documentRevision` を追加し、本章の表にも追記する。

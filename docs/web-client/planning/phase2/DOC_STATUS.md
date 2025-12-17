@@ -1,7 +1,7 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
 - 本更新 RUN_ID=`20251217T130407Z`（OrcaSummary 請求/予約サマリ商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。備考: 請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。
-- 本更新 RUN_ID=`20251217T212718Z`（Charts 並行編集ロック/最終更新表示）。証跡: `docs/web-client/planning/phase2/logs/20251217T212718Z-charts-concurrent-edit-lock.md`。備考: 二段階ロック（localStorage + server editLock/ETag）、閲覧専用/強制引き継ぎフロー、最終更新ピルと `CHARTS_EDIT_LOCK` 監査を追加。
+- 本更新 RUN_ID=`20251217T212600Z`（ドラフト保存と復元 設計追加）。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md`。備考: 受付ID/患者ID/診療日/runId/facilityId/userId でドラフト束縛、localStorage+React Query 二重保存、復元ダイアログ、監査 `DRAFT_SAVE/RESTORE/DISCARD` を定義。
 - 本更新 RUN_ID=`20251217T150614Z`（DocumentTimeline 商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md`。備考: 受付→診療→ORCA 3ステップ可視化、missingMaster 強調、nextAction 表示、仮想化/折りたたみ/表示件数コントロールを追加。
 - 本更新 RUN_ID=`20251217T120220Z`（Charts 診療終了ガード・キュー再取得具体化）。証跡: `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md`。備考: READY_TO_CLOSE を分離し、ORCA送信待ちのバックオフ（5s→15s→45s, max3）と disable 理由固定・info バナー告知を追加。
 - 本更新 RUN_ID=`20251217T114331Z`（Charts 診療開始/終了の状態遷移）。証跡: `docs/web-client/planning/phase2/logs/20251217T114331Z-charts-encounter-state.md`。備考: 診療状態を OPEN/ DIRTY / QUEUE_PENDING / CLOSING / CLOSED / ABORTED に整理し、終了ガードと Timeline/Badge/Audit の一貫性を固定。
@@ -71,6 +71,7 @@
 | `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` | ChartsPage 棚卸し（計画→実装の差分） | Active | 2025-12-12 | RUN_ID=`20251212T140014Z`。P0/P1/P2 と入口/出口（Reception/Patients/Administration）責務分離案を確定。証跡: `docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`。 |
 | `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` | Charts 外来 API 契約（監査/透過/再試行ルール） | Active | 2025-12-12 | RUN_ID=`20251212T143720Z`。Playwright/fixture の単一ソースとして API 契約を固定。証跡: `docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`。 |
 | `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` | Charts 診療開始/終了 状態モデル | Active | 2025-12-17 | RUN_ID=`20251217T120220Z`（親 `20251217T114331Z`）。READY_TO_CLOSE 追加、送信待ちバックオフと終了ガード理由固定、復元戦略を定義。 |
+| `src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md` | Charts ドラフト保存/復元 | Active | 2025-12-17 | RUN_ID=`20251217T212600Z`。受付ID/患者ID/診療日/runId/facilityId/userId でドラフト束縛、localStorage+React Query 二重保存、復元ダイアログと監査 `DRAFT_SAVE/RESTORE/DISCARD` を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md`。 |
 | `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` | Charts シェル UI レイアウト確定 | Active | 2025-12-17 | RUN_ID=`20251217T060504Z`。ヘッダー/アクションバー/左右ペイン比率と画面幅別挙動、重要情報の常時視認配置を確定。 |
 | `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` | Charts ToneBanner/状態ピル一貫性 | Active | 2025-12-17 | RUN_ID=`20251217T063116Z`。Reception と語彙/aria-live/ピル順序を統一し、読み上げ抑制と tooltip 方針を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T063116Z-charts-tone-banner-pill.md`。 |
 | `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` | OrcaSummary 請求/予約サマリ商用仕上げ | Active | 2025-12-17 | RUN_ID=`20251217T130407Z`。請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線を定義。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。 |
