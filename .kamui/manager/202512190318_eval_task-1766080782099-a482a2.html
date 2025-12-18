@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body { font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif; line-height: 1.6; margin: 24px; background-color: #e9f0f2; color: #1f2a30; }
+      .monitor-wrapper { max-width: 1180px; margin: 0 auto; padding: 32px; background: #ffffff; border: 1px solid #c4d3d7; }
+      .monitor-header { display: flex; flex-direction: column; gap: 8px; margin-bottom: 24px; }
+      .monitor-title { font-size: 26px; font-weight: 700; letter-spacing: 0.04em; color: #1f2a30; }
+      .monitor-description { font-size: 14px; color: #3a4b53; }
+      .score-banner { display: flex; flex-direction: column; gap: 4px; padding: 12px 16px; background: #f0f7ff; border: 1px solid #b9d4ff; border-radius: 8px; margin-bottom: 20px; }
+      .score-main { font-size: 24px; font-weight: 700; letter-spacing: 0.04em; }
+      .score-sub { font-size: 14px; color: #2c3a40; }
+      .summary-block { margin-bottom: 16px; font-size: 14px; color: #2c3a40; }
+      .hex-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 12px; }
+      .hex { position: relative; padding: 16px 10px; text-align: center; color: #0f2733; background: #dfeff6; clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%); font-size: 12px; font-weight: 700; line-height: 1.3; min-height: 72px; }
+      .hex span { display: block; font-weight: 500; font-size: 11px; color: #39505c; margin-top: 4px; }
+      table.monitor-report { width: 100%; border-collapse: collapse; table-layout: fixed; background: #ffffff; border: 1px solid #c4d3d7; }
+      col.timestamp-column { width: 180px; }
+      col.agent-column { width: calc((100% - 180px) / 4); }
+      th, td { border: 1px solid #c4d3d7; padding: 16px; vertical-align: top; background-color: #ffffff; }
+      th { background: #d8e6e9; text-align: left; font-size: 13px; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; color: #2c3a40; }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; font-weight: 500; font-size: 13px; color: #1f2a30; padding: 0; background: transparent; border: none; }
+      .details-toggle::before { content: "▶"; font-size: 10px; transition: transform 160ms ease; display: inline-block; }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      .snapshot-summary { margin-bottom: 12px; font-weight: 500; color: #2c3a40; }
+      pre { white-space: pre-wrap; word-break: break-word; margin: 0; font-size: 12px; line-height: 1.55; color: #1f2a30; background: #f2f6f7; border: 1px solid #c4d3d7; padding: 16px; }
+      .status-badge { display: inline-block; font-size: 10px; font-weight: 600; letter-spacing: 0.02em; padding: 1px 6px; background: #d8e6e9; border: 1px solid #b8c9cd; color: #1f2a30; white-space: nowrap; line-height: 1.3; vertical-align: top; }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .agent-meta { display: block; margin-bottom: 8px; line-height: 1.5; }
+      .agent-meta .status-badge { margin-right: 6px; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+      .metric-reason { font-size: 12px; color: #2c3a40; margin: 6px 0; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク: 50 Playwright 外来カルテ主要シナリオ（受付→Charts→送信→会計）。MSW ON/OFF 両対応のE2E自動化、tone/dataSourceTransition/guard属性の検証を対象。</p>
+      </header>
+      <div class="score-banner">
+        <div class="score-main">🏆 548 / 600（平均 91.3 点・🥇 gold）</div>
+        <div class="score-sub">評価時刻: 2025-12-19 03:18 JST / 対象ブランチ: task/task-1766080782099-a482a2 / コミット: 73d16fb5</div>
+      </div>
+      <div class="summary-block">
+        受付から外来カルテ、送信、会計までの主要導線を3シナリオ（cacheHit/missingMaster/fallback）で自動化。MSW ONはx-msw-scenarioヘッダと__OUTPATIENT_SCENARIO__.updateによるrunId注入を確認し、MSW OFFはroute.fulfillで同等レスポンスをスタブ。tone bannerのaria-live、meta data属性、送信/会計ガード理由、toastのtransition表記を検証。DOC_STATUSとログ/設計ドキュメントをRUN_ID紐付けで更新済み。
+      </div>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766080782099-a482a2</th>
+            <th>Agent (比較枠)</th>
+            <th>Agent task-CCC</th>
+            <th>Agent task-DDD</th>
+            <th>Agent task-EEE</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-19 03:18</td>
+            <td>
+              <div class="hex-grid">
+                <div class="hex">機能合理性 92<span>MSW ON/OFF 両立・tone/guardをUI属性で検証</span></div>
+                <div class="hex">緻密性 90<span>meta/tone/send/billingを3シナリオで網羅</span></div>
+                <div class="hex">安定性 88<span>固有行ダブルクリック依存・selector安定性に若干の懸念</span></div>
+                <div class="hex">トレーサビリティ 95<span>DOC_STATUSとRUN_IDログを更新</span></div>
+                <div class="hex">コード品質 93<span>関数分割・定数化で可読性良好</span></div>
+                <div class="hex">実行容易性 90<span>RUN_ID指定手順とmsw off実行例を明記</span></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">completed</span>
+                <span class="agent-label">評価AI (cursor cli)</span>
+              </div>
+              <div class="metric-reason">総合: 外来主要導線のE2E化が完結。MSW ON/OFFで同一シナリオを再現し、tone/dataSourceTransition/guard属性を検証。artifact保存は共通fixturesに委譲。</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット & 差分詳細</summary>
+                <pre>73d16fb5 Add outpatient main Playwright flow and runbook
+- tests/e2e/charts-outpatient-mainflow.spec.ts: 3シナリオ×MSW ON/OFF、meta/tone/送信/会計ガード検証、スタブ投入。
+- docs/web-client/planning/phase2/DOC_STATUS.md: RUN_ID=20251218T180331Zを追記。
+- docs/web-client/planning/phase2/logs/20251218T180331Z-charts-outpatient-playwright-main.md: 実装ログ。
+- src/charts_production_outpatient/quality/50_Playwright外来カルテ主要シナリオ.md: 実装手順/期待値まとめ。</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">リスク/改善ポイント</summary>
+                <pre>- 固定行名（山田花子）ダブルクリック依存でデータ変化に弱い。
+- billing遷移後のmeta検証はrunIdのみでtone継続性未確認。
+- MSW OFFスタブで複数患者/受付パターン未網羅、ガード理由文字列の厳密一致までは検証していない。</pre>
+              </details>
+              <div class="metric-reason">成果物リンク: tests/e2e/charts-outpatient-mainflow.spec.ts, docs/web-client/planning/phase2/logs/20251218T180331Z-charts-outpatient-playwright-main.md, src/charts_production_outpatient/quality/50_Playwright外来カルテ主要シナリオ.md</div>
+            </td>
+            <td>
+              <div class="hex-grid">
+                <div class="hex">比較対象なし<span>—</span></div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">pending</span>
+                <span class="agent-label">他AI評価データなし</span>
+              </div>
+            </td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">pending</span><span class="agent-label">未割当</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">pending</span><span class="agent-label">未割当</span></div></td>
+            <td><div class="agent-meta"><span class="status-badge status-badge--pending">pending</span><span class="agent-label">未割当</span></div></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
