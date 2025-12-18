@@ -41,6 +41,8 @@ Charts が利用する「予約一覧 / 患者別予約 / 来院中リスト」�
   - `ReceptionEntry.receptionId?: string` を追加。
 - `web-client/src/features/outpatient/transformers.ts`
   - `slots/reservations/visits` のパースで `receptionId` を抽出し、重複排除（visits 優先）を追加。
+  - `receptionId` 抽出は `voucherNumber` に加え `acceptanceId` の揺れも吸収する。
+  - 重複排除のマージは `undefined` での上書きを避け、情報落ちを防止する（定義済みフィールド優先）。
   - ランダムID生成（Math.random）を廃止し、入力に基づく安定IDへ。
 - `web-client/src/features/reception/api.ts`
   - 空データ時の **サンプル注入を撤廃**（MSW fixture のみがサンプル提供）。
@@ -56,6 +58,7 @@ Charts が利用する「予約一覧 / 患者別予約 / 来院中リスト」�
   - 予約変更/キャンセルの導線（Reception への遷移）を追加。
 - `web-client/src/features/reception/pages/ReceptionPage.tsx`
   - `intent` パラメータを保持し、Charts から来たことをバナーで表示。
+  - Reception 一覧でも `受付ID` を表示し、受付側での突合が Charts 依存にならないようにする。
 
 ---
 
