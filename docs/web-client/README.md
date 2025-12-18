@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251218T183545Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251218T213011Z`）
 > 2025-12-14 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T183545Z`）
+### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T213011Z`）
+- 54 リリース前チェックリストと DOC_STATUS 更新（RUN_ID=`20251218T213011Z`）。DoD 達成サマリと未完了項目（Stage/Preview 実 API 再検証、性能実測、予約変更は Reception 委譲、APM 未接続）を整理し、DOC_STATUS に RUN_ID を追記。成果物: `src/charts_production_outpatient/quality/54_リリース前チェックリストとDOC_STATUS更新.md`。
 - 52 監査ログ/テレメトリ証跡化（RUN_ID=`20251218T183545Z`）。telemetry (`recordOutpatientFunnel`) と auditEvent が同一 `runId/traceId` で追跡できることを vitest で確認。証跡: `docs/server-modernization/phase2/operations/logs/20251218T183545Z-charts-audit-telemetry.md` / 計画: `docs/web-client/planning/phase2/logs/20251218T183545Z-charts-audit-telemetry.md` / 成果物: `src/charts_production_outpatient/quality/52_監査ログ_テレメトリ_証跡化.md` / テスト: `web-client/src/features/charts/__tests__/auditTelemetryRunId.test.ts`。
 - 53 障害注入（タイムアウト/500/スキーマ不一致/キュー滞留）（RUN_ID=`20251218T171651Z`）。MSW の `x-msw-fault`/`x-msw-delay-ms` で Charts の外来 API に故障を注入し、解除後に再取得で復帰できることを確認可能化。証跡: `docs/web-client/planning/phase2/logs/20251218T171651Z-charts-fault-injection.md` / 成果物: `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md` / 実装: `web-client/src/mocks/handlers/outpatient.ts`, `web-client/src/mocks/handlers/orcaQueue.ts`, `web-client/src/libs/http/header-flags.ts`, `web-client/src/features/outpatient/OutpatientMockPage.tsx` / E2E: `tests/e2e/charts-fault-injection.msw.spec.ts`。
 - 43 `/orca12/patientmodv2/outpatient` 編集導線（患者更新）（RUN_ID=`20251218T115400Z`）。Charts 患者サイドペインから「基本/保険」を安全に更新（権限/監査/差分確認/巻き戻し/再試行）。`operation=create/update/delete` と `changedKeys` を監査ログへ残し、入力検証（形式/必須/マスタ依存）と `role=alert` エラー表示を統一。証跡: `src/charts_production_outpatient/integration/logs/20251218T115400Z-patientmodv2-outpatient-edit.md` / 成果物: `src/charts_production_outpatient/integration/43_patientmodv2_outpatient編集導線.md` / 実装: `web-client/src/features/charts/PatientsTab.tsx`, `web-client/src/features/charts/PatientInfoEditDialog.tsx`, `web-client/src/features/patients/api.ts`。
