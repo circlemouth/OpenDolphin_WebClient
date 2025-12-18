@@ -1,7 +1,7 @@
 import { Global } from '@emotion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AuthServiceControls } from '../AuthServiceControls';
 import { useAuthService, type DataSourceTransition } from '../authService';
@@ -23,6 +23,15 @@ import { useSession } from '../../../AppRouter';
 import { fetchEffectiveAdminConfig, type ChartsMasterSourcePolicy } from '../../administration/api';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
+import {
+  buildChartsEncounterSearch,
+  hasEncounterContext,
+  loadChartsEncounterContext,
+  normalizeVisitDate,
+  parseChartsEncounterContext,
+  storeChartsEncounterContext,
+  type OutpatientEncounterContext,
+} from '../encounterContext';
 
 const isLikelyNetworkError = (error: unknown) => {
   if (!error) return false;
@@ -46,14 +55,32 @@ function ChartsContent() {
   const session = useSession();
   const queryClient = useQueryClient();
   const location = useLocation();
-  const navigationState = (location.state as { patientId?: string; appointmentId?: string } | null) ?? {};
-  const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>(navigationState.patientId);
-  const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | undefined>(navigationState.appointmentId);
-  const [draftState, setDraftState] = useState<{ dirty: boolean; patientId?: string; appointmentId?: string }>({ dirty: false });
+  const navigate = useNavigate();
+  const navigationState = (location.state as Partial<OutpatientEncounterContext> | null) ?? {};
+  const [encounterContext, setEncounterContext] = useState<OutpatientEncounterContext>(() => {
+    const urlContext = parseChartsEncounterContext(location.search);
+    if (hasEncounterContext(urlContext)) return urlContext;
+    const stored = loadChartsEncounterContext();
+    if (hasEncounterContext(stored)) return stored ?? {};
+    return {
+      patientId: typeof navigationState.patientId === 'string' ? navigationState.patientId : undefined,
+      appointmentId: typeof navigationState.appointmentId === 'string' ? navigationState.appointmentId : undefined,
+      receptionId: typeof navigationState.receptionId === 'string' ? navigationState.receptionId : undefined,
+      visitDate: normalizeVisitDate(typeof navigationState.visitDate === 'string' ? navigationState.visitDate : undefined),
+    };
+  });
+  const [draftState, setDraftState] = useState<{
+    dirty: boolean;
+    patientId?: string;
+    appointmentId?: string;
+    receptionId?: string;
+    visitDate?: string;
+  }>({ dirty: false });
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [contextAlert, setContextAlert] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [deliveryImpactBanner, setDeliveryImpactBanner] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [deliveryAppliedMeta, setDeliveryAppliedMeta] = useState<{
     appliedAt: string;
@@ -80,6 +107,46 @@ function ChartsContent() {
     chartsSendEnabled?: boolean;
     chartsMasterSource?: ChartsMasterSourcePolicy;
   }>({});
+
+  const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
+
+  const sameEncounterContext = useCallback((left: OutpatientEncounterContext, right: OutpatientEncounterContext) => {
+    return (
+      (left.patientId ?? '') === (right.patientId ?? '') &&
+      (left.appointmentId ?? '') === (right.appointmentId ?? '') &&
+      (left.receptionId ?? '') === (right.receptionId ?? '') &&
+      (normalizeVisitDate(left.visitDate) ?? '') === (normalizeVisitDate(right.visitDate) ?? '')
+    );
+  }, []);
+
+  useEffect(() => {
+    if (!hasEncounterContext(urlContext)) return;
+    if (sameEncounterContext(urlContext, encounterContext)) return;
+    if (draftState.dirty || lockState.locked) {
+      setContextAlert({
+        tone: 'warning',
+        message: '未保存ドラフトまたは処理中のため、URL からの患者切替をブロックしました（別患者混入防止）。',
+      });
+      const currentSearch = buildChartsEncounterSearch(encounterContext);
+      if (location.search !== currentSearch) {
+        navigate({ pathname: '/charts', search: currentSearch }, { replace: true });
+      }
+      return;
+    }
+    setEncounterContext(urlContext);
+    setContextAlert({
+      tone: 'info',
+      message: 'URL の外来コンテキストに合わせて表示を更新しました（戻る/進む操作）。',
+    });
+  }, [draftState.dirty, encounterContext, location.search, lockState.locked, navigate, sameEncounterContext, urlContext]);
+
+  useEffect(() => {
+    if (!hasEncounterContext(encounterContext)) return;
+    storeChartsEncounterContext(encounterContext);
+    const nextSearch = buildChartsEncounterSearch(encounterContext);
+    if (location.search === nextSearch) return;
+    navigate({ pathname: '/charts', search: nextSearch }, { replace: true });
+  }, [encounterContext, location.search, navigate]);
 
   const adminQueryKey = ['admin-effective-config'];
   const adminConfigQuery = useQuery({
@@ -337,9 +404,9 @@ function ChartsContent() {
 
   const selectedQueueEntry = useMemo(() => {
     const entries = (claimQuery.data as ClaimOutpatientPayload | undefined)?.queueEntries ?? [];
-    if (!selectedPatientId) return entries[0];
-    return entries.find((entry) => entry.patientId === selectedPatientId) ?? entries[0];
-  }, [claimQuery.data, selectedPatientId]);
+    if (!encounterContext.patientId) return entries[0];
+    return entries.find((entry) => entry.patientId === encounterContext.patientId) ?? entries[0];
+  }, [claimQuery.data, encounterContext.patientId]);
 
   const hasPermission = useMemo(() => hasStoredAuth(), []);
 
@@ -417,14 +484,18 @@ function ChartsContent() {
   );
 
   const selectedEntry = useMemo(() => {
-    if (!selectedPatientId && !selectedAppointmentId) return undefined;
-    const byAppointment = selectedAppointmentId
-      ? patientEntries.find((entry) => entry.appointmentId === selectedAppointmentId)
+    if (!encounterContext.patientId && !encounterContext.appointmentId && !encounterContext.receptionId) return undefined;
+    const byReception = encounterContext.receptionId
+      ? patientEntries.find((entry) => entry.receptionId === encounterContext.receptionId)
+      : undefined;
+    if (byReception) return byReception;
+    const byAppointment = encounterContext.appointmentId
+      ? patientEntries.find((entry) => entry.appointmentId === encounterContext.appointmentId)
       : undefined;
     if (byAppointment) return byAppointment;
-    if (!selectedPatientId) return undefined;
-    return patientEntries.find((entry) => (entry.patientId ?? entry.id) === selectedPatientId);
-  }, [patientEntries, selectedAppointmentId, selectedPatientId]);
+    if (!encounterContext.patientId) return undefined;
+    return patientEntries.find((entry) => (entry.patientId ?? entry.id) === encounterContext.patientId);
+  }, [encounterContext.appointmentId, encounterContext.patientId, encounterContext.receptionId, patientEntries]);
   const appointmentRecordsReturned = useMemo(
     () =>
       appointmentPages.reduce(
@@ -449,11 +520,42 @@ function ChartsContent() {
   );
   useEffect(() => {
     if (patientEntries.length === 0) return;
-    if (selectedPatientId || selectedAppointmentId) return;
+    if (draftState.dirty || lockState.locked) return;
+    const resolve = (entries: ReceptionEntry[], context: OutpatientEncounterContext) => {
+      if (context.receptionId) return entries.find((entry) => entry.receptionId === context.receptionId);
+      if (context.appointmentId) return entries.find((entry) => entry.appointmentId === context.appointmentId);
+      if (context.patientId) return entries.find((entry) => (entry.patientId ?? entry.id) === context.patientId);
+      return undefined;
+    };
+
+    const resolved = resolve(patientEntries, encounterContext);
     const head = patientEntries[0];
-    setSelectedPatientId(head.patientId ?? head.id);
-    setSelectedAppointmentId(head.appointmentId);
-  }, [patientEntries, selectedAppointmentId, selectedPatientId]);
+    if (!resolved && hasEncounterContext(encounterContext)) {
+      setContextAlert({
+        tone: 'warning',
+        message: `指定された外来コンテキストが見つかりません（patientId=${encounterContext.patientId ?? '―'} receptionId=${encounterContext.receptionId ?? '―'}）。先頭の患者へ切替えました。`,
+      });
+      setEncounterContext({
+        patientId: head.patientId ?? head.id,
+        appointmentId: head.appointmentId,
+        receptionId: head.receptionId,
+        visitDate: normalizeVisitDate(head.visitDate) ?? today,
+      });
+      return;
+    }
+
+    const chosen = resolved ?? head;
+    const nextContext: OutpatientEncounterContext = {
+      patientId: chosen.patientId ?? chosen.id,
+      appointmentId: chosen.appointmentId,
+      receptionId: chosen.receptionId,
+      visitDate: normalizeVisitDate(chosen.visitDate) ?? encounterContext.visitDate ?? today,
+    };
+    if (!sameEncounterContext(nextContext, encounterContext)) {
+      setEncounterContext(nextContext);
+      setContextAlert(null);
+    }
+  }, [draftState.dirty, encounterContext, lockState.locked, patientEntries, sameEncounterContext, today]);
 
   const latestAuditEvent = useMemo(() => {
     const auditMeta = {
@@ -502,6 +604,16 @@ function ChartsContent() {
         </div>
       </section>
       <AdminBroadcastBanner broadcast={broadcast} surface="charts" />
+      {contextAlert ? (
+        <ToneBanner
+          tone={contextAlert.tone}
+          message={contextAlert.message}
+          destination="Charts"
+          nextAction="必要なら Reception で再選択"
+          runId={flags.runId}
+          ariaLive={contextAlert.tone === 'info' ? 'polite' : 'assertive'}
+        />
+      ) : null}
       {deliveryImpactBanner ? (
         <ToneBanner
           tone={deliveryImpactBanner.tone}
@@ -555,7 +667,7 @@ function ChartsContent() {
               selectedEntry={selectedEntry}
               sendEnabled={sendAllowedByDelivery}
               sendDisabledReason={sendDisabledReason}
-              patientId={selectedPatientId}
+              patientId={encounterContext.patientId}
               queueEntry={selectedQueueEntry}
               hasUnsavedDraft={draftState.dirty}
               hasPermission={hasPermission}
@@ -576,8 +688,9 @@ function ChartsContent() {
             entries={patientEntries}
             appointmentBanner={appointmentBanner}
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-            selectedPatientId={selectedPatientId}
-            selectedAppointmentId={selectedAppointmentId}
+            selectedPatientId={encounterContext.patientId}
+            selectedAppointmentId={encounterContext.appointmentId}
+            selectedReceptionId={encounterContext.receptionId}
             claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
             claimError={
               claimQuery.isError
@@ -611,11 +724,20 @@ function ChartsContent() {
             entries={patientEntries}
             appointmentBanner={appointmentBanner}
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-            selectedPatientId={selectedPatientId}
+            selectedContext={encounterContext}
             draftDirty={draftState.dirty}
+            switchLocked={lockState.locked}
+            switchLockedReason={lockState.reason}
             onDraftDirtyChange={(next) => setDraftState(next)}
-            onSelectPatient={setSelectedPatientId}
-            onSelectAppointment={setSelectedAppointmentId}
+            onSelectEncounter={(next) => {
+              if (!next) return;
+              setEncounterContext((prev) => ({
+                ...prev,
+                ...next,
+                visitDate: normalizeVisitDate(next.visitDate) ?? prev.visitDate ?? today,
+              }));
+              setContextAlert(null);
+            }}
           />
         </div>
         <div className="charts-card">
