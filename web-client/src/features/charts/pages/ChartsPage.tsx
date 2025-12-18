@@ -53,6 +53,8 @@ function ChartsContent() {
     deliveredAt?: string;
     deliveryId?: string;
     deliveryVersion?: string;
+    syncMismatch?: boolean;
+    syncMismatchFields?: string;
   } | null>(null);
   const appliedMeta = useRef<{
     runId?: string;
@@ -135,6 +137,8 @@ function ChartsContent() {
       deliveredAt: data.deliveredAt,
       deliveryId: data.deliveryId,
       deliveryVersion: data.deliveryVersion,
+      syncMismatch: data.syncMismatch,
+      syncMismatchFields: data.syncMismatchFields?.length ? data.syncMismatchFields.join(', ') : undefined,
     });
     logAuditEvent({
       runId: data.runId ?? flags.runId,
@@ -153,6 +157,12 @@ function ChartsContent() {
           chartsDisplayEnabled: data.chartsDisplayEnabled,
           chartsSendEnabled: data.chartsSendEnabled,
           chartsMasterSource: data.chartsMasterSource,
+        },
+        syncMismatch: data.syncMismatch,
+        syncMismatchFields: data.syncMismatchFields,
+        raw: {
+          config: data.rawConfig,
+          delivery: data.rawDelivery,
         },
       },
     });
@@ -475,6 +485,10 @@ function ChartsContent() {
             <span className="charts-page__pill">deliveredAt: {deliveryAppliedMeta.deliveredAt ?? '―'}</span>
             <span className="charts-page__pill">deliveryId: {deliveryAppliedMeta.deliveryId ?? '―'}</span>
             <span className="charts-page__pill">deliveryVersion: {deliveryAppliedMeta.deliveryVersion ?? '―'}</span>
+            <span className="charts-page__pill">
+              syncMismatch: {deliveryAppliedMeta.syncMismatch === undefined ? '―' : String(deliveryAppliedMeta.syncMismatch)}
+            </span>
+            <span className="charts-page__pill">mismatchFields: {deliveryAppliedMeta.syncMismatchFields ?? '―'}</span>
           </div>
         </section>
       ) : null}
