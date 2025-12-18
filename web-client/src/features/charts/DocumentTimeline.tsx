@@ -14,6 +14,7 @@ export interface DocumentTimelineProps {
   auditEvent?: Record<string, unknown>;
   selectedPatientId?: string;
   selectedAppointmentId?: string;
+  selectedReceptionId?: string;
   claimData?: ClaimOutpatientPayload;
   claimError?: Error;
   isClaimLoading?: boolean;
@@ -86,6 +87,7 @@ export function DocumentTimeline({
   auditEvent,
   selectedPatientId,
   selectedAppointmentId,
+  selectedReceptionId,
   claimData,
   claimError,
   isClaimLoading,
@@ -155,10 +157,11 @@ export function DocumentTimeline({
   const selectedIndex = useMemo(() =>
     sortedEntries.findIndex(
       (entry) =>
-        (selectedPatientId && entry.patientId === selectedPatientId) ||
-        (selectedAppointmentId && entry.appointmentId === selectedAppointmentId),
+        (selectedReceptionId && entry.receptionId === selectedReceptionId) ||
+        (selectedAppointmentId && entry.appointmentId === selectedAppointmentId) ||
+        (selectedPatientId && entry.patientId === selectedPatientId),
     ),
-  [selectedAppointmentId, selectedPatientId, sortedEntries]);
+  [selectedAppointmentId, selectedPatientId, selectedReceptionId, sortedEntries]);
 
   useEffect(() => {
     if (selectedIndex < 0) return;
@@ -232,23 +235,33 @@ export function DocumentTimeline({
         {!collapsedSections[section.status] &&
           section.items.map((entry) => {
             const isSelected =
+              (selectedReceptionId && entry.receptionId === selectedReceptionId) ||
               (selectedPatientId && entry.patientId === selectedPatientId) ||
               (selectedAppointmentId && entry.appointmentId === selectedAppointmentId);
             const shouldHighlight = resolvedMissingMaster || isSelected;
             const bundle = pickClaimBundleForEntry(entry, claimBundles);
             const nextAction = deriveNextAction(entry.status, queuePhase, resolvedMissingMaster);
             const bundleStatus = bundle?.claimStatus ?? '診療中';
-            const queueStepStatus: Record<'受付' | '診療' | 'ORCAキュー', 'done' | 'active' | 'blocked' | 'pending'> = {
-              受付: 'done',
-              診療: entry.status === '受付中' || entry.status === '予約' ? 'active' : 'done',
-              ORCAキュー:
-                queuePhase === 'error'
-                  ? 'blocked'
-                  : queuePhase === 'retrying' || queuePhase === 'pending'
+            const queueStepStatus: Record<'受付' | '診療' | '会計', 'done' | 'active' | 'blocked' | 'pending'> = {
+              受付: entry.status === '予約' ? 'pending' : 'done',
+              診療:
+                entry.status === '予約' || entry.status === '受付中'
+                  ? 'pending'
+                  : entry.status === '診療中'
                     ? 'active'
-                    : bundleStatus === '会計待ち' || bundleStatus === '会計済み'
-                      ? 'done'
-                      : 'pending',
+                    : 'done',
+              会計:
+                entry.status === '会計済み'
+                  ? 'done'
+                  : entry.status === '会計待ち'
+                    ? 'active'
+                    : queuePhase === 'error' || queuePhase === 'holding'
+                      ? 'blocked'
+                      : queuePhase === 'retrying' || queuePhase === 'pending'
+                        ? 'pending'
+                        : bundleStatus === '会計待ち' || bundleStatus === '会計済み'
+                          ? 'active'
+                          : 'pending',
             };
 
             return (
@@ -270,8 +283,8 @@ export function DocumentTimeline({
                   {queuePhase === 'error' && <span className="document-timeline__badge-error">再取得待ち</span>}
                   {queuePhase === 'retrying' && <span className="document-timeline__badge-info">再取得中</span>}
                 </header>
-                <div className="document-timeline__steps" aria-label="受付からORCAまでの進捗">
-                  {(['受付', '診療', 'ORCAキュー'] as const).map((step) => (
+                <div className="document-timeline__steps" aria-label="受付から会計までの進捗">
+                  {(['受付', '診療', '会計'] as const).map((step) => (
                     <div key={step} className={`document-timeline__step document-timeline__step--${queueStepStatus[step]}`}>
                       <span className="document-timeline__step-label">{step}</span>
                     </div>
@@ -298,6 +311,7 @@ export function DocumentTimeline({
     resolvedRunId,
     selectedAppointmentId,
     selectedPatientId,
+    selectedReceptionId,
     toggleSection,
   ]);
 

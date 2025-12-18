@@ -579,6 +579,12 @@ export function ChartsActionBar({
           <span className="charts-actions__pill">missingMaster: {String(missingMaster)}</span>
           <span className="charts-actions__pill">fallbackUsed: {String(fallbackUsed)}</span>
           <span className="charts-actions__pill">draftDirty: {String(hasUnsavedDraft)}</span>
+          <span className="charts-actions__pill">
+            患者: {selectedEntry?.name ?? '未選択'}（{selectedEntry?.patientId ?? selectedEntry?.appointmentId ?? 'ID不明'}）
+          </span>
+          <span className="charts-actions__pill">受付ID: {selectedEntry?.receptionId ?? '—'}</span>
+          <span className="charts-actions__pill">診療日: {selectedEntry?.visitDate ?? '—'}</span>
+          <span className="charts-actions__pill">現在: {selectedEntry?.status ?? '—'}（受付→診療→会計）</span>
         </div>
       </header>
 

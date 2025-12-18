@@ -8,27 +8,36 @@ import { recordChartsAuditEvent } from './audit';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
+import type { OutpatientEncounterContext } from './encounterContext';
 
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
   appointmentBanner?: AppointmentDataBanner | null;
   auditEvent?: Record<string, unknown>;
-  selectedPatientId?: string;
+  selectedContext?: OutpatientEncounterContext;
   draftDirty?: boolean;
-  onDraftDirtyChange?: (params: { dirty: boolean; patientId?: string; appointmentId?: string }) => void;
-  onSelectPatient?: (patientId?: string) => void;
-  onSelectAppointment?: (appointmentId?: string) => void;
+  switchLocked?: boolean;
+  switchLockedReason?: string;
+  onDraftDirtyChange?: (params: {
+    dirty: boolean;
+    patientId?: string;
+    appointmentId?: string;
+    receptionId?: string;
+    visitDate?: string;
+  }) => void;
+  onSelectEncounter?: (context?: OutpatientEncounterContext) => void;
 }
 
 export function PatientsTab({
   entries = [],
   appointmentBanner,
   auditEvent,
-  selectedPatientId,
+  selectedContext,
   draftDirty = false,
+  switchLocked = false,
+  switchLockedReason,
   onDraftDirtyChange,
-  onSelectPatient,
-  onSelectAppointment,
+  onSelectEncounter,
 }: PatientsTabProps) {
   const { flags } = useAuthService();
   const navigate = useNavigate();
@@ -39,7 +48,9 @@ export function PatientsTab({
   };
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
   const [keyword, setKeyword] = useState('');
-  const [localSelectedId, setLocalSelectedId] = useState<string | undefined>(selectedPatientId);
+  const [localSelectedKey, setLocalSelectedKey] = useState<string | undefined>(
+    selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId,
+  );
   const [noteDraft, setNoteDraft] = useState('');
   const lastAuditPatientId = useRef<string | undefined>();
 
@@ -47,34 +58,57 @@ export function PatientsTab({
     const kw = keyword.trim().toLowerCase();
     if (!kw) return entries;
     return entries.filter((entry) =>
-      [entry.patientId, entry.name, entry.kana, entry.appointmentId].some((field) =>
+      [entry.patientId, entry.name, entry.kana, entry.appointmentId, entry.receptionId].some((field) =>
         field?.toLowerCase().includes(kw),
       ),
     );
   }, [entries, keyword]);
 
   const selected = useMemo(() => {
-    const id = selectedPatientId ?? localSelectedId;
-    if (id) {
+    if (selectedContext?.receptionId) {
+      return filteredEntries.find((entry) => entry.receptionId === selectedContext.receptionId) ?? filteredEntries[0];
+    }
+    if (selectedContext?.appointmentId) {
+      return filteredEntries.find((entry) => entry.appointmentId === selectedContext.appointmentId) ?? filteredEntries[0];
+    }
+    if (selectedContext?.patientId) {
+      return filteredEntries.find((entry) => (entry.patientId ?? entry.id) === selectedContext.patientId) ?? filteredEntries[0];
+    }
+    if (localSelectedKey) {
       return filteredEntries.find(
-        (entry) => entry.patientId === id || entry.appointmentId === id || entry.id === id,
+        (entry) =>
+          entry.receptionId === localSelectedKey ||
+          entry.appointmentId === localSelectedKey ||
+          entry.patientId === localSelectedKey ||
+          entry.id === localSelectedKey,
       );
     }
     return filteredEntries[0];
-  }, [filteredEntries, localSelectedId, selectedPatientId]);
+  }, [filteredEntries, localSelectedKey, selectedContext?.appointmentId, selectedContext?.patientId, selectedContext?.receptionId]);
 
   useEffect(() => {
     if (!selected && filteredEntries[0]) {
-      const fallbackId = filteredEntries[0].patientId ?? filteredEntries[0].id;
-      setLocalSelectedId(fallbackId);
-      onSelectPatient?.(fallbackId);
-      onSelectAppointment?.(filteredEntries[0].appointmentId);
-      onDraftDirtyChange?.({ dirty: false, patientId: fallbackId, appointmentId: filteredEntries[0].appointmentId });
+      const head = filteredEntries[0];
+      const fallbackId = head.patientId ?? head.id;
+      setLocalSelectedKey(head.receptionId ?? head.appointmentId ?? fallbackId);
+      onSelectEncounter?.({
+        patientId: fallbackId,
+        appointmentId: head.appointmentId,
+        receptionId: head.receptionId,
+        visitDate: head.visitDate,
+      });
+      onDraftDirtyChange?.({
+        dirty: false,
+        patientId: fallbackId,
+        appointmentId: head.appointmentId,
+        receptionId: head.receptionId,
+        visitDate: head.visitDate,
+      });
       recordChartsAuditEvent({
         action: 'CHARTS_PATIENT_SWITCH',
         outcome: 'success',
         patientId: fallbackId,
-        appointmentId: filteredEntries[0].appointmentId,
+        appointmentId: head.appointmentId,
         note: 'auto-select first patient',
         dataSourceTransition: flags.dataSourceTransition,
         cacheHit: flags.cacheHit,
@@ -84,14 +118,33 @@ export function PatientsTab({
       });
       lastAuditPatientId.current = fallbackId;
     }
-  }, [filteredEntries, onDraftDirtyChange, onSelectAppointment, onSelectPatient, selected]);
+  }, [filteredEntries, onDraftDirtyChange, onSelectEncounter, selected]);
 
   const handleSelect = (entry: ReceptionEntry) => {
+    if (switchLocked) return;
     const nextId = entry.patientId ?? entry.id;
-    setLocalSelectedId(nextId);
-    onSelectPatient?.(nextId);
-    onSelectAppointment?.(entry.appointmentId);
-    onDraftDirtyChange?.({ dirty: false, patientId: nextId, appointmentId: entry.appointmentId });
+    const nextKey = entry.receptionId ?? entry.appointmentId ?? nextId;
+    const currentKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId ?? localSelectedKey;
+    if (draftDirty && currentKey && nextKey && currentKey !== nextKey) {
+      const confirmed = typeof window === 'undefined'
+        ? true
+        : window.confirm('未保存の入力があります。ドラフトを破棄して患者を切り替えますか？');
+      if (!confirmed) return;
+    }
+    setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
+    onSelectEncounter?.({
+      patientId: nextId,
+      appointmentId: entry.appointmentId,
+      receptionId: entry.receptionId,
+      visitDate: entry.visitDate,
+    });
+    onDraftDirtyChange?.({
+      dirty: false,
+      patientId: nextId,
+      appointmentId: entry.appointmentId,
+      receptionId: entry.receptionId,
+      visitDate: entry.visitDate,
+    });
     if (lastAuditPatientId.current !== nextId) {
       recordChartsAuditEvent({
         action: 'CHARTS_PATIENT_SWITCH',
@@ -113,14 +166,19 @@ export function PatientsTab({
 
   useEffect(() => {
     setNoteDraft(selected?.note ?? '');
-    onDraftDirtyChange?.({ dirty: false, patientId: selected?.patientId, appointmentId: selected?.appointmentId });
-  }, [onDraftDirtyChange, selected?.appointmentId, selected?.note, selected?.patientId]);
+    onDraftDirtyChange?.({
+      dirty: false,
+      patientId: selected?.patientId,
+      appointmentId: selected?.appointmentId,
+      receptionId: selected?.receptionId,
+      visitDate: selected?.visitDate,
+    });
+  }, [onDraftDirtyChange, selected?.appointmentId, selected?.note, selected?.patientId, selected?.receptionId, selected?.visitDate]);
 
   useEffect(() => {
-    if (selectedPatientId) {
-      setLocalSelectedId(selectedPatientId);
-    }
-  }, [selectedPatientId]);
+    const nextKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId;
+    if (nextKey) setLocalSelectedKey(nextKey);
+  }, [selectedContext?.appointmentId, selectedContext?.patientId, selectedContext?.receptionId]);
 
   const navigateToReception = (intent: 'appointment_change' | 'appointment_cancel') => {
     const keywordValue = selected?.appointmentId ?? selected?.patientId ?? selected?.receptionId ?? '';
@@ -131,7 +189,7 @@ export function PatientsTab({
     recordChartsAuditEvent({
       action: 'CHARTS_NAVIGATE_RECEPTION',
       outcome: 'success',
-      patientId: selected?.patientId ?? localSelectedId,
+      patientId: selected?.patientId ?? selectedContext?.patientId ?? localSelectedKey,
       appointmentId: selected?.appointmentId,
       note: `navigate to reception intent=${intent}`,
       dataSourceTransition: flags.dataSourceTransition,
@@ -206,11 +264,13 @@ export function PatientsTab({
           />
         </label>
         <div className="patients-tab__edit-guard" aria-live="polite">
-          {isReadOnly
-            ? 'missingMaster または tone=server 中は編集不可'
-            : draftDirty
-              ? '未保存ドラフトあり（ORCA送信前にドラフト保存してください）'
-              : '編集可能（server route 待機中）'}
+          {switchLocked
+            ? `他の処理が進行中のため患者切替をロック中${switchLockedReason ? `: ${switchLockedReason}` : ''}`
+            : isReadOnly
+              ? 'missingMaster または tone=server 中は編集不可'
+              : draftDirty
+                ? '未保存ドラフトあり（ORCA送信前にドラフト保存してください）'
+                : '編集可能（server route 待機中）'}
         </div>
       </div>
 
@@ -228,15 +288,20 @@ export function PatientsTab({
           )}
           {filteredEntries.slice(0, 8).map((patient) => {
             const isSelected =
-              (selectedPatientId && (patient.patientId === selectedPatientId || patient.id === selectedPatientId)) ||
-              localSelectedId === patient.patientId ||
-              localSelectedId === patient.id;
+              (selectedContext?.receptionId && patient.receptionId === selectedContext.receptionId) ||
+              (selectedContext?.appointmentId && patient.appointmentId === selectedContext.appointmentId) ||
+              (selectedContext?.patientId && (patient.patientId === selectedContext.patientId || patient.id === selectedContext.patientId)) ||
+              localSelectedKey === patient.receptionId ||
+              localSelectedKey === patient.appointmentId ||
+              localSelectedKey === patient.patientId ||
+              localSelectedKey === patient.id;
             return (
               <button
                 key={patient.id}
                 type="button"
                 className={`patients-tab__row${isSelected ? ' patients-tab__row--selected' : ''}`}
                 data-run-id={flags.runId}
+                disabled={switchLocked}
                 onClick={() => handleSelect(patient)}
               >
                 <div className="patients-tab__row-meta">

@@ -15,6 +15,7 @@ import { getChartToneDetails } from '../../../ux/charts/tones';
 import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
+import { buildChartsUrl } from '../../charts/encounterContext';
 
 type SortKey = 'time' | 'name' | 'department';
 
@@ -490,7 +491,20 @@ export function ReceptionPage({
         missingMaster: mergedMeta.missingMaster,
         patientId: entry.patientId,
       });
-      navigate('/charts', { state: { patientId: entry.patientId, appointmentId: entry.appointmentId } });
+      const url = buildChartsUrl({
+        patientId: entry.patientId,
+        appointmentId: entry.appointmentId,
+        receptionId: entry.receptionId,
+        visitDate: entry.visitDate,
+      });
+      navigate(url, {
+        state: {
+          patientId: entry.patientId,
+          appointmentId: entry.appointmentId,
+          receptionId: entry.receptionId,
+          visitDate: entry.visitDate,
+        },
+      });
     },
     [bumpRunId, flags.runId, initialRunId, mergedMeta.cacheHit, mergedMeta.dataSourceTransition, mergedMeta.missingMaster, mergedMeta.runId, navigate],
   );

@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T022759Z`）
+### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T082404Z`）
+- Charts 外来受診コンテキスト確立（Reception→Charts で `receptionId/visitDate/patientId` を URL へ格納し、リロード/複数タブ/戻る操作でも別患者混入を防ぐガードを追加）。証跡: `docs/web-client/planning/phase2/logs/20251218T082404Z-charts-encounter-context.md` / 成果物: `src/charts_production_outpatient/workflow/30_外来受診コンテキスト確立.md`。
 - config/delivery 不一致検知（`syncMismatch`）と raw 監査強化（RUN_ID=`20251218T022759Z`）。Administration/Charts の UI に mismatch を可視化し、Charts の `admin/delivery.apply` 監査 payload に raw(config/delivery) を分離して格納。証跡: `docs/web-client/planning/phase2/logs/20251218T022759Z-admin-syncMismatch-raw-audit.md`。
 - 41 `/api01rv2/appointment/outpatient/*` 統合（RUN_ID=`20251217T234312Z`）。予約一覧/患者別予約/来院中リストを Charts 向けに正規化し、`受付ID(receptionId)` 表示と Charts→Reception の導線（予約変更/キャンセル）を追加。予約データの未取得/不整合は `tone=info/warning` で統一。証跡: `src/charts_production_outpatient/integration/logs/20251217T234312Z-appointment-outpatient-integration.md` / 成果物: `src/charts_production_outpatient/integration/41_appointment_outpatient統合.md`。
 - Administration 設定配信（`/api/admin/config` / `/api/admin/delivery`）のフラグ同期を実装（RUN_ID=`20251217T233755Z`）。Charts の表示/送信/masterSource を配信で切替でき、Charts 側で「いつ・誰に・どの runId で」適用されたかを UI と監査ログに残す。masterSource 変更（例: `server→fallback`）は ToneBanner で明示。証跡: `docs/web-client/planning/phase2/logs/20251217T233755Z-admin-config-delivery-flags.md` / 成果物: `src/charts_production_outpatient/integration/44_admin_config_deliveryフラグ同期.md`。
@@ -41,6 +42,7 @@
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
 - `src/charts_production_outpatient/integration/41_appointment_outpatient統合.md` — `/api01rv2/appointment/outpatient/*` 統合（予約/来院 正規化＋受付ID＋導線、RUN_ID=`20251217T234312Z`）。
 - `src/charts_production_outpatient/integration/44_admin_config_deliveryフラグ同期.md` — Administration 設定配信（`/api/admin/config`/`/api/admin/delivery`）フラグ同期（RUN_ID=`20251217T233755Z`）。
+- `src/charts_production_outpatient/workflow/30_外来受診コンテキスト確立.md` — 受付ID/診療日/患者の来院コンテキストを URL/タブ/復元で破綻させないガード（RUN_ID=`20251218T082404Z`）。
 - `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` — 診療開始/終了の状態モデルと終了ガード（RUN_ID=`20251217T120220Z`）。
 - `src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md` — ORCA送信の送信前チェック（送信不可条件の列挙・状態表示・再試行/中断・証跡表示、RUN_ID=`20251217T233430Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
@@ -57,6 +59,7 @@
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
 - 証跡ログ: `planning/phase2/logs/20251217T233430Z-charts-orca-send-precheck.md`、`planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
+- 証跡ログ: `planning/phase2/logs/20251218T082404Z-charts-encounter-context.md`（外来受診コンテキスト確立）を追加。
 - 証跡ログ: `planning/phase2/logs/20251214T123042Z-module-json-ui-save.md` を追加。
 - Charts 実装ログ: `planning/phase2/logs/20251211T120619Z-charts-timeline.md`（DocumentTimeline/OrcaSummary/PatientsTab のデータバインド、RUN_ID=`20251211T120619Z`）。
 
