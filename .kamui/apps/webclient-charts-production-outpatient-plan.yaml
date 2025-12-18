@@ -510,17 +510,18 @@ src:
           - 外来医療記録を “市販カルテ相当” の読みやすさで表示するため、セクション（診断/処方/検査/処置/メモ等）に分割して提示する。
           - セクションごとの “未取得/欠落/エラー” を部分的に表示できるようにし、全体停止を避ける。
           - `recordsReturned/outcome` を UI と監査ログに反映し、監査で追える形にする。
+          - RUN_ID=`20251218T105723Z`。証跡: `src/charts_production_outpatient/integration/logs/20251218T105723Z-medicalmodv2-outpatient-sections.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api:
           - "/orca21/medicalmodv2/outpatient"
         dependency:
           - src/charts_production_outpatient/integration/41_appointment_outpatient統合.md
         schedule:
-          start: 2026-01-14T00:00:00.000Z
-          days: 5
+          start: 2025-12-18T10:57:23.000Z
+          days: 2
       43_patientmodv2_outpatient編集導線.md:
         content: |-
           # 43 `/orca12/patientmodv2/outpatient` 編集導線（患者更新）
@@ -528,9 +529,10 @@ src:
           - Charts の患者サイドペインから “安全に” 患者基本/保険情報を更新できる導線を整備する（権限/監査/差分表示）。
           - create/update/delete の操作種別（operation）を監査ログに残し、失敗時の巻き戻し/再試行を実装する。
           - 入力検証（形式/必須/マスタ依存）とエラー表示（role=alert）を統一する。
+          - RUN_ID=`20251218T115400Z`。証跡: `src/charts_production_outpatient/integration/logs/20251218T115400Z-patientmodv2-outpatient-edit.md`。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api:
           - "/orca12/patientmodv2/outpatient"
@@ -538,8 +540,8 @@ src:
           - src/charts_production_outpatient/integration/42_medicalmodv2_outpatient表示セクション分割.md
           - src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md
         schedule:
-          start: 2026-01-20T00:00:00.000Z
-          days: 4
+          start: 2025-12-18T11:54:00.000Z
+          days: 2
       44_admin_config_deliveryフラグ同期.md:
         content: |-
           # 44 `/api/admin/config` `/api/admin/delivery` フラグ同期
@@ -568,9 +570,11 @@ src:
           - ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。
           - キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。
           - traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。
+          - RUN_ID=`20251218T114241Z`。証跡: `src/charts_production_outpatient/integration/logs/20251218T114241Z-orca-queue-send-status.md`。
+          - 残タスク: MSW OFF（dev proxy/modernized）での実データ確認、Playwright（タスク50）シナリオへの組み込み、エラー/滞留の境界値（時間閾値）最終調整。
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 80
         agent: claude code
         api:
           - "/api/orca/queue"
@@ -579,8 +583,8 @@ src:
           - src/charts_production_outpatient/integration/44_admin_config_deliveryフラグ同期.md
           - src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md
         schedule:
-          start: 2026-01-25T00:00:00.000Z
-          days: 3
+          start: 2025-12-18T11:42:41.000Z
+          days: 2
     quality:
       50_Playwright外来カルテ主要シナリオ.md:
         content: |-
