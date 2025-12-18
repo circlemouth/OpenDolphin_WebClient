@@ -679,6 +679,7 @@ export function ReceptionPage({
                         <td>
                           <div className="reception-table__time">{entry.appointmentTime ?? '-'}</div>
                           <small className="reception-table__id">{entry.appointmentId ?? entry.id}</small>
+                          {entry.receptionId && <small className="reception-table__id">受付ID: {entry.receptionId}</small>}
                         </td>
                         <td>
                           <div className="reception-table__patient">

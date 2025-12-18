@@ -63,6 +63,11 @@ const buildDedupKey = (entry: ReceptionEntry) => {
   return `id:${entry.id}`;
 };
 
+const mergePreferDefined = <T extends Record<string, unknown>>(base: T, override: T): T => {
+  const definedOverrides = Object.fromEntries(Object.entries(override).filter(([, value]) => value !== undefined)) as T;
+  return { ...base, ...definedOverrides };
+};
+
 const dedupeEntries = (entries: ReceptionEntry[]) => {
   const map = new Map<string, ReceptionEntry>();
   for (const entry of entries) {
@@ -80,10 +85,17 @@ const dedupeEntries = (entries: ReceptionEntry[]) => {
           : (entry.status === '診療中' || entry.status === '会計待ち' || entry.status === '会計済み') && existing.status === '予約'
             ? entry
             : existing;
-    map.set(key, { ...existing, ...next });
+    map.set(key, mergePreferDefined(existing, next));
   }
   return Array.from(map.values());
 };
+
+const pickReceptionId = (value: any): string | undefined =>
+  value?.receptionId ??
+  value?.reception_id ??
+  value?.voucherNumber ??
+  value?.acceptanceId ??
+  value?.acceptance_id;
 
 const toClaimStatus = (statusText?: string): ClaimBundleStatus | undefined => {
   if (!statusText) return undefined;
@@ -171,7 +183,7 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
     entries.push({
       id: buildEntryId(slot.appointmentId, `slot-${index}`),
       appointmentId: slot.appointmentId,
-      receptionId: slot.receptionId ?? slot.voucherNumber ?? slot.reception_id,
+      receptionId: pickReceptionId(slot),
       patientId: patient.patientId,
       name: patient.wholeName,
       kana: patient.wholeNameKana,
@@ -192,7 +204,7 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
     entries.push({
       id: buildEntryId(reservation.appointmentId, `reservation-${index}`),
       appointmentId: reservation.appointmentId,
-      receptionId: reservation.receptionId ?? reservation.voucherNumber ?? reservation.reception_id,
+      receptionId: pickReceptionId(reservation),
       patientId: patient.patientId,
       name: patient.wholeName,
       kana: patient.wholeNameKana,
@@ -214,7 +226,7 @@ export const parseAppointmentEntries = (json: any): ReceptionEntry[] => {
   const visits: any[] = Array.isArray(json?.visits) ? json.visits : [];
   visits.forEach((visit, index) => {
     const patient = visit.patient ?? {};
-    const receptionId = visit.voucherNumber ?? visit.receptionId ?? visit.reception_id;
+    const receptionId = pickReceptionId(visit);
     entries.push({
       id: buildEntryId(receptionId, `visit-${index}`),
       appointmentId: visit.sequentialNumber,
