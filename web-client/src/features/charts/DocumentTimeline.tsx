@@ -260,10 +260,12 @@ export function DocumentTimeline({
     });
   }, [claimBundles, entries]);
 
-  const rank: Record<ReceptionStatus, number> = useMemo(
-    () => Object.fromEntries(STATUS_ORDER.map((s, idx) => [s, idx])),
-    [],
-  );
+  const rank: Record<ReceptionStatus, number> = useMemo(() => {
+    return STATUS_ORDER.reduce<Record<ReceptionStatus, number>>((acc, status, idx) => {
+      acc[status] = idx;
+      return acc;
+    }, {} as Record<ReceptionStatus, number>);
+  }, []);
 
   const sortedEntries = useMemo(() => {
     if (entriesWithClaim.length === 0) return [] as ReceptionEntry[];
@@ -320,7 +322,7 @@ export function DocumentTimeline({
     })).filter((section) => section.items.length > 0 || section.total > 0),
   [sortedEntries, windowedEntries]);
 
-  const [collapsedSections, setCollapsedSections] = useState<Record<ReceptionStatus, boolean>>({});
+  const [collapsedSections, setCollapsedSections] = useState<Partial<Record<ReceptionStatus, boolean>>>({});
 
   const toggleSection = useCallback((status: ReceptionStatus) => {
     setCollapsedSections((prev) => ({ ...prev, [status]: !prev[status] }));
