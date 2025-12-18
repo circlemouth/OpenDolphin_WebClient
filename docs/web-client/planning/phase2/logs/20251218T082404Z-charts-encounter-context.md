@@ -32,8 +32,9 @@
 - DocumentTimeline の進捗が `受付/診療/会計` の 3 ステップで表示されること。
 
 ## 実行コマンド（予定/実施）
-- `cd web-client && npm run typecheck`
-- `cd web-client && npm test`
+- `cd web-client && npm ci --cache ../tmp/npm-cache --prefer-offline`
+  - 背景: `~/.npm/_cacache` で `EACCES` が発生したため、リポジトリ配下のキャッシュに切替。
+- `cd web-client && npm run typecheck`（pass）
+- `cd web-client && npm test`（pass）
 
 ※ 本ログは「実装と同期」の証跡であり、Stage/Preview（`VITE_DISABLE_MSW=1`）の実 API 検証は別 RUN で実施する。
-
