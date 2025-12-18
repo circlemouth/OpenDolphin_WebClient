@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>評価レポート: 53 障害注入（タイムアウト/スキーマ不一致）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 12px;
+        margin: 18px 0 24px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        font-size: 14px;
+        margin: 0 0 10px 0;
+        color: #2c3a40;
+        letter-spacing: 0.03em;
+      }
+      .scorecard .total {
+        font-size: 28px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+        margin: 4px 0 8px;
+      }
+      .scorecard .meta {
+        font-size: 12px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .note {
+        font-size: 13px;
+        color: #2c3a40;
+        margin: 14px 0 0;
+        padding: 10px 12px;
+        border: 1px solid #c4d3d7;
+        background: #eef3f4;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+
+      .kpis {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 14px;
+        align-items: start;
+        margin: 12px 0 14px;
+      }
+      .radar {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 10px;
+      }
+      .radar svg {
+        width: 100%;
+        height: auto;
+        display: block;
+      }
+      .kpi-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .kpi-list li {
+        margin: 4px 0;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 11px;
+        padding: 1px 8px;
+        border-radius: 999px;
+        border: 1px solid #c4d3d7;
+        background: #eef3f4;
+        color: #2c3a40;
+      }
+      a {
+        color: #1a5a75;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 53 障害注入（タイムアウト/500/スキーマ不一致/キュー滞留）</h1>
+        <p class="monitor-description">
+          対象ブランチ <code>task/task-1766077886052-3c7ddf</code> のコミット/差分を精査し、機能合理性・緻密性を中心に採点します（監査レポートではありません）。
+        </p>
+      </header>
+
+      <section class="scoreboard" aria-label="合計点">
+        <div class="scorecard">
+          <h2>claude code / task-1766077886052-3c7ddf</h2>
+          <div class="total">521 / 600 🥇</div>
+          <p class="meta">総合: <span class="pill">87 / 100</span>（メダル: <span class="pill">gold</span>）</p>
+          <p class="meta">HEAD: <code>eb2e8e59</code> / base(master): <code>d3462491</code> / 未コミット変更: なし</p>
+        </div>
+        <div class="scorecard">
+          <h2>比較対象なし</h2>
+          <div class="total">0 / 600 ⚪️</div>
+          <p class="meta">この評価は 1 ブランチのみ指定のため、比較列は参考枠です。</p>
+          <p class="meta">（任意）別エージェント/別ブランチが提示されれば差分比較に更新できます。</p>
+        </div>
+      </section>
+
+      <p class="note">
+        注意: 成果物リンクは <code>.worktrees/task-1766077886052-3c7ddf</code> 内のファイルを参照します。worktree を削除するとリンクが切れます。
+      </p>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1766077886052-3c7ddf</th>
+            <th>比較対象なし</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-19 02:31</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">MSW による障害注入（timeout/500/schema mismatch/queue stall）を追加し、手動手順・E2E を整備。</span>
+              </div>
+
+              <div class="kpis">
+                <div
+                  class="radar"
+                  data-radar
+                  data-title="6指標（各100点）"
+                  data-scores="90,82,88,85,84,92"
+                  data-labels="機能合理性,緻密性,コード品質,テスト/検証,証跡/運用,ドキュメント"
+                >
+                  <svg viewBox="0 0 240 220" role="img" aria-label="6指標レーダーチャート（claude code）">
+                    <defs>
+                      <style>
+                        .grid { fill: none; stroke: #c4d3d7; stroke-width: 1; }
+                        .axis { stroke: #b8c9cd; stroke-width: 1; }
+                        .shape { fill: rgba(26, 90, 117, 0.22); stroke: #1a5a75; stroke-width: 2; }
+                        .label { font: 11px "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; fill: #2c3a40; }
+                        .title { font: 12px "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; fill: #1f2a30; font-weight: 700; }
+                      </style>
+                    </defs>
+                    <text class="title" x="10" y="18">6指標（各100点）</text>
+                    <g data-grid></g>
+                    <g data-axis></g>
+                    <polygon class="shape" data-shape points=""></polygon>
+                    <g data-labels></g>
+                  </svg>
+                </div>
+                <ol class="kpi-list" aria-label="指標内訳">
+                  <li>機能合理性 90点: 要件4種を MSW/ヘッダーで一括注入し、UI 操作から切替できる。</li>
+                  <li>緻密性 82点: 主要網羅は十分。ただし MSW 無効時のヘッダー付与ガード等に改善余地。</li>
+                  <li>コード品質 88点: 60s 上限・トークン化など堅実。共通化（parseFaultSpec 重複）するとさらに良い。</li>
+                  <li>テスト/検証 85点: Playwright で4パターン確認。ただしドラフト保持・医療記録側の復帰まで自動化すると強い。</li>
+                  <li>証跡/運用 84点: RUN_ID と artifacts 導線は明記。RUN_ID 未指定時の <code>unknown-run-id</code> になり得る点は注意。</li>
+                  <li>ドキュメント 92点: 手順書・実装ログ・DOC_STATUS・ハブ更新が揃い、追跡性が高い。</li>
+                </ol>
+              </div>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">仕事の概要（解決した課題 / 実現した機能）</summary>
+                <pre>
+目的:
+- Charts の外来フローで timeout / 500 / スキーマ不一致 / キュー滞留 を意図的に再現し、
+  UI が「落ちずに説明できる」ことと、解除後に復帰できることを確認可能にする。
+
+実現:
+- 共通リクエストヘッダーで x-msw-fault / x-msw-delay-ms を付与し、MSW ハンドラ側で 4 種障害を注入。
+- /outpatient-mock から障害注入を UI 操作で切替（localStorage 永続）。
+- Playwright(MSWプロファイル) で 4 パターンの「エラー表示→解除→復帰」を自動確認。
+                </pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク（worktree参照）</summary>
+                <pre>
+手順書:
+- ../../.worktrees/task-1766077886052-3c7ddf/src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md
+
+実装ログ:
+- ../../.worktrees/task-1766077886052-3c7ddf/docs/web-client/planning/phase2/logs/20251218T171651Z-charts-fault-injection.md
+
+主要実装:
+- ../../.worktrees/task-1766077886052-3c7ddf/web-client/src/libs/http/header-flags.ts
+- ../../.worktrees/task-1766077886052-3c7ddf/web-client/src/features/outpatient/OutpatientMockPage.tsx
+- ../../.worktrees/task-1766077886052-3c7ddf/web-client/src/mocks/handlers/outpatient.ts
+- ../../.worktrees/task-1766077886052-3c7ddf/web-client/src/mocks/handlers/orcaQueue.ts
+
+E2E:
+- ../../.worktrees/task-1766077886052-3c7ddf/tests/e2e/charts-fault-injection.msw.spec.ts
+                </pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ / 差分サマリ</summary>
+                <pre>
+commit:
+eb2e8e59 (HEAD -> task/task-1766077886052-3c7ddf) charts: add MSW fault injection (timeout/500/schema mismatch/queue stall)
+
+diffstat (master..HEAD):
+10 files changed, 766 insertions(+), 15 deletions(-)
+M  docs/web-client/README.md
+M  docs/web-client/planning/phase2/DOC_STATUS.md
+A  docs/web-client/planning/phase2/logs/20251218T171651Z-charts-fault-injection.md
+A  src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md
+A  tests/e2e/charts-fault-injection.msw.spec.ts
+M  web-client/src/features/outpatient/OutpatientMockPage.tsx
+M  web-client/src/libs/http/header-flags.ts
+M  web-client/src/mocks/handlers/index.ts
+A  web-client/src/mocks/handlers/orcaQueue.ts
+M  web-client/src/mocks/handlers/outpatient.ts
+                </pre>
+              </details>
+
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価コメント（良い点 / 改善提案）</summary>
+                <pre>
+良い点:
+- 障害注入を「HTTP 失敗（504/500）」と「アプリ層スキーマ不一致（200 + ERROR_*）」に分けて再現でき、現実の障害の切り分けに使える。
+- /outpatient-mock の UI から即時に切替でき、手動確認の再現性が高い（localStorage に保持）。
+- ORCA キュー滞留は lastDispatchAt を過去に倒すだけで再現しており、既存の滞留検知ロジックと整合しやすい。
+- docs/ と DOC_STATUS まで更新され、RUN_ID と証跡の導線が保たれている。
+
+改善提案（緻密性向上）:
+- MSW 無効時（VITE_DISABLE_MSW=1 や Stage 接続）に x-msw-fault / x-msw-delay-ms を付与しないガードがあると安心。
+  例: resolveHeaderFlags/buildHeaderOverrides 側で MSW 有効条件を見て抑止する、または msw=1 のときのみ注入する。
+- parseFaultSpec が outpatient.ts と orcaQueue.ts で重複しているため、共通ユーティリティ化すると保守性が上がる。
+- E2E で「医療記録側の復帰（再取得でエラー解消）」や「ドラフト保持」まで自動化できると要件達成の強度が上がる。
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">評価対象外</span>
+                <span class="agent-label">この列は比較用の空枠です。</span>
+              </div>
+              <div class="kpis">
+                <div class="radar" data-radar data-title="6指標（各100点）" data-scores="0,0,0,0,0,0" data-labels="機能合理性,緻密性,コード品質,テスト/検証,証跡/運用,ドキュメント">
+                  <svg viewBox="0 0 240 220" role="img" aria-label="6指標レーダーチャート（比較対象なし）">
+                    <defs>
+                      <style>
+                        .grid { fill: none; stroke: #c4d3d7; stroke-width: 1; }
+                        .axis { stroke: #b8c9cd; stroke-width: 1; }
+                        .shape { fill: rgba(150, 150, 150, 0.15); stroke: #6b7b82; stroke-width: 2; }
+                        .label { font: 11px "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; fill: #2c3a40; }
+                        .title { font: 12px "Hiragino Sans", "Noto Sans JP", system-ui, sans-serif; fill: #1f2a30; font-weight: 700; }
+                      </style>
+                    </defs>
+                    <text class="title" x="10" y="18">6指標（各100点）</text>
+                    <g data-grid></g>
+                    <g data-axis></g>
+                    <polygon class="shape" data-shape points=""></polygon>
+                    <g data-labels></g>
+                  </svg>
+                </div>
+                <ol class="kpi-list">
+                  <li>評価対象なし（0点扱い）</li>
+                </ol>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function () {
+        function clamp01(v) {
+          if (Number.isNaN(v)) return 0;
+          return Math.max(0, Math.min(1, v));
+        }
+
+        function polarToXY(cx, cy, radius, angleRad) {
+          return { x: cx + radius * Math.cos(angleRad), y: cy + radius * Math.sin(angleRad) };
+        }
+
+        function renderRadar(el) {
+          var labels = (el.getAttribute("data-labels") || "").split(",").map(function (s) { return s.trim(); }).filter(Boolean);
+          var scores = (el.getAttribute("data-scores") || "").split(",").map(function (s) { return Number(s.trim()); });
+          while (scores.length < labels.length) scores.push(0);
+          scores = scores.slice(0, labels.length);
+
+          var svg = el.querySelector("svg");
+          if (!svg) return;
+          var grid = svg.querySelector("[data-grid]");
+          var axis = svg.querySelector("[data-axis]");
+          var shape = svg.querySelector("[data-shape]");
+          var labelGroup = svg.querySelector("[data-labels]");
+          if (!grid || !axis || !shape || !labelGroup) return;
+
+          grid.innerHTML = "";
+          axis.innerHTML = "";
+          labelGroup.innerHTML = "";
+
+          var cx = 120;
+          var cy = 120;
+          var maxR = 78;
+          var count = Math.max(3, labels.length || 6);
+          var start = -Math.PI / 2; // 上から開始
+
+          // グリッド（3層）
+          [0.33, 0.66, 1].forEach(function (t) {
+            var pts = [];
+            for (var i = 0; i < count; i++) {
+              var a = start + (i * 2 * Math.PI) / count;
+              var p = polarToXY(cx, cy, maxR * t, a);
+              pts.push(p.x.toFixed(2) + "," + p.y.toFixed(2));
+            }
+            var poly = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
+            poly.setAttribute("class", "grid");
+            poly.setAttribute("points", pts.join(" "));
+            grid.appendChild(poly);
+          });
+
+          // 軸とラベル
+          for (var i = 0; i < count; i++) {
+            var a = start + (i * 2 * Math.PI) / count;
+            var p = polarToXY(cx, cy, maxR, a);
+            var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            line.setAttribute("class", "axis");
+            line.setAttribute("x1", String(cx));
+            line.setAttribute("y1", String(cy));
+            line.setAttribute("x2", String(p.x));
+            line.setAttribute("y2", String(p.y));
+            axis.appendChild(line);
+
+            var label = labels[i] || "指標" + (i + 1);
+            var lp = polarToXY(cx, cy, maxR + 22, a);
+            var text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+            text.setAttribute("class", "label");
+            text.setAttribute("x", String(lp.x));
+            text.setAttribute("y", String(lp.y));
+            text.setAttribute("text-anchor", lp.x >= cx ? "start" : "end");
+            text.setAttribute("dominant-baseline", lp.y >= cy ? "hanging" : "auto");
+            text.textContent = label;
+            labelGroup.appendChild(text);
+          }
+
+          // 形状
+          var pts2 = [];
+          for (var i = 0; i < count; i++) {
+            var s = clamp01((scores[i] || 0) / 100);
+            var a = start + (i * 2 * Math.PI) / count;
+            var p = polarToXY(cx, cy, maxR * s, a);
+            pts2.push(p.x.toFixed(2) + "," + p.y.toFixed(2));
+          }
+          shape.setAttribute("points", pts2.join(" "));
+        }
+
+        document.querySelectorAll("[data-radar]").forEach(renderRadar);
+      })();
+    </script>
+  </body>
+</html>
+
