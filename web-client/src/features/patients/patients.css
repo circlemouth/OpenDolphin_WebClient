@@ -240,6 +240,80 @@
   resize: vertical;
 }
 
+.patients-page__field-error {
+  margin-top: 0.25rem;
+  color: #b91c1c;
+  font-size: 0.85rem;
+}
+
+.patient-form__alert {
+  border-radius: 12px;
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  background: #fef2f2;
+  padding: 0.75rem 0.9rem;
+  color: #991b1b;
+}
+
+.patient-form__alert-title {
+  margin: 0;
+  font-weight: 900;
+  color: #7f1d1d;
+}
+
+.patient-form__alert-list {
+  margin: 0.45rem 0 0;
+  padding-left: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.patient-form__alert-link {
+  border: none;
+  padding: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+  text-decoration: underline;
+  font: inherit;
+  text-align: left;
+}
+
+.patients-page__retry-save {
+  border-radius: 12px;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  background: #eff6ff;
+  padding: 0.75rem 0.9rem;
+  color: #0f172a;
+}
+
+.patients-page__retry-save-title {
+  margin: 0;
+  font-weight: 900;
+}
+
+.patients-page__retry-save-actions {
+  margin-top: 0.5rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.patients-page__retry-save-actions button {
+  border-radius: 10px;
+  border: 1px solid rgba(59, 130, 246, 0.25);
+  padding: 0.6rem 0.75rem;
+  font-weight: 800;
+  cursor: pointer;
+  background: #ffffff;
+  color: #0f172a;
+}
+
+.patients-page__retry-save-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 .patients-page__grid .span-2 {
   grid-column: span 2;
 }
