@@ -19,6 +19,13 @@ export interface DocumentTimelineProps {
   claimError?: Error;
   isClaimLoading?: boolean;
   onRetryClaim?: () => void;
+  recordsReturned?: number;
+  hasNextPage?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  isInitialLoading?: boolean;
+  isRefetchingList?: boolean;
+  pageSize?: number;
 }
 
 const STATUS_ORDER: ReceptionStatus[] = ['受付中', '診療中', '会計待ち', '会計済み', '予約'];
@@ -92,6 +99,13 @@ export function DocumentTimeline({
   claimError,
   isClaimLoading,
   onRetryClaim,
+  recordsReturned,
+  hasNextPage,
+  onLoadMore,
+  isLoadingMore,
+  isInitialLoading,
+  isRefetchingList,
+  pageSize,
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
   const resolvedRunId = claimData?.runId ?? flags.runId;
@@ -100,7 +114,6 @@ export function DocumentTimeline({
   const resolvedTransition = claimData?.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = claimData?.fallbackUsed ?? false;
   const fallbackFlagMissing = claimData?.fallbackFlagMissing ?? false;
-  const resolvedCacheMiss = resolvedCacheHit === false;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -154,14 +167,16 @@ export function DocumentTimeline({
   const [windowSize, setWindowSize] = useState(VIRTUAL_WINDOW);
   const totalEntries = sortedEntries.length;
 
-  const selectedIndex = useMemo(() =>
-    sortedEntries.findIndex(
-      (entry) =>
-        (selectedReceptionId && entry.receptionId === selectedReceptionId) ||
-        (selectedAppointmentId && entry.appointmentId === selectedAppointmentId) ||
-        (selectedPatientId && entry.patientId === selectedPatientId),
-    ),
-  [selectedAppointmentId, selectedPatientId, selectedReceptionId, sortedEntries]);
+  const selectedIndex = useMemo(
+    () =>
+      sortedEntries.findIndex(
+        (entry) =>
+          (selectedReceptionId && entry.receptionId === selectedReceptionId) ||
+          (selectedAppointmentId && entry.appointmentId === selectedAppointmentId) ||
+          (selectedPatientId && entry.patientId === selectedPatientId),
+      ),
+    [selectedAppointmentId, selectedPatientId, selectedReceptionId, sortedEntries],
+  );
 
   useEffect(() => {
     if (selectedIndex < 0) return;
@@ -187,13 +202,15 @@ export function DocumentTimeline({
     return sortedEntries.slice(windowStart, windowStart + windowSize);
   }, [sortedEntries, totalEntries, windowSize, windowStart]);
 
-  const groupedEntries = useMemo(() =>
-    STATUS_ORDER.map((status) => ({
-      status,
-      items: windowedEntries.filter((entry) => entry.status === status),
-      total: sortedEntries.filter((entry) => entry.status === status).length,
-    })).filter((section) => section.items.length > 0 || section.total > 0),
-  [sortedEntries, windowedEntries]);
+  const groupedEntries = useMemo(
+    () =>
+      STATUS_ORDER.map((status) => ({
+        status,
+        items: windowedEntries.filter((entry) => entry.status === status),
+        total: sortedEntries.filter((entry) => entry.status === status).length,
+      })).filter((section) => section.items.length > 0 || section.total > 0),
+    [sortedEntries, windowedEntries],
+  );
 
   const [collapsedSections, setCollapsedSections] = useState<Record<ReceptionStatus, boolean>>({});
 
@@ -376,6 +393,22 @@ export function DocumentTimeline({
           <span className="document-timeline__window-meta">
             表示 {windowedEntries.length}/{totalEntries} 件
           </span>
+          {typeof recordsReturned === 'number' && (
+            <span className="document-timeline__window-meta">
+              取得 {recordsReturned} 件{typeof pageSize === 'number' ? `（pageSize=${pageSize}）` : ''}
+              {isRefetchingList ? '｜更新中…' : ''}
+            </span>
+          )}
+          {hasNextPage && onLoadMore && (
+            <button
+              type="button"
+              onClick={onLoadMore}
+              className="document-timeline__pager"
+              disabled={isLoadingMore || isInitialLoading}
+            >
+              {isLoadingMore ? '追加取得中…' : 'さらに取得'}
+            </button>
+          )}
         </div>
         <div className="document-timeline__control-group" aria-label="仮想化ウィンドウサイズ">
           <label>
@@ -460,14 +493,14 @@ export function DocumentTimeline({
                 description={transitionMeta.description}
                 runId={resolvedRunId}
               />
-            <StatusBadge
-              label="fallbackUsed"
-              value={resolvedFallbackUsed ? 'true' : 'false'}
-              tone={resolvedFallbackUsed ? 'error' : 'info'}
-              description={resolvedFallbackUsed ? 'フォールバック使用中。優先で再取得を実施' : 'フォールバック未使用'}
-              runId={resolvedRunId}
-            />
-          </div>
+              <StatusBadge
+                label="fallbackUsed"
+                value={resolvedFallbackUsed ? 'true' : 'false'}
+                tone={resolvedFallbackUsed ? 'error' : 'info'}
+                description={resolvedFallbackUsed ? 'フォールバック使用中。優先で再取得を実施' : 'フォールバック未使用'}
+                runId={resolvedRunId}
+              />
+            </div>
             {claimData?.fetchedAt && (
               <p className="document-timeline__queue-meta">
                 最終取得: {claimData.fetchedAt} ｜ recordsReturned: {claimData.recordsReturned ?? claimBundles.length ?? '―'}
