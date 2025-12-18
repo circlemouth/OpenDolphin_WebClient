@@ -361,9 +361,11 @@ export function DocumentTimeline({
   return (
     <section
       className="document-timeline"
-      aria-live={tone === 'info' ? 'polite' : 'assertive'}
-      aria-atomic="false"
+      id="charts-document-timeline"
+      tabIndex={-1}
+      data-focus-anchor="true"
       role="region"
+      aria-label="DocumentTimeline"
       data-run-id={resolvedRunId}
     >
       <ToneBanner
@@ -447,7 +449,7 @@ export function DocumentTimeline({
         </div>
       )}
       {!claimError && onRetryClaim && (resolvedFallbackUsed || resolvedCacheHit === false) && (
-        <div className="document-timeline__retry" aria-live="polite">
+        <div className="document-timeline__retry" aria-live="off">
           <p>請求バンドルの整合性を再確認するには再取得を実行してください。</p>
           <button className="document-timeline__retry-button" onClick={onRetryClaim} disabled={isClaimLoading}>
             {isClaimLoading ? '再取得中…' : '請求バンドルを再取得'}
@@ -462,7 +464,7 @@ export function DocumentTimeline({
             value={resolvedMissingMaster ? 'true' : 'false'}
             tone={resolvedMissingMaster ? 'warning' : 'success'}
             description={resolvedMissingMaster ? 'マスタ欠損を検知・再取得を待機中' : 'マスタ取得済み・ORCA 再送フェーズ'}
-            ariaLive={resolvedMissingMaster ? 'assertive' : 'polite'}
+            ariaLive="off"
             runId={resolvedRunId}
           />
           <StatusBadge
@@ -470,17 +472,18 @@ export function DocumentTimeline({
             value={resolvedCacheHit ? 'true' : 'false'}
             tone={resolvedCacheHit ? 'success' : 'warning'}
             description={resolvedCacheHit ? 'キャッシュ命中：再取得不要' : 'キャッシュ未命中：再取得または server route を模索'}
+            ariaLive="off"
             runId={resolvedRunId}
           />
           <div
             className={`document-timeline__transition document-timeline__transition--${transitionMeta.tone}`}
             role="status"
-            aria-live="polite"
+            aria-live="off"
           >
             <strong>{transitionMeta.label}</strong>
             <p>{transitionMeta.description}</p>
           </div>
-          <div className="document-timeline__queue" aria-live="polite">
+          <div className="document-timeline__queue" aria-live="off">
             <div className="document-timeline__queue-header">
               <strong>ORCA キュー連携</strong>
               <span className="document-timeline__queue-runid">RUN_ID: {resolvedRunId}</span>
@@ -491,6 +494,7 @@ export function DocumentTimeline({
                 value={resolvedTransition ?? 'snapshot'}
                 tone={transitionMeta.tone}
                 description={transitionMeta.description}
+                ariaLive="off"
                 runId={resolvedRunId}
               />
               <StatusBadge
@@ -498,6 +502,7 @@ export function DocumentTimeline({
                 value={resolvedFallbackUsed ? 'true' : 'false'}
                 tone={resolvedFallbackUsed ? 'error' : 'info'}
                 description={resolvedFallbackUsed ? 'フォールバック使用中。優先で再取得を実施' : 'フォールバック未使用'}
+                ariaLive="off"
                 runId={resolvedRunId}
               />
             </div>
@@ -507,7 +512,7 @@ export function DocumentTimeline({
               </p>
             )}
             {claimBundles.length > 0 && (
-              <div className="document-timeline__queue-meta" aria-live="polite">
+              <div className="document-timeline__queue-meta" aria-live="off">
                 <strong>請求バンドル ({claimBundles.length}件)</strong>
                 <ul>
                   {claimBundles.slice(0, 3).map((bundle, idx) => (
@@ -522,7 +527,7 @@ export function DocumentTimeline({
             )}
           </div>
           {auditEvent && (
-            <div className="document-timeline__audit" role="alert" aria-live="assertive">
+            <div className="document-timeline__audit" role="status" aria-live="off">
               <strong>auditEvent</strong>
               <p className="document-timeline__audit-text">
                 {Object.entries(auditEvent)

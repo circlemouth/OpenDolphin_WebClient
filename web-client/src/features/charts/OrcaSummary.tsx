@@ -221,8 +221,9 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
   return (
     <section
       className="orca-summary"
-      aria-live={tone === 'info' ? 'polite' : 'assertive'}
-      aria-atomic="false"
+      id="charts-orca-summary"
+      tabIndex={-1}
+      data-focus-anchor="true"
       data-run-id={resolvedRunId}
       data-loading-scope="orca-summary"
       data-test-id="orca-summary"
@@ -257,7 +258,7 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
             value={resolvedMissingMaster ? 'true' : 'false'}
             tone={resolvedMissingMaster ? 'warning' : 'success'}
             description={resolvedMissingMaster ? 'マスタ未取得で再送停止' : 'マスタ取得済みで ORCA 再送可能'}
-            ariaLive={resolvedMissingMaster ? 'assertive' : 'polite'}
+            ariaLive="off"
             runId={resolvedRunId}
           />
           <StatusBadge
@@ -265,6 +266,7 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
             value={resolvedCacheHit ? 'true' : 'false'}
             tone={resolvedCacheHit ? 'success' : 'warning'}
             description={resolvedCacheHit ? 'マスタキャッシュ命中' : 'キャッシュを使えず再取得を試行'}
+            ariaLive="off"
             runId={resolvedRunId}
           />
           <StatusBadge
@@ -272,6 +274,7 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
             value={resolvedFallbackUsed ? 'true' : 'false'}
             tone={resolvedFallbackUsed ? 'error' : 'info'}
             description={resolvedFallbackUsed ? 'fallbackUsed=true ｜ snapshot/fallback データで処理中' : 'fallback 未使用'}
+            ariaLive="off"
             runId={resolvedRunId}
           />
           {fallbackFlagMissing && (
@@ -280,12 +283,13 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
               value="true"
               tone="warning"
               description="API 応答に fallbackUsed が含まれていません"
+              ariaLive="off"
               runId={resolvedRunId}
             />
           )}
         </div>
       </div>
-      <div className="orca-summary__cards" aria-live="polite">
+      <div className="orca-summary__cards" aria-live="off">
         <div className="orca-summary__card">
           <header>
             <strong>請求サマリ</strong>
@@ -354,7 +358,7 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
         </button>
       </div>
       {payloadPreview && (
-        <div className="orca-summary__payload" aria-live="polite">
+        <div className="orca-summary__payload" aria-live="off">
           <strong>応答プレビュー</strong>
           <p>{payloadPreview}</p>
         </div>

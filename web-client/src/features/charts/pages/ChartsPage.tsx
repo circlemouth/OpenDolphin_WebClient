@@ -56,6 +56,7 @@ function ChartsContent() {
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigate = useNavigate();
+  const focusRestoreRef = useRef<HTMLElement | null>(null);
   const navigationState = (location.state as Partial<OutpatientEncounterContext> | null) ?? {};
   const [encounterContext, setEncounterContext] = useState<OutpatientEncounterContext>(() => {
     const urlContext = parseChartsEncounterContext(location.search);
@@ -613,21 +614,128 @@ function ChartsContent() {
     }
   }, [appointmentQuery, claimQuery, orcaSummaryQuery]);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const shouldIgnore = (target: EventTarget | null) => {
+      const el = target as HTMLElement | null;
+      if (!el) return false;
+      const tag = el.tagName?.toLowerCase();
+      return tag === 'input' || tag === 'textarea' || tag === 'select' || el.isContentEditable;
+    };
+    const focusById = (id: string) => {
+      const el = document.getElementById(id) as HTMLElement | null;
+      if (!el) return false;
+      el.focus();
+      return true;
+    };
+    const clickById = (id: string) => {
+      const el = document.getElementById(id) as HTMLButtonElement | null;
+      if (!el) return false;
+      el.click();
+      return true;
+    };
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.defaultPrevented) return;
+      if (event.metaKey) return;
+
+      const key = event.key.toLowerCase();
+
+      // Patient search: Alt+P / Ctrl+F
+      if (!shouldIgnore(event.target) && event.altKey && !event.ctrlKey && key === 'p') {
+        event.preventDefault();
+        focusRestoreRef.current = document.activeElement as HTMLElement | null;
+        focusById('charts-patient-search');
+        return;
+      }
+      if (!shouldIgnore(event.target) && event.ctrlKey && !event.altKey && key === 'f') {
+        event.preventDefault();
+        focusRestoreRef.current = document.activeElement as HTMLElement | null;
+        focusById('charts-patient-search');
+        return;
+      }
+
+      // Action shortcuts
+      if (!shouldIgnore(event.target) && event.altKey && !event.ctrlKey && key === 's') {
+        event.preventDefault();
+        clickById('charts-action-send');
+        return;
+      }
+      if (!shouldIgnore(event.target) && event.altKey && !event.ctrlKey && key === 'i') {
+        event.preventDefault();
+        clickById('charts-action-print');
+        return;
+      }
+      if (!shouldIgnore(event.target) && event.altKey && !event.ctrlKey && key === 'e') {
+        event.preventDefault();
+        clickById('charts-action-finish');
+        return;
+      }
+      if (!shouldIgnore(event.target) && event.shiftKey && !event.altKey && !event.ctrlKey && key === 'enter') {
+        event.preventDefault();
+        clickById('charts-action-draft');
+        return;
+      }
+
+      // Section navigation: Ctrl+Shift+Left/Right
+      if (!shouldIgnore(event.target) && event.ctrlKey && event.shiftKey && (key === 'arrowright' || key === 'arrowleft')) {
+        event.preventDefault();
+        const anchors = [
+          'charts-topbar',
+          'charts-actionbar',
+          'charts-document-timeline',
+          'charts-orca-summary',
+          'charts-patients-tab',
+          'charts-telemetry',
+        ];
+        const active = document.activeElement as HTMLElement | null;
+        const current = active?.closest?.('[data-focus-anchor="true"]') as HTMLElement | null;
+        const currentId = current?.id ?? active?.id ?? '';
+        const currentIdx = Math.max(0, anchors.indexOf(currentId));
+        const delta = key === 'arrowright' ? 1 : -1;
+        const nextIdx = (currentIdx + delta + anchors.length) % anchors.length;
+        focusById(anchors[nextIdx]);
+        return;
+      }
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []);
+
   return (
-    <main className="charts-page" data-run-id={flags.runId} aria-busy={lockState.locked}>
-      <section className="charts-page__header">
+    <>
+      <a className="skip-link" href="#charts-main" data-test-id="charts-skip-main">
+        本文へスキップ
+      </a>
+      <main
+        id="charts-main"
+        tabIndex={-1}
+        className="charts-page"
+        data-run-id={flags.runId}
+        aria-busy={lockState.locked}
+      >
+      <header className="charts-page__header" id="charts-topbar" tabIndex={-1} data-focus-anchor="true">
         <h1>Charts / ORCA トーン連携デモ</h1>
         <p>
           Reception での `missingMaster` / `cacheHit` / `dataSourceTransition` を Charts 側へキャリーし、DocumentTimeline・
           OrcaSummary・Patients の各カードで同じ RUN_ID を基点にトーンをそろえます。Auth-service からのフラグを右上の
           コントロールで切り替え、監査メタの carry over を確認できます。
         </p>
-        <div className="charts-page__meta" aria-live="polite">
-          <span className="charts-page__pill">RUN_ID: {flags.runId}</span>
-          <span className="charts-page__pill">dataSourceTransition: {flags.dataSourceTransition}</span>
-          <span className="charts-page__pill">missingMaster: {String(flags.missingMaster)}</span>
-          <span className="charts-page__pill">cacheHit: {String(flags.cacheHit)}</span>
-          <span className="charts-page__pill">fallbackUsed: {String(flags.fallbackUsed)}</span>
+        <div
+          className="charts-page__meta"
+          role="status"
+          aria-live="off"
+          data-test-id="charts-topbar-meta"
+          data-run-id={resolvedRunId}
+          data-source-transition={resolvedTransition}
+          data-missing-master={String(resolvedMissingMaster)}
+          data-cache-hit={String(resolvedCacheHit)}
+          data-fallback-used={String(resolvedFallbackUsed)}
+        >
+          <span className="charts-page__pill">RUN_ID: {resolvedRunId}</span>
+          <span className="charts-page__pill">dataSourceTransition: {resolvedTransition}</span>
+          <span className="charts-page__pill">missingMaster: {String(resolvedMissingMaster)}</span>
+          <span className="charts-page__pill">cacheHit: {String(resolvedCacheHit)}</span>
+          <span className="charts-page__pill">fallbackUsed: {String(resolvedFallbackUsed)}</span>
           <span className="charts-page__pill">Charts master: {chartsMasterSourcePolicy}</span>
           <span className="charts-page__pill">Charts送信: {sendAllowedByDelivery ? 'enabled' : 'disabled'}</span>
           <span className="charts-page__pill">
@@ -635,7 +743,7 @@ function ChartsContent() {
           </span>
           <span className="charts-page__pill">適用先: {session.facilityId}:{session.userId}</span>
         </div>
-      </section>
+      </header>
       <AdminBroadcastBanner broadcast={broadcast} surface="charts" />
       {contextAlert ? (
         <ToneBanner
@@ -755,6 +863,10 @@ function ChartsContent() {
             draftDirty={draftState.dirty}
             switchLocked={lockState.locked}
             switchLockedReason={lockState.reason}
+            onRequestRestoreFocus={() => {
+              const el = focusRestoreRef.current;
+              if (el && typeof el.focus === 'function') el.focus();
+            }}
             onDraftDirtyChange={(next) => setDraftState(next)}
             onSelectEncounter={(next) => {
               if (!next) return;
@@ -774,5 +886,6 @@ function ChartsContent() {
         </>
       )}
     </main>
+    </>
   );
 }

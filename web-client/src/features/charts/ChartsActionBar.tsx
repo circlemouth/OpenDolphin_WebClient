@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { FocusTrapDialog } from '../../components/modals/FocusTrapDialog';
 import { logUiState } from '../../libs/audit/auditLogger';
 import { resolveAuditActor } from '../../libs/auth/storedAuth';
 import { httpFetch } from '../../libs/http/httpClient';
 import { getObservabilityMeta } from '../../libs/observability/observability';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { ToneBanner, type BannerTone } from '../reception/components/ToneBanner';
 import { recordChartsAuditEvent } from './audit';
 import type { DataSourceTransition } from './authService';
 import type { ClaimQueueEntry } from '../outpatient/types';
@@ -15,9 +17,15 @@ import { saveOutpatientPrintPreview } from './print/printPreviewStorage';
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
 type ToastState = {
-  tone: 'success' | 'warning' | 'error' | 'info';
+  tone: 'success';
   message: string;
   detail?: string;
+};
+
+type BannerState = {
+  tone: BannerTone;
+  message: string;
+  nextAction?: string;
 };
 
 type GuardReason = {
@@ -91,9 +99,11 @@ export function ChartsActionBar({
   const navigate = useNavigate();
   const [lockReason, setLockReason] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
+  const [banner, setBanner] = useState<BannerState | null>(null);
   const [retryAction, setRetryAction] = useState<ChartAction | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [runningAction, setRunningAction] = useState<ChartAction | null>(null);
+  const [confirmAction, setConfirmAction] = useState<ChartAction | null>(null);
   const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
   const [permissionDenied, setPermissionDenied] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -297,12 +307,13 @@ export function ChartsActionBar({
       const blockedReason = sendPrecheckReasons
         .map((reason) => `${reason.summary}: ${reason.detail}`)
         .join(' / ');
-      setToast({
+      setBanner({
         tone: 'warning',
-        message: 'ORCA送信を停止',
-        detail: blockedReason,
+        message: `ORCA送信を停止: ${blockedReason}`,
+        nextAction: '送信前チェック（理由）を確認し、必要なら Reception で再取得してください。',
       });
       setRetryAction(null);
+      setToast(null);
       logTelemetry(action, 'blocked', undefined, blockedReason);
       logUiState({
         action: 'send',
@@ -321,8 +332,9 @@ export function ChartsActionBar({
 
     if (action === 'send' && !patientId) {
       const blockedReason = '患者IDが未確定のため ORCA 送信を実行できません。Patients で患者を選択してください。';
-      setToast({ tone: 'warning', message: 'ORCA送信を停止', detail: blockedReason });
+      setBanner({ tone: 'warning', message: `ORCA送信を停止: ${blockedReason}`, nextAction: 'Patients で対象患者を選択してください。' });
       setRetryAction(null);
+      setToast(null);
       logTelemetry(action, 'blocked', undefined, blockedReason);
       logUiState({
         action: 'send',
@@ -340,12 +352,12 @@ export function ChartsActionBar({
     }
 
     if (action === 'send' && (fallbackUsed || missingMaster)) {
-      setToast({
+      setBanner({
         tone: 'warning',
-        message: '送信前チェック',
-        detail: missingMaster
-          ? 'missingMaster=true を検知しました。Reception で master を再取得してから再送してください。'
-          : 'fallbackUsed=true を検知しました。master 解消後に再送してください。',
+        message: missingMaster
+          ? 'missingMaster=true を検知しました。送信前に master を再取得してください。'
+          : 'fallbackUsed=true を検知しました。送信前に master 解消（server route）を確認してください。',
+        nextAction: 'Reception で再取得してから再送してください。',
       });
     }
 
@@ -353,11 +365,7 @@ export function ChartsActionBar({
     setIsRunning(true);
     setRunningAction(action);
     setRetryAction(null);
-    setToast({
-      tone: 'info',
-      message: `${ACTION_LABEL[action]}を実行中…`,
-      detail: `runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'} / dataSourceTransition=${dataSourceTransition}`,
-    });
+    setToast(null);
 
     logUiState({
       action:
@@ -416,6 +424,7 @@ export function ChartsActionBar({
       const after = getObservabilityMeta();
       const nextRunId = after.runId ?? runId;
       const nextTraceId = after.traceId ?? resolvedTraceId;
+      setBanner(null);
       setToast({
         tone: 'success',
         message: `${ACTION_LABEL[action]}を完了`,
@@ -439,11 +448,8 @@ export function ChartsActionBar({
       if (isAbort) {
         const abortedDetail = 'ユーザー操作により送信を中断しました。通信回復後に再試行できます。';
         setRetryAction('send');
-        setToast({
-          tone: 'warning',
-          message: 'ORCA送信を中断',
-          detail: abortedDetail,
-        });
+        setBanner({ tone: 'warning', message: `ORCA送信を中断: ${abortedDetail}`, nextAction: '通信回復後にリトライできます。' });
+        setToast(null);
         logTelemetry(action, 'blocked', durationMs, abortedDetail);
         logAudit(action, 'blocked', abortedDetail, durationMs);
       } else {
@@ -458,11 +464,8 @@ export function ChartsActionBar({
         })();
         const composedDetail = `${detail}（runId=${errorRunId} / traceId=${errorTraceId ?? 'unknown'} / requestId=${queueEntry?.requestId ?? 'unknown'}）${nextSteps ? ` / ${nextSteps}` : ''}`;
         setRetryAction(action);
-        setToast({
-          tone: 'error',
-          message: `${ACTION_LABEL[action]}に失敗`,
-          detail: composedDetail,
-        });
+        setBanner({ tone: 'error', message: `${ACTION_LABEL[action]}に失敗: ${composedDetail}`, nextAction: nextSteps });
+        setToast(null);
         logTelemetry(action, 'error', durationMs, composedDetail);
         logAudit(action, 'error', composedDetail, durationMs);
       }
@@ -475,7 +478,8 @@ export function ChartsActionBar({
 
   const handlePrintExport = () => {
     if (!selectedEntry) {
-      setToast({ tone: 'warning', message: '患者が未選択です', detail: 'Patients で患者を選択してから出力してください。' });
+      setBanner({ tone: 'warning', message: '患者が未選択です。Patients で患者を選択してから出力してください。' });
+      setToast(null);
       logAudit('print', 'blocked', 'no selectedEntry');
       return;
     }
@@ -483,7 +487,8 @@ export function ChartsActionBar({
     const { actor, facilityId } = resolveAuditActor();
 
     const detail = `印刷プレビューを開きました (actor=${actor})`;
-    setToast({ tone: 'info', message: '印刷/エクスポートを開きました', detail });
+    setBanner(null);
+    setToast({ tone: 'success', message: '印刷/エクスポートを開きました', detail });
 
     recordChartsAuditEvent({
       action: 'PRINT_OUTPATIENT',
@@ -534,11 +539,8 @@ export function ChartsActionBar({
 
   const handleUnlock = () => {
     setLockReason(null);
-    setToast({
-      tone: 'info',
-      message: 'UIロックを解除しました',
-      detail: '次のアクションを実行できます',
-    });
+    setBanner({ tone: 'info', message: 'UIロックを解除しました。次のアクションを実行できます。' });
+    setToast(null);
     logUiState({
       action: 'lock',
       screen: 'charts/action-bar',
@@ -561,8 +563,12 @@ export function ChartsActionBar({
   return (
     <section
       className={`charts-actions${isLocked ? ' charts-actions--locked' : ''}`}
-      aria-live={sendPrecheckReasons.length > 0 ? 'assertive' : 'polite'}
+      id="charts-actionbar"
+      tabIndex={-1}
+      data-focus-anchor="true"
+      aria-live="off"
       data-run-id={runId}
+      data-test-id="charts-actionbar"
     >
       <header className="charts-actions__header">
         <div>
@@ -588,21 +594,96 @@ export function ChartsActionBar({
         </div>
       </header>
 
+      <FocusTrapDialog
+        open={confirmAction === 'send'}
+        role="alertdialog"
+        title="ORCA送信の確認"
+        description={`現在の患者/受付を ORCA へ送信します。実行後に取り消せない場合があります。（runId=${runId} / transition=${dataSourceTransition}）`}
+        onClose={() => setConfirmAction(null)}
+        testId="charts-send-dialog"
+      >
+        <div role="group" aria-label="ORCA送信の確認">
+          <button type="button" onClick={() => setConfirmAction(null)}>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmAction(null);
+              void handleAction('send');
+            }}
+          >
+            送信する
+          </button>
+        </div>
+      </FocusTrapDialog>
+
+      <FocusTrapDialog
+        open={confirmAction === 'print'}
+        role="dialog"
+        title="印刷/エクスポートの確認"
+        description={`個人情報を含む診療文書を表示します。画面共有/第三者の閲覧に注意してください。（runId=${runId}）`}
+        onClose={() => setConfirmAction(null)}
+        testId="charts-print-dialog"
+      >
+        <div role="group" aria-label="印刷/エクスポートの確認">
+          <button type="button" onClick={() => setConfirmAction(null)}>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmAction(null);
+              handlePrintExport();
+            }}
+          >
+            開く
+          </button>
+        </div>
+      </FocusTrapDialog>
+
+      {banner && (
+        <div className="charts-actions__banner">
+          <ToneBanner tone={banner.tone} message={banner.message} nextAction={banner.nextAction} runId={runId} />
+          <div className="charts-actions__banner-actions" role="group" aria-label="通知操作">
+            {retryAction && !isRunning && (
+              <button type="button" className="charts-actions__retry" onClick={() => handleAction(retryAction)}>
+                リトライ
+              </button>
+            )}
+            <button type="button" className="charts-actions__retry" onClick={() => setBanner(null)}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
+      {isRunning && runningAction === 'send' && (
+        <div className="charts-actions__banner-actions" role="group" aria-label="進行中の操作">
+          <button type="button" className="charts-actions__retry" onClick={handleAbort}>
+            送信を中断
+          </button>
+        </div>
+      )}
+
       <div className="charts-actions__controls" role="group" aria-label="Charts 操作用ボタン">
         <button
           type="button"
+          id="charts-action-finish"
           className="charts-actions__button"
           disabled={otherBlocked}
           data-disabled-reason={otherBlocked ? (isLocked ? 'locked' : undefined) : undefined}
           onClick={() => handleAction('finish')}
+          aria-keyshortcuts="Alt+E"
         >
           診療終了
         </button>
         <button
           type="button"
+          id="charts-action-send"
           className="charts-actions__button charts-actions__button--primary"
           disabled={sendDisabled}
-          onClick={() => handleAction('send')}
+          onClick={() => setConfirmAction('send')}
           aria-disabled={sendDisabled}
           aria-describedby={!isRunning && sendPrecheckReasons.length > 0 ? 'charts-actions-send-guard' : undefined}
           data-disabled-reason={
@@ -610,29 +691,34 @@ export function ChartsActionBar({
               ? (isRunning ? 'running' : sendPrecheckReasons.map((reason) => reason.key).join(','))
               : undefined
           }
+          aria-keyshortcuts="Alt+S"
         >
           ORCA 送信
         </button>
         <button
           type="button"
+          id="charts-action-print"
           className="charts-actions__button"
           disabled={sendDisabled}
           aria-disabled={sendDisabled}
-          onClick={handlePrintExport}
+          onClick={() => setConfirmAction('print')}
           data-disabled-reason={
             sendDisabled
               ? (isRunning ? 'running' : sendPrecheckReasons.map((reason) => reason.key).join(','))
               : undefined
           }
+          aria-keyshortcuts="Alt+I"
         >
           印刷/エクスポート
         </button>
         <button
           type="button"
+          id="charts-action-draft"
           className="charts-actions__button"
           disabled={otherBlocked}
           data-disabled-reason={otherBlocked ? (isLocked ? 'locked' : undefined) : undefined}
           onClick={() => handleAction('draft')}
+          aria-keyshortcuts="Shift+Enter"
         >
           ドラフト保存
         </button>
@@ -656,7 +742,7 @@ export function ChartsActionBar({
       </div>
 
       {!isRunning && sendPrecheckReasons.length > 0 && (
-        <div id="charts-actions-send-guard" className="charts-actions__guard" role="note" aria-live="assertive">
+        <div id="charts-actions-send-guard" className="charts-actions__guard" role="note" aria-live="off">
           <strong>送信前チェック: ORCA送信をブロック</strong>
           <ul>
             {sendPrecheckReasons.map((reason) => (
@@ -678,28 +764,17 @@ export function ChartsActionBar({
       {toast && (
         <div
           className={`charts-actions__toast charts-actions__toast--${toast.tone}`}
-          role={toast.tone === 'success' ? 'status' : 'alert'}
-          aria-live="assertive"
+          role="status"
+          aria-live="polite"
+          aria-atomic="false"
         >
           <div>
             <strong>{toast.message}</strong>
             {toast.detail && <p>{toast.detail}</p>}
           </div>
-          {retryAction && toast.tone !== 'success' && (
-            <button
-              type="button"
-              className="charts-actions__retry"
-              onClick={() => handleAction(retryAction)}
-              disabled={isRunning}
-            >
-              リトライ
-            </button>
-          )}
-          {isRunning && runningAction === 'send' && (
-            <button type="button" className="charts-actions__retry" onClick={handleAbort}>
-              送信を中断
-            </button>
-          )}
+          <button type="button" className="charts-actions__retry" onClick={() => setToast(null)}>
+            閉じる
+          </button>
         </div>
       )}
     </section>
