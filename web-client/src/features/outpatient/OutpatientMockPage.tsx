@@ -57,6 +57,15 @@ const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFl
 
 export function OutpatientMockPage() {
   const mswDisabled = import.meta.env.VITE_DISABLE_MSW === '1';
+  const mswQueryEnabled = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    try {
+      const url = new URL(window.location.href);
+      return url.searchParams.get('msw') === '1';
+    } catch {
+      return false;
+    }
+  }, []);
   const scenarioOptions = useMemo(() => listOutpatientScenarios(), []);
   const [scenarioId, setScenarioId] = useState<OutpatientScenarioId>('snapshot-missing-master');
   const [overrideFlags, setOverrideFlags] = useState<Partial<OutpatientFlagSet>>({});
@@ -222,6 +231,11 @@ export function OutpatientMockPage() {
           {mswDisabled ? (
             <p className="status-message" aria-live="assertive">
               ⚠️ VITE_DISABLE_MSW=1: 実 API 接続中のためシナリオ切替は無効です。MSW を使う場合はフラグを 0 にして再読込してください。
+            </p>
+          ) : !mswQueryEnabled ? (
+            <p className="status-message" aria-live="assertive">
+              ⚠️ `msw=1` が付いていないため、障害注入ヘッダー（x-msw-fault / x-msw-delay-ms）は送出されません。検証時は{' '}
+              <a href="/outpatient-mock?msw=1">/outpatient-mock?msw=1</a> を開いてください。
             </p>
           ) : (
             <p className="status-message" aria-live="polite">
