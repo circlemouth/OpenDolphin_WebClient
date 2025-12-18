@@ -127,6 +127,16 @@ export function ChartsActionBar({
   const isLocked = uiLocked || isRunning || readOnly;
   const resolvedTraceId = traceId ?? getObservabilityMeta().traceId;
 
+  const sendQueueLabel = useMemo(() => {
+    const phase = queueEntry?.phase;
+    if (!phase) return undefined;
+    if (phase === 'ack') return '成功';
+    if (phase === 'failed') return '失敗';
+    if (phase === 'retry' || phase === 'sent') return '処理中';
+    if (phase === 'hold') return '待ち（保留）';
+    return '待ち';
+  }, [queueEntry?.phase]);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const handleOnline = () => setIsOnline(true);
@@ -281,8 +291,23 @@ export function ChartsActionBar({
       const head = sendPrecheckReasons[0];
       return `送信不可: ${head.summary}（runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'}）`;
     }
+    if (sendQueueLabel) {
+      return `送信状態: ${sendQueueLabel}（runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'}${queueEntry?.requestId ? ` / requestId=${queueEntry.requestId}` : ''}）`;
+    }
     return 'アクションを選択できます';
-  }, [dataSourceTransition, isRunning, lockReason, readOnly, readOnlyReason, resolvedTraceId, runId, runningAction, sendPrecheckReasons]);
+  }, [
+    dataSourceTransition,
+    isRunning,
+    lockReason,
+    queueEntry?.requestId,
+    readOnly,
+    readOnlyReason,
+    resolvedTraceId,
+    runId,
+    runningAction,
+    sendPrecheckReasons,
+    sendQueueLabel,
+  ]);
 
   const logTelemetry = (action: ChartAction, outcome: 'success' | 'error' | 'blocked' | 'started', durationMs?: number, note?: string) => {
     recordOutpatientFunnel('charts_action', {

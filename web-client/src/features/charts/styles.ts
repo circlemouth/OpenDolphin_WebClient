@@ -465,7 +465,8 @@ export const chartsStyles = css`
 
   .document-timeline__badge-warning,
   .document-timeline__badge-error,
-  .document-timeline__badge-info {
+  .document-timeline__badge-info,
+  .document-timeline__badge-success {
     border-radius: 999px;
     padding: 0.2rem 0.55rem;
     font-size: 0.85rem;
@@ -488,6 +489,12 @@ export const chartsStyles = css`
     background: #eff6ff;
     color: #1d4ed8;
     border: 1px solid #60a5fa;
+  }
+
+  .document-timeline__badge-success {
+    background: #ecfdf3;
+    color: #065f46;
+    border: 1px solid #34d399;
   }
 
   .document-timeline__steps {
