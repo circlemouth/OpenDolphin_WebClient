@@ -5,15 +5,16 @@ import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
 import { updateObservabilityMeta } from '../../libs/observability/observability';
 import { ToneBanner } from '../reception/components/ToneBanner';
+import { useSession } from '../../AppRouter';
 import {
   discardOrcaQueue,
-  fetchAdminConfig,
-  fetchAdminDelivery,
+  fetchEffectiveAdminConfig,
   fetchOrcaQueue,
   retryOrcaQueue,
   saveAdminConfig,
   type AdminConfigPayload,
   type AdminConfigResponse,
+  type ChartsMasterSourcePolicy,
   type OrcaQueueEntry,
 } from './api';
 import './administration.css';
@@ -31,6 +32,9 @@ const DEFAULT_FORM: AdminConfigPayload = {
   mswEnabled: import.meta.env.VITE_DISABLE_MSW !== '1',
   useMockOrcaQueue: resolveHeaderFlags().useMockOrcaQueue,
   verifyAdminDelivery: resolveHeaderFlags().verifyAdminDelivery,
+  chartsDisplayEnabled: true,
+  chartsSendEnabled: true,
+  chartsMasterSource: 'auto',
 };
 
 const formatTimeAgo = (iso?: string) => {
@@ -49,16 +53,14 @@ const toStatusClass = (status: string) => {
 
 export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const isSystemAdmin = role === 'system_admin' || role === 'admin' || role === 'system-admin';
+  const session = useSession();
   const [form, setForm] = useState<AdminConfigPayload>(DEFAULT_FORM);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const queryClient = useQueryClient();
 
   const configQuery = useQuery({
     queryKey: ['admin-config'],
-    queryFn: async () => {
-      const [config, delivery] = await Promise.all([fetchAdminConfig(), fetchAdminDelivery().catch(() => null)]);
-      return (delivery ?? config) as AdminConfigResponse;
-    },
+    queryFn: fetchEffectiveAdminConfig,
     staleTime: 60_000,
   });
 
@@ -77,6 +79,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       mswEnabled: data.mswEnabled ?? prev.mswEnabled,
       useMockOrcaQueue: data.useMockOrcaQueue ?? prev.useMockOrcaQueue,
       verifyAdminDelivery: data.verifyAdminDelivery ?? prev.verifyAdminDelivery,
+      chartsDisplayEnabled: data.chartsDisplayEnabled ?? prev.chartsDisplayEnabled,
+      chartsSendEnabled: data.chartsSendEnabled ?? prev.chartsSendEnabled,
+      chartsMasterSource: data.chartsMasterSource ?? prev.chartsMasterSource,
     }));
     persistHeaderFlags({
       useMockOrcaQueue: data.useMockOrcaQueue,
@@ -102,6 +107,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         deliveredAt: data.deliveredAt,
         queueMode: data.useMockOrcaQueue ? 'mock' : 'live',
         verifyAdminDelivery: data.verifyAdminDelivery,
+        chartsDisplayEnabled: data.chartsDisplayEnabled ?? form.chartsDisplayEnabled,
+        chartsSendEnabled: data.chartsSendEnabled ?? form.chartsSendEnabled,
+        chartsMasterSource: data.chartsMasterSource ?? form.chartsMasterSource,
         note: data.note,
         source: data.source,
       });
@@ -109,7 +117,12 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         runId: data.runId ?? runId,
         source: 'admin/config',
         note: data.note ?? 'config saved',
-        payload: { ...form, broadcast },
+        payload: {
+          actor: `${session.facilityId}:${session.userId}`,
+          role: session.role,
+          ...form,
+          broadcast,
+        },
       });
       logUiState({
         action: 'config_delivery',
@@ -179,6 +192,14 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
+  const handleChartsMasterSourceChange = (value: string) => {
+    const next: ChartsMasterSourcePolicy =
+      value === 'auto' || value === 'server' || value === 'mock' || value === 'snapshot' || value === 'fallback'
+        ? value
+        : 'auto';
+    handleInputChange('chartsMasterSource', next);
+  };
+
   const handleSave = () => {
     configMutation.mutate(form);
   };
@@ -192,6 +213,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   };
 
   const latestRunId = configQuery.data?.runId ?? queueQuery.data?.runId ?? runId;
+  const syncMismatch = configQuery.data?.syncMismatch;
+  const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
 
   return (
     <main className="administration-page" data-test-id="administration-page" data-run-id={latestRunId}>
@@ -210,6 +233,17 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           <span className="administration-page__pill">
             ORCA queue: {form.useMockOrcaQueue ? 'mock (MSW)' : 'live'}
           </span>
+          <span className="administration-page__pill">
+            Charts表示: {form.chartsDisplayEnabled ? 'enabled' : 'disabled'}
+          </span>
+          <span className="administration-page__pill">
+            Charts送信: {form.chartsSendEnabled ? 'enabled' : 'disabled'}
+          </span>
+          <span className="administration-page__pill">Charts master: {form.chartsMasterSource}</span>
+          <span className="administration-page__pill">
+            syncMismatch: {syncMismatch === undefined ? '―' : syncMismatch ? 'true（delivery優先）' : 'false'}
+          </span>
+          <span className="administration-page__pill">mismatchFields: {syncMismatchFields ?? '―'}</span>
         </div>
       </div>
 
@@ -220,6 +254,14 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           destination="ORCA queue"
           runId={latestRunId}
           nextAction="再送/破棄・再取得"
+        />
+      ) : syncMismatch ? (
+        <ToneBanner
+          tone="warning"
+          message={`config/delivery の不一致を検知しました（delivery優先）。fields: ${syncMismatchFields ?? 'unknown'}`}
+          destination="Administration"
+          runId={latestRunId}
+          nextAction="再取得 / 再配信で解消"
         />
       ) : (
         <p className="admin-quiet">未配信キューの遅延は検知されていません。</p>
@@ -289,6 +331,51 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                   disabled={!isSystemAdmin}
                 />
               </div>
+              <div className="admin-toggle">
+                <div className="admin-toggle__label">
+                  <span>Charts 表示フラグ</span>
+                  <span className="admin-toggle__hint">Charts の表示（カード一式）を切替</span>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="Charts 表示フラグ"
+                  checked={form.chartsDisplayEnabled}
+                  onChange={(event) => handleInputChange('chartsDisplayEnabled', event.target.checked)}
+                  disabled={!isSystemAdmin}
+                />
+              </div>
+              <div className="admin-toggle">
+                <div className="admin-toggle__label">
+                  <span>Charts 送信フラグ</span>
+                  <span className="admin-toggle__hint">ORCA送信（ActionBar）を切替</span>
+                </div>
+                <input
+                  type="checkbox"
+                  aria-label="Charts 送信フラグ"
+                  checked={form.chartsSendEnabled}
+                  onChange={(event) => handleInputChange('chartsSendEnabled', event.target.checked)}
+                  disabled={!isSystemAdmin}
+                />
+              </div>
+            </div>
+
+            <div className="admin-form__field">
+              <label htmlFor="charts-master-source">Charts master ソース</label>
+              <select
+                id="charts-master-source"
+                value={form.chartsMasterSource}
+                onChange={(event) => handleChartsMasterSourceChange(event.target.value)}
+                disabled={!isSystemAdmin}
+              >
+                <option value="auto">auto（環境変数に従う）</option>
+                <option value="server">server（実 API 優先）</option>
+                <option value="mock">mock（MSW/fixture 優先）</option>
+                <option value="fallback">fallback（送信停止・フォールバック扱い）</option>
+                <option value="snapshot">snapshot（将来拡張）</option>
+              </select>
+              <p className="admin-quiet">
+                `fallback` は Charts 側で送信をブロックし、ToneBanner で「server→fallback」を明示します（デモ用途）。
+              </p>
             </div>
 
             <div className="admin-actions">
@@ -329,6 +416,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             <li>deliveryVersion: {configQuery.data?.deliveryVersion ?? '―'}</li>
             <li>deliveredAt: {configQuery.data?.deliveredAt ?? '―'}</li>
             <li>verified: {configQuery.data?.verifyAdminDelivery ? 'true' : 'false'}</li>
+            <li>chartsDisplayEnabled: {configQuery.data?.chartsDisplayEnabled === undefined ? '―' : String(configQuery.data.chartsDisplayEnabled)}</li>
+            <li>chartsSendEnabled: {configQuery.data?.chartsSendEnabled === undefined ? '―' : String(configQuery.data.chartsSendEnabled)}</li>
+            <li>chartsMasterSource: {configQuery.data?.chartsMasterSource ?? '―'}</li>
           </ul>
           <p className="admin-note">
             保存時に broadcast を発行し、Reception/Charts へ「設定更新」バナーを表示します。system_admin 以外は読み取り専用です。

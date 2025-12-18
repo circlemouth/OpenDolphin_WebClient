@@ -20,6 +20,7 @@ type GuardReason = {
   key:
     | 'missing_master'
     | 'fallback_used'
+    | 'config_disabled'
     | 'draft_unsaved'
     | 'permission_denied'
     | 'network_offline'
@@ -47,6 +48,8 @@ export interface ChartsActionBarProps {
   missingMaster: boolean;
   dataSourceTransition: DataSourceTransition;
   fallbackUsed?: boolean;
+  sendEnabled?: boolean;
+  sendDisabledReason?: string;
   patientId?: string;
   queueEntry?: ClaimQueueEntry;
   hasUnsavedDraft?: boolean;
@@ -66,6 +69,8 @@ export function ChartsActionBar({
   missingMaster,
   dataSourceTransition,
   fallbackUsed = false,
+  sendEnabled = true,
+  sendDisabledReason,
   patientId,
   queueEntry,
   hasUnsavedDraft = false,
@@ -104,6 +109,15 @@ export function ChartsActionBar({
 
   const sendPrecheckReasons: GuardReason[] = useMemo(() => {
     const reasons: GuardReason[] = [];
+
+    if (!sendEnabled) {
+      reasons.push({
+        key: 'config_disabled',
+        summary: '管理配信で送信停止',
+        detail: sendDisabledReason ?? '管理配信により ORCA 送信が無効化されています。',
+        next: ['Administration で再配信', '設定を再取得して反映を確認'],
+      });
+    }
 
     if (uiLocked) {
       reasons.push({
@@ -202,6 +216,8 @@ export function ChartsActionBar({
     permissionDenied,
     requireServerRouteForSend,
     requirePatientForSend,
+    sendDisabledReason,
+    sendEnabled,
     uiLocked,
   ]);
 

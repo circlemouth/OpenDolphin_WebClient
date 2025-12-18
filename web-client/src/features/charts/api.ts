@@ -20,11 +20,14 @@ const preferredSource = (): ResolveMasterSource | undefined =>
 const resolvedDataSource = (transition?: DataSourceTransition, fallback?: ResolveMasterSource): ResolveMasterSource | undefined =>
   (transition as ResolveMasterSource | undefined) ?? fallback;
 
-export async function fetchOrcaOutpatientSummary(context?: QueryFunctionContext): Promise<OrcaOutpatientSummary> {
+export async function fetchOrcaOutpatientSummary(
+  context?: QueryFunctionContext,
+  options: { preferredSourceOverride?: ResolveMasterSource } = {},
+): Promise<OrcaOutpatientSummary> {
   const result = await fetchWithResolver({
     candidates: orcaSummaryCandidates,
     queryContext: context,
-    preferredSource: preferredSource(),
+    preferredSource: options.preferredSourceOverride ?? preferredSource(),
     description: 'medical_outpatient_summary',
   });
 
