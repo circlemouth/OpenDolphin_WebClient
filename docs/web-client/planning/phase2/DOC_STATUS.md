@@ -1,6 +1,7 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
 - 本更新 RUN_ID=`20251217T233755Z`（Administration 設定配信: `/api/admin/config`/`/api/admin/delivery` フラグ同期）。証跡: `docs/web-client/planning/phase2/logs/20251217T233755Z-admin-config-delivery-flags.md`。備考: Charts の表示/送信/masterSource を配信で切替し、適用（いつ/誰に/runId）を UI と監査ログで追跡。ToneBanner で影響を明示。
+- 本更新 RUN_ID=`20251218T022759Z`（config/delivery 不一致検知 `syncMismatch`＋raw監査強化）。証跡: `docs/web-client/planning/phase2/logs/20251218T022759Z-admin-syncMismatch-raw-audit.md`。備考: 不一致キー一覧を UI で表示し、Charts の `admin/delivery.apply` 監査 payload に raw(config/delivery) を分離して格納。
 - 本更新 RUN_ID=`20251217T212939Z`（Charts アクセシビリティ自動検査＋手動監査）。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md`。備考: axe 重大違反ゼロ、ToneBanner/ActionBar のフォーカス順・操作不能理由読み上げをテスト化。
 - 本更新 RUN_ID=`20251217T130407Z`（OrcaSummary 請求/予約サマリ商用仕上げ）。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。備考: 請求/予約の表示粒度、`dataSourceTransition` 説明、`fallbackUsed=true` 強警告、予約/会計/再取得導線とショートカットを定義。
 - 本更新 RUN_ID=`20251217T212600Z`（ドラフト保存と復元 設計追加）。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md`。備考: 受付ID/患者ID/診療日/runId/facilityId/userId でドラフト束縛、localStorage+React Query 二重保存、復元ダイアログ、監査 `DRAFT_SAVE/RESTORE/DISCARD` を定義。
