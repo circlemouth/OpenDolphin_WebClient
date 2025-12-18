@@ -7,6 +7,7 @@ export type ChartsAuditAction =
   | 'CHARTS_NAVIGATE_RECEPTION'
   | 'CHARTS_EDIT_LOCK'
   | 'CHARTS_CONFLICT'
+  | 'ORCA_QUEUE_STATUS'
   | 'ORCA_SEND'
   | 'ENCOUNTER_CLOSE'
   | 'DRAFT_SAVE'
@@ -16,6 +17,7 @@ export type ChartsAuditAction =
 
 export type ChartsAuditOutcome =
   | 'success'
+  | 'warning'
   | 'error'
   | 'blocked'
   | 'started'
@@ -87,6 +89,11 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'trigger',
   'resolution',
   'tabSessionId',
+  'queueSource',
+  'queueEntries',
+  'fetchedAt',
+  'counts',
+  'selectedSendStatus',
 ]);
 
 const sanitizeDetails = (details: Record<string, unknown>) => {

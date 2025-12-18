@@ -7,6 +7,8 @@ import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tone
 import type { ReceptionEntry, ReceptionStatus } from '../reception/api';
 import type { ClaimOutpatientPayload, ClaimBundle, ClaimBundleStatus } from '../outpatient/types';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
+import type { OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
+import { resolveOrcaSendStatus } from '../outpatient/orcaQueueStatus';
 
 export interface DocumentTimelineProps {
   entries?: ReceptionEntry[];
@@ -18,6 +20,17 @@ export interface DocumentTimelineProps {
   claimData?: ClaimOutpatientPayload;
   claimError?: Error;
   isClaimLoading?: boolean;
+  orcaQueue?: OrcaQueueResponse;
+  orcaQueueUpdatedAt?: number;
+  isOrcaQueueLoading?: boolean;
+  orcaQueueError?: Error;
+  recordsReturned?: number;
+  hasNextPage?: boolean;
+  onLoadMore?: () => void;
+  isLoadingMore?: boolean;
+  isInitialLoading?: boolean;
+  pageSize?: number;
+  isRefetchingList?: boolean;
   onRetryClaim?: () => void;
 }
 
@@ -60,8 +73,15 @@ const deriveNextAction = (
   status: ReceptionStatus,
   queuePhase: QueuePhase,
   missingMaster?: boolean,
+  sendStatus?: ReturnType<typeof resolveOrcaSendStatus>,
 ): string => {
   if (missingMaster) return 'マスタ再取得を完了してから ORCA 再送を実行';
+  if (sendStatus?.key === 'failure') return '送信失敗：エラー詳細を確認し、ORCA再送（Alt+S）';
+  if (sendStatus?.key === 'waiting' || sendStatus?.key === 'processing') {
+    return sendStatus.isStalled
+      ? '送信が滞留：ORCA キューを確認し、必要なら再送（Alt+S）または設定確認'
+      : '送信待ち/処理中：反映を確認してから会計へ進む';
+  }
   if (queuePhase === 'error') return '請求キューを再取得し、失敗理由を確認';
   if (queuePhase === 'retrying') return '再取得完了まで待機し、結果を確認';
   if (queuePhase === 'pending') return 'ORCA キューへの反映を確認してから会計へ進む';
@@ -91,6 +111,17 @@ export function DocumentTimeline({
   claimData,
   claimError,
   isClaimLoading,
+  orcaQueue,
+  orcaQueueUpdatedAt,
+  isOrcaQueueLoading,
+  orcaQueueError,
+  recordsReturned,
+  hasNextPage,
+  onLoadMore,
+  isLoadingMore,
+  isInitialLoading,
+  pageSize,
+  isRefetchingList,
   onRetryClaim,
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
@@ -100,7 +131,6 @@ export function DocumentTimeline({
   const resolvedTransition = claimData?.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = claimData?.fallbackUsed ?? false;
   const fallbackFlagMissing = claimData?.fallbackFlagMissing ?? false;
-  const resolvedCacheMiss = resolvedCacheHit === false;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -111,11 +141,11 @@ export function DocumentTimeline({
 
   const auditSummary = useMemo(() => {
     if (!auditEvent) return null;
-    const action = typeof (auditEvent as any).action === 'string' ? ((auditEvent as any).action as string) : 'AUDIT_EVENT';
-    const outcome =
-      typeof (auditEvent as any).outcome === 'string' ? ((auditEvent as any).outcome as string) : undefined;
-    const details = (typeof (auditEvent as any).details === 'object' && (auditEvent as any).details !== null
-      ? ((auditEvent as any).details as Record<string, unknown>)
+    const payload = auditEvent as Record<string, unknown>;
+    const action = typeof payload.action === 'string' ? payload.action : 'AUDIT_EVENT';
+    const outcome = typeof payload.outcome === 'string' ? payload.outcome : undefined;
+    const details = (typeof payload.details === 'object' && payload.details !== null
+      ? (payload.details as Record<string, unknown>)
       : {}) as Record<string, unknown>;
     const actor = typeof details.actor === 'string' ? details.actor : undefined;
     const note = typeof details.note === 'string' ? details.note : undefined;
@@ -147,6 +177,30 @@ export function DocumentTimeline({
     fallbackUsed: resolvedFallbackUsed,
     cacheHit: resolvedCacheHit,
   });
+
+  const orcaQueueByPatientId = useMemo(() => {
+    const map = new Map<string, OrcaQueueEntry>();
+    const queue = orcaQueue?.queue ?? [];
+    for (const entry of queue) {
+      if (!entry?.patientId) continue;
+      const prev = map.get(entry.patientId);
+      if (!prev) {
+        map.set(entry.patientId, entry);
+        continue;
+      }
+      const prevAt = prev.lastDispatchAt ?? '';
+      const nextAt = entry.lastDispatchAt ?? '';
+      if (nextAt && (!prevAt || nextAt >= prevAt)) {
+        map.set(entry.patientId, entry);
+      }
+    }
+    return map;
+  }, [orcaQueue?.queue]);
+
+  const selectedSendStatus = useMemo(() => {
+    if (!selectedPatientId) return undefined;
+    return resolveOrcaSendStatus(orcaQueueByPatientId.get(selectedPatientId));
+  }, [orcaQueueByPatientId, selectedPatientId]);
 
   const entriesWithClaim = useMemo(() => {
     if (entries.length === 0) return [];
@@ -269,7 +323,8 @@ export function DocumentTimeline({
               (selectedAppointmentId && entry.appointmentId === selectedAppointmentId);
             const shouldHighlight = resolvedMissingMaster || isSelected;
             const bundle = pickClaimBundleForEntry(entry, claimBundles);
-            const nextAction = deriveNextAction(entry.status, queuePhase, resolvedMissingMaster);
+            const sendStatus = resolveOrcaSendStatus(entry.patientId ? orcaQueueByPatientId.get(entry.patientId) : undefined);
+            const nextAction = deriveNextAction(entry.status, queuePhase, resolvedMissingMaster, sendStatus);
             const bundleStatus = bundle?.claimStatus ?? '診療中';
             const queueStepStatus: Record<'受付' | '診療' | '会計', 'done' | 'active' | 'blocked' | 'pending'> = {
               受付: entry.status === '予約' ? 'pending' : 'done',
@@ -284,9 +339,9 @@ export function DocumentTimeline({
                   ? 'done'
                   : entry.status === '会計待ち'
                     ? 'active'
-                    : queuePhase === 'error' || queuePhase === 'holding'
+                    : sendStatus?.key === 'failure' || queuePhase === 'error' || queuePhase === 'holding'
                       ? 'blocked'
-                      : queuePhase === 'retrying' || queuePhase === 'pending'
+                      : sendStatus?.key === 'waiting' || sendStatus?.key === 'processing' || queuePhase === 'retrying' || queuePhase === 'pending'
                         ? 'pending'
                         : bundleStatus === '会計待ち' || bundleStatus === '会計済み'
                           ? 'active'
@@ -311,6 +366,22 @@ export function DocumentTimeline({
                   {shouldHighlight && <span className="document-timeline__badge-warning">missingMaster</span>}
                   {queuePhase === 'error' && <span className="document-timeline__badge-error">再取得待ち</span>}
                   {queuePhase === 'retrying' && <span className="document-timeline__badge-info">再取得中</span>}
+                  {sendStatus && (
+                    <span
+                      className={
+                        sendStatus.tone === 'success'
+                          ? 'document-timeline__badge-success'
+                          : sendStatus.tone === 'error'
+                            ? 'document-timeline__badge-error'
+                            : sendStatus.tone === 'warning'
+                              ? 'document-timeline__badge-warning'
+                              : 'document-timeline__badge-info'
+                      }
+                    >
+                      送信:{sendStatus.label}
+                    </span>
+                  )}
+                  {sendStatus?.isStalled && <span className="document-timeline__badge-warning">滞留</span>}
                 </header>
                 <div className="document-timeline__steps" aria-label="受付から会計までの進捗">
                   {(['受付', '診療', '会計'] as const).map((step) => (
@@ -320,7 +391,9 @@ export function DocumentTimeline({
                   ))}
                 </div>
                 <p className="document-timeline__entry-note">
-                  {entry.note ?? 'メモなし'} ｜ キュー: {bundle?.claimStatusText ?? bundle?.claimStatus ?? '未取得'}
+                  {entry.note ?? 'メモなし'} ｜ 請求: {bundle?.claimStatusText ?? bundle?.claimStatus ?? '未取得'}
+                  {sendStatus?.lastDispatchAt ? ` ｜ 最終送信: ${sendStatus.lastDispatchAt}` : ''}
+                  {sendStatus?.key === 'failure' && sendStatus.error ? ` ｜ エラー: ${sendStatus.error}` : ''}
                 </p>
                 <div className="document-timeline__actions" aria-label="次にやること">
                   <strong>次にやること:</strong>
@@ -335,6 +408,7 @@ export function DocumentTimeline({
     claimBundles,
     collapsedSections,
     groupedEntries,
+    orcaQueueByPatientId,
     queuePhase,
     resolvedMissingMaster,
     resolvedRunId,
@@ -397,6 +471,16 @@ export function DocumentTimeline({
           ariaLive={appointmentBanner.tone === 'info' ? 'polite' : 'assertive'}
         />
       )}
+      {orcaQueueError && (
+        <ToneBanner
+          tone="warning"
+          message={`ORCA キュー取得に失敗しました: ${orcaQueueError.message}`}
+          runId={resolvedRunId}
+          destination="ORCA Queue"
+          nextAction="ネットワーク/設定を確認し、必要なら Administration でキュー状態を確認"
+          ariaLive="assertive"
+        />
+      )}
       <div className="document-timeline__controls">
         <div className="document-timeline__control-group" aria-label="表示件数とページング">
           <button type="button" onClick={() => moveWindow('start')} className="document-timeline__pager">先頭</button>
@@ -406,6 +490,10 @@ export function DocumentTimeline({
           <button type="button" onClick={() => moveWindow('all')} className="document-timeline__pager">すべて表示</button>
           <span className="document-timeline__window-meta">
             表示 {windowedEntries.length}/{totalEntries} 件
+          </span>
+          <span className="document-timeline__window-meta">
+            取得 {recordsReturned ?? entries.length} 件{typeof pageSize === 'number' ? `（pageSize=${pageSize}）` : ''}
+            {isRefetchingList ? ' ｜ 再取得中…' : ''}
           </span>
         </div>
         <div className="document-timeline__control-group" aria-label="仮想化ウィンドウサイズ">
@@ -421,6 +509,13 @@ export function DocumentTimeline({
             />
           </label>
         </div>
+        {hasNextPage && onLoadMore && (
+          <div className="document-timeline__control-group" aria-label="追加読み込み">
+            <button type="button" onClick={onLoadMore} className="document-timeline__pager" disabled={isLoadingMore || isInitialLoading}>
+              {isLoadingMore ? '追加取得中…' : 'さらに読み込む'}
+            </button>
+          </div>
+        )}
       </div>
       {resolvedFallbackUsed && (
         <div className="document-timeline__fallback" role="alert" aria-live="assertive">
@@ -499,6 +594,45 @@ export function DocumentTimeline({
               runId={resolvedRunId}
             />
           </div>
+            <div className="document-timeline__queue-badges">
+              <StatusBadge
+                label="ORCA送信（選択患者）"
+                value={selectedSendStatus?.label ?? (selectedPatientId ? '未取得' : '患者未選択')}
+                tone={
+                  selectedSendStatus?.tone ??
+                  (selectedPatientId ? 'warning' : 'info')
+                }
+                description={
+                  selectedSendStatus
+                    ? [
+                        selectedSendStatus.isStalled ? '滞留を検知' : undefined,
+                        selectedSendStatus.lastDispatchAt ? `lastDispatchAt=${selectedSendStatus.lastDispatchAt}` : undefined,
+                        selectedSendStatus.key === 'failure' && selectedSendStatus.error ? `error=${selectedSendStatus.error}` : undefined,
+                      ]
+                        .filter((v): v is string => typeof v === 'string' && v.length > 0)
+                        .join(' ｜ ')
+                    : 'ORCA キュー応答から送信状態を解決します（Alt+S で再送）。'
+                }
+                ariaLive={selectedSendStatus?.isStalled ? 'assertive' : 'polite'}
+                runId={orcaQueue?.runId ?? resolvedRunId}
+              />
+              <StatusBadge
+                label="ORCA キュー"
+                value={orcaQueue?.source ? `${orcaQueue.source}` : isOrcaQueueLoading ? '取得中' : '未取得'}
+                tone={orcaQueue?.source ? 'info' : isOrcaQueueLoading ? 'info' : 'warning'}
+                description={
+                  [
+                    orcaQueue?.queue ? `entries=${orcaQueue.queue.length}` : undefined,
+                    orcaQueue?.fetchedAt ? `fetchedAt=${orcaQueue.fetchedAt}` : undefined,
+                    orcaQueue?.traceId ? `traceId=${orcaQueue.traceId}` : undefined,
+                    typeof orcaQueueUpdatedAt === 'number' && orcaQueueUpdatedAt > 0 ? `updatedAt=${new Date(orcaQueueUpdatedAt).toISOString()}` : undefined,
+                  ]
+                    .filter((v): v is string => typeof v === 'string' && v.length > 0)
+                    .join(' ｜ ')
+                }
+                runId={orcaQueue?.runId ?? resolvedRunId}
+              />
+            </div>
             {claimData?.fetchedAt && (
               <p className="document-timeline__queue-meta">
                 最終取得: {claimData.fetchedAt} ｜ recordsReturned: {claimData.recordsReturned ?? claimBundles.length ?? '―'}
