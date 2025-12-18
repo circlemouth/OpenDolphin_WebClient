@@ -1,14 +1,19 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
+import { logUiState, getAuditEventLog, type AuditEventRecord } from '../../libs/audit/auditLogger';
+import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { useAuthService } from './authService';
 import { recordChartsAuditEvent } from './audit';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
 import type { OutpatientEncounterContext } from './encounterContext';
+import { useSession } from '../../AppRouter';
+import { fetchPatients, type PatientRecord } from '../patients/api';
 
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
@@ -40,6 +45,7 @@ export function PatientsTab({
   onSelectEncounter,
 }: PatientsTabProps) {
   const { flags } = useAuthService();
+  const session = useSession();
   const navigate = useNavigate();
   const tonePayload: ChartTonePayload = {
     missingMaster: flags.missingMaster,
@@ -51,8 +57,20 @@ export function PatientsTab({
   const [localSelectedKey, setLocalSelectedKey] = useState<string | undefined>(
     selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId,
   );
-  const [noteDraft, setNoteDraft] = useState('');
-  const lastAuditPatientId = useRef<string | undefined>();
+  const [memoDraft, setMemoDraft] = useState('');
+  const [memoEditing, setMemoEditing] = useState(false);
+  const [historyTab, setHistoryTab] = useState<'recent' | 'past90' | 'all'>('recent');
+  const [historyKeyword, setHistoryKeyword] = useState('');
+  const [historyFrom, setHistoryFrom] = useState('');
+  const [historyTo, setHistoryTo] = useState('');
+  const [auditOpen, setAuditOpen] = useState(false);
+  const [auditSnapshot, setAuditSnapshot] = useState<AuditEventRecord[]>([]);
+  const [diffHighlightKeys, setDiffHighlightKeys] = useState<string[]>([]);
+  const lastAuditPatientId = useRef<string | undefined>(undefined);
+  const memoPatientIdRef = useRef<string | undefined>(undefined);
+  const basicRef = useRef<HTMLDivElement | null>(null);
+  const insuranceRef = useRef<HTMLDivElement | null>(null);
+  const diffRef = useRef<HTMLDivElement | null>(null);
 
   const filteredEntries = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -86,6 +104,95 @@ export function PatientsTab({
     return filteredEntries[0];
   }, [filteredEntries, localSelectedKey, selectedContext?.appointmentId, selectedContext?.patientId, selectedContext?.receptionId]);
 
+  const selectedPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
+
+  const patientBaselineQuery = useQuery({
+    queryKey: ['charts-patient-sidepane-baseline', selectedPatientId],
+    queryFn: async () => {
+      if (!selectedPatientId) return null;
+      const result = await fetchPatients({ keyword: selectedPatientId });
+      const exact = result.patients.find((p) => p.patientId === selectedPatientId);
+      return exact ?? result.patients[0] ?? null;
+    },
+    enabled: Boolean(selectedPatientId),
+    staleTime: 60_000,
+  });
+
+  const patientBaseline: PatientRecord | null = patientBaselineQuery.data ?? null;
+
+  const editBlockedByMaster = flags.missingMaster || flags.fallbackUsed || flags.dataSourceTransition !== 'server';
+  const editBlockedReason = editBlockedByMaster
+    ? `missingMaster=${String(flags.missingMaster)} / fallbackUsed=${String(flags.fallbackUsed)} / dataSourceTransition=${flags.dataSourceTransition}`
+    : undefined;
+
+  const canEditMemoByRole = useMemo(() => {
+    const role = session.role?.toLowerCase?.() ?? '';
+    return role === 'doctor' || role === 'nurse';
+  }, [session.role]);
+
+  const canEditPatientInfoByRole = useMemo(() => {
+    const role = session.role?.toLowerCase?.() ?? '';
+    return role === 'reception' || role === 'system_admin' || role === 'admin' || role === 'system-admin' || role === 'clerk' || role === 'office';
+  }, [session.role]);
+
+  const canEditByStatus = useMemo(() => {
+    if (!selected) return false;
+    return selected.status === '受付中' || selected.status === '診療中' || selected.status === '予約';
+  }, [selected]);
+
+  const canEditMemo = canEditMemoByRole && !editBlockedByMaster;
+  const canDeepLinkPatientsBasic = canEditPatientInfoByRole && canEditByStatus && !editBlockedByMaster;
+  const canDeepLinkPatientsInsurance = canDeepLinkPatientsBasic;
+
+  const guardMessage = useMemo(() => {
+    if (switchLocked) {
+      return `他の処理が進行中のため患者切替をロック中${switchLockedReason ? `: ${switchLockedReason}` : ''}`;
+    }
+    if (editBlockedByMaster) {
+      return `編集不可（master/tone ガード）: ${editBlockedReason}`;
+    }
+    if (!canEditByStatus) {
+      return `編集不可（受付ステータス=${selected?.status ?? '不明'}）: 会計待ち以降は編集できません。`;
+    }
+    if (!canEditPatientInfoByRole && !canEditMemoByRole) {
+      return `編集不可（role=${session.role}）: 権限不足。`;
+    }
+    if (draftDirty) {
+      return '未保存ドラフトあり（ORCA送信前にドラフト保存してください）';
+    }
+    return '閲覧モード（編集は権限とガード条件を満たす場合のみ）';
+  }, [
+    canEditByStatus,
+    canEditMemoByRole,
+    canEditPatientInfoByRole,
+    draftDirty,
+    editBlockedByMaster,
+    editBlockedReason,
+    selected?.status,
+    session.role,
+    switchLocked,
+    switchLockedReason,
+  ]);
+
+  const scrollTo = (target: 'basic' | 'insurance' | 'diff' | 'timeline') => {
+    const map: Record<typeof target, HTMLElement | null> = {
+      basic: basicRef.current,
+      insurance: insuranceRef.current,
+      diff: diffRef.current,
+      timeline: typeof document !== 'undefined' ? (document.getElementById('document-timeline') as HTMLElement | null) : null,
+    };
+    const el = map[target];
+    if (!el) return;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    if (target === 'timeline') {
+      try {
+        el.focus({ preventScroll: true });
+      } catch {
+        // focus できない環境ではスキップ
+      }
+    }
+  };
+
   useEffect(() => {
     if (!selected && filteredEntries[0]) {
       const head = filteredEntries[0];
@@ -107,6 +214,7 @@ export function PatientsTab({
       recordChartsAuditEvent({
         action: 'CHARTS_PATIENT_SWITCH',
         outcome: 'success',
+        subject: 'sidepane',
         patientId: fallbackId,
         appointmentId: head.appointmentId,
         note: 'auto-select first patient',
@@ -125,10 +233,14 @@ export function PatientsTab({
     const nextId = entry.patientId ?? entry.id;
     const nextKey = entry.receptionId ?? entry.appointmentId ?? nextId;
     const currentKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId ?? localSelectedKey;
-    if (draftDirty && currentKey && nextKey && currentKey !== nextKey) {
-      const confirmed = typeof window === 'undefined'
-        ? true
-        : window.confirm('未保存の入力があります。ドラフトを破棄して患者を切り替えますか？');
+    const isSwitchingKey = Boolean(currentKey && nextKey && currentKey !== nextKey);
+    const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
+    const isSwitchingPatient = Boolean(currentPatientId && nextId && currentPatientId !== nextId);
+    if ((draftDirty || isSwitchingPatient) && isSwitchingKey) {
+      const message = draftDirty
+        ? '未保存の入力があります。ドラフトを破棄して患者を切り替えますか？'
+        : `患者が切り替わります（現在: ${currentPatientId ?? '不明'} → 次: ${nextId}）。切り替えますか？`;
+      const confirmed = typeof window === 'undefined' ? true : window.confirm(message);
       if (!confirmed) return;
     }
     setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
@@ -149,6 +261,7 @@ export function PatientsTab({
       recordChartsAuditEvent({
         action: 'CHARTS_PATIENT_SWITCH',
         outcome: 'success',
+        subject: 'sidepane',
         patientId: nextId,
         appointmentId: entry.appointmentId,
         note: 'manual switch',
@@ -162,23 +275,52 @@ export function PatientsTab({
     }
   };
 
-  const isReadOnly = flags.missingMaster || flags.fallbackUsed || flags.dataSourceTransition !== 'server';
-
   useEffect(() => {
-    setNoteDraft(selected?.note ?? '');
-    onDraftDirtyChange?.({
-      dirty: false,
-      patientId: selected?.patientId,
-      appointmentId: selected?.appointmentId,
-      receptionId: selected?.receptionId,
-      visitDate: selected?.visitDate,
+    const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
+    const baselineMemo = patientBaseline?.memo;
+    const initialMemo = baselineMemo ?? selected?.note ?? '';
+    const patientChanged = memoPatientIdRef.current !== currentPatientId;
+    if (patientChanged) {
+      memoPatientIdRef.current = currentPatientId;
+      setMemoEditing(false);
+      setMemoDraft(initialMemo);
+      onDraftDirtyChange?.({
+        dirty: false,
+        patientId: selected?.patientId,
+        appointmentId: selected?.appointmentId,
+        receptionId: selected?.receptionId,
+        visitDate: selected?.visitDate,
+      });
+      return;
+    }
+
+    setMemoDraft((prev) => {
+      if (memoEditing) return prev;
+      if (draftDirty) return prev;
+      return initialMemo;
     });
-  }, [onDraftDirtyChange, selected?.appointmentId, selected?.note, selected?.patientId, selected?.receptionId, selected?.visitDate]);
+  }, [
+    draftDirty,
+    memoEditing,
+    onDraftDirtyChange,
+    patientBaseline?.memo,
+    selected?.appointmentId,
+    selected?.note,
+    selected?.patientId,
+    selected?.receptionId,
+    selected?.visitDate,
+    selectedContext?.patientId,
+  ]);
 
   useEffect(() => {
     const nextKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId;
     if (nextKey) setLocalSelectedKey(nextKey);
   }, [selectedContext?.appointmentId, selectedContext?.patientId, selectedContext?.receptionId]);
+
+  useEffect(() => {
+    if (!auditOpen) return;
+    setAuditSnapshot(getAuditEventLog());
+  }, [auditOpen]);
 
   const navigateToReception = (intent: 'appointment_change' | 'appointment_cancel') => {
     const keywordValue = selected?.appointmentId ?? selected?.patientId ?? selected?.receptionId ?? '';
@@ -198,6 +340,212 @@ export function PatientsTab({
       fallbackUsed: flags.fallbackUsed,
       runId: flags.runId,
     });
+  };
+
+  const navigateToPatients = (intent: 'basic' | 'insurance') => {
+    const params = new URLSearchParams();
+    if (selectedPatientId) params.set('kw', selectedPatientId);
+    if (selectedPatientId) params.set('patientId', selectedPatientId);
+    params.set('from', 'charts');
+    params.set('intent', intent);
+    params.set('runId', flags.runId);
+    if (selectedContext?.receptionId) params.set('receptionId', selectedContext.receptionId);
+    if (selectedContext?.visitDate) params.set('visitDate', selectedContext.visitDate);
+    navigate(`/patients?${params.toString()}`);
+
+    recordOutpatientFunnel('charts_patient_sidepane', {
+      runId: flags.runId,
+      cacheHit: flags.cacheHit ?? false,
+      missingMaster: flags.missingMaster ?? false,
+      dataSourceTransition: flags.dataSourceTransition ?? 'snapshot',
+      fallbackUsed: flags.fallbackUsed ?? false,
+      action: 'deeplink',
+      outcome: 'started',
+      note: `intent=${intent}`,
+    });
+
+    logUiState({
+      action: 'patient_fetch',
+      screen: 'charts',
+      controlId: `patients-deeplink-${intent}`,
+      runId: flags.runId,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      dataSourceTransition: flags.dataSourceTransition,
+      fallbackUsed: flags.fallbackUsed,
+      details: {
+        patientId: selectedPatientId,
+        intent,
+      },
+    });
+  };
+
+  const formatVisit = (entry: ReceptionEntry) => {
+    const date = entry.visitDate ?? '日付不明';
+    const time = entry.appointmentTime ? ` ${entry.appointmentTime}` : '';
+    return `${date}${time}`;
+  };
+
+  const historyEntriesForSelected = useMemo(() => {
+    if (!selectedPatientId) return [];
+    const list = entries.filter((entry) => (entry.patientId ?? entry.id) === selectedPatientId);
+    const sorted = [...list].sort((a, b) => (b.visitDate ?? '').localeCompare(a.visitDate ?? ''));
+
+    const now = new Date();
+    const cutoff = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
+    const within90 = sorted.filter((entry) => {
+      if (!entry.visitDate) return false;
+      const parsed = new Date(entry.visitDate);
+      if (Number.isNaN(parsed.getTime())) return false;
+      return parsed >= cutoff;
+    });
+
+    const keywordLower = historyKeyword.trim().toLowerCase();
+    const keywordFiltered = keywordLower
+      ? sorted.filter((entry) =>
+          [entry.department, entry.physician, entry.insurance, entry.status, entry.receptionId, entry.appointmentId]
+            .filter(Boolean)
+            .some((field) => String(field).toLowerCase().includes(keywordLower)),
+        )
+      : sorted;
+
+    const fromFiltered = historyFrom
+      ? keywordFiltered.filter((entry) => (entry.visitDate ?? '') >= historyFrom)
+      : keywordFiltered;
+    const toFiltered = historyTo
+      ? fromFiltered.filter((entry) => (entry.visitDate ?? '') <= historyTo)
+      : fromFiltered;
+
+    if (historyTab === 'recent') return sorted.slice(0, 3);
+    if (historyTab === 'past90') return within90;
+    return toFiltered;
+  }, [entries, historyFrom, historyKeyword, historyTab, historyTo, selectedPatientId]);
+
+  const isCurrentEncounterRow = (entry: ReceptionEntry) => {
+    if (!selectedContext) return false;
+    if (selectedContext.receptionId && entry.receptionId) return selectedContext.receptionId === entry.receptionId;
+    if (selectedContext.appointmentId && entry.appointmentId) return selectedContext.appointmentId === entry.appointmentId;
+    const entryPatientId = entry.patientId ?? entry.id;
+    return selectedContext.patientId === entryPatientId && !selectedContext.receptionId && !selectedContext.appointmentId;
+  };
+
+  const jumpToEncounter = (entry: ReceptionEntry) => {
+    if (switchLocked) return;
+    const nextId = entry.patientId ?? entry.id;
+    onSelectEncounter?.({
+      patientId: nextId,
+      appointmentId: entry.appointmentId,
+      receptionId: entry.receptionId,
+      visitDate: entry.visitDate,
+    });
+    recordOutpatientFunnel('charts_patient_sidepane', {
+      runId: flags.runId,
+      cacheHit: flags.cacheHit ?? false,
+      missingMaster: flags.missingMaster ?? false,
+      dataSourceTransition: flags.dataSourceTransition ?? 'snapshot',
+      fallbackUsed: flags.fallbackUsed ?? false,
+      action: 'history_jump',
+      outcome: 'started',
+      note: `receptionId=${entry.receptionId ?? '—'} appointmentId=${entry.appointmentId ?? '—'}`,
+    });
+    scrollTo('timeline');
+  };
+
+  const importantLabel = useMemo(() => {
+    if (!selected) return '患者未選択';
+    const id = selected.patientId ?? selected.id;
+    const receptionId = selected.receptionId ? `受付ID:${selected.receptionId}` : undefined;
+    const insurance = selected.insurance ? `保険:${selected.insurance}` : undefined;
+    const status = `状態:${selected.status}`;
+    return [selected.name ?? '氏名未登録', `患者ID:${id}`, receptionId, insurance, status].filter(Boolean).join(' ｜ ');
+  }, [selected]);
+
+  type DiffRow = {
+    key: string;
+    label: string;
+    before: string;
+    after: string;
+  };
+
+  const diffRows: DiffRow[] = useMemo(() => {
+    const before = {
+      name: patientBaseline?.name ?? selected?.name ?? '',
+      kana: patientBaseline?.kana ?? selected?.kana ?? '',
+      birthDate: patientBaseline?.birthDate ?? selected?.birthDate ?? '',
+      sex: patientBaseline?.sex ?? selected?.sex ?? '',
+      phone: patientBaseline?.phone ?? '',
+      zip: patientBaseline?.zip ?? '',
+      address: patientBaseline?.address ?? '',
+      insurance: patientBaseline?.insurance ?? selected?.insurance ?? '',
+      memo: patientBaseline?.memo ?? selected?.note ?? '',
+    };
+    const after = {
+      ...before,
+      memo: memoDraft,
+    };
+    const safe = (value: string) => (value?.trim?.() ? value : '—');
+    return [
+      { key: 'name', label: '氏名', before: safe(before.name), after: safe(after.name) },
+      { key: 'kana', label: 'カナ', before: safe(before.kana), after: safe(after.kana) },
+      { key: 'birthDate', label: '生年月日', before: safe(before.birthDate), after: safe(after.birthDate) },
+      { key: 'sex', label: '性別', before: safe(before.sex), after: safe(after.sex) },
+      { key: 'address', label: '住所', before: safe(before.address), after: safe(after.address) },
+      { key: 'phone', label: '電話', before: safe(before.phone), after: safe(after.phone) },
+      { key: 'insurance', label: '保険/自費', before: safe(before.insurance), after: safe(after.insurance) },
+      { key: 'memo', label: 'メモ', before: safe(before.memo), after: safe(after.memo) },
+    ];
+  }, [memoDraft, patientBaseline?.address, patientBaseline?.birthDate, patientBaseline?.insurance, patientBaseline?.kana, patientBaseline?.memo, patientBaseline?.name, patientBaseline?.phone, patientBaseline?.sex, selected?.birthDate, selected?.insurance, selected?.kana, selected?.name, selected?.note, selected?.sex]);
+
+  const changedKeys = useMemo(() => {
+    return diffRows.filter((row) => row.before !== row.after).map((row) => row.key);
+  }, [diffRows]);
+
+  const openAudit = () => {
+    setAuditSnapshot(getAuditEventLog());
+    setAuditOpen(true);
+    recordOutpatientFunnel('charts_patient_sidepane', {
+      runId: flags.runId,
+      cacheHit: flags.cacheHit ?? false,
+      missingMaster: flags.missingMaster ?? false,
+      dataSourceTransition: flags.dataSourceTransition ?? 'snapshot',
+      fallbackUsed: flags.fallbackUsed ?? false,
+      action: 'audit_open',
+      outcome: 'started',
+      note: `patientId=${selectedPatientId ?? '—'}`,
+    });
+  };
+
+  const closeAudit = () => setAuditOpen(false);
+
+  const relevantAuditEvents = useMemo(() => {
+    const list = [...auditSnapshot].reverse();
+    const filtered = list.filter((record) => {
+      const payload = (record.payload ?? {}) as Record<string, unknown>;
+      const details = (payload.details ?? {}) as Record<string, unknown>;
+      const payloadPatientId =
+        (payload.patientId as string | undefined) ??
+        (details.patientId as string | undefined) ??
+        ((payload.auditEvent as Record<string, unknown> | undefined)?.patientId as string | undefined);
+      if (!selectedPatientId) return true;
+      if (!payloadPatientId) return false;
+      return payloadPatientId === selectedPatientId;
+    });
+    return filtered.slice(0, 5);
+  }, [auditSnapshot, selectedPatientId]);
+
+  const describeAudit = (record: AuditEventRecord) => {
+    const payload = (record.payload ?? {}) as Record<string, unknown>;
+    const details = (payload.details ?? {}) as Record<string, unknown>;
+    const action = (payload.action as string | undefined) ?? ((payload.auditEvent as any)?.action as string | undefined) ?? 'unknown';
+    const outcome = (payload.outcome as string | undefined) ?? ((payload.auditEvent as any)?.outcome as string | undefined) ?? '—';
+    const runId = (payload.runId as string | undefined) ?? (details.runId as string | undefined) ?? record.runId ?? '—';
+    const traceId = (details.traceId as string | undefined) ?? (payload.traceId as string | undefined) ?? '—';
+    const changed =
+      (payload.changedKeys as unknown) ??
+      (details.changedKeys as unknown) ??
+      ((payload.auditEvent as any)?.changedKeys as unknown);
+    const changedText = Array.isArray(changed) ? changed.join(', ') : typeof changed === 'string' ? changed : undefined;
+    return { action, outcome, runId, traceId, changedText };
   };
 
   return (
@@ -223,6 +571,29 @@ export function PatientsTab({
           ariaLive={appointmentBanner.tone === 'info' ? 'polite' : 'assertive'}
         />
       )}
+      <div className="patients-tab__important">
+        <button
+          type="button"
+          className="patients-tab__important-main"
+          onClick={() => scrollTo('basic')}
+          aria-label="患者基本情報へ移動"
+        >
+          <strong className="patients-tab__important-title">{selected?.name ?? '患者未選択'}</strong>
+          <span className="patients-tab__important-sub">{importantLabel}</span>
+        </button>
+        <div className="patients-tab__important-actions" role="group" aria-label="患者サイドペイン操作">
+          <button type="button" className="patients-tab__ghost" onClick={() => scrollTo('insurance')}>
+            基本/保険へ
+          </button>
+          <button type="button" className="patients-tab__ghost" onClick={() => scrollTo('diff')}>
+            差分へ{changedKeys.length > 0 ? `（${changedKeys.length}件）` : ''}
+          </button>
+          <button type="button" className="patients-tab__ghost" onClick={openAudit}>
+            保存履歴
+          </button>
+        </div>
+      </div>
+
       <div className="patients-tab__header">
         <div>
           <p className="patients-tab__header-label">dataSourceTransition</p>
@@ -250,11 +621,12 @@ export function PatientsTab({
             ariaLive={flags.fallbackUsed ? 'assertive' : 'polite'}
             runId={flags.runId}
           />
+          <StatusBadge label="role" value={session.role} tone="info" runId={flags.runId} />
         </div>
       </div>
       <div className="patients-tab__controls">
         <label className="patients-tab__search">
-          <span>患者検索</span>
+          <span>患者検索（外来一覧）</span>
           <input
             type="search"
             placeholder="氏名 / カナ / ID"
@@ -264,18 +636,12 @@ export function PatientsTab({
           />
         </label>
         <div className="patients-tab__edit-guard" aria-live="polite">
-          {switchLocked
-            ? `他の処理が進行中のため患者切替をロック中${switchLockedReason ? `: ${switchLockedReason}` : ''}`
-            : isReadOnly
-              ? 'missingMaster または tone=server 中は編集不可'
-              : draftDirty
-                ? '未保存ドラフトあり（ORCA送信前にドラフト保存してください）'
-                : '編集可能（server route 待機中）'}
+          {guardMessage}
         </div>
       </div>
 
       <div className="patients-tab__body">
-        <div className="patients-tab__table" role="list">
+        <div className="patients-tab__table" role="list" aria-label="外来一覧（患者切替）">
           {filteredEntries.length === 0 && (
             <article className="patients-tab__row" data-run-id={flags.runId}>
               <div className="patients-tab__row-meta">
@@ -320,66 +686,345 @@ export function PatientsTab({
           })}
         </div>
 
-        <div className="patients-tab__detail" role="group" aria-label="患者詳細">
+        <div className="patients-tab__detail" role="group" aria-label="患者サイドペイン（基本/保険/履歴/差分）">
           {!selected && <p className="patients-tab__detail-empty">患者を選択すると詳細が表示されます。</p>}
           {selected && (
             <>
-              <div className="patients-tab__detail-row">
-                <label>患者ID</label>
-                <input value={selected.patientId ?? 'ID不明'} readOnly />
+              <div className="patients-tab__card" ref={basicRef}>
+                <div className="patients-tab__card-header">
+                  <h3>基本情報（閲覧）</h3>
+                  <div className="patients-tab__card-actions" role="group" aria-label="基本情報操作">
+                    <button
+                      type="button"
+                      onClick={() => navigateToPatients('basic')}
+                      disabled={!canDeepLinkPatientsBasic}
+                      title={
+                        canDeepLinkPatientsBasic
+                          ? 'Patients 画面で編集'
+                          : editBlockedByMaster
+                            ? `ガード中: ${editBlockedReason}`
+                            : !canEditPatientInfoByRole
+                              ? `role=${session.role} のため編集不可`
+                              : !canEditByStatus
+                                ? `受付ステータス=${selected.status} のため編集不可`
+                                : '編集不可'
+                      }
+                      className="patients-tab__primary"
+                    >
+                      基本を編集（Patients）
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => patientBaselineQuery.refetch()}
+                      disabled={!selectedPatientId}
+                      className="patients-tab__ghost"
+                    >
+                      再取得
+                    </button>
+                  </div>
+                </div>
+                <div className="patients-tab__grid">
+                  <div className="patients-tab__kv">
+                    <span>患者ID</span>
+                    <strong>{selected.patientId ?? 'ID不明'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>受付ID</span>
+                    <strong>{selected.receptionId ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>氏名</span>
+                    <strong>{patientBaseline?.name ?? selected.name ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>カナ</span>
+                    <strong>{patientBaseline?.kana ?? selected.kana ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>生年月日</span>
+                    <strong>{patientBaseline?.birthDate ?? selected.birthDate ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>性別</span>
+                    <strong>{patientBaseline?.sex ?? selected.sex ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>住所</span>
+                    <strong>{patientBaseline?.address ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>電話</span>
+                    <strong>{patientBaseline?.phone ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>診療科</span>
+                    <strong>{selected.department ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>担当医</span>
+                    <strong>{selected.physician ?? '—'}</strong>
+                  </div>
+                </div>
+                <div className="patients-tab__memo">
+                  <div className="patients-tab__memo-header">
+                    <h4>患者メモ</h4>
+                    <div className="patients-tab__memo-actions">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (!canEditMemo) return;
+                          setMemoEditing((prev) => !prev);
+                          recordOutpatientFunnel('charts_patient_sidepane', {
+                            runId: flags.runId,
+                            cacheHit: flags.cacheHit ?? false,
+                            missingMaster: flags.missingMaster ?? false,
+                            dataSourceTransition: flags.dataSourceTransition ?? 'snapshot',
+                            fallbackUsed: flags.fallbackUsed ?? false,
+                            action: 'memo_edit_toggle',
+                            outcome: 'started',
+                            note: `next=${String(!memoEditing)}`,
+                          });
+                        }}
+                        disabled={!canEditMemo}
+                        title={canEditMemo ? 'メモ編集を開始/終了' : editBlockedByMaster ? `ガード中: ${editBlockedReason}` : `role=${session.role} のため編集不可`}
+                        className="patients-tab__ghost"
+                      >
+                        {memoEditing ? 'メモ編集を終了' : 'メモ編集'}
+                      </button>
+                      {memoEditing ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setMemoDraft(patientBaseline?.memo ?? selected?.note ?? '');
+                            setMemoEditing(false);
+                            setDiffHighlightKeys([]);
+                          }}
+                          className="patients-tab__ghost"
+                        >
+                          変更を破棄
+                        </button>
+                      ) : null}
+                    </div>
+                  </div>
+                  <textarea
+                    value={memoDraft || 'メモなし'}
+                    onChange={(event) => {
+                      const next = event.target.value;
+                      setMemoDraft(next);
+                      if (memoEditing && canEditMemo) {
+                        onDraftDirtyChange?.({
+                          dirty: true,
+                          patientId: selected.patientId,
+                          appointmentId: selected.appointmentId,
+                          receptionId: selected.receptionId,
+                          visitDate: selected.visitDate,
+                        });
+                      }
+                    }}
+                    readOnly={!memoEditing || !canEditMemo}
+                    aria-readonly={!memoEditing || !canEditMemo}
+                    rows={3}
+                  />
+                  {!canEditMemo && <small className="patients-tab__detail-guard">医師/看護師のみメモ編集可（ガード条件により無効化されます）。</small>}
+                </div>
               </div>
-              <div className="patients-tab__detail-row">
-                <label>受付ID</label>
-                <input value={selected.receptionId ?? '—'} readOnly />
+
+              <div className="patients-tab__card" ref={insuranceRef}>
+                <div className="patients-tab__card-header">
+                  <h3>保険・公費（閲覧）</h3>
+                  <div className="patients-tab__card-actions" role="group" aria-label="保険操作">
+                    <button
+                      type="button"
+                      onClick={() => navigateToPatients('insurance')}
+                      disabled={!canDeepLinkPatientsInsurance}
+                      title={
+                        canDeepLinkPatientsInsurance
+                          ? 'Patients 画面で編集'
+                          : editBlockedByMaster
+                            ? `ガード中: ${editBlockedReason}`
+                            : !canEditPatientInfoByRole
+                              ? `role=${session.role} のため編集不可`
+                              : !canEditByStatus
+                                ? `受付ステータス=${selected.status} のため編集不可`
+                                : '編集不可'
+                      }
+                      className="patients-tab__primary"
+                    >
+                      保険を編集（Patients）
+                    </button>
+                    <button type="button" className="patients-tab__ghost" onClick={() => scrollTo('diff')}>
+                      差分へ
+                    </button>
+                  </div>
+                </div>
+                <div className="patients-tab__grid">
+                  <div className="patients-tab__kv">
+                    <span>保険/自費</span>
+                    <strong>{patientBaseline?.insurance ?? selected.insurance ?? '—'}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>受付ステータス</span>
+                    <strong>{selected.status}</strong>
+                  </div>
+                  <div className="patients-tab__kv">
+                    <span>予約時刻</span>
+                    <strong>{selected.appointmentTime ?? '—'}</strong>
+                  </div>
+                </div>
+                {editBlockedByMaster ? (
+                  <small className="patients-tab__detail-guard">
+                    missingMaster/fallbackUsed/非serverルートの場合は保険編集を停止します（{editBlockedReason}）。
+                  </small>
+                ) : null}
               </div>
-              <div className="patients-tab__detail-row">
-                <label>氏名 / カナ</label>
-                <input value={selected.name ?? '患者未登録'} readOnly />
-                <input value={selected.kana ?? ''} readOnly />
-              </div>
-              <div className="patients-tab__detail-row">
-                <label>診療科 / 医師</label>
-                <input value={selected.department ?? '―'} readOnly />
-                <input value={selected.physician ?? '―'} readOnly />
-              </div>
-              <div className="patients-tab__detail-row">
-                <label>保険 / メモ</label>
-                <input value={selected.insurance ?? '―'} readOnly />
-                <textarea
-                  value={noteDraft || selected.note || 'メモなし'}
-                  onChange={(event) => {
-                    const next = event.target.value;
-                    setNoteDraft(next);
-                    if (!isReadOnly) {
-                      onDraftDirtyChange?.({
-                        dirty: true,
-                        patientId: selected.patientId,
-                        appointmentId: selected.appointmentId,
-                      });
-                    }
-                  }}
-                  readOnly={isReadOnly}
-                  aria-readonly={isReadOnly}
-                  rows={3}
-                />
-                {isReadOnly && <small className="patients-tab__detail-guard">missingMaster または tone=server 中は編集不可</small>}
-              </div>
-              <div className="patients-tab__detail-row">
-                <label>ステータス</label>
-                <input value={selected.status} readOnly />
-                <input value={selected.appointmentTime ?? '時刻未設定'} readOnly />
-              </div>
-              <div className="patients-tab__detail-row">
-                <label>予約操作</label>
-                <div className="patients-tab__detail-actions">
-                  <button type="button" onClick={() => navigateToReception('appointment_change')}>
+
+              <div className="patients-tab__card">
+                <div className="patients-tab__card-header">
+                  <h3>履歴（過去受診/直近受診）</h3>
+                  <div className="patients-tab__card-actions" role="group" aria-label="履歴タブ操作">
+                    <button
+                      type="button"
+                      className={`patients-tab__tab${historyTab === 'recent' ? ' is-active' : ''}`}
+                      onClick={() => setHistoryTab('recent')}
+                    >
+                      直近3回
+                    </button>
+                    <button
+                      type="button"
+                      className={`patients-tab__tab${historyTab === 'past90' ? ' is-active' : ''}`}
+                      onClick={() => setHistoryTab('past90')}
+                    >
+                      過去90日
+                    </button>
+                    <button
+                      type="button"
+                      className={`patients-tab__tab${historyTab === 'all' ? ' is-active' : ''}`}
+                      onClick={() => setHistoryTab('all')}
+                    >
+                      全期間検索
+                    </button>
+                  </div>
+                </div>
+                {historyTab === 'all' ? (
+                  <div className="patients-tab__history-filters" aria-label="履歴検索フィルタ">
+                    <label>
+                      <span>キーワード</span>
+                      <input
+                        type="search"
+                        value={historyKeyword}
+                        onChange={(event) => setHistoryKeyword(event.target.value)}
+                        placeholder="診療科/医師/保険/受付ID"
+                      />
+                    </label>
+                    <label>
+                      <span>開始日</span>
+                      <input type="date" value={historyFrom} onChange={(event) => setHistoryFrom(event.target.value)} />
+                    </label>
+                    <label>
+                      <span>終了日</span>
+                      <input type="date" value={historyTo} onChange={(event) => setHistoryTo(event.target.value)} />
+                    </label>
+                  </div>
+                ) : null}
+                <div className="patients-tab__history" role="list" aria-label="受診履歴一覧">
+                  {historyEntriesForSelected.length === 0 ? (
+                    <p className="patients-tab__detail-empty" role="status" aria-live="polite">
+                      該当する履歴がありません（このデモでは外来一覧の範囲内のみ表示）。
+                    </p>
+                  ) : (
+                    historyEntriesForSelected.map((entry) => {
+                      const active = isCurrentEncounterRow(entry);
+                      return (
+                        <button
+                          key={`${entry.id}-${entry.receptionId ?? entry.appointmentId ?? 'x'}`}
+                          type="button"
+                          className={`patients-tab__history-row${active ? ' is-active' : ''}`}
+                          onClick={() => jumpToEncounter(entry)}
+                          disabled={switchLocked}
+                          aria-current={active ? 'true' : undefined}
+                        >
+                          <div className="patients-tab__history-main">
+                            <strong>{formatVisit(entry)}</strong>
+                            <span className="patients-tab__history-badge">{entry.status}</span>
+                          </div>
+                          <div className="patients-tab__history-sub">
+                            <span>{entry.department ?? '診療科不明'}</span>
+                            <span>{entry.physician ?? '医師不明'}</span>
+                            <span>{entry.insurance ?? '保険不明'}</span>
+                            {entry.receptionId ? <span>受付ID:{entry.receptionId}</span> : null}
+                          </div>
+                        </button>
+                      );
+                    })
+                  )}
+                </div>
+                <div className="patients-tab__detail-actions" role="group" aria-label="関連導線">
+                  <button type="button" onClick={() => navigateToReception('appointment_change')} className="patients-tab__ghost">
                     予約変更へ（Reception）
                   </button>
-                  <button type="button" onClick={() => navigateToReception('appointment_cancel')}>
+                  <button type="button" onClick={() => navigateToReception('appointment_cancel')} className="patients-tab__ghost">
                     予約キャンセルへ（Reception）
                   </button>
+                  <button type="button" onClick={() => scrollTo('timeline')} className="patients-tab__ghost">
+                    DocumentTimeline へ
+                  </button>
                 </div>
-                <small className="patients-tab__detail-guard">Charts は導線のみ。操作は Reception 側で実行します。</small>
+                <small className="patients-tab__detail-guard">Charts は導線のみ。予約操作は Reception 側で実行します。</small>
+              </div>
+
+              <div className="patients-tab__card" ref={diffRef}>
+                <div className="patients-tab__card-header">
+                  <h3>差分（変更前/変更後）</h3>
+                  <div className="patients-tab__card-actions" role="group" aria-label="差分操作">
+                    <button
+                      type="button"
+                      className="patients-tab__ghost"
+                      onClick={() => {
+                        setDiffHighlightKeys(changedKeys);
+                        recordOutpatientFunnel('charts_patient_sidepane', {
+                          runId: flags.runId,
+                          cacheHit: flags.cacheHit ?? false,
+                          missingMaster: flags.missingMaster ?? false,
+                          dataSourceTransition: flags.dataSourceTransition ?? 'snapshot',
+                          fallbackUsed: flags.fallbackUsed ?? false,
+                          action: 'diff',
+                          outcome: 'started',
+                          note: `changed=${changedKeys.join(',') || 'none'}`,
+                        });
+                      }}
+                    >
+                      差分を強調
+                    </button>
+                    <button type="button" className="patients-tab__ghost" onClick={() => setDiffHighlightKeys([])}>
+                      強調解除
+                    </button>
+                  </div>
+                </div>
+                <div className="patients-tab__diff">
+                  <div className="patients-tab__diff-head">
+                    <span>項目</span>
+                    <span>変更前</span>
+                    <span>変更後</span>
+                  </div>
+                  {diffRows.map((row) => {
+                    const changed = row.before !== row.after;
+                    const highlighted = diffHighlightKeys.includes(row.key);
+                    return (
+                      <div
+                        key={row.key}
+                        className={`patients-tab__diff-row${changed ? ' is-changed' : ''}${highlighted ? ' is-highlighted' : ''}`}
+                        data-key={row.key}
+                      >
+                        <span className="patients-tab__diff-label">{row.label}</span>
+                        <span className="patients-tab__diff-before">{row.before}</span>
+                        <span className="patients-tab__diff-after">{row.after}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+                <small className="patients-tab__detail-guard">
+                  変更前は直近取得値、変更後は現在の表示（メモはローカル編集）です。基本/保険の保存は Patients 画面で実施してください。
+                </small>
               </div>
             </>
           )}
@@ -396,6 +1041,80 @@ export function PatientsTab({
           </p>
         </div>
       )}
+
+      {auditOpen ? (
+        <div className="patients-tab__modal" role="dialog" aria-modal="true" aria-label="保存履歴（監査ログ）">
+          <div className="patients-tab__modal-card">
+            <div className="patients-tab__modal-header">
+              <h3>保存履歴（最新5件）</h3>
+              <button type="button" className="patients-tab__ghost" onClick={closeAudit}>
+                閉じる
+              </button>
+            </div>
+            <p className="patients-tab__modal-sub">
+              runId={flags.runId} ／ patientId={selectedPatientId ?? '—'} ／ traceId={(auditEvent as any)?.details?.traceId ?? '—'}
+            </p>
+            <div className="patients-tab__modal-list" role="list">
+              {relevantAuditEvents.length === 0 ? (
+                <p className="patients-tab__detail-empty" role="status" aria-live="polite">
+                  まだ保存履歴がありません（Patients 画面で保存するとここに反映されます）。
+                </p>
+              ) : (
+                relevantAuditEvents.map((record, index) => {
+                  const desc = describeAudit(record);
+                  return (
+                    <button
+                      key={`${record.timestamp}-${index}`}
+                      type="button"
+                      className="patients-tab__modal-row"
+                      onClick={() => {
+                        const changedText = desc.changedText;
+                        const keys = changedText ? changedText.split(',').map((s) => s.trim()).filter(Boolean) : [];
+                        setDiffHighlightKeys(keys.length > 0 ? keys : changedKeys);
+                        setAuditOpen(false);
+                        scrollTo('diff');
+                      }}
+                    >
+                      <div className="patients-tab__modal-row-main">
+                        <strong>{desc.action}</strong>
+                        <span className="patients-tab__modal-pill">outcome: {desc.outcome}</span>
+                      </div>
+                      <div className="patients-tab__modal-row-sub">
+                        <span>{record.timestamp}</span>
+                        <span>runId: {desc.runId}</span>
+                        <span>traceId: {desc.traceId}</span>
+                        {desc.changedText ? <span>changedKeys: {desc.changedText}</span> : null}
+                      </div>
+                    </button>
+                  );
+                })
+              )}
+            </div>
+            <div className="patients-tab__modal-actions" role="group" aria-label="保存履歴の補助操作">
+              <button
+                type="button"
+                className="patients-tab__primary"
+                onClick={() => {
+                  closeAudit();
+                  navigateToPatients('basic');
+                }}
+                disabled={!selectedPatientId}
+              >
+                Patients で編集/保存へ
+              </button>
+              <button
+                type="button"
+                className="patients-tab__ghost"
+                onClick={() => {
+                  setAuditSnapshot(getAuditEventLog());
+                }}
+              >
+                履歴を更新
+              </button>
+            </div>
+          </div>
+        </div>
+      ) : null}
     </section>
   );
 }

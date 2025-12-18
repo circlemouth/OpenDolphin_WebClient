@@ -22,7 +22,7 @@ export function TelemetryFunnelPanel() {
 
   return (
     <section className="telemetry-panel" aria-live="polite" aria-atomic="false" role="status" data-run-id={flags.runId}>
-      <h2>Telemetry funnel（resolve_master → charts_orchestration → charts_action）</h2>
+      <h2>Telemetry funnel（resolve_master → charts_orchestration → charts_action / charts_patient_sidepane）</h2>
       <p className="telemetry-panel__meta">
         runId={flags.runId} ｜ dataSourceTransition={flags.dataSourceTransition} ｜ missingMaster={String(flags.missingMaster)} ｜ cacheHit={String(flags.cacheHit)}
       </p>

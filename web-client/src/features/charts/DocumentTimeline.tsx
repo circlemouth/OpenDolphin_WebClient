@@ -343,10 +343,12 @@ export function DocumentTimeline({
 
   return (
     <section
+      id="document-timeline"
       className="document-timeline"
       aria-live={tone === 'info' ? 'polite' : 'assertive'}
       aria-atomic="false"
       role="region"
+      tabIndex={-1}
       data-run-id={resolvedRunId}
     >
       <ToneBanner
