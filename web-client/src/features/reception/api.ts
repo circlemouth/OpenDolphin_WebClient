@@ -194,8 +194,15 @@ export async function fetchClaimFlags(
   const json = result.raw ?? {};
   const bundles = parseClaimBundles(json);
   const queueEntries = parseQueueEntries(json);
+  const claimInformation = (json as any)?.['claim:information'] ?? (json as any)?.claim?.information ?? (json as any)?.claimInformation ?? (json as any)?.information;
+  const claimInformationStatus =
+    claimInformation?.status ?? claimInformation?.claimStatus ?? claimInformation?.['claim:status'] ?? claimInformation?.['claim_status'];
   const resolvedClaimStatusText =
-    (json as any).claimStatus ?? (json as any).status ?? (json as any).apiResult ?? bundles[0]?.claimStatusText;
+    (json as any).claimStatus ??
+    claimInformationStatus ??
+    (json as any).status ??
+    (json as any).apiResult ??
+    bundles[0]?.claimStatusText;
   const metaRecords = typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : bundles.length || undefined;
   const meta = mergeOutpatientMeta(json, {
     ...result.meta,

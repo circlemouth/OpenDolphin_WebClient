@@ -118,16 +118,36 @@ const toNumber = (value: unknown): number | undefined => {
   return undefined;
 };
 
+const pickClaimHeader = (json: any): any | undefined =>
+  json?.claimInformation ??
+  json?.information ??
+  json?.['claim:information'] ??
+  json?.claim?.information ??
+  json?.claim?.['claim:information'] ??
+  json?.response?.['claim:information'] ??
+  json?.response?.claim?.information;
+
+const pickClaimBundlesRaw = (json: any): any[] =>
+  (Array.isArray(json?.claimBundles) && json.claimBundles) ||
+  (Array.isArray(json?.['claim:bundle']) && json['claim:bundle']) ||
+  (Array.isArray(json?.bundles) && json.bundles) ||
+  (Array.isArray(json?.claim?.bundles) && json.claim.bundles) ||
+  (Array.isArray(json?.claim?.bundle) && json.claim.bundle) ||
+  (Array.isArray(json?.claim?.['claim:bundle']) && json.claim['claim:bundle']) ||
+  (Array.isArray(json?.response?.['claim:bundle']) && json.response['claim:bundle']) ||
+  (Array.isArray(json?.claim) && json.claim) ||
+  [];
+
 const parseClaimItems = (rawItems: unknown): ClaimBundleItem[] => {
   if (!Array.isArray(rawItems)) return [];
   return rawItems.map((item: any) => ({
-    code: item?.code ?? item?.itemCode,
-    tableId: item?.tableId ?? item?.itemTableId,
-    name: item?.name ?? item?.itemName,
-    number: toNumber(item?.number ?? item?.itemNumber),
-    unit: item?.unit ?? item?.itemUnit,
-    claimRate: toNumber(item?.claimRate ?? item?.rate),
-    amount: toNumber(item?.amount ?? item?.price ?? item?.total),
+    code: item?.code ?? item?.itemCode ?? item?.['claim:code'] ?? item?.Item_Code ?? item?.ItemCode,
+    tableId: item?.tableId ?? item?.itemTableId ?? item?.['claim:tableId'] ?? item?.Table_Id ?? item?.TableId,
+    name: item?.name ?? item?.itemName ?? item?.['claim:name'] ?? item?.Item_Name ?? item?.ItemName,
+    number: toNumber(item?.number ?? item?.itemNumber ?? item?.['claim:number'] ?? item?.Item_Number ?? item?.ItemNumber),
+    unit: item?.unit ?? item?.itemUnit ?? item?.['claim:unit'] ?? item?.Item_Unit ?? item?.ItemUnit,
+    claimRate: toNumber(item?.claimRate ?? item?.rate ?? item?.['claim:claimRate'] ?? item?.Claim_Rate ?? item?.ClaimRate),
+    amount: toNumber(item?.amount ?? item?.price ?? item?.total ?? item?.['claim:amount'] ?? item?.Amount ?? item?.Total),
   }));
 };
 
@@ -141,32 +161,48 @@ const parseBundle = (bundle: any, defaultStatus?: ClaimBundleStatus): ClaimBundl
     bundle?.claim?.status;
   const claimStatus = toClaimStatus(statusText) ?? defaultStatus;
   return {
-    bundleNumber: bundle?.bundleNumber ?? bundle?.bundle_id ?? bundle?.bundleId ?? bundle?.id,
-    classCode: bundle?.classCode ?? bundle?.class_code ?? bundle?.class,
-    patientId: bundle?.patientId ?? bundle?.patient_id ?? bundle?.patient?.patientId,
-    appointmentId: bundle?.appointmentId ?? bundle?.appointment_id ?? bundle?.sequentialNumber,
-    performTime: bundle?.performTime ?? bundle?.perform_time ?? bundle?.claim?.performTime ?? bundle?.claimPerformTime,
+    bundleNumber:
+      bundle?.bundleNumber ??
+      bundle?.bundle_id ??
+      bundle?.bundleId ??
+      bundle?.Bundle_Number ??
+      bundle?.BundleNumber ??
+      bundle?.id,
+    classCode: bundle?.classCode ?? bundle?.class_code ?? bundle?.class ?? bundle?.Class_Code ?? bundle?.ClassCode,
+    patientId: bundle?.patientId ?? bundle?.patient_id ?? bundle?.Patient_ID ?? bundle?.patient?.patientId,
+    appointmentId: bundle?.appointmentId ?? bundle?.appointment_id ?? bundle?.Appointment_Id ?? bundle?.sequentialNumber,
+    performTime:
+      bundle?.performTime ??
+      bundle?.perform_time ??
+      bundle?.Perform_Time ??
+      bundle?.claim?.performTime ??
+      bundle?.claimPerformTime,
     claimStatusText: typeof statusText === 'string' ? statusText : undefined,
     claimStatus,
     totalClaimAmount: toNumber(bundle?.totalClaimAmount ?? bundle?.totalAmount ?? bundle?.amount ?? bundle?.claimTotal),
-    items: parseClaimItems(bundle?.items ?? bundle?.claimItems ?? bundle?.claim?.items),
+    items: parseClaimItems(
+      bundle?.items ??
+        bundle?.claimItems ??
+        bundle?.claim?.items ??
+        bundle?.['claim:item'] ??
+        bundle?.claimItem ??
+        bundle?.Claim_Item,
+    ),
   };
 };
 
 export const parseClaimBundles = (json: any): ClaimBundle[] => {
-  const bundles: any[] =
-    (Array.isArray(json?.claimBundles) && json.claimBundles) ||
-    (Array.isArray(json?.bundles) && json.bundles) ||
-    (Array.isArray(json?.claim?.bundles) && json.claim.bundles) ||
-    (Array.isArray(json?.claim?.bundle) && json.claim.bundle) ||
-    (Array.isArray(json?.claim) && json.claim) ||
-    [];
+  const bundles: any[] = pickClaimBundlesRaw(json);
+  const header = pickClaimHeader(json);
   const defaultStatus = toClaimStatus(
     json?.claimStatus ??
       json?.claim_status ??
       json?.status ??
       json?.claim?.status ??
       json?.claim?.information?.status ??
+      header?.status ??
+      header?.claimStatus ??
+      header?.['claim:status'] ??
       json?.apiResult,
   );
   return bundles.map((bundle) => parseBundle(bundle, defaultStatus));

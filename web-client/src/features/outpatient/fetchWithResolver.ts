@@ -116,6 +116,8 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
           cacheHit: cacheHitHint,
           fromCache: cacheHitHint,
           retryCount,
+          sourcePath: candidate.path,
+          httpStatus: 0,
         },
         ok: false,
         error: error instanceof Error ? error.message : String(error),
