@@ -55,6 +55,15 @@ const pickClaimBundleForEntry = (entry: ReceptionEntry, bundles: ClaimBundle[]) 
 
 type QueuePhase = 'ok' | 'retrying' | 'holding' | 'error' | 'pending';
 
+type OrcaQueueCounts = {
+  waiting: number;
+  processing: number;
+  success: number;
+  failure: number;
+  unknown: number;
+  stalled: number;
+};
+
 const resolveQueuePhase = (options: {
   missingMaster?: boolean;
   isClaimLoading?: boolean;
@@ -67,6 +76,29 @@ const resolveQueuePhase = (options: {
   if (options.isClaimLoading) return 'retrying';
   if (options.fallbackUsed === true || options.cacheHit === false) return 'pending';
   return 'ok';
+};
+
+const buildOrcaQueueCounts = (queue: OrcaQueueEntry[]): OrcaQueueCounts => {
+  const counts: OrcaQueueCounts = {
+    waiting: 0,
+    processing: 0,
+    success: 0,
+    failure: 0,
+    unknown: 0,
+    stalled: 0,
+  };
+
+  for (const entry of queue) {
+    const status = resolveOrcaSendStatus(entry);
+    if (!status) {
+      counts.unknown += 1;
+      continue;
+    }
+    counts[status.key] += 1;
+    if (status.isStalled) counts.stalled += 1;
+  }
+
+  return counts;
 };
 
 const deriveNextAction = (
@@ -202,6 +234,16 @@ export function DocumentTimeline({
     return resolveOrcaSendStatus(orcaQueueByPatientId.get(selectedPatientId));
   }, [orcaQueueByPatientId, selectedPatientId]);
 
+  const orcaQueueCounts = useMemo(() => buildOrcaQueueCounts([...orcaQueueByPatientId.values()]), [orcaQueueByPatientId]);
+
+  const orcaQueueCountsTone = useMemo(() => {
+    if (orcaQueueCounts.failure > 0) return 'error' as const;
+    if (orcaQueueCounts.stalled > 0) return 'warning' as const;
+    if (orcaQueueCounts.waiting > 0) return 'warning' as const;
+    if (orcaQueueCounts.processing > 0) return 'info' as const;
+    return 'success' as const;
+  }, [orcaQueueCounts.failure, orcaQueueCounts.processing, orcaQueueCounts.stalled, orcaQueueCounts.waiting]);
+
   const entriesWithClaim = useMemo(() => {
     if (entries.length === 0) return [];
     if (claimBundles.length === 0) return entries;
@@ -218,10 +260,12 @@ export function DocumentTimeline({
     });
   }, [claimBundles, entries]);
 
-  const rank: Record<ReceptionStatus, number> = useMemo(
-    () => Object.fromEntries(STATUS_ORDER.map((s, idx) => [s, idx])),
-    [],
-  );
+  const rank: Record<ReceptionStatus, number> = useMemo(() => {
+    return STATUS_ORDER.reduce<Record<ReceptionStatus, number>>((acc, status, idx) => {
+      acc[status] = idx;
+      return acc;
+    }, {} as Record<ReceptionStatus, number>);
+  }, []);
 
   const sortedEntries = useMemo(() => {
     if (entriesWithClaim.length === 0) return [] as ReceptionEntry[];
@@ -278,7 +322,7 @@ export function DocumentTimeline({
     })).filter((section) => section.items.length > 0 || section.total > 0),
   [sortedEntries, windowedEntries]);
 
-  const [collapsedSections, setCollapsedSections] = useState<Record<ReceptionStatus, boolean>>({});
+  const [collapsedSections, setCollapsedSections] = useState<Partial<Record<ReceptionStatus, boolean>>>({});
 
   const toggleSection = useCallback((status: ReceptionStatus) => {
     setCollapsedSections((prev) => ({ ...prev, [status]: !prev[status] }));
@@ -586,15 +630,13 @@ export function DocumentTimeline({
                 description={transitionMeta.description}
                 runId={resolvedRunId}
               />
-            <StatusBadge
-              label="fallbackUsed"
-              value={resolvedFallbackUsed ? 'true' : 'false'}
-              tone={resolvedFallbackUsed ? 'error' : 'info'}
-              description={resolvedFallbackUsed ? 'フォールバック使用中。優先で再取得を実施' : 'フォールバック未使用'}
-              runId={resolvedRunId}
-            />
-          </div>
-            <div className="document-timeline__queue-badges">
+              <StatusBadge
+                label="fallbackUsed"
+                value={resolvedFallbackUsed ? 'true' : 'false'}
+                tone={resolvedFallbackUsed ? 'error' : 'info'}
+                description={resolvedFallbackUsed ? 'フォールバック使用中。優先で再取得を実施' : 'フォールバック未使用'}
+                runId={resolvedRunId}
+              />
               <StatusBadge
                 label="ORCA送信（選択患者）"
                 value={selectedSendStatus?.label ?? (selectedPatientId ? '未取得' : '患者未選択')}
@@ -630,6 +672,21 @@ export function DocumentTimeline({
                     .filter((v): v is string => typeof v === 'string' && v.length > 0)
                     .join(' ｜ ')
                 }
+                runId={orcaQueue?.runId ?? resolvedRunId}
+              />
+              <StatusBadge
+                label="ORCA キュー内訳"
+                value={`待ち:${orcaQueueCounts.waiting} / 処理中:${orcaQueueCounts.processing} / 成功:${orcaQueueCounts.success} / 失敗:${orcaQueueCounts.failure}`}
+                tone={orcaQueueCountsTone}
+                description={
+                  [
+                    orcaQueueCounts.stalled > 0 ? `滞留:${orcaQueueCounts.stalled}` : undefined,
+                    orcaQueueCounts.unknown > 0 ? `不明:${orcaQueueCounts.unknown}` : undefined,
+                  ]
+                    .filter((v): v is string => typeof v === 'string' && v.length > 0)
+                    .join(' ｜ ') || '選択患者以外の滞留/失敗も含めて俯瞰します。'
+                }
+                ariaLive={orcaQueueCounts.failure > 0 || orcaQueueCounts.stalled > 0 ? 'assertive' : 'polite'}
                 runId={orcaQueue?.runId ?? resolvedRunId}
               />
             </div>
