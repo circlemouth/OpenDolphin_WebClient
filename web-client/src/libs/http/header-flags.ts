@@ -9,6 +9,19 @@ export type HeaderFlags = {
   mswDelayMs?: number;
 };
 
+const isMswFaultInjectionAllowed = (): boolean => {
+  // MSW を無効化している（実 API / Stage 接続）場合は、誤って注入ヘッダーを送らない。
+  if (import.meta.env.VITE_DISABLE_MSW === '1') return false;
+  if (typeof window === 'undefined') return false;
+  try {
+    const url = new URL(window.location.href);
+    // 事故防止のため、明示的に msw=1 のページのみ注入を許可する（E2E/デバッグ用）。
+    return url.searchParams.get('msw') === '1';
+  } catch {
+    return false;
+  }
+};
+
 export function readHeaderFlagsFromEnv(): HeaderFlags {
   const delayRaw = import.meta.env.VITE_MSW_DELAY_MS;
   const delay = typeof delayRaw === 'string' && delayRaw.trim().length > 0 ? Number(delayRaw) : undefined;
@@ -21,14 +34,20 @@ export function readHeaderFlagsFromEnv(): HeaderFlags {
 }
 
 export function buildHeaderOverrides(flags: HeaderFlags) {
+  const allowMswFaultHeaders = isMswFaultInjectionAllowed();
   const overrides: Record<string, string> = {
     'x-use-mock-orca-queue': flags.useMockOrcaQueue ? '1' : '0',
     'x-verify-admin-delivery': flags.verifyAdminDelivery ? '1' : '0',
   };
-  if (flags.mswFault && flags.mswFault.trim().length > 0) {
+  if (allowMswFaultHeaders && flags.mswFault && flags.mswFault.trim().length > 0) {
     overrides['x-msw-fault'] = flags.mswFault.trim();
   }
-  if (typeof flags.mswDelayMs === 'number' && Number.isFinite(flags.mswDelayMs) && flags.mswDelayMs > 0) {
+  if (
+    allowMswFaultHeaders &&
+    typeof flags.mswDelayMs === 'number' &&
+    Number.isFinite(flags.mswDelayMs) &&
+    flags.mswDelayMs > 0
+  ) {
     overrides['x-msw-delay-ms'] = String(Math.floor(flags.mswDelayMs));
   }
   return overrides;

@@ -27,7 +27,7 @@ const stubSessionApis = async (page: Page) => {
         facilityId: '0001',
         userId: 'doctor1',
         displayName: 'Playwright Doctor',
-        roles: ['admin'],
+        roles: ['doctor'],
       }),
     }),
   );
@@ -57,28 +57,42 @@ const openCharts = async (page: Page) => {
   await expect(page.locator('[data-test-id="medical-record-panel"]')).toBeVisible({ timeout: 20_000 });
 };
 
+const orcaSummaryActions = (page: Page) => page.locator('[aria-label="OrcaSummary アクション"]');
+
 test.describe('Charts fault injection (MSW)', () => {
   test.skip(profile !== 'msw', 'MSW プロファイル専用（Stage 接続禁止）');
 
-  test('timeout: 504 でも UI が落ちずに説明でき、解除後に再取得で復帰', async ({ context }) => {
-    await context.setExtraHTTPHeaders({
-      'x-msw-scenario': 'cache-hit',
-      'x-msw-fault': 'timeout',
-    });
+  test('timeout: 504 でも UI が落ちずに説明でき、解除後に再取得で復帰（医療記録/ドラフト保持含む）', async ({ context }) => {
+    // 初期ロードは正常系（PatientsTab でドラフトを作るため、appointment/patient の取得が必要）
+    await context.setExtraHTTPHeaders({ 'x-msw-scenario': 'cache-hit' });
     const page = await context.newPage();
     await loginWithMsw(page);
     await openCharts(page);
 
+    // PatientsTab: メモ編集でドラフト dirty を作る（障害注入中でも保持されることを確認する）
+    await page.getByRole('button', { name: 'メモ編集' }).click();
+    const memo = page.locator('.patients-tab__memo textarea');
+    await memo.fill('E2E draft note');
+    await expect(page.locator('.charts-actions__pill', { hasText: 'draftDirty' })).toContainText('true');
+
+    // 故障注入: 再取得（OrcaSummary）で claim/medical/appointment を同時にエラーへ落とす
+    await context.setExtraHTTPHeaders({ 'x-msw-scenario': 'cache-hit', 'x-msw-fault': 'timeout' });
+    await orcaSummaryActions(page).getByRole('button', { name: '再取得' }).click();
+
     const claimRetry = page.locator('.document-timeline__retry');
-    await expect(claimRetry).toBeVisible();
+    await expect(claimRetry).toBeVisible({ timeout: 20_000 });
     await expect(claimRetry).toContainText('請求バンドルの取得に失敗しました');
 
     const medical = page.locator('[data-test-id="medical-record-panel"]');
     await expect(medical).toContainText('外来医療記録の取得に失敗しました');
+    await expect(page.locator('.charts-actions__pill', { hasText: 'draftDirty' })).toContainText('true');
 
+    // 復旧: fault を解除し、Claim/Medical それぞれを再取得してエラーが解消することを確認
     await context.setExtraHTTPHeaders({ 'x-msw-scenario': 'cache-hit' });
-    await page.getByRole('button', { name: '請求バンドルを再取得' }).click();
+    await orcaSummaryActions(page).getByRole('button', { name: '再取得' }).click();
     await expect(claimRetry).toBeHidden({ timeout: 20_000 });
+    await expect(medical).not.toContainText('取得に失敗', { timeout: 20_000 });
+    await expect(page.locator('.charts-actions__pill', { hasText: 'draftDirty' })).toContainText('true');
   });
 
   test('http-500: 500 でも UI が落ちずに説明でき、解除後に再取得で復帰', async ({ context }) => {
@@ -100,6 +114,9 @@ test.describe('Charts fault injection (MSW)', () => {
     await context.setExtraHTTPHeaders({ 'x-msw-scenario': 'cache-hit' });
     await page.getByRole('button', { name: '請求バンドルを再取得' }).click();
     await expect(claimRetry).toBeHidden({ timeout: 20_000 });
+
+    await orcaSummaryActions(page).getByRole('button', { name: '再取得' }).click();
+    await expect(medical).not.toContainText('取得に失敗', { timeout: 20_000 });
   });
 
   test('schema-mismatch: 200 + ERROR_* でも UI が落ちずに説明でき、解除後に再取得で復帰', async ({ context }) => {
@@ -121,6 +138,9 @@ test.describe('Charts fault injection (MSW)', () => {
     await context.setExtraHTTPHeaders({ 'x-msw-scenario': 'cache-hit' });
     await page.getByRole('button', { name: '請求バンドルを再取得' }).click();
     await expect(claimRetry).toBeHidden({ timeout: 20_000 });
+
+    await orcaSummaryActions(page).getByRole('button', { name: '再取得' }).click();
+    await expect(medical).not.toContainText('取得に失敗', { timeout: 20_000 });
   });
 
   test('queue-stall: 滞留バッジが表示され、解除後に復帰', async ({ context }) => {
@@ -140,4 +160,3 @@ test.describe('Charts fault injection (MSW)', () => {
     await expect(stalled).toBeHidden({ timeout: 20_000 });
   });
 });
-

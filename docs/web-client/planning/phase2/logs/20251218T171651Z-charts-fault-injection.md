@@ -9,6 +9,7 @@
 ### 1) MSW 障害注入ヘッダー
 - `web-client/src/libs/http/header-flags.ts`
   - localStorage/env から `mswFault` / `mswDelayMs` を読み、`x-msw-fault` / `x-msw-delay-ms` を全リクエストへ付与。
+  - 事故防止: `VITE_DISABLE_MSW=1` では送出しない。さらに `?msw=1` のページのみ送出する（E2E/デバッグ限定）。
 
 ### 2) MSW ハンドラ（外来 API）
 - `web-client/src/mocks/handlers/outpatient.ts`
@@ -40,4 +41,3 @@
 
 ## 関連ドキュメント
 - 手順書: `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md`
-
