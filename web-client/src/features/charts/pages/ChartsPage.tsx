@@ -7,6 +7,7 @@ import { AuthServiceControls } from '../AuthServiceControls';
 import { useAuthService, type DataSourceTransition } from '../authService';
 import { DocumentTimeline } from '../DocumentTimeline';
 import { OrcaSummary } from '../OrcaSummary';
+import { MedicalOutpatientRecordPanel } from '../MedicalOutpatientRecordPanel';
 import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
@@ -1045,6 +1046,9 @@ function ChartsContent() {
             onRefresh={handleRefreshSummary}
             isRefreshing={isManualRefreshing}
           />
+        </div>
+        <div className="charts-card">
+          <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
         </div>
         <div className="charts-card">
           <PatientsTab

@@ -814,6 +814,107 @@ export const chartsStyles = css`
     flex-wrap: wrap;
   }
 
+  .medical-record {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .medical-record__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .medical-record__title {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+  }
+
+  .medical-record__meta {
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
+  .medical-record__badges {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .medical-record__empty {
+    margin: 0;
+    padding: 0.85rem 1rem;
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #f8fafc;
+    color: #475569;
+  }
+
+  .medical-record__sections {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .medical-record__section {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #ffffff;
+    overflow: hidden;
+  }
+
+  .medical-record__section-summary {
+    padding: 0.7rem 0.9rem;
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    align-items: baseline;
+    cursor: pointer;
+    background: #f8fafc;
+  }
+
+  .medical-record__section-title {
+    font-weight: 800;
+    color: #0f172a;
+  }
+
+  .medical-record__section-meta {
+    color: #475569;
+    font-size: 0.9rem;
+    text-align: right;
+  }
+
+  .medical-record__section-empty {
+    margin: 0;
+    padding: 0.8rem 0.95rem;
+    color: #475569;
+  }
+
+  .medical-record__section-list {
+    margin: 0;
+    padding: 0.85rem 1.05rem;
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.65rem;
+  }
+
+  .medical-record__item-headline {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .medical-record__item-sub {
+    color: #475569;
+    font-size: 0.9rem;
+    line-height: 1.35;
+  }
+
   .patients-tab {
     display: flex;
     flex-direction: column;
