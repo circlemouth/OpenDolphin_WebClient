@@ -1,14 +1,19 @@
 import { httpFetch } from '../../libs/http/httpClient';
 import { updateObservabilityMeta } from '../../libs/observability/observability';
 
+export type ChartsMasterSourcePolicy = 'auto' | 'server' | 'mock' | 'snapshot' | 'fallback';
+
 export type AdminConfigPayload = {
   orcaEndpoint: string;
   mswEnabled: boolean;
   useMockOrcaQueue: boolean;
   verifyAdminDelivery: boolean;
+  chartsDisplayEnabled: boolean;
+  chartsSendEnabled: boolean;
+  chartsMasterSource: ChartsMasterSourcePolicy;
 };
 
-export type AdminConfigResponse = AdminConfigPayload & {
+export type AdminConfigResponse = Partial<AdminConfigPayload> & {
   runId?: string;
   deliveryId?: string;
   deliveryVersion?: string;
@@ -46,6 +51,15 @@ const normalizeBooleanHeader = (value: string | null) => {
 const getString = (value: unknown) => (typeof value === 'string' ? value : undefined);
 const getBoolean = (value: unknown) => (typeof value === 'boolean' ? value : undefined);
 
+const isChartsMasterSourcePolicy = (value: string): value is ChartsMasterSourcePolicy =>
+  value === 'auto' || value === 'server' || value === 'mock' || value === 'snapshot' || value === 'fallback';
+
+const getChartsMasterSourcePolicy = (value: unknown): ChartsMasterSourcePolicy | undefined => {
+  const raw = getString(value);
+  if (!raw) return undefined;
+  return isChartsMasterSourcePolicy(raw) ? raw : undefined;
+};
+
 const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse => {
   const body = (json ?? {}) as Record<string, unknown>;
   const runId = getString(body.runId) ?? headers.get('x-run-id') ?? undefined;
@@ -54,11 +68,17 @@ const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse =
   const verified = getBoolean(body.verified) ?? normalizeBooleanHeader(verifyHeader);
   const source = (getString(body.source) as 'mock' | 'live' | undefined) ?? (queueMode === 'mock' ? 'mock' : 'live');
 
+  const charts = (body.charts ?? {}) as Record<string, unknown>;
+
   const payload: AdminConfigResponse = {
-    orcaEndpoint: getString(body.orcaEndpoint) ?? getString(body.endpoint) ?? '',
-    mswEnabled: getBoolean(body.mswEnabled) ?? getBoolean(body.msw) ?? false,
-    useMockOrcaQueue: getBoolean(body.useMockOrcaQueue) ?? queueMode === 'mock',
-    verifyAdminDelivery: getBoolean(body.verifyAdminDelivery) ?? normalizeBooleanHeader(verifyHeader) ?? false,
+    orcaEndpoint: getString(body.orcaEndpoint) ?? getString(body.endpoint),
+    mswEnabled: getBoolean(body.mswEnabled) ?? getBoolean(body.msw),
+    useMockOrcaQueue: getBoolean(body.useMockOrcaQueue) ?? (queueMode === null ? undefined : queueMode === 'mock'),
+    verifyAdminDelivery: getBoolean(body.verifyAdminDelivery) ?? normalizeBooleanHeader(verifyHeader),
+    chartsDisplayEnabled: getBoolean(body.chartsDisplayEnabled) ?? getBoolean(charts.displayEnabled),
+    chartsSendEnabled: getBoolean(body.chartsSendEnabled) ?? getBoolean(charts.sendEnabled),
+    chartsMasterSource:
+      getChartsMasterSourcePolicy(body.chartsMasterSource) ?? getChartsMasterSourcePolicy(charts.masterSource),
     deliveryId: getString(body.deliveryId),
     deliveryVersion: getString(body.deliveryVersion) ?? getString(body.etag) ?? getString(body.version),
     deliveredAt: getString(body.deliveredAt) ?? getString(body.updatedAt),
@@ -96,6 +116,26 @@ export async function fetchAdminDelivery(): Promise<AdminConfigResponse> {
   const response = await httpFetch(ADMIN_DELIVERY_ENDPOINT, { method: 'GET' });
   const json = await response.json().catch(() => ({}));
   return normalizeConfig(json, response.headers);
+}
+
+export function mergeAdminConfigResponses(config: AdminConfigResponse, delivery: AdminConfigResponse): AdminConfigResponse {
+  return {
+    ...config,
+    ...delivery,
+    orcaEndpoint: delivery.orcaEndpoint || config.orcaEndpoint,
+    mswEnabled: delivery.mswEnabled ?? config.mswEnabled,
+    useMockOrcaQueue: delivery.useMockOrcaQueue ?? config.useMockOrcaQueue,
+    verifyAdminDelivery: delivery.verifyAdminDelivery ?? config.verifyAdminDelivery,
+    chartsDisplayEnabled: delivery.chartsDisplayEnabled ?? config.chartsDisplayEnabled,
+    chartsSendEnabled: delivery.chartsSendEnabled ?? config.chartsSendEnabled,
+    chartsMasterSource: delivery.chartsMasterSource ?? config.chartsMasterSource,
+  };
+}
+
+export async function fetchEffectiveAdminConfig(): Promise<AdminConfigResponse> {
+  const [config, delivery] = await Promise.all([fetchAdminConfig(), fetchAdminDelivery().catch(() => null)]);
+  if (!delivery) return config;
+  return mergeAdminConfigResponses(config, delivery);
 }
 
 const normalizeQueue = (json: unknown, headers: Headers): OrcaQueueResponse => {
