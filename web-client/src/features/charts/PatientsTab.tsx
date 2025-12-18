@@ -11,6 +11,8 @@ export interface PatientsTabProps {
   entries?: ReceptionEntry[];
   auditEvent?: Record<string, unknown>;
   selectedPatientId?: string;
+  draftDirty?: boolean;
+  onDraftDirtyChange?: (params: { dirty: boolean; patientId?: string; appointmentId?: string }) => void;
   onSelectPatient?: (patientId?: string) => void;
   onSelectAppointment?: (appointmentId?: string) => void;
 }
@@ -19,6 +21,8 @@ export function PatientsTab({
   entries = [],
   auditEvent,
   selectedPatientId,
+  draftDirty = false,
+  onDraftDirtyChange,
   onSelectPatient,
   onSelectAppointment,
 }: PatientsTabProps) {
@@ -60,6 +64,7 @@ export function PatientsTab({
       setLocalSelectedId(fallbackId);
       onSelectPatient?.(fallbackId);
       onSelectAppointment?.(filteredEntries[0].appointmentId);
+      onDraftDirtyChange?.({ dirty: false, patientId: fallbackId, appointmentId: filteredEntries[0].appointmentId });
       recordChartsAuditEvent({
         action: 'CHARTS_PATIENT_SWITCH',
         outcome: 'success',
@@ -74,13 +79,14 @@ export function PatientsTab({
       });
       lastAuditPatientId.current = fallbackId;
     }
-  }, [filteredEntries, onSelectAppointment, onSelectPatient, selected]);
+  }, [filteredEntries, onDraftDirtyChange, onSelectAppointment, onSelectPatient, selected]);
 
   const handleSelect = (entry: ReceptionEntry) => {
     const nextId = entry.patientId ?? entry.id;
     setLocalSelectedId(nextId);
     onSelectPatient?.(nextId);
     onSelectAppointment?.(entry.appointmentId);
+    onDraftDirtyChange?.({ dirty: false, patientId: nextId, appointmentId: entry.appointmentId });
     if (lastAuditPatientId.current !== nextId) {
       recordChartsAuditEvent({
         action: 'CHARTS_PATIENT_SWITCH',
@@ -102,7 +108,8 @@ export function PatientsTab({
 
   useEffect(() => {
     setNoteDraft(selected?.note ?? '');
-  }, [selected?.note]);
+    onDraftDirtyChange?.({ dirty: false, patientId: selected?.patientId, appointmentId: selected?.appointmentId });
+  }, [onDraftDirtyChange, selected?.appointmentId, selected?.note, selected?.patientId]);
 
   useEffect(() => {
     if (selectedPatientId) {
@@ -164,7 +171,11 @@ export function PatientsTab({
           />
         </label>
         <div className="patients-tab__edit-guard" aria-live="polite">
-          {isReadOnly ? 'missingMaster または tone=server 中は編集不可' : '編集可能（server route 待機中）'}
+          {isReadOnly
+            ? 'missingMaster または tone=server 中は編集不可'
+            : draftDirty
+              ? '未保存ドラフトあり（ORCA送信前にドラフト保存してください）'
+              : '編集可能（server route 待機中）'}
         </div>
       </div>
 
@@ -231,7 +242,17 @@ export function PatientsTab({
                 <input value={selected.insurance ?? '―'} readOnly />
                 <textarea
                   value={noteDraft || selected.note || 'メモなし'}
-                  onChange={(event) => setNoteDraft(event.target.value)}
+                  onChange={(event) => {
+                    const next = event.target.value;
+                    setNoteDraft(next);
+                    if (!isReadOnly) {
+                      onDraftDirtyChange?.({
+                        dirty: true,
+                        patientId: selected.patientId,
+                        appointmentId: selected.appointmentId,
+                      });
+                    }
+                  }}
                   readOnly={isReadOnly}
                   aria-readonly={isReadOnly}
                   rows={3}

@@ -1,9 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 
 import { logUiState } from '../../libs/audit/auditLogger';
+import { httpFetch } from '../../libs/http/httpClient';
+import { getObservabilityMeta } from '../../libs/observability/observability';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { recordChartsAuditEvent } from './audit';
 import type { DataSourceTransition } from './authService';
+import type { ClaimQueueEntry } from '../outpatient/types';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -11,6 +14,22 @@ type ToastState = {
   tone: 'success' | 'warning' | 'error' | 'info';
   message: string;
   detail?: string;
+};
+
+type GuardReason = {
+  key:
+    | 'missing_master'
+    | 'fallback_used'
+    | 'draft_unsaved'
+    | 'permission_denied'
+    | 'network_offline'
+    | 'network_degraded'
+    | 'not_server_route'
+    | 'patient_not_selected'
+    | 'locked';
+  summary: string;
+  detail: string;
+  next: string[];
 };
 
 const ACTION_LABEL: Record<ChartAction, string> = {
@@ -21,23 +40,41 @@ const ACTION_LABEL: Record<ChartAction, string> = {
   print: '印刷',
 };
 
-const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms));
-
 export interface ChartsActionBarProps {
   runId: string;
+  traceId?: string;
   cacheHit: boolean;
   missingMaster: boolean;
   dataSourceTransition: DataSourceTransition;
   fallbackUsed?: boolean;
+  patientId?: string;
+  queueEntry?: ClaimQueueEntry;
+  hasUnsavedDraft?: boolean;
+  hasPermission?: boolean;
+  requireServerRouteForSend?: boolean;
+  requirePatientForSend?: boolean;
+  networkDegradedReason?: string;
+  onAfterSend?: () => void | Promise<void>;
+  onDraftSaved?: () => void;
   onLockChange?: (locked: boolean, reason?: string) => void;
 }
 
 export function ChartsActionBar({
   runId,
+  traceId,
   cacheHit,
   missingMaster,
   dataSourceTransition,
   fallbackUsed = false,
+  patientId,
+  queueEntry,
+  hasUnsavedDraft = false,
+  hasPermission = true,
+  requireServerRouteForSend = false,
+  requirePatientForSend = false,
+  networkDegradedReason,
+  onAfterSend,
+  onDraftSaved,
   onLockChange,
 }: ChartsActionBarProps) {
   const [lockReason, setLockReason] = useState<string | null>(null);
@@ -45,10 +82,130 @@ export function ChartsActionBar({
   const [retryAction, setRetryAction] = useState<ChartAction | null>(null);
   const [isRunning, setIsRunning] = useState(false);
   const [runningAction, setRunningAction] = useState<ChartAction | null>(null);
-  const [errorDetail, setErrorDetail] = useState<string | null>(null);
+  const [isOnline, setIsOnline] = useState(() => (typeof navigator === 'undefined' ? true : navigator.onLine));
+  const [permissionDenied, setPermissionDenied] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
-  const isLocked = lockReason !== null || isRunning;
-  const sendBlocked = missingMaster || fallbackUsed || isLocked;
+  const uiLocked = lockReason !== null;
+  const isLocked = uiLocked || isRunning;
+  const resolvedTraceId = traceId ?? getObservabilityMeta().traceId;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener('online', handleOnline);
+    window.addEventListener('offline', handleOffline);
+    return () => {
+      window.removeEventListener('online', handleOnline);
+      window.removeEventListener('offline', handleOffline);
+    };
+  }, []);
+
+  const sendPrecheckReasons: GuardReason[] = useMemo(() => {
+    const reasons: GuardReason[] = [];
+
+    if (uiLocked) {
+      reasons.push({
+        key: 'locked',
+        summary: '他の操作が進行中/ロック中',
+        detail: lockReason ? lockReason : '別アクション実行中のため送信できません。',
+        next: ['ロック解除', '処理完了を待って再試行'],
+      });
+    }
+
+    if (requirePatientForSend && !patientId) {
+      reasons.push({
+        key: 'patient_not_selected',
+        summary: '患者未選択',
+        detail: '患者が未選択のため送信先が確定できません。',
+        next: ['Patients で患者を選択', 'Reception へ戻って対象患者を確定'],
+      });
+    }
+
+    if (requireServerRouteForSend && dataSourceTransition !== 'server') {
+      reasons.push({
+        key: 'not_server_route',
+        summary: 'server ルートではない',
+        detail: `dataSourceTransition=${dataSourceTransition} のため ORCA 送信を停止します。`,
+        next: ['server route に切替（MSW OFF / 実 API）', 'Reception で再取得'],
+      });
+    }
+
+    if (missingMaster) {
+      reasons.push({
+        key: 'missing_master',
+        summary: 'missingMaster=true',
+        detail: 'マスタ欠損を検知したため、送信は実施できません。',
+        next: ['Reception で master を再取得', '再取得完了後に ORCA再送'],
+      });
+    }
+
+    if (fallbackUsed) {
+      reasons.push({
+        key: 'fallback_used',
+        summary: 'fallbackUsed=true',
+        detail: 'フォールバック経路のため、送信は実施できません。',
+        next: ['Reception で再取得', 'master 解消後に再送'],
+      });
+    }
+
+    if (hasUnsavedDraft) {
+      reasons.push({
+        key: 'draft_unsaved',
+        summary: '未保存ドラフト',
+        detail: '未保存の入力があるため、送信前にドラフト保存が必要です。',
+        next: ['ドラフト保存', '不要なら入力を戻してから再送'],
+      });
+    }
+
+    if (!isOnline) {
+      reasons.push({
+        key: 'network_offline',
+        summary: '通信オフライン',
+        detail: 'ブラウザが offline 状態のため送信できません。',
+        next: ['通信回復を待つ', '回線/プロキシ設定を確認'],
+      });
+    }
+
+    if (networkDegradedReason) {
+      reasons.push({
+        key: 'network_degraded',
+        summary: '通信不安定',
+        detail: networkDegradedReason,
+        next: ['再取得してから再送', 'Reception へ戻って状態確認'],
+      });
+    }
+
+    if (permissionDenied || !hasPermission) {
+      reasons.push({
+        key: 'permission_denied',
+        summary: '権限不足/認証不備',
+        detail: permissionDenied
+          ? '直近の送信で 401/403 を検知しました。'
+          : '認証情報が揃っていないため送信を停止します。',
+        next: ['再ログイン', '設定確認（facilityId/userId/password）'],
+      });
+    }
+
+    return reasons;
+  }, [
+    dataSourceTransition,
+    fallbackUsed,
+    hasPermission,
+    hasUnsavedDraft,
+    isOnline,
+    lockReason,
+    missingMaster,
+    networkDegradedReason,
+    patientId,
+    permissionDenied,
+    requireServerRouteForSend,
+    requirePatientForSend,
+    uiLocked,
+  ]);
+
+  const sendDisabled = isRunning || sendPrecheckReasons.length > 0;
   const otherBlocked = isLocked;
 
   useEffect(() => {
@@ -60,10 +217,12 @@ export function ChartsActionBar({
       return `${ACTION_LABEL[runningAction]}を実行中… dataSourceTransition=${dataSourceTransition}`;
     }
     if (lockReason) return lockReason;
-    if (missingMaster) return 'missingMaster=true: Reception で master を再取得するまで送信を停止中';
-    if (fallbackUsed) return 'fallbackUsed=true: スナップショット経由、送信をブロック中';
+    if (sendPrecheckReasons.length > 0) {
+      const head = sendPrecheckReasons[0];
+      return `送信不可: ${head.summary}（runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'}）`;
+    }
     return 'アクションを選択できます';
-  }, [dataSourceTransition, fallbackUsed, isRunning, lockReason, missingMaster, runningAction]);
+  }, [dataSourceTransition, isRunning, lockReason, resolvedTraceId, runId, runningAction, sendPrecheckReasons]);
 
   const logTelemetry = (action: ChartAction, outcome: 'success' | 'error' | 'blocked' | 'started', durationMs?: number, note?: string) => {
     recordOutpatientFunnel('charts_action', {
@@ -111,13 +270,10 @@ export function ChartsActionBar({
   const handleAction = async (action: ChartAction) => {
     if (isRunning) return;
 
-    const blockedReason =
-      action === 'send' && missingMaster
-        ? 'missingMaster=true のため ORCA 送信をブロックしました。Reception で master を解決してから再送してください。'
-        : action === 'send' && fallbackUsed
-          ? 'fallbackUsed=true のため ORCA 送信をブロックしました。master 解消後に再取得してください。'
-          : null;
-    if (blockedReason) {
+    if (action === 'send' && sendPrecheckReasons.length > 0) {
+      const blockedReason = sendPrecheckReasons
+        .map((reason) => `${reason.summary}: ${reason.detail}`)
+        .join(' / ');
       setToast({
         tone: 'warning',
         message: 'ORCA送信を停止',
@@ -134,17 +290,39 @@ export function ChartsActionBar({
         missingMaster,
         dataSourceTransition,
         fallbackUsed,
-        details: { blocked: true, reason: missingMaster ? 'missing_master' : 'fallback_used' },
+        details: { blocked: true, reasons: sendPrecheckReasons.map((reason) => reason.key), traceId: resolvedTraceId },
       });
       logAudit(action, 'blocked', blockedReason);
       return;
     }
 
-    if (fallbackUsed) {
+    if (action === 'send' && !patientId) {
+      const blockedReason = '患者IDが未確定のため ORCA 送信を実行できません。Patients で患者を選択してください。';
+      setToast({ tone: 'warning', message: 'ORCA送信を停止', detail: blockedReason });
+      setRetryAction(null);
+      logTelemetry(action, 'blocked', undefined, blockedReason);
+      logUiState({
+        action: 'send',
+        screen: 'charts/action-bar',
+        controlId: `action-${action}`,
+        runId,
+        cacheHit,
+        missingMaster,
+        dataSourceTransition,
+        fallbackUsed,
+        details: { blocked: true, reasons: ['patient_not_selected'], traceId: resolvedTraceId },
+      });
+      logAudit(action, 'blocked', blockedReason);
+      return;
+    }
+
+    if (action === 'send' && (fallbackUsed || missingMaster)) {
       setToast({
         tone: 'warning',
-        message: 'fallbackUsed=true を検知',
-        detail: 'スナップショット経由のデータです。ORCA 送信は master 解決後に再実行してください。',
+        message: '送信前チェック',
+        detail: missingMaster
+          ? 'missingMaster=true を検知しました。Reception で master を再取得してから再送してください。'
+          : 'fallbackUsed=true を検知しました。master 解消後に再送してください。',
       });
     }
 
@@ -152,11 +330,10 @@ export function ChartsActionBar({
     setIsRunning(true);
     setRunningAction(action);
     setRetryAction(null);
-    setErrorDetail(null);
     setToast({
       tone: 'info',
       message: `${ACTION_LABEL[action]}を実行中…`,
-      detail: `runId=${runId} / dataSourceTransition=${dataSourceTransition}`,
+      detail: `runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'} / dataSourceTransition=${dataSourceTransition}`,
     });
 
     logUiState({
@@ -168,41 +345,97 @@ export function ChartsActionBar({
       missingMaster,
       dataSourceTransition,
       fallbackUsed,
+      details: {
+        patientId,
+        appointmentId: queueEntry?.appointmentId,
+        requestId: queueEntry?.requestId,
+        traceId: resolvedTraceId,
+      },
     });
     logTelemetry(action, 'started');
     logAudit(action, 'started', undefined);
 
     try {
-      const waitMs = action === 'send' ? 1700 : 1100;
-      await sleep(waitMs);
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
 
-      if (action === 'send' && fallbackUsed) {
-        throw new Error('fallbackUsed=true のため ORCA 送信を保留しました');
+      if (action === 'send') {
+        const endpoint = `/api/orca/queue?patientId=${encodeURIComponent(patientId ?? '')}&retry=1`;
+        const response = await httpFetch(endpoint, { method: 'GET', signal });
+        if (response.status === 401 || response.status === 403) {
+          setPermissionDenied(true);
+          throw new Error(`権限不足（HTTP ${response.status}）。再ログインまたは権限設定を確認してください。`);
+        }
+        if (!response.ok) {
+          const bodyText = await response.text().catch(() => '');
+          throw new Error(`ORCA 送信 API に失敗（HTTP ${response.status}）。${bodyText ? `response=${bodyText.slice(0, 120)}` : ''}`);
+        }
+        // 応答ボディは環境差があるため、ここでは成功判定のみ行い、詳細は claim/outpatient 再取得で確認する。
+        await response.json().catch(() => ({}));
+        await onAfterSend?.();
+      } else if (action === 'draft') {
+        // TODO: 本実装では localStorage / server に保存。現段階は送信前チェック用のガード連携を優先。
+        onDraftSaved?.();
+      } else {
+        // finish/cancel/print は現状デモ（監査・テレメトリの記録）として扱う。
       }
 
-      setLockReason(`${ACTION_LABEL[action]}完了。UI をロック中`);
       const durationMs = Math.round(performance.now() - startedAt);
+      const after = getObservabilityMeta();
+      const nextRunId = after.runId ?? runId;
+      const nextTraceId = after.traceId ?? resolvedTraceId;
       setToast({
         tone: 'success',
         message: `${ACTION_LABEL[action]}を完了`,
-        detail: `runId=${runId} / transition=${dataSourceTransition}`,
+        detail: `runId=${nextRunId} / traceId=${nextTraceId ?? 'unknown'} / requestId=${queueEntry?.requestId ?? 'unknown'} / transition=${dataSourceTransition}`,
       });
       logTelemetry(action, 'success', durationMs);
       logAudit(action, 'success', undefined, durationMs);
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
-      setErrorDetail(detail);
-      setRetryAction(action);
-      setLockReason(null);
-      setToast({
-        tone: 'error',
-        message: `${ACTION_LABEL[action]}に失敗`,
-        detail,
-      });
+      const isAbort =
+        error instanceof DOMException
+          ? error.name === 'AbortError'
+          : error instanceof Error
+            ? error.name === 'AbortError'
+            : false;
       const durationMs = Math.round(performance.now() - startedAt);
-      logTelemetry(action, 'error', durationMs, detail);
-      logAudit(action, 'error', detail, durationMs);
+      const after = getObservabilityMeta();
+      const errorRunId = after.runId ?? runId;
+      const errorTraceId = after.traceId ?? resolvedTraceId;
+
+      if (isAbort) {
+        const abortedDetail = 'ユーザー操作により送信を中断しました。通信回復後に再試行できます。';
+        setRetryAction('send');
+        setToast({
+          tone: 'warning',
+          message: 'ORCA送信を中断',
+          detail: abortedDetail,
+        });
+        logTelemetry(action, 'blocked', durationMs, abortedDetail);
+        logAudit(action, 'blocked', abortedDetail, durationMs);
+      } else {
+        const nextSteps = (() => {
+          if (/HTTP 401|HTTP 403|権限不足/.test(detail)) {
+            return '次にやること: 再ログイン / 設定確認（facilityId/userId/password）';
+          }
+          if (error instanceof TypeError || /Failed to fetch|NetworkError/.test(detail)) {
+            return '次にやること: 通信回復を待つ / Reception で再取得 / リトライ';
+          }
+          return '次にやること: Reception へ戻る / 請求を再取得 / 設定確認';
+        })();
+        const composedDetail = `${detail}（runId=${errorRunId} / traceId=${errorTraceId ?? 'unknown'} / requestId=${queueEntry?.requestId ?? 'unknown'}）${nextSteps ? ` / ${nextSteps}` : ''}`;
+        setRetryAction(action);
+        setToast({
+          tone: 'error',
+          message: `${ACTION_LABEL[action]}に失敗`,
+          detail: composedDetail,
+        });
+        logTelemetry(action, 'error', durationMs, composedDetail);
+        logAudit(action, 'error', composedDetail, durationMs);
+      }
     } finally {
+      abortControllerRef.current = null;
       setIsRunning(false);
       setRunningAction(null);
     }
@@ -249,10 +482,16 @@ export function ChartsActionBar({
     });
   };
 
+  const handleAbort = () => {
+    if (!isRunning) return;
+    if (runningAction !== 'send') return;
+    abortControllerRef.current?.abort();
+  };
+
   return (
     <section
       className={`charts-actions${isLocked ? ' charts-actions--locked' : ''}`}
-      aria-live={missingMaster ? 'assertive' : 'polite'}
+      aria-live={sendPrecheckReasons.length > 0 ? 'assertive' : 'polite'}
       data-run-id={runId}
     >
       <header className="charts-actions__header">
@@ -265,9 +504,11 @@ export function ChartsActionBar({
         </div>
         <div className="charts-actions__meta">
           <span className="charts-actions__pill">runId: {runId}</span>
+          <span className="charts-actions__pill">traceId: {resolvedTraceId ?? 'unknown'}</span>
           <span className="charts-actions__pill">transition: {dataSourceTransition}</span>
           <span className="charts-actions__pill">missingMaster: {String(missingMaster)}</span>
           <span className="charts-actions__pill">fallbackUsed: {String(fallbackUsed)}</span>
+          <span className="charts-actions__pill">draftDirty: {String(hasUnsavedDraft)}</span>
         </div>
       </header>
 
@@ -284,12 +525,14 @@ export function ChartsActionBar({
         <button
           type="button"
           className="charts-actions__button charts-actions__button--primary"
-          disabled={sendBlocked}
+          disabled={sendDisabled}
           onClick={() => handleAction('send')}
-          aria-disabled={sendBlocked}
-          aria-describedby={missingMaster ? 'charts-actions-blocked' : undefined}
+          aria-disabled={sendDisabled}
+          aria-describedby={!isRunning && sendPrecheckReasons.length > 0 ? 'charts-actions-send-guard' : undefined}
           data-disabled-reason={
-            sendBlocked ? (missingMaster ? 'missing_master' : fallbackUsed ? 'fallback_used' : isLocked ? 'locked' : undefined) : undefined
+            sendDisabled
+              ? (isRunning ? 'running' : sendPrecheckReasons.map((reason) => reason.key).join(','))
+              : undefined
           }
         >
           ORCA 送信
@@ -297,11 +540,13 @@ export function ChartsActionBar({
         <button
           type="button"
           className="charts-actions__button"
-          disabled={sendBlocked}
+          disabled={sendDisabled}
           onClick={handlePrint}
-          aria-disabled={sendBlocked}
+          aria-disabled={sendDisabled}
           data-disabled-reason={
-            sendBlocked ? (missingMaster ? 'missing_master' : fallbackUsed ? 'fallback_used' : isLocked ? 'locked' : undefined) : undefined
+            sendDisabled
+              ? (isRunning ? 'running' : sendPrecheckReasons.map((reason) => reason.key).join(','))
+              : undefined
           }
         >
           印刷 (監査記録)
@@ -334,15 +579,17 @@ export function ChartsActionBar({
         </button>
       </div>
 
-      {missingMaster && (
-        <p id="charts-actions-blocked" className="charts-actions__guard" role="note" aria-live="assertive">
-          missingMaster=true のため ORCA 送信を一時停止しています。Reception で master を解決してください。
-        </p>
-      )}
-      {fallbackUsed && !missingMaster && (
-        <p className="charts-actions__guard" role="note" aria-live="assertive">
-          fallbackUsed=true のため ORCA 送信をブロック中です。マスタ再取得後に再送してください。
-        </p>
+      {!isRunning && sendPrecheckReasons.length > 0 && (
+        <div id="charts-actions-send-guard" className="charts-actions__guard" role="note" aria-live="assertive">
+          <strong>送信前チェック: ORCA送信をブロック</strong>
+          <ul>
+            {sendPrecheckReasons.map((reason) => (
+              <li key={reason.key}>
+                {reason.summary}: {reason.detail}（次にやること: {reason.next.join(' / ')}）
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {isRunning && (
@@ -357,14 +604,12 @@ export function ChartsActionBar({
           className={`charts-actions__toast charts-actions__toast--${toast.tone}`}
           role={toast.tone === 'success' ? 'status' : 'alert'}
           aria-live="assertive"
-          id={missingMaster ? 'charts-actions-blocked' : undefined}
         >
           <div>
             <strong>{toast.message}</strong>
             {toast.detail && <p>{toast.detail}</p>}
-            {errorDetail && <p className="charts-actions__toast-detail">詳細: {errorDetail}</p>}
           </div>
-          {retryAction && toast.tone === 'error' && (
+          {retryAction && toast.tone !== 'success' && (
             <button
               type="button"
               className="charts-actions__retry"
@@ -372,6 +617,11 @@ export function ChartsActionBar({
               disabled={isRunning}
             >
               リトライ
+            </button>
+          )}
+          {isRunning && runningAction === 'send' && (
+            <button type="button" className="charts-actions__retry" onClick={handleAbort}>
+              送信を中断
             </button>
           )}
         </div>

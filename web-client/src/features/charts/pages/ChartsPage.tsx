@@ -19,6 +19,14 @@ import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
+import { hasStoredAuth } from '../../../libs/http/httpClient';
+
+const isLikelyNetworkError = (error: unknown) => {
+  if (!error) return false;
+  if (error instanceof TypeError) return true;
+  if (error instanceof Error) return /Failed to fetch|NetworkError|ネットワーク/i.test(error.message);
+  return false;
+};
 
 export function ChartsPage() {
   return (
@@ -36,6 +44,7 @@ function ChartsContent() {
   const navigationState = (location.state as { patientId?: string; appointmentId?: string } | null) ?? {};
   const [selectedPatientId, setSelectedPatientId] = useState<string | undefined>(navigationState.patientId);
   const [selectedAppointmentId, setSelectedAppointmentId] = useState<string | undefined>(navigationState.appointmentId);
+  const [draftState, setDraftState] = useState<{ dirty: boolean; patientId?: string; appointmentId?: string }>({ dirty: false });
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
@@ -132,6 +141,24 @@ function ChartsContent() {
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
   const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
+
+  const selectedQueueEntry = useMemo(() => {
+    const entries = (claimQuery.data as ClaimOutpatientPayload | undefined)?.queueEntries ?? [];
+    if (!selectedPatientId) return entries[0];
+    return entries.find((entry) => entry.patientId === selectedPatientId) ?? entries[0];
+  }, [claimQuery.data, selectedPatientId]);
+
+  const hasPermission = useMemo(() => hasStoredAuth(), []);
+
+  const networkDegradedReason = useMemo(() => {
+    const firstError =
+      (claimQuery.isError && isLikelyNetworkError(claimQuery.error) ? claimQuery.error : undefined) ??
+      (orcaSummaryQuery.isError && isLikelyNetworkError(orcaSummaryQuery.error) ? orcaSummaryQuery.error : undefined) ??
+      (appointmentQuery.isError && isLikelyNetworkError(appointmentQuery.error) ? appointmentQuery.error : undefined);
+    if (!firstError) return undefined;
+    const message = firstError instanceof Error ? firstError.message : String(firstError);
+    return `直近の取得でネットワークエラーを検知: ${message}`;
+  }, [appointmentQuery.error, appointmentQuery.isError, claimQuery.error, claimQuery.isError, orcaSummaryQuery.error, orcaSummaryQuery.isError]);
 
   const handleRetryClaim = () => {
     logAuditEvent({
@@ -262,6 +289,15 @@ function ChartsContent() {
           missingMaster={resolvedMissingMaster ?? false}
           dataSourceTransition={resolvedTransition ?? 'snapshot'}
           fallbackUsed={resolvedFallbackUsed}
+          patientId={selectedPatientId}
+          queueEntry={selectedQueueEntry}
+          hasUnsavedDraft={draftState.dirty}
+          hasPermission={hasPermission}
+          requireServerRouteForSend
+          requirePatientForSend
+          networkDegradedReason={networkDegradedReason}
+          onAfterSend={handleRefreshSummary}
+          onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
           onLockChange={(locked, reason) => setLockState({ locked, reason })}
         />
       </div>
@@ -309,6 +345,8 @@ function ChartsContent() {
             entries={patientEntries}
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
             selectedPatientId={selectedPatientId}
+            draftDirty={draftState.dirty}
+            onDraftDirtyChange={(next) => setDraftState(next)}
             onSelectPatient={setSelectedPatientId}
             onSelectAppointment={setSelectedAppointmentId}
           />
