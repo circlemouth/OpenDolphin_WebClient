@@ -1,3 +1,4 @@
 import { outpatientHandlers } from './outpatient';
+import { orcaQueueHandlers } from './orcaQueue';
 
-export const handlers = [...outpatientHandlers];
+export const handlers = [...outpatientHandlers, ...orcaQueueHandlers];

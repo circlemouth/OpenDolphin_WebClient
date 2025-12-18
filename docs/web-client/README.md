@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251218T115400Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251218T171651Z`）
 > 2025-12-14 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T115400Z`）
+### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T171651Z`）
+- 53 障害注入（タイムアウト/500/スキーマ不一致/キュー滞留）（RUN_ID=`20251218T171651Z`）。MSW の `x-msw-fault`/`x-msw-delay-ms` で Charts の外来 API に故障を注入し、解除後に再取得で復帰できることを確認可能化。証跡: `docs/web-client/planning/phase2/logs/20251218T171651Z-charts-fault-injection.md` / 成果物: `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md` / 実装: `web-client/src/mocks/handlers/outpatient.ts`, `web-client/src/mocks/handlers/orcaQueue.ts`, `web-client/src/libs/http/header-flags.ts`, `web-client/src/features/outpatient/OutpatientMockPage.tsx` / E2E: `tests/e2e/charts-fault-injection.msw.spec.ts`。
 - 43 `/orca12/patientmodv2/outpatient` 編集導線（患者更新）（RUN_ID=`20251218T115400Z`）。Charts 患者サイドペインから「基本/保険」を安全に更新（権限/監査/差分確認/巻き戻し/再試行）。`operation=create/update/delete` と `changedKeys` を監査ログへ残し、入力検証（形式/必須/マスタ依存）と `role=alert` エラー表示を統一。証跡: `src/charts_production_outpatient/integration/logs/20251218T115400Z-patientmodv2-outpatient-edit.md` / 成果物: `src/charts_production_outpatient/integration/43_patientmodv2_outpatient編集導線.md` / 実装: `web-client/src/features/charts/PatientsTab.tsx`, `web-client/src/features/charts/PatientInfoEditDialog.tsx`, `web-client/src/features/patients/api.ts`。
 - 45 `/api/orca/queue` と送信ステータス表示（RUN_ID=`20251218T114241Z`）。ORCA キューを Charts に統合し、送信状態（待ち/処理中/成功/失敗）を DocumentTimeline の患者行と “ORCA キュー連携” に表示。滞留検知（時間閾値）と `runId/traceId` の証跡（UI state / 監査）を同期。証跡: `src/charts_production_outpatient/integration/logs/20251218T114241Z-orca-queue-send-status.md` / 成果物: `src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md` / 実装: `web-client/src/features/charts/pages/ChartsPage.tsx`, `web-client/src/features/charts/DocumentTimeline.tsx`, `web-client/src/features/charts/ChartsActionBar.tsx`, `web-client/src/features/outpatient/orcaQueueApi.ts`, `web-client/src/features/outpatient/orcaQueueStatus.ts`。
 - 42 `/orca21/medicalmodv2/outpatient` 表示セクション分割（医療記録）（RUN_ID=`20251218T105723Z`）。診断/処方/検査/処置/メモの 5 セクションで表示し、セクション単位の未取得/欠落/エラーを部分表示（全体停止回避）。`recordsReturned/outcome` を UI と監査ログへ反映。証跡: `src/charts_production_outpatient/integration/logs/20251218T105723Z-medicalmodv2-outpatient-sections.md` / 成果物: `src/charts_production_outpatient/integration/42_medicalmodv2_outpatient表示セクション分割.md` / 実装: `web-client/src/features/charts/MedicalOutpatientRecordPanel.tsx`, `web-client/src/features/charts/medicalOutpatient.ts`, `web-client/src/features/charts/api.ts`。
@@ -58,6 +59,7 @@
 - `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` — OrcaSummary 請求/予約サマリ商用仕上げ（RUN_ID=`20251217T130407Z`）。
 - `src/charts_production_outpatient/ux/26_印刷_エクスポート_診療文書.md` — Charts 印刷/エクスポート（診療文書）（RUN_ID=`20251217T233649Z`）。
 - `src/charts_production_outpatient/quality/51_アクセシビリティ自動検査と手動監査.md` — Charts アクセシビリティ自動/手動監査（RUN_ID=`20251217T212939Z`）。
+- `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md` — Charts 障害注入（timeout/500/schema mismatch/queue stall）（RUN_ID=`20251218T171651Z`）。
 - `src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md` — Charts セッション/権限ガード方針（RUN_ID=`20251213T000432Z`）。
 - `src/charts_production_outpatient/foundation/12_エラーハンドリングとリトライ規約.md` — Charts エラー/リトライ規約（RUN_ID=`20251217T125828Z`）。
 - `src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md` — Charts 外来 fetch レイヤー統一（RUN_ID=`20251213T133932Z`）。
