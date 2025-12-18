@@ -24,6 +24,9 @@ import { useSession } from '../../../AppRouter';
 import { fetchEffectiveAdminConfig, type ChartsMasterSourcePolicy } from '../../administration/api';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
+import { fetchOrcaQueue } from '../../outpatient/orcaQueueApi';
+import { resolveOrcaSendStatus, toClaimQueueEntryFromOrcaQueueEntry } from '../../outpatient/orcaQueueStatus';
+import { getObservabilityMeta } from '../../../libs/observability/observability';
 import {
   buildChartsEncounterSearch,
   hasEncounterContext,
@@ -116,6 +119,7 @@ function ChartsContent() {
     chartsMasterSource?: ChartsMasterSourcePolicy;
   }>({});
   const lastEditLockAnnouncement = useRef<string | null>(null);
+  const lastOrcaQueueSnapshot = useRef<string | null>(null);
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
 
@@ -339,6 +343,19 @@ function ChartsContent() {
     },
   });
 
+  const orcaQueueQueryKey = ['orca-queue'];
+  const orcaQueueQuery = useQuery({
+    queryKey: orcaQueueQueryKey,
+    queryFn: () => fetchOrcaQueue(),
+    refetchInterval: 30_000,
+    staleTime: 30_000,
+    retry: 1,
+    meta: {
+      servedFromCache: !!queryClient.getQueryState(orcaQueueQueryKey)?.dataUpdatedAt,
+      retryCount: queryClient.getQueryState(orcaQueueQueryKey)?.fetchFailureCount ?? 0,
+    },
+  });
+
   const appointmentQueryKey = ['charts-appointments', today];
   const appointmentQuery = useInfiniteQuery({
     queryKey: appointmentQueryKey,
@@ -416,6 +433,112 @@ function ChartsContent() {
     if (!encounterContext.patientId) return entries[0];
     return entries.find((entry) => entry.patientId === encounterContext.patientId) ?? entries[0];
   }, [claimQuery.data, encounterContext.patientId]);
+
+  const selectedOrcaQueueEntry = useMemo(() => {
+    const patientId = encounterContext.patientId;
+    if (!patientId) return undefined;
+    const entries = orcaQueueQuery.data?.queue ?? [];
+    return entries.find((entry) => entry.patientId === patientId);
+  }, [encounterContext.patientId, orcaQueueQuery.data?.queue]);
+
+  const selectedOrcaSendStatus = useMemo(() => resolveOrcaSendStatus(selectedOrcaQueueEntry), [selectedOrcaQueueEntry]);
+
+  const orcaQueueCounts = useMemo(() => {
+    const queue = orcaQueueQuery.data?.queue ?? [];
+    const counts = { waiting: 0, processing: 0, success: 0, failure: 0, unknown: 0, stalled: 0 };
+    for (const entry of queue) {
+      const status = resolveOrcaSendStatus(entry);
+      if (!status) {
+        counts.unknown += 1;
+        continue;
+      }
+      counts[status.key] += 1;
+      if (status.isStalled) counts.stalled += 1;
+    }
+    return counts;
+  }, [orcaQueueQuery.data?.queue]);
+
+  const actionBarQueueEntry = useMemo(() => {
+    if (!selectedOrcaQueueEntry) return selectedQueueEntry;
+    const mapped = toClaimQueueEntryFromOrcaQueueEntry(selectedOrcaQueueEntry);
+    if (!selectedQueueEntry) return mapped;
+    return {
+      ...selectedQueueEntry,
+      phase: mapped.phase,
+      errorMessage: mapped.errorMessage ?? selectedQueueEntry.errorMessage,
+      patientId: selectedQueueEntry.patientId ?? mapped.patientId,
+    };
+  }, [selectedOrcaQueueEntry, selectedQueueEntry]);
+
+  useEffect(() => {
+    if (!orcaQueueQuery.data) return;
+    const meta = getObservabilityMeta();
+    const snapshot = JSON.stringify({
+      patientId: encounterContext.patientId ?? null,
+      queueRunId: orcaQueueQuery.data.runId ?? null,
+      traceId: meta.traceId ?? null,
+      selected: selectedOrcaSendStatus
+        ? {
+            key: selectedOrcaSendStatus.key,
+            isStalled: selectedOrcaSendStatus.isStalled,
+            lastDispatchAt: selectedOrcaSendStatus.lastDispatchAt ?? null,
+            error: selectedOrcaSendStatus.error ?? null,
+          }
+        : null,
+      counts: orcaQueueCounts,
+    });
+    if (lastOrcaQueueSnapshot.current === snapshot) return;
+    lastOrcaQueueSnapshot.current = snapshot;
+
+    logUiState({
+      action: 'outpatient_fetch',
+      screen: 'charts/orca-queue',
+      runId: orcaQueueQuery.data.runId ?? resolvedRunId ?? flags.runId,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
+      details: {
+        endpoint: '/api/orca/queue',
+        fetchedAt: orcaQueueQuery.data.fetchedAt,
+        queueSource: orcaQueueQuery.data.source,
+        queueEntries: orcaQueueQuery.data.queue?.length ?? 0,
+        selectedPatientId: encounterContext.patientId,
+        selectedSendStatus: selectedOrcaSendStatus ?? null,
+        counts: orcaQueueCounts,
+        traceId: meta.traceId,
+      },
+    });
+
+    recordChartsAuditEvent({
+      action: 'ORCA_QUEUE_STATUS',
+      outcome: selectedOrcaSendStatus?.key === 'failure' || selectedOrcaSendStatus?.isStalled ? 'warning' : 'success',
+      subject: 'charts-orca-queue',
+      patientId: encounterContext.patientId,
+      runId: orcaQueueQuery.data.runId ?? resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      fallbackUsed: resolvedFallbackUsed,
+      dataSourceTransition: resolvedTransition,
+      details: {
+        traceId: meta.traceId,
+        queueSource: orcaQueueQuery.data.source,
+        fetchedAt: orcaQueueQuery.data.fetchedAt,
+        counts: orcaQueueCounts,
+        selectedSendStatus: selectedOrcaSendStatus ?? null,
+      },
+    });
+  }, [
+    encounterContext.patientId,
+    flags.runId,
+    orcaQueueCounts,
+    orcaQueueQuery.data,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
+    selectedOrcaSendStatus,
+  ]);
 
   const hasPermission = useMemo(() => hasStoredAuth(), []);
 
@@ -944,7 +1067,7 @@ function ChartsContent() {
               sendEnabled={sendAllowedByDelivery}
               sendDisabledReason={sendDisabledReason}
               patientId={encounterContext.patientId}
-              queueEntry={selectedQueueEntry}
+              queueEntry={actionBarQueueEntry}
               hasUnsavedDraft={draftState.dirty}
               hasPermission={hasPermission}
               requireServerRouteForSend
@@ -1028,6 +1151,14 @@ function ChartsContent() {
             claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
             claimError={claimErrorForTimeline}
             isClaimLoading={claimQuery.isFetching}
+            orcaQueue={orcaQueueQuery.data}
+            orcaQueueUpdatedAt={orcaQueueQuery.dataUpdatedAt}
+            isOrcaQueueLoading={orcaQueueQuery.isFetching}
+            orcaQueueError={
+              orcaQueueQuery.isError
+                ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
+                : undefined
+            }
             onRetryClaim={handleRetryClaim}
             recordsReturned={appointmentRecordsReturned}
             hasNextPage={hasNextAppointments}
