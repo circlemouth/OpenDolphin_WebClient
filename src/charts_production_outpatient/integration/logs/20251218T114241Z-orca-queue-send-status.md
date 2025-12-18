@@ -19,10 +19,9 @@
 - Charts → DocumentTimeline の患者行に `送信:待ち/処理中/成功/失敗` が表示される
 - `失敗` の場合、エラー文言（`error`）が併記される
 - `lastDispatchAt` が一定時間以上前の `待ち/処理中` は `滞留` バッジが付与される
-- 右側 “ORCA キュー連携” に `traceId` と `entries=<件数>` が表示される
+- 右側 “ORCA キュー連携” に `traceId` と `entries=<件数>`、およびキュー内訳（待ち/処理中/成功/失敗 + 滞留/不明）が表示される
 
 ## 監査/ログ（問い合わせ対応）
 - `window.__AUDIT_EVENTS__`（監査ログ）に `action=ORCA_QUEUE_STATUS` が残る
-- `window.__UI_STATE_LOGS__`（UI 状態ログ）に `screen=charts/orca-queue` が残る
+- `window.__AUDIT_UI_STATE__`（UI 状態ログ）に `screen=charts/orca-queue` が残る
   - `runId/traceId`、`counts`、`selectedSendStatus` を含む
-
