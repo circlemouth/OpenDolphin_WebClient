@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
+import { FocusTrapDialog } from '../../components/modals/FocusTrapDialog';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
@@ -18,6 +19,7 @@ export interface PatientsTabProps {
   draftDirty?: boolean;
   switchLocked?: boolean;
   switchLockedReason?: string;
+  onRequestRestoreFocus?: () => void;
   onDraftDirtyChange?: (params: {
     dirty: boolean;
     patientId?: string;
@@ -36,6 +38,7 @@ export function PatientsTab({
   draftDirty = false,
   switchLocked = false,
   switchLockedReason,
+  onRequestRestoreFocus,
   onDraftDirtyChange,
   onSelectEncounter,
 }: PatientsTabProps) {
@@ -52,7 +55,41 @@ export function PatientsTab({
     selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId,
   );
   const [noteDraft, setNoteDraft] = useState('');
+  const [pendingSwitch, setPendingSwitch] = useState<ReceptionEntry | null>(null);
   const lastAuditPatientId = useRef<string | undefined>();
+
+  const commitSelect = (entry: ReceptionEntry) => {
+    const nextId = entry.patientId ?? entry.id;
+    setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
+    onSelectEncounter?.({
+      patientId: nextId,
+      appointmentId: entry.appointmentId,
+      receptionId: entry.receptionId,
+      visitDate: entry.visitDate,
+    });
+    onDraftDirtyChange?.({
+      dirty: false,
+      patientId: nextId,
+      appointmentId: entry.appointmentId,
+      receptionId: entry.receptionId,
+      visitDate: entry.visitDate,
+    });
+    if (lastAuditPatientId.current !== nextId) {
+      recordChartsAuditEvent({
+        action: 'CHARTS_PATIENT_SWITCH',
+        outcome: 'success',
+        patientId: nextId,
+        appointmentId: entry.appointmentId,
+        note: 'manual switch',
+        dataSourceTransition: flags.dataSourceTransition,
+        cacheHit: flags.cacheHit,
+        missingMaster: flags.missingMaster,
+        fallbackUsed: flags.fallbackUsed,
+        runId: flags.runId,
+      });
+      lastAuditPatientId.current = nextId;
+    }
+  };
 
   const filteredEntries = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -63,6 +100,8 @@ export function PatientsTab({
       ),
     );
   }, [entries, keyword]);
+
+  const patientRowRefs = useRef<Array<HTMLButtonElement | null>>([]);
 
   const selected = useMemo(() => {
     if (selectedContext?.receptionId) {
@@ -126,40 +165,10 @@ export function PatientsTab({
     const nextKey = entry.receptionId ?? entry.appointmentId ?? nextId;
     const currentKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId ?? localSelectedKey;
     if (draftDirty && currentKey && nextKey && currentKey !== nextKey) {
-      const confirmed = typeof window === 'undefined'
-        ? true
-        : window.confirm('未保存の入力があります。ドラフトを破棄して患者を切り替えますか？');
-      if (!confirmed) return;
+      setPendingSwitch(entry);
+      return;
     }
-    setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
-    onSelectEncounter?.({
-      patientId: nextId,
-      appointmentId: entry.appointmentId,
-      receptionId: entry.receptionId,
-      visitDate: entry.visitDate,
-    });
-    onDraftDirtyChange?.({
-      dirty: false,
-      patientId: nextId,
-      appointmentId: entry.appointmentId,
-      receptionId: entry.receptionId,
-      visitDate: entry.visitDate,
-    });
-    if (lastAuditPatientId.current !== nextId) {
-      recordChartsAuditEvent({
-        action: 'CHARTS_PATIENT_SWITCH',
-        outcome: 'success',
-        patientId: nextId,
-        appointmentId: entry.appointmentId,
-        note: 'manual switch',
-        dataSourceTransition: flags.dataSourceTransition,
-        cacheHit: flags.cacheHit,
-        missingMaster: flags.missingMaster,
-        fallbackUsed: flags.fallbackUsed,
-        runId: flags.runId,
-      });
-      lastAuditPatientId.current = nextId;
-    }
+    commitSelect(entry);
   };
 
   const isReadOnly = flags.missingMaster || flags.fallbackUsed || flags.dataSourceTransition !== 'server';
@@ -203,10 +212,37 @@ export function PatientsTab({
   return (
     <section
       className="patients-tab"
-      aria-live={tone === 'info' ? 'polite' : 'assertive'}
-      aria-atomic="false"
+      id="charts-patients-tab"
+      tabIndex={-1}
+      data-focus-anchor="true"
       data-run-id={flags.runId}
     >
+      <FocusTrapDialog
+        open={!!pendingSwitch}
+        role="alertdialog"
+        title="未保存の入力があります"
+        description={`ドラフトを破棄して患者を切り替えますか？（runId=${flags.runId} / dataSourceTransition=${flags.dataSourceTransition}）`}
+        onClose={() => setPendingSwitch(null)}
+        testId="charts-patient-switch-dialog"
+      >
+        <div role="group" aria-label="患者切替の確認">
+          <button type="button" onClick={() => setPendingSwitch(null)}>
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              if (!pendingSwitch) return;
+              const next = pendingSwitch;
+              setPendingSwitch(null);
+              commitSelect(next);
+            }}
+          >
+            破棄して切替
+          </button>
+        </div>
+      </FocusTrapDialog>
+
       <ToneBanner
         tone={tone}
         message={toneMessage}
@@ -234,20 +270,21 @@ export function PatientsTab({
             label="missingMaster"
             value={flags.missingMaster ? 'true' : 'false'}
             tone={flags.missingMaster ? 'warning' : 'success'}
-            ariaLive={flags.missingMaster ? 'assertive' : 'polite'}
+            ariaLive="off"
             runId={flags.runId}
           />
           <StatusBadge
             label="cacheHit"
             value={flags.cacheHit ? 'true' : 'false'}
             tone={flags.cacheHit ? 'success' : 'warning'}
+            ariaLive="off"
             runId={flags.runId}
           />
           <StatusBadge
             label="fallbackUsed"
             value={flags.fallbackUsed ? 'true' : 'false'}
             tone={flags.fallbackUsed ? 'warning' : 'info'}
-            ariaLive={flags.fallbackUsed ? 'assertive' : 'polite'}
+            ariaLive="off"
             runId={flags.runId}
           />
         </div>
@@ -256,14 +293,23 @@ export function PatientsTab({
         <label className="patients-tab__search">
           <span>患者検索</span>
           <input
+            id="charts-patient-search"
             type="search"
             placeholder="氏名 / カナ / ID"
             value={keyword}
             onChange={(event) => setKeyword(event.target.value)}
+            onKeyDown={(event) => {
+              if (event.key === 'Escape') {
+                event.preventDefault();
+                setKeyword('');
+                onRequestRestoreFocus?.();
+              }
+            }}
             aria-label="患者検索キーワード"
+            aria-keyshortcuts="Alt+P Ctrl+F"
           />
         </label>
-        <div className="patients-tab__edit-guard" aria-live="polite">
+        <div className="patients-tab__edit-guard" role="status" aria-live="off" aria-atomic="false">
           {switchLocked
             ? `他の処理が進行中のため患者切替をロック中${switchLockedReason ? `: ${switchLockedReason}` : ''}`
             : isReadOnly
@@ -275,7 +321,28 @@ export function PatientsTab({
       </div>
 
       <div className="patients-tab__body">
-        <div className="patients-tab__table" role="list">
+        <div
+          className="patients-tab__table"
+          role="list"
+          onKeyDown={(event) => {
+            const key = event.key;
+            if (!['ArrowDown', 'ArrowUp', 'Home', 'End'].includes(key)) return;
+            const active = document.activeElement;
+            const index = patientRowRefs.current.findIndex((el) => el === active);
+            if (index < 0) return;
+            event.preventDefault();
+            const last = patientRowRefs.current.length - 1;
+            const nextIndex =
+              key === 'Home'
+                ? 0
+                : key === 'End'
+                  ? last
+                  : key === 'ArrowDown'
+                    ? Math.min(last, index + 1)
+                    : Math.max(0, index - 1);
+            patientRowRefs.current[nextIndex]?.focus();
+          }}
+        >
           {filteredEntries.length === 0 && (
             <article className="patients-tab__row" data-run-id={flags.runId}>
               <div className="patients-tab__row-meta">
@@ -286,7 +353,7 @@ export function PatientsTab({
               <span className="patients-tab__row-status">tone={tone}</span>
             </article>
           )}
-          {filteredEntries.slice(0, 8).map((patient) => {
+          {filteredEntries.slice(0, 8).map((patient, idx) => {
             const isSelected =
               (selectedContext?.receptionId && patient.receptionId === selectedContext.receptionId) ||
               (selectedContext?.appointmentId && patient.appointmentId === selectedContext.appointmentId) ||
@@ -303,6 +370,10 @@ export function PatientsTab({
                 data-run-id={flags.runId}
                 disabled={switchLocked}
                 onClick={() => handleSelect(patient)}
+                ref={(el) => {
+                  patientRowRefs.current = patientRowRefs.current.slice(0, 8);
+                  patientRowRefs.current[idx] = el;
+                }}
               >
                 <div className="patients-tab__row-meta">
                   <span className="patients-tab__row-id">{patient.patientId ?? patient.appointmentId ?? 'ID不明'}</span>
@@ -387,7 +458,7 @@ export function PatientsTab({
       </div>
 
       {auditEvent && (
-        <div className="patients-tab__audit" role="alert" aria-live="assertive">
+        <div className="patients-tab__audit" role="status" aria-live="off">
           <strong>auditEvent</strong>
           <p>
             {Object.entries(auditEvent)
