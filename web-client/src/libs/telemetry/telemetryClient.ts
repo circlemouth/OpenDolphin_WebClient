@@ -7,6 +7,7 @@ export type TelemetryFunnelStage =
   | 'resolve_master'
   | 'charts_orchestration'
   | 'charts_action'
+  | 'charts_patient_sidepane'
   | 'patient_fetch'
   | 'orca_summary';
 
