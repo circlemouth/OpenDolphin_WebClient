@@ -7,7 +7,8 @@ import { updateObservabilityMeta } from '../../libs/observability/observability'
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ToneBanner } from '../reception/components/ToneBanner';
-import { useAuthService } from '../charts/authService';
+import { useAuthService, type DataSourceTransition } from '../charts/authService';
+import { buildChartsUrl, normalizeVisitDate } from '../charts/encounterContext';
 import {
   fetchPatients,
   savePatient,
@@ -93,6 +94,14 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const fromCharts = searchParams.get('from') === 'charts';
+  const chartsReturnUrl = useMemo(() => {
+    if (!fromCharts) return null;
+    const patientId = searchParams.get('patientId') ?? searchParams.get('kw') ?? undefined;
+    const receptionId = searchParams.get('receptionId') ?? undefined;
+    const visitDate = normalizeVisitDate(searchParams.get('visitDate') ?? undefined);
+    return buildChartsUrl({ patientId, receptionId, visitDate });
+  }, [fromCharts, searchParams]);
   const initialFilters = useMemo(() => readFilters(searchParams), [searchParams]);
   const [filters, setFilters] = useState(initialFilters);
   const [selectedId, setSelectedId] = useState<string | undefined>();
@@ -379,6 +388,15 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         >
           検索を更新
         </button>
+        {fromCharts && chartsReturnUrl ? (
+          <button
+            type="button"
+            className="patients-page__filter-link"
+            onClick={() => navigate(chartsReturnUrl)}
+          >
+            Charts に戻る
+          </button>
+        ) : null}
         <button type="button" className="patients-page__filter-link" onClick={() => navigate({ pathname: '/reception', search: location.search })}>
           Reception に戻る
         </button>

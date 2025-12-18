@@ -19,13 +19,6 @@ export interface DocumentTimelineProps {
   claimError?: Error;
   isClaimLoading?: boolean;
   onRetryClaim?: () => void;
-  recordsReturned?: number;
-  hasNextPage?: boolean;
-  onLoadMore?: () => void;
-  isLoadingMore?: boolean;
-  isInitialLoading?: boolean;
-  isRefetchingList?: boolean;
-  pageSize?: number;
 }
 
 const STATUS_ORDER: ReceptionStatus[] = ['受付中', '診療中', '会計待ち', '会計済み', '予約'];
@@ -99,13 +92,6 @@ export function DocumentTimeline({
   claimError,
   isClaimLoading,
   onRetryClaim,
-  recordsReturned,
-  hasNextPage,
-  onLoadMore,
-  isLoadingMore,
-  isInitialLoading,
-  isRefetchingList,
-  pageSize,
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
   const resolvedRunId = claimData?.runId ?? flags.runId;
@@ -114,6 +100,7 @@ export function DocumentTimeline({
   const resolvedTransition = claimData?.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = claimData?.fallbackUsed ?? false;
   const fallbackFlagMissing = claimData?.fallbackFlagMissing ?? false;
+  const resolvedCacheMiss = resolvedCacheHit === false;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -167,16 +154,14 @@ export function DocumentTimeline({
   const [windowSize, setWindowSize] = useState(VIRTUAL_WINDOW);
   const totalEntries = sortedEntries.length;
 
-  const selectedIndex = useMemo(
-    () =>
-      sortedEntries.findIndex(
-        (entry) =>
-          (selectedReceptionId && entry.receptionId === selectedReceptionId) ||
-          (selectedAppointmentId && entry.appointmentId === selectedAppointmentId) ||
-          (selectedPatientId && entry.patientId === selectedPatientId),
-      ),
-    [selectedAppointmentId, selectedPatientId, selectedReceptionId, sortedEntries],
-  );
+  const selectedIndex = useMemo(() =>
+    sortedEntries.findIndex(
+      (entry) =>
+        (selectedReceptionId && entry.receptionId === selectedReceptionId) ||
+        (selectedAppointmentId && entry.appointmentId === selectedAppointmentId) ||
+        (selectedPatientId && entry.patientId === selectedPatientId),
+    ),
+  [selectedAppointmentId, selectedPatientId, selectedReceptionId, sortedEntries]);
 
   useEffect(() => {
     if (selectedIndex < 0) return;
@@ -202,15 +187,13 @@ export function DocumentTimeline({
     return sortedEntries.slice(windowStart, windowStart + windowSize);
   }, [sortedEntries, totalEntries, windowSize, windowStart]);
 
-  const groupedEntries = useMemo(
-    () =>
-      STATUS_ORDER.map((status) => ({
-        status,
-        items: windowedEntries.filter((entry) => entry.status === status),
-        total: sortedEntries.filter((entry) => entry.status === status).length,
-      })).filter((section) => section.items.length > 0 || section.total > 0),
-    [sortedEntries, windowedEntries],
-  );
+  const groupedEntries = useMemo(() =>
+    STATUS_ORDER.map((status) => ({
+      status,
+      items: windowedEntries.filter((entry) => entry.status === status),
+      total: sortedEntries.filter((entry) => entry.status === status).length,
+    })).filter((section) => section.items.length > 0 || section.total > 0),
+  [sortedEntries, windowedEntries]);
 
   const [collapsedSections, setCollapsedSections] = useState<Record<ReceptionStatus, boolean>>({});
 
@@ -360,12 +343,12 @@ export function DocumentTimeline({
 
   return (
     <section
+      id="document-timeline"
       className="document-timeline"
-      id="charts-document-timeline"
-      tabIndex={-1}
-      data-focus-anchor="true"
+      aria-live={tone === 'info' ? 'polite' : 'assertive'}
+      aria-atomic="false"
       role="region"
-      aria-label="DocumentTimeline"
+      tabIndex={-1}
       data-run-id={resolvedRunId}
     >
       <ToneBanner
@@ -395,22 +378,6 @@ export function DocumentTimeline({
           <span className="document-timeline__window-meta">
             表示 {windowedEntries.length}/{totalEntries} 件
           </span>
-          {typeof recordsReturned === 'number' && (
-            <span className="document-timeline__window-meta">
-              取得 {recordsReturned} 件{typeof pageSize === 'number' ? `（pageSize=${pageSize}）` : ''}
-              {isRefetchingList ? '｜更新中…' : ''}
-            </span>
-          )}
-          {hasNextPage && onLoadMore && (
-            <button
-              type="button"
-              onClick={onLoadMore}
-              className="document-timeline__pager"
-              disabled={isLoadingMore || isInitialLoading}
-            >
-              {isLoadingMore ? '追加取得中…' : 'さらに取得'}
-            </button>
-          )}
         </div>
         <div className="document-timeline__control-group" aria-label="仮想化ウィンドウサイズ">
           <label>
@@ -449,7 +416,7 @@ export function DocumentTimeline({
         </div>
       )}
       {!claimError && onRetryClaim && (resolvedFallbackUsed || resolvedCacheHit === false) && (
-        <div className="document-timeline__retry" aria-live="off">
+        <div className="document-timeline__retry" aria-live="polite">
           <p>請求バンドルの整合性を再確認するには再取得を実行してください。</p>
           <button className="document-timeline__retry-button" onClick={onRetryClaim} disabled={isClaimLoading}>
             {isClaimLoading ? '再取得中…' : '請求バンドルを再取得'}
@@ -464,7 +431,7 @@ export function DocumentTimeline({
             value={resolvedMissingMaster ? 'true' : 'false'}
             tone={resolvedMissingMaster ? 'warning' : 'success'}
             description={resolvedMissingMaster ? 'マスタ欠損を検知・再取得を待機中' : 'マスタ取得済み・ORCA 再送フェーズ'}
-            ariaLive="off"
+            ariaLive={resolvedMissingMaster ? 'assertive' : 'polite'}
             runId={resolvedRunId}
           />
           <StatusBadge
@@ -472,18 +439,17 @@ export function DocumentTimeline({
             value={resolvedCacheHit ? 'true' : 'false'}
             tone={resolvedCacheHit ? 'success' : 'warning'}
             description={resolvedCacheHit ? 'キャッシュ命中：再取得不要' : 'キャッシュ未命中：再取得または server route を模索'}
-            ariaLive="off"
             runId={resolvedRunId}
           />
           <div
             className={`document-timeline__transition document-timeline__transition--${transitionMeta.tone}`}
             role="status"
-            aria-live="off"
+            aria-live="polite"
           >
             <strong>{transitionMeta.label}</strong>
             <p>{transitionMeta.description}</p>
           </div>
-          <div className="document-timeline__queue" aria-live="off">
+          <div className="document-timeline__queue" aria-live="polite">
             <div className="document-timeline__queue-header">
               <strong>ORCA キュー連携</strong>
               <span className="document-timeline__queue-runid">RUN_ID: {resolvedRunId}</span>
@@ -494,25 +460,23 @@ export function DocumentTimeline({
                 value={resolvedTransition ?? 'snapshot'}
                 tone={transitionMeta.tone}
                 description={transitionMeta.description}
-                ariaLive="off"
                 runId={resolvedRunId}
               />
-              <StatusBadge
-                label="fallbackUsed"
-                value={resolvedFallbackUsed ? 'true' : 'false'}
-                tone={resolvedFallbackUsed ? 'error' : 'info'}
-                description={resolvedFallbackUsed ? 'フォールバック使用中。優先で再取得を実施' : 'フォールバック未使用'}
-                ariaLive="off"
-                runId={resolvedRunId}
-              />
-            </div>
+            <StatusBadge
+              label="fallbackUsed"
+              value={resolvedFallbackUsed ? 'true' : 'false'}
+              tone={resolvedFallbackUsed ? 'error' : 'info'}
+              description={resolvedFallbackUsed ? 'フォールバック使用中。優先で再取得を実施' : 'フォールバック未使用'}
+              runId={resolvedRunId}
+            />
+          </div>
             {claimData?.fetchedAt && (
               <p className="document-timeline__queue-meta">
                 最終取得: {claimData.fetchedAt} ｜ recordsReturned: {claimData.recordsReturned ?? claimBundles.length ?? '―'}
               </p>
             )}
             {claimBundles.length > 0 && (
-              <div className="document-timeline__queue-meta" aria-live="off">
+              <div className="document-timeline__queue-meta" aria-live="polite">
                 <strong>請求バンドル ({claimBundles.length}件)</strong>
                 <ul>
                   {claimBundles.slice(0, 3).map((bundle, idx) => (
@@ -527,7 +491,7 @@ export function DocumentTimeline({
             )}
           </div>
           {auditEvent && (
-            <div className="document-timeline__audit" role="status" aria-live="off">
+            <div className="document-timeline__audit" role="alert" aria-live="assertive">
               <strong>auditEvent</strong>
               <p className="document-timeline__audit-text">
                 {Object.entries(auditEvent)
