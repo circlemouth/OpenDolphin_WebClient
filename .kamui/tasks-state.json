@@ -1,31 +1,5 @@
 [
   {
-    "id": "task-1766049453436-bfdd79",
-    "name": "CodexCLI1: [webclient charts production outpatient plan] 21_キーボード操作とARIA監査\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 21 キーボード操作と ARIA 監査\n\n- 主要操作（患者切替/タブ移動/検索/送信/印刷）をキーボードで完結できるようにし、フォーカス順を最適化する。\n- ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。\n- モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。\n- キーボード操作後も Topbar の `runId`/dataSource 表示が上書きされないことを検証し、RUN_ID を DOC_STATUS・証跡に同一で残す（再宣言や初期化処理での上書きを禁止）。\n\nYAML ID: src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-18T09:17:33.436Z",
-    "updatedAt": "2025-12-18T09:17:38.378Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766049453436-bfdd79",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766049453434-aqkovcb9",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 21_キーボード操作とARIA監査\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 21 キーボード操作と ARIA 監査\n\n- 主要操作（患者切替/タブ移動/検索/送信/印刷）をキーボードで完結できるようにし、フォーカス順を最適化する。\n- ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。\n- モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。\n- キーボード操作後も Topbar の `runId`/dataSource 表示が上書きされないことを検証し、RUN_ID を DOC_STATUS・証跡に同一で残す（再宣言や初期化処理での上書きを禁止）。\n\nYAML ID: src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766049453436-bfdd79",
-    "medal": "none",
-    "aiCompetitionScore": 10
-  },
-  {
     "id": "task-1766049453636-368451",
     "name": "CodexCLI2: [webclient charts production outpatient plan] 21_キーボード操作とARIA監査\n期間: 01/06 09:00 - 01/09 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 21 キーボード操作と ARIA 監査\n\n- 主要操作（患者切替/タブ移動/検索/送信/印刷）をキーボードで完結できるようにし、フォーカス順を最適化する。\n- ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。\n- モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。\n- キーボード操作後も Topbar の `runId`/dataSource 表示が上書きされないことを検証し、RUN_ID を DOC_STATUS・証跡に同一で残す（再宣言や初期化処理での上書きを禁止）。\n\nYAML ID: src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md",
     "model": "Codex CLI",
@@ -48,8 +22,8 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1766049453636-368451",
-    "medal": "gold",
-    "aiCompetitionScore": 85
+    "medal": "silver",
+    "aiCompetitionScore": 84
   },
   {
     "id": "task-yaml-1ml06kb-src-charts-produ",
