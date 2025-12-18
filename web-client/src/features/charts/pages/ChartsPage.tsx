@@ -18,6 +18,9 @@ import { getAuditEventLog, logAuditEvent, type AuditEventRecord } from '../../..
 import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
+import { ToneBanner } from '../../reception/components/ToneBanner';
+import { useSession } from '../../../AppRouter';
+import { fetchEffectiveAdminConfig, type ChartsMasterSourcePolicy } from '../../administration/api';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
 
@@ -40,6 +43,7 @@ export function ChartsPage() {
 
 function ChartsContent() {
   const { flags, setCacheHit, setDataSourceTransition, setMissingMaster, setFallbackUsed, bumpRunId } = useAuthService();
+  const session = useSession();
   const queryClient = useQueryClient();
   const location = useLocation();
   const navigationState = (location.state as { patientId?: string; appointmentId?: string } | null) ?? {};
@@ -50,6 +54,18 @@ function ChartsContent() {
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
+  const [deliveryImpactBanner, setDeliveryImpactBanner] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
+  const [deliveryAppliedMeta, setDeliveryAppliedMeta] = useState<{
+    appliedAt: string;
+    appliedTo: string;
+    role: string;
+    runId?: string;
+    deliveredAt?: string;
+    deliveryId?: string;
+    deliveryVersion?: string;
+    syncMismatch?: boolean;
+    syncMismatchFields?: string;
+  } | null>(null);
   const appliedMeta = useRef<{
     runId?: string;
     cacheHit?: boolean;
@@ -58,11 +74,187 @@ function ChartsContent() {
     fallbackUsed?: boolean;
   }>({});
   const { broadcast } = useAdminBroadcast();
+  const appliedDelivery = useRef<{ key?: string }>({});
+  const previousDeliveryFlags = useRef<{
+    chartsDisplayEnabled?: boolean;
+    chartsSendEnabled?: boolean;
+    chartsMasterSource?: ChartsMasterSourcePolicy;
+  }>({});
+
+  const adminQueryKey = ['admin-effective-config'];
+  const adminConfigQuery = useQuery({
+    queryKey: adminQueryKey,
+    queryFn: fetchEffectiveAdminConfig,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    retry: 1,
+  });
+
+  useEffect(() => {
+    if (!broadcast?.updatedAt) return;
+    void adminConfigQuery.refetch();
+  }, [adminConfigQuery, broadcast?.updatedAt]);
+
+  const chartsMasterSourcePolicy: ChartsMasterSourcePolicy =
+    (adminConfigQuery.data?.chartsMasterSource as ChartsMasterSourcePolicy | undefined) ??
+    (broadcast?.chartsMasterSource as ChartsMasterSourcePolicy | undefined) ??
+    'auto';
+  const chartsDisplayEnabled =
+    (adminConfigQuery.data?.chartsDisplayEnabled ?? broadcast?.chartsDisplayEnabled) ?? true;
+  const chartsSendEnabled =
+    (adminConfigQuery.data?.chartsSendEnabled ?? broadcast?.chartsSendEnabled) ?? true;
+
+  const resolvePreferredSourceOverride = (policy: ChartsMasterSourcePolicy) => {
+    if (policy === 'server') return 'server' as const;
+    if (policy === 'mock') return 'mock' as const;
+    if (policy === 'fallback') return 'mock' as const;
+    if (policy === 'snapshot') return 'snapshot' as const;
+    return undefined;
+  };
+  const preferredSourceOverride = resolvePreferredSourceOverride(chartsMasterSourcePolicy);
+  const forceFallbackUsed = chartsMasterSourcePolicy === 'fallback';
+  const sendAllowedByDelivery = chartsSendEnabled && (chartsMasterSourcePolicy === 'auto' || chartsMasterSourcePolicy === 'server');
+  const sendDisabledReason = !chartsSendEnabled
+    ? '管理配信で ORCA送信 が disabled になっています。'
+    : chartsMasterSourcePolicy === 'fallback'
+      ? '管理配信で masterSource=fallback が指定されているため ORCA送信 を停止しています。'
+      : chartsMasterSourcePolicy === 'mock'
+        ? '管理配信で masterSource=mock が指定されているため ORCA送信 を停止しています。'
+        : undefined;
+
+  useEffect(() => {
+    const data = adminConfigQuery.data;
+    if (!data) return;
+    const key = JSON.stringify({
+      deliveryId: data.deliveryId,
+      deliveryVersion: data.deliveryVersion,
+      deliveredAt: data.deliveredAt,
+      runId: data.runId,
+      chartsDisplayEnabled: data.chartsDisplayEnabled,
+      chartsSendEnabled: data.chartsSendEnabled,
+      chartsMasterSource: data.chartsMasterSource,
+    });
+    if (appliedDelivery.current.key === key) return;
+    appliedDelivery.current.key = key;
+
+    const appliedAt = new Date().toISOString();
+    const appliedTo = `${session.facilityId}:${session.userId}`;
+    setDeliveryAppliedMeta({
+      appliedAt,
+      appliedTo,
+      role: session.role,
+      runId: data.runId ?? flags.runId,
+      deliveredAt: data.deliveredAt,
+      deliveryId: data.deliveryId,
+      deliveryVersion: data.deliveryVersion,
+      syncMismatch: data.syncMismatch,
+      syncMismatchFields: data.syncMismatchFields?.length ? data.syncMismatchFields.join(', ') : undefined,
+    });
+    logAuditEvent({
+      runId: data.runId ?? flags.runId,
+      source: 'admin/delivery.apply',
+      note: 'charts apply admin delivery',
+      payload: {
+        appliedAt,
+        appliedTo,
+        role: session.role,
+        delivery: {
+          deliveryId: data.deliveryId,
+          deliveryVersion: data.deliveryVersion,
+          deliveredAt: data.deliveredAt,
+        },
+        flags: {
+          chartsDisplayEnabled: data.chartsDisplayEnabled,
+          chartsSendEnabled: data.chartsSendEnabled,
+          chartsMasterSource: data.chartsMasterSource,
+        },
+        syncMismatch: data.syncMismatch,
+        syncMismatchFields: data.syncMismatchFields,
+        raw: {
+          config: data.rawConfig,
+          delivery: data.rawDelivery,
+        },
+      },
+    });
+
+    const prevSource = previousDeliveryFlags.current.chartsMasterSource ?? 'auto';
+    const prevSend = previousDeliveryFlags.current.chartsSendEnabled;
+    const prevDisplay = previousDeliveryFlags.current.chartsDisplayEnabled;
+
+    const nextSource = (data.chartsMasterSource ?? chartsMasterSourcePolicy) as ChartsMasterSourcePolicy;
+    const nextSend = data.chartsSendEnabled ?? chartsSendEnabled;
+    const nextDisplay = data.chartsDisplayEnabled ?? chartsDisplayEnabled;
+    const isFirstApply = previousDeliveryFlags.current.chartsMasterSource === undefined;
+    previousDeliveryFlags.current = {
+      chartsMasterSource: nextSource,
+      chartsSendEnabled: nextSend,
+      chartsDisplayEnabled: nextDisplay,
+    };
+
+    if (isFirstApply && (nextSource === 'fallback' || nextSource === 'mock')) {
+      setDeliveryImpactBanner({
+        tone: 'warning',
+        message: `Charts masterSource=${nextSource} で起動しています（送信は停止扱い）。`,
+      });
+      return;
+    }
+    if (isFirstApply && nextSend === false) {
+      setDeliveryImpactBanner({
+        tone: 'warning',
+        message: 'Charts の ORCA送信 は管理配信で disabled の状態です。',
+      });
+      return;
+    }
+    if (isFirstApply && nextDisplay === false) {
+      setDeliveryImpactBanner({
+        tone: 'warning',
+        message: 'Charts の表示は管理配信で disabled の状態です。',
+      });
+      return;
+    }
+    if (prevSource !== nextSource) {
+      const impact =
+        nextSource === 'fallback'
+          ? '（送信停止・フォールバック扱い）'
+          : nextSource === 'mock'
+            ? '（送信停止・モック優先）'
+            : '';
+      setDeliveryImpactBanner({
+        tone: nextSource === 'fallback' ? 'warning' : nextSource === 'mock' ? 'warning' : 'info',
+        message: `Charts masterSource が ${prevSource} → ${nextSource} に更新されました${impact}`,
+      });
+      return;
+    }
+    if (prevSend !== undefined && prevSend !== nextSend && nextSend === false) {
+      setDeliveryImpactBanner({
+        tone: 'warning',
+        message: 'Charts の ORCA送信 が管理配信で無効化されました。',
+      });
+      return;
+    }
+    if (prevDisplay !== undefined && prevDisplay !== nextDisplay && nextDisplay === false) {
+      setDeliveryImpactBanner({
+        tone: 'warning',
+        message: 'Charts の表示が管理配信で無効化されました。',
+      });
+      return;
+    }
+    setDeliveryImpactBanner(null);
+  }, [
+    adminConfigQuery.data,
+    chartsDisplayEnabled,
+    chartsMasterSourcePolicy,
+    chartsSendEnabled,
+    flags.runId,
+    session.facilityId,
+    session.role,
+    session.userId,
+  ]);
 
   const claimQueryKey = ['charts-claim-flags'];
   const claimQuery = useQuery({
     queryKey: claimQueryKey,
-    queryFn: (context) => fetchClaimFlags(context, { screen: 'charts' }),
+    queryFn: (context) => fetchClaimFlags(context, { screen: 'charts', preferredSourceOverride }),
     refetchInterval: 120_000,
     staleTime: 120_000,
     meta: {
@@ -75,7 +267,7 @@ function ChartsContent() {
   const appointmentQuery = useInfiniteQuery({
     queryKey: appointmentQueryKey,
     queryFn: ({ pageParam = 1, ...context }) =>
-      fetchAppointmentOutpatients({ date: today, page: pageParam, size: 50 }, context),
+      fetchAppointmentOutpatients({ date: today, page: pageParam, size: 50 }, context, { preferredSourceOverride }),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasNextPage === false) return undefined;
       if (lastPage.hasNextPage === true) return (lastPage.page ?? allPages.length) + 1;
@@ -94,7 +286,7 @@ function ChartsContent() {
   const orcaSummaryQueryKey = ['orca-outpatient-summary', flags.runId];
   const orcaSummaryQuery = useQuery({
     queryKey: orcaSummaryQueryKey,
-    queryFn: (context) => fetchOrcaOutpatientSummary(context),
+    queryFn: (context) => fetchOrcaOutpatientSummary(context, { preferredSourceOverride }),
     refetchInterval: 120_000,
     staleTime: 120_000,
     meta: {
@@ -141,7 +333,7 @@ function ChartsContent() {
   const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
   const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
-  const resolvedFallbackUsed = mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
+  const resolvedFallbackUsed = (mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false) || forceFallbackUsed;
 
   const selectedQueueEntry = useMemo(() => {
     const entries = (claimQuery.data as ClaimOutpatientPayload | undefined)?.queueEntries ?? [];
@@ -291,30 +483,79 @@ function ChartsContent() {
           <span className="charts-page__pill">missingMaster: {String(flags.missingMaster)}</span>
           <span className="charts-page__pill">cacheHit: {String(flags.cacheHit)}</span>
           <span className="charts-page__pill">fallbackUsed: {String(flags.fallbackUsed)}</span>
+          <span className="charts-page__pill">Charts master: {chartsMasterSourcePolicy}</span>
+          <span className="charts-page__pill">Charts送信: {sendAllowedByDelivery ? 'enabled' : 'disabled'}</span>
+          <span className="charts-page__pill">
+            配信: {adminConfigQuery.data?.deliveryVersion ?? adminConfigQuery.data?.deliveryId ?? '―'}
+          </span>
+          <span className="charts-page__pill">適用先: {session.facilityId}:{session.userId}</span>
         </div>
       </section>
       <AdminBroadcastBanner broadcast={broadcast} surface="charts" />
-
-      <div className="charts-card charts-card--actions">
-        <ChartsActionBar
-          runId={resolvedRunId ?? flags.runId}
-          cacheHit={resolvedCacheHit ?? false}
-          missingMaster={resolvedMissingMaster ?? false}
-          dataSourceTransition={resolvedTransition ?? 'snapshot'}
-          fallbackUsed={resolvedFallbackUsed}
-          patientId={selectedPatientId}
-          queueEntry={selectedQueueEntry}
-          hasUnsavedDraft={draftState.dirty}
-          hasPermission={hasPermission}
-          requireServerRouteForSend
-          requirePatientForSend
-          networkDegradedReason={networkDegradedReason}
-          onAfterSend={handleRefreshSummary}
-          onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
-          onLockChange={(locked, reason) => setLockState({ locked, reason })}
+      {deliveryImpactBanner ? (
+        <ToneBanner
+          tone={deliveryImpactBanner.tone}
+          message={deliveryImpactBanner.message}
+          destination="Charts"
+          nextAction="再取得/リロードで反映"
+          runId={adminConfigQuery.data?.runId ?? broadcast?.runId ?? flags.runId}
+          ariaLive="assertive"
         />
-      </div>
+      ) : null}
 
+      {!chartsDisplayEnabled ? (
+        <ToneBanner
+          tone="warning"
+          message="Charts の表示が管理配信で disabled です。Administration で再度 enabled にして配信してください。"
+          destination="Charts"
+          nextAction="Administration で再配信"
+          runId={adminConfigQuery.data?.runId ?? broadcast?.runId ?? flags.runId}
+          ariaLive="assertive"
+        />
+      ) : null}
+
+      {deliveryAppliedMeta ? (
+        <section className="charts-card" aria-label="管理配信の適用メタ">
+          <h2>管理配信（適用メタ）</h2>
+          <div className="charts-page__meta" aria-live="polite">
+            <span className="charts-page__pill">適用時刻: {deliveryAppliedMeta.appliedAt}</span>
+            <span className="charts-page__pill">適用ユーザー: {deliveryAppliedMeta.appliedTo}</span>
+            <span className="charts-page__pill">role: {deliveryAppliedMeta.role}</span>
+            <span className="charts-page__pill">配信runId: {deliveryAppliedMeta.runId ?? '―'}</span>
+            <span className="charts-page__pill">deliveredAt: {deliveryAppliedMeta.deliveredAt ?? '―'}</span>
+            <span className="charts-page__pill">deliveryId: {deliveryAppliedMeta.deliveryId ?? '―'}</span>
+            <span className="charts-page__pill">deliveryVersion: {deliveryAppliedMeta.deliveryVersion ?? '―'}</span>
+            <span className="charts-page__pill">
+              syncMismatch: {deliveryAppliedMeta.syncMismatch === undefined ? '―' : String(deliveryAppliedMeta.syncMismatch)}
+            </span>
+            <span className="charts-page__pill">mismatchFields: {deliveryAppliedMeta.syncMismatchFields ?? '―'}</span>
+          </div>
+        </section>
+      ) : null}
+
+      {!chartsDisplayEnabled ? null : (
+        <>
+          <div className="charts-card charts-card--actions">
+            <ChartsActionBar
+              runId={resolvedRunId ?? flags.runId}
+              cacheHit={resolvedCacheHit ?? false}
+              missingMaster={resolvedMissingMaster ?? false}
+              dataSourceTransition={resolvedTransition ?? 'snapshot'}
+              fallbackUsed={resolvedFallbackUsed}
+              sendEnabled={sendAllowedByDelivery}
+              sendDisabledReason={sendDisabledReason}
+              patientId={selectedPatientId}
+              queueEntry={selectedQueueEntry}
+              hasUnsavedDraft={draftState.dirty}
+              hasPermission={hasPermission}
+              requireServerRouteForSend
+              requirePatientForSend
+              networkDegradedReason={networkDegradedReason}
+              onAfterSend={handleRefreshSummary}
+              onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
+              onLockChange={(locked, reason) => setLockState({ locked, reason })}
+            />
+          </div>
       <section className="charts-page__grid">
         <div className="charts-card">
           <AuthServiceControls />
@@ -370,6 +611,8 @@ function ChartsContent() {
           <TelemetryFunnelPanel />
         </div>
       </section>
+        </>
+      )}
     </main>
   );
 }

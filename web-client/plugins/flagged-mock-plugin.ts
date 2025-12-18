@@ -27,11 +27,41 @@ const shouldVerifyAdminDelivery = (req: IncomingMessage) => {
   return process.env.VITE_VERIFY_ADMIN_DELIVERY === '1';
 };
 
+const readBooleanFromHeaderOrEnv = (
+  req: IncomingMessage,
+  headerName: string,
+  envName: string,
+  fallback: boolean,
+) => {
+  const header = req.headers[headerName] as string | undefined;
+  if (header === '1' || header === '0') {
+    return header === '1';
+  }
+  const env = process.env[envName];
+  if (env === '1' || env === '0') {
+    return env === '1';
+  }
+  return fallback;
+};
+
+const readChartsMasterSource = (req: IncomingMessage) => {
+  const header = (req.headers['x-charts-master-source'] as string | undefined) ?? undefined;
+  const env = process.env.VITE_CHARTS_MASTER_SOURCE ?? undefined;
+  const raw = (header ?? env ?? 'auto').trim();
+  if (raw === 'auto' || raw === 'server' || raw === 'mock' || raw === 'snapshot' || raw === 'fallback') {
+    return raw;
+  }
+  return 'auto';
+};
+
 const createFlagAwareMiddleware = (): NextHandleFunction => (req, res, next) => {
   const url = new URL(req.url ?? '/', 'http://localhost');
   const useMock = shouldUseMockOrcaQueue(req);
   const verifyAdmin = shouldVerifyAdminDelivery(req);
   const isAdminConfig = url.pathname.startsWith('/api/admin/config') || url.pathname.startsWith('/api/admin/delivery');
+  const chartsDisplayEnabled = readBooleanFromHeaderOrEnv(req, 'x-charts-display-enabled', 'VITE_CHARTS_DISPLAY_ENABLED', true);
+  const chartsSendEnabled = readBooleanFromHeaderOrEnv(req, 'x-charts-send-enabled', 'VITE_CHARTS_SEND_ENABLED', true);
+  const chartsMasterSource = readChartsMasterSource(req);
 
   if (url.pathname.startsWith('/api/orca/queue')) {
     res.setHeader('x-orca-queue-mode', useMock ? 'mock' : 'live');
@@ -71,6 +101,9 @@ const createFlagAwareMiddleware = (): NextHandleFunction => (req, res, next) => 
         verified: true,
         source: useMock ? 'mock' : 'live',
         deliveredAt: new Date().toISOString(),
+        chartsDisplayEnabled,
+        chartsSendEnabled,
+        chartsMasterSource,
         note: 'Flagged by x-verify-admin-delivery header for Playwright/preview checks.',
       });
       return;

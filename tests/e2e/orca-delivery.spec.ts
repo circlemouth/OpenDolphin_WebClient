@@ -239,6 +239,9 @@ test.describe('ORCA 送信/Administration 配信', () => {
     expect(body.runId).toBe(runId);
     expect(body.verified).toBe(true);
     expect(body.deliveryId).toBe(adminVerified.deliveryId);
+    expect(body.chartsDisplayEnabled).toBe(true);
+    expect(body.chartsSendEnabled).toBe(true);
+    expect(body.chartsMasterSource).toBe('server');
 
     const auditContext = await playwrightRequest.newContext({
       baseURL: fixtureServer.url,
@@ -266,6 +269,9 @@ test.describe('ORCA 送信/Administration 配信', () => {
     expect(body.verified).toBe(false);
     expect(body.source).toBe('live');
     expect(body.deliveryId).toBe(adminBypass.deliveryId);
+    expect(body.chartsDisplayEnabled).toBe(true);
+    expect(body.chartsSendEnabled).toBe(false);
+    expect(body.chartsMasterSource).toBe('fallback');
     expect(body.note).toContain('フォールスルー');
   });
 });

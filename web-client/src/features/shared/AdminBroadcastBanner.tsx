@@ -8,12 +8,21 @@ type AdminBroadcastBannerProps = {
 
 export function AdminBroadcastBanner({ broadcast, surface }: AdminBroadcastBannerProps) {
   if (!broadcast) return null;
-  const tone: 'info' | 'warning' = broadcast.queueMode === 'live' && !broadcast.verifyAdminDelivery ? 'warning' : 'info';
+  const hasChartsImpact =
+    broadcast.chartsMasterSource === 'fallback' ||
+    broadcast.chartsDisplayEnabled === false ||
+    broadcast.chartsSendEnabled === false;
+  const tone: 'info' | 'warning' =
+    hasChartsImpact || (broadcast.queueMode === 'live' && !broadcast.verifyAdminDelivery) ? 'warning' : 'info';
   const message = [
     '管理設定が更新されました',
     broadcast.deliveryId ? `deliveryId: ${broadcast.deliveryId}` : undefined,
     broadcast.deliveryVersion ? `version: ${broadcast.deliveryVersion}` : undefined,
+    broadcast.deliveredAt ? `deliveredAt: ${broadcast.deliveredAt}` : undefined,
     broadcast.queueMode ? `queueMode: ${broadcast.queueMode}` : undefined,
+    broadcast.chartsMasterSource ? `chartsMasterSource: ${broadcast.chartsMasterSource}` : undefined,
+    broadcast.chartsSendEnabled === false ? 'chartsSend: disabled' : undefined,
+    broadcast.chartsDisplayEnabled === false ? 'chartsDisplay: disabled' : undefined,
   ]
     .filter(Boolean)
     .join(' ｜ ');

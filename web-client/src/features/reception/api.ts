@@ -98,6 +98,7 @@ const parseQueueEntries = (json: any): ClaimQueueEntry[] => {
 export async function fetchAppointmentOutpatients(
   params: AppointmentQueryParams,
   context?: QueryFunctionContext,
+  options: { preferredSourceOverride?: ResolveMasterSource } = {},
 ): Promise<AppointmentPayload> {
   const page = params.page ?? 1;
   const size = params.size ?? 50;
@@ -112,7 +113,7 @@ export async function fetchAppointmentOutpatients(
       size,
     },
     queryContext: context,
-    preferredSource: preferredSource(),
+    preferredSource: options.preferredSourceOverride ?? preferredSource(),
     description: 'appointment_outpatient',
   });
 
@@ -181,12 +182,12 @@ export async function fetchAppointmentOutpatients(
 
 export async function fetchClaimFlags(
   context?: QueryFunctionContext,
-  options: { screen?: 'reception' | 'charts' } = {},
+  options: { screen?: 'reception' | 'charts'; preferredSourceOverride?: ResolveMasterSource } = {},
 ): Promise<ClaimOutpatientPayload> {
   const result = await fetchWithResolver({
     candidates: claimCandidates,
     queryContext: context,
-    preferredSource: preferredSource(),
+    preferredSource: options.preferredSourceOverride ?? preferredSource(),
     description: 'claim_outpatient',
   });
 

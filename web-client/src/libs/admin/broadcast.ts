@@ -5,6 +5,9 @@ export type AdminBroadcast = {
   deliveredAt?: string;
   queueMode?: 'mock' | 'live';
   verifyAdminDelivery?: boolean;
+  chartsDisplayEnabled?: boolean;
+  chartsSendEnabled?: boolean;
+  chartsMasterSource?: string;
   note?: string;
   source?: string;
   updatedAt: string;
