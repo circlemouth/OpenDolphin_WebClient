@@ -14,6 +14,7 @@ import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner'
 import type { OutpatientEncounterContext } from './encounterContext';
 import { useSession } from '../../AppRouter';
 import { fetchPatients, type PatientRecord } from '../patients/api';
+import { PatientInfoEditDialog } from './PatientInfoEditDialog';
 
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
@@ -66,6 +67,10 @@ export function PatientsTab({
   const [auditOpen, setAuditOpen] = useState(false);
   const [auditSnapshot, setAuditSnapshot] = useState<AuditEventRecord[]>([]);
   const [diffHighlightKeys, setDiffHighlightKeys] = useState<string[]>([]);
+  const [patientEditDialog, setPatientEditDialog] = useState<{ open: boolean; section: 'basic' | 'insurance' }>({
+    open: false,
+    section: 'basic',
+  });
   const lastAuditPatientId = useRef<string | undefined>(undefined);
   const memoPatientIdRef = useRef<string | undefined>(undefined);
   const basicRef = useRef<HTMLDivElement | null>(null);
@@ -141,8 +146,31 @@ export function PatientsTab({
   }, [selected]);
 
   const canEditMemo = canEditMemoByRole && !editBlockedByMaster;
+  const canEditPatientInfoNow =
+    Boolean(selectedPatientId) && canEditPatientInfoByRole && canEditByStatus && !editBlockedByMaster && !switchLocked && !draftDirty;
   const canDeepLinkPatientsBasic = canEditPatientInfoByRole && canEditByStatus && !editBlockedByMaster;
   const canDeepLinkPatientsInsurance = canDeepLinkPatientsBasic;
+
+  const patientEditBlockedReason = useMemo(() => {
+    if (!selectedPatientId) return 'patientId が未確定のため編集できません。';
+    if (switchLocked) return `他の処理が進行中のためロック中${switchLockedReason ? `: ${switchLockedReason}` : ''}`;
+    if (draftDirty) return '未保存ドラフトあり（ドラフトを保存/破棄してから患者更新してください）。';
+    if (editBlockedByMaster) return `編集不可（master/tone ガード）: ${editBlockedReason}`;
+    if (!canEditByStatus) return `編集不可（受付ステータス=${selected?.status ?? '不明'}）`;
+    if (!canEditPatientInfoByRole) return `編集不可（role=${session.role}）`;
+    return undefined;
+  }, [
+    canEditByStatus,
+    canEditPatientInfoByRole,
+    draftDirty,
+    editBlockedByMaster,
+    editBlockedReason,
+    selected?.status,
+    selectedPatientId,
+    session.role,
+    switchLocked,
+    switchLockedReason,
+  ]);
 
   const guardMessage = useMemo(() => {
     if (switchLocked) {
@@ -192,6 +220,23 @@ export function PatientsTab({
       }
     }
   };
+
+  const fallbackPatientRecord: PatientRecord | null = useMemo(() => {
+    if (!selected) return null;
+    return {
+      patientId: selected.patientId ?? selectedContext?.patientId,
+      name: selected.name,
+      kana: selected.kana,
+      birthDate: selected.birthDate,
+      sex: selected.sex,
+      phone: undefined,
+      zip: undefined,
+      address: undefined,
+      insurance: selected.insurance,
+      memo: selected.note,
+      lastVisit: selected.visitDate,
+    };
+  }, [selected, selectedContext?.patientId]);
 
   useEffect(() => {
     if (!selected && filteredEntries[0]) {
@@ -696,22 +741,25 @@ export function PatientsTab({
                   <div className="patients-tab__card-actions" role="group" aria-label="基本情報操作">
                     <button
                       type="button"
-                      onClick={() => navigateToPatients('basic')}
-                      disabled={!canDeepLinkPatientsBasic}
+                      onClick={() => setPatientEditDialog({ open: true, section: 'basic' })}
+                      disabled={!canEditPatientInfoNow}
                       title={
-                        canDeepLinkPatientsBasic
-                          ? 'Patients 画面で編集'
-                          : editBlockedByMaster
-                            ? `ガード中: ${editBlockedReason}`
-                            : !canEditPatientInfoByRole
-                              ? `role=${session.role} のため編集不可`
-                              : !canEditByStatus
-                                ? `受付ステータス=${selected.status} のため編集不可`
-                                : '編集不可'
+                        canEditPatientInfoNow
+                          ? 'Charts から安全に更新（差分確認/監査/再試行）'
+                          : patientEditBlockedReason ?? '編集不可'
                       }
                       className="patients-tab__primary"
                     >
-                      基本を編集（Patients）
+                      基本を編集（Charts）
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateToPatients('basic')}
+                      disabled={!canDeepLinkPatientsBasic}
+                      className="patients-tab__ghost"
+                      title={canDeepLinkPatientsBasic ? 'Patients 画面で編集（代替導線）' : '編集不可'}
+                    >
+                      Patients で開く
                     </button>
                     <button
                       type="button"
@@ -835,22 +883,25 @@ export function PatientsTab({
                   <div className="patients-tab__card-actions" role="group" aria-label="保険操作">
                     <button
                       type="button"
-                      onClick={() => navigateToPatients('insurance')}
-                      disabled={!canDeepLinkPatientsInsurance}
+                      onClick={() => setPatientEditDialog({ open: true, section: 'insurance' })}
+                      disabled={!canEditPatientInfoNow}
                       title={
-                        canDeepLinkPatientsInsurance
-                          ? 'Patients 画面で編集'
-                          : editBlockedByMaster
-                            ? `ガード中: ${editBlockedReason}`
-                            : !canEditPatientInfoByRole
-                              ? `role=${session.role} のため編集不可`
-                              : !canEditByStatus
-                                ? `受付ステータス=${selected.status} のため編集不可`
-                                : '編集不可'
+                        canEditPatientInfoNow
+                          ? 'Charts から安全に更新（差分確認/監査/再試行）'
+                          : patientEditBlockedReason ?? '編集不可'
                       }
                       className="patients-tab__primary"
                     >
-                      保険を編集（Patients）
+                      保険を編集（Charts）
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => navigateToPatients('insurance')}
+                      disabled={!canDeepLinkPatientsInsurance}
+                      className="patients-tab__ghost"
+                      title={canDeepLinkPatientsInsurance ? 'Patients 画面で編集（代替導線）' : '編集不可'}
+                    >
+                      Patients で開く
                     </button>
                     <button type="button" className="patients-tab__ghost" onClick={() => scrollTo('diff')}>
                       差分へ
@@ -877,6 +928,37 @@ export function PatientsTab({
                   </small>
                 ) : null}
               </div>
+
+              <PatientInfoEditDialog
+                open={patientEditDialog.open}
+                section={patientEditDialog.section}
+                baseline={patientBaseline}
+                fallback={fallbackPatientRecord}
+                editAllowed={canEditPatientInfoNow}
+                editBlockedReason={patientEditBlockedReason}
+                meta={{
+                  runId: flags.runId,
+                  cacheHit: flags.cacheHit,
+                  missingMaster: flags.missingMaster,
+                  fallbackUsed: flags.fallbackUsed,
+                  dataSourceTransition: flags.dataSourceTransition,
+                  patientId: selectedPatientId,
+                  appointmentId: selected?.appointmentId,
+                  receptionId: selected?.receptionId,
+                  visitDate: selected?.visitDate,
+                  actorRole: session.role,
+                }}
+                onClose={() => setPatientEditDialog((prev) => ({ ...prev, open: false }))}
+                onSaved={(result) => {
+                  setAuditSnapshot(getAuditEventLog());
+                  const details = (result.auditEvent as any)?.details as Record<string, unknown> | undefined;
+                  const keys = Array.isArray(details?.changedKeys) ? (details?.changedKeys as string[]) : [];
+                  if (keys.length > 0) {
+                    setDiffHighlightKeys(keys);
+                  }
+                }}
+                onRefetchBaseline={() => patientBaselineQuery.refetch()}
+              />
 
               <div className="patients-tab__card">
                 <div className="patients-tab__card-header">
@@ -1023,7 +1105,7 @@ export function PatientsTab({
                   })}
                 </div>
                 <small className="patients-tab__detail-guard">
-                  変更前は直近取得値、変更後は現在の表示（メモはローカル編集）です。基本/保険の保存は Patients 画面で実施してください。
+                  変更前は直近取得値、変更後は現在の表示（メモはローカル編集）です。基本/保険は Charts（差分確認）または Patients で保存できます。
                 </small>
               </div>
             </>
@@ -1057,7 +1139,7 @@ export function PatientsTab({
             <div className="patients-tab__modal-list" role="list">
               {relevantAuditEvents.length === 0 ? (
                 <p className="patients-tab__detail-empty" role="status" aria-live="polite">
-                  まだ保存履歴がありません（Patients 画面で保存するとここに反映されます）。
+                  まだ保存履歴がありません（Charts/Patients で保存するとここに反映されます）。
                 </p>
               ) : (
                 relevantAuditEvents.map((record, index) => {
@@ -1100,7 +1182,7 @@ export function PatientsTab({
                 }}
                 disabled={!selectedPatientId}
               >
-                Patients で編集/保存へ
+                Patients で編集/保存（代替）
               </button>
               <button
                 type="button"

@@ -45,6 +45,15 @@ export type PatientMutationPayload = {
   patient: PatientRecord;
   operation: 'create' | 'update' | 'delete';
   runId?: string;
+  auditMeta?: {
+    source?: 'patients' | 'charts';
+    section?: 'basic' | 'insurance';
+    changedKeys?: string[];
+    receptionId?: string;
+    appointmentId?: string;
+    visitDate?: string;
+    actorRole?: string;
+  };
 };
 
 export type PatientMutationResult = {
@@ -57,6 +66,8 @@ export type PatientMutationResult = {
   auditEvent?: Record<string, unknown>;
   message?: string;
   patient?: PatientRecord;
+  status?: number;
+  sourcePath?: string;
 };
 
 const SAMPLE_PATIENTS: PatientRecord[] = [
@@ -303,6 +314,13 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
     runId,
     patientId: payload.patient.patientId,
     timestamp: new Date().toISOString(),
+    source: payload.auditMeta?.source ?? 'patients',
+    section: payload.auditMeta?.section,
+    changedKeys: payload.auditMeta?.changedKeys,
+    receptionId: payload.auditMeta?.receptionId,
+    appointmentId: payload.auditMeta?.appointmentId,
+    visitDate: payload.auditMeta?.visitDate,
+    actorRole: payload.auditMeta?.actorRole,
   };
   const body = {
     ...payload.patient,
@@ -314,6 +332,7 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
 
   const postResult = await tryPostJson(patientMutationCandidates, body);
   const json = postResult.json ?? {};
+  const serverAuditEvent = (json.auditEvent as Record<string, unknown> | undefined) ?? undefined;
   const result: PatientMutationResult = {
     ok: postResult.ok,
     runId: (json.runId as string | undefined) ?? runId,
@@ -321,9 +340,41 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
     missingMaster: normalizeBoolean(json.missingMaster),
     dataSourceTransition: json.dataSourceTransition as DataSourceTransition | undefined,
     fallbackUsed: normalizeBoolean(json.fallbackUsed),
-    auditEvent: (json.auditEvent as Record<string, unknown>) ?? body.auditEvent,
+    auditEvent: serverAuditEvent,
     message: (json.apiResultMessage as string | undefined) ?? (postResult.ok ? '保存しました' : '保存に失敗しました'),
     patient: json.patient as PatientRecord | undefined,
+    status: postResult.status,
+    sourcePath: postResult.path,
+  };
+
+  const serverDetails =
+    serverAuditEvent && typeof serverAuditEvent.details === 'object' && serverAuditEvent.details !== null
+      ? (serverAuditEvent.details as Record<string, unknown>)
+      : {};
+
+  const normalizedDetails: Record<string, unknown> = {
+    ...serverDetails,
+    operation: payload.operation,
+    source: payload.auditMeta?.source ?? 'patients',
+    section: payload.auditMeta?.section,
+    changedKeys: payload.auditMeta?.changedKeys,
+    patientId: payload.patient.patientId,
+    receptionId: payload.auditMeta?.receptionId,
+    appointmentId: payload.auditMeta?.appointmentId,
+    visitDate: payload.auditMeta?.visitDate,
+    actorRole: payload.auditMeta?.actorRole,
+    status: result.status,
+    sourcePath: result.sourcePath,
+    outcome: result.ok ? 'success' : 'error',
+    message: result.message,
+  };
+
+  result.auditEvent = {
+    action: (serverAuditEvent?.action as string | undefined) ?? 'PATIENTMODV2_OUTPATIENT_MUTATE',
+    outcome: (serverAuditEvent?.outcome as string | undefined) ?? (result.ok ? 'success' : 'error'),
+    subject: (serverAuditEvent?.subject as string | undefined) ?? (payload.auditMeta?.source ?? 'patients'),
+    runId: (serverAuditEvent?.runId as string | undefined) ?? result.runId,
+    details: normalizedDetails,
   };
 
   updateObservabilityMeta({
@@ -332,6 +383,39 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
     missingMaster: result.missingMaster,
     dataSourceTransition: result.dataSourceTransition,
     fallbackUsed: result.fallbackUsed,
+  });
+
+  recordOutpatientFunnel('patient_save', {
+    runId: result.runId,
+    cacheHit: result.cacheHit ?? false,
+    missingMaster: result.missingMaster ?? false,
+    dataSourceTransition: result.dataSourceTransition ?? 'server',
+    fallbackUsed: result.fallbackUsed ?? false,
+    action: `patient_save_${payload.operation}`,
+    outcome: result.ok ? 'success' : 'error',
+    note: result.ok ? (result.sourcePath ?? '') : `${result.sourcePath ?? ''} status=${result.status ?? 'unknown'}`,
+  });
+
+  logAuditEvent({
+    runId: result.runId,
+    source: 'patient-save',
+    cacheHit: result.cacheHit,
+    missingMaster: result.missingMaster,
+    fallbackUsed: result.fallbackUsed,
+    dataSourceTransition: result.dataSourceTransition,
+    payload: result.auditEvent,
+  });
+
+  logUiState({
+    action: 'patient_save',
+    screen: payload.auditMeta?.source ?? 'patients',
+    controlId: `patient_save_${payload.operation}`,
+    runId: result.runId,
+    cacheHit: result.cacheHit,
+    missingMaster: result.missingMaster,
+    fallbackUsed: result.fallbackUsed,
+    dataSourceTransition: result.dataSourceTransition,
+    details: normalizedDetails,
   });
 
   return result;
