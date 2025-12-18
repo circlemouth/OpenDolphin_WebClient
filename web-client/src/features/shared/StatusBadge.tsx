@@ -25,7 +25,7 @@ export function StatusBadge({
   value,
   tone = 'info',
   description,
-  ariaLive = 'polite',
+  ariaLive = 'off',
   runId,
 }: StatusBadgeProps) {
   return (
@@ -68,7 +68,7 @@ export function MissingMasterBadge({ missingMaster, runId }: MissingMasterBadgeP
           ? 'tone=server ｜ マスタ未取得のため ORCA 再送を停止'
           : 'tone=info ｜ マスタ取得済み、再送を継続'
       }
-      ariaLive={missingMaster ? 'assertive' : 'polite'}
+      ariaLive="off"
       runId={runId}
     />
   );
@@ -86,7 +86,7 @@ export function CacheHitBadge({ cacheHit, runId }: CacheHitBadgeProps) {
       value={cacheHit ? 'true' : 'false'}
       tone={cacheHit ? 'success' : 'warning'}
       description={cacheHit ? 'cacheHit=true ｜ 再取得不要で ORCA 送信準備完了' : 'cacheHit=false ｜ サーバー再取得または fallback が必要'}
-      ariaLive="polite"
+      ariaLive="off"
       runId={runId}
     />
   );
