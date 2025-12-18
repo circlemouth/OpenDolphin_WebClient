@@ -806,7 +806,7 @@
     "importance": "medium",
     "urgency": "low",
     "createdAt": "2025-12-18T11:30:16.247Z",
-    "updatedAt": "2025-12-18T11:30:16.247Z",
+    "updatedAt": "2025-12-18T16:31:45.319Z",
     "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-5iu4xg-src-charts-produ",
@@ -845,7 +845,8 @@
     "category": "src / charts_production_outpatient / integration",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# 43 `/orca12/patientmodv2/outpatient` 編集導線（患者更新）\n\n- Charts の患者サイドペインから “安全に” 患者基本/保険情報を更新できる導線を整備する（権限/監査/差分表示）。\n- create/update/delete の操作種別（operation）を監査ログに残し、失敗時の巻き戻し/再試行を実装する。\n- 入力検証（形式/必須/マスタ依存）とエラー表示（role=alert）を統一する。"
+    "description": "# 43 `/orca12/patientmodv2/outpatient` 編集導線（患者更新）\n\n- Charts の患者サイドペインから “安全に” 患者基本/保険情報を更新できる導線を整備する（権限/監査/差分表示）。\n- create/update/delete の操作種別（operation）を監査ログに残し、失敗時の巻き戻し/再試行を実装する。\n- 入力検証（形式/必須/マスタ依存）とエラー表示（role=alert）を統一する。",
+    "medal": "bronze"
   },
   {
     "id": "task-yaml-4ui3zf-src-charts-produ",
@@ -855,7 +856,7 @@
     "importance": "high",
     "urgency": "low",
     "createdAt": "2025-12-18T11:30:34.175Z",
-    "updatedAt": "2025-12-18T11:30:34.175Z",
+    "updatedAt": "2025-12-18T16:31:47.219Z",
     "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-4ui3zf-src-charts-produ",
@@ -895,7 +896,8 @@
     "category": "src / charts_production_outpatient / integration",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# 45 `/api/orca/queue` と送信ステータス表示\n\n- ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。\n- キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。\n- traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。"
+    "description": "# 45 `/api/orca/queue` と送信ステータス表示\n\n- ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。\n- キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。\n- traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。",
+    "medal": "bronze"
   },
   {
     "id": "task-1766057639037-731f76",
@@ -924,32 +926,6 @@
     "aiCompetitionScore": 81
   },
   {
-    "id": "task-1766057758389-2575ee",
-    "name": "CodexCLI2: [webclient charts production outpatient plan] 45_orca_queueと送信ステータス表示\n期間: 01/25 09:00 - 01/28 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 45 `/api/orca/queue` と送信ステータス表示\n\n- ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。\n- キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。\n- traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。\n\nYAML ID: src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-18T11:35:58.389Z",
-    "updatedAt": "2025-12-18T11:36:04.077Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766057758389-2575ee",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766057758178-n9nxfc11",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 45_orca_queueと送信ステータス表示\n期間: 01/25 09:00 - 01/28 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 45 `/api/orca/queue` と送信ステータス表示\n\n- ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。\n- キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。\n- traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。\n\nYAML ID: src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766057758389-2575ee",
-    "medal": "gold",
-    "aiCompetitionScore": 81
-  },
-  {
     "id": "task-1766057758186-86c84a",
     "name": "CodexCLI1: [webclient charts production outpatient plan] 45_orca_queueと送信ステータス表示\n期間: 01/25 09:00 - 01/28 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 45 `/api/orca/queue` と送信ステータス表示\n\n- ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。\n- キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。\n- traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。\n\nYAML ID: src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md",
     "model": "Codex CLI",
@@ -972,40 +948,5 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1766057758186-86c84a"
-  },
-  {
-    "id": "task-1766057766122-875b36",
-    "name": "🔍Monitor: [webclient charts production outpatient plan] 45_orca_queueと送信ステータス表示\n期間: 01/25 09:00 - 01/28 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 45 `/api/orca/queue` と送信ステータス表示\n\n- ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。\n- キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。\n- traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。\n\nYAML ID: src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-18T11:36:06.122Z",
-    "updatedAt": "2025-12-18T11:36:10.398Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766057766122-875b36",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766057758178-n9nxfc11",
-    "aiCompetitionGroupName": "[webclient charts production outpatient plan] 45_orca_queueと送信ステータス表示\n期間: 01/25 09:00 - 01/28 09:00 / 優先度: high / 緊急度: low / エージェント: claude code\n\n# 45 `/api/orca/queue` と送信ステータス表示\n\n- ORCA キューの状態を Charts に表示し、送信の “待ち/処理中/成功/失敗” をタイムラインと整合させる。\n- キュー遅延や滞留を “現場が判断できる” 形で示し、再試行/受付確認/設定確認へ誘導する。\n- traceId/runId と紐づけて証跡を残し、問い合わせ対応（いつ何が起きたか）に耐える形にする。\n\nYAML ID: src/charts_production_outpatient/integration/45_orca_queueと送信ステータス表示.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1766057758186-86c84a",
-      "task-1766057758389-2575ee"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1766057818178,
-    "worktreePath": ".worktrees/task-1766057766122-875b36"
   }
 ]
