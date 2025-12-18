@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 45 /api/orca/queue と送信ステータス表示</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 20px 0 28px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 14px;
+      }
+      .scorecard h2 {
+        font-size: 14px;
+        margin: 0 0 10px;
+        color: #2c3a40;
+      }
+      .total {
+        display: flex;
+        align-items: baseline;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+      }
+      .total .points {
+        font-size: 22px;
+        font-weight: 800;
+        letter-spacing: 0.02em;
+      }
+      .total .badge {
+        font-size: 22px;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .metrics ul {
+        padding-left: 18px;
+        margin: 0;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metrics li { margin: 2px 0; }
+
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column { width: 190px; }
+      col.agent-column { width: calc((100% - 190px) / 3); }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td { background-color: #eef3f4; }
+
+      details { display: block; margin: 0; }
+      details summary { list-style: none; }
+      details[open] summary { margin-bottom: 12px; }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before { transform: rotate(90deg); }
+
+      .timestamp { font-weight: 600; color: #2c3a40; overflow-wrap: anywhere; }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed { background: #c3d4d8; border-color: #aabfc5; }
+      .status-badge--in-progress { background: #fef3cd; border-color: #f0e5a5; }
+      .status-badge--pending { background: #e3edf0; border-color: #cdd9dd; }
+      .status-badge--error { background: #f8d7da; border-color: #f1aeb5; }
+
+      .agent-meta { display: block; margin-bottom: 10px; line-height: 1.5; }
+      .agent-meta .agent-label { display: inline; font-size: 13px; color: #3a4b53; }
+
+      .links { font-size: 12px; color: #3a4b53; }
+      .links a { color: #1f2a30; }
+
+      /* Radar */
+      .radar-wrap { width: 160px; }
+      .radar-title { font-size: 11px; color: #2c3a40; margin: 0 0 6px; font-weight: 600; }
+      svg.radar { width: 160px; height: 160px; display: block; }
+      .radar-grid { fill: none; stroke: #cdd9dd; stroke-width: 1; }
+      .radar-axis { stroke: #cdd9dd; stroke-width: 1; }
+      .radar-shape { fill: rgba(46, 125, 132, 0.18); stroke: #2e7d84; stroke-width: 2; }
+      .radar-caption { font-size: 10px; fill: #2c3a40; }
+
+      .small-note { font-size: 12px; color: #3a4b53; margin-top: 6px; }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート（タスク45: /api/orca/queue と送信ステータス表示）</h1>
+        <p class="monitor-description">
+          対象: 3ブランチ（監視対象タスク） / RUN_ID=<code>20251218T114241Z</code> / 証跡ログ: <code>src/charts_production_outpatient/integration/logs/20251218T114241Z-orca-queue-send-status.md</code>
+        </p>
+        <p class="monitor-description">
+          評価日時: <strong>@@EVAL_DISPLAY@@</strong>（updatedAt=@@EVAL_ISO@@）
+        </p>
+      </header>
+
+      <section>
+        <h2 style="margin: 0 0 10px; font-size: 16px;">タスク内容と仕事の概要</h2>
+        <div style="font-size: 13px; color: #2c3a40;">
+          <ul style="margin: 0; padding-left: 18px;">
+            <li>Charts に ORCA キュー状態を表示し、送信ステータス（待ち/処理中/成功/失敗）をタイムラインと整合させる。</li>
+            <li>滞留/失敗を「現場が判断できる」形で提示し、再試行/受付確認/設定確認へ誘導する。</li>
+            <li>runId/traceId と紐づけ、問い合わせ対応に耐える証跡（UI state / 監査）を残す。</li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="scoreboard" aria-label="スコアサマリ">
+        <div class="scorecard">
+          <h2>claude code / @@B1@@</h2>
+          <div class="total"><span class="points">528 / 600</span><span class="badge">🥈</span></div>
+          <div class="metrics">
+            <div class="radar-wrap">
+              <p class="radar-title">6指標（六角形）</p>
+              <svg class="radar" viewBox="-110 -110 220 220" data-scores="90,85,88,90,85,90" data-labels="機能合理性,緻密性,UX/運用,可観測性,安全性,証跡/Docs"></svg>
+            </div>
+            <ul>
+              <li>機能合理性 90点：キュー内訳/滞留トーン/aria-live の意図が明確。</li>
+              <li>緻密性 85点：型修正や重複patientId対応は良いが、unknownカウントなど仕様と実装のズレが残る。</li>
+              <li>UX/運用 88点：選択患者＋全体俯瞰の両方を提示し、現場判断に寄与。</li>
+              <li>可観測性 90点：runId/traceId 前提でUI状態/監査の追跡に寄与（ログ仕様は一部記述揺れあり）。</li>
+              <li>安全性 85点：局所変更で副作用小。ただし「内訳」の集計母集団（全件/最新のみ）の定義が曖昧。</li>
+              <li>証跡/Docs 90点：README/DOC_STATUS/証跡ログの更新が揃っている。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="scorecard">
+          <h2>claude code / @@B2@@</h2>
+          <div class="total"><span class="points">486 / 600</span><span class="badge">🥈</span></div>
+          <div class="metrics">
+            <div class="radar-wrap">
+              <p class="radar-title">6指標（六角形）</p>
+              <svg class="radar" viewBox="-110 -110 220 220" data-scores="80,85,78,75,88,80" data-labels="機能合理性,緻密性,UX/運用,可観測性,安全性,証跡/Docs"></svg>
+            </div>
+            <ul>
+              <li>機能合理性 80点：同一patientId複数エントリ時の不整合を潰す修正は妥当。</li>
+              <li>緻密性 85点：lastDispatchAt の比較ロジックが堅実（空文字/未設定も考慮）。</li>
+              <li>UX/運用 78点：ユーザー可視性は間接的（不整合防止寄り）。</li>
+              <li>可観測性 75点：既存ログに依存し、ログ仕様（__AUDIT_UI_STATE__等）の記述更新が一部不足。</li>
+              <li>安全性 88点：既存データ構造を壊さず、最小の選択ロジック追加。</li>
+              <li>証跡/Docs 80点：証跡ログ追記はあるが用語揺れが残る。</li>
+            </ul>
+          </div>
+        </div>
+
+        <div class="scorecard">
+          <h2>claude code / @@B3@@</h2>
+          <div class="total"><span class="points">205 / 600</span><span class="badge">⚪️</span></div>
+          <div class="metrics">
+            <div class="radar-wrap">
+              <p class="radar-title">6指標（六角形）</p>
+              <svg class="radar" viewBox="-110 -110 220 220" data-scores="40,30,30,30,40,35" data-labels="機能合理性,緻密性,UX/運用,可観測性,安全性,証跡/Docs"></svg>
+            </div>
+            <ul>
+              <li>機能合理性 40点：MSW向けのモック拡張案は方向性としては有用。</li>
+              <li>緻密性 30点：未コミット差分が残り、評価対象として再現性が不足。</li>
+              <li>UX/運用 30点：実装取り込み前でユーザー価値が未到達。</li>
+              <li>可観測性 30点：ログ/trace連携の変更は未反映。</li>
+              <li>安全性 40点：モック変更自体は局所だが、未コミットのためレビュー/CIに乗らない。</li>
+              <li>証跡/Docs 35点：証跡ログも未コミットで揺れが残る。</li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>@@B1@@</th>
+            <th>@@B2@@</th>
+            <th>@@B3@@</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">@@EVAL_DISPLAY@@</td>
+
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了扱い（コミットあり）</span>
+                <span class="agent-label">ORCAキュー内訳バッジ追加 + tsc -b向け型調整。</span>
+              </div>
+              <div class="links">
+                成果物: <a href="../../web-client/src/features/charts/DocumentTimeline.tsx">DocumentTimeline.tsx</a> /
+                <a href="../../docs/web-client/README.md">docs/web-client/README.md</a> /
+                <a href="../../docs/web-client/planning/phase2/DOC_STATUS.md">DOC_STATUS.md</a>
+                <div class="small-note">（注）リンクはリポジトリルート基準。各ブランチ固有の内容は <code>git show</code> の参照が確実です。</div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分/パッチ</summary>
+                <p class="snapshot-summary">未コミット（worktree status）</p>
+                <pre>@@STATUS_WT1@@</pre>
+                <p class="snapshot-summary">コミット（master..branch）</p>
+                <pre>@@COMMITS_B1@@</pre>
+                <p class="snapshot-summary">diffstat（master...branch）</p>
+                <pre>@@DIFFSTAT_B1@@</pre>
+                <p class="snapshot-summary">name-status（master...branch）</p>
+                <pre>@@NAMESTATUS_B1@@</pre>
+                <p class="snapshot-summary">主要パッチ（DocumentTimeline.tsx）</p>
+                <pre>@@PATCH_B1_TIMELINE@@</pre>
+              </details>
+            </td>
+
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了扱い（コミットあり）</span>
+                <span class="agent-label">同一patientId複数エントリ時の「最新lastDispatchAt採用」修正。</span>
+              </div>
+              <div class="links">
+                成果物: <a href="../../web-client/src/features/charts/pages/ChartsPage.tsx">ChartsPage.tsx</a> /
+                <a href="../../src/charts_production_outpatient/integration/logs/20251218T114241Z-orca-queue-send-status.md">証跡ログ</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分/パッチ</summary>
+                <p class="snapshot-summary">未コミット（worktree status）</p>
+                <pre>@@STATUS_WT2@@</pre>
+                <p class="snapshot-summary">コミット（master..branch）</p>
+                <pre>@@COMMITS_B2@@</pre>
+                <p class="snapshot-summary">diffstat（master...branch）</p>
+                <pre>@@DIFFSTAT_B2@@</pre>
+                <p class="snapshot-summary">name-status（master...branch）</p>
+                <pre>@@NAMESTATUS_B2@@</pre>
+                <p class="snapshot-summary">主要パッチ（ChartsPage.tsx）</p>
+                <pre>@@PATCH_B2_CHARTSPAGE@@</pre>
+              </details>
+            </td>
+
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">未完了（コミットなし + 未コミットあり）</span>
+                <span class="agent-label">MSW用の /api/orca/queue モック追加案が未コミットのまま残存。</span>
+              </div>
+              <div class="links">
+                対象worktree: <code>@@WT3@@</code>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット差分</summary>
+                <p class="snapshot-summary">未コミット（worktree status）</p>
+                <pre>@@STATUS_WT3@@</pre>
+                <p class="snapshot-summary">コミット（master..branch）</p>
+                <pre>@@COMMITS_B3@@</pre>
+                <p class="snapshot-summary">diffstat（master...branch）</p>
+                <pre>@@DIFFSTAT_B3@@</pre>
+                <p class="snapshot-summary">name-status（master...branch）</p>
+                <pre>@@NAMESTATUS_B3@@</pre>
+                <p class="snapshot-summary">未コミットname-status</p>
+                <pre>@@UNCOMMITTED_B3@@</pre>
+                <p class="snapshot-summary">未コミット主要パッチ（mocks）</p>
+                <pre>@@PATCH_B3_MOCKS@@</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section style="margin-top: 24px; font-size: 13px; color: #2c3a40;">
+        <h2 style="margin: 0 0 10px; font-size: 16px;">指摘（改善余地）</h2>
+        <ul style="margin: 0; padding-left: 18px;">
+          <li>「ORCA キュー内訳」の集計母集団が、<code>queue全件</code>（重複patientId含む）なのか <code>patientIdごとの最新のみ</code> なのかが UI/ログ間で揺れているため、定義を揃えると問い合わせ耐性が上がります。</li>
+          <li><code>resolveOrcaSendStatus</code> は現状 <code>unknown</code> を返さない実装なので、unknownカウント/説明が残る場合は仕様化（例: 無効なstatus/日時）か削除で整合すると良いです。</li>
+          <li>@@B3@@ は未コミット差分があるため、タスクルール（worktree内は報告前コミット）観点で失格寄りの状態です。</li>
+        </ul>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        const svgs = document.querySelectorAll('svg.radar');
+        const maxR = 90;
+        const angles = [
+          -Math.PI / 2,
+          -Math.PI / 2 + (Math.PI * 2) / 6,
+          -Math.PI / 2 + (Math.PI * 4) / 6,
+          -Math.PI / 2 + (Math.PI * 6) / 6,
+          -Math.PI / 2 + (Math.PI * 8) / 6,
+          -Math.PI / 2 + (Math.PI * 10) / 6,
+        ];
+
+        function pt(r, a) {
+          return { x: Math.cos(a) * r, y: Math.sin(a) * r };
+        }
+
+        function poly(points) {
+          return points.map((p) => p.x.toFixed(2) + ',' + p.y.toFixed(2)).join(' ');
+        }
+
+        svgs.forEach((svg) => {
+          const scores = (svg.dataset.scores || '')
+            .split(',')
+            .map((v) => Number(v.trim()))
+            .filter((n) => !Number.isNaN(n));
+          const labels = (svg.dataset.labels || '').split(',').map((v) => v.trim());
+          if (scores.length !== 6) return;
+
+          const NS = 'http://www.w3.org/2000/svg';
+
+          const grid = document.createElementNS(NS, 'polygon');
+          grid.setAttribute('class', 'radar-grid');
+          grid.setAttribute('points', poly(angles.map((a) => pt(maxR, a))));
+          svg.appendChild(grid);
+
+          angles.forEach((a) => {
+            const axis = document.createElementNS(NS, 'line');
+            axis.setAttribute('class', 'radar-axis');
+            axis.setAttribute('x1', '0');
+            axis.setAttribute('y1', '0');
+            axis.setAttribute('x2', String(pt(maxR, a).x));
+            axis.setAttribute('y2', String(pt(maxR, a).y));
+            svg.appendChild(axis);
+          });
+
+          const pts = scores.map((s, i) => pt((Math.max(0, Math.min(100, s)) / 100) * maxR, angles[i]));
+          const shape = document.createElementNS(NS, 'polygon');
+          shape.setAttribute('class', 'radar-shape');
+          shape.setAttribute('points', poly(pts));
+          svg.appendChild(shape);
+
+          labels.forEach((label, i) => {
+            const p = pt(maxR + 14, angles[i]);
+            const t = document.createElementNS(NS, 'text');
+            t.setAttribute('class', 'radar-caption');
+            t.setAttribute('x', String(p.x));
+            t.setAttribute('y', String(p.y));
+            t.setAttribute('text-anchor', p.x > 20 ? 'start' : p.x < -20 ? 'end' : 'middle');
+            t.setAttribute('dominant-baseline', p.y > 20 ? 'hanging' : p.y < -20 ? 'alphabetic' : 'middle');
+            t.textContent = label + ' ' + scores[i] + '点';
+            svg.appendChild(t);
+          });
+        });
+      })();
+    </script>
+  </body>
+</html>
