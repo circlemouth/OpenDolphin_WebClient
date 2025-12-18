@@ -68,7 +68,8 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
       const after = getObservabilityMeta();
       const meta: OutpatientMeta = {
         runId: (json.runId as string | undefined) ?? after.runId ?? runId,
-        traceId: after.traceId,
+        traceId: (json.traceId as string | undefined) ?? after.traceId,
+        requestId: typeof json.requestId === 'string' ? (json.requestId as string) : undefined,
         dataSourceTransition: (json.dataSourceTransition as DataSourceTransition | undefined) ?? candidate.source,
         resolveMasterSource: candidate.source,
         cacheHit: normalizeBoolean(json.cacheHit ?? cacheHitHint ?? after.cacheHit),
@@ -77,6 +78,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
         fallbackFlagMissing: json.fallbackUsed === undefined ? true : undefined,
         fetchedAt: (json.fetchedAt as string | undefined) ?? after.fetchedAt,
         recordsReturned: typeof json.recordsReturned === 'number' ? (json.recordsReturned as number) : undefined,
+        outcome: typeof json.outcome === 'string' ? (json.outcome as string) : undefined,
         fromCache: cacheHitHint,
         retryCount,
         sourcePath: candidate.path,
@@ -86,6 +88,7 @@ export async function fetchWithResolver(options: FetchWithResolverOptions): Prom
 
       updateObservabilityMeta({
         runId: meta.runId,
+        traceId: meta.traceId,
         cacheHit: meta.cacheHit,
         missingMaster: meta.missingMaster,
         dataSourceTransition: meta.dataSourceTransition,

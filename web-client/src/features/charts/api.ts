@@ -1,11 +1,12 @@
 import type { QueryFunctionContext } from '@tanstack/react-query';
 
-import { logUiState } from '../../libs/audit/auditLogger';
+import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { updateObservabilityMeta } from '../../libs/observability/observability';
 import type { DataSourceTransition, ResolveMasterSource } from '../../libs/observability/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchWithResolver } from '../outpatient/fetchWithResolver';
 import { mergeOutpatientMeta } from '../outpatient/transformers';
+import { extractMedicalOutpatientRecord } from './medicalOutpatient';
 import type { OrcaOutpatientSummary } from '../outpatient/types';
 export type { OrcaOutpatientSummary } from '../outpatient/types';
 
@@ -44,10 +45,21 @@ export async function fetchOrcaOutpatientSummary(
     resolveMasterSource: resolvedDataSource(result.meta.dataSourceTransition, result.meta.resolveMasterSource),
   });
 
+  const derivedFromSections = extractMedicalOutpatientRecord(payload, undefined);
+  const resolvedOutcome =
+    typeof (payload as any).outcome === 'string'
+      ? ((payload as any).outcome as string)
+      : derivedFromSections?.outcome
+        ? derivedFromSections.outcome
+        : result.ok
+          ? 'SUCCESS'
+          : 'ERROR';
+
   const summary: OrcaOutpatientSummary = {
     ...meta,
     note: typeof payload.apiResultMessage === 'string' ? (payload.apiResultMessage as string) : undefined,
     payload,
+    outcome: meta.outcome ?? resolvedOutcome,
   };
 
   recordOutpatientFunnel('charts_orchestration', {
@@ -73,10 +85,43 @@ export async function fetchOrcaOutpatientSummary(
       endpoint: summary.sourcePath ?? result.meta.sourcePath,
       fetchedAt: summary.fetchedAt,
       recordsReturned: summary.recordsReturned,
+      outcome: summary.outcome,
       resolveMasterSource: summary.resolveMasterSource,
       fromCache: result.meta.fromCache,
       retryCount: result.meta.retryCount,
       description: 'medical_outpatient_summary',
+    },
+  });
+
+  logAuditEvent({
+    runId: summary.runId,
+    cacheHit: summary.cacheHit ?? result.meta.fromCache,
+    missingMaster: summary.missingMaster,
+    fallbackUsed: summary.fallbackUsed,
+    dataSourceTransition: summary.dataSourceTransition,
+    payload: {
+      action: 'ORCA_MEDICAL_OUTPATIENT_FETCH',
+      outcome: result.ok ? 'success' : 'error',
+      details: {
+        runId: summary.runId,
+        traceId: summary.traceId ?? result.meta.traceId,
+        requestId: summary.requestId,
+        dataSourceTransition: summary.dataSourceTransition,
+        cacheHit: summary.cacheHit ?? result.meta.fromCache ?? false,
+        missingMaster: summary.missingMaster ?? false,
+        fallbackUsed: summary.fallbackUsed ?? false,
+        fetchedAt: summary.fetchedAt,
+        recordsReturned: summary.recordsReturned,
+        outcome: summary.outcome,
+        sectionOutcomes: derivedFromSections?.sections?.map((section) => ({
+          key: section.key,
+          outcome: section.outcome,
+          recordsReturned: section.recordsReturned ?? section.items.length,
+        })),
+        resolveMasterSource: summary.resolveMasterSource,
+        sourcePath: summary.sourcePath ?? result.meta.sourcePath,
+        error: result.ok ? undefined : result.error,
+      },
     },
   });
 

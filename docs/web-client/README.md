@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251218T092541Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251218T105723Z`）
 > 2025-12-14 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T092541Z`）
+### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T105723Z`）
+- 42 `/orca21/medicalmodv2/outpatient` 表示セクション分割（医療記録）（RUN_ID=`20251218T105723Z`）。診断/処方/検査/処置/メモの 5 セクションで表示し、セクション単位の未取得/欠落/エラーを部分表示（全体停止回避）。`recordsReturned/outcome` を UI と監査ログへ反映。証跡: `src/charts_production_outpatient/integration/logs/20251218T105723Z-medicalmodv2-outpatient-sections.md` / 成果物: `src/charts_production_outpatient/integration/42_medicalmodv2_outpatient表示セクション分割.md` / 実装: `web-client/src/features/charts/MedicalOutpatientRecordPanel.tsx`, `web-client/src/features/charts/medicalOutpatient.ts`, `web-client/src/features/charts/api.ts`。
 - Charts 患者サイドペイン（基本/保険/履歴）仕上げ（閲覧中心 + role/missingMaster/fallback/dataSourceTransition + 受付ステータスで編集ガード、差分表示と保存履歴モーダル、履歴タブ整理、Patients への deep link/復帰導線を追加）。証跡: `docs/web-client/planning/phase2/logs/20251218T092541Z-charts-patient-sidepane.md` / 成果物: `src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md` / 実装: `web-client/src/features/charts/PatientsTab.tsx`。
 - Charts 並行編集（同一端末の複数タブ）検知を実装（閲覧専用化＋warning 統一＋最終更新ピル＋監査イベント `CHARTS_EDIT_LOCK/CHARTS_CONFLICT`）。証跡: `docs/web-client/planning/phase2/logs/20251218T092228Z-charts-concurrent-edit-lock.md` / 成果物: `src/charts_production_outpatient/workflow/34_並行編集とロック表示.md` / 実装: `web-client/src/features/charts/editLock.ts`。
 - Charts 外来受診コンテキスト確立（Reception→Charts で `receptionId/visitDate/patientId` を URL へ格納し、リロード/複数タブ/戻る操作でも別患者混入を防ぐガードを追加）。証跡: `docs/web-client/planning/phase2/logs/20251218T082404Z-charts-encounter-context.md` / 成果物: `src/charts_production_outpatient/workflow/30_外来受診コンテキスト確立.md`。
@@ -43,6 +44,7 @@
 - `src/charts_production_outpatient/02_ChartsPage現状棚卸しとギャップ.md` — ChartsPage の現状棚卸しとギャップ（RUN_ID=`20251212T140014Z`）。
 - `src/charts_production_outpatient/03_モダナイズ外来API契約テーブル確定.md` — Charts 外来 API 契約（監査・UI 透過・再試行/ガードの単一ソース、RUN_ID=`20251212T143720Z`）。
 - `src/charts_production_outpatient/integration/41_appointment_outpatient統合.md` — `/api01rv2/appointment/outpatient/*` 統合（予約/来院 正規化＋受付ID＋導線、RUN_ID=`20251217T234312Z`）。
+- `src/charts_production_outpatient/integration/42_medicalmodv2_outpatient表示セクション分割.md` — `/orca21/medicalmodv2/outpatient` 表示セクション分割（診断/処方/検査/処置/メモ、RUN_ID=`20251218T105723Z`）。
 - `src/charts_production_outpatient/integration/44_admin_config_deliveryフラグ同期.md` — Administration 設定配信（`/api/admin/config`/`/api/admin/delivery`）フラグ同期（RUN_ID=`20251217T233755Z`）。
 - `src/charts_production_outpatient/workflow/30_外来受診コンテキスト確立.md` — 受付ID/診療日/患者の来院コンテキストを URL/タブ/復元で破綻させないガード（RUN_ID=`20251218T082404Z`）。
 - `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` — 診療開始/終了の状態モデルと終了ガード（RUN_ID=`20251217T120220Z`）。

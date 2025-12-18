@@ -242,8 +242,11 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
           <p>{transitionCopy.body}</p>
           <p className="orca-summary__meta-label">recordsReturned</p>
           <strong>{summary?.recordsReturned ?? claim?.recordsReturned ?? '―'}</strong>
+          <p className="orca-summary__meta-label">outcome</p>
+          <strong>{summary?.outcome ?? '―'}</strong>
           {summary?.fetchedAt && <p className="orca-summary__meta-note">取得: {summary.fetchedAt}</p>}
           {claim?.fetchedAt && !summary?.fetchedAt && <p className="orca-summary__meta-note">請求取得: {claim.fetchedAt}</p>}
+          {summary?.requestId && <p className="orca-summary__meta-note">requestId: {summary.requestId}</p>}
           {summary?.note && <p className="orca-summary__meta-note">メッセージ: {summary.note}</p>}
           {claim?.claimStatus && (
             <p className="orca-summary__meta-note">請求ステータス: {claim.claimStatus}（{claim.claimStatusText ?? 'textなし'}）</p>
