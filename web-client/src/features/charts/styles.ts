@@ -1438,6 +1438,203 @@ export const chartsStyles = css`
     flex-wrap: wrap;
   }
 
+  .patient-form__alert {
+    border-radius: 14px;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    background: #fef2f2;
+    padding: 0.75rem 0.85rem;
+    color: #991b1b;
+  }
+
+  .patient-form__alert-title {
+    margin: 0;
+    font-weight: 900;
+    color: #7f1d1d;
+  }
+
+  .patient-form__alert-list {
+    margin: 0.45rem 0 0;
+    padding-left: 1.1rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .patient-form__alert-link {
+    border: none;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    color: inherit;
+    text-decoration: underline;
+    font: inherit;
+    text-align: left;
+  }
+
+  .patient-edit__notice {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.4);
+    background: #f8fafc;
+    padding: 0.75rem 0.85rem;
+    color: #0f172a;
+  }
+
+  .patient-edit__notice--success {
+    border-color: rgba(34, 197, 94, 0.35);
+    background: #f0fdf4;
+  }
+
+  .patient-edit__notice--error {
+    border-color: rgba(239, 68, 68, 0.35);
+    background: #fef2f2;
+  }
+
+  .patient-edit__notice--info {
+    border-color: rgba(59, 130, 246, 0.25);
+    background: #eff6ff;
+  }
+
+  .patient-edit__notice-title {
+    margin: 0;
+    font-weight: 900;
+  }
+
+  .patient-edit__notice-detail {
+    margin: 0.35rem 0 0;
+    color: #475569;
+  }
+
+  .patient-edit__meta {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+
+  .patient-edit__form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .patient-edit__grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.65rem 0.75rem;
+  }
+
+  .patient-edit__field {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
+  .patient-edit__field--wide {
+    grid-column: 1 / -1;
+  }
+
+  .patient-edit__field input,
+  .patient-edit__field select {
+    border-radius: 12px;
+    border: 1px solid #cbd5f5;
+    padding: 0.55rem 0.65rem;
+    font-family: inherit;
+    background: #ffffff;
+  }
+
+  .patient-edit__field input[aria-readonly='true'] {
+    background: #f1f5f9;
+    color: #475569;
+  }
+
+  .patient-edit__field-error {
+    color: #b91c1c;
+  }
+
+  .patient-edit__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: center;
+  }
+
+  .patient-edit__actions-spacer {
+    flex: 1;
+  }
+
+  .patient-edit__review-title {
+    margin: 0;
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .patient-edit__diff {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .patient-edit__diff-header {
+    display: grid;
+    grid-template-columns: 0.8fr 1fr 1fr;
+    gap: 0.6rem;
+    color: #64748b;
+    font-weight: 900;
+    font-size: 0.85rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px dashed rgba(148, 163, 184, 0.6);
+  }
+
+  .patient-edit__diff-row {
+    display: grid;
+    grid-template-columns: 0.8fr 1fr 1fr;
+    gap: 0.6rem;
+    padding: 0.45rem 0.55rem;
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: #ffffff;
+    align-items: start;
+  }
+
+  .patient-edit__diff-row.is-changed {
+    border-color: rgba(245, 158, 11, 0.55);
+    background: #fffbeb;
+  }
+
+  .patient-edit__diff-label {
+    font-weight: 900;
+    color: #0f172a;
+  }
+
+  .patient-edit__diff-before,
+  .patient-edit__diff-after {
+    overflow-wrap: anywhere;
+    color: #0f172a;
+  }
+
+  .patient-edit__confirm {
+    display: flex;
+    gap: 0.5rem;
+    align-items: center;
+    color: #0f172a;
+    font-weight: 800;
+  }
+
+  .patient-edit__blocked {
+    padding: 0.85rem 0.95rem;
+    border-radius: 16px;
+    background: #fef2f2;
+    border: 1px solid rgba(239, 68, 68, 0.35);
+    color: #991b1b;
+  }
+
+  .patient-edit__blocked p {
+    margin: 0.35rem 0;
+  }
+
   .telemetry-panel {
     display: flex;
     flex-direction: column;
