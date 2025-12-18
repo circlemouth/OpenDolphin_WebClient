@@ -48,6 +48,7 @@
 - `src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md` — 診療開始/終了の状態モデルと終了ガード（RUN_ID=`20251217T120220Z`）。
 - `src/charts_production_outpatient/workflow/33_ORCA送信フロー_送信前チェック.md` — ORCA送信の送信前チェック（送信不可条件の列挙・状態表示・再試行/中断・証跡表示、RUN_ID=`20251217T233430Z`）。
 - `src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md` — Charts シェル UI 最終レイアウト（RUN_ID=`20251217T060504Z`）。
+- `src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md` — Charts キーボード操作と ARIA 監査（RUN_ID=`20251217T113616Z`）。
 - `src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md` — Charts ToneBanner/状態ピル一貫性（RUN_ID=`20251217T063116Z`）。
 - `src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md` — OrcaSummary 請求/予約サマリ商用仕上げ（RUN_ID=`20251217T130407Z`）。
 - `src/charts_production_outpatient/ux/26_印刷_エクスポート_診療文書.md` — Charts 印刷/エクスポート（診療文書）（RUN_ID=`20251217T233649Z`）。
@@ -61,6 +62,7 @@
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
 - 証跡ログ: `planning/phase2/logs/20251217T233430Z-charts-orca-send-precheck.md`、`planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
+- 証跡ログ: `planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md`（キーボード操作とARIA監査）を追加。
 - 証跡ログ: `planning/phase2/logs/20251218T082404Z-charts-encounter-context.md`（外来受診コンテキスト確立）を追加。
 - 証跡ログ: `planning/phase2/logs/20251214T123042Z-module-json-ui-save.md` を追加。
 - Charts 実装ログ: `planning/phase2/logs/20251211T120619Z-charts-timeline.md`（DocumentTimeline/OrcaSummary/PatientsTab のデータバインド、RUN_ID=`20251211T120619Z`）。
