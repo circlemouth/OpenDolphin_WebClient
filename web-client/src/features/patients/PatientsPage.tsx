@@ -1,14 +1,15 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
+import { logUiState } from '../../libs/audit/auditLogger';
 import { updateObservabilityMeta } from '../../libs/observability/observability';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { useAuthService, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeVisitDate } from '../charts/encounterContext';
+import { PatientFormErrorAlert } from './PatientFormErrorAlert';
 import {
   fetchPatients,
   savePatient,
@@ -17,6 +18,7 @@ import {
   type PatientMutationResult,
   type PatientRecord,
 } from './api';
+import { validatePatientMutation, type PatientValidationError } from './patientValidation';
 import './patients.css';
 
 const FILTER_STORAGE_KEY = 'patients-filter-state';
@@ -106,8 +108,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [filters, setFilters] = useState(initialFilters);
   const [selectedId, setSelectedId] = useState<string | undefined>();
   const [form, setForm] = useState<PatientRecord>({});
+  const [baseline, setBaseline] = useState<PatientRecord | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastAuditEvent, setLastAuditEvent] = useState<Record<string, unknown> | undefined>();
+  const [validationErrors, setValidationErrors] = useState<PatientValidationError[]>([]);
+  const [lastAttempt, setLastAttempt] = useState<PatientMutationPayload | null>(null);
+  const baselineRef = useRef<PatientRecord | null>(null);
   const [lastMeta, setLastMeta] = useState<
     Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
   >({
@@ -201,12 +207,18 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     if (!selectedId && patients[0]) {
       setSelectedId(patients[0].patientId ?? patients[0].name ?? patients[0].kana ?? 'new');
       setForm(patients[0]);
+      setBaseline(patients[0]);
+      baselineRef.current = patients[0];
     }
   }, [patients, selectedId]);
 
   const handleSelect = (patient: PatientRecord) => {
     setSelectedId(patient.patientId ?? patient.name ?? 'new');
     setForm(patient);
+    setBaseline(patient);
+    baselineRef.current = patient;
+    setValidationErrors([]);
+    setLastAttempt(null);
     logUiState({
       action: 'tone_change',
       screen: 'patients',
@@ -233,6 +245,10 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     };
     setSelectedId(undefined);
     setForm(draft);
+    setBaseline(null);
+    baselineRef.current = null;
+    setValidationErrors([]);
+    setLastAttempt(null);
   };
 
   const mutation = useMutation({
@@ -253,35 +269,38 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         dataSourceTransition: result.dataSourceTransition ?? prev.dataSourceTransition,
         runId: result.runId ?? prev.runId,
       }));
-      logAuditEvent({
-        runId: result.runId,
-        source: 'patient-save',
-        cacheHit: result.cacheHit,
-        missingMaster: result.missingMaster,
-        fallbackUsed: result.fallbackUsed,
-        dataSourceTransition: result.dataSourceTransition,
-        payload: {
-          auditEvent: result.auditEvent,
-          operation: variables.operation,
-        },
-      });
+      if (result.ok) {
+        setBaseline(variables.patient);
+        baselineRef.current = variables.patient;
+        setValidationErrors([]);
+        setLastAttempt(null);
+      } else {
+        setLastAttempt(variables);
+      }
       patientsQuery.refetch();
     },
     onError: (error: unknown) => {
       setToast({ tone: 'error', message: '保存に失敗しました', detail: error instanceof Error ? error.message : String(error) });
+      // onError は network/throw のみなので、直前の attempt を残して UI から再試行できるようにする
     },
   });
 
   const missingMasterFlag = resolvedMissingMaster;
   const fallbackUsedFlag = resolvedFallbackUsed;
-  const blocking = Boolean(missingMasterFlag || fallbackUsedFlag);
+  const masterOk = !missingMasterFlag && !fallbackUsedFlag && (resolvedTransition ?? 'server') === 'server';
+  const blocking = !masterOk;
+
+  const focusField = (field: keyof PatientRecord) => {
+    const el = typeof document !== 'undefined' ? (document.getElementById(`patients-form-${String(field)}`) as HTMLElement | null) : null;
+    if (el && typeof el.focus === 'function') el.focus();
+  };
 
   const save = (operation: 'create' | 'update' | 'delete') => {
     if (blocking) {
       setToast({
         tone: 'warning',
-        message: 'missingMaster または fallbackUsed が true のため保存をブロックしました',
-        detail: `missingMaster=${missingMasterFlag} / fallbackUsed=${fallbackUsedFlag}`,
+        message: 'missingMaster / fallbackUsed / 非server ルートのため保存をブロックしました',
+        detail: `missingMaster=${missingMasterFlag} / fallbackUsed=${fallbackUsedFlag} / dataSourceTransition=${resolvedTransition ?? 'unknown'}`,
       });
       logUiState({
         action: 'save',
@@ -296,11 +315,26 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       return;
     }
 
+    const validation = validatePatientMutation({ patient: form, operation, context: { masterOk } });
+    setValidationErrors(validation);
+    if (validation.length > 0) {
+      setToast({ tone: 'error', message: '入力エラーがあります（保存できません）。' });
+      const firstField = validation.find((e) => e.field && e.field !== 'form')?.field;
+      if (firstField && firstField !== 'form') {
+        focusField(firstField as keyof PatientRecord);
+      }
+      return;
+    }
+
     const payload: PatientMutationPayload = {
       patient: form,
       operation,
       runId: flags.runId,
+      auditMeta: {
+        source: 'patients',
+      },
     };
+    setLastAttempt(payload);
     mutation.mutate(payload);
   };
 
@@ -456,11 +490,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             </div>
             <div className="patients-page__form-actions">
               <button type="button" onClick={handleNew} className="ghost">新規作成</button>
-              <button type="button" onClick={handleDelete} disabled={mutation.isLoading} className="ghost danger">
+              <button type="button" onClick={handleDelete} disabled={mutation.isPending} className="ghost danger">
                 削除
               </button>
-              <button type="submit" disabled={mutation.isLoading}>
-                {mutation.isLoading ? '保存中…' : '保存'}
+              <button type="submit" disabled={mutation.isPending}>
+                {mutation.isPending ? '保存中…' : '保存'}
               </button>
             </div>
           </div>
@@ -469,6 +503,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label>
               <span>患者ID</span>
               <input
+                id="patients-form-patientId"
                 value={form.patientId ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, patientId: event.target.value }))}
                 placeholder="自動採番または手入力"
@@ -477,56 +512,108 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label>
               <span>氏名</span>
               <input
+                id="patients-form-name"
                 required
                 value={form.name ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
                 placeholder="山田 花子"
+                aria-invalid={validationErrors.some((e) => e.field === 'name')}
+                aria-describedby={validationErrors.some((e) => e.field === 'name') ? 'patients-form-error-name' : undefined}
               />
+              {validationErrors.some((e) => e.field === 'name') ? (
+                <small id="patients-form-error-name" className="patients-page__field-error" role="alert">
+                  {validationErrors.find((e) => e.field === 'name')?.message}
+                </small>
+              ) : null}
             </label>
             <label>
               <span>カナ</span>
               <input
+                id="patients-form-kana"
                 value={form.kana ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, kana: event.target.value }))}
                 placeholder="ヤマダ ハナコ"
+                aria-invalid={validationErrors.some((e) => e.field === 'kana')}
+                aria-describedby={validationErrors.some((e) => e.field === 'kana') ? 'patients-form-error-kana' : undefined}
               />
+              {validationErrors.some((e) => e.field === 'kana') ? (
+                <small id="patients-form-error-kana" className="patients-page__field-error" role="alert">
+                  {validationErrors.find((e) => e.field === 'kana')?.message}
+                </small>
+              ) : null}
             </label>
             <label>
               <span>生年月日</span>
               <input
+                id="patients-form-birthDate"
                 type="date"
                 value={form.birthDate ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, birthDate: event.target.value }))}
+                aria-invalid={validationErrors.some((e) => e.field === 'birthDate')}
+                aria-describedby={validationErrors.some((e) => e.field === 'birthDate') ? 'patients-form-error-birthDate' : undefined}
               />
+              {validationErrors.some((e) => e.field === 'birthDate') ? (
+                <small id="patients-form-error-birthDate" className="patients-page__field-error" role="alert">
+                  {validationErrors.find((e) => e.field === 'birthDate')?.message}
+                </small>
+              ) : null}
             </label>
             <label>
               <span>性別</span>
-              <select value={form.sex ?? ''} onChange={(event) => setForm((prev) => ({ ...prev, sex: event.target.value }))}>
+              <select
+                id="patients-form-sex"
+                value={form.sex ?? ''}
+                onChange={(event) => setForm((prev) => ({ ...prev, sex: event.target.value }))}
+                aria-invalid={validationErrors.some((e) => e.field === 'sex')}
+                aria-describedby={validationErrors.some((e) => e.field === 'sex') ? 'patients-form-error-sex' : undefined}
+              >
                 <option value="">未選択</option>
                 <option value="M">男性</option>
                 <option value="F">女性</option>
                 <option value="O">その他</option>
               </select>
+              {validationErrors.some((e) => e.field === 'sex') ? (
+                <small id="patients-form-error-sex" className="patients-page__field-error" role="alert">
+                  {validationErrors.find((e) => e.field === 'sex')?.message}
+                </small>
+              ) : null}
             </label>
             <label>
               <span>電話</span>
               <input
+                id="patients-form-phone"
                 value={form.phone ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, phone: event.target.value }))}
                 placeholder="03-1234-5678"
+                aria-invalid={validationErrors.some((e) => e.field === 'phone')}
+                aria-describedby={validationErrors.some((e) => e.field === 'phone') ? 'patients-form-error-phone' : undefined}
               />
+              {validationErrors.some((e) => e.field === 'phone') ? (
+                <small id="patients-form-error-phone" className="patients-page__field-error" role="alert">
+                  {validationErrors.find((e) => e.field === 'phone')?.message}
+                </small>
+              ) : null}
             </label>
             <label>
               <span>郵便番号</span>
               <input
+                id="patients-form-zip"
                 value={form.zip ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, zip: event.target.value }))}
                 placeholder="1000001"
+                aria-invalid={validationErrors.some((e) => e.field === 'zip')}
+                aria-describedby={validationErrors.some((e) => e.field === 'zip') ? 'patients-form-error-zip' : undefined}
               />
+              {validationErrors.some((e) => e.field === 'zip') ? (
+                <small id="patients-form-error-zip" className="patients-page__field-error" role="alert">
+                  {validationErrors.find((e) => e.field === 'zip')?.message}
+                </small>
+              ) : null}
             </label>
             <label className="span-2">
               <span>住所</span>
               <input
+                id="patients-form-address"
                 value={form.address ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
                 placeholder="東京都千代田区..."
@@ -535,6 +622,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label>
               <span>保険/自費</span>
               <input
+                id="patients-form-insurance"
                 value={form.insurance ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, insurance: event.target.value }))}
                 placeholder="社保12 / 自費など"
@@ -543,6 +631,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             <label className="span-2">
               <span>メモ</span>
               <textarea
+                id="patients-form-memo"
                 rows={3}
                 value={form.memo ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
@@ -553,9 +642,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
 
           {blocking && (
             <div className="patients-page__block" role="alert" aria-live="assertive">
-              missingMaster または fallbackUsed が true のため保存できません。Reception で master を解決してから再試行してください。
+              missingMaster / fallbackUsed / 非server ルートのため保存できません。Reception で master を解決してから再試行してください。
             </div>
           )}
+
+          <PatientFormErrorAlert errors={validationErrors} onFocusField={focusField} />
 
           {toast && (
             <div className={`patients-page__toast patients-page__toast--${toast.tone}`} role="alert" aria-live="assertive">
@@ -563,6 +654,33 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               {toast.detail && <p>{toast.detail}</p>}
             </div>
           )}
+
+              {(toast?.tone === 'error' || toast?.tone === 'warning') && lastAttempt ? (
+            <div className="patients-page__retry-save" role="alert" aria-live="assertive">
+              <p className="patients-page__retry-save-title">保存を再試行できます</p>
+              <div className="patients-page__retry-save-actions" role="group" aria-label="保存失敗時の操作">
+                <button type="button" onClick={() => mutation.mutate(lastAttempt)} disabled={mutation.isPending}>
+                  再試行
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    const base = baselineRef.current ?? baseline;
+                    if (!base) return;
+                    setForm(base);
+                    setValidationErrors([]);
+                    setToast({ tone: 'info', message: '変更を巻き戻しました（直近取得値へ復元）。' });
+                  }}
+                  disabled={mutation.isPending || !(baselineRef.current ?? baseline)}
+                >
+                  巻き戻し
+                </button>
+                <button type="button" onClick={() => patientsQuery.refetch()} disabled={mutation.isPending}>
+                  再取得
+                </button>
+              </div>
+            </div>
+          ) : null}
 
           {lastAuditEvent && (
             <div className="patients-page__audit" role="status" aria-live="polite">
