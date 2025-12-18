@@ -5,20 +5,52 @@
 export type HeaderFlags = {
   useMockOrcaQueue: boolean;
   verifyAdminDelivery: boolean;
+  mswFault?: string;
+  mswDelayMs?: number;
+};
+
+const isMswFaultInjectionAllowed = (): boolean => {
+  // MSW を無効化している（実 API / Stage 接続）場合は、誤って注入ヘッダーを送らない。
+  if (import.meta.env.VITE_DISABLE_MSW === '1') return false;
+  if (typeof window === 'undefined') return false;
+  try {
+    const url = new URL(window.location.href);
+    // 事故防止のため、明示的に msw=1 のページのみ注入を許可する（E2E/デバッグ用）。
+    return url.searchParams.get('msw') === '1';
+  } catch {
+    return false;
+  }
 };
 
 export function readHeaderFlagsFromEnv(): HeaderFlags {
+  const delayRaw = import.meta.env.VITE_MSW_DELAY_MS;
+  const delay = typeof delayRaw === 'string' && delayRaw.trim().length > 0 ? Number(delayRaw) : undefined;
   return {
     useMockOrcaQueue: import.meta.env.VITE_USE_MOCK_ORCA_QUEUE === '1',
     verifyAdminDelivery: import.meta.env.VITE_VERIFY_ADMIN_DELIVERY === '1',
+    mswFault: typeof import.meta.env.VITE_MSW_FAULT === 'string' ? import.meta.env.VITE_MSW_FAULT : undefined,
+    mswDelayMs: Number.isFinite(delay as number) ? (delay as number) : undefined,
   };
 }
 
 export function buildHeaderOverrides(flags: HeaderFlags) {
-  return {
+  const allowMswFaultHeaders = isMswFaultInjectionAllowed();
+  const overrides: Record<string, string> = {
     'x-use-mock-orca-queue': flags.useMockOrcaQueue ? '1' : '0',
     'x-verify-admin-delivery': flags.verifyAdminDelivery ? '1' : '0',
   };
+  if (allowMswFaultHeaders && flags.mswFault && flags.mswFault.trim().length > 0) {
+    overrides['x-msw-fault'] = flags.mswFault.trim();
+  }
+  if (
+    allowMswFaultHeaders &&
+    typeof flags.mswDelayMs === 'number' &&
+    Number.isFinite(flags.mswDelayMs) &&
+    flags.mswDelayMs > 0
+  ) {
+    overrides['x-msw-delay-ms'] = String(Math.floor(flags.mswDelayMs));
+  }
+  return overrides;
 }
 
 function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
@@ -46,6 +78,9 @@ export function resolveHeaderFlags(): HeaderFlags {
   const envFlags = readHeaderFlagsFromEnv();
   const storedMock = localStorage.getItem('useMockOrcaQueue');
   const storedVerify = localStorage.getItem('verifyAdminDelivery');
+  const storedFault = localStorage.getItem('mswFault');
+  const storedDelay = localStorage.getItem('mswDelayMs');
+  const parsedDelay = storedDelay ? Number(storedDelay) : undefined;
 
   return {
     useMockOrcaQueue:
@@ -54,6 +89,10 @@ export function resolveHeaderFlags(): HeaderFlags {
     verifyAdminDelivery:
       envFlags.verifyAdminDelivery ||
       (storedVerify === '1' ? true : storedVerify === '0' ? false : false),
+    mswFault: envFlags.mswFault ?? (storedFault && storedFault.trim().length > 0 ? storedFault : undefined),
+    mswDelayMs:
+      envFlags.mswDelayMs ??
+      (typeof parsedDelay === 'number' && Number.isFinite(parsedDelay) && parsedDelay > 0 ? parsedDelay : undefined),
   };
 }
 
@@ -64,6 +103,21 @@ export function persistHeaderFlags(partial: Partial<HeaderFlags>) {
   }
   if (partial.verifyAdminDelivery !== undefined) {
     localStorage.setItem('verifyAdminDelivery', partial.verifyAdminDelivery ? '1' : '0');
+  }
+  if (partial.mswFault !== undefined) {
+    const value = partial.mswFault?.trim() ?? '';
+    if (value.length === 0) {
+      localStorage.removeItem('mswFault');
+    } else {
+      localStorage.setItem('mswFault', value);
+    }
+  }
+  if (partial.mswDelayMs !== undefined) {
+    if (typeof partial.mswDelayMs !== 'number' || !Number.isFinite(partial.mswDelayMs) || partial.mswDelayMs <= 0) {
+      localStorage.removeItem('mswDelayMs');
+    } else {
+      localStorage.setItem('mswDelayMs', String(Math.floor(partial.mswDelayMs)));
+    }
   }
 }
 
