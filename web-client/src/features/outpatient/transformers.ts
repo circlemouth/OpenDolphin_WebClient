@@ -315,6 +315,7 @@ export const mergeOutpatientMeta = (
   return {
     runId: (raw.runId as string | undefined) ?? defaults.runId,
     traceId: (raw.traceId as string | undefined) ?? defaults.traceId,
+    requestId: (raw.requestId as string | undefined) ?? defaults.requestId,
     dataSourceTransition: resolvedTransition,
     resolveMasterSource: resolvedSource,
     cacheHit: normalizeBoolean(raw.cacheHit ?? defaults.cacheHit),
@@ -323,6 +324,7 @@ export const mergeOutpatientMeta = (
     fallbackFlagMissing,
     fetchedAt: (raw.fetchedAt as string | undefined) ?? defaults.fetchedAt,
     recordsReturned,
+    outcome: (raw.outcome as string | undefined) ?? defaults.outcome,
     size,
     page,
     hasNextPage,

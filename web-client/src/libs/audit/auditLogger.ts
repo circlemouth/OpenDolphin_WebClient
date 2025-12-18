@@ -3,6 +3,15 @@ import type { DataSourceTransition } from '../observability/types';
 
 export type UiAction =
   | 'tone_change'
+  | 'scenario_change'
+  | 'scenario_override'
+  | 'search'
+  | 'navigate'
+  | 'deeplink'
+  | 'history_jump'
+  | 'audit_open'
+  | 'memo_edit_toggle'
+  | 'diff'
   | 'send'
   | 'save'
   | 'print'
