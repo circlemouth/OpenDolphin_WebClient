@@ -261,16 +261,17 @@ src:
           - ToneBanner/トースト/エラー表示の `role` と `aria-live` を規約化し、通知が “過不足なく” 読み上げられる状態にする。
           - モーダル/ダイアログのフォーカストラップ、Escape 閉じる、戻り先の復元を統一する。
           - キーボード操作後も Topbar の `runId`/dataSource 表示が上書きされないことを検証し、RUN_ID を DOC_STATUS・証跡に同一で残す（再宣言や初期化処理での上書きを禁止）。
+          - RUN_ID=`20251217T113616Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T113616Z-charts-keyboard-aria.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
           - src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md
           - src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md
         schedule:
-          start: 2026-01-06T00:00:00.000Z
+          start: 2025-12-17T11:36:16.000Z
           days: 3
       22_ToneBannerと状態Pillの一貫性.md:
         content: |-
@@ -336,16 +337,17 @@ src:
           - Charts 内の患者情報表示を “閲覧中心” に揃え、編集は権限と missingMaster によってガードする。
           - 患者基本・保険情報の差分表示（変更前/変更後）と、保存時の監査ログを UI で確認できる導線を用意する。
           - 過去受診/直近受診の参照導線を整理し、患者切替ミスを減らす UI にする。
+          - RUN_ID=`20251218T092541Z`。証跡: `docs/web-client/planning/phase2/logs/20251218T092541Z-charts-patient-sidepane.md`。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api:
           - "/orca12/patientmodv2/outpatient"
         dependency:
           - src/charts_production_outpatient/ux/20_ChartsシェルUI最終レイアウト.md
         schedule:
-          start: 2026-01-06T00:00:00.000Z
+          start: 2025-12-18T09:25:41.000Z
           days: 3
       26_印刷_エクスポート_診療文書.md:
         content: |-
@@ -450,15 +452,16 @@ src:
           - 同一患者/同一受付ID を複数タブ/複数端末で開いたときの衝突を想定し、警告/読み取り専用化/破棄のルールを整備する。
           - “最後に更新したのは誰か/いつか” の表示と、誤上書き防止の UX を実装する。
           - 衝突発生時の監査ログと、ユーザーへの説明（tone=warning）を統一する。
+          - RUN_ID=`20251218T092228Z`。証跡: `docs/web-client/planning/phase2/logs/20251218T092228Z-charts-concurrent-edit-lock.md`。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
           - src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md
         schedule:
-          start: 2026-01-09T00:00:00.000Z
+          start: 2025-12-18T09:22:28.000Z
           days: 2
     integration:
       40_claim_outpatient統合.md:
@@ -468,9 +471,10 @@ src:
           - OrcaSummary/タイムラインが参照する “請求バンドル” を API から取得し、メタデータ（runId 等）と UI を同期する。
           - “会計待ち/会計済み” の判定や、請求試算が暫定（fallbackUsed）なときの警告を実装する。
           - 失敗時の再試行導線と、監査ログ（成功/失敗）を完成させる。
+          - RUN_ID=`20251218T093252Z`。証跡: `src/charts_production_outpatient/integration/logs/20251218T093252Z-claim-outpatient-integration.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api:
           - "/api01rv2/claim/outpatient/*"
@@ -478,7 +482,7 @@ src:
           - src/charts_production_outpatient/workflow/30_外来受診コンテキスト確立.md
           - src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md
         schedule:
-          start: 2026-01-06T00:00:00.000Z
+          start: 2025-12-18T09:32:52.000Z
           days: 4
       41_appointment_outpatient統合.md:
         content: |-
