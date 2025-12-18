@@ -24,6 +24,7 @@ export type ReceptionEntry = {
 export type OutpatientMeta = {
   runId?: string;
   traceId?: string;
+  requestId?: string;
   dataSourceTransition?: DataSourceTransition;
   resolveMasterSource?: ResolveMasterSource;
   cacheHit?: boolean;
@@ -32,6 +33,7 @@ export type OutpatientMeta = {
   fallbackFlagMissing?: boolean;
   fetchedAt?: string;
   recordsReturned?: number;
+  outcome?: string;
   hasNextPage?: boolean;
   page?: number;
   size?: number;
