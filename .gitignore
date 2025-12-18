@@ -40,7 +40,7 @@ server_*_logs.txt
 # Temporary marker files
 CACHED
 fallback
-Phase2
+/Phase2
 
 # Temporary payload files in root
 /payload.json
