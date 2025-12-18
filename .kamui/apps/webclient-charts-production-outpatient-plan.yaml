@@ -296,9 +296,10 @@ src:
           - 受付→診療→ORCA キューの状態遷移をタイムラインで “迷いなく” 追えるようにし、失敗/再試行/保留の状態を明示する。
           - `missingMaster=true` の行ハイライトと “次にやること” を表示し、送信不可の理由が一目で分かるようにする。
           - 大量データでも破綻しない表示（折りたたみ、仮想化、段階ロード）を導入する。
+          - RUN_ID=`20251217T150614Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T150614Z-document-timeline.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api:
           - "/orca21/medicalmodv2/outpatient"
@@ -306,7 +307,7 @@ src:
         dependency:
           - src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md
         schedule:
-          start: 2026-01-08T00:00:00.000Z
+          start: 2025-12-17T15:06:14.000Z
           days: 4
       24_OrcaSummary_請求予約_商用レベル仕上げ.md:
         content: |-
@@ -315,9 +316,10 @@ src:
           - 請求/予約サマリを “診療中の判断に必要な粒度” で表示し、データソースの説明（dataSourceTransition）を添える。
           - `fallbackUsed=true` の場合は警告を強め、計算が暫定であることを明示（業務判断ミス防止）。
           - 関連アクション（予約へ遷移、会計へ、再取得）を UI で自然に辿れるようにする。
+          - RUN_ID=`20251217T130407Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T130407Z-orca-summary.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api:
           - "/api01rv2/claim/outpatient/*"
@@ -325,7 +327,7 @@ src:
         dependency:
           - src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md
         schedule:
-          start: 2026-01-08T00:00:00.000Z
+          start: 2025-12-17T13:04:07.000Z
           days: 3
       25_患者サイドペイン_基本保険履歴_仕上げ.md:
         content: |-
@@ -352,9 +354,10 @@ src:
           - “診療記録の出力” を商用要件として実装し、印刷プレビュー（A4/余白/ヘッダ）とPDF出力を整備する。
           - 監査ログに “誰が・いつ・何を出力したか” を残し、runId と紐づける。
           - 個人情報の取り扱い（画面/印刷）と、出力時の注意喚起（tone=warning）を整備する。
+          - RUN_ID=`20251217T233649Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T233649Z-charts-print-export.md`。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -362,7 +365,7 @@ src:
           - src/charts_production_outpatient/ux/24_OrcaSummary_請求予約_商用レベル仕上げ.md
           - src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md
         schedule:
-          start: 2026-01-13T00:00:00.000Z
+          start: 2025-12-17T23:36:49.000Z
           days: 3
     workflow:
       30_外来受診コンテキスト確立.md:
@@ -372,16 +375,17 @@ src:
           - Reception→Charts の遷移で “受付ID（来院コンテキスト）” を確実に受け取り、URL/タブ/復元で破綻しない状態管理にする。
           - 患者切替・複数タブ・戻る操作で “別患者の情報が混ざらない” ことを最優先にし、クリティカルガードを実装する。
           - 受付→診療→会計の状態遷移を UI に明示し、現場の “今どこ？” を迷わせない。
+          - RUN_ID=`20251218T082404Z`。証跡: `docs/web-client/planning/phase2/logs/20251218T082404Z-charts-encounter-context.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api:
           - "/api01rv2/appointment/outpatient/*"
         dependency:
           - src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md
         schedule:
-          start: 2026-01-02T00:00:00.000Z
+          start: 2025-12-18T08:24:04.000Z
           days: 2
       31_診療開始終了の状態遷移.md:
         content: |-
@@ -390,15 +394,16 @@ src:
           - 診療開始（Chart open）から診療終了（完了/中止）の状態遷移を明文化し、UI の表示（Timeline/バッジ）と整合させる。
           - “未保存ドラフトあり” や “ORCA送信未完了” を理由に終了を抑止できるようにし、誤操作を防ぐ。
           - 例外系（通信断・タイムアウト）でも状態が壊れない復元戦略を定義する。
+          - RUN_ID=`20251217T120220Z`（親=`20251217T114331Z`）。証跡: `docs/web-client/planning/phase2/logs/20251217T114331Z-charts-encounter-state.md` / `docs/web-client/planning/phase2/logs/20251217T120220Z-charts-encounter-state-ux.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
           - src/charts_production_outpatient/workflow/30_外来受診コンテキスト確立.md
         schedule:
-          start: 2026-01-06T00:00:00.000Z
+          start: 2025-12-17T12:02:20.000Z
           days: 3
       32_ドラフト保存と復元.md:
         content: |-
@@ -407,15 +412,16 @@ src:
           - 送信前の入力（メモ/所見/チェック項目等）をドラフトとして保存し、誤終了やブラウザクラッシュから復元できるようにする。
           - ドラフトの適用範囲（受付ID/患者ID/診療日）を厳密にし、取り違えを防止する。
           - 保存/復元/破棄を監査ログに残し、運用上の追跡を可能にする。
+          - RUN_ID=`20251217T212600Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T212600Z-charts-draft-save.md`。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
           - src/charts_production_outpatient/workflow/31_診療開始終了の状態遷移.md
         schedule:
-          start: 2026-01-09T00:00:00.000Z
+          start: 2025-12-17T21:26:00.000Z
           days: 3
       33_ORCA送信フロー_送信前チェック.md:
         content: |-
@@ -424,9 +430,10 @@ src:
           - `missingMaster=true`/権限不足/未保存ドラフト/通信不安定など “送信不可” の条件を洗い出し、UI で明確にブロックする。
           - 送信開始→進行中→成功/失敗の状態を一貫して表示し、再試行・中断・証跡（traceId/runId）を残す。
           - 送信失敗時は “次にやること（受付へ戻る/再取得/設定確認）” を提示する。
+          - RUN_ID=`20251217T233430Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T233430Z-charts-orca-send-precheck.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: cursor cli
         api:
           - "/api/orca/queue"
@@ -434,7 +441,7 @@ src:
           - src/charts_production_outpatient/workflow/32_ドラフト保存と復元.md
           - src/charts_production_outpatient/ux/22_ToneBannerと状態Pillの一貫性.md
         schedule:
-          start: 2026-01-14T00:00:00.000Z
+          start: 2025-12-17T23:34:30.000Z
           days: 4
       34_並行編集とロック表示.md:
         content: |-
@@ -480,16 +487,17 @@ src:
           - 予約一覧/患者別予約/来院中リストを Charts が必要とする形に正規化し、受付ID と紐づく表示を整備する。
           - 予約変更・キャンセル等 “業務で頻発する操作” は Charts からの導線（リンク/遷移）として整備する。
           - 予約データの未取得/不整合時の表示（tone=info/warning）を統一する。
+          - RUN_ID=`20251217T234312Z`。証跡: `src/charts_production_outpatient/integration/logs/20251217T234312Z-appointment-outpatient-integration.md`。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api:
           - "/api01rv2/appointment/outpatient/*"
         dependency:
           - src/charts_production_outpatient/integration/40_claim_outpatient統合.md
         schedule:
-          start: 2026-01-10T00:00:00.000Z
+          start: 2025-12-17T23:43:12.000Z
           days: 3
       42_medicalmodv2_outpatient表示セクション分割.md:
         content: |-
@@ -535,9 +543,10 @@ src:
           - 設定配信（delivery）により、Charts の機能フラグ（表示/送信/マスタソース）を切り替えられるようにする。
           - 設定が “いつ・誰に・どの runId で” 適用されたかを UI と監査ログで追えるようにする。
           - 設定変更が Charts の状態に影響する場合（例: server→fallback）に、ToneBanner で明確に通知する。
+          - RUN_ID=`20251217T233755Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T233755Z-admin-config-delivery-flags.md`。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api:
           - "/api/admin/config"
@@ -546,7 +555,7 @@ src:
           - src/charts_production_outpatient/foundation/10_セッションと権限ガード整理.md
           - src/charts_production_outpatient/foundation/13_データ取得レイヤの統一_fetchWithResolver.md
         schedule:
-          start: 2026-01-10T00:00:00.000Z
+          start: 2025-12-17T23:37:55.000Z
           days: 3
       45_orca_queueと送信ステータス表示.md:
         content: |-
@@ -599,15 +608,16 @@ src:
           - `aria-live`/`role`/フォーカス順の自動検査を回し、重大違反をゼロにする。
           - スクリーンリーダーでの読み上げを手動確認し、ToneBanner と “操作不能理由” が伝わることを担保する。
           - 監査結果を “直せる粒度” に落とし込み、以降の回帰テストに組み込む。
+          - RUN_ID=`20251217T212939Z`。証跡: `docs/web-client/planning/phase2/logs/20251217T212939Z-charts-a11y.md`。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
           - src/charts_production_outpatient/ux/21_キーボード操作とARIA監査.md
         schedule:
-          start: 2026-01-09T00:00:00.000Z
+          start: 2025-12-17T21:29:39.000Z
           days: 2
       52_監査ログ_テレメトリ_証跡化.md:
         content: |-
