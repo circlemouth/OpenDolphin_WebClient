@@ -8,6 +8,7 @@ import { ToneBanner } from '../../reception/components/ToneBanner';
 import { recordChartsAuditEvent } from '../audit';
 import { chartsPrintStyles } from '../print/printStyles';
 import { OutpatientClinicalDocument, type ChartsPrintMeta } from '../print/outpatientClinicalDocument';
+import { clearOutpatientPrintPreview, loadOutpatientPrintPreview } from '../print/printPreviewStorage';
 
 type PrintLocationState = {
   entry: ReceptionEntry;
@@ -37,7 +38,9 @@ export function ChartsOutpatientPrintPage() {
 function ChartsOutpatientPrintContent() {
   const navigate = useNavigate();
   const location = useLocation();
-  const state = useMemo(() => getState(location.state), [location.state]);
+  const restored = useMemo(() => loadOutpatientPrintPreview(), []);
+  const state = useMemo(() => getState(location.state) ?? restored?.value ?? null, [location.state, restored?.value]);
+  const restoredAt = restored?.storedAt;
   const [printedAtIso] = useState(() => new Date().toISOString());
   const lastModeRef = useRef<OutputMode | null>(null);
 
@@ -102,7 +105,10 @@ function ChartsOutpatientPrintContent() {
     window.print();
   };
 
-  const handleClose = () => navigate('/charts');
+  const handleClose = () => {
+    clearOutpatientPrintPreview();
+    navigate('/charts');
+  };
 
   if (!state) {
     return (
@@ -134,6 +140,14 @@ function ChartsOutpatientPrintContent() {
   return (
     <main className="charts-print">
       <div className="charts-print__screen-only">
+        {restoredAt && !getState(location.state) && (
+          <ToneBanner
+            tone="info"
+            message="印刷プレビュー状態をセッションから復元しました（リロード対策）。"
+            nextAction="出力後は「閉じる」でセッション保存データを破棄します。"
+            runId={state.meta.runId}
+          />
+        )}
         <ToneBanner
           tone="warning"
           message="個人情報を含む診療文書です。画面共有/第三者の閲覧に注意し、印刷物・PDFは必要最小限にしてください。"

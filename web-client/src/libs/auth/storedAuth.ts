@@ -1,3 +1,5 @@
+import { resolveSessionActor } from '../session/storedSession';
+
 export type StoredAuth = {
   facilityId: string;
   userId: string;
@@ -11,9 +13,13 @@ export function readStoredAuth(): StoredAuth | null {
   return { facilityId, userId };
 }
 
-export function resolveAuditActor(): string {
-  const stored = readStoredAuth();
-  if (!stored) return 'unknown';
-  return `${stored.facilityId}:${stored.userId}`;
-}
+export function resolveAuditActor(): { actor: string; facilityId: string } {
+  // 監査の「誰が」は、ログインにより確定した sessionStorage を優先する。
+  // localStorage(devFacilityId/devUserId) はヘッダ補助のため乖離し得る。
+  const sessionActor = resolveSessionActor();
+  if (sessionActor) return sessionActor;
 
+  const stored = readStoredAuth();
+  if (!stored) return { actor: 'unknown', facilityId: 'unknown' };
+  return { actor: `${stored.facilityId}:${stored.userId}`, facilityId: stored.facilityId };
+}
