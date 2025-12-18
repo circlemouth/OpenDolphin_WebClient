@@ -2,6 +2,7 @@ import { Global } from '@emotion/react';
 import { useEffect, useMemo, useState } from 'react';
 
 import { httpFetch } from '../../libs/http/httpClient';
+import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
 import {
   clearOutpatientFunnelLog,
   getOutpatientFunnelLog,
@@ -59,6 +60,8 @@ export function OutpatientMockPage() {
   const scenarioOptions = useMemo(() => listOutpatientScenarios(), []);
   const [scenarioId, setScenarioId] = useState<OutpatientScenarioId>('snapshot-missing-master');
   const [overrideFlags, setOverrideFlags] = useState<Partial<OutpatientFlagSet>>({});
+  const [faultMode, setFaultMode] = useState<string>(() => resolveHeaderFlags().mswFault ?? '');
+  const [faultDelayMs, setFaultDelayMs] = useState<number>(() => resolveHeaderFlags().mswDelayMs ?? 0);
   const [flags, setFlags] = useState<ResolvedFlags>({
     runId: FALLBACK_RUN_ID,
     traceId: undefined,
@@ -185,6 +188,19 @@ export function OutpatientMockPage() {
     setLoaded(false);
   };
 
+  const applyFault = (next: { mode?: string; delayMs?: number }) => {
+    const mode = next.mode !== undefined ? next.mode : faultMode;
+    const delayMs = next.delayMs !== undefined ? next.delayMs : faultDelayMs;
+    setFaultMode(mode);
+    setFaultDelayMs(delayMs);
+    persistHeaderFlags({
+      mswFault: mode && mode.trim().length > 0 ? mode.trim() : undefined,
+      mswDelayMs: delayMs && delayMs > 0 ? delayMs : undefined,
+    });
+    clearOutpatientFunnelLog();
+    setLoaded(false);
+  };
+
   return (
     <>
       <Global styles={receptionStyles} />
@@ -266,6 +282,48 @@ export function OutpatientMockPage() {
                   上書きをリセット
                 </button>
               </div>
+            </div>
+            <div className="order-console__step">
+              <span className="order-console__step-label">障害注入（MSW）</span>
+              <div className="order-console__status-group" aria-live="polite">
+                <label className="order-console__toggle">
+                  mode:
+                  <select
+                    value={faultMode}
+                    onChange={(event) => applyFault({ mode: event.target.value })}
+                    aria-label="MSW fault injection mode"
+                  >
+                    <option value="">none</option>
+                    <option value="timeout">timeout（504）</option>
+                    <option value="http-500">http-500（500）</option>
+                    <option value="schema-mismatch">schema-mismatch（200 + ERROR_*）</option>
+                    <option value="queue-stall">queue-stall（/api/orca/queue 滞留）</option>
+                  </select>
+                </label>
+                <label className="order-console__toggle">
+                  delay(ms):
+                  <input
+                    type="number"
+                    min={0}
+                    step={100}
+                    value={faultDelayMs}
+                    onChange={(event) => {
+                      const next = Number(event.target.value);
+                      setFaultDelayMs(Number.isFinite(next) ? next : 0);
+                    }}
+                    onBlur={() => applyFault({ delayMs: faultDelayMs })}
+                    style={{ width: 120 }}
+                    aria-label="MSW delay ms"
+                  />
+                </label>
+                <button type="button" className="order-console__toggle" onClick={() => applyFault({ mode: '', delayMs: 0 })}>
+                  障害注入を解除
+                </button>
+              </div>
+              <p className="order-console__note">
+                `x-msw-fault` / `x-msw-delay-ms` を全 API リクエストに付与します。Charts で「落ちずに説明できる」こと、
+                解除後に再取得で復帰できることを確認してください。
+              </p>
             </div>
           </section>
         )}
