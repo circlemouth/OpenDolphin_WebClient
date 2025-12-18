@@ -23,6 +23,13 @@ export type AdminConfigResponse = Partial<AdminConfigPayload> & {
   note?: string;
 };
 
+export type EffectiveAdminConfigResponse = AdminConfigResponse & {
+  rawConfig?: AdminConfigResponse;
+  rawDelivery?: AdminConfigResponse;
+  syncMismatch?: boolean;
+  syncMismatchFields?: Array<keyof AdminConfigPayload>;
+};
+
 export type OrcaQueueEntry = {
   patientId: string;
   status: 'pending' | 'delivered' | 'failed' | string;
@@ -118,7 +125,32 @@ export async function fetchAdminDelivery(): Promise<AdminConfigResponse> {
   return normalizeConfig(json, response.headers);
 }
 
-export function mergeAdminConfigResponses(config: AdminConfigResponse, delivery: AdminConfigResponse): AdminConfigResponse {
+const ADMIN_SYNC_FIELDS: Array<keyof AdminConfigPayload> = [
+  'orcaEndpoint',
+  'mswEnabled',
+  'useMockOrcaQueue',
+  'verifyAdminDelivery',
+  'chartsDisplayEnabled',
+  'chartsSendEnabled',
+  'chartsMasterSource',
+];
+
+const detectSyncMismatch = (config: AdminConfigResponse, delivery: AdminConfigResponse) => {
+  const mismatched: Array<keyof AdminConfigPayload> = [];
+  for (const key of ADMIN_SYNC_FIELDS) {
+    const a = config[key];
+    const b = delivery[key];
+    if (a === undefined || b === undefined) continue;
+    if (a !== b) mismatched.push(key);
+  }
+  return mismatched;
+};
+
+export function mergeAdminConfigResponses(
+  config: AdminConfigResponse,
+  delivery: AdminConfigResponse,
+): EffectiveAdminConfigResponse {
+  const syncMismatchFields = detectSyncMismatch(config, delivery);
   return {
     ...config,
     ...delivery,
@@ -129,10 +161,14 @@ export function mergeAdminConfigResponses(config: AdminConfigResponse, delivery:
     chartsDisplayEnabled: delivery.chartsDisplayEnabled ?? config.chartsDisplayEnabled,
     chartsSendEnabled: delivery.chartsSendEnabled ?? config.chartsSendEnabled,
     chartsMasterSource: delivery.chartsMasterSource ?? config.chartsMasterSource,
+    rawConfig: config,
+    rawDelivery: delivery,
+    syncMismatch: syncMismatchFields.length > 0 ? true : false,
+    syncMismatchFields,
   };
 }
 
-export async function fetchEffectiveAdminConfig(): Promise<AdminConfigResponse> {
+export async function fetchEffectiveAdminConfig(): Promise<EffectiveAdminConfigResponse> {
   const [config, delivery] = await Promise.all([fetchAdminConfig(), fetchAdminDelivery().catch(() => null)]);
   if (!delivery) return config;
   return mergeAdminConfigResponses(config, delivery);

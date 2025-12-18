@@ -213,6 +213,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   };
 
   const latestRunId = configQuery.data?.runId ?? queueQuery.data?.runId ?? runId;
+  const syncMismatch = configQuery.data?.syncMismatch;
+  const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
 
   return (
     <main className="administration-page" data-test-id="administration-page" data-run-id={latestRunId}>
@@ -238,6 +240,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             Charts送信: {form.chartsSendEnabled ? 'enabled' : 'disabled'}
           </span>
           <span className="administration-page__pill">Charts master: {form.chartsMasterSource}</span>
+          <span className="administration-page__pill">
+            syncMismatch: {syncMismatch === undefined ? '―' : syncMismatch ? 'true（delivery優先）' : 'false'}
+          </span>
+          <span className="administration-page__pill">mismatchFields: {syncMismatchFields ?? '―'}</span>
         </div>
       </div>
 
@@ -248,6 +254,14 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           destination="ORCA queue"
           runId={latestRunId}
           nextAction="再送/破棄・再取得"
+        />
+      ) : syncMismatch ? (
+        <ToneBanner
+          tone="warning"
+          message={`config/delivery の不一致を検知しました（delivery優先）。fields: ${syncMismatchFields ?? 'unknown'}`}
+          destination="Administration"
+          runId={latestRunId}
+          nextAction="再取得 / 再配信で解消"
         />
       ) : (
         <p className="admin-quiet">未配信キューの遅延は検知されていません。</p>
