@@ -1,6 +1,6 @@
 import { Global } from '@emotion/react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useLocation } from 'react-router-dom';
 
 import { AuthServiceControls } from '../AuthServiceControls';
@@ -27,6 +27,7 @@ const isLikelyNetworkError = (error: unknown) => {
   if (error instanceof Error) return /Failed to fetch|NetworkError|ネットワーク/i.test(error.message);
   return false;
 };
+import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 
 export function ChartsPage() {
   return (
@@ -232,6 +233,18 @@ function ChartsContent() {
   );
   const hasNextAppointments =
     appointmentQuery.hasNextPage ?? appointmentPages.some((page) => page.hasNextPage === true);
+
+  const appointmentBanner = useMemo(
+    () =>
+      getAppointmentDataBanner({
+        entries: patientEntries,
+        isLoading: appointmentQuery.isLoading,
+        isError: appointmentQuery.isError,
+        error: appointmentQuery.error,
+        date: today,
+      }),
+    [appointmentQuery.error, appointmentQuery.isError, appointmentQuery.isLoading, patientEntries, today],
+  );
   useEffect(() => {
     if (patientEntries.length === 0) return;
     if (selectedPatientId || selectedAppointmentId) return;
@@ -309,6 +322,7 @@ function ChartsContent() {
         <div className="charts-card">
           <DocumentTimeline
             entries={patientEntries}
+            appointmentBanner={appointmentBanner}
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
             selectedPatientId={selectedPatientId}
             selectedAppointmentId={selectedAppointmentId}
@@ -343,6 +357,7 @@ function ChartsContent() {
         <div className="charts-card">
           <PatientsTab
             entries={patientEntries}
+            appointmentBanner={appointmentBanner}
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
             selectedPatientId={selectedPatientId}
             draftDirty={draftState.dirty}
