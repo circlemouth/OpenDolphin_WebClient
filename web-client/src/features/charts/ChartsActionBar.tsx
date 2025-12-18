@@ -2,11 +2,12 @@ import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
-import { resolveAuditActor, readStoredAuth } from '../../libs/auth/storedAuth';
+import { resolveAuditActor } from '../../libs/auth/storedAuth';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { recordChartsAuditEvent } from './audit';
 import type { DataSourceTransition } from './authService';
 import type { ReceptionEntry } from '../reception/api';
+import { saveOutpatientPrintPreview } from './print/printPreviewStorage';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -221,8 +222,7 @@ export function ChartsActionBar({
       return;
     }
 
-    const actor = resolveAuditActor();
-    const facilityId = readStoredAuth()?.facilityId ?? 'unknown';
+    const { actor, facilityId } = resolveAuditActor();
 
     const detail = `印刷プレビューを開きました (actor=${actor})`;
     setToast({ tone: 'info', message: '印刷/エクスポートを開きました', detail });
@@ -265,6 +265,12 @@ export function ChartsActionBar({
         actor,
         facilityId,
       },
+    });
+    saveOutpatientPrintPreview({
+      entry: selectedEntry,
+      meta: { runId, cacheHit, missingMaster, fallbackUsed, dataSourceTransition },
+      actor,
+      facilityId,
     });
   };
 
