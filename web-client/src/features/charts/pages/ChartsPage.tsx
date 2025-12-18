@@ -14,7 +14,7 @@ import { normalizeAuditEventLog, normalizeAuditEventPayload } from '../audit';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
-import { getAuditEventLog, logAuditEvent, type AuditEventRecord } from '../../../libs/audit/auditLogger';
+import { getAuditEventLog, logAuditEvent, logUiState, type AuditEventRecord } from '../../../libs/audit/auditLogger';
 import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
@@ -440,8 +440,41 @@ function ChartsContent() {
         },
       },
     });
+    logUiState({
+      action: 'outpatient_fetch',
+      screen: 'charts/document-timeline',
+      controlId: 'retry-claim',
+      runId: claimQuery.data?.runId ?? resolvedRunId,
+      cacheHit: claimQuery.data?.cacheHit ?? resolvedCacheHit,
+      missingMaster: claimQuery.data?.missingMaster ?? resolvedMissingMaster,
+      dataSourceTransition: claimQuery.data?.dataSourceTransition ?? resolvedTransition,
+      fallbackUsed: claimQuery.data?.fallbackUsed ?? resolvedFallbackUsed,
+      details: {
+        reason: 'manual_retry',
+        endpoint: claimQuery.data?.sourcePath,
+        httpStatus: claimQuery.data?.httpStatus,
+        apiResult: (claimQuery.data as ClaimOutpatientPayload | undefined)?.apiResult,
+      },
+    });
     void claimQuery.refetch();
   };
+
+  const claimErrorForTimeline = useMemo(() => {
+    const data = claimQuery.data as ClaimOutpatientPayload | undefined;
+    if (data?.httpStatus === 0 || (typeof data?.httpStatus === 'number' && data.httpStatus >= 400)) {
+      const endpoint = data.sourcePath ?? 'unknown';
+      const message = data.apiResultMessage ? ` / ${data.apiResultMessage}` : '';
+      const httpLabel = data.httpStatus === 0 ? 'NETWORK' : `HTTP ${data.httpStatus}`;
+      return new Error(`請求バンドル取得に失敗（${httpLabel} / endpoint=${endpoint}${message}）`);
+    }
+    if (typeof data?.apiResult === 'string' && /error|^E/i.test(data.apiResult)) {
+      const endpoint = data.sourcePath ?? 'unknown';
+      const message = data.apiResultMessage ? ` / ${data.apiResultMessage}` : '';
+      return new Error(`請求バンドルの処理結果がエラー（apiResult=${data.apiResult} / endpoint=${endpoint}${message}）`);
+    }
+    if (!claimQuery.isError) return undefined;
+    return claimQuery.error instanceof Error ? claimQuery.error : new Error(String(claimQuery.error));
+  }, [claimQuery.data, claimQuery.error, claimQuery.isError]);
 
   useEffect(() => {
     const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedFlags;
@@ -692,13 +725,7 @@ function ChartsContent() {
             selectedAppointmentId={encounterContext.appointmentId}
             selectedReceptionId={encounterContext.receptionId}
             claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
-            claimError={
-              claimQuery.isError
-                ? claimQuery.error instanceof Error
-                  ? claimQuery.error
-                  : new Error(String(claimQuery.error))
-                : undefined
-            }
+            claimError={claimErrorForTimeline}
             isClaimLoading={claimQuery.isFetching}
             onRetryClaim={handleRetryClaim}
             recordsReturned={appointmentRecordsReturned}
