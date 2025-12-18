@@ -36,6 +36,7 @@ type ChartsAuditParams = AuditContext & {
   action: ChartsAuditAction;
   outcome: ChartsAuditOutcome;
   subject?: string;
+  actor?: string;
   patientId?: string;
   appointmentId?: string;
   note?: string;
@@ -47,6 +48,7 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'runId',
   'traceId',
   'requestId',
+  'actor',
   'dataSource',
   'dataSourceTransition',
   'cacheHit',
@@ -91,6 +93,7 @@ const buildDetails = (params: ChartsAuditParams) => {
     runId: params.runId ?? meta.runId,
     traceId: params.traceId ?? meta.traceId,
     requestId: params.requestId,
+    actor: params.actor,
     dataSource: resolveDataSource({ dataSourceTransition, cacheHit, fallbackUsed }),
     dataSourceTransition,
     cacheHit,
