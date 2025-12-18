@@ -70,6 +70,15 @@ export interface ChartsActionBarProps {
   requireServerRouteForSend?: boolean;
   requirePatientForSend?: boolean;
   networkDegradedReason?: string;
+  editLock?: {
+    readOnly: boolean;
+    reason?: string;
+    ownerRunId?: string;
+    expiresAt?: string;
+  };
+  onReloadLatest?: () => void | Promise<void>;
+  onDiscardChanges?: () => void;
+  onForceTakeover?: () => void;
   onAfterSend?: () => void | Promise<void>;
   onDraftSaved?: () => void;
   onLockChange?: (locked: boolean, reason?: string) => void;
@@ -92,6 +101,10 @@ export function ChartsActionBar({
   requireServerRouteForSend = false,
   requirePatientForSend = false,
   networkDegradedReason,
+  editLock,
+  onReloadLatest,
+  onDiscardChanges,
+  onForceTakeover,
   onAfterSend,
   onDraftSaved,
   onLockChange,
@@ -109,7 +122,9 @@ export function ChartsActionBar({
   const abortControllerRef = useRef<AbortController | null>(null);
 
   const uiLocked = lockReason !== null;
-  const isLocked = uiLocked || isRunning;
+  const readOnly = editLock?.readOnly === true;
+  const readOnlyReason = editLock?.reason ?? '並行編集を検知したため、このタブは閲覧専用です。';
+  const isLocked = uiLocked || isRunning || readOnly;
   const resolvedTraceId = traceId ?? getObservabilityMeta().traceId;
 
   useEffect(() => {
@@ -142,6 +157,15 @@ export function ChartsActionBar({
         summary: '他の操作が進行中/ロック中',
         detail: lockReason ? lockReason : '別アクション実行中のため送信できません。',
         next: ['ロック解除', '処理完了を待って再試行'],
+      });
+    }
+
+    if (readOnly) {
+      reasons.push({
+        key: 'locked',
+        summary: '閲覧専用（並行編集）',
+        detail: readOnlyReason,
+        next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
       });
     }
 
@@ -231,6 +255,8 @@ export function ChartsActionBar({
     networkDegradedReason,
     patientId,
     permissionDenied,
+    readOnly,
+    readOnlyReason,
     requireServerRouteForSend,
     requirePatientForSend,
     sendDisabledReason,
@@ -250,12 +276,13 @@ export function ChartsActionBar({
       return `${ACTION_LABEL[runningAction]}を実行中… dataSourceTransition=${dataSourceTransition}`;
     }
     if (lockReason) return lockReason;
+    if (readOnly) return readOnlyReason;
     if (sendPrecheckReasons.length > 0) {
       const head = sendPrecheckReasons[0];
       return `送信不可: ${head.summary}（runId=${runId} / traceId=${resolvedTraceId ?? 'unknown'}）`;
     }
     return 'アクションを選択できます';
-  }, [dataSourceTransition, isRunning, lockReason, resolvedTraceId, runId, runningAction, sendPrecheckReasons]);
+  }, [dataSourceTransition, isRunning, lockReason, readOnly, readOnlyReason, resolvedTraceId, runId, runningAction, sendPrecheckReasons]);
 
   const logTelemetry = (action: ChartAction, outcome: 'success' | 'error' | 'blocked' | 'started', durationMs?: number, note?: string) => {
     recordOutpatientFunnel('charts_action', {
@@ -302,6 +329,39 @@ export function ChartsActionBar({
 
   const handleAction = async (action: ChartAction) => {
     if (isRunning) return;
+
+    if (readOnly) {
+      const blockedReason = readOnlyReason;
+      setToast({
+        tone: 'warning',
+        message: `${ACTION_LABEL[action]}を停止`,
+        detail: blockedReason,
+      });
+      setRetryAction(null);
+      logTelemetry(action, 'blocked', undefined, blockedReason);
+      logUiState({
+        action:
+          action === 'draft'
+            ? 'draft'
+            : action === 'finish'
+              ? 'finish'
+              : action === 'cancel'
+                ? 'cancel'
+                : action === 'print'
+                  ? 'print'
+                  : 'send',
+        screen: 'charts/action-bar',
+        controlId: `action-${action}`,
+        runId,
+        cacheHit,
+        missingMaster,
+        dataSourceTransition,
+        fallbackUsed,
+        details: { blocked: true, reasons: ['edit_lock_conflict'], traceId: resolvedTraceId, editLock: editLock ?? null },
+      });
+      logAudit(action, 'blocked', blockedReason);
+      return;
+    }
 
     if (action === 'send' && sendPrecheckReasons.length > 0) {
       const blockedReason = sendPrecheckReasons
@@ -560,6 +620,36 @@ export function ChartsActionBar({
     abortControllerRef.current?.abort();
   };
 
+  const handleReloadLatest = async () => {
+    setToast({
+      tone: 'info',
+      message: '最新を再読込',
+      detail: '最新データを再取得します（取得完了後に編集可否が更新されます）。',
+    });
+    await onReloadLatest?.();
+  };
+
+  const handleDiscard = () => {
+    onDiscardChanges?.();
+    setToast({
+      tone: 'info',
+      message: '変更を破棄しました',
+      detail: 'ローカルの未保存状態を破棄し、閲覧専用状態の解除を待てます。',
+    });
+  };
+
+  const handleForceTakeover = () => {
+    const confirmed = typeof window !== 'undefined'
+      ? window.confirm('別タブが保持している編集ロックを引き継ぎますか？（上書きの可能性があります）')
+      : false;
+    if (!confirmed) return;
+    const second = typeof window !== 'undefined'
+      ? window.confirm('最終確認: 編集ロックの引き継ぎを実行します。よろしいですか？')
+      : false;
+    if (!second) return;
+    onForceTakeover?.();
+  };
+
   return (
     <section
       className={`charts-actions${isLocked ? ' charts-actions--locked' : ''}`}
@@ -665,6 +755,34 @@ export function ChartsActionBar({
           </button>
         </div>
       )}
+      {readOnly ? (
+        <div className="charts-actions__conflict" role="group" aria-label="並行編集（閲覧専用）の対応">
+          <div className="charts-actions__conflict-title">
+            <strong>並行編集を検知</strong>
+            <span className="charts-actions__conflict-meta">
+              {editLock?.ownerRunId ? `ownerRunId=${editLock.ownerRunId}` : ''}
+              {editLock?.expiresAt ? ` expiresAt=${editLock.expiresAt}` : ''}
+            </span>
+          </div>
+          <p className="charts-actions__conflict-message">{readOnlyReason}</p>
+          <div className="charts-actions__conflict-actions">
+            <button type="button" className="charts-actions__button charts-actions__button--unlock" onClick={handleReloadLatest}>
+              最新を再読込
+            </button>
+            <button
+              type="button"
+              className="charts-actions__button charts-actions__button--ghost"
+              onClick={handleDiscard}
+              disabled={!hasUnsavedDraft}
+            >
+              自分の変更を破棄
+            </button>
+            <button type="button" className="charts-actions__button" onClick={handleForceTakeover}>
+              強制引き継ぎ
+            </button>
+          </div>
+        </div>
+      ) : null}
 
       <div className="charts-actions__controls" role="group" aria-label="Charts 操作用ボタン">
         <button

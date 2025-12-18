@@ -220,6 +220,42 @@ export const chartsStyles = css`
     color: #991b1b;
   }
 
+  .charts-actions__conflict {
+    background: #fffbeb;
+    border: 1px solid rgba(245, 158, 11, 0.6);
+    border-radius: 14px;
+    padding: 0.85rem 0.9rem;
+    color: #92400e;
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .charts-actions__conflict-title {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.8rem;
+  }
+
+  .charts-actions__conflict-meta {
+    font-size: 0.85rem;
+    color: rgba(146, 64, 14, 0.85);
+  }
+
+  .charts-actions__conflict-message {
+    margin: 0;
+    line-height: 1.5;
+    font-weight: 600;
+  }
+
+  .charts-actions__conflict-actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
   .charts-actions__toast--info {
     background: #eff6ff;
     border: 1px solid #60a5fa;

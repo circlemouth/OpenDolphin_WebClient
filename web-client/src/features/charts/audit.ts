@@ -5,6 +5,8 @@ import type { DataSourceTransition } from './authService';
 export type ChartsAuditAction =
   | 'CHARTS_PATIENT_SWITCH'
   | 'CHARTS_NAVIGATE_RECEPTION'
+  | 'CHARTS_EDIT_LOCK'
+  | 'CHARTS_CONFLICT'
   | 'ORCA_SEND'
   | 'ENCOUNTER_CLOSE'
   | 'DRAFT_SAVE'
@@ -12,7 +14,19 @@ export type ChartsAuditAction =
   | 'PRINT_OUTPATIENT'
   | 'CHARTS_ACTION_FAILURE';
 
-export type ChartsAuditOutcome = 'success' | 'error' | 'blocked' | 'started';
+export type ChartsAuditOutcome =
+  | 'success'
+  | 'error'
+  | 'blocked'
+  | 'started'
+  | 'acquired'
+  | 'renewed'
+  | 'stolen'
+  | 'conflict'
+  | 'released'
+  | 'expired'
+  | 'discarded'
+  | 'resolved';
 
 export const CRITICAL_CHARTS_ACTIONS: ChartsAuditAction[] = [
   'CHARTS_PATIENT_SWITCH',
@@ -42,6 +56,7 @@ type ChartsAuditParams = AuditContext & {
   note?: string;
   durationMs?: number;
   error?: string;
+  details?: Record<string, unknown>;
 };
 
 const ALLOWED_DETAIL_KEYS = new Set([
@@ -49,6 +64,8 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'traceId',
   'requestId',
   'actor',
+  'facilityId',
+  'userId',
   'dataSource',
   'dataSourceTransition',
   'cacheHit',
@@ -56,10 +73,20 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'fallbackUsed',
   'patientId',
   'appointmentId',
+  'receptionId',
   'note',
   'durationMs',
   'error',
   'subject',
+  'lockRequestId',
+  'documentVersion',
+  'lockOwnerUserId',
+  'lockOwnerName',
+  'lockOwnerRunId',
+  'lockExpiresAt',
+  'trigger',
+  'resolution',
+  'tabSessionId',
 ]);
 
 const sanitizeDetails = (details: Record<string, unknown>) => {
@@ -104,6 +131,7 @@ const buildDetails = (params: ChartsAuditParams) => {
     note: params.note,
     durationMs: params.durationMs,
     error: params.error,
+    ...(params.details ?? {}),
   });
 };
 

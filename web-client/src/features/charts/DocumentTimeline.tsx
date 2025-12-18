@@ -109,6 +109,35 @@ export function DocumentTimeline({
 
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
+  const auditSummary = useMemo(() => {
+    if (!auditEvent) return null;
+    const action = typeof (auditEvent as any).action === 'string' ? ((auditEvent as any).action as string) : 'AUDIT_EVENT';
+    const outcome =
+      typeof (auditEvent as any).outcome === 'string' ? ((auditEvent as any).outcome as string) : undefined;
+    const details = (typeof (auditEvent as any).details === 'object' && (auditEvent as any).details !== null
+      ? ((auditEvent as any).details as Record<string, unknown>)
+      : {}) as Record<string, unknown>;
+    const actor = typeof details.actor === 'string' ? details.actor : undefined;
+    const note = typeof details.note === 'string' ? details.note : undefined;
+    const lockExpiresAt = typeof details.lockExpiresAt === 'string' ? details.lockExpiresAt : undefined;
+
+    const isConflict =
+      action === 'CHARTS_EDIT_LOCK' ||
+      action === 'CHARTS_CONFLICT' ||
+      action === 'CHARTS_ACTION_FAILURE';
+    const bannerTone = isConflict ? 'warning' : 'info';
+    const message = [
+      outcome ? `${action}(${outcome})` : action,
+      actor ? `actor=${actor}` : undefined,
+      note ? `note=${note}` : undefined,
+      lockExpiresAt ? `lockExpiresAt=${lockExpiresAt}` : undefined,
+    ]
+      .filter((fragment): fragment is string => typeof fragment === 'string' && fragment.length > 0)
+      .join(' ｜ ');
+
+    return { tone: bannerTone as 'warning' | 'info', message };
+  }, [auditEvent]);
+
   const claimBundles = claimData?.bundles ?? [];
 
   const queuePhase = resolveQueuePhase({
@@ -490,16 +519,16 @@ export function DocumentTimeline({
               </div>
             )}
           </div>
-          {auditEvent && (
-            <div className="document-timeline__audit" role="alert" aria-live="assertive">
-              <strong>auditEvent</strong>
-              <p className="document-timeline__audit-text">
-                {Object.entries(auditEvent)
-                  .map(([key, value]) => `${key}: ${String(value)}`)
-                  .join(' ｜ ')}
-              </p>
-            </div>
-          )}
+          {auditSummary ? (
+            <ToneBanner
+              tone={auditSummary.tone}
+              message={auditSummary.message}
+              destination="Charts/Timeline"
+              nextAction="必要なら再取得して整合を確認"
+              runId={resolvedRunId}
+              ariaLive="polite"
+            />
+          ) : null}
         </div>
       </div>
     </section>

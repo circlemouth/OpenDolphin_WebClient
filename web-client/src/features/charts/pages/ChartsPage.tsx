@@ -10,7 +10,7 @@ import { OrcaSummary } from '../OrcaSummary';
 import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
-import { normalizeAuditEventLog, normalizeAuditEventPayload } from '../audit';
+import { normalizeAuditEventLog, normalizeAuditEventPayload, recordChartsAuditEvent } from '../audit';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
@@ -32,6 +32,7 @@ import {
   storeChartsEncounterContext,
   type OutpatientEncounterContext,
 } from '../encounterContext';
+import { useChartsTabLock } from '../useChartsTabLock';
 
 const isLikelyNetworkError = (error: unknown) => {
   if (!error) return false;
@@ -82,6 +83,11 @@ function ChartsContent() {
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [contextAlert, setContextAlert] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
+  const [editLockAlert, setEditLockAlert] = useState<{
+    tone: 'warning';
+    message: string;
+    ariaLive: 'polite' | 'assertive';
+  } | null>(null);
   const [deliveryImpactBanner, setDeliveryImpactBanner] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [deliveryAppliedMeta, setDeliveryAppliedMeta] = useState<{
     appliedAt: string;
@@ -108,6 +114,7 @@ function ChartsContent() {
     chartsSendEnabled?: boolean;
     chartsMasterSource?: ChartsMasterSourcePolicy;
   }>({});
+  const lastEditLockAnnouncement = useRef<string | null>(null);
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
 
@@ -530,6 +537,113 @@ function ChartsContent() {
     if (!encounterContext.patientId) return undefined;
     return patientEntries.find((entry) => (entry.patientId ?? entry.id) === encounterContext.patientId);
   }, [encounterContext.appointmentId, encounterContext.patientId, encounterContext.receptionId, patientEntries]);
+
+  const lockTarget = useMemo(() => {
+    const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
+    return {
+      facilityId: session.facilityId,
+      patientId,
+      receptionId: selectedEntry?.receptionId ?? encounterContext.receptionId,
+      appointmentId: selectedEntry?.appointmentId ?? encounterContext.appointmentId,
+    };
+  }, [
+    encounterContext.appointmentId,
+    encounterContext.patientId,
+    encounterContext.receptionId,
+    selectedEntry?.appointmentId,
+    selectedEntry?.id,
+    selectedEntry?.patientId,
+    selectedEntry?.receptionId,
+    session.facilityId,
+  ]);
+
+  const tabLock = useChartsTabLock({
+    runId: resolvedRunId ?? flags.runId,
+    target: lockTarget,
+    enabled: chartsDisplayEnabled && Boolean(lockTarget.patientId),
+  });
+
+  useEffect(() => {
+    if (!tabLock.storageKey) {
+      setEditLockAlert(null);
+      return;
+    }
+    if (!tabLock.isReadOnly) {
+      setEditLockAlert(null);
+      return;
+    }
+    const announcementKey = `${tabLock.storageKey}:${tabLock.ownerTabSessionId ?? 'unknown'}:${tabLock.expiresAt ?? 'unknown'}`;
+    const isFirst = lastEditLockAnnouncement.current !== announcementKey;
+    lastEditLockAnnouncement.current = announcementKey;
+
+    const message = `${tabLock.readOnlyReason ?? '別タブで編集中のため閲覧専用です。'}（patientId=${lockTarget.patientId ?? '—'} receptionId=${lockTarget.receptionId ?? '—'}）`;
+    setEditLockAlert({
+      tone: 'warning',
+      message,
+      ariaLive: isFirst ? 'assertive' : 'polite',
+    });
+
+    recordChartsAuditEvent({
+      action: 'CHARTS_EDIT_LOCK',
+      outcome: 'conflict',
+      subject: 'charts-tab-lock',
+      patientId: lockTarget.patientId,
+      appointmentId: lockTarget.appointmentId,
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      fallbackUsed: resolvedFallbackUsed,
+      dataSourceTransition: resolvedTransition,
+      details: {
+        trigger: 'tab',
+        tabSessionId: tabLock.tabSessionId,
+        lockOwnerRunId: tabLock.ownerRunId,
+        lockExpiresAt: tabLock.expiresAt,
+        receptionId: lockTarget.receptionId,
+        facilityId: session.facilityId,
+        userId: session.userId,
+      },
+    });
+  }, [
+    flags.runId,
+    lockTarget.appointmentId,
+    lockTarget.patientId,
+    lockTarget.receptionId,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
+    session.facilityId,
+    session.userId,
+    tabLock.expiresAt,
+    tabLock.isReadOnly,
+    tabLock.ownerRunId,
+    tabLock.ownerTabSessionId,
+    tabLock.readOnlyReason,
+    tabLock.storageKey,
+    tabLock.tabSessionId,
+  ]);
+
+  const formattedLastUpdated = useMemo(() => {
+    for (let idx = auditEvents.length - 1; idx >= 0; idx -= 1) {
+      const record = auditEvents[idx];
+      const payload = (record.payload ?? {}) as Record<string, unknown>;
+      const action = payload.action;
+      const outcome = payload.outcome;
+      if (outcome !== 'success') continue;
+      if (action !== 'DRAFT_SAVE' && action !== 'ORCA_SEND' && action !== 'ENCOUNTER_CLOSE') continue;
+      const details = (payload.details ?? {}) as Record<string, unknown>;
+      const actor = typeof details.actor === 'string' ? details.actor : undefined;
+      const stamp = typeof record.timestamp === 'string' ? record.timestamp : undefined;
+      if (!stamp) continue;
+      const date = new Date(stamp);
+      if (Number.isNaN(date.getTime())) continue;
+      const hhmm = date.toISOString().slice(11, 16);
+      return { action: String(action), actor, hhmm };
+    }
+    return null;
+  }, [auditEvents]);
   const appointmentRecordsReturned = useMemo(
     () =>
       appointmentPages.reduce(
@@ -736,6 +850,16 @@ function ChartsContent() {
           <span className="charts-page__pill">missingMaster: {String(resolvedMissingMaster)}</span>
           <span className="charts-page__pill">cacheHit: {String(resolvedCacheHit)}</span>
           <span className="charts-page__pill">fallbackUsed: {String(resolvedFallbackUsed)}</span>
+          <span className="charts-page__pill" aria-live="off">
+            編集: {tabLock.isReadOnly ? '閲覧専用' : tabLock.storageKey ? '編集中' : '—'}
+            {tabLock.isReadOnly && tabLock.ownerRunId ? `（ownerRunId=${tabLock.ownerRunId}）` : ''}
+          </span>
+          <span className="charts-page__pill" aria-live="off">
+            最終更新:{' '}
+            {formattedLastUpdated
+              ? `${formattedLastUpdated.hhmm} by ${formattedLastUpdated.actor ?? 'unknown'} (${formattedLastUpdated.action})`
+              : '—'}
+          </span>
           <span className="charts-page__pill">Charts master: {chartsMasterSourcePolicy}</span>
           <span className="charts-page__pill">Charts送信: {sendAllowedByDelivery ? 'enabled' : 'disabled'}</span>
           <span className="charts-page__pill">
@@ -753,6 +877,16 @@ function ChartsContent() {
           nextAction="必要なら Reception で再選択"
           runId={flags.runId}
           ariaLive={contextAlert.tone === 'info' ? 'polite' : 'assertive'}
+        />
+      ) : null}
+      {editLockAlert ? (
+        <ToneBanner
+          tone={editLockAlert.tone}
+          message={editLockAlert.message}
+          destination="Charts"
+          nextAction="別タブを閉じる / 最新を再読込 / 強制引き継ぎ"
+          runId={resolvedRunId ?? flags.runId}
+          ariaLive={editLockAlert.ariaLive}
         />
       ) : null}
       {deliveryImpactBanner ? (
@@ -815,6 +949,64 @@ function ChartsContent() {
               requireServerRouteForSend
               requirePatientForSend
               networkDegradedReason={networkDegradedReason}
+              editLock={{
+                readOnly: tabLock.isReadOnly,
+                reason: tabLock.readOnlyReason,
+                ownerRunId: tabLock.ownerRunId,
+                expiresAt: tabLock.expiresAt,
+              }}
+              onReloadLatest={handleRefreshSummary}
+              onDiscardChanges={() => {
+                setDraftState((prev) => ({ ...prev, dirty: false }));
+                recordChartsAuditEvent({
+                  action: 'CHARTS_CONFLICT',
+                  outcome: 'discarded',
+                  subject: 'charts-tab-lock',
+                  patientId: lockTarget.patientId,
+                  appointmentId: lockTarget.appointmentId,
+                  runId: resolvedRunId ?? flags.runId,
+                  cacheHit: resolvedCacheHit,
+                  missingMaster: resolvedMissingMaster,
+                  fallbackUsed: resolvedFallbackUsed,
+                  dataSourceTransition: resolvedTransition,
+                  details: {
+                    trigger: 'tab',
+                    resolution: 'discard',
+                    tabSessionId: tabLock.tabSessionId,
+                    lockOwnerRunId: tabLock.ownerRunId,
+                    lockExpiresAt: tabLock.expiresAt,
+                    receptionId: lockTarget.receptionId,
+                    facilityId: session.facilityId,
+                    userId: session.userId,
+                  },
+                });
+              }}
+              onForceTakeover={() => {
+                const wasReadOnly = tabLock.isReadOnly;
+                tabLock.forceTakeover();
+                recordChartsAuditEvent({
+                  action: 'CHARTS_EDIT_LOCK',
+                  outcome: wasReadOnly ? 'stolen' : 'acquired',
+                  subject: 'charts-tab-lock',
+                  patientId: lockTarget.patientId,
+                  appointmentId: lockTarget.appointmentId,
+                  runId: resolvedRunId ?? flags.runId,
+                  cacheHit: resolvedCacheHit,
+                  missingMaster: resolvedMissingMaster,
+                  fallbackUsed: resolvedFallbackUsed,
+                  dataSourceTransition: resolvedTransition,
+                  details: {
+                    trigger: 'tab',
+                    resolution: 'force_takeover',
+                    tabSessionId: tabLock.tabSessionId,
+                    lockOwnerRunId: tabLock.ownerRunId,
+                    lockExpiresAt: tabLock.expiresAt,
+                    receptionId: lockTarget.receptionId,
+                    facilityId: session.facilityId,
+                    userId: session.userId,
+                  },
+                });
+              }}
               onAfterSend={handleRefreshSummary}
               onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
               onLockChange={(locked, reason) => setLockState({ locked, reason })}

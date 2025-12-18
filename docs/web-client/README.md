@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251218T022759Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251218T092541Z`）
 > 2025-12-14 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -8,6 +8,7 @@
 
 ### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T092541Z`）
 - Charts 患者サイドペイン（基本/保険/履歴）仕上げ（閲覧中心 + role/missingMaster/fallback/dataSourceTransition + 受付ステータスで編集ガード、差分表示と保存履歴モーダル、履歴タブ整理、Patients への deep link/復帰導線を追加）。証跡: `docs/web-client/planning/phase2/logs/20251218T092541Z-charts-patient-sidepane.md` / 成果物: `src/charts_production_outpatient/ux/25_患者サイドペイン_基本保険履歴_仕上げ.md` / 実装: `web-client/src/features/charts/PatientsTab.tsx`。
+- Charts 並行編集（同一端末の複数タブ）検知を実装（閲覧専用化＋warning 統一＋最終更新ピル＋監査イベント `CHARTS_EDIT_LOCK/CHARTS_CONFLICT`）。証跡: `docs/web-client/planning/phase2/logs/20251218T092228Z-charts-concurrent-edit-lock.md` / 成果物: `src/charts_production_outpatient/workflow/34_並行編集とロック表示.md` / 実装: `web-client/src/features/charts/editLock.ts`。
 - Charts 外来受診コンテキスト確立（Reception→Charts で `receptionId/visitDate/patientId` を URL へ格納し、リロード/複数タブ/戻る操作でも別患者混入を防ぐガードを追加）。証跡: `docs/web-client/planning/phase2/logs/20251218T082404Z-charts-encounter-context.md` / 成果物: `src/charts_production_outpatient/workflow/30_外来受診コンテキスト確立.md`。
 - config/delivery 不一致検知（`syncMismatch`）と raw 監査強化（RUN_ID=`20251218T022759Z`）。Administration/Charts の UI に mismatch を可視化し、Charts の `admin/delivery.apply` 監査 payload に raw(config/delivery) を分離して格納。証跡: `docs/web-client/planning/phase2/logs/20251218T022759Z-admin-syncMismatch-raw-audit.md`。
 - 41 `/api01rv2/appointment/outpatient/*` 統合（RUN_ID=`20251217T234312Z`）。予約一覧/患者別予約/来院中リストを Charts 向けに正規化し、`受付ID(receptionId)` 表示と Charts→Reception の導線（予約変更/キャンセル）を追加。予約データの未取得/不整合は `tone=info/warning` で統一。証跡: `src/charts_production_outpatient/integration/logs/20251217T234312Z-appointment-outpatient-integration.md` / 成果物: `src/charts_production_outpatient/integration/41_appointment_outpatient統合.md`。
