@@ -1,5 +1,7 @@
-# DOC_STATUS（RUN_ID=`20251214T022944Z`）
+# DOC_STATUS（RUN_ID=`20251219T063136Z`）
 
+- 本更新 RUN_ID=`20251219T063136Z`（DOC_STATUS 棚卸しとハブ同期。DOC_STATUS の備考欄へ RUN_ID/証跡パスを追記し、README/Phase2 INDEX/manager overview/checklist を同日付で同期。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/DOC_STATUS棚卸しとハブ同期.md`。）
+- 本更新 RUN_ID=`20251219T062549Z`（RUN_ID 整備と参照チェーン再確認。参照チェーンを再確認し、README/Phase2 INDEX/manager overview/checklist/DOC_STATUS の RUN_ID を統一。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/RUN_ID整備と参照チェーン再確認.md`。）
 - 本更新 RUN_ID=`20251218T213011Z`（54 リリース前チェックリストと DOC_STATUS 更新: DoD に対する未完了/既知制限/回避策を整理し、Stage/Preview 実 API 再検証とパフォーマンス実測の未了を明示。証跡: `src/charts_production_outpatient/quality/54_リリース前チェックリストとDOC_STATUS更新.md`。備考: 本行の追記と README 同期予定。）
 - 本更新 RUN_ID=`20251218T183545Z`（52 監査ログ/テレメトリ証跡化: telemetry と auditEvent を同一 runId/traceId で追跡できることを vitest で確認。証跡: `docs/server-modernization/phase2/operations/logs/20251218T183545Z-charts-audit-telemetry.md`。備考: `docs/web-client/planning/phase2/logs/20251218T183545Z-charts-audit-telemetry.md` / 成果物: `src/charts_production_outpatient/quality/52_監査ログ_テレメトリ_証跡化.md` / テスト: `web-client/src/features/charts/__tests__/auditTelemetryRunId.test.ts`。）
 - 本更新 RUN_ID=`20251218T180331Z`（50 Playwright外来カルテ主要シナリオ: Reception→Charts→送信→会計を MSW ON/OFF 両対応で自動化。tone/transition/dataSource の carry-over と送信/会計ガードを検証し、HAR/スクリーンショットを RUN_ID 配下に保存する運用を定義。証跡: `docs/web-client/planning/phase2/logs/20251218T180331Z-charts-outpatient-playwright-main.md`。備考: `tests/e2e/charts-outpatient-mainflow.spec.ts` / 設計: `src/charts_production_outpatient/quality/50_Playwright外来カルテ主要シナリオ.md`。）
@@ -35,12 +37,12 @@
 - 目的: docs/web-client 配下のアクティブ資料を棚卸しし、RUN_ID/証跡/責務を同期させる。参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → 本ファイル。
 - 今回の整理でフル電子カルテ版の実装計画を再定義し、Legacy ログイン専用期の資料は Archive として分離した。
 - Legacy (`client/`, `common/`, `ext_lib/`) は参照専用。接続検証や設定変更の対象は `server-modernized/` のみ。
-- 証跡ログ: `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`（module_json ガント開始）、`docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`（fetch レイヤ統一）、`docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`（セッション/権限ガード整理）、`docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`（外来 API 契約）、`docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`（ChartsPage 棚卸し）、`docs/web-client/planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`（カバレッジ定義）、`docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`（ガント起点）。
+- 証跡ログ: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`（DOC_STATUS 棚卸しとハブ同期）、`docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`（module_json ガント開始）、`docs/web-client/planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`（fetch レイヤ統一）、`docs/web-client/planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`（セッション/権限ガード整理）、`docs/web-client/planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`（外来 API 契約）、`docs/web-client/planning/phase2/logs/20251212T140014Z-charts-page-gap.md`（ChartsPage 棚卸し）、`docs/web-client/planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`（カバレッジ定義）、`docs/web-client/planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`（ガント起点）。
 
-## Active ドキュメント（2025-12-14 現在）
+## Active ドキュメント（2025-12-19 現在）
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / RUN_ID |
 | --- | --- | --- | --- | --- |
-| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。module_json JSON 化手順への導線を追加し、参照チェーンを更新。 |
+| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-19 | RUN_ID=`20251219T063136Z`。DOC_STATUS 棚卸しとハブ同期を反映。 |
 | `src/docs/modernization/設計と手順書アップデート.md` | module_json 設計/手順書更新タスク | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。server-modernized README/operations への JSON 化手順反映と証跡整理。証跡 `planning/phase2/logs/20251214T082236Z-module-json-docs.md`。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
 | `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` | module_json: 型情報フォールバック | Active | 2025-12-14 | RUN_ID=`20251214T132418Z`。`@class` 無し beanJson を WARN なしで decode するフォールバック方針。証跡 `planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`。 |
@@ -51,7 +53,9 @@
 | `src/modernization/module_json/Flywayスクリプト追加.md` | module_json Flyway 追加 | Active | 2025-12-14 | RUN_ID=`20251214T031229Z`（親 `20251214T022944Z`）。証跡 `docs/web-client/planning/phase2/logs/20251214T031229Z-module-json-flyway.md`。 |
 | `src/modernization/module_json/KarteServiceBean組み込み.md` | module_json: KarteServiceBean 直列化/復元 | Active | 2025-12-14 | RUN_ID=`20251214T041935Z`（親 `20251214T022944Z`）。add/updateDocument 直列化・読込系復元を実装。証跡 `docs/web-client/planning/phase2/logs/20251214T041935Z-module-json-karte-service-bean.md`。 |
 | `docs/web-client/planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` | 画面別実装計画 | Active | 2025-12-11 | 新設。画面/機能/ARIA/監査/テレメトリ/ロードマップを統合。 |
-| `docs/web-client/planning/phase2/DOC_STATUS.md` | 棚卸し台帳 | Active | 2025-12-14 | 本ファイル。RUN_ID=`20251214T022944Z`。module_json ガント行を追加。 |
+| `docs/web-client/planning/phase2/DOC_STATUS.md` | 棚卸し台帳 | Active | 2025-12-19 | 本ファイル。RUN_ID=`20251219T063136Z`。DOC_STATUS 棚卸しとハブ同期を反映。 |
+| `src/server_modernized_full_completion_phase2/00_governance/RUN_ID整備と参照チェーン再確認.md` | RUN_ID 整備・参照チェーン再確認 | Active | 2025-12-19 | RUN_ID=`20251219T062549Z`。参照チェーン再確認と RUN_ID 統一のガバナンス記録。 |
+| `src/server_modernized_full_completion_phase2/00_governance/DOC_STATUS棚卸しとハブ同期.md` | DOC_STATUS 棚卸しとハブ同期 | Active | 2025-12-19 | RUN_ID=`20251219T063136Z`。DOC_STATUS の備考とハブ文書の同日更新を記録。 |
 | `docs/web-client/architecture/future-web-client-design.md` | 画面配置・機能サマリ | Active | 2025-12-10 | RUN_ID=`20251210T141208Z`。計画書と整合。 |
 | `docs/web-client/architecture/web-client-api-mapping.md` | 外来 API マッピング | Active | 2025-12-08 | RUN_ID=`20251208T124645Z`。OUTPATIENT_API_ENDPOINTS と同期。 |
 | `docs/web-client/ux/reception-schedule-ui-policy.md` | Reception UX ポリシー | Active | 2025-12-12 | RUN_ID=`20251212T090000Z`（他の RUN_ID は本文記載）。 |
@@ -73,6 +77,8 @@
 | `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md` | module_json MSW OFF スモークログ | Active | 2025-12-14 | RUN_ID=`20251214T091846Z`。MSW OFF smoke 1/1 pass。beanJson は WAR 再ビルド＋opendolphin スキーマ整合後に `/karte/document` POST→GET→DB まで自動保存を確認（docPk=-45, bean_json NOT NULL）。HAR/trace/screenshot を同 RUN_ID で取得済み。 |
 | `docs/web-client/planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md` | module_json 型情報フォールバックログ | Active | 2025-12-14 | RUN_ID=`20251214T132418Z`。`@class` 無し beanJson を non-typed fallback で decode し WARN を抑止。回帰テストを追加し `mvn -pl common test` 成功。 |
 | `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md` | module_json ガントキックオフ証跡 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。参照チェーン再確認・Legacy 非改変の明文化。成果物 `src/modernization/module_json/キックオフ_RUN_ID採番.md`。 |
+| `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md` | DOC_STATUS 棚卸しとハブ同期ログ | Active | 2025-12-19 | RUN_ID=`20251219T063136Z`。DOC_STATUS 更新とハブ文書同期の証跡。 |
+| `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md` | RUN_ID 整備・参照チェーン再確認ログ | Active | 2025-12-19 | RUN_ID=`20251219T062549Z`。ハブ文書の RUN_ID 統一と scope 再確認。成果物 `src/server_modernized_full_completion_phase2/00_governance/RUN_ID整備と参照チェーン再確認.md`。 |
 | `docs/web-client/planning/phase2/logs/20251211T172459Z-runid-governance.md` | RUN_ID 整備・参照チェーン確認ログ | Active | 2025-12-11 | RUN_ID=`20251211T172459Z`。本ガントの事前登録。 |
 | `docs/web-client/planning/phase2/logs/20251211T120619Z-charts-timeline.md` | Charts データバインド実装ログ | Active | 2025-12-11 | RUN_ID=`20251211T120619Z`。DocumentTimeline/PatientsTab/OrcaSummary のデータバインドと tone 連動メモ。 |
 | `docs/web-client/planning/phase2/logs/20251211T193942Z-administration-delivery.md` | Administration 配信/キュー実装ログ | Active | 2025-12-11 | RUN_ID=`20251211T193942Z`。設定配信フォーム・キュー再送/破棄・Reception/Charts 通知。 |
