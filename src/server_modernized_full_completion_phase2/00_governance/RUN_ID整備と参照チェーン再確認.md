@@ -1,8 +1,8 @@
-# RUN_ID整備と参照チェーン確認（RUN_ID=20251219T062549Z）
+# RUN_ID整備と参照チェーン再確認（RUN_ID=20251219T062549Z）
 
-- YAML ID: src/webclient_modernization_phase2/00_governance/RUN_ID整備と参照チェーン確認.md
+- YAML ID: src/server_modernized_full_completion_phase2/00_governance/RUN_ID整備と参照チェーン再確認.md
 - 期間: 2025-12-19 09:00 JST 〜 2025-12-20 09:00 JST
-- 目的: Web クライアントとモダナイズ版サーバーのガバナンス整合（RUN_ID統一・参照チェーン再確認）。
+- 目的: Web クライアントとモダナイズ版サーバーのガバナンス整合（RUN_ID 統一・参照チェーン再確認）。
 - 参照チェーン: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → `docs/managerdocs/PHASE2_WEB_CLIENT_EXPERIENCE_MANAGER_CHECKLIST.md` → `docs/web-client/planning/phase2/DOC_STATUS.md`。
 - スコープ: `server-modernized/` を対象にした接続/運用確認のみ。`server/`, `client/`, `common/`, `ext_lib/` は参照専用で変更不可。
 - 証跡ログ: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`（参照チェーン再確認、ORCA 接続なし）。

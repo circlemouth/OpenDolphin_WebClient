@@ -13,6 +13,8 @@
 > - DOC_STATUS 行: `docs/web-client/planning/phase2/DOC_STATUS.md`「Web クライアント UX/Features」行の更新内容
 >
 > RUN_ID=`20251201T053420Z` で参照チェーン（AGENTS→README→Phase2 INDEX→本チェックリスト）を棚卸し済み。証跡: `docs/server-modernization/phase2/operations/logs/20251201T053420Z-run-id-chain.md`。
+> RUN_ID=`20251219T062549Z` で参照チェーンを再確認し、RUN_ID をハブ文書で統一。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。
+> RUN_ID=`20251219T063136Z` で DOC_STATUS 棚卸しとハブ同期を実施。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。
 > RUN_ID=`20251202T083708Z` で画面別 API マッピングとバージョン整合メモ（`src/webclient_screens_plan/02_画面別 API マッピングとバージョン整合.md`）を更新し、証跡ログ `docs/server-modernization/phase2/operations/logs/20251202T083708Z-api-mapping.md` を README/DOC_STATUS と同期。orca05 hash/diff 再取得済み（同 RUN_ID）。
 > RUN_ID=`20251202T090000Z` で受付/カルテ/管理の screens 棚卸しを開始。証跡: `docs/server-modernization/phase2/operations/logs/20251202T090000Z-screens.md`（README/DOC_STATUS と同期）。
 > RUN_ID=`20251202T090000Z` の棚卸し内容を `docs/web-client/ux/` 配下の UX 草稿（Reception/Charts/Patients+Administration）へ移植済み。証跡ログと同 RUN_ID を保持する。

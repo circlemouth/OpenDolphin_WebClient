@@ -13,6 +13,9 @@
 > 4. DOC_STATUS 更新は (a) 最終コミット確認 → (b) Active/Dormant/Archive 判定 → (c) 備考に RUN_ID / 証跡パスを追記 → (d) ハブドキュメントへ同日付反映、の順で行い、完了報告前にチェック。  
 > 5. Legacy サーバー/クライアントは参照専用アーカイブであり、差分検証のためにのみ起動可（保守・稼働維持作業は禁止）。
 
+RUN_ID=`20251219T062549Z` で参照チェーンを再確認し、ハブ文書の RUN_ID を統一。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。
+RUN_ID=`20251219T063136Z` で DOC_STATUS 棚卸しとハブ同期を実施。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。
+
 ## 1. 機能別マッピング（EMR 通信の 2 本柱）
 
 機能単位でタスクを切り出し、電子カルテサーバーを中心とした 2 つの通信ラインで管理します。
