@@ -885,11 +885,15 @@ public class OrcaResource {
         StringBuilder sb = new StringBuilder();
         sb.append("select * from tbl_inputcd where ");
         if (true) {
-            sb.append("hospnum=");
+            sb.append("(hospnum=");
             sb.append(HOSP_NUM);
             sb.append(" and ");
-        } 
-        sb.append("(inputcd like 'P%' or inputcd like 'S%') order by inputcd");
+        }
+        sb.append("(inputcd like 'P%' or inputcd like 'S%')");
+        if (true) {
+            sb.append(")");
+        }
+        sb.append(" order by inputcd");
         
         String sql = sb.toString();
         debug(sql);
