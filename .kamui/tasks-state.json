@@ -1306,5 +1306,53 @@
     "worktreePath": ".worktrees/task-1766148377926-e06f26",
     "medal": "silver",
     "aiCompetitionScore": 78
+  },
+  {
+    "id": "task-yaml-14holtx-src-server-moder",
+    "name": "[server modernized implementation 20251219] ORCA_02_stamp_dateパラメータ追加\n期間: 12/28 21:00 - 12/29 21:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-02 `/orca/stamp/{setCd,name}` 日付パラメータ追加\n\n- `date` パラメータを追加し、有効期間でフィルタ可能にする。\n\nYAML ID: src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-19T13:00:35.374Z",
+    "updatedAt": "2025-12-19T13:00:35.374Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-14holtx-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-implementation-202-b638306cbd::src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md",
+      "appId": "custom-app-server-modernized-implementation-202-b638306cbd",
+      "datasetLabel": "server modernized implementation 20251219",
+      "pathId": "src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md",
+      "fileName": "server-modernized-implementation-20251219.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-implementation-20251219.yaml",
+      "addedAt": "2025-12-19T13:00:34.632Z"
+    },
+    "labels": [
+      "server modernized implementation 20251219",
+      "src / server_modernized_full_completion_phase2 / 04_orca_master_api"
+    ],
+    "dependencies": [
+      "task-yaml-5r854m-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766923200000,
+      "endMs": 1767009600000,
+      "durationDays": 1
+    },
+    "category": "src / server_modernized_full_completion_phase2 / 04_orca_master_api",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA-02 `/orca/stamp/{setCd,name}` 日付パラメータ追加\n\n- `date` パラメータを追加し、有効期間でフィルタ可能にする。"
   }
 ]
