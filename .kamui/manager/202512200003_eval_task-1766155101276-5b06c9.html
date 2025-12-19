@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - ORCA-06 保険者・住所マスタ実装</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-top: 8px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h3 {
+        margin: 0 0 8px 0;
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #50626a;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.label-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .section-title {
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .hex-wrap {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 12px;
+        align-items: center;
+      }
+      .hex-chart {
+        width: 220px;
+        height: 220px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .pill {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .note {
+        font-size: 12px;
+        color: #51626a;
+      }
+      a {
+        color: #1f5c78;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA-06 保険者・住所マスタ実装</h1>
+        <p class="monitor-description">
+          対象: /orca/master/hokenja / /orca/master/address の実装比較。評価基準は機能合理性・緻密性。
+          作成日時: 2025-12-19
+        </p>
+        <div class="scoreboard">
+          <div class="score-card">
+            <h3>claude code / task-1766155101276-5b06c9</h3>
+            <div class="score-total">524 / 600 🏆🥇</div>
+            <div class="score-meta">総合スコア: 87点</div>
+          </div>
+          <div class="score-card">
+            <h3>claude code / task-1766155101476-4c9eab</h3>
+            <div class="score-total">419 / 600 🥈</div>
+            <div class="score-meta">総合スコア: 70点</div>
+          </div>
+        </div>
+      </header>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="label-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>claude code / task-1766155101276-5b06c9</th>
+            <th>claude code / task-1766155101476-4c9eab</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="section-title">仕事の概要</td>
+            <td>
+              /orca/master/hokenja と /orca/master/address を追加し、スナップショット/fixture からの応答、
+              404/503/空レスポンス差分の監査ログ記録、DTO/テスト追加までを完備。
+            </td>
+            <td>
+              ORCA-06 の2エンドポイントとDTOを実装し監査ログも追加。ページングやバリデーションは対応済みだが、
+              404/空レス差分の挙動は仕様未満。
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">6指標チャート</td>
+            <td>
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 220 220" data-scores="[92,90,88,88,86,80]"></svg>
+                <ul class="metric-list">
+                  <li>機能適合 92点</li>
+                  <li>仕様準拠 90点</li>
+                  <li>監査ログ品質 88点</li>
+                  <li>エラーハンドリング 88点</li>
+                  <li>コード品質 86点</li>
+                  <li>テスト/ドキュメント 80点</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 220 220" data-scores="[78,65,70,72,74,60]"></svg>
+                <ul class="metric-list">
+                  <li>機能適合 78点</li>
+                  <li>仕様準拠 65点</li>
+                  <li>監査ログ品質 70点</li>
+                  <li>エラーハンドリング 72点</li>
+                  <li>コード品質 74点</li>
+                  <li>テスト/ドキュメント 60点</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">評価根拠</td>
+            <td>
+              <p class="pill">高評価ポイント</p>
+              <ul class="metric-list">
+                <li>address未該当時は 404 を返却し、fallback時は 200 空レスで差分化。</li>
+                <li>監査ログに httpStatus/emptyResult/resultCount 等を統一的に記録。</li>
+                <li>DTO追加と単体テスト追加で最低限の回帰耐性を確保。</li>
+              </ul>
+              <p class="pill">注意点</p>
+              <ul class="metric-list">
+                <li>MSW fixture と snapshot の dataSource 表記が区別されない。</li>
+                <li>テストは追加済みだが未実行。</li>
+              </ul>
+            </td>
+            <td>
+              <p class="pill">高評価ポイント</p>
+              <ul class="metric-list">
+                <li>バリデーション/ページング/監査ログを一括で実装。</li>
+                <li>MODERNIZED_REST_API_INVENTORY も更新し記録整備。</li>
+              </ul>
+              <p class="pill">注意点</p>
+              <ul class="metric-list">
+                <li>address未該当時に 404 を返さず、空レスとの区別ができない。</li>
+                <li>payerRatio の既定値が 0.7 と高めで仕様妥当性に疑義。</li>
+                <li>単体テスト未追加・未実施。</li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">コミットログ</td>
+            <td>
+              <pre>36498a7e Implement ORCA-06 hokenja/address master endpoints
+ .../PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md          |   1 +
+ .../PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md       |   1 +
+ docs/server-modernization/phase2/INDEX.md          |   1 +
+ .../20251219T144408Z-orca-06-hokenja-address.md    |  24 ++
+ docs/web-client/README.md                          |   7 +-
+ docs/web-client/planning/phase2/DOC_STATUS.md      |   7 +-
+ .../dolphin/rest/dto/orca/OrcaAddressEntry.java    |  89 +++++
+ .../dolphin/rest/dto/orca/OrcaInsurerEntry.java    | 116 ++++++
+ .../java/open/orca/rest/OrcaMasterResource.java    | 419 ++++++++++++++++++++ -
+ .../open/orca/rest/OrcaMasterResourceTest.java     |  74 +++-
+ ..._06_hokenja_address実装.md                      |  32 ++
+ 11 files changed, 749 insertions(+), 22 deletions(-)</pre>
+            </td>
+            <td>
+              <pre>15021aa9 feat: implement ORCA-06 hokenja/address master
+ .../PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md          |   1 +
+ .../PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md       |   1 +
+ .../MODERNIZED_REST_API_INVENTORY.md               |   4 +-
+ docs/server-modernization/phase2/INDEX.md          |   1 +
+ .../20251219T235500Z-orca-06-hokenja-address.md    |  27 ++
+ docs/web-client/README.md                          |   7 +-
+ docs/web-client/planning/phase2/DOC_STATUS.md      |   5 +-
+ .../dolphin/rest/dto/orca/OrcaAddressEntry.java    |  89 ++++++
+ .../dolphin/rest/dto/orca/OrcaInsurerEntry.java    | 116 ++++++
+ .../java/open/orca/rest/OrcaMasterResource.java    | 344 ++++++++++++++++++++ -
+ ..._06_hokenja_address実装.md                      |  35 ++
+ 11 files changed, 621 insertions(+), 9 deletions(-)</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">差分サマリ</td>
+            <td>
+              <pre>11 files changed, 749 insertions(+), 22 deletions(-)
+主な差分: OrcaMasterResource.java, OrcaMasterResourceTest.java, OrcaInsurerEntry.java, OrcaAddressEntry.java</pre>
+            </td>
+            <td>
+              <pre>11 files changed, 621 insertions(+), 9 deletions(-)
+主な差分: OrcaMasterResource.java, OrcaInsurerEntry.java, OrcaAddressEntry.java, MODERNIZED_REST_API_INVENTORY.md</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">成果物リンク</td>
+            <td>
+              <div class="note">別 worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101276-5b06c9</div>
+              <ul class="metric-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101276-5b06c9/server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">OrcaMasterResource.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101276-5b06c9/server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java">OrcaMasterResourceTest.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101276-5b06c9/docs/server-modernization/phase2/operations/logs/20251219T144408Z-orca-06-hokenja-address.md">実装ログ</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="note">別 worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101476-4c9eab</div>
+              <ul class="metric-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101476-4c9eab/server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">OrcaMasterResource.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101476-4c9eab/docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md">MODERNIZED_REST_API_INVENTORY.md</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766155101476-4c9eab/docs/server-modernization/phase2/operations/logs/20251219T235500Z-orca-06-hokenja-address.md">実装ログ</a></li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      const toPoint = (cx, cy, r, angleDeg) => {
+        const rad = (Math.PI / 180) * angleDeg;
+        return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+      };
+      charts.forEach((svg) => {
+        const scores = JSON.parse(svg.dataset.scores || '[]');
+        const cx = 110;
+        const cy = 110;
+        const maxR = 70;
+        const angles = [-90, -30, 30, 90, 150, 210];
+        const outerPoints = angles.map((angle) => toPoint(cx, cy, maxR, angle));
+        const scorePoints = angles.map((angle, i) => toPoint(cx, cy, maxR * (scores[i] / 100), angle));
+        const axis = angles.map((angle) => toPoint(cx, cy, maxR, angle));
+
+        const ns = 'http://www.w3.org/2000/svg';
+        const outer = document.createElementNS(ns, 'polygon');
+        outer.setAttribute('points', outerPoints.map((p) => p.join(',')).join(' '));
+        outer.setAttribute('fill', '#f2f6f7');
+        outer.setAttribute('stroke', '#9eb1b7');
+        outer.setAttribute('stroke-width', '1.2');
+        svg.appendChild(outer);
+
+        axis.forEach((p) => {
+          const line = document.createElementNS(ns, 'line');
+          line.setAttribute('x1', cx);
+          line.setAttribute('y1', cy);
+          line.setAttribute('x2', p[0]);
+          line.setAttribute('y2', p[1]);
+          line.setAttribute('stroke', '#c4d3d7');
+          line.setAttribute('stroke-width', '1');
+          svg.appendChild(line);
+        });
+
+        const scorePoly = document.createElementNS(ns, 'polygon');
+        scorePoly.setAttribute('points', scorePoints.map((p) => p.join(',')).join(' '));
+        scorePoly.setAttribute('fill', 'rgba(31, 92, 120, 0.25)');
+        scorePoly.setAttribute('stroke', '#1f5c78');
+        scorePoly.setAttribute('stroke-width', '1.5');
+        svg.appendChild(scorePoly);
+
+        const centerDot = document.createElementNS(ns, 'circle');
+        centerDot.setAttribute('cx', cx);
+        centerDot.setAttribute('cy', cy);
+        centerDot.setAttribute('r', '2.5');
+        centerDot.setAttribute('fill', '#1f5c78');
+        svg.appendChild(centerDot);
+      });
+    </script>
+  </body>
+</html>
