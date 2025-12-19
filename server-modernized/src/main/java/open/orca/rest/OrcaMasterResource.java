@@ -30,6 +30,7 @@ import open.dolphin.rest.dto.orca.OrcaMasterListResponse;
 import open.dolphin.rest.dto.orca.OrcaMasterMeta;
 import open.dolphin.rest.dto.orca.OrcaAddressEntry;
 import open.dolphin.rest.dto.orca.OrcaInsurerEntry;
+import open.dolphin.rest.dto.orca.OrcaTensuEntry;
 import open.dolphin.rest.AbstractResource;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.security.audit.AuditEventPayload;
@@ -52,6 +53,9 @@ public class OrcaMasterResource extends AbstractResource {
     private static final Pattern SRYCD_PATTERN = Pattern.compile("^\\d{9}$");
     private static final Pattern ZIP_PATTERN = Pattern.compile("^\\d{7}$");
     private static final Pattern PREF_PATTERN = Pattern.compile("^(0[1-9]|[1-3][0-9]|4[0-7])$");
+    private static final Pattern ETENSU_CATEGORY_PATTERN = Pattern.compile("^\\d{1,2}$");
+    private static final Pattern TENSU_VERSION_PATTERN = Pattern.compile("^\\d{6}$");
+    private static final Pattern AS_OF_PATTERN = Pattern.compile("^\\d{8}$");
     private static final java.nio.file.Path SNAPSHOT_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "master-snapshots");
     private static final java.nio.file.Path MSW_FIXTURE_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "msw-fixture");
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
@@ -421,6 +425,68 @@ public class OrcaMasterResource extends AbstractResource {
         return getKensaSort(userName, password, uriInfo);
     }
 
+    @GET
+    @Path("/orca/tensu/etensu")
+    public Response getEtensu(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        if (!isAuthorized(userName, password)) {
+            return unauthorized();
+        }
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        final String keyword = getFirstValue(params, "keyword");
+        final String category = getFirstValue(params, "category");
+        if (category != null && !ETENSU_CATEGORY_PATTERN.matcher(category).matches()) {
+            return validationError("TENSU_CATEGORY_INVALID", "category must be numeric 1-2 digits");
+        }
+        final String asOf = getFirstValue(params, "asOf");
+        if (asOf != null && !AS_OF_PATTERN.matcher(asOf).matches()) {
+            return validationError("TENSU_ASOF_INVALID", "asOf must be YYYYMMDD");
+        }
+        final String tensuVersion = getFirstValue(params, "tensuVersion");
+        if (tensuVersion != null && !TENSU_VERSION_PATTERN.matcher(tensuVersion).matches()) {
+            return validationError("TENSU_VERSION_INVALID", "tensuVersion must be YYYYMM");
+        }
+        final LoadedFixture<FixtureEtensuEntry> fixture = loadEntries(
+                FixtureEtensuEntry.class,
+                "etensu/orca_master_etensu_response.json",
+                "orca-master-etensu.json"
+        );
+        if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
+            Response failure = serviceUnavailable("ETENSU_UNAVAILABLE", "etensu master unavailable");
+            recordMasterAudit(request, "/orca/tensu/etensu", "orca08-etensu", 503, fixture, true, 0,
+                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+            return failure;
+        }
+        final String normalizedVersion = normalizeTensuVersion(tensuVersion);
+        final List<FixtureEtensuEntry> filtered = fixture.entries.stream()
+                .filter(entry -> matchesKeyword(keyword, entry.name))
+                .filter(entry -> matchesEtensuCategory(category, entry))
+                .filter(entry -> isEffective(asOf, entry.validFrom, entry.validTo, entry.startDate, entry.endDate))
+                .filter(entry -> matchesTensuVersion(normalizedVersion, entry))
+                .collect(Collectors.toList());
+        if (filtered.isEmpty()) {
+            Response notFound = notFound("TENSU_NOT_FOUND", "no etensu entries matched", request);
+            recordMasterAudit(request, "/orca/tensu/etensu", "orca08-etensu", 404, fixture, true, 0,
+                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+            return notFound;
+        }
+        final int totalCount = filtered.size();
+        final List<FixtureEtensuEntry> paged = paginateList(filtered, params);
+        final List<OrcaTensuEntry> items = paged.stream()
+                .map(entry -> toEtensuEntry(entry, fixture))
+                .collect(Collectors.toList());
+        OrcaMasterListResponse<OrcaTensuEntry> response = new OrcaMasterListResponse<>();
+        response.setTotalCount(totalCount);
+        response.setItems(items);
+        recordMasterAudit(request, "/orca/tensu/etensu", "orca08-etensu", 200, fixture, false, totalCount,
+                buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+        return Response.ok(response).build();
+    }
+
     private Response unauthorized() {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode("ORCA_MASTER_UNAUTHORIZED");
@@ -441,18 +507,37 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     private <T> LoadedFixture<T> loadEntries(Class<T> entryType, String snapshotRelativePath, String fixtureFileName) {
-        FixtureLoadResult<T> snapshot = tryReadResponse(entryType, SNAPSHOT_ROOT.resolve(snapshotRelativePath));
+        FixtureLoadResult<T> snapshot = tryReadResponse(entryType, snapshotRoot().resolve(snapshotRelativePath));
         if (snapshot.response != null) {
             return new LoadedFixture<>(safeList(snapshot.response.list), snapshot.response.snapshotVersion,
                     snapshot.response.version, DataOrigin.SNAPSHOT, snapshot.loadFailed);
         }
-        FixtureLoadResult<T> fixture = tryReadResponse(entryType, MSW_FIXTURE_ROOT.resolve(fixtureFileName));
+        FixtureLoadResult<T> fixture = tryReadResponse(entryType, fixtureRoot().resolve(fixtureFileName));
         if (fixture.response != null) {
             return new LoadedFixture<>(safeList(fixture.response.list), fixture.response.snapshotVersion,
                     fixture.response.version, DataOrigin.MSW_FIXTURE, fixture.loadFailed);
         }
         return new LoadedFixture<>(Collections.emptyList(), null, null, DataOrigin.FALLBACK,
                 snapshot.loadFailed || fixture.loadFailed);
+    }
+
+    private java.nio.file.Path snapshotRoot() {
+        return resolveRoot("ORCA_MASTER_SNAPSHOT_ROOT", SNAPSHOT_ROOT);
+    }
+
+    private java.nio.file.Path fixtureRoot() {
+        return resolveRoot("ORCA_MASTER_FIXTURE_ROOT", MSW_FIXTURE_ROOT);
+    }
+
+    private java.nio.file.Path resolveRoot(String key, java.nio.file.Path fallback) {
+        String override = System.getProperty(key);
+        if (override == null || override.isBlank()) {
+            override = System.getenv(key);
+        }
+        if (override == null || override.isBlank()) {
+            return fallback;
+        }
+        return Paths.get(override);
     }
 
     private <T> FixtureLoadResult<T> tryReadResponse(Class<T> entryType, java.nio.file.Path file) {
@@ -653,6 +738,24 @@ public class OrcaMasterResource extends AbstractResource {
         return response;
     }
 
+    private OrcaTensuEntry toEtensuEntry(FixtureEtensuEntry entry, LoadedFixture<?> fixture) {
+        OrcaTensuEntry response = new OrcaTensuEntry();
+        response.setTensuCode(firstNonBlank(entry.tensuCode, entry.medicalFeeCode));
+        response.setName(entry.name);
+        response.setKubun(firstNonBlank(entry.kubun, entry.category, entry.etensuCategory));
+        response.setTanka(entry.points);
+        response.setUnit(entry.unit);
+        response.setCategory(firstNonBlank(entry.category, entry.etensuCategory));
+        response.setStartDate(firstNonBlank(entry.startDate, entry.validFrom, DEFAULT_VALID_FROM));
+        response.setEndDate(firstNonBlank(entry.endDate, entry.validTo, DEFAULT_VALID_TO));
+        response.setTensuVersion(resolveTensuVersion(entry));
+        boolean missing = Boolean.TRUE.equals(entry.missingMaster);
+        boolean fallback = Boolean.TRUE.equals(entry.fallbackUsed) || missing || fixture.origin == DataOrigin.FALLBACK;
+        boolean cache = Boolean.TRUE.equals(entry.cacheHit);
+        response.setMeta(buildMeta(fixture.origin, fixture.snapshotVersion, fixture.version, cache, missing, fallback, null));
+        return response;
+    }
+
     private OrcaDrugMasterEntry buildDrugEntry(
             String code,
             String name,
@@ -775,6 +878,31 @@ public class OrcaMasterResource extends AbstractResource {
         return false;
     }
 
+    private boolean matchesEtensuCategory(String category, FixtureEtensuEntry entry) {
+        if (category == null || category.isBlank()) {
+            return true;
+        }
+        String entryCategory = firstNonBlank(entry.category, entry.etensuCategory, entry.kubun);
+        if (entryCategory == null) {
+            return false;
+        }
+        if (category.equals(entryCategory)) {
+            return true;
+        }
+        return category.length() > entryCategory.length() && category.startsWith(entryCategory);
+    }
+
+    private boolean matchesTensuVersion(String normalized, FixtureEtensuEntry entry) {
+        if (normalized == null || normalized.isBlank()) {
+            return true;
+        }
+        String entryVersion = normalizeTensuVersion(resolveTensuVersion(entry));
+        if (entryVersion == null) {
+            return false;
+        }
+        return normalized.equals(entryVersion);
+    }
+
     private boolean isAuthorized(String userName, String password) {
         String expectedUser = firstNonBlank(
                 System.getenv("ORCA_MASTER_BASIC_USER"),
@@ -799,6 +927,24 @@ public class OrcaMasterResource extends AbstractResource {
             }
         }
         return null;
+    }
+
+    private String normalizeTensuVersion(String version) {
+        if (version == null || version.isBlank()) {
+            return null;
+        }
+        if (TENSU_VERSION_PATTERN.matcher(version).matches()) {
+            return version;
+        }
+        String digits = version.replaceAll("\\D", "");
+        if (digits.length() >= 6) {
+            return digits.substring(0, 6);
+        }
+        return version;
+    }
+
+    private String resolveTensuVersion(FixtureEtensuEntry entry) {
+        return firstNonBlank(entry.tensuVersion, entry.version, entry.snapshotVersion);
     }
 
     private Response notFound(String code, String message, HttpServletRequest request) {
@@ -952,6 +1098,31 @@ public class OrcaMasterResource extends AbstractResource {
         return details;
     }
 
+    private java.util.Map<String, Object> buildTensuQueryDetails(String keyword, String category, String asOf,
+            String tensuVersion, MultivaluedMap<String, String> params) {
+        java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
+        if (keyword != null && !keyword.isBlank()) {
+            details.put("keywordPresent", true);
+            details.put("keywordLength", keyword.length());
+        } else {
+            details.put("keywordPresent", false);
+        }
+        if (category != null) {
+            details.put("category", category);
+        }
+        if (asOf != null) {
+            details.put("asOf", asOf);
+        }
+        if (tensuVersion != null) {
+            details.put("tensuVersion", tensuVersion);
+        }
+        if (params != null) {
+            details.put("page", parsePositiveInt(params, "page", 1));
+            details.put("size", parsePositiveInt(params, "size", 100));
+        }
+        return details;
+    }
+
     private static final class FixtureListResponse<T> {
         public List<T> list;
         public Integer totalCount;
@@ -1087,6 +1258,27 @@ public class OrcaMasterResource extends AbstractResource {
         public String address;
         public String validFrom;
         public String validTo;
+        public Boolean cacheHit;
+        public Boolean missingMaster;
+        public Boolean fallbackUsed;
+    }
+
+    private static final class FixtureEtensuEntry {
+        public String etensuCategory;
+        public String category;
+        public String medicalFeeCode;
+        public String tensuCode;
+        public String name;
+        public Double points;
+        public String unit;
+        public String startDate;
+        public String endDate;
+        public String validFrom;
+        public String validTo;
+        public String tensuVersion;
+        public String version;
+        public String snapshotVersion;
+        public String kubun;
         public Boolean cacheHit;
         public Boolean missingMaster;
         public Boolean fallbackUsed;
