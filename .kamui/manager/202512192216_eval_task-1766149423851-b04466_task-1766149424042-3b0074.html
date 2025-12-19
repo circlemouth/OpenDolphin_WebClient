@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - ORCA-02 stamp date</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 12px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: calc(100% / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      .section-title {
+        margin: 16px 0 8px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .artifact-links a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - ORCA-02 /orca/stamp 日付パラメータ追加</h1>
+        <p class="monitor-description">対象: ORCA-02 `/orca/stamp/{setCd,name}` に `date` パラメータを追加し、有効期間フィルタを指定可能にする。ブランチごとの実装とドキュメント整合を比較評価。</p>
+        <p class="monitor-description">評価基準: 機能合理性 / 緻密性。補助指標として影響範囲・ドキュメント・テスト・運用配慮を採点。</p>
+      </header>
+
+      <div class="score-banner">
+        <div class="score-card">
+          <h2>codex / task-1766149423851-b04466 合計</h2>
+          <div class="score-value">🏆 440 / 600 点</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766149424042-3b0074 合計</h2>
+          <div class="score-value">🥉 295 / 600 点</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1766149423851-b04466</th>
+            <th>Agent task-1766149424042-3b0074</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">QueryParam 追加で `date` を優先し、既存 3 要素指定を後方互換で維持。</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="220" height="200" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100,28 155.4,68 158.9,134 100,132 48,130 51.5,72" fill="rgba(31,42,48,0.15)" stroke="#1f2a30" stroke-width="1.5" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 90点</li>
+                  <li>緻密性 80点</li>
+                  <li>ドキュメント整合 85点</li>
+                  <li>テスト/検証 40点</li>
+                  <li>影響範囲管理 75点</li>
+                  <li>運用配慮 70点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>機能: getStamp に date クエリを追加し、visitDateParam を上書きして既存ロジックに接続。
+緻密性: 空文字チェックと後方互換を維持する一方でバリデーション不足。
+ドキュメント: DOC_STATUS/README/ログ/インベントリ(YAML)を更新。
+テスト: 実行なし。回帰検証が未実施。
+影響範囲: 変更点は OrcaResource のみで限定的。
+運用配慮: RUN_ID と証跡ログを整備。</pre>
+              <div class="section-title">主要な確認事項</div>
+              <pre>✓ /orca/stamp/{param} に date クエリを追加。
+✓ 既存の param 第3要素指定を維持。
+△ MODERNIZED_REST_API_INVENTORY.md / api_inventory.yaml への反映は未確認。</pre>
+              <div class="section-title">成果物リンク</div>
+              <div class="artifact-links">
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766149423851-b04466/server-modernized/src/main/java/open/orca/rest/OrcaResource.java">server-modernized/src/main/java/open/orca/rest/OrcaResource.java</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766149423851-b04466/docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md">docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>efaef9a3 Add date query param to ORCA stamp endpoint</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>9 files changed, 75 insertions(+), 19 deletions(-)
+- OrcaResource: @QueryParam("date") 追加と visitDateParam 上書き
+- server-api-inventory.yaml: date query 追加
+- DOC_STATUS / README / INDEX / ログ更新</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">ドキュメント更新中心。実装差分はコメントのみで API 仕様と不整合。</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="220" height="200" viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100,68 131.2,82 148.5,128 100,116 58.4,124 58.4,76" fill="rgba(31,42,48,0.12)" stroke="#1f2a30" stroke-width="1.5" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 40点</li>
+                  <li>緻密性 45点</li>
+                  <li>ドキュメント整合 70点</li>
+                  <li>テスト/検証 20点</li>
+                  <li>影響範囲管理 60点</li>
+                  <li>運用配慮 60点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>機能: 実装差分が Javadoc 更新のみで date パラメータ追加が未実装。
+緻密性: API インベントリ/ギャップ追記はあるが実装と乖離。
+ドキュメント: 複数ドキュメントを整備した点は評価。
+テスト: 実行なし。
+影響範囲: 変更は主にドキュメントで安全。
+運用配慮: RUN_ID と証跡ログはあるが実装不在。</pre>
+              <div class="section-title">主要な確認事項</div>
+              <pre>✗ OrcaResource の API シグネチャに date クエリ追加なし。
+✗ 実際の有効期間判定の変更が見当たらない。
+△ gap tracker で「実装済み」更新済だが実装と不整合。</pre>
+              <div class="section-title">成果物リンク</div>
+              <div class="artifact-links">
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766149424042-3b0074/docs/server-modernization/server-api-inventory.md">docs/server-modernization/server-api-inventory.md</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766149424042-3b0074/src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md">src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>2dc2201f ORCA-02: add date param docs and inventory</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>12 files changed, 83 insertions(+), 32 deletions(-)
+- OrcaResource: Javadoc 更新のみ
+- server-api-inventory.(md/yaml) 更新
+- DOC_STATUS / README / gap tracker / ログ更新</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
