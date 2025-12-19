@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-18 / RUN_ID=`20251218T213011Z`）
+### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T063753Z`）
+- 実装状況ドキュメント棚卸し（RUN_ID=`20251219T063753Z`）。`JAKARTA_EE10_GAP_LIST.md` / `MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` / `ORCA_API_STATUS.md` を突合し、未実装・部分実装・証跡未取得の一覧をタスク化。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md`。
 - 54 リリース前チェックリストと DOC_STATUS 更新（RUN_ID=`20251218T213011Z`）。DoD 達成サマリと未完了項目（Stage/Preview 実 API 再検証、性能実測、予約変更は Reception 委譲、APM 未接続）を整理し、DOC_STATUS に RUN_ID を追記。成果物: `src/charts_production_outpatient/quality/54_リリース前チェックリストとDOC_STATUS更新.md`。
 - 52 監査ログ/テレメトリ証跡化（RUN_ID=`20251218T183545Z`）。telemetry (`recordOutpatientFunnel`) と auditEvent が同一 `runId/traceId` で追跡できることを vitest で確認。証跡: `docs/server-modernization/phase2/operations/logs/20251218T183545Z-charts-audit-telemetry.md` / 計画: `docs/web-client/planning/phase2/logs/20251218T183545Z-charts-audit-telemetry.md` / 成果物: `src/charts_production_outpatient/quality/52_監査ログ_テレメトリ_証跡化.md` / テスト: `web-client/src/features/charts/__tests__/auditTelemetryRunId.test.ts`。
 - 53 障害注入（タイムアウト/500/スキーマ不一致/キュー滞留）（RUN_ID=`20251218T171651Z`）。MSW の `x-msw-fault`/`x-msw-delay-ms` で Charts の外来 API に故障を注入し、解除後に再取得で復帰できることを確認可能化。証跡: `docs/web-client/planning/phase2/logs/20251218T171651Z-charts-fault-injection.md` / 成果物: `src/charts_production_outpatient/quality/53_障害注入_タイムアウト_スキーマ不一致.md` / 実装: `web-client/src/mocks/handlers/outpatient.ts`, `web-client/src/mocks/handlers/orcaQueue.ts`, `web-client/src/libs/http/header-flags.ts`, `web-client/src/features/outpatient/OutpatientMockPage.tsx` / E2E: `tests/e2e/charts-fault-injection.msw.spec.ts`。
@@ -37,6 +38,7 @@
 - Charts 外来の fetch レイヤー統一、エラー/リトライ規約、セッション/権限ガード、API 契約テーブルなど 2025-12-13 までの更新内容は据え置き（次の UI 実装タスク開始待ち）。
 
 ## 現在のドキュメント（Active）
+- `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` — server-modernized 実装状況棚卸し（RUN_ID=`20251219T063753Z`）。
 - `src/modernization/module_json/キックオフ_RUN_ID採番.md` — module_json モダナイズ計画ガント起点（RUN_ID=`20251214T022944Z`）。
 - `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` — module_json: 型情報フォールバック（RUN_ID=`20251214T132418Z`）。
 - `src/modernization/module_json/UI保存復元確認.md` — module_json: UI 経路の addDocument 保存/復元（RUN_ID=`20251214T123042Z`）。

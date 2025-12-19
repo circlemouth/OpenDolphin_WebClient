@@ -1,5 +1,6 @@
 # DOC_STATUS（RUN_ID=`20251214T022944Z`）
 
+- 本更新 RUN_ID=`20251219T063753Z`（server-modernized 実装状況棚卸し: JAKARTA/GapTracker/ORCA_API_STATUS を突合し、未実装・部分実装・証跡未取得をタスク化。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md`。）
 - 本更新 RUN_ID=`20251218T213011Z`（54 リリース前チェックリストと DOC_STATUS 更新: DoD に対する未完了/既知制限/回避策を整理し、Stage/Preview 実 API 再検証とパフォーマンス実測の未了を明示。証跡: `src/charts_production_outpatient/quality/54_リリース前チェックリストとDOC_STATUS更新.md`。備考: 本行の追記と README 同期予定。）
 - 本更新 RUN_ID=`20251218T183545Z`（52 監査ログ/テレメトリ証跡化: telemetry と auditEvent を同一 runId/traceId で追跡できることを vitest で確認。証跡: `docs/server-modernization/phase2/operations/logs/20251218T183545Z-charts-audit-telemetry.md`。備考: `docs/web-client/planning/phase2/logs/20251218T183545Z-charts-audit-telemetry.md` / 成果物: `src/charts_production_outpatient/quality/52_監査ログ_テレメトリ_証跡化.md` / テスト: `web-client/src/features/charts/__tests__/auditTelemetryRunId.test.ts`。）
 - 本更新 RUN_ID=`20251218T180331Z`（50 Playwright外来カルテ主要シナリオ: Reception→Charts→送信→会計を MSW ON/OFF 両対応で自動化。tone/transition/dataSource の carry-over と送信/会計ガードを検証し、HAR/スクリーンショットを RUN_ID 配下に保存する運用を定義。証跡: `docs/web-client/planning/phase2/logs/20251218T180331Z-charts-outpatient-playwright-main.md`。備考: `tests/e2e/charts-outpatient-mainflow.spec.ts` / 設計: `src/charts_production_outpatient/quality/50_Playwright外来カルテ主要シナリオ.md`。）
@@ -41,6 +42,7 @@
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / RUN_ID |
 | --- | --- | --- | --- | --- |
 | `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。module_json JSON 化手順への導線を追加し、参照チェーンを更新。 |
+| `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` | server-modernized 実装状況棚卸し | Active | 2025-12-19 | RUN_ID=`20251219T063753Z`。JAKARTA/GapTracker/ORCA_API_STATUS を突合し、未実装・部分実装・証跡未取得を整理。 |
 | `src/docs/modernization/設計と手順書アップデート.md` | module_json 設計/手順書更新タスク | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。server-modernized README/operations への JSON 化手順反映と証跡整理。証跡 `planning/phase2/logs/20251214T082236Z-module-json-docs.md`。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
 | `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` | module_json: 型情報フォールバック | Active | 2025-12-14 | RUN_ID=`20251214T132418Z`。`@class` 無し beanJson を WARN なしで decode するフォールバック方針。証跡 `planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`。 |
