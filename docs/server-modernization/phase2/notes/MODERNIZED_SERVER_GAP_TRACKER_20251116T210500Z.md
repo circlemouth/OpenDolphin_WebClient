@@ -9,6 +9,9 @@
   - Trace/Audit: `docs/server-modernization/phase2/operations/logs/20251116T151200Z-trace-audit-review.md`  
   - 外部 API ギャップ: `docs/server-modernization/phase2/notes/external-api-gap-20251116T111329Z.md`
 
+## 0.5 追記（RUN_ID=20251219T133053Z）
+- ORCA-03 `/orca/tensu/shinku` のレスポンス列拡充（`taniname` / `ykzkbn` / `yakkakjncd`）を確認し、対応済みとして更新。証跡: `docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md`。
+
 ## 1. カルテ/添付系ギャップ
 | ID | 課題 | 必要対応 | 根拠 |
 | --- | --- | --- | --- |
@@ -22,7 +25,7 @@
 | --- | --- | --- | --- |
 | ORCA-01 | `/orca/inputset` の WHERE 句に括弧がなく S% の hospnum フィルタが欠落 | SQL を `(inputcd like 'P%' or inputcd like 'S%')` で括り、両方に `hospnum=?` を適用。 | `…193200Z-orca-stamp-tensu.md` |
 | ORCA-02 | `/orca/stamp/{setCd,name}` が診療日指定不可 | パラメータに `date` を追加し、`tbl_inputset` の有効期間チェックを呼び出し元で指定できるようにする。 | 同上 |
-| ORCA-03 | `/orca/tensu/shinku` が必要列を返却しない | `TensuMaster` の `taniname`, `ykzkbn`, `yakkakjncd` などをレスポンスに含め、`/tensu/name` との整合を取る。 | 同上 |
+| ORCA-03 | `/orca/tensu/shinku` が必要列を返却しない | **対応済み**: `taniname` / `ykzkbn` / `yakkakjncd` を含む列構成で `/tensu/name` と整合。 | `…193200Z-orca-stamp-tensu.md`, `docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md` |
 | ORCA-05 | 薬剤・特定器材・検査分類マスタ（例: `TBL_GENERIC_CLASS`, `TBL_GENERIC_PRICE`, `TBL_MATERIAL_*`, `TBL_KENSASORT`）を返す REST が不存在 | 薬効/用法/材料/検査分類コードを返却する新規 REST を追加し、DTO/Schema に分類・最低薬価・用法コードを含める。ステータス=Open、オーナー=Worker-B、優先度=P1、ETA=2025-12-06（RUN_ID=`20251124T073245Z` で設計メモ更新）。性能/監査計測ドラフト（RUN_ID=`20251124T111500Z`）の P99・アラート・必須ログ項目を実装時に準拠させる。ベンチテンプレ（k6/autocannon）を `artifacts/api-stability/20251124T111500Z/benchmarks/templates/` に配置済（RUN_ID=`20251124T120000Z`）。 | `docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md`; `operations/ORCA_CONNECTIVITY_VALIDATION.md` §7 |
 | ORCA-06 | 保険者・住所マスタ（`TBL_HKNJAINF`, `TBL_ADRS` 等）を REST で提供していない | 保険者コード・住所コード体系を返却する API を新設し、資格確認/住所補完の UI で利用できるようにする。ステータス=Open、オーナー=Worker-B、優先度=P1、ETA=2025-12-06（RUN_ID=`20251124T073245Z` 設計更新）。性能/監査計測ドラフト（RUN_ID=`20251124T111500Z`）の住所フィルタ負荷・監査ログ必須項目を実装スコープに含める。ベンチテンプレ（k6/autocannon）を `artifacts/api-stability/20251124T111500Z/benchmarks/templates/` に配置済（RUN_ID=`20251124T120000Z`）。 | 同上; `operations/ORCA_CONNECTIVITY_VALIDATION.md` §7 |
 | ORCA-07 | ORCA DB 接続が `custom.properties` 直指定で DataSource/Secrets 化されていない | DataSource/Secrets 設計ドラフト（RUN_ID=`20251124T080000Z`, 親=`20251124T000000Z`）: <br>- JNDI=`java:/datasources/OrcaDb`（既存 `ORCADS` 置換互換）、接続文字列/資格情報は Vault or `.env`（例: `ORCA_DB_URL`/`ORCA_DB_USER`/`ORCA_DB_PASSWORD`）で注入し `custom.properties` はフォールバックのみ。<br>- プール推奨: min=2, max=20, idle-timeout=300s, validation=`SELECT 1`、`setReadOnly(true)` を維持。<br>- 資格情報ローテ: Vault バージョンタグ＋secretRef を configmap/env に供給→Datasource reload→旧資格情報 revoke→監査ログへ version/hash を記録。<br>- 監査項目: lookup JNDI 名、secretRef/version、接続成功/失敗（例外種類・DB ホスト非表示）、fallback 発動時の経路。<br>- フェールセーフ: DS lookup 失敗時は read-only DriverManager を最後の手段に限定し、連続失敗閾値で CircuitBreaker→警告レスポンスへ切替。ステータス=Open、オーナー=Worker-B、ETA=2025-12-06 | 証跡: `docs/server-modernization/phase2/operations/logs/20251123T135709Z-webclient-master-bridge.md#run_id-20251124t080000z-orca-07-08-draft` |
