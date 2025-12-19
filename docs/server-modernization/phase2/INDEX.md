@@ -17,6 +17,7 @@ Web クライアント開発と並行して進めるモダナイズ作業の資�
 RUN_ID=`20251201T053420Z` で参照チェーン棚卸しを再確認済み。証跡: `operations/logs/20251201T053420Z-run-id-chain.md`（DOC_STATUS/README/manager checklist と同期）。 
 RUN_ID=`20251219T062549Z` で参照チェーンを再確認し、RUN_ID をハブ文書で統一。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。
 RUN_ID=`20251219T063136Z` で DOC_STATUS 棚卸しとハブ同期を実施。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。
+RUN_ID=`20251219T113948Z` で ORCA-01 `/orca/inputset` SQL 修正とテスト追加を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。
 
 ## 基礎資料（Foundation）
 - [`foundation/JAKARTA_EE10_GAP_LIST.md`](foundation/JAKARTA_EE10_GAP_LIST.md): Jakarta EE 10 への移行ギャップ一覧。
