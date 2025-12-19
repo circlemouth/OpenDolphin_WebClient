@@ -1,10 +1,10 @@
-# Server Modernization Phase 2 ナビゲーション
+# Server Modernization Phase 2 ナビゲーション（Legacy）
 
-> **Legacy/Archive（参照のみ・新規追加禁止, RUN_ID=20251203T203000Z）** Phase2 資料はロールオフ済み。`docs/server-modernization/phase2/PHASE2_DOCS_ROLLOFF.md` を起点に参照し、現行作業は Web クライアント側の README/DOC_STATUS へ誘導する。証跡ログ: `operations/logs/20251203T203000Z-phase2-legacy-mark.md`
+> **Legacy/Archive（参照のみ・新規追加禁止, RUN_ID=20251203T203000Z）** Phase2 資料はロールオフ済み。`docs/server-modernization/phase2/PHASE2_DOCS_ROLLOFF.md` を起点に参照すること。現行の開発状況は `docs/DEVELOPMENT_STATUS.md` を参照。証跡ログ: `operations/logs/20251203T203000Z-phase2-legacy-mark.md`
 
-Web クライアント開発と並行して進めるモダナイズ作業の資料をフェーズ別に集約。Phase2 以降の情報はここを起点にたどり、更新時は `docs/web-client/planning/phase2/DOC_STATUS.md` にステータスを追記する。
+本 INDEX は Phase2 の履歴参照用。新規の作業・更新は行わない。
 
-## Phase2 ガバナンス必読チェーン
+## Phase2 ガバナンス必読チェーン（Legacy）
 
 > **Phase2 ガバナンス必読チェーン / 接続・RUN 運用共通ルール**  
 > 1. `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各領域チェックリストの順で参照・更新し、同一 RUN_ID を連携する。  
