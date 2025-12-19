@@ -2303,8 +2303,8 @@ resources:
         path: "/orca/stamp/{param}"
         path_template: "/orca/stamp/{param}"
         requires_body: false
-        signature: "public ModuleListConverter getStamp(@PathParam(\"param\") String param)"
-        notes: ""
+        signature: "public ModuleListConverter getStamp(@PathParam(\"param\") String param, @QueryParam(\"date\") String date)"
+        notes: "param=setCd,stampName[,date]. dateクエリで診療日指定が可能（dateクエリが優先）。"
       - id: "orcaresource_10"
         resource: "OrcaResource"
         name: "getTensuMasterByCode"
