@@ -8,23 +8,10 @@ import { generateRunId, updateObservabilityMeta } from './libs/observability/obs
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
-const toHex = (buffer: ArrayBuffer) => {
-  const bytes = new Uint8Array(buffer);
-  return Array.from(bytes)
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-};
 
-const hashPasswordMd5 = async (password: string) => {
-  try {
-    if (globalThis.crypto?.subtle) {
-      const digest = await globalThis.crypto.subtle.digest('MD5', new TextEncoder().encode(password));
-      return toHex(digest);
-    }
-  } catch (error) {
-    console.warn('MD5 ハッシュ化に失敗しました。CryptoJS を利用します。', error);
-  }
 
+const hashPasswordMd5 = (password: string): string => {
+  // Web Crypto API (SubtleCrypto) は MD5 をサポートしていないため、CryptoJS を使用
   return CryptoJS.MD5(password).toString(CryptoJS.enc.Hex);
 };
 
@@ -148,9 +135,13 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       setFeedback('ログインに成功しました。');
       setStatus('success');
       try {
-        localStorage.setItem('devFacilityId', result.facilityId);
-        localStorage.setItem('devUserId', result.userId);
-        localStorage.setItem('devPasswordMd5', await hashPasswordMd5(normalizedValues.password));
+        // サーバーからの result.userId は "facilityId:userId" 形式で返されるが、
+        // httpClient.ts は devFacilityId と devUserId を結合するため、
+        // ユーザー入力値 (normalizedValues) を保存しないと二重結合になる
+        localStorage.setItem('devFacilityId', normalizedValues.facilityId);
+        localStorage.setItem('devUserId', normalizedValues.userId);
+        localStorage.setItem('devPasswordMd5', hashPasswordMd5(normalizedValues.password));
+        localStorage.setItem('devClientUuid', result.clientUuid);
       } catch (storageError) {
         console.warn('認証情報の保存に失敗しましたが、ログイン処理は継続します。', storageError);
       }
@@ -252,7 +243,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
 };
 
 const performLogin = async (payload: LoginFormValues, runId: string): Promise<LoginResult> => {
-  const passwordMd5 = await hashPasswordMd5(payload.password);
+  const passwordMd5 = hashPasswordMd5(payload.password);
   const clientUuid = createClientUuid(payload.clientUuid);
 
   const headers: HeadersInit = {

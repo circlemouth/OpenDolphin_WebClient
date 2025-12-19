@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート ORCA-05 master generic</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #3a4b53;
+        font-weight: 600;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #5b6b72;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 170px;
+      }
+      col.agent-column {
+        width: calc((100% - 170px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .agent-section h4 {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .hex-chart {
+        width: 160px;
+        height: 160px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA-05 master generic 系列実装</h1>
+        <p class="monitor-description">
+          対象: /orca/master/generic-class / generic-price / youhou / material / kensa-sort 実装。DTO/監査メタ/ページング/契約テストの整備状況を、ブランチ別の差分とログから評価。
+        </p>
+        <p class="monitor-description">
+          参照YAML: <code>src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md</code>
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>claude code / task-1766152131447-4d899d</h3>
+          <div class="score-total">529 / 600 🏆</div>
+          <div class="score-sub">6指標合計（600満点）</div>
+        </div>
+        <div class="score-card">
+          <h3>claude code / task-1766152131249-2846c0</h3>
+          <div class="score-total">507 / 600 🥇</div>
+          <div class="score-sub">6指標合計（600満点）</div>
+        </div>
+        <div class="score-card">
+          <h3>claude code / task-1766152131047-a3ae5e</h3>
+          <div class="score-total">456 / 600 🥈</div>
+          <div class="score-sub">6指標合計（600満点）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1766152131447-4d899d</th>
+            <th>claude code / task-1766152131249-2846c0</th>
+            <th>claude code / task-1766152131047-a3ae5e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-19</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">DTO分離 + 監査メタ/ページング/契約テスト整備、API inventory/gap trackerまで更新。</span>
+              </div>
+              <div class="agent-section metrics">
+                <svg class="hex-chart" viewBox="0 0 160 160" aria-hidden="true">
+                  <polygon points="80,20 131,50 131,110 80,140 29,110 29,50" fill="none" stroke="#c4d3d7" />
+                  <polygon points="80,35 119,57 119,103 80,125 41,103 41,57" fill="none" stroke="#d8e6e9" />
+                  <polygon points="80.0,27.2 126.8,53.0 124.7,105.8 80.0,135.2 35.8,105.5 34.3,53.6" fill="#7fb3b8" fill-opacity="0.35" stroke="#4d7c82" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能充足 88点</div>
+                  <div>監査メタ整合 90点</div>
+                  <div>ページング/検索 86点</div>
+                  <div>DTO設計 92点</div>
+                  <div>契約テスト 85点</div>
+                  <div>ドキュメント/証跡 88点</div>
+                </div>
+              </div>
+              <div class="agent-section">
+                <h4>総合評価（🥇/90点）</h4>
+                <p class="snapshot-summary">仕様整合とドキュメント更新の範囲が広く、DTO/監査メタ/ページング/契約テストの要求に最も近い実装。</p>
+                <h4>根拠</h4>
+                <p>OpenAPI 対応の DTO 群を追加し、レスポンスの meta と page 情報を一貫して整備。API inventory / gap tracker / manager checklist の更新で運用面の追跡性も高い。</p>
+                <h4>リスク/改善点</h4>
+                <p>DB 直読ではなく snapshot/fixture 前提の挙動が濃く、実データ接続時の差分が残る可能性。Resource の大規模リファクタで既存の fallback 条件が変わる点は要再確認。</p>
+                <h4>成果物リンク</h4>
+                <div class="link-list">
+                  <a href="../../server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java</a><br />
+                  <a href="../../server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaDrugMasterEntry.java">server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaDrugMasterEntry.java</a><br />
+                  <a href="../../server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java">server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java</a>
+                </div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit log:
+3d7001c1 Implement ORCA-05 master endpoints
+
+diff --stat:
+ docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md          |    1 +
+ docs/managerdocs/PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md       |    1 +
+ docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md      |   10 +-
+ docs/server-modernization/phase2/INDEX.md                       |    1 +
+ docs/server-modernization/phase2/notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md | 2 +-
+ docs/server-modernization/phase2/operations/logs/20251219T140028Z-orca-05-master-generic.md | 31 +
+ docs/web-client/README.md                                       |    7 +-
+ docs/web-client/planning/phase2/DOC_STATUS.md                   |    3 +
+ server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaDrugMasterEntry.java | 116 +
+ server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaMasterErrorResponse.java | 62 +
+ server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaMasterListResponse.java | 27 +
+ server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaMasterMeta.java | 89 +
+ server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java | 1007 ++++++++------------
+ server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java | 111 +++
+ src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md | 44 +
+ 15 files changed, 898 insertions(+), 614 deletions(-)
+</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">新DTOファイル導入、監査メタ/ページング強化、契約テスト追加。</span>
+              </div>
+              <div class="agent-section metrics">
+                <svg class="hex-chart" viewBox="0 0 160 160" aria-hidden="true">
+                  <polygon points="80,20 131,50 131,110 80,140 29,110 29,50" fill="none" stroke="#c4d3d7" />
+                  <polygon points="80,35 119,57 119,103 80,125 41,103 41,57" fill="none" stroke="#d8e6e9" />
+                  <polygon points="80.0,29.0 125.7,53.6 122.6,104.6 80.0,134.0 36.4,105.2 39.5,56.6" fill="#8bb5d6" fill-opacity="0.35" stroke="#547aa6" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能充足 85点</div>
+                  <div>監査メタ整合 88点</div>
+                  <div>ページング/検索 82点</div>
+                  <div>DTO設計 90点</div>
+                  <div>契約テスト 84点</div>
+                  <div>ドキュメント/証跡 78点</div>
+                </div>
+              </div>
+              <div class="agent-section">
+                <h4>総合評価（🥈/84点）</h4>
+                <p class="snapshot-summary">DTO/監査メタ/ページングの整備は良好で、テストも追加。ドキュメントは一部更新に留まる。</p>
+                <h4>根拠</h4>
+                <p>大規模な DTO 集約ファイルを新設し、dataSourceTransition/ pageInfo など詳細メタを拡充。契約テストで paging・validation を確認。</p>
+                <h4>リスク/改善点</h4>
+                <p>OpenAPI とのパラメータ整合（limit/offset/page/pageSize の併存）が曖昧になりやすい。inventory/gap tracker の更新が不足。</p>
+                <h4>成果物リンク</h4>
+                <div class="link-list">
+                  <a href="../../server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaMasterDtos.java">server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaMasterDtos.java</a><br />
+                  <a href="../../server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java</a><br />
+                  <a href="../../server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java">server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java</a>
+                </div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit log:
+5f699e2e Implement ORCA-05 master generic endpoints
+
+diff --stat:
+ docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md          |    3 +-
+ docs/managerdocs/PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md       |    3 +-
+ docs/server-modernization/phase2/INDEX.md                       |    1 +
+ docs/server-modernization/phase2/operations/logs/20251219T235500Z-orca-05-master-generic.md | 28 +
+ docs/web-client/README.md                                       |    6 +-
+ docs/web-client/planning/phase2/DOC_STATUS.md                   |    5 +-
+ server-modernized/src/main/java/open/dolphin/rest/dto/orca/OrcaMasterDtos.java | 1150 ++++++++++++++++++++
+ server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java | 627 ++++-------
+ server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java | 133 +++
+ src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md | 37 +
+ 10 files changed, 1545 insertions(+), 448 deletions(-)
+</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">DB直読実装 + 監査メタ/ページング/バリデーション/契約テスト。</span>
+              </div>
+              <div class="agent-section metrics">
+                <svg class="hex-chart" viewBox="0 0 160 160" aria-hidden="true">
+                  <polygon points="80,20 131,50 131,110 80,140 29,110 29,50" fill="none" stroke="#c4d3d7" />
+                  <polygon points="80,35 119,57 119,103 80,125 41,103 41,57" fill="none" stroke="#d8e6e9" />
+                  <polygon points="80.0,30.8 121.6,56.0 123.6,105.2 80.0,116.0 39.5,103.4 42.6,58.4" fill="#c7b07a" fill-opacity="0.35" stroke="#8d7846" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能充足 82点</div>
+                  <div>監査メタ整合 80点</div>
+                  <div>ページング/検索 84点</div>
+                  <div>DTO設計 60点</div>
+                  <div>契約テスト 78点</div>
+                  <div>ドキュメント/証跡 72点</div>
+                </div>
+              </div>
+              <div class="agent-section">
+                <h4>総合評価（🥉/78点）</h4>
+                <p class="snapshot-summary">DB 直読で機能性は高いが、DTO 分離と API inventory 更新が弱い。</p>
+                <h4>根拠</h4>
+                <p>SQL ベースで generic 系列を実装し、effective/keyword/ページング/バリデーションを導入。契約テストでメタ付与と paging を検証。</p>
+                <h4>リスク/改善点</h4>
+                <p>DTO を専用パッケージに切り出しておらず、OpenAPI との整合を保つ設計が弱い。inventory/gap tracker の更新が不足。</p>
+                <h4>成果物リンク</h4>
+                <div class="link-list">
+                  <a href="../../server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java</a><br />
+                  <a href="../../server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java">server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java</a><br />
+                  <a href="../../docs/server-modernization/phase2/operations/logs/20251219T235400Z-orca-05-master-generic.md">docs/server-modernization/phase2/operations/logs/20251219T235400Z-orca-05-master-generic.md</a>
+                </div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit log:
+0adc21bb Implement ORCA-05 master generic endpoints
+
+diff --stat:
+ docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md          |   1 +
+ docs/server-modernization/phase2/INDEX.md                       |   1 +
+ docs/server-modernization/phase2/operations/logs/20251219T235400Z-orca-05-master-generic.md | 23 +
+ docs/web-client/README.md                                       |   4 +-
+ docs/web-client/planning/phase2/DOC_STATUS.md                   |   4 +-
+ server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java | 709 ++++++++++++++++++---
+ server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java | 111 ++++
+ src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md | 35 +
+ 8 files changed, 807 insertions(+), 81 deletions(-)
+</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

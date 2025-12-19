@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | ORCA-03 tensu/shinku レスポンス拡充</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 12px;
+      }
+      .scorecard .total-score {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .scorecard .agent-label {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .agent-block {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .hex-chart svg {
+        width: 140px;
+        height: 140px;
+        display: block;
+      }
+      .hex-bg {
+        fill: none;
+        stroke: #b8c9cd;
+        stroke-width: 1.2;
+      }
+      .hex-score {
+        fill: rgba(46, 88, 110, 0.2);
+        stroke: #2e586e;
+        stroke-width: 1.6;
+      }
+      .score-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .score-list li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 8px;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜ORCA-03 /orca/tensu/shinku レスポンス拡充</h1>
+        <p class="monitor-description">
+          タスク内容: /orca/tensu/shinku に taniname / ykzkbn / yakkakjncd 等の必須項目を返却させる。<br />
+          仕事の概要: 既存実装が要件を満たしている点を確認し、証跡ログとドキュメント連鎖（README・DOC_STATUS・ハブ）を更新。
+        </p>
+        <div class="scoreboard">
+          <div class="scorecard">
+            <div class="total-score">🥉 405 / 600</div>
+            <div class="agent-label">gemini cli / task-1766150766719-139e5c</div>
+          </div>
+          <div class="scorecard">
+            <div class="total-score">🥈 441 / 600</div>
+            <div class="agent-label">gemini cli / task-1766150766891-a6b42b</div>
+          </div>
+        </div>
+      </header>
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1766150766719-139e5c</th>
+            <th>gemini cli / task-1766150766891-a6b42b</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-19 22:38</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ドキュメント/証跡中心の完了報告。コード変更はなし。</span>
+              </div>
+              <div class="agent-block">
+                <div class="hex-chart">
+                  <svg viewBox="0 0 140 140" role="img" aria-label="6指標チャート">
+                    <polygon class="hex-bg" points="70,10 122,40 122,100 70,130 18,100 18,40" />
+                    <polygon class="hex-score" points="70.0,28.0 110.5,46.6 107.4,91.6 70.0,112.0 49.2,82.0 31.0,47.5" />
+                  </svg>
+                </div>
+                <ul class="score-list">
+                  <li>機能妥当性 70点</li>
+                  <li>証跡/ガバナンス 78点</li>
+                  <li>ドキュメント網羅性 72点</li>
+                  <li>影響分析 70点</li>
+                  <li>検証/テスト 40点</li>
+                  <li>差分透明性 75点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>・既存コードで対象列が含まれている旨を記載し、証跡ログとDOC_STATUS/README更新を実施。
+・実装差分がない点は明記されているが、検証/テストは未実施で裏取り不足。</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../../docs/server-modernization/phase2/operations/logs/20251219T133108Z-orca-03-tensu-shinku.md">証跡ログ</a></li>
+                <li><a href="../../src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md">成果物ドキュメント</a></li>
+              </ul>
+              <p class="note">※ 参照した実装は worktree: .worktrees/task-1766150766719-139e5c</p>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ / 差分概要</summary>
+                <div class="section-title">コミットログ</div>
+                <pre>29bcdc3a docs: ORCA-03 tensu/shinku response expansion
+f6000d22 Merge branch 'task/task-1766149423851-b04466'
+d1d0acbe chore: update kamui state
+5d9125af Document ORCA stamp date query follow-up
+...</pre>
+                <div class="section-title">差分ファイル</div>
+                <pre>docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md
+docs/managerdocs/PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md
+docs/server-modernization/phase2/INDEX.md
+docs/server-modernization/phase2/operations/logs/20251219T133108Z-orca-03-tensu-shinku.md
+docs/web-client/README.md
+docs/web-client/planning/phase2/DOC_STATUS.md
+src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ドキュメント更新に加え、ギャップトラッカーも更新。</span>
+              </div>
+              <div class="agent-block">
+                <div class="hex-chart">
+                  <svg viewBox="0 0 140 140" role="img" aria-label="6指標チャート">
+                    <polygon class="hex-bg" points="70,10 122,40 122,100 70,130 18,100 18,40" />
+                    <polygon class="hex-score" points="70.0,24.4 112.6,45.4 114.2,95.5 70.0,116.8 49.2,82.0 28.4,46.0" />
+                  </svg>
+                </div>
+                <ul class="score-list">
+                  <li>機能妥当性 76点</li>
+                  <li>証跡/ガバナンス 82点</li>
+                  <li>ドキュメント網羅性 85点</li>
+                  <li>影響分析 78点</li>
+                  <li>検証/テスト 40点</li>
+                  <li>差分透明性 80点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>・既存実装の列構成(14列)まで踏み込み、証跡ログ/README/DOC_STATUSの更新に加えてギャップ資料を更新。
+・テスト未実施のため確証が弱い点は減点。</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../../docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md">証跡ログ</a></li>
+                <li><a href="../../src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md">成果物ドキュメント</a></li>
+                <li><a href="../../docs/server-modernization/phase2/notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md">ギャップトラッカー更新</a></li>
+                <li><a href="../../src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md">棚卸しメモ更新</a></li>
+              </ul>
+              <p class="note">※ 参照した実装は worktree: .worktrees/task-1766150766891-a6b42b</p>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ / 差分概要</summary>
+                <div class="section-title">コミットログ</div>
+                <pre>b4fd2e76 ORCA-03 tensu shinku response docs
+f6000d22 Merge branch 'task/task-1766149423851-b04466'
+d1d0acbe chore: update kamui state
+5d9125af Document ORCA stamp date query follow-up
+...</pre>
+                <div class="section-title">差分ファイル</div>
+                <pre>docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md
+docs/managerdocs/PHASE2_ORCA_SPRINT2_MANAGER_CHECKLIST.md
+docs/server-modernization/phase2/INDEX.md
+docs/server-modernization/phase2/notes/MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md
+docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md
+docs/web-client/README.md
+docs/web-client/planning/phase2/DOC_STATUS.md
+src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md
+src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

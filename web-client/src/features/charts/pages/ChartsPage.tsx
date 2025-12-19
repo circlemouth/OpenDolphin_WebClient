@@ -85,6 +85,9 @@ function ChartsContent() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
+  const handleLockChange = useCallback((locked: boolean, reason?: string) => {
+    setLockState({ locked, reason });
+  }, []);
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [contextAlert, setContextAlert] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [editLockAlert, setEditLockAlert] = useState<{
@@ -1133,7 +1136,7 @@ function ChartsContent() {
               }}
               onAfterSend={handleRefreshSummary}
               onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
-              onLockChange={(locked, reason) => setLockState({ locked, reason })}
+              onLockChange={handleLockChange}
             />
           </div>
       <section className="charts-page__grid">
