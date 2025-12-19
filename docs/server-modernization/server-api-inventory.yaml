@@ -179,6 +179,12 @@ paths:
         schema:
           type: string
         description: Path parameter ``param`` as defined in the legacy API.
+      - name: date
+        in: query
+        required: false
+        schema:
+          type: string
+        description: Optional effective date (YYYYMMDD or ISO8601). When provided, it is used for inputset/tensu effective period filtering.
       responses:
         '200':
           description: Successful response carrying the legacy payload. Returned as

@@ -22,6 +22,7 @@ import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.MediaType;
 import open.dolphin.common.OrcaConnect;
 import open.dolphin.converter.*;
@@ -1007,12 +1008,15 @@ public class OrcaResource {
     @GET
     @Path("/stamp/{param}")
     @Produces(MediaType.APPLICATION_JSON)
-    public ModuleListConverter getStamp(@PathParam("param") String param) {
+    public ModuleListConverter getStamp(@PathParam("param") String param, @QueryParam("date") String date) {
         
         String[] params = param.split(CAMMA);
         String setCd = params[0]; // stampId=setCd; セットコード
         String stampName = params[1];
         String visitDateParam = params.length >= 3 ? params[2] : null;
+        if (date != null && !date.trim().isEmpty()) {
+            visitDateParam = date;
+        }
         String effectiveDate = resolveEffectiveDate(visitDateParam);
         debug("OrcaResource: getStamp");
         debug("setCd = " + setCd);
