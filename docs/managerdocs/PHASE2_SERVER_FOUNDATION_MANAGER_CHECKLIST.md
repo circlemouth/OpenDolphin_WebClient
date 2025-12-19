@@ -11,6 +11,8 @@
 > - 証跡パス: `docs/server-modernization/phase2/foundation/...`, `ops/...`, `artifacts/...`, `logs/...`
 > - DOC_STATUS 行: `docs/web-client/planning/phase2/DOC_STATUS.md`「モダナイズ/基盤（Server Foundation）」行の更新内容
 >
+> RUN_ID=`20251219T125123Z` で DDL 変換警告と Agroal クラスロード警告の解消を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`。
+>
 > **Archive 移行チェック（担当: Codex, 期限: 2025-11-29）**
 > - [ ] Dormant 判定と関連ログ
 > - [ ] `docs/archive/2025Q4/` への移行とスタブ作成
