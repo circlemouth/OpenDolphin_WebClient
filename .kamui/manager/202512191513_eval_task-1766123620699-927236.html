@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .scorecards {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .metric-chart {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        font-size: 12px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: モダナイズ版サーバー実装ガント</h1>
+        <p class="monitor-description">タスク内容: モダナイズ版サーバーの実装状況をドキュメントから棚卸しし、未実装/部分実装を100%完了できるガントYAMLとSVGアイコンを整備。3ブランチの成果物を比較評価。</p>
+      </header>
+
+      <section class="summary-block">
+        <strong>仕事の概要</strong>
+        <p>各ブランチは .kamui/apps 配下にガントYAML、.kamui/apps/icons にSVGを作成。ガント構造、依存関係、日程整合、アイコン表現、要件遵守の観点で比較。</p>
+      </section>
+
+      <section class="scorecards">
+        <div class="scorecard">
+          <h2>Agent task-1766123620699-927236</h2>
+          <div class="score-total">🏆 516 / 600</div>
+          <div class="score-note">総合評価: 要件満足度が高く、章立ても網羅的。</div>
+        </div>
+        <div class="scorecard">
+          <h2>Agent task-1766123620900-586760</h2>
+          <div class="score-total">🥈 489 / 600</div>
+          <div class="score-note">総合評価: 内容量は多いが、フィルタ構造の要件適合に揺らぎ。</div>
+        </div>
+        <div class="scorecard">
+          <h2>Agent task-1766123621102-5588a7</h2>
+          <div class="score-total">🥈 470 / 600</div>
+          <div class="score-note">総合評価: 実装ギャップの整理は良いが、基盤系の網羅性が控えめ。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766123620699-927236</th>
+            <th>Agent task-1766123620900-586760</th>
+            <th>Agent task-1766123621102-5588a7</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-19 15:13</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">server-modernized-implementation-20251219 ガントを中心に網羅性を確認。</span>
+              </div>
+              <div class="metric-chart">
+                <svg width="180" height="180" viewBox="0 0 180 180" aria-label="六角形チャート">
+                  <polygon points="90,30 142,60 142,120 90,150 38,120 38,60" fill="none" stroke="#9fb3b8" stroke-width="2" />
+                  <line x1="90" y1="90" x2="90" y2="30" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="142" y2="60" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="142" y2="120" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="90" y2="150" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="38" y2="120" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="38" y2="60" stroke="#c4d3d7" />
+                  <polygon points="90,37.2 136.8,63 134.7,115.8 90,142.8 46.3,115.2 48.4,66" fill="rgba(30, 100, 120, 0.25)" stroke="#1f2a30" />
+                </svg>
+                <div class="metric-list">
+                  <div>要件準拠 88点</div>
+                  <div>機能合理性 90点</div>
+                  <div>緻密性 86点</div>
+                  <div>依存整合 88点</div>
+                  <div>可視性/運用 84点</div>
+                  <div>表現品質 80点</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">評価理由</div>
+              <pre>・ガバナンス/ジャカルタ/ORCA/外部API/運用の章立てが揃い、100%完了の道筋が明確。
+・全タスクが content/priority/status/progress/schedule を保持。
+・SVGアイコンは256px/角丸/アクセントを満たすが、色意図の説明は成果物内に残されていない。</pre>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766123620699-927236/.kamui/apps/server-modernized-implementation-20251219.yaml">YAML: server-modernized-implementation-20251219.yaml</a></div>
+                <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766123620699-927236/.kamui/apps/icons/server-modernized-implementation-20251219.svg">SVG: server-modernized-implementation-20251219.svg</a></div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>71fc694e (task/task-1766123620699-927236) Add server modernized completion gantt dataset</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分（stat）</summary>
+                <pre> .../server-modernized-implementation-20251219.svg  |  40 ++
+ .../server-modernized-implementation-20251219.yaml | 707 +++++++++++++++++++++
+ 2 files changed, 747 insertions(+)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット変更</summary>
+                <pre></pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">modernized-server-gap-gantt の広範な領域分類を評価。</span>
+              </div>
+              <div class="metric-chart">
+                <svg width="180" height="180" viewBox="0 0 180 180" aria-label="六角形チャート">
+                  <polygon points="90,30 142,60 142,120 90,150 38,120 38,60" fill="none" stroke="#9fb3b8" stroke-width="2" />
+                  <line x1="90" y1="90" x2="90" y2="30" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="142" y2="60" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="142" y2="120" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="90" y2="150" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="38" y2="120" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="38" y2="60" stroke="#c4d3d7" />
+                  <polygon points="90,43.2 134.2,64.5 132.6,114.6 90,138 49.5,113.4 45.3,64.2" fill="rgba(30, 100, 120, 0.25)" stroke="#1f2a30" />
+                </svg>
+                <div class="metric-list">
+                  <div>要件準拠 78点</div>
+                  <div>機能合理性 85点</div>
+                  <div>緻密性 82点</div>
+                  <div>依存整合 80点</div>
+                  <div>可視性/運用 78点</div>
+                  <div>表現品質 86点</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">評価理由</div>
+              <pre>・領域別filtersの追加で多面的だが、優先度/ステータスのフィルタ構造がガイドと不一致。
+・タスク量は十分で依存関係も整備されている。
+・SVGは見やすいが、色意図/コントラスト説明は成果物に残らない。</pre>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766123620900-586760/.kamui/apps/modernized-server-gap-gantt.yaml">YAML: modernized-server-gap-gantt.yaml</a></div>
+                <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766123620900-586760/.kamui/apps/icons/modernized-server-gap-gantt.svg">SVG: modernized-server-gap-gantt.svg</a></div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>ef2775a1 (task/task-1766123620900-586760) Add modernized server gap gantt dataset and icon</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分（stat）</summary>
+                <pre> .kamui/apps/icons/modernized-server-gap-gantt.svg |   30 +
+ .kamui/apps/modernized-server-gap-gantt.yaml      | 1069 +++++++++++++++++++++
+ 2 files changed, 1099 insertions(+)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット変更</summary>
+                <pre></pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">modernized-server-implementation-gantt-20251219 を評価。</span>
+              </div>
+              <div class="metric-chart">
+                <svg width="180" height="180" viewBox="0 0 180 180" aria-label="六角形チャート">
+                  <polygon points="90,30 142,60 142,120 90,150 38,120 38,60" fill="none" stroke="#9fb3b8" stroke-width="2" />
+                  <line x1="90" y1="90" x2="90" y2="30" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="142" y2="60" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="142" y2="120" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="90" y2="150" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="38" y2="120" stroke="#c4d3d7" />
+                  <line x1="90" y1="90" x2="38" y2="60" stroke="#c4d3d7" />
+                  <polygon points="90,40.8 131.6,66 128.4,112.2 90,136.8 52.6,111.6 46.3,64.8" fill="rgba(30, 100, 120, 0.25)" stroke="#1f2a30" />
+                </svg>
+                <div class="metric-list">
+                  <div>要件準拠 82点</div>
+                  <div>機能合理性 80点</div>
+                  <div>緻密性 74点</div>
+                  <div>依存整合 78点</div>
+                  <div>可視性/運用 72点</div>
+                  <div>表現品質 84点</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">評価理由</div>
+              <pre>・Karte/ORCA/外部APIに焦点を当てた構成で読みやすい。
+・一方で Jakarta基盤/運用系のタスクが少なく、100%完了の網羅性は控えめ。
+・アイコンは視認性良好、タイトル/100%バッジが要件に合致。</pre>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <div class="link-list">
+                <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766123621102-5588a7/.kamui/apps/modernized-server-implementation-gantt-20251219.yaml">YAML: modernized-server-implementation-gantt-20251219.yaml</a></div>
+                <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766123621102-5588a7/.kamui/apps/icons/modernized-server-implementation-gantt-20251219.svg">SVG: modernized-server-implementation-gantt-20251219.svg</a></div>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>626801e4 (task/task-1766123621102-5588a7) Add modernized server implementation gantt and icon</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分（stat）</summary>
+                <pre> ...rnized-server-implementation-gantt-20251219.svg |  44 ++
+ ...nized-server-implementation-gantt-20251219.yaml | 542 +++++++++++++++++++++
+ 2 files changed, 586 insertions(+)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット変更</summary>
+                <pre></pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
