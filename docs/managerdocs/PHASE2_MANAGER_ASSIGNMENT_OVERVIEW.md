@@ -18,6 +18,7 @@ RUN_ID=`20251219T063136Z` で DOC_STATUS 棚卸しとハブ同期を実施。証
 RUN_ID=`20251219T113948Z` で ORCA-01 `/orca/inputset` SQL 修正とテスト追加を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。
 RUN_ID=`20251219T125123Z` で DDL 変換警告と Agroal クラスロード警告を解消。証跡: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`。
 RUN_ID=`20251219T140028Z` で ORCA-05 `/orca/master/generic-class|generic-price|youhou|material|kensa-sort` を実装。証跡: `docs/server-modernization/phase2/operations/logs/20251219T140028Z-orca-05-master-generic.md`。
+RUN_ID=`20251219T144408Z` で ORCA-06 `/orca/master/hokenja` `/orca/master/address` を実装。証跡: `docs/server-modernization/phase2/operations/logs/20251219T144408Z-orca-06-hokenja-address.md`。
 RUN_ID=`20251219T131008Z` で ORCA-02 `/orca/stamp/{setCd,name}` date パラメータ追加を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md`。
 RUN_ID=`20251219T133053Z` で ORCA-03 `/orca/tensu/shinku` レスポンス拡充（`taniname` / `ykzkbn` / `yakkakjncd`）を記録。証跡: `docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md`。
 RUN_ID=`20251219T223000Z` で ORCA-02 `/orca/stamp/{setCd,name}` date 追補回収（ドキュメント/最小確認）を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T223000Z-orca-02-stamp-date-followup.md`。

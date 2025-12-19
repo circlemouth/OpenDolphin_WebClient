@@ -12,6 +12,8 @@ import java.util.List;
 import java.util.Objects;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
@@ -26,6 +28,12 @@ import open.dolphin.rest.dto.orca.OrcaDrugMasterEntry;
 import open.dolphin.rest.dto.orca.OrcaMasterErrorResponse;
 import open.dolphin.rest.dto.orca.OrcaMasterListResponse;
 import open.dolphin.rest.dto.orca.OrcaMasterMeta;
+import open.dolphin.rest.dto.orca.OrcaAddressEntry;
+import open.dolphin.rest.dto.orca.OrcaInsurerEntry;
+import open.dolphin.rest.AbstractResource;
+import open.dolphin.audit.AuditEventEnvelope;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.SessionAuditDispatcher;
 
 /**
  * ORCA master endpoints for the modernized server.
@@ -33,18 +41,23 @@ import open.dolphin.rest.dto.orca.OrcaMasterMeta;
  */
 @Path("/")
 @Produces(MediaType.APPLICATION_JSON)
-public class OrcaMasterResource {
+public class OrcaMasterResource extends AbstractResource {
 
     private static final String DEFAULT_USERNAME = "1.3.6.1.4.1.9414.70.1:admin";
     private static final String DEFAULT_PASSWORD = "21232f297a57a5a743894a0e4a801fc3";
-    private static final String RUN_ID = "20251219T140028Z";
+    private static final String RUN_ID = "20251219T144408Z";
     private static final String DEFAULT_VERSION = "20240426";
     private static final String DEFAULT_VALID_FROM = "20240401";
     private static final String DEFAULT_VALID_TO = "99991231";
     private static final Pattern SRYCD_PATTERN = Pattern.compile("^\\d{9}$");
+    private static final Pattern ZIP_PATTERN = Pattern.compile("^\\d{7}$");
+    private static final Pattern PREF_PATTERN = Pattern.compile("^(0[1-9]|[1-3][0-9]|4[0-7])$");
     private static final java.nio.file.Path SNAPSHOT_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "master-snapshots");
     private static final java.nio.file.Path MSW_FIXTURE_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "msw-fixture");
     private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+
+    @Inject
+    SessionAuditDispatcher sessionAuditDispatcher;
 
     private enum DataOrigin {
         SNAPSHOT,
@@ -57,12 +70,24 @@ public class OrcaMasterResource {
         final String snapshotVersion;
         final String version;
         final DataOrigin origin;
+        final boolean loadFailed;
 
-        LoadedFixture(List<T> entries, String snapshotVersion, String version, DataOrigin origin) {
+        LoadedFixture(List<T> entries, String snapshotVersion, String version, DataOrigin origin, boolean loadFailed) {
             this.entries = entries;
             this.snapshotVersion = snapshotVersion;
             this.version = version;
             this.origin = origin;
+            this.loadFailed = loadFailed;
+        }
+    }
+
+    private static final class FixtureLoadResult<T> {
+        final FixtureListResponse<T> response;
+        final boolean loadFailed;
+
+        FixtureLoadResult(FixtureListResponse<T> response, boolean loadFailed) {
+            this.response = response;
+            this.loadFailed = loadFailed;
         }
     }
 
@@ -89,7 +114,7 @@ public class OrcaMasterResource {
                 .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, entry.startDate, entry.endDate))
                 .collect(Collectors.toList());
         final int totalCount = filtered.size();
-        final List<FixtureGenericClassEntry> paged = paginate(filtered, params);
+        final List<FixtureGenericClassEntry> paged = paginateList(filtered, params);
         final List<OrcaDrugMasterEntry> items = paged.stream()
                 .map(entry -> toGenericClassEntry(entry, fixture))
                 .collect(Collectors.toList());
@@ -268,6 +293,125 @@ public class OrcaMasterResource {
     }
 
     @GET
+    @Path("/api/orca/master/hokenja")
+    public Response getHokenja(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        if (!isAuthorized(userName, password)) {
+            return unauthorized();
+        }
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        final String pref = getFirstValue(params, "pref");
+        if (pref != null && !PREF_PATTERN.matcher(pref).matches()) {
+            return validationError("PREF_VALIDATION_ERROR", "都道府県コードは 01-47 の 2 桁で指定してください");
+        }
+        final String keyword = getFirstValue(params, "keyword");
+        final String effective = getFirstValue(params, "effective");
+        final LoadedFixture<FixtureHokenjaEntry> fixture = loadEntries(
+                FixtureHokenjaEntry.class,
+                "hokenja/orca_master_hokenja_response.json",
+                "orca-master-hokenja.json"
+        );
+        if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
+            Response failure = serviceUnavailable("MASTER_HOKENJA_UNAVAILABLE", "保険者マスタを取得できませんでした");
+            recordMasterAudit(request, "/orca/master/hokenja", "orca06-hokenja", 503, fixture, true, 0,
+                    buildQueryDetails(pref, keyword, effective, params));
+            return failure;
+        }
+        final List<FixtureHokenjaEntry> filtered = fixture.entries.stream()
+                .filter(entry -> matchesPref(pref, entry))
+                .filter(entry -> matchesKeyword(keyword, entry.insurerName, entry.insurerKana, entry.insurerNumber))
+                .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, null, null))
+                .collect(Collectors.toList());
+        final int totalCount = filtered.size();
+        final List<FixtureHokenjaEntry> paged = paginateList(filtered, params);
+        final List<OrcaInsurerEntry> items = paged.stream()
+                .map(entry -> toInsurerEntry(entry, fixture))
+                .collect(Collectors.toList());
+        OrcaMasterListResponse<OrcaInsurerEntry> response = new OrcaMasterListResponse<>();
+        response.setTotalCount(totalCount);
+        response.setItems(items);
+        recordMasterAudit(request, "/orca/master/hokenja", "orca06-hokenja", 200, fixture,
+                totalCount == 0, totalCount, buildQueryDetails(pref, keyword, effective, params));
+        return Response.ok(response).build();
+    }
+
+    @GET
+    @Path("/orca/master/hokenja")
+    public Response getHokenjaAlias(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        return getHokenja(userName, password, uriInfo, request);
+    }
+
+    @GET
+    @Path("/api/orca/master/address")
+    public Response getAddress(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        if (!isAuthorized(userName, password)) {
+            return unauthorized();
+        }
+        final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
+        final String zip = getFirstValue(params, "zip");
+        if (zip == null || !ZIP_PATTERN.matcher(zip).matches()) {
+            return validationError("ZIP_VALIDATION_ERROR", "郵便番号は数字 7 桁で指定してください");
+        }
+        final String effective = getFirstValue(params, "effective");
+        final LoadedFixture<FixtureAddressEntry> fixture = loadEntries(
+                FixtureAddressEntry.class,
+                "address/orca_master_address_response.json",
+                "orca-master-address.json"
+        );
+        if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
+            Response failure = serviceUnavailable("MASTER_ADDRESS_UNAVAILABLE", "住所マスタを取得できませんでした");
+            recordMasterAudit(request, "/orca/master/address", "orca06-address", 503, fixture, true, 0,
+                    buildQueryDetails(null, null, effective, params, zip));
+            return failure;
+        }
+        FixtureAddressEntry match = fixture.entries.stream()
+                .filter(entry -> zip.equals(firstNonBlank(entry.zip, entry.zipCode)))
+                .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, null, null))
+                .findFirst()
+                .orElse(null);
+        if (match == null) {
+            if (fixture.origin == DataOrigin.FALLBACK) {
+                recordMasterAudit(request, "/orca/master/address", "orca06-address", 200, fixture, true, 0,
+                        buildQueryDetails(null, null, effective, params, zip));
+                return Response.ok(Collections.emptyMap()).build();
+            }
+            Response notFound = notFound("MASTER_ADDRESS_NOT_FOUND", "指定の郵便番号に該当する住所がありません", request);
+            recordMasterAudit(request, "/orca/master/address", "orca06-address", 404, fixture, true, 0,
+                    buildQueryDetails(null, null, effective, params, zip));
+            return notFound;
+        }
+        OrcaAddressEntry response = toAddressEntry(match, fixture);
+        recordMasterAudit(request, "/orca/master/address", "orca06-address", 200, fixture, false, 1,
+                buildQueryDetails(null, null, effective, params, zip));
+        return Response.ok(response).build();
+    }
+
+    @GET
+    @Path("/orca/master/address")
+    public Response getAddressAlias(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        return getAddress(userName, password, uriInfo, request);
+    }
+
+    @GET
     @Path("/orca/master/kensa-sort")
     public Response getKensaSortAlias(
             @HeaderParam("userName") String userName,
@@ -297,26 +441,33 @@ public class OrcaMasterResource {
     }
 
     private <T> LoadedFixture<T> loadEntries(Class<T> entryType, String snapshotRelativePath, String fixtureFileName) {
-        FixtureListResponse<T> snapshot = tryReadResponse(entryType, SNAPSHOT_ROOT.resolve(snapshotRelativePath));
-        if (snapshot != null) {
-            return new LoadedFixture<>(safeList(snapshot.list), snapshot.snapshotVersion, snapshot.version, DataOrigin.SNAPSHOT);
+        FixtureLoadResult<T> snapshot = tryReadResponse(entryType, SNAPSHOT_ROOT.resolve(snapshotRelativePath));
+        if (snapshot.response != null) {
+            return new LoadedFixture<>(safeList(snapshot.response.list), snapshot.response.snapshotVersion,
+                    snapshot.response.version, DataOrigin.SNAPSHOT, snapshot.loadFailed);
         }
-        FixtureListResponse<T> fixture = tryReadResponse(entryType, MSW_FIXTURE_ROOT.resolve(fixtureFileName));
-        if (fixture != null) {
-            return new LoadedFixture<>(safeList(fixture.list), fixture.snapshotVersion, fixture.version, DataOrigin.MSW_FIXTURE);
+        FixtureLoadResult<T> fixture = tryReadResponse(entryType, MSW_FIXTURE_ROOT.resolve(fixtureFileName));
+        if (fixture.response != null) {
+            return new LoadedFixture<>(safeList(fixture.response.list), fixture.response.snapshotVersion,
+                    fixture.response.version, DataOrigin.MSW_FIXTURE, fixture.loadFailed);
         }
-        return new LoadedFixture<>(Collections.emptyList(), null, null, DataOrigin.FALLBACK);
+        return new LoadedFixture<>(Collections.emptyList(), null, null, DataOrigin.FALLBACK,
+                snapshot.loadFailed || fixture.loadFailed);
     }
 
-    private <T> FixtureListResponse<T> tryReadResponse(Class<T> entryType, java.nio.file.Path file) {
+    private <T> FixtureLoadResult<T> tryReadResponse(Class<T> entryType, java.nio.file.Path file) {
         if (Files.notExists(file)) {
-            return null;
+            return new FixtureLoadResult<>(null, false);
         }
         try {
             JavaType type = TypeFactory.defaultInstance().constructParametricType(FixtureListResponse.class, entryType);
-            return OBJECT_MAPPER.readValue(file.toFile(), type);
+            FixtureListResponse<T> response = OBJECT_MAPPER.readValue(file.toFile(), type);
+            if (response == null || response.list == null) {
+                return new FixtureLoadResult<>(null, true);
+            }
+            return new FixtureLoadResult<>(response, false);
         } catch (IOException e) {
-            return null;
+            return new FixtureLoadResult<>(null, true);
         }
     }
 
@@ -324,7 +475,7 @@ public class OrcaMasterResource {
         return source == null ? Collections.emptyList() : source;
     }
 
-    private List<FixtureGenericClassEntry> paginate(List<FixtureGenericClassEntry> source, MultivaluedMap<String, String> params) {
+    private <T> List<T> paginateList(List<T> source, MultivaluedMap<String, String> params) {
         int page = parsePositiveInt(params, "page", 1);
         int size = parsePositiveInt(params, "size", 100);
         if (size > 2000) {
@@ -459,6 +610,47 @@ public class OrcaMasterResource {
                 entry.missingMaster,
                 entry.fallbackUsed
         );
+    }
+
+    private OrcaInsurerEntry toInsurerEntry(FixtureHokenjaEntry entry, LoadedFixture<?> fixture) {
+        OrcaInsurerEntry response = new OrcaInsurerEntry();
+        String payerCode = firstNonBlank(entry.payerCode, entry.insurerNumber);
+        response.setPayerCode(payerCode);
+        response.setPayerName(firstNonBlank(entry.payerName, entry.insurerName));
+        String payerType = resolvePayerType(entry.insurerType, payerCode);
+        response.setPayerType(payerType);
+        response.setPayerRatio(resolvePayerRatio(entry.payerRatio, payerType));
+        String prefCode = firstNonBlank(entry.prefCode, entry.prefectureCode, derivePrefCode(payerCode));
+        response.setPrefCode(prefCode);
+        response.setCityCode(firstNonBlank(entry.cityCode, deriveCityCode(prefCode)));
+        response.setZip(firstNonBlank(entry.zip, entry.zipCode));
+        response.setAddressLine(firstNonBlank(entry.addressLine, entry.address));
+        response.setPhone(entry.phone);
+        response.setValidFrom(firstNonBlank(entry.validFrom, DEFAULT_VALID_FROM));
+        response.setValidTo(firstNonBlank(entry.validTo, DEFAULT_VALID_TO));
+        boolean missing = Boolean.TRUE.equals(entry.missingMaster);
+        boolean fallback = Boolean.TRUE.equals(entry.fallbackUsed) || missing || fixture.origin == DataOrigin.FALLBACK;
+        boolean cache = Boolean.TRUE.equals(entry.cacheHit);
+        response.setMeta(buildMeta(fixture.origin, fixture.snapshotVersion, fixture.version, cache, missing, fallback, null));
+        return response;
+    }
+
+    private OrcaAddressEntry toAddressEntry(FixtureAddressEntry entry, LoadedFixture<?> fixture) {
+        OrcaAddressEntry response = new OrcaAddressEntry();
+        response.setZip(firstNonBlank(entry.zip, entry.zipCode));
+        String prefCode = firstNonBlank(entry.prefCode, entry.prefectureCode);
+        response.setPrefCode(prefCode);
+        response.setCityCode(firstNonBlank(entry.cityCode, deriveCityCode(prefCode)));
+        response.setCity(entry.city);
+        response.setTown(entry.town);
+        response.setKana(entry.kana);
+        response.setRoman(entry.roman);
+        response.setFullAddress(firstNonBlank(entry.fullAddress, entry.addressLine, entry.address));
+        boolean missing = Boolean.TRUE.equals(entry.missingMaster);
+        boolean fallback = Boolean.TRUE.equals(entry.fallbackUsed) || missing || fixture.origin == DataOrigin.FALLBACK;
+        boolean cache = Boolean.TRUE.equals(entry.cacheHit);
+        response.setMeta(buildMeta(fixture.origin, fixture.snapshotVersion, fixture.version, cache, missing, fallback, null));
+        return response;
     }
 
     private OrcaDrugMasterEntry buildDrugEntry(
@@ -609,6 +801,157 @@ public class OrcaMasterResource {
         return null;
     }
 
+    private Response notFound(String code, String message, HttpServletRequest request) {
+        OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
+        response.setCode(code);
+        response.setMessage(message);
+        response.setRunId(RUN_ID);
+        response.setTimestamp(Instant.now().toString());
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            response.setCorrelationId(traceId);
+        }
+        return Response.status(Status.NOT_FOUND).entity(response).build();
+    }
+
+    private Response serviceUnavailable(String code, String message) {
+        OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
+        response.setCode(code);
+        response.setMessage(message);
+        response.setRunId(RUN_ID);
+        response.setTimestamp(Instant.now().toString());
+        return Response.status(Status.SERVICE_UNAVAILABLE).entity(response).build();
+    }
+
+    private String resolvePayerType(String rawType, String payerCode) {
+        String source = rawType != null ? rawType : "";
+        if (source.contains("国保")) {
+            return "national_health";
+        }
+        if (source.contains("船員")) {
+            return "seamen";
+        }
+        if (source.contains("共済")) {
+            return "mutual_aid";
+        }
+        if (source.contains("後期")) {
+            return "late_elderly";
+        }
+        if (source.contains("社保") || source.contains("健保") || source.contains("協会")) {
+            return "social_insurance";
+        }
+        if (payerCode != null && payerCode.startsWith("39")) {
+            return "late_elderly";
+        }
+        return "other";
+    }
+
+    private Double resolvePayerRatio(Double ratio, String payerType) {
+        if (ratio != null) {
+            return ratio;
+        }
+        if ("late_elderly".equals(payerType)) {
+            return 0.1;
+        }
+        return 0.3;
+    }
+
+    private String derivePrefCode(String payerCode) {
+        if (payerCode == null || payerCode.length() < 2) {
+            return null;
+        }
+        return payerCode.substring(0, 2);
+    }
+
+    private String deriveCityCode(String prefCode) {
+        if (prefCode == null || prefCode.isBlank()) {
+            return null;
+        }
+        return prefCode + "000";
+    }
+
+    private boolean matchesPref(String pref, FixtureHokenjaEntry entry) {
+        if (pref == null || pref.isBlank()) {
+            return true;
+        }
+        String entryPref = firstNonBlank(entry.prefCode, entry.prefectureCode, derivePrefCode(entry.payerCode), derivePrefCode(entry.insurerNumber));
+        return pref.equals(entryPref);
+    }
+
+    private void recordMasterAudit(HttpServletRequest request, String apiRoute, String masterType, int httpStatus,
+            LoadedFixture<?> fixture, boolean emptyResult, int resultCount, java.util.Map<String, Object> extraDetails) {
+        if (sessionAuditDispatcher == null) {
+            return;
+        }
+        AuditEventPayload payload = new AuditEventPayload();
+        payload.setAction("ORCA_MASTER_FETCH");
+        payload.setResource(apiRoute);
+        payload.setActorId(request != null ? request.getRemoteUser() : null);
+        payload.setIpAddress(request != null ? request.getRemoteAddr() : null);
+        payload.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            payload.setTraceId(traceId);
+        }
+        String requestId = request != null ? request.getHeader("X-Request-Id") : null;
+        if (requestId != null && !requestId.isBlank()) {
+            payload.setRequestId(requestId);
+        } else if (traceId != null && !traceId.isBlank()) {
+            payload.setRequestId(traceId);
+        }
+        java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
+        details.put("runId", RUN_ID);
+        details.put("masterType", masterType);
+        details.put("httpStatus", httpStatus);
+        details.put("dataSource", dataSourceForOrigin(fixture.origin));
+        details.put("snapshotVersion", fixture.snapshotVersion);
+        details.put("version", firstNonBlank(fixture.version, DEFAULT_VERSION));
+        details.put("cacheHit", Boolean.FALSE);
+        details.put("missingMaster", fixture.origin == DataOrigin.FALLBACK);
+        details.put("fallbackUsed", fixture.origin == DataOrigin.FALLBACK);
+        details.put("resultCount", resultCount);
+        details.put("emptyResult", emptyResult);
+        if (extraDetails != null) {
+            details.putAll(extraDetails);
+        }
+        payload.setDetails(details);
+        AuditEventEnvelope.Outcome outcome = httpStatus >= 400
+                ? AuditEventEnvelope.Outcome.FAILURE
+                : AuditEventEnvelope.Outcome.SUCCESS;
+        String errorCode = httpStatus >= 400 ? "http_" + httpStatus : null;
+        sessionAuditDispatcher.record(payload, outcome, errorCode, null);
+    }
+
+    private java.util.Map<String, Object> buildQueryDetails(String pref, String keyword, String effective,
+            MultivaluedMap<String, String> params) {
+        return buildQueryDetails(pref, keyword, effective, params, null);
+    }
+
+    private java.util.Map<String, Object> buildQueryDetails(String pref, String keyword, String effective,
+            MultivaluedMap<String, String> params, String zip) {
+        java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
+        if (pref != null) {
+            details.put("queryPref", pref);
+        }
+        if (zip != null) {
+            details.put("queryZip", zip);
+        }
+        if (keyword != null && !keyword.isBlank()) {
+            details.put("keywordPresent", true);
+            details.put("keywordLength", keyword.length());
+        } else {
+            details.put("keywordPresent", false);
+        }
+        if (effective != null) {
+            details.put("effective", effective);
+        }
+        if (params != null) {
+            details.put("page", parsePositiveInt(params, "page", 1));
+            details.put("size", parsePositiveInt(params, "size", 100));
+        }
+        return details;
+    }
+
     private static final class FixtureListResponse<T> {
         public List<T> list;
         public Integer totalCount;
@@ -698,6 +1041,50 @@ public class OrcaMasterResource {
         public String category;
         public String departmentCode;
         public String kensaSort;
+        public String validFrom;
+        public String validTo;
+        public Boolean cacheHit;
+        public Boolean missingMaster;
+        public Boolean fallbackUsed;
+    }
+
+    private static final class FixtureHokenjaEntry {
+        public String payerCode;
+        public String payerName;
+        public Double payerRatio;
+        public String payerType;
+        public String insurerNumber;
+        public String insurerName;
+        public String insurerKana;
+        public String prefectureCode;
+        public String prefCode;
+        public String cityCode;
+        public String zip;
+        public String zipCode;
+        public String addressLine;
+        public String address;
+        public String phone;
+        public String insurerType;
+        public String validFrom;
+        public String validTo;
+        public Boolean cacheHit;
+        public Boolean missingMaster;
+        public Boolean fallbackUsed;
+    }
+
+    private static final class FixtureAddressEntry {
+        public String zip;
+        public String zipCode;
+        public String prefCode;
+        public String prefectureCode;
+        public String cityCode;
+        public String city;
+        public String town;
+        public String kana;
+        public String roman;
+        public String fullAddress;
+        public String addressLine;
+        public String address;
         public String validFrom;
         public String validTo;
         public Boolean cacheHit;

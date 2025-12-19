@@ -43,6 +43,7 @@
 - [x] **タスクE: ORCA-02 `/orca/stamp/{setCd,name}` date パラメータ追加** — `date` クエリで有効期間判定を指定可能化し、既存の第3要素指定は後方互換で維持。証跡: `docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md` / 成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md`。
 - [x] **タスクF: ORCA-03 `/orca/tensu/shinku` レスポンス拡充** — `taniname` / `ykzkbn` / `yakkakjncd` を含む列構成で `/orca/tensu/name` と整合。証跡: `docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md` / 成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md`。
 - [x] **タスクG: ORCA-05 `/orca/master/generic-class|generic-price|youhou|material|kensa-sort` 実装** — DTO/監査メタ/ページング/契約テストを整備。証跡: `docs/server-modernization/phase2/operations/logs/20251219T140028Z-orca-05-master-generic.md` / 成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md`。
+- [x] **タスクH: ORCA-06 `/orca/master/hokenja` `/orca/master/address` 実装** — 保険者/住所 DTO と監査ログ（404/503/空レス差分）を整備。証跡: `docs/server-modernization/phase2/operations/logs/20251219T144408Z-orca-06-hokenja-address.md` / 成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_06_hokenja_address実装.md`。
 - [ ] 2025-11-20 追記: `DOC_STATUS.md` W22 行（ORCA PHR タスク）に登録された RUN_ID=`20251121TrialPHRSeqZ1`（Trial CRUD ベース）のステータスと `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` を突合し、「新規登録／更新／削除 OK（トライアル環境でのみ）」表記と CRUD ログ反映可否を確認。行 25 の備考へ Trial 切替と残課題を明記。
 
 ## 3. 進捗更新テンプレ（ワーカー報告）
