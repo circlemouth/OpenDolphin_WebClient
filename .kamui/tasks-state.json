@@ -1472,31 +1472,5 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# ORCA-06 保険者・住所マスタ実装\n\n- `/orca/master/hokenja` / `/orca/master/address` を実装。\n- 404/503/空レスの差分を監査ログへ反映。"
-  },
-  {
-    "id": "task-1766155766290-021ebe",
-    "name": "CodexCLI1: phase2開発ドキュメントはlegacyのはずだが、AGENTS.mdやGEMINI.mdからドキュメントを参照したエージェントが、phase2開発段階にあるという誤解をする現象が続いている。この原因を突き止めて、正しい開発状況を参照できるように改善を行え。",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-19T14:49:26.290Z",
-    "updatedAt": "2025-12-19T14:49:35.834Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766155766290-021ebe",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766155766289-1yhtw6uu",
-    "aiCompetitionGroupName": "phase2開発ドキュメントはlegacyのはずだが、AGENTS.mdやGEMINI.mdからドキュメントを参照したエージェントが、phase2開発段階にあるという誤解をする現象が続いている。この原因を突き止めて、正しい開発状況を参照できるように改善を行え。",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766155766290-021ebe",
-    "medal": "gold",
-    "aiCompetitionScore": 92
   }
 ]
