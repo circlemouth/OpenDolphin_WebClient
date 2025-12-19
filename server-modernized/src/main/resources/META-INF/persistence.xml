@@ -43,7 +43,7 @@
         <class>open.dolphin.infomodel.Factor2BackupKey</class>
         <class>open.dolphin.infomodel.AuditEvent</class>
         <properties>
-            <property name="jakarta.persistence.schema-generation.database.action" value="update"/>
+            <property name="jakarta.persistence.schema-generation.database.action" value="none"/>
             <property name="hibernate.dialect" value="org.hibernate.dialect.PostgreSQLDialect"/>
             <property name="hibernate.jdbc.use_streams_for_lob" value="false"/>
             <property name="hibernate.jdbc.lob.non_contextual_creation" value="true"/>

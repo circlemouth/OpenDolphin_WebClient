@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251219T113948Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251219T125123Z`）
 > 2025-12-19 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T113948Z`）
+### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T125123Z`）
+- DDL 変換警告と Agroal クラスロード警告の解消（RUN_ID=`20251219T125123Z`）。`schema-generation.database.action=none` へ変更し、`io.agroal.api` module dependency を追加して `WELD-000119` を解消。証跡: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`。成果物: `src/server_modernized_full_completion_phase2/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md`。
 - ORCA-01 `/orca/inputset` SQL 修正（RUN_ID=`20251219T113948Z`）。`inputcd` の WHERE 句を括弧で明示し、SQL 文字列ユニットテストを追加。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md`。
 - server-modernized 実装優先度と実装順を確定（RUN_ID=`20251219T065150Z`）。ORCA Master → 監査・JMS → 外部 API → Jakarta 設定の順序と依存関係/テスト順序を明文化し、ガント（`.kamui/apps/server-modernized-implementation-20251219.yaml`）へ反映。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md`。
 - 実装状況ドキュメント棚卸し（RUN_ID=`20251219T063753Z`）。`JAKARTA_EE10_GAP_LIST.md` / `MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` / `ORCA_API_STATUS.md` を突合し、未実装・部分実装・証跡未取得の一覧をタスク化。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md`。
@@ -44,6 +45,7 @@
 ## 現在のドキュメント（Active）
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md` — server-modernized 実装優先度と順序確定（RUN_ID=`20251219T065150Z`）。
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` — server-modernized 実装状況棚卸し（RUN_ID=`20251219T063753Z`）。
+- `src/server_modernized_full_completion_phase2/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md` — DDL 変換警告と Agroal クラスロード解消（RUN_ID=`20251219T125123Z`）。
 - `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md` — ORCA-01 `/orca/inputset` SQL 修正（RUN_ID=`20251219T113948Z`）。
 - `src/modernization/module_json/キックオフ_RUN_ID採番.md` — module_json モダナイズ計画ガント起点（RUN_ID=`20251214T022944Z`）。
 - `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` — module_json: 型情報フォールバック（RUN_ID=`20251214T132418Z`）。
@@ -82,6 +84,7 @@
 - UX ポリシー: `ux/reception-schedule-ui-policy.md`, `ux/charts-claim-ui-policy.md`, `ux/patients-admin-ui-policy.md`, `ux/config-toggle-design.md`, `ux/admin-delivery-validation.md`, `ux/playwright-scenarios.md`, `ux/ux-documentation-plan.md`。
 - Ops/Debug: `operations/debugging-outpatient-bugs.md`（外来 API 差分ログ）。
 - 証跡ログ: `planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`（DOC_STATUS 棚卸しとハブ同期）。
+- 証跡ログ: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`（DDL 変換警告と Agroal クラスロード解消、RUN_ID=`20251219T125123Z`）。
 - 証跡ログ: `planning/phase2/logs/20251218T183545Z-charts-audit-telemetry.md`（auditEvent と telemetry runId/traceId 突合、RUN_ID=`20251218T183545Z`）。
 - 証跡ログ: `planning/phase2/logs/20251219T062549Z-runid-governance.md`（RUN_ID 整備と参照チェーン再確認）。
 - 証跡ログ: `planning/phase2/logs/20251217T233430Z-charts-orca-send-precheck.md`、`planning/phase2/logs/20251214T082236Z-module-json-docs.md`、`planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`、`planning/phase2/logs/20251213T133932Z-charts-fetch-with-resolver.md`、`planning/phase2/logs/20251213T000432Z-charts-session-permission-guard.md`、`planning/phase2/logs/20251212T143720Z-charts-outpatient-api-contract.md`、`planning/phase2/logs/20251212T140014Z-charts-page-gap.md`、`planning/phase2/logs/20251212T130647Z-charts-production-outpatient-governance.md`、`planning/phase2/logs/20251212T131901Z-charts-outpatient-coverage.md`、`planning/phase2/logs/20251211T172459Z-runid-governance.md`、`planning/phase2/logs/20251211T172459Z-web-client-plan.md`、`planning/phase2/logs/20251211T193942Z-administration-delivery.md`。過去 RUN_ID は DOC_STATUS を参照。
