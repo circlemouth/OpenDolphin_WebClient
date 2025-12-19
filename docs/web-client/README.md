@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251219T112155Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251219T113948Z`）
 > 2025-12-19 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,8 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T112155Z`）
-- ORCA-01 `/orca/inputset` SQL 修正（RUN_ID=`20251219T112155Z`）。`inputcd` の WHERE 句を括弧で明示し、`hospnum` フィルタを常時適用。証跡: `docs/server-modernization/phase2/operations/logs/20251219T112155Z-orca01-inputset-sql.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md`。
+### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T113948Z`）
+- ORCA-01 `/orca/inputset` SQL 修正（RUN_ID=`20251219T113948Z`）。`inputcd` の WHERE 句を括弧で明示し、SQL 文字列ユニットテストを追加。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md`。
 - server-modernized 実装優先度と実装順を確定（RUN_ID=`20251219T065150Z`）。ORCA Master → 監査・JMS → 外部 API → Jakarta 設定の順序と依存関係/テスト順序を明文化し、ガント（`.kamui/apps/server-modernized-implementation-20251219.yaml`）へ反映。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md`。
 - 実装状況ドキュメント棚卸し（RUN_ID=`20251219T063753Z`）。`JAKARTA_EE10_GAP_LIST.md` / `MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` / `ORCA_API_STATUS.md` を突合し、未実装・部分実装・証跡未取得の一覧をタスク化。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md`。
 - DOC_STATUS 棚卸しとハブ同期（RUN_ID=`20251219T063136Z`）。DOC_STATUS の備考欄へ RUN_ID/証跡パスを追記し、README/Phase2 INDEX/manager overview/checklist を同日付で同期。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/DOC_STATUS棚卸しとハブ同期.md`。
@@ -44,7 +44,7 @@
 ## 現在のドキュメント（Active）
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md` — server-modernized 実装優先度と順序確定（RUN_ID=`20251219T065150Z`）。
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` — server-modernized 実装状況棚卸し（RUN_ID=`20251219T063753Z`）。
-- `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md` — ORCA-01 `/orca/inputset` SQL 修正（RUN_ID=`20251219T112155Z`）。
+- `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md` — ORCA-01 `/orca/inputset` SQL 修正（RUN_ID=`20251219T113948Z`）。
 - `src/modernization/module_json/キックオフ_RUN_ID採番.md` — module_json モダナイズ計画ガント起点（RUN_ID=`20251214T022944Z`）。
 - `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` — module_json: 型情報フォールバック（RUN_ID=`20251214T132418Z`）。
 - `src/modernization/module_json/UI保存復元確認.md` — module_json: UI 経路の addDocument 保存/復元（RUN_ID=`20251214T123042Z`）。

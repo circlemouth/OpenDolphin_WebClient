@@ -15,6 +15,7 @@
 
 RUN_ID=`20251219T062549Z` で参照チェーンを再確認し、ハブ文書の RUN_ID を統一。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。
 RUN_ID=`20251219T063136Z` で DOC_STATUS 棚卸しとハブ同期を実施。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。
+RUN_ID=`20251219T113948Z` で ORCA-01 `/orca/inputset` SQL 修正とテスト追加を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。
 
 ## 1. 機能別マッピング（EMR 通信の 2 本柱）
 
