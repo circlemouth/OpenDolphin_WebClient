@@ -145,6 +145,23 @@ src:
         schedule:
           start: 2026-01-22T12:00:00.000Z
           days: 0.5
+      ddl変換警告とAgroalクラスロード解消.md:
+        content: |-
+          # DDL 変換警告と Agroal クラスロード解消
+
+          - `d_factor2_*` と `d_stamp_tree` の型変換 WARN（oid/bytea 変換失敗）を解消。
+          - `DatasourceMetricsRegistrar` の AgroalDataSource クラスロード警告を解消。
+          - 既存ログに残る WARN が再現しないことを確認し、証跡を保存。
+        dependency:
+          - src/server_modernized_full_completion_phase2/00_governance/DOC_STATUS棚卸しとハブ同期.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-20T00:00:00.000Z
+          days: 1
       jsonp_jsonb_validation依存整備.md:
         content: |-
           # JSON-P / JSON-B / Validation 依存整備
@@ -306,10 +323,10 @@ src:
         api:
           - /orca/inputset
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
-          start: 2025-12-28T00:00:00.000Z
+          start: 2025-12-19T00:00:00.000Z
           days: 0.5
       ORCA_02_stamp_dateパラメータ追加.md:
         content: |-
@@ -317,7 +334,7 @@ src:
 
           - `date` パラメータを追加し、有効期間でフィルタ可能にする。
         dependency:
-          - src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md
+          - src/server_modernized_full_completion_phase2/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md
         agent: codex
         api:
           - /orca/stamp/{setCd}/{name}
