@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251219T140028Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251219T144408Z`）
 > 2025-12-19 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T140028Z`）
+### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T144408Z`）
+- ORCA-06 `/orca/master/hokenja` `/orca/master/address` を実装（RUN_ID=`20251219T144408Z`）。保険者/住所の DTO を追加し、404/503/空レス差分を監査ログに反映。証跡: `docs/server-modernization/phase2/operations/logs/20251219T144408Z-orca-06-hokenja-address.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_06_hokenja_address実装.md`。
 - ORCA-05 `/orca/master/generic-class|generic-price|youhou|material|kensa-sort` を OpenAPI 準拠で実装（RUN_ID=`20251219T140028Z`）。DTO/監査メタ/ページング/契約テストを整備。証跡: `docs/server-modernization/phase2/operations/logs/20251219T140028Z-orca-05-master-generic.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md`。
 - ORCA-03 `/orca/tensu/shinku` レスポンス拡充（RUN_ID=`20251219T133053Z`）。`taniname` / `ykzkbn` / `yakkakjncd` を含む列構成で `/orca/tensu/name` と整合。証跡: `docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md`。
 - ORCA-02 `/orca/stamp/{setCd,name}` date パラメータの追補ドキュメント反映（RUN_ID=`20251219T223000Z`）。`server-api-inventory.md`/`api_inventory.yaml` を更新し、証跡ログに「テスト未実施」を明記。証跡: `docs/server-modernization/phase2/operations/logs/20251219T223000Z-orca-02-stamp-date-followup.md`。
@@ -50,6 +51,7 @@
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md` — server-modernized 実装優先度と順序確定（RUN_ID=`20251219T065150Z`）。
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` — server-modernized 実装状況棚卸し（RUN_ID=`20251219T063753Z`）。
 - `src/server_modernized_full_completion_phase2/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md` — DDL 変換警告と Agroal クラスロード解消（RUN_ID=`20251219T125123Z`）。
+- `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_06_hokenja_address実装.md` — ORCA-06 `/orca/master/hokenja` `/orca/master/address` 実装（RUN_ID=`20251219T144408Z`）。
 - `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md` — ORCA-05 `/orca/master/generic-class|generic-price|youhou|material|kensa-sort` 実装（RUN_ID=`20251219T140028Z`）。
 - `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md` — ORCA-03 `/orca/tensu/shinku` レスポンス拡充（RUN_ID=`20251219T133053Z`）。
 - `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md` — ORCA-02 `/orca/stamp/{setCd,name}` date パラメータ追加（RUN_ID=`20251219T131008Z`）。
@@ -93,6 +95,7 @@
 - 証跡ログ: `planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`（DOC_STATUS 棚卸しとハブ同期）。
 - 証跡ログ: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`（DDL 変換警告と Agroal クラスロード解消、RUN_ID=`20251219T125123Z`）。
 - 証跡ログ: `docs/server-modernization/phase2/operations/logs/20251219T140028Z-orca-05-master-generic.md`（ORCA-05 マスタ実装、RUN_ID=`20251219T140028Z`）。
+- 証跡ログ: `docs/server-modernization/phase2/operations/logs/20251219T144408Z-orca-06-hokenja-address.md`（ORCA-06 保険者・住所マスタ実装、RUN_ID=`20251219T144408Z`）。
 - 証跡ログ: `docs/server-modernization/phase2/operations/logs/20251219T133053Z-orca-03-tensu-shinku.md`（ORCA-03 `/orca/tensu/shinku` レスポンス拡充、RUN_ID=`20251219T133053Z`）。
 - 証跡ログ: `docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md`（ORCA-02 `/orca/stamp` date パラメータ追加、RUN_ID=`20251219T131008Z`）。
 - 証跡ログ: `docs/server-modernization/phase2/operations/logs/20251219T223000Z-orca-02-stamp-date-followup.md`（ORCA-02 `/orca/stamp` date 追補回収、RUN_ID=`20251219T223000Z`）。
