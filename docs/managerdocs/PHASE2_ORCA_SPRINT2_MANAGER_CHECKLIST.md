@@ -39,6 +39,7 @@
 - [x] `DOC_STATUS.md` 行 25: ステータス Active / 最終レビュー **2025-11-16** / 備考へ「RUN_ID=20251116T170500Z, evidence=docs/server-modernization/phase2/operations/logs/20251116T170500Z-orca-ui-sync.md, REST_API_INVENTORY UI ステータス列と API_UI_GAP §0 追加」を追記済み。
   - [ ] `MODERNIZED_API_DOCUMENTATION_GUIDE.md` §5 へ今回の棚卸し結果メモ（必要な場合）。
   - [ ] `docs/web-client/README.md` ORCA リンク整合チェック（必要時更新）。
+- [x] **タスクD: ORCA-01 `/orca/inputset` SQL 修正** — `inputcd` の WHERE 句を括弧で明示し、SQL 文字列ユニットテストを追加。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md` / 成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md`。
 - [ ] 2025-11-20 追記: `DOC_STATUS.md` W22 行（ORCA PHR タスク）に登録された RUN_ID=`20251121TrialPHRSeqZ1`（Trial CRUD ベース）のステータスと `docs/server-modernization/phase2/operations/logs/2025-11-21-phr-seq-trial.md` を突合し、「新規登録／更新／削除 OK（トライアル環境でのみ）」表記と CRUD ログ反映可否を確認。行 25 の備考へ Trial 切替と残課題を明記。
 
 ## 3. 進捗更新テンプレ（ワーカー報告）
