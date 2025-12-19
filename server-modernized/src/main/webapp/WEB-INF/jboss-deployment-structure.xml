@@ -4,5 +4,8 @@
     <exclusions>
       <module name="org.wildfly.micrometer.deployment"/>
     </exclusions>
+    <dependencies>
+      <module name="io.agroal.api"/>
+    </dependencies>
   </deployment>
 </jboss-deployment-structure>
