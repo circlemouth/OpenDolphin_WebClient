@@ -17,6 +17,8 @@ RUN_ID=`20251219T062549Z` で参照チェーンを再確認し、ハブ文書の
 RUN_ID=`20251219T063136Z` で DOC_STATUS 棚卸しとハブ同期を実施。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。
 RUN_ID=`20251219T113948Z` で ORCA-01 `/orca/inputset` SQL 修正とテスト追加を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。
 RUN_ID=`20251219T125123Z` で DDL 変換警告と Agroal クラスロード警告を解消。証跡: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`。
+RUN_ID=`20251219T131008Z` で ORCA-02 `/orca/stamp/{setCd,name}` date パラメータ追加を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md`。
+RUN_ID=`20251219T223000Z` で ORCA-02 `/orca/stamp/{setCd,name}` date 追補回収（ドキュメント/最小確認）を実施。証跡: `docs/server-modernization/phase2/operations/logs/20251219T223000Z-orca-02-stamp-date-followup.md`。
 
 ## 1. 機能別マッピング（EMR 通信の 2 本柱）
 
