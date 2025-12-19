@@ -136,14 +136,14 @@ src:
           - `server-modernized/src/main/webapp/WEB-INF/web.xml` と `beans.xml` の namespace/xsd を Jakarta EE 10 に更新。
           - WildFly 33 でのデプロイ警告を解消する。
         dependency:
-          - src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md
+          - src/server_modernized_full_completion_phase2/07_external_api/EXT_03_MML_紹介状_証跡取得.md
         agent: claude code
         api: []
         priority: High
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-21T00:00:00.000Z
+          start: 2026-01-22T12:00:00.000Z
           days: 0.5
       jsonp_jsonb_validation依存整備.md:
         content: |-
@@ -159,7 +159,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-21T12:00:00.000Z
+          start: 2026-01-23T00:00:00.000Z
           days: 0.5
       hibernate5依存削除とDockerキャッシュ更新.md:
         content: |-
@@ -175,7 +175,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-22T00:00:00.000Z
+          start: 2026-01-23T12:00:00.000Z
           days: 0.5
       wildfly33_jms_queue_ee_concurrency整備.md:
         content: |-
@@ -191,7 +191,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-22T12:00:00.000Z
+          start: 2026-01-24T00:00:00.000Z
           days: 1
       https_forwarded_header運用整備.md:
         content: |-
@@ -207,7 +207,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-24T00:00:00.000Z
+          start: 2026-01-25T00:00:00.000Z
           days: 0.5
       elytron_auth統合計画と実装.md:
         content: |-
@@ -223,7 +223,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-24T12:00:00.000Z
+          start: 2026-01-25T12:00:00.000Z
           days: 2
     03_kartes_and_attachments:
       KRT_03_karte_image_pathparam修正.md:
@@ -241,7 +241,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-26T00:00:00.000Z
+          start: 2026-01-27T12:00:00.000Z
           days: 0.25
       KRT_04_添付ストレージ二重アップロード解消.md:
         content: |-
@@ -258,7 +258,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-26T06:00:00.000Z
+          start: 2026-01-27T18:00:00.000Z
           days: 0.75
       添付_ロールバックと再送テスト.md:
         content: |-
@@ -274,7 +274,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-27T00:00:00.000Z
+          start: 2026-01-28T12:00:00.000Z
           days: 0.5
       SafetySummary_契約テスト追加.md:
         content: |-
@@ -291,7 +291,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2025-12-27T12:00:00.000Z
+          start: 2026-01-29T00:00:00.000Z
           days: 0.5
     04_orca_master_api:
       ORCA_01_inputset_sql修正.md:
@@ -301,7 +301,7 @@ src:
           - `inputcd` の WHERE 句に括弧を追加し `hospnum` フィルタを適用。
           - 既存テストの再実行と証跡更新。
         dependency:
-          - src/server_modernized_full_completion_phase2/03_kartes_and_attachments/SafetySummary_契約テスト追加.md
+          - src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md
         agent: codex
         api:
           - /orca/inputset
@@ -631,14 +631,14 @@ src:
           - 固定フォールバックキーを廃止し環境変数必須にする。
           - ローテーション手順と監査ログを追加。
         dependency:
-          - src/server_modernized_full_completion_phase2/07_external_api/EXT_03_MML_紹介状_証跡取得.md
+          - src/server_modernized_full_completion_phase2/03_kartes_and_attachments/SafetySummary_契約テスト追加.md
         agent: codex
         api: []
         priority: High
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-22T00:00:00.000Z
+          start: 2026-01-29T12:00:00.000Z
           days: 1
       Secrets欠落時挙動と監視整備.md:
         content: |-
@@ -654,7 +654,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-23T00:00:00.000Z
+          start: 2026-01-30T12:00:00.000Z
           days: 1
     09_quality_release:
       契約テスト_パリティテスト整備.md:
@@ -671,7 +671,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-24T00:00:00.000Z
+          start: 2026-01-31T12:00:00.000Z
           days: 2
       DOC_STATUSとハブ最終更新.md:
         content: |-
@@ -687,7 +687,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-26T00:00:00.000Z
+          start: 2026-02-02T12:00:00.000Z
           days: 0.5
       リリース準備レビュー.md:
         content: |-
@@ -703,5 +703,5 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-26T12:00:00.000Z
+          start: 2026-02-03T00:00:00.000Z
           days: 0.5
