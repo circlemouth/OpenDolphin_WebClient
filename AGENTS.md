@@ -6,6 +6,10 @@
 - mainブランチへのマージを指示されたときは、今の作業ディレクトリの内容をマージする。プロンプト中で示されているのはあくまで例であることに注意すること。
 - 文字化け防止: 日本語ドキュメントは UTF-8(BOMなし)で保存する。PowerShell での書き込みは `-Encoding UTF8`/`UTF8NoBOM` を用い、既存エンコーディングを壊さないこと。
 
+## 0. 開発状況（最優先）
+- Phase2 開発ドキュメントは **Legacy/Archive（参照専用）**。Phase2 を現行フェーズとして扱わないこと。
+- 現行の開発状況は `docs/DEVELOPMENT_STATUS.md` を単一の参照元とし、ここに記載がない限り Phase2 ドキュメントを更新しない。
+
 ## 1. 守るべき制約（高速開発でも削れないもの）
 - `server/` 配下にある旧来のサーバースクリプトを変更しない。触れるのは Web クライアント資産と関連ドキュメントのみ。
 - Legacy サーバー/クライアントは差分検証目的で一時起動してもよいが、保守や運用作業は禁止。
@@ -13,7 +17,8 @@
 - ORCA 連携の接続先・認証情報は機微扱いとし、現行の開発／検証では `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一のルールセットとして参照する。WebORCA トライアルや本番経路の直接アクセス、mac-dev の開発サーバー構成、`curl --cert-type P12` の乱用は行なわず、証跡は `docs/server-modernization/phase2/operations/logs/20251203T134014Z-orcacertification-only.md` へ残す。
 - 参照専用: `client/`, `common/`, `ext_lib/` の Legacy 資産。更新はしない。
 
-## 2. Phase2 オペレーション最小セット
+## 2. Legacy: Phase2 オペレーション最小セット（参照のみ）
+> **注意**: 本セクションは Phase2 の履歴・参照目的。現行タスクでは原則使用しない。
 1. **参照チェーン**: `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → `docs/managerdocs/PHASE2_MANAGER_ASSIGNMENT_OVERVIEW.md` → 各 manager checklist。新タスクはこの順で確認する。
 2. **RUN_ID**: `YYYYMMDDThhmmssZ` を必ず採番し、指示・README・DOC_STATUS・ログ・証跡ディレクトリで同じ値を使う。派生 RUN_ID を作る場合は親 RUN_ID を明示する。
 3. **DOC_STATUS**: `docs/web-client/planning/phase2/DOC_STATUS.md` の棚卸し手順に従って更新し、備考に RUN_ID / 証跡パスを追記したら同日付でハブ文書へ反映する。
