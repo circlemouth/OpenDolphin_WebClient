@@ -882,16 +882,7 @@ public class OrcaResource {
         ArrayList<OrcaInputCd> collection;
         Statement st = null;
 
-        StringBuilder sb = new StringBuilder();
-        sb.append("select * from tbl_inputcd where ");
-        if (true) {
-            sb.append("hospnum=");
-            sb.append(HOSP_NUM);
-            sb.append(" and ");
-        } 
-        sb.append("(inputcd like 'P%' or inputcd like 'S%') order by inputcd");
-        
-        String sql = sb.toString();
+        String sql = buildInputSetSql(HOSP_NUM, true);
         debug(sql);
         
         boolean v4 = true;  //Project.getOrcaVersion().startsWith("4") ? true : false;
@@ -990,6 +981,22 @@ public class OrcaResource {
         }
         
         return null;
+    }
+
+    String buildInputSetSql(int hospNum, boolean includeHospNum) {
+        StringBuilder sb = new StringBuilder();
+        sb.append("select * from tbl_inputcd where ");
+        if (includeHospNum) {
+            sb.append("(hospnum=");
+            sb.append(hospNum);
+            sb.append(" and ");
+        }
+        sb.append("(inputcd like 'P%' or inputcd like 'S%')");
+        if (includeHospNum) {
+            sb.append(")");
+        }
+        sb.append(" order by inputcd");
+        return sb.toString();
     }
     
     /**
