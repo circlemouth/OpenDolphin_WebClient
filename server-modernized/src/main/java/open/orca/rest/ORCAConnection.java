@@ -4,9 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 import java.sql.Connection;
-import java.sql.DriverManager;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import jakarta.naming.InitialContext;
 import jakarta.naming.NamingException;
 import javax.sql.DataSource;
@@ -16,15 +17,13 @@ import javax.sql.DataSource;
  * @author kazushi
  */
 public class ORCAConnection {
-    
+    private static final Logger LOGGER = Logger.getLogger(ORCAConnection.class.getName());
+    private static final String ORCA_JNDI_NAME = "java:jboss/datasources/ORCADS";
+
     private static final ORCAConnection instane = new ORCAConnection();
     
     //@Resource(mappedName="java:jboss/datasources/ORCADS")
     //private DataSource ds;
-    
-    private String jdbcURL;
-    private String user;
-    private String password;
     
 //minagawa^    
     private final Properties config;
@@ -51,31 +50,20 @@ public class ORCAConnection {
                 config.load(r);
             }
 
-            String conn = config.getProperty("claim.conn");
-            if (conn!=null && conn.equals("server")) {
-                jdbcURL = config.getProperty("claim.jdbc.url");
-                user = config.getProperty("claim.user");
-                password = config.getProperty("claim.password");
-            }
-            
         } catch (Exception e) {
-            e.printStackTrace(System.err);
+            LOGGER.log(Level.WARNING, "Failed to load custom.properties for ORCA config", e);
         }
+
+        warnLegacyJdbcConfig();
     }
     
     public Connection getConnection() {
         
         try {
-            if (jdbcURL!=null && user!=null && password!=null) {
-                Connection conn = DriverManager.getConnection(jdbcURL, user, password);         
-                conn.setReadOnly(true);           
-                return conn;
-            } else {
-                DataSource ds = (DataSource)InitialContext.doLookup("java:jboss/datasources/ORCADS");
-                return ds.getConnection();
-            }
+            DataSource ds = (DataSource)InitialContext.doLookup(ORCA_JNDI_NAME);
+            return ds.getConnection();
         } catch (SQLException | NamingException e) {
-            e.printStackTrace(System.err);
+            LOGGER.log(Level.SEVERE, "Failed to obtain ORCA datasource connection", e);
         }
         return null;
     }
@@ -94,6 +82,17 @@ public class ORCAConnection {
         return test!=null && test.equals("server");
     }
 //minagawa$    
+
+    private void warnLegacyJdbcConfig() {
+        if (config == null) {
+            return;
+        }
+        if (config.getProperty("claim.jdbc.url") != null
+                || config.getProperty("claim.user") != null
+                || config.getProperty("claim.password") != null) {
+            LOGGER.warning("custom.properties claim.jdbc.* is ignored; use JNDI datasource " + ORCA_JNDI_NAME);
+        }
+    }
 
     private static Properties copyProperties(Properties source) {
         Properties copy = new Properties();
