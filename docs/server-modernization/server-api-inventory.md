@@ -370,6 +370,9 @@
 | GET | `/orca/tensu/shinku/{param}/` | `getTensutensuByShinku` |
 | GET | `/orca/tensu/ten/{param}/` | `getTensuMasterByTen` |
 
+補足:
+- `/orca/stamp/{param}` は `param=setCd,stampName[,date]`（第3要素は診療日）を許容し、`date` クエリでも診療日を指定できる（`date` クエリが優先）。
+
 ## PHRResource
 
 - ベースパス: `/20/adm/phr`

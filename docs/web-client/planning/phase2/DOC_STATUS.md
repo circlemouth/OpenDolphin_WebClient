@@ -1,5 +1,6 @@
-# DOC_STATUS（RUN_ID=`20251219T131008Z`）
+# DOC_STATUS（RUN_ID=`20251219T223000Z`）
 
+- 本更新 RUN_ID=`20251219T223000Z`（ORCA-02 `/orca/stamp/{setCd,name}` date 追補回収: `server-api-inventory.md` と `api_inventory.yaml` の date 仕様を統一し、証跡ログに「テスト未実施/簡易確認」を明記。証跡: `docs/server-modernization/phase2/operations/logs/20251219T223000Z-orca-02-stamp-date-followup.md`。）
 - 本更新 RUN_ID=`20251219T131008Z`（ORCA-02 `/orca/stamp/{setCd,name}` date パラメータ追加: `date` クエリで有効期間判定を指定可能化し、既存の第3要素指定は後方互換で維持。証跡: `docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md`。）
 - 本更新 RUN_ID=`20251219T125123Z`（DDL 変換警告と Agroal クラスロード警告の解消。`schema-generation.database.action=none` へ変更し、`io.agroal.api` module dependency を追加。証跡: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`。成果物: `src/server_modernized_full_completion_phase2/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md`。）
 - 本更新 RUN_ID=`20251219T113948Z`（ORCA-01 `/orca/inputset` SQL 修正: `inputcd` の WHERE 句を括弧で明示し、SQL 文字列ユニットテストを追加。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md`。）
@@ -55,6 +56,7 @@
 | `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md` | ORCA-01 `/orca/inputset` SQL 修正 | Active | 2025-12-19 | RUN_ID=`20251219T113948Z`。`inputcd` の WHERE 句を括弧で明示し、SQL 文字列ユニットテストを追加。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。 |
 | `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md` | ORCA-01 `/orca/inputset` SQL 修正 実行ログ | Active | 2025-12-19 | RUN_ID=`20251219T113948Z`。`mvn -pl server-modernized -am test` の再実行結果を記録。 |
 | `docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md` | ORCA-02 `/orca/stamp` date パラメータ追加 実行ログ | Active | 2025-12-19 | RUN_ID=`20251219T131008Z`。`date` クエリ追加と後方互換の記録。 |
+| `docs/server-modernization/phase2/operations/logs/20251219T223000Z-orca-02-stamp-date-followup.md` | ORCA-02 `/orca/stamp` date 追補回収ログ | Active | 2025-12-19 | RUN_ID=`20251219T223000Z`。`server-api-inventory.md`/`api_inventory.yaml` の追補とテスト未実施メモ。 |
 | `src/docs/modernization/設計と手順書アップデート.md` | module_json 設計/手順書更新タスク | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。server-modernized README/operations への JSON 化手順反映と証跡整理。証跡 `planning/phase2/logs/20251214T082236Z-module-json-docs.md`。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
 | `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` | module_json: 型情報フォールバック | Active | 2025-12-14 | RUN_ID=`20251214T132418Z`。`@class` 無し beanJson を WARN なしで decode するフォールバック方針。証跡 `planning/phase2/logs/20251214T132418Z-module-json-typeinfo-fallback.md`。 |
