@@ -226,11 +226,11 @@
 | --- | --- | --- | --- | --- |
 | GET | `/orca/master/address?zip=` | 郵便番号から住所 1 件を返却。未一致時は 200/空 body。 | OpenAPI 正式版は 404 `MASTER_ADDRESS_NOT_FOUND` も規定。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-06） |
 | GET | `/orca/master/hokenja?pref=&keyword=&effective=` | 保険者検索（名称/カナ部分一致）。 | `totalCount+items[]` でページング。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-06） |
-| GET | `/orca/master/generic-class?keyword=&effective=&page=&pageSize=` | 薬剤分類ツリー取得。 | `DrugMasterEntry` + 監査メタ必須。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
-| GET | `/orca/master/generic-price?srycd=&effective=` | 薬価（単一）を返却。未一致時は price=null。 | 404 非採用、200 + null を明記。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
-| GET | `/orca/master/youhou?keyword=&effective=` | 用法マスタ取得。 | 配列返却、監査メタ必須。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
-| GET | `/orca/master/material?keyword=&effective=` | 特定器材マスタ取得。 | price 0 許容、ページング対応。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
-| GET | `/orca/master/kensa-sort?keyword=&effective=` | 検査分類マスタ取得。 | `kensaSort` 必須、監査メタ必須。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-06, ORCA-05） |
+| GET | `/orca/master/generic-class?keyword=&effective=&page=&size=` | 薬剤分類ツリー取得。 | `DrugMasterEntry` + 監査メタ必須。 | 実装済み（RUN_ID=`20251219T140028Z`）。`totalCount` と `items` を返却し、`page`/`size` でページング。 |
+| GET | `/orca/master/generic-price?srycd=&effective=` | 薬価（単一）を返却。未一致時は price=null。 | 404 非採用、200 + null を明記。 | 実装済み（RUN_ID=`20251219T140028Z`）。SRYCD 9 桁バリデーションの 422 応答を追加。 |
+| GET | `/orca/master/youhou?keyword=&effective=` | 用法マスタ取得。 | 配列返却、監査メタ必須。 | 実装済み（RUN_ID=`20251219T140028Z`）。 |
+| GET | `/orca/master/material?keyword=&effective=` | 特定器材マスタ取得。 | price 0 許容、ページング対応。 | 実装済み（RUN_ID=`20251219T140028Z`）。 |
+| GET | `/orca/master/kensa-sort?keyword=&effective=` | 検査分類マスタ取得。 | `kensaSort` 必須、監査メタ必須。 | 実装済み（RUN_ID=`20251219T140028Z`）。 |
 | GET | `/orca/tensu/etensu?keyword=&category=&asOf=&tensuVersion=&page=&pageSize=` | 電子点数表検索。 | `totalCount+items[]`、404 は `TENSU_NOT_FOUND`。 | 実装準備中（RUN_ID=`20251124T110000Z`, ETA=2025-12-20, ORCA-08） |
 
 ### PHRResource (`/20/adm/phr`)
