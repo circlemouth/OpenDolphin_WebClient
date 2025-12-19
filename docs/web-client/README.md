@@ -1,4 +1,4 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251219T063753Z`）
+# Web クライアント ドキュメントハブ（RUN_ID=`20251219T065150Z`）
 > 2025-12-19 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
@@ -6,7 +6,8 @@
 - 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
 - ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
 
-### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T063753Z`）
+### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T065150Z`）
+- server-modernized 実装優先度と実装順を確定（RUN_ID=`20251219T065150Z`）。ORCA Master → 監査・JMS → 外部 API → Jakarta 設定の順序と依存関係/テスト順序を明文化し、ガント（`.kamui/apps/server-modernized-implementation-20251219.yaml`）へ反映。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md`。
 - 実装状況ドキュメント棚卸し（RUN_ID=`20251219T063753Z`）。`JAKARTA_EE10_GAP_LIST.md` / `MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` / `ORCA_API_STATUS.md` を突合し、未実装・部分実装・証跡未取得の一覧をタスク化。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md`。
 - DOC_STATUS 棚卸しとハブ同期（RUN_ID=`20251219T063136Z`）。DOC_STATUS の備考欄へ RUN_ID/証跡パスを追記し、README/Phase2 INDEX/manager overview/checklist を同日付で同期。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/DOC_STATUS棚卸しとハブ同期.md`。
 - RUN_ID 整備と参照チェーン再確認（RUN_ID=`20251219T062549Z`）。参照チェーン（AGENTS → README → Phase2 INDEX → manager overview → checklist）を再確認し、RUN_ID を統一。Legacy 資産は参照専用、`server-modernized/` のみ対象範囲であることを再合意。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/RUN_ID整備と参照チェーン再確認.md`。
@@ -40,6 +41,7 @@
 - Charts 外来の fetch レイヤー統一、エラー/リトライ規約、セッション/権限ガード、API 契約テーブルなど 2025-12-13 までの更新内容は据え置き（次の UI 実装タスク開始待ち）。
 
 ## 現在のドキュメント（Active）
+- `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md` — server-modernized 実装優先度と順序確定（RUN_ID=`20251219T065150Z`）。
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` — server-modernized 実装状況棚卸し（RUN_ID=`20251219T063753Z`）。
 - `src/modernization/module_json/キックオフ_RUN_ID採番.md` — module_json モダナイズ計画ガント起点（RUN_ID=`20251214T022944Z`）。
 - `src/modernization/module_json/ModuleJsonConverter型情報フォールバック.md` — module_json: 型情報フォールバック（RUN_ID=`20251214T132418Z`）。

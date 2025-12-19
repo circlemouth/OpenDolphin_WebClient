@@ -1,5 +1,6 @@
-# DOC_STATUS（RUN_ID=`20251219T063753Z`）
+# DOC_STATUS（RUN_ID=`20251219T065150Z`）
 
+- 本更新 RUN_ID=`20251219T065150Z`（server-modernized 実装優先度と実装順を確定。ORCA Master → 監査・JMS → 外部 API → Jakarta 設定の順序、依存関係とテスト順序、ガント反映を完了。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md`。）
 - 本更新 RUN_ID=`20251219T063753Z`（server-modernized 実装状況棚卸し: JAKARTA/GapTracker/ORCA_API_STATUS を突合し、未実装・部分実装・証跡未取得をタスク化。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md`。）
 - 本更新 RUN_ID=`20251219T063136Z`（DOC_STATUS 棚卸しとハブ同期。DOC_STATUS の備考欄へ RUN_ID/証跡パスを追記し、README/Phase2 INDEX/manager overview/checklist を同日付で同期。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/DOC_STATUS棚卸しとハブ同期.md`。）
 - 本更新 RUN_ID=`20251219T062549Z`（RUN_ID 整備と参照チェーン再確認。参照チェーンを再確認し、README/Phase2 INDEX/manager overview/checklist/DOC_STATUS の RUN_ID を統一。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/RUN_ID整備と参照チェーン再確認.md`。）
@@ -43,7 +44,8 @@
 ## Active ドキュメント（2025-12-19 現在）
 | ドキュメント | スコープ | ステータス | 最終レビュー | 備考 / RUN_ID |
 | --- | --- | --- | --- | --- |
-| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-19 | RUN_ID=`20251219T063753Z`。最新サマリ（実装状況棚卸し/DOC_STATUS同期/RUN_ID整備）を反映。 |
+| `docs/web-client/README.md` | Web クライアントハブ | Active | 2025-12-19 | RUN_ID=`20251219T065150Z`。server-modernized 実装順確定とガント反映を追加。 |
+| `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md` | server-modernized 実装優先度/順序確定 | Active | 2025-12-19 | RUN_ID=`20251219T065150Z`。ORCA Master → 監査・JMS → 外部 API → Jakarta 設定の順で依存関係とテスト順序を確定。 |
 | `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` | server-modernized 実装状況棚卸し | Active | 2025-12-19 | RUN_ID=`20251219T063753Z`。JAKARTA/GapTracker/ORCA_API_STATUS を突合し、未実装・部分実装・証跡未取得を整理。 |
 | `src/docs/modernization/設計と手順書アップデート.md` | module_json 設計/手順書更新タスク | Active | 2025-12-14 | RUN_ID=`20251214T082236Z`。server-modernized README/operations への JSON 化手順反映と証跡整理。証跡 `planning/phase2/logs/20251214T082236Z-module-json-docs.md`。 |
 | `src/modernization/module_json/キックオフ_RUN_ID採番.md` | module_json ガント起点 | Active | 2025-12-14 | RUN_ID=`20251214T022944Z`。証跡 `docs/web-client/planning/phase2/logs/20251214T022944Z-module-json-kickoff.md`。 |
