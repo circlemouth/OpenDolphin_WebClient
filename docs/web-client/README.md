@@ -1,10 +1,11 @@
-# Web クライアント ドキュメントハブ（RUN_ID=`20251219T140028Z`）
-> 2025-12-19 時点の最新版。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
+# Web クライアント ドキュメントハブ（Phase2 Legacy）
+> ⚠️ **Legacy/Archive**: Phase2 ドキュメントは参照専用。現行の開発状況は `docs/DEVELOPMENT_STATUS.md` を参照すること。
+> 2025-12-19 時点の Phase2 記録。デバッグ用 Web クライアント（ログイン＋Reception/Charts/Outpatient Mock シェル）を起点に、フル電子カルテ版の実装計画を整理した。
 
 ## 概要
 - 現行実装はログイン＋デモシェルのみが実 API 接続（ログイン API）。Reception/Charts/Outpatient Mock では RUN_ID を発行し tone/banner carry-over を確認できる。
-- 今後の開発は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` を主計画として、画面別仕様・API・UX・テレメトリを統合して進める。
-- ドキュメント更新時はガバナンスチェーン `AGENTS.md` → `docs/web-client/README.md` → `docs/server-modernization/phase2/INDEX.md` → マネージャーチェックリストを踏襲し、RUN_ID／証跡／DOC_STATUS を同一値で併記する。
+- Phase2 期の計画は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` に集約している（参照専用）。
+- Phase2 文書の更新が必要な場合は、`docs/DEVELOPMENT_STATUS.md` の例外手順に従うこと。
 
 ### 最新更新サマリ（2025-12-19 / RUN_ID=`20251219T140028Z`）
 - ORCA-05 `/orca/master/generic-class|generic-price|youhou|material|kensa-sort` を OpenAPI 準拠で実装（RUN_ID=`20251219T140028Z`）。DTO/監査メタ/ページング/契約テストを整備。証跡: `docs/server-modernization/phase2/operations/logs/20251219T140028Z-orca-05-master-generic.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_master_generic系列実装.md`。
@@ -107,16 +108,16 @@
 - ログイン専用化までの計画・ログ (`planning/phase2/LOGIN_REWORK_PLAN.md`, `planning/phase2/logs/20251130T120000Z-login-rework.md` など) は Archive として保持。詳細は `docs/archive/2025Q4/web-client/legacy-archive.md` と DOC_STATUS の Legacy セクションを参照。
 - 旧 RUN_ID（`20251203T203000Z` 等）のロールオフ手順: `docs/server-modernization/phase2/PHASE2_DOCS_ROLLOFF.md`。証跡: `docs/server-modernization/phase2/operations/logs/20251203T203000Z-phase2-legacy-mark.md`。
 
-## 運用方針
-1. 新規ドキュメント作成時は DOC_STATUS 備考に RUN_ID・証跡パスを追記し、本 README の Active リストへリンクを追加する。
-2. Stage/Preview での実 API 検証は `planning/phase2/WEB_CLIENT_IMPLEMENTATION_PLAN.md` のロードマップに沿い、証跡を `planning/phase2/logs/<RUN_ID>-*.md` と `docs/server-modernization/phase2/operations/logs/` に残す。
-3. Active でない資料は `docs/archive/<YYYYQn>/` へ移し、RUN_ID を揃えて履歴管理する。
+## 運用方針（Phase2 Legacy）
+1. Phase2 文書は参照専用。原則として新規ドキュメントの追加や RUN_ID 更新を行わない。
+2. 例外的に Phase2 文書を更新する場合は、`docs/DEVELOPMENT_STATUS.md` の例外手順に従う。
+3. 既存の Phase2 資料は `docs/archive/<YYYYQn>/` へ順次移行し、履歴管理のみ継続する。
 
 ## ORCA 接続の現行方針
 - 接続先・証明書は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を唯一のルールとして参照。違反となる WebORCA トライアル接続や `curl --cert-type P12` の乱用は禁止。
 - `VITE_DISABLE_MSW` / `VITE_DEV_PROXY_TARGET` を用いた実 API 検証は証跡ログに RUN_ID 付きで保存する（例: `docs/server-modernization/phase2/operations/logs/<RUN_ID>-*.md`）。
 
-## 参照チェーン
+## 参照チェーン（Phase2 Legacy）
 - `AGENTS.md`
 - `docs/web-client/README.md`（本ファイル）
 - `docs/server-modernization/phase2/INDEX.md`
