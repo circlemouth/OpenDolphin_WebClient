@@ -82,8 +82,10 @@ src:
         content: |-
           # ガント分離と参照先提示
 
-          - Phase2 ガントに Legacy 参照専用の注意を追加。
-          - 現行ガントを新規作成し、参照先を明示。
+          - Phase2 ガントは Legacy/Archive の参照専用として扱う。
+          - Phase2 ガント（履歴）: `.kamui/apps/server-modernized-implementation-20251219.yaml`
+          - 現行ガント: `.kamui/apps/server-modernized-current-plan-20251220.yaml`
+          - 現行の単一参照先: `docs/DEVELOPMENT_STATUS.md`
         dependency:
           - src/server_modernized_current_alignment/00_docs_alignment/Phase2_legacy前提の再整理.md
         agent: codex
