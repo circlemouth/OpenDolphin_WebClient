@@ -133,7 +133,7 @@
 | GET | `/stamp/list/{stampIds}` | 複数スタンプ取得 | カンマ区切り ID を受け取り一覧を返却。【F:server-modernized/src/main/java/open/dolphin/rest/StampResource.java†L293-L313】 |
 | PUT | `/stamp/id` | スタンプ保存/更新 | 単体スタンプを保存し ID を返却。【F:server-modernized/src/main/java/open/dolphin/rest/StampResource.java†L315-L335】 |
 | PUT | `/stamp/list` | スタンプ一括保存 | `StampList` を受け取り保存 ID 群を返却。【F:server-modernized/src/main/java/open/dolphin/rest/StampResource.java†L337-L361】 |
-| DELETE | `/stamp/id/{stampId}` | スタンプ削除 | 削除件数を返却。監査ログ強化予定。【F:server-modernized/src/main/java/open/dolphin/rest/StampResource.java†L363-L374】 |
+| DELETE | `/stamp/id/{stampId}` | スタンプ削除 | 削除件数を返却。削除監査で requestId/traceId と errorMessage を記録。【F:server-modernized/src/main/java/open/dolphin/rest/StampResource.java†L363-L374】 |
 | DELETE | `/stamp/list/{stampIds}` | スタンプ一括削除 | 複数 ID を削除し件数を返却。【F:server-modernized/src/main/java/open/dolphin/rest/StampResource.java†L376-L391】 |
 
 ### ChartEventResource (`/chartEvent`)
