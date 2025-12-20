@@ -9,6 +9,8 @@ import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.inject.Inject;
@@ -23,8 +25,12 @@ import open.dolphin.rest.dto.RoutineMedicationResponse;
 import open.dolphin.rest.dto.RpHistoryEntryResponse;
 import open.dolphin.rest.dto.SafetySummaryResponse;
 import open.dolphin.rest.dto.UserPropertyResponse;
+import open.dolphin.security.audit.AuditEventPayload;
+import open.dolphin.security.audit.AuditTrailService;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.session.PVTServiceBean;
+import open.dolphin.session.framework.SessionTraceContext;
+import open.dolphin.session.framework.SessionTraceManager;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -36,6 +42,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 @Path("/karte")
 public class KarteResource extends AbstractResource {
 
+    private static final Logger LOGGER = Logger.getLogger(KarteResource.class.getName());
     private static final String HEADER_FACILITY = "X-Facility-Id";
     private static final String HEADER_FACILITY_LEGACY = "facilityId";
 
@@ -44,6 +51,15 @@ public class KarteResource extends AbstractResource {
     
     @Inject
     private PVTServiceBean pvtServiceBean;
+
+    @Inject
+    private AuditTrailService auditTrailService;
+
+    @Inject
+    private SessionTraceManager sessionTraceManager;
+
+    @Context
+    private HttpServletRequest httpServletRequest;
 
     /** Creates a new instance of KarteResource */
     public KarteResource() {
@@ -281,13 +297,28 @@ public class KarteResource extends AbstractResource {
     public StringListConverter deleteDocument(@PathParam("id") String idStr) {
 
         long id = Long.parseLong(idStr);
+        DocumentModel document = null;
+        try {
+            List<DocumentModel> documents = karteServiceBean.getDocuments(List.of(id));
+            if (documents != null && !documents.isEmpty()) {
+                document = documents.get(0);
+            }
+        } catch (Exception ex) {
+            LOGGER.log(Level.FINE, "Failed to resolve document metadata for audit [id=" + id + "]", ex);
+        }
 
-        List<String> list = karteServiceBean.deleteDocument(id);
-        StringList strList = new StringList();
-        strList.setList(list);
-        StringListConverter conv = new StringListConverter();
-        conv.setModel(strList);
-        return conv;
+        try {
+            List<String> list = karteServiceBean.deleteDocument(id);
+            recordDocumentDeletionAudit(id, document, list, "success", null);
+            StringList strList = new StringList();
+            strList.setList(list);
+            StringListConverter conv = new StringListConverter();
+            conv.setModel(strList);
+            return conv;
+        } catch (RuntimeException ex) {
+            recordDocumentDeletionAudit(id, document, null, "failed", ex.getClass().getSimpleName());
+            throw ex;
+        }
     }
 
     @GET
@@ -912,6 +943,138 @@ public class KarteResource extends AbstractResource {
                 attachmentModel.setDocumentModel(document);
             }
         }
+    }
+
+    private void recordDocumentDeletionAudit(long documentPk,
+                                             DocumentModel document,
+                                             List<String> deletedDocIds,
+                                             String status,
+                                             String reason) {
+        if (auditTrailService == null) {
+            return;
+        }
+        try {
+            AuditEventPayload payload = createBaseAuditPayload("KARTE_DOCUMENT_DELETE");
+            Map<String, Object> details = new HashMap<>();
+            details.put("status", status);
+            details.put("documentPk", documentPk);
+            if (deletedDocIds != null) {
+                details.put("deletedDocIds", List.copyOf(deletedDocIds));
+                details.put("deletedCount", deletedDocIds.size());
+            }
+            if (reason != null && !reason.isBlank()) {
+                details.put("reason", reason);
+            }
+            if (document != null) {
+                if (document.getDocInfoModel() != null) {
+                    details.put("documentId", document.getDocInfoModel().getDocId());
+                }
+                if (document.getKarteBean() != null) {
+                    details.put("karteId", document.getKarteBean().getId());
+                }
+                if (document.getKarteBean() != null && document.getKarteBean().getPatientModel() != null) {
+                    details.put("patientId", document.getKarteBean().getPatientModel().getPatientId());
+                }
+            }
+            enrichUserDetails(details);
+            enrichTraceDetails(details);
+            payload.setDetails(details);
+            auditTrailService.record(payload);
+        } catch (Exception ex) {
+            LOGGER.log(Level.FINE, "Failed to record document deletion audit [documentPk=" + documentPk + "]", ex);
+        }
+    }
+
+    private AuditEventPayload createBaseAuditPayload(String action) {
+        AuditEventPayload payload = new AuditEventPayload();
+        String actorId = resolveActorId();
+        payload.setActorId(actorId);
+        payload.setActorDisplayName(resolveActorDisplayName(actorId));
+        if (httpServletRequest != null && httpServletRequest.isUserInRole("ADMIN")) {
+            payload.setActorRole("ADMIN");
+        }
+        payload.setAction(action);
+        payload.setResource(resolveResourcePath());
+        String traceId = resolveTraceId(httpServletRequest);
+        if (traceId == null || traceId.isBlank()) {
+            traceId = resolveRequestId();
+        }
+        payload.setRequestId(traceId);
+        payload.setTraceId(traceId);
+        payload.setIpAddress(resolveIpAddress());
+        payload.setUserAgent(resolveUserAgent());
+        return payload;
+    }
+
+    private void enrichUserDetails(Map<String, Object> details) {
+        String remoteUser = resolveRemoteUser();
+        if (remoteUser != null) {
+            details.put("remoteUser", remoteUser);
+            int idx = remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+            if (idx > 0) {
+                details.put("facilityId", remoteUser.substring(0, idx));
+                if (idx + 1 < remoteUser.length()) {
+                    details.put("userId", remoteUser.substring(idx + 1));
+                }
+            }
+        }
+    }
+
+    private void enrichTraceDetails(Map<String, Object> details) {
+        boolean traceCaptured = false;
+        if (sessionTraceManager != null) {
+            SessionTraceContext context = sessionTraceManager.current();
+            if (context != null) {
+                details.put("traceId", context.getTraceId());
+                details.put("sessionOperation", context.getOperation());
+                traceCaptured = true;
+            }
+        }
+        if (!traceCaptured) {
+            String traceId = resolveTraceId(httpServletRequest);
+            if (traceId != null) {
+                details.put("traceId", traceId);
+            }
+        }
+    }
+
+    private String resolveActorId() {
+        return Optional.ofNullable(resolveRemoteUser()).orElse("system");
+    }
+
+    private String resolveActorDisplayName(String actorId) {
+        if (actorId == null) {
+            return "system";
+        }
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx >= 0 && idx + 1 < actorId.length()) {
+            return actorId.substring(idx + 1);
+        }
+        return actorId;
+    }
+
+    private String resolveResourcePath() {
+        return httpServletRequest != null ? httpServletRequest.getRequestURI() : "/karte";
+    }
+
+    private String resolveRequestId() {
+        if (httpServletRequest == null) {
+            return UUID.randomUUID().toString();
+        }
+        return Optional.ofNullable(httpServletRequest.getHeader("X-Request-Id"))
+                .orElse(UUID.randomUUID().toString());
+    }
+
+    private String resolveIpAddress() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteAddr() : null;
+    }
+
+    private String resolveUserAgent() {
+        return httpServletRequest != null ? httpServletRequest.getHeader("User-Agent") : null;
+    }
+
+    private String resolveRemoteUser() {
+        return httpServletRequest != null ? httpServletRequest.getRemoteUser() : null;
     }
 
 }

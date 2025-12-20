@@ -94,6 +94,9 @@ public class TouchFailureAuditLogger {
         if (errorCode != null && !errorCode.isBlank()) {
             enriched.putIfAbsent("reason", errorCode);
         }
+        if (message != null && !message.isBlank()) {
+            enriched.putIfAbsent("errorMessage", message);
+        }
         enrichFacility(enriched, request);
         attachTraceContext(enriched);
         payload.setDetails(enriched);

@@ -25,7 +25,9 @@ import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -90,6 +92,9 @@ import open.dolphin.touch.converter.ISendPackage;
 import open.dolphin.touch.converter.ISendPackage2;
 import open.dolphin.touch.converter.IVitalModel;
 import open.dolphin.touch.session.EHTServiceBean;
+import open.dolphin.touch.support.TouchAuditHelper;
+import open.dolphin.touch.support.TouchRequestContext;
+import open.dolphin.touch.support.TouchRequestContextExtractor;
 import open.orca.rest.ORCAConnection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -137,6 +142,9 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     
     @Inject
     private ChartEventServiceBean eventServiceBean;
+
+    @Inject
+    private TouchAuditHelper auditHelper;
 
     @Inject
     // LegacyObjectMapperProducer で Touch 系 JSON の既定設定を共有
@@ -784,19 +792,57 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     @Path("/document")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
-    public StreamingOutput deleteDocument(final String json) {
-        
+    public StreamingOutput deleteDocument(final @Context HttpServletRequest request, final String json) {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                
+                TouchRequestContext context = TouchRequestContextExtractor.from(request);
                 String[] pks = legacyTouchMapper.readValue(json, String[].class);
-                
                 long pk = Long.parseLong(pks[0]);
-                List<String> list = ehtService.deleteDocumentByPk(pk);
-                
-                ObjectMapper mapper = getSerializeMapper();
-                mapper.writeValue(os, list);
+                DocumentModel document = null;
+                try {
+                    document = ehtService.getDocumentByPk(pk);
+                } catch (Exception ex) {
+                    LOGGER.log(Level.FINE, "Failed to resolve Touch document metadata [pk=" + pk + "]", ex);
+                }
+                try {
+                    List<String> list = ehtService.deleteDocumentByPk(pk);
+                    ObjectMapper mapper = getSerializeMapper();
+                    mapper.writeValue(os, list);
+
+                    if (auditHelper != null) {
+                        Map<String, Object> details = new HashMap<>();
+                        details.put("status", "success");
+                        details.put("requestedDocPk", pk);
+                        details.put("deletedDocGroup", list);
+                        details.put("deletedCount", list != null ? list.size() : 0);
+                        if (document != null) {
+                            if (document.getDocInfoModel() != null) {
+                                details.put("documentId", document.getDocInfoModel().getDocId());
+                            }
+                            if (document.getKarteBean() != null) {
+                                details.put("karteId", document.getKarteBean().getId());
+                            }
+                            if (document.getKarteBean() != null && document.getKarteBean().getPatientModel() != null) {
+                                details.put("patientId", document.getKarteBean().getPatientModel().getPatientId());
+                            }
+                        }
+                        auditHelper.record(context, "TOUCH_DOCUMENT_DELETE", "/10/eht/document", details);
+                    }
+                } catch (RuntimeException ex) {
+                    if (auditHelper != null) {
+                        Map<String, Object> details = new HashMap<>();
+                        details.put("status", "failed");
+                        details.put("requestedDocPk", pk);
+                        details.put("reason", ex.getClass().getSimpleName());
+                        details.put("error", ex.getClass().getSimpleName());
+                        if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
+                            details.put("errorMessage", ex.getMessage());
+                        }
+                        auditHelper.record(context, "TOUCH_DOCUMENT_DELETE", "/10/eht/document", details);
+                    }
+                    throw ex;
+                }
             }
         };
     }
