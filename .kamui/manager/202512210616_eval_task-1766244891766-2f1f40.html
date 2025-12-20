@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 6px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #c3d4d8;
+        border: 1px solid #aabfc5;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .agent-meta {
+        margin-bottom: 12px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin: 12px 0 16px;
+      }
+      .hex-chart svg {
+        width: 220px;
+        height: 220px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .block {
+        font-size: 12px;
+        color: #2c3a40;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        white-space: pre-wrap;
+        margin-bottom: 12px;
+      }
+      a {
+        color: #1b5a6b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜EHTResource例外ハンドリング運用検証・原因特定</h1>
+        <p class="monitor-description">
+          対象ブランチのコミットログ/差分を確認し、機能合理性・緻密性を中心に評価。成果物は各worktree配下にあり、リンクは該当worktreeへ向けています。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">claude code / task-1766244891766-2f1f40</div>
+          <div class="score-total">🏆 530 / 600</div>
+          <div class="score-sub">総合評価 88点（🥇）</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">claude code / task-1766244891567-f49477</div>
+          <div class="score-total">🥈 514 / 600</div>
+          <div class="score-sub">総合評価 84点（🥈）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1766244891766-2f1f40</th>
+            <th>claude code / task-1766244891567-f49477</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-21 06:16 JST</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">評価完了</span>
+                <span class="agent-label">EHTResource例外ハンドリング運用検証・原因特定</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,20 173,60 173,140 100,180 27,140 27,60" fill="#e9f0f2" stroke="#b8c9cd" stroke-width="2" />
+                  <polygon points="100,28 159.6,65.6 158.2,133.6 100,172 36.3,136.8 39,64.8" fill="#7bb0c0" opacity="0.65" stroke="#1f2a30" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 90点</div>
+                  <div>緻密性 86点</div>
+                  <div>調査網羅性 84点</div>
+                  <div>追跡性/運用観点 90点</div>
+                  <div>実装接続性 92点</div>
+                  <div>ドキュメント適合 88点</div>
+                </div>
+              </div>
+
+              <div class="section-title">評価理由（主要指標）</div>
+              <div class="block">機能合理性: 例外汎用化の整理と運用障害の具体化が的確。AbstractResource.restError活用やerrorCode導入まで踏み込んだ提案が合理的。
+緻密性: 対象クラス/メソッド単位で指摘し、task tableで次フェーズへ繋がる。getTreeJsonの隠蔽ケース等は未言及だが全体の粒度は高い。</div>
+
+              <div class="section-title">コミット/差分の確認</div>
+              <div class="block">commit: 774f0f73 Add predeploy readiness analysis for EHTResource exception handling
+差分: src/predeploy_readiness/01_api_implementation/EHTResource例外ハンドリング運用検証・原因特定.md（68行追加）</div>
+
+              <div class="section-title">成果物リンク</div>
+              <div class="block"><a href="../../.worktrees/task-1766244891766-2f1f40/src/predeploy_readiness/01_api_implementation/EHTResource例外ハンドリング運用検証・原因特定.md">worktree成果物: task-1766244891766-2f1f40</a></div>
+
+              <div class="section-title">補足観点</div>
+              <div class="block">System.err廃止/構造化ログ化、監査失敗イベント拡張、claim送信フォールバック拡張など、運用での原因切り分けに直結する施策が明快。実装タスクID付与により次フェーズ移行性が高い。</div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">評価完了</span>
+                <span class="agent-label">EHTResource例外ハンドリング運用検証・原因特定</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100,20 173,60 173,140 100,180 27,140 27,60" fill="#e9f0f2" stroke="#b8c9cd" stroke-width="2" />
+                  <polygon points="100,29.6 157.5,66.8 159.6,134.4 100,169.6 44.6,132 37.6,64" fill="#90b6a4" opacity="0.65" stroke="#1f2a30" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 88点</div>
+                  <div>緻密性 83点</div>
+                  <div>調査網羅性 86点</div>
+                  <div>追跡性/運用観点 87点</div>
+                  <div>実装接続性 80点</div>
+                  <div>ドキュメント適合 90点</div>
+                </div>
+              </div>
+
+              <div class="section-title">評価理由（主要指標）</div>
+              <div class="block">機能合理性: 例外汎用化の整理と監査欠落の指摘が明確で、運用視点も押さえている。
+緻密性: getTreeJsonのnull返却やExceptionMapper導入など具体的。ただし実装タスクの粒度や担当ファイル別の整理は前者より粗い。</div>
+
+              <div class="section-title">コミット/差分の確認</div>
+              <div class="block">commit: 3d88c2d3 Add EHTResource exception handling assessment
+差分: src/predeploy_readiness/01_api_implementation/EHTResource例外ハンドリング運用検証・原因特定.md（73行追加）</div>
+
+              <div class="section-title">成果物リンク</div>
+              <div class="block"><a href="../../.worktrees/task-1766244891567-f49477/src/predeploy_readiness/01_api_implementation/EHTResource例外ハンドリング運用検証・原因特定.md">worktree成果物: task-1766244891567-f49477</a></div>
+
+              <div class="section-title">補足観点</div>
+              <div class="block">参照ソースを明記し、監査/ログ要件ドキュメントとの整合性を強調できている。一方で、是正案が抽象寄りのため実装タスク化への橋渡しは追加検討が必要。</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
