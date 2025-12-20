@@ -113,7 +113,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
@@ -170,12 +170,12 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String srycd = getFirstValue(params, "srycd");
         if (srycd == null || !SRYCD_PATTERN.matcher(srycd).matches()) {
-            return validationError("SRYCD_VALIDATION_ERROR", "SRYCD は数字 9 桁で指定してください");
+            return validationError(request, "SRYCD_VALIDATION_ERROR", "SRYCD は数字 9 桁で指定してください");
         }
         final String effective = getFirstValue(params, "effective");
         final LoadedFixture<FixtureGenericPriceEntry> fixture = loadEntries(
@@ -246,7 +246,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
@@ -296,7 +296,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
@@ -346,7 +346,7 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
@@ -384,12 +384,12 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String pref = getFirstValue(params, "pref");
         if (pref != null && !PREF_PATTERN.matcher(pref).matches()) {
-            return validationError("PREF_VALIDATION_ERROR", "都道府県コードは 01-47 の 2 桁で指定してください");
+            return validationError(request, "PREF_VALIDATION_ERROR", "都道府県コードは 01-47 の 2 桁で指定してください");
         }
         final String keyword = getFirstValue(params, "keyword");
         final String effective = getFirstValue(params, "effective");
@@ -407,7 +407,7 @@ public class OrcaMasterResource extends AbstractResource {
             return buildNotModifiedResponse(etagValue, ttlSeconds);
         }
         if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
-            Response failure = serviceUnavailable("MASTER_HOKENJA_UNAVAILABLE", "保険者マスタを取得できませんでした");
+            Response failure = serviceUnavailable(request, "MASTER_HOKENJA_UNAVAILABLE", "保険者マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/hokenja", masterType, 503, fixture, false, true, 0,
                     buildQueryDetails(pref, keyword, effective, params));
             return failure;
@@ -452,12 +452,12 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String zip = getFirstValue(params, "zip");
         if (zip == null || !ZIP_PATTERN.matcher(zip).matches()) {
-            return validationError("ZIP_VALIDATION_ERROR", "郵便番号は数字 7 桁で指定してください");
+            return validationError(request, "ZIP_VALIDATION_ERROR", "郵便番号は数字 7 桁で指定してください");
         }
         final String effective = getFirstValue(params, "effective");
         final LoadedFixture<FixtureAddressEntry> fixture = loadEntries(
@@ -474,7 +474,7 @@ public class OrcaMasterResource extends AbstractResource {
             return buildNotModifiedResponse(etagValue, ttlSeconds);
         }
         if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
-            Response failure = serviceUnavailable("MASTER_ADDRESS_UNAVAILABLE", "住所マスタを取得できませんでした");
+            Response failure = serviceUnavailable(request, "MASTER_ADDRESS_UNAVAILABLE", "住所マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/address", masterType, 503, fixture, false, true, 0,
                     buildQueryDetails(null, null, effective, params, zip));
             return failure;
@@ -535,21 +535,21 @@ public class OrcaMasterResource extends AbstractResource {
             @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
-            return unauthorized();
+            return unauthorized(request);
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
         final String category = getFirstValue(params, "category");
         if (category != null && !ETENSU_CATEGORY_PATTERN.matcher(category).matches()) {
-            return validationError("TENSU_CATEGORY_INVALID", "category must be numeric 1-2 digits");
+            return validationError(request, "TENSU_CATEGORY_INVALID", "category must be numeric 1-2 digits");
         }
         final String asOf = getFirstValue(params, "asOf");
         if (asOf != null && !AS_OF_PATTERN.matcher(asOf).matches()) {
-            return validationError("TENSU_ASOF_INVALID", "asOf must be YYYYMMDD");
+            return validationError(request, "TENSU_ASOF_INVALID", "asOf must be YYYYMMDD");
         }
         final String tensuVersion = getFirstValue(params, "tensuVersion");
         if (tensuVersion != null && !TENSU_VERSION_PATTERN.matcher(tensuVersion).matches()) {
-            return validationError("TENSU_VERSION_INVALID", "tensuVersion must be YYYYMM");
+            return validationError(request, "TENSU_VERSION_INVALID", "tensuVersion must be YYYYMM");
         }
         final LoadedFixture<FixtureEtensuEntry> fixture = loadEntries(
                 FixtureEtensuEntry.class,
@@ -565,7 +565,7 @@ public class OrcaMasterResource extends AbstractResource {
             return buildNotModifiedResponse(etagValue, ttlSeconds);
         }
         if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
-            Response failure = serviceUnavailable("ETENSU_UNAVAILABLE", "etensu master unavailable");
+            Response failure = serviceUnavailable(request, "ETENSU_UNAVAILABLE", "etensu master unavailable");
             recordMasterAudit(request, "/orca/tensu/etensu", masterType, 503, fixture, false, true, 0,
                     buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
             return failure;
@@ -597,21 +597,29 @@ public class OrcaMasterResource extends AbstractResource {
         return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
-    private Response unauthorized() {
+    private Response unauthorized(HttpServletRequest request) {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode("ORCA_MASTER_UNAUTHORIZED");
         response.setMessage("Invalid Basic headers");
         response.setRunId(RUN_ID);
         response.setTimestamp(Instant.now().toString());
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            response.setCorrelationId(traceId);
+        }
         return Response.status(Status.UNAUTHORIZED).entity(response).build();
     }
 
-    private Response validationError(String code, String message) {
+    private Response validationError(HttpServletRequest request, String code, String message) {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode(code);
         response.setMessage(message);
         response.setRunId(RUN_ID);
         response.setTimestamp(Instant.now().toString());
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            response.setCorrelationId(traceId);
+        }
         response.setValidationError(Boolean.TRUE);
         return Response.status(Status.UNPROCESSABLE_ENTITY).entity(response).build();
     }
@@ -1085,12 +1093,16 @@ public class OrcaMasterResource extends AbstractResource {
         return Response.status(Status.NOT_FOUND).entity(response).build();
     }
 
-    private Response serviceUnavailable(String code, String message) {
+    private Response serviceUnavailable(HttpServletRequest request, String code, String message) {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode(code);
         response.setMessage(message);
         response.setRunId(RUN_ID);
         response.setTimestamp(Instant.now().toString());
+        String traceId = resolveTraceId(request);
+        if (traceId != null && !traceId.isBlank()) {
+            response.setCorrelationId(traceId);
+        }
         return Response.status(Status.SERVICE_UNAVAILABLE).entity(response).build();
     }
 
