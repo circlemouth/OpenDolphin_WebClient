@@ -68,6 +68,7 @@ src:
 
           - Phase2 ドキュメントは Legacy/Archive（参照専用）。
           - 現行作業は `docs/DEVELOPMENT_STATUS.md` を単一参照とする。
+          - 現行ガントは `.kamui/apps/server-modernized-current-plan-20251220.yaml` を参照する。
           - 本ガントは履歴として保持し、実作業の指示には使用しない。
         dependency: []
         agent: codex
