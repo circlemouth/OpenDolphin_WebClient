@@ -164,6 +164,23 @@ src:
         schedule:
           start: 2025-12-24T00:00:00.000Z
           days: 2
+      スタンプ削除監査イベント整合検証・追加.md:
+        content: |-
+          # スタンプ削除監査イベント整合検証・追加
+
+          - `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の「監査ログ強化予定」記載を解消する。
+          - スタンプ削除の監査イベントを追加し、必須フィールド（requestId/traceId/errorMessage 等）の整合性を検証する。
+          - 必須フィールドの不足が判明した場合は要件ドキュメントへ反映し、実装の差分を解消する。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/監査・ログAPI要件ドキュメント整備.md
+        agent: claude code
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-25T00:00:00.000Z
+          days: 1
     02_feature_implementation:
       バリデーション・スキーマ整備.md:
         content: |-
