@@ -8,6 +8,9 @@ public class OrcaTensuEntry {
     private String tensuCode;
     private String name;
     private String kubun;
+    private String noticeDate;
+    private String effectiveDate;
+    private Double points;
     private Double tanka;
     private String unit;
     private String category;
@@ -38,6 +41,30 @@ public class OrcaTensuEntry {
 
     public void setKubun(String kubun) {
         this.kubun = kubun;
+    }
+
+    public String getNoticeDate() {
+        return noticeDate;
+    }
+
+    public void setNoticeDate(String noticeDate) {
+        this.noticeDate = noticeDate;
+    }
+
+    public String getEffectiveDate() {
+        return effectiveDate;
+    }
+
+    public void setEffectiveDate(String effectiveDate) {
+        this.effectiveDate = effectiveDate;
+    }
+
+    public Double getPoints() {
+        return points;
+    }
+
+    public void setPoints(Double points) {
+        this.points = points;
     }
 
     public Double getTanka() {
