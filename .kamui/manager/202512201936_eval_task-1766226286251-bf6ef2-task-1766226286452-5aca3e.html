@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px 18px;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 4px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-row {
+        display: flex;
+        align-items: flex-start;
+        gap: 16px;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 200px;
+        height: 180px;
+        flex: 0 0 auto;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .section-title {
+        margin: 14px 0 6px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      .link-list {
+        padding-left: 18px;
+        margin: 6px 0 0;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">タスク成果物（YAML/アイコン）とブランチ差分を確認し、機能合理性・緻密性を中心に評価しました。</p>
+        <p class="monitor-description">対象: task/task-1766226286251-bf6ef2, task/task-1766226286452-5aca3e</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>task-1766226286251-bf6ef2（AI: codex）</h3>
+          <div class="score-total">🥈 515 / 600</div>
+          <div class="score-meta">平均 86点（総合スコア）</div>
+        </div>
+        <div class="score-card">
+          <h3>task-1766226286452-5aca3e（AI: codex）</h3>
+          <div class="score-total">🥉 466 / 600</div>
+          <div class="score-meta">平均 78点（総合スコア）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766226286251-bf6ef2</th>
+            <th>Agent task-1766226286452-5aca3e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-20 19:36</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">predeploy readiness ガントとアイコンを追加。</span>
+              </div>
+              <div class="hex-row">
+                <svg class="hex-chart" viewBox="0 0 200 180" aria-label="評価六角形チャート">
+                  <polygon points="100,20 160.6,55 160.6,125 100,160 39.4,125 39.4,55" fill="none" stroke="#aabfc5" stroke-width="2" />
+                  <polygon points="100,28 152,60 151.1,119.5 100,150 50.6,118.5 45.4,58.5" fill="rgba(58,175,169,0.35)" stroke="#1f2a30" stroke-width="1.5" />
+                </svg>
+                <ul class="metric-list">
+                  <li>要件準拠 88点</li>
+                  <li>構造整合 86点</li>
+                  <li>依存/日程整合 84点</li>
+                  <li>可読性 85点</li>
+                  <li>表現力 82点</li>
+                  <li>運用考慮 90点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価要約</div>
+              <p class="note">ganttConfig/labels/filters をルートに揃え、タスクごとに必須フィールドを網羅。依存関係と日付の整合性も概ね良好。</p>
+              <div class="section-title">懸念点</div>
+              <p class="note">提出時の説明文（色/図形/文字の意図、ガントアプリ起動手順など）は成果物内に残らないため、チャット回答での網羅性は別途確認が必要。</p>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../apps/server-modernized-predeploy-ready-plan-20251220.yaml">YAML: server-modernized-predeploy-ready-plan-20251220.yaml</a></li>
+                <li><a href="../apps/icons/server-modernized-predeploy-ready-plan-20251220.svg">SVG: server-modernized-predeploy-ready-plan-20251220.svg</a></li>
+              </ul>
+              <div class="section-title">コミット/差分</div>
+              <details>
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>7ab888ce 2025-12-20 19:31:37 +0900 circlemouth Add predeploy readiness gantt and icon
+
+Diffstat:
+ .kamui/apps/icons/server-modernized-predeploy-ready-plan-20251220.svg | 28 ++
+ .kamui/apps/server-modernized-predeploy-ready-plan-20251220.yaml      | 472 +++++++++++++++++++++
+ 2 files changed, 500 insertions(+)
+
+未コミット差分: なし</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">predeploy completion ガントとアイコンを追加。</span>
+              </div>
+              <div class="hex-row">
+                <svg class="hex-chart" viewBox="0 0 200 180" aria-label="評価六角形チャート">
+                  <polygon points="100,20 160.6,55 160.6,125 100,160 39.4,125 39.4,55" fill="none" stroke="#aabfc5" stroke-width="2" />
+                  <polygon points="100,33 145,64 147.6,117.5 100,146 55,116 53.2,63" fill="rgba(255,179,71,0.35)" stroke="#1f2a30" stroke-width="1.5" />
+                </svg>
+                <ul class="metric-list">
+                  <li>要件準拠 82点</li>
+                  <li>構造整合 74点</li>
+                  <li>依存/日程整合 78点</li>
+                  <li>可読性 80点</li>
+                  <li>表現力 75点</li>
+                  <li>運用考慮 77点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価要約</div>
+              <p class="note">詳細なフェーズ分割と依存関係は明確。タスク内の必須フィールドも揃っており、工程の網羅性は高い。</p>
+              <div class="section-title">懸念点</div>
+              <p class="note">.kamui/gantte/test.yaml の構造を「踏襲」する条件に対し、structure.yaml による説明ブロックが不在で構造整合が弱い。</p>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../apps/server-modernized-predeploy-completion-plan-20251220.yaml">YAML: server-modernized-predeploy-completion-plan-20251220.yaml</a></li>
+                <li><a href="../apps/icons/server-modernized-predeploy-completion-plan-20251220.svg">SVG: server-modernized-predeploy-completion-plan-20251220.svg</a></li>
+              </ul>
+              <div class="section-title">コミット/差分</div>
+              <details>
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>686c3795 2025-12-20 19:31:35 +0900 circlemouth Add predeploy completion gantt and icon
+
+Diffstat:
+ .kamui/apps/icons/server-modernized-predeploy-completion-plan-20251220.svg | 21 +
+ .kamui/apps/server-modernized-predeploy-completion-plan-20251220.yaml      | 516 +++++++++++++++++++++
+ 2 files changed, 537 insertions(+)
+
+未コミット差分: なし</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
