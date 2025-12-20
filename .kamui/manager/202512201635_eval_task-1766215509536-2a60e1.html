@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート ORCA_08_etensu電子点数表実装</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-block h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      .summary-block p {
+        margin: 0 0 6px 0;
+        font-size: 13px;
+      }
+      .score-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px 0;
+        font-size: 15px;
+        color: #2c3a40;
+      }
+      .score-card .score-value {
+        font-size: 26px;
+        font-weight: 700;
+      }
+      .score-card .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .status-badge--warning {
+        background: #fff3cd;
+        border-color: #f0e5a5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        width: 160px;
+        height: 160px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .links-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #2c3a40;
+      }
+      .links-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA_08_etensu電子点数表実装</h1>
+        <p class="monitor-description">対象ブランチのコミットログと差分を確認し、機能合理性・緻密性を中心に評価しました。</p>
+      </header>
+
+      <section class="summary-block">
+        <h2>タスク内容</h2>
+        <p>ORCA_08: /orca/tensu/etensu で告示日・適用日・区分・点数を返却し、404/503 を含む契約テストを整備する。</p>
+        <p>仕事の概要: etensu レスポンスの追加フィールドとマッピング実装、契約テストの追加・補強を評価対象とした。</p>
+        <p>成果物リンクは各 worktree 上で管理される点に留意。</p>
+      </section>
+
+      <section class="score-summary">
+        <div class="score-card">
+          <h2>claude code / task-1766215509739-0f742a</h2>
+          <div class="score-value">🏆 501 / 600</div>
+          <div class="score-meta">メダル: 🥇 / 総合スコア 88</div>
+          <div class="score-meta">評価理由: 要件の告示日・適用日・点数を実装し、fixture を用いた契約テストも追加。</div>
+        </div>
+        <div class="score-card">
+          <h2>claude code / task-1766215509939-5439d4</h2>
+          <div class="score-value">❌ 243 / 600</div>
+          <div class="score-meta">失格理由: 実装は未追加で、契約テストのみ。要件の返却項目が未実装。</div>
+          <div class="score-meta">メダル: ⚪️ / 総合スコア 40</div>
+        </div>
+        <div class="score-card">
+          <h2>claude code / task-1766215509536-2a60e1</h2>
+          <div class="score-value">🥉 357 / 600</div>
+          <div class="score-meta">メダル: 🥉 / 総合スコア 62</div>
+          <div class="score-meta">評価理由: 告示日・適用日の一部実装はあるが、点数未実装で仕様との差分が残る。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>claude code / task-1766215509739-0f742a</th>
+            <th>claude code / task-1766215509939-5439d4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-20 16:35</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">完了</span>
+                <span class="agent-label">告示日・適用日・点数の実装と fixture ベースの検証を追加。</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="100.0,28.0 159.6,65.6 158.9,134.0 100.0,170.4 43.2,132.8 51.5,72.0" fill="#c3d4d8" stroke="#7e959b" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 90点</div>
+                  <div>緻密性 86点</div>
+                  <div>コード品質 85点</div>
+                  <div>テスト品質 88点</div>
+                  <div>エラーハンドリング 82点</div>
+                  <div>ドキュメント整備 70点</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">根拠</div>
+              <pre>告示日/適用日/点数のフィールドをDTOへ追加し、レスポンスマッピングで notice/effective/points を補完。
+fixture を使った契約テストで実データの値を検証。</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>コミット:
+65d9f2ce Add etensu notice/effective dates and points
+
+差分統計:
+3 files changed, 92 insertions(+)</pre>
+              </details>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <ul class="links-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766215509739-0f742a">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766215509739-0f742a</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">要件未達</span>
+                <span class="agent-label">契約テストのみで、告示日・適用日・点数の実装が不足。</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="100.0,72.0 126.3,84.8 138.1,122.0 100.0,136.0 72.3,116.0 79.2,88.0" fill="#c3d4d8" stroke="#7e959b" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 35点</div>
+                  <div>緻密性 38点</div>
+                  <div>コード品質 55点</div>
+                  <div>テスト品質 45点</div>
+                  <div>エラーハンドリング 40点</div>
+                  <div>ドキュメント整備 30点</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">根拠</div>
+              <pre>etensu の追加フィールド実装がなく、要件 (告示日/適用日/区分/点数) を満たさない。
+テストは既存レスポンスの存在確認に留まり、実装保証が弱い。</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>コミット:
+40f217ec Add etensu contract test coverage
+
+差分統計:
+1 file changed, 26 insertions(+)</pre>
+              </details>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <ul class="links-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766215509939-5439d4">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766215509939-5439d4</a></li>
+              </ul>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2025-12-20 16:35</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">部分対応</span>
+                <span class="agent-label">告示日/適用日の一部実装はあるが、点数/適用日の命名が仕様と不一致。</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="100.0,50.4 141.6,76.0 145.0,126.0 100.0,146.4 57.0,124.8 65.4,80.0" fill="#c3d4d8" stroke="#7e959b" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 62点</div>
+                  <div>緻密性 60点</div>
+                  <div>コード品質 65点</div>
+                  <div>テスト品質 58点</div>
+                  <div>エラーハンドリング 62点</div>
+                  <div>ドキュメント整備 50点</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">根拠</div>
+              <pre>noticeDate/applyDate の追加はあるが、effectiveDate と points の要件に未対応。
+404/503 のエラー応答で runId/timestamp を検証する補強はあるが要件外。</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>コミット:
+8de63578 Add notice/apply dates to etensu response
+
+差分統計:
+3 files changed, 52 insertions(+)</pre>
+              </details>
+              <div class="snapshot-summary">成果物リンク（worktree）</div>
+              <ul class="links-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766215509536-2a60e1">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766215509536-2a60e1</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--error">比較対象なし</span>
+                <span class="agent-label">2列比較構成のため空欄。</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#eef3f4" stroke="#b8c9cd" />
+                  <polygon points="100.0,100.0 100.0,100.0 100.0,100.0 100.0,100.0 100.0,100.0 100.0,100.0" fill="#c3d4d8" stroke="#7e959b" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 0点</div>
+                  <div>緻密性 0点</div>
+                  <div>コード品質 0点</div>
+                  <div>テスト品質 0点</div>
+                  <div>エラーハンドリング 0点</div>
+                  <div>ドキュメント整備 0点</div>
+                </div>
+              </div>
+              <div class="snapshot-summary">根拠</div>
+              <pre>比較対象が存在しないため、評価は空欄扱い。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

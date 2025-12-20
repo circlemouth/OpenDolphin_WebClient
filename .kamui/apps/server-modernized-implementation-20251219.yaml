@@ -73,8 +73,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-19T00:00:00.000Z
           days: 0.25
@@ -90,8 +90,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-19T06:00:00.000Z
           days: 0.5
@@ -107,8 +107,8 @@ src:
         agent: gemini cli
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-19T12:00:00.000Z
           days: 1
@@ -123,8 +123,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-20T12:00:00.000Z
           days: 0.5
@@ -157,8 +157,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 80
         schedule:
           start: 2025-12-20T00:00:00.000Z
           days: 1
@@ -339,8 +339,8 @@ src:
         api:
           - /orca/stamp/{setCd}/{name}
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-28T12:00:00.000Z
           days: 0.5
@@ -355,8 +355,8 @@ src:
         api:
           - /orca/tensu/shinku
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-29T00:00:00.000Z
           days: 0.5
@@ -376,8 +376,8 @@ src:
           - /orca/master/material
           - /orca/master/kensa-sort
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-29T12:00:00.000Z
           days: 3
@@ -394,8 +394,8 @@ src:
           - /orca/master/hokenja
           - /orca/master/address
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-02T00:00:00.000Z
           days: 2
@@ -410,8 +410,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-04T00:00:00.000Z
           days: 1
@@ -443,8 +443,8 @@ src:
         agent: gemini cli
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 70
         schedule:
           start: 2026-01-08T00:00:00.000Z
           days: 2
