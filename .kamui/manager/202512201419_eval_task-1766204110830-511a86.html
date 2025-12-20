@@ -1,0 +1,389 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f6fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #52636c;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .metric-list {
+        margin: 8px 0 12px;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .hex-wrap {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin: 8px 0 12px;
+      }
+      .hex-chart {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-labels {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-labels div {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .section-title {
+        font-weight: 600;
+        margin-top: 12px;
+        margin-bottom: 6px;
+        font-size: 13px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA-05/06/08 Cache ETag ベンチ検証</h1>
+        <p class="monitor-description">ETag/TTL 実装および監査ログ整備の完成度を、コミットログ/差分から比較評価した。ベンチは未実施のため、実測値は未評価。</p>
+        <p class="monitor-description">作業時刻: 2025-12-20 14:22 / 未コミット変更: なし（現在の worktree）</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>gemini cli / task-1766204110830-511a86</h2>
+          <div class="score-total">🥉 343 / 600</div>
+          <div class="score-sub">総合スコア: 57 / 100</div>
+        </div>
+        <div class="score-card">
+          <h2>gemini cli / task-1766204111030-d0b180</h2>
+          <div class="score-total">🥉 368 / 600</div>
+          <div class="score-sub">総合スコア: 61 / 100</div>
+        </div>
+        <div class="score-card">
+          <h2>gemini cli / task-1766204111240-ee605c</h2>
+          <div class="score-total">🥈 464 / 600</div>
+          <div class="score-sub">総合スコア: 77 / 100</div>
+        </div>
+      </section>
+
+      <div class="snapshot-summary">タスク概要: ORCA-05/06/08 マスター API に ETag/TTL を導入し、304 レスポンスによるキャッシュヒットを活用。監査ログに cacheHit/snapshotVersion を残してベンチ検証に備える。</div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1766204110830-511a86</th>
+            <th>gemini cli / task-1766204111030-d0b180</th>
+            <th>gemini cli / task-1766204111240-ee605c</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-20 14:22</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価済</span>
+                <span class="agent-label">レスポンスキャッシュ＋ETag を実装。audit の cacheHit はキャッシュヒット時に true。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 120 120" aria-label="評価チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,27.5 86,45 83.8,73.8 60,80 31.9,76.2 34.9,45.5" fill="rgba(80, 130, 150, 0.35)" stroke="#507f93" stroke-width="1.5" />
+                </svg>
+                <div class="metric-labels">
+                  <div>実装適合性 65点</div>
+                  <div>キャッシュ/ETag設計 60点</div>
+                  <div>監査ログ整備 55点</div>
+                  <div>テスト/検証 40点</div>
+                  <div>ドキュメント 65点</div>
+                  <div>保守性/安全性 58点</div>
+                </div>
+              </div>
+              <div class="section-title">指標根拠</div>
+              <ul class="metric-list">
+                <li>実装適合性: ETag/TTL を実装し 304 応答を返すが、cacheHit の意味が「レスポンスキャッシュ命中」に寄りがち。</li>
+                <li>キャッシュ/ETag設計: レスポンスキャッシュ導入は有効だが、TTL が短めで stale-while-revalidate なし。</li>
+                <li>監査ログ整備: hokenja/address/etensu の監査ログは更新。ETag 304 の cacheHit 反映が限定的。</li>
+                <li>テスト/検証: テスト追加なし、ベンチ未実施。</li>
+                <li>ドキュメント: ベンチ手順/テンプレは記載されている。</li>
+                <li>保守性/安全性: キャッシュユーティリティ導入で複雑化、無制限キャッシュの運用リスク。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>e2d365de Add RUN_ID to bench doc
+29df758f Add ORCA master ETag cache</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>.../java/open/orca/rest/OrcaMasterResource.java | 489 ++++++++++++++++++---
+.../java/open/orca/rest/OrcaMasterResourceTest.java | 20 +-
+.../ORCA_05_06_08_cache_etag_bench.md | 20 +
+3 files changed, 470 insertions(+), 59 deletions(-)</pre>
+              <div class="section-title">成果物リンク（別 worktree での成果）</div>
+              <ul class="link-list">
+                <li><a href="server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java</a>（branch: task/task-1766204110830-511a86）</li>
+                <li><a href="server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java">server-modernized/src/test/java/open/orca/rest/OrcaMasterResourceTest.java</a>（branch: task/task-1766204110830-511a86）</li>
+                <li><a href="src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_06_08_cache_etag_bench.md">src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_06_08_cache_etag_bench.md</a>（branch: task/task-1766204110830-511a86）</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価済</span>
+                <span class="agent-label">Fixture キャッシュ＋ETag を実装。cacheHit は fixture キャッシュ命中を反映。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 120 120" aria-label="評価チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,25 89.4,43 83.8,73.8 60,80 29.7,77.5 31.9,43.8" fill="rgba(80, 130, 150, 0.35)" stroke="#507f93" stroke-width="1.5" />
+                </svg>
+                <div class="metric-labels">
+                  <div>実装適合性 70点</div>
+                  <div>キャッシュ/ETag設計 68点</div>
+                  <div>監査ログ整備 55点</div>
+                  <div>テスト/検証 40点</div>
+                  <div>ドキュメント 70点</div>
+                  <div>保守性/安全性 65点</div>
+                </div>
+              </div>
+              <div class="section-title">指標根拠</div>
+              <ul class="metric-list">
+                <li>実装適合性: ETag/TTL を導入し 304 を返すが、cacheHit が ETag 由来と一致しない。</li>
+                <li>キャッシュ/ETag設計: パス/クエリ/スナップショット由来の ETag は妥当。Cache-Control は private で保守寄り。</li>
+                <li>監査ログ整備: cacheHit が fixture キャッシュ由来になり、304 ヒットの監査が弱い。</li>
+                <li>テスト/検証: テスト追加なし、ベンチ未実施。</li>
+                <li>ドキュメント: 実装/TTL 設定の説明あり。</li>
+                <li>保守性/安全性: fixture キャッシュは単純だが、無制限な増加に注意が必要。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>77a79a05 Add ORCA master cache ETag TTL support</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>.../java/open/orca/rest/OrcaMasterResource.java | 255 ++++++++++++++++++---
+.../ORCA_05_06_08_cache_etag_bench.md | 18 ++
+2 files changed, 237 insertions(+), 36 deletions(-)</pre>
+              <div class="section-title">成果物リンク（別 worktree での成果）</div>
+              <ul class="link-list">
+                <li><a href="server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java</a>（branch: task/task-1766204111030-d0b180）</li>
+                <li><a href="src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_06_08_cache_etag_bench.md">src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_06_08_cache_etag_bench.md</a>（branch: task/task-1766204111030-d0b180）</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価済</span>
+                <span class="agent-label">ETag/TTL と監査ログの整合が高い。cacheHit は 304 応答時に true。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" viewBox="0 0 120 120" aria-label="評価チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="60,16 99,37.5 98.1,82 60,80 25.4,80 26.2,40.5" fill="rgba(80, 130, 150, 0.35)" stroke="#507f93" stroke-width="1.5" />
+                </svg>
+                <div class="metric-labels">
+                  <div>実装適合性 88点</div>
+                  <div>キャッシュ/ETag設計 90点</div>
+                  <div>監査ログ整備 88点</div>
+                  <div>テスト/検証 40点</div>
+                  <div>ドキュメント 80点</div>
+                  <div>保守性/安全性 78点</div>
+                </div>
+              </div>
+              <div class="section-title">指標根拠</div>
+              <ul class="metric-list">
+                <li>実装適合性: ORCA-05/06/08 に ETag/TTL を実装し、If-None-Match で 304 応答。</li>
+                <li>キャッシュ/ETag設計: snapshotVersion/Version/Query を含む ETag、TTL 2階層＋stale-while-revalidate。</li>
+                <li>監査ログ整備: cacheHit は 304 時のみ true、snapshotVersion を確実に記録。</li>
+                <li>テスト/検証: 追加テストなし、ベンチ未実施。</li>
+                <li>ドキュメント: 実装概要と TTL/ETag 仕様が整理されている。</li>
+                <li>保守性/安全性: 追加ロジックは多いが責務分離は明確、設定値は定数化。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>5966612f Add ETag caching for ORCA master</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>.../java/open/orca/rest/OrcaMasterResource.java | 314 ++++++++++++++++++---
+.../ORCA_05_06_08_cache_etag_bench.md | 17 ++
+2 files changed, 290 insertions(+), 41 deletions(-)</pre>
+              <div class="section-title">成果物リンク（別 worktree での成果）</div>
+              <ul class="link-list">
+                <li><a href="server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java</a>（branch: task/task-1766204111240-ee605c）</li>
+                <li><a href="src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_06_08_cache_etag_bench.md">src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_05_06_08_cache_etag_bench.md</a>（branch: task/task-1766204111240-ee605c）</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
