@@ -129,10 +129,13 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditSuccess(ctx, "PHR_ACCESS_KEY_FETCH", key.getPatientId(), details);
             return streamJson(key, MediaType.APPLICATION_OCTET_STREAM_TYPE);
         } catch (WebApplicationException ex) {
-            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH", null, ex.getResponse().getStatusInfo().toString(), details);
+            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
+            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH", null, ex.getResponse().getStatusInfo().toString(),
+                    failureDetails(details, ex, status));
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH", null, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH", null, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "PHRアクセスキー取得中にエラーが発生しました。",
@@ -160,10 +163,13 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditSuccess(ctx, "PHR_ACCESS_KEY_FETCH_BY_PATIENT", key.getPatientId(), details);
             return streamJson(key, MediaType.APPLICATION_OCTET_STREAM_TYPE);
         } catch (WebApplicationException ex) {
-            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH_BY_PATIENT", patientId, ex.getResponse().getStatusInfo().toString(), details);
+            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
+            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH_BY_PATIENT", patientId, ex.getResponse().getStatusInfo().toString(),
+                    failureDetails(details, ex, status));
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH_BY_PATIENT", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_ACCESS_KEY_FETCH_BY_PATIENT", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "PHRアクセスキー取得中にエラーが発生しました。",
@@ -192,17 +198,21 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditSuccess(ctx, "PHR_ACCESS_KEY_UPSERT", key.getPatientId(), details);
             return streamJson(List.of(pk), MediaType.APPLICATION_OCTET_STREAM_TYPE);
         } catch (IOException ex) {
-            auditFailure(ctx, "PHR_ACCESS_KEY_UPSERT", null, "invalid_payload", details);
+            auditFailure(ctx, "PHR_ACCESS_KEY_UPSERT", null, "invalid_payload",
+                    failureDetails(details, ex, Status.BAD_REQUEST.getStatusCode()));
             throw error(Status.BAD_REQUEST,
                     "error.phr.invalidPayload",
                     "リクエストボディの形式が不正です。",
                     ctx.traceId(),
                     ex);
         } catch (WebApplicationException ex) {
-            auditFailure(ctx, "PHR_ACCESS_KEY_UPSERT", null, ex.getResponse().getStatusInfo().toString(), details);
+            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
+            auditFailure(ctx, "PHR_ACCESS_KEY_UPSERT", null, ex.getResponse().getStatusInfo().toString(),
+                    failureDetails(details, ex, status));
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_ACCESS_KEY_UPSERT", null, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_ACCESS_KEY_UPSERT", null, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "PHRアクセスキー登録中にエラーが発生しました。",
@@ -240,7 +250,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_ALLERGY_TEXT", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_ALLERGY_TEXT", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "アレルギー情報取得中にエラーが発生しました。",
@@ -274,7 +285,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_DISEASE_TEXT", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_DISEASE_TEXT", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "病名情報取得中にエラーが発生しました。",
@@ -298,7 +310,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_MEDICATION_TEXT", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_MEDICATION_TEXT", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "処方情報取得中にエラーが発生しました。",
@@ -321,7 +334,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_LABTEST_TEXT", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_LABTEST_TEXT", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "検査情報取得中にエラーが発生しました。",
@@ -344,7 +358,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_LABTEST_ABNORMAL_TEXT", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_LABTEST_ABNORMAL_TEXT", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "異常値情報取得中にエラーが発生しました。",
@@ -376,7 +391,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_IMAGE_FETCH", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_IMAGE_FETCH", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "画像取得中にエラーが発生しました。",
@@ -432,10 +448,13 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditSuccess(ctx, "PHR_CONTAINER_FETCH", patientId, details);
             return streamJson(container, MediaType.APPLICATION_OCTET_STREAM_TYPE);
         } catch (WebApplicationException ex) {
-            auditFailure(ctx, "PHR_CONTAINER_FETCH", patientId, ex.getResponse().getStatusInfo().toString(), details);
+            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
+            auditFailure(ctx, "PHR_CONTAINER_FETCH", patientId, ex.getResponse().getStatusInfo().toString(),
+                    failureDetails(details, ex, status));
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_CONTAINER_FETCH", patientId, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_CONTAINER_FETCH", patientId, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "PHRデータ取得中にエラーが発生しました。",
@@ -458,7 +477,13 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditHelper.recordSuccess(null, "PHR_IDENTITY_TOKEN", user, Map.of("nonceLength", nonce.length()));
             return token;
         } catch (Exception ex) {
-            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", null, ex.getClass().getSimpleName(), Map.of());
+            Map<String, Object> details = new HashMap<>();
+            details.put("error", ex.getClass().getSimpleName());
+            if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
+                details.put("errorMessage", ex.getMessage());
+            }
+            details.put("httpStatus", Status.INTERNAL_SERVER_ERROR.getStatusCode());
+            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", null, ex.getClass().getSimpleName(), details);
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "Identity トークンの生成中にエラーが発生しました。",
@@ -489,17 +514,21 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditSuccess(ctx, "PHR_EXPORT_REQUEST", null, details);
             return Response.status(Status.ACCEPTED).entity(response).build();
         } catch (WebApplicationException ex) {
-            auditFailure(ctx, "PHR_EXPORT_REQUEST", null, ex.getResponse().getStatusInfo().toString(), details);
+            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
+            auditFailure(ctx, "PHR_EXPORT_REQUEST", null, ex.getResponse().getStatusInfo().toString(),
+                    failureDetails(details, ex, status));
             throw ex;
         } catch (IllegalArgumentException ex) {
-            auditFailure(ctx, "PHR_EXPORT_REQUEST", null, "invalid_payload", details);
+            auditFailure(ctx, "PHR_EXPORT_REQUEST", null, "invalid_payload",
+                    failureDetails(details, ex, Status.BAD_REQUEST.getStatusCode()));
             throw error(Status.BAD_REQUEST,
                     "error.phr.invalidPayload",
                     ex.getMessage(),
                     ctx.traceId(),
                     ex);
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_EXPORT_REQUEST", null, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_EXPORT_REQUEST", null, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "PHR エクスポートジョブの登録中にエラーが発生しました。",
@@ -521,10 +550,13 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditSuccess(ctx, "PHR_EXPORT_STATUS", null, details);
             return Response.ok(response).build();
         } catch (WebApplicationException ex) {
-            auditFailure(ctx, "PHR_EXPORT_STATUS", null, ex.getResponse().getStatusInfo().toString(), details);
+            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
+            auditFailure(ctx, "PHR_EXPORT_STATUS", null, ex.getResponse().getStatusInfo().toString(),
+                    failureDetails(details, ex, status));
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_EXPORT_STATUS", null, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_EXPORT_STATUS", null, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "ジョブステータス取得中にエラーが発生しました。",
@@ -542,7 +574,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         try {
             PHRAsyncJob job = requireJob(ctx, jobId, "PHR_EXPORT_CANCEL");
             if (job.getState() != PHRAsyncJob.State.PENDING) {
-                auditFailure(ctx, "PHR_EXPORT_CANCEL", null, "invalid_state", details);
+                auditFailure(ctx, "PHR_EXPORT_CANCEL", null, "invalid_state",
+                        failureDetails(details, null, Status.CONFLICT.getStatusCode()));
                 throw error(Status.CONFLICT,
                         "error.phr.invalidState",
                         "ジョブはキャンセル可能な状態ではありません。",
@@ -551,7 +584,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             }
             boolean cancelled = asyncJobService.cancel(jobId);
             if (!cancelled) {
-                auditFailure(ctx, "PHR_EXPORT_CANCEL", null, "invalid_state", details);
+                auditFailure(ctx, "PHR_EXPORT_CANCEL", null, "invalid_state",
+                        failureDetails(details, null, Status.CONFLICT.getStatusCode()));
                 throw error(Status.CONFLICT,
                         "error.phr.invalidState",
                         "ジョブはキャンセル可能な状態ではありません。",
@@ -563,7 +597,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_EXPORT_CANCEL", null, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_EXPORT_CANCEL", null, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "ジョブのキャンセル中にエラーが発生しました。",
@@ -591,7 +626,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         try {
             PHRAsyncJob job = requireJob(ctx, jobId, "PHR_EXPORT_ARTIFACT");
             if (job.getState() != PHRAsyncJob.State.SUCCEEDED || job.getResultUri() == null) {
-                auditFailure(ctx, "PHR_EXPORT_ARTIFACT", null, "invalid_state", details);
+                auditFailure(ctx, "PHR_EXPORT_ARTIFACT", null, "invalid_state",
+                        failureDetails(details, null, Status.CONFLICT.getStatusCode()));
                 throw error(Status.CONFLICT,
                         "error.phr.invalidState",
                         "ジョブが完了していません。",
@@ -601,7 +637,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             String basePath = request != null ? request.getRequestURI() : buildArtifactPath(jobId);
             boolean verified = signedUrlService.verify(basePath, ctx.facilityId(), expires, token);
             if (!verified) {
-                auditFailure(ctx, "PHR_EXPORT_ARTIFACT", null, "invalid_signature", details);
+                auditFailure(ctx, "PHR_EXPORT_ARTIFACT", null, "invalid_signature",
+                        failureDetails(details, null, Status.FORBIDDEN.getStatusCode()));
                 throw error(Status.FORBIDDEN,
                         "error.phr.invalidSignature",
                         "署名の検証に失敗しました。",
@@ -626,7 +663,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
-            auditFailure(ctx, "PHR_EXPORT_ARTIFACT", null, ex.getClass().getSimpleName(), details);
+            auditFailure(ctx, "PHR_EXPORT_ARTIFACT", null, ex.getClass().getSimpleName(),
+                    failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "成果物ダウンロード中にエラーが発生しました。",
@@ -681,14 +719,32 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         auditHelper.recordFailure(ctx, action, patientId, reason, details);
     }
 
+    private Map<String, Object> failureDetails(Map<String, Object> base, Throwable error, Integer httpStatus) {
+        Map<String, Object> details = new HashMap<>();
+        if (base != null && !base.isEmpty()) {
+            details.putAll(base);
+        }
+        if (httpStatus != null) {
+            details.put("httpStatus", httpStatus);
+        }
+        if (error != null) {
+            details.put("error", error.getClass().getSimpleName());
+            if (error.getMessage() != null && !error.getMessage().isBlank()) {
+                details.put("errorMessage", error.getMessage());
+            }
+        }
+        return details;
+    }
+
     private void ensureFacility(PhrRequestContext ctx, String facilityId, String patientId, String action, Map<String, Object> details) {
         if (facilityId == null || facilityId.equals(ctx.facilityId())) {
             return;
         }
-        Map<String, Object> failureDetails = new HashMap<>(details);
-        failureDetails.put("expectedFacilityId", facilityId);
-        failureDetails.put("actualFacilityId", ctx.facilityId());
-        auditFailure(ctx, action, patientId, "facility_mismatch", failureDetails);
+        Map<String, Object> failureDetailsMap = new HashMap<>(details);
+        failureDetailsMap.put("expectedFacilityId", facilityId);
+        failureDetailsMap.put("actualFacilityId", ctx.facilityId());
+        auditFailure(ctx, action, patientId, "facility_mismatch",
+                failureDetails(failureDetailsMap, null, Status.FORBIDDEN.getStatusCode()));
         throw error(Status.FORBIDDEN,
                 "error.phr.forbiddenFacility",
                 "他医療機関のデータにはアクセスできません。",
@@ -717,7 +773,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         try {
             return phrServiceBean.getKarte(ctx.facilityId(), patientId);
         } catch (NoResultException ex) {
-            auditFailure(ctx, action, patientId, "not_found", details);
+            auditFailure(ctx, action, patientId, "not_found",
+                    failureDetails(details, ex, Status.NOT_FOUND.getStatusCode()));
             throw error(Status.NOT_FOUND,
                     "error.phr.patientNotFound",
                     "指定された患者が見つかりません。",
@@ -848,7 +905,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         try {
             return UUID.fromString(rawJobId);
         } catch (IllegalArgumentException ex) {
-            auditFailure(ctx, action, null, "invalid_job_id", Map.of("jobId", rawJobId));
+            auditFailure(ctx, action, null, "invalid_job_id",
+                    failureDetails(Map.of("jobId", rawJobId), ex, Status.BAD_REQUEST.getStatusCode()));
             throw error(Status.BAD_REQUEST,
                     "error.phr.invalidJobId",
                     "ジョブ ID の形式が不正です。",
@@ -860,7 +918,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     private PHRAsyncJob requireJob(PhrRequestContext ctx, UUID jobId, String action) {
         PHRAsyncJob job = asyncJobService.find(jobId);
         if (job == null) {
-            auditFailure(ctx, action, null, "not_found", Map.of("jobId", jobId.toString()));
+            auditFailure(ctx, action, null, "not_found",
+                    failureDetails(Map.of("jobId", jobId.toString()), null, Status.NOT_FOUND.getStatusCode()));
             throw error(Status.NOT_FOUND,
                     "error.phr.jobNotFound",
                     "指定されたジョブが見つかりません。",
@@ -946,8 +1005,9 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         fallbackDetails.put("downloadUrl", basePath);
         if (message != null && !message.isBlank()) {
             fallbackDetails.put("message", message);
+            fallbackDetails.put("errorMessage", message);
         }
-        auditFailure(ctx, SIGNED_URL_FALLBACK_ACTION, null, reason, fallbackDetails);
+        auditFailure(ctx, SIGNED_URL_FALLBACK_ACTION, null, reason, failureDetails(fallbackDetails, null, null));
     }
 
     private void auditSignedUrlIssueFailed(PhrRequestContext ctx,
@@ -960,7 +1020,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
             failureDetails.put("message", ex.getMessage());
         }
-        auditFailure(ctx, SIGNED_URL_FAILURE_ACTION, null, ex.getClass().getSimpleName(), failureDetails);
+        auditFailure(ctx, SIGNED_URL_FAILURE_ACTION, null, ex.getClass().getSimpleName(),
+                failureDetails(failureDetails, ex, null));
         auditSignedUrlFallback(ctx, job, basePath, ttlSeconds, SIGNED_URL_FALLBACK_REASON_UNAVAILABLE, ex.getMessage());
     }
 }

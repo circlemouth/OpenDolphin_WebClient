@@ -55,6 +55,7 @@ import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.Factor2Code;
 import open.dolphin.infomodel.Factor2Spec;
+import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.infomodel.LastDateCount30;
 import open.dolphin.infomodel.NurseProgressCourseModel;
 import open.dolphin.infomodel.OndobanModel;
@@ -743,10 +744,12 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             recordAudit("TOTP_REGISTER_INIT", "/20/adm/factor2/totp/registration", request.getUserPk(), details);
             return Response.ok(response).build();
         } catch (NoResultException e) {
-            recordAuditFailure("TOTP_REGISTER_INIT_FAILED", "/20/adm/factor2/totp/registration", request.getUserPk(), "user_not_found", e);
+            recordAuditFailure("TOTP_REGISTER_INIT_FAILED", "/20/adm/factor2/totp/registration", request.getUserPk(),
+                    "user_not_found", e, Response.Status.NOT_FOUND.getStatusCode());
             throw new WebApplicationException(e, 404);
         } catch (SecurityException e) {
-            recordAuditFailure("TOTP_REGISTER_INIT_FAILED", "/20/adm/factor2/totp/registration", request.getUserPk(), e.getMessage(), e);
+            recordAuditFailure("TOTP_REGISTER_INIT_FAILED", "/20/adm/factor2/totp/registration", request.getUserPk(),
+                    e.getMessage(), e, Response.Status.BAD_REQUEST.getStatusCode());
             throw new WebApplicationException(e, 400);
         }
     }
@@ -775,12 +778,14 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         } catch (NoResultException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("credentialId", request.getCredentialId());
-            recordAuditFailure("TOTP_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/totp/verification", request.getUserPk(), "credential_not_found", e, details);
+            recordAuditFailure("TOTP_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/totp/verification", request.getUserPk(),
+                    "credential_not_found", e, Response.Status.NOT_FOUND.getStatusCode(), details);
             throw new WebApplicationException(e, 404);
         } catch (SecurityException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("credentialId", request.getCredentialId());
-            recordAuditFailure("TOTP_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/totp/verification", request.getUserPk(), e.getMessage(), e, details);
+            recordAuditFailure("TOTP_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/totp/verification", request.getUserPk(),
+                    e.getMessage(), e, Response.Status.BAD_REQUEST.getStatusCode(), details);
             throw new WebApplicationException(e, 400);
         }
     }
@@ -808,12 +813,14 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         } catch (NoResultException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("authenticatorAttachment", request.getAuthenticatorAttachment());
-            recordAuditFailure("FIDO2_REGISTER_INIT_FAILED", "/20/adm/factor2/fido2/registration/options", request.getUserPk(), "user_not_found", e, details);
+            recordAuditFailure("FIDO2_REGISTER_INIT_FAILED", "/20/adm/factor2/fido2/registration/options", request.getUserPk(),
+                    "user_not_found", e, Response.Status.NOT_FOUND.getStatusCode(), details);
             throw new WebApplicationException(e, 404);
         } catch (SecurityException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("authenticatorAttachment", request.getAuthenticatorAttachment());
-            recordAuditFailure("FIDO2_REGISTER_INIT_FAILED", "/20/adm/factor2/fido2/registration/options", request.getUserPk(), e.getMessage(), e, details);
+            recordAuditFailure("FIDO2_REGISTER_INIT_FAILED", "/20/adm/factor2/fido2/registration/options", request.getUserPk(),
+                    e.getMessage(), e, Response.Status.BAD_REQUEST.getStatusCode(), details);
             throw new WebApplicationException(e, 400);
         }
     }
@@ -841,12 +848,14 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         } catch (NoResultException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("requestId", request.getRequestId());
-            recordAuditFailure("FIDO2_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/fido2/registration/finish", request.getUserPk(), "challenge_not_found", e, details);
+            recordAuditFailure("FIDO2_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/fido2/registration/finish", request.getUserPk(),
+                    "challenge_not_found", e, Response.Status.NOT_FOUND.getStatusCode(), details);
             throw new WebApplicationException(e, 404);
         } catch (SecurityException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("requestId", request.getRequestId());
-            recordAuditFailure("FIDO2_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/fido2/registration/finish", request.getUserPk(), e.getMessage(), e, details);
+            recordAuditFailure("FIDO2_REGISTER_COMPLETE_FAILED", "/20/adm/factor2/fido2/registration/finish", request.getUserPk(),
+                    e.getMessage(), e, Response.Status.BAD_REQUEST.getStatusCode(), details);
             throw new WebApplicationException(e, 400);
         }
     }
@@ -873,12 +882,14 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         } catch (NoResultException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("userId", request.getUserId());
-            recordAuditFailure("FIDO2_ASSERT_INIT_FAILED", "/20/adm/factor2/fido2/assertion/options", request.getUserPk(), "credential_not_found", e, details);
+            recordAuditFailure("FIDO2_ASSERT_INIT_FAILED", "/20/adm/factor2/fido2/assertion/options", request.getUserPk(),
+                    "credential_not_found", e, Response.Status.NOT_FOUND.getStatusCode(), details);
             throw new WebApplicationException(e, 404);
         } catch (SecurityException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("userId", request.getUserId());
-            recordAuditFailure("FIDO2_ASSERT_INIT_FAILED", "/20/adm/factor2/fido2/assertion/options", request.getUserPk(), e.getMessage(), e, details);
+            recordAuditFailure("FIDO2_ASSERT_INIT_FAILED", "/20/adm/factor2/fido2/assertion/options", request.getUserPk(),
+                    e.getMessage(), e, Response.Status.BAD_REQUEST.getStatusCode(), details);
             throw new WebApplicationException(e, 400);
         }
     }
@@ -906,12 +917,14 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         } catch (NoResultException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("requestId", request.getRequestId());
-            recordAuditFailure("FIDO2_ASSERT_COMPLETE_FAILED", "/20/adm/factor2/fido2/assertion/finish", request.getUserPk(), "challenge_not_found", e, details);
+            recordAuditFailure("FIDO2_ASSERT_COMPLETE_FAILED", "/20/adm/factor2/fido2/assertion/finish", request.getUserPk(),
+                    "challenge_not_found", e, Response.Status.NOT_FOUND.getStatusCode(), details);
             throw new WebApplicationException(e, 404);
         } catch (SecurityException e) {
             Map<String, Object> details = new HashMap<>();
             details.put("requestId", request.getRequestId());
-            recordAuditFailure("FIDO2_ASSERT_COMPLETE_FAILED", "/20/adm/factor2/fido2/assertion/finish", request.getUserPk(), e.getMessage(), e, details);
+            recordAuditFailure("FIDO2_ASSERT_COMPLETE_FAILED", "/20/adm/factor2/fido2/assertion/finish", request.getUserPk(),
+                    e.getMessage(), e, Response.Status.BAD_REQUEST.getStatusCode(), details);
             throw new WebApplicationException(e, 400);
         }
     }
@@ -1036,16 +1049,24 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
             traceId = payload.getRequestId();
         }
         payload.setTraceId(traceId);
+        enrichUserDetails(payloadDetails, actorId);
+        enrichTraceDetails(payloadDetails, traceId);
         if (sessionAuditDispatcher != null) {
             sessionAuditDispatcher.record(payload);
         }
     }
 
     private void recordAuditFailure(String action, String resource, long userPk, String reason, Throwable error) {
-        recordAuditFailure(action, resource, userPk, reason, error, null);
+        recordAuditFailure(action, resource, userPk, reason, error, null, null);
     }
 
-    private void recordAuditFailure(String action, String resource, long userPk, String reason, Throwable error, Map<String, Object> extraDetails) {
+    private void recordAuditFailure(String action, String resource, long userPk, String reason, Throwable error,
+            Integer httpStatus) {
+        recordAuditFailure(action, resource, userPk, reason, error, httpStatus, null);
+    }
+
+    private void recordAuditFailure(String action, String resource, long userPk, String reason, Throwable error,
+            Integer httpStatus, Map<String, Object> extraDetails) {
         Map<String, Object> details = new HashMap<>();
         if (extraDetails != null && !extraDetails.isEmpty()) {
             details.putAll(extraDetails);
@@ -1056,8 +1077,35 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         }
         if (error != null) {
             details.put("error", error.getClass().getSimpleName());
+            if (error.getMessage() != null && !error.getMessage().isBlank()) {
+                details.put("errorMessage", error.getMessage());
+            }
+        }
+        if (httpStatus != null) {
+            details.put("httpStatus", httpStatus);
         }
         recordAudit(action, resource, userPk, details);
+    }
+
+    private void enrichUserDetails(Map<String, Object> details, String actorId) {
+        if (details == null || actorId == null) {
+            return;
+        }
+        details.putIfAbsent("remoteUser", actorId);
+        int idx = actorId.indexOf(IInfoModel.COMPOSITE_KEY_MAKER);
+        if (idx > 0) {
+            details.putIfAbsent("facilityId", actorId.substring(0, idx));
+            if (idx + 1 < actorId.length()) {
+                details.putIfAbsent("userId", actorId.substring(idx + 1));
+            }
+        }
+    }
+
+    private void enrichTraceDetails(Map<String, Object> details, String traceId) {
+        if (details == null || traceId == null || traceId.isBlank()) {
+            return;
+        }
+        details.putIfAbsent("traceId", traceId);
     }
      
     private Connection getConnection() {
