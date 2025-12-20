@@ -3,7 +3,7 @@ info:
   title: ORCA Master APIs (ORCA-05/06/08)
   version: 1.0.0
   description: |
-    RUN_ID: 20251124T101000Z (parent: 20251124T000000Z)
+    RUN_ID: 20251219T144408Z (parent: 20251219T144408Z)
     ORCA マスターデータ REST の正式版定義。ORCA DB 定義書 (2024-04-26 正式版)
     と webclient_modernized_bridge の補完設計に基づく。実装前提: DataSource=java:/datasources/OrcaDb。
 servers:
@@ -20,6 +20,27 @@ tags:
     description: 電子点数表（診療行為区分）
 components:
   parameters:
+    userNameHeader:
+      name: userName
+      in: header
+      description: ORCA Basic 認証用のユーザー名ヘッダ。
+      required: true
+      schema:
+        type: string
+    passwordHeader:
+      name: password
+      in: header
+      description: ORCA Basic 認証用のパスワードヘッダ。
+      required: true
+      schema:
+        type: string
+    ifNoneMatchHeader:
+      name: If-None-Match
+      in: header
+      description: ETag によるキャッシュ検証。
+      required: false
+      schema:
+        type: string
     effectiveDate:
       name: effective
       in: query
@@ -73,7 +94,7 @@ components:
         dataSource:
           type: string
           description: 実データ/キャッシュの取得元を示す。
-          enum: [server, snapshot, mock, fallback]
+          enum: [snapshot, fallback]
         cacheHit:
           type: boolean
           description: キャッシュヒット時 true。
@@ -285,10 +306,39 @@ components:
               value:
                 code: "VALIDATION_ERROR"
                 message: "コード体系が正しくありません（SRYCD は 9 桁数字で指定してください）"
-                runId: "20251124T170000Z"
+                runId: "20251219T144408Z"
                 correlationId: "2d1f0c3c-5a70-4ad3-8f4c-77c6b1f7b100"
-                timestamp: "2025-11-24T17:00:00Z"
+                timestamp: "2025-12-19T14:44:08Z"
                 validationError: true
+    Unauthorized:
+      description: 認証エラー（Basic ヘッダ不備）。
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotModified:
+      description: ETag 一致時の 304 応答。
+      headers:
+        ETag:
+          $ref: '#/components/headers/ETag'
+        Cache-Control:
+          $ref: '#/components/headers/Cache-Control'
+        Vary:
+          $ref: '#/components/headers/Vary'
+
+  headers:
+    ETag:
+      description: レスポンスの ETag。
+      schema:
+        type: string
+    Cache-Control:
+      description: キャッシュ制御ヘッダ。
+      schema:
+        type: string
+    Vary:
+      description: キャッシュ差分判定のための Vary。
+      schema:
+        type: string
 
 paths:
   /orca/master/generic-class:
@@ -296,6 +346,9 @@ paths:
       tags: [ORCA-05]
       summary: 薬剤分類ツリー取得
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - $ref: '#/components/parameters/keyword'
         - $ref: '#/components/parameters/effectiveDate'
         - $ref: '#/components/parameters/page'
@@ -303,6 +356,13 @@ paths:
       responses:
         '200':
           description: 成功
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -332,13 +392,13 @@ paths:
                         note: "正式版 2024-04-26"
                         meta:
                           version: "20240426"
-                          runId: "20251124T101000Z"
+                          runId: "20251219T144408Z"
                           snapshotVersion: "2025-11-23"
                           dataSource: "snapshot"
                           cacheHit: false
                           missingMaster: false
                           fallbackUsed: false
-                          fetchedAt: "2025-11-24T10:10:00Z"
+                          fetchedAt: "2025-12-19T10:10:00Z"
                       - code: "21101"
                         name: "ACE 阻害薬"
                         category: "generic"
@@ -352,13 +412,17 @@ paths:
                         note: null
                         meta:
                           version: "20240426"
-                          runId: "20251124T101000Z"
+                          runId: "20251219T144408Z"
                           snapshotVersion: "2025-11-23"
                           dataSource: "snapshot"
                           cacheHit: false
                           missingMaster: false
                           fallbackUsed: false
-                          fetchedAt: "2025-11-24T10:10:00Z"
+                          fetchedAt: "2025-12-19T10:10:00Z"
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -367,6 +431,9 @@ paths:
       tags: [ORCA-05]
       summary: 薬価・最低薬価取得
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - name: srycd
           in: query
           required: true
@@ -377,6 +444,13 @@ paths:
       responses:
         '200':
           description: 成功（ヒットなしは price=null）
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -396,13 +470,13 @@ paths:
                     validTo: "99991231"
                     meta:
                       version: "20240426"
-                      runId: "20251124T101000Z"
+                      runId: "20251219T144408Z"
                       snapshotVersion: "2025-11-23"
                       dataSource: "snapshot"
                       cacheHit: false
                       missingMaster: false
                       fallbackUsed: false
-                      fetchedAt: "2025-11-24T10:10:10Z"
+                      fetchedAt: "2025-12-19T10:10:10Z"
                 noPrice:
                   value:
                     code: "699999999"
@@ -417,13 +491,17 @@ paths:
                     validTo: "99991231"
                     meta:
                       version: "20240426"
-                      runId: "20251124T101000Z"
+                      runId: "20251219T144408Z"
                       snapshotVersion: "2025-11-23"
                       dataSource: "snapshot"
                       cacheHit: false
                       missingMaster: true
                       fallbackUsed: true
-                      fetchedAt: "2025-11-24T10:10:10Z"
+                      fetchedAt: "2025-12-19T10:10:10Z"
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
         '422':
@@ -437,8 +515,8 @@ paths:
                   value:
                     code: "SRYCD_VALIDATION_ERROR"
                     message: "SRYCD は数字 9 桁で指定してください"
-                    runId: "20251124T170000Z"
-                    timestamp: "2025-11-24T17:00:00Z"
+                    runId: "20251219T144408Z"
+                    timestamp: "2025-12-19T17:00:00Z"
                     validationError: true
 
   /orca/master/youhou:
@@ -446,11 +524,21 @@ paths:
       tags: [ORCA-05]
       summary: 用法マスタ取得
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - $ref: '#/components/parameters/keyword'
         - $ref: '#/components/parameters/effectiveDate'
       responses:
         '200':
           description: 成功
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -472,13 +560,17 @@ paths:
                       validTo: "99991231"
                       meta:
                         version: "20240426"
-                        runId: "20251124T101000Z"
+                        runId: "20251219T144408Z"
                         snapshotVersion: "2025-11-23"
                         dataSource: "snapshot"
                         cacheHit: true
                         missingMaster: false
                         fallbackUsed: false
-                        fetchedAt: "2025-11-24T10:10:20Z"
+                        fetchedAt: "2025-12-19T10:10:20Z"
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -487,11 +579,21 @@ paths:
       tags: [ORCA-05]
       summary: 特定器材マスタ取得
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - $ref: '#/components/parameters/keyword'
         - $ref: '#/components/parameters/effectiveDate'
       responses:
         '200':
           description: 成功
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -511,13 +613,17 @@ paths:
                       validTo: "20250331"
                       meta:
                         version: "20240426"
-                        runId: "20251124T101000Z"
+                        runId: "20251219T144408Z"
                         snapshotVersion: "2025-11-23"
                         dataSource: "snapshot"
                         cacheHit: false
                         missingMaster: false
                         fallbackUsed: false
-                        fetchedAt: "2025-11-24T10:10:30Z"
+                        fetchedAt: "2025-12-19T10:10:30Z"
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -526,11 +632,21 @@ paths:
       tags: [ORCA-05]
       summary: 検査分類マスタ取得
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - $ref: '#/components/parameters/keyword'
         - $ref: '#/components/parameters/effectiveDate'
       responses:
         '200':
           description: 成功
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -549,13 +665,17 @@ paths:
                       validTo: "99991231"
                       meta:
                         version: "20240426"
-                        runId: "20251124T101000Z"
+                        runId: "20251219T144408Z"
                         snapshotVersion: "2025-11-23"
                         dataSource: "snapshot"
                         cacheHit: true
                         missingMaster: false
                         fallbackUsed: false
-                        fetchedAt: "2025-11-24T10:10:40Z"
+                        fetchedAt: "2025-12-19T10:10:40Z"
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
 
@@ -564,6 +684,9 @@ paths:
       tags: [ORCA-06]
       summary: 保険者検索
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - name: pref
           in: query
           required: false
@@ -578,6 +701,13 @@ paths:
       responses:
         '200':
           description: 成功
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -605,28 +735,32 @@ paths:
                         phone: "011-123-4567"
                         meta:
                           version: "20240426"
-                          runId: "20251124T101000Z"
+                          runId: "20251219T144408Z"
                           snapshotVersion: "2025-11-23"
                           dataSource: "snapshot"
                           cacheHit: false
                           missingMaster: false
                           fallbackUsed: false
-                          fetchedAt: "2025-11-24T10:11:00Z"
+                          fetchedAt: "2025-12-19T10:11:00Z"
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
         '422':
-          description: 保険者番号や都道府県コードがコード体系と不整合の場合
+          description: 都道府県コードがコード体系と不整合の場合
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                prefectureMismatch:
+                invalidPref:
                   value:
-                    code: "PAYER_CODE_PREF_MISMATCH"
-                    message: "保険者番号の先頭 2 桁は都道府県コードと一致させてください"
-                    runId: "20251124T170000Z"
-                    timestamp: "2025-11-24T17:00:00Z"
+                    code: "PREF_VALIDATION_ERROR"
+                    message: "都道府県コードは 01-47 の 2 桁で指定してください"
+                    runId: "20251219T144408Z"
+                    timestamp: "2025-12-19T14:44:08Z"
                     validationError: true
 
   /orca/master/address:
@@ -634,6 +768,9 @@ paths:
       tags: [ORCA-06]
       summary: 郵便番号から住所 1 件取得
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - name: zip
           in: query
           required: true
@@ -644,6 +781,13 @@ paths:
       responses:
         '200':
           description: 成功（該当なしは空オブジェクトを返す）
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -663,15 +807,19 @@ paths:
                     fullAddress: "東京都千代田区千代田"
                     meta:
                       version: "20240426"
-                      runId: "20251124T101000Z"
+                      runId: "20251219T144408Z"
                       snapshotVersion: "2025-11-23"
                       dataSource: "snapshot"
                       cacheHit: false
                       missingMaster: false
                       fallbackUsed: false
-                      fetchedAt: "2025-11-24T10:11:10Z"
+                      fetchedAt: "2025-12-19T10:11:10Z"
                 empty:
                   value: {}
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: 郵便番号未登録
           content:
@@ -683,9 +831,9 @@ paths:
                   value:
                     code: "MASTER_ADDRESS_NOT_FOUND"
                     message: "指定の郵便番号に該当する住所がありません"
-                    runId: "20251124T101000Z"
+                    runId: "20251219T144408Z"
                     correlationId: "9f2e3a3a-79e3-4f3e-9c2b-d3f1c6a1d001"
-                    timestamp: "2025-11-24T10:11:12Z"
+                    timestamp: "2025-12-19T10:11:12Z"
         '422':
           description: 郵便番号形式不正（ハイフン除去後 7 桁以外）
           content:
@@ -697,8 +845,8 @@ paths:
                   value:
                     code: "ZIP_VALIDATION_ERROR"
                     message: "郵便番号は数字 7 桁で指定してください"
-                    runId: "20251124T170000Z"
-                    timestamp: "2025-11-24T17:00:00Z"
+                    runId: "20251219T144408Z"
+                    timestamp: "2025-12-19T17:00:00Z"
                     validationError: true
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
@@ -708,6 +856,9 @@ paths:
       tags: [ORCA-08]
       summary: 電子点数表検索
       parameters:
+        - $ref: '#/components/parameters/userNameHeader'
+        - $ref: '#/components/parameters/passwordHeader'
+        - $ref: '#/components/parameters/ifNoneMatchHeader'
         - $ref: '#/components/parameters/keyword'
         - name: category
           in: query
@@ -715,7 +866,7 @@ paths:
           description: "区分コード（例: 11=診療、21=薬剤、31=特定器材）"
           schema:
             type: string
-            pattern: "^\\d{2}$"
+            pattern: "^\\d{1,2}$"
         - name: asOf
           in: query
           required: false
@@ -735,6 +886,13 @@ paths:
       responses:
         '200':
           description: 成功
+          headers:
+            ETag:
+              $ref: '#/components/headers/ETag'
+            Cache-Control:
+              $ref: '#/components/headers/Cache-Control'
+            Vary:
+              $ref: '#/components/headers/Vary'
           content:
             application/json:
               schema:
@@ -762,13 +920,13 @@ paths:
                         tensuVersion: "202404"
                         meta:
                           version: "202404"
-                          runId: "20251124T101000Z"
+                          runId: "20251219T144408Z"
                           snapshotVersion: "2025-11-23"
                           dataSource: "snapshot"
                           cacheHit: false
                           missingMaster: false
                           fallbackUsed: false
-                          fetchedAt: "2025-11-24T10:11:30Z"
+                          fetchedAt: "2025-12-19T10:11:30Z"
                       - tensuCode: "110000101"
                         name: "再診料"
                         kubun: "11"
@@ -780,13 +938,17 @@ paths:
                         tensuVersion: "202404"
                         meta:
                           version: "202404"
-                          runId: "20251124T101000Z"
+                          runId: "20251219T144408Z"
                           snapshotVersion: "2025-11-23"
                           dataSource: "snapshot"
                           cacheHit: true
                           missingMaster: false
                           fallbackUsed: false
-                          fetchedAt: "2025-11-24T10:11:30Z"
+                          fetchedAt: "2025-12-19T10:11:30Z"
+        '304':
+          $ref: '#/components/responses/NotModified'
+        '401':
+          $ref: '#/components/responses/Unauthorized'
         '404':
           description: 該当なし（空コレクションも可）
           content:
@@ -798,21 +960,21 @@ paths:
                   value:
                     code: "TENSU_NOT_FOUND"
                     message: "指定条件に一致する点数がありません"
-                    runId: "20251124T101000Z"
-                    timestamp: "2025-11-24T10:11:40Z"
+                    runId: "20251219T144408Z"
+                    timestamp: "2025-12-19T10:11:40Z"
         '422':
-          description: コード体系エラー（kubun 2 桁 / tensuVersion 6 桁などの制約違反）
+          description: コード体系エラー（category 1-2 桁 / asOf 8 桁 / tensuVersion 6 桁などの制約違反）
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
               examples:
-                invalidVersion:
+                invalidCategory:
                   value:
-                    code: "TENSU_VERSION_INVALID"
-                    message: "tensuVersion は YYYYMM（6 桁）で指定してください"
-                    runId: "20251124T170000Z"
-                    timestamp: "2025-11-24T17:00:00Z"
+                    code: "TENSU_CATEGORY_INVALID"
+                    message: "category must be numeric 1-2 digits"
+                    runId: "20251219T144408Z"
+                    timestamp: "2025-12-19T14:44:08Z"
                     validationError: true
         '503':
           $ref: '#/components/responses/ServiceUnavailable'
