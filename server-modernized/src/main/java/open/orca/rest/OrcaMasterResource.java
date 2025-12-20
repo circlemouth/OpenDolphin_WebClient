@@ -1345,6 +1345,7 @@ public class OrcaMasterResource extends AbstractResource {
         return Response.ok(entity)
                 .tag(tag)
                 .header("Cache-Control", cacheControlHeader(ttlSeconds))
+                .header("Vary", "userName,password")
                 .build();
     }
 
@@ -1353,6 +1354,7 @@ public class OrcaMasterResource extends AbstractResource {
         return Response.status(Status.NOT_MODIFIED)
                 .tag(tag)
                 .header("Cache-Control", cacheControlHeader(ttlSeconds))
+                .header("Vary", "userName,password")
                 .build();
     }
 

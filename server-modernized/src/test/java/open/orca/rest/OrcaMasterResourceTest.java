@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.lang.reflect.Proxy;
+import java.lang.reflect.Method;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -29,7 +30,7 @@ class OrcaMasterResourceTest {
         OrcaMasterResource resource = new OrcaMasterResource();
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
-        Response response = resource.getGenericClass(USER, PASSWORD, uriInfo);
+        Response response = resource.getGenericClass(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(200, response.getStatus());
         @SuppressWarnings("unchecked")
@@ -57,7 +58,7 @@ class OrcaMasterResourceTest {
         params.add("srycd", "12345");
         UriInfo uriInfo = createUriInfo(params);
 
-        Response response = resource.getGenericPrice(USER, PASSWORD, uriInfo);
+        Response response = resource.getGenericPrice(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(422, response.getStatus());
         OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
@@ -73,7 +74,7 @@ class OrcaMasterResourceTest {
         params.add("srycd", "999999999");
         UriInfo uriInfo = createUriInfo(params);
 
-        Response response = resource.getGenericPrice(USER, PASSWORD, uriInfo);
+        Response response = resource.getGenericPrice(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(200, response.getStatus());
         OrcaDrugMasterEntry payload = (OrcaDrugMasterEntry) response.getEntity();
@@ -89,7 +90,7 @@ class OrcaMasterResourceTest {
         OrcaMasterResource resource = new OrcaMasterResource();
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
-        Response response = resource.getYouhou(USER, PASSWORD, uriInfo);
+        Response response = resource.getYouhou(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(200, response.getStatus());
         @SuppressWarnings("unchecked")
@@ -106,7 +107,7 @@ class OrcaMasterResourceTest {
         OrcaMasterResource resource = new OrcaMasterResource();
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
-        Response response = resource.getHokenja(USER, PASSWORD, uriInfo, null);
+        Response response = resource.getHokenja(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(200, response.getStatus());
         @SuppressWarnings("unchecked")
@@ -131,7 +132,7 @@ class OrcaMasterResourceTest {
         params.add("zip", "123");
         UriInfo uriInfo = createUriInfo(params);
 
-        Response response = resource.getAddress(USER, PASSWORD, uriInfo, null);
+        Response response = resource.getAddress(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(422, response.getStatus());
         OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
@@ -146,7 +147,7 @@ class OrcaMasterResourceTest {
         params.add("zip", "1000001");
         UriInfo uriInfo = createUriInfo(params);
 
-        Response response = resource.getAddress(USER, PASSWORD, uriInfo, null);
+        Response response = resource.getAddress(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(200, response.getStatus());
         OrcaAddressEntry payload = (OrcaAddressEntry) response.getEntity();
@@ -162,7 +163,7 @@ class OrcaMasterResourceTest {
         params.add("zip", "9999999");
         UriInfo uriInfo = createUriInfo(params);
 
-        Response response = resource.getAddress(USER, PASSWORD, uriInfo, null);
+        Response response = resource.getAddress(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(404, response.getStatus());
         OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
@@ -176,7 +177,7 @@ class OrcaMasterResourceTest {
         params.add("keyword", "no-such-entry");
         UriInfo uriInfo = createUriInfo(params);
 
-        Response response = resource.getEtensu(USER, PASSWORD, uriInfo, null);
+        Response response = resource.getEtensu(USER, PASSWORD, null, uriInfo, null);
 
         assertEquals(404, response.getStatus());
         OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
@@ -200,7 +201,7 @@ class OrcaMasterResourceTest {
             OrcaMasterResource resource = new OrcaMasterResource();
             UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
-            Response response = resource.getEtensu(USER, PASSWORD, uriInfo, null);
+            Response response = resource.getEtensu(USER, PASSWORD, null, uriInfo, null);
 
             assertEquals(503, response.getStatus());
             OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
@@ -209,6 +210,32 @@ class OrcaMasterResourceTest {
             restoreSystemProperty(snapshotKey, prevSnapshot);
             restoreSystemProperty(fixtureKey, prevFixture);
         }
+    }
+
+    @Test
+    void etagMatches_acceptsWeakMultipleAndWildcardValues() throws Exception {
+        OrcaMasterResource resource = new OrcaMasterResource();
+        Method method = OrcaMasterResource.class.getDeclaredMethod("etagMatches", String.class, String.class);
+        method.setAccessible(true);
+        assertTrue((Boolean) method.invoke(resource, "\"abc\"", "abc"));
+        assertTrue((Boolean) method.invoke(resource, "W/\"abc\"", "abc"));
+        assertTrue((Boolean) method.invoke(resource, "\"nope\", \"abc\"", "abc"));
+        assertTrue((Boolean) method.invoke(resource, "*", "abc"));
+        assertFalse((Boolean) method.invoke(resource, "\"nope\"", "abc"));
+    }
+
+    @Test
+    void normalizeQuery_sortsKeysAndValuesWithDuplicates() throws Exception {
+        OrcaMasterResource resource = new OrcaMasterResource();
+        Method method = OrcaMasterResource.class.getDeclaredMethod("normalizeQuery", MultivaluedMap.class);
+        method.setAccessible(true);
+        MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
+        params.add("b", "2");
+        params.add("a", "3");
+        params.add("b", "1");
+        params.add("b", "1");
+        String normalized = (String) method.invoke(resource, params);
+        assertEquals("a=3&b=1,1,2", normalized);
     }
 
     private void restoreSystemProperty(String key, String value) {
