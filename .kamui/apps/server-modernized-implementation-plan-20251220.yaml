@@ -1,0 +1,737 @@
+ganttConfig:
+  defaultView: day
+  startDate: 2025-12-20
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  structure.yaml:
+    content: |-
+      現行ドキュメント体系に基づき、モダナイズ版サーバーの実装計画を再構成したガントです。
+      Phase2 ドキュメントは Legacy 参照専用のため、現行の参照元は `docs/DEVELOPMENT_STATUS.md` を単一ソースとします。
+      進捗状況は既存ガントの完了/進行中状態を引き継ぎ、残タスクは現行ルールに沿って整理しています。
+
+      優先度は絵文字で表現: 🔴高 🟠中 🟢低 ⚫️完了
+    agent選定理由: サーバー実装/検証/ドキュメントの横断計画のため、複数モデルを適材適所で割り当てる。
+    api選定理由: 対象 API は現行の接続検証と契約テストで使用するため、各タスクに明記する。
+    dependency: []
+    agent: codex
+    api: []
+  current_governance:
+    00_current_rules:
+      現行ドキュメント体系の参照固定.md:
+        content: |-
+          # 現行ドキュメント体系の参照固定
+
+          - 現行の単一参照元は `docs/DEVELOPMENT_STATUS.md`。
+          - Phase2 文書は Legacy 参照専用として更新対象外。
+          - 以後の計画/実装は現行ルールのみで実施する。
+        dependency: []
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-19T00:00:00.000Z
+          days: 0.25
+      既存進捗の引継ぎ整理.md:
+        content: |-
+          # 既存進捗の引継ぎ整理
+
+          - 旧ガントの完了/進行中タスクを現行ガントへ反映。
+          - 依存関係の参照パスを現行構造に置換。
+          - 進捗率と開始日を維持し、計画の連続性を確保する。
+        dependency:
+          - src/current_governance/00_current_rules/現行ドキュメント体系の参照固定.md
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-20T00:00:00.000Z
+          days: 0.25
+  server_modernized_current_plan:
+    01_gap_inventory:
+      実装状況ドキュメント棚卸し.md:
+        content: |-
+          # 実装状況ドキュメント棚卸し
+
+          - Legacy 参照専用の差分を整理し、現行課題を抽出。
+          - `docs/DEVELOPMENT_STATUS.md` に基づいて未実装・証跡不足を一覧化する。
+        dependency:
+          - src/current_governance/00_current_rules/既存進捗の引継ぎ整理.md
+        agent: gemini cli
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-19T12:00:00.000Z
+          days: 1
+      優先度と実装順確定.md:
+        content: |-
+          # 優先度と実装順確定
+
+          - ORCA Master / 監査・JMS / 外部 API / Jakarta 設定の順に実装順を確定。
+          - 依存関係とテスト順序を現行ガントへ反映する。
+        dependency:
+          - src/server_modernized_current_plan/01_gap_inventory/実装状況ドキュメント棚卸し.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-20T12:00:00.000Z
+          days: 0.5
+    02_jakarta_foundation:
+      ddl変換警告とAgroalクラスロード解消.md:
+        content: |-
+          # DDL 変換警告と Agroal クラスロード解消
+
+          - `d_factor2_*` と `d_stamp_tree` の型変換 WARN（oid/bytea 変換失敗）を解消。
+          - `DatasourceMetricsRegistrar` の AgroalDataSource クラスロード警告を解消。
+          - WARN が再現しないことを確認し、証跡を保存する。
+        dependency:
+          - src/server_modernized_current_plan/01_gap_inventory/優先度と実装順確定.md
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-20T00:00:00.000Z
+          days: 1
+      web_xml_beans_xml_jakarta更新.md:
+        content: |-
+          # web.xml / beans.xml の Jakarta 化
+
+          - `server-modernized/src/main/webapp/WEB-INF/web.xml` と `beans.xml` の namespace/xsd を Jakarta EE 10 に更新。
+          - WildFly 33 でのデプロイ警告を解消する。
+        dependency:
+          - src/server_modernized_current_plan/07_external_api/EXT_03_MML_紹介状_証跡取得.md
+        agent: claude code
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-22T12:00:00.000Z
+          days: 0.5
+      jsonp_jsonb_validation依存整備.md:
+        content: |-
+          # JSON-P / JSON-B / Validation 依存整備
+
+          - `jakarta.json` / `jakarta.validation` の提供形態を確定。
+          - `pom.server-modernized.xml` に依存を追加し、ビルドエラーを排除する。
+        dependency:
+          - src/server_modernized_current_plan/02_jakarta_foundation/web_xml_beans_xml_jakarta更新.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-23T00:00:00.000Z
+          days: 0.5
+      hibernate5依存削除とDockerキャッシュ更新.md:
+        content: |-
+          # Hibernate 5 互換依存の削除と Docker キャッシュ更新
+
+          - 旧 Dockerfile の `hibernate-core:5.0.10.Final` 取得を削除。
+          - CI/compose のキャッシュを更新し、Hibernate 6 へ統一する。
+        dependency:
+          - src/server_modernized_current_plan/02_jakarta_foundation/jsonp_jsonb_validation依存整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-23T12:00:00.000Z
+          days: 0.5
+      wildfly33_jms_queue_ee_concurrency整備.md:
+        content: |-
+          # WildFly 33 JMS Queue / EE Concurrency 整備
+
+          - `java:/queue/dolphin` / `java:/JmsXA` を WildFly 33 で定義。
+          - `ManagedScheduledExecutorService` 名を CLI で明示し、再デプロイ時の二重スケジュールを抑止。
+        dependency:
+          - src/server_modernized_current_plan/02_jakarta_foundation/hibernate5依存削除とDockerキャッシュ更新.md
+        agent: claude code
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-24T00:00:00.000Z
+          days: 1
+      https_forwarded_header運用整備.md:
+        content: |-
+          # HTTPS / Forwarded Header 運用整備
+
+          - Undertow の forwarded ヘッダ検証と HTTPS 常時化の設定を確定。
+          - 逆プロキシ前提の運用手順を Runbook へ反映。
+        dependency:
+          - src/server_modernized_current_plan/02_jakarta_foundation/wildfly33_jms_queue_ee_concurrency整備.md
+        agent: gemini cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-25T00:00:00.000Z
+          days: 0.5
+      elytron_auth統合計画と実装.md:
+        content: |-
+          # Elytron / Jakarta Security への統合
+
+          - `LogFilter` の独自認証を段階的に削減し Elytron/Bearer に移行。
+          - 401/403 の監査ログとセキュリティテストを整備。
+        dependency:
+          - src/server_modernized_current_plan/02_jakarta_foundation/https_forwarded_header運用整備.md
+        agent: claude code
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-25T12:00:00.000Z
+          days: 2
+    03_kartes_and_attachments:
+      KRT_03_karte_image_pathparam修正.md:
+        content: |-
+          # KRT-03 `/karte/image/{id}` PathParam 修正
+
+          - `@PathParam("param")` を `@PathParam("id")` に修正。
+          - 500 を防止し、画像取得を正常化。
+        dependency:
+          - src/server_modernized_current_plan/02_jakarta_foundation/elytron_auth統合計画と実装.md
+        agent: codex
+        api:
+          - /karte/image/{id}
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-27T12:00:00.000Z
+          days: 0.25
+      KRT_04_添付ストレージ二重アップロード解消.md:
+        content: |-
+          # KRT-04 添付ストレージ二重アップロード解消
+
+          - `AttachmentStorageManager` の二重呼び出しを 1 回に統合。
+          - 例外時のロールバックと監査ログを追加。
+        dependency:
+          - src/server_modernized_current_plan/03_kartes_and_attachments/KRT_03_karte_image_pathparam修正.md
+        agent: codex
+        api:
+          - /karte/attachment/*
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-27T18:00:00.000Z
+          days: 0.75
+      添付_ロールバックと再送テスト.md:
+        content: |-
+          # 添付ロールバックと再送テスト
+
+          - S3/DB 両モードで失敗時の整合性を確認。
+          - 監査イベントに失敗理由を残す。
+        dependency:
+          - src/server_modernized_current_plan/03_kartes_and_attachments/KRT_04_添付ストレージ二重アップロード解消.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-28T12:00:00.000Z
+          days: 0.5
+      SafetySummary_契約テスト追加.md:
+        content: |-
+          # SafetySummary 契約テスト追加
+
+          - `/karte/safety/{karteId}` の 200/404 契約テストを追加。
+          - Web クライアント向け DTO 互換を保証する。
+        dependency:
+          - src/server_modernized_current_plan/03_kartes_and_attachments/添付_ロールバックと再送テスト.md
+        agent: claude code
+        api:
+          - /karte/safety/{karteId}
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-29T00:00:00.000Z
+          days: 0.5
+    04_orca_master_api:
+      ORCA_01_inputset_sql修正.md:
+        content: |-
+          # ORCA-01 `/orca/inputset` SQL 修正
+
+          - `inputcd` の WHERE 句に括弧を追加し `hospnum` フィルタを適用。
+          - 既存テストの再実行と証跡更新。
+        dependency:
+          - src/server_modernized_current_plan/01_gap_inventory/優先度と実装順確定.md
+        agent: codex
+        api:
+          - /orca/inputset
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-19T00:00:00.000Z
+          days: 0.5
+      ORCA_02_stamp_dateパラメータ追加.md:
+        content: |-
+          # ORCA-02 `/orca/stamp/{setCd,name}` 日付パラメータ追加
+
+          - `date` パラメータを追加し、有効期間でフィルタ可能にする。
+        dependency:
+          - src/server_modernized_current_plan/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md
+        agent: codex
+        api:
+          - /orca/stamp/{setCd}/{name}
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-28T12:00:00.000Z
+          days: 0.5
+      ORCA_03_tensu_shinkuレスポンス拡充.md:
+        content: |-
+          # ORCA-03 `/orca/tensu/shinku` レスポンス拡充
+
+          - `taniname` / `ykzkbn` / `yakkakjncd` など必須フィールドを追加。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md
+        agent: gemini cli
+        api:
+          - /orca/tensu/shinku
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-29T00:00:00.000Z
+          days: 0.5
+      ORCA_05_master_generic系列実装.md:
+        content: |-
+          # ORCA-05 薬剤/器材/検査分類マスタ実装
+
+          - `/orca/master/generic-class` / `generic-price` / `youhou` / `material` / `kensa-sort` を実装。
+          - DTO/監査メタ/ページング/契約テストを整備。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_03_tensu_shinkuレスポンス拡充.md
+        agent: claude code
+        api:
+          - /orca/master/generic-class
+          - /orca/master/generic-price
+          - /orca/master/youhou
+          - /orca/master/material
+          - /orca/master/kensa-sort
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-29T12:00:00.000Z
+          days: 3
+      ORCA_06_hokenja_address実装.md:
+        content: |-
+          # ORCA-06 保険者・住所マスタ実装
+
+          - `/orca/master/hokenja` / `/orca/master/address` を実装。
+          - 404/503/空レスの差分を監査ログへ反映。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_05_master_generic系列実装.md
+        agent: claude code
+        api:
+          - /orca/master/hokenja
+          - /orca/master/address
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2026-01-02T00:00:00.000Z
+          days: 2
+      ORCA_07_orca_db_datasource_secrets化.md:
+        content: |-
+          # ORCA-07 ORCA DB Datasource / Secrets 化
+
+          - `custom.properties` 直指定を廃止し JNDI Datasource に統合。
+          - Secrets ローテーションと監査ログを整備。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_06_hokenja_address実装.md
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2026-01-04T00:00:00.000Z
+          days: 1
+      ORCA_08_etensu電子点数表実装.md:
+        content: |-
+          # ORCA-08 電子点数表実装
+
+          - `/orca/tensu/etensu` を実装し、告示日/適用日/区分/点数を返却。
+          - 404/503 を含む契約テストを整備。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_07_orca_db_datasource_secrets化.md
+        agent: claude code
+        api:
+          - /orca/tensu/etensu
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2026-01-05T00:00:00.000Z
+          days: 3
+      ORCA_05_06_08_cache_etag_bench.md:
+        content: |-
+          # ORCA-05/06/08 キャッシュ・ETag・ベンチ検証
+
+          - ETag/TTL を実装し、k6/autocannon ベンチで P99 を検証。
+          - `cacheHit`/`snapshotVersion` の監査ログ整備。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_08_etensu電子点数表実装.md
+        agent: gemini cli
+        api: []
+        priority: Medium
+        status: in_progress
+        progress: 70
+        schedule:
+          start: 2026-01-08T00:00:00.000Z
+          days: 2
+      ORCA_master_openapi_contract更新.md:
+        content: |-
+          # ORCA Master OpenAPI / 契約テスト更新
+
+          - OpenAPI 定義と `orca-api-matrix` を更新。
+          - CI で契約テストを実行し差分を固定する。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_05_06_08_cache_etag_bench.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-10T00:00:00.000Z
+          days: 1
+    05_orca_connectivity:
+      ORCA_API_STATUS再測定.md:
+        content: |-
+          # ORCA_API_STATUS 再測定
+
+          - `/api01rv2/acceptlstv2` / `/api21/medicalmodv2` の実測を再取得。
+          - 404 再発時の原因（web.xml/route/旧イメージ）を特定。
+        dependency:
+          - src/server_modernized_current_plan/04_orca_master_api/ORCA_master_openapi_contract更新.md
+        agent: codex
+        api:
+          - /api01rv2/acceptlstv2
+          - /api21/medicalmodv2
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-11T00:00:00.000Z
+          days: 0.5
+      ORCA_CERTIFICATION_ONLY本番接続検証.md:
+        content: |-
+          # ORCA_CERTIFICATION_ONLY 本番接続検証
+
+          - `ORCA_CONNECTIVITY_VALIDATION.md` に従い RUN_ID 付きで証跡取得。
+          - 接続/レスポンス/監査ログを `operations/logs/<RUN_ID>-*.md` に保存。
+        dependency:
+          - src/server_modernized_current_plan/05_orca_connectivity/ORCA_API_STATUS再測定.md
+        agent: claude code
+        api:
+          - /api01rv2/acceptlstv2
+          - /orca21/medicalmodv2/outpatient
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-11T12:00:00.000Z
+          days: 1
+    06_messaging_audit_trace:
+      AUD_02_4xx5xx監査ログ連携.md:
+        content: |-
+          # AUD-02 4xx/5xx 監査ログ連携
+
+          - `LogFilter` から `SessionAuditDispatcher` へ REST エラーを送出。
+          - 401/500 の監査行を整備し、現行 Runbook を更新する。
+        dependency:
+          - src/server_modernized_current_plan/05_orca_connectivity/ORCA_CERTIFICATION_ONLY本番接続検証.md
+        agent: claude code
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-12T12:00:00.000Z
+          days: 1
+      SessionOperation適用範囲拡大.md:
+        content: |-
+          # SessionOperation 適用範囲拡大
+
+          - `touch/user` など未付与クラスへ `@SessionOperation` を追加。
+          - 401 を 500 へ落とさない例外ハンドリングを確認。
+        dependency:
+          - src/server_modernized_current_plan/06_messaging_audit_trace/AUD_02_4xx5xx監査ログ連携.md
+        agent: codex
+        api:
+          - /touch/user/*
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-13T12:00:00.000Z
+          days: 1
+      JMS_ACK検証と証跡取得.md:
+        content: |-
+          # JMS ACK 検証と証跡取得
+
+          - WildFly 33 上で ORCA 送信/ACK 受信を確認。
+          - `ops/tools/jms-probe.sh` 証跡を更新。
+        dependency:
+          - src/server_modernized_current_plan/06_messaging_audit_trace/SessionOperation適用範囲拡大.md
+        agent: gemini cli
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-14T12:00:00.000Z
+          days: 1
+      Trace_Runbook更新と再測定.md:
+        content: |-
+          # Trace Runbook 更新と再測定
+
+          - 監査/Trace の表を最新 RUN_ID で更新。
+          - 200/400/401/500 の差分を解消する。
+        dependency:
+          - src/server_modernized_current_plan/06_messaging_audit_trace/JMS_ACK検証と証跡取得.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-15T12:00:00.000Z
+          days: 0.5
+    07_external_api:
+      EXT_01_PHR_rest_crud実測.md:
+        content: |-
+          # EXT-01 PHR REST CRUD 実測
+
+          - Flyway/Secrets を適用し Trial/ORMaster で CRUD 証跡を取得。
+          - 現行の API ギャップ表と稼働記録を更新する。
+        dependency:
+          - src/server_modernized_current_plan/06_messaging_audit_trace/Trace_Runbook更新と再測定.md
+        agent: claude code
+        api:
+          - /20/adm/phr/*
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-16T00:00:00.000Z
+          days: 2
+      PHR_07_image_stream実装.md:
+        content: |-
+          # PHR-07 画像ストリーム実装
+
+          - `/20/adm/phr/image/{patientId}` を実装し帯域制御を適用。
+          - 監査ログとスロットルの証跡を残す。
+        dependency:
+          - src/server_modernized_current_plan/07_external_api/EXT_01_PHR_rest_crud実測.md
+        agent: gemini cli
+        api:
+          - /20/adm/phr/image/{patientId}
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-18T00:00:00.000Z
+          days: 1
+      EXT_02_予約受付ラッパー実測.md:
+        content: |-
+          # EXT-02 予約/受付ラッパー実測
+
+          - Trial/ORMaster で `appointments/visits` の 200 証跡を取得。
+          - Runbook と現行ステータス表を更新する。
+        dependency:
+          - src/server_modernized_current_plan/07_external_api/PHR_07_image_stream実装.md
+        agent: codex
+        api:
+          - /api01rv2/appointlstv2
+          - /api01rv2/acceptlstv2
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-19T00:00:00.000Z
+          days: 1
+      EXT_03_MML_紹介状_証跡取得.md:
+        content: |-
+          # EXT-03 MML / 紹介状 証跡取得
+
+          - `/mml/letter*` / `/mml/labtest*` を Legacy/Modern で差分取得。
+          - Lab seed の不足を解消し Evidence を保存。
+        dependency:
+          - src/server_modernized_current_plan/07_external_api/EXT_02_予約受付ラッパー実測.md
+        agent: claude code
+        api:
+          - /mml/letter/list
+          - /mml/letter/json
+          - /mml/labtest/list
+          - /mml/labtest/json
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-20T00:00:00.000Z
+          days: 2
+    08_ops_security:
+      SecondFactor鍵必須化とSecrets運用.md:
+        content: |-
+          # SecondFactor 鍵必須化と Secrets 運用
+
+          - 固定フォールバックキーを廃止し環境変数必須にする。
+          - ローテーション手順と監査ログを追加。
+        dependency:
+          - src/server_modernized_current_plan/03_kartes_and_attachments/SafetySummary_契約テスト追加.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-29T12:00:00.000Z
+          days: 1
+      Secrets欠落時挙動と監視整備.md:
+        content: |-
+          # Secrets 欠落時挙動と監視整備
+
+          - `.env` 欠落時の挙動を整理しアラート条件を実装。
+          - 監査ログ・Runbook を更新。
+        dependency:
+          - src/server_modernized_current_plan/08_ops_security/SecondFactor鍵必須化とSecrets運用.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-30T12:00:00.000Z
+          days: 1
+    09_quality_release:
+      契約テスト_パリティテスト整備.md:
+        content: |-
+          # 契約テスト / パリティテスト整備
+
+          - ORCA Master / PHR / JMS / Trace の契約テストを CI に統合。
+          - Legacy/Modern との差分レポートを自動生成。
+        dependency:
+          - src/server_modernized_current_plan/08_ops_security/Secrets欠落時挙動と監視整備.md
+        agent: claude code
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-31T12:00:00.000Z
+          days: 2
+      現行ドキュメント最終更新.md:
+        content: |-
+          # 現行ドキュメント最終更新
+
+          - 進捗行・証跡リンクを同日付で更新。
+          - `docs/DEVELOPMENT_STATUS.md` に実施状況を反映。
+        dependency:
+          - src/server_modernized_current_plan/09_quality_release/契約テスト_パリティテスト整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-02-02T12:00:00.000Z
+          days: 0.5
+      リリース準備レビュー.md:
+        content: |-
+          # リリース準備レビュー
+
+          - 未完タスクが 0 件であることを確認。
+          - 最終ガントを 100% 完了で確定。
+        dependency:
+          - src/server_modernized_current_plan/09_quality_release/現行ドキュメント最終更新.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-02-03T00:00:00.000Z
+          days: 0.5
