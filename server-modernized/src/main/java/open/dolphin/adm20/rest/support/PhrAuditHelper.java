@@ -125,6 +125,7 @@ public class PhrAuditHelper {
         }
         if (reason != null) {
             details.put("reason", reason);
+            details.putIfAbsent("errorCode", reason);
         }
         if (additionalDetails != null && !additionalDetails.isEmpty()) {
             details.putAll(additionalDetails);
