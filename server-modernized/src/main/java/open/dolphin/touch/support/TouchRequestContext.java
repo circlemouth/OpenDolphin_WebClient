@@ -10,6 +10,7 @@ public record TouchRequestContext(
         String facilityId,
         String userId,
         String traceId,
+        String requestId,
         String accessReason,
         String consentToken,
         String clientIp,
@@ -20,6 +21,7 @@ public record TouchRequestContext(
         Objects.requireNonNull(facilityId, "facilityId must not be null");
         Objects.requireNonNull(userId, "userId must not be null");
         Objects.requireNonNull(traceId, "traceId must not be null");
+        Objects.requireNonNull(requestId, "requestId must not be null");
         Objects.requireNonNull(clientIp, "clientIp must not be null");
     }
 

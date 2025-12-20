@@ -76,11 +76,12 @@ public class TouchFailureAuditLogger {
         payload.setIpAddress(resolveClientIp(request));
         payload.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
 
+        String requestId = resolveRequestId(request);
         String traceId = AbstractResource.resolveTraceIdValue(request);
         if (traceId == null || traceId.isBlank()) {
-            traceId = UUID.randomUUID().toString();
+            traceId = requestId;
         }
-        payload.setRequestId(traceId);
+        payload.setRequestId(requestId);
         payload.setTraceId(traceId);
 
         Map<String, Object> enriched = new HashMap<>();
@@ -93,6 +94,7 @@ public class TouchFailureAuditLogger {
         }
         if (errorCode != null && !errorCode.isBlank()) {
             enriched.putIfAbsent("reason", errorCode);
+            enriched.putIfAbsent("errorCode", errorCode);
         }
         if (message != null && !message.isBlank()) {
             enriched.putIfAbsent("errorMessage", message);
@@ -161,6 +163,17 @@ public class TouchFailureAuditLogger {
         }
         String remote = request.getRemoteAddr();
         return remote == null || remote.isBlank() ? "unknown" : remote;
+    }
+
+    private String resolveRequestId(HttpServletRequest request) {
+        if (request == null) {
+            return UUID.randomUUID().toString();
+        }
+        String header = request.getHeader("X-Request-Id");
+        if (header != null && !header.isBlank()) {
+            return header.trim();
+        }
+        return UUID.randomUUID().toString();
     }
 
     private String resolvePrincipalCandidate(HttpServletRequest request) {
