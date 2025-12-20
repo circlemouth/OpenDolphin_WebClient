@@ -1,0 +1,377 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート｜監査・ログAPI補完</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1220px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .task-summary {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .score-cards {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        background: #f7fafb;
+        border: 1px solid #c4d3d7;
+        padding: 14px 16px;
+      }
+      .score-card h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #54636a;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 10px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .hex-chart {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+        flex-wrap: wrap;
+      }
+      .hex-chart svg {
+        width: 140px;
+        height: 120px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .artifact-links a {
+        color: #1f2a30;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート｜監査・ログAPI補完</h1>
+        <p class="monitor-description">対象: server modernized predeploy ready plan 20251220 / 監査・ログAPI補完</p>
+      </header>
+
+      <section class="task-summary">
+        <div><strong>タスク内容</strong>: 監査ログ未整備の操作（文書削除/スタンプ削除/Touch・PHR系）の補完、2FA/Touch/PHR の監査メタと失敗時ログ形式の統一。</div>
+        <div><strong>仕事の概要</strong>: 各ブランチで文書削除の監査ログ追加、Touch/PHR/2FA 失敗メタの整備を実施。特に Touch の文書削除や PHR 失敗メタ強化の有無で完成度に差がある。</div>
+        <div><strong>注意</strong>: 成果物はそれぞれ異なる worktree 上のファイル。リンクは参照用パス。</div>
+      </section>
+
+      <section class="score-cards">
+        <div class="score-card">
+          <h3>claude code / task-1766235721734-f75f1e</h3>
+          <div class="score-total">🥈 432 / 600</div>
+          <div class="score-note">総合スコア 72点</div>
+        </div>
+        <div class="score-card">
+          <h3>claude code / task-1766235721935-df7f50</h3>
+          <div class="score-total">🥇 483 / 600</div>
+          <div class="score-note">総合スコア 82点</div>
+        </div>
+        <div class="score-card">
+          <h3>claude code / task-1766235722136-9f5361</h3>
+          <div class="score-total">🥉 403 / 600</div>
+          <div class="score-note">総合スコア 67点</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766235721734-f75f1e</th>
+            <th>Agent task-1766235721935-df7f50</th>
+            <th>Agent task-1766235722136-9f5361</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-20</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">文書削除監査と PHR/Touch 失敗メタ整備を実施。</span>
+              </div>
+              <div class="hex-chart" data-values="78,72,70,74,68,70" data-labels="機能合理性,緻密性,監査一貫性,失敗ログ網羅,保守性,安全性">
+                <svg viewBox="0 0 200 170" aria-label="Hex chart"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 78点</li>
+                  <li>緻密性 72点</li>
+                  <li>監査一貫性 70点</li>
+                  <li>失敗ログ網羅 74点</li>
+                  <li>保守性 68点</li>
+                  <li>安全性 70点</li>
+                </ul>
+              </div>
+              <div class="section-title">良い点</div>
+              <ul>
+                <li>文書削除の監査ログを REST 層に追加し、成功/失敗を区別して記録。</li>
+                <li>PHR 失敗時に httpStatus を推定しメタを統一。</li>
+                <li>Touch/PHR の失敗ログに error を補完。</li>
+              </ul>
+              <div class="section-title">懸念点</div>
+              <ul>
+                <li>スタンプ削除の監査追加が見当たらず、要件未達の可能性。</li>
+                <li>文書削除ログに患者/カルテなどの識別情報が不足。</li>
+                <li>失敗時の httpStatus が文書削除側で不足。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="artifact-links">
+                <li><a href="../../.worktrees/task-1766235721734-f75f1e/server-modernized/src/main/java/open/dolphin/rest/KarteResource.java">KarteResource.java</a></li>
+                <li><a href="../../.worktrees/task-1766235721734-f75f1e/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a></li>
+                <li><a href="../../.worktrees/task-1766235721734-f75f1e/server-modernized/src/main/java/open/dolphin/adm20/rest/AdmissionResource.java">AdmissionResource.java</a></li>
+              </ul>
+              <div class="section-title">コミット/差分要約</div>
+              <pre>commit b7ae6b52
+Add audit logs for document delete and align failure metadata
+Files: AdmissionResource.java, PHRResource.java, PhrAuditHelper.java, KarteResource.java, TouchAuditHelper.java, TouchFailureAuditLogger.java</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">Touch 文書削除監査と PHR/2FA 失敗メタを広範に整備。</span>
+              </div>
+              <div class="hex-chart" data-values="84,82,80,83,76,78" data-labels="機能合理性,緻密性,監査一貫性,失敗ログ網羅,保守性,安全性">
+                <svg viewBox="0 0 200 170" aria-label="Hex chart"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 84点</li>
+                  <li>緻密性 82点</li>
+                  <li>監査一貫性 80点</li>
+                  <li>失敗ログ網羅 83点</li>
+                  <li>保守性 76点</li>
+                  <li>安全性 78点</li>
+                </ul>
+              </div>
+              <div class="section-title">良い点</div>
+              <ul>
+                <li>Touch 文書削除に成功/失敗監査と詳細メタを追加。</li>
+                <li>PHR 失敗時の httpStatus / errorMessage 補完で統一感が高い。</li>
+                <li>2FA 監査に httpStatus を追加し失敗情報が明確。</li>
+              </ul>
+              <div class="section-title">懸念点</div>
+              <ul>
+                <li>スタンプ削除の監査追加が見当たらず、要件未達の可能性。</li>
+                <li>文書削除監査の requestId/traceId が同一値で固定される実装。</li>
+                <li>文書削除失敗時に errorMessage を載せていない。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="artifact-links">
+                <li><a href="../../.worktrees/task-1766235721935-df7f50/server-modernized/src/main/java/open/dolphin/touch/EHTResource.java">EHTResource.java</a></li>
+                <li><a href="../../.worktrees/task-1766235721935-df7f50/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a></li>
+                <li><a href="../../.worktrees/task-1766235721935-df7f50/server-modernized/src/main/java/open/dolphin/adm20/rest/AdmissionResource.java">AdmissionResource.java</a></li>
+                <li><a href="../../.worktrees/task-1766235721935-df7f50/server-modernized/src/main/java/open/dolphin/rest/KarteResource.java">KarteResource.java</a></li>
+              </ul>
+              <div class="section-title">コミット/差分要約</div>
+              <pre>commit fe85434c
+Add audit coverage for document deletes and unify failure metadata
+Files: AdmissionResource.java, PHRResource.java, KarteResource.java, EHTResource.java, TouchFailureAuditLogger.java</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">文書削除監査追加と Touch/PHR メタの一部整備。</span>
+              </div>
+              <div class="hex-chart" data-values="70,68,65,62,72,66" data-labels="機能合理性,緻密性,監査一貫性,失敗ログ網羅,保守性,安全性">
+                <svg viewBox="0 0 200 170" aria-label="Hex chart"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 70点</li>
+                  <li>緻密性 68点</li>
+                  <li>監査一貫性 65点</li>
+                  <li>失敗ログ網羅 62点</li>
+                  <li>保守性 72点</li>
+                  <li>安全性 66点</li>
+                </ul>
+              </div>
+              <div class="section-title">良い点</div>
+              <ul>
+                <li>文書削除監査で患者/カルテIDや trace 情報を補完。</li>
+                <li>Touch/PHR ヘルパで status/actorRole/exception を補完。</li>
+              </ul>
+              <div class="section-title">懸念点</div>
+              <ul>
+                <li>PHR 本体の失敗時 httpStatus/詳細付与が未整備。</li>
+                <li>スタンプ削除・Touch 文書削除など要件の一部が未着手。</li>
+                <li>失敗時の errorMessage が欠落。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="artifact-links">
+                <li><a href="../../.worktrees/task-1766235722136-9f5361/server-modernized/src/main/java/open/dolphin/rest/KarteResource.java">KarteResource.java</a></li>
+                <li><a href="../../.worktrees/task-1766235722136-9f5361/server-modernized/src/main/java/open/dolphin/adm20/rest/support/PhrAuditHelper.java">PhrAuditHelper.java</a></li>
+                <li><a href="../../.worktrees/task-1766235722136-9f5361/server-modernized/src/main/java/open/dolphin/touch/support/TouchAuditHelper.java">TouchAuditHelper.java</a></li>
+              </ul>
+              <div class="section-title">コミット/差分要約</div>
+              <pre>commit 898befb2
+Audit: add document delete and normalize touch/phr metadata
+Files: PhrAuditHelper.java, KarteResource.java, DolphinResource.java, TouchAuditHelper.java</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      (function () {
+        const charts = document.querySelectorAll('.hex-chart');
+        const angles = [-90, -30, 30, 90, 150, 210];
+        charts.forEach((chart) => {
+          const values = chart.dataset.values.split(',').map((v) => parseFloat(v.trim()) || 0);
+          const svg = chart.querySelector('svg');
+          const width = 200;
+          const height = 170;
+          const cx = width / 2;
+          const cy = height / 2 + 5;
+          const maxR = 65;
+          const points = values.map((value, idx) => {
+            const angle = angles[idx] * (Math.PI / 180);
+            const radius = (value / 100) * maxR;
+            const x = cx + radius * Math.cos(angle);
+            const y = cy + radius * Math.sin(angle);
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+          });
+          const outerPoints = angles.map((angle) => {
+            const rad = angle * (Math.PI / 180);
+            const x = cx + maxR * Math.cos(rad);
+            const y = cy + maxR * Math.sin(rad);
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+          });
+          svg.innerHTML = `
+            <polygon points="${outerPoints.join(' ')}" fill="#f2f6f7" stroke="#b8c9cd" stroke-width="1" />
+            <polygon points="${points.join(' ')}" fill="#7da0aa" fill-opacity="0.55" stroke="#4f6b73" stroke-width="1" />
+          `;
+        });
+      })();
+    </script>
+  </body>
+</html>
