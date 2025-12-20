@@ -18,6 +18,7 @@ import open.dolphin.rest.dto.orca.OrcaMasterErrorResponse;
 import open.dolphin.rest.dto.orca.OrcaMasterListResponse;
 import open.dolphin.rest.dto.orca.OrcaMasterMeta;
 import open.dolphin.rest.dto.orca.OrcaInsurerEntry;
+import open.dolphin.rest.dto.orca.OrcaTensuEntry;
 import org.junit.jupiter.api.Test;
 
 class OrcaMasterResourceTest {
@@ -182,6 +183,65 @@ class OrcaMasterResourceTest {
         assertEquals(404, response.getStatus());
         OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
         assertEquals("TENSU_NOT_FOUND", payload.getCode());
+    }
+
+    @Test
+    void getEtensu_returnsNoticeEffectiveKubunAndPoints() throws Exception {
+        Path snapshotRoot = Files.createTempDirectory("orca-etensu-snapshot");
+        Path fixtureRoot = Files.createTempDirectory("orca-etensu-fixture");
+        Path fixtureFile = fixtureRoot.resolve("orca-master-etensu.json");
+        String fixtureJson = """
+                {
+                  "list": [
+                    {
+                      "etensuCategory": "1",
+                      "category": "11",
+                      "medicalFeeCode": "110000001",
+                      "tensuCode": "110000001",
+                      "name": "Sample Tensu",
+                      "points": 288,
+                      "tanka": 288,
+                      "unit": "visit",
+                      "noticeDate": "20240101",
+                      "effectiveDate": "20240401",
+                      "startDate": "20240401",
+                      "endDate": "99991231",
+                      "tensuVersion": "202404"
+                    }
+                  ],
+                  "version": "20240101",
+                  "snapshotVersion": "2024-01-01"
+                }
+                """;
+        Files.write(fixtureFile, fixtureJson.getBytes(StandardCharsets.UTF_8));
+
+        String snapshotKey = "ORCA_MASTER_SNAPSHOT_ROOT";
+        String fixtureKey = "ORCA_MASTER_FIXTURE_ROOT";
+        String prevSnapshot = System.getProperty(snapshotKey);
+        String prevFixture = System.getProperty(fixtureKey);
+        System.setProperty(snapshotKey, snapshotRoot.toString());
+        System.setProperty(fixtureKey, fixtureRoot.toString());
+        try {
+            OrcaMasterResource resource = new OrcaMasterResource();
+            UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
+
+            Response response = resource.getEtensu(USER, PASSWORD, null, uriInfo, null);
+
+            assertEquals(200, response.getStatus());
+            @SuppressWarnings("unchecked")
+            OrcaMasterListResponse<OrcaTensuEntry> payload =
+                    (OrcaMasterListResponse<OrcaTensuEntry>) response.getEntity();
+            assertNotNull(payload);
+            assertEquals(1, payload.getTotalCount());
+            OrcaTensuEntry entry = payload.getItems().get(0);
+            assertEquals("11", entry.getKubun());
+            assertEquals(288d, entry.getPoints());
+            assertEquals("20240101", entry.getNoticeDate());
+            assertEquals("20240401", entry.getEffectiveDate());
+        } finally {
+            restoreSystemProperty(snapshotKey, prevSnapshot);
+            restoreSystemProperty(fixtureKey, prevFixture);
+        }
     }
 
     @Test

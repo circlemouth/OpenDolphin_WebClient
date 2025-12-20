@@ -853,6 +853,9 @@ public class OrcaMasterResource extends AbstractResource {
         response.setTensuCode(firstNonBlank(entry.tensuCode, entry.medicalFeeCode));
         response.setName(entry.name);
         response.setKubun(firstNonBlank(entry.kubun, entry.category, entry.etensuCategory));
+        response.setNoticeDate(firstNonBlank(entry.noticeDate, entry.version, fixture.version, entry.snapshotVersion));
+        response.setEffectiveDate(firstNonBlank(entry.effectiveDate, entry.startDate, entry.validFrom, DEFAULT_VALID_FROM));
+        response.setPoints(firstNonBlankDouble(entry.points, entry.tanka));
         response.setTanka(firstNonBlankDouble(entry.tanka, entry.points));
         response.setUnit(entry.unit);
         response.setCategory(firstNonBlank(entry.category, entry.etensuCategory));
@@ -1519,6 +1522,8 @@ public class OrcaMasterResource extends AbstractResource {
         public Double points;
         public Double tanka;
         public String unit;
+        public String noticeDate;
+        public String effectiveDate;
         public String startDate;
         public String endDate;
         public String validFrom;
