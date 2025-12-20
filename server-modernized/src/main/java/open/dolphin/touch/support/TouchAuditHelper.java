@@ -41,8 +41,16 @@ public class TouchAuditHelper {
         payload.setActorRole(determineRole());
         payload.setAction(action);
         payload.setResource(resource);
-        payload.setRequestId(context.traceId());
-        payload.setTraceId(context.traceId());
+        String requestId = context.requestId();
+        String traceId = context.traceId();
+        if (requestId == null || requestId.isBlank()) {
+            requestId = traceId;
+        }
+        if (traceId == null || traceId.isBlank()) {
+            traceId = requestId;
+        }
+        payload.setRequestId(requestId);
+        payload.setTraceId(traceId);
         payload.setIpAddress(context.clientIp());
         payload.setUserAgent(context.userAgent());
         payload.setDetails(mergeDetails(context, additionalDetails));
@@ -66,6 +74,7 @@ public class TouchAuditHelper {
 
     private Map<String, Object> mergeDetails(TouchRequestContext context, Map<String, Object> additionalDetails) {
         Map<String, Object> details = new HashMap<>();
+        details.put("status", "success");
         if (context.accessReason() != null) {
             details.put("accessReason", context.accessReason());
         }

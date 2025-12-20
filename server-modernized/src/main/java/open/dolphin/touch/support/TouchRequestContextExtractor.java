@@ -21,6 +21,7 @@ public final class TouchRequestContextExtractor {
     public static final String HEADER_ACCESS_REASON = "X-Access-Reason";
     public static final String HEADER_CONSENT_TOKEN = "X-Consent-Token";
     public static final String HEADER_TRACE_ID = "X-Trace-Id";
+    public static final String HEADER_REQUEST_ID = "X-Request-Id";
     public static final String HEADER_CLIENT_UUID = "clientUUID";
     private static final String ATTRIBUTE_TRACE_ID = LogFilter.TRACE_ID_ATTRIBUTE;
     private static final String HEADER_USER_NAME = "userName";
@@ -36,6 +37,7 @@ public final class TouchRequestContextExtractor {
         RemoteIdentity identity = resolveRemoteIdentity(request);
 
         String traceId = resolveTraceId(request);
+        String requestId = resolveRequestId(request);
         String accessReason = normalise(request.getHeader(HEADER_ACCESS_REASON));
         String consentToken = normalise(request.getHeader(HEADER_CONSENT_TOKEN));
 
@@ -43,7 +45,7 @@ public final class TouchRequestContextExtractor {
         String userAgent = normalise(request.getHeader("User-Agent"));
 
         return new TouchRequestContext(identity.remoteUser(), identity.facilityId(), identity.userId(),
-                traceId, accessReason, consentToken, clientIp, userAgent);
+                traceId, requestId, accessReason, consentToken, clientIp, userAgent);
     }
 
     private static RemoteIdentity resolveRemoteIdentity(HttpServletRequest request) {
@@ -133,6 +135,14 @@ public final class TouchRequestContextExtractor {
             return trace;
         }
         String fromHeader = normalise(request.getHeader(HEADER_TRACE_ID));
+        if (fromHeader != null) {
+            return fromHeader;
+        }
+        return UUID.randomUUID().toString();
+    }
+
+    private static String resolveRequestId(HttpServletRequest request) {
+        String fromHeader = normalise(request.getHeader(HEADER_REQUEST_ID));
         if (fromHeader != null) {
             return fromHeader;
         }
