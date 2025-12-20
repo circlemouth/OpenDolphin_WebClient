@@ -463,7 +463,7 @@ public class OrcaMasterResource extends AbstractResource {
         }
         final String normalizedVersion = normalizeTensuVersion(tensuVersion);
         final List<FixtureEtensuEntry> filtered = fixture.entries.stream()
-                .filter(entry -> matchesKeyword(keyword, entry.name))
+                .filter(entry -> matchesKeyword(keyword, entry.name, entry.note, entry.tensuCode, entry.medicalFeeCode))
                 .filter(entry -> matchesEtensuCategory(category, entry))
                 .filter(entry -> isEffective(asOf, entry.validFrom, entry.validTo, entry.startDate, entry.endDate))
                 .filter(entry -> matchesTensuVersion(normalizedVersion, entry))
@@ -743,7 +743,7 @@ public class OrcaMasterResource extends AbstractResource {
         response.setTensuCode(firstNonBlank(entry.tensuCode, entry.medicalFeeCode));
         response.setName(entry.name);
         response.setKubun(firstNonBlank(entry.kubun, entry.category, entry.etensuCategory));
-        response.setTanka(entry.points);
+        response.setTanka(firstNonBlankDouble(entry.tanka, entry.points));
         response.setUnit(entry.unit);
         response.setCategory(firstNonBlank(entry.category, entry.etensuCategory));
         response.setStartDate(firstNonBlank(entry.startDate, entry.validFrom, DEFAULT_VALID_FROM));
@@ -923,6 +923,18 @@ public class OrcaMasterResource extends AbstractResource {
         }
         for (String candidate : candidates) {
             if (candidate != null && !candidate.isBlank()) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
+    private Double firstNonBlankDouble(Double... candidates) {
+        if (candidates == null) {
+            return null;
+        }
+        for (Double candidate : candidates) {
+            if (candidate != null) {
                 return candidate;
             }
         }
@@ -1269,7 +1281,9 @@ public class OrcaMasterResource extends AbstractResource {
         public String medicalFeeCode;
         public String tensuCode;
         public String name;
+        public String note;
         public Double points;
+        public Double tanka;
         public String unit;
         public String startDate;
         public String endDate;
