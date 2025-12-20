@@ -159,8 +159,8 @@ src:
         agent: claude code
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 30
         schedule:
           start: 2025-12-24T00:00:00.000Z
           days: 2
@@ -180,6 +180,23 @@ src:
         progress: 100
         schedule:
           start: 2025-12-25T00:00:00.000Z
+          days: 1
+      EHTResource例外ハンドリング運用検証・原因特定.md:
+        content: |-
+          # EHTResource例外ハンドリング運用検証・原因特定
+
+          - WebApplicationException/IOException 以外の例外が汎用化されている現状を整理する。
+          - 運用側で原因特定できるログ/監査情報（errorMessage/traceId/requestId）の不足を洗い出す。
+          - 必要な追加ログ/監査イベント/エラーハンドリングの是正案を定義し、実装タスクへ繋げる。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/監査・ログAPI要件ドキュメント整備.md
+        agent: claude code
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-26T00:00:00.000Z
           days: 1
     02_feature_implementation:
       バリデーション・スキーマ整備.md:
