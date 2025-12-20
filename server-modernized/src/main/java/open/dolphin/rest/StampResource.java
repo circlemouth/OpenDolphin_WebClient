@@ -339,16 +339,21 @@ public class StampResource extends AbstractResource {
         List<String> targetIds = List.of(param);
         StampModel existing = stampServiceBean.getStamp(param);
         if (existing == null) {
-            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null, "stamp_not_found");
-            throw new NotFoundException("Stamp not found: " + param);
+            String message = "Stamp not found: " + param;
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null, "stamp_not_found", message);
+            throw new NotFoundException(message);
         }
 
         try {
             int cnt = stampServiceBean.removeStamp(param);
-            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "success", cnt, null);
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "success", cnt, null, null);
             debug(String.valueOf(cnt));
         } catch (RuntimeException e) {
-            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null, e.getClass().getSimpleName());
+            String errorMessage = (e.getMessage() == null || e.getMessage().isBlank())
+                    ? e.getClass().getSimpleName()
+                    : e.getMessage();
+            recordStampDeletionAudit("STAMP_DELETE_SINGLE", targetIds, "failed", null,
+                    e.getClass().getSimpleName(), errorMessage);
             throw e;
         }
     }
@@ -371,22 +376,28 @@ public class StampResource extends AbstractResource {
             }
         }
         if (!missing.isEmpty()) {
+            String message = "Missing stamp ids: " + String.join(CAMMA, missing);
             recordStampDeletionAudit("STAMP_DELETE_BULK", list, "failed", null,
-                    "missing_ids:" + String.join(CAMMA, missing));
-            throw new NotFoundException("Missing stamp ids: " + String.join(CAMMA, missing));
+                    "missing_ids:" + String.join(CAMMA, missing), message);
+            throw new NotFoundException(message);
         }
 
         try {
             int cnt = stampServiceBean.removeStamp(list);
-            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "success", cnt, null);
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "success", cnt, null, null);
             debug(String.valueOf(cnt));
         } catch (RuntimeException e) {
-            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "failed", null, e.getClass().getSimpleName());
+            String errorMessage = (e.getMessage() == null || e.getMessage().isBlank())
+                    ? e.getClass().getSimpleName()
+                    : e.getMessage();
+            recordStampDeletionAudit("STAMP_DELETE_BULK", list, "failed", null,
+                    e.getClass().getSimpleName(), errorMessage);
             throw e;
         }
     }
 
-    private void recordStampDeletionAudit(String action, List<String> ids, String status, Integer deletedCount, String reason) {
+    private void recordStampDeletionAudit(String action, List<String> ids, String status, Integer deletedCount,
+                                          String reason, String errorMessage) {
         if (auditTrailService == null) {
             return;
         }
@@ -545,6 +556,9 @@ public class StampResource extends AbstractResource {
         }
         if (reason != null) {
             details.put("reason", reason);
+        }
+        if (errorMessage != null && !errorMessage.isBlank()) {
+            details.put("errorMessage", errorMessage);
         }
         enrichUserDetails(details);
         enrichTraceDetails(details);
