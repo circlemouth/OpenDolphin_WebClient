@@ -309,14 +309,18 @@ public class KarteResource extends AbstractResource {
 
         try {
             List<String> list = karteServiceBean.deleteDocument(id);
-            recordDocumentDeletionAudit(id, document, list, "success", null);
+            recordDocumentDeletionAudit(id, document, list, "success", null, null);
             StringList strList = new StringList();
             strList.setList(list);
             StringListConverter conv = new StringListConverter();
             conv.setModel(strList);
             return conv;
         } catch (RuntimeException ex) {
-            recordDocumentDeletionAudit(id, document, null, "failed", ex.getClass().getSimpleName());
+            String message = ex.getMessage();
+            if (message == null || message.isBlank()) {
+                message = "Document delete failed.";
+            }
+            recordDocumentDeletionAudit(id, document, null, "failed", ex.getClass().getSimpleName(), message);
             throw ex;
         }
     }
@@ -949,7 +953,8 @@ public class KarteResource extends AbstractResource {
                                              DocumentModel document,
                                              List<String> deletedDocIds,
                                              String status,
-                                             String reason) {
+                                             String reason,
+                                             String errorMessage) {
         if (auditTrailService == null) {
             return;
         }
@@ -964,6 +969,9 @@ public class KarteResource extends AbstractResource {
             }
             if (reason != null && !reason.isBlank()) {
                 details.put("reason", reason);
+            }
+            if (errorMessage != null && !errorMessage.isBlank()) {
+                details.put("errorMessage", errorMessage);
             }
             if (document != null) {
                 if (document.getDocInfoModel() != null) {
@@ -995,11 +1003,12 @@ public class KarteResource extends AbstractResource {
         }
         payload.setAction(action);
         payload.setResource(resolveResourcePath());
+        String requestId = resolveRequestId();
         String traceId = resolveTraceId(httpServletRequest);
         if (traceId == null || traceId.isBlank()) {
-            traceId = resolveRequestId();
+            traceId = requestId;
         }
-        payload.setRequestId(traceId);
+        payload.setRequestId(requestId);
         payload.setTraceId(traceId);
         payload.setIpAddress(resolveIpAddress());
         payload.setUserAgent(resolveUserAgent());

@@ -728,7 +728,9 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             details.put("httpStatus", httpStatus);
         }
         if (error != null) {
-            details.put("error", error.getClass().getSimpleName());
+            String exceptionClass = error.getClass().getSimpleName();
+            details.put("error", exceptionClass);
+            details.put("exceptionClass", exceptionClass);
             if (error.getMessage() != null && !error.getMessage().isBlank()) {
                 details.put("errorMessage", error.getMessage());
             }

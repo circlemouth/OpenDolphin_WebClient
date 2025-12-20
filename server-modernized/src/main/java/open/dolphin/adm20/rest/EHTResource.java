@@ -1139,15 +1139,36 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
                 } catch (Exception ignore) {
                     // 監査用の参照が失敗しても削除処理は継続する
                 }
-                List<String> list = ehtService.deleteDocumentByPk(pk);
-                
-                mapper = getSerializeMapper();
-                mapper.writeValue(os, list);
+                try {
+                    List<String> list = ehtService.deleteDocumentByPk(pk);
+                    
+                    mapper = getSerializeMapper();
+                    mapper.writeValue(os, list);
 
-                Map<String, Object> details = new HashMap<>();
-                details.put("deletedDocGroup", list);
-                details.put("requestedDocPk", pk);
-                recordAuditEvent("EHT_DOCUMENT_DELETE", "/20/adm/eht/document", karteId != null ? String.valueOf(karteId) : null, details);
+                    Map<String, Object> details = new HashMap<>();
+                    details.put("deletedDocGroup", list);
+                    details.put("requestedDocPk", pk);
+                    details.put("status", "success");
+                    recordAuditEvent("EHT_DOCUMENT_DELETE", "/20/adm/eht/document", karteId != null ? String.valueOf(karteId) : null, details);
+                } catch (Exception ex) {
+                    Map<String, Object> details = new HashMap<>();
+                    details.put("requestedDocPk", pk);
+                    details.put("status", "failed");
+                    details.put("reason", ex.getClass().getSimpleName());
+                    String message = ex.getMessage();
+                    if (message == null || message.isBlank()) {
+                        message = "Document delete failed.";
+                    }
+                    details.put("errorMessage", message);
+                    recordAuditEvent("EHT_DOCUMENT_DELETE", "/20/adm/eht/document", karteId != null ? String.valueOf(karteId) : null, details);
+                    if (ex instanceof WebApplicationException) {
+                        throw (WebApplicationException) ex;
+                    }
+                    if (ex instanceof IOException) {
+                        throw (IOException) ex;
+                    }
+                    throw new WebApplicationException(ex);
+                }
             }
         };
     }
