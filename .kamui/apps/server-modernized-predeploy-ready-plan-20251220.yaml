@@ -1,0 +1,472 @@
+ganttConfig:
+  defaultView: day
+  startDate: 2025-12-20
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  structure.yaml:
+    content: |-
+      開発ドキュメントの網羅レビュー結果を基点に、未実装API/機能の実装とモダナイズ版サーバーの開発状況を
+      「最終デプロイ前テストを除外」した範囲で完了させるためのガントです。
+
+      参照元の優先度は `docs/DEVELOPMENT_STATUS.md` を単一ソースとし、Phase2 文書は Legacy/Archive の参照専用です。
+      実装対象は棚卸しで抽出したギャップのみを扱い、要件確定からAPI/機能実装、結合検証、運用ドキュメント整備までを含みます。
+
+      優先度は絵文字で表現: 🔴高 🟠中 🟢低 ⚫️完了
+    agent選定理由: 仕様棚卸しと実装/検証でモデル特性を分けるため、複数エージェントを並列利用する。
+    api選定理由: API ギャップ棚卸しで抽出した対象のみを実装し、タスクごとに範囲を明記する。
+    dependency: []
+    agent: codex
+    api: []
+  predeploy_readiness:
+    00_inventory:
+      開発ドキュメント総点検.md:
+        content: |-
+          # 開発ドキュメント総点検
+
+          - `docs/DEVELOPMENT_STATUS.md` を単一参照元として、現行の不足事項を一次整理する。
+          - Webクライアント/モダナイズ版サーバーの現行仕様差分を抽出する。
+          - Phase2 文書は Legacy 参照として差分確認のみに限定する。
+        dependency: []
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-20T00:00:00.000Z
+          days: 1
+      API・機能ギャップ台帳作成.md:
+        content: |-
+          # API・機能ギャップ台帳作成
+
+          - API/機能の未実装項目を台帳化し、実装順と優先度を確定する。
+          - 依存する周辺機能（認証、監査、マスター）を同時に棚卸しする。
+          - 台帳は実装フェーズの進捗管理に使う。
+        dependency:
+          - src/predeploy_readiness/00_inventory/開発ドキュメント総点検.md
+        agent: claude code
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-21T00:00:00.000Z
+          days: 1
+      実装スコープ確定.md:
+        content: |-
+          # 実装スコープ確定
+
+          - ギャップ台帳から最終デプロイ前テストを除外した実装範囲を確定する。
+          - 依存関係とリスクを整理し、実装順序を固定する。
+          - 実装対象外（最終デプロイ前テスト）は明示的に切り分ける。
+        dependency:
+          - src/predeploy_readiness/00_inventory/API・機能ギャップ台帳作成.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-22T00:00:00.000Z
+          days: 1
+    01_api_implementation:
+      認証・認可API補完.md:
+        content: |-
+          # 認証・認可API補完
+
+          - 認証フロー/トークン更新/権限制御の不足APIを実装する。
+          - 既存クライアント連携で必要なスコープを整合させる。
+        dependency:
+          - src/predeploy_readiness/00_inventory/実装スコープ確定.md
+        agent: gemini cli
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-23T00:00:00.000Z
+          days: 2
+      患者基本API補完.md:
+        content: |-
+          # 患者基本API補完
+
+          - 患者基本情報/検索/更新の不足APIを実装する。
+          - 既存データ構造との互換性を維持する。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/認証・認可API補完.md
+        agent: gemini cli
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-25T00:00:00.000Z
+          days: 2
+      受付・予約API補完.md:
+        content: |-
+          # 受付・予約API補完
+
+          - 受付登録/来院管理/予約枠操作の不足APIを実装する。
+          - カレンダー/受付台帳と整合するスキーマに揃える。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/患者基本API補完.md
+        agent: gemini cli
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-27T00:00:00.000Z
+          days: 2
+      カルテ・診療録API補完.md:
+        content: |-
+          # カルテ・診療録API補完
+
+          - 診療録取得/更新/履歴の不足APIを実装する。
+          - 監査ログ連携の前提となる更新イベントを整備する。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/受付・予約API補完.md
+        agent: gemini cli
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-29T00:00:00.000Z
+          days: 3
+      会計・請求API補完.md:
+        content: |-
+          # 会計・請求API補完
+
+          - 会計計算/請求更新/レセプト関連の不足APIを実装する。
+          - 入出金フローの整合性を担保する。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/カルテ・診療録API補完.md
+        agent: claude code
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-01T00:00:00.000Z
+          days: 3
+      マスター同期API補完.md:
+        content: |-
+          # マスター同期API補完
+
+          - 診療行為/薬剤/保険情報のマスター同期APIを補完する。
+          - 変更検知と差分更新の仕組みを整備する。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/会計・請求API補完.md
+        agent: claude code
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-04T00:00:00.000Z
+          days: 2
+      監査・ログAPI補完.md:
+        content: |-
+          # 監査・ログAPI補完
+
+          - 操作ログ/監査証跡の不足APIを実装する。
+          - 重要操作の追跡と検索性を確保する。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/マスター同期API補完.md
+        agent: claude code
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-06T00:00:00.000Z
+          days: 2
+    02_feature_implementation:
+      バリデーション・スキーマ整備.md:
+        content: |-
+          # バリデーション・スキーマ整備
+
+          - API入力/出力スキーマの整合性を確保する。
+          - バリデーションエラーの共通形式を整備する。
+        dependency:
+          - src/predeploy_readiness/01_api_implementation/監査・ログAPI補完.md
+        agent: cursor cli
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-08T00:00:00.000Z
+          days: 1
+      エラーハンドリング・リトライ整備.md:
+        content: |-
+          # エラーハンドリング・リトライ整備
+
+          - サーバー側の統一エラーハンドリングと再試行戦略を確立する。
+          - 既存クライアントの期待値と整合させる。
+        dependency:
+          - src/predeploy_readiness/02_feature_implementation/バリデーション・スキーマ整備.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-09T00:00:00.000Z
+          days: 1
+      権限・ロール整備.md:
+        content: |-
+          # 権限・ロール整備
+
+          - 権限/ロール設定をクライアント要件と整合させる。
+          - 監査対象操作の権限境界を再確認する。
+        dependency:
+          - src/predeploy_readiness/02_feature_implementation/エラーハンドリング・リトライ整備.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-10T00:00:00.000Z
+          days: 1
+      Webクライアント連携差分整備.md:
+        content: |-
+          # Webクライアント連携差分整備
+
+          - 未実装機能のUI連携に必要なAPI/イベントの差分を補完する。
+          - Webクライアント側の検証観点を整理する。
+        dependency:
+          - src/predeploy_readiness/02_feature_implementation/権限・ロール整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-11T00:00:00.000Z
+          days: 2
+    03_integration_validation:
+      契約テスト・スキーマ検証.md:
+        content: |-
+          # 契約テスト・スキーマ検証
+
+          - API契約の差分を検証し、クライアント互換を確保する。
+          - スキーマ変更点をドキュメントに反映する。
+        dependency:
+          - src/predeploy_readiness/02_feature_implementation/Webクライアント連携差分整備.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-13T00:00:00.000Z
+          days: 2
+      モック・スタブ更新.md:
+        content: |-
+          # モック・スタブ更新
+
+          - 契約テストに合わせたモック/スタブを更新する。
+          - MSW/スタブデータの更新点を整理する。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/契約テスト・スキーマ検証.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-15T00:00:00.000Z
+          days: 1
+      結合シナリオ検証（最終デプロイ前テスト除外）.md:
+        content: |-
+          # 結合シナリオ検証（最終デプロイ前テスト除外）
+
+          - 主要業務シナリオの結合検証を実施する。
+          - 最終デプロイ前テストは対象外として切り分ける。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/モック・スタブ更新.md
+        agent: claude code
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-16T00:00:00.000Z
+          days: 2
+      パフォーマンス予備検証.md:
+        content: |-
+          # パフォーマンス予備検証
+
+          - 主要APIのレスポンスと負荷耐性を予備的に測定する。
+          - 最終デプロイ前テストとは別枠で課題を洗い出す。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/結合シナリオ検証（最終デプロイ前テスト除外）.md
+        agent: claude code
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-18T00:00:00.000Z
+          days: 2
+    04_operations_docs:
+      監視・メトリクス定義.md:
+        content: |-
+          # 監視・メトリクス定義
+
+          - エラー率/遅延/失敗率の監視指標を定義する。
+          - アラート条件と一次対応フローを整理する。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/契約テスト・スキーマ検証.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-15T00:00:00.000Z
+          days: 1
+      デプロイ手順下書き（最終承認前）.md:
+        content: |-
+          # デプロイ手順下書き（最終承認前）
+
+          - 実際のデプロイ前提を除外した手順書を作成する。
+          - 依存サービスとの連携手順を整理する。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/結合シナリオ検証（最終デプロイ前テスト除外）.md
+        agent: cursor cli
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-20T00:00:00.000Z
+          days: 1
+      変更履歴・リリースノート準備.md:
+        content: |-
+          # 変更履歴・リリースノート準備
+
+          - 実装済みAPI/機能の変更履歴を整理する。
+          - 関係者向けのリリースノート草案を準備する。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/結合シナリオ検証（最終デプロイ前テスト除外）.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-20T00:00:00.000Z
+          days: 1
+      ORCA接続検証ログ整備.md:
+        content: |-
+          # ORCA接続検証ログ整備
+
+          - ORCA接続の検証ログ/証跡のテンプレートを整備する。
+          - RUN_ID 運用の記録先を明示する。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/結合シナリオ検証（最終デプロイ前テスト除外）.md
+        agent: codex
+        api: []
+        priority: Low
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-20T00:00:00.000Z
+          days: 1
+    05_completion:
+      完了判定レビュー（最終デプロイ前テスト除外）.md:
+        content: |-
+          # 完了判定レビュー（最終デプロイ前テスト除外）
+
+          - 最終デプロイ前テストを除いた完了条件を満たしているかレビューする。
+          - 未消化課題/リスクの有無を確認する。
+        dependency:
+          - src/predeploy_readiness/03_integration_validation/パフォーマンス予備検証.md
+          - src/predeploy_readiness/04_operations_docs/デプロイ手順下書き（最終承認前）.md
+          - src/predeploy_readiness/04_operations_docs/変更履歴・リリースノート準備.md
+          - src/predeploy_readiness/04_operations_docs/ORCA接続検証ログ整備.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-21T00:00:00.000Z
+          days: 1
+      残課題・リスク棚卸しとGo/No-Go草案.md:
+        content: |-
+          # 残課題・リスク棚卸しとGo/No-Go草案
+
+          - 残課題を棚卸しし、最終デプロイ前テストへの引継ぎ事項を整理する。
+          - Go/No-Go 判断の草案を作成する。
+        dependency:
+          - src/predeploy_readiness/05_completion/完了判定レビュー（最終デプロイ前テスト除外）.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-22T00:00:00.000Z
+          days: 1
