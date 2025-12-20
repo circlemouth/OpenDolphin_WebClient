@@ -7,6 +7,9 @@ import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.core.UriInfo;
 import java.lang.reflect.Proxy;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.List;
 import open.dolphin.rest.dto.orca.OrcaDrugMasterEntry;
 import open.dolphin.rest.dto.orca.OrcaAddressEntry;
@@ -164,6 +167,56 @@ class OrcaMasterResourceTest {
         assertEquals(404, response.getStatus());
         OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
         assertEquals("MASTER_ADDRESS_NOT_FOUND", payload.getCode());
+    }
+
+    @Test
+    void getEtensu_emptyResult_returnsNotFound() {
+        OrcaMasterResource resource = new OrcaMasterResource();
+        MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
+        params.add("keyword", "no-such-entry");
+        UriInfo uriInfo = createUriInfo(params);
+
+        Response response = resource.getEtensu(USER, PASSWORD, uriInfo, null);
+
+        assertEquals(404, response.getStatus());
+        OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
+        assertEquals("TENSU_NOT_FOUND", payload.getCode());
+    }
+
+    @Test
+    void getEtensu_fixtureLoadFailed_returnsServiceUnavailable() throws Exception {
+        Path snapshotRoot = Files.createTempDirectory("orca-etensu-snapshot");
+        Path fixtureRoot = Files.createTempDirectory("orca-etensu-fixture");
+        Path fixtureFile = fixtureRoot.resolve("orca-master-etensu.json");
+        Files.write(fixtureFile, "not-json".getBytes(StandardCharsets.UTF_8));
+
+        String snapshotKey = "ORCA_MASTER_SNAPSHOT_ROOT";
+        String fixtureKey = "ORCA_MASTER_FIXTURE_ROOT";
+        String prevSnapshot = System.getProperty(snapshotKey);
+        String prevFixture = System.getProperty(fixtureKey);
+        System.setProperty(snapshotKey, snapshotRoot.toString());
+        System.setProperty(fixtureKey, fixtureRoot.toString());
+        try {
+            OrcaMasterResource resource = new OrcaMasterResource();
+            UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
+
+            Response response = resource.getEtensu(USER, PASSWORD, uriInfo, null);
+
+            assertEquals(503, response.getStatus());
+            OrcaMasterErrorResponse payload = (OrcaMasterErrorResponse) response.getEntity();
+            assertEquals("ETENSU_UNAVAILABLE", payload.getCode());
+        } finally {
+            restoreSystemProperty(snapshotKey, prevSnapshot);
+            restoreSystemProperty(fixtureKey, prevFixture);
+        }
+    }
+
+    private void restoreSystemProperty(String key, String value) {
+        if (value == null) {
+            System.clearProperty(key);
+        } else {
+            System.setProperty(key, value);
+        }
     }
 
     private UriInfo createUriInfo(MultivaluedMap<String, String> params) {
