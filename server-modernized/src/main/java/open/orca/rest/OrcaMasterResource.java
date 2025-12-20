@@ -4,12 +4,16 @@ import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.TreeMap;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import jakarta.inject.Inject;
@@ -19,6 +23,7 @@ import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
+import jakarta.ws.rs.core.EntityTag;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.MultivaluedMap;
 import jakarta.ws.rs.core.Response;
@@ -50,6 +55,9 @@ public class OrcaMasterResource extends AbstractResource {
     private static final String DEFAULT_VERSION = "20240426";
     private static final String DEFAULT_VALID_FROM = "20240401";
     private static final String DEFAULT_VALID_TO = "99991231";
+    private static final long CACHE_TTL_SHORT_SECONDS = 300;
+    private static final long CACHE_TTL_LONG_SECONDS = 604800;
+    private static final long CACHE_STALE_REVALIDATE_SECONDS = 86400;
     private static final Pattern SRYCD_PATTERN = Pattern.compile("^\\d{9}$");
     private static final Pattern ZIP_PATTERN = Pattern.compile("^\\d{7}$");
     private static final Pattern PREF_PATTERN = Pattern.compile("^(0[1-9]|[1-3][0-9]|4[0-7])$");
@@ -100,7 +108,9 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getGenericClass(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
@@ -113,6 +123,14 @@ public class OrcaMasterResource extends AbstractResource {
                 "generic-class/orca_master_generic-class_response.json",
                 "orca-master-generic-class.json"
         );
+        final String masterType = "orca05-generic-class";
+        final String etagValue = buildEtag("/orca/master/generic-class", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/master/generic-class", masterType, 304, fixture, true, null, null,
+                    buildQueryDetails(null, keyword, effective, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         final List<FixtureGenericClassEntry> filtered = fixture.entries.stream()
                 .filter(entry -> matchesKeyword(keyword, entry.className, entry.kanaName))
                 .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, entry.startDate, entry.endDate))
@@ -125,7 +143,9 @@ public class OrcaMasterResource extends AbstractResource {
         OrcaMasterListResponse<OrcaDrugMasterEntry> response = new OrcaMasterListResponse<>();
         response.setTotalCount(totalCount);
         response.setItems(items);
-        return Response.ok(response).build();
+        recordMasterAudit(request, "/orca/master/generic-class", masterType, 200, fixture, false, totalCount == 0,
+                totalCount, buildQueryDetails(null, keyword, effective, params));
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     @GET
@@ -133,9 +153,11 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getGenericClassAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
-        return getGenericClass(userName, password, uriInfo);
+        return getGenericClass(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET
@@ -143,7 +165,9 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getGenericPrice(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
@@ -159,6 +183,14 @@ public class OrcaMasterResource extends AbstractResource {
                 "generic-price/orca_master_generic-price_response.json",
                 "orca-master-generic-price.json"
         );
+        final String masterType = "orca05-generic-price";
+        final String etagValue = buildEtag("/orca/master/generic-price", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/master/generic-price", masterType, 304, fixture, true, null, null,
+                    buildSrycdDetails(srycd, effective, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         final FixtureGenericPriceEntry hit = fixture.entries.stream()
                 .filter(entry -> srycd.equals(entry.srycd))
                 .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, entry.startDate, entry.endDate))
@@ -182,10 +214,14 @@ public class OrcaMasterResource extends AbstractResource {
                     true,
                     false
             );
-            return Response.ok(missing).build();
+            recordMasterAudit(request, "/orca/master/generic-price", masterType, 200, fixture, false, true, 0,
+                    buildSrycdDetails(srycd, effective, params));
+            return buildCachedOkResponse(missing, etagValue, ttlSeconds);
         }
         OrcaDrugMasterEntry response = toGenericPriceEntry(hit, fixture);
-        return Response.ok(response).build();
+        recordMasterAudit(request, "/orca/master/generic-price", masterType, 200, fixture, false, false, 1,
+                buildSrycdDetails(srycd, effective, params));
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     @GET
@@ -193,9 +229,11 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getGenericPriceAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
-        return getGenericPrice(userName, password, uriInfo);
+        return getGenericPrice(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET
@@ -203,7 +241,9 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getYouhou(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
@@ -216,12 +256,22 @@ public class OrcaMasterResource extends AbstractResource {
                 "youhou/orca_master_youhou_response.json",
                 "orca-master-youhou.json"
         );
+        final String masterType = "orca05-youhou";
+        final String etagValue = buildEtag("/orca/master/youhou", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/master/youhou", masterType, 304, fixture, true, null, null,
+                    buildQueryDetails(null, keyword, effective, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         final List<OrcaDrugMasterEntry> response = fixture.entries.stream()
                 .filter(entry -> matchesKeyword(keyword, entry.youhouName, entry.comment))
                 .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, null, null))
                 .map(entry -> toYouhouEntry(entry, fixture))
                 .collect(Collectors.toList());
-        return Response.ok(response).build();
+        recordMasterAudit(request, "/orca/master/youhou", masterType, 200, fixture, false, response.isEmpty(),
+                response.size(), buildQueryDetails(null, keyword, effective, params));
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     @GET
@@ -229,9 +279,11 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getYouhouAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
-        return getYouhou(userName, password, uriInfo);
+        return getYouhou(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET
@@ -239,7 +291,9 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getMaterial(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
@@ -252,12 +306,22 @@ public class OrcaMasterResource extends AbstractResource {
                 "material/orca_master_material_response.json",
                 "orca-master-material.json"
         );
+        final String masterType = "orca05-material";
+        final String etagValue = buildEtag("/orca/master/material", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/master/material", masterType, 304, fixture, true, null, null,
+                    buildQueryDetails(null, keyword, effective, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         final List<OrcaDrugMasterEntry> response = fixture.entries.stream()
                 .filter(entry -> matchesKeyword(keyword, entry.materialName))
                 .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, entry.startDate, entry.endDate))
                 .map(entry -> toMaterialEntry(entry, fixture))
                 .collect(Collectors.toList());
-        return Response.ok(response).build();
+        recordMasterAudit(request, "/orca/master/material", masterType, 200, fixture, false, response.isEmpty(),
+                response.size(), buildQueryDetails(null, keyword, effective, params));
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     @GET
@@ -265,9 +329,11 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getMaterialAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
-        return getMaterial(userName, password, uriInfo);
+        return getMaterial(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET
@@ -275,7 +341,9 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getKensaSort(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
         if (!isAuthorized(userName, password)) {
             return unauthorized();
@@ -288,12 +356,22 @@ public class OrcaMasterResource extends AbstractResource {
                 "kensa-sort/orca_master_kensa-sort_response.json",
                 "orca-master-kensa-sort.json"
         );
+        final String masterType = "orca05-kensa-sort";
+        final String etagValue = buildEtag("/orca/master/kensa-sort", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/master/kensa-sort", masterType, 304, fixture, true, null, null,
+                    buildQueryDetails(null, keyword, effective, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         final List<OrcaDrugMasterEntry> response = fixture.entries.stream()
                 .filter(entry -> matchesKeyword(keyword, entry.kensaName, entry.classification))
                 .filter(entry -> isEffective(effective, entry.validFrom, entry.validTo, null, null))
                 .map(entry -> toKensaSortEntry(entry, fixture))
                 .collect(Collectors.toList());
-        return Response.ok(response).build();
+        recordMasterAudit(request, "/orca/master/kensa-sort", masterType, 200, fixture, false, response.isEmpty(),
+                response.size(), buildQueryDetails(null, keyword, effective, params));
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     @GET
@@ -301,6 +379,7 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getHokenja(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
@@ -319,9 +398,17 @@ public class OrcaMasterResource extends AbstractResource {
                 "hokenja/orca_master_hokenja_response.json",
                 "orca-master-hokenja.json"
         );
+        final String masterType = "orca06-hokenja";
+        final String etagValue = buildEtag("/orca/master/hokenja", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/master/hokenja", masterType, 304, fixture, true, null, null,
+                    buildQueryDetails(pref, keyword, effective, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
             Response failure = serviceUnavailable("MASTER_HOKENJA_UNAVAILABLE", "保険者マスタを取得できませんでした");
-            recordMasterAudit(request, "/orca/master/hokenja", "orca06-hokenja", 503, fixture, true, 0,
+            recordMasterAudit(request, "/orca/master/hokenja", masterType, 503, fixture, false, true, 0,
                     buildQueryDetails(pref, keyword, effective, params));
             return failure;
         }
@@ -338,9 +425,9 @@ public class OrcaMasterResource extends AbstractResource {
         OrcaMasterListResponse<OrcaInsurerEntry> response = new OrcaMasterListResponse<>();
         response.setTotalCount(totalCount);
         response.setItems(items);
-        recordMasterAudit(request, "/orca/master/hokenja", "orca06-hokenja", 200, fixture,
-                totalCount == 0, totalCount, buildQueryDetails(pref, keyword, effective, params));
-        return Response.ok(response).build();
+        recordMasterAudit(request, "/orca/master/hokenja", masterType, 200, fixture, false, totalCount == 0,
+                totalCount, buildQueryDetails(pref, keyword, effective, params));
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     @GET
@@ -348,10 +435,11 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getHokenjaAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        return getHokenja(userName, password, uriInfo, request);
+        return getHokenja(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET
@@ -359,6 +447,7 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getAddress(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
@@ -376,9 +465,17 @@ public class OrcaMasterResource extends AbstractResource {
                 "address/orca_master_address_response.json",
                 "orca-master-address.json"
         );
+        final String masterType = "orca06-address";
+        final String etagValue = buildEtag("/orca/master/address", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/master/address", masterType, 304, fixture, true, null, null,
+                    buildQueryDetails(null, null, effective, params, zip));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
             Response failure = serviceUnavailable("MASTER_ADDRESS_UNAVAILABLE", "住所マスタを取得できませんでした");
-            recordMasterAudit(request, "/orca/master/address", "orca06-address", 503, fixture, true, 0,
+            recordMasterAudit(request, "/orca/master/address", masterType, 503, fixture, false, true, 0,
                     buildQueryDetails(null, null, effective, params, zip));
             return failure;
         }
@@ -389,19 +486,19 @@ public class OrcaMasterResource extends AbstractResource {
                 .orElse(null);
         if (match == null) {
             if (fixture.origin == DataOrigin.FALLBACK) {
-                recordMasterAudit(request, "/orca/master/address", "orca06-address", 200, fixture, true, 0,
+                recordMasterAudit(request, "/orca/master/address", masterType, 200, fixture, false, true, 0,
                         buildQueryDetails(null, null, effective, params, zip));
-                return Response.ok(Collections.emptyMap()).build();
+                return buildCachedOkResponse(Collections.emptyMap(), etagValue, ttlSeconds);
             }
             Response notFound = notFound("MASTER_ADDRESS_NOT_FOUND", "指定の郵便番号に該当する住所がありません", request);
-            recordMasterAudit(request, "/orca/master/address", "orca06-address", 404, fixture, true, 0,
+            recordMasterAudit(request, "/orca/master/address", masterType, 404, fixture, false, true, 0,
                     buildQueryDetails(null, null, effective, params, zip));
             return notFound;
         }
         OrcaAddressEntry response = toAddressEntry(match, fixture);
-        recordMasterAudit(request, "/orca/master/address", "orca06-address", 200, fixture, false, 1,
+        recordMasterAudit(request, "/orca/master/address", masterType, 200, fixture, false, false, 1,
                 buildQueryDetails(null, null, effective, params, zip));
-        return Response.ok(response).build();
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     @GET
@@ -409,10 +506,11 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getAddressAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
-        return getAddress(userName, password, uriInfo, request);
+        return getAddress(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET
@@ -420,9 +518,11 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getKensaSortAlias(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
-            @Context UriInfo uriInfo
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
     ) {
-        return getKensaSort(userName, password, uriInfo);
+        return getKensaSort(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET
@@ -430,6 +530,7 @@ public class OrcaMasterResource extends AbstractResource {
     public Response getEtensu(
             @HeaderParam("userName") String userName,
             @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
             @Context UriInfo uriInfo,
             @Context HttpServletRequest request
     ) {
@@ -455,9 +556,17 @@ public class OrcaMasterResource extends AbstractResource {
                 "etensu/orca_master_etensu_response.json",
                 "orca-master-etensu.json"
         );
+        final String masterType = "orca08-etensu";
+        final String etagValue = buildEtag("/orca/tensu/etensu", masterType, fixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, fixture, true, null, null,
+                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
         if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
             Response failure = serviceUnavailable("ETENSU_UNAVAILABLE", "etensu master unavailable");
-            recordMasterAudit(request, "/orca/tensu/etensu", "orca08-etensu", 503, fixture, true, 0,
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 503, fixture, false, true, 0,
                     buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
             return failure;
         }
@@ -470,7 +579,7 @@ public class OrcaMasterResource extends AbstractResource {
                 .collect(Collectors.toList());
         if (filtered.isEmpty()) {
             Response notFound = notFound("TENSU_NOT_FOUND", "no etensu entries matched", request);
-            recordMasterAudit(request, "/orca/tensu/etensu", "orca08-etensu", 404, fixture, true, 0,
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, fixture, false, true, 0,
                     buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
             return notFound;
         }
@@ -482,9 +591,10 @@ public class OrcaMasterResource extends AbstractResource {
         OrcaMasterListResponse<OrcaTensuEntry> response = new OrcaMasterListResponse<>();
         response.setTotalCount(totalCount);
         response.setItems(items);
-        recordMasterAudit(request, "/orca/tensu/etensu", "orca08-etensu", 200, fixture, false, totalCount,
+        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 200, fixture, false, totalCount == 0,
+                totalCount,
                 buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
-        return Response.ok(response).build();
+        return buildCachedOkResponse(response, etagValue, ttlSeconds);
     }
 
     private Response unauthorized() {
@@ -1037,7 +1147,8 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     private void recordMasterAudit(HttpServletRequest request, String apiRoute, String masterType, int httpStatus,
-            LoadedFixture<?> fixture, boolean emptyResult, int resultCount, java.util.Map<String, Object> extraDetails) {
+            LoadedFixture<?> fixture, boolean cacheHit, Boolean emptyResult, Integer resultCount,
+            java.util.Map<String, Object> extraDetails) {
         if (sessionAuditDispatcher == null) {
             return;
         }
@@ -1064,11 +1175,15 @@ public class OrcaMasterResource extends AbstractResource {
         details.put("dataSource", dataSourceForOrigin(fixture.origin));
         details.put("snapshotVersion", fixture.snapshotVersion);
         details.put("version", firstNonBlank(fixture.version, DEFAULT_VERSION));
-        details.put("cacheHit", Boolean.FALSE);
+        details.put("cacheHit", cacheHit);
         details.put("missingMaster", fixture.origin == DataOrigin.FALLBACK);
         details.put("fallbackUsed", fixture.origin == DataOrigin.FALLBACK);
-        details.put("resultCount", resultCount);
-        details.put("emptyResult", emptyResult);
+        if (resultCount != null) {
+            details.put("resultCount", resultCount);
+        }
+        if (emptyResult != null) {
+            details.put("emptyResult", emptyResult);
+        }
         if (extraDetails != null) {
             details.putAll(extraDetails);
         }
@@ -1110,6 +1225,13 @@ public class OrcaMasterResource extends AbstractResource {
         return details;
     }
 
+    private java.util.Map<String, Object> buildSrycdDetails(String srycd, String effective,
+            MultivaluedMap<String, String> params) {
+        java.util.Map<String, Object> details = buildQueryDetails(null, null, effective, params);
+        details.put("srycd", srycd);
+        return details;
+    }
+
     private java.util.Map<String, Object> buildTensuQueryDetails(String keyword, String category, String asOf,
             String tensuVersion, MultivaluedMap<String, String> params) {
         java.util.Map<String, Object> details = new java.util.LinkedHashMap<>();
@@ -1133,6 +1255,116 @@ public class OrcaMasterResource extends AbstractResource {
             details.put("size", parsePositiveInt(params, "size", 100));
         }
         return details;
+    }
+
+    private String buildEtag(String apiRoute, String masterType, LoadedFixture<?> fixture,
+            MultivaluedMap<String, String> params) {
+        StringBuilder seed = new StringBuilder();
+        seed.append(apiRoute).append('|');
+        seed.append(masterType).append('|');
+        seed.append(dataSourceForOrigin(fixture.origin)).append('|');
+        seed.append(firstNonBlank(fixture.snapshotVersion, "none")).append('|');
+        seed.append(firstNonBlank(fixture.version, DEFAULT_VERSION)).append('|');
+        seed.append(normalizeQuery(params));
+        return sha256Hex(seed.toString());
+    }
+
+    private String normalizeQuery(MultivaluedMap<String, String> params) {
+        if (params == null || params.isEmpty()) {
+            return "";
+        }
+        Map<String, List<String>> sorted = new TreeMap<>();
+        for (Map.Entry<String, List<String>> entry : params.entrySet()) {
+            if (entry.getKey() == null) {
+                continue;
+            }
+            List<String> values = entry.getValue() != null ? entry.getValue() : Collections.emptyList();
+            List<String> normalized = values.stream()
+                    .filter(Objects::nonNull)
+                    .sorted()
+                    .collect(Collectors.toList());
+            sorted.put(entry.getKey(), normalized);
+        }
+        StringBuilder query = new StringBuilder();
+        for (Map.Entry<String, List<String>> entry : sorted.entrySet()) {
+            if (query.length() > 0) {
+                query.append('&');
+            }
+            query.append(entry.getKey()).append('=');
+            query.append(String.join(",", entry.getValue()));
+        }
+        return query.toString();
+    }
+
+    private String sha256Hex(String input) {
+        try {
+            MessageDigest digest = MessageDigest.getInstance("SHA-256");
+            byte[] bytes = digest.digest(input.getBytes(StandardCharsets.UTF_8));
+            StringBuilder hex = new StringBuilder(bytes.length * 2);
+            for (byte value : bytes) {
+                String part = Integer.toHexString(value & 0xff);
+                if (part.length() == 1) {
+                    hex.append('0');
+                }
+                hex.append(part);
+            }
+            return hex.toString();
+        } catch (Exception e) {
+            return Integer.toHexString(input.hashCode());
+        }
+    }
+
+    private boolean etagMatches(String ifNoneMatch, String etagValue) {
+        if (ifNoneMatch == null || ifNoneMatch.isBlank()) {
+            return false;
+        }
+        String[] tokens = ifNoneMatch.split(",");
+        for (String token : tokens) {
+            String candidate = token.trim();
+            if (candidate.isEmpty()) {
+                continue;
+            }
+            if ("*".equals(candidate)) {
+                return true;
+            }
+            if (candidate.startsWith("W/")) {
+                candidate = candidate.substring(2).trim();
+            }
+            if (candidate.startsWith("\"") && candidate.endsWith("\"") && candidate.length() >= 2) {
+                candidate = candidate.substring(1, candidate.length() - 1);
+            }
+            if (etagValue.equals(candidate)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Response buildCachedOkResponse(Object entity, String etagValue, long ttlSeconds) {
+        EntityTag tag = new EntityTag(etagValue);
+        return Response.ok(entity)
+                .tag(tag)
+                .header("Cache-Control", cacheControlHeader(ttlSeconds))
+                .build();
+    }
+
+    private Response buildNotModifiedResponse(String etagValue, long ttlSeconds) {
+        EntityTag tag = new EntityTag(etagValue);
+        return Response.status(Status.NOT_MODIFIED)
+                .tag(tag)
+                .header("Cache-Control", cacheControlHeader(ttlSeconds))
+                .build();
+    }
+
+    private String cacheControlHeader(long ttlSeconds) {
+        return "public, max-age=" + ttlSeconds + ", stale-while-revalidate=" + CACHE_STALE_REVALIDATE_SECONDS;
+    }
+
+    private long cacheTtlSeconds(String masterType) {
+        if ("orca06-address".equals(masterType) || "orca06-hokenja".equals(masterType)) {
+            return CACHE_TTL_LONG_SECONDS;
+        }
+        return CACHE_TTL_SHORT_SECONDS;
     }
 
     private static final class FixtureListResponse<T> {
