@@ -165,6 +165,7 @@ public class AbstractResource {
             String message, Map<String, ?> details) {
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("error", errorCode);
+        body.put("code", errorCode);
         if (message != null && !message.isBlank()) {
             body.put("message", message);
         }
@@ -185,6 +186,9 @@ public class AbstractResource {
                     body.put(key, value);
                 }
             });
+        }
+        if (!body.containsKey("validationError") && (status == 400 || status == 422)) {
+            body.put("validationError", Boolean.TRUE);
         }
         return body;
     }
