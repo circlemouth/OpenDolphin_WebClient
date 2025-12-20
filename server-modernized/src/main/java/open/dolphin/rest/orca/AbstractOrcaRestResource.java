@@ -66,6 +66,7 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
     protected WebApplicationException validationError(HttpServletRequest request, String field, String message) {
         Map<String, Object> details = new HashMap<>();
         details.put("field", field);
+        details.put("validationError", Boolean.TRUE);
         return restError(request, Response.Status.BAD_REQUEST, "invalid_request", message, details, null);
     }
 }
