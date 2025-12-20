@@ -15,7 +15,7 @@
 - ORCA-02 `/orca/stamp/{setCd,name}` date パラメータ追加（RUN_ID=`20251219T131008Z`）。`date` クエリで有効期間判定を指定可能にし、既存の第3要素指定は後方互換で維持。証跡: `docs/server-modernization/phase2/operations/logs/20251219T131008Z-orca-02-stamp-date.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_02_stamp_dateパラメータ追加.md`。
 - DDL 変換警告と Agroal クラスロード警告の解消（RUN_ID=`20251219T125123Z`）。`schema-generation.database.action=none` へ変更し、`io.agroal.api` module dependency を追加して `WELD-000119` を解消。証跡: `docs/server-modernization/phase2/operations/logs/20251219T125123Z-ddl-agroal-warn-fix.md`。成果物: `src/server_modernized_full_completion_phase2/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md`。
 - ORCA-01 `/orca/inputset` SQL 修正（RUN_ID=`20251219T113948Z`）。`inputcd` の WHERE 句を括弧で明示し、SQL 文字列ユニットテストを追加。証跡: `docs/server-modernization/phase2/operations/logs/20251219T113948Z-orca-01-inputset-sql.md`。成果物: `src/server_modernized_full_completion_phase2/04_orca_master_api/ORCA_01_inputset_sql修正.md`。
-- server-modernized 実装優先度と実装順を確定（RUN_ID=`20251219T065150Z`）。ORCA Master → 監査・JMS → 外部 API → Jakarta 設定の順序と依存関係/テスト順序を明文化し、ガント（`.kamui/apps/server-modernized-implementation-20251219.yaml`）へ反映。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md`。
+- server-modernized 実装優先度と実装順を確定（RUN_ID=`20251219T065150Z`）。ORCA Master → 監査・JMS → 外部 API → Jakarta 設定の順序と依存関係/テスト順序を明文化し、Phase2 ガント（`.kamui/apps/server-modernized-implementation-20251219.yaml`）へ反映。現在は Legacy 参照専用のため、現行ガントは `.kamui/apps/server-modernized-current-plan-20251220.yaml` を参照。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md`。
 - 実装状況ドキュメント棚卸し（RUN_ID=`20251219T063753Z`）。`JAKARTA_EE10_GAP_LIST.md` / `MODERNIZED_SERVER_GAP_TRACKER_20251116T210500Z.md` / `ORCA_API_STATUS.md` を突合し、未実装・部分実装・証跡未取得の一覧をタスク化。成果物: `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md`。
 - DOC_STATUS 棚卸しとハブ同期（RUN_ID=`20251219T063136Z`）。DOC_STATUS の備考欄へ RUN_ID/証跡パスを追記し、README/Phase2 INDEX/manager overview/checklist を同日付で同期。証跡: `docs/web-client/planning/phase2/logs/20251219T063136Z-doc-status-hub-sync.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/DOC_STATUS棚卸しとハブ同期.md`。
 - RUN_ID 整備と参照チェーン再確認（RUN_ID=`20251219T062549Z`）。参照チェーン（AGENTS → README → Phase2 INDEX → manager overview → checklist）を再確認し、RUN_ID を統一。Legacy 資産は参照専用、`server-modernized/` のみ対象範囲であることを再合意。証跡: `docs/web-client/planning/phase2/logs/20251219T062549Z-runid-governance.md`。成果物: `src/server_modernized_full_completion_phase2/00_governance/RUN_ID整備と参照チェーン再確認.md`。
@@ -48,7 +48,8 @@
 - module_json MSW OFF スモークを追加（RUN_ID=`20251214T091846Z`）。`VITE_DISABLE_MSW=1` で dev 起動し、orca-master-bridge smoke 1/1 pass。副作用なし（証跡: `docs/web-client/planning/phase2/logs/20251214T091846Z-msw-off-smoke.md`）。beanJson UI までの巡回は今後の軽量ケースで補完予定。
 - Charts 外来の fetch レイヤー統一、エラー/リトライ規約、セッション/権限ガード、API 契約テーブルなど 2025-12-13 までの更新内容は据え置き（次の UI 実装タスク開始待ち）。
 
-## 現在のドキュメント（Active）
+## Legacy 記録（参照専用）
+- Phase2 の記録一覧。現行の作業判断は `docs/DEVELOPMENT_STATUS.md` を単一参照とする。
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/優先度と実装順確定.md` — server-modernized 実装優先度と順序確定（RUN_ID=`20251219T065150Z`）。
 - `src/server_modernized_full_completion_phase2/01_gap_inventory/実装状況ドキュメント棚卸し.md` — server-modernized 実装状況棚卸し（RUN_ID=`20251219T063753Z`）。
 - `src/server_modernized_full_completion_phase2/02_jakarta_foundation/ddl変換警告とAgroalクラスロード解消.md` — DDL 変換警告と Agroal クラスロード解消（RUN_ID=`20251219T125123Z`）。

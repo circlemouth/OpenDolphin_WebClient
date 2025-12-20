@@ -60,6 +60,42 @@ filters:
     not_started: true
   showDependencies: true
 src:
+  phase2_legacy_notice:
+    00_legacy_notice:
+      Phase2ガントはLegacy参照専用.md:
+        content: |-
+          # Phase2 ガントは Legacy 参照専用
+
+          - Phase2 ドキュメントは Legacy/Archive（参照専用）。
+          - 現行作業は `docs/DEVELOPMENT_STATUS.md` を単一参照とする。
+          - 本ガントは履歴として保持し、実作業の指示には使用しない。
+        dependency: []
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-20T00:00:00.000Z
+          days: 0.25
+  current_plan_reference:
+    00_current_plan:
+      現行ガント参照.md:
+        content: |-
+          # 現行ガントの参照先
+
+          - Phase2 の誤適用を防ぐため、現行タスクは別ガントに切り出す。
+          - 現行ガント: `.kamui/apps/server-modernized-current-plan-20251220.yaml`
+          - 参照の単一ソース: `docs/DEVELOPMENT_STATUS.md`
+        dependency: []
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
+        schedule:
+          start: 2025-12-20T00:00:00.000Z
+          days: 0.25
   server_modernized_full_completion_phase2:
     00_governance:
       RUN_ID整備と参照チェーン再確認.md:
