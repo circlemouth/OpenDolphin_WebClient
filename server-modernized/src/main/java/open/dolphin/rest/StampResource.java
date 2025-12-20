@@ -515,6 +515,7 @@ public class StampResource extends AbstractResource {
             String facilityId, String visibility) {
         Map<String, Object> body = new HashMap<>();
         body.put("error", errorCode);
+        body.put("code", errorCode);
         body.put("message", message);
         body.put("status", status.getStatusCode());
         String traceId = resolveTraceId(httpServletRequest);
@@ -522,6 +523,9 @@ public class StampResource extends AbstractResource {
             body.put("traceId", traceId);
         }
         body.put("path", resolveResourcePath());
+        if (status == Response.Status.BAD_REQUEST) {
+            body.put("validationError", Boolean.TRUE);
+        }
         if (facilityId != null && !facilityId.isEmpty()) {
             body.put("facilityId", facilityId);
         }
