@@ -139,8 +139,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-23T00:00:00.000Z
           days: 1
@@ -159,8 +159,8 @@ src:
         agent: claude code
         api: []
         priority: Medium
-        status: in_progress
-        progress: 30
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T00:00:00.000Z
           days: 2
@@ -193,8 +193,8 @@ src:
         agent: claude code
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-26T00:00:00.000Z
           days: 1
