@@ -62,29 +62,13 @@ filters:
 src:
   server_modernized_gap_20251221:
     00_factcheck:
-      前提ドキュメント_雛形作成.md:
-        content: |-
-          # 前提ドキュメント雛形作成
-
-          - 各フェーズ着手前に必要となるタスク文書を雛形として先行作成。
-          - Touch/PHR/ORCA 各領域の作業手順・参照リンクを事前に整備。
-        dependency: []
-        agent: codex
-        api: []
-        priority: High
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2025-12-22T00:00:00.000Z
-          days: 0
       現状棚卸し_ギャップ確定.md:
         content: |-
           # 現状棚卸しとギャップ確定
 
           - 既存コード/設定/Runbook を突合し、未実装・未検証項目を確定する。
           - PHR/ORCA/Touch/Demo の差分を一次リスト化してスコープ確定。
-        dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/前提ドキュメント_雛形作成.md
+        dependency: []
         agent: codex
         api: []
         priority: High
@@ -110,22 +94,6 @@ src:
           start: 2025-12-24T00:00:00.000Z
           days: 1
     01_orca07_datasource:
-      ORCA-07_前提ドキュメント整備.md:
-        content: |-
-          # ORCA-07 前提ドキュメント整備
-
-          - ORCA-07 対応の作業手順書と参照資料を先行作成。
-          - DataSource/Vault 周辺の前提リンクを整理。
-        dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
-        agent: codex
-        api: []
-        priority: High
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2025-12-24T00:00:00.000Z
-          days: 0
       ORCA-07_設計確定.md:
         content: |-
           # ORCA-07 設計確定（DataSource/Vault）
@@ -133,7 +101,7 @@ src:
           - JNDI DataSource と Vault Secrets の責務を確定。
           - custom.properties 依存を段階廃止する方針を整理。
         dependency:
-          - src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_前提ドキュメント整備.md
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
         agent: codex
         api: []
         priority: High
@@ -194,8 +162,8 @@ src:
         content: |-
           # ORCA-08 前提ドキュメント整備
 
-          - ETENSU 実装に必要な前提文書を先行作成。
-          - テーブル定義や検証観点の参照リンクを整理。
+          - ORCA-08 実装に必要な前提文書と参照リンクを先行作成。
+          - テーブル定義・検証観点・監査要件を整理。
         dependency:
           - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
         agent: codex
@@ -217,8 +185,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T02:00:00.000Z
           days: 3
@@ -233,8 +201,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 30
         schedule:
           start: 2025-12-27T00:00:00.000Z
           days: 3
@@ -271,22 +239,6 @@ src:
           start: 2026-01-02T00:00:00.000Z
           days: 2
     03_phr:
-      PHR_前提ドキュメント整備.md:
-        content: |-
-          # PHR 前提ドキュメント整備
-
-          - PHR 対応で参照する仕様・運用文書を先行作成。
-          - 監査/署名/エクスポート関連の前提を整理。
-        dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
-        agent: codex
-        api: []
-        priority: High
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2025-12-24T03:00:00.000Z
-          days: 0
       PHR_ヘッダー_監査ID整備.md:
         content: |-
           # PHR ヘッダー/監査ID 整備
@@ -294,7 +246,7 @@ src:
           - X-Facility-Id / TraceId の必須化と監査イベントを統一。
           - 4xx/5xx 監査とエラーマッピングを整備。
         dependency:
-          - src/server_modernized_gap_20251221/03_phr/PHR_前提ドキュメント整備.md
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
         agent: codex
         api: []
         priority: High
@@ -514,6 +466,39 @@ src:
         schedule:
           start: 2025-12-24T08:00:00.000Z
           days: 2
+      ORCA_wrapper_実接続_Transport.md:
+        content: |-
+          # ORCA wrapper 実接続 Transport 実装
+
+          - StubOrcaTransport を実接続 transport に切替。
+          - 監査/失敗時ログの最小セットを実装。
+        dependency:
+          - src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md
+          - src/server_modernized_gap_20251221/05_orca_wrappers/SpecBased_API_解放条件整理.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-29T08:00:00.000Z
+          days: 3
+      ORCA_wrapper_監査補完.md:
+        content: |-
+          # ORCA wrapper 監査補完
+
+          - Wrapper API の recordAudit 未実装箇所を補完。
+          - TraceId/FacilityId の引き回しを統一。
+        dependency:
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_Transport.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-01T08:00:00.000Z
+          days: 2
       ORCA_POST_実装切替.md:
         content: |-
           # ORCA POST 実装切替
@@ -523,6 +508,7 @@ src:
         dependency:
           - src/server_modernized_gap_20251221/05_orca_wrappers/SpecBased_API_解放条件整理.md
           - src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md
         agent: codex
         api: []
         priority: Medium
@@ -547,7 +533,92 @@ src:
         schedule:
           start: 2026-01-06T04:00:00.000Z
           days: 2
-    06_quality_release:
+    06_server_ops_required:
+      ORCA_master_DAO実装.md:
+        content: |-
+          # ORCA Master DAO 実装（05/06）
+
+          - ORCA-05/06 の DB テーブルを読み出す DAO を実装。
+          - ORCA-08 は ETENSU DAO の成果と統合する。
+        dependency:
+          - src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-30T02:00:00.000Z
+          days: 3
+      ORCA_master_API_実接続.md:
+        content: |-
+          # ORCA Master API 実接続
+
+          - /orca/master/* を fixture から DB 実データへ切替。
+          - ETag/TTL/監査メタを本番仕様に合わせる。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_DAO実装.md
+          - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_ETENSU_API連携.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-02T02:00:00.000Z
+          days: 3
+      WebClient前提API_実装切替.md:
+        content: |-
+          # Web クライアント前提 API 実装切替
+
+          - /api01rv2/claim/outpatient/*, /orca21/medicalmodv2/outpatient を実実装へ切替。
+          - mock 固定レスポンスの撤去と監査メタの整合を行う。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-05T02:00:00.000Z
+          days: 3
+      ORCA_master_E2E_証跡.md:
+        content: |-
+          # ORCA Master E2E 証跡
+
+          - ORCA-05/06/08 の実測レスポンスと監査ログを証跡化。
+          - ORCA 接続基準（P99/キャッシュ）を満たすことを確認。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-08T00:00:00.000Z
+          days: 2
+      ORCA_API_STATUS_更新.md:
+        content: |-
+          # ORCA API STATUS 更新
+
+          - ORCA API の実測結果と公開状況を最新化。
+          - 監査/証跡リンクを整備。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_E2E_証跡.md
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_E2E.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-10T00:00:00.000Z
+          days: 1
+    07_quality_release:
       品質リリース_前提ドキュメント整備.md:
         content: |-
           # 品質リリース 前提ドキュメント整備
@@ -571,7 +642,7 @@ src:
           - 監査イベントの不足分を補完。
           - 失敗時のメタ情報を統一。
         dependency:
-          - src/server_modernized_gap_20251221/06_quality_release/品質リリース_前提ドキュメント整備.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
           - src/server_modernized_gap_20251221/03_phr/PHR_E2E_証跡.md
           - src/server_modernized_gap_20251221/04_touch_demo/Touch_P1_API_実装.md
         agent: codex
@@ -606,8 +677,8 @@ src:
           - MODERNIZED_REST_API_INVENTORY を更新。
           - ガントの完了条件と証跡リンクを付与。
         dependency:
-          - src/server_modernized_gap_20251221/06_quality_release/4xx5xx_監査_統一.md
-          - src/server_modernized_gap_20251221/06_quality_release/性能回帰_ロードテスト.md
+          - src/server_modernized_gap_20251221/07_quality_release/4xx5xx_監査_統一.md
+          - src/server_modernized_gap_20251221/07_quality_release/性能回帰_ロードテスト.md
           - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_E2E.md
         agent: codex
         api: []
