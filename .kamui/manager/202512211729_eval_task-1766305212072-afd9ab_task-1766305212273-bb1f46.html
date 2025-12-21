@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - エンドポイントマトリクス再生成</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-wrapper {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：エンドポイントマトリクス再生成</h1>
+        <p class="monitor-description">対象タスクの成果物（差分・コミットログ）を確認し、機能合理性と緻密性を中心に採点しました。</p>
+      </header>
+
+      <section class="monitor-description">
+        <strong>タスク概要</strong><br />
+        MODERNIZED_REST_API_INVENTORY の再確認と、報告書内の数値（Legacy 256 / Modernized 221 等）の真偽を検証し、差分整理を行う。
+      </section>
+
+      <div class="score-banner">
+        <div class="score-card">
+          <h2>task-1766305212072-afd9ab</h2>
+          <div class="score-total">🏆 546 / 600</div>
+          <div>メダル: 🥇 (gold) ・換算スコア: 91</div>
+        </div>
+        <div class="score-card">
+          <h2>task-1766305212273-bb1f46</h2>
+          <div class="score-total">🥈 465 / 600</div>
+          <div>メダル: 🥈 (silver) ・換算スコア: 78</div>
+        </div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex / task-1766305212072-afd9ab</th>
+            <th>Agent codex / task-1766305212273-bb1f46</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-21 17:29</td>
+            <td>
+              <div class="hex-wrapper">
+                <svg class="hex-chart" viewBox="0 0 120 120" aria-label="評価指標">
+                  <polygon points="60,6 108,33 108,87 60,114 12,87 12,33" fill="#eef3f4" stroke="#9eb1b6" stroke-width="2" />
+                  <line x1="60" y1="6" x2="60" y2="114" stroke="#9eb1b6" stroke-width="1" />
+                  <line x1="12" y1="33" x2="108" y2="87" stroke="#9eb1b6" stroke-width="1" />
+                  <line x1="12" y1="87" x2="108" y2="33" stroke="#9eb1b6" stroke-width="1" />
+                  <polygon points="60,14 101,38 101,82 60,106 19,82 19,38" fill="rgba(60,110,130,0.35)" stroke="#3a6e82" stroke-width="1.5" />
+                </svg>
+                <ul class="metric-list">
+                  <li>仕様遵守 92点</li>
+                  <li>数値検証 95点</li>
+                  <li>差分分析 93点</li>
+                  <li>再現性 88点</li>
+                  <li>結論明確 90点</li>
+                  <li>文書品質 88点</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">Factcheck の数値整合性と差分根拠を詳細に整理。</span>
+              </div>
+              <div class="snapshot-summary">
+                - Modernized 221 の不整合を、パリティ表の実測・Inventory との差分で具体化。<br />
+                - Inventory とパリティの差分（重複/片側のみ）を列挙し、欠落領域を明示。
+              </div>
+              <div class="snapshot-summary">根拠ファイル（別worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766305212072-afd9ab/src/server_modernized_gap_20251221/00_factcheck/%E3%82%A8%E3%83%B3%E3%83%89%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E3%83%9E%E3%83%88%E3%83%AA%E3%82%AF%E3%82%B9%E5%86%8D%E7%94%9F%E6%88%90.md">エンドポイントマトリクス再生成.md</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>0fe9ba7a docs: add endpoint matrix factcheck report</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>1 file changed, 75 insertions(+)
+- src/server_modernized_gap_20251221/00_factcheck/エンドポイントマトリクス再生成.md</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>・Legacy/Inventory/パリティ表の複数ソースを照合し、数値の真偽を多面的に検証。
+・method+path 正規化による突合で、欠落領域と新規追加領域を具体的に指摘。
+・結論と次アクションが明確だが、実測コマンドの詳細手順は一部省略されているため満点ではない。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="hex-wrapper">
+                <svg class="hex-chart" viewBox="0 0 120 120" aria-label="評価指標">
+                  <polygon points="60,6 108,33 108,87 60,114 12,87 12,33" fill="#eef3f4" stroke="#9eb1b6" stroke-width="2" />
+                  <line x1="60" y1="6" x2="60" y2="114" stroke="#9eb1b6" stroke-width="1" />
+                  <line x1="12" y1="33" x2="108" y2="87" stroke="#9eb1b6" stroke-width="1" />
+                  <line x1="12" y1="87" x2="108" y2="33" stroke="#9eb1b6" stroke-width="1" />
+                  <polygon points="60,20 92,40 92,80 60,100 28,80 28,40" fill="rgba(60,110,130,0.25)" stroke="#3a6e82" stroke-width="1.5" />
+                </svg>
+                <ul class="metric-list">
+                  <li>仕様遵守 80点</li>
+                  <li>数値検証 78点</li>
+                  <li>差分分析 55点</li>
+                  <li>再現性 86点</li>
+                  <li>結論明確 82点</li>
+                  <li>文書品質 84点</li>
+                </ul>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">Inventory と Legacy の件数差分を整理。</span>
+              </div>
+              <div class="snapshot-summary">
+                - Modernized 221 の不整合を指摘したが、根拠の深掘りは限定的。<br />
+                - Inventory の範囲（完了分のみ）の前提整理は明確。
+              </div>
+              <div class="snapshot-summary">根拠ファイル（別worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766305212273-bb1f46/src/server_modernized_gap_20251221/00_factcheck/%E3%82%A8%E3%83%B3%E3%83%89%E3%83%9D%E3%82%A4%E3%83%B3%E3%83%88%E3%83%9E%E3%83%88%E3%83%AA%E3%82%AF%E3%82%B9%E5%86%8D%E7%94%9F%E6%88%90.md">エンドポイントマトリクス再生成.md</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>06aa96aa エンドポイントマトリクス再生成の検証結果を追加</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>1 file changed, 51 insertions(+)
+- src/server_modernized_gap_20251221/00_factcheck/エンドポイントマトリクス再生成.md</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">評価理由</summary>
+                <pre>・Legacy/Inventory の主要数値を再現可能なコマンドで提示。
+・Modernized 221 の由来は言及するが、パリティ表や差分内訳の検証が不足。
+・差分の具体例がないため、緻密性で減点。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
