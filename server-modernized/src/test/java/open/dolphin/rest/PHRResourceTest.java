@@ -86,7 +86,8 @@ class PHRResourceTest extends RuntimeDelegateTestSupport {
         lenient().when(httpRequest.getRemoteAddr()).thenReturn("192.0.2.10");
         lenient().when(httpRequest.getHeader("User-Agent")).thenReturn("JUnit");
         lenient().when(httpRequest.getHeader("X-Forwarded-For")).thenReturn("192.0.2.10");
-        lenient().when(httpRequest.getHeader("X-Trace-Id")).thenReturn(null);
+        lenient().when(httpRequest.getHeader("X-Trace-Id")).thenReturn(TRACE_ID);
+        lenient().when(httpRequest.getHeader("X-Facility-Id")).thenReturn("F001");
         lenient().when(httpRequest.getHeader("X-Request-Id")).thenReturn(null);
         lenient().when(httpRequest.getAttribute(anyString())).thenReturn(TRACE_ID);
         lenient().when(httpRequest.getRequestURI()).thenReturn("/resources/20/adm/phr/export");
