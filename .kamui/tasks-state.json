@@ -656,31 +656,5 @@
     "worktreePath": ".worktrees/task-1766316678505-e4f137",
     "medal": "bronze",
     "aiCompetitionScore": 55
-  },
-  {
-    "id": "task-1766316853443-456f2a",
-    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] ORCA-07_JNDI_Datasource_実装\n期間: 12/26 09:00 - 12/29 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-07 JNDI DataSource 実装\n\n- ORCA JDBC を JNDI 経由へ統一し、フェイルセーフを整備。\n- custom.properties の認証情報読み取りを禁止方向へ修正。\n\nYAML ID: src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-21T11:34:13.443Z",
-    "updatedAt": "2025-12-21T11:34:26.730Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766316853443-456f2a",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766316850686-clhe5e81",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] ORCA-07_JNDI_Datasource_実装\n期間: 12/26 09:00 - 12/29 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-07 JNDI DataSource 実装\n\n- ORCA JDBC を JNDI 経由へ統一し、フェイルセーフを整備。\n- custom.properties の認証情報読み取りを禁止方向へ修正。\n\nYAML ID: src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766316853443-456f2a",
-    "medal": "silver",
-    "aiCompetitionScore": 75
   }
 ]
