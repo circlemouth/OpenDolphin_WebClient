@@ -1,28 +1,362 @@
 [
   {
-    "id": "task-1766296318474-23e31e",
-    "name": "CodexCLI2: ユーザー入力: モダナイズ版サーバーの実装状況について、別のエージェントがドキュメントレビューを行い、以下の報告をあげてきた。この報告の真贋を確認しつつ、欠けている機能についてモダナイズ版サーバーに全て実装するガントを作成せよ。 以下、報告内容 モダナイズ版サーバー実装状況レポート 📊 全体サマリ 指標 数値 備考 Legacyエンドポイント総数 256件 旧サーバーAPI モダナイズ済みエンドポイント 221件 Jakarta EE 10ベース 1:1対応済み 202件 完全移行 Legacyのみ（未移植） 54件 主にDemoリソース等 モダナイズのみ（新規） 8件 SSE, ORCA ラッパー等 推定完成度 約79% 202/256 ベース ✅ 完了済み領域 1. コア認証・システム（完成） UserResource (/user) — ユーザーCRUD、施設情報更新 SystemResource (/dolphin) — 活動ログ、ライセンス管理 ServerInfoResource (/serverinfo) — JMARI、CLAIM接続モード 2. 患者・受付・スケジュール（完成） PatientResource (/patient) — 患者検索・登録・更新 PVTResource (/pvt) — 受付一覧・登録・削除 ScheduleResource (/schedule) — 予約一覧・削除 AppoResource (/appo) — 予約更新 3. カルテ・診療記録（完成） KarteResource (/karte) — 30以上のエンドポイント実装済み カルテ取得/保存/更新/削除 病名登録・CLAIM送信 観察値・メモ・添付ファイル LetterResource (/odletter) — 紹介状CRUD StampResource (/stamp) — スタンプ/ツリー管理 NLabResource (/lab) — ラボ検査結果 4. チャートイベント/リアルタイム（完成） ChartEventResource (/chartEvent) — ロングポーリング互換 ChartEventStreamResource (/chart-events) — 🆕 SSE (新規追加) 5. 入院・管理（完成） AdmissionResource (/20/adm) — ケアプラン、2FA/TOTP/FIDO2認証 6. JMS/Messaging（2025-11-19完了） MessageSender.java / MessagingGateway.java — Jakarta Messaging 3.0準拠 傷病名送信制御（diagnosis.claim.sendフラグ） 7. ORCAマスタ系REST（2025-12-19完了） API ステータス RUN_ID /orca/master/generic-class ✅ 実装済み 20251219T140028Z /orca/master/generic-price ✅ 実装済み 20251219T140028Z /orca/master/youhou ✅ 実装済み 20251219T140028Z /orca/master/material ✅ 実装済み 20251219T140028Z /orca/master/kensa-sort ✅ 実装済み 20251219T140028Z /orca/master/hokenja ✅ 実装済み 20251219T144408Z /orca/master/address ✅ 実装済み 20251219T144408Z /orca/tensu/shinku ✅ 列拡充済み 20251219T133053Z /orca/inputset ✅ SQL修正済み 20251219T113948Z /orca/stamp/{setCd,name} ✅ dateパラメータ追加 20251219T131008Z ⚠️ 欠けている実装（未完了） 1. PHRResource（11件未公開）— 優先度: P0-P1 ID エンドポイント 状態 PHR-01 /20/adm/phr/abnormal/{patientId} RESTEasy未登録 PHR-02 PUT /20/adm/phr/accessKey 未実装 PHR-03 GET /20/adm/phr/accessKey/{accessKey} 未実装 PHR-04～11 アレルギー/傷病名/画像/検査/処方 etc. 未実装 ブロッカー: phr_access_key Flyway適用、Layer ID secrets整備、監査ID追加が必要 2. 電子点数表REST（ORCA-08）— ETA: 2025-12-20 /orca/tensu/etensu — 未実装（設計ドラフトは完了） TBL_ETENSU_1~5 からの点数/背反/加算ルール取得が必要 3. ORCA DataSource/Vault化（ORCA-07）— 未着手 現状: custom.properties 直読み 目標: JNDI DataSource + Vault secrets管理 証跡: MODERNIZED_SERVER_GAP_TRACKER §ORCA-07 4. Touch/Demo系エンドポイント（約34件） 種別 未実装数 優先度 DolphinResource系 19件 P0-P1 DemoResource系 15件 P2 主なブロッカー: XML→JSON変換の統一 TouchAuthHandler ヘッダー必須化 監査ログ整備 5. ORCA APIラッパー（Spec-based残り） API 状態 ブロッカー /orca/tensu/sync (medicatonmodv2) △ Spec-based ORMaster未開放 /orca/medical/records (medicalgetv2) △ Spec-based ORCA POST閉鎖 /orca/chart/subjectives △ Spec-based ORCA POST閉鎖 /orca/medical-sets △ Spec-based ORCA POST閉鎖 /orca/birth-delivery △ Spec-based ORCA POST閉鎖 /orca/disease/v3 △ Spec-based ORCA POST閉鎖 注: これらはORCA本番/ORasterサーバーのPOST解放待ち。モダナイズ側はstub実装済み。 🎯 完成度評価 領域 完成度 備考 コアREST API 95% ほぼ完全移行 カルテ/診療記録 90% KRT-01〜04の細かい修正残り ORCAマスタ 85% 電子点数表(ORCA-08)が残り ORCA APIラッパー 70% Spec-based多数（外部依存） PHR 10% ほぼ未着手 Touch/Demo 40% Legacy XMLのまま Messaging/監査 80% JMS実装完了、4xx/5xx監査は部分対応 DataSource/Secrets 20% Vault化はドラフトのみ 総合完成度: 約75-80% 📋 次に優先すべき実装 ORCA-08: /orca/tensu/etensu（電子点数表）— ETA: 2025-12-20 PHR-01〜11: PHRリソースのRESTEasy登録と監査整備 ORCA-07: DataSource/Vault化（運用安全性向上） Touch系: P0エンドポイント（/touch/patient, /touch/user）のJSON化 まとめ: モダナイズ版サーバーはコア機能の約80%が完成しており、日常外来診療で必要なカルテ・受付・患者管理・ORCAマスタ参照は実用レベルです。ただし、PHR連携、電子点数表、Touch/Demo系、DataSource Vault化が未完了であり、これらは順次対応が必要です。また、ORCA本番サーバーのPOST API解放を待っている「Spec-based」実装が複数あり、外部環境の整備も影響します。\n作成日: 2025-12-21 (日) 14:50:53\n\n次の要件に従って AI ガントチャート用の YAML データセットを準備してください。\n対応できる実行モデルは codex / claude code / gemini cli / cursor cli の4種類のみ。\nリファレンス: .kamui/gantte/test.yaml の構造・章立て・フィールド命名をそのまま踏襲してください。\n1. `.kamui/apps/` に YAML ファイルを1枚生成する（例: `<slug>-plan.yaml`）。\n   - UTF-8 / 2スペースインデント。ルートには `ganttConfig`, `labels`, `filters` を含め、`.kamui/gantte/test.yaml` と同じ構造で実装する。\n   - 各タスクには `content`(Markdown), `priority`, `status`, `progress`, `agent`, `api`, `dependency/dependencies`、さらに `schedule.start`(ISO8601) と `schedule.days` もしくは `schedule.end` を必ず設定する。\n   - 依存関係と時系列が矛盾しないよう調整し、`ganttConfig.filters.showDependencies` を true にしてエッジ表示ができるようにする。\n   - 必要に応じて `src/<area>/...` のような階層を定義し、章ごとのタスク群を整理する。\n2. `.kamui/apps/icons/` に同じ接頭辞の SVG アイコンを1枚生成する（HTMLアプリと同じ命名規則）。\n   - アイコン制作時の注意:\n- 入力キーワード（「モダナイズ版サーバーの実装状況について、別のエージェントがドキュメントレビューを行い、以下の報告をあげてきた。この報告の真贋を確認しつつ、欠けている機能についてモダナイズ版サーバーに全て実装するガントを作成せよ。\n\n以下、報告内容\n\nモダナイズ版サーバー実装状況レポート\n📊 全体サマリ\n指標\t数値\t備考\nLegacyエンドポイント総数\t256件\t旧サーバーAPI\nモダナイズ済みエンドポイント\t221件\tJakarta EE 10ベース\n1:1対応済み\t202件\t完全移行\nLegacyのみ（未移植）\t54件\t主にDemoリソース等\nモダナイズのみ（新規）\t8件\tSSE, ORCA ラッパー等\n推定完成度\t約79%\t202/256 ベース\n✅ 完了済み領域\n1. コア認証・システム（完成）\nUserResource (/user) — ユーザーCRUD、施設情報更新\nSystemResource (/dolphin) — 活動ログ、ライセンス管理\nServerInfoResource (/serverinfo) — JMARI、CLAIM接続モード\n2. 患者・受付・スケジュール（完成）\nPatientResource (/patient) — 患者検索・登録・更新\nPVTResource (/pvt) — 受付一覧・登録・削除\nScheduleResource (/schedule) — 予約一覧・削除\nAppoResource (/appo) — 予約更新\n3. カルテ・診療記録（完成）\nKarteResource (/karte) — 30以上のエンドポイント実装済み\nカルテ取得/保存/更新/削除\n病名登録・CLAIM送信\n観察値・メモ・添付ファイル\nLetterResource (/odletter) — 紹介状CRUD\nStampResource (/stamp) — スタンプ/ツリー管理\nNLabResource (/lab) — ラボ検査結果\n4. チャートイベント/リアルタイム（完成）\nChartEventResource (/chartEvent) — ロングポーリング互換\nChartEventStreamResource (/chart-events) — 🆕 SSE (新規追加)\n5. 入院・管理（完成）\nAdmissionResource (/20/adm) — ケアプラン、2FA/TOTP/FIDO2認証\n6. JMS/Messaging（2025-11-19完了）\nMessageSender.java / MessagingGateway.java — Jakarta Messaging 3.0準拠\n傷病名送信制御（diagnosis.claim.sendフラグ）\n7. ORCAマスタ系REST（2025-12-19完了）\nAPI\tステータス\tRUN_ID\n/orca/master/generic-class\t✅ 実装済み\t20251219T140028Z\n/orca/master/generic-price\t✅ 実装済み\t20251219T140028Z\n/orca/master/youhou\t✅ 実装済み\t20251219T140028Z\n/orca/master/material\t✅ 実装済み\t20251219T140028Z\n/orca/master/kensa-sort\t✅ 実装済み\t20251219T140028Z\n/orca/master/hokenja\t✅ 実装済み\t20251219T144408Z\n/orca/master/address\t✅ 実装済み\t20251219T144408Z\n/orca/tensu/shinku\t✅ 列拡充済み\t20251219T133053Z\n/orca/inputset\t✅ SQL修正済み\t20251219T113948Z\n/orca/stamp/{setCd,name}\t✅ dateパラメータ追加\t20251219T131008Z\n⚠️ 欠けている実装（未完了）\n1. PHRResource（11件未公開）— 優先度: P0-P1\nID\tエンドポイント\t状態\nPHR-01\t/20/adm/phr/abnormal/{patientId}\tRESTEasy未登録\nPHR-02\tPUT /20/adm/phr/accessKey\t未実装\nPHR-03\tGET /20/adm/phr/accessKey/{accessKey}\t未実装\nPHR-04～11\tアレルギー/傷病名/画像/検査/処方 etc.\t未実装\nブロッカー: phr_access_key Flyway適用、Layer ID secrets整備、監査ID追加が必要\n\n2. 電子点数表REST（ORCA-08）— ETA: 2025-12-20\n/orca/tensu/etensu — 未実装（設計ドラフトは完了）\nTBL_ETENSU_1~5 からの点数/背反/加算ルール取得が必要\n3. ORCA DataSource/Vault化（ORCA-07）— 未着手\n現状: custom.properties 直読み\n目標: JNDI DataSource + Vault secrets管理\n証跡: MODERNIZED_SERVER_GAP_TRACKER §ORCA-07\n4. Touch/Demo系エンドポイント（約34件）\n種別\t未実装数\t優先度\nDolphinResource系\t19件\tP0-P1\nDemoResource系\t15件\tP2\n主なブロッカー:\n\nXML→JSON変換の統一\nTouchAuthHandler ヘッダー必須化\n監査ログ整備\n5. ORCA APIラッパー（Spec-based残り）\nAPI\t状態\tブロッカー\n/orca/tensu/sync (medicatonmodv2)\t△ Spec-based\tORMaster未開放\n/orca/medical/records (medicalgetv2)\t△ Spec-based\tORCA POST閉鎖\n/orca/chart/subjectives\t△ Spec-based\tORCA POST閉鎖\n/orca/medical-sets\t△ Spec-based\tORCA POST閉鎖\n/orca/birth-delivery\t△ Spec-based\tORCA POST閉鎖\n/orca/disease/v3\t△ Spec-based\tORCA POST閉鎖\n注: これらはORCA本番/ORasterサーバーのPOST解放待ち。モダナイズ側はstub実装済み。\n\n🎯 完成度評価\n領域\t完成度\t備考\nコアREST API\t95%\tほぼ完全移行\nカルテ/診療記録\t90%\tKRT-01〜04の細かい修正残り\nORCAマスタ\t85%\t電子点数表(ORCA-08)が残り\nORCA APIラッパー\t70%\tSpec-based多数（外部依存）\nPHR\t10%\tほぼ未着手\nTouch/Demo\t40%\tLegacy XMLのまま\nMessaging/監査\t80%\tJMS実装完了、4xx/5xx監査は部分対応\nDataSource/Secrets\t20%\tVault化はドラフトのみ\n総合完成度: 約75-80%\n📋 次に優先すべき実装\nORCA-08: /orca/tensu/etensu（電子点数表）— ETA: 2025-12-20\nPHR-01〜11: PHRリソースのRESTEasy登録と監査整備\nORCA-07: DataSource/Vault化（運用安全性向上）\nTouch系: P0エンドポイント（/touch/patient, /touch/user）のJSON化\nまとめ: モダナイズ版サーバーはコア機能の約80%が完成しており、日常外来診療で必要なカルテ・受付・患者管理・ORCAマスタ参照は実用レベルです。ただし、PHR連携、電子点数表、Touch/Demo系、DataSource Vault化が未完了であり、これらは順次対応が必要です。また、ORCA本番サーバーのPOST API解放を待っている「Spec-based」実装が複数あり、外部環境の整備も影響します。」）の印象をベースに、背景色・アクセント・文字や絵文字を組み合わせた単一のアイコン案をまとめる。\n- アイコンは 256×256px 相当の正方形SVG1枚で作成し、必要に応じて角丸・影・グラデーション等の装飾を加える。\n- HTMLファイルと同じ接頭辞を用い、アイコンは `.kamui/apps/icons/<HTMLファイル名（拡張子除く）>.svg` に保存する前提で構成する。\n- SVG内で用いる色・図形・文字について、それぞれの意図とコントラスト確保の理由を出力に明記する。\n- 他ファイル（apps.json など）は自動変更しない。後で登録しやすいよう、アイコンで使用した色やテキストを出力で整理する。\n\n3. 出力では以下を列挙すること。\n   - 生成する YAML のファイル名/ツリー構成/タスク数/主要な依存関係。\n   - 作成した SVG アイコンのファイル名とデザイン意図（配色・文字・象徴するモチーフ）。\n   - デスクトップ上のガントアプリを開く手順（クリックすると AI ガントレンダリングが実行されること）。\n   - YAML本体（コードブロック形式）と、必要に応じた注意点。",
+    "id": "task-yaml-154fzae-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] 現状棚卸し_ギャップ確定\n期間: 12/22 09:00 - 12/24 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 現状棚卸しとギャップ確定\n\n- 既存コード/設定/Runbook を突合し、未実装・未検証項目を確定する。\n- PHR/ORCA/Touch/Demo の差分を一次リスト化してスコープ確定。\n\nYAML ID: src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-21T07:50:51.366Z",
+    "updatedAt": "2025-12-21T08:19:30.670Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-154fzae-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T07:50:51.350Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 00_factcheck"
+    ],
+    "dependencies": [],
+    "schedule": {
+      "startMs": 1766361600000,
+      "endMs": 1766534400000,
+      "durationDays": 2
+    },
+    "category": "src / server_modernized_gap_20251221 / 00_factcheck",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 現状棚卸しとギャップ確定\n\n- 既存コード/設定/Runbook を突合し、未実装・未検証項目を確定する。\n- PHR/ORCA/Touch/Demo の差分を一次リスト化してスコープ確定。"
+  },
+  {
+    "id": "task-yaml-1hbkrdb-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] エンドポイントマトリクス再生成\n期間: 12/24 09:00 - 12/25 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# エンドポイントマトリクス再生成\n\n- MODERNIZED_REST_API_INVENTORY を再確認し、差分を整理。\n- 報告書の数値（Legacy 256/Modernized 221 等）の真偽を検証。\n\nYAML ID: src/server_modernized_gap_20251221/00_factcheck/エンドポイントマトリクス再生成.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-21T08:18:56.128Z",
+    "updatedAt": "2025-12-21T08:18:56.128Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1hbkrdb-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/00_factcheck/エンドポイントマトリクス再生成.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/00_factcheck/エンドポイントマトリクス再生成.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T08:18:56.084Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 00_factcheck"
+    ],
+    "dependencies": [
+      "task-yaml-154fzae-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766534400000,
+      "endMs": 1766620800000,
+      "durationDays": 1
+    },
+    "category": "src / server_modernized_gap_20251221 / 00_factcheck",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# エンドポイントマトリクス再生成\n\n- MODERNIZED_REST_API_INVENTORY を再確認し、差分を整理。\n- 報告書の数値（Legacy 256/Modernized 221 等）の真偽を検証。"
+  },
+  {
+    "id": "task-yaml-8687qf-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] ORCA-07_設計確定\n期間: 12/24 11:00 - 12/26 11:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# ORCA-07 設計確定（DataSource/Vault）\n\n- JNDI DataSource と Vault Secrets の責務を確定。\n- custom.properties 依存を段階廃止する方針を整理。\n\nYAML ID: src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_設計確定.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-21T08:18:59.348Z",
+    "updatedAt": "2025-12-21T08:18:59.348Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-8687qf-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_設計確定.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_設計確定.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T08:18:59.313Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 01_orca07_datasource"
+    ],
+    "dependencies": [
+      "task-yaml-154fzae-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766541600000,
+      "endMs": 1766714400000,
+      "durationDays": 2
+    },
+    "category": "src / server_modernized_gap_20251221 / 01_orca07_datasource",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA-07 設計確定（DataSource/Vault）\n\n- JNDI DataSource と Vault Secrets の責務を確定。\n- custom.properties 依存を段階廃止する方針を整理。"
+  },
+  {
+    "id": "task-yaml-1unqk85-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] ORCA-08_ETENSU_DAO実装\n期間: 12/24 11:00 - 12/27 11:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# ORCA-08 ETENSU DAO 実装\n\n- TBL_ETENSU_1〜5 を読み出す DAO を実装。\n- 背反/加算/算定単位の結合ロジックを確定。\n\nYAML ID: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_ETENSU_DAO実装.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-21T08:19:03.749Z",
+    "updatedAt": "2025-12-21T08:19:03.749Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1unqk85-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_ETENSU_DAO実装.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_ETENSU_DAO実装.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T08:19:03.679Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 02_orca08_etensu"
+    ],
+    "dependencies": [
+      "task-yaml-154fzae-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766541600000,
+      "endMs": 1766800800000,
+      "durationDays": 3
+    },
+    "category": "src / server_modernized_gap_20251221 / 02_orca08_etensu",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA-08 ETENSU DAO 実装\n\n- TBL_ETENSU_1〜5 を読み出す DAO を実装。\n- 背反/加算/算定単位の結合ロジックを確定。"
+  },
+  {
+    "id": "task-yaml-npqupd-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] PHR_ヘッダー_監査ID整備\n期間: 12/24 13:00 - 12/26 13:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# PHR ヘッダー/監査ID 整備\n\n- X-Facility-Id / TraceId の必須化と監査イベントを統一。\n- 4xx/5xx 監査とエラーマッピングを整備。\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-21T08:19:06.627Z",
+    "updatedAt": "2025-12-21T08:19:06.627Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-npqupd-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T08:19:06.592Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 03_phr"
+    ],
+    "dependencies": [
+      "task-yaml-154fzae-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766548800000,
+      "endMs": 1766721600000,
+      "durationDays": 2
+    },
+    "category": "src / server_modernized_gap_20251221 / 03_phr",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# PHR ヘッダー/監査ID 整備\n\n- X-Facility-Id / TraceId の必須化と監査イベントを統一。\n- 4xx/5xx 監査とエラーマッピングを整備。"
+  },
+  {
+    "id": "task-yaml-nrds8d-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] Touch_共通JSON変換基盤\n期間: 12/24 15:00 - 12/27 15:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-21T08:19:09.547Z",
+    "updatedAt": "2025-12-21T08:19:09.547Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-nrds8d-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T08:19:09.501Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 04_touch_demo"
+    ],
+    "dependencies": [
+      "task-yaml-154fzae-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766556000000,
+      "endMs": 1766815200000,
+      "durationDays": 3
+    },
+    "category": "src / server_modernized_gap_20251221 / 04_touch_demo",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。"
+  },
+  {
+    "id": "task-yaml-1tgddhi-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] SpecBased_API_解放条件整理\n期間: 12/24 17:00 - 12/26 17:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# Spec-based API 解放条件整理\n\n- ORCA POST 未開放 API の前提条件と切替条件を定義。\n- 解除後の検証フローと証跡を整理。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/SpecBased_API_解放条件整理.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "high",
+    "createdAt": "2025-12-21T08:19:12.765Z",
+    "updatedAt": "2025-12-21T08:19:12.765Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1tgddhi-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/05_orca_wrappers/SpecBased_API_解放条件整理.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/05_orca_wrappers/SpecBased_API_解放条件整理.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T08:19:12.732Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 05_orca_wrappers"
+    ],
+    "dependencies": [
+      "task-yaml-154fzae-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766563200000,
+      "endMs": 1766736000000,
+      "durationDays": 2
+    },
+    "category": "src / server_modernized_gap_20251221 / 05_orca_wrappers",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# Spec-based API 解放条件整理\n\n- ORCA POST 未開放 API の前提条件と切替条件を定義。\n- 解除後の検証フローと証跡を整理。"
+  },
+  {
+    "id": "task-1766305212072-afd9ab",
+    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] エンドポイントマトリクス再生成\n期間: 12/24 09:00 - 12/25 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# エンドポイントマトリクス再生成\n\n- MODERNIZED_REST_API_INVENTORY を再確認し、差分を整理。\n- 報告書の数値（Legacy 256/Modernized 221 等）の真偽を検証。\n\nYAML ID: src/server_modernized_gap_20251221/00_factcheck/エンドポイントマトリクス再生成.md",
     "model": "Codex CLI",
     "status": "running",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-21T05:51:58.474Z",
-    "updatedAt": "2025-12-21T05:52:06.752Z",
+    "createdAt": "2025-12-21T08:20:12.072Z",
+    "updatedAt": "2025-12-21T08:20:18.852Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1766296318474-23e31e",
+    "branchName": "task/task-1766305212072-afd9ab",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766296318272-e3576vwy",
-    "aiCompetitionGroupName": "ユーザー入力: モダナイズ版サーバーの実装状況について、別のエージェントがドキュメントレビューを行い、以下の報告をあげてきた。この報告の真贋を確認しつつ、欠けている機能についてモダナイズ版サーバーに全て実装するガントを作成せよ。 以下、報告内容 モダナイズ版サーバー実装状況レポート 📊 全体サマリ 指標 数値 備考 Legacyエンドポイント総数 256件 旧サーバーAPI モダナイズ済みエンドポイント 221件 Jakarta EE 10ベース 1:1対応済み 202件 完全移行 Legacyのみ（未移植） 54件 主にDemoリソース等 モダナイズのみ（新規） 8件 SSE, ORCA ラッパー等 推定完成度 約79% 202/256 ベース ✅ 完了済み領域 1. コア認証・システム（完成） UserResource (/user) — ユーザーCRUD、施設情報更新 SystemResource (/dolphin) — 活動ログ、ライセンス管理 ServerInfoResource (/serverinfo) — JMARI、CLAIM接続モード 2. 患者・受付・スケジュール（完成） PatientResource (/patient) — 患者検索・登録・更新 PVTResource (/pvt) — 受付一覧・登録・削除 ScheduleResource (/schedule) — 予約一覧・削除 AppoResource (/appo) — 予約更新 3. カルテ・診療記録（完成） KarteResource (/karte) — 30以上のエンドポイント実装済み カルテ取得/保存/更新/削除 病名登録・CLAIM送信 観察値・メモ・添付ファイル LetterResource (/odletter) — 紹介状CRUD StampResource (/stamp) — スタンプ/ツリー管理 NLabResource (/lab) — ラボ検査結果 4. チャートイベント/リアルタイム（完成） ChartEventResource (/chartEvent) — ロングポーリング互換 ChartEventStreamResource (/chart-events) — 🆕 SSE (新規追加) 5. 入院・管理（完成） AdmissionResource (/20/adm) — ケアプラン、2FA/TOTP/FIDO2認証 6. JMS/Messaging（2025-11-19完了） MessageSender.java / MessagingGateway.java — Jakarta Messaging 3.0準拠 傷病名送信制御（diagnosis.claim.sendフラグ） 7. ORCAマスタ系REST（2025-12-19完了） API ステータス RUN_ID /orca/master/generic-class ✅ 実装済み 20251219T140028Z /orca/master/generic-price ✅ 実装済み 20251219T140028Z /orca/master/youhou ✅ 実装済み 20251219T140028Z /orca/master/material ✅ 実装済み 20251219T140028Z /orca/master/kensa-sort ✅ 実装済み 20251219T140028Z /orca/master/hokenja ✅ 実装済み 20251219T144408Z /orca/master/address ✅ 実装済み 20251219T144408Z /orca/tensu/shinku ✅ 列拡充済み 20251219T133053Z /orca/inputset ✅ SQL修正済み 20251219T113948Z /orca/stamp/{setCd,name} ✅ dateパラメータ追加 20251219T131008Z ⚠️ 欠けている実装（未完了） 1. PHRResource（11件未公開）— 優先度: P0-P1 ID エンドポイント 状態 PHR-01 /20/adm/phr/abnormal/{patientId} RESTEasy未登録 PHR-02 PUT /20/adm/phr/accessKey 未実装 PHR-03 GET /20/adm/phr/accessKey/{accessKey} 未実装 PHR-04～11 アレルギー/傷病名/画像/検査/処方 etc. 未実装 ブロッカー: phr_access_key Flyway適用、Layer ID secrets整備、監査ID追加が必要 2. 電子点数表REST（ORCA-08）— ETA: 2025-12-20 /orca/tensu/etensu — 未実装（設計ドラフトは完了） TBL_ETENSU_1~5 からの点数/背反/加算ルール取得が必要 3. ORCA DataSource/Vault化（ORCA-07）— 未着手 現状: custom.properties 直読み 目標: JNDI DataSource + Vault secrets管理 証跡: MODERNIZED_SERVER_GAP_TRACKER §ORCA-07 4. Touch/Demo系エンドポイント（約34件） 種別 未実装数 優先度 DolphinResource系 19件 P0-P1 DemoResource系 15件 P2 主なブロッカー: XML→JSON変換の統一 TouchAuthHandler ヘッダー必須化 監査ログ整備 5. ORCA APIラッパー（Spec-based残り） API 状態 ブロッカー /orca/tensu/sync (medicatonmodv2) △ Spec-based ORMaster未開放 /orca/medical/records (medicalgetv2) △ Spec-based ORCA POST閉鎖 /orca/chart/subjectives △ Spec-based ORCA POST閉鎖 /orca/medical-sets △ Spec-based ORCA POST閉鎖 /orca/birth-delivery △ Spec-based ORCA POST閉鎖 /orca/disease/v3 △ Spec-based ORCA POST閉鎖 注: これらはORCA本番/ORasterサーバーのPOST解放待ち。モダナイズ側はstub実装済み。 🎯 完成度評価 領域 完成度 備考 コアREST API 95% ほぼ完全移行 カルテ/診療記録 90% KRT-01〜04の細かい修正残り ORCAマスタ 85% 電子点数表(ORCA-08)が残り ORCA APIラッパー 70% Spec-based多数（外部依存） PHR 10% ほぼ未着手 Touch/Demo 40% Legacy XMLのまま Messaging/監査 80% JMS実装完了、4xx/5xx監査は部分対応 DataSource/Secrets 20% Vault化はドラフトのみ 総合完成度: 約75-80% 📋 次に優先すべき実装 ORCA-08: /orca/tensu/etensu（電子点数表）— ETA: 2025-12-20 PHR-01〜11: PHRリソースのRESTEasy登録と監査整備 ORCA-07: DataSource/Vault化（運用安全性向上） Touch系: P0エンドポイント（/touch/patient, /touch/user）のJSON化 まとめ: モダナイズ版サーバーはコア機能の約80%が完成しており、日常外来診療で必要なカルテ・受付・患者管理・ORCAマスタ参照は実用レベルです。ただし、PHR連携、電子点数表、Touch/Demo系、DataSource Vault化が未完了であり、これらは順次対応が必要です。また、ORCA本番サーバーのPOST API解放を待っている「Spec-based」実装が複数あり、外部環境の整備も影響します。\n作成日: 2025-12-21 (日) 14:50:53\n\n次の要件に従って AI ガントチャート用の YAML データセットを準備してください。\n対応できる実行モデルは codex / claude code / gemini cli / cursor cli の4種類のみ。\nリファレンス: .kamui/gantte/test.yaml の構造・章立て・フィールド命名をそのまま踏襲してください。\n1. `.kamui/apps/` に YAML ファイルを1枚生成する（例: `<slug>-plan.yaml`）。\n   - UTF-8 / 2スペースインデント。ルートには `ganttConfig`, `labels`, `filters` を含め、`.kamui/gantte/test.yaml` と同じ構造で実装する。\n   - 各タスクには `content`(Markdown), `priority`, `status`, `progress`, `agent`, `api`, `dependency/dependencies`、さらに `schedule.start`(ISO8601) と `schedule.days` もしくは `schedule.end` を必ず設定する。\n   - 依存関係と時系列が矛盾しないよう調整し、`ganttConfig.filters.showDependencies` を true にしてエッジ表示ができるようにする。\n   - 必要に応じて `src/<area>/...` のような階層を定義し、章ごとのタスク群を整理する。\n2. `.kamui/apps/icons/` に同じ接頭辞の SVG アイコンを1枚生成する（HTMLアプリと同じ命名規則）。\n   - アイコン制作時の注意:\n- 入力キーワード（「モダナイズ版サーバーの実装状況について、別のエージェントがドキュメントレビューを行い、以下の報告をあげてきた。この報告の真贋を確認しつつ、欠けている機能についてモダナイズ版サーバーに全て実装するガントを作成せよ。\n\n以下、報告内容\n\nモダナイズ版サーバー実装状況レポート\n📊 全体サマリ\n指標\t数値\t備考\nLegacyエンドポイント総数\t256件\t旧サーバーAPI\nモダナイズ済みエンドポイント\t221件\tJakarta EE 10ベース\n1:1対応済み\t202件\t完全移行\nLegacyのみ（未移植）\t54件\t主にDemoリソース等\nモダナイズのみ（新規）\t8件\tSSE, ORCA ラッパー等\n推定完成度\t約79%\t202/256 ベース\n✅ 完了済み領域\n1. コア認証・システム（完成）\nUserResource (/user) — ユーザーCRUD、施設情報更新\nSystemResource (/dolphin) — 活動ログ、ライセンス管理\nServerInfoResource (/serverinfo) — JMARI、CLAIM接続モード\n2. 患者・受付・スケジュール（完成）\nPatientResource (/patient) — 患者検索・登録・更新\nPVTResource (/pvt) — 受付一覧・登録・削除\nScheduleResource (/schedule) — 予約一覧・削除\nAppoResource (/appo) — 予約更新\n3. カルテ・診療記録（完成）\nKarteResource (/karte) — 30以上のエンドポイント実装済み\nカルテ取得/保存/更新/削除\n病名登録・CLAIM送信\n観察値・メモ・添付ファイル\nLetterResource (/odletter) — 紹介状CRUD\nStampResource (/stamp) — スタンプ/ツリー管理\nNLabResource (/lab) — ラボ検査結果\n4. チャートイベント/リアルタイム（完成）\nChartEventResource (/chartEvent) — ロングポーリング互換\nChartEventStreamResource (/chart-events) — 🆕 SSE (新規追加)\n5. 入院・管理（完成）\nAdmissionResource (/20/adm) — ケアプラン、2FA/TOTP/FIDO2認証\n6. JMS/Messaging（2025-11-19完了）\nMessageSender.java / MessagingGateway.java — Jakarta Messaging 3.0準拠\n傷病名送信制御（diagnosis.claim.sendフラグ）\n7. ORCAマスタ系REST（2025-12-19完了）\nAPI\tステータス\tRUN_ID\n/orca/master/generic-class\t✅ 実装済み\t20251219T140028Z\n/orca/master/generic-price\t✅ 実装済み\t20251219T140028Z\n/orca/master/youhou\t✅ 実装済み\t20251219T140028Z\n/orca/master/material\t✅ 実装済み\t20251219T140028Z\n/orca/master/kensa-sort\t✅ 実装済み\t20251219T140028Z\n/orca/master/hokenja\t✅ 実装済み\t20251219T144408Z\n/orca/master/address\t✅ 実装済み\t20251219T144408Z\n/orca/tensu/shinku\t✅ 列拡充済み\t20251219T133053Z\n/orca/inputset\t✅ SQL修正済み\t20251219T113948Z\n/orca/stamp/{setCd,name}\t✅ dateパラメータ追加\t20251219T131008Z\n⚠️ 欠けている実装（未完了）\n1. PHRResource（11件未公開）— 優先度: P0-P1\nID\tエンドポイント\t状態\nPHR-01\t/20/adm/phr/abnormal/{patientId}\tRESTEasy未登録\nPHR-02\tPUT /20/adm/phr/accessKey\t未実装\nPHR-03\tGET /20/adm/phr/accessKey/{accessKey}\t未実装\nPHR-04～11\tアレルギー/傷病名/画像/検査/処方 etc.\t未実装\nブロッカー: phr_access_key Flyway適用、Layer ID secrets整備、監査ID追加が必要\n\n2. 電子点数表REST（ORCA-08）— ETA: 2025-12-20\n/orca/tensu/etensu — 未実装（設計ドラフトは完了）\nTBL_ETENSU_1~5 からの点数/背反/加算ルール取得が必要\n3. ORCA DataSource/Vault化（ORCA-07）— 未着手\n現状: custom.properties 直読み\n目標: JNDI DataSource + Vault secrets管理\n証跡: MODERNIZED_SERVER_GAP_TRACKER §ORCA-07\n4. Touch/Demo系エンドポイント（約34件）\n種別\t未実装数\t優先度\nDolphinResource系\t19件\tP0-P1\nDemoResource系\t15件\tP2\n主なブロッカー:\n\nXML→JSON変換の統一\nTouchAuthHandler ヘッダー必須化\n監査ログ整備\n5. ORCA APIラッパー（Spec-based残り）\nAPI\t状態\tブロッカー\n/orca/tensu/sync (medicatonmodv2)\t△ Spec-based\tORMaster未開放\n/orca/medical/records (medicalgetv2)\t△ Spec-based\tORCA POST閉鎖\n/orca/chart/subjectives\t△ Spec-based\tORCA POST閉鎖\n/orca/medical-sets\t△ Spec-based\tORCA POST閉鎖\n/orca/birth-delivery\t△ Spec-based\tORCA POST閉鎖\n/orca/disease/v3\t△ Spec-based\tORCA POST閉鎖\n注: これらはORCA本番/ORasterサーバーのPOST解放待ち。モダナイズ側はstub実装済み。\n\n🎯 完成度評価\n領域\t完成度\t備考\nコアREST API\t95%\tほぼ完全移行\nカルテ/診療記録\t90%\tKRT-01〜04の細かい修正残り\nORCAマスタ\t85%\t電子点数表(ORCA-08)が残り\nORCA APIラッパー\t70%\tSpec-based多数（外部依存）\nPHR\t10%\tほぼ未着手\nTouch/Demo\t40%\tLegacy XMLのまま\nMessaging/監査\t80%\tJMS実装完了、4xx/5xx監査は部分対応\nDataSource/Secrets\t20%\tVault化はドラフトのみ\n総合完成度: 約75-80%\n📋 次に優先すべき実装\nORCA-08: /orca/tensu/etensu（電子点数表）— ETA: 2025-12-20\nPHR-01〜11: PHRリソースのRESTEasy登録と監査整備\nORCA-07: DataSource/Vault化（運用安全性向上）\nTouch系: P0エンドポイント（/touch/patient, /touch/user）のJSON化\nまとめ: モダナイズ版サーバーはコア機能の約80%が完成しており、日常外来診療で必要なカルテ・受付・患者管理・ORCAマスタ参照は実用レベルです。ただし、PHR連携、電子点数表、Touch/Demo系、DataSource Vault化が未完了であり、これらは順次対応が必要です。また、ORCA本番サーバーのPOST API解放を待っている「Spec-based」実装が複数あり、外部環境の整備も影響します。」）の印象をベースに、背景色・アクセント・文字や絵文字を組み合わせた単一のアイコン案をまとめる。\n- アイコンは 256×256px 相当の正方形SVG1枚で作成し、必要に応じて角丸・影・グラデーション等の装飾を加える。\n- HTMLファイルと同じ接頭辞を用い、アイコンは `.kamui/apps/icons/<HTMLファイル名（拡張子除く）>.svg` に保存する前提で構成する。\n- SVG内で用いる色・図形・文字について、それぞれの意図とコントラスト確保の理由を出力に明記する。\n- 他ファイル（apps.json など）は自動変更しない。後で登録しやすいよう、アイコンで使用した色やテキストを出力で整理する。\n\n3. 出力では以下を列挙すること。\n   - 生成する YAML のファイル名/ツリー構成/タスク数/主要な依存関係。\n   - 作成した SVG アイコンのファイル名とデザイン意図（配色・文字・象徴するモチーフ）。\n   - デスクトップ上のガントアプリを開く手順（クリックすると AI ガントレンダリングが実行されること）。\n   - YAML本体（コードブロック形式）と、必要に応じた注意点。",
+    "aiCompetitionGroupId": "comp-1766305212071-gssjr0d1",
+    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] エンドポイントマトリクス再生成\n期間: 12/24 09:00 - 12/25 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# エンドポイントマトリクス再生成\n\n- MODERNIZED_REST_API_INVENTORY を再確認し、差分を整理。\n- 報告書の数値（Legacy 256/Modernized 221 等）の真偽を検証。\n\nYAML ID: src/server_modernized_gap_20251221/00_factcheck/エンドポイントマトリクス再生成.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766296318474-23e31e",
-    "medal": "silver",
-    "aiCompetitionScore": 78
+    "worktreePath": ".worktrees/task-1766305212072-afd9ab",
+    "medal": "gold",
+    "aiCompetitionScore": 91
   }
 ]
