@@ -32,6 +32,14 @@
    - 既存 API での影響範囲を整理
    - P0/P1 実装タスクへの受け渡し項目を整理
 
+## 実装（初期基盤）
+- `open.dolphin.touch.transform` に共通 JSON 変換レイヤを新設。
+  - `TouchJsonTransformer` が Legacy DTO 変換・traceId/requestId の正規化・監査失敗ログを集約。
+  - `TouchJsonResponse` / `TouchJsonMetadata` / `TouchJsonError` で `metadata/items/errors` の共通フォーマットを提供。
+  - `TouchJsonListPolicy` で null/空配列の正規化ポリシーを明示。
+- 変換失敗時は `TOUCH_JSON_CONVERSION_FAILURE` で監査イベントを記録し、入力ペイロードはログに含めない。
+- 既存 API への組み込みは次タスクで行い、互換性確認と段階的移行を前提とする。
+
 ## 非スコープ
 - Touch P0/P1 API の個別機能実装（別タスク）
 - ORCA 実測や外部接続の検証
