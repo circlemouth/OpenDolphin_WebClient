@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - エラーハンドリング・リトライ整備（再評価）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 8px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.label-column {
+        width: 200px;
+      }
+      col.agent-column {
+        width: calc((100% - 200px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 6px;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 8px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .badge--silver {
+        background: #d9dfe5;
+        border-color: #c0c7ce;
+      }
+      .badge--bronze {
+        background: #e2d3c3;
+        border-color: #d3c0ac;
+      }
+      .summary-text {
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+      }
+      .link-list li {
+        margin-bottom: 6px;
+      }
+      .hex-label {
+        font-size: 11px;
+        fill: #2c3a40;
+      }
+      .score-reason {
+        margin: 0 0 8px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：エラーハンドリング・リトライ整備（再評価）</h1>
+        <p class="monitor-description">タスク「server modernized predeploy ready plan 20251220」の更新差分を再評価しました。統一エラーハンドリングと再試行戦略の実装度、クライアント整合性、運用面の緻密性を中心に採点しています。</p>
+      </header>
+
+      <section class="score-summary">
+        <div class="score-card">
+          <div class="score-title">cursor cli / task-1766268525062-aff843</div>
+          <div class="score-total">🥉 385 / 600</div>
+          <div class="summary-text">統一エラーボディ/監査連携の実装が進み、クライアント整合性が改善。例外全体の統一マッピングやリトライ指標は未整備。</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">cursor cli / task-1766268525262-6cbb77</div>
+          <div class="score-total">🥈 446 / 600</div>
+          <div class="summary-text">統一例外マッパ・validationError・reason 付与まで実装。再試行判定も整備され、総合的に一段高い完成度。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="label-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>cursor cli / task-1766268525062-aff843</th>
+            <th>cursor cli / task-1766268525262-6cbb77</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="section-title">6指標チャート</td>
+            <td>
+              <div class="metric-grid">
+                <svg viewBox="0 0 120 120" width="140" height="140" aria-label="指標チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="60,30 86,40 82,78 60,92 32,76 36,40" fill="rgba(93, 132, 148, 0.35)" stroke="#5d8494" />
+                  <text x="60" y="8" text-anchor="middle" class="hex-label">機能合理性</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 65点</li>
+                  <li>緻密性 68点</li>
+                  <li>クライアント整合 62点</li>
+                  <li>エラー設計 70点</li>
+                  <li>リトライ戦略 40点</li>
+                  <li>ドキュメント品質 80点</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <div class="metric-grid">
+                <svg viewBox="0 0 120 120" width="140" height="140" aria-label="指標チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="60,22 90,44 86,78 60,98 30,78 34,44" fill="rgba(93, 132, 148, 0.35)" stroke="#5d8494" />
+                  <text x="60" y="8" text-anchor="middle" class="hex-label">機能合理性</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 78点</li>
+                  <li>緻密性 74点</li>
+                  <li>クライアント整合 70点</li>
+                  <li>エラー設計 82点</li>
+                  <li>リトライ戦略 72点</li>
+                  <li>ドキュメント品質 70点</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">総評</td>
+            <td>
+              <span class="badge badge--bronze">🥉 64点</span>
+              <p class="summary-text">AbstractResource を中心に統一エラーボディを強化し、監査ログの requestId 連携を追加。実運用での統一性は上がったが、例外全体の統一マッピングやリトライ指標が不足。</p>
+            </td>
+            <td>
+              <span class="badge badge--silver">🥈 74点</span>
+              <p class="summary-text">例外マッパで JSON への統一、validationError/field/details、reason 付与、retryable 判定を追加。要求とクライアント規約の整合が進んでいる。</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">指標理由</td>
+            <td>
+              <p class="score-reason">機能合理性: AbstractResource と一部リソースで統一化が進むが、全例外の統一マッピングが未整備。</p>
+              <p class="score-reason">緻密性: traceId/requestId/validationError の補強があり、監査・追跡性が改善。</p>
+              <p class="score-reason">クライアント整合: 400/422 の validationError 付与は評価できるが retryable 判定が未実装。</p>
+              <p class="score-reason">エラー設計: restError への集約で統一感がある一方、例外分類が限定的。</p>
+              <p class="score-reason">リトライ戦略: リトライ可否の明示が無いため加点は限定。</p>
+              <p class="score-reason">ドキュメント品質: 規約と変更候補が明記され整理度は高い。</p>
+            </td>
+            <td>
+              <p class="score-reason">機能合理性: ExceptionMapper 導入で全例外の統一応答を実現。</p>
+              <p class="score-reason">緻密性: validationError/field/details/理由付与まで整理されている。</p>
+              <p class="score-reason">クライアント整合: retryable と reason で UI の再試行・説明導線に合致。</p>
+              <p class="score-reason">エラー設計: エラーコード/メッセージのデフォルトと JSON 判定が整備。</p>
+              <p class="score-reason">リトライ戦略: 408/429/5xx の明示で運用判断が可能。</p>
+              <p class="score-reason">ドキュメント品質: 差分/未対応/確認項目が記載され実務的。</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">確認したコミット/差分</td>
+            <td>
+              <p class="summary-text">commit: <code>04bb976e</code>, <code>9b29defd</code> / 変更: 5 files, 144 insertions, 50 deletions</p>
+            </td>
+            <td>
+              <p class="summary-text">commit: <code>4ef8e0e6</code>, <code>e6e5fb29</code> / 変更: 2 files, 362 insertions</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">成果物リンク</td>
+            <td>
+              <ul class="link-list">
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766268525062-aff843/server-modernized/src/main/java/open/dolphin/rest/AbstractResource.java">worktree: task-1766268525062-aff843 / AbstractResource</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766268525062-aff843/server-modernized/src/main/java/open/dolphin/rest/LogFilter.java">worktree: task-1766268525062-aff843 / LogFilter</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766268525062-aff843/server-modernized/src/main/java/open/dolphin/rest/StampResource.java">worktree: task-1766268525062-aff843 / StampResource</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766268525062-aff843/src/predeploy_readiness/02_feature_implementation/エラーハンドリング・リトライ整備.md">worktree: task-1766268525062-aff843 / ドキュメント</a></li>
+              </ul>
+              <p class="summary-text">※成果物は別 worktree 上に存在。</p>
+            </td>
+            <td>
+              <ul class="link-list">
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766268525262-6cbb77/server-modernized/src/main/java/open/dolphin/rest/RestExceptionMapper.java">worktree: task-1766268525262-6cbb77 / RestExceptionMapper</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766268525262-6cbb77/src/predeploy_readiness/02_feature_implementation/エラーハンドリング・リトライ整備.md">worktree: task-1766268525262-6cbb77 / ドキュメント</a></li>
+              </ul>
+              <p class="summary-text">※成果物は別 worktree 上に存在。</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="section-title">主要懸念</td>
+            <td>
+              <p class="summary-text">例外の全体統一マッピングが未整備で、異常系がリソース依存になりうる。</p>
+            </td>
+            <td>
+              <p class="summary-text">validationError の判定がメッセージ解析に依存しており、明示的なバリデーション例外があるとより堅牢。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
