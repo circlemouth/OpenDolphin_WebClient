@@ -35,6 +35,7 @@ import open.dolphin.infomodel.VisitPackage;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.rest.jackson.LegacyObjectMapperProducer;
+import open.dolphin.touch.support.TouchJsonConverter;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.Test;
@@ -95,9 +96,11 @@ class JsonTouchResourceParityTest {
 
         LegacyObjectMapperProducer producer = new LegacyObjectMapperProducer();
         ObjectMapper legacyMapper = producer.provideLegacyAwareMapper();
-        injectField(touchResource, "legacyTouchMapper", legacyMapper);
-        injectField(adm10Resource, "legacyTouchMapper", legacyMapper);
-        injectField(adm20Resource, "legacyTouchMapper", legacyMapper);
+        TouchJsonConverter converter = new TouchJsonConverter();
+        injectField(converter, "legacyTouchMapper", legacyMapper);
+        injectField(touchResource, "touchJsonConverter", converter);
+        injectField(adm10Resource, "touchJsonConverter", converter);
+        injectField(adm20Resource, "touchJsonConverter", converter);
 
         servletRequest = (HttpServletRequest) Proxy.newProxyInstance(
                 getClass().getClassLoader(),
@@ -394,9 +397,18 @@ class JsonTouchResourceParityTest {
     }
 
     private ObjectMapper getLegacyMapper(Object resource) throws Exception {
-        Field field = resource.getClass().getDeclaredField("legacyTouchMapper");
-        field.setAccessible(true);
-        return (ObjectMapper) field.get(resource);
+        try {
+            Field field = resource.getClass().getDeclaredField("legacyTouchMapper");
+            field.setAccessible(true);
+            return (ObjectMapper) field.get(resource);
+        } catch (NoSuchFieldException ex) {
+            Field converterField = resource.getClass().getDeclaredField("touchJsonConverter");
+            converterField.setAccessible(true);
+            Object converter = converterField.get(resource);
+            Field mapperField = converter.getClass().getDeclaredField("legacyTouchMapper");
+            mapperField.setAccessible(true);
+            return (ObjectMapper) mapperField.get(converter);
+        }
     }
 
     private JavaTimeEnvelope deserializeJavaTimePayload(Object resource, String payload) throws Exception {
