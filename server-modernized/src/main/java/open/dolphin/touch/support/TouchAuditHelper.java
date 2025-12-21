@@ -32,6 +32,30 @@ public class TouchAuditHelper {
                                                String action,
                                                String resource,
                                                Map<String, Object> additionalDetails) {
+        return record(context, action, resource, "success", null, additionalDetails);
+    }
+
+    public Optional<AuditEventEnvelope> recordSuccess(TouchRequestContext context,
+                                                      String action,
+                                                      String resource,
+                                                      Map<String, Object> additionalDetails) {
+        return record(context, action, resource, "success", null, additionalDetails);
+    }
+
+    public Optional<AuditEventEnvelope> recordFailure(TouchRequestContext context,
+                                                      String action,
+                                                      String resource,
+                                                      String reason,
+                                                      Map<String, Object> additionalDetails) {
+        return record(context, action, resource, "failed", reason, additionalDetails);
+    }
+
+    private Optional<AuditEventEnvelope> record(TouchRequestContext context,
+                                                String action,
+                                                String resource,
+                                                String status,
+                                                String reason,
+                                                Map<String, Object> additionalDetails) {
         if ((sessionAuditDispatcher == null && auditTrailService == null) || context == null) {
             return Optional.empty();
         }
@@ -53,7 +77,7 @@ public class TouchAuditHelper {
         payload.setTraceId(traceId);
         payload.setIpAddress(context.clientIp());
         payload.setUserAgent(context.userAgent());
-        payload.setDetails(mergeDetails(context, additionalDetails));
+        payload.setDetails(mergeDetails(context, status, reason, additionalDetails));
         if (sessionAuditDispatcher != null) {
             return Optional.of(sessionAuditDispatcher.record(payload));
         }
@@ -72,9 +96,12 @@ public class TouchAuditHelper {
         return traceContext.getActorRole();
     }
 
-    private Map<String, Object> mergeDetails(TouchRequestContext context, Map<String, Object> additionalDetails) {
+    private Map<String, Object> mergeDetails(TouchRequestContext context,
+                                             String status,
+                                             String reason,
+                                             Map<String, Object> additionalDetails) {
         Map<String, Object> details = new HashMap<>();
-        details.put("status", "success");
+        details.put("status", status != null ? status : "success");
         if (context.accessReason() != null) {
             details.put("accessReason", context.accessReason());
         }
@@ -83,6 +110,10 @@ public class TouchAuditHelper {
         }
         details.put("facilityId", context.facilityId());
         details.put("userId", context.userId());
+        if (reason != null && !reason.isBlank()) {
+            details.putIfAbsent("reason", reason);
+            details.putIfAbsent("errorCode", reason);
+        }
         if (additionalDetails != null && !additionalDetails.isEmpty()) {
             details.putAll(additionalDetails);
         }

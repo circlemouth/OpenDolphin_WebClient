@@ -53,6 +53,8 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
             "JUnit"
     );
 
+    private static final String DEVICE_ID = "device-001";
+
     @Mock
     IPhoneServiceBean iPhoneServiceBean;
 
@@ -72,7 +74,8 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
     @Test
     void getUserSummary_requiresAccessReason() {
         WebApplicationException ex = assertThrows(WebApplicationException.class,
-                () -> service.getUserSummary(CONTEXT_NO_REASON, "user", CONTEXT.facilityId(), "pass", CONTEXT.remoteUser(), "pass"));
+                () -> service.getUserSummary(CONTEXT_NO_REASON, "user", CONTEXT.facilityId(), "pass",
+                        CONTEXT.remoteUser(), "pass", DEVICE_ID));
         assertThat(ex.getResponse().getStatus()).isEqualTo(403);
         verify(iPhoneServiceBean, never()).getUser(any(), any());
     }
@@ -80,7 +83,8 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
     @Test
     void getUserSummary_validatesHeaderUser() {
         WebApplicationException ex = assertThrows(WebApplicationException.class,
-                () -> service.getUserSummary(CONTEXT, "user", CONTEXT.facilityId(), "pass", "other-user", "pass"));
+                () -> service.getUserSummary(CONTEXT, "user", CONTEXT.facilityId(), "pass",
+                        "other-user", "pass", DEVICE_ID));
         assertThat(ex.getResponse().getStatus()).isEqualTo(401);
         verify(iPhoneServiceBean, never()).getUser(any(), any());
     }
@@ -98,7 +102,8 @@ class TouchUserServiceTest extends RuntimeDelegateTestSupport {
         when(iPhoneServiceBean.getUser(AbstractResource.DOLPHIN_ASP_OID + "2.10" + ":user", "pass"))
                 .thenReturn(user);
 
-        TouchUserDtos.TouchUserResponse response = service.getUserSummary(CONTEXT, "user", CONTEXT.facilityId(), "pass", CONTEXT.remoteUser(), "pass");
+        TouchUserDtos.TouchUserResponse response = service.getUserSummary(CONTEXT, "user", CONTEXT.facilityId(), "pass",
+                CONTEXT.remoteUser(), "pass", DEVICE_ID);
 
         assertThat(response.userPk()).isEqualTo(42L);
         assertThat(response.userId()).isEqualTo("user");
