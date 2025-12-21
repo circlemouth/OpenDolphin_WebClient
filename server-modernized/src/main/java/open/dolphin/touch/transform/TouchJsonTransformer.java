@@ -123,7 +123,7 @@ public class TouchJsonTransformer {
             if (traceContext != null && traceContext.getTraceId() != null && !traceContext.getTraceId().isBlank()) {
                 return traceContext.getTraceId();
             }
-            String attribute = sessionTraceManager.getAttribute(SessionTraceAttributes.TRACE_ID);
+            String attribute = sessionTraceManager.getAttribute(SessionTraceAttributes.REQUEST_ID);
             if (attribute != null && !attribute.isBlank()) {
                 return attribute;
             }

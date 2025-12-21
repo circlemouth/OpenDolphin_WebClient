@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 14px 16px;
+      }
+      .scorecard h2 {
+        margin: 0 0 6px;
+        font-size: 15px;
+        color: #1f2a30;
+      }
+      .scorecard .total {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .scorecard .total span {
+        font-size: 16px;
+        font-weight: 600;
+        margin-left: 8px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        width: 140px;
+        height: 140px;
+      }
+      .radar-list {
+        font-size: 12px;
+        color: #2c3a40;
+        line-height: 1.5;
+      }
+      .radar-list span {
+        display: block;
+      }
+      .link-list {
+        font-size: 12px;
+        line-height: 1.6;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">KRT-01 Document更新API 評価レポート</h1>
+        <p class="monitor-description">対象: PUT /karte/document の本文更新エンドポイント追加と互換ヘッダー/既存タイトル更新APIの整合確認。2つのブランチのコミットと差分を比較し、機能合理性・緻密性を中心に採点。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>codex / task-1766354331146-e5d252</h2>
+          <div class="total">372点 <span>/ 600点 🥉</span></div>
+          <div>総合スコア: 62点</div>
+        </div>
+        <div class="scorecard">
+          <h2>codex / task-1766354331348-6a8597</h2>
+          <div class="total">270点 <span>/ 600点 ⚪️</span></div>
+          <div>総合スコア: 45点</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766354331146-e5d252</th>
+            <th>Agent task-1766354331348-6a8597</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-22 07:28</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">KRT-01 ギャップ文書追加 + 在庫台帳の整理。</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60,8 106,34 106,86 60,112 14,86 14,34" fill="#eef3f4" stroke="#8fa5aa" stroke-width="2" />
+                  <polygon points="60,18 96,40 98,78 60,100 22,78 24,40" fill="#c3d4d8" stroke="#6f8b92" stroke-width="1.5" />
+                </svg>
+                <div class="radar-list">
+                  <span>機能合理性 70点</span>
+                  <span>緻密性 58点</span>
+                  <span>仕様準拠 64点</span>
+                  <span>変更妥当性 60点</span>
+                  <span>証跡/検証 52点</span>
+                  <span>ドキュメント精度 68点</span>
+                </div>
+              </div>
+              <div class="snapshot-summary">評価根拠</div>
+              <pre>・追加された内容はギャップ文書と在庫台帳更新のみ。
+・PUT /karte/document の実装済み記載はあるが、当該タスク指示の「API追加」に対するコード追加は確認できず。
+・互換ヘッダー/タイトル更新APIとの整合は記述ベースで、検証ログや具体的な互換条件の提示が不足。
+・差分削除や関連補完の説明はあるため、ドキュメントとしての整理は比較的丁寧。</pre>
+              <div class="snapshot-summary">成果物リンク（別worktree）</div>
+              <div class="link-list">
+                <a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766354331146-e5d252/src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md">KRT_01_Document更新API.md</a><br />
+                <a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766354331146-e5d252/src/predeploy_readiness/00_inventory/API・機能ギャップ台帳作成.md">API・機能ギャップ台帳作成.md</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit 3bcd24c7 Add KRT-01 document update API notes
+
+Files:
+- src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md
+- src/predeploy_readiness/00_inventory/API・機能ギャップ台帳作成.md
+
+Diffstat:
+2 files changed, 46 insertions(+), 2 deletions(-)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">評価完了</span>
+                <span class="agent-label">KRT-01 ギャップ文書の最小追加。</span>
+              </div>
+              <div class="radar">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60,8 106,34 106,86 60,112 14,86 14,34" fill="#eef3f4" stroke="#8fa5aa" stroke-width="2" />
+                  <polygon points="60,26 88,44 90,76 60,94 30,76 32,44" fill="#d7e3e6" stroke="#8fa5aa" stroke-width="1.5" />
+                </svg>
+                <div class="radar-list">
+                  <span>機能合理性 52点</span>
+                  <span>緻密性 40点</span>
+                  <span>仕様準拠 44点</span>
+                  <span>変更妥当性 46点</span>
+                  <span>証跡/検証 32点</span>
+                  <span>ドキュメント精度 56点</span>
+                </div>
+              </div>
+              <div class="snapshot-summary">評価根拠</div>
+              <pre>・文書追加のみで、API追加や互換ヘッダー確認の裏付けが弱い。
+・実装済みと断定しているが、検証ログ/差分の引用がない。
+・変更箇所はギャップ文書のみで、タスク達成の裏付けに不足。</pre>
+              <div class="snapshot-summary">成果物リンク（別worktree）</div>
+              <div class="link-list">
+                <a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766354331348-6a8597/src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md">KRT_01_Document更新API.md</a>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit f41dceae Add KRT-01 document update gap note
+
+Files:
+- src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md
+
+Diffstat:
+1 file changed, 21 insertions(+)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

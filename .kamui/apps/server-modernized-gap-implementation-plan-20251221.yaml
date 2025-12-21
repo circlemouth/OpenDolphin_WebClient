@@ -159,6 +159,22 @@ src:
           start: 2025-12-31T00:00:00.000Z
           days: 1
     02_karte_gap:
+      KRT_前提ドキュメント整備.md:
+        content: |-
+          # KRT 前提ドキュメント整備
+
+          - KRT-01/02/03/04 実装に必要な前提文書と参照リンクを先行作成。
+          - 互換ヘッダー/監査/既存API差分の整理観点を明文化。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-25T00:00:00.000Z
+          days: 0
       KRT_01_Document更新API.md:
         content: |-
           # KRT-01 Document更新API
@@ -166,7 +182,7 @@ src:
           - PUT /karte/document の本文更新エンドポイントを追加。
           - 互換ヘッダー/既存タイトル更新 API との整合を確認。
         dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+          - src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md
         agent: codex
         api: []
         priority: High
@@ -182,7 +198,7 @@ src:
           - /karte/routineMed.list, /karte/rpHistory/list, /karte/userProperty/{userId} を実装。
           - Masuda/SafetySummary 画面の必須レスポンスを合わせる。
         dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+          - src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md
         agent: codex
         api: []
         priority: High
@@ -198,7 +214,7 @@ src:
           - GET /karte/image/{id} の @PathParam 名不一致を修正。
           - 既存 SchemaModelConverter の戻り値を維持。
         dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+          - src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md
         agent: codex
         api: []
         priority: Medium
@@ -214,7 +230,7 @@ src:
           - addDocument の添付 persist を二重実行しないよう修正。
           - 既存の監査イベント/レスポンス互換性を維持。
         dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+          - src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md
         agent: codex
         api: []
         priority: Medium
