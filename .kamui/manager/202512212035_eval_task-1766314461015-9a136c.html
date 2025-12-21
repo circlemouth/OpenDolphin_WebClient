@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: Touch 共通JSON変換基盤</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 12px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .summary-block {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .summary-block h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+      .summary-block p {
+        margin: 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+        align-items: center;
+      }
+      .hexagon {
+        width: 120px;
+        height: 104px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: Touch 共通JSON変換基盤</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1766314461015-9a136c, task/task-1766314460813-e1f826（比較評価）</p>
+      </header>
+
+      <section class="summary-block">
+        <h3>タスク内容・仕事の概要</h3>
+        <p>XML/Legacy DTO を JSON に統一する変換レイヤの準備と、監査 ID/TraceId の引き回し標準化に向けた計画・実装状況を確認。対象ブランチのコミットログと差分から、計画ドキュメントの追加状況と実装の有無を評価した。</p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1766314461015-9a136c</h2>
+          <div class="score-total">合計 356 / 600 🥈</div>
+          <div style="font-size:12px;color:#3a4b53;">実装は未着手だが計画ドキュメントを追加。</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766314460813-e1f826</h2>
+          <div class="score-total">合計 120 / 600 ⚪️</div>
+          <div style="font-size:12px;color:#3a4b53;">コミット・差分なしのため評価対象が不足。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1766314461015-9a136c</th>
+            <th>codex / task-1766314460813-e1f826</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-21 20:35</td>
+            <td>
+              <div class="metrics">
+                <svg class="hexagon" viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg" aria-label="六角形チャート">
+                  <polygon points="60,2 115,28 115,76 60,102 5,76 5,28" fill="#eef3f4" stroke="#9fb3b8" stroke-width="2" />
+                  <line x1="60" y1="2" x2="60" y2="102" stroke="#c4d3d7" />
+                  <line x1="5" y1="28" x2="115" y2="76" stroke="#c4d3d7" />
+                  <line x1="115" y1="28" x2="5" y2="76" stroke="#c4d3d7" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 60点</div>
+                  <div>緻密性 58点</div>
+                  <div>仕様遵守 70点</div>
+                  <div>ドキュメント品質 76点</div>
+                  <div>変更範囲適切性 62点</div>
+                  <div>テスト/検証 30点</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価対象</span>
+                <span class="agent-label">計画ドキュメントの追加のみ。実装・テストは未実施。</span>
+              </div>
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">評価メモ</summary>
+                <pre>【コミット】
+- 09790dda Add Touch JSON transform plan doc
+
+【差分要約】
+- src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md (新規 27行)
+
+【評価根拠】
+- 目的/対応内容/留意点が網羅され、監査ID・TraceIdの標準化方針を明示。
+- 実装、テスト、実環境検証が未着手のため機能合理性・緻密性は限定評価。
+- 仕様・制約への配慮（Phase2参照のみ、ORCA未実施）を明記している点は加点。</pre>
+              </details>
+              <div class="link-list" style="margin-top:12px;font-size:12px;">
+                成果物リンク: <a href="../../src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md">Touch_共通JSON変換基盤.md</a>
+              </div>
+            </td>
+            <td>
+              <div class="metrics">
+                <svg class="hexagon" viewBox="0 0 120 104" xmlns="http://www.w3.org/2000/svg" aria-label="六角形チャート">
+                  <polygon points="60,2 115,28 115,76 60,102 5,76 5,28" fill="#eef3f4" stroke="#9fb3b8" stroke-width="2" />
+                  <line x1="60" y1="2" x2="60" y2="102" stroke="#c4d3d7" />
+                  <line x1="5" y1="28" x2="115" y2="76" stroke="#c4d3d7" />
+                  <line x1="115" y1="28" x2="5" y2="76" stroke="#c4d3d7" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 15点</div>
+                  <div>緻密性 18点</div>
+                  <div>仕様遵守 20点</div>
+                  <div>ドキュメント品質 18点</div>
+                  <div>変更範囲適切性 24点</div>
+                  <div>テスト/検証 25点</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">差分なし</span>
+                <span class="agent-label">コミット・差分が存在せず評価対象が不足。</span>
+              </div>
+              <details class="snapshot-details" open>
+                <summary class="details-toggle">評価メモ</summary>
+                <pre>【コミット】
+- 該当ブランチの独自コミットなし（masterと同一）
+
+【差分要約】
+- 変更なし
+
+【評価根拠】
+- 実装・計画・検証の成果物が確認できず、最低限の評価となる。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
