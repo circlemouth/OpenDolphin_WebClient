@@ -10,6 +10,7 @@ import java.util.Map;
 import open.dolphin.infomodel.UserModel;
 import open.dolphin.touch.AbstractResource;
 import open.dolphin.touch.support.TouchAuditHelper;
+import open.dolphin.touch.support.TouchErrorResponse;
 import open.dolphin.touch.support.TouchErrorMapper;
 import open.dolphin.touch.support.TouchRequestContext;
 import open.dolphin.touch.session.IPhoneServiceBean;
@@ -35,32 +36,53 @@ public class TouchUserService {
                                                           String facilityId,
                                                           String password,
                                                           String headerUserName,
-                                                          String headerPassword) {
-        requireAccessReason(context);
-        verifyCredentialHeaders(context, headerUserName, headerPassword);
-        ensureFacilityMatch(context, facilityId);
-        ensureHeaderMatchesUser(context, headerUserName);
+                                                          String headerPassword,
+                                                          String deviceId) {
+        String resource = "/touch/user";
+        try {
+            requireAccessReason(context);
+            requireDeviceId(context, deviceId);
+            verifyCredentialHeaders(context, headerUserName, headerPassword);
+            ensureFacilityMatch(context, facilityId);
+            ensureHeaderMatchesUser(context, headerUserName);
 
-        String compositeUserId = composeCompositeUserId(facilityId, pathUserId);
-        UserModel user = iPhoneServiceBean.getUser(compositeUserId, password);
-        if (user == null || !isActiveMember(user)) {
-            throw TouchErrorMapper.toException(Response.Status.UNAUTHORIZED,
-                    "authentication_failed", "ユーザー認証に失敗しました。", context.traceId());
+            String compositeUserId = composeCompositeUserId(facilityId, pathUserId);
+            UserModel user = iPhoneServiceBean.getUser(compositeUserId, password);
+            if (user == null || !isActiveMember(user)) {
+                throw TouchErrorMapper.toException(Response.Status.UNAUTHORIZED,
+                        "authentication_failed", "ユーザー認証に失敗しました。", context.traceId());
+            }
+
+            ensureHeaderMatchesUser(context, user.getUserId());
+
+            TouchUserDtos.TouchUserResponse response = convert(user);
+            auditHelper.record(context, ACTION_USER_LOOKUP,
+                    resource,
+                    Map.of("userId", user.getUserId(), "memberType", user.getMemberType(),
+                            "deviceId", deviceId));
+            return response;
+        } catch (jakarta.ws.rs.WebApplicationException ex) {
+            recordFailure(context, resource, ex,
+                    Map.of("userId", pathUserId, "facilityId", facilityId, "deviceId", deviceId));
+            throw ex;
+        } catch (RuntimeException ex) {
+            recordFailure(context, resource, ex,
+                    Map.of("userId", pathUserId, "facilityId", facilityId, "deviceId", deviceId));
+            throw ex;
         }
-
-        ensureHeaderMatchesUser(context, user.getUserId());
-
-        TouchUserDtos.TouchUserResponse response = convert(user);
-        auditHelper.record(context, ACTION_USER_LOOKUP,
-                "/touch/user",
-                Map.of("userId", user.getUserId(), "memberType", user.getMemberType()));
-        return response;
     }
 
     private void requireAccessReason(TouchRequestContext context) {
         if (context.accessReason() == null) {
             throw TouchErrorMapper.toException(Response.Status.FORBIDDEN,
                     "access_reason_required", "アクセス理由ヘッダーが必要です。", context.traceId());
+        }
+    }
+
+    private void requireDeviceId(TouchRequestContext context, String deviceId) {
+        if (deviceId == null || deviceId.isBlank()) {
+            throw TouchErrorMapper.toException(Response.Status.BAD_REQUEST,
+                    "device_id_required", "X-Device-Id ヘッダーが必要です。", context.traceId());
         }
     }
 
@@ -159,5 +181,33 @@ public class TouchUserService {
             return facilityId.substring(AbstractResource.DOLPHIN_ASP_OID.length());
         }
         return facilityId;
+    }
+
+    private void recordFailure(TouchRequestContext context,
+                               String resource,
+                               Throwable error,
+                               Map<String, Object> details) {
+        if (auditHelper == null || context == null) {
+            return;
+        }
+        Map<String, Object> failureDetails = new java.util.HashMap<>();
+        if (details != null) {
+            failureDetails.putAll(details);
+        }
+        if (error instanceof jakarta.ws.rs.WebApplicationException wae) {
+            failureDetails.put("httpStatus", wae.getResponse().getStatus());
+            Object entity = wae.getResponse().getEntity();
+            if (entity instanceof TouchErrorResponse touchError && touchError.type() != null) {
+                failureDetails.putIfAbsent("reason", touchError.type());
+            }
+        }
+        if (error != null) {
+            failureDetails.put("error", error.getClass().getSimpleName());
+            if (error.getMessage() != null && !error.getMessage().isBlank()) {
+                failureDetails.put("errorMessage", error.getMessage());
+            }
+        }
+        String reason = failureDetails.get("reason") instanceof String r ? r : null;
+        auditHelper.recordFailure(context, ACTION_USER_LOOKUP, resource, reason, failureDetails);
     }
 }

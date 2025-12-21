@@ -896,17 +896,29 @@ public class DemoResourceAsp extends open.dolphin.touch.AbstractResource {
 
     private void validateUserHeaders(TouchRequestContext context, String endpoint) {
         String userHeader = header("userName");
+        String passwordHeader = header("password");
+        String clientUuid = header("clientUUID");
+        if (authHandler != null) {
+            authHandler.requireHeaders(servletRequest, endpoint,
+                    TouchAuthHandler.REQUIRED_USER_NAME,
+                    TouchAuthHandler.REQUIRED_PASSWORD,
+                    TouchAuthHandler.REQUIRED_CLIENT_UUID);
+        } else {
+            if (!hasText(userHeader)) {
+                throw failure(Response.Status.UNAUTHORIZED, endpoint, "missing userName header");
+            }
+            if (!hasText(passwordHeader)) {
+                throw failure(Response.Status.UNAUTHORIZED, endpoint, "missing password header");
+            }
+            if (!hasText(clientUuid)) {
+                throw failure(Response.Status.BAD_REQUEST, endpoint, "missing clientUUID header");
+            }
+        }
         if (!hasText(userHeader)) {
             throw failure(Response.Status.UNAUTHORIZED, endpoint, "missing userName header");
         }
         if (!userHeader.equals(context.remoteUser())) {
             throw failure(Response.Status.UNAUTHORIZED, endpoint, "userName header mismatch");
-        }
-        if (!hasText(header("password"))) {
-            throw failure(Response.Status.UNAUTHORIZED, endpoint, "missing password header");
-        }
-        if (!hasText(header("clientUUID"))) {
-            throw failure(Response.Status.BAD_REQUEST, endpoint, "missing clientUUID header");
         }
     }
 
