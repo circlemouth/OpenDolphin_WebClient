@@ -62,18 +62,34 @@ filters:
 src:
   server_modernized_gap_20251221:
     00_factcheck:
-      現状棚卸し_ギャップ確定.md:
+      前提ドキュメント_雛形作成.md:
         content: |-
-          # 現状棚卸しとギャップ確定
+          # 前提ドキュメント雛形作成
 
-          - 既存コード/設定/Runbook を突合し、未実装・未検証項目を確定する。
-          - PHR/ORCA/Touch/Demo の差分を一次リスト化してスコープ確定。
+          - 各フェーズ着手前に必要となるタスク文書を雛形として先行作成。
+          - Touch/PHR/ORCA 各領域の作業手順・参照リンクを事前に整備。
         dependency: []
         agent: codex
         api: []
         priority: High
         status: not_started
         progress: 0
+        schedule:
+          start: 2025-12-22T00:00:00.000Z
+          days: 0
+      現状棚卸し_ギャップ確定.md:
+        content: |-
+          # 現状棚卸しとギャップ確定
+
+          - 既存コード/設定/Runbook を突合し、未実装・未検証項目を確定する。
+          - PHR/ORCA/Touch/Demo の差分を一次リスト化してスコープ確定。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/前提ドキュメント_雛形作成.md
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-22T00:00:00.000Z
           days: 2
@@ -88,18 +104,18 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T00:00:00.000Z
           days: 1
     01_orca07_datasource:
-      ORCA-07_設計確定.md:
+      ORCA-07_前提ドキュメント整備.md:
         content: |-
-          # ORCA-07 設計確定（DataSource/Vault）
+          # ORCA-07 前提ドキュメント整備
 
-          - JNDI DataSource と Vault Secrets の責務を確定。
-          - custom.properties 依存を段階廃止する方針を整理。
+          - ORCA-07 対応の作業手順書と参照資料を先行作成。
+          - DataSource/Vault 周辺の前提リンクを整理。
         dependency:
           - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
         agent: codex
@@ -107,6 +123,22 @@ src:
         priority: High
         status: not_started
         progress: 0
+        schedule:
+          start: 2025-12-24T00:00:00.000Z
+          days: 0
+      ORCA-07_設計確定.md:
+        content: |-
+          # ORCA-07 設計確定（DataSource/Vault）
+
+          - JNDI DataSource と Vault Secrets の責務を確定。
+          - custom.properties 依存を段階廃止する方針を整理。
+        dependency:
+          - src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T02:00:00.000Z
           days: 2
@@ -158,6 +190,22 @@ src:
           start: 2025-12-31T00:00:00.000Z
           days: 1
     02_orca08_etensu:
+      ORCA-08_前提ドキュメント整備.md:
+        content: |-
+          # ORCA-08 前提ドキュメント整備
+
+          - ETENSU 実装に必要な前提文書を先行作成。
+          - テーブル定義や検証観点の参照リンクを整理。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-24T01:00:00.000Z
+          days: 0
       ORCA-08_ETENSU_DAO実装.md:
         content: |-
           # ORCA-08 ETENSU DAO 実装
@@ -165,7 +213,7 @@ src:
           - TBL_ETENSU_1〜5 を読み出す DAO を実装。
           - 背反/加算/算定単位の結合ロジックを確定。
         dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+          - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_前提ドキュメント整備.md
         agent: codex
         api: []
         priority: High
@@ -223,12 +271,12 @@ src:
           start: 2026-01-02T00:00:00.000Z
           days: 2
     03_phr:
-      PHR_ヘッダー_監査ID整備.md:
+      PHR_前提ドキュメント整備.md:
         content: |-
-          # PHR ヘッダー/監査ID 整備
+          # PHR 前提ドキュメント整備
 
-          - X-Facility-Id / TraceId の必須化と監査イベントを統一。
-          - 4xx/5xx 監査とエラーマッピングを整備。
+          - PHR 対応で参照する仕様・運用文書を先行作成。
+          - 監査/署名/エクスポート関連の前提を整理。
         dependency:
           - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
         agent: codex
@@ -236,6 +284,22 @@ src:
         priority: High
         status: not_started
         progress: 0
+        schedule:
+          start: 2025-12-24T03:00:00.000Z
+          days: 0
+      PHR_ヘッダー_監査ID整備.md:
+        content: |-
+          # PHR ヘッダー/監査ID 整備
+
+          - X-Facility-Id / TraceId の必須化と監査イベントを統一。
+          - 4xx/5xx 監査とエラーマッピングを整備。
+        dependency:
+          - src/server_modernized_gap_20251221/03_phr/PHR_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: High
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T04:00:00.000Z
           days: 2
@@ -321,6 +385,22 @@ src:
           start: 2026-01-05T00:00:00.000Z
           days: 2
     04_touch_demo:
+      Touch_前提ドキュメント整備.md:
+        content: |-
+          # Touch 前提ドキュメント整備
+
+          - Touch/Demo 対応の作業手順書と参照リンクを先行作成。
+          - 共通 JSON 変換基盤の設計前提を整理。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-24T05:00:00.000Z
+          days: 0
       Touch_共通JSON変換基盤.md:
         content: |-
           # Touch 共通 JSON 変換基盤
@@ -328,7 +408,7 @@ src:
           - XML/Legacy DTO を JSON へ統一する変換レイヤを準備。
           - 監査 ID/TraceId の引き回しを標準化。
         dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+          - src/server_modernized_gap_20251221/04_touch_demo/Touch_前提ドキュメント整備.md
         agent: codex
         api: []
         priority: High
@@ -402,6 +482,22 @@ src:
           start: 2026-01-07T00:00:00.000Z
           days: 2
     05_orca_wrappers:
+      ORCA_wrapper_前提ドキュメント整備.md:
+        content: |-
+          # ORCA wrapper 前提ドキュメント整備
+
+          - Spec-based API 解放に必要な前提資料を先行作成。
+          - 切替条件/監査要件のリンクを整理。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-24T07:00:00.000Z
+          days: 0
       SpecBased_API_解放条件整理.md:
         content: |-
           # Spec-based API 解放条件整理
@@ -409,7 +505,7 @@ src:
           - ORCA POST 未開放 API の前提条件と切替条件を定義。
           - 解除後の検証フローと証跡を整理。
         dependency:
-          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_前提ドキュメント整備.md
         agent: codex
         api: []
         priority: Medium
@@ -452,6 +548,22 @@ src:
           start: 2026-01-06T04:00:00.000Z
           days: 2
     06_quality_release:
+      品質リリース_前提ドキュメント整備.md:
+        content: |-
+          # 品質リリース 前提ドキュメント整備
+
+          - 品質/リリース判定に必要な前提文書を先行作成。
+          - 監査/性能/証跡の観点を整理。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-07T00:00:00.000Z
+          days: 0
       4xx5xx_監査_統一.md:
         content: |-
           # 4xx/5xx 監査統一
@@ -459,6 +571,7 @@ src:
           - 監査イベントの不足分を補完。
           - 失敗時のメタ情報を統一。
         dependency:
+          - src/server_modernized_gap_20251221/06_quality_release/品質リリース_前提ドキュメント整備.md
           - src/server_modernized_gap_20251221/03_phr/PHR_E2E_証跡.md
           - src/server_modernized_gap_20251221/04_touch_demo/Touch_P1_API_実装.md
         agent: codex
