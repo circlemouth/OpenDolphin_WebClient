@@ -14,8 +14,17 @@
   - `common/src/main/java/open/dolphin/infomodel/PHRKey.java` は `@Entity` + `@Table(name = "d_phr_key")`。
   - `common/src/main/java/open/dolphin/infomodel/PHRAsyncJob.java` は `@Entity` + `@Table(name = "phr_async_job")` と `jsonb` マッピングを保持。
 
-## 状態
-- 机上確認のみ（実 DB への Flyway 実行・接続検証は未実施）。
+## 実施結果 (RUN_ID=20251221T194544Z)
+- Flyway
+  - `flyway_schema_history` の `0228` を登録済み（`flyway_migrate_v0228_only.log`, `flyway_version_0228_after.txt`）。
+  - `V0225` の重複で通常の `flyway migrate` が失敗するため、`-validateOnMigrate=false` で `V0228` 単独適用を実施。
+- 永続化 (DB 直叩き)
+  - `d_phr_key` / `phr_async_job` へ insert → select → delete で永続化を確認（`psql_persistence_check.txt`）。
+- エビデンス: `artifacts/server-modernized-gap/20251221/phr_access_key_persistence/20251221T194544Z/`
+
+## 実測できなかった項目
+- `setup-modernized-env.sh` が `server-modernized` のビルドエラーで停止し、PHR API 経由の e2e 確認は未実施。
+  - 失敗ログ: `artifacts/server-modernized-gap/20251221/phr_access_key_persistence/20251221T194544Z/setup-modernized-env.log`
 
 ## 変更ファイル
 - `server-modernized/tools/flyway/sql/V0228__phr_key_and_async_job.sql`
