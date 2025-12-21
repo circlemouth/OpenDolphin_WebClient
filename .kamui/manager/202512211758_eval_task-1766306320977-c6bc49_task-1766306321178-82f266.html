@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート ORCA-07 設計確定（DataSource/Vault）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .scorecard h2 {
+        font-size: 16px;
+        margin: 0 0 8px;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-total small {
+        font-size: 14px;
+        font-weight: 600;
+        color: #3a4b53;
+      }
+      .score-sub {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-top: 4px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .medal {
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .radar-wrapper {
+        margin: 12px 0 8px;
+        display: flex;
+        justify-content: center;
+      }
+      .radar {
+        width: 220px;
+        height: 220px;
+      }
+      .radar-labels {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .radar-labels li {
+        margin-bottom: 4px;
+      }
+      .evidence-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .evidence-list li {
+        margin-bottom: 4px;
+      }
+      a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA-07 設計確定（DataSource/Vault）</h1>
+        <p class="monitor-description">タスク完了ブランチ（2件）のコミットログと差分を参照し、設計確定ドキュメントの完成度を比較評価した。成果物はそれぞれ別の worktree に存在する。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>AI: circlemouth / task-1766306320977-c6bc49</h2>
+          <div class="score-total">🥈 438 <small>/ 600</small></div>
+          <div class="score-sub">総合スコア: 78 / 100</div>
+        </div>
+        <div class="scorecard">
+          <h2>AI: circlemouth / task-1766306321178-82f266</h2>
+          <div class="score-total">🏆 527 <small>/ 600</small></div>
+          <div class="score-sub">総合スコア: 90 / 100</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>AI circlemouth / task-1766306320977-c6bc49</th>
+            <th>AI circlemouth / task-1766306321178-82f266</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-21 18:00</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">設計完了</span>
+                <span class="agent-label">JNDI DataSource / Vault の責務分離と custom.properties の段階廃止を要約的に整理。</span>
+              </div>
+              <div class="medal">🥈 メダル / 78点</div>
+              <div class="radar-wrapper">
+                <svg class="radar" viewBox="0 0 220 220" data-scores="78,72,70,76,68,74">
+                  <polygon class="radar-max" fill="none" stroke="#c4d3d7" stroke-width="2"></polygon>
+                  <polygon class="radar-data" fill="#9fb7bf" fill-opacity="0.45" stroke="#58707a" stroke-width="2"></polygon>
+                </svg>
+              </div>
+              <ul class="radar-labels">
+                <li>機能合理性 78点: 役割分担とフェーズ方針の骨子が明確。</li>
+                <li>緻密性 72点: 監査・ローテーションの粒度はあるが実装参照が限定的。</li>
+                <li>影響範囲把握 70点: 参照箇所や既存設定との関係がやや不足。</li>
+                <li>一貫性 76点: JNDI/Vault の境界整理は一貫。</li>
+                <li>具体性 68点: 変数名や既存 CLI への接続が記載されていない。</li>
+                <li>運用適合性 74点: 監査手順の方針はあるが運用導線が薄い。</li>
+              </ul>
+              <ul class="evidence-list">
+                <li>成果物: <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766306320977-c6bc49/src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_%E8%A8%AD%E8%A8%88%E7%A2%BA%E5%AE%9A.md">ORCA-07_設計確定.md（worktree task-1766306320977-c6bc49）</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit 356ac40fd5b897d075514f7b15e5ec985f77a8aa
+Author: circlemouth &lt;circlemouth.h@gmail.com&gt;
+Date:   Sun Dec 21 17:41:24 2025 +0900
+
+    Add ORCA-07 datasource/vault design
+
+ src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_設計確定.md | 56 ++++++++++++++++++++++
+ 1 file changed, 56 insertions(+)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">設計完了</span>
+                <span class="agent-label">既存実装参照と変数/運用ルールまで踏み込んだ DataSource/Vault 設計を明文化。</span>
+              </div>
+              <div class="medal">🥇 メダル / 90点</div>
+              <div class="radar-wrapper">
+                <svg class="radar" viewBox="0 0 220 220" data-scores="88,90,86,88,90,85">
+                  <polygon class="radar-max" fill="none" stroke="#c4d3d7" stroke-width="2"></polygon>
+                  <polygon class="radar-data" fill="#86a9a1" fill-opacity="0.45" stroke="#2f5b53" stroke-width="2"></polygon>
+                </svg>
+              </div>
+              <ul class="radar-labels">
+                <li>機能合理性 88点: JNDI と Secrets の役割線引きが現行実装に整合。</li>
+                <li>緻密性 90点: 既存ファイル/警告ログの扱いを踏まえた段階設計。</li>
+                <li>影響範囲把握 86点: ORCAConnection/CLI など関連箇所を明示。</li>
+                <li>一貫性 88点: 移行フェーズと運用ルールの論理が安定。</li>
+                <li>具体性 90点: 変数名・監査項目・手順が具体。</li>
+                <li>運用適合性 85点: ローテーション手順と監査内容が実務に近い。</li>
+              </ul>
+              <ul class="evidence-list">
+                <li>成果物: <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766306321178-82f266/src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_%E8%A8%AD%E8%A8%88%E7%A2%BA%E5%AE%9A.md">ORCA-07_設計確定.md（worktree task-1766306321178-82f266）</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit bc5d7293c57a70fe0e162c153ea5fc257295bb7f
+Author: circlemouth &lt;circlemouth.h@gmail.com&gt;
+Date:   Sun Dec 21 17:42:21 2025 +0900
+
+    ORCA-07 datasource/vault design decision
+
+ src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_設計確定.md | 71 ++++++++++++++++++++++
+ 1 file changed, 71 insertions(+)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (() => {
+        const charts = document.querySelectorAll(".radar");
+        charts.forEach((svg) => {
+          const scores = (svg.dataset.scores || "").split(",").map((v) => Number(v.trim()));
+          const cx = 110;
+          const cy = 110;
+          const maxR = 80;
+          const angles = [-90, -30, 30, 90, 150, 210];
+          const toPoint = (angleDeg, radius) => {
+            const rad = (angleDeg * Math.PI) / 180;
+            const x = cx + radius * Math.cos(rad);
+            const y = cy + radius * Math.sin(rad);
+            return `${x.toFixed(1)},${y.toFixed(1)}`;
+          };
+          const maxPoints = angles.map((angle) => toPoint(angle, maxR)).join(" ");
+          const dataPoints = angles
+            .map((angle, index) => {
+              const value = Number.isFinite(scores[index]) ? scores[index] : 0;
+              return toPoint(angle, (maxR * value) / 100);
+            })
+            .join(" ");
+          const maxPolygon = svg.querySelector(".radar-max");
+          const dataPolygon = svg.querySelector(".radar-data");
+          if (maxPolygon) maxPolygon.setAttribute("points", maxPoints);
+          if (dataPolygon) dataPolygon.setAttribute("points", dataPoints);
+        });
+      })();
+    </script>
+  </body>
+</html>
