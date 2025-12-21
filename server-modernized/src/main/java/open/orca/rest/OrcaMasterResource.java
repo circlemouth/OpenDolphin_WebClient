@@ -939,6 +939,8 @@ public class OrcaMasterResource extends AbstractResource {
         response.setConflicts(record.getConflicts().isEmpty() ? null : record.getConflicts());
         response.setAdditions(record.getAdditions().isEmpty() ? null : record.getAdditions());
         response.setCalcUnits(record.getCalcUnits().isEmpty() ? null : record.getCalcUnits());
+        response.setBundlingMembers(record.getBundlingMembers().isEmpty() ? null : record.getBundlingMembers());
+        response.setSpecimens(record.getSpecimens().isEmpty() ? null : record.getSpecimens());
         response.setMeta(buildMeta(fixture.origin, fixture.snapshotVersion, fixture.version, false, false, false, null));
         return response;
     }

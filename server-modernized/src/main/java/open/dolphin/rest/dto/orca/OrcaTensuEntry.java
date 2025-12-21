@@ -20,6 +20,8 @@ public class OrcaTensuEntry {
     private java.util.List<OrcaEtensuConflict> conflicts;
     private java.util.List<OrcaEtensuAddition> additions;
     private java.util.List<OrcaEtensuCalcUnit> calcUnits;
+    private java.util.List<OrcaEtensuBundlingMember> bundlingMembers;
+    private java.util.List<OrcaEtensuSpecimen> specimens;
     private OrcaMasterMeta meta;
 
     public String getTensuCode() {
@@ -140,6 +142,22 @@ public class OrcaTensuEntry {
 
     public void setCalcUnits(java.util.List<OrcaEtensuCalcUnit> calcUnits) {
         this.calcUnits = calcUnits;
+    }
+
+    public java.util.List<OrcaEtensuBundlingMember> getBundlingMembers() {
+        return bundlingMembers;
+    }
+
+    public void setBundlingMembers(java.util.List<OrcaEtensuBundlingMember> bundlingMembers) {
+        this.bundlingMembers = bundlingMembers;
+    }
+
+    public java.util.List<OrcaEtensuSpecimen> getSpecimens() {
+        return specimens;
+    }
+
+    public void setSpecimens(java.util.List<OrcaEtensuSpecimen> specimens) {
+        this.specimens = specimens;
     }
 
     public OrcaMasterMeta getMeta() {
