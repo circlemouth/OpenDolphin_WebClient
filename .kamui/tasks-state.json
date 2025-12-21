@@ -632,32 +632,6 @@
     "description": "# KRT-02 Masuda/SafetySummary API\n\n- /karte/routineMed.list, /karte/rpHistory/list, /karte/userProperty/{userId} を実装。\n- Masuda/SafetySummary 画面の必須レスポンスを合わせる。"
   },
   {
-    "id": "task-1766354331146-e5d252",
-    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] KRT_01_Document更新API\n期間: 12/26 09:00 - 12/28 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# KRT-01 Document更新API\n\n- PUT /karte/document の本文更新エンドポイントを追加。\n- 互換ヘッダー/既存タイトル更新 API との整合を確認。\n\nYAML ID: src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-21T21:58:51.146Z",
-    "updatedAt": "2025-12-21T21:58:58.633Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766354331146-e5d252",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766354331146-cz7l0dhl",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] KRT_01_Document更新API\n期間: 12/26 09:00 - 12/28 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# KRT-01 Document更新API\n\n- PUT /karte/document の本文更新エンドポイントを追加。\n- 互換ヘッダー/既存タイトル更新 API との整合を確認。\n\nYAML ID: src/server_modernized_gap_20251221/02_karte_gap/KRT_01_Document更新API.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766354331146-e5d252",
-    "medal": "bronze",
-    "aiCompetitionScore": 62
-  },
-  {
     "id": "task-1766355441861-60b295",
     "name": "CodexCLI1: [server modernized gap implementation plan 20251221] KRT_02_Masuda_SafetySummary_API\n期間: 12/26 11:00 - 12/29 11:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# KRT-02 Masuda/SafetySummary API\n\n- /karte/routineMed.list, /karte/rpHistory/list, /karte/userProperty/{userId} を実装。\n- Masuda/SafetySummary 画面の必須レスポンスを合わせる。\n\nYAML ID: src/server_modernized_gap_20251221/02_karte_gap/KRT_02_Masuda_SafetySummary_API.md",
     "model": "Codex CLI",
@@ -753,7 +727,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766355724169-b0ce84"
+    "worktreePath": ".worktrees/task-1766355724169-b0ce84",
+    "medal": "silver",
+    "aiCompetitionScore": 80
   },
   {
     "id": "task-1766355724374-33be1a",
@@ -777,7 +753,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766355724374-33be1a"
+    "worktreePath": ".worktrees/task-1766355724374-33be1a",
+    "medal": "bronze",
+    "aiCompetitionScore": 56
   },
   {
     "id": "task-1766355736494-9b0d4c",
@@ -823,6 +801,77 @@
     "urgency": "medium",
     "createdAt": "2025-12-21T22:50:51.788Z",
     "updatedAt": "2025-12-21T22:50:51.859Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
+  },
+  {
+    "id": "task-yaml-150wui0-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] KRT_前提ドキュメント整備\n期間: 12/25 09:00 - 12/26 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# KRT 前提ドキュメント整備\n\n- KRT-01/02/03/04 実装に必要な前提文書と参照リンクを先行作成。\n- 互換ヘッダー/監査/既存API差分の整理観点を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-21T23:01:22.768Z",
+    "updatedAt": "2025-12-21T23:01:22.768Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-150wui0-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T23:01:22.243Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 02_karte_gap"
+    ],
+    "dependencies": [
+      "task-yaml-154fzae-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766620800000,
+      "endMs": 1766707200000,
+      "durationDays": 1
+    },
+    "category": "src / server_modernized_gap_20251221 / 02_karte_gap",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# KRT 前提ドキュメント整備\n\n- KRT-01/02/03/04 実装に必要な前提文書と参照リンクを先行作成。\n- 互換ヘッダー/監査/既存API差分の整理観点を明文化。"
+  },
+  {
+    "id": "task-1766358087617-211bef",
+    "name": "[server modernized gap implementation plan 20251221] KRT_前提ドキュメント整備\n期間: 12/25 09:00 - 12/26 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# KRT 前提ドキュメント整備\n\n- KRT-01/02/03/04 実装に必要な前提文書と参照リンクを先行作成。\n- 互換ヘッダー/監査/既存API差分の整理観点を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/02_karte_gap/KRT_前提ドキュメント整備.md",
+    "model": "YAML App",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-21T23:01:27.617Z",
+    "updatedAt": "2025-12-21T23:01:29.763Z",
     "requiresTerminal": true,
     "createWorktree": false,
     "branchName": null,
