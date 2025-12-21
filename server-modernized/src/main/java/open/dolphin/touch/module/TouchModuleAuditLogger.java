@@ -1,5 +1,6 @@
 package open.dolphin.touch.module;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.WebApplicationException;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
@@ -7,6 +8,7 @@ import java.util.UUID;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import open.dolphin.rest.AbstractResource;
 
 /**
  * Structured audit logger for Touch module endpoints.
@@ -19,9 +21,21 @@ public final class TouchModuleAuditLogger {
     }
 
     public static String begin(String endpoint, Supplier<String> details) {
-        String traceId = UUID.randomUUID().toString();
-        AUDIT_LOGGER.info(() -> format("start", endpoint, traceId, safe(details)));
-        return traceId;
+        return begin(endpoint, (String) null, details);
+    }
+
+    public static String begin(HttpServletRequest request, String endpoint, Supplier<String> details) {
+        String traceId = AbstractResource.resolveTraceIdValue(request);
+        return begin(endpoint, traceId, details);
+    }
+
+    public static String begin(String endpoint, String traceId, Supplier<String> details) {
+        String resolvedTraceId = traceId;
+        if (resolvedTraceId == null || resolvedTraceId.isBlank()) {
+            resolvedTraceId = UUID.randomUUID().toString();
+        }
+        AUDIT_LOGGER.info(() -> format("start", endpoint, resolvedTraceId, safe(details)));
+        return resolvedTraceId;
     }
 
     public static void success(String endpoint, String traceId, Supplier<String> details) {

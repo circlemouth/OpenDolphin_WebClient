@@ -4,17 +4,12 @@
  */
 package open.dolphin.touch;
 
-import java.beans.XMLDecoder;
-import java.io.BufferedInputStream;
-import java.io.BufferedReader;
-import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
-import java.io.StringReader;
 import java.io.UnsupportedEncodingException;
 import java.nio.charset.StandardCharsets;
 import java.sql.Connection;
@@ -93,6 +88,7 @@ import open.dolphin.touch.converter.ISendPackage2;
 import open.dolphin.touch.converter.IVitalModel;
 import open.dolphin.touch.session.EHTServiceBean;
 import open.dolphin.touch.support.TouchAuditHelper;
+import open.dolphin.touch.support.TouchJsonConverter;
 import open.dolphin.touch.support.TouchRequestContext;
 import open.dolphin.touch.support.TouchRequestContextExtractor;
 import open.orca.rest.ORCAConnection;
@@ -147,8 +143,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     private TouchAuditHelper auditHelper;
 
     @Inject
-    // LegacyObjectMapperProducer で Touch 系 JSON の既定設定を共有
-    private ObjectMapper legacyTouchMapper;
+    private TouchJsonConverter touchJsonConverter;
     
     @Context
     private HttpServletRequest servletReq;
@@ -327,7 +322,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IPatientMemoModel model = legacyTouchMapper.readValue(json, IPatientMemoModel.class);
+                IPatientMemoModel model = touchJsonConverter.readLegacy(json, IPatientMemoModel.class);
                 int cnt = ehtService.addPatientMemo(model.toModel());
                 ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
@@ -344,7 +339,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IPatientMemoModel model = legacyTouchMapper.readValue(json, IPatientMemoModel.class);
+                IPatientMemoModel model = touchJsonConverter.readLegacy(json, IPatientMemoModel.class);
                 int cnt = ehtService.updatePatientMemo(model.toModel());
                 ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
@@ -362,7 +357,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IPatientMemoModel model = legacyTouchMapper.readValue(json, IPatientMemoModel.class);
+                IPatientMemoModel model = touchJsonConverter.readLegacy(json, IPatientMemoModel.class);
                 int cnt = ehtService.deletePatientMemo(model.toModel());
                 ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, String.valueOf(cnt));
@@ -421,7 +416,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                IAllergyModel[] allergies = legacyTouchMapper.readValue(json, IAllergyModel[].class);
+                IAllergyModel[] allergies = touchJsonConverter.readLegacy(json, IAllergyModel[].class);
                 
                 int cnt = 0;
                 for (IAllergyModel am : allergies) {
@@ -446,7 +441,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                IAllergyModel[] allergies = legacyTouchMapper.readValue(json, IAllergyModel[].class);
+                IAllergyModel[] allergies = touchJsonConverter.readLegacy(json, IAllergyModel[].class);
                 
                 int cnt = 0;
                 for (IAllergyModel am : allergies) {
@@ -471,7 +466,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                IAllergyModel[] allergies = legacyTouchMapper.readValue(json, IAllergyModel[].class);
+                IAllergyModel[] allergies = touchJsonConverter.readLegacy(json, IAllergyModel[].class);
 
                 int cnt = 0;
                 for (IAllergyModel am : allergies) {
@@ -524,7 +519,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IRegisteredDiagnosis[] list = legacyTouchMapper.readValue(json, IRegisteredDiagnosis[].class);
+                IRegisteredDiagnosis[] list = touchJsonConverter.readLegacy(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
                 for (IRegisteredDiagnosis ir : list) {
@@ -549,7 +544,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IRegisteredDiagnosis[] list = legacyTouchMapper.readValue(json, IRegisteredDiagnosis[].class);
+                IRegisteredDiagnosis[] list = touchJsonConverter.readLegacy(json, IRegisteredDiagnosis[].class);
                 
                 int cnt = 0;
                 for (IRegisteredDiagnosis ir : list) {
@@ -574,7 +569,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IRegisteredDiagnosis[] list = legacyTouchMapper.readValue(json, IRegisteredDiagnosis[].class);
+                IRegisteredDiagnosis[] list = touchJsonConverter.readLegacy(json, IRegisteredDiagnosis[].class);
                                 
                 int cnt = 0;
                 for (IRegisteredDiagnosis ir : list) {
@@ -708,7 +703,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
+                ISendPackage pkg = touchJsonConverter.readLegacy(json, ISendPackage.class);
 
                 handleTouchClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "/10/eht/sendClaim");
             }
@@ -727,7 +722,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 
-                ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
+                ISendPackage2 pkg = touchJsonConverter.readLegacy(json, ISendPackage2.class);
 
                 handleTouchClaimSend(pkg.documentModel(), pkg.chartEventModel(), os, "/10/eht/sendClaim2");
             }
@@ -797,7 +792,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 TouchRequestContext context = TouchRequestContextExtractor.from(request);
-                String[] pks = legacyTouchMapper.readValue(json, String[].class);
+                String[] pks = touchJsonConverter.readLegacy(json, String[].class);
                 long pk = Long.parseLong(pks[0]);
                 DocumentModel document = null;
                 try {
@@ -1111,7 +1106,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
                 long pk = Long.parseLong(param);
                 String json = getTreeJson(pk);
-                os.write(json.getBytes(StandardCharsets.UTF_8));
+                if (json != null) {
+                    os.write(json.getBytes(StandardCharsets.UTF_8));
+                } else {
+                    os.write(new byte[0]);
+                }
             }
         };
     }
@@ -1119,21 +1118,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     private String getTreeJson(long userPK) {
         
         IStampTreeModel treeModel = ehtService.getTrees(userPK);
-        
-        try {
-            String treeXml = new String(treeModel.getTreeBytes(), StandardCharsets.UTF_8);
-            BufferedReader reader = new BufferedReader(new StringReader(treeXml));
-            JSONStampTreeBuilder builder = new JSONStampTreeBuilder();
-            StampTreeDirector director = new StampTreeDirector(builder);
-            String json = director.build(reader);
-            reader.close();
-            return json;
-        } catch (UnsupportedEncodingException ex) {
-            //System.err.println("getTreeJson:" + ex.getMessage());
-        } catch (IOException ex) {
-            //System.err.println("getTreeJson:" + ex.getMessage());
-        }
-        return null;
+        return touchJsonConverter.convertStampTreeOrNull(treeModel);
     }
     
     @GET
@@ -1146,16 +1131,11 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             public void write(OutputStream os) throws IOException, WebApplicationException {
 
                 StampModel stampModel = ehtService.getStamp(param);
-                if (stampModel!=null) {
-                    XMLDecoder d = new XMLDecoder(
-                        new BufferedInputStream(
-                        new ByteArrayInputStream(stampModel.getStampBytes())));
-                    InfoModel model = (InfoModel)d.readObject();
-                    JSONStampBuilder builder = new JSONStampBuilder();
-                    String json = builder.build(model);
+                String json = touchJsonConverter.convertStampOrNull(stampModel);
+                if (json != null) {
                     os.write(json.getBytes(StandardCharsets.UTF_8));
                 } else {
-                    os.write(null);
+                    os.write(new byte[0]);
                 }
             }
         };
@@ -1249,7 +1229,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
 
-                InteractionCodeList input = legacyTouchMapper.readValue(json, InteractionCodeList.class);
+                InteractionCodeList input = touchJsonConverter.readLegacy(json, InteractionCodeList.class);
                 
 //                if (input.getCodes1()!=null)
 //                {
@@ -1344,7 +1324,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IVitalModel imodel = legacyTouchMapper.readValue(json, IVitalModel.class);
+                IVitalModel imodel = touchJsonConverter.readLegacy(json, IVitalModel.class);
                 VitalModel model = imodel.toModel();
                 int cnt = ehtService.addVital(model);
 
@@ -1392,7 +1372,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return new StreamingOutput() {
             @Override
             public void write(OutputStream os) throws IOException, WebApplicationException {
-                IPhysicalModel physical = legacyTouchMapper.readValue(json, IPhysicalModel.class);
+                IPhysicalModel physical = touchJsonConverter.readLegacy(json, IPhysicalModel.class);
                 int cnt = 0;
                 List<ObservationModel> om = physical.toObservationModel();
                 ehtService.addObservations(om);

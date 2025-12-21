@@ -1,6 +1,5 @@
 package open.dolphin.touch;
 
-import java.beans.XMLDecoder;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
@@ -14,7 +13,7 @@ import open.dolphin.session.KarteServiceBean;
 import open.dolphin.touch.converter.IDocument;
 import open.dolphin.touch.converter.IDocument2;
 import open.dolphin.touch.session.IPhoneServiceBean;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import open.dolphin.touch.support.TouchJsonConverter;
 
 /**
  * REST Web Service
@@ -105,8 +104,7 @@ public class DolphinResourceASP extends AbstractResource {
     private KarteServiceBean karteService;
 
     @Inject
-    // LegacyObjectMapperProducer を介して Touch 既定設定を共有
-    private ObjectMapper legacyTouchMapper;
+    private TouchJsonConverter touchJsonConverter;
 
     /** Creates a new instance of DolphinResource */
     public DolphinResourceASP() {
@@ -1369,22 +1367,7 @@ public class DolphinResourceASP extends AbstractResource {
         
         long pk = Long.parseLong(param);
         IStampTreeModel treeModel = iPhoneServiceBean.getTrees(pk);
-        
-        try {
-            String treeXml = new String(treeModel.getTreeBytes(), "UTF-8");
-            BufferedReader reader = new BufferedReader(new StringReader(treeXml));
-            JSONStampTreeBuilder builder = new JSONStampTreeBuilder();
-            StampTreeDirector director = new StampTreeDirector(builder);
-            String json = director.build(reader);
-            reader.close();
-            //System.err.println(json);
-            return json;
-            
-        } catch (UnsupportedEncodingException ex) {
-        } catch (IOException ex) {
-        }
-        
-        return null;
+        return touchJsonConverter.convertStampTreeOrNull(treeModel);
     }
     
     @GET
@@ -1393,18 +1376,7 @@ public class DolphinResourceASP extends AbstractResource {
     public String getStamp(@PathParam("param") String param) {
         
         StampModel stampModel = iPhoneServiceBean.getStamp(param);
-        
-        if (stampModel!=null) {
-            XMLDecoder d = new XMLDecoder(
-                new BufferedInputStream(
-                new ByteArrayInputStream(stampModel.getStampBytes())));
-            InfoModel model = (InfoModel)d.readObject();
-            JSONStampBuilder builder = new JSONStampBuilder();
-            String json = builder.build(model);
-            return json;
-        }
-        
-        return null;
+        return touchJsonConverter.convertStampOrNull(stampModel);
     }
     
     //--------------------------------------------------------------------------
@@ -1417,7 +1389,7 @@ public class DolphinResourceASP extends AbstractResource {
         //System.err.println("post document did call");
         System.err.println(json);
         
-        IDocument document = legacyTouchMapper.readValue(json, IDocument.class);
+        IDocument document = touchJsonConverter.readLegacy(json, IDocument.class);
         DocumentModel model = document.toModel();
         System.err.println(model.toString());
         
@@ -1440,7 +1412,7 @@ public class DolphinResourceASP extends AbstractResource {
         
         System.err.println(json);
         
-        IDocument2 document = legacyTouchMapper.readValue(json, IDocument2.class);
+        IDocument2 document = touchJsonConverter.readLegacy(json, IDocument2.class);
         DocumentModel model = document.toModel();
         System.err.println(model.toString());
         
