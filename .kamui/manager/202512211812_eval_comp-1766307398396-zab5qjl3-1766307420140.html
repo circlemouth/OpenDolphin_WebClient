@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - PHR_ヘッダー_監査ID整備</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin-bottom: 20px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 12px 14px;
+      }
+      .score-card h3 {
+        margin: 0 0 6px 0;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #c3d4d8;
+        border: 1px solid #aabfc5;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar-legend {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .radar-legend div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      ul {
+        margin: 0 0 6px 18px;
+        padding: 0;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      code {
+        background: #f2f6f7;
+        padding: 0 4px;
+        border: 1px solid #c4d3d7;
+        border-radius: 3px;
+        font-size: 12px;
+      }
+      .score-line {
+        font-size: 12px;
+        margin-bottom: 8px;
+        color: #2c3a40;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        font-size: 11px;
+        font-weight: 600;
+        margin-right: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: PHR_ヘッダー_監査ID整備</h1>
+        <p class="monitor-description">タスク範囲: X-Facility-Id / TraceId の必須化、監査イベント統一、4xx/5xx 監査とエラーマッピング整備。ブランチ比較対象: task/task-1766307398403-3e52b9, task/task-1766307398609-350dc9。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>Agent codex / task-1766307398403-3e52b9</h3>
+          <div class="score-total">🏆 513 / 600</div>
+          <div class="score-meta">総合評価 86点（🥇）</div>
+        </div>
+        <div class="score-card">
+          <h3>Agent codex / task-1766307398609-350dc9</h3>
+          <div class="score-total">🥈 423 / 600</div>
+          <div class="score-meta">総合評価 71点（🥈）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent codex / task-1766307398403-3e52b9</th>
+            <th>Agent codex / task-1766307398609-350dc9</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-21 18:12</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">完了</span>
+                <span class="pill">メダル: 🥇</span>
+                <span class="pill">スコア: 86</span>
+              </div>
+              <div class="radar-wrap">
+                <svg width="200" height="200" viewBox="0 0 200 200" aria-label="hex chart">
+                  <polygon points="100,30 160.6,65 160.6,135 100,170 39.4,135 39.4,65" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="100,35.6 153.3,69.2 154.6,131.5 100,159.5 51.5,128 52.7,72.7" fill="#9bb9c4" stroke="#56707a" opacity="0.8" />
+                  <text x="100" y="18" text-anchor="middle" font-size="10">機能合理性</text>
+                  <text x="178" y="55" text-anchor="middle" font-size="10">緻密性</text>
+                  <text x="178" y="155" text-anchor="middle" font-size="10">監査整合</text>
+                  <text x="100" y="192" text-anchor="middle" font-size="10">エラー対応</text>
+                  <text x="22" y="155" text-anchor="middle" font-size="10">影響配慮</text>
+                  <text x="22" y="55" text-anchor="middle" font-size="10">テスト</text>
+                </svg>
+                <div class="radar-legend">
+                  <div>機能合理性 92点</div>
+                  <div>緻密性 88点</div>
+                  <div>監査整合 90点</div>
+                  <div>エラー対応 85点</div>
+                  <div>影響配慮 80点</div>
+                  <div>テスト 78点</div>
+                </div>
+              </div>
+
+              <div class="section-title">概要</div>
+              <ul>
+                <li>X-Facility-Id / X-Trace-Id の必須化を PHRResource 各API単位で明示。</li>
+                <li>4xx/5xx 監査をパラメータ不正・署名不足などに対して追加記録。</li>
+                <li>失敗監査の理由コードと詳細を粒度高く補強。</li>
+              </ul>
+
+              <div class="section-title">主な差分</div>
+              <ul>
+                <li><code>server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java</code> で requireContext(action) とヘッダー検証/監査を追加。</li>
+                <li>パラメータ不正時に監査失敗を記録してからエラー返却。</li>
+                <li><code>server-modernized/src/test/java/open/dolphin/rest/PHRResourceTest.java</code> にヘッダー前提の調整。</li>
+              </ul>
+
+              <div class="section-title">指標根拠</div>
+              <ul>
+                <li>機能合理性: 監査・ヘッダー必須化・施設不一致を網羅。</li>
+                <li>緻密性: 具体的な failureDetails を統一し 4xx 監査も追加。</li>
+                <li>監査整合: アクション名を API 単位で揃え成功/失敗を区別。</li>
+                <li>エラー対応: BAD_REQUEST/FORBIDDEN を明確に分類。</li>
+                <li>影響配慮: PHR 領域内に閉じた変更、既存エラー形式維持。</li>
+                <li>テスト: ヘッダー追加のみで追加ケースは不足。</li>
+              </ul>
+
+              <div class="section-title">リスク/不足</div>
+              <ul>
+                <li>共通フィルタ・抽出ロジックへの反映は未実施。</li>
+                <li>X-Touch-TraceId など周辺系の TraceId 互換は未対応。</li>
+                <li>異常系テスト追加は限定的。</li>
+              </ul>
+
+              <div class="section-title">コミット</div>
+              <ul>
+                <li><code>d8c6d446</code> PHR headers and audit enforcement</li>
+              </ul>
+
+              <div class="section-title">成果物</div>
+              <ul>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a></li>
+                <li><a href="../../server-modernized/src/test/java/open/dolphin/rest/PHRResourceTest.java">PHRResourceTest.java</a></li>
+                <li><a href="../../src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md">PHR_ヘッダー_監査ID整備.md</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">完了</span>
+                <span class="pill">メダル: 🥈</span>
+                <span class="pill">スコア: 71</span>
+              </div>
+              <div class="radar-wrap">
+                <svg width="200" height="200" viewBox="0 0 200 200" aria-label="hex chart">
+                  <polygon points="100,30 160.6,65 160.6,135 100,170 39.4,135 39.4,65" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="100,45.4 142.4,75.5 141.2,123.8 100,145.5 50.3,128.7 63.6,79" fill="#a9c6d0" stroke="#56707a" opacity="0.8" />
+                  <text x="100" y="18" text-anchor="middle" font-size="10">機能合理性</text>
+                  <text x="178" y="55" text-anchor="middle" font-size="10">緻密性</text>
+                  <text x="178" y="155" text-anchor="middle" font-size="10">監査整合</text>
+                  <text x="100" y="192" text-anchor="middle" font-size="10">エラー対応</text>
+                  <text x="22" y="155" text-anchor="middle" font-size="10">影響配慮</text>
+                  <text x="22" y="55" text-anchor="middle" font-size="10">テスト</text>
+                </svg>
+                <div class="radar-legend">
+                  <div>機能合理性 78点</div>
+                  <div>緻密性 70点</div>
+                  <div>監査整合 68点</div>
+                  <div>エラー対応 65点</div>
+                  <div>影響配慮 82点</div>
+                  <div>テスト 60点</div>
+                </div>
+              </div>
+
+              <div class="section-title">概要</div>
+              <ul>
+                <li>PHR の X-Facility-Id / TraceId 必須化を共通コンテキストで実施。</li>
+                <li>X-Touch-TraceId を TraceId として解釈し LogFilter/ヘルパへ反映。</li>
+              </ul>
+
+              <div class="section-title">主な差分</div>
+              <ul>
+                <li><code>server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java</code> でヘッダー必須チェック。</li>
+                <li><code>server-modernized/src/main/java/open/dolphin/rest/LogFilter.java</code> に X-Touch-TraceId 対応。</li>
+                <li><code>server-modernized/src/main/java/open/dolphin/rest/AbstractResource.java</code> と PHR 文脈抽出の TraceId 拡張。</li>
+              </ul>
+
+              <div class="section-title">指標根拠</div>
+              <ul>
+                <li>機能合理性: ヘッダー必須化は満たすが 4xx/5xx 監査は未網羅。</li>
+                <li>緻密性: 詳細理由や API 単位の失敗監査は限定的。</li>
+                <li>監査整合: PHR 以外へ TraceId 互換を拡張したが不足あり。</li>
+                <li>エラー対応: 4xx/5xx の監査記録・マッピング追加なし。</li>
+                <li>影響配慮: 共通コンポーネント修正で広域整合を確保。</li>
+                <li>テスト: 追加テストなし。</li>
+              </ul>
+
+              <div class="section-title">リスク/不足</div>
+              <ul>
+                <li>4xx/5xx の監査・エラーマッピング整備が未達。</li>
+                <li>PHR API 個別のアクション名統一が不十分。</li>
+                <li>ヘッダー不一致/欠落時の詳細監査粒度が不足。</li>
+              </ul>
+
+              <div class="section-title">コミット</div>
+              <ul>
+                <li><code>a5fa0bfa</code> PHR header audit guard</li>
+              </ul>
+
+              <div class="section-title">成果物</div>
+              <ul>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a></li>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/rest/LogFilter.java">LogFilter.java</a></li>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/rest/AbstractResource.java">AbstractResource.java</a></li>
+                <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/rest/support/PhrRequestContextExtractor.java">PhrRequestContextExtractor.java</a></li>
+                <li><a href="../../src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md">PHR_ヘッダー_監査ID整備.md</a></li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
