@@ -109,7 +109,7 @@ public class StampResource extends AbstractResource {
         try {
             long pk = stampServiceBean.putTree(model);
             String pkStr = String.valueOf(pk);
-            recordStampTreeAudit("STAMP_TREE_PUT", model, "success", pkStr, null, null);
+            recordStampTreeAudit("STAMP_TREE_PUT", model, "success", pkStr, null, null, null);
             debug(pkStr);
             return pkStr;
         } catch (RuntimeException e) {
@@ -127,7 +127,7 @@ public class StampResource extends AbstractResource {
         try {
             String pkAndVersion = stampServiceBean.syncTree(model);
             String[] parsed = splitPkAndVersion(pkAndVersion);
-            recordStampTreeAudit("STAMP_TREE_SYNC", model, "success", parsed[0], parsed[1], null);
+            recordStampTreeAudit("STAMP_TREE_SYNC", model, "success", parsed[0], parsed[1], null, null);
             debug(pkAndVersion);
             return pkAndVersion;
         } catch (RuntimeException e) {
@@ -144,7 +144,8 @@ public class StampResource extends AbstractResource {
         StampTreeModel model = deserializeStampTree(json);
         try {
             stampServiceBean.forceSyncTree(model);
-            recordStampTreeAudit("STAMP_TREE_FORCE_SYNC", model, "success", model != null ? String.valueOf(model.getId()) : null, null, null);
+            recordStampTreeAudit("STAMP_TREE_FORCE_SYNC", model, "success",
+                    model != null ? String.valueOf(model.getId()) : null, null, null, null);
         } catch (RuntimeException e) {
             handleStampTreeFailure("STAMP_TREE_FORCE_SYNC", model, e);
             throw e;
@@ -539,7 +540,8 @@ public class StampResource extends AbstractResource {
         return new WebApplicationException(response);
     }
 
-    private void recordStampTreeAudit(String action, StampTreeModel model, String status, String treeId, String persistedVersion, String reason) {
+    private void recordStampTreeAudit(String action, StampTreeModel model, String status, String treeId,
+                                      String persistedVersion, String reason, String errorMessage) {
         if (auditTrailService == null) {
             return;
         }
@@ -572,7 +574,10 @@ public class StampResource extends AbstractResource {
 
     private void handleStampTreeFailure(String action, StampTreeModel model, RuntimeException e) {
         logStampTreeFailure(action, model, e);
-        recordStampTreeAudit(action, model, "failed", null, null, e.getClass().getSimpleName());
+        String errorMessage = (e.getMessage() == null || e.getMessage().isBlank())
+                ? e.getClass().getSimpleName()
+                : e.getMessage();
+        recordStampTreeAudit(action, model, "failed", null, null, e.getClass().getSimpleName(), errorMessage);
     }
 
     private void logStampTreeFailure(String action, StampTreeModel model, RuntimeException e) {

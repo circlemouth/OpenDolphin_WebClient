@@ -34,8 +34,9 @@ public final class DolphinTouchAuditLogger {
         if (resolvedTraceId == null || resolvedTraceId.isBlank()) {
             resolvedTraceId = UUID.randomUUID().toString();
         }
-        AUDIT_LOGGER.info(() -> format("start", endpoint, resolvedTraceId, safe(details)));
-        return resolvedTraceId;
+        final String finalTraceId = resolvedTraceId;
+        AUDIT_LOGGER.info(() -> format("start", endpoint, finalTraceId, safe(details)));
+        return finalTraceId;
     }
 
     public static void success(String endpoint, String traceId, Supplier<String> details) {

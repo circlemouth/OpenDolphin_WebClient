@@ -641,7 +641,7 @@ public class OrcaMasterResource extends AbstractResource {
             response.setCorrelationId(traceId);
         }
         response.setValidationError(Boolean.TRUE);
-        return Response.status(Status.UNPROCESSABLE_ENTITY).entity(response).build();
+        return Response.status(422).entity(response).build();
     }
 
     private <T> LoadedFixture<T> loadEntries(Class<T> entryType, String snapshotRelativePath, String fixtureFileName) {

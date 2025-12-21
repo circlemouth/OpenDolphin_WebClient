@@ -59,102 +59,6 @@
     "worktreePath": ".worktrees/task-1766316093195-179f05"
   },
   {
-    "id": "task-yaml-1qp6h14-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] ORCA-07_JNDI_Datasource_実装\n期間: 12/26 09:00 - 12/29 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-07 JNDI DataSource 実装\n\n- ORCA JDBC を JNDI 経由へ統一し、フェイルセーフを整備。\n- custom.properties の認証情報読み取りを禁止方向へ修正。\n\nYAML ID: src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-21T11:18:01.992Z",
-    "updatedAt": "2025-12-21T11:18:01.992Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1qp6h14-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
-      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
-      "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
-      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-21T11:18:01.964Z"
-    },
-    "labels": [
-      "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 01_orca07_datasource"
-    ],
-    "dependencies": [
-      "task-yaml-8687qf-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1766707200000,
-      "endMs": 1766966400000,
-      "durationDays": 3
-    },
-    "category": "src / server_modernized_gap_20251221 / 01_orca07_datasource",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# ORCA-07 JNDI DataSource 実装\n\n- ORCA JDBC を JNDI 経由へ統一し、フェイルセーフを整備。\n- custom.properties の認証情報読み取りを禁止方向へ修正。"
-  },
-  {
-    "id": "task-yaml-ley17e-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] PHR_アクセスキー_永続化\n期間: 12/26 13:00 - 12/28 13:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR アクセスキー永続化\n\n- phr_access_key マイグレーション適用確認。\n- PHRKey/PHRAsyncJob の永続化を検証。\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_アクセスキー_永続化.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-21T11:17:19.312Z",
-    "updatedAt": "2025-12-21T11:17:19.312Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-ley17e-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/03_phr/PHR_アクセスキー_永続化.md",
-      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
-      "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/03_phr/PHR_アクセスキー_永続化.md",
-      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-21T11:17:19.249Z"
-    },
-    "labels": [
-      "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 03_phr"
-    ],
-    "dependencies": [
-      "task-yaml-npqupd-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1766721600000,
-      "endMs": 1766894400000,
-      "durationDays": 2
-    },
-    "category": "src / server_modernized_gap_20251221 / 03_phr",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# PHR アクセスキー永続化\n\n- phr_access_key マイグレーション適用確認。\n- PHRKey/PHRAsyncJob の永続化を検証。"
-  },
-  {
     "id": "task-yaml-173411o-src-server-moder",
     "name": "[server modernized gap implementation plan 20251221] ORCA-08_ETENSU_API連携\n期間: 12/27 09:00 - 12/30 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-08 ETENSU API 連携\n\n- 既存 /orca/tensu/etensu の fixture 実装を DB 実装へ切替。\n- asOf/tensuVersion/category のバリデーション整備。\n\nYAML ID: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_ETENSU_API連携.md",
     "model": "YAML App",
@@ -250,54 +154,6 @@
     "source": "yaml-app",
     "description": "# Spec-based API 解放条件整理\n\n- ORCA POST 未開放 API の前提条件と切替条件を定義。\n- 解除後の検証フローと証跡を整理。",
     "medal": "bronze"
-  },
-  {
-    "id": "task-yaml-nrds8d-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] Touch_共通JSON変換基盤\n期間: 12/24 15:00 - 12/27 15:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-21T10:52:33.481Z",
-    "updatedAt": "2025-12-21T10:52:33.481Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-nrds8d-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
-      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
-      "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
-      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-21T10:52:33.460Z"
-    },
-    "labels": [
-      "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 04_touch_demo"
-    ],
-    "dependencies": [
-      "task-yaml-11662hp-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1766556000000,
-      "endMs": 1766815200000,
-      "durationDays": 3
-    },
-    "category": "src / server_modernized_gap_20251221 / 04_touch_demo",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。"
   },
   {
     "id": "task-1766313900420-129dd8",
@@ -417,29 +273,6 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# Touch 前提ドキュメント整備\n\n- Touch/Demo 対応の作業手順書と参照リンクを先行作成。\n- 共通 JSON 変換基盤の設計前提を整理。"
-  },
-  {
-    "id": "task-1766310190253-1a7e00",
-    "name": "対象ファイル: .kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml\n\ntouch 共通JSON変換基盤の整備タスクの前に、src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.mdが作成されておらず、作業に支障がでる。このタスク、及びその他のタスクも見直して、前提となるドキュメントが各段階の作業着手前に整備されるようにせよ。",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-21T09:43:10.253Z",
-    "updatedAt": "2025-12-21T09:43:10.306Z",
-    "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": null,
-    "baseBranch": null,
-    "useTmux": false,
-    "singleMode": true,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null
   },
   {
     "id": "task-yaml-npqupd-src-server-moder",
@@ -632,29 +465,125 @@
     "description": "# 現状棚卸しとギャップ確定\n\n- 既存コード/設定/Runbook を突合し、未実装・未検証項目を確定する。\n- PHR/ORCA/Touch/Demo の差分を一次リスト化してスコープ確定。"
   },
   {
-    "id": "task-1766316678505-e4f137",
-    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] PHR_アクセスキー_永続化\n期間: 12/26 13:00 - 12/28 13:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR アクセスキー永続化\n\n- phr_access_key マイグレーション適用確認。\n- PHRKey/PHRAsyncJob の永続化を検証。\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_アクセスキー_永続化.md",
+    "id": "task-yaml-1qp6h14-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] ORCA-07_JNDI_Datasource_実装\n期間: 12/26 09:00 - 12/29 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-07 JNDI DataSource 実装\n\n- ORCA JDBC を JNDI 経由へ統一し、フェイルセーフを整備。\n- custom.properties の認証情報読み取りを禁止方向へ修正。\n- コンパイルエラー解消後にテスト再実行・確認を行う。\n\nYAML ID: src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-21T20:42:41.968Z",
+    "updatedAt": "2025-12-21T20:42:41.968Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1qp6h14-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T20:42:41.953Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 01_orca07_datasource"
+    ],
+    "dependencies": [
+      "task-yaml-8687qf-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766707200000,
+      "endMs": 1766966400000,
+      "durationDays": 3
+    },
+    "category": "src / server_modernized_gap_20251221 / 01_orca07_datasource",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA-07 JNDI DataSource 実装\n\n- ORCA JDBC を JNDI 経由へ統一し、フェイルセーフを整備。\n- custom.properties の認証情報読み取りを禁止方向へ修正。\n- コンパイルエラー解消後にテスト再実行・確認を行う。"
+  },
+  {
+    "id": "task-yaml-nrds8d-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] Touch_共通JSON変換基盤\n期間: 12/24 15:00 - 12/27 15:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2025-12-21T20:42:52.175Z",
+    "updatedAt": "2025-12-21T20:42:52.175Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-nrds8d-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-21T20:42:52.164Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 04_touch_demo"
+    ],
+    "dependencies": [
+      "task-yaml-11662hp-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766556000000,
+      "endMs": 1766815200000,
+      "durationDays": 3
+    },
+    "category": "src / server_modernized_gap_20251221 / 04_touch_demo",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。"
+  },
+  {
+    "id": "task-1766350889867-38339b",
+    "name": "CodexCLI2: [server modernized gap implementation plan 20251221] Touch_共通JSON変換基盤\n期間: 12/24 15:00 - 12/27 15:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
     "model": "Codex CLI",
     "status": "running",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-21T11:31:18.505Z",
-    "updatedAt": "2025-12-21T11:31:37.486Z",
+    "createdAt": "2025-12-21T21:01:29.867Z",
+    "updatedAt": "2025-12-21T21:01:37.479Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1766316678505-e4f137",
+    "branchName": "task/task-1766350889867-38339b",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766316678269-0182uxmw",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] PHR_アクセスキー_永続化\n期間: 12/26 13:00 - 12/28 13:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR アクセスキー永続化\n\n- phr_access_key マイグレーション適用確認。\n- PHRKey/PHRAsyncJob の永続化を検証。\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_アクセスキー_永続化.md",
+    "aiCompetitionGroupId": "comp-1766350889665-hd9xhl4o",
+    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] Touch_共通JSON変換基盤\n期間: 12/24 15:00 - 12/27 15:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# Touch 共通 JSON 変換基盤\n\n- XML/Legacy DTO を JSON へ統一する変換レイヤを準備。\n- 監査 ID/TraceId の引き回しを標準化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Touch_共通JSON変換基盤.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766316678505-e4f137",
-    "medal": "bronze",
-    "aiCompetitionScore": 55
+    "worktreePath": ".worktrees/task-1766350889867-38339b",
+    "medal": "silver",
+    "aiCompetitionScore": 83
   }
 ]
