@@ -6,6 +6,7 @@ import java.io.InputStreamReader;
 import java.sql.Connection;
 import java.sql.SQLException;
 import java.util.Properties;
+import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.naming.InitialContext;
@@ -19,6 +20,11 @@ import javax.sql.DataSource;
 public class ORCAConnection {
     private static final Logger LOGGER = Logger.getLogger(ORCAConnection.class.getName());
     private static final String ORCA_JNDI_NAME = "java:jboss/datasources/ORCADS";
+    private static final Set<String> BLOCKED_CUSTOM_PROPERTIES = Set.of(
+            "claim.jdbc.url",
+            "claim.user",
+            "claim.password"
+    );
 
     private static final ORCAConnection instane = new ORCAConnection();
     
@@ -43,29 +49,35 @@ public class ORCAConnection {
         
         this.config = new Properties();
 
+        boolean hasLegacyJdbcConfig = false;
         try {
             // 読み込む
             FileInputStream fin = new FileInputStream(f);
             try (InputStreamReader r = new InputStreamReader(fin, "JISAutoDetect")) {
                 config.load(r);
             }
+            hasLegacyJdbcConfig = hasLegacyJdbcConfig(config);
+            stripSensitiveProperties(config);
 
         } catch (Exception e) {
             LOGGER.log(Level.WARNING, "Failed to load custom.properties for ORCA config", e);
         }
 
-        warnLegacyJdbcConfig();
+        if (hasLegacyJdbcConfig) {
+            warnLegacyJdbcConfig();
+        }
     }
     
-    public Connection getConnection() {
-        
+    public Connection getConnection() throws SQLException {
         try {
-            DataSource ds = (DataSource)InitialContext.doLookup(ORCA_JNDI_NAME);
+            DataSource ds = (DataSource) InitialContext.doLookup(ORCA_JNDI_NAME);
+            if (ds == null) {
+                throw new SQLException("ORCA datasource lookup returned null: " + ORCA_JNDI_NAME);
+            }
             return ds.getConnection();
-        } catch (SQLException | NamingException e) {
-            LOGGER.log(Level.SEVERE, "Failed to obtain ORCA datasource connection", e);
+        } catch (NamingException e) {
+            throw new SQLException("Failed to lookup ORCA datasource: " + ORCA_JNDI_NAME, e);
         }
-        return null;
     }
     
 //minagawa^     
@@ -74,6 +86,10 @@ public class ORCAConnection {
     }
     
     public String getProperty(String prop) {
+        if (isSensitiveProperty(prop)) {
+            LOGGER.warning("Blocked access to sensitive property in custom.properties: " + prop);
+            return null;
+        }
         return config.getProperty(prop);
     }
     
@@ -84,20 +100,50 @@ public class ORCAConnection {
 //minagawa$    
 
     private void warnLegacyJdbcConfig() {
-        if (config == null) {
+        LOGGER.warning("custom.properties claim.jdbc.* is ignored; use JNDI datasource " + ORCA_JNDI_NAME);
+    }
+
+    private static boolean isSensitiveProperty(String prop) {
+        if (prop == null) {
+            return false;
+        }
+        if (BLOCKED_CUSTOM_PROPERTIES.contains(prop)) {
+            return true;
+        }
+        return prop.startsWith("claim.jdbc.");
+    }
+
+    private static boolean hasLegacyJdbcConfig(Properties source) {
+        if (source == null) {
+            return false;
+        }
+        for (String key : source.stringPropertyNames()) {
+            if (isSensitiveProperty(key)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void stripSensitiveProperties(Properties source) {
+        if (source == null) {
             return;
         }
-        if (config.getProperty("claim.jdbc.url") != null
-                || config.getProperty("claim.user") != null
-                || config.getProperty("claim.password") != null) {
-            LOGGER.warning("custom.properties claim.jdbc.* is ignored; use JNDI datasource " + ORCA_JNDI_NAME);
+        for (String key : Set.copyOf(source.stringPropertyNames())) {
+            if (isSensitiveProperty(key)) {
+                source.remove(key);
+            }
         }
     }
 
     private static Properties copyProperties(Properties source) {
         Properties copy = new Properties();
         if (source != null) {
-            copy.putAll(source);
+            for (String key : source.stringPropertyNames()) {
+                if (!isSensitiveProperty(key)) {
+                    copy.setProperty(key, source.getProperty(key));
+                }
+            }
         }
         return copy;
     }
