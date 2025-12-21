@@ -71,7 +71,15 @@ public class OrcaMasterResource extends AbstractResource {
     @Inject
     SessionAuditDispatcher sessionAuditDispatcher;
 
-    private final EtensuDao etensuDao = new EtensuDao();
+    private final EtensuDao etensuDao;
+
+    public OrcaMasterResource() {
+        this(new EtensuDao());
+    }
+
+    OrcaMasterResource(EtensuDao etensuDao) {
+        this.etensuDao = etensuDao != null ? etensuDao : new EtensuDao();
+    }
 
     private enum DataOrigin {
         ORCA_DB,
@@ -563,80 +571,47 @@ public class OrcaMasterResource extends AbstractResource {
         criteria.setPage(parsePositiveInt(params, "page", 1));
         criteria.setSize(parsePositiveInt(params, "size", 100));
         EtensuDao.EtensuSearchResult dbResult = etensuDao.search(criteria);
-        if (dbResult != null) {
+        if (dbResult == null) {
             LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
-                    dbResult.getRecords(),
+                    Collections.emptyList(),
                     null,
-                    dbResult.getVersion(),
+                    tensuVersion,
                     DataOrigin.ORCA_DB,
-                    false
+                    true
             );
-            final String etagValue = buildEtag("/orca/tensu/etensu", masterType, dbFixture, params);
-            final long ttlSeconds = cacheTtlSeconds(masterType);
-            if (etagMatches(ifNoneMatch, etagValue)) {
-                recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, dbFixture, true, null, null,
-                        buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
-                return buildNotModifiedResponse(etagValue, ttlSeconds);
-            }
-            if (dbResult.getRecords().isEmpty()) {
-                Response notFound = notFound("TENSU_NOT_FOUND", "no etensu entries matched", request);
-                recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, dbFixture, false, true, 0,
-                        buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
-                return notFound;
-            }
-            final int totalCount = dbResult.getTotalCount();
-            final List<OrcaTensuEntry> items = dbResult.getRecords().stream()
-                    .map(entry -> toEtensuEntry(entry, dbFixture))
-                    .collect(Collectors.toList());
-            OrcaMasterListResponse<OrcaTensuEntry> response = new OrcaMasterListResponse<>();
-            response.setTotalCount(totalCount);
-            response.setItems(items);
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 200, dbFixture, false, totalCount == 0,
-                    totalCount,
-                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
-            return buildCachedOkResponse(response, etagValue, ttlSeconds);
-        }
-
-        final LoadedFixture<FixtureEtensuEntry> fixture = loadEntries(
-                FixtureEtensuEntry.class,
-                "etensu/orca_master_etensu_response.json",
-                "orca-master-etensu.json"
-        );
-        final String etagValue = buildEtag("/orca/tensu/etensu", masterType, fixture, params);
-        final long ttlSeconds = cacheTtlSeconds(masterType);
-        if (etagMatches(ifNoneMatch, etagValue)) {
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, fixture, true, null, null,
-                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
-            return buildNotModifiedResponse(etagValue, ttlSeconds);
-        }
-        if (fixture.origin == DataOrigin.FALLBACK && fixture.loadFailed) {
             Response failure = serviceUnavailable(request, "ETENSU_UNAVAILABLE", "etensu master unavailable");
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 503, fixture, false, true, 0,
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 503, dbFixture, false, true, 0,
                     buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
             return failure;
         }
-        final String normalizedVersion = normalizeTensuVersion(tensuVersion);
-        final List<FixtureEtensuEntry> filtered = fixture.entries.stream()
-                .filter(entry -> matchesKeyword(keyword, entry.name, entry.note, entry.tensuCode, entry.medicalFeeCode))
-                .filter(entry -> matchesEtensuCategory(category, entry))
-                .filter(entry -> isEffective(asOf, entry.validFrom, entry.validTo, entry.startDate, entry.endDate))
-                .filter(entry -> matchesTensuVersion(normalizedVersion, entry))
-                .collect(Collectors.toList());
-        if (filtered.isEmpty()) {
+        LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
+                dbResult.getRecords(),
+                null,
+                dbResult.getVersion(),
+                DataOrigin.ORCA_DB,
+                false
+        );
+        final String etagValue = buildEtag("/orca/tensu/etensu", masterType, dbFixture, params);
+        final long ttlSeconds = cacheTtlSeconds(masterType);
+        if (etagMatches(ifNoneMatch, etagValue)) {
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, dbFixture, true, null, null,
+                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+            return buildNotModifiedResponse(etagValue, ttlSeconds);
+        }
+        if (dbResult.getRecords().isEmpty()) {
             Response notFound = notFound("TENSU_NOT_FOUND", "no etensu entries matched", request);
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, fixture, false, true, 0,
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, dbFixture, false, true, 0,
                     buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
             return notFound;
         }
-        final int totalCount = filtered.size();
-        final List<FixtureEtensuEntry> paged = paginateList(filtered, params);
-        final List<OrcaTensuEntry> items = paged.stream()
-                .map(entry -> toEtensuEntry(entry, fixture))
+        final int totalCount = dbResult.getTotalCount();
+        final List<OrcaTensuEntry> items = dbResult.getRecords().stream()
+                .map(entry -> toEtensuEntry(entry, dbFixture))
                 .collect(Collectors.toList());
         OrcaMasterListResponse<OrcaTensuEntry> response = new OrcaMasterListResponse<>();
         response.setTotalCount(totalCount);
         response.setItems(items);
-        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 200, fixture, false, totalCount == 0,
+        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 200, dbFixture, false, totalCount == 0,
                 totalCount,
                 buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
         return buildCachedOkResponse(response, etagValue, ttlSeconds);
