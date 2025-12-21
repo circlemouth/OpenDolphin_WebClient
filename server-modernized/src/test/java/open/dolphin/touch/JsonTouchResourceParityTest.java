@@ -96,11 +96,11 @@ class JsonTouchResourceParityTest {
 
         LegacyObjectMapperProducer producer = new LegacyObjectMapperProducer();
         ObjectMapper legacyMapper = producer.provideLegacyAwareMapper();
-        TouchJsonConverter converter = new TouchJsonConverter();
-        injectField(converter, "legacyTouchMapper", legacyMapper);
-        injectField(touchResource, "touchJsonConverter", converter);
-        injectField(adm10Resource, "touchJsonConverter", converter);
-        injectField(adm20Resource, "touchJsonConverter", converter);
+        TouchJsonConverter jsonConverter = new TouchJsonConverter();
+        injectField(jsonConverter, "legacyTouchMapper", legacyMapper);
+        injectField(touchResource, "touchJsonConverter", jsonConverter);
+        injectField(adm10Resource, "touchJsonConverter", jsonConverter);
+        injectField(adm20Resource, "touchJsonConverter", jsonConverter);
 
         servletRequest = (HttpServletRequest) Proxy.newProxyInstance(
                 getClass().getClassLoader(),

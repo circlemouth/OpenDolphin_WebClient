@@ -116,13 +116,14 @@ src:
 
           - ORCA JDBC を JNDI 経由へ統一し、フェイルセーフを整備。
           - custom.properties の認証情報読み取りを禁止方向へ修正。
+          - コンパイルエラー解消後にテスト再実行・確認を行う。
         dependency:
           - src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_設計確定.md
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 60
         schedule:
           start: 2025-12-26T00:00:00.000Z
           days: 3
@@ -157,6 +158,71 @@ src:
         schedule:
           start: 2025-12-31T00:00:00.000Z
           days: 1
+    02_karte_gap:
+      KRT_01_Document更新API.md:
+        content: |-
+          # KRT-01 Document更新API
+
+          - PUT /karte/document の本文更新エンドポイントを追加。
+          - 互換ヘッダー/既存タイトル更新 API との整合を確認。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-26T00:00:00.000Z
+          days: 2
+      KRT_02_Masuda_SafetySummary_API.md:
+        content: |-
+          # KRT-02 Masuda/SafetySummary API
+
+          - /karte/routineMed.list, /karte/rpHistory/list, /karte/userProperty/{userId} を実装。
+          - Masuda/SafetySummary 画面の必須レスポンスを合わせる。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-26T02:00:00.000Z
+          days: 3
+      KRT_03_karte_image_PathParam修正.md:
+        content: |-
+          # KRT-03 /karte/image PathParam 修正
+
+          - GET /karte/image/{id} の @PathParam 名不一致を修正。
+          - 既存 SchemaModelConverter の戻り値を維持。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-28T00:00:00.000Z
+          days: 1
+      KRT_04_添付ストレージ二重アップロード修正.md:
+        content: |-
+          # KRT-04 添付ストレージ二重アップロード修正
+
+          - addDocument の添付 persist を二重実行しないよう修正。
+          - 既存の監査イベント/レスポンス互換性を維持。
+        dependency:
+          - src/server_modernized_gap_20251221/00_factcheck/現状棚卸し_ギャップ確定.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2025-12-29T00:00:00.000Z
+          days: 2
     02_orca08_etensu:
       ORCA-08_前提ドキュメント整備.md:
         content: |-
@@ -169,8 +235,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T01:00:00.000Z
           days: 0
@@ -261,13 +327,14 @@ src:
 
           - phr_access_key マイグレーション適用確認。
           - PHRKey/PHRAsyncJob の永続化を検証。
+          - コンパイルエラー解消後に API 経由の e2e 確認を実施。
         dependency:
           - src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 70
         schedule:
           start: 2025-12-26T04:00:00.000Z
           days: 2
@@ -348,8 +415,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T05:00:00.000Z
           days: 0
@@ -445,8 +512,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T07:00:00.000Z
           days: 0
@@ -461,8 +528,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-24T08:00:00.000Z
           days: 2
@@ -515,7 +582,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-02T08:00:00.000Z
+          start: 2026-01-09T08:00:00.000Z
           days: 3
       ORCA_wrapper_E2E.md:
         content: |-
@@ -531,7 +598,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-06T04:00:00.000Z
+          start: 2026-01-13T04:00:00.000Z
           days: 2
     06_server_ops_required:
       ORCA_master_DAO実装.md:
@@ -585,6 +652,22 @@ src:
         schedule:
           start: 2026-01-05T02:00:00.000Z
           days: 3
+      Webクライアント_MSW無効化検証.md:
+        content: |-
+          # Web クライアント MSW 無効化検証
+
+          - MSW を無効化して Charts/受付/ORCA の実 API を通す。
+          - Web/Server の同期ポイント（TraceId/監査）を証跡化。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md
+        agent: codex
+        api: []
+        priority: High
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-08T04:00:00.000Z
+          days: 2
       ORCA_master_E2E_証跡.md:
         content: |-
           # ORCA Master E2E 証跡
@@ -653,6 +736,38 @@ src:
         schedule:
           start: 2026-01-07T06:00:00.000Z
           days: 2
+      JMS_ORCA_ACK_検証.md:
+        content: |-
+          # JMS ORCA ACK 検証（WildFly 33）
+
+          - WildFly 33 環境で ORCA 送信/ACK 受信を実測。
+          - 監査イベントと JMS メトリクスを突合。
+        dependency:
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-12T00:00:00.000Z
+          days: 1
+      4xx5xx_TraceId_監査到達確認.md:
+        content: |-
+          # 4xx/5xx TraceId 監査到達確認
+
+          - 4xx/5xx の TraceId が監査ログへ到達することを確認。
+          - 例外パスのメタ整合とログ出力を証跡化。
+        dependency:
+          - src/server_modernized_gap_20251221/07_quality_release/4xx5xx_監査_統一.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-09T06:00:00.000Z
+          days: 1
       性能回帰_ロードテスト.md:
         content: |-
           # 性能回帰/ロードテスト

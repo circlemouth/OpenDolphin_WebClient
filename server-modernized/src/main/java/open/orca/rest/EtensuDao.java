@@ -513,7 +513,7 @@ public class EtensuDao {
         }
     }
 
-    private boolean isRelated(Integer flag) {
+    private static boolean isRelated(Integer flag) {
         return flag != null && flag > 0;
     }
 

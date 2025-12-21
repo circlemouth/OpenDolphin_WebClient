@@ -15,10 +15,13 @@ import static org.mockito.Mockito.when;
 
 import jakarta.security.enterprise.SecurityContext;
 import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletOutputStream;
 import jakarta.servlet.ServletRequest;
 import jakarta.servlet.ServletResponse;
+import jakarta.servlet.WriteListener;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
+import java.io.ByteArrayOutputStream;
 import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
@@ -94,6 +97,7 @@ class LogFilterTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
+        stubResponseOutput(response);
 
         Map<String, Object> attributes = new HashMap<>();
         doAnswer(invocation -> {
@@ -107,8 +111,6 @@ class LogFilterTest {
         when(request.getRequestURI()).thenReturn("/openDolphin/resources/protected");
         when(request.getMethod()).thenReturn("POST");
         when(request.getRemoteAddr()).thenReturn("192.0.2.11");
-
-        doNothing().when(response).sendError(HttpServletResponse.SC_FORBIDDEN);
 
         TestLogHandler handler = new TestLogHandler();
         Logger appLogger = Logger.getLogger("open.dolphin");
@@ -131,7 +133,7 @@ class LogFilterTest {
         String traceId = traceCaptor.getValue();
         assertNotNull(traceId);
 
-        verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         verify(chain, never()).doFilter(any(ServletRequest.class), any(ServletResponse.class));
 
         List<LogRecord> records = handler.records();
@@ -162,6 +164,7 @@ class LogFilterTest {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpServletResponse response = mock(HttpServletResponse.class);
         FilterChain chain = mock(FilterChain.class);
+        stubResponseOutput(response);
 
         Map<String, Object> attributes = new HashMap<>();
         doAnswer(invocation -> {
@@ -173,13 +176,32 @@ class LogFilterTest {
         when(request.getMethod()).thenReturn("POST");
         when(request.getRemoteAddr()).thenReturn("192.0.2.30");
 
-        doNothing().when(response).sendError(HttpServletResponse.SC_FORBIDDEN);
-
         filter.doFilter(request, response, chain);
 
         verify(userService, never()).authenticate(anyString(), anyString());
-        verify(response).sendError(HttpServletResponse.SC_FORBIDDEN);
+        verify(response).setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         verify(chain, never()).doFilter(any(ServletRequest.class), any(ServletResponse.class));
+    }
+
+    private void stubResponseOutput(HttpServletResponse response) throws Exception {
+        when(response.isCommitted()).thenReturn(false);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        when(response.getOutputStream()).thenReturn(new ServletOutputStream() {
+            @Override
+            public boolean isReady() {
+                return true;
+            }
+
+            @Override
+            public void setWriteListener(WriteListener listener) {
+                // no-op
+            }
+
+            @Override
+            public void write(int b) {
+                out.write(b);
+            }
+        });
     }
 
     private static final class TestLogHandler extends Handler {
