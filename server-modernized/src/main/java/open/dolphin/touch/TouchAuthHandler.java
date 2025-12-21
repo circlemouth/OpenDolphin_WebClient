@@ -23,12 +23,36 @@ import open.dolphin.touch.support.TouchFailureAuditLogger;
 public class TouchAuthHandler {
 
     public static final String FACILITY_HEADER = "X-Facility-Id";
+    public static final String USER_NAME_HEADER = "userName";
+    public static final String PASSWORD_HEADER = "password";
+    public static final String CLIENT_UUID_HEADER = "clientUUID";
+    public static final String ACCESS_REASON_HEADER = "X-Access-Reason";
+    public static final String CONSENT_TOKEN_HEADER = "X-Consent-Token";
+    public static final String TRACE_ID_HEADER = "X-Trace-Id";
+    public static final String REQUEST_ID_HEADER = "X-Request-Id";
+    public static final String DEVICE_ID_HEADER = "X-Device-Id";
+    public static final String DEMO_MODE_HEADER = "X-Demo-Mode";
 
     private static final Logger LOGGER = Logger.getLogger(TouchAuthHandler.class.getName());
     private static final String ANONYMOUS_PRINCIPAL = "anonymous";
-    private static final String HEADER_USER_NAME = "userName";
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
     private static final String AUTH_CHALLENGE = "Basic realm=\"OpenDolphin\"";
+    private static final String HEADER_USER_NAME = USER_NAME_HEADER;
+
+    public static final HeaderRequirement REQUIRED_USER_NAME =
+            new HeaderRequirement(USER_NAME_HEADER, Response.Status.UNAUTHORIZED, "missing_user_name", "missing userName header");
+    public static final HeaderRequirement REQUIRED_PASSWORD =
+            new HeaderRequirement(PASSWORD_HEADER, Response.Status.UNAUTHORIZED, "missing_password", "missing password header");
+    public static final HeaderRequirement REQUIRED_CLIENT_UUID =
+            new HeaderRequirement(CLIENT_UUID_HEADER, Response.Status.BAD_REQUEST, "missing_client_uuid", "missing clientUUID header");
+    public static final HeaderRequirement REQUIRED_DEVICE_ID =
+            new HeaderRequirement(DEVICE_ID_HEADER, Response.Status.BAD_REQUEST, "missing_device_id", "missing X-Device-Id header");
+    public static final HeaderRequirement REQUIRED_ACCESS_REASON =
+            new HeaderRequirement(ACCESS_REASON_HEADER, Response.Status.FORBIDDEN, "access_reason_required", "missing X-Access-Reason header");
+    public static final HeaderRequirement REQUIRED_CONSENT_TOKEN =
+            new HeaderRequirement(CONSENT_TOKEN_HEADER, Response.Status.FORBIDDEN, "consent_token_required", "missing X-Consent-Token header");
+    public static final HeaderRequirement REQUIRED_TRACE_ID =
+            new HeaderRequirement(TRACE_ID_HEADER, Response.Status.BAD_REQUEST, "missing_trace_id", "missing X-Trace-Id header");
 
     @Inject
     TouchFailureAuditLogger failureAuditLogger;
@@ -126,6 +150,32 @@ public class TouchAuthHandler {
         return fallback;
     }
 
+    public void requireHeaders(HttpServletRequest request, String endpoint, HeaderRequirement... requirements) {
+        if (requirements == null || requirements.length == 0) {
+            return;
+        }
+        for (HeaderRequirement requirement : requirements) {
+            if (requirement == null) {
+                continue;
+            }
+            requireHeaderValue(request, endpoint, requirement);
+        }
+    }
+
+    public String requireHeaderValue(HttpServletRequest request, String endpoint, HeaderRequirement requirement) {
+        Objects.requireNonNull(requirement, "requirement must not be null");
+        String headerName = requirement.headerName();
+        String value = readHeader(request, headerName);
+        if (value == null) {
+            recordAuthorizationFailure(request, endpoint, requirement.status(),
+                    requirement.errorCode(),
+                    Map.of("missingHeader", headerName));
+            throw failure(requirement.status(), endpoint,
+                    requirement.message() != null ? requirement.message() : ("missing " + headerName + " header"));
+        }
+        return value;
+    }
+
     private WebApplicationException failure(Response.Status status, String endpoint, String message) {
         return failure(status, endpoint, () -> message);
     }
@@ -181,6 +231,18 @@ public class TouchAuthHandler {
         return trimmed.isEmpty() ? null : trimmed.toUpperCase(Locale.ROOT);
     }
 
+    private String readHeader(HttpServletRequest request, String headerName) {
+        if (request == null || headerName == null) {
+            return null;
+        }
+        String value = request.getHeader(headerName);
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
     private String resolveFacilityHeader(HttpServletRequest request) {
         String value = normalize(request.getHeader(FACILITY_HEADER));
         if (value != null) {
@@ -207,5 +269,11 @@ public class TouchAuthHandler {
         Object traceId = request != null ? request.getAttribute(LogFilter.TRACE_ID_ATTRIBUTE) : null;
         LOGGER.log(Level.FINE, "Fallback facility header detected: {0}, traceId={1}",
                 new Object[]{facilityId, traceId});
+    }
+
+    public record HeaderRequirement(String headerName,
+                                    Response.Status status,
+                                    String errorCode,
+                                    String message) {
     }
 }
