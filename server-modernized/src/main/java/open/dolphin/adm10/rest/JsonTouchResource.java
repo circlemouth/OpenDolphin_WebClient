@@ -55,6 +55,7 @@ import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.StampModel;
 import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.touch.JsonTouchAuditLogger;
+import open.dolphin.touch.support.TouchJsonConverter;
 import open.orca.rest.ORCAConnection;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
@@ -74,7 +75,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     private ADM10_EHTServiceBean ehtService;
 
     @Inject
-    private ObjectMapper legacyTouchMapper;
+    private TouchJsonConverter touchJsonConverter;
+
+    @Context
+    private HttpServletRequest servletRequest;
 
     private InteractionExecutor interactionExecutor = new DatabaseInteractionExecutor();
     
@@ -175,10 +179,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String postSendPackage(@Context HttpServletRequest servletReq, String json) {
         final String endpoint = "POST /10/adm/jtouch/sendPackage";
-        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        final String traceId = JsonTouchAuditLogger.begin(servletReq, endpoint,
+                () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
-            ObjectMapper mapper = legacyTouchMapper;
-            ISendPackage pkg = mapper.readValue(json, ISendPackage.class);
+            ISendPackage pkg = touchJsonConverter.readLegacy(json, ISendPackage.class);
             DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
             if (wrapper != null) {
                 populateDiagnosisAuditMetadata(servletReq, wrapper, "/10/adm/jtouch/sendPackage");
@@ -202,10 +206,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String postSendPackage2(@Context HttpServletRequest servletReq, String json) {
         final String endpoint = "POST /10/adm/jtouch/sendPackage2";
-        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        final String traceId = JsonTouchAuditLogger.begin(servletReq, endpoint,
+                () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
-            ObjectMapper mapper = legacyTouchMapper;
-            ISendPackage2 pkg = mapper.readValue(json, ISendPackage2.class);
+            ISendPackage2 pkg = touchJsonConverter.readLegacy(json, ISendPackage2.class);
             DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
             if (wrapper != null) {
                 populateDiagnosisAuditMetadata(servletReq, wrapper, "/10/adm/jtouch/sendPackage2");
@@ -279,7 +283,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
 
         return output -> {
             final String endpoint = "GET /10/adm/jtouch/order";
-            final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "param=" + param);
+            final String traceId = JsonTouchAuditLogger.begin(servletRequest, endpoint, () -> "param=" + param);
             try {
                 String[] params = param.split(",");
                 long pk = Long.parseLong(params[0]);            // patientPK
@@ -329,16 +333,16 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
 
         return os -> {
             final String endpoint = "PUT /10/adm/jtouch/interaction";
-            final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+            final String traceId = JsonTouchAuditLogger.begin(servletRequest, endpoint,
+                    () -> "payloadSize=" + (json != null ? json.length() : 0));
             try {
-                ObjectMapper mapper = legacyTouchMapper;
-                InteractionCodeList input = mapper.readValue(json, InteractionCodeList.class);
+                InteractionCodeList input = touchJsonConverter.readLegacy(json, InteractionCodeList.class);
 
                 List<DrugInteractionModel> ret = new ArrayList<>();
 
                 if (input.getCodes1() == null || input.getCodes1().isEmpty()
                         || input.getCodes2() == null || input.getCodes2().isEmpty()) {
-                    mapper = getSerializeMapper();
+                    ObjectMapper mapper = getSerializeMapper();
                     mapper.writeValue(os, Collections.emptyList());
                 JsonTouchAuditLogger.success(endpoint, traceId, () -> "interactionCount=0");
                 return;
@@ -356,7 +360,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
 
                 ret = interactionExecutor.execute(sql);
                 List<InteractionRow> payload = toInteractionRows(ret);
-                mapper = getSerializeMapper();
+                ObjectMapper mapper = getSerializeMapper();
                 mapper.writeValue(os, payload);
                 JsonTouchAuditLogger.success(endpoint, traceId, () -> "interactionCount=" + payload.size());
             } catch (IOException | SQLException | RuntimeException e) {
@@ -376,7 +380,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
 
         return os -> {
             final String endpoint = "GET /10/adm/jtouch/stampTree";
-            final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "userPk=" + param);
+            final String traceId = JsonTouchAuditLogger.begin(servletRequest, endpoint, () -> "userPk=" + param);
             try {
                 long pk = Long.parseLong(param);
                 String json = buildStampTreeJson(pk);
@@ -413,7 +417,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
 
         return os -> {
             final String endpoint = "GET /10/adm/jtouch/stamp";
-            final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "stampId=" + param);
+            final String traceId = JsonTouchAuditLogger.begin(servletRequest, endpoint, () -> "stampId=" + param);
             try {
                 StampModel stampModel = ehtService.getStamp(param);
                 if (stampModel != null) {
@@ -440,10 +444,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     }
     
     private <T> String handleDocumentPayload(String endpoint, String json, Class<T> payloadType, Function<T, DocumentModel> converter, boolean dryRun) {
-        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        final String traceId = JsonTouchAuditLogger.begin(servletRequest, endpoint,
+                () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
-            ObjectMapper mapper = legacyTouchMapper;
-            T payload = mapper.readValue(json, payloadType);
+            T payload = touchJsonConverter.readLegacy(json, payloadType);
             DocumentModel model = converter.apply(payload);
             long pk = dryRun ? resolveDryRunDocumentPk(model) : sharedService.saveDocument(model);
             JsonTouchAuditLogger.success(endpoint, traceId,

@@ -15,6 +15,7 @@ import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.touch.converter.IDocument;
 import open.dolphin.touch.session.IPhoneServiceBean;
+import open.dolphin.touch.support.TouchJsonConverter;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.testsupport.RuntimeDelegateTestSupport;
 import org.junit.jupiter.api.BeforeEach;
@@ -60,8 +61,8 @@ public class DolphinResourceDocumentTest extends RuntimeDelegateTestSupport {
     void postDocumentSuccess() throws Exception {
         DocumentModel model = document(300L);
         model.setKarte(karte(patient(11L, "F001")));
-        StubObjectMapper mapper = new StubObjectMapper(newPayload(model));
-        injectField(resource, "objectMapper", mapper);
+        TouchJsonConverter converter = converterWith(newPayload(model));
+        injectField(resource, "touchJsonConverter", converter);
 
         String result = resource.postDocument("{}");
 
@@ -74,8 +75,8 @@ public class DolphinResourceDocumentTest extends RuntimeDelegateTestSupport {
         DocumentModel model = document(400L);
         PatientModel patient = patient(12L, "F002");
         model.setKarte(karte(patient));
-        StubObjectMapper mapper = new StubObjectMapper(newPayload(model));
-        injectField(resource, "objectMapper", mapper);
+        TouchJsonConverter converter = converterWith(newPayload(model));
+        injectField(resource, "touchJsonConverter", converter);
 
         WebApplicationException ex = assertThrows(WebApplicationException.class,
                 () -> resource.postDocument("{}"));
@@ -86,8 +87,8 @@ public class DolphinResourceDocumentTest extends RuntimeDelegateTestSupport {
 
     @Test
     void postDocumentValidationFailure() throws Exception {
-        StubObjectMapper mapper = new StubObjectMapper(null);
-        injectField(resource, "objectMapper", mapper);
+        TouchJsonConverter converter = converterWith(null);
+        injectField(resource, "touchJsonConverter", converter);
 
         WebApplicationException ex = assertThrows(WebApplicationException.class,
                 () -> resource.postDocument("{}"));
@@ -132,6 +133,12 @@ public class DolphinResourceDocumentTest extends RuntimeDelegateTestSupport {
         Field field = target.getClass().getDeclaredField(name);
         field.setAccessible(true);
         field.set(target, value);
+    }
+
+    private static TouchJsonConverter converterWith(Object payload) throws Exception {
+        TouchJsonConverter converter = new TouchJsonConverter();
+        injectField(converter, "legacyTouchMapper", new StubObjectMapper(payload));
+        return converter;
     }
 
     private static final class StubIPhoneServiceBean extends IPhoneServiceBean {

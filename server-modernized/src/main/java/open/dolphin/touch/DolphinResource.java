@@ -40,7 +40,7 @@ import open.dolphin.touch.session.IPhoneServiceBean;
 //import open.dolphin.msg.ServerPrescriptionPDFMaker;
 import open.dolphin.session.KarteServiceBean;
 import open.dolphin.touch.converter.IDocument2;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import open.dolphin.touch.support.TouchJsonConverter;
 import open.dolphin.touch.DolphinTouchAuditLogger;
 import io.micrometer.core.instrument.MeterRegistry;
 import open.dolphin.security.audit.AuditEventPayload;
@@ -150,8 +150,7 @@ public class DolphinResource extends AbstractResource {
     private HttpServletRequest servletRequest;
 
     @Inject
-    // LegacyObjectMapperProducer で ADM/Touch 共通のデシリアライズ設定を共有
-    private ObjectMapper legacyTouchMapper;
+    private TouchJsonConverter touchJsonConverter;
 
     @Inject
     private IPhoneServiceBean iPhoneServiceBean;
@@ -868,7 +867,7 @@ public class DolphinResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getRp(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
         final String endpoint = "GET /touch/module/rp/{param}";
-        final String traceId = TouchModuleAuditLogger.begin(endpoint, () -> "param=" + param);
+        final String traceId = TouchModuleAuditLogger.begin(servletReq, endpoint, () -> "param=" + param);
         try {
             String[] params = splitParam(param, 3, endpoint);
             long patientPk = parseLong(params[0], "patientPk", endpoint);
@@ -970,7 +969,7 @@ public class DolphinResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getModule(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
         final String endpoint = "GET /touch/module/{param}";
-        final String traceId = TouchModuleAuditLogger.begin(endpoint, () -> "param=" + param);
+        final String traceId = TouchModuleAuditLogger.begin(servletReq, endpoint, () -> "param=" + param);
         try {
             String[] params = splitParam(param, 4, endpoint);
             long patientPk = parseLong(params[0], "patientPk", endpoint);
@@ -995,7 +994,7 @@ public class DolphinResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getLaboTest(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
         final String endpoint = "GET /touch/module/laboTest/{param}";
-        final String traceId = TouchModuleAuditLogger.begin(endpoint, () -> "param=" + param);
+        final String traceId = TouchModuleAuditLogger.begin(servletReq, endpoint, () -> "param=" + param);
         try {
             String[] params = splitParam(param, 4, endpoint);
             String facilityId = trimToNull(params[0]);
@@ -1030,7 +1029,7 @@ public class DolphinResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getLaboGraph(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
         final String endpoint = "GET /touch/item/laboItem/{param}";
-        final String traceId = TouchModuleAuditLogger.begin(endpoint, () -> "param=" + param);
+        final String traceId = TouchModuleAuditLogger.begin(servletReq, endpoint, () -> "param=" + param);
         try {
             String[] params = splitParam(param, 5, endpoint);
             String facilityId = trimToNull(params[0]);
@@ -1068,7 +1067,7 @@ public class DolphinResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getDiagnosis(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
         final String endpoint = "GET /touch/module/diagnosis/{param}";
-        final String traceId = TouchModuleAuditLogger.begin(endpoint, () -> "param=" + param);
+        final String traceId = TouchModuleAuditLogger.begin(servletReq, endpoint, () -> "param=" + param);
         try {
             String[] params = splitParam(param, 3, endpoint);
             long patientPk = parseLong(params[0], "patientPk", endpoint);
@@ -1092,7 +1091,7 @@ public class DolphinResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public Response getSchema(@Context HttpServletRequest servletReq, @PathParam("param") String param) {
         final String endpoint = "GET /touch/module/schema/{param}";
-        final String traceId = TouchModuleAuditLogger.begin(endpoint, () -> "param=" + param);
+        final String traceId = TouchModuleAuditLogger.begin(servletReq, endpoint, () -> "param=" + param);
         try {
             String[] params = splitParam(param, 3, endpoint);
             long patientPk = parseLong(params[0], "patientPk", endpoint);
@@ -1116,7 +1115,7 @@ public class DolphinResource extends AbstractResource {
     @Produces(MediaType.APPLICATION_JSON)
     public ProgressCourseResponse getProgressCource(@PathParam("param") String param) {
         final String endpoint = "GET /touch/document/progressCourse";
-        final String traceId = DolphinTouchAuditLogger.begin(endpoint, () -> "param=" + param);
+        final String traceId = DolphinTouchAuditLogger.begin(servletRequest, endpoint, () -> "param=" + param);
         long patientPk = -1L;
         try {
             String facilityId = requireFacility(endpoint, traceId);
@@ -1183,11 +1182,11 @@ public class DolphinResource extends AbstractResource {
 
     private <T> String handleDocumentSubmission(String endpoint, String json, Class<T> payloadType,
                                                 Function<T, DocumentModel> converter) {
-        final String traceId = DolphinTouchAuditLogger.begin(endpoint,
+        final String traceId = DolphinTouchAuditLogger.begin(servletRequest, endpoint,
                 () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
             String facilityId = requireFacility(endpoint, traceId);
-            T payload = legacyTouchMapper.readValue(json, payloadType);
+            T payload = touchJsonConverter.readLegacy(json, payloadType);
             if (payload == null) {
                 throw DolphinTouchAuditLogger.validationFailure(LOGGER, endpoint, traceId,
                         "Payload must not be empty");

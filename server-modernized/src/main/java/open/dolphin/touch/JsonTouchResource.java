@@ -35,7 +35,7 @@ import open.dolphin.touch.converter.IPatientModel;
 import open.dolphin.touch.converter.ISendPackage;
 import open.dolphin.touch.converter.ISendPackage2;
 import open.dolphin.touch.converter.IVisitPackage;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import open.dolphin.touch.support.TouchJsonConverter;
 
 /**
  *
@@ -47,11 +47,13 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     private static final Logger LOGGER = Logger.getLogger(JsonTouchResource.class.getName());
 
     @Inject
-    // Phase3: JavaTimeModule など Touch 固有モジュールも CDI プロデューサで集約予定。
-    private ObjectMapper legacyTouchMapper;
+    private TouchJsonConverter touchJsonConverter;
 
     @Inject
     private JsonTouchSharedService sharedService;
+
+    @Context
+    private HttpServletRequest servletRequest;
     
     @GET
     @Path("/user/{uid}")
@@ -142,9 +144,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String postSendPackage(String json) {
         final String endpoint = "POST /jtouch/sendPackage";
-        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        final String traceId = JsonTouchAuditLogger.begin(servletRequest, endpoint,
+                () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
-            ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
+            ISendPackage pkg = touchJsonConverter.readLegacy(json, ISendPackage.class);
             long retPk = sharedService.processSendPackage(pkg);
             JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
             return String.valueOf(retPk);
@@ -160,9 +163,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String postSendPackage2(String json) {
         final String endpoint = "POST /jtouch/sendPackage2";
-        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        final String traceId = JsonTouchAuditLogger.begin(servletRequest, endpoint,
+                () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
-            ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
+            ISendPackage2 pkg = touchJsonConverter.readLegacy(json, ISendPackage2.class);
             long retPk = sharedService.processSendPackage2(pkg);
             JsonTouchAuditLogger.success(endpoint, traceId, () -> "documentPk=" + retPk);
             return String.valueOf(retPk);
@@ -233,9 +237,10 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
 
     private <T> String handleDocumentPayload(String endpoint, String json, Class<T> payloadType,
             Function<T, DocumentModel> converter, boolean dryRun, HttpServletRequest servletReq) {
-        final String traceId = JsonTouchAuditLogger.begin(endpoint, () -> "payloadSize=" + json.length());
+        final String traceId = JsonTouchAuditLogger.begin(servletReq, endpoint,
+                () -> "payloadSize=" + (json != null ? json.length() : 0));
         try {
-            T payload = legacyTouchMapper.readValue(json, payloadType);
+            T payload = touchJsonConverter.readLegacy(json, payloadType);
             DocumentModel model = converter.apply(payload);
             if (!dryRun) {
                 prepareDocumentForPersist(model, servletReq);

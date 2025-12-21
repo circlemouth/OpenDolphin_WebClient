@@ -20,7 +20,7 @@ import open.dolphin.infomodel.PatientList;
 import open.dolphin.infomodel.StringList;
 import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.adm20.converter.ISendPackage2;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import open.dolphin.touch.support.TouchJsonConverter;
 
 /**
  *
@@ -33,7 +33,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     private JsonTouchSharedService sharedService;
 
     @Inject
-    private ObjectMapper legacyTouchMapper;
+    private TouchJsonConverter touchJsonConverter;
     
 //minagawa^ 2013/08/29
     //@Resource(mappedName="java:jboss/datasources/OrcaDS")
@@ -133,7 +133,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String postSendPackage(@Context HttpServletRequest servletReq, String json) throws IOException {
 
-        ISendPackage pkg = legacyTouchMapper.readValue(json, ISendPackage.class);
+        ISendPackage pkg = touchJsonConverter.readLegacy(json, ISendPackage.class);
         DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
         if (wrapper != null) {
             populateDiagnosisAuditMetadata(servletReq, wrapper, "/20/adm/jtouch/sendPackage");
@@ -154,7 +154,7 @@ public class JsonTouchResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String postSendPackage2(@Context HttpServletRequest servletReq, String json) throws IOException {
 
-        ISendPackage2 pkg = legacyTouchMapper.readValue(json, ISendPackage2.class);
+        ISendPackage2 pkg = touchJsonConverter.readLegacy(json, ISendPackage2.class);
         DiagnosisSendWrapper wrapper = pkg != null ? pkg.diagnosisSendWrapperModel() : null;
         if (wrapper != null) {
             populateDiagnosisAuditMetadata(servletReq, wrapper, "/20/adm/jtouch/sendPackage2");
