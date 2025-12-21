@@ -35,7 +35,6 @@
 | ORCA-07 | ORCA Master | ORCA DB 接続の DataSource 化 | 未実装 | Master/認証 | P0 / ORCA Master | JNDI DataSource + Secrets 注入 | 実装状況棚卸し |
 | AUD-02 | 監査 | 4xx/5xx で Trace-ID を AuditTrail へ伝播 | 未実装 | 監査 | P0 / 監査・JMS | LogFilter 改修 + 証跡取得 | 実装状況棚卸し |
 | JKT-03 | 監査/JMS | JMS キュー/接続ファクトリの WildFly 33 CLI 定義 | 未実装 | 監査 | P0 / 監査・JMS | `messaging-activemq` へ定義追加 | 実装状況棚卸し |
-| KRT-01 | カルテ | PUT `/karte/document` | 未実装 | 監査 | P1 / カルテ | `KarteResource/Service` へ更新 API | 実装状況棚卸し |
 | KRT-02 | カルテ | `SafetySummary` 系 API | 未実装 | 監査 | P1 / カルテ | Legacy 実装の Jakarta 化 | 実装状況棚卸し |
 | KRT-03 | カルテ | `GET /karte/image/{id}` の `@PathParam` 修正 | 未実装 | 監査 | P1 / カルテ | `@PathParam("id")` へ修正 | 実装状況棚卸し |
 | KRT-04 | 添付 | 添付ストレージ二重アップロード解消 | 未実装 | 監査 | P1 / カルテ | `AttachmentStorageManager` 単一化 | 実装状況棚卸し |
@@ -76,6 +75,7 @@
 | ORCA-API-03 | `/orca12/patientmodv2/outpatient` | ステータス表未記載 | P1 / 外部 API | 実装状況棚卸し |
 | ORCA-API-04 | PHR/予約/紹介状 API | Trial/ORMaster 実測 200 証跡未取得 | P1 / 外部 API | 実装状況棚卸し |
 | JMS-ACK-01 | JMS 送信 ACK 受信 | `operations/logs/<RUN_ID>-jms-orca-ack.md` 未作成 | P0 / 監査・JMS | 実装状況棚卸し |
+| KRT-01 | `PUT /karte/document` | 200 応答 + 監査ログ証跡 | P1 / カルテ | 実装状況棚卸し |
 
 ---
 
@@ -103,4 +103,3 @@
 - `ORCA_API_STATUS.md` の対象 API を拡張し、未記載 API を洗い出す。
 - 外来 API の「実データ」検証結果を Stage/Preview で再取得する（MSW OFF + dev proxy）。
 - Web クライアント側の `audit.logUiState` / `auditEvent.details` のフィールド一致を再検証する。
-
