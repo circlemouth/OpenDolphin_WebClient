@@ -1111,7 +1111,7 @@ public class AdmissionResource extends open.dolphin.rest.AbstractResource {
         details.putIfAbsent("traceId", traceId);
     }
      
-    private Connection getConnection() {
+    private Connection getConnection() throws SQLException {
         return ORCAConnection.getInstance().getConnection();
     }
     

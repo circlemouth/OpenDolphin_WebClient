@@ -1529,7 +1529,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return sb.toString();
     }
     
-    private Connection getConnection() {
+    private Connection getConnection() throws SQLException {
         return ORCAConnection.getInstance().getConnection();
     }
     
