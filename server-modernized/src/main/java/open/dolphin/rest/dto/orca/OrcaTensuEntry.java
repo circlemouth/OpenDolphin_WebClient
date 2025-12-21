@@ -17,6 +17,11 @@ public class OrcaTensuEntry {
     private String startDate;
     private String endDate;
     private String tensuVersion;
+    private java.util.List<OrcaEtensuConflict> conflicts;
+    private java.util.List<OrcaEtensuAddition> additions;
+    private java.util.List<OrcaEtensuCalcUnit> calcUnits;
+    private java.util.List<OrcaEtensuBundlingMember> bundlingMembers;
+    private java.util.List<OrcaEtensuSpecimen> specimens;
     private OrcaMasterMeta meta;
 
     public String getTensuCode() {
@@ -113,6 +118,46 @@ public class OrcaTensuEntry {
 
     public void setTensuVersion(String tensuVersion) {
         this.tensuVersion = tensuVersion;
+    }
+
+    public java.util.List<OrcaEtensuConflict> getConflicts() {
+        return conflicts;
+    }
+
+    public void setConflicts(java.util.List<OrcaEtensuConflict> conflicts) {
+        this.conflicts = conflicts;
+    }
+
+    public java.util.List<OrcaEtensuAddition> getAdditions() {
+        return additions;
+    }
+
+    public void setAdditions(java.util.List<OrcaEtensuAddition> additions) {
+        this.additions = additions;
+    }
+
+    public java.util.List<OrcaEtensuCalcUnit> getCalcUnits() {
+        return calcUnits;
+    }
+
+    public void setCalcUnits(java.util.List<OrcaEtensuCalcUnit> calcUnits) {
+        this.calcUnits = calcUnits;
+    }
+
+    public java.util.List<OrcaEtensuBundlingMember> getBundlingMembers() {
+        return bundlingMembers;
+    }
+
+    public void setBundlingMembers(java.util.List<OrcaEtensuBundlingMember> bundlingMembers) {
+        this.bundlingMembers = bundlingMembers;
+    }
+
+    public java.util.List<OrcaEtensuSpecimen> getSpecimens() {
+        return specimens;
+    }
+
+    public void setSpecimens(java.util.List<OrcaEtensuSpecimen> specimens) {
+        this.specimens = specimens;
     }
 
     public OrcaMasterMeta getMeta() {

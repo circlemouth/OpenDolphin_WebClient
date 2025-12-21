@@ -71,7 +71,10 @@ public class OrcaMasterResource extends AbstractResource {
     @Inject
     SessionAuditDispatcher sessionAuditDispatcher;
 
+    private final EtensuDao etensuDao = new EtensuDao();
+
     private enum DataOrigin {
+        ORCA_DB,
         SNAPSHOT,
         MSW_FIXTURE,
         FALLBACK
@@ -551,12 +554,54 @@ public class OrcaMasterResource extends AbstractResource {
         if (tensuVersion != null && !TENSU_VERSION_PATTERN.matcher(tensuVersion).matches()) {
             return validationError(request, "TENSU_VERSION_INVALID", "tensuVersion must be YYYYMM");
         }
+        final String masterType = "orca08-etensu";
+        EtensuDao.EtensuSearchCriteria criteria = new EtensuDao.EtensuSearchCriteria();
+        criteria.setKeyword(keyword);
+        criteria.setCategory(category);
+        criteria.setAsOf(asOf);
+        criteria.setTensuVersion(tensuVersion);
+        criteria.setPage(parsePositiveInt(params, "page", 1));
+        criteria.setSize(parsePositiveInt(params, "size", 100));
+        EtensuDao.EtensuSearchResult dbResult = etensuDao.search(criteria);
+        if (dbResult != null) {
+            LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
+                    dbResult.getRecords(),
+                    null,
+                    dbResult.getVersion(),
+                    DataOrigin.ORCA_DB,
+                    false
+            );
+            final String etagValue = buildEtag("/orca/tensu/etensu", masterType, dbFixture, params);
+            final long ttlSeconds = cacheTtlSeconds(masterType);
+            if (etagMatches(ifNoneMatch, etagValue)) {
+                recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, dbFixture, true, null, null,
+                        buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+                return buildNotModifiedResponse(etagValue, ttlSeconds);
+            }
+            if (dbResult.getRecords().isEmpty()) {
+                Response notFound = notFound("TENSU_NOT_FOUND", "no etensu entries matched", request);
+                recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, dbFixture, false, true, 0,
+                        buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+                return notFound;
+            }
+            final int totalCount = dbResult.getTotalCount();
+            final List<OrcaTensuEntry> items = dbResult.getRecords().stream()
+                    .map(entry -> toEtensuEntry(entry, dbFixture))
+                    .collect(Collectors.toList());
+            OrcaMasterListResponse<OrcaTensuEntry> response = new OrcaMasterListResponse<>();
+            response.setTotalCount(totalCount);
+            response.setItems(items);
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 200, dbFixture, false, totalCount == 0,
+                    totalCount,
+                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+            return buildCachedOkResponse(response, etagValue, ttlSeconds);
+        }
+
         final LoadedFixture<FixtureEtensuEntry> fixture = loadEntries(
                 FixtureEtensuEntry.class,
                 "etensu/orca_master_etensu_response.json",
                 "orca-master-etensu.json"
         );
-        final String masterType = "orca08-etensu";
         final String etagValue = buildEtag("/orca/tensu/etensu", masterType, fixture, params);
         final long ttlSeconds = cacheTtlSeconds(masterType);
         if (etagMatches(ifNoneMatch, etagValue)) {
@@ -877,6 +922,29 @@ public class OrcaMasterResource extends AbstractResource {
         return response;
     }
 
+    private OrcaTensuEntry toEtensuEntry(EtensuDao.EtensuRecord record, LoadedFixture<?> fixture) {
+        OrcaTensuEntry response = new OrcaTensuEntry();
+        response.setTensuCode(record.getTensuCode());
+        response.setName(record.getName());
+        response.setKubun(record.getKubun());
+        response.setNoticeDate(firstNonBlank(record.getNoticeDate(), record.getTensuVersion()));
+        response.setEffectiveDate(firstNonBlank(record.getEffectiveDate(), record.getStartDate(), DEFAULT_VALID_FROM));
+        response.setPoints(firstNonBlankDouble(record.getPoints(), record.getTanka()));
+        response.setTanka(firstNonBlankDouble(record.getTanka(), record.getPoints()));
+        response.setUnit(record.getUnit());
+        response.setCategory(record.getCategory());
+        response.setStartDate(firstNonBlank(record.getStartDate(), DEFAULT_VALID_FROM));
+        response.setEndDate(firstNonBlank(record.getEndDate(), DEFAULT_VALID_TO));
+        response.setTensuVersion(record.getTensuVersion());
+        response.setConflicts(record.getConflicts().isEmpty() ? null : record.getConflicts());
+        response.setAdditions(record.getAdditions().isEmpty() ? null : record.getAdditions());
+        response.setCalcUnits(record.getCalcUnits().isEmpty() ? null : record.getCalcUnits());
+        response.setBundlingMembers(record.getBundlingMembers().isEmpty() ? null : record.getBundlingMembers());
+        response.setSpecimens(record.getSpecimens().isEmpty() ? null : record.getSpecimens());
+        response.setMeta(buildMeta(fixture.origin, fixture.snapshotVersion, fixture.version, false, false, false, null));
+        return response;
+    }
+
     private OrcaDrugMasterEntry buildDrugEntry(
             String code,
             String name,
@@ -939,6 +1007,9 @@ public class OrcaMasterResource extends AbstractResource {
     private String dataSourceForOrigin(DataOrigin origin) {
         if (origin == DataOrigin.FALLBACK) {
             return "fallback";
+        }
+        if (origin == DataOrigin.ORCA_DB) {
+            return "orca-db";
         }
         return "snapshot";
     }
