@@ -37,7 +37,8 @@ public class TouchUserResource {
         String password = params[2];
         String headerUserName = request.getHeader("userName");
         String headerPassword = request.getHeader("password");
-        return userService.getUserSummary(context, pathUserId, facilityId, password, headerUserName, headerPassword);
+        String deviceId = request.getHeader("X-Device-Id");
+        return userService.getUserSummary(context, pathUserId, facilityId, password, headerUserName, headerPassword, deviceId);
     }
 }
 

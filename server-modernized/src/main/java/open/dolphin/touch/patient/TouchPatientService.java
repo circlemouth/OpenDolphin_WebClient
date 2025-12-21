@@ -23,6 +23,7 @@ import open.dolphin.touch.patient.dto.TouchPatientDtos.HealthInsuranceDto;
 import open.dolphin.touch.patient.dto.TouchPatientDtos.PatientPackageResponse;
 import open.dolphin.touch.patient.dto.TouchPatientDtos.PublicInsuranceDto;
 import open.dolphin.touch.support.TouchAuditHelper;
+import open.dolphin.touch.support.TouchErrorResponse;
 import open.dolphin.touch.support.TouchErrorMapper;
 import open.dolphin.touch.support.TouchRequestContext;
 import open.dolphin.touch.session.IPhoneServiceBean;
@@ -44,45 +45,63 @@ public class TouchPatientService {
     TouchAuditHelper auditHelper;
 
     public IPatientModel getPatientByPk(TouchRequestContext context, long patientPk) {
-        requireConsent(context);
-        PatientModel patient = iPhoneServiceBean.getPatient(patientPk);
-        if (patient == null) {
-            throw TouchErrorMapper.toException(jakarta.ws.rs.core.Response.Status.NOT_FOUND,
-                    "patient_not_found", "患者情報が見つかりません。", context.traceId());
+        String resource = "/touch/patient/" + patientPk;
+        try {
+            requireConsent(context);
+            PatientModel patient = iPhoneServiceBean.getPatient(patientPk);
+            if (patient == null) {
+                throw TouchErrorMapper.toException(jakarta.ws.rs.core.Response.Status.NOT_FOUND,
+                        "patient_not_found", "患者情報が見つかりません。", context.traceId());
+            }
+            ensureFacilityOwnership(context, patient.getFacilityId());
+            IPatientModel converter = new IPatientModel();
+            converter.setModel(patient);
+            long kartePk = iPhoneServiceBean.getKartePKByPatientPK(patientPk);
+            converter.setKartePK(kartePk);
+            auditHelper.record(context, ACTION_PATIENT_PROFILE,
+                    resource,
+                    Map.of("patientPk", patientPk, "kartePk", kartePk));
+            return converter;
+        } catch (jakarta.ws.rs.WebApplicationException ex) {
+            recordFailure(context, ACTION_PATIENT_PROFILE, resource, ex, Map.of("patientPk", patientPk));
+            throw ex;
+        } catch (RuntimeException ex) {
+            recordFailure(context, ACTION_PATIENT_PROFILE, resource, ex, Map.of("patientPk", patientPk));
+            throw ex;
         }
-        ensureFacilityOwnership(context, patient.getFacilityId());
-        IPatientModel converter = new IPatientModel();
-        converter.setModel(patient);
-        long kartePk = iPhoneServiceBean.getKartePKByPatientPK(patientPk);
-        converter.setKartePK(kartePk);
-        auditHelper.record(context, ACTION_PATIENT_PROFILE,
-                "/touch/patient/" + patientPk,
-                Map.of("patientPk", patientPk, "kartePk", kartePk));
-        return converter;
     }
 
     public PatientPackageResponse getPatientPackage(TouchRequestContext context, long patientPk) {
-        requireConsent(context);
-        PatientPackage pack = iPhoneServiceBean.getPatientPackage(patientPk);
-        if (pack == null || pack.getPatient() == null) {
-            throw TouchErrorMapper.toException(jakarta.ws.rs.core.Response.Status.NOT_FOUND,
-                    "patient_package_not_found", "患者パッケージが見つかりません。", context.traceId());
+        String resource = "/touch/patientPackage/" + patientPk;
+        try {
+            requireConsent(context);
+            PatientPackage pack = iPhoneServiceBean.getPatientPackage(patientPk);
+            if (pack == null || pack.getPatient() == null) {
+                throw TouchErrorMapper.toException(jakarta.ws.rs.core.Response.Status.NOT_FOUND,
+                        "patient_package_not_found", "患者パッケージが見つかりません。", context.traceId());
+            }
+            ensureFacilityOwnership(context, pack.getPatient().getFacilityId());
+            long kartePk = iPhoneServiceBean.getKartePKByPatientPK(patientPk);
+            JsonTouchSharedService.PatientModelSnapshot patientSnapshot =
+                    JsonTouchSharedService.snapshot(pack.getPatient(), kartePk);
+
+            List<HealthInsuranceDto> insurances = convertInsurances(pack.getInsurances());
+            List<AllergyDto> allergies = convertAllergies(pack.getAllergies());
+
+            auditHelper.record(context, ACTION_PATIENT_PACKAGE,
+                    resource,
+                    Map.of("patientPk", patientPk, "kartePk", kartePk,
+                            "insuranceCount", insurances.size(),
+                            "allergyCount", allergies.size()));
+
+            return new PatientPackageResponse(patientSnapshot, insurances, allergies);
+        } catch (jakarta.ws.rs.WebApplicationException ex) {
+            recordFailure(context, ACTION_PATIENT_PACKAGE, resource, ex, Map.of("patientPk", patientPk));
+            throw ex;
+        } catch (RuntimeException ex) {
+            recordFailure(context, ACTION_PATIENT_PACKAGE, resource, ex, Map.of("patientPk", patientPk));
+            throw ex;
         }
-        ensureFacilityOwnership(context, pack.getPatient().getFacilityId());
-        long kartePk = iPhoneServiceBean.getKartePKByPatientPK(patientPk);
-        JsonTouchSharedService.PatientModelSnapshot patientSnapshot =
-                JsonTouchSharedService.snapshot(pack.getPatient(), kartePk);
-
-        List<HealthInsuranceDto> insurances = convertInsurances(pack.getInsurances());
-        List<AllergyDto> allergies = convertAllergies(pack.getAllergies());
-
-        auditHelper.record(context, ACTION_PATIENT_PACKAGE,
-                "/touch/patientPackage/" + patientPk,
-                Map.of("patientPk", patientPk, "kartePk", kartePk,
-                        "insuranceCount", insurances.size(),
-                        "allergyCount", allergies.size()));
-
-        return new PatientPackageResponse(patientSnapshot, insurances, allergies);
     }
 
     public IPatientList searchPatientsByName(TouchRequestContext context,
@@ -90,27 +109,38 @@ public class TouchPatientService {
                                              String keyword,
                                              int firstResult,
                                              int maxResult) {
-        requireConsent(context);
-        ensureFacilityOwnership(context, facilityId);
+        String resource = "/touch/patients/name";
+        try {
+            requireConsent(context);
+            ensureFacilityOwnership(context, facilityId);
 
-        String normalizedKeyword = normalizeKeyword(keyword);
+            String normalizedKeyword = normalizeKeyword(keyword);
 
-        List<PatientModel> patients;
-        if (isKana(normalizedKeyword)) {
-            patients = iPhoneServiceBean.getPatientsByKana(facilityId, normalizedKeyword, firstResult, maxResult);
-        } else {
-            patients = iPhoneServiceBean.getPatientsByName(facilityId, normalizedKeyword, firstResult, maxResult);
+            List<PatientModel> patients;
+            if (isKana(normalizedKeyword)) {
+                patients = iPhoneServiceBean.getPatientsByKana(facilityId, normalizedKeyword, firstResult, maxResult);
+            } else {
+                patients = iPhoneServiceBean.getPatientsByName(facilityId, normalizedKeyword, firstResult, maxResult);
+            }
+            PatientList patientList = new PatientList();
+            patientList.setList(patients);
+            IPatientList converter = new IPatientList();
+            converter.setModel(patientList);
+
+            auditHelper.record(context, ACTION_PATIENT_SEARCH,
+                    resource,
+                    Map.of("facilityId", facilityId, "keyword", keyword,
+                            "resultCount", patients != null ? patients.size() : 0));
+            return converter;
+        } catch (jakarta.ws.rs.WebApplicationException ex) {
+            recordFailure(context, ACTION_PATIENT_SEARCH, resource, ex,
+                    Map.of("facilityId", facilityId, "keyword", keyword));
+            throw ex;
+        } catch (RuntimeException ex) {
+            recordFailure(context, ACTION_PATIENT_SEARCH, resource, ex,
+                    Map.of("facilityId", facilityId, "keyword", keyword));
+            throw ex;
         }
-        PatientList patientList = new PatientList();
-        patientList.setList(patients);
-        IPatientList converter = new IPatientList();
-        converter.setModel(patientList);
-
-        auditHelper.record(context, ACTION_PATIENT_SEARCH,
-                "/touch/patients/name",
-                Map.of("facilityId", facilityId, "keyword", keyword,
-                        "resultCount", patients != null ? patients.size() : 0));
-        return converter;
     }
 
     private void ensureFacilityOwnership(TouchRequestContext context, String resourceFacilityId) {
@@ -125,6 +155,35 @@ public class TouchPatientService {
             throw TouchErrorMapper.toException(jakarta.ws.rs.core.Response.Status.FORBIDDEN,
                     "consent_required", "アクセス理由と同意トークンが必要です。", context.traceId());
         }
+    }
+
+    private void recordFailure(TouchRequestContext context,
+                               String action,
+                               String resource,
+                               Throwable error,
+                               Map<String, Object> details) {
+        if (auditHelper == null || context == null) {
+            return;
+        }
+        Map<String, Object> failureDetails = new java.util.HashMap<>();
+        if (details != null) {
+            failureDetails.putAll(details);
+        }
+        if (error instanceof jakarta.ws.rs.WebApplicationException wae) {
+            failureDetails.put("httpStatus", wae.getResponse().getStatus());
+            Object entity = wae.getResponse().getEntity();
+            if (entity instanceof TouchErrorResponse touchError && touchError.type() != null) {
+                failureDetails.putIfAbsent("reason", touchError.type());
+            }
+        }
+        if (error != null) {
+            failureDetails.put("error", error.getClass().getSimpleName());
+            if (error.getMessage() != null && !error.getMessage().isBlank()) {
+                failureDetails.put("errorMessage", error.getMessage());
+            }
+        }
+        String reason = failureDetails.get("reason") instanceof String r ? r : null;
+        auditHelper.recordFailure(context, action, resource, reason, failureDetails);
     }
 
     private List<HealthInsuranceDto> convertInsurances(List<HealthInsuranceModel> insurances) {
