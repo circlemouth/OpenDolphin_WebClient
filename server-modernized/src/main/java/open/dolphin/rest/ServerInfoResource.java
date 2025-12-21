@@ -10,6 +10,7 @@ import java.io.IOException;
 import java.io.InputStreamReader;
 import java.util.List;
 import java.util.Properties;
+import java.util.logging.Logger;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
@@ -29,6 +30,8 @@ import static open.dolphin.rest.AbstractResource.getRemoteFacility;
  */
 @Path("/serverinfo")
 public class ServerInfoResource extends AbstractResource {
+
+    private static final Logger LOGGER = Logger.getLogger(ServerInfoResource.class.getName());
     
     private static final String MOBILE_KIND = "mobile.kind";
     private static final String MOBILE_ONOFF = "mobile.onoff";
@@ -77,6 +80,10 @@ public class ServerInfoResource extends AbstractResource {
     }
     
     public String getProperty(String item) {
+        if (isSensitiveProperty(item)) {
+            LOGGER.warning("Blocked access to sensitive property in custom.properties: " + item);
+            return "";
+        }
         Properties config = new Properties();
         StringBuilder sb = new StringBuilder();
         sb.append(System.getProperty("jboss.home.dir"));
@@ -93,5 +100,15 @@ public class ServerInfoResource extends AbstractResource {
             ex.printStackTrace(System.err);
         }
         return config.getProperty(item, "");
+    }
+
+    private static boolean isSensitiveProperty(String prop) {
+        if (prop == null) {
+            return false;
+        }
+        if (CLAIM_USER.equals(prop) || CLAIM_PASSWORD.equals(prop)) {
+            return true;
+        }
+        return prop.startsWith("claim.jdbc.");
     }
 }
