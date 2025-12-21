@@ -16,8 +16,10 @@ import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.rest.dto.orca.OrcaEtensuAddition;
+import open.dolphin.rest.dto.orca.OrcaEtensuBundlingMember;
 import open.dolphin.rest.dto.orca.OrcaEtensuCalcUnit;
 import open.dolphin.rest.dto.orca.OrcaEtensuConflict;
+import open.dolphin.rest.dto.orca.OrcaEtensuSpecimen;
 
 public class EtensuDao {
     private static final Logger LOGGER = Logger.getLogger(EtensuDao.class.getName());
@@ -110,6 +112,12 @@ public class EtensuDao {
                 + selectColumn(meta.startDateColumn) + " AS startDate, "
                 + selectColumn(meta.endDateColumn) + " AS endDate, "
                 + selectColumn(meta.tensuVersionColumn) + " AS tensuVersion, "
+                + selectColumn(meta.hTani1Column) + " AS hTani1, "
+                + selectColumn(meta.hGroup1Column) + " AS hGroup1, "
+                + selectColumn(meta.hTani2Column) + " AS hTani2, "
+                + selectColumn(meta.hGroup2Column) + " AS hGroup2, "
+                + selectColumn(meta.hTani3Column) + " AS hTani3, "
+                + selectColumn(meta.hGroup3Column) + " AS hGroup3, "
                 + selectColumn(meta.rDayColumn) + " AS rDay, "
                 + selectColumn(meta.rMonthColumn) + " AS rMonth, "
                 + selectColumn(meta.rSameColumn) + " AS rSame, "
@@ -143,6 +151,12 @@ public class EtensuDao {
                     record.noticeDate = rs.getString("chgYmd");
                     record.effectiveDate = record.startDate;
                     record.points = record.tanka;
+                    record.hTani1 = getInteger(rs, "hTani1");
+                    record.hGroup1 = rs.getString("hGroup1");
+                    record.hTani2 = getInteger(rs, "hTani2");
+                    record.hGroup2 = rs.getString("hGroup2");
+                    record.hTani3 = getInteger(rs, "hTani3");
+                    record.hGroup3 = rs.getString("hGroup3");
                     record.rDay = getInteger(rs, "rDay");
                     record.rMonth = getInteger(rs, "rMonth");
                     record.rSame = getInteger(rs, "rSame");
@@ -165,6 +179,7 @@ public class EtensuDao {
         Set<String> conflictWeek = new HashSet<>();
         Set<String> calcUnitTargets = new HashSet<>();
         Set<Integer> additionGroups = new HashSet<>();
+        Set<String> bundlingGroups = new HashSet<>();
         for (EtensuRecord record : records) {
             if (record.tensuCode == null) {
                 continue;
@@ -188,6 +203,15 @@ public class EtensuDao {
             if (record.nGroup != null && record.nGroup > 0) {
                 additionGroups.add(record.nGroup);
             }
+            if (record.hGroup1 != null && !record.hGroup1.isBlank()) {
+                bundlingGroups.add(record.hGroup1);
+            }
+            if (record.hGroup2 != null && !record.hGroup2.isBlank()) {
+                bundlingGroups.add(record.hGroup2);
+            }
+            if (record.hGroup3 != null && !record.hGroup3.isBlank()) {
+                bundlingGroups.add(record.hGroup3);
+            }
         }
         if (!conflictDay.isEmpty()) {
             loadConflicts(connection, "TBL_ETENSU_3_1", "day", conflictDay, asOf, recordsBySrycd);
@@ -206,6 +230,10 @@ public class EtensuDao {
         }
         if (!calcUnitTargets.isEmpty()) {
             loadCalcUnits(connection, calcUnitTargets, asOf, recordsBySrycd);
+        }
+        if (!bundlingGroups.isEmpty()) {
+            loadBundlingMembers(connection, bundlingGroups, asOf, records);
+            loadSpecimens(connection, bundlingGroups, asOf, records);
         }
     }
 
@@ -322,6 +350,133 @@ public class EtensuDao {
         }
     }
 
+    private void loadBundlingMembers(Connection connection, Set<String> groupCodes, String asOf, List<EtensuRecord> records)
+            throws SQLException {
+        String inClause = buildInClause(groupCodes.size());
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT H_GROUP, SRYCD, YUKOSTYMD, YUKOEDYMD, TOKUREI, CHGYMD FROM TBL_ETENSU_2 WHERE H_GROUP IN (")
+                .append(inClause)
+                .append(")");
+        List<Object> params = new ArrayList<>(groupCodes);
+        if (asOf != null && !asOf.isBlank()) {
+            sql.append(" AND YUKOSTYMD <= ? AND YUKOEDYMD >= ?");
+            params.add(asOf);
+            params.add(asOf);
+        }
+        Map<String, OrcaEtensuBundlingMember> memberMap = new HashMap<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            bindParams(ps, params, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    OrcaEtensuBundlingMember member = new OrcaEtensuBundlingMember();
+                    member.setGroupCode(rs.getString("H_GROUP"));
+                    member.setSrycd(rs.getString("SRYCD"));
+                    member.setSpecialCondition(getInteger(rs, "TOKUREI"));
+                    memberMap.put(memberKey(member.getGroupCode(), member.getSrycd()), member);
+                }
+            }
+        }
+        loadBundlingMembersJma(connection, groupCodes, asOf, memberMap);
+        applyBundlingExclusions(connection, groupCodes, asOf, memberMap);
+        for (EtensuRecord record : records) {
+            attachBundlingMembers(record, memberMap);
+        }
+    }
+
+    private void loadBundlingMembersJma(Connection connection, Set<String> groupCodes, String asOf,
+            Map<String, OrcaEtensuBundlingMember> memberMap) throws SQLException {
+        String inClause = buildInClause(groupCodes.size());
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT H_GROUP, SRYCD, YUKOSTYMD, YUKOEDYMD, TOKUREI, CHGYMD FROM TBL_ETENSU_2_JMA WHERE H_GROUP IN (")
+                .append(inClause)
+                .append(")");
+        List<Object> params = new ArrayList<>(groupCodes);
+        if (asOf != null && !asOf.isBlank()) {
+            sql.append(" AND YUKOSTYMD <= ? AND YUKOEDYMD >= ?");
+            params.add(asOf);
+            params.add(asOf);
+        }
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            bindParams(ps, params, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    OrcaEtensuBundlingMember member = new OrcaEtensuBundlingMember();
+                    member.setGroupCode(rs.getString("H_GROUP"));
+                    member.setSrycd(rs.getString("SRYCD"));
+                    member.setSpecialCondition(getInteger(rs, "TOKUREI"));
+                    memberMap.putIfAbsent(memberKey(member.getGroupCode(), member.getSrycd()), member);
+                }
+            }
+        }
+    }
+
+    private void applyBundlingExclusions(Connection connection, Set<String> groupCodes, String asOf,
+            Map<String, OrcaEtensuBundlingMember> memberMap) throws SQLException {
+        String inClause = buildInClause(groupCodes.size());
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT H_GROUP, SRYCD, YUKOSTYMD, YUKOEDYMD FROM TBL_ETENSU_2_OFF WHERE H_GROUP IN (")
+                .append(inClause)
+                .append(")");
+        List<Object> params = new ArrayList<>(groupCodes);
+        if (asOf != null && !asOf.isBlank()) {
+            sql.append(" AND YUKOSTYMD <= ? AND YUKOEDYMD >= ?");
+            params.add(asOf);
+            params.add(asOf);
+        }
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            bindParams(ps, params, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    String group = rs.getString("H_GROUP");
+                    String srycd = rs.getString("SRYCD");
+                    String key = memberKey(group, srycd);
+                    OrcaEtensuBundlingMember member = memberMap.get(key);
+                    if (member != null) {
+                        member.setExcluded(Boolean.TRUE);
+                    } else {
+                        OrcaEtensuBundlingMember excluded = new OrcaEtensuBundlingMember();
+                        excluded.setGroupCode(group);
+                        excluded.setSrycd(srycd);
+                        excluded.setExcluded(Boolean.TRUE);
+                        memberMap.put(key, excluded);
+                    }
+                }
+            }
+        }
+    }
+
+    private void loadSpecimens(Connection connection, Set<String> groupCodes, String asOf, List<EtensuRecord> records)
+            throws SQLException {
+        String inClause = buildInClause(groupCodes.size());
+        StringBuilder sql = new StringBuilder();
+        sql.append("SELECT H_GROUP, SRYCD, YUKOSTYMD, YUKOEDYMD, RENUM, SAMPLECD, CHGYMD FROM TBL_ETENSU_2_SAMPLE WHERE H_GROUP IN (")
+                .append(inClause)
+                .append(")");
+        List<Object> params = new ArrayList<>(groupCodes);
+        if (asOf != null && !asOf.isBlank()) {
+            sql.append(" AND YUKOSTYMD <= ? AND YUKOEDYMD >= ?");
+            params.add(asOf);
+            params.add(asOf);
+        }
+        Map<String, List<OrcaEtensuSpecimen>> specimensByGroup = new HashMap<>();
+        try (PreparedStatement ps = connection.prepareStatement(sql.toString())) {
+            bindParams(ps, params, 1);
+            try (ResultSet rs = ps.executeQuery()) {
+                while (rs.next()) {
+                    OrcaEtensuSpecimen specimen = new OrcaEtensuSpecimen();
+                    specimen.setGroupCode(rs.getString("H_GROUP"));
+                    specimen.setSrycd(rs.getString("SRYCD"));
+                    specimen.setSeq(getInteger(rs, "RENUM"));
+                    specimen.setSampleCode(rs.getString("SAMPLECD"));
+                    specimensByGroup.computeIfAbsent(specimen.getGroupCode(), key -> new ArrayList<>()).add(specimen);
+                }
+            }
+        }
+        for (EtensuRecord record : records) {
+            attachSpecimens(record, specimensByGroup);
+        }
+    }
+
     private void attachConflict(Map<String, List<EtensuRecord>> recordsBySrycd, String srycd,
             OrcaEtensuConflict conflict, String scope) {
         if (srycd == null) {
@@ -336,6 +491,28 @@ public class EtensuDao {
                 continue;
             }
             record.conflicts.add(conflict);
+        }
+    }
+
+    private void attachBundlingMembers(EtensuRecord record, Map<String, OrcaEtensuBundlingMember> memberMap) {
+        for (String group : record.groupCodes()) {
+            for (Map.Entry<String, OrcaEtensuBundlingMember> entry : memberMap.entrySet()) {
+                if (entry.getValue() == null || entry.getValue().getGroupCode() == null) {
+                    continue;
+                }
+                if (entry.getValue().getGroupCode().equals(group)) {
+                    record.bundlingMembers.add(entry.getValue());
+                }
+            }
+        }
+    }
+
+    private void attachSpecimens(EtensuRecord record, Map<String, List<OrcaEtensuSpecimen>> specimensByGroup) {
+        for (String group : record.groupCodes()) {
+            List<OrcaEtensuSpecimen> specimens = specimensByGroup.get(group);
+            if (specimens != null && !specimens.isEmpty()) {
+                record.specimens.addAll(specimens);
+            }
         }
     }
 
@@ -492,6 +669,12 @@ public class EtensuDao {
         private String tensuVersion;
         private String noticeDate;
         private String effectiveDate;
+        private Integer hTani1;
+        private String hGroup1;
+        private Integer hTani2;
+        private String hGroup2;
+        private Integer hTani3;
+        private String hGroup3;
         private Integer rDay;
         private Integer rMonth;
         private Integer rSame;
@@ -501,6 +684,8 @@ public class EtensuDao {
         private final List<OrcaEtensuConflict> conflicts = new ArrayList<>();
         private final List<OrcaEtensuAddition> additions = new ArrayList<>();
         private final List<OrcaEtensuCalcUnit> calcUnits = new ArrayList<>();
+        private final List<OrcaEtensuBundlingMember> bundlingMembers = new ArrayList<>();
+        private final List<OrcaEtensuSpecimen> specimens = new ArrayList<>();
 
         public String getTensuCode() {
             return tensuCode;
@@ -562,6 +747,14 @@ public class EtensuDao {
             return calcUnits;
         }
 
+        public List<OrcaEtensuBundlingMember> getBundlingMembers() {
+            return bundlingMembers;
+        }
+
+        public List<OrcaEtensuSpecimen> getSpecimens() {
+            return specimens;
+        }
+
         private boolean isConflictScopeEnabled(String scope) {
             if (scope == null) {
                 return false;
@@ -578,6 +771,20 @@ public class EtensuDao {
                 default:
                     return false;
             }
+        }
+
+        private List<String> groupCodes() {
+            List<String> groups = new ArrayList<>();
+            if (hGroup1 != null && !hGroup1.isBlank()) {
+                groups.add(hGroup1);
+            }
+            if (hGroup2 != null && !hGroup2.isBlank()) {
+                groups.add(hGroup2);
+            }
+            if (hGroup3 != null && !hGroup3.isBlank()) {
+                groups.add(hGroup3);
+            }
+            return groups;
         }
     }
 
@@ -600,6 +807,12 @@ public class EtensuDao {
         private final String startDateColumn;
         private final String endDateColumn;
         private final String tensuVersionColumn;
+        private final String hTani1Column;
+        private final String hGroup1Column;
+        private final String hTani2Column;
+        private final String hGroup2Column;
+        private final String hTani3Column;
+        private final String hGroup3Column;
         private final String rDayColumn;
         private final String rMonthColumn;
         private final String rSameColumn;
@@ -612,8 +825,10 @@ public class EtensuDao {
 
         private EtensuTableMeta(String kubunColumn, String nameColumn, String tankaColumn, String unitColumn,
                 String categoryColumn, String startDateColumn, String endDateColumn, String tensuVersionColumn,
-                String rDayColumn, String rMonthColumn, String rSameColumn, String rWeekColumn, String nGroupColumn,
-                String cKaisuColumn, String chgYmdColumn, boolean hasName, boolean hasTensuVersion) {
+                String hTani1Column, String hGroup1Column, String hTani2Column, String hGroup2Column,
+                String hTani3Column, String hGroup3Column, String rDayColumn, String rMonthColumn,
+                String rSameColumn, String rWeekColumn, String nGroupColumn, String cKaisuColumn,
+                String chgYmdColumn, boolean hasName, boolean hasTensuVersion) {
             this.kubunColumn = kubunColumn;
             this.nameColumn = nameColumn;
             this.tankaColumn = tankaColumn;
@@ -622,6 +837,12 @@ public class EtensuDao {
             this.startDateColumn = startDateColumn;
             this.endDateColumn = endDateColumn;
             this.tensuVersionColumn = tensuVersionColumn;
+            this.hTani1Column = hTani1Column;
+            this.hGroup1Column = hGroup1Column;
+            this.hTani2Column = hTani2Column;
+            this.hGroup2Column = hGroup2Column;
+            this.hTani3Column = hTani3Column;
+            this.hGroup3Column = hGroup3Column;
             this.rDayColumn = rDayColumn;
             this.rMonthColumn = rMonthColumn;
             this.rSameColumn = rSameColumn;
@@ -649,6 +870,12 @@ public class EtensuDao {
                 endDate = columnOrNull(meta, "TBL_ETENSU_1", "YUKOEDYMD");
             }
             String tensuVersion = columnOrNull(meta, "TBL_ETENSU_1", "TENSU_VERSION");
+            String hTani1 = columnOrNull(meta, "TBL_ETENSU_1", "H_TANI1");
+            String hGroup1 = columnOrNull(meta, "TBL_ETENSU_1", "H_GROUP1");
+            String hTani2 = columnOrNull(meta, "TBL_ETENSU_1", "H_TANI2");
+            String hGroup2 = columnOrNull(meta, "TBL_ETENSU_1", "H_GROUP2");
+            String hTani3 = columnOrNull(meta, "TBL_ETENSU_1", "H_TANI3");
+            String hGroup3 = columnOrNull(meta, "TBL_ETENSU_1", "H_GROUP3");
             String rDay = columnOrNull(meta, "TBL_ETENSU_1", "R_DAY");
             String rMonth = columnOrNull(meta, "TBL_ETENSU_1", "R_MONTH");
             String rSame = columnOrNull(meta, "TBL_ETENSU_1", "R_SAME");
@@ -660,6 +887,12 @@ public class EtensuDao {
                     startDate != null ? startDate : "YUKOSTYMD",
                     endDate != null ? endDate : "YUKOEDYMD",
                     tensuVersion,
+                    hTani1 != null ? hTani1 : "H_TANI1",
+                    hGroup1 != null ? hGroup1 : "H_GROUP1",
+                    hTani2 != null ? hTani2 : "H_TANI2",
+                    hGroup2 != null ? hGroup2 : "H_GROUP2",
+                    hTani3 != null ? hTani3 : "H_TANI3",
+                    hGroup3 != null ? hGroup3 : "H_GROUP3",
                     rDay != null ? rDay : "R_DAY",
                     rMonth != null ? rMonth : "R_MONTH",
                     rSame != null ? rSame : "R_SAME",
@@ -694,5 +927,9 @@ public class EtensuDao {
             }
             return kubunColumn;
         }
+    }
+
+    private static String memberKey(String groupCode, String srycd) {
+        return (groupCode == null ? "" : groupCode) + "|" + (srycd == null ? "" : srycd);
     }
 }
