@@ -5,6 +5,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeParseException;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
@@ -337,6 +338,20 @@ public class KarteResource extends AbstractResource {
     }
 
     @GET
+    @Path("/routineMed.list")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<RoutineMedicationResponse> getRoutineMedicationsByQuery(@QueryParam("karteId") Long karteId,
+                                                                        @DefaultValue("0") @QueryParam("firstResult") int firstResult,
+                                                                        @DefaultValue("50") @QueryParam("maxResults") int maxResults) {
+        if (karteId == null || karteId <= 0) {
+            return Collections.emptyList();
+        }
+        int safeFirst = Math.max(firstResult, 0);
+        int safeMax = maxResults > 0 ? Math.min(maxResults, 200) : 50;
+        return karteServiceBean.getRoutineMedications(karteId, safeFirst, safeMax);
+    }
+
+    @GET
     @Path("/safety/{karteId}")
     @Produces(MediaType.APPLICATION_JSON)
     public SafetySummaryResponse getSafetySummary(@PathParam("karteId") long karteId) {
@@ -350,6 +365,21 @@ public class KarteResource extends AbstractResource {
                                                      @QueryParam("fromDate") String fromDate,
                                                      @QueryParam("toDate") String toDate,
                                                      @DefaultValue("false") @QueryParam("lastOnly") boolean lastOnly) {
+        Date from = parseDateAtStart(fromDate);
+        Date toExclusive = parseDateExclusiveEnd(toDate);
+        return karteServiceBean.getRpHistory(karteId, from, toExclusive, lastOnly);
+    }
+
+    @GET
+    @Path("/rpHistory/list")
+    @Produces(MediaType.APPLICATION_JSON)
+    public List<RpHistoryEntryResponse> getRpHistoryByQuery(@QueryParam("karteId") Long karteId,
+                                                            @QueryParam("fromDate") String fromDate,
+                                                            @QueryParam("toDate") String toDate,
+                                                            @DefaultValue("false") @QueryParam("lastOnly") boolean lastOnly) {
+        if (karteId == null || karteId <= 0) {
+            return Collections.emptyList();
+        }
         Date from = parseDateAtStart(fromDate);
         Date toExclusive = parseDateExclusiveEnd(toDate);
         return karteServiceBean.getRpHistory(karteId, from, toExclusive, lastOnly);
