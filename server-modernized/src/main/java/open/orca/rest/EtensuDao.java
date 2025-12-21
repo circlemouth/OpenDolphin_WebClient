@@ -28,11 +28,8 @@ public class EtensuDao {
         if (criteria == null) {
             return null;
         }
-        Connection connection = ORCAConnection.getInstance().getConnection();
-        if (connection == null) {
-            return null;
-        }
         try {
+            Connection connection = ORCAConnection.getInstance().getConnection();
             EtensuTableMeta meta = EtensuTableMeta.load(connection);
             EtensuQuery query = buildQuery(criteria, meta);
             int totalCount = fetchTotalCount(connection, query);

@@ -1455,6 +1455,10 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
     }
     
     public String getProperty(String item) {
+        if (isSensitiveProperty(item)) {
+            LOGGER.warning("Blocked access to sensitive property in custom.properties: " + item);
+            return "";
+        }
         Properties config = new Properties();
         StringBuilder sb = new StringBuilder();
         sb.append(System.getProperty("jboss.home.dir"));
@@ -1471,6 +1475,16 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
             ex.printStackTrace(System.err);
         }
         return config.getProperty(item, "");
+    }
+
+    private static boolean isSensitiveProperty(String prop) {
+        if (prop == null) {
+            return false;
+        }
+        if (CLAIM_USER.equals(prop) || CLAIM_PASSWORD.equals(prop)) {
+            return true;
+        }
+        return prop.startsWith("claim.jdbc.");
     }
      
     // srycdのListからカンマ区切りの文字列を作る
@@ -1495,7 +1509,7 @@ public class EHTResource extends open.dolphin.rest.AbstractResource {
         return sb.toString();
     }
     
-    private Connection getConnection() {
+    private Connection getConnection() throws SQLException {
         return ORCAConnection.getInstance().getConnection();
     }
     
