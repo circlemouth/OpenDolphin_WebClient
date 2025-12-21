@@ -68,6 +68,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
 
     private static final Logger LOGGER = Logger.getLogger(PHRResource.class.getName());
     private static final String TRACE_ID_ATTRIBUTE = open.dolphin.rest.LogFilter.class.getName() + ".TRACE_ID";
+    private static final String HEADER_TRACE_ID = "X-Trace-Id";
+    private static final String HEADER_FACILITY_ID = "X-Facility-Id";
     private static final long DEFAULT_SIGNED_URL_TTL_SECONDS = 300L;
     private static final String SIGNED_URL_ISSUER = "RESTEASY";
     private static final String SIGNED_URL_BANDWIDTH_PROFILE = "phr-container";
@@ -114,7 +116,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/accessKey/{accessKey}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response getPHRKeyByAccessKey(@PathParam("accessKey") String accessKey) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_ACCESS_KEY_FETCH");
         Map<String, Object> details = new HashMap<>();
         details.put("accessKeySuffix", accessKeySuffix(accessKey));
         try {
@@ -148,7 +150,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/patient/{patientId}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response getPHRKeyByPatientId(@PathParam("patientId") String patientId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_ACCESS_KEY_FETCH_BY_PATIENT");
         Map<String, Object> details = new HashMap<>();
         details.put("patientId", patientId);
         try {
@@ -183,7 +185,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response putPHRKey(String json) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_ACCESS_KEY_UPSERT");
         Map<String, Object> details = new HashMap<>();
         try {
             PHRKey key = objectMapper.readValue(json, PHRKey.class);
@@ -225,7 +227,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/allergy/{patientId}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getAllergy(@PathParam("patientId") String patientId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_ALLERGY_TEXT");
         Map<String, Object> details = Map.of("patientId", patientId);
         try {
             KarteBean karte = requireKarte(ctx, patientId, "PHR_ALLERGY_TEXT", details);
@@ -264,7 +266,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/disease/{patientId}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getDisease(@PathParam("patientId") String patientId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_DISEASE_TEXT");
         Map<String, Object> details = Map.of("patientId", patientId);
         try {
             KarteBean karte = requireKarte(ctx, patientId, "PHR_DISEASE_TEXT", details);
@@ -299,7 +301,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/medication/{patientId}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getLastMedication(@PathParam("patientId") String patientId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_MEDICATION_TEXT");
         Map<String, Object> details = Map.of("patientId", patientId);
         try {
             KarteBean karte = requireKarte(ctx, patientId, "PHR_MEDICATION_TEXT", details);
@@ -324,7 +326,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/labtest/{patientId}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getLastLabTest(@PathParam("patientId") String patientId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_LABTEST_TEXT");
         Map<String, Object> details = Map.of("patientId", patientId);
         try {
             List<NLaboModule> modules = phrServiceBean.getLastLabTest(ctx.facilityId(), patientId);
@@ -348,7 +350,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/abnormal/{patientId}")
     @Produces(MediaType.TEXT_PLAIN)
     public Response getAbnormalValue(@PathParam("patientId") String patientId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_LABTEST_ABNORMAL_TEXT");
         Map<String, Object> details = Map.of("patientId", patientId);
         try {
             List<NLaboModule> modules = phrServiceBean.getLastLabTest(ctx.facilityId(), patientId);
@@ -372,7 +374,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/image/{patientId}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response getImage(@PathParam("patientId") String patientId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_IMAGE_FETCH");
         Map<String, Object> details = Map.of("patientId", patientId);
         try {
             Optional<SchemaModel> imageOpt = dataAssembler.findLatestImage(ctx.facilityId(), patientId);
@@ -405,9 +407,12 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/{param}")
     @Produces(MediaType.APPLICATION_OCTET_STREAM)
     public Response getPHRData(@PathParam("param") String param) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_CONTAINER_FETCH");
         String[] params = param.split(",");
         if (params.length < 2) {
+            auditFailure(ctx, "PHR_CONTAINER_FETCH", null, "invalid_parameter",
+                    failureDetails(Map.of("param", param, "paramLength", params.length), null,
+                            Status.BAD_REQUEST.getStatusCode()));
             throw error(Status.BAD_REQUEST,
                     "error.phr.invalidParameter",
                     "パラメータ形式が不正です。",
@@ -424,6 +429,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             try {
                 rpRequest = Integer.parseInt(params[4]);
             } catch (NumberFormatException ex) {
+                auditFailure(ctx, "PHR_CONTAINER_FETCH", patientId, "invalid_parameter",
+                        failureDetails(Map.of("rpRequest", params[4]), ex, Status.BAD_REQUEST.getStatusCode()));
                 throw error(Status.BAD_REQUEST,
                         "error.phr.invalidParameter",
                         "rpRequest が数値ではありません。",
@@ -469,6 +476,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Produces(MediaType.TEXT_PLAIN)
     public String getIdentityToken(String json) {
         String traceId = resolveTraceId();
+        requireTraceHeader("PHR_IDENTITY_TOKEN", traceId, null);
         try {
             JsonObject jso = Json.createReader(new java.io.StringReader(json)).readObject();
             String nonce = jso.getString("nonce");
@@ -497,7 +505,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
     public Response requestExport(String json) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_EXPORT_REQUEST");
         Map<String, Object> details = new HashMap<>();
         try {
             PhrExportRequest requestPayload = objectMapper.readValue(json, PhrExportRequest.class);
@@ -541,7 +549,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @Path("/status/{jobId}")
     @Produces(MediaType.APPLICATION_JSON)
     public Response getExportStatus(@PathParam("jobId") String rawJobId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_EXPORT_STATUS");
         UUID jobId = parseJobId(rawJobId, ctx, "PHR_EXPORT_STATUS");
         Map<String, Object> details = Map.of("jobId", jobId.toString());
         try {
@@ -568,7 +576,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     @DELETE
     @Path("/status/{jobId}")
     public Response cancelExport(@PathParam("jobId") String rawJobId) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_EXPORT_CANCEL");
         UUID jobId = parseJobId(rawJobId, ctx, "PHR_EXPORT_CANCEL");
         Map<String, Object> details = Map.of("jobId", jobId.toString());
         try {
@@ -613,10 +621,15 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     public Response downloadArtifact(@PathParam("jobId") String rawJobId,
                                      @QueryParam("expires") Long expires,
                                      @QueryParam("token") String token) {
-        PhrRequestContext ctx = requireContext();
+        PhrRequestContext ctx = requireContext("PHR_EXPORT_ARTIFACT");
         UUID jobId = parseJobId(rawJobId, ctx, "PHR_EXPORT_ARTIFACT");
         Map<String, Object> details = Map.of("jobId", jobId.toString());
         if (expires == null || token == null || token.isBlank()) {
+            Map<String, Object> invalidDetails = new HashMap<>(details);
+            invalidDetails.put("expires", expires);
+            invalidDetails.put("tokenProvided", token != null && !token.isBlank());
+            auditFailure(ctx, "PHR_EXPORT_ARTIFACT", null, "invalid_parameter",
+                    failureDetails(invalidDetails, null, Status.BAD_REQUEST.getStatusCode()));
             throw error(Status.BAD_REQUEST,
                     "error.phr.invalidParameter",
                     "expires と token を指定してください。",
@@ -681,15 +694,17 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         if (attribute instanceof String trace && !trace.isBlank()) {
             return trace;
         }
-        String header = request.getHeader("X-Trace-Id");
+        String header = request.getHeader(HEADER_TRACE_ID);
         if (header != null && !header.isBlank()) {
             return header.trim();
         }
         return UUID.randomUUID().toString();
     }
 
-    private PhrRequestContext requireContext() {
+    private PhrRequestContext requireContext(String action) {
         if (request == null) {
+            auditHelper.recordFailure(null, action, null, "missing_request_context",
+                    failureDetails(null, null, Status.INTERNAL_SERVER_ERROR.getStatusCode()));
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.environment",
                     "HTTP リクエストコンテキストが利用できません。",
@@ -697,8 +712,14 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
                     null);
         }
         try {
-            return PhrRequestContextExtractor.from(request);
+            PhrRequestContext ctx = PhrRequestContextExtractor.from(request);
+            requireTraceHeader(action, ctx.traceId(), ctx);
+            String facilityHeader = requireFacilityHeader(action, ctx);
+            verifyFacilityHeader(ctx, facilityHeader, action);
+            return ctx;
         } catch (IllegalStateException ex) {
+            auditHelper.recordFailure(null, action, null, "unauthenticated",
+                    failureDetails(Map.of("errorMessage", ex.getMessage()), ex, Status.FORBIDDEN.getStatusCode()));
             throw error(Status.FORBIDDEN,
                     "error.phr.unauthenticated",
                     "認証済みユーザー情報が取得できません。",
@@ -736,6 +757,71 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             }
         }
         return details;
+    }
+
+    private String readHeader(String headerName) {
+        if (request == null || headerName == null) {
+            return null;
+        }
+        String value = request.getHeader(headerName);
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    private void requireTraceHeader(String action, String traceId, PhrRequestContext ctx) {
+        String traceHeader = readHeader(HEADER_TRACE_ID);
+        if (traceHeader != null) {
+            return;
+        }
+        Map<String, Object> details = new HashMap<>();
+        details.put("missingHeader", HEADER_TRACE_ID);
+        auditFailure(ctx, action, null, "missing_trace_header",
+                failureDetails(details, null, Status.BAD_REQUEST.getStatusCode()));
+        throw error(Status.BAD_REQUEST,
+                "error.phr.missingTraceId",
+                "X-Trace-Id ヘッダーが必要です。",
+                traceId,
+                null);
+    }
+
+    private String requireFacilityHeader(String action, PhrRequestContext ctx) {
+        String facilityHeader = readHeader(HEADER_FACILITY_ID);
+        if (facilityHeader != null) {
+            return facilityHeader;
+        }
+        Map<String, Object> details = new HashMap<>();
+        details.put("missingHeader", HEADER_FACILITY_ID);
+        auditFailure(ctx, action, null, "missing_facility_header",
+                failureDetails(details, null, Status.BAD_REQUEST.getStatusCode()));
+        throw error(Status.BAD_REQUEST,
+                "error.phr.missingFacilityId",
+                "X-Facility-Id ヘッダーが必要です。",
+                ctx.traceId(),
+                null);
+    }
+
+    private void verifyFacilityHeader(PhrRequestContext ctx, String facilityHeader, String action) {
+        if (ctx == null || facilityHeader == null) {
+            return;
+        }
+        String normalizedHeader = facilityHeader.trim();
+        String normalizedFacility = ctx.facilityId() != null ? ctx.facilityId().trim() : null;
+        if (normalizedFacility == null || normalizedFacility.equalsIgnoreCase(normalizedHeader)) {
+            return;
+        }
+        Map<String, Object> details = new HashMap<>();
+        details.put("headerFacilityId", normalizedHeader);
+        details.put("remoteFacilityId", ctx.facilityId());
+        auditFailure(ctx, action, null, "facility_mismatch_header",
+                failureDetails(details, null, Status.FORBIDDEN.getStatusCode()));
+        throw error(Status.FORBIDDEN,
+                "error.phr.forbiddenFacility",
+                "他医療機関のデータにはアクセスできません。",
+                ctx.traceId(),
+                null);
     }
 
     private void ensureFacility(PhrRequestContext ctx, String facilityId, String patientId, String action, Map<String, Object> details) {
