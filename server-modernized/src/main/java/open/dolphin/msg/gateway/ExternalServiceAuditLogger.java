@@ -85,6 +85,27 @@ public final class ExternalServiceAuditLogger {
                 error);
     }
 
+    public static void logOrcaRequest(String traceId, String action, String path, String targetSummary) {
+        log(Level.INFO, "ORCA_REQUEST", traceId,
+                () -> orcaPayloadSummary(action, path),
+                () -> targetSummary,
+                null);
+    }
+
+    public static void logOrcaResponse(String traceId, String action, String path, int status, String targetSummary) {
+        log(Level.INFO, "ORCA_RESPONSE", traceId,
+                () -> orcaPayloadSummary(action, path) + " http.status=" + status,
+                () -> targetSummary,
+                null);
+    }
+
+    public static void logOrcaFailure(String traceId, String action, String path, String targetSummary, Throwable error) {
+        log(Level.WARNING, "ORCA_FAILURE", traceId,
+                () -> orcaPayloadSummary(action, path),
+                () -> targetSummary,
+                error);
+    }
+
     private static void log(Level level, String event, String traceId,
             Supplier<String> payloadSummarySupplier,
             Supplier<String> settingsSummarySupplier,
@@ -158,6 +179,12 @@ public final class ExternalServiceAuditLogger {
             return "plivo.environment=unknown";
         }
         return String.format("plivo.environment=%s plivo.source=%s", safe(settings.environment()), safe(settings.sourceNumber()));
+    }
+
+    private static String orcaPayloadSummary(String action, String path) {
+        String resolvedAction = action != null ? action : "ORCA_HTTP";
+        String resolvedPath = path != null ? path : "unknown";
+        return "orca.action=" + resolvedAction + " orca.path=" + resolvedPath;
     }
 
     private static String safe(String value) {
