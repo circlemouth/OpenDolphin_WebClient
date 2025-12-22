@@ -24,9 +24,9 @@
 
 ## 実装状況
 - 実装済み
-  - PHRContainer の JSON 返却（`application/json`）。
+  - PHRContainer の JSON 返却（`application/json`）を `docList`/`labList` の空配列を含めて返却。
   - 画像ストリームの `image/jpeg` 応答 + `Cache-Control: no-store` + `Content-Length`。
-  - 薬剤の JSON 変換（`PHRBundle`/`PHRClaimItem` へのマッピング）。
+  - 薬剤の JSON 変換（`PHRBundle`/`PHRClaimItem` へのマッピング）と `bundles` の空配列化。
 - 未実装
   - **禁忌語の置換ロジック**（`TouchMedicationFormatter` などによる文言置換）。
     - 現状は用法/頻度/投与量などの構造化データを JSON へ反映するのみ。
@@ -34,6 +34,7 @@
 
 ## 確認
 - 2025-12-22: `PHRResource`/`PhrDataAssembler`/`PhrMedicationResponse` の現行実装で要件を満たしていることを確認。
+- 2025-12-22 (RUN_ID=20251222T211600Z): `PHRResource` の JSON 応答ラッパーを追加し、空配列を欠落させない実装に更新。
 
 ## 実装済みエンドポイント
 - `GET /20/adm/phr/{facilityId,patientId,...}`: `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
@@ -47,8 +48,7 @@
 
 ## 変更ファイル
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
-- `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`
-- `server-modernized/src/main/java/open/dolphin/adm20/dto/PhrMedicationResponse.java`
+- `src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md`
 
 ## 留意点
 - Phase2/Legacy 文書は参照のみで更新対象外。
