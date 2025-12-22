@@ -70,6 +70,9 @@ public class IdentityService {
             LOGGER.log(Level.INFO, "token={0}", ret);
             return ret;
             
+        } catch (IdentityTokenSecretsException ex) {
+            LOGGER.log(Level.SEVERE, "IdentityToken secrets are not configured.", ex);
+            throw ex;
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | InvalidKeyException | SignatureException ex) {
             LOGGER.log(Level.SEVERE, "Failed to generate IdentityToken.", ex);
             throw new IllegalStateException("Failed to generate IdentityToken.", ex);
@@ -78,41 +81,67 @@ public class IdentityService {
     
     private byte[] readPrivateKeyFromDisk(final String path) throws IOException {
         if (path == null || path.isBlank()) {
-            throw new IOException("PHR identity private key path is not configured.");
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_MISSING,
+                    "PHR identity private key path is not configured.",
+                    "path");
         }
         final File privateKeyFile = new File(path);
         if (!privateKeyFile.exists()) {
-            throw new IOException("PHR identity private key file not found: " + privateKeyFile.getAbsolutePath());
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_NOT_FOUND,
+                    "PHR identity private key file not found: " + privateKeyFile.getAbsolutePath(),
+                    "path");
         }
-        final FileInputStream fileInputStream = new FileInputStream(privateKeyFile);
-        final DataInputStream dis = new DataInputStream(fileInputStream);
+        if (!privateKeyFile.isFile()) {
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_NOT_FOUND,
+                    "PHR identity private key is not a file: " + privateKeyFile.getAbsolutePath(),
+                    "path");
+        }
         final byte[] privateBytes = new byte[(int) privateKeyFile.length()];
-        try {
+        try (FileInputStream fileInputStream = new FileInputStream(privateKeyFile);
+             DataInputStream dis = new DataInputStream(fileInputStream)) {
             dis.readFully(privateBytes);
-        } catch (IOException ioe) {
-            /** No-op **/
-        } finally {
-            fileInputStream.close();
+        } catch (IOException ex) {
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_READ_FAILED,
+                    "PHR identity private key file read failed: " + privateKeyFile.getAbsolutePath(),
+                    "path",
+                    ex);
         }
         if (privateBytes.length == 0) {
-            throw new IOException("PHR identity private key file is empty: " + privateKeyFile.getAbsolutePath());
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_EMPTY,
+                    "PHR identity private key file is empty: " + privateKeyFile.getAbsolutePath(),
+                    "path");
         }
         return privateBytes;
     }
 
     private byte[] readPrivateKeyFromBase64(final String base64) throws IOException {
         if (base64 == null || base64.isBlank()) {
-            throw new IOException("PHR identity private key base64 is empty.");
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_MISSING,
+                    "PHR identity private key base64 is empty.",
+                    "base64");
         }
         String normalized = base64.replaceAll("\\s", "");
         try {
             byte[] decoded = Base64.getDecoder().decode(normalized);
             if (decoded.length == 0) {
-                throw new IOException("PHR identity private key base64 is empty after decode.");
+                throw new IdentityTokenSecretsException(
+                        IdentityTokenSecretsException.REASON_KEY_EMPTY,
+                        "PHR identity private key base64 is empty after decode.",
+                        "base64");
             }
             return decoded;
         } catch (IllegalArgumentException ex) {
-            throw new IOException("PHR identity private key base64 is invalid.", ex);
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_INVALID,
+                    "PHR identity private key base64 is invalid.",
+                    "base64",
+                    ex);
         }
     }
 

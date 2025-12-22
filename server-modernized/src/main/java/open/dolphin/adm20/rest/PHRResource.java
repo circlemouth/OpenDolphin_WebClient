@@ -44,6 +44,7 @@ import open.dolphin.adm20.export.PhrExportStorage;
 import open.dolphin.adm20.export.PhrExportStorageFactory;
 import open.dolphin.adm20.export.SignedUrlService;
 import open.dolphin.adm20.mbean.IdentityService;
+import open.dolphin.adm20.mbean.IdentityTokenSecretsException;
 import open.dolphin.adm20.rest.support.PhrAuditHelper;
 import open.dolphin.adm20.rest.support.PhrErrorMapper;
 import open.dolphin.adm20.rest.support.PhrRequestContext;
@@ -525,6 +526,23 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             throw error(Status.BAD_REQUEST,
                     "error.phr.invalidPayload",
                     "リクエストボディの形式が不正です。",
+                    traceId,
+                    ex);
+        } catch (IdentityTokenSecretsException ex) {
+            Map<String, Object> failure = failureDetails(details, ex, Status.SERVICE_UNAVAILABLE.getStatusCode());
+            if (ex.getReason() != null && !ex.getReason().isBlank()) {
+                failure.put("secretReason", ex.getReason());
+            }
+            if (ex.getSource() != null && !ex.getSource().isBlank()) {
+                failure.put("secretSource", ex.getSource());
+            }
+            String reason = ex.getReason() != null && !ex.getReason().isBlank()
+                    ? ex.getReason()
+                    : "identity_token_secret_missing";
+            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, reason, failure);
+            throw error(Status.SERVICE_UNAVAILABLE,
+                    "error.phr.identityTokenUnavailable",
+                    "Identity トークンの署名鍵が利用できません。",
                     traceId,
                     ex);
         } catch (WebApplicationException ex) {
