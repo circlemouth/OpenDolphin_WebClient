@@ -551,19 +551,25 @@ public class OrcaMasterResource extends AbstractResource {
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
+        final String masterType = "orca08-etensu";
         final String category = getFirstValue(params, "category");
         if (category != null && !ETENSU_CATEGORY_PATTERN.matcher(category).matches()) {
+            recordEtensuValidationAudit(request, masterType, keyword, category, null, null,
+                    "TENSU_CATEGORY_INVALID", params);
             return validationError(request, "TENSU_CATEGORY_INVALID", "category must be numeric 1-2 digits");
         }
         final String asOf = getFirstValue(params, "asOf");
         if (asOf != null && !AS_OF_PATTERN.matcher(asOf).matches()) {
+            recordEtensuValidationAudit(request, masterType, keyword, category, asOf, null,
+                    "TENSU_ASOF_INVALID", params);
             return validationError(request, "TENSU_ASOF_INVALID", "asOf must be YYYYMMDD");
         }
         final String tensuVersion = getFirstValue(params, "tensuVersion");
         if (tensuVersion != null && !TENSU_VERSION_PATTERN.matcher(tensuVersion).matches()) {
+            recordEtensuValidationAudit(request, masterType, keyword, category, asOf, tensuVersion,
+                    "TENSU_VERSION_INVALID", params);
             return validationError(request, "TENSU_VERSION_INVALID", "tensuVersion must be YYYYMM");
         }
-        final String masterType = "orca08-etensu";
         EtensuDao.EtensuSearchCriteria criteria = new EtensuDao.EtensuSearchCriteria();
         criteria.setKeyword(keyword);
         criteria.setCategory(category);
@@ -616,6 +622,24 @@ public class OrcaMasterResource extends AbstractResource {
                 totalCount,
                 buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
         return buildCachedOkResponse(response, etagValue, ttlSeconds);
+    }
+
+    private void recordEtensuValidationAudit(HttpServletRequest request, String masterType, String keyword,
+            String category, String asOf, String tensuVersion, String errorCode,
+            MultivaluedMap<String, String> params) {
+        LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
+                Collections.emptyList(),
+                null,
+                tensuVersion,
+                DataOrigin.ORCA_DB,
+                false
+        );
+        java.util.Map<String, Object> details = buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params);
+        details.put("validationError", true);
+        if (errorCode != null && !errorCode.isBlank()) {
+            details.put("errorCode", errorCode);
+        }
+        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 422, dbFixture, false, null, null, details);
     }
 
     private Response unauthorized(HttpServletRequest request) {
