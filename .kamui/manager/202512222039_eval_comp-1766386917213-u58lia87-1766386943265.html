@@ -1,0 +1,256 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: PHR コンテナ/画像/薬剤変換</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-title {
+        font-weight: 600;
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 4px;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #1f2a30;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px 12px;
+        font-size: 12px;
+        margin-top: 8px;
+        color: #2c3a40;
+      }
+      .metric-list span {
+        background: #eef3f4;
+        padding: 4px 6px;
+        border: 1px solid #c4d3d7;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        margin-bottom: 8px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      a {
+        color: #1f5b75;
+      }
+      .radar {
+        width: 220px;
+        margin-bottom: 8px;
+      }
+      .radar svg {
+        width: 100%;
+        height: auto;
+      }
+      .notes {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: PHR コンテナ/画像/薬剤変換</h1>
+        <p class="monitor-description">対象ブランチのコミットと差分を確認し、要件充足と実装品質を比較評価。</p>
+        <p class="monitor-description">作成日時: 202512222039</p>
+      </header>
+
+      <section>
+        <div class="section-title">タスク概要</div>
+        <p class="monitor-description">
+          PHRContainer の JSON 応答確定、PHR 画像応答の Content-Type/ヘッダー整備、薬剤（禁忌語用法）変換の JSON 統一が求められている。
+          ただし両ブランチとも、実装は PHR 画像の Content-Type を固定する変更に限定されている。
+        </p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">codex task-1766386917214-9a9db9 合計点 (600点満点)</div>
+          <div class="score-value">215 / 600 🥉</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">codex task-1766386917414-d8dec7 合計点 (600点満点)</div>
+          <div class="score-value">195 / 600 🥉</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>codex task-1766386917214-9a9db9</th>
+            <th>codex task-1766386917414-d8dec7</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="badge">メダル: 🥉 / スコア: 40点</div>
+              <div class="radar">
+                <svg viewBox="0 0 200 200" role="img" aria-label="6指標レーダーチャート">
+                  <polygon points="100,30 160.6,65 160.6,135 100,170 39.4,135 39.4,65" fill="none" stroke="#93a8af" stroke-width="1" />
+                  <polygon points="100,65 130.3,82.5 130.3,117.5 100,135 69.7,117.5 69.7,82.5" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100,68.5 124.2,86 118.2,110.5 100,124.5 72.7,115.8 87.9,93" fill="#9fc4d1" fill-opacity="0.6" stroke="#4f7f8c" stroke-width="1" />
+                </svg>
+              </div>
+              <div class="metric-list">
+                <span>コード品質 45点</span>
+                <span>要件適合 40点</span>
+                <span>網羅性 30点</span>
+                <span>緻密性 35点</span>
+                <span>安全性 45点</span>
+                <span>テスト/検証 20点</span>
+              </div>
+              <div class="section-title">根拠</div>
+              <pre>・画像 Content-Type を image/jpeg に固定し仕様の一部に適合。
+・PHRContainer の JSON 応答確定や薬剤 JSON 変換は未対応。
+・変更範囲は PHRResource のみで、関連 DTO/Assembler への反映がない。</pre>
+
+              <div class="section-title">コミットログ</div>
+              <pre>41a9c76f Fix PHR image content type to jpeg</pre>
+
+              <div class="section-title">差分要約</div>
+              <pre>server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java
+- ExtRefModel 参照を削除
+- 応答 Content-Type を常に image/jpeg に固定</pre>
+
+              <div class="section-title">成果物リンク</div>
+              <pre><a href="C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766386917214-9a9db9/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766386917214-9a9db9/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java</a></pre>
+              <div class="notes">別 worktree の成果物である点に留意。</div>
+            </td>
+            <td>
+              <div class="badge">メダル: 🥉 / スコア: 38点</div>
+              <div class="radar">
+                <svg viewBox="0 0 200 200" role="img" aria-label="6指標レーダーチャート">
+                  <polygon points="100,30 160.6,65 160.6,135 100,170 39.4,135 39.4,65" fill="none" stroke="#93a8af" stroke-width="1" />
+                  <polygon points="100,65 130.3,82.5 130.3,117.5 100,135 69.7,117.5 69.7,82.5" fill="none" stroke="#c4d3d7" stroke-width="1" />
+                  <polygon points="100,72 121.2,87.8 115.2,108.8 100,124.5 75.8,114 87.9,93" fill="#9fc4d1" fill-opacity="0.6" stroke="#4f7f8c" stroke-width="1" />
+                </svg>
+              </div>
+              <div class="metric-list">
+                <span>コード品質 40点</span>
+                <span>要件適合 35点</span>
+                <span>網羅性 25点</span>
+                <span>緻密性 35点</span>
+                <span>安全性 40点</span>
+                <span>テスト/検証 20点</span>
+              </div>
+              <div class="section-title">根拠</div>
+              <pre>・画像 Content-Type の修正は実施。
+・PHRContainer/薬剤 JSON 変換は未対応。
+・worktree に未コミット変更 (.kamui/tasks-state.json) が残存。</pre>
+
+              <div class="section-title">コミットログ</div>
+              <pre>e6e7ffc1 Fix PHR image content type</pre>
+
+              <div class="section-title">差分要約</div>
+              <pre>server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java
+- ExtRefModel 参照を削除
+- 応答 Content-Type を常に image/jpeg に固定</pre>
+
+              <div class="section-title">成果物リンク</div>
+              <pre><a href="C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766386917414-d8dec7/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766386917414-d8dec7/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java</a></pre>
+              <div class="notes">別 worktree の成果物である点に留意。</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
