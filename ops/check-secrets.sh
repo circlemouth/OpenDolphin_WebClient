@@ -123,12 +123,56 @@ check_factor2_aes_key_entropy() {
   fi
 }
 
+check_layer_identity_secrets() {
+  local base64_value="${PHR_LAYER_PRIVATE_KEY_BASE64:-}"
+  local path_value="${PHR_LAYER_PRIVATE_KEY_PATH:-}"
+
+  if [[ -z "$base64_value" && -z "$path_value" ]]; then
+    add_error "PHR_LAYER_PRIVATE_KEY_BASE64 または PHR_LAYER_PRIVATE_KEY_PATH: 未設定（Layer ID 署名鍵が必要）"
+    return
+  fi
+
+  if [[ -n "$base64_value" && -n "$path_value" ]]; then
+    add_warning "PHR_LAYER_PRIVATE_KEY_BASE64 と PHR_LAYER_PRIVATE_KEY_PATH が両方設定されています（base64 を優先）"
+  fi
+
+  if [[ -n "$base64_value" ]]; then
+    if ! [[ "$base64_value" =~ ^[A-Za-z0-9+/=\r\n[:space:]]+$ ]]; then
+      add_error "PHR_LAYER_PRIVATE_KEY_BASE64: 形式不一致（Base64 形式の秘密鍵）"
+      return
+    fi
+
+    if ! command -v base64 >/dev/null 2>&1; then
+      add_warning "base64 コマンドが見つからないため PHR_LAYER_PRIVATE_KEY_BASE64 のデコード検証をスキップ"
+      return
+    fi
+
+    local normalized
+    normalized="$(printf '%s' "$base64_value" | tr -d '[:space:]')"
+    if ! printf '%s' "$normalized" | base64 -d >/dev/null 2>&1; then
+      add_error "PHR_LAYER_PRIVATE_KEY_BASE64: Base64 デコード失敗（再登録が必要）"
+    fi
+    return
+  fi
+
+  if [[ -n "$path_value" ]]; then
+    if [[ ! -f "$path_value" ]]; then
+      add_error "PHR_LAYER_PRIVATE_KEY_PATH: ファイルが存在しません (${path_value})"
+      return
+    fi
+    if [[ ! -s "$path_value" ]]; then
+      add_error "PHR_LAYER_PRIVATE_KEY_PATH: ファイルが空です (${path_value})"
+    fi
+  fi
+}
+
 main() {
   log_info "Secrets チェックを開始します（vault/外部依存は実行しません）"
 
   check_required_secrets
   check_s3_only_secrets
   check_factor2_aes_key_entropy
+  check_layer_identity_secrets
 
   if [[ "${#WARNINGS[@]}" -gt 0 ]]; then
     log_info "Warnings:"

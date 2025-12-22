@@ -14,6 +14,7 @@
   - `POST /20/adm/phr/identityToken` を実装済み。
 - `server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java`
   - RSA 署名で IdentityToken を生成し、秘密鍵は base64/ファイルのどちらからでも取得できる。
+  - 鍵未設定・不正時は `IdentityTokenSecretsException` を送出する。
 - `server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java`
   - Layer ID と秘密鍵参照先は System Property / 環境変数で上書きできる。
     - `phr.layer.app.id` / `PHR_LAYER_APP_ID`
@@ -21,6 +22,20 @@
     - `phr.layer.provider.id` / `PHR_LAYER_PROVIDER_ID`
     - `phr.layer.private.key.path` / `PHR_LAYER_PRIVATE_KEY_PATH`
     - `phr.layer.private.key.base64` / `PHR_LAYER_PRIVATE_KEY_BASE64`
+
+## 対応内容
+- IdentityToken 失敗監査の補完
+  - 鍵未設定/読込失敗/形式不正を `IdentityTokenSecretsException` で判定し、監査へ reason/source を記録。
+  - `POST /20/adm/phr/identityToken` は鍵不備時に 503 + `error.phr.identityTokenUnavailable` を返却。
+- Secrets 注入チェック
+  - `ops/check-secrets.sh` に `PHR_LAYER_PRIVATE_KEY_BASE64` / `PHR_LAYER_PRIVATE_KEY_PATH` の検証を追加。
+  - base64 が設定されている場合はデコード検証、path 指定時は存在/空ファイルを確認。
+
+## 変更ファイル
+- `server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityTokenSecretsException.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+- `ops/check-secrets.sh`
 
 ## 未実施
 - Secrets の注入運用（Vault 連携）や鍵の保護ポリシー整備。
