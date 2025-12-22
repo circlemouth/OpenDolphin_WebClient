@@ -6,10 +6,13 @@ import jakarta.ws.rs.GET;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.DefaultValue;
+import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
+import open.dolphin.touch.converter.IPatientVisitModel;
 import open.dolphin.touch.patient.dto.TouchPatientDtos.PatientPackageResponse;
 import open.dolphin.touch.support.TouchErrorMapper;
 import open.dolphin.touch.support.TouchRequestContext;
@@ -58,6 +61,20 @@ public class TouchPatientResource {
         int firstResult = parseInt(params[2], context);
         int maxResult = parseInt(params[3], context);
         return patientService.searchPatientsByName(context, facilityId, keyword, firstResult, maxResult);
+    }
+
+    @GET
+    @Path("/patient/visit")
+    public java.util.List<IPatientVisitModel> getPatientVisit(@Context HttpServletRequest request,
+                                                              @QueryParam("facility") String facilityId,
+                                                              @DefaultValue("0") @QueryParam("offset") String offset,
+                                                              @DefaultValue("50") @QueryParam("limit") String limit,
+                                                              @DefaultValue("pvtDate") @QueryParam("sort") String sort,
+                                                              @DefaultValue("desc") @QueryParam("order") String order) {
+        TouchRequestContext context = TouchRequestContextExtractor.from(request);
+        int firstResult = parseInt(offset, context);
+        int maxResult = parseInt(limit, context);
+        return patientService.getPatientVisits(context, facilityId, firstResult, maxResult, sort, order);
     }
 
     private long parseLong(String value, TouchRequestContext context) {

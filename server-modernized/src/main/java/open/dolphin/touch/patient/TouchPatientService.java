@@ -11,12 +11,14 @@ import open.dolphin.infomodel.HealthInsuranceModel;
 import open.dolphin.infomodel.PatientList;
 import open.dolphin.infomodel.PatientModel;
 import open.dolphin.infomodel.PatientPackage;
+import open.dolphin.infomodel.PatientVisitModel;
 import open.dolphin.infomodel.PVTHealthInsuranceModel;
 import open.dolphin.infomodel.PVTPublicInsuranceItemModel;
 import open.dolphin.touch.JsonTouchSharedService;
 import open.dolphin.touch.KanjiHelper;
 import open.dolphin.touch.converter.IPatientList;
 import open.dolphin.touch.converter.IPatientModel;
+import open.dolphin.touch.converter.IPatientVisitModel;
 import open.dolphin.touch.converter.IOSHelper;
 import open.dolphin.touch.patient.dto.TouchPatientDtos.AllergyDto;
 import open.dolphin.touch.patient.dto.TouchPatientDtos.HealthInsuranceDto;
@@ -37,6 +39,8 @@ public class TouchPatientService {
     private static final String ACTION_PATIENT_PROFILE = "TOUCH_PATIENT_PROFILE_VIEW";
     private static final String ACTION_PATIENT_PACKAGE = "TOUCH_PATIENT_PACKAGE_VIEW";
     private static final String ACTION_PATIENT_SEARCH = "TOUCH_PATIENT_SEARCH";
+    private static final String ACTION_PATIENT_VISIT = "TOUCH_PATIENT_VISIT_VIEW";
+    private static final int MAX_LIMIT = 1000;
 
     @Inject
     IPhoneServiceBean iPhoneServiceBean;
@@ -139,6 +143,50 @@ public class TouchPatientService {
         } catch (RuntimeException ex) {
             recordFailure(context, ACTION_PATIENT_SEARCH, resource, ex,
                     Map.of("facilityId", facilityId, "keyword", keyword));
+            throw ex;
+        }
+    }
+
+    public List<IPatientVisitModel> getPatientVisits(TouchRequestContext context,
+                                                     String facilityId,
+                                                     int firstResult,
+                                                     int maxResult,
+                                                     String sort,
+                                                     String order) {
+        String resource = "/touch/patient/visit";
+        try {
+            requireConsent(context);
+            String resolvedFacility = facilityId == null || facilityId.isBlank()
+                    ? context.facilityId()
+                    : facilityId;
+            ensureFacilityOwnership(context, resolvedFacility);
+
+            int normalizedOffset = normalizeOffset(firstResult, context);
+            int normalizedLimit = normalizeLimit(maxResult, context);
+            IPhoneServiceBean.VisitOrder visitOrder = parseVisitOrder(sort);
+            boolean descending = isDescending(order);
+
+            List<PatientVisitModel> visits = iPhoneServiceBean.getPatientVisit(
+                    resolvedFacility, normalizedOffset, normalizedLimit, visitOrder, descending);
+            List<IPatientVisitModel> converted = convertVisits(visits);
+
+            Map<String, Object> details = new java.util.HashMap<>();
+            details.put("facilityId", resolvedFacility);
+            details.put("offset", normalizedOffset);
+            details.put("limit", normalizedLimit);
+            details.put("sort", visitOrder.name());
+            details.put("order", descending ? "desc" : "asc");
+            details.put("resultCount", converted.size());
+            auditHelper.record(context, ACTION_PATIENT_VISIT, resource, details);
+
+            return converted;
+        } catch (jakarta.ws.rs.WebApplicationException ex) {
+            recordFailure(context, ACTION_PATIENT_VISIT, resource, ex,
+                    Map.of("facilityId", facilityId, "offset", firstResult, "limit", maxResult));
+            throw ex;
+        } catch (RuntimeException ex) {
+            recordFailure(context, ACTION_PATIENT_VISIT, resource, ex,
+                    Map.of("facilityId", facilityId, "offset", firstResult, "limit", maxResult));
             throw ex;
         }
     }
@@ -267,5 +315,53 @@ public class TouchPatientService {
         Character.UnicodeBlock block = Character.UnicodeBlock.of(ch);
         return Character.UnicodeBlock.HALFWIDTH_AND_FULLWIDTH_FORMS.equals(block) &&
                 Character.toString(ch).matches("[\\uFF66-\\uFF9D]");
+    }
+
+    private List<IPatientVisitModel> convertVisits(List<PatientVisitModel> visits) {
+        if (visits == null || visits.isEmpty()) {
+            return List.of();
+        }
+        List<IPatientVisitModel> converted = new ArrayList<>(visits.size());
+        for (PatientVisitModel visit : visits) {
+            if (visit == null) {
+                continue;
+            }
+            IPatientVisitModel converter = new IPatientVisitModel();
+            converter.setModel(visit);
+            converted.add(converter);
+        }
+        return converted;
+    }
+
+    private int normalizeOffset(int offset, TouchRequestContext context) {
+        if (offset < 0) {
+            throw TouchErrorMapper.toException(jakarta.ws.rs.core.Response.Status.BAD_REQUEST,
+                    "invalid_offset", "offset は 0 以上で指定してください。", context.traceId());
+        }
+        return offset;
+    }
+
+    private int normalizeLimit(int limit, TouchRequestContext context) {
+        if (limit <= 0) {
+            throw TouchErrorMapper.toException(jakarta.ws.rs.core.Response.Status.BAD_REQUEST,
+                    "invalid_limit", "limit は 1 以上で指定してください。", context.traceId());
+        }
+        return Math.min(limit, MAX_LIMIT);
+    }
+
+    private IPhoneServiceBean.VisitOrder parseVisitOrder(String sortParam) {
+        if (sortParam == null) {
+            return IPhoneServiceBean.VisitOrder.PVT_DATE;
+        }
+        String candidate = sortParam.trim().toLowerCase(Locale.ROOT);
+        return switch (candidate) {
+            case "patientkana", "kana" -> IPhoneServiceBean.VisitOrder.PATIENT_KANA;
+            case "pvtdate", "date", "visitdate" -> IPhoneServiceBean.VisitOrder.PVT_DATE;
+            default -> IPhoneServiceBean.VisitOrder.PVT_DATE;
+        };
+    }
+
+    private boolean isDescending(String orderParam) {
+        return orderParam == null || !"asc".equalsIgnoreCase(orderParam.trim());
     }
 }
