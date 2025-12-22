@@ -8,6 +8,7 @@ import open.dolphin.orca.OrcaGatewayException;
 import open.dolphin.orca.converter.OrcaXmlMapper;
 import open.dolphin.orca.transport.OrcaEndpoint;
 import open.dolphin.orca.transport.OrcaTransport;
+import open.dolphin.orca.transport.RestOrcaTransport;
 import open.dolphin.rest.dto.orca.AppointmentMutationRequest;
 import open.dolphin.rest.dto.orca.AppointmentMutationResponse;
 import open.dolphin.rest.dto.orca.BillingSimulationRequest;
@@ -60,7 +61,7 @@ public class OrcaWrapperService {
     @PostConstruct
     private void initializeDependencies() {
         if (transport == null) {
-            transport = CDI.current().select(OrcaTransport.class).get();
+            transport = CDI.current().select(RestOrcaTransport.class).get();
         }
         if (mapper == null) {
             mapper = CDI.current().select(OrcaXmlMapper.class).get();
