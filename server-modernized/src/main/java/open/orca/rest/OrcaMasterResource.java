@@ -58,6 +58,7 @@ public class OrcaMasterResource extends AbstractResource {
     private static final long CACHE_TTL_SHORT_SECONDS = 300;
     private static final long CACHE_TTL_LONG_SECONDS = 604800;
     private static final long CACHE_STALE_REVALIDATE_SECONDS = 86400;
+    private static final int MAX_PAGE_SIZE = 2000;
     private static final Pattern SRYCD_PATTERN = Pattern.compile("^\\d{9}$");
     private static final Pattern ZIP_PATTERN = Pattern.compile("^\\d{7}$");
     private static final Pattern PREF_PATTERN = Pattern.compile("^(0[1-9]|[1-3][0-9]|4[0-7])$");
@@ -550,26 +551,32 @@ public class OrcaMasterResource extends AbstractResource {
         }
         final MultivaluedMap<String, String> params = uriInfo.getQueryParameters();
         final String keyword = getFirstValue(params, "keyword");
+        final String masterType = "orca08-etensu";
         final String category = getFirstValue(params, "category");
         if (category != null && !ETENSU_CATEGORY_PATTERN.matcher(category).matches()) {
+            recordEtensuValidationAudit(request, masterType, keyword, category, null, null,
+                    "TENSU_CATEGORY_INVALID", params);
             return validationError(request, "TENSU_CATEGORY_INVALID", "category must be numeric 1-2 digits");
         }
         final String asOf = getFirstValue(params, "asOf");
         if (asOf != null && !AS_OF_PATTERN.matcher(asOf).matches()) {
+            recordEtensuValidationAudit(request, masterType, keyword, category, asOf, null,
+                    "TENSU_ASOF_INVALID", params);
             return validationError(request, "TENSU_ASOF_INVALID", "asOf must be YYYYMMDD");
         }
         final String tensuVersion = getFirstValue(params, "tensuVersion");
         if (tensuVersion != null && !TENSU_VERSION_PATTERN.matcher(tensuVersion).matches()) {
+            recordEtensuValidationAudit(request, masterType, keyword, category, asOf, tensuVersion,
+                    "TENSU_VERSION_INVALID", params);
             return validationError(request, "TENSU_VERSION_INVALID", "tensuVersion must be YYYYMM");
         }
-        final String masterType = "orca08-etensu";
         EtensuDao.EtensuSearchCriteria criteria = new EtensuDao.EtensuSearchCriteria();
         criteria.setKeyword(keyword);
         criteria.setCategory(category);
         criteria.setAsOf(asOf);
         criteria.setTensuVersion(tensuVersion);
         criteria.setPage(parsePositiveInt(params, "page", 1));
-        criteria.setSize(parsePositiveInt(params, "size", 100));
+        criteria.setSize(parsePageSize(params, "size", 100));
         EtensuDao.EtensuSearchResult dbResult = etensuDao.search(criteria);
         if (dbResult == null) {
             LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
@@ -615,6 +622,24 @@ public class OrcaMasterResource extends AbstractResource {
                 totalCount,
                 buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
         return buildCachedOkResponse(response, etagValue, ttlSeconds);
+    }
+
+    private void recordEtensuValidationAudit(HttpServletRequest request, String masterType, String keyword,
+            String category, String asOf, String tensuVersion, String errorCode,
+            MultivaluedMap<String, String> params) {
+        LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
+                Collections.emptyList(),
+                null,
+                tensuVersion,
+                DataOrigin.ORCA_DB,
+                false
+        );
+        java.util.Map<String, Object> details = buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params);
+        details.put("validationError", true);
+        if (errorCode != null && !errorCode.isBlank()) {
+            details.put("errorCode", errorCode);
+        }
+        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 422, dbFixture, false, null, null, details);
     }
 
     private Response unauthorized(HttpServletRequest request) {
@@ -700,10 +725,7 @@ public class OrcaMasterResource extends AbstractResource {
 
     private <T> List<T> paginateList(List<T> source, MultivaluedMap<String, String> params) {
         int page = parsePositiveInt(params, "page", 1);
-        int size = parsePositiveInt(params, "size", 100);
-        if (size > 2000) {
-            size = 2000;
-        }
+        int size = parsePageSize(params, "size", 100);
         int fromIndex = Math.max(0, (page - 1) * size);
         if (fromIndex >= source.size()) {
             return Collections.emptyList();
@@ -723,6 +745,11 @@ public class OrcaMasterResource extends AbstractResource {
         } catch (NumberFormatException e) {
             return fallback;
         }
+    }
+
+    private int parsePageSize(MultivaluedMap<String, String> params, String key, int fallback) {
+        int parsed = parsePositiveInt(params, key, fallback);
+        return Math.min(parsed, MAX_PAGE_SIZE);
     }
 
     private OrcaDrugMasterEntry toGenericClassEntry(FixtureGenericClassEntry entry, LoadedFixture<?> fixture) {
@@ -1233,14 +1260,19 @@ public class OrcaMasterResource extends AbstractResource {
         details.put("runId", RUN_ID);
         details.put("masterType", masterType);
         details.put("httpStatus", httpStatus);
+        details.put("status", httpStatus >= 400 ? "failed" : "success");
         details.put("dataSource", dataSourceForOrigin(fixture.origin));
         details.put("snapshotVersion", fixture.snapshotVersion);
         details.put("version", firstNonBlank(fixture.version, DEFAULT_VERSION));
         details.put("cacheHit", cacheHit);
         details.put("missingMaster", fixture.origin == DataOrigin.FALLBACK);
         details.put("fallbackUsed", fixture.origin == DataOrigin.FALLBACK);
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+        }
         if (resultCount != null) {
             details.put("resultCount", resultCount);
+            details.put("totalCount", resultCount);
         }
         if (emptyResult != null) {
             details.put("emptyResult", emptyResult);
@@ -1281,7 +1313,7 @@ public class OrcaMasterResource extends AbstractResource {
         }
         if (params != null) {
             details.put("page", parsePositiveInt(params, "page", 1));
-            details.put("size", parsePositiveInt(params, "size", 100));
+            details.put("size", parsePageSize(params, "size", 100));
         }
         return details;
     }
@@ -1313,7 +1345,7 @@ public class OrcaMasterResource extends AbstractResource {
         }
         if (params != null) {
             details.put("page", parsePositiveInt(params, "page", 1));
-            details.put("size", parsePositiveInt(params, "size", 100));
+            details.put("size", parsePageSize(params, "size", 100));
         }
         return details;
     }
