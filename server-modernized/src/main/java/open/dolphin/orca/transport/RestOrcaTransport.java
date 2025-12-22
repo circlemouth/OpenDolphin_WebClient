@@ -70,18 +70,23 @@ public class RestOrcaTransport implements OrcaTransport {
 
     @Override
     public String invoke(OrcaEndpoint endpoint, String requestXml) {
-        if (endpoint == null) {
-            throw new OrcaGatewayException("Endpoint must not be null");
-        }
         OrcaTransportSettings resolved = OrcaTransportSettings.load();
+        String traceId = resolveTraceId();
+        String action = "ORCA_HTTP";
+        if (endpoint == null) {
+            OrcaGatewayException failure = new OrcaGatewayException("Endpoint must not be null");
+            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, null, resolved.auditSummary(), failure);
+            throw failure;
+        }
         if (!resolved.isReady()) {
-            throw new OrcaGatewayException("ORCA transport settings are incomplete");
+            OrcaGatewayException failure = new OrcaGatewayException("ORCA transport settings are incomplete");
+            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
+            throw failure;
         }
         String payload = requestXml != null ? requestXml : "";
-        String traceId = resolveTraceId();
         String requestId = traceId;
         String url = resolved.buildUrl(endpoint);
-        String action = "ORCA_HTTP";
+        URI uri = toUriWithAudit(url, traceId, action, endpoint, resolved);
         int maxRetries = resolved.retryMax;
         long backoffMs = resolved.retryBackoffMs;
         int attempt = 0;
@@ -89,7 +94,7 @@ public class RestOrcaTransport implements OrcaTransport {
             attempt++;
             try {
                 HttpRequest request = HttpRequest.newBuilder()
-                        .uri(toUri(url))
+                        .uri(uri)
                         .timeout(DEFAULT_READ_TIMEOUT)
                         .header("Content-Type", "application/xml")
                         .header("Accept", "application/xml")
@@ -150,6 +155,18 @@ public class RestOrcaTransport implements OrcaTransport {
             return new URI(url);
         } catch (URISyntaxException ex) {
             throw new OrcaGatewayException("Invalid ORCA API URL: " + url, ex);
+        }
+    }
+
+    private static URI toUriWithAudit(String url, String traceId, String action,
+            OrcaEndpoint endpoint, OrcaTransportSettings settings) {
+        try {
+            return toUri(url);
+        } catch (OrcaGatewayException ex) {
+            String path = endpoint != null ? endpoint.getPath() : null;
+            String summary = settings != null ? settings.auditSummary() : "orca.host=unknown";
+            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, path, summary, ex);
+            throw ex;
         }
     }
 
