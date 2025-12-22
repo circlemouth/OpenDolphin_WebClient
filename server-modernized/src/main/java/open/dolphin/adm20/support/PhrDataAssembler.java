@@ -51,6 +51,11 @@ public class PhrDataAssembler {
 
     private static final Logger LOGGER = Logger.getLogger(PhrDataAssembler.class.getName());
     private static final ObjectMapper MAPPER = new ObjectMapper();
+    // Legacy TouchMedicationFormatter 互換の最小置換（PHR 表示の禁忌語を緩和）
+    private static final String[][] MEDICATION_TERM_REPLACEMENTS = {
+            {"併用禁忌", "併用注意"},
+            {"禁忌", "注意"}
+    };
 
     @Inject
     private AMD20_PHRServiceBean phrServiceBean;
@@ -354,16 +359,16 @@ public class PhrDataAssembler {
         if (source == null) {
             return;
         }
-        bundle.setAdmin(source.getAdmin());
+        bundle.setAdmin(replaceMedicationTerms(source.getAdmin()));
         bundle.setAdminCode(source.getAdminCode());
         bundle.setAdminCodeSystem(source.getAdminCodeSystem());
-        bundle.setAdminMemo(source.getAdminMemo());
+        bundle.setAdminMemo(replaceMedicationTerms(source.getAdminMemo()));
         bundle.setBundleNumber(source.getBundleNumber());
         bundle.setClsCode(source.getClassCode());
         bundle.setClsCodeSystem(source.getClassCodeSystem());
         bundle.setClsName(source.getClassName());
         bundle.setInsurance(source.getInsurance());
-        bundle.setMemo(source.getMemo());
+        bundle.setMemo(replaceMedicationTerms(source.getMemo()));
         if (facilityNumber != null) {
             bundle.setFacilityNumber(facilityNumber);
         }
@@ -382,21 +387,32 @@ public class PhrDataAssembler {
         phrItem.setClsCodeSystem(item.getClassCodeSystem());
         phrItem.setCode(item.getCode());
         phrItem.setCodeSystem(item.getCodeSystem());
-        phrItem.setMemo(item.getMemo());
+        phrItem.setMemo(replaceMedicationTerms(item.getMemo()));
         phrItem.setName(item.getName());
         phrItem.setQuantity(item.getNumber());
         phrItem.setUnit(item.getUnit());
         phrItem.setNumberCode(item.getNumberCode());
         phrItem.setNumberCodeSystem(item.getNumberCodeSystem());
         phrItem.setYkzKbn(item.getYkzKbn());
-        phrItem.setFrequency(item.getNumberCode());
-        phrItem.setFrequencyName(item.getNumberCodeName());
+        phrItem.setFrequency(replaceMedicationTerms(item.getNumberCode()));
+        phrItem.setFrequencyName(replaceMedicationTerms(item.getNumberCodeName()));
         phrItem.setStartDate(item.getStartDate());
         phrItem.setEndDate(item.getEndDate());
-        phrItem.setAdministration(item.getSanteiCode());
-        phrItem.setDose(item.getDose());
-        phrItem.setDoseUnit(item.getDoseUnit());
+        phrItem.setAdministration(replaceMedicationTerms(item.getSanteiCode()));
+        phrItem.setDose(replaceMedicationTerms(item.getDose()));
+        phrItem.setDoseUnit(replaceMedicationTerms(item.getDoseUnit()));
         return phrItem;
+    }
+
+    private String replaceMedicationTerms(String value) {
+        if (value == null || value.isBlank()) {
+            return value;
+        }
+        String replaced = value;
+        for (String[] rule : MEDICATION_TERM_REPLACEMENTS) {
+            replaced = replaced.replace(rule[0], rule[1]);
+        }
+        return replaced;
     }
 
     private String createModuleId(String docId, long serialNumber) {
