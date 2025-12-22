@@ -1,0 +1,247 @@
+﻿<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - PHR IdentityToken / Secrets</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        background: #eef3f4;
+        padding: 16px;
+      }
+      .scorecard h2 {
+        font-size: 16px;
+        margin: 0 0 8px 0;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 8px 0;
+        color: #1f2a30;
+      }
+      .agent-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .agent-panel {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #ffffff;
+      }
+      .agent-title {
+        font-size: 15px;
+        font-weight: 600;
+        margin-bottom: 12px;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 150px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .metric-list {
+        margin: 0;
+        padding: 0 0 0 18px;
+        font-size: 13px;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .summary-list {
+        margin: 0;
+        padding: 0 0 0 18px;
+        font-size: 13px;
+      }
+      .summary-list li {
+        margin-bottom: 4px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .links a {
+        color: #1f2a30;
+      }
+      .chart-label {
+        font-size: 10px;
+        fill: #2c3a40;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - PHR IdentityToken / Secrets</h1>
+        <p class="monitor-description">
+          対象タスクの差分とコミットを比較し、緻密性・網羅性を中心に採点しました。
+          2列の比較構成で、それぞれの成果物を明示しています。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>codex / task-1766403449960-b2c9cd</h2>
+          <div class="score-total">🥉 467 / 600</div>
+          <div>メダル: 🥉 / 総合スコア: 78点</div>
+        </div>
+        <div class="scorecard">
+          <h2>codex / task-1766403450092-8b0d82</h2>
+          <div class="score-total">🥈 512 / 600</div>
+          <div>メダル: 🥈 / 総合スコア: 85点</div>
+        </div>
+      </section>
+
+      <section class="agent-grid">
+        <div class="agent-panel">
+          <div class="agent-title">codex / task-1766403449960-b2c9cd</div>
+          <div class="metrics">
+            <svg width="150" height="150" viewBox="0 0 140 140" aria-label="評価チャート">
+              <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="#eef3f4" stroke="#c4d3d7" />
+              <polygon points="70,25.6 109.0,47.5 109.0,92.5 70,116.8 25.8,95.5 28.4,46.0" fill="#c3d4d8" stroke="#81979f" />
+              <text class="chart-label" x="70" y="6" text-anchor="middle">仕様適合</text>
+              <text class="chart-label" x="132" y="40" text-anchor="end">緻密性</text>
+              <text class="chart-label" x="132" y="104" text-anchor="end">網羅性</text>
+              <text class="chart-label" x="70" y="138" text-anchor="middle">安全性</text>
+              <text class="chart-label" x="8" y="104" text-anchor="start">運用性</text>
+              <text class="chart-label" x="8" y="40" text-anchor="start">ドキュメント</text>
+            </svg>
+            <ul class="metric-list">
+              <li>仕様適合 74点</li>
+              <li>緻密性 75点</li>
+              <li>網羅性 75点</li>
+              <li>安全性 78点</li>
+              <li>運用性 85点</li>
+              <li>ドキュメント 80点</li>
+            </ul>
+          </div>
+          <div class="section-title">評価根拠</div>
+          <ul class="summary-list">
+            <li>Layer ID/鍵を環境変数・システムプロパティで注入できる点は要件に適合。</li>
+            <li>IdentityToken 生成失敗時に例外化して監査へ反映する方針は緻密。</li>
+            <li>JSON不正時のHTTP 400/監査が IdentityToken ではなく別処理に寄っており、失敗系網羅が一部不足。</li>
+            <li>監査イベント名の不一致が疑われる変更があり、運用監視の精度に影響する懸念。</li>
+          </ul>
+          <div class="section-title">コミットログ</div>
+          <pre>965fdfad Handle PHR identity token secrets and failures</pre>
+          <div class="section-title">差分概要</div>
+          <pre>server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java | 122 +-
+server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java | 111 +-
+server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java | 66 +-
+src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md | 13 +-</pre>
+          <div class="section-title">主な観測事項</div>
+          <ul class="summary-list">
+            <li>Base64/PEM 由来の秘密鍵を受け付けるデコード処理を追加。</li>
+            <li>IdentityToken 失敗時に例外を投げて監査失敗へ移行。</li>
+            <li>IdentityToken とは別の処理で監査イベント名が混在する可能性があり、分類ズレの懸念。</li>
+          </ul>
+          <div class="section-title">成果物リンク (別worktree)</div>
+          <div class="links">
+            <a href="file:///C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766403449960-b2c9cd/server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java">IdentityService.java</a><br />
+            <a href="file:///C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766403449960-b2c9cd/server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java">LayerConfig.java</a><br />
+            <a href="file:///C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766403449960-b2c9cd/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a>
+          </div>
+        </div>
+
+        <div class="agent-panel">
+          <div class="agent-title">codex / task-1766403450092-8b0d82</div>
+          <div class="metrics">
+            <svg width="150" height="150" viewBox="0 0 140 140" aria-label="評価チャート">
+              <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="#eef3f4" stroke="#c4d3d7" />
+              <polygon points="70,17.2 114.7,44.2 115.7,96.4 70,121.6 27.4,94.6 27.4,45.4" fill="#c3d4d8" stroke="#81979f" />
+              <text class="chart-label" x="70" y="6" text-anchor="middle">仕様適合</text>
+              <text class="chart-label" x="132" y="40" text-anchor="end">緻密性</text>
+              <text class="chart-label" x="132" y="104" text-anchor="end">網羅性</text>
+              <text class="chart-label" x="70" y="138" text-anchor="middle">安全性</text>
+              <text class="chart-label" x="8" y="104" text-anchor="start">運用性</text>
+              <text class="chart-label" x="8" y="40" text-anchor="start">ドキュメント</text>
+            </svg>
+            <ul class="metric-list">
+              <li>仕様適合 88点</li>
+              <li>緻密性 86点</li>
+              <li>網羅性 88点</li>
+              <li>安全性 86点</li>
+              <li>運用性 82点</li>
+              <li>ドキュメント 82点</li>
+            </ul>
+          </div>
+          <div class="section-title">評価根拠</div>
+          <ul class="summary-list">
+            <li>IdentityToken API の失敗系（空ボディ、欠落項目、JSON不正）を監査に結び付けて網羅。</li>
+            <li>秘密鍵取得の異常を詳細に検知し、運用上のトラブルシュート性が高い。</li>
+            <li>Base64 はヘッダ除去がないため、PEM 形式をそのまま入れると失敗しうる。</li>
+          </ul>
+          <div class="section-title">コミットログ</div>
+          <pre>35793440 PHR IdentityToken secrets config and audit</pre>
+          <div class="section-title">差分概要</div>
+          <pre>server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java | 140 +-
+server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java | 89 +-
+server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java | 79 +-
+src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md | 11 +-</pre>
+          <div class="section-title">主な観測事項</div>
+          <ul class="summary-list">
+            <li>IdentityToken 生成に必要な JSON 失敗系を 400 + 監査へ明確に誘導。</li>
+            <li>秘密鍵ファイル/BASE64 両対応で、空/存在しないケースの検知を追加。</li>
+            <li>環境変数名が PHR 用に名前空間化され、運用の衝突リスクが低い。</li>
+          </ul>
+          <div class="section-title">成果物リンク (別worktree)</div>
+          <div class="links">
+            <a href="file:///C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766403450092-8b0d82/server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java">IdentityService.java</a><br />
+            <a href="file:///C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766403450092-8b0d82/server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java">LayerConfig.java</a><br />
+            <a href="file:///C:/Users/marug/Documents/OpenDolphin_WebClient/.worktrees/task-1766403450092-8b0d82/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a>
+          </div>
+        </div>
+      </section>
+    </div>
+  </body>
+</html>
