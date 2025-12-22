@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 16px;
+        margin: 24px 0;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f5f9fa;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .metric-block {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        margin: 12px 0 16px;
+      }
+      .metric-list {
+        margin: 0;
+        padding: 0 0 0 16px;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+        font-size: 12px;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA wrapper 実接続 Transport</h1>
+        <p class="monitor-description">StubOrcaTransport を実接続 transport に切替え、監査/失敗時ログの最小セットを実装するタスクの完了度を比較評価。</p>
+      </header>
+
+      <section>
+        <div class="section-title">タスク概要</div>
+        <p class="monitor-description">
+          対象ブランチ: task/task-1766411616674-f3a85c と task/task-1766411616879-2a3232。実装内容、コミットログ、差分、未コミット変更の有無を比較し、
+          機能合理性と緻密性を中心に 6 指標で採点。
+        </p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1766411616674-f3a85c</h2>
+          <div class="score-total">372 / 600 🥉</div>
+          <div class="score-sub">メダル評価: Bronze</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766411616879-2a3232</h2>
+          <div class="score-total">492 / 600 🥈</div>
+          <div class="score-sub">メダル評価: Silver</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766411616674-f3a85c</th>
+            <th>Agent task-1766411616879-2a3232</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-22 23:08</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">実接続 transport 実装 + 監査ログ導入。</span>
+              </div>
+              <div class="metric-block">
+                <svg width="180" height="180" viewBox="0 0 200 200" aria-label="評価指標チャート">
+                  <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="100,45.6 143,75.2 145.7,126.4 100,148 64,120.8 55.7,74.4" fill="#8fb6c4" opacity="0.7" stroke="#4f7d8a" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 68点</li>
+                  <li>実装緻密性 62点</li>
+                  <li>コード品質 66点</li>
+                  <li>変更安全性 60点</li>
+                  <li>テスト/検証 52点</li>
+                  <li>ドキュメント/運用 64点</li>
+                </ul>
+              </div>
+              <div class="section-title">指標根拠</div>
+              <ul class="metric-list">
+                <li>実接続 transport を追加したが CDI の実装選択に曖昧さが残る点を減点。</li>
+                <li>監査ログは独自ロガーで最低限の項目を記録しているが、運用設定の明示が不足。</li>
+                <li>設定のキャッシュ戦略は合理的だが、動的変更の反映不可。</li>
+                <li>テスト・検証記録の追加が見当たらず証跡として弱い。</li>
+                <li>Stub との切替制御がコード上で明示されていない。</li>
+                <li>大規模な削除差分が含まれておりタスク範囲外リスクを増やす。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>5238bd9f Add HTTP ORCA transport with audit logging</pre>
+              <div class="section-title">差分概要 (master 比較)</div>
+              <pre>7 files changed, 406 insertions(+), 2228 deletions(-)
+主な変更: HttpOrcaTransport 追加 / StubOrcaTransport 微修正 / OrcaMasterDao 削除 / .kamui 更新</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+              <div class="section-title">成果物リンク (別 worktree)</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766411616674-f3a85c/server-modernized/src/main/java/open/dolphin/orca/transport/HttpOrcaTransport.java">HttpOrcaTransport.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766411616674-f3a85c/server-modernized/src/main/java/open/dolphin/orca/transport/StubOrcaTransport.java">StubOrcaTransport.java</a></li>
+              </ul>
+              <div class="section-title">主なリスク/懸念</div>
+              <ul class="metric-list">
+                <li>CDI で OrcaTransport 実装が複数登録され、注入が曖昧になる可能性。</li>
+                <li>Stub から実接続へ切替える仕組みが明示されず運用手順が不透明。</li>
+                <li>OrcaMasterDao の大規模削除がタスク目的と乖離している可能性。</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">実接続 transport 実装 + 監査ログ拡張。</span>
+              </div>
+              <div class="metric-block">
+                <svg width="180" height="180" viewBox="0 0 200 200" aria-label="評価指標チャート">
+                  <polygon points="100,20 169.3,60 169.3,140 100,180 30.7,140 30.7,60" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="100,32 156.8,67.2 155.4,132 100,162.4 50.1,128.8 34.2,62" fill="#7db0a6" opacity="0.75" stroke="#3d776e" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 85点</li>
+                  <li>実装緻密性 82点</li>
+                  <li>コード品質 80点</li>
+                  <li>変更安全性 78点</li>
+                  <li>テスト/検証 72点</li>
+                  <li>ドキュメント/運用 95点</li>
+                </ul>
+              </div>
+              <div class="section-title">指標根拠</div>
+              <ul class="metric-list">
+                <li>Stub を @Alternative にし、実接続 transport への切替が明確。</li>
+                <li>ExternalServiceAuditLogger に ORCA ログを追加し監査要件を満たす。</li>
+                <li>設定の優先順位 (env → custom.properties → ORCAConnection) が整理されている。</li>
+                <li>オプションの path prefix や traceId ヘッダに対応。</li>
+                <li>テストや実接続検証の証跡が未提示。</li>
+                <li>OrcaMasterDao 削除がタスク範囲外の可能性。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>b7192f16 Implement real ORCA transport with audit logging</pre>
+              <div class="section-title">差分概要 (master 比較)</div>
+              <pre>11 files changed, 481 insertions(+), 2251 deletions(-)
+主な変更: RestOrcaTransport 追加 / OrcaTransport 拡張 / ExternalServiceAuditLogger 追記 / env.sample 更新 / OrcaMasterDao 削除 / .kamui 更新</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+              <div class="section-title">成果物リンク (別 worktree)</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766411616879-2a3232/server-modernized/src/main/java/open/dolphin/orca/transport/RestOrcaTransport.java">RestOrcaTransport.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766411616879-2a3232/server-modernized/src/main/java/open/dolphin/msg/gateway/ExternalServiceAuditLogger.java">ExternalServiceAuditLogger.java</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766411616879-2a3232/server-modernized/config/server-modernized.env.sample">server-modernized.env.sample</a></li>
+              </ul>
+              <div class="section-title">主なリスク/懸念</div>
+              <ul class="metric-list">
+                <li>レスポンス空ボディ検知やリトライ等の運用面は未実装。</li>
+                <li>テスト/実接続検証の証跡が未提示。</li>
+                <li>OrcaMasterDao 削除の妥当性説明が必要。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
