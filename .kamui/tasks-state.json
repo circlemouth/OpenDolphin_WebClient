@@ -129,7 +129,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766410159533-6fedbb"
+    "worktreePath": ".worktrees/task-1766410159533-6fedbb",
+    "medal": "silver",
+    "aiCompetitionScore": 82
   },
   {
     "id": "task-1766410159333-b54239",
@@ -153,7 +155,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766410159333-b54239"
+    "worktreePath": ".worktrees/task-1766410159333-b54239",
+    "medal": "bronze",
+    "aiCompetitionScore": 71
   },
   {
     "id": "task-yaml-q8k00i-src-server-moder",
@@ -251,32 +255,6 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# ORCA-07 回帰/監査\n\n- 接続監査・メトリクスを追加し、接続失敗時のエラーパスを確認。"
-  },
-  {
-    "id": "task-1766409386694-f59000",
-    "name": "CodexCLI2: [server modernized gap implementation plan 20251221] ORCA-08_キャッシュ_監査_性能\n期間: 12/30 09:00 - 01/01 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# ORCA-08 キャッシュ/監査/性能\n\n- ETag/TTL/監査メタを本番仕様に合わせて調整。\n- 大型レスポンスの P99/メモリ対策を実施。\n- 参照: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md\n\nYAML ID: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-22T13:16:26.694Z",
-    "updatedAt": "2025-12-22T13:17:03.154Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766409386694-f59000",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766409362953-mh59hscw",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] ORCA-08_キャッシュ_監査_性能\n期間: 12/30 09:00 - 01/01 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# ORCA-08 キャッシュ/監査/性能\n\n- ETag/TTL/監査メタを本番仕様に合わせて調整。\n- 大型レスポンスの P99/メモリ対策を実施。\n- 参照: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md\n\nYAML ID: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766409386694-f59000",
-    "medal": "silver",
-    "aiCompetitionScore": 75
   },
   {
     "id": "task-yaml-so5ohl-src-server-moder",
@@ -388,7 +366,7 @@
     "id": "task-yaml-1ehmg27-src-server-moder",
     "name": "[server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
     "model": "Codex CLI",
-    "status": "pending",
+    "status": "completed",
     "importance": "high",
     "urgency": "medium",
     "branchName": "task/task-yaml-1ehmg27-src-server-moder",
@@ -396,7 +374,7 @@
     "worktreePath": null,
     "createWorktree": false,
     "createdAt": "2025-12-22T06:26:59.399Z",
-    "updatedAt": "2025-12-22T06:26:59.399Z",
+    "updatedAt": "2025-12-22T13:51:48.390Z",
     "requiresTerminal": false,
     "bookmarked": false,
     "aiCompetitionEntry": false,

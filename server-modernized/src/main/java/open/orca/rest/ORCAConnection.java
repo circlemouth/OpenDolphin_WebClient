@@ -1,5 +1,7 @@
 package open.orca.rest;
 
+import io.micrometer.core.instrument.Metrics;
+import io.micrometer.core.instrument.Tags;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
@@ -21,6 +23,10 @@ public class ORCAConnection {
     private static final Logger LOGGER = Logger.getLogger(ORCAConnection.class.getName());
     private static final Logger AUDIT_LOGGER = Logger.getLogger("open.dolphin.audit.external");
     private static final String ORCA_JNDI_NAME = "java:jboss/datasources/ORCADS";
+    private static final String METRIC_LOOKUP_COUNTER = "opendolphin_orca_datasource_lookup_total";
+    private static final String METRIC_CONNECTION_COUNTER = "opendolphin_orca_connection_total";
+    private static final String OUTCOME_SUCCESS = "success";
+    private static final String OUTCOME_FAILURE = "failure";
     private static final Set<String> BLOCKED_CUSTOM_PROPERTIES = Set.of(
             "claim.jdbc.url",
             "claim.user",
@@ -50,6 +56,7 @@ public class ORCAConnection {
     private final Properties config;
 //minagawa$
     private boolean datasourceAuditLogged;
+    private boolean connectionAuditLogged;
     
     public static ORCAConnection getInstance() {
         return instane;
@@ -92,7 +99,14 @@ public class ORCAConnection {
                 throw new SQLException("ORCA datasource lookup returned null: " + ORCA_JNDI_NAME);
             }
             auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_SUCCESS", null);
-            return ds.getConnection();
+            try {
+                Connection connection = ds.getConnection();
+                auditDatasourceConnection("ORCA_DATASOURCE_CONNECTION_SUCCESS", null);
+                return connection;
+            } catch (SQLException ex) {
+                auditDatasourceConnection("ORCA_DATASOURCE_CONNECTION_FAILURE", ex.getClass().getSimpleName());
+                throw ex;
+            }
         } catch (NamingException e) {
             auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_FAILURE", e.getClass().getSimpleName());
             throw new SQLException("Failed to lookup ORCA datasource: " + ORCA_JNDI_NAME, e);
@@ -177,6 +191,7 @@ public class ORCAConnection {
     }
 
     private synchronized void auditDatasourceLookup(String event, String reason) {
+        recordMetric(METRIC_LOOKUP_COUNTER, event, reason);
         if (datasourceAuditLogged && reason == null) {
             return;
         }
@@ -201,6 +216,37 @@ public class ORCAConnection {
         if (reason == null) {
             datasourceAuditLogged = true;
         }
+    }
+
+    private synchronized void auditDatasourceConnection(String event, String reason) {
+        recordMetric(METRIC_CONNECTION_COUNTER, event, reason);
+        if (connectionAuditLogged && reason == null) {
+            return;
+        }
+        ValidationResult result = ValidationResult.evaluate();
+        StringBuilder builder = new StringBuilder();
+        builder.append("event=").append(event);
+        builder.append(" jndiName=").append(ORCA_JNDI_NAME);
+        builder.append(" source=").append(result.sourceLabel());
+        if (!result.secretRef.isBlank()) {
+            builder.append(" secretRef=").append(result.secretRef);
+        }
+        if (!result.secretVersion.isBlank()) {
+            builder.append(" secretVersion=").append(result.secretVersion);
+        }
+        if (reason != null) {
+            builder.append(" reason=").append(reason);
+        }
+        AUDIT_LOGGER.log(reason == null ? Level.INFO : Level.WARNING, builder.toString());
+        if (reason == null) {
+            connectionAuditLogged = true;
+        }
+    }
+
+    private static void recordMetric(String metric, String event, String reason) {
+        String outcome = event != null && event.endsWith("SUCCESS") ? OUTCOME_SUCCESS : OUTCOME_FAILURE;
+        String resolvedReason = (reason == null || reason.isBlank()) ? "none" : reason;
+        Metrics.counter(metric, Tags.of("outcome", outcome, "reason", resolvedReason)).increment();
     }
 
     private static boolean hasAnyOrcaOverride() {
