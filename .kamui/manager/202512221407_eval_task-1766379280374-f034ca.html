@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - Touch_P0_API_実装</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f5f9fa;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #4c5a60;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      .metric-list {
+        margin: 8px 0 0;
+        padding: 0;
+        list-style: none;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 6px;
+      }
+      .chart-wrap {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+      }
+      .chart-legend {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .link-list {
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 6px 0 0;
+      }
+      .link-list code {
+        font-size: 12px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: Touch_P0_API_実装</h1>
+        <p class="monitor-description">対象ブランチのコミットと差分を精査し、/touch/patient/visit を中心とした P0 API 実装の完成度と精度を比較評価。</p>
+        <p class="monitor-description">概要: 2 ブランチとも /touch/patient/visit を実装。task-1766379280374-f034ca は入力検証を厳格化し監査情報を詳細化。task-1766379280575-5a7c27 はレガシー形式の互換パスとテストを追加した一方、監査アクション名の変更が仕様と齟齬。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1766379280374-f034ca</h2>
+          <div class="score-total">🥈 488 / 600</div>
+          <div class="score-sub">メダル: Silver</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766379280575-5a7c27</h2>
+          <div class="score-total">🥉 423 / 600</div>
+          <div class="score-sub">メダル: Bronze</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI codex / task-1766379280374-f034ca</th>
+            <th>AI codex / task-1766379280575-5a7c27</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="chart-wrap">
+                <svg width="200" height="200" viewBox="0 0 200 200" aria-label="評価チャート">
+                  <polygon points="100,10 177.9,55 177.9,145 100,190 22.1,145 22.1,55" fill="#e8f1f3" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="100" y2="10" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="177.9" y2="55" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="177.9" y2="145" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="100" y2="190" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="22.1" y2="145" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="22.1" y2="55" stroke="#c4d3d7" />
+                  <polygon points="100.0,19.0 166.3,61.8 170.1,140.5 100.0,179.2 61.0,122.5 33.7,61.7" fill="rgba(90, 140, 160, 0.45)" stroke="#2c5f73" />
+                </svg>
+                <div class="chart-legend">
+                  <div>機能合理性 90点</div>
+                  <div>互換性/仕様適合 85点</div>
+                  <div>監査ID整合 90点</div>
+                  <div>入力検証 88点</div>
+                  <div>テスト 50点</div>
+                  <div>保守性 85点</div>
+                </div>
+              </div>
+
+              <div class="section-title">コミット</div>
+              <pre>8bad7cf1 Add touch patient visit JSON endpoint</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientResource.java | 55 ++---
+server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientService.java  | 160 ++++++++++++++++-----
+2 files changed, 164 insertions(+), 51 deletions(-)</pre>
+
+              <div class="section-title">評価ポイント</div>
+              <ul class="metric-list">
+                <li>機能合理性: /touch/patient/visit の実装と並び替え指定を実装し、訪問一覧取得の API 要件を満たす。</li>
+                <li>互換性: facility 未指定時の既定値採用などは互換性高いが、offset/limit を厳格に BAD_REQUEST とする点は仕様確認が必要。</li>
+                <li>監査ID整合: ACTION_PATIENT_VISIT を追加し、成功/失敗両方で監査詳細を記録。</li>
+                <li>入力検証: offset/limit の不正値を明示的に拒否し、整合したトレース ID を返す。</li>
+                <li>テスト: 新 API に対するテスト追加がなく、退行検知が弱い。</li>
+                <li>保守性: 変換/正規化を専用メソッド化しており読みやすい。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク (worktree: task-1766379280374-f034ca)</div>
+              <div class="link-list">
+                <div><code>server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientResource.java</code></div>
+                <div><code>server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientService.java</code></div>
+              </div>
+            </td>
+            <td>
+              <div class="chart-wrap">
+                <svg width="200" height="200" viewBox="0 0 200 200" aria-label="評価チャート">
+                  <polygon points="100,10 177.9,55 177.9,145 100,190 22.1,145 22.1,55" fill="#e8f1f3" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="100" y2="10" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="177.9" y2="55" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="177.9" y2="145" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="100" y2="190" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="22.1" y2="145" stroke="#c4d3d7" />
+                  <line x1="100" y1="100" x2="22.1" y2="55" stroke="#c4d3d7" />
+                  <polygon points="100.0,29.8 146.8,73.0 146.8,127.0 100.0,163.0 41.5,133.8 37.6,64.0" fill="rgba(120, 160, 120, 0.45)" stroke="#3c6f3c" />
+                </svg>
+                <div class="chart-legend">
+                  <div>機能合理性 78点</div>
+                  <div>互換性/仕様適合 60点</div>
+                  <div>監査ID整合 65点</div>
+                  <div>入力検証 70点</div>
+                  <div>テスト 75点</div>
+                  <div>保守性 80点</div>
+                </div>
+              </div>
+
+              <div class="section-title">コミット</div>
+              <pre>447edab9 Implement Touch P0 patient visit JSON API</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientResource.java | 96 ++++++++----
+server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientService.java  | 161 ++++++++++++++++-----
+server-modernized/src/main/java/open/dolphin/touch/user/TouchUserService.java        | 2 +-
+server-modernized/src/test/java/open/dolphin/touch/patient/TouchPatientServiceTest.java | 63 +++++---
+server-modernized/src/test/java/open/dolphin/touch/user/TouchUserServiceTest.java    | 2 +-
+5 files changed, 240 insertions(+), 84 deletions(-)</pre>
+
+              <div class="section-title">評価ポイント</div>
+              <ul class="metric-list">
+                <li>機能合理性: /touch/patient/visit に加えて旧形式 /patient/visit/{param} を追加し互換性配慮。</li>
+                <li>互換性: TouchUser の監査アクション名を TOUCH_USER_AUTH に変更しており、既存仕様 (TOUCH_USER_LOOKUP) と齟齬。</li>
+                <li>監査ID整合: 患者訪問の監査は整合するが、ユーザー側の監査 ID 変更が副作用。</li>
+                <li>入力検証: offset/limit の不正値を丸めて処理しており、エラー返却要件がある場合は不足。</li>
+                <li>テスト: 患者訪問 API のテストを追加し、監査記録の検証も含む。</li>
+                <li>保守性: 正規化や並び替えのヘルパー化で読みやすい。</li>
+              </ul>
+
+              <div class="section-title">成果物リンク (worktree: task-1766379280575-5a7c27)</div>
+              <div class="link-list">
+                <div><code>server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientResource.java</code></div>
+                <div><code>server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientService.java</code></div>
+                <div><code>server-modernized/src/main/java/open/dolphin/touch/user/TouchUserService.java</code></div>
+                <div><code>server-modernized/src/test/java/open/dolphin/touch/patient/TouchPatientServiceTest.java</code></div>
+              </div>
+              <div class="section-title">仕様参照</div>
+              <div class="link-list">
+                <div><code>docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md</code> (TOUCH_USER_LOOKUP 仕様)</div>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

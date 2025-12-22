@@ -40,6 +40,14 @@
 - 変換失敗時は `TOUCH_JSON_CONVERSION_FAILURE` で監査イベントを記録し、入力ペイロードはログに含めない。
 - 既存 API への組み込みは次タスクで行い、互換性確認と段階的移行を前提とする。
 
+## 実装状況
+- `server-modernized/src/main/java/open/dolphin/touch/transform/TouchJsonTransformer.java`
+- `server-modernized/src/main/java/open/dolphin/touch/transform/TouchJsonResponse.java`
+- `server-modernized/src/main/java/open/dolphin/touch/transform/TouchJsonMetadata.java`
+- `server-modernized/src/main/java/open/dolphin/touch/transform/TouchJsonError.java`
+- `server-modernized/src/main/java/open/dolphin/touch/transform/TouchJsonListPolicy.java`
+- `server-modernized/src/main/java/open/dolphin/touch/support/TouchJsonConverter.java`
+
 ## 非スコープ
 - Touch P0/P1 API の個別機能実装（別タスク）
 - ORCA 実測や外部接続の検証
