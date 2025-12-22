@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | ORCA-08 キャッシュ/監査/性能</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f5f9fa;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        margin-right: 6px;
+      }
+      .hex-wrap {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 160px;
+        height: 160px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-weight: 600;
+        font-size: 13px;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+      a {
+        color: #1b5e7a;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | ORCA-08 キャッシュ/監査/性能</h1>
+        <p class="monitor-description">対象ブランチのコミットログと差分を比較し、機能合理性と緻密性を中心に評価しました。成果物は別worktreeに存在するため、リンク先はworktreeパスを参照します。</p>
+        <p class="monitor-description">タスク概要: ETag/TTL/監査メタの調整、ETENSUの性能メトリクス追加、レスポンス生成のメモリ配慮を実装。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>AI codex / task-1766416496269-b30a38</h2>
+          <div class="score-total">🥇 488 / 600</div>
+          <div class="note">合計点は6指標の合算です。</div>
+        </div>
+        <div class="score-card">
+          <h2>AI codex / task-1766416496470-484657</h2>
+          <div class="score-total">🥈 452 / 600</div>
+          <div class="note">合計点は6指標の合算です。</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI codex / task-1766416496269-b30a38</th>
+            <th>AI codex / task-1766416496470-484657</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="hex-wrap">
+                <svg class="hex-chart" data-scores="88,86,84,88,82,60" viewBox="0 0 160 160" aria-label="評価チャート"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 88点</li>
+                  <li>緻密性 86点</li>
+                  <li>性能配慮 84点</li>
+                  <li>監査/運用適合 88点</li>
+                  <li>コード品質 82点</li>
+                  <li>テスト/証跡 60点</li>
+                </ul>
+              </div>
+              <div class="section-title">総評</div>
+              <div class="agent-meta">
+                <span class="badge">高評価</span>
+                <span class="agent-label">監査メタと性能ヘッダーを一貫して追加し、メモリ配慮まで含めた実装。エラーレスポンスにも性能ヘッダーを付与できる設計が強み。</span>
+              </div>
+              <div class="section-title">強み</div>
+              <ul class="metric-list">
+                <li>ETENSUの監査メタにdbTimeMs/rowCountを追加し、観測性を拡張。</li>
+                <li>200/304/404のレスポンスに性能ヘッダーを付与する共通化。</li>
+                <li>大量レスポンス時のMap/Set初期容量を調整してメモリ圧を軽減。</li>
+              </ul>
+              <div class="section-title">懸念点</div>
+              <ul class="metric-list">
+                <li>P99/メモリの実測結果や証跡は未取得。</li>
+                <li>ETag一致でもDB取得後に判定するため、DB節約効果は限定的（既存仕様踏襲）。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="metric-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766416496269-b30a38/server-modernized/src/main/java/open/orca/rest/EtensuDao.java">EtensuDao.java (worktree)</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766416496269-b30a38/server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">OrcaMasterResource.java (worktree)</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766416496269-b30a38/src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_%E3%82%AD%E3%83%A3%E3%83%83%E3%82%B7%E3%83%A5_%E7%9B%A3%E6%9F%BB_%E6%80%A7%E8%83%BD.md">タスク記録 (worktree)</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>1416a9d8 ORCA-08 add perf headers and audit metrics</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>server-modernized/src/main/java/open/orca/rest/EtensuDao.java
+- dbTimeMs計測、コレクション容量調整、EtensuSearchResult拡張
+
+server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java
+- 200/304/404の性能ヘッダー付与、監査メタ拡張、エラー応答ヘッダー対応
+
+src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
+- 追加実装の記録</pre>
+              </details>
+            </td>
+            <td>
+              <div class="hex-wrap">
+                <svg class="hex-chart" data-scores="82,78,76,78,80,58" viewBox="0 0 160 160" aria-label="評価チャート"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 82点</li>
+                  <li>緻密性 78点</li>
+                  <li>性能配慮 76点</li>
+                  <li>監査/運用適合 78点</li>
+                  <li>コード品質 80点</li>
+                  <li>テスト/証跡 58点</li>
+                </ul>
+              </div>
+              <div class="section-title">総評</div>
+              <div class="agent-meta">
+                <span class="badge">良好</span>
+                <span class="agent-label">性能ヘッダーと監査メタ追加は達成。ただしヘッダー適用範囲やメモリ配慮が一部限定的。</span>
+              </div>
+              <div class="section-title">強み</div>
+              <ul class="metric-list">
+                <li>dbTimeMs/rowCountを監査メタに反映し、分析準備を整備。</li>
+                <li>ETENSU items生成の初期容量確保でメモリ再確保を削減。</li>
+              </ul>
+              <div class="section-title">懸念点</div>
+              <ul class="metric-list">
+                <li>X-Orca-Total-Countなど一部ヘッダーが未実装で観測性が限定的。</li>
+                <li>404/422などエラーレスポンスに性能ヘッダーが付与されない。</li>
+                <li>Map/Setの初期容量調整が未実施で大規模レスポンス時のメモリ改善が限定的。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="metric-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766416496470-484657/server-modernized/src/main/java/open/orca/rest/EtensuDao.java">EtensuDao.java (worktree)</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766416496470-484657/server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java">OrcaMasterResource.java (worktree)</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766416496470-484657/src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_%E3%82%AD%E3%83%A3%E3%83%83%E3%82%B7%E3%83%A5_%E7%9B%A3%E6%9F%BB_%E6%80%A7%E8%83%BD.md">タスク記録 (worktree)</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>f1cc6d78 ORCA-08 add perf headers and audit metrics</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>server-modernized/src/main/java/open/orca/rest/EtensuDao.java
+- dbTimeMs/rowCount計測追加、ArrayList初期容量調整
+
+server-modernized/src/main/java/open/orca/rest/OrcaMasterResource.java
+- 200/304の性能ヘッダー追加、監査メタにdbTimeMs/rowCount追加
+
+src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
+- 追加実装の記録</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const toPoints = (scores, center, maxR) => {
+        return scores.map((score, i) => {
+          const angle = (Math.PI / 180) * (-90 + i * 60);
+          const r = maxR * (score / 100);
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(" ");
+      };
+
+      document.querySelectorAll('.hex-chart').forEach((chart) => {
+        const scores = chart.dataset.scores.split(',').map((v) => Number(v.trim()));
+        const size = 160;
+        const center = size / 2;
+        const maxR = 60;
+        const grid = [20, 40, 60].map((r) => {
+          return `<polygon points="${toPoints([100,100,100,100,100,100], center, r)}" fill="none" stroke="#c4d3d7" stroke-width="1" />`;
+        }).join('');
+        const dataPoly = `<polygon points="${toPoints(scores, center, maxR)}" fill="#8fb6c2" fill-opacity="0.55" stroke="#2c3a40" stroke-width="1" />`;
+        const frame = `<polygon points="${toPoints([100,100,100,100,100,100], center, maxR)}" fill="none" stroke="#8aa1a8" stroke-width="1.5" />`;
+        chart.innerHTML = `<svg viewBox="0 0 ${size} ${size}" width="${size}" height="${size}">${grid}${frame}${dataPoly}</svg>`;
+      });
+    </script>
+  </body>
+</html>

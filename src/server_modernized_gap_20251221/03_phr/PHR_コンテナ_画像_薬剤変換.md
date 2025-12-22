@@ -28,6 +28,8 @@
   - 画像ストリームの `image/jpeg` 応答 + `Cache-Control: no-store` + `Content-Length`。
   - 薬剤の JSON 変換（`PHRBundle`/`PHRClaimItem` へのマッピング）と `bundles` の空配列化。
   - **禁忌語の置換ロジック**（`TouchMedicationFormatter` 由来の文言置換）。
+
+## 未実施
 - PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
 
 ## 確認
