@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>ORCA Master DAO 評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 15px;
+      }
+      .score-total {
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #4a5b63;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar {
+        width: 220px;
+        height: 220px;
+      }
+      .metric-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        margin: 12px 0 8px;
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      ul.note-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">ORCA Master DAO 評価レポート</h1>
+        <p class="monitor-description">
+          対象: ORCA-05/06 の master DAO 実装。2ブランチのコミットログと差分を比較し、機能合理性と緻密性を中心に採点。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>codex / task-1766410159333-b54239</h3>
+          <div class="score-total">423 / 600 🥉</div>
+          <div class="score-meta">平均 71点・メダル: 🥉・評価スコア: 71点</div>
+        </div>
+        <div class="score-card">
+          <h3>codex / task-1766410159533-6fedbb</h3>
+          <div class="score-total">489 / 600 🥈</div>
+          <div class="score-meta">平均 82点・メダル: 🥈・評価スコア: 82点</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1766410159333-b54239</th>
+            <th>codex / task-1766410159533-6fedbb</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-22 00:00</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ORCA-05/06 を分割DAOで実装。</span>
+              </div>
+              <div class="radar-wrap" data-values="74,68,72,66,70,73" data-labels="機能合理性,緻密性,コード品質,保守性,安全性,仕様適合">
+                <svg class="radar" viewBox="0 0 220 220" aria-label="六角形チャート"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 74点</li>
+                  <li>緻密性 68点</li>
+                  <li>コード品質 72点</li>
+                  <li>保守性 66点</li>
+                  <li>安全性 70点</li>
+                  <li>仕様適合 73点</li>
+                </ul>
+              </div>
+              <div class="section-title">指標の根拠</div>
+              <ul class="note-list">
+                <li>ORCA-05/06の主要テーブルに対応する検索系DAOは揃っている。</li>
+                <li>Criteria のページング初期値が未設定で、全件取得に寄りやすい。</li>
+                <li>GenericPrice/Address が無制限取得になり得るため運用時の負荷が懸念。</li>
+                <li>DAOが分割され重複ロジックが多く、保守性は中程度。</li>
+                <li>PreparedStatementでSQL注入回避はできている。</li>
+                <li>ORCA-08/ETENSU 統合は本ブランチ内で未確認。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>423597cfd0d3eaafd5c16949578b3ba9252c69d6
+Add ORCA-05/06 master DAOs
+2025-12-22 22:42:04 +0900</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>
+server-modernized/src/main/java/open/orca/rest/OrcaMaster05Dao.java (+1341)
+server-modernized/src/main/java/open/orca/rest/OrcaMaster06Dao.java (+720)
+              </pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="note-list link-list">
+                <li><a href="../../.worktrees/task-1766410159333-b54239/server-modernized/src/main/java/open/orca/rest/OrcaMaster05Dao.java">OrcaMaster05Dao.java</a></li>
+                <li><a href="../../.worktrees/task-1766410159333-b54239/server-modernized/src/main/java/open/orca/rest/OrcaMaster06Dao.java">OrcaMaster06Dao.java</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">ORCA-05/06 を統合DAOで実装。</span>
+              </div>
+              <div class="radar-wrap" data-values="84,82,80,78,82,83" data-labels="機能合理性,緻密性,コード品質,保守性,安全性,仕様適合">
+                <svg class="radar" viewBox="0 0 220 220" aria-label="六角形チャート"></svg>
+                <ul class="metric-list">
+                  <li>機能合理性 84点</li>
+                  <li>緻密性 82点</li>
+                  <li>コード品質 80点</li>
+                  <li>保守性 78点</li>
+                  <li>安全性 82点</li>
+                  <li>仕様適合 83点</li>
+                </ul>
+              </div>
+              <div class="section-title">指標の根拠</div>
+              <ul class="note-list">
+                <li>05/06のDAOが統合され、テーブルメタ解決の再利用性が高い。</li>
+                <li>ページング初期値・最大件数制御があり安全寄り。</li>
+                <li>GenericPriceは最新1件取得に絞られており合理的。</li>
+                <li>巨大クラス化しているため分割設計に余地あり。</li>
+                <li>カラム不在時は null 選択で落ちにくい。</li>
+                <li>ORCA-08/ETENSU 統合は本ブランチ内で未確認。</li>
+              </ul>
+              <div class="section-title">コミットログ</div>
+              <pre>1e391e1502ab457d62890fa9c0dd3b54abf32a81
+Add ORCA master DAO for ORCA-05/06 tables
+2025-12-22 22:44:27 +0900</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>
+server-modernized/src/main/java/open/orca/rest/OrcaMasterDao.java (+1437)
+              </pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="note-list link-list">
+                <li><a href="../../.worktrees/task-1766410159533-6fedbb/server-modernized/src/main/java/open/orca/rest/OrcaMasterDao.java">OrcaMasterDao.java</a></li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const createRadar = (container) => {
+        const svg = container.querySelector('svg');
+        const values = (container.dataset.values || '').split(',').map((v) => Number(v.trim()) / 100);
+        const labels = (container.dataset.labels || '').split(',');
+        const cx = 110;
+        const cy = 110;
+        const radius = 90;
+        const angleStep = (Math.PI * 2) / 6;
+        const points = [];
+        const outer = [];
+        for (let i = 0; i < 6; i++) {
+          const angle = -Math.PI / 2 + angleStep * i;
+          const ox = cx + Math.cos(angle) * radius;
+          const oy = cy + Math.sin(angle) * radius;
+          outer.push(`${ox},${oy}`);
+          const value = values[i] ?? 0;
+          const ix = cx + Math.cos(angle) * radius * value;
+          const iy = cy + Math.sin(angle) * radius * value;
+          points.push(`${ix},${iy}`);
+        }
+        svg.innerHTML = `
+          <polygon points="${outer.join(' ')}" fill="none" stroke="#c4d3d7" stroke-width="1" />
+          <polygon points="${points.join(' ')}" fill="rgba(31,42,48,0.2)" stroke="#1f2a30" stroke-width="1" />
+          ${outer.map((point) => `<circle cx="${point.split(',')[0]}" cy="${point.split(',')[1]}" r="2" fill="#1f2a30" />`).join('')}
+        `;
+      };
+
+      document.querySelectorAll('.radar-wrap').forEach(createRadar);
+    </script>
+  </body>
+</html>
