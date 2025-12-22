@@ -29,6 +29,16 @@
 3. Touch/Demo の主要サービスで失敗監査を追加
    - 失敗時の `reason` / `httpStatus` / `errorMessage` を監査へ残す
 
+## 実装状況
+- `server-modernized/src/main/java/open/dolphin/touch/TouchAuthHandler.java`
+  - 必須ヘッダー定義と欠落時の失敗監査ログを実装済み。
+- `server-modernized/src/main/java/open/dolphin/touch/support/TouchAuditHelper.java`
+- `server-modernized/src/main/java/open/dolphin/touch/support/TouchFailureAuditLogger.java`
+- `server-modernized/src/main/java/open/dolphin/touch/support/TouchRequestContextExtractor.java`
+- `server-modernized/src/main/java/open/dolphin/touch/user/TouchUserService.java`
+- `server-modernized/src/main/java/open/dolphin/touch/patient/TouchPatientService.java`
+- `server-modernized/src/main/java/open/dolphin/touch/stamp/TouchStampService.java`
+
 ## 非スコープ
 - Phase2 文書の更新
 - ORCA 実環境接続や Stage/Preview 実測
