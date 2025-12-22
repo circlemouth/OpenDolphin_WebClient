@@ -876,6 +876,38 @@ public class OrcaMasterDao {
         public String endDate;
         public String version;
 
+        public String getClassCode() {
+            return classCode;
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        public String getKanaName() {
+            return kanaName;
+        }
+
+        public String getCategoryCode() {
+            return categoryCode;
+        }
+
+        public String getParentClassCode() {
+            return parentClassCode;
+        }
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
         @Override
         public String version() {
             return version;
@@ -893,6 +925,42 @@ public class OrcaMasterDao {
         public String endDate;
         public String version;
 
+        public String getSrycd() {
+            return srycd;
+        }
+
+        public String getDrugName() {
+            return drugName;
+        }
+
+        public String getKanaName() {
+            return kanaName;
+        }
+
+        public Double getPrice() {
+            return price;
+        }
+
+        public String getUnit() {
+            return unit;
+        }
+
+        public String getYouhouCode() {
+            return youhouCode;
+        }
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
         @Override
         public String version() {
             return version;
@@ -906,6 +974,30 @@ public class OrcaMasterDao {
         public String startDate;
         public String endDate;
         public String version;
+
+        public String getYouhouCode() {
+            return youhouCode;
+        }
+
+        public String getYouhouName() {
+            return youhouName;
+        }
+
+        public String getKanaName() {
+            return kanaName;
+        }
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public String getVersion() {
+            return version;
+        }
 
         @Override
         public String version() {
@@ -926,6 +1018,50 @@ public class OrcaMasterDao {
         public String endDate;
         public String version;
 
+        public String getMaterialCode() {
+            return materialCode;
+        }
+
+        public String getMaterialName() {
+            return materialName;
+        }
+
+        public String getKanaName() {
+            return kanaName;
+        }
+
+        public String getCategory() {
+            return category;
+        }
+
+        public String getMaterialCategory() {
+            return materialCategory;
+        }
+
+        public String getUnit() {
+            return unit;
+        }
+
+        public Double getPrice() {
+            return price;
+        }
+
+        public String getMaker() {
+            return maker;
+        }
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
         @Override
         public String version() {
             return version;
@@ -941,6 +1077,38 @@ public class OrcaMasterDao {
         public String startDate;
         public String endDate;
         public String version;
+
+        public String getKensaCode() {
+            return kensaCode;
+        }
+
+        public String getKensaName() {
+            return kensaName;
+        }
+
+        public String getKanaName() {
+            return kanaName;
+        }
+
+        public String getKensaSort() {
+            return kensaSort;
+        }
+
+        public String getClassification() {
+            return classification;
+        }
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public String getVersion() {
+            return version;
+        }
 
         @Override
         public String version() {
@@ -963,6 +1131,58 @@ public class OrcaMasterDao {
         public String endDate;
         public String version;
 
+        public String getPayerCode() {
+            return payerCode;
+        }
+
+        public String getPayerName() {
+            return payerName;
+        }
+
+        public String getPayerKana() {
+            return payerKana;
+        }
+
+        public String getInsurerType() {
+            return insurerType;
+        }
+
+        public Double getPayerRatio() {
+            return payerRatio;
+        }
+
+        public String getPrefCode() {
+            return prefCode;
+        }
+
+        public String getCityCode() {
+            return cityCode;
+        }
+
+        public String getZip() {
+            return zip;
+        }
+
+        public String getAddressLine() {
+            return addressLine;
+        }
+
+        public String getPhone() {
+            return phone;
+        }
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
         @Override
         public String version() {
             return version;
@@ -981,6 +1201,50 @@ public class OrcaMasterDao {
         public String startDate;
         public String endDate;
         public String version;
+
+        public String getZip() {
+            return zip;
+        }
+
+        public String getPrefCode() {
+            return prefCode;
+        }
+
+        public String getCityCode() {
+            return cityCode;
+        }
+
+        public String getCity() {
+            return city;
+        }
+
+        public String getTown() {
+            return town;
+        }
+
+        public String getKana() {
+            return kana;
+        }
+
+        public String getRoman() {
+            return roman;
+        }
+
+        public String getFullAddress() {
+            return fullAddress;
+        }
+
+        public String getStartDate() {
+            return startDate;
+        }
+
+        public String getEndDate() {
+            return endDate;
+        }
+
+        public String getVersion() {
+            return version;
+        }
 
         @Override
         public String version() {
