@@ -39,6 +39,8 @@ public class RestOrcaTransport implements OrcaTransport {
     private static final String ENV_ORCA_API_USER = "ORCA_API_USER";
     private static final String ENV_ORCA_API_PASSWORD = "ORCA_API_PASSWORD";
     private static final String ENV_ORCA_API_PATH_PREFIX = "ORCA_API_PATH_PREFIX";
+    private static final String ENV_ORCA_API_RETRY_MAX = "ORCA_API_RETRY_MAX";
+    private static final String ENV_ORCA_API_RETRY_BACKOFF_MS = "ORCA_API_RETRY_BACKOFF_MS";
 
     private static final String PROP_ORCA_API_HOST = "orca.orcaapi.ip";
     private static final String PROP_ORCA_API_PORT = "orca.orcaapi.port";
@@ -51,6 +53,8 @@ public class RestOrcaTransport implements OrcaTransport {
 
     private static final Duration DEFAULT_CONNECT_TIMEOUT = Duration.ofSeconds(5);
     private static final Duration DEFAULT_READ_TIMEOUT = Duration.ofSeconds(15);
+    private static final int DEFAULT_RETRY_MAX = 0;
+    private static final long DEFAULT_RETRY_BACKOFF_MS = 200L;
 
     private HttpClient client;
 
@@ -78,35 +82,58 @@ public class RestOrcaTransport implements OrcaTransport {
         String requestId = traceId;
         String url = resolved.buildUrl(endpoint);
         String action = "ORCA_HTTP";
-        try {
-            HttpRequest request = HttpRequest.newBuilder()
-                    .uri(toUri(url))
-                    .timeout(DEFAULT_READ_TIMEOUT)
-                    .header("Content-Type", "application/xml")
-                    .header("Accept", "application/xml")
-                    .header("Authorization", resolved.basicAuthHeader())
-                    .header("X-Request-Id", safeHeader(requestId))
-                    .header("X-Trace-Id", safeHeader(traceId))
-                    .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
-                    .build();
-            ExternalServiceAuditLogger.logOrcaRequest(traceId, action, endpoint.getPath(), resolved.auditSummary());
-            HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
-            int status = response.statusCode();
-            String body = response.body() != null ? response.body() : "";
-            ExternalServiceAuditLogger.logOrcaResponse(traceId, action, endpoint.getPath(), status, resolved.auditSummary());
-            if (status < 200 || status >= 300) {
-                OrcaGatewayException failure = new OrcaGatewayException("ORCA HTTP response status " + status);
-                ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
-                throw failure;
+        int maxRetries = resolved.retryMax;
+        long backoffMs = resolved.retryBackoffMs;
+        int attempt = 0;
+        while (true) {
+            attempt++;
+            try {
+                HttpRequest request = HttpRequest.newBuilder()
+                        .uri(toUri(url))
+                        .timeout(DEFAULT_READ_TIMEOUT)
+                        .header("Content-Type", "application/xml")
+                        .header("Accept", "application/xml")
+                        .header("Authorization", resolved.basicAuthHeader())
+                        .header("X-Request-Id", safeHeader(requestId))
+                        .header("X-Trace-Id", safeHeader(traceId))
+                        .POST(HttpRequest.BodyPublishers.ofString(payload, StandardCharsets.UTF_8))
+                        .build();
+                ExternalServiceAuditLogger.logOrcaRequest(traceId, action, endpoint.getPath(), resolved.auditSummary());
+                HttpResponse<String> response = client.send(request, HttpResponse.BodyHandlers.ofString(StandardCharsets.UTF_8));
+                int status = response.statusCode();
+                String body = response.body() != null ? response.body() : "";
+                ExternalServiceAuditLogger.logOrcaResponse(traceId, action, endpoint.getPath(), status, resolved.auditSummary());
+                if (status < 200 || status >= 300) {
+                    OrcaGatewayException failure = new OrcaGatewayException("ORCA HTTP response status " + status);
+                    ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
+                    if (shouldRetry(status, attempt, maxRetries)) {
+                        sleepQuietly(backoffMs);
+                        continue;
+                    }
+                    throw failure;
+                }
+                if (body.isBlank()) {
+                    OrcaGatewayException failure = new OrcaGatewayException("ORCA HTTP response body is empty");
+                    ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
+                    if (shouldRetry(200, attempt, maxRetries)) {
+                        sleepQuietly(backoffMs);
+                        continue;
+                    }
+                    throw failure;
+                }
+                return body;
+            } catch (IOException ex) {
+                ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
+                if (shouldRetry(-1, attempt, maxRetries)) {
+                    sleepQuietly(backoffMs);
+                    continue;
+                }
+                throw new OrcaGatewayException("Failed to call ORCA API", ex);
+            } catch (InterruptedException ex) {
+                Thread.currentThread().interrupt();
+                ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
+                throw new OrcaGatewayException("ORCA API request interrupted", ex);
             }
-            return body;
-        } catch (IOException ex) {
-            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
-            throw new OrcaGatewayException("Failed to call ORCA API", ex);
-        } catch (InterruptedException ex) {
-            Thread.currentThread().interrupt();
-            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), ex);
-            throw new OrcaGatewayException("ORCA API request interrupted", ex);
         }
     }
 
@@ -130,6 +157,27 @@ public class RestOrcaTransport implements OrcaTransport {
         return value == null ? "" : value;
     }
 
+    private static boolean shouldRetry(int status, int attempt, int maxRetries) {
+        if (attempt > maxRetries + 1) {
+            return false;
+        }
+        if (status == -1) {
+            return true;
+        }
+        return status >= 500 && status < 600;
+    }
+
+    private static void sleepQuietly(long backoffMs) {
+        if (backoffMs <= 0) {
+            return;
+        }
+        try {
+            Thread.sleep(backoffMs);
+        } catch (InterruptedException ex) {
+            Thread.currentThread().interrupt();
+        }
+    }
+
     static final class OrcaTransportSettings {
         private final String host;
         private final int port;
@@ -137,14 +185,19 @@ public class RestOrcaTransport implements OrcaTransport {
         private final String user;
         private final String password;
         private final String pathPrefix;
+        private final int retryMax;
+        private final long retryBackoffMs;
 
-        private OrcaTransportSettings(String host, int port, String scheme, String user, String password, String pathPrefix) {
+        private OrcaTransportSettings(String host, int port, String scheme, String user, String password,
+                String pathPrefix, int retryMax, long retryBackoffMs) {
             this.host = host;
             this.port = port;
             this.scheme = scheme;
             this.user = user;
             this.password = password;
             this.pathPrefix = pathPrefix;
+            this.retryMax = retryMax;
+            this.retryBackoffMs = retryBackoffMs;
         }
 
         static OrcaTransportSettings load() {
@@ -155,7 +208,9 @@ public class RestOrcaTransport implements OrcaTransport {
                     normalizeScheme(firstNonBlank(trim(env(ENV_ORCA_API_SCHEME)), property(props, PROP_CLAIM_SCHEME))),
                     firstNonBlank(trim(env(ENV_ORCA_API_USER)), property(props, PROP_ORCA_API_USER)),
                     firstNonBlank(trim(env(ENV_ORCA_API_PASSWORD)), property(props, PROP_ORCA_API_PASSWORD)),
-                    normalizePathPrefix(firstNonBlank(trim(env(ENV_ORCA_API_PATH_PREFIX))))
+                    normalizePathPrefix(firstNonBlank(trim(env(ENV_ORCA_API_PATH_PREFIX)))),
+                    parseInt(env(ENV_ORCA_API_RETRY_MAX), DEFAULT_RETRY_MAX),
+                    parseLong(env(ENV_ORCA_API_RETRY_BACKOFF_MS), DEFAULT_RETRY_BACKOFF_MS)
             );
         }
 
@@ -303,6 +358,30 @@ public class RestOrcaTransport implements OrcaTransport {
 
         private static String safe(String value) {
             return value != null ? value : "unknown";
+        }
+
+        private static int parseInt(String value, int defaultValue) {
+            if (value == null || value.isBlank()) {
+                return defaultValue;
+            }
+            try {
+                return Integer.parseInt(value.trim());
+            } catch (NumberFormatException ex) {
+                LOGGER.log(Level.WARNING, "Invalid ORCA retry max: {0}", value);
+                return defaultValue;
+            }
+        }
+
+        private static long parseLong(String value, long defaultValue) {
+            if (value == null || value.isBlank()) {
+                return defaultValue;
+            }
+            try {
+                return Long.parseLong(value.trim());
+            } catch (NumberFormatException ex) {
+                LOGGER.log(Level.WARNING, "Invalid ORCA retry backoff ms: {0}", value);
+                return defaultValue;
+            }
         }
     }
 }
