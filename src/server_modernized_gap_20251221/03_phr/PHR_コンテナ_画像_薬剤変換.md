@@ -27,15 +27,14 @@
   - PHRContainer の JSON 返却（`application/json`）を `docList`/`labList` の空配列を含めて返却。
   - 画像ストリームの `image/jpeg` 応答 + `Cache-Control: no-store` + `Content-Length`。
   - 薬剤の JSON 変換（`PHRBundle`/`PHRClaimItem` へのマッピング）と `bundles` の空配列化。
-- 未実装
-  - **禁忌語の置換ロジック**（`TouchMedicationFormatter` などによる文言置換）。
-    - 現状は用法/頻度/投与量などの構造化データを JSON へ反映するのみ。
+  - **禁忌語の置換ロジック**（`TouchMedicationFormatter` 由来の文言置換）。
 - PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
 
 ## 確認
 - 2025-12-22: `PHRResource`/`PhrDataAssembler`/`PhrMedicationResponse` の現行実装で要件を満たしていることを確認。
 - 2025-12-22 (RUN_ID=20251222T211600Z): `PHRResource` の JSON 応答ラッパーを追加し、空配列を欠落させない実装に更新。
 - 2025-12-22: 画像レスポンスの `Cache-Control: no-store` と `Content-Length`、薬剤 JSON の `bundles` 空配列化を確認（禁忌語置換は別途）。
+- 2025-12-22 (RUN_ID=20251222T223200Z): 禁忌語置換の実装方針を確定し、`admin`/`adminMemo`/`memo`/用法・頻度関連に反映。
 
 ## 実装済みエンドポイント
 - `GET /20/adm/phr/{facilityId,patientId,...}`: `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
@@ -49,6 +48,7 @@
 
 ## 変更ファイル
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`
 - `src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md`
 
 ## 留意点
