@@ -70,12 +70,14 @@ public class RestOrcaTransport implements OrcaTransport {
 
     @Override
     public String invoke(OrcaEndpoint endpoint, String requestXml) {
-        if (endpoint == null) {
-            throw new OrcaGatewayException("Endpoint must not be null");
-        }
         OrcaTransportSettings resolved = OrcaTransportSettings.load();
         String traceId = resolveTraceId();
         String action = "ORCA_HTTP";
+        if (endpoint == null) {
+            OrcaGatewayException failure = new OrcaGatewayException("Endpoint must not be null");
+            ExternalServiceAuditLogger.logOrcaFailure(traceId, action, null, resolved.auditSummary(), failure);
+            throw failure;
+        }
         if (!resolved.isReady()) {
             OrcaGatewayException failure = new OrcaGatewayException("ORCA transport settings are incomplete");
             ExternalServiceAuditLogger.logOrcaFailure(traceId, action, endpoint.getPath(), resolved.auditSummary(), failure);
