@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-box h2 {
+        font-size: 16px;
+        margin: 0 0 8px 0;
+      }
+      .summary-box p {
+        margin: 0;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .compare-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+      }
+      .agent-card {
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .agent-title {
+        font-size: 15px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .score-banner {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        background: #d8e6e9;
+        padding: 10px 12px;
+        margin-bottom: 16px;
+        font-weight: 700;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .score-banner span {
+        font-size: 18px;
+      }
+      .hex-wrap {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 12px 0 8px 0;
+        color: #2c3a40;
+      }
+      .evidence-box {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        font-size: 12px;
+        white-space: pre-wrap;
+      }
+      .link-list {
+        font-size: 12px;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+      .reason-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .reason-list li {
+        margin-bottom: 6px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 700;
+        padding: 2px 6px;
+        background: #e3edf0;
+        border: 1px solid #cdd9dd;
+        margin-right: 6px;
+      }
+      .hex-chart {
+        width: 200px;
+        height: 200px;
+      }
+      .hex-chart polygon.outer {
+        fill: none;
+        stroke: #9db3ba;
+        stroke-width: 2;
+      }
+      .hex-chart polygon.area {
+        fill: rgba(82, 136, 153, 0.35);
+        stroke: #3b6b7a;
+        stroke-width: 2;
+      }
+      .hex-chart line.axis {
+        stroke: #c4d3d7;
+        stroke-width: 1;
+      }
+      .hex-chart text {
+        font-size: 10px;
+        fill: #2c3a40;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | PHR IdentityToken / Secrets</h1>
+        <p class="monitor-description">server modernized gap implementation plan 20251221 / PHR_IdentityToken_Secrets の実装ブランチ比較評価</p>
+      </header>
+
+      <section class="summary-box">
+        <h2>タスク概要</h2>
+        <p>Layer ID Secrets の注入・監査強化および IdentityToken 発行失敗系の補完を評価対象とし、2ブランチのコミットと差分を精査した。評価は機能合理性と緻密性を中心に、運用性・安全性・可読性・ドキュメントを含む6指標で採点した。</p>
+      </section>
+
+      <section class="compare-grid">
+        <article class="agent-card">
+          <div class="agent-title">codex / task-1766416647659-a4ae8c</div>
+          <div class="score-banner">合計点 515 / 600 <span>🏆</span></div>
+          <div class="hex-wrap">
+            <svg class="hex-chart" viewBox="0 0 200 200" data-values="90,86,88,85,84,82">
+              <polygon class="outer" points="100,10 177.9,55 177.9,145 100,190 22.1,145 22.1,55"></polygon>
+              <line class="axis" x1="100" y1="100" x2="100" y2="10"></line>
+              <line class="axis" x1="100" y1="100" x2="177.9" y2="55"></line>
+              <line class="axis" x1="100" y1="100" x2="177.9" y2="145"></line>
+              <line class="axis" x1="100" y1="100" x2="100" y2="190"></line>
+              <line class="axis" x1="100" y1="100" x2="22.1" y2="145"></line>
+              <line class="axis" x1="100" y1="100" x2="22.1" y2="55"></line>
+              <polygon class="area"></polygon>
+            </svg>
+            <ul class="metric-list">
+              <li>機能合理性 90点</li>
+              <li>緻密性 86点</li>
+              <li>安全性 88点</li>
+              <li>可読性 85点</li>
+              <li>運用性 84点</li>
+              <li>ドキュメント 82点</li>
+            </ul>
+          </div>
+
+          <div class="section-title">評価理由</div>
+          <ul class="reason-list">
+            <li>機能合理性: IdentityToken 鍵欠落/不正時の例外と 503 応答を追加し、障害時の挙動が明確。</li>
+            <li>緻密性: base64・ファイルパス双方の失敗理由を reason/source で監査に載せる実装が丁寧。</li>
+            <li>安全性: 鍵読込失敗を専用例外化し監査に残す点は良いが、トークンログ出力が残存。</li>
+            <li>可読性: 例外クラスの導入で分岐が整理されているが、PHRResource 側の処理追加はやや長い。</li>
+            <li>運用性: `check-secrets.sh` に Layer ID 鍵検証を追加し事前検知が可能。</li>
+            <li>ドキュメント: 実施内容と未実施事項が追記されているが、設定例の詳細は控えめ。</li>
+          </ul>
+
+          <div class="section-title">コミットログ</div>
+          <div class="evidence-box">0e34226e Handle identity token secrets failures</div>
+
+          <div class="section-title">差分サマリ</div>
+          <div class="evidence-box">5 files changed, 168 insertions(+), 29 deletions(-)</div>
+
+          <div class="section-title">未コミット変更</div>
+          <div class="evidence-box">なし</div>
+
+          <div class="section-title">成果物リンク</div>
+          <ul class="link-list">
+            <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java">IdentityService.java</a></li>
+            <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityTokenSecretsException.java">IdentityTokenSecretsException.java</a></li>
+            <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a></li>
+            <li><a href="../../ops/check-secrets.sh">ops/check-secrets.sh</a></li>
+            <li><a href="../../src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md">PHR_IdentityToken_Secrets.md</a></li>
+          </ul>
+        </article>
+
+        <article class="agent-card">
+          <div class="agent-title">codex / task-1766416647496-9f2c43</div>
+          <div class="score-banner">合計点 487 / 600 <span>🥈</span></div>
+          <div class="hex-wrap">
+            <svg class="hex-chart" viewBox="0 0 200 200" data-values="82,78,80,83,79,85">
+              <polygon class="outer" points="100,10 177.9,55 177.9,145 100,190 22.1,145 22.1,55"></polygon>
+              <line class="axis" x1="100" y1="100" x2="100" y2="10"></line>
+              <line class="axis" x1="100" y1="100" x2="177.9" y2="55"></line>
+              <line class="axis" x1="100" y1="100" x2="177.9" y2="145"></line>
+              <line class="axis" x1="100" y1="100" x2="100" y2="190"></line>
+              <line class="axis" x1="100" y1="100" x2="22.1" y2="145"></line>
+              <line class="axis" x1="100" y1="100" x2="22.1" y2="55"></line>
+              <polygon class="area"></polygon>
+            </svg>
+            <ul class="metric-list">
+              <li>機能合理性 82点</li>
+              <li>緻密性 78点</li>
+              <li>安全性 80点</li>
+              <li>可読性 83点</li>
+              <li>運用性 79点</li>
+              <li>ドキュメント 85点</li>
+            </ul>
+          </div>
+
+          <div class="section-title">評価理由</div>
+          <ul class="reason-list">
+            <li>機能合理性: 監査メタに Layer 設定情報を追加し調査性が向上。</li>
+            <li>緻密性: 秘密鍵ソースの判定はあるが、鍵未設定・不正時の例外処理は未補完。</li>
+            <li>安全性: 署名済みトークンのログ出力を除去できている点は良い。</li>
+            <li>可読性: IdentityService の説明用メソッド追加で責務が明確。</li>
+            <li>運用性: env sample に設定項目を追加し、運用時の漏れを抑制。</li>
+            <li>ドキュメント: 実施内容・環境変数・根拠が明記され、差分意図が読みやすい。</li>
+          </ul>
+
+          <div class="section-title">コミットログ</div>
+          <div class="evidence-box">273aac3d PHR IdentityToken secrets metadata and config</div>
+
+          <div class="section-title">差分サマリ</div>
+          <div class="evidence-box">4 files changed, 65 insertions(+), 21 deletions(-)</div>
+
+          <div class="section-title">未コミット変更</div>
+          <div class="evidence-box">なし</div>
+
+          <div class="section-title">成果物リンク</div>
+          <ul class="link-list">
+            <li><a href="../../server-modernized/config/server-modernized.env.sample">server-modernized.env.sample</a></li>
+            <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java">IdentityService.java</a></li>
+            <li><a href="../../server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a></li>
+            <li><a href="../../src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md">PHR_IdentityToken_Secrets.md</a></li>
+          </ul>
+        </article>
+      </section>
+    </div>
+
+    <script>
+      (function () {
+        const SIZE = 90;
+        const CENTER = 100;
+        const STEP = (Math.PI * 2) / 6;
+        document.querySelectorAll(".hex-chart").forEach((chart) => {
+          const values = (chart.dataset.values || "").split(",").map((v) => Number(v.trim()));
+          if (values.length !== 6) return;
+          const points = values
+            .map((value, idx) => {
+              const r = (Math.max(0, Math.min(100, value)) / 100) * SIZE;
+              const angle = -Math.PI / 2 + idx * STEP;
+              const x = CENTER + r * Math.cos(angle);
+              const y = CENTER + r * Math.sin(angle);
+              return `${x.toFixed(1)},${y.toFixed(1)}`;
+            })
+            .join(" ");
+          const polygon = chart.querySelector("polygon.area");
+          if (polygon) polygon.setAttribute("points", points);
+        });
+      })();
+    </script>
+  </body>
+</html>

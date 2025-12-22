@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - PHR_コンテナ_画像_薬剤変換</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f8fbfc;
+      }
+      .summary-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .score-total {
+        font-size: 24px;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .metric-title {
+        font-weight: 600;
+        margin: 0 0 8px;
+      }
+      .metric-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .hex-chart {
+        display: inline-block;
+        margin: 8px 0 12px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border: 1px solid #b8c9cd;
+        background: #d8e6e9;
+        margin-right: 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: PHR_コンテナ_画像_薬剤変換</h1>
+        <p class="monitor-description">対象ブランチのコミットログと差分を確認し、機能合理性と緻密性を中心に評価しました。</p>
+        <p class="monitor-description">対象: task/task-1766417256310-e1362a, task/task-1766417256370-2101b2</p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="summary-card">
+          <h2>codex / task-1766417256310-e1362a</h2>
+          <p class="score-total">🥉 205 / 600</p>
+          <p class="score-sub">メダル評価: ⚪️ / スコア: 35</p>
+          <p class="note">小規模なドキュメント更新のみで、実装面の進捗は確認できませんでした。</p>
+        </div>
+        <div class="summary-card">
+          <h2>codex / task-1766417256370-2101b2</h2>
+          <p class="score-total">❌ 20 / 600</p>
+          <p class="score-sub">失格理由: 変更・コミットが存在せず評価不能</p>
+          <p class="score-sub">メダル評価: ⚪️ / スコア: 0</p>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="metric-title">タスク内容・仕事の概要</h2>
+        <p class="note">PHRContainer DTO の JSON 返却、画像ストリーム仕様、薬剤情報の禁忌語・用法を含む JSON 変換を確定する計画に対し、対象ブランチでの実装差分を確認しました。実装は既存コードに既に反映済みとの記載がある一方、今回の対象ブランチではドキュメント追記のみ、または変更なしでした。</p>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1766417256310-e1362a</th>
+            <th>Agent task-1766417256370-2101b2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="hex-chart">
+                <svg width="120" height="120" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="60,50 75.2,51.3 64.3,62.5 60,90 38.4,72.5 47.0,52.5" fill="#90b7bf" stroke="#5c7f86" />
+                </svg>
+              </div>
+              <div class="badge">指標 (6)</div>
+              <ul class="metric-list">
+                <li>機能合理性 20点</li>
+                <li>緻密性 35点</li>
+                <li>実装網羅性 10点</li>
+                <li>変更適正 60点</li>
+                <li>証跡/ドキュメント 50点</li>
+                <li>影響把握 30点</li>
+              </ul>
+              <p class="note">理由: 変更はドキュメント追記のみで、要求機能の実装確認や追加検証が不足。差分の再確認は適切だが、実装・検証の具体性が乏しい。</p>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <svg width="120" height="120" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="60,60 62.2,58.8 60,60 60,65 60,60 57.8,58.8" fill="#d1d9db" stroke="#8a9aa0" />
+                </svg>
+              </div>
+              <div class="badge">指標 (6)</div>
+              <ul class="metric-list">
+                <li>機能合理性 0点</li>
+                <li>緻密性 5点</li>
+                <li>実装網羅性 0点</li>
+                <li>変更適正 10点</li>
+                <li>証跡/ドキュメント 0点</li>
+                <li>影響把握 5点</li>
+              </ul>
+              <p class="note">理由: コミット・差分が存在しないため、機能面や実装品質を確認できません。</p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="metric-title">コミットログ</div>
+              <pre>commit 9677967867f205030b8134cb6d29d376cd27209d (task/task-1766417256310-e1362a)
+Author: circlemouth &lt;circlemouth.h@gmail.com&gt;
+Date:   Tue Dec 23 00:38:45 2025 +0900
+
+    docs: note phr gap task recheck
+
+src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md | 1 +
+1 file changed, 1 insertion(+)</pre>
+            </td>
+            <td>
+              <div class="metric-title">コミットログ</div>
+              <pre>master との差分コミットなし</pre>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="metric-title">差分サマリ</div>
+              <pre>+ 2025-12-22: 本ワークツリーで実装差分を再確認し、追加変更が不要であることを確認。</pre>
+            </td>
+            <td>
+              <div class="metric-title">差分サマリ</div>
+              <pre>変更ファイルなし</pre>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="metric-title">成果物リンク</div>
+              <div class="link-list">
+                <a href="../../src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md">PHR_コンテナ_画像_薬剤変換.md</a>
+              </div>
+              <p class="note">※リンク先はリポジトリ直下。作業は別worktreeで行われています。</p>
+            </td>
+            <td>
+              <div class="metric-title">成果物リンク</div>
+              <div class="link-list">
+                <span class="note">成果物なし（差分なし）</span>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
