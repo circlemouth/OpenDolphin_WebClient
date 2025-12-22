@@ -1,5 +1,6 @@
 # ORCA-07 Vault Secrets 連携
 - 期間: 2025-12-29 09:00 - 2025-12-30 09:00 / 優先度: high / 緊急度: medium
+- 状態: 完了
 - YAML ID: `src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md`
 
 ## 目的
@@ -20,6 +21,12 @@
 
 ## 未実施
 - Vault 実連携の有効化・RUN_ID 証跡取得。
+
+## 実装済み根拠
+- WildFly DataSource: `ops/modernized-server/docker/configure-wildfly.cli`
+- 起動時の検証 & 監査ログ: `server-modernized/src/main/java/open/orca/rest/ORCAConnection.java`
+- 起動時の失敗判定: `server-modernized/src/main/java/open/dolphin/mbean/ServletStartup.java`
+- 環境変数サンプル: `server-modernized/config/server-modernized.env.sample`
 
 ## 参照
 - `src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_JNDI_Datasource_実装.md`
