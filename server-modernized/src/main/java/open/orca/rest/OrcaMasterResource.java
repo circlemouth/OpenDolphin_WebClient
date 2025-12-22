@@ -58,6 +58,7 @@ public class OrcaMasterResource extends AbstractResource {
     private static final long CACHE_TTL_SHORT_SECONDS = 300;
     private static final long CACHE_TTL_LONG_SECONDS = 604800;
     private static final long CACHE_STALE_REVALIDATE_SECONDS = 86400;
+    private static final int MAX_PAGE_SIZE = 2000;
     private static final Pattern SRYCD_PATTERN = Pattern.compile("^\\d{9}$");
     private static final Pattern ZIP_PATTERN = Pattern.compile("^\\d{7}$");
     private static final Pattern PREF_PATTERN = Pattern.compile("^(0[1-9]|[1-3][0-9]|4[0-7])$");
@@ -569,7 +570,7 @@ public class OrcaMasterResource extends AbstractResource {
         criteria.setAsOf(asOf);
         criteria.setTensuVersion(tensuVersion);
         criteria.setPage(parsePositiveInt(params, "page", 1));
-        criteria.setSize(parsePositiveInt(params, "size", 100));
+        criteria.setSize(parsePageSize(params, "size", 100));
         EtensuDao.EtensuSearchResult dbResult = etensuDao.search(criteria);
         if (dbResult == null) {
             LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
@@ -700,10 +701,7 @@ public class OrcaMasterResource extends AbstractResource {
 
     private <T> List<T> paginateList(List<T> source, MultivaluedMap<String, String> params) {
         int page = parsePositiveInt(params, "page", 1);
-        int size = parsePositiveInt(params, "size", 100);
-        if (size > 2000) {
-            size = 2000;
-        }
+        int size = parsePageSize(params, "size", 100);
         int fromIndex = Math.max(0, (page - 1) * size);
         if (fromIndex >= source.size()) {
             return Collections.emptyList();
@@ -723,6 +721,11 @@ public class OrcaMasterResource extends AbstractResource {
         } catch (NumberFormatException e) {
             return fallback;
         }
+    }
+
+    private int parsePageSize(MultivaluedMap<String, String> params, String key, int fallback) {
+        int parsed = parsePositiveInt(params, key, fallback);
+        return Math.min(parsed, MAX_PAGE_SIZE);
     }
 
     private OrcaDrugMasterEntry toGenericClassEntry(FixtureGenericClassEntry entry, LoadedFixture<?> fixture) {
@@ -1233,14 +1236,19 @@ public class OrcaMasterResource extends AbstractResource {
         details.put("runId", RUN_ID);
         details.put("masterType", masterType);
         details.put("httpStatus", httpStatus);
+        details.put("status", httpStatus >= 400 ? "failed" : "success");
         details.put("dataSource", dataSourceForOrigin(fixture.origin));
         details.put("snapshotVersion", fixture.snapshotVersion);
         details.put("version", firstNonBlank(fixture.version, DEFAULT_VERSION));
         details.put("cacheHit", cacheHit);
         details.put("missingMaster", fixture.origin == DataOrigin.FALLBACK);
         details.put("fallbackUsed", fixture.origin == DataOrigin.FALLBACK);
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+        }
         if (resultCount != null) {
             details.put("resultCount", resultCount);
+            details.put("totalCount", resultCount);
         }
         if (emptyResult != null) {
             details.put("emptyResult", emptyResult);
@@ -1281,7 +1289,7 @@ public class OrcaMasterResource extends AbstractResource {
         }
         if (params != null) {
             details.put("page", parsePositiveInt(params, "page", 1));
-            details.put("size", parsePositiveInt(params, "size", 100));
+            details.put("size", parsePageSize(params, "size", 100));
         }
         return details;
     }
@@ -1313,7 +1321,7 @@ public class OrcaMasterResource extends AbstractResource {
         }
         if (params != null) {
             details.put("page", parsePositiveInt(params, "page", 1));
-            details.put("size", parsePositiveInt(params, "size", 100));
+            details.put("size", parsePageSize(params, "size", 100));
         }
         return details;
     }
