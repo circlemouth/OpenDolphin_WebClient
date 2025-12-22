@@ -23,7 +23,7 @@ public class OrcaMasterDao {
         try (Connection connection = ORCAConnection.getInstance().getConnection()) {
             GenericClassTableMeta meta = GenericClassTableMeta.load(connection);
             if (meta == null || meta.codeColumn == null) {
-                return new GenericClassSearchResult(Collections.emptyList(), 0, null);
+                return null;
             }
             Query query = buildGenericClassQuery(criteria, meta);
             int totalCount = fetchTotalCount(connection, meta.tableName, query);
@@ -40,7 +40,7 @@ public class OrcaMasterDao {
         }
     }
 
-    public GenericPriceRecord findGenericPrice(GenericPriceCriteria criteria) {
+    public LookupResult<GenericPriceRecord> findGenericPrice(GenericPriceCriteria criteria) {
         if (criteria == null || criteria.srycd == null || criteria.srycd.isBlank()) {
             return null;
         }
@@ -51,64 +51,74 @@ public class OrcaMasterDao {
             }
             Query query = buildGenericPriceQuery(criteria, meta);
             List<GenericPriceRecord> records = fetchGenericPriceRecords(connection, meta, query);
-            return records.isEmpty() ? null : records.get(0);
+            if (records.isEmpty()) {
+                return new LookupResult<>(null, null, false);
+            }
+            String version = resolveVersion(records, null);
+            return new LookupResult<>(records.get(0), version, true);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA-05 generic price master", e);
             return null;
         }
     }
 
-    public List<YouhouRecord> searchYouhou(YouhouCriteria criteria) {
+    public ListSearchResult<YouhouRecord> searchYouhou(YouhouCriteria criteria) {
         if (criteria == null) {
-            return Collections.emptyList();
+            return null;
         }
         try (Connection connection = ORCAConnection.getInstance().getConnection()) {
             YouhouTableMeta meta = YouhouTableMeta.load(connection);
             if (meta == null || meta.codeColumn == null) {
-                return Collections.emptyList();
+                return null;
             }
             Query query = buildKeywordEffectiveQuery(criteria.keyword, criteria.effective, meta.tableName,
                     meta.codeColumn, meta.nameColumn, meta.kanaColumn, meta.startDateColumn, meta.endDateColumn);
-            return fetchYouhouRecords(connection, meta, query);
+            List<YouhouRecord> records = fetchYouhouRecords(connection, meta, query);
+            String version = resolveVersion(records, null);
+            return new ListSearchResult<>(records, records.size(), version);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA-05 youhou master", e);
-            return Collections.emptyList();
+            return null;
         }
     }
 
-    public List<MaterialRecord> searchMaterial(MaterialCriteria criteria) {
+    public ListSearchResult<MaterialRecord> searchMaterial(MaterialCriteria criteria) {
         if (criteria == null) {
-            return Collections.emptyList();
+            return null;
         }
         try (Connection connection = ORCAConnection.getInstance().getConnection()) {
             MaterialTableMeta meta = MaterialTableMeta.load(connection);
             if (meta == null || meta.codeColumn == null) {
-                return Collections.emptyList();
+                return null;
             }
             Query query = buildKeywordEffectiveQuery(criteria.keyword, criteria.effective, meta.tableName,
                     meta.codeColumn, meta.nameColumn, meta.kanaColumn, meta.startDateColumn, meta.endDateColumn);
-            return fetchMaterialRecords(connection, meta, query);
+            List<MaterialRecord> records = fetchMaterialRecords(connection, meta, query);
+            String version = resolveVersion(records, null);
+            return new ListSearchResult<>(records, records.size(), version);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA-05 material master", e);
-            return Collections.emptyList();
+            return null;
         }
     }
 
-    public List<KensaSortRecord> searchKensaSort(KensaSortCriteria criteria) {
+    public ListSearchResult<KensaSortRecord> searchKensaSort(KensaSortCriteria criteria) {
         if (criteria == null) {
-            return Collections.emptyList();
+            return null;
         }
         try (Connection connection = ORCAConnection.getInstance().getConnection()) {
             KensaSortTableMeta meta = KensaSortTableMeta.load(connection);
             if (meta == null || meta.codeColumn == null) {
-                return Collections.emptyList();
+                return null;
             }
             Query query = buildKeywordEffectiveQuery(criteria.keyword, criteria.effective, meta.tableName,
                     meta.codeColumn, meta.nameColumn, meta.kanaColumn, meta.startDateColumn, meta.endDateColumn);
-            return fetchKensaSortRecords(connection, meta, query);
+            List<KensaSortRecord> records = fetchKensaSortRecords(connection, meta, query);
+            String version = resolveVersion(records, null);
+            return new ListSearchResult<>(records, records.size(), version);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA-05 kensa sort master", e);
-            return Collections.emptyList();
+            return null;
         }
     }
 
@@ -119,7 +129,7 @@ public class OrcaMasterDao {
         try (Connection connection = ORCAConnection.getInstance().getConnection()) {
             HokenjaTableMeta meta = HokenjaTableMeta.load(connection);
             if (meta == null || meta.codeColumn == null) {
-                return new HokenjaSearchResult(Collections.emptyList(), 0, null);
+                return null;
             }
             Query query = buildHokenjaQuery(criteria, meta);
             int totalCount = fetchTotalCount(connection, meta.tableName, query);
@@ -131,11 +141,11 @@ public class OrcaMasterDao {
             return new HokenjaSearchResult(records, totalCount, version);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA-06 hokenja master", e);
-            return new HokenjaSearchResult(Collections.emptyList(), 0, null);
+            return null;
         }
     }
 
-    public AddressRecord findAddress(AddressCriteria criteria) {
+    public LookupResult<AddressRecord> findAddress(AddressCriteria criteria) {
         if (criteria == null || criteria.zip == null || criteria.zip.isBlank()) {
             return null;
         }
@@ -146,7 +156,11 @@ public class OrcaMasterDao {
             }
             Query query = buildAddressQuery(criteria, meta);
             List<AddressRecord> records = fetchAddressRecords(connection, meta, query);
-            return records.isEmpty() ? null : records.get(0);
+            if (records.isEmpty()) {
+                return new LookupResult<>(null, null, false);
+            }
+            String version = resolveVersion(records, null);
+            return new LookupResult<>(records.get(0), version, true);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA-06 address master", e);
             return null;
@@ -1019,6 +1033,54 @@ public class OrcaMasterDao {
 
         public String getVersion() {
             return version;
+        }
+    }
+
+    public static final class ListSearchResult<T extends VersionedRecord> {
+        private final List<T> records;
+        private final int totalCount;
+        private final String version;
+
+        public ListSearchResult(List<T> records, int totalCount, String version) {
+            this.records = records;
+            this.totalCount = totalCount;
+            this.version = version;
+        }
+
+        public List<T> getRecords() {
+            return records;
+        }
+
+        public int getTotalCount() {
+            return totalCount;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+    }
+
+    public static final class LookupResult<T extends VersionedRecord> {
+        private final T record;
+        private final String version;
+        private final boolean found;
+
+        public LookupResult(T record, String version, boolean found) {
+            this.record = record;
+            this.version = version;
+            this.found = found;
+        }
+
+        public T getRecord() {
+            return record;
+        }
+
+        public String getVersion() {
+            return version;
+        }
+
+        public boolean isFound() {
+            return found;
         }
     }
 
