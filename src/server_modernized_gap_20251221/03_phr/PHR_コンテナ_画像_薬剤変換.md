@@ -18,6 +18,15 @@
   - `PHRBundle`/`PHRClaimItem` へ ClaimBundle/ClaimItem を変換し、
     `admin`/`adminMemo`/`memo`/`frequency*`/`dose*` など用法・禁忌語に相当する情報を JSON で返却。
 
+## 実装状況
+- 実装済み
+  - PHRContainer の JSON 返却（`application/json`）。
+  - 画像ストリームの `image/jpeg` 応答 + `Cache-Control: no-store` + `Content-Length`。
+  - 薬剤の JSON 変換（`PHRBundle`/`PHRClaimItem` へのマッピング）。
+- 未実装
+  - **禁忌語の置換ロジック**（`TouchMedicationFormatter` などによる文言置換）。
+    - 現状は用法/頻度/投与量などの構造化データを JSON へ反映するのみ。
+
 ## 変更ファイル
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
 - `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`
