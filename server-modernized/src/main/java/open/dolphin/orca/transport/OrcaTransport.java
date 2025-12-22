@@ -13,4 +13,11 @@ public interface OrcaTransport {
      * @return ORCA XML payload as UTF-8 string
      */
     String invoke(OrcaEndpoint endpoint, String requestXml);
+
+    /**
+     * Hint whether this transport is backed by stub payloads.
+     */
+    default boolean isStub() {
+        return false;
+    }
 }

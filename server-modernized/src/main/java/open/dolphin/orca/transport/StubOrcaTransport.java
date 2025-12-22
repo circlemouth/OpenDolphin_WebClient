@@ -1,6 +1,7 @@
 package open.dolphin.orca.transport;
 
 import jakarta.enterprise.context.ApplicationScoped;
+import jakarta.enterprise.inject.Alternative;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
@@ -9,8 +10,14 @@ import open.dolphin.orca.OrcaGatewayException;
 /**
  * File based transport that returns canned ORCA XML payloads.
  */
+@Alternative
 @ApplicationScoped
 public class StubOrcaTransport implements OrcaTransport {
+
+    @Override
+    public boolean isStub() {
+        return true;
+    }
 
     @Override
     public String invoke(OrcaEndpoint endpoint, String requestXml) {
