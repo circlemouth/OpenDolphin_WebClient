@@ -30,7 +30,10 @@
 - 未実装
   - **禁忌語の置換ロジック**（`TouchMedicationFormatter` などによる文言置換）。
     - 現状は用法/頻度/投与量などの構造化データを JSON へ反映するのみ。
-  - PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
+- PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
+
+## 確認
+- 2025-12-22: `PHRResource`/`PhrDataAssembler`/`PhrMedicationResponse` の現行実装で要件を満たしていることを確認。
 
 ## 変更ファイル
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
