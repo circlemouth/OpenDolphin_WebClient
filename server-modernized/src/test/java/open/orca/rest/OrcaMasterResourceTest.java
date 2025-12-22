@@ -232,7 +232,7 @@ class OrcaMasterResourceTest {
         OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao() {
             @Override
             public EtensuSearchResult search(EtensuSearchCriteria criteria) {
-                return null;
+                return new EtensuSearchResult(Collections.emptyList(), 0, "202404", 0, true);
             }
         });
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());

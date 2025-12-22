@@ -1,5 +1,6 @@
 package open.orca.rest;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.TypeFactory;
@@ -9,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -68,7 +70,9 @@ public class OrcaMasterResource extends AbstractResource {
     private static final Pattern AS_OF_PATTERN = Pattern.compile("^\\d{8}$");
     private static final java.nio.file.Path SNAPSHOT_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "master-snapshots");
     private static final java.nio.file.Path MSW_FIXTURE_ROOT = Paths.get("artifacts", "api-stability", "20251124T000000Z", "msw-fixture");
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper().findAndRegisterModules();
+    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper()
+            .findAndRegisterModules()
+            .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
 
     @Inject
     SessionAuditDispatcher sessionAuditDispatcher;
@@ -579,7 +583,7 @@ public class OrcaMasterResource extends AbstractResource {
         criteria.setPage(parsePositiveInt(params, "page", 1));
         criteria.setSize(parsePageSize(params, "size", 100));
         EtensuDao.EtensuSearchResult dbResult = etensuDao.search(criteria);
-        if (dbResult == null) {
+        if (dbResult == null || dbResult.isLoadFailed()) {
             LoadedFixture<EtensuDao.EtensuRecord> dbFixture = new LoadedFixture<>(
                     Collections.emptyList(),
                     null,
@@ -705,9 +709,34 @@ public class OrcaMasterResource extends AbstractResource {
             override = System.getenv(key);
         }
         if (override == null || override.isBlank()) {
-            return fallback;
+            return resolveProjectRelative(fallback);
         }
         return Paths.get(override);
+    }
+
+    private java.nio.file.Path resolveProjectRelative(java.nio.file.Path fallback) {
+        if (fallback == null || fallback.isAbsolute()) {
+            return fallback;
+        }
+        String multiModuleRoot = System.getProperty("maven.multiModuleProjectDirectory");
+        if (multiModuleRoot == null || multiModuleRoot.isBlank()) {
+            multiModuleRoot = null;
+        }
+        if (multiModuleRoot != null) {
+            java.nio.file.Path candidate = Paths.get(multiModuleRoot).resolve(fallback);
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+        }
+        java.nio.file.Path current = Paths.get("").toAbsolutePath();
+        while (current != null) {
+            java.nio.file.Path candidate = current.resolve(fallback);
+            if (Files.exists(candidate)) {
+                return candidate;
+            }
+            current = current.getParent();
+        }
+        return fallback;
     }
 
     private <T> FixtureLoadResult<T> tryReadResponse(Class<T> entryType, java.nio.file.Path file) {
@@ -1361,6 +1390,7 @@ public class OrcaMasterResource extends AbstractResource {
         if (result == null) {
             return details;
         }
+        details.put("loadFailed", result.isLoadFailed());
         details.put("rowCount", result.getRecords().size());
         details.put("dbTimeMs", result.getDbTimeMs());
         return details;
