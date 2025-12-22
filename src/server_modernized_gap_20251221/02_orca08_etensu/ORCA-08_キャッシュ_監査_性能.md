@@ -11,9 +11,13 @@
   - ETag 生成・`Cache-Control` ヘッダー・`stale-while-revalidate` 設定を実装済み。
   - `/orca/tensu/etensu` の監査イベント記録（`recordMasterAudit`）を実装済み。
   - TTL は `address/hokenja=7日`, それ以外 `5分` の方針で実装済み。
-  - 監査メタに `status` / `traceId` / `totalCount` を追加。
+  - 監査メタに `status` / `traceId` / `totalCount` / `rowCount` / `dbTimeMs` を追加。
   - `size` 上限 2000 を DB 取得前に適用し、監査メタの `size` にも反映。
   - バリデーションエラー (422) 時の監査記録を追加（`validationError`/`errorCode` を details に出力）。
+  - ETENSU 応答に `X-Orca-Db-Time` / `X-Orca-Row-Count` / `X-Orca-Total-Count` / `X-Orca-Cache-Hit` を付与。
+- `server-modernized/src/main/java/open/orca/rest/EtensuDao.java`
+  - 取得結果の `dbTimeMs` を集計し、監査/ヘッダ連携へ渡す。
+  - 大量データ時のメモリ負荷を抑えるため、コレクション初期容量を調整。
 
 ## 未実施
 - P99/メモリに関する実測・計測値の証跡取得。
