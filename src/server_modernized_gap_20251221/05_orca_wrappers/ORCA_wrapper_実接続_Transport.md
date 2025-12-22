@@ -7,11 +7,12 @@
 
 ## 実装状況（現行コード）
 - `RestOrcaTransport` が `@ApplicationScoped` で実装済み（HTTP 経由、Basic 認証、リトライ設定、`ExternalServiceAuditLogger` による監査ログ出力）。
-- `StubOrcaTransport` は `@Alternative` のみで、`beans.xml` 側で代替指定はされていない。
+- `StubOrcaTransport` は `@Vetoed` のため CDI 対象外で、実運用では選択されない。
 - `OrcaWrapperService` は CDI で `OrcaTransport` を解決するため、デフォルトは `RestOrcaTransport` が選択される構成。
 
 ## 未実施（明文化が必要な未対応）
 - Stub/実接続の切替条件（どの設定で stub を有効化するか）の運用ルール記載。
+- Stub を有効化する仕組み（`@Alternative`/設定フラグ/DI 切替など）の明文化・実装方針が未整備。
 - 実接続時の設定手順（`ORCA_API_*` / `custom.properties` の優先順位・禁止事項）の明文化。
 - 実接続の疎通・レスポンス検証・監査ログの証跡取得（RUN_ID 付き）の記録。
 
