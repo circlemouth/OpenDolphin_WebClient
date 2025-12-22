@@ -295,31 +295,5 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md"
-  },
-  {
-    "id": "task-1766384844643-bf2dd6",
-    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-22T06:27:24.643Z",
-    "updatedAt": "2025-12-22T06:27:34.642Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766384844643-bf2dd6",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766384844642-3qzu972k",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766384844643-bf2dd6",
-    "medal": "none",
-    "aiCompetitionScore": 51
   }
 ]
