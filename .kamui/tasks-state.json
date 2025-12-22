@@ -82,102 +82,6 @@
     "scoringConfig": null
   },
   {
-    "id": "task-yaml-1crbncr-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] ORCA-07_Vault_Secrets連携\n期間: 12/29 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-07 Vault Secrets 連携\n\n- ORCA DB 認証情報を Vault から注入。\n- 秘密情報未設定時の起動失敗・監査ログを整備。\n\nYAML ID: src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-22T04:51:20.587Z",
-    "updatedAt": "2025-12-22T04:51:20.587Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1crbncr-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md",
-      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
-      "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md",
-      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-22T04:51:20.573Z"
-    },
-    "labels": [
-      "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 01_orca07_datasource"
-    ],
-    "dependencies": [
-      "task-yaml-1qp6h14-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1766966400000,
-      "endMs": 1767139200000,
-      "durationDays": 2
-    },
-    "category": "src / server_modernized_gap_20251221 / 01_orca07_datasource",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# ORCA-07 Vault Secrets 連携\n\n- ORCA DB 認証情報を Vault から注入。\n- 秘密情報未設定時の起動失敗・監査ログを整備。"
-  },
-  {
-    "id": "task-yaml-1ehmg27-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-22T04:51:45.972Z",
-    "updatedAt": "2025-12-22T04:51:45.972Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1ehmg27-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
-      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
-      "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
-      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-22T04:51:45.957Z"
-    },
-    "labels": [
-      "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 03_phr"
-    ],
-    "dependencies": [
-      "task-yaml-npqupd-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1766880000000,
-      "endMs": 1767139200000,
-      "durationDays": 3
-    },
-    "category": "src / server_modernized_gap_20251221 / 03_phr",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md"
-  },
-  {
     "id": "task-yaml-cukrxi-src-server-moder",
     "name": "[server modernized gap implementation plan 20251221] Touch_P0_API_実装\n期間: 12/29 15:00 - 01/02 15:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# Touch P0 API 実装\n\n- /touch/patient, /touch/user など優先度 P0 の不足分を実装。\n- JSON 応答の互換性と監査 ID を整合。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Touch_P0_API_実装.md",
     "model": "YAML App",
@@ -226,64 +130,196 @@
     "description": "# Touch P0 API 実装\n\n- /touch/patient, /touch/user など優先度 P0 の不足分を実装。\n- JSON 応答の互換性と監査 ID を整合。"
   },
   {
-    "id": "task-1766379790407-8c0969",
+    "id": "task-yaml-1crbncr-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] ORCA-07_Vault_Secrets連携\n期間: 12/29 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA-07 Vault Secrets 連携\n\n- ORCA DB 認証情報を Vault から注入。\n- 秘密情報未設定時の起動失敗・監査ログを整備。\n\nYAML ID: src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-22T06:09:39.228Z",
+    "updatedAt": "2025-12-22T06:09:39.228Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1crbncr-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/01_orca07_datasource/ORCA-07_Vault_Secrets連携.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-22T06:09:39.203Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 01_orca07_datasource"
+    ],
+    "dependencies": [
+      "task-yaml-1qp6h14-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766966400000,
+      "endMs": 1767139200000,
+      "durationDays": 2
+    },
+    "category": "src / server_modernized_gap_20251221 / 01_orca07_datasource",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA-07 Vault Secrets 連携\n\n- ORCA DB 認証情報を Vault から注入。\n- 秘密情報未設定時の起動失敗・監査ログを整備。"
+  },
+  {
+    "id": "task-yaml-1i5txd3-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] Touch_P1_API_実装\n期間: 01/03 09:00 - 01/07 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# Touch P1 API 実装\n\n- /touch/module/*, /touch/patient/* など P1 を順次実装。\n- キャッシュ/ページング/監査の共通化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Touch_P1_API_実装.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-22T06:09:59.759Z",
+    "updatedAt": "2025-12-22T06:09:59.759Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1i5txd3-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/04_touch_demo/Touch_P1_API_実装.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/04_touch_demo/Touch_P1_API_実装.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-22T06:09:58.304Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 04_touch_demo"
+    ],
+    "dependencies": [
+      "task-yaml-cukrxi-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1767398400000,
+      "endMs": 1767744000000,
+      "durationDays": 4
+    },
+    "category": "src / server_modernized_gap_20251221 / 04_touch_demo",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# Touch P1 API 実装\n\n- /touch/module/*, /touch/patient/* など P1 を順次実装。\n- キャッシュ/ページング/監査の共通化。"
+  },
+  {
+    "id": "task-1766383873597-7ea86d",
+    "name": "対象ファイル: .kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml\n\n進行中、未進行のタスクについて進捗度をドキュメントや実装内容から判断し、正確な進捗度も含めてガントを更新せよ",
+    "model": "Codex CLI",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-22T06:11:13.597Z",
+    "updatedAt": "2025-12-22T06:11:13.638Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
+  },
+  {
+    "id": "task-yaml-1ehmg27-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "createdAt": "2025-12-22T06:26:59.399Z",
+    "updatedAt": "2025-12-22T06:26:59.399Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1ehmg27-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-22T06:26:59.377Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 03_phr"
+    ],
+    "dependencies": [
+      "task-yaml-npqupd-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1766880000000,
+      "endMs": 1767139200000,
+      "durationDays": 3
+    },
+    "category": "src / server_modernized_gap_20251221 / 03_phr",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md"
+  },
+  {
+    "id": "task-1766384844643-bf2dd6",
     "name": "CodexCLI1: [server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
     "model": "Codex CLI",
     "status": "running",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-22T05:03:10.407Z",
-    "updatedAt": "2025-12-22T05:03:20.303Z",
+    "createdAt": "2025-12-22T06:27:24.643Z",
+    "updatedAt": "2025-12-22T06:27:34.642Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1766379790407-8c0969",
+    "branchName": "task/task-1766384844643-bf2dd6",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766379790399-ciqc208f",
+    "aiCompetitionGroupId": "comp-1766384844642-3qzu972k",
     "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766379790407-8c0969",
-    "medal": "silver",
-    "aiCompetitionScore": 75
-  },
-  {
-    "id": "task-1766379802523-656fbd",
-    "name": "🔍Monitor: [server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-22T05:03:22.523Z",
-    "updatedAt": "2025-12-22T05:03:36.162Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766379802523-656fbd",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766379790399-ciqc208f",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] PHR_コンテナ_画像_薬剤変換\n期間: 12/28 09:00 - 12/31 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# PHR コンテナ/画像/薬剤変換\n\n- PHRContainer DTO と画像ストリームを確定。\n- Medication 変換（禁忌語・用法）を JSON に統一。\n- 参照: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md\n\nYAML ID: src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1766379790602-191421",
-      "task-1766379790407-8c0969"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1766379850399,
-    "worktreePath": ".worktrees/task-1766379802523-656fbd"
+    "worktreePath": ".worktrees/task-1766384844643-bf2dd6",
+    "medal": "none",
+    "aiCompetitionScore": 51
   }
 ]
