@@ -56,11 +56,13 @@ import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.NLaboItem;
 import open.dolphin.infomodel.NLaboModule;
 import open.dolphin.infomodel.PHRAsyncJob;
+import open.dolphin.infomodel.PHRBundle;
+import open.dolphin.infomodel.PHRCatch;
 import open.dolphin.infomodel.PHRContainer;
 import open.dolphin.infomodel.PHRKey;
+import open.dolphin.infomodel.PHRLabModule;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
-import open.dolphin.infomodel.ExtRefModel;
 
 @Path("/20/adm/phr")
 public class PHRResource extends open.dolphin.rest.AbstractResource {
@@ -307,7 +309,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             List<ModuleModel> modules = phrServiceBean.getLastMedication(karte.getId());
             PhrMedicationResponse result = dataAssembler.buildMedicationResponse(modules, ctx.facilityId());
             auditSuccess(ctx, "PHR_MEDICATION_TEXT", patientId, details);
-            return streamJson(result, MediaType.APPLICATION_JSON_TYPE);
+            return streamJson(new PhrMedicationPayload(result), MediaType.APPLICATION_JSON_TYPE);
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -387,11 +389,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             if (bytes == null || bytes.length == 0) {
                 return Response.status(Status.NOT_FOUND).build();
             }
-            String contentType = Optional.ofNullable(image.getExtRefModel())
-                    .map(ExtRefModel::getContentType)
-                    .filter(type -> !type.isBlank())
-                    .orElse("image/jpeg");
-            return Response.ok(bytes, contentType)
+            return Response.ok(bytes, "image/jpeg")
                     .header("Content-Length", bytes.length)
                     .header("Cache-Control", "no-store")
                     .build();
@@ -458,7 +456,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
                     rpRequest,
                     replyTo);
             auditSuccess(ctx, "PHR_CONTAINER_FETCH", patientId, details);
-            return streamJson(container, MediaType.APPLICATION_JSON_TYPE);
+            return streamJson(new PhrContainerResponse(container), MediaType.APPLICATION_JSON_TYPE);
         } catch (WebApplicationException ex) {
             Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
             auditFailure(ctx, "PHR_CONTAINER_FETCH", patientId, ex.getResponse().getStatusInfo().toString(),
@@ -855,6 +853,45 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
                     .build();
         } catch (IOException ex) {
             throw new IllegalStateException("レスポンスのシリアライズに失敗しました。", ex);
+        }
+    }
+
+    private static final class PhrContainerResponse {
+        private final List<PHRCatch> docList;
+        private final List<PHRLabModule> labList;
+
+        private PhrContainerResponse(PHRContainer container) {
+            List<PHRCatch> docs = container != null ? container.getDocList() : null;
+            List<PHRLabModule> labs = container != null ? container.getLabList() : null;
+            this.docList = docs != null ? docs : List.of();
+            this.labList = labs != null ? labs : List.of();
+        }
+
+        public List<PHRCatch> getDocList() {
+            return docList;
+        }
+
+        public List<PHRLabModule> getLabList() {
+            return labList;
+        }
+    }
+
+    private static final class PhrMedicationPayload {
+        private final String message;
+        private final List<PHRBundle> bundles;
+
+        private PhrMedicationPayload(PhrMedicationResponse response) {
+            this.message = response != null ? response.getMessage() : null;
+            List<PHRBundle> source = response != null ? response.getBundles() : null;
+            this.bundles = source != null ? source : List.of();
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public List<PHRBundle> getBundles() {
+            return bundles;
         }
     }
 
