@@ -13,12 +13,17 @@
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
   - `POST /20/adm/phr/identityToken` を実装済み。
 - `server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java`
-  - RSA 署名で IdentityToken を生成する実装が存在。
+  - RSA 署名で IdentityToken を生成し、秘密鍵は base64/ファイルのどちらからでも取得できる。
 - `server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java`
-  - `jboss.home.dir/phrchat.pk8` を参照する実装が存在。
+  - Layer ID と秘密鍵参照先は System Property / 環境変数で上書きできる。
+    - `phr.layer.app.id` / `PHR_LAYER_APP_ID`
+    - `phr.layer.key.id` / `PHR_LAYER_KEY_ID`
+    - `phr.layer.provider.id` / `PHR_LAYER_PROVIDER_ID`
+    - `phr.layer.private.key.path` / `PHR_LAYER_PRIVATE_KEY_PATH`
+    - `phr.layer.private.key.base64` / `PHR_LAYER_PRIVATE_KEY_BASE64`
 
 ## 未実施
-- Secrets の注入（Vault/環境変数）や鍵の保護ポリシー整備。
+- Secrets の注入運用（Vault 連携）や鍵の保護ポリシー整備。
 - IdentityToken 失敗時の実測証跡（監査ログ/HTTP 応答）の取得。
 
 ## 参照

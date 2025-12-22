@@ -14,6 +14,7 @@ import java.security.spec.EncodedKeySpec;
 import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.util.Calendar;
+import java.util.Base64;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import jakarta.annotation.PostConstruct;
@@ -33,6 +34,7 @@ import org.joda.time.Instant;
 public class IdentityService {
     
     private static final long TWO_MINUTES_IN_MILLISECONDS = 1000L * 60L * 2L;
+    private static final Logger LOGGER = Logger.getLogger(IdentityService.class.getName());
     
     private LayerConfig layerConfig;
     
@@ -65,18 +67,23 @@ public class IdentityService {
             token.setParam("nce", nonce);
 
             String ret = token.serializeAndSign();
-            Logger.getLogger(this.getClass().getName()).log(Level.INFO, "token={0}", ret);
+            LOGGER.log(Level.INFO, "token={0}", ret);
             return ret;
             
         } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | InvalidKeyException | SignatureException ex) {
-            Logger.getLogger(this.getClass().getName()).log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.SEVERE, "Failed to generate IdentityToken.", ex);
+            throw new IllegalStateException("Failed to generate IdentityToken.", ex);
         }
-        
-        return null;
     }
     
     private byte[] readPrivateKeyFromDisk(final String path) throws IOException {
+        if (path == null || path.isBlank()) {
+            throw new IOException("PHR identity private key path is not configured.");
+        }
         final File privateKeyFile = new File(path);
+        if (!privateKeyFile.exists()) {
+            throw new IOException("PHR identity private key file not found: " + privateKeyFile.getAbsolutePath());
+        }
         final FileInputStream fileInputStream = new FileInputStream(privateKeyFile);
         final DataInputStream dis = new DataInputStream(fileInputStream);
         final byte[] privateBytes = new byte[(int) privateKeyFile.length()];
@@ -87,14 +94,41 @@ public class IdentityService {
         } finally {
             fileInputStream.close();
         }
+        if (privateBytes.length == 0) {
+            throw new IOException("PHR identity private key file is empty: " + privateKeyFile.getAbsolutePath());
+        }
         return privateBytes;
+    }
+
+    private byte[] readPrivateKeyFromBase64(final String base64) throws IOException {
+        if (base64 == null || base64.isBlank()) {
+            throw new IOException("PHR identity private key base64 is empty.");
+        }
+        String normalized = base64.replaceAll("\\s", "");
+        try {
+            byte[] decoded = Base64.getDecoder().decode(normalized);
+            if (decoded.length == 0) {
+                throw new IOException("PHR identity private key base64 is empty after decode.");
+            }
+            return decoded;
+        } catch (IllegalArgumentException ex) {
+            throw new IOException("PHR identity private key base64 is invalid.", ex);
+        }
+    }
+
+    private byte[] resolvePrivateKeyBytes() throws IOException {
+        String base64 = layerConfig.getRsaKeyBase64();
+        if (base64 != null && !base64.isBlank()) {
+            return readPrivateKeyFromBase64(base64);
+        }
+        return readPrivateKeyFromDisk(layerConfig.getRsaKeyPath());
     }
     
     private RSAPrivateKey getPrivateKey() throws NoSuchAlgorithmException, InvalidKeySpecException,
             IOException {
 
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
-        final byte[] encodedKey = readPrivateKeyFromDisk(layerConfig.getRsaKeyPath());
+        final byte[] encodedKey = resolvePrivateKeyBytes();
         final EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedKey);
         final PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
         return (RSAPrivateKey) privateKey;

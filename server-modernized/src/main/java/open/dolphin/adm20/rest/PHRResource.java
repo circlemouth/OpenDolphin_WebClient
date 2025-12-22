@@ -3,6 +3,7 @@ package open.dolphin.adm20.rest;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.inject.Inject;
 import jakarta.json.Json;
+import jakarta.json.JsonException;
 import jakarta.json.JsonObject;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.persistence.NoResultException;
@@ -480,21 +481,63 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
     public String getIdentityToken(String json) {
         String traceId = resolveTraceId();
         requireTraceHeader("PHR_IDENTITY_TOKEN", traceId, null);
+        Map<String, Object> details = new HashMap<>();
+        details.put("traceId", traceId);
+        String user = null;
         try {
-            JsonObject jso = Json.createReader(new java.io.StringReader(json)).readObject();
-            String nonce = jso.getString("nonce");
-            String user = jso.getString("user");
-            String token = identityService.getIdentityToken(nonce, user);
-            auditHelper.recordSuccess(null, "PHR_IDENTITY_TOKEN", user, Map.of("nonceLength", nonce.length()));
-            return token;
-        } catch (Exception ex) {
-            Map<String, Object> details = new HashMap<>();
-            details.put("error", ex.getClass().getSimpleName());
-            if (ex.getMessage() != null && !ex.getMessage().isBlank()) {
-                details.put("errorMessage", ex.getMessage());
+            if (json == null || json.isBlank()) {
+                details.put("missingBody", true);
+                throw error(Status.BAD_REQUEST,
+                        "error.phr.invalidPayload",
+                        "リクエストボディが空です。",
+                        traceId,
+                        null);
             }
-            details.put("httpStatus", Status.INTERNAL_SERVER_ERROR.getStatusCode());
-            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", null, ex.getClass().getSimpleName(), details);
+            JsonObject jso = Json.createReader(new java.io.StringReader(json)).readObject();
+            String nonce = jso.getString("nonce", null);
+            user = jso.getString("user", null);
+            if (nonce == null || nonce.isBlank()) {
+                details.put("missingField", "nonce");
+                throw error(Status.BAD_REQUEST,
+                        "error.phr.invalidPayload",
+                        "nonce が指定されていません。",
+                        traceId,
+                        null);
+            }
+            if (user == null || user.isBlank()) {
+                details.put("missingField", "user");
+                throw error(Status.BAD_REQUEST,
+                        "error.phr.invalidPayload",
+                        "user が指定されていません。",
+                        traceId,
+                        null);
+            }
+            details.put("nonceLength", nonce.length());
+            String token = identityService.getIdentityToken(nonce, user);
+            if (token == null || token.isBlank()) {
+                throw new IllegalStateException("IdentityToken is empty.");
+            }
+            auditHelper.recordSuccess(null, "PHR_IDENTITY_TOKEN", user, details);
+            return token;
+        } catch (JsonException ex) {
+            Map<String, Object> failure = failureDetails(details, ex, Status.BAD_REQUEST.getStatusCode());
+            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, "invalid_payload", failure);
+            throw error(Status.BAD_REQUEST,
+                    "error.phr.invalidPayload",
+                    "リクエストボディの形式が不正です。",
+                    traceId,
+                    ex);
+        } catch (WebApplicationException ex) {
+            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
+            String reason = status != null && status == Status.BAD_REQUEST.getStatusCode()
+                    ? "invalid_payload"
+                    : ex.getResponse().getStatusInfo().toString();
+            Map<String, Object> failure = failureDetails(details, ex, status);
+            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, reason, failure);
+            throw ex;
+        } catch (Exception ex) {
+            Map<String, Object> failure = failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode());
+            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, ex.getClass().getSimpleName(), failure);
             throw error(Status.INTERNAL_SERVER_ERROR,
                     "error.phr.internal",
                     "Identity トークンの生成中にエラーが発生しました。",
