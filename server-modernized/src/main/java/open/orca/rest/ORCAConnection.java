@@ -19,12 +19,27 @@ import javax.sql.DataSource;
  */
 public class ORCAConnection {
     private static final Logger LOGGER = Logger.getLogger(ORCAConnection.class.getName());
+    private static final Logger AUDIT_LOGGER = Logger.getLogger("open.dolphin.audit.external");
     private static final String ORCA_JNDI_NAME = "java:jboss/datasources/ORCADS";
     private static final Set<String> BLOCKED_CUSTOM_PROPERTIES = Set.of(
             "claim.jdbc.url",
             "claim.user",
             "claim.password"
     );
+    private static final String ENV_ORCA_DB_HOST = "ORCA_DB_HOST";
+    private static final String ENV_ORCA_DB_PORT = "ORCA_DB_PORT";
+    private static final String ENV_ORCA_DB_NAME = "ORCA_DB_NAME";
+    private static final String ENV_ORCA_DB_USER = "ORCA_DB_USER";
+    private static final String ENV_ORCA_DB_PASSWORD = "ORCA_DB_PASSWORD";
+    private static final String ENV_ORCA_DB_SSLMODE = "ORCA_DB_SSLMODE";
+    private static final String ENV_ORCA_DB_SSLROOTCERT = "ORCA_DB_SSLROOTCERT";
+    private static final String ENV_ORCA_DB_SECRET_REF = "ORCA_DB_SECRET_REF";
+    private static final String ENV_ORCA_DB_SECRET_VERSION = "ORCA_DB_SECRET_VERSION";
+    private static final String ENV_DB_HOST = "DB_HOST";
+    private static final String ENV_DB_PORT = "DB_PORT";
+    private static final String ENV_DB_NAME = "DB_NAME";
+    private static final String ENV_DB_USER = "DB_USER";
+    private static final String ENV_DB_PASSWORD = "DB_PASSWORD";
 
     private static final ORCAConnection instane = new ORCAConnection();
     
@@ -34,6 +49,7 @@ public class ORCAConnection {
 //minagawa^    
     private final Properties config;
 //minagawa$
+    private boolean datasourceAuditLogged;
     
     public static ORCAConnection getInstance() {
         return instane;
@@ -72,10 +88,13 @@ public class ORCAConnection {
         try {
             DataSource ds = (DataSource) InitialContext.doLookup(ORCA_JNDI_NAME);
             if (ds == null) {
+                auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_FAILURE", "datasource_null");
                 throw new SQLException("ORCA datasource lookup returned null: " + ORCA_JNDI_NAME);
             }
+            auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_SUCCESS", null);
             return ds.getConnection();
         } catch (NamingException e) {
+            auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_FAILURE", e.getClass().getSimpleName());
             throw new SQLException("Failed to lookup ORCA datasource: " + ORCA_JNDI_NAME, e);
         }
     }
@@ -98,6 +117,15 @@ public class ORCAConnection {
         return test!=null && test.equals("server");
     }
 //minagawa$    
+
+    public synchronized void validateDatasourceSecretsOrThrow() {
+        ValidationResult result = ValidationResult.evaluate();
+        if (!result.isValid()) {
+            auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_FAILURE", "missing_env");
+            throw new IllegalStateException("ORCA datasource secrets are missing: " + result.missingSummary());
+        }
+        auditDatasourceLookup("ORCA_DATASOURCE_LOOKUP_SUCCESS", null);
+    }
 
     private void warnLegacyJdbcConfig() {
         LOGGER.warning("custom.properties claim.jdbc.* is ignored; use JNDI datasource " + ORCA_JNDI_NAME);
@@ -146,5 +174,104 @@ public class ORCAConnection {
             }
         }
         return copy;
+    }
+
+    private synchronized void auditDatasourceLookup(String event, String reason) {
+        if (datasourceAuditLogged && reason == null) {
+            return;
+        }
+        ValidationResult result = ValidationResult.evaluate();
+        StringBuilder builder = new StringBuilder();
+        builder.append("event=").append(event);
+        builder.append(" jndiName=").append(ORCA_JNDI_NAME);
+        builder.append(" source=").append(result.sourceLabel());
+        if (!result.secretRef.isBlank()) {
+            builder.append(" secretRef=").append(result.secretRef);
+        }
+        if (!result.secretVersion.isBlank()) {
+            builder.append(" secretVersion=").append(result.secretVersion);
+        }
+        if (reason != null) {
+            builder.append(" reason=").append(reason);
+        }
+        if (!result.missingEnv.isEmpty()) {
+            builder.append(" missingEnv=").append(result.missingSummary());
+        }
+        AUDIT_LOGGER.log(reason == null ? Level.INFO : Level.WARNING, builder.toString());
+        if (reason == null) {
+            datasourceAuditLogged = true;
+        }
+    }
+
+    private static boolean hasAnyOrcaOverride() {
+        return hasEnv(ENV_ORCA_DB_HOST)
+                || hasEnv(ENV_ORCA_DB_PORT)
+                || hasEnv(ENV_ORCA_DB_NAME)
+                || hasEnv(ENV_ORCA_DB_USER)
+                || hasEnv(ENV_ORCA_DB_PASSWORD)
+                || hasEnv(ENV_ORCA_DB_SSLMODE)
+                || hasEnv(ENV_ORCA_DB_SSLROOTCERT)
+                || hasEnv(ENV_ORCA_DB_SECRET_REF)
+                || hasEnv(ENV_ORCA_DB_SECRET_VERSION);
+    }
+
+    private static boolean hasEnv(String key) {
+        return !isBlank(System.getenv(key));
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.isBlank();
+    }
+
+    private static final class ValidationResult {
+        private final boolean orcaOverrides;
+        private final Set<String> missingEnv;
+        private final String secretRef;
+        private final String secretVersion;
+
+        private ValidationResult(boolean orcaOverrides, Set<String> missingEnv, String secretRef, String secretVersion) {
+            this.orcaOverrides = orcaOverrides;
+            this.missingEnv = missingEnv;
+            this.secretRef = secretRef != null ? secretRef : "";
+            this.secretVersion = secretVersion != null ? secretVersion : "";
+        }
+
+        private static ValidationResult evaluate() {
+            boolean useOrca = hasAnyOrcaOverride();
+            Set<String> missing = Set.of();
+            if (useOrca) {
+                missing = collectMissing(ENV_ORCA_DB_HOST, ENV_ORCA_DB_NAME, ENV_ORCA_DB_USER, ENV_ORCA_DB_PASSWORD);
+            } else {
+                missing = collectMissing(ENV_DB_HOST, ENV_DB_NAME, ENV_DB_USER, ENV_DB_PASSWORD);
+            }
+            return new ValidationResult(useOrca, missing,
+                    System.getenv(ENV_ORCA_DB_SECRET_REF),
+                    System.getenv(ENV_ORCA_DB_SECRET_VERSION));
+        }
+
+        private static Set<String> collectMissing(String... keys) {
+            Set<String> missing = new java.util.LinkedHashSet<>();
+            for (String key : keys) {
+                if (isBlank(System.getenv(key))) {
+                    missing.add(key);
+                }
+            }
+            return missing;
+        }
+
+        private boolean isValid() {
+            return missingEnv.isEmpty();
+        }
+
+        private String sourceLabel() {
+            return orcaOverrides ? "ORCA_DB" : "DB";
+        }
+
+        private String missingSummary() {
+            if (missingEnv.isEmpty()) {
+                return "";
+            }
+            return String.join(",", missingEnv);
+        }
     }
 }
