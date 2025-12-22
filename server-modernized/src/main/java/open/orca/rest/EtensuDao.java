@@ -15,6 +15,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.regex.Pattern;
 import open.dolphin.rest.dto.orca.OrcaEtensuAddition;
 import open.dolphin.rest.dto.orca.OrcaEtensuBundlingMember;
 import open.dolphin.rest.dto.orca.OrcaEtensuCalcUnit;
@@ -23,10 +24,12 @@ import open.dolphin.rest.dto.orca.OrcaEtensuSpecimen;
 
 public class EtensuDao {
     private static final Logger LOGGER = Logger.getLogger(EtensuDao.class.getName());
+    private static final Pattern TENSU_VERSION_PATTERN = Pattern.compile("\\d{6}");
 
     public EtensuSearchResult search(EtensuSearchCriteria criteria) {
         if (criteria == null) {
-            return null;
+            LOGGER.warning("ETENSU search criteria was null");
+            return new EtensuSearchResult(Collections.emptyList(), 0, null, 0, true);
         }
         long startTime = System.nanoTime();
         try {
@@ -36,7 +39,7 @@ public class EtensuDao {
             int totalCount = fetchTotalCount(connection, query);
             if (totalCount == 0) {
                 long elapsedMs = toMillis(startTime);
-                return new EtensuSearchResult(Collections.emptyList(), 0, criteria.tensuVersion, elapsedMs);
+                return new EtensuSearchResult(Collections.emptyList(), 0, criteria.tensuVersion, elapsedMs, false);
             }
             List<EtensuRecord> records = fetchRecords(connection, query, criteria.page, criteria.size, meta);
             if (!records.isEmpty()) {
@@ -44,10 +47,11 @@ public class EtensuDao {
             }
             String version = resolveVersion(records, criteria.tensuVersion);
             long elapsedMs = toMillis(startTime);
-            return new EtensuSearchResult(records, totalCount, version, elapsedMs);
+            return new EtensuSearchResult(records, totalCount, version, elapsedMs, false);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA ETENSU master", e);
-            return null;
+            long elapsedMs = toMillis(startTime);
+            return new EtensuSearchResult(Collections.emptyList(), 0, criteria.tensuVersion, elapsedMs, true);
         }
     }
 
@@ -533,20 +537,51 @@ public class EtensuDao {
     }
 
     private String resolveVersion(List<EtensuRecord> records, String fallback) {
-        String version = fallback;
+        String numericVersion = null;
+        Integer numericKey = null;
+        String nonNumericVersion = firstNonBlank(fallback);
+        Integer fallbackKey = parseVersionKey(fallback);
+        if (fallbackKey != null) {
+            numericVersion = fallback;
+            numericKey = fallbackKey;
+            nonNumericVersion = null;
+        }
         for (EtensuRecord record : records) {
             if (record.tensuVersion == null || record.tensuVersion.isBlank()) {
                 continue;
             }
-            if (version == null || version.compareTo(record.tensuVersion) < 0) {
-                version = record.tensuVersion;
+            Integer candidateKey = parseVersionKey(record.tensuVersion);
+            if (candidateKey != null) {
+                if (numericKey == null || candidateKey > numericKey) {
+                    numericKey = candidateKey;
+                    numericVersion = record.tensuVersion;
+                }
+                continue;
+            }
+            if (nonNumericVersion == null) {
+                nonNumericVersion = record.tensuVersion;
             }
         }
-        return version;
+        return numericVersion != null ? numericVersion : nonNumericVersion;
     }
 
     private static String selectColumn(String column) {
         return column != null ? column : "null";
+    }
+
+    private static Integer parseVersionKey(String version) {
+        if (version == null || version.isBlank()) {
+            return null;
+        }
+        String trimmed = version.trim();
+        if (!TENSU_VERSION_PATTERN.matcher(trimmed).matches()) {
+            return null;
+        }
+        return Integer.parseInt(trimmed);
+    }
+
+    private static String firstNonBlank(String value) {
+        return (value != null && !value.isBlank()) ? value : null;
     }
 
     private static int bindParams(PreparedStatement ps, List<Object> params, int startIndex) throws SQLException {
@@ -649,16 +684,23 @@ public class EtensuDao {
         private final int totalCount;
         private final String version;
         private final long dbTimeMs;
+        private final boolean loadFailed;
 
         public EtensuSearchResult(List<EtensuRecord> records, int totalCount, String version) {
-            this(records, totalCount, version, 0);
+            this(records, totalCount, version, 0, false);
         }
 
         public EtensuSearchResult(List<EtensuRecord> records, int totalCount, String version, long dbTimeMs) {
+            this(records, totalCount, version, dbTimeMs, false);
+        }
+
+        public EtensuSearchResult(List<EtensuRecord> records, int totalCount, String version, long dbTimeMs,
+                boolean loadFailed) {
             this.records = records;
             this.totalCount = totalCount;
             this.version = version;
             this.dbTimeMs = dbTimeMs;
+            this.loadFailed = loadFailed;
         }
 
         public List<EtensuRecord> getRecords() {
@@ -675,6 +717,10 @@ public class EtensuDao {
 
         public long getDbTimeMs() {
             return dbTimeMs;
+        }
+
+        public boolean isLoadFailed() {
+            return loadFailed;
         }
     }
 
