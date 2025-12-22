@@ -26,6 +26,7 @@ import open.dolphin.infomodel.ClaimItem;
 import open.dolphin.infomodel.DocumentModel;
 import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.ModuleModel;
+import open.dolphin.infomodel.ModuleInfoBean;
 import open.dolphin.infomodel.NLaboItem;
 import open.dolphin.infomodel.NLaboModule;
 import open.dolphin.infomodel.PatientModel;
@@ -39,6 +40,7 @@ import open.dolphin.infomodel.PHRLabItem;
 import open.dolphin.infomodel.PHRLabModule;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
+import open.dolphin.adm20.dto.PhrMedicationResponse;
 import open.orca.rest.ORCAConnection;
 
 /**
@@ -108,6 +110,24 @@ public class PhrDataAssembler {
         return Optional.ofNullable(phrServiceBean.getImages(karte.getId()));
     }
 
+    public PhrMedicationResponse buildMedicationResponse(List<ModuleModel> modules, String facilityId) {
+        if (modules == null || modules.isEmpty()) {
+            return new PhrMedicationResponse("処方の登録はありません。", List.of());
+        }
+        String cachedFacilityNumber = extractJmariCode(getFacilityCodeBy1001());
+        String facilityNumber = !isBlank(cachedFacilityNumber) ? cachedFacilityNumber : facilityId;
+
+        List<PHRBundle> bundles = new ArrayList<>(modules.size());
+        for (ModuleModel module : modules) {
+            ClaimBundle bundle = (ClaimBundle) IOSHelper.xmlDecode(module.getBeanBytes());
+            PHRBundle phrBundle = new PHRBundle();
+            applyModuleMetadata(phrBundle, module);
+            applyClaimBundle(phrBundle, bundle, facilityNumber);
+            bundles.add(phrBundle);
+        }
+        return new PhrMedicationResponse(null, bundles);
+    }
+
     public String toJson(Object value) {
         try {
             return MAPPER.writeValueAsString(value);
@@ -175,57 +195,12 @@ public class PhrDataAssembler {
                 PHRBundle pcb = new PHRBundle();
                 phrCatch.addBundle(pcb);
 
+                applyModuleMetadata(pcb, mm);
                 pcb.setCatchId(phrCatch.getCatchId());
                 pcb.setBundleId(createModuleId(phrCatch.getStarted(), modules.size() - mm.getModuleInfoBean().getStampNumber()));
 
-                pcb.setStarted(stringFromStarted(mm.getStarted()));
-                pcb.setConfirmed(stringFromStarted(mm.getConfirmed()));
-                pcb.setStatus(mm.getStatus());
-
-                pcb.setEnt(mm.getModuleInfoBean().getEntity());
-                pcb.setRole(mm.getModuleInfoBean().getStampRole());
-                pcb.setNumber(mm.getModuleInfoBean().getStampNumber());
-
                 ClaimBundle bundle = (ClaimBundle) IOSHelper.xmlDecode(mm.getBeanBytes());
-                pcb.setAdmin(bundle.getAdmin());
-                pcb.setAdminCode(bundle.getAdminCode());
-                pcb.setAdminCodeSystem(bundle.getAdminCodeSystem());
-                pcb.setAdminMemo(bundle.getAdminMemo());
-                pcb.setBundleNumber(bundle.getBundleNumber());
-                pcb.setClsCode(bundle.getClassCode());
-                pcb.setClsCodeSystem(bundle.getClassCodeSystem());
-                pcb.setClsName(bundle.getClassName());
-                pcb.setInsurance(bundle.getInsurance());
-                pcb.setMemo(bundle.getMemo());
-                pcb.setOrderName(pcb.getEnt());
-                pcb.setFacilityNumber(resolvedFacilityNumber);
-
-                ClaimItem[] items = bundle.getClaimItem();
-                if (items != null && items.length > 0) {
-                    for (ClaimItem item : items) {
-                        PHRClaimItem phrItem = new PHRClaimItem();
-                        pcb.addPHRClaimItem(phrItem);
-
-                        phrItem.setClsCode(item.getClassCode());
-                        phrItem.setClsCodeSystem(item.getClassCodeSystem());
-                        phrItem.setCode(item.getCode());
-                        phrItem.setCodeSystem(item.getCodeSystem());
-                        phrItem.setMemo(item.getMemo());
-                        phrItem.setName(item.getName());
-                        phrItem.setQuantity(item.getNumber());
-                        phrItem.setUnit(item.getUnit());
-                        phrItem.setNumberCode(item.getNumberCode());
-                        phrItem.setNumberCodeSystem(item.getNumberCodeSystem());
-                        phrItem.setYkzKbn(item.getYkzKbn());
-                        phrItem.setFrequency(item.getNumberCode());
-                        phrItem.setFrequencyName(item.getNumberCodeName());
-                        phrItem.setStartDate(item.getStartDate());
-                        phrItem.setEndDate(item.getEndDate());
-                        phrItem.setAdministration(item.getSanteiCode());
-                        phrItem.setDose(item.getDose());
-                        phrItem.setDoseUnit(item.getDoseUnit());
-                    }
-                }
+                applyClaimBundle(pcb, bundle, resolvedFacilityNumber);
             });
         });
 
@@ -360,6 +335,68 @@ public class PhrDataAssembler {
         }
 
         return result;
+    }
+
+    private void applyModuleMetadata(PHRBundle bundle, ModuleModel module) {
+        bundle.setStarted(stringFromStarted(module.getStarted()));
+        bundle.setConfirmed(stringFromStarted(module.getConfirmed()));
+        bundle.setStatus(module.getStatus());
+        ModuleInfoBean info = module.getModuleInfoBean();
+        if (info != null) {
+            bundle.setEnt(info.getEntity());
+            bundle.setRole(info.getStampRole());
+            bundle.setNumber(info.getStampNumber());
+            bundle.setOrderName(info.getEntity());
+        }
+    }
+
+    private void applyClaimBundle(PHRBundle bundle, ClaimBundle source, String facilityNumber) {
+        if (source == null) {
+            return;
+        }
+        bundle.setAdmin(source.getAdmin());
+        bundle.setAdminCode(source.getAdminCode());
+        bundle.setAdminCodeSystem(source.getAdminCodeSystem());
+        bundle.setAdminMemo(source.getAdminMemo());
+        bundle.setBundleNumber(source.getBundleNumber());
+        bundle.setClsCode(source.getClassCode());
+        bundle.setClsCodeSystem(source.getClassCodeSystem());
+        bundle.setClsName(source.getClassName());
+        bundle.setInsurance(source.getInsurance());
+        bundle.setMemo(source.getMemo());
+        if (facilityNumber != null) {
+            bundle.setFacilityNumber(facilityNumber);
+        }
+
+        ClaimItem[] items = source.getClaimItem();
+        if (items != null && items.length > 0) {
+            for (ClaimItem item : items) {
+                bundle.addPHRClaimItem(toPhrClaimItem(item));
+            }
+        }
+    }
+
+    private PHRClaimItem toPhrClaimItem(ClaimItem item) {
+        PHRClaimItem phrItem = new PHRClaimItem();
+        phrItem.setClsCode(item.getClassCode());
+        phrItem.setClsCodeSystem(item.getClassCodeSystem());
+        phrItem.setCode(item.getCode());
+        phrItem.setCodeSystem(item.getCodeSystem());
+        phrItem.setMemo(item.getMemo());
+        phrItem.setName(item.getName());
+        phrItem.setQuantity(item.getNumber());
+        phrItem.setUnit(item.getUnit());
+        phrItem.setNumberCode(item.getNumberCode());
+        phrItem.setNumberCodeSystem(item.getNumberCodeSystem());
+        phrItem.setYkzKbn(item.getYkzKbn());
+        phrItem.setFrequency(item.getNumberCode());
+        phrItem.setFrequencyName(item.getNumberCodeName());
+        phrItem.setStartDate(item.getStartDate());
+        phrItem.setEndDate(item.getEndDate());
+        phrItem.setAdministration(item.getSanteiCode());
+        phrItem.setDose(item.getDose());
+        phrItem.setDoseUnit(item.getDoseUnit());
+        return phrItem;
     }
 
     private String createModuleId(String docId, long serialNumber) {
