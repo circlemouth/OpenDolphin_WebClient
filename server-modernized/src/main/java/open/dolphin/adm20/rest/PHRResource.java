@@ -34,9 +34,9 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import open.dolphin.adm20.converter.IOSHelper;
 import open.dolphin.adm20.dto.PhrExportJobResponse;
 import open.dolphin.adm20.dto.PhrExportRequest;
+import open.dolphin.adm20.dto.PhrMedicationResponse;
 import open.dolphin.adm20.export.PhrExportConfig;
 import open.dolphin.adm20.export.PhrExportJobManager;
 import open.dolphin.adm20.export.PhrExportStorage;
@@ -51,8 +51,6 @@ import open.dolphin.adm20.session.AMD20_PHRServiceBean;
 import open.dolphin.adm20.session.PHRAsyncJobServiceBean;
 import open.dolphin.adm20.support.PhrDataAssembler;
 import open.dolphin.infomodel.AllergyModel;
-import open.dolphin.infomodel.ClaimBundle;
-import open.dolphin.infomodel.ClaimItem;
 import open.dolphin.infomodel.KarteBean;
 import open.dolphin.infomodel.ModuleModel;
 import open.dolphin.infomodel.NLaboItem;
@@ -62,6 +60,7 @@ import open.dolphin.infomodel.PHRContainer;
 import open.dolphin.infomodel.PHRKey;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
+import open.dolphin.infomodel.ExtRefModel;
 
 @Path("/20/adm/phr")
 public class PHRResource extends open.dolphin.rest.AbstractResource {
@@ -299,16 +298,16 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
 
     @GET
     @Path("/medication/{patientId}")
-    @Produces(MediaType.TEXT_PLAIN)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getLastMedication(@PathParam("patientId") String patientId) {
         PhrRequestContext ctx = requireContext("PHR_MEDICATION_TEXT");
         Map<String, Object> details = Map.of("patientId", patientId);
         try {
             KarteBean karte = requireKarte(ctx, patientId, "PHR_MEDICATION_TEXT", details);
             List<ModuleModel> modules = phrServiceBean.getLastMedication(karte.getId());
-            String result = buildMedicationText(modules);
+            PhrMedicationResponse result = dataAssembler.buildMedicationResponse(modules, ctx.facilityId());
             auditSuccess(ctx, "PHR_MEDICATION_TEXT", patientId, details);
-            return okText(result);
+            return streamJson(result, MediaType.APPLICATION_JSON_TYPE);
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -372,7 +371,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
 
     @GET
     @Path("/image/{patientId}")
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces("image/jpeg")
     public Response getImage(@PathParam("patientId") String patientId) {
         PhrRequestContext ctx = requireContext("PHR_IMAGE_FETCH");
         Map<String, Object> details = Map.of("patientId", patientId);
@@ -384,12 +383,18 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             }
             SchemaModel image = imageOpt.get();
             auditSuccess(ctx, "PHR_IMAGE_FETCH", patientId, details);
-            return Response.ok((StreamingOutput) output -> {
-                byte[] bytes = image.getJpegByte();
-                if (bytes != null) {
-                    output.write(bytes);
-                }
-            }, MediaType.APPLICATION_OCTET_STREAM).build();
+            byte[] bytes = image.getJpegByte();
+            if (bytes == null || bytes.length == 0) {
+                return Response.status(Status.NOT_FOUND).build();
+            }
+            String contentType = Optional.ofNullable(image.getExtRefModel())
+                    .map(ExtRefModel::getContentType)
+                    .filter(type -> !type.isBlank())
+                    .orElse("image/jpeg");
+            return Response.ok(bytes, contentType)
+                    .header("Content-Length", bytes.length)
+                    .header("Cache-Control", "no-store")
+                    .build();
         } catch (WebApplicationException ex) {
             throw ex;
         } catch (Exception ex) {
@@ -405,7 +410,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
 
     @GET
     @Path("/{param}")
-    @Produces(MediaType.APPLICATION_OCTET_STREAM)
+    @Produces(MediaType.APPLICATION_JSON)
     public Response getPHRData(@PathParam("param") String param) {
         PhrRequestContext ctx = requireContext("PHR_CONTAINER_FETCH");
         String[] params = param.split(",");
@@ -453,7 +458,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
                     rpRequest,
                     replyTo);
             auditSuccess(ctx, "PHR_CONTAINER_FETCH", patientId, details);
-            return streamJson(container, MediaType.APPLICATION_OCTET_STREAM_TYPE);
+            return streamJson(container, MediaType.APPLICATION_JSON_TYPE);
         } catch (WebApplicationException ex) {
             Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
             auditFailure(ctx, "PHR_CONTAINER_FETCH", patientId, ex.getResponse().getStatusInfo().toString(),
@@ -869,33 +874,6 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
                     ctx.traceId(),
                     ex);
         }
-    }
-
-    private String buildMedicationText(List<ModuleModel> modules) {
-        if (modules == null || modules.isEmpty()) {
-            return "処方の登録はありません。";
-        }
-        StringBuilder sb = new StringBuilder();
-        int count = 0;
-        for (ModuleModel mm : modules) {
-            if (count == 0 && mm.getStarted() != null) {
-                String date = new SimpleDateFormat("yyyy年M月d日").format(mm.getStarted());
-                sb.append(date).append("\n");
-            }
-            count++;
-            ClaimBundle bundle = (ClaimBundle) IOSHelper.xmlDecode(mm.getBeanBytes());
-            ClaimItem[] items = bundle.getClaimItem();
-            if (items != null) {
-                for (ClaimItem item : items) {
-                    sb.append(item.getName()).append(" x ").append(item.getNumber()).append(item.getUnit()).append("\n");
-                }
-            }
-            sb.append(bundle.getAdmin()).append(" x ").append(bundle.getBundleNumber()).append("\n");
-        }
-        if (sb.length() > 0) {
-            sb.setLength(sb.length() - 1);
-        }
-        return sb.toString();
     }
 
     private String buildLabText(List<NLaboModule> modules) {

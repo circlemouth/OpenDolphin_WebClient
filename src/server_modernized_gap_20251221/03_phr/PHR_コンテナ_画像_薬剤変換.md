@@ -1,25 +1,45 @@
-# PHR コンテナ/画像/薬剤変換
+# PHR_コンテナ_画像_薬剤変換
 - 期間: 2025-12-28 09:00 - 2025-12-31 09:00 / 優先度: high / 緊急度: medium
 - YAML ID: `src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md`
 
 ## 目的
-- PHRContainer の組み立て・画像ストリーミング・薬剤（処方）テキスト変換をモダナイズ版サーバーで提供し、PHR API の実レスポンスを成立させる。
+- PHRContainer の JSON 返却と画像ストリームのレスポンス仕様を確定する。
+- 薬剤情報の変換（禁忌語・用法を含むフィールド）を JSON に統一する。
 
 ## スコープ
 - `PHRResource` / `PhrDataAssembler` を中心とした PHR 応答の生成。
-- 画像取得と薬剤テキスト化の互換維持。
+- 画像取得と薬剤 JSON 変換の互換維持。
+
+## 対応内容
+- PHRContainer
+  - `/20/adm/phr/{facilityId,patientId,...}` を `application/json` で返却。
+  - 既存の `PHRContainer` DTO は `docList`/`labList` を空配列で返す前提を維持。
+- 画像ストリーム
+  - `/20/adm/phr/image/{patientId}` を `image/jpeg` で返却し、`Cache-Control: no-store` と `Content-Length` を付与。
+  - 画像データが空の場合は 404 を返却。
+- 薬剤 JSON
+  - `/20/adm/phr/medication/{patientId}` を JSON 返却へ統一。
+  - `PHRBundle`/`PHRClaimItem` へ ClaimBundle/ClaimItem を変換し、
+    `admin`/`adminMemo`/`memo`/`frequency*`/`dose*` など用法・禁忌語に相当する情報を JSON で返却。
 
 ## 実装状況
-- `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
-  - `GET /20/adm/phr/medication/{patientId}` と `GET /20/adm/phr/image/{patientId}` を実装済み。
-  - `GET /20/adm/phr/{param}` で `PHRContainer` を組み立てて返却する経路を実装済み。
-- `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`
-  - `PHRContainer` / `PHRBundle` / `PHRClaimItem` の組み立てを実装済み。
-  - `IOSHelper.xmlDecode` を用いた ClaimBundle 変換ルートが存在。
+- 実装済み
+  - PHRContainer の JSON 返却（`application/json`）。
+  - 画像ストリームの `image/jpeg` 応答 + `Cache-Control: no-store` + `Content-Length`。
+  - 薬剤の JSON 変換（`PHRBundle`/`PHRClaimItem` へのマッピング）。
+- 未実装
+  - **禁忌語の置換ロジック**（`TouchMedicationFormatter` などによる文言置換）。
+    - 現状は用法/頻度/投与量などの構造化データを JSON へ反映するのみ。
+  - PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
 
-## 未実施
-- PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
-- 禁忌語・用法の変換ロジックが要求どおりかの監査（仕様比較・テスト）
+## 変更ファイル
+- `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/dto/PhrMedicationResponse.java`
+
+## 留意点
+- Phase2/Legacy 文書は参照のみで更新対象外。
+- ORCA 実環境接続や Stage/Preview 実測は本タスクで未実施。
 
 ## 参照
 - `src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md`
