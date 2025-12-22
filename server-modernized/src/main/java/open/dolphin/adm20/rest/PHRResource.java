@@ -60,7 +60,6 @@ import open.dolphin.infomodel.PHRContainer;
 import open.dolphin.infomodel.PHRKey;
 import open.dolphin.infomodel.RegisteredDiagnosisModel;
 import open.dolphin.infomodel.SchemaModel;
-import open.dolphin.infomodel.ExtRefModel;
 
 @Path("/20/adm/phr")
 public class PHRResource extends open.dolphin.rest.AbstractResource {
@@ -387,11 +386,7 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             if (bytes == null || bytes.length == 0) {
                 return Response.status(Status.NOT_FOUND).build();
             }
-            String contentType = Optional.ofNullable(image.getExtRefModel())
-                    .map(ExtRefModel::getContentType)
-                    .filter(type -> !type.isBlank())
-                    .orElse("image/jpeg");
-            return Response.ok(bytes, contentType)
+            return Response.ok(bytes, "image/jpeg")
                     .header("Content-Length", bytes.length)
                     .header("Cache-Control", "no-store")
                     .build();
