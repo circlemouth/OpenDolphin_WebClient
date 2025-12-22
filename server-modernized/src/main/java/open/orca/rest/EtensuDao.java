@@ -28,20 +28,23 @@ public class EtensuDao {
         if (criteria == null) {
             return null;
         }
+        long startTime = System.nanoTime();
         try {
             Connection connection = ORCAConnection.getInstance().getConnection();
             EtensuTableMeta meta = EtensuTableMeta.load(connection);
             EtensuQuery query = buildQuery(criteria, meta);
             int totalCount = fetchTotalCount(connection, query);
             if (totalCount == 0) {
-                return new EtensuSearchResult(Collections.emptyList(), 0, criteria.tensuVersion);
+                long elapsedMs = toMillis(startTime);
+                return new EtensuSearchResult(Collections.emptyList(), 0, criteria.tensuVersion, elapsedMs);
             }
             List<EtensuRecord> records = fetchRecords(connection, query, criteria.page, criteria.size, meta);
             if (!records.isEmpty()) {
                 populateDetails(connection, records, criteria.asOf, meta);
             }
             String version = resolveVersion(records, criteria.tensuVersion);
-            return new EtensuSearchResult(records, totalCount, version);
+            long elapsedMs = toMillis(startTime);
+            return new EtensuSearchResult(records, totalCount, version, elapsedMs);
         } catch (SQLException e) {
             LOGGER.log(Level.WARNING, "Failed to load ORCA ETENSU master", e);
             return null;
@@ -128,7 +131,7 @@ public class EtensuDao {
         int safePage = Math.max(1, page);
         int offset = (safePage - 1) * safeSize;
         sql = sql + " LIMIT ? OFFSET ?";
-        List<EtensuRecord> records = new ArrayList<>();
+        List<EtensuRecord> records = new ArrayList<>(safeSize);
         try (PreparedStatement ps = connection.prepareStatement(sql)) {
             int index = bindParams(ps, query.params, 1);
             ps.setInt(index++, safeSize);
@@ -169,14 +172,15 @@ public class EtensuDao {
 
     private void populateDetails(Connection connection, List<EtensuRecord> records, String asOf,
             EtensuTableMeta meta) throws SQLException {
-        Map<String, List<EtensuRecord>> recordsBySrycd = new HashMap<>();
-        Set<String> conflictDay = new HashSet<>();
-        Set<String> conflictMonth = new HashSet<>();
-        Set<String> conflictSame = new HashSet<>();
-        Set<String> conflictWeek = new HashSet<>();
-        Set<String> calcUnitTargets = new HashSet<>();
-        Set<Integer> additionGroups = new HashSet<>();
-        Set<String> bundlingGroups = new HashSet<>();
+        int expectedSize = expectedCapacity(records.size());
+        Map<String, List<EtensuRecord>> recordsBySrycd = new HashMap<>(expectedSize);
+        Set<String> conflictDay = new HashSet<>(expectedSize);
+        Set<String> conflictMonth = new HashSet<>(expectedSize);
+        Set<String> conflictSame = new HashSet<>(expectedSize);
+        Set<String> conflictWeek = new HashSet<>(expectedSize);
+        Set<String> calcUnitTargets = new HashSet<>(expectedSize);
+        Set<Integer> additionGroups = new HashSet<>(expectedSize);
+        Set<String> bundlingGroups = new HashSet<>(expectedSize);
         for (EtensuRecord record : records) {
             if (record.tensuCode == null) {
                 continue;
@@ -232,6 +236,17 @@ public class EtensuDao {
             loadBundlingMembers(connection, bundlingGroups, asOf, records);
             loadSpecimens(connection, bundlingGroups, asOf, records);
         }
+    }
+
+    private int expectedCapacity(int size) {
+        if (size <= 0) {
+            return 16;
+        }
+        return Math.max(16, (int) (size / 0.75f) + 1);
+    }
+
+    private long toMillis(long startTime) {
+        return java.util.concurrent.TimeUnit.NANOSECONDS.toMillis(System.nanoTime() - startTime);
     }
 
     private void loadConflicts(Connection connection, String table, String scope, Set<String> srycds, String asOf,
@@ -633,11 +648,17 @@ public class EtensuDao {
         private final List<EtensuRecord> records;
         private final int totalCount;
         private final String version;
+        private final long dbTimeMs;
 
         public EtensuSearchResult(List<EtensuRecord> records, int totalCount, String version) {
+            this(records, totalCount, version, 0);
+        }
+
+        public EtensuSearchResult(List<EtensuRecord> records, int totalCount, String version, long dbTimeMs) {
             this.records = records;
             this.totalCount = totalCount;
             this.version = version;
+            this.dbTimeMs = dbTimeMs;
         }
 
         public List<EtensuRecord> getRecords() {
@@ -650,6 +671,10 @@ public class EtensuDao {
 
         public String getVersion() {
             return version;
+        }
+
+        public long getDbTimeMs() {
+            return dbTimeMs;
         }
     }
 

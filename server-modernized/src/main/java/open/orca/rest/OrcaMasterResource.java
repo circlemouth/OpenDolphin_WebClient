@@ -10,6 +10,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.time.Instant;
 import java.util.Collections;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -600,28 +601,34 @@ public class OrcaMasterResource extends AbstractResource {
         );
         final String etagValue = buildEtag("/orca/tensu/etensu", masterType, dbFixture, params);
         final long ttlSeconds = cacheTtlSeconds(masterType);
+        final Map<String, Object> etensuAuditDetails = buildEtensuAuditDetails(keyword, category, asOf, tensuVersion,
+                params, dbResult);
+        final Map<String, String> basePerfHeaders = buildEtensuPerformanceHeaders(dbResult, false);
         if (etagMatches(ifNoneMatch, etagValue)) {
-            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, dbFixture, true, null, null,
-                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
-            return buildNotModifiedResponse(etagValue, ttlSeconds);
+            recordMasterAudit(request, "/orca/tensu/etensu", masterType, 304, dbFixture, true, null,
+                    dbResult.getTotalCount(), etensuAuditDetails);
+            Map<String, String> perfHeaders = buildEtensuPerformanceHeaders(dbResult, true);
+            return buildNotModifiedResponse(etagValue, ttlSeconds, perfHeaders);
         }
         if (dbResult.getRecords().isEmpty()) {
-            Response notFound = notFound("TENSU_NOT_FOUND", "no etensu entries matched", request);
+            Response notFound = buildErrorResponse(Status.NOT_FOUND, "TENSU_NOT_FOUND",
+                    "no etensu entries matched", request, basePerfHeaders);
             recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, dbFixture, false, true, 0,
-                    buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
+                    etensuAuditDetails);
             return notFound;
         }
         final int totalCount = dbResult.getTotalCount();
-        final List<OrcaTensuEntry> items = dbResult.getRecords().stream()
-                .map(entry -> toEtensuEntry(entry, dbFixture))
-                .collect(Collectors.toList());
+        final List<OrcaTensuEntry> items = new ArrayList<>(dbResult.getRecords().size());
+        for (EtensuDao.EtensuRecord entry : dbResult.getRecords()) {
+            items.add(toEtensuEntry(entry, dbFixture));
+        }
         OrcaMasterListResponse<OrcaTensuEntry> response = new OrcaMasterListResponse<>();
         response.setTotalCount(totalCount);
         response.setItems(items);
         recordMasterAudit(request, "/orca/tensu/etensu", masterType, 200, dbFixture, false, totalCount == 0,
                 totalCount,
-                buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params));
-        return buildCachedOkResponse(response, etagValue, ttlSeconds);
+                etensuAuditDetails);
+        return buildCachedOkResponse(response, etagValue, ttlSeconds, basePerfHeaders);
     }
 
     private void recordEtensuValidationAudit(HttpServletRequest request, String masterType, String keyword,
@@ -639,7 +646,7 @@ public class OrcaMasterResource extends AbstractResource {
         if (errorCode != null && !errorCode.isBlank()) {
             details.put("errorCode", errorCode);
         }
-        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 422, dbFixture, false, null, null, details);
+        recordMasterAudit(request, "/orca/tensu/etensu", masterType, 422, dbFixture, false, null, 0, details);
     }
 
     private Response unauthorized(HttpServletRequest request) {
@@ -1154,19 +1161,15 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     private Response notFound(String code, String message, HttpServletRequest request) {
-        OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
-        response.setCode(code);
-        response.setMessage(message);
-        response.setRunId(RUN_ID);
-        response.setTimestamp(Instant.now().toString());
-        String traceId = resolveTraceId(request);
-        if (traceId != null && !traceId.isBlank()) {
-            response.setCorrelationId(traceId);
-        }
-        return Response.status(Status.NOT_FOUND).entity(response).build();
+        return buildErrorResponse(Status.NOT_FOUND, code, message, request, null);
     }
 
     private Response serviceUnavailable(HttpServletRequest request, String code, String message) {
+        return buildErrorResponse(Status.SERVICE_UNAVAILABLE, code, message, request, null);
+    }
+
+    private Response buildErrorResponse(Status status, String code, String message, HttpServletRequest request,
+            Map<String, String> extraHeaders) {
         OrcaMasterErrorResponse response = new OrcaMasterErrorResponse();
         response.setCode(code);
         response.setMessage(message);
@@ -1176,7 +1179,9 @@ public class OrcaMasterResource extends AbstractResource {
         if (traceId != null && !traceId.isBlank()) {
             response.setCorrelationId(traceId);
         }
-        return Response.status(Status.SERVICE_UNAVAILABLE).entity(response).build();
+        Response.ResponseBuilder builder = Response.status(status).entity(response);
+        applyExtraHeaders(builder, extraHeaders);
+        return builder.build();
     }
 
     private String resolvePayerType(String rawType, String payerCode) {
@@ -1350,6 +1355,29 @@ public class OrcaMasterResource extends AbstractResource {
         return details;
     }
 
+    private java.util.Map<String, Object> buildEtensuAuditDetails(String keyword, String category, String asOf,
+            String tensuVersion, MultivaluedMap<String, String> params, EtensuDao.EtensuSearchResult result) {
+        java.util.Map<String, Object> details = buildTensuQueryDetails(keyword, category, asOf, tensuVersion, params);
+        if (result == null) {
+            return details;
+        }
+        details.put("rowCount", result.getRecords().size());
+        details.put("dbTimeMs", result.getDbTimeMs());
+        return details;
+    }
+
+    private Map<String, String> buildEtensuPerformanceHeaders(EtensuDao.EtensuSearchResult result, boolean cacheHit) {
+        if (result == null) {
+            return Collections.emptyMap();
+        }
+        Map<String, String> headers = new LinkedHashMap<>();
+        headers.put("X-Orca-Db-Time", Long.toString(result.getDbTimeMs()));
+        headers.put("X-Orca-Row-Count", Integer.toString(result.getRecords().size()));
+        headers.put("X-Orca-Total-Count", Integer.toString(result.getTotalCount()));
+        headers.put("X-Orca-Cache-Hit", Boolean.toString(cacheHit));
+        return headers;
+    }
+
     private String buildEtag(String apiRoute, String masterType, LoadedFixture<?> fixture,
             MultivaluedMap<String, String> params) {
         StringBuilder seed = new StringBuilder();
@@ -1434,21 +1462,47 @@ public class OrcaMasterResource extends AbstractResource {
     }
 
     private Response buildCachedOkResponse(Object entity, String etagValue, long ttlSeconds) {
-        EntityTag tag = new EntityTag(etagValue);
-        return Response.ok(entity)
-                .tag(tag)
-                .header("Cache-Control", cacheControlHeader(ttlSeconds))
-                .header("Vary", "userName,password")
-                .build();
+        return buildCachedOkResponse(entity, etagValue, ttlSeconds, null);
     }
 
     private Response buildNotModifiedResponse(String etagValue, long ttlSeconds) {
+        return buildNotModifiedResponse(etagValue, ttlSeconds, null);
+    }
+
+    private Response buildCachedOkResponse(Object entity, String etagValue, long ttlSeconds,
+            Map<String, String> extraHeaders) {
         EntityTag tag = new EntityTag(etagValue);
-        return Response.status(Status.NOT_MODIFIED)
+        Response.ResponseBuilder builder = Response.ok(entity)
                 .tag(tag)
                 .header("Cache-Control", cacheControlHeader(ttlSeconds))
-                .header("Vary", "userName,password")
-                .build();
+                .header("Vary", "userName,password");
+        applyExtraHeaders(builder, extraHeaders);
+        return builder.build();
+    }
+
+    private Response buildNotModifiedResponse(String etagValue, long ttlSeconds, Map<String, String> extraHeaders) {
+        EntityTag tag = new EntityTag(etagValue);
+        Response.ResponseBuilder builder = Response.status(Status.NOT_MODIFIED)
+                .tag(tag)
+                .header("Cache-Control", cacheControlHeader(ttlSeconds))
+                .header("Vary", "userName,password");
+        applyExtraHeaders(builder, extraHeaders);
+        return builder.build();
+    }
+
+    private void applyExtraHeaders(Response.ResponseBuilder builder, Map<String, String> extraHeaders) {
+        if (builder == null || extraHeaders == null || extraHeaders.isEmpty()) {
+            return;
+        }
+        for (Map.Entry<String, String> entry : extraHeaders.entrySet()) {
+            if (entry.getKey() == null || entry.getKey().isBlank()) {
+                continue;
+            }
+            if (entry.getValue() == null) {
+                continue;
+            }
+            builder.header(entry.getKey(), entry.getValue());
+        }
     }
 
     private String cacheControlHeader(long ttlSeconds) {
