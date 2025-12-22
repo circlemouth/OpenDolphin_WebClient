@@ -32,6 +32,16 @@
     - 現状は用法/頻度/投与量などの構造化データを JSON へ反映するのみ。
   - PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
 
+## 実装済みエンドポイント
+- `GET /20/adm/phr/{facilityId,patientId,...}`: `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+- `GET /20/adm/phr/image/{patientId}`: `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+- `GET /20/adm/phr/medication/{patientId}`: `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+
+## 実装済みコンポーネント
+- `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/dto/PhrMedicationResponse.java`
+
 ## 変更ファイル
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
 - `server-modernized/src/main/java/open/dolphin/adm20/support/PhrDataAssembler.java`

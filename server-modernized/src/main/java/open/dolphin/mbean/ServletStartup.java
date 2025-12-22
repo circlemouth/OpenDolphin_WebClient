@@ -50,6 +50,7 @@ public class ServletStartup {
     public void init() {
         contextHolder.ensureDateInitialized();
         eventServiceBean.ensureInitialized();
+        ORCAConnection.getInstance().validateDatasourceSecretsOrThrow();
         if (scheduler == null) {
             LOGGER.warning("ManagedScheduledExecutorService is not available. Timed jobs will not be executed.");
             return;

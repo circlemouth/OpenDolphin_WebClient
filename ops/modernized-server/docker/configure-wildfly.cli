@@ -20,13 +20,13 @@ end-if
 
 # 旧 ORCADS 設定を踏襲しつつ、再実行時に差分のみ反映されるよう冪等化
 if (outcome != success) of /subsystem=datasources/data-source=ORCADS:read-resource()
-    /subsystem=datasources/data-source=ORCADS:add(jndi-name=java:jboss/datasources/ORCADS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}", user-name=${env.DB_USER:opendolphin}, password=${env.DB_PASSWORD:opendolphin}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1", query-timeout=60)
+    /subsystem=datasources/data-source=ORCADS:add(jndi-name=java:jboss/datasources/ORCADS, driver-name=postgresql, connection-url="jdbc:postgresql://${env.ORCA_DB_HOST:${env.DB_HOST:db}}:${env.ORCA_DB_PORT:${env.DB_PORT:5432}}/${env.ORCA_DB_NAME:${env.DB_NAME:opendolphin_modern}}?sslmode=${env.ORCA_DB_SSLMODE:${env.DB_SSLMODE:prefer}}", user-name=${env.ORCA_DB_USER:${env.DB_USER:opendolphin}}, password=${env.ORCA_DB_PASSWORD:${env.DB_PASSWORD:opendolphin}}, use-ccm=false, share-prepared-statements=true, min-pool-size=5, max-pool-size=50, background-validation=true, background-validation-millis=60000, validate-on-match=true, check-valid-connection-sql="SELECT 1", query-timeout=60)
 else
     /subsystem=datasources/data-source=ORCADS:write-attribute(name=jndi-name,value="java:jboss/datasources/ORCADS")
     /subsystem=datasources/data-source=ORCADS:write-attribute(name=driver-name,value=postgresql)
-    /subsystem=datasources/data-source=ORCADS:write-attribute(name=connection-url,value="jdbc:postgresql://${env.DB_HOST:db}:${env.DB_PORT:5432}/${env.DB_NAME:opendolphin_modern}?sslmode=${env.DB_SSLMODE:prefer}")
-    /subsystem=datasources/data-source=ORCADS:write-attribute(name=user-name,value=${env.DB_USER:opendolphin})
-    /subsystem=datasources/data-source=ORCADS:write-attribute(name=password,value=${env.DB_PASSWORD:opendolphin})
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=connection-url,value="jdbc:postgresql://${env.ORCA_DB_HOST:${env.DB_HOST:db}}:${env.ORCA_DB_PORT:${env.DB_PORT:5432}}/${env.ORCA_DB_NAME:${env.DB_NAME:opendolphin_modern}}?sslmode=${env.ORCA_DB_SSLMODE:${env.DB_SSLMODE:prefer}}")
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=user-name,value=${env.ORCA_DB_USER:${env.DB_USER:opendolphin}})
+    /subsystem=datasources/data-source=ORCADS:write-attribute(name=password,value=${env.ORCA_DB_PASSWORD:${env.DB_PASSWORD:opendolphin}})
     /subsystem=datasources/data-source=ORCADS:write-attribute(name=use-ccm,value=false)
     /subsystem=datasources/data-source=ORCADS:write-attribute(name=share-prepared-statements,value=true)
     /subsystem=datasources/data-source=ORCADS:write-attribute(name=min-pool-size,value=5)
@@ -41,8 +41,8 @@ end-if
 if (outcome == success) of /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:read-resource()
     /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:remove()
 end-if
-if (result != "UNSET") of :resolve-expression(expression="${env.DB_SSLROOTCERT:UNSET}")
-    /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:add(value="${env.DB_SSLROOTCERT}")
+if (result != "UNSET") of :resolve-expression(expression="${env.ORCA_DB_SSLROOTCERT:${env.DB_SSLROOTCERT:UNSET}}")
+    /subsystem=datasources/data-source=ORCADS/connection-properties=sslrootcert:add(value="${env.ORCA_DB_SSLROOTCERT:${env.DB_SSLROOTCERT}}")
 end-if
 
 # 旧 PostgresDS を再デプロイ時に破棄しない形で同期
