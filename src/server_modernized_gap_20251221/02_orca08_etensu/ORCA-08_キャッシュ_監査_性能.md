@@ -13,6 +13,7 @@
   - TTL は `address/hokenja=7日`, それ以外 `5分` の方針で実装済み。
   - 監査メタに `status` / `traceId` / `totalCount` を追加。
   - `size` 上限 2000 を DB 取得前に適用し、監査メタの `size` にも反映。
+  - バリデーションエラー (422) 時の監査記録を追加（`validationError`/`errorCode` を details に出力）。
 
 ## 未実施
 - P99/メモリに関する実測・計測値の証跡取得。
