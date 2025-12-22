@@ -35,6 +35,7 @@
 ## 確認
 - 2025-12-22: `PHRResource`/`PhrDataAssembler`/`PhrMedicationResponse` の現行実装で要件を満たしていることを確認。
 - 2025-12-22 (RUN_ID=20251222T211600Z): `PHRResource` の JSON 応答ラッパーを追加し、空配列を欠落させない実装に更新。
+- 2025-12-22: 画像レスポンスの `Cache-Control: no-store` と `Content-Length`、薬剤 JSON の `bundles` 空配列化を確認（禁忌語置換は別途）。
 
 ## 実装済みエンドポイント
 - `GET /20/adm/phr/{facilityId,patientId,...}`: `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
