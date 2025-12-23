@@ -27,7 +27,7 @@ public class PhrExportStorageFactory {
             case FILESYSTEM -> storage = filesystemStorage;
             case S3 -> {
                 storage = s3Storage;
-                LOGGER.warning("S3 storage type selected but no implementation is available. Operations will fail until configured.");
+                LOGGER.info("PHR export storage initialized in S3 mode.");
             }
         }
     }
