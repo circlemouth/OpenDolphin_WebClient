@@ -1,0 +1,277 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: PHR IdentityToken / Secrets</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 12px;
+        text-transform: uppercase;
+        letter-spacing: 0.08em;
+        color: #3a4b53;
+      }
+      .score-value {
+        font-size: 26px;
+        font-weight: 700;
+        margin-top: 6px;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #c3d4d8;
+        border: 1px solid #aabfc5;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .chart-block {
+        display: grid;
+        grid-template-columns: 130px 1fr;
+        gap: 16px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 12px;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: PHR IdentityToken / Secrets</h1>
+        <p class="monitor-description">
+          対象タスク: task-1766474688736-4b0fac / task-1766474688542-8ac134（Agent: codex）<br />
+          目的: IdentityToken 秘密鍵の形式不正検知と Secrets 由来の失敗監査補完の実装評価。
+        </p>
+      </header>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <div class="score-title">codex / task-1766474688736-4b0fac</div>
+          <div class="score-value">🥈 合計 480 / 600</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">codex / task-1766474688542-8ac134</div>
+          <div class="score-value">🥉 合計 453 / 600</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1766474688736-4b0fac</th>
+            <th>codex / task-1766474688542-8ac134</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-23 17:14</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">完了</span>
+                <span class="agent-label">IdentityToken 秘密鍵の形式不正を reason/source 付きで例外化。</span>
+              </div>
+              <div class="chart-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60.0,10.0 103.3,35.0 103.3,85.0 60.0,110.0 16.7,85.0 16.7,35.0" fill="#ffffff" stroke="#9fb0b7" stroke-width="2" />
+                  <polygon points="60.0,17.5 94.6,40.0 95.5,80.5 60.0,99.0 25.4,80.0 27.5,41.3" fill="#9ec3ca" fill-opacity="0.6" stroke="#567680" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 85点</li>
+                  <li>緻密性 80点</li>
+                  <li>例外設計 82点</li>
+                  <li>保守性/可読性 78点</li>
+                  <li>影響範囲/安全性 80点</li>
+                  <li>検証容易性 75点</li>
+                </ul>
+              </div>
+              <div class="section-title">指標根拠</div>
+              <pre>機能合理性: InvalidKeySpec/ClassCast を IdentityTokenSecretsException に統合し、監査理由が明確。
+緻密性: 取得元判定を追加したが、鍵不在/空パスの明示検証はなし。
+例外設計: REASON_KEY_INVALID と source 付与で監査に適合。
+保守性/可読性: resolvePrivateKeySource 追加は小規模で理解しやすい。
+影響範囲/安全性: 例外区分のみの変更で副作用は限定的。
+検証容易性: テスト追加がないため検証は手動前提。</pre>
+              <div class="section-title">コミットログ</div>
+              <pre>5de8285a Handle invalid PHR identity key format</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>- server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java
+  - InvalidKeySpecException を内部捕捉し REASON_KEY_INVALID を送出
+  - base64/path を判定する resolvePrivateKeySource を追加</pre>
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <pre><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766474688736-4b0fac/server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java">IdentityService.java</a></pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">完了</span>
+                <span class="agent-label">秘密鍵の取得元と InvalidKeySpec を関連付ける補強。</span>
+              </div>
+              <div class="chart-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60.0,10.0 103.3,35.0 103.3,85.0 60.0,110.0 16.7,85.0 16.7,35.0" fill="#ffffff" stroke="#9fb0b7" stroke-width="2" />
+                  <polygon points="60.0,20.0 92.5,41.3 91.2,78.0 60.0,99.0 26.2,79.5 29.7,42.5" fill="#b7cbd1" fill-opacity="0.6" stroke="#567680" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 80点</li>
+                  <li>緻密性 75点</li>
+                  <li>例外設計 72点</li>
+                  <li>保守性/可読性 78点</li>
+                  <li>影響範囲/安全性 78点</li>
+                  <li>検証容易性 70点</li>
+                </ul>
+              </div>
+              <div class="section-title">指標根拠</div>
+              <pre>機能合理性: 取得元を payload に保持し、監査情報の付与に寄与。
+緻密性: InvalidKeySpec のみ捕捉で ClassCast 由来は漏れる可能性。
+例外設計: REASON_KEY_INVALID は追加されたが範囲が限定的。
+保守性/可読性: PrivateKeyPayload で責務が明確。
+影響範囲/安全性: IdentityService 内の局所変更で影響は小さい。
+検証容易性: テスト/検証手順の追加がない。</pre>
+              <div class="section-title">コミットログ</div>
+              <pre>f65c6dec Handle invalid IdentityToken key format</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>- server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java
+  - PrivateKeyPayload で base64/path を保持
+  - InvalidKeySpecException を IdentityTokenSecretsException に変換</pre>
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <pre><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766474688542-8ac134/server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java">IdentityService.java</a></pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

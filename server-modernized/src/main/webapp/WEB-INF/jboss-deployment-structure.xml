@@ -5,7 +5,7 @@
       <module name="org.wildfly.micrometer.deployment"/>
     </exclusions>
     <dependencies>
-      <module name="io.agroal.api"/>
+      <module name="io.agroal"/>
     </dependencies>
   </deployment>
 </jboss-deployment-structure>

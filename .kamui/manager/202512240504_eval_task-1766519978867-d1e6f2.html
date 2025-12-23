@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .score-banner {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        align-items: center;
+        padding: 16px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+      }
+      .score-total {
+        font-size: 24px;
+        font-weight: 700;
+      }
+      .score-sub {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-top: 20px;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-card {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+        padding: 12px;
+        border: 1px solid #c4d3d7;
+        background: #f8fbfc;
+      }
+      .hex-card svg {
+        width: 140px;
+        height: 120px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #1f2a30;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: PHR IdentityToken / Secrets</h1>
+        <p class="monitor-description">対象タスク: server modernized gap implementation plan 20251221 / PHR_IdentityToken_Secrets</p>
+        <div class="score-banner">
+          <div class="score-total">🥈 合計 487 / 600</div>
+          <div class="score-sub">対象AI: codex / task-1766519978867-d1e6f2</div>
+          <div class="score-sub">評価基準: 機能合理性・緻密性（補助指標: 仕様適合・エラー処理・監査/ログ・ドキュメント）</div>
+        </div>
+      </header>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1766519978867-d1e6f2</th>
+            <th>codex / task-1766519978867-d1e6f2</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-24 05:04</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">IdentityToken 署名鍵の失敗系統一と監査補強を確認。</span>
+              </div>
+              <div class="hex-card">
+                <svg viewBox="0 0 120 104" aria-label="評価チャート">
+                  <polygon points="60,4 110,30 110,74 60,100 10,74 10,30" fill="#eef3f4" stroke="#9fb1b7" stroke-width="2" />
+                  <text x="60" y="54" text-anchor="middle" font-size="16" fill="#1f2a30" font-weight="600">487</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 84点</li>
+                  <li>緻密性 80点</li>
+                  <li>仕様適合 78点</li>
+                  <li>エラー処理 83点</li>
+                  <li>監査/ログ 86点</li>
+                  <li>ドキュメント 76点</li>
+                </ul>
+              </div>
+              <div class="section-title">タスク概要</div>
+              <div class="snapshot-summary">
+                署名鍵の未設定/不正/空/読込失敗を明確化し、IdentityToken 発行失敗のレスポンスと監査を 503 + reason 統一へ整理。
+              </div>
+              <div class="section-title">評価コメント</div>
+              <ul class="metric-list">
+                <li>IdentityToken の失敗を 503 へ統一し、監査 reason/source を詳細化した点は運用上の一貫性が高い。</li>
+                <li>actorId 欠落で 500 となる監査不具合を補正し、監査の堅牢性を向上。</li>
+                <li>invalid payload まで 503 に丸めるため、入力不正と鍵不備の識別が運用的に弱くなる懸念が残る。</li>
+                <li>ドキュメントで ops/check-secrets の更新を言及するが、差分範囲では実変更を確認できず整合性に注意。</li>
+              </ul>
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <ul class="link-list">
+                <li><a href="../../.worktrees/task-1766519978867-d1e6f2/server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java">PHRResource.java</a></li>
+                <li><a href="../../.worktrees/task-1766519978867-d1e6f2/server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java">IdentityService.java</a></li>
+                <li><a href="../../.worktrees/task-1766519978867-d1e6f2/server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java">LayerConfig.java</a></li>
+                <li><a href="../../.worktrees/task-1766519978867-d1e6f2/server-modernized/src/main/java/open/dolphin/adm20/rest/support/PhrAuditHelper.java">PhrAuditHelper.java</a></li>
+                <li><a href="../../.worktrees/task-1766519978867-d1e6f2/ops/modernized-server/docker/Dockerfile">Dockerfile</a></li>
+                <li><a href="../../.worktrees/task-1766519978867-d1e6f2/src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md">PHR_IdentityToken_Secrets.md</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>9dd20581 Merge branch 'task/task-1766474688736-4b0fac'
+ b0c75c03 Update tasks state
+ 47bb6841 Document recent identity token work
+ ffe74f7e Ensure audit actorId for identity token
+ 399a275f Add io.agroal.api module alias
+ d00797bb Fix missing InvalidKeySpecException import
+ ed95a702 Return 503 for all identity token failures
+ 8ded8eae Document identity token audit reasons
+ c02068f5 Unify identity token failure response
+ 540c2a9b Clarify LayerConfig key source priority
+ 5de8285a Handle invalid PHR identity key format</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre>7 files changed, 206 insertions(+), 89 deletions(-)
+- server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java
+- server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java
+- server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java
+- server-modernized/src/main/java/open/dolphin/adm20/rest/support/PhrAuditHelper.java
+- ops/modernized-server/docker/Dockerfile
+- src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md
+- .kamui/tasks-state.json</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">比較列（同一タスク）: 設計意図と仕様整合の観点を強調。</span>
+              </div>
+              <div class="hex-card">
+                <svg viewBox="0 0 120 104" aria-label="評価チャート">
+                  <polygon points="60,4 110,30 110,74 60,100 10,74 10,30" fill="#eef3f4" stroke="#9fb1b7" stroke-width="2" />
+                  <text x="60" y="54" text-anchor="middle" font-size="16" fill="#1f2a30" font-weight="600">487</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>機能合理性 84点</li>
+                  <li>緻密性 80点</li>
+                  <li>仕様適合 78点</li>
+                  <li>エラー処理 83点</li>
+                  <li>監査/ログ 86点</li>
+                  <li>ドキュメント 76点</li>
+                </ul>
+              </div>
+              <div class="section-title">補足観点</div>
+              <ul class="metric-list">
+                <li>IdentityToken 失敗理由の reason/source 分離は監査の可観測性を高める。</li>
+                <li>503 統一は運用上の簡潔さを得る一方、入力不正との区別が薄くなる点は要注意。</li>
+                <li>Dockerfile の module alias 追加は環境復旧として妥当。</li>
+                <li>ドキュメントの検証手順は整理されているが、実施ログが不足。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

@@ -8,8 +8,17 @@
 ## スコープ
 - Export ジョブ管理と署名 URL 生成の設定整理。
 
+## 実装状況
+- HMAC 署名 URL の生成ロジックは実装済み（`HmacSignedUrlService`）。
+- Filesystem への出力は実装済み（`FilesystemPhrExportStorage`）。
+- S3 出力は未実装（`S3PhrExportStorage` は `UnsupportedOperationException`）。
+
 ## 未実施
-- S3/署名 URL 実測と監査証跡取得。
+- S3/署名 URL 実測と監査証跡取得（最終段階で実施）。
+
+## 完了条件
+- S3 出力の実装と運用設定が整っていること。
+- 最終段階での実測証跡取得が完了していること。
 
 ## 参照
 - `src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md`

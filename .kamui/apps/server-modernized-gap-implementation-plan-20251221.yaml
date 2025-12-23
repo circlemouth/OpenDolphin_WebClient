@@ -295,32 +295,17 @@ src:
 
           - ETag/TTL/監査メタを本番仕様に合わせて調整。
           - 大型レスポンスの P99/メモリ対策を実施。
+          - 実測証跡の取得は最終段階（品質/リリース）でまとめて実施。
           - 参照: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
         dependency:
           - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_ETENSU_API連携.md
         agent: codex
         api: []
         priority: Medium
-        status: in_progress
-        progress: 90
+        status: completed
+        progress: 100
         schedule:
           start: 2025-12-30T00:00:00.000Z
-          days: 2
-      ORCA-08_E2E_証跡.md:
-        content: |-
-          # ORCA-08 E2E 証跡
-
-          - ORCA DB 実測とレスポンス検証。
-          - 監査ログとレスポンス差分を証跡化。
-        dependency:
-          - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-02T00:00:00.000Z
           days: 2
     03_phr:
       PHR_ヘッダー_監査ID整備.md:
@@ -396,6 +381,7 @@ src:
 
           - SignedUrlService と PHR export の安全運用を確立。
           - S3/帯域ポリシー・監査の整合を取る。
+          - 実測証跡の取得は最終段階（品質/リリース）でまとめて実施。
         dependency:
           - src/server_modernized_gap_20251221/03_phr/PHR_コンテナ_画像_薬剤変換.md
           - src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md
@@ -403,26 +389,10 @@ src:
         api: []
         priority: Medium
         status: in_progress
-        progress: 80
+        progress: 40
         schedule:
           start: 2026-01-02T04:00:00.000Z
           days: 3
-      PHR_E2E_証跡.md:
-        content: |-
-          # PHR E2E 証跡
-
-          - PHR-01〜11 と export 系の実測証跡を取得。
-          - Trial/ORMaster での差異を記録。
-        dependency:
-          - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-05T00:00:00.000Z
-          days: 2
     04_touch_demo:
       Touch_前提ドキュメント整備.md:
         content: |-
@@ -542,7 +512,7 @@ src:
           # Spec-based API 解放条件整理
 
           - ORCA POST 未開放 API の前提条件と切替条件を定義。
-          - 解除後の検証フローと証跡を整理。
+          - 解除後の検証フローと証跡要件（取得は最終段階）を整理。
         dependency:
           - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_前提ドキュメント整備.md
         agent: codex
@@ -566,7 +536,7 @@ src:
         api: []
         priority: High
         status: in_progress
-        progress: 80
+        progress: 70
         schedule:
           start: 2025-12-29T08:00:00.000Z
           days: 3
@@ -581,8 +551,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: in_progress
-        progress: 50
+        status: not_started
+        progress: 0
         schedule:
           start: 2026-01-01T08:00:00.000Z
           days: 2
@@ -604,22 +574,6 @@ src:
         schedule:
           start: 2026-01-09T08:00:00.000Z
           days: 3
-      ORCA_wrapper_E2E.md:
-        content: |-
-          # ORCA Wrapper E2E
-
-          - ORMaster/本番相当で POST API を実測。
-          - 外部依存の証跡と切替手順を残す。
-        dependency:
-          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-13T04:00:00.000Z
-          days: 2
     06_server_ops_required:
       ORCA_master_DAO実装.md:
         content: |-
@@ -677,7 +631,7 @@ src:
           # Web クライアント MSW 無効化検証
 
           - MSW を無効化して Charts/受付/ORCA の実 API を通す。
-          - Web/Server の同期ポイント（TraceId/監査）を証跡化。
+          - Web/Server の同期ポイント（TraceId/監査）を確認（証跡は最終段階で取得）。
         dependency:
           - src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md
         agent: codex
@@ -688,39 +642,6 @@ src:
         schedule:
           start: 2026-01-08T04:00:00.000Z
           days: 2
-      ORCA_master_E2E_証跡.md:
-        content: |-
-          # ORCA Master E2E 証跡
-
-          - ORCA-05/06/08 の実測レスポンスと監査ログを証跡化。
-          - ORCA 接続基準（P99/キャッシュ）を満たすことを確認。
-        dependency:
-          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-08T00:00:00.000Z
-          days: 2
-      ORCA_API_STATUS_更新.md:
-        content: |-
-          # ORCA API STATUS 更新
-
-          - ORCA API の実測結果と公開状況を最新化。
-          - 監査/証跡リンクを整備。
-        dependency:
-          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_E2E_証跡.md
-          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_E2E.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-10T00:00:00.000Z
-          days: 1
     07_quality_release:
       品質リリース_前提ドキュメント整備.md:
         content: |-
@@ -754,7 +675,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-07T06:00:00.000Z
+          start: 2026-01-11T00:00:00.000Z
           days: 2
       JMS_ORCA_ACK_検証.md:
         content: |-
@@ -786,7 +707,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-09T06:00:00.000Z
+          start: 2026-01-13T00:00:00.000Z
           days: 1
       性能回帰_ロードテスト.md:
         content: |-
@@ -803,7 +724,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-09T00:00:00.000Z
+          start: 2026-01-12T00:00:00.000Z
           days: 2
       ガント_インベントリ更新.md:
         content: |-
@@ -821,5 +742,90 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-11T00:00:00.000Z
+          start: 2026-01-16T00:00:00.000Z
+          days: 1
+      ORCA-08_E2E_証跡.md:
+        content: |-
+          # ORCA-08 E2E 証跡
+
+          - ORCA DB 実測とレスポンス検証を最終段階で実施。
+          - 監査ログとレスポンス差分を証跡化。
+        dependency:
+          - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-08T00:00:00.000Z
+          days: 2
+      PHR_E2E_証跡.md:
+        content: |-
+          # PHR E2E 証跡
+
+          - PHR-01〜11 と export 系の実測証跡を最終段階で取得。
+          - Trial/ORMaster での差異を記録。
+        dependency:
+          - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-09T00:00:00.000Z
+          days: 2
+      ORCA_master_E2E_証跡.md:
+        content: |-
+          # ORCA Master E2E 証跡
+
+          - ORCA-05/06/08 の実測レスポンスと監査ログを証跡化。
+          - ORCA 接続基準（P99/キャッシュ）を満たすことを確認。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-10T00:00:00.000Z
+          days: 2
+      ORCA_wrapper_E2E.md:
+        content: |-
+          # ORCA Wrapper E2E
+
+          - ORMaster/本番相当で POST API を最終段階にて実測。
+          - 外部依存の証跡と切替手順を残す。
+        dependency:
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-12T00:00:00.000Z
+          days: 2
+      ORCA_API_STATUS_更新.md:
+        content: |-
+          # ORCA API STATUS 更新
+
+          - ORCA API の実測結果と公開状況を最新化。
+          - 監査/証跡リンクを整備。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_E2E_証跡.md
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_E2E.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-15T00:00:00.000Z
           days: 1

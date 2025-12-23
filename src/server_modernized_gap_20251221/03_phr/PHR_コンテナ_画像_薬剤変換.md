@@ -30,7 +30,7 @@
   - **禁忌語の置換ロジック**（`TouchMedicationFormatter` 由来の文言置換）。
 
 ## 未実施
-- PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得。
+- PHR 実測（P99/レスポンス差分/画像帯域）に関する証跡取得（最終段階で実施）。
 
 ## 確認
 - 2025-12-22: `PHRResource`/`PhrDataAssembler`/`PhrMedicationResponse` の現行実装で要件を満たしていることを確認。
