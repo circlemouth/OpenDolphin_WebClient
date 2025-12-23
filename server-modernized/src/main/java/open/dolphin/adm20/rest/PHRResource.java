@@ -484,6 +484,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         requireTraceHeader("PHR_IDENTITY_TOKEN", traceId, null);
         Map<String, Object> details = new HashMap<>();
         details.put("traceId", traceId);
+        details.put("actorId", "unknown");
+        details.put("actorDisplayName", "unknown");
         String user = null;
         try {
             if (json == null || json.isBlank()) {
@@ -513,6 +515,8 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
                         traceId,
                         null);
             }
+            details.put("actorId", user);
+            details.put("actorDisplayName", user);
             details.put("nonceLength", nonce.length());
             String token = identityService.getIdentityToken(nonce, user);
             if (token == null || token.isBlank()) {
