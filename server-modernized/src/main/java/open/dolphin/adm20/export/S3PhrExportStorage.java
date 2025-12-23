@@ -13,7 +13,9 @@ import java.nio.file.StandardCopyOption;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import open.dolphin.infomodel.PHRAsyncJob;
+import software.amazon.awssdk.auth.credentials.AwsBasicCredentials;
 import software.amazon.awssdk.auth.credentials.DefaultCredentialsProvider;
+import software.amazon.awssdk.auth.credentials.StaticCredentialsProvider;
 import software.amazon.awssdk.core.ResponseInputStream;
 import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.regions.Region;
@@ -40,6 +42,9 @@ public class S3PhrExportStorage implements PhrExportStorage {
     private boolean forcePathStyle;
     private String kmsKeyId;
     private URI endpoint;
+    private String accessKey;
+    private String secretKey;
+    private String serverSideEncryption;
 
     @PostConstruct
     void init() {
@@ -52,6 +57,9 @@ public class S3PhrExportStorage implements PhrExportStorage {
         forcePathStyle = config.isS3ForcePathStyle();
         kmsKeyId = trimToNull(config.getS3KmsKeyId());
         endpoint = parseEndpoint(config.getS3Endpoint());
+        accessKey = trimToNull(config.getS3AccessKey());
+        secretKey = trimToNull(config.getS3SecretKey());
+        serverSideEncryption = trimToNull(config.getS3ServerSideEncryption());
     }
 
     @PreDestroy
@@ -68,21 +76,32 @@ public class S3PhrExportStorage implements PhrExportStorage {
         }
         S3Client client = ensureClient();
         String key = resolveObjectKey(job);
+        if (size < 0) {
+            throw new IOException("Invalid content length for S3 upload (bucket=" + bucket + ", key=" + key + ", size=" + size + ").");
+        }
         PutObjectRequest.Builder builder = PutObjectRequest.builder()
                 .bucket(bucket)
                 .key(key)
                 .contentLength(size);
-        if (contentType != null && !contentType.isBlank()) {
-            builder.contentType(contentType);
-        }
-        if (kmsKeyId != null && !kmsKeyId.isBlank()) {
-            builder.serverSideEncryption(ServerSideEncryption.AWS_KMS)
-                    .ssekmsKeyId(kmsKeyId);
+        String resolvedContentType = contentType != null && !contentType.isBlank()
+                ? contentType
+                : "application/zip";
+        builder.contentType(resolvedContentType);
+        ServerSideEncryption encryption = resolveServerSideEncryption(serverSideEncryption, kmsKeyId);
+        if (encryption != null) {
+            builder.serverSideEncryption(encryption);
+            if (encryption == ServerSideEncryption.AWS_KMS) {
+                if (kmsKeyId != null && !kmsKeyId.isBlank()) {
+                    builder.ssekmsKeyId(kmsKeyId);
+                } else {
+                    LOGGER.warning("PHR_EXPORT_S3_SERVER_SIDE_ENCRYPTION requires AWS KMS, but PHR_EXPORT_S3_KMS_KEY is not configured.");
+                }
+            }
         }
         try {
             client.putObject(builder.build(), RequestBody.fromInputStream(data, size));
         } catch (Exception ex) {
-            throw new IOException("Failed to upload PHR export artifact to S3: " + key, ex);
+            throw new IOException("Failed to upload PHR export artifact to S3 bucket=" + bucket + ", key=" + key, ex);
         }
         String location = String.format("s3://%s/%s", bucket, key);
         LOGGER.log(Level.FINE, "Stored PHR export artifact at {0}", location);
@@ -128,8 +147,13 @@ public class S3PhrExportStorage implements PhrExportStorage {
         S3Configuration serviceConfiguration = S3Configuration.builder()
                 .pathStyleAccessEnabled(forcePathStyle)
                 .build();
+        if ((accessKey == null) != (secretKey == null)) {
+            LOGGER.warning("PHR_EXPORT_S3_ACCESS_KEY and PHR_EXPORT_S3_SECRET_KEY must be set together. Falling back to default credentials.");
+            accessKey = null;
+            secretKey = null;
+        }
         S3ClientBuilder builder = S3Client.builder()
-                .credentialsProvider(DefaultCredentialsProvider.create())
+                .credentialsProvider(resolveCredentialsProvider(accessKey, secretKey))
                 .region(Region.of(region))
                 .serviceConfiguration(serviceConfiguration);
         if (endpoint != null) {
@@ -137,6 +161,31 @@ public class S3PhrExportStorage implements PhrExportStorage {
         }
         s3Client = builder.build();
         return s3Client;
+    }
+
+    private static software.amazon.awssdk.auth.credentials.AwsCredentialsProvider resolveCredentialsProvider(
+            String accessKeyValue,
+            String secretKeyValue
+    ) {
+        if (accessKeyValue != null && secretKeyValue != null) {
+            return StaticCredentialsProvider.create(AwsBasicCredentials.create(accessKeyValue, secretKeyValue));
+        }
+        return DefaultCredentialsProvider.create();
+    }
+
+    private ServerSideEncryption resolveServerSideEncryption(String rawValue, String kmsKeyIdValue) {
+        if (rawValue == null || rawValue.isBlank()) {
+            return kmsKeyIdValue != null ? ServerSideEncryption.AWS_KMS : null;
+        }
+        String normalized = rawValue.trim().toLowerCase();
+        if ("aes256".equals(normalized)) {
+            return ServerSideEncryption.AES256;
+        }
+        if ("aws:kms".equals(normalized) || "kms".equals(normalized)) {
+            return ServerSideEncryption.AWS_KMS;
+        }
+        LOGGER.log(Level.WARNING, "Unknown PHR_EXPORT_S3_SERVER_SIDE_ENCRYPTION value: {0}", rawValue);
+        return kmsKeyIdValue != null ? ServerSideEncryption.AWS_KMS : null;
     }
 
     private String resolveObjectKey(PHRAsyncJob job) {
