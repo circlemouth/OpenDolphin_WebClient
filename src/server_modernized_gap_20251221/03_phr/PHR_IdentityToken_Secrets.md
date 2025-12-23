@@ -30,10 +30,14 @@
 - Secrets 注入チェック
   - `ops/check-secrets.sh` に `PHR_LAYER_PRIVATE_KEY_BASE64` / `PHR_LAYER_PRIVATE_KEY_PATH` の検証を追加。
   - base64 が設定されている場合はデコード検証、path 指定時は存在/空ファイルを確認。
+- LayerConfig の優先順明確化
+  - system property → env の優先順で取得し、未設定時は `jboss.home.dir/phrchat.pk8`（未設定ならカレントディレクトリ）へフォールバック。
+  - base64 未設定時は path 設定へフォールバック。
 
 ## 変更ファイル
 - `server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityService.java`
 - `server-modernized/src/main/java/open/dolphin/adm20/mbean/IdentityTokenSecretsException.java`
+- `server-modernized/src/main/java/open/dolphin/adm20/mbean/LayerConfig.java`
 - `server-modernized/src/main/java/open/dolphin/adm20/rest/PHRResource.java`
 - `ops/check-secrets.sh`
 
