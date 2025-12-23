@@ -26,7 +26,7 @@
 ## 対応内容
 - IdentityToken 失敗監査の補完
   - 鍵未設定/読込失敗/形式不正を `IdentityTokenSecretsException` で判定し、監査へ reason/source を記録。
-  - `POST /20/adm/phr/identityToken` は鍵不備時に 503 + `error.phr.identityTokenUnavailable` を返却。
+  - `POST /20/adm/phr/identityToken` は署名鍵利用不可時に 503 + `error.phr.identityTokenUnavailable` を返却（失敗系のレスポンス統一）。
 - Secrets 注入チェック
   - `ops/check-secrets.sh` に `PHR_LAYER_PRIVATE_KEY_BASE64` / `PHR_LAYER_PRIVATE_KEY_PATH` の検証を追加。
   - base64 が設定されている場合はデコード検証、path 指定時は存在/空ファイルを確認。
