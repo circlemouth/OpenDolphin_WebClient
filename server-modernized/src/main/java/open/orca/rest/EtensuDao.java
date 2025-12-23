@@ -32,8 +32,7 @@ public class EtensuDao {
             return new EtensuSearchResult(Collections.emptyList(), 0, null, 0, true);
         }
         long startTime = System.nanoTime();
-        try {
-            Connection connection = ORCAConnection.getInstance().getConnection();
+        try (Connection connection = ORCAConnection.getInstance().getConnection()) {
             EtensuTableMeta meta = EtensuTableMeta.load(connection);
             EtensuQuery query = buildQuery(criteria, meta);
             int totalCount = fetchTotalCount(connection, query);

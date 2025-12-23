@@ -41,6 +41,10 @@
 - 実データ/大量件数投入後の大容量レスポンス検証（size=2000 でも実件数は少数のまま）。
 
 ## 実測/証跡
+- RUN_ID=`20251223T013000Z`:
+  - EtensuDao の接続 close 修正は反映済みだが、WAR 再ビルドが mvn 未導入で失敗。
+  - ホットデプロイ/再計測は未実施。
+  - ビルドログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T013000Z/mvn_package.log`
 - RUN_ID=`20251222T234349Z`（ローカル）: autocannon による P99 計測を実施。
   - 実行ログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251222T234349Z/autocannon.log`
   - 設定: `artifacts/api-stability/20251124T111500Z/benchmarks/20251222T234349Z/bench.config.json`
