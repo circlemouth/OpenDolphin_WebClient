@@ -36,12 +36,14 @@ public class LayerConfig {
     }
 
     public String getRsaKeyPath() {
+        // 優先順: system property -> env。未指定の場合は jboss.home.dir/phrchat.pk8 を参照。
         String configured = resolveProperty(PRIVATE_KEY_PATH_KEY, PRIVATE_KEY_PATH_ENV, null);
         if (configured != null && !configured.isBlank()) {
             return configured.trim();
         }
         String jbossHome = System.getProperty("jboss.home.dir");
         if (jbossHome == null || jbossHome.isBlank()) {
+            // jboss.home.dir がない場合はカレントディレクトリ基準。
             return "phrchat.pk8";
         }
         StringBuilder sb = new StringBuilder();
@@ -52,10 +54,12 @@ public class LayerConfig {
     }
 
     public String getRsaKeyBase64() {
+        // 優先順: system property -> env。未指定の場合は null（path 設定へフォールバック）。
         return resolveProperty(PRIVATE_KEY_BASE64_KEY, PRIVATE_KEY_BASE64_ENV, null);
     }
 
     private String resolveProperty(String propertyKey, String envKey, String fallback) {
+        // system property が最優先。
         String value = System.getProperty(propertyKey);
         if (value != null && !value.isBlank()) {
             return value;
