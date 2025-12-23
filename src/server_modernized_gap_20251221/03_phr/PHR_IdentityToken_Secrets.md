@@ -40,6 +40,9 @@
 ## 変更ファイル
 - `src/server_modernized_gap_20251221/03_phr/PHR_IdentityToken_Secrets.md`
 
+## 対応状況
+- 実装・ドキュメント整合は完了（失敗レスポンス統一/監査 reason/source 設計/Secrets 検証範囲の明文化）。
+
 ## 未実施
 - Secrets の注入運用（Vault 連携）や鍵の保護ポリシー整備。
 - IdentityToken 失敗時の実測証跡（監査ログ/HTTP 応答）の取得。
@@ -59,7 +62,8 @@
 
 ## 作業履歴
 - 2025-12-23 / RUN_ID=`20251223T202955Z`
-  - `ops/check-secrets.sh` の実装が要件を満たすためコード変更は行わず、ドキュメントに現状の検知範囲を明記。
+  - 実装は要件を満たすためコード変更は行わず、ドキュメントに現状の検知範囲を明記。
+  - 対応状況を「実装・ドキュメント整合は完了」として明文化。
   - 手動検証は未実施（docker 起動等は指示待ち）。
 - 2025-12-23
   - IdentityToken の失敗系を 503 + `error.phr.identityTokenUnavailable` へ統一し、監査 reason の整理を実施。
