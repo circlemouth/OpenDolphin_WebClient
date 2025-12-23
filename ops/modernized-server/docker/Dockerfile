@@ -91,6 +91,16 @@ logger.category.dolphin.claim.level=INFO
 logger.category.dolphin.claim.useParentHandlers=true
 EOF
 
+RUN mkdir -p ${WILDFLY_HOME}/modules/system/layers/base/io/agroal/api/main && \
+    cat <<'EOF' > ${WILDFLY_HOME}/modules/system/layers/base/io/agroal/api/main/module.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.9" name="io.agroal.api">
+    <dependencies>
+        <module name="io.agroal"/>
+    </dependencies>
+</module>
+EOF
+
 RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
     mv /opt/jboss/string-clob-type-compat.jar /opt/jboss/tmp/WEB-INF/lib/ && \
     cd /opt/jboss/tmp && \
