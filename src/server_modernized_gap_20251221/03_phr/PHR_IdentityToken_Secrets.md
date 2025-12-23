@@ -30,6 +30,9 @@
 - Secrets 注入チェック
   - `ops/check-secrets.sh` に `PHR_LAYER_PRIVATE_KEY_BASE64` / `PHR_LAYER_PRIVATE_KEY_PATH` の検証を追加。
   - base64 が設定されている場合はデコード検証、path 指定時は存在/空ファイルを確認。
+- 監査理由の一貫性
+  - 未設定/読込失敗/形式不正は `IdentityTokenSecretsException` の reason/source を監査へ記録。
+  - その他の失敗は 503 + `error.phr.identityTokenUnavailable` に統一し、監査 reason は `identity_token_unavailable`。
 - LayerConfig の優先順明確化
   - system property → env の優先順で取得し、未設定時は `jboss.home.dir/phrchat.pk8`（未設定ならカレントディレクトリ）へフォールバック。
   - base64 未設定時は path 設定へフォールバック。
@@ -44,6 +47,15 @@
 ## 未実施
 - Secrets の注入運用（Vault 連携）や鍵の保護ポリシー整備。
 - IdentityToken 失敗時の実測証跡（監査ログ/HTTP 応答）の取得。
+
+## 最低限の検証手順（手動）
+- `PHR_LAYER_PRIVATE_KEY_BASE64` を未設定にして `PHR_LAYER_PRIVATE_KEY_PATH` を空/不存在にする。
+  - `POST /20/adm/phr/identityToken` で 503 + `error.phr.identityTokenUnavailable` を確認。
+  - 監査ログの reason/source が `identity_token_key_missing` / `path` になることを確認。
+- `PHR_LAYER_PRIVATE_KEY_BASE64` に不正な Base64 を設定。
+  - 監査ログの reason が `identity_token_key_invalid`、source が `base64` になることを確認。
+- `PHR_LAYER_PRIVATE_KEY_PATH` に空ファイルを指定。
+  - 監査ログの reason が `identity_token_key_empty`、source が `path` になることを確認。
 
 ## 参照
 - `src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md`
