@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | ORCA wrapper 監査補完</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fbfc;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .score-card .total-score {
+        font-size: 32px;
+        font-weight: 700;
+        margin: 4px 0 6px;
+      }
+      .score-card .total-score span {
+        font-size: 18px;
+        font-weight: 600;
+        color: #3a4b53;
+      }
+      .score-card .trophy {
+        font-size: 22px;
+      }
+      .indicator-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+        gap: 12px;
+        margin: 12px 0 0;
+      }
+      .hex {
+        width: 110px;
+        height: 100px;
+        margin: 0 auto;
+      }
+      .hex text {
+        font-size: 11px;
+        font-weight: 600;
+        fill: #1f2a30;
+        text-anchor: middle;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 16px 0 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #53636b;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | ORCA wrapper 監査補完</h1>
+        <p class="monitor-description">タスク内容: Wrapper API の recordAudit 未実装箇所の補完、TraceId/FacilityId の引き回し統一。対象ブランチのコミットログと差分を精査し、機能合理性と緻密性を中心に評価。</p>
+        <p class="monitor-description">成果物は別worktree上の変更であるため、参照リンクは各worktreeのパスを明示。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1766524483120-42018b</h2>
+          <div class="total-score">460 <span>/ 600</span> <span class="trophy">🥈</span></div>
+          <div class="note">総評: 監査補完は達成。ただし TraceId 統一が未反映で減点。</div>
+          <div class="indicator-grid">
+            <svg class="hex" viewBox="0 0 100 90" aria-label="機能合理性 85点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">機能合理性</text>
+              <text x="50" y="60">85点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="緻密性 75点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">緻密性</text>
+              <text x="50" y="60">75点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="コード品質 80点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">コード品質</text>
+              <text x="50" y="60">80点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="監査網羅性 78点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">監査網羅性</text>
+              <text x="50" y="60">78点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="変更影響制御 82点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">変更影響</text>
+              <text x="50" y="60">82点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="テスト/検証 60点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">テスト</text>
+              <text x="50" y="60">60点</text>
+            </svg>
+          </div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766524483321-f9c8cb</h2>
+          <div class="total-score">489 <span>/ 600</span> <span class="trophy">🥇</span></div>
+          <div class="note">総評: TraceId/FacilityId 統一と監査補完を広範囲に反映。</div>
+          <div class="indicator-grid">
+            <svg class="hex" viewBox="0 0 100 90" aria-label="機能合理性 90点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">機能合理性</text>
+              <text x="50" y="60">90点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="緻密性 85点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">緻密性</text>
+              <text x="50" y="60">85点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="コード品質 82点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">コード品質</text>
+              <text x="50" y="60">82点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="監査網羅性 88点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">監査網羅性</text>
+              <text x="50" y="60">88点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="変更影響制御 84点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">変更影響</text>
+              <text x="50" y="60">84点</text>
+            </svg>
+            <svg class="hex" viewBox="0 0 100 90" aria-label="テスト/検証 60点">
+              <polygon points="50,2 95,24 95,66 50,88 5,66 5,24" fill="#dbe9ec" stroke="#9fb5bc" />
+              <text x="50" y="40">テスト</text>
+              <text x="50" y="60">60点</text>
+            </svg>
+          </div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>AI / Task</th>
+            <th>AI / Task</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">codex / task-1766524483120-42018b</span>
+              </div>
+              <div class="section-title">仕事の概要</div>
+              <p>ORCA wrapper の主要エンドポイントに監査ログを追加し、実行/失敗時の監査イベントを記録。データソース判定など運用向けの補足も付与。</p>
+              <div class="section-title">評価根拠（機能合理性・緻密性）</div>
+              <p>各エンドポイントで recordAudit を呼び出し、バリデーション失敗時も監査する流れは合理的。一方 TraceId の統一引き回しが実装されておらず、要件達成は部分的。</p>
+              <div class="section-title">懸念点</div>
+              <p>TraceId の収集/付与が無く、facilityId も remoteUser 依存。ヘッダ経由のフォールバックや requestId の統一が必要。</p>
+              <div class="section-title">成果物リンク</div>
+              <p><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766524483120-42018b/server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java">OrcaAppointmentResource.java</a></p>
+              <p><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766524483120-42018b/server-modernized/src/main/java/open/dolphin/orca/rest/OrcaPatientBatchResource.java">OrcaPatientBatchResource.java</a></p>
+              <p><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766524483120-42018b/server-modernized/src/main/java/open/dolphin/orca/rest/OrcaVisitResource.java">OrcaVisitResource.java</a></p>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>71feda70 (HEAD -&gt; task/task-1766524483120-42018b) Add audit logging to ORCA wrapper endpoints
+b8bfe880 (task/task-1766524536915-8d860b, task/task-1766524498051-cb17de, master) Merge branch 'task/task-1766520059533-5bd97d'
+b0a841ae chore: update kamui state
+839586e2 merge: task-1766519978867-d1e6f2
+ea17abb5 clean
+56394727 (task/task-1766519978867-d1e6f2) docs: mark PHR IdentityToken secrets task complete
+35e77aad (task/task-1766520059533-5bd97d) Localize ORCA master unavailable messages
+11fe74b4 docs: clarify PHR IdentityToken secrets checks
+6d965b8f Switch ORCA master APIs to DB-backed DAO
+9dd20581 (task/task-1766520084421-0de066, task/task-1766519991384-08df09, task/task-1766519973540-846af9) Merge branch 'task/task-1766474688736-4b0fac'</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre> .../dolphin/orca/rest/OrcaAppointmentResource.java | 287 ++++++++++++++-------
+ .../orca/rest/OrcaPatientBatchResource.java        | 233 ++++++++++++-----
+ .../open/dolphin/orca/rest/OrcaVisitResource.java  | 168 +++++++++---
+ .../dolphin/orca/service/OrcaWrapperService.java   |  18 +-
+ 4 files changed, 505 insertions(+), 201 deletions(-)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット変更</summary>
+                <pre>なし</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">codex / task-1766524483321-f9c8cb</span>
+              </div>
+              <div class="section-title">仕事の概要</div>
+              <p>共通監査ヘルパー（AbstractOrcaWrapperResource）を新設し、TraceId/FacilityId を含めた監査詳細の統一を実施。各 wrapper エンドポイントで成功/失敗監査を補完。</p>
+              <div class="section-title">評価根拠（機能合理性・緻密性）</div>
+              <p>新規ベースクラスで監査詳細を集約し、TraceId/FacilityId の統一を実現。レスポンス情報の転記も行うため要件適合度は高い。</p>
+              <div class="section-title">懸念点</div>
+              <p>データソース判定は常に server 固定で、stub/snapshot の運用判定が反映されない。監査の件数/返却件数など追加属性は限定的。</p>
+              <div class="section-title">成果物リンク</div>
+              <p><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766524483321-f9c8cb/server-modernized/src/main/java/open/dolphin/orca/rest/AbstractOrcaWrapperResource.java">AbstractOrcaWrapperResource.java</a></p>
+              <p><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766524483321-f9c8cb/server-modernized/src/main/java/open/dolphin/orca/rest/OrcaAppointmentResource.java">OrcaAppointmentResource.java</a></p>
+              <p><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766524483321-f9c8cb/server-modernized/src/main/java/open/dolphin/orca/rest/OrcaPatientBatchResource.java">OrcaPatientBatchResource.java</a></p>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>37603519 (HEAD -&gt; task/task-1766524483321-f9c8cb) Add audit logging to ORCA wrapper resources
+b8bfe880 (task/task-1766524536915-8d860b, task/task-1766524498051-cb17de, master) Merge branch 'task/task-1766520059533-5bd97d'
+b0a841ae chore: update kamui state
+839586e2 merge: task-1766519978867-d1e6f2
+ea17abb5 clean
+56394727 (task/task-1766519978867-d1e6f2) docs: mark PHR IdentityToken secrets task complete
+35e77aad (task/task-1766520059533-5bd97d) Localize ORCA master unavailable messages
+11fe74b4 docs: clarify PHR IdentityToken secrets checks
+6d965b8f Switch ORCA master APIs to DB-backed DAO
+9dd20581 (task/task-1766520084421-0de066, task/task-1766519991384-08df09, task/task-1766519973540-846af9) Merge branch 'task/task-1766474688736-4b0fac'</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分サマリ</summary>
+                <pre> .../orca/rest/AbstractOrcaWrapperResource.java     | 121 +++++++++
+ .../dolphin/orca/rest/OrcaAppointmentResource.java | 269 ++++++++++++++++-----
+ .../orca/rest/OrcaPatientBatchResource.java        | 216 ++++++++++++-----
+ .../open/dolphin/orca/rest/OrcaVisitResource.java  | 121 ++++++---
+ 4 files changed, 570 insertions(+), 157 deletions(-)</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット変更</summary>
+                <pre>なし</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
