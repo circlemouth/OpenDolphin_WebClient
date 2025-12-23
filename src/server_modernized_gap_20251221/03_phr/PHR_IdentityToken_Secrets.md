@@ -26,7 +26,7 @@
 ## 対応内容
 - IdentityToken 失敗監査の補完
   - 鍵未設定/読込失敗/形式不正を `IdentityTokenSecretsException` で判定し、監査へ reason/source を記録。
-  - `POST /20/adm/phr/identityToken` は署名鍵利用不可時に 503 + `error.phr.identityTokenUnavailable` を返却（失敗系のレスポンス統一）。
+  - `POST /20/adm/phr/identityToken` は失敗パターン全体で 503 + `error.phr.identityTokenUnavailable` を返却（失敗系のレスポンス統一）。
 - Secrets 注入チェック
   - `ops/check-secrets.sh` に `PHR_LAYER_PRIVATE_KEY_BASE64` / `PHR_LAYER_PRIVATE_KEY_PATH` の検証を追加。
   - base64 が設定されている場合はデコード検証、path 指定時は存在/空ファイルを確認。
@@ -56,6 +56,9 @@
   - 監査ログの reason が `identity_token_key_invalid`、source が `base64` になることを確認。
 - `PHR_LAYER_PRIVATE_KEY_PATH` に空ファイルを指定。
   - 監査ログの reason が `identity_token_key_empty`、source が `path` になることを確認。
+- リクエストボディを空/不正 JSON にする。
+  - 503 + `error.phr.identityTokenUnavailable` が返ることを確認。
+  - 監査ログの reason が `invalid_payload` になることを確認。
 
 ## 参照
 - `src/server_modernized_gap_20251221/03_phr/PHR_ヘッダー_監査ID整備.md`
