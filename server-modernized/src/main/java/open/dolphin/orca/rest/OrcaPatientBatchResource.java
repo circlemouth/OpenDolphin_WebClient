@@ -9,8 +9,9 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
+import java.util.Map;
+import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.orca.service.OrcaWrapperService;
-import open.dolphin.rest.AbstractResource;
 import open.dolphin.rest.dto.orca.FormerNameHistoryRequest;
 import open.dolphin.rest.dto.orca.FormerNameHistoryResponse;
 import open.dolphin.rest.dto.orca.InsuranceCombinationRequest;
@@ -26,7 +27,7 @@ import open.dolphin.rest.dto.orca.PatientSearchResponse;
  * REST wrapper for patient synchronization endpoints.
  */
 @Path("/orca")
-public class OrcaPatientBatchResource extends AbstractResource {
+public class OrcaPatientBatchResource extends AbstractOrcaWrapperResource {
 
     private OrcaWrapperService wrapperService;
 
@@ -45,10 +46,30 @@ public class OrcaPatientBatchResource extends AbstractResource {
     public PatientIdListResponse patientIdList(@Context HttpServletRequest request,
             PatientIdListRequest body) {
         if (body == null || body.getStartDate() == null || body.getEndDate() == null) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "patientIdList");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.id.invalid", "startDate and endDate are required");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.id.invalid",
                     "startDate and endDate are required");
         }
-        return wrapperService.getPatientIdList(body);
+        Map<String, Object> details = newAuditDetails(request);
+        details.put("operation", "patientIdList");
+        details.put("startDate", body.getStartDate());
+        details.put("endDate", body.getEndDate());
+        try {
+            PatientIdListResponse response = wrapperService.getPatientIdList(body);
+            applyResponseAuditDetails(response, details);
+            markSuccessDetails(details);
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.SUCCESS);
+            return response;
+        } catch (RuntimeException ex) {
+            markFailureDetails(details, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                    "orca.patient.id.error", ex.getMessage());
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw ex;
+        }
     }
 
     @POST
@@ -58,10 +79,29 @@ public class OrcaPatientBatchResource extends AbstractResource {
     public PatientBatchResponse patientBatch(@Context HttpServletRequest request,
             PatientBatchRequest body) {
         if (body == null || body.getPatientIds().isEmpty()) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "patientBatch");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.batch.invalid", "patientIds must contain at least one entry");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.batch.invalid",
                     "patientIds must contain at least one entry");
         }
-        return wrapperService.getPatientBatch(body);
+        Map<String, Object> details = newAuditDetails(request);
+        details.put("operation", "patientBatch");
+        details.put("patientIdCount", body.getPatientIds().size());
+        try {
+            PatientBatchResponse response = wrapperService.getPatientBatch(body);
+            applyResponseAuditDetails(response, details);
+            markSuccessDetails(details);
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.SUCCESS);
+            return response;
+        } catch (RuntimeException ex) {
+            markFailureDetails(details, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                    "orca.patient.batch.error", ex.getMessage());
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw ex;
+        }
     }
 
     @POST
@@ -72,10 +112,40 @@ public class OrcaPatientBatchResource extends AbstractResource {
             PatientNameSearchRequest body) {
         if (body == null || ((body.getName() == null || body.getName().isBlank())
                 && (body.getKana() == null || body.getKana().isBlank()))) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "patientNameSearch");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.search.invalid", "name or kana is required");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.search.invalid",
                     "name or kana is required");
         }
-        return wrapperService.searchPatients(body);
+        Map<String, Object> details = newAuditDetails(request);
+        details.put("operation", "patientNameSearch");
+        if (body.getName() != null && !body.getName().isBlank()) {
+            details.put("namePresent", true);
+            details.put("nameLength", body.getName().trim().length());
+        } else {
+            details.put("namePresent", false);
+        }
+        if (body.getKana() != null && !body.getKana().isBlank()) {
+            details.put("kanaPresent", true);
+            details.put("kanaLength", body.getKana().trim().length());
+        } else {
+            details.put("kanaPresent", false);
+        }
+        try {
+            PatientSearchResponse response = wrapperService.searchPatients(body);
+            applyResponseAuditDetails(response, details);
+            markSuccessDetails(details);
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.SUCCESS);
+            return response;
+        } catch (RuntimeException ex) {
+            markFailureDetails(details, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                    "orca.patient.search.error", ex.getMessage());
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw ex;
+        }
     }
 
     @POST
@@ -85,10 +155,29 @@ public class OrcaPatientBatchResource extends AbstractResource {
     public InsuranceCombinationResponse insuranceCombinations(@Context HttpServletRequest request,
             InsuranceCombinationRequest body) {
         if (body == null || body.getPatientId() == null || body.getPatientId().isBlank()) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "insuranceCombinations");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.insurance.invalid", "patientId is required");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.insurance.invalid",
                     "patientId is required");
         }
-        return wrapperService.getInsuranceCombinations(body);
+        Map<String, Object> details = newAuditDetails(request);
+        details.put("operation", "insuranceCombinations");
+        details.put("patientId", body.getPatientId());
+        try {
+            InsuranceCombinationResponse response = wrapperService.getInsuranceCombinations(body);
+            applyResponseAuditDetails(response, details);
+            markSuccessDetails(details);
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.SUCCESS);
+            return response;
+        } catch (RuntimeException ex) {
+            markFailureDetails(details, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                    "orca.patient.insurance.error", ex.getMessage());
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw ex;
+        }
     }
 
     @POST
@@ -98,10 +187,29 @@ public class OrcaPatientBatchResource extends AbstractResource {
     public FormerNameHistoryResponse formerNames(@Context HttpServletRequest request,
             FormerNameHistoryRequest body) {
         if (body == null || body.getPatientId() == null || body.getPatientId().isBlank()) {
+            Map<String, Object> details = newAuditDetails(request);
+            details.put("operation", "formerNames");
+            markFailureDetails(details, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "orca.patient.former-name.invalid", "patientId is required");
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
             throw restError(request, Response.Status.BAD_REQUEST, "orca.patient.former-name.invalid",
                     "patientId is required");
         }
-        return wrapperService.getFormerNames(body);
+        Map<String, Object> details = newAuditDetails(request);
+        details.put("operation", "formerNames");
+        details.put("patientId", body.getPatientId());
+        try {
+            FormerNameHistoryResponse response = wrapperService.getFormerNames(body);
+            applyResponseAuditDetails(response, details);
+            markSuccessDetails(details);
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.SUCCESS);
+            return response;
+        } catch (RuntimeException ex) {
+            markFailureDetails(details, Response.Status.INTERNAL_SERVER_ERROR.getStatusCode(),
+                    "orca.patient.former-name.error", ex.getMessage());
+            recordAudit(request, ACTION_PATIENT_SYNC, details, AuditEventEnvelope.Outcome.FAILURE);
+            throw ex;
+        }
     }
 
     void setWrapperService(OrcaWrapperService wrapperService) {
