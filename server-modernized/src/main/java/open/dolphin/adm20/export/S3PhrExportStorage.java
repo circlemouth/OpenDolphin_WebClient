@@ -99,6 +99,7 @@ public class S3PhrExportStorage implements PhrExportStorage {
             }
         }
         try {
+            // Stream upload: avoids buffering export content in memory.
             client.putObject(builder.build(), RequestBody.fromInputStream(data, size));
         } catch (Exception ex) {
             throw new IOException("Failed to upload PHR export artifact to S3 bucket=" + bucket + ", key=" + key, ex);

@@ -22,6 +22,9 @@
   - `PHR_EXPORT_S3_ACCESS_KEY` / `PHR_EXPORT_S3_SECRET_KEY`（未設定時は DefaultCredentialsProvider を利用）
   - `PHR_EXPORT_S3_SERVER_SIDE_ENCRYPTION`（`AES256` / `aws:kms` / `kms`）
   - `PHR_EXPORT_S3_KMS_KEY`（KMS 指定時に任意。未設定時は警告ログ）
+  - 資格情報の取得順序: 明示キー（`PHR_EXPORT_S3_ACCESS_KEY` / `PHR_EXPORT_S3_SECRET_KEY`）→ DefaultCredentialsProvider
+  - 転送方式: ストリーミング送信（メモリへの全量展開を避ける）
+- 監査イベント（`PHR_EXPORT_*` / `PHR_SIGNED_URL_*`）の維持は継続し、実測証跡は最終段階で取得する。
 - 最終段階での実測証跡取得が完了していること。
 
 ## 参照
