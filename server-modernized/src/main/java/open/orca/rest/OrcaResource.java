@@ -15,15 +15,21 @@ import java.util.logging.Logger;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.Resource;
 import jakarta.ejb.Singleton;
+import jakarta.inject.Inject;
+import jakarta.servlet.http.HttpServletRequest;
 import javax.sql.DataSource;
 import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.GET;
+import jakarta.ws.rs.HeaderParam;
 import jakarta.ws.rs.PUT;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
+import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
+import jakarta.ws.rs.core.UriInfo;
 import open.dolphin.common.OrcaConnect;
 import open.dolphin.converter.*;
 import open.dolphin.infomodel.*;
@@ -38,6 +44,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 public class OrcaResource {
     
     private static final String RP_KBN_START = "2";
+
+    @Inject
+    OrcaMasterResource orcaMasterResource;
     private static final String SHINRYO_KBN_START = ".";
     private static final int SHINRYO_KBN_LENGTH = 3;
     private static final int DEFAULT_BUNDLE_NUMBER = 1;
@@ -642,6 +651,22 @@ public class OrcaResource {
         }
 
         return null;
+    }
+
+    @GET
+    @Path("/tensu/etensu")
+    @Produces(MediaType.APPLICATION_JSON)
+    public Response getEtensu(
+            @HeaderParam("userName") String userName,
+            @HeaderParam("password") String password,
+            @HeaderParam("If-None-Match") String ifNoneMatch,
+            @Context UriInfo uriInfo,
+            @Context HttpServletRequest request
+    ) {
+        if (orcaMasterResource == null) {
+            return Response.status(Response.Status.SERVICE_UNAVAILABLE).build();
+        }
+        return orcaMasterResource.getEtensu(userName, password, ifNoneMatch, uriInfo, request);
     }
 
     @GET

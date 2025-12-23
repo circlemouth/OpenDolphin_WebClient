@@ -1,1 +1,96 @@
-[]
+[
+  {
+    "id": "task-yaml-so5ohl-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] ORCA-08_キャッシュ_監査_性能\n期間: 12/30 09:00 - 01/01 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# ORCA-08 キャッシュ/監査/性能\n\n- ETag/TTL/監査メタを本番仕様に合わせて調整。\n- 大型レスポンスの P99/メモリ対策を実施。\n- 参照: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md\n\nYAML ID: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-22T23:34:31.384Z",
+    "updatedAt": "2025-12-22T23:34:31.384Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-so5ohl-src-server-moder",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md",
+      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
+      "datasetLabel": "server modernized gap implementation plan 20251221",
+      "pathId": "src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md",
+      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
+      "absolutePath": "C:\\Users\\marug\\Documents\\OpenDolphin_WebClient\\.kamui\\apps\\server-modernized-gap-implementation-plan-20251221.yaml",
+      "addedAt": "2025-12-22T23:34:31.350Z"
+    },
+    "labels": [
+      "server modernized gap implementation plan 20251221",
+      "src / server_modernized_gap_20251221 / 02_orca08_etensu"
+    ],
+    "dependencies": [
+      "task-yaml-173411o-src-server-moder"
+    ],
+    "schedule": {
+      "startMs": 1767052800000,
+      "endMs": 1767225600000,
+      "durationDays": 2
+    },
+    "category": "src / server_modernized_gap_20251221 / 02_orca08_etensu",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# ORCA-08 キャッシュ/監査/性能\n\n- ETag/TTL/監査メタを本番仕様に合わせて調整。\n- 大型レスポンスの P99/メモリ対策を実施。\n- 参照: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md"
+  },
+  {
+    "id": "task-1766446667576-ff6172",
+    "name": "[server modernized gap implementation plan 20251221] ORCA-08_キャッシュ_監査_性能\n期間: 12/30 09:00 - 01/01 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# ORCA-08 キャッシュ/監査/性能\n\n- ETag/TTL/監査メタを本番仕様に合わせて調整。\n- 大型レスポンスの P99/メモリ対策を実施。\n- 参照: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md\n\nYAML ID: src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md",
+    "model": "YAML App",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-22T23:37:47.576Z",
+    "updatedAt": "2025-12-22T23:37:47.621Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
+  },
+  {
+    "id": "task-1766453009618-ee97a1",
+    "name": "【ワーカー指示】                                                                                                  \n\n  - 担当領域: 正常起動（/orca/tensu/etensu が 200 応答）までの一連対応（ビルド失敗の解消・デプロイ内容確認・DB 前提 \n  の確認/seed）                                                                                                     \n  - 参照チェーン: AGENTS.md → docs/DEVELOPMENT_STATUS.md → src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-\n  08_キャッシュ_監査_性能.md                                                                                        \n  - 作業内容（直列で実施）:                                                                                         \n      1. docker compose -f docker-compose.modernized.dev.yml build server-modernized-dev の失敗原因（Maven 取得失   \n  敗）を特定し、settings.xml 等の修正で解消する。                                                                   \n      2. 稼働中コンテナ内で /openDolphin/resources/orca/tensu/etensu と /openDolphin/resources/api/orca/master/     \n  etensu の応答を比較し、WAR の更新有無を確認する。                                                                 \n      3. DB に TBL_ETENSU_1~5 があるか確認し、未存在なら seed-orca08.sql を用いた最小投入の段取りを整理（実行した場 \n  合はログを保存）。                                                                                                \n      4. /orca/tensu/etensu が 200 になる条件を明文化し、必要なら再ビルド→再デプロイで検証する。                    \n  - 更新必須ドキュメント:                                                                                           \n      - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md に結果と証跡パスを追記。\n  - 証跡出力先: artifacts/api-stability/20251124T111500Z/benchmarks/20251223T001200Z/                               \n  - RUN_ID: 20251223T001200Z                                                                                        \n  - 報告形式: 【ワーカー報告】実施内容・証跡パス・DOC_STATUS更新行（更新なしなら「更新なし」）・RUN_ID              \n  - 注意: コンテナ停止は禁止。Python 実行禁止。",
+    "model": "Codex CLI",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-23T01:23:29.618Z",
+    "updatedAt": "2025-12-23T01:23:29.659Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
+  }
+]

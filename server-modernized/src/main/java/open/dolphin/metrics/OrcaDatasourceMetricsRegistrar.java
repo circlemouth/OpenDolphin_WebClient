@@ -1,6 +1,5 @@
 package open.dolphin.metrics;
 
-import io.agroal.api.AgroalDataSource;
 import io.agroal.api.AgroalDataSourceMetrics;
 import io.micrometer.core.instrument.Gauge;
 import io.micrometer.core.instrument.Meter;
@@ -14,6 +13,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import javax.sql.DataSource;
 
 /**
  * ORCA データソースの接続プールメトリクスを Micrometer へ公開する。
@@ -26,7 +26,7 @@ public class OrcaDatasourceMetricsRegistrar {
     private static final String MAX_USED_CONNECTIONS = "opendolphin_orca_db_max_used_connections";
 
     @Resource(lookup = "java:jboss/datasources/ORCADS")
-    private AgroalDataSource dataSource;
+    private DataSource dataSource;
 
     @Inject
     private MeterRegistry meterRegistry;
@@ -77,8 +77,11 @@ public class OrcaDatasourceMetricsRegistrar {
         if (dataSource == null) {
             return null;
         }
+        if (!(dataSource instanceof io.agroal.api.AgroalDataSource)) {
+            return null;
+        }
         try {
-            return dataSource.getMetrics();
+            return ((io.agroal.api.AgroalDataSource) dataSource).getMetrics();
         } catch (Exception ex) {
             return null;
         }
