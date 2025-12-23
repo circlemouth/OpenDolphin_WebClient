@@ -40,6 +40,12 @@ public class PhrExportConfig {
     private static final String S3_FORCE_PATH_STYLE_ENV = "PHR_EXPORT_S3_FORCE_PATH_STYLE";
     private static final String S3_KMS_KEY_KEY = "phr-export.storage.s3.kms-key-id";
     private static final String S3_KMS_KEY_ENV = "PHR_EXPORT_S3_KMS_KEY";
+    private static final String S3_ACCESS_KEY_KEY = "phr-export.storage.s3.access-key";
+    private static final String S3_ACCESS_KEY_ENV = "PHR_EXPORT_S3_ACCESS_KEY";
+    private static final String S3_SECRET_KEY_KEY = "phr-export.storage.s3.secret-key";
+    private static final String S3_SECRET_KEY_ENV = "PHR_EXPORT_S3_SECRET_KEY";
+    private static final String S3_SERVER_SIDE_ENCRYPTION_KEY = "phr-export.storage.s3.server-side-encryption";
+    private static final String S3_SERVER_SIDE_ENCRYPTION_ENV = "PHR_EXPORT_S3_SERVER_SIDE_ENCRYPTION";
 
     private static final String DEFAULT_FILESYSTEM_PATH = "/var/opendolphin/phr-export";
     private static final long DEFAULT_TOKEN_TTL_SECONDS = 300L;
@@ -55,6 +61,9 @@ public class PhrExportConfig {
     private String s3Endpoint;
     private boolean s3ForcePathStyle = DEFAULT_S3_FORCE_PATH_STYLE;
     private String s3KmsKeyId;
+    private String s3AccessKey;
+    private String s3SecretKey;
+    private String s3ServerSideEncryption;
 
     @PostConstruct
     void init() {
@@ -68,6 +77,9 @@ public class PhrExportConfig {
         s3Endpoint = resolveTrimmedProperty(S3_ENDPOINT_KEY, S3_ENDPOINT_ENV, null);
         s3ForcePathStyle = resolveBooleanProperty(S3_FORCE_PATH_STYLE_KEY, S3_FORCE_PATH_STYLE_ENV, DEFAULT_S3_FORCE_PATH_STYLE);
         s3KmsKeyId = resolveTrimmedProperty(S3_KMS_KEY_KEY, S3_KMS_KEY_ENV, null);
+        s3AccessKey = resolveTrimmedProperty(S3_ACCESS_KEY_KEY, S3_ACCESS_KEY_ENV, null);
+        s3SecretKey = resolveTrimmedProperty(S3_SECRET_KEY_KEY, S3_SECRET_KEY_ENV, null);
+        s3ServerSideEncryption = resolveTrimmedProperty(S3_SERVER_SIDE_ENCRYPTION_KEY, S3_SERVER_SIDE_ENCRYPTION_ENV, null);
     }
 
     public StorageType getStorageType() {
@@ -108,6 +120,18 @@ public class PhrExportConfig {
 
     public String getS3KmsKeyId() {
         return s3KmsKeyId;
+    }
+
+    public String getS3AccessKey() {
+        return s3AccessKey;
+    }
+
+    public String getS3SecretKey() {
+        return s3SecretKey;
+    }
+
+    public String getS3ServerSideEncryption() {
+        return s3ServerSideEncryption;
     }
 
     private StorageType resolveStorageType() {
