@@ -154,7 +154,7 @@ public class OrcaMasterResource extends AbstractResource {
                     true
             );
             Response failure = serviceUnavailable(request, "MASTER_GENERIC_CLASS_UNAVAILABLE",
-                    "generic class master unavailable");
+                    "薬効分類マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/generic-class", "orca05-generic-class", 503, dbFixture, false,
                     true, 0, buildQueryDetails(null, keyword, effective, params));
             return failure;
@@ -226,7 +226,7 @@ public class OrcaMasterResource extends AbstractResource {
                     true
             );
             Response failure = serviceUnavailable(request, "MASTER_GENERIC_PRICE_UNAVAILABLE",
-                    "generic price master unavailable");
+                    "最低薬価マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/generic-price", "orca05-generic-price", 503, dbFixture, false,
                     true, 0, buildSrycdDetails(srycd, effective, params));
             return failure;
@@ -312,7 +312,7 @@ public class OrcaMasterResource extends AbstractResource {
                     null,
                     true
             );
-            Response failure = serviceUnavailable(request, "MASTER_YOUHOU_UNAVAILABLE", "youhou master unavailable");
+            Response failure = serviceUnavailable(request, "MASTER_YOUHOU_UNAVAILABLE", "用法マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/youhou", "orca05-youhou", 503, dbFixture, false,
                     true, 0, buildQueryDetails(null, keyword, effective, params));
             return failure;
@@ -375,7 +375,7 @@ public class OrcaMasterResource extends AbstractResource {
                     null,
                     true
             );
-            Response failure = serviceUnavailable(request, "MASTER_MATERIAL_UNAVAILABLE", "material master unavailable");
+            Response failure = serviceUnavailable(request, "MASTER_MATERIAL_UNAVAILABLE", "特定器材マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/material", "orca05-material", 503, dbFixture, false,
                     true, 0, buildQueryDetails(null, keyword, effective, params));
             return failure;
@@ -439,7 +439,7 @@ public class OrcaMasterResource extends AbstractResource {
                     true
             );
             Response failure = serviceUnavailable(request, "MASTER_KENSA_SORT_UNAVAILABLE",
-                    "kensa sort master unavailable");
+                    "検査区分マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/kensa-sort", "orca05-kensa-sort", 503, dbFixture, false,
                     true, 0, buildQueryDetails(null, keyword, effective, params));
             return failure;
@@ -498,7 +498,7 @@ public class OrcaMasterResource extends AbstractResource {
                     true
             );
             Response failure = serviceUnavailable(request, "MASTER_HOKENJA_UNAVAILABLE",
-                    "hokenja master unavailable");
+                    "保険者マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/hokenja", "orca06-hokenja", 503, dbFixture, false,
                     true, 0, buildQueryDetails(pref, keyword, effective, params));
             return failure;
@@ -569,7 +569,7 @@ public class OrcaMasterResource extends AbstractResource {
                     true
             );
             Response failure = serviceUnavailable(request, "MASTER_ADDRESS_UNAVAILABLE",
-                    "address master unavailable");
+                    "住所マスタを取得できませんでした");
             recordMasterAudit(request, "/orca/master/address", "orca06-address", 503, dbFixture, false,
                     true, 0, buildQueryDetails(null, null, effective, params, zip));
             return failure;
