@@ -11,13 +11,13 @@
 ## 実装状況
 - HMAC 署名 URL の生成ロジックは実装済み（`HmacSignedUrlService`）。
 - Filesystem への出力は実装済み（`FilesystemPhrExportStorage`）。
-- S3 出力は未実装（`S3PhrExportStorage` は `UnsupportedOperationException`）。
+- S3 出力を実装済み（`S3PhrExportStorage`：S3 保存/取得、KMS 任意設定）。
 
 ## 未実施
 - S3/署名 URL 実測と監査証跡取得（最終段階で実施）。
 
 ## 完了条件
-- S3 出力の実装と運用設定が整っていること。
+- S3 出力の実装と運用設定が整っていること（`PHR_EXPORT_S3_*` の設定整備）。
 - 最終段階での実測証跡取得が完了していること。
 
 ## 参照
