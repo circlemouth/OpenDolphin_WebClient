@@ -19,6 +19,13 @@
   - 取得結果の `dbTimeMs` を集計し、監査/ヘッダ連携へ渡す。
   - 大量データ時のメモリ負荷を抑えるため、コレクション初期容量を調整。
 
+## 最終結果（採用）
+- RUN_ID=`20251223T104902Z`
+  - 大容量レスポンス検証（size=2000）は 200 応答で OK。
+  - totalCount=5000 / items=2000。
+  - autocannon: P99=1513ms (size=20), 733ms (size=2000)、errors=0/timeouts=0。
+  - 証跡: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/`
+
 ## 決定事項
 - `/api/orca/master/etensu` は Modernized REST の対象外とし、404 を仕様として許容する。
   - 根拠: `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の ORCA-08 は `/orca/tensu/etensu` のみ定義。
@@ -37,8 +44,8 @@
 - 注意: `claim.jdbc.*` は無視され、ORCADS の JNDI 設定（`DB_NAME` 既定 `opendolphin_modern`）が優先。
 
 ## 未実施
-- autocannon 等の負荷計測でエラーなしの P99 再計測（`EtensuDao` の接続リーク修正→再デプロイが必要）。
-- 実データ/大量件数投入後の大容量レスポンス検証（size=2000 でも実件数は少数のまま）。
+- なし（2025-12-23 に大容量レスポンス検証を完了）。
+- 追加の実測証跡取得は最終段階（品質/リリース）で集約する方針。
 
 ## 実測/証跡
 - RUN_ID=`20251223T013000Z`:
@@ -97,6 +104,62 @@
     - `/openDolphin/resources/api/orca/master/etensu` は 404。
       - 証跡: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T001200Z/etensu-api-master-master-auth.txt`
     - 差分: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T001200Z/etensu-compare-master-auth.txt`
+- RUN_ID=`20251223T081513Z`:
+  - autocannon による P99 再計測（errors=0/timeouts=0）。
+  - 実行ログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T081513Z/autocannon.log`
+  - 設定: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T081513Z/bench.config.json`
+  - 実行スクリプト: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T081513Z/autocannon-orca08.js`
+  - メモリスナップショット: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T081513Z/docker-stats.txt`
+  - 追加ヘッダ採取: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T081513Z/etensu-{small,large}.headers.txt`
+  - 結果: P99=38ms (size=20), 23ms (size=2000)、errors=0/timeouts=0。
+  - 備考: 現行イメージ（`setup-modernized-env.sh` 起動）で計測。再ビルドは未実施。
+- RUN_ID=`20251223T091911Z`:
+  - 大容量レスポンス検証のため ORCA-08 大量シード（TBL_ETENSU_1=5000 件）を投入。
+  - 作成/投入ログ:
+    - `artifacts/api-stability/20251124T130000Z/seed/runs/20251223T091911Z/create-etensu-tables.log`
+    - `artifacts/api-stability/20251124T130000Z/seed/runs/20251223T091911Z/seed-orca08-large.log`
+    - 件数確認: `artifacts/api-stability/20251124T130000Z/seed/runs/20251223T091911Z/etensu-count.log`
+    - フィルタ件数: `artifacts/api-stability/20251124T130000Z/seed/runs/20251223T091911Z/etensu-filter-count.log`
+  - `/orca/tensu/etensu` 実測（size=2000）は 404（ボディなし）となり、API 経由の大容量レスポンス検証は未達。
+    - HTTP 証跡: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T091911Z/etensu-large.{headers.txt,httpcode.txt}`
+  - 備考: コンテナ内 WAR が 2025-12-14 ビルドのため、最新リソース未反映の可能性あり。
+- RUN_ID=`20251223T094635Z`:
+  - `docker compose -f docker-compose.modernized.dev.yml build server-modernized-dev` を実行し再ビルド後に再デプロイ。
+  - デプロイが `io.agroal.api` モジュール欠落で失敗（WildFly が `opendolphin-server.war` を load できず）。
+    - サーバーログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T094635Z/server-modernized-dev.log`
+  - `/openDolphin/resources/orca/tensu/etensu` は 404（size=20/2000）。
+    - HTTP 証跡: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T094635Z/etensu-size{20,2000}.{headers.txt,httpcode.txt}`
+  - 備考: `jboss-deployment-structure.xml` の `io.agroal.api` 参照に対し、コンテナ内には `io.agroal` モジュールのみ存在。
+- RUN_ID=`20251223T103121Z`:
+  - `jboss-deployment-structure.xml` の `io.agroal.api` を `io.agroal` へ変更し、再ビルド/再デプロイ。
+    - ビルドログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/docker-build.log`
+  - `/openDolphin/resources/orca/tensu/etensu` が 200（size=20/2000）で応答。
+    - HTTP 証跡: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/etensu-size{20,2000}.{headers.txt,httpcode.txt}`
+  - 大容量レスポンス（size=2000）:
+    - items=2000 / totalCount=5000（JSON 保存＆集計）。
+    - 集計: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/etensu-size2000.summary.json`
+    - JSON: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/etensu-size2000.response.json`
+  - autocannon 実測（errors=0/timeouts=0）:
+    - ログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/autocannon.log`
+    - 設定: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/bench.config.json`
+    - 実行スクリプト: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/autocannon-orca08.js`
+    - 結果: P99=3239ms (size=20), 814ms (size=2000)。
+  - メモリスナップショット: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/docker-stats.txt`
+  - サーバーログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T103121Z/server-modernized-dev.log`
+- RUN_ID=`20251223T104902Z`:
+  - スリープ影響の可能性を排除するため、再計測。
+  - `/openDolphin/resources/orca/tensu/etensu` が 200（size=20/2000）。
+    - HTTP 証跡: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/etensu-size{20,2000}.{headers.txt,httpcode.txt}`
+  - 大容量レスポンス（size=2000）:
+    - items=2000 / totalCount=5000。
+    - 集計: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/etensu-size2000.summary.json`
+  - autocannon 実測（errors=0/timeouts=0）:
+    - ログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/autocannon.log`
+    - 設定: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/bench.config.json`
+    - 実行スクリプト: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/autocannon-orca08.js`
+    - 結果: P99=1513ms (size=20), 733ms (size=2000)。
+  - メモリスナップショット: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/docker-stats.txt`
+  - サーバーログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T104902Z/server-modernized-dev.log`
 
 ## 参照
 - `src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_ETENSU_API連携.md`

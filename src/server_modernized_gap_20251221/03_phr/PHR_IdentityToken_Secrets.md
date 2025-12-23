@@ -46,7 +46,11 @@
 
 ## 未実施
 - Secrets の注入運用（Vault 連携）や鍵の保護ポリシー整備。
-- IdentityToken 失敗時の実測証跡（監査ログ/HTTP 応答）の取得。
+- IdentityToken 失敗時の実測証跡（監査ログ/HTTP 応答）の取得（最終段階で実施）。
+
+## 完了条件
+- Secrets 注入運用（Vault 連携）と鍵保護ポリシーが整備されていること。
+- 最終段階での実測証跡取得が完了していること。
 
 ## 最低限の検証手順（手動）
 - `PHR_LAYER_PRIVATE_KEY_BASE64` を未設定にして `PHR_LAYER_PRIVATE_KEY_PATH` を空/不存在にする。

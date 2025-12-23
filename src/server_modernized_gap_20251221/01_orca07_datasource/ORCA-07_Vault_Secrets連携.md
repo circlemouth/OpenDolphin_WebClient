@@ -20,7 +20,7 @@
 - 既存互換: `DB_HOST` / `DB_PORT` / `DB_NAME` / `DB_USER` / `DB_PASSWORD` / `DB_SSLMODE` / `DB_SSLROOTCERT`
 
 ## 未実施
-- Vault 実連携の有効化・RUN_ID 証跡取得。
+- Vault 実連携の有効化・RUN_ID 証跡取得（最終段階で実施）。
 
 ## 実装済み根拠
 - WildFly DataSource: `ops/modernized-server/docker/configure-wildfly.cli`

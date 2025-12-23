@@ -2,11 +2,12 @@
 
 ## 目的
 - ORCA 側で POST が未開放の API について、**解放前提条件** と **切替条件**（Spec-based → 実 API）を明文化する。
-- 解放後に必要な **検証フロー** と **証跡の置き方**を整理し、後続の実測作業を迷わず実行できる状態にする。
+- 解放後に必要な **検証フロー** と **証跡要件** を整理し、実測証跡は最終段階で一括取得する前提を揃える。
 
 ## 対象範囲
 - ORCA POST が未開放のため **Spec-based stub** で応答している API。
 - 本ドキュメントは **条件整理のみ**。実 API 呼び出しや環境変更は行わない。
+- 実測証跡の取得は最終段階（品質/リリース）で実施する。
 
 ## 未開放 API（現状整理）
 > 参照: `docs/server-modernization/phase2/operations/ORCA_API_STATUS.md` / `docs/server-modernization/phase2/operations/logs/*orca*` / `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md`
@@ -35,14 +36,14 @@
    - Trial/ORMaster のどちらかで **CRUD 可能なデータ**（患者・受付・予約等）が揃っていること。
 
 ## 切替条件（Spec-based → 実 API）
-> 解除条件は **ORCA 側の開放確認** + **実測証跡** + **サーバー切替準備完了** の 3 点で成立。
+> 解除条件は **ORCA 側の開放確認** + **実測証跡（最終段階で取得）** + **サーバー切替準備完了** の 3 点で成立。
 
 ### 1) ORCA 側開放の確認
 - 同一 API に対して **HTTP 200/201/403** を取得し、`Api_Result=79` 以外のレスポンスを確認する。
 - 405（Allow: GET/OPTIONS）や 404 が続く場合は **解放未達**として扱い、切替しない。
 
-### 2) 実測証跡の取得
-- `artifacts/orca-connectivity/<RUN_ID>/` に以下を保存:
+### 2) 実測証跡の要件整理（取得は最終段階）
+- `artifacts/orca-connectivity/<RUN_ID>/` に以下を保存する想定:
   - `httpdump/<api>/request.http` / `response.http`
   - `trace/<api>.log`（`curl --trace-ascii`）
   - `logs/http_extract_*.log`（HTTP/Allow/Api_Result 抜粋）
@@ -63,9 +64,10 @@
    - モダナイズ server から ORCA 経路へ到達し、**UI 上の状態更新**が行えることを確認。
    - エラー時は **HTTP/Api_Result/traceId** をセットで記録。
 4. **切替完了の記録**
-   - `Spec-based` 表記を解除し、**証跡パス**を残す。
+   - `Spec-based` 表記を解除し、**証跡パス**を残す（最終段階で実施）。
 
 ## 証跡の置き方（最低限セット）
+- 実測証跡の取得は最終段階（品質/リリース）で実施する。
 - ディレクトリ: `artifacts/orca-connectivity/<RUN_ID>/`
 - 必須:
   - `httpdump/<api>/request.http`
