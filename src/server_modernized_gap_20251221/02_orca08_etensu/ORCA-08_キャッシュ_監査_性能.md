@@ -29,8 +29,15 @@
   - Flyway: `server-modernized/tools/flyway/sql/V0227__audit_event_payload_text.sql`
   - 既存 DB で `payload` が OID の場合のみ適用。新規環境で `text` 済みなら不要。
 
+## 切り分け/対処
+- 500: `OrcaResource` の同時アクセスロック (`WFLYEJB0241`) が発生。
+- 503: ORCADS のコネクションプール枯渇 (`IJ000655: No managed connections available`) により `EtensuDao` が取得失敗。
+- 直接原因: `EtensuDao` が `Connection` を close しておらず、リクエスト回数に比例して ORCADS が枯渇。
+- 暫定対処: `/subsystem=datasources/data-source=ORCADS:flush-all-connection-in-pool` を実行すると単発 200 が復帰。
+- 注意: `claim.jdbc.*` は無視され、ORCADS の JNDI 設定（`DB_NAME` 既定 `opendolphin_modern`）が優先。
+
 ## 未実施
-- 正常応答（200）前提の P99/メモリ再計測。現状は 500/503 が混在するため再実施が必要。
+- autocannon 等の負荷計測でエラーなしの P99 再計測（`EtensuDao` の接続リーク修正→再デプロイが必要）。
 - 実データ/大量件数投入後の大容量レスポンス検証（size=2000 でも実件数は少数のまま）。
 
 ## 実測/証跡
@@ -50,6 +57,21 @@
   - 結果: P99=5592ms (size=20), 5579ms (size=2000)、errors=2/timeouts=2。
   - 最大メモリ: 1.185GiB（2025-12-23T13:43:59 時点）。
   - 備考: 500/503 が混在し、正常応答の P99 は再計測が必要。
+- RUN_ID=`20251223T010500Z`:
+  - 原因切り分け:
+    - ORCADS 状態: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/orcads-status.log`
+    - サーバーログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/server{.log,.after.log,.bench.log}`
+    - DB ログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/db{.log,.after.log}`
+  - 暫定対処（200 復帰）: ORCADS flush 実行ログ
+    - `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/orcads-flush{,-after}.log`
+  - ORCA DB 仮セットアップ:
+    - SQL: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/orca-db-bootstrap.sql`
+    - 実行ログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/orca-db-bootstrap.log`
+  - 正常応答の簡易 P99（seq10/curl、10 サンプル）
+    - 計測: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/seq10-curl.csv`
+    - 集計: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T010500Z/seq10-curl-summary.csv`
+    - 結果: P99=119ms (size=20), 206ms (size=2000)、200=10/10。
+    - メモリ: 最大 1.368GiB（`docker-stats-seq10-curl.txt`）。
 - RUN_ID=`20251223T001200Z`:
   - WAR 更新: `docker build -f ops/modernized-server/docker/Dockerfile` で再ビルド後、`opendolphin-server.war` を稼働コンテナへホットデプロイ。
     - ログ: `artifacts/api-stability/20251124T111500Z/benchmarks/20251223T001200Z/docker-build.log`
