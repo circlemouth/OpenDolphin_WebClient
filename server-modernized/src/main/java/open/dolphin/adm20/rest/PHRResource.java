@@ -484,13 +484,15 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
         requireTraceHeader("PHR_IDENTITY_TOKEN", traceId, null);
         Map<String, Object> details = new HashMap<>();
         details.put("traceId", traceId);
+        details.put("actorId", "unknown");
+        details.put("actorDisplayName", "unknown");
         String user = null;
         try {
             if (json == null || json.isBlank()) {
                 details.put("missingBody", true);
-                throw error(Status.BAD_REQUEST,
-                        "error.phr.invalidPayload",
-                        "リクエストボディが空です。",
+                throw error(Status.SERVICE_UNAVAILABLE,
+                        "error.phr.identityTokenUnavailable",
+                        "Identity トークンの署名鍵が利用できません。",
                         traceId,
                         null);
             }
@@ -499,20 +501,22 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             user = jso.getString("user", null);
             if (nonce == null || nonce.isBlank()) {
                 details.put("missingField", "nonce");
-                throw error(Status.BAD_REQUEST,
-                        "error.phr.invalidPayload",
-                        "nonce が指定されていません。",
+                throw error(Status.SERVICE_UNAVAILABLE,
+                        "error.phr.identityTokenUnavailable",
+                        "Identity トークンの署名鍵が利用できません。",
                         traceId,
                         null);
             }
             if (user == null || user.isBlank()) {
                 details.put("missingField", "user");
-                throw error(Status.BAD_REQUEST,
-                        "error.phr.invalidPayload",
-                        "user が指定されていません。",
+                throw error(Status.SERVICE_UNAVAILABLE,
+                        "error.phr.identityTokenUnavailable",
+                        "Identity トークンの署名鍵が利用できません。",
                         traceId,
                         null);
             }
+            details.put("actorId", user);
+            details.put("actorDisplayName", user);
             details.put("nonceLength", nonce.length());
             String token = identityService.getIdentityToken(nonce, user);
             if (token == null || token.isBlank()) {
@@ -521,11 +525,11 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditHelper.recordSuccess(null, "PHR_IDENTITY_TOKEN", user, details);
             return token;
         } catch (JsonException ex) {
-            Map<String, Object> failure = failureDetails(details, ex, Status.BAD_REQUEST.getStatusCode());
+            Map<String, Object> failure = failureDetails(details, ex, Status.SERVICE_UNAVAILABLE.getStatusCode());
             auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, "invalid_payload", failure);
-            throw error(Status.BAD_REQUEST,
-                    "error.phr.invalidPayload",
-                    "リクエストボディの形式が不正です。",
+            throw error(Status.SERVICE_UNAVAILABLE,
+                    "error.phr.identityTokenUnavailable",
+                    "Identity トークンの署名鍵が利用できません。",
                     traceId,
                     ex);
         } catch (IdentityTokenSecretsException ex) {
@@ -546,19 +550,20 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
                     traceId,
                     ex);
         } catch (WebApplicationException ex) {
-            Integer status = ex.getResponse() != null ? ex.getResponse().getStatus() : null;
-            String reason = status != null && status == Status.BAD_REQUEST.getStatusCode()
-                    ? "invalid_payload"
-                    : ex.getResponse().getStatusInfo().toString();
-            Map<String, Object> failure = failureDetails(details, ex, status);
+            String reason = "identity_token_unavailable";
+            Map<String, Object> failure = failureDetails(details, ex, Status.SERVICE_UNAVAILABLE.getStatusCode());
             auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, reason, failure);
-            throw ex;
+            throw error(Status.SERVICE_UNAVAILABLE,
+                    "error.phr.identityTokenUnavailable",
+                    "Identity トークンの署名鍵が利用できません。",
+                    traceId,
+                    ex);
         } catch (Exception ex) {
-            Map<String, Object> failure = failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode());
-            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, ex.getClass().getSimpleName(), failure);
-            throw error(Status.INTERNAL_SERVER_ERROR,
-                    "error.phr.internal",
-                    "Identity トークンの生成中にエラーが発生しました。",
+            Map<String, Object> failure = failureDetails(details, ex, Status.SERVICE_UNAVAILABLE.getStatusCode());
+            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, "identity_token_unavailable", failure);
+            throw error(Status.SERVICE_UNAVAILABLE,
+                    "error.phr.identityTokenUnavailable",
+                    "Identity トークンの署名鍵が利用できません。",
                     traceId,
                     ex);
         }
