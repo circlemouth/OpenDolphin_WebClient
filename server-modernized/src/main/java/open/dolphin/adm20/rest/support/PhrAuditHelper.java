@@ -51,6 +51,8 @@ public class PhrAuditHelper {
             return;
         }
         AuditEventPayload payload = new AuditEventPayload();
+        Map<String, Object> details = buildDetails(context, status, reason, additionalDetails);
+        attachTraceDetails(details, context);
         if (context != null) {
             payload.setActorId(context.remoteUser());
             payload.setActorDisplayName(context.userId());
@@ -64,9 +66,8 @@ public class PhrAuditHelper {
         } else {
             payload.setAction(action);
             payload.setResource("/20/adm/phr");
+            applyActorFromDetails(payload, details);
         }
-        Map<String, Object> details = buildDetails(context, status, reason, additionalDetails);
-        attachTraceDetails(details, context);
         payload.setDetails(details);
         ensureTraceIdentifiers(payload, details);
         dispatch(payload, status, reason);
@@ -93,6 +94,25 @@ public class PhrAuditHelper {
                 payload.setTraceId(traceId);
             } else {
                 payload.setTraceId(payload.getRequestId());
+            }
+        }
+    }
+
+    private void applyActorFromDetails(AuditEventPayload payload, Map<String, Object> details) {
+        if (payload == null || details == null) {
+            return;
+        }
+        Object actorId = details.get("actorId");
+        if (actorId instanceof String actor && !actor.isBlank()) {
+            payload.setActorId(actor);
+        }
+        Object display = details.get("actorDisplayName");
+        if (display instanceof String displayName && !displayName.isBlank()) {
+            payload.setActorDisplayName(displayName);
+        } else if (payload.getActorDisplayName() == null || payload.getActorDisplayName().isBlank()) {
+            Object userId = details.get("userId");
+            if (userId instanceof String user && !user.isBlank()) {
+                payload.setActorDisplayName(user);
             }
         }
     }

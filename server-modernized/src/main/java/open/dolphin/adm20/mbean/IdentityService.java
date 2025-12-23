@@ -73,7 +73,7 @@ public class IdentityService {
         } catch (IdentityTokenSecretsException ex) {
             LOGGER.log(Level.SEVERE, "IdentityToken secrets are not configured.", ex);
             throw ex;
-        } catch (NoSuchAlgorithmException | InvalidKeySpecException | IOException | InvalidKeyException | SignatureException ex) {
+        } catch (NoSuchAlgorithmException | IOException | InvalidKeyException | SignatureException ex) {
             LOGGER.log(Level.SEVERE, "Failed to generate IdentityToken.", ex);
             throw new IllegalStateException("Failed to generate IdentityToken.", ex);
         }
@@ -152,14 +152,29 @@ public class IdentityService {
         }
         return readPrivateKeyFromDisk(layerConfig.getRsaKeyPath());
     }
+
+    private String resolvePrivateKeySource() {
+        String base64 = layerConfig.getRsaKeyBase64();
+        if (base64 != null && !base64.isBlank()) {
+            return "base64";
+        }
+        return "path";
+    }
     
-    private RSAPrivateKey getPrivateKey() throws NoSuchAlgorithmException, InvalidKeySpecException,
-            IOException {
+    private RSAPrivateKey getPrivateKey() throws NoSuchAlgorithmException, IOException {
 
         final KeyFactory keyFactory = KeyFactory.getInstance("RSA");
         final byte[] encodedKey = resolvePrivateKeyBytes();
         final EncodedKeySpec privateKeySpec = new PKCS8EncodedKeySpec(encodedKey);
-        final PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
-        return (RSAPrivateKey) privateKey;
+        try {
+            final PrivateKey privateKey = keyFactory.generatePrivate(privateKeySpec);
+            return (RSAPrivateKey) privateKey;
+        } catch (InvalidKeySpecException | ClassCastException ex) {
+            throw new IdentityTokenSecretsException(
+                    IdentityTokenSecretsException.REASON_KEY_INVALID,
+                    "PHR identity private key format is invalid.",
+                    resolvePrivateKeySource(),
+                    ex);
+        }
     }
 }
