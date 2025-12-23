@@ -554,11 +554,11 @@ public class PHRResource extends open.dolphin.rest.AbstractResource {
             auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, reason, failure);
             throw ex;
         } catch (Exception ex) {
-            Map<String, Object> failure = failureDetails(details, ex, Status.INTERNAL_SERVER_ERROR.getStatusCode());
-            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, ex.getClass().getSimpleName(), failure);
-            throw error(Status.INTERNAL_SERVER_ERROR,
-                    "error.phr.internal",
-                    "Identity トークンの生成中にエラーが発生しました。",
+            Map<String, Object> failure = failureDetails(details, ex, Status.SERVICE_UNAVAILABLE.getStatusCode());
+            auditHelper.recordFailure(null, "PHR_IDENTITY_TOKEN", user, "identity_token_unavailable", failure);
+            throw error(Status.SERVICE_UNAVAILABLE,
+                    "error.phr.identityTokenUnavailable",
+                    "Identity トークンの署名鍵が利用できません。",
                     traceId,
                     ex);
         }
