@@ -27,7 +27,19 @@ class OrcaMasterResourceTest {
 
     @Test
     void getGenericClass_returnsPagedResponseWithMeta() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public GenericClassSearchResult searchGenericClass(GenericClassCriteria criteria) {
+                GenericClassRecord record = new GenericClassRecord();
+                record.classCode = "101";
+                record.className = "Test Generic";
+                record.startDate = "20240401";
+                record.endDate = "99991231";
+                record.version = "20240426";
+                return new GenericClassSearchResult(List.of(record), 1, "20240426");
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
         Response response = resource.getGenericClass(USER, PASSWORD, null, uriInfo, null);
@@ -46,14 +58,14 @@ class OrcaMasterResourceTest {
         assertNotNull(entry.getValidTo());
         OrcaMasterMeta meta = entry.getMeta();
         assertNotNull(meta);
-        assertEquals("snapshot", meta.getDataSource());
+        assertEquals("orca-db", meta.getDataSource());
         assertEquals("20251219T144408Z", meta.getRunId());
         assertNotNull(meta.getFetchedAt());
     }
 
     @Test
     void getGenericPrice_invalidSrycd_returnsValidationError() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), new OrcaMasterDao());
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("srycd", "12345");
         UriInfo uriInfo = createUriInfo(params);
@@ -69,7 +81,13 @@ class OrcaMasterResourceTest {
 
     @Test
     void getGenericPrice_missingMaster_returnsFallbackMeta() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public LookupResult<GenericPriceRecord> findGenericPrice(GenericPriceCriteria criteria) {
+                return new LookupResult<>(null, "20240426", false);
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("srycd", "999999999");
         UriInfo uriInfo = createUriInfo(params);
@@ -87,7 +105,19 @@ class OrcaMasterResourceTest {
 
     @Test
     void getYouhou_returnsListWithMeta() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public ListSearchResult<YouhouRecord> searchYouhou(YouhouCriteria criteria) {
+                YouhouRecord record = new YouhouRecord();
+                record.youhouCode = "Y001";
+                record.youhouName = "Sample Youhou";
+                record.startDate = "20240401";
+                record.endDate = "99991231";
+                record.version = "20240426";
+                return new ListSearchResult<>(List.of(record), 1, "20240426");
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
         Response response = resource.getYouhou(USER, PASSWORD, null, uriInfo, null);
@@ -104,7 +134,26 @@ class OrcaMasterResourceTest {
 
     @Test
     void getHokenja_returnsListWithMeta() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public HokenjaSearchResult searchHokenja(HokenjaCriteria criteria) {
+                HokenjaRecord record = new HokenjaRecord();
+                record.payerCode = "123456";
+                record.payerName = "Sample Payer";
+                record.insurerType = "国保";
+                record.payerRatio = 0.3;
+                record.prefCode = "13";
+                record.cityCode = "13000";
+                record.zip = "1000001";
+                record.addressLine = "Tokyo";
+                record.phone = "0312345678";
+                record.startDate = "20240401";
+                record.endDate = "99991231";
+                record.version = "20240426";
+                return new HokenjaSearchResult(List.of(record), 1, "20240426");
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
         Response response = resource.getHokenja(USER, PASSWORD, null, uriInfo, null);
@@ -127,7 +176,7 @@ class OrcaMasterResourceTest {
 
     @Test
     void getAddress_invalidZip_returnsValidationError() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), new OrcaMasterDao());
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("zip", "123");
         UriInfo uriInfo = createUriInfo(params);
@@ -142,7 +191,25 @@ class OrcaMasterResourceTest {
 
     @Test
     void getAddress_returnsEntryWithMeta() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public LookupResult<AddressRecord> findAddress(AddressCriteria criteria) {
+                AddressRecord record = new AddressRecord();
+                record.zip = "1000001";
+                record.prefCode = "13";
+                record.cityCode = "13000";
+                record.city = "千代田区";
+                record.town = "千代田";
+                record.kana = "トウキョウト チヨダク チヨダ";
+                record.roman = "Chiyoda";
+                record.fullAddress = "東京都千代田区千代田";
+                record.startDate = "20240401";
+                record.endDate = "99991231";
+                record.version = "20240426";
+                return new LookupResult<>(record, "20240426", true);
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("zip", "1000001");
         UriInfo uriInfo = createUriInfo(params);
@@ -158,7 +225,13 @@ class OrcaMasterResourceTest {
 
     @Test
     void getAddress_unknownZip_returnsNotFound() {
-        OrcaMasterResource resource = new OrcaMasterResource();
+        OrcaMasterDao masterDao = new OrcaMasterDao() {
+            @Override
+            public LookupResult<AddressRecord> findAddress(AddressCriteria criteria) {
+                return new LookupResult<>(null, "20240426", false);
+            }
+        };
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), masterDao);
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("zip", "9999999");
         UriInfo uriInfo = createUriInfo(params);
@@ -177,7 +250,7 @@ class OrcaMasterResourceTest {
             public EtensuSearchResult search(EtensuSearchCriteria criteria) {
                 return new EtensuSearchResult(Collections.emptyList(), 0, "202404");
             }
-        });
+        }, new OrcaMasterDao());
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("keyword", "no-such-entry");
         UriInfo uriInfo = createUriInfo(params);
@@ -209,7 +282,7 @@ class OrcaMasterResourceTest {
             public EtensuSearchResult search(EtensuSearchCriteria criteria) {
                 return new EtensuSearchResult(List.of(record), 1, "202404");
             }
-        });
+        }, new OrcaMasterDao());
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
         Response response = resource.getEtensu(USER, PASSWORD, null, uriInfo, null);
@@ -234,7 +307,7 @@ class OrcaMasterResourceTest {
             public EtensuSearchResult search(EtensuSearchCriteria criteria) {
                 return new EtensuSearchResult(Collections.emptyList(), 0, "202404", 0, true);
             }
-        });
+        }, new OrcaMasterDao());
         UriInfo uriInfo = createUriInfo(new MultivaluedHashMap<>());
 
         Response response = resource.getEtensu(USER, PASSWORD, null, uriInfo, null);
@@ -246,7 +319,7 @@ class OrcaMasterResourceTest {
 
     @Test
     void getEtensu_invalidCategory_returnsValidationError() {
-        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao());
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), new OrcaMasterDao());
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("category", "ABC");
         UriInfo uriInfo = createUriInfo(params);
@@ -261,7 +334,7 @@ class OrcaMasterResourceTest {
 
     @Test
     void getEtensu_invalidAsOf_returnsValidationError() {
-        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao());
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), new OrcaMasterDao());
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("asOf", "2024-01-01");
         UriInfo uriInfo = createUriInfo(params);
@@ -276,7 +349,7 @@ class OrcaMasterResourceTest {
 
     @Test
     void getEtensu_invalidTensuVersion_returnsValidationError() {
-        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao());
+        OrcaMasterResource resource = new OrcaMasterResource(new EtensuDao(), new OrcaMasterDao());
         MultivaluedMap<String, String> params = new MultivaluedHashMap<>();
         params.add("tensuVersion", "2024-04");
         UriInfo uriInfo = createUriInfo(params);
