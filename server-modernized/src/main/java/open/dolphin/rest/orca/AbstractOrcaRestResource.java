@@ -7,6 +7,7 @@ import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import open.dolphin.audit.AuditEventEnvelope;
+import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.rest.AbstractResource;
 import open.dolphin.security.audit.AuditEventPayload;
 import open.dolphin.security.audit.SessionAuditDispatcher;
@@ -17,6 +18,8 @@ import open.dolphin.security.audit.SessionAuditDispatcher;
 public abstract class AbstractOrcaRestResource extends AbstractResource {
 
     protected static final String RUN_ID = "20251116T170500Z";
+    private static final String FACILITY_HEADER = "X-Facility-Id";
+    private static final String LEGACY_FACILITY_HEADER = "facilityId";
 
     @Inject
     protected SessionAuditDispatcher sessionAuditDispatcher;
@@ -43,6 +46,11 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
         if (sessionAuditDispatcher == null) {
             return;
         }
+        Map<String, Object> enriched = details != null ? new HashMap<>(details) : new HashMap<>();
+        String facilityId = resolveAuditFacilityId(request);
+        if (facilityId != null && !facilityId.isBlank()) {
+            enriched.putIfAbsent("facilityId", facilityId);
+        }
         AuditEventPayload payload = new AuditEventPayload();
         payload.setAction(action);
         payload.setResource(request != null ? request.getRequestURI() : "/orca");
@@ -52,15 +60,40 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
         String traceId = resolveTraceId(request);
         if (traceId != null && !traceId.isBlank()) {
             payload.setTraceId(traceId);
+            enriched.putIfAbsent("traceId", traceId);
         }
         String requestId = request != null ? request.getHeader("X-Request-Id") : null;
         if (requestId != null && !requestId.isBlank()) {
             payload.setRequestId(requestId);
+            enriched.putIfAbsent("requestId", requestId);
         } else if (traceId != null && !traceId.isBlank()) {
             payload.setRequestId(traceId);
+            enriched.putIfAbsent("requestId", traceId);
         }
-        payload.setDetails(details != null ? new HashMap<>(details) : Map.of());
+        payload.setDetails(enriched);
         sessionAuditDispatcher.record(payload, outcome, null, null);
+    }
+
+    private String resolveAuditFacilityId(HttpServletRequest request) {
+        if (request == null) {
+            return null;
+        }
+        String remoteUser = request.getRemoteUser();
+        String facility = null;
+        if (remoteUser != null && remoteUser.indexOf(IInfoModel.COMPOSITE_KEY_MAKER) >= 0) {
+            facility = getRemoteFacility(remoteUser);
+        }
+        if (facility == null || facility.isBlank()) {
+            String header = request.getHeader(FACILITY_HEADER);
+            if (header != null && !header.trim().isEmpty()) {
+                return header.trim();
+            }
+            String legacy = request.getHeader(LEGACY_FACILITY_HEADER);
+            if (legacy != null && !legacy.trim().isEmpty()) {
+                return legacy.trim();
+            }
+        }
+        return facility;
     }
 
     protected WebApplicationException validationError(HttpServletRequest request, String field, String message) {
