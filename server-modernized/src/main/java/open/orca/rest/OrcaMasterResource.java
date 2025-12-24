@@ -266,7 +266,7 @@ public class OrcaMasterResource extends AbstractResource {
                     false
             );
             recordMasterAudit(request, "/orca/master/generic-price", masterType, 200, fixture, false, true, 0,
-                    buildSrycdDetails(srycd, effective, params));
+                    true, true, buildSrycdDetails(srycd, effective, params));
             return buildCachedOkResponse(missing, etagValue, ttlSeconds);
         }
         OrcaDrugMasterEntry response = toGenericPriceEntry(hit, fixture);
@@ -593,7 +593,7 @@ public class OrcaMasterResource extends AbstractResource {
         if (match == null) {
             Response notFound = notFound("MASTER_ADDRESS_NOT_FOUND", "指定の郵便番号に該当する住所がありません", request);
             recordMasterAudit(request, "/orca/master/address", masterType, 404, fixture, false, true, 0,
-                    buildQueryDetails(null, null, effective, params, zip));
+                    true, true, buildQueryDetails(null, null, effective, params, zip));
             return notFound;
         }
         OrcaAddressEntry response = toAddressEntry(match, fixture);
@@ -702,7 +702,7 @@ public class OrcaMasterResource extends AbstractResource {
             Response notFound = buildErrorResponse(Status.NOT_FOUND, "TENSU_NOT_FOUND",
                     "no etensu entries matched", request, basePerfHeaders);
             recordMasterAudit(request, "/orca/tensu/etensu", masterType, 404, dbFixture, false, true, 0,
-                    etensuAuditDetails);
+                    true, true, etensuAuditDetails);
             return notFound;
         }
         final int totalCount = dbResult.getTotalCount();
@@ -1129,7 +1129,7 @@ public class OrcaMasterResource extends AbstractResource {
             return "fallback";
         }
         if (origin == DataOrigin.ORCA_DB) {
-            return "orca-db";
+            return "server";
         }
         return "snapshot";
     }
@@ -1353,6 +1353,13 @@ public class OrcaMasterResource extends AbstractResource {
     private void recordMasterAudit(HttpServletRequest request, String apiRoute, String masterType, int httpStatus,
             LoadedFixture<?> fixture, boolean cacheHit, Boolean emptyResult, Integer resultCount,
             java.util.Map<String, Object> extraDetails) {
+        recordMasterAudit(request, apiRoute, masterType, httpStatus, fixture, cacheHit, emptyResult, resultCount,
+                null, null, extraDetails);
+    }
+
+    private void recordMasterAudit(HttpServletRequest request, String apiRoute, String masterType, int httpStatus,
+            LoadedFixture<?> fixture, boolean cacheHit, Boolean emptyResult, Integer resultCount,
+            Boolean missingMasterOverride, Boolean fallbackUsedOverride, java.util.Map<String, Object> extraDetails) {
         if (sessionAuditDispatcher == null) {
             return;
         }
@@ -1381,8 +1388,18 @@ public class OrcaMasterResource extends AbstractResource {
         details.put("snapshotVersion", fixture.snapshotVersion);
         details.put("version", firstNonBlank(fixture.version, DEFAULT_VERSION));
         details.put("cacheHit", cacheHit);
-        details.put("missingMaster", fixture.origin == DataOrigin.FALLBACK);
-        details.put("fallbackUsed", fixture.origin == DataOrigin.FALLBACK);
+        boolean missingMaster = fixture.origin == DataOrigin.FALLBACK;
+        if (missingMasterOverride != null) {
+            missingMaster = missingMasterOverride;
+        }
+        boolean fallbackUsed = fixture.origin == DataOrigin.FALLBACK;
+        if (fallbackUsedOverride != null) {
+            fallbackUsed = fallbackUsedOverride;
+        } else if (missingMaster) {
+            fallbackUsed = true;
+        }
+        details.put("missingMaster", missingMaster);
+        details.put("fallbackUsed", fallbackUsed);
         if (traceId != null && !traceId.isBlank()) {
             details.put("traceId", traceId);
         }
