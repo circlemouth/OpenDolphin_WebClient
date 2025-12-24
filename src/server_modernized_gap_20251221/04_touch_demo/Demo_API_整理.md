@@ -12,6 +12,10 @@
 - 公開設定: `server-modernized/src/main/webapp/WEB-INF/web.xml` の `resteasy.resources` に 3 種が登録済み。
 - 参照元: `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo セクション。
 
+## 利用状況（Web クライアント）
+- `/demo` を直接呼び出す実装は Web クライアント側で確認できない（`web-client/` を全文検索）。
+- `web-client/scripts/ui-smoke.mjs` に demo ログイン情報があるが、Demo API 呼び出しの記述はなし。
+
 ## Demo API 一覧（現行実装）
 | 種別 | エンドポイント | JSON | XML | 備考 |
 | --- | --- | --- | --- | --- |
@@ -33,18 +37,22 @@
 
 ## 未移植・差分
 - `DemoResourceAsp` は上記 15 API を JSON 化済み。コード上の未移植 API は現状なし。
-- `MODERNIZED_REST_API_INVENTORY.md` の記述（XML のまま）と齟齬があるため、棚卸し結果と整合させる。
+- `MODERNIZED_REST_API_INVENTORY.md` の Demo セクションに「欠落エンドポイント」として記載が残っているため、棚卸し結果と整合させる。
 
-## 廃止方針（案）
-- Web クライアントからの利用が確認できない Demo API は廃止候補とする。
-- 廃止までの手順:
-  1. デモ利用フロー（Web/Touch/営業デモ）の必要性を確認。
-  2. 廃止候補 API をドキュメントに明記し、移行期限を設定。
-  3. `web.xml` から XML 版 DemoResource を除外し、JSON 版に統一。
-  4. Demo 環境で接続検証を実施したうえで削除/404 化を実施。
+## 廃止方針（明文化）
+- **対象**: Web クライアント側で呼び出しが確認できず、Demo 専用業務フローでも使用が確認できない API。
+- **判断基準**:
+  - Web クライアントおよび Touch/営業デモ手順で利用実態がない。
+  - Demo 用固定データや監査イベントが維持されていない。
+  - 代替 API（/touch 系）が存在し機能重複している。
+- **廃止までの手順**:
+  1. 利用実態の確認（Web/Touch/営業デモ）と合意形成。
+  2. 廃止候補 API と移行期限をドキュメントへ明記（このファイルと API 在庫）。
+  3. XML 版の公開解除（`web.xml` から DemoResource 系を整理）と JSON 版へ統一。
+  4. Demo 環境での接続検証を実施し、削除または 410/404 へ移行。
 
 ## 次アクション
-- `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo 行を最新化（JSON 実装済みを明記）。
+- `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo セクションを最新化（JSON 実装済みを明記）。
 - Demo 用に残す API の最小セットを PM/Manager と合意。
 - 合意後に `server-modernized/src/main/webapp/WEB-INF/web.xml` の登録整理を検討。
 

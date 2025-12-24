@@ -326,31 +326,34 @@
 | Dolphin-19 | GET | `/touch/user/{param}` | Touch ユーザー認証。 | `TouchUserService#getUser` + `TouchAuthHandler` + `DolphinTouchAuditLogger` | P0（ログイン）。`X-Device-Id` を含むヘッダー整合・2FA 状態確認・監査 `TOUCH_USER_AUTH` が前提。 |
 
 ### DemoResource / DemoResourceASP (`/demo`)
-- デモモード用エンドポイント。`GET /demo/patient/{pk}` や `GET /demo/module/{param}` など、`/touch` 相当の読み取り専用 API を提供。【F:server-modernized/src/main/java/open/dolphin/touch/DemoResource.java†L24-L347】【F:server-modernized/src/main/java/open/dolphin/touch/DemoResourceASP.java†L24-L1440】
+- デモモード用エンドポイント。`GET /demo/patient/{pk}` や `GET /demo/module/{param}` など、`/touch` 相当の読み取り専用 API を提供。JSON 実装は `open.dolphin.rest.DemoResourceAsp` に集約済み。【F:server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java†L85-L825】【F:server-modernized/src/main/java/open/dolphin/touch/DemoResource.java†L24-L347】【F:server-modernized/src/main/java/open/dolphin/touch/DemoResourceASP.java†L24-L1440】
+- Demo API 整理: `src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md` を参照。
 
 > **2025-11-14 再登録**: `web.xml` へ `open.dolphin.touch.DemoResourceASP` を再追加し、デモ環境固定値 `touch.demo.fixedFacilityId=1.3.6.1.4.1.9414.2.100` を context-param で配布。DemoResource 系エンドポイントは該当パラメータを参照して Facility 強制の設計レビューを行うこと。
 >
 > **2025-11-14 ギャップ棚卸し**: Demo テナントの XML レスポンスが Legacy クラス（`open.dolphin.touch.DemoResourceASP`）のまま。モダナイズ済みの `Touch*` サービスを流用して JSON 応答へ統一する必要がある。
+>
+> **2025-12-24 棚卸し**: `open.dolphin.rest.DemoResourceAsp` で 15 API の JSON 実装が完了。`web.xml` には XML 版（`DemoResource`/`DemoResourceASP`）も登録済みのため、公開整理は Demo API 整理の方針に合わせる。
 
-#### 欠落エンドポイント整理 (2025-11-14)
+#### Demo エンドポイント一覧（2025-12-24）
 
-| ID | HTTP | パス | レガシー機能 | 必要なモダナイズ側モジュール | 優先度 / 前提条件 |
+| ID | HTTP | パス | 機能概要 | 現行実装 | 補足 |
 | --- | --- | --- | --- | --- | --- |
-| Demo-01 | GET | `/demo/document/progressCourse/{param}` | デモカルテの経過記録 XML を返し、看護業務フローを再現。 | `TouchModuleService`（ProgressCourse DTO 化）+ `TouchRequestContextExtractor` + `TouchAuditHelper` | P2（デモカルテ）。Demo テナント専用 DB と `X-Demo-Mode` ヘッダーを必須化し、監査を Demo 名前空間へ分離。 |
-| Demo-02 | GET | `/demo/item/laboItem/{param}` | 単項目ラボトレンドを返却しグラフ表示を再現。 | `TouchModuleService#getLaboGraph` + `IPhoneServiceBean`（demo フィクスチャ） + `TouchResponseCache` | P2（デモ検査）。ラボサンプルデータ投入と 10 秒 TTL キャッシュ設定、`facilityId=2.100` 固定を前提。 |
-| Demo-03 | GET | `/demo/module/diagnosis/{param}` | 登録診断のページング取得。 | `TouchModuleService#getDiagnoses` + `TouchAuditHelper` | P2。診断 DTO を JSON 化し、デモ医師ロールのみアクセス許可。 |
-| Demo-04 | GET | `/demo/module/laboTest/{param}` | 検査結果モジュール一覧を返却。 | `TouchModuleService#getLaboModules` + `TouchRequestContextExtractor` | P2。ラボ施設 ID の固定化と無効患者リクエスト時 404 応答が前提。 |
-| Demo-05 | GET | `/demo/module/rp/{param}` | 処方モジュールを返却。 | `TouchModuleService#getRpModules` + `IOSHelper` | P2。RP 多剤テストデータの整備と `BundleDolphin` → JSON 変換確認が必要。 |
-| Demo-06 | GET | `/demo/module/schema/{param}` | スキーマ画像を Base64 で返却。 | `TouchModuleService#getSchema` + `SchemaModel` ストリーマ + `Cache-Control` | P2。Schema バイナリを 5MB 以下に圧縮し、`no-store`/帯域制限の設定が必要。 |
-| Demo-07 | GET | `/demo/module/{param}` | 任意 entity のモジュール（観察値等）取得。 | `TouchModuleService#getModules` + `TouchRequestContextExtractor` | P2。entity ごとの UI 表示テストに用いるため、Demo DTO を JSON Schema 化。 |
-| Demo-08 | GET | `/demo/patient/firstVisitors/{param}` | 初診患者一覧を返却。 | `TouchPatientService#getFirstVisitors` + `JsonTouchSharedService` + `TouchAuditHelper` | P2（デモ受付）。Demo facility=2.100 に縛り、監査イベント `DEMO_FIRST_VISITORS` を追加。 |
-| Demo-09 | GET | `/demo/patient/visit/{param}` | 来院履歴を返却。 | `TouchPatientService#getVisitList` + `TouchRequestContextExtractor` | P2。Mock PVT データ投入と offset/limit クエリの検証が前提。 |
-| Demo-10 | GET | `/demo/patient/visitLast/{param}` | 最終来院情報を返却。 | `TouchPatientService#getLastVisit` + `TouchAuditHelper` | P2。最終来院日時を固定 seed から生成し、ログで区別。 |
-| Demo-11 | GET | `/demo/patient/visitRange/{param}` | 期間指定の来院履歴を返却。 | `TouchPatientService#getVisitRange` + `TouchRequestContextExtractor` | P2。期間フィルタ検証用のサンプルデータを追加、`from/to` クエリの妥当性チェックが必要。 |
-| Demo-12 | GET | `/demo/patient/{pk}` | 患者基本情報を取得。 | `TouchPatientService#getPatientByPk` + `TouchRequestContextExtractor` + `TouchAuditHelper` | P2。`Trace-Id` と Demo consent トークンを強制し、患者不一致時のダミー応答を定義。 |
-| Demo-13 | GET | `/demo/patientPackage/{pk}` | 患者パッケージ（患者＋保険＋アレルギー）取得。 | `TouchPatientService#getPatientPackage` + `JsonTouchSharedService` + `IOSHelper` | P2。保険・公費のデモデータを固定 seed で投入し、署名済み consent のみ許可。 |
-| Demo-14 | GET | `/demo/patients/name/{param}` | 氏名検索で患者リストを返却。 | `TouchPatientService#searchPatientsByName` + `KanjiHelper` + `TouchAuditHelper` | P2。かな/漢字の Normalization ロジックを Demo 検索要件へ合わせ、ログを Demo 名前空間に振り分け。 |
-| Demo-15 | GET | `/demo/user/{param}` | デモユーザーの資格情報を返却。 | `TouchUserService#getUser` + `TouchAuthHandler` + `TouchAuditHelper` | P2（ログインデモ）。Demo アカウント `ehrTouch` のみ許可、Basic 認証失敗時のレスポンスを固定化。 |
+| Demo-01 | GET | `/demo/document/progressCourse/{param}` | デモカルテの経過記録 XML を返し、看護業務フローを再現。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2（デモカルテ）。Demo テナント専用 DB と `X-Demo-Mode` ヘッダーを必須化し、監査を Demo 名前空間へ分離。 |
+| Demo-02 | GET | `/demo/item/laboItem/{param}` | 単項目ラボトレンドを返却しグラフ表示を再現。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2（デモ検査）。ラボサンプルデータ投入と 10 秒 TTL キャッシュ設定、`facilityId=2.100` 固定を前提。 |
+| Demo-03 | GET | `/demo/module/diagnosis/{param}` | 登録診断のページング取得。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。診断 DTO を JSON 化し、デモ医師ロールのみアクセス許可。 |
+| Demo-04 | GET | `/demo/module/laboTest/{param}` | 検査結果モジュール一覧を返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。ラボ施設 ID の固定化と無効患者リクエスト時 404 応答が前提。 |
+| Demo-05 | GET | `/demo/module/rp/{param}` | 処方モジュールを返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。RP 多剤テストデータの整備と `BundleDolphin` → JSON 変換確認が必要。 |
+| Demo-06 | GET | `/demo/module/schema/{param}` | スキーマ画像を Base64 で返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。Schema バイナリを 5MB 以下に圧縮し、`no-store`/帯域制限の設定が必要。 |
+| Demo-07 | GET | `/demo/module/{param}` | 任意 entity のモジュール（観察値等）取得。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。entity ごとの UI 表示テストに用いるため、Demo DTO を JSON Schema 化。 |
+| Demo-08 | GET | `/demo/patient/firstVisitors/{param}` | 初診患者一覧を返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2（デモ受付）。Demo facility=2.100 に縛り、監査イベント `DEMO_FIRST_VISITORS` を追加。 |
+| Demo-09 | GET | `/demo/patient/visit/{param}` | 来院履歴を返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。Mock PVT データ投入と offset/limit クエリの検証が前提。 |
+| Demo-10 | GET | `/demo/patient/visitLast/{param}` | 最終来院情報を返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。最終来院日時を固定 seed から生成し、ログで区別。 |
+| Demo-11 | GET | `/demo/patient/visitRange/{param}` | 期間指定の来院履歴を返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。期間フィルタ検証用のサンプルデータを追加、`from/to` クエリの妥当性チェックが必要。 |
+| Demo-12 | GET | `/demo/patient/{pk}` | 患者基本情報を取得。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。`Trace-Id` と Demo consent トークンを強制し、患者不一致時のダミー応答を定義。 |
+| Demo-13 | GET | `/demo/patientPackage/{pk}` | 患者パッケージ（患者＋保険＋アレルギー）取得。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。保険・公費のデモデータを固定 seed で投入し、署名済み consent のみ許可。 |
+| Demo-14 | GET | `/demo/patients/name/{param}` | 氏名検索で患者リストを返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2。かな/漢字の Normalization ロジックを Demo 検索要件へ合わせ、ログを Demo 名前空間に振り分け。 |
+| Demo-15 | GET | `/demo/user/{param}` | デモユーザーの資格情報を返却。 | `DemoResourceAsp`（JSON）/ `DemoResourceASP`・`DemoResource`（XML） | P2（ログインデモ）。Demo アカウント `ehrTouch` のみ許可、Basic 認証失敗時のレスポンスを固定化。 |
 
 ### JsonTouchResource (`/touch/jtouch`)
 - `/touch/jtouch` 系は JSON ベースの軽量 API として患者検索、受付パッケージ取得、スタンプ取得などを提供。【F:server-modernized/src/main/java/open/dolphin/touch/JsonTouchResource.java†L69-L488】
