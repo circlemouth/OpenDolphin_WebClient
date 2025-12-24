@@ -16,6 +16,34 @@
 - `/demo` を直接呼び出す実装は Web クライアント側で確認できない（`web-client/` を全文検索）。
 - `web-client/scripts/ui-smoke.mjs` に demo ログイン情報があるが、Demo API 呼び出しの記述はなし。
 
+## 利用確認（RUN_ID: 20251224T160500Z）
+- 検索対象: `web-client/`, `docs/`, `scripts/`（Phase2/Legacy ドキュメントは参照のみ）
+- 検索方法: `rg -n "/demo" web-client scripts docs` および `rg -n "demo|Demo|デモ" docs web-client`
+- 証跡:
+  - `/demo` の呼び出しは `web-client/` 側で検出されず、`docs/` 内の記述は API 在庫/整理文書に限定。
+  - Web クライアントは「デモシェル/Outpatient Mock」記述が中心で、Demo API の具体的利用は記載なし。
+  - `web-client/scripts/ui-smoke.mjs` は demo 用のログイン情報のみ。
+  - 参照ファイル: `docs/web-client/README.md`, `docs/web-client/architecture/future-web-client-design.md`, `web-client/src/AppRouter.tsx`, `web-client/scripts/ui-smoke.mjs`
+
+## Demo API 維持/廃止判定（RUN_ID: 20251224T160500Z）
+| ID | エンドポイント | 判定 | 理由 / 根拠 |
+| --- | --- | --- | --- |
+| Demo-01 | `GET /demo/user/{param}` | 廃止候補 | Web クライアント/非 Phase2 ドキュメントに利用記述なし。 |
+| Demo-02 | `GET /demo/patient/firstVisitors/{param}` | 廃止候補 | 同上。 |
+| Demo-03 | `GET /demo/patient/visit/{param}` | 廃止候補 | 同上。 |
+| Demo-04 | `GET /demo/patient/visitRange/{param}` | 廃止候補 | 同上。 |
+| Demo-05 | `GET /demo/patient/visitLast/{param}` | 廃止候補 | 同上。 |
+| Demo-06 | `GET /demo/patient/{pk}` | 廃止候補 | 同上。 |
+| Demo-07 | `GET /demo/patients/name/{param}` | 廃止候補 | 同上。 |
+| Demo-08 | `GET /demo/patientPackage/{pk}` | 廃止候補 | 同上。 |
+| Demo-09 | `GET /demo/module/{param}` | 廃止候補 | 同上。 |
+| Demo-10 | `GET /demo/module/rp/{param}` | 廃止候補 | 同上。 |
+| Demo-11 | `GET /demo/module/diagnosis/{param}` | 廃止候補 | 同上。 |
+| Demo-12 | `GET /demo/module/schema/{param}` | 廃止候補 | 同上。 |
+| Demo-13 | `GET /demo/module/laboTest/{param}` | 廃止候補 | 同上。 |
+| Demo-14 | `GET /demo/item/laboItem/{param}` | 廃止候補 | 同上。 |
+| Demo-15 | `GET /demo/document/progressCourse/{param}` | 廃止候補 | 同上。 |
+
 ## Demo API 一覧（現行実装）
 | 種別 | エンドポイント | JSON | XML | 備考 |
 | --- | --- | --- | --- | --- |
@@ -50,6 +78,28 @@
   2. 廃止候補 API と移行期限をドキュメントへ明記（このファイルと API 在庫）。
   3. XML 版の公開解除（`web.xml` から DemoResource 系を整理）と JSON 版へ統一。
   4. Demo 環境での接続検証を実施し、削除または 410/404 へ移行。
+- **合意待ち/未確認（RUN_ID: 20251224T160500Z）**:
+  - Touch/営業デモ手順の一次情報（運用/営業側の手順書）が手元にないため、最終判断は保留。
+  - 現時点の判定は「利用確認側の一次整理」であり、合意後に維持/廃止を確定する。
+
+## 廃止対象リスト（暫定 / RUN_ID: 20251224T160500Z）
+- 判定基準: 「Web クライアント/非 Phase2 ドキュメントに利用記述なし」かつ「代替 `/touch` 系が存在する」。
+- 対象エンドポイント:
+  - `/demo/user/{param}`
+  - `/demo/patient/firstVisitors/{param}`
+  - `/demo/patient/visit/{param}`
+  - `/demo/patient/visitRange/{param}`
+  - `/demo/patient/visitLast/{param}`
+  - `/demo/patient/{pk}`
+  - `/demo/patients/name/{param}`
+  - `/demo/patientPackage/{pk}`
+  - `/demo/module/{param}`
+  - `/demo/module/rp/{param}`
+  - `/demo/module/diagnosis/{param}`
+  - `/demo/module/schema/{param}`
+  - `/demo/module/laboTest/{param}`
+  - `/demo/item/laboItem/{param}`
+  - `/demo/document/progressCourse/{param}`
 
 ## 次アクション
 - `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo セクションを最新化（JSON 実装済みを明記）。
