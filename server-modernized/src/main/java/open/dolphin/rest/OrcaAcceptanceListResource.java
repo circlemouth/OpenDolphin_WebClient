@@ -94,6 +94,19 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         Map<String, Object> details = new LinkedHashMap<>();
         details.put("runId", RUN_ID);
         details.put("resource", resourcePath);
+        String remoteUser = request != null ? request.getRemoteUser() : null;
+        String facilityId = getRemoteFacility(remoteUser);
+        if (facilityId != null && !facilityId.isBlank()) {
+            details.put("facilityId", facilityId);
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+        }
+        if (requestId != null && !requestId.isBlank()) {
+            details.put("requestId", requestId);
+        } else if (traceId != null && !traceId.isBlank()) {
+            details.put("requestId", traceId);
+        }
         if (classCode != null && !classCode.isBlank()) {
             details.put("class", classCode);
         }
