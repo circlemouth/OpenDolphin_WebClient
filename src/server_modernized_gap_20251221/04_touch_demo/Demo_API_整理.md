@@ -33,7 +33,16 @@
   - `docs/web-client/README.md` は「デモシェル/Outpatient Mock」を記載するが `/demo` 利用の記述なし。
   - Web クライアント側コードはデモ UI 表現のみで、Demo API 呼び出しなし（`web-client/src/AppRouter.tsx` 等）。
 
-## Demo API 維持/廃止/保留 判定（RUN_ID: 20251224T162000Z）
+## 追加調査（RUN_ID: 20251224T163500Z）
+- 検索対象: `docs/`, `ops/`, `scripts/`, `tests/`, `web-client/`, `server-modernized/`
+- 検索方法: `rg -n "demo|Demo|デモ|/demo|DemoResource|touch\\.demo" docs ops scripts tests web-client server-modernized`
+- 証跡:
+  - Touch/営業デモ手順に相当する一次情報は非 Phase2 ドキュメントでは検出できず。
+  - `ops/postman/DemoResourceAsp.postman_collection.json` は Legacy/Modernized のパリティ確認用途（運用手順ではない）。
+  - `ops/tests/storage/attachment-mode/README.md` はデモ患者記述のみで `/demo` API の利用記述なし。
+  - Web クライアント/テストコードはデモ UI 表現に留まり、Demo API 呼び出しは見当たらない。
+
+## Demo API 維持/廃止/保留 判定（RUN_ID: 20251224T163500Z）
 | ID | エンドポイント | 判定 | 理由 / 根拠 |
 | --- | --- | --- | --- |
 | Demo-01 | `GET /demo/user/{param}` | 保留 | Web クライアント/非 Phase2 ドキュメントで利用記述なし。Touch/営業デモ手順の一次情報が未取得。 |
@@ -90,12 +99,13 @@
   - Touch/営業デモ手順の一次情報（運用/営業側の手順書）が手元にないため、最終判断は保留。
   - 現時点の判定は「利用確認側の一次整理」であり、合意後に維持/廃止を確定する。
 
-## 決裁待ち項目（RUN_ID: 20251224T162000Z）
+## 決裁待ち項目（RUN_ID: 20251224T163500Z）
 - 必要な一次情報:
   - Touch/営業デモの運用手順書（担当: 事業/営業側、または現行デモ運用の一次情報保持者）
   - 実デモ環境で `/demo` を使用しているかの実測ログ or 手順書
 - 決裁待ち理由:
   - Web クライアント/非 Phase2 ドキュメントから利用実態を特定できず、廃止判断の根拠が不足。
+  - `ops/postman/DemoResourceAsp.postman_collection.json` はパリティ検証用途であり、運用上の利用可否を判断できない。
 
 ## 廃止対象リスト（暫定 / RUN_ID: 20251224T162000Z）
 - 判定基準: 「Web クライアント/非 Phase2 ドキュメントに利用記述なし」かつ「代替 `/touch` 系が存在する」。
