@@ -25,24 +25,32 @@
   - `web-client/scripts/ui-smoke.mjs` は demo 用のログイン情報のみ。
   - 参照ファイル: `docs/web-client/README.md`, `docs/web-client/architecture/future-web-client-design.md`, `web-client/src/AppRouter.tsx`, `web-client/scripts/ui-smoke.mjs`
 
-## Demo API 維持/廃止判定（RUN_ID: 20251224T160500Z）
+## 追加調査（RUN_ID: 20251224T162000Z）
+- 検索対象: `docs/`, `ops/`, `scripts/`, `tests/`, `server-modernized/`, `web-client/`
+- 検索方法: `rg -n "demo|Demo|デモ|/demo|DemoResource|touch\\.demo" docs ops scripts tests server-modernized web-client`
+- 証跡:
+  - `/demo` の実利用を示す手順書・運用フローは非 Phase2 ドキュメントで検出されず。
+  - `docs/web-client/README.md` は「デモシェル/Outpatient Mock」を記載するが `/demo` 利用の記述なし。
+  - Web クライアント側コードはデモ UI 表現のみで、Demo API 呼び出しなし（`web-client/src/AppRouter.tsx` 等）。
+
+## Demo API 維持/廃止/保留 判定（RUN_ID: 20251224T162000Z）
 | ID | エンドポイント | 判定 | 理由 / 根拠 |
 | --- | --- | --- | --- |
-| Demo-01 | `GET /demo/user/{param}` | 廃止候補 | Web クライアント/非 Phase2 ドキュメントに利用記述なし。 |
-| Demo-02 | `GET /demo/patient/firstVisitors/{param}` | 廃止候補 | 同上。 |
-| Demo-03 | `GET /demo/patient/visit/{param}` | 廃止候補 | 同上。 |
-| Demo-04 | `GET /demo/patient/visitRange/{param}` | 廃止候補 | 同上。 |
-| Demo-05 | `GET /demo/patient/visitLast/{param}` | 廃止候補 | 同上。 |
-| Demo-06 | `GET /demo/patient/{pk}` | 廃止候補 | 同上。 |
-| Demo-07 | `GET /demo/patients/name/{param}` | 廃止候補 | 同上。 |
-| Demo-08 | `GET /demo/patientPackage/{pk}` | 廃止候補 | 同上。 |
-| Demo-09 | `GET /demo/module/{param}` | 廃止候補 | 同上。 |
-| Demo-10 | `GET /demo/module/rp/{param}` | 廃止候補 | 同上。 |
-| Demo-11 | `GET /demo/module/diagnosis/{param}` | 廃止候補 | 同上。 |
-| Demo-12 | `GET /demo/module/schema/{param}` | 廃止候補 | 同上。 |
-| Demo-13 | `GET /demo/module/laboTest/{param}` | 廃止候補 | 同上。 |
-| Demo-14 | `GET /demo/item/laboItem/{param}` | 廃止候補 | 同上。 |
-| Demo-15 | `GET /demo/document/progressCourse/{param}` | 廃止候補 | 同上。 |
+| Demo-01 | `GET /demo/user/{param}` | 保留 | Web クライアント/非 Phase2 ドキュメントで利用記述なし。Touch/営業デモ手順の一次情報が未取得。 |
+| Demo-02 | `GET /demo/patient/firstVisitors/{param}` | 保留 | 同上。 |
+| Demo-03 | `GET /demo/patient/visit/{param}` | 保留 | 同上。 |
+| Demo-04 | `GET /demo/patient/visitRange/{param}` | 保留 | 同上。 |
+| Demo-05 | `GET /demo/patient/visitLast/{param}` | 保留 | 同上。 |
+| Demo-06 | `GET /demo/patient/{pk}` | 保留 | 同上。 |
+| Demo-07 | `GET /demo/patients/name/{param}` | 保留 | 同上。 |
+| Demo-08 | `GET /demo/patientPackage/{pk}` | 保留 | 同上。 |
+| Demo-09 | `GET /demo/module/{param}` | 保留 | 同上。 |
+| Demo-10 | `GET /demo/module/rp/{param}` | 保留 | 同上。 |
+| Demo-11 | `GET /demo/module/diagnosis/{param}` | 保留 | 同上。 |
+| Demo-12 | `GET /demo/module/schema/{param}` | 保留 | 同上。 |
+| Demo-13 | `GET /demo/module/laboTest/{param}` | 保留 | 同上。 |
+| Demo-14 | `GET /demo/item/laboItem/{param}` | 保留 | 同上。 |
+| Demo-15 | `GET /demo/document/progressCourse/{param}` | 保留 | 同上。 |
 
 ## Demo API 一覧（現行実装）
 | 種別 | エンドポイント | JSON | XML | 備考 |
@@ -82,8 +90,16 @@
   - Touch/営業デモ手順の一次情報（運用/営業側の手順書）が手元にないため、最終判断は保留。
   - 現時点の判定は「利用確認側の一次整理」であり、合意後に維持/廃止を確定する。
 
-## 廃止対象リスト（暫定 / RUN_ID: 20251224T160500Z）
+## 決裁待ち項目（RUN_ID: 20251224T162000Z）
+- 必要な一次情報:
+  - Touch/営業デモの運用手順書（担当: 事業/営業側、または現行デモ運用の一次情報保持者）
+  - 実デモ環境で `/demo` を使用しているかの実測ログ or 手順書
+- 決裁待ち理由:
+  - Web クライアント/非 Phase2 ドキュメントから利用実態を特定できず、廃止判断の根拠が不足。
+
+## 廃止対象リスト（暫定 / RUN_ID: 20251224T162000Z）
 - 判定基準: 「Web クライアント/非 Phase2 ドキュメントに利用記述なし」かつ「代替 `/touch` 系が存在する」。
+- 決裁状態: Touch/営業デモ手順の一次情報が未取得のため、**暫定**（保留扱い）。
 - 対象エンドポイント:
   - `/demo/user/{param}`
   - `/demo/patient/firstVisitors/{param}`
