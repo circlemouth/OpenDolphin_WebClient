@@ -58,7 +58,7 @@ class OrcaMasterResourceTest {
         assertNotNull(entry.getValidTo());
         OrcaMasterMeta meta = entry.getMeta();
         assertNotNull(meta);
-        assertEquals("orca-db", meta.getDataSource());
+        assertEquals("server", meta.getDataSource());
         assertEquals("20251219T144408Z", meta.getRunId());
         assertNotNull(meta.getFetchedAt());
     }
