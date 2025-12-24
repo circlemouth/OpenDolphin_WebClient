@@ -58,14 +58,15 @@ public class OrcaAcceptanceListResource extends AbstractResource {
         try {
             String body = resolveAcceptListPayload();
             markSuccess(details);
-            recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.SUCCESS);
+            recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.SUCCESS, null, null);
             return Response.ok(body, MediaType.APPLICATION_XML_TYPE)
                     .header("X-Run-Id", RUN_ID)
                     .build();
         } catch (RuntimeException ex) {
-            markFailure(details, Response.Status.BAD_GATEWAY.getStatusCode(),
-                    "orca.acceptlist.error", ex.getMessage());
-            recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.FAILURE);
+            String errorCode = "orca.acceptlist.error";
+            String errorMessage = ex.getMessage();
+            markFailure(details, Response.Status.BAD_GATEWAY.getStatusCode(), errorCode, errorMessage);
+            recordAudit(request, resourcePath, details, AuditEventEnvelope.Outcome.FAILURE, errorCode, errorMessage);
             throw ex;
         }
     }
@@ -123,7 +124,7 @@ public class OrcaAcceptanceListResource extends AbstractResource {
     }
 
     private void recordAudit(HttpServletRequest request, String resourcePath, Map<String, Object> details,
-            AuditEventEnvelope.Outcome outcome) {
+            AuditEventEnvelope.Outcome outcome, String errorCode, String errorMessage) {
         if (sessionAuditDispatcher == null) {
             return;
         }
@@ -146,6 +147,6 @@ public class OrcaAcceptanceListResource extends AbstractResource {
 
         payload.setDetails(details);
 
-        sessionAuditDispatcher.record(payload, outcome, null, null);
+        sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
     }
 }

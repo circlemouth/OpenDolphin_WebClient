@@ -13,6 +13,7 @@
 ## 実装メモ（2025-12-24）
 - `OrcaAcceptanceListResource` の stub fallback を廃止し、`OrcaTransport` 実接続に統一。
 - acceptlstv2 の成功/失敗で監査詳細（status / httpStatus / errorCode / errorMessage）を記録。
+- errorCode/errorMessage を監査エンベロープにも反映。
 
 ## 未実施（明文化が必要な未対応）
 - Stub/実接続の切替条件（どの設定で stub を有効化するか）の運用ルール記載。
