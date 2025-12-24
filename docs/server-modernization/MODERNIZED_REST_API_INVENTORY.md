@@ -336,9 +336,9 @@
 >
 > **2025-12-24 棚卸し**: `open.dolphin.rest.DemoResourceAsp` で 15 API の JSON 実装が完了。`web.xml` には XML 版（`DemoResource`/`DemoResourceASP`）も登録済みのため、公開整理は Demo API 整理の方針に合わせる。
 >
-> **2025-12-24 利用確認 (RUN_ID: 20251224T162000Z)**: Web クライアント/非 Phase2 ドキュメントに `/demo` の利用記述が見当たらず、15 API は「保留（決裁待ち）」。Touch/営業デモ手順の一次情報が未確認のため最終確定は未了。
+> **2025-12-24 利用確認 (RUN_ID: 20251224T163500Z)**: Web クライアント/非 Phase2 ドキュメントに `/demo` の利用記述が見当たらず、15 API は「保留（決裁待ち）」。Touch/営業デモ手順の一次情報が未確認のため最終確定は未了。
 
-#### Demo エンドポイント一覧（2025-12-24 / RUN_ID: 20251224T162000Z）
+#### Demo エンドポイント一覧（2025-12-24 / RUN_ID: 20251224T163500Z）
 
 | ID | HTTP | パス | 機能概要 | 実装形態 | 運用判断 |
 | --- | --- | --- | --- | --- | --- |
@@ -359,7 +359,7 @@
 | Demo-15 | GET | `/demo/user/{param}` | デモユーザーの資格情報を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
 
 ※ 運用判断の確定は Touch/営業デモ手順の一次情報確認後に行う（現時点は「保留」＝決裁待ち）。
-RUN_ID: 20251224T162000Z
+RUN_ID: 20251224T163500Z
 
 ### JsonTouchResource (`/touch/jtouch`)
 - `/touch/jtouch` 系は JSON ベースの軽量 API として患者検索、受付パッケージ取得、スタンプ取得などを提供。【F:server-modernized/src/main/java/open/dolphin/touch/JsonTouchResource.java†L69-L488】
