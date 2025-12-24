@@ -336,29 +336,30 @@
 >
 > **2025-12-24 棚卸し**: `open.dolphin.rest.DemoResourceAsp` で 15 API の JSON 実装が完了。`web.xml` には XML 版（`DemoResource`/`DemoResourceASP`）も登録済みのため、公開整理は Demo API 整理の方針に合わせる。
 >
-> **2025-12-24 利用確認 (RUN_ID: 20251224T160500Z)**: Web クライアント/非 Phase2 ドキュメントに `/demo` の利用記述が見当たらず、15 API は暫定で「廃止候補」。Touch/営業デモ手順の一次情報が未確認のため最終確定は保留。
+> **2025-12-24 利用確認 (RUN_ID: 20251224T162000Z)**: Web クライアント/非 Phase2 ドキュメントに `/demo` の利用記述が見当たらず、15 API は「保留（決裁待ち）」。Touch/営業デモ手順の一次情報が未確認のため最終確定は未了。
 
-#### Demo エンドポイント一覧（2025-12-24 / RUN_ID: 20251224T160500Z）
+#### Demo エンドポイント一覧（2025-12-24 / RUN_ID: 20251224T162000Z）
 
 | ID | HTTP | パス | 機能概要 | 実装形態 | 運用判断 |
 | --- | --- | --- | --- | --- | --- |
-| Demo-01 | GET | `/demo/document/progressCourse/{param}` | デモカルテの経過記録 XML を返し、看護業務フローを再現。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-02 | GET | `/demo/item/laboItem/{param}` | 単項目ラボトレンドを返却しグラフ表示を再現。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-03 | GET | `/demo/module/diagnosis/{param}` | 登録診断のページング取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-04 | GET | `/demo/module/laboTest/{param}` | 検査結果モジュール一覧を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-05 | GET | `/demo/module/rp/{param}` | 処方モジュールを返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-06 | GET | `/demo/module/schema/{param}` | スキーマ画像を Base64 で返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-07 | GET | `/demo/module/{param}` | 任意 entity のモジュール（観察値等）取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-08 | GET | `/demo/patient/firstVisitors/{param}` | 初診患者一覧を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-09 | GET | `/demo/patient/visit/{param}` | 来院履歴を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-10 | GET | `/demo/patient/visitLast/{param}` | 最終来院情報を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-11 | GET | `/demo/patient/visitRange/{param}` | 期間指定の来院履歴を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-12 | GET | `/demo/patient/{pk}` | 患者基本情報を取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-13 | GET | `/demo/patientPackage/{pk}` | 患者パッケージ（患者＋保険＋アレルギー）取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-14 | GET | `/demo/patients/name/{param}` | 氏名検索で患者リストを返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
-| Demo-15 | GET | `/demo/user/{param}` | デモユーザーの資格情報を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 廃止候補（利用未確認） |
+| Demo-01 | GET | `/demo/document/progressCourse/{param}` | デモカルテの経過記録 XML を返し、看護業務フローを再現。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-02 | GET | `/demo/item/laboItem/{param}` | 単項目ラボトレンドを返却しグラフ表示を再現。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-03 | GET | `/demo/module/diagnosis/{param}` | 登録診断のページング取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-04 | GET | `/demo/module/laboTest/{param}` | 検査結果モジュール一覧を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-05 | GET | `/demo/module/rp/{param}` | 処方モジュールを返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-06 | GET | `/demo/module/schema/{param}` | スキーマ画像を Base64 で返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-07 | GET | `/demo/module/{param}` | 任意 entity のモジュール（観察値等）取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-08 | GET | `/demo/patient/firstVisitors/{param}` | 初診患者一覧を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-09 | GET | `/demo/patient/visit/{param}` | 来院履歴を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-10 | GET | `/demo/patient/visitLast/{param}` | 最終来院情報を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-11 | GET | `/demo/patient/visitRange/{param}` | 期間指定の来院履歴を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-12 | GET | `/demo/patient/{pk}` | 患者基本情報を取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-13 | GET | `/demo/patientPackage/{pk}` | 患者パッケージ（患者＋保険＋アレルギー）取得。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-14 | GET | `/demo/patients/name/{param}` | 氏名検索で患者リストを返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
+| Demo-15 | GET | `/demo/user/{param}` | デモユーザーの資格情報を返却。 | JSON: `DemoResourceAsp` / XML: `DemoResourceASP`・`DemoResource` | 保留（決裁待ち: Touch/営業デモ手順未確認） |
 
-※ 運用判断の確定は Touch/営業デモ手順の一次情報確認後に行う（現時点は「廃止候補」＝合意待ち）。
+※ 運用判断の確定は Touch/営業デモ手順の一次情報確認後に行う（現時点は「保留」＝決裁待ち）。
+RUN_ID: 20251224T162000Z
 
 ### JsonTouchResource (`/touch/jtouch`)
 - `/touch/jtouch` 系は JSON ベースの軽量 API として患者検索、受付パッケージ取得、スタンプ取得などを提供。【F:server-modernized/src/main/java/open/dolphin/touch/JsonTouchResource.java†L69-L488】
