@@ -198,8 +198,11 @@ class LogFilterTest {
             HttpServletRequest httpReq = (HttpServletRequest) req;
             httpReq.setAttribute(AbstractResource.ERROR_CODE_ATTRIBUTE, "mock_error");
             httpReq.setAttribute(AbstractResource.ERROR_MESSAGE_ATTRIBUTE, "mock failure");
+            Map<String, Object> errorDetails = new HashMap<>();
+            errorDetails.put("detailKey", "detailValue");
+            httpReq.setAttribute(AbstractResource.ERROR_DETAILS_ATTRIBUTE, errorDetails);
             HttpServletResponse httpRes = (HttpServletResponse) res;
-            httpRes.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+            httpRes.setStatus(HttpServletResponse.SC_BAD_REQUEST);
         };
         stubResponseOutput(response);
 
@@ -217,7 +220,7 @@ class LogFilterTest {
         when(request.getRequestURI()).thenReturn("/openDolphin/resources/error");
         when(request.getMethod()).thenReturn("GET");
         when(request.getRemoteAddr()).thenReturn("192.0.2.50");
-        when(response.getStatus()).thenReturn(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+        when(response.getStatus()).thenReturn(HttpServletResponse.SC_BAD_REQUEST);
 
         filter.doFilter(request, response, chain);
 
@@ -231,10 +234,53 @@ class LogFilterTest {
         assertEquals("mock failure", errorMessageCaptor.getValue());
         Map<String, Object> details = payloadCaptor.getValue().getDetails();
         assertEquals("failed", details.get("status"));
-        assertEquals(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, details.get("httpStatus"));
+        assertEquals(HttpServletResponse.SC_BAD_REQUEST, details.get("httpStatus"));
         assertEquals("mock_error", details.get("errorCode"));
         assertEquals("mock_error", details.get("reason"));
         assertEquals("mock failure", details.get("errorMessage"));
+        assertEquals("detailValue", details.get("detailKey"));
+        assertEquals(Boolean.TRUE, details.get("validationError"));
+    }
+
+    @Test
+    void unauthorizedAuditIncludesErrorCodeAndMessage() throws Exception {
+        when(userService.authenticate(anyString(), anyString())).thenReturn(false);
+        SessionAuditDispatcher dispatcher = mock(SessionAuditDispatcher.class);
+        setField("sessionAuditDispatcher", dispatcher);
+
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpServletResponse response = mock(HttpServletResponse.class);
+        FilterChain chain = mock(FilterChain.class);
+        stubResponseOutput(response);
+
+        Map<String, Object> attributes = new HashMap<>();
+        doAnswer(invocation -> {
+            attributes.put(invocation.getArgument(0, String.class), invocation.getArgument(1));
+            return null;
+        }).when(request).setAttribute(anyString(), any());
+        when(request.getAttribute(anyString())).thenAnswer(invocation -> attributes.get(invocation.getArgument(0, String.class)));
+
+        Map<String, String> headers = new HashMap<>();
+        when(request.getHeader(anyString())).thenAnswer(invocation -> headers.get(invocation.getArgument(0, String.class)));
+        when(request.getRequestURI()).thenReturn("/openDolphin/resources/protected");
+        when(request.getMethod()).thenReturn("POST");
+        when(request.getRemoteAddr()).thenReturn("192.0.2.51");
+
+        filter.doFilter(request, response, chain);
+
+        ArgumentCaptor<AuditEventPayload> payloadCaptor = ArgumentCaptor.forClass(AuditEventPayload.class);
+        ArgumentCaptor<String> errorCodeCaptor = ArgumentCaptor.forClass(String.class);
+        ArgumentCaptor<String> errorMessageCaptor = ArgumentCaptor.forClass(String.class);
+        verify(dispatcher).record(payloadCaptor.capture(), eq(AuditEventEnvelope.Outcome.FAILURE),
+                errorCodeCaptor.capture(), errorMessageCaptor.capture());
+
+        assertEquals("unauthorized", errorCodeCaptor.getValue());
+        assertEquals("Authentication required", errorMessageCaptor.getValue());
+        Map<String, Object> details = payloadCaptor.getValue().getDetails();
+        assertEquals("failed", details.get("status"));
+        assertEquals("unauthorized", details.get("errorCode"));
+        assertEquals("Authentication required", details.get("errorMessage"));
+        assertEquals("authentication_failed", details.get("reason"));
     }
 
     private void stubResponseOutput(HttpServletResponse response) throws Exception {
