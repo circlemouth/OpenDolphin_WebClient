@@ -54,8 +54,6 @@
                 open.dolphin.touch.patient.TouchPatientResource,
                 open.dolphin.touch.stamp.TouchStampResource,
                 open.dolphin.touch.user.TouchUserResource,
-                open.dolphin.touch.DemoResource,
-                open.dolphin.touch.DemoResourceASP,
                 open.dolphin.touch.EHTResource,
                 open.dolphin.adm10.rest.JsonTouchResource,
                 open.dolphin.adm20.rest.JsonTouchResource,
