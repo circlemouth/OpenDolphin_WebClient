@@ -2,15 +2,103 @@
   {
     "id": "task-yaml-qqptk4-src-server-moder",
     "name": "[server modernized gap implementation plan 20251221] ORCA_wrapper_監査補完\n期間: 01/01 17:00 - 01/03 17:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA wrapper 監査補完\n\n- Wrapper API の recordAudit 未実装箇所を補完。\n- TraceId/FacilityId の引き回しを統一。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
-    "model": "YAML App",
+    "model": "Codex CLI",
     "status": "completed",
     "importance": "high",
     "urgency": "medium",
+    "branchName": "task/task-yaml-qqptk4-src-server-moder",
+    "baseBranch": "main",
+    "worktreePath": null,
+    "createWorktree": false,
     "createdAt": "2025-12-25T03:04:32.202Z",
     "updatedAt": "2025-12-25T03:58:58.929Z",
     "requiresTerminal": false,
+    "bookmarked": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "autoEvaluationNotBefore": null,
+    "useTmux": false,
+    "taskType": "yaml-plan",
+    "modelId": null,
+    "latestVersion": null,
+    "currentVersion": null,
+    "installSteps": [],
+    "installCommand": null,
+    "createdAutomatically": false,
+    "dependencies": [
+      "task-yaml-1h3eexs-src-server-moder"
+    ]
+  },
+  {
+    "id": "task-yaml-f2po12-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] WebClient前提API_実装切替\n期間: 01/05 11:00 - 01/08 11:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# Web クライアント前提 API 実装切替\n\n- /api01rv2/claim/outpatient/*, /orca21/medicalmodv2/outpatient を実実装へ切替。\n- mock 固定レスポンスの撤去と監査メタの整合を行う。\n\nYAML ID: src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md",
+    "model": "Codex CLI",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "medium",
+    "branchName": "task/task-yaml-f2po12-src-server-moder",
+    "baseBranch": "main",
+    "worktreePath": null,
     "createWorktree": false,
-    "branchName": "task/task-yaml-qqptk4-src-server-moder",
+    "createdAt": "2025-12-25T03:58:50.901Z",
+    "updatedAt": "2025-12-25T03:58:50.901Z",
+    "requiresTerminal": false,
+    "bookmarked": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "autoEvaluationNotBefore": null,
+    "useTmux": false,
+    "taskType": "yaml-plan",
+    "modelId": null,
+    "latestVersion": null,
+    "currentVersion": null,
+    "installSteps": [],
+    "installCommand": null,
+    "createdAutomatically": false,
+    "dependencies": [
+      "task-yaml-1w0r8vv-src-server-moder",
+      "task-yaml-qqptk4-src-server-moder"
+    ]
+  },
+  {
+    "id": "task-1766659835390-172074",
+    "name": "[server modernized gap implementation plan 20251221] WebClient前提API_実装切替\n期間: 01/05 11:00 - 01/08 11:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# Web クライアント前提 API 実装切替\n\n- /api01rv2/claim/outpatient/*, /orca21/medicalmodv2/outpatient を実実装へ切替。\n- mock 固定レスポンスの撤去と監査メタの整合を行う。\n\nYAML ID: src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md",
+    "model": "Codex CLI",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-25T10:50:35.390Z",
+    "updatedAt": "2025-12-25T10:50:35.447Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
+  },
+  {
+    "id": "task-yaml-1sqo8s5-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] ORCA_POST_実装切替\n期間: 01/09 17:00 - 01/12 17:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# ORCA POST 実装切替\n\n- /orca/medical/records, /orca/chart/subjectives 等を実実装へ。\n- Feature flag で stub/real を切替可能にする。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "low",
+    "createdAt": "2025-12-25T10:51:06.584Z",
+    "updatedAt": "2025-12-25T10:51:06.584Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1sqo8s5-src-server-moder",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -22,43 +110,46 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md",
       "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
       "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
+      "pathId": "src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md",
       "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-25T03:04:30.201Z"
+      "addedAt": "2025-12-25T10:51:06.550Z"
     },
     "labels": [
       "server modernized gap implementation plan 20251221",
       "src / server_modernized_gap_20251221 / 05_orca_wrappers"
     ],
     "dependencies": [
-      "task-yaml-1h3eexs-src-server-moder"
+      "task-yaml-1tgddhi-src-server-moder",
+      "task-yaml-1crbncr-src-server-moder",
+      "task-yaml-qqptk4-src-server-moder",
+      "task-yaml-8wd8ta-src-server-moder"
     ],
     "schedule": {
-      "startMs": 1767254400000,
-      "endMs": 1767427200000,
-      "durationDays": 2
+      "startMs": 1767945600000,
+      "endMs": 1768204800000,
+      "durationDays": 3
     },
     "category": "src / server_modernized_gap_20251221 / 05_orca_wrappers",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# ORCA wrapper 監査補完\n\n- Wrapper API の recordAudit 未実装箇所を補完。\n- TraceId/FacilityId の引き回しを統一。"
+    "description": "# ORCA POST 実装切替\n\n- /orca/medical/records, /orca/chart/subjectives 等を実実装へ。\n- Feature flag で stub/real を切替可能にする。"
   },
   {
-    "id": "task-yaml-f2po12-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] WebClient前提API_実装切替\n期間: 01/05 11:00 - 01/08 11:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# Web クライアント前提 API 実装切替\n\n- /api01rv2/claim/outpatient/*, /orca21/medicalmodv2/outpatient を実実装へ切替。\n- mock 固定レスポンスの撤去と監査メタの整合を行う。\n\nYAML ID: src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md",
+    "id": "task-yaml-1yg8yad-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] 品質リリース_前提ドキュメント整備\n期間: 01/07 09:00 - 01/08 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 品質リリース 前提ドキュメント整備\n\n- 品質/リリース判定に必要な前提文書を先行作成。\n- 監査/性能/証跡の観点を整理。\n\nYAML ID: src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md",
     "model": "YAML App",
     "status": "pending",
-    "importance": "high",
+    "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-25T03:58:50.901Z",
-    "updatedAt": "2025-12-25T03:58:50.901Z",
+    "createdAt": "2025-12-25T10:51:26.555Z",
+    "updatedAt": "2025-12-25T10:51:26.555Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-f2po12-src-server-moder",
+    "branchName": "task/task-yaml-1yg8yad-src-server-moder",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -70,30 +161,53 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md",
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md",
       "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
       "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md",
+      "pathId": "src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md",
       "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-25T03:58:50.881Z"
+      "addedAt": "2025-12-25T10:51:26.507Z"
     },
     "labels": [
       "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 06_server_ops_required"
+      "src / server_modernized_gap_20251221 / 07_quality_release"
     ],
     "dependencies": [
-      "task-yaml-1w0r8vv-src-server-moder",
-      "task-yaml-qqptk4-src-server-moder"
+      "task-yaml-154fzae-src-server-moder"
     ],
     "schedule": {
-      "startMs": 1767578400000,
-      "endMs": 1767837600000,
-      "durationDays": 3
+      "startMs": 1767744000000,
+      "endMs": 1767830400000,
+      "durationDays": 1
     },
-    "category": "src / server_modernized_gap_20251221 / 06_server_ops_required",
+    "category": "src / server_modernized_gap_20251221 / 07_quality_release",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# Web クライアント前提 API 実装切替\n\n- /api01rv2/claim/outpatient/*, /orca21/medicalmodv2/outpatient を実実装へ切替。\n- mock 固定レスポンスの撤去と監査メタの整合を行う。"
+    "description": "# 品質リリース 前提ドキュメント整備\n\n- 品質/リリース判定に必要な前提文書を先行作成。\n- 監査/性能/証跡の観点を整理。"
+  },
+  {
+    "id": "task-1766659957755-b915a6",
+    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] 品質リリース_前提ドキュメント整備\n期間: 01/07 09:00 - 01/08 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 品質リリース 前提ドキュメント整備\n\n- 品質/リリース判定に必要な前提文書を先行作成。\n- 監査/性能/証跡の観点を整理。\n\nYAML ID: src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md",
+    "model": "Codex CLI",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-25T10:52:37.755Z",
+    "updatedAt": "2025-12-25T10:52:41.115Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1766659957755-b915a6",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1766659957753-dxc42tht",
+    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] 品質リリース_前提ドキュメント整備\n期間: 01/07 09:00 - 01/08 09:00 / 優先度: medium / 緊急度: medium / エージェント: codex\n\n# 品質リリース 前提ドキュメント整備\n\n- 品質/リリース判定に必要な前提文書を先行作成。\n- 監査/性能/証跡の観点を整理。\n\nYAML ID: src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1766659957755-b915a6"
   }
 ]
