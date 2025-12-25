@@ -8,6 +8,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
@@ -39,10 +40,25 @@ public class OrcaPatientResource extends AbstractOrcaRestResource {
         String facilityId = requireFacilityId(request);
 
         if (payload == null || payload.getOperation() == null) {
+            Map<String, Object> auditDetails = new HashMap<>();
+            auditDetails.put("facilityId", facilityId);
+            auditDetails.put("validationError", Boolean.TRUE);
+            auditDetails.put("field", "operation");
+            markFailureDetails(auditDetails, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "operation is required");
+            recordAudit(request, "ORCA_PATIENT_MUTATION", auditDetails, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "operation", "operation is required");
         }
         if (payload.getPatient() == null || payload.getPatient().getPatientId() == null
                 || payload.getPatient().getPatientId().isBlank()) {
+            Map<String, Object> auditDetails = new HashMap<>();
+            auditDetails.put("facilityId", facilityId);
+            auditDetails.put("operation", payload.getOperation());
+            auditDetails.put("validationError", Boolean.TRUE);
+            auditDetails.put("field", "patient.patientId");
+            markFailureDetails(auditDetails, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "patientId is required");
+            recordAudit(request, "ORCA_PATIENT_MUTATION", auditDetails, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "patient.patientId", "patientId is required");
         }
 
@@ -68,7 +84,11 @@ public class OrcaPatientResource extends AbstractOrcaRestResource {
             case "update" -> {
                 PatientModel existing = patientServiceBean.getPatientById(facilityId, payload.getPatient().getPatientId());
                 if (existing == null) {
-                    throw restError(request, jakarta.ws.rs.core.Response.Status.NOT_FOUND, "patient_not_found",
+                    Map<String, Object> missingAudit = new HashMap<>(auditDetails);
+                    markFailureDetails(missingAudit, Response.Status.NOT_FOUND.getStatusCode(),
+                            "patient_not_found", "Patient not found");
+                    recordAudit(request, "ORCA_PATIENT_MUTATION", missingAudit, AuditEventEnvelope.Outcome.FAILURE);
+                    throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
                             "Patient not found");
                 }
                 PatientModel update = toPatientModel(payload.getPatient(), facilityId);
@@ -87,7 +107,15 @@ public class OrcaPatientResource extends AbstractOrcaRestResource {
                 recordAudit(request, "ORCA_PATIENT_MUTATION", auditDetails, AuditEventEnvelope.Outcome.FAILURE);
                 return response;
             }
-            default -> throw validationError(request, "operation", "Unsupported operation: " + payload.getOperation());
+            default -> {
+                Map<String, Object> unsupportedAudit = new HashMap<>(auditDetails);
+                unsupportedAudit.put("validationError", Boolean.TRUE);
+                unsupportedAudit.put("field", "operation");
+                markFailureDetails(unsupportedAudit, Response.Status.BAD_REQUEST.getStatusCode(),
+                        "invalid_request", "Unsupported operation: " + payload.getOperation());
+                recordAudit(request, "ORCA_PATIENT_MUTATION", unsupportedAudit, AuditEventEnvelope.Outcome.FAILURE);
+                throw validationError(request, "operation", "Unsupported operation: " + payload.getOperation());
+            }
         }
     }
 

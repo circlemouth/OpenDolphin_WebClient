@@ -8,6 +8,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.HashMap;
@@ -51,18 +52,39 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         String facilityId = requireFacilityId(request);
 
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "patientId");
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "Patient_ID is required");
+            recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "patientId", "Patient_ID is required");
         }
 
         Date fromDate = parseDate(payload.getFromDate(), ModelUtils.AD1800);
         Date toDate = parseDate(payload.getToDate(), new Date());
         if (fromDate.after(toDate)) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", payload.getPatientId());
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "fromDate");
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "fromDate must be before toDate");
+            recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "fromDate", "fromDate must be before toDate");
         }
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, payload.getPatientId());
         if (patient == null) {
-            throw restError(request, jakarta.ws.rs.core.Response.Status.NOT_FOUND, "patient_not_found",
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", payload.getPatientId());
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "patient_not_found", "Patient not found");
+            recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
                     "Patient not found");
         }
 
