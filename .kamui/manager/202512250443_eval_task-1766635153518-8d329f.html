@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - WebClient前提API_実装切替</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-title {
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .score-banner {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+        margin-bottom: 12px;
+      }
+      .score-total {
+        font-size: 20px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .chart-row {
+        display: grid;
+        grid-template-columns: 220px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      .bullet {
+        margin: 0 0 4px 0;
+        padding-left: 16px;
+      }
+      .path-link {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - WebClient前提API_実装切替</h1>
+        <p class="monitor-description">対象: /api01rv2/claim/outpatient/*, /orca21/medicalmodv2/outpatient の実実装切替と監査メタ整合。</p>
+      </header>
+
+      <div class="summary-box">
+        <div class="summary-title">タスク概要</div>
+        <div>Webクライアントが前提とする外来請求・外来診療 API をモック固定レスポンスから実データ参照へ切替。監査メタ（runId/traceId/dataSource等）の整合とレスポンス構造の現実化を評価。</div>
+        <div>比較対象ブランチ: task/task-1766635153518-8d329f, task/task-1766635153720-65dd1e</div>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>比較項目</th>
+            <th>codex / task-1766635153518-8d329f</th>
+            <th>codex / task-1766635153720-65dd1e</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">総合スコア</td>
+            <td>
+              <div class="score-banner">
+                <div class="score-total">428 / 600 🥈</div>
+                <div class="score-sub">総合評価: 72点 (メダル: 🥈 / silver)</div>
+              </div>
+              <div class="chart-row">
+                <svg viewBox="0 0 200 200" width="200" height="200" aria-label="hex chart">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#eef3f4" stroke="#90a4aa" stroke-width="1" />
+                  <polygon points="100.0,37.6 151.3,70.4 148.5,128.0 100.0,154.4 50.1,128.8 54.3,73.6" fill="rgba(120,150,160,0.35)" stroke="#5f7780" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 78点</div>
+                  <div>実装緻密性 74点</div>
+                  <div>監査メタ整合 70点</div>
+                  <div>API忠実性 68点</div>
+                  <div>テスト妥当性 72点</div>
+                  <div>運用/保守 66点</div>
+                </div>
+              </div>
+              <div class="section-title">評価理由</div>
+              <ul class="bullet">
+                <li>Claim/Medical ともに実データ参照の導線は追加され、モック固定値からの脱却は進んだ。</li>
+                <li>Medical 側は診断のみ実装で、処方・検査・処置・メモが「未取得」固定となり、実実装として不足。</li>
+                <li>監査メタはヘッダ依存が多く、dataSourceTransition 等が実処理から算出されていない点で精度に課題。</li>
+                <li>レスポンス型が Map のため、型安全性・将来互換性に懸念が残る。</li>
+                <li>テストはメタ確認中心で、実データ組み立ての検証が薄い。</li>
+              </ul>
+              <div class="section-title">主な差分</div>
+              <div class="path-link">.worktrees/task-1766635153518-8d329f/server-modernized/src/main/java/open/dolphin/rest/OutpatientClaimResource.java</div>
+              <div class="path-link">.worktrees/task-1766635153518-8d329f/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalModV2Resource.java</div>
+              <div class="path-link">.worktrees/task-1766635153518-8d329f/server-modernized/src/test/java/open/dolphin/rest/OutpatientClaimResourceTest.java</div>
+              <div class="path-link">.worktrees/task-1766635153518-8d329f/server-modernized/src/test/java/open/dolphin/rest/orca/OrcaMedicalModV2ResourceTest.java</div>
+              <div class="section-title">懸念/リスク</div>
+              <ul class="bullet">
+                <li>Medical の各セクションが未取得固定のため、Web クライアント側の期待データに不足。</li>
+                <li>監査メタがヘッダ値に依存しており、実取得の整合が担保されない。</li>
+                <li>レスポンス構造が Map で型保証が弱く、変更時に破壊的な差異が起きやすい。</li>
+              </ul>
+              <div class="section-title">検証状況</div>
+              <div><span class="status-badge">未実行</span> 追加テスト/起動確認は本評価では未実行。</div>
+            </td>
+            <td>
+              <div class="score-banner">
+                <div class="score-total">510 / 600 🏆</div>
+                <div class="score-sub">総合評価: 86点 (メダル: 🥇 / gold)</div>
+              </div>
+              <div class="chart-row">
+                <svg viewBox="0 0 200 200" width="200" height="200" aria-label="hex chart">
+                  <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#eef3f4" stroke="#90a4aa" stroke-width="1" />
+                  <polygon points="100.0,28.0 161.0,64.8 159.6,134.4 100.0,167.2 43.2,132.8 44.6,68.0" fill="rgba(88,140,160,0.4)" stroke="#3f6a7a" stroke-width="1" />
+                </svg>
+                <div class="metric-list">
+                  <div>機能合理性 90点</div>
+                  <div>実装緻密性 88点</div>
+                  <div>監査メタ整合 86点</div>
+                  <div>API忠実性 84点</div>
+                  <div>テスト妥当性 82点</div>
+                  <div>運用/保守 80点</div>
+                </div>
+              </div>
+              <div class="section-title">評価理由</div>
+              <ul class="bullet">
+                <li>Claim/Medical ともに DTO を追加し、実データ（PVT/Karte/Module）からの組み立てに移行。</li>
+                <li>監査メタ（runId/traceId/requestId/dataSource 等）が実処理と連動し、telemetry の整合が高い。</li>
+                <li>Medical は診断/処方/検査/処置/メモを解析し、Web 前提の情報密度を満たしている。</li>
+                <li>テストでは Fake Service を追加し、診断・処方・メモなどの実データ流れを検証。</li>
+              </ul>
+              <div class="section-title">主な差分</div>
+              <div class="path-link">.worktrees/task-1766635153720-65dd1e/server-modernized/src/main/java/open/dolphin/rest/OutpatientClaimResource.java</div>
+              <div class="path-link">.worktrees/task-1766635153720-65dd1e/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalModV2Resource.java</div>
+              <div class="path-link">.worktrees/task-1766635153720-65dd1e/server-modernized/src/main/java/open/dolphin/dto/outpatient/ClaimOutpatientResponse.java</div>
+              <div class="path-link">.worktrees/task-1766635153720-65dd1e/server-modernized/src/main/java/open/dolphin/dto/outpatient/MedicalOutpatientResponse.java</div>
+              <div class="path-link">.worktrees/task-1766635153720-65dd1e/server-modernized/src/test/java/open/dolphin/rest/OutpatientClaimResourceTest.java</div>
+              <div class="path-link">.worktrees/task-1766635153720-65dd1e/server-modernized/src/test/java/open/dolphin/rest/orca/OrcaMedicalModV2ResourceTest.java</div>
+              <div class="section-title">懸念/リスク</div>
+              <ul class="bullet">
+                <li>Claim 側は直近 24h のドキュメントのみ参照するため、対象期間不足の可能性。</li>
+                <li>Medical の処置バンドル対象エンティティの網羅性は今後の追加確認が必要。</li>
+                <li>データ量が多い環境での性能評価（PVT + Karte 組み立て）は未評価。</li>
+              </ul>
+              <div class="section-title">検証状況</div>
+              <div><span class="status-badge">未実行</span> 本評価内で起動・E2E 実行は未実施。</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">コミット</td>
+            <td>
+              <div class="agent-meta">
+                <span class="agent-label">c82aeac8 Implement outpatient claim/medical responses</span>
+              </div>
+              <div>差分: 4 files changed, 615 insertions(+), 93 deletions(-)</div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="agent-label">c7fc5860 Implement real outpatient claim/medical endpoints</span>
+              </div>
+              <div>差分: 7 files changed, 1702 insertions(+), 50 deletions(-)</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">未コミット</td>
+            <td>なし（git status clean）</td>
+            <td>なし（git status clean）</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
