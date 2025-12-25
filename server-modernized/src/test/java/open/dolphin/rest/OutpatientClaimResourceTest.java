@@ -95,6 +95,7 @@ class OutpatientClaimResourceTest extends RuntimeDelegateTestSupport {
         assertEquals("F001", details.get("facilityId"));
         assertEquals("resolve_master", details.get("telemetryFunnelStage"));
         assertEquals(1, details.get("recordsReturned"));
+        assertEquals("SUCCESS", details.get("outcome"));
 
         assertNotNull(auditDispatcher.payload, "Audit dispatcher should receive payload");
         assertEquals("ORCA_CLAIM_OUTPATIENT", auditDispatcher.payload.getAction());

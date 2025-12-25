@@ -97,7 +97,7 @@ export function OutpatientMockPage() {
           if (overrideFlags.dataSourceTransition) headers.set('x-msw-transition', overrideFlags.dataSourceTransition);
         }
         const [claimRes, medicalRes] = await Promise.all([
-          httpFetch('/api01rv2/claim/outpatient/mock', { method: 'POST', headers }),
+          httpFetch('/api01rv2/claim/outpatient', { method: 'POST', headers }),
           httpFetch('/orca21/medicalmodv2/outpatient', { method: 'POST', headers }),
         ]);
         const claimJson = (await claimRes.json().catch(() => ({}))) as FlagEnvelope;

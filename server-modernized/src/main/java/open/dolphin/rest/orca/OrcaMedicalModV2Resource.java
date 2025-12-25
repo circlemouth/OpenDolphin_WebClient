@@ -100,7 +100,7 @@ public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
 
         Map<String, Object> details = buildAuditDetails(facilityId, outpatientEntries, response);
         OutpatientFlagResponse.AuditEvent auditEvent = new OutpatientFlagResponse.AuditEvent();
-        auditEvent.setAction("ORCA_MEDICAL_OUTPATIENT");
+        auditEvent.setAction("ORCA_MEDICAL_GET");
         auditEvent.setResource("/orca21/medicalmodv2/outpatient");
         auditEvent.setOutcome("SUCCESS");
         auditEvent.setDetails(details);
@@ -110,17 +110,9 @@ public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
 
         Map<String, Object> auditPayload = new LinkedHashMap<>(details);
         auditPayload.put("recordsReturned", response.getRecordsReturned());
-        recordAudit(request, "ORCA_MEDICAL_OUTPATIENT", auditPayload, AuditEventEnvelope.Outcome.SUCCESS);
+        recordAudit(request, "ORCA_MEDICAL_GET", auditPayload, AuditEventEnvelope.Outcome.SUCCESS);
 
         return response;
-    }
-
-    @POST
-    @Path("/outpatient/mock")
-    @Consumes(MediaType.APPLICATION_JSON)
-    @Produces(MediaType.APPLICATION_JSON)
-    public MedicalOutpatientResponse postOutpatientMedicalMock(@Context HttpServletRequest request, Map<String, Object> payload) {
-        return postOutpatientMedical(request, payload);
     }
 
     private Map<String, Object> buildAuditDetails(String facilityId,
@@ -135,6 +127,8 @@ public class OrcaMedicalModV2Resource extends AbstractOrcaRestResource {
         details.put("fallbackUsed", response.isFallbackUsed());
         details.put("fetchedAt", response.getFetchedAt());
         details.put("recordsReturned", response.getRecordsReturned());
+        details.put("outcome", response.getOutcome());
+        details.put("resource", "/orca21/medicalmodv2/outpatient");
         details.put("telemetryFunnelStage", "charts_orchestration");
         if (entries != null && !entries.isEmpty()) {
             details.put("patientsReturned", entries.size());

@@ -14,3 +14,40 @@
 - Claim 側が直近 24h のドキュメント参照に限定されるため、要件上の対象期間不足の可能性がある。
 - Medical の処置バンドル対象エンティティの網羅性が未確認。
 - 本番相当データ量での性能評価・起動/E2E 検証が未実施。
+
+## API 疎通確認（ローカル）
+> RUN_ID は `YYYYMMDDThhmmssZ` で採番し、同じ値を両リクエストに使う。
+
+1. 環境起動（Docker + Web クライアント）
+   - `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+2. Web クライアント側で MSW を無効化し、modernized へ直結
+   - `export VITE_DISABLE_MSW=1`
+   - `export VITE_DEV_PROXY_TARGET=http://localhost:9080/openDolphin/resources`
+3. API 疎通確認（curl で 200 を確認）
+   - 認証は **`dolphindev` の MD5** を使用する（`1cc2f4c06fd32d0a6e2fa33f6e1c9164`）。
+   - `/api01rv2/claim/outpatient`:
+     - `curl -s -D - \`
+       `-H "userName: 1.3.6.1.4.1.9414.10.1:dolphindev" \`
+       `-H "password: 1cc2f4c06fd32d0a6e2fa33f6e1c9164" \`
+       `-H "clientUUID: devclient" \`
+       `-H "X-Facility-Id: 1.3.6.1.4.1.9414.10.1" \`
+       `-H "Content-Type: application/json" \`
+       `-H "X-Run-Id: <RUN_ID>" \`
+       `-d '{}' \`
+       `http://localhost:9080/openDolphin/resources/api01rv2/claim/outpatient`
+   - `/orca21/medicalmodv2/outpatient`:
+     - `curl -s -D - \`
+       `-H "userName: 1.3.6.1.4.1.9414.10.1:dolphindev" \`
+       `-H "password: 1cc2f4c06fd32d0a6e2fa33f6e1c9164" \`
+       `-H "clientUUID: devclient" \`
+       `-H "X-Facility-Id: 1.3.6.1.4.1.9414.10.1" \`
+       `-H "Content-Type: application/json" \`
+       `-H "X-Run-Id: <RUN_ID>" \`
+       `-d '{}' \`
+       `http://localhost:9080/openDolphin/resources/orca21/medicalmodv2/outpatient`
+4. 期待結果
+   - HTTP 200
+   - `runId=<RUN_ID>`
+   - `dataSourceTransition=server`
+   - `auditEvent.action` が claim=`ORCA_CLAIM_OUTPATIENT` / medical=`ORCA_MEDICAL_GET`
+   - `auditEvent.details` に `recordsReturned` / `outcome` を含む
