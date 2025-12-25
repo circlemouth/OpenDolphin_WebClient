@@ -109,7 +109,8 @@ public class LogFilter implements Filter {
 
             if (!authenticated) {
                 logUnauthorized(req, candidateUser, traceId);
-                recordUnauthorizedAudit(req, traceId, candidateUser, "authentication_failed", HttpServletResponse.SC_UNAUTHORIZED);
+                recordUnauthorizedAudit(req, traceId, candidateUser, "unauthorized",
+                        "Authentication required", "authentication_failed", HttpServletResponse.SC_UNAUTHORIZED);
                 sendUnauthorized(req, res, "unauthorized", "Authentication required",
                         unauthorizedDetails(candidateUser, "authentication_failed"));
                 return;
@@ -118,7 +119,9 @@ public class LogFilter implements Filter {
             String resolvedUser = resolveEffectiveUser(effectiveUser, headerUser, req);
             if (resolvedUser == null) {
                 logUnauthorized(req, candidateUser, traceId);
-                recordUnauthorizedAudit(req, traceId, candidateUser, "principal_unresolved", HttpServletResponse.SC_UNAUTHORIZED);
+                recordUnauthorizedAudit(req, traceId, candidateUser, "unauthorized",
+                        "Authenticated user is not associated with a facility",
+                        "principal_unresolved", HttpServletResponse.SC_UNAUTHORIZED);
                 sendUnauthorized(req, res, "unauthorized", "Authenticated user is not associated with a facility",
                         unauthorizedDetails(candidateUser, "principal_unresolved"));
                 return;
@@ -414,6 +417,8 @@ public class LogFilter implements Filter {
     private void recordUnauthorizedAudit(HttpServletRequest request,
             String traceId,
             String principal,
+            String errorCode,
+            String errorMessage,
             String reason,
             int statusCode) {
         if (sessionAuditDispatcher == null) {
@@ -434,6 +439,13 @@ public class LogFilter implements Filter {
         Map<String, Object> details = new HashMap<>();
         details.put("status", "failed");
         details.put("reason", reason);
+        if (errorCode != null && !errorCode.isBlank()) {
+            details.put("errorCode", errorCode);
+            details.putIfAbsent("reason", errorCode);
+        }
+        if (errorMessage != null && !errorMessage.isBlank()) {
+            details.put("errorMessage", errorMessage);
+        }
         details.put("httpStatus", statusCode);
         String facilityHeader = resolveFacilityHeader(request);
         if (facilityHeader != null) {
@@ -443,7 +455,8 @@ public class LogFilter implements Filter {
             details.put("principal", principal);
         }
         payload.setDetails(details);
-        sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE, reason, null);
+        sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE,
+                errorCode != null && !errorCode.isBlank() ? errorCode : reason, errorMessage);
         if (request != null) {
             request.setAttribute(ERROR_AUDIT_RECORDED_ATTR, Boolean.TRUE);
         }
@@ -488,6 +501,19 @@ public class LogFilter implements Filter {
         Map<String, Object> details = new HashMap<>();
         details.put("status", "failed");
         details.put("httpStatus", status);
+        String errorCode = resolveErrorCode(request, status);
+        String errorMessage = resolveErrorMessage(request, failure);
+        mergeErrorDetails(details, request);
+        if (errorCode != null && !errorCode.isBlank()) {
+            details.put("errorCode", errorCode);
+            details.putIfAbsent("reason", errorCode);
+        }
+        if (errorMessage != null && !errorMessage.isBlank()) {
+            details.put("errorMessage", errorMessage);
+        }
+        if (!details.containsKey("validationError") && (status == 400 || status == 422)) {
+            details.put("validationError", Boolean.TRUE);
+        }
         String facilityHeader = resolveFacilityHeader(request);
         if (facilityHeader != null) {
             details.put("facilityId", facilityHeader);
@@ -499,8 +525,7 @@ public class LogFilter implements Filter {
             }
         }
         payload.setDetails(details);
-        sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE, "http_" + status,
-                failure != null ? failure.getMessage() : null);
+        sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE, errorCode, errorMessage);
         request.setAttribute(ERROR_AUDIT_RECORDED_ATTR, Boolean.TRUE);
     }
 
@@ -509,5 +534,48 @@ public class LogFilter implements Filter {
             return response.getStatus();
         }
         return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+    }
+
+    private String resolveErrorCode(HttpServletRequest request, int status) {
+        if (request != null) {
+            Object attribute = request.getAttribute(AbstractResource.ERROR_CODE_ATTRIBUTE);
+            if (attribute instanceof String code && !code.isBlank()) {
+                return code;
+            }
+        }
+        return "http_" + status;
+    }
+
+    private String resolveErrorMessage(HttpServletRequest request, Throwable failure) {
+        if (request != null) {
+            Object attribute = request.getAttribute(AbstractResource.ERROR_MESSAGE_ATTRIBUTE);
+            if (attribute instanceof String message && !message.isBlank()) {
+                return message;
+            }
+        }
+        if (failure != null && failure.getMessage() != null && !failure.getMessage().isBlank()) {
+            return failure.getMessage();
+        }
+        return null;
+    }
+
+    private void mergeErrorDetails(Map<String, Object> target, HttpServletRequest request) {
+        if (target == null || request == null) {
+            return;
+        }
+        Object attribute = request.getAttribute(AbstractResource.ERROR_DETAILS_ATTRIBUTE);
+        if (!(attribute instanceof Map<?, ?> details)) {
+            return;
+        }
+        details.forEach((key, value) -> {
+            if (key == null || value == null) {
+                return;
+            }
+            String normalizedKey = key.toString();
+            if (normalizedKey.isBlank()) {
+                return;
+            }
+            target.putIfAbsent(normalizedKey, value);
+        });
     }
 }
