@@ -1,64 +1,16 @@
 [
   {
-    "id": "task-yaml-2mei71-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] Demo_API_整理\n期間: 01/07 09:00 - 01/09 09:00 / 優先度: low / 緊急度: medium / エージェント: codex\n\n# Demo API 整理\n\n- Demo 系の未移植 API を整理し、必要なもののみ実装。\n- 不要 API は廃止方針を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md",
+    "id": "task-yaml-qqptk4-src-server-moder",
+    "name": "[server modernized gap implementation plan 20251221] ORCA_wrapper_監査補完\n期間: 01/01 17:00 - 01/03 17:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA wrapper 監査補完\n\n- Wrapper API の recordAudit 未実装箇所を補完。\n- TraceId/FacilityId の引き回しを統一。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
     "model": "YAML App",
-    "status": "completed",
-    "importance": "low",
-    "urgency": "medium",
-    "createdAt": "2025-12-24T12:51:32.038Z",
-    "updatedAt": "2025-12-24T14:19:32.515Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-2mei71-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md",
-      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
-      "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md",
-      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-24T12:51:31.977Z"
-    },
-    "labels": [
-      "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 04_touch_demo"
-    ],
-    "dependencies": [
-      "task-yaml-1i5txd3-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1767744000000,
-      "endMs": 1767916800000,
-      "durationDays": 2
-    },
-    "category": "src / server_modernized_gap_20251221 / 04_touch_demo",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# Demo API 整理\n\n- Demo 系の未移植 API を整理し、必要なもののみ実装。\n- 不要 API は廃止方針を明文化。"
-  },
-  {
-    "id": "task-yaml-1w0r8vv-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] ORCA_master_API_実接続\n期間: 01/02 11:00 - 01/05 11:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA Master API 実接続\n\n- /orca/master/* を fixture から DB 実データへ切替。\n- ETag/TTL/監査メタを本番仕様に合わせる。\n\nYAML ID: src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md",
-    "model": "YAML App",
-    "status": "completed",
+    "status": "pending",
     "importance": "high",
     "urgency": "medium",
-    "createdAt": "2025-12-24T12:51:08.941Z",
-    "updatedAt": "2025-12-24T13:38:22.245Z",
+    "createdAt": "2025-12-25T03:04:32.202Z",
+    "updatedAt": "2025-12-25T03:04:32.202Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-1w0r8vv-src-server-moder",
+    "branchName": "task/task-yaml-qqptk4-src-server-moder",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -70,137 +22,55 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md",
+      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
       "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
       "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md",
+      "pathId": "src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
       "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-24T12:51:08.918Z"
-    },
-    "labels": [
-      "server modernized gap implementation plan 20251221",
-      "src / server_modernized_gap_20251221 / 06_server_ops_required"
-    ],
-    "dependencies": [
-      "task-yaml-q8k00i-src-server-moder",
-      "task-yaml-173411o-src-server-moder"
-    ],
-    "schedule": {
-      "startMs": 1767319200000,
-      "endMs": 1767578400000,
-      "durationDays": 3
-    },
-    "category": "src / server_modernized_gap_20251221 / 06_server_ops_required",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# ORCA Master API 実接続\n\n- /orca/master/* を fixture から DB 実データへ切替。\n- ETag/TTL/監査メタを本番仕様に合わせる。"
-  },
-  {
-    "id": "task-yaml-1h3eexs-src-server-moder",
-    "name": "[server modernized gap implementation plan 20251221] ORCA_wrapper_実接続_Transport\n期間: 12/29 17:00 - 01/01 17:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA wrapper 実接続 Transport 実装\n\n- StubOrcaTransport を実接続 transport に切替。\n- 監査/失敗時ログの最小セットを実装。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_Transport.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "medium",
-    "createdAt": "2025-12-24T12:45:20.369Z",
-    "updatedAt": "2025-12-24T14:08:06.266Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1h3eexs-src-server-moder",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-server-modernized-gap-implementation-23fe373454::src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_Transport.md",
-      "appId": "custom-app-server-modernized-gap-implementation-23fe373454",
-      "datasetLabel": "server modernized gap implementation plan 20251221",
-      "pathId": "src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_Transport.md",
-      "fileName": "server-modernized-gap-implementation-plan-20251221.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml",
-      "addedAt": "2025-12-24T12:45:20.344Z"
+      "addedAt": "2025-12-25T03:04:30.201Z"
     },
     "labels": [
       "server modernized gap implementation plan 20251221",
       "src / server_modernized_gap_20251221 / 05_orca_wrappers"
     ],
     "dependencies": [
-      "task-yaml-1crbncr-src-server-moder",
-      "task-yaml-1tgddhi-src-server-moder"
+      "task-yaml-1h3eexs-src-server-moder"
     ],
     "schedule": {
-      "startMs": 1766995200000,
-      "endMs": 1767254400000,
-      "durationDays": 3
+      "startMs": 1767254400000,
+      "endMs": 1767427200000,
+      "durationDays": 2
     },
     "category": "src / server_modernized_gap_20251221 / 05_orca_wrappers",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# ORCA wrapper 実接続 Transport 実装\n\n- StubOrcaTransport を実接続 transport に切替。\n- 監査/失敗時ログの最小セットを実装。"
+    "description": "# ORCA wrapper 監査補完\n\n- Wrapper API の recordAudit 未実装箇所を補完。\n- TraceId/FacilityId の引き回しを統一。"
   },
   {
-    "id": "task-1766579731034-226d06",
-    "name": "対象ファイル: .kamui/apps/server-modernized-gap-implementation-plan-20251221.yaml\n\nこのガントの進行中、未進行のタスクに関わるドキュメントを網羅的にレビューして進捗度とリポジトリの状態を合わせるように、ガントを更新して",
+    "id": "task-1766632001235-b69a9a",
+    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] ORCA_wrapper_監査補完\n期間: 01/01 17:00 - 01/03 17:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA wrapper 監査補完\n\n- Wrapper API の recordAudit 未実装箇所を補完。\n- TraceId/FacilityId の引き回しを統一。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
     "model": "Codex CLI",
     "status": "running",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-24T12:35:31.034Z",
-    "updatedAt": "2025-12-24T12:35:31.069Z",
-    "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": null,
-    "baseBranch": null,
-    "useTmux": false,
-    "singleMode": true,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null
-  },
-  {
-    "id": "task-1766580990286-e05c61",
-    "name": "🔍Monitor: [server modernized gap implementation plan 20251221] Demo_API_整理\n期間: 01/07 09:00 - 01/09 09:00 / 優先度: low / 緊急度: medium / エージェント: codex\n\n# Demo API 整理\n\n- Demo 系の未移植 API を整理し、必要なもののみ実装。\n- 不要 API は廃止方針を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-24T12:56:30.286Z",
-    "updatedAt": "2025-12-24T12:59:24.245Z",
+    "createdAt": "2025-12-25T03:06:41.235Z",
+    "updatedAt": "2025-12-25T03:06:51.291Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1766580990286-e05c61",
+    "branchName": "task/task-1766632001235-b69a9a",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
-    "aiCompetitionEntry": false,
+    "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766580973629-q4wfni5z",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] Demo_API_整理\n期間: 01/07 09:00 - 01/09 09:00 / 優先度: low / 緊急度: medium / エージェント: codex\n\n# Demo API 整理\n\n- Demo 系の未移植 API を整理し、必要なもののみ実装。\n- 不要 API は廃止方針を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1766580973638-30e6f5",
-      "task-1766580973843-20349f"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "機能合理性、緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1766581033629,
-    "worktreePath": ".worktrees/task-1766580990286-e05c61"
+    "aiCompetitionGroupId": "comp-1766632001234-ef4iklp9",
+    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] ORCA_wrapper_監査補完\n期間: 01/01 17:00 - 01/03 17:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# ORCA wrapper 監査補完\n\n- Wrapper API の recordAudit 未実装箇所を補完。\n- TraceId/FacilityId の引き回しを統一。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_監査補完.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1766632001235-b69a9a",
+    "medal": "gold",
+    "aiCompetitionScore": 90
   }
 ]
