@@ -7,6 +7,7 @@ import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.HashMap;
 import java.util.Map;
@@ -28,8 +29,15 @@ public class OrcaSubjectiveResource extends AbstractOrcaRestResource {
             SubjectiveEntryRequest payload) {
 
         requireRemoteUser(request);
-        requireFacilityId(request);
+        String facilityId = requireFacilityId(request);
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "patientId");
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "patientId is required");
+            recordAudit(request, "ORCA_SUBJECTIVES_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "patientId", "patientId is required");
         }
 

@@ -12,6 +12,7 @@ import jakarta.ws.rs.Produces;
 import jakarta.ws.rs.QueryParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -65,6 +66,13 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         String facilityId = requireFacilityId(request);
 
         if (patientId == null || patientId.isBlank()) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "patientId");
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "patientId is required");
+            recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "patientId", "patientId is required");
         }
         Date fromDate = parseDate(from, ModelUtils.AD1800);
@@ -72,7 +80,13 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, patientId);
         if (patient == null) {
-            throw restError(request, jakarta.ws.rs.core.Response.Status.NOT_FOUND, "patient_not_found",
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", patientId);
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "patient_not_found", "Patient not found");
+            recordAudit(request, "ORCA_DISEASE_IMPORT", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
                     "Patient not found");
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, patientId, fromDate);
@@ -115,12 +129,25 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         String remoteUser = requireRemoteUser(request);
         String facilityId = requireFacilityId(request);
         if (payload == null || payload.getPatientId() == null || payload.getPatientId().isBlank()) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "patientId");
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "patientId is required");
+            recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "patientId", "patientId is required");
         }
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, payload.getPatientId());
         if (patient == null) {
-            throw restError(request, jakarta.ws.rs.core.Response.Status.NOT_FOUND, "patient_not_found",
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", payload.getPatientId());
+            markFailureDetails(audit, Response.Status.NOT_FOUND.getStatusCode(),
+                    "patient_not_found", "Patient not found");
+            recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
                     "Patient not found");
         }
         KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), ModelUtils.AD1800);
