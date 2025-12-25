@@ -29,6 +29,9 @@ public class AbstractResource {
     protected static final String CAMMA = ",";
     protected static final boolean DEBUG = false;
     private static final String TRACE_ID_HEADER = "X-Trace-Id";
+    public static final String ERROR_CODE_ATTRIBUTE = AbstractResource.class.getName() + ".ERROR_CODE";
+    public static final String ERROR_MESSAGE_ATTRIBUTE = AbstractResource.class.getName() + ".ERROR_MESSAGE";
+    public static final String ERROR_STATUS_ATTRIBUTE = AbstractResource.class.getName() + ".ERROR_STATUS";
 
     protected Date parseDate(String source) {
         try {
@@ -99,6 +102,7 @@ public class AbstractResource {
             String errorCode, String message, Map<String, ?> details, Throwable cause) {
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(errorCode, "errorCode");
+        markErrorAttributes(request, status.getStatusCode(), errorCode, message);
         Map<String, Object> body = buildErrorBody(request, status.getStatusCode(), errorCode, message, details);
         Response response = Response.status(status)
                 .type(MediaType.APPLICATION_JSON_TYPE)
@@ -113,6 +117,7 @@ public class AbstractResource {
         if (response == null) {
             return;
         }
+        markErrorAttributes(request, status, errorCode, message);
         if (!response.isCommitted()) {
             response.resetBuffer();
         }
@@ -191,5 +196,18 @@ public class AbstractResource {
             body.put("validationError", Boolean.TRUE);
         }
         return body;
+    }
+
+    private static void markErrorAttributes(HttpServletRequest request, int status, String errorCode, String message) {
+        if (request == null) {
+            return;
+        }
+        request.setAttribute(ERROR_STATUS_ATTRIBUTE, status);
+        if (errorCode != null && !errorCode.isBlank()) {
+            request.setAttribute(ERROR_CODE_ATTRIBUTE, errorCode);
+        }
+        if (message != null && !message.isBlank()) {
+            request.setAttribute(ERROR_MESSAGE_ATTRIBUTE, message);
+        }
     }
 }

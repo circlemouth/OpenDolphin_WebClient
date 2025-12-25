@@ -488,6 +488,15 @@ public class LogFilter implements Filter {
         Map<String, Object> details = new HashMap<>();
         details.put("status", "failed");
         details.put("httpStatus", status);
+        String errorCode = resolveErrorCode(request, status);
+        if (errorCode != null && !errorCode.isBlank()) {
+            details.put("errorCode", errorCode);
+            details.putIfAbsent("reason", errorCode);
+        }
+        String errorMessage = resolveErrorMessage(request, failure);
+        if (errorMessage != null && !errorMessage.isBlank()) {
+            details.put("errorMessage", errorMessage);
+        }
         String facilityHeader = resolveFacilityHeader(request);
         if (facilityHeader != null) {
             details.put("facilityId", facilityHeader);
@@ -499,8 +508,7 @@ public class LogFilter implements Filter {
             }
         }
         payload.setDetails(details);
-        sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE, "http_" + status,
-                failure != null ? failure.getMessage() : null);
+        sessionAuditDispatcher.record(payload, AuditEventEnvelope.Outcome.FAILURE, errorCode, errorMessage);
         request.setAttribute(ERROR_AUDIT_RECORDED_ATTR, Boolean.TRUE);
     }
 
@@ -509,5 +517,28 @@ public class LogFilter implements Filter {
             return response.getStatus();
         }
         return HttpServletResponse.SC_INTERNAL_SERVER_ERROR;
+    }
+
+    private String resolveErrorCode(HttpServletRequest request, int status) {
+        if (request != null) {
+            Object attribute = request.getAttribute(AbstractResource.ERROR_CODE_ATTRIBUTE);
+            if (attribute instanceof String code && !code.isBlank()) {
+                return code;
+            }
+        }
+        return "http_" + status;
+    }
+
+    private String resolveErrorMessage(HttpServletRequest request, Throwable failure) {
+        if (request != null) {
+            Object attribute = request.getAttribute(AbstractResource.ERROR_MESSAGE_ATTRIBUTE);
+            if (attribute instanceof String message && !message.isBlank()) {
+                return message;
+            }
+        }
+        if (failure != null && failure.getMessage() != null && !failure.getMessage().isBlank()) {
+            return failure.getMessage();
+        }
+        return null;
     }
 }
