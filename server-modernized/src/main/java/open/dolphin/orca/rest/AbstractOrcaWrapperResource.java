@@ -37,15 +37,19 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
         }
 
         String traceId = resolveTraceId(request);
-        if (traceId != null && !traceId.isBlank()) {
-            details.put("traceId", traceId);
-        }
-
         String requestId = request != null ? request.getHeader(TRACE_HEADER) : null;
         if (requestId != null && !requestId.isBlank()) {
-            details.put("requestId", requestId.trim());
-        } else if (traceId != null && !traceId.isBlank()) {
-            details.put("requestId", traceId);
+            requestId = requestId.trim();
+            details.put("requestId", requestId);
+        }
+        if ((traceId == null || traceId.isBlank()) && requestId != null && !requestId.isBlank()) {
+            traceId = requestId;
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+            if (requestId == null || requestId.isBlank()) {
+                details.put("requestId", traceId);
+            }
         }
         return details;
     }

@@ -22,11 +22,13 @@ import open.dolphin.rest.dto.orca.PatientIdListRequest;
 import open.dolphin.rest.dto.orca.PatientIdListResponse;
 import open.dolphin.rest.dto.orca.PatientNameSearchRequest;
 import open.dolphin.rest.dto.orca.PatientSearchResponse;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  * REST wrapper for patient synchronization endpoints.
  */
 @Path("/orca")
+@SessionOperation
 public class OrcaPatientBatchResource extends AbstractOrcaWrapperResource {
 
     private OrcaWrapperService wrapperService;
