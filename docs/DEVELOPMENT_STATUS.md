@@ -1,4 +1,4 @@
-# 開発状況（単一参照, 更新日: 2025-12-19）
+# 開発状況（単一参照, 更新日: 2025-12-25）
 
 ## 現行ステータス
 - Phase2 開発ドキュメントは **Legacy/Archive（参照専用）**。Phase2 を現行フェーズとして扱わない。
@@ -18,3 +18,8 @@
 ## 補足
 - Phase2 の文書は履歴・差分確認のために保持しているが、更新は原則行わない。
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
+
+## 実施記録（最新）
+- 2025-12-25: WebClient 前提 API 実装切替のローカル疎通を再検証（RUN_ID=20251225T105103Z）。
+  - 期待条件（HTTP 200 / runId / dataSourceTransition / auditEvent）を満たすのは `dolphindev` の MD5 (`1cc2f4c06fd32d0a6e2fa33f6e1c9164`) を使った場合。
+  - 手順のパスワード記載を `src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md` へ反映済み。

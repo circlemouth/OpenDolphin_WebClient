@@ -213,42 +213,6 @@
     "aiCompetitionScore": 85
   },
   {
-    "id": "task-1766660670867-1fbfc6",
-    "name": "🔍Monitor: [server modernized gap implementation plan 20251221] ORCA_POST_実装切替\n期間: 01/09 17:00 - 01/12 17:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# ORCA POST 実装切替\n\n- /orca/medical/records, /orca/chart/subjectives 等を実実装へ。\n- Feature flag で stub/real を切替可能にする。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md",
-    "model": "codex",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-25T11:04:30.867Z",
-    "updatedAt": "2025-12-25T11:04:34.394Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766660670867-1fbfc6",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766660664292-2i8fqdeq",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] ORCA_POST_実装切替\n期間: 01/09 17:00 - 01/12 17:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# ORCA POST 実装切替\n\n- /orca/medical/records, /orca/chart/subjectives 等を実実装へ。\n- Feature flag で stub/real を切替可能にする。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1766660664701-e45590",
-      "task-1766660664494-c93ee1",
-      "task-1766660664293-52f285"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "与えられたタスクを完遂しているか、本番運用で耐える実装されているか",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1766660724292,
-    "worktreePath": ".worktrees/task-1766660670867-1fbfc6"
-  },
-  {
     "id": "task-yaml-8wd8ta-src-server-moder",
     "name": "[server modernized gap implementation plan 20251221] ORCA_wrapper_実接続_運用条件明文化\n期間: 01/10 17:00 - 01/11 17:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# ORCA wrapper 実接続 運用条件明文化\n\n- stub/実接続の切替条件と有効化手段を明文化。\n- 実接続時の設定手順（ORCA_API_*/custom.properties の優先順位・禁止事項）を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_運用条件明文化.md",
     "model": "YAML App",
@@ -296,29 +260,5 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# ORCA wrapper 実接続 運用条件明文化\n\n- stub/実接続の切替条件と有効化手段を明文化。\n- 実接続時の設定手順（ORCA_API_*/custom.properties の優先順位・禁止事項）を明文化。"
-  },
-  {
-    "id": "task-1766660869962-f59b37",
-    "name": "CodexCLI1: [server modernized gap implementation plan 20251221] ORCA_wrapper_実接続_運用条件明文化\n期間: 01/10 17:00 - 01/11 17:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# ORCA wrapper 実接続 運用条件明文化\n\n- stub/実接続の切替条件と有効化手段を明文化。\n- 実接続時の設定手順（ORCA_API_*/custom.properties の優先順位・禁止事項）を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_運用条件明文化.md",
-    "model": "Codex CLI",
-    "status": "running",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-25T11:07:49.962Z",
-    "updatedAt": "2025-12-25T11:07:56.455Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766660869962-f59b37",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766660869878-pyxee5r2",
-    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] ORCA_wrapper_実接続_運用条件明文化\n期間: 01/10 17:00 - 01/11 17:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# ORCA wrapper 実接続 運用条件明文化\n\n- stub/実接続の切替条件と有効化手段を明文化。\n- 実接続時の設定手順（ORCA_API_*/custom.properties の優先順位・禁止事項）を明文化。\n\nYAML ID: src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_運用条件明文化.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766660869962-f59b37"
   }
 ]
