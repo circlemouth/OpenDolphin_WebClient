@@ -32,6 +32,7 @@ public class AbstractResource {
     public static final String ERROR_CODE_ATTRIBUTE = AbstractResource.class.getName() + ".ERROR_CODE";
     public static final String ERROR_MESSAGE_ATTRIBUTE = AbstractResource.class.getName() + ".ERROR_MESSAGE";
     public static final String ERROR_STATUS_ATTRIBUTE = AbstractResource.class.getName() + ".ERROR_STATUS";
+    public static final String ERROR_DETAILS_ATTRIBUTE = AbstractResource.class.getName() + ".ERROR_DETAILS";
 
     protected Date parseDate(String source) {
         try {
@@ -102,7 +103,7 @@ public class AbstractResource {
             String errorCode, String message, Map<String, ?> details, Throwable cause) {
         Objects.requireNonNull(status, "status");
         Objects.requireNonNull(errorCode, "errorCode");
-        markErrorAttributes(request, status.getStatusCode(), errorCode, message);
+        markErrorAttributes(request, status.getStatusCode(), errorCode, message, details);
         Map<String, Object> body = buildErrorBody(request, status.getStatusCode(), errorCode, message, details);
         Response response = Response.status(status)
                 .type(MediaType.APPLICATION_JSON_TYPE)
@@ -117,7 +118,7 @@ public class AbstractResource {
         if (response == null) {
             return;
         }
-        markErrorAttributes(request, status, errorCode, message);
+        markErrorAttributes(request, status, errorCode, message, details);
         if (!response.isCommitted()) {
             response.resetBuffer();
         }
@@ -198,7 +199,8 @@ public class AbstractResource {
         return body;
     }
 
-    private static void markErrorAttributes(HttpServletRequest request, int status, String errorCode, String message) {
+    private static void markErrorAttributes(HttpServletRequest request, int status, String errorCode, String message,
+            Map<String, ?> details) {
         if (request == null) {
             return;
         }
@@ -209,5 +211,30 @@ public class AbstractResource {
         if (message != null && !message.isBlank()) {
             request.setAttribute(ERROR_MESSAGE_ATTRIBUTE, message);
         }
+        Map<String, Object> filtered = filterErrorDetails(details);
+        if ((status == 400 || status == 422) && !filtered.containsKey("validationError")) {
+            filtered.put("validationError", Boolean.TRUE);
+        }
+        if (!filtered.isEmpty()) {
+            request.setAttribute(ERROR_DETAILS_ATTRIBUTE, filtered);
+        }
+    }
+
+    private static Map<String, Object> filterErrorDetails(Map<String, ?> details) {
+        Map<String, Object> filtered = new LinkedHashMap<>();
+        if (details == null) {
+            return filtered;
+        }
+        details.forEach((key, value) -> {
+            if (key == null || value == null) {
+                return;
+            }
+            String normalizedKey = key.toString();
+            if (normalizedKey.isBlank()) {
+                return;
+            }
+            filtered.put(normalizedKey, value);
+        });
+        return filtered;
     }
 }
