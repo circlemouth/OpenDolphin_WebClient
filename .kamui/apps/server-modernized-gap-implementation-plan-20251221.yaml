@@ -553,8 +553,8 @@ src:
         agent: codex
         api: []
         priority: Low
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 60
         schedule:
           start: 2026-01-12T02:00:00.000Z
           days: 1
@@ -620,8 +620,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-10T08:00:00.000Z
           days: 1
@@ -655,8 +655,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 40
         schedule:
           start: 2026-01-09T08:00:00.000Z
           days: 3
@@ -724,8 +724,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 60
         schedule:
           start: 2026-01-05T02:00:00.000Z
           days: 3
@@ -791,8 +791,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-07T00:00:00.000Z
           days: 0
