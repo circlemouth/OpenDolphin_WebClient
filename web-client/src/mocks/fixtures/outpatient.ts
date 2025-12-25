@@ -323,7 +323,7 @@ export function buildClaimFixture(flags: OutpatientFlagSet) {
     apiResultMessage:
       flags.status && flags.status >= 400 ? 'mock claim fetch failure (msw scenario)' : 'mock claim fetch success',
     auditEvent: {
-      endpoint: '/api01rv2/claim/outpatient/mock',
+      endpoint: '/api01rv2/claim/outpatient',
       recordedAt: new Date().toISOString(),
       runId: flags.runId,
       cacheHit: flags.cacheHit,

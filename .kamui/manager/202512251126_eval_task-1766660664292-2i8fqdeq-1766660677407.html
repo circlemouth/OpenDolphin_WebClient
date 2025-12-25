@@ -1,0 +1,337 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | ORCA_POST_実装切替</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin-bottom: 8px;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list div {
+        margin-bottom: 4px;
+      }
+      .metric-reason {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      .artifact-links a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: ORCA_POST_実装切替</h1>
+        <p class="monitor-description">タスク対象: /orca/medical/records, /orca/chart/subjectives の実実装切替と feature flag 対応。比較対象は 3 ブランチ（各 worktree）。</p>
+        <p class="monitor-description">RUN_ID: 20251225T112117Z / 評価日時: 2025-12-25 (UTC)</p>
+      </header>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <div class="score-title">codex / task-1766660664701-e45590</div>
+          <div class="score-value">464 / 600 🥈</div>
+          <div class="score-meta">総合スコア: 84点 / メダル: silver</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">codex / task-1766660664494-c93ee1</div>
+          <div class="score-value">450 / 600 🥉</div>
+          <div class="score-meta">総合スコア: 78点 / メダル: bronze</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">codex / task-1766660664293-52f285</div>
+          <div class="score-value">449 / 600 🥉</div>
+          <div class="score-meta">総合スコア: 74点 / メダル: bronze</div>
+        </div>
+      </section>
+
+      <section class="section-title">タスク概要</section>
+      <pre>ORCA POST ラッパーの stub/real 切替を導入し、/orca/medical/records と /orca/chart/subjectives を実実装へ。
+追加で、医療セット・点数同期・出産育児一時金など Trial 未開放 API を stub として切替可能にする案も含む。</pre>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766660664701-e45590</th>
+            <th>Agent task-1766660664494-c93ee1</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-25 11:21 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">ORCA POST stub/real 切替 + subjectives/medical records 実装</span>
+              </div>
+              <div class="metric-grid">
+                <svg width="160" height="160" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon points="80,20 132,50 132,110 80,140 28,110 28,50" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="80.0,30.8 123.6,54.8 124.7,105.8 80.0,129.2 43.6,101.0 48.8,62.0" fill="rgba(52, 129, 164, 0.35)" stroke="#3481a4" />
+                </svg>
+                <div class="metric-list">
+                  <div>完遂度 82点</div>
+                  <div>仕様適合 84点</div>
+                  <div>コード品質 86点</div>
+                  <div>安全性/監査 82点</div>
+                  <div>運用性 70点</div>
+                  <div>検証/テスト 60点</div>
+                  <div class="metric-reason">バリデーションと監査が厚い一方、env 例や運用フラグの明示が弱い。テスト実行ログなし。</div>
+                </div>
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>ddf02a6e feat: add ORCA POST stub/real toggles</pre>
+              <div class="section-title">差分概要</div>
+              <pre>server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaPostFeatureFlags.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaSubjectiveResource.java</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>reporting/target/classes/... (バイナリ生成物が多数、要クリーン)</pre>
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <div class="artifact-links">
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664701-e45590/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java">OrcaMedicalResource.java</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664701-e45590/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaSubjectiveResource.java">OrcaSubjectiveResource.java</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664701-e45590/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaPostFeatureFlags.java">OrcaPostFeatureFlags.java</a>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">ORCA POST stub/real 切替 + env サンプル追記</span>
+              </div>
+              <div class="metric-grid">
+                <svg width="160" height="160" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon points="80,20 132,50 132,110 80,140 28,110 28,50" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="80.0,33.2 119.5,57.2 121.6,104.0 80.0,125.6 38.4,104.0 48.8,62.0" fill="rgba(52, 129, 164, 0.35)" stroke="#3481a4" />
+                </svg>
+                <div class="metric-list">
+                  <div>完遂度 78点</div>
+                  <div>仕様適合 76点</div>
+                  <div>コード品質 80点</div>
+                  <div>安全性/監査 76点</div>
+                  <div>運用性 80点</div>
+                  <div>検証/テスト 60点</div>
+                  <div class="metric-reason">env サンプルとフラグは明確だが、SOAP カテゴリや user/karte 未検証など実運用リスクが残る。</div>
+                </div>
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>aa8a044f Enable ORCA POST real switch</pre>
+              <div class="section-title">差分概要</div>
+              <pre>server-modernized/config/server-modernized.env.sample
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaPostFeatureFlags.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaSubjectiveResource.java</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <div class="artifact-links">
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664494-c93ee1/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java">OrcaMedicalResource.java</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664494-c93ee1/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaSubjectiveResource.java">OrcaSubjectiveResource.java</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664494-c93ee1/server-modernized/config/server-modernized.env.sample">server-modernized.env.sample</a>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2025-12-25 11:21 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">拡張版: 追加 POST API も切替対象に追加</span>
+              </div>
+              <div class="metric-grid">
+                <svg width="160" height="160" viewBox="0 0 160 160" aria-label="六角形チャート">
+                  <polygon points="80,20 132,50 132,110 80,140 28,110 28,50" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="80.0,29.0 116.4,59.0 120.5,103.4 80.0,124.4 37.4,104.6 48.8,62.0" fill="rgba(52, 129, 164, 0.35)" stroke="#3481a4" />
+                </svg>
+                <div class="metric-list">
+                  <div>完遂度 85点</div>
+                  <div>仕様適合 70点</div>
+                  <div>コード品質 78点</div>
+                  <div>安全性/監査 74点</div>
+                  <div>運用性 82点</div>
+                  <div>検証/テスト 60点</div>
+                  <div class="metric-reason">複数 API に切替を拡張したが、real 時の処理が最小限で仕様検証が不足。subjectives の入力検証が弱い。</div>
+                </div>
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>962201ac Enable ORCA POST switch</pre>
+              <div class="section-title">差分概要</div>
+              <pre>server-modernized/config/server-modernized.env.sample
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalAdministrationResource.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaPostMode.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaPostSwitch.java
+server-modernized/src/main/java/open/dolphin/rest/orca/OrcaSubjectiveResource.java</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+              <div class="section-title">成果物リンク（別 worktree）</div>
+              <div class="artifact-links">
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664293-52f285/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalResource.java">OrcaMedicalResource.java</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664293-52f285/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaSubjectiveResource.java">OrcaSubjectiveResource.java</a><br />
+                <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766660664293-52f285/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalAdministrationResource.java">OrcaMedicalAdministrationResource.java</a>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">比較対象なし</span>
+                <span class="agent-label">-</span>
+              </div>
+              <pre>この行は 3 ブランチ比較のための補助セルです。</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

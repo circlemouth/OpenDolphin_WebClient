@@ -94,7 +94,7 @@ class OrcaMedicalModV2ResourceTest extends RuntimeDelegateTestSupport {
 
         OutpatientFlagResponse.AuditEvent auditEvent = response.getAuditEvent();
         assertNotNull(auditEvent, "Audit event should be present");
-        assertEquals("ORCA_MEDICAL_OUTPATIENT", auditEvent.getAction());
+        assertEquals("ORCA_MEDICAL_GET", auditEvent.getAction());
         assertEquals("/orca21/medicalmodv2/outpatient", auditEvent.getResource());
         assertEquals("SUCCESS", auditEvent.getOutcome());
         assertEquals("trace-outpatient-medical", auditEvent.getTraceId());
@@ -104,9 +104,10 @@ class OrcaMedicalModV2ResourceTest extends RuntimeDelegateTestSupport {
         assertEquals("F001", details.get("facilityId"));
         assertEquals(1, details.get("recordsReturned"));
         assertEquals("charts_orchestration", details.get("telemetryFunnelStage"));
+        assertEquals("SUCCESS", details.get("outcome"));
 
         assertNotNull(auditDispatcher.payload, "Audit dispatcher should receive payload");
-        assertEquals("ORCA_MEDICAL_OUTPATIENT", auditDispatcher.payload.getAction());
+        assertEquals("ORCA_MEDICAL_GET", auditDispatcher.payload.getAction());
         assertEquals("/orca21/medicalmodv2/outpatient", auditDispatcher.payload.getResource());
         assertEquals("F001:doctor01", auditDispatcher.payload.getActorId());
         assertEquals("trace-outpatient-medical", auditDispatcher.payload.getTraceId());

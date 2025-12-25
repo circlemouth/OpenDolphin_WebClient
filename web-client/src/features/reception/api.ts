@@ -26,10 +26,7 @@ export type AppointmentQueryParams = {
   size?: number;
 };
 
-const claimCandidates = [
-  { path: '/api01rv2/claim/outpatient/mock', source: 'mock' as ResolveMasterSource },
-  { path: '/api01rv2/claim/outpatient', source: 'server' as ResolveMasterSource },
-];
+const claimCandidates = [{ path: '/api01rv2/claim/outpatient', source: 'server' as ResolveMasterSource }];
 
 const appointmentCandidates = [
   { path: '/api01rv2/appointment/outpatient/list', source: 'server' as ResolveMasterSource },

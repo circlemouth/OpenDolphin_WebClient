@@ -94,33 +94,6 @@ export const outpatientHandlers = [
     }
     return respond(buildClaimFixture(scenario.flags));
   }),
-  http.post('/api01rv2/claim/outpatient/mock', async ({ request }) => {
-    const fault = parseFaultSpec(request);
-    const scenario = applyRequestScenario(request);
-    await applyFaultDelay(fault);
-    if (fault.tokens.has('timeout')) {
-      return respond(buildClaimFixture({ ...scenario.flags, status: 504 }));
-    }
-    if (fault.tokens.has('http-500') || fault.tokens.has('500')) {
-      return respond(buildClaimFixture({ ...scenario.flags, status: 500 }));
-    }
-    if (fault.tokens.has('schema-mismatch')) {
-      const mismatch = {
-        runId: scenario.flags.runId,
-        traceId: scenario.flags.traceId ?? `trace-${scenario.flags.runId}`,
-        cacheHit: scenario.flags.cacheHit,
-        missingMaster: scenario.flags.missingMaster,
-        dataSourceTransition: scenario.flags.dataSourceTransition,
-        fallbackUsed: scenario.flags.fallbackUsed,
-        claim: { bundle: null, information: 123 },
-        apiResult: 'ERROR_SCHEMA_MISMATCH',
-        apiResultMessage: 'MSW injected schema mismatch for claim/outpatient/mock',
-        status: 200,
-      } as any;
-      return respond(mismatch);
-    }
-    return respond(buildClaimFixture(scenario.flags));
-  }),
   http.post('/api01rv2/appointment/outpatient', async ({ request }) => {
     const fault = parseFaultSpec(request);
     const scenario = applyRequestScenario(request);

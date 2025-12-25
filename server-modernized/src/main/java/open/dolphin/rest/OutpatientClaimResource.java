@@ -6,8 +6,10 @@ import jakarta.ws.rs.Consumes;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
 import jakarta.ws.rs.Produces;
+import jakarta.ws.rs.PathParam;
 import jakarta.ws.rs.core.Context;
 import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
@@ -15,9 +17,11 @@ import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Date;
+import java.util.LinkedHashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.BundleDolphin;
 import open.dolphin.infomodel.ClaimItem;
@@ -63,11 +67,15 @@ public class OutpatientClaimResource extends AbstractResource {
     }
 
     @POST
-    @Path("/mock")
+    @Path("/{subPath: .+}")
     @Consumes(MediaType.APPLICATION_JSON)
     @Produces(MediaType.APPLICATION_JSON)
-    public ClaimOutpatientResponse postOutpatientClaimMock(@Context HttpServletRequest request, Map<String, Object> payload) {
-        return buildResponse(request, payload, "/api01rv2/claim/outpatient/mock");
+    public ClaimOutpatientResponse postOutpatientClaimSubPath(@Context HttpServletRequest request,
+            @PathParam("subPath") String subPath, Map<String, Object> payload) {
+        if ("mock".equals(subPath)) {
+            throw restError(request, Response.Status.NOT_FOUND, "not_found", "mock endpoint is deprecated");
+        }
+        return buildResponse(request, payload, "/api01rv2/claim/outpatient/" + subPath);
     }
 
     private ClaimOutpatientResponse buildResponse(HttpServletRequest request, Map<String, Object> payload, String resourcePath) {
@@ -78,6 +86,8 @@ public class OutpatientClaimResource extends AbstractResource {
 
         List<PatientVisitModel> visits = fetchVisits(facilityId, payload);
         List<ClaimOutpatientResponse.ClaimBundleEntry> bundles = new ArrayList<>();
+        Set<String> patientIds = new LinkedHashSet<>();
+        Set<String> appointmentIds = new LinkedHashSet<>();
         boolean allPaid = true;
         for (PatientVisitModel visit : visits) {
             if (visit == null || visit.getPatientModel() == null) {
@@ -86,6 +96,12 @@ public class OutpatientClaimResource extends AbstractResource {
             PatientModel patient = visit.getPatientModel();
             String patientId = patient.getPatientId();
             String appointmentId = resolveAppointmentId(visit);
+            if (patientId != null && !patientId.isBlank()) {
+                patientIds.add(patientId);
+            }
+            if (appointmentId != null && !appointmentId.isBlank()) {
+                appointmentIds.add(appointmentId);
+            }
             String claimStatus = resolveClaimStatus(visit);
             if (!"会計済み".equals(claimStatus)) {
                 allPaid = false;
@@ -109,7 +125,9 @@ public class OutpatientClaimResource extends AbstractResource {
         response.setClaimStatus(claimStatus);
         response.setClaimStatusText(claimStatus);
 
-        Map<String, Object> details = buildAuditDetails(facilityId, runId, bundles, claimStatus, resourcePath);
+        String outcome = bundles.isEmpty() ? "MISSING" : "SUCCESS";
+        Map<String, Object> details = buildAuditDetails(facilityId, runId, bundles, claimStatus, resourcePath,
+                patientIds, appointmentIds, outcome);
         OutpatientFlagResponse.AuditEvent auditEvent = new OutpatientFlagResponse.AuditEvent();
         auditEvent.setAction("ORCA_CLAIM_OUTPATIENT");
         auditEvent.setResource(resourcePath);
@@ -124,12 +142,25 @@ public class OutpatientClaimResource extends AbstractResource {
     }
 
     private Map<String, Object> buildAuditDetails(String facilityId, String runId,
-            List<ClaimOutpatientResponse.ClaimBundleEntry> bundles, String claimStatus, String resource) {
+            List<ClaimOutpatientResponse.ClaimBundleEntry> bundles, String claimStatus, String resource,
+            Set<String> patientIds, Set<String> appointmentIds, String outcome) {
         Map<String, Object> details = new LinkedHashMap<>();
         if (facilityId != null && !facilityId.isBlank()) {
             details.put("facilityId", facilityId);
         }
         details.put("resource", resource);
+        if (patientIds != null && !patientIds.isEmpty()) {
+            if (patientIds.size() == 1) {
+                details.put("patientId", patientIds.iterator().next());
+            }
+            details.put("patientIds", new ArrayList<>(patientIds));
+        }
+        if (appointmentIds != null && !appointmentIds.isEmpty()) {
+            if (appointmentIds.size() == 1) {
+                details.put("appointmentId", appointmentIds.iterator().next());
+            }
+            details.put("appointmentIds", new ArrayList<>(appointmentIds));
+        }
         details.put("runId", runId);
         details.put("dataSource", DATA_SOURCE);
         details.put("dataSourceTransition", DATA_SOURCE);
@@ -139,6 +170,9 @@ public class OutpatientClaimResource extends AbstractResource {
         details.put("fetchedAt", Instant.now().toString());
         details.put("recordsReturned", bundles != null ? bundles.size() : 0);
         details.put("claimBundles", bundles != null ? bundles.size() : 0);
+        if (outcome != null) {
+            details.put("outcome", outcome);
+        }
         if (claimStatus != null) {
             details.put("claimStatus", claimStatus);
         }
