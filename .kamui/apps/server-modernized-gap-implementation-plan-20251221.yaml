@@ -667,6 +667,13 @@ src:
 
           - MSW を無効化して Charts/受付/ORCA の実 API を通す。
           - Web/Server の同期ポイント（TraceId/監査）を確認（証跡は最終段階で取得）。
+          - 検証タスクは証跡・ログのみ（コード変更禁止）。
+          - 対象外: server-modernized / client / server の編集。
+          - 変更対象: artifacts/ と src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md のみ。
+          - 作業前チェックリスト:
+            - 差分混入防止（不要な変更を含めない）。
+            - git status で差分確認。
+            - ブランチ専用化（本タスク専用ブランチのみ使用）。
         dependency:
           - src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md
         agent: codex
