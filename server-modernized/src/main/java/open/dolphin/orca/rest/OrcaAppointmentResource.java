@@ -22,11 +22,13 @@ import open.dolphin.rest.dto.orca.PatientAppointmentListRequest;
 import open.dolphin.rest.dto.orca.PatientAppointmentListResponse;
 import open.dolphin.rest.dto.orca.VisitPatientListRequest;
 import open.dolphin.rest.dto.orca.VisitPatientListResponse;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  * REST wrapper for appointment, billing simulation, and visit helper endpoints.
  */
 @Path("/orca")
+@SessionOperation
 public class OrcaAppointmentResource extends AbstractOrcaWrapperResource {
 
     private OrcaWrapperService wrapperService;

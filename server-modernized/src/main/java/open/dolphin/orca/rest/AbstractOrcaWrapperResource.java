@@ -1,5 +1,6 @@
 package open.dolphin.orca.rest;
 
+import jakarta.inject.Inject;
 import jakarta.servlet.http.HttpServletRequest;
 import java.time.Instant;
 import java.util.LinkedHashMap;
@@ -8,6 +9,8 @@ import open.dolphin.infomodel.IInfoModel;
 import open.dolphin.orca.service.OrcaWrapperService;
 import open.dolphin.rest.dto.orca.OrcaApiResponse;
 import open.dolphin.rest.orca.AbstractOrcaRestResource;
+import open.dolphin.session.framework.SessionTraceAttributes;
+import open.dolphin.session.framework.SessionTraceManager;
 
 /**
  * Shared audit helpers for ORCA wrapper endpoints.
@@ -20,6 +23,9 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
     private static final String TRACE_HEADER = "X-Request-Id";
     private static final String FACILITY_HEADER = "X-Facility-Id";
     private static final String LEGACY_FACILITY_HEADER = "facilityId";
+
+    @Inject
+    protected SessionTraceManager sessionTraceManager;
 
     protected Map<String, Object> newAuditDetails(HttpServletRequest request) {
         Map<String, Object> details = new LinkedHashMap<>();
@@ -37,16 +43,21 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
         }
 
         String traceId = resolveTraceId(request);
-        if (traceId != null && !traceId.isBlank()) {
-            details.put("traceId", traceId);
-        }
-
         String requestId = request != null ? request.getHeader(TRACE_HEADER) : null;
         if (requestId != null && !requestId.isBlank()) {
-            details.put("requestId", requestId.trim());
-        } else if (traceId != null && !traceId.isBlank()) {
-            details.put("requestId", traceId);
+            requestId = requestId.trim();
+            details.put("requestId", requestId);
         }
+        if ((traceId == null || traceId.isBlank()) && requestId != null && !requestId.isBlank()) {
+            traceId = requestId;
+        }
+        if (traceId != null && !traceId.isBlank()) {
+            details.put("traceId", traceId);
+            if (requestId == null || requestId.isBlank()) {
+                details.put("requestId", traceId);
+            }
+        }
+        syncTraceContext(request, facilityId, traceId, requestId);
         return details;
     }
 
@@ -117,5 +128,33 @@ public abstract class AbstractOrcaWrapperResource extends AbstractOrcaRestResour
             return legacy.trim();
         }
         return null;
+    }
+
+    private void syncTraceContext(HttpServletRequest request, String facilityId, String traceId, String requestId) {
+        if (sessionTraceManager == null || sessionTraceManager.current() == null) {
+            return;
+        }
+        if (request != null) {
+            String remoteUser = request.getRemoteUser();
+            if (remoteUser != null && !remoteUser.isBlank()) {
+                String existingActor = sessionTraceManager.getAttribute(SessionTraceAttributes.ACTOR_ID);
+                if (existingActor == null || existingActor.isBlank()) {
+                    sessionTraceManager.putAttribute(SessionTraceAttributes.ACTOR_ID, remoteUser);
+                }
+            }
+        }
+        if (facilityId != null && !facilityId.isBlank()) {
+            String existingFacility = sessionTraceManager.getAttribute(SessionTraceAttributes.FACILITY_ID);
+            if (existingFacility == null || existingFacility.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.FACILITY_ID, facilityId);
+            }
+        }
+        String candidateRequestId = (requestId != null && !requestId.isBlank()) ? requestId : traceId;
+        if (candidateRequestId != null && !candidateRequestId.isBlank()) {
+            String existingRequest = sessionTraceManager.getAttribute(SessionTraceAttributes.REQUEST_ID);
+            if (existingRequest == null || existingRequest.isBlank()) {
+                sessionTraceManager.putAttribute(SessionTraceAttributes.REQUEST_ID, candidateRequestId);
+            }
+        }
     }
 }
