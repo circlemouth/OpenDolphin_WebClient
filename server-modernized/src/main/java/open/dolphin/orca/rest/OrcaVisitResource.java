@@ -14,11 +14,13 @@ import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.orca.service.OrcaWrapperService;
 import open.dolphin.rest.dto.orca.VisitMutationRequest;
 import open.dolphin.rest.dto.orca.VisitMutationResponse;
+import open.dolphin.session.framework.SessionOperation;
 
 /**
  * REST wrapper for acceptmodv2 (reception mutations).
  */
 @Path("/orca/visits")
+@SessionOperation
 public class OrcaVisitResource extends AbstractOrcaWrapperResource {
 
     private OrcaWrapperService wrapperService;

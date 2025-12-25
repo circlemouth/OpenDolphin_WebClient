@@ -79,11 +79,22 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
         payload.setIpAddress(request != null ? request.getRemoteAddr() : null);
         payload.setUserAgent(request != null ? request.getHeader("User-Agent") : null);
         String traceId = resolveTraceId(request);
+        String requestId = request != null ? request.getHeader("X-Request-Id") : null;
+        if (requestId != null && !requestId.isBlank()) {
+            requestId = requestId.trim();
+        } else {
+            requestId = extractDetailText(enriched, "requestId");
+        }
+        if ((traceId == null || traceId.isBlank())) {
+            traceId = extractDetailText(enriched, "traceId");
+        }
+        if ((traceId == null || traceId.isBlank()) && requestId != null && !requestId.isBlank()) {
+            traceId = requestId;
+        }
         if (traceId != null && !traceId.isBlank()) {
             payload.setTraceId(traceId);
             enriched.putIfAbsent("traceId", traceId);
         }
-        String requestId = request != null ? request.getHeader("X-Request-Id") : null;
         if (requestId != null && !requestId.isBlank()) {
             payload.setRequestId(requestId);
             enriched.putIfAbsent("requestId", requestId);
