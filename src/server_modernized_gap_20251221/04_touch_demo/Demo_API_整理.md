@@ -11,7 +11,7 @@
 ## 現状整理
 - JSON 版: `server-modernized/src/main/java/open/dolphin/rest/DemoResourceAsp.java`
 - XML 版: `server-modernized/src/main/java/open/dolphin/touch/DemoResource.java` / `server-modernized/src/main/java/open/dolphin/touch/DemoResourceASP.java`
-- 公開設定: `server-modernized/src/main/webapp/WEB-INF/web.xml` の `resteasy.resources` に 3 種が登録済み。
+- 公開設定: `server-modernized/src/main/webapp/WEB-INF/web.xml` は **JSON 版のみ登録**（XML 版は登録削除済み）。
 - 参照元: `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo セクション。
 
 ## 利用状況（Web クライアント）

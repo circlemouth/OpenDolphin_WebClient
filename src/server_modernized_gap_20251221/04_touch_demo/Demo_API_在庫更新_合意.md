@@ -7,12 +7,12 @@
 
 ## 現行状況（2025-12-25 時点）
 - 在庫更新: `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo セクションに 15 API の JSON 実装完了が反映済み。
-- 合意状況: Touch/営業デモの一次情報が未取得のため、維持/廃止は **保留**。
-- 参照: `src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md` の判定表と合意形成フェーズ。
+- 合意状況: JSON 版 15 API の維持、XML 版の公開終了で合意済み（RUN_ID: 20251225T195836Z）。
+- 公開設定: `server-modernized/src/main/webapp/WEB-INF/web.xml` は JSON 版のみ登録（XML 版は削除済み）。
+- 参照: `src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md` の合意結果。
 
-## 残タスク
-- Touch/営業デモ運用の一次情報（手順書 or 実測ログ）を取得し、維持/廃止の合意を確定する。
-- 合意後に在庫表の「保留」ステータスを更新し、必要であれば `web.xml` の公開整理方針に反映する。
+## 追加対応（任意）
+- デモ環境で JSON 版のみの動作確認を行い、必要なら 410/404 への移行方針を追記する。
 
 ## 参照
 - `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md`

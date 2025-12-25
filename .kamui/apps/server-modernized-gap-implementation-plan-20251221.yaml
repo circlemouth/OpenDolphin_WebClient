@@ -307,23 +307,6 @@ src:
         schedule:
           start: 2025-12-30T00:00:00.000Z
           days: 2
-      ORCA-08_E2E_証跡.md:
-        content: |-
-          # ORCA-08 E2E 証跡
-
-          - ORCA DB 実測とレスポンス検証を最終段階で実施。
-          - 監査ログとレスポンス差分を証跡化。
-        dependency:
-          - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
-          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-08T00:00:00.000Z
-          days: 2
     03_phr:
       PHR_ヘッダー_監査ID整備.md:
         content: |-
@@ -409,40 +392,6 @@ src:
         schedule:
           start: 2026-01-02T04:00:00.000Z
           days: 3
-      PHR_E2E_証跡.md:
-        content: |-
-          # PHR E2E 証跡
-
-          - PHR-01〜11 と export 系の実測証跡を最終段階で取得。
-          - Trial/ORMaster での差異を記録。
-        dependency:
-          - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
-          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-09T00:00:00.000Z
-          days: 2
-      PHR_Export_証跡取得.md:
-        content: |-
-          # PHR Export 証跡取得
-
-          - PHR Export の S3/署名 URL 実測と監査証跡を取得。
-          - 運用設定（S3/署名鍵/TTL）と監査メタの整合を確認。
-        dependency:
-          - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
-          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-09T02:00:00.000Z
-          days: 1
     04_touch_demo:
       Touch_前提ドキュメント整備.md:
         content: |-
@@ -553,8 +502,8 @@ src:
         agent: codex
         api: []
         priority: Low
-        status: in_progress
-        progress: 60
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-12T02:00:00.000Z
           days: 1
@@ -636,8 +585,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: in_progress
-        progress: 20
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-01T08:00:00.000Z
           days: 2
@@ -655,28 +604,11 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: in_progress
-        progress: 40
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-09T08:00:00.000Z
           days: 3
-      ORCA_wrapper_E2E.md:
-        content: |-
-          # ORCA Wrapper E2E
-
-          - ORMaster/本番相当で POST API を最終段階にて実測。
-          - 外部依存の証跡と切替手順を残す。
-        dependency:
-          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md
-          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-12T00:00:00.000Z
-          days: 2
     06_server_ops_required:
       ORCA_master_DAO実装.md:
         content: |-
@@ -724,8 +656,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: in_progress
-        progress: 60
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-05T02:00:00.000Z
           days: 3
@@ -744,23 +676,6 @@ src:
         progress: 0
         schedule:
           start: 2026-01-08T04:00:00.000Z
-          days: 2
-      ORCA_master_E2E_証跡.md:
-        content: |-
-          # ORCA Master E2E 証跡
-
-          - ORCA-05/06/08 の実測レスポンスと監査ログを証跡化。
-          - ORCA 接続基準（P99/キャッシュ）を満たすことを確認。
-        dependency:
-          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md
-          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
-        api: []
-        priority: Medium
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-10T00:00:00.000Z
           days: 2
       ORCA_API_STATUS_更新.md:
         content: |-
@@ -814,6 +729,110 @@ src:
         schedule:
           start: 2026-01-11T00:00:00.000Z
           days: 2
+      ガント_インベントリ更新.md:
+        content: |-
+          # ガント/インベントリ更新
+
+          - MODERNIZED_REST_API_INVENTORY を更新。
+          - ガントの完了条件と証跡リンクを付与。
+        dependency:
+          - src/server_modernized_gap_20251221/07_quality_release/4xx5xx_監査_統一.md
+          - src/server_modernized_gap_20251221/07_quality_release/性能回帰_ロードテスト.md
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_E2E.md
+        agent: codex
+        api: []
+        priority: Low
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-16T00:00:00.000Z
+          days: 1
+    08_evidence_package:
+      ORCA-08_E2E_証跡.md:
+        content: |-
+          # ORCA-08 E2E 証跡
+
+          - ORCA DB 実測とレスポンス検証を最終段階で実施。
+          - 監査ログとレスポンス差分を証跡化。
+        dependency:
+          - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-08T00:00:00.000Z
+          days: 2
+      PHR_E2E_証跡.md:
+        content: |-
+          # PHR E2E 証跡
+
+          - PHR-01〜11 と export 系の実測証跡を最終段階で取得。
+          - Trial/ORMaster での差異を記録。
+        dependency:
+          - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-09T00:00:00.000Z
+          days: 2
+      PHR_Export_証跡取得.md:
+        content: |-
+          # PHR Export 証跡取得
+
+          - PHR Export の S3/署名 URL 実測と監査証跡を取得。
+          - 運用設定（S3/署名鍵/TTL）と監査メタの整合を確認。
+        dependency:
+          - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-09T02:00:00.000Z
+          days: 1
+      ORCA_wrapper_E2E.md:
+        content: |-
+          # ORCA Wrapper E2E
+
+          - ORMaster/本番相当で POST API を最終段階にて実測。
+          - 外部依存の証跡と切替手順を残す。
+        dependency:
+          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-12T00:00:00.000Z
+          days: 2
+      ORCA_master_E2E_証跡.md:
+        content: |-
+          # ORCA Master E2E 証跡
+
+          - ORCA-05/06/08 の実測レスポンスと監査ログを証跡化。
+          - ORCA 接続基準（P99/キャッシュ）を満たすことを確認。
+        dependency:
+          - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md
+          - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
+        agent: codex
+        api: []
+        priority: Medium
+        status: not_started
+        progress: 0
+        schedule:
+          start: 2026-01-10T00:00:00.000Z
+          days: 2
       JMS_ORCA_ACK_検証.md:
         content: |-
           # JMS ORCA ACK 検証（WildFly 33）
@@ -863,21 +882,3 @@ src:
         schedule:
           start: 2026-01-12T00:00:00.000Z
           days: 2
-      ガント_インベントリ更新.md:
-        content: |-
-          # ガント/インベントリ更新
-
-          - MODERNIZED_REST_API_INVENTORY を更新。
-          - ガントの完了条件と証跡リンクを付与。
-        dependency:
-          - src/server_modernized_gap_20251221/07_quality_release/4xx5xx_監査_統一.md
-          - src/server_modernized_gap_20251221/07_quality_release/性能回帰_ロードテスト.md
-          - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_E2E.md
-        agent: codex
-        api: []
-        priority: Low
-        status: not_started
-        progress: 0
-        schedule:
-          start: 2026-01-16T00:00:00.000Z
-          days: 1

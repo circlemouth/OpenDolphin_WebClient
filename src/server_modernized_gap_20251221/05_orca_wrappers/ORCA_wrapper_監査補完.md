@@ -10,11 +10,12 @@
 - 上記 REST リソース内で `SessionAuditDispatcher` 等の監査イベント記録は行っていない。
 - バリデーション失敗は `AbstractResource#restError` により 4xx を返すが、監査イベント記録は未実装。
 
-## 未実施（明文化が必要な未対応）
-- 成功時の監査イベント記録（予約/来院/患者同期/請求系エンドポイントごとの audit payload 定義）。
-- 4xx/5xx 失敗時の監査イベント記録（`restError` と transport 例外の両方を対象）。
-- `traceId`/`facilityId` の引き回しと監査メタ整合（`web-client-api-mapping.md` 準拠）の整理。
-- 監査イベントの実測証跡（ログ/レスポンス差分）の取得と RUN_ID 記載は最終段階で実施。
+## 補足
+- 監査イベントの実測証跡（ログ/レスポンス差分）の取得と RUN_ID 記載は証跡統合タスクへ移管済み。
+
+## 完了条件
+- 監査イベントの実装が完了し、traceId/facilityId の引き回しが整合していること。
+- 証跡取得は証跡統合タスクで実施すること。
 
 ## 参照
 - `src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_wrapper_実接続_Transport.md`
