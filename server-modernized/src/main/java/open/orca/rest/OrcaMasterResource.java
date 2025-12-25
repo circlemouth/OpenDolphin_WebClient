@@ -892,9 +892,9 @@ public class OrcaMasterResource extends AbstractResource {
                 validTo,
                 null,
                 fixture,
-                entry.cacheHit,
-                entry.missingMaster,
-                entry.fallbackUsed
+                null,
+                null,
+                null
         );
     }
 
@@ -914,9 +914,9 @@ public class OrcaMasterResource extends AbstractResource {
                 validTo,
                 null,
                 fixture,
-                entry.cacheHit,
-                entry.missingMaster,
-                entry.fallbackUsed
+                null,
+                null,
+                null
         );
     }
 
