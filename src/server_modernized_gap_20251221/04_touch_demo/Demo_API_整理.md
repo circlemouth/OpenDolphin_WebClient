@@ -1,6 +1,8 @@
 # Demo API 整理
 - 日時: 2026-01-07 09:00 - 2026-01-09 09:00 / 優先度: low / 緊急度: medium
 - YAML ID: `src/server_modernized_gap_20251221/04_touch_demo/Demo_API_整理.md`
+- 更新履歴:
+  - 2025-12-25: Demo API 在庫更新と合意内容を確定（RUN_ID: 20251225T195836Z）。
 
 ## 目的
 - Demo 系 API の棚卸しと移植状況を明文化する。
@@ -42,24 +44,29 @@
   - `ops/tests/storage/attachment-mode/README.md` はデモ患者記述のみで `/demo` API の利用記述なし。
   - Web クライアント/テストコードはデモ UI 表現に留まり、Demo API 呼び出しは見当たらない。
 
-## Demo API 維持/廃止/保留 判定（RUN_ID: 20251224T163500Z）
+## Demo API 合意結果（RUN_ID: 20251225T195836Z）
+- 最小セット: JSON 版 15 API を維持（デモ用途に限定し読み取り専用）。
+- 廃止判断: XML 版 DemoResource/DemoResourceASP は公開終了（`web.xml` から登録を削除）。
+- 理由: Web クライアント/非 Phase2 ドキュメントで `/demo` 利用が確認できず、デモ用途の最小構成は JSON 統一で十分と判断。
+
+## Demo API 維持/廃止 判定（2025-12-25）
 | ID | エンドポイント | 判定 | 理由 / 根拠 |
 | --- | --- | --- | --- |
-| Demo-01 | `GET /demo/user/{param}` | 保留 | Web クライアント/非 Phase2 ドキュメントで利用記述なし。Touch/営業デモ手順の一次情報が未取得。 |
-| Demo-02 | `GET /demo/patient/firstVisitors/{param}` | 保留 | 同上。 |
-| Demo-03 | `GET /demo/patient/visit/{param}` | 保留 | 同上。 |
-| Demo-04 | `GET /demo/patient/visitRange/{param}` | 保留 | 同上。 |
-| Demo-05 | `GET /demo/patient/visitLast/{param}` | 保留 | 同上。 |
-| Demo-06 | `GET /demo/patient/{pk}` | 保留 | 同上。 |
-| Demo-07 | `GET /demo/patients/name/{param}` | 保留 | 同上。 |
-| Demo-08 | `GET /demo/patientPackage/{pk}` | 保留 | 同上。 |
-| Demo-09 | `GET /demo/module/{param}` | 保留 | 同上。 |
-| Demo-10 | `GET /demo/module/rp/{param}` | 保留 | 同上。 |
-| Demo-11 | `GET /demo/module/diagnosis/{param}` | 保留 | 同上。 |
-| Demo-12 | `GET /demo/module/schema/{param}` | 保留 | 同上。 |
-| Demo-13 | `GET /demo/module/laboTest/{param}` | 保留 | 同上。 |
-| Demo-14 | `GET /demo/item/laboItem/{param}` | 保留 | 同上。 |
-| Demo-15 | `GET /demo/document/progressCourse/{param}` | 保留 | 同上。 |
+| Demo-01 | `GET /demo/user/{param}` | 維持（JSON）/ XML 廃止 | JSON 実装済み。 |
+| Demo-02 | `GET /demo/patient/firstVisitors/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-03 | `GET /demo/patient/visit/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-04 | `GET /demo/patient/visitRange/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-05 | `GET /demo/patient/visitLast/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-06 | `GET /demo/patient/{pk}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-07 | `GET /demo/patients/name/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-08 | `GET /demo/patientPackage/{pk}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-09 | `GET /demo/module/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-10 | `GET /demo/module/rp/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-11 | `GET /demo/module/diagnosis/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-12 | `GET /demo/module/schema/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-13 | `GET /demo/module/laboTest/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-14 | `GET /demo/item/laboItem/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
+| Demo-15 | `GET /demo/document/progressCourse/{param}` | 維持（JSON）/ XML 廃止 | 同上。 |
 
 ## Demo API 一覧（現行実装）
 | 種別 | エンドポイント | JSON | XML | 備考 |
@@ -84,68 +91,33 @@
 - `DemoResourceAsp` は上記 15 API を JSON 化済み。コード上の未移植 API は現状なし。
 - `MODERNIZED_REST_API_INVENTORY.md` の Demo セクションに「欠落エンドポイント」として記載が残っているため、棚卸し結果と整合させる。
 
-## 廃止方針（明文化）
-- **対象**: Web クライアント側で呼び出しが確認できず、Demo 専用業務フローでも使用が確認できない API。
+## 廃止方針（確定）
+- **対象**: XML 版 `DemoResource` / `DemoResourceASP` の公開（web.xml 登録）。
 - **判断基準**:
-  - Web クライアントおよび Touch/営業デモ手順で利用実態がない。
-  - Demo 用固定データや監査イベントが維持されていない。
-  - 代替 API（/touch 系）が存在し機能重複している。
-- **廃止までの手順**:
-  1. 利用実態の確認（Web/Touch/営業デモ）と合意形成。
-  2. 廃止候補 API と移行期限をドキュメントへ明記（このファイルと API 在庫）。
-  3. XML 版の公開解除（`web.xml` から DemoResource 系を整理）と JSON 版へ統一。
-  4. Demo 環境での接続検証を実施し、削除または 410/404 へ移行。
-- **合意待ち/未確認（RUN_ID: 20251224T160500Z）**:
-  - Touch/営業デモ手順の一次情報（運用/営業側の手順書）が手元にないため、最終判断は保留。
-  - 現時点の判定は「利用確認側の一次整理」であり、合意後に維持/廃止を確定する。
+  - JSON 版 `DemoResourceAsp` が 15 API を実装済みであり、デモ用途は JSON 統一で十分。
+  - Web クライアント/非 Phase2 ドキュメントで `/demo` 利用実績が確認できない。
+- **廃止までの手順（確定）**:
+  1. `web.xml` から XML 版 DemoResource 登録を削除（実施済み）。
+  2. Demo 環境で JSON 版のみの動作確認を行い、必要なら 410/404 へ移行方針を追記。
 
-## 決裁待ち項目（RUN_ID: 20251224T163500Z）
-- 必要な一次情報:
-  - Touch/営業デモの運用手順書（担当: 事業/営業側、または現行デモ運用の一次情報保持者）
-  - 実デモ環境で `/demo` を使用しているかの実測ログ or 手順書
-- 決裁待ち理由:
-  - Web クライアント/非 Phase2 ドキュメントから利用実態を特定できず、廃止判断の根拠が不足。
-  - `ops/postman/DemoResourceAsp.postman_collection.json` はパリティ検証用途であり、運用上の利用可否を判断できない。
+## 決裁待ち項目（解消済み）
+- 2025-12-25 に「JSON 版を維持・XML 版を廃止」の判断で合意済み（RUN_ID: 20251225T195836Z）。
+- Touch/営業デモの一次情報が入手できた場合は、JSON 版 15 API の維持可否を再評価する。
 
-## 合意形成フェーズ（RUN_ID: 20251224T170000Z）
-- 決裁者/担当/窓口:
-  - 決裁者: 事業オーナー（営業デモ運用の責任者）
-  - 担当/窓口: デモ運用チーム（営業側の一次情報保持者）
-- 必要な判断材料:
-  - Touch/営業デモの運用手順書（最新版）
-  - 実デモ環境での `/demo` 利用有無が分かる実測ログ or 実演手順
-  - Demo API を利用する画面/機能一覧（営業デモ資料に紐づくもの）
-- 判断期限（仮）:
-  - 2026-01-09 09:00（Demo API 整理タスクの期間に合わせた暫定期限）
-- 暫定的な運用判断（現時点の扱い）:
-  - `DemoResourceAsp` の公開は維持継続（機能削除・404 化は行わない）。
-  - XML 版 `DemoResource` / `DemoResourceASP` は公開継続だが、整理対象として凍結（追加変更なし）。
-  - 廃止準備はドキュメント上の整理に留め、実コード/設定変更は合意後に着手。
+## 合意結果（RUN_ID: 20251225T195836Z）
+- 決裁結果:
+  - `DemoResourceAsp` の JSON 版 15 API は維持。
+  - XML 版 `DemoResource` / `DemoResourceASP` は公開終了（web.xml から削除）。
+- 追加条件:
+  - デモ運用の一次情報が再取得できた場合、JSON 版の維持範囲を見直す。
 
-## 廃止対象リスト（暫定 / RUN_ID: 20251224T162000Z）
-- 判定基準: 「Web クライアント/非 Phase2 ドキュメントに利用記述なし」かつ「代替 `/touch` 系が存在する」。
-- 決裁状態: Touch/営業デモ手順の一次情報が未取得のため、**暫定**（保留扱い）。
-- 対象エンドポイント:
-  - `/demo/user/{param}`
-  - `/demo/patient/firstVisitors/{param}`
-  - `/demo/patient/visit/{param}`
-  - `/demo/patient/visitRange/{param}`
-  - `/demo/patient/visitLast/{param}`
-  - `/demo/patient/{pk}`
-  - `/demo/patients/name/{param}`
-  - `/demo/patientPackage/{pk}`
-  - `/demo/module/{param}`
-  - `/demo/module/rp/{param}`
-  - `/demo/module/diagnosis/{param}`
-  - `/demo/module/schema/{param}`
-  - `/demo/module/laboTest/{param}`
-  - `/demo/item/laboItem/{param}`
-  - `/demo/document/progressCourse/{param}`
+## 廃止対象リスト（確定）
+- 対象: XML 版 `DemoResource` / `DemoResourceASP` の公開（web.xml 登録）。
+- 影響範囲: `/demo/*` の XML 形式レスポンスのみ。JSON 版 15 API は維持。
 
 ## 次アクション
-- `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo セクションを最新化（JSON 実装済みを明記）。
-- Demo 用に残す API の最小セットを PM/Manager と合意。
-- 合意後に `server-modernized/src/main/webapp/WEB-INF/web.xml` の登録整理を検討。
+- `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の Demo セクションを最新化（実施）。
+- XML 版削除後の Demo 環境動作確認ログを取得し、必要なら 410/404 への移行方針を追記。
 
 ## 参照
 - `docs/DEVELOPMENT_STATUS.md`
