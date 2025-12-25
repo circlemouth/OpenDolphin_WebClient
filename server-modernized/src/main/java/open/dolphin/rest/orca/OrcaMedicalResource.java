@@ -62,6 +62,16 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
             throw validationError(request, "patientId", "Patient_ID is required");
         }
 
+        if (!OrcaPostFeatureFlags.useRealMedicalRecords()) {
+            MedicalGetResponse response = buildStubResponse();
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", payload.getPatientId());
+            audit.put("status", "blocked");
+            recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.FAILURE);
+            return response;
+        }
+
         Date fromDate = parseDate(payload.getFromDate(), ModelUtils.AD1800);
         Date toDate = parseDate(payload.getToDate(), new Date());
         if (fromDate.after(toDate)) {
@@ -106,6 +116,16 @@ public class OrcaMedicalResource extends AbstractOrcaRestResource {
         audit.put("patientId", payload.getPatientId());
         audit.put("recordsReturned", entries.size());
         recordAudit(request, "ORCA_MEDICAL_GET", audit, AuditEventEnvelope.Outcome.SUCCESS);
+        return response;
+    }
+
+    private MedicalGetResponse buildStubResponse() {
+        MedicalGetResponse response = new MedicalGetResponse();
+        response.setApiResult("79");
+        response.setApiResultMessage("Spec-based implementation / Trial未検証");
+        response.setRunId(RUN_ID);
+        response.setGeneratedAt(java.time.Instant.now().toString());
+        response.addWarning("ORCA POST is disabled; stub response returned.");
         return response;
     }
 
