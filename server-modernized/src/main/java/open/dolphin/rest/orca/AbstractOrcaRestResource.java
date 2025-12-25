@@ -41,6 +41,27 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
         return facilityId;
     }
 
+    protected void markFailureDetails(Map<String, Object> details, int httpStatus, String errorCode, String errorMessage) {
+        if (details == null) {
+            return;
+        }
+        details.put("status", "failed");
+        details.put("httpStatus", httpStatus);
+        if (errorCode != null && !errorCode.isBlank()) {
+            details.put("errorCode", errorCode);
+        }
+        if (errorMessage != null && !errorMessage.isBlank()) {
+            details.put("errorMessage", errorMessage);
+        }
+    }
+
+    protected void markSuccessDetails(Map<String, Object> details) {
+        if (details == null) {
+            return;
+        }
+        details.put("status", "success");
+    }
+
     protected void recordAudit(HttpServletRequest request, String action, Map<String, Object> details,
             AuditEventEnvelope.Outcome outcome) {
         if (sessionAuditDispatcher == null) {
@@ -71,7 +92,9 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
             enriched.putIfAbsent("requestId", traceId);
         }
         payload.setDetails(enriched);
-        sessionAuditDispatcher.record(payload, outcome, null, null);
+        String errorCode = extractDetailText(enriched, "errorCode");
+        String errorMessage = extractDetailText(enriched, "errorMessage");
+        sessionAuditDispatcher.record(payload, outcome, errorCode, errorMessage);
     }
 
     private String resolveAuditFacilityId(HttpServletRequest request) {
@@ -94,6 +117,17 @@ public abstract class AbstractOrcaRestResource extends AbstractResource {
             }
         }
         return facility;
+    }
+
+    private String extractDetailText(Map<String, Object> details, String key) {
+        if (details == null || key == null) {
+            return null;
+        }
+        Object value = details.get(key);
+        if (value instanceof String text && !text.isBlank()) {
+            return text;
+        }
+        return null;
     }
 
     protected WebApplicationException validationError(HttpServletRequest request, String field, String message) {
