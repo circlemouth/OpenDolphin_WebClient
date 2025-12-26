@@ -12,7 +12,7 @@ if (outcome == success) of /core-service=management/management-interface=http-in
 end-if
 
 # 2025-11-03 モダナイズ対応: WildFly 33 base レイヤ指定（依存は javax 系で維持）
-module add --name=org.postgresql --resources=/opt/jboss/postgresql-driver.jar --dependencies=javax.api,javax.transaction.api --module-root-dir=/opt/jboss/wildfly/modules/system/layers/base
+# org.postgresql モジュールは Dockerfile で事前配置するため、CLI では追加しない。
 
 if (outcome != success) of /subsystem=datasources/jdbc-driver=postgresql:read-resource()
     /subsystem=datasources/jdbc-driver=postgresql:add(driver-name=postgresql,driver-module-name=org.postgresql,driver-class-name=org.postgresql.Driver)
