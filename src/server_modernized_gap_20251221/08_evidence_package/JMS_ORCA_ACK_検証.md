@@ -46,5 +46,5 @@ RUN_ID: 20251226T153725Z
 - 実 ORCA での ACK 実測を行う場合は、`claim.host` / `claim.send.port` が実 ORCA に到達する構成で再実行すること。
 
 ## 6. 実 ORCA 実測の進捗
-- `ORCAcertification/103867__JP_u00001294_client3948.p12` と `ORCAcertification/新規 テキスト ドキュメント.txt` が作業ツリーに存在せず、`ORCA_CERTIFICATION_ONLY.md` の手順に従った実 ORCA 接続ができないため未実施。
-- 資格情報ファイルが配置され次第、同手順で再実測し、`artifacts/orca-connectivity/<RUN_ID>/` に証跡を追加する。
+- `ORCAcertification/103867__JP_u00001294_client3948.p12` と `ORCAcertification/新規 テキスト ドキュメント.txt` の配置を確認済み。
+- `ORCA_CERTIFICATION_ONLY.md` の手順に従い、実 ORCA 接続での ACK 実測を次回実行し、`artifacts/orca-connectivity/<RUN_ID>/` に証跡を追加する。
