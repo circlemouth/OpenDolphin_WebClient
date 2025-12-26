@@ -1,6 +1,6 @@
 # PHR Export 証跡取得
 - 期間: 2026-01-09 11:00 - 2026-01-10 11:00 / 優先度: medium / 緊急度: medium
-- RUN_ID: 20251226T140447Z
+- RUN_ID: 20251226T153329Z
 - YAML ID: `src/server_modernized_gap_20251221/08_evidence_package/PHR_Export_証跡取得.md`
 
 ## 目的
@@ -26,37 +26,37 @@
   - `PHR_EXPORT_S3_FORCE_PATH_STYLE=true`
   - `PHR_EXPORT_S3_ACCESS_KEY=opendolphin`
   - `PHR_EXPORT_S3_SECRET_KEY=opendolphin-secret`
-  - 証跡: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/logs/env_phr_export.txt`
+  - 証跡: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/logs/env_phr_export.txt`
 
 ## Evidence 記録（実測結果）
-- 実施日時: 2025-12-26 23:42–23:43 JST
+- 実施日時: 2025-12-27 00:36–00:37 JST
 - 実施者: worker-phr
-- RUN_ID: 20251226T140447Z
+- RUN_ID: 20251226T153329Z
 
 ### Request/Response（HTTP）
-- `POST /20/adm/phr/export` → **200**
-  - request: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_export_request.json`
-  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_export_response_headers.txt`
-  - response body: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_export_response_body.json`
+- `POST /20/adm/phr/export` → **202**
+  - request: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_export_request.json`
+  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_export_response_headers.txt`
+  - response body: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_export_response_body.json`
 - `GET /20/adm/phr/status/{jobId}` → **200 (SUCCEEDED + signed URL)**
-  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_status_response_headers.txt`
-  - response body: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_status_response_body.json`
+  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_status_response_headers.txt`
+  - response body: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_status_response_body.json`
 - `GET /20/adm/phr/export/{jobId}/artifact` → **200**
-  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_export_artifact_response_headers.txt`
-  - artifact: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_export_artifact.zip`
+  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_export_artifact_response_headers.txt`
+  - artifact: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_export_artifact.zip`
 - `DELETE /20/adm/phr/status/{jobId}` → **409 (invalid_state)**
-  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_status_delete_response_headers.txt`
-  - response body: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/http/phr_status_delete_response_body.json`
+  - response header: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_status_delete_response_headers.txt`
+  - response body: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_status_delete_response_body.json`
 
 ### 監査ログ（DB 抽出）
 - `PHR_EXPORT_REQUEST` / `PHR_SIGNED_URL_ISSUED` / `PHR_EXPORT_STATUS` / `PHR_EXPORT_ARTIFACT` を記録。
 - `PHR_EXPORT_CANCEL` は **409 (invalid_state)** の失敗監査が記録。
-- 抽出先: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/db/audit_events.txt`
+- 抽出先: `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/db/audit_events.txt`
 
 ### サーバーログ（成功フロー）
 - `PHR_EXPORT_REQUEST` / `PHR_SIGNED_URL_ISSUED` / `PHR_EXPORT_STATUS` / `PHR_EXPORT_ARTIFACT` の成功ログを記録。
 - 証跡:
-  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T140447Z/logs/server_phr_export.txt`
+  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/logs/server_phr_export.txt`
 
 ## 未達項目
 - なし（S3 保存・署名URL発行・成果物取得まで完了）。
