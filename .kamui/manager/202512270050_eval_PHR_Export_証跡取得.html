@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | PHR Export 証跡取得</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 0;
+      }
+      .score-card {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .score-card h2 {
+        font-size: 15px;
+        margin: 0 0 8px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .grid-2 {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .agent-panel {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+      }
+      .agent-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 0 0 8px;
+      }
+      .agent-meta {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-bottom: 12px;
+      }
+      .badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 600;
+        padding: 2px 6px;
+        border-radius: 4px;
+        border: 1px solid #b8c9cd;
+        background: #d8e6e9;
+        margin-right: 6px;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        font-size: 12px;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .artifact-list {
+        font-size: 12px;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .artifact-list li {
+        margin-bottom: 4px;
+      }
+      .summary {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        font-size: 13px;
+      }
+      .hex-title {
+        font-size: 12px;
+        font-weight: 600;
+        margin: 0 0 4px;
+      }
+      .hex-labels {
+        font-size: 10px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | PHR Export 証跡取得</h1>
+        <p class="monitor-description">タスク完了状況・実測証跡・監査メタ整合性を比較評価し、運用品質を採点しました。</p>
+        <div class="summary">
+          <strong>タスク概要:</strong> PHR Export のS3保存/署名URL発行/監査証跡の実測結果を取得し、運用設定と監査メタの整合を確認。
+        </div>
+        <div class="scoreboard">
+          <div class="score-card">
+            <h2>worker-phr / task-1766763115203-2d7871</h2>
+            <div class="score-total">🏆 548 / 600</div>
+            <div>評価: 🥇 92点</div>
+          </div>
+          <div class="score-card">
+            <h2>worker-phr / task-1766763115404-e766e5</h2>
+            <div class="score-total">🥇 534 / 600</div>
+            <div>評価: 🥇 90点</div>
+          </div>
+        </div>
+      </header>
+
+      <div class="grid-2">
+        <section class="agent-panel">
+          <h2 class="agent-title">worker-phr / task-1766763115203-2d7871</h2>
+          <div class="agent-meta">
+            <span class="badge">RUN_ID: 20251226T153329Z</span>
+            <span class="badge">コミット: b19bf843</span>
+          </div>
+          <div class="metrics">
+            <div>
+              <p class="hex-title">6指標チャート</p>
+              <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="score chart">
+                <polygon points="90,20 150,55 150,125 90,160 30,125 30,55" fill="#eef3f4" stroke="#b8c9cd" />
+                <polygon points="90,23.5 145.8,57.8 144.6,121.5 90.0,151.6 35.4,121.5 33.6,57.4" fill="rgba(56, 142, 142, 0.35)" stroke="#2c6e6f" />
+              </svg>
+            </div>
+            <ul class="metric-list">
+              <li>完了度 95点: 署名URL/成果物/監査ログを一式記録。</li>
+              <li>監査適合 92点: 監査イベント種別と失敗監査が明示。</li>
+              <li>証跡品質 90点: HTTP/DB/ログの3系統が揃う。</li>
+              <li>再現性 88点: 環境変数と実施日時を明記。</li>
+              <li>リスク管理 90点: 409の仕様説明あり。</li>
+              <li>ドキュメント 93点: 参照リンクと次アクション記載。</li>
+            </ul>
+          </div>
+          <div class="section-title">コミットログ</div>
+          <pre>b19bf843 2025-12-27 00:38:29 +0900 circlemouth Add PHR export evidence (RUN_ID=20251226T153329Z)</pre>
+          <div class="section-title">差分サマリ</div>
+          <pre>17 files changed, 104 insertions(+), 16 deletions(-)
+artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/...</pre>
+          <div class="section-title">成果物リンク（別worktree由来）</div>
+          <ul class="artifact-list">
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/logs/env_phr_export.txt">env_phr_export.txt</a></li>
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/db/audit_events.txt">audit_events.txt</a></li>
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153329Z/http/phr_export_artifact.zip">phr_export_artifact.zip</a></li>
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/src/server_modernized_gap_20251221/08_evidence_package/PHR_Export_証跡取得.md">PHR_Export_証跡取得.md</a></li>
+          </ul>
+        </section>
+
+        <section class="agent-panel">
+          <h2 class="agent-title">worker-phr / task-1766763115404-e766e5</h2>
+          <div class="agent-meta">
+            <span class="badge">RUN_ID: 20251226T153433Z</span>
+            <span class="badge">コミット: 54faa563</span>
+          </div>
+          <div class="metrics">
+            <div>
+              <p class="hex-title">6指標チャート</p>
+              <svg width="180" height="180" viewBox="0 0 180 180" role="img" aria-label="score chart">
+                <polygon points="90,20 150,55 150,125 90,160 30,125 30,55" fill="#eef3f4" stroke="#b8c9cd" />
+                <polygon points="90.0,25.6 144.6,58.5 143.3,120.8 90.0,150.2 36.7,120.8 35.4,58.5" fill="rgba(56, 142, 142, 0.35)" stroke="#2c6e6f" />
+              </svg>
+            </div>
+            <ul class="metric-list">
+              <li>完了度 92点: フロー完走と証跡一式を提示。</li>
+              <li>監査適合 90点: 監査イベントと失敗監査が整合。</li>
+              <li>証跡品質 88点: HTTP/DB/ログは揃うが一部ステータス記録が省略。</li>
+              <li>再現性 86点: 実施時刻記載はあるがrun_timestamp追加のみ。</li>
+              <li>リスク管理 88点: 409の解釈は記載。</li>
+              <li>ドキュメント 90点: 参照リンクと次アクションが明記。</li>
+            </ul>
+          </div>
+          <div class="section-title">コミットログ</div>
+          <pre>54faa563 2025-12-27 00:44:28 +0900 circlemouth Add PHR export evidence run 20251226T153433Z</pre>
+          <div class="section-title">差分サマリ</div>
+          <pre>14 files changed, 106 insertions(+), 17 deletions(-)
+artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153433Z/...</pre>
+          <div class="section-title">成果物リンク（別worktree由来）</div>
+          <ul class="artifact-list">
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153433Z/logs/env_phr_export.txt">env_phr_export.txt</a></li>
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153433Z/db/audit_events.txt">audit_events.txt</a></li>
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T153433Z/http/phr_export_artifact.zip">phr_export_artifact.zip</a></li>
+            <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/src/server_modernized_gap_20251221/08_evidence_package/PHR_Export_証跡取得.md">PHR_Export_証跡取得.md</a></li>
+          </ul>
+        </section>
+      </div>
+    </div>
+  </body>
+</html>
