@@ -1,6 +1,6 @@
 # JMS ORCA ACK 検証（WildFly 33）
 
-RUN_ID: 20251226T133822Z
+RUN_ID: 20251226T153725Z
 
 ## 1. 実行環境
 - WildFly: `opendolphin-server-modernized-dev`（起動済みのため再起動なし）
@@ -11,35 +11,35 @@ RUN_ID: 20251226T133822Z
 1. `sendClaim` を実行し、JMS enqueue → MDB（MessageSender）処理を確認。
 2. JMS メトリクス（`dolphinQueue`）の `messages-added` と `message-count` を前後で取得。
 3. 監査イベント `EHT_CLAIM_SEND` を `d_audit_event` から取得。
-4. ORCA ACK 受信はローカル ACK スタブ（TCP 18080）で代替し、`dolphin.claim` ロガーの `ACK:` を確認。
+4. ORCA ACK 受信はローカル ACK スタブ（TCP 18080）で代替し、`CLAIM_SUCCESS` と ACK スタブログを確認。
 
 ## 3. 結果サマリ
 - JMS:
-  - `messages-added` が 760 → 761 に増加（1回送信）。
+  - `messages-added` が 66 → 82 に増加（並列実行の影響で +16）。
   - `message-count` は 0L 維持（即時ドレイン）。
 - 監査イベント:
-  - `EHT_CLAIM_SEND` が `trace_id=trace-jms-20251226T133822Z-ack2` で記録。
+  - `EHT_CLAIM_SEND` が `trace_id=trace-jms-20251226T153725Z-ack1` で記録。
 - ORCA ACK:
-  - `dolphin.claim` ログに `ACK:` を確認。
+  - `open.dolphin.audit.external` の `CLAIM_SUCCESS` を確認。
   - ACK は **ローカル ACK スタブ**による受信（実 ORCA ではない）。
 
 ## 4. 証跡
 - HTTP
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/http/sendClaim_ack_headers.txt`
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/http/sendClaim_ack_request.headers`
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/http/sendClaim_ack_request.json`
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/http/sendClaim_ack_response.bin`
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/http/sendClaim_ack_response.hex`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/http/sendClaim_ack_headers.txt`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/http/sendClaim_ack_request.headers`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/http/sendClaim_ack_request.json`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/http/sendClaim_ack_response.bin`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/http/sendClaim_ack_response.hex`
 - JMS メトリクス
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/logs/jms_dolphinQueue_before.txt`
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/logs/jms_dolphinQueue_after.txt`
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/logs/jms_dolphinQueue_after_ack.txt`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/logs/jms_dolphinQueue_before.txt`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/logs/jms_dolphinQueue_after.txt`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/logs/jms_dolphinQueue_after_ack.txt`
 - 監査ログ
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/logs/d_audit_event_trace_20251226T133822Z_ack.csv`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/logs/d_audit_event_trace_20251226T153725Z_ack.csv`
 - サーバーログ（ACK 受信）
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/logs/server_modernized_dev_ack.log`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/logs/server_modernized_dev_ack.log`
 - ACK スタブログ
-  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T133822Z/logs/orca_ack_stub.log`
+  - `artifacts/parity-manual/JMS_ORCA_ACK/20251226T153725Z/logs/orca_ack_stub.log`
 
 ## 5. 補足（実 ORCA との差分）
 - 本 RUN は **ローカル ACK スタブ**で ACK を返却。
