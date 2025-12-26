@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: Webクライアント MSW 無効化検証</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 14px;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-main {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+        margin-bottom: 24px;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        display: flex;
+        gap: 16px;
+        align-items: center;
+        margin: 12px 0 16px;
+        flex-wrap: wrap;
+      }
+      .hex-chart svg {
+        width: 140px;
+        height: 140px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: Webクライアント MSW 無効化検証</h1>
+        <p class="monitor-description">RUN_ID=20251225T234011Z / 監視対象ブランチ: task-1766704406691-bb1c3c, task-1766704406893-339496, task-1766704407092-3917af</p>
+      </header>
+
+      <section class="summary-block">
+        <div class="snapshot-summary">タスク概要</div>
+        <p>MSW を無効化した Web クライアントが Charts/受付/ORCA の実 API を通過し、TraceId/監査の同期ポイントが確認できるかを検証。各ブランチで証跡ログ・スクリーンショットの有無、運用上の阻害要因、手順の再現性を評価した。</p>
+        <p>比較構成は 2 列テーブルで実施。タスク 3 件を 2 つの比較テーブルに分割して掲載。</p>
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>codex / task-1766704406691-bb1c3c</h3>
+          <div class="score-main">486 / 600 🥇</div>
+          <div class="score-sub">メダル: 🥈 (85点)</div>
+        </div>
+        <div class="score-card">
+          <h3>codex / task-1766704406893-339496</h3>
+          <div class="score-main">447 / 600 🥈</div>
+          <div class="score-sub">メダル: 🥉 (78点)</div>
+        </div>
+        <div class="score-card">
+          <h3>codex / task-1766704407092-3917af</h3>
+          <div class="score-main">540 / 600 🏆</div>
+          <div class="score-sub">メダル: 🥇 (92点)</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1766704406691-bb1c3c</th>
+            <th>codex / task-1766704406893-339496</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-25 23:40Z</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">MSW OFF で Web/Vite 経由 + 直叩き API の検証を実施。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 140 140" aria-label="hex chart">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="none" stroke="#c4d3d7" stroke-width="2" />
+                  <polygon points="70.0,19.0 111.6,46.0 114.2,95.5 70.0,112.0 24.3,96.4 29.5,46.6" fill="rgba(79,129,137,0.35)" stroke="#4f8189" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>完了度 85点</li>
+                  <li>証跡品質 80点</li>
+                  <li>Trace/監査整合 85点</li>
+                  <li>運用準備度 70点</li>
+                  <li>記録明瞭さ 88点</li>
+                  <li>リスク低減 78点</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">評価理由</p>
+              <p>MSW 無効化で Vite dev 起動と proxy 経由の API を確認し、TraceId と auditEvent を複数経路で取得。docker compose 競合によりセットアップが完遂できていない点は運用準備度を減点。</p>
+              <p class="snapshot-summary">成果物リンク（別 worktree）</p>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766704406691-bb1c3c/src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md">検証記録</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766704406691-bb1c3c/artifacts/webclient/msw-off/20251225T231459Z/">証跡ディレクトリ</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>a4d520c3 MSW無効化検証ログ追加 20251225T231459Z
+a7d6eb01 MSW無効化検証 20251225T231459Z
+43bc22a0 WebクライアントMSW無効化検証のスコープ明記</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分概要</summary>
+                <pre>artifacts/webclient/msw-off/20251225T231459Z/... 追加
+src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md 更新
+66 files changed, 441 insertions(+)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">MSW OFF 実 API 検証と専用コンテナ作成で再試験。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 140 140" aria-label="hex chart">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="none" stroke="#c4d3d7" stroke-width="2" />
+                  <polygon points="70.0,23.2 106.4,49.0 109.0,92.5 70.0,113.2 27.4,94.6 33.6,49.0" fill="rgba(79,129,137,0.35)" stroke="#4f8189" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>完了度 78点</li>
+                  <li>証跡品質 70点</li>
+                  <li>Trace/監査整合 75点</li>
+                  <li>運用準備度 72点</li>
+                  <li>記録明瞭さ 82点</li>
+                  <li>リスク低減 70点</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">評価理由</p>
+              <p>MSW 無効化の意図と API 200/404 を確認したが、Web UI での挙動やスクリーンショットが無い点を減点。ワークツリー専用コンテナ構築で再試験した点は加点。</p>
+              <p class="snapshot-summary">成果物リンク（別 worktree）</p>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766704406893-339496/src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md">検証記録</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766704406893-339496/artifacts/webclient/msw-disabled/20251225T231452Z/">証跡ディレクトリ1</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766704406893-339496/artifacts/webclient/msw-disabled/20251225T233524Z-wt/">証跡ディレクトリ2</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>7ef63945 ワークツリー専用コンテナでMSW無効化実測
+800c9d06 MSW無効化の実API検証ログを追加
+43bc22a0 WebクライアントMSW無効化検証のスコープ明記</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分概要</summary>
+                <pre>artifacts/compose/worktree-modernized.override.yml 追加
+artifacts/webclient/msw-disabled/20251225T231452Z... 追加
+artifacts/webclient/msw-disabled/20251225T233524Z-wt... 追加
+src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md 更新
+20 files changed, 126 insertions(+)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex / task-1766704407092-3917af</th>
+            <th>codex / task-1766704406691-bb1c3c</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-25 23:40Z</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">MSW OFF の Web UI 動作と Playwright での実 API 証跡を取得。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 140 140" aria-label="hex chart">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="none" stroke="#c4d3d7" stroke-width="2" />
+                  <polygon points="70.0,14.8 119.4,41.5 116.8,97.0 70.0,122.8 23.2,97.0 25.8,44.5" fill="rgba(79,129,137,0.35)" stroke="#4f8189" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>完了度 92点</li>
+                  <li>証跡品質 95点</li>
+                  <li>Trace/監査整合 90点</li>
+                  <li>運用準備度 88点</li>
+                  <li>記録明瞭さ 90点</li>
+                  <li>リスク低減 85点</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">評価理由</p>
+              <p>Vite 設定・MSW 無効化を明示し、UI スクリーンショットと Playwright 結果を添付。TraceId/監査一致の確認が明確で証跡品質が高い。</p>
+              <p class="snapshot-summary">成果物リンク（別 worktree）</p>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766704407092-3917af/src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md">検証記録</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766704407092-3917af/artifacts/webclient/msw-off/20251225T231456Z/">証跡ディレクトリ</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>43414b1c MSW無効化の実API検証証跡を追加
+43bc22a0 WebクライアントMSW無効化検証のスコープ明記</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分概要</summary>
+                <pre>artifacts/webclient/msw-off/20251225T231456Z/... 追加
+playwright-results.json / screenshots 追加
+src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md 更新
+17 files changed, 373 insertions(+)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">Web/Server API の同期ポイント確認は実施済み。</span>
+              </div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 140 140" aria-label="hex chart">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="none" stroke="#c4d3d7" stroke-width="2" />
+                  <polygon points="70.0,19.0 111.6,46.0 114.2,95.5 70.0,112.0 24.3,96.4 29.5,46.6" fill="rgba(79,129,137,0.35)" stroke="#4f8189" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>完了度 85点</li>
+                  <li>証跡品質 80点</li>
+                  <li>Trace/監査整合 85点</li>
+                  <li>運用準備度 70点</li>
+                  <li>記録明瞭さ 88点</li>
+                  <li>リスク低減 78点</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">評価理由</p>
+              <p>MSW 無効化の実 API 応答は確認済みだが、UI 証跡は限定的。再現性の観点では追加の UI 証跡が望ましい。</p>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>a4d520c3 MSW無効化検証ログ追加 20251225T231459Z
+a7d6eb01 MSW無効化検証 20251225T231459Z
+43bc22a0 WebクライアントMSW無効化検証のスコープ明記</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分概要</summary>
+                <pre>artifacts/webclient/msw-off/20251225T231459Z/... 追加
+src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md 更新
+66 files changed, 441 insertions(+)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section class="summary-block">
+        <div class="snapshot-summary">総合評価メモ</div>
+        <ul class="metric-list">
+          <li>task-1766704407092-3917af は UI スクリーンショットと Playwright 証跡が揃い、TraceId/監査の記述も明瞭。</li>
+          <li>task-1766704406691-bb1c3c は Vite 経由と直叩きの二経路検証で信頼性は高いが、セットアップ失敗の影響が残る。</li>
+          <li>task-1766704406893-339496 は API 証跡中心で UI/UX 面の証跡が不足しているため次回補強が必要。</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

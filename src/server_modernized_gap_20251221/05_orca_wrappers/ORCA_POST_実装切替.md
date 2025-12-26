@@ -14,7 +14,7 @@
 
 ## 残タスクの扱い
 - subjectives / medical records の実接続検証と監査証跡取得は **証跡統合タスクへ移管**。
-- stub 固定の POST（medical-sets / tensu / birth-delivery）は **方針確定済み**（Trial 未開放のため stub 継続）。
+- stub 固定の POST（medical-sets / tensu / birth-delivery）は **方針確定済み**（ORCA certification 環境で未開放のため stub 継続）。
 - フラグ運用方針は `server-modernized/config/server-modernized.env.sample` に明記済み。
 
 ## 完了条件

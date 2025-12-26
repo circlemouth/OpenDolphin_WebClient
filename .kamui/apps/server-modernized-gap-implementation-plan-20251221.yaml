@@ -679,8 +679,8 @@ src:
         agent: codex
         api: []
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-08T04:00:00.000Z
           days: 2
@@ -731,8 +731,8 @@ src:
         agent: codex
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-11T00:00:00.000Z
           days: 2
@@ -764,11 +764,11 @@ src:
         dependency:
           - src/server_modernized_gap_20251221/02_orca08_etensu/ORCA-08_キャッシュ_監査_性能.md
           - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
+        agent: worker-orca-master
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-08T00:00:00.000Z
           days: 2
@@ -777,15 +777,15 @@ src:
           # PHR E2E 証跡
 
           - PHR-01〜11 と export 系の実測証跡を最終段階で取得。
-          - Trial/ORMaster での差異を記録。
+          - ORCA certification 環境での差異を記録。
         dependency:
           - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
           - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
+        agent: worker-phr
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-09T00:00:00.000Z
           days: 2
@@ -795,10 +795,13 @@ src:
 
           - PHR Export の S3/署名 URL 実測と監査証跡を取得。
           - 運用設定（S3/署名鍵/TTL）と監査メタの整合を確認。
+          - 本タスクは他タスクと**並列実施**を前提とする。
+          - サーバー起動は**未起動時のみ**実施し、起動済みの場合は**再起動しない**。
+          - サーバー停止は**行わない**（他作業の継続を優先）。
         dependency:
           - src/server_modernized_gap_20251221/03_phr/PHR_Export_ジョブ_署名URL.md
           - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
+        agent: worker-phr
         api: []
         priority: Medium
         status: not_started
@@ -810,16 +813,16 @@ src:
         content: |-
           # ORCA Wrapper E2E
 
-          - ORMaster/本番相当で POST API を最終段階にて実測。
+          - ORCA certification 環境で POST API を最終段階にて実測。
           - 外部依存の証跡と切替手順を残す。
         dependency:
           - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md
           - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
+        agent: worker-orca-wrapper
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-12T00:00:00.000Z
           days: 2
@@ -832,11 +835,11 @@ src:
         dependency:
           - src/server_modernized_gap_20251221/06_server_ops_required/ORCA_master_API_実接続.md
           - src/server_modernized_gap_20251221/07_quality_release/品質リリース_前提ドキュメント整備.md
-        agent: codex
+        agent: worker-orca-master
         api: []
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-10T00:00:00.000Z
           days: 2
@@ -846,9 +849,12 @@ src:
 
           - WildFly 33 環境で ORCA 送信/ACK 受信を実測。
           - 監査イベントと JMS メトリクスを突合。
+          - 本タスクは他タスクと**並列実施**を前提とする。
+          - サーバー起動は**未起動時のみ**実施し、起動済みの場合は**再起動しない**。
+          - サーバー停止は**行わない**（他作業の継続を優先）。
         dependency:
           - src/server_modernized_gap_20251221/05_orca_wrappers/ORCA_POST_実装切替.md
-        agent: codex
+        agent: worker-audit-jms
         api: []
         priority: Medium
         status: not_started
@@ -862,9 +868,12 @@ src:
 
           - 4xx/5xx の TraceId が監査ログへ到達することを確認。
           - 例外パスのメタ整合とログ出力を証跡化。
+          - 本タスクは他タスクと**並列実施**を前提とする。
+          - サーバー起動は**未起動時のみ**実施し、起動済みの場合は**再起動しない**。
+          - サーバー停止は**行わない**（他作業の継続を優先）。
         dependency:
           - src/server_modernized_gap_20251221/07_quality_release/4xx5xx_監査_統一.md
-        agent: codex
+        agent: worker-audit-jms
         api: []
         priority: Medium
         status: not_started

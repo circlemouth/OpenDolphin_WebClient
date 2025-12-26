@@ -14,14 +14,14 @@
 
 | 区分 | API / 経路 | 現状 | 主な Blocker（要約） |
 | --- | --- | --- | --- |
-| 受付 | `/orca11/acceptmodv2` | HTTP 405（Allow: OPTIONS, GET） | Trial/ORMaster 側で POST 未開放。
-| 予約 | `/orca14/appointmodv2` | HTTP 405（Allow: OPTIONS, GET） | Trial/ORMaster 側で POST 未開放。
-| 患者メモ | `/orca06/patientmemomodv2` | HTTP 405（Allow: OPTIONS, GET） | Trial/ORMaster 側で POST 未開放。
-| 帳票印刷 | `/orca42/receiptprintv3` | HTTP 405（Allow: OPTIONS, GET） | Trial 側で帳票/出力が禁止。ORCA 側の出力制限解除が必要。
-| カルテ主訴 | `POST /orca/chart/subjectives`（`/orca25/subjectivesv2`） | Spec-based stub（`Api_Result=79`） | Trial で POST 未開放。ORMaster 実測が必要。
-| 出産育児 | `POST /orca/birth-delivery`（`/orca31/birthdeliveryv2`） | Spec-based stub（`Api_Result=79`） | Trial で POST 未開放。ORMaster 実測が必要。
-| 医療セット | `POST /orca/medical-sets` | Spec-based stub（`Api_Result=79`） | Trial で POST 未開放。ORMaster 実測が必要。
-| 点数同期 | `POST /orca/tensu/sync` | Spec-based stub（`Api_Result=79`） | Trial で POST 未開放。ORMaster 実測が必要。
+| 受付 | `/orca11/acceptmodv2` | HTTP 405（Allow: OPTIONS, GET） | ORCA certification 環境で POST 未開放。
+| 予約 | `/orca14/appointmodv2` | HTTP 405（Allow: OPTIONS, GET） | ORCA certification 環境で POST 未開放。
+| 患者メモ | `/orca06/patientmemomodv2` | HTTP 405（Allow: OPTIONS, GET） | ORCA certification 環境で POST 未開放。
+| 帳票印刷 | `/orca42/receiptprintv3` | HTTP 405（Allow: OPTIONS, GET） | ORCA certification 環境で帳票/出力が禁止。ORCA 側の出力制限解除が必要。
+| カルテ主訴 | `POST /orca/chart/subjectives`（`/orca25/subjectivesv2`） | Spec-based stub（`Api_Result=79`） | ORCA certification 環境で POST 未開放。ORCA certification で実測が必要。
+| 出産育児 | `POST /orca/birth-delivery`（`/orca31/birthdeliveryv2`） | Spec-based stub（`Api_Result=79`） | ORCA certification 環境で POST 未開放。ORCA certification で実測が必要。
+| 医療セット | `POST /orca/medical-sets` | Spec-based stub（`Api_Result=79`） | ORCA certification 環境で POST 未開放。ORCA certification で実測が必要。
+| 点数同期 | `POST /orca/tensu/sync` | Spec-based stub（`Api_Result=79`） | ORCA certification 環境で POST 未開放。ORCA certification で実測が必要。
 
 ## 解放前提条件（ORCA 側）
 1. **POST 受理の解禁**
@@ -33,7 +33,7 @@
 3. **データ出力/帳票制限の解除（該当 API のみ）**
    - 帳票/CSV/外部媒体の出力制限が解除され、**receipt print 系 API が利用可能**であること。
 4. **実測環境の用意**
-   - Trial/ORMaster のどちらかで **CRUD 可能なデータ**（患者・受付・予約等）が揃っていること。
+   - ORCA certification 環境で **CRUD 可能なデータ**（患者・受付・予約等）が揃っていること。
 
 ## 切替条件（Spec-based → 実 API）
 > 解除条件は **ORCA 側の開放確認** + **実測証跡（最終段階で取得）** + **サーバー切替準備完了** の 3 点で成立。
@@ -75,7 +75,7 @@
   - `logs/http_extract_<UTC>.log`
 - 任意:
   - `trace/<api>.log`
-  - `trial/<api>/README.md`（UI での確認ができた場合）
+- `orcacertification/<api>/README.md`（UI での確認ができた場合）
 
 ## 非スコープ
 - ORCA 実環境への接続や設定変更。
