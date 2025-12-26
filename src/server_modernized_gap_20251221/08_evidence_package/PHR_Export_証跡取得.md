@@ -41,9 +41,9 @@
 ### サーバーログ（失敗原因）
 - `PHRAsyncJobServiceBean#createJob` のトランザクション commit 失敗（`PGobject` 未解決）。
 - 証跡:
-  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T133021Z/logs/server_phr_export.log`
-  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T133021Z/logs/server_phr_async_job_error.log`
-  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T133021Z/logs/server_pgobject_error.log`
+  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T133021Z/logs/server_phr_export.txt`
+  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T133021Z/logs/server_phr_async_job_error.txt`
+  - `artifacts/server-modernized-gap/20251226/phr_export_evidence/20251226T133021Z/logs/server_pgobject_error.txt`
 
 ## 未達項目
 - S3 backend によるアーティファクト保存・取得の実測。
