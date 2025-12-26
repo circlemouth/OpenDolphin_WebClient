@@ -876,8 +876,8 @@ src:
         agent: worker-audit-jms
         api: []
         priority: Medium
-        status: in_progress
-        progress: 33
+        status: completed
+        progress: 100
         schedule:
           start: 2026-01-13T00:00:00.000Z
           days: 1
