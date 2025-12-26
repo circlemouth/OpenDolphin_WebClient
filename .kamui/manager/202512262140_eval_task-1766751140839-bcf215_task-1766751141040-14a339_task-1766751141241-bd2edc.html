@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | JMS ORCA ACK 検証</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .task-summary {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .task-summary h2 {
+        margin: 0 0 8px 0;
+        font-size: 16px;
+      }
+      .task-summary ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .score-summary {
+        display: flex;
+        align-items: baseline;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #5b6a70;
+      }
+      .score-medal {
+        font-size: 22px;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--partial {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--blocked {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .hex-wrap {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        margin-bottom: 8px;
+      }
+      .hex-chart {
+        width: 180px;
+        height: 180px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 0;
+        padding-left: 16px;
+      }
+      .metric-list li {
+        margin-bottom: 2px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 12px 0 6px 0;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      a {
+        color: #1b5f7a;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート | JMS ORCA ACK 検証（WildFly 33）</h1>
+        <p class="monitor-description">評価対象: task/task-1766751140839-bcf215, task/task-1766751141040-14a339, task/task-1766751141241-bd2edc / RUN_ID集計: 20251226T121342Z, 20251226T121353Z, 20251226T121350Z</p>
+      </header>
+
+      <section class="task-summary">
+        <h2>タスク内容・仕事の概要</h2>
+        <ul>
+          <li>WildFly 33 で ORCA 送信と ACK/NAK 受信を実測し、JMS メトリクスと監査イベントの突合を行う。</li>
+          <li>task-1766751140839-bcf215 は ACK スタブで ACK 受信を確認（実 ORCA ではない）。</li>
+          <li>task-1766751141040-14a339 は実 ORCA 接続を試みたが Connection refused により ACK 未受信。</li>
+          <li>task-1766751141241-bd2edc は未コミットで ACK 実測未完了、ブロッカーを記録。</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>worker-audit-jms<br />task-1766751140839-bcf215</th>
+            <th>worker-audit-jms<br />task-1766751141040-14a339</th>
+            <th>worker-audit-jms<br />task-1766751141241-bd2edc</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-26 21:40 JST</td>
+            <td>
+              <div class="score-summary">
+                <span class="score-total">345/600</span>
+                <span class="score-medal">🥉</span>
+                <span class="score-sub">総合 58点</span>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--partial">部分完了</span>
+                <span class="agent-label">ACK はローカル ACK スタブで確認。実 ORCA 実測は未達。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" data-values="55,70,75,35,65,45" viewBox="0 0 200 200" aria-label="評価指標チャート"></svg>
+                <ul class="metric-list">
+                  <li>完遂度 55点</li>
+                  <li>証跡品質 70点</li>
+                  <li>監査/JMS突合 75点</li>
+                  <li>ORCA ACK 実測 35点</li>
+                  <li>再現性 65点</li>
+                  <li>運用適合 45点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>ACK ログは取得できたが、明記されている通りローカル ACK スタブであり実 ORCA ではない。
+監査イベントと JMS メトリクスは trace で突合されているため証跡品質は一定水準。
+未コミットの tmp/claim-tests が残っており運用整備は不足。</pre>
+              <div class="section-title">コミットログ（master..branch）</div>
+              <pre>2308eb82 JMS ORCA ACK 検証の証跡を追加</pre>
+              <div class="section-title">差分概要</div>
+              <pre>19 files changed, 207 insertions(+)</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>?? tmp/claim-tests/</pre>
+              <div class="section-title">成果物リンク</div>
+              <pre><a href="../../src/server_modernized_gap_20251221/08_evidence_package/JMS_ORCA_ACK_検証.md">JMS_ORCA_ACK_検証.md</a>
+<a href="../../artifacts/parity-manual/JMS_ORCA_ACK/20251226T121342Z/">artifacts/parity-manual/JMS_ORCA_ACK/20251226T121342Z/</a></pre>
+            </td>
+            <td>
+              <div class="score-summary">
+                <span class="score-total">340/600</span>
+                <span class="score-medal">🥉</span>
+                <span class="score-sub">総合 57点</span>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--partial">部分完了</span>
+                <span class="agent-label">実 ORCA 接続に失敗し ACK 未受信。JMS/監査の突合は実施。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" data-values="45,75,80,20,70,50" viewBox="0 0 200 200" aria-label="評価指標チャート"></svg>
+                <ul class="metric-list">
+                  <li>完遂度 45点</li>
+                  <li>証跡品質 75点</li>
+                  <li>監査/JMS突合 80点</li>
+                  <li>ORCA ACK 実測 20点</li>
+                  <li>再現性 70点</li>
+                  <li>運用適合 50点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>実 ORCA への送信を試みたが Connection refused により ACK/NAK を受信できていない。
+JMS queue の増分と d_audit_event の trace 突合は確認済みで、証跡は詳細。
+次アクションが明記されているため再現性は確保。</pre>
+              <div class="section-title">コミットログ（master..branch）</div>
+              <pre>d87c43ef JMS ORCA ACK 検証証跡を追加</pre>
+              <div class="section-title">差分概要</div>
+              <pre>14 files changed, 273 insertions(+)</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし</pre>
+              <div class="section-title">成果物リンク</div>
+              <pre><a href="../../src/server_modernized_gap_20251221/08_evidence_package/JMS_ORCA_ACK_検証.md">JMS_ORCA_ACK_検証.md</a>
+<a href="../../artifacts/parity-manual/JMS_ORCA_ACK/20251226T121353Z/">artifacts/parity-manual/JMS_ORCA_ACK/20251226T121353Z/</a></pre>
+            </td>
+            <td>
+              <div class="score-summary">
+                <span class="score-total">125/600</span>
+                <span class="score-medal">⚪️</span>
+                <span class="score-sub">総合 21点</span>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--blocked">未完了</span>
+                <span class="agent-label">ブランチにコミットがなく、ACK 実測未完了。ブロッカーのみ記録。</span>
+              </div>
+              <div class="hex-wrap">
+                <svg class="hex-chart" data-values="20,30,25,0,30,20" viewBox="0 0 200 200" aria-label="評価指標チャート"></svg>
+                <ul class="metric-list">
+                  <li>完遂度 20点</li>
+                  <li>証跡品質 30点</li>
+                  <li>監査/JMS突合 25点</li>
+                  <li>ORCA ACK 実測 0点</li>
+                  <li>再現性 30点</li>
+                  <li>運用適合 20点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>成果物が未コミットであり、task ブランチの差分が存在しない。
+custom.properties 参照失敗や DLQ 流入が発生しており、ACK 実測は未完了。
+タスク対象 API も sendClaim ではなく /karte/diagnosis/claim でありスコープ逸脱。</pre>
+              <div class="section-title">コミットログ（master..branch）</div>
+              <pre>なし（master と同一）</pre>
+              <div class="section-title">差分概要</div>
+              <pre>差分なし</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>?? artifacts/orca-connectivity/20251226T121350Z/
+?? src/server_modernized_gap_20251221/08_evidence_package/JMS_ORCA_ACK_検証.md
+?? tmp/claim-tests/</pre>
+              <div class="section-title">成果物リンク</div>
+              <pre><a href="../../.worktrees/task-1766751141241-bd2edc/src/server_modernized_gap_20251221/08_evidence_package/JMS_ORCA_ACK_検証.md">未コミット JMS_ORCA_ACK_検証.md</a></pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function () {
+        const charts = document.querySelectorAll('.hex-chart');
+        const baseAngles = [0, 60, 120, 180, 240, 300].map((deg) => (deg - 90) * (Math.PI / 180));
+        charts.forEach((svg) => {
+          const values = (svg.getAttribute('data-values') || '')
+            .split(',')
+            .map((v) => Math.max(0, Math.min(100, Number(v.trim()) || 0)));
+          const size = 80;
+          const center = 100;
+          const ringSteps = [20, 40, 60, 80, 100];
+          svg.innerHTML = '';
+
+          ringSteps.forEach((step) => {
+            const points = baseAngles
+              .map((angle) => {
+                const r = (size * step) / 100;
+                const x = center + r * Math.cos(angle);
+                const y = center + r * Math.sin(angle);
+                return `${x},${y}`;
+              })
+              .join(' ');
+            const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+            poly.setAttribute('points', points);
+            poly.setAttribute('fill', 'none');
+            poly.setAttribute('stroke', '#c4d3d7');
+            poly.setAttribute('stroke-width', '1');
+            svg.appendChild(poly);
+          });
+
+          baseAngles.forEach((angle) => {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', center);
+            line.setAttribute('y1', center);
+            line.setAttribute('x2', center + size * Math.cos(angle));
+            line.setAttribute('y2', center + size * Math.sin(angle));
+            line.setAttribute('stroke', '#c4d3d7');
+            line.setAttribute('stroke-width', '1');
+            svg.appendChild(line);
+          });
+
+          const dataPoints = baseAngles
+            .map((angle, idx) => {
+              const value = values[idx] || 0;
+              const r = (size * value) / 100;
+              const x = center + r * Math.cos(angle);
+              const y = center + r * Math.sin(angle);
+              return `${x},${y}`;
+            })
+            .join(' ');
+
+          const dataPolygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+          dataPolygon.setAttribute('points', dataPoints);
+          dataPolygon.setAttribute('fill', 'rgba(59, 122, 150, 0.35)');
+          dataPolygon.setAttribute('stroke', '#1b5f7a');
+          dataPolygon.setAttribute('stroke-width', '2');
+          svg.appendChild(dataPolygon);
+        });
+      })();
+    </script>
+  </body>
+</html>
