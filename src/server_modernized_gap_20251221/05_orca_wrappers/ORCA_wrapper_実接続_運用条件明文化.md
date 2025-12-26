@@ -18,7 +18,7 @@
 
 ## Stub / 実接続の切替条件
 ### 実接続（RestOrcaTransport）
-- **本番/検証環境の既定**。ORCA HTTP API が利用可能であることが前提。
+- **ORCA certification 環境の既定**。ORCA HTTP API が利用可能であることが前提。
 - 切替条件（実接続を継続すべき状態）:
   - `ORCA_API_*` または `custom.properties` で **host/port/user/password が揃っている**。
   - `ORCA_API_STATUS` で該当 API が **実接続可能（POST/GET 開放）**と判断できる。
@@ -80,7 +80,7 @@
 - `retry`: `ORCA_API_RETRY_MAX` / `ORCA_API_RETRY_BACKOFF_MS` のみ
 
 ## 実接続時の設定手順（解像度）
-1. **環境変数を優先して設定**する（本番/検証は必須）。
+1. **環境変数を優先して設定**する（ORCA certification 環境は必須）。
    - ORCA API の URL/認証情報は `ORCA_API_*` に集約する。
 2. `custom.properties` は **ローカル/レガシー互換のフォールバック**として扱う。
 3. 設定後、`RestOrcaTransport` が `isReady()` を満たすことを確認する。
@@ -89,7 +89,7 @@
 ## 禁止事項・注意事項
 - **禁止**: `custom.properties` の `claim.jdbc.*` / `claim.user` / `claim.password` を ORCA DB 接続の情報源として使うこと。
   - これらは **JNDI DataSource に一本化**され、読み取りはブロック/警告の対象。
-- **禁止**: 本番で `ORCA_API_*` を未設定のまま **`custom.properties` のデフォルト値**（例: `orca.id=ormaster`）に依存すること。
+- **禁止**: ORCA certification 環境で `ORCA_API_*` を未設定のまま **`custom.properties` のデフォルト値**（例: `orca.id=ormaster`）に依存すること。
 - **禁止**: `ORCA_API_*` と `custom.properties` の **ホスト/ポートを矛盾させる運用**。
   - 環境変数が優先されるため、値が混在すると誤接続の原因となる。
 - **注意**: `ORCA_API_PATH_PREFIX` は **環境変数のみ**で指定可能（`custom.properties` には対応なし）。

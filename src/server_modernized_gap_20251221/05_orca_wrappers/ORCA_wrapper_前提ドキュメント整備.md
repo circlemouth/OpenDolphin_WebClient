@@ -46,7 +46,7 @@
 1. `docs/server-modernization/MODERNIZED_REST_API_INVENTORY.md` の ORCA wrapper 項目を確認し、対象 API と P0/P1/P2 の優先度を整理する。
 2. `OrcaWrapperService` / `OrcaTransport` / `StubOrcaTransport` の責務を棚卸しし、Spec-based API 解放時に切り替えるべき transport の前提条件を明記する。
 3. `open/dolphin/orca/rest` 配下の Resource 群（予約・来院・バッチ）と実際の ORCA API 仕様の対応表（API 名 / HTTP メソッド / パス / DTO / 期待レスポンス）を整理する。
-4. 互換レイヤー（`X-Client-Compat: orca-trial` 等）によるステータス正規化・`apiResult` 補完の前提を Legacy ログから抽出し、Spec-based API 解放時の移行条件を一覧化する。
+4. 互換レイヤー（`X-Client-Compat: orca-certification` 等）によるステータス正規化・`apiResult` 補完の前提を Legacy ログから抽出し、Spec-based API 解放時の移行条件を一覧化する。
 5. 監査イベントの期待形（`runId` / `traceId` / `missingMaster` / `fallbackUsed` / `dataSourceTransition` など）を `web-client-api-mapping.md` で確認し、ORCA wrapper で不足している監査項目を整理する。
 6. 4xx/5xx のエラーレスポンス形式と監査ログ記録ルールを `predeploy_readiness` のガイドに照らして整理し、未整備箇所の TODO を明示する。
 7. 監査実装の参考として `OrcaMasterResource` の監査記録（`SessionAuditDispatcher`）を確認し、ORCA wrapper 側の実装指針に反映する。

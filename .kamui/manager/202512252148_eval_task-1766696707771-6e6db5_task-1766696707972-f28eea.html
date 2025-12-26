@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: Webクライアント_MSW無効化検証</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 28px;
+      }
+      .scorecard {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .scorecard h2 {
+        font-size: 16px;
+        margin: 0 0 8px;
+      }
+      .scorecard .total {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .scorecard .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--warning {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--risk {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 10px;
+        margin: 12px 0 16px;
+      }
+      .hex {
+        width: 100%;
+        padding-top: 86%;
+        position: relative;
+        clip-path: polygon(25% 5%, 75% 5%, 100% 50%, 75% 95%, 25% 95%, 0% 50%);
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+      }
+      .hex.good { background: #c8e6c9; }
+      .hex.mid { background: #fff3cd; }
+      .hex.low { background: #f8d7da; }
+      .hex span {
+        position: absolute;
+        inset: 8px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-size: 11px;
+        line-height: 1.3;
+        color: #1f2a30;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 16px 0 8px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .artifact-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: Webクライアント_MSW無効化検証</h1>
+        <p class="monitor-description">対象ブランチのコミットログと差分、証跡を確認して完了度・運用品質を評価。</p>
+        <p class="monitor-description">RUN_ID=20251225T214520Z / 評価日時=2025-12-25</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="scorecard">
+          <h2>codex / task-1766696707771-6e6db5</h2>
+          <div class="total">合計 360/600 🥉</div>
+          <div class="note">メダル: bronze / 総合スコア: 60</div>
+        </div>
+        <div class="scorecard">
+          <h2>codex / task-1766696707972-f28eea</h2>
+          <div class="total">合計 338/600 🥉</div>
+          <div class="note">メダル: bronze / 総合スコア: 56</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent: codex / task-1766696707771-6e6db5</th>
+            <th>Agent: codex / task-1766696707972-f28eea</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了状況: 部分完了</span>
+                <span class="status-badge status-badge--warning">未解決: ORCA master 401 / 予約API 404</span>
+                <span class="status-badge status-badge--risk">リスク: サーバーコード改変・テスト削除</span>
+              </div>
+
+              <div class="section-title">六角形指標</div>
+              <div class="hex-grid">
+                <div class="hex mid"><span>完了度<br>70点</span></div>
+                <div class="hex good"><span>検証網羅<br>78点</span></div>
+                <div class="hex mid"><span>証跡品質<br>72点</span></div>
+                <div class="hex low"><span>リスク管理<br>40点</span></div>
+                <div class="hex mid"><span>再現性<br>65点</span></div>
+                <div class="hex low"><span>スコープ遵守<br>35点</span></div>
+              </div>
+
+              <div class="section-title">概要</div>
+              <p>MSW無効状態でReception/ChartsをPlaywright巡回し、RunId/TraceId一致と実API応答を確認。HAR/スクリーンショット/JSONログは取得済みだが、ORCA masterは401、予約APIは404で未解決。</p>
+
+              <div class="section-title">コミットログ (master..branch)</div>
+              <pre>6f7fb255 (task/task-1766696707771-6e6db5) MSW無効化の実API検証ログを追加</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>28 files changed, 6412 insertions(+), 925 deletions(-)
+- artifacts/webclient/e2e/20251225T210628Z/msw-off/* (HAR/PNG/JSON)
+- server-modernized/src/main/java/open/dolphin/rest/AbstractResource.java
+- server-modernized/src/main/java/open/dolphin/rest/LogFilter.java
+- server-modernized/src/test/java/open/dolphin/rest/LogFilterTest.java
+- .kamui/* (tasks-state/model-cache/manager html)</pre>
+
+              <div class="section-title">主な評価ポイント</div>
+              <p>✅ UI経由のMSW無効確認 (Service Worker 0件)、TraceId/RunIdの一致を記録。</p>
+              <p>⚠️ ORCA master認証失敗で dataSourceTransition 検証に到達していない。</p>
+              <p>⚠️ 監査ログ証跡 (server audit) は未添付。</p>
+              <p>❌ タスク外のサーバー監査ロジック削除/テスト削除が混在。検証タスクとしてはスコープ逸脱でリスク高。</p>
+
+              <div class="section-title">成果物リンク (別worktree)</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707771-6e6db5/src/server_modernized_gap_20251221/06_server_ops_required/Web%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88_MSW%E7%84%A1%E5%8A%B9%E5%8C%96%E6%A4%9C%E8%A8%BC.md">検証レポート</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707771-6e6db5/artifacts/webclient/e2e/20251225T210628Z/msw-off/msw-off-verify.json">msw-off-verify.json</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707771-6e6db5/artifacts/webclient/e2e/20251225T210628Z/msw-off/msw-off-verify.log">msw-off-verify.log</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707771-6e6db5/artifacts/webclient/e2e/20251225T210628Z/msw-off/har/tests_e2e_modernized-main-flow.spec.ts___flow_Modernized_main_flow_a11y_telemetry__Reception_Charts_Patients_Administration_aria-live_telemetry_.har">HAR</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707771-6e6db5/artifacts/webclient/e2e/20251225T210628Z/msw-off/msw-off-reception.png">Receptionスクリーンショット</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了状況: 部分完了</span>
+                <span class="status-badge status-badge--warning">未解決: 予約API 404 / UI証跡は最終段階で未取得</span>
+                <span class="status-badge status-badge--risk">リスク: サーバーコード改変・テスト削除</span>
+              </div>
+
+              <div class="section-title">六角形指標</div>
+              <div class="hex-grid">
+                <div class="hex mid"><span>完了度<br>68点</span></div>
+                <div class="hex low"><span>検証網羅<br>55点</span></div>
+                <div class="hex mid"><span>証跡品質<br>70点</span></div>
+                <div class="hex low"><span>リスク管理<br>40点</span></div>
+                <div class="hex mid"><span>再現性<br>70点</span></div>
+                <div class="hex low"><span>スコープ遵守<br>35点</span></div>
+              </div>
+
+              <div class="section-title">概要</div>
+              <p>curlベースでORCA/Claimsの実API疎通を確認し、auditログでTraceId/Actionを確認。MSW無効化を宣言しているが、UI経由の証跡 (HAR/スクリーンショット) は未取得。</p>
+
+              <div class="section-title">コミットログ (master..branch)</div>
+              <pre>a567193e (task/task-1766696707972-f28eea) 監査ログ証跡を追加
+a54622f6 MSW無効化の実API検証ログを追加</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>23 files changed, 572 insertions(+), 925 deletions(-)
+- artifacts/webclient/ops/20251225T210633Z-msw-off/* (curl headers/json + server audit)
+- server-modernized/src/main/java/open/dolphin/rest/AbstractResource.java
+- server-modernized/src/main/java/open/dolphin/rest/LogFilter.java
+- server-modernized/src/test/java/open/dolphin/rest/LogFilterTest.java
+- .kamui/* (tasks-state/model-cache/manager html)</pre>
+
+              <div class="section-title">主な評価ポイント</div>
+              <p>✅ AuditログでTraceIdとAction一致を確認 (ORCA_CLAIM_OUTPATIENT / ORCA_MEDICAL_GET)。</p>
+              <p>⚠️ UI経由のMSW無効確認とTraceId表示の証跡は未取得。</p>
+              <p>⚠️ 予約APIが404でギャップ継続。</p>
+              <p>❌ タスク外のサーバー監査ロジック削除/テスト削除が混在。検証タスクとしてはスコープ逸脱でリスク高。</p>
+
+              <div class="section-title">成果物リンク (別worktree)</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707972-f28eea/src/server_modernized_gap_20251221/06_server_ops_required/Web%E3%82%AF%E3%83%A9%E3%82%A4%E3%82%A2%E3%83%B3%E3%83%88_MSW%E7%84%A1%E5%8A%B9%E5%8C%96%E6%A4%9C%E8%A8%BC.md">検証レポート</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707972-f28eea/artifacts/webclient/ops/20251225T210633Z-msw-off/claim-outpatient.json">claim-outpatient.json</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707972-f28eea/artifacts/webclient/ops/20251225T210633Z-msw-off/orca-medicalmodv2-outpatient.json">orca-medicalmodv2-outpatient.json</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766696707972-f28eea/artifacts/webclient/ops/20251225T210633Z-msw-off/server-audit.txt">server-audit.txt</a></li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
