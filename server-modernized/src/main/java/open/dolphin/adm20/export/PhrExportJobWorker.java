@@ -73,6 +73,7 @@ public class PhrExportJobWorker {
 
         try (ByteArrayOutputStream buffer = new ByteArrayOutputStream();
              ZipOutputStream zip = new ZipOutputStream(buffer, StandardCharsets.UTF_8)) {
+            OutputStreamWriter writer = new OutputStreamWriter(zip, StandardCharsets.UTF_8);
 
             for (String patientId : patientIds) {
                 processed++;
@@ -87,10 +88,8 @@ public class PhrExportJobWorker {
                         request.getRpRequest() != null ? request.getRpRequest() : 0,
                         request.getReplyTo());
 
-                try (OutputStreamWriter writer = new OutputStreamWriter(zip, StandardCharsets.UTF_8)) {
-                    writer.write(dataAssembler.toJson(container));
-                    writer.flush();
-                }
+                writer.write(dataAssembler.toJson(container));
+                writer.flush();
 
                 zip.closeEntry();
                 int progress = Math.floorDiv(processed * 100, total);
@@ -99,10 +98,8 @@ public class PhrExportJobWorker {
 
             zip.putNextEntry(new ZipEntry("metadata.json"));
             String metadata = buildMetadata(request, facilityId, total);
-            try (OutputStreamWriter writer = new OutputStreamWriter(zip, StandardCharsets.UTF_8)) {
-                writer.write(metadata);
-                writer.flush();
-            }
+            writer.write(metadata);
+            writer.flush();
             zip.closeEntry();
             zip.finish();
 

@@ -78,6 +78,20 @@ ENV OPENDOLPHIN_REPORT_FONT_PATH=/usr/share/fonts/opendolphin/NotoSansCJKjp-Regu
 COPY --from=build /workspace/server-modernized/target/${WAR_BASENAME}.war ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war
 COPY --from=build /root/.m2/repository/org/postgresql/postgresql/*/postgresql-*.jar /opt/jboss/postgresql-driver.jar
 COPY --from=build /tmp/hbcompat/string-clob-type-compat.jar /opt/jboss/string-clob-type-compat.jar
+RUN mkdir -p ${WILDFLY_HOME}/modules/system/layers/base/org/postgresql/main && \
+    cp /opt/jboss/postgresql-driver.jar ${WILDFLY_HOME}/modules/system/layers/base/org/postgresql/main/postgresql-driver.jar && \
+    cat <<'EOF' > ${WILDFLY_HOME}/modules/system/layers/base/org/postgresql/main/module.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<module xmlns="urn:jboss:module:1.9" name="org.postgresql">
+    <resources>
+        <resource-root path="postgresql-driver.jar"/>
+    </resources>
+    <dependencies>
+        <module name="javax.api"/>
+        <module name="javax.transaction.api"/>
+    </dependencies>
+</module>
+EOF
 RUN mkdir -p /opt/jboss/config
 COPY server-modernized/config/attachment-storage.sample.yaml /opt/jboss/config/attachment-storage.yaml
 COPY ops/shared/docker/custom.properties ${WILDFLY_HOME}/custom.properties
@@ -106,6 +120,11 @@ RUN mkdir -p /opt/jboss/tmp/WEB-INF/lib && \
     cd /opt/jboss/tmp && \
     jar uf ${WILDFLY_HOME}/standalone/deployments/${WAR_BASENAME}.war -C /opt/jboss/tmp WEB-INF && \
     rm -rf /opt/jboss/tmp
+
+RUN HIBERNATE_MODULE=${WILDFLY_HOME}/modules/system/layers/base/org/hibernate/main/module.xml && \
+    if ! grep -q 'name="org.postgresql"' "${HIBERNATE_MODULE}"; then \
+        sed -i '/<\/dependencies>/ i\\        <module name="org.postgresql"/>' "${HIBERNATE_MODULE}"; \
+    fi
 
 # Manual check (Ops-CLI): run `docker build -f ops/modernized-server/docker/Dockerfile .` and ensure the JBoss CLI log shows configure-wildfly.cli finishing with `outcome => success`
 RUN ${WILDFLY_HOME}/bin/jboss-cli.sh --file=/opt/jboss/configure-wildfly.cli && \
