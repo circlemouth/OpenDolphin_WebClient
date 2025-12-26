@@ -166,7 +166,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766763107107-d5f287"
+    "worktreePath": ".worktrees/task-1766763107107-d5f287",
+    "medal": "gold",
+    "aiCompetitionScore": 86
   },
   {
     "id": "task-1766763115404-e766e5",
@@ -190,7 +192,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766763115404-e766e5"
+    "worktreePath": ".worktrees/task-1766763115404-e766e5",
+    "medal": "silver",
+    "aiCompetitionScore": 90
   },
   {
     "id": "task-1766763115203-2d7871",
@@ -214,7 +218,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766763115203-2d7871"
+    "worktreePath": ".worktrees/task-1766763115203-2d7871",
+    "medal": "gold",
+    "aiCompetitionScore": 92
   },
   {
     "id": "task-1766763126066-0e6560",
@@ -333,5 +339,40 @@
     },
     "autoEvaluationNotBefore": 1766763204653,
     "worktreePath": ".worktrees/task-1766763193621-c9fb92"
+  },
+  {
+    "id": "task-1766763115870-bf65f2",
+    "name": "🔍Monitor: [server modernized gap implementation plan 20251221] 4xx5xx_TraceId_監査到達確認\n期間: 01/13 09:00 - 01/14 09:00 / 優先度: medium / 緊急度: low / エージェント: worker-audit-jms\n\n# 4xx/5xx TraceId 監査到達確認\n\n- 4xx/5xx の TraceId が監査ログへ到達することを確認。\n- 例外パスのメタ整合とログ出力を証跡化。\n- 本タスクは他タスクと**並列実施**を前提とする。\n- サーバー起動は**未起動時のみ**実施し、起動済みの場合は**再起動しない**。\n- サーバー停止は**行わない**（他作業の継続を優先）。\n\nYAML ID: src/server_modernized_gap_20251221/08_evidence_package/4xx5xx_TraceId_監査到達確認.md",
+    "model": "codex",
+    "status": "running",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-26T15:31:55.870Z",
+    "updatedAt": "2025-12-26T15:32:04.628Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1766763115870-bf65f2",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1766763107106-91kt0xoz",
+    "aiCompetitionGroupName": "[server modernized gap implementation plan 20251221] 4xx5xx_TraceId_監査到達確認\n期間: 01/13 09:00 - 01/14 09:00 / 優先度: medium / 緊急度: low / エージェント: worker-audit-jms\n\n# 4xx/5xx TraceId 監査到達確認\n\n- 4xx/5xx の TraceId が監査ログへ到達することを確認。\n- 例外パスのメタ整合とログ出力を証跡化。\n- 本タスクは他タスクと**並列実施**を前提とする。\n- サーバー起動は**未起動時のみ**実施し、起動済みの場合は**再起動しない**。\n- サーバー停止は**行わない**（他作業の継続を優先）。\n\nYAML ID: src/server_modernized_gap_20251221/08_evidence_package/4xx5xx_TraceId_監査到達確認.md",
+    "aiCompetitionMonitor": true,
+    "monitorTargets": [
+      "task-1766763107308-a110d2",
+      "task-1766763107107-d5f287"
+    ],
+    "scoringConfig": {
+      "auditEnabled": false,
+      "auditPrompt": "",
+      "enabled": true,
+      "prompt": "与えられたタスクを完遂しているか、本番運用で耐える実装されているか",
+      "rubric": "medals",
+      "model": "codex"
+    },
+    "autoEvaluationNotBefore": 1766763167106,
+    "worktreePath": ".worktrees/task-1766763115870-bf65f2"
   }
 ]
