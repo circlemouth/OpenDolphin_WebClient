@@ -4,8 +4,10 @@ import {
   buildChartsEncounterSearch,
   loadChartsEncounterContext,
   parseChartsEncounterContext,
+  parseChartsNavigationMeta,
   parseReceptionCarryoverParams,
   storeChartsEncounterContext,
+  normalizeRunId,
 } from '../encounterContext';
 
 describe('charts encounterContext', () => {
@@ -58,5 +60,36 @@ describe('charts encounterContext', () => {
       receptionId: 'R-1',
       visitDate: '2025-12-18',
     });
+  });
+
+  it('runId normalize: 空/スペース/フォーマット外は無効', () => {
+    expect(normalizeRunId('')).toBeUndefined();
+    expect(normalizeRunId('   ')).toBeUndefined();
+    expect(normalizeRunId('20251227T133020')).toBeUndefined();
+    expect(normalizeRunId('2025-12-27T133020Z')).toBeUndefined();
+    expect(normalizeRunId('RUN-123')).toBeUndefined();
+  });
+
+  it('runId parse/build: valid のみ反映される', () => {
+    const validRunId = '20251227T133020Z';
+    expect(normalizeRunId(` ${validRunId} `)).toBe(validRunId);
+    expect(parseChartsNavigationMeta(`?runId=${validRunId}`)).toEqual({ runId: validRunId });
+    expect(buildChartsEncounterSearch({ patientId: 'PX-9' }, {}, { runId: validRunId })).toContain(`runId=${validRunId}`);
+
+    const invalidRunId = '20251227T133020';
+    expect(parseChartsNavigationMeta(`?runId=${invalidRunId}`)).toEqual({ runId: undefined });
+    const search = buildChartsEncounterSearch({ patientId: 'PX-9' }, {}, { runId: invalidRunId });
+    expect(search).not.toContain('runId=');
+  });
+
+  it('parseChartsEncounterContext: runId は取り込まず無視する', () => {
+    const parsed = parseChartsEncounterContext('?patientId=PX-1&runId=20251227T133020Z');
+    expect(parsed).toEqual({
+      patientId: 'PX-1',
+      appointmentId: undefined,
+      receptionId: undefined,
+      visitDate: undefined,
+    });
+    expect(parsed).not.toHaveProperty('runId');
   });
 });

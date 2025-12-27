@@ -96,7 +96,8 @@ export const buildChartsEncounterSearch = (
   if (context.receptionId) params.set(CHARTS_CONTEXT_QUERY_KEYS.receptionId, context.receptionId);
   const normalizedDate = normalizeVisitDate(context.visitDate);
   if (normalizedDate) params.set(CHARTS_CONTEXT_QUERY_KEYS.visitDate, normalizedDate);
-  if (meta.runId) params.set(CHARTS_META_QUERY_KEYS.runId, meta.runId);
+  const normalizedRunId = normalizeRunId(meta.runId);
+  if (normalizedRunId) params.set(CHARTS_META_QUERY_KEYS.runId, normalizedRunId);
   if (carryover.kw) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.keyword, carryover.kw);
   if (carryover.dept) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.department, carryover.dept);
   if (carryover.phys) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.physician, carryover.phys);
