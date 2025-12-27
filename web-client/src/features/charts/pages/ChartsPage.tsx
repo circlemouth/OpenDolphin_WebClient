@@ -4,7 +4,7 @@ import { useInfiniteQuery, useQuery, useQueryClient } from '@tanstack/react-quer
 import { useLocation, useNavigate } from 'react-router-dom';
 
 import { AuthServiceControls } from '../AuthServiceControls';
-import { useAuthService, type DataSourceTransition } from '../authService';
+import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../authService';
 import { DocumentTimeline } from '../DocumentTimeline';
 import { OrcaSummary } from '../OrcaSummary';
 import { MedicalOutpatientRecordPanel } from '../MedicalOutpatientRecordPanel';
@@ -107,13 +107,7 @@ function ChartsContent() {
     syncMismatch?: boolean;
     syncMismatchFields?: string;
   } | null>(null);
-  const appliedMeta = useRef<{
-    runId?: string;
-    cacheHit?: boolean;
-    missingMaster?: boolean;
-    dataSourceTransition?: DataSourceTransition;
-    fallbackUsed?: boolean;
-  }>({});
+  const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const { broadcast } = useAdminBroadcast();
   const appliedDelivery = useRef<{ key?: string }>({});
   const previousDeliveryFlags = useRef<{
@@ -400,7 +394,8 @@ function ChartsContent() {
       claimQuery.data?.dataSourceTransition ??
       orcaSummaryQuery.data?.dataSourceTransition ??
       flags.dataSourceTransition;
-    const fallbackUsed = claimQuery.data?.fallbackUsed ?? orcaSummaryQuery.data?.fallbackUsed;
+    const fallbackUsed =
+      claimQuery.data?.fallbackUsed ?? orcaSummaryQuery.data?.fallbackUsed ?? flags.fallbackUsed;
     const auditMeta = { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed };
     const auditEvent = normalizeAuditEventPayload(
       claimQuery.data?.auditEvent as Record<string, unknown> | undefined,
@@ -416,6 +411,7 @@ function ChartsContent() {
     claimQuery.data?.fallbackUsed,
     flags.cacheHit,
     flags.dataSourceTransition,
+    flags.fallbackUsed,
     flags.missingMaster,
     flags.runId,
     orcaSummaryQuery.data?.cacheHit,
@@ -613,20 +609,11 @@ function ChartsContent() {
 
   useEffect(() => {
     const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedFlags;
-    const prev = appliedMeta.current;
-    const hasRunIdChange = runId && prev.runId !== runId;
-    const hasCacheChange = cacheHit !== undefined && cacheHit !== prev.cacheHit;
-    const hasMissingChange = missingMaster !== undefined && missingMaster !== prev.missingMaster;
-    const hasTransitionChange = dataSourceTransition && dataSourceTransition !== prev.dataSourceTransition;
-    const hasFallbackChange = fallbackUsed !== undefined && fallbackUsed !== prev.fallbackUsed;
-    if (!(hasRunIdChange || hasCacheChange || hasMissingChange || hasTransitionChange || hasFallbackChange)) return;
-
-    if (runId) bumpRunId(runId);
-    if (cacheHit !== undefined) setCacheHit(cacheHit);
-    if (missingMaster !== undefined) setMissingMaster(missingMaster);
-    if (dataSourceTransition) setDataSourceTransition(dataSourceTransition);
-    if (fallbackUsed !== undefined) setFallbackUsed(fallbackUsed);
-    appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed };
+    appliedMeta.current = applyAuthServicePatch(
+      { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed },
+      appliedMeta.current,
+      { bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed },
+    );
     setAuditEvents(getAuditEventLog());
   }, [
     bumpRunId,

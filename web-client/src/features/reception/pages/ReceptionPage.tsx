@@ -4,13 +4,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
-import { updateObservabilityMeta } from '../../../libs/observability/observability';
 import type { DataSourceTransition } from '../../../libs/observability/types';
 import { OrderConsole } from '../components/OrderConsole';
 import { ToneBanner } from '../components/ToneBanner';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry, type ReceptionStatus } from '../api';
 import { receptionStyles } from '../styles';
-import { useAuthService } from '../../charts/authService';
+import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../../charts/authService';
 import { getChartToneDetails } from '../../../ux/charts/tones';
 import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
@@ -138,13 +137,7 @@ export function ReceptionPage({
   const [collapsed, setCollapsed] = useState<Record<ReceptionStatus, boolean>>(loadCollapseState);
   const [missingMasterNote, setMissingMasterNote] = useState('');
   const summaryRef = useRef<HTMLParagraphElement | null>(null);
-  const appliedMeta = useRef<{
-    runId?: string;
-    cacheHit?: boolean;
-    missingMaster?: boolean;
-    dataSourceTransition?: DataSourceTransition;
-    fallbackUsed?: boolean;
-  }>({});
+  const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const lastAuditEventHash = useRef<string>();
 
   const claimQueryKey = ['outpatient-claim-flags'];
@@ -272,25 +265,11 @@ export function ReceptionPage({
 
   useEffect(() => {
     const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedMeta;
-    const prev = appliedMeta.current;
-    const isChanged =
-      runId !== prev.runId ||
-      cacheHit !== prev.cacheHit ||
-      missingMaster !== prev.missingMaster ||
-      dataSourceTransition !== prev.dataSourceTransition ||
-      fallbackUsed !== prev.fallbackUsed;
-    if (!isChanged) return;
-
-    if (runId) {
-      bumpRunId(runId);
-      updateObservabilityMeta({ runId });
-    }
-    if (cacheHit !== undefined) setCacheHit(cacheHit);
-    if (missingMaster !== undefined) setMissingMaster(missingMaster);
-    if (dataSourceTransition) setDataSourceTransition(dataSourceTransition);
-    if (fallbackUsed !== undefined) setFallbackUsed(fallbackUsed);
-
-    appliedMeta.current = { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed };
+    appliedMeta.current = applyAuthServicePatch(
+      { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed },
+      appliedMeta.current,
+      { bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed },
+    );
   }, [bumpRunId, mergedMeta, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
   useEffect(() => {
@@ -479,7 +458,6 @@ export function ReceptionPage({
       const nextRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
       if (nextRunId) {
         bumpRunId(nextRunId);
-        updateObservabilityMeta({ runId: nextRunId });
       }
       logUiState({
         action: 'navigate',

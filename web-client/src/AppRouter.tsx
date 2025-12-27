@@ -25,7 +25,7 @@ import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import './styles/app-shell.css';
 import { updateObservabilityMeta } from './libs/observability/observability';
-import { AuthServiceProvider } from './features/charts/authService';
+import { AuthServiceProvider, clearStoredAuthFlags, useAuthService } from './features/charts/authService';
 import { PatientsPage } from './features/patients/PatientsPage';
 import { AdministrationPage } from './features/administration/AdministrationPage';
 
@@ -36,8 +36,20 @@ const loadStoredSession = (): Session | null => {
   try {
     const raw = sessionStorage.getItem(AUTH_STORAGE_KEY);
     if (!raw) return null;
-    return JSON.parse(raw) as Session;
+    const parsed = JSON.parse(raw) as Session;
+    if (!parsed?.facilityId || !parsed?.userId) {
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+      clearStoredAuthFlags();
+      return null;
+    }
+    return parsed;
   } catch {
+    try {
+      sessionStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch {
+      // ignore
+    }
+    clearStoredAuthFlags();
     return null;
   }
 };
@@ -48,6 +60,15 @@ const persistSession = (session: Session) => {
   } catch {
     // storage が使えない環境ではスキップ
   }
+};
+
+const clearSession = () => {
+  try {
+    sessionStorage.removeItem(AUTH_STORAGE_KEY);
+  } catch {
+    // storage が使えない環境ではスキップ
+  }
+  clearStoredAuthFlags();
 };
 
 const SessionContext = createContext<Session | null>(null);
@@ -86,7 +107,10 @@ export function AppRouter() {
     persistSession(result);
   };
 
-  const handleLogout = () => setSession(null);
+  const handleLogout = () => {
+    clearSession();
+    setSession(null);
+  };
 
   useEffect(() => {
     const stored = loadStoredSession();
@@ -135,6 +159,7 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
           missingMaster: true,
           dataSourceTransition: 'snapshot',
         }}
+        sessionKey={`${session.facilityId}:${session.userId}`}
       >
         <AppLayout onLogout={onLogout} />
       </AuthServiceProvider>
@@ -145,6 +170,8 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
 function AppLayout({ onLogout }: { onLogout: () => void }) {
   const location = useLocation();
   const session = useSession();
+  const { flags } = useAuthService();
+  const resolvedRunId = flags.runId || session.runId;
   const [toasts, setToasts] = useState<Toast[]>([]);
   const toastTimers = useRef<Map<string, number>>(new Map());
 
@@ -191,6 +218,11 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!resolvedRunId || resolvedRunId === session.runId) return;
+    persistSession({ ...session, runId: resolvedRunId });
+  }, [resolvedRunId, session]);
+
   const navItems = useMemo(
     () =>
       NAV_LINKS.map((link) => {
@@ -229,7 +261,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   );
 
   const handleCopyRunId = async () => {
-    const runId = session.runId;
+    const runId = resolvedRunId;
     if (!runId) {
       enqueueToast({ tone: 'error', message: 'RUN_ID が未取得です', detail: 'ログイン情報を確認してください。' });
       return;
@@ -256,12 +288,12 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
 
   return (
     <div className="app-shell">
-      <header className="app-shell__topbar" role="status" aria-live="polite" data-run-id={session.runId}>
+      <header className="app-shell__topbar" role="status" aria-live="polite" data-run-id={resolvedRunId}>
         <div className="app-shell__brand">
           <span className="app-shell__title">OpenDolphin Web</span>
           <small className="app-shell__subtitle">電子カルテデモシェル</small>
         </div>
-        <div className="app-shell__session" data-run-id={session.runId}>
+        <div className="app-shell__session" data-run-id={resolvedRunId}>
           <span className="app-shell__pill app-shell__pill--fixed">施設ID: {session.facilityId}</span>
           <span className="app-shell__pill app-shell__pill--fixed">
             ユーザー: {session.displayName ?? session.commonName ?? session.userId}
@@ -273,9 +305,9 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
             type="button"
             className="app-shell__pill app-shell__pill--copy"
             onClick={handleCopyRunId}
-            aria-label={`RUN_ID をコピー: ${session.runId}`}
+            aria-label={`RUN_ID をコピー: ${resolvedRunId}`}
           >
-            RUN_ID: {session.runId}
+            RUN_ID: {resolvedRunId}
             <span className="app-shell__pill-note">クリックでコピー</span>
           </button>
           <button type="button" className="app-shell__logout" onClick={onLogout}>
@@ -314,10 +346,11 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
 
 function ConnectedReception() {
   const session = useSession();
+  const { flags } = useAuthService();
 
   return (
     <ReceptionPage
-      runId={session.runId}
+      runId={flags.runId ?? session.runId}
       patientId={`PX-${session.facilityId}-${session.userId}`}
       receptionId={`R-${session.facilityId}-${session.userId}`}
       destination="ORCA queue"
@@ -333,10 +366,12 @@ function ConnectedCharts() {
 
 function ConnectedPatients() {
   const session = useSession();
-  return <PatientsPage runId={session.runId} />;
+  const { flags } = useAuthService();
+  return <PatientsPage runId={flags.runId ?? session.runId} />;
 }
 
 function ConnectedAdministration() {
   const session = useSession();
-  return <AdministrationPage runId={session.runId} role={session.role} />;
+  const { flags } = useAuthService();
+  return <AdministrationPage runId={flags.runId ?? session.runId} role={session.role} />;
 }
