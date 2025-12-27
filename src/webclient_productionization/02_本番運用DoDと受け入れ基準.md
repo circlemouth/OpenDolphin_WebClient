@@ -1,13 +1,25 @@
 # 02 本番運用 DoD と受け入れ基準
 
-- RUN_ID: `20251227T063328Z`
+- RUN_ID: `20251227T065343Z`
 - 期間: 2025-12-31 09:00 〜 2026-01-02 09:00 (JST) / 優先度: high / 緊急度: medium / エージェント: codex
 - YAML ID: `src/webclient_productionization/02_本番運用DoDと受け入れ基準.md`
+
+## 参照チェーン（整合確認の前提）
+1. `docs/DEVELOPMENT_STATUS.md`
+2. `docs/web-client/architecture/future-web-client-design.md`
+3. `docs/web-client/architecture/web-client-api-mapping.md`
+4. `docs/web-client/ux/*`
+5. `src/webclient_productionization/01_現状実装棚卸しとギャップ整理.md`
 
 ## 目的
 - 監査（auditEvent/logUiState）・A11y（role/aria-live/キーボード）・テレメトリ（funnel/traceId）の受け入れ基準を明文化する。
 - “UI 表示/失敗時/運用導線/監査証跡” を満たすための DoD を画面別に定義する。
 - 本番時に MSW を無効化する前提の動作保証範囲を決める。
+
+## 運用手順リンク（本番運用の導線）
+- 起動・ログイン手順: `setup-modernized-env.sh` / `docs/web-client/README.md`
+- 障害時の切り分け: `docs/web-client/operations/debugging-outpatient-bugs.md`
+- ORCA 実環境接続時の手順: `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md`（Legacy 文書だが運用上必須）
 
 ## 前提
 - 対象スコープ: 外来（Login / AppShell / Reception / Charts / Patients / Administration / Outpatient Mock）。
