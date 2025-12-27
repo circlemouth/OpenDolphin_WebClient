@@ -32,7 +32,9 @@ import {
   hasEncounterContext,
   loadChartsEncounterContext,
   normalizeVisitDate,
+  normalizeRunId,
   parseChartsEncounterContext,
+  parseChartsNavigationMeta,
   parseReceptionCarryoverParams,
   storeChartsEncounterContext,
   type OutpatientEncounterContext,
@@ -57,7 +59,13 @@ function ChartsContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const focusRestoreRef = useRef<HTMLElement | null>(null);
-  const navigationState = (location.state as Partial<OutpatientEncounterContext> | null) ?? {};
+  const tabLockReadOnlyRef = useRef(false);
+  type ChartsNavigationState = Partial<OutpatientEncounterContext> & { runId?: string };
+  const navigationState = (location.state as ChartsNavigationState | null) ?? {};
+  const urlMeta = useMemo(() => parseChartsNavigationMeta(location.search), [location.search]);
+  const navigationRunId = normalizeRunId(typeof navigationState.runId === 'string' ? navigationState.runId : undefined);
+  const explicitRunId = urlMeta.runId ?? navigationRunId;
+  const runIdForUrl = explicitRunId ?? flags.runId;
   const [encounterContext, setEncounterContext] = useState<OutpatientEncounterContext>(() => {
     const urlContext = parseChartsEncounterContext(location.search);
     if (hasEncounterContext(urlContext)) return urlContext;
@@ -126,14 +134,21 @@ function ChartsContent() {
   }, []);
 
   useEffect(() => {
+    if (!explicitRunId) return;
+    if (draftState.dirty || lockState.locked || tabLockReadOnlyRef.current) return;
+    if (explicitRunId === flags.runId) return;
+    bumpRunId(explicitRunId);
+  }, [bumpRunId, draftState.dirty, explicitRunId, flags.runId, lockState.locked]);
+
+  useEffect(() => {
     if (!hasEncounterContext(urlContext)) return;
     if (sameEncounterContext(urlContext, encounterContext)) return;
-    if (draftState.dirty || lockState.locked) {
+    if (draftState.dirty || lockState.locked || tabLockReadOnlyRef.current) {
       setContextAlert({
         tone: 'warning',
         message: '未保存ドラフトまたは処理中のため、URL からの患者切替をブロックしました（別患者混入防止）。',
       });
-      const currentSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover);
+      const currentSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: flags.runId });
       if (location.search !== currentSearch) {
         navigate({ pathname: '/charts', search: currentSearch }, { replace: true });
       }
@@ -144,15 +159,24 @@ function ChartsContent() {
       tone: 'info',
       message: 'URL の外来コンテキストに合わせて表示を更新しました（戻る/進む操作）。',
     });
-  }, [draftState.dirty, encounterContext, location.search, lockState.locked, navigate, sameEncounterContext, urlContext]);
+  }, [
+    draftState.dirty,
+    encounterContext,
+    flags.runId,
+    location.search,
+    lockState.locked,
+    navigate,
+    sameEncounterContext,
+    urlContext,
+  ]);
 
   useEffect(() => {
     if (!hasEncounterContext(encounterContext)) return;
     storeChartsEncounterContext(encounterContext);
-    const nextSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover);
+    const nextSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: runIdForUrl });
     if (location.search === nextSearch) return;
     navigate({ pathname: '/charts', search: nextSearch }, { replace: true });
-  }, [encounterContext, location.search, navigate, receptionCarryover]);
+  }, [encounterContext, location.search, navigate, receptionCarryover, runIdForUrl]);
 
   const adminQueryKey = ['admin-effective-config'];
   const adminConfigQuery = useQuery({
@@ -681,6 +705,7 @@ function ChartsContent() {
     target: lockTarget,
     enabled: chartsDisplayEnabled && Boolean(lockTarget.patientId),
   });
+  tabLockReadOnlyRef.current = tabLock.isReadOnly;
 
   useEffect(() => {
     if (!tabLock.storageKey) {
@@ -785,9 +810,11 @@ function ChartsContent() {
       }),
     [appointmentQuery.error, appointmentQuery.isError, appointmentQuery.isLoading, patientEntries, today],
   );
+  const switchLocked = lockState.locked || tabLock.isReadOnly;
+  const switchLockedReason = lockState.reason ?? (tabLock.isReadOnly ? tabLock.readOnlyReason : undefined);
   useEffect(() => {
     if (patientEntries.length === 0) return;
-    if (draftState.dirty || lockState.locked) return;
+    if (draftState.dirty || lockState.locked || tabLock.isReadOnly) return;
     const resolve = (entries: ReceptionEntry[], context: OutpatientEncounterContext) => {
       if (context.receptionId) return entries.find((entry) => entry.receptionId === context.receptionId);
       if (context.appointmentId) return entries.find((entry) => entry.appointmentId === context.appointmentId);
@@ -822,7 +849,7 @@ function ChartsContent() {
       setEncounterContext(nextContext);
       setContextAlert(null);
     }
-  }, [draftState.dirty, encounterContext, lockState.locked, patientEntries, sameEncounterContext, today]);
+  }, [draftState.dirty, encounterContext, lockState.locked, patientEntries, sameEncounterContext, tabLock.isReadOnly, today]);
 
   const latestAuditEvent = useMemo(() => {
     const auditMeta = {
@@ -1183,8 +1210,8 @@ function ChartsContent() {
             auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
             selectedContext={encounterContext}
             draftDirty={draftState.dirty}
-            switchLocked={lockState.locked}
-            switchLockedReason={lockState.reason}
+            switchLocked={switchLocked}
+            switchLockedReason={switchLockedReason}
             onRequestRestoreFocus={() => {
               const el = focusRestoreRef.current;
               if (el && typeof el.focus === 'function') el.focus();

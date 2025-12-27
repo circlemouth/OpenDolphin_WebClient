@@ -734,14 +734,19 @@ export function ReceptionPage({
         missingMaster: mergedMeta.missingMaster,
         patientId: entry.patientId,
       });
-      const url = buildChartsUrl({
-        patientId: entry.patientId,
-        appointmentId: entry.appointmentId,
-        receptionId: entry.receptionId,
-        visitDate: entry.visitDate,
-      }, receptionCarryover);
+      const url = buildChartsUrl(
+        {
+          patientId: entry.patientId,
+          appointmentId: entry.appointmentId,
+          receptionId: entry.receptionId,
+          visitDate: entry.visitDate,
+        },
+        receptionCarryover,
+        { runId: nextRunId },
+      );
       navigate(url, {
         state: {
+          runId: nextRunId,
           patientId: entry.patientId,
           appointmentId: entry.appointmentId,
           receptionId: entry.receptionId,

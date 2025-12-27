@@ -5,6 +5,10 @@ export type OutpatientEncounterContext = {
   visitDate?: string; // YYYY-MM-DD
 };
 
+export type ChartsNavigationMeta = {
+  runId?: string;
+};
+
 export type ReceptionCarryoverParams = {
   kw?: string;
   dept?: string;
@@ -16,12 +20,17 @@ export type ReceptionCarryoverParams = {
 const STORAGE_KEY = 'opendolphin:web-client:charts:encounter-context:v1';
 
 const DATE_RE = /^\d{4}-\d{2}-\d{2}$/;
+const RUN_ID_RE = /^\d{8}T\d{6}Z$/;
 
 export const CHARTS_CONTEXT_QUERY_KEYS = {
   patientId: 'patientId',
   appointmentId: 'appointmentId',
   receptionId: 'receptionId',
   visitDate: 'visitDate',
+} as const;
+
+export const CHARTS_META_QUERY_KEYS = {
+  runId: 'runId',
 } as const;
 
 export const RECEPTION_CARRYOVER_QUERY_KEYS = {
@@ -39,6 +48,13 @@ export const normalizeVisitDate = (value?: string): string | undefined => {
   return trimmed;
 };
 
+export const normalizeRunId = (value?: string): string | undefined => {
+  if (!value) return undefined;
+  const trimmed = value.trim();
+  if (!RUN_ID_RE.test(trimmed)) return undefined;
+  return trimmed;
+};
+
 export const hasEncounterContext = (context?: OutpatientEncounterContext | null): boolean => {
   if (!context) return false;
   return Boolean(context.receptionId || context.appointmentId || context.patientId || context.visitDate);
@@ -51,6 +67,12 @@ export const parseChartsEncounterContext = (search: string): OutpatientEncounter
   const receptionId = params.get(CHARTS_CONTEXT_QUERY_KEYS.receptionId) ?? undefined;
   const visitDate = normalizeVisitDate(params.get(CHARTS_CONTEXT_QUERY_KEYS.visitDate) ?? undefined);
   return { patientId, appointmentId, receptionId, visitDate };
+};
+
+export const parseChartsNavigationMeta = (search: string): ChartsNavigationMeta => {
+  const params = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+  const runId = normalizeRunId(params.get(CHARTS_META_QUERY_KEYS.runId) ?? undefined);
+  return { runId };
 };
 
 export const parseReceptionCarryoverParams = (search: string): ReceptionCarryoverParams => {
@@ -66,6 +88,7 @@ export const parseReceptionCarryoverParams = (search: string): ReceptionCarryove
 export const buildChartsEncounterSearch = (
   context: OutpatientEncounterContext,
   carryover: ReceptionCarryoverParams = {},
+  meta: ChartsNavigationMeta = {},
 ): string => {
   const params = new URLSearchParams();
   if (context.patientId) params.set(CHARTS_CONTEXT_QUERY_KEYS.patientId, context.patientId);
@@ -73,6 +96,7 @@ export const buildChartsEncounterSearch = (
   if (context.receptionId) params.set(CHARTS_CONTEXT_QUERY_KEYS.receptionId, context.receptionId);
   const normalizedDate = normalizeVisitDate(context.visitDate);
   if (normalizedDate) params.set(CHARTS_CONTEXT_QUERY_KEYS.visitDate, normalizedDate);
+  if (meta.runId) params.set(CHARTS_META_QUERY_KEYS.runId, meta.runId);
   if (carryover.kw) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.keyword, carryover.kw);
   if (carryover.dept) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.department, carryover.dept);
   if (carryover.phys) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.physician, carryover.phys);
@@ -82,8 +106,11 @@ export const buildChartsEncounterSearch = (
   return query ? `?${query}` : '';
 };
 
-export const buildChartsUrl = (context: OutpatientEncounterContext, carryover?: ReceptionCarryoverParams): string =>
-  `/charts${buildChartsEncounterSearch(context, carryover)}`;
+export const buildChartsUrl = (
+  context: OutpatientEncounterContext,
+  carryover?: ReceptionCarryoverParams,
+  meta?: ChartsNavigationMeta,
+): string => `/charts${buildChartsEncounterSearch(context, carryover, meta)}`;
 
 export const storeChartsEncounterContext = (context: OutpatientEncounterContext) => {
   if (typeof sessionStorage === 'undefined') return;
