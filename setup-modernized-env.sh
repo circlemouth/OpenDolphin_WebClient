@@ -43,15 +43,6 @@ WEB_CLIENT_DEV_PID_FILE="${WEB_CLIENT_DEV_PID_FILE:-tmp/web-client-dev.pid}"
 WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources"
 WEB_CLIENT_DEV_PROXY_TARGET="${WEB_CLIENT_DEV_PROXY_TARGET:-$WEB_CLIENT_DEV_PROXY_TARGET_DEFAULT}"
 WEB_CLIENT_DEV_API_BASE="${WEB_CLIENT_DEV_API_BASE:-/api}"
-# Container suffix for worktree-local isolation (e.g. task-<id>)
-WORKTREE_SUFFIX="${WORKTREE_SUFFIX:-}"
-CONTAINER_SUFFIX=""
-if [[ -n "$WORKTREE_SUFFIX" ]]; then
-  CONTAINER_SUFFIX="-$WORKTREE_SUFFIX"
-fi
-POSTGRES_CONTAINER="opendolphin-postgres-modernized${CONTAINER_SUFFIX}"
-SERVER_CONTAINER="opendolphin-server-modernized-dev${CONTAINER_SUFFIX}"
-MINIO_CONTAINER="opendolphin-minio${CONTAINER_SUFFIX}"
 # ENVs for npm dev server overrides
 WEB_CLIENT_ENV_LOCAL="${WEB_CLIENT_ENV_LOCAL:-$SCRIPT_DIR/web-client/.env.local}"
 # Normalize mode for bash versions without ${var,,}
@@ -142,14 +133,9 @@ generate_compose_override() {
   log "Generating $COMPOSE_OVERRIDE_FILE..."
   cat > "$COMPOSE_OVERRIDE_FILE" <<EOF
 services:
-  db-modernized:
-    container_name: ${POSTGRES_CONTAINER}
   server-modernized-dev:
-    container_name: ${SERVER_CONTAINER}
     volumes:
       - ./$(basename "$CUSTOM_PROP_OUTPUT"):/opt/jboss/wildfly/custom.properties
-  minio:
-    container_name: ${MINIO_CONTAINER}
 EOF
   log "docker-compose override written to $COMPOSE_OVERRIDE_FILE"
 }
@@ -191,8 +177,8 @@ apply_baseline_seed() {
     echo "Seed file not found: $LOCAL_SEED_FILE" >&2
     exit 1
   fi
-  docker cp "$LOCAL_SEED_FILE" "${POSTGRES_CONTAINER}":/tmp/modern_seed.sql
-  docker exec "${POSTGRES_CONTAINER}" psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
+  docker cp "$LOCAL_SEED_FILE" opendolphin-postgres-modernized:/tmp/modern_seed.sql
+  docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
   log "Baseline seed applied."
 }
 
@@ -270,8 +256,8 @@ FROM d_users WHERE userid = '$NEW_USER_ID'
 AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NEW_USER_ID' AND c_role = 'doctor');
 EOF
 
-  docker cp "$tmp_sql" "${POSTGRES_CONTAINER}":/tmp/modern_user_seed.sql
-  docker exec "${POSTGRES_CONTAINER}" psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
+  docker cp "$tmp_sql" opendolphin-postgres-modernized:/tmp/modern_user_seed.sql
+  docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
   rm -f "$tmp_sql"
   log "User registration SQL executed successfully."
 }
