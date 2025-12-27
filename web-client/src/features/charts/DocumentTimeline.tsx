@@ -10,12 +10,13 @@ import type { ClaimOutpatientPayload, ClaimBundle, ClaimBundleStatus } from '../
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
 import type { OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
 import { resolveOrcaSendStatus } from '../outpatient/orcaQueueStatus';
-import { resolveOutpatientFlags } from '../outpatient/flags';
+import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient/flags';
 import { formatSoapAuthoredAt, getLatestSoapEntries, SOAP_SECTION_LABELS, type SoapEntry, type SoapSectionKey } from './soapNote';
 
 export interface DocumentTimelineProps {
   entries?: ReceptionEntry[];
   appointmentBanner?: AppointmentDataBanner | null;
+  appointmentMeta?: OutpatientFlagSource;
   auditEvent?: Record<string, unknown>;
   soapHistory?: SoapEntry[];
   selectedPatientId?: string;
@@ -140,6 +141,7 @@ const deriveNextAction = (
 export function DocumentTimeline({
   entries = [],
   appointmentBanner,
+  appointmentMeta,
   auditEvent,
   soapHistory = [],
   selectedPatientId,
@@ -162,7 +164,7 @@ export function DocumentTimeline({
   onRetryClaim,
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
-  const resolvedFlags = resolveOutpatientFlags(claimData, flags);
+  const resolvedFlags = resolveOutpatientFlags(claimData, appointmentMeta, flags);
   const resolvedRunId = resolvedFlags.runId ?? flags.runId;
   const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
   const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;

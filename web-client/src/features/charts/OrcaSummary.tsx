@@ -9,20 +9,28 @@ import type { OrcaOutpatientSummary } from './api';
 import type { ClaimOutpatientPayload, ReceptionEntry } from '../outpatient/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { logUiState } from '../../libs/audit/auditLogger';
-import { resolveOutpatientFlags } from '../outpatient/flags';
+import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient/flags';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
   claim?: ClaimOutpatientPayload;
   appointments?: ReceptionEntry[];
+  appointmentMeta?: OutpatientFlagSource;
   onRefresh?: () => Promise<void> | void;
   isRefreshing?: boolean;
 }
 
-export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRefreshing = false }: OrcaSummaryProps) {
+export function OrcaSummary({
+  summary,
+  claim,
+  appointments = [],
+  appointmentMeta,
+  onRefresh,
+  isRefreshing = false,
+}: OrcaSummaryProps) {
   const navigate = useNavigate();
   const { flags } = useAuthService();
-  const resolvedFlags = resolveOutpatientFlags(summary, claim, flags);
+  const resolvedFlags = resolveOutpatientFlags(summary, claim, appointmentMeta, flags);
   const resolvedRunId = resolvedFlags.runId ?? flags.runId;
   const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
   const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;

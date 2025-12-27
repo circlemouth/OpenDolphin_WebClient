@@ -165,6 +165,38 @@ export async function fetchAppointmentOutpatients(
     },
   });
 
+  logAuditEvent({
+    runId: payload.runId,
+    cacheHit: payload.cacheHit ?? result.meta.fromCache,
+    missingMaster: payload.missingMaster,
+    fallbackUsed: payload.fallbackUsed,
+    dataSourceTransition: payload.dataSourceTransition,
+    patientId: entries[0]?.patientId,
+    appointmentId: entries[0]?.appointmentId,
+    payload: {
+      action: 'APPOINTMENT_OUTPATIENT_FETCH',
+      outcome: result.ok ? 'success' : 'error',
+      details: {
+        runId: payload.runId,
+        cacheHit: payload.cacheHit ?? result.meta.fromCache ?? false,
+        missingMaster: payload.missingMaster ?? false,
+        fallbackUsed: payload.fallbackUsed ?? false,
+        dataSourceTransition: payload.dataSourceTransition ?? result.meta.dataSourceTransition,
+        fetchedAt: payload.fetchedAt,
+        recordsReturned: payload.recordsReturned ?? entries.length,
+        page: payload.page,
+        size: payload.size,
+        resolveMasterSource: payload.resolveMasterSource,
+        sourcePath: payload.sourcePath ?? result.meta.sourcePath,
+        apiResult: payload.apiResult,
+        apiResultMessage: payload.apiResultMessage,
+        patientId: entries[0]?.patientId,
+        appointmentId: entries[0]?.appointmentId,
+        error: result.ok ? undefined : result.error ?? payload.apiResultMessage,
+      },
+    },
+  });
+
   updateObservabilityMeta({
     runId: payload.runId,
     cacheHit: payload.cacheHit,

@@ -18,7 +18,7 @@ import { isNetworkError } from '../shared/apiError';
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
 type ToastState = {
-  tone: 'success';
+  tone: 'success' | 'warning' | 'error' | 'info';
   message: string;
   detail?: string;
 };
@@ -544,7 +544,11 @@ export function ChartsActionBar({
         const abortedDetail = 'ユーザー操作により送信を中断しました。通信回復後に再試行できます。';
         setRetryAction('send');
         setBanner({ tone: 'warning', message: `ORCA送信を中断: ${abortedDetail}`, nextAction: '通信回復後にリトライできます。' });
-        setToast(null);
+        if (action === 'send') {
+          setToast({ tone: 'warning', message: 'ORCA送信を中断', detail: abortedDetail });
+        } else {
+          setToast(null);
+        }
         logTelemetry(action, 'blocked', durationMs, abortedDetail, abortedDetail);
         logAudit(action, 'blocked', abortedDetail, durationMs);
       } else {
@@ -560,7 +564,11 @@ export function ChartsActionBar({
         const composedDetail = `${detail}（runId=${errorRunId} / traceId=${errorTraceId ?? 'unknown'} / requestId=${queueEntry?.requestId ?? 'unknown'}）${nextSteps ? ` / ${nextSteps}` : ''}`;
         setRetryAction(action);
         setBanner({ tone: 'error', message: `${ACTION_LABEL[action]}に失敗: ${composedDetail}`, nextAction: nextSteps });
-        setToast(null);
+        if (action === 'send') {
+          setToast({ tone: 'error', message: 'ORCA送信に失敗', detail: composedDetail });
+        } else {
+          setToast(null);
+        }
         logTelemetry(action, 'error', durationMs, composedDetail, composedDetail);
         logAudit(action, 'error', composedDetail, durationMs);
       }
