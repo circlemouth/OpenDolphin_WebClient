@@ -65,9 +65,7 @@ export function recordOutpatientFunnel(
     payload.dataSourceTransition ??
     meta.dataSourceTransition ??
     (resolvedFallbackUsed ? 'fallback' : resolvedCacheHit ? 'server' : 'server');
-  const resolvedReason =
-    payload.reason ??
-    ((payload.outcome === 'error' || payload.outcome === 'blocked') ? payload.note : undefined);
+  const resolvedReason = payload.reason;
   const record: OutpatientFunnelRecord = {
     stage,
     funnel: 'funnels/outpatient',

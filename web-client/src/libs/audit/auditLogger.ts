@@ -72,9 +72,31 @@ const resolveDataSourceTransition = (
 
 export function logUiState(entry: Omit<UiStateLog, 'timestamp'>) {
   const meta = ensureObservabilityMeta();
+  const actorMeta = resolveAuditActor();
   const merged = mergeDefined({ ...meta } as UiStateLog, entry as Partial<UiStateLog>);
+  const details =
+    merged.details && typeof merged.details === 'object' && merged.details !== null
+      ? (merged.details as Record<string, unknown>)
+      : {};
+  const resolvedFacilityId =
+    merged.facilityId ??
+    (details.facilityId as string | undefined) ??
+    actorMeta.facilityId;
+  const resolvedPatientId =
+    merged.patientId ??
+    (details.patientId as string | undefined);
+  const resolvedAppointmentId =
+    merged.appointmentId ??
+    (details.appointmentId as string | undefined);
+  const resolvedClaimId =
+    merged.claimId ??
+    (details.claimId as string | undefined);
   const record: UiStateLog = {
     ...merged,
+    facilityId: resolvedFacilityId,
+    patientId: resolvedPatientId,
+    appointmentId: resolvedAppointmentId,
+    claimId: resolvedClaimId,
     cacheHit: merged.cacheHit ?? false,
     missingMaster: merged.missingMaster ?? false,
     fallbackUsed: merged.fallbackUsed ?? false,
