@@ -17,7 +17,7 @@ export const statusBadgeStyles = css`
 
   .status-badge__label {
     font-size: 0.85rem;
-    color: #475569;
+    color: #334155;
   }
 
   .status-badge__value {
@@ -28,30 +28,31 @@ export const statusBadgeStyles = css`
   .status-badge__description {
     margin: 0.45rem 0 0;
     font-size: 0.8rem;
-    color: #475569;
+    color: #334155;
   }
 
   .status-badge__tone {
     font-weight: 600;
+    color: #0f172a;
   }
 
   .status-badge--warning {
-    border-color: #facc15;
-    background: #fefce8;
+    border-color: #f59e0b;
+    background: #fffbeb;
   }
 
   .status-badge--error {
-    border-color: #fecaca;
+    border-color: #fca5a5;
     background: #fef2f2;
   }
 
   .status-badge--info {
-    border-color: #bfdbfe;
+    border-color: #93c5fd;
     background: #eff6ff;
   }
 
   .status-badge--success {
-    border-color: #34d399;
+    border-color: #6ee7b7;
     background: #ecfdf5;
   }
 `;
@@ -71,8 +72,8 @@ export const toneBannerStyles = css`
     font-weight: 700;
     padding: 0.35rem 0.85rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.45);
   }
 
   .tone-banner__message {
@@ -81,23 +82,58 @@ export const toneBannerStyles = css`
   }
 
   .tone-banner--error {
-    background: #fee2e2;
-    border-color: #fecaca;
+    background: #fef2f2;
+    border-color: #fca5a5;
+  }
+
+  .tone-banner--error .tone-banner__tag {
+    background: #fecaca;
+    border-color: #fca5a5;
+    color: #7f1d1d;
   }
 
   .tone-banner--warning {
     background: #fff7ed;
-    border-color: #fed7aa;
+    border-color: #fdba74;
+  }
+
+  .tone-banner--warning .tone-banner__tag {
+    background: #fed7aa;
+    border-color: #fdba74;
+    color: #7c2d12;
   }
 
   .tone-banner--info {
     background: #eff6ff;
-    border-color: #bfdbfe;
+    border-color: #93c5fd;
+  }
+
+  .tone-banner--info .tone-banner__tag {
+    background: #bfdbfe;
+    border-color: #93c5fd;
+    color: #1e3a8a;
+  }
+
+  .tone-banner:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
   }
 `;
 
 export const receptionStyles = css`
   ${statusBadgeStyles}
+
+  .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+  }
 
   .skip-link {
     position: absolute;
@@ -118,6 +154,10 @@ export const receptionStyles = css`
     transform: translateY(0);
     outline: 3px solid rgba(37, 99, 235, 0.35);
     outline-offset: 2px;
+  }
+
+  .skip-link + .skip-link {
+    top: 3.4rem;
   }
 
   .focus-trap-dialog__backdrop {
@@ -239,8 +279,8 @@ export const receptionStyles = css`
     font-weight: 700;
     padding: 0.35rem 0.85rem;
     border-radius: 999px;
-    background: rgba(255, 255, 255, 0.5);
-    border: 1px solid rgba(255, 255, 255, 0.35);
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.45);
   }
 
   .tone-banner__message {
@@ -249,18 +289,41 @@ export const receptionStyles = css`
   }
 
   .tone-banner--error {
-    background: #fee2e2;
-    border-color: #fecaca;
+    background: #fef2f2;
+    border-color: #fca5a5;
+  }
+
+  .tone-banner--error .tone-banner__tag {
+    background: #fecaca;
+    border-color: #fca5a5;
+    color: #7f1d1d;
   }
 
   .tone-banner--warning {
     background: #fff7ed;
-    border-color: #fed7aa;
+    border-color: #fdba74;
+  }
+
+  .tone-banner--warning .tone-banner__tag {
+    background: #fed7aa;
+    border-color: #fdba74;
+    color: #7c2d12;
   }
 
   .tone-banner--info {
     background: #eff6ff;
-    border-color: #bfdbfe;
+    border-color: #93c5fd;
+  }
+
+  .tone-banner--info .tone-banner__tag {
+    background: #bfdbfe;
+    border-color: #93c5fd;
+    color: #1e3a8a;
+  }
+
+  .tone-banner:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
   }
 
   .resolve-master {
@@ -435,6 +498,11 @@ export const receptionStyles = css`
     display: flex;
     flex-direction: column;
     gap: 0.85rem;
+  }
+
+  .reception-sidepane:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
   }
 
   .reception-sidepane__header {
@@ -621,6 +689,11 @@ export const receptionStyles = css`
     overflow-x: auto;
   }
 
+  .reception-table__wrapper:focus-visible {
+    outline: 3px solid rgba(37, 99, 235, 0.45);
+    outline-offset: 2px;
+  }
+
   .reception-table {
     width: 100%;
     border-collapse: collapse;
@@ -711,28 +784,28 @@ export const receptionStyles = css`
   }
 
   .reception-badge--受付中 {
-    background: #eef2ff;
-    color: #1d4ed8;
+    background: #dbeafe;
+    color: #1e3a8a;
   }
 
   .reception-badge--診療中 {
-    background: #fff7ed;
-    color: #c2410c;
+    background: #ffedd5;
+    color: #7c2d12;
   }
 
   .reception-badge--会計待ち {
-    background: #fef9c3;
-    color: #92400e;
+    background: #fef3c7;
+    color: #78350f;
   }
 
   .reception-badge--会計済み {
-    background: #ecfdf5;
-    color: #047857;
+    background: #d1fae5;
+    color: #065f46;
   }
 
   .reception-badge--予約 {
-    background: #e0f2fe;
-    color: #075985;
+    background: #bae6fd;
+    color: #0c4a6e;
   }
 
   .reception-badge--muted {
@@ -750,23 +823,23 @@ export const receptionStyles = css`
   }
 
   .reception-queue--info {
-    background: #eff6ff;
-    color: #1d4ed8;
+    background: #dbeafe;
+    color: #1e3a8a;
   }
 
   .reception-queue--warning {
     background: #fef3c7;
-    color: #92400e;
+    color: #78350f;
   }
 
   .reception-queue--error {
     background: #fee2e2;
-    color: #b91c1c;
+    color: #7f1d1d;
   }
 
   .reception-queue--success {
-    background: #ecfdf5;
-    color: #047857;
+    background: #d1fae5;
+    color: #065f46;
   }
 
   .reception-table tr:focus-visible {
