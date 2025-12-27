@@ -1,6 +1,7 @@
 # 2025-12-27 ORCA 接続ログ
 
 ## RUN_ID: 20251227T225951Z
+- 追記: 現行ルールに従い Phase2 配下から `docs/server-modernization/operations/logs/` へ移設。
 - 目的: ORCA 本番（certification）疎通の TLS/BASIC 事前確認と system01dailyv2 実行
 - 接続先: `https://weborca.cloud.orcamo.jp:443`
 - 証跡: `artifacts/orca-connectivity/20251227T225951Z/`
