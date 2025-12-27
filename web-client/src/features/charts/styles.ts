@@ -176,7 +176,7 @@ export const chartsStyles = css`
 
   .charts-workbench__body {
     display: grid;
-    grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1.4fr) minmax(260px, 1fr) 240px;
+    grid-template-columns: minmax(280px, 0.95fr) minmax(420px, 1.6fr) minmax(300px, 1.05fr) minmax(220px, 0.8fr);
     gap: 1rem;
     align-items: start;
   }
@@ -211,9 +211,20 @@ export const chartsStyles = css`
     color: #0f172a;
   }
 
+  .charts-side-menu__header h2 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+
   .charts-side-menu__header span {
     font-size: 0.85rem;
     color: #64748b;
+  }
+
+  .charts-side-menu__desc {
+    margin: 0;
+    font-size: 0.85rem;
+    color: #475569;
   }
 
   .charts-side-menu__button {
@@ -236,6 +247,62 @@ export const chartsStyles = css`
     color: #ffffff;
     border-color: transparent;
     box-shadow: 0 10px 24px rgba(29, 78, 216, 0.3);
+  }
+
+  .charts-side-panel {
+    margin-top: 0.75rem;
+    border-radius: 14px;
+    padding: 0.75rem;
+    border: 1px dashed rgba(59, 130, 246, 0.4);
+    background: #f8fafc;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .charts-side-panel[data-open='false'] {
+    opacity: 0.7;
+  }
+
+  .charts-side-panel__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 0.6rem;
+  }
+
+  .charts-side-panel__header h3 {
+    margin: 0;
+    font-size: 1rem;
+  }
+
+  .charts-side-panel__close {
+    border: none;
+    background: transparent;
+    color: #1d4ed8;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
+  .charts-side-panel__message {
+    margin: 0;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
+  .charts-side-panel__actions {
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .charts-side-panel__actions button {
+    border-radius: 10px;
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    background: #ffffff;
+    padding: 0.45rem 0.6rem;
+    cursor: pointer;
+    font-weight: 600;
+    color: #1d4ed8;
   }
 
   .charts-card {
@@ -507,6 +574,36 @@ export const chartsStyles = css`
     display: flex;
     flex-direction: column;
     gap: 1rem;
+  }
+
+  .document-timeline__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .document-timeline__header h2 {
+    margin: 0;
+    font-size: 1.25rem;
+    color: #0f172a;
+  }
+
+  .document-timeline__meta-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    padding: 0.4rem 0.6rem;
+    border-radius: 12px;
+    background: #0f172a;
+    color: #f8fafc;
+    font-size: 0.85rem;
+    font-weight: 700;
+  }
+
+  .document-timeline__meta-bar span {
+    padding: 0.15rem 0.4rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.1);
   }
 
   .document-timeline__content {
@@ -1947,9 +2044,15 @@ export const chartsStyles = css`
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    .charts-workbench__column--right {
+      grid-column: 1 / -1;
+    }
+
     .charts-workbench__side {
       grid-column: 1 / -1;
       position: static;
+      border: 1px solid rgba(148, 163, 184, 0.35);
+      background: #f8fafc;
     }
   }
 

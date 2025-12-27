@@ -156,6 +156,9 @@ function ChartsContent() {
   }>({});
   const lastEditLockAnnouncement = useRef<string | null>(null);
   const lastOrcaQueueSnapshot = useRef<string | null>(null);
+  const [sidePanelAction, setSidePanelAction] = useState<
+    'prescription' | 'order' | 'lab' | 'document' | 'imaging' | null
+  >(null);
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
 
@@ -901,6 +904,15 @@ function ChartsContent() {
     }
   }, [appointmentQuery, claimQuery, orcaSummaryQuery]);
 
+  const focusSectionById = useCallback((id: string) => {
+    if (typeof document === 'undefined') return false;
+    const el = document.getElementById(id) as HTMLElement | null;
+    if (!el) return false;
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    el.focus();
+    return true;
+  }, []);
+
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const shouldIgnore = (target: EventTarget | null) => {
@@ -1352,20 +1364,126 @@ function ChartsContent() {
                   <TelemetryFunnelPanel />
                 </div>
               </div>
-              <aside className="charts-workbench__side" aria-label="右固定メニュー">
-                <div className="charts-side-menu">
+              <aside
+                className="charts-workbench__side"
+                aria-label="右固定メニュー"
+                aria-describedby="charts-side-menu-desc"
+              >
+                <div className="charts-side-menu" role="region" aria-label="右固定メニュー">
                   <div className="charts-side-menu__header">
-                    <strong>右固定メニュー</strong>
+                    <h2>右固定メニュー</h2>
                     <span>追加機能入口</span>
                   </div>
-                  <button type="button" className="charts-side-menu__button">処方検索</button>
-                  <button type="button" className="charts-side-menu__button">オーダー検索</button>
-                  <button type="button" className="charts-side-menu__button">検査オーダー</button>
-                  <button type="button" className="charts-side-menu__button">文書登録</button>
-                  <button type="button" className="charts-side-menu__button">画像/スキャン</button>
-                  <button type="button" className="charts-side-menu__button charts-side-menu__button--primary">
+                  <p id="charts-side-menu-desc" className="charts-side-menu__desc">
+                    右固定メニューから補助機能を開き、必要なセクションへ即時移動します。
+                  </p>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'prescription'}
+                    onClick={() => {
+                      setSidePanelAction('prescription');
+                      focusSectionById('charts-orca-summary');
+                    }}
+                  >
+                    処方検索
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'order'}
+                    onClick={() => {
+                      setSidePanelAction('order');
+                      focusSectionById('charts-document-timeline');
+                    }}
+                  >
+                    オーダー検索
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'lab'}
+                    onClick={() => {
+                      setSidePanelAction('lab');
+                      focusSectionById('charts-telemetry');
+                    }}
+                  >
+                    検査オーダー
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'document'}
+                    onClick={() => {
+                      setSidePanelAction('document');
+                      focusSectionById('charts-document-timeline');
+                    }}
+                  >
+                    文書登録
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'imaging'}
+                    onClick={() => {
+                      setSidePanelAction('imaging');
+                      focusSectionById('charts-patients-tab');
+                    }}
+                  >
+                    画像/スキャン
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button charts-side-menu__button--primary"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction !== null}
+                    onClick={() => setSidePanelAction((prev) => (prev ? null : 'prescription'))}
+                  >
                     右パネルを開く
                   </button>
+                  <div
+                    id="charts-side-panel"
+                    className="charts-side-panel"
+                    role="dialog"
+                    aria-label="右固定メニューの詳細パネル"
+                    aria-live="polite"
+                    data-open={sidePanelAction ? 'true' : 'false'}
+                  >
+                    <div className="charts-side-panel__header">
+                      <h3>
+                        {sidePanelAction === 'prescription' && '処方検索'}
+                        {sidePanelAction === 'order' && 'オーダー検索'}
+                        {sidePanelAction === 'lab' && '検査オーダー'}
+                        {sidePanelAction === 'document' && '文書登録'}
+                        {sidePanelAction === 'imaging' && '画像/スキャン'}
+                        {!sidePanelAction && '右パネル'}
+                      </h3>
+                      <button type="button" className="charts-side-panel__close" onClick={() => setSidePanelAction(null)}>
+                        閉じる
+                      </button>
+                    </div>
+                    <p className="charts-side-panel__message">
+                      {sidePanelAction
+                        ? 'このパネルは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。'
+                        : '右固定メニューから機能を選択すると、ここに操作内容が表示されます。'}
+                    </p>
+                    <div className="charts-side-panel__actions">
+                      <button type="button" onClick={() => focusSectionById('charts-actionbar')}>
+                        診療操作へ移動
+                      </button>
+                      <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
+                        タイムラインへ移動
+                      </button>
+                      <button type="button" onClick={() => focusSectionById('charts-orca-summary')}>
+                        ORCAサマリへ移動
+                      </button>
+                    </div>
+                  </div>
                 </div>
               </aside>
             </div>

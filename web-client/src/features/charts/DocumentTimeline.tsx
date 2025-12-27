@@ -173,6 +173,9 @@ export function DocumentTimeline({
   };
 
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
+  const claimFetchedAt = claimData?.fetchedAt;
+  const orcaQueueUpdatedAtLabel =
+    typeof orcaQueueUpdatedAt === 'number' && orcaQueueUpdatedAt > 0 ? new Date(orcaQueueUpdatedAt).toISOString() : undefined;
 
   const auditSummary = useMemo(() => {
     if (!auditEvent) return null;
@@ -350,6 +353,8 @@ export function DocumentTimeline({
     const appointmentMeta = selectedEntry?.appointmentTime ? `受付: ${selectedEntry.appointmentTime}` : '受付時刻未取得';
     const receptionMeta = selectedEntry?.receptionId ? `受付ID: ${selectedEntry.receptionId}` : undefined;
     const visitMeta = selectedEntry?.visitDate ? `診療日: ${selectedEntry.visitDate}` : undefined;
+    const claimMeta = claimFetchedAt ? `claim更新: ${claimFetchedAt}` : 'claim更新: 未取得';
+    const orcaMeta = orcaQueueUpdatedAtLabel ? `ORCA更新: ${orcaQueueUpdatedAtLabel}` : 'ORCA更新: 未取得';
 
     return [
       {
@@ -370,25 +375,34 @@ export function DocumentTimeline({
         key: 'objective',
         label: 'Objective',
         body: `状態: ${objectiveDetail}`,
-        meta: receptionMeta,
+        meta: receptionMeta ?? claimMeta,
         tone: queuePhase === 'error' ? 'error' : 'neutral',
       },
       {
         key: 'assessment',
         label: 'Assessment',
         body: assessmentDetail,
-        meta: `missingMaster=${String(resolvedMissingMaster)}`,
+        meta: `${claimMeta} ｜ ${orcaMeta}`,
         tone: resolvedMissingMaster ? 'warning' : 'neutral',
       },
       {
         key: 'plan',
         label: 'Plan',
         body: planDetail,
-        meta: selectedSendStatus?.label ? `ORCA送信: ${selectedSendStatus.label}` : undefined,
+        meta: selectedSendStatus?.label ? `ORCA送信: ${selectedSendStatus.label}` : orcaMeta,
         tone: queuePhase === 'error' ? 'error' : 'info',
       },
     ];
-  }, [auditSummary?.message, claimBundles, queuePhase, resolvedMissingMaster, selectedEntry, selectedSendStatus]);
+  }, [
+    auditSummary?.message,
+    claimBundles,
+    claimFetchedAt,
+    orcaQueueUpdatedAtLabel,
+    queuePhase,
+    resolvedMissingMaster,
+    selectedEntry,
+    selectedSendStatus,
+  ]);
 
   const entryList = useMemo(() => {
     if (groupedEntries.length === 0) {
@@ -560,6 +574,16 @@ export function DocumentTimeline({
       tabIndex={-1}
       data-run-id={resolvedRunId}
     >
+      <div className="document-timeline__header" aria-label="DocumentTimeline メタ">
+        <h2>Document Timeline</h2>
+        <div className="document-timeline__meta-bar" role="status" aria-live="polite">
+          <span>RUN_ID: {resolvedRunId}</span>
+          <span>dataSourceTransition: {resolvedTransition ?? 'snapshot'}</span>
+          <span>cacheHit: {String(resolvedCacheHit ?? false)}</span>
+          <span>missingMaster: {String(resolvedMissingMaster ?? false)}</span>
+          <span>fallbackUsed: {String(resolvedFallbackUsed ?? false)}</span>
+        </div>
+      </div>
       <ToneBanner
         tone={tone}
         message={toneMessage}
@@ -663,22 +687,29 @@ export function DocumentTimeline({
           <div className="document-timeline__section-logs" aria-label="セクション別ログ">
             <div className="document-timeline__section-logs-header">
               <h3>セクション別ログ</h3>
-              <span>RUN_ID: {resolvedRunId}</span>
+              <span>RUN_ID: {resolvedRunId} ｜ transition: {resolvedTransition ?? 'snapshot'}</span>
             </div>
             <div className="document-timeline__section-logs-grid">
-              {sectionLogs.map((log) => (
-                <article
-                  key={log.key}
-                  className={`document-timeline__section-log document-timeline__section-log--${log.tone}`}
-                  data-run-id={resolvedRunId}
-                >
-                  <header>
-                    <strong>{log.label}</strong>
-                    {log.meta ? <span>{log.meta}</span> : null}
-                  </header>
-                  <p>{log.body}</p>
-                </article>
-              ))}
+              {sectionLogs.map((log) => {
+                const metaId = log.meta ? `document-timeline-log-${log.key}-meta` : undefined;
+                const bodyId = `document-timeline-log-${log.key}-body`;
+                const describedBy = metaId ? `${metaId} ${bodyId}` : bodyId;
+                return (
+                  <article
+                    key={log.key}
+                    className={`document-timeline__section-log document-timeline__section-log--${log.tone}`}
+                    data-run-id={resolvedRunId}
+                    aria-label={`${log.label} セクションログ`}
+                    aria-describedby={describedBy}
+                  >
+                    <header>
+                      <strong>{log.label}</strong>
+                      {log.meta ? <span id={metaId}>{log.meta}</span> : null}
+                    </header>
+                    <p id={bodyId}>{log.body}</p>
+                  </article>
+                );
+              })}
             </div>
           </div>
           <div className="document-timeline__list" aria-label="タイムライン">
