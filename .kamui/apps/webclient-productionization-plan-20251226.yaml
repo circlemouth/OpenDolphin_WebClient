@@ -535,9 +535,9 @@ src:
         agent: gemini cli
         api: []
         dependency:
-          - src/webclient_productionization/infrastructure/71_セキュリティとログマスキング.md
+          - src/webclient_productionization/infrastructure/70_環境変数とビルド/配信設定の整理.md
         schedule:
-          start: 2026-02-13T00:00:00.000Z
+          start: 2026-02-12T00:00:00.000Z
           days: 1.5
     quality:
       80_Playwright回帰テスト整備.md:
@@ -552,9 +552,9 @@ src:
         agent: codex
         api: []
         dependency:
-          - src/webclient_productionization/infrastructure/72_性能最適化とキャッシュ設計.md
+          - src/webclient_productionization/infrastructure/70_環境変数とビルド/配信設定の整理.md
         schedule:
-          start: 2026-02-14T12:00:00.000Z
+          start: 2026-02-12T12:00:00.000Z
           days: 3
       81_Vitestユニットテスト補強.md:
         content: |-
@@ -570,7 +570,7 @@ src:
         dependency:
           - src/webclient_productionization/quality/80_Playwright回帰テスト整備.md
         schedule:
-          start: 2026-02-17T12:00:00.000Z
+          start: 2026-02-15T12:00:00.000Z
           days: 1.5
       82_A11y監査とUI整合.md:
         content: |-
@@ -586,7 +586,7 @@ src:
         dependency:
           - src/webclient_productionization/quality/81_Vitestユニットテスト補強.md
         schedule:
-          start: 2026-02-19T00:00:00.000Z
+          start: 2026-02-17T00:00:00.000Z
           days: 1
     release:
       90_運用ドキュメント整備.md:
@@ -603,7 +603,7 @@ src:
         dependency:
           - src/webclient_productionization/quality/82_A11y監査とUI整合.md
         schedule:
-          start: 2026-02-20T00:00:00.000Z
+          start: 2026-02-18T00:00:00.000Z
           days: 1.5
       91_ステージ検証とリハーサル.md:
         content: |-
@@ -619,7 +619,7 @@ src:
         dependency:
           - src/webclient_productionization/release/90_運用ドキュメント整備.md
         schedule:
-          start: 2026-02-21T12:00:00.000Z
+          start: 2026-02-19T12:00:00.000Z
           days: 2
       92_本番リリース判定.md:
         content: |-
@@ -635,5 +635,5 @@ src:
         dependency:
           - src/webclient_productionization/release/91_ステージ検証とリハーサル.md
         schedule:
-          start: 2026-02-23T12:00:00.000Z
+          start: 2026-02-21T12:00:00.000Z
           days: 1
