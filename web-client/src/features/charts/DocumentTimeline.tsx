@@ -173,6 +173,9 @@ export function DocumentTimeline({
   };
 
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
+  const claimFetchedAt = claimData?.fetchedAt;
+  const orcaQueueUpdatedAtLabel =
+    typeof orcaQueueUpdatedAt === 'number' && orcaQueueUpdatedAt > 0 ? new Date(orcaQueueUpdatedAt).toISOString() : undefined;
 
   const auditSummary = useMemo(() => {
     if (!auditEvent) return null;
@@ -293,6 +296,11 @@ export function DocumentTimeline({
     ),
   [selectedAppointmentId, selectedPatientId, selectedReceptionId, sortedEntries]);
 
+  const selectedEntry = useMemo(() => {
+    if (selectedIndex < 0) return undefined;
+    return sortedEntries[selectedIndex];
+  }, [selectedIndex, sortedEntries]);
+
   useEffect(() => {
     if (selectedIndex < 0) return;
     if (selectedIndex < windowStart || selectedIndex >= windowStart + windowSize) {
@@ -330,6 +338,71 @@ export function DocumentTimeline({
   const toggleSection = useCallback((status: ReceptionStatus) => {
     setCollapsedSections((prev) => ({ ...prev, [status]: !prev[status] }));
   }, []);
+
+  const sectionLogs = useMemo(() => {
+    const selectedBundle = selectedEntry ? pickClaimBundleForEntry(selectedEntry, claimBundles) : undefined;
+    const planDetail = selectedEntry
+      ? deriveNextAction(selectedEntry.status, queuePhase, resolvedMissingMaster, selectedSendStatus)
+      : '次にやることを待機中';
+    const assessmentDetail = auditSummary?.message ?? '監査ログ未取得';
+    const objectiveDetail = selectedBundle?.claimStatusText ?? selectedBundle?.claimStatus ?? selectedEntry?.status ?? '状態未取得';
+    const subjectDetail = [
+      selectedEntry?.department ? `診療科: ${selectedEntry.department}` : '診療科未指定',
+      selectedEntry?.physician ? `担当: ${selectedEntry.physician}` : '担当未指定',
+    ].join(' ｜ ');
+    const appointmentMeta = selectedEntry?.appointmentTime ? `受付: ${selectedEntry.appointmentTime}` : '受付時刻未取得';
+    const receptionMeta = selectedEntry?.receptionId ? `受付ID: ${selectedEntry.receptionId}` : undefined;
+    const visitMeta = selectedEntry?.visitDate ? `診療日: ${selectedEntry.visitDate}` : undefined;
+    const claimMeta = claimFetchedAt ? `claim更新: ${claimFetchedAt}` : 'claim更新: 未取得';
+    const orcaMeta = orcaQueueUpdatedAtLabel ? `ORCA更新: ${orcaQueueUpdatedAtLabel}` : 'ORCA更新: 未取得';
+
+    return [
+      {
+        key: 'free',
+        label: 'Free',
+        body: selectedEntry?.note ?? '記載なし',
+        meta: appointmentMeta,
+        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+      },
+      {
+        key: 'subjective',
+        label: 'Subjective',
+        body: subjectDetail,
+        meta: visitMeta,
+        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+      },
+      {
+        key: 'objective',
+        label: 'Objective',
+        body: `状態: ${objectiveDetail}`,
+        meta: receptionMeta ?? claimMeta,
+        tone: queuePhase === 'error' ? 'error' : 'neutral',
+      },
+      {
+        key: 'assessment',
+        label: 'Assessment',
+        body: assessmentDetail,
+        meta: `${claimMeta} ｜ ${orcaMeta}`,
+        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+      },
+      {
+        key: 'plan',
+        label: 'Plan',
+        body: planDetail,
+        meta: selectedSendStatus?.label ? `ORCA送信: ${selectedSendStatus.label}` : orcaMeta,
+        tone: queuePhase === 'error' ? 'error' : 'info',
+      },
+    ];
+  }, [
+    auditSummary?.message,
+    claimBundles,
+    claimFetchedAt,
+    orcaQueueUpdatedAtLabel,
+    queuePhase,
+    resolvedMissingMaster,
+    selectedEntry,
+    selectedSendStatus,
+  ]);
 
   const entryList = useMemo(() => {
     if (groupedEntries.length === 0) {
@@ -501,6 +574,16 @@ export function DocumentTimeline({
       tabIndex={-1}
       data-run-id={resolvedRunId}
     >
+      <div className="document-timeline__header" aria-label="DocumentTimeline メタ">
+        <h2>Document Timeline</h2>
+        <div className="document-timeline__meta-bar" role="status" aria-live="polite">
+          <span>RUN_ID: {resolvedRunId}</span>
+          <span>dataSourceTransition: {resolvedTransition ?? 'snapshot'}</span>
+          <span>cacheHit: {String(resolvedCacheHit ?? false)}</span>
+          <span>missingMaster: {String(resolvedMissingMaster ?? false)}</span>
+          <span>fallbackUsed: {String(resolvedFallbackUsed ?? false)}</span>
+        </div>
+      </div>
       <ToneBanner
         tone={tone}
         message={toneMessage}
@@ -600,7 +683,43 @@ export function DocumentTimeline({
         </div>
       )}
       <div className="document-timeline__content">
-        <div className="document-timeline__list">{entryList}</div>
+        <div className="document-timeline__timeline">
+          <div className="document-timeline__section-logs" aria-label="セクション別ログ">
+            <div className="document-timeline__section-logs-header">
+              <h3>セクション別ログ</h3>
+              <span>RUN_ID: {resolvedRunId} ｜ transition: {resolvedTransition ?? 'snapshot'}</span>
+            </div>
+            <div className="document-timeline__section-logs-grid">
+              {sectionLogs.map((log) => {
+                const metaId = log.meta ? `document-timeline-log-${log.key}-meta` : undefined;
+                const bodyId = `document-timeline-log-${log.key}-body`;
+                const describedBy = metaId ? `${metaId} ${bodyId}` : bodyId;
+                return (
+                  <article
+                    key={log.key}
+                    className={`document-timeline__section-log document-timeline__section-log--${log.tone}`}
+                    data-run-id={resolvedRunId}
+                    aria-label={`${log.label} セクションログ`}
+                    aria-describedby={describedBy}
+                  >
+                    <header>
+                      <strong>{log.label}</strong>
+                      {log.meta ? <span id={metaId}>{log.meta}</span> : null}
+                    </header>
+                    <p id={bodyId}>{log.body}</p>
+                  </article>
+                );
+              })}
+            </div>
+          </div>
+          <div className="document-timeline__list" aria-label="タイムライン">
+            <div className="document-timeline__timeline-header">
+              <h3>タイムライン</h3>
+              <span>受付→診療→会計</span>
+            </div>
+            {entryList}
+          </div>
+        </div>
         <div className="document-timeline__insights">
           <StatusBadge
             label="missingMaster"
