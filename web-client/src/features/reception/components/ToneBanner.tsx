@@ -38,6 +38,7 @@ export function ToneBanner({
   ariaLive,
 }: ToneBannerProps) {
   const live = ariaLive ?? toneLive[tone];
+  const role = tone === 'info' ? 'status' : 'alert';
   const fragments = [
     message,
     patientId ? `患者ID: ${patientId}` : undefined,
@@ -45,14 +46,17 @@ export function ToneBanner({
     destination ? `送信先: ${destination}` : undefined,
     nextAction ? `次アクション: ${nextAction}` : undefined,
   ].filter((fragment): fragment is string => typeof fragment === 'string');
+  const ariaText = [tonePrefix[tone], ...fragments].join('、');
   return (
     <>
       <Global styles={toneBannerStyles} />
       <div
         className={`tone-banner tone-banner--${tone}`}
-        role="alert"
+        role={role}
         aria-live={live}
-        aria-atomic="false"
+        aria-atomic="true"
+        aria-label={ariaText}
+        tabIndex={0}
         data-run-id={runId}
       >
         <div className="tone-banner__tag">{tonePrefix[tone]}</div>

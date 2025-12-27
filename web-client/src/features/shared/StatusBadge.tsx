@@ -28,6 +28,8 @@ export function StatusBadge({
   ariaLive = 'off',
   runId,
 }: StatusBadgeProps) {
+  const descriptionText = typeof description === 'string' ? description : undefined;
+  const ariaText = [label, value, descriptionText].filter(Boolean).join('、');
   return (
     <>
       <Global styles={statusBadgeStyles} />
@@ -35,6 +37,8 @@ export function StatusBadge({
         className={`status-badge status-badge--${tone}`}
         role="status"
         aria-live={ariaLive}
+        aria-atomic="true"
+        aria-label={ariaText}
         data-run-id={runId}
       >
         <div className="status-badge__row">
@@ -68,7 +72,7 @@ export function MissingMasterBadge({ missingMaster, runId }: MissingMasterBadgeP
           ? 'tone=server ｜ マスタ未取得のため ORCA 再送を停止'
           : 'tone=info ｜ マスタ取得済み、再送を継続'
       }
-      ariaLive="off"
+      ariaLive="polite"
       runId={runId}
     />
   );
@@ -86,7 +90,7 @@ export function CacheHitBadge({ cacheHit, runId }: CacheHitBadgeProps) {
       value={cacheHit ? 'true' : 'false'}
       tone={cacheHit ? 'success' : 'warning'}
       description={cacheHit ? 'cacheHit=true ｜ 再取得不要で ORCA 送信準備完了' : 'cacheHit=false ｜ サーバー再取得または fallback が必要'}
-      ariaLive="off"
+      ariaLive="polite"
       runId={runId}
     />
   );

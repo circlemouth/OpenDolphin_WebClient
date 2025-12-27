@@ -512,6 +512,28 @@ export function ReceptionPage({
     return `検索結果 ${sortedEntries.length}件（${counts}）`;
   }, [grouped, sortedEntries.length]);
 
+  const selectionSummaryText = useMemo(() => {
+    if (!selectedEntry) return '選択中の患者はありません。';
+    const queue = resolveQueueStatus(selectedQueue);
+    return [
+      `選択中: ${selectedEntry.name ?? '未登録'}`,
+      `患者ID ${selectedEntry.patientId ?? '未登録'}`,
+      `状態 ${selectedEntry.status ?? '-'}`,
+      `ORCAキュー ${queue.label}${queue.detail ? ` ${queue.detail}` : ''}`,
+    ].join('、');
+  }, [selectedEntry, selectedQueue]);
+
+  const orderSummaryText = useMemo(() => {
+    if (!selectedEntry) return 'オーダー概要は未選択です。';
+    return [
+      `請求状態 ${selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}`,
+      `バンドル ${selectedBundle?.bundleNumber ?? '—'}`,
+      `合計金額 ${selectedBundle?.totalClaimAmount !== undefined ? `${selectedBundle.totalClaimAmount.toLocaleString()}円` : '—'}`,
+      `診療時間 ${toDateLabel(selectedBundle?.performTime)}`,
+      `ORCAキュー ${selectedQueueStatus.label}${selectedQueueStatus.detail ? ` ${selectedQueueStatus.detail}` : ''}`,
+    ].join('、');
+  }, [selectedBundle, selectedEntry, selectedQueueStatus]);
+
   useEffect(() => {
     summaryRef.current?.focus?.();
   }, [summaryText]);
@@ -775,6 +797,12 @@ export function ReceptionPage({
     <>
       <Global styles={receptionStyles} />
       <main className="reception-page" data-run-id={mergedMeta.runId}>
+        <a className="skip-link" href="#reception-results">
+          検索結果へスキップ
+        </a>
+        <a className="skip-link" href="#reception-sidepane">
+          右ペインへスキップ
+        </a>
         <AdminBroadcastBanner broadcast={broadcast} surface="reception" />
         <section className="reception-page__header">
           <h1>{title}</h1>
@@ -788,7 +816,7 @@ export function ReceptionPage({
           </div>
         </section>
 
-        <section className="reception-layout">
+        <section className="reception-layout" id="reception-results" tabIndex={-1}>
           <div className="reception-layout__main">
             <section className="reception-search" aria-label="検索とフィルタ">
               <form className="reception-search__form" onSubmit={handleSearchSubmit}>
@@ -887,11 +915,20 @@ export function ReceptionPage({
               )}
             </section>
 
-            {grouped.map(({ status, items }) => (
+            {grouped.map(({ status, items }, index) => {
+              const sectionId = `reception-section-${index}`;
+              const tableHelpId = `${sectionId}-help`;
+              const tableStatusId = `${sectionId}-status`;
+              const tableLabelId = `${sectionId}-label`;
+              const tableStatusText =
+                selectedEntry && selectedEntry.status === status
+                  ? selectionSummaryText
+                  : `${SECTION_LABEL[status]} ${items.length}件`;
+              return (
               <section key={status} className="reception-section" aria-label={`${SECTION_LABEL[status]}リスト`}>
                 <header className="reception-section__header">
                   <div>
-                    <h2>{SECTION_LABEL[status]}</h2>
+                    <h2 id={tableLabelId}>{SECTION_LABEL[status]}</h2>
                     <span className="reception-section__count" aria-live="polite">
                       {items.length} 件
                     </span>
@@ -906,8 +943,19 @@ export function ReceptionPage({
                   </button>
                 </header>
                 {!collapsed[status] && (
-                  <div className="reception-table__wrapper">
-                    <table className="reception-table">
+                  <div
+                    className="reception-table__wrapper"
+                    role="region"
+                    tabIndex={0}
+                    aria-labelledby={tableLabelId}
+                  >
+                    <p id={tableHelpId} className="sr-only">
+                      テーブル行は Tab でフォーカスし、Enter で Charts へ移動します。
+                    </p>
+                    <p id={tableStatusId} className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                      {tableStatusText}
+                    </p>
+                    <table className="reception-table" aria-describedby={`${tableHelpId} ${tableStatusId}`}>
                       <thead>
                         <tr>
                           <th scope="col">状態</th>
@@ -947,7 +995,10 @@ export function ReceptionPage({
                               aria-label={`${entry.name ?? '患者'} ${entry.appointmentTime ?? ''} ${entry.department ?? ''}`}
                             >
                               <td>
-                                <span className={`reception-badge reception-badge--${status}`}>
+                                <span
+                                  className={`reception-badge reception-badge--${status}`}
+                                  aria-label={`状態: ${SECTION_LABEL[status]}`}
+                                >
                                   {SECTION_LABEL[status]}
                                 </span>
                               </td>
@@ -974,7 +1025,10 @@ export function ReceptionPage({
                               </td>
                               <td className="reception-table__last">{resolveLastVisitForEntry(entry)}</td>
                               <td className="reception-table__queue">
-                                <span className={`reception-queue reception-queue--${queueStatus.tone}`}>
+                                <span
+                                  className={`reception-queue reception-queue--${queueStatus.tone}`}
+                                  aria-label={`ORCAキュー: ${queueStatus.label}${queueStatus.detail ? ` ${queueStatus.detail}` : ''}`}
+                                >
                                   {queueStatus.label}
                                 </span>
                                 {queueStatus.detail && <small className="reception-table__sub">{queueStatus.detail}</small>}
@@ -987,17 +1041,29 @@ export function ReceptionPage({
                   </div>
                 )}
               </section>
-            ))}
+            )})}
           </div>
 
-          <aside className="reception-layout__side" aria-label="右ペイン">
-            <section className="reception-sidepane" data-run-id={mergedMeta.runId}>
+          <aside className="reception-layout__side" aria-label="右ペイン" id="reception-sidepane" tabIndex={-1}>
+            <section
+              className="reception-sidepane"
+              data-run-id={mergedMeta.runId}
+              role="region"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-labelledby="reception-sidepane-patient-title"
+              aria-describedby="reception-sidepane-patient-status"
+              tabIndex={0}
+            >
               <header className="reception-sidepane__header">
-                <h2>患者概要</h2>
+                <h2 id="reception-sidepane-patient-title">患者概要</h2>
                 <span className="reception-sidepane__meta">
                   {selectedEntry?.name ?? '未選択'}
                 </span>
               </header>
+              <p id="reception-sidepane-patient-status" className="sr-only">
+                {selectionSummaryText}
+              </p>
               {!selectedEntry ? (
                 <p className="reception-sidepane__empty">一覧の行を選択すると詳細が表示されます。</p>
               ) : (
@@ -1038,13 +1104,25 @@ export function ReceptionPage({
               )}
             </section>
 
-            <section className="reception-sidepane" data-run-id={mergedMeta.runId}>
+            <section
+              className="reception-sidepane"
+              data-run-id={mergedMeta.runId}
+              role="region"
+              aria-live="polite"
+              aria-atomic="true"
+              aria-labelledby="reception-sidepane-order-title"
+              aria-describedby="reception-sidepane-order-status"
+              tabIndex={0}
+            >
               <header className="reception-sidepane__header">
-                <h2>オーダー概要</h2>
+                <h2 id="reception-sidepane-order-title">オーダー概要</h2>
                 <span className="reception-sidepane__meta">
                   {selectedBundle?.claimStatus ?? selectedBundle?.claimStatusText ?? '未取得'}
                 </span>
               </header>
+              <p id="reception-sidepane-order-status" className="sr-only">
+                {orderSummaryText}
+              </p>
               {!selectedEntry ? (
                 <p className="reception-sidepane__empty">対象患者を選択してください。</p>
               ) : (
