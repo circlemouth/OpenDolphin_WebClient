@@ -214,8 +214,17 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         model.setDiagnosis(entry.getDiagnosisName());
         model.setDiagnosisCode(entry.getDiagnosisCode());
         model.setCategory(entry.getCategory());
-        model.setCategoryDesc(entry.getCategory());
+        String categoryDesc = entry.getSuspectedFlag();
+        if (categoryDesc == null || categoryDesc.isBlank()) {
+            categoryDesc = entry.getCategory();
+        }
+        model.setCategoryDesc(categoryDesc);
         model.setCategoryCodeSys("ORCA");
+        if (entry.getOutcome() != null && !entry.getOutcome().isBlank()) {
+            model.setOutcome(entry.getOutcome());
+            model.setOutcomeDesc(entry.getOutcome());
+            model.setOutcomeCodeSys("ORCA");
+        }
         model.setFirstEncounterDate(entry.getStartDate());
         model.setDepartment(entry.getDepartmentCode());
         model.setStatus(IInfoModel.STATUS_FINAL);
