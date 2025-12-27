@@ -32,7 +32,9 @@ import {
   hasEncounterContext,
   loadChartsEncounterContext,
   normalizeVisitDate,
+  normalizeRunId,
   parseChartsEncounterContext,
+  parseChartsNavigationMeta,
   parseReceptionCarryoverParams,
   storeChartsEncounterContext,
   type OutpatientEncounterContext,
@@ -40,51 +42,6 @@ import {
 import { useChartsTabLock } from '../useChartsTabLock';
 import { isNetworkError } from '../../shared/apiError';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
-
-const parseDate = (value?: string): Date | null => {
-  if (!value) return null;
-  const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? null : date;
-};
-
-const formatAge = (birthDate?: string, baseDate: Date = new Date()): string => {
-  const birth = parseDate(birthDate);
-  if (!birth) return '—';
-  const baseYear = baseDate.getFullYear();
-  const baseMonth = baseDate.getMonth();
-  const baseDay = baseDate.getDate();
-  const birthYear = birth.getFullYear();
-  const birthMonth = birth.getMonth();
-  const birthDay = birth.getDate();
-  let totalMonths = (baseYear - birthYear) * 12 + (baseMonth - birthMonth);
-  if (baseDay < birthDay) totalMonths -= 1;
-  if (totalMonths < 0) return '—';
-  const years = Math.floor(totalMonths / 12);
-  const months = totalMonths % 12;
-  return months === 0 ? `${years}歳` : `${years}歳${months}ヶ月`;
-};
-
-const formatJapaneseEra = (date: Date): string => {
-  const eras = [
-    { name: '令和', start: new Date(2019, 4, 1) },
-    { name: '平成', start: new Date(1989, 0, 8) },
-    { name: '昭和', start: new Date(1926, 11, 25) },
-    { name: '大正', start: new Date(1912, 6, 30) },
-    { name: '明治', start: new Date(1868, 0, 25) },
-  ];
-  const found = eras.find((era) => date >= era.start);
-  if (!found) return '—';
-  const year = date.getFullYear() - found.start.getFullYear() + 1;
-  const yearLabel = year === 1 ? '元' : String(year);
-  return `${found.name}${yearLabel}年${date.getMonth() + 1}月${date.getDate()}日`;
-};
-
-const formatBirthDate = (value?: string): string => {
-  const date = parseDate(value);
-  if (!date) return '—';
-  const iso = date.toISOString().slice(0, 10);
-  return `${iso}（${formatJapaneseEra(date)}）`;
-};
 
 export function ChartsPage() {
   return (
@@ -102,7 +59,13 @@ function ChartsContent() {
   const location = useLocation();
   const navigate = useNavigate();
   const focusRestoreRef = useRef<HTMLElement | null>(null);
-  const navigationState = (location.state as Partial<OutpatientEncounterContext> | null) ?? {};
+  const tabLockReadOnlyRef = useRef(false);
+  type ChartsNavigationState = Partial<OutpatientEncounterContext> & { runId?: string };
+  const navigationState = (location.state as ChartsNavigationState | null) ?? {};
+  const urlMeta = useMemo(() => parseChartsNavigationMeta(location.search), [location.search]);
+  const navigationRunId = normalizeRunId(typeof navigationState.runId === 'string' ? navigationState.runId : undefined);
+  const explicitRunId = urlMeta.runId ?? navigationRunId;
+  const runIdForUrl = explicitRunId ?? flags.runId;
   const [encounterContext, setEncounterContext] = useState<OutpatientEncounterContext>(() => {
     const urlContext = parseChartsEncounterContext(location.search);
     if (hasEncounterContext(urlContext)) return urlContext;
@@ -157,9 +120,6 @@ function ChartsContent() {
   }>({});
   const lastEditLockAnnouncement = useRef<string | null>(null);
   const lastOrcaQueueSnapshot = useRef<string | null>(null);
-  const [sidePanelAction, setSidePanelAction] = useState<
-    'prescription' | 'order' | 'lab' | 'document' | 'imaging' | null
-  >(null);
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
   const receptionCarryover = useMemo(() => parseReceptionCarryoverParams(location.search), [location.search]);
@@ -174,14 +134,21 @@ function ChartsContent() {
   }, []);
 
   useEffect(() => {
+    if (!explicitRunId) return;
+    if (draftState.dirty || lockState.locked || tabLockReadOnlyRef.current) return;
+    if (explicitRunId === flags.runId) return;
+    bumpRunId(explicitRunId);
+  }, [bumpRunId, draftState.dirty, explicitRunId, flags.runId, lockState.locked]);
+
+  useEffect(() => {
     if (!hasEncounterContext(urlContext)) return;
     if (sameEncounterContext(urlContext, encounterContext)) return;
-    if (draftState.dirty || lockState.locked) {
+    if (draftState.dirty || lockState.locked || tabLockReadOnlyRef.current) {
       setContextAlert({
         tone: 'warning',
         message: '未保存ドラフトまたは処理中のため、URL からの患者切替をブロックしました（別患者混入防止）。',
       });
-      const currentSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover);
+      const currentSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: flags.runId });
       if (location.search !== currentSearch) {
         navigate({ pathname: '/charts', search: currentSearch }, { replace: true });
       }
@@ -192,15 +159,24 @@ function ChartsContent() {
       tone: 'info',
       message: 'URL の外来コンテキストに合わせて表示を更新しました（戻る/進む操作）。',
     });
-  }, [draftState.dirty, encounterContext, location.search, lockState.locked, navigate, sameEncounterContext, urlContext]);
+  }, [
+    draftState.dirty,
+    encounterContext,
+    flags.runId,
+    location.search,
+    lockState.locked,
+    navigate,
+    sameEncounterContext,
+    urlContext,
+  ]);
 
   useEffect(() => {
     if (!hasEncounterContext(encounterContext)) return;
     storeChartsEncounterContext(encounterContext);
-    const nextSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover);
+    const nextSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: runIdForUrl });
     if (location.search === nextSearch) return;
     navigate({ pathname: '/charts', search: nextSearch }, { replace: true });
-  }, [encounterContext, location.search, navigate, receptionCarryover]);
+  }, [encounterContext, location.search, navigate, receptionCarryover, runIdForUrl]);
 
   const adminQueryKey = ['admin-effective-config'];
   const adminConfigQuery = useQuery({
@@ -705,41 +681,31 @@ function ChartsContent() {
     return patientEntries.find((entry) => (entry.patientId ?? entry.id) === encounterContext.patientId);
   }, [encounterContext.appointmentId, encounterContext.patientId, encounterContext.receptionId, patientEntries]);
 
-  const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
-  const appointmentId = selectedEntry?.appointmentId ?? encounterContext.appointmentId;
-  const receptionId = selectedEntry?.receptionId ?? encounterContext.receptionId;
-  const patientDisplay = useMemo(
-    () => ({
-      name: selectedEntry?.name ?? (patientId ? `患者 ${patientId}` : '患者未選択'),
-      kana: selectedEntry?.kana ?? '—',
-      sex: selectedEntry?.sex ?? '—',
-      birthDate: formatBirthDate(selectedEntry?.birthDate),
-      age: formatAge(selectedEntry?.birthDate),
-      department: selectedEntry?.department ?? '—',
-      physician: selectedEntry?.physician ?? '—',
-      insurance: selectedEntry?.insurance ?? '—',
-      visitDate: selectedEntry?.visitDate ?? encounterContext.visitDate ?? today,
-      appointmentTime: selectedEntry?.appointmentTime ?? '—',
-      status: selectedEntry?.status ?? '—',
-      note: selectedEntry?.note ?? '患者メモ未登録',
-    }),
-    [encounterContext.visitDate, patientId, selectedEntry, today],
-  );
-
   const lockTarget = useMemo(() => {
+    const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
     return {
       facilityId: session.facilityId,
       patientId,
-      receptionId,
-      appointmentId,
+      receptionId: selectedEntry?.receptionId ?? encounterContext.receptionId,
+      appointmentId: selectedEntry?.appointmentId ?? encounterContext.appointmentId,
     };
-  }, [appointmentId, patientId, receptionId, session.facilityId]);
+  }, [
+    encounterContext.appointmentId,
+    encounterContext.patientId,
+    encounterContext.receptionId,
+    selectedEntry?.appointmentId,
+    selectedEntry?.id,
+    selectedEntry?.patientId,
+    selectedEntry?.receptionId,
+    session.facilityId,
+  ]);
 
   const tabLock = useChartsTabLock({
     runId: resolvedRunId ?? flags.runId,
     target: lockTarget,
     enabled: chartsDisplayEnabled && Boolean(lockTarget.patientId),
   });
+  tabLockReadOnlyRef.current = tabLock.isReadOnly;
 
   useEffect(() => {
     if (!tabLock.storageKey) {
@@ -844,9 +810,11 @@ function ChartsContent() {
       }),
     [appointmentQuery.error, appointmentQuery.isError, appointmentQuery.isLoading, patientEntries, today],
   );
+  const switchLocked = lockState.locked || tabLock.isReadOnly;
+  const switchLockedReason = lockState.reason ?? (tabLock.isReadOnly ? tabLock.readOnlyReason : undefined);
   useEffect(() => {
     if (patientEntries.length === 0) return;
-    if (draftState.dirty || lockState.locked) return;
+    if (draftState.dirty || lockState.locked || tabLock.isReadOnly) return;
     const resolve = (entries: ReceptionEntry[], context: OutpatientEncounterContext) => {
       if (context.receptionId) return entries.find((entry) => entry.receptionId === context.receptionId);
       if (context.appointmentId) return entries.find((entry) => entry.appointmentId === context.appointmentId);
@@ -881,7 +849,7 @@ function ChartsContent() {
       setEncounterContext(nextContext);
       setContextAlert(null);
     }
-  }, [draftState.dirty, encounterContext, lockState.locked, patientEntries, sameEncounterContext, today]);
+  }, [draftState.dirty, encounterContext, lockState.locked, patientEntries, sameEncounterContext, tabLock.isReadOnly, today]);
 
   const latestAuditEvent = useMemo(() => {
     const auditMeta = {
@@ -905,15 +873,6 @@ function ChartsContent() {
       setIsManualRefreshing(false);
     }
   }, [appointmentQuery, claimQuery, orcaSummaryQuery]);
-
-  const focusSectionById = useCallback((id: string) => {
-    if (typeof document === 'undefined') return false;
-    const el = document.getElementById(id) as HTMLElement | null;
-    if (!el) return false;
-    el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-    el.focus();
-    return true;
-  }, []);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -1119,7 +1078,7 @@ function ChartsContent() {
 
       {!chartsDisplayEnabled ? null : (
         <>
-          <div className="charts-card charts-card--actions" id="charts-actionbar" tabIndex={-1} data-focus-anchor="true">
+          <div className="charts-card charts-card--actions">
             <ChartsActionBar
               runId={resolvedRunId ?? flags.runId}
               cacheHit={resolvedCacheHit ?? false}
@@ -1199,297 +1158,80 @@ function ChartsContent() {
               onLockChange={handleLockChange}
             />
           </div>
-          <section className="charts-workbench" aria-label="外来カルテ作業台" data-run-id={resolvedRunId ?? flags.runId}>
-            <div className="charts-workbench__sticky">
-              <div className="charts-card charts-card--patient" id="charts-patient-header">
-                <div className="charts-patient-header">
-                  <div className="charts-patient-header__identity">
-                    <span className="charts-patient-header__label">患者ヘッダ</span>
-                    <h2 className="charts-patient-header__name">{patientDisplay.name}</h2>
-                    <span className="charts-patient-header__kana">{patientDisplay.kana}</span>
-                  </div>
-                  <div className="charts-patient-header__meta">
-                    <div>
-                      <span className="charts-patient-header__meta-label">患者番号</span>
-                      <strong>{patientId ?? '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">性別/年齢</span>
-                      <strong>{patientDisplay.sex} / {patientDisplay.age}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">生年月日</span>
-                      <strong>{patientDisplay.birthDate}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">受付番号</span>
-                      <strong>{receptionId ?? '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">予約番号</span>
-                      <strong>{appointmentId ?? '—'}</strong>
-                    </div>
-                    <div>
-                      <span className="charts-patient-header__meta-label">TEL</span>
-                      <strong>—</strong>
-                    </div>
-                  </div>
-                  <p className="charts-patient-header__memo">{patientDisplay.note}</p>
-                </div>
-              </div>
-              <div className="charts-card charts-card--clinical" id="charts-clinical-bar">
-                <div className="charts-clinical-bar">
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">診療ステータス</span>
-                    <strong>{patientDisplay.status}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">診療科</span>
-                    <strong>{patientDisplay.department}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">担当者</span>
-                    <strong>{patientDisplay.physician}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">保険/自費</span>
-                    <strong>{patientDisplay.insurance}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">診療日</span>
-                    <strong>{patientDisplay.visitDate} {patientDisplay.appointmentTime}</strong>
-                  </div>
-                  <div className="charts-clinical-bar__item">
-                    <span className="charts-clinical-bar__label">承認/ロック</span>
-                    <strong>{tabLock.isReadOnly ? '承認済（編集不可）' : '未承認'}</strong>
-                  </div>
-                </div>
-              </div>
-              <div className="charts-card charts-card--safety" id="charts-safety-display">
-                <div
-                  className="charts-safety"
-                  role="status"
-                  aria-live={resolvedMissingMaster ? 'assertive' : 'polite'}
-                  data-run-id={resolvedRunId}
-                  data-missing-master={String(resolvedMissingMaster)}
-                >
-                  <div className="charts-safety__primary">
-                    <span className="charts-safety__label">安全表示</span>
-                    <strong>{patientDisplay.name}</strong>
-                  </div>
-                  <div className="charts-safety__meta">
-                    <span>患者ID: {patientId ?? '—'}</span>
-                    <span>受付ID: {receptionId ?? '—'}</span>
-                    <span>生年月日: {patientDisplay.birthDate}</span>
-                    <span>RUN_ID: {resolvedRunId}</span>
-                    <span>missingMaster: {String(resolvedMissingMaster)}</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-            <div className="charts-workbench__body">
-              <div className="charts-workbench__column charts-workbench__column--left">
-                <div className="charts-card" id="charts-patients-tab" tabIndex={-1} data-focus-anchor="true">
-                  <PatientsTab
-                    entries={patientEntries}
-                    appointmentBanner={appointmentBanner}
-                    auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-                    selectedContext={encounterContext}
-                    draftDirty={draftState.dirty}
-                    switchLocked={lockState.locked}
-                    switchLockedReason={lockState.reason}
-                    onRequestRestoreFocus={() => {
-                      const el = focusRestoreRef.current;
-                      if (el && typeof el.focus === 'function') el.focus();
-                    }}
-                    onDraftDirtyChange={(next) => setDraftState(next)}
-                    onSelectEncounter={(next) => {
-                      if (!next) return;
-                      setEncounterContext((prev) => ({
-                        ...prev,
-                        ...next,
-                        visitDate: normalizeVisitDate(next.visitDate) ?? prev.visitDate ?? today,
-                      }));
-                      setContextAlert(null);
-                    }}
-                  />
-                </div>
-                <div className="charts-card">
-                  <AuthServiceControls />
-                </div>
-              </div>
-              <div className="charts-workbench__column charts-workbench__column--center">
-                <div className="charts-card" id="charts-document-timeline" tabIndex={-1} data-focus-anchor="true">
-                  <DocumentTimeline
-                    entries={patientEntries}
-                    appointmentBanner={appointmentBanner}
-                    auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-                    selectedPatientId={encounterContext.patientId}
-                    selectedAppointmentId={encounterContext.appointmentId}
-                    selectedReceptionId={encounterContext.receptionId}
-                    claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
-                    claimError={claimErrorForTimeline}
-                    isClaimLoading={claimQuery.isFetching}
-                    orcaQueue={orcaQueueQuery.data}
-                    orcaQueueUpdatedAt={orcaQueueQuery.dataUpdatedAt}
-                    isOrcaQueueLoading={orcaQueueQuery.isFetching}
-                    orcaQueueError={
-                      orcaQueueQuery.isError
-                        ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
-                        : undefined
-                    }
-                    onRetryClaim={handleRetryClaim}
-                    recordsReturned={appointmentRecordsReturned}
-                    hasNextPage={hasNextAppointments}
-                    onLoadMore={() => appointmentQuery.fetchNextPage()}
-                    isLoadingMore={appointmentQuery.isFetchingNextPage}
-                    isInitialLoading={appointmentQuery.isLoading}
-                    pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
-                    isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
-                  />
-                </div>
-                <div className="charts-card">
-                  <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
-                </div>
-              </div>
-              <div className="charts-workbench__column charts-workbench__column--right">
-                <div className="charts-card" id="charts-orca-summary" tabIndex={-1} data-focus-anchor="true">
-                  <OrcaSummary
-                    summary={orcaSummaryQuery.data}
-                    claim={claimQuery.data as ClaimOutpatientPayload | undefined}
-                    appointments={patientEntries}
-                    onRefresh={handleRefreshSummary}
-                    isRefreshing={isManualRefreshing}
-                  />
-                </div>
-                <div className="charts-card" id="charts-telemetry" tabIndex={-1} data-focus-anchor="true">
-                  <TelemetryFunnelPanel />
-                </div>
-              </div>
-              <aside
-                className="charts-workbench__side"
-                aria-label="右固定メニュー"
-                aria-describedby="charts-side-menu-desc"
-              >
-                <div className="charts-side-menu" role="region" aria-label="右固定メニュー">
-                  <div className="charts-side-menu__header">
-                    <h2>右固定メニュー</h2>
-                    <span>追加機能入口</span>
-                  </div>
-                  <p id="charts-side-menu-desc" className="charts-side-menu__desc">
-                    右固定メニューから補助機能を開き、必要なセクションへ即時移動します。
-                  </p>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'prescription'}
-                    onClick={() => {
-                      setSidePanelAction('prescription');
-                      focusSectionById('charts-orca-summary');
-                    }}
-                  >
-                    処方検索
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'order'}
-                    onClick={() => {
-                      setSidePanelAction('order');
-                      focusSectionById('charts-document-timeline');
-                    }}
-                  >
-                    オーダー検索
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'lab'}
-                    onClick={() => {
-                      setSidePanelAction('lab');
-                      focusSectionById('charts-telemetry');
-                    }}
-                  >
-                    検査オーダー
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'document'}
-                    onClick={() => {
-                      setSidePanelAction('document');
-                      focusSectionById('charts-document-timeline');
-                    }}
-                  >
-                    文書登録
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'imaging'}
-                    onClick={() => {
-                      setSidePanelAction('imaging');
-                      focusSectionById('charts-patients-tab');
-                    }}
-                  >
-                    画像/スキャン
-                  </button>
-                  <button
-                    type="button"
-                    className="charts-side-menu__button charts-side-menu__button--primary"
-                    aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction !== null}
-                    onClick={() => setSidePanelAction((prev) => (prev ? null : 'prescription'))}
-                  >
-                    右パネルを開く
-                  </button>
-                  <div
-                    id="charts-side-panel"
-                    className="charts-side-panel"
-                    role="dialog"
-                    aria-label="右固定メニューの詳細パネル"
-                    aria-live="polite"
-                    data-open={sidePanelAction ? 'true' : 'false'}
-                  >
-                    <div className="charts-side-panel__header">
-                      <h3>
-                        {sidePanelAction === 'prescription' && '処方検索'}
-                        {sidePanelAction === 'order' && 'オーダー検索'}
-                        {sidePanelAction === 'lab' && '検査オーダー'}
-                        {sidePanelAction === 'document' && '文書登録'}
-                        {sidePanelAction === 'imaging' && '画像/スキャン'}
-                        {!sidePanelAction && '右パネル'}
-                      </h3>
-                      <button type="button" className="charts-side-panel__close" onClick={() => setSidePanelAction(null)}>
-                        閉じる
-                      </button>
-                    </div>
-                    <p className="charts-side-panel__message">
-                      {sidePanelAction
-                        ? 'このパネルは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。'
-                        : '右固定メニューから機能を選択すると、ここに操作内容が表示されます。'}
-                    </p>
-                    <div className="charts-side-panel__actions">
-                      <button type="button" onClick={() => focusSectionById('charts-actionbar')}>
-                        診療操作へ移動
-                      </button>
-                      <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
-                        タイムラインへ移動
-                      </button>
-                      <button type="button" onClick={() => focusSectionById('charts-orca-summary')}>
-                        ORCAサマリへ移動
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </aside>
-            </div>
-          </section>
+      <section className="charts-page__grid">
+        <div className="charts-card">
+          <AuthServiceControls />
+        </div>
+        <div className="charts-card">
+          <DocumentTimeline
+            entries={patientEntries}
+            appointmentBanner={appointmentBanner}
+            auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
+            selectedPatientId={encounterContext.patientId}
+            selectedAppointmentId={encounterContext.appointmentId}
+            selectedReceptionId={encounterContext.receptionId}
+            claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
+            claimError={claimErrorForTimeline}
+            isClaimLoading={claimQuery.isFetching}
+            orcaQueue={orcaQueueQuery.data}
+            orcaQueueUpdatedAt={orcaQueueQuery.dataUpdatedAt}
+            isOrcaQueueLoading={orcaQueueQuery.isFetching}
+            orcaQueueError={
+              orcaQueueQuery.isError
+                ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
+                : undefined
+            }
+            onRetryClaim={handleRetryClaim}
+            recordsReturned={appointmentRecordsReturned}
+            hasNextPage={hasNextAppointments}
+            onLoadMore={() => appointmentQuery.fetchNextPage()}
+            isLoadingMore={appointmentQuery.isFetchingNextPage}
+            isInitialLoading={appointmentQuery.isLoading}
+            pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
+            isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
+          />
+        </div>
+        <div className="charts-card">
+          <OrcaSummary
+            summary={orcaSummaryQuery.data}
+            claim={claimQuery.data as ClaimOutpatientPayload | undefined}
+            appointments={patientEntries}
+            onRefresh={handleRefreshSummary}
+            isRefreshing={isManualRefreshing}
+          />
+        </div>
+        <div className="charts-card">
+          <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
+        </div>
+        <div className="charts-card">
+          <PatientsTab
+            entries={patientEntries}
+            appointmentBanner={appointmentBanner}
+            auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
+            selectedContext={encounterContext}
+            draftDirty={draftState.dirty}
+            switchLocked={switchLocked}
+            switchLockedReason={switchLockedReason}
+            onRequestRestoreFocus={() => {
+              const el = focusRestoreRef.current;
+              if (el && typeof el.focus === 'function') el.focus();
+            }}
+            onDraftDirtyChange={(next) => setDraftState(next)}
+            onSelectEncounter={(next) => {
+              if (!next) return;
+              setEncounterContext((prev) => ({
+                ...prev,
+                ...next,
+                visitDate: normalizeVisitDate(next.visitDate) ?? prev.visitDate ?? today,
+              }));
+              setContextAlert(null);
+            }}
+          />
+        </div>
+        <div className="charts-card">
+          <TelemetryFunnelPanel />
+        </div>
+      </section>
         </>
       )}
     </main>
