@@ -24,6 +24,7 @@ export interface PatientsTabProps {
   draftDirty?: boolean;
   switchLocked?: boolean;
   switchLockedReason?: string;
+  onDraftBlocked?: (message: string) => void;
   onDraftDirtyChange?: (params: {
     dirty: boolean;
     patientId?: string;
@@ -42,6 +43,7 @@ export function PatientsTab({
   draftDirty = false,
   switchLocked = false,
   switchLockedReason,
+  onDraftBlocked,
   onDraftDirtyChange,
   onSelectEncounter,
 }: PatientsTabProps) {
@@ -281,10 +283,13 @@ export function PatientsTab({
     const isSwitchingKey = Boolean(currentKey && nextKey && currentKey !== nextKey);
     const currentPatientId = selected?.patientId ?? selectedContext?.patientId ?? undefined;
     const isSwitchingPatient = Boolean(currentPatientId && nextId && currentPatientId !== nextId);
-    if ((draftDirty || isSwitchingPatient) && isSwitchingKey) {
-      const message = draftDirty
-        ? '未保存の入力があります。ドラフトを破棄して患者を切り替えますか？'
-        : `患者が切り替わります（現在: ${currentPatientId ?? '不明'} → 次: ${nextId}）。切り替えますか？`;
+    if (draftDirty && isSwitchingKey) {
+      const message = '未保存のドラフトがあるため患者切替をブロックしました。保存または破棄してから切り替えてください。';
+      onDraftBlocked?.(message);
+      return;
+    }
+    if (isSwitchingPatient && isSwitchingKey) {
+      const message = `患者が切り替わります（現在: ${currentPatientId ?? '不明'} → 次: ${nextId}）。切り替えますか？`;
       const confirmed = typeof window === 'undefined' ? true : window.confirm(message);
       if (!confirmed) return;
     }

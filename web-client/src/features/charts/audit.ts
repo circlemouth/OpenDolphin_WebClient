@@ -13,6 +13,9 @@ export type ChartsAuditAction =
   | 'DRAFT_SAVE'
   | 'DRAFT_CANCEL'
   | 'PRINT_OUTPATIENT'
+  | 'SOAP_TEMPLATE_APPLY'
+  | 'SOAP_NOTE_SAVE'
+  | 'SOAP_NOTE_UPDATE'
   | 'CHARTS_ACTION_FAILURE';
 
 export type ChartsAuditOutcome =
@@ -95,6 +98,12 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'fetchedAt',
   'counts',
   'selectedSendStatus',
+  'soapSection',
+  'templateId',
+  'authoredAt',
+  'authorRole',
+  'authorName',
+  'soapLength',
 ]);
 
 const sanitizeDetails = (details: Record<string, unknown>) => {

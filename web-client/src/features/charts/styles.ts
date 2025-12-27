@@ -570,6 +570,146 @@ export const chartsStyles = css`
     font-family: inherit;
   }
 
+  .soap-note {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .soap-note__header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+    flex-wrap: wrap;
+  }
+
+  .soap-note__header h2 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #0f172a;
+  }
+
+  .soap-note__subtitle {
+    margin: 0.35rem 0 0;
+    color: #475569;
+    font-size: 0.9rem;
+  }
+
+  .soap-note__actions {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .soap-note__primary,
+  .soap-note__ghost {
+    border-radius: 999px;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    padding: 0.45rem 0.9rem;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .soap-note__primary {
+    background: #1d4ed8;
+    color: #ffffff;
+    border-color: transparent;
+  }
+
+  .soap-note__ghost {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .soap-note__primary:disabled,
+  .soap-note__ghost:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  .soap-note__guard {
+    margin: 0;
+    color: #b45309;
+    font-size: 0.9rem;
+  }
+
+  .soap-note__feedback {
+    margin: 0;
+    color: #2563eb;
+    font-size: 0.9rem;
+  }
+
+  .soap-note__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 0.9rem;
+  }
+
+  .soap-note__section {
+    border-radius: 14px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #f8fafc;
+    padding: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .soap-note__section-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .soap-note__section-header strong {
+    color: #0f172a;
+  }
+
+  .soap-note__section-header span {
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+
+  .soap-note__section textarea {
+    border-radius: 12px;
+    border: 1px solid #cbd5f5;
+    padding: 0.55rem 0.7rem;
+    font-family: inherit;
+    resize: vertical;
+    background: #ffffff;
+  }
+
+  .soap-note__section-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    align-items: center;
+  }
+
+  .soap-note__section-actions label {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .soap-note__section-actions select {
+    border-radius: 10px;
+    border: 1px solid #cbd5f5;
+    padding: 0.35rem 0.45rem;
+    font-family: inherit;
+  }
+
+  .soap-note__template-tag {
+    font-size: 0.8rem;
+    color: #1d4ed8;
+    background: #e0e7ff;
+    border-radius: 999px;
+    padding: 0.2rem 0.55rem;
+  }
+
   .document-timeline {
     display: flex;
     flex-direction: column;
@@ -670,6 +810,90 @@ export const chartsStyles = css`
     margin: 0;
     color: #334155;
     line-height: 1.5;
+  }
+
+  .document-timeline__soap-history {
+    margin-top: 0.5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .document-timeline__soap-history-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+  }
+
+  .document-timeline__soap-history-header h3 {
+    margin: 0;
+    font-size: 1rem;
+    color: #0f172a;
+  }
+
+  .document-timeline__soap-history-header span {
+    color: #64748b;
+    font-size: 0.85rem;
+  }
+
+  .document-timeline__soap-empty {
+    margin: 0;
+    color: #64748b;
+    font-size: 0.9rem;
+  }
+
+  .document-timeline__soap-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .document-timeline__soap-entry {
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #ffffff;
+    padding: 0.65rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .document-timeline__soap-entry header {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: baseline;
+  }
+
+  .document-timeline__soap-action {
+    font-size: 0.85rem;
+    font-weight: 700;
+    color: #1d4ed8;
+  }
+
+  .document-timeline__soap-time {
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .document-timeline__soap-entry p {
+    margin: 0;
+    color: #0f172a;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+  }
+
+  .document-timeline__soap-meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.6rem;
+    font-size: 0.85rem;
+    color: #64748b;
   }
 
   .document-timeline__section-log--warning {

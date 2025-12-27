@@ -12,6 +12,8 @@ import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
 import { normalizeAuditEventLog, normalizeAuditEventPayload, recordChartsAuditEvent } from '../audit';
+import { SoapNotePanel } from '../SoapNotePanel';
+import type { SoapEntry } from '../soapNote';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
@@ -43,6 +45,106 @@ import { useChartsTabLock } from '../useChartsTabLock';
 import { isNetworkError } from '../../shared/apiError';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 
+const parseDate = (value?: string): Date | null => {
+  if (!value) return null;
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? null : date;
+};
+
+const formatAge = (birthDate?: string, baseDate: Date = new Date()): string => {
+  const birth = parseDate(birthDate);
+  if (!birth) return '—';
+  const baseYear = baseDate.getFullYear();
+  const baseMonth = baseDate.getMonth();
+  const baseDay = baseDate.getDate();
+  const birthYear = birth.getFullYear();
+  const birthMonth = birth.getMonth();
+  const birthDay = birth.getDate();
+  let totalMonths = (baseYear - birthYear) * 12 + (baseMonth - birthMonth);
+  if (baseDay < birthDay) totalMonths -= 1;
+  if (totalMonths < 0) return '—';
+  const years = Math.floor(totalMonths / 12);
+  const months = totalMonths % 12;
+  return months === 0 ? `${years}歳` : `${years}歳${months}ヶ月`;
+};
+
+const formatJapaneseEra = (date: Date): string => {
+  const eras = [
+    { name: '令和', start: new Date(2019, 4, 1) },
+    { name: '平成', start: new Date(1989, 0, 8) },
+    { name: '昭和', start: new Date(1926, 11, 25) },
+    { name: '大正', start: new Date(1912, 6, 30) },
+    { name: '明治', start: new Date(1868, 0, 25) },
+  ];
+  const found = eras.find((era) => date >= era.start);
+  if (!found) return '—';
+  const year = date.getFullYear() - found.start.getFullYear() + 1;
+  const yearLabel = year === 1 ? '元' : String(year);
+  return `${found.name}${yearLabel}年${date.getMonth() + 1}月${date.getDate()}日`;
+};
+
+const formatBirthDate = (value?: string): string => {
+  const date = parseDate(value);
+  if (!date) return '—';
+  const iso = date.toISOString().slice(0, 10);
+  return `${iso}（${formatJapaneseEra(date)}）`;
+};
+
+const SOAP_HISTORY_STORAGE_KEY = 'opendolphin:web-client:soap-history';
+const SOAP_HISTORY_MAX_ENTRIES = 50;
+const SOAP_HISTORY_MAX_ENCOUNTERS = 20;
+const SOAP_HISTORY_MAX_BYTES = 200_000;
+
+type SoapHistoryStorage = {
+  version: 1;
+  updatedAt: string;
+  encounters: Record<
+    string,
+    {
+      updatedAt: string;
+      entries: SoapEntry[];
+    }
+  >;
+};
+
+const readSoapHistoryStorage = (): SoapHistoryStorage | null => {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(SOAP_HISTORY_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SoapHistoryStorage;
+    if (!parsed || parsed.version !== 1 || !parsed.encounters) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const sanitizeSoapHistory = (entries: Record<string, SoapEntry[]>) => {
+  const encounterKeys = Object.keys(entries);
+  if (encounterKeys.length === 0) return { encounters: {}, removed: [] as string[] };
+  const normalized: Record<string, { updatedAt: string; entries: SoapEntry[] }> = {};
+  const removed: string[] = [];
+  encounterKeys.forEach((key) => {
+    const list = entries[key] ?? [];
+    if (list.length === 0) return;
+    const trimmed = list.slice(-SOAP_HISTORY_MAX_ENTRIES);
+    const updatedAt = trimmed[trimmed.length - 1]?.authoredAt ?? new Date().toISOString();
+    normalized[key] = { updatedAt, entries: trimmed };
+  });
+  const sortedKeys = Object.keys(normalized).sort((a, b) => {
+    const left = normalized[a]?.updatedAt ?? '';
+    const right = normalized[b]?.updatedAt ?? '';
+    return left.localeCompare(right);
+  });
+  while (sortedKeys.length > SOAP_HISTORY_MAX_ENCOUNTERS) {
+    const oldest = sortedKeys.shift();
+    if (!oldest) break;
+    removed.push(oldest);
+    delete normalized[oldest];
+  }
+  return { encounters: normalized, removed };
+};
 export function ChartsPage() {
   return (
     <>
@@ -85,6 +187,15 @@ function ChartsContent() {
     receptionId?: string;
     visitDate?: string;
   }>({ dirty: false });
+  const [soapHistoryByEncounter, setSoapHistoryByEncounter] = useState<Record<string, SoapEntry[]>>(() => {
+    const stored = readSoapHistoryStorage();
+    if (!stored) return {};
+    const entries: Record<string, SoapEntry[]> = {};
+    Object.entries(stored.encounters).forEach(([key, value]) => {
+      entries[key] = value.entries ?? [];
+    });
+    return entries;
+  });
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
@@ -123,6 +234,90 @@ function ChartsContent() {
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
   const receptionCarryover = useMemo(() => parseReceptionCarryoverParams(location.search), [location.search]);
+  const soapEncounterKey = useMemo(
+    () =>
+      [
+        encounterContext.patientId ?? 'none',
+        encounterContext.appointmentId ?? 'none',
+        encounterContext.receptionId ?? 'none',
+        encounterContext.visitDate ?? 'none',
+      ].join('::'),
+    [
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      encounterContext.visitDate,
+    ],
+  );
+  const soapHistory = useMemo(() => soapHistoryByEncounter[soapEncounterKey] ?? [], [soapEncounterKey, soapHistoryByEncounter]);
+  const appendSoapHistory = useCallback(
+    (entries: SoapEntry[]) => {
+      setSoapHistoryByEncounter((prev) => ({
+        ...prev,
+        [soapEncounterKey]: [...(prev[soapEncounterKey] ?? []), ...entries].slice(-SOAP_HISTORY_MAX_ENTRIES),
+      }));
+    },
+    [soapEncounterKey],
+  );
+  const clearSoapHistory = useCallback(() => {
+    setSoapHistoryByEncounter((prev) => {
+      const next = { ...prev };
+      delete next[soapEncounterKey];
+      return next;
+    });
+    if (typeof sessionStorage !== 'undefined') {
+      const stored = readSoapHistoryStorage();
+      if (stored?.encounters?.[soapEncounterKey]) {
+        delete stored.encounters[soapEncounterKey];
+        try {
+          sessionStorage.setItem(SOAP_HISTORY_STORAGE_KEY, JSON.stringify({ ...stored, updatedAt: new Date().toISOString() }));
+        } catch {
+          sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+        }
+      }
+    }
+  }, [soapEncounterKey]);
+
+  useEffect(() => {
+    if (typeof sessionStorage === 'undefined') return;
+    const sanitized = sanitizeSoapHistory(soapHistoryByEncounter);
+    if (sanitized.removed.length > 0) {
+      setSoapHistoryByEncounter((prev) => {
+        const next: Record<string, SoapEntry[]> = { ...prev };
+        sanitized.removed.forEach((key) => {
+          delete next[key];
+        });
+        return next;
+      });
+      setContextAlert({
+        tone: 'warning',
+        message: 'SOAP履歴が上限を超えたため、古い履歴を削除しました。',
+      });
+    }
+    const payload: SoapHistoryStorage = {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      encounters: sanitized.encounters,
+    };
+    try {
+      const serialized = JSON.stringify(payload);
+      if (serialized.length > SOAP_HISTORY_MAX_BYTES) {
+        sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+        setContextAlert({
+          tone: 'warning',
+          message: 'SOAP履歴が容量上限を超えたため、セッション保存をクリアしました。',
+        });
+        return;
+      }
+      sessionStorage.setItem(SOAP_HISTORY_STORAGE_KEY, serialized);
+    } catch {
+      sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+      setContextAlert({
+        tone: 'warning',
+        message: 'SOAP履歴の保存に失敗したため、セッション保存をクリアしました。',
+      });
+    }
+  }, [soapHistoryByEncounter, setContextAlert]);
 
   const sameEncounterContext = useCallback((left: OutpatientEncounterContext, right: OutpatientEncounterContext) => {
     return (
@@ -446,6 +641,39 @@ function ChartsContent() {
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
   const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = (mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false) || forceFallbackUsed;
+  const soapNoteMeta = useMemo(
+    () => ({
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      patientId: encounterContext.patientId,
+      appointmentId: encounterContext.appointmentId,
+      receptionId: encounterContext.receptionId,
+      visitDate: encounterContext.visitDate,
+    }),
+    [
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      encounterContext.visitDate,
+      flags.runId,
+      resolvedCacheHit,
+      resolvedFallbackUsed,
+      resolvedMissingMaster,
+      resolvedRunId,
+      resolvedTransition,
+    ],
+  );
+  const soapNoteAuthor = useMemo(
+    () => ({
+      role: session.role,
+      displayName: session.displayName ?? session.commonName,
+      userId: session.userId,
+    }),
+    [session.commonName, session.displayName, session.role, session.userId],
+  );
 
   const selectedQueueEntry = useMemo(() => {
     const entries = (claimQuery.data as ClaimOutpatientPayload | undefined)?.queueEntries ?? [];
@@ -1158,80 +1386,312 @@ function ChartsContent() {
               onLockChange={handleLockChange}
             />
           </div>
-      <section className="charts-page__grid">
-        <div className="charts-card">
-          <AuthServiceControls />
-        </div>
-        <div className="charts-card">
-          <DocumentTimeline
-            entries={patientEntries}
-            appointmentBanner={appointmentBanner}
-            auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-            selectedPatientId={encounterContext.patientId}
-            selectedAppointmentId={encounterContext.appointmentId}
-            selectedReceptionId={encounterContext.receptionId}
-            claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
-            claimError={claimErrorForTimeline}
-            isClaimLoading={claimQuery.isFetching}
-            orcaQueue={orcaQueueQuery.data}
-            orcaQueueUpdatedAt={orcaQueueQuery.dataUpdatedAt}
-            isOrcaQueueLoading={orcaQueueQuery.isFetching}
-            orcaQueueError={
-              orcaQueueQuery.isError
-                ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
-                : undefined
-            }
-            onRetryClaim={handleRetryClaim}
-            recordsReturned={appointmentRecordsReturned}
-            hasNextPage={hasNextAppointments}
-            onLoadMore={() => appointmentQuery.fetchNextPage()}
-            isLoadingMore={appointmentQuery.isFetchingNextPage}
-            isInitialLoading={appointmentQuery.isLoading}
-            pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
-            isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
-          />
-        </div>
-        <div className="charts-card">
-          <OrcaSummary
-            summary={orcaSummaryQuery.data}
-            claim={claimQuery.data as ClaimOutpatientPayload | undefined}
-            appointments={patientEntries}
-            onRefresh={handleRefreshSummary}
-            isRefreshing={isManualRefreshing}
-          />
-        </div>
-        <div className="charts-card">
-          <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
-        </div>
-        <div className="charts-card">
-          <PatientsTab
-            entries={patientEntries}
-            appointmentBanner={appointmentBanner}
-            auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
-            selectedContext={encounterContext}
-            draftDirty={draftState.dirty}
-            switchLocked={switchLocked}
-            switchLockedReason={switchLockedReason}
-            onRequestRestoreFocus={() => {
-              const el = focusRestoreRef.current;
-              if (el && typeof el.focus === 'function') el.focus();
-            }}
-            onDraftDirtyChange={(next) => setDraftState(next)}
-            onSelectEncounter={(next) => {
-              if (!next) return;
-              setEncounterContext((prev) => ({
-                ...prev,
-                ...next,
-                visitDate: normalizeVisitDate(next.visitDate) ?? prev.visitDate ?? today,
-              }));
-              setContextAlert(null);
-            }}
-          />
-        </div>
-        <div className="charts-card">
-          <TelemetryFunnelPanel />
-        </div>
-      </section>
+          <section className="charts-workbench" aria-label="外来カルテ作業台" data-run-id={resolvedRunId ?? flags.runId}>
+            <div className="charts-workbench__sticky">
+              <div className="charts-card charts-card--patient" id="charts-patient-header">
+                <div className="charts-patient-header">
+                  <div className="charts-patient-header__identity">
+                    <span className="charts-patient-header__label">患者ヘッダ</span>
+                    <h2 className="charts-patient-header__name">{patientDisplay.name}</h2>
+                    <span className="charts-patient-header__kana">{patientDisplay.kana}</span>
+                  </div>
+                  <div className="charts-patient-header__meta">
+                    <div>
+                      <span className="charts-patient-header__meta-label">患者番号</span>
+                      <strong>{patientId ?? '—'}</strong>
+                    </div>
+                    <div>
+                      <span className="charts-patient-header__meta-label">性別/年齢</span>
+                      <strong>{patientDisplay.sex} / {patientDisplay.age}</strong>
+                    </div>
+                    <div>
+                      <span className="charts-patient-header__meta-label">生年月日</span>
+                      <strong>{patientDisplay.birthDate}</strong>
+                    </div>
+                    <div>
+                      <span className="charts-patient-header__meta-label">受付番号</span>
+                      <strong>{receptionId ?? '—'}</strong>
+                    </div>
+                    <div>
+                      <span className="charts-patient-header__meta-label">予約番号</span>
+                      <strong>{appointmentId ?? '—'}</strong>
+                    </div>
+                    <div>
+                      <span className="charts-patient-header__meta-label">TEL</span>
+                      <strong>—</strong>
+                    </div>
+                  </div>
+                  <p className="charts-patient-header__memo">{patientDisplay.note}</p>
+                </div>
+              </div>
+              <div className="charts-card charts-card--clinical" id="charts-clinical-bar">
+                <div className="charts-clinical-bar">
+                  <div className="charts-clinical-bar__item">
+                    <span className="charts-clinical-bar__label">診療ステータス</span>
+                    <strong>{patientDisplay.status}</strong>
+                  </div>
+                  <div className="charts-clinical-bar__item">
+                    <span className="charts-clinical-bar__label">診療科</span>
+                    <strong>{patientDisplay.department}</strong>
+                  </div>
+                  <div className="charts-clinical-bar__item">
+                    <span className="charts-clinical-bar__label">担当者</span>
+                    <strong>{patientDisplay.physician}</strong>
+                  </div>
+                  <div className="charts-clinical-bar__item">
+                    <span className="charts-clinical-bar__label">保険/自費</span>
+                    <strong>{patientDisplay.insurance}</strong>
+                  </div>
+                  <div className="charts-clinical-bar__item">
+                    <span className="charts-clinical-bar__label">診療日</span>
+                    <strong>{patientDisplay.visitDate} {patientDisplay.appointmentTime}</strong>
+                  </div>
+                  <div className="charts-clinical-bar__item">
+                    <span className="charts-clinical-bar__label">承認/ロック</span>
+                    <strong>{tabLock.isReadOnly ? '承認済（編集不可）' : '未承認'}</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="charts-card charts-card--safety" id="charts-safety-display">
+                <div
+                  className="charts-safety"
+                  role="status"
+                  aria-live={resolvedMissingMaster ? 'assertive' : 'polite'}
+                  data-run-id={resolvedRunId}
+                  data-missing-master={String(resolvedMissingMaster)}
+                >
+                  <div className="charts-safety__primary">
+                    <span className="charts-safety__label">安全表示</span>
+                    <strong>{patientDisplay.name}</strong>
+                  </div>
+                  <div className="charts-safety__meta">
+                    <span>患者ID: {patientId ?? '—'}</span>
+                    <span>受付ID: {receptionId ?? '—'}</span>
+                    <span>生年月日: {patientDisplay.birthDate}</span>
+                    <span>RUN_ID: {resolvedRunId}</span>
+                    <span>missingMaster: {String(resolvedMissingMaster)}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="charts-workbench__body">
+              <div className="charts-workbench__column charts-workbench__column--left">
+                <div className="charts-card" id="charts-patients-tab" tabIndex={-1} data-focus-anchor="true">
+                  <PatientsTab
+                    entries={patientEntries}
+                    appointmentBanner={appointmentBanner}
+                    auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
+                    selectedContext={encounterContext}
+                    draftDirty={draftState.dirty}
+                    switchLocked={lockState.locked}
+                    switchLockedReason={lockState.reason}
+                    onDraftBlocked={(message) => setContextAlert({ tone: 'warning', message })}
+                    onRequestRestoreFocus={() => {
+                      const el = focusRestoreRef.current;
+                      if (el && typeof el.focus === 'function') el.focus();
+                    }}
+                    onDraftDirtyChange={(next) => setDraftState(next)}
+                    onSelectEncounter={(next) => {
+                      if (!next) return;
+                      setEncounterContext((prev) => ({
+                        ...prev,
+                        ...next,
+                        visitDate: normalizeVisitDate(next.visitDate) ?? prev.visitDate ?? today,
+                      }));
+                      setContextAlert(null);
+                    }}
+                  />
+                </div>
+                <div className="charts-card">
+                  <AuthServiceControls />
+                </div>
+              </div>
+              <div className="charts-workbench__column charts-workbench__column--center">
+                <div className="charts-card" id="charts-soap-note" tabIndex={-1} data-focus-anchor="true">
+                  <SoapNotePanel
+                    history={soapHistory}
+                    meta={soapNoteMeta}
+                    author={soapNoteAuthor}
+                    readOnly={tabLock.isReadOnly}
+                    readOnlyReason={tabLock.readOnlyReason}
+                    onAppendHistory={appendSoapHistory}
+                    onDraftDirtyChange={setDraftState}
+                    onClearHistory={clearSoapHistory}
+                    onAuditLogged={() => setAuditEvents(getAuditEventLog())}
+                  />
+                </div>
+                <div className="charts-card" id="charts-document-timeline" tabIndex={-1} data-focus-anchor="true">
+                  <DocumentTimeline
+                    entries={patientEntries}
+                    appointmentBanner={appointmentBanner}
+                    auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
+                    soapHistory={soapHistory}
+                    selectedPatientId={encounterContext.patientId}
+                    selectedAppointmentId={encounterContext.appointmentId}
+                    selectedReceptionId={encounterContext.receptionId}
+                    claimData={claimQuery.data as ClaimOutpatientPayload | undefined}
+                    claimError={claimErrorForTimeline}
+                    isClaimLoading={claimQuery.isFetching}
+                    orcaQueue={orcaQueueQuery.data}
+                    orcaQueueUpdatedAt={orcaQueueQuery.dataUpdatedAt}
+                    isOrcaQueueLoading={orcaQueueQuery.isFetching}
+                    orcaQueueError={
+                      orcaQueueQuery.isError
+                        ? (orcaQueueQuery.error instanceof Error ? orcaQueueQuery.error : new Error(String(orcaQueueQuery.error)))
+                        : undefined
+                    }
+                    onRetryClaim={handleRetryClaim}
+                    recordsReturned={appointmentRecordsReturned}
+                    hasNextPage={hasNextAppointments}
+                    onLoadMore={() => appointmentQuery.fetchNextPage()}
+                    isLoadingMore={appointmentQuery.isFetchingNextPage}
+                    isInitialLoading={appointmentQuery.isLoading}
+                    pageSize={appointmentQuery.data?.pages?.[0]?.size ?? 50}
+                    isRefetchingList={appointmentQuery.isFetching && !appointmentQuery.isLoading}
+                  />
+                </div>
+                <div className="charts-card">
+                  <MedicalOutpatientRecordPanel summary={orcaSummaryQuery.data} selectedPatientId={encounterContext.patientId} />
+                </div>
+              </div>
+              <div className="charts-workbench__column charts-workbench__column--right">
+                <div className="charts-card" id="charts-orca-summary" tabIndex={-1} data-focus-anchor="true">
+                  <OrcaSummary
+                    summary={orcaSummaryQuery.data}
+                    claim={claimQuery.data as ClaimOutpatientPayload | undefined}
+                    appointments={patientEntries}
+                    onRefresh={handleRefreshSummary}
+                    isRefreshing={isManualRefreshing}
+                  />
+                </div>
+                <div className="charts-card" id="charts-telemetry" tabIndex={-1} data-focus-anchor="true">
+                  <TelemetryFunnelPanel />
+                </div>
+              </div>
+              <aside
+                className="charts-workbench__side"
+                aria-label="右固定メニュー"
+                aria-describedby="charts-side-menu-desc"
+              >
+                <div className="charts-side-menu" role="region" aria-label="右固定メニュー">
+                  <div className="charts-side-menu__header">
+                    <h2>右固定メニュー</h2>
+                    <span>追加機能入口</span>
+                  </div>
+                  <p id="charts-side-menu-desc" className="charts-side-menu__desc">
+                    右固定メニューから補助機能を開き、必要なセクションへ即時移動します。
+                  </p>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'prescription'}
+                    onClick={() => {
+                      setSidePanelAction('prescription');
+                      focusSectionById('charts-orca-summary');
+                    }}
+                  >
+                    処方検索
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'order'}
+                    onClick={() => {
+                      setSidePanelAction('order');
+                      focusSectionById('charts-document-timeline');
+                    }}
+                  >
+                    オーダー検索
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'lab'}
+                    onClick={() => {
+                      setSidePanelAction('lab');
+                      focusSectionById('charts-telemetry');
+                    }}
+                  >
+                    検査オーダー
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'document'}
+                    onClick={() => {
+                      setSidePanelAction('document');
+                      focusSectionById('charts-document-timeline');
+                    }}
+                  >
+                    文書登録
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'imaging'}
+                    onClick={() => {
+                      setSidePanelAction('imaging');
+                      focusSectionById('charts-patients-tab');
+                    }}
+                  >
+                    画像/スキャン
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button charts-side-menu__button--primary"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction !== null}
+                    onClick={() => setSidePanelAction((prev) => (prev ? null : 'prescription'))}
+                  >
+                    右パネルを開く
+                  </button>
+                  <div
+                    id="charts-side-panel"
+                    className="charts-side-panel"
+                    role="dialog"
+                    aria-label="右固定メニューの詳細パネル"
+                    aria-live="polite"
+                    data-open={sidePanelAction ? 'true' : 'false'}
+                  >
+                    <div className="charts-side-panel__header">
+                      <h3>
+                        {sidePanelAction === 'prescription' && '処方検索'}
+                        {sidePanelAction === 'order' && 'オーダー検索'}
+                        {sidePanelAction === 'lab' && '検査オーダー'}
+                        {sidePanelAction === 'document' && '文書登録'}
+                        {sidePanelAction === 'imaging' && '画像/スキャン'}
+                        {!sidePanelAction && '右パネル'}
+                      </h3>
+                      <button type="button" className="charts-side-panel__close" onClick={() => setSidePanelAction(null)}>
+                        閉じる
+                      </button>
+                    </div>
+                    <p className="charts-side-panel__message">
+                      {sidePanelAction
+                        ? 'このパネルは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。'
+                        : '右固定メニューから機能を選択すると、ここに操作内容が表示されます。'}
+                    </p>
+                    <div className="charts-side-panel__actions">
+                      <button type="button" onClick={() => focusSectionById('charts-actionbar')}>
+                        診療操作へ移動
+                      </button>
+                      <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
+                        タイムラインへ移動
+                      </button>
+                      <button type="button" onClick={() => focusSectionById('charts-orca-summary')}>
+                        ORCAサマリへ移動
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </aside>
+            </div>
+          </section>
         </>
       )}
     </main>
