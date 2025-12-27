@@ -33,6 +33,7 @@ import {
   loadChartsEncounterContext,
   normalizeVisitDate,
   parseChartsEncounterContext,
+  parseReceptionCarryoverParams,
   storeChartsEncounterContext,
   type OutpatientEncounterContext,
 } from '../encounterContext';
@@ -113,6 +114,7 @@ function ChartsContent() {
   const lastOrcaQueueSnapshot = useRef<string | null>(null);
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
+  const receptionCarryover = useMemo(() => parseReceptionCarryoverParams(location.search), [location.search]);
 
   const sameEncounterContext = useCallback((left: OutpatientEncounterContext, right: OutpatientEncounterContext) => {
     return (
@@ -131,7 +133,7 @@ function ChartsContent() {
         tone: 'warning',
         message: '未保存ドラフトまたは処理中のため、URL からの患者切替をブロックしました（別患者混入防止）。',
       });
-      const currentSearch = buildChartsEncounterSearch(encounterContext);
+      const currentSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover);
       if (location.search !== currentSearch) {
         navigate({ pathname: '/charts', search: currentSearch }, { replace: true });
       }
@@ -147,10 +149,10 @@ function ChartsContent() {
   useEffect(() => {
     if (!hasEncounterContext(encounterContext)) return;
     storeChartsEncounterContext(encounterContext);
-    const nextSearch = buildChartsEncounterSearch(encounterContext);
+    const nextSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover);
     if (location.search === nextSearch) return;
     navigate({ pathname: '/charts', search: nextSearch }, { replace: true });
-  }, [encounterContext, location.search, navigate]);
+  }, [encounterContext, location.search, navigate, receptionCarryover]);
 
   const adminQueryKey = ['admin-effective-config'];
   const adminConfigQuery = useQuery({

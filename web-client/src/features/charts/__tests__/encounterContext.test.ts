@@ -4,6 +4,7 @@ import {
   buildChartsEncounterSearch,
   loadChartsEncounterContext,
   parseChartsEncounterContext,
+  parseReceptionCarryoverParams,
   storeChartsEncounterContext,
 } from '../encounterContext';
 
@@ -31,10 +32,15 @@ describe('charts encounterContext', () => {
       visitDate: '2025-12-18',
     });
 
-    const rebuilt = buildChartsEncounterSearch(parsed);
+    const carryover = parseReceptionCarryoverParams('?kw=tanaka&dept=D1&sort=time&date=2025-12-27');
+    const rebuilt = buildChartsEncounterSearch(parsed, carryover);
     expect(rebuilt).toContain('patientId=0001');
     expect(rebuilt).toContain('receptionId=R-9');
     expect(rebuilt).toContain('visitDate=2025-12-18');
+    expect(rebuilt).toContain('kw=tanaka');
+    expect(rebuilt).toContain('dept=D1');
+    expect(rebuilt).toContain('sort=time');
+    expect(rebuilt).toContain('date=2025-12-27');
 
     expect(parseChartsEncounterContext('?visitDate=20251218').visitDate).toBeUndefined();
   });
@@ -54,4 +60,3 @@ describe('charts encounterContext', () => {
     });
   });
 });
-
