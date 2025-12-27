@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 11_AuthServiceフラグ統合とRUN_ID伝播</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-box {
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .summary-box p {
+        margin: 6px 0;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .score-total {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-chart svg {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list p {
+        margin: 2px 0;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .links a {
+        color: #1a5b6e;
+        text-decoration: none;
+      }
+      .links a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 11_AuthServiceフラグ統合とRUN_ID伝播</h1>
+        <p class="monitor-description">評価対象ブランチのコミットログと差分を確認し、AuthServiceフラグ統合・RUN_ID伝播・復元/リセット方針を中心に比較評価しました。</p>
+      </header>
+
+      <div class="summary-box">
+        <p><strong>タスク概要:</strong> AuthServiceフラグの統一更新、data-run-idの一貫性、リロード復元方針、セッション切れ時の安全リセット。</p>
+        <p><strong>RUN_ID:</strong> 20251227T075938Z</p>
+        <p><strong>対象ブランチ:</strong> task/task-1766821007830-a4528c, task/task-1766821007629-0e0cd4, task/task-1766821008031-e20568</p>
+      </div>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini-cli / task-1766821007830-a4528c</th>
+            <th>gemini-cli / task-1766821007629-0e0cd4</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-27 08:02 UTC</td>
+            <td>
+              <div class="score-total">🥈 合計 491 / 600 点</div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="60.0,17.5 95.5,39.5 94.6,80.0 60.0,99.0 22.8,81.5 25.4,40.0" fill="rgba(26,91,110,0.35)" stroke="#1a5b6e" />
+                </svg>
+                <div class="metric-list">
+                  <p>要件適合 85点</p>
+                  <p>一貫性/可観測性 82点</p>
+                  <p>リロード復元 80点</p>
+                  <p>セッション安全性 78点</p>
+                  <p>実装品質 86点</p>
+                  <p>運用耐性 80点</p>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge">評価結果</span><span class="agent-label">AuthService applyFlags導入とセッションKey付きフラグ復元を評価。data-run-idはflagsへ統一。</span></div>
+              <details>
+                <summary class="details-toggle">評価理由</summary>
+                <pre>+ applyFlagsでmissingMaster/cacheHit/dataSourceTransition/fallbackUsedを一括更新し、画面間のcarry-overを一元化。
++ sessionKey(施設+ユーザー+端末UUID)でフラグ復元し、ログイン/ログアウトでスナップショットをクリア。
+- TTLやセッション破損検知がなく、長時間残留/不整合の自動リセットが弱い。
+- Administration/Patients/ReceptionでrunId表示がflags基準に統一された一方、復元失敗時のフォールバックが薄い。</pre>
+              </details>
+              <details>
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit 0d7c8029 Align AuthService flags and runId carryover
+
+Diff stat:
+web-client/src/AppRouter.tsx                       |   9 +-
+web-client/src/features/administration/AdministrationPage.tsx | 18 ++--
+web-client/src/features/charts/authService.tsx     | 102 +++++++++++++++++++--
+web-client/src/features/charts/pages/ChartsPage.tsx | 34 +++----
+web-client/src/features/patients/PatientsPage.tsx  | 35 ++++---
+web-client/src/features/reception/pages/ReceptionPage.tsx | 33 +++----
+
+未コミット変更: なし</pre>
+              </details>
+              <p class="links">成果物: <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766821007830-a4528c">worktree/task-1766821007830-a4528c</a>（別worktree）</p>
+            </td>
+            <td>
+              <div class="score-total">🥉 合計 448 / 600 点</div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="60.0,21.0 92.9,41.0 91.2,78.0 60.0,95.0 25.4,80.0 28.8,42.0" fill="rgba(26,91,110,0.35)" stroke="#1a5b6e" />
+                </svg>
+                <div class="metric-list">
+                  <p>要件適合 78点</p>
+                  <p>一貫性/可観測性 76点</p>
+                  <p>リロード復元 72点</p>
+                  <p>セッション安全性 70点</p>
+                  <p>実装品質 80点</p>
+                  <p>運用耐性 72点</p>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge">評価結果</span><span class="agent-label">applyFlags導入とsessionStorage復元はあるが、セッション整合性や復元条件の厳密さが不足。</span></div>
+              <details>
+                <summary class="details-toggle">評価理由</summary>
+                <pre>+ applyFlagsで旗をまとめて更新し、Reception/Patients/Chartsで一致を保つ方針。
++ AppLayoutや各ページでflags.runIdを参照し、表示RUN_IDを統一。
+- フラグ復元がsessionRunId依存のみで、TTLやセッション破損検知がない。
+- ログイン時の既存フラグクリアが弱く、同一runId時の残留リスクが残る。</pre>
+              </details>
+              <details>
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit b466a831 Unify auth flags and runId carryover (RUN_ID=20251227T073811Z)
+
+Diff stat:
+web-client/src/AppRouter.tsx                       | 32 +++++---
+web-client/src/features/administration/AdministrationPage.tsx | 23 ++++--
+web-client/src/features/charts/authService.tsx     | 95 ++++++++++++++++++++--
+web-client/src/features/charts/pages/ChartsPage.tsx | 19 ++---
+web-client/src/features/patients/PatientsPage.tsx  | 20 ++---
+web-client/src/features/reception/pages/ReceptionPage.tsx | 19 ++---
+
+未コミット変更: なし</pre>
+              </details>
+              <p class="links">成果物: <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766821007629-0e0cd4">worktree/task-1766821007629-0e0cd4</a>（別worktree）</p>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2025-12-27 08:02 UTC</td>
+            <td>
+              <div class="score-total">🥇 合計 540 / 600 点</div>
+              <div class="hex-chart">
+                <svg viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="60.0,14.0 99.0,37.5 98.1,82.0 60.0,105.0 20.2,83.0 21.9,38.0" fill="rgba(26,91,110,0.35)" stroke="#1a5b6e" />
+                </svg>
+                <div class="metric-list">
+                  <p>要件適合 92点</p>
+                  <p>一貫性/可観測性 90点</p>
+                  <p>リロード復元 88点</p>
+                  <p>セッション安全性 90点</p>
+                  <p>実装品質 92点</p>
+                  <p>運用耐性 88点</p>
+                </div>
+              </div>
+              <div class="agent-meta"><span class="status-badge">評価結果</span><span class="agent-label">sessionKey + TTLの復元、破損セッションのリセット、RUN_IDの再同期まで実装済み。</span></div>
+              <details>
+                <summary class="details-toggle">評価理由</summary>
+                <pre>+ sessionKeyとTTLで復元スナップショットを制御し、古い情報を自動クリア。
++ 破損したsessionStorage検知とクリア、ログアウト時の完全リセットを実装。
++ applyAuthServicePatchでフラグ更新差分を吸収し、画面間の更新が一貫。
++ AppLayoutでrunIdを再同期してセッションに書き戻すため、表示/コピーの一貫性が高い。</pre>
+              </details>
+              <details>
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>commit 4350e3ad AuthServiceフラグ同期とRUN_ID伝播整理
+
+Diff stat:
+web-client/src/AppRouter.tsx                       | 57 ++++++++---
+web-client/src/features/administration/AdministrationPage.tsx | 36 ++++---
+web-client/src/features/charts/authService.tsx     | 106 ++++++++++++++++++++--
+web-client/src/features/charts/pages/ChartsPage.tsx | 33 ++-----
+web-client/src/features/patients/PatientsPage.tsx  | 40 ++++----
+web-client/src/features/reception/pages/ReceptionPage.tsx | 36 ++-----
+
+未コミット変更: なし</pre>
+              </details>
+              <p class="links">成果物: <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766821008031-e20568">worktree/task-1766821008031-e20568</a>（別worktree）</p>
+            </td>
+            <td>
+              <div class="score-total">比較対象なし</div>
+              <div class="agent-meta"><span class="status-badge">備考</span><span class="agent-label">比較枠を保持するための空セルです。</span></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

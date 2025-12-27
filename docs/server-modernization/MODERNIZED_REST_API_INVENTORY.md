@@ -205,6 +205,16 @@
 
 ※ 上記以外にも `/orca/tensu/point/` や `/orca/claim/` 系の補助エンドポイントが存在するため、要件変更時はソース全体を確認すること。
 
+### OutpatientClaimResource (`/api01rv2/claim/outpatient`)
+| HTTP | パス | 主な処理 | 備考 |
+| --- | --- | --- | --- |
+| POST | `/api01rv2/claim/outpatient` | 外来請求バンドル取得 | `PVTServiceBean`/`KarteServiceBean` で請求バンドルを構築し、`ORCA_CLAIM_OUTPATIENT` を監査記録。`/api01rv2/claim/outpatient/{subPath}` も受け付けるが `mock` は 404。RUN_ID=20251225T231456Z 実測（`src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md`）。【F:server-modernized/src/main/java/open/dolphin/rest/OutpatientClaimResource.java†L43-L205】 |
+
+### OrcaMedicalModV2Resource (`/orca21/medicalmodv2`)
+| HTTP | パス | 主な処理 | 備考 |
+| --- | --- | --- | --- |
+| POST | `/orca21/medicalmodv2/outpatient` | 外来医療記録サマリ取得 | PVT から外来データを集計し、`ORCA_MEDICAL_GET` を監査記録。`telemetryFunnelStage=charts_orchestration` を付与。RUN_ID=20251225T231456Z 実測（`src/server_modernized_gap_20251221/06_server_ops_required/Webクライアント_MSW無効化検証.md`）。【F:server-modernized/src/main/java/open/dolphin/rest/orca/OrcaMedicalModV2Resource.java†L37-L136】 |
+
 #### ORCA-08: ORCA マスタ系（Spec-based / MSW 実装済み、UI 実装中）
 - RUN_ID=`20251123T135709Z`。サーバー実装は未着手だが、web-client 側で MSW フィクスチャ＋型定義は実装済み（`web-client/src/mocks/fixtures/orcaMaster.ts` ほか）。OrcaOrderPanel の UI 連携は ORCA-04 backlog として実装中。証跡: `docs/server-modernization/phase2/operations/logs/20251123T135709Z-orca-master-gap.md`（artifact スキーマ: `artifacts/api-stability/20251123T130134Z/schemas/orca-master-*.json`）。
 - 2025-11-24 追記（RUN_ID=`20251124T073245Z`）: ORCA DB 定義書（正式版 2024-04-26）に沿った項目セットと監査メタを確定。サーバー実装オーナー=Worker-B（暫定）、優先度=P1。ETA: ORCA-05/06=2025-12-06, ORCA-08=2025-12-20。クライアント側は DTO 拡張と Bridge スケルトンを用意済み（`src/webclient_modernized_bridge/04_マスターデータ補完ブリッジ実装計画.md` / `web-client/src/types/orca.ts` / `web-client/src/features/charts/api/orca-api.ts`）。

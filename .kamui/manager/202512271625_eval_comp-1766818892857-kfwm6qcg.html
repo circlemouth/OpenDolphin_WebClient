@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - AppShell強化とグローバルUI整備（再評価）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        border-radius: 16px;
+        padding: 16px;
+        background: #f5f8f9;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 800;
+        color: #1f2a30;
+      }
+      .score-total span {
+        font-size: 18px;
+        margin-left: 8px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 160px;
+      }
+      col.agent-column {
+        width: calc((100% - 160px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--warning {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-grid {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .hex-chart {
+        width: 160px;
+        height: 140px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #3a4b53;
+        display: grid;
+        gap: 4px;
+      }
+      .metric-list strong {
+        color: #1f2a30;
+      }
+      .link-list a {
+        color: #1d4ed8;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - AppShell強化とグローバルUI整備（再評価）</h1>
+        <p class="monitor-description">対象: 10_AppShell強化とグローバルUI整備（再評価）。task-1766818893453-e57a03 をコミット後に再評価しました。</p>
+      </header>
+
+      <section class="summary-block">
+        <strong>再評価概要</strong><br />
+        task-1766818893453-e57a03 がコミット済みになったため、他2ブランチとの比較を更新しました。
+        未コミット汚染は解消、UI要件は満たしているが、通知の自動消去はタイマーのみで再通知制御が最低限のため評価は中位です。
+      </section>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>codex / task-1766818893059-0be223</h2>
+          <div class="score-total">514 / 600 <span>🥇</span></div>
+          <div class="score-note">総合スコア: 85点</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766818893453-e57a03</h2>
+          <div class="score-total">474 / 600 <span>🥈</span></div>
+          <div class="score-note">総合スコア: 79点</div>
+        </div>
+        <div class="score-card">
+          <h2>codex / task-1766818892859-527e9f</h2>
+          <div class="score-total">501 / 600 <span>🥇</span></div>
+          <div class="score-note">総合スコア: 82点</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>codex task-1766818893059-0be223</th>
+            <th>codex task-1766818893453-e57a03</th>
+            <th>codex task-1766818892859-527e9f</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-27 16:25</td>
+            <td>
+              <div class="hex-grid">
+                <svg class="hex-chart" viewBox="0 0 200 180" aria-hidden="true">
+                  <polygon points="100,10 180,55 180,125 100,170 20,125 20,55" fill="#e5f0f3" stroke="#94a3b8" />
+                  <polygon points="100,26 168,63 168,117 100,154 32,117 32,63" fill="#bfe3ec" stroke="#5b8fa0" />
+                </svg>
+                <div class="metric-list">
+                  <div><strong>要件充足 85点</strong> RUN_IDコピー/トースト/ツールチップ/監査表示を満たす。</div>
+                  <div><strong>UI整合 84点</strong> 色・トーンは統一、ナビ配色も一貫。</div>
+                  <div><strong>アクセシビリティ 78点</strong> aria-live付与は良いがツールチップは視覚依存。</div>
+                  <div><strong>実装品質 82点</strong> トーストの自動消去/閉じる導線あり。</div>
+                  <div><strong>スコープ妥当 90点</strong> 変更範囲はUI周辺に限定。</div>
+                  <div><strong>完了度 95点</strong> 1コミット・未コミットなし。</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">AppShell UI強化と監査表示の追加を実装済み。</span>
+              </div>
+              <div class="snapshot-summary">コミット: feat: enhance app shell global ui (a9c8acda)</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ/差分</summary>
+                <pre>web-client/src/AppRouter.tsx
+web-client/src/styles/app-shell.css
+
++ RUN_IDコピーUI、トーストスタック、権限ツールチップ
++ topbar/nav aria-live 追加、監査情報固定表示
+- 変更合計: 241 insertions / 15 deletions</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre class="link-list">
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818893059-0be223/web-client/src/AppRouter.tsx">AppRouter.tsx</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818893059-0be223/web-client/src/styles/app-shell.css">app-shell.css</a>
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="hex-grid">
+                <svg class="hex-chart" viewBox="0 0 200 180" aria-hidden="true">
+                  <polygon points="100,10 180,55 180,125 100,170 20,125 20,55" fill="#e5f0f3" stroke="#94a3b8" />
+                  <polygon points="100,30 162,70 162,110 100,150 38,110 38,70" fill="#cfe8ef" stroke="#5b8fa0" />
+                </svg>
+                <div class="metric-list">
+                  <div><strong>要件充足 80点</strong> RUN_IDコピー/トースト/ツールチップ/監査表示を満たす。</div>
+                  <div><strong>UI整合 82点</strong> カラー変数導入で統一感あり。</div>
+                  <div><strong>アクセシビリティ 80点</strong> aria-live/tooltip対応だがスクリーンリーダー向け誘導は限定。</div>
+                  <div><strong>実装品質 78点</strong> 通知は自動消去のみ、閉じる操作なし。</div>
+                  <div><strong>スコープ妥当 88点</strong> UI範囲内に収まる。</div>
+                  <div><strong>完了度 95点</strong> コミット済み、未コミットなし。</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">コミット済み。UI要件を満たし安定度は中程度。</span>
+              </div>
+              <div class="snapshot-summary">コミット: Enhance app shell global UI (d0f1272e)</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ/差分</summary>
+                <pre>web-client/src/AppRouter.tsx
+web-client/src/styles/app-shell.css
+
++ RUN_IDコピーUI、トーストスタック、権限ツールチップ
++ topbar/nav aria-live 追加、監査情報固定表示
+- 変更合計: 234 insertions / 33 deletions</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre class="link-list">
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818893453-e57a03/web-client/src/AppRouter.tsx">AppRouter.tsx</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818893453-e57a03/web-client/src/styles/app-shell.css">app-shell.css</a>
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="hex-grid">
+                <svg class="hex-chart" viewBox="0 0 200 180" aria-hidden="true">
+                  <polygon points="100,10 180,55 180,125 100,170 20,125 20,55" fill="#e5f0f3" stroke="#94a3b8" />
+                  <polygon points="100,28 168,64 168,116 100,152 32,116 32,64" fill="#bfe3ec" stroke="#5b8fa0" />
+                </svg>
+                <div class="metric-list">
+                  <div><strong>要件充足 88点</strong> RUN_ID/トースト/ツールチップ/監査表示は全て満たす。</div>
+                  <div><strong>UI整合 86点</strong> CSS変数でトーン統一、監査枠を強調。</div>
+                  <div><strong>アクセシビリティ 84点</strong> aria-live/role設定とalert切替が良好。</div>
+                  <div><strong>実装品質 78点</strong> 通知制御は良いが追加スクリプトの影響懸念。</div>
+                  <div><strong>スコープ妥当 70点</strong> Vite/依存追加がUIタスク外に拡張。</div>
+                  <div><strong>完了度 95点</strong> コミットあり、未コミットなし。</div>
+                </div>
+              </div>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">UI要件充足だが追加スクリプトが副作用リスク。</span>
+              </div>
+              <div class="snapshot-summary">コミット: Enhance AppShell global UI (bf197518)</div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ/差分</summary>
+                <pre>web-client/src/AppRouter.tsx
+web-client/src/styles/app-shell.css
+web-client/scripts/ensure-react-router-mjs.mjs
+web-client/vite.config.ts
+web-client/package.json
+
++ RUN_IDコピー/トースト/ツールチップ/監査UI
++ react-router shim + alias追加
+- 変更合計: 297 insertions / 41 deletions</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre class="link-list">
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818892859-527e9f/web-client/src/AppRouter.tsx">AppRouter.tsx</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818892859-527e9f/web-client/src/styles/app-shell.css">app-shell.css</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818892859-527e9f/web-client/scripts/ensure-react-router-mjs.mjs">ensure-react-router-mjs.mjs</a>
+<a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766818892859-527e9f/web-client/vite.config.ts">vite.config.ts</a>
+                </pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
