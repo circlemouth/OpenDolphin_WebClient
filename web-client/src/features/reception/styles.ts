@@ -56,6 +56,46 @@ export const statusBadgeStyles = css`
   }
 `;
 
+export const toneBannerStyles = css`
+  .tone-banner {
+    display: flex;
+    gap: 0.95rem;
+    align-items: center;
+    padding: 1rem 1.25rem;
+    border-radius: 18px;
+    border: 1px solid transparent;
+    font-size: 0.95rem;
+  }
+
+  .tone-banner__tag {
+    font-weight: 700;
+    padding: 0.35rem 0.85rem;
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.35);
+  }
+
+  .tone-banner__message {
+    margin: 0;
+    color: #0f172a;
+  }
+
+  .tone-banner--error {
+    background: #fee2e2;
+    border-color: #fecaca;
+  }
+
+  .tone-banner--warning {
+    background: #fff7ed;
+    border-color: #fed7aa;
+  }
+
+  .tone-banner--info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+`;
+
 export const receptionStyles = css`
   ${statusBadgeStyles}
 

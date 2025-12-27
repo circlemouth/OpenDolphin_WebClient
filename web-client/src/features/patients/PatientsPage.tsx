@@ -5,6 +5,7 @@ import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 import { logUiState } from '../../libs/audit/auditLogger';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { StatusBadge } from '../shared/StatusBadge';
+import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeVisitDate } from '../charts/encounterContext';
@@ -162,6 +163,17 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       }),
     staleTime: 60_000,
   });
+
+  const patientsErrorContext = useMemo(() => {
+    const httpStatus = patientsQuery.data?.status;
+    const hasHttpError = typeof httpStatus === 'number' && httpStatus >= 400;
+    const error = patientsQuery.isError ? patientsQuery.error : patientsQuery.data?.error;
+    if (!error && !hasHttpError) return null;
+    return {
+      error,
+      httpStatus,
+    };
+  }, [patientsQuery.data?.error, patientsQuery.data?.status, patientsQuery.error, patientsQuery.isError]);
 
   useEffect(() => {
     const meta = patientsQuery.data;
@@ -442,13 +454,17 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         <button type="button" className="patients-page__filter-link" onClick={() => navigate({ pathname: '/reception', search: location.search })}>
           Reception に戻る
         </button>
-        {(patientsQuery.data?.error || patientsQuery.data?.status?.toString().startsWith('5')) && (
-          <div className="patients-page__retry" role="alert" aria-live="assertive">
-            <p>
-              患者情報の取得に失敗しました（{patientsQuery.data?.status ?? 'timeout'}）。再取得してください。
-            </p>
-            <button type="button" onClick={() => patientsQuery.refetch()}>再取得</button>
-          </div>
+        {patientsErrorContext && (
+          <ApiFailureBanner
+            subject="患者情報"
+            destination="Patients"
+            runId={patientsQuery.data?.runId ?? flags.runId}
+            nextAction="再取得"
+            retryLabel="再取得"
+            onRetry={() => patientsQuery.refetch()}
+            isRetrying={patientsQuery.isFetching}
+            {...patientsErrorContext}
+          />
         )}
         {resolvedFetchedAt && (
           <p className="patients-page__hint" role="note">

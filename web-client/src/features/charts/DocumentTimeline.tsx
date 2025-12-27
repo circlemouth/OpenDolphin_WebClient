@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
+import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry, ReceptionStatus } from '../reception/api';
@@ -9,6 +10,7 @@ import type { ClaimOutpatientPayload, ClaimBundle, ClaimBundleStatus } from '../
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
 import type { OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
 import { resolveOrcaSendStatus } from '../outpatient/orcaQueueStatus';
+import { resolveOutpatientFlags } from '../outpatient/flags';
 
 export interface DocumentTimelineProps {
   entries?: ReceptionEntry[];
@@ -157,12 +159,13 @@ export function DocumentTimeline({
   onRetryClaim,
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
-  const resolvedRunId = claimData?.runId ?? flags.runId;
-  const resolvedMissingMaster = claimData?.missingMaster ?? flags.missingMaster;
-  const resolvedCacheHit = claimData?.cacheHit ?? flags.cacheHit;
-  const resolvedTransition = claimData?.dataSourceTransition ?? flags.dataSourceTransition;
-  const resolvedFallbackUsed = claimData?.fallbackUsed ?? false;
-  const fallbackFlagMissing = claimData?.fallbackFlagMissing ?? false;
+  const resolvedFlags = resolveOutpatientFlags(claimData, flags);
+  const resolvedRunId = resolvedFlags.runId ?? flags.runId;
+  const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
+  const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;
+  const resolvedTransition = resolvedFlags.dataSourceTransition ?? flags.dataSourceTransition;
+  const resolvedFallbackUsed = resolvedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
+  const fallbackFlagMissing = resolvedFlags.fallbackFlagMissing ?? false;
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -516,12 +519,12 @@ export function DocumentTimeline({
         />
       )}
       {orcaQueueError && (
-        <ToneBanner
-          tone="warning"
-          message={`ORCA キュー取得に失敗しました: ${orcaQueueError.message}`}
+        <ApiFailureBanner
+          subject="ORCA キュー"
+          error={orcaQueueError}
+          destination="ORCA キュー"
           runId={resolvedRunId}
-          destination="ORCA Queue"
-          nextAction="ネットワーク/設定を確認し、必要なら Administration でキュー状態を確認"
+          nextAction="再取得 / 設定確認（Administration のキュー監視）"
           ariaLive="assertive"
         />
       )}
@@ -574,14 +577,19 @@ export function DocumentTimeline({
         </div>
       )}
       {claimError && (
-        <div className="document-timeline__retry" role="alert" aria-live="assertive">
-          <p>請求バンドルの取得に失敗しました: {claimError.message}</p>
-          {onRetryClaim && (
-            <button className="document-timeline__retry-button" onClick={onRetryClaim} disabled={isClaimLoading}>
-              {isClaimLoading ? '再取得中…' : '請求バンドルを再取得'}
-            </button>
-          )}
-        </div>
+        <ApiFailureBanner
+          subject="請求バンドル"
+          error={claimError}
+          httpStatus={claimData?.httpStatus}
+          apiResult={claimData?.apiResult}
+          apiResultMessage={claimData?.apiResultMessage}
+          destination="請求バンドル"
+          runId={resolvedRunId}
+          nextAction="再取得"
+          retryLabel="請求バンドルを再取得"
+          onRetry={onRetryClaim}
+          isRetrying={isClaimLoading}
+        />
       )}
       {!claimError && onRetryClaim && (resolvedFallbackUsed || resolvedCacheHit === false) && (
         <div className="document-timeline__retry" aria-live="polite">

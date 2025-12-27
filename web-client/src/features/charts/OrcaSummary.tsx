@@ -9,6 +9,7 @@ import type { OrcaOutpatientSummary } from './api';
 import type { ClaimOutpatientPayload, ReceptionEntry } from '../outpatient/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { logUiState } from '../../libs/audit/auditLogger';
+import { resolveOutpatientFlags } from '../outpatient/flags';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
@@ -21,12 +22,13 @@ export interface OrcaSummaryProps {
 export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRefreshing = false }: OrcaSummaryProps) {
   const navigate = useNavigate();
   const { flags } = useAuthService();
-  const resolvedRunId = summary?.runId ?? claim?.runId ?? flags.runId;
-  const resolvedMissingMaster = summary?.missingMaster ?? claim?.missingMaster ?? flags.missingMaster;
-  const resolvedCacheHit = summary?.cacheHit ?? claim?.cacheHit ?? flags.cacheHit;
-  const resolvedFallbackUsed = summary?.fallbackUsed ?? claim?.fallbackUsed ?? false;
-  const resolvedTransition = summary?.dataSourceTransition ?? claim?.dataSourceTransition ?? flags.dataSourceTransition;
-  const fallbackFlagMissing = summary?.fallbackFlagMissing ?? claim?.fallbackFlagMissing ?? false;
+  const resolvedFlags = resolveOutpatientFlags(summary, claim, flags);
+  const resolvedRunId = resolvedFlags.runId ?? flags.runId;
+  const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
+  const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;
+  const resolvedFallbackUsed = resolvedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
+  const resolvedTransition = resolvedFlags.dataSourceTransition ?? flags.dataSourceTransition;
+  const fallbackFlagMissing = resolvedFlags.fallbackFlagMissing ?? false;
   const [perfMeasured, setPerfMeasured] = useState(false);
   const renderStartedAt = useMemo(() => performance.now(), []);
   const tonePayload: ChartTonePayload = {

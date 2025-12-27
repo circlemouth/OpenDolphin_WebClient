@@ -1,8 +1,9 @@
 import type { BannerTone } from '../reception/components/ToneBanner';
+import { buildApiFailureBanner } from '../shared/apiError';
 import type { ReceptionEntry } from './types';
 
 export type AppointmentDataBanner = {
-  tone: Extract<BannerTone, 'info' | 'warning'>;
+  tone: BannerTone;
   message: string;
 };
 
@@ -13,8 +14,6 @@ type AppointmentDataBannerInput = {
   error?: unknown;
   date?: string;
 };
-
-const toErrorMessage = (error: unknown) => (error instanceof Error ? error.message : typeof error === 'string' ? error : undefined);
 
 export function getAppointmentDataBanner({
   entries,
@@ -28,8 +27,8 @@ export function getAppointmentDataBanner({
   }
 
   if (isError) {
-    const detail = toErrorMessage(error);
-    return { tone: 'warning', message: `予約/来院データの取得に失敗しました。再取得してください。${detail ? `（${detail}）` : ''}` };
+    const banner = buildApiFailureBanner('予約/来院データ', { error }, '取得');
+    return { tone: banner.tone, message: banner.message };
   }
 
   if (entries.length === 0) {
@@ -50,4 +49,3 @@ export function getAppointmentDataBanner({
 
   return { tone: 'warning', message: `予約/来院データに不整合があります（${parts.join(' / ')}）` };
 }
-
