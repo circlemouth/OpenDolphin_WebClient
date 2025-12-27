@@ -85,8 +85,8 @@ src:
         - `future-web-client-design.md` の画面配置/機能/トーン/監査/ARIA と照合し、未実装・暫定・デモ止まりの項目を P0/P1/P2 で分類する。
         - “本番運用可能” 判定に必要な不足項目（セキュリティ/監査/運用/テスト）を一覧化する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -102,8 +102,8 @@ src:
         - “UI 表示/失敗時/運用導線/監査証跡” を満たすための DoD を画面別に定義する。
         - 本番時に MSW を無効化する前提の動作保証範囲を決める。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -120,8 +120,8 @@ src:
           - ナビゲーションとトップバーに `role=status`/`aria-live` を付与し、色・トーンの統一を適用する。
           - 施設/ユーザー/role 情報の表示を固定し、監査観点の可視性を担保する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -137,8 +137,8 @@ src:
           - `data-run-id` の付与と `updateObservabilityMeta` の更新タイミングを整理し、画面間遷移でぶれないようにする。
           - リロード時の復元方針を定義し、セッション切れ時の安全なリセットを実装する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -154,8 +154,8 @@ src:
           - `telemetryClient.recordOutpatientFunnel` の送信位置を整理し、失敗理由の必須化を徹底する。
           - 監査ログに含める業務キー（facilityId/patientId/appointmentId/claimId）を統一する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api:
           - "/api/audit"
@@ -171,8 +171,8 @@ src:
           - API 失敗時の共通バナーとリトライ導線（再読込/再送）を整理し、画面間で文言/トーンを統一する。
           - ネットワーク障害と業務エラーを分離し、`missingMaster`/`fallbackUsed` の表示ロジックを整備する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -189,8 +189,8 @@ src:
           - 右ペインの患者概要・オーダー概要・missingMaster ノート入力を監査に連携する。
           - 検索/フィルタ/ソートの URL パラメータ引継ぎを Charts まで通す。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api:
           - "/api01rv2/appointment/outpatient/*"
@@ -208,8 +208,8 @@ src:
           - ダブルクリック遷移時の runId/患者文脈/受付 ID を URL と state で二重保持する。
           - Charts 側のドラフト/ロック状態と衝突しない遷移ガードを追加する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -241,8 +241,8 @@ src:
           - 3カラム＋右固定メニューのレイアウトへ移行し、患者ヘッダ/診療バー/安全表示を常設する。
           - `DocumentTimeline` を「セクション別ログ + タイムライン」構造に拡張する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -257,8 +257,8 @@ src:
           - Free/S/O/A/P のセクション別ログとテンプレート挿入を実装し、保存/更新の監査イベントを記録する。
           - 記載者職種/記載日時/テンプレート ID を保持し、履歴をタイムラインへ反映する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api:
           - "/orca21/medicalmodv2/outpatient"

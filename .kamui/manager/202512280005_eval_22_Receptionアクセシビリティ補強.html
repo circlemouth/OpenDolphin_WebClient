@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - Receptionアクセシビリティ補強</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .task-summary {
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        border-radius: 8px;
+        font-size: 13px;
+      }
+      .comparison-block {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-top: 24px;
+      }
+      .agent-card {
+        border: 1px solid #c4d3d7;
+        background: #ffffff;
+        padding: 16px;
+      }
+      .agent-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: baseline;
+        gap: 12px;
+        border-bottom: 1px solid #d8e6e9;
+        padding-bottom: 10px;
+        margin-bottom: 12px;
+      }
+      .agent-title {
+        font-size: 15px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .agent-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .total-score {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 12px;
+        margin: 12px 0 16px;
+      }
+      .hex {
+        position: relative;
+        width: 100%;
+        padding-top: 86%;
+        background: #eef3f4;
+        border: 1px solid #c4d3d7;
+        clip-path: polygon(25% 6%, 75% 6%, 100% 50%, 75% 94%, 25% 94%, 0 50%);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+      .hex-content {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        padding: 8px;
+        gap: 4px;
+      }
+      .hex-score {
+        font-size: 16px;
+        font-weight: 700;
+      }
+      .hex-label {
+        font-size: 11px;
+        color: #3a4b53;
+      }
+      h3 {
+        font-size: 14px;
+        margin: 12px 0 6px;
+      }
+      ul {
+        margin: 6px 0 12px 18px;
+        padding: 0;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        padding: 2px 8px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+      }
+      .status-badge--good { background: #c3d4d8; }
+      .status-badge--partial { background: #fef3cd; }
+      .status-badge--gap { background: #f8d7da; }
+      .link-list a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+      .link-list a:hover {
+        text-decoration: underline;
+      }
+      .comparison-note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - Receptionアクセシビリティ補強</h1>
+        <p class="monitor-description">対象: [webclient productionization plan 20251226] 22_Receptionアクセシビリティ補強 / 評価日時: 2025-12-28 00:05</p>
+      </header>
+
+      <section class="task-summary">
+        <strong>タスク内容</strong>
+        <ul>
+          <li>バナー/テーブル/右ペインのキーボードフォーカスと aria-live の付与を統一する。</li>
+          <li>バッジ/トーンの色コントラストと読み上げ内容を整備する。</li>
+        </ul>
+        <strong>仕事の概要</strong>
+        <ul>
+          <li>Reception画面のフォーカス可能領域・ライブリージョン・ラベル付け・色コントラスト改善を比較評価。</li>
+          <li>3ブランチのコミット差分を確認し、要件充足度・実装の一貫性・回帰リスクで採点。</li>
+        </ul>
+        <div class="comparison-note">未コミット変更は各ブランチで検出なし。</div>
+      </section>
+
+      <section class="comparison-block">
+        <div class="agent-card">
+          <div class="agent-header">
+            <div>
+              <div class="agent-title">codex / task-1766846580529-cbe7dc</div>
+              <div class="agent-sub">ブランチ: task/task-1766846580529-cbe7dc</div>
+              <div class="agent-sub">メダル: 🥇 / スコア: 88</div>
+            </div>
+            <div class="total-score">合計 512 / 600 🥇</div>
+          </div>
+          <div class="score-grid">
+            <div class="hex"><div class="hex-content"><div class="hex-score">90</div><div class="hex-label">要件充足</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">88</div><div class="hex-label">アクセシビリティ</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">86</div><div class="hex-label">コントラスト</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">84</div><div class="hex-label">ARIA設計</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">86</div><div class="hex-label">実装品質</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">78</div><div class="hex-label">回帰リスク</div></div></div>
+          </div>
+          <h3>指標の根拠</h3>
+          <ul>
+            <li>要件充足: バナー/テーブル/右ペインにtabIndexとaria-liveを統一的に付与。</li>
+            <li>アクセシビリティ: region/label付与、バッジとキューの読み上げラベル追加。</li>
+            <li>コントラスト: receptionバッジ/キュー/トーンタグの配色を濃色寄りに調整。</li>
+            <li>ARIA設計: aria-atomic=trueで読み上げの一貫性を確保。</li>
+            <li>実装品質: 共有クラスでフォーカス可視化を統一。</li>
+            <li>回帰リスク: aria-atomic強化により読み上げ量が増える可能性。</li>
+          </ul>
+          <h3>判定</h3>
+          <div class="status-badge status-badge--good">要件達成</div>
+          <h3>指摘/残課題</h3>
+          <ul>
+            <li>StatusBadge系の読み上げ最適化は未対応（対象外なら問題なし）。</li>
+          </ul>
+          <h3>成果物リンク</h3>
+          <ul class="link-list">
+            <li><a href="../../.worktrees/task-1766846580529-cbe7dc/web-client/src/features/reception/components/ToneBanner.tsx">ToneBanner.tsx</a></li>
+            <li><a href="../../.worktrees/task-1766846580529-cbe7dc/web-client/src/features/reception/pages/ReceptionPage.tsx">ReceptionPage.tsx</a></li>
+            <li><a href="../../.worktrees/task-1766846580529-cbe7dc/web-client/src/features/reception/styles.ts">styles.ts</a></li>
+          </ul>
+          <details>
+            <summary class="details-toggle">コミットログ</summary>
+            <pre>c6102e4d Improve reception a11y focus and badge contrast</pre>
+          </details>
+          <details>
+            <summary class="details-toggle">差分概要</summary>
+            <pre>3 files changed, 86 insertions(+), 42 deletions(-)
+- ToneBanner.tsx
+- ReceptionPage.tsx
+- styles.ts</pre>
+          </details>
+        </div>
+
+        <div class="agent-card">
+          <div class="agent-header">
+            <div>
+              <div class="agent-title">codex / task-1766846580128-b09b4e</div>
+              <div class="agent-sub">ブランチ: task/task-1766846580128-b09b4e</div>
+              <div class="agent-sub">メダル: 🥈 / スコア: 78</div>
+            </div>
+            <div class="total-score">合計 470 / 600 🥈</div>
+          </div>
+          <div class="score-grid">
+            <div class="hex"><div class="hex-content"><div class="hex-score">78</div><div class="hex-label">要件充足</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">80</div><div class="hex-label">アクセシビリティ</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">82</div><div class="hex-label">コントラスト</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">74</div><div class="hex-label">ARIA設計</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">80</div><div class="hex-label">実装品質</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">76</div><div class="hex-label">回帰リスク</div></div></div>
+          </div>
+          <h3>指標の根拠</h3>
+          <ul>
+            <li>要件充足: テーブル/右ペインは対応、バナーは未対応。</li>
+            <li>アクセシビリティ: skip linkと行の詳細aria-label追加。</li>
+            <li>コントラスト: receptionバッジ/キュー/トーンタグ色の改善。</li>
+            <li>ARIA設計: サイドペインにregion付与のみでラベル不足。</li>
+            <li>実装品質: StatusBadgeにaria-label/aria-atomicを追加。</li>
+            <li>回帰リスク: 既存UI構造への影響は小さめ。</li>
+          </ul>
+          <h3>判定</h3>
+          <div class="status-badge status-badge--partial">部分達成</div>
+          <h3>指摘/残課題</h3>
+          <ul>
+            <li>バナーのキーボードフォーカス/aria-live統一が未対応。</li>
+            <li>右ペインregionにラベル（aria-label/aria-labelledby）が不足。</li>
+          </ul>
+          <h3>成果物リンク</h3>
+          <ul class="link-list">
+            <li><a href="../../.worktrees/task-1766846580128-b09b4e/web-client/src/features/reception/pages/ReceptionPage.tsx">ReceptionPage.tsx</a></li>
+            <li><a href="../../.worktrees/task-1766846580128-b09b4e/web-client/src/features/reception/styles.ts">styles.ts</a></li>
+            <li><a href="../../.worktrees/task-1766846580128-b09b4e/web-client/src/features/shared/StatusBadge.tsx">StatusBadge.tsx</a></li>
+          </ul>
+          <details>
+            <summary class="details-toggle">コミットログ</summary>
+            <pre>dc06ed59 Improve reception accessibility focus and badge contrast</pre>
+          </details>
+          <details>
+            <summary class="details-toggle">差分概要</summary>
+            <pre>3 files changed, 93 insertions(+), 17 deletions(-)
+- ReceptionPage.tsx
+- styles.ts
+- StatusBadge.tsx</pre>
+          </details>
+        </div>
+      </section>
+
+      <section class="comparison-block">
+        <div class="agent-card">
+          <div class="agent-header">
+            <div>
+              <div class="agent-title">codex / task-1766846580328-3f9338</div>
+              <div class="agent-sub">ブランチ: task/task-1766846580328-3f9338</div>
+              <div class="agent-sub">メダル: 🥉 / スコア: 68</div>
+            </div>
+            <div class="total-score">合計 448 / 600 🥉</div>
+          </div>
+          <div class="score-grid">
+            <div class="hex"><div class="hex-content"><div class="hex-score">72</div><div class="hex-label">要件充足</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">78</div><div class="hex-label">アクセシビリティ</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">65</div><div class="hex-label">コントラスト</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">75</div><div class="hex-label">ARIA設計</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">80</div><div class="hex-label">実装品質</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">78</div><div class="hex-label">回帰リスク</div></div></div>
+          </div>
+          <h3>指標の根拠</h3>
+          <ul>
+            <li>要件充足: バナー/右ペイン/テーブルにtabIndexとaria-liveは対応。</li>
+            <li>アクセシビリティ: 右ペインにsr-onlyの読み上げ文を追加。</li>
+            <li>コントラスト: StatusBadgeのコントラスト改善はあるが、receptionバッジ/キューの配色未対応。</li>
+            <li>ARIA設計: バナーにaria-label/タブ移動対応、aria-atomic未設定。</li>
+            <li>実装品質: 追加クラスでフォーカス表示を整理。</li>
+            <li>回帰リスク: 追加SR文言は読み上げ頻度が高くなる可能性。</li>
+          </ul>
+          <h3>判定</h3>
+          <div class="status-badge status-badge--partial">部分達成</div>
+          <h3>指摘/残課題</h3>
+          <ul>
+            <li>Receptionバッジ/キューの色コントラスト改善が不足。</li>
+            <li>aria-atomicの統一が未実施。</li>
+          </ul>
+          <h3>成果物リンク</h3>
+          <ul class="link-list">
+            <li><a href="../../.worktrees/task-1766846580328-3f9338/web-client/src/features/reception/components/ToneBanner.tsx">ToneBanner.tsx</a></li>
+            <li><a href="../../.worktrees/task-1766846580328-3f9338/web-client/src/features/reception/pages/ReceptionPage.tsx">ReceptionPage.tsx</a></li>
+            <li><a href="../../.worktrees/task-1766846580328-3f9338/web-client/src/features/reception/styles.ts">styles.ts</a></li>
+            <li><a href="../../.worktrees/task-1766846580328-3f9338/web-client/src/features/shared/StatusBadge.tsx">StatusBadge.tsx</a></li>
+          </ul>
+          <details>
+            <summary class="details-toggle">コミットログ</summary>
+            <pre>fc3fbe21 Improve reception accessibility focus and contrast</pre>
+          </details>
+          <details>
+            <summary class="details-toggle">差分概要</summary>
+            <pre>4 files changed, 100 insertions(+), 9 deletions(-)
+- ToneBanner.tsx
+- ReceptionPage.tsx
+- styles.ts
+- StatusBadge.tsx</pre>
+          </details>
+        </div>
+
+        <div class="agent-card">
+          <div class="agent-header">
+            <div>
+              <div class="agent-title">比較対象なし</div>
+              <div class="agent-sub">ブランチ: -</div>
+              <div class="agent-sub">メダル: ⚪️ / スコア: -</div>
+            </div>
+            <div class="total-score">合計 0 / 600 ⚪️</div>
+          </div>
+          <div class="score-grid">
+            <div class="hex"><div class="hex-content"><div class="hex-score">-</div><div class="hex-label">要件充足</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">-</div><div class="hex-label">アクセシビリティ</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">-</div><div class="hex-label">コントラスト</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">-</div><div class="hex-label">ARIA設計</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">-</div><div class="hex-label">実装品質</div></div></div>
+            <div class="hex"><div class="hex-content"><div class="hex-score">-</div><div class="hex-label">回帰リスク</div></div></div>
+          </div>
+          <h3>補足</h3>
+          <ul>
+            <li>比較対象が1件のため空欄。</li>
+          </ul>
+        </div>
+      </section>
+      <p class="comparison-note">成果物リンクは各worktree上のファイルを参照しています。</p>
+    </div>
+  </body>
+</html>

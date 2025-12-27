@@ -699,7 +699,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-15T00:00:00.000Z
+          start: 2026-01-12T04:00:00.000Z
           days: 1
     07_quality_release:
       品質リリース_前提ドキュメント整備.md:
@@ -752,7 +752,7 @@ src:
         status: not_started
         progress: 0
         schedule:
-          start: 2026-01-16T00:00:00.000Z
+          start: 2026-01-14T00:00:00.000Z
           days: 1
     08_evidence_package:
       ORCA-08_E2E_証跡.md:
