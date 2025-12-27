@@ -558,6 +558,8 @@ function ChartsContent() {
       missingMaster: claimQuery.data?.missingMaster,
       fallbackUsed: claimQuery.data?.fallbackUsed,
       dataSourceTransition: claimQuery.data?.dataSourceTransition ?? resolvedTransition,
+      patientId: encounterContext.patientId,
+      appointmentId: encounterContext.appointmentId,
       payload: {
         action: 'CLAIM_OUTPATIENT_RETRY',
         outcome: 'started',

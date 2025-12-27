@@ -68,6 +68,7 @@ export async function fetchOrcaOutpatientSummary(
     action: 'medical_fetch',
     outcome: result.ok ? 'success' : 'error',
     note: summary.sourcePath,
+    reason: result.ok ? undefined : result.error ?? summary.note ?? summary.sourcePath,
   });
 
   logUiState({

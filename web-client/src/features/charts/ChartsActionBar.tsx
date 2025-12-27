@@ -309,12 +309,19 @@ export function ChartsActionBar({
     sendQueueLabel,
   ]);
 
-  const logTelemetry = (action: ChartAction, outcome: 'success' | 'error' | 'blocked' | 'started', durationMs?: number, note?: string) => {
+  const logTelemetry = (
+    action: ChartAction,
+    outcome: 'success' | 'error' | 'blocked' | 'started',
+    durationMs?: number,
+    note?: string,
+    reason?: string,
+  ) => {
     recordOutpatientFunnel('charts_action', {
       action,
       outcome,
       durationMs,
       note,
+      reason,
       cacheHit,
       missingMaster,
       dataSourceTransition,
@@ -344,6 +351,8 @@ export function ChartsActionBar({
       note: detail,
       error: outcome === 'error' ? detail : undefined,
       durationMs,
+      patientId,
+      appointmentId: queueEntry?.appointmentId,
       dataSourceTransition,
       cacheHit,
       missingMaster,
@@ -363,7 +372,7 @@ export function ChartsActionBar({
         detail: blockedReason,
       });
       setRetryAction(null);
-      logTelemetry(action, 'blocked', undefined, blockedReason);
+      logTelemetry(action, 'blocked', undefined, blockedReason, blockedReason);
       logUiState({
         action:
           action === 'draft'
@@ -399,7 +408,7 @@ export function ChartsActionBar({
       });
       setRetryAction(null);
       setToast(null);
-      logTelemetry(action, 'blocked', undefined, blockedReason);
+      logTelemetry(action, 'blocked', undefined, blockedReason, blockedReason);
       logUiState({
         action: 'send',
         screen: 'charts/action-bar',
@@ -420,7 +429,7 @@ export function ChartsActionBar({
       setBanner({ tone: 'warning', message: `ORCA送信を停止: ${blockedReason}`, nextAction: 'Patients で対象患者を選択してください。' });
       setRetryAction(null);
       setToast(null);
-      logTelemetry(action, 'blocked', undefined, blockedReason);
+      logTelemetry(action, 'blocked', undefined, blockedReason, blockedReason);
       logUiState({
         action: 'send',
         screen: 'charts/action-bar',
@@ -535,7 +544,7 @@ export function ChartsActionBar({
         setRetryAction('send');
         setBanner({ tone: 'warning', message: `ORCA送信を中断: ${abortedDetail}`, nextAction: '通信回復後にリトライできます。' });
         setToast(null);
-        logTelemetry(action, 'blocked', durationMs, abortedDetail);
+        logTelemetry(action, 'blocked', durationMs, abortedDetail, abortedDetail);
         logAudit(action, 'blocked', abortedDetail, durationMs);
       } else {
         const nextSteps = (() => {
@@ -551,7 +560,7 @@ export function ChartsActionBar({
         setRetryAction(action);
         setBanner({ tone: 'error', message: `${ACTION_LABEL[action]}に失敗: ${composedDetail}`, nextAction: nextSteps });
         setToast(null);
-        logTelemetry(action, 'error', durationMs, composedDetail);
+        logTelemetry(action, 'error', durationMs, composedDetail, composedDetail);
         logAudit(action, 'error', composedDetail, durationMs);
       }
     } finally {

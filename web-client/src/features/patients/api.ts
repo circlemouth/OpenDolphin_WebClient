@@ -275,6 +275,7 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
     action: 'patient_fetch',
     outcome: meta.error ? 'error' : 'success',
     note: meta.error ?? meta.sourcePath,
+    reason: meta.error ?? undefined,
   });
 
   logAuditEvent({
@@ -394,6 +395,7 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
     action: `patient_save_${payload.operation}`,
     outcome: result.ok ? 'success' : 'error',
     note: result.ok ? (result.sourcePath ?? '') : `${result.sourcePath ?? ''} status=${result.status ?? 'unknown'}`,
+    reason: result.ok ? undefined : result.message ?? result.sourcePath,
   });
 
   logAuditEvent({
