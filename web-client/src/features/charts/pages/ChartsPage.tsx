@@ -11,6 +11,8 @@ import { MedicalOutpatientRecordPanel } from '../MedicalOutpatientRecordPanel';
 import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
+import { DiagnosisEditPanel } from '../DiagnosisEditPanel';
+import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
 import { normalizeAuditEventLog, normalizeAuditEventPayload, recordChartsAuditEvent } from '../audit';
 import { SoapNotePanel } from '../SoapNotePanel';
 import type { SoapEntry } from '../soapNote';
@@ -106,6 +108,14 @@ type SoapHistoryStorage = {
     }
   >;
 };
+
+type SidePanelAction =
+  | 'lab'
+  | 'document'
+  | 'imaging'
+  | 'diagnosis-edit'
+  | 'prescription-edit'
+  | 'order-edit';
 
 const readSoapHistoryStorage = (): SoapHistoryStorage | null => {
   if (typeof sessionStorage === 'undefined') return null;
@@ -210,6 +220,7 @@ function ChartsContent() {
     ariaLive: 'polite' | 'assertive';
   } | null>(null);
   const [deliveryImpactBanner, setDeliveryImpactBanner] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
+  const [sidePanelAction, setSidePanelAction] = useState<SidePanelAction | null>(null);
   const [deliveryAppliedMeta, setDeliveryAppliedMeta] = useState<{
     appliedAt: string;
     appliedTo: string;
@@ -664,6 +675,39 @@ function ChartsContent() {
       resolvedMissingMaster,
       resolvedRunId,
       resolvedTransition,
+    ],
+  );
+  const sidePanelMeta = useMemo(
+    () => ({
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      patientId: encounterContext.patientId,
+      appointmentId: encounterContext.appointmentId,
+      receptionId: encounterContext.receptionId,
+      visitDate: encounterContext.visitDate,
+      actorRole: session.role,
+      readOnly: lockState.locked || tabLock.isReadOnly,
+      readOnlyReason: lockState.reason ?? tabLock.readOnlyReason,
+    }),
+    [
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      encounterContext.visitDate,
+      flags.runId,
+      lockState.locked,
+      lockState.reason,
+      resolvedCacheHit,
+      resolvedFallbackUsed,
+      resolvedMissingMaster,
+      resolvedRunId,
+      resolvedTransition,
+      session.role,
+      tabLock.isReadOnly,
+      tabLock.readOnlyReason,
     ],
   );
   const soapNoteAuthor = useMemo(
@@ -1585,25 +1629,37 @@ function ChartsContent() {
                     type="button"
                     className="charts-side-menu__button"
                     aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'prescription'}
+                    aria-expanded={sidePanelAction === 'diagnosis-edit'}
                     onClick={() => {
-                      setSidePanelAction('prescription');
+                      setSidePanelAction('diagnosis-edit');
                       focusSectionById('charts-orca-summary');
                     }}
                   >
-                    処方検索
+                    病名編集
                   </button>
                   <button
                     type="button"
                     className="charts-side-menu__button"
                     aria-controls="charts-side-panel"
-                    aria-expanded={sidePanelAction === 'order'}
+                    aria-expanded={sidePanelAction === 'prescription-edit'}
                     onClick={() => {
-                      setSidePanelAction('order');
+                      setSidePanelAction('prescription-edit');
                       focusSectionById('charts-document-timeline');
                     }}
                   >
-                    オーダー検索
+                    処方編集
+                  </button>
+                  <button
+                    type="button"
+                    className="charts-side-menu__button"
+                    aria-controls="charts-side-panel"
+                    aria-expanded={sidePanelAction === 'order-edit'}
+                    onClick={() => {
+                      setSidePanelAction('order-edit');
+                      focusSectionById('charts-document-timeline');
+                    }}
+                  >
+                    オーダー編集
                   </button>
                   <button
                     type="button"
@@ -1646,7 +1702,7 @@ function ChartsContent() {
                     className="charts-side-menu__button charts-side-menu__button--primary"
                     aria-controls="charts-side-panel"
                     aria-expanded={sidePanelAction !== null}
-                    onClick={() => setSidePanelAction((prev) => (prev ? null : 'prescription'))}
+                    onClick={() => setSidePanelAction((prev) => (prev ? null : 'prescription-edit'))}
                   >
                     右パネルを開く
                   </button>
@@ -1660,8 +1716,9 @@ function ChartsContent() {
                   >
                     <div className="charts-side-panel__header">
                       <h3>
-                        {sidePanelAction === 'prescription' && '処方検索'}
-                        {sidePanelAction === 'order' && 'オーダー検索'}
+                        {sidePanelAction === 'diagnosis-edit' && '病名編集'}
+                        {sidePanelAction === 'prescription-edit' && '処方編集'}
+                        {sidePanelAction === 'order-edit' && 'オーダー編集'}
                         {sidePanelAction === 'lab' && '検査オーダー'}
                         {sidePanelAction === 'document' && '文書登録'}
                         {sidePanelAction === 'imaging' && '画像/スキャン'}
@@ -1671,22 +1728,55 @@ function ChartsContent() {
                         閉じる
                       </button>
                     </div>
-                    <p className="charts-side-panel__message">
-                      {sidePanelAction
-                        ? 'このパネルは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。'
-                        : '右固定メニューから機能を選択すると、ここに操作内容が表示されます。'}
-                    </p>
-                    <div className="charts-side-panel__actions">
-                      <button type="button" onClick={() => focusSectionById('charts-actionbar')}>
-                        診療操作へ移動
-                      </button>
-                      <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
-                        タイムラインへ移動
-                      </button>
-                      <button type="button" onClick={() => focusSectionById('charts-orca-summary')}>
-                        ORCAサマリへ移動
-                      </button>
-                    </div>
+                    {(sidePanelAction === 'diagnosis-edit' ||
+                      sidePanelAction === 'prescription-edit' ||
+                      sidePanelAction === 'order-edit') && (
+                      <div className="charts-side-panel__content">
+                        {sidePanelAction === 'diagnosis-edit' && (
+                          <DiagnosisEditPanel patientId={encounterContext.patientId} meta={sidePanelMeta} />
+                        )}
+                        {sidePanelAction === 'prescription-edit' && (
+                          <OrderBundleEditPanel
+                            patientId={encounterContext.patientId}
+                            entity="medOrder"
+                            title="処方編集"
+                            bundleLabel="RP名"
+                            itemQuantityLabel="用量"
+                            meta={sidePanelMeta}
+                          />
+                        )}
+                        {sidePanelAction === 'order-edit' && (
+                          <OrderBundleEditPanel
+                            patientId={encounterContext.patientId}
+                            entity="generalOrder"
+                            title="オーダー編集"
+                            bundleLabel="オーダー名"
+                            itemQuantityLabel="数量"
+                            meta={sidePanelMeta}
+                          />
+                        )}
+                      </div>
+                    )}
+                    {(sidePanelAction === 'lab' || sidePanelAction === 'document' || sidePanelAction === 'imaging' || !sidePanelAction) && (
+                      <>
+                        <p className="charts-side-panel__message">
+                          {sidePanelAction
+                            ? 'このパネルは実運用で検索・登録 UI を開く位置です。現在は関連セクションへの移動を補助します。'
+                            : '右固定メニューから機能を選択すると、ここに操作内容が表示されます。'}
+                        </p>
+                        <div className="charts-side-panel__actions">
+                          <button type="button" onClick={() => focusSectionById('charts-actionbar')}>
+                            診療操作へ移動
+                          </button>
+                          <button type="button" onClick={() => focusSectionById('charts-document-timeline')}>
+                            タイムラインへ移動
+                          </button>
+                          <button type="button" onClick={() => focusSectionById('charts-orca-summary')}>
+                            ORCAサマリへ移動
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 </div>
               </aside>

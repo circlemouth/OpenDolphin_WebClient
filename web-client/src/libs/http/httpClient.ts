@@ -107,6 +107,28 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
     ],
   },
   {
+    id: 'diseaseMutation',
+    group: 'outpatient',
+    method: 'ANY',
+    path: '/orca/disease',
+    purpose: 'Charts の病名編集で傷病名を登録・更新・削除し、主/疑い/開始/転帰を監査ログへ連携する。',
+    auditMetadata: ['runId', 'operation', 'patientId'],
+    sourceDocs: [
+      'docs/web-client/ux/charts-claim-ui-policy.md',
+    ],
+  },
+  {
+    id: 'orderBundleMutation',
+    group: 'outpatient',
+    method: 'ANY',
+    path: '/orca/order/bundles',
+    purpose: 'Charts の処方（RP）/オーダー束編集でバンドルを登録・更新・削除し、監査イベントへ反映する。',
+    auditMetadata: ['runId', 'operation', 'patientId', 'entity'],
+    sourceDocs: [
+      'docs/web-client/ux/charts-claim-ui-policy.md',
+    ],
+  },
+  {
     id: 'patientOutpatient',
     group: 'outpatient',
     method: 'ANY',

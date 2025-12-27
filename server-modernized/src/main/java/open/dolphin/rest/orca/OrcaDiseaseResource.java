@@ -95,6 +95,7 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         DiseaseImportResponse response = new DiseaseImportResponse();
         response.setApiResult("00");
         response.setApiResultMessage("処理終了");
+        response.setRunId(RUN_ID);
         response.setPatientId(patientId);
         response.setBaseDate(DATE_FORMAT.format(fromDate));
         diagnoses.stream()
@@ -150,6 +151,17 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
             throw restError(request, Response.Status.NOT_FOUND, "patient_not_found",
                     "Patient not found");
         }
+        if (payload.getOperations() == null || payload.getOperations().isEmpty()) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", payload.getPatientId());
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "operations");
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                    "invalid_request", "operations is required");
+            recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw validationError(request, "operations", "operations is required");
+        }
         KarteBean karte = karteServiceBean.getKarte(facilityId, payload.getPatientId(), ModelUtils.AD1800);
         UserModel user = userServiceBean.getUser(remoteUser);
 
@@ -162,7 +174,20 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
                 if (entry.getOperation() == null) {
                     continue;
                 }
-                switch (entry.getOperation().toLowerCase(Locale.ROOT)) {
+                String operation = entry.getOperation().toLowerCase(Locale.ROOT);
+                if (!isSupportedOperation(operation)) {
+                    Map<String, Object> audit = new HashMap<>();
+                    audit.put("facilityId", facilityId);
+                    audit.put("patientId", payload.getPatientId());
+                    audit.put("validationError", Boolean.TRUE);
+                    audit.put("field", "operation");
+                    audit.put("operation", entry.getOperation());
+                    markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(),
+                            "invalid_request", "operation is invalid");
+                    recordAudit(request, "ORCA_DISEASE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+                    throw validationError(request, "operation", "operation is invalid");
+                }
+                switch (operation) {
                     case "create" -> adds.add(buildDiagnosis(entry, karte, user));
                     case "update" -> updates.add(buildDiagnosis(entry, karte, user));
                     case "delete" -> {
@@ -214,8 +239,17 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         model.setDiagnosis(entry.getDiagnosisName());
         model.setDiagnosisCode(entry.getDiagnosisCode());
         model.setCategory(entry.getCategory());
-        model.setCategoryDesc(entry.getCategory());
+        String categoryDesc = entry.getSuspectedFlag();
+        if (categoryDesc == null || categoryDesc.isBlank()) {
+            categoryDesc = entry.getCategory();
+        }
+        model.setCategoryDesc(categoryDesc);
         model.setCategoryCodeSys("ORCA");
+        if (entry.getOutcome() != null && !entry.getOutcome().isBlank()) {
+            model.setOutcome(entry.getOutcome());
+            model.setOutcomeDesc(entry.getOutcome());
+            model.setOutcomeCodeSys("ORCA");
+        }
         model.setFirstEncounterDate(entry.getStartDate());
         model.setDepartment(entry.getDepartmentCode());
         model.setStatus(IInfoModel.STATUS_FINAL);
@@ -250,5 +284,9 @@ public class OrcaDiseaseResource extends AbstractOrcaRestResource {
         }
         Date parsed = ModelUtils.getDateAsObject(input);
         return parsed != null ? parsed : defaultValue;
+    }
+
+    private boolean isSupportedOperation(String operation) {
+        return "create".equals(operation) || "update".equals(operation) || "delete".equals(operation);
     }
 }
