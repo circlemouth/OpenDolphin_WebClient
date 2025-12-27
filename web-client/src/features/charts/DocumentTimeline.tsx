@@ -293,6 +293,11 @@ export function DocumentTimeline({
     ),
   [selectedAppointmentId, selectedPatientId, selectedReceptionId, sortedEntries]);
 
+  const selectedEntry = useMemo(() => {
+    if (selectedIndex < 0) return undefined;
+    return sortedEntries[selectedIndex];
+  }, [selectedIndex, sortedEntries]);
+
   useEffect(() => {
     if (selectedIndex < 0) return;
     if (selectedIndex < windowStart || selectedIndex >= windowStart + windowSize) {
@@ -330,6 +335,60 @@ export function DocumentTimeline({
   const toggleSection = useCallback((status: ReceptionStatus) => {
     setCollapsedSections((prev) => ({ ...prev, [status]: !prev[status] }));
   }, []);
+
+  const sectionLogs = useMemo(() => {
+    const selectedBundle = selectedEntry ? pickClaimBundleForEntry(selectedEntry, claimBundles) : undefined;
+    const planDetail = selectedEntry
+      ? deriveNextAction(selectedEntry.status, queuePhase, resolvedMissingMaster, selectedSendStatus)
+      : '次にやることを待機中';
+    const assessmentDetail = auditSummary?.message ?? '監査ログ未取得';
+    const objectiveDetail = selectedBundle?.claimStatusText ?? selectedBundle?.claimStatus ?? selectedEntry?.status ?? '状態未取得';
+    const subjectDetail = [
+      selectedEntry?.department ? `診療科: ${selectedEntry.department}` : '診療科未指定',
+      selectedEntry?.physician ? `担当: ${selectedEntry.physician}` : '担当未指定',
+    ].join(' ｜ ');
+    const appointmentMeta = selectedEntry?.appointmentTime ? `受付: ${selectedEntry.appointmentTime}` : '受付時刻未取得';
+    const receptionMeta = selectedEntry?.receptionId ? `受付ID: ${selectedEntry.receptionId}` : undefined;
+    const visitMeta = selectedEntry?.visitDate ? `診療日: ${selectedEntry.visitDate}` : undefined;
+
+    return [
+      {
+        key: 'free',
+        label: 'Free',
+        body: selectedEntry?.note ?? '記載なし',
+        meta: appointmentMeta,
+        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+      },
+      {
+        key: 'subjective',
+        label: 'Subjective',
+        body: subjectDetail,
+        meta: visitMeta,
+        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+      },
+      {
+        key: 'objective',
+        label: 'Objective',
+        body: `状態: ${objectiveDetail}`,
+        meta: receptionMeta,
+        tone: queuePhase === 'error' ? 'error' : 'neutral',
+      },
+      {
+        key: 'assessment',
+        label: 'Assessment',
+        body: assessmentDetail,
+        meta: `missingMaster=${String(resolvedMissingMaster)}`,
+        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+      },
+      {
+        key: 'plan',
+        label: 'Plan',
+        body: planDetail,
+        meta: selectedSendStatus?.label ? `ORCA送信: ${selectedSendStatus.label}` : undefined,
+        tone: queuePhase === 'error' ? 'error' : 'info',
+      },
+    ];
+  }, [auditSummary?.message, claimBundles, queuePhase, resolvedMissingMaster, selectedEntry, selectedSendStatus]);
 
   const entryList = useMemo(() => {
     if (groupedEntries.length === 0) {
@@ -600,7 +659,36 @@ export function DocumentTimeline({
         </div>
       )}
       <div className="document-timeline__content">
-        <div className="document-timeline__list">{entryList}</div>
+        <div className="document-timeline__timeline">
+          <div className="document-timeline__section-logs" aria-label="セクション別ログ">
+            <div className="document-timeline__section-logs-header">
+              <h3>セクション別ログ</h3>
+              <span>RUN_ID: {resolvedRunId}</span>
+            </div>
+            <div className="document-timeline__section-logs-grid">
+              {sectionLogs.map((log) => (
+                <article
+                  key={log.key}
+                  className={`document-timeline__section-log document-timeline__section-log--${log.tone}`}
+                  data-run-id={resolvedRunId}
+                >
+                  <header>
+                    <strong>{log.label}</strong>
+                    {log.meta ? <span>{log.meta}</span> : null}
+                  </header>
+                  <p>{log.body}</p>
+                </article>
+              ))}
+            </div>
+          </div>
+          <div className="document-timeline__list" aria-label="タイムライン">
+            <div className="document-timeline__timeline-header">
+              <h3>タイムライン</h3>
+              <span>受付→診療→会計</span>
+            </div>
+            {entryList}
+          </div>
+        </div>
         <div className="document-timeline__insights">
           <StatusBadge
             label="missingMaster"

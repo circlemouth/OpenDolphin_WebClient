@@ -56,6 +56,188 @@ export const chartsStyles = css`
     align-items: start;
   }
 
+  .charts-workbench {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .charts-workbench__sticky {
+    position: sticky;
+    top: 1rem;
+    z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+
+  .charts-patient-header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .charts-patient-header__identity {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+  }
+
+  .charts-patient-header__label {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #64748b;
+  }
+
+  .charts-patient-header__name {
+    margin: 0;
+    font-size: 1.6rem;
+    color: #0f172a;
+  }
+
+  .charts-patient-header__kana {
+    color: #475569;
+    font-size: 0.95rem;
+  }
+
+  .charts-patient-header__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.5rem;
+  }
+
+  .charts-patient-header__meta-label {
+    display: block;
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .charts-patient-header__memo {
+    margin: 0;
+    padding: 0.65rem 0.75rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px dashed rgba(148, 163, 184, 0.4);
+    color: #334155;
+  }
+
+  .charts-clinical-bar {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .charts-clinical-bar__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    padding: 0.55rem 0.65rem;
+    border-radius: 12px;
+    background: #f8fafc;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+  }
+
+  .charts-clinical-bar__label {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .charts-safety {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    padding: 0.9rem 1rem;
+    border-radius: 16px;
+    background: #fef9c3;
+    border: 1px solid #f59e0b;
+    color: #92400e;
+  }
+
+  .charts-safety__primary {
+    display: flex;
+    align-items: baseline;
+    gap: 0.6rem;
+  }
+
+  .charts-safety__label {
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    font-size: 0.8rem;
+    text-transform: uppercase;
+  }
+
+  .charts-safety__meta {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 0.35rem 0.6rem;
+    font-size: 0.9rem;
+  }
+
+  .charts-workbench__body {
+    display: grid;
+    grid-template-columns: minmax(260px, 0.9fr) minmax(360px, 1.4fr) minmax(260px, 1fr) 240px;
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .charts-workbench__column {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .charts-workbench__side {
+    position: sticky;
+    top: 1.25rem;
+    align-self: start;
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 18px 55px rgba(15, 23, 42, 0.08);
+  }
+
+  .charts-side-menu {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .charts-side-menu__header {
+    display: flex;
+    flex-direction: column;
+    gap: 0.1rem;
+    color: #0f172a;
+  }
+
+  .charts-side-menu__header span {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .charts-side-menu__button {
+    border-radius: 12px;
+    border: 1px solid rgba(59, 130, 246, 0.35);
+    background: #eff6ff;
+    padding: 0.65rem 0.75rem;
+    font-weight: 700;
+    cursor: pointer;
+    color: #0f172a;
+    transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  }
+
+  .charts-side-menu__button:hover {
+    background: #dbeafe;
+  }
+
+  .charts-side-menu__button--primary {
+    background: #1d4ed8;
+    color: #ffffff;
+    border-color: transparent;
+    box-shadow: 0 10px 24px rgba(29, 78, 216, 0.3);
+  }
+
   .charts-card {
     background: #ffffff;
     border-radius: 22px;
@@ -327,6 +509,99 @@ export const chartsStyles = css`
     gap: 1rem;
   }
 
+  .document-timeline__content {
+    display: grid;
+    grid-template-columns: minmax(0, 1.6fr) minmax(0, 0.9fr);
+    gap: 1rem;
+    align-items: start;
+  }
+
+  .document-timeline__timeline {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .document-timeline__section-logs {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+  }
+
+  .document-timeline__section-logs-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    color: #0f172a;
+  }
+
+  .document-timeline__section-logs-header span {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .document-timeline__section-logs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .document-timeline__section-log {
+    border-radius: 14px;
+    padding: 0.65rem 0.75rem;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .document-timeline__section-log header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    gap: 0.5rem;
+    color: #0f172a;
+  }
+
+  .document-timeline__section-log header span {
+    font-size: 0.8rem;
+    color: #64748b;
+  }
+
+  .document-timeline__section-log p {
+    margin: 0;
+    color: #334155;
+    line-height: 1.5;
+  }
+
+  .document-timeline__section-log--warning {
+    background: #fff7ed;
+    border-color: #fdba74;
+  }
+
+  .document-timeline__section-log--error {
+    background: #fef2f2;
+    border-color: #fca5a5;
+  }
+
+  .document-timeline__section-log--info {
+    background: #eff6ff;
+    border-color: #bfdbfe;
+  }
+
+  .document-timeline__timeline-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    color: #0f172a;
+  }
+
+  .document-timeline__timeline-header span {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
   .document-timeline__controls {
     display: flex;
     flex-wrap: wrap;
@@ -378,6 +653,11 @@ export const chartsStyles = css`
     font-size: 0.9rem;
     color: #475569;
   }
+
+  .document-timeline__list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
   }
 
   .document-timeline__section {
@@ -1662,11 +1942,28 @@ export const chartsStyles = css`
     color: #0f172a;
   }
 
+  @media (max-width: 1280px) {
+    .charts-workbench__body {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .charts-workbench__side {
+      grid-column: 1 / -1;
+      position: static;
+    }
+  }
+
   @media (max-width: 920px) {
+    .charts-workbench__sticky,
+    .charts-workbench__body,
     .document-timeline__content,
     .orca-summary__details,
     .charts-page__grid {
       grid-template-columns: 1fr;
+    }
+
+    .charts-workbench__side {
+      position: static;
     }
 
     .patients-tab__header {
