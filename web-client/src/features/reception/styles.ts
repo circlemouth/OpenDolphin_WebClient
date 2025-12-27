@@ -403,6 +403,86 @@ export const receptionStyles = css`
     font-size: 0.9rem;
   }
 
+  .reception-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 360px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+
+  .reception-layout__main {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    min-width: 0;
+  }
+
+  .reception-layout__side {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+    position: sticky;
+    top: 1.5rem;
+    align-self: start;
+  }
+
+  .reception-sidepane {
+    background: #ffffff;
+    border-radius: 20px;
+    padding: 1.1rem;
+    border: 1px solid rgba(148, 163, 184, 0.3);
+    box-shadow: 0 14px 36px rgba(15, 23, 42, 0.08);
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+
+  .reception-sidepane__header {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+  }
+
+  .reception-sidepane__header h2 {
+    margin: 0;
+    font-size: 1.05rem;
+    color: #0f172a;
+  }
+
+  .reception-sidepane__meta {
+    font-size: 0.85rem;
+    color: #64748b;
+  }
+
+  .reception-sidepane__grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 0.6rem;
+  }
+
+  .reception-sidepane__item {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    background: #f8fafc;
+    border-radius: 12px;
+    padding: 0.6rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .reception-sidepane__item strong {
+    color: #0f172a;
+    font-size: 0.95rem;
+  }
+
+  .reception-sidepane__empty {
+    margin: 0;
+    color: #64748b;
+  }
+
   .reception-search {
     background: #ffffff;
     border-radius: 24px;
@@ -544,7 +624,7 @@ export const receptionStyles = css`
   .reception-table {
     width: 100%;
     border-collapse: collapse;
-    min-width: 720px;
+    min-width: 960px;
   }
 
   .reception-table th,
@@ -567,6 +647,10 @@ export const receptionStyles = css`
     background: #f8fafc;
   }
 
+  .reception-table__row--selected {
+    background: #eff6ff;
+  }
+
   .reception-table__empty {
     text-align: center;
     color: #475569;
@@ -581,8 +665,30 @@ export const receptionStyles = css`
     display: block;
   }
 
+  .reception-table__sub {
+    color: #64748b;
+    display: block;
+    font-size: 0.78rem;
+  }
+
   .reception-table__patient strong {
     display: block;
+  }
+
+  .reception-table__insurance {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .reception-table__last {
+    font-weight: 600;
+    color: #0f172a;
+  }
+
+  .reception-table__queue {
+    display: flex;
+    flex-direction: column;
+    gap: 0.3rem;
   }
 
   .reception-table__note {
@@ -634,6 +740,35 @@ export const receptionStyles = css`
     color: #475569;
   }
 
+  .reception-queue {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.2rem 0.6rem;
+    border-radius: 999px;
+    font-weight: 700;
+    font-size: 0.8rem;
+  }
+
+  .reception-queue--info {
+    background: #eff6ff;
+    color: #1d4ed8;
+  }
+
+  .reception-queue--warning {
+    background: #fef3c7;
+    color: #92400e;
+  }
+
+  .reception-queue--error {
+    background: #fee2e2;
+    color: #b91c1c;
+  }
+
+  .reception-queue--success {
+    background: #ecfdf5;
+    color: #047857;
+  }
+
   .reception-table tr:focus-visible {
     outline: 2px solid #1d4ed8;
     outline-offset: -2px;
@@ -644,8 +779,16 @@ export const receptionStyles = css`
       flex: 1 1 100%;
     }
 
+    .reception-layout {
+      grid-template-columns: 1fr;
+    }
+
+    .reception-layout__side {
+      position: static;
+    }
+
     .reception-table {
-      min-width: 640px;
+      min-width: 760px;
     }
   }
 `;
