@@ -1,11 +1,11 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
-import { updateObservabilityMeta } from '../../libs/observability/observability';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { useSession } from '../../AppRouter';
+import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../charts/authService';
 import {
   discardOrcaQueue,
   fetchEffectiveAdminConfig,
@@ -54,6 +54,8 @@ const toStatusClass = (status: string) => {
 export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const isSystemAdmin = role === 'system_admin' || role === 'admin' || role === 'system-admin';
   const session = useSession();
+  const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
+  const { flags, bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed } = useAuthService();
   const [form, setForm] = useState<AdminConfigPayload>(DEFAULT_FORM);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
   const queryClient = useQueryClient();
@@ -87,10 +89,12 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       useMockOrcaQueue: data.useMockOrcaQueue,
       verifyAdminDelivery: data.verifyAdminDelivery,
     });
-    if (data.runId) {
-      updateObservabilityMeta({ runId: data.runId });
-    }
-  }, [configQuery.data]);
+    appliedMeta.current = applyAuthServicePatch(
+      { runId: data.runId },
+      appliedMeta.current,
+      { bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed },
+    );
+  }, [bumpRunId, configQuery.data, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
   const configMutation = useMutation({
     mutationFn: saveAdminConfig,
@@ -131,7 +135,6 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         runId: data.runId ?? runId,
         dataSourceTransition: undefined,
       });
-      updateObservabilityMeta({ runId: data.runId ?? runId });
     },
     onError: () => {
       setFeedback({ tone: 'error', message: '保存に失敗しました。再度お試しください。' });
@@ -174,6 +177,16 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     () => queueQuery.data?.queue ?? [],
     [queueQuery.data?.queue],
   );
+
+  useEffect(() => {
+    const runIdFromQueue = queueQuery.data?.runId ?? configQuery.data?.runId;
+    if (!runIdFromQueue) return;
+    appliedMeta.current = applyAuthServicePatch(
+      { runId: runIdFromQueue },
+      appliedMeta.current,
+      { bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed },
+    );
+  }, [bumpRunId, configQuery.data?.runId, queueQuery.data?.runId, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
   const warningEntries = useMemo(
     () =>
       queueEntries.filter((entry) => {
@@ -213,16 +226,17 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   };
 
   const latestRunId = configQuery.data?.runId ?? queueQuery.data?.runId ?? runId;
+  const resolvedRunId = latestRunId ?? flags.runId;
   const syncMismatch = configQuery.data?.syncMismatch;
   const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
 
   return (
-    <main className="administration-page" data-test-id="administration-page" data-run-id={latestRunId}>
+    <main className="administration-page" data-test-id="administration-page" data-run-id={resolvedRunId}>
       <div className="administration-page__header">
         <h1>Administration（設定配信）</h1>
         <p className="administration-page__lead" role="status" aria-live="assertive">
           管理者が ORCA 接続・MSW トグル・配信フラグを編集し、保存時に broadcast / audit を送ります。RUN_ID:{' '}
-          <strong>{latestRunId}</strong>
+          <strong>{resolvedRunId}</strong>
         </p>
         <div className="administration-page__meta" aria-live="polite">
           <span className="administration-page__pill">role: {role ?? 'unknown'}</span>
@@ -252,7 +266,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           tone="warning"
           message={`未配信・失敗バンドルが ${warningEntries.length} 件あります。再送または破棄を実施してください。`}
           destination="ORCA queue"
-          runId={latestRunId}
+          runId={resolvedRunId}
           nextAction="再送/破棄・再取得"
         />
       ) : syncMismatch ? (
@@ -260,7 +274,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           tone="warning"
           message={`config/delivery の不一致を検知しました（delivery優先）。fields: ${syncMismatchFields ?? 'unknown'}`}
           destination="Administration"
-          runId={latestRunId}
+          runId={resolvedRunId}
           nextAction="再取得 / 再配信で解消"
         />
       ) : (

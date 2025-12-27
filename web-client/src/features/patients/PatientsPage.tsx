@@ -3,11 +3,10 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
-import { updateObservabilityMeta } from '../../libs/observability/observability';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ToneBanner } from '../reception/components/ToneBanner';
-import { useAuthService, type DataSourceTransition } from '../charts/authService';
+import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeVisitDate } from '../charts/encounterContext';
 import { PatientFormErrorAlert } from './PatientFormErrorAlert';
 import {
@@ -125,6 +124,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     fetchedAt: undefined,
     recordsReturned: undefined,
   });
+  const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
 
   useEffect(() => {
@@ -166,14 +166,17 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   useEffect(() => {
     const meta = patientsQuery.data;
     if (!meta) return;
-    if (meta.runId) {
-      bumpRunId(meta.runId);
-      updateObservabilityMeta({ runId: meta.runId });
-    }
-    if (meta.cacheHit !== undefined) setCacheHit(meta.cacheHit);
-    if (meta.missingMaster !== undefined) setMissingMaster(meta.missingMaster);
-    if (meta.dataSourceTransition) setDataSourceTransition(meta.dataSourceTransition as DataSourceTransition);
-    if (meta.fallbackUsed !== undefined) setFallbackUsed(meta.fallbackUsed);
+    appliedMeta.current = applyAuthServicePatch(
+      {
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        dataSourceTransition: meta.dataSourceTransition as DataSourceTransition | undefined,
+        fallbackUsed: meta.fallbackUsed,
+      },
+      appliedMeta.current,
+      { bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed },
+    );
     setLastAuditEvent(meta.auditEvent);
     setLastMeta({
       missingMaster: meta.missingMaster,
@@ -256,12 +259,17 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     onSuccess: (result: PatientMutationResult, variables) => {
       setLastAuditEvent(result.auditEvent);
       setToast({ tone: result.ok ? 'success' : 'error', message: result.message ?? '保存しました' });
-      if (result.runId) {
-        bumpRunId(result.runId);
-      }
-      if (result.cacheHit !== undefined) setCacheHit(result.cacheHit);
-      if (result.missingMaster !== undefined) setMissingMaster(result.missingMaster);
-      if (result.dataSourceTransition) setDataSourceTransition(result.dataSourceTransition);
+      appliedMeta.current = applyAuthServicePatch(
+        {
+          runId: result.runId,
+          cacheHit: result.cacheHit,
+          missingMaster: result.missingMaster,
+          dataSourceTransition: result.dataSourceTransition,
+          fallbackUsed: result.fallbackUsed,
+        },
+        appliedMeta.current,
+        { bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed },
+      );
       setLastMeta((prev) => ({
         missingMaster: result.missingMaster ?? prev.missingMaster,
         fallbackUsed: result.fallbackUsed ?? prev.fallbackUsed,
