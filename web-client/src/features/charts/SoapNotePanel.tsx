@@ -47,6 +47,7 @@ type SoapNotePanelProps = {
     receptionId?: string;
     visitDate?: string;
   }) => void;
+  onClearHistory?: () => void;
   onAuditLogged?: () => void;
 };
 
@@ -65,6 +66,7 @@ export function SoapNotePanel({
   readOnlyReason,
   onAppendHistory,
   onDraftDirtyChange,
+  onClearHistory,
   onAuditLogged,
 }: SoapNotePanelProps) {
   const [draft, setDraft] = useState<SoapDraft>(() => buildSoapDraftFromHistory(history));
@@ -115,6 +117,32 @@ export function SoapNotePanel({
         return { ...prev, [section]: next };
       });
       setPendingTemplate((prev) => ({ ...prev, [section]: templateId }));
+      setSelectedTemplate((prev) => ({ ...prev, [section]: '' }));
+      const authoredAt = new Date().toISOString();
+      recordChartsAuditEvent({
+        action: 'SOAP_TEMPLATE_APPLY',
+        outcome: 'success',
+        subject: 'chart-soap-template',
+        actor: resolveAuthorLabel(author),
+        patientId: meta.patientId,
+        appointmentId: meta.appointmentId,
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        note: `${SOAP_SECTION_LABELS[section]} テンプレ挿入`,
+        details: {
+          soapSection: section,
+          templateId,
+          authoredAt,
+          authorRole: author.role,
+          authorName: resolveAuthorLabel(author),
+          receptionId: meta.receptionId,
+          visitDate: meta.visitDate,
+          soapLength: snippet.length,
+        },
+      });
       setFeedback(`テンプレート「${template?.label ?? templateId}」を挿入しました。`);
       onDraftDirtyChange?.({
         dirty: true,
@@ -124,7 +152,7 @@ export function SoapNotePanel({
         visitDate: meta.visitDate,
       });
     },
-    [meta.appointmentId, meta.patientId, meta.receptionId, meta.visitDate, onDraftDirtyChange, selectedTemplate],
+    [author, meta.appointmentId, meta.cacheHit, meta.dataSourceTransition, meta.fallbackUsed, meta.missingMaster, meta.patientId, meta.receptionId, meta.runId, meta.visitDate, onDraftDirtyChange, selectedTemplate],
   );
 
   const handleSave = useCallback(() => {
@@ -135,15 +163,17 @@ export function SoapNotePanel({
       if (!body) return;
       const prior = latestBySection.get(section);
       const action = prior ? 'update' : 'save';
-      const templateId = pendingTemplate[section];
+      const templateId = pendingTemplate[section] ?? prior?.templateId ?? null;
+      const authorLabel = resolveAuthorLabel(author);
+      const soapLength = body.length;
       const entry: SoapEntry = {
         id: buildSoapEntryId(section, authoredAt),
         section,
         body,
-        templateId,
+        templateId: templateId ?? undefined,
         authoredAt,
         authorRole: author.role,
-        authorName: resolveAuthorLabel(author),
+        authorName: authorLabel,
         action,
         patientId: meta.patientId,
         appointmentId: meta.appointmentId,
@@ -156,7 +186,7 @@ export function SoapNotePanel({
         action: action === 'save' ? 'SOAP_NOTE_SAVE' : 'SOAP_NOTE_UPDATE',
         outcome: 'success',
         subject: 'chart-soap-note',
-        actor: resolveAuthorLabel(author),
+        actor: authorLabel,
         patientId: meta.patientId,
         appointmentId: meta.appointmentId,
         runId: meta.runId,
@@ -169,9 +199,9 @@ export function SoapNotePanel({
           soapSection: section,
           authoredAt,
           authorRole: author.role,
-          authorName: resolveAuthorLabel(author),
+          authorName: authorLabel,
           templateId,
-          soapLength: body.length,
+          soapLength,
           receptionId: meta.receptionId,
           visitDate: meta.visitDate,
         },
@@ -232,6 +262,23 @@ export function SoapNotePanel({
     });
   }, [meta.appointmentId, meta.patientId, meta.receptionId, meta.visitDate, onDraftDirtyChange]);
 
+  const handleClearHistory = useCallback(() => {
+    if (!onClearHistory) return;
+    const confirmed = typeof window === 'undefined' ? true : window.confirm('SOAP履歴をクリアしますか？');
+    if (!confirmed) return;
+    onClearHistory();
+    setDraft({
+      free: '',
+      subjective: '',
+      objective: '',
+      assessment: '',
+      plan: '',
+    });
+    setPendingTemplate({});
+    setSelectedTemplate({});
+    setFeedback('SOAP履歴をクリアしました。');
+  }, [onClearHistory]);
+
   return (
     <section className="soap-note" aria-label="SOAP 記載" data-run-id={meta.runId}>
       <header className="soap-note__header">
@@ -242,12 +289,29 @@ export function SoapNotePanel({
           </p>
         </div>
         <div className="soap-note__actions">
-          <button type="button" onClick={handleSave} disabled={readOnly} className="soap-note__primary">
+          <button
+            type="button"
+            onClick={handleSave}
+            disabled={readOnly}
+            className="soap-note__primary"
+            title={readOnly ? readOnlyReason ?? '読み取り専用のため保存できません。' : undefined}
+          >
             {history.length === 0 ? '保存' : '更新'}
           </button>
-          <button type="button" onClick={handleClear} disabled={readOnly} className="soap-note__ghost">
+          <button
+            type="button"
+            onClick={handleClear}
+            disabled={readOnly}
+            className="soap-note__ghost"
+            title={readOnly ? readOnlyReason ?? '読み取り専用のためクリアできません。' : undefined}
+          >
             クリア
           </button>
+          {onClearHistory ? (
+            <button type="button" onClick={handleClearHistory} className="soap-note__ghost">
+              履歴クリア
+            </button>
+          ) : null}
         </div>
       </header>
       {readOnly ? (
@@ -286,6 +350,7 @@ export function SoapNotePanel({
                       setSelectedTemplate((prev) => ({ ...prev, [section]: event.target.value }))
                     }
                     disabled={readOnly}
+                    title={readOnly ? readOnlyReason ?? '読み取り専用のため選択できません。' : undefined}
                   >
                     <option value="">選択してください</option>
                     {templateOptions.map((template) => (
@@ -300,6 +365,7 @@ export function SoapNotePanel({
                   onClick={() => handleTemplateInsert(section)}
                   className="soap-note__ghost"
                   disabled={readOnly}
+                  title={readOnly ? readOnlyReason ?? '読み取り専用のため挿入できません。' : undefined}
                 >
                   テンプレ挿入
                 </button>

@@ -13,6 +13,7 @@ export type ChartsAuditAction =
   | 'DRAFT_SAVE'
   | 'DRAFT_CANCEL'
   | 'PRINT_OUTPATIENT'
+  | 'SOAP_TEMPLATE_APPLY'
   | 'SOAP_NOTE_SAVE'
   | 'SOAP_NOTE_UPDATE'
   | 'CHARTS_ACTION_FAILURE';

@@ -88,6 +88,62 @@ const formatBirthDate = (value?: string): string => {
   return `${iso}（${formatJapaneseEra(date)}）`;
 };
 
+const SOAP_HISTORY_STORAGE_KEY = 'opendolphin:web-client:soap-history';
+const SOAP_HISTORY_MAX_ENTRIES = 50;
+const SOAP_HISTORY_MAX_ENCOUNTERS = 20;
+const SOAP_HISTORY_MAX_BYTES = 200_000;
+
+type SoapHistoryStorage = {
+  version: 1;
+  updatedAt: string;
+  encounters: Record<
+    string,
+    {
+      updatedAt: string;
+      entries: SoapEntry[];
+    }
+  >;
+};
+
+const readSoapHistoryStorage = (): SoapHistoryStorage | null => {
+  if (typeof sessionStorage === 'undefined') return null;
+  try {
+    const raw = sessionStorage.getItem(SOAP_HISTORY_STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw) as SoapHistoryStorage;
+    if (!parsed || parsed.version !== 1 || !parsed.encounters) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+};
+
+const sanitizeSoapHistory = (entries: Record<string, SoapEntry[]>) => {
+  const encounterKeys = Object.keys(entries);
+  if (encounterKeys.length === 0) return { encounters: {}, removed: [] as string[] };
+  const normalized: Record<string, { updatedAt: string; entries: SoapEntry[] }> = {};
+  const removed: string[] = [];
+  encounterKeys.forEach((key) => {
+    const list = entries[key] ?? [];
+    if (list.length === 0) return;
+    const trimmed = list.slice(-SOAP_HISTORY_MAX_ENTRIES);
+    const updatedAt = trimmed[trimmed.length - 1]?.authoredAt ?? new Date().toISOString();
+    normalized[key] = { updatedAt, entries: trimmed };
+  });
+  const sortedKeys = Object.keys(normalized).sort((a, b) => {
+    const left = normalized[a]?.updatedAt ?? '';
+    const right = normalized[b]?.updatedAt ?? '';
+    return left.localeCompare(right);
+  });
+  while (sortedKeys.length > SOAP_HISTORY_MAX_ENCOUNTERS) {
+    const oldest = sortedKeys.shift();
+    if (!oldest) break;
+    removed.push(oldest);
+    delete normalized[oldest];
+  }
+  return { encounters: normalized, removed };
+};
+
 export function ChartsPage() {
   return (
     <>
@@ -124,7 +180,15 @@ function ChartsContent() {
     receptionId?: string;
     visitDate?: string;
   }>({ dirty: false });
-  const [soapHistoryByEncounter, setSoapHistoryByEncounter] = useState<Record<string, SoapEntry[]>>({});
+  const [soapHistoryByEncounter, setSoapHistoryByEncounter] = useState<Record<string, SoapEntry[]>>(() => {
+    const stored = readSoapHistoryStorage();
+    if (!stored) return {};
+    const entries: Record<string, SoapEntry[]> = {};
+    Object.entries(stored.encounters).forEach(([key, value]) => {
+      entries[key] = value.entries ?? [];
+    });
+    return entries;
+  });
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
@@ -186,11 +250,70 @@ function ChartsContent() {
     (entries: SoapEntry[]) => {
       setSoapHistoryByEncounter((prev) => ({
         ...prev,
-        [soapEncounterKey]: [...(prev[soapEncounterKey] ?? []), ...entries],
+        [soapEncounterKey]: [...(prev[soapEncounterKey] ?? []), ...entries].slice(-SOAP_HISTORY_MAX_ENTRIES),
       }));
     },
     [soapEncounterKey],
   );
+  const clearSoapHistory = useCallback(() => {
+    setSoapHistoryByEncounter((prev) => {
+      const next = { ...prev };
+      delete next[soapEncounterKey];
+      return next;
+    });
+    if (typeof sessionStorage !== 'undefined') {
+      const stored = readSoapHistoryStorage();
+      if (stored?.encounters?.[soapEncounterKey]) {
+        delete stored.encounters[soapEncounterKey];
+        try {
+          sessionStorage.setItem(SOAP_HISTORY_STORAGE_KEY, JSON.stringify({ ...stored, updatedAt: new Date().toISOString() }));
+        } catch {
+          sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+        }
+      }
+    }
+  }, [soapEncounterKey]);
+
+  useEffect(() => {
+    if (typeof sessionStorage === 'undefined') return;
+    const sanitized = sanitizeSoapHistory(soapHistoryByEncounter);
+    if (sanitized.removed.length > 0) {
+      setSoapHistoryByEncounter((prev) => {
+        const next: Record<string, SoapEntry[]> = { ...prev };
+        sanitized.removed.forEach((key) => {
+          delete next[key];
+        });
+        return next;
+      });
+      setContextAlert({
+        tone: 'warning',
+        message: 'SOAP履歴が上限を超えたため、古い履歴を削除しました。',
+      });
+    }
+    const payload: SoapHistoryStorage = {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      encounters: sanitized.encounters,
+    };
+    try {
+      const serialized = JSON.stringify(payload);
+      if (serialized.length > SOAP_HISTORY_MAX_BYTES) {
+        sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+        setContextAlert({
+          tone: 'warning',
+          message: 'SOAP履歴が容量上限を超えたため、セッション保存をクリアしました。',
+        });
+        return;
+      }
+      sessionStorage.setItem(SOAP_HISTORY_STORAGE_KEY, serialized);
+    } catch {
+      sessionStorage.removeItem(SOAP_HISTORY_STORAGE_KEY);
+      setContextAlert({
+        tone: 'warning',
+        message: 'SOAP履歴の保存に失敗したため、セッション保存をクリアしました。',
+      });
+    }
+  }, [soapHistoryByEncounter, setContextAlert]);
 
   const sameEncounterContext = useCallback((left: OutpatientEncounterContext, right: OutpatientEncounterContext) => {
     return (
@@ -1359,6 +1482,7 @@ function ChartsContent() {
                     draftDirty={draftState.dirty}
                     switchLocked={lockState.locked}
                     switchLockedReason={lockState.reason}
+                    onDraftBlocked={(message) => setContextAlert({ tone: 'warning', message })}
                     onRequestRestoreFocus={() => {
                       const el = focusRestoreRef.current;
                       if (el && typeof el.focus === 'function') el.focus();
@@ -1389,6 +1513,7 @@ function ChartsContent() {
                     readOnlyReason={tabLock.readOnlyReason}
                     onAppendHistory={appendSoapHistory}
                     onDraftDirtyChange={setDraftState}
+                    onClearHistory={clearSoapHistory}
                     onAuditLogged={() => setAuditEvents(getAuditEventLog())}
                   />
                 </div>

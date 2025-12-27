@@ -20,6 +20,9 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2025-12-27: SOAP記載ログ/テンプレ挿入/監査イベント/履歴永続化のブラッシュアップを実装（RUN_ID=20251227T144854Z）。
+  - SOAP テンプレ挿入の監査イベント追加、保存/更新の監査詳細メタ強化、SOAP履歴の sessionStorage 永続化と容量管理を実装。
+  - 患者切替時の未保存ドラフトブロックを強化し、SOAP履歴のタイムライン反映テストを追加。
 - 2025-12-25: WebClient 前提 API 実装切替のローカル疎通を再検証（RUN_ID=20251225T105103Z）。
   - 期待条件（HTTP 200 / runId / dataSourceTransition / auditEvent）を満たすのは `dolphindev` の MD5 (`1cc2f4c06fd32d0a6e2fa33f6e1c9164`) を使った場合。
   - 手順のパスワード記載を `src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md` へ反映済み。
