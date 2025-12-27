@@ -1,7 +1,10 @@
 # system01dailyv2 実施記録 (RUN_ID: 20251227T225951Z)
 
-- 状態: 未実施
-- 理由: ORCAcertification の資格情報ファイルが作業ツリーに存在しないため
-- 必要ファイル:
-  - ORCAcertification/新規 テキスト ドキュメント.txt
-  - ORCAcertification/103867__JP_u00001294_client3948.p12
+- 状態: 実施（HTTP 502）
+- リクエスト: `docs/server-modernization/phase2/operations/assets/orca-api-requests/44_system01dailyv2_request.json`
+- 証跡:
+  - `trial/system01dailyv2/response.headers`
+  - `trial/system01dailyv2/response.json`（空）
+  - `trace/system01dailyv2.trace`
+- 備考:
+  - 作業ツリーに資格情報ファイルが存在しないため、master ブランチの `ORCAcertification/` を参照して実行。

@@ -7,7 +7,6 @@
 - 実施結果:
   - DNS 取得: `dns/resolve.log`
   - TLS ハンドシェイク: `tls/openssl_s_client.log`（`ssl/tls alert handshake failure` を記録）
-  - system01dailyv2: 未実施（資格情報ファイル欠如）
-- Blocker:
-  - `ORCAcertification/新規 テキスト ドキュメント.txt` が存在しない
-  - `ORCAcertification/103867__JP_u00001294_client3948.p12` が存在しない
+  - system01dailyv2: HTTP 502（`trial/system01dailyv2/response.headers`）
+- 補足:
+  - 作業ツリーに資格情報ファイルが存在しないため、master ブランチの `ORCAcertification/` を参照して実行。
