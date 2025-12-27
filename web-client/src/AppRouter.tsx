@@ -1,4 +1,13 @@
-import { useEffect, useMemo, useState, createContext, useContext, type MouseEvent } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  createContext,
+  useContext,
+  type MouseEvent,
+} from 'react';
 import {
   BrowserRouter,
   Routes,
@@ -59,6 +68,14 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/administration', label: 'Administration 配信', roles: ['system_admin', 'admin', 'system-admin'] },
   { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
+
+type ToastTone = 'info' | 'success' | 'warning' | 'error';
+type Toast = {
+  id: string;
+  message: string;
+  detail?: string;
+  tone: ToastTone;
+};
 
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
@@ -128,6 +145,51 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
 function AppLayout({ onLogout }: { onLogout: () => void }) {
   const location = useLocation();
   const session = useSession();
+  const [toasts, setToasts] = useState<Toast[]>([]);
+  const toastTimers = useRef<Map<string, number>>(new Map());
+
+  const enqueueToast = useCallback((toast: Omit<Toast, 'id'>) => {
+    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setToasts((prev) => [...prev.slice(-2), { id, ...toast }]);
+    const timer = window.setTimeout(() => {
+      setToasts((prev) => prev.filter((item) => item.id !== id));
+      toastTimers.current.delete(id);
+    }, 5200);
+    toastTimers.current.set(id, timer);
+  }, []);
+
+  const dismissToast = useCallback((id: string) => {
+    setToasts((prev) => prev.filter((item) => item.id !== id));
+    const timer = toastTimers.current.get(id);
+    if (timer) {
+      window.clearTimeout(timer);
+      toastTimers.current.delete(id);
+    }
+  }, []);
+
+  useEffect(() => {
+    const handleKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setToasts((prev) => {
+          const removed = prev.length ? prev[prev.length - 1] : undefined;
+          if (removed) {
+            const timer = toastTimers.current.get(removed.id);
+            if (timer) {
+              window.clearTimeout(timer);
+              toastTimers.current.delete(removed.id);
+            }
+          }
+          return prev.slice(0, -1);
+        });
+      }
+    };
+    window.addEventListener('keydown', handleKey);
+    return () => {
+      window.removeEventListener('keydown', handleKey);
+      toastTimers.current.forEach((timer) => window.clearTimeout(timer));
+      toastTimers.current.clear();
+    };
+  }, []);
 
   const navItems = useMemo(
     () =>
@@ -140,6 +202,11 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
         const handleClick = (event: MouseEvent) => {
           if (!allowed) {
             event.preventDefault();
+            enqueueToast({
+              tone: 'warning',
+              message: 'アクセス権限がありません',
+              detail: `必要ロール: ${link.roles?.join(', ') ?? '指定なし'} / 現在: ${session.role}`,
+            });
           }
         };
         return (
@@ -150,41 +217,97 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
             aria-disabled={!allowed}
             tabIndex={allowed ? 0 : -1}
             onClick={handleClick}
+            data-tooltip={
+              allowed ? undefined : `権限がありません（必要ロール: ${link.roles?.join(', ') ?? '指定なし'}）`
+            }
           >
             {link.label}
           </NavLink>
         );
       }),
-    [location.pathname, session.role],
+    [enqueueToast, location.pathname, session.role],
   );
+
+  const handleCopyRunId = async () => {
+    const runId = session.runId;
+    if (!runId) {
+      enqueueToast({ tone: 'error', message: 'RUN_ID が未取得です', detail: 'ログイン情報を確認してください。' });
+      return;
+    }
+    try {
+      if (navigator.clipboard?.writeText) {
+        await navigator.clipboard.writeText(runId);
+      } else {
+        const textarea = document.createElement('textarea');
+        textarea.value = runId;
+        textarea.style.position = 'fixed';
+        textarea.style.top = '-1000px';
+        textarea.style.opacity = '0';
+        document.body.appendChild(textarea);
+        textarea.select();
+        document.execCommand('copy');
+        document.body.removeChild(textarea);
+      }
+      enqueueToast({ tone: 'success', message: 'RUN_ID をコピーしました', detail: runId });
+    } catch {
+      enqueueToast({ tone: 'error', message: 'RUN_ID のコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
+    }
+  };
 
   return (
     <div className="app-shell">
-      <header className="app-shell__topbar">
+      <header className="app-shell__topbar" role="status" aria-live="polite" data-run-id={session.runId}>
         <div className="app-shell__brand">
           <span className="app-shell__title">OpenDolphin Web</span>
           <small className="app-shell__subtitle">電子カルテデモシェル</small>
         </div>
-        <div className="app-shell__session">
-          <span className="app-shell__pill">施設: {session.facilityId}</span>
-          <span className="app-shell__pill">
+        <div className="app-shell__session" data-run-id={session.runId}>
+          <span className="app-shell__pill app-shell__pill--fixed">施設ID: {session.facilityId}</span>
+          <span className="app-shell__pill app-shell__pill--fixed">
             ユーザー: {session.displayName ?? session.commonName ?? session.userId}
           </span>
-          <span className="app-shell__pill">role: {session.role}</span>
-          <span className="app-shell__pill">RUN_ID: {session.runId}</span>
+          <span className="app-shell__pill app-shell__pill--fixed" data-tooltip="認可ロール">
+            role: {session.role}
+          </span>
+          <button
+            type="button"
+            className="app-shell__pill app-shell__pill--copy"
+            onClick={handleCopyRunId}
+            aria-label={`RUN_ID をコピー: ${session.runId}`}
+          >
+            RUN_ID: {session.runId}
+            <span className="app-shell__pill-note">クリックでコピー</span>
+          </button>
           <button type="button" className="app-shell__logout" onClick={onLogout}>
             ログアウト
           </button>
         </div>
       </header>
 
-      <nav className="app-shell__nav" aria-label="画面ナビゲーション">
+      <nav className="app-shell__nav" aria-label="画面ナビゲーション" role="status" aria-live="polite">
         {navItems}
       </nav>
 
       <div className="app-shell__body">
         <Outlet />
       </div>
+
+      <aside className="app-shell__notice-stack" aria-live="polite">
+        {toasts.map((toast) => (
+          <div key={toast.id} className={`app-shell__notice app-shell__notice--${toast.tone}`} role="status">
+            <div className="app-shell__notice-message">{toast.message}</div>
+            {toast.detail ? <div className="app-shell__notice-detail">{toast.detail}</div> : null}
+            <button
+              type="button"
+              className="app-shell__notice-close"
+              onClick={() => dismissToast(toast.id)}
+              aria-label="通知を閉じる"
+            >
+              ×
+            </button>
+          </div>
+        ))}
+      </aside>
     </div>
   );
 }
