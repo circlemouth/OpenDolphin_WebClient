@@ -90,6 +90,7 @@ export function PatientInfoEditDialog({
       action: 'open',
       outcome: editAllowed ? 'success' : 'blocked',
       note: section,
+      reason: editAllowed ? undefined : editBlockedReason ?? 'edit not allowed',
     });
 
     logUiState({
@@ -175,6 +176,7 @@ export function PatientInfoEditDialog({
           action: 'save',
           outcome: 'error',
           note: result.message ?? 'save failed',
+          reason: result.message ?? 'save failed',
         });
       }
     },
@@ -569,4 +571,3 @@ export function PatientInfoEditDialog({
     </FocusTrapDialog>
   );
 }
-

@@ -1,4 +1,4 @@
-import { getObservabilityMeta } from '../observability/observability';
+import { ensureObservabilityMeta } from '../observability/observability';
 import type { DataSourceTransition as ObservabilityDataSourceTransition } from '../observability/types';
 
 export type DataSourceTransition = ObservabilityDataSourceTransition;
@@ -7,8 +7,10 @@ export type TelemetryFunnelStage =
   | 'resolve_master'
   | 'charts_orchestration'
   | 'charts_action'
+  | 'charts_patient_edit'
   | 'charts_patient_sidepane'
   | 'patient_fetch'
+  | 'patient_save'
   | 'orca_summary';
 
 export interface OutpatientFunnelPayload {
@@ -22,6 +24,7 @@ export interface OutpatientFunnelPayload {
   outcome?: 'success' | 'error' | 'blocked' | 'started';
   durationMs?: number;
   note?: string;
+  reason?: string;
 }
 
 export interface OutpatientFlagAttributes extends Omit<OutpatientFunnelPayload, 'dataSourceTransition'> {}
@@ -55,20 +58,28 @@ export function recordOutpatientFunnel(
   stage: TelemetryFunnelStage,
   payload: OutpatientFlagAttributes & Partial<Pick<OutpatientFunnelPayload, 'dataSourceTransition'>>,
 ) {
-  const meta = getObservabilityMeta();
+  const meta = ensureObservabilityMeta();
+  const resolvedCacheHit = payload.cacheHit ?? meta.cacheHit ?? false;
+  const resolvedFallbackUsed = payload.fallbackUsed ?? meta.fallbackUsed ?? false;
+  const resolvedTransition =
+    payload.dataSourceTransition ??
+    meta.dataSourceTransition ??
+    (resolvedFallbackUsed ? 'fallback' : resolvedCacheHit ? 'server' : 'server');
+  const resolvedReason = payload.reason;
   const record: OutpatientFunnelRecord = {
     stage,
     funnel: 'funnels/outpatient',
-    dataSourceTransition: payload.dataSourceTransition ?? meta.dataSourceTransition ?? 'server',
-    cacheHit: payload.cacheHit ?? meta.cacheHit ?? false,
+    dataSourceTransition: resolvedTransition,
+    cacheHit: resolvedCacheHit,
     missingMaster: payload.missingMaster ?? meta.missingMaster ?? false,
     runId: payload.runId ?? meta.runId,
     traceId: payload.traceId ?? meta.traceId,
-    fallbackUsed: payload.fallbackUsed ?? meta.fallbackUsed ?? false,
+    fallbackUsed: resolvedFallbackUsed,
     action: payload.action,
     outcome: payload.outcome,
     durationMs: payload.durationMs,
     note: payload.note,
+    reason: resolvedReason,
     recordedAt: new Date().toISOString(),
   };
   const missing: string[] = [];
@@ -76,6 +87,9 @@ export function recordOutpatientFunnel(
   if (record.dataSourceTransition === undefined) missing.push('dataSourceTransition');
   if (record.cacheHit === undefined) missing.push('cacheHit');
   if (record.missingMaster === undefined) missing.push('missingMaster');
+  if ((record.outcome === 'error' || record.outcome === 'blocked') && !record.reason) {
+    missing.push('reason');
+  }
   if (missing.length > 0 && typeof console !== 'undefined') {
     console.warn('[telemetry] recordOutpatientFunnel schema warning', { stage, missing, record });
   }

@@ -159,6 +159,7 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
         durationMs: Math.round(performance.now() - started),
       });
     } catch (error) {
+      const reason = error instanceof Error ? error.message : String(error);
       recordOutpatientFunnel('orca_summary', {
         action: 'manual_refresh',
         outcome: 'error',
@@ -167,7 +168,8 @@ export function OrcaSummary({ summary, claim, appointments = [], onRefresh, isRe
         dataSourceTransition: resolvedTransition ?? 'snapshot',
         fallbackUsed: resolvedFallbackUsed ?? false,
         runId: resolvedRunId,
-        note: error instanceof Error ? error.message : String(error),
+        note: reason,
+        reason,
       });
     }
   }, [onRefresh, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition]);

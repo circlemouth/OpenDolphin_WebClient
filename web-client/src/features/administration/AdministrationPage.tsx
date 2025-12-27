@@ -161,6 +161,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         runId: data.runId ?? runId,
         source: 'orca/queue',
         note: variables.kind,
+        patientId: variables.patientId,
         payload: { patientId: variables.patientId, queue: data.queue },
       });
       setFeedback({

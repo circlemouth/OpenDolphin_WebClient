@@ -496,12 +496,13 @@ function ChartsContent() {
       missingMaster: resolvedMissingMaster,
       dataSourceTransition: resolvedTransition,
       fallbackUsed: resolvedFallbackUsed,
+      patientId: encounterContext.patientId ?? undefined,
       details: {
         endpoint: '/api/orca/queue',
         fetchedAt: orcaQueueQuery.data.fetchedAt,
         queueSource: orcaQueueQuery.data.source,
         queueEntries: orcaQueueQuery.data.queue?.length ?? 0,
-        selectedPatientId: encounterContext.patientId,
+        patientId: encounterContext.patientId,
         selectedSendStatus: selectedOrcaSendStatus ?? null,
         counts: orcaQueueCounts,
         traceId: meta.traceId,
@@ -558,6 +559,8 @@ function ChartsContent() {
       missingMaster: claimQuery.data?.missingMaster,
       fallbackUsed: claimQuery.data?.fallbackUsed,
       dataSourceTransition: claimQuery.data?.dataSourceTransition ?? resolvedTransition,
+      patientId: encounterContext.patientId,
+      appointmentId: encounterContext.appointmentId,
       payload: {
         action: 'CLAIM_OUTPATIENT_RETRY',
         outcome: 'started',
@@ -580,11 +583,17 @@ function ChartsContent() {
       missingMaster: claimQuery.data?.missingMaster ?? resolvedMissingMaster,
       dataSourceTransition: claimQuery.data?.dataSourceTransition ?? resolvedTransition,
       fallbackUsed: claimQuery.data?.fallbackUsed ?? resolvedFallbackUsed,
+      patientId: encounterContext.patientId ?? undefined,
+      appointmentId: encounterContext.appointmentId ?? undefined,
+      claimId: (claimQuery.data as ClaimOutpatientPayload | undefined)?.bundles?.[0]?.bundleNumber,
       details: {
         reason: 'manual_retry',
         endpoint: claimQuery.data?.sourcePath,
         httpStatus: claimQuery.data?.httpStatus,
         apiResult: (claimQuery.data as ClaimOutpatientPayload | undefined)?.apiResult,
+        patientId: encounterContext.patientId,
+        appointmentId: encounterContext.appointmentId,
+        claimId: (claimQuery.data as ClaimOutpatientPayload | undefined)?.bundles?.[0]?.bundleNumber,
       },
     });
     void claimQuery.refetch();

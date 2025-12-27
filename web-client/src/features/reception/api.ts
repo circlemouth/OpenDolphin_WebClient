@@ -143,6 +143,7 @@ export async function fetchAppointmentOutpatients(
     action: 'appointment_fetch',
     outcome: result.ok ? 'success' : 'error',
     note: payload.sourcePath,
+    reason: result.ok ? undefined : result.error ?? payload.apiResultMessage ?? payload.apiResult,
   });
 
   logUiState({
@@ -227,6 +228,7 @@ export async function fetchClaimFlags(
     action: 'claim_fetch',
     outcome: result.ok ? 'success' : 'error',
     note: payload.sourcePath,
+    reason: result.ok ? undefined : result.error ?? payload.apiResultMessage ?? payload.apiResult,
   });
 
   logUiState({
@@ -237,6 +239,9 @@ export async function fetchClaimFlags(
     missingMaster: payload.missingMaster,
     dataSourceTransition: payload.dataSourceTransition,
     fallbackUsed: payload.fallbackUsed,
+    patientId: bundles[0]?.patientId,
+    appointmentId: bundles[0]?.appointmentId,
+    claimId: bundles[0]?.bundleNumber,
     details: {
       endpoint: payload.sourcePath ?? result.meta.sourcePath,
       fetchedAt: payload.fetchedAt,
@@ -244,6 +249,9 @@ export async function fetchClaimFlags(
        hasNextPage: payload.hasNextPage,
       claimBundles: bundles.length,
       queueEntries: queueEntries.length,
+      patientId: bundles[0]?.patientId,
+      appointmentId: bundles[0]?.appointmentId,
+      claimId: bundles[0]?.bundleNumber,
       resolveMasterSource: payload.resolveMasterSource,
       fromCache: result.meta.fromCache,
       retryCount: result.meta.retryCount,
@@ -282,6 +290,9 @@ export async function fetchClaimFlags(
         size: payload.size,
         queueEntries: queueEntries.length,
         claimBundles: bundles.length,
+        patientId: bundles[0]?.patientId,
+        appointmentId: bundles[0]?.appointmentId,
+        claimId: bundles[0]?.bundleNumber,
         sourcePath: payload.sourcePath ?? result.meta.sourcePath,
         error: result.ok ? undefined : result.error ?? payload.apiResultMessage,
       },

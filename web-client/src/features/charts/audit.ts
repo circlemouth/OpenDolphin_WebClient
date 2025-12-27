@@ -75,6 +75,7 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'fallbackUsed',
   'patientId',
   'appointmentId',
+  'claimId',
   'receptionId',
   'note',
   'durationMs',

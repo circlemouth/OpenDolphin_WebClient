@@ -67,6 +67,19 @@ export function getObservabilityMeta(): ObservabilityMeta {
   return { ...currentMeta };
 }
 
+export function ensureObservabilityMeta(overrides?: ObservabilityMeta): ObservabilityMeta {
+  const merged = mergeMeta(currentMeta, overrides);
+  if (!merged.runId) {
+    merged.runId = generateRunId();
+    updateObservabilityMeta({ runId: merged.runId });
+  }
+  if (!merged.traceId) {
+    merged.traceId = generateTraceId();
+    updateObservabilityMeta({ traceId: merged.traceId });
+  }
+  return { ...merged };
+}
+
 export function applyObservabilityHeaders(init?: RequestInit, overrides?: ObservabilityMeta): RequestInit {
   const headers = normalizeHeaders(init?.headers);
   const meta = mergeMeta(currentMeta, overrides);
