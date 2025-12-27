@@ -14,6 +14,7 @@ import { getChartToneDetails } from '../../../ux/charts/tones';
 import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
+import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
 import { buildChartsUrl } from '../../charts/encounterContext';
 
 type SortKey = 'time' | 'name' | 'department';
@@ -171,6 +172,26 @@ export function ReceptionPage({
       retryCount: queryClient.getQueryState(appointmentQueryKey)?.fetchFailureCount ?? 0,
     },
   });
+
+  const appointmentErrorContext = useMemo(() => {
+    const httpStatus = appointmentQuery.data?.httpStatus;
+    const hasHttpError = typeof httpStatus === 'number' && httpStatus >= 400;
+    const error = appointmentQuery.isError ? appointmentQuery.error : appointmentQuery.data?.error;
+    if (!error && !hasHttpError) return null;
+    return {
+      error,
+      httpStatus,
+      apiResult: appointmentQuery.data?.apiResult,
+      apiResultMessage: appointmentQuery.data?.apiResultMessage,
+    };
+  }, [
+    appointmentQuery.data?.apiResult,
+    appointmentQuery.data?.apiResultMessage,
+    appointmentQuery.data?.error,
+    appointmentQuery.data?.httpStatus,
+    appointmentQuery.error,
+    appointmentQuery.isError,
+  ]);
 
   useEffect(() => {
     persistCollapseState(collapsed);
@@ -610,10 +631,17 @@ export function ReceptionPage({
               外来リストを読み込み中…
             </p>
           )}
-          {appointmentQuery.isError && (
-            <p role="alert" className="reception-status reception-status--error">
-              外来リストの取得に失敗しました。再取得を試してください。
-            </p>
+          {appointmentErrorContext && (
+            <ApiFailureBanner
+              subject="外来リスト"
+              destination="Reception"
+              runId={appointmentQuery.data?.runId ?? flags.runId}
+              nextAction="再取得"
+              retryLabel="再取得"
+              onRetry={() => appointmentQuery.refetch()}
+              isRetrying={appointmentQuery.isFetching}
+              {...appointmentErrorContext}
+            />
           )}
         </section>
 

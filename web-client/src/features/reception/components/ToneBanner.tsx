@@ -1,3 +1,7 @@
+import { Global } from '@emotion/react';
+
+import { toneBannerStyles } from '../styles';
+
 export type BannerTone = 'error' | 'warning' | 'info';
 
 const tonePrefix: Record<BannerTone, string> = {
@@ -42,15 +46,18 @@ export function ToneBanner({
     nextAction ? `次アクション: ${nextAction}` : undefined,
   ].filter((fragment): fragment is string => typeof fragment === 'string');
   return (
-    <div
-      className={`tone-banner tone-banner--${tone}`}
-      role="alert"
-      aria-live={live}
-      aria-atomic="false"
-      data-run-id={runId}
-    >
-      <div className="tone-banner__tag">{tonePrefix[tone]}</div>
-      <p className="tone-banner__message">{fragments.join(' ｜ ')}</p>
-    </div>
+    <>
+      <Global styles={toneBannerStyles} />
+      <div
+        className={`tone-banner tone-banner--${tone}`}
+        role="alert"
+        aria-live={live}
+        aria-atomic="false"
+        data-run-id={runId}
+      >
+        <div className="tone-banner__tag">{tonePrefix[tone]}</div>
+        <p className="tone-banner__message">{fragments.join(' ｜ ')}</p>
+      </div>
+    </>
   );
 }

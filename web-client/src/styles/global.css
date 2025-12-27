@@ -140,6 +140,33 @@ body {
   color: inherit;
 }
 
+.api-failure {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.api-failure__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.api-failure__button {
+  border-radius: 10px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #ffffff;
+  padding: 0.45rem 0.9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.api-failure__button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 @media (max-width: 520px) {
   .login-card {
     padding: 2rem;

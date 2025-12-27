@@ -37,13 +37,7 @@ import {
   type OutpatientEncounterContext,
 } from '../encounterContext';
 import { useChartsTabLock } from '../useChartsTabLock';
-
-const isLikelyNetworkError = (error: unknown) => {
-  if (!error) return false;
-  if (error instanceof TypeError) return true;
-  if (error instanceof Error) return /Failed to fetch|NetworkError|ネットワーク/i.test(error.message);
-  return false;
-};
+import { isNetworkError } from '../../shared/apiError';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 
 export function ChartsPage() {
@@ -544,9 +538,9 @@ function ChartsContent() {
 
   const networkDegradedReason = useMemo(() => {
     const firstError =
-      (claimQuery.isError && isLikelyNetworkError(claimQuery.error) ? claimQuery.error : undefined) ??
-      (orcaSummaryQuery.isError && isLikelyNetworkError(orcaSummaryQuery.error) ? orcaSummaryQuery.error : undefined) ??
-      (appointmentQuery.isError && isLikelyNetworkError(appointmentQuery.error) ? appointmentQuery.error : undefined);
+      (claimQuery.isError && isNetworkError(claimQuery.error) ? claimQuery.error : undefined) ??
+      (orcaSummaryQuery.isError && isNetworkError(orcaSummaryQuery.error) ? orcaSummaryQuery.error : undefined) ??
+      (appointmentQuery.isError && isNetworkError(appointmentQuery.error) ? appointmentQuery.error : undefined);
     if (!firstError) return undefined;
     const message = firstError instanceof Error ? firstError.message : String(firstError);
     return `直近の取得でネットワークエラーを検知: ${message}`;

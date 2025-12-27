@@ -13,6 +13,7 @@ import type { DataSourceTransition } from './authService';
 import type { ClaimQueueEntry } from '../outpatient/types';
 import type { ReceptionEntry } from '../reception/api';
 import { saveOutpatientPrintPreview } from './print/printPreviewStorage';
+import { isNetworkError } from '../shared/apiError';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -551,7 +552,7 @@ export function ChartsActionBar({
           if (/HTTP 401|HTTP 403|権限不足/.test(detail)) {
             return '次にやること: 再ログイン / 設定確認（facilityId/userId/password）';
           }
-          if (error instanceof TypeError || /Failed to fetch|NetworkError/.test(detail)) {
+          if (isNetworkError(error) || isNetworkError(detail)) {
             return '次にやること: 通信回復を待つ / Reception で再取得 / リトライ';
           }
           return '次にやること: Reception へ戻る / 請求を再取得 / 設定確認';
