@@ -33,3 +33,9 @@
 - 2025-12-25: WebClient 前提 API 実装切替のローカル疎通を再検証（RUN_ID=20251225T105103Z）。
   - 期待条件（HTTP 200 / runId / dataSourceTransition / auditEvent）を満たすのは `dolphindev` の MD5 (`1cc2f4c06fd32d0a6e2fa33f6e1c9164`) を使った場合。
   - 手順のパスワード記載を `src/server_modernized_gap_20251221/06_server_ops_required/WebClient前提API_実装切替.md` へ反映済み。
+
+## 懸念点（要確認）
+- テスト未実施: 病名/処方/オーダーの CRUD と監査ログの実運用確認がない。E2E/統合テストの証跡がなく、本番運用レベルの保証に欠ける。
+- 実機連携の未確認: ORCA 実環境での動作確認が未実施（認証・データ反映・監査ログ到達の確認が必要）。
+- 入力バリデーションの妥当性: server-modernized 側は operation/entity 等のバリデーションを強化したが、病名の必須項目や空文字制御が API 側でどこまで保証されるかは要確認。
+- readOnly の伝播確認: UI はブロックするが、sidePanelMeta が常に readOnly/missingMaster/fallback を正しく反映しているか、実運用での状態遷移確認が必要。
