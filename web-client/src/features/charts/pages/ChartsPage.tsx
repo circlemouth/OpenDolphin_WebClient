@@ -12,6 +12,8 @@ import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
 import { normalizeAuditEventLog, normalizeAuditEventPayload, recordChartsAuditEvent } from '../audit';
+import { SoapNotePanel } from '../SoapNotePanel';
+import type { SoapEntry } from '../soapNote';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
@@ -122,6 +124,7 @@ function ChartsContent() {
     receptionId?: string;
     visitDate?: string;
   }>({ dirty: false });
+  const [soapHistoryByEncounter, setSoapHistoryByEncounter] = useState<Record<string, SoapEntry[]>>({});
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
@@ -163,6 +166,31 @@ function ChartsContent() {
 
   const urlContext = useMemo(() => parseChartsEncounterContext(location.search), [location.search]);
   const receptionCarryover = useMemo(() => parseReceptionCarryoverParams(location.search), [location.search]);
+  const soapEncounterKey = useMemo(
+    () =>
+      [
+        encounterContext.patientId ?? 'none',
+        encounterContext.appointmentId ?? 'none',
+        encounterContext.receptionId ?? 'none',
+        encounterContext.visitDate ?? 'none',
+      ].join('::'),
+    [
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      encounterContext.visitDate,
+    ],
+  );
+  const soapHistory = useMemo(() => soapHistoryByEncounter[soapEncounterKey] ?? [], [soapEncounterKey, soapHistoryByEncounter]);
+  const appendSoapHistory = useCallback(
+    (entries: SoapEntry[]) => {
+      setSoapHistoryByEncounter((prev) => ({
+        ...prev,
+        [soapEncounterKey]: [...(prev[soapEncounterKey] ?? []), ...entries],
+      }));
+    },
+    [soapEncounterKey],
+  );
 
   const sameEncounterContext = useCallback((left: OutpatientEncounterContext, right: OutpatientEncounterContext) => {
     return (
@@ -470,6 +498,39 @@ function ChartsContent() {
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
   const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = (mergedFlags.fallbackUsed ?? flags.fallbackUsed ?? false) || forceFallbackUsed;
+  const soapNoteMeta = useMemo(
+    () => ({
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit ?? false,
+      missingMaster: resolvedMissingMaster ?? false,
+      fallbackUsed: resolvedFallbackUsed ?? false,
+      dataSourceTransition: resolvedTransition ?? 'snapshot',
+      patientId: encounterContext.patientId,
+      appointmentId: encounterContext.appointmentId,
+      receptionId: encounterContext.receptionId,
+      visitDate: encounterContext.visitDate,
+    }),
+    [
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      encounterContext.visitDate,
+      flags.runId,
+      resolvedCacheHit,
+      resolvedFallbackUsed,
+      resolvedMissingMaster,
+      resolvedRunId,
+      resolvedTransition,
+    ],
+  );
+  const soapNoteAuthor = useMemo(
+    () => ({
+      role: session.role,
+      displayName: session.displayName ?? session.commonName,
+      userId: session.userId,
+    }),
+    [session.commonName, session.displayName, session.role, session.userId],
+  );
 
   const selectedQueueEntry = useMemo(() => {
     const entries = (claimQuery.data as ClaimOutpatientPayload | undefined)?.queueEntries ?? [];
@@ -1319,11 +1380,24 @@ function ChartsContent() {
                 </div>
               </div>
               <div className="charts-workbench__column charts-workbench__column--center">
+                <div className="charts-card" id="charts-soap-note" tabIndex={-1} data-focus-anchor="true">
+                  <SoapNotePanel
+                    history={soapHistory}
+                    meta={soapNoteMeta}
+                    author={soapNoteAuthor}
+                    readOnly={tabLock.isReadOnly}
+                    readOnlyReason={tabLock.readOnlyReason}
+                    onAppendHistory={appendSoapHistory}
+                    onDraftDirtyChange={setDraftState}
+                    onAuditLogged={() => setAuditEvents(getAuditEventLog())}
+                  />
+                </div>
                 <div className="charts-card" id="charts-document-timeline" tabIndex={-1} data-focus-anchor="true">
                   <DocumentTimeline
                     entries={patientEntries}
                     appointmentBanner={appointmentBanner}
                     auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
+                    soapHistory={soapHistory}
                     selectedPatientId={encounterContext.patientId}
                     selectedAppointmentId={encounterContext.appointmentId}
                     selectedReceptionId={encounterContext.receptionId}

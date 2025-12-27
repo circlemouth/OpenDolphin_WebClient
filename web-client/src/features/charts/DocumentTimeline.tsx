@@ -11,11 +11,13 @@ import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner'
 import type { OrcaQueueEntry, OrcaQueueResponse } from '../outpatient/orcaQueueApi';
 import { resolveOrcaSendStatus } from '../outpatient/orcaQueueStatus';
 import { resolveOutpatientFlags } from '../outpatient/flags';
+import { formatSoapAuthoredAt, getLatestSoapEntries, SOAP_SECTION_LABELS, type SoapEntry, type SoapSectionKey } from './soapNote';
 
 export interface DocumentTimelineProps {
   entries?: ReceptionEntry[];
   appointmentBanner?: AppointmentDataBanner | null;
   auditEvent?: Record<string, unknown>;
+  soapHistory?: SoapEntry[];
   selectedPatientId?: string;
   selectedAppointmentId?: string;
   selectedReceptionId?: string;
@@ -139,6 +141,7 @@ export function DocumentTimeline({
   entries = [],
   appointmentBanner,
   auditEvent,
+  soapHistory = [],
   selectedPatientId,
   selectedAppointmentId,
   selectedReceptionId,
@@ -339,6 +342,33 @@ export function DocumentTimeline({
     setCollapsedSections((prev) => ({ ...prev, [status]: !prev[status] }));
   }, []);
 
+  const soapLatestBySection = useMemo(() => getLatestSoapEntries(soapHistory), [soapHistory]);
+
+  const soapTimelineEntries = useMemo(() => {
+    if (soapHistory.length === 0) return [];
+    return [...soapHistory].sort((a, b) => (b.authoredAt ?? '').localeCompare(a.authoredAt ?? ''));
+  }, [soapHistory]);
+
+  const buildSoapMeta = useCallback((entry?: SoapEntry) => {
+    if (!entry) return undefined;
+    const authoredAt = formatSoapAuthoredAt(entry.authoredAt);
+    const template = entry.templateId ? `template=${entry.templateId}` : 'templateなし';
+    return `${authoredAt} ／ ${entry.authorRole} ／ ${template}`;
+  }, []);
+
+  const resolveSoapLogBody = useCallback(
+    (section: SoapSectionKey, fallback: string) => {
+      const entry = soapLatestBySection.get(section);
+      if (!entry) return { body: fallback, meta: undefined, tone: 'neutral' as const };
+      return {
+        body: entry.body,
+        meta: buildSoapMeta(entry),
+        tone: entry.action === 'update' ? ('info' as const) : ('neutral' as const),
+      };
+    },
+    [buildSoapMeta, soapLatestBySection],
+  );
+
   const sectionLogs = useMemo(() => {
     const selectedBundle = selectedEntry ? pickClaimBundleForEntry(selectedEntry, claimBundles) : undefined;
     const planDetail = selectedEntry
@@ -355,51 +385,67 @@ export function DocumentTimeline({
     const visitMeta = selectedEntry?.visitDate ? `診療日: ${selectedEntry.visitDate}` : undefined;
     const claimMeta = claimFetchedAt ? `claim更新: ${claimFetchedAt}` : 'claim更新: 未取得';
     const orcaMeta = orcaQueueUpdatedAtLabel ? `ORCA更新: ${orcaQueueUpdatedAtLabel}` : 'ORCA更新: 未取得';
+    const freeLog = resolveSoapLogBody('free', selectedEntry?.note ?? '記載なし');
+    const subjectiveLog = resolveSoapLogBody(
+      'subjective',
+      subjectDetail,
+    );
+    const objectiveLog = resolveSoapLogBody(
+      'objective',
+      `状態: ${objectiveDetail}`,
+    );
+    const assessmentLog = resolveSoapLogBody(
+      'assessment',
+      assessmentDetail,
+    );
+    const planLog = resolveSoapLogBody('plan', planDetail);
 
     return [
       {
         key: 'free',
         label: 'Free',
-        body: selectedEntry?.note ?? '記載なし',
-        meta: appointmentMeta,
-        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+        body: freeLog.body,
+        meta: freeLog.meta ?? appointmentMeta,
+        tone: resolvedMissingMaster ? 'warning' : freeLog.tone,
       },
       {
         key: 'subjective',
         label: 'Subjective',
-        body: subjectDetail,
-        meta: visitMeta,
-        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+        body: subjectiveLog.body,
+        meta: subjectiveLog.meta ?? visitMeta,
+        tone: resolvedMissingMaster ? 'warning' : subjectiveLog.tone,
       },
       {
         key: 'objective',
         label: 'Objective',
-        body: `状態: ${objectiveDetail}`,
-        meta: receptionMeta ?? claimMeta,
-        tone: queuePhase === 'error' ? 'error' : 'neutral',
+        body: objectiveLog.body,
+        meta: objectiveLog.meta ?? (receptionMeta ?? claimMeta),
+        tone: queuePhase === 'error' ? 'error' : objectiveLog.tone,
       },
       {
         key: 'assessment',
         label: 'Assessment',
-        body: assessmentDetail,
-        meta: `${claimMeta} ｜ ${orcaMeta}`,
-        tone: resolvedMissingMaster ? 'warning' : 'neutral',
+        body: assessmentLog.body,
+        meta: assessmentLog.meta ?? `${claimMeta} ｜ ${orcaMeta}`,
+        tone: resolvedMissingMaster ? 'warning' : assessmentLog.tone,
       },
       {
         key: 'plan',
         label: 'Plan',
-        body: planDetail,
-        meta: selectedSendStatus?.label ? `ORCA送信: ${selectedSendStatus.label}` : orcaMeta,
-        tone: queuePhase === 'error' ? 'error' : 'info',
+        body: planLog.body,
+        meta: planLog.meta ?? (selectedSendStatus?.label ? `ORCA送信: ${selectedSendStatus.label}` : orcaMeta),
+        tone: queuePhase === 'error' ? 'error' : planLog.tone,
       },
     ];
   }, [
     auditSummary?.message,
+    buildSoapMeta,
     claimBundles,
     claimFetchedAt,
     orcaQueueUpdatedAtLabel,
     queuePhase,
     resolvedMissingMaster,
+    resolveSoapLogBody,
     selectedEntry,
     selectedSendStatus,
   ]);
@@ -711,6 +757,38 @@ export function DocumentTimeline({
                 );
               })}
             </div>
+          </div>
+          <div className="document-timeline__soap-history" aria-label="SOAP記載履歴">
+            <div className="document-timeline__soap-history-header">
+              <h3>SOAP記載履歴</h3>
+              <span>保存/更新の監査ログ</span>
+            </div>
+            {soapTimelineEntries.length === 0 ? (
+              <p className="document-timeline__soap-empty">SOAP 記載履歴はまだありません。</p>
+            ) : (
+              <ul className="document-timeline__soap-list">
+                {soapTimelineEntries.map((entry) => {
+                  const label = SOAP_SECTION_LABELS[entry.section];
+                  const actionLabel = entry.action === 'save' ? '保存' : '更新';
+                  const body =
+                    entry.body.length > 160 ? `${entry.body.slice(0, 160)}…` : entry.body;
+                  return (
+                    <li key={entry.id} className="document-timeline__soap-entry" data-section={entry.section}>
+                      <header>
+                        <strong>{label}</strong>
+                        <span className="document-timeline__soap-action">{actionLabel}</span>
+                        <span className="document-timeline__soap-time">{formatSoapAuthoredAt(entry.authoredAt)}</span>
+                      </header>
+                      <p>{body}</p>
+                      <div className="document-timeline__soap-meta">
+                        <span>記載者: {entry.authorRole}</span>
+                        <span>template: {entry.templateId ?? '—'}</span>
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            )}
           </div>
           <div className="document-timeline__list" aria-label="タイムライン">
             <div className="document-timeline__timeline-header">
