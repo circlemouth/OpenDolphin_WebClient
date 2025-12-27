@@ -224,8 +224,8 @@ src:
           - バナー/テーブル/右ペインのキーボードフォーカスと `aria-live` の付与を統一する。
           - バッジ/トーンの色コントラストと読み上げ内容を整備する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -274,8 +274,8 @@ src:
           - 病名（主/疑い/開始/転帰）・処方（RP単位）・オーダー束の編集 UI と API 連携を実装する。
           - 右固定メニューからの編集導線に統一し、編集操作を監査イベントへ記録する。
         priority: High
-        status: not_started
-        progress: 0
+        status: in_progress
+        progress: 80
         agent: claude code
         api:
           - "/orca21/medicalmodv2/outpatient"

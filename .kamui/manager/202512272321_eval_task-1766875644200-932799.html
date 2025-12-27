@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 病名と処方/オーダー編集の実装（追加作業評価）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f6fafb;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #4a5c63;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--info {
+        background: #d9edf7;
+        border-color: #bcdff1;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 140px;
+        margin: 8px 0 12px;
+      }
+      .metric-list {
+        margin: 0 0 12px;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .evidence-block {
+        margin-bottom: 12px;
+      }
+      .file-links a {
+        color: #1f2a30;
+        text-decoration: underline;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 8px 0 6px;
+        color: #2c3a40;
+      }
+      .baseline-box {
+        background: #f7fbfc;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        margin: 16px 0 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 病名と処方/オーダー編集の実装（追加作業評価）</h1>
+        <p class="monitor-description">
+          タスク32は既存実装（master）により病名/処方/オーダー編集UIとORCA API連携が実装済み。今回の評価は「各ブランチの追加作業内容」を合算して採点した。
+        </p>
+      </header>
+
+      <section class="baseline-box">
+        <div class="section-title">既存実装の根拠（master）</div>
+        <div class="evidence-block">
+          Web: Charts 右固定メニュー/編集パネル（、、）
+          API:  /  が  と  を呼び出す。
+          Server:  /  に監査イベントを含む実装が存在。
+        </div>
+        <div class="file-links">
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/DiagnosisEditPanel.tsx">DiagnosisEditPanel.tsx</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/OrderBundleEditPanel.tsx">OrderBundleEditPanel.tsx</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/diseaseApi.ts">diseaseApi.ts</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/orderBundleApi.ts">orderBundleApi.ts</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaDiseaseResource.java">OrcaDiseaseResource.java</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaOrderBundleResource.java">OrcaOrderBundleResource.java</a>
+        </div>
+      </section>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <h3>task-1766875644601-41d229</h3>
+          <div class="score-total">⚪️ 150 / 600</div>
+          <div class="score-note">総合スコア 25 / 100（評価: ⚪️）</div>
+        </div>
+        <div class="score-card">
+          <h3>task-1766875644401-626b24</h3>
+          <div class="score-total">🥉 210 / 600</div>
+          <div class="score-note">総合スコア 35 / 100（評価: ⚪️）</div>
+        </div>
+        <div class="score-card">
+          <h3>task-1766875644200-932799</h3>
+          <div class="score-total">🥉 240 / 600</div>
+          <div class="score-note">総合スコア 40 / 100（評価: ⚪️）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766875644601-41d229</th>
+            <th>Agent task-1766875644401-626b24</th>
+            <th>Agent task-1766875644200-932799</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-27 23:12 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--info">追加作業評価</span>
+                <span class="agent-label">懸念点追記のみ。追加価値は限定的で、証明書削除差分がリスク。</span>
+              </div>
+              <div class="hex-chart" data-scores="20,15,10,10,35,10"></div>
+              <div class="section-title">6指標</div>
+              <ul class="metric-list">
+                <li>要件充足 20点</li>
+                <li>実装品質 15点</li>
+                <li>テスト/検証 10点</li>
+                <li>安全性/リスク 10点</li>
+                <li>変更管理/ドキュメント 35点</li>
+                <li>運用適合 10点</li>
+              </ul>
+              <div class="section-title">根拠</div>
+              <div class="evidence-block">
+                既存実装は master に存在するため、当該ブランチの追加作業は懸念点の追記のみ。運用上の重要ファイル削除が含まれるため加点は限定的。
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>828a787cd docs: add concerns for task 32</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre> ORCAcertification/103867__JP_u00001294_client3948.p12    | Bin 4165 -&gt; 0 bytes
+ ...0\351\233\206\343\201\256\345\256\237\350\243\205.md" |   8 +++++++-
+ 2 files changed, 7 insertions(+), 1 deletion(-)</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>diff --git a/ORCAcertification/103867__JP_u00001294_client3948.p12 b/ORCAcertification/103867__JP_u00001294_client3948.p12
+deleted file mode 100644
+index 75f9fff33..000000000
+Binary files a/ORCAcertification/103867__JP_u00001294_client3948.p12 and /dev/null differ
+diff --git "a/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md" "b/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
+index b75abe515..603ed2f3a 100644
+--- "a/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
++++ "b/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
+@@ -13,5 +13,11 @@
+ ## 受け入れ基準 / Done
+ - TODO
+ 
++## 懸念点（要確認）
++- 病名/処方/オーダーの CRUD と監査ログの実運用確認が未実施で、E2E/統合テストの証跡が不足している。
++- ORCA 実環境での動作確認が未実施（認証・データ反映・監査ログ到達の確認が必要）。
++- API 側の入力バリデーション（病名必須項目や空文字制御など）の妥当性が未確認。
++- readOnly/fallback/missingMaster の状態遷移が実運用で正しく反映されるか要確認。
++
+ ## 実施ログ
+-- （未記載）
++- 2025-12-27: 懸念点（要確認）を追記（RUN_ID=20251227T224854Z）。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--info">追加作業評価</span>
+                <span class="agent-label">worktree用コンテナ名サフィックス対応は有用だがタスク固有ではない。</span>
+              </div>
+              <div class="hex-chart" data-scores="25,30,20,15,45,30"></div>
+              <div class="section-title">6指標</div>
+              <ul class="metric-list">
+                <li>要件充足 25点</li>
+                <li>実装品質 30点</li>
+                <li>テスト/検証 20点</li>
+                <li>安全性/リスク 15点</li>
+                <li>変更管理/ドキュメント 45点</li>
+                <li>運用適合 30点</li>
+              </ul>
+              <div class="section-title">根拠</div>
+              <div class="evidence-block">
+                並列作業支援の環境整備は運用上の価値がある一方、病名/処方/オーダー編集の直接的な品質向上ではないため中程度の加点。
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>bd9af9016 Support worktree container suffix and close chart task 32</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre> .../103867__JP_u00001294_client3948.p12            | Bin 4165 -&gt; 0 bytes
+ docs/DEVELOPMENT_STATUS.md                         |   1 +
+ setup-modernized-env.sh                            |  22 +++++++++++++++++----
+ ...233\206\343\201\256\345\256\237\350\243\205.md" |  17 +++++++++-------
+ 4 files changed, 29 insertions(+), 11 deletions(-)</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>diff --git a/ORCAcertification/103867__JP_u00001294_client3948.p12 b/ORCAcertification/103867__JP_u00001294_client3948.p12
+deleted file mode 100644
+index 75f9fff33..000000000
+Binary files a/ORCAcertification/103867__JP_u00001294_client3948.p12 and /dev/null differ
+diff --git a/docs/DEVELOPMENT_STATUS.md b/docs/DEVELOPMENT_STATUS.md
+index 04a0ee370..dee143c74 100644
+--- a/docs/DEVELOPMENT_STATUS.md
++++ b/docs/DEVELOPMENT_STATUS.md
+@@ -20,6 +20,7 @@
+ - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
+ 
+ ## 実施記録（最新）
++- 2025-12-27: worktree 用に `setup-modernized-env.sh` のコンテナ名サフィックス対応を追加し、Modernized サーバー/DB/MinIO を分離起動できるよう整備（RUN_ID=20251227T224853Z）。
+ - 2025-12-27: Charts 病名/処方/オーダー編集の readOnly/監査/バリデーション整備（RUN_ID=20251227T213517Z）。
+   - 右パネル編集は master未同期/フォールバック/タブロック時に編集ブロックし、理由を明示。
+   - 病名/処方/オーダーの監査イベントに更新内容と runId 等の観測メタを統一して記録。
+diff --git a/setup-modernized-env.sh b/setup-modernized-env.sh
+index 50fa3cb7a..fc859bd03 100755
+--- a/setup-modernized-env.sh
++++ b/setup-modernized-env.sh
+@@ -47,6 +47,15 @@ WEB_CLIENT_DEV_API_BASE="${WEB_CLIENT_DEV_API_BASE:-/api}"
+ WEB_CLIENT_ENV_LOCAL="${WEB_CLIENT_ENV_LOCAL:-$SCRIPT_DIR/web-client/.env.local}"
+ # Normalize mode for bash versions without ${var,,}
+ WEB_CLIENT_MODE_LOWER="$(printf '%s' "$WEB_CLIENT_MODE" | tr '[:upper:]' '[:lower:]')"
++CONTAINER_NAME_SUFFIX="${CONTAINER_NAME_SUFFIX:-}"
++POSTGRES_CONTAINER_NAME="opendolphin-postgres-modernized"
++SERVER_CONTAINER_NAME="opendolphin-server-modernized-dev"
++MINIO_CONTAINER_NAME="opendolphin-minio"
++if [[ -n "$CONTAINER_NAME_SUFFIX" ]]; then
++  POSTGRES_CONTAINER_NAME="${POSTGRES_CONTAINER_NAME}-${CONTAINER_NAME_SUFFIX}"
++  SERVER_CONTAINER_NAME="${SERVER_CONTAINER_NAME}-${CONTAINER_NAME_SUFFIX}"
++  MINIO_CONTAINER_NAME="${MINIO_CONTAINER_NAME}-${CONTAINER_NAME_SUFFIX}"
++fi
+ 
+ log() {
+   echo "[$(date +%H:%M:%S)] $*"
+@@ -133,7 +142,12 @@ generate_compose_override() {
+   log "Generating $COMPOSE_OVERRIDE_FILE..."
+   cat &gt; "$COMPOSE_OVERRIDE_FILE" &lt;&lt;EOF
+ services:
++  db-modernized:
++    container_name: ${POSTGRES_CONTAINER_NAME}
++  minio:
++    container_name: ${MINIO_CONTAINER_NAME}
+   server-modernized-dev:
++    container_name: ${SERVER_CONTAINER_NAME}
+     volumes:
+       - ./$(basename "$CUSTOM_PROP_OUTPUT"):/opt/jboss/wildfly/custom.properties
+ EOF
+@@ -177,8 +191,8 @@ apply_baseline_seed() {
+     echo "Seed file not found: $LOCAL_SEED_FILE" &gt;&amp;2
+     exit 1
+   fi
+-  docker cp "$LOCAL_SEED_FILE" opendolphin-postgres-modernized:/tmp/modern_seed.sql
+-  docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
++  docker cp "$LOCAL_SEED_FILE" "${POSTGRES_CONTAINER_NAME}":/tmp/modern_seed.sql
++  docker exec "${POSTGRES_CONTAINER_NAME}" psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
+   log "Baseline seed applied."
+ }
+ 
+@@ -256,8 +270,8 @@ FROM d_users WHERE userid = '$NEW_USER_ID'
+ AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NEW_USER_ID' AND c_role = 'doctor');
+ EOF
+ 
+-  docker cp "$tmp_sql" opendolphin-postgres-modernized:/tmp/modern_user_seed.sql
+-  docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
++  docker cp "$tmp_sql" "${POSTGRES_CONTAINER_NAME}":/tmp/modern_user_seed.sql
++  docker exec "${POSTGRES_CONTAINER_NAME}" psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
+   rm -f "$tmp_sql"
+   log "User registration SQL executed successfully."
+ }
+diff --git "a/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md" "b/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
+index b75abe515..f33fce83a 100644
+--- "a/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
++++ "b/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
+@@ -1,17 +1,20 @@
+ # 病名と処方オーダー編集の実装
+ 
+-- RUN_ID: 20251227T152749Z
+-- 期間: TBD
+-- ステータス: not_started
+-- 進捗: 0
++- RUN_ID: 20251227T224853Z
++- 期間: 01/23 21:00 - 01/27 21:00
++- ステータス: done
++- 進捗: 100
+ - YAML ID: src/webclient_productionization/charts/32_病名と処方オーダー編集の実装.md
+ - 参照ガント: .kamui/apps/webclient-productionization-plan-20251226.yaml
+ 
+ ## 目的
+-- TODO
++- 病名（主/疑い/開始/転帰）・処方（RP単位）・オーダー束の編集 UI と API 連携を実装し、右固定メニューからの編集導線と監査イベント記録を統一する。
+ 
+ ## 受け入れ基準 / Done
+-- TODO
++- 右固定メニューから病名/処方/オーダー編集パネルへ遷移できる。
++- 病名の主/疑い/開始/転帰を編集し、ORCA 病名 API に反映される。
++- 処方（RP）とオーダー束の編集/保存/削除が行え、ORCA オーダー束 API に反映される。
++- 編集操作が監査イベントへ記録される。
+ 
+ ## 実施ログ
+-- （未記載）
++- 20251227T224853Z: 病名/処方/オーダー編集の実装内容を確認し、右固定メニュー導線と監査イベント連携を含めて整理。`WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` を実行してモダナイズ版サーバーと Web クライアントの起動を確認。</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--info">追加作業評価</span>
+                <span class="agent-label">ORCA疎通証跡は検証価値が高いがPhase2系ログでタスク直接度は低め。</span>
+              </div>
+              <div class="hex-chart" data-scores="30,25,30,20,55,30"></div>
+              <div class="section-title">6指標</div>
+              <ul class="metric-list">
+                <li>要件充足 30点</li>
+                <li>実装品質 25点</li>
+                <li>テスト/検証 30点</li>
+                <li>安全性/リスク 20点</li>
+                <li>変更管理/ドキュメント 55点</li>
+                <li>運用適合 30点</li>
+              </ul>
+              <div class="section-title">根拠</div>
+              <div class="evidence-block">
+                疎通証跡・ログ追加は実運用検証の価値があるが、タスク32のUI/API実装とは間接的。Phase2ログで現行ルール外のため加点を抑制。
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>af73a69d1 Record ORCA system01dailyv2 502
+8c429d905 Add ORCA connectivity log (blocked)
+dacd0f450 Update task 32 status</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre> .../103867__JP_u00001294_client3948.p12            | Bin 4165 -&gt; 0 bytes
+ .../20251227T225951Z/00_README.md                  |  25 +++
+ .../20251227T225951Z/01_docker_ps.txt              |   0
+ .../20251227T225951Z/02_serverinfo_claim_conn.json |   0
+ .../03_api01rv2_patientgetv2_response.json         |   0
+ .../orca-connectivity/20251227T225951Z/README.md   |  18 ++
+ .../20251227T225951Z/audit_event.sql               |   0
+ .../20251227T225951Z/config_diff.txt               |   0
+ .../20251227T225951Z/data-check/system01dailyv2.md |  10 ++
+ .../20251227T225951Z/phr-seq/README.md             |  65 +++++++
+ .../20251227T225951Z/trace/system01dailyv2.trace   | 191 +++++++++++++++++++++
+ .../trial/system01dailyv2/response.headers         |   4 +
+ .../trial/system01dailyv2/response.json            |   0
+ .../logs/2025-12-27-orca-connectivity.md           |  12 ++
+ ...233\206\343\201\256\345\256\237\350\243\205.md" |  19 +-
+ 15 files changed, 336 insertions(+), 8 deletions(-)</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>diff --git a/ORCAcertification/103867__JP_u00001294_client3948.p12 b/ORCAcertification/103867__JP_u00001294_client3948.p12
+deleted file mode 100644
+index 75f9fff33..000000000
+Binary files a/ORCAcertification/103867__JP_u00001294_client3948.p12 and /dev/null differ
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/00_README.md b/artifacts/orca-connectivity/20251227T225951Z/00_README.md
+new file mode 100644
+index 000000000..11c77a7e0
+--- /dev/null
++++ b/artifacts/orca-connectivity/20251227T225951Z/00_README.md
+@@ -0,0 +1,25 @@
++# ORCA Connectivity Evidence Template
++
++&gt; RUN_ID 命名・Evidence 運用は `docs/server-modernization/phase2/operations/ORCA_CONNECTIVITY_VALIDATION.md` §0.1-§0.2（Single Playbook）を参照。本テンプレは同 Playbook で定義された構成を実際のディレクトリへ反映するための雛形。
++
++## RUN_ID / タイムスタンプ命名ルール
++- Evidence ディレクトリは `RUN_ID=YYYYMMDDThhmmssZ`（UTC、例: `20251112T090000Z`）で作成する。Trial CRUD など手動採番を行う場合も Single Playbook §0.1 の命名ルール（例: `RUN_ID=20251120TrialCrudPrepZ1`）と整合させる。
++- 推奨手順:
++  1. `export RUN_ID=$(date -u +%Y%m%dT%H%M%SZ)`
++  2. `mkdir -p artifacts/orca-connectivity/${RUN_ID}`
++  3. `cp -R artifacts/orca-connectivity/TEMPLATE/ artifacts/orca-connectivity/${RUN_ID}`（初期ファイルをコピー）
++
++## 各ファイルの役割
++| ファイル | 目的 |
++| --- | --- |
++| `01_docker_ps.txt` | ORCA / DB / OpenDolphin サービスの稼働状態 (`docker ps --format ...`) を保存し、実行中コンテナの証跡を残す。 |
++| `02_serverinfo_claim_conn.json` | `GET /openDolphin/resources/serverinfo/claim/conn` のレスポンス JSON。`claim.conn` / `claim.host` などの設定値を記録する。 |
++| `03_api01rv2_patientgetv2_response.json` | `api01rv2 patientgetv2` の代表レスポンス（例: `/orca/api01rv2/patientgetv2`) を保存し、ORCA API 疎通証跡に使う。 |
++| `config_diff.txt` | `git diff --no-index ops/shared/docker/custom.properties ops/modernized-server/docker/custom.properties` の結果。Legacy/Modernized の ORCA 設定差分を比較する。 |
++| `audit_event.sql` | `d_audit_event` など ORCA 連携関連テーブルの確認クエリ／INSERT 文。問題切り分け時に再実行できる形で保存する。 |
++| `00_README.md` | 本テンプレートの使い方と RUN_ID 命名ルールのメモ。更新時は DOC_STATUS への反映も忘れないこと。 |
++
++## 命名検証 (`scripts/tools/orca-artifacts-namer.js`)
++1. テンプレートをコピーした後、Evidence 一式を作成する前に `node scripts/tools/orca-artifacts-namer.js artifacts/orca-connectivity` を実行する。
++2. 命名規則に違反するディレクトリがある場合は一覧が表示され、推奨名が提示される。修正後に再実行して終了コード 0 を確認する。
++3. CI でも同スクリプトを利用するため、ローカルでエラーが出た場合は必ず手元で解決してから成果物をコミットする。
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/01_docker_ps.txt b/artifacts/orca-connectivity/20251227T225951Z/01_docker_ps.txt
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/02_serverinfo_claim_conn.json b/artifacts/orca-connectivity/20251227T225951Z/02_serverinfo_claim_conn.json
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/03_api01rv2_patientgetv2_response.json b/artifacts/orca-connectivity/20251227T225951Z/03_api01rv2_patientgetv2_response.json
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/README.md b/artifacts/orca-connectivity/20251227T225951Z/README.md
+new file mode 100644
+index 000000000..6e9e0ab86
+--- /dev/null
++++ b/artifacts/orca-connectivity/20251227T225951Z/README.md
+@@ -0,0 +1,18 @@
++# ORCA 接続証跡（RUN_ID: 20251227T225951Z）
++
++## 実施概要
++- 目的: ORCA 本番（certification）疎通の TLS/BASIC 事前確認と system01dailyv2 実行
++- 接続先: https://weborca.cloud.orcamo.jp:443
++- 結果: TLS/DNS は取得。system01dailyv2 実行は HTTP 502。
++
++## 実施内容
++- DNS 取得: `dns/resolve.log`
++- TLS ハンドシェイク: `tls/openssl_s_client.log`
++  - 事象: `ssl/tls alert handshake failure` が記録されるが、証明書チェーン/暗号スイートは取得。
++- system01dailyv2 呼び出し: HTTP 502（`trial/system01dailyv2/response.headers`）
++
++## 追加メモ
++- 作業ツリーに資格情報ファイルが存在しないため、master ブランチの `ORCAcertification/` を参照して実行（ファイルのコピーは行っていない）。
++
++## 次アクション
++- 上記 2 ファイルを作業ツリーの `ORCAcertification/` に配置後、`system01dailyv2` を再実行する。
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/audit_event.sql b/artifacts/orca-connectivity/20251227T225951Z/audit_event.sql
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/config_diff.txt b/artifacts/orca-connectivity/20251227T225951Z/config_diff.txt
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/data-check/system01dailyv2.md b/artifacts/orca-connectivity/20251227T225951Z/data-check/system01dailyv2.md
+new file mode 100644
+index 000000000..c11382414
+--- /dev/null
++++ b/artifacts/orca-connectivity/20251227T225951Z/data-check/system01dailyv2.md
+@@ -0,0 +1,10 @@
++# system01dailyv2 実施記録 (RUN_ID: 20251227T225951Z)
++
++- 状態: 実施（HTTP 502）
++- リクエスト: `docs/server-modernization/phase2/operations/assets/orca-api-requests/44_system01dailyv2_request.json`
++- 証跡:
++  - `trial/system01dailyv2/response.headers`
++  - `trial/system01dailyv2/response.json`（空）
++  - `trace/system01dailyv2.trace`
++- 備考:
++  - 作業ツリーに資格情報ファイルが存在しないため、master ブランチの `ORCAcertification/` を参照して実行。
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/phr-seq/README.md b/artifacts/orca-connectivity/20251227T225951Z/phr-seq/README.md
+new file mode 100644
+index 000000000..42e8deee8
+--- /dev/null
++++ b/artifacts/orca-connectivity/20251227T225951Z/phr-seq/README.md
+@@ -0,0 +1,65 @@
++# PHR シーケンス証跡テンプレート
++
++`RUN_ID={{RUN_ID}}` を差し込んで `scripts/orca_prepare_next_run.sh {{RUN_ID}}` 実行後、本テンプレートを `artifacts/orca-connectivity/{{RUN_ID}}/` 配下にコピーする。Task-C（RUN_ID=20251114TphrEvidenceZ1）ではこのテンプレを初期化し、PHR-01〜11 の証跡保存ルールを Runbook §4.3.1 と同期した。
++
++## ディレクトリ構成
++```
++artifacts/orca-connectivity/{{RUN_ID}}/
++├── httpdump/                      # cURL -D/-o 出力（共通）
++├── trace/                         # --trace-ascii 出力
++├── serverinfo/claim_conn.json     # ServerInfoResource (Modernized)
++├── logs/                          # PHR サマリメモ（labtest, accessKey 等）
++├── wildfly/                       # server.log 抜粋 / identityToken 例外
++├── screenshots/                   # `phr-0X_response.png` / UI プレビュー
++├── todo/PHR_OPEN_ITEMS.md         # 未完タスク・seed 作業メモ
++└── phr-seq/
++    ├── 10_key-management/PHR-0{2,3,10}_*.http
++    ├── 20_view-text/{abnormal,allergy,disease,labtest,medication}/
++    ├── 30_layer-id/identityToken/
++    ├── 40_image/image/
++    ├── 50_container/container/
++    └── 60_export-track/README.md
++```
++
++## RUN_ID 差し替え手順
++1. `export RUN_ID=20251114TphrEvidenceZ1`（テンプレ）または `RUN_ID=YYYYMMDDTorcaPHRSeqZ#`（本番）。
++2. `scripts/orca_prepare_next_run.sh ${RUN_ID}` を実行し、`artifacts/orca-connectivity/${RUN_ID}/` を生成。
++3. `cp -R artifacts/orca-connectivity/TEMPLATE/phr-seq/* artifacts/orca-connectivity/${RUN_ID}/` で雛形を展開。
++4. `echo "PHR template initialized" &gt; artifacts/orca-connectivity/${RUN_ID}/README.md` に初期化ログを残す。
++
++## cURL 雛形
++```
++API_PATH="/20/adm/phr/accessKey"
++REQUEST=phr-seq/10_key-management/PHR-02_request.json
++curl --silent --show-error --cert-type P12 \
++     --cert "${ORCA_PROD_CERT}:${ORCA_PROD_CERT_PASS}" \
++     -u "${ORCA_PROD_BASIC_USER}:${ORCA_PROD_BASIC_KEY}" \
++     -H "Content-Type: application/json; charset=UTF-8" \
++     -H "Accept: application/json" \
++     -H "X-Facility-Id: ${TOUCH_FACILITY_ID}" \
++     -H "X-Touch-TraceId: ${RUN_ID}" \
++     -H "X-Access-Reason: phr-evidence" \
++     --data-binary @"${REQUEST}" \
++     "https://weborca.cloud.orcamo.jp${API_PATH}" \
++     -D "httpdump${API_PATH//\//_}.headers" \
++     -o "httpdump${API_PATH//\//_}.json" \
++     --trace-ascii "trace${API_PATH//\//_}_trace.log"
++```
++※ Layer ID（PHR-06）は `-H "X-Consent-Token: ..."` を追加する。画像 API（PHR-07）は `-o httpdump/.../response.bin` に保存し、`screenshots/phr-07_image.png` へビューワのスクリーンショットを残す。
++
++## ServerInfo / WildFly 記録
++- `curl http://server-modernized-dev:8080/openDolphin/resources/serverinfo/claim/conn -u &lt;admin&gt;` → `serverinfo/claim_conn.json`。
++- `tail -n 200 server/standalone/log/server.log | tee wildfly/phr_${RUN_ID}.log` で RESTEasy 例外を併記。
++
++## スクリーンショット要件
++- `screenshots/phr-0X_response.png`: cURL レスポンス or SystemPreferencesPage の PHR タブプレビュー。
++- `screenshots/layer-id/token-issue.png`: PHR-06 実施時に Layer ID 発行画面キャプチャ。
++- `screenshots/container/legacy-diff.png`: PHR-11 で Legacy vs Modernized diff。
++
++## TODO テンプレ
++`todo/PHR_OPEN_ITEMS.md` に以下フォーマットで追記する。
++```
++- [ ] PHR-09 medication: TouchMedicationFormatter 置換待ち （担当: ___ / 期限: ___ / 参照 RUN_ID）
++```
++
++更新したら `docs/server-modernization/phase2/operations/logs/2025-11-13-orca-connectivity.md#phr-連携テンプレ` と `docs/web-client/planning/phase2/DOC_STATUS.md` へ RUN_ID・証跡パスを共有する。
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/trace/system01dailyv2.trace b/artifacts/orca-connectivity/20251227T225951Z/trace/system01dailyv2.trace
+new file mode 100644
+index 000000000..9827e191e
+--- /dev/null
++++ b/artifacts/orca-connectivity/20251227T225951Z/trace/system01dailyv2.trace
+@@ -0,0 +1,191 @@
++== Info: Host weborca.cloud.orcamo.jp:443 was resolved.
++== Info: IPv6: (none)
++== Info: IPv4: 54.178.230.126, 35.76.144.148
++== Info:   Trying 54.178.230.126:443...
++== Info: Connected to weborca.cloud.orcamo.jp (54.178.230.126) port 443
++== Info: ALPN: curl offers h2,http/1.1
++== Info: (304) (OUT), TLS handshake, Client hello (1):
++=&gt; Send SSL data, 328 bytes (0x148)
++0000: ...D.....C....9U..#..".....u.,@.t&gt;T... S...hz...5.mp.:.Y.......m
++0040: $.mG..G.b.............0.,.(.$.......k.9...........=.5...../.+.'.
++0080: #.......g.3...E...&lt;./...A.......................+............3.&amp;
++00c0: .$... ......nQ.V..-&lt;.J(..J$.Y...z...(4.........weborca.cloud.orc
++0100: amo.jp.......................................................h2.
++0140: http/1.1
++== Info:  CAfile: /etc/ssl/cert.pem
++== Info:  CApath: none
++== Info: (304) (IN), TLS handshake, Server hello (2):
++&lt;= Recv SSL data, 61 bytes (0x3d)
++0000: ...9.........^.H..mR.v.?.J..F.$:.Z..&gt;...0....................
++== Info: TLSv1.2 (IN), TLS handshake, Certificate (11):
++&lt;= Recv SSL data, 3049 bytes (0xbe9)
++0000: ..........0...0...............^...@;....:0...*.H........0i1.0...
++0040: U....JP1*0(..U...!Japan Registry Services Co., Ltd.1.0,..U...%JP
++0080: RS Domain Validation Authority - G40...251205073401Z..2612311459
++00c0: 59Z0.1.0...U....*.cloud.orcamo.jp0.."0...*.H.............0......
++0100: ...9).....n..,.x.M......`O..p....^zIC......~..@=.r. 3.E..].n....
++0140: .gH!Y..dL.......\&gt;...t......,..)........VA..lOD.....C.....0..Wf.
++0180: @&amp;86y1@....n.K......qa^..pmrf.|.V."..0.;..0.JP..U?......p.......
++01c0: ..h.`F.! .?^+..URiY.E../....(.e..YZG...5r..u*......{...y....y8.J
++0200: 8..........0...0...U.#..0...|$...8-..c^.xz..L...0....+..........
++0240: 0..0O..+.....0..Chttp://repo.pubcert.jprs.jp/sppca/jprs/dvca_g4/
++0280: JPRS_DVCA_G4_DER.cer0-..+.....0..!http://dv.g4.ocsp.pubcert.jprs
++02c0: .jp0-..U...&amp;0$..*.cloud.orcamo.jp..cloud.orcamo.jp0Y..U. .R0P0D.
++0300: .+......C...0503..+........'http://jprs.jp/pubcert/info/reposito
++0340: ry/0...g.....0...U.%..0...+.......0K..U...D0B0@.&gt;.&lt;.:http://repo
++0380: .pubcert.jprs.jp/sppca/jprs/dvca_g4/fullcrl.crl0...U.......f.h..
++03c0: .......YN.S...0...U...........0.....+.....y..............v..m}..
++0400: ..w..._......3Ze....s....iw.....w.x.....G0E. &amp;~..T. .&amp;.....{..If
++0440: .+v...3.n.")..!..R.._A....|i..#..$..].d. q+1..._.v...U;.Oz....o.
++0480: O.....^.U&amp;....r.EK......w.......G0E.!....!..c.?......s.8...k#...
++04c0: s.u@.,. ..}..4...J,..YT..P.....`=_&gt;|..=..v..1~WE..E..8...A...!Z"
++0500: .....v...R......w.......G0E.!..&gt;..4..}..:Xiz.OP.p.........!.:.. 
++0540: K.."..,..ZI...O....)..[DKHa...K..w..8...|..D_[....n..Y.G.i......
++0580: .X......w.......H0F.!.......n.Q4a./e...v..I.6.f"&amp;...#+.!.....O.A
++05c0: .IL.V5.%!w....cn.....n..@0...*.H..............5d.B..^.o..s......
++0600: .{.D..).^9."!...G....'+~.=.V.7..Ea5.$...w..^c..&amp;.....e...0.I&lt;...
++0640: M.I.4. .._.L.-......y...._~..C....&gt;T......i...'...*]....M.".6.F.
++0680: ....z......s..U.Z.. L.W.....n..~0t6.;...m.2w.]5.g..j.d....a`1d..
++06c0: ....K.d..)-c.M....G...Il....C....8......z.2.Y...0...0.........."
++0700: ......U........0...*.H........0]1.0...U....JP1%0#..U....SECOM Tr
++0740: ust Systems CO.,LTD.1'0%..U....Security Communication RootCA20..
++0780: .200722104053Z..290529050039Z0i1.0...U....JP1*0(..U...!Japan Reg
++07c0: istry Services Co., Ltd.1.0,..U...%JPRS Domain Validation Author
++0800: ity - G40.."0...*.H.............0..............mu..tz....w...O.s
++0840: I...p^G.........q.....n.&lt;..2.W.oM..............)..J_.g.a...*....
++0880: {4.E.QD...Y......69.qgd.....5.:.|...AJ..4v...b.z.o....M..K..[...
++08c0: .!.".....6}:...3[.&gt;...'+2.U.K........)...-....A].T.]Pk.!&gt;f.....k
++0900: ..?.F;.....E.]."S+l.I......'Kb8..1\1.j............0...0...U.....
++0940: .|$...8-..c^.xz..L...0...U.#..0......we..|@....,8...&lt;.0...U.....
++0980: ..0.......0...U...........0I..U...B0@0&gt;.&lt;.:.8http://repository.s
++09c0: ecomtrust.net/SC-Root2/SCRoot2CRL.crl0Q..U. .J0H0F..*.....d...08
++0a00: 06..+........*http://repository.secomtrust.net/SC-Root2/0....+..
++0a40: ......y0w00..+.....0..$http://scrootca2.ocsp.secomtrust.net0C..+
++0a80: .....0..7http://repository.secomtrust.net/SC-Root2/SCRoot2ca.cer
++0ac0: 0...U.%..0...+.......0...*.H................/.]...'.f......QQ..v
++0b00: T.-..(.X..5.}..}...0...*z...}sL)co........e..R1.)....r.4!A.^..D$
++0b40: ......9.`..uZ........m.....6^.....&amp;VQ.PP..AK.GF.bztz..9..u._"[..
++0b80: ....|..f..p.&lt;F&gt;kC.....OFl...%.:.=...T..N........U.)z...&gt;.....D..
++0bc0: .#.....*.c...tYog.....wK1..%..1c...o.A.^.
++== Info: TLSv1.2 (IN), TLS handshake, Server key exchange (12):
++&lt;= Recv SSL data, 300 bytes (0x12c)
++0000: ...(... M..v....h^@[..H....r.!..d....x.R.....|e.3...n....k.;.iFD
++0040: .z3.E)....&amp;..&lt;e............%......}....}....&amp;6.{...M.3.E.D.I.kZ.
++0080: OAx.%Q.Qf....5.@...$.....Wt...fG.j....y.....M.e..J.x0=bL...$xD2*
++00c0: pJD3.-.aV....-....`Lw.{..+.h....R.....I;......k..&gt;u.b.`.wa......
++0100: .TY8.)...SIg.........#f3.JPNn.7:@.]..Qf\Y...
++== Info: TLSv1.2 (IN), TLS handshake, Request CERT (13):
++&lt;= Recv SSL data, 203 bytes (0xcb)
++0000: .......@.(...........................................C0A1.0...U.
++0040: ...JP1%0#..U....ORCA Management Organization1.0...U....ca.P0N1.0
++0080: ...U....JP1%0#..U....ORCA Management Organization1.0...U....Inte
++00c0: rmediate CA
++== Info: TLSv1.2 (IN), TLS handshake, Server finished (14):
++&lt;= Recv SSL data, 4 bytes (0x4)
++0000: ....
++== Info: TLSv1.2 (OUT), TLS handshake, Certificate (11):
++=&gt; Send SSL data, 1421 bytes (0x58d)
++0000: ..........0...0..g..........0...*.H........0N1.0...U....JP1%0#..
++0040: U....ORCA Management Organization1.0...U....Intermediate CA0...2
++0080: 50815235207Z..280814235207Z0M1.0...U....JP1.0...U....u000012941*
++00c0: 0(..U...!client3948 (u00001294) 2028-08-150.."0...*.H...........
++0100: ..0..........K..].Ie....v...c.V..;..*.P..S...w..O7.....`Y..W....
++0140: FB.4..da.....C.l....2)WG...e.....c..3......h..Uv\aW..p:&amp;.U.tr...
++0180: NI...........s.2....K..I[.r.............{...:.)&lt;_...|........U.M
++01c0: S.X.&lt;....v...!z..d.TV.]..(z@.........U.......oI..S_...85....24b.
++0200: ...}...8i|...&amp;w.F..Ph...&gt;qM.......4E..71v....k.&lt;eW'.r..O.f...G*.
++0240: yT.k..v...M.&amp;...|'t.....M.:.#...8![0Wz.;.Dfr..S. ...@+..DCb.....
++0280: .a.A{U.R....a&amp;.:.W.{......R(..@,C.2....I.l.~8....v&gt;.#...p~.B,t.&amp;
++02c0: .@..S']B...RI..y...~.jk..0V,.(B...,a.....\.........#2)......S.m.
++0300: ."...............g0e0...U...........0...U.%..0...+.......0...U..
++0340: ....R.../....#...RXv....0...U.#..0.../u.*IY...b.%{"@.."=.0...*.H
++0380: .............*.%./...-...z...5.......Xh...*.Z.....b-L...g.1.....
++03c0: ...../.d^...B ..m..!.Bc....;..)._..M...a..a,.......wBw...-..xU..
++0400: hgS..T%.....mN...P.....S..k#....o.....?uTKn.&gt;.....3if8gu.....dT.
++0440: .I!UV....a.C.......zW8^.d..}....lY8..q+]|G.)..&lt;.G...Gw..7Gl"....
++0480: |D.}....Fep.)A.MR....4..}....B.(Z...b.. ..u..|.~C.g./@..........
++04c0: .e.....c..Y."...........h...4ZZ.....f......1.4.3]Sw.Z.-....$....
++0500: .|f.....o.+..g(;....N.j..
++051b: .....w.L.......9.m...E....n.Z~......!..Z...j..A...&amp;+....-...I2.6
++055b: 8..Y..xo.^j.F...9.T&amp; .M.....Fr.w....Sb.r.C@.?...C.
++== Info: TLSv1.2 (OUT), TLS handshake, Client key exchange (16):
++=&gt; Send SSL data, 37 bytes (0x25)
++0000: ...! ...A~....,...U\"...X....n\...WN.
++== Info: TLSv1.2 (OUT), TLS handshake, CERT verify (15):
++=&gt; Send SSL data, 520 bytes (0x208)
++0000: ........(`kQ...o..O...b7...+.......Mo..n;4.......&gt;=.^..Wp.&lt;.....
++0040: F.u..\X.............vt;.,....A.......7x.d(S5....&gt;.V.i..E......z.
++0080: .7......X.R-w]U.7..G......~....J.v.FA..3t].e.......?X....f..2!.c
++00c0: 8..N...# &gt;Q...A.-.....A.P............#.B. .!.....8Q.@&gt;...b...`.R
++0100: .h..L!.....z.:.....J.7.`.....F.Ep.........y........3...Kv.......
++0140: ..)s..0..{.......x..........7..Oq.......wn.k~.....|.....n$....."
++0180: 5f.......W......\..dZ..n....6"[.(...^..N0...&amp;fE...H...?,'..._J\.
++01c0: 5.......p.........~,L.....3.)..r....V&amp;.G5f...e?.j...}........'..
++0200: ...A...;
++== Info: TLSv1.2 (OUT), TLS change cipher, Change cipher spec (1):
++=&gt; Send SSL data, 1 bytes (0x1)
++0000: .
++== Info: TLSv1.2 (OUT), TLS handshake, Finished (20):
++=&gt; Send SSL data, 16 bytes (0x10)
++0000: .....]]Y.n"&gt;&amp;...
++== Info: TLSv1.2 (IN), TLS change cipher, Change cipher spec (1):
++&lt;= Recv SSL data, 1 bytes (0x1)
++0000: .
++== Info: TLSv1.2 (IN), TLS handshake, Finished (20):
++&lt;= Recv SSL data, 16 bytes (0x10)
++0000: ........Ej......
++== Info: SSL connection using TLSv1.2 / ECDHE-RSA-AES256-GCM-SHA384 / [blank] / UNDEF
++== Info: ALPN: server did not agree on a protocol. Uses default.
++== Info: Server certificate:
++== Info:  subject: CN=*.cloud.orcamo.jp
++== Info:  start date: Dec  5 07:34:01 2025 GMT
++== Info:  expire date: Dec 31 14:59:59 2026 GMT
++== Info:  subjectAltName: host "weborca.cloud.orcamo.jp" matched cert's "*.cloud.orcamo.jp"
++== Info:  issuer: C=JP; O=Japan Registry Services Co., Ltd.; CN=JPRS Domain Validation Authority - G4
++== Info:  SSL certificate verify ok.
++== Info: using HTTP/1.x
++== Info: Server auth using Basic with user 'jimu6482'
++=&gt; Send header, 332 bytes (0x14c)
++0000: POST /api/api01rv2/system01dailyv2?class=00 HTTP/1.1
++0036: Host: weborca.cloud.orcamo.jp
++0055: Authorization: Basic &lt;MASKED&gt;
++0095: lMGRlOGQyN2U4YmFmMGViOGNiODE2OWFmYWI1MWNiMDA3YWIwYTlhYg==
++00d0: User-Agent: curl/8.7.1
++00e8: Accept: application/json
++0102: Content-Type: application/json; charset=Shift_JIS
++0135: Content-Length: 809
++014a: 
++=&gt; Send data, 809 bytes (0x329)
++0000: // API 44 /api01rv2/system01dailyv2 (..................)
++003a: {
++003d:   "path": "/api01rv2/system01dailyv2",
++0065:   // NOTE (W27): `scripts/tools/orca-curl-snippets.js` .........
++00a5: ... Shift_JIS ........................UTF-8 XML ................
++00e5: ..........................
++0101:   "headers": {
++0111:     "Content-Type": "application/xml; charset=UTF-8",
++0148:     "Accept": "application/xml"
++0169:   },
++016f:   // NOTE (W19 2025-11-13): UTF-8 XML `&lt;data&gt;&lt;system01_dailyreq&gt;
++01af: ` .................. 200/Api_Result=00...
++01da:   // Shift_JIS ............... Request_Number ............ (Api_
++021a: Result=91) ............... UTF-8 .........
++0246:   // Evidence: artifacts/orca-connectivity/20251113T002806Z/unce
++0286: rtain-api/44_system01dailyv2_response.txt
++02b1:   "data": {
++02be:     "system01_dailyreq": {
++02da:       "Request_Number": "01",
++02f9:       "Base_Date": "2025-11-12"
++031a:     }
++0321:   }
++0326: }
++== Info: upload completely sent off: 809 bytes
++&lt;= Recv header, 26 bytes (0x1a)
++0000: HTTP/1.1 502 Bad Gateway
++&lt;= Recv header, 37 bytes (0x25)
++0000: Date: Sat, 27 Dec 2025 23:04:22 GMT
++&lt;= Recv header, 19 bytes (0x13)
++0000: Content-Length: 0
++&lt;= Recv header, 2 bytes (0x2)
++0000: 
++== Info: Connection #0 to host weborca.cloud.orcamo.jp left intact
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/trial/system01dailyv2/response.headers b/artifacts/orca-connectivity/20251227T225951Z/trial/system01dailyv2/response.headers
+new file mode 100644
+index 000000000..f6b10545d
+--- /dev/null
++++ b/artifacts/orca-connectivity/20251227T225951Z/trial/system01dailyv2/response.headers
+@@ -0,0 +1,4 @@
++HTTP/1.1 502 Bad Gateway
++Date: Sat, 27 Dec 2025 23:04:22 GMT
++Content-Length: 0
++
+diff --git a/artifacts/orca-connectivity/20251227T225951Z/trial/system01dailyv2/response.json b/artifacts/orca-connectivity/20251227T225951Z/trial/system01dailyv2/response.json
+new file mode 100644
+index 000000000..e69de29bb
+diff --git a/docs/server-modernization/phase2/operations/logs/2025-12-27-orca-connectivity.md b/docs/server-modernization/phase2/operations/logs/2025-12-27-orca-connectivity.md
+new file mode 100644
+index 000000000..dd69e9c62
+--- /dev/null
++++ b/docs/server-modernization/phase2/operations/logs/2025-12-27-orca-connectivity.md
+@@ -0,0 +1,12 @@
++# 2025-12-27 ORCA 接続ログ
++
++## RUN_ID: 20251227T225951Z
++- 目的: ORCA 本番（certification）疎通の TLS/BASIC 事前確認と system01dailyv2 実行
++- 接続先: `https://weborca.cloud.orcamo.jp:443`
++- 証跡: `artifacts/orca-connectivity/20251227T225951Z/`
++- 実施結果:
++  - DNS 取得: `dns/resolve.log`
++  - TLS ハンドシェイク: `tls/openssl_s_client.log`（`ssl/tls alert handshake failure` を記録）
++  - system01dailyv2: HTTP 502（`trial/system01dailyv2/response.headers`）
++- 補足:
++  - 作業ツリーに資格情報ファイルが存在しないため、master ブランチの `ORCAcertification/` を参照して実行。
+diff --git "a/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md" "b/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
+index b75abe515..a9a64c043 100644
+--- "a/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
++++ "b/src/webclient_productionization/charts/32_\347\227\205\345\220\215\343\201\250\345\207\246\346\226\271\343\202\252\343\203\274\343\203\200\343\203\274\347\267\250\351\233\206\343\201\256\345\256\237\350\243\205.md"
+@@ -1,17 +1,20 @@
+ # 病名と処方オーダー編集の実装
+ 
+-- RUN_ID: 20251227T152749Z
++- RUN_ID: 20251227T224849Z
+ - 期間: TBD
+-- ステータス: not_started
+-- 進捗: 0
++- ステータス: done
++- 進捗: 100
+ - YAML ID: src/webclient_productionization/charts/32_病名と処方オーダー編集の実装.md
+ - 参照ガント: .kamui/apps/webclient-productionization-plan-20251226.yaml
+ 
+ ## 目的
+-- TODO
+-
++- 病名（主/疑い/開始/転帰）・処方（RP単位）・オーダー束の編集 UI を右固定メニューに集約し、ORCA 連携 API と監査イベント記録までを完結させる。
+ ## 受け入れ基準 / Done
+-- TODO
+-
++- 右固定メニューから病名編集パネルを開き、主/疑い/開始/転帰の変更が ORCA `/orca/disease` に反映される。
++- 右固定メニューから処方（RP）/オーダー束の編集 UI を開き、作成/更新/削除が `/orca/order/bundles` に反映される。
++- すべての編集操作が監査イベントに記録され、runId 等の観測メタが残る。
++- readOnly やマスタ未同期など編集不可の状態では UI が編集ブロックと理由表示を行う。
+ ## 実施ログ
+-- （未記載）
++- 2025-12-27: UI/API 連携の最終確認と YAML 更新（RUN_ID: 20251227T224849Z）
++  - 病名/処方/オーダー編集の右固定メニュー導線と ORCA 連携、監査イベント記録の実装を反映済み。
++  - readOnly/マスタ未同期/フォールバック時の編集ブロックの仕様を反映済み。</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const buildHex = (el) => {
+        const scores = (el.dataset.scores || '').split(',').map((v) => Number(v.trim()) || 0);
+        const size = 120;
+        const center = size / 2;
+        const maxR = 45;
+        const toPoint = (value, idx) => {
+          const angle = (Math.PI / 180) * (-90 + idx * 60);
+          const r = maxR * (Math.max(0, Math.min(100, value)) / 100);
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          return x.toFixed(1) + ',' + y.toFixed(1);
+        };
+        const bgPoints = Array.from({ length: 6 }).map((_, idx) => {
+          const angle = (Math.PI / 180) * (-90 + idx * 60);
+          const x = center + maxR * Math.cos(angle);
+          const y = center + maxR * Math.sin(angle);
+          return x.toFixed(1) + ',' + y.toFixed(1);
+        }).join(' ');
+        const valPoints = scores.map((score, idx) => toPoint(score, idx)).join(' ');
+        el.innerHTML =
+          '<svg viewBox="0 0 ' + size + ' ' + size + '" width="140" height="140">' +
+          '<polygon points="' + bgPoints + '" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1"></polygon>' +
+          '<polygon points="' + valPoints + '" fill="rgba(65, 125, 140, 0.45)" stroke="#417d8c" stroke-width="1"></polygon>' +
+          '</svg>';
+      };
+      document.querySelectorAll('.hex-chart').forEach(buildHex);
+    </script>
+  </body>
+</html>

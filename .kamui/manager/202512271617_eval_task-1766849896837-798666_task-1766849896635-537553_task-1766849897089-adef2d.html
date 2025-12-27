@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .score-card h3 {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        color: #2c3a40;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #e3edf0;
+        border: 1px solid #cdd9dd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--warn {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .hex-grid {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-labels {
+        font-size: 12px;
+        color: #3a4b53;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px 12px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .inline-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 13px;
+      }
+      .section-title {
+        font-size: 14px;
+        margin: 12px 0 6px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 32 病名と処方/オーダー編集の実装</h1>
+        <p class="monitor-description">評価対象: task/task-1766849896837-798666, task/task-1766849896635-537553, task/task-1766849897089-adef2d</p>
+        <p class="monitor-description">評価日時: 2025-12-27 16:17Z</p>
+        <p class="monitor-description">概要: 右固定メニューから病名/処方/オーダー束の編集 UI を開き、API 連携と監査イベント記録まで含む実装の完成度を比較評価。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>claude code / task-1766849896837-798666</h3>
+          <div class="score-value">⚪️ 280 / 600</div>
+          <div class="score-note">総合スコア: 47点（API 連携が限定的）</div>
+        </div>
+        <div class="score-card">
+          <h3>claude code / task-1766849896635-537553</h3>
+          <div class="score-value">⚪️ 330 / 600</div>
+          <div class="score-note">総合スコア: 55点（バックエンドが stub）</div>
+        </div>
+        <div class="score-card">
+          <h3>claude code / task-1766849897089-adef2d</h3>
+          <div class="score-value">🥉 400 / 600</div>
+          <div class="score-note">総合スコア: 67点（最も要件に近い）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent claude code / task-1766849896837-798666</th>
+            <th>Agent claude code / task-1766849896635-537553</th>
+            <th>Agent claude code / task-1766849897089-adef2d</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-27 16:17Z</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warn">部分完了</span>
+                <span class="agent-label">UI は追加されているが、処方/オーダー束は新規登録のみで既存編集・取得が未実装。</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="140" height="140" viewBox="0 0 200 200" role="img" aria-label="hex chart">
+                  <polygon points="100,10 173,55 173,145 100,190 27,145 27,55" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="100.0,64.0 131.2,82.0 138.1,122.0 100.0,156.0 61.9,122.0 93.1,96.0" fill="#8aa4ab" stroke="#6d878e" />
+                </svg>
+                <div class="hex-labels">
+                  <div>実装完了度 45点</div>
+                  <div>仕様適合 45点</div>
+                  <div>安定性 55点</div>
+                  <div>監査/ログ 70点</div>
+                  <div>UI/UX 55点</div>
+                  <div>テスト 10点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <ul class="inline-list">
+                <li>病名編集は /karte 経由で保存可能だが、処方/オーダー束は既存データ取得・更新がなく新規保存のみ。</li>
+                <li>右固定メニューへの統合と監査イベント記録は実装済み。</li>
+                <li>API は legacy (/karte, /document) に依存し、ORCA/modernized 側の連携が未実装。</li>
+              </ul>
+              <div class="section-title">コミット/差分</div>
+              <pre>7f6ff2dd Implement charts edit panels
++ DiagnosisEditPanel / OrderBundleEditPanel
++ chartsEditApi (karte/document 経由)
++ 右固定メニューUI / 監査イベント追加</pre>
+              <div class="section-title">成果物</div>
+              <pre>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766849896837-798666</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warn">部分完了</span>
+                <span class="agent-label">UI/導線は整備されるが、処方/オーダーの API が stub で永続化されない。</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="140" height="140" viewBox="0 0 200 200" role="img" aria-label="hex chart">
+                  <polygon points="100,10 173,55 173,145 100,190 27,145 27,55" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="100.0,52.0 138.1,78.0 141.6,124.0 100.0,160.0 55.0,126.0 89.6,94.0" fill="#8aa4ab" stroke="#6d878e" />
+                </svg>
+                <div class="hex-labels">
+                  <div>実装完了度 60点</div>
+                  <div>仕様適合 55点</div>
+                  <div>安定性 60点</div>
+                  <div>監査/ログ 75点</div>
+                  <div>UI/UX 65点</div>
+                  <div>テスト 15点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <ul class="inline-list">
+                <li>病名/処方/オーダー編集 UI を統合し、監査イベントは詳細に記録。</li>
+                <li>処方/オーダー API は成功レスポンスのみで永続化せず、本番運用には不十分。</li>
+                <li>データソースが summary/claim 依存で、実際の ORCA データと乖離する可能性がある。</li>
+              </ul>
+              <div class="section-title">コミット/差分</div>
+              <pre>a6cef713 Charts: add diagnosis/prescription/order edit panel
++ MedicalEditPanel / medicalEditApi
++ ORCA prescription/order mutation wrapper (stub)
++ 右固定メニュー導線</pre>
+              <div class="section-title">成果物</div>
+              <pre>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766849896635-537553</pre>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">評価済み</span>
+                <span class="agent-label">病名/処方/オーダー束の取得・更新まで一通り実装。最も要件に近い。</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="140" height="140" viewBox="0 0 200 200" role="img" aria-label="hex chart">
+                  <polygon points="100,10 173,55 173,145 100,190 27,145 27,55" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="100.0,36.0 155.4,68.0 148.5,128.0 100.0,164.0 48.0,130.0 89.6,94.0" fill="#8aa4ab" stroke="#6d878e" />
+                </svg>
+                <div class="hex-labels">
+                  <div>実装完了度 80点</div>
+                  <div>仕様適合 80点</div>
+                  <div>安定性 70点</div>
+                  <div>監査/ログ 80点</div>
+                  <div>UI/UX 75点</div>
+                  <div>テスト 15点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <ul class="inline-list">
+                <li>ORCA disease import/mutation と order bundle fetch/mutation を実装し、CRUD が成立。</li>
+                <li>右固定メニューへの統一導線と監査イベント記録は要件通り。</li>
+                <li>読み取り専用ロック時の編集ブロックが UI に未反映で運用リスクが残る。</li>
+              </ul>
+              <div class="section-title">コミット/差分</div>
+              <pre>58b7e4c8 Charts病名・処方・オーダー編集を追加
++ OrcaOrderBundleResource CRUD
++ OrcaDiseaseResource 強化
++ DiagnosisEditPanel / OrderBundleEditPanel</pre>
+              <div class="section-title">成果物</div>
+              <pre>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766849897089-adef2d</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section style="margin-top: 20px;">
+        <h2 style="font-size: 16px; margin-bottom: 8px;">補足（共通）</h2>
+        <pre>テスト実行: なし（差分確認とコードレビューのみ）
+懸念点: readOnly/lock 条件での編集ブロック、処方 API 実運用の整合性、E2E テスト不足</pre>
+      </section>
+    </div>
+  </body>
+</html>

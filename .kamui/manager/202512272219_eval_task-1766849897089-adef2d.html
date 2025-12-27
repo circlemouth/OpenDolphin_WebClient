@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .score-card h3 {
+        margin: 0 0 8px 0;
+        font-size: 13px;
+        color: #2c3a40;
+        letter-spacing: 0.03em;
+        text-transform: uppercase;
+      }
+      .score-value {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc(100% - 180px);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #e3edf0;
+        border: 1px solid #cdd9dd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .hex-grid {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-labels {
+        font-size: 12px;
+        color: #3a4b53;
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 4px 12px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .inline-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 13px;
+      }
+      .section-title {
+        font-size: 14px;
+        margin: 12px 0 6px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 32 病名と処方/オーダー編集の実装（再評価）</h1>
+        <p class="monitor-description">評価対象: task/task-1766849897089-adef2d</p>
+        <p class="monitor-description">評価日時: 2025-12-27 22:19Z</p>
+        <p class="monitor-description">概要: readOnly ブロックと監査イベント詳細の追加により、本番運用に近づいたかを再評価。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h3>claude code / task-1766849897089-adef2d</h3>
+          <div class="score-value">🥈 453 / 600</div>
+          <div class="score-note">総合スコア: 76点（readOnlyブロックと監査詳細は改善、テスト不足が残る）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent claude code / task-1766849897089-adef2d</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-27 22:19Z</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge">再評価完了</span>
+                <span class="agent-label">readOnly/マスター未同期/フォールバックの編集ブロックと監査詳細が整備され、要件達成度が向上。</span>
+              </div>
+              <div class="hex-grid">
+                <svg width="140" height="140" viewBox="0 0 200 200" role="img" aria-label="hex chart">
+                  <polygon points="100,10 173,55 173,145 100,190 27,145 27,55" fill="#f2f6f7" stroke="#c4d3d7" />
+                  <polygon points="100.0,28.0 161.0,64.8 155.4,132.0 100.0,170.4 43.2,132.8 82.7,90.0" fill="#8aa4ab" stroke="#6d878e" />
+                </svg>
+                <div class="hex-labels">
+                  <div>実装完了度 90点</div>
+                  <div>仕様適合 88点</div>
+                  <div>安定性 80点</div>
+                  <div>監査/ログ 88点</div>
+                  <div>UI/UX 82点</div>
+                  <div>テスト 25点</div>
+                </div>
+              </div>
+              <div class="section-title">評価根拠</div>
+              <ul class="inline-list">
+                <li>readOnly/missingMaster/fallbackUsed を UI でブロックし理由表示、操作ボタン無効化を実装。</li>
+                <li>監査イベントに operation/entity/itemCount/病名詳細を付与し、要件の監査粒度を満たす。</li>
+                <li>病名/処方/オーダーの CRUD と ORCA 側のバリデーション強化が揃った。</li>
+                <li>テスト実行の証跡がなく、E2E/統合検証が未実施のため減点。</li>
+              </ul>
+              <div class="section-title">コミット/差分</div>
+              <pre>fe4b672a Charts編集のreadOnlyと監査詳細を整備
++ DiagnosisEditPanel / OrderBundleEditPanel のブロック・監査詳細
++ OrcaDisease/OrderBundle の入力検証強化</pre>
+              <div class="section-title">成果物</div>
+              <pre>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766849897089-adef2d</pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section style="margin-top: 20px;">
+        <h2 style="font-size: 16px; margin-bottom: 8px;">補足</h2>
+        <pre>テスト実行: なし（ログ確認のみ）
+残課題: 監査ログ/CRUD の実機検証、E2E テストの追加、ORCA 実環境での動作確認</pre>
+      </section>
+    </div>
+  </body>
+</html>

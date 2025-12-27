@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 病名と処方/オーダー編集の実装（追加作業評価）</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f6fafb;
+      }
+      .score-card h3 {
+        margin: 0 0 8px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #4a5c63;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--info {
+        background: #d9edf7;
+        border-color: #bcdff1;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 140px;
+        margin: 8px 0 12px;
+      }
+      .metric-list {
+        margin: 0 0 12px;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .evidence-block {
+        margin-bottom: 12px;
+      }
+      .file-links a {
+        color: #1f2a30;
+        text-decoration: underline;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 8px 0 6px;
+        color: #2c3a40;
+      }
+      .baseline-box {
+        background: #f7fbfc;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+        margin: 16px 0 20px;
+      }
+      code {
+        font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 病名と処方/オーダー編集の実装（追加作業評価）</h1>
+        <p class="monitor-description">
+          タスク32は既存実装（master）により病名/処方/オーダー編集UIとORCA API連携が実装済み。今回の評価は「各ブランチの追加作業内容」を合算して採点した。
+        </p>
+      </header>
+
+      <section class="baseline-box">
+        <div class="section-title">既存実装の根拠（master）</div>
+        <div class="evidence-block">
+          Web: Charts 右固定メニュー/編集パネル（<code>web-client/src/features/charts/ChartsPage.tsx</code>、<code>web-client/src/features/charts/DiagnosisEditPanel.tsx</code>、<code>web-client/src/features/charts/OrderBundleEditPanel.tsx</code>）
+          API: <code>web-client/src/features/charts/diseaseApi.ts</code> / <code>web-client/src/features/charts/orderBundleApi.ts</code> が <code>/orca/disease</code> と <code>/orca/order/bundles</code> を呼び出す。
+          Server: <code>server-modernized/src/main/java/open/dolphin/rest/orca/OrcaDiseaseResource.java</code> / <code>OrcaOrderBundleResource.java</code> に監査イベントを含む実装が存在。
+        </div>
+        <div class="file-links">
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/DiagnosisEditPanel.tsx">DiagnosisEditPanel.tsx</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/OrderBundleEditPanel.tsx">OrderBundleEditPanel.tsx</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/diseaseApi.ts">diseaseApi.ts</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/web-client/src/features/charts/orderBundleApi.ts">orderBundleApi.ts</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaDiseaseResource.java">OrcaDiseaseResource.java</a><br />
+          <a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaOrderBundleResource.java">OrcaOrderBundleResource.java</a>
+        </div>
+      </section>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <h3>task-1766875644601-41d229</h3>
+          <div class="score-total">⚪️ 150 / 600</div>
+          <div class="score-note">総合スコア 25 / 100（評価: ⚪️）</div>
+        </div>
+        <div class="score-card">
+          <h3>task-1766875644401-626b24</h3>
+          <div class="score-total">🥉 210 / 600</div>
+          <div class="score-note">総合スコア 35 / 100（評価: ⚪️）</div>
+        </div>
+        <div class="score-card">
+          <h3>task-1766875644200-932799</h3>
+          <div class="score-total">🥉 240 / 600</div>
+          <div class="score-note">総合スコア 40 / 100（評価: ⚪️）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766875644601-41d229</th>
+            <th>Agent task-1766875644401-626b24</th>
+            <th>Agent task-1766875644200-932799</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-27 23:12 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--info">追加作業評価</span>
+                <span class="agent-label">懸念点追記のみ。追加価値は限定的で、証明書削除差分がリスク。</span>
+              </div>
+              <div class="hex-chart" data-scores="20,15,10,10,35,10"></div>
+              <div class="section-title">6指標</div>
+              <ul class="metric-list">
+                <li>要件充足 20点</li>
+                <li>実装品質 15点</li>
+                <li>テスト/検証 10点</li>
+                <li>安全性/リスク 10点</li>
+                <li>変更管理/ドキュメント 35点</li>
+                <li>運用適合 10点</li>
+              </ul>
+              <div class="section-title">根拠</div>
+              <div class="evidence-block">
+                既存実装は master に存在するため、当該ブランチの追加作業は懸念点の追記のみ。運用上の重要ファイル削除が含まれるため加点は限定的。
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>__LOG_A__</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>__DIFFSTAT_A__</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>__DIFF_A__</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--info">追加作業評価</span>
+                <span class="agent-label">worktree用コンテナ名サフィックス対応は有用だがタスク固有ではない。</span>
+              </div>
+              <div class="hex-chart" data-scores="25,30,20,15,45,30"></div>
+              <div class="section-title">6指標</div>
+              <ul class="metric-list">
+                <li>要件充足 25点</li>
+                <li>実装品質 30点</li>
+                <li>テスト/検証 20点</li>
+                <li>安全性/リスク 15点</li>
+                <li>変更管理/ドキュメント 45点</li>
+                <li>運用適合 30点</li>
+              </ul>
+              <div class="section-title">根拠</div>
+              <div class="evidence-block">
+                並列作業支援の環境整備は運用上の価値がある一方、病名/処方/オーダー編集の直接的な品質向上ではないため中程度の加点。
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>__LOG_B__</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>__DIFFSTAT_B__</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>__DIFF_B__</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--info">追加作業評価</span>
+                <span class="agent-label">ORCA疎通証跡は検証価値が高いがPhase2系ログでタスク直接度は低め。</span>
+              </div>
+              <div class="hex-chart" data-scores="30,25,30,20,55,30"></div>
+              <div class="section-title">6指標</div>
+              <ul class="metric-list">
+                <li>要件充足 30点</li>
+                <li>実装品質 25点</li>
+                <li>テスト/検証 30点</li>
+                <li>安全性/リスク 20点</li>
+                <li>変更管理/ドキュメント 55点</li>
+                <li>運用適合 30点</li>
+              </ul>
+              <div class="section-title">根拠</div>
+              <div class="evidence-block">
+                疎通証跡・ログ追加は実運用検証の価値があるが、タスク32のUI/API実装とは間接的。Phase2ログで現行ルール外のため加点を抑制。
+              </div>
+              <div class="section-title">コミットログ</div>
+              <pre>__LOG_C__</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>__DIFFSTAT_C__</pre>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分詳細</summary>
+                <pre>__DIFF_C__</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const buildHex = (el) => {
+        const scores = (el.dataset.scores || '').split(',').map((v) => Number(v.trim()) || 0);
+        const size = 120;
+        const center = size / 2;
+        const maxR = 45;
+        const toPoint = (value, idx) => {
+          const angle = (Math.PI / 180) * (-90 + idx * 60);
+          const r = maxR * (Math.max(0, Math.min(100, value)) / 100);
+          const x = center + r * Math.cos(angle);
+          const y = center + r * Math.sin(angle);
+          return x.toFixed(1) + ',' + y.toFixed(1);
+        };
+        const bgPoints = Array.from({ length: 6 }).map((_, idx) => {
+          const angle = (Math.PI / 180) * (-90 + idx * 60);
+          const x = center + maxR * Math.cos(angle);
+          const y = center + maxR * Math.sin(angle);
+          return x.toFixed(1) + ',' + y.toFixed(1);
+        }).join(' ');
+        const valPoints = scores.map((score, idx) => toPoint(score, idx)).join(' ');
+        el.innerHTML =
+          '<svg viewBox="0 0 ' + size + ' ' + size + '" width="140" height="140">' +
+          '<polygon points="' + bgPoints + '" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1"></polygon>' +
+          '<polygon points="' + valPoints + '" fill="rgba(65, 125, 140, 0.45)" stroke="#417d8c" stroke-width="1"></polygon>' +
+          '</svg>';
+      };
+      document.querySelectorAll('.hex-chart').forEach(buildHex);
+    </script>
+  </body>
+</html>

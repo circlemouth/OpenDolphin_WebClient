@@ -26,8 +26,15 @@ docs/web-client/operations/mac-dev-login.local.md
 ops/tests/api-smoke-test/headers/javatime-stage.headers
 
 # ORCA certification files
-ORCAcertification/*
-!ORCAcertification/README_PASSPHRASE.md
+# Note: Pre-push hook (.git/hooks/pre-push) prevents pushing sensitive files to remote
+# You can track these files locally with 'git add -f' if needed for worktree sharing
+ORCAcertification/*.p12
+ORCAcertification/*.pfx
+ORCAcertification/*.key
+ORCAcertification/*.pem
+ORCAcertification/使用目的不明：使用停止/
+ORCAcertification/新規*.txt
+# README is tracked by default (no exclusion needed)
 
 # Build artifacts and temporary files
 build/
