@@ -75,6 +75,17 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             recordAudit(request, "ORCA_ORDER_BUNDLE_FETCH", audit, AuditEventEnvelope.Outcome.FAILURE);
             throw validationError(request, "patientId", "patientId is required");
         }
+        if (entity != null && !entity.isBlank() && !isValidEntity(entity)) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", patientId);
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "entity");
+            audit.put("entity", entity);
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "entity is invalid");
+            recordAudit(request, "ORCA_ORDER_BUNDLE_FETCH", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw validationError(request, "entity", "entity is invalid");
+        }
 
         PatientModel patient = patientServiceBean.getPatientById(facilityId, patientId);
         if (patient == null) {
@@ -186,6 +197,16 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
             throw restError(request, Response.Status.NOT_FOUND, "karte_not_found", "Karte not found");
         }
 
+        if (payload.getOperations() == null || payload.getOperations().isEmpty()) {
+            Map<String, Object> audit = new HashMap<>();
+            audit.put("facilityId", facilityId);
+            audit.put("patientId", payload.getPatientId());
+            audit.put("validationError", Boolean.TRUE);
+            audit.put("field", "operations");
+            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "operations is required");
+            recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+            throw validationError(request, "operations", "operations is required");
+        }
         UserModel user = userServiceBean.getUser(remoteUser);
 
         List<Long> created = new ArrayList<>();
@@ -194,10 +215,39 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
 
         if (payload.getOperations() != null) {
             for (OrderBundleMutationRequest.BundleOperation op : payload.getOperations()) {
-                if (op == null || op.getOperation() == null) {
-                    continue;
+                if (op == null || op.getOperation() == null || op.getOperation().isBlank()) {
+                    Map<String, Object> audit = new HashMap<>();
+                    audit.put("facilityId", facilityId);
+                    audit.put("patientId", payload.getPatientId());
+                    audit.put("validationError", Boolean.TRUE);
+                    audit.put("field", "operation");
+                    markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "operation is required");
+                    recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+                    throw validationError(request, "operation", "operation is required");
                 }
                 String operation = op.getOperation().toLowerCase(Locale.ROOT);
+                if (!isSupportedOperation(operation)) {
+                    Map<String, Object> audit = new HashMap<>();
+                    audit.put("facilityId", facilityId);
+                    audit.put("patientId", payload.getPatientId());
+                    audit.put("validationError", Boolean.TRUE);
+                    audit.put("field", "operation");
+                    audit.put("operation", op.getOperation());
+                    markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "operation is invalid");
+                    recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+                    throw validationError(request, "operation", "operation is invalid");
+                }
+                if (op.getEntity() != null && !op.getEntity().isBlank() && !isValidEntity(op.getEntity())) {
+                    Map<String, Object> audit = new HashMap<>();
+                    audit.put("facilityId", facilityId);
+                    audit.put("patientId", payload.getPatientId());
+                    audit.put("validationError", Boolean.TRUE);
+                    audit.put("field", "entity");
+                    audit.put("entity", op.getEntity());
+                    markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request", "entity is invalid");
+                    recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+                    throw validationError(request, "entity", "entity is invalid");
+                }
                 switch (operation) {
                     case "create" -> {
                         DocumentModel document = buildDocument(karte, user, op);
@@ -207,7 +257,15 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                     case "update" -> {
                         Long documentId = op.getDocumentId();
                         if (documentId == null || documentId <= 0) {
-                            continue;
+                            Map<String, Object> audit = new HashMap<>();
+                            audit.put("facilityId", facilityId);
+                            audit.put("patientId", payload.getPatientId());
+                            audit.put("validationError", Boolean.TRUE);
+                            audit.put("field", "documentId");
+                            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request",
+                                    "documentId is required");
+                            recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+                            throw validationError(request, "documentId", "documentId is required");
                         }
                         DocumentModel document = fetchDocument(documentId);
                         if (document == null) {
@@ -220,7 +278,15 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                     case "delete" -> {
                         Long documentId = op.getDocumentId();
                         if (documentId == null || documentId <= 0) {
-                            continue;
+                            Map<String, Object> audit = new HashMap<>();
+                            audit.put("facilityId", facilityId);
+                            audit.put("patientId", payload.getPatientId());
+                            audit.put("validationError", Boolean.TRUE);
+                            audit.put("field", "documentId");
+                            markFailureDetails(audit, Response.Status.BAD_REQUEST.getStatusCode(), "invalid_request",
+                                    "documentId is required");
+                            recordAudit(request, "ORCA_ORDER_BUNDLE_MUTATION", audit, AuditEventEnvelope.Outcome.FAILURE);
+                            throw validationError(request, "documentId", "documentId is required");
                         }
                         karteServiceBean.deleteDocument(documentId);
                         deleted.add(documentId);
@@ -419,6 +485,14 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
 
     private boolean hasText(String value) {
         return value != null && !value.isBlank();
+    }
+
+    private boolean isSupportedOperation(String operation) {
+        return "create".equals(operation) || "update".equals(operation) || "delete".equals(operation);
+    }
+
+    private boolean isValidEntity(String entity) {
+        return IInfoModel.ENTITY_MED_ORDER.equals(entity) || IInfoModel.ENTITY_GENERAL_ORDER.equals(entity);
     }
 
     private DocumentModel fetchDocument(long documentId) {

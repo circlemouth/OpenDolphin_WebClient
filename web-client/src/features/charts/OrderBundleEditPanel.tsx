@@ -17,6 +17,8 @@ export type OrderBundleEditPanelMeta = {
   receptionId?: string;
   visitDate?: string;
   actorRole?: string;
+  readOnly?: boolean;
+  readOnlyReason?: string;
 };
 
 export type OrderBundleEditPanelProps = {
@@ -78,6 +80,37 @@ export function OrderBundleEditPanel({
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [form, setForm] = useState<BundleFormState>(() => buildEmptyForm(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
+  const blockReasons = useMemo(() => {
+    const reasons: string[] = [];
+    if (meta.readOnly) {
+      reasons.push(meta.readOnlyReason ?? '閲覧専用のため編集できません。');
+    }
+    if (meta.missingMaster) {
+      reasons.push('マスター未同期のため編集できません。');
+    }
+    if (meta.fallbackUsed) {
+      reasons.push('フォールバックデータのため編集できません。');
+    }
+    return reasons;
+  }, [meta.fallbackUsed, meta.missingMaster, meta.readOnly, meta.readOnlyReason]);
+  const isBlocked = blockReasons.length > 0;
+  const auditMetaDetails = useMemo(
+    () => ({
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      patientId: meta.patientId,
+      appointmentId: meta.appointmentId,
+      receptionId: meta.receptionId,
+      visitDate: meta.visitDate,
+      actorRole: meta.actorRole,
+    }),
+    [meta],
+  );
+
+  const countItems = (items?: OrderBundleItem[]) =>
+    items ? items.filter((item) => item.name.trim().length > 0).length : 0;
 
   const queryKey = ['charts-order-bundles', patientId, entity];
   const bundleQuery = useQuery({
@@ -111,6 +144,7 @@ export function OrderBundleEditPanel({
   const mutation = useMutation({
     mutationFn: async (payload: BundleFormState) => {
       if (!patientId) throw new Error('patientId is required');
+      const filteredItems = payload.items.filter((item) => item.name.trim().length > 0);
       return mutateOrderBundles({
         patientId,
         operations: [
@@ -125,13 +159,14 @@ export function OrderBundleEditPanel({
             adminMemo: payload.adminMemo,
             memo: payload.memo,
             startDate: payload.startDate,
-            items: payload.items.filter((item) => item.name.trim().length > 0),
+            items: filteredItems,
           },
         ],
       });
     },
     onSuccess: (result, payload) => {
       const operation = payload.documentId ? 'update' : 'create';
+      const itemCount = countItems(payload.items);
       setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? 'オーダーを保存しました。' : 'オーダーの保存に失敗しました。' });
       recordOutpatientFunnel('charts_action', {
         runId: result.runId ?? meta.runId,
@@ -154,13 +189,16 @@ export function OrderBundleEditPanel({
           outcome: result.ok ? 'success' : 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: result.runId ?? meta.runId,
             operation,
             entity,
             patientId,
             documentId: payload.documentId,
+            moduleId: payload.moduleId,
             bundleName: payload.bundleName,
             bundleNumber: payload.bundleNumber,
-            itemCount: payload.items.length,
+            itemCount,
           },
         },
       });
@@ -171,6 +209,7 @@ export function OrderBundleEditPanel({
     },
     onError: (error: unknown, payload) => {
       const message = error instanceof Error ? error.message : String(error);
+      const itemCount = countItems(payload.items);
       setNotice({ tone: 'error', message: `オーダーの保存に失敗しました: ${message}` });
       logAuditEvent({
         runId: meta.runId,
@@ -183,9 +222,16 @@ export function OrderBundleEditPanel({
           outcome: 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
             operation: payload.documentId ? 'update' : 'create',
             entity,
             patientId,
+            documentId: payload.documentId,
+            moduleId: payload.moduleId,
+            bundleName: payload.bundleName,
+            bundleNumber: payload.bundleNumber,
+            itemCount,
             error: message,
           },
         },
@@ -209,6 +255,7 @@ export function OrderBundleEditPanel({
       });
     },
     onSuccess: (result, bundle) => {
+      const itemCount = bundle.items?.length ?? 0;
       setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? 'オーダーを削除しました。' : 'オーダーの削除に失敗しました。' });
       logAuditEvent({
         runId: result.runId ?? meta.runId,
@@ -221,11 +268,16 @@ export function OrderBundleEditPanel({
           outcome: result.ok ? 'success' : 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: result.runId ?? meta.runId,
             operation: 'delete',
             entity,
             patientId,
             documentId: bundle.documentId,
+            moduleId: bundle.moduleId,
             bundleName: bundle.bundleName,
+            bundleNumber: bundle.bundleNumber,
+            itemCount,
           },
         },
       });
@@ -235,6 +287,7 @@ export function OrderBundleEditPanel({
     },
     onError: (error: unknown, bundle) => {
       const message = error instanceof Error ? error.message : String(error);
+      const itemCount = bundle.items?.length ?? 0;
       setNotice({ tone: 'error', message: `オーダーの削除に失敗しました: ${message}` });
       logAuditEvent({
         runId: meta.runId,
@@ -247,10 +300,16 @@ export function OrderBundleEditPanel({
           outcome: 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
             operation: 'delete',
             entity,
             patientId,
             documentId: bundle.documentId,
+            moduleId: bundle.moduleId,
+            bundleName: bundle.bundleName,
+            bundleNumber: bundle.bundleNumber,
+            itemCount,
             error: message,
           },
         },
@@ -278,17 +337,26 @@ export function OrderBundleEditPanel({
             setForm(buildEmptyForm(today));
             setNotice(null);
           }}
+          disabled={isBlocked}
         >
           新規入力
         </button>
       </header>
 
+      {isBlocked && (
+        <div className="charts-side-panel__notice charts-side-panel__notice--info">
+          編集はブロックされています: {blockReasons.join(' / ')}
+        </div>
+      )}
       {notice && <div className={`charts-side-panel__notice charts-side-panel__notice--${notice.tone}`}>{notice.message}</div>}
 
       <form
         className="charts-side-panel__form"
         onSubmit={(event) => {
           event.preventDefault();
+          if (isBlocked) {
+            return;
+          }
           if (!form.bundleName.trim()) {
             setNotice({ tone: 'error', message: `${bundleLabel}を入力してください。` });
             return;
@@ -303,6 +371,7 @@ export function OrderBundleEditPanel({
             value={form.bundleName}
             onChange={(event) => setForm((prev) => ({ ...prev, bundleName: event.target.value }))}
             placeholder="例: 降圧薬RP"
+            disabled={isBlocked}
           />
         </div>
         <div className="charts-side-panel__field-row">
@@ -313,6 +382,7 @@ export function OrderBundleEditPanel({
               value={form.admin}
               onChange={(event) => setForm((prev) => ({ ...prev, admin: event.target.value }))}
               placeholder="例: 1日1回 朝"
+              disabled={isBlocked}
             />
           </div>
           <div className="charts-side-panel__field">
@@ -322,6 +392,7 @@ export function OrderBundleEditPanel({
               value={form.bundleNumber}
               onChange={(event) => setForm((prev) => ({ ...prev, bundleNumber: event.target.value }))}
               placeholder="1"
+              disabled={isBlocked}
             />
           </div>
         </div>
@@ -332,6 +403,7 @@ export function OrderBundleEditPanel({
             type="date"
             value={form.startDate}
             onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
+            disabled={isBlocked}
           />
         </div>
         <div className="charts-side-panel__field">
@@ -341,6 +413,7 @@ export function OrderBundleEditPanel({
             value={form.memo}
             onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
             placeholder="コメントを入力"
+            disabled={isBlocked}
           />
         </div>
 
@@ -351,6 +424,7 @@ export function OrderBundleEditPanel({
               type="button"
               className="charts-side-panel__ghost"
               onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, buildEmptyItem()] }))}
+              disabled={isBlocked}
             >
               追加
             </button>
@@ -368,6 +442,7 @@ export function OrderBundleEditPanel({
                   });
                 }}
                 placeholder="項目名"
+                disabled={isBlocked}
               />
               <input
                 value={item.quantity ?? ''}
@@ -380,6 +455,7 @@ export function OrderBundleEditPanel({
                   });
                 }}
                 placeholder={itemQuantityLabel}
+                disabled={isBlocked}
               />
               <input
                 value={item.unit ?? ''}
@@ -392,6 +468,7 @@ export function OrderBundleEditPanel({
                   });
                 }}
                 placeholder="単位"
+                disabled={isBlocked}
               />
               <button
                 type="button"
@@ -402,6 +479,7 @@ export function OrderBundleEditPanel({
                     items: prev.items.length > 1 ? prev.items.filter((_, idx) => idx !== index) : [buildEmptyItem()],
                   }));
                 }}
+                disabled={isBlocked}
               >
                 ✕
               </button>
@@ -410,7 +488,7 @@ export function OrderBundleEditPanel({
         </div>
 
         <div className="charts-side-panel__actions">
-          <button type="submit" disabled={mutation.isPending}>
+          <button type="submit" disabled={mutation.isPending || isBlocked}>
             {form.documentId ? '更新する' : '追加する'}
           </button>
         </div>
@@ -444,10 +522,15 @@ export function OrderBundleEditPanel({
                       setForm(toFormState(bundle, today));
                       setNotice(null);
                     }}
+                    disabled={isBlocked}
                   >
                     編集
                   </button>
-                  <button type="button" onClick={() => deleteMutation.mutate(bundle)} disabled={deleteMutation.isPending}>
+                  <button
+                    type="button"
+                    onClick={() => deleteMutation.mutate(bundle)}
+                    disabled={deleteMutation.isPending || isBlocked}
+                  >
                     削除
                   </button>
                 </div>

@@ -385,6 +385,14 @@ export const chartsStyles = css`
     font-size: 0.9rem;
   }
 
+  .charts-side-panel__form input:disabled,
+  .charts-side-panel__form textarea:disabled,
+  .charts-side-panel__form select:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
   .charts-side-panel__form textarea {
     resize: vertical;
     min-height: 64px;
@@ -445,6 +453,16 @@ export const chartsStyles = css`
     height: 32px;
     cursor: pointer;
     font-weight: 700;
+  }
+
+  .charts-side-panel__ghost:disabled,
+  .charts-side-panel__actions button:disabled,
+  .charts-side-panel__item-actions button:disabled,
+  .charts-side-panel__icon:disabled {
+    background: #e2e8f0;
+    border-color: rgba(148, 163, 184, 0.4);
+    color: #94a3b8;
+    cursor: not-allowed;
   }
 
   .charts-side-panel__list {

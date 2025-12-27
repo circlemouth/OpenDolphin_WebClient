@@ -689,6 +689,8 @@ function ChartsContent() {
       receptionId: encounterContext.receptionId,
       visitDate: encounterContext.visitDate,
       actorRole: session.role,
+      readOnly: lockState.locked || tabLock.isReadOnly,
+      readOnlyReason: lockState.reason ?? tabLock.readOnlyReason,
     }),
     [
       encounterContext.appointmentId,
@@ -696,12 +698,16 @@ function ChartsContent() {
       encounterContext.receptionId,
       encounterContext.visitDate,
       flags.runId,
+      lockState.locked,
+      lockState.reason,
       resolvedCacheHit,
       resolvedFallbackUsed,
       resolvedMissingMaster,
       resolvedRunId,
       resolvedTransition,
       session.role,
+      tabLock.isReadOnly,
+      tabLock.readOnlyReason,
     ],
   );
   const soapNoteAuthor = useMemo(

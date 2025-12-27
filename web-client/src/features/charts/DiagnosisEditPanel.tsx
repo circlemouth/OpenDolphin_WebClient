@@ -17,6 +17,8 @@ export type DiagnosisEditPanelMeta = {
   receptionId?: string;
   visitDate?: string;
   actorRole?: string;
+  readOnly?: boolean;
+  readOnlyReason?: string;
 };
 
 export type DiagnosisEditPanelProps = {
@@ -70,6 +72,34 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [form, setForm] = useState<DiagnosisFormState>(() => buildEmptyForm(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
+  const blockReasons = useMemo(() => {
+    const reasons: string[] = [];
+    if (meta.readOnly) {
+      reasons.push(meta.readOnlyReason ?? '閲覧専用のため編集できません。');
+    }
+    if (meta.missingMaster) {
+      reasons.push('マスター未同期のため編集できません。');
+    }
+    if (meta.fallbackUsed) {
+      reasons.push('フォールバックデータのため編集できません。');
+    }
+    return reasons;
+  }, [meta.fallbackUsed, meta.missingMaster, meta.readOnly, meta.readOnlyReason]);
+  const isBlocked = blockReasons.length > 0;
+  const auditMetaDetails = useMemo(
+    () => ({
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      patientId: meta.patientId,
+      appointmentId: meta.appointmentId,
+      receptionId: meta.receptionId,
+      visitDate: meta.visitDate,
+      actorRole: meta.actorRole,
+    }),
+    [meta],
+  );
 
   const queryKey = ['charts-diagnosis', patientId];
   const diagnosisQuery = useQuery({
@@ -145,15 +175,20 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
           outcome: result.ok ? 'success' : 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: result.runId ?? meta.runId,
             operation: payload.diagnosisId ? 'update' : 'create',
             patientId,
             diagnosisId: payload.diagnosisId,
             diagnosisName: payload.name,
+            diagnosisCode: payload.code,
             startDate: payload.startDate,
             endDate: payload.endDate,
             outcome: payload.outcome,
             isMain: payload.isMain,
             isSuspected: payload.isSuspected,
+            category: payload.isMain ? '主病名' : '副病名',
+            suspectedFlag: payload.isSuspected ? '疑い' : undefined,
           },
         },
       });
@@ -176,9 +211,18 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
           outcome: 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
             operation: payload.diagnosisId ? 'update' : 'create',
             patientId,
             diagnosisId: payload.diagnosisId,
+            diagnosisName: payload.name,
+            diagnosisCode: payload.code,
+            startDate: payload.startDate,
+            endDate: payload.endDate,
+            outcome: payload.outcome,
+            isMain: payload.isMain,
+            isSuspected: payload.isSuspected,
             error: message,
           },
         },
@@ -213,10 +257,18 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
           outcome: result.ok ? 'success' : 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: result.runId ?? meta.runId,
             operation: 'delete',
             patientId,
             diagnosisId: entry.diagnosisId,
             diagnosisName: entry.diagnosisName,
+            diagnosisCode: entry.diagnosisCode,
+            startDate: entry.startDate,
+            endDate: entry.endDate,
+            outcome: entry.outcome,
+            category: entry.category,
+            suspectedFlag: entry.suspectedFlag,
           },
         },
       });
@@ -238,9 +290,18 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
           outcome: 'error',
           subject: 'charts',
           details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
             operation: 'delete',
             patientId,
             diagnosisId: entry.diagnosisId,
+            diagnosisName: entry.diagnosisName,
+            diagnosisCode: entry.diagnosisCode,
+            startDate: entry.startDate,
+            endDate: entry.endDate,
+            outcome: entry.outcome,
+            category: entry.category,
+            suspectedFlag: entry.suspectedFlag,
             error: message,
           },
         },
@@ -268,17 +329,26 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
             setForm(buildEmptyForm(today));
             setNotice(null);
           }}
+          disabled={isBlocked}
         >
           新規入力
         </button>
       </header>
 
+      {isBlocked && (
+        <div className="charts-side-panel__notice charts-side-panel__notice--info">
+          編集はブロックされています: {blockReasons.join(' / ')}
+        </div>
+      )}
       {notice && <div className={`charts-side-panel__notice charts-side-panel__notice--${notice.tone}`}>{notice.message}</div>}
 
       <form
         className="charts-side-panel__form"
         onSubmit={(event) => {
           event.preventDefault();
+          if (isBlocked) {
+            return;
+          }
           if (!form.name.trim()) {
             setNotice({ tone: 'error', message: '病名を入力してください。' });
             return;
@@ -293,6 +363,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
             value={form.name}
             onChange={(event) => setForm((prev) => ({ ...prev, name: event.target.value }))}
             placeholder="例: 高血圧症"
+            disabled={isBlocked}
           />
         </div>
         <div className="charts-side-panel__field">
@@ -302,6 +373,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
             value={form.code}
             onChange={(event) => setForm((prev) => ({ ...prev, code: event.target.value }))}
             placeholder="例: I10"
+            disabled={isBlocked}
           />
         </div>
         <div className="charts-side-panel__field-row">
@@ -310,6 +382,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
               type="checkbox"
               checked={form.isMain}
               onChange={(event) => setForm((prev) => ({ ...prev, isMain: event.target.checked }))}
+              disabled={isBlocked}
             />
             主病名
           </label>
@@ -318,6 +391,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
               type="checkbox"
               checked={form.isSuspected}
               onChange={(event) => setForm((prev) => ({ ...prev, isSuspected: event.target.checked }))}
+              disabled={isBlocked}
             />
             疑い
           </label>
@@ -330,6 +404,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
               type="date"
               value={form.startDate}
               onChange={(event) => setForm((prev) => ({ ...prev, startDate: event.target.value }))}
+              disabled={isBlocked}
             />
           </div>
           <div className="charts-side-panel__field">
@@ -339,6 +414,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
               type="date"
               value={form.endDate}
               onChange={(event) => setForm((prev) => ({ ...prev, endDate: event.target.value }))}
+              disabled={isBlocked}
             />
           </div>
         </div>
@@ -350,6 +426,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
             value={form.outcome}
             onChange={(event) => setForm((prev) => ({ ...prev, outcome: event.target.value }))}
             placeholder="例: 継続"
+            disabled={isBlocked}
           />
           <datalist id="diagnosis-outcome-options">
             {OUTCOME_PRESETS.map((option) => (
@@ -358,7 +435,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
           </datalist>
         </div>
         <div className="charts-side-panel__actions">
-          <button type="submit" disabled={mutation.isPending}>
+          <button type="submit" disabled={mutation.isPending || isBlocked}>
             {form.diagnosisId ? '更新する' : '追加する'}
           </button>
         </div>
@@ -396,10 +473,15 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
                       setForm(toFormState(entry, today));
                       setNotice(null);
                     }}
+                    disabled={isBlocked}
                   >
                     編集
                   </button>
-                  <button type="button" onClick={() => deleteMutation.mutate(entry)} disabled={deleteMutation.isPending}>
+                  <button
+                    type="button"
+                    onClick={() => deleteMutation.mutate(entry)}
+                    disabled={deleteMutation.isPending || isBlocked}
+                  >
                     削除
                   </button>
                 </div>

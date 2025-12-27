@@ -19,6 +19,7 @@ export type DiseaseImportResponse = {
   baseDate?: string;
   apiResult?: string;
   apiResultMessage?: string;
+  runId?: string;
   diseases?: DiseaseEntry[];
 };
 

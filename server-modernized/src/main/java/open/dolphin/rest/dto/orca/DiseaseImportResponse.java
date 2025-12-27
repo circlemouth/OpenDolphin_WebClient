@@ -12,6 +12,7 @@ public class DiseaseImportResponse {
 
     private String apiResult;
     private String apiResultMessage;
+    private String runId;
     private String patientId;
     private String baseDate;
     private List<DiseaseEntry> diseases;
@@ -31,6 +32,14 @@ public class DiseaseImportResponse {
 
     public void setApiResultMessage(String apiResultMessage) {
         this.apiResultMessage = apiResultMessage;
+    }
+
+    public String getRunId() {
+        return runId;
+    }
+
+    public void setRunId(String runId) {
+        this.runId = runId;
     }
 
     public String getPatientId() {
