@@ -41,7 +41,8 @@ type GuardReason = {
     | 'network_degraded'
     | 'not_server_route'
     | 'patient_not_selected'
-    | 'locked';
+    | 'locked'
+    | 'approval_locked';
   summary: string;
   detail: string;
   next: string[];
@@ -72,6 +73,12 @@ export interface ChartsActionBarProps {
   requireServerRouteForSend?: boolean;
   requirePatientForSend?: boolean;
   networkDegradedReason?: string;
+  approvalLock?: {
+    locked: boolean;
+    approvedAt?: string;
+    runId?: string;
+    action?: 'send';
+  };
   editLock?: {
     readOnly: boolean;
     reason?: string;
@@ -85,6 +92,7 @@ export interface ChartsActionBarProps {
   onAfterSend?: () => void | Promise<void>;
   onDraftSaved?: () => void;
   onLockChange?: (locked: boolean, reason?: string) => void;
+  onApprovalConfirmed?: (meta: { action: 'send'; actor?: string }) => void;
 }
 
 export function ChartsActionBar({
@@ -104,6 +112,7 @@ export function ChartsActionBar({
   requireServerRouteForSend = false,
   requirePatientForSend = false,
   networkDegradedReason,
+  approvalLock,
   editLock,
   onReloadLatest,
   onDiscardChanges,
@@ -111,6 +120,7 @@ export function ChartsActionBar({
   onAfterSend,
   onDraftSaved,
   onLockChange,
+  onApprovalConfirmed,
 }: ChartsActionBarProps) {
   const navigate = useNavigate();
   const [lockReason, setLockReason] = useState<string | null>(null);
@@ -127,7 +137,10 @@ export function ChartsActionBar({
   const uiLocked = lockReason !== null;
   const readOnly = editLock?.readOnly === true;
   const readOnlyReason = editLock?.reason ?? '並行編集を検知したため、このタブは閲覧専用です。';
-  const isLocked = uiLocked || isRunning || readOnly;
+  const approvalLocked = approvalLock?.locked === true;
+  const approvalReason = approvalLocked ? '署名確定済みのため編集できません。' : undefined;
+  const actionLocked = uiLocked || isRunning || readOnly;
+  const isLocked = actionLocked || approvalLocked;
   const resolvedTraceId = traceId ?? getObservabilityMeta().traceId;
   const resolvedPatientId = patientId ?? selectedEntry?.patientId ?? selectedEntry?.id;
   const resolvedAppointmentId = queueEntry?.appointmentId ?? selectedEntry?.appointmentId;
@@ -182,6 +195,15 @@ export function ChartsActionBar({
         summary: '閲覧専用（並行編集）',
         detail: readOnlyReason,
         next: ['最新を再読込', '別タブを閉じる', '必要ならロック引き継ぎ（強制）'],
+      });
+    }
+
+    if (approvalLocked) {
+      reasons.push({
+        key: 'approval_locked',
+        summary: '承認済み（署名確定）',
+        detail: approvalReason ?? '署名確定済みのため編集できません。',
+        next: ['必要なら新規受付で再作成', '承認内容の確認（監査ログ）'],
       });
     }
 
@@ -271,6 +293,8 @@ export function ChartsActionBar({
     networkDegradedReason,
     patientId,
     permissionDenied,
+    approvalLocked,
+    approvalReason,
     readOnly,
     readOnlyReason,
     requireServerRouteForSend,
@@ -280,7 +304,7 @@ export function ChartsActionBar({
     uiLocked,
   ]);
 
-  const sendDisabled = isRunning || sendPrecheckReasons.length > 0;
+  const sendDisabled = isRunning || approvalLocked || sendPrecheckReasons.length > 0;
 
   const printPrecheckReasons: GuardReason[] = useMemo(() => {
     const reasons: GuardReason[] = [];
@@ -339,12 +363,15 @@ export function ChartsActionBar({
   const otherBlocked = isLocked;
 
   useEffect(() => {
-    onLockChange?.(isLocked, lockReason ?? undefined);
-  }, [isLocked, lockReason, onLockChange]);
+    onLockChange?.(actionLocked, lockReason ?? undefined);
+  }, [actionLocked, lockReason, onLockChange]);
 
   const statusLine = useMemo(() => {
     if (isRunning && runningAction) {
       return `${ACTION_LABEL[runningAction]}を実行中… dataSourceTransition=${dataSourceTransition}`;
+    }
+    if (approvalLocked) {
+      return `承認済み（署名確定）: 編集不可（runId=${approvalLock?.runId ?? runId}）`;
     }
     if (lockReason) return lockReason;
     if (readOnly) return readOnlyReason;
@@ -368,6 +395,8 @@ export function ChartsActionBar({
     runningAction,
     sendPrecheckReasons,
     sendQueueLabel,
+    approvalLocked,
+    approvalLock?.runId,
   ]);
 
   const logTelemetry = (
@@ -483,6 +512,52 @@ export function ChartsActionBar({
 
   const handleAction = async (action: ChartAction) => {
     if (isRunning) return;
+
+    if (approvalLocked) {
+      const blockedReason = approvalReason ?? '署名確定済みのため編集できません。';
+      setToast({
+        tone: 'warning',
+        message: `${ACTION_LABEL[action]}を停止`,
+        detail: blockedReason,
+      });
+      setRetryAction(null);
+      logTelemetry(action, 'blocked', undefined, blockedReason, blockedReason);
+      logUiState({
+        action:
+          action === 'draft'
+            ? 'draft'
+            : action === 'finish'
+              ? 'finish'
+              : action === 'cancel'
+                ? 'cancel'
+                : action === 'print'
+                  ? 'print'
+                  : 'send',
+        screen: 'charts/action-bar',
+        controlId: `action-${action}`,
+        runId,
+        cacheHit,
+        missingMaster,
+        dataSourceTransition,
+        fallbackUsed,
+        details: {
+          operationPhase: 'lock',
+          blocked: true,
+          reasons: ['approval_locked'],
+          traceId: resolvedTraceId,
+          approval: approvalLock ?? null,
+        },
+      });
+      logAudit(action, 'blocked', blockedReason, undefined, {
+        phase: 'lock',
+        details: {
+          trigger: 'approval_locked',
+          blockedReasons: ['approval_locked'],
+          approvalState: 'confirmed',
+        },
+      });
+      return;
+    }
 
     if (readOnly) {
       const blockedReason = readOnlyReason;
@@ -846,6 +921,23 @@ export function ChartsActionBar({
       fallbackUsed,
       details: { operationPhase: 'lock', unlocked: true },
     });
+    recordChartsAuditEvent({
+      action: 'CHARTS_EDIT_LOCK',
+      outcome: 'released',
+      subject: 'charts-ui-lock',
+      patientId: resolvedPatientId,
+      appointmentId: resolvedAppointmentId,
+      runId,
+      cacheHit,
+      missingMaster,
+      fallbackUsed,
+      dataSourceTransition,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'ui_unlock',
+        lockStatus: 'ui',
+      },
+    });
   };
 
   const handleAbort = () => {
@@ -859,6 +951,40 @@ export function ChartsActionBar({
       tone: 'info',
       message: '最新を再読込',
       detail: '最新データを再取得します（取得完了後に編集可否が更新されます）。',
+    });
+    recordChartsAuditEvent({
+      action: 'CHARTS_CONFLICT',
+      outcome: 'resolved',
+      subject: 'charts-tab-lock',
+      patientId: resolvedPatientId,
+      appointmentId: resolvedAppointmentId,
+      runId,
+      cacheHit,
+      missingMaster,
+      fallbackUsed,
+      dataSourceTransition,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'tab',
+        resolution: 'reload',
+        lockStatus: editLock?.lockStatus,
+      },
+    });
+    logUiState({
+      action: 'lock',
+      screen: 'charts/action-bar',
+      controlId: 'reload-latest',
+      runId,
+      cacheHit,
+      missingMaster,
+      dataSourceTransition,
+      fallbackUsed,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'tab',
+        resolution: 'reload',
+        lockStatus: editLock?.lockStatus,
+      },
     });
     await onReloadLatest?.();
   };
@@ -944,6 +1070,8 @@ export function ChartsActionBar({
             onClick={() => {
               finalizeApproval('send', 'confirmed');
               setConfirmAction(null);
+              const { actor } = resolveAuditActor();
+              onApprovalConfirmed?.({ action: 'send', actor });
               void handleAction('send');
             }}
           >
@@ -1009,7 +1137,23 @@ export function ChartsActionBar({
           </button>
         </div>
       )}
-      {readOnly ? (
+      {approvalLocked ? (
+        <div className="charts-actions__conflict" role="group" aria-label="承認済み（署名確定）のため編集不可">
+          <div className="charts-actions__conflict-title">
+            <strong>承認済み（署名確定）</strong>
+            <span className="charts-actions__conflict-meta">
+              {approvalLock?.approvedAt ? `approvedAt=${approvalLock.approvedAt}` : ''}
+            </span>
+          </div>
+          <p className="charts-actions__conflict-message">{approvalReason}</p>
+          <div className="charts-actions__conflict-actions">
+            <button type="button" className="charts-actions__button charts-actions__button--unlock" onClick={handlePrintExport}>
+              印刷/エクスポートへ
+            </button>
+          </div>
+        </div>
+      ) : null}
+      {readOnly && !approvalLocked ? (
         <div className="charts-actions__conflict" role="group" aria-label="並行編集（閲覧専用）の対応">
           <div className="charts-actions__conflict-title">
             <strong>並行編集を検知</strong>
@@ -1111,7 +1255,7 @@ export function ChartsActionBar({
         <button
           type="button"
           className="charts-actions__button charts-actions__button--unlock"
-          disabled={isRunning || !isLocked}
+          disabled={isRunning || !isLocked || approvalLocked}
           onClick={handleUnlock}
         >
           ロック解除

@@ -43,6 +43,12 @@ import {
   storeChartsEncounterContext,
   type OutpatientEncounterContext,
 } from '../encounterContext';
+import {
+  buildChartsApprovalStorageKey,
+  readChartsApprovalRecord,
+  writeChartsApprovalRecord,
+  type ChartsApprovalRecord,
+} from '../approvalState';
 import { useChartsTabLock } from '../useChartsTabLock';
 import { isNetworkError } from '../../shared/apiError';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
@@ -232,9 +238,43 @@ function ChartsContent() {
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [auditEvents, setAuditEvents] = useState<AuditEventRecord[]>([]);
   const [lockState, setLockState] = useState<{ locked: boolean; reason?: string }>({ locked: false });
+  const [approvalState, setApprovalState] = useState<{
+    status: 'none' | 'approved';
+    record?: ChartsApprovalRecord;
+  }>({ status: 'none' });
+  const approvalLockLogRef = useRef<string | null>(null);
   const handleLockChange = useCallback((locked: boolean, reason?: string) => {
     setLockState({ locked, reason });
   }, []);
+  const handleApprovalConfirmed = useCallback(
+    (meta: { action: 'send'; actor?: string }) => {
+      const storageKey = buildChartsApprovalStorageKey({
+        facilityId: session.facilityId,
+        patientId: encounterContext.patientId,
+        appointmentId: encounterContext.appointmentId,
+        receptionId: encounterContext.receptionId,
+      });
+      if (!storageKey) return;
+      const record: ChartsApprovalRecord = {
+        version: 1,
+        key: storageKey,
+        approvedAt: new Date().toISOString(),
+        runId: resolvedRunId ?? flags.runId,
+        actor: meta.actor,
+        action: meta.action,
+      };
+      writeChartsApprovalRecord(record);
+      setApprovalState({ status: 'approved', record });
+    },
+    [
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      flags.runId,
+      resolvedRunId,
+      session.facilityId,
+    ],
+  );
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [contextAlert, setContextAlert] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [editLockAlert, setEditLockAlert] = useState<{
@@ -806,10 +846,12 @@ function ChartsContent() {
       receptionId: encounterContext.receptionId,
       visitDate: encounterContext.visitDate,
       actorRole: session.role,
-      readOnly: lockState.locked || tabLock.isReadOnly,
-      readOnlyReason: lockState.reason ?? tabLock.readOnlyReason,
+      readOnly: lockState.locked || tabLock.isReadOnly || approvalLocked,
+      readOnlyReason: approvalLocked ? approvalReason : lockState.reason ?? tabLock.readOnlyReason,
     }),
     [
+      approvalLocked,
+      approvalReason,
       encounterContext.appointmentId,
       encounterContext.patientId,
       encounterContext.receptionId,
@@ -1088,6 +1130,26 @@ function ChartsContent() {
     selectedEntry?.receptionId,
     session.facilityId,
   ]);
+  const approvalTarget = useMemo(
+    () => ({
+      facilityId: session.facilityId,
+      patientId: encounterContext.patientId,
+      appointmentId: encounterContext.appointmentId,
+      receptionId: encounterContext.receptionId,
+    }),
+    [
+      encounterContext.appointmentId,
+      encounterContext.patientId,
+      encounterContext.receptionId,
+      session.facilityId,
+    ],
+  );
+  const approvalStorageKey = useMemo(
+    () => buildChartsApprovalStorageKey(approvalTarget),
+    [approvalTarget],
+  );
+  const approvalLocked = approvalState.status === 'approved';
+  const approvalReason = approvalLocked ? '署名確定済みのため編集できません。' : undefined;
 
   const tabLock = useChartsTabLock({
     runId: resolvedRunId ?? flags.runId,
@@ -1095,6 +1157,86 @@ function ChartsContent() {
     enabled: chartsDisplayEnabled && Boolean(lockTarget.patientId),
   });
   tabLockReadOnlyRef.current = tabLock.isReadOnly;
+
+  useEffect(() => {
+    if (!approvalStorageKey) {
+      setApprovalState({ status: 'none' });
+      return;
+    }
+    const record = readChartsApprovalRecord(approvalStorageKey);
+    if (record) {
+      setApprovalState({ status: 'approved', record });
+      return;
+    }
+    setApprovalState({ status: 'none' });
+  }, [approvalStorageKey]);
+
+  useEffect(() => {
+    if (!approvalLocked) {
+      approvalLockLogRef.current = null;
+      return;
+    }
+    if (!approvalStorageKey) return;
+    const approvedAt = approvalState.record?.approvedAt ?? 'unknown';
+    const signature = `${approvalStorageKey}:${approvedAt}`;
+    if (approvalLockLogRef.current === signature) return;
+    approvalLockLogRef.current = signature;
+    recordChartsAuditEvent({
+      action: 'CHARTS_EDIT_LOCK',
+      outcome: 'acquired',
+      subject: 'charts-approval-lock',
+      patientId: approvalTarget.patientId,
+      appointmentId: approvalTarget.appointmentId,
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      fallbackUsed: resolvedFallbackUsed,
+      dataSourceTransition: resolvedTransition,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'approval',
+        lockStatus: 'approved',
+        approvalState: 'confirmed',
+        receptionId: approvalTarget.receptionId,
+        facilityId: session.facilityId,
+        userId: session.userId,
+      },
+    });
+    logUiState({
+      action: 'lock',
+      screen: 'charts',
+      controlId: 'approval-lock',
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
+      patientId: approvalTarget.patientId,
+      appointmentId: approvalTarget.appointmentId,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'approval',
+        lockStatus: 'approved',
+        approvalState: 'confirmed',
+        receptionId: approvalTarget.receptionId,
+      },
+    });
+  }, [
+    approvalLocked,
+    approvalState.record?.approvedAt,
+    approvalStorageKey,
+    approvalTarget.appointmentId,
+    approvalTarget.patientId,
+    approvalTarget.receptionId,
+    flags.runId,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
+    session.facilityId,
+    session.userId,
+  ]);
 
   useEffect(() => {
     if (!tabLock.storageKey) {
@@ -1223,6 +1365,24 @@ function ChartsContent() {
       }),
     [appointmentQuery.error, appointmentQuery.isError, appointmentQuery.isLoading, patientEntries, today],
   );
+  const approvalLabel = approvalLocked ? '承認済（署名確定）' : '未承認';
+  const approvalDetail = approvalLocked
+    ? approvalState.record?.approvedAt
+      ? `承認時刻: ${approvalState.record.approvedAt}`
+      : '承認済み'
+    : '署名未確定';
+  const lockStatus = useMemo(() => {
+    if (approvalLocked) {
+      return { label: '編集不可', detail: approvalReason ?? '承認済みロック中' };
+    }
+    if (tabLock.isReadOnly) {
+      return { label: '閲覧専用', detail: tabLock.readOnlyReason ?? '別タブが編集中です。' };
+    }
+    if (lockState.locked) {
+      return { label: '操作中ロック', detail: lockState.reason ?? '処理中のため一時ロックしています。' };
+    }
+    return { label: '解除済み', detail: '編集可能' };
+  }, [approvalLocked, approvalReason, lockState.locked, lockState.reason, tabLock.isReadOnly, tabLock.readOnlyReason]);
   const switchLocked = lockState.locked || tabLock.isReadOnly;
   const switchLockedReason = lockState.reason ?? (tabLock.isReadOnly ? tabLock.readOnlyReason : undefined);
   useEffect(() => {
@@ -1544,6 +1704,12 @@ function ChartsContent() {
               requireServerRouteForSend
               requirePatientForSend
               networkDegradedReason={networkDegradedReason}
+              approvalLock={{
+                locked: approvalLocked,
+                approvedAt: approvalState.record?.approvedAt,
+                runId: approvalState.record?.runId,
+                action: approvalState.record?.action,
+              }}
               editLock={{
                 readOnly: tabLock.isReadOnly,
                 reason: tabLock.readOnlyReason,
@@ -1607,6 +1773,7 @@ function ChartsContent() {
                   },
                 });
               }}
+              onApprovalConfirmed={handleApprovalConfirmed}
               onAfterSend={handleRefreshSummary}
               onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
               onLockChange={handleLockChange}
@@ -1674,7 +1841,10 @@ function ChartsContent() {
                   </div>
                   <div className="charts-clinical-bar__item">
                     <span className="charts-clinical-bar__label">承認/ロック</span>
-                    <strong>{tabLock.isReadOnly ? '承認済（編集不可）' : '未承認'}</strong>
+                    <strong>{approvalLabel}</strong>
+                    <span className="charts-clinical-bar__meta">{approvalDetail}</span>
+                    <span className="charts-clinical-bar__meta">ロック: {lockStatus.label}</span>
+                    <span className="charts-clinical-bar__meta">{lockStatus.detail}</span>
                   </div>
                 </div>
               </div>
@@ -1738,8 +1908,8 @@ function ChartsContent() {
                     history={soapHistory}
                     meta={soapNoteMeta}
                     author={soapNoteAuthor}
-                    readOnly={tabLock.isReadOnly}
-                    readOnlyReason={tabLock.readOnlyReason}
+                    readOnly={tabLock.isReadOnly || approvalLocked}
+                    readOnlyReason={approvalLocked ? approvalReason : tabLock.readOnlyReason}
                     onAppendHistory={appendSoapHistory}
                     onDraftDirtyChange={setDraftState}
                     onClearHistory={clearSoapHistory}

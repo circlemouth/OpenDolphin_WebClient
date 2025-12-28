@@ -143,6 +143,11 @@ export const chartsStyles = css`
     color: #64748b;
   }
 
+  .charts-clinical-bar__meta {
+    font-size: 0.75rem;
+    color: #475569;
+  }
+
   .charts-safety {
     display: flex;
     flex-direction: column;
