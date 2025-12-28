@@ -95,11 +95,16 @@ const formatBirthDate = (value?: string): string => {
 
 const pickLatestOutpatientMeta = (pages: AppointmentPayload[]): AppointmentPayload | undefined => {
   if (pages.length === 0) return undefined;
+  const toTimestamp = (value?: string): number => {
+    if (!value) return Number.NEGATIVE_INFINITY;
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+  };
   let latest = pages[0];
-  let latestTimestamp = latest.fetchedAt ? Date.parse(latest.fetchedAt) : Number.NEGATIVE_INFINITY;
+  let latestTimestamp = toTimestamp(latest.fetchedAt);
   for (const page of pages.slice(1)) {
-    const parsed = page.fetchedAt ? Date.parse(page.fetchedAt) : Number.NEGATIVE_INFINITY;
-    if (!Number.isNaN(parsed) && parsed >= latestTimestamp) {
+    const parsed = toTimestamp(page.fetchedAt);
+    if (parsed >= latestTimestamp) {
       latest = page;
       latestTimestamp = parsed;
     }
@@ -601,7 +606,11 @@ function ChartsContent() {
   const appointmentQuery = useInfiniteQuery({
     queryKey: appointmentQueryKey,
     queryFn: ({ pageParam = 1, ...context }) =>
-      fetchAppointmentOutpatients({ date: today, page: pageParam, size: 50 }, context, { preferredSourceOverride }),
+      fetchAppointmentOutpatients(
+        { date: today, page: pageParam, size: 50 },
+        context,
+        { preferredSourceOverride, screen: 'charts' },
+      ),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasNextPage === false) return undefined;
       if (lastPage.hasNextPage === true) return (lastPage.page ?? allPages.length) + 1;

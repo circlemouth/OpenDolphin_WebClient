@@ -95,7 +95,7 @@ const parseQueueEntries = (json: any): ClaimQueueEntry[] => {
 export async function fetchAppointmentOutpatients(
   params: AppointmentQueryParams,
   context?: QueryFunctionContext,
-  options: { preferredSourceOverride?: ResolveMasterSource } = {},
+  options: { preferredSourceOverride?: ResolveMasterSource; screen?: string } = {},
 ): Promise<AppointmentPayload> {
   const page = params.page ?? 1;
   const size = params.size ?? 50;
@@ -148,7 +148,7 @@ export async function fetchAppointmentOutpatients(
 
   logUiState({
     action: 'outpatient_fetch',
-    screen: 'reception',
+    screen: options.screen ?? 'reception',
     runId: payload.runId,
     cacheHit: payload.cacheHit ?? result.meta.fromCache,
     missingMaster: payload.missingMaster,
