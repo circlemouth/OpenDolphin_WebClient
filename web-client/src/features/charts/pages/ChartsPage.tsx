@@ -377,6 +377,55 @@ function ChartsContent() {
         tone: 'warning',
         message: '未保存ドラフトまたは処理中のため、URL からの患者切替をブロックしました（別患者混入防止）。',
       });
+      const blockedReasons = [
+        ...(draftState.dirty ? ['draft_dirty'] : []),
+        ...(lockState.locked ? ['ui_locked'] : []),
+        ...(tabLockReadOnlyRef.current ? ['tab_read_only'] : []),
+      ];
+      recordChartsAuditEvent({
+        action: 'CHARTS_PATIENT_SWITCH',
+        outcome: 'blocked',
+        subject: 'charts-url',
+        patientId: encounterContext.patientId,
+        appointmentId: encounterContext.appointmentId,
+        note: `url_context_switch_blocked targetPatientId=${urlContext.patientId ?? '—'} targetAppointmentId=${urlContext.appointmentId ?? '—'}`,
+        runId: flags.runId,
+        cacheHit: flags.cacheHit,
+        missingMaster: flags.missingMaster,
+        fallbackUsed: flags.fallbackUsed,
+        dataSourceTransition: flags.dataSourceTransition,
+        details: {
+          operationPhase: 'lock',
+          trigger: 'url',
+          blockedReasons,
+          ...(urlContext.patientId ? {} : encounterContext.patientId ? { fallbackPatientId: encounterContext.patientId } : {}),
+          ...(urlContext.appointmentId
+            ? {}
+            : encounterContext.appointmentId
+              ? { fallbackAppointmentId: encounterContext.appointmentId }
+              : {}),
+        },
+      });
+      logUiState({
+        action: 'navigate',
+        screen: 'charts',
+        controlId: 'patient-switch-url-blocked',
+        runId: flags.runId,
+        cacheHit: flags.cacheHit,
+        missingMaster: flags.missingMaster,
+        dataSourceTransition: flags.dataSourceTransition,
+        fallbackUsed: flags.fallbackUsed,
+        patientId: encounterContext.patientId,
+        appointmentId: encounterContext.appointmentId,
+        details: {
+          operationPhase: 'lock',
+          trigger: 'url',
+          blocked: true,
+          blockedReasons,
+          targetPatientId: urlContext.patientId ?? '—',
+          targetAppointmentId: urlContext.appointmentId ?? '—',
+        },
+      });
       const currentSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: flags.runId });
       if (location.search !== currentSearch) {
         navigate({ pathname: '/charts', search: currentSearch }, { replace: true });
@@ -387,6 +436,45 @@ function ChartsContent() {
     setContextAlert({
       tone: 'info',
       message: 'URL の外来コンテキストに合わせて表示を更新しました（戻る/進む操作）。',
+    });
+    recordChartsAuditEvent({
+      action: 'CHARTS_PATIENT_SWITCH',
+      outcome: 'success',
+      subject: 'charts-url',
+      patientId: urlContext.patientId,
+      appointmentId: urlContext.appointmentId,
+      note: `url_context_switch targetPatientId=${urlContext.patientId ?? '—'} targetAppointmentId=${urlContext.appointmentId ?? '—'}`,
+      runId: flags.runId,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      fallbackUsed: flags.fallbackUsed,
+      dataSourceTransition: flags.dataSourceTransition,
+      details: {
+        operationPhase: 'do',
+        trigger: 'url',
+        ...(urlContext.patientId ? {} : encounterContext.patientId ? { fallbackPatientId: encounterContext.patientId } : {}),
+        ...(urlContext.appointmentId
+          ? {}
+          : encounterContext.appointmentId
+            ? { fallbackAppointmentId: encounterContext.appointmentId }
+            : {}),
+      },
+    });
+    logUiState({
+      action: 'navigate',
+      screen: 'charts',
+      controlId: 'patient-switch-url',
+      runId: flags.runId,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      dataSourceTransition: flags.dataSourceTransition,
+      fallbackUsed: flags.fallbackUsed,
+      patientId: urlContext.patientId,
+      appointmentId: urlContext.appointmentId,
+      details: {
+        operationPhase: 'do',
+        trigger: 'url',
+      },
     });
   }, [
     draftState.dirty,
@@ -1040,13 +1128,37 @@ function ChartsContent() {
       fallbackUsed: resolvedFallbackUsed,
       dataSourceTransition: resolvedTransition,
       details: {
+        operationPhase: 'lock',
         trigger: 'tab',
+        lockStatus: tabLock.status,
         tabSessionId: tabLock.tabSessionId,
         lockOwnerRunId: tabLock.ownerRunId,
         lockExpiresAt: tabLock.expiresAt,
         receptionId: lockTarget.receptionId,
         facilityId: session.facilityId,
         userId: session.userId,
+      },
+    });
+    logUiState({
+      action: 'lock',
+      screen: 'charts',
+      controlId: 'tab-lock',
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
+      patientId: lockTarget.patientId,
+      appointmentId: lockTarget.appointmentId,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'tab',
+        reason: tabLock.readOnlyReason,
+        lockStatus: tabLock.status,
+        tabSessionId: tabLock.tabSessionId,
+        lockOwnerRunId: tabLock.ownerRunId,
+        lockExpiresAt: tabLock.expiresAt,
+        receptionId: lockTarget.receptionId,
       },
     });
   }, [
@@ -1129,6 +1241,42 @@ function ChartsContent() {
       setContextAlert({
         tone: 'warning',
         message: `指定された外来コンテキストが見つかりません（patientId=${encounterContext.patientId ?? '―'} receptionId=${encounterContext.receptionId ?? '―'}）。先頭の患者へ切替えました。`,
+      });
+      recordChartsAuditEvent({
+        action: 'CHARTS_PATIENT_SWITCH',
+        outcome: 'warning',
+        subject: 'charts-context',
+        patientId: head.patientId ?? head.id,
+        appointmentId: head.appointmentId,
+        note: 'auto-resolve missing encounter context',
+        runId: resolvedRunId ?? flags.runId,
+        cacheHit: resolvedCacheHit,
+        missingMaster: resolvedMissingMaster,
+        fallbackUsed: resolvedFallbackUsed,
+        dataSourceTransition: resolvedTransition,
+        details: {
+          operationPhase: 'do',
+          trigger: 'auto_resolve',
+          receptionId: head.receptionId,
+        },
+      });
+      logUiState({
+        action: 'navigate',
+        screen: 'charts',
+        controlId: 'patient-switch-auto-resolve',
+        runId: resolvedRunId ?? flags.runId,
+        cacheHit: resolvedCacheHit,
+        missingMaster: resolvedMissingMaster,
+        dataSourceTransition: resolvedTransition,
+        fallbackUsed: resolvedFallbackUsed,
+        patientId: head.patientId ?? head.id,
+        appointmentId: head.appointmentId,
+        details: {
+          operationPhase: 'do',
+          trigger: 'auto_resolve',
+          receptionId: head.receptionId,
+          previousContext: encounterContext,
+        },
       });
       setEncounterContext({
         patientId: head.patientId ?? head.id,
@@ -1401,6 +1549,7 @@ function ChartsContent() {
                 reason: tabLock.readOnlyReason,
                 ownerRunId: tabLock.ownerRunId,
                 expiresAt: tabLock.expiresAt,
+                lockStatus: tabLock.status,
               }}
               onReloadLatest={handleRefreshSummary}
               onDiscardChanges={() => {
@@ -1417,8 +1566,10 @@ function ChartsContent() {
                   fallbackUsed: resolvedFallbackUsed,
                   dataSourceTransition: resolvedTransition,
                   details: {
+                    operationPhase: 'lock',
                     trigger: 'tab',
                     resolution: 'discard',
+                    lockStatus: tabLock.status,
                     tabSessionId: tabLock.tabSessionId,
                     lockOwnerRunId: tabLock.ownerRunId,
                     lockExpiresAt: tabLock.expiresAt,
@@ -1443,8 +1594,10 @@ function ChartsContent() {
                   fallbackUsed: resolvedFallbackUsed,
                   dataSourceTransition: resolvedTransition,
                   details: {
+                    operationPhase: 'lock',
                     trigger: 'tab',
                     resolution: 'force_takeover',
+                    lockStatus: tabLock.status,
                     tabSessionId: tabLock.tabSessionId,
                     lockOwnerRunId: tabLock.ownerRunId,
                     lockExpiresAt: tabLock.expiresAt,
