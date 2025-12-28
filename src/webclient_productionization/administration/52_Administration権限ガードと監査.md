@@ -31,7 +31,7 @@
 
 ## 実施ログ
 - 2025-12-28: Administration 権限ガード（UI/ARIA）、操作ブロック時メッセージ、監査ログを追加。ナビゲーション拒否も監査へ記録。RUN_ID=20251228T094553Z
-  - コミット: 後述
+  - コミット: 6b82e55cd
   - 証跡: `tmp/web-client-dev.log`（setup-modernized-env 起動ログ）
   - 検証: `MINIO_API_PORT=29000 MINIO_CONSOLE_PORT=29001 MODERNIZED_POSTGRES_PORT=15432 MODERNIZED_APP_HTTP_PORT=29080 MODERNIZED_APP_ADMIN_PORT=30000 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` 実行、Web Client 起動確認
   - 残課題: なし
