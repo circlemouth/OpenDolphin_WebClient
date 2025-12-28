@@ -44,6 +44,12 @@ const normalizeBooleanHeader = (value: string | null) => {
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : undefined);
 const getBoolean = (value: unknown) => (typeof value === 'boolean' ? value : undefined);
+const resolveClientEnvironment = () => {
+  const meta = import.meta.env as Record<string, string | undefined>;
+  return meta.VITE_ENVIRONMENT ?? meta.VITE_DEPLOY_ENV ?? (import.meta.env.MODE === 'development' ? 'dev' : meta.MODE);
+};
+
+// 優先順位: header > body > client env (import.meta.env)
 const normalizeEnvironment = (body: Record<string, unknown>, headers: Headers) => {
   const header =
     headers.get('x-environment') ??
@@ -52,7 +58,8 @@ const normalizeEnvironment = (body: Record<string, unknown>, headers: Headers) =
     headers.get('x-runtime-env') ??
     undefined;
   const bodyValue = getString(body.environment) ?? getString(body.env) ?? getString(body.stage);
-  return header ?? bodyValue;
+  const clientValue = resolveClientEnvironment();
+  return header ?? bodyValue ?? clientValue;
 };
 const normalizeDeliveryMode = (body: Record<string, unknown>, headers: Headers) => {
   const header = headers.get('x-delivery-mode') ?? headers.get('x-admin-delivery-mode') ?? undefined;

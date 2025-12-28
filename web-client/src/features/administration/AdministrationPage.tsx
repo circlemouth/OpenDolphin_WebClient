@@ -111,6 +111,8 @@ const summarizeDeliveryStatus = (status: AdminDeliveryStatus) => {
   };
 };
 
+const formatDeliveryValue = (value: boolean | string | undefined) => (value === undefined ? '―' : String(value));
+
 export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const isSystemAdmin = role === 'system_admin' || role === 'admin' || role === 'system-admin';
   const session = useSession();
@@ -326,9 +328,11 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       (import.meta.env.MODE === 'development' ? 'dev' : import.meta.env.MODE),
   );
   const environmentLabel = normalizeEnvironmentLabel(configQuery.data?.environment) ?? envFallback ?? 'unknown';
+  const deliveryMode = configQuery.data?.deliveryMode ?? rawDelivery?.deliveryMode ?? rawConfig?.deliveryMode;
   const deliveryStatus = buildChartsDeliveryStatus(rawConfig, rawDelivery);
   const deliverySummary = summarizeDeliveryStatus(deliveryStatus);
   const lastDeliveredAt = rawDelivery?.deliveredAt ?? configQuery.data?.deliveredAt;
+  const deliveryPriorityLabel = rawDelivery ? 'delivery → config' : 'config（delivery未取得）';
   const deliveryFlagRows = [
     {
       key: 'chartsDisplayEnabled',
@@ -365,6 +369,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           <span className="administration-page__pill">role: {role ?? 'unknown'}</span>
           <span className="administration-page__pill">配信元: {configQuery.data?.source ?? 'live'}</span>
           <span className="administration-page__pill">環境: {environmentLabel}</span>
+          <span className="administration-page__pill">deliveryMode: {deliveryMode ?? '―'}</span>
           <span className="administration-page__pill">配信状態: {deliverySummary.summary}</span>
           <span className="administration-page__pill">最終配信: {formatTimestampWithAgo(lastDeliveredAt)}</span>
           <span className="administration-page__pill">
@@ -381,7 +386,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           </span>
           <span className="administration-page__pill">Charts master: {form.chartsMasterSource}</span>
           <span className="administration-page__pill">
-            syncMismatch: {syncMismatch === undefined ? '―' : syncMismatch ? 'true（delivery優先）' : 'false'}
+            syncMismatch: {syncMismatch === undefined ? '―' : syncMismatch ? `true（${deliveryPriorityLabel}）` : 'false'}
           </span>
           <span className="administration-page__pill">mismatchFields: {syncMismatchFields ?? '―'}</span>
         </div>
@@ -556,19 +561,19 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
             <li>deliveryVersion: {configQuery.data?.deliveryVersion ?? '―'}</li>
             <li>deliveredAt: {formatTimestamp(rawDelivery?.deliveredAt ?? configQuery.data?.deliveredAt)}</li>
             <li>environment: {environmentLabel}</li>
-            <li>deliveryMode: {configQuery.data?.deliveryMode ?? (deliverySummary.summary ?? '―')}</li>
+            <li>deliveryMode: {deliveryMode ?? '―'}</li>
             <li>verified: {configQuery.data?.verifyAdminDelivery ? 'true' : 'false'}</li>
             <li>chartsDisplayEnabled: {configQuery.data?.chartsDisplayEnabled === undefined ? '―' : String(configQuery.data.chartsDisplayEnabled)}</li>
             <li>chartsSendEnabled: {configQuery.data?.chartsSendEnabled === undefined ? '―' : String(configQuery.data.chartsSendEnabled)}</li>
             <li>chartsMasterSource: {configQuery.data?.chartsMasterSource ?? '―'}</li>
           </ul>
+          <p className="admin-quiet">表示優先: {deliveryPriorityLabel}（rawConfig / rawDelivery を併記）</p>
           <ul className="admin-delivery-flags" aria-label="Charts 配信状態">
             {deliveryFlagRows.map((row) => (
               <li key={row.key} className="admin-delivery-flags__row">
                 <span className="admin-delivery-flags__label">{row.label}</span>
                 <span className="admin-delivery-flags__value">
-                  config: {row.configValue === undefined ? '―' : String(row.configValue)} / delivery:{' '}
-                  {row.deliveryValue === undefined ? '―' : String(row.deliveryValue)}
+                  rawConfig: {formatDeliveryValue(row.configValue)} / rawDelivery: {formatDeliveryValue(row.deliveryValue)}
                 </span>
                 <span className={`admin-delivery-pill admin-delivery-pill--${row.state}`}>
                   {deliveryFlagStateLabel(row.state)}

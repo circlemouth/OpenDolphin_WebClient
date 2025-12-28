@@ -566,6 +566,8 @@ function ChartsContent() {
 
     const appliedAt = new Date().toISOString();
     const appliedTo = `${session.facilityId}:${session.userId}`;
+    const resolvedDeliveryMode = data.deliveryMode ?? data.rawDelivery?.deliveryMode ?? data.rawConfig?.deliveryMode;
+    const resolvedEnvironment = data.environment ?? data.rawDelivery?.environment ?? data.rawConfig?.environment;
     setDeliveryAppliedMeta({
       appliedAt,
       appliedTo,
@@ -586,12 +588,12 @@ function ChartsContent() {
         appliedAt,
         appliedTo,
         role: session.role,
-        environment: data.environment,
+        environment: resolvedEnvironment,
         delivery: {
           deliveryId: data.deliveryId,
           deliveryVersion: data.deliveryVersion,
           deliveredAt: data.deliveredAt,
-          deliveryMode: data.deliveryMode,
+          deliveryMode: resolvedDeliveryMode,
         },
         flags: {
           chartsDisplayEnabled: data.chartsDisplayEnabled,
