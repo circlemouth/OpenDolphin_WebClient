@@ -33,6 +33,8 @@ export type ChartsAuditOutcome =
   | 'discarded'
   | 'resolved';
 
+export type ChartsOperationPhase = 'approval' | 'lock' | 'do';
+
 export const CRITICAL_CHARTS_ACTIONS: ChartsAuditAction[] = [
   'CHARTS_PATIENT_SWITCH',
   'ORCA_SEND',
@@ -98,6 +100,8 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'fetchedAt',
   'counts',
   'selectedSendStatus',
+  'operationPhase',
+  'approvalState',
   'soapSection',
   'templateId',
   'authoredAt',

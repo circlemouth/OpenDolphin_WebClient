@@ -1040,6 +1040,7 @@ function ChartsContent() {
       fallbackUsed: resolvedFallbackUsed,
       dataSourceTransition: resolvedTransition,
       details: {
+        operationPhase: 'lock',
         trigger: 'tab',
         tabSessionId: tabLock.tabSessionId,
         lockOwnerRunId: tabLock.ownerRunId,
@@ -1047,6 +1048,27 @@ function ChartsContent() {
         receptionId: lockTarget.receptionId,
         facilityId: session.facilityId,
         userId: session.userId,
+      },
+    });
+    logUiState({
+      action: 'lock',
+      screen: 'charts',
+      controlId: 'tab-lock',
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
+      patientId: lockTarget.patientId,
+      appointmentId: lockTarget.appointmentId,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'tab',
+        reason: tabLock.readOnlyReason,
+        tabSessionId: tabLock.tabSessionId,
+        lockOwnerRunId: tabLock.ownerRunId,
+        lockExpiresAt: tabLock.expiresAt,
+        receptionId: lockTarget.receptionId,
       },
     });
   }, [
@@ -1129,6 +1151,42 @@ function ChartsContent() {
       setContextAlert({
         tone: 'warning',
         message: `指定された外来コンテキストが見つかりません（patientId=${encounterContext.patientId ?? '―'} receptionId=${encounterContext.receptionId ?? '―'}）。先頭の患者へ切替えました。`,
+      });
+      recordChartsAuditEvent({
+        action: 'CHARTS_PATIENT_SWITCH',
+        outcome: 'warning',
+        subject: 'charts-context',
+        patientId: head.patientId ?? head.id,
+        appointmentId: head.appointmentId,
+        note: 'auto-resolve missing encounter context',
+        runId: resolvedRunId ?? flags.runId,
+        cacheHit: resolvedCacheHit,
+        missingMaster: resolvedMissingMaster,
+        fallbackUsed: resolvedFallbackUsed,
+        dataSourceTransition: resolvedTransition,
+        details: {
+          operationPhase: 'do',
+          trigger: 'auto_resolve',
+          receptionId: head.receptionId,
+        },
+      });
+      logUiState({
+        action: 'navigate',
+        screen: 'charts',
+        controlId: 'patient-switch-auto-resolve',
+        runId: resolvedRunId ?? flags.runId,
+        cacheHit: resolvedCacheHit,
+        missingMaster: resolvedMissingMaster,
+        dataSourceTransition: resolvedTransition,
+        fallbackUsed: resolvedFallbackUsed,
+        patientId: head.patientId ?? head.id,
+        appointmentId: head.appointmentId,
+        details: {
+          operationPhase: 'do',
+          trigger: 'auto_resolve',
+          receptionId: head.receptionId,
+          previousContext: encounterContext,
+        },
       });
       setEncounterContext({
         patientId: head.patientId ?? head.id,
@@ -1417,6 +1475,7 @@ function ChartsContent() {
                   fallbackUsed: resolvedFallbackUsed,
                   dataSourceTransition: resolvedTransition,
                   details: {
+                    operationPhase: 'lock',
                     trigger: 'tab',
                     resolution: 'discard',
                     tabSessionId: tabLock.tabSessionId,
@@ -1443,6 +1502,7 @@ function ChartsContent() {
                   fallbackUsed: resolvedFallbackUsed,
                   dataSourceTransition: resolvedTransition,
                   details: {
+                    operationPhase: 'lock',
                     trigger: 'tab',
                     resolution: 'force_takeover',
                     tabSessionId: tabLock.tabSessionId,

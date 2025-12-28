@@ -8,7 +8,7 @@ import { httpFetch } from '../../libs/http/httpClient';
 import { getObservabilityMeta } from '../../libs/observability/observability';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { ToneBanner, type BannerTone } from '../reception/components/ToneBanner';
-import { recordChartsAuditEvent } from './audit';
+import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
 import type { ClaimQueueEntry } from '../outpatient/types';
 import type { ReceptionEntry } from '../reception/api';
@@ -336,6 +336,7 @@ export function ChartsActionBar({
     outcome: 'success' | 'error' | 'blocked' | 'started',
     detail?: string,
     durationMs?: number,
+    options?: { phase?: ChartsOperationPhase; details?: Record<string, unknown> },
   ) => {
     const actionMap: Record<ChartAction, 'ENCOUNTER_CLOSE' | 'ORCA_SEND' | 'DRAFT_SAVE' | 'DRAFT_CANCEL' | 'PRINT_OUTPATIENT'> = {
       finish: 'ENCOUNTER_CLOSE',
@@ -345,6 +346,7 @@ export function ChartsActionBar({
       print: 'PRINT_OUTPATIENT',
     };
     const normalizedAction = outcome === 'error' ? 'CHARTS_ACTION_FAILURE' : actionMap[action];
+    const phase = options?.phase ?? (outcome === 'blocked' ? 'lock' : 'do');
     recordChartsAuditEvent({
       action: normalizedAction,
       outcome,
@@ -359,6 +361,39 @@ export function ChartsActionBar({
       missingMaster,
       fallbackUsed,
       runId,
+      details: {
+        operationPhase: phase,
+        ...options?.details,
+      },
+    });
+  };
+
+  const logApproval = (action: ChartAction, state: 'open' | 'confirmed' | 'cancelled') => {
+    logUiState({
+      action: action === 'print' ? 'print' : 'send',
+      screen: 'charts/action-bar',
+      controlId: `action-${action}-approval`,
+      runId,
+      cacheHit,
+      missingMaster,
+      dataSourceTransition,
+      fallbackUsed,
+      details: {
+        operationPhase: 'approval',
+        approvalState: state,
+        patientId,
+        appointmentId: queueEntry?.appointmentId,
+        requestId: queueEntry?.requestId,
+        traceId: resolvedTraceId,
+      },
+    });
+    logAudit(action, state === 'open' || state === 'confirmed' ? 'started' : 'blocked', `approval_${state}`, undefined, {
+      phase: 'approval',
+      details: {
+        approvalState: state,
+        requestId: queueEntry?.requestId,
+        traceId: resolvedTraceId,
+      },
     });
   };
 
@@ -392,9 +427,21 @@ export function ChartsActionBar({
         missingMaster,
         dataSourceTransition,
         fallbackUsed,
-        details: { blocked: true, reasons: ['edit_lock_conflict'], traceId: resolvedTraceId, editLock: editLock ?? null },
+        details: {
+          operationPhase: 'lock',
+          blocked: true,
+          reasons: ['edit_lock_conflict'],
+          traceId: resolvedTraceId,
+          editLock: editLock ?? null,
+        },
       });
-      logAudit(action, 'blocked', blockedReason);
+      logAudit(action, 'blocked', blockedReason, undefined, {
+        phase: 'lock',
+        details: {
+          trigger: 'edit_lock',
+          traceId: resolvedTraceId,
+        },
+      });
       return;
     }
 
@@ -419,9 +466,21 @@ export function ChartsActionBar({
         missingMaster,
         dataSourceTransition,
         fallbackUsed,
-        details: { blocked: true, reasons: sendPrecheckReasons.map((reason) => reason.key), traceId: resolvedTraceId },
+        details: {
+          operationPhase: 'lock',
+          blocked: true,
+          reasons: sendPrecheckReasons.map((reason) => reason.key),
+          traceId: resolvedTraceId,
+        },
       });
-      logAudit(action, 'blocked', blockedReason);
+      logAudit(action, 'blocked', blockedReason, undefined, {
+        phase: 'lock',
+        details: {
+          trigger: 'precheck',
+          traceId: resolvedTraceId,
+          reasons: sendPrecheckReasons.map((reason) => reason.key),
+        },
+      });
       return;
     }
 
@@ -440,9 +499,15 @@ export function ChartsActionBar({
         missingMaster,
         dataSourceTransition,
         fallbackUsed,
-        details: { blocked: true, reasons: ['patient_not_selected'], traceId: resolvedTraceId },
+        details: { operationPhase: 'lock', blocked: true, reasons: ['patient_not_selected'], traceId: resolvedTraceId },
       });
-      logAudit(action, 'blocked', blockedReason);
+      logAudit(action, 'blocked', blockedReason, undefined, {
+        phase: 'lock',
+        details: {
+          trigger: 'patient_not_selected',
+          traceId: resolvedTraceId,
+        },
+      });
       return;
     }
 
@@ -481,6 +546,7 @@ export function ChartsActionBar({
       dataSourceTransition,
       fallbackUsed,
       details: {
+        operationPhase: 'do',
         patientId,
         appointmentId: queueEntry?.appointmentId,
         requestId: queueEntry?.requestId,
@@ -488,7 +554,7 @@ export function ChartsActionBar({
       },
     });
     logTelemetry(action, 'started');
-    logAudit(action, 'started', undefined);
+    logAudit(action, 'started', undefined, undefined, { phase: 'do' });
 
     try {
       abortControllerRef.current = new AbortController();
@@ -526,7 +592,7 @@ export function ChartsActionBar({
         detail: `runId=${nextRunId} / traceId=${nextTraceId ?? 'unknown'} / requestId=${queueEntry?.requestId ?? 'unknown'} / transition=${dataSourceTransition}`,
       });
       logTelemetry(action, 'success', durationMs);
-      logAudit(action, 'success', undefined, durationMs);
+      logAudit(action, 'success', undefined, durationMs, { phase: 'do' });
     } catch (error) {
       const detail = error instanceof Error ? error.message : String(error);
       const isAbort =
@@ -550,7 +616,10 @@ export function ChartsActionBar({
           setToast(null);
         }
         logTelemetry(action, 'blocked', durationMs, abortedDetail, abortedDetail);
-        logAudit(action, 'blocked', abortedDetail, durationMs);
+        logAudit(action, 'blocked', abortedDetail, durationMs, {
+          phase: 'lock',
+          details: { trigger: 'abort', traceId: errorTraceId },
+        });
       } else {
         const nextSteps = (() => {
           if (/HTTP 401|HTTP 403|権限不足/.test(detail)) {
@@ -570,7 +639,10 @@ export function ChartsActionBar({
           setToast(null);
         }
         logTelemetry(action, 'error', durationMs, composedDetail, composedDetail);
-        logAudit(action, 'error', composedDetail, durationMs);
+        logAudit(action, 'error', composedDetail, durationMs, {
+          phase: 'do',
+          details: { traceId: errorTraceId },
+        });
       }
     } finally {
       abortControllerRef.current = null;
@@ -583,7 +655,10 @@ export function ChartsActionBar({
     if (!selectedEntry) {
       setBanner({ tone: 'warning', message: '患者が未選択です。Patients で患者を選択してから出力してください。' });
       setToast(null);
-      logAudit('print', 'blocked', 'no selectedEntry');
+      logAudit('print', 'blocked', 'no selectedEntry', undefined, {
+        phase: 'lock',
+        details: { trigger: 'patient_not_selected' },
+      });
       return;
     }
 
@@ -618,6 +693,7 @@ export function ChartsActionBar({
       dataSourceTransition,
       fallbackUsed,
       details: {
+        operationPhase: 'do',
         destination: '/charts/print/outpatient',
         patientId: selectedEntry.patientId ?? selectedEntry.id,
         appointmentId: selectedEntry.appointmentId,
@@ -653,7 +729,7 @@ export function ChartsActionBar({
       missingMaster,
       dataSourceTransition,
       fallbackUsed,
-      details: { unlocked: true },
+      details: { operationPhase: 'lock', unlocked: true },
     });
   };
 
@@ -732,17 +808,27 @@ export function ChartsActionBar({
         role="alertdialog"
         title="ORCA送信の確認"
         description={`現在の患者/受付を ORCA へ送信します。実行後に取り消せない場合があります。（runId=${runId} / transition=${dataSourceTransition}）`}
-        onClose={() => setConfirmAction(null)}
+        onClose={() => {
+          setConfirmAction(null);
+          logApproval('send', 'cancelled');
+        }}
         testId="charts-send-dialog"
       >
         <div role="group" aria-label="ORCA送信の確認">
-          <button type="button" onClick={() => setConfirmAction(null)}>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmAction(null);
+              logApproval('send', 'cancelled');
+            }}
+          >
             キャンセル
           </button>
           <button
             type="button"
             onClick={() => {
               setConfirmAction(null);
+              logApproval('send', 'confirmed');
               void handleAction('send');
             }}
           >
@@ -756,17 +842,27 @@ export function ChartsActionBar({
         role="dialog"
         title="印刷/エクスポートの確認"
         description={`個人情報を含む診療文書を表示します。画面共有/第三者の閲覧に注意してください。（runId=${runId}）`}
-        onClose={() => setConfirmAction(null)}
+        onClose={() => {
+          setConfirmAction(null);
+          logApproval('print', 'cancelled');
+        }}
         testId="charts-print-dialog"
       >
         <div role="group" aria-label="印刷/エクスポートの確認">
-          <button type="button" onClick={() => setConfirmAction(null)}>
+          <button
+            type="button"
+            onClick={() => {
+              setConfirmAction(null);
+              logApproval('print', 'cancelled');
+            }}
+          >
             キャンセル
           </button>
           <button
             type="button"
             onClick={() => {
               setConfirmAction(null);
+              logApproval('print', 'confirmed');
               handlePrintExport();
             }}
           >
@@ -844,7 +940,10 @@ export function ChartsActionBar({
           id="charts-action-send"
           className="charts-actions__button charts-actions__button--primary"
           disabled={sendDisabled}
-          onClick={() => setConfirmAction('send')}
+          onClick={() => {
+            setConfirmAction('send');
+            logApproval('send', 'open');
+          }}
           aria-disabled={sendDisabled}
           aria-describedby={!isRunning && sendPrecheckReasons.length > 0 ? 'charts-actions-send-guard' : undefined}
           data-disabled-reason={
@@ -862,7 +961,10 @@ export function ChartsActionBar({
           className="charts-actions__button"
           disabled={sendDisabled}
           aria-disabled={sendDisabled}
-          onClick={() => setConfirmAction('print')}
+          onClick={() => {
+            setConfirmAction('print');
+            logApproval('print', 'open');
+          }}
           data-disabled-reason={
             sendDisabled
               ? (isRunning ? 'running' : sendPrecheckReasons.map((reason) => reason.key).join(','))

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 
@@ -7,7 +7,7 @@ import { StatusBadge } from '../shared/StatusBadge';
 import { logUiState, getAuditEventLog, type AuditEventRecord } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { useAuthService } from './authService';
-import { recordChartsAuditEvent } from './audit';
+import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
@@ -78,6 +78,58 @@ export function PatientsTab({
   const basicRef = useRef<HTMLDivElement | null>(null);
   const insuranceRef = useRef<HTMLDivElement | null>(null);
   const diffRef = useRef<HTMLDivElement | null>(null);
+
+  const logPatientSwitch = useCallback((params: {
+    phase: ChartsOperationPhase;
+    outcome: 'success' | 'blocked' | 'warning';
+    patientId?: string;
+    appointmentId?: string;
+    note?: string;
+    controlId: string;
+    details?: Record<string, unknown>;
+  }) => {
+    recordChartsAuditEvent({
+      action: 'CHARTS_PATIENT_SWITCH',
+      outcome: params.outcome,
+      subject: 'sidepane',
+      patientId: params.patientId,
+      appointmentId: params.appointmentId,
+      note: params.note,
+      dataSourceTransition: flags.dataSourceTransition,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      fallbackUsed: flags.fallbackUsed,
+      runId: flags.runId,
+      details: {
+        operationPhase: params.phase,
+        ...params.details,
+      },
+    });
+    logUiState({
+      action: 'history_jump',
+      screen: 'charts/patients-tab',
+      controlId: params.controlId,
+      runId: flags.runId,
+      cacheHit: flags.cacheHit,
+      missingMaster: flags.missingMaster,
+      dataSourceTransition: flags.dataSourceTransition,
+      fallbackUsed: flags.fallbackUsed,
+      details: {
+        operationPhase: params.phase,
+        outcome: params.outcome,
+        note: params.note,
+        patientId: params.patientId,
+        appointmentId: params.appointmentId,
+        ...params.details,
+      },
+    });
+  }, [
+    flags.cacheHit,
+    flags.dataSourceTransition,
+    flags.fallbackUsed,
+    flags.missingMaster,
+    flags.runId,
+  ]);
 
   const filteredEntries = useMemo(() => {
     const kw = keyword.trim().toLowerCase();
@@ -258,25 +310,37 @@ export function PatientsTab({
         receptionId: head.receptionId,
         visitDate: head.visitDate,
       });
-      recordChartsAuditEvent({
-        action: 'CHARTS_PATIENT_SWITCH',
+      logPatientSwitch({
+        phase: 'do',
         outcome: 'success',
-        subject: 'sidepane',
         patientId: fallbackId,
         appointmentId: head.appointmentId,
         note: 'auto-select first patient',
-        dataSourceTransition: flags.dataSourceTransition,
-        cacheHit: flags.cacheHit,
-        missingMaster: flags.missingMaster,
-        fallbackUsed: flags.fallbackUsed,
-        runId: flags.runId,
+        controlId: 'patient-switch-auto',
+        details: {
+          trigger: 'auto_select',
+        },
       });
       lastAuditPatientId.current = fallbackId;
     }
-  }, [filteredEntries, onDraftDirtyChange, onSelectEncounter, selected]);
+  }, [filteredEntries, logPatientSwitch, onDraftDirtyChange, onSelectEncounter, selected]);
 
   const handleSelect = (entry: ReceptionEntry) => {
-    if (switchLocked) return;
+    if (switchLocked) {
+      const reason = switchLockedReason ?? 'chart switch locked';
+      logPatientSwitch({
+        phase: 'lock',
+        outcome: 'blocked',
+        patientId: entry.patientId ?? entry.id,
+        appointmentId: entry.appointmentId,
+        note: reason,
+        controlId: 'patient-switch-blocked',
+        details: {
+          trigger: 'lock',
+        },
+      });
+      return;
+    }
     const nextId = entry.patientId ?? entry.id;
     const nextKey = entry.receptionId ?? entry.appointmentId ?? nextId;
     const currentKey = selectedContext?.receptionId ?? selectedContext?.appointmentId ?? selectedContext?.patientId ?? localSelectedKey;
@@ -286,12 +350,38 @@ export function PatientsTab({
     if (draftDirty && isSwitchingKey) {
       const message = '未保存のドラフトがあるため患者切替をブロックしました。保存または破棄してから切り替えてください。';
       onDraftBlocked?.(message);
+      logPatientSwitch({
+        phase: 'lock',
+        outcome: 'blocked',
+        patientId: nextId,
+        appointmentId: entry.appointmentId,
+        note: message,
+        controlId: 'patient-switch-blocked',
+        details: {
+          trigger: 'draft_dirty',
+          currentPatientId,
+        },
+      });
       return;
     }
     if (isSwitchingPatient && isSwitchingKey) {
       const message = `患者が切り替わります（現在: ${currentPatientId ?? '不明'} → 次: ${nextId}）。切り替えますか？`;
       const confirmed = typeof window === 'undefined' ? true : window.confirm(message);
-      if (!confirmed) return;
+      if (!confirmed) {
+        logPatientSwitch({
+          phase: 'approval',
+          outcome: 'blocked',
+          patientId: nextId,
+          appointmentId: entry.appointmentId,
+          note: 'user_cancelled',
+          controlId: 'patient-switch-cancelled',
+          details: {
+            trigger: 'confirm',
+            currentPatientId,
+          },
+        });
+        return;
+      }
     }
     setLocalSelectedKey(entry.receptionId ?? entry.appointmentId ?? nextId);
     onSelectEncounter?.({
@@ -308,18 +398,17 @@ export function PatientsTab({
       visitDate: entry.visitDate,
     });
     if (lastAuditPatientId.current !== nextId) {
-      recordChartsAuditEvent({
-        action: 'CHARTS_PATIENT_SWITCH',
+      logPatientSwitch({
+        phase: 'do',
         outcome: 'success',
-        subject: 'sidepane',
         patientId: nextId,
         appointmentId: entry.appointmentId,
         note: 'manual switch',
-        dataSourceTransition: flags.dataSourceTransition,
-        cacheHit: flags.cacheHit,
-        missingMaster: flags.missingMaster,
-        fallbackUsed: flags.fallbackUsed,
-        runId: flags.runId,
+        controlId: 'patient-switch',
+        details: {
+          trigger: 'manual',
+          currentPatientId,
+        },
       });
       lastAuditPatientId.current = nextId;
     }

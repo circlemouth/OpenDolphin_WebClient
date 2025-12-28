@@ -20,6 +20,7 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2025-12-28: Charts の重要操作で auditEvent/UI ログの operationPhase(approval/lock/do) を統一（RUN_ID=20251228T001604Z）。
 - 2025-12-28: Charts の Appointment 監査ログに screen=charts を反映し、appointment meta の最新選定を安定化（RUN_ID=20251228T000144Z）。
 - 2025-12-27: Charts 病名/処方/オーダー編集の readOnly/監査/バリデーション整備（RUN_ID=20251227T213517Z）。
   - 右パネル編集は master未同期/フォールバック/タブロック時に編集ブロックし、理由を明示。

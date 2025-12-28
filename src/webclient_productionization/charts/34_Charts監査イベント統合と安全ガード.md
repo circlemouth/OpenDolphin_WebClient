@@ -1,9 +1,9 @@
 # Charts監査イベント統合と安全ガード
 
-- RUN_ID: 20251227T152749Z
-- 期間: TBD
-- ステータス: not_started
-- 進捗: 0
+- RUN_ID: 20251228T001604Z
+- 期間: 2025-12-28
+- ステータス: done
+- 進捗: 100
 - YAML ID: src/webclient_productionization/charts/34_Charts監査イベント統合と安全ガード.md
 - 参照ガント: .kamui/apps/webclient-productionization-plan-20251226.yaml
 
@@ -13,17 +13,22 @@
 - 進捗更新時は docs/DEVELOPMENT_STATUS.md の懸念点有無も確認し、必要ならここに反映する。
 
 ## 進捗メモ（担当者が更新）
-- 担当者: TBD
-- 更新日: TBD
-- 根拠: TBD
-- 次アクション: TBD
+- 担当者: Codex CLI
+- 更新日: 2025-12-28
+- 根拠: Charts の患者切替/送信/印刷/キャンセル/ロック操作に監査イベントと UI ログを紐づけ、operationPhase(approval/lock/do) を統一して実装。
+- 次アクション: 運用確認（UI 操作で auditEvent を確認）。
 
 
 ## 目的
-- TODO
+- Charts の重要操作（患者切替/送信/印刷/キャンセル/ロック）で監査イベントの欠落を防止し、承認/ロック/Do の操作定義を UI と監査イベントで一致させる。
 
 ## 受け入れ基準 / Done
-- TODO
+- 患者切替/送信/印刷/キャンセル/ロックの各操作で auditEvent が記録される。
+- approval/lock/do の操作フェーズが UI ログと auditEvent の details に統一して記録される。
+- 既存の監査イベント形式（action/outcome/details）は崩さず、追加情報のみ補完する。
 
 ## 実施ログ
-- （未記載）
+- 2025-12-28: Charts 重要操作の auditEvent 連携強化と operationPhase 統一を実装（RUN_ID=20251228T001604Z）
+  - 変更: `web-client/src/features/charts/ChartsActionBar.tsx` / `web-client/src/features/charts/PatientsTab.tsx` / `web-client/src/features/charts/pages/ChartsPage.tsx` / `web-client/src/features/charts/audit.ts`
+  - 結果: 患者切替/送信/印刷/キャンセル/ロックで auditEvent+UI ログのフェーズ統一を確認
+  - 検証: `npm test -- charts`（web-client, vitest）
