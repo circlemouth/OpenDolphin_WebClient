@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
-import { logUiState } from '../../libs/audit/auditLogger';
+import { getAuditEventLog, logUiState, type AuditEventRecord } from '../../libs/audit/auditLogger';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
@@ -126,6 +126,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [baseline, setBaseline] = useState<PatientRecord | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
   const [lastAuditEvent, setLastAuditEvent] = useState<Record<string, unknown> | undefined>();
+  const [lastSaveResult, setLastSaveResult] = useState<PatientMutationResult | null>(null);
+  const [auditSnapshot, setAuditSnapshot] = useState<AuditEventRecord[]>(() => getAuditEventLog());
   const [validationErrors, setValidationErrors] = useState<PatientValidationError[]>([]);
   const [lastAttempt, setLastAttempt] = useState<PatientMutationPayload | null>(null);
   const baselineRef = useRef<PatientRecord | null>(null);
@@ -297,6 +299,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     }
   }, [patients, selectedId]);
 
+  useEffect(() => {
+    if (!lastAuditEvent) return;
+    setAuditSnapshot(getAuditEventLog());
+  }, [lastAuditEvent]);
+
   const handleSelect = (patient: PatientRecord) => {
     setSelectedId(patient.patientId ?? patient.name ?? 'new');
     setForm(patient);
@@ -340,6 +347,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     mutationFn: (payload: PatientMutationPayload) => savePatient(payload),
     onSuccess: (result: PatientMutationResult, variables) => {
       setLastAuditEvent(result.auditEvent);
+      setLastSaveResult(result);
       setToast({ tone: result.ok ? 'success' : 'error', message: result.message ?? '保存しました' });
       appliedMeta.current = applyAuthServicePatch(
         {
@@ -372,13 +380,114 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     onError: (error: unknown) => {
       setToast({ tone: 'error', message: '保存に失敗しました', detail: error instanceof Error ? error.message : String(error) });
       // onError は network/throw のみなので、直前の attempt を残して UI から再試行できるようにする
+      setLastSaveResult({
+        ok: false,
+        message: '保存に失敗しました',
+      });
     },
   });
 
   const missingMasterFlag = resolvedMissingMaster;
   const fallbackUsedFlag = resolvedFallbackUsed;
   const masterOk = !missingMasterFlag && !fallbackUsedFlag && (resolvedTransition ?? 'server') === 'server';
-  const blocking = !masterOk;
+  const blockReasons = useMemo(() => {
+    const reasons: string[] = [];
+    if (missingMasterFlag) reasons.push('missingMaster=true: ORCAマスタ未取得のため編集不可');
+    if (fallbackUsedFlag) reasons.push('fallbackUsed=true: フォールバックデータのため編集不可');
+    if ((resolvedTransition ?? 'server') !== 'server') {
+      reasons.push(`dataSourceTransition=${resolvedTransition ?? 'unknown'}: 非serverルートのため編集不可`);
+    }
+    return reasons;
+  }, [fallbackUsedFlag, missingMasterFlag, resolvedTransition]);
+  const blocking = blockReasons.length > 0;
+
+  const currentOrcaStatus = useMemo(() => {
+    if (missingMasterFlag) {
+      return { state: '反映停止', detail: 'missingMaster=true のため ORCA 反映を停止中' };
+    }
+    if (fallbackUsedFlag) {
+      return { state: '反映停止', detail: 'fallbackUsed=true のため ORCA 反映を停止中' };
+    }
+    if ((resolvedTransition ?? 'server') !== 'server') {
+      return { state: '反映停止', detail: `dataSourceTransition=${resolvedTransition ?? 'unknown'} のため ORCA 反映を停止中` };
+    }
+    return { state: '反映可能', detail: 'server ルートで ORCA 反映可能' };
+  }, [fallbackUsedFlag, missingMasterFlag, resolvedTransition]);
+
+  const lastSaveOrcaStatus = useMemo(() => {
+    if (!lastSaveResult) return { state: '未送信', detail: '保存操作がまだありません' };
+    if (lastSaveResult.missingMaster) return { state: '反映停止', detail: 'missingMaster=true のため ORCA 反映を停止' };
+    if (lastSaveResult.fallbackUsed) return { state: '反映停止', detail: 'fallbackUsed=true のため ORCA 反映を停止' };
+    if ((lastSaveResult.dataSourceTransition ?? 'server') !== 'server') {
+      return { state: '反映停止', detail: `dataSourceTransition=${lastSaveResult.dataSourceTransition ?? 'unknown'} のため ORCA 反映を停止` };
+    }
+    if (!lastSaveResult.ok) {
+      return { state: '反映失敗', detail: lastSaveResult.message ?? '保存に失敗しました' };
+    }
+    return {
+      state: '反映完了',
+      detail: `status=${lastSaveResult.status ?? 'unknown'} / endpoint=${lastSaveResult.sourcePath ?? 'unknown'}`,
+    };
+  }, [lastSaveResult]);
+
+  const resolveAuditPatientId = (record: AuditEventRecord) => {
+    const payload = record.payload as Record<string, unknown> | undefined;
+    const details = payload?.details as Record<string, unknown> | undefined;
+    return (
+      (record.patientId as string | undefined) ??
+      (payload?.patientId as string | undefined) ??
+      (details?.patientId as string | undefined)
+    );
+  };
+
+  const auditRows = useMemo(() => {
+    const selectedPatientId = form.patientId ?? baseline?.patientId ?? undefined;
+    const list = [...auditSnapshot];
+    const filtered = list.filter((record) => {
+      const payload = record.payload as Record<string, unknown> | undefined;
+      const action = (payload?.action as string | undefined) ?? '';
+      const source = record.source ?? '';
+      if (!action.includes('PATIENT') && !source.includes('patient')) return false;
+      const recordPatientId = resolveAuditPatientId(record);
+      if (!selectedPatientId) return true;
+      return recordPatientId === selectedPatientId;
+    });
+    return filtered.slice(-5).reverse();
+  }, [auditSnapshot, baseline?.patientId, form.patientId]);
+
+  const describeAudit = (record: AuditEventRecord) => {
+    const payload = record.payload as Record<string, unknown> | undefined;
+    const details = payload?.details as Record<string, unknown> | undefined;
+    const action =
+      (payload?.action as string | undefined) ??
+      (details?.operation ? `PATIENT_${String(details.operation).toUpperCase()}` : undefined) ??
+      'PATIENT_EVENT';
+    const outcome = (payload?.outcome as string | undefined) ?? (details?.outcome as string | undefined) ?? '—';
+    const runId = (payload?.runId as string | undefined) ?? record.runId ?? '—';
+    const traceId = (payload?.traceId as string | undefined) ?? record.traceId ?? '—';
+    const changedKeysRaw = details?.changedKeys as string[] | string | undefined;
+    const changedKeys = Array.isArray(changedKeysRaw) ? changedKeysRaw.join(', ') : changedKeysRaw ?? '';
+    const status = details?.status as string | number | undefined;
+    const sourcePath = details?.sourcePath as string | undefined;
+    const orcaStatus =
+      record.missingMaster || record.fallbackUsed || record.dataSourceTransition !== 'server'
+        ? '反映停止'
+        : outcome === 'success'
+          ? '反映完了'
+          : outcome === 'error'
+            ? '反映失敗'
+            : '反映待ち';
+    return {
+      action,
+      outcome,
+      runId,
+      traceId,
+      changedKeys,
+      status,
+      sourcePath,
+      orcaStatus,
+    };
+  };
 
   const focusField = (field: keyof PatientRecord) => {
     const el = typeof document !== 'undefined' ? (document.getElementById(`patients-form-${String(field)}`) as HTMLElement | null) : null;
@@ -389,8 +498,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     if (blocking) {
       setToast({
         tone: 'warning',
-        message: 'missingMaster / fallbackUsed / 非server ルートのため保存をブロックしました',
-        detail: `missingMaster=${missingMasterFlag} / fallbackUsed=${fallbackUsedFlag} / dataSourceTransition=${resolvedTransition ?? 'unknown'}`,
+        message: '編集ブロック中のため保存できません',
+        detail: blockReasons.join(' / '),
       });
       logUiState({
         action: 'save',
@@ -673,11 +782,13 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <p className="patients-page__sub">保存時に runId と auditEvent を付与します。</p>
             </div>
             <div className="patients-page__form-actions">
-              <button type="button" onClick={handleNew} className="ghost">新規作成</button>
-              <button type="button" onClick={handleDelete} disabled={mutation.isPending} className="ghost danger">
+              <button type="button" onClick={handleNew} className="ghost" disabled={mutation.isPending || blocking}>
+                新規作成
+              </button>
+              <button type="button" onClick={handleDelete} disabled={mutation.isPending || blocking} className="ghost danger">
                 削除
               </button>
-              <button type="submit" disabled={mutation.isPending}>
+              <button type="submit" disabled={mutation.isPending || blocking}>
                 {mutation.isPending ? '保存中…' : '保存'}
               </button>
             </div>
@@ -691,6 +802,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 value={form.patientId ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, patientId: event.target.value }))}
                 placeholder="自動採番または手入力"
+                disabled={blocking}
               />
             </label>
             <label>
@@ -703,6 +815,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 placeholder="山田 花子"
                 aria-invalid={validationErrors.some((e) => e.field === 'name')}
                 aria-describedby={validationErrors.some((e) => e.field === 'name') ? 'patients-form-error-name' : undefined}
+                disabled={blocking}
               />
               {validationErrors.some((e) => e.field === 'name') ? (
                 <small id="patients-form-error-name" className="patients-page__field-error" role="alert">
@@ -719,6 +832,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 placeholder="ヤマダ ハナコ"
                 aria-invalid={validationErrors.some((e) => e.field === 'kana')}
                 aria-describedby={validationErrors.some((e) => e.field === 'kana') ? 'patients-form-error-kana' : undefined}
+                disabled={blocking}
               />
               {validationErrors.some((e) => e.field === 'kana') ? (
                 <small id="patients-form-error-kana" className="patients-page__field-error" role="alert">
@@ -735,6 +849,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 onChange={(event) => setForm((prev) => ({ ...prev, birthDate: event.target.value }))}
                 aria-invalid={validationErrors.some((e) => e.field === 'birthDate')}
                 aria-describedby={validationErrors.some((e) => e.field === 'birthDate') ? 'patients-form-error-birthDate' : undefined}
+                disabled={blocking}
               />
               {validationErrors.some((e) => e.field === 'birthDate') ? (
                 <small id="patients-form-error-birthDate" className="patients-page__field-error" role="alert">
@@ -750,6 +865,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 onChange={(event) => setForm((prev) => ({ ...prev, sex: event.target.value }))}
                 aria-invalid={validationErrors.some((e) => e.field === 'sex')}
                 aria-describedby={validationErrors.some((e) => e.field === 'sex') ? 'patients-form-error-sex' : undefined}
+                disabled={blocking}
               >
                 <option value="">未選択</option>
                 <option value="M">男性</option>
@@ -771,6 +887,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 placeholder="03-1234-5678"
                 aria-invalid={validationErrors.some((e) => e.field === 'phone')}
                 aria-describedby={validationErrors.some((e) => e.field === 'phone') ? 'patients-form-error-phone' : undefined}
+                disabled={blocking}
               />
               {validationErrors.some((e) => e.field === 'phone') ? (
                 <small id="patients-form-error-phone" className="patients-page__field-error" role="alert">
@@ -787,6 +904,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 placeholder="1000001"
                 aria-invalid={validationErrors.some((e) => e.field === 'zip')}
                 aria-describedby={validationErrors.some((e) => e.field === 'zip') ? 'patients-form-error-zip' : undefined}
+                disabled={blocking}
               />
               {validationErrors.some((e) => e.field === 'zip') ? (
                 <small id="patients-form-error-zip" className="patients-page__field-error" role="alert">
@@ -801,6 +919,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 value={form.address ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, address: event.target.value }))}
                 placeholder="東京都千代田区..."
+                disabled={blocking}
               />
             </label>
             <label>
@@ -810,6 +929,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 value={form.insurance ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, insurance: event.target.value }))}
                 placeholder="社保12 / 自費など"
+                disabled={blocking}
               />
             </label>
             <label className="span-2">
@@ -820,13 +940,21 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 value={form.memo ?? ''}
                 onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
                 placeholder="アレルギー、受診メモなど"
+                disabled={blocking}
               />
             </label>
           </div>
 
           {blocking && (
             <div className="patients-page__block" role="alert" aria-live="assertive">
-              missingMaster / fallbackUsed / 非server ルートのため保存できません。Reception で master を解決してから再試行してください。
+              <strong>編集をブロックしました</strong>
+              <ul>
+                {blockReasons.map((reason) => (
+                  <li key={reason}>{reason}</li>
+                ))}
+              </ul>
+              <p>Reception で master を再取得してから再試行してください。</p>
+              <small>現在の ORCA 状態: {currentOrcaStatus.state}（{currentOrcaStatus.detail}）</small>
             </div>
           )}
 
@@ -866,16 +994,68 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             </div>
           ) : null}
 
-          {lastAuditEvent && (
-            <div className="patients-page__audit" role="status" aria-live="polite">
-              <h3>auditEvent</h3>
-              <p>
-                {Object.entries(lastAuditEvent)
-                  .map(([key, value]) => `${key}: ${String(value)}`)
-                  .join(' ｜ ')}
-              </p>
+          <div className="patients-page__audit-view" role="status" aria-live="polite">
+            <div className="patients-page__audit-head">
+              <h3>監査ログビュー</h3>
+              <button type="button" onClick={() => setAuditSnapshot(getAuditEventLog())}>
+                履歴を更新
+              </button>
             </div>
-          )}
+            <div className="patients-page__audit-summary">
+              <div className="patients-page__audit-card">
+                <span>保存結果</span>
+                <strong>{lastSaveResult ? (lastSaveResult.ok ? '成功' : '失敗') : '未送信'}</strong>
+                <small>
+                  runId={lastSaveResult?.runId ?? resolvedRunId ?? '—'} ／ status={lastSaveResult?.status ?? '—'} ／ endpoint=
+                  {lastSaveResult?.sourcePath ?? '—'}
+                </small>
+                {lastSaveResult?.message ? <small>message: {lastSaveResult.message}</small> : null}
+              </div>
+              <div className="patients-page__audit-card">
+                <span>ORCA反映</span>
+                <strong>{lastSaveOrcaStatus.state}</strong>
+                <small>{lastSaveOrcaStatus.detail}</small>
+              </div>
+            </div>
+            {lastAuditEvent && (
+              <div className="patients-page__audit-raw">
+                <strong>最新 auditEvent</strong>
+                <p>
+                  {Object.entries(lastAuditEvent)
+                    .map(([key, value]) => `${key}: ${String(value)}`)
+                    .join(' ｜ ')}
+                </p>
+              </div>
+            )}
+            <div className="patients-page__audit-list" role="list" aria-label="保存履歴">
+              {auditRows.length === 0 ? (
+                <p className="patients-page__audit-empty" role="status" aria-live="polite">
+                  まだ保存履歴がありません（Patients/Charts で保存すると反映されます）。
+                </p>
+              ) : (
+                auditRows.map((record, index) => {
+                  const desc = describeAudit(record);
+                  return (
+                    <div key={`${record.timestamp}-${index}`} className="patients-page__audit-row" role="listitem">
+                      <div className="patients-page__audit-row-main">
+                        <strong>{desc.action}</strong>
+                        <span className="patients-page__audit-pill">outcome: {desc.outcome}</span>
+                        <span className="patients-page__audit-pill">ORCA: {desc.orcaStatus}</span>
+                      </div>
+                      <div className="patients-page__audit-row-sub">
+                        <span>{record.timestamp}</span>
+                        <span>runId: {desc.runId}</span>
+                        <span>traceId: {desc.traceId}</span>
+                        {desc.status ? <span>status: {String(desc.status)}</span> : null}
+                        {desc.sourcePath ? <span>endpoint: {desc.sourcePath}</span> : null}
+                        {desc.changedKeys ? <span>changedKeys: {desc.changedKeys}</span> : null}
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
 
           <div className="patients-page__footnote" role="note">
             <span>dataSourceTransition: {transitionMeta.label}</span>
