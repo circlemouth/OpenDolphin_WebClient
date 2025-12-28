@@ -8,7 +8,7 @@ import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
-import { buildChartsUrl, normalizeVisitDate } from '../charts/encounterContext';
+import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
 import { PatientFormErrorAlert } from './PatientFormErrorAlert';
 import { useAppToast } from '../../libs/ui/appToast';
 import {
@@ -112,13 +112,33 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [searchParams, setSearchParams] = useSearchParams();
   const { enqueue } = useAppToast();
   const fromCharts = searchParams.get('from') === 'charts';
+  const receptionCarryover = useMemo(() => parseReceptionCarryoverParams(location.search), [location.search]);
+  const patientIdParam = searchParams.get('patientId') ?? undefined;
+  const appointmentIdParam = searchParams.get('appointmentId') ?? undefined;
+  const receptionIdParam = searchParams.get('receptionId') ?? undefined;
+  const visitDateParam = normalizeVisitDate(searchParams.get('visitDate') ?? undefined);
+  const runIdParam = normalizeRunId(searchParams.get('runId') ?? undefined);
+  const returnToParam = searchParams.get('returnTo') ?? undefined;
   const chartsReturnUrl = useMemo(() => {
     if (!fromCharts) return null;
-    const patientId = searchParams.get('patientId') ?? searchParams.get('kw') ?? undefined;
-    const receptionId = searchParams.get('receptionId') ?? undefined;
-    const visitDate = normalizeVisitDate(searchParams.get('visitDate') ?? undefined);
-    return buildChartsUrl({ patientId, receptionId, visitDate });
-  }, [fromCharts, searchParams]);
+    if (returnToParam?.startsWith('/charts')) return returnToParam;
+    const patientId = patientIdParam ?? searchParams.get('kw') ?? undefined;
+    return buildChartsUrl(
+      { patientId, appointmentId: appointmentIdParam, receptionId: receptionIdParam, visitDate: visitDateParam },
+      receptionCarryover,
+      { runId: runIdParam },
+    );
+  }, [
+    appointmentIdParam,
+    fromCharts,
+    patientIdParam,
+    receptionCarryover,
+    receptionIdParam,
+    returnToParam,
+    runIdParam,
+    searchParams,
+    visitDateParam,
+  ]);
   const initialFilters = useMemo(() => readFilters(searchParams), [searchParams]);
   const [filters, setFilters] = useState(initialFilters);
   const [selectedId, setSelectedId] = useState<string | undefined>();
@@ -135,6 +155,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [savedViewName, setSavedViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string>('');
   const lastUnlinkedToastKey = useRef<string | null>(null);
+  const lastChartsPatientId = useRef<string | null>(null);
   const [lastMeta, setLastMeta] = useState<
     Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
   >({
@@ -181,14 +202,20 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     const date = dateFromUrl ?? pickString(receptionStored?.date);
     const from = carryoverSource.get('from');
     const patientId = carryoverSource.get('patientId');
+    const appointmentId = carryoverSource.get('appointmentId');
     const receptionId = carryoverSource.get('receptionId');
     const visitDate = carryoverSource.get('visitDate');
+    const returnTo = carryoverSource.get('returnTo');
+    const runIdFromUrl = carryoverSource.get('runId');
     if (sort) params.set('sort', sort);
     if (date) params.set('date', date);
     if (from) params.set('from', from);
     if (patientId) params.set('patientId', patientId);
+    if (appointmentId) params.set('appointmentId', appointmentId);
     if (receptionId) params.set('receptionId', receptionId);
     if (visitDate) params.set('visitDate', visitDate);
+    if (returnTo) params.set('returnTo', returnTo);
+    if (runIdFromUrl) params.set('runId', runIdFromUrl);
     const nextSearch = params.toString();
     const currentSearch = location.search.startsWith('?') ? location.search.slice(1) : location.search;
     if (nextSearch !== currentSearch) {
@@ -275,6 +302,24 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     return { message, detail: `recordsReturned=${resolvedRecordsReturned ?? '―'}`, key };
   }, [patients, resolvedRecordsReturned, resolvedRunId]);
 
+  const chartsArrivalBanner = useMemo(() => {
+    if (!fromCharts) return null;
+    const hasPatient = Boolean(patientIdParam);
+    const matched = hasPatient && patients.some((patient) => patient.patientId === patientIdParam);
+    if (hasPatient && !matched) {
+      return {
+        tone: 'warning' as const,
+        message: 'Charts から移動しましたが、対象患者が一覧に見つかりません。Reception の検索条件を確認してください。',
+        nextAction: '検索条件を見直す',
+      };
+    }
+    return {
+      tone: 'warning' as const,
+      message: 'Charts から患者管理へ移動しました。受付フィルタを維持しているため、操作前に対象患者を確認してください。',
+      nextAction: '対象患者を確認',
+    };
+  }, [fromCharts, patientIdParam, patients]);
+
   useEffect(() => {
     if (!unlinkedNotice) {
       lastUnlinkedToastKey.current = null;
@@ -298,6 +343,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       baselineRef.current = patients[0];
     }
   }, [patients, selectedId]);
+
+  useEffect(() => {
+    if (!patientIdParam) return;
+    if (lastChartsPatientId.current === patientIdParam) return;
+    const target = patients.find((patient) => patient.patientId === patientIdParam);
+    if (target) {
+      setSelectedId(patientIdParam);
+      setForm(target);
+      setBaseline(target);
+      baselineRef.current = target;
+    }
+    lastChartsPatientId.current = patientIdParam;
+  }, [patientIdParam, patients]);
 
   useEffect(() => {
     if (!lastAuditEvent) return;
@@ -612,6 +670,18 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       </header>
 
       <ToneBanner tone={tone} message={toneMessage} runId={resolvedRunId} ariaLive={missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite'} />
+      {chartsArrivalBanner && (
+        <ToneBanner
+          tone={chartsArrivalBanner.tone}
+          message={chartsArrivalBanner.message}
+          patientId={patientIdParam}
+          receptionId={receptionIdParam}
+          destination="Patients"
+          nextAction={chartsArrivalBanner.nextAction}
+          runId={resolvedRunId}
+          ariaLive="assertive"
+        />
+      )}
       {unlinkedNotice && (
         <ToneBanner
           tone="warning"

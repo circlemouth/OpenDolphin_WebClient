@@ -1943,6 +1943,7 @@ function ChartsContent() {
                     appointmentBanner={appointmentBanner}
                     auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
                     selectedContext={encounterContext}
+                    receptionCarryover={receptionCarryover}
                     draftDirty={draftState.dirty}
                     switchLocked={lockState.locked}
                     switchLockedReason={lockState.reason}

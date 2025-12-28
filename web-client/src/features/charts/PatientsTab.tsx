@@ -11,7 +11,7 @@ import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import type { ReceptionEntry } from '../reception/api';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
-import type { OutpatientEncounterContext } from './encounterContext';
+import { buildChartsUrl, type OutpatientEncounterContext, type ReceptionCarryoverParams } from './encounterContext';
 import { useSession } from '../../AppRouter';
 import { fetchPatients, type PatientRecord } from '../patients/api';
 import { PatientInfoEditDialog } from './PatientInfoEditDialog';
@@ -21,6 +21,7 @@ export interface PatientsTabProps {
   appointmentBanner?: AppointmentDataBanner | null;
   auditEvent?: Record<string, unknown>;
   selectedContext?: OutpatientEncounterContext;
+  receptionCarryover?: ReceptionCarryoverParams;
   draftDirty?: boolean;
   switchLocked?: boolean;
   switchLockedReason?: string;
@@ -40,6 +41,7 @@ export function PatientsTab({
   appointmentBanner,
   auditEvent,
   selectedContext,
+  receptionCarryover,
   draftDirty = false,
   switchLocked = false,
   switchLockedReason,
@@ -486,13 +488,30 @@ export function PatientsTab({
 
   const navigateToPatients = (intent: 'basic' | 'insurance') => {
     const params = new URLSearchParams();
-    if (selectedPatientId) params.set('kw', selectedPatientId);
     if (selectedPatientId) params.set('patientId', selectedPatientId);
     params.set('from', 'charts');
     params.set('intent', intent);
     params.set('runId', flags.runId);
+    if (selectedContext?.appointmentId) params.set('appointmentId', selectedContext.appointmentId);
     if (selectedContext?.receptionId) params.set('receptionId', selectedContext.receptionId);
     if (selectedContext?.visitDate) params.set('visitDate', selectedContext.visitDate);
+    if (receptionCarryover?.kw) params.set('kw', receptionCarryover.kw);
+    if (receptionCarryover?.dept) params.set('dept', receptionCarryover.dept);
+    if (receptionCarryover?.phys) params.set('phys', receptionCarryover.phys);
+    if (receptionCarryover?.pay) params.set('pay', receptionCarryover.pay);
+    if (receptionCarryover?.sort) params.set('sort', receptionCarryover.sort);
+    if (receptionCarryover?.date) params.set('date', receptionCarryover.date);
+    const returnTo = buildChartsUrl(
+      {
+        patientId: selectedPatientId ?? selectedContext?.patientId,
+        appointmentId: selectedContext?.appointmentId,
+        receptionId: selectedContext?.receptionId,
+        visitDate: selectedContext?.visitDate,
+      },
+      receptionCarryover,
+      { runId: flags.runId },
+    );
+    if (returnTo) params.set('returnTo', returnTo);
     navigate(`/patients?${params.toString()}`);
 
     recordOutpatientFunnel('charts_patient_sidepane', {
