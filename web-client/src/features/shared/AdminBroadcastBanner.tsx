@@ -43,8 +43,10 @@ export function AdminBroadcastBanner({ broadcast, surface }: AdminBroadcastBanne
     broadcast.chartsDisplayEnabled === false ||
     broadcast.chartsSendEnabled === false;
   const deliveryStatusSummary = summarizeDeliveryStatus(broadcast.deliveryStatus);
+  const queueHasRisk =
+    broadcast.queueStatus ? broadcast.queueStatus.failed > 0 || broadcast.queueStatus.delayed > 0 : false;
   const tone: 'info' | 'warning' = isQueueBroadcast
-    ? broadcast.queueResult === 'failure'
+    ? broadcast.queueResult === 'failure' || queueHasRisk
       ? 'warning'
       : 'info'
     : hasChartsImpact ||
@@ -56,14 +58,16 @@ export function AdminBroadcastBanner({ broadcast, surface }: AdminBroadcastBanne
     broadcast.queueOperation === 'retry' ? '再送' : broadcast.queueOperation === 'discard' ? '破棄' : undefined;
   const queueResultLabel =
     broadcast.queueResult === 'failure' ? '失敗' : broadcast.queueResult === 'success' ? '完了' : undefined;
+  const queueStatusLabel = broadcast.queueStatus
+    ? `queue: 合計${broadcast.queueStatus.total}件 / pending:${broadcast.queueStatus.pending} / failed:${broadcast.queueStatus.failed} / delayed:${broadcast.queueStatus.delayed}`
+    : undefined;
   const message = isQueueBroadcast
     ? [
         '配信キュー操作が通知されました',
         queueOperationLabel ? `操作: ${queueOperationLabel}` : undefined,
         queueResultLabel ? `結果: ${queueResultLabel}` : undefined,
         broadcast.queuePatientId ? `patientId: ${broadcast.queuePatientId}` : undefined,
-        broadcast.queueCount !== undefined ? `queue: ${broadcast.queueCount}件` : undefined,
-        broadcast.queueWarningCount !== undefined ? `warning: ${broadcast.queueWarningCount}件` : undefined,
+        queueStatusLabel,
         broadcast.environment ? `environment: ${broadcast.environment}` : undefined,
         broadcast.queueMode ? `queueMode: ${broadcast.queueMode}` : undefined,
         broadcast.deliveredAt ? `updatedAt: ${formatTimestamp(broadcast.deliveredAt) ?? broadcast.deliveredAt}` : undefined,

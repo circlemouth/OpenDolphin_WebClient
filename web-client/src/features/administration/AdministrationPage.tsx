@@ -6,7 +6,11 @@ import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-f
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { useSession } from '../../AppRouter';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../charts/authService';
-import { ORCA_QUEUE_STALL_THRESHOLD_MS } from '../outpatient/orcaQueueStatus';
+import {
+  ORCA_QUEUE_STALL_THRESHOLD_MS,
+  buildOrcaQueueWarningSummary,
+  isOrcaQueueWarningEntry,
+} from '../outpatient/orcaQueueStatus';
 import {
   discardOrcaQueue,
   fetchEffectiveAdminConfig,
@@ -68,28 +72,6 @@ const formatTimestampWithAgo = (iso?: string) => {
 };
 
 const QUEUE_DELAY_WARNING_MS = ORCA_QUEUE_STALL_THRESHOLD_MS;
-
-const isQueueWarningEntry = (entry: OrcaQueueEntry, nowMs = Date.now()) => {
-  const normalized = entry.status.toLowerCase();
-  if (normalized.includes('fail') || normalized.includes('error')) return true;
-  const isPending =
-    normalized === 'pending' ||
-    normalized === 'waiting' ||
-    normalized === 'processing' ||
-    normalized.includes('retry') ||
-    normalized.includes('hold') ||
-    normalized.includes('dispatch') ||
-    normalized.includes('send');
-  if (!isPending) return false;
-  if (!entry.lastDispatchAt) return true;
-  const elapsed = nowMs - new Date(entry.lastDispatchAt).getTime();
-  return elapsed > QUEUE_DELAY_WARNING_MS;
-};
-
-const countQueueWarnings = (entries: OrcaQueueEntry[]) => {
-  const nowMs = Date.now();
-  return entries.filter((entry) => isQueueWarningEntry(entry, nowMs)).length;
-};
 
 const toStatusClass = (status: string) => {
   if (status === 'delivered') return 'admin-queue__status admin-queue__status--delivered';
@@ -274,15 +256,14 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['orca-queue'], data);
       const queueOperation = variables.kind;
-      const warningCount = countQueueWarnings(data.queue);
+      const queueSummary = buildOrcaQueueWarningSummary(data.queue);
       publishAdminBroadcast({
         runId: data.runId ?? runId,
         action: 'queue',
         queueOperation,
         queueResult: 'success',
         queuePatientId: variables.patientId,
-        queueCount: data.queue.length,
-        queueWarningCount: warningCount,
+        queueStatus: queueSummary,
         deliveryId: variables.patientId,
         deliveryVersion: data.source,
         deliveredAt: new Date().toISOString(),
@@ -302,8 +283,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           environment: environmentLabel,
           queueMode: data.source,
           queue: data.queue,
+          queueSnapshot: queueSummary,
           warningThresholdMs: QUEUE_DELAY_WARNING_MS,
-          warningCount,
         },
       });
       logAuditEvent({
@@ -316,8 +297,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           queue: data.queue,
           operation: queueOperation,
           result: 'success',
+          queueSnapshot: queueSummary,
           warningThresholdMs: QUEUE_DELAY_WARNING_MS,
-          warningCount,
         },
       });
       setFeedback({
@@ -326,8 +307,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       });
     },
     onError: (error, variables) => {
-      const queueSnapshot = queueQuery.data?.queue ?? [];
-      const warningCount = countQueueWarnings(queueSnapshot);
+      const queueSnapshotEntries = queueQuery.data?.queue ?? [];
+      const queueSummary = buildOrcaQueueWarningSummary(queueSnapshotEntries);
       const errorMessage = error instanceof Error ? error.message : String(error);
       const queueOperation = variables.kind;
       publishAdminBroadcast({
@@ -336,8 +317,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         queueOperation,
         queueResult: 'failure',
         queuePatientId: variables.patientId,
-        queueCount: queueSnapshot.length,
-        queueWarningCount: warningCount,
+        queueStatus: queueSummary,
         deliveredAt: new Date().toISOString(),
         queueMode: queueQuery.data?.source ?? (form.useMockOrcaQueue ? 'mock' : 'live'),
         verifyAdminDelivery: queueQuery.data?.verifyAdminDelivery ?? form.verifyAdminDelivery,
@@ -355,8 +335,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           environment: environmentLabel,
           queueMode: queueQuery.data?.source ?? (form.useMockOrcaQueue ? 'mock' : 'live'),
           error: errorMessage,
+          queueSnapshot: queueSummary,
           warningThresholdMs: QUEUE_DELAY_WARNING_MS,
-          warningCount,
         },
       });
       logAuditEvent({
@@ -369,8 +349,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           operation: queueOperation,
           result: 'failure',
           error: errorMessage,
+          queueSnapshot: queueSummary,
           warningThresholdMs: QUEUE_DELAY_WARNING_MS,
-          warningCount,
         },
       });
       setFeedback({ tone: 'error', message: 'キュー操作に失敗しました。' });
@@ -393,7 +373,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   }, [bumpRunId, configQuery.data?.runId, queueQuery.data?.runId, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
   const warningEntries = useMemo(() => {
     const nowMs = Date.now();
-    return queueEntries.filter((entry) => isQueueWarningEntry(entry, nowMs));
+    return queueEntries.filter((entry) => isOrcaQueueWarningEntry(entry, nowMs).isWarning);
   }, [queueEntries]);
 
   const handleInputChange = (key: keyof AdminConfigPayload, value: string | boolean) => {

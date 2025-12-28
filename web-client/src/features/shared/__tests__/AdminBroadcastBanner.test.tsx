@@ -42,21 +42,27 @@ describe('AdminBroadcastBanner', () => {
           queueOperation: 'retry',
           queueResult: 'success',
           queuePatientId: 'P-001',
-          queueCount: 2,
-          queueWarningCount: 1,
+          queueStatus: {
+            total: 2,
+            pending: 1,
+            failed: 0,
+            delayed: 1,
+          },
           queueMode: 'mock',
           environment: 'dev',
         }}
       />,
     );
 
-    const banner = screen.getByRole('status');
-    expect(banner).toHaveClass('tone-banner--info');
+    const banner = screen.getByRole('alert');
+    expect(banner).toHaveClass('tone-banner--warning');
     expect(banner.textContent).toContain('配信キュー操作が通知されました');
     expect(banner.textContent).toContain('操作: 再送');
     expect(banner.textContent).toContain('結果: 完了');
     expect(banner.textContent).toContain('patientId: P-001');
-    expect(banner.textContent).toContain('queue: 2件');
-    expect(banner.textContent).toContain('warning: 1件');
+    expect(banner.textContent).toContain('queue: 合計2件');
+    expect(banner.textContent).toContain('pending:1');
+    expect(banner.textContent).toContain('failed:0');
+    expect(banner.textContent).toContain('delayed:1');
   });
 });
