@@ -43,7 +43,8 @@ const applyRequestScenario = (request: Request) => {
   const missingMasterHeader = request.headers.get('x-msw-missing-master');
   const transitionHeader = request.headers.get('x-msw-transition');
   const fallbackUsedHeader = request.headers.get('x-msw-fallback-used');
-  if (cacheHitHeader || missingMasterHeader || transitionHeader || fallbackUsedHeader) {
+  const runIdHeader = request.headers.get('x-msw-run-id');
+  if (cacheHitHeader || missingMasterHeader || transitionHeader || fallbackUsedHeader || runIdHeader) {
     updateOutpatientScenarioFlags({
       cacheHit: cacheHitHeader === '1' || cacheHitHeader === 'true' ? true : cacheHitHeader === '0' ? false : undefined,
       missingMaster:
@@ -59,6 +60,7 @@ const applyRequestScenario = (request: Request) => {
           : fallbackUsedHeader === '0'
             ? false
             : undefined,
+      runId: runIdHeader ? String(runIdHeader) : undefined,
     });
   }
 

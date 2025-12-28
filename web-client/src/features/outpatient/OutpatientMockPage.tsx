@@ -46,6 +46,7 @@ const FALLBACK_RUN_ID =
   // DEV/Playwright 用の暫定キー
   (import.meta.env as Record<string, string | undefined>).VITE_RUN_ID ??
   OUTPATIENT_FALLBACK_RUN_ID;
+const RUN_ID_PATTERN = /^\d{8}T\d{6}Z$/;
 
 const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFlags => ({
   runId: claim.runId ?? medical.runId ?? FALLBACK_RUN_ID,
@@ -71,6 +72,9 @@ export function OutpatientMockPage() {
   const [overrideFlags, setOverrideFlags] = useState<Partial<OutpatientFlagSet>>({});
   const [faultMode, setFaultMode] = useState<string>(() => resolveHeaderFlags().mswFault ?? '');
   const [faultDelayMs, setFaultDelayMs] = useState<number>(() => resolveHeaderFlags().mswDelayMs ?? 0);
+  const [runIdInput, setRunIdInput] = useState<string>(FALLBACK_RUN_ID);
+  const [runIdDirty, setRunIdDirty] = useState(false);
+  const [runIdMessage, setRunIdMessage] = useState<string>('');
   const [flags, setFlags] = useState<ResolvedFlags>({
     runId: FALLBACK_RUN_ID,
     traceId: undefined,
@@ -95,6 +99,7 @@ export function OutpatientMockPage() {
           if (overrideFlags.missingMaster !== undefined)
             headers.set('x-msw-missing-master', overrideFlags.missingMaster ? '1' : '0');
           if (overrideFlags.dataSourceTransition) headers.set('x-msw-transition', overrideFlags.dataSourceTransition);
+          if (overrideFlags.runId) headers.set('x-msw-run-id', overrideFlags.runId);
         }
         const [claimRes, medicalRes] = await Promise.all([
           httpFetch('/api01rv2/claim/outpatient', { method: 'POST', headers }),
@@ -147,7 +152,14 @@ export function OutpatientMockPage() {
     return () => {
       cancelled = true;
     };
-  }, [scenarioId, overrideFlags.cacheHit, overrideFlags.missingMaster, overrideFlags.dataSourceTransition, mswDisabled]);
+  }, [
+    scenarioId,
+    overrideFlags.cacheHit,
+    overrideFlags.missingMaster,
+    overrideFlags.dataSourceTransition,
+    overrideFlags.runId,
+    mswDisabled,
+  ]);
 
   const tonePayload: ChartTonePayload = {
     missingMaster: flags.missingMaster,
@@ -164,6 +176,8 @@ export function OutpatientMockPage() {
     setOverrideFlags({});
     clearOutpatientFunnelLog();
     setLoaded(false);
+    setRunIdDirty(false);
+    setRunIdMessage('');
     logUiState({
       action: 'scenario_change',
       screen: 'outpatient-mock',
@@ -195,6 +209,8 @@ export function OutpatientMockPage() {
     setOverrideFlags({});
     clearOutpatientFunnelLog();
     setLoaded(false);
+    setRunIdDirty(false);
+    setRunIdMessage('');
   };
 
   const applyFault = (next: { mode?: string; delayMs?: number }) => {
@@ -208,6 +224,27 @@ export function OutpatientMockPage() {
     });
     clearOutpatientFunnelLog();
     setLoaded(false);
+  };
+
+  useEffect(() => {
+    if (!runIdDirty) {
+      setRunIdInput(flags.runId);
+    }
+  }, [flags.runId, runIdDirty]);
+
+  const applyRunIdOverride = () => {
+    const trimmed = runIdInput.trim();
+    if (trimmed.length === 0) {
+      setRunIdMessage('runId が空白のため適用できません。');
+      return;
+    }
+    if (!RUN_ID_PATTERN.test(trimmed)) {
+      setRunIdMessage('runId は YYYYMMDDThhmmssZ を推奨します。');
+    } else {
+      setRunIdMessage('');
+    }
+    handleOverride({ runId: trimmed });
+    setRunIdDirty(false);
   };
 
   return (
@@ -230,7 +267,8 @@ export function OutpatientMockPage() {
           </p>
           {mswDisabled ? (
             <p className="status-message" aria-live="assertive">
-              ⚠️ VITE_DISABLE_MSW=1: 実 API 接続中のためシナリオ切替は無効です。MSW を使う場合はフラグを 0 にして再読込してください。
+              ⚠️ VITE_DISABLE_MSW=1: 実 API 接続中のためシナリオ切替や runId/dataSourceTransition の上書きは無効です。
+              MSW を使う場合はフラグを 0 にして再読込してください。
             </p>
           ) : !mswQueryEnabled ? (
             <p className="status-message" aria-live="assertive">
@@ -296,6 +334,33 @@ export function OutpatientMockPage() {
                   上書きをリセット
                 </button>
               </div>
+              <div className="order-console__status-group" aria-live="polite">
+                <label className="order-console__toggle">
+                  runId:
+                  <input
+                    type="text"
+                    value={runIdInput}
+                    onChange={(event) => {
+                      setRunIdInput(event.target.value);
+                      setRunIdDirty(true);
+                      if (runIdMessage) setRunIdMessage('');
+                    }}
+                    style={{ width: 240 }}
+                    aria-label="MSW run id override"
+                  />
+                </label>
+                <button
+                  type="button"
+                  className="order-console__toggle"
+                  onClick={applyRunIdOverride}
+                >
+                  runId を適用
+                </button>
+              </div>
+              {runIdMessage ? <p className="order-console__note">{runIdMessage}</p> : null}
+              <p className="order-console__note">
+                QA では runId と dataSourceTransition の切替をここで操作し、Reception/Charts のバナーと telemetry が連動しているか確認してください。
+              </p>
             </div>
             <div className="order-console__step">
               <span className="order-console__step-label">障害注入（MSW）</span>
