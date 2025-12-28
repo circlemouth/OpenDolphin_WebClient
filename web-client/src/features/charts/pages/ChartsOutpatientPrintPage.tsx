@@ -145,6 +145,8 @@ function ChartsOutpatientPrintContent() {
   }, [hasPermission, state]);
 
   const outputDisabled = outputGuardReasons.length > 0;
+  const outputGuardSummary = outputGuardReasons.map((reason) => reason.summary).join(' / ');
+  const outputGuardDetail = outputGuardReasons.map((reason) => reason.detail).join(' / ');
 
   const recordOutputAudit = (
     outcome: 'started' | 'success' | 'blocked' | 'error',
@@ -175,12 +177,13 @@ function ChartsOutpatientPrintContent() {
     if (outputDisabled) {
       const blockedReasons = outputGuardReasons.map((reason) => reason.key);
       const head = outputGuardReasons[0];
+      const detail = outputGuardDetail || head?.detail || '出力前チェックでブロックされました。';
       recordOutputAudit('blocked', head?.detail ?? 'output_blocked', {
         operationPhase: 'lock',
         blockedReasons,
       });
       setOutputStatus('failed');
-      setOutputError(head?.detail ?? '出力前チェックでブロックされました。');
+      setOutputError(detail);
       return;
     }
     lastModeRef.current = mode;
@@ -204,12 +207,13 @@ function ChartsOutpatientPrintContent() {
     if (outputDisabled) {
       const blockedReasons = outputGuardReasons.map((reason) => reason.key);
       const head = outputGuardReasons[0];
+      const detail = outputGuardDetail || head?.detail || '出力前チェックでブロックされました。';
       recordOutputAudit('blocked', head?.detail ?? 'output_blocked', {
         operationPhase: 'lock',
         blockedReasons,
       });
       setOutputStatus('failed');
-      setOutputError(head?.detail ?? '出力前チェックでブロックされました。');
+      setOutputError(detail);
       return;
     }
     setOutputStatus('idle');
@@ -254,6 +258,7 @@ function ChartsOutpatientPrintContent() {
   const exportDisabled = outputDisabled;
   const outputGuardHead = outputGuardReasons[0];
   const outputGuardNextAction = outputGuardHead ? outputGuardHead.next.join(' / ') : undefined;
+  const outputGuardMessage = outputGuardSummary ? `出力ガード中: ${outputGuardSummary}` : '出力前チェックにより停止中です。';
 
   return (
     <main className="charts-print">
@@ -310,11 +315,7 @@ function ChartsOutpatientPrintContent() {
         <div className="charts-print__screen-only">
           <ToneBanner
             tone="warning"
-            message={
-              outputGuardHead?.summary
-                ? `出力ガード中: ${outputGuardHead.summary}`
-                : '出力前チェックにより停止中です。'
-            }
+            message={outputGuardMessage}
             nextAction={outputGuardNextAction ?? 'Reception で master 解決/再取得を行い、最新データで再度出力してください。'}
             runId={state.meta.runId}
           />
