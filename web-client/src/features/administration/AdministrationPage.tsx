@@ -13,7 +13,6 @@ import {
   retryOrcaQueue,
   saveAdminConfig,
   type AdminConfigPayload,
-  type AdminConfigResponse,
   type ChartsMasterSourcePolicy,
   type OrcaQueueEntry,
 } from './api';
