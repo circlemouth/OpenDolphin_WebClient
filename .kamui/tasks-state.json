@@ -936,5 +936,30 @@
     "scoringConfig": null,
     "worktreePath": ".worktrees/task-1766956656544-ed4544",
     "medal": "gold"
+  },
+  {
+    "id": "task-1766956656657-3aad22",
+    "name": "CodexCLI2: [order input gap analysis plan 20251229] 01_旧来版_処方オーダー入力調査\n期間: 12/30 09:00 - 01/01 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 01 旧来版：処方オーダー入力調査\n\n- 旧来版クライアントの処方入力画面（内服/外用/頓用/注射など）に存在する入力欄、選択肢、サブダイアログ、ショートカット操作を一覧化する。\n- 入力必須条件（用法必須、日数必須など）と保存/取消/中止/再開の操作フローを整理する。\n- コード上の参照ポイント（UI/バリデーション/保存）を紐づけ、差分表テンプレートに記入する。\n\nYAML ID: src/order_input_gap_analysis/01_旧来版_処方オーダー入力調査.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-28T21:17:36.657Z",
+    "updatedAt": "2025-12-28T21:17:36.657Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1766956656657-3aad22",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1766956655926-yasjl3ou",
+    "aiCompetitionGroupName": "[order input gap analysis plan 20251229] 01_旧来版_処方オーダー入力調査\n期間: 12/30 09:00 - 01/01 09:00 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 01 旧来版：処方オーダー入力調査\n\n- 旧来版クライアントの処方入力画面（内服/外用/頓用/注射など）に存在する入力欄、選択肢、サブダイアログ、ショートカット操作を一覧化する。\n- 入力必須条件（用法必須、日数必須など）と保存/取消/中止/再開の操作フローを整理する。\n- コード上の参照ポイント（UI/バリデーション/保存）を紐づけ、差分表テンプレートに記入する。\n\nYAML ID: src/order_input_gap_analysis/01_旧来版_処方オーダー入力調査.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1766956656657-3aad22",
+    "medal": "silver"
   }
 ]
