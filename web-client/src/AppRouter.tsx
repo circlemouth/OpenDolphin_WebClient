@@ -28,6 +28,7 @@ import { updateObservabilityMeta } from './libs/observability/observability';
 import { AuthServiceProvider, clearStoredAuthFlags, useAuthService } from './features/charts/authService';
 import { PatientsPage } from './features/patients/PatientsPage';
 import { AdministrationPage } from './features/administration/AdministrationPage';
+import { AppToastProvider, type AppToast, type AppToastInput } from './libs/ui/appToast';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
@@ -89,14 +90,6 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/administration', label: 'Administration 配信', roles: ['system_admin', 'admin', 'system-admin'] },
   { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
-
-type ToastTone = 'info' | 'success' | 'warning' | 'error';
-type Toast = {
-  id: string;
-  message: string;
-  detail?: string;
-  tone: ToastTone;
-};
 
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
@@ -172,12 +165,17 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   const session = useSession();
   const { flags } = useAuthService();
   const resolvedRunId = flags.runId || session.runId;
-  const [toasts, setToasts] = useState<Toast[]>([]);
+  const [toasts, setToasts] = useState<AppToast[]>([]);
   const toastTimers = useRef<Map<string, number>>(new Map());
 
-  const enqueueToast = useCallback((toast: Omit<Toast, 'id'>) => {
-    const id = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
-    setToasts((prev) => [...prev.slice(-2), { id, ...toast }]);
+  const enqueueToast = useCallback((toast: AppToastInput) => {
+    const id = toast.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+    setToasts((prev) => {
+      if (prev.some((item) => item.id === id)) {
+        return prev;
+      }
+      return [...prev.slice(-2), { id, ...toast }];
+    });
     const timer = window.setTimeout(() => {
       setToasts((prev) => prev.filter((item) => item.id !== id));
       toastTimers.current.delete(id);
@@ -287,60 +285,62 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   };
 
   return (
-    <div className="app-shell">
-      <header className="app-shell__topbar" role="status" aria-live="polite" data-run-id={resolvedRunId}>
-        <div className="app-shell__brand">
-          <span className="app-shell__title">OpenDolphin Web</span>
-          <small className="app-shell__subtitle">電子カルテデモシェル</small>
-        </div>
-        <div className="app-shell__session" data-run-id={resolvedRunId}>
-          <span className="app-shell__pill app-shell__pill--fixed">施設ID: {session.facilityId}</span>
-          <span className="app-shell__pill app-shell__pill--fixed">
-            ユーザー: {session.displayName ?? session.commonName ?? session.userId}
-          </span>
-          <span className="app-shell__pill app-shell__pill--fixed" data-tooltip="認可ロール">
-            role: {session.role}
-          </span>
-          <button
-            type="button"
-            className="app-shell__pill app-shell__pill--copy"
-            onClick={handleCopyRunId}
-            aria-label={`RUN_ID をコピー: ${resolvedRunId}`}
-          >
-            RUN_ID: {resolvedRunId}
-            <span className="app-shell__pill-note">クリックでコピー</span>
-          </button>
-          <button type="button" className="app-shell__logout" onClick={onLogout}>
-            ログアウト
-          </button>
-        </div>
-      </header>
-
-      <nav className="app-shell__nav" aria-label="画面ナビゲーション" role="status" aria-live="polite">
-        {navItems}
-      </nav>
-
-      <div className="app-shell__body">
-        <Outlet />
-      </div>
-
-      <aside className="app-shell__notice-stack" aria-live="polite">
-        {toasts.map((toast) => (
-          <div key={toast.id} className={`app-shell__notice app-shell__notice--${toast.tone}`} role="status">
-            <div className="app-shell__notice-message">{toast.message}</div>
-            {toast.detail ? <div className="app-shell__notice-detail">{toast.detail}</div> : null}
+    <AppToastProvider value={{ enqueue: enqueueToast, dismiss: dismissToast }}>
+      <div className="app-shell">
+        <header className="app-shell__topbar" role="status" aria-live="polite" data-run-id={resolvedRunId}>
+          <div className="app-shell__brand">
+            <span className="app-shell__title">OpenDolphin Web</span>
+            <small className="app-shell__subtitle">電子カルテデモシェル</small>
+          </div>
+          <div className="app-shell__session" data-run-id={resolvedRunId}>
+            <span className="app-shell__pill app-shell__pill--fixed">施設ID: {session.facilityId}</span>
+            <span className="app-shell__pill app-shell__pill--fixed">
+              ユーザー: {session.displayName ?? session.commonName ?? session.userId}
+            </span>
+            <span className="app-shell__pill app-shell__pill--fixed" data-tooltip="認可ロール">
+              role: {session.role}
+            </span>
             <button
               type="button"
-              className="app-shell__notice-close"
-              onClick={() => dismissToast(toast.id)}
-              aria-label="通知を閉じる"
+              className="app-shell__pill app-shell__pill--copy"
+              onClick={handleCopyRunId}
+              aria-label={`RUN_ID をコピー: ${resolvedRunId}`}
             >
-              ×
+              RUN_ID: {resolvedRunId}
+              <span className="app-shell__pill-note">クリックでコピー</span>
+            </button>
+            <button type="button" className="app-shell__logout" onClick={onLogout}>
+              ログアウト
             </button>
           </div>
-        ))}
-      </aside>
-    </div>
+        </header>
+
+        <nav className="app-shell__nav" aria-label="画面ナビゲーション" role="status" aria-live="polite">
+          {navItems}
+        </nav>
+
+        <div className="app-shell__body">
+          <Outlet />
+        </div>
+
+        <aside className="app-shell__notice-stack" aria-live="polite">
+          {toasts.map((toast) => (
+            <div key={toast.id} className={`app-shell__notice app-shell__notice--${toast.tone}`} role="status">
+              <div className="app-shell__notice-message">{toast.message}</div>
+              {toast.detail ? <div className="app-shell__notice-detail">{toast.detail}</div> : null}
+              <button
+                type="button"
+                className="app-shell__notice-close"
+                onClick={() => dismissToast(toast.id)}
+                aria-label="通知を閉じる"
+              >
+                ×
+              </button>
+            </div>
+          ))}
+        </aside>
+      </div>
+    </AppToastProvider>
   );
 }
 

@@ -34,13 +34,14 @@ describe('charts encounterContext', () => {
       visitDate: '2025-12-18',
     });
 
-    const carryover = parseReceptionCarryoverParams('?kw=tanaka&dept=D1&sort=time&date=2025-12-27');
+    const carryover = parseReceptionCarryoverParams('?kw=tanaka&dept=D1&sort=time&date=2025-12-27&pay=insurance');
     const rebuilt = buildChartsEncounterSearch(parsed, carryover);
     expect(rebuilt).toContain('patientId=0001');
     expect(rebuilt).toContain('receptionId=R-9');
     expect(rebuilt).toContain('visitDate=2025-12-18');
     expect(rebuilt).toContain('kw=tanaka');
     expect(rebuilt).toContain('dept=D1');
+    expect(rebuilt).toContain('pay=insurance');
     expect(rebuilt).toContain('sort=time');
     expect(rebuilt).toContain('date=2025-12-27');
 
