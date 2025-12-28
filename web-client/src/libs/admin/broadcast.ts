@@ -1,3 +1,11 @@
+export type AdminDeliveryFlagState = 'applied' | 'pending' | 'unknown';
+
+export type AdminDeliveryStatus = {
+  chartsDisplayEnabled?: AdminDeliveryFlagState;
+  chartsSendEnabled?: AdminDeliveryFlagState;
+  chartsMasterSource?: AdminDeliveryFlagState;
+};
+
 export type AdminBroadcast = {
   runId?: string;
   deliveryId?: string;
@@ -8,6 +16,8 @@ export type AdminBroadcast = {
   chartsDisplayEnabled?: boolean;
   chartsSendEnabled?: boolean;
   chartsMasterSource?: string;
+  environment?: string;
+  deliveryStatus?: AdminDeliveryStatus;
   note?: string;
   source?: string;
   updatedAt: string;

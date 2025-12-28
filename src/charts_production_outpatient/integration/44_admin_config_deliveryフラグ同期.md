@@ -18,7 +18,7 @@
   - Administration 画面の保存で broadcast が発行された場合、Charts は broadcast を契機に再取得して適用する。
 - **適用の追跡**:
   - UI: 適用ユーザー（facilityId:userId）、適用時刻、runId、deliveryVersion/deliveryId を表示する。
-  - 監査ログ: `admin/delivery.apply` を記録し、適用ユーザーと差分（前→後）を payload に含める。
+- 監査ログ: `admin/delivery`（`operation=apply`）を記録し、適用ユーザーと差分（前→後）を payload に含める。
 
 ## 追加/同期対象フラグ（Charts）
 - `chartsDisplayEnabled`（boolean）: Charts のカード一式を表示するか。
@@ -32,7 +32,7 @@
 
 ## 検証メモ
 - 監査ログ（UI 内部）:
-  - `window.__AUDIT_EVENTS__` に `source=admin/delivery.apply` が残り、`appliedAt/appliedTo/runId/deliveryVersion` が確認できる。
+- `window.__AUDIT_EVENTS__` に `source=admin/delivery` が残り、`operation=apply` と `appliedAt/appliedTo/runId/deliveryVersion` が確認できる。
 - Vite preview/dev のモック応答（任意）:
   - `web-client/plugins/flagged-mock-plugin.ts` は `VITE_CHARTS_DISPLAY_ENABLED` / `VITE_CHARTS_SEND_ENABLED` / `VITE_CHARTS_MASTER_SOURCE` を読む。
   - 例: `VITE_CHARTS_MASTER_SOURCE=fallback` を与えると、Charts が warning として扱い、送信停止ガードが出る。

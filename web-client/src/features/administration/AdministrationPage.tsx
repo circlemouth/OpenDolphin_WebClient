@@ -18,7 +18,11 @@ import {
   type OrcaQueueEntry,
 } from './api';
 import './administration.css';
-import { publishAdminBroadcast } from '../../libs/admin/broadcast';
+import {
+  publishAdminBroadcast,
+  type AdminDeliveryFlagState,
+  type AdminDeliveryStatus,
+} from '../../libs/admin/broadcast';
 
 type AdministrationPageProps = {
   runId: string;
@@ -26,6 +30,12 @@ type AdministrationPageProps = {
 };
 
 type Feedback = { tone: 'success' | 'warning' | 'error' | 'info'; message: string };
+
+const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
+  if (state === 'applied') return '配信済み';
+  if (state === 'pending') return '未反映';
+  return '不明';
+};
 
 const DEFAULT_FORM: AdminConfigPayload = {
   orcaEndpoint: 'https://localhost:9080/openDolphin/resources',
@@ -45,10 +55,61 @@ const formatTimeAgo = (iso?: string) => {
   return `${minutes}分前`;
 };
 
+const formatTimestamp = (iso?: string) => {
+  if (!iso) return '―';
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return iso;
+  return date.toLocaleString('ja-JP', { hour12: false });
+};
+
+const formatTimestampWithAgo = (iso?: string) => {
+  if (!iso) return '―';
+  return `${formatTimestamp(iso)}（${formatTimeAgo(iso)}）`;
+};
+
 const toStatusClass = (status: string) => {
   if (status === 'delivered') return 'admin-queue__status admin-queue__status--delivered';
   if (status === 'failed') return 'admin-queue__status admin-queue__status--failed';
   return 'admin-queue__status admin-queue__status--pending';
+};
+
+const normalizeEnvironmentLabel = (raw?: string) => {
+  if (!raw) return undefined;
+  const value = raw.toLowerCase();
+  if (value.includes('stage')) return 'stage';
+  if (value.includes('dev')) return 'dev';
+  if (value.includes('prod')) return 'prod';
+  if (value.includes('preview')) return 'preview';
+  return raw;
+};
+
+const resolveDeliveryFlagState = (
+  configValue: boolean | string | undefined,
+  deliveryValue: boolean | string | undefined,
+): AdminDeliveryFlagState => {
+  if (deliveryValue === undefined && configValue === undefined) return 'unknown';
+  if (deliveryValue === undefined) return 'pending';
+  if (configValue === undefined) return 'applied';
+  return deliveryValue === configValue ? 'applied' : 'pending';
+};
+
+const buildChartsDeliveryStatus = (
+  config?: Partial<AdminConfigPayload>,
+  delivery?: Partial<AdminConfigPayload>,
+): AdminDeliveryStatus => ({
+  chartsDisplayEnabled: resolveDeliveryFlagState(config?.chartsDisplayEnabled, delivery?.chartsDisplayEnabled),
+  chartsSendEnabled: resolveDeliveryFlagState(config?.chartsSendEnabled, delivery?.chartsSendEnabled),
+  chartsMasterSource: resolveDeliveryFlagState(config?.chartsMasterSource, delivery?.chartsMasterSource),
+});
+
+const summarizeDeliveryStatus = (status: AdminDeliveryStatus) => {
+  const states = Object.values(status).filter(Boolean) as AdminDeliveryFlagState[];
+  const hasPending = states.some((state) => state === 'pending');
+  const hasApplied = states.some((state) => state === 'applied');
+  return {
+    hasPending,
+    summary: hasPending ? '次回リロード' : hasApplied ? '即時反映' : '不明',
+  };
 };
 
 export function AdministrationPage({ runId, role }: AdministrationPageProps) {
@@ -104,28 +165,55 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         useMockOrcaQueue: data.useMockOrcaQueue,
         verifyAdminDelivery: data.verifyAdminDelivery,
       });
+      const nextChartsFlags = {
+        chartsDisplayEnabled: data.chartsDisplayEnabled ?? form.chartsDisplayEnabled,
+        chartsSendEnabled: data.chartsSendEnabled ?? form.chartsSendEnabled,
+        chartsMasterSource: data.chartsMasterSource ?? form.chartsMasterSource,
+      };
+      const nextDeliveryStatus = buildChartsDeliveryStatus(nextChartsFlags, rawDelivery);
+      const deliveredAt = data.deliveredAt ?? rawDelivery?.deliveredAt;
+      const resolvedEnvironment = normalizeEnvironmentLabel(data.environment) ?? environmentLabel;
       const broadcast = publishAdminBroadcast({
         runId: data.runId ?? runId,
         deliveryId: data.deliveryId,
         deliveryVersion: data.deliveryVersion,
-        deliveredAt: data.deliveredAt,
+        deliveredAt,
         queueMode: data.useMockOrcaQueue ? 'mock' : 'live',
         verifyAdminDelivery: data.verifyAdminDelivery,
-        chartsDisplayEnabled: data.chartsDisplayEnabled ?? form.chartsDisplayEnabled,
-        chartsSendEnabled: data.chartsSendEnabled ?? form.chartsSendEnabled,
-        chartsMasterSource: data.chartsMasterSource ?? form.chartsMasterSource,
+        chartsDisplayEnabled: nextChartsFlags.chartsDisplayEnabled,
+        chartsSendEnabled: nextChartsFlags.chartsSendEnabled,
+        chartsMasterSource: nextChartsFlags.chartsMasterSource,
+        environment: resolvedEnvironment,
+        deliveryStatus: nextDeliveryStatus,
         note: data.note,
         source: data.source,
       });
       logAuditEvent({
         runId: data.runId ?? runId,
-        source: 'admin/config',
-        note: data.note ?? 'config saved',
+        source: 'admin/delivery',
+        note: data.note ?? 'admin delivery saved',
         payload: {
+          operation: 'save',
           actor: `${session.facilityId}:${session.userId}`,
           role: session.role,
-          ...form,
+          environment: resolvedEnvironment,
+          delivery: {
+            deliveryId: data.deliveryId,
+            deliveryVersion: data.deliveryVersion,
+            deliveredAt,
+            deliveryMode: data.deliveryMode ?? configQuery.data?.deliveryMode,
+            source: data.source,
+            verified: data.verified,
+          },
+          flags: {
+            ...form,
+            ...nextChartsFlags,
+          },
           broadcast,
+          raw: {
+            config: rawConfig,
+            delivery: rawDelivery,
+          },
         },
       });
       logUiState({
@@ -155,6 +243,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         deliveredAt: new Date().toISOString(),
         queueMode: data.source,
         verifyAdminDelivery: data.verifyAdminDelivery,
+        environment: environmentLabel,
         note: variables.kind === 'retry' ? '再送完了' : '破棄完了',
       });
       logAuditEvent({
@@ -230,6 +319,40 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const resolvedRunId = latestRunId ?? flags.runId;
   const syncMismatch = configQuery.data?.syncMismatch;
   const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
+  const rawConfig = configQuery.data?.rawConfig ?? configQuery.data;
+  const rawDelivery = configQuery.data?.rawDelivery;
+  const envFallback = normalizeEnvironmentLabel(
+    (import.meta.env as Record<string, string | undefined>).VITE_ENVIRONMENT ??
+      (import.meta.env as Record<string, string | undefined>).VITE_DEPLOY_ENV ??
+      (import.meta.env.MODE === 'development' ? 'dev' : import.meta.env.MODE),
+  );
+  const environmentLabel = normalizeEnvironmentLabel(configQuery.data?.environment) ?? envFallback ?? 'unknown';
+  const deliveryStatus = buildChartsDeliveryStatus(rawConfig, rawDelivery);
+  const deliverySummary = summarizeDeliveryStatus(deliveryStatus);
+  const lastDeliveredAt = rawDelivery?.deliveredAt ?? configQuery.data?.deliveredAt;
+  const deliveryFlagRows = [
+    {
+      key: 'chartsDisplayEnabled',
+      label: 'Charts表示',
+      configValue: rawConfig?.chartsDisplayEnabled,
+      deliveryValue: rawDelivery?.chartsDisplayEnabled,
+      state: deliveryStatus.chartsDisplayEnabled ?? 'unknown',
+    },
+    {
+      key: 'chartsSendEnabled',
+      label: 'Charts送信',
+      configValue: rawConfig?.chartsSendEnabled,
+      deliveryValue: rawDelivery?.chartsSendEnabled,
+      state: deliveryStatus.chartsSendEnabled ?? 'unknown',
+    },
+    {
+      key: 'chartsMasterSource',
+      label: 'Charts master',
+      configValue: rawConfig?.chartsMasterSource,
+      deliveryValue: rawDelivery?.chartsMasterSource,
+      state: deliveryStatus.chartsMasterSource ?? 'unknown',
+    },
+  ];
 
   return (
     <main className="administration-page" data-test-id="administration-page" data-run-id={resolvedRunId}>
@@ -242,6 +365,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         <div className="administration-page__meta" aria-live="polite">
           <span className="administration-page__pill">role: {role ?? 'unknown'}</span>
           <span className="administration-page__pill">配信元: {configQuery.data?.source ?? 'live'}</span>
+          <span className="administration-page__pill">環境: {environmentLabel}</span>
+          <span className="administration-page__pill">配信状態: {deliverySummary.summary}</span>
+          <span className="administration-page__pill">最終配信: {formatTimestampWithAgo(lastDeliveredAt)}</span>
           <span className="administration-page__pill">
             検証フラグ: {form.verifyAdminDelivery ? 'enabled' : 'disabled'}
           </span>
@@ -429,11 +555,27 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           <ul className="placeholder-page__list">
             <li>deliveryId: {configQuery.data?.deliveryId ?? '―'}</li>
             <li>deliveryVersion: {configQuery.data?.deliveryVersion ?? '―'}</li>
-            <li>deliveredAt: {configQuery.data?.deliveredAt ?? '―'}</li>
+            <li>deliveredAt: {formatTimestamp(rawDelivery?.deliveredAt ?? configQuery.data?.deliveredAt)}</li>
+            <li>environment: {environmentLabel}</li>
+            <li>deliveryMode: {configQuery.data?.deliveryMode ?? (deliverySummary.summary ?? '―')}</li>
             <li>verified: {configQuery.data?.verifyAdminDelivery ? 'true' : 'false'}</li>
             <li>chartsDisplayEnabled: {configQuery.data?.chartsDisplayEnabled === undefined ? '―' : String(configQuery.data.chartsDisplayEnabled)}</li>
             <li>chartsSendEnabled: {configQuery.data?.chartsSendEnabled === undefined ? '―' : String(configQuery.data.chartsSendEnabled)}</li>
             <li>chartsMasterSource: {configQuery.data?.chartsMasterSource ?? '―'}</li>
+          </ul>
+          <ul className="admin-delivery-flags" aria-label="Charts 配信状態">
+            {deliveryFlagRows.map((row) => (
+              <li key={row.key} className="admin-delivery-flags__row">
+                <span className="admin-delivery-flags__label">{row.label}</span>
+                <span className="admin-delivery-flags__value">
+                  config: {row.configValue === undefined ? '―' : String(row.configValue)} / delivery:{' '}
+                  {row.deliveryValue === undefined ? '―' : String(row.deliveryValue)}
+                </span>
+                <span className={`admin-delivery-pill admin-delivery-pill--${row.state}`}>
+                  {deliveryFlagStateLabel(row.state)}
+                </span>
+              </li>
+            ))}
           </ul>
           <p className="admin-note">
             保存時に broadcast を発行し、Reception/Charts へ「設定更新」バナーを表示します。system_admin 以外は読み取り専用です。

@@ -579,16 +579,19 @@ function ChartsContent() {
     });
     logAuditEvent({
       runId: data.runId ?? flags.runId,
-      source: 'admin/delivery.apply',
-      note: 'charts apply admin delivery',
+      source: 'admin/delivery',
+      note: 'admin delivery applied',
       payload: {
+        operation: 'apply',
         appliedAt,
         appliedTo,
         role: session.role,
+        environment: data.environment,
         delivery: {
           deliveryId: data.deliveryId,
           deliveryVersion: data.deliveryVersion,
           deliveredAt: data.deliveredAt,
+          deliveryMode: data.deliveryMode,
         },
         flags: {
           chartsDisplayEnabled: data.chartsDisplayEnabled,
