@@ -1,0 +1,273 @@
+ganttConfig:
+  defaultView: week
+  startDate: 2025-12-29
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  order_input_gap_analysis:
+    00_RUN_IDと調査範囲確定.md:
+      content: |-
+        # 00 RUN_ID と調査範囲確定
+
+        - RUN_ID=`20251228T195453Z` を起点に、旧来版（client）とモダナイズ版（web-client）で対象とする「処方・文書・リハビリ・処置/検査/指示」オーダー入力の画面・入力欄・操作フローを洗い出す。
+        - 参照先を `docs/DEVELOPMENT_STATUS.md` → `web-client/README.md` の順で確認し、Phase2 文書は参照のみとする。
+        - 旧来版とモダナイズ版の調査結果を統合する差分表のテンプレート（項目名/入力方式/必須条件/保存挙動/コード参照）を決めて、以降の調査で統一する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency: []
+      schedule:
+        start: 2025-12-29T00:00:00.000Z
+        days: 1
+    01_旧来版_処方オーダー入力調査.md:
+      content: |-
+        # 01 旧来版：処方オーダー入力調査
+
+        - 旧来版クライアントの処方入力画面（内服/外用/頓用/注射など）に存在する入力欄、選択肢、サブダイアログ、ショートカット操作を一覧化する。
+        - 入力必須条件（用法必須、日数必須など）と保存/取消/中止/再開の操作フローを整理する。
+        - コード上の参照ポイント（UI/バリデーション/保存）を紐づけ、差分表テンプレートに記入する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: claude code
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    02_旧来版_文書オーダー入力調査.md:
+      content: |-
+        # 02 旧来版：文書オーダー入力調査
+
+        - 旧来版クライアントの文書オーダー（診断書、紹介状、同意書など）入力欄とテンプレ選択、入力支援、印刷/プレビューの導線を整理する。
+        - 文書ごとの必須項目、署名/印影/発行日などの特記事項を洗い出し、保存/再編集の流れを記録する。
+        - 参照コードと入力方法を差分表テンプレートに反映する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    03_旧来版_リハビリオーダー入力調査.md:
+      content: |-
+        # 03 旧来版：リハビリオーダー入力調査
+
+        - 旧来版クライアントのリハビリオーダー入力欄（部位、回数、期間、指示、担当者）と選択UIを洗い出す。
+        - 予約/スケジュールとの連携、コメント欄、必須条件、保存/取消の挙動を整理する。
+        - 参照コードと入力方法を差分表テンプレートに反映する。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    04_旧来版_処置検査指示オーダー入力調査.md:
+      content: |-
+        # 04 旧来版：処置/検査/指示オーダー入力調査
+
+        - 旧来版クライアントの処置・検査・指示系オーダーの入力欄（部位、数量、実施日、材料、コメント）と入力方法を整理する。
+        - セット/パネル入力、複数行編集、履歴コピーなどの操作手順をまとめる。
+        - 参照コードと入力方法を差分表テンプレートに反映する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    05_WEB_処方オーダー入力調査.md:
+      content: |-
+        # 05 WEB：処方オーダー入力調査
+
+        - モダナイズ版Webクライアントの処方オーダー入力欄（RP編集、薬剤追加、用法/日数/回数、コメント）と入力フローを整理する。
+        - 旧来版との差分が出る箇所（入力補助、必須判定、選択UI、保存/取消導線）を明記する。
+        - 差分表テンプレートに入力欄・操作方法・必須条件・参照コードを記載する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: claude code
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    06_WEB_文書オーダー入力調査.md:
+      content: |-
+        # 06 WEB：文書オーダー入力調査
+
+        - モダナイズ版Webクライアントの文書オーダー入力欄、テンプレ選択、印刷/プレビュー導線を整理する。
+        - 旧来版との差分（文書種別、必須項目、発行フロー）を明記する。
+        - 差分表テンプレートに入力欄・操作方法・必須条件・参照コードを記載する。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    07_WEB_リハビリオーダー入力調査.md:
+      content: |-
+        # 07 WEB：リハビリオーダー入力調査
+
+        - モダナイズ版Webクライアントのリハビリオーダー入力欄（部位、回数、期間、指示、担当者）と入力フローを整理する。
+        - 旧来版との差分（スケジュール連携、入力補助、保存/取消挙動）を明記する。
+        - 差分表テンプレートに入力欄・操作方法・必須条件・参照コードを記載する。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    08_WEB_処置検査指示オーダー入力調査.md:
+      content: |-
+        # 08 WEB：処置/検査/指示オーダー入力調査
+
+        - モダナイズ版Webクライアントの処置・検査・指示系オーダー入力欄と入力方法を整理する。
+        - 旧来版との差分（セット入力、複数行編集、履歴コピー、入力補助）を明記する。
+        - 差分表テンプレートに入力欄・操作方法・必須条件・参照コードを記載する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/00_RUN_IDと調査範囲確定.md
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 2
+    09_差分マトリクス統合.md:
+      content: |-
+        # 09 差分マトリクス統合
+
+        - 01〜08 の調査結果を統合し、旧来版/WEB の両方に存在する項目・片側のみ存在する項目を漏れなく一覧化する。
+        - 入力方法（直接入力/選択/検索/テンプレ/ショートカット）と保存フローを比較し、差異の原因候補を添える。
+        - 実装漏れの可能性が高い項目を優先度付きでマークする。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: claude code
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/01_旧来版_処方オーダー入力調査.md
+        - src/order_input_gap_analysis/02_旧来版_文書オーダー入力調査.md
+        - src/order_input_gap_analysis/03_旧来版_リハビリオーダー入力調査.md
+        - src/order_input_gap_analysis/04_旧来版_処置検査指示オーダー入力調査.md
+        - src/order_input_gap_analysis/05_WEB_処方オーダー入力調査.md
+        - src/order_input_gap_analysis/06_WEB_文書オーダー入力調査.md
+        - src/order_input_gap_analysis/07_WEB_リハビリオーダー入力調査.md
+        - src/order_input_gap_analysis/08_WEB_処置検査指示オーダー入力調査.md
+      schedule:
+        start: 2026-01-01T00:00:00.000Z
+        days: 2
+    10_ドキュメント化とレビュー.md:
+      content: |-
+        # 10 ドキュメント化とレビュー
+
+        - 差分マトリクスをドキュメント（調査結果・差分・実装漏れ候補）として整理し、参照先コード/画面/操作手順を明記する。
+        - 今後の実装漏れ修正タスクに引き継げるよう、項目ごとの再現手順と優先度を添える。
+        - 既存のドキュメント構成に合わせて配置場所とファイル名を決める。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: gemini cli
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/09_差分マトリクス統合.md
+      schedule:
+        start: 2026-01-03T00:00:00.000Z
+        days: 2
+    11_漏れ検証と最終確認.md:
+      content: |-
+        # 11 漏れ検証と最終確認
+
+        - 旧来版/WEB の双方で「片側のみ存在する項目」が残っていないか、チェックリストで相互突合する。
+        - 観点漏れ（入力欄/入力方法/必須条件/保存フロー/ショートカット/履歴・コピー）を再確認する。
+        - 最終的な差分ドキュメントにチェック日時と確認者を記録する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: cursor cli
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/10_ドキュメント化とレビュー.md
+      schedule:
+        start: 2026-01-05T00:00:00.000Z
+        days: 1
