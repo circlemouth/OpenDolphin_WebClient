@@ -8,6 +8,7 @@ export type AdminDeliveryStatus = {
 
 export type AdminBroadcast = {
   runId?: string;
+  action?: 'config' | 'queue';
   deliveryId?: string;
   deliveryVersion?: string;
   deliveredAt?: string;
@@ -18,6 +19,11 @@ export type AdminBroadcast = {
   chartsMasterSource?: string;
   environment?: string;
   deliveryStatus?: AdminDeliveryStatus;
+  queueOperation?: 'retry' | 'discard';
+  queueResult?: 'success' | 'failure';
+  queuePatientId?: string;
+  queueCount?: number;
+  queueWarningCount?: number;
   note?: string;
   source?: string;
   updatedAt: string;

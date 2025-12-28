@@ -12,7 +12,8 @@ export type OrcaSendStatus = {
   error?: string;
 };
 
-const STALL_THRESHOLD_MS = 5 * 60 * 1000;
+export const ORCA_QUEUE_STALL_THRESHOLD_MS = 5 * 60 * 1000;
+const STALL_THRESHOLD_MS = ORCA_QUEUE_STALL_THRESHOLD_MS;
 const PROCESSING_WINDOW_MS = 90 * 1000;
 
 const normalizeClaimQueuePhaseFromStatus = (status: string): ClaimQueuePhase => {
@@ -71,4 +72,3 @@ export const toClaimQueueEntryFromOrcaQueueEntry = (entry: OrcaQueueEntry): Clai
     errorMessage: entry.error,
   };
 };
-

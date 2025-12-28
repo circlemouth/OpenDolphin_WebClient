@@ -30,4 +30,33 @@ describe('AdminBroadcastBanner', () => {
     expect(banner.textContent).toContain('S:反映');
     expect(banner.textContent).toContain('M:不明');
   });
+
+  it('配信キュー操作は結果を含めて通知する', () => {
+    render(
+      <AdminBroadcastBanner
+        surface="reception"
+        broadcast={{
+          runId: 'RUN-QUEUE',
+          updatedAt: '2025-12-28T00:10:00.000Z',
+          action: 'queue',
+          queueOperation: 'retry',
+          queueResult: 'success',
+          queuePatientId: 'P-001',
+          queueCount: 2,
+          queueWarningCount: 1,
+          queueMode: 'mock',
+          environment: 'dev',
+        }}
+      />,
+    );
+
+    const banner = screen.getByRole('status');
+    expect(banner).toHaveClass('tone-banner--info');
+    expect(banner.textContent).toContain('配信キュー操作が通知されました');
+    expect(banner.textContent).toContain('操作: 再送');
+    expect(banner.textContent).toContain('結果: 完了');
+    expect(banner.textContent).toContain('patientId: P-001');
+    expect(banner.textContent).toContain('queue: 2件');
+    expect(banner.textContent).toContain('warning: 1件');
+  });
 });
