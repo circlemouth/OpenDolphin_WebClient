@@ -46,6 +46,7 @@ const FALLBACK_RUN_ID =
   // DEV/Playwright 用の暫定キー
   (import.meta.env as Record<string, string | undefined>).VITE_RUN_ID ??
   OUTPATIENT_FALLBACK_RUN_ID;
+const RUN_ID_PATTERN = /^\d{8}T\d{6}Z$/;
 
 const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFlags => ({
   runId: claim.runId ?? medical.runId ?? FALLBACK_RUN_ID,
@@ -73,6 +74,7 @@ export function OutpatientMockPage() {
   const [faultDelayMs, setFaultDelayMs] = useState<number>(() => resolveHeaderFlags().mswDelayMs ?? 0);
   const [runIdInput, setRunIdInput] = useState<string>(FALLBACK_RUN_ID);
   const [runIdDirty, setRunIdDirty] = useState(false);
+  const [runIdMessage, setRunIdMessage] = useState<string>('');
   const [flags, setFlags] = useState<ResolvedFlags>({
     runId: FALLBACK_RUN_ID,
     traceId: undefined,
@@ -175,6 +177,7 @@ export function OutpatientMockPage() {
     clearOutpatientFunnelLog();
     setLoaded(false);
     setRunIdDirty(false);
+    setRunIdMessage('');
     logUiState({
       action: 'scenario_change',
       screen: 'outpatient-mock',
@@ -207,6 +210,7 @@ export function OutpatientMockPage() {
     clearOutpatientFunnelLog();
     setLoaded(false);
     setRunIdDirty(false);
+    setRunIdMessage('');
   };
 
   const applyFault = (next: { mode?: string; delayMs?: number }) => {
@@ -227,6 +231,21 @@ export function OutpatientMockPage() {
       setRunIdInput(flags.runId);
     }
   }, [flags.runId, runIdDirty]);
+
+  const applyRunIdOverride = () => {
+    const trimmed = runIdInput.trim();
+    if (trimmed.length === 0) {
+      setRunIdMessage('runId が空白のため適用できません。');
+      return;
+    }
+    if (!RUN_ID_PATTERN.test(trimmed)) {
+      setRunIdMessage('runId は YYYYMMDDThhmmssZ を推奨します。');
+    } else {
+      setRunIdMessage('');
+    }
+    handleOverride({ runId: trimmed });
+    setRunIdDirty(false);
+  };
 
   return (
     <>
@@ -324,6 +343,7 @@ export function OutpatientMockPage() {
                     onChange={(event) => {
                       setRunIdInput(event.target.value);
                       setRunIdDirty(true);
+                      if (runIdMessage) setRunIdMessage('');
                     }}
                     style={{ width: 240 }}
                     aria-label="MSW run id override"
@@ -332,15 +352,12 @@ export function OutpatientMockPage() {
                 <button
                   type="button"
                   className="order-console__toggle"
-                  onClick={() => {
-                    const trimmed = runIdInput.trim();
-                    handleOverride({ runId: trimmed.length > 0 ? trimmed : FALLBACK_RUN_ID });
-                    setRunIdDirty(false);
-                  }}
+                  onClick={applyRunIdOverride}
                 >
                   runId を適用
                 </button>
               </div>
+              {runIdMessage ? <p className="order-console__note">{runIdMessage}</p> : null}
               <p className="order-console__note">
                 QA では runId と dataSourceTransition の切替をここで操作し、Reception/Charts のバナーと telemetry が連動しているか確認してください。
               </p>

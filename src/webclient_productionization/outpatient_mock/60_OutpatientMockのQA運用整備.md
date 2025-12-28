@@ -35,7 +35,7 @@
 ## QA 操作手順（runId / dataSourceTransition 切替）
 1. `RUN_ID=<採番> VITE_DISABLE_MSW=0 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動する。
 2. `/outpatient-mock?msw=1` を開き、シナリオを選択する。
-3. `runId` 入力欄で任意の RUN_ID を入力し「runId を適用」を押す。
+3. `runId` 入力欄で任意の RUN_ID を入力し「runId を適用」を押す（空白は適用不可、推奨形式は `YYYYMMDDThhmmssZ`）。
 4. `dataSourceTransition` のセレクトを切替える。
 5. 画面上部の RUN_ID / dataSourceTransition 表示、Reception/Charts の ToneBanner と Telemetry funnel が更新されることを確認する。
 6. VITE_DISABLE_MSW=1 で再起動し、警告表示が出てシナリオ/上書きが無効になることを確認する。
@@ -44,3 +44,4 @@
 - 2025-12-27: 依存関係の意図を追記（RUN_ID: 20251227T221802Z）。
 - 2025-12-28: QA 用の runId/dataSourceTransition 切替 UI と MSW 無効時警告の整備に着手（RUN_ID: 20251228T120603Z）。
 - 2025-12-28: MSW runId 上書きと警告文を実装、QA 手順を更新。`npm -C web-client test -- medicalOutpatient` 実行済み。`WEB_CLIENT_MODE=npm VITE_DISABLE_MSW=0 MODERNIZED_POSTGRES_PORT=15433 MINIO_API_PORT=59002 MINIO_CONSOLE_PORT=59003 MODERNIZED_APP_HTTP_PORT=59080 MODERNIZED_APP_ADMIN_PORT=59995 ./setup-modernized-env.sh` で起動確認（RUN_ID: 20251228T120603Z）。
+- 2025-12-28: VITE_DISABLE_MSW=1 時の警告表示を Playwright で実証。ログ: `artifacts/webclient/debug/20251228T120603Z-outpatient-mock/logs/msw-disabled-setup.log` / `.../logs/msw-disabled-ui-body.txt` / `.../logs/msw-disabled-ui.txt`、スクリーンショット: `artifacts/webclient/debug/20251228T120603Z-outpatient-mock/screenshots/msw-disabled-warning.png`（RUN_ID: 20251228T120603Z）。
