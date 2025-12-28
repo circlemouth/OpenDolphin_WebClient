@@ -6,11 +6,13 @@ import { getAuditEventLog, logUiState, type AuditEventRecord } from '../../libs/
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
+import { AdminBroadcastBanner } from '../shared/AdminBroadcastBanner';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeVisitDate } from '../charts/encounterContext';
 import { PatientFormErrorAlert } from './PatientFormErrorAlert';
 import { useAppToast } from '../../libs/ui/appToast';
+import { useAdminBroadcast } from '../../libs/admin/useAdminBroadcast';
 import {
   fetchPatients,
   savePatient,
@@ -148,6 +150,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   });
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
+  const { broadcast } = useAdminBroadcast();
 
   useEffect(() => {
     const merged = readFilters(searchParams);
@@ -207,6 +210,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       }),
     staleTime: 60_000,
   });
+  const refetchPatients = patientsQuery.refetch;
+
+  useEffect(() => {
+    if (!broadcast?.updatedAt) return;
+    void refetchPatients();
+  }, [broadcast?.updatedAt, refetchPatients]);
 
   const patientsErrorContext = useMemo(() => {
     const httpStatus = patientsQuery.data?.status;
@@ -611,6 +620,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         </div>
       </header>
 
+      <AdminBroadcastBanner broadcast={broadcast} surface="patients" runId={resolvedRunId ?? runId} />
       <ToneBanner tone={tone} message={toneMessage} runId={resolvedRunId} ariaLive={missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite'} />
       {unlinkedNotice && (
         <ToneBanner

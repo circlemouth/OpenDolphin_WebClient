@@ -1687,7 +1687,7 @@ function ChartsContent() {
           <span className="charts-page__pill">適用先: {session.facilityId}:{session.userId}</span>
         </div>
       </header>
-      <AdminBroadcastBanner broadcast={broadcast} surface="charts" />
+      <AdminBroadcastBanner broadcast={broadcast} surface="charts" runId={resolvedRunId ?? flags.runId} />
       {contextAlert ? (
         <ToneBanner
           tone={contextAlert.tone}
