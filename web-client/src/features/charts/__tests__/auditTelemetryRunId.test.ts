@@ -3,6 +3,8 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import {
   clearAuditEventLog,
   getAuditEventLog,
+  logAuditEvent,
+  logUiState,
 } from '../../../libs/audit/auditLogger';
 import {
   clearOutpatientFunnelLog,
@@ -56,5 +58,60 @@ describe('auditEvent と telemetry の runId 整合', () => {
     expect(auditDetails.runId ?? audit?.runId).toBe(RUN_ID);
     expect(telemetry?.traceId).toBe(TRACE_ID);
     expect(auditDetails.traceId).toBe(TRACE_ID);
+  });
+
+  it('__AUDIT_* は機微情報がマスクされている', () => {
+    logUiState({
+      action: 'navigate',
+      screen: 'test',
+      runId: RUN_ID,
+      details: {
+        facilityId: 'FAC-01',
+        patientId: 'PT-999',
+        appointmentId: 'APT-999',
+        actor: 'FAC-01:USER-01',
+        email: 'test@example.com',
+      },
+    });
+
+    logAuditEvent({
+      runId: RUN_ID,
+      source: 'test',
+      note: 'mask-check',
+      payload: {
+        action: 'TEST_ACTION',
+        details: {
+          facilityId: 'FAC-01',
+          patientId: 'PT-999',
+          appointmentId: 'APT-999',
+          actor: 'FAC-01:USER-01',
+          email: 'test@example.com',
+          passwordMd5: 'deadbeef',
+        },
+      },
+    });
+
+    const uiState = (window as any).__AUDIT_UI_STATE__ ?? [];
+    const auditEvents = (window as any).__AUDIT_EVENTS__ ?? [];
+
+    expect(Array.isArray(uiState)).toBeTruthy();
+    expect(Array.isArray(auditEvents)).toBeTruthy();
+
+    const uiEntry = uiState[uiState.length - 1];
+    const eventEntry = auditEvents[auditEvents.length - 1];
+
+    expect(uiEntry?.details?.facilityId).toBe('[REDACTED]');
+    expect(uiEntry?.details?.patientId).toBe('[REDACTED]');
+    expect(uiEntry?.details?.appointmentId).toBe('[REDACTED]');
+    expect(uiEntry?.details?.actor).toBe('[REDACTED]');
+    expect(uiEntry?.details?.email).toBe('[REDACTED]');
+
+    const eventDetails = eventEntry?.payload?.details ?? {};
+    expect(eventDetails?.facilityId).toBe('[REDACTED]');
+    expect(eventDetails?.patientId).toBe('[REDACTED]');
+    expect(eventDetails?.appointmentId).toBe('[REDACTED]');
+    expect(eventDetails?.actor).toBe('[REDACTED]');
+    expect(eventDetails?.email).toBe('[REDACTED]');
+    expect(eventDetails?.passwordMd5).toBe('[REDACTED]');
   });
 });

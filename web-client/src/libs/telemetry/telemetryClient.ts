@@ -1,4 +1,5 @@
 import { ensureObservabilityMeta } from '../observability/observability';
+import { maskSensitiveLog } from '../logging/mask';
 import type { DataSourceTransition as ObservabilityDataSourceTransition } from '../observability/types';
 
 export type DataSourceTransition = ObservabilityDataSourceTransition;
@@ -90,12 +91,13 @@ export function recordOutpatientFunnel(
   if ((record.outcome === 'error' || record.outcome === 'blocked') && !record.reason) {
     missing.push('reason');
   }
+  const maskedRecord = maskSensitiveLog(record);
   if (missing.length > 0 && typeof console !== 'undefined') {
-    console.warn('[telemetry] recordOutpatientFunnel schema warning', { stage, missing, record });
+    console.warn('[telemetry] recordOutpatientFunnel schema warning', { stage, missing, record: maskedRecord });
   }
   funnelLog.push(record);
   if (typeof console !== 'undefined') {
-    console.info('[telemetry] Record outpatient funnel', record);
+    console.info('[telemetry] Record outpatient funnel', maskedRecord);
   }
   notifyFunnelSubscribers();
   return record;
@@ -103,6 +105,10 @@ export function recordOutpatientFunnel(
 
 export function getOutpatientFunnelLog() {
   return [...funnelLog];
+}
+
+export function getMaskedOutpatientFunnelLog() {
+  return funnelLog.map((entry) => maskSensitiveLog(entry));
 }
 
 export function clearOutpatientFunnelLog() {

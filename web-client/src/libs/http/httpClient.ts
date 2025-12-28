@@ -177,7 +177,7 @@ export type HttpFetchInit = RequestInit & {
 
 const shouldNotifySessionExpired = (status: number, init?: HttpFetchInit) => {
   if (init?.suppressSessionExpiry) return false;
-  if (status !== 401 && status !== 403) return false;
+  if (status !== 401 && status !== 403 && status !== 419 && status !== 440) return false;
   const session = readStoredSession();
   return Boolean(session);
 };
@@ -192,7 +192,13 @@ export async function httpFetch(input: RequestInfo | URL, init?: HttpFetchInit) 
   const response = await fetch(input, { ...initWithObservability, credentials });
   captureObservabilityFromResponse(response);
   if (shouldNotifySessionExpired(response.status, init)) {
-    notifySessionExpired(response.status === 403 ? 'forbidden' : 'unauthorized', response.status);
+    const reason =
+      response.status === 403
+        ? 'forbidden'
+        : response.status === 419 || response.status === 440
+          ? 'timeout'
+          : 'unauthorized';
+    notifySessionExpired(reason, response.status);
   }
   return response;
 }

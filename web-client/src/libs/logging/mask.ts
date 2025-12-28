@@ -22,11 +22,30 @@ const REDACT_KEYS = new Set([
   'user_name',
   'clientuuid',
   'client_uuid',
+  'passwordmd5',
+  'token',
+  'authorization',
+  'cookie',
+  'session',
+  'email',
   'password',
   'passwordmd5',
 ]);
 
-const REDACT_KEYWORDS = ['password', 'passcode', 'token', 'secret', 'authorization', 'cookie', 'sessionid', 'csrf'];
+const REDACT_KEYWORDS = [
+  'password',
+  'passcode',
+  'passwordmd5',
+  'token',
+  'secret',
+  'authorization',
+  'cookie',
+  'session',
+  'sessionid',
+  'clientuuid',
+  'email',
+  'csrf',
+];
 
 const shouldRedactKey = (key: string) => {
   const normalized = key.toLowerCase();

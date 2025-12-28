@@ -1,4 +1,4 @@
-export type SessionExpiryReason = 'unauthorized' | 'forbidden';
+export type SessionExpiryReason = 'unauthorized' | 'forbidden' | 'timeout';
 
 export type SessionExpiryNotice = {
   reason: SessionExpiryReason;
@@ -15,7 +15,10 @@ let lastNotifiedAt = 0;
 
 const buildMessage = (reason: SessionExpiryReason) => {
   if (reason === 'forbidden') {
-    return '権限エラーによりセッションが無効になりました。再ログインしてください。';
+    return '権限不足のためアクセスできません。権限を確認して再ログインしてください。';
+  }
+  if (reason === 'timeout') {
+    return 'セッションの有効期限が切れました。再ログインしてください。';
   }
   return 'セッションが切れました。再ログインしてください。';
 };
