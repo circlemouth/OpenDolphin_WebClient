@@ -68,20 +68,23 @@ src/
 ```
 
 ## 環境変数
-`.env.sample` を参照してください。最低限 `VITE_API_BASE_URL` を既存サーバーのリバースプロキシ URL に設定します。
+`.env.sample` を参照してください。最低限 `VITE_API_BASE_URL` を同一オリジンの `/api` に設定します（未指定時の既定値も `/api`）。
 
 ### 本番/ステージ環境の分離
 - Stage: `web-client/.env.stage.example` を `.env.stage` として作成し、`npm run dev:stage`（`--env-file .env.stage`）で起動します。
 - Prod: `web-client/.env.prod.example` を基にデプロイ先の環境変数（または `.env.prod`）を用意し、`VITE_DISABLE_MSW=1` を固定します。
 
 ### MSW 無効化時の接続パス（本番向け）
-- `VITE_DISABLE_MSW=1` の場合、**MSW は登録されず**、API リクエストは `VITE_API_BASE_URL`（未指定なら `/api`）に向かいます。
-- 本番は **同一オリジンで `/api` をリバースプロキシ**する構成を推奨します（CORS を回避できる）。
-- 別オリジンで運用する場合は、API 側で `Access-Control-Allow-Origin`/`Access-Control-Allow-Credentials` を許可し、Cookie を利用する場合は `SameSite=None; Secure` が必要です。
+- `web-client/src/main.tsx` は `VITE_DISABLE_MSW !== '1'` のときのみ MSW を登録します（`VITE_DISABLE_MSW=1` で完全に無効化）。
+- `web-client/src/LoginScreen.tsx` は `VITE_API_BASE_URL ?? '/api'` を API ベースとして参照します（既定値は `/api`）。
+- 本番/Stage は **同一オリジンで `/api` をリバースプロキシ**する前提に統一し、CORS を回避します。
+- 別オリジン運用が不可避な場合のみ、API 側で `Access-Control-Allow-Origin`/`Access-Control-Allow-Credentials` を許可し、Cookie 利用時は `SameSite=None; Secure` を設定します。
 
-### 証明書/プロキシ前提
-- Vite dev/preview のプロキシは `VITE_DEV_PROXY_TARGET` を利用します（ローカル検証専用）。
-- mTLS が必要な ORCA 本番/Stage 経路は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を厳守してください（証明書・Basic 認証情報はログに残さない）。
+### 本番/Stage の証明書・CORS・プロキシ前提
+- **Stage**: `/api` を同一オリジンへリバースプロキシ。HTTPS 前提（自己署名の場合はブラウザ許可）。CORS 設定は不要。
+- **Prod**: `/api` を同一オリジンへリバースプロキシ。TLS 設定は本番証明書前提。CORS 設定は不要。
+- **Dev/Preview**: ローカル検証のみ `VITE_DEV_PROXY_TARGET` を利用（`/api` をこのオリジンへ中継）。
+- **ORCA**: mTLS が必要な本番/Stage 経路は `docs/server-modernization/phase2/operations/ORCA_CERTIFICATION_ONLY.md` を厳守（証明書・Basic 認証情報はログに残さない）。
 
 ## 今後の予定
 - 認証ラッパーと長輪講ラッパーの具体実装
