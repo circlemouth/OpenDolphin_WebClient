@@ -29,6 +29,7 @@ import { AuthServiceProvider, clearStoredAuthFlags, useAuthService } from './fea
 import { PatientsPage } from './features/patients/PatientsPage';
 import { AdministrationPage } from './features/administration/AdministrationPage';
 import { AppToastProvider, type AppToast, type AppToastInput } from './libs/ui/appToast';
+import { logAuditEvent } from './libs/audit/auditLogger';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
@@ -235,7 +236,20 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
             enqueueToast({
               tone: 'warning',
               message: 'アクセス権限がありません',
-              detail: `必要ロール: ${link.roles?.join(', ') ?? '指定なし'} / 現在: ${session.role}`,
+              detail: `必要ロール: ${link.roles?.join(', ') ?? '指定なし'} / 現在: ${session.role} / 管理者へ依頼・再ログインで解消`,
+            });
+            logAuditEvent({
+              runId: resolvedRunId,
+              source: 'authz',
+              note: 'navigation access denied',
+              payload: {
+                operation: 'navigate',
+                target: link.to,
+                requiredRoles: link.roles,
+                role: session.role,
+                actor: `${session.facilityId}:${session.userId}`,
+                screen: 'navigation',
+              },
             });
           }
         };
