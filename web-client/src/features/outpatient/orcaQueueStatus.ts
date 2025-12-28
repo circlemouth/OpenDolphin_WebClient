@@ -12,7 +12,15 @@ export type OrcaSendStatus = {
   error?: string;
 };
 
-const STALL_THRESHOLD_MS = 5 * 60 * 1000;
+export type OrcaQueueWarningSummary = {
+  total: number;
+  pending: number;
+  failed: number;
+  delayed: number;
+};
+
+export const ORCA_QUEUE_STALL_THRESHOLD_MS = 5 * 60 * 1000;
+const STALL_THRESHOLD_MS = ORCA_QUEUE_STALL_THRESHOLD_MS;
 const PROCESSING_WINDOW_MS = 90 * 1000;
 
 const normalizeClaimQueuePhaseFromStatus = (status: string): ClaimQueuePhase => {
@@ -72,3 +80,37 @@ export const toClaimQueueEntryFromOrcaQueueEntry = (entry: OrcaQueueEntry): Clai
   };
 };
 
+export const isOrcaQueueWarningEntry = (entry: OrcaQueueEntry, nowMs = Date.now()) => {
+  const phase = normalizeClaimQueuePhaseFromStatus(entry.status);
+  const sendStatus = resolveOrcaSendStatus(entry, nowMs);
+  const isFailed = phase === 'failed' || sendStatus?.key === 'failure';
+  const isPending = phase === 'pending' || phase === 'retry' || phase === 'hold' || phase === 'sent';
+  const missingDispatch = isPending && !entry.lastDispatchAt;
+  const isDelayed = Boolean(sendStatus?.isStalled || missingDispatch);
+  return {
+    isWarning: isFailed || isDelayed,
+    isFailed,
+    isPending,
+    isDelayed,
+  };
+};
+
+export const buildOrcaQueueWarningSummary = (entries: OrcaQueueEntry[], nowMs = Date.now()): OrcaQueueWarningSummary => {
+  let pending = 0;
+  let failed = 0;
+  let delayed = 0;
+
+  entries.forEach((entry) => {
+    const result = isOrcaQueueWarningEntry(entry, nowMs);
+    if (result.isFailed) failed += 1;
+    if (result.isPending) pending += 1;
+    if (result.isDelayed) delayed += 1;
+  });
+
+  return {
+    total: entries.length,
+    pending,
+    failed,
+    delayed,
+  };
+};

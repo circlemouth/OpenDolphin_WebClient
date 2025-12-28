@@ -6,8 +6,16 @@ export type AdminDeliveryStatus = {
   chartsMasterSource?: AdminDeliveryFlagState;
 };
 
+export type AdminQueueStatus = {
+  total: number;
+  pending: number;
+  failed: number;
+  delayed: number;
+};
+
 export type AdminBroadcast = {
   runId?: string;
+  action?: 'config' | 'queue';
   deliveryId?: string;
   deliveryVersion?: string;
   deliveredAt?: string;
@@ -18,6 +26,10 @@ export type AdminBroadcast = {
   chartsMasterSource?: string;
   environment?: string;
   deliveryStatus?: AdminDeliveryStatus;
+  queueOperation?: 'retry' | 'discard';
+  queueResult?: 'success' | 'failure';
+  queuePatientId?: string;
+  queueStatus?: AdminQueueStatus;
   note?: string;
   source?: string;
   updatedAt: string;

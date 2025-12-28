@@ -7,6 +7,11 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { useSession } from '../../AppRouter';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../charts/authService';
 import {
+  ORCA_QUEUE_STALL_THRESHOLD_MS,
+  buildOrcaQueueWarningSummary,
+  isOrcaQueueWarningEntry,
+} from '../outpatient/orcaQueueStatus';
+import {
   discardOrcaQueue,
   fetchEffectiveAdminConfig,
   fetchOrcaQueue,
@@ -65,6 +70,8 @@ const formatTimestampWithAgo = (iso?: string) => {
   if (!iso) return '―';
   return `${formatTimestamp(iso)}（${formatTimeAgo(iso)}）`;
 };
+
+const QUEUE_DELAY_WARNING_MS = ORCA_QUEUE_STALL_THRESHOLD_MS;
 
 const toStatusClass = (status: string) => {
   if (status === 'delivered') return 'admin-queue__status admin-queue__status--delivered';
@@ -134,6 +141,16 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     refetchInterval: 60_000,
   });
 
+  const latestRunId = configQuery.data?.runId ?? queueQuery.data?.runId ?? runId;
+  const resolvedRunId = latestRunId ?? flags.runId;
+  const envFallback = normalizeEnvironmentLabel(
+    (import.meta.env as Record<string, string | undefined>).VITE_ENVIRONMENT ??
+      (import.meta.env as Record<string, string | undefined>).VITE_DEPLOY_ENV ??
+      (import.meta.env.MODE === 'development' ? 'dev' : import.meta.env.MODE),
+  );
+  const environmentLabel = normalizeEnvironmentLabel(configQuery.data?.environment) ?? envFallback ?? 'unknown';
+  const warningThresholdMinutes = Math.round(QUEUE_DELAY_WARNING_MS / 60000);
+
   useEffect(() => {
     const data = configQuery.data;
     if (!data) return;
@@ -176,6 +193,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       const resolvedEnvironment = normalizeEnvironmentLabel(data.environment) ?? environmentLabel;
       const broadcast = publishAdminBroadcast({
         runId: data.runId ?? runId,
+        action: 'config',
         deliveryId: data.deliveryId,
         deliveryVersion: data.deliveryVersion,
         deliveredAt,
@@ -238,8 +256,14 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['orca-queue'], data);
       const queueOperation = variables.kind;
+      const queueSummary = buildOrcaQueueWarningSummary(data.queue);
       publishAdminBroadcast({
         runId: data.runId ?? runId,
+        action: 'queue',
+        queueOperation,
+        queueResult: 'success',
+        queuePatientId: variables.patientId,
+        queueStatus: queueSummary,
         deliveryId: variables.patientId,
         deliveryVersion: data.source,
         deliveredAt: new Date().toISOString(),
@@ -254,10 +278,13 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         note: `orca queue ${queueOperation}`,
         payload: {
           operation: queueOperation,
+          result: 'success',
           patientId: variables.patientId,
           environment: environmentLabel,
           queueMode: data.source,
           queue: data.queue,
+          queueSnapshot: queueSummary,
+          warningThresholdMs: QUEUE_DELAY_WARNING_MS,
         },
       });
       logAuditEvent({
@@ -265,14 +292,67 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         source: 'orca/queue',
         note: queueOperation,
         patientId: variables.patientId,
-        payload: { patientId: variables.patientId, queue: data.queue, operation: queueOperation },
+        payload: {
+          patientId: variables.patientId,
+          queue: data.queue,
+          operation: queueOperation,
+          result: 'success',
+          queueSnapshot: queueSummary,
+          warningThresholdMs: QUEUE_DELAY_WARNING_MS,
+        },
       });
       setFeedback({
         tone: 'info',
         message: queueOperation === 'retry' ? '再送リクエストを送信しました。' : 'キューエントリを破棄しました。',
       });
     },
-    onError: () => {
+    onError: (error, variables) => {
+      const queueSnapshotEntries = queueQuery.data?.queue ?? [];
+      const queueSummary = buildOrcaQueueWarningSummary(queueSnapshotEntries);
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      const queueOperation = variables.kind;
+      publishAdminBroadcast({
+        runId: resolvedRunId,
+        action: 'queue',
+        queueOperation,
+        queueResult: 'failure',
+        queuePatientId: variables.patientId,
+        queueStatus: queueSummary,
+        deliveredAt: new Date().toISOString(),
+        queueMode: queueQuery.data?.source ?? (form.useMockOrcaQueue ? 'mock' : 'live'),
+        verifyAdminDelivery: queueQuery.data?.verifyAdminDelivery ?? form.verifyAdminDelivery,
+        environment: environmentLabel,
+        note: queueOperation === 'retry' ? '再送失敗' : '破棄失敗',
+      });
+      logAuditEvent({
+        runId: resolvedRunId,
+        source: 'admin/delivery',
+        note: `orca queue ${queueOperation} failed`,
+        payload: {
+          operation: queueOperation,
+          result: 'failure',
+          patientId: variables.patientId,
+          environment: environmentLabel,
+          queueMode: queueQuery.data?.source ?? (form.useMockOrcaQueue ? 'mock' : 'live'),
+          error: errorMessage,
+          queueSnapshot: queueSummary,
+          warningThresholdMs: QUEUE_DELAY_WARNING_MS,
+        },
+      });
+      logAuditEvent({
+        runId: resolvedRunId,
+        source: 'orca/queue',
+        note: `${queueOperation} failed`,
+        patientId: variables.patientId,
+        payload: {
+          patientId: variables.patientId,
+          operation: queueOperation,
+          result: 'failure',
+          error: errorMessage,
+          queueSnapshot: queueSummary,
+          warningThresholdMs: QUEUE_DELAY_WARNING_MS,
+        },
+      });
       setFeedback({ tone: 'error', message: 'キュー操作に失敗しました。' });
     },
   });
@@ -291,19 +371,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       { bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed },
     );
   }, [bumpRunId, configQuery.data?.runId, queueQuery.data?.runId, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
-  const warningEntries = useMemo(
-    () =>
-      queueEntries.filter((entry) => {
-        if (entry.status === 'failed') return true;
-        if (entry.status === 'pending') {
-          if (!entry.lastDispatchAt) return true;
-          const elapsed = Date.now() - new Date(entry.lastDispatchAt).getTime();
-          return elapsed > 120_000;
-        }
-        return false;
-      }),
-    [queueEntries],
-  );
+  const warningEntries = useMemo(() => {
+    const nowMs = Date.now();
+    return queueEntries.filter((entry) => isOrcaQueueWarningEntry(entry, nowMs).isWarning);
+  }, [queueEntries]);
 
   const handleInputChange = (key: keyof AdminConfigPayload, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [key]: value }));
@@ -329,18 +400,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     queueMutation.mutate({ kind: 'discard', patientId });
   };
 
-  const latestRunId = configQuery.data?.runId ?? queueQuery.data?.runId ?? runId;
-  const resolvedRunId = latestRunId ?? flags.runId;
   const syncMismatch = configQuery.data?.syncMismatch;
   const syncMismatchFields = configQuery.data?.syncMismatchFields?.length ? configQuery.data.syncMismatchFields.join(', ') : undefined;
   const rawConfig = configQuery.data?.rawConfig ?? configQuery.data;
   const rawDelivery = configQuery.data?.rawDelivery;
-  const envFallback = normalizeEnvironmentLabel(
-    (import.meta.env as Record<string, string | undefined>).VITE_ENVIRONMENT ??
-      (import.meta.env as Record<string, string | undefined>).VITE_DEPLOY_ENV ??
-      (import.meta.env.MODE === 'development' ? 'dev' : import.meta.env.MODE),
-  );
-  const environmentLabel = normalizeEnvironmentLabel(configQuery.data?.environment) ?? envFallback ?? 'unknown';
   const deliveryMode = configQuery.data?.deliveryMode ?? rawDelivery?.deliveryMode ?? rawConfig?.deliveryMode;
   const deliveryStatus = buildChartsDeliveryStatus(rawConfig, rawDelivery);
   const deliverySummary = summarizeDeliveryStatus(deliveryStatus);
@@ -408,7 +471,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       {warningEntries.length > 0 ? (
         <ToneBanner
           tone="warning"
-          message={`未配信・失敗バンドルが ${warningEntries.length} 件あります。再送または破棄を実施してください。`}
+          message={`未配信・失敗バンドルが ${warningEntries.length} 件あります（遅延判定:${warningThresholdMinutes}分）。再送または破棄を実施してください。`}
           destination="ORCA queue"
           runId={resolvedRunId}
           nextAction="再送/破棄・再取得"
@@ -422,7 +485,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           nextAction="再取得 / 再配信で解消"
         />
       ) : (
-        <p className="admin-quiet">未配信キューの遅延は検知されていません。</p>
+        <p className="admin-quiet">
+          未配信キューの遅延は検知されていません（遅延閾値:{warningThresholdMinutes}分）。
+        </p>
       )}
 
       <div className="administration-grid">
@@ -603,7 +668,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
       <section className="administration-card" aria-label="配信キュー一覧">
         <h2 className="administration-card__title">配信キュー</h2>
         <p className="admin-quiet">
-          未配信のバンドルを確認し、必要に応じて再送（retry）または破棄します。ヘッダーで queueMode / delivery verification を表示します。
+          未配信のバンドルを確認し、必要に応じて再送（retry）または破棄します。遅延判定は {warningThresholdMinutes}
+          分超の pending を対象とし、失敗と合わせて警告バナーに反映します。
         </p>
         <table className="admin-queue">
           <thead>
