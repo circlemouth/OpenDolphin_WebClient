@@ -1,6 +1,6 @@
 # Charts監査イベント統合と安全ガード
 
-- RUN_ID: 20251228T001604Z
+- RUN_ID: 20251228T005005Z
 - 期間: 2025-12-28
 - ステータス: done
 - 進捗: 100
@@ -15,7 +15,7 @@
 ## 進捗メモ（担当者が更新）
 - 担当者: Codex CLI
 - 更新日: 2025-12-28
-- 根拠: Charts の患者切替/送信/印刷/キャンセル/ロック操作に監査イベントと UI ログを紐づけ、operationPhase(approval/lock/do) を統一して実装。
+- 根拠: Charts の監査イベント重複防止と operationPhase 一貫性/lockStatus/blocked理由の補強を実装。
 - 次アクション: 運用確認（UI 操作で auditEvent を確認）。
 
 
@@ -32,3 +32,7 @@
   - 変更: `web-client/src/features/charts/ChartsActionBar.tsx` / `web-client/src/features/charts/PatientsTab.tsx` / `web-client/src/features/charts/pages/ChartsPage.tsx` / `web-client/src/features/charts/audit.ts`
   - 結果: 患者切替/送信/印刷/キャンセル/ロックで auditEvent+UI ログのフェーズ統一を確認
   - 検証: `npm test -- charts`（web-client, vitest）
+- 2025-12-28: 監査イベントの重複防止/lockStatus 整合/URL切替ログ/blocked理由の補強を追加（RUN_ID=20251228T005005Z）
+  - 変更: `web-client/src/features/charts/ChartsActionBar.tsx` / `web-client/src/features/charts/PatientsTab.tsx` / `web-client/src/features/charts/pages/ChartsPage.tsx` / `web-client/src/features/charts/audit.ts`
+  - 結果: 確認ダイアログの重複ログ防止、URL切替やタブロックの監査詳細に lockStatus/blockedReasons を補完
+  - 検証: `npm --prefix web-client test -- charts`（vitest）

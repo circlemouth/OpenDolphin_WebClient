@@ -9,6 +9,7 @@ import { getObservabilityMeta } from '../../libs/observability/observability';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { ToneBanner, type BannerTone } from '../reception/components/ToneBanner';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
+import type { ChartsTabLockStatus } from './useChartsTabLock';
 import type { DataSourceTransition } from './authService';
 import type { ClaimQueueEntry } from '../outpatient/types';
 import type { ReceptionEntry } from '../reception/api';
@@ -76,6 +77,7 @@ export interface ChartsActionBarProps {
     reason?: string;
     ownerRunId?: string;
     expiresAt?: string;
+    lockStatus?: ChartsTabLockStatus;
   };
   onReloadLatest?: () => void | Promise<void>;
   onDiscardChanges?: () => void;
@@ -127,6 +129,9 @@ export function ChartsActionBar({
   const readOnlyReason = editLock?.reason ?? '並行編集を検知したため、このタブは閲覧専用です。';
   const isLocked = uiLocked || isRunning || readOnly;
   const resolvedTraceId = traceId ?? getObservabilityMeta().traceId;
+  const resolvedPatientId = patientId ?? selectedEntry?.patientId ?? selectedEntry?.id;
+  const resolvedAppointmentId = queueEntry?.appointmentId ?? selectedEntry?.appointmentId;
+  const resolvedReceptionId = selectedEntry?.receptionId;
 
   const sendQueueLabel = useMemo(() => {
     const phase = queueEntry?.phase;
@@ -331,6 +336,15 @@ export function ChartsActionBar({
     });
   };
 
+  const buildFallbackDetails = () => {
+    const details: Record<string, unknown> = {};
+    if (!patientId && resolvedPatientId) details.fallbackPatientId = resolvedPatientId;
+    if (!queueEntry?.appointmentId && resolvedAppointmentId) details.fallbackAppointmentId = resolvedAppointmentId;
+    if ((!patientId || !queueEntry?.appointmentId) && resolvedReceptionId) details.fallbackReceptionId = resolvedReceptionId;
+    if (editLock?.lockStatus) details.lockStatus = editLock.lockStatus;
+    return details;
+  };
+
   const logAudit = (
     action: ChartAction,
     outcome: 'success' | 'error' | 'blocked' | 'started',
@@ -354,8 +368,8 @@ export function ChartsActionBar({
       note: detail,
       error: outcome === 'error' ? detail : undefined,
       durationMs,
-      patientId,
-      appointmentId: queueEntry?.appointmentId,
+      patientId: resolvedPatientId,
+      appointmentId: resolvedAppointmentId,
       dataSourceTransition,
       cacheHit,
       missingMaster,
@@ -363,12 +377,16 @@ export function ChartsActionBar({
       runId,
       details: {
         operationPhase: phase,
+        ...buildFallbackDetails(),
         ...options?.details,
       },
     });
   };
 
+  const approvalSessionRef = useRef<{ action: ChartAction; closed: boolean } | null>(null);
+
   const logApproval = (action: ChartAction, state: 'open' | 'confirmed' | 'cancelled') => {
+    const blockedReasons = state === 'cancelled' ? ['confirm_cancelled'] : undefined;
     logUiState({
       action: action === 'print' ? 'print' : 'send',
       screen: 'charts/action-bar',
@@ -381,10 +399,12 @@ export function ChartsActionBar({
       details: {
         operationPhase: 'approval',
         approvalState: state,
-        patientId,
-        appointmentId: queueEntry?.appointmentId,
+        patientId: resolvedPatientId,
+        appointmentId: resolvedAppointmentId,
         requestId: queueEntry?.requestId,
         traceId: resolvedTraceId,
+        ...(blockedReasons ? { blockedReasons } : {}),
+        ...buildFallbackDetails(),
       },
     });
     logAudit(action, state === 'open' || state === 'confirmed' ? 'started' : 'blocked', `approval_${state}`, undefined, {
@@ -393,8 +413,17 @@ export function ChartsActionBar({
         approvalState: state,
         requestId: queueEntry?.requestId,
         traceId: resolvedTraceId,
+        ...(blockedReasons ? { blockedReasons } : {}),
+        ...buildFallbackDetails(),
       },
     });
+  };
+
+  const finalizeApproval = (action: ChartAction, state: 'confirmed' | 'cancelled') => {
+    const session = approvalSessionRef.current;
+    if (!session || session.action !== action || session.closed) return;
+    session.closed = true;
+    logApproval(action, state);
   };
 
   const handleAction = async (action: ChartAction) => {
@@ -432,6 +461,7 @@ export function ChartsActionBar({
           blocked: true,
           reasons: ['edit_lock_conflict'],
           traceId: resolvedTraceId,
+          lockStatus: editLock?.lockStatus,
           editLock: editLock ?? null,
         },
       });
@@ -440,6 +470,7 @@ export function ChartsActionBar({
         details: {
           trigger: 'edit_lock',
           traceId: resolvedTraceId,
+          blockedReasons: ['edit_lock_conflict'],
         },
       });
       return;
@@ -471,6 +502,7 @@ export function ChartsActionBar({
           blocked: true,
           reasons: sendPrecheckReasons.map((reason) => reason.key),
           traceId: resolvedTraceId,
+          lockStatus: editLock?.lockStatus,
         },
       });
       logAudit(action, 'blocked', blockedReason, undefined, {
@@ -479,6 +511,7 @@ export function ChartsActionBar({
           trigger: 'precheck',
           traceId: resolvedTraceId,
           reasons: sendPrecheckReasons.map((reason) => reason.key),
+          blockedReasons: sendPrecheckReasons.map((reason) => reason.key),
         },
       });
       return;
@@ -506,6 +539,7 @@ export function ChartsActionBar({
         details: {
           trigger: 'patient_not_selected',
           traceId: resolvedTraceId,
+          blockedReasons: ['patient_not_selected'],
         },
       });
       return;
@@ -547,10 +581,11 @@ export function ChartsActionBar({
       fallbackUsed,
       details: {
         operationPhase: 'do',
-        patientId,
-        appointmentId: queueEntry?.appointmentId,
+        patientId: resolvedPatientId,
+        appointmentId: resolvedAppointmentId,
         requestId: queueEntry?.requestId,
         traceId: resolvedTraceId,
+        ...buildFallbackDetails(),
       },
     });
     logTelemetry(action, 'started');
@@ -616,10 +651,10 @@ export function ChartsActionBar({
           setToast(null);
         }
         logTelemetry(action, 'blocked', durationMs, abortedDetail, abortedDetail);
-        logAudit(action, 'blocked', abortedDetail, durationMs, {
-          phase: 'lock',
-          details: { trigger: 'abort', traceId: errorTraceId },
-        });
+      logAudit(action, 'blocked', abortedDetail, durationMs, {
+        phase: 'lock',
+        details: { trigger: 'abort', traceId: errorTraceId },
+      });
       } else {
         const nextSteps = (() => {
           if (/HTTP 401|HTTP 403|権限不足/.test(detail)) {
@@ -655,9 +690,25 @@ export function ChartsActionBar({
     if (!selectedEntry) {
       setBanner({ tone: 'warning', message: '患者が未選択です。Patients で患者を選択してから出力してください。' });
       setToast(null);
+      logUiState({
+        action: 'print',
+        screen: 'charts/action-bar',
+        controlId: 'action-print',
+        runId,
+        cacheHit,
+        missingMaster,
+        dataSourceTransition,
+        fallbackUsed,
+        details: {
+          operationPhase: 'lock',
+          blocked: true,
+          reasons: ['patient_not_selected'],
+          ...buildFallbackDetails(),
+        },
+      });
       logAudit('print', 'blocked', 'no selectedEntry', undefined, {
         phase: 'lock',
-        details: { trigger: 'patient_not_selected' },
+        details: { trigger: 'patient_not_selected', blockedReasons: ['patient_not_selected'] },
       });
       return;
     }
@@ -681,6 +732,9 @@ export function ChartsActionBar({
       missingMaster,
       fallbackUsed,
       dataSourceTransition,
+      details: {
+        operationPhase: 'do',
+      },
     });
 
     logUiState({
@@ -809,8 +863,8 @@ export function ChartsActionBar({
         title="ORCA送信の確認"
         description={`現在の患者/受付を ORCA へ送信します。実行後に取り消せない場合があります。（runId=${runId} / transition=${dataSourceTransition}）`}
         onClose={() => {
+          finalizeApproval('send', 'cancelled');
           setConfirmAction(null);
-          logApproval('send', 'cancelled');
         }}
         testId="charts-send-dialog"
       >
@@ -818,8 +872,8 @@ export function ChartsActionBar({
           <button
             type="button"
             onClick={() => {
+              finalizeApproval('send', 'cancelled');
               setConfirmAction(null);
-              logApproval('send', 'cancelled');
             }}
           >
             キャンセル
@@ -827,8 +881,8 @@ export function ChartsActionBar({
           <button
             type="button"
             onClick={() => {
+              finalizeApproval('send', 'confirmed');
               setConfirmAction(null);
-              logApproval('send', 'confirmed');
               void handleAction('send');
             }}
           >
@@ -843,8 +897,8 @@ export function ChartsActionBar({
         title="印刷/エクスポートの確認"
         description={`個人情報を含む診療文書を表示します。画面共有/第三者の閲覧に注意してください。（runId=${runId}）`}
         onClose={() => {
+          finalizeApproval('print', 'cancelled');
           setConfirmAction(null);
-          logApproval('print', 'cancelled');
         }}
         testId="charts-print-dialog"
       >
@@ -852,8 +906,8 @@ export function ChartsActionBar({
           <button
             type="button"
             onClick={() => {
+              finalizeApproval('print', 'cancelled');
               setConfirmAction(null);
-              logApproval('print', 'cancelled');
             }}
           >
             キャンセル
@@ -861,8 +915,8 @@ export function ChartsActionBar({
           <button
             type="button"
             onClick={() => {
+              finalizeApproval('print', 'confirmed');
               setConfirmAction(null);
-              logApproval('print', 'confirmed');
               handlePrintExport();
             }}
           >
@@ -942,6 +996,7 @@ export function ChartsActionBar({
           disabled={sendDisabled}
           onClick={() => {
             setConfirmAction('send');
+            approvalSessionRef.current = { action: 'send', closed: false };
             logApproval('send', 'open');
           }}
           aria-disabled={sendDisabled}
@@ -963,6 +1018,7 @@ export function ChartsActionBar({
           aria-disabled={sendDisabled}
           onClick={() => {
             setConfirmAction('print');
+            approvalSessionRef.current = { action: 'print', closed: false };
             logApproval('print', 'open');
           }}
           data-disabled-reason={

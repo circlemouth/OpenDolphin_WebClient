@@ -337,6 +337,7 @@ export function PatientsTab({
         controlId: 'patient-switch-blocked',
         details: {
           trigger: 'lock',
+          blockedReasons: ['switch_locked'],
         },
       });
       return;
@@ -360,6 +361,7 @@ export function PatientsTab({
         details: {
           trigger: 'draft_dirty',
           currentPatientId,
+          blockedReasons: ['draft_dirty'],
         },
       });
       return;
@@ -378,6 +380,7 @@ export function PatientsTab({
           details: {
             trigger: 'confirm',
             currentPatientId,
+            blockedReasons: ['user_cancelled'],
           },
         });
         return;
