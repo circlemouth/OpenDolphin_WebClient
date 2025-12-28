@@ -21,6 +21,7 @@ LOCAL_SEED_FILE="ops/db/local-baseline/local_synthetic_seed.sql"
 MODERNIZED_APP_HTTP_PORT="${MODERNIZED_APP_HTTP_PORT:-9080}"
 export MODERNIZED_APP_HTTP_PORT
 SERVER_HEALTH_URL="http://localhost:${MODERNIZED_APP_HTTP_PORT}/openDolphin/resources/dolphin"
+WORKTREE_CONTAINER_SUFFIX="${WORKTREE_CONTAINER_SUFFIX:-}"
 
 ADMIN_USER="1.3.6.1.4.1.9414.10.1:dolphin"
 ADMIN_PASS="36cdf8b887a5cffc78dcd5c08991b993" # dolphin (MD5)
@@ -48,8 +49,36 @@ WEB_CLIENT_ENV_LOCAL="${WEB_CLIENT_ENV_LOCAL:-$SCRIPT_DIR/web-client/.env.local}
 # Normalize mode for bash versions without ${var,,}
 WEB_CLIENT_MODE_LOWER="$(printf '%s' "$WEB_CLIENT_MODE" | tr '[:upper:]' '[:lower:]')"
 
+if [[ -z "$WORKTREE_CONTAINER_SUFFIX" ]] && [[ "$SCRIPT_DIR" == *"/.worktrees/"* ]]; then
+  WORKTREE_CONTAINER_SUFFIX="$(basename "$SCRIPT_DIR")"
+fi
+if [[ -n "$WORKTREE_CONTAINER_SUFFIX" ]]; then
+  WORKTREE_CONTAINER_SUFFIX="$(printf '%s' "$WORKTREE_CONTAINER_SUFFIX" | tr -c '[:alnum:]-' '-')"
+fi
+
+container_name() {
+  local base="$1"
+  if [[ -n "$WORKTREE_CONTAINER_SUFFIX" ]]; then
+    printf '%s-%s' "$base" "$WORKTREE_CONTAINER_SUFFIX"
+    return
+  fi
+  printf '%s' "$base"
+}
+
+POSTGRES_CONTAINER_NAME="$(container_name opendolphin-postgres-modernized)"
+SERVER_CONTAINER_NAME="$(container_name opendolphin-server-modernized-dev)"
+MINIO_CONTAINER_NAME="$(container_name opendolphin-minio)"
+
 log() {
   echo "[$(date +%H:%M:%S)] $*"
+}
+
+has_modernized_table() {
+  local table_name="$1"
+  docker exec "${POSTGRES_CONTAINER_NAME}" \
+    psql -U opendolphin -d opendolphin_modern -tAc \
+    "SELECT 1 FROM information_schema.tables WHERE table_name='${table_name}' LIMIT 1;" \
+    | tr -d '[:space:]'
 }
 
 read_orca_info() {
@@ -134,8 +163,13 @@ generate_compose_override() {
   cat > "$COMPOSE_OVERRIDE_FILE" <<EOF
 services:
   server-modernized-dev:
+    container_name: ${SERVER_CONTAINER_NAME}
     volumes:
       - ./$(basename "$CUSTOM_PROP_OUTPUT"):/opt/jboss/wildfly/custom.properties
+  db-modernized:
+    container_name: ${POSTGRES_CONTAINER_NAME}
+  minio:
+    container_name: ${MINIO_CONTAINER_NAME}
 EOF
   log "docker-compose override written to $COMPOSE_OVERRIDE_FILE"
 }
@@ -177,13 +211,21 @@ apply_baseline_seed() {
     echo "Seed file not found: $LOCAL_SEED_FILE" >&2
     exit 1
   fi
-  docker cp "$LOCAL_SEED_FILE" opendolphin-postgres-modernized:/tmp/modern_seed.sql
-  docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
+  if [[ "$(has_modernized_table d_facility)" != "1" ]]; then
+    log "Warning: d_facility table not found; skipping baseline seed. Initialize DB schema first."
+    return
+  fi
+  docker cp "$LOCAL_SEED_FILE" "${POSTGRES_CONTAINER_NAME}":/tmp/modern_seed.sql
+  docker exec "${POSTGRES_CONTAINER_NAME}" psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_seed.sql
   log "Baseline seed applied."
 }
 
 register_initial_user() {
   log "Registering initial user ($NEW_USER_ID) via SQL..."
+  if [[ "$(has_modernized_table d_users)" != "1" ]]; then
+    log "Warning: d_users table not found; skipping initial user registration."
+    return
+  fi
   local pass_hash
   pass_hash=$(printf "%s" "$NEW_USER_PASS" | md5sum | awk '{print $1}')
 
@@ -256,8 +298,8 @@ FROM d_users WHERE userid = '$NEW_USER_ID'
 AND NOT EXISTS (SELECT 1 FROM d_roles WHERE user_id = '$NEW_USER_ID' AND c_role = 'doctor');
 EOF
 
-  docker cp "$tmp_sql" opendolphin-postgres-modernized:/tmp/modern_user_seed.sql
-  docker exec opendolphin-postgres-modernized psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
+  docker cp "$tmp_sql" "${POSTGRES_CONTAINER_NAME}":/tmp/modern_user_seed.sql
+  docker exec "${POSTGRES_CONTAINER_NAME}" psql -U opendolphin -d opendolphin_modern -v ON_ERROR_STOP=1 -f /tmp/modern_user_seed.sql
   rm -f "$tmp_sql"
   log "User registration SQL executed successfully."
 }

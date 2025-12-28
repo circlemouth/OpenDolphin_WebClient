@@ -143,6 +143,11 @@ export const chartsStyles = css`
     color: #64748b;
   }
 
+  .charts-clinical-bar__meta {
+    font-size: 0.75rem;
+    color: #475569;
+  }
+
   .charts-safety {
     display: flex;
     flex-direction: column;
@@ -624,6 +629,12 @@ export const chartsStyles = css`
     background: #fff7ed;
     border-color: rgba(234, 88, 12, 0.35);
     color: #9a3412;
+  }
+
+  .charts-actions__button--danger {
+    background: #fef2f2;
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #991b1b;
   }
 
   .charts-actions__button--unlock {
