@@ -16,6 +16,8 @@ import { useSession } from '../../AppRouter';
 import { fetchPatients, type PatientRecord } from '../patients/api';
 import { PatientInfoEditDialog } from './PatientInfoEditDialog';
 
+const RETURN_TO_STORAGE_KEY = 'opendolphin:web-client:patients:returnTo:v1';
+
 export interface PatientsTabProps {
   entries?: ReceptionEntry[];
   appointmentBanner?: AppointmentDataBanner | null;
@@ -488,6 +490,8 @@ export function PatientsTab({
 
   const navigateToPatients = (intent: 'basic' | 'insurance') => {
     const params = new URLSearchParams();
+    const kwCandidate = receptionCarryover?.kw ?? selectedPatientId;
+    if (kwCandidate) params.set('kw', kwCandidate);
     if (selectedPatientId) params.set('patientId', selectedPatientId);
     params.set('from', 'charts');
     params.set('intent', intent);
@@ -512,6 +516,13 @@ export function PatientsTab({
       { runId: flags.runId },
     );
     if (returnTo) params.set('returnTo', returnTo);
+    if (typeof sessionStorage !== 'undefined') {
+      try {
+        sessionStorage.setItem(RETURN_TO_STORAGE_KEY, returnTo);
+      } catch {
+        // storage が使えない環境ではスキップ
+      }
+    }
     navigate(`/patients?${params.toString()}`);
 
     recordOutpatientFunnel('charts_patient_sidepane', {

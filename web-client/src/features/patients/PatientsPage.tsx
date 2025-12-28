@@ -31,6 +31,7 @@ import './patients.css';
 
 const FILTER_STORAGE_KEY = 'patients-filter-state';
 const RECEPTION_FILTER_STORAGE_KEY = 'reception-filter-state';
+const RETURN_TO_STORAGE_KEY = 'opendolphin:web-client:patients:returnTo:v1';
 
 const DEFAULT_FILTER = {
   keyword: '',
@@ -52,6 +53,11 @@ const toSearchParams = (filters: typeof DEFAULT_FILTER) => {
 };
 
 const pickString = (value: unknown): string | undefined => (typeof value === 'string' && value.length > 0 ? value : undefined);
+
+const isSafeChartsReturnTo = (value?: string | null) => {
+  if (!value) return false;
+  return value.startsWith('/charts');
+};
 
 const readStorageJson = (key: string) => {
   if (typeof localStorage === 'undefined') return null;
@@ -121,12 +127,21 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const returnToParam = searchParams.get('returnTo') ?? undefined;
   const chartsReturnUrl = useMemo(() => {
     if (!fromCharts) return null;
-    if (returnToParam?.startsWith('/charts')) return returnToParam;
+    if (isSafeChartsReturnTo(returnToParam)) return returnToParam;
+    const storedReturnTo = (() => {
+      if (typeof sessionStorage === 'undefined') return undefined;
+      try {
+        return sessionStorage.getItem(RETURN_TO_STORAGE_KEY) ?? undefined;
+      } catch {
+        return undefined;
+      }
+    })();
+    if (isSafeChartsReturnTo(storedReturnTo)) return storedReturnTo;
     const patientId = patientIdParam ?? searchParams.get('kw') ?? undefined;
     return buildChartsUrl(
       { patientId, appointmentId: appointmentIdParam, receptionId: receptionIdParam, visitDate: visitDateParam },
       receptionCarryover,
-      { runId: runIdParam },
+      { runId: runIdParam ?? runId },
     );
   }, [
     appointmentIdParam,
@@ -136,6 +151,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     receptionIdParam,
     returnToParam,
     runIdParam,
+    runId,
     searchParams,
     visitDateParam,
   ]);
