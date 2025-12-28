@@ -20,6 +20,10 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2025-12-28: Charts 印刷導線のガード理由可視化と確認モーダルのテスト補強を追加（RUN_ID=20251228T014700Z）。
+- 2025-12-28: Charts 印刷/エクスポートの確認モーダル/復旧導線/監査ログとガード条件を整備（RUN_ID=20251228T011746Z）。
+  - 出力前確認と失敗時の復旧導線を追加し、印刷の approval/do/lock を auditEvent に記録。
+  - ChartsActionBar の印刷ガードを送信条件から分離し、missingMaster/fallback/権限のみで制御。
 - 2025-12-28: Charts の監査イベント重複防止/lockStatus 整合/URL切替ログ/blocked理由の補強を追加（RUN_ID=20251228T005005Z）。
 - 2025-12-28: Charts の重要操作で auditEvent/UI ログの operationPhase(approval/lock/do) を統一（RUN_ID=20251228T001604Z）。
 - 2025-12-28: Charts の Appointment 監査ログに screen=charts を反映し、appointment meta の最新選定を安定化（RUN_ID=20251228T000144Z）。

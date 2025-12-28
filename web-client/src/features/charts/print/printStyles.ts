@@ -175,6 +175,14 @@ export const chartsPrintStyles = css`
     width: min(900px, 100%);
   }
 
+  .charts-print__recovery {
+    margin-top: 0.75rem;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    justify-content: flex-end;
+  }
+
   @media print {
     body[data-route='charts-print'] {
       background: #ffffff;
@@ -214,4 +222,3 @@ export const chartsPrintStyles = css`
     }
   }
 `;
-

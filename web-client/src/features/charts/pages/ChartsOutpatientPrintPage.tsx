@@ -2,6 +2,8 @@ import { Global } from '@emotion/react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 
+import { FocusTrapDialog } from '../../../components/modals/FocusTrapDialog';
+import { hasStoredAuth } from '../../../libs/http/httpClient';
 import type { ReceptionEntry } from '../../reception/api';
 import { receptionStyles } from '../../reception/styles';
 import { ToneBanner } from '../../reception/components/ToneBanner';
@@ -18,6 +20,7 @@ type PrintLocationState = {
 };
 
 type OutputMode = 'print' | 'pdf';
+type OutputStatus = 'idle' | 'printing' | 'completed' | 'failed';
 
 const getState = (value: unknown): PrintLocationState | null => {
   if (!value || typeof value !== 'object') return null;
@@ -43,6 +46,12 @@ function ChartsOutpatientPrintContent() {
   const restoredAt = restored?.storedAt;
   const [printedAtIso] = useState(() => new Date().toISOString());
   const lastModeRef = useRef<OutputMode | null>(null);
+  const [confirmMode, setConfirmMode] = useState<OutputMode | null>(null);
+  const [outputStatus, setOutputStatus] = useState<OutputStatus>('idle');
+  const [outputError, setOutputError] = useState<string | null>(null);
+  const [lastOutputMode, setLastOutputMode] = useState<OutputMode | null>(null);
+  const hasPermission = useMemo(() => hasStoredAuth(), []);
+  const missingStateLoggedRef = useRef(false);
 
   useEffect(() => {
     document.body.dataset.route = 'charts-print';
@@ -65,6 +74,8 @@ function ChartsOutpatientPrintContent() {
     const onAfterPrint = () => {
       const mode = lastModeRef.current;
       if (!mode) return;
+      setOutputStatus('completed');
+      setOutputError(null);
       recordChartsAuditEvent({
         action: 'PRINT_OUTPATIENT',
         outcome: 'success',
@@ -78,6 +89,9 @@ function ChartsOutpatientPrintContent() {
         missingMaster: state.meta.missingMaster,
         fallbackUsed: state.meta.fallbackUsed,
         dataSourceTransition: state.meta.dataSourceTransition,
+        details: {
+          operationPhase: 'do',
+        },
       });
       lastModeRef.current = null;
     };
@@ -85,24 +99,130 @@ function ChartsOutpatientPrintContent() {
     return () => window.removeEventListener('afterprint', onAfterPrint);
   }, [state]);
 
-  const handleOutput = (mode: OutputMode) => {
-    if (!state) return;
-    lastModeRef.current = mode;
+  useEffect(() => {
+    if (state || missingStateLoggedRef.current) return;
+    missingStateLoggedRef.current = true;
     recordChartsAuditEvent({
       action: 'PRINT_OUTPATIENT',
-      outcome: 'started',
+      outcome: 'blocked',
       subject: 'outpatient-document-output',
-      note: `output=${mode}`,
-      patientId: state.entry.patientId ?? state.entry.id,
-      appointmentId: state.entry.appointmentId,
-      actor: state.actor,
-      runId: state.meta.runId,
-      cacheHit: state.meta.cacheHit,
-      missingMaster: state.meta.missingMaster,
-      fallbackUsed: state.meta.fallbackUsed,
-      dataSourceTransition: state.meta.dataSourceTransition,
+      note: 'missing_print_state',
+      details: {
+        operationPhase: 'lock',
+        blockedReasons: ['missing_print_state'],
+      },
     });
-    window.print();
+  }, [state]);
+
+  const outputGuardReasons = useMemo(() => {
+    if (!state) return [];
+    const reasons: Array<{ key: string; summary: string; detail: string; next: string[] }> = [];
+    if (state.meta.missingMaster) {
+      reasons.push({
+        key: 'missing_master',
+        summary: 'missingMaster=true',
+        detail: 'マスタ欠損を検知したため出力を停止します。',
+        next: ['Reception で master を再取得', '再取得完了後に再出力'],
+      });
+    }
+    if (state.meta.fallbackUsed) {
+      reasons.push({
+        key: 'fallback_used',
+        summary: 'fallbackUsed=true',
+        detail: 'フォールバック経路のため出力を停止します。',
+        next: ['Reception で再取得', 'master 解消後に再出力'],
+      });
+    }
+    if (!hasPermission) {
+      reasons.push({
+        key: 'permission_denied',
+        summary: '権限不足/認証不備',
+        detail: '認証情報が揃っていないため出力できません。',
+        next: ['再ログイン', '設定確認（facilityId/userId/password）'],
+      });
+    }
+    return reasons;
+  }, [hasPermission, state]);
+
+  const outputDisabled = outputGuardReasons.length > 0;
+  const outputGuardSummary = outputGuardReasons.map((reason) => reason.summary).join(' / ');
+  const outputGuardDetail = outputGuardReasons.map((reason) => reason.detail).join(' / ');
+
+  const recordOutputAudit = (
+    outcome: 'started' | 'success' | 'blocked' | 'error',
+    note: string,
+    details?: Record<string, unknown>,
+    error?: string,
+  ) => {
+    recordChartsAuditEvent({
+      action: 'PRINT_OUTPATIENT',
+      outcome,
+      subject: 'outpatient-document-output',
+      note,
+      error,
+      actor: state?.actor,
+      patientId: state?.entry.patientId ?? state?.entry.id,
+      appointmentId: state?.entry.appointmentId,
+      runId: state?.meta.runId,
+      cacheHit: state?.meta.cacheHit,
+      missingMaster: state?.meta.missingMaster,
+      fallbackUsed: state?.meta.fallbackUsed,
+      dataSourceTransition: state?.meta.dataSourceTransition,
+      details,
+    });
+  };
+
+  const handleOutput = (mode: OutputMode) => {
+    if (!state) return;
+    if (outputDisabled) {
+      const blockedReasons = outputGuardReasons.map((reason) => reason.key);
+      const head = outputGuardReasons[0];
+      const detail = outputGuardDetail || head?.detail || '出力前チェックでブロックされました。';
+      recordOutputAudit('blocked', head?.detail ?? 'output_blocked', {
+        operationPhase: 'lock',
+        blockedReasons,
+      });
+      setOutputStatus('failed');
+      setOutputError(detail);
+      return;
+    }
+    lastModeRef.current = mode;
+    setLastOutputMode(mode);
+    setOutputStatus('printing');
+    setOutputError(null);
+    recordOutputAudit('started', `output=${mode}`, { operationPhase: 'do' });
+    try {
+      window.print();
+    } catch (error) {
+      const detail = error instanceof Error ? error.message : '印刷ダイアログの起動に失敗しました。';
+      lastModeRef.current = null;
+      setOutputStatus('failed');
+      setOutputError(detail);
+      recordOutputAudit('error', `output=${mode} failed`, { operationPhase: 'do' }, detail);
+    }
+  };
+
+  const handleRequestOutput = (mode: OutputMode) => {
+    if (!state) return;
+    if (outputDisabled) {
+      const blockedReasons = outputGuardReasons.map((reason) => reason.key);
+      const head = outputGuardReasons[0];
+      const detail = outputGuardDetail || head?.detail || '出力前チェックでブロックされました。';
+      recordOutputAudit('blocked', head?.detail ?? 'output_blocked', {
+        operationPhase: 'lock',
+        blockedReasons,
+      });
+      setOutputStatus('failed');
+      setOutputError(detail);
+      return;
+    }
+    setOutputStatus('idle');
+    setOutputError(null);
+    setConfirmMode(mode);
+    recordOutputAudit('started', `output=${mode} approval_open`, {
+      operationPhase: 'approval',
+      approvalState: 'open',
+    });
   };
 
   const handleClose = () => {
@@ -135,7 +255,10 @@ function ChartsOutpatientPrintContent() {
     );
   }
 
-  const exportDisabled = state.meta.missingMaster || state.meta.fallbackUsed;
+  const exportDisabled = outputDisabled;
+  const outputGuardHead = outputGuardReasons[0];
+  const outputGuardNextAction = outputGuardHead ? outputGuardHead.next.join(' / ') : undefined;
+  const outputGuardMessage = outputGuardSummary ? `出力ガード中: ${outputGuardSummary}` : '出力前チェックにより停止中です。';
 
   return (
     <main className="charts-print">
@@ -167,7 +290,7 @@ function ChartsOutpatientPrintContent() {
           <button
             type="button"
             className="charts-print__button charts-print__button--primary"
-            onClick={() => handleOutput('print')}
+            onClick={() => handleRequestOutput('print')}
             disabled={exportDisabled}
             aria-disabled={exportDisabled}
           >
@@ -176,7 +299,7 @@ function ChartsOutpatientPrintContent() {
           <button
             type="button"
             className="charts-print__button"
-            onClick={() => handleOutput('pdf')}
+            onClick={() => handleRequestOutput('pdf')}
             disabled={exportDisabled}
             aria-disabled={exportDisabled}
           >
@@ -192,16 +315,121 @@ function ChartsOutpatientPrintContent() {
         <div className="charts-print__screen-only">
           <ToneBanner
             tone="warning"
-            message={
-              state.meta.missingMaster
-                ? 'missingMaster=true のため出力をブロック中です。'
-                : 'fallbackUsed=true（スナップショット経由）のため出力をブロック中です。'
-            }
-            nextAction="Reception で master 解決/再取得を行い、最新データで再度出力してください。"
+            message={outputGuardMessage}
+            nextAction={outputGuardNextAction ?? 'Reception で master 解決/再取得を行い、最新データで再度出力してください。'}
             runId={state.meta.runId}
           />
+          <div className="charts-print__recovery" role="group" aria-label="出力復旧導線">
+            <button type="button" className="charts-print__button" onClick={() => navigate('/reception')}>
+              Receptionへ戻る
+            </button>
+            <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
+              Chartsへ戻る
+            </button>
+          </div>
         </div>
       )}
+
+      {outputStatus === 'failed' && (
+        <div className="charts-print__screen-only">
+          <ToneBanner
+            tone="error"
+            message={`出力に失敗しました: ${outputError ?? '原因不明'}`}
+            nextAction="再試行するか、Reception/Charts に戻って状態を確認してください。"
+            runId={state.meta.runId}
+          />
+          <div className="charts-print__recovery" role="group" aria-label="出力の再試行">
+            <button
+              type="button"
+              className="charts-print__button charts-print__button--primary"
+              onClick={() => handleRequestOutput(lastOutputMode ?? 'print')}
+              disabled={exportDisabled}
+            >
+              再試行
+            </button>
+            <button type="button" className="charts-print__button" onClick={() => navigate('/reception')}>
+              Receptionへ戻る
+            </button>
+            <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
+              Chartsへ戻る
+            </button>
+          </div>
+        </div>
+      )}
+
+      {outputStatus === 'completed' && (
+        <div className="charts-print__screen-only">
+          <ToneBanner
+            tone="info"
+            message="印刷ダイアログを閉じました。印刷/保存できなかった場合は再試行してください。"
+            nextAction="再試行または戻るで運用を継続できます。"
+            runId={state.meta.runId}
+          />
+          <div className="charts-print__recovery" role="group" aria-label="出力後の補助操作">
+            <button
+              type="button"
+              className="charts-print__button"
+              onClick={() => handleRequestOutput(lastOutputMode ?? 'print')}
+              disabled={exportDisabled}
+            >
+              再試行
+            </button>
+            <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
+              閉じる
+            </button>
+          </div>
+        </div>
+      )}
+
+      <FocusTrapDialog
+        open={confirmMode !== null}
+        role="dialog"
+        title="出力の最終確認"
+        description={`個人情報を含む診療文書を${confirmMode === 'pdf' ? 'PDF保存' : '印刷'}します。出力先/共有範囲を確認してください。（runId=${state.meta.runId}）`}
+        onClose={() => {
+          if (confirmMode) {
+            recordOutputAudit('blocked', `output=${confirmMode} approval_cancelled`, {
+              operationPhase: 'approval',
+              approvalState: 'cancelled',
+              blockedReasons: ['confirm_cancelled'],
+            });
+          }
+          setConfirmMode(null);
+        }}
+        testId="charts-print-output-dialog"
+      >
+        <div role="group" aria-label="出力の最終確認">
+          <button
+            type="button"
+            onClick={() => {
+              if (confirmMode) {
+                recordOutputAudit('blocked', `output=${confirmMode} approval_cancelled`, {
+                  operationPhase: 'approval',
+                  approvalState: 'cancelled',
+                  blockedReasons: ['confirm_cancelled'],
+                });
+              }
+              setConfirmMode(null);
+            }}
+          >
+            キャンセル
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const mode = confirmMode ?? 'print';
+              recordOutputAudit('started', `output=${mode} approval_confirmed`, {
+                operationPhase: 'approval',
+                approvalState: 'confirmed',
+              });
+              setConfirmMode(null);
+              handleOutput(mode);
+            }}
+          >
+            出力する
+          </button>
+        </div>
+      </FocusTrapDialog>
 
       <OutpatientClinicalDocument
         entry={state.entry}

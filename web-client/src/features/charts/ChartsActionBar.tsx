@@ -281,6 +281,61 @@ export function ChartsActionBar({
   ]);
 
   const sendDisabled = isRunning || sendPrecheckReasons.length > 0;
+
+  const printPrecheckReasons: GuardReason[] = useMemo(() => {
+    const reasons: GuardReason[] = [];
+
+    if (isRunning) {
+      reasons.push({
+        key: 'locked',
+        summary: '他の操作が進行中',
+        detail: '別アクションの実行中は印刷を開始できません。',
+        next: ['処理完了を待って再試行'],
+      });
+    }
+
+    if (!selectedEntry) {
+      reasons.push({
+        key: 'patient_not_selected',
+        summary: '患者未選択',
+        detail: '患者が未選択のため印刷プレビューを開けません。',
+        next: ['Patients で患者を選択', 'Reception へ戻って対象患者を確定'],
+      });
+    }
+
+    if (missingMaster) {
+      reasons.push({
+        key: 'missing_master',
+        summary: 'missingMaster=true',
+        detail: 'マスタ欠損を検知したため出力を停止します。',
+        next: ['Reception で master を再取得', '再取得完了後に出力'],
+      });
+    }
+
+    if (fallbackUsed) {
+      reasons.push({
+        key: 'fallback_used',
+        summary: 'fallbackUsed=true',
+        detail: 'フォールバック経路のため出力を停止します。',
+        next: ['Reception で再取得', 'master 解消後に出力'],
+      });
+    }
+
+    if (permissionDenied || !hasPermission) {
+      reasons.push({
+        key: 'permission_denied',
+        summary: '権限不足/認証不備',
+        detail: permissionDenied
+          ? '直近の送信で 401/403 を検知しました。'
+          : '認証情報が揃っていないため出力を停止します。',
+        next: ['再ログイン', '設定確認（facilityId/userId/password）'],
+      });
+    }
+
+    return reasons;
+  }, [hasPermission, isRunning, missingMaster, permissionDenied, fallbackUsed, selectedEntry]);
+
+  const printDisabled = printPrecheckReasons.length > 0;
   const otherBlocked = isLocked;
 
   useEffect(() => {
@@ -687,8 +742,11 @@ export function ChartsActionBar({
   };
 
   const handlePrintExport = () => {
-    if (!selectedEntry) {
-      setBanner({ tone: 'warning', message: '患者が未選択です。Patients で患者を選択してから出力してください。' });
+    if (printPrecheckReasons.length > 0) {
+      const head = printPrecheckReasons[0];
+      const blockedReasons = printPrecheckReasons.map((reason) => reason.key);
+      const nextAction = head.next.join(' / ');
+      setBanner({ tone: 'warning', message: `印刷/エクスポートを停止: ${head.summary}`, nextAction });
       setToast(null);
       logUiState({
         action: 'print',
@@ -702,13 +760,16 @@ export function ChartsActionBar({
         details: {
           operationPhase: 'lock',
           blocked: true,
-          reasons: ['patient_not_selected'],
+          blockedReasons,
           ...buildFallbackDetails(),
         },
       });
-      logAudit('print', 'blocked', 'no selectedEntry', undefined, {
+      logAudit('print', 'blocked', head.detail, undefined, {
         phase: 'lock',
-        details: { trigger: 'patient_not_selected', blockedReasons: ['patient_not_selected'] },
+        details: {
+          trigger: blockedReasons[0],
+          blockedReasons,
+        },
       });
       return;
     }
@@ -1014,18 +1075,15 @@ export function ChartsActionBar({
           type="button"
           id="charts-action-print"
           className="charts-actions__button"
-          disabled={sendDisabled}
-          aria-disabled={sendDisabled}
+          disabled={printDisabled}
+          aria-disabled={printDisabled}
           onClick={() => {
             setConfirmAction('print');
             approvalSessionRef.current = { action: 'print', closed: false };
             logApproval('print', 'open');
           }}
-          data-disabled-reason={
-            sendDisabled
-              ? (isRunning ? 'running' : sendPrecheckReasons.map((reason) => reason.key).join(','))
-              : undefined
-          }
+          aria-describedby={!isRunning && printPrecheckReasons.length > 0 ? 'charts-actions-print-guard' : undefined}
+          data-disabled-reason={printDisabled ? printPrecheckReasons.map((reason) => reason.key).join(',') : undefined}
           aria-keyshortcuts="Alt+I"
         >
           印刷/エクスポート
@@ -1065,6 +1123,19 @@ export function ChartsActionBar({
           <strong>送信前チェック: ORCA送信をブロック</strong>
           <ul>
             {sendPrecheckReasons.map((reason) => (
+              <li key={reason.key}>
+                {reason.summary}: {reason.detail}（次にやること: {reason.next.join(' / ')}）
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {!isRunning && printPrecheckReasons.length > 0 && (
+        <div id="charts-actions-print-guard" className="charts-actions__guard" role="note" aria-live="off">
+          <strong>印刷前チェック: 印刷/エクスポートをブロック</strong>
+          <ul>
+            {printPrecheckReasons.map((reason) => (
               <li key={reason.key}>
                 {reason.summary}: {reason.detail}（次にやること: {reason.next.join(' / ')}）
               </li>
