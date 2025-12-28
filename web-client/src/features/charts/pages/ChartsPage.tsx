@@ -18,7 +18,7 @@ import { SoapNotePanel } from '../SoapNotePanel';
 import type { SoapEntry } from '../soapNote';
 import { chartsStyles } from '../styles';
 import { receptionStyles } from '../../reception/styles';
-import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry } from '../../reception/api';
+import { fetchAppointmentOutpatients, fetchClaimFlags, type AppointmentPayload, type ReceptionEntry } from '../../reception/api';
 import { getAuditEventLog, logAuditEvent, logUiState, type AuditEventRecord } from '../../../libs/audit/auditLogger';
 import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
@@ -46,6 +46,7 @@ import {
 import { useChartsTabLock } from '../useChartsTabLock';
 import { isNetworkError } from '../../shared/apiError';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
+import { resolveOutpatientFlags } from '../../outpatient/flags';
 
 const parseDate = (value?: string): Date | null => {
   if (!value) return null;
@@ -90,6 +91,28 @@ const formatBirthDate = (value?: string): string => {
   if (!date) return '—';
   const iso = date.toISOString().slice(0, 10);
   return `${iso}（${formatJapaneseEra(date)}）`;
+};
+
+const pickLatestOutpatientMeta = (pages: AppointmentPayload[]): AppointmentPayload | undefined => {
+  if (pages.length === 0) return undefined;
+  const toTimestamp = (value?: string): number => {
+    if (!value) return Number.NEGATIVE_INFINITY;
+    const parsed = Date.parse(value);
+    return Number.isNaN(parsed) ? Number.NEGATIVE_INFINITY : parsed;
+  };
+  let latest = pages[0];
+  let latestTimestamp = toTimestamp(latest.fetchedAt);
+  for (const page of pages.slice(1)) {
+    const parsed = toTimestamp(page.fetchedAt);
+    if (parsed >= latestTimestamp) {
+      latest = page;
+      latestTimestamp = parsed;
+    }
+  }
+  if (latestTimestamp === Number.NEGATIVE_INFINITY) {
+    return pages[pages.length - 1];
+  }
+  return latest;
 };
 
 const SOAP_HISTORY_STORAGE_KEY = 'opendolphin:web-client:soap-history';
@@ -583,7 +606,11 @@ function ChartsContent() {
   const appointmentQuery = useInfiniteQuery({
     queryKey: appointmentQueryKey,
     queryFn: ({ pageParam = 1, ...context }) =>
-      fetchAppointmentOutpatients({ date: today, page: pageParam, size: 50 }, context, { preferredSourceOverride }),
+      fetchAppointmentOutpatients(
+        { date: today, page: pageParam, size: 50 },
+        context,
+        { preferredSourceOverride, screen: 'charts' },
+      ),
     getNextPageParam: (lastPage, allPages) => {
       if (lastPage.hasNextPage === false) return undefined;
       if (lastPage.hasNextPage === true) return (lastPage.page ?? allPages.length) + 1;
@@ -611,24 +638,26 @@ function ChartsContent() {
     },
   });
 
+  const appointmentMeta = useMemo(() => {
+    const pages = appointmentQuery.data?.pages ?? [];
+    return pickLatestOutpatientMeta(pages as AppointmentPayload[]);
+  }, [appointmentQuery.data?.pages]);
+
   const mergedFlags = useMemo(() => {
-    const runId = claimQuery.data?.runId ?? orcaSummaryQuery.data?.runId ?? flags.runId;
-    const cacheHit = claimQuery.data?.cacheHit ?? orcaSummaryQuery.data?.cacheHit ?? flags.cacheHit;
-    const missingMaster =
-      claimQuery.data?.missingMaster ?? orcaSummaryQuery.data?.missingMaster ?? flags.missingMaster;
-    const dataSourceTransition =
-      claimQuery.data?.dataSourceTransition ??
-      orcaSummaryQuery.data?.dataSourceTransition ??
-      flags.dataSourceTransition;
-    const fallbackUsed =
-      claimQuery.data?.fallbackUsed ?? orcaSummaryQuery.data?.fallbackUsed ?? flags.fallbackUsed;
+    const resolvedFlags = resolveOutpatientFlags(claimQuery.data, orcaSummaryQuery.data, appointmentMeta, flags);
+    const runId = resolvedFlags.runId ?? flags.runId;
+    const cacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;
+    const missingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
+    const dataSourceTransition = resolvedFlags.dataSourceTransition ?? flags.dataSourceTransition;
+    const fallbackUsed = resolvedFlags.fallbackUsed ?? flags.fallbackUsed;
     const auditMeta = { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed };
     const auditEvent = normalizeAuditEventPayload(
       claimQuery.data?.auditEvent as Record<string, unknown> | undefined,
       auditMeta,
     );
-    return { ...auditMeta, auditEvent };
+    return { ...resolvedFlags, ...auditMeta, auditEvent };
   }, [
+    appointmentMeta,
     claimQuery.data?.auditEvent,
     claimQuery.data?.cacheHit,
     claimQuery.data?.dataSourceTransition,
@@ -1568,6 +1597,7 @@ function ChartsContent() {
                   <DocumentTimeline
                     entries={patientEntries}
                     appointmentBanner={appointmentBanner}
+                    appointmentMeta={appointmentMeta}
                     auditEvent={latestAuditEvent as Record<string, unknown> | undefined}
                     soapHistory={soapHistory}
                     selectedPatientId={encounterContext.patientId}
@@ -1604,6 +1634,7 @@ function ChartsContent() {
                     summary={orcaSummaryQuery.data}
                     claim={claimQuery.data as ClaimOutpatientPayload | undefined}
                     appointments={patientEntries}
+                    appointmentMeta={appointmentMeta}
                     onRefresh={handleRefreshSummary}
                     isRefreshing={isManualRefreshing}
                   />
