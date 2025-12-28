@@ -1,5 +1,7 @@
 import { applyHeaderFlagsToInit } from './header-flags';
 import { applyObservabilityHeaders, captureObservabilityFromResponse } from '../observability/observability';
+import { notifySessionExpired } from '../session/sessionExpiry';
+import { readStoredSession } from '../session/storedSession';
 
 type StoredAuth = {
   facilityId: string;
@@ -169,7 +171,18 @@ export const OUTPATIENT_API_ENDPOINTS: readonly HttpEndpointDefinition[] = [
 // `resolveMasterSource` が `dataSourceTransition=server` を返す経路ではこの `outpatient` グループを使い、`cacheHit`/`missingMaster` を `telemetryClient` に継承します。
 // RUN_ID=20251205T150000Z の統合実装ではこのパス一覧を経由し、`docs/server-modernization/phase2/operations/logs/20251205T150000Z-integration-implementation.md` へ telemetry funnel を記録しています。
 
-export async function httpFetch(input: RequestInfo | URL, init?: RequestInit) {
+export type HttpFetchInit = RequestInit & {
+  suppressSessionExpiry?: boolean;
+};
+
+const shouldNotifySessionExpired = (status: number, init?: HttpFetchInit) => {
+  if (init?.suppressSessionExpiry) return false;
+  if (status !== 401 && status !== 403) return false;
+  const session = readStoredSession();
+  return Boolean(session);
+};
+
+export async function httpFetch(input: RequestInfo | URL, init?: HttpFetchInit) {
   // Header flags are applied here to propagate Playwright extraHTTPHeaders.
   // 新しいフラグを追加する場合は header-flags.ts に追記し、この呼び出しで一括適用される前提。
   const initWithFlags = applyHeaderFlagsToInit(applyAuthHeaders(init));
@@ -178,5 +191,8 @@ export async function httpFetch(input: RequestInfo | URL, init?: RequestInit) {
   const credentials = initWithObservability.credentials ?? 'include';
   const response = await fetch(input, { ...initWithObservability, credentials });
   captureObservabilityFromResponse(response);
+  if (shouldNotifySessionExpired(response.status, init)) {
+    notifySessionExpired(response.status === 403 ? 'forbidden' : 'unauthorized', response.status);
+  }
   return response;
 }

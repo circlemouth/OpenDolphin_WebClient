@@ -1,10 +1,11 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import CryptoJS from 'crypto-js';
 import { v4 as uuidv4 } from 'uuid';
 
 import { httpFetch } from './libs/http/httpClient';
 import { generateRunId, updateObservabilityMeta } from './libs/observability/observability';
+import { consumeSessionExpiredNotice } from './libs/session/sessionExpiry';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 
@@ -86,6 +87,14 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
 
   const isLoading = status === 'loading';
   const isSuccess = status === 'success';
+
+  useEffect(() => {
+    const notice = consumeSessionExpiredNotice();
+    if (notice?.message) {
+      setFeedback(notice.message);
+      setStatus('error');
+    }
+  }, []);
 
   const handleChange = (key: FieldKey) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues((prev) => ({ ...prev, [key]: event.target.value }));
@@ -257,6 +266,7 @@ const performLogin = async (payload: LoginFormValues, runId: string): Promise<Lo
     method: 'GET',
     headers,
     credentials: 'include',
+    suppressSessionExpiry: true,
   });
 
   if (!response.ok) {
