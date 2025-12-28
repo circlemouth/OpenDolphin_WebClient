@@ -274,8 +274,8 @@ src:
           - 病名（主/疑い/開始/転帰）・処方（RP単位）・オーダー束の編集 UI と API 連携を実装する。
           - 右固定メニューからの編集導線に統一し、編集操作を監査イベントへ記録する。
         priority: High
-        status: in_progress
-        progress: 80
+        status: completed
+        progress: 100
         agent: claude code
         api:
           - "/orca21/medicalmodv2/outpatient"
@@ -310,8 +310,8 @@ src:
           - 患者切替/送信/印刷/キャンセルなどの重要操作に auditEvent を必須化する。
           - 承認/ロック/Do の操作定義を UI と監査イベントで統一する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api:
           - "/api/audit"
@@ -327,8 +327,8 @@ src:
           - `ChartsOutpatientPrintPage` の操作導線と権限ガードを整理し、印刷ログを auditEvent に残す。
           - 出力前の確認モーダルと失敗時の復旧導線を実装する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -343,8 +343,8 @@ src:
           - 承認=署名確定、ロック=承認済み編集不可のルールを UI に反映する。
           - ロック状態の可視化と解除手順の監査ログを実装する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -377,8 +377,8 @@ src:
           - 右ペインの編集フォームに監査ログビューを追加し、保存結果と ORCA 反映状態を可視化する。
           - missingMaster=true の場合の編集ブロックと理由表示を実装する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api:
           - "/orca12/patientmodv2/outpatient"
@@ -395,8 +395,8 @@ src:
           - Charts から患者管理へ遷移した場合の戻り URL を保証し、フィルタ復元を安定させる。
           - 受付キーワードとの同期を維持し、誤操作防止のバナーを追加する。
         priority: Low
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -412,8 +412,8 @@ src:
           - `chartsDisplayEnabled/chartsSendEnabled/chartsMasterSource` の配信状態を UI とバナーに反映する。
           - 環境情報（dev/stage）と最終配信時刻の表示を更新し、監査イベントを統一する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api:
           - "/api/admin/config"
@@ -430,8 +430,8 @@ src:
           - 遅延検知閾値と warning バナーを設定し、再送/破棄の結果を監査ログに反映する。
           - キュー操作の結果を Reception/Charts にブロードキャストする。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api:
           - "/api/orca/queue"
@@ -447,8 +447,8 @@ src:
           - `system_admin` 以外の操作制限を UI/ARIA で明示し、監査ログに記録する。
           - 不正操作時のメッセージとフォールバック導線を整備する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:
@@ -463,8 +463,8 @@ src:
           - Administration の配信結果を Reception/Charts/Patients に即時反映する。
           - バナーの `aria-live` 設定と runId 表示を統一する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -480,8 +480,8 @@ src:
           - MSW シナリオ選択と `VITE_DISABLE_MSW=1` 時の警告表示を整備する。
           - QA の観点から runId と dataSourceTransition の切替操作を明示する。
         priority: Low
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -498,8 +498,8 @@ src:
           - `.env` の本番/ステージ分離、プロキシ・証明書・CORS の前提を整理する。
           - MSW 無効化時の API 直接接続パスを検証し、本番向けビルド設定を確定する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: codex
         api: []
         dependency:
@@ -514,8 +514,8 @@ src:
           - フロントエンド側での機微情報表示/ログ出力を最小化し、マスキングルールを整理する。
           - セッション切れ時の安全なログアウトとエラー通知を統一する。
         priority: High
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: claude code
         api: []
         dependency:
@@ -530,8 +530,8 @@ src:
           - 大量データ表示時のレンダリング最適化、キャッシュ期限、再取得条件を整理する。
           - 診療中の UI ブロッキングを抑えるための非同期制御を導入する。
         priority: Medium
-        status: not_started
-        progress: 0
+        status: completed
+        progress: 100
         agent: gemini cli
         api: []
         dependency:

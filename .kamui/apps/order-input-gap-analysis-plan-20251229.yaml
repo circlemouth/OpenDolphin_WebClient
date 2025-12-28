@@ -69,8 +69,8 @@ src:
         - 差分表テンプレート（項目名/入力方式/必須条件/保存挙動/コード参照/証跡URL）と、調査ログ（日時/担当/参照画面/参照コード/補足）をテンプレ化して配置する。
         - 参照先は `docs/DEVELOPMENT_STATUS.md` → `web-client/README.md` の順で確認し、Phase2 文書は参照のみとする旨をテンプレ冒頭に明記する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency: []
@@ -85,8 +85,8 @@ src:
         - 参照先を `docs/DEVELOPMENT_STATUS.md` → `web-client/README.md` の順で確認し、Phase2 文書は参照のみとする。
         - 旧来版とモダナイズ版の調査結果を統合する差分表のテンプレート（項目名/入力方式/必須条件/保存挙動/コード参照）を決めて、以降の調査で統一する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -102,8 +102,8 @@ src:
         - 入力必須条件（用法必須、日数必須など）と保存/取消/中止/再開の操作フローを整理する。
         - コード上の参照ポイント（UI/バリデーション/保存）を紐づけ、差分表テンプレートに記入する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -119,8 +119,8 @@ src:
         - 文書ごとの必須項目、署名/印影/発行日などの特記事項を洗い出し、保存/再編集の流れを記録する。
         - 参照コードと入力方法を差分表テンプレートに反映する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
@@ -136,8 +136,8 @@ src:
         - 予約/スケジュールとの連携、コメント欄、必須条件、保存/取消の挙動を整理する。
         - 参照コードと入力方法を差分表テンプレートに反映する。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api: []
       dependency:
@@ -153,8 +153,8 @@ src:
         - セット/パネル入力、複数行編集、履歴コピーなどの操作手順をまとめる。
         - 参照コードと入力方法を差分表テンプレートに反映する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -170,8 +170,8 @@ src:
         - 旧来版との差分が出る箇所（入力補助、必須判定、選択UI、保存/取消導線）を明記する。
         - 差分表テンプレートに入力欄・操作方法・必須条件・参照コードを記載する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -187,8 +187,8 @@ src:
         - 旧来版との差分（文書種別、必須項目、発行フロー）を明記する。
         - 差分表テンプレートに入力欄・操作方法・必須条件・参照コードを記載する。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: gemini cli
       api: []
       dependency:
