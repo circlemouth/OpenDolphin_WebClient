@@ -17,6 +17,16 @@ import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
 import { buildChartsUrl, type ReceptionCarryoverParams } from '../../charts/encounterContext';
 import type { ClaimBundle, ClaimQueueEntry, ClaimQueuePhase } from '../../outpatient/types';
+import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
+import {
+  loadOutpatientSavedViews,
+  removeOutpatientSavedView,
+  resolvePaymentMode,
+  type OutpatientSavedView,
+  type PaymentMode,
+  upsertOutpatientSavedView,
+} from '../../outpatient/savedViews';
+import { useAppToast } from '../../../libs/ui/appToast';
 
 type SortKey = 'time' | 'name' | 'department';
 
@@ -116,11 +126,15 @@ const toMasterSource = (transition?: DataSourceTransition): ResolveMasterSource 
   return 'snapshot';
 };
 
+const normalizePaymentMode = (value?: string | null): PaymentMode =>
+  value === 'insurance' || value === 'self' ? value : 'all';
+
 const filterEntries = (
   entries: ReceptionEntry[],
   keyword: string,
   department: string,
   physician: string,
+  paymentMode: PaymentMode,
 ): ReceptionEntry[] => {
   const kw = keyword.trim().toLowerCase();
   return entries.filter((entry) => {
@@ -131,7 +145,10 @@ const filterEntries = (
       );
     const matchesDept = department ? entry.department === department : true;
     const matchesPhysician = physician ? entry.physician === physician : true;
-    return matchesKeyword && matchesDept && matchesPhysician;
+    const resolvedPayment = resolvePaymentMode(entry.insurance);
+    const matchesPayment =
+      paymentMode === 'all' ? true : resolvedPayment ? resolvedPayment === paymentMode : false;
+    return matchesKeyword && matchesDept && matchesPhysician && matchesPayment;
   });
 };
 
@@ -180,6 +197,7 @@ export function ReceptionPage({
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { enqueue } = useAppToast();
   const { broadcast } = useAdminBroadcast();
   const { flags, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed, bumpRunId } = useAuthService();
   const [selectedDate, setSelectedDate] = useState(() => searchParams.get('date') ?? todayString());
@@ -187,6 +205,7 @@ export function ReceptionPage({
   const [submittedKeyword, setSubmittedKeyword] = useState(() => searchParams.get('kw') ?? '');
   const [departmentFilter, setDepartmentFilter] = useState(() => searchParams.get('dept') ?? '');
   const [physicianFilter, setPhysicianFilter] = useState(() => searchParams.get('phys') ?? '');
+  const [paymentMode, setPaymentMode] = useState<PaymentMode>(() => normalizePaymentMode(searchParams.get('pay')));
   const [sortKey, setSortKey] = useState<SortKey>(() => {
     const fromUrl = searchParams.get('sort');
     return isSortKey(fromUrl) ? fromUrl : 'time';
@@ -198,6 +217,10 @@ export function ReceptionPage({
   const lastAuditEventHash = useRef<string>();
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const lastSidepaneAuditKey = useRef<string | null>(null);
+  const [savedViews, setSavedViews] = useState<OutpatientSavedView[]>(() => loadOutpatientSavedViews());
+  const [savedViewName, setSavedViewName] = useState('');
+  const [selectedViewId, setSelectedViewId] = useState<string>('');
+  const lastUnlinkedToastKey = useRef<string | null>(null);
 
   const claimQueryKey = ['outpatient-claim-flags'];
   const claimQuery = useQuery({
@@ -260,7 +283,9 @@ export function ReceptionPage({
       if (typeof localStorage === 'undefined') return null;
       try {
         const raw = localStorage.getItem(FILTER_STORAGE_KEY);
-        return raw ? (JSON.parse(raw) as Partial<Record<'kw' | 'dept' | 'phys' | 'sort' | 'date', string>>) : null;
+        return raw
+          ? (JSON.parse(raw) as Partial<Record<'kw' | 'dept' | 'phys' | 'sort' | 'date' | 'pay', string>>)
+          : null;
       } catch {
         return null;
       }
@@ -269,6 +294,7 @@ export function ReceptionPage({
       kw: searchParams.get('kw') ?? undefined,
       dept: searchParams.get('dept') ?? undefined,
       phys: searchParams.get('phys') ?? undefined,
+      pay: searchParams.get('pay') ?? undefined,
       sort: searchParams.get('sort') ?? undefined,
       date: searchParams.get('date') ?? undefined,
     };
@@ -279,6 +305,7 @@ export function ReceptionPage({
     }
     if (merged.dept !== undefined) setDepartmentFilter(merged.dept);
     if (merged.phys !== undefined) setPhysicianFilter(merged.phys);
+    if (merged.pay !== undefined) setPaymentMode(normalizePaymentMode(merged.pay));
     if (merged.sort !== undefined && isSortKey(merged.sort)) setSortKey(merged.sort);
     if (merged.date !== undefined) setSelectedDate(merged.date);
   }, [searchParams]);
@@ -307,6 +334,7 @@ export function ReceptionPage({
     if (keyword) params.set('kw', keyword);
     if (departmentFilter) params.set('dept', departmentFilter);
     if (physicianFilter) params.set('phys', physicianFilter);
+    if (paymentMode !== 'all') params.set('pay', paymentMode);
     if (sortKey) params.set('sort', sortKey);
     if (selectedDate) params.set('date', selectedDate);
     if (intentParam) params.set('intent', intentParam);
@@ -316,12 +344,13 @@ export function ReceptionPage({
         kw: keyword,
         dept: departmentFilter,
         phys: physicianFilter,
+        pay: paymentMode,
         sort: sortKey,
         date: selectedDate,
       };
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(snapshot));
     }
-  }, [departmentFilter, intentParam, keyword, physicianFilter, selectedDate, setSearchParams, sortKey]);
+  }, [departmentFilter, intentParam, keyword, physicianFilter, paymentMode, selectedDate, setSearchParams, sortKey]);
 
   const mergedMeta = useMemo(() => {
     const claim = claimQuery.data;
@@ -385,8 +414,8 @@ export function ReceptionPage({
 
   const entries = appointmentQuery.data?.entries ?? [];
   const filteredEntries = useMemo(
-    () => filterEntries(entries, keyword, departmentFilter, physicianFilter),
-    [entries, keyword, departmentFilter, physicianFilter],
+    () => filterEntries(entries, keyword, departmentFilter, physicianFilter, paymentMode),
+    [entries, keyword, departmentFilter, physicianFilter, paymentMode],
   );
   const sortedEntries = useMemo(() => sortEntries(filteredEntries, sortKey), [filteredEntries, sortKey]);
   const grouped = useMemo(() => groupByStatus(sortedEntries), [sortedEntries]);
@@ -492,10 +521,11 @@ export function ReceptionPage({
       kw: keyword.trim() || undefined,
       dept: departmentFilter || undefined,
       phys: physicianFilter || undefined,
+      pay: paymentMode !== 'all' ? paymentMode : undefined,
       sort: sortKey,
       date: selectedDate || undefined,
     }),
-    [departmentFilter, keyword, physicianFilter, selectedDate, sortKey],
+    [departmentFilter, keyword, paymentMode, physicianFilter, selectedDate, sortKey],
   );
 
   const uniqueDepartments = useMemo(
@@ -533,6 +563,57 @@ export function ReceptionPage({
       `ORCAキュー ${selectedQueueStatus.label}${selectedQueueStatus.detail ? ` ${selectedQueueStatus.detail}` : ''}`,
     ].join('、');
   }, [selectedBundle, selectedEntry, selectedQueueStatus]);
+
+  const unlinkedCounts = useMemo(() => {
+    return {
+      missingPatientId: entries.filter((entry) => !entry.patientId).length,
+      missingAppointmentId: entries.filter((entry) => !entry.appointmentId).length,
+      missingReceptionId: entries.filter((entry) => entry.source === 'visits' && !entry.receptionId).length,
+    };
+  }, [entries]);
+
+  const unlinkedWarning = useMemo(() => {
+    const banner = getAppointmentDataBanner({
+      entries,
+      isLoading: appointmentQuery.isLoading,
+      isError: appointmentQuery.isError,
+      error: appointmentQuery.error,
+      date: selectedDate,
+    });
+    if (!banner || banner.tone !== 'warning') return null;
+    const parts = [
+      unlinkedCounts.missingPatientId > 0 ? `患者ID欠損: ${unlinkedCounts.missingPatientId}` : undefined,
+      unlinkedCounts.missingAppointmentId > 0 ? `予約ID欠損: ${unlinkedCounts.missingAppointmentId}` : undefined,
+      unlinkedCounts.missingReceptionId > 0 ? `受付ID欠損: ${unlinkedCounts.missingReceptionId}` : undefined,
+    ].filter((value): value is string => typeof value === 'string');
+    const key = `${mergedMeta.runId ?? 'runId'}-${selectedDate}-${unlinkedCounts.missingPatientId}-${unlinkedCounts.missingAppointmentId}-${unlinkedCounts.missingReceptionId}`;
+    return { ...banner, key, detail: parts.join(' / ') };
+  }, [
+    appointmentQuery.error,
+    appointmentQuery.isError,
+    appointmentQuery.isLoading,
+    entries,
+    mergedMeta.runId,
+    selectedDate,
+    unlinkedCounts.missingAppointmentId,
+    unlinkedCounts.missingPatientId,
+    unlinkedCounts.missingReceptionId,
+  ]);
+
+  useEffect(() => {
+    if (!unlinkedWarning) {
+      lastUnlinkedToastKey.current = null;
+      return;
+    }
+    if (lastUnlinkedToastKey.current === unlinkedWarning.key) return;
+    lastUnlinkedToastKey.current = unlinkedWarning.key;
+    enqueue({
+      id: `reception-unlinked-${unlinkedWarning.key}`,
+      tone: 'warning',
+      message: unlinkedWarning.message,
+      detail: unlinkedWarning.detail ? `${unlinkedWarning.detail} / 検索日: ${selectedDate}` : `検索日: ${selectedDate}`,
+    });
+  }, [enqueue, selectedDate, unlinkedWarning]);
 
   useEffect(() => {
     summaryRef.current?.focus?.();
@@ -636,8 +717,50 @@ export function ReceptionPage({
     setSubmittedKeyword('');
     setDepartmentFilter('');
     setPhysicianFilter('');
+    setPaymentMode('all');
     setSortKey('time');
   }, []);
+
+  const applySavedView = useCallback(
+    (view: OutpatientSavedView) => {
+      const nextKeyword = view.filters.keyword ?? '';
+      setKeyword(nextKeyword);
+      setSubmittedKeyword(nextKeyword);
+      setDepartmentFilter(view.filters.department ?? '');
+      setPhysicianFilter(view.filters.physician ?? '');
+      setPaymentMode(view.filters.paymentMode ?? 'all');
+      setSortKey(isSortKey(view.filters.sort) ? (view.filters.sort as SortKey) : 'time');
+      setSelectedDate(view.filters.date ?? selectedDate);
+      appointmentQuery.refetch();
+    },
+    [appointmentQuery, selectedDate],
+  );
+
+  const handleSaveView = () => {
+    const label = savedViewName || `検索 ${new Date().toLocaleString()}`;
+    const nextViews = upsertOutpatientSavedView({
+      label,
+      filters: {
+        keyword: keyword.trim() || undefined,
+        department: departmentFilter || undefined,
+        physician: physicianFilter || undefined,
+        paymentMode,
+        sort: sortKey,
+        date: selectedDate,
+      },
+    });
+    setSavedViews(nextViews);
+    const saved = nextViews.find((view) => view.label === label);
+    if (saved) setSelectedViewId(saved.id);
+    setSavedViewName('');
+  };
+
+  const handleDeleteView = () => {
+    if (!selectedViewId) return;
+    const nextViews = removeOutpatientSavedView(selectedViewId);
+    setSavedViews(nextViews);
+    setSelectedViewId('');
+  };
 
   const handleMasterSourceChange = useCallback(
     (value: ResolveMasterSource) => {
@@ -862,6 +985,14 @@ export function ReceptionPage({
                     </select>
                   </label>
                   <label className="reception-search__field">
+                    <span>保険/自費</span>
+                    <select value={paymentMode} onChange={(event) => setPaymentMode(normalizePaymentMode(event.target.value))}>
+                      <option value="all">すべて</option>
+                      <option value="insurance">保険</option>
+                      <option value="self">自費</option>
+                    </select>
+                  </label>
+                  <label className="reception-search__field">
                     <span>ソート</span>
                     <select value={sortKey} onChange={(event) => setSortKey(event.target.value as SortKey)}>
                       <option value="time">受付/予約時間</option>
@@ -880,11 +1011,88 @@ export function ReceptionPage({
                   <button type="button" className="reception-search__button ghost" onClick={handleClear}>
                     クリア
                   </button>
+                  <button
+                    type="button"
+                    className="reception-search__button ghost"
+                    onClick={() => {
+                      const params = new URLSearchParams();
+                      if (keyword) params.set('kw', keyword);
+                      if (departmentFilter) params.set('dept', departmentFilter);
+                      if (physicianFilter) params.set('phys', physicianFilter);
+                      if (paymentMode !== 'all') params.set('pay', paymentMode);
+                      if (sortKey) params.set('sort', sortKey);
+                      if (selectedDate) params.set('date', selectedDate);
+                      params.set('from', 'reception');
+                      navigate(`/patients?${params.toString()}`);
+                    }}
+                  >
+                    Patients へ
+                  </button>
                 </div>
               </form>
+              <div className="reception-search__saved" aria-label="保存ビュー">
+                <div className="reception-search__saved-row">
+                  <label className="reception-search__field">
+                    <span>保存ビュー</span>
+                    <select
+                      value={selectedViewId}
+                      onChange={(event) => setSelectedViewId(event.target.value)}
+                    >
+                      <option value="">選択してください</option>
+                      {savedViews.map((view) => (
+                        <option key={view.id} value={view.id}>
+                          {view.label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                  <button
+                    type="button"
+                    className="reception-search__button ghost"
+                    onClick={() => {
+                      const view = savedViews.find((item) => item.id === selectedViewId);
+                      if (view) applySavedView(view);
+                    }}
+                    disabled={!selectedViewId}
+                  >
+                    適用
+                  </button>
+                  <button
+                    type="button"
+                    className="reception-search__button ghost"
+                    onClick={handleDeleteView}
+                    disabled={!selectedViewId}
+                  >
+                    削除
+                  </button>
+                </div>
+                <div className="reception-search__saved-row">
+                  <label className="reception-search__field">
+                    <span>ビュー名</span>
+                    <input
+                      value={savedViewName}
+                      onChange={(event) => setSavedViewName(event.target.value)}
+                      placeholder="例: 内科/午前/保険"
+                    />
+                  </label>
+                  <button type="button" className="reception-search__button primary" onClick={handleSaveView}>
+                    現在の条件を保存
+                  </button>
+                </div>
+              </div>
               <p className="reception-summary" aria-live="polite" ref={summaryRef} tabIndex={-1}>
                 {summaryText}
               </p>
+              {unlinkedWarning && (
+                <ToneBanner
+                  tone="warning"
+                  message={unlinkedWarning.message}
+                  destination="Reception"
+                  nextAction="一覧を確認"
+                  runId={mergedMeta.runId}
+                  ariaLive="assertive"
+                />
+              )}
               {intentBanner && (
                 <ToneBanner
                   tone={intentBanner.tone}

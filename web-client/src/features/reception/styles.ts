@@ -599,6 +599,23 @@ export const receptionStyles = css`
     flex-wrap: wrap;
   }
 
+  .reception-search__saved {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    padding: 0.75rem;
+    background: #f8fafc;
+    border-radius: 16px;
+    border: 1px solid rgba(148, 163, 184, 0.2);
+  }
+
+  .reception-search__saved-row {
+    display: flex;
+    gap: 0.6rem;
+    flex-wrap: wrap;
+    align-items: flex-end;
+  }
+
   .reception-search__button {
     padding: 0.65rem 1rem;
     border-radius: 999px;

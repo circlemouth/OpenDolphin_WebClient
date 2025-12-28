@@ -13,6 +13,7 @@ export type ReceptionCarryoverParams = {
   kw?: string;
   dept?: string;
   phys?: string;
+  pay?: string;
   sort?: string;
   date?: string;
 };
@@ -37,6 +38,7 @@ export const RECEPTION_CARRYOVER_QUERY_KEYS = {
   keyword: 'kw',
   department: 'dept',
   physician: 'phys',
+  payment: 'pay',
   sort: 'sort',
   date: 'date',
 } as const;
@@ -80,9 +82,10 @@ export const parseReceptionCarryoverParams = (search: string): ReceptionCarryove
   const keyword = params.get(RECEPTION_CARRYOVER_QUERY_KEYS.keyword) ?? undefined;
   const department = params.get(RECEPTION_CARRYOVER_QUERY_KEYS.department) ?? undefined;
   const physician = params.get(RECEPTION_CARRYOVER_QUERY_KEYS.physician) ?? undefined;
+  const payment = params.get(RECEPTION_CARRYOVER_QUERY_KEYS.payment) ?? undefined;
   const sort = params.get(RECEPTION_CARRYOVER_QUERY_KEYS.sort) ?? undefined;
   const date = params.get(RECEPTION_CARRYOVER_QUERY_KEYS.date) ?? undefined;
-  return { kw: keyword, dept: department, phys: physician, sort, date };
+  return { kw: keyword, dept: department, phys: physician, pay: payment, sort, date };
 };
 
 export const buildChartsEncounterSearch = (
@@ -101,6 +104,7 @@ export const buildChartsEncounterSearch = (
   if (carryover.kw) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.keyword, carryover.kw);
   if (carryover.dept) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.department, carryover.dept);
   if (carryover.phys) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.physician, carryover.phys);
+  if (carryover.pay) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.payment, carryover.pay);
   if (carryover.sort) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.sort, carryover.sort);
   if (carryover.date) params.set(RECEPTION_CARRYOVER_QUERY_KEYS.date, carryover.date);
   const query = params.toString();

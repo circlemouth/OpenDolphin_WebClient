@@ -80,6 +80,23 @@
   color: #e2e8f0;
 }
 
+.patients-page__views {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  padding: 0.65rem;
+  border-radius: 12px;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  background: #ffffff;
+}
+
+.patients-page__views-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
 .patients-page__content {
   display: grid;
   grid-template-columns: minmax(280px, 32%) 1fr;

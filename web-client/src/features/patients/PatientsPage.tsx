@@ -10,6 +10,7 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeVisitDate } from '../charts/encounterContext';
 import { PatientFormErrorAlert } from './PatientFormErrorAlert';
+import { useAppToast } from '../../libs/ui/appToast';
 import {
   fetchPatients,
   savePatient,
@@ -19,6 +20,13 @@ import {
   type PatientRecord,
 } from './api';
 import { validatePatientMutation, type PatientValidationError } from './patientValidation';
+import {
+  loadOutpatientSavedViews,
+  removeOutpatientSavedView,
+  type OutpatientSavedView,
+  type PaymentMode,
+  upsertOutpatientSavedView,
+} from '../outpatient/savedViews';
 import './patients.css';
 
 const FILTER_STORAGE_KEY = 'patients-filter-state';
@@ -31,6 +39,9 @@ const DEFAULT_FILTER = {
   paymentMode: 'all' as 'all' | 'insurance' | 'self',
 };
 
+const normalizePaymentMode = (value?: string | null): PaymentMode | undefined =>
+  value === 'insurance' || value === 'self' ? value : undefined;
+
 const toSearchParams = (filters: typeof DEFAULT_FILTER) => {
   const params = new URLSearchParams();
   if (filters.keyword) params.set('kw', filters.keyword);
@@ -39,6 +50,8 @@ const toSearchParams = (filters: typeof DEFAULT_FILTER) => {
   if (filters.paymentMode && filters.paymentMode !== 'all') params.set('pay', filters.paymentMode);
   return params;
 };
+
+const pickString = (value: unknown): string | undefined => (typeof value === 'string' && value.length > 0 ? value : undefined);
 
 const readStorageJson = (key: string) => {
   if (typeof localStorage === 'undefined') return null;
@@ -58,20 +71,21 @@ const readFilters = (searchParams: URLSearchParams): typeof DEFAULT_FILTER => {
     keyword: searchParams.get('kw') ?? undefined,
     department: searchParams.get('dept') ?? undefined,
     physician: searchParams.get('phys') ?? undefined,
-    paymentMode: (searchParams.get('pay') as 'all' | 'insurance' | 'self' | null) ?? undefined,
+    paymentMode: normalizePaymentMode(searchParams.get('pay')),
   };
 
   const normalizedReception: Partial<typeof DEFAULT_FILTER> = {
     keyword: (receptionStored?.kw as string | undefined) ?? undefined,
     department: (receptionStored?.dept as string | undefined) ?? undefined,
     physician: (receptionStored?.phys as string | undefined) ?? undefined,
+    paymentMode: normalizePaymentMode(receptionStored?.pay as string | undefined),
   };
 
   const normalizedPatients: Partial<typeof DEFAULT_FILTER> = {
     keyword: (patientStored?.keyword as string | undefined) ?? (patientStored?.kw as string | undefined),
     department: (patientStored?.department as string | undefined) ?? (patientStored?.dept as string | undefined),
     physician: (patientStored?.physician as string | undefined) ?? (patientStored?.phys as string | undefined),
-    paymentMode: patientStored?.paymentMode as 'all' | 'insurance' | 'self' | undefined,
+    paymentMode: normalizePaymentMode(patientStored?.paymentMode as string | undefined),
   };
 
   return {
@@ -96,6 +110,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
+  const { enqueue } = useAppToast();
   const fromCharts = searchParams.get('from') === 'charts';
   const chartsReturnUrl = useMemo(() => {
     if (!fromCharts) return null;
@@ -114,6 +129,10 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [validationErrors, setValidationErrors] = useState<PatientValidationError[]>([]);
   const [lastAttempt, setLastAttempt] = useState<PatientMutationPayload | null>(null);
   const baselineRef = useRef<PatientRecord | null>(null);
+  const [savedViews, setSavedViews] = useState<OutpatientSavedView[]>(() => loadOutpatientSavedViews());
+  const [savedViewName, setSavedViewName] = useState('');
+  const [selectedViewId, setSelectedViewId] = useState<string>('');
+  const lastUnlinkedToastKey = useRef<string | null>(null);
   const [lastMeta, setLastMeta] = useState<
     Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
   >({
@@ -138,19 +157,42 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   }, [location.search]);
 
   useEffect(() => {
+    const carryoverSource = new URLSearchParams(location.search);
+    const receptionStored = readStorageJson(RECEPTION_FILTER_STORAGE_KEY);
+    const sortFromUrl = carryoverSource.get('sort');
+    const dateFromUrl = carryoverSource.get('date');
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
       const receptionSnapshot = {
-        ...(readStorageJson(RECEPTION_FILTER_STORAGE_KEY) ?? {}),
+        ...(receptionStored ?? {}),
         kw: filters.keyword,
         dept: filters.department,
         phys: filters.physician,
+        pay: filters.paymentMode,
+        sort: sortFromUrl ?? receptionStored?.sort,
+        date: dateFromUrl ?? receptionStored?.date,
       };
       localStorage.setItem(RECEPTION_FILTER_STORAGE_KEY, JSON.stringify(receptionSnapshot));
     }
     const params = toSearchParams(filters);
-    setSearchParams(params, { replace: true });
-  }, [filters, setSearchParams]);
+    const sort = sortFromUrl ?? pickString(receptionStored?.sort);
+    const date = dateFromUrl ?? pickString(receptionStored?.date);
+    const from = carryoverSource.get('from');
+    const patientId = carryoverSource.get('patientId');
+    const receptionId = carryoverSource.get('receptionId');
+    const visitDate = carryoverSource.get('visitDate');
+    if (sort) params.set('sort', sort);
+    if (date) params.set('date', date);
+    if (from) params.set('from', from);
+    if (patientId) params.set('patientId', patientId);
+    if (receptionId) params.set('receptionId', receptionId);
+    if (visitDate) params.set('visitDate', visitDate);
+    const nextSearch = params.toString();
+    const currentSearch = location.search.startsWith('?') ? location.search.slice(1) : location.search;
+    if (nextSearch !== currentSearch) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [filters, location.search, setSearchParams]);
 
   const patientsQuery = useQuery({
     queryKey: ['patients', filters],
@@ -217,6 +259,34 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     patientsQuery.data?.dataSourceTransition ?? flags.dataSourceTransition ?? lastMeta.dataSourceTransition;
   const resolvedFetchedAt = patientsQuery.data?.fetchedAt ?? lastMeta.fetchedAt;
   const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
+
+  const unlinkedNotice = useMemo(() => {
+    const missingPatientId = patients.filter((patient) => !patient.patientId).length;
+    const missingName = patients.filter((patient) => !patient.name).length;
+    if (missingPatientId === 0 && missingName === 0) return null;
+    const parts = [
+      missingPatientId > 0 ? `患者ID未紐付: ${missingPatientId}` : undefined,
+      missingName > 0 ? `氏名未紐付: ${missingName}` : undefined,
+    ].filter((value): value is string => typeof value === 'string');
+    const message = `患者一覧に未紐付ステータスがあります（${parts.join(' / ')}）`;
+    const key = `${missingPatientId}-${missingName}-${resolvedRunId ?? 'runId'}`;
+    return { message, detail: `recordsReturned=${resolvedRecordsReturned ?? '―'}`, key };
+  }, [patients, resolvedRecordsReturned, resolvedRunId]);
+
+  useEffect(() => {
+    if (!unlinkedNotice) {
+      lastUnlinkedToastKey.current = null;
+      return;
+    }
+    if (lastUnlinkedToastKey.current === unlinkedNotice.key) return;
+    lastUnlinkedToastKey.current = unlinkedNotice.key;
+    enqueue({
+      id: `patients-unlinked-${unlinkedNotice.key}`,
+      tone: 'warning',
+      message: unlinkedNotice.message,
+      detail: unlinkedNotice.detail,
+    });
+  }, [enqueue, unlinkedNotice]);
 
   useEffect(() => {
     if (!selectedId && patients[0]) {
@@ -376,6 +446,40 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     setFilters((prev) => ({ ...prev, [key]: value }));
   };
 
+  const applySavedView = (view: OutpatientSavedView) => {
+    setFilters({
+      keyword: view.filters.keyword ?? '',
+      department: view.filters.department ?? '',
+      physician: view.filters.physician ?? '',
+      paymentMode: view.filters.paymentMode ?? 'all',
+    });
+    patientsQuery.refetch();
+  };
+
+  const handleSaveView = () => {
+    const label = savedViewName || `検索 ${new Date().toLocaleString()}`;
+    const nextViews = upsertOutpatientSavedView({
+      label,
+      filters: {
+        keyword: filters.keyword.trim() || undefined,
+        department: filters.department || undefined,
+        physician: filters.physician || undefined,
+        paymentMode: filters.paymentMode,
+      },
+    });
+    setSavedViews(nextViews);
+    const saved = nextViews.find((view) => view.label === label);
+    if (saved) setSelectedViewId(saved.id);
+    setSavedViewName('');
+  };
+
+  const handleDeleteView = () => {
+    if (!selectedViewId) return;
+    const nextViews = removeOutpatientSavedView(selectedViewId);
+    setSavedViews(nextViews);
+    setSelectedViewId('');
+  };
+
   const toneLive = missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite';
 
   return (
@@ -399,6 +503,16 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       </header>
 
       <ToneBanner tone={tone} message={toneMessage} runId={resolvedRunId} ariaLive={missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite'} />
+      {unlinkedNotice && (
+        <ToneBanner
+          tone="warning"
+          message={unlinkedNotice.message}
+          destination="Patients"
+          nextAction="一覧を確認"
+          runId={resolvedRunId}
+          ariaLive="assertive"
+        />
+      )}
 
       <section className="patients-page__filters" aria-label="フィルタ" aria-live="polite">
         <label>
@@ -451,9 +565,55 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             Charts に戻る
           </button>
         ) : null}
-        <button type="button" className="patients-page__filter-link" onClick={() => navigate({ pathname: '/reception', search: location.search })}>
+        <button
+          type="button"
+          className="patients-page__filter-link"
+          onClick={() => navigate({ pathname: '/reception', search: location.search })}
+        >
           Reception に戻る
         </button>
+        <div className="patients-page__views" aria-label="保存ビュー">
+          <div className="patients-page__views-row">
+            <label>
+              <span>保存ビュー</span>
+              <select value={selectedViewId} onChange={(event) => setSelectedViewId(event.target.value)}>
+                <option value="">選択してください</option>
+                {savedViews.map((view) => (
+                  <option key={view.id} value={view.id}>
+                    {view.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <button
+              type="button"
+              className="patients-page__filter-link"
+              onClick={() => {
+                const view = savedViews.find((item) => item.id === selectedViewId);
+                if (view) applySavedView(view);
+              }}
+              disabled={!selectedViewId}
+            >
+              適用
+            </button>
+            <button type="button" className="patients-page__filter-link" onClick={handleDeleteView} disabled={!selectedViewId}>
+              削除
+            </button>
+          </div>
+          <div className="patients-page__views-row">
+            <label>
+              <span>ビュー名</span>
+              <input
+                value={savedViewName}
+                onChange={(event) => setSavedViewName(event.target.value)}
+                placeholder="例: 内科/午前/保険"
+              />
+            </label>
+            <button type="button" className="patients-page__filter-apply" onClick={handleSaveView}>
+              現在の条件を保存
+            </button>
+          </div>
+        </div>
         {patientsErrorContext && (
           <ApiFailureBanner
             subject="患者情報"
