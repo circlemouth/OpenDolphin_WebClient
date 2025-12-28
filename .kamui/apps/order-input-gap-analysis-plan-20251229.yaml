@@ -61,11 +61,27 @@ filters:
   showDependencies: true
 src:
   order_input_gap_analysis:
+    00_前提ドキュメント整備.md:
+      content: |-
+        # 00 前提ドキュメント整備
+
+        - 調査結果の保存先を `src/order_input_gap_analysis/` に固定し、命名規則（`YYMMDD_区分_内容.md` など）を先に決める。
+        - 差分表テンプレート（項目名/入力方式/必須条件/保存挙動/コード参照/証跡URL）と、調査ログ（日時/担当/参照画面/参照コード/補足）をテンプレ化して配置する。
+        - 参照先は `docs/DEVELOPMENT_STATUS.md` → `web-client/README.md` の順で確認し、Phase2 文書は参照のみとする旨をテンプレ冒頭に明記する。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency: []
+      schedule:
+        start: 2025-12-29T00:00:00.000Z
+        days: 1
     00_RUN_IDと調査範囲確定.md:
       content: |-
         # 00 RUN_ID と調査範囲確定
 
-        - RUN_ID=`20251228T195453Z` を起点に、旧来版（client）とモダナイズ版（web-client）で対象とする「処方・文書・リハビリ・処置/検査/指示」オーダー入力の画面・入力欄・操作フローを洗い出す。
+        - RUN_ID=`20251228T201657Z` を起点に、旧来版（client）とモダナイズ版（web-client）で対象とする「処方・文書・リハビリ・処置/検査/指示」オーダー入力の画面・入力欄・操作フローを洗い出す。
         - 参照先を `docs/DEVELOPMENT_STATUS.md` → `web-client/README.md` の順で確認し、Phase2 文書は参照のみとする。
         - 旧来版とモダナイズ版の調査結果を統合する差分表のテンプレート（項目名/入力方式/必須条件/保存挙動/コード参照）を決めて、以降の調査で統一する。
       priority: High
@@ -73,7 +89,8 @@ src:
       progress: 0
       agent: codex
       api: []
-      dependency: []
+      dependency:
+        - src/order_input_gap_analysis/00_前提ドキュメント整備.md
       schedule:
         start: 2025-12-29T00:00:00.000Z
         days: 1
