@@ -45,6 +45,7 @@ import {
 } from '../encounterContext';
 import {
   buildChartsApprovalStorageKey,
+  clearChartsApprovalRecord,
   readChartsApprovalRecord,
   writeChartsApprovalRecord,
   type ChartsApprovalRecord,
@@ -243,38 +244,10 @@ function ChartsContent() {
     record?: ChartsApprovalRecord;
   }>({ status: 'none' });
   const approvalLockLogRef = useRef<string | null>(null);
+  const approvalUnlockLogRef = useRef<string | null>(null);
   const handleLockChange = useCallback((locked: boolean, reason?: string) => {
     setLockState({ locked, reason });
   }, []);
-  const handleApprovalConfirmed = useCallback(
-    (meta: { action: 'send'; actor?: string }) => {
-      const storageKey = buildChartsApprovalStorageKey({
-        facilityId: session.facilityId,
-        patientId: encounterContext.patientId,
-        appointmentId: encounterContext.appointmentId,
-        receptionId: encounterContext.receptionId,
-      });
-      if (!storageKey) return;
-      const record: ChartsApprovalRecord = {
-        version: 1,
-        key: storageKey,
-        approvedAt: new Date().toISOString(),
-        runId: resolvedRunId ?? flags.runId,
-        actor: meta.actor,
-        action: meta.action,
-      };
-      writeChartsApprovalRecord(record);
-      setApprovalState({ status: 'approved', record });
-    },
-    [
-      encounterContext.appointmentId,
-      encounterContext.patientId,
-      encounterContext.receptionId,
-      flags.runId,
-      resolvedRunId,
-      session.facilityId,
-    ],
-  );
   const [isManualRefreshing, setIsManualRefreshing] = useState(false);
   const [contextAlert, setContextAlert] = useState<{ tone: 'info' | 'warning'; message: string } | null>(null);
   const [editLockAlert, setEditLockAlert] = useState<{
@@ -1148,6 +1121,88 @@ function ChartsContent() {
     () => buildChartsApprovalStorageKey(approvalTarget),
     [approvalTarget],
   );
+  const handleApprovalConfirmed = useCallback(
+    (meta: { action: 'send'; actor?: string }) => {
+      if (!approvalStorageKey) return;
+      const record: ChartsApprovalRecord = {
+        version: 1,
+        key: approvalStorageKey,
+        approvedAt: new Date().toISOString(),
+        runId: resolvedRunId ?? flags.runId,
+        actor: meta.actor,
+        action: meta.action,
+      };
+      writeChartsApprovalRecord(record);
+      setApprovalState({ status: 'approved', record });
+    },
+    [approvalStorageKey, flags.runId, resolvedRunId],
+  );
+  const handleApprovalUnlock = useCallback(() => {
+    if (!approvalStorageKey) {
+      setApprovalState({ status: 'none' });
+      return;
+    }
+    const approvedAt = approvalState.record?.approvedAt ?? 'unknown';
+    const signature = `${approvalStorageKey}:${approvedAt}`;
+    clearChartsApprovalRecord(approvalStorageKey);
+    setApprovalState({ status: 'none' });
+    if (approvalUnlockLogRef.current === signature) return;
+    approvalUnlockLogRef.current = signature;
+    recordChartsAuditEvent({
+      action: 'CHARTS_EDIT_LOCK',
+      outcome: 'released',
+      subject: 'charts-approval-lock',
+      patientId: approvalTarget.patientId,
+      appointmentId: approvalTarget.appointmentId,
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      fallbackUsed: resolvedFallbackUsed,
+      dataSourceTransition: resolvedTransition,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'approval_unlock',
+        approvalState: 'released',
+        lockStatus: 'approved',
+        receptionId: approvalTarget.receptionId,
+        facilityId: session.facilityId,
+        userId: session.userId,
+      },
+    });
+    logUiState({
+      action: 'lock',
+      screen: 'charts/action-bar',
+      controlId: 'approval-unlock',
+      runId: resolvedRunId ?? flags.runId,
+      cacheHit: resolvedCacheHit,
+      missingMaster: resolvedMissingMaster,
+      dataSourceTransition: resolvedTransition,
+      fallbackUsed: resolvedFallbackUsed,
+      patientId: approvalTarget.patientId,
+      appointmentId: approvalTarget.appointmentId,
+      details: {
+        operationPhase: 'lock',
+        trigger: 'approval_unlock',
+        approvalState: 'released',
+        lockStatus: 'approved',
+        receptionId: approvalTarget.receptionId,
+      },
+    });
+  }, [
+    approvalState.record?.approvedAt,
+    approvalStorageKey,
+    approvalTarget.appointmentId,
+    approvalTarget.patientId,
+    approvalTarget.receptionId,
+    flags.runId,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
+    resolvedMissingMaster,
+    resolvedRunId,
+    resolvedTransition,
+    session.facilityId,
+    session.userId,
+  ]);
   const approvalLocked = approvalState.status === 'approved';
   const approvalReason = approvalLocked ? '署名確定済みのため編集できません。' : undefined;
 
@@ -1774,6 +1829,7 @@ function ChartsContent() {
                 });
               }}
               onApprovalConfirmed={handleApprovalConfirmed}
+              onApprovalUnlock={handleApprovalUnlock}
               onAfterSend={handleRefreshSummary}
               onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
               onLockChange={handleLockChange}

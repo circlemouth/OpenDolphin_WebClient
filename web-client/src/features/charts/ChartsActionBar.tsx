@@ -93,6 +93,7 @@ export interface ChartsActionBarProps {
   onDraftSaved?: () => void;
   onLockChange?: (locked: boolean, reason?: string) => void;
   onApprovalConfirmed?: (meta: { action: 'send'; actor?: string }) => void;
+  onApprovalUnlock?: () => void;
 }
 
 export function ChartsActionBar({
@@ -121,6 +122,7 @@ export function ChartsActionBar({
   onDraftSaved,
   onLockChange,
   onApprovalConfirmed,
+  onApprovalUnlock,
 }: ChartsActionBarProps) {
   const navigate = useNavigate();
   const [lockReason, setLockReason] = useState<string | null>(null);
@@ -946,6 +948,25 @@ export function ChartsActionBar({
     abortControllerRef.current?.abort();
   };
 
+  const handleApprovalUnlock = () => {
+    if (!approvalLocked || !onApprovalUnlock) return;
+    const first = typeof window !== 'undefined'
+      ? window.confirm('承認ロック（署名確定）を解除しますか？この操作は危険です。')
+      : false;
+    if (!first) return;
+    const second = typeof window !== 'undefined'
+      ? window.confirm('最終確認: 承認ロック解除（署名取消）を実行します。よろしいですか？')
+      : false;
+    if (!second) return;
+    onApprovalUnlock();
+    setBanner({
+      tone: 'warning',
+      message: '承認ロックを解除しました。署名確定が取り消され、編集が再開できます。',
+      nextAction: '編集前に内容確認と再署名が必要か確認してください。',
+    });
+    setToast(null);
+  };
+
   const handleReloadLatest = async () => {
     setToast({
       tone: 'info',
@@ -1149,6 +1170,14 @@ export function ChartsActionBar({
           <div className="charts-actions__conflict-actions">
             <button type="button" className="charts-actions__button charts-actions__button--unlock" onClick={handlePrintExport}>
               印刷/エクスポートへ
+            </button>
+            <button
+              type="button"
+              className="charts-actions__button charts-actions__button--danger"
+              onClick={handleApprovalUnlock}
+              disabled={!onApprovalUnlock}
+            >
+              承認ロック解除
             </button>
           </div>
         </div>

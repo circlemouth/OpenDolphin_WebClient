@@ -631,6 +631,12 @@ export const chartsStyles = css`
     color: #9a3412;
   }
 
+  .charts-actions__button--danger {
+    background: #fef2f2;
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #991b1b;
+  }
+
   .charts-actions__button--unlock {
     background: #ecfdf5;
     border-color: rgba(16, 185, 129, 0.45);

@@ -1,7 +1,7 @@
 # Charts承認ロックと状態統一
 
-- RUN_ID: 20251228T015915Z
-- 期間: 2025-12-28 01:59 - 2025-12-28 02:24
+- RUN_ID: 20251228T042200Z
+- 期間: 2025-12-28 04:22 - 2025-12-28 04:40
 - ステータス: done
 - 進捗: 100
 - YAML ID: src/webclient_productionization/charts/36_Charts承認ロックと状態統一.md
@@ -31,3 +31,6 @@
 - 2025-12-28: 承認状態ストレージ/表示/ロック制御の追加、UIロック解除/再読込の監査ログ補強、ActionBar とヘッダーの状態表示を統一（RUN_ID=20251228T015915Z）
   - 変更: `web-client/src/features/charts/approvalState.ts`, `web-client/src/features/charts/pages/ChartsPage.tsx`, `web-client/src/features/charts/ChartsActionBar.tsx`, `web-client/src/features/charts/styles.ts`
   - テスト: `npm run typecheck`（`web-client`、成功）
+- 2025-12-28: 承認ロック解除導線（二重確認）と解除監査ログの追加、解除後の readOnly 解除とヘッダ表示の即時更新を反映（RUN_ID=20251228T042200Z）
+  - 変更: `web-client/src/features/charts/pages/ChartsPage.tsx`, `web-client/src/features/charts/ChartsActionBar.tsx`, `web-client/src/features/charts/styles.ts`
+  - テスト: `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`（承認ロック解除 UI/ログの確認は手動想定）
