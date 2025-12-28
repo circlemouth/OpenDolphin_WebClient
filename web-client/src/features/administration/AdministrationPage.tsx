@@ -1,4 +1,5 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
@@ -34,6 +35,7 @@ type AdministrationPageProps = {
 };
 
 type Feedback = { tone: 'success' | 'warning' | 'error' | 'info'; message: string };
+type GuardAction = 'access' | 'edit' | 'save' | 'retry' | 'discard';
 
 const deliveryFlagStateLabel = (state: AdminDeliveryFlagState) => {
   if (state === 'applied') return '配信済み';
@@ -124,6 +126,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const isSystemAdmin = role === 'system_admin' || role === 'admin' || role === 'system-admin';
   const session = useSession();
   const appliedMeta = useRef<Partial<AuthServiceFlags>>({});
+  const guardLogRef = useRef<{ runId?: string; role?: string }>({});
   const { flags, bumpRunId, setCacheHit, setMissingMaster, setDataSourceTransition, setFallbackUsed } = useAuthService();
   const [form, setForm] = useState<AdminConfigPayload>(DEFAULT_FORM);
   const [feedback, setFeedback] = useState<Feedback | null>(null);
@@ -150,6 +153,51 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   );
   const environmentLabel = normalizeEnvironmentLabel(configQuery.data?.environment) ?? envFallback ?? 'unknown';
   const warningThresholdMinutes = Math.round(QUEUE_DELAY_WARNING_MS / 60000);
+  const guardMessageId = 'admin-guard-message';
+  const guardDetailsId = 'admin-guard-details';
+  const actorId = `${session.facilityId}:${session.userId}`;
+
+  const logGuardEvent = useCallback(
+    (action: GuardAction, detail?: string) => {
+      logAuditEvent({
+        runId: resolvedRunId,
+        source: 'admin/guard',
+        note: action === 'access' ? 'admin access restricted' : 'admin action blocked',
+        payload: {
+          operation: action,
+          actor: actorId,
+          role,
+          requiredRole: 'system_admin',
+          environment: environmentLabel,
+          detail,
+          fallback: ['再ログイン', '管理者へ依頼', 'Receptionで確認'],
+        },
+      });
+      logUiState({
+        action: 'navigate',
+        screen: 'administration',
+        controlId: 'admin-guard',
+        runId: resolvedRunId,
+        details: { operation: action, role, detail, requiredRole: 'system_admin' },
+      });
+    },
+    [actorId, environmentLabel, resolvedRunId, role],
+  );
+
+  const reportGuardedAction = useCallback(
+    (action: GuardAction, detail?: string) => {
+      setFeedback({ tone: 'warning', message: '権限がないため操作をブロックしました。管理者へ依頼してください。' });
+      logGuardEvent(action, detail);
+    },
+    [logGuardEvent],
+  );
+
+  useEffect(() => {
+    if (isSystemAdmin) return;
+    if (guardLogRef.current.runId === resolvedRunId && guardLogRef.current.role === role) return;
+    guardLogRef.current = { runId: resolvedRunId, role };
+    logGuardEvent('access', 'read-only view');
+  }, [isSystemAdmin, logGuardEvent, resolvedRunId, role]);
 
   useEffect(() => {
     const data = configQuery.data;
@@ -377,6 +425,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   }, [queueEntries]);
 
   const handleInputChange = (key: keyof AdminConfigPayload, value: string | boolean) => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('edit', `field:${key}`);
+      return;
+    }
     setForm((prev) => ({ ...prev, [key]: value }));
   };
 
@@ -389,14 +441,26 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   };
 
   const handleSave = () => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('save');
+      return;
+    }
     configMutation.mutate(form);
   };
 
   const handleRetry = (patientId: string) => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('retry', `patient:${patientId}`);
+      return;
+    }
     queueMutation.mutate({ kind: 'retry', patientId });
   };
 
   const handleDiscard = (patientId: string) => {
+    if (!isSystemAdmin) {
+      reportGuardedAction('discard', `patient:${patientId}`);
+      return;
+    }
     queueMutation.mutate({ kind: 'discard', patientId });
   };
 
@@ -466,6 +530,24 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           </span>
           <span className="administration-page__pill">mismatchFields: {syncMismatchFields ?? '―'}</span>
         </div>
+        {!isSystemAdmin ? (
+          <div className="admin-guard" role="alert" aria-live="assertive" id={guardMessageId}>
+            <div className="admin-guard__header">
+              <span className="admin-guard__title">操作ガード中</span>
+              <span className="admin-guard__badge">system_adminのみ</span>
+            </div>
+            <p className="admin-guard__message">
+              現在のロール（{role ?? 'unknown'}）では配信設定の変更・キュー操作はできません。閲覧のみ可能です。
+            </p>
+            <ul className="admin-guard__next" id={guardDetailsId}>
+              <li>system_admin で再ログインしてください。</li>
+              <li>権限保持者へ配信依頼を行ってください。</li>
+              <li>
+                <Link to="/reception" className="admin-guard__link">Reception へ戻って受付状況を確認</Link>
+              </li>
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       {warningEntries.length > 0 ? (
@@ -502,6 +584,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                 value={form.orcaEndpoint}
                 onChange={(event) => handleInputChange('orcaEndpoint', event.target.value)}
                 disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
               />
               <p className="admin-quiet">例: https://localhost:9080/openDolphin/resources</p>
             </div>
@@ -522,6 +606,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                     persistHeaderFlags({ useMockOrcaQueue: next });
                   }}
                   disabled={!isSystemAdmin}
+                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
                 />
               </div>
               <div className="admin-toggle">
@@ -539,6 +624,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                     persistHeaderFlags({ verifyAdminDelivery: next });
                   }}
                   disabled={!isSystemAdmin}
+                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
                 />
               </div>
               <div className="admin-toggle">
@@ -552,6 +638,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                   checked={form.mswEnabled}
                   onChange={(event) => handleInputChange('mswEnabled', event.target.checked)}
                   disabled={!isSystemAdmin}
+                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
                 />
               </div>
               <div className="admin-toggle">
@@ -565,6 +652,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                   checked={form.chartsDisplayEnabled}
                   onChange={(event) => handleInputChange('chartsDisplayEnabled', event.target.checked)}
                   disabled={!isSystemAdmin}
+                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
                 />
               </div>
               <div className="admin-toggle">
@@ -578,6 +666,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                   checked={form.chartsSendEnabled}
                   onChange={(event) => handleInputChange('chartsSendEnabled', event.target.checked)}
                   disabled={!isSystemAdmin}
+                  aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
                 />
               </div>
             </div>
@@ -589,6 +678,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                 value={form.chartsMasterSource}
                 onChange={(event) => handleChartsMasterSourceChange(event.target.value)}
                 disabled={!isSystemAdmin}
+                aria-readonly={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
               >
                 <option value="auto">auto（環境変数に従う）</option>
                 <option value="server">server（実 API 優先）</option>
@@ -606,7 +697,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                 type="button"
                 className="admin-button admin-button--primary"
                 onClick={handleSave}
-                disabled={!isSystemAdmin || configMutation.isPending}
+                disabled={configMutation.isPending}
+                aria-disabled={!isSystemAdmin || configMutation.isPending}
+                data-guarded={!isSystemAdmin}
+                aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
               >
                 保存して配信
               </button>
@@ -701,7 +795,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                         type="button"
                         className="admin-button admin-button--secondary"
                         onClick={() => handleRetry(entry.patientId)}
-                        disabled={!isSystemAdmin || queueMutation.isPending || !entry.retryable}
+                        disabled={queueMutation.isPending || !entry.retryable}
+                        aria-disabled={!isSystemAdmin || queueMutation.isPending || !entry.retryable}
+                        data-guarded={!isSystemAdmin}
+                        aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
                       >
                         再送
                       </button>
@@ -709,7 +806,10 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
                         type="button"
                         className="admin-button admin-button--danger"
                         onClick={() => handleDiscard(entry.patientId)}
-                        disabled={!isSystemAdmin || queueMutation.isPending}
+                        disabled={queueMutation.isPending}
+                        aria-disabled={!isSystemAdmin || queueMutation.isPending}
+                        data-guarded={!isSystemAdmin}
+                        aria-describedby={!isSystemAdmin ? guardDetailsId : undefined}
                       >
                         破棄
                       </button>
