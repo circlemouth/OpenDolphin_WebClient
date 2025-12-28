@@ -5,6 +5,7 @@ import { httpFetch } from '../../libs/http/httpClient';
 import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
 import {
   clearOutpatientFunnelLog,
+  getMaskedOutpatientFunnelLog,
   getOutpatientFunnelLog,
   recordOutpatientFunnel,
   type DataSourceTransition,
@@ -124,6 +125,7 @@ export function OutpatientMockPage() {
         setMasterSource(getResolveMasterSource());
 
         const funnelSnapshot = getOutpatientFunnelLog();
+        const maskedSnapshot = getMaskedOutpatientFunnelLog();
         setTelemetryLog(funnelSnapshot);
         logUiState({
           action: 'tone_change',
@@ -137,7 +139,7 @@ export function OutpatientMockPage() {
         });
 
         if (typeof window !== 'undefined') {
-          (window as any).__OUTPATIENT_FUNNEL__ = funnelSnapshot;
+          (window as any).__OUTPATIENT_FUNNEL__ = maskedSnapshot;
           (window as any).__OUTPATIENT_RESOLVE__ = resolveRecord;
           (window as any).__OUTPATIENT_ORCHESTRATION__ = orchestrationRecord;
         }

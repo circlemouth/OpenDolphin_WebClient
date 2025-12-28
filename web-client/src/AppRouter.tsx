@@ -30,6 +30,11 @@ import { PatientsPage } from './features/patients/PatientsPage';
 import { AdministrationPage } from './features/administration/AdministrationPage';
 import { AppToastProvider, type AppToast, type AppToastInput } from './libs/ui/appToast';
 import { logAuditEvent } from './libs/audit/auditLogger';
+import {
+  SESSION_EXPIRED_EVENT,
+  clearSessionExpiredNotice,
+  type SessionExpiryNotice,
+} from './libs/session/sessionExpiry';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
@@ -73,6 +78,17 @@ const clearSession = () => {
   clearStoredAuthFlags();
 };
 
+const clearStoredCredentials = () => {
+  if (typeof localStorage === 'undefined') return;
+  try {
+    localStorage.removeItem('devPasswordMd5');
+    localStorage.removeItem('devClientUuid');
+    localStorage.removeItem('devRole');
+  } catch {
+    // ignore storage errors
+  }
+};
+
 const SessionContext = createContext<Session | null>(null);
 
 // eslint-disable-next-line react-refresh/only-export-components
@@ -101,10 +117,14 @@ export function AppRouter() {
     persistSession(result);
   };
 
-  const handleLogout = () => {
+  const handleLogout = useCallback((reason: 'manual' | 'session-expired' = 'manual') => {
+    if (reason === 'manual') {
+      clearSessionExpiredNotice();
+    }
+    clearStoredCredentials();
     clearSession();
     setSession(null);
-  };
+  }, []);
 
   useEffect(() => {
     const stored = loadStoredSession();
@@ -113,6 +133,34 @@ export function AppRouter() {
       updateObservabilityMeta({ runId: stored.runId });
     }
   }, []);
+
+  useEffect(() => {
+    const onSessionExpired = (event: Event) => {
+      const detail = (event as CustomEvent<SessionExpiryNotice>).detail;
+      if (session) {
+        logAuditEvent({
+          runId: session.runId,
+          source: 'auth',
+          note: 'session expired',
+          payload: {
+            reason: detail?.reason,
+            status: detail?.status,
+            screen: 'session',
+            actor: `${session.facilityId}:${session.userId}`,
+          },
+        });
+      }
+      handleLogout('session-expired');
+    };
+    if (typeof window !== 'undefined') {
+      window.addEventListener(SESSION_EXPIRED_EVENT, onSessionExpired as EventListener);
+    }
+    return () => {
+      if (typeof window !== 'undefined') {
+        window.removeEventListener(SESSION_EXPIRED_EVENT, onSessionExpired as EventListener);
+      }
+    };
+  }, [handleLogout, session]);
 
   return (
     <BrowserRouter>
@@ -123,7 +171,7 @@ export function AppRouter() {
             session ? <Navigate to="/reception" replace /> : <LoginScreen onLoginSuccess={handleLoginSuccess} />
           }
         />
-        <Route element={<Protected session={session} onLogout={handleLogout} />}>
+        <Route element={<Protected session={session} onLogout={() => handleLogout('manual')} />}>
           <Route index element={<Navigate to="/reception" replace />} />
         <Route path="/reception" element={<ConnectedReception />} />
         <Route path="/charts" element={<ConnectedCharts />} />
