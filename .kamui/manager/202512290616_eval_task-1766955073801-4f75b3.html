@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f4f8f9;
+        padding: 18px 20px;
+      }
+      .score-title {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 8px;
+      }
+      .score-value {
+        font-size: 30px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .metrics {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: start;
+      }
+      .metrics-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metrics-list div {
+        margin-bottom: 6px;
+      }
+      .section-title {
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 8px;
+        color: #2c3a40;
+      }
+      .summary {
+        font-size: 13px;
+        color: #2c3a40;
+      }
+      .path {
+        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 12px;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 6px 8px;
+      }
+      .radar {
+        width: 140px;
+        height: 140px;
+      }
+      .radar text {
+        font-size: 9px;
+        fill: #3a4b53;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 8px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 72_性能最適化とキャッシュ設計</h1>
+        <p class="monitor-description">
+          タスク概要: 大量データ描画の最適化・キャッシュ期限/再取得条件の整理・診療中のUIブロッキング抑止の非同期制御方針を文書化。
+          評価基準: 緻密性。
+          RUN_ID: 20251228T211507Z。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-title">AI: task-1766955073801-4f75b3（gemini cli）</div>
+          <div class="score-value">🥇 537 / 600</div>
+          <div class="score-sub">判定: Gold</div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">AI: task-1766955074109-a7f351（gemini cli）</div>
+          <div class="score-value">🥈 502 / 600</div>
+          <div class="score-sub">判定: Silver</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1766955073801-4f75b3</th>
+            <th>Agent task-1766955074109-a7f351</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-29 06:16</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">現行実装の具体値に基づく性能/キャッシュ方針を整理。</span>
+              </div>
+              <div class="metrics">
+                <svg class="radar" data-values="92,90,92,85,88,90" data-labels="要件網羅性,具体性,キャッシュ精度,非同期制御,検証明確性,ドキュメント品質" viewBox="0 0 140 140" aria-label="六角形チャート"></svg>
+                <div class="metrics-list">
+                  <div>要件網羅性 92点</div>
+                  <div>具体性 90点</div>
+                  <div>キャッシュ精度 92点</div>
+                  <div>非同期制御 85点</div>
+                  <div>検証明確性 88点</div>
+                  <div>ドキュメント品質 90点</div>
+                </div>
+              </div>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">要件整理とTODOの体系化を中心に設計を記述。</span>
+              </div>
+              <div class="metrics">
+                <svg class="radar" data-values="86,80,85,84,82,85" data-labels="要件網羅性,具体性,キャッシュ精度,非同期制御,検証明確性,ドキュメント品質" viewBox="0 0 140 140" aria-label="六角形チャート"></svg>
+                <div class="metrics-list">
+                  <div>要件網羅性 86点</div>
+                  <div>具体性 80点</div>
+                  <div>キャッシュ精度 85点</div>
+                  <div>非同期制御 84点</div>
+                  <div>検証明確性 82点</div>
+                  <div>ドキュメント品質 85点</div>
+                </div>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">評価理由</td>
+            <td class="summary">
+              要件を「既存実装の具体値」に紐付けて整理しており、staleTime/ETag/画面別の再取得条件まで明確。UIブロッキング抑止の非同期制御も具体的で、Done条件との整合が高い。一方で、P95/P99など計測計画の具体数値は次アクションに留まり、検証観点は一部抽象に留まる。
+            </td>
+            <td class="summary">
+              目的とTODOが整理され、対象画面・施策・計測観点が明文化されている。キャッシュ分類も網羅的だが、既存実装の値や運用条件との突合せが弱く、具体性が一段劣る。非同期制御は方針としては十分だが、適用先と実装入口が限定的。
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">コミット</td>
+            <td class="summary">
+              <div>1ae3b6ed2 docs: define performance and cache policy</div>
+              <div class="note">未コミット変更: なし</div>
+            </td>
+            <td class="summary">
+              <div>9058ad191 docs: define performance and cache design</div>
+              <div class="note">未コミット変更: なし</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">差分サマリ</td>
+            <td class="summary">
+              <div>対象ファイル: 72_性能最適化とキャッシュ設計.md</div>
+              <div>主な変更: 既存実装のReact Query設定/画面ごとの再取得条件/ETag方針/非同期制御を具体化。</div>
+            </td>
+            <td class="summary">
+              <div>対象ファイル: 72_性能最適化とキャッシュ設計.md</div>
+              <div>主な変更: 要件整理と方針・TODOの体系化、キャッシュ分類と非同期制御の設計整理。</div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">成果物リンク</td>
+            <td class="summary">
+              <div class="path">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766955073801-4f75b3/src/webclient_productionization/infrastructure/72_性能最適化とキャッシュ設計.md</div>
+              <div class="note">別worktreeでの成果物である点に留意。</div>
+            </td>
+            <td class="summary">
+              <div class="path">/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766955074109-a7f351/src/webclient_productionization/infrastructure/72_性能最適化とキャッシュ設計.md</div>
+              <div class="note">別worktreeでの成果物である点に留意。</div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    <script>
+      const radars = document.querySelectorAll('.radar');
+      const max = 100;
+      radars.forEach((svg) => {
+        const values = svg.dataset.values.split(',').map((v) => Number(v.trim()));
+        const center = 70;
+        const radius = 50;
+        const points = values.map((value, index) => {
+          const angle = (Math.PI * 2 * index) / values.length - Math.PI / 2;
+          const r = (value / max) * radius;
+          const x = center + Math.cos(angle) * r;
+          const y = center + Math.sin(angle) * r;
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        const grid = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        grid.setAttribute('points', Array.from({ length: 6 }, (_, i) => {
+          const angle = (Math.PI * 2 * i) / 6 - Math.PI / 2;
+          const x = center + Math.cos(angle) * radius;
+          const y = center + Math.sin(angle) * radius;
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        }).join(' '));
+        grid.setAttribute('fill', 'none');
+        grid.setAttribute('stroke', '#c4d3d7');
+        grid.setAttribute('stroke-width', '1');
+
+        const poly = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        poly.setAttribute('points', points.join(' '));
+        poly.setAttribute('fill', 'rgba(85, 140, 160, 0.35)');
+        poly.setAttribute('stroke', '#3a4b53');
+        poly.setAttribute('stroke-width', '1.4');
+
+        svg.appendChild(grid);
+        svg.appendChild(poly);
+      });
+    </script>
+  </body>
+</html>

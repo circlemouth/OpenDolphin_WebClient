@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-summary {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #12323d;
+      }
+      .score-total span {
+        font-size: 18px;
+        font-weight: 600;
+        margin-left: 6px;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .radar-wrap {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+      }
+      .radar {
+        width: 180px;
+        height: 180px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-weight: 600;
+        margin: 12px 0 6px;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .link-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：旧来版処方オーダー入力調査（比較）</h1>
+        <p class="monitor-description">
+          タスク「01_旧来版_処方オーダー入力調査」の成果物を、緻密性観点で比較評価。RUN_ID=20251228T213056Z / 評価開始日: 2025-12-29 06:32（ローカル）
+        </p>
+        <p class="monitor-description">
+          仕事の概要: 旧来版クライアントの処方/注射/放射線/汎用オーダー入力UIを調査し、入力欄・必須条件・保存フロー・コード参照を差分表テンプレートへ記入した成果物を比較。
+        </p>
+      </header>
+
+      <section class="score-summary">
+        <div class="score-card">
+          <h2>claude code / task-1766956656657-3aad22</h2>
+          <div class="score-total">🥈 449<span>/600</span></div>
+          <div class="score-meta">評価基準: 緻密性 / メダル: silver</div>
+        </div>
+        <div class="score-card">
+          <h2>claude code / task-1766956656544-ed4544</h2>
+          <div class="score-total">🏆 513<span>/600</span></div>
+          <div class="score-meta">評価基準: 緻密性 / メダル: gold</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1766956656657-3aad22</th>
+            <th>Agent task-1766956656544-ed4544</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">緻密性評価（比較対象A）</span>
+              </div>
+              <div class="radar-wrap">
+                <svg class="radar" data-values="80,76,78,65,80,70" data-labels="調査網羅性,UI/入力詳細,必須条件把握,操作フロー整理,参照紐付け,差分表完成度" viewBox="0 0 180 180">
+                  <polygon class="radar-bg" points="" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="radar-data" points="" fill="rgba(43,98,116,0.35)" stroke="#2b6274" stroke-width="1"></polygon>
+                  <g class="radar-grid" stroke="#c4d3d7" stroke-width="0.6"></g>
+                  <g class="radar-labels" fill="#2c3a40" font-size="9"></g>
+                </svg>
+                <ul class="metric-list">
+                  <li>調査網羅性 80点</li>
+                  <li>UI/入力詳細 76点</li>
+                  <li>必須条件把握 78点</li>
+                  <li>操作フロー整理 65点</li>
+                  <li>参照紐付け 80点</li>
+                  <li>差分表完成度 70点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由（緻密性）</div>
+              <pre>UI構成・必須条件・保存フローの整理は一通り揃っているが、処置/検査系の対象範囲や例外条件の粒度が一段浅い。差分表は主要項目を押さえているものの、共通操作と各エディタ固有操作の境界がやや粗く、詳細チェックや例外条件の明示に改善余地がある。</pre>
+              <div class="section-title">コミットログ（先頭20件）</div>
+              <pre>316701a35 (task/task-1766956656657-3aad22) Add legacy prescription order input survey
+f5ca90405 (task/task-1766956680110-1ec9eb, task/task-1766955758611-0f139b, task/task-1766955754053-4ae431, task/task-1766955721076-86f1cb, task/task-1766955701502-5abb62, task/task-1766955701381-f1b734) Merge branch 'task/task-1766953308721-86cb4c'
+8a851a290 Update kamui app metadata
+71f87fe67 (task/task-1766955098591-21c1a1) Update tasks state
+fb8845126 (task/task-1766954914344-dbf362, task/task-1766954884538-8d6dba, task/task-1766954884308-400af1, task/task-1766954739201-2a6c3f) Merge branch 'task/task-1766951703921-1e13ce'
+bc3eb486a chore: update tasks state
+277a3a1d0 (task/task-1766953308721-86cb4c) Add order input gap analysis scope and template
+c2eb82032 (task/task-1766951703921-1e13ce) chore: unify api base env templates and docs
+3a20f441a (task/task-1766953324357-4a4fe1) Merge branch 'task/task-1766951594836-7b281b'
+1d8100364 Update kamui task state
+effebd337 chore: add stage/prod env templates and doc
+bd80c0709 (task/task-1766951594836-7b281b) Add order input gap analysis gantt plan
+b13493150 (task/task-1766951719798-a48fd4, task/task-1766951605458-f02f5d) Merge branch 'task/task-1766923465259-4f4e89'
+e96b9f7ce Update tasks state before merge
+057a2a1ad (task/task-1766923465259-4f4e89) Validate runId override and record MSW disabled evidence
+823e09a29 OutpatientMock QA controls for runId and MSW
+5406db61f (task/task-1766923478242-e60f2e) Merge branch 'task/task-1766918830675-581286'
+12c033696 chore: update kamui task state
+ead860d94 (task/task-1766918830675-581286) chore: 検証手順を追記
+8d7ba72a1 chore: 作業ログにコミットを記録</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>1 file changed, 147 insertions(+)
+- src/order_input_gap_analysis/01_旧来版_処方オーダー入力調査.md</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし（worktree: task-1766956656657-3aad22）</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766956656657-3aad22/src/order_input_gap_analysis/01_旧来版_処方オーダー入力調査.md</li>
+              </ul>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">緻密性評価（比較対象B）</span>
+              </div>
+              <div class="radar-wrap">
+                <svg class="radar" data-values="90,88,86,80,85,84" data-labels="調査網羅性,UI/入力詳細,必須条件把握,操作フロー整理,参照紐付け,差分表完成度" viewBox="0 0 180 180">
+                  <polygon class="radar-bg" points="" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="radar-data" points="" fill="rgba(43,98,116,0.35)" stroke="#2b6274" stroke-width="1"></polygon>
+                  <g class="radar-grid" stroke="#c4d3d7" stroke-width="0.6"></g>
+                  <g class="radar-labels" fill="#2c3a40" font-size="9"></g>
+                </svg>
+                <ul class="metric-list">
+                  <li>調査網羅性 90点</li>
+                  <li>UI/入力詳細 88点</li>
+                  <li>必須条件把握 86点</li>
+                  <li>操作フロー整理 80点</li>
+                  <li>参照紐付け 85点</li>
+                  <li>差分表完成度 84点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由（緻密性）</div>
+              <pre>処方/注射/放射線/汎用の各画面に対する入力欄・選択肢・必須条件が細かく整理され、エディタ固有の条件や例外条件（ラボ検体/手技料なし等）まで記述されている。差分表の粒度も高く、操作とコード参照の対応が明確で、比較にそのまま利用できる完成度。</pre>
+              <div class="section-title">コミットログ（先頭20件）</div>
+              <pre>89a49e457 (task/task-1766956656544-ed4544) docs: add legacy prescription order input survey
+f5ca90405 (task/task-1766956680110-1ec9eb, task/task-1766955758611-0f139b, task/task-1766955754053-4ae431, task/task-1766955721076-86f1cb, task/task-1766955701502-5abb62, task/task-1766955701381-f1b734) Merge branch 'task/task-1766953308721-86cb4c'
+8a851a290 Update kamui app metadata
+71f87fe67 (task/task-1766955098591-21c1a1) Update tasks state
+fb8845126 (task/task-1766954914344-dbf362, task/task-1766954884538-8d6dba, task/task-1766954884308-400af1, task/task-1766954739201-2a6c3f) Merge branch 'task/task-1766951703921-1e13ce'
+bc3eb486a chore: update tasks state
+277a3a1d0 (task/task-1766953308721-86cb4c) Add order input gap analysis scope and template
+c2eb82032 (task/task-1766951703921-1e13ce) chore: unify api base env templates and docs
+3a20f441a (task/task-1766953324357-4a4fe1) Merge branch 'task/task-1766951594836-7b281b'
+1d8100364 Update kamui task state
+effebd337 chore: add stage/prod env templates and doc
+bd80c0709 (task/task-1766951594836-7b281b) Add order input gap analysis gantt plan
+b13493150 (task/task-1766951719798-a48fd4, task/task-1766951605458-f02f5d) Merge branch 'task/task-1766923465259-4f4e89'
+e96b9f7ce Update tasks state before merge
+057a2a1ad (task/task-1766923465259-4f4e89) Validate runId override and record MSW disabled evidence
+823e09a29 OutpatientMock QA controls for runId and MSW
+5406db61f (task/task-1766923478242-e60f2e) Merge branch 'task/task-1766918830675-581286'
+12c033696 chore: update kamui task state
+ead860d94 (task/task-1766918830675-581286) chore: 検証手順を追記
+8d7ba72a1 chore: 作業ログにコミットを記録</pre>
+              <div class="section-title">差分サマリ</div>
+              <pre>1 file changed, 219 insertions(+)
+- src/order_input_gap_analysis/01_旧来版_処方オーダー入力調査.md</pre>
+              <div class="section-title">未コミット変更</div>
+              <pre>なし（worktree: task-1766956656544-ed4544）</pre>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766956656544-ed4544/src/order_input_gap_analysis/01_旧来版_処方オーダー入力調査.md</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      (function () {
+        const toPoint = (cx, cy, r, angle) => {
+          const rad = (Math.PI / 180) * angle;
+          return [cx + r * Math.cos(rad), cy + r * Math.sin(rad)];
+        };
+
+        document.querySelectorAll('.radar').forEach((svg) => {
+          const values = (svg.getAttribute('data-values') || '').split(',').map((v) => Number(v.trim()) || 0);
+          const labels = (svg.getAttribute('data-labels') || '').split(',').map((v) => v.trim());
+          const cx = 90;
+          const cy = 90;
+          const maxR = 70;
+          const basePoints = [];
+          const dataPoints = [];
+          const labelGroup = svg.querySelector('.radar-labels');
+          const gridGroup = svg.querySelector('.radar-grid');
+
+          for (let i = 0; i < 6; i += 1) {
+            const angle = -90 + i * 60;
+            const [bx, by] = toPoint(cx, cy, maxR, angle);
+            basePoints.push(`${bx.toFixed(2)},${by.toFixed(2)}`);
+
+            const ratio = Math.max(0, Math.min(1, (values[i] || 0) / 100));
+            const [dx, dy] = toPoint(cx, cy, maxR * ratio, angle);
+            dataPoints.push(`${dx.toFixed(2)},${dy.toFixed(2)}`);
+
+            const [lx, ly] = toPoint(cx, cy, maxR + 16, angle);
+            const label = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            label.setAttribute('x', lx);
+            label.setAttribute('y', ly);
+            label.setAttribute('text-anchor', 'middle');
+            label.textContent = labels[i] || '';
+            labelGroup.appendChild(label);
+
+            const axis = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            axis.setAttribute('x1', cx);
+            axis.setAttribute('y1', cy);
+            axis.setAttribute('x2', bx);
+            axis.setAttribute('y2', by);
+            gridGroup.appendChild(axis);
+          }
+
+          svg.querySelector('.radar-bg').setAttribute('points', basePoints.join(' '));
+          svg.querySelector('.radar-data').setAttribute('points', dataPoints.join(' '));
+        });
+      })();
+    </script>
+  </body>
+</html>

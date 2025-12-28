@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 24px 0 28px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 15px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-total span {
+        font-size: 18px;
+        margin-left: 6px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 6px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+      .hex-label {
+        font-size: 10px;
+        fill: #2c3a40;
+      }
+      .hex-score {
+        font-size: 10px;
+        fill: #1f2a30;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">対象: [order input gap analysis plan 20251229] 06_WEB_文書オーダー入力調査。モダナイズ版Webクライアントの文書オーダー入力欄/テンプレ選択/印刷導線と旧来版との差分整理に対する成果物を比較評価。</p>
+        <p class="monitor-description">仕事の概要: Web側の文書登録/印刷導線の現状整理、旧来版の文書種別・必須項目・発行フローの差分記述、差分表テンプレートの記載。2つのブランチ成果物を比較し、緻密性を中心に採点。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>gemini cli / task-1766960992058-c8af75</h2>
+          <div class="score-total">445 / 600 <span>🥉</span></div>
+          <div class="score-note">総合スコア換算: 74点（緻密性評価中心）</div>
+        </div>
+        <div class="score-card">
+          <h2>gemini cli / task-1766960992240-8fbe42</h2>
+          <div class="score-total">528 / 600 <span>🥇</span></div>
+          <div class="score-note">総合スコア換算: 88点（緻密性評価中心）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1766960992058-c8af75</th>
+            <th>gemini cli / task-1766960992240-8fbe42</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-28 22:41</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">Web側の文書登録/印刷導線と旧来版差分を整理。差分表テンプレート記入まで実施。</span>
+              </div>
+              <div class="metric-grid">
+                <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="指標チャート">
+                  <polygon points="80,10 140,45 140,115 80,150 20,115 20,45" fill="#f2f6f7" stroke="#8aa2a9" />
+                  <polygon points="80,20 128,48 128,112 80,140 32,112 32,48" fill="#cbdde1" stroke="#5f7a82" />
+                  <text x="80" y="18" text-anchor="middle" class="hex-label">緻密性 78</text>
+                  <text x="140" y="60" text-anchor="end" class="hex-label">完成度 70</text>
+                  <text x="140" y="118" text-anchor="end" class="hex-label">差分明確性 80</text>
+                  <text x="80" y="156" text-anchor="middle" class="hex-label">テンプレ適合 75</text>
+                  <text x="20" y="118" text-anchor="start" class="hex-label">参照網羅 72</text>
+                  <text x="20" y="60" text-anchor="start" class="hex-label">再現性 70</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性: Web側導線の記載は網羅的だが、旧来版の具体的入力項目・代表文書プラグインの根拠が限定的。</li>
+                  <li>完成度: 目的の差分表は埋まっているが、旧来版の詳細な入力欄例が不足。</li>
+                  <li>差分明確性: 文書種別/必須項目/発行フローの差分整理は明確。</li>
+                  <li>テンプレ適合: 指定テンプレート項目は充足。</li>
+                  <li>参照網羅: Web側参照は十分、旧来版の参照がChartImplに偏る。</li>
+                  <li>再現性: RUN_IDは記載済みだが、調査根拠の具体コードパスが限定的。</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">成果物リンク（別worktree）:</p>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766960992058-c8af75/src/order_input_gap_analysis/06_WEB_文書オーダー入力調査.md">06_WEB_文書オーダー入力調査.md</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>Commit: fa43a7d3b "Add web document order input gap analysis"
+Files: src/order_input_gap_analysis/06_WEB_文書オーダー入力調査.md (+102)
+Diff summary:
+- Web側の文書登録/印刷導線/ガード条件を整理
+- 旧来版との差分（種別/必須/発行フロー）を記載
+- 差分表テンプレに入力方式/必須条件/保存挙動/参照コードを記載
+
+未コミット変更: なし</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">Webと旧来版の双方を詳細に整理し、代表文書プラグインと入力欄例まで追加。</span>
+              </div>
+              <div class="metric-grid">
+                <svg width="160" height="160" viewBox="0 0 160 160" role="img" aria-label="指標チャート">
+                  <polygon points="80,10 140,45 140,115 80,150 20,115 20,45" fill="#f2f6f7" stroke="#8aa2a9" />
+                  <polygon points="80,16 134,47 134,113 80,144 26,113 26,47" fill="#b5d0d6" stroke="#4f6f76" />
+                  <text x="80" y="18" text-anchor="middle" class="hex-label">緻密性 90</text>
+                  <text x="140" y="60" text-anchor="end" class="hex-label">完成度 88</text>
+                  <text x="140" y="118" text-anchor="end" class="hex-label">差分明確性 86</text>
+                  <text x="80" y="156" text-anchor="middle" class="hex-label">テンプレ適合 85</text>
+                  <text x="20" y="118" text-anchor="start" class="hex-label">参照網羅 92</text>
+                  <text x="20" y="60" text-anchor="start" class="hex-label">再現性 87</text>
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性: 旧来版の具体的文書プラグインと入力欄例まで整理し、差分の説得力が高い。</li>
+                  <li>完成度: 指示項目を満たし、差分表もテンプレ準拠で充実。</li>
+                  <li>差分明確性: 文書種別・必須項目・発行フローの違いが具体的。</li>
+                  <li>テンプレ適合: 差分表の必須欄を完全に埋めている。</li>
+                  <li>参照網羅: Web + 旧来版の実装/リソースまで参照範囲が広い。</li>
+                  <li>再現性: 参照箇所が明確で、調査根拠の追跡が容易。</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">成果物リンク（別worktree）:</p>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1766960992240-8fbe42/src/order_input_gap_analysis/06_WEB_文書オーダー入力調査.md">06_WEB_文書オーダー入力調査.md</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>Commit: b0114c5dd "Add web document order input gap analysis"
+Files: src/order_input_gap_analysis/06_WEB_文書オーダー入力調査.md (+105)
+Diff summary:
+- Web側の文書登録/印刷導線/ガード条件を明記
+- 旧来版の文書プラグイン種別・入力欄例・PDF保存先を具体化
+- 差分表テンプレを項目ごとに拡充（Web/旧来版の双方記載）
+
+未コミット変更: なし</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 05 WEB：処方オーダー入力調査</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-banner {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f2f6f7;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px 0;
+        font-size: 16px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .hex-block {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 16px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-block ul {
+        margin: 0;
+        padding-left: 18px;
+        color: #2c3a40;
+        font-size: 13px;
+      }
+      .pill {
+        display: inline-block;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 11px;
+        background: #e3edf0;
+        color: #2c3a40;
+        border: 1px solid #cdd9dd;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：05 WEB 処方オーダー入力調査</h1>
+        <p class="monitor-description">対象ブランチは別 worktree 上の成果物です。差分とコミットログを参照して、緻密性を中心に比較評価しました。</p>
+        <p class="monitor-description">対象: task/task-1766959811446-f9f2dc・task/task-1766959811628-849de6 / RUN_ID: 20251228T222821Z</p>
+      </header>
+
+      <section class="score-banner">
+        <div class="score-card">
+          <h2>claude code / task-1766959811446-f9f2dc</h2>
+          <div class="score-total">459 / 600 🥉</div>
+          <div class="score-sub">平均 77 点（緻密性評価）</div>
+        </div>
+        <div class="score-card">
+          <h2>claude code / task-1766959811628-849de6</h2>
+          <div class="score-total">531 / 600 🥈</div>
+          <div class="score-sub">平均 89 点（緻密性評価）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent task-1766959811446-f9f2dc</th>
+            <th>Agent task-1766959811628-849de6</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">コミット: 6d65cf52a / 追加ファイル: 05_WEB_処方オーダー入力調査.md</span>
+              </div>
+              <div class="hex-block">
+                <svg viewBox="0 0 200 200" width="200" height="200" aria-label="六角形チャート">
+                  <polygon points="100,10 176,55 176,145 100,190 24,145 24,55" fill="#eef3f4" stroke="#9fb2b8" stroke-width="2" />
+                  <polygon points="100,28 160,63 160,137 100,172 40,137 40,63" fill="rgba(90,130,140,0.2)" stroke="#5a828c" stroke-width="2" />
+                  <line x1="100" y1="10" x2="100" y2="190" stroke="#b4c3c7" stroke-width="1" />
+                  <line x1="24" y1="55" x2="176" y2="145" stroke="#b4c3c7" stroke-width="1" />
+                  <line x1="176" y1="55" x2="24" y2="145" stroke="#b4c3c7" stroke-width="1" />
+                </svg>
+                <ul>
+                  <li>要件充足 82点</li>
+                  <li>入力フロー整理 78点</li>
+                  <li>差分分析 75点</li>
+                  <li>差分表網羅性 72点</li>
+                  <li>参照コード明確さ 74点</li>
+                  <li>明瞭性/一貫性 78点</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">評価理由: 要求の主要項目は押さえているが、参照セクションが簡潔で旧来版 UI 詳細やブロック条件の具体性がやや不足。</p>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ・差分要約</summary>
+                <pre>log:
+6d65cf52a Add prescription order input gap analysis
+
+files:
+A src/order_input_gap_analysis/05_WEB_処方オーダー入力調査.md (51 lines)
+
+main diff summary:
+- Web フロー整理と差分ポイント記載
+- 差分表は Web 項目中心で旧来版の入力補助/UI 参照は一部のみ
+</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre><a href="../../src/order_input_gap_analysis/05_WEB_処方オーダー入力調査.md">src/order_input_gap_analysis/05_WEB_処方オーダー入力調査.md</a></pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">コミット: 493f3af73 / 追加ファイル: 05_WEB_処方オーダー入力調査.md</span>
+              </div>
+              <div class="hex-block">
+                <svg viewBox="0 0 200 200" width="200" height="200" aria-label="六角形チャート">
+                  <polygon points="100,10 176,55 176,145 100,190 24,145 24,55" fill="#eef3f4" stroke="#9fb2b8" stroke-width="2" />
+                  <polygon points="100,20 168,60 168,140 100,180 32,140 32,60" fill="rgba(90,130,140,0.28)" stroke="#4b7680" stroke-width="2" />
+                  <line x1="100" y1="10" x2="100" y2="190" stroke="#b4c3c7" stroke-width="1" />
+                  <line x1="24" y1="55" x2="176" y2="145" stroke="#b4c3c7" stroke-width="1" />
+                  <line x1="176" y1="55" x2="24" y2="145" stroke="#b4c3c7" stroke-width="1" />
+                </svg>
+                <ul>
+                  <li>要件充足 90点</li>
+                  <li>入力フロー整理 88点</li>
+                  <li>差分分析 90点</li>
+                  <li>差分表網羅性 88点</li>
+                  <li>参照コード明確さ 90点</li>
+                  <li>明瞭性/一貫性 85点</li>
+                </ul>
+              </div>
+              <p class="snapshot-summary">評価理由: 参照一覧・ブロック条件・保存フロー・旧来版の UI 差分まで網羅し、差分表にも旧来版項目を載せて比較が明瞭。</p>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ・差分要約</summary>
+                <pre>log:
+493f3af73 Add web prescription order input gap analysis
+
+files:
+A src/order_input_gap_analysis/05_WEB_処方オーダー入力調査.md (73 lines)
+
+main diff summary:
+- 参照ファイル一覧と入力フロー整理を明記
+- readOnly/missingMaster/fallbackUsed のブロック条件を明記
+- 旧来版 UI/保存導線の比較項目を差分表に明示
+</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">成果物リンク</summary>
+                <pre><a href="../../src/order_input_gap_analysis/05_WEB_処方オーダー入力調査.md">src/order_input_gap_analysis/05_WEB_処方オーダー入力調査.md</a></pre>
+              </details>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <div class="agent-meta"><span class="pill">メダル</span> 🥉 / スコア 77</div>
+              <p class="snapshot-summary">不足: ブロック条件や旧来版 UI 補助の記述が簡潔で、差分表の旧来側が薄い。</p>
+            </td>
+            <td>
+              <div class="agent-meta"><span class="pill">メダル</span> 🥈 / スコア 89</div>
+              <p class="snapshot-summary">強み: 差分表に旧来版項目も含め、入力補助・必須判定・保存導線を具体的に整理。</p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
