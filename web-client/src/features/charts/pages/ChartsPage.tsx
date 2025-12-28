@@ -1164,6 +1164,8 @@ function ChartsContent() {
         trigger: 'approval_unlock',
         approvalState: 'released',
         lockStatus: 'approved',
+        patientId: approvalTarget.patientId,
+        appointmentId: approvalTarget.appointmentId,
         receptionId: approvalTarget.receptionId,
         facilityId: session.facilityId,
         userId: session.userId,
@@ -1185,6 +1187,8 @@ function ChartsContent() {
         trigger: 'approval_unlock',
         approvalState: 'released',
         lockStatus: 'approved',
+        patientId: approvalTarget.patientId,
+        appointmentId: approvalTarget.appointmentId,
         receptionId: approvalTarget.receptionId,
       },
     });
