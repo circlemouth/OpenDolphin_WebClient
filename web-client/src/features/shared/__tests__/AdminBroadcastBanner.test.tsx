@@ -25,7 +25,7 @@ describe('AdminBroadcastBanner', () => {
 
     const banner = screen.getByRole('alert');
     expect(banner).toHaveClass('tone-banner--warning');
-    expect(banner.textContent).toContain('配信:未反映');
+    expect(banner.textContent).toContain('配信:未反映（D=表示/S=送信/M=master）');
     expect(banner.textContent).toContain('D:未反映');
     expect(banner.textContent).toContain('S:反映');
     expect(banner.textContent).toContain('M:不明');

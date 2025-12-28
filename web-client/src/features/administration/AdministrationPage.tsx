@@ -237,6 +237,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     },
     onSuccess: (data, variables) => {
       queryClient.setQueryData(['orca-queue'], data);
+      const queueOperation = variables.kind;
       publishAdminBroadcast({
         runId: data.runId ?? runId,
         deliveryId: variables.patientId,
@@ -245,18 +246,30 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         queueMode: data.source,
         verifyAdminDelivery: data.verifyAdminDelivery,
         environment: environmentLabel,
-        note: variables.kind === 'retry' ? '再送完了' : '破棄完了',
+        note: queueOperation === 'retry' ? '再送完了' : '破棄完了',
+      });
+      logAuditEvent({
+        runId: data.runId ?? runId,
+        source: 'admin/delivery',
+        note: `orca queue ${queueOperation}`,
+        payload: {
+          operation: queueOperation,
+          patientId: variables.patientId,
+          environment: environmentLabel,
+          queueMode: data.source,
+          queue: data.queue,
+        },
       });
       logAuditEvent({
         runId: data.runId ?? runId,
         source: 'orca/queue',
-        note: variables.kind,
+        note: queueOperation,
         patientId: variables.patientId,
-        payload: { patientId: variables.patientId, queue: data.queue },
+        payload: { patientId: variables.patientId, queue: data.queue, operation: queueOperation },
       });
       setFeedback({
         tone: 'info',
-        message: variables.kind === 'retry' ? '再送リクエストを送信しました。' : 'キューエントリを破棄しました。',
+        message: queueOperation === 'retry' ? '再送リクエストを送信しました。' : 'キューエントリを破棄しました。',
       });
     },
     onError: () => {

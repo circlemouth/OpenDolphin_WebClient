@@ -51,7 +51,9 @@ export function AdminBroadcastBanner({ broadcast, surface }: AdminBroadcastBanne
   const message = [
     '管理設定が更新されました',
     broadcast.environment ? `environment: ${broadcast.environment}` : undefined,
-    deliveryStatusSummary.summary ? `配信:${deliveryStatusSummary.summary}` : undefined,
+    deliveryStatusSummary.summary
+      ? `配信:${deliveryStatusSummary.summary}${deliveryStatusSummary.parts.length ? '（D=表示/S=送信/M=master）' : ''}`
+      : undefined,
     broadcast.deliveryId ? `deliveryId: ${broadcast.deliveryId}` : undefined,
     broadcast.deliveryVersion ? `version: ${broadcast.deliveryVersion}` : undefined,
     broadcast.deliveredAt ? `deliveredAt: ${formatTimestamp(broadcast.deliveredAt) ?? broadcast.deliveredAt}` : undefined,
