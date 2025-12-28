@@ -96,32 +96,6 @@
     "description": "# 50 設定配信フォームの本番要件充足\n\n- `chartsDisplayEnabled/chartsSendEnabled/chartsMasterSource` の配信状態を UI とバナーに反映する。\n- 環境情報（dev/stage）と最終配信時刻の表示を更新し、監査イベントを統一する。"
   },
   {
-    "id": "task-1766897395849-6c089e",
-    "name": "CodexCLI1: [webclient productionization plan 20251226] 40_患者一覧と保存ビュー整備\n期間: 02/03 21:00 - 02/05 21:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 40 患者一覧と保存ビュー整備\n\n- 診療科/担当医/属性のフィルタと保存済みビューを整備し、Reception からの導線を統一する。\n- 未紐付ステータスの警告表示とトーストを統合する。\n\nYAML ID: src/webclient_productionization/patients/40_患者一覧と保存ビュー整備.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-28T04:49:55.849Z",
-    "updatedAt": "2025-12-28T04:49:55.849Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766897395849-6c089e",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766897395848-6tiiws70",
-    "aiCompetitionGroupName": "[webclient productionization plan 20251226] 40_患者一覧と保存ビュー整備\n期間: 02/03 21:00 - 02/05 21:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 40 患者一覧と保存ビュー整備\n\n- 診療科/担当医/属性のフィルタと保存済みビューを整備し、Reception からの導線を統一する。\n- 未紐付ステータスの警告表示とトーストを統合する。\n\nYAML ID: src/webclient_productionization/patients/40_患者一覧と保存ビュー整備.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766897395849-6c089e",
-    "medal": "silver",
-    "aiCompetitionScore": 86
-  },
-  {
     "id": "task-1766897396051-d32ad9",
     "name": "CodexCLI2: [webclient productionization plan 20251226] 40_患者一覧と保存ビュー整備\n期間: 02/03 21:00 - 02/05 21:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 40 患者一覧と保存ビュー整備\n\n- 診療科/担当医/属性のフィルタと保存済みビューを整備し、Reception からの導線を統一する。\n- 未紐付ステータスの警告表示とトーストを統合する。\n\nYAML ID: src/webclient_productionization/patients/40_患者一覧と保存ビュー整備.md",
     "model": "Codex CLI",
@@ -196,41 +170,5 @@
     "worktreePath": ".worktrees/task-1766897498896-d62788",
     "medal": "gold",
     "aiCompetitionScore": 88
-  },
-  {
-    "id": "task-1766897512999-7b3919",
-    "name": "🔍Monitor: [webclient productionization plan 20251226] 50_設定配信フォームの本番要件充足\n期間: 02/03 21:00 - 02/05 21:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 50 設定配信フォームの本番要件充足\n\n- `chartsDisplayEnabled/chartsSendEnabled/chartsMasterSource` の配信状態を UI とバナーに反映する。\n- 環境情報（dev/stage）と最終配信時刻の表示を更新し、監査イベントを統一する。\n\nYAML ID: src/webclient_productionization/administration/50_設定配信フォームの本番要件充足.md",
-    "model": "codex",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-28T04:51:52.999Z",
-    "updatedAt": "2025-12-28T04:51:52.999Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1766897512999-7b3919",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766897498886-3i4urh6n",
-    "aiCompetitionGroupName": "[webclient productionization plan 20251226] 50_設定配信フォームの本番要件充足\n期間: 02/03 21:00 - 02/05 21:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 50 設定配信フォームの本番要件充足\n\n- `chartsDisplayEnabled/chartsSendEnabled/chartsMasterSource` の配信状態を UI とバナーに反映する。\n- 環境情報（dev/stage）と最終配信時刻の表示を更新し、監査イベントを統一する。\n\nYAML ID: src/webclient_productionization/administration/50_設定配信フォームの本番要件充足.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1766897499318-f7615a",
-      "task-1766897498896-d62788",
-      "task-1766897499090-5a5b85"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "与えられたタスクを完遂しているか、本番運用で耐える実装されているか",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1766897558886,
-    "worktreePath": ".worktrees/task-1766897512999-7b3919"
   }
 ]
