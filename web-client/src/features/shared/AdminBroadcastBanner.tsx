@@ -3,7 +3,8 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 
 type AdminBroadcastBannerProps = {
   broadcast?: AdminBroadcast | null;
-  surface: 'reception' | 'charts';
+  surface: 'reception' | 'charts' | 'patients';
+  runId?: string;
 };
 
 const formatTimestamp = (iso?: string) => {
@@ -35,8 +36,15 @@ const summarizeDeliveryStatus = (status?: AdminDeliveryStatus) => {
   return { summary, hasPending, parts };
 };
 
-export function AdminBroadcastBanner({ broadcast, surface }: AdminBroadcastBannerProps) {
+const resolveDestination = (surface: AdminBroadcastBannerProps['surface']) => {
+  if (surface === 'reception') return 'Reception';
+  if (surface === 'charts') return 'Charts';
+  return 'Patients';
+};
+
+export function AdminBroadcastBanner({ broadcast, surface, runId }: AdminBroadcastBannerProps) {
   if (!broadcast) return null;
+  const resolvedRunId = broadcast.runId ?? runId;
   const isQueueBroadcast = broadcast.action === 'queue' || !!broadcast.queueOperation;
   const hasChartsImpact =
     broadcast.chartsMasterSource === 'fallback' ||
@@ -95,9 +103,9 @@ export function AdminBroadcastBanner({ broadcast, surface }: AdminBroadcastBanne
     <ToneBanner
       tone={tone}
       message={message}
-      destination={surface === 'reception' ? 'Reception' : 'Charts'}
+      destination={resolveDestination(surface)}
       nextAction={isQueueBroadcast ? '再取得/キュー更新' : '再取得/リロードで反映'}
-      runId={broadcast.runId}
+      runId={resolvedRunId}
       ariaLive={tone === 'warning' ? 'assertive' : 'polite'}
     />
   );

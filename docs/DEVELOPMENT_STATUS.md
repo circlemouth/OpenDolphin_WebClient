@@ -20,6 +20,7 @@
 - 例外的に Phase2 文書を更新する場合は、事前にマネージャー指示を明記すること。
 
 ## 実施記録（最新）
+- 2025-12-28: 配信バナーの即時反映を Reception/Charts/Patients へ拡張し、runId/aria-live を統一（RUN_ID=20251228T104911Z）。
 - 2025-12-28: Administration 画面の system_admin ガード明示/監査ログ/不正操作メッセージ/導線を整備（RUN_ID=20251228T094553Z）。
 - 2025-12-28: Charts→Patients の returnTo フォールバックと kw 優先度仕様化、誤操作防止バナー補強（RUN_ID=20251228T094336Z）。
 - 2025-12-28: Charts→Patients の戻りURL保持と受付フィルタ同期、誤操作防止バナーを追加（RUN_ID=20251228T091828Z）。

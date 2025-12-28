@@ -233,6 +233,7 @@ export function ReceptionPage({
       retryCount: queryClient.getQueryState(claimQueryKey)?.fetchFailureCount ?? 0,
     },
   });
+  const refetchClaim = claimQuery.refetch;
 
   const appointmentQueryKey = ['outpatient-appointments', selectedDate, submittedKeyword, departmentFilter, physicianFilter];
   const appointmentQuery = useQuery({
@@ -253,6 +254,13 @@ export function ReceptionPage({
       retryCount: queryClient.getQueryState(appointmentQueryKey)?.fetchFailureCount ?? 0,
     },
   });
+  const refetchAppointment = appointmentQuery.refetch;
+
+  useEffect(() => {
+    if (!broadcast?.updatedAt) return;
+    void refetchClaim();
+    void refetchAppointment();
+  }, [broadcast?.updatedAt, refetchAppointment, refetchClaim]);
 
   const appointmentErrorContext = useMemo(() => {
     const httpStatus = appointmentQuery.data?.httpStatus;
@@ -926,7 +934,7 @@ export function ReceptionPage({
         <a className="skip-link" href="#reception-sidepane">
           右ペインへスキップ
         </a>
-        <AdminBroadcastBanner broadcast={broadcast} surface="reception" />
+        <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={mergedMeta.runId ?? initialRunId ?? flags.runId} />
         <section className="reception-page__header">
           <h1>{title}</h1>
           <p>{description}</p>
