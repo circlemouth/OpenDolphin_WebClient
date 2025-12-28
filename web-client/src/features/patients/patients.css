@@ -343,6 +343,29 @@
   border-radius: 10px;
 }
 
+.patients-page__block strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.patients-page__block ul {
+  margin: 0.35rem 0 0;
+  padding-left: 1.2rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.patients-page__block p {
+  margin: 0.45rem 0 0;
+}
+
+.patients-page__block small {
+  display: block;
+  margin-top: 0.35rem;
+  color: #7c2d12;
+}
+
 .patients-page__toast {
   border-radius: 12px;
   padding: 0.85rem 1rem;
@@ -373,6 +396,124 @@
   padding: 0.75rem 0.9rem;
   border-radius: 10px;
   color: #475569;
+}
+
+.patients-page__audit-view {
+  border: 1px dashed rgba(148, 163, 184, 0.45);
+  border-radius: 12px;
+  padding: 0.9rem;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.patients-page__audit-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.patients-page__audit-head h3 {
+  margin: 0;
+}
+
+.patients-page__audit-head button {
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  padding: 0.45rem 0.8rem;
+  background: #ffffff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.patients-page__audit-summary {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.patients-page__audit-card {
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  padding: 0.7rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  color: #0f172a;
+}
+
+.patients-page__audit-card span {
+  color: #475569;
+  font-size: 0.85rem;
+}
+
+.patients-page__audit-card strong {
+  font-size: 1.1rem;
+}
+
+.patients-page__audit-card small {
+  color: #64748b;
+}
+
+.patients-page__audit-raw {
+  border-radius: 10px;
+  border: 1px dashed rgba(148, 163, 184, 0.5);
+  padding: 0.65rem 0.75rem;
+  background: #ffffff;
+  color: #475569;
+}
+
+.patients-page__audit-raw p {
+  margin: 0.35rem 0 0;
+}
+
+.patients-page__audit-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.patients-page__audit-row {
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  border-radius: 10px;
+  padding: 0.65rem 0.75rem;
+  background: #ffffff;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.patients-page__audit-row-main {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.patients-page__audit-pill {
+  background: #e2e8f0;
+  color: #0f172a;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.patients-page__audit-row-sub {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.85rem;
+  color: #64748b;
+}
+
+.patients-page__audit-empty {
+  margin: 0;
+  color: #64748b;
 }
 
 .patients-page__footnote {
