@@ -20,6 +20,8 @@
 web-client/.env
 web-client/.env.*
 !web-client/.env.sample
+!web-client/.env.stage.example
+!web-client/.env.prod.example
 
 # Local-only documentation with credentials
 docs/web-client/operations/mac-dev-login.local.md
