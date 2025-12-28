@@ -62,6 +62,11 @@ const createFlagAwareMiddleware = (): NextHandleFunction => (req, res, next) => 
   const chartsDisplayEnabled = readBooleanFromHeaderOrEnv(req, 'x-charts-display-enabled', 'VITE_CHARTS_DISPLAY_ENABLED', true);
   const chartsSendEnabled = readBooleanFromHeaderOrEnv(req, 'x-charts-send-enabled', 'VITE_CHARTS_SEND_ENABLED', true);
   const chartsMasterSource = readChartsMasterSource(req);
+  const environment =
+    (process.env.VITE_ENVIRONMENT ??
+      process.env.VITE_DEPLOY_ENV ??
+      process.env.VITE_STAGE ??
+      (process.env.NODE_ENV === 'production' ? 'prod' : 'dev')) || 'dev';
 
   if (url.pathname.startsWith('/api/orca/queue')) {
     res.setHeader('x-orca-queue-mode', useMock ? 'mock' : 'live');
@@ -94,12 +99,14 @@ const createFlagAwareMiddleware = (): NextHandleFunction => (req, res, next) => 
   if (isAdminConfig) {
     res.setHeader('x-admin-delivery-verification', verifyAdmin ? 'enabled' : 'disabled');
     res.setHeader('x-orca-queue-mode', useMock ? 'mock' : 'live');
+    res.setHeader('x-environment', environment);
     // モック/検証ヘッダーが有効な場合は、実 API へ到達させずにここで応答を返す。
     if (verifyAdmin || useMock) {
       json(res, 200, {
         runId,
         verified: true,
         source: useMock ? 'mock' : 'live',
+        environment,
         deliveredAt: new Date().toISOString(),
         chartsDisplayEnabled,
         chartsSendEnabled,

@@ -23,6 +23,8 @@ export type AdminConfigResponse = Partial<AdminConfigPayload> & {
   source?: 'mock' | 'live';
   verified?: boolean;
   note?: string;
+  environment?: string;
+  deliveryMode?: string;
 };
 
 export type EffectiveAdminConfigResponse = AdminConfigResponse & {
@@ -42,6 +44,27 @@ const normalizeBooleanHeader = (value: string | null) => {
 
 const getString = (value: unknown) => (typeof value === 'string' ? value : undefined);
 const getBoolean = (value: unknown) => (typeof value === 'boolean' ? value : undefined);
+const resolveClientEnvironment = () => {
+  const meta = import.meta.env as Record<string, string | undefined>;
+  return meta.VITE_ENVIRONMENT ?? meta.VITE_DEPLOY_ENV ?? (import.meta.env.MODE === 'development' ? 'dev' : meta.MODE);
+};
+
+// 優先順位: header > body > client env (import.meta.env)
+const normalizeEnvironment = (body: Record<string, unknown>, headers: Headers) => {
+  const header =
+    headers.get('x-environment') ??
+    headers.get('x-env') ??
+    headers.get('x-stage') ??
+    headers.get('x-runtime-env') ??
+    undefined;
+  const bodyValue = getString(body.environment) ?? getString(body.env) ?? getString(body.stage);
+  const clientValue = resolveClientEnvironment();
+  return header ?? bodyValue ?? clientValue;
+};
+const normalizeDeliveryMode = (body: Record<string, unknown>, headers: Headers) => {
+  const header = headers.get('x-delivery-mode') ?? headers.get('x-admin-delivery-mode') ?? undefined;
+  return getString(body.deliveryMode) ?? getString(body.deliveryState) ?? getString(body.deliveryStatus) ?? header;
+};
 
 const isChartsMasterSourcePolicy = (value: string): value is ChartsMasterSourcePolicy =>
   value === 'auto' || value === 'server' || value === 'mock' || value === 'snapshot' || value === 'fallback';
@@ -59,6 +82,8 @@ const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse =
   const queueMode = headers.get('x-orca-queue-mode');
   const verified = getBoolean(body.verified) ?? normalizeBooleanHeader(verifyHeader);
   const source = (getString(body.source) as 'mock' | 'live' | undefined) ?? (queueMode === 'mock' ? 'mock' : 'live');
+  const environment = normalizeEnvironment(body, headers);
+  const deliveryMode = normalizeDeliveryMode(body, headers);
 
   const charts = (body.charts ?? {}) as Record<string, unknown>;
 
@@ -78,6 +103,8 @@ const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse =
     runId,
     source,
     verified,
+    environment,
+    deliveryMode,
   };
 
   if (runId) {
@@ -146,6 +173,8 @@ export function mergeAdminConfigResponses(
     chartsDisplayEnabled: delivery.chartsDisplayEnabled ?? config.chartsDisplayEnabled,
     chartsSendEnabled: delivery.chartsSendEnabled ?? config.chartsSendEnabled,
     chartsMasterSource: delivery.chartsMasterSource ?? config.chartsMasterSource,
+    environment: delivery.environment ?? config.environment,
+    deliveryMode: delivery.deliveryMode ?? config.deliveryMode,
     rawConfig: config,
     rawDelivery: delivery,
     syncMismatch: syncMismatchFields.length > 0 ? true : false,

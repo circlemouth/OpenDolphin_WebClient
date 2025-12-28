@@ -566,6 +566,8 @@ function ChartsContent() {
 
     const appliedAt = new Date().toISOString();
     const appliedTo = `${session.facilityId}:${session.userId}`;
+    const resolvedDeliveryMode = data.deliveryMode ?? data.rawDelivery?.deliveryMode ?? data.rawConfig?.deliveryMode;
+    const resolvedEnvironment = data.environment ?? data.rawDelivery?.environment ?? data.rawConfig?.environment;
     setDeliveryAppliedMeta({
       appliedAt,
       appliedTo,
@@ -579,16 +581,19 @@ function ChartsContent() {
     });
     logAuditEvent({
       runId: data.runId ?? flags.runId,
-      source: 'admin/delivery.apply',
-      note: 'charts apply admin delivery',
+      source: 'admin/delivery',
+      note: 'admin delivery applied',
       payload: {
+        operation: 'apply',
         appliedAt,
         appliedTo,
         role: session.role,
+        environment: resolvedEnvironment,
         delivery: {
           deliveryId: data.deliveryId,
           deliveryVersion: data.deliveryVersion,
           deliveredAt: data.deliveredAt,
+          deliveryMode: resolvedDeliveryMode,
         },
         flags: {
           chartsDisplayEnabled: data.chartsDisplayEnabled,
