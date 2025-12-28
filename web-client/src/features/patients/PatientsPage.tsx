@@ -51,6 +51,8 @@ const toSearchParams = (filters: typeof DEFAULT_FILTER) => {
   return params;
 };
 
+const pickString = (value: unknown): string | undefined => (typeof value === 'string' && value.length > 0 ? value : undefined);
+
 const readStorageJson = (key: string) => {
   if (typeof localStorage === 'undefined') return null;
   try {
@@ -155,19 +157,42 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   }, [location.search]);
 
   useEffect(() => {
+    const carryoverSource = new URLSearchParams(location.search);
+    const receptionStored = readStorageJson(RECEPTION_FILTER_STORAGE_KEY);
+    const sortFromUrl = carryoverSource.get('sort');
+    const dateFromUrl = carryoverSource.get('date');
     if (typeof localStorage !== 'undefined') {
       localStorage.setItem(FILTER_STORAGE_KEY, JSON.stringify(filters));
       const receptionSnapshot = {
-        ...(readStorageJson(RECEPTION_FILTER_STORAGE_KEY) ?? {}),
+        ...(receptionStored ?? {}),
         kw: filters.keyword,
         dept: filters.department,
         phys: filters.physician,
+        pay: filters.paymentMode,
+        sort: sortFromUrl ?? receptionStored?.sort,
+        date: dateFromUrl ?? receptionStored?.date,
       };
       localStorage.setItem(RECEPTION_FILTER_STORAGE_KEY, JSON.stringify(receptionSnapshot));
     }
     const params = toSearchParams(filters);
-    setSearchParams(params, { replace: true });
-  }, [filters, setSearchParams]);
+    const sort = sortFromUrl ?? pickString(receptionStored?.sort);
+    const date = dateFromUrl ?? pickString(receptionStored?.date);
+    const from = carryoverSource.get('from');
+    const patientId = carryoverSource.get('patientId');
+    const receptionId = carryoverSource.get('receptionId');
+    const visitDate = carryoverSource.get('visitDate');
+    if (sort) params.set('sort', sort);
+    if (date) params.set('date', date);
+    if (from) params.set('from', from);
+    if (patientId) params.set('patientId', patientId);
+    if (receptionId) params.set('receptionId', receptionId);
+    if (visitDate) params.set('visitDate', visitDate);
+    const nextSearch = params.toString();
+    const currentSearch = location.search.startsWith('?') ? location.search.slice(1) : location.search;
+    if (nextSearch !== currentSearch) {
+      setSearchParams(params, { replace: true });
+    }
+  }, [filters, location.search, setSearchParams]);
 
   const patientsQuery = useQuery({
     queryKey: ['patients', filters],
@@ -249,7 +274,10 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   }, [patients, resolvedRecordsReturned, resolvedRunId]);
 
   useEffect(() => {
-    if (!unlinkedNotice) return;
+    if (!unlinkedNotice) {
+      lastUnlinkedToastKey.current = null;
+      return;
+    }
     if (lastUnlinkedToastKey.current === unlinkedNotice.key) return;
     lastUnlinkedToastKey.current = unlinkedNotice.key;
     enqueue({
@@ -578,7 +606,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               <input
                 value={savedViewName}
                 onChange={(event) => setSavedViewName(event.target.value)}
-                placeholder="例: 内科/保険"
+                placeholder="例: 内科/午前/保険"
               />
             </label>
             <button type="button" className="patients-page__filter-apply" onClick={handleSaveView}>

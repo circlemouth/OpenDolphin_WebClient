@@ -564,6 +564,14 @@ export function ReceptionPage({
     ].join('、');
   }, [selectedBundle, selectedEntry, selectedQueueStatus]);
 
+  const unlinkedCounts = useMemo(() => {
+    return {
+      missingPatientId: entries.filter((entry) => !entry.patientId).length,
+      missingAppointmentId: entries.filter((entry) => !entry.appointmentId).length,
+      missingReceptionId: entries.filter((entry) => entry.source === 'visits' && !entry.receptionId).length,
+    };
+  }, [entries]);
+
   const unlinkedWarning = useMemo(() => {
     const banner = getAppointmentDataBanner({
       entries,
@@ -573,19 +581,37 @@ export function ReceptionPage({
       date: selectedDate,
     });
     if (!banner || banner.tone !== 'warning') return null;
-    const key = `${selectedDate}-${banner.message}`;
-    return { ...banner, key };
-  }, [appointmentQuery.error, appointmentQuery.isError, appointmentQuery.isLoading, entries, selectedDate]);
+    const parts = [
+      unlinkedCounts.missingPatientId > 0 ? `患者ID欠損: ${unlinkedCounts.missingPatientId}` : undefined,
+      unlinkedCounts.missingAppointmentId > 0 ? `予約ID欠損: ${unlinkedCounts.missingAppointmentId}` : undefined,
+      unlinkedCounts.missingReceptionId > 0 ? `受付ID欠損: ${unlinkedCounts.missingReceptionId}` : undefined,
+    ].filter((value): value is string => typeof value === 'string');
+    const key = `${mergedMeta.runId ?? 'runId'}-${selectedDate}-${unlinkedCounts.missingPatientId}-${unlinkedCounts.missingAppointmentId}-${unlinkedCounts.missingReceptionId}`;
+    return { ...banner, key, detail: parts.join(' / ') };
+  }, [
+    appointmentQuery.error,
+    appointmentQuery.isError,
+    appointmentQuery.isLoading,
+    entries,
+    mergedMeta.runId,
+    selectedDate,
+    unlinkedCounts.missingAppointmentId,
+    unlinkedCounts.missingPatientId,
+    unlinkedCounts.missingReceptionId,
+  ]);
 
   useEffect(() => {
-    if (!unlinkedWarning) return;
+    if (!unlinkedWarning) {
+      lastUnlinkedToastKey.current = null;
+      return;
+    }
     if (lastUnlinkedToastKey.current === unlinkedWarning.key) return;
     lastUnlinkedToastKey.current = unlinkedWarning.key;
     enqueue({
       id: `reception-unlinked-${unlinkedWarning.key}`,
       tone: 'warning',
       message: unlinkedWarning.message,
-      detail: `検索日: ${selectedDate}`,
+      detail: unlinkedWarning.detail ? `${unlinkedWarning.detail} / 検索日: ${selectedDate}` : `検索日: ${selectedDate}`,
     });
   }, [enqueue, selectedDate, unlinkedWarning]);
 
@@ -994,6 +1020,8 @@ export function ReceptionPage({
                       if (departmentFilter) params.set('dept', departmentFilter);
                       if (physicianFilter) params.set('phys', physicianFilter);
                       if (paymentMode !== 'all') params.set('pay', paymentMode);
+                      if (sortKey) params.set('sort', sortKey);
+                      if (selectedDate) params.set('date', selectedDate);
                       params.set('from', 'reception');
                       navigate(`/patients?${params.toString()}`);
                     }}
