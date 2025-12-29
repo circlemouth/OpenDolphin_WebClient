@@ -156,29 +156,29 @@
     "worktreePath": ".worktrees/task-1766972021892-463bf2"
   },
   {
-    "id": "task-1766972427381-a4cfad",
-    "name": "CodexCLI2: [order input gap analysis plan 20251229] 10_ドキュメント化とレビュー\n期間: 01/03 09:00 - 01/05 09:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n# 10 ドキュメント化とレビュー\n\n- 差分マトリクスをドキュメント（調査結果・差分・実装漏れ候補）として整理し、参照先コード/画面/操作手順を明記する。\n- 今後の実装漏れ修正タスクに引き継げるよう、項目ごとの再現手順と優先度を添える。\n- 既存のドキュメント構成に合わせて配置場所とファイル名を決める。\n\nYAML ID: src/order_input_gap_analysis/10_ドキュメント化とレビュー.md",
+    "id": "task-1766986770750-ba38cd",
+    "name": "CodexCLI2: 対象ファイル: .kamui/apps/order-input-gap-analysis-plan-20251229.yaml\n\n10番タスクの産物であるsrc/order_input_gap_analysis/10_ドキュメント化とレビュー.mdを具体的にレビューし、未実行のタスク内容を、具体的な内容に改めていってほしい。改修範囲がWEBクライアントのみなのか、モダナイズ版サーバー側にもおよぶのか、どちらか事前に検討してから具体的な改修にかかるタスクにすること。",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-29T01:40:27.381Z",
-    "updatedAt": "2025-12-29T01:40:27.381Z",
+    "createdAt": "2025-12-29T05:39:30.750Z",
+    "updatedAt": "2025-12-29T05:39:30.750Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1766972427381-a4cfad",
+    "branchName": "task/task-1766986770750-ba38cd",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1766972427178-q0789inw",
-    "aiCompetitionGroupName": "[order input gap analysis plan 20251229] 10_ドキュメント化とレビュー\n期間: 01/03 09:00 - 01/05 09:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n# 10 ドキュメント化とレビュー\n\n- 差分マトリクスをドキュメント（調査結果・差分・実装漏れ候補）として整理し、参照先コード/画面/操作手順を明記する。\n- 今後の実装漏れ修正タスクに引き継げるよう、項目ごとの再現手順と優先度を添える。\n- 既存のドキュメント構成に合わせて配置場所とファイル名を決める。\n\nYAML ID: src/order_input_gap_analysis/10_ドキュメント化とレビュー.md",
+    "aiCompetitionGroupId": "comp-1766986770549-4ir8kn8w",
+    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/order-input-gap-analysis-plan-20251229.yaml\n\n10番タスクの産物であるsrc/order_input_gap_analysis/10_ドキュメント化とレビュー.mdを具体的にレビューし、未実行のタスク内容を、具体的な内容に改めていってほしい。改修範囲がWEBクライアントのみなのか、モダナイズ版サーバー側にもおよぶのか、どちらか事前に検討してから具体的な改修にかかるタスクにすること。",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1766972427381-a4cfad",
+    "worktreePath": ".worktrees/task-1766986770750-ba38cd",
     "medal": "silver",
-    "aiCompetitionScore": 87
+    "aiCompetitionScore": 83
   }
 ]
