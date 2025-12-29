@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
+import { fetchStampDetail } from '../stampApi';
 
 vi.mock('../orderBundleApi', async () => ({
   fetchOrderBundles: vi.fn().mockResolvedValue({
@@ -133,5 +134,22 @@ describe('OrderBundleEditPanel stamp flow', () => {
 
     const select = screen.getByLabelText('既存スタンプ') as HTMLSelectElement;
     await waitFor(() => expect(select.textContent).toContain('自院セット'));
+  });
+
+  it('スタンプ取り込み失敗時にエラー通知される', async () => {
+    const user = userEvent.setup();
+    vi.mocked(fetchStampDetail).mockResolvedValueOnce({
+      ok: false,
+      stampId: 'STAMP-1',
+      message: '取り込み失敗',
+    });
+
+    renderWithClient(<OrderBundleEditPanel {...baseProps} />);
+
+    await screen.findByRole('option', { name: /降圧セット/ });
+    await user.selectOptions(screen.getByLabelText('既存スタンプ'), 'server::STAMP-1');
+    await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
+
+    await waitFor(() => expect(screen.getByText('取り込み失敗')).toBeInTheDocument());
   });
 });
