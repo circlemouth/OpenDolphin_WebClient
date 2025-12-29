@@ -610,20 +610,117 @@ src:
       schedule:
         start: 2026-01-05T00:00:00.000Z
         days: 1
-    25_P2改修_履歴コピー_スタンプコピー.md:
+    25_P0改修_用法検索UI.md:
       content: |-
-        # 25 P2 改修：履歴コピー/スタンプコピー・ペースト
+        # 25 P0 改修：用法検索/フィルタ UI
 
-        RUN_ID: 20251229T215000Z
+        RUN_ID: 20251229T213910Z
 
-        - 目的: 旧来版の履歴コピー/スタンプコピー・ペースト相当の導線を Web に追加する。
-        - 対象: OrderBundleEditPanel（オーダー束/スタンプ操作）。
+        - 目的: 処方オーダーで旧来版同等の用法検索/フィルタ UI を提供する。
+        - 対象: OrderBundleEditPanel（処方/RP の用法入力）。
         - 実装観点:
-          - 履歴コピー: 既存履歴から取り込み、編集へ反映する導線を追加。
-          - スタンプコピー/ペースト: 既存スタンプを複製・貼り付けできる UI を追加。
-          - readOnly/missingMaster/fallbackUsed 時は操作不可とし、メッセージを統一。
-        - 依存/前提: 履歴/スタンプ取得 API の仕様確認（不足時は server-modernized タスク起票）。
-        - テスト: コピー/ペースト反映、保存時の auditEvent、ガード条件のブロック。
+          - 用法マスタ検索（部分一致/件数制限）と結果選択の導線を追加する。
+          - 検索結果選択で用法コード/表示名を一括反映する。
+          - readOnly/missingMaster/fallbackUsed ガードと競合しない導線を確保する。
+        - 依存/前提: /orca/master/medicationUsage などの API 仕様確認（不足時は server-modernized タスク起票）。
+        - テスト: 用法検索→選択→保存、入力ブロック時の UI 挙動。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/13_WEB修正タスク化_P0.md
+        - src/order_input_gap_analysis/15_改修前提ドキュメント整備.md
+      schedule:
+        start: 2026-01-17T00:00:00.000Z
+        days: 2
+    26_P0改修_薬剤材料行追加.md:
+      content: |-
+        # 26 P0 改修：薬剤/材料行の検索追加
+
+        RUN_ID: 20251229T213910Z
+
+        - 目的: 処方オーダーの薬剤/材料行をマスタ検索から追加できるようにする。
+        - 対象: OrderBundleEditPanel（処方/RP の items 行）。
+        - 実装観点:
+          - 薬剤/材料のマスタ検索 UI と行追加導線を追加する。
+          - 選択結果を items に反映し、行編集の既存 UI と整合を取る。
+          - 旧来版の検索→行追加の操作手順を踏襲する。
+        - 依存/前提: /orca/master/medicine などの API 仕様確認（不足時は server-modernized タスク起票）。
+        - テスト: 検索→行追加→保存、readOnly 時のブロック。
+      priority: High
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/13_WEB修正タスク化_P0.md
+        - src/order_input_gap_analysis/15_改修前提ドキュメント整備.md
+      schedule:
+        start: 2026-01-19T00:00:00.000Z
+        days: 2
+    27_P1改修_処方詳細入力補助.md:
+      content: |-
+        # 27 P1 改修：処方詳細入力補助（院内/院外・頓用/臨時・日数/回数・RP名補正）
+
+        RUN_ID: 20251229T213910Z
+
+        - 目的: 処方オーダーの詳細入力（院内/院外・頓用/臨時・日数/回数）と RP 名補正の差分を解消する。
+        - 対象: OrderBundleEditPanel（処方/RP）。
+        - 実装観点:
+          - 院内/院外・頓用/臨時の UI と送信項目を追加する。
+          - 用法行の日数/回数入力 UI を旧来版相当に拡張する。
+          - RP 名が空欄の場合の補正ルールを Web 側で定義する。
+        - 依存/前提: server-modernized の保存項目対応状況の確認（不足時はサーバータスク起票）。
+        - テスト: UI 入力→保存→再編集時の値整合、補正ロジック。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
+      schedule:
+        start: 2026-01-27T00:00:00.000Z
+        days: 2
+    28_P1改修_リハビリ部位コメント入力.md:
+      content: |-
+        # 28 P1 改修：リハビリ部位/コメントコード入力
+
+        RUN_ID: 20251229T213910Z
+
+        - 目的: リハビリオーダーの部位マスタ検索とコメントコード入力の差分を解消する。
+        - 対象: OrderBundleEditPanel（generalOrder のリハビリ相当）。
+        - 実装観点:
+          - 部位マスタ検索 UI と選択反映を追加する。
+          - コメントコード行の入力/編集 UI を追加する。
+          - 既存 memo 入力との役割分担を明文化する。
+        - 依存/前提: /orca/master/bodypart などの API 仕様確認（不足時は server-modernized タスク起票）。
+        - テスト: 検索→選択→保存、コメントコード行の編集/削除。
+      priority: Medium
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
+      schedule:
+        start: 2026-01-29T00:00:00.000Z
+        days: 2
+    29_P2改修_オーダ履歴コピー.md:
+      content: |-
+        # 29 P2 改修：オーダ履歴コピー
+
+        RUN_ID: 20251229T213910Z
+
+        - 目的: 旧来版のオーダ履歴コピー導線を Web に追加する。
+        - 対象: Charts オーダ履歴表示/OrderBundleEditPanel。
+        - 実装観点:
+          - オーダ履歴一覧から行をコピーして編集フォームへ反映する UI を追加する。
+          - 参照時の readOnly/missingMaster/fallbackUsed ガードを維持する。
+        - 依存/前提: オーダ履歴 API の取得範囲確認（不足時は server-modernized タスク起票）。
+        - テスト: 履歴行コピー→編集→保存、ガード時のブロック表示。
       priority: Low
       status: not_started
       progress: 0
@@ -633,4 +730,27 @@ src:
         - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
       schedule:
         start: 2026-01-30T00:00:00.000Z
+        days: 2
+    30_P2改修_スタンプコピー_ペースト.md:
+      content: |-
+        # 30 P2 改修：スタンプコピー/ペースト
+
+        RUN_ID: 20251229T213910Z
+
+        - 目的: 旧来版のスタンプコピー/ペースト導線を Web に追加する。
+        - 対象: スタンプ UI / OrderBundleEditPanel。
+        - 実装観点:
+          - スタンプ行のコピー/ペースト操作を追加する。
+          - 既存のスタンプ保存/取り込み UI と干渉しないよう設計する。
+        - 依存/前提: スタンプデータ構造/保存 API 仕様の確認（不足時は server-modernized タスク起票）。
+        - テスト: コピー→ペースト→保存、readOnly 時の無効化。
+      priority: Low
+      status: not_started
+      progress: 0
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
+      schedule:
+        start: 2026-02-01T00:00:00.000Z
         days: 2
