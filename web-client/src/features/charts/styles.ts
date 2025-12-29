@@ -310,6 +310,39 @@ export const chartsStyles = css`
     color: #1d4ed8;
   }
 
+  .charts-document-menu {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .charts-document-menu__button {
+    border-radius: 12px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    background: #ffffff;
+    padding: 0.6rem 0.75rem;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.25rem;
+    cursor: pointer;
+    text-align: left;
+  }
+
+  .charts-document-menu__button span {
+    font-weight: 700;
+    color: #0f172a;
+  }
+
+  .charts-document-menu__button small {
+    color: #64748b;
+    font-size: 0.75rem;
+  }
+
+  .charts-document-menu__button--active {
+    border-color: rgba(37, 99, 235, 0.4);
+    background: #eff6ff;
+  }
+
   .charts-side-panel__content {
     display: flex;
     flex-direction: column;
@@ -559,6 +592,51 @@ export const chartsStyles = css`
     display: flex;
     flex-direction: column;
     gap: 0.35rem;
+  }
+
+  .charts-document-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .charts-document-list__header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    color: #475569;
+  }
+
+  .charts-document-list__items {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.4rem;
+  }
+
+  .charts-document-list__items li {
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    background: #ffffff;
+    padding: 0.55rem 0.7rem;
+    display: grid;
+    gap: 0.25rem;
+  }
+
+  .charts-document-list__items li div {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.5rem;
+    font-size: 0.85rem;
+  }
+
+  .charts-document-list__items li strong {
+    color: #1e3a8a;
+  }
+
+  .charts-document-list__items li small {
+    color: #64748b;
   }
 
   .charts-side-panel__bundle-items {

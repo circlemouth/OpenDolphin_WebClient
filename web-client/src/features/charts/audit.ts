@@ -12,6 +12,8 @@ export type ChartsAuditAction =
   | 'ENCOUNTER_CLOSE'
   | 'DRAFT_SAVE'
   | 'DRAFT_CANCEL'
+  | 'CHARTS_DOCUMENT_CREATE'
+  | 'CHARTS_DOCUMENT_CANCEL'
   | 'PRINT_OUTPATIENT'
   | 'SOAP_TEMPLATE_APPLY'
   | 'SOAP_NOTE_SAVE'
@@ -113,6 +115,10 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'authorRole',
   'authorName',
   'soapLength',
+  'documentType',
+  'documentTitle',
+  'documentIssuedAt',
+  'missingFields',
 ]);
 
 const sanitizeDetails = (details: Record<string, unknown>) => {
