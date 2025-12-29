@@ -42,7 +42,40 @@ type BundleFormState = {
   items: OrderBundleItem[];
 };
 
+type BundleValidationIssue = {
+  key: string;
+  message: string;
+};
+
+type BundleValidationRule = {
+  itemLabel: string;
+  requiresItems: boolean;
+  requiresUsage: boolean;
+};
+
 const buildEmptyItem = (): OrderBundleItem => ({ name: '', quantity: '', unit: '', memo: '' });
+
+const countItems = (items?: OrderBundleItem[]) =>
+  items ? items.filter((item) => item.name.trim().length > 0).length : 0;
+
+const DEFAULT_VALIDATION_RULE: BundleValidationRule = {
+  itemLabel: '項目',
+  requiresItems: true,
+  requiresUsage: false,
+};
+
+const VALIDATION_RULES_BY_ENTITY: Record<string, BundleValidationRule> = {
+  medOrder: {
+    itemLabel: '薬剤/項目',
+    requiresItems: true,
+    requiresUsage: true,
+  },
+  generalOrder: {
+    itemLabel: '項目',
+    requiresItems: true,
+    requiresUsage: false,
+  },
+};
 
 const buildEmptyForm = (today: string): BundleFormState => ({
   bundleName: '',
@@ -67,6 +100,30 @@ const toFormState = (bundle: OrderBundle, today: string): BundleFormState => ({
 });
 
 const formatBundleName = (bundle: OrderBundle) => bundle.bundleName ?? '名称未設定';
+
+export const validateBundleForm = ({
+  form,
+  entity,
+  bundleLabel,
+}: {
+  form: BundleFormState;
+  entity: string;
+  bundleLabel: string;
+}): BundleValidationIssue[] => {
+  const issues: BundleValidationIssue[] = [];
+  if (!form.bundleName.trim()) {
+    issues.push({ key: 'missing_bundle_name', message: `${bundleLabel}を入力してください。` });
+  }
+  const rule = VALIDATION_RULES_BY_ENTITY[entity] ?? DEFAULT_VALIDATION_RULE;
+  const itemCount = countItems(form.items);
+  if (rule.requiresItems && itemCount === 0) {
+    issues.push({ key: 'missing_items', message: `${rule.itemLabel}を1件以上入力してください。` });
+  }
+  if (rule.requiresUsage && !form.admin.trim()) {
+    issues.push({ key: 'missing_usage', message: '用法を入力してください。' });
+  }
+  return issues;
+};
 
 export function OrderBundleEditPanel({
   patientId,
@@ -93,6 +150,13 @@ export function OrderBundleEditPanel({
     }
     return reasons;
   }, [meta.fallbackUsed, meta.missingMaster, meta.readOnly, meta.readOnlyReason]);
+  const guardReasonKeys = useMemo(() => {
+    const reasons: string[] = [];
+    if (meta.readOnly) reasons.push('read_only');
+    if (meta.missingMaster) reasons.push('missing_master');
+    if (meta.fallbackUsed) reasons.push('fallback_used');
+    return reasons;
+  }, [meta.fallbackUsed, meta.missingMaster, meta.readOnly]);
   const isBlocked = blockReasons.length > 0;
   const auditMetaDetails = useMemo(
     () => ({
@@ -108,9 +172,6 @@ export function OrderBundleEditPanel({
     }),
     [meta],
   );
-
-  const countItems = (items?: OrderBundleItem[]) =>
-    items ? items.filter((item) => item.name.trim().length > 0).length : 0;
 
   const queryKey = ['charts-order-bundles', patientId, entity];
   const bundleQuery = useQuery({
@@ -355,10 +416,61 @@ export function OrderBundleEditPanel({
         onSubmit={(event) => {
           event.preventDefault();
           if (isBlocked) {
+            setNotice({ tone: 'error', message: '編集ガード中のため保存できません。' });
+            logAuditEvent({
+              runId: meta.runId,
+              cacheHit: meta.cacheHit,
+              missingMaster: meta.missingMaster,
+              fallbackUsed: meta.fallbackUsed,
+              dataSourceTransition: meta.dataSourceTransition,
+              payload: {
+                action: 'CHARTS_ORDER_BUNDLE_MUTATION',
+                outcome: 'blocked',
+                subject: 'charts',
+                details: {
+                  ...auditMetaDetails,
+                  runId: meta.runId,
+                  operation: form.documentId ? 'update' : 'create',
+                  entity,
+                  patientId,
+                  bundleName: form.bundleName,
+                  bundleNumber: form.bundleNumber,
+                  itemCount: countItems(form.items),
+                  blockedReasons: guardReasonKeys.length > 0 ? guardReasonKeys : ['edit_guard'],
+                  operationPhase: 'lock',
+                },
+              },
+            });
             return;
           }
-          if (!form.bundleName.trim()) {
-            setNotice({ tone: 'error', message: `${bundleLabel}を入力してください。` });
+          const validationIssues = validateBundleForm({ form, entity, bundleLabel });
+          if (validationIssues.length > 0) {
+            setNotice({ tone: 'error', message: validationIssues[0].message });
+            logAuditEvent({
+              runId: meta.runId,
+              cacheHit: meta.cacheHit,
+              missingMaster: meta.missingMaster,
+              fallbackUsed: meta.fallbackUsed,
+              dataSourceTransition: meta.dataSourceTransition,
+              payload: {
+                action: 'CHARTS_ORDER_BUNDLE_MUTATION',
+                outcome: 'blocked',
+                subject: 'charts',
+                details: {
+                  ...auditMetaDetails,
+                  runId: meta.runId,
+                  operation: form.documentId ? 'update' : 'create',
+                  entity,
+                  patientId,
+                  bundleName: form.bundleName,
+                  bundleNumber: form.bundleNumber,
+                  itemCount: countItems(form.items),
+                  blockedReasons: validationIssues.map((issue) => issue.key),
+                  validationMessages: validationIssues.map((issue) => issue.message),
+                  operationPhase: 'lock',
+                },
+              },
+            });
             return;
           }
           mutation.mutate(form);
