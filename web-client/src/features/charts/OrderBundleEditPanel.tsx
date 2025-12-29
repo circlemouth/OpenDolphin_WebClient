@@ -338,6 +338,7 @@ export function OrderBundleEditPanel({
   const [bodyPartKeyword, setBodyPartKeyword] = useState('');
   const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
   const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [selectedItemRowId, setSelectedItemRowId] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState<OrderBundleItem>({
     code: '',
     name: '',
@@ -1082,23 +1083,42 @@ export function OrderBundleEditPanel({
   };
 
   const clearItemRows = () => {
-    if (!window.confirm('薬剤/項目の行をすべてクリアしますか？')) return;
+    if (!window.confirm('薬剤/項目・材料・コメントの入力をすべてクリアしますか？')) return;
     setForm((prev) => ({
       ...prev,
       items: [buildEmptyItem()],
+      materialItems: [],
+      commentItems: [],
     }));
+    setCommentDraft({ code: '', name: '', quantity: '', unit: '', memo: '' });
   };
 
-  const removeItemRow = () => {
+  const removeItemRowById = (rowId?: string | null) => {
+    if (!rowId) return;
     setForm((prev) => {
-      if (prev.items.length <= 1) {
-        return { ...prev, items: [buildEmptyItem()] };
-      }
-      const nextItems = [...prev.items];
-      nextItems.pop();
+      const nextItems =
+        prev.items.length > 1
+          ? prev.items.filter((item) => (item as OrderBundleItemWithRowId).rowId !== rowId)
+          : [buildEmptyItem()];
       return { ...prev, items: nextItems };
     });
   };
+
+  const removeSelectedItemRow = () => removeItemRowById(selectedItemRowId);
+
+  useEffect(() => {
+    const rows = form.items;
+    if (rows.length === 0) {
+      setSelectedItemRowId(null);
+      return;
+    }
+    const exists = selectedItemRowId
+      ? rows.some((item) => (item as OrderBundleItemWithRowId).rowId === selectedItemRowId)
+      : false;
+    if (!exists) {
+      setSelectedItemRowId((rows[0] as OrderBundleItemWithRowId).rowId ?? null);
+    }
+  }, [form.items, selectedItemRowId]);
 
   if (!patientId) {
     return <p className="charts-side-panel__empty">患者IDが未選択のため {title} を開始できません。</p>;
@@ -1513,7 +1533,11 @@ export function OrderBundleEditPanel({
               <button
                 type="button"
                 className="charts-side-panel__ghost"
-                onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, buildEmptyItem()] }))}
+                onClick={() => {
+                  const nextItem = buildEmptyItem();
+                  setForm((prev) => ({ ...prev, items: [...prev.items, nextItem] }));
+                  setSelectedItemRowId((nextItem as OrderBundleItemWithRowId).rowId ?? null);
+                }}
                 disabled={isBlocked}
               >
                 追加
@@ -1521,10 +1545,10 @@ export function OrderBundleEditPanel({
               <button
                 type="button"
                 className="charts-side-panel__row-delete"
-                onClick={removeItemRow}
-                disabled={isBlocked}
+                onClick={removeSelectedItemRow}
+                disabled={isBlocked || !selectedItemRowId}
               >
-                行削除
+                選択行削除
               </button>
               <button
                 type="button"
@@ -1541,9 +1565,14 @@ export function OrderBundleEditPanel({
               key={(item as OrderBundleItemWithRowId).rowId ?? `${entity}-item-${index}`}
               className={`charts-side-panel__item-row${
                 dragOverIndex === index ? ' charts-side-panel__item-row--drag-over' : ''
-              }${draggingIndex === index ? ' charts-side-panel__item-row--dragging' : ''}`}
+              }${draggingIndex === index ? ' charts-side-panel__item-row--dragging' : ''}${
+                selectedItemRowId === (item as OrderBundleItemWithRowId).rowId
+                  ? ' charts-side-panel__item-row--selected'
+                  : ''
+              }`}
               data-testid="order-bundle-item-row"
               data-rowid={(item as OrderBundleItemWithRowId).rowId ?? ''}
+              onClick={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
               onDragOver={(event) => {
                 if (isBlocked) return;
                 event.preventDefault();
@@ -1569,7 +1598,7 @@ export function OrderBundleEditPanel({
               <button
                 type="button"
                 className="charts-side-panel__drag-handle"
-                aria-label="ドラッグして並べ替え"
+                aria-label={`行 ${index + 1} をドラッグして並べ替え`}
                 draggable={!isBlocked}
                 onDragStart={(event) => {
                   if (isBlocked) return;
@@ -1581,6 +1610,7 @@ export function OrderBundleEditPanel({
                   setDragOverIndex(null);
                   setDraggingIndex(null);
                 }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
                 disabled={isBlocked}
               >
                 ≡
@@ -1595,6 +1625,7 @@ export function OrderBundleEditPanel({
                     return { ...prev, items: next };
                   });
                 }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
                 placeholder="項目名"
                 disabled={isBlocked}
               />
@@ -1608,6 +1639,7 @@ export function OrderBundleEditPanel({
                     return { ...prev, items: next };
                   });
                 }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
                 placeholder={itemQuantityLabel}
                 disabled={isBlocked}
               />
@@ -1621,18 +1653,15 @@ export function OrderBundleEditPanel({
                     return { ...prev, items: next };
                   });
                 }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
                 placeholder="単位"
                 disabled={isBlocked}
               />
               <button
                 type="button"
                 className="charts-side-panel__icon"
-                onClick={() => {
-                  setForm((prev) => ({
-                    ...prev,
-                    items: prev.items.length > 1 ? prev.items.filter((_, idx) => idx !== index) : [buildEmptyItem()],
-                  }));
-                }}
+                aria-label={`行 ${index + 1} を削除`}
+                onClick={() => removeItemRowById((item as OrderBundleItemWithRowId).rowId)}
                 disabled={isBlocked}
               >
                 ✕

@@ -556,6 +556,11 @@ export const chartsStyles = css`
     opacity: 0.7;
   }
 
+  .charts-side-panel__item-row--selected {
+    background: rgba(59, 130, 246, 0.12);
+    outline: 1px solid rgba(59, 130, 246, 0.5);
+  }
+
   .charts-side-panel__drag-handle {
     border: 1px solid rgba(148, 163, 184, 0.5);
     background: #f8fafc;
