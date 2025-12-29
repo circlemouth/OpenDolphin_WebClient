@@ -4,11 +4,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchOrderBundles, mutateOrderBundles, type OrderBundle, type OrderBundleItem } from './orderBundleApi';
-import {
-  fetchOrderMasterSearch,
-  type OrderMasterSearchItem,
-  type OrderMasterSearchType,
-} from './orderMasterSearchApi';
 import type { DataSourceTransition } from './authService';
 
 export type OrderBundleEditPanelMeta = {
@@ -45,6 +40,13 @@ type BundleFormState = {
   memo: string;
   startDate: string;
   items: OrderBundleItem[];
+};
+
+type OrderBundleSubmitAction = 'save' | 'expand' | 'expand_continue';
+
+type OrderBundleSubmitPayload = {
+  form: BundleFormState;
+  action: OrderBundleSubmitAction;
 };
 
 const buildEmptyItem = (): OrderBundleItem => ({ name: '', quantity: '', unit: '', memo: '' });
@@ -85,11 +87,6 @@ export function OrderBundleEditPanel({
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [form, setForm] = useState<BundleFormState>(() => buildEmptyForm(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
-  const [masterKeywordInput, setMasterKeywordInput] = useState('');
-  const [masterKeyword, setMasterKeyword] = useState('');
-  const [masterType, setMasterType] = useState<OrderMasterSearchType>(() =>
-    entity === 'medOrder' ? 'generic-class' : 'etensu',
-  );
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -122,22 +119,6 @@ export function OrderBundleEditPanel({
   const countItems = (items?: OrderBundleItem[]) =>
     items ? items.filter((item) => item.name.trim().length > 0).length : 0;
 
-  const masterTypeOptions = useMemo(() => {
-    if (entity === 'medOrder') {
-      return [
-        { value: 'generic-class' as const, label: '薬効分類' },
-        { value: 'youhou' as const, label: '用法' },
-        { value: 'material' as const, label: '材料' },
-      ];
-    }
-    return [
-      { value: 'etensu' as const, label: '点数' },
-      { value: 'kensa-sort' as const, label: '検査区分' },
-      { value: 'material' as const, label: '材料' },
-      { value: 'youhou' as const, label: '用法' },
-    ];
-  }, [entity]);
-
   const queryKey = ['charts-order-bundles', patientId, entity];
   const bundleQuery = useQuery({
     queryKey,
@@ -148,9 +129,15 @@ export function OrderBundleEditPanel({
     enabled: !!patientId,
   });
 
-  useEffect(() => {
-    setMasterType(entity === 'medOrder' ? 'generic-class' : 'etensu');
-  }, [entity]);
+  const resolveActionMessage = (action: OrderBundleSubmitAction, ok: boolean) => {
+    if (action === 'save') {
+      return ok ? 'オーダーを保存しました。' : 'オーダーの保存に失敗しました。';
+    }
+    if (action === 'expand') {
+      return ok ? 'オーダーを展開しました。' : 'オーダーの展開に失敗しました。';
+    }
+    return ok ? 'オーダーを展開し、編集を継続します。' : 'オーダーの展開継続に失敗しました。';
+  };
 
   useEffect(() => {
     logUiState({
@@ -172,41 +159,42 @@ export function OrderBundleEditPanel({
   }, [entity, meta]);
 
   const mutation = useMutation({
-    mutationFn: async (payload: BundleFormState) => {
+    mutationFn: async (payload: OrderBundleSubmitPayload) => {
       if (!patientId) throw new Error('patientId is required');
-      const filteredItems = payload.items.filter((item) => item.name.trim().length > 0);
+      const filteredItems = payload.form.items.filter((item) => item.name.trim().length > 0);
       return mutateOrderBundles({
         patientId,
         operations: [
           {
-            operation: payload.documentId ? 'update' : 'create',
-            documentId: payload.documentId,
-            moduleId: payload.moduleId,
+            operation: payload.form.documentId ? 'update' : 'create',
+            documentId: payload.form.documentId,
+            moduleId: payload.form.moduleId,
             entity,
-            bundleName: payload.bundleName,
-            bundleNumber: payload.bundleNumber,
-            admin: payload.admin,
-            adminMemo: payload.adminMemo,
-            memo: payload.memo,
-            startDate: payload.startDate,
+            bundleName: payload.form.bundleName,
+            bundleNumber: payload.form.bundleNumber,
+            admin: payload.form.admin,
+            adminMemo: payload.form.adminMemo,
+            memo: payload.form.memo,
+            startDate: payload.form.startDate,
             items: filteredItems,
           },
         ],
       });
     },
     onSuccess: (result, payload) => {
-      const operation = payload.documentId ? 'update' : 'create';
-      const itemCount = countItems(payload.items);
-      setNotice({ tone: result.ok ? 'success' : 'error', message: result.ok ? 'オーダーを保存しました。' : 'オーダーの保存に失敗しました。' });
+      const operation = payload.form.documentId ? 'update' : 'create';
+      const itemCount = countItems(payload.form.items);
+      const operationPhase = payload.action === 'save' ? 'save' : payload.action;
+      setNotice({ tone: result.ok ? 'success' : 'error', message: resolveActionMessage(payload.action, result.ok) });
       recordOutpatientFunnel('charts_action', {
         runId: result.runId ?? meta.runId,
         cacheHit: meta.cacheHit ?? false,
         missingMaster: meta.missingMaster ?? false,
         dataSourceTransition: meta.dataSourceTransition ?? 'server',
         fallbackUsed: meta.fallbackUsed ?? false,
-        action: operation,
+        action: payload.action === 'save' ? operation : payload.action,
         outcome: result.ok ? 'success' : 'error',
-        note: payload.bundleName,
+        note: payload.form.bundleName,
       });
       logAuditEvent({
         runId: result.runId ?? meta.runId,
@@ -221,26 +209,30 @@ export function OrderBundleEditPanel({
           details: {
             ...auditMetaDetails,
             runId: result.runId ?? meta.runId,
+            operationPhase,
             operation,
             entity,
             patientId,
-            documentId: payload.documentId,
-            moduleId: payload.moduleId,
-            bundleName: payload.bundleName,
-            bundleNumber: payload.bundleNumber,
+            documentId: payload.form.documentId,
+            moduleId: payload.form.moduleId,
+            bundleName: payload.form.bundleName,
+            bundleNumber: payload.form.bundleNumber,
             itemCount,
           },
         },
       });
       if (result.ok) {
         queryClient.invalidateQueries({ queryKey });
-        setForm(buildEmptyForm(today));
+        if (payload.action !== 'expand_continue') {
+          setForm(buildEmptyForm(today));
+        }
       }
     },
-    onError: (error: unknown, payload) => {
+    onError: (error: unknown, payload: OrderBundleSubmitPayload) => {
       const message = error instanceof Error ? error.message : String(error);
-      const itemCount = countItems(payload.items);
-      setNotice({ tone: 'error', message: `オーダーの保存に失敗しました: ${message}` });
+      const itemCount = countItems(payload.form.items);
+      const operationPhase = payload.action === 'save' ? 'save' : payload.action;
+      setNotice({ tone: 'error', message: `${resolveActionMessage(payload.action, false)}: ${message}` });
       logAuditEvent({
         runId: meta.runId,
         cacheHit: meta.cacheHit,
@@ -254,13 +246,14 @@ export function OrderBundleEditPanel({
           details: {
             ...auditMetaDetails,
             runId: meta.runId,
-            operation: payload.documentId ? 'update' : 'create',
+            operationPhase,
+            operation: payload.form.documentId ? 'update' : 'create',
             entity,
             patientId,
-            documentId: payload.documentId,
-            moduleId: payload.moduleId,
-            bundleName: payload.bundleName,
-            bundleNumber: payload.bundleNumber,
+            documentId: payload.form.documentId,
+            moduleId: payload.form.moduleId,
+            bundleName: payload.form.bundleName,
+            bundleNumber: payload.form.bundleNumber,
             itemCount,
             error: message,
           },
@@ -348,46 +341,15 @@ export function OrderBundleEditPanel({
   });
 
   const bundles = bundleQuery.data?.bundles ?? [];
-  const masterSearchQueryKey = ['charts-order-master-search', entity, masterType, masterKeyword];
-  const masterSearchQuery = useQuery({
-    queryKey: masterSearchQueryKey,
-    queryFn: () =>
-      fetchOrderMasterSearch({
-        type: masterType,
-        keyword: masterKeyword,
-      }),
-    enabled: masterKeyword.length > 0 && !isBlocked,
-  });
-  const masterResults = masterSearchQuery.data?.items ?? [];
-  const masterTotalCount = masterSearchQuery.data?.totalCount ?? masterResults.length;
-
-  const formatMasterLabel = (item: OrderMasterSearchItem) =>
-    item.code ? `${item.code} ${item.name}` : item.name;
-
-  const handleMasterSelection = (item: OrderMasterSearchItem) => {
-    if (isBlocked) return;
-    if (item.type === 'youhou') {
-      const nextAdmin = formatMasterLabel(item);
-      setForm((prev) => ({ ...prev, admin: nextAdmin }));
-      setNotice({ tone: 'info', message: `用法をセットしました: ${nextAdmin}` });
+  const submitAction = (action: OrderBundleSubmitAction) => {
+    if (isBlocked) {
       return;
     }
-    setForm((prev) => {
-      const nextItems = [...prev.items];
-      const targetIndex = nextItems.findIndex((entry) => entry.name.trim().length === 0);
-      const newItem: OrderBundleItem = {
-        name: formatMasterLabel(item),
-        unit: item.unit ?? '',
-        quantity: '',
-      };
-      if (targetIndex >= 0) {
-        nextItems[targetIndex] = newItem;
-      } else {
-        nextItems.push(newItem);
-      }
-      return { ...prev, items: nextItems };
-    });
-    setNotice({ tone: 'info', message: `${item.name} を追加しました。` });
+    if (!form.bundleName.trim()) {
+      setNotice({ tone: 'error', message: `${bundleLabel}を入力してください。` });
+      return;
+    }
+    mutation.mutate({ form, action });
   };
 
   if (!patientId) {
@@ -399,7 +361,7 @@ export function OrderBundleEditPanel({
       <header className="charts-side-panel__section-header">
         <div>
           <strong>{title}</strong>
-          <p>RP単位/オーダー束を編集し、Charts に反映します。</p>
+          <p>RP単位/オーダー束を編集し、カルテ展開/保存の導線で反映します。</p>
         </div>
         <button
           type="button"
@@ -425,14 +387,7 @@ export function OrderBundleEditPanel({
         className="charts-side-panel__form"
         onSubmit={(event) => {
           event.preventDefault();
-          if (isBlocked) {
-            return;
-          }
-          if (!form.bundleName.trim()) {
-            setNotice({ tone: 'error', message: `${bundleLabel}を入力してください。` });
-            return;
-          }
-          mutation.mutate(form);
+          submitAction('save');
         }}
       >
         <div className="charts-side-panel__field">
@@ -486,87 +441,6 @@ export function OrderBundleEditPanel({
             placeholder="コメントを入力"
             disabled={isBlocked}
           />
-        </div>
-
-        <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
-          <div className="charts-side-panel__subheader">
-            <strong>マスタ検索</strong>
-            <span className="charts-side-panel__search-count">
-              {masterSearchQuery.isFetching ? '検索中' : `結果 ${masterTotalCount} 件`}
-            </span>
-          </div>
-          <div className="charts-side-panel__field-row">
-            <div className="charts-side-panel__field">
-              <label htmlFor={`${entity}-master-type`}>検索種別</label>
-              <select
-                id={`${entity}-master-type`}
-                value={masterType}
-                onChange={(event) => setMasterType(event.target.value as OrderMasterSearchType)}
-                disabled={isBlocked}
-              >
-                {masterTypeOptions.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="charts-side-panel__field">
-              <label htmlFor={`${entity}-master-keyword`}>キーワード</label>
-              <input
-                id={`${entity}-master-keyword`}
-                value={masterKeywordInput}
-                onChange={(event) => {
-                  const value = event.target.value;
-                  setMasterKeywordInput(value);
-                  setMasterKeyword(value.trim());
-                }}
-                placeholder="例: アムロジピン / 血液検査"
-                disabled={isBlocked}
-              />
-            </div>
-          </div>
-          {masterSearchQuery.isError && (
-            <div className="charts-side-panel__notice charts-side-panel__notice--error">
-              マスタ検索に失敗しました。
-            </div>
-          )}
-          {masterSearchQuery.data && !masterSearchQuery.data.ok && masterSearchQuery.data.message && (
-            <div className="charts-side-panel__notice charts-side-panel__notice--error">{masterSearchQuery.data.message}</div>
-          )}
-          {masterKeyword.length === 0 ? (
-            <p className="charts-side-panel__empty">キーワードを入力すると検索結果が表示されます。</p>
-          ) : masterResults.length === 0 && !masterSearchQuery.isFetching ? (
-            <p className="charts-side-panel__empty">該当するマスタがありません。</p>
-          ) : (
-            <div className="charts-side-panel__search-table" role="table" aria-label="マスタ検索結果">
-              <div className="charts-side-panel__search-header" role="row">
-                <span role="columnheader">コード</span>
-                <span role="columnheader">名称</span>
-                <span role="columnheader">単位</span>
-                <span role="columnheader">区分/点数</span>
-                <span role="columnheader">有効期間</span>
-              </div>
-              {masterResults.map((item, index) => (
-                <button
-                  key={`${item.type}-${item.code ?? item.name}-${index}`}
-                  type="button"
-                  className="charts-side-panel__search-row"
-                  role="row"
-                  onClick={() => handleMasterSelection(item)}
-                  disabled={isBlocked}
-                >
-                  <span role="cell">{item.code ?? '—'}</span>
-                  <span role="cell">{item.name}</span>
-                  <span role="cell">{item.unit ?? '—'}</span>
-                  <span role="cell">{item.points ?? item.category ?? '—'}</span>
-                  <span role="cell">
-                    {item.validFrom || item.validTo ? `${item.validFrom ?? '—'}〜${item.validTo ?? '—'}` : '—'}
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
         </div>
 
         <div className="charts-side-panel__subsection">
@@ -639,9 +513,26 @@ export function OrderBundleEditPanel({
           ))}
         </div>
 
+        <p className="charts-side-panel__message">
+          展開: カルテへ反映 / 展開継続: 反映後に入力を保持 / 保存: オーダー束を保存
+        </p>
         <div className="charts-side-panel__actions">
+          <button
+            type="button"
+            onClick={() => submitAction('expand')}
+            disabled={mutation.isPending || isBlocked}
+          >
+            展開する
+          </button>
+          <button
+            type="button"
+            onClick={() => submitAction('expand_continue')}
+            disabled={mutation.isPending || isBlocked}
+          >
+            展開継続する
+          </button>
           <button type="submit" disabled={mutation.isPending || isBlocked}>
-            {form.documentId ? '更新する' : '追加する'}
+            {form.documentId ? '保存して更新' : '保存して追加'}
           </button>
         </div>
       </form>
