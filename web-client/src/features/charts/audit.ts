@@ -33,7 +33,7 @@ export type ChartsAuditOutcome =
   | 'discarded'
   | 'resolved';
 
-export type ChartsOperationPhase = 'approval' | 'lock' | 'do';
+export type ChartsOperationPhase = 'approval' | 'lock' | 'do' | 'save' | 'expand' | 'expand_continue';
 
 export const CRITICAL_CHARTS_ACTIONS: ChartsAuditAction[] = [
   'CHARTS_PATIENT_SWITCH',
