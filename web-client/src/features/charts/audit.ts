@@ -15,6 +15,7 @@ export type ChartsAuditAction =
   | 'CHARTS_DOCUMENT_CREATE'
   | 'CHARTS_DOCUMENT_CANCEL'
   | 'PRINT_OUTPATIENT'
+  | 'PRINT_DOCUMENT'
   | 'SOAP_TEMPLATE_APPLY'
   | 'SOAP_NOTE_SAVE'
   | 'SOAP_NOTE_UPDATE'
@@ -42,6 +43,7 @@ export const CRITICAL_CHARTS_ACTIONS: ChartsAuditAction[] = [
   'ORCA_SEND',
   'ENCOUNTER_CLOSE',
   'PRINT_OUTPATIENT',
+  'PRINT_DOCUMENT',
   'CHARTS_ACTION_FAILURE',
 ];
 
@@ -118,6 +120,7 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'documentType',
   'documentTitle',
   'documentIssuedAt',
+  'documentId',
   'missingFields',
 ]);
 

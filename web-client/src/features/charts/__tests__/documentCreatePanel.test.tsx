@@ -30,6 +30,7 @@ describe('DocumentCreatePanel', () => {
     expect(screen.getByText('紹介状')).toBeInTheDocument();
     expect(screen.getByText('診断書')).toBeInTheDocument();
     expect(screen.getByText('返信書')).toBeInTheDocument();
+    expect(screen.getByLabelText('テンプレート *')).toBeInTheDocument();
     expect(screen.getByLabelText('宛先医療機関 *')).toBeInTheDocument();
   });
 
@@ -43,6 +44,7 @@ describe('DocumentCreatePanel', () => {
   it('保存すると履歴に追加される', async () => {
     const user = userEvent.setup();
     render(<DocumentCreatePanel {...baseProps} />);
+    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'REF-ODT-STD');
     await user.type(screen.getByLabelText('宛先医療機関 *'), '東京クリニック');
     await user.type(screen.getByLabelText('宛先医師 *'), '山田太郎');
     await user.type(screen.getByLabelText('紹介目的 *'), '精査依頼');

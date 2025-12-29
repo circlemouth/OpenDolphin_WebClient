@@ -21,6 +21,7 @@ import {
 import { LoginScreen, type LoginResult } from './LoginScreen';
 import { ChartsPage } from './features/charts/pages/ChartsPage';
 import { ChartsOutpatientPrintPage } from './features/charts/pages/ChartsOutpatientPrintPage';
+import { ChartsDocumentPrintPage } from './features/charts/pages/ChartsDocumentPrintPage';
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import './styles/app-shell.css';
@@ -176,6 +177,7 @@ export function AppRouter() {
         <Route path="/reception" element={<ConnectedReception />} />
         <Route path="/charts" element={<ConnectedCharts />} />
         <Route path="/charts/print/outpatient" element={<ChartsOutpatientPrintPage />} />
+        <Route path="/charts/print/document" element={<ChartsDocumentPrintPage />} />
         <Route path="/patients" element={<ConnectedPatients />} />
         <Route path="/administration" element={<ConnectedAdministration />} />
         <Route path="/outpatient-mock" element={<OutpatientMockPage />} />
