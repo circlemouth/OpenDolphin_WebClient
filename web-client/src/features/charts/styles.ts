@@ -479,6 +479,13 @@ export const chartsStyles = css`
     align-items: center;
   }
 
+  .charts-side-panel__subheader-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
   .charts-side-panel__search-count {
     font-size: 0.78rem;
     color: #64748b;
@@ -486,26 +493,59 @@ export const chartsStyles = css`
 
   .charts-side-panel__item-row {
     display: grid;
-    grid-template-columns: 1.4fr 0.8fr 0.6fr auto;
+    grid-template-columns: auto 1.4fr 0.8fr 0.6fr auto;
     gap: 0.4rem;
     align-items: center;
+    padding: 0.2rem 0.3rem;
+    border-radius: 10px;
   }
 
-  .charts-side-panel__icon {
-    border: none;
-    background: #fee2e2;
-    color: #b91c1c;
-    border-radius: 999px;
+  .charts-side-panel__item-row--drag-over {
+    background: rgba(59, 130, 246, 0.08);
+    outline: 1px dashed rgba(59, 130, 246, 0.45);
+  }
+
+  .charts-side-panel__item-row--dragging {
+    opacity: 0.7;
+  }
+
+  .charts-side-panel__drag-handle {
+    border: 1px solid rgba(148, 163, 184, 0.5);
+    background: #f8fafc;
+    color: #475569;
+    border-radius: 10px;
     width: 32px;
     height: 32px;
+    cursor: grab;
+    font-weight: 700;
+  }
+
+  .charts-side-panel__drag-handle:active {
+    cursor: grabbing;
+  }
+
+  .charts-side-panel__row-delete {
+    border: none;
+    background: #fef2f2;
+    color: #b91c1c;
+    border-radius: 999px;
+    padding: 0.25rem 0.7rem;
     cursor: pointer;
     font-weight: 700;
+    font-size: 0.78rem;
+  }
+
+  .charts-side-panel__ghost--danger {
+    border-color: rgba(239, 68, 68, 0.45);
+    color: #b91c1c;
+    background: #fff1f2;
   }
 
   .charts-side-panel__ghost:disabled,
   .charts-side-panel__actions button:disabled,
   .charts-side-panel__item-actions button:disabled,
-  .charts-side-panel__icon:disabled {
+  .charts-side-panel__row-delete:disabled,
+  .charts-side-panel__drag-handle:disabled {
     background: #e2e8f0;
     border-color: rgba(148, 163, 184, 0.4);
     color: #94a3b8;
