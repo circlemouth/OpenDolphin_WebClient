@@ -4,6 +4,11 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchOrderBundles, mutateOrderBundles, type OrderBundle, type OrderBundleItem } from './orderBundleApi';
+import {
+  fetchOrderMasterSearch,
+  type OrderMasterSearchItem,
+  type OrderMasterSearchType,
+} from './orderMasterSearchApi';
 import type { DataSourceTransition } from './authService';
 
 export type OrderBundleEditPanelMeta = {
@@ -80,6 +85,11 @@ export function OrderBundleEditPanel({
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [form, setForm] = useState<BundleFormState>(() => buildEmptyForm(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
+  const [masterKeywordInput, setMasterKeywordInput] = useState('');
+  const [masterKeyword, setMasterKeyword] = useState('');
+  const [masterType, setMasterType] = useState<OrderMasterSearchType>(() =>
+    entity === 'medOrder' ? 'generic-class' : 'etensu',
+  );
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -112,6 +122,22 @@ export function OrderBundleEditPanel({
   const countItems = (items?: OrderBundleItem[]) =>
     items ? items.filter((item) => item.name.trim().length > 0).length : 0;
 
+  const masterTypeOptions = useMemo(() => {
+    if (entity === 'medOrder') {
+      return [
+        { value: 'generic-class' as const, label: '薬効分類' },
+        { value: 'youhou' as const, label: '用法' },
+        { value: 'material' as const, label: '材料' },
+      ];
+    }
+    return [
+      { value: 'etensu' as const, label: '点数' },
+      { value: 'kensa-sort' as const, label: '検査区分' },
+      { value: 'material' as const, label: '材料' },
+      { value: 'youhou' as const, label: '用法' },
+    ];
+  }, [entity]);
+
   const queryKey = ['charts-order-bundles', patientId, entity];
   const bundleQuery = useQuery({
     queryKey,
@@ -121,6 +147,10 @@ export function OrderBundleEditPanel({
     },
     enabled: !!patientId,
   });
+
+  useEffect(() => {
+    setMasterType(entity === 'medOrder' ? 'generic-class' : 'etensu');
+  }, [entity]);
 
   useEffect(() => {
     logUiState({
@@ -318,6 +348,47 @@ export function OrderBundleEditPanel({
   });
 
   const bundles = bundleQuery.data?.bundles ?? [];
+  const masterSearchQueryKey = ['charts-order-master-search', entity, masterType, masterKeyword];
+  const masterSearchQuery = useQuery({
+    queryKey: masterSearchQueryKey,
+    queryFn: () =>
+      fetchOrderMasterSearch({
+        type: masterType,
+        keyword: masterKeyword,
+      }),
+    enabled: masterKeyword.length > 0 && !isBlocked,
+  });
+  const masterResults = masterSearchQuery.data?.items ?? [];
+  const masterTotalCount = masterSearchQuery.data?.totalCount ?? masterResults.length;
+
+  const formatMasterLabel = (item: OrderMasterSearchItem) =>
+    item.code ? `${item.code} ${item.name}` : item.name;
+
+  const handleMasterSelection = (item: OrderMasterSearchItem) => {
+    if (isBlocked) return;
+    if (item.type === 'youhou') {
+      const nextAdmin = formatMasterLabel(item);
+      setForm((prev) => ({ ...prev, admin: nextAdmin }));
+      setNotice({ tone: 'info', message: `用法をセットしました: ${nextAdmin}` });
+      return;
+    }
+    setForm((prev) => {
+      const nextItems = [...prev.items];
+      const targetIndex = nextItems.findIndex((entry) => entry.name.trim().length === 0);
+      const newItem: OrderBundleItem = {
+        name: formatMasterLabel(item),
+        unit: item.unit ?? '',
+        quantity: '',
+      };
+      if (targetIndex >= 0) {
+        nextItems[targetIndex] = newItem;
+      } else {
+        nextItems.push(newItem);
+      }
+      return { ...prev, items: nextItems };
+    });
+    setNotice({ tone: 'info', message: `${item.name} を追加しました。` });
+  };
 
   if (!patientId) {
     return <p className="charts-side-panel__empty">患者IDが未選択のため {title} を開始できません。</p>;
@@ -415,6 +486,87 @@ export function OrderBundleEditPanel({
             placeholder="コメントを入力"
             disabled={isBlocked}
           />
+        </div>
+
+        <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
+          <div className="charts-side-panel__subheader">
+            <strong>マスタ検索</strong>
+            <span className="charts-side-panel__search-count">
+              {masterSearchQuery.isFetching ? '検索中' : `結果 ${masterTotalCount} 件`}
+            </span>
+          </div>
+          <div className="charts-side-panel__field-row">
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-master-type`}>検索種別</label>
+              <select
+                id={`${entity}-master-type`}
+                value={masterType}
+                onChange={(event) => setMasterType(event.target.value as OrderMasterSearchType)}
+                disabled={isBlocked}
+              >
+                {masterTypeOptions.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-master-keyword`}>キーワード</label>
+              <input
+                id={`${entity}-master-keyword`}
+                value={masterKeywordInput}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  setMasterKeywordInput(value);
+                  setMasterKeyword(value.trim());
+                }}
+                placeholder="例: アムロジピン / 血液検査"
+                disabled={isBlocked}
+              />
+            </div>
+          </div>
+          {masterSearchQuery.isError && (
+            <div className="charts-side-panel__notice charts-side-panel__notice--error">
+              マスタ検索に失敗しました。
+            </div>
+          )}
+          {masterSearchQuery.data && !masterSearchQuery.data.ok && masterSearchQuery.data.message && (
+            <div className="charts-side-panel__notice charts-side-panel__notice--error">{masterSearchQuery.data.message}</div>
+          )}
+          {masterKeyword.length === 0 ? (
+            <p className="charts-side-panel__empty">キーワードを入力すると検索結果が表示されます。</p>
+          ) : masterResults.length === 0 && !masterSearchQuery.isFetching ? (
+            <p className="charts-side-panel__empty">該当するマスタがありません。</p>
+          ) : (
+            <div className="charts-side-panel__search-table" role="table" aria-label="マスタ検索結果">
+              <div className="charts-side-panel__search-header" role="row">
+                <span role="columnheader">コード</span>
+                <span role="columnheader">名称</span>
+                <span role="columnheader">単位</span>
+                <span role="columnheader">区分/点数</span>
+                <span role="columnheader">有効期間</span>
+              </div>
+              {masterResults.map((item, index) => (
+                <button
+                  key={`${item.type}-${item.code ?? item.name}-${index}`}
+                  type="button"
+                  className="charts-side-panel__search-row"
+                  role="row"
+                  onClick={() => handleMasterSelection(item)}
+                  disabled={isBlocked}
+                >
+                  <span role="cell">{item.code ?? '—'}</span>
+                  <span role="cell">{item.name}</span>
+                  <span role="cell">{item.unit ?? '—'}</span>
+                  <span role="cell">{item.points ?? item.category ?? '—'}</span>
+                  <span role="cell">
+                    {item.validFrom || item.validTo ? `${item.validFrom ?? '—'}〜${item.validTo ?? '—'}` : '—'}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="charts-side-panel__subsection">
