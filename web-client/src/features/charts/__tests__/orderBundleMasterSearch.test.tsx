@@ -161,4 +161,31 @@ describe('OrderBundleEditPanel master search UI', () => {
     expect(typeSelect).toBeDisabled();
     expect(fetchOrderBundles).toHaveBeenCalled();
   });
+
+  it('readOnly の場合は放射線の部位/コメント入力が無効化される', async () => {
+    localStorage.setItem('devFacilityId', 'facility');
+    localStorage.setItem('devUserId', 'doctor');
+
+    renderWithClient(
+      <OrderBundleEditPanel
+        {...baseProps}
+        entity="radiologyOrder"
+        title="放射線"
+        bundleLabel="放射線オーダー名"
+        meta={{
+          ...baseProps.meta,
+          readOnly: true,
+          readOnlyReason: '閲覧専用',
+        }}
+      />,
+    );
+
+    expect(screen.getByLabelText('部位')).toBeDisabled();
+    expect(screen.getByLabelText('部位検索')).toBeDisabled();
+    expect(screen.getByRole('button', { name: '部位検索' })).toBeDisabled();
+    expect(screen.getByPlaceholderText('コード')).toBeDisabled();
+    expect(screen.getByPlaceholderText('コメント内容')).toBeDisabled();
+    const addButtons = screen.getAllByRole('button', { name: '追加' });
+    addButtons.forEach((button) => expect(button).toBeDisabled());
+  });
 });

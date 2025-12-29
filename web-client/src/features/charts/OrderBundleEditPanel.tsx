@@ -251,6 +251,14 @@ export const validateBundleForm = ({
   bundleLabel: string;
 }): BundleValidationIssue[] => {
   const issues: BundleValidationIssue[] = [];
+  const hasAnyValue = (item: OrderBundleItem) =>
+    Boolean(
+      item.name?.trim() ||
+        item.code?.trim() ||
+        item.quantity?.trim() ||
+        item.unit?.trim() ||
+        item.memo?.trim(),
+    );
   const rule = VALIDATION_RULES_BY_ENTITY[entity] ?? DEFAULT_VALIDATION_RULE;
   const itemCount = countMainItems(form);
   if (rule.requiresItems && itemCount === 0) {
@@ -261,6 +269,32 @@ export const validateBundleForm = ({
   }
   if (BUNDLE_NAME_REQUIRED_ENTITIES.has(entity) && !form.bundleName.trim()) {
     issues.push({ key: 'missing_bundle_name', message: `${bundleLabel}を入力してください。` });
+  }
+  if (entity === 'radiologyOrder' && !form.bodyPart?.name?.trim()) {
+    issues.push({ key: 'missing_body_part', message: '部位を入力してください。' });
+  }
+  const invalidMaterial = form.materialItems.some(
+    (item) => hasAnyValue(item) && !item.name?.trim(),
+  );
+  if (invalidMaterial) {
+    issues.push({ key: 'invalid_material_item', message: '材料名を入力してください。' });
+  }
+  const commentIssues = form.commentItems.reduce(
+    (acc, item) => {
+      const hasCode = Boolean(item.code?.trim());
+      const hasName = Boolean(item.name?.trim());
+      const hasValue = hasAnyValue(item);
+      if (hasValue && (!hasCode || !hasName)) acc.incomplete = true;
+      if (hasCode && !COMMENT_CODE_PATTERN.test(item.code!.trim())) acc.invalidCode = true;
+      return acc;
+    },
+    { incomplete: false, invalidCode: false },
+  );
+  if (commentIssues.incomplete) {
+    issues.push({ key: 'invalid_comment_item', message: 'コメントコードと内容を入力してください。' });
+  }
+  if (commentIssues.invalidCode) {
+    issues.push({ key: 'invalid_comment_code', message: 'コメントコードが不正です。' });
   }
   return issues;
 };
@@ -1309,7 +1343,7 @@ export function OrderBundleEditPanel({
                   {bodyPartSearchQuery.isFetching ? '検索中...' : `${bodyPartSearchQuery.data.totalCount ?? 0}件`}
                 </div>
                 {bodyPartSearchQuery.data.items.length === 0 ? (
-                  <p className="charts-side-panel__empty">部位が見つかりませんでした。</p>
+                  <p className="charts-side-panel__empty">該当する部位が見つかりません。</p>
                 ) : (
                   <div className="charts-side-panel__search-table">
                     <div className="charts-side-panel__search-header">
@@ -1556,6 +1590,9 @@ export function OrderBundleEditPanel({
                   </button>
                 ))}
               </div>
+            )}
+            {materialSearchQuery.data?.ok && materialSearchQuery.data.items.length === 0 && materialKeyword.trim() && (
+              <p className="charts-side-panel__empty">該当する材料が見つかりません。</p>
             )}
             {form.materialItems.map((item, index) => (
               <div key={`${entity}-material-${index}`} className="charts-side-panel__item-row">
