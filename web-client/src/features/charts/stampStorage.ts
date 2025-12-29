@@ -4,6 +4,9 @@ export type LocalStampBundle = {
   bundleName: string;
   admin: string;
   bundleNumber: string;
+  classCode?: string;
+  classCodeSystem?: string;
+  className?: string;
   adminMemo: string;
   memo: string;
   startDate: string;
