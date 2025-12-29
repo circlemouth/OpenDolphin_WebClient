@@ -194,4 +194,23 @@ describe('OrderBundleEditPanel master search UI', () => {
     const addButtons = screen.getAllByRole('button', { name: '追加' });
     addButtons.forEach((button) => expect(button).toBeDisabled());
   });
+
+  it('generalOrder の場合はリハビリ部位検索が表示される', async () => {
+    localStorage.setItem('devFacilityId', 'facility');
+    localStorage.setItem('devUserId', 'doctor');
+
+    renderWithClient(
+      <OrderBundleEditPanel
+        {...baseProps}
+        entity="generalOrder"
+        title="オーダー編集"
+        bundleLabel="オーダー名"
+        itemQuantityLabel="数量"
+      />,
+    );
+
+    expect(screen.getByLabelText('部位')).toBeEnabled();
+    expect(screen.getByLabelText('部位検索')).toBeEnabled();
+    expect(screen.getByRole('button', { name: '部位検索' })).toBeEnabled();
+  });
 });
