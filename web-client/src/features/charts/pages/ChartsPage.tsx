@@ -12,6 +12,7 @@ import { PatientsTab } from '../PatientsTab';
 import { TelemetryFunnelPanel } from '../TelemetryFunnelPanel';
 import { ChartsActionBar } from '../ChartsActionBar';
 import { DiagnosisEditPanel } from '../DiagnosisEditPanel';
+import { DocumentCreatePanel } from '../DocumentCreatePanel';
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
 import { normalizeAuditEventLog, normalizeAuditEventPayload, recordChartsAuditEvent } from '../audit';
 import { SoapNotePanel } from '../SoapNotePanel';
@@ -2103,7 +2104,7 @@ function ChartsContent() {
                       focusSectionById('charts-document-timeline');
                     }}
                   >
-                    文書登録
+                    文書作成
                   </button>
                   <button
                     type="button"
@@ -2140,7 +2141,7 @@ function ChartsContent() {
                         {sidePanelAction === 'prescription-edit' && '処方編集'}
                         {sidePanelAction === 'order-edit' && 'オーダー編集'}
                         {sidePanelAction === 'lab' && '検査オーダー'}
-                        {sidePanelAction === 'document' && '文書登録'}
+                        {sidePanelAction === 'document' && '文書作成'}
                         {sidePanelAction === 'imaging' && '画像/スキャン'}
                         {!sidePanelAction && '右パネル'}
                       </h3>
@@ -2177,7 +2178,16 @@ function ChartsContent() {
                         )}
                       </div>
                     )}
-                    {(sidePanelAction === 'lab' || sidePanelAction === 'document' || sidePanelAction === 'imaging' || !sidePanelAction) && (
+                    {sidePanelAction === 'document' && (
+                      <div className="charts-side-panel__content">
+                        <DocumentCreatePanel
+                          patientId={encounterContext.patientId}
+                          meta={sidePanelMeta}
+                          onClose={() => setSidePanelAction(null)}
+                        />
+                      </div>
+                    )}
+                    {(sidePanelAction === 'lab' || sidePanelAction === 'imaging' || !sidePanelAction) && (
                       <>
                         <p className="charts-side-panel__message">
                           {sidePanelAction
