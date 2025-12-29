@@ -10,6 +10,9 @@ const baseForm = {
   memo: '',
   startDate: '2025-12-29',
   items: [{ name: '', quantity: '', unit: '', memo: '' }],
+  materialItems: [],
+  commentItems: [],
+  bodyPart: null,
 };
 
 describe('validateBundleForm', () => {
@@ -89,5 +92,116 @@ describe('validateBundleForm', () => {
       bundleLabel: 'オーダー名',
     });
     expect(issues.map((issue) => issue.key)).toEqual(['missing_bundle_name']);
+  });
+
+  it('injectionOrder: 手技料なしフラグがあっても必須条件を満たせばエラーなし', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        memo: '手技料なし',
+        items: [{ name: 'ビタミン注射', quantity: '1', unit: '回', memo: '' }],
+      },
+      entity: 'injectionOrder',
+      bundleLabel: '注射オーダー名',
+    });
+    expect(issues).toHaveLength(0);
+  });
+
+  it('radiologyOrder: 部位が未入力の場合にエラー', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '胸部撮影',
+        items: [{ name: '胸部X線', quantity: '1', unit: '回', memo: '' }],
+        bodyPart: null,
+      },
+      entity: 'radiologyOrder',
+      bundleLabel: '放射線オーダー名',
+    });
+    expect(issues.map((issue) => issue.key)).toEqual(['missing_body_part']);
+  });
+
+  it('radiologyOrder: 部位が入力済みならエラーなし', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '胸部撮影',
+        items: [{ name: '胸部X線', quantity: '1', unit: '回', memo: '' }],
+        bodyPart: { code: '002000', name: '胸部', quantity: '', unit: '', memo: '' },
+      },
+      entity: 'radiologyOrder',
+      bundleLabel: '放射線オーダー名',
+    });
+    expect(issues).toHaveLength(0);
+  });
+
+  it('commentItems: コメントコードか内容が欠ける場合はエラー', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '処置オーダー',
+        items: [{ name: '処置A', quantity: '1', unit: '回', memo: '' }],
+        commentItems: [{ code: '0081', name: '', quantity: '', unit: '', memo: '' }],
+      },
+      entity: 'generalOrder',
+      bundleLabel: 'オーダー名',
+    });
+    expect(issues.map((issue) => issue.key)).toEqual(['invalid_comment_item']);
+  });
+
+  it('commentItems: 不正なコメントコードはエラー', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '処置オーダー',
+        items: [{ name: '処置A', quantity: '1', unit: '回', memo: '' }],
+        commentItems: [{ code: '123', name: '注意事項', quantity: '', unit: '', memo: '' }],
+      },
+      entity: 'generalOrder',
+      bundleLabel: 'オーダー名',
+    });
+    expect(issues.map((issue) => issue.key)).toEqual(['invalid_comment_code']);
+  });
+
+  it('commentItems: 行を削除するとエラーが解消される', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '処置オーダー',
+        items: [{ name: '処置A', quantity: '1', unit: '回', memo: '' }],
+        commentItems: [],
+      },
+      entity: 'generalOrder',
+      bundleLabel: 'オーダー名',
+    });
+    expect(issues).toHaveLength(0);
+  });
+
+  it('materialItems: 材料名が空の場合にエラー', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '処置オーダー',
+        items: [{ name: '処置A', quantity: '1', unit: '回', memo: '' }],
+        materialItems: [{ name: '', quantity: '1', unit: '枚', memo: '' }],
+      },
+      entity: 'generalOrder',
+      bundleLabel: 'オーダー名',
+    });
+    expect(issues.map((issue) => issue.key)).toEqual(['invalid_material_item']);
+  });
+
+  it('materialItems: 行を削除するとエラーが解消される', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '処置オーダー',
+        items: [{ name: '処置A', quantity: '1', unit: '回', memo: '' }],
+        materialItems: [],
+      },
+      entity: 'generalOrder',
+      bundleLabel: 'オーダー名',
+    });
+    expect(issues).toHaveLength(0);
   });
 });

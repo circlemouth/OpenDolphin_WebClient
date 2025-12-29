@@ -156,10 +156,19 @@ public class OrderBundleFetchResponse {
     }
 
     public static class OrderBundleItem {
+        private String code;
         private String name;
         private String quantity;
         private String unit;
         private String memo;
+
+        public String getCode() {
+            return code;
+        }
+
+        public void setCode(String code) {
+            this.code = code;
+        }
 
         public String getName() {
             return name;

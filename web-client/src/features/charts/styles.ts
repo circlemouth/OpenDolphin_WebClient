@@ -486,6 +486,27 @@ export const chartsStyles = css`
     justify-content: flex-end;
   }
 
+  .charts-side-panel__status {
+    font-size: 0.78rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: #475569;
+    background: #f1f5f9;
+  }
+
+  .charts-side-panel__status--ok {
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #166534;
+    background: #dcfce7;
+  }
+
+  .charts-side-panel__status--warn {
+    border-color: rgba(234, 179, 8, 0.45);
+    color: #92400e;
+    background: #fef9c3;
+  }
+
   .charts-side-panel__search-count {
     font-size: 0.78rem;
     color: #64748b;
@@ -498,6 +519,10 @@ export const chartsStyles = css`
     align-items: center;
     padding: 0.2rem 0.3rem;
     border-radius: 10px;
+  }
+
+  .charts-side-panel__item-row--comment {
+    grid-template-columns: 0.7fr 1.6fr 0.6fr 0.6fr auto;
   }
 
   .charts-side-panel__item-row--drag-over {
@@ -524,6 +549,17 @@ export const chartsStyles = css`
     cursor: grabbing;
   }
 
+  .charts-side-panel__icon {
+    border: none;
+    background: #fee2e2;
+    color: #b91c1c;
+    border-radius: 999px;
+    width: 32px;
+    height: 32px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+
   .charts-side-panel__row-delete {
     border: none;
     background: #fef2f2;
@@ -545,7 +581,8 @@ export const chartsStyles = css`
   .charts-side-panel__actions button:disabled,
   .charts-side-panel__item-actions button:disabled,
   .charts-side-panel__row-delete:disabled,
-  .charts-side-panel__drag-handle:disabled {
+  .charts-side-panel__drag-handle:disabled,
+  .charts-side-panel__icon:disabled {
     background: #e2e8f0;
     border-color: rgba(148, 163, 184, 0.4);
     color: #94a3b8;

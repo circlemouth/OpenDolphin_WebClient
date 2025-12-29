@@ -434,6 +434,7 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                 continue;
             }
             OrderBundleFetchResponse.OrderBundleItem entry = new OrderBundleFetchResponse.OrderBundleItem();
+            entry.setCode(item.getCode());
             entry.setName(item.getName());
             entry.setQuantity(item.getNumber());
             entry.setUnit(item.getUnit());
