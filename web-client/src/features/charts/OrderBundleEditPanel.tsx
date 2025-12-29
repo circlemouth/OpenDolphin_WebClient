@@ -359,6 +359,7 @@ export function OrderBundleEditPanel({
   });
   const isInjectionOrder = entity === 'injectionOrder';
   const isRadiologyOrder = entity === 'radiologyOrder';
+  const supportsBodyPartSearch = isRadiologyOrder || entity === 'generalOrder';
   const supportsCommentCodes = BASE_EDITOR_ENTITIES.includes(entity);
   const supportsMaterials = ['generalOrder', 'treatmentOrder', 'testOrder', 'instractionChargeOrder'].includes(entity);
   const blockReasons = useMemo(() => {
@@ -1447,17 +1448,19 @@ export function OrderBundleEditPanel({
           </div>
         )}
 
-        {isRadiologyOrder && (
+        {supportsBodyPartSearch && (
           <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
             <div className="charts-side-panel__subheader">
-              <strong>部位</strong>
-              <span
-                className={`charts-side-panel__status ${
-                  form.bodyPart?.name?.trim() ? 'charts-side-panel__status--ok' : 'charts-side-panel__status--warn'
-                }`}
-              >
-                {form.bodyPart?.name?.trim() ? '入力済み' : '未入力'}
-              </span>
+              <strong>{isRadiologyOrder ? '部位' : 'リハビリ部位'}</strong>
+              {isRadiologyOrder && (
+                <span
+                  className={`charts-side-panel__status ${
+                    form.bodyPart?.name?.trim() ? 'charts-side-panel__status--ok' : 'charts-side-panel__status--warn'
+                  }`}
+                >
+                  {form.bodyPart?.name?.trim() ? '入力済み' : '未入力'}
+                </span>
+              )}
             </div>
             <div className="charts-side-panel__field-row">
               <div className="charts-side-panel__field">
@@ -1508,6 +1511,11 @@ export function OrderBundleEditPanel({
                 部位クリア
               </button>
             </div>
+            {!isRadiologyOrder && (
+              <p className="charts-side-panel__message">
+                リハビリ部位は任意入力です。部位マスタから選択するか、手入力で補足できます。
+              </p>
+            )}
             {bodyPartSearchQuery.data && !bodyPartSearchQuery.data.ok && (
               <div className="charts-side-panel__notice charts-side-panel__notice--error">
                 {bodyPartSearchQuery.data.message ?? '部位マスタの検索に失敗しました。'}
@@ -1841,6 +1849,9 @@ export function OrderBundleEditPanel({
             <div className="charts-side-panel__subheader">
               <strong>コメントコード</strong>
             </div>
+            <p className="charts-side-panel__message">
+              コメントコードは指示/コメントをコード行として登録します。自由記述は上部のメモ欄を使用してください。
+            </p>
             <div className="charts-side-panel__item-row charts-side-panel__item-row--comment">
               <input
                 value={commentDraft.code ?? ''}
