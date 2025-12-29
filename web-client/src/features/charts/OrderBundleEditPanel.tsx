@@ -64,17 +64,33 @@ const DEFAULT_VALIDATION_RULE: BundleValidationRule = {
   requiresUsage: false,
 };
 
+const BASE_EDITOR_ENTITIES = [
+  'generalOrder',
+  'treatmentOrder',
+  'testOrder',
+  'laboTest',
+  'physiologyOrder',
+  'bacteriaOrder',
+  'instractionChargeOrder',
+  'surgeryOrder',
+  'otherOrder',
+  'radiologyOrder',
+  'baseChargeOrder',
+];
+
+const BASE_EDITOR_RULE: BundleValidationRule = {
+  itemLabel: '項目',
+  requiresItems: true,
+  requiresUsage: false,
+};
+
 const VALIDATION_RULES_BY_ENTITY: Record<string, BundleValidationRule> = {
   medOrder: {
     itemLabel: '薬剤/項目',
     requiresItems: true,
     requiresUsage: true,
   },
-  generalOrder: {
-    itemLabel: '項目',
-    requiresItems: true,
-    requiresUsage: false,
-  },
+  ...Object.fromEntries(BASE_EDITOR_ENTITIES.map((entity) => [entity, BASE_EDITOR_RULE])),
 };
 
 const buildEmptyForm = (today: string): BundleFormState => ({
@@ -111,9 +127,6 @@ export const validateBundleForm = ({
   bundleLabel: string;
 }): BundleValidationIssue[] => {
   const issues: BundleValidationIssue[] = [];
-  if (!form.bundleName.trim()) {
-    issues.push({ key: 'missing_bundle_name', message: `${bundleLabel}を入力してください。` });
-  }
   const rule = VALIDATION_RULES_BY_ENTITY[entity] ?? DEFAULT_VALIDATION_RULE;
   const itemCount = countItems(form.items);
   if (rule.requiresItems && itemCount === 0) {
@@ -121,6 +134,9 @@ export const validateBundleForm = ({
   }
   if (rule.requiresUsage && !form.admin.trim()) {
     issues.push({ key: 'missing_usage', message: '用法を入力してください。' });
+  }
+  if (entity === 'medOrder' && !form.bundleName.trim()) {
+    issues.push({ key: 'missing_bundle_name', message: `${bundleLabel}を入力してください。` });
   }
   return issues;
 };
