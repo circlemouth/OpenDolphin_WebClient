@@ -142,9 +142,10 @@ export async function fetchOrderMasterSearch(params: {
   category?: string;
   page?: number;
   size?: number;
+  allowEmpty?: boolean;
 }): Promise<OrderMasterSearchResult> {
   const keyword = params.keyword.trim();
-  if (!keyword && params.type !== 'bodypart') {
+  if (!keyword && params.type !== 'bodypart' && !params.allowEmpty) {
     return { ok: false, items: [], totalCount: 0, message: '検索キーワードが未指定です。' };
   }
   const query = new URLSearchParams();

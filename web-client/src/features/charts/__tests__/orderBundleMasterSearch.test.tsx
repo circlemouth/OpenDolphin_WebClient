@@ -96,7 +96,9 @@ describe('OrderBundleEditPanel master search UI', () => {
     const user = userEvent.setup();
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    const keywordInput = screen.getByLabelText('キーワード');
+    const keywordInput = screen.getByLabelText('キーワード', {
+      selector: 'input[id$="-master-keyword"]',
+    });
     await user.type(keywordInput, 'アム');
 
     await waitFor(() => expect(searchMock).toHaveBeenCalled());
@@ -128,7 +130,9 @@ describe('OrderBundleEditPanel master search UI', () => {
     const user = userEvent.setup();
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    const keywordInput = screen.getByLabelText('キーワード');
+    const keywordInput = screen.getByLabelText('キーワード', {
+      selector: 'input[id$="-master-keyword"]',
+    });
     await user.type(keywordInput, 'アム');
 
     await waitFor(() => expect(screen.getByText('アムロジピン')).toBeInTheDocument());
@@ -155,7 +159,9 @@ describe('OrderBundleEditPanel master search UI', () => {
       />,
     );
 
-    const keywordInput = screen.getByLabelText('キーワード');
+    const keywordInput = screen.getByLabelText('キーワード', {
+      selector: 'input[id$="-master-keyword"]',
+    });
     expect(keywordInput).toBeDisabled();
     const typeSelect = screen.getByLabelText('検索種別');
     expect(typeSelect).toBeDisabled();
