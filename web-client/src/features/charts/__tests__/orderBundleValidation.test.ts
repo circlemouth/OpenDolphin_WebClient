@@ -77,4 +77,17 @@ describe('validateBundleForm', () => {
     });
     expect(issues.map((issue) => issue.key)).toEqual(['missing_items']);
   });
+
+  it('generalOrder: オーダー名が未入力の場合にエラー', () => {
+    const issues = validateBundleForm({
+      form: {
+        ...baseForm,
+        bundleName: '',
+        items: [{ name: '処置A', quantity: '1', unit: '回', memo: '' }],
+      },
+      entity: 'generalOrder',
+      bundleLabel: 'オーダー名',
+    });
+    expect(issues.map((issue) => issue.key)).toEqual(['missing_bundle_name']);
+  });
 });

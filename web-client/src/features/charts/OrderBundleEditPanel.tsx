@@ -78,6 +78,8 @@ const BASE_EDITOR_ENTITIES = [
   'baseChargeOrder',
 ];
 
+const BUNDLE_NAME_REQUIRED_ENTITIES = new Set([...BASE_EDITOR_ENTITIES, 'medOrder']);
+
 const BASE_EDITOR_RULE: BundleValidationRule = {
   itemLabel: '項目',
   requiresItems: true,
@@ -135,7 +137,7 @@ export const validateBundleForm = ({
   if (rule.requiresUsage && !form.admin.trim()) {
     issues.push({ key: 'missing_usage', message: '用法を入力してください。' });
   }
-  if (entity === 'medOrder' && !form.bundleName.trim()) {
+  if (BUNDLE_NAME_REQUIRED_ENTITIES.has(entity) && !form.bundleName.trim()) {
     issues.push({ key: 'missing_bundle_name', message: `${bundleLabel}を入力してください。` });
   }
   return issues;
