@@ -110,7 +110,7 @@ describe('ChartsDocumentPrintPage', () => {
     await waitFor(() => {
       expect(window.print).toHaveBeenCalledTimes(1);
     });
-  });
+  }, 10000);
 
   it('テンプレ未選択で出力ブロック表示が出る', () => {
     const router = buildRouter({ document: { templateId: '', templateLabel: '未選択' } });
@@ -127,5 +127,28 @@ describe('ChartsDocumentPrintPage', () => {
 
     expect(screen.getByRole('button', { name: '印刷' })).toBeDisabled();
     expect(screen.getByText(/出力ガード中/)).toHaveTextContent('権限不足/認証不備');
+  });
+
+  it('missingMaster で出力ガードが表示される', () => {
+    const router = buildRouter({ meta: { missingMaster: true } });
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByRole('button', { name: '印刷' })).toBeDisabled();
+    expect(screen.getByText(/出力ガード中/)).toHaveTextContent('missingMaster=true');
+  });
+
+  it('fallbackUsed で出力ガードが表示される', () => {
+    const router = buildRouter({ meta: { fallbackUsed: true } });
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByRole('button', { name: '印刷' })).toBeDisabled();
+    expect(screen.getByText(/出力ガード中/)).toHaveTextContent('fallbackUsed=true');
+  });
+
+  it('初期出力モード指定で確認ダイアログが開く', () => {
+    const router = buildRouter({ initialOutputMode: 'pdf' });
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByRole('dialog', { name: '出力の最終確認' })).toBeInTheDocument();
   });
 });

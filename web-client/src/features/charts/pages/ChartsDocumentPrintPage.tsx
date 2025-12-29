@@ -12,11 +12,12 @@ import { DocumentClinicalDocument } from '../print/documentClinicalDocument';
 import {
   clearDocumentPrintPreview,
   loadDocumentPrintPreview,
+  type DocumentOutputMode,
   type DocumentPrintPreviewState,
 } from '../print/documentPrintPreviewStorage';
 import { DOCUMENT_TYPE_LABELS } from '../documentTemplates';
 
-type OutputMode = 'print' | 'pdf';
+type OutputMode = DocumentOutputMode;
 type OutputStatus = 'idle' | 'printing' | 'completed' | 'failed';
 
 const getState = (value: unknown): DocumentPrintPreviewState | null => {
@@ -49,6 +50,7 @@ function ChartsDocumentPrintContent() {
   const [lastOutputMode, setLastOutputMode] = useState<OutputMode | null>(null);
   const hasPermission = useMemo(() => hasStoredAuth(), []);
   const missingStateLoggedRef = useRef(false);
+  const autoOutputRequestedRef = useRef(false);
 
   useEffect(() => {
     document.body.dataset.route = 'charts-print';
@@ -273,6 +275,12 @@ function ChartsDocumentPrintContent() {
       documentId: state.document.id,
     });
   };
+
+  useEffect(() => {
+    if (!state?.initialOutputMode || autoOutputRequestedRef.current) return;
+    autoOutputRequestedRef.current = true;
+    handleRequestOutput(state.initialOutputMode);
+  }, [handleRequestOutput, state]);
 
   const handleClose = () => {
     clearDocumentPrintPreview();

@@ -59,6 +59,9 @@ describe('Charts print/export audit', () => {
     expect(events).toHaveLength(1);
     const payload = events[0]?.payload as any;
     expect(payload.action).toBe('PRINT_DOCUMENT');
+    expect(payload.details.runId).toBe('RUN-DOC-PRINT');
+    expect(payload.details.patientId).toBe('000123');
+    expect(payload.details.actor).toBe('0001:doctor01');
     expect(payload.details.documentType).toBe('referral');
     expect(payload.details.templateId).toBe('REF-ODT-STD');
     expect(payload.details.documentId).toBe('DOC-001');

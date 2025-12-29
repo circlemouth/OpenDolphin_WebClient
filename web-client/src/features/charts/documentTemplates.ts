@@ -14,6 +14,42 @@ export type DocumentTemplate = {
   defaults: Record<string, string>;
 };
 
+// TODO(20251229T081044Z): server-modernized で文書テンプレ API 仕様確定後に差し替える。
+export type DocumentTemplateApiItem = {
+  templateId: string;
+  documentType: DocumentType;
+  label: string;
+  description?: string;
+  defaults?: Record<string, string>;
+  version?: string;
+  updatedAt?: string;
+};
+
+export type DocumentTemplateApiResponse = {
+  runId: string;
+  templates: DocumentTemplateApiItem[];
+};
+
+// TODO(20251229T081044Z): 文書出力 API の仕様確定後に request/response を実 API に合わせる。
+export type DocumentOutputRequest = {
+  runId: string;
+  patientId: string;
+  documentId: string;
+  templateId: string;
+  documentType: DocumentType;
+  documentTitle: string;
+  documentIssuedAt: string;
+  output: 'print' | 'pdf';
+  actor: string;
+};
+
+export type DocumentOutputResponse = {
+  runId: string;
+  requestId: string;
+  status: 'queued' | 'completed' | 'failed';
+  errorMessage?: string;
+};
+
 export const DOCUMENT_TEMPLATES: Record<DocumentType, DocumentTemplate[]> = {
   referral: [
     {

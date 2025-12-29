@@ -1,6 +1,8 @@
 import type { ChartsPrintMeta } from './outpatientClinicalDocument';
 import type { DocumentType } from '../documentTemplates';
 
+export type DocumentOutputMode = 'print' | 'pdf';
+
 export type DocumentPrintEntry = {
   id: string;
   type: DocumentType;
@@ -18,6 +20,7 @@ export type DocumentPrintPreviewState = {
   meta: ChartsPrintMeta;
   actor: string;
   facilityId: string;
+  initialOutputMode?: DocumentOutputMode;
 };
 
 const STORAGE_KEY = 'opendolphin:web-client:charts:printPreview:document';

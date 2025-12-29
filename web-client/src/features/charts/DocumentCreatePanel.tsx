@@ -8,7 +8,7 @@ import { ensureObservabilityMeta } from '../../libs/observability/observability'
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
 import { DOCUMENT_TEMPLATES, DOCUMENT_TYPE_LABELS, getTemplateById, type DocumentType } from './documentTemplates';
-import { saveDocumentPrintPreview } from './print/documentPrintPreviewStorage';
+import { saveDocumentPrintPreview, type DocumentOutputMode } from './print/documentPrintPreviewStorage';
 
 export type DocumentCreatePanelMeta = {
   runId?: string;
@@ -421,7 +421,8 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     return reasons;
   };
 
-  const handleOpenDocumentPreview = (doc: SavedDocument) => {
+  const handleOpenDocumentPreview = (doc: SavedDocument, initialOutputMode?: DocumentOutputMode) => {
+    const { actor, facilityId } = resolveAuditActor();
     const blockedReasons = resolveOutputGuardReasons(doc);
     if (blockedReasons.length > 0) {
       setNotice({ tone: 'error', message: `出力できません: ${blockedReasons[0].detail}` });
@@ -431,6 +432,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
         subject: 'charts-document-preview',
         note: blockedReasons[0].detail,
         patientId: doc.patientId,
+        actor,
         runId: resolvedRunId,
         cacheHit: meta.cacheHit,
         missingMaster: meta.missingMaster,
@@ -449,9 +451,10 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       return;
     }
 
-    const { actor, facilityId } = resolveAuditActor();
-    const detail = `文書プレビューを開きました (actor=${actor})`;
-    setNotice({ tone: 'success', message: '文書プレビューを開きました。' });
+    const outputLabel =
+      initialOutputMode === 'print' ? '印刷' : initialOutputMode === 'pdf' ? 'PDF出力' : 'プレビュー';
+    const detail = `文書${outputLabel}プレビューを開きました (actor=${actor})`;
+    setNotice({ tone: 'success', message: `文書${outputLabel}プレビューを開きました。` });
     recordChartsAuditEvent({
       action: 'PRINT_DOCUMENT',
       outcome: 'started',
@@ -485,6 +488,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       },
       actor,
       facilityId,
+      initialOutputMode,
     };
     navigate('/charts/print/document', { state: previewState });
     saveDocumentPrintPreview(previewState);
@@ -537,7 +541,26 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
           <select
             id="document-template"
             value={forms[activeType].templateId}
-            onChange={(event) => updateForm(activeType, { templateId: event.target.value })}
+            onChange={(event) => {
+              const templateId = event.target.value;
+              const template = getTemplateById(activeType, templateId);
+              updateForm(activeType, { templateId });
+              logUiState({
+                action: 'scenario_change',
+                screen: 'charts/document-create',
+                controlId: 'document-template',
+                runId: resolvedRunId,
+                cacheHit: meta.cacheHit,
+                missingMaster: meta.missingMaster,
+                fallbackUsed: meta.fallbackUsed,
+                dataSourceTransition: meta.dataSourceTransition,
+                details: {
+                  documentType: activeType,
+                  templateId,
+                  templateLabel: template?.label ?? '未選択',
+                },
+              });
+            }}
             disabled={isBlocked}
           >
             <option value="">テンプレートを選択</option>
@@ -762,7 +785,13 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                       </div>
                       <div className="charts-document-list__actions" role="group" aria-label="文書出力操作">
                         <button type="button" onClick={() => handleOpenDocumentPreview(doc)} disabled={guards.length > 0}>
-                          プレビュー/印刷
+                          プレビュー
+                        </button>
+                        <button type="button" onClick={() => handleOpenDocumentPreview(doc, 'print')} disabled={guards.length > 0}>
+                          印刷
+                        </button>
+                        <button type="button" onClick={() => handleOpenDocumentPreview(doc, 'pdf')} disabled={guards.length > 0}>
+                          PDF出力
                         </button>
                       </div>
                       {guards.length > 0 && <div className="charts-document-list__guard">出力停止: {guards[0]?.summary}</div>}
