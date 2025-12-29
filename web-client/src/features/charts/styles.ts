@@ -436,10 +436,19 @@ export const chartsStyles = css`
     padding-top: 0.5rem;
   }
 
+  .charts-side-panel__subsection--search {
+    gap: 0.65rem;
+  }
+
   .charts-side-panel__subheader {
     display: flex;
     justify-content: space-between;
     align-items: center;
+  }
+
+  .charts-side-panel__search-count {
+    font-size: 0.78rem;
+    color: #64748b;
   }
 
   .charts-side-panel__item-row {
@@ -474,6 +483,56 @@ export const chartsStyles = css`
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+  }
+
+  .charts-side-panel__search-table {
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+    border: 1px solid rgba(148, 163, 184, 0.25);
+    border-radius: 12px;
+    overflow: hidden;
+    background: #f8fafc;
+  }
+
+  .charts-side-panel__search-header {
+    display: grid;
+    grid-template-columns: 1.2fr 2.2fr 0.9fr 1fr 1.4fr;
+    gap: 0.4rem;
+    padding: 0.5rem 0.6rem;
+    font-size: 0.75rem;
+    color: #475569;
+    background: #eef2ff;
+    font-weight: 600;
+  }
+
+  .charts-side-panel__search-row {
+    display: grid;
+    grid-template-columns: 1.2fr 2.2fr 0.9fr 1fr 1.4fr;
+    gap: 0.4rem;
+    padding: 0.55rem 0.6rem;
+    border: none;
+    background: #ffffff;
+    cursor: pointer;
+    text-align: left;
+    font-size: 0.82rem;
+    color: #1f2937;
+  }
+
+  .charts-side-panel__search-row:nth-child(even) {
+    background: #f9fafb;
+  }
+
+  .charts-side-panel__search-row:disabled {
+    background: #e2e8f0;
+    color: #94a3b8;
+    cursor: not-allowed;
+  }
+
+  .charts-side-panel__search-row span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   .charts-side-panel__list-header {
