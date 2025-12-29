@@ -336,14 +336,20 @@ src:
       schedule:
         start: 2025-12-29T00:00:00.000Z
         days: 1
-    16_WEB改修計画_P0_必須判定バリデーション.md:
+    16_P0改修_必須判定バリデーション.md:
       content: |-
-        # 16 Web改修計画（P0）：必須判定バリデーション
+        # 16 P0 改修：必須判定バリデーション
 
-        - 対象: 処方の用法必須/薬剤≥1/用法検索必須、BaseEditor の entity 別必須判定。
-        - 実装方針: 既存の readOnly/missingMaster/fallbackUsed ガードと競合しない判定順序で統一バリデーションを追加。
-        - 監査ログ: バリデーション失敗/保存拒否時の UI ログ要件を確認し、必要なら auditEvent を追加。
-        - テスト: 必須違反時の保存ブロック/メッセージ表示、readOnly 時の入力抑止。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: 旧来版の必須判定（処方/処置/検査/指示/リハビリ）を Web バリデーションに反映する。
+        - 対象: OrderBundleEditPanel / BaseEditor 系（Charts 右パネル）。
+        - 実装観点:
+          - 処方: 薬剤≥1、用法必須、用法検索必須を保存前に検証。
+          - BaseEditor: entity 別必須項目の定義を整理し、保存ブロックとメッセージを統一。
+          - readOnly/missingMaster/fallbackUsed ガードと競合しない判定順序を明確化。
+        - 依存/前提: entity 定義・必須項目一覧の整備（不足時は前提ドキュメントに追記）。
+        - テスト: 必須違反時の保存ブロック/メッセージ/監査ログの整合。
       priority: High
       status: not_started
       progress: 0
@@ -355,14 +361,20 @@ src:
       schedule:
         start: 2026-01-06T00:00:00.000Z
         days: 2
-    17_WEB改修計画_P0_マスタ検索UI.md:
+    17_P0改修_マスタ検索UI.md:
       content: |-
-        # 17 Web改修計画（P0）：マスタ検索/UI
+        # 17 P0 改修：マスタ検索 UI
 
-        - 対象: OrderBundleEditPanel の検索欄・結果テーブル・行選択導線（処方/処置検査/リハビリ共通）。
-        - 実装方針: /orca/master/* 検索 API を利用し、検索→結果表示→選択反映を追加。
-        - 監査ログ: 検索/選択の記録要否を既存ポリシーに合わせて整理。
-        - テスト: 検索条件変更時の結果更新、行選択反映、readOnly ブロック。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: OrderBundleEditPanel にマスタ検索/検索結果テーブル/行選択導線を追加する。
+        - 対象: 処方/処置検査/指示/リハビリ共通の検索補助 UI。
+        - 実装観点:
+          - 検索入力→結果テーブル→行選択で入力反映。
+          - 既存の readOnly/missingMaster/fallbackUsed ガードを維持。
+          - 検索結果の表示項目と選択反映の仕様を明文化。
+        - 依存/前提: /orca/master/* の検索 API スキーマ確認（不足時は server-modernized タスク起票）。
+        - テスト: 検索条件変更時の結果更新、行選択反映、readOnly 時のブロック。
       priority: High
       status: not_started
       progress: 0
@@ -374,14 +386,20 @@ src:
       schedule:
         start: 2026-01-08T00:00:00.000Z
         days: 3
-    18_WEB改修計画_P0_展開導線.md:
+    18_P0改修_展開導線.md:
       content: |-
-        # 18 Web改修計画（P0）：展開/展開継続導線
+        # 18 P0 改修：展開/展開継続導線
 
-        - 対象: カルテ反映フローを想定した展開/展開継続 UI 導線の追加。
-        - 実装方針: /orca/order/bundles 保存フローとの整合を維持し、operationPhase を展開/保存で分離。
-        - 監査ログ: 展開/展開継続の操作を auditEvent に記録。
-        - テスト: 展開/展開継続/保存の UI 導線とログ整合。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: 旧来版の展開/展開継続操作を Web に追加し、カルテ反映フローを明確化する。
+        - 対象: Charts 右パネルの OrderBundleEditPanel。
+        - 実装観点:
+          - 展開/展開継続の UI 導線を追加し、保存導線との差分を明示。
+          - /orca/order/bundles 保存フローとの整合を維持。
+          - operationPhase を展開/保存で分離し、監査ログに反映。
+        - 依存/前提: 展開時のビジネスルール（カルテ反映定義）の合意。
+        - テスト: 展開/展開継続/保存の導線とログが一致すること。
       priority: High
       status: not_started
       progress: 0
@@ -393,14 +411,20 @@ src:
       schedule:
         start: 2026-01-11T00:00:00.000Z
         days: 2
-    19_WEB改修計画_P0_スタンプ保存取り込み.md:
+    19_P0改修_スタンプ導線.md:
       content: |-
-        # 19 Web改修計画（P0）：スタンプ保存/取り込み導線
+        # 19 P0 改修：スタンプ保存/取り込み導線
 
-        - 対象: OrderBundleEditPanel に保存 UI/既存スタンプ選択 UI/反映手順を追加。
-        - 実装方針: /stamp/* API の適用可否を確認し、保存/取り込みの導線を設計。
-        - 監査ログ: スタンプ保存/取り込み操作の auditEvent を追加。
-        - テスト: 保存/取り込みの成功・失敗、反映手順表示、readOnly ブロック。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: スタンプ保存/取り込み相当の導線を Web に実装する。
+        - 対象: OrderBundleEditPanel（保存 UI / 既存スタンプ選択 UI）。
+        - 実装観点:
+          - スタンプ保存の入力項目（名称/分類/対象）と選択 UI を追加。
+          - 取り込み後の編集反映手順を明示。
+          - 監査ログに保存/取り込み操作を記録。
+        - 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。
+        - テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。
       priority: High
       status: not_started
       progress: 0
@@ -411,15 +435,21 @@ src:
         - src/order_input_gap_analysis/15_改修前提ドキュメント整備.md
       schedule:
         start: 2026-01-13T00:00:00.000Z
-        days: 3
-    20_WEB改修計画_P0_文書メニューとフォーム.md:
+        days: 2
+    20_P0改修_文書作成フォーム.md:
       content: |-
-        # 20 Web改修計画（P0）：文書作成メニュー/フォーム
+        # 20 P0 改修：文書作成メニュー/フォーム
 
-        - 対象: Charts 右パネルに文書作成メニューとフォーム（紹介状/診断書/返信書）を追加。
-        - 実装方針: 文書作成 API の有無を確認し、必須項目までのフォーム導線を実装。
-        - 監査ログ: 文書作成操作の auditEvent（screen/charts, runId, operationPhase）を追加。
-        - テスト: メニュー表示、フォーム起動、保存/中断時の挙動。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: Charts 右パネルに文書作成メニューと P0 範囲のフォームを追加する。
+        - 対象: 紹介状/診断書/返信書の基本フォーム。
+        - 実装観点:
+          - 文書作成メニューの表示とフォーム起動導線を追加。
+          - P0 必須項目の入力/保存フローを整備（テンプレ/印刷は P1 以降）。
+          - operationPhase と runId を監査ログに付与。
+        - 依存/前提: 文書作成 API の有無/仕様確認（不足時は server-modernized タスク起票）。
+        - テスト: メニュー表示、フォーム起動、保存/中断の導線確認。
       priority: High
       status: not_started
       progress: 0
@@ -429,16 +459,22 @@ src:
         - src/order_input_gap_analysis/13_WEB修正タスク化_P0.md
         - src/order_input_gap_analysis/15_改修前提ドキュメント整備.md
       schedule:
-        start: 2026-01-16T00:00:00.000Z
+        start: 2026-01-15T00:00:00.000Z
         days: 3
-    21_WEB改修計画_P1_DnD全クリア行削除.md:
+    21_P1改修_DnD行操作.md:
       content: |-
-        # 21 Web改修計画（P1）：DnD 並べ替え/全クリア/行削除補助
+        # 21 P1 改修：DnD 並べ替え / 全クリア / 行削除補助
 
-        - 対象: OrderBundleEditPanel の DnD 並べ替え/全クリア/行削除補助 UI。
-        - 実装方針: DnD ライブラリ選定、確認ダイアログ追加、既存削除 UI の補助導線追加。
-        - 監査ログ: edit 操作ログの runId/screen/operationPhase を維持。
-        - テスト: DnD 後の保存順序反映、readOnly ブロック。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: OrderBundleEditPanel の操作補助 UI を追加する。
+        - 対象: Charts 右パネル（OrderBundleEditPanel）。
+        - 実装観点:
+          - 行ドラッグで並べ替え可能にする。
+          - 「全クリア」操作と確認導線を追加。
+          - 行削除の明示アクションを追加。
+        - 依存/前提: DnD ライブラリ選定と既存テーブル構造の整理。
+        - テスト: 保存順序の反映、readOnly/missingMaster/fallbackUsed 時の無効化。
       priority: Medium
       status: not_started
       progress: 0
@@ -446,18 +482,24 @@ src:
       api: []
       dependency:
         - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
-        - src/order_input_gap_analysis/20_WEB改修計画_P0_文書メニューとフォーム.md
       schedule:
-        start: 2026-01-21T00:00:00.000Z
-        days: 3
-    22_WEB改修計画_P1_注射放射線コメント材料.md:
+        start: 2026-01-20T00:00:00.000Z
+        days: 2
+    22_P1改修_注射放射線コメント材料.md:
       content: |-
-        # 22 Web改修計画（P1）：注射/放射線/コメント/材料 UI
+        # 22 P1 改修：注射/放射線/コメントコード/材料 UI
 
-        - 対象: 注射「手技料なし」、放射線部位検索/部位チェック表示、コメントコード行編集、材料（SLOT_ZAIRYO）追加 UI。
-        - 実装方針: /orca/order/bundles と /orca/master/* の API を前提に UI を拡張。
-        - 監査ログ: edit ログにフラグ/部位/コメント/材料の変更内容を含める。
-        - テスト: 各 UI の保存/再表示、readOnly ブロック、マスタ検索の反映。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: 旧来版に合わせた専用 UI（注射/放射線/コメントコード/材料）を追加する。
+        - 対象: OrderBundleEditPanel（注射/処置検査/指示/リハビリ）。
+        - 実装観点:
+          - 注射「手技料なし」フラグ UI 追加。
+          - 放射線部位検索・部位チェック表示を追加。
+          - コメントコード行の追加/編集 UI を追加。
+          - 材料（SLOT_ZAIRYO）追加 UI を追加。
+        - 依存/前提: /orca/master/bodypart/material 等の API 確認（不足時は server-modernized タスク起票）。
+        - テスト: 追加/編集/削除の保存反映、readOnly ブロック。
       priority: Medium
       status: not_started
       progress: 0
@@ -465,17 +507,21 @@ src:
       api: []
       dependency:
         - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
-        - src/order_input_gap_analysis/21_WEB改修計画_P1_DnD全クリア行削除.md
       schedule:
-        start: 2026-01-24T00:00:00.000Z
-        days: 4
-    23_WEB改修計画_P1_文書テンプレ印刷.md:
+        start: 2026-01-22T00:00:00.000Z
+        days: 3
+    23_P1改修_文書テンプレ印刷.md:
       content: |-
-        # 23 Web改修計画（P1）：文書テンプレ差し込み/文書別印刷導線
+        # 23 P1 改修：文書テンプレ差し込み/文書別印刷導線
 
-        - 対象: 文書テンプレ選択（差し込み）と文書別印刷/プレビュー導線の追加。
-        - 実装方針: テンプレ取得/印刷 API の有無を確認し、導線設計を実装。
-        - 監査ログ: 文書出力の操作ログを既存印刷ログに準拠して追加。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: ODT テンプレ差し込みと文書別印刷導線を追加する。
+        - 対象: Charts 文書作成導線。
+        - 実装観点:
+          - テンプレ選択 UI を追加し、文書別に印刷/プレビュー導線を整理。
+          - 出力操作の監査ログを既存印刷ログに準拠して追加。
+        - 依存/前提: 文書テンプレ API/出力 API の仕様確認（不足時は server-modernized タスク起票）。
         - テスト: テンプレ選択→生成→印刷の導線、権限/ガード条件。
       priority: Medium
       status: not_started
@@ -484,18 +530,23 @@ src:
       api: []
       dependency:
         - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
-        - src/order_input_gap_analysis/20_WEB改修計画_P0_文書メニューとフォーム.md
       schedule:
-        start: 2026-01-30T00:00:00.000Z
+        start: 2026-01-25T00:00:00.000Z
         days: 3
-    24_WEB改修計画_P2_リハビリ予約連携.md:
+    24_P2改修_リハビリ予約連携.md:
       content: |-
-        # 24 Web改修計画（P2）：リハビリ予約/スケジュール連携
+        # 24 P2 改修：リハビリ予約/スケジュール連携
 
-        - 対象: リハビリ予約/スケジュール連携 UI の可否検討と代替運用案の明記。
-        - 実装方針: 予約/スケジュール API の有無を調査し、可能であれば UI 導線設計まで行う。
-        - 監査ログ: 連携を実装する場合の操作ログ方針を定義。
-        - テスト: 連携 UI の成否、代替運用時の入力誘導文言。
+        RUN_ID: 20251229T081044Z
+
+        - 目的: リハビリ予約/スケジュール連携 UI の可否を判断し、代替運用を整理する。
+        - 対象: リハビリオーダー入力（Charts 右パネル）。
+        - 実装観点:
+          - 予約/スケジュール API の有無と利用可否を調査。
+          - 実装不可の場合は代替運用（手入力/別システム）を明文化。
+          - 実装可能なら UI 導線と監査ログ方針を定義。
+        - 依存/前提: 予約/スケジュール連携仕様の確認（不足時は server-modernized タスク起票）。
+        - テスト: 代替運用の入力誘導文言と UI 表示確認。
       priority: Low
       status: not_started
       progress: 0
@@ -504,25 +555,7 @@ src:
       dependency:
         - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
       schedule:
-        start: 2026-02-03T00:00:00.000Z
-        days: 3
-    25_server-modernized_APIギャップ確認.md:
-      content: |-
-        # 25 server-modernized APIギャップ確認（必要時改修計画）
-
-        - 対象: P0/P1 実装に必要な API の不足有無を確認し、不足時のみ server-modernized の改修計画を起票する。
-        - 確認対象: /stamp/*、文書テンプレ取得/出力 API、/orca/master/*（部位/材料等）。
-        - 成果: 不足 API が判明した場合は改修タスクをガントに追加し、不要なら根拠を記録。
-      priority: High
-      status: not_started
-      progress: 0
-      agent: codex
-      api: []
-      dependency:
-        - src/order_input_gap_analysis/13_WEB修正タスク化_P0.md
-        - src/order_input_gap_analysis/14_WEB修正タスク化_P1_P2.md
-      schedule:
-        start: 2026-01-07T00:00:00.000Z
+        start: 2026-01-28T00:00:00.000Z
         days: 2
     15_改修前提ドキュメント整備.md:
       content: |-
@@ -568,12 +601,12 @@ src:
         - 追記対応: 新規差分が出た場合は 09 → 10 の順に追記し、P0/P1/P2 の優先度と再現手順を明確化する。
         - 完了条件: `10_ドキュメント化とレビュー.md` にチェック日時/確認者を追記し、差分漏れなしの記録を残す。
       priority: High
-      status: completed
-      progress: 100
+      status: not_started
+      progress: 0
       agent: cursor cli
       api: []
       dependency:
         - src/order_input_gap_analysis/10_ドキュメント化とレビュー.md
       schedule:
-        start: 2025-12-29T00:00:00.000Z
+        start: 2026-01-05T00:00:00.000Z
         days: 1
