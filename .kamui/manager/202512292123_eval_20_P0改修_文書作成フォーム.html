@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 20 P0改修 文書作成フォーム</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.02em;
+        color: #1f2a30;
+      }
+      .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.compare-table {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .hex-block {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+      .hex-chart {
+        width: 130px;
+        height: 130px;
+      }
+      .hex-labels {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .hex-labels div {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        margin: 0 0 8px;
+        font-size: 14px;
+        font-weight: 600;
+        color: #2c3a40;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+        margin-right: 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      details {
+        display: block;
+        margin: 10px 0 0;
+      }
+      details summary {
+        list-style: none;
+        cursor: pointer;
+        font-size: 12px;
+        color: #1f2a30;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 8px 0 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      a {
+        color: #1b4f72;
+      }
+      .link-list {
+        margin: 6px 0 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - 20 P0改修 文書作成フォーム</h1>
+        <p class="monitor-description">対象: 文書作成メニュー/フォーム追加、P0必須項目の入力・保存導線、監査ログへの operationPhase/runId 付与。評価軸は緻密性を中心に判定。</p>
+        <p class="monitor-description">評価対象ブランチ: task-1767008682584-3261d1 / task-1767008682229-fb07e6 / task-1767008682030-2a5f3f</p>
+      </header>
+
+      <section>
+        <h2 class="section-title">タスク概要</h2>
+        <p class="note">Charts 右パネルに文書作成メニューを追加し、紹介状/診断書/返信書のP0必須項目入力・保存/中断導線を実装。監査ログに operationPhase と runId を付与する要件。</p>
+      </section>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <h2>AI task-1767008682030-2a5f3f</h2>
+          <div class="score-total">🥇 523 / 600</div>
+          <div class="score-meta">メダル: 🥇 / スコア: 87</div>
+        </div>
+        <div class="score-card">
+          <h2>AI task-1767008682584-3261d1</h2>
+          <div class="score-total">🥈 418 / 600</div>
+          <div class="score-meta">メダル: 🥈 / スコア: 70</div>
+        </div>
+        <div class="score-card">
+          <h2>AI task-1767008682229-fb07e6</h2>
+          <div class="score-total">🥉 145 / 600</div>
+          <div class="score-meta">メダル: ⚪️ / スコア: 24</div>
+        </div>
+      </section>
+
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>AI task-1767008682030-2a5f3f</th>
+            <th>AI task-1767008682584-3261d1</th>
+            <th>AI task-1767008682229-fb07e6</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="hex-block">
+                <svg class="hex-chart" viewBox="0 0 120 120" data-scores="92,88,90,86,85,82"></svg>
+                <div class="hex-labels">
+                  <div>要件適合 92点</div>
+                  <div>UI導線 88点</div>
+                  <div>監査ログ 90点</div>
+                  <div>保存/中断 86点</div>
+                  <div>テスト 85点</div>
+                  <div>変更管理/保守 82点</div>
+                </div>
+              </div>
+              <div class="section-title">評価メモ</div>
+              <div class="note">
+                <span class="status-badge">良好</span>
+                文書作成パネルを追加し、紹介状/診断書/返信書の必須項目・保存/中断導線を実装。監査ログに action 追加、operationPhase/runId 付与、UIテスト追加まで整備。
+              </div>
+              <div class="note">懸念: 保存が端末セッション内で完結（永続化なし）。P0仕様として許容か確認が必要。</div>
+              <details>
+                <summary>コミットログ</summary>
+                <pre>2f40ad5b7 feat(charts): add document create panel P0 (RUN_ID=20251229T081044Z)
+1d498f5f0 Merge task/task-1767003790784-a9638d
+...</pre>
+              </details>
+              <details>
+                <summary>差分概要</summary>
+                <pre>DocumentCreatePanel 追加, ChartsPage 組み込み, audit.ts で action/detail 許可追加, styles 追加, documentCreatePanel.test 追加</pre>
+              </details>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767008682030-2a5f3f/web-client/src/features/charts/DocumentCreatePanel.tsx">DocumentCreatePanel.tsx</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767008682030-2a5f3f/web-client/src/features/charts/__tests__/documentCreatePanel.test.tsx">documentCreatePanel.test.tsx</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767008682030-2a5f3f/web-client/src/features/charts/pages/ChartsPage.tsx">ChartsPage.tsx</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="hex-block">
+                <svg class="hex-chart" viewBox="0 0 120 120" data-scores="78,80,70,78,40,72"></svg>
+                <div class="hex-labels">
+                  <div>要件適合 78点</div>
+                  <div>UI導線 80点</div>
+                  <div>監査ログ 70点</div>
+                  <div>保存/中断 78点</div>
+                  <div>テスト 40点</div>
+                  <div>変更管理/保守 72点</div>
+                </div>
+              </div>
+              <div class="section-title">評価メモ</div>
+              <div class="note">
+                <span class="status-badge">概ね対応</span>
+                文書作成パネル/フォームとローカル保存導線を実装。ログ送信に runId/operationPhase を含めている。
+              </div>
+              <div class="note">懸念: audit.ts への action/detail 許可追加がなく、CHARTS_DOCUMENT_MUTATION が既存許可リスト外の可能性。テスト未整備。</div>
+              <details>
+                <summary>コミットログ</summary>
+                <pre>d09b535ab Add charts document create panel (RUN_ID=20251229T081044Z)
+1d498f5f0 Merge task/task-1767003790784-a9638d
+...</pre>
+              </details>
+              <details>
+                <summary>差分概要</summary>
+                <pre>DocumentCreatePanel 追加, ChartsPage 組み込み, styles 追加 (audit.ts 更新なし / テスト追加なし)</pre>
+              </details>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767008682584-3261d1/web-client/src/features/charts/DocumentCreatePanel.tsx">DocumentCreatePanel.tsx</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767008682584-3261d1/web-client/src/features/charts/pages/ChartsPage.tsx">ChartsPage.tsx</a></li>
+              </ul>
+            </td>
+            <td>
+              <div class="hex-block">
+                <svg class="hex-chart" viewBox="0 0 120 120" data-scores="20,25,30,20,20,30"></svg>
+                <div class="hex-labels">
+                  <div>要件適合 20点</div>
+                  <div>UI導線 25点</div>
+                  <div>監査ログ 30点</div>
+                  <div>保存/中断 20点</div>
+                  <div>テスト 20点</div>
+                  <div>変更管理/保守 30点</div>
+                </div>
+              </div>
+              <div class="section-title">評価メモ</div>
+              <div class="note">
+                <span class="status-badge">未完了</span>
+                文書作成フォームの実装がブランチ上に存在せず、要件未達。未コミットの変更が多数（npm cache と DocumentCreatePanel.tsx など）が残存。
+              </div>
+              <details>
+                <summary>コミットログ</summary>
+                <pre>1d498f5f0 Merge task/task-1767003790784-a9638d
+... (文書作成関連の新規コミットなし)</pre>
+              </details>
+              <details>
+                <summary>差分概要</summary>
+                <pre>DocumentCreatePanel の追加なし。diff は他タスク由来の OrderBundle / MasterSearch 系が中心。</pre>
+              </details>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <ul class="link-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767008682229-fb07e6/web-client/src/features/charts/pages/ChartsPage.tsx">ChartsPage.tsx (未コミット変更あり)</a></li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <section style="margin-top: 24px;">
+        <h2 class="section-title">観測された未コミット変更</h2>
+        <p class="note">task-1767008682229-fb07e6 の worktree に npm キャッシュと DocumentCreatePanel などの未コミット変更が残存。評価時点では完了扱い不可。</p>
+      </section>
+    </div>
+
+    <script>
+      const charts = document.querySelectorAll('.hex-chart');
+      const hexPoints = (radius, cx, cy) => {
+        const angles = [-90, -30, 30, 90, 150, 210];
+        return angles.map((deg) => {
+          const rad = (Math.PI / 180) * deg;
+          const x = cx + radius * Math.cos(rad);
+          const y = cy + radius * Math.sin(rad);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+      };
+      charts.forEach((svg) => {
+        const scores = (svg.dataset.scores || '').split(',').map((v) => Number(v.trim()) || 0);
+        const cx = 60;
+        const cy = 60;
+        const maxRadius = 46;
+        const base = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        base.setAttribute('points', hexPoints(maxRadius, cx, cy).join(' '));
+        base.setAttribute('fill', '#e9f0f2');
+        base.setAttribute('stroke', '#b8c9cd');
+        base.setAttribute('stroke-width', '1');
+        svg.appendChild(base);
+        const dataPoints = scores.map((score, index) => {
+          const ratio = Math.max(0, Math.min(100, score)) / 100;
+          const radius = maxRadius * ratio;
+          const angle = (-90 + index * 60) * (Math.PI / 180);
+          const x = cx + radius * Math.cos(angle);
+          const y = cy + radius * Math.sin(angle);
+          return `${x.toFixed(1)},${y.toFixed(1)}`;
+        });
+        const data = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+        data.setAttribute('points', dataPoints.join(' '));
+        data.setAttribute('fill', 'rgba(36, 122, 150, 0.35)');
+        data.setAttribute('stroke', '#247a96');
+        data.setAttribute('stroke-width', '1.5');
+        svg.appendChild(data);
+      });
+    </script>
+  </body>
+</html>

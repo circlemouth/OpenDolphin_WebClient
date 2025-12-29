@@ -26,32 +26,6 @@
     "aiCompetitionScore": 55
   },
   {
-    "id": "task-1767003055268-da2129",
-    "name": "CodexCLI2: [order input gap analysis plan 20251229] 16_P0改修_必須判定バリデーション\n期間: 01/06 09:00 - 01/08 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 16 P0 改修：必須判定バリデーション\n\nRUN_ID: 20251229T081044Z\n\n- 目的: 旧来版の必須判定（処方/処置/検査/指示/リハビリ）を Web バリデーションに反映する。\n- 対象: OrderBundleEditPanel / BaseEditor 系（Charts 右パネル）。\n- 実装観点:\n  - 処方: 薬剤≥1、用法必須、用法検索必須を保存前に検証。\n  - BaseEditor: entity 別必須項目の定義を整理し、保存ブロックとメッセージを統一。\n  - readOnly/missingMaster/fallbackUsed ガードと競合しない判定順序を明確化。\n- 依存/前提: entity 定義・必須項目一覧の整備（不足時は前提ドキュメントに追記）。\n- テスト: 必須違反時の保存ブロック/メッセージ/監査ログの整合。\n\nYAML ID: src/order_input_gap_analysis/16_P0改修_必須判定バリデーション.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-29T10:10:55.268Z",
-    "updatedAt": "2025-12-29T10:10:55.268Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1767003055268-da2129",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767003055067-iyw32lrd",
-    "aiCompetitionGroupName": "[order input gap analysis plan 20251229] 16_P0改修_必須判定バリデーション\n期間: 01/06 09:00 - 01/08 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 16 P0 改修：必須判定バリデーション\n\nRUN_ID: 20251229T081044Z\n\n- 目的: 旧来版の必須判定（処方/処置/検査/指示/リハビリ）を Web バリデーションに反映する。\n- 対象: OrderBundleEditPanel / BaseEditor 系（Charts 右パネル）。\n- 実装観点:\n  - 処方: 薬剤≥1、用法必須、用法検索必須を保存前に検証。\n  - BaseEditor: entity 別必須項目の定義を整理し、保存ブロックとメッセージを統一。\n  - readOnly/missingMaster/fallbackUsed ガードと競合しない判定順序を明確化。\n- 依存/前提: entity 定義・必須項目一覧の整備（不足時は前提ドキュメントに追記）。\n- テスト: 必須違反時の保存ブロック/メッセージ/監査ログの整合。\n\nYAML ID: src/order_input_gap_analysis/16_P0改修_必須判定バリデーション.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767003055268-da2129",
-    "medal": "silver",
-    "aiCompetitionScore": 74
-  },
-  {
     "id": "task-yaml-5r5nc2-src-order-input-",
     "name": "[order input gap analysis plan 20251229] 18_P0改修_展開導線\n期間: 01/11 09:00 - 01/13 09:00 / 優先度: high / 緊急度: medium / エージェント: codex\n\n# 18 P0 改修：展開/展開継続導線\n\nRUN_ID: 20251229T081044Z\n\n- 目的: 旧来版の展開/展開継続操作を Web に追加し、カルテ反映フローを明確化する。\n- 対象: Charts 右パネルの OrderBundleEditPanel。\n- 実装観点:\n  - 展開/展開継続の UI 導線を追加し、保存導線との差分を明示。\n  - /orca/order/bundles 保存フローとの整合を維持。\n  - operationPhase を展開/保存で分離し、監査ログに反映。\n- 依存/前提: 展開時のビジネスルール（カルテ反映定義）の合意。\n- テスト: 展開/展開継続/保存の導線とログが一致すること。\n\nYAML ID: src/order_input_gap_analysis/18_P0改修_展開導線.md",
     "model": "YAML App",
@@ -202,11 +176,11 @@
     "id": "task-yaml-1iatjot-src-order-input-",
     "name": "[order input gap analysis plan 20251229] 19_P0改修_スタンプ導線\n期間: 01/13 09:00 - 01/15 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 19 P0 改修：スタンプ保存/取り込み導線\n\nRUN_ID: 20251229T081044Z\n\n- 目的: スタンプ保存/取り込み相当の導線を Web に実装する。\n- 対象: OrderBundleEditPanel（保存 UI / 既存スタンプ選択 UI）。\n- 実装観点:\n  - スタンプ保存の入力項目（名称/分類/対象）と選択 UI を追加。\n  - 取り込み後の編集反映手順を明示。\n  - 監査ログに保存/取り込み操作を記録。\n- 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。\n\nYAML ID: src/order_input_gap_analysis/19_P0改修_スタンプ導線.md",
     "model": "YAML App",
-    "status": "pending",
+    "status": "completed",
     "importance": "high",
     "urgency": "low",
     "createdAt": "2025-12-29T11:38:00.902Z",
-    "updatedAt": "2025-12-29T11:38:00.902Z",
+    "updatedAt": "2025-12-29T19:37:20.981Z",
     "requiresTerminal": false,
     "createWorktree": false,
     "branchName": "task/task-yaml-1iatjot-src-order-input-",
@@ -297,30 +271,6 @@
     "description": "# 20 P0 改修：文書作成メニュー/フォーム\n\nRUN_ID: 20251229T081044Z\n\n- 目的: Charts 右パネルに文書作成メニューと P0 範囲のフォームを追加する。\n- 対象: 紹介状/診断書/返信書の基本フォーム。\n- 実装観点:\n  - 文書作成メニューの表示とフォーム起動導線を追加。\n  - P0 必須項目の入力/保存フローを整備（テンプレ/印刷は P1 以降）。\n  - operationPhase と runId を監査ログに付与。\n- 依存/前提: 文書作成 API の有無/仕様確認（不足時は server-modernized タスク起票）。\n- テスト: メニュー表示、フォーム起動、保存/中断の導線確認。"
   },
   {
-    "id": "task-1767008346705-544374",
-    "name": "CodexCLI2: [order input gap analysis plan 20251229] 19_P0改修_スタンプ導線\n期間: 01/13 09:00 - 01/15 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 19 P0 改修：スタンプ保存/取り込み導線\n\nRUN_ID: 20251229T081044Z\n\n- 目的: スタンプ保存/取り込み相当の導線を Web に実装する。\n- 対象: OrderBundleEditPanel（保存 UI / 既存スタンプ選択 UI）。\n- 実装観点:\n  - スタンプ保存の入力項目（名称/分類/対象）と選択 UI を追加。\n  - 取り込み後の編集反映手順を明示。\n  - 監査ログに保存/取り込み操作を記録。\n- 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。\n\nYAML ID: src/order_input_gap_analysis/19_P0改修_スタンプ導線.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-29T11:39:06.705Z",
-    "updatedAt": "2025-12-29T11:39:06.705Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1767008346705-544374",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767008346407-w6ognv3g",
-    "aiCompetitionGroupName": "[order input gap analysis plan 20251229] 19_P0改修_スタンプ導線\n期間: 01/13 09:00 - 01/15 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 19 P0 改修：スタンプ保存/取り込み導線\n\nRUN_ID: 20251229T081044Z\n\n- 目的: スタンプ保存/取り込み相当の導線を Web に実装する。\n- 対象: OrderBundleEditPanel（保存 UI / 既存スタンプ選択 UI）。\n- 実装観点:\n  - スタンプ保存の入力項目（名称/分類/対象）と選択 UI を追加。\n  - 取り込み後の編集反映手順を明示。\n  - 監査ログに保存/取り込み操作を記録。\n- 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。\n\nYAML ID: src/order_input_gap_analysis/19_P0改修_スタンプ導線.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767008346705-544374"
-  },
-  {
     "id": "task-1767008346875-58068a",
     "name": "CodexCLI3: [order input gap analysis plan 20251229] 19_P0改修_スタンプ導線\n期間: 01/13 09:00 - 01/15 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 19 P0 改修：スタンプ保存/取り込み導線\n\nRUN_ID: 20251229T081044Z\n\n- 目的: スタンプ保存/取り込み相当の導線を Web に実装する。\n- 対象: OrderBundleEditPanel（保存 UI / 既存スタンプ選択 UI）。\n- 実装観点:\n  - スタンプ保存の入力項目（名称/分類/対象）と選択 UI を追加。\n  - 取り込み後の編集反映手順を明示。\n  - 監査ログに保存/取り込み操作を記録。\n- 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。\n\nYAML ID: src/order_input_gap_analysis/19_P0改修_スタンプ導線.md",
     "model": "Codex CLI",
@@ -342,31 +292,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767008346875-58068a"
-  },
-  {
-    "id": "task-1767008346470-928f9b",
-    "name": "CodexCLI1: [order input gap analysis plan 20251229] 19_P0改修_スタンプ導線\n期間: 01/13 09:00 - 01/15 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 19 P0 改修：スタンプ保存/取り込み導線\n\nRUN_ID: 20251229T081044Z\n\n- 目的: スタンプ保存/取り込み相当の導線を Web に実装する。\n- 対象: OrderBundleEditPanel（保存 UI / 既存スタンプ選択 UI）。\n- 実装観点:\n  - スタンプ保存の入力項目（名称/分類/対象）と選択 UI を追加。\n  - 取り込み後の編集反映手順を明示。\n  - 監査ログに保存/取り込み操作を記録。\n- 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。\n\nYAML ID: src/order_input_gap_analysis/19_P0改修_スタンプ導線.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-29T11:39:06.470Z",
-    "updatedAt": "2025-12-29T11:39:06.470Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1767008346470-928f9b",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767008346407-w6ognv3g",
-    "aiCompetitionGroupName": "[order input gap analysis plan 20251229] 19_P0改修_スタンプ導線\n期間: 01/13 09:00 - 01/15 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 19 P0 改修：スタンプ保存/取り込み導線\n\nRUN_ID: 20251229T081044Z\n\n- 目的: スタンプ保存/取り込み相当の導線を Web に実装する。\n- 対象: OrderBundleEditPanel（保存 UI / 既存スタンプ選択 UI）。\n- 実装観点:\n  - スタンプ保存の入力項目（名称/分類/対象）と選択 UI を追加。\n  - 取り込み後の編集反映手順を明示。\n  - 監査ログに保存/取り込み操作を記録。\n- 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。\n\nYAML ID: src/order_input_gap_analysis/19_P0改修_スタンプ導線.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767008346470-928f9b"
+    "worktreePath": ".worktrees/task-1767008346875-58068a",
+    "medal": "gold",
+    "aiCompetitionScore": 86
   },
   {
     "id": "task-1767008366789-009ab6",
@@ -426,7 +354,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767008682030-2a5f3f"
+    "worktreePath": ".worktrees/task-1767008682030-2a5f3f",
+    "medal": "gold",
+    "aiCompetitionScore": 87
   },
   {
     "id": "task-1767008682584-3261d1",
@@ -450,7 +380,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767008682584-3261d1"
+    "worktreePath": ".worktrees/task-1767008682584-3261d1",
+    "medal": "silver",
+    "aiCompetitionScore": 70
   },
   {
     "id": "task-1767008682229-fb07e6",
@@ -474,7 +406,9 @@
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767008682229-fb07e6"
+    "worktreePath": ".worktrees/task-1767008682229-fb07e6",
+    "medal": "none",
+    "aiCompetitionScore": 24
   },
   {
     "id": "task-1767008699922-b680c0",
