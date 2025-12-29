@@ -1,9 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
+import { readStoredAuth } from '../../libs/auth/storedAuth';
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchOrderBundles, mutateOrderBundles, type OrderBundle, type OrderBundleItem } from './orderBundleApi';
+import { fetchStampDetail, fetchStampTree, fetchUserProfile, type StampBundleJson, type StampTreeEntry } from './stampApi';
+import { loadLocalStamps, saveLocalStamp, type LocalStampEntry } from './stampStorage';
 import type { DataSourceTransition } from './authService';
 
 export type OrderBundleEditPanelMeta = {
@@ -58,6 +61,19 @@ type BundleValidationRule = {
   itemLabel: string;
   requiresItems: boolean;
   requiresUsage: boolean;
+};
+
+type StampNotice = { tone: 'info' | 'success' | 'error'; message: string };
+
+type StampSelection = {
+  source: 'local' | 'server';
+  id: string;
+};
+
+type StampFormState = {
+  name: string;
+  category: string;
+  target: string;
 };
 
 const buildEmptyItem = (): OrderBundleItem => ({ name: '', quantity: '', unit: '', memo: '' });
@@ -124,6 +140,34 @@ const toFormState = (bundle: OrderBundle, today: string): BundleFormState => ({
   items: bundle.items && bundle.items.length > 0 ? bundle.items.map((item) => ({ ...item })) : [buildEmptyItem()],
 });
 
+const toFormStateFromStamp = (stamp: StampBundleJson, today: string): BundleFormState => ({
+  bundleName: stamp.orderName ?? stamp.className ?? '',
+  admin: stamp.admin ?? '',
+  bundleNumber: stamp.bundleNumber ?? '1',
+  adminMemo: stamp.adminMemo ?? '',
+  memo: stamp.memo ?? '',
+  startDate: today,
+  items:
+    stamp.claimItem && stamp.claimItem.length > 0
+      ? stamp.claimItem.map((item) => ({
+          name: item.name ?? '',
+          quantity: item.number ?? '',
+          unit: item.unit ?? '',
+          memo: item.memo ?? '',
+        }))
+      : [buildEmptyItem()],
+});
+
+const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => ({
+  bundleName: stamp.bundle.bundleName,
+  admin: stamp.bundle.admin,
+  bundleNumber: stamp.bundle.bundleNumber,
+  adminMemo: stamp.bundle.adminMemo,
+  memo: stamp.bundle.memo,
+  startDate: stamp.bundle.startDate,
+  items: stamp.bundle.items.length > 0 ? stamp.bundle.items.map((item) => ({ ...item })) : [buildEmptyItem()],
+});
+
 const formatBundleName = (bundle: OrderBundle) => bundle.bundleName ?? '名称未設定';
 
 export const validateBundleForm = ({
@@ -162,6 +206,10 @@ export function OrderBundleEditPanel({
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [form, setForm] = useState<BundleFormState>(() => buildEmptyForm(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
+  const [stampNotice, setStampNotice] = useState<StampNotice | null>(null);
+  const [stampForm, setStampForm] = useState<StampFormState>({ name: '', category: '', target: entity });
+  const [selectedStamp, setSelectedStamp] = useState<string>('');
+  const [localStamps, setLocalStamps] = useState<LocalStampEntry[]>([]);
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -197,6 +245,18 @@ export function OrderBundleEditPanel({
     }),
     [meta],
   );
+
+  const storedAuth = useMemo(() => readStoredAuth(), []);
+  const userName = storedAuth ? `:` : null;
+
+  useEffect(() => {
+    if (!userName) return;
+    setLocalStamps(loadLocalStamps(userName));
+  }, [userName]);
+
+  useEffect(() => {
+    setStampForm((prev) => ({ ...prev, target: entity }));
+  }, [entity]);
 
   const queryKey = ['charts-order-bundles', patientId, entity];
   const bundleQuery = useQuery({
@@ -236,6 +296,80 @@ export function OrderBundleEditPanel({
       },
     });
   }, [entity, meta]);
+
+  const userProfileQuery = useQuery({
+    queryKey: ['charts-user-profile', userName],
+    queryFn: () => {
+      if (!userName) throw new Error('userName is required');
+      return fetchUserProfile(userName);
+    },
+    enabled: !!userName,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const userPk = userProfileQuery.data?.id;
+
+  const stampTreeQuery = useQuery({
+    queryKey: ['charts-stamp-tree', userPk],
+    queryFn: () => {
+      if (!userPk) throw new Error('userPk is required');
+      return fetchStampTree(userPk);
+    },
+    enabled: typeof userPk === 'number',
+  });
+
+  const stampTreeEntries = useMemo(() => {
+    const trees = stampTreeQuery.data?.trees ?? [];
+    return trees
+      .filter((tree) => tree.entity === entity)
+      .flatMap((tree) =>
+        (Array.isArray(tree.stampList) ? tree.stampList : []).map((stamp) => ({
+          ...stamp,
+          treeName: tree.treeName,
+          treeEntity: tree.entity,
+        })),
+      );
+  }, [entity, stampTreeQuery.data?.trees]);
+
+  const stampCategories = useMemo(() => {
+    const fromServer = stampTreeEntries.map((entry) => entry.treeName).filter((name) => name && name.trim().length > 0);
+    const fromLocal = localStamps.map((stamp) => stamp.category).filter((name) => name && name.trim().length > 0);
+    return Array.from(new Set([...fromServer, ...fromLocal])).sort();
+  }, [localStamps, stampTreeEntries]);
+
+  const stampTargets = useMemo(
+    () => [
+      { value: 'medOrder', label: '処方' },
+      { value: 'generalOrder', label: '処置/検査/指示' },
+      { value: 'injectionOrder', label: '注射' },
+      { value: 'treatmentOrder', label: '処置' },
+      { value: 'surgeryOrder', label: '手術' },
+      { value: 'testOrder', label: '検査' },
+      { value: 'physiologyOrder', label: '生理検査' },
+      { value: 'bacteriaOrder', label: '細菌検査' },
+      { value: 'radiologyOrder', label: '放射線' },
+      { value: 'otherOrder', label: 'その他' },
+    ],
+    [],
+  );
+  const resolvedStampTargets = useMemo(() => {
+    if (stampTargets.some((option) => option.value === entity)) {
+      return stampTargets;
+    }
+    return [...stampTargets, { value: entity, label: entity }];
+  }, [entity, stampTargets]);
+
+  const localStampOptions = useMemo(
+    () => localStamps.filter((stamp) => stamp.target === entity),
+    [entity, localStamps],
+  );
+
+  const parseStampSelection = (value: string): StampSelection | null => {
+    if (!value) return null;
+    const [source, id] = value.split('::');
+    if ((source !== 'local' && source !== 'server') || !id) return null;
+    return { source, id };
+  };
 
   const mutation = useMutation({
     mutationFn: async (payload: OrderBundleSubmitPayload) => {
@@ -482,6 +616,247 @@ export function OrderBundleEditPanel({
     mutation.mutate({ form, action });
   };
 
+  const stampImportMutation = useMutation({
+    mutationFn: async (stampId: string) => fetchStampDetail(stampId),
+    onSuccess: (result, stampId) => {
+      if (!result.ok || !result.stamp) {
+        setStampNotice({ tone: 'error', message: result.message ?? 'スタンプの取り込みに失敗しました。' });
+        logAuditEvent({
+          runId: result.runId ?? meta.runId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          payload: {
+            action: 'CHARTS_STAMP_IMPORT',
+            outcome: 'error',
+            subject: 'charts',
+            details: {
+              ...auditMetaDetails,
+              runId: result.runId ?? meta.runId,
+              operationPhase: 'import',
+            entity,
+            patientId,
+            stampId,
+            stampSource: 'server',
+            reason: result.message ?? 'stamp_import_failed',
+          },
+        },
+      });
+        return;
+      }
+      const nextForm = toFormStateFromStamp(result.stamp, today);
+      setForm((prev) => ({
+        ...nextForm,
+        documentId: prev.documentId,
+        moduleId: prev.moduleId,
+      }));
+      setStampNotice({ tone: 'success', message: 'スタンプを取り込みました。内容を確認して反映してください。' });
+      logAuditEvent({
+        runId: result.runId ?? meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_IMPORT',
+          outcome: 'success',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: result.runId ?? meta.runId,
+            operationPhase: 'import',
+            entity,
+            patientId,
+            stampId,
+            stampSource: 'server',
+            bundleName: nextForm.bundleName,
+            itemCount: countItems(nextForm.items),
+          },
+        },
+      });
+    },
+    onError: (error: unknown, stampId: string) => {
+      const message = error instanceof Error ? error.message : String(error);
+      setStampNotice({ tone: 'error', message: `スタンプの取り込みに失敗しました: ${message}` });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_IMPORT',
+          outcome: 'error',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'import',
+            entity,
+            patientId,
+            stampId,
+            stampSource: 'server',
+            error: message,
+          },
+        },
+      });
+    },
+  });
+
+  const saveStamp = () => {
+    if (isBlocked) {
+      setStampNotice({ tone: 'error', message: '編集ガード中のためスタンプ保存はできません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_SAVE',
+          outcome: 'blocked',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'save',
+            entity,
+            patientId,
+            blockedReasons: blockReasons,
+          },
+        },
+      });
+      return;
+    }
+    if (!userName) {
+      setStampNotice({ tone: 'error', message: 'ログイン情報が取得できないためスタンプ保存ができません。' });
+      return;
+    }
+    if (!stampForm.name.trim()) {
+      setStampNotice({ tone: 'error', message: 'スタンプ名称を入力してください。' });
+      return;
+    }
+    if (!stampForm.target) {
+      setStampNotice({ tone: 'error', message: '対象を選択してください。' });
+      return;
+    }
+    const entry = saveLocalStamp(userName, {
+      name: stampForm.name.trim(),
+      category: stampForm.category.trim(),
+      target: stampForm.target,
+      entity,
+      bundle: {
+        bundleName: form.bundleName,
+        admin: form.admin,
+        bundleNumber: form.bundleNumber,
+        adminMemo: form.adminMemo,
+        memo: form.memo,
+        startDate: form.startDate,
+        items: form.items.filter((item) => item.name.trim().length > 0),
+      },
+    });
+    setLocalStamps(loadLocalStamps(userName));
+    setStampNotice({ tone: 'success', message: 'スタンプを保存しました。' });
+    setSelectedStamp(`local::${entry.id}`);
+    logAuditEvent({
+      runId: meta.runId,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      payload: {
+        action: 'CHARTS_STAMP_SAVE',
+        outcome: 'success',
+        subject: 'charts',
+        details: {
+          ...auditMetaDetails,
+          runId: meta.runId,
+          operationPhase: 'save',
+          entity,
+          patientId,
+          stampName: stampForm.name.trim(),
+          stampCategory: stampForm.category.trim(),
+          stampTarget: stampForm.target,
+          stampSource: 'local',
+          bundleName: form.bundleName,
+          itemCount: countItems(form.items),
+        },
+      },
+    });
+  };
+
+  const importStamp = () => {
+    if (isBlocked) {
+      setStampNotice({ tone: 'error', message: '編集ガード中のためスタンプ取り込みはできません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_IMPORT',
+          outcome: 'blocked',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'import',
+            entity,
+            patientId,
+            blockedReasons: blockReasons,
+          },
+        },
+      });
+      return;
+    }
+    const selection = parseStampSelection(selectedStamp);
+    if (!selection) {
+      setStampNotice({ tone: 'error', message: '取り込むスタンプを選択してください。' });
+      return;
+    }
+    if (selection.source === 'local') {
+      const local = localStamps.find((stamp) => stamp.id === selection.id);
+      if (!local) {
+        setStampNotice({ tone: 'error', message: 'ローカルスタンプが見つかりません。' });
+        return;
+      }
+      const nextForm = toFormStateFromLocalStamp(local);
+      setForm((prev) => ({
+        ...nextForm,
+        documentId: prev.documentId,
+        moduleId: prev.moduleId,
+      }));
+      setStampNotice({ tone: 'success', message: 'ローカルスタンプを取り込みました。内容を確認して反映してください。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_IMPORT',
+          outcome: 'success',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'import',
+            entity,
+            patientId,
+            stampId: selection.id,
+            stampSource: 'local',
+            bundleName: nextForm.bundleName,
+            itemCount: countItems(nextForm.items),
+          },
+        },
+      });
+      return;
+    }
+    stampImportMutation.mutate(selection.id);
+  };
+
   if (!patientId) {
     return <p className="charts-side-panel__empty">患者IDが未選択のため {title} を開始できません。</p>;
   }
@@ -499,6 +874,7 @@ export function OrderBundleEditPanel({
           onClick={() => {
             setForm(buildEmptyForm(today));
             setNotice(null);
+            setStampNotice(null);
           }}
           disabled={isBlocked}
         >
@@ -512,6 +888,104 @@ export function OrderBundleEditPanel({
         </div>
       )}
       {notice && <div className={`charts-side-panel__notice charts-side-panel__notice--${notice.tone}`}>{notice.message}</div>}
+
+      <div className="charts-side-panel__subsection">
+        <div className="charts-side-panel__subheader">
+          <strong>スタンプ保存/取り込み</strong>
+        </div>
+        {stampNotice && (
+          <div className={`charts-side-panel__notice charts-side-panel__notice--${stampNotice.tone}`}>{stampNotice.message}</div>
+        )}
+        <div className="charts-side-panel__field">
+          <label htmlFor={`${entity}-stamp-name`}>スタンプ名称</label>
+          <input
+            id={`${entity}-stamp-name`}
+            value={stampForm.name}
+            onChange={(event) => setStampForm((prev) => ({ ...prev, name: event.target.value }))}
+            placeholder="例: 降圧薬セット"
+            disabled={isBlocked}
+          />
+        </div>
+        <div className="charts-side-panel__field-row">
+          <div className="charts-side-panel__field">
+            <label htmlFor={`${entity}-stamp-category`}>分類</label>
+            <input
+              id={`${entity}-stamp-category`}
+              list={`${entity}-stamp-category-list`}
+              value={stampForm.category}
+              onChange={(event) => setStampForm((prev) => ({ ...prev, category: event.target.value }))}
+              placeholder="例: 院内セット"
+              disabled={isBlocked}
+            />
+            <datalist id={`${entity}-stamp-category-list`}>
+              {stampCategories.map((category) => (
+                <option key={category} value={category} />
+              ))}
+            </datalist>
+          </div>
+          <div className="charts-side-panel__field">
+            <label htmlFor={`${entity}-stamp-target`}>対象</label>
+            <select
+              id={`${entity}-stamp-target`}
+              value={stampForm.target}
+              onChange={(event) => setStampForm((prev) => ({ ...prev, target: event.target.value }))}
+              disabled={isBlocked}
+            >
+              {resolvedStampTargets.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
+            </select>
+          </div>
+        </div>
+        <div className="charts-side-panel__field">
+          <label htmlFor={`${entity}-stamp-select`}>既存スタンプ</label>
+          <select
+            id={`${entity}-stamp-select`}
+            value={selectedStamp}
+            onChange={(event) => setSelectedStamp(event.target.value)}
+            disabled={isBlocked}
+          >
+            <option value="">選択してください</option>
+            {localStampOptions.length > 0 && (
+              <optgroup label={`ローカル (${localStampOptions.length}件)`}>
+                {localStampOptions.map((stamp) => (
+                  <option key={stamp.id} value={`local::${stamp.id}`}>
+                    {stamp.name || '名称未設定'}
+                    {stamp.category ? ` / ${stamp.category}` : ''}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+            {stampTreeEntries.length > 0 && (
+              <optgroup label={`サーバー (${stampTreeEntries.length}件)`}>
+                {stampTreeEntries.map((stamp: StampTreeEntry & { treeName?: string }) => (
+                  <option key={stamp.stampId} value={`server::${stamp.stampId}`}>
+                    {stamp.name}
+                    {stamp.treeName ? ` / ${stamp.treeName}` : ''}
+                  </option>
+                ))}
+              </optgroup>
+            )}
+          </select>
+        </div>
+        <div className="charts-side-panel__actions">
+          <button type="button" onClick={saveStamp} disabled={isBlocked}>
+            スタンプ保存
+          </button>
+          <button
+            type="button"
+            onClick={importStamp}
+            disabled={stampImportMutation.isPending || isBlocked}
+          >
+            スタンプ取り込み
+          </button>
+        </div>
+        <p className="charts-side-panel__message">
+          取り込み後は内容を確認し、必要に応じて編集してから「展開する」「展開継続する」または「保存して追加」で反映してください。
+        </p>
+      </div>
 
       <form
         className="charts-side-panel__form"

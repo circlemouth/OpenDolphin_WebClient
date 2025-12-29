@@ -21,6 +21,12 @@ vi.mock('../orderMasterSearchApi', async () => ({
   fetchOrderMasterSearch: vi.fn(),
 }));
 
+vi.mock('../stampApi', async () => ({
+  fetchUserProfile: vi.fn().mockResolvedValue({ ok: true, id: 1, userId: 'facility:doctor' }),
+  fetchStampTree: vi.fn().mockResolvedValue({ ok: true, trees: [] }),
+  fetchStampDetail: vi.fn(),
+}));
+
 const renderWithClient = (ui: ReactElement) => {
   const client = new QueryClient({
     defaultOptions: {
@@ -50,10 +56,13 @@ const baseProps = {
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
+  localStorage.clear();
 });
 
 describe('OrderBundleEditPanel master search UI', () => {
   it('検索条件変更時に結果が更新される', async () => {
+    localStorage.setItem('devFacilityId', 'facility');
+    localStorage.setItem('devUserId', 'doctor');
     const searchMock = vi.mocked(fetchOrderMasterSearch);
     searchMock.mockImplementation(async ({ keyword }) => {
       if (keyword.includes('ベル')) {
@@ -100,6 +109,8 @@ describe('OrderBundleEditPanel master search UI', () => {
   });
 
   it('検索結果の行選択で項目が追加される', async () => {
+    localStorage.setItem('devFacilityId', 'facility');
+    localStorage.setItem('devUserId', 'doctor');
     const searchMock = vi.mocked(fetchOrderMasterSearch);
     searchMock.mockImplementation(async () => ({
       ok: true,
@@ -131,6 +142,8 @@ describe('OrderBundleEditPanel master search UI', () => {
   });
 
   it('readOnly の場合は検索入力が無効化される', async () => {
+    localStorage.setItem('devFacilityId', 'facility');
+    localStorage.setItem('devUserId', 'doctor');
     renderWithClient(
       <OrderBundleEditPanel
         {...baseProps}
