@@ -2,6 +2,7 @@ import { httpFetch } from '../../libs/http/httpClient';
 import { generateRunId, getObservabilityMeta, updateObservabilityMeta } from '../../libs/observability/observability';
 
 export type OrderBundleItem = {
+  code?: string;
   name: string;
   quantity?: string;
   unit?: string;

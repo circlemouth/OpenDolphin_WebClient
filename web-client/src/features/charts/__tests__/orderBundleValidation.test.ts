@@ -10,6 +10,9 @@ const baseForm = {
   memo: '',
   startDate: '2025-12-29',
   items: [{ name: '', quantity: '', unit: '', memo: '' }],
+  materialItems: [],
+  commentItems: [],
+  bodyPart: null,
 };
 
 describe('validateBundleForm', () => {

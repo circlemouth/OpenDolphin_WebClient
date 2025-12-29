@@ -2,7 +2,13 @@ import { httpFetch } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta, getObservabilityMeta } from '../../libs/observability/observability';
 import type { DataSourceTransition } from './authService';
 
-export type OrderMasterSearchType = 'generic-class' | 'youhou' | 'material' | 'kensa-sort' | 'etensu';
+export type OrderMasterSearchType =
+  | 'generic-class'
+  | 'youhou'
+  | 'material'
+  | 'kensa-sort'
+  | 'etensu'
+  | 'bodypart';
 
 export type OrderMasterSearchItem = {
   type: OrderMasterSearchType;
@@ -70,6 +76,7 @@ const MASTER_ENDPOINT_MAP: Record<OrderMasterSearchType, string> = {
   material: '/orca/master/material',
   'kensa-sort': '/orca/master/kensa-sort',
   etensu: '/orca/tensu/etensu',
+  bodypart: '/orca/tensu/etensu',
 };
 
 const normalizeDrugEntry = (entry: OrcaDrugMasterEntry, type: OrderMasterSearchType): OrderMasterSearchItem | null => {
@@ -90,12 +97,12 @@ const normalizeDrugEntry = (entry: OrcaDrugMasterEntry, type: OrderMasterSearchT
   };
 };
 
-const normalizeTensuEntry = (entry: OrcaTensuEntry): OrderMasterSearchItem | null => {
+const normalizeTensuEntry = (entry: OrcaTensuEntry, type: OrderMasterSearchType): OrderMasterSearchItem | null => {
   const name = entry.name?.trim();
   if (!name) return null;
   const code = entry.tensuCode?.trim();
   return {
-    type: 'etensu',
+    type,
     code: code || undefined,
     name,
     unit: entry.unit ?? undefined,
@@ -132,16 +139,21 @@ export async function fetchOrderMasterSearch(params: {
   type: OrderMasterSearchType;
   keyword: string;
   effective?: string;
+  category?: string;
   page?: number;
   size?: number;
 }): Promise<OrderMasterSearchResult> {
   const keyword = params.keyword.trim();
-  if (!keyword) {
+  if (!keyword && params.type !== 'bodypart') {
     return { ok: false, items: [], totalCount: 0, message: '検索キーワードが未指定です。' };
   }
   const query = new URLSearchParams();
-  query.set('keyword', keyword);
+  if (keyword) query.set('keyword', keyword);
   if (params.effective) query.set('effective', params.effective);
+  if (params.category) query.set('category', params.category);
+  if (params.type === 'bodypart' && !params.category) {
+    query.set('category', '2');
+  }
   if (params.type === 'generic-class') {
     query.set('page', String(params.page ?? 1));
     query.set('size', String(params.size ?? 50));
@@ -167,9 +179,11 @@ export async function fetchOrderMasterSearch(params: {
     };
   }
 
-  if (params.type === 'etensu') {
+  if (params.type === 'etensu' || params.type === 'bodypart') {
     const { items, totalCount } = extractList<OrcaTensuEntry>(json);
-    const normalized = items.map(normalizeTensuEntry).filter((item): item is OrderMasterSearchItem => Boolean(item));
+    const normalized = items
+      .map((entry) => normalizeTensuEntry(entry, params.type))
+      .filter((item): item is OrderMasterSearchItem => Boolean(item));
     return {
       ok: true,
       items: normalized,

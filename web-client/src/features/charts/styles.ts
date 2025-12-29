@@ -479,6 +479,27 @@ export const chartsStyles = css`
     align-items: center;
   }
 
+  .charts-side-panel__status {
+    font-size: 0.78rem;
+    padding: 0.15rem 0.5rem;
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    color: #475569;
+    background: #f1f5f9;
+  }
+
+  .charts-side-panel__status--ok {
+    border-color: rgba(34, 197, 94, 0.4);
+    color: #166534;
+    background: #dcfce7;
+  }
+
+  .charts-side-panel__status--warn {
+    border-color: rgba(234, 179, 8, 0.45);
+    color: #92400e;
+    background: #fef9c3;
+  }
+
   .charts-side-panel__search-count {
     font-size: 0.78rem;
     color: #64748b;
@@ -489,6 +510,10 @@ export const chartsStyles = css`
     grid-template-columns: 1.4fr 0.8fr 0.6fr auto;
     gap: 0.4rem;
     align-items: center;
+  }
+
+  .charts-side-panel__item-row--comment {
+    grid-template-columns: 0.7fr 1.6fr 0.6fr 0.6fr auto;
   }
 
   .charts-side-panel__icon {

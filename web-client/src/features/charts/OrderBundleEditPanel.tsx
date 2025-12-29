@@ -5,6 +5,11 @@ import { readStoredAuth } from '../../libs/auth/storedAuth';
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { fetchOrderBundles, mutateOrderBundles, type OrderBundle, type OrderBundleItem } from './orderBundleApi';
+import {
+  fetchOrderMasterSearch,
+  type OrderMasterSearchItem,
+  type OrderMasterSearchType,
+} from './orderMasterSearchApi';
 import { fetchStampDetail, fetchStampTree, fetchUserProfile, type StampBundleJson, type StampTreeEntry } from './stampApi';
 import { loadLocalStamps, saveLocalStamp, type LocalStampEntry } from './stampStorage';
 import type { DataSourceTransition } from './authService';
@@ -43,6 +48,9 @@ type BundleFormState = {
   memo: string;
   startDate: string;
   items: OrderBundleItem[];
+  materialItems: OrderBundleItem[];
+  commentItems: OrderBundleItem[];
+  bodyPart?: OrderBundleItem | null;
 };
 
 type OrderBundleSubmitAction = 'save' | 'expand' | 'expand_continue';
@@ -78,8 +86,53 @@ type StampFormState = {
 
 const buildEmptyItem = (): OrderBundleItem => ({ name: '', quantity: '', unit: '', memo: '' });
 
+const NO_PROCEDURE_CHARGE_TEXT = '手技料なし';
+const MATERIAL_CODE_PREFIX = '7';
+const BODY_PART_CODE_PREFIX = '002';
+const COMMENT_CODE_PATTERN = /^(008[1-6]|8[1-6]|098|099|98|99)/;
+
 const countItems = (items?: OrderBundleItem[]) =>
   items ? items.filter((item) => item.name.trim().length > 0).length : 0;
+
+const splitBundleItems = (items?: OrderBundleItem[]) => {
+  const normal: OrderBundleItem[] = [];
+  const material: OrderBundleItem[] = [];
+  const comment: OrderBundleItem[] = [];
+  let bodyPart: OrderBundleItem | null = null;
+  (items ?? []).forEach((item) => {
+    const code = item.code?.trim();
+    if (code && code.startsWith(BODY_PART_CODE_PREFIX)) {
+      if (!bodyPart) {
+        bodyPart = { ...item };
+      } else {
+        normal.push({ ...item });
+      }
+      return;
+    }
+    if (code && code.startsWith(MATERIAL_CODE_PREFIX)) {
+      material.push({ ...item });
+      return;
+    }
+    if (code && COMMENT_CODE_PATTERN.test(code)) {
+      comment.push({ ...item });
+      return;
+    }
+    normal.push({ ...item });
+  });
+  return { normal, material, comment, bodyPart };
+};
+
+const collectBundleItems = (form: BundleFormState) => {
+  const merged = [
+    ...(form.bodyPart && form.bodyPart.name.trim() ? [form.bodyPart] : []),
+    ...form.items,
+    ...form.materialItems,
+    ...form.commentItems,
+  ];
+  return merged;
+};
+
+const countMainItems = (form: BundleFormState) => countItems([...form.items, ...form.materialItems]);
 
 const DEFAULT_VALIDATION_RULE: BundleValidationRule = {
   itemLabel: '項目',
@@ -126,19 +179,28 @@ const buildEmptyForm = (today: string): BundleFormState => ({
   memo: '',
   startDate: today,
   items: [buildEmptyItem()],
+  materialItems: [],
+  commentItems: [],
+  bodyPart: null,
 });
 
-const toFormState = (bundle: OrderBundle, today: string): BundleFormState => ({
-  documentId: bundle.documentId,
-  moduleId: bundle.moduleId,
-  bundleName: bundle.bundleName ?? '',
-  admin: bundle.admin ?? '',
-  bundleNumber: bundle.bundleNumber ?? '1',
-  adminMemo: bundle.adminMemo ?? '',
-  memo: bundle.memo ?? '',
-  startDate: bundle.started ?? today,
-  items: bundle.items && bundle.items.length > 0 ? bundle.items.map((item) => ({ ...item })) : [buildEmptyItem()],
-});
+const toFormState = (bundle: OrderBundle, today: string): BundleFormState => {
+  const { normal, material, comment, bodyPart } = splitBundleItems(bundle.items);
+  return {
+    documentId: bundle.documentId,
+    moduleId: bundle.moduleId,
+    bundleName: bundle.bundleName ?? '',
+    admin: bundle.admin ?? '',
+    bundleNumber: bundle.bundleNumber ?? '1',
+    adminMemo: bundle.adminMemo ?? '',
+    memo: bundle.memo ?? '',
+    startDate: bundle.started ?? today,
+    items: normal.length > 0 ? normal : [buildEmptyItem()],
+    materialItems: material,
+    commentItems: comment,
+    bodyPart,
+  };
+};
 
 const toFormStateFromStamp = (stamp: StampBundleJson, today: string): BundleFormState => ({
   bundleName: stamp.orderName ?? stamp.className ?? '',
@@ -156,17 +218,26 @@ const toFormStateFromStamp = (stamp: StampBundleJson, today: string): BundleForm
           memo: item.memo ?? '',
         }))
       : [buildEmptyItem()],
+  materialItems: [],
+  commentItems: [],
+  bodyPart: null,
 });
 
-const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => ({
-  bundleName: stamp.bundle.bundleName,
-  admin: stamp.bundle.admin,
-  bundleNumber: stamp.bundle.bundleNumber,
-  adminMemo: stamp.bundle.adminMemo,
-  memo: stamp.bundle.memo,
-  startDate: stamp.bundle.startDate,
-  items: stamp.bundle.items.length > 0 ? stamp.bundle.items.map((item) => ({ ...item })) : [buildEmptyItem()],
-});
+const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => {
+  const { normal, material, comment, bodyPart } = splitBundleItems(stamp.bundle.items);
+  return {
+    bundleName: stamp.bundle.bundleName,
+    admin: stamp.bundle.admin,
+    bundleNumber: stamp.bundle.bundleNumber,
+    adminMemo: stamp.bundle.adminMemo,
+    memo: stamp.bundle.memo,
+    startDate: stamp.bundle.startDate,
+    items: normal.length > 0 ? normal : [buildEmptyItem()],
+    materialItems: material,
+    commentItems: comment,
+    bodyPart,
+  };
+};
 
 const formatBundleName = (bundle: OrderBundle) => bundle.bundleName ?? '名称未設定';
 
@@ -181,7 +252,7 @@ export const validateBundleForm = ({
 }): BundleValidationIssue[] => {
   const issues: BundleValidationIssue[] = [];
   const rule = VALIDATION_RULES_BY_ENTITY[entity] ?? DEFAULT_VALIDATION_RULE;
-  const itemCount = countItems(form.items);
+  const itemCount = countMainItems(form);
   if (rule.requiresItems && itemCount === 0) {
     issues.push({ key: 'missing_items', message: `${rule.itemLabel}を1件以上入力してください。` });
   }
@@ -210,6 +281,21 @@ export function OrderBundleEditPanel({
   const [stampForm, setStampForm] = useState<StampFormState>({ name: '', category: '', target: entity });
   const [selectedStamp, setSelectedStamp] = useState<string>('');
   const [localStamps, setLocalStamps] = useState<LocalStampEntry[]>([]);
+  const [masterKeyword, setMasterKeyword] = useState('');
+  const [masterSearchType, setMasterSearchType] = useState<OrderMasterSearchType>('generic-class');
+  const [materialKeyword, setMaterialKeyword] = useState('');
+  const [bodyPartKeyword, setBodyPartKeyword] = useState('');
+  const [commentDraft, setCommentDraft] = useState<OrderBundleItem>({
+    code: '',
+    name: '',
+    quantity: '',
+    unit: '',
+    memo: '',
+  });
+  const isInjectionOrder = entity === 'injectionOrder';
+  const isRadiologyOrder = entity === 'radiologyOrder';
+  const supportsCommentCodes = BASE_EDITOR_ENTITIES.includes(entity);
+  const supportsMaterials = ['generalOrder', 'treatmentOrder', 'testOrder', 'instractionChargeOrder'].includes(entity);
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -364,6 +450,27 @@ export function OrderBundleEditPanel({
     [entity, localStamps],
   );
 
+  const masterSearchQuery = useQuery({
+    queryKey: ['charts-order-master-search', masterSearchType, masterKeyword],
+    queryFn: () => fetchOrderMasterSearch({ type: masterSearchType, keyword: masterKeyword }),
+    enabled: masterKeyword.trim().length > 0,
+    staleTime: 30 * 1000,
+  });
+
+  const materialSearchQuery = useQuery({
+    queryKey: ['charts-order-material-search', materialKeyword],
+    queryFn: () => fetchOrderMasterSearch({ type: 'material', keyword: materialKeyword }),
+    enabled: supportsMaterials && materialKeyword.trim().length > 0,
+    staleTime: 30 * 1000,
+  });
+
+  const bodyPartSearchQuery = useQuery({
+    queryKey: ['charts-order-bodypart-search', bodyPartKeyword],
+    queryFn: () => fetchOrderMasterSearch({ type: 'bodypart', keyword: bodyPartKeyword }),
+    enabled: false,
+    staleTime: 30 * 1000,
+  });
+
   const parseStampSelection = (value: string): StampSelection | null => {
     if (!value) return null;
     const [source, id] = value.split('::');
@@ -371,10 +478,45 @@ export function OrderBundleEditPanel({
     return { source, id };
   };
 
+  const formatMasterLabel = (item: OrderMasterSearchItem) =>
+    item.code ? `${item.code} ${item.name}` : item.name;
+
+  const appendItem = (item: OrderBundleItem) => {
+    setForm((prev) => {
+      const nextItems = [...prev.items];
+      const emptyIndex = nextItems.findIndex((row) => row.name.trim().length === 0);
+      if (emptyIndex >= 0) {
+        nextItems[emptyIndex] = { ...nextItems[emptyIndex], ...item };
+      } else {
+        nextItems.push(item);
+      }
+      return { ...prev, items: nextItems };
+    });
+  };
+
+  const appendMaterialItem = (item: OrderBundleItem) => {
+    setForm((prev) => ({ ...prev, materialItems: [...prev.materialItems, item] }));
+  };
+
+  const applyBodyPart = (item: OrderMasterSearchItem) => {
+    setForm((prev) => ({
+      ...prev,
+      bodyPart: {
+        code: item.code,
+        name: item.name,
+        quantity: '',
+        unit: item.unit ?? '',
+        memo: item.note ?? '',
+      },
+    }));
+  };
+
+  const isNoProcedureCharge = isInjectionOrder && form.memo === NO_PROCEDURE_CHARGE_TEXT;
+
   const mutation = useMutation({
     mutationFn: async (payload: OrderBundleSubmitPayload) => {
       if (!patientId) throw new Error('patientId is required');
-      const filteredItems = payload.form.items.filter((item) => item.name.trim().length > 0);
+      const filteredItems = collectBundleItems(payload.form).filter((item) => item.name.trim().length > 0);
       return mutateOrderBundles({
         patientId,
         operations: [
@@ -396,7 +538,8 @@ export function OrderBundleEditPanel({
     },
     onSuccess: (result, payload) => {
       const operation = payload.form.documentId ? 'update' : 'create';
-      const itemCount = countItems(payload.form.items);
+      const allItems = collectBundleItems(payload.form);
+      const itemCount = countItems(allItems);
       const operationPhase = payload.action === 'save' ? 'save' : payload.action;
       setNotice({ tone: result.ok ? 'success' : 'error', message: resolveActionMessage(payload.action, result.ok) });
       recordOutpatientFunnel('charts_action', {
@@ -431,6 +574,10 @@ export function OrderBundleEditPanel({
             bundleName: payload.form.bundleName,
             bundleNumber: payload.form.bundleNumber,
             itemCount,
+            materialItemCount: countItems(payload.form.materialItems),
+            commentItemCount: countItems(payload.form.commentItems),
+            bodyPart: payload.form.bodyPart?.name ?? null,
+            noProcedureCharge: payload.form.memo === NO_PROCEDURE_CHARGE_TEXT,
           },
         },
       });
@@ -443,7 +590,8 @@ export function OrderBundleEditPanel({
     },
     onError: (error: unknown, payload: OrderBundleSubmitPayload) => {
       const message = error instanceof Error ? error.message : String(error);
-      const itemCount = countItems(payload.form.items);
+      const allItems = collectBundleItems(payload.form);
+      const itemCount = countItems(allItems);
       const operationPhase = payload.action === 'save' ? 'save' : payload.action;
       setNotice({ tone: 'error', message: `${resolveActionMessage(payload.action, false)}: ${message}` });
       logAuditEvent({
@@ -468,6 +616,10 @@ export function OrderBundleEditPanel({
             bundleName: payload.form.bundleName,
             bundleNumber: payload.form.bundleNumber,
             itemCount,
+            materialItemCount: countItems(payload.form.materialItems),
+            commentItemCount: countItems(payload.form.commentItems),
+            bodyPart: payload.form.bodyPart?.name ?? null,
+            noProcedureCharge: payload.form.memo === NO_PROCEDURE_CHARGE_TEXT,
             error: message,
           },
         },
@@ -575,7 +727,11 @@ export function OrderBundleEditPanel({
             patientId,
             bundleName: form.bundleName,
             bundleNumber: form.bundleNumber,
-            itemCount: countItems(form.items),
+            itemCount: countItems(collectBundleItems(form)),
+            materialItemCount: countItems(form.materialItems),
+            commentItemCount: countItems(form.commentItems),
+            bodyPart: form.bodyPart?.name ?? null,
+            noProcedureCharge: form.memo === NO_PROCEDURE_CHARGE_TEXT,
             blockedReasons: guardReasonKeys.length > 0 ? guardReasonKeys : ['edit_guard'],
             operationPhase: 'lock',
           },
@@ -604,7 +760,11 @@ export function OrderBundleEditPanel({
             patientId,
             bundleName: form.bundleName,
             bundleNumber: form.bundleNumber,
-            itemCount: countItems(form.items),
+            itemCount: countItems(collectBundleItems(form)),
+            materialItemCount: countItems(form.materialItems),
+            commentItemCount: countItems(form.commentItems),
+            bodyPart: form.bodyPart?.name ?? null,
+            noProcedureCharge: form.memo === NO_PROCEDURE_CHARGE_TEXT,
             blockedReasons: validationIssues.map((issue) => issue.key),
             validationMessages: validationIssues.map((issue) => issue.message),
             operationPhase: 'lock',
@@ -753,7 +913,7 @@ export function OrderBundleEditPanel({
         adminMemo: form.adminMemo,
         memo: form.memo,
         startDate: form.startDate,
-        items: form.items.filter((item) => item.name.trim().length > 0),
+        items: collectBundleItems(form).filter((item) => item.name.trim().length > 0),
       },
     });
     setLocalStamps(loadLocalStamps(userName));
@@ -780,7 +940,7 @@ export function OrderBundleEditPanel({
           stampTarget: stampForm.target,
           stampSource: 'local',
           bundleName: form.bundleName,
-          itemCount: countItems(form.items),
+          itemCount: countItems(collectBundleItems(form)),
         },
       },
     });
@@ -875,6 +1035,16 @@ export function OrderBundleEditPanel({
             setForm(buildEmptyForm(today));
             setNotice(null);
             setStampNotice(null);
+            setMasterKeyword('');
+            setMaterialKeyword('');
+            setBodyPartKeyword('');
+            setCommentDraft({
+              code: '',
+              name: '',
+              quantity: '',
+              unit: '',
+              memo: '',
+            });
           }}
           disabled={isBlocked}
         >
@@ -1036,15 +1206,221 @@ export function OrderBundleEditPanel({
             disabled={isBlocked}
           />
         </div>
-        <div className="charts-side-panel__field">
-          <label htmlFor={`${entity}-memo`}>メモ</label>
-          <textarea
-            id={`${entity}-memo`}
-            value={form.memo}
-            onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
-            placeholder="コメントを入力"
-            disabled={isBlocked}
-          />
+        {isInjectionOrder ? (
+          <div className="charts-side-panel__field">
+            <label className="charts-side-panel__toggle">
+              <input
+                type="checkbox"
+                checked={isNoProcedureCharge}
+                onChange={(event) =>
+                  setForm((prev) => ({
+                    ...prev,
+                    memo: event.target.checked ? NO_PROCEDURE_CHARGE_TEXT : '',
+                  }))
+                }
+                disabled={isBlocked}
+              />
+              手技料なし
+            </label>
+            <p className="charts-side-panel__message">注射オーダーのメモに「手技料なし」を反映します。</p>
+          </div>
+        ) : (
+          <div className="charts-side-panel__field">
+            <label htmlFor={`${entity}-memo`}>メモ</label>
+            <textarea
+              id={`${entity}-memo`}
+              value={form.memo}
+              onChange={(event) => setForm((prev) => ({ ...prev, memo: event.target.value }))}
+              placeholder="コメントを入力"
+              disabled={isBlocked}
+            />
+          </div>
+        )}
+
+        {isRadiologyOrder && (
+          <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
+            <div className="charts-side-panel__subheader">
+              <strong>部位</strong>
+              <span
+                className={`charts-side-panel__status ${
+                  form.bodyPart?.name?.trim() ? 'charts-side-panel__status--ok' : 'charts-side-panel__status--warn'
+                }`}
+              >
+                {form.bodyPart?.name?.trim() ? '入力済み' : '未入力'}
+              </span>
+            </div>
+            <div className="charts-side-panel__field-row">
+              <div className="charts-side-panel__field">
+                <label htmlFor={`${entity}-bodypart`}>部位</label>
+                <input
+                  id={`${entity}-bodypart`}
+                  value={form.bodyPart?.name ?? ''}
+                  onChange={(event) =>
+                    setForm((prev) => ({
+                      ...prev,
+                      bodyPart: {
+                        code: prev.bodyPart?.code,
+                        name: event.target.value,
+                        quantity: prev.bodyPart?.quantity ?? '',
+                        unit: prev.bodyPart?.unit ?? '',
+                        memo: prev.bodyPart?.memo ?? '',
+                      },
+                    }))
+                  }
+                  placeholder="例: 胸部"
+                  disabled={isBlocked}
+                />
+              </div>
+              <div className="charts-side-panel__field">
+                <label htmlFor={`${entity}-bodypart-keyword`}>部位検索</label>
+                <input
+                  id={`${entity}-bodypart-keyword`}
+                  value={bodyPartKeyword}
+                  onChange={(event) => setBodyPartKeyword(event.target.value)}
+                  placeholder="例: 胸"
+                  disabled={isBlocked}
+                />
+              </div>
+            </div>
+            <div className="charts-side-panel__actions">
+              <button
+                type="button"
+                onClick={() => bodyPartSearchQuery.refetch()}
+                disabled={isBlocked || bodyPartSearchQuery.isFetching}
+              >
+                部位検索
+              </button>
+              <button
+                type="button"
+                onClick={() => setForm((prev) => ({ ...prev, bodyPart: null }))}
+                disabled={isBlocked || !form.bodyPart?.name}
+              >
+                部位クリア
+              </button>
+            </div>
+            {bodyPartSearchQuery.data && !bodyPartSearchQuery.data.ok && (
+              <div className="charts-side-panel__notice charts-side-panel__notice--error">
+                {bodyPartSearchQuery.data.message ?? '部位マスタの検索に失敗しました。'}
+              </div>
+            )}
+            {bodyPartSearchQuery.data?.ok && (
+              <>
+                <div className="charts-side-panel__search-count">
+                  {bodyPartSearchQuery.isFetching ? '検索中...' : `${bodyPartSearchQuery.data.totalCount ?? 0}件`}
+                </div>
+                {bodyPartSearchQuery.data.items.length === 0 ? (
+                  <p className="charts-side-panel__empty">部位が見つかりませんでした。</p>
+                ) : (
+                  <div className="charts-side-panel__search-table">
+                    <div className="charts-side-panel__search-header">
+                      <span>コード</span>
+                      <span>名称</span>
+                      <span>単位</span>
+                      <span>分類</span>
+                      <span>備考</span>
+                    </div>
+                    {bodyPartSearchQuery.data.items.map((item) => (
+                      <button
+                        key={`bodypart-${item.code ?? item.name}`}
+                        type="button"
+                        className="charts-side-panel__search-row"
+                        onClick={() => applyBodyPart(item)}
+                        disabled={isBlocked}
+                      >
+                        <span>{item.code ?? '-'}</span>
+                        <span>{item.name}</span>
+                        <span>{item.unit ?? '-'}</span>
+                        <span>{item.category ?? '-'}</span>
+                        <span>{item.note ?? '-'}</span>
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
+        )}
+
+        <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
+          <div className="charts-side-panel__subheader">
+            <strong>マスタ検索</strong>
+            <span className="charts-side-panel__search-count">
+              {masterSearchQuery.isFetching
+                ? '検索中...'
+                : masterSearchQuery.data?.ok
+                  ? `${masterSearchQuery.data.totalCount ?? 0}件`
+                  : ''}
+            </span>
+          </div>
+          <div className="charts-side-panel__field-row">
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-master-keyword`}>キーワード</label>
+              <input
+                id={`${entity}-master-keyword`}
+                value={masterKeyword}
+                onChange={(event) => setMasterKeyword(event.target.value)}
+                placeholder="例: アムロジピン"
+                disabled={isBlocked}
+              />
+            </div>
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-master-type`}>検索種別</label>
+              <select
+                id={`${entity}-master-type`}
+                value={masterSearchType}
+                onChange={(event) => setMasterSearchType(event.target.value as OrderMasterSearchType)}
+                disabled={isBlocked}
+              >
+                <option value="generic-class">医薬品（一般）</option>
+                <option value="youhou">用法</option>
+                <option value="material">材料</option>
+                <option value="kensa-sort">検査区分</option>
+                <option value="etensu">点数</option>
+              </select>
+            </div>
+          </div>
+          {masterSearchQuery.data && !masterSearchQuery.data.ok && (
+            <div className="charts-side-panel__notice charts-side-panel__notice--error">
+              {masterSearchQuery.data.message ?? 'マスタ検索に失敗しました。'}
+            </div>
+          )}
+          {masterSearchQuery.data?.ok && masterSearchQuery.data.items.length > 0 && (
+            <div className="charts-side-panel__search-table">
+              <div className="charts-side-panel__search-header">
+                <span>コード</span>
+                <span>名称</span>
+                <span>単位</span>
+                <span>分類</span>
+                <span>備考</span>
+              </div>
+              {masterSearchQuery.data.items.map((item) => (
+                <button
+                  key={`master-${item.code ?? item.name}`}
+                  type="button"
+                  className="charts-side-panel__search-row"
+                  onClick={() =>
+                    appendItem({
+                      code: item.code,
+                      name: formatMasterLabel(item),
+                      quantity: '',
+                      unit: item.unit ?? '',
+                      memo: item.note ?? '',
+                    })
+                  }
+                  disabled={isBlocked}
+                >
+                  <span>{item.code ?? '-'}</span>
+                  <span>{item.name}</span>
+                  <span>{item.unit ?? '-'}</span>
+                  <span>{item.category ?? '-'}</span>
+                  <span>{item.note ?? '-'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {masterSearchQuery.data?.ok && masterSearchQuery.data.items.length === 0 && masterKeyword.trim() && (
+            <p className="charts-side-panel__empty">該当するマスタが見つかりません。</p>
+          )}
         </div>
 
         <div className="charts-side-panel__subsection">
@@ -1116,6 +1492,259 @@ export function OrderBundleEditPanel({
             </div>
           ))}
         </div>
+
+        {supportsMaterials && (
+          <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
+            <div className="charts-side-panel__subheader">
+              <strong>材料</strong>
+              <button
+                type="button"
+                className="charts-side-panel__ghost"
+                onClick={() =>
+                  setForm((prev) => ({ ...prev, materialItems: [...prev.materialItems, buildEmptyItem()] }))
+                }
+                disabled={isBlocked}
+              >
+                追加
+              </button>
+            </div>
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-material-keyword`}>材料キーワード</label>
+              <input
+                id={`${entity}-material-keyword`}
+                value={materialKeyword}
+                onChange={(event) => setMaterialKeyword(event.target.value)}
+                placeholder="例: ガーゼ"
+                disabled={isBlocked}
+              />
+            </div>
+            {materialSearchQuery.data && !materialSearchQuery.data.ok && (
+              <div className="charts-side-panel__notice charts-side-panel__notice--error">
+                {materialSearchQuery.data.message ?? '材料マスタの検索に失敗しました。'}
+              </div>
+            )}
+            {materialSearchQuery.data?.ok && materialSearchQuery.data.items.length > 0 && (
+              <div className="charts-side-panel__search-table">
+                <div className="charts-side-panel__search-header">
+                  <span>コード</span>
+                  <span>名称</span>
+                  <span>単位</span>
+                  <span>分類</span>
+                  <span>備考</span>
+                </div>
+                {materialSearchQuery.data.items.map((item) => (
+                  <button
+                    key={`material-${item.code ?? item.name}`}
+                    type="button"
+                    className="charts-side-panel__search-row"
+                    onClick={() =>
+                      appendMaterialItem({
+                        code: item.code,
+                        name: formatMasterLabel(item),
+                        quantity: '',
+                        unit: item.unit ?? '',
+                        memo: item.note ?? '',
+                      })
+                    }
+                    disabled={isBlocked}
+                  >
+                    <span>{item.code ?? '-'}</span>
+                    <span>{item.name}</span>
+                    <span>{item.unit ?? '-'}</span>
+                    <span>{item.category ?? '-'}</span>
+                    <span>{item.note ?? '-'}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+            {form.materialItems.map((item, index) => (
+              <div key={`${entity}-material-${index}`} className="charts-side-panel__item-row">
+                <input
+                  value={item.name}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm((prev) => {
+                      const next = [...prev.materialItems];
+                      next[index] = { ...next[index], name: value };
+                      return { ...prev, materialItems: next };
+                    });
+                  }}
+                  placeholder="材料名"
+                  disabled={isBlocked}
+                />
+                <input
+                  value={item.quantity ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm((prev) => {
+                      const next = [...prev.materialItems];
+                      next[index] = { ...next[index], quantity: value };
+                      return { ...prev, materialItems: next };
+                    });
+                  }}
+                  placeholder={itemQuantityLabel}
+                  disabled={isBlocked}
+                />
+                <input
+                  value={item.unit ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm((prev) => {
+                      const next = [...prev.materialItems];
+                      next[index] = { ...next[index], unit: value };
+                      return { ...prev, materialItems: next };
+                    });
+                  }}
+                  placeholder="単位"
+                  disabled={isBlocked}
+                />
+                <button
+                  type="button"
+                  className="charts-side-panel__icon"
+                  onClick={() => {
+                    setForm((prev) => ({
+                      ...prev,
+                      materialItems:
+                        prev.materialItems.length > 1
+                          ? prev.materialItems.filter((_, idx) => idx !== index)
+                          : [],
+                    }));
+                  }}
+                  disabled={isBlocked}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {supportsCommentCodes && (
+          <div className="charts-side-panel__subsection">
+            <div className="charts-side-panel__subheader">
+              <strong>コメントコード</strong>
+            </div>
+            <div className="charts-side-panel__item-row charts-side-panel__item-row--comment">
+              <input
+                value={commentDraft.code ?? ''}
+                onChange={(event) => setCommentDraft((prev) => ({ ...prev, code: event.target.value }))}
+                placeholder="コード"
+                disabled={isBlocked}
+              />
+              <input
+                value={commentDraft.name}
+                onChange={(event) => setCommentDraft((prev) => ({ ...prev, name: event.target.value }))}
+                placeholder="コメント内容"
+                disabled={isBlocked}
+              />
+              <input
+                value={commentDraft.quantity ?? ''}
+                onChange={(event) => setCommentDraft((prev) => ({ ...prev, quantity: event.target.value }))}
+                placeholder="数量"
+                disabled={isBlocked}
+              />
+              <input
+                value={commentDraft.unit ?? ''}
+                onChange={(event) => setCommentDraft((prev) => ({ ...prev, unit: event.target.value }))}
+                placeholder="単位"
+                disabled={isBlocked}
+              />
+              <button
+                type="button"
+                className="charts-side-panel__ghost"
+                onClick={() => {
+                  if (!commentDraft.code?.trim() || !commentDraft.name.trim()) return;
+                  setForm((prev) => ({
+                    ...prev,
+                    commentItems: [
+                      ...prev.commentItems,
+                      {
+                        code: commentDraft.code?.trim(),
+                        name: commentDraft.name.trim(),
+                        quantity: commentDraft.quantity ?? '',
+                        unit: commentDraft.unit ?? '',
+                        memo: commentDraft.memo ?? '',
+                      },
+                    ],
+                  }));
+                  setCommentDraft({ code: '', name: '', quantity: '', unit: '', memo: '' });
+                }}
+                disabled={isBlocked || !commentDraft.code?.trim() || !commentDraft.name.trim()}
+              >
+                追加
+              </button>
+            </div>
+            {form.commentItems.map((item, index) => (
+              <div key={`${entity}-comment-${index}`} className="charts-side-panel__item-row charts-side-panel__item-row--comment">
+                <input
+                  value={item.code ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm((prev) => {
+                      const next = [...prev.commentItems];
+                      next[index] = { ...next[index], code: value };
+                      return { ...prev, commentItems: next };
+                    });
+                  }}
+                  placeholder="コード"
+                  disabled={isBlocked}
+                />
+                <input
+                  value={item.name}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm((prev) => {
+                      const next = [...prev.commentItems];
+                      next[index] = { ...next[index], name: value };
+                      return { ...prev, commentItems: next };
+                    });
+                  }}
+                  placeholder="コメント内容"
+                  disabled={isBlocked}
+                />
+                <input
+                  value={item.quantity ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm((prev) => {
+                      const next = [...prev.commentItems];
+                      next[index] = { ...next[index], quantity: value };
+                      return { ...prev, commentItems: next };
+                    });
+                  }}
+                  placeholder="数量"
+                  disabled={isBlocked}
+                />
+                <input
+                  value={item.unit ?? ''}
+                  onChange={(event) => {
+                    const value = event.target.value;
+                    setForm((prev) => {
+                      const next = [...prev.commentItems];
+                      next[index] = { ...next[index], unit: value };
+                      return { ...prev, commentItems: next };
+                    });
+                  }}
+                  placeholder="単位"
+                  disabled={isBlocked}
+                />
+                <button
+                  type="button"
+                  className="charts-side-panel__icon"
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      commentItems: prev.commentItems.filter((_, idx) => idx !== index),
+                    }))
+                  }
+                  disabled={isBlocked}
+                >
+                  ✕
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
 
         <p className="charts-side-panel__message">
           展開: カルテへ反映 / 展開継続: 反映後に入力を保持 / 保存: オーダー束を保存
