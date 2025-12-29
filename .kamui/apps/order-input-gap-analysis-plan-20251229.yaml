@@ -258,7 +258,7 @@ src:
       content: |-
         # 12 差分判定：修正区分
 
-        RUN_ID: 20251228T235747Z
+        RUN_ID: 20251228T235802Z
 
         ## 判定ルール
         - 差分が UI/入力補助/操作フロー起因の場合は Web クライアント側の改修対象とする。
@@ -325,6 +325,24 @@ src:
       schedule:
         start: 2026-01-05T00:00:00.000Z
         days: 2
+    15_改修前提ドキュメント整備.md:
+      content: |-
+        # 15 改修前提ドキュメント整備
+
+        - 差分判定後の Web 改修タスク（P0/P1/P2）に必要な前提情報を一箇所に集約する。
+        - 利用する API・ログ・ガード条件の前提を整理し、実装着手前に共有できる状態にする。
+        - 改修タスク化で使うテンプレ（対象/依存/テスト観点）を用意する。
+      priority: High
+      status: completed
+      progress: 100
+      agent: codex
+      api: []
+      dependency:
+        - src/order_input_gap_analysis/12_差分判定_修正区分.md
+      schedule:
+        start: 2026-01-02T00:00:00.000Z
+        days: 1
+
     10_ドキュメント化とレビュー.md:
       content: |-
         # 10 ドキュメント化とレビュー
