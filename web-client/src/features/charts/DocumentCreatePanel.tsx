@@ -1,9 +1,14 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
+import { resolveAuditActor } from '../../libs/auth/storedAuth';
+import { hasStoredAuth } from '../../libs/http/httpClient';
 import { ensureObservabilityMeta } from '../../libs/observability/observability';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
+import { DOCUMENT_TEMPLATES, DOCUMENT_TYPE_LABELS, getTemplateById, type DocumentType } from './documentTemplates';
+import { saveDocumentPrintPreview, type DocumentOutputMode } from './print/documentPrintPreviewStorage';
 
 export type DocumentCreatePanelMeta = {
   runId?: string;
@@ -26,10 +31,9 @@ export type DocumentCreatePanelProps = {
   onClose?: () => void;
 };
 
-type DocumentType = 'referral' | 'certificate' | 'reply';
-
 type ReferralFormState = {
   issuedAt: string;
+  templateId: string;
   hospital: string;
   doctor: string;
   purpose: string;
@@ -39,6 +43,7 @@ type ReferralFormState = {
 
 type CertificateFormState = {
   issuedAt: string;
+  templateId: string;
   submitTo: string;
   diagnosis: string;
   purpose: string;
@@ -47,6 +52,7 @@ type CertificateFormState = {
 
 type ReplyFormState = {
   issuedAt: string;
+  templateId: string;
   hospital: string;
   doctor: string;
   summary: string;
@@ -64,17 +70,22 @@ type SavedDocument = {
   issuedAt: string;
   title: string;
   savedAt: string;
+  templateId: string;
+  templateLabel: string;
+  form: DocumentFormState[DocumentType];
+  patientId: string;
 };
 
 const DOCUMENT_TYPES: { type: DocumentType; label: string; hint: string }[] = [
-  { type: 'referral', label: '紹介状', hint: '宛先・目的・診断名を入力して保存します。' },
-  { type: 'certificate', label: '診断書', hint: '提出先と診断内容を記録します。' },
-  { type: 'reply', label: '返信書', hint: '紹介元への返信内容を簡潔にまとめます。' },
+  { type: 'referral', label: DOCUMENT_TYPE_LABELS.referral, hint: '宛先・目的・診断名を入力して保存します。' },
+  { type: 'certificate', label: DOCUMENT_TYPE_LABELS.certificate, hint: '提出先と診断内容を記録します。' },
+  { type: 'reply', label: DOCUMENT_TYPE_LABELS.reply, hint: '紹介元への返信内容を簡潔にまとめます。' },
 ];
 
 const buildEmptyForms = (today: string): DocumentFormState => ({
   referral: {
     issuedAt: today,
+    templateId: '',
     hospital: '',
     doctor: '',
     purpose: '',
@@ -83,6 +94,7 @@ const buildEmptyForms = (today: string): DocumentFormState => ({
   },
   certificate: {
     issuedAt: today,
+    templateId: '',
     submitTo: '',
     diagnosis: '',
     purpose: '',
@@ -90,6 +102,7 @@ const buildEmptyForms = (today: string): DocumentFormState => ({
   },
   reply: {
     issuedAt: today,
+    templateId: '',
     hospital: '',
     doctor: '',
     summary: '',
@@ -110,6 +123,7 @@ const resolveRequiredFields = (type: DocumentType): { key: string; label: string
   if (type === 'referral') {
     return [
       { key: 'issuedAt', label: '発行日' },
+      { key: 'templateId', label: 'テンプレート' },
       { key: 'hospital', label: '宛先医療機関' },
       { key: 'doctor', label: '宛先医師' },
       { key: 'purpose', label: '紹介目的' },
@@ -120,6 +134,7 @@ const resolveRequiredFields = (type: DocumentType): { key: string; label: string
   if (type === 'certificate') {
     return [
       { key: 'issuedAt', label: '発行日' },
+      { key: 'templateId', label: 'テンプレート' },
       { key: 'submitTo', label: '提出先' },
       { key: 'diagnosis', label: '診断名' },
       { key: 'purpose', label: '用途' },
@@ -128,6 +143,7 @@ const resolveRequiredFields = (type: DocumentType): { key: string; label: string
   }
   return [
     { key: 'issuedAt', label: '発行日' },
+    { key: 'templateId', label: 'テンプレート' },
     { key: 'hospital', label: '返信先医療機関' },
     { key: 'doctor', label: '返信先医師' },
     { key: 'summary', label: '返信内容' },
@@ -146,6 +162,7 @@ const resolveMissingFields = (type: DocumentType, form: DocumentFormState): stri
 };
 
 export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreatePanelProps) {
+  const navigate = useNavigate();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [activeType, setActiveType] = useState<DocumentType>('referral');
   const [forms, setForms] = useState<DocumentFormState>(() => buildEmptyForms(today));
@@ -153,6 +170,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   const [savedDocs, setSavedDocs] = useState<SavedDocument[]>([]);
   const observability = useMemo(() => ensureObservabilityMeta({ runId: meta.runId }), [meta.runId]);
   const resolvedRunId = observability.runId ?? meta.runId;
+  const hasPermission = useMemo(() => hasStoredAuth(), []);
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -206,6 +224,35 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
         ...next,
       },
     }));
+  };
+
+  const templateOptions = useMemo(() => DOCUMENT_TEMPLATES[activeType], [activeType]);
+  const activeTemplate = useMemo(() => getTemplateById(activeType, forms[activeType].templateId), [activeType, forms]);
+
+  const applyTemplate = () => {
+    const template = activeTemplate;
+    if (!template) {
+      setNotice({ tone: 'error', message: 'テンプレートを選択してください。' });
+      return;
+    }
+    setForms((prev) => {
+      const current = prev[activeType];
+      const nextValues: Record<string, string> = {};
+      Object.entries(template.defaults).forEach(([key, value]) => {
+        const currentValue = (current as Record<string, string>)[key];
+        if (!currentValue || currentValue.trim().length === 0) {
+          nextValues[key] = value;
+        }
+      });
+      return {
+        ...prev,
+        [activeType]: {
+          ...current,
+          ...nextValues,
+        },
+      };
+    });
+    setNotice({ tone: 'success', message: `テンプレート「${template.label}」を差し込みました。` });
   };
 
   const logDocumentAudit = (action: 'CHARTS_DOCUMENT_CREATE' | 'CHARTS_DOCUMENT_CANCEL', phase: ChartsOperationPhase, details: Record<string, unknown>) => {
@@ -292,6 +339,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     const summary = buildDocumentSummary(activeType, forms);
     const issuedAt = forms[activeType].issuedAt;
     const savedAt = new Date().toISOString();
+    const templateLabel = activeTemplate?.label ?? '未選択';
     setSavedDocs((prev) => [
       {
         id: `doc-${Date.now()}`,
@@ -299,12 +347,16 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
         issuedAt,
         title: summary,
         savedAt,
+        templateId: forms[activeType].templateId,
+        templateLabel,
+        form: forms[activeType],
+        patientId: patientId ?? '',
       },
       ...prev,
     ]);
     setNotice({
       tone: 'success',
-      message: '文書を保存しました（P0: テンプレ/印刷は未対応）。',
+      message: '文書を保存しました。テンプレ/印刷導線を利用できます。',
     });
     setForms((prev) => ({
       ...prev,
@@ -314,6 +366,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     logDocumentAudit('CHARTS_DOCUMENT_CREATE', 'save', {
       documentTitle: summary,
       documentIssuedAt: issuedAt,
+      templateId: forms[activeType].templateId,
     });
   };
 
@@ -323,8 +376,122 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     logDocumentAudit('CHARTS_DOCUMENT_CANCEL', 'do', {
       documentTitle: buildDocumentSummary(activeType, forms),
       documentIssuedAt: forms[activeType].issuedAt,
+      templateId: forms[activeType].templateId,
     });
     if (onClose) onClose();
+  };
+
+  const resolveOutputGuardReasons = (doc: SavedDocument) => {
+    const reasons: Array<{ key: string; summary: string; detail: string }> = [];
+    if (meta.missingMaster) {
+      reasons.push({
+        key: 'missing_master',
+        summary: 'missingMaster=true',
+        detail: 'マスタ欠損を検知したため出力を停止します。',
+      });
+    }
+    if (meta.fallbackUsed) {
+      reasons.push({
+        key: 'fallback_used',
+        summary: 'fallbackUsed=true',
+        detail: 'フォールバック経路のため出力を停止します。',
+      });
+    }
+    if (!doc.patientId) {
+      reasons.push({
+        key: 'patient_not_selected',
+        summary: '患者未選択',
+        detail: '患者IDが未確定のため出力できません。',
+      });
+    }
+    if (!doc.templateId) {
+      reasons.push({
+        key: 'template_missing',
+        summary: 'テンプレ未選択',
+        detail: 'テンプレートを選択してから出力してください。',
+      });
+    }
+    if (!hasPermission) {
+      reasons.push({
+        key: 'permission_denied',
+        summary: '権限不足/認証不備',
+        detail: '認証情報が揃っていないため出力を停止します。',
+      });
+    }
+    return reasons;
+  };
+
+  const handleOpenDocumentPreview = (doc: SavedDocument, initialOutputMode?: DocumentOutputMode) => {
+    const { actor, facilityId } = resolveAuditActor();
+    const blockedReasons = resolveOutputGuardReasons(doc);
+    if (blockedReasons.length > 0) {
+      setNotice({ tone: 'error', message: `出力できません: ${blockedReasons[0].detail}` });
+      recordChartsAuditEvent({
+        action: 'PRINT_DOCUMENT',
+        outcome: 'blocked',
+        subject: 'charts-document-preview',
+        note: blockedReasons[0].detail,
+        patientId: doc.patientId,
+        actor,
+        runId: resolvedRunId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        details: {
+          operationPhase: 'lock',
+          blockedReasons: blockedReasons.map((reason) => reason.key),
+          documentType: doc.type,
+          documentTitle: doc.title,
+          documentIssuedAt: doc.issuedAt,
+          templateId: doc.templateId,
+          documentId: doc.id,
+        },
+      });
+      return;
+    }
+
+    const outputLabel =
+      initialOutputMode === 'print' ? '印刷' : initialOutputMode === 'pdf' ? 'PDF出力' : 'プレビュー';
+    const detail = `文書${outputLabel}プレビューを開きました (actor=${actor})`;
+    setNotice({ tone: 'success', message: `文書${outputLabel}プレビューを開きました。` });
+    recordChartsAuditEvent({
+      action: 'PRINT_DOCUMENT',
+      outcome: 'started',
+      subject: 'charts-document-preview',
+      note: detail,
+      actor,
+      patientId: doc.patientId,
+      runId: resolvedRunId,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      details: {
+        operationPhase: 'do',
+        documentType: doc.type,
+        documentTitle: doc.title,
+        documentIssuedAt: doc.issuedAt,
+        templateId: doc.templateId,
+        documentId: doc.id,
+      },
+    });
+
+    const previewState = {
+      document: { ...doc, form: doc.form as Record<string, string> },
+      meta: {
+        runId: resolvedRunId ?? meta.runId ?? '',
+        cacheHit: meta.cacheHit ?? false,
+        missingMaster: meta.missingMaster ?? false,
+        fallbackUsed: meta.fallbackUsed ?? false,
+        dataSourceTransition: meta.dataSourceTransition ?? 'snapshot',
+      },
+      actor,
+      facilityId,
+      initialOutputMode,
+    };
+    navigate('/charts/print/document', { state: previewState });
+    saveDocumentPrintPreview(previewState);
   };
 
   if (!patientId) {
@@ -336,7 +503,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       <header className="charts-side-panel__section-header">
         <div>
           <h4>文書作成メニュー</h4>
-          <p>紹介状/診断書/返信書の必須項目のみ入力できます（テンプレ/印刷は P1 以降）。</p>
+          <p>文書別テンプレを差し込み、保存後に印刷/プレビューできます。</p>
         </div>
         <button type="button" className="charts-side-panel__ghost" onClick={handleCancel}>
           中断して閉じる
@@ -369,6 +536,49 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
         ))}
       </div>
       <form className="charts-side-panel__form" onSubmit={(event) => event.preventDefault()}>
+        <div className="charts-side-panel__field">
+          <label htmlFor="document-template">テンプレート *</label>
+          <select
+            id="document-template"
+            value={forms[activeType].templateId}
+            onChange={(event) => {
+              const templateId = event.target.value;
+              const template = getTemplateById(activeType, templateId);
+              updateForm(activeType, { templateId });
+              logUiState({
+                action: 'scenario_change',
+                screen: 'charts/document-create',
+                controlId: 'document-template',
+                runId: resolvedRunId,
+                cacheHit: meta.cacheHit,
+                missingMaster: meta.missingMaster,
+                fallbackUsed: meta.fallbackUsed,
+                dataSourceTransition: meta.dataSourceTransition,
+                details: {
+                  documentType: activeType,
+                  templateId,
+                  templateLabel: template?.label ?? '未選択',
+                },
+              });
+            }}
+            disabled={isBlocked}
+          >
+            <option value="">テンプレートを選択</option>
+            {templateOptions.map((template) => (
+              <option key={template.id} value={template.id}>
+                {template.label}
+              </option>
+            ))}
+          </select>
+          <p className="charts-side-panel__help">
+            {activeTemplate?.description ?? '選択したテンプレの説明がここに表示されます。'}
+          </p>
+          <div className="charts-side-panel__template-actions">
+            <button type="button" onClick={applyTemplate} disabled={isBlocked || !forms[activeType].templateId}>
+              テンプレ挿入
+            </button>
+          </div>
+        </div>
         {activeType === 'referral' && (
           <>
             <div className="charts-side-panel__field">
@@ -560,13 +770,34 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
           <ul className="charts-document-list__items">
             {savedDocs.map((doc) => (
               <li key={doc.id}>
-                <div>
-                  <strong>{DOCUMENT_TYPES.find((entry) => entry.type === doc.type)?.label ?? '文書'}</strong>
-                  <span>{doc.title}</span>
-                </div>
-                <small>
-                  発行日: {doc.issuedAt} / 保存: {new Date(doc.savedAt).toLocaleString()}
-                </small>
+                {(() => {
+                  const guards = resolveOutputGuardReasons(doc);
+                  return (
+                    <>
+                      <div className="charts-document-list__row">
+                        <strong>{DOCUMENT_TYPE_LABELS[doc.type] ?? '文書'}</strong>
+                        <span>{doc.title}</span>
+                      </div>
+                      <div className="charts-document-list__meta">
+                        <small>
+                          発行日: {doc.issuedAt} / テンプレ: {doc.templateLabel} / 保存: {new Date(doc.savedAt).toLocaleString()}
+                        </small>
+                      </div>
+                      <div className="charts-document-list__actions" role="group" aria-label="文書出力操作">
+                        <button type="button" onClick={() => handleOpenDocumentPreview(doc)} disabled={guards.length > 0}>
+                          プレビュー
+                        </button>
+                        <button type="button" onClick={() => handleOpenDocumentPreview(doc, 'print')} disabled={guards.length > 0}>
+                          印刷
+                        </button>
+                        <button type="button" onClick={() => handleOpenDocumentPreview(doc, 'pdf')} disabled={guards.length > 0}>
+                          PDF出力
+                        </button>
+                      </div>
+                      {guards.length > 0 && <div className="charts-document-list__guard">出力停止: {guards[0]?.summary}</div>}
+                    </>
+                  );
+                })()}
               </li>
             ))}
           </ul>
