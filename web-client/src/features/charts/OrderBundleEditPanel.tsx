@@ -359,8 +359,10 @@ export function OrderBundleEditPanel({
   });
   const isInjectionOrder = entity === 'injectionOrder';
   const isRadiologyOrder = entity === 'radiologyOrder';
+  const isRehabOrder = entity === 'generalOrder';
   const supportsCommentCodes = BASE_EDITOR_ENTITIES.includes(entity);
   const supportsMaterials = ['generalOrder', 'treatmentOrder', 'testOrder', 'instractionChargeOrder'].includes(entity);
+  const supportsBodyPart = isRadiologyOrder || isRehabOrder;
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -1444,21 +1446,31 @@ export function OrderBundleEditPanel({
               placeholder="コメントを入力"
               disabled={isBlocked}
             />
+            {isRehabOrder && (
+              <p className="charts-side-panel__message">
+                メモは自由記述の補足欄です。指示・コメントをコードで管理する場合は「コメントコード」に入力してください。
+              </p>
+            )}
           </div>
         )}
 
-        {isRadiologyOrder && (
+        {supportsBodyPart && (
           <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
             <div className="charts-side-panel__subheader">
-              <strong>部位</strong>
-              <span
-                className={`charts-side-panel__status ${
-                  form.bodyPart?.name?.trim() ? 'charts-side-panel__status--ok' : 'charts-side-panel__status--warn'
-                }`}
-              >
-                {form.bodyPart?.name?.trim() ? '入力済み' : '未入力'}
-              </span>
+              <strong>{isRadiologyOrder ? '部位' : '部位（リハビリ）'}</strong>
+              {isRadiologyOrder && (
+                <span
+                  className={`charts-side-panel__status ${
+                    form.bodyPart?.name?.trim() ? 'charts-side-panel__status--ok' : 'charts-side-panel__status--warn'
+                  }`}
+                >
+                  {form.bodyPart?.name?.trim() ? '入力済み' : '未入力'}
+                </span>
+              )}
             </div>
+            {isRehabOrder && (
+              <p className="charts-side-panel__message">部位マスタ検索から選択できます（任意入力）。</p>
+            )}
             <div className="charts-side-panel__field-row">
               <div className="charts-side-panel__field">
                 <label htmlFor={`${entity}-bodypart`}>部位</label>
@@ -1487,7 +1499,7 @@ export function OrderBundleEditPanel({
                   id={`${entity}-bodypart-keyword`}
                   value={bodyPartKeyword}
                   onChange={(event) => setBodyPartKeyword(event.target.value)}
-                  placeholder="例: 胸"
+                  placeholder={isRadiologyOrder ? '例: 胸' : '例: 膝'}
                   disabled={isBlocked}
                 />
               </div>
@@ -1841,6 +1853,9 @@ export function OrderBundleEditPanel({
             <div className="charts-side-panel__subheader">
               <strong>コメントコード</strong>
             </div>
+            <p className="charts-side-panel__message">
+              コメントコードはコードと内容を入力して登録します（メモとは別枠で管理します）。
+            </p>
             <div className="charts-side-panel__item-row charts-side-panel__item-row--comment">
               <input
                 value={commentDraft.code ?? ''}
