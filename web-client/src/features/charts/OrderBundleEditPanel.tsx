@@ -90,6 +90,19 @@ const NO_PROCEDURE_CHARGE_TEXT = '手技料なし';
 const MATERIAL_CODE_PREFIX = '7';
 const BODY_PART_CODE_PREFIX = '002';
 const COMMENT_CODE_PATTERN = /^(008[1-6]|8[1-6]|098|099|98|99)/;
+const USAGE_FILTER_OPTIONS = [
+  { value: '', label: '用法選択', pattern: '' },
+  { value: '0010001', label: '内服1回等(100)', pattern: '0010001' },
+  { value: '0010002', label: '内服2回等(200)', pattern: '0010002' },
+  { value: '0010003', label: '内服3回等(300)', pattern: '0010003' },
+  { value: '0010004', label: '内服4回等(400)', pattern: '0010004' },
+  { value: '(0010005|0010007)', label: '点眼等(500,700)', pattern: '(0010005|0010007)' },
+  { value: '0010006', label: '塗布等(600)', pattern: '0010006' },
+  { value: '0010008', label: '頓用等(800)', pattern: '0010008' },
+  { value: '0010009', label: '吸入等(900)', pattern: '0010009' },
+  { value: '001', label: '全て', pattern: '001' },
+];
+const DEFAULT_USAGE_LIMIT = 50;
 
 const countItems = (items?: OrderBundleItem[]) =>
   items ? items.filter((item) => item.name.trim().length > 0).length : 0;
@@ -240,6 +253,20 @@ const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => {
 };
 
 const formatBundleName = (bundle: OrderBundle) => bundle.bundleName ?? '名称未設定';
+const formatMasterLabel = (item: OrderMasterSearchItem) => (item.code ? `${item.code} ${item.name}` : item.name);
+const formatUsageLabel = (item: OrderMasterSearchItem) => formatMasterLabel(item);
+const resolveUsagePattern = (value: string) =>
+  USAGE_FILTER_OPTIONS.find((option) => option.value === value)?.pattern ?? '';
+const matchesUsagePattern = (code: string | undefined, pattern: string) => {
+  if (!pattern) return true;
+  if (!code) return false;
+  try {
+    const regex = new RegExp(`^${pattern}`);
+    return regex.test(code);
+  } catch {
+    return code.startsWith(pattern);
+  }
+};
 
 export const validateBundleForm = ({
   form,
@@ -317,6 +344,10 @@ export function OrderBundleEditPanel({
   const [localStamps, setLocalStamps] = useState<LocalStampEntry[]>([]);
   const [masterKeyword, setMasterKeyword] = useState('');
   const [masterSearchType, setMasterSearchType] = useState<OrderMasterSearchType>('generic-class');
+  const [usageKeyword, setUsageKeyword] = useState('');
+  const [usageFilter, setUsageFilter] = useState(USAGE_FILTER_OPTIONS[0].value);
+  const [usagePartialMatch, setUsagePartialMatch] = useState(false);
+  const [usageLimit, setUsageLimit] = useState(DEFAULT_USAGE_LIMIT);
   const [materialKeyword, setMaterialKeyword] = useState('');
   const [bodyPartKeyword, setBodyPartKeyword] = useState('');
   const [commentDraft, setCommentDraft] = useState<OrderBundleItem>({
@@ -491,6 +522,19 @@ export function OrderBundleEditPanel({
     staleTime: 30 * 1000,
   });
 
+  const usagePattern = useMemo(() => resolveUsagePattern(usageFilter), [usageFilter]);
+  const usageSearchQuery = useQuery({
+    queryKey: ['charts-order-usage-search', usageKeyword],
+    queryFn: () =>
+      fetchOrderMasterSearch({
+        type: 'youhou',
+        keyword: usageKeyword,
+        allowEmpty: Boolean(usagePattern),
+      }),
+    enabled: usageKeyword.trim().length > 0 || Boolean(usagePattern),
+    staleTime: 30 * 1000,
+  });
+
   const materialSearchQuery = useQuery({
     queryKey: ['charts-order-material-search', materialKeyword],
     queryFn: () => fetchOrderMasterSearch({ type: 'material', keyword: materialKeyword }),
@@ -505,15 +549,29 @@ export function OrderBundleEditPanel({
     staleTime: 30 * 1000,
   });
 
+  const usageItems = useMemo(() => {
+    if (!usageSearchQuery.data?.ok) return [];
+    const keyword = usageKeyword.trim().toLowerCase();
+    return usageSearchQuery.data.items.filter((item) => {
+      if (!matchesUsagePattern(item.code, usagePattern)) return false;
+      if (!usagePartialMatch || !keyword) return true;
+      const name = item.name.toLowerCase();
+      const code = item.code?.toLowerCase() ?? '';
+      return name.includes(keyword) || code.includes(keyword);
+    });
+  }, [usageKeyword, usagePartialMatch, usagePattern, usageSearchQuery.data]);
+
+  const usageItemsLimited = useMemo(
+    () => usageItems.slice(0, Math.max(1, usageLimit)),
+    [usageItems, usageLimit],
+  );
+
   const parseStampSelection = (value: string): StampSelection | null => {
     if (!value) return null;
     const [source, id] = value.split('::');
     if ((source !== 'local' && source !== 'server') || !id) return null;
     return { source, id };
   };
-
-  const formatMasterLabel = (item: OrderMasterSearchItem) =>
-    item.code ? `${item.code} ${item.name}` : item.name;
 
   const appendItem = (item: OrderBundleItem) => {
     setForm((prev) => {
@@ -526,6 +584,15 @@ export function OrderBundleEditPanel({
       }
       return { ...prev, items: nextItems };
     });
+  };
+
+  const applyUsage = (item: OrderMasterSearchItem) => {
+    const label = formatUsageLabel(item);
+    setForm((prev) => ({
+      ...prev,
+      admin: label,
+      adminMemo: item.code ?? prev.adminMemo,
+    }));
   };
 
   const appendMaterialItem = (item: OrderBundleItem) => {
@@ -1070,6 +1137,10 @@ export function OrderBundleEditPanel({
             setNotice(null);
             setStampNotice(null);
             setMasterKeyword('');
+            setUsageKeyword('');
+            setUsageFilter(USAGE_FILTER_OPTIONS[0].value);
+            setUsagePartialMatch(false);
+            setUsageLimit(DEFAULT_USAGE_LIMIT);
             setMaterialKeyword('');
             setBodyPartKeyword('');
             setCommentDraft({
@@ -1214,7 +1285,9 @@ export function OrderBundleEditPanel({
             <input
               id={`${entity}-admin`}
               value={form.admin}
-              onChange={(event) => setForm((prev) => ({ ...prev, admin: event.target.value }))}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, admin: event.target.value, adminMemo: '' }))
+              }
               placeholder="例: 1日1回 朝"
               disabled={isBlocked}
             />
@@ -1229,6 +1302,109 @@ export function OrderBundleEditPanel({
               disabled={isBlocked}
             />
           </div>
+        </div>
+        <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
+          <div className="charts-side-panel__subheader">
+            <strong>用法検索</strong>
+            <span className="charts-side-panel__search-count">
+              {usageSearchQuery.isFetching
+                ? '検索中...'
+                : usageSearchQuery.data?.ok
+                  ? usageItems.length > usageItemsLimited.length
+                    ? `${usageItems.length}件 (表示: ${usageItemsLimited.length}件)`
+                    : `${usageItems.length}件`
+                  : ''}
+            </span>
+          </div>
+          <div className="charts-side-panel__field-row">
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-usage-keyword`}>キーワード</label>
+              <input
+                id={`${entity}-usage-keyword`}
+                value={usageKeyword}
+                onChange={(event) => setUsageKeyword(event.target.value)}
+                placeholder="例: 1日1回"
+                disabled={isBlocked}
+              />
+            </div>
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-usage-filter`}>用法フィルタ</label>
+              <select
+                id={`${entity}-usage-filter`}
+                value={usageFilter}
+                onChange={(event) => setUsageFilter(event.target.value)}
+                disabled={isBlocked}
+              >
+                {USAGE_FILTER_OPTIONS.map((option) => (
+                  <option key={option.value || option.label} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          <div className="charts-side-panel__field-row">
+            <div className="charts-side-panel__field">
+              <label className="charts-side-panel__toggle">
+                <input
+                  type="checkbox"
+                  checked={usagePartialMatch}
+                  onChange={(event) => setUsagePartialMatch(event.target.checked)}
+                  disabled={isBlocked}
+                />
+                部分一致
+              </label>
+            </div>
+            <div className="charts-side-panel__field">
+              <label htmlFor={`${entity}-usage-limit`}>件数上限</label>
+              <select
+                id={`${entity}-usage-limit`}
+                value={usageLimit}
+                onChange={(event) => setUsageLimit(Number(event.target.value))}
+                disabled={isBlocked}
+              >
+                {[20, 50, 100].map((value) => (
+                  <option key={value} value={value}>
+                    {value}件
+                  </option>
+                ))}
+              </select>
+            </div>
+          </div>
+          {usageSearchQuery.data && !usageSearchQuery.data.ok && (
+            <div className="charts-side-panel__notice charts-side-panel__notice--error">
+              {usageSearchQuery.data.message ?? '用法マスタの検索に失敗しました。'}
+            </div>
+          )}
+          {usageSearchQuery.data?.ok && usageItemsLimited.length > 0 && (
+            <div className="charts-side-panel__search-table">
+              <div className="charts-side-panel__search-header">
+                <span>コード</span>
+                <span>名称</span>
+                <span>単位</span>
+                <span>分類</span>
+                <span>備考</span>
+              </div>
+              {usageItemsLimited.map((item) => (
+                <button
+                  key={`usage-${item.code ?? item.name}`}
+                  type="button"
+                  className="charts-side-panel__search-row"
+                  onClick={() => applyUsage(item)}
+                  disabled={isBlocked}
+                >
+                  <span>{item.code ?? '-'}</span>
+                  <span>{item.name}</span>
+                  <span>{item.unit ?? '-'}</span>
+                  <span>{item.category ?? '-'}</span>
+                  <span>{item.note ?? '-'}</span>
+                </button>
+              ))}
+            </div>
+          )}
+          {usageSearchQuery.data?.ok && usageItemsLimited.length === 0 && (usageKeyword.trim() || usagePattern) && (
+            <p className="charts-side-panel__empty">該当する用法が見つかりません。</p>
+          )}
         </div>
         <div className="charts-side-panel__field">
           <label htmlFor={`${entity}-start`}>開始日</label>
@@ -1432,15 +1608,19 @@ export function OrderBundleEditPanel({
                   key={`master-${item.code ?? item.name}`}
                   type="button"
                   className="charts-side-panel__search-row"
-                  onClick={() =>
+                  onClick={() => {
+                    if (item.type === 'youhou' || masterSearchType === 'youhou') {
+                      applyUsage(item);
+                      return;
+                    }
                     appendItem({
                       code: item.code,
                       name: formatMasterLabel(item),
                       quantity: '',
                       unit: item.unit ?? '',
                       memo: item.note ?? '',
-                    })
-                  }
+                    });
+                  }}
                   disabled={isBlocked}
                 >
                   <span>{item.code ?? '-'}</span>
