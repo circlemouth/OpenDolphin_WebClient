@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type DragEvent } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { readStoredAuth } from '../../libs/auth/storedAuth';
@@ -33,6 +33,8 @@ export type OrderBundleEditPanelProps = {
   meta: OrderBundleEditPanelMeta;
 };
 
+type BundleFormItem = OrderBundleItem & { rowId: string };
+
 type BundleFormState = {
   documentId?: number;
   moduleId?: number;
@@ -42,7 +44,7 @@ type BundleFormState = {
   adminMemo: string;
   memo: string;
   startDate: string;
-  items: OrderBundleItem[];
+  items: BundleFormItem[];
 };
 
 type OrderBundleSubmitAction = 'save' | 'expand' | 'expand_continue';
@@ -76,9 +78,24 @@ type StampFormState = {
   target: string;
 };
 
-const buildEmptyItem = (): OrderBundleItem => ({ name: '', quantity: '', unit: '', memo: '' });
+const createRowId = () => {
+  if (typeof globalThis.crypto?.randomUUID === 'function') {
+    return globalThis.crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
 
-const countItems = (items?: OrderBundleItem[]) =>
+const buildFormItem = (item?: Partial<OrderBundleItem>): BundleFormItem => ({
+  rowId: createRowId(),
+  name: item?.name ?? '',
+  quantity: item?.quantity ?? '',
+  unit: item?.unit ?? '',
+  memo: item?.memo ?? '',
+});
+
+const buildEmptyItem = (): BundleFormItem => buildFormItem();
+
+const countItems = (items?: BundleFormItem[]) =>
   items ? items.filter((item) => item.name.trim().length > 0).length : 0;
 
 const DEFAULT_VALIDATION_RULE: BundleValidationRule = {
@@ -125,7 +142,7 @@ const buildEmptyForm = (today: string): BundleFormState => ({
   adminMemo: '',
   memo: '',
   startDate: today,
-  items: [buildEmptyItem()],
+  items: [buildFormItem()],
 });
 
 const toFormState = (bundle: OrderBundle, today: string): BundleFormState => ({
@@ -137,7 +154,10 @@ const toFormState = (bundle: OrderBundle, today: string): BundleFormState => ({
   adminMemo: bundle.adminMemo ?? '',
   memo: bundle.memo ?? '',
   startDate: bundle.started ?? today,
-  items: bundle.items && bundle.items.length > 0 ? bundle.items.map((item) => ({ ...item })) : [buildEmptyItem()],
+  items:
+    bundle.items && bundle.items.length > 0
+      ? bundle.items.map((item) => buildFormItem(item))
+      : [buildFormItem()],
 });
 
 const toFormStateFromStamp = (stamp: StampBundleJson, today: string): BundleFormState => ({
@@ -149,13 +169,15 @@ const toFormStateFromStamp = (stamp: StampBundleJson, today: string): BundleForm
   startDate: today,
   items:
     stamp.claimItem && stamp.claimItem.length > 0
-      ? stamp.claimItem.map((item) => ({
-          name: item.name ?? '',
-          quantity: item.number ?? '',
-          unit: item.unit ?? '',
-          memo: item.memo ?? '',
-        }))
-      : [buildEmptyItem()],
+      ? stamp.claimItem.map((item) =>
+          buildFormItem({
+            name: item.name ?? '',
+            quantity: item.number ?? '',
+            unit: item.unit ?? '',
+            memo: item.memo ?? '',
+          }),
+        )
+      : [buildFormItem()],
 });
 
 const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => ({
@@ -165,7 +187,7 @@ const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => (
   adminMemo: stamp.bundle.adminMemo,
   memo: stamp.bundle.memo,
   startDate: stamp.bundle.startDate,
-  items: stamp.bundle.items.length > 0 ? stamp.bundle.items.map((item) => ({ ...item })) : [buildEmptyItem()],
+  items: stamp.bundle.items.length > 0 ? stamp.bundle.items.map((item) => buildFormItem(item)) : [buildFormItem()],
 });
 
 const formatBundleName = (bundle: OrderBundle) => bundle.bundleName ?? '名称未設定';
@@ -210,6 +232,8 @@ export function OrderBundleEditPanel({
   const [stampForm, setStampForm] = useState<StampFormState>({ name: '', category: '', target: entity });
   const [selectedStamp, setSelectedStamp] = useState<string>('');
   const [localStamps, setLocalStamps] = useState<LocalStampEntry[]>([]);
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
   const blockReasons = useMemo(() => {
     const reasons: string[] = [];
     if (meta.readOnly) {
@@ -374,7 +398,9 @@ export function OrderBundleEditPanel({
   const mutation = useMutation({
     mutationFn: async (payload: OrderBundleSubmitPayload) => {
       if (!patientId) throw new Error('patientId is required');
-      const filteredItems = payload.form.items.filter((item) => item.name.trim().length > 0);
+      const filteredItems = payload.form.items
+        .filter((item) => item.name.trim().length > 0)
+        .map(({ rowId, ...rest }) => rest);
       return mutateOrderBundles({
         patientId,
         operations: [
@@ -616,6 +642,72 @@ export function OrderBundleEditPanel({
     mutation.mutate({ form, action });
   };
 
+  const canReorderItems = !isBlocked && form.items.length > 1;
+
+  const resetDragState = () => {
+    setDraggedIndex(null);
+    setDragOverIndex(null);
+  };
+
+  const handleDragStart = (index: number, event: DragEvent<HTMLButtonElement>) => {
+    if (!canReorderItems) return;
+    setDraggedIndex(index);
+    setDragOverIndex(null);
+    event.dataTransfer.effectAllowed = 'move';
+    event.dataTransfer.setData('text/plain', String(index));
+  };
+
+  const handleDragOver = (index: number, event: DragEvent<HTMLDivElement>) => {
+    if (!canReorderItems) return;
+    if (index < 0 || index >= form.items.length) return;
+    event.preventDefault();
+    if (dragOverIndex !== index) {
+      setDragOverIndex(index);
+    }
+  };
+
+  const handleDrop = (index: number, event: DragEvent<HTMLDivElement>) => {
+    if (!canReorderItems) return;
+    event.preventDefault();
+    if (index < 0 || index >= form.items.length) {
+      resetDragState();
+      return;
+    }
+    const fromIndexRaw = draggedIndex ?? Number(event.dataTransfer.getData('text/plain'));
+    if (!Number.isFinite(fromIndexRaw)) {
+      resetDragState();
+      return;
+    }
+    const fromIndex = Number(fromIndexRaw);
+    if (fromIndex < 0 || fromIndex >= form.items.length) {
+      resetDragState();
+      return;
+    }
+    if (fromIndex === index) {
+      resetDragState();
+      return;
+    }
+    setForm((prev) => {
+      const nextItems = [...prev.items];
+      const [moved] = nextItems.splice(fromIndex, 1);
+      nextItems.splice(index, 0, moved);
+      return { ...prev, items: nextItems };
+    });
+    resetDragState();
+  };
+
+  const handleDragEnd = () => {
+    resetDragState();
+  };
+
+  const clearItems = () => {
+    if (isBlocked) return;
+    const confirmed = window.confirm('入力中の行をすべてクリアします。よろしいですか？');
+    if (!confirmed) return;
+    setForm((prev) => ({ ...prev, items: [buildFormItem()] }));
+    setNotice({ tone: 'info', message: '入力行を全てクリアしました。' });
+  };
+
   const stampImportMutation = useMutation({
     mutationFn: async (stampId: string) => fetchStampDetail(stampId),
     onSuccess: (result, stampId) => {
@@ -753,7 +845,7 @@ export function OrderBundleEditPanel({
         adminMemo: form.adminMemo,
         memo: form.memo,
         startDate: form.startDate,
-        items: form.items.filter((item) => item.name.trim().length > 0),
+        items: form.items.filter((item) => item.name.trim().length > 0).map(({ rowId, ...rest }) => rest),
       },
     });
     setLocalStamps(loadLocalStamps(userName));
@@ -1050,17 +1142,48 @@ export function OrderBundleEditPanel({
         <div className="charts-side-panel__subsection">
           <div className="charts-side-panel__subheader">
             <strong>薬剤/項目</strong>
-            <button
-              type="button"
-              className="charts-side-panel__ghost"
-              onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, buildEmptyItem()] }))}
-              disabled={isBlocked}
-            >
-              追加
-            </button>
+            <div className="charts-side-panel__subheader-actions">
+              <button
+                type="button"
+                className="charts-side-panel__ghost"
+                onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, buildEmptyItem()] }))}
+                disabled={isBlocked}
+              >
+                追加
+              </button>
+              <button
+                type="button"
+                className="charts-side-panel__ghost charts-side-panel__ghost--danger"
+                onClick={clearItems}
+                disabled={isBlocked}
+              >
+                全クリア
+              </button>
+            </div>
           </div>
           {form.items.map((item, index) => (
-            <div key={`${entity}-item-${index}`} className="charts-side-panel__item-row">
+            <div
+              key={item.rowId}
+              data-testid="order-bundle-item-row"
+              data-rowid={item.rowId}
+              className={`charts-side-panel__item-row${
+                dragOverIndex === index ? ' charts-side-panel__item-row--drag-over' : ''
+              }${draggedIndex === index ? ' charts-side-panel__item-row--dragging' : ''}`}
+              onDragOver={(event) => handleDragOver(index, event)}
+              onDrop={(event) => handleDrop(index, event)}
+            >
+              <button
+                type="button"
+                className="charts-side-panel__drag-handle"
+                draggable={canReorderItems}
+                onDragStart={(event) => handleDragStart(index, event)}
+                onDragEnd={handleDragEnd}
+                disabled={!canReorderItems}
+                aria-label="ドラッグして並べ替え"
+                title={canReorderItems ? 'ドラッグして並べ替え' : '並べ替えは複数行が必要です'}
+              >
+                ≡
+              </button>
               <input
                 value={item.name}
                 onChange={(event) => {
@@ -1102,16 +1225,19 @@ export function OrderBundleEditPanel({
               />
               <button
                 type="button"
-                className="charts-side-panel__icon"
-                onClick={() => {
-                  setForm((prev) => ({
-                    ...prev,
-                    items: prev.items.length > 1 ? prev.items.filter((_, idx) => idx !== index) : [buildEmptyItem()],
-                  }));
-                }}
+                className="charts-side-panel__row-delete"
+              onClick={() => {
+                setForm((prev) => ({
+                  ...prev,
+                  items:
+                    prev.items.length > 1
+                      ? prev.items.filter((_, idx) => idx !== index)
+                      : [buildFormItem()],
+                }));
+              }}
                 disabled={isBlocked}
               >
-                ✕
+                行削除
               </button>
             </div>
           ))}
