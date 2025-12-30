@@ -1,0 +1,399 @@
+ganttConfig:
+  defaultView: day
+  startDate: 2025-12-30
+  showFilters: true
+  filters:
+    priorities:
+      High: true
+      Medium: true
+      Low: true
+    statuses:
+      completed: true
+      in_progress: true
+      not_started: true
+    showDependencies: true
+  labels:
+    dayNames:
+      - 日
+      - 月
+      - 火
+      - 水
+      - 木
+      - 金
+      - 土
+    priorities:
+      high: 高
+      medium: 中
+      low: 低
+    statuses:
+      completed: 完了
+      inProgress: 進行中
+      notStarted: 未開始
+    buttons:
+      filter: フィルター
+      previousPeriod: 前へ
+      nextPeriod: 次へ
+    filterPanel:
+      priorities: 優先度
+      statuses: ステータス
+      dependencies: 依存関係
+      showDependencies: 依存関係を表示
+      tasksCount: タスク数
+    tooltipFields:
+      startDate: 開始日
+      duration: 期間
+      priority: 優先度
+      status: ステータス
+      progress: 進捗
+      agent: エージェント
+      details: 詳細
+      prerequisites: 前提タスク
+      nextTasks: Next Tasks
+labels:
+  dayNames:
+    - 日
+    - 月
+    - 火
+    - 水
+    - 木
+    - 金
+    - 土
+  priorities:
+    high: 高
+    medium: 中
+    low: 低
+  statuses:
+    completed: 完了
+    inProgress: 進行中
+    notStarted: 未開始
+  buttons:
+    filter: フィルター
+    previousPeriod: 前へ
+    nextPeriod: 次へ
+  filterPanel:
+    priorities: 優先度
+    statuses: ステータス
+    dependencies: 依存関係
+    showDependencies: 依存関係を表示
+    tasksCount: タスク数
+  tooltipFields:
+    startDate: 開始日
+    duration: 期間
+    priority: 優先度
+    status: ステータス
+    progress: 進捗
+    agent: エージェント
+    details: 詳細
+    prerequisites: 前提タスク
+    nextTasks: Next Tasks
+filters:
+  priorities:
+    High: true
+    Medium: true
+    Low: true
+  statuses:
+    completed: true
+    in_progress: true
+    not_started: true
+  showDependencies: true
+src:
+  structure.yaml:
+    content: |-
+      本タスクは「モダナイズ版クライアントのカルテ入力画面以外」について、
+      開発ドキュメントと旧来版クライアントの実装を照合し、追加検討すべき機能・運用を洗い出すための調査計画です。
+
+      目的:
+      - 対象画面の機能一覧とユーザーフローを棚卸する
+      - 旧来版とモダナイズ版の差分を可視化する
+      - 追加検討項目の優先度と依存関係を整理し、実装検討に引き継ぐ
+
+      文体: 調査計画として、作業手順と成果物の粒度が明確
+    agent選定理由: 既存ドキュメントとコード参照の棚卸は codex を主担当とし、他モデルで補助レビューする。
+    api選定理由: ローカル資料とコードの突き合わせが中心のため外部API不要。
+    dependency: []
+    agent: codex
+    api: []
+    ganttConfig:
+      defaultView: day
+      startDate: 2025-12-30
+      showFilters: true
+      filters:
+        priorities:
+          High: true
+          Medium: true
+          Low: true
+        statuses:
+          completed: true
+          in_progress: true
+          not_started: true
+        showDependencies: true
+      labels:
+        dayNames:
+          - 日
+          - 月
+          - 火
+          - 水
+          - 木
+          - 金
+          - 土
+        priorities:
+          high: 高
+          medium: 中
+          low: 低
+        statuses:
+          completed: 完了
+          inProgress: 進行中
+          notStarted: 未開始
+        buttons:
+          filter: フィルター
+          previousPeriod: 前へ
+          nextPeriod: 次へ
+        filterPanel:
+          priorities: 優先度
+          statuses: ステータス
+          dependencies: 依存関係
+          showDependencies: 依存関係を表示
+          tasksCount: タスク数
+        tooltipFields:
+          startDate: 開始日
+          duration: 期間
+          priority: 優先度
+          status: ステータス
+          progress: 進捗
+          agent: エージェント
+          details: 詳細
+          prerequisites: 前提タスク
+          nextTasks: Next Tasks
+  discovery:
+    対象範囲と成果物定義.md:
+      content: |-
+        # 対象範囲と成果物定義
+
+        ## 目的
+        「カルテ入力画面以外」の対象画面・機能を明確化し、洗い出し対象の境界を固定する。
+
+        ## 対象
+        - 受付/患者一覧/予約/帳票/設定/配信/管理など
+        - Charts 画面のうちカルテ入力以外（監査、印刷、検索、権限）
+
+        ## 成果物
+        - 対象画面リスト
+        - 参照ドキュメント一覧
+        - 旧来版ソースの参照箇所
+      dependency: []
+      agent: codex
+      api: []
+      priority: High
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2025-12-30T00:00:00.000Z
+        days: 1
+  documentation:
+    開発ドキュメント棚卸.md:
+      content: |-
+        # 開発ドキュメント棚卸
+
+        ## 目的
+        現行ドキュメント（docs/web-client、README、運用手順）から機能要件と画面一覧を抽出する。
+
+        ## 手順
+        - docs/DEVELOPMENT_STATUS.md を正本として参照順序を確認
+        - 既存仕様や運用ガイドを整理
+        - 画面単位で機能項目を抽出
+
+        ## 成果物
+        - ドキュメント索引
+        - 画面別の要求機能一覧
+      dependency:
+        - src/discovery/対象範囲と成果物定義.md
+      agent: claude code
+      api: []
+      priority: High
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2025-12-31T00:00:00.000Z
+        days: 1
+  legacy_review:
+    旧来版クライアント機能棚卸.md:
+      content: |-
+        # 旧来版クライアント機能棚卸
+
+        ## 目的
+        旧来版クライアントの画面構成と機能を抽出し、モダナイズ版との差分候補を作る。
+
+        ## 手順
+        - client/ 配下の画面・ルート・コンポーネントを確認
+        - 画面単位で機能と操作フローを整理
+        - モダナイズ版で未対応の可能性がある要素を付記
+
+        ## 成果物
+        - 旧来版画面一覧
+        - 画面別機能メモ
+      dependency:
+        - src/discovery/対象範囲と成果物定義.md
+      agent: gemini cli
+      api: []
+      priority: High
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2025-12-31T00:00:00.000Z
+        days: 2
+  modernized_review:
+    モダナイズ版実装範囲整理.md:
+      content: |-
+        # モダナイズ版実装範囲整理
+
+        ## 目的
+        web-client/src と server-modernized 連携点から、現行モダナイズ版で対応済みの機能を整理する。
+
+        ## 手順
+        - web-client/ 配下の画面構成・主要機能を棚卸
+        - server-modernized 側の API 対応状況を確認
+        - 対応済み/未対応のラベル付け
+
+        ## 成果物
+        - モダナイズ版機能一覧
+      dependency:
+        - src/documentation/開発ドキュメント棚卸.md
+      agent: cursor cli
+      api: []
+      priority: Medium
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2026-01-01T00:00:00.000Z
+        days: 1
+    非カルテ入力ユーザーフロー整理.md:
+      content: |-
+        # 非カルテ入力ユーザーフロー整理
+
+        ## 目的
+        受付/患者/設定/管理などの画面遷移と操作フローを整理し、抜け漏れを検出するための基盤を作る。
+
+        ## 成果物
+        - 画面遷移図（テキストベース）
+        - 主要操作の入口/出口
+      dependency:
+        - src/documentation/開発ドキュメント棚卸.md
+      agent: codex
+      api: []
+      priority: Medium
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2026-01-01T00:00:00.000Z
+        days: 1
+  gap_analysis:
+    機能ギャップ抽出.md:
+      content: |-
+        # 機能ギャップ抽出
+
+        ## 目的
+        旧来版とモダナイズ版の差分を一覧化し、追加検討項目を抽出する。
+
+        ## 手順
+        - 画面別に機能差分を比較
+        - 影響範囲（UI/運用/権限/監査）をタグ付け
+        - 追加検討候補を分類
+
+        ## 成果物
+        - ギャップ一覧表
+      dependency:
+        - src/legacy_review/旧来版クライアント機能棚卸.md
+        - src/modernized_review/モダナイズ版実装範囲整理.md
+        - src/modernized_review/非カルテ入力ユーザーフロー整理.md
+      agent: claude code
+      api: []
+      priority: High
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2026-01-02T00:00:00.000Z
+        days: 1
+    追加検討項目の優先度付け.md:
+      content: |-
+        # 追加検討項目の優先度付け
+
+        ## 目的
+        抽出したギャップを重要度と影響度で整理し、次フェーズへの引き継ぎに備える。
+
+        ## 成果物
+        - 重要度/緊急度マトリクス
+        - 初期バックログ案
+      dependency:
+        - src/gap_analysis/機能ギャップ抽出.md
+      agent: codex
+      api: []
+      priority: Medium
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2026-01-02T00:00:00.000Z
+        days: 1
+  planning:
+    依存関係と影響範囲整理.md:
+      content: |-
+        # 依存関係と影響範囲整理
+
+        ## 目的
+        追加検討項目の実装影響範囲と依存関係を整理し、計画化できる状態にする。
+
+        ## 成果物
+        - 依存関係マップ
+        - 影響範囲のメモ（UI/API/運用/監査）
+      dependency:
+        - src/gap_analysis/追加検討項目の優先度付け.md
+      agent: gemini cli
+      api: []
+      priority: Medium
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2026-01-03T00:00:00.000Z
+        days: 1
+    レビュー準備と合意形成.md:
+      content: |-
+        # レビュー準備と合意形成
+
+        ## 目的
+        チームレビュー用の資料を整え、合意形成のための確認観点を整理する。
+
+        ## 成果物
+        - レビュー観点リスト
+        - 追加検討項目の説明資料
+      dependency:
+        - src/gap_analysis/追加検討項目の優先度付け.md
+      agent: cursor cli
+      api: []
+      priority: Medium
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2026-01-03T00:00:00.000Z
+        days: 1
+  reporting:
+    調査結果レポート作成.md:
+      content: |-
+        # 調査結果レポート作成
+
+        ## 目的
+        洗い出し結果をまとめ、次フェーズの実装計画に引き渡す。
+
+        ## 成果物
+        - 画面別の追加検討項目一覧
+        - 優先度と依存関係のまとめ
+        - 未確認事項とリスク
+      dependency:
+        - src/planning/依存関係と影響範囲整理.md
+        - src/planning/レビュー準備と合意形成.md
+      agent: claude code
+      api: []
+      priority: High
+      status: not_started
+      progress: 0
+      schedule:
+        start: 2026-01-03T00:00:00.000Z
+        days: 1
