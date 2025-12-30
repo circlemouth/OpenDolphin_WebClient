@@ -218,10 +218,6 @@ function FacilityGate({ session, onLogout }: { session: Session | null; onLogout
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (loginRoute) {
-    const redirectFrom = resolveLoginRedirect(location);
-    if (redirectFrom) {
-      return <Navigate to={normalizeFacilityRedirect(session.facilityId, redirectFrom)} replace />;
-    }
     return <Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />;
   }
 
@@ -316,16 +312,6 @@ const isLoginRoute = (pathname: string) => {
   if (pathname === '/login') return true;
   const match = parseFacilityPath(pathname);
   return match?.suffix === '/login';
-};
-
-const normalizeFacilityRedirect = (facilityId: string, target: string) => {
-  const [pathname, rawSearch] = target.split('?');
-  const search = rawSearch ? `?${rawSearch}` : '';
-  const facilityMatch = parseFacilityPath(pathname);
-  const safePath = facilityMatch
-    ? buildFacilityPath(facilityId, facilityMatch.suffix)
-    : buildFacilityPath(facilityId, pathname);
-  return `${safePath}${search}`;
 };
 
 function AppLayout({ onLogout }: { onLogout: () => void }) {
