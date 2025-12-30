@@ -219,42 +219,6 @@
     "aiCompetitionScore": 88
   },
   {
-    "id": "task-1767048040372-11f3e5",
-    "name": "🔍Monitor: [order input gap analysis plan 20251229] 21_P1改修_DnD行操作\n期間: 01/20 09:00 - 01/22 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 21 P1 改修：DnD 並べ替え / 全クリア / 行削除補助\n\nRUN_ID: 20251229T081044Z\n\n- 目的: OrderBundleEditPanel の操作補助 UI を追加する。\n- 対象: Charts 右パネル（OrderBundleEditPanel）。\n- 実装観点:\n  - 行ドラッグで並べ替え可能にする。\n  - 「全クリア」操作と確認導線を追加。\n  - 行削除の明示アクションを追加。\n- 依存/前提: DnD ライブラリ選定と既存テーブル構造の整理。\n- テスト: 保存順序の反映、readOnly/missingMaster/fallbackUsed 時の無効化。\n\nYAML ID: src/order_input_gap_analysis/21_P1改修_DnD行操作.md",
-    "model": "codex",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-29T22:40:40.372Z",
-    "updatedAt": "2025-12-29T22:40:40.372Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1767048040372-11f3e5",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767048021136-1nxxfosv",
-    "aiCompetitionGroupName": "[order input gap analysis plan 20251229] 21_P1改修_DnD行操作\n期間: 01/20 09:00 - 01/22 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 21 P1 改修：DnD 並べ替え / 全クリア / 行削除補助\n\nRUN_ID: 20251229T081044Z\n\n- 目的: OrderBundleEditPanel の操作補助 UI を追加する。\n- 対象: Charts 右パネル（OrderBundleEditPanel）。\n- 実装観点:\n  - 行ドラッグで並べ替え可能にする。\n  - 「全クリア」操作と確認導線を追加。\n  - 行削除の明示アクションを追加。\n- 依存/前提: DnD ライブラリ選定と既存テーブル構造の整理。\n- テスト: 保存順序の反映、readOnly/missingMaster/fallbackUsed 時の無効化。\n\nYAML ID: src/order_input_gap_analysis/21_P1改修_DnD行操作.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1767048021339-a5bb95",
-      "task-1767048021139-5f7068",
-      "task-1767048021538-34abdd"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1767048081136,
-    "worktreePath": ".worktrees/task-1767048040372-11f3e5"
-  },
-  {
     "id": "task-1767048236329-d94272",
     "name": "CodexCLI1: [order input gap analysis plan 20251229] 25_P0改修_用法検索UI\n期間: 01/17 09:00 - 01/19 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 25 P0 改修：用法検索/フィルタ UI\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 処方オーダーで旧来版同等の用法検索/フィルタ UI を提供する。\n- 対象: OrderBundleEditPanel（処方/RP の用法入力）。\n- 実装観点:\n  - 用法マスタ検索（部分一致/件数制限）と結果選択の導線を追加する。\n  - 検索結果選択で用法コード/表示名を一括反映する。\n  - readOnly/missingMaster/fallbackUsed ガードと競合しない導線を確保する。\n- 依存/前提: /orca/master/medicationUsage などの API 仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 用法検索→選択→保存、入力ブロック時の UI 挙動。\n\nYAML ID: src/order_input_gap_analysis/25_P0改修_用法検索UI.md",
     "model": "Codex CLI",
