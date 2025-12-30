@@ -721,8 +721,16 @@ export function OrderBundleEditPanel({
   };
 
   const isNoProcedureCharge = isInjectionOrder && form.memo === NO_PROCEDURE_CHARGE_TEXT;
-  const bundleNumberLabel = isMedOrder ? '日数/回数' : '回数';
-  const bundleNumberPlaceholder = isMedOrder ? '例: 7' : '1';
+  const bundleNumberLabel = isMedOrder
+    ? form.prescriptionTiming === 'regular'
+      ? '日数'
+      : '回数'
+    : '回数';
+  const bundleNumberPlaceholder = isMedOrder
+    ? form.prescriptionTiming === 'regular'
+      ? '例: 7'
+      : '例: 1'
+    : '1';
   const isPrescriptionLocationLocked = isMedOrder && form.prescriptionTiming !== 'regular';
   const canEditBundleNumber = !isMedOrder || form.admin.trim().length > 0;
   const bundleNumberDisabled = isBlocked || !canEditBundleNumber;
@@ -731,7 +739,9 @@ export function OrderBundleEditPanel({
       ? form.prescriptionTiming === 'regular'
         ? '通常処方は日数として扱われます。'
         : '頓用/臨時は回数として扱われます。'
-      : '用法入力後に日数/回数を入力できます。'
+      : form.prescriptionTiming === 'regular'
+        ? '用法入力後に日数を入力できます。'
+        : '用法入力後に回数を入力できます。'
     : '';
 
   const mutation = useMutation({
@@ -1452,7 +1462,7 @@ export function OrderBundleEditPanel({
                 </label>
               </div>
               {isPrescriptionLocationLocked && (
-                <p className="charts-side-panel__help">頓用/臨時では内用/外用を変更できません。</p>
+                <p className="charts-side-panel__help">頓用/臨時では院内/院外を変更できません。</p>
               )}
             </div>
             <div className="charts-side-panel__field">
