@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate, type Location } from 'react-router-dom';
 
-import { buildFacilityPath, normalizeFacilityId } from '../../routes/facilityRoutes';
+import { buildFacilityPath, normalizeFacilityId, parseFacilityPath } from '../../routes/facilityRoutes';
 import { FacilityLoginEntry } from './FacilityLoginEntry';
 import { isLegacyFrom, resolveFromState } from './loginRouteState';
 import { loadDevFacilityId, loadRecentFacilities } from './recentFacilityStore';
@@ -25,7 +25,22 @@ const loadFacilityIdFromJson = async (): Promise<string | undefined> => {
   }
 };
 
-const resolveFacilityId = async (): Promise<string | undefined> => {
+const resolveFacilityIdFromFromState = (from?: string | Location): string | undefined => {
+  if (!from) return undefined;
+  const pathname =
+    typeof from === 'string'
+      ? (from.split('?')[0] ?? '').split('#')[0] ?? ''
+      : from.pathname ?? '';
+  if (!pathname) return undefined;
+  const parsed = parseFacilityPath(pathname);
+  if (!parsed?.facilityId) return undefined;
+  return normalizeFacilityId(parsed.facilityId);
+};
+
+const resolveFacilityId = async (fromState?: string | Location): Promise<string | undefined> => {
+  const fromFacilityId = resolveFacilityIdFromFromState(fromState);
+  if (fromFacilityId) return fromFacilityId;
+
   const recentFacilities = loadRecentFacilities();
   if (recentFacilities.length === 1) {
     return recentFacilities[0];
@@ -59,9 +74,11 @@ export const FacilityLoginResolver = () => {
     setIsResolving(true);
 
     const attemptResolve = async () => {
-      const facilityId = await resolveFacilityId();
+      const facilityId = await resolveFacilityId(fromState);
       if (!active) return;
       if (facilityId) {
+        // ルーティングの差分を最小化するため、/login 直アクセスは replace、
+        // 旧URL/リダイレクト由来（fromState or legacyFrom）は push で履歴を残す。
         navigate(buildFacilityPath(facilityId, '/login'), {
           replace: !(fromState || legacyFrom),
           state: forwardState,
