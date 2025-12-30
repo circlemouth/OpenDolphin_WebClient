@@ -8,6 +8,7 @@ import { generateRunId, updateObservabilityMeta } from './libs/observability/obs
 import { consumeSessionExpiredNotice } from './libs/session/sessionExpiry';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
+const SYSTEM_ICON_URL = `${import.meta.env.BASE_URL}LogoImage/nz8rHDLB3Mdj8Gzrm_F_F_output.jpg`;
 
 
 
@@ -188,8 +189,17 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
     <main className="login-shell">
       <section className="login-card" aria-labelledby="login-heading">
         <header className="login-card__header">
-          <h1 id="login-heading">OpenDolphin Web ログイン</h1>
-          <p>
+          <div className="login-brand">
+            <div className="login-brand__badge">
+              <img src={SYSTEM_ICON_URL} alt="OpenDolphin システムアイコン" />
+            </div>
+            <div className="login-brand__text">
+              <p className="login-brand__eyebrow">OpenDolphin Web</p>
+              <h1 id="login-heading">ログイン</h1>
+              <p className="login-brand__sub">診療フローに接続するシステムポータル</p>
+            </div>
+          </div>
+          <p className="login-card__lead">
             施設ID・ユーザーID・パスワードを入力し、認証ヘッダーを用いた既存APIでサインインします。クライアントUUIDはログイン時に自動生成されます。
           </p>
         </header>
