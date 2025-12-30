@@ -1,198 +1,5 @@
 [
   {
-    "id": "task-yaml-15qw5rg-src-order-input-",
-    "name": "[order input gap analysis plan 20251229] 21_P1改修_DnD行操作\n期間: 01/20 09:00 - 01/22 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 21 P1 改修：DnD 並べ替え / 全クリア / 行削除補助\n\nRUN_ID: 20251229T081044Z\n\n- 目的: OrderBundleEditPanel の操作補助 UI を追加する。\n- 対象: Charts 右パネル（OrderBundleEditPanel）。\n- 実装観点:\n  - 行ドラッグで並べ替え可能にする。\n  - 「全クリア」操作と確認導線を追加。\n  - 行削除の明示アクションを追加。\n- 依存/前提: DnD ライブラリ選定と既存テーブル構造の整理。\n- テスト: 保存順序の反映、readOnly/missingMaster/fallbackUsed 時の無効化。\n\nYAML ID: src/order_input_gap_analysis/21_P1改修_DnD行操作.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "low",
-    "createdAt": "2025-12-29T22:39:01.269Z",
-    "updatedAt": "2025-12-30T00:24:16.220Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-15qw5rg-src-order-input-",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-order-input-gap-analysis-plan-202512-3951439072::src/order_input_gap_analysis/21_P1改修_DnD行操作.md",
-      "appId": "custom-app-order-input-gap-analysis-plan-202512-3951439072",
-      "datasetLabel": "order input gap analysis plan 20251229",
-      "pathId": "src/order_input_gap_analysis/21_P1改修_DnD行操作.md",
-      "fileName": "order-input-gap-analysis-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/order-input-gap-analysis-plan-20251229.yaml",
-      "addedAt": "2025-12-29T22:39:01.255Z"
-    },
-    "labels": [
-      "order input gap analysis plan 20251229",
-      "src / order_input_gap_analysis"
-    ],
-    "dependencies": [
-      "task-yaml-nohecn-src-order-input-"
-    ],
-    "schedule": {
-      "startMs": 1768867200000,
-      "endMs": 1769040000000,
-      "durationDays": 2
-    },
-    "category": "src / order_input_gap_analysis",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 21 P1 改修：DnD 並べ替え / 全クリア / 行削除補助\n\nRUN_ID: 20251229T081044Z\n\n- 目的: OrderBundleEditPanel の操作補助 UI を追加する。\n- 対象: Charts 右パネル（OrderBundleEditPanel）。\n- 実装観点:\n  - 行ドラッグで並べ替え可能にする。\n  - 「全クリア」操作と確認導線を追加。\n  - 行削除の明示アクションを追加。\n- 依存/前提: DnD ライブラリ選定と既存テーブル構造の整理。\n- テスト: 保存順序の反映、readOnly/missingMaster/fallbackUsed 時の無効化。"
-  },
-  {
-    "id": "task-yaml-xqub5t-src-order-input-",
-    "name": "[order input gap analysis plan 20251229] 25_P0改修_用法検索UI\n期間: 01/17 09:00 - 01/19 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 25 P0 改修：用法検索/フィルタ UI\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 処方オーダーで旧来版同等の用法検索/フィルタ UI を提供する。\n- 対象: OrderBundleEditPanel（処方/RP の用法入力）。\n- 実装観点:\n  - 用法マスタ検索（部分一致/件数制限）と結果選択の導線を追加する。\n  - 検索結果選択で用法コード/表示名を一括反映する。\n  - readOnly/missingMaster/fallbackUsed ガードと競合しない導線を確保する。\n- 依存/前提: /orca/master/medicationUsage などの API 仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 用法検索→選択→保存、入力ブロック時の UI 挙動。\n\nYAML ID: src/order_input_gap_analysis/25_P0改修_用法検索UI.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "low",
-    "createdAt": "2025-12-29T22:39:25.974Z",
-    "updatedAt": "2025-12-29T23:21:53.022Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-xqub5t-src-order-input-",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-order-input-gap-analysis-plan-202512-3951439072::src/order_input_gap_analysis/25_P0改修_用法検索UI.md",
-      "appId": "custom-app-order-input-gap-analysis-plan-202512-3951439072",
-      "datasetLabel": "order input gap analysis plan 20251229",
-      "pathId": "src/order_input_gap_analysis/25_P0改修_用法検索UI.md",
-      "fileName": "order-input-gap-analysis-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/order-input-gap-analysis-plan-20251229.yaml",
-      "addedAt": "2025-12-29T22:39:25.951Z"
-    },
-    "labels": [
-      "order input gap analysis plan 20251229",
-      "src / order_input_gap_analysis"
-    ],
-    "dependencies": [
-      "task-yaml-knr37m-src-order-input-",
-      "task-yaml-u0r1rb-src-order-input-"
-    ],
-    "schedule": {
-      "startMs": 1768608000000,
-      "endMs": 1768780800000,
-      "durationDays": 2
-    },
-    "category": "src / order_input_gap_analysis",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 25 P0 改修：用法検索/フィルタ UI\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 処方オーダーで旧来版同等の用法検索/フィルタ UI を提供する。\n- 対象: OrderBundleEditPanel（処方/RP の用法入力）。\n- 実装観点:\n  - 用法マスタ検索（部分一致/件数制限）と結果選択の導線を追加する。\n  - 検索結果選択で用法コード/表示名を一括反映する。\n  - readOnly/missingMaster/fallbackUsed ガードと競合しない導線を確保する。\n- 依存/前提: /orca/master/medicationUsage などの API 仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 用法検索→選択→保存、入力ブロック時の UI 挙動。"
-  },
-  {
-    "id": "task-yaml-hl3aes-src-order-input-",
-    "name": "[order input gap analysis plan 20251229] 27_P1改修_処方詳細入力補助\n期間: 01/27 09:00 - 01/29 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 27 P1 改修：処方詳細入力補助（院内/院外・頓用/臨時・日数/回数・RP名補正）\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 処方オーダーの詳細入力（院内/院外・頓用/臨時・日数/回数）と RP 名補正の差分を解消する。\n- 対象: OrderBundleEditPanel（処方/RP）。\n- 実装観点:\n  - 院内/院外・頓用/臨時の UI と送信項目を追加する。\n  - 用法行の日数/回数入力 UI を旧来版相当に拡張する。\n  - RP 名が空欄の場合の補正ルールを Web 側で定義する。\n- 依存/前提: server-modernized の保存項目対応状況の確認（不足時はサーバータスク起票）。\n- テスト: UI 入力→保存→再編集時の値整合、補正ロジック。\n\nYAML ID: src/order_input_gap_analysis/27_P1改修_処方詳細入力補助.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "low",
-    "createdAt": "2025-12-29T22:39:58.850Z",
-    "updatedAt": "2025-12-30T01:25:13.808Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-hl3aes-src-order-input-",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-order-input-gap-analysis-plan-202512-3951439072::src/order_input_gap_analysis/27_P1改修_処方詳細入力補助.md",
-      "appId": "custom-app-order-input-gap-analysis-plan-202512-3951439072",
-      "datasetLabel": "order input gap analysis plan 20251229",
-      "pathId": "src/order_input_gap_analysis/27_P1改修_処方詳細入力補助.md",
-      "fileName": "order-input-gap-analysis-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/order-input-gap-analysis-plan-20251229.yaml",
-      "addedAt": "2025-12-29T22:39:56.949Z"
-    },
-    "labels": [
-      "order input gap analysis plan 20251229",
-      "src / order_input_gap_analysis"
-    ],
-    "dependencies": [
-      "task-yaml-nohecn-src-order-input-"
-    ],
-    "schedule": {
-      "startMs": 1769472000000,
-      "endMs": 1769644800000,
-      "durationDays": 2
-    },
-    "category": "src / order_input_gap_analysis",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 27 P1 改修：処方詳細入力補助（院内/院外・頓用/臨時・日数/回数・RP名補正）\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 処方オーダーの詳細入力（院内/院外・頓用/臨時・日数/回数）と RP 名補正の差分を解消する。\n- 対象: OrderBundleEditPanel（処方/RP）。\n- 実装観点:\n  - 院内/院外・頓用/臨時の UI と送信項目を追加する。\n  - 用法行の日数/回数入力 UI を旧来版相当に拡張する。\n  - RP 名が空欄の場合の補正ルールを Web 側で定義する。\n- 依存/前提: server-modernized の保存項目対応状況の確認（不足時はサーバータスク起票）。\n- テスト: UI 入力→保存→再編集時の値整合、補正ロジック。"
-  },
-  {
-    "id": "task-yaml-h7ikfg-src-order-input-",
-    "name": "[order input gap analysis plan 20251229] 28_P1改修_リハビリ部位コメント入力\n期間: 01/29 09:00 - 01/31 09:00 / 優先度: medium / 緊急度: low / エージェント: codex\n\n# 28 P1 改修：リハビリ部位/コメントコード入力\n\nRUN_ID: 20251229T213910Z\n\n- 目的: リハビリオーダーの部位マスタ検索とコメントコード入力の差分を解消する。\n- 対象: OrderBundleEditPanel（generalOrder のリハビリ相当）。\n- 実装観点:\n  - 部位マスタ検索 UI と選択反映を追加する。\n  - コメントコード行の入力/編集 UI を追加する。\n  - 既存 memo 入力との役割分担を明文化する。\n- 依存/前提: /orca/master/bodypart などの API 仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 検索→選択→保存、コメントコード行の編集/削除。\n\nYAML ID: src/order_input_gap_analysis/28_P1改修_リハビリ部位コメント入力.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "medium",
-    "urgency": "low",
-    "createdAt": "2025-12-29T22:40:01.874Z",
-    "updatedAt": "2025-12-30T00:46:21.521Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-h7ikfg-src-order-input-",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-order-input-gap-analysis-plan-202512-3951439072::src/order_input_gap_analysis/28_P1改修_リハビリ部位コメント入力.md",
-      "appId": "custom-app-order-input-gap-analysis-plan-202512-3951439072",
-      "datasetLabel": "order input gap analysis plan 20251229",
-      "pathId": "src/order_input_gap_analysis/28_P1改修_リハビリ部位コメント入力.md",
-      "fileName": "order-input-gap-analysis-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/order-input-gap-analysis-plan-20251229.yaml",
-      "addedAt": "2025-12-29T22:40:01.852Z"
-    },
-    "labels": [
-      "order input gap analysis plan 20251229",
-      "src / order_input_gap_analysis"
-    ],
-    "dependencies": [
-      "task-yaml-nohecn-src-order-input-"
-    ],
-    "schedule": {
-      "startMs": 1769644800000,
-      "endMs": 1769817600000,
-      "durationDays": 2
-    },
-    "category": "src / order_input_gap_analysis",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 28 P1 改修：リハビリ部位/コメントコード入力\n\nRUN_ID: 20251229T213910Z\n\n- 目的: リハビリオーダーの部位マスタ検索とコメントコード入力の差分を解消する。\n- 対象: OrderBundleEditPanel（generalOrder のリハビリ相当）。\n- 実装観点:\n  - 部位マスタ検索 UI と選択反映を追加する。\n  - コメントコード行の入力/編集 UI を追加する。\n  - 既存 memo 入力との役割分担を明文化する。\n- 依存/前提: /orca/master/bodypart などの API 仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 検索→選択→保存、コメントコード行の編集/削除。"
-  },
-  {
     "id": "task-1767048236329-d94272",
     "name": "CodexCLI1: [order input gap analysis plan 20251229] 25_P0改修_用法検索UI\n期間: 01/17 09:00 - 01/19 09:00 / 優先度: high / 緊急度: low / エージェント: codex\n\n# 25 P0 改修：用法検索/フィルタ UI\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 処方オーダーで旧来版同等の用法検索/フィルタ UI を提供する。\n- 対象: OrderBundleEditPanel（処方/RP の用法入力）。\n- 実装観点:\n  - 用法マスタ検索（部分一致/件数制限）と結果選択の導線を追加する。\n  - 検索結果選択で用法コード/表示名を一括反映する。\n  - readOnly/missingMaster/fallbackUsed ガードと競合しない導線を確保する。\n- 依存/前提: /orca/master/medicationUsage などの API 仕様確認（不足時は server-modernized タスク起票）。\n- テスト: 用法検索→選択→保存、入力ブロック時の UI 挙動。\n\nYAML ID: src/order_input_gap_analysis/25_P0改修_用法検索UI.md",
     "model": "Codex CLI",
@@ -329,52 +136,6 @@
     "worktreePath": ".worktrees/task-1767050943628-99ce8d"
   },
   {
-    "id": "task-yaml-zq87ik-src-webclient-fa",
-    "name": "[webclient facility prefix plan 20251229] 00_RUN_IDと参照確認\n期間: 12/30 09:00 - 12/31 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 00 RUN_ID と参照確認\n\n- RUN_ID: 20251229T220416Z\n- 参照順: `docs/DEVELOPMENT_STATUS.md` → `web-client/src/AppRouter.tsx` → `web-client/src/LoginScreen.tsx` → 本ガント。\n- 変更対象は `web-client/` のみ。`server/` は参照専用。\n\nYAML ID: src/webclient_facility_prefix/00_RUN_IDと参照確認.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-30T01:25:31.077Z",
-    "updatedAt": "2025-12-30T01:38:00.174Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-zq87ik-src-webclient-fa",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731::src/webclient_facility_prefix/00_RUN_IDと参照確認.md",
-      "appId": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731",
-      "datasetLabel": "webclient facility prefix plan 20251229",
-      "pathId": "src/webclient_facility_prefix/00_RUN_IDと参照確認.md",
-      "fileName": "webclient-facility-prefix-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-facility-prefix-plan-20251229.yaml",
-      "addedAt": "2025-12-30T01:25:31.009Z"
-    },
-    "labels": [
-      "webclient facility prefix plan 20251229",
-      "src / webclient_facility_prefix"
-    ],
-    "dependencies": [],
-    "schedule": {
-      "startMs": 1767052800000,
-      "endMs": 1767139200000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_facility_prefix",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 00 RUN_ID と参照確認\n\n- RUN_ID: 20251229T220416Z\n- 参照順: `docs/DEVELOPMENT_STATUS.md` → `web-client/src/AppRouter.tsx` → `web-client/src/LoginScreen.tsx` → 本ガント。\n- 変更対象は `web-client/` のみ。`server/` は参照専用。"
-  },
-  {
     "id": "task-1767057955456-6517d9",
     "name": "🔍Monitor: [webclient facility prefix plan 20251229] 00_RUN_IDと参照確認\n期間: 12/30 09:00 - 12/31 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 00 RUN_ID と参照確認\n\n- RUN_ID: 20251229T220416Z\n- 参照順: `docs/DEVELOPMENT_STATUS.md` → `web-client/src/AppRouter.tsx` → `web-client/src/LoginScreen.tsx` → 本ガント。\n- 変更対象は `web-client/` のみ。`server/` は参照専用。\n\nYAML ID: src/webclient_facility_prefix/00_RUN_IDと参照確認.md",
     "model": "codex",
@@ -408,102 +169,6 @@
     },
     "autoEvaluationNotBefore": 1767057999483,
     "worktreePath": ".worktrees/task-1767057955456-6517d9"
-  },
-  {
-    "id": "task-yaml-fraabs-src-order-input-",
-    "name": "[order input gap analysis plan 20251229] 29_P2改修_オーダ履歴コピー\n期間: 01/30 09:00 - 02/01 09:00 / 優先度: low / 緊急度: low / エージェント: codex\n\n# 29 P2 改修：オーダ履歴コピー\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 旧来版のオーダ履歴コピー導線を Web に追加する。\n- 対象: Charts オーダ履歴表示/OrderBundleEditPanel。\n- 実装観点:\n  - オーダ履歴一覧から行をコピーして編集フォームへ反映する UI を追加する。\n  - 参照時の readOnly/missingMaster/fallbackUsed ガードを維持する。\n- 依存/前提: オーダ履歴 API の取得範囲確認（不足時は server-modernized タスク起票）。\n- テスト: 履歴行コピー→編集→保存、ガード時のブロック表示。\n\nYAML ID: src/order_input_gap_analysis/29_P2改修_オーダ履歴コピー.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "low",
-    "urgency": "low",
-    "createdAt": "2025-12-30T01:27:01.819Z",
-    "updatedAt": "2025-12-30T03:14:58.040Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-fraabs-src-order-input-",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-order-input-gap-analysis-plan-202512-3951439072::src/order_input_gap_analysis/29_P2改修_オーダ履歴コピー.md",
-      "appId": "custom-app-order-input-gap-analysis-plan-202512-3951439072",
-      "datasetLabel": "order input gap analysis plan 20251229",
-      "pathId": "src/order_input_gap_analysis/29_P2改修_オーダ履歴コピー.md",
-      "fileName": "order-input-gap-analysis-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/order-input-gap-analysis-plan-20251229.yaml",
-      "addedAt": "2025-12-30T01:26:39.228Z"
-    },
-    "labels": [
-      "order input gap analysis plan 20251229",
-      "src / order_input_gap_analysis"
-    ],
-    "dependencies": [
-      "task-yaml-nohecn-src-order-input-"
-    ],
-    "schedule": {
-      "startMs": 1769731200000,
-      "endMs": 1769904000000,
-      "durationDays": 2
-    },
-    "category": "src / order_input_gap_analysis",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 29 P2 改修：オーダ履歴コピー\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 旧来版のオーダ履歴コピー導線を Web に追加する。\n- 対象: Charts オーダ履歴表示/OrderBundleEditPanel。\n- 実装観点:\n  - オーダ履歴一覧から行をコピーして編集フォームへ反映する UI を追加する。\n  - 参照時の readOnly/missingMaster/fallbackUsed ガードを維持する。\n- 依存/前提: オーダ履歴 API の取得範囲確認（不足時は server-modernized タスク起票）。\n- テスト: 履歴行コピー→編集→保存、ガード時のブロック表示。"
-  },
-  {
-    "id": "task-yaml-270efl-src-order-input-",
-    "name": "[order input gap analysis plan 20251229] 30_P2改修_スタンプコピー_ペースト\n期間: 02/01 09:00 - 02/03 09:00 / 優先度: low / 緊急度: low / エージェント: codex\n\n# 30 P2 改修：スタンプコピー/ペースト\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 旧来版のスタンプコピー/ペースト導線を Web に追加する。\n- 対象: スタンプ UI / OrderBundleEditPanel。\n- 実装観点:\n  - スタンプ行のコピー/ペースト操作を追加する。\n  - 既存のスタンプ保存/取り込み UI と干渉しないよう設計する。\n- 依存/前提: スタンプデータ構造/保存 API 仕様の確認（不足時は server-modernized タスク起票）。\n- テスト: コピー→ペースト→保存、readOnly 時の無効化。\n\nYAML ID: src/order_input_gap_analysis/30_P2改修_スタンプコピー_ペースト.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "low",
-    "urgency": "low",
-    "createdAt": "2025-12-30T01:28:28.985Z",
-    "updatedAt": "2025-12-30T02:57:53.375Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-270efl-src-order-input-",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-order-input-gap-analysis-plan-202512-3951439072::src/order_input_gap_analysis/30_P2改修_スタンプコピー_ペースト.md",
-      "appId": "custom-app-order-input-gap-analysis-plan-202512-3951439072",
-      "datasetLabel": "order input gap analysis plan 20251229",
-      "pathId": "src/order_input_gap_analysis/30_P2改修_スタンプコピー_ペースト.md",
-      "fileName": "order-input-gap-analysis-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/order-input-gap-analysis-plan-20251229.yaml",
-      "addedAt": "2025-12-30T01:26:57.505Z"
-    },
-    "labels": [
-      "order input gap analysis plan 20251229",
-      "src / order_input_gap_analysis"
-    ],
-    "dependencies": [
-      "task-yaml-nohecn-src-order-input-"
-    ],
-    "schedule": {
-      "startMs": 1769904000000,
-      "endMs": 1770076800000,
-      "durationDays": 2
-    },
-    "category": "src / order_input_gap_analysis",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 30 P2 改修：スタンプコピー/ペースト\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 旧来版のスタンプコピー/ペースト導線を Web に追加する。\n- 対象: スタンプ UI / OrderBundleEditPanel。\n- 実装観点:\n  - スタンプ行のコピー/ペースト操作を追加する。\n  - 既存のスタンプ保存/取り込み UI と干渉しないよう設計する。\n- 依存/前提: スタンプデータ構造/保存 API 仕様の確認（不足時は server-modernized タスク起票）。\n- テスト: コピー→ペースト→保存、readOnly 時の無効化。"
   },
   {
     "id": "task-1767057939686-1197c0",
@@ -582,54 +247,6 @@
     "worktreePath": ".worktrees/task-1767059394536-535b87"
   },
   {
-    "id": "task-yaml-9ptaj2-src-webclient-fa",
-    "name": "[webclient facility prefix plan 20251229] 01_ルーティング設計と旧URL方針\n期間: 12/30 09:30 - 12/31 09:30 / 優先度: high / 緊急度: high / エージェント: claude code\n\n# 01 ルーティング設計と旧URL方針\n\n- `/f/:facilityId/*` にルート集約する方針を整理する。\n- `/login` 直アクセス時の挙動（案内/誘導/選択）を決定し、ルート遷移方針を確定する。\n- 主要画面の遷移先が `/f/:facilityId/...` に統一されることを確認する。\n\nYAML ID: src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md",
-    "model": "YAML App",
-    "status": "completed",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-30T01:54:43.834Z",
-    "updatedAt": "2025-12-30T03:21:07.800Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-9ptaj2-src-webclient-fa",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731::src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md",
-      "appId": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731",
-      "datasetLabel": "webclient facility prefix plan 20251229",
-      "pathId": "src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md",
-      "fileName": "webclient-facility-prefix-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-facility-prefix-plan-20251229.yaml",
-      "addedAt": "2025-12-30T01:54:43.808Z"
-    },
-    "labels": [
-      "webclient facility prefix plan 20251229",
-      "src / webclient_facility_prefix"
-    ],
-    "dependencies": [
-      "task-yaml-zq87ik-src-webclient-fa"
-    ],
-    "schedule": {
-      "startMs": 1767054600000,
-      "endMs": 1767141000000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_facility_prefix",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 01 ルーティング設計と旧URL方針\n\n- `/f/:facilityId/*` にルート集約する方針を整理する。\n- `/login` 直アクセス時の挙動（案内/誘導/選択）を決定し、ルート遷移方針を確定する。\n- 主要画面の遷移先が `/f/:facilityId/...` に統一されることを確認する。"
-  },
-  {
     "id": "task-1767063489313-5f5250",
     "name": "CodexCLI3: [order input gap analysis plan 20251229] 29_P2改修_オーダ履歴コピー\n期間: 01/30 09:00 - 02/01 09:00 / 優先度: low / 緊急度: low / エージェント: codex\n\n# 29 P2 改修：オーダ履歴コピー\n\nRUN_ID: 20251229T213910Z\n\n- 目的: 旧来版のオーダ履歴コピー導線を Web に追加する。\n- 対象: Charts オーダ履歴表示/OrderBundleEditPanel。\n- 実装観点:\n  - オーダ履歴一覧から行をコピーして編集フォームへ反映する UI を追加する。\n  - 参照時の readOnly/missingMaster/fallbackUsed ガードを維持する。\n- 依存/前提: オーダ履歴 API の取得範囲確認（不足時は server-modernized タスク起票）。\n- テスト: 履歴行コピー→編集→保存、ガード時のブロック表示。\n\nYAML ID: src/order_input_gap_analysis/29_P2改修_オーダ履歴コピー.md",
     "model": "Codex CLI",
@@ -654,125 +271,6 @@
     "worktreePath": ".worktrees/task-1767063489313-5f5250",
     "medal": "none",
     "aiCompetitionScore": 5
-  },
-  {
-    "id": "task-1767064919188-18164c",
-    "name": "対象ファイル: .kamui/apps/order-input-gap-analysis-plan-20251229.yaml\n\nガント関連ドキュメントやgitマージ履歴見て、がんとの進捗更新、および関連ドキュメントから判定される追加推奨タスクがあればガントに追加して。",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-30T03:21:59.188Z",
-    "updatedAt": "2025-12-30T03:21:59.188Z",
-    "requiresTerminal": true,
-    "createWorktree": false,
-    "branchName": null,
-    "baseBranch": null,
-    "useTmux": false,
-    "singleMode": true,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null
-  },
-  {
-    "id": "task-yaml-1pn6ett-src-webclient-fa",
-    "name": "[webclient facility prefix plan 20251229] 02_AppRouterパスプレフィックス実装\n期間: 12/30 15:00 - 12/31 15:00 / 優先度: high / 緊急度: high / エージェント: gemini cli\n\n# 02 AppRouter パスプレフィックス実装\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/AppRouter.tsx`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` に `/f/:facilityId/*` ルートを実装する。\n- 既存ルート（`/login`, `/reception`, `/charts`, `/patients`, `/administration`, `/outpatient-mock`）を `/f/:facilityId/` 配下へ移動する。\n- 旧URLアクセス時のリダイレクト/案内を組み込み、衝突のない導線にする。\n\nYAML ID: src/webclient_facility_prefix/02_AppRouterパスプレフィックス実装.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-30T03:22:14.086Z",
-    "updatedAt": "2025-12-30T03:22:14.086Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1pn6ett-src-webclient-fa",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731::src/webclient_facility_prefix/02_AppRouterパスプレフィックス実装.md",
-      "appId": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731",
-      "datasetLabel": "webclient facility prefix plan 20251229",
-      "pathId": "src/webclient_facility_prefix/02_AppRouterパスプレフィックス実装.md",
-      "fileName": "webclient-facility-prefix-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-facility-prefix-plan-20251229.yaml",
-      "addedAt": "2025-12-30T03:22:11.658Z"
-    },
-    "labels": [
-      "webclient facility prefix plan 20251229",
-      "src / webclient_facility_prefix"
-    ],
-    "dependencies": [
-      "task-yaml-9ptaj2-src-webclient-fa"
-    ],
-    "schedule": {
-      "startMs": 1767074400000,
-      "endMs": 1767160800000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_facility_prefix",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 02 AppRouter パスプレフィックス実装\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/AppRouter.tsx`\n\n## 作業内容\n- `web-client/src/AppRouter.tsx` に `/f/:facilityId/*` ルートを実装する。\n- 既存ルート（`/login`, `/reception`, `/charts`, `/patients`, `/administration`, `/outpatient-mock`）を `/f/:facilityId/` 配下へ移動する。\n- 旧URLアクセス時のリダイレクト/案内を組み込み、衝突のない導線にする。"
-  },
-  {
-    "id": "task-yaml-axvubs-src-webclient-fa",
-    "name": "[webclient facility prefix plan 20251229] 03_LoginScreen施設ID注入と表示制御\n期間: 12/30 18:00 - 12/31 18:00 / 優先度: high / 緊急度: high / エージェント: cursor cli\n\n# 03 LoginScreen 施設ID注入と表示制御\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/LoginScreen.tsx`\n- `web-client/src/AppRouter.tsx`\n\n## 作業内容\n- `useParams` で `facilityId` を取得し初期値へ注入する。\n- 施設ID入力は非表示または readonly 表示に切り替える。\n- 施設ID未取得時のエラー/誘導メッセージを追加する。\n\nYAML ID: src/webclient_facility_prefix/03_LoginScreen施設ID注入と表示制御.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "high",
-    "urgency": "high",
-    "createdAt": "2025-12-30T03:22:29.950Z",
-    "updatedAt": "2025-12-30T03:22:29.950Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-axvubs-src-webclient-fa",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731::src/webclient_facility_prefix/03_LoginScreen施設ID注入と表示制御.md",
-      "appId": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731",
-      "datasetLabel": "webclient facility prefix plan 20251229",
-      "pathId": "src/webclient_facility_prefix/03_LoginScreen施設ID注入と表示制御.md",
-      "fileName": "webclient-facility-prefix-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-facility-prefix-plan-20251229.yaml",
-      "addedAt": "2025-12-30T03:22:29.923Z"
-    },
-    "labels": [
-      "webclient facility prefix plan 20251229",
-      "src / webclient_facility_prefix"
-    ],
-    "dependencies": [
-      "task-yaml-9ptaj2-src-webclient-fa"
-    ],
-    "schedule": {
-      "startMs": 1767085200000,
-      "endMs": 1767171600000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_facility_prefix",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 03 LoginScreen 施設ID注入と表示制御\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/LoginScreen.tsx`\n- `web-client/src/AppRouter.tsx`\n\n## 作業内容\n- `useParams` で `facilityId` を取得し初期値へ注入する。\n- 施設ID入力は非表示または readonly 表示に切り替える。\n- 施設ID未取得時のエラー/誘導メッセージを追加する。"
   },
   {
     "id": "task-1767065120835-a7695b",
@@ -801,129 +299,6 @@
     "aiCompetitionScore": 0
   },
   {
-    "id": "task-yaml-1imdrnm-src-order-input-",
-    "name": "[order input gap analysis plan 20251229] 25_P2改修_履歴コピー_スタンプコピー\n期間: 02/01 09:00 - 02/03 09:00 / 優先度: low / 緊急度: low / エージェント: codex\n\n# 25 P2 改修：履歴コピー/スタンプコピー・ペースト\n\nRUN_ID: 20251229T215000Z\n\n## 目的\n- 旧来版の履歴コピー/スタンプコピー・ペースト相当の導線を Web に追加する。\n\n## 対象\n- OrderBundleEditPanel（オーダー束/スタンプ操作）。\n\n## 実装観点\n- 履歴コピー: 既存履歴から取り込み、編集へ反映する導線を追加。\n- スタンプコピー/ペースト: 既存スタンプを複製・貼り付けできる UI を追加。\n- readOnly/missingMaster/fallbackUsed 時は操作不可とし、メッセージを統一。\n\n## 依存/前提\n- 履歴/スタンプ取得 API の仕様確認（不足時は server-modernized タスク起票）。\n\n## テスト\n- コピー/ペースト反映、保存時の auditEvent、ガード条件のブロック。\n\nYAML ID: src/order_input_gap_analysis/25_P2改修_履歴コピー_スタンプコピー.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "low",
-    "urgency": "low",
-    "createdAt": "2025-12-30T04:37:49.275Z",
-    "updatedAt": "2025-12-30T04:37:49.275Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-1imdrnm-src-order-input-",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-order-input-gap-analysis-plan-202512-3951439072::src/order_input_gap_analysis/25_P2改修_履歴コピー_スタンプコピー.md",
-      "appId": "custom-app-order-input-gap-analysis-plan-202512-3951439072",
-      "datasetLabel": "order input gap analysis plan 20251229",
-      "pathId": "src/order_input_gap_analysis/25_P2改修_履歴コピー_スタンプコピー.md",
-      "fileName": "order-input-gap-analysis-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/order-input-gap-analysis-plan-20251229.yaml",
-      "addedAt": "2025-12-30T04:37:49.159Z"
-    },
-    "labels": [
-      "order input gap analysis plan 20251229",
-      "src / order_input_gap_analysis"
-    ],
-    "dependencies": [
-      "task-yaml-nohecn-src-order-input-"
-    ],
-    "schedule": {
-      "startMs": 1769904000000,
-      "endMs": 1770076800000,
-      "durationDays": 2
-    },
-    "category": "src / order_input_gap_analysis",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 25 P2 改修：履歴コピー/スタンプコピー・ペースト\n\nRUN_ID: 20251229T215000Z\n\n## 目的\n- 旧来版の履歴コピー/スタンプコピー・ペースト相当の導線を Web に追加する。\n\n## 対象\n- OrderBundleEditPanel（オーダー束/スタンプ操作）。\n\n## 実装観点\n- 履歴コピー: 既存履歴から取り込み、編集へ反映する導線を追加。\n- スタンプコピー/ペースト: 既存スタンプを複製・貼り付けできる UI を追加。\n- readOnly/missingMaster/fallbackUsed 時は操作不可とし、メッセージを統一。\n\n## 依存/前提\n- 履歴/スタンプ取得 API の仕様確認（不足時は server-modernized タスク起票）。\n\n## テスト\n- コピー/ペースト反映、保存時の auditEvent、ガード条件のブロック。"
-  },
-  {
-    "id": "task-yaml-gfj4w8-src-webclient-fa",
-    "name": "[webclient facility prefix plan 20251229] 04_認証保存と遷移統一\n期間: 12/30 21:00 - 12/31 21:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 04 認証保存と遷移統一\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/LoginScreen.tsx`\n- `web-client/src/httpClient.ts`\n\n## 作業内容\n- `localStorage` の `devFacilityId` を URL 由来の値で更新する。\n- ログイン成功後の遷移先を `/f/:facilityId/reception` へ統一する。\n- `httpClient.ts` など施設ID参照の破綻がないか確認する。\n\nYAML ID: src/webclient_facility_prefix/04_認証保存と遷移統一.md",
-    "model": "YAML App",
-    "status": "pending",
-    "importance": "medium",
-    "urgency": "high",
-    "createdAt": "2025-12-30T04:42:35.430Z",
-    "updatedAt": "2025-12-30T04:42:35.430Z",
-    "requiresTerminal": false,
-    "createWorktree": false,
-    "branchName": "task/task-yaml-gfj4w8-src-webclient-fa",
-    "baseBranch": "main",
-    "useTmux": false,
-    "singleMode": false,
-    "aiCompetitionEntry": false,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": null,
-    "aiCompetitionGroupName": null,
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "yamlSource": {
-      "key": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731::src/webclient_facility_prefix/04_認証保存と遷移統一.md",
-      "appId": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731",
-      "datasetLabel": "webclient facility prefix plan 20251229",
-      "pathId": "src/webclient_facility_prefix/04_認証保存と遷移統一.md",
-      "fileName": "webclient-facility-prefix-plan-20251229.yaml",
-      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-facility-prefix-plan-20251229.yaml",
-      "addedAt": "2025-12-30T04:42:35.417Z"
-    },
-    "labels": [
-      "webclient facility prefix plan 20251229",
-      "src / webclient_facility_prefix"
-    ],
-    "dependencies": [
-      "task-yaml-1pn6ett-src-webclient-fa",
-      "task-yaml-axvubs-src-webclient-fa"
-    ],
-    "schedule": {
-      "startMs": 1767096000000,
-      "endMs": 1767182400000,
-      "durationDays": 1
-    },
-    "category": "src / webclient_facility_prefix",
-    "taskType": "yaml-plan",
-    "source": "yaml-app",
-    "description": "# 04 認証保存と遷移統一\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/LoginScreen.tsx`\n- `web-client/src/httpClient.ts`\n\n## 作業内容\n- `localStorage` の `devFacilityId` を URL 由来の値で更新する。\n- ログイン成功後の遷移先を `/f/:facilityId/reception` へ統一する。\n- `httpClient.ts` など施設ID参照の破綻がないか確認する。"
-  },
-  {
-    "id": "task-1767069765919-ec602f",
-    "name": "CodexCLI2: [webclient facility prefix plan 20251229] 04_認証保存と遷移統一\n期間: 12/30 21:00 - 12/31 21:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 04 認証保存と遷移統一\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/LoginScreen.tsx`\n- `web-client/src/httpClient.ts`\n\n## 作業内容\n- `localStorage` の `devFacilityId` を URL 由来の値で更新する。\n- ログイン成功後の遷移先を `/f/:facilityId/reception` へ統一する。\n- `httpClient.ts` など施設ID参照の破綻がないか確認する。\n\nYAML ID: src/webclient_facility_prefix/04_認証保存と遷移統一.md",
-    "model": "Codex CLI",
-    "status": "working",
-    "importance": "medium",
-    "urgency": "medium",
-    "createdAt": "2025-12-30T04:42:45.919Z",
-    "updatedAt": "2025-12-30T04:42:45.919Z",
-    "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1767069765919-ec602f",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
-    "aiCompetitionEntry": true,
-    "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767069765718-08kezlmg",
-    "aiCompetitionGroupName": "[webclient facility prefix plan 20251229] 04_認証保存と遷移統一\n期間: 12/30 21:00 - 12/31 21:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 04 認証保存と遷移統一\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/LoginScreen.tsx`\n- `web-client/src/httpClient.ts`\n\n## 作業内容\n- `localStorage` の `devFacilityId` を URL 由来の値で更新する。\n- ログイン成功後の遷移先を `/f/:facilityId/reception` へ統一する。\n- `httpClient.ts` など施設ID参照の破綻がないか確認する。\n\nYAML ID: src/webclient_facility_prefix/04_認証保存と遷移統一.md",
-    "aiCompetitionMonitor": false,
-    "monitorTargets": null,
-    "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767069765919-ec602f",
-    "medal": "gold",
-    "aiCompetitionScore": 85
-  },
-  {
     "id": "task-1767069765718-0fe8bc",
     "name": "CodexCLI1: [webclient facility prefix plan 20251229] 04_認証保存と遷移統一\n期間: 12/30 21:00 - 12/31 21:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 04 認証保存と遷移統一\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/LoginScreen.tsx`\n- `web-client/src/httpClient.ts`\n\n## 作業内容\n- `localStorage` の `devFacilityId` を URL 由来の値で更新する。\n- ログイン成功後の遷移先を `/f/:facilityId/reception` へ統一する。\n- `httpClient.ts` など施設ID参照の破綻がないか確認する。\n\nYAML ID: src/webclient_facility_prefix/04_認証保存と遷移統一.md",
     "model": "Codex CLI",
@@ -950,17 +325,40 @@
     "aiCompetitionScore": 82
   },
   {
-    "id": "task-yaml-1yxqfib-src-webclient-fa",
-    "name": "[webclient facility prefix plan 20251229] 05_ローカル起動と動作確認\n期間: 12/30 23:00 - 12/31 23:00 / 優先度: medium / 緊急度: high / エージェント: claude code\n\n# 05 ローカル起動と動作確認\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/README.md`\n- `setup-modernized-env.sh`\n\n## 作業内容\n- `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動確認を行う。\n- `https://localhost:<port>/f/0001/login` からログインし、`/f/0001/reception` へ遷移する。\n- 旧URL `/login` と施設ID未指定URLの挙動を確認する。\n\nYAML ID: src/webclient_facility_prefix/05_ローカル起動と動作確認.md",
+    "id": "task-1767074079686-58b7d1",
+    "name": "対象ファイル: .kamui/apps/webclient-facility-prefix-plan-20251229.yaml\n\n05まで完遂したはずだが、ドキュメント等を確認してほしい。また、ユーザーが施設IDを指定せずに、施設IDを含めたURLでいきなり電子カルテログイン画面にアクセスできるようにしたい。かつ、ログイン画面でUUIDを入力させる必要はない(自動採番でよい)ので、以上の変更を行う作業計画を、完遂タスク以降の部分に追加して",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-30T05:54:39.687Z",
+    "updatedAt": "2025-12-30T05:54:39.687Z",
+    "requiresTerminal": true,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
+  },
+  {
+    "id": "task-yaml-1q2vn3k-src-webclient-fa",
+    "name": "[webclient facility prefix plan 20251229] 06_施設ID未指定ログイン導線方針確認\n期間: 12/31 01:30 - 01/01 01:30 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 06 施設ID未指定ログイン導線方針確認\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/AppRouter.tsx`\n- `web-client/src/LoginScreen.tsx`\n- `facility.json`\n- `docs/web-client/`\n- `web-client/src/features/login/FacilityLoginEntry.tsx`\n- `web-client/src/features/login/recentFacilityStore.ts`\n- `web-client/src/routes/facilityRoutes.ts`\n\n## 作業内容\n- 施設ID補完ルールは **C案** を採用する前提で整理する。\n- 優先順（案C）: (1) `/f/:facilityId/login` 直アクセス（URL） (2) recentFacilities が 1 件のみ (3) `devFacilityId` が存在し recentFacilities が空 (4) `VITE_DEFAULT_FACILITY_ID` or `facility.json` が存在し上記が空 (5) それ以外は施設選択へ誘導。\n- 補完後は `/f/:facilityId/login` へ遷移し、履歴は replace を基本とする（旧URLや状態復帰時の誘導は例外扱い）。\n- 補完不可時は `FacilityLoginEntry` を表示し、選択/入力を要求する（エラーではなく誘導とする）。\n\nYAML ID: src/webclient_facility_prefix/06_施設ID未指定ログイン導線方針確認.md",
     "model": "YAML App",
     "status": "pending",
-    "importance": "medium",
+    "importance": "high",
     "urgency": "high",
-    "createdAt": "2025-12-30T05:01:01.083Z",
-    "updatedAt": "2025-12-30T05:01:01.083Z",
+    "createdAt": "2025-12-30T06:13:20.421Z",
+    "updatedAt": "2025-12-30T06:13:20.421Z",
     "requiresTerminal": false,
     "createWorktree": false,
-    "branchName": "task/task-yaml-1yxqfib-src-webclient-fa",
+    "branchName": "task/task-yaml-1q2vn3k-src-webclient-fa",
     "baseBranch": "main",
     "useTmux": false,
     "singleMode": false,
@@ -972,29 +370,55 @@
     "monitorTargets": null,
     "scoringConfig": null,
     "yamlSource": {
-      "key": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731::src/webclient_facility_prefix/05_ローカル起動と動作確認.md",
+      "key": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731::src/webclient_facility_prefix/06_施設ID未指定ログイン導線方針確認.md",
       "appId": "custom-app-webclient-facility-prefix-plan-20251-6d92fa6731",
       "datasetLabel": "webclient facility prefix plan 20251229",
-      "pathId": "src/webclient_facility_prefix/05_ローカル起動と動作確認.md",
+      "pathId": "src/webclient_facility_prefix/06_施設ID未指定ログイン導線方針確認.md",
       "fileName": "webclient-facility-prefix-plan-20251229.yaml",
       "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-facility-prefix-plan-20251229.yaml",
-      "addedAt": "2025-12-30T04:59:26.643Z"
+      "addedAt": "2025-12-30T06:13:18.336Z"
     },
     "labels": [
       "webclient facility prefix plan 20251229",
       "src / webclient_facility_prefix"
     ],
     "dependencies": [
-      "task-yaml-gfj4w8-src-webclient-fa"
+      "task-yaml-1yxqfib-src-webclient-fa"
     ],
     "schedule": {
-      "startMs": 1767103200000,
-      "endMs": 1767189600000,
+      "startMs": 1767112200000,
+      "endMs": 1767198600000,
       "durationDays": 1
     },
     "category": "src / webclient_facility_prefix",
     "taskType": "yaml-plan",
     "source": "yaml-app",
-    "description": "# 05 ローカル起動と動作確認\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/README.md`\n- `setup-modernized-env.sh`\n\n## 作業内容\n- `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動確認を行う。\n- `https://localhost:<port>/f/0001/login` からログインし、`/f/0001/reception` へ遷移する。\n- 旧URL `/login` と施設ID未指定URLの挙動を確認する。"
+    "description": "# 06 施設ID未指定ログイン導線方針確認\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/AppRouter.tsx`\n- `web-client/src/LoginScreen.tsx`\n- `facility.json`\n- `docs/web-client/`\n- `web-client/src/features/login/FacilityLoginEntry.tsx`\n- `web-client/src/features/login/recentFacilityStore.ts`\n- `web-client/src/routes/facilityRoutes.ts`\n\n## 作業内容\n- 施設ID補完ルールは **C案** を採用する前提で整理する。\n- 優先順（案C）: (1) `/f/:facilityId/login` 直アクセス（URL） (2) recentFacilities が 1 件のみ (3) `devFacilityId` が存在し recentFacilities が空 (4) `VITE_DEFAULT_FACILITY_ID` or `facility.json` が存在し上記が空 (5) それ以外は施設選択へ誘導。\n- 補完後は `/f/:facilityId/login` へ遷移し、履歴は replace を基本とする（旧URLや状態復帰時の誘導は例外扱い）。\n- 補完不可時は `FacilityLoginEntry` を表示し、選択/入力を要求する（エラーではなく誘導とする）。"
+  },
+  {
+    "id": "task-1767075207540-0f780c",
+    "name": "CodexCLI1: [webclient facility prefix plan 20251229] 06_施設ID未指定ログイン導線方針確認\n期間: 12/31 01:30 - 01/01 01:30 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 06 施設ID未指定ログイン導線方針確認\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/AppRouter.tsx`\n- `web-client/src/LoginScreen.tsx`\n- `facility.json`\n- `docs/web-client/`\n- `web-client/src/features/login/FacilityLoginEntry.tsx`\n- `web-client/src/features/login/recentFacilityStore.ts`\n- `web-client/src/routes/facilityRoutes.ts`\n\n## 作業内容\n- 施設ID補完ルールは **C案** を採用する前提で整理する。\n- 優先順（案C）: (1) `/f/:facilityId/login` 直アクセス（URL） (2) recentFacilities が 1 件のみ (3) `devFacilityId` が存在し recentFacilities が空 (4) `VITE_DEFAULT_FACILITY_ID` or `facility.json` が存在し上記が空 (5) それ以外は施設選択へ誘導。\n- 補完後は `/f/:facilityId/login` へ遷移し、履歴は replace を基本とする（旧URLや状態復帰時の誘導は例外扱い）。\n- 補完不可時は `FacilityLoginEntry` を表示し、選択/入力を要求する（エラーではなく誘導とする）。\n\nYAML ID: src/webclient_facility_prefix/06_施設ID未指定ログイン導線方針確認.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-30T06:13:27.540Z",
+    "updatedAt": "2025-12-30T06:13:27.540Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1767075207540-0f780c",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1767075207537-r0jwoujn",
+    "aiCompetitionGroupName": "[webclient facility prefix plan 20251229] 06_施設ID未指定ログイン導線方針確認\n期間: 12/31 01:30 - 01/01 01:30 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 06 施設ID未指定ログイン導線方針確認\n\n## 前提ドキュメント\n- `docs/DEVELOPMENT_STATUS.md`\n- `web-client/src/AppRouter.tsx`\n- `web-client/src/LoginScreen.tsx`\n- `facility.json`\n- `docs/web-client/`\n- `web-client/src/features/login/FacilityLoginEntry.tsx`\n- `web-client/src/features/login/recentFacilityStore.ts`\n- `web-client/src/routes/facilityRoutes.ts`\n\n## 作業内容\n- 施設ID補完ルールは **C案** を採用する前提で整理する。\n- 優先順（案C）: (1) `/f/:facilityId/login` 直アクセス（URL） (2) recentFacilities が 1 件のみ (3) `devFacilityId` が存在し recentFacilities が空 (4) `VITE_DEFAULT_FACILITY_ID` or `facility.json` が存在し上記が空 (5) それ以外は施設選択へ誘導。\n- 補完後は `/f/:facilityId/login` へ遷移し、履歴は replace を基本とする（旧URLや状態復帰時の誘導は例外扱い）。\n- 補完不可時は `FacilityLoginEntry` を表示し、選択/入力を要求する（エラーではなく誘導とする）。\n\nYAML ID: src/webclient_facility_prefix/06_施設ID未指定ログイン導線方針確認.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1767075207540-0f780c",
+    "medal": "silver",
+    "aiCompetitionScore": 86
   }
 ]
