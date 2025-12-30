@@ -315,9 +315,20 @@ const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => {
   };
 };
 
+const toFormStateFromHistoryCopy = (bundle: OrderBundle, today: string): BundleFormState => {
+  const base = toFormState(bundle, today);
+  return {
+    ...base,
+    documentId: undefined,
+    moduleId: undefined,
+    startDate: today,
+  };
+};
+
 const toClipboardEntryFromLocalStamp = (stamp: LocalStampEntry): StampClipboardEntry => ({
   savedAt: new Date().toISOString(),
   source: 'local',
+  stampId: stamp.id,
   name: stamp.name,
   category: stamp.category,
   target: stamp.target,
@@ -328,10 +339,11 @@ const toClipboardEntryFromLocalStamp = (stamp: LocalStampEntry): StampClipboardE
 const toClipboardEntryFromStamp = (
   stamp: StampBundleJson,
   today: string,
-  meta: { name?: string; category?: string; target: string; entity: string },
+  meta: { name?: string; category?: string; target: string; entity: string; stampId?: string },
 ): StampClipboardEntry => ({
   savedAt: new Date().toISOString(),
   source: 'server',
+  stampId: meta.stampId,
   name: meta.name ?? stamp.orderName ?? stamp.className ?? '',
   category: meta.category ?? '',
   target: meta.target,
@@ -740,6 +752,18 @@ export function OrderBundleEditPanel({
     return { source, id };
   };
 
+  const resolveStampSelectionMeta = (selection: StampSelection | null) => {
+    if (!selection) {
+      return { stampSource: 'unknown', stampId: undefined, stampName: undefined };
+    }
+    if (selection.source === 'local') {
+      const local = localStamps.find((stamp) => stamp.id === selection.id);
+      return { stampSource: 'local', stampId: selection.id, stampName: local?.name };
+    }
+    const server = stampTreeEntries.find((entry) => entry.stampId === selection.id);
+    return { stampSource: 'server', stampId: selection.id, stampName: server?.name };
+  };
+
   const appendItem = (item: OrderBundleItem) => {
     setForm((prev) => {
       const nextItems = [...prev.items];
@@ -799,6 +823,63 @@ export function OrderBundleEditPanel({
     });
     if (!corrected.trim() || corrected === bundleForm.bundleName) return bundleForm;
     return { ...bundleForm, bundleName: corrected };
+  };
+
+  const copyFromHistory = (bundle: OrderBundle) => {
+    if (isBlocked) {
+      setNotice({ tone: 'error', message: '編集ガード中のため履歴コピーはできません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_ORDER_HISTORY_COPY',
+          outcome: 'blocked',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            sourceDocumentId: bundle.documentId,
+            sourceModuleId: bundle.moduleId,
+            bundleName: bundle.bundleName,
+            itemCount: countItems(bundle.items),
+            blockedReasons: guardReasonKeys.length > 0 ? guardReasonKeys : ['edit_guard'],
+          },
+        },
+      });
+      return;
+    }
+    const nextForm = toFormStateFromHistoryCopy(bundle, today);
+    setForm(nextForm);
+    setNotice({ tone: 'info', message: '履歴をコピーしました。内容を確認して反映してください。' });
+    logAuditEvent({
+      runId: meta.runId,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      payload: {
+        action: 'CHARTS_ORDER_HISTORY_COPY',
+        outcome: 'success',
+        subject: 'charts',
+        details: {
+          ...auditMetaDetails,
+          runId: meta.runId,
+          operationPhase: 'copy',
+          entity,
+          patientId,
+          sourceDocumentId: bundle.documentId,
+          sourceModuleId: bundle.moduleId,
+          bundleName: bundle.bundleName,
+          itemCount: countItems(bundle.items),
+        },
+      },
+    });
   };
 
   const isNoProcedureCharge = isInjectionOrder && form.memo === NO_PROCEDURE_CHARGE_TEXT;
@@ -1188,6 +1269,7 @@ export function OrderBundleEditPanel({
   const stampCopyMutation = useMutation({
     mutationFn: async (stampId: string) => fetchStampDetail(stampId),
     onSuccess: (result, stampId) => {
+      const stampMeta = stampTreeEntries.find((entry) => entry.stampId === stampId);
       if (!result.ok || !result.stamp) {
         setStampNotice({ tone: 'error', message: result.message ?? 'スタンプのコピーに失敗しました。' });
         logAuditEvent({
@@ -1208,6 +1290,7 @@ export function OrderBundleEditPanel({
               patientId,
               stampId,
               stampSource: 'server',
+              stampName: stampMeta?.name,
               error: result.message ?? 'stamp_copy_failed',
             },
           },
@@ -1216,9 +1299,31 @@ export function OrderBundleEditPanel({
       }
       if (!userName) {
         setStampNotice({ tone: 'error', message: 'ログイン情報が取得できないためコピーできません。' });
+        logAuditEvent({
+          runId: meta.runId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          payload: {
+            action: 'CHARTS_STAMP_COPY',
+            outcome: 'error',
+            subject: 'charts',
+            details: {
+              ...auditMetaDetails,
+              runId: meta.runId,
+              operationPhase: 'copy',
+              entity,
+              patientId,
+              stampId,
+              stampSource: 'server',
+              stampName: stampMeta?.name,
+              error: 'missing_user',
+            },
+          },
+        });
         return;
       }
-      const stampMeta = stampTreeEntries.find((entry) => entry.stampId === stampId);
       const entry = saveStampClipboard(
         userName,
         toClipboardEntryFromStamp(result.stamp, today, {
@@ -1226,6 +1331,7 @@ export function OrderBundleEditPanel({
           category: stampMeta?.treeName ?? '',
           target: entity,
           entity,
+          stampId,
         }),
       );
       setStampClipboard(entry);
@@ -1248,6 +1354,7 @@ export function OrderBundleEditPanel({
             patientId,
             stampId,
             stampSource: 'server',
+            stampName: entry.name,
             bundleName: entry.bundle.bundleName,
             itemCount: countItems(entry.bundle.items),
           },
@@ -1257,6 +1364,7 @@ export function OrderBundleEditPanel({
     onError: (error: unknown, stampId: string) => {
       const message = error instanceof Error ? error.message : String(error);
       setStampNotice({ tone: 'error', message: `スタンプのコピーに失敗しました: ${message}` });
+      const stampMeta = stampTreeEntries.find((entry) => entry.stampId === stampId);
       logAuditEvent({
         runId: meta.runId,
         cacheHit: meta.cacheHit,
@@ -1275,6 +1383,7 @@ export function OrderBundleEditPanel({
             patientId,
             stampId,
             stampSource: 'server',
+            stampName: stampMeta?.name,
             error: message,
           },
         },
@@ -1446,6 +1555,8 @@ export function OrderBundleEditPanel({
   };
 
   const copyStamp = () => {
+    const selection = parseStampSelection(selectedStamp);
+    const selectionMeta = resolveStampSelectionMeta(selection);
     if (isBlocked) {
       setStampNotice({ tone: 'error', message: '編集ガード中のためスタンプコピーはできません。' });
       logAuditEvent({
@@ -1464,7 +1575,10 @@ export function OrderBundleEditPanel({
             operationPhase: 'copy',
             entity,
             patientId,
-            blockedReasons: blockReasons,
+            stampSource: selectionMeta.stampSource,
+            stampId: selectionMeta.stampId,
+            stampName: selectionMeta.stampName,
+            blockedReasons: guardReasonKeys.length > 0 ? guardReasonKeys : ['edit_guard'],
           },
         },
       });
@@ -1472,17 +1586,85 @@ export function OrderBundleEditPanel({
     }
     if (!userName) {
       setStampNotice({ tone: 'error', message: 'ログイン情報が取得できないためスタンプコピーができません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_COPY',
+          outcome: 'error',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            stampSource: selectionMeta.stampSource,
+            stampId: selectionMeta.stampId,
+            stampName: selectionMeta.stampName,
+            error: 'missing_user',
+          },
+        },
+      });
       return;
     }
-    const selection = parseStampSelection(selectedStamp);
     if (!selection) {
       setStampNotice({ tone: 'error', message: 'コピーするスタンプを選択してください。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_COPY',
+          outcome: 'error',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            stampSource: selectionMeta.stampSource,
+            stampId: selectionMeta.stampId,
+            stampName: selectionMeta.stampName,
+            error: 'missing_selection',
+          },
+        },
+      });
       return;
     }
     if (selection.source === 'local') {
       const local = localStamps.find((stamp) => stamp.id === selection.id);
       if (!local) {
         setStampNotice({ tone: 'error', message: 'ローカルスタンプが見つかりません。' });
+        logAuditEvent({
+          runId: meta.runId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          payload: {
+            action: 'CHARTS_STAMP_COPY',
+            outcome: 'error',
+            subject: 'charts',
+            details: {
+              ...auditMetaDetails,
+              runId: meta.runId,
+              operationPhase: 'copy',
+              entity,
+              patientId,
+              stampSource: 'local',
+              stampId: selection.id,
+              stampName: selectionMeta.stampName,
+              error: 'local_stamp_missing',
+            },
+          },
+        });
         return;
       }
       const entry = saveStampClipboard(userName, toClipboardEntryFromLocalStamp(local));
@@ -1506,6 +1688,7 @@ export function OrderBundleEditPanel({
             patientId,
             stampId: selection.id,
             stampSource: 'local',
+            stampName: entry.name,
             bundleName: entry.bundle.bundleName,
             itemCount: countItems(entry.bundle.items),
           },
@@ -1517,6 +1700,10 @@ export function OrderBundleEditPanel({
   };
 
   const pasteStamp = () => {
+    const entry = userName ? (stampClipboard ?? loadStampClipboard(userName)) : stampClipboard;
+    const stampSource = entry?.source ?? 'unknown';
+    const stampId = entry?.stampId;
+    const stampName = entry?.name;
     if (isBlocked) {
       setStampNotice({ tone: 'error', message: '編集ガード中のためスタンプペーストはできません。' });
       logAuditEvent({
@@ -1535,7 +1722,10 @@ export function OrderBundleEditPanel({
             operationPhase: 'paste',
             entity,
             patientId,
-            blockedReasons: blockReasons,
+            stampSource,
+            stampId,
+            stampName,
+            blockedReasons: guardReasonKeys.length > 0 ? guardReasonKeys : ['edit_guard'],
           },
         },
       });
@@ -1543,11 +1733,56 @@ export function OrderBundleEditPanel({
     }
     if (!userName) {
       setStampNotice({ tone: 'error', message: 'ログイン情報が取得できないためスタンプペーストができません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_PASTE',
+          outcome: 'error',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'paste',
+            entity,
+            patientId,
+            stampSource,
+            stampId,
+            stampName,
+            error: 'missing_user',
+          },
+        },
+      });
       return;
     }
-    const entry = stampClipboard ?? loadStampClipboard(userName);
     if (!entry) {
       setStampNotice({ tone: 'error', message: 'コピー済みのスタンプがありません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_PASTE',
+          outcome: 'error',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'paste',
+            entity,
+            patientId,
+            stampSource,
+            stampId,
+            stampName,
+            error: 'missing_clipboard',
+          },
+        },
+      });
       return;
     }
     if (!stampClipboard) {
@@ -1572,6 +1807,8 @@ export function OrderBundleEditPanel({
             entity,
             patientId,
             stampSource: entry.source,
+            stampId: entry.stampId,
+            stampName: entry.name,
             blockedReasons: ['entity_mismatch'],
           },
         },
@@ -1617,6 +1854,8 @@ export function OrderBundleEditPanel({
           entity,
           patientId,
           stampSource: entry.source,
+          stampId: entry.stampId,
+          stampName: entry.name,
           bundleName: nextForm.bundleName,
           itemCount: countItems(nextForm.items),
         },
@@ -2748,6 +2987,13 @@ export function OrderBundleEditPanel({
                   ))}
                 </div>
                 <div className="charts-side-panel__item-actions">
+                  <button
+                    type="button"
+                    onClick={() => copyFromHistory(bundle)}
+                    disabled={isBlocked}
+                  >
+                    コピー
+                  </button>
                   <button
                     type="button"
                     onClick={() => {

@@ -26,6 +26,7 @@ export type LocalStampEntry = {
 export type StampClipboardEntry = {
   savedAt: string;
   source: 'local' | 'server';
+  stampId?: string;
   name: string;
   category: string;
   target: string;
