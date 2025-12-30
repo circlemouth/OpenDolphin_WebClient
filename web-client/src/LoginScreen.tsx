@@ -126,12 +126,14 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
     setFeedback(null);
     setProfile(null);
 
+    const generatedClientUuid = createClientUuid();
     const normalizedValues: LoginFormValues = {
       facilityId: normalize(values.facilityId),
       userId: normalize(values.userId),
       password: values.password,
-      clientUuid: values.clientUuid,
+      clientUuid: generatedClientUuid,
     };
+    setValues((prev) => ({ ...prev, clientUuid: generatedClientUuid }));
 
     const nextErrors = validate(normalizedValues);
     if (Object.keys(nextErrors).length > 0) {
@@ -188,7 +190,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
         <header className="login-card__header">
           <h1 id="login-heading">OpenDolphin Web ログイン</h1>
           <p>
-            施設ID・ユーザーID・パスワードを入力し、認証ヘッダーを用いた既存APIでサインインします。クライアントUUIDを指定しない場合は自動生成されます。
+            施設ID・ユーザーID・パスワードを入力し、認証ヘッダーを用いた既存APIでサインインします。クライアントUUIDはログイン時に自動生成されます。
           </p>
         </header>
 
@@ -228,16 +230,6 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
               placeholder="パスワード"
             />
             {errors.password ? <span className="field-error">{errors.password}</span> : null}
-          </label>
-
-          <label className="field">
-            <span>クライアントUUID (任意)</span>
-            <input
-              type="text"
-              value={values.clientUuid}
-              onChange={handleChange('clientUuid')}
-              placeholder="未指定の場合、自動生成されます"
-            />
           </label>
 
           <div className="login-form__actions">
