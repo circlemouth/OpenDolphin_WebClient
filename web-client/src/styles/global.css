@@ -1,7 +1,7 @@
 :root {
-  font-family: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
-  color: #0f172a;
-  background-color: #e5e7eb;
+  font-family: 'Outfit', 'Inter', system-ui, -apple-system, sans-serif;
+  color: #1e293b;
+  background-color: #ffffff;
 }
 
 * {
@@ -11,323 +11,313 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at 20% 20%, #eef2ff 0%, #f8f9ff 45%, #edf2fb 100%);
+  overflow-x: hidden;
 }
 
+/* Full Screen Split Layout */
 .login-shell {
   min-height: 100vh;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 3rem 1.25rem;
+  padding: 0;
+  background: white;
 }
 
+/* The container becomes the grid wrapper */
 .login-card {
-  width: min(440px, 100%);
-  padding: 2.5rem;
-  background: #ffffff;
-  border-radius: 24px;
-  box-shadow: 0 25px 80px rgba(15, 23, 42, 0.15);
-  border: 1px solid #eff2f7;
-  position: relative;
-  overflow: hidden;
+  width: 100%;
+  min-height: 100vh;
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  background: transparent;
+  border-radius: 0;
+  box-shadow: none;
+  border: none;
+  padding: 0;
 }
 
-.login-card::before {
-  content: '';
-  position: absolute;
-  top: -140px;
-  right: -120px;
-  width: 320px;
-  height: 320px;
-  background: radial-gradient(circle, rgba(37, 99, 235, 0.18) 0%, rgba(37, 99, 235, 0) 70%);
-  pointer-events: none;
-}
-
+/* Left Side: Visuals & Branding */
 .login-card__header {
   position: relative;
-  z-index: 1;
+  background: #ffffff;
   display: flex;
   flex-direction: column;
-  gap: 0.9rem;
-}
-
-.login-card__header h1 {
-  margin: 0;
-  font-size: 2rem;
-  font-weight: 800;
+  justify-content: center;
+  align-items: center;
+  padding: 0;
+  /* Remove padding to allow full-bleed image */
   color: #0f172a;
+  overflow: hidden;
+  gap: 0;
+  border-right: 1px solid #f1f5f9;
 }
 
-.login-card__lead {
-  margin: 0;
-  color: #475569;
-  line-height: 1.6;
+/* Abstract Background Shapes - lighter for white bg */
+.login-card__header::before {
+  content: '';
+  position: absolute;
+  top: -20%;
+  left: -20%;
+  width: 80%;
+  height: 80%;
+  background: radial-gradient(circle, rgba(79, 70, 229, 0.05) 0%, transparent 70%);
+  border-radius: 50%;
+  filter: blur(60px);
 }
 
+.login-card__header::after {
+  content: '';
+  position: absolute;
+  bottom: -10%;
+  right: -10%;
+  width: 70%;
+  height: 70%;
+  background: radial-gradient(circle, rgba(56, 189, 248, 0.05) 0%, transparent 60%);
+  border-radius: 50%;
+  filter: blur(40px);
+}
+
+/* Branding Container */
 .login-brand {
+  position: relative;
+  z-index: 10;
   display: flex;
   align-items: center;
-  gap: 1rem;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
 }
 
 .login-brand__badge {
-  width: 86px;
-  height: 86px;
-  padding: 6px;
-  border-radius: 22px;
-  background: linear-gradient(145deg, #1e3a8a 0%, #2563eb 50%, #0f172a 100%);
-  box-shadow: 0 18px 35px rgba(15, 23, 42, 0.25);
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  /* Allow full expansion */
+  background: transparent;
+  border: none;
+  padding: 2rem;
+  /* Keep a little padding so logo doesn't touch the absolute edge, or make it 0 for full bleed? "全体を表示" usually implies safe area or full. Let's give it slight breathing room (2rem) inside the full container. */
+  box-shadow: none;
   display: flex;
   align-items: center;
   justify-content: center;
+  flex: 1;
 }
 
 .login-brand__badge img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
-  border-radius: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.7);
-  background: #ffffff;
+  object-fit: contain;
+  /* Shows the whole image respecting aspect ratio */
+  mix-blend-mode: multiply;
+  /* Blends the image white background with the container */
 }
 
 .login-brand__text {
-  display: flex;
-  flex-direction: column;
-  gap: 0.35rem;
+  text-align: center;
+  color: #0f172a;
+  margin-bottom: 2rem;
+  /* Give some space from bottom */
 }
 
 .login-brand__eyebrow {
-  margin: 0;
-  font-size: 0.85rem;
+  color: #4f46e5;
+  font-size: 0.875rem;
+  letter-spacing: 0.2em;
+  margin-bottom: 0.5rem;
   font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: #2563eb;
+}
+
+.login-card__header h1 {
+  font-size: 3rem;
+  background: linear-gradient(to right, #0f172a, #334155);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  margin: 0;
+  line-height: 1.1;
+  letter-spacing: -0.03em;
 }
 
 .login-brand__sub {
-  margin: 0;
-  font-size: 0.95rem;
-  color: #475569;
-  font-weight: 600;
+  color: #64748b;
+  font-weight: 500;
+  font-size: 1.1rem;
+  margin-top: 1rem;
 }
 
+/* Right Side: Form */
 .login-form {
-  margin-top: 1.5rem;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  justify-content: center;
+  padding: 4rem 6rem;
+  gap: 1.75rem;
+  background: #f8fafc;
+  /* Subtle cool gray to distinguish from the white left panel */
+  position: relative;
+  border-left: 1px solid #e2e8f0;
+}
+
+/* Ensure the form content is centered vertically but not too spread out */
+.login-form>* {
+  max-width: 420px;
+  width: 100%;
+  margin-inline: auto;
 }
 
 .field {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
-  font-size: 0.95rem;
-  color: #475569;
+  gap: 0.5rem;
 }
 
 .field span {
+  font-size: 0.85rem;
   font-weight: 600;
+  color: #64748b;
+  /* Lighter, more elegant text color */
+  margin-left: 2px;
+  letter-spacing: 0.02em;
 }
 
 .field input {
-  padding: 0.65rem 0.75rem;
-  border-radius: 10px;
-  border: 1px solid #cbd5f5;
+  font-family: 'Inter', sans-serif;
+  width: 100%;
+  padding: 1.1rem 1.25rem;
   font-size: 1rem;
-  font-family: inherit;
-  background: #f9fafb;
-  transition: border 0.2s ease, box-shadow 0.2s ease;
+  border-radius: 16px;
+  /* softer rounded corners */
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  /* pure white inputs on the gray bg */
+  color: #1e293b;
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  /* subtle depth */
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .field input:focus {
-  border-color: #2563eb;
   outline: none;
-  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  background: #ffffff;
+  border-color: #0ea5e9;
+  /* Sky blue focus */
+  box-shadow: 0 0 0 4px rgba(14, 165, 233, 0.15);
+  /* Soft sky glow */
+  transform: translateY(-1px);
+}
+
+.field input::placeholder {
+  color: #cbd5e1;
 }
 
 .field-error {
+  color: #ef4444;
   font-size: 0.85rem;
-  color: #dc2626;
+  font-weight: 500;
+  margin-left: 4px;
 }
 
 .login-form__actions {
-  margin-top: 0.25rem;
+  margin-top: 1.5rem;
 }
 
 .login-form__actions button {
   width: 100%;
-  padding: 0.9rem 1rem;
-  font-size: 1rem;
-  font-weight: 600;
-  border-radius: 999px;
+  padding: 1.1rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  border-radius: 16px;
   border: none;
-  background: #2563eb;
-  color: #ffffff;
+  /* Stylish Ocean Gradient */
+  background: linear-gradient(135deg, #0284c7 0%, #0ea5e9 100%);
+  color: white;
   cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: all 0.3s ease;
+  box-shadow: 0 10px 20px -10px rgba(2, 132, 199, 0.5);
+  /* Colored shadow */
+  letter-spacing: 0.02em;
 }
 
 .login-form__actions button:hover:not(:disabled) {
-  transform: translateY(-1px);
-  box-shadow: 0 10px 25px rgba(37, 99, 235, 0.3);
+  transform: translateY(-2px) scale(1.01);
+  box-shadow: 0 20px 30px -10px rgba(2, 132, 199, 0.6);
 }
 
 .login-form__actions button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
+  background: #cbd5e1;
+  cursor: default;
+  transform: none;
   box-shadow: none;
 }
 
-.facility-entry__block {
-  margin-top: 1.25rem;
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.facility-entry__label {
-  margin: 0;
-  font-weight: 600;
-  color: #475569;
-}
-
-.facility-entry__choices {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.facility-entry__choice {
-  padding: 0.45rem 0.85rem;
-  border-radius: 999px;
-  border: 1px solid #cbd5f5;
-  background: #f1f5ff;
-  color: #1e3a8a;
-  font-weight: 600;
-  cursor: pointer;
-  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.facility-entry__choice:hover {
-  background: #dbeafe;
-  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
-  transform: translateY(-1px);
-}
-
-.facility-entry__toggle {
-  align-self: flex-start;
-  border: none;
-  background: transparent;
-  color: #2563eb;
-  font-weight: 600;
-  cursor: pointer;
-  padding: 0;
-}
-
-.facility-entry__toggle:disabled {
-  color: #94a3b8;
-  cursor: not-allowed;
-}
-
-.facility-entry__empty {
-  margin-top: 1rem;
-  color: #64748b;
-  font-size: 0.95rem;
-}
-
-.facility-entry__form {
-  margin-top: 1rem;
-}
-
-.facility-entry__actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.facility-entry__secondary {
-  width: 100%;
-  padding: 0.65rem 1rem;
-  border-radius: 999px;
-  border: 1px solid #cbd5f5;
-  background: #ffffff;
-  color: #1e293b;
-  font-weight: 600;
-  cursor: pointer;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
-}
-
-.facility-entry__secondary:hover {
-  transform: translateY(-1px);
-  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
-}
-
+/* Status Messages */
 .status-message {
-  margin-top: 0.25rem;
-  padding: 0.75rem 1rem;
+  padding: 1rem;
   border-radius: 12px;
-  background: #fef9c3;
-  border: 1px solid #fde68a;
+  background: #fffbeb;
   color: #92400e;
   font-size: 0.9rem;
+  border: 1px solid #fcd34d;
+  animation: slideUp 0.3s ease-out;
 }
 
 .status-message.is-error {
   background: #fef2f2;
-  border-color: #fecaca;
-  color: #b91c1c;
+  border-color: #fca5a5;
+  color: #991b1b;
 }
 
 .status-message.is-success {
-  background: #ecfdf5;
-  border-color: #34d399;
-  color: #065f46;
+  background: #f0fdf4;
+  border-color: #86efac;
+  color: #166534;
 }
 
-.status-message__detail {
-  margin: 0.35rem 0 0;
-  font-size: 0.85rem;
-  color: inherit;
-}
-
-.api-failure {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.api-failure__actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-}
-
-.api-failure__button {
-  border-radius: 10px;
-  border: 1px solid #2563eb;
-  background: #2563eb;
-  color: #ffffff;
-  padding: 0.45rem 0.9rem;
-  font-weight: 700;
-  cursor: pointer;
-}
-
-.api-failure__button:disabled {
-  opacity: 0.6;
-  cursor: not-allowed;
-}
-
-@media (max-width: 520px) {
-  .login-card {
-    padding: 2rem;
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
   }
 
-  .login-brand {
-    flex-direction: column;
-    align-items: flex-start;
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Facility Entry Overrides (Reused classes from LoginScreen logic) */
+.facility-entry__block {
+  max-width: 420px;
+  margin: 1rem auto 0;
+  width: 100%;
+}
+
+.facility-entry__choices {
+  justify-content: flex-start;
+}
+
+/* Responsive */
+@media (max-width: 960px) {
+  .login-card {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+
+  .login-card__header {
+    padding: 3rem 2rem;
+    min-height: 300px;
+  }
+
+  .login-brand__badge {
+    width: 100px;
+    height: 100px;
+    padding: 16px;
+  }
+
+  .login-card__header h1 {
+    font-size: 2.25rem;
+  }
+
+  .login-form {
+    padding: 2rem;
   }
 }

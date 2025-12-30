@@ -193,30 +193,28 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
             <div className="login-brand__badge">
               <img src={SYSTEM_ICON_URL} alt="OpenDolphin システムアイコン" />
             </div>
-            <div className="login-brand__text">
-              <p className="login-brand__eyebrow">OpenDolphin Web</p>
-              <h1 id="login-heading">ログイン</h1>
-              <p className="login-brand__sub">診療フローに接続するシステムポータル</p>
-            </div>
+
           </div>
-          <p className="login-card__lead">
-            施設ID・ユーザーID・パスワードを入力し、認証ヘッダーを用いた既存APIでサインインします。クライアントUUIDはログイン時に自動生成されます。
-          </p>
+
         </header>
 
         <form className="login-form" onSubmit={handleSubmit} noValidate>
-          <label className="field">
-            <span>施設ID</span>
-            <input
-              type="text"
-              autoComplete="organization"
-              value={values.facilityId}
-              onChange={handleChange('facilityId')}
-              placeholder="例: 0001"
-              disabled={lockFacilityId}
-            />
-            {errors.facilityId ? <span className="field-error">{errors.facilityId}</span> : null}
-          </label>
+          {lockFacilityId ? (
+            <input type="hidden" name="facilityId" value={values.facilityId} />
+          ) : (
+            <label className="field">
+              <span>施設ID</span>
+              <input
+                type="text"
+                autoComplete="organization"
+                value={values.facilityId}
+                onChange={handleChange('facilityId')}
+                placeholder="例: 0001"
+                disabled={lockFacilityId}
+              />
+              {errors.facilityId ? <span className="field-error">{errors.facilityId}</span> : null}
+            </label>
+          )}
 
           <label className="field">
             <span>ユーザーID</span>
@@ -260,7 +258,7 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
           ) : null}
         </form>
       </section>
-    </main>
+    </main >
   );
 };
 
