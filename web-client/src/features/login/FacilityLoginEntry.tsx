@@ -1,27 +1,13 @@
 import { useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
-import { useLocation, useNavigate, type Location } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 
-import { buildFacilityPath, normalizeFacilityId, parseFacilityPath } from '../../routes/facilityRoutes';
+import { buildFacilityPath, normalizeFacilityId } from '../../routes/facilityRoutes';
 import { loadRecentFacilities } from './recentFacilityStore';
+import { isLegacyFrom, normalizeFromState } from './loginRouteState';
 
 type FacilityLoginEntryProps = {
   heading?: string;
-};
-
-const normalizeFromState = (state: unknown): { from?: string | Location } | undefined => {
-  if (!state) return undefined;
-  if (typeof state === 'object' && state !== null && 'from' in state) {
-    return state as { from?: string | Location };
-  }
-  return undefined;
-};
-
-const isLegacyFrom = (from?: string | Location) => {
-  if (!from) return false;
-  const pathname = typeof from === 'string' ? from.split('?')[0] ?? '' : from.pathname ?? '';
-  if (!pathname || pathname === '/login') return false;
-  return parseFacilityPath(pathname) === null;
 };
 
 export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }: FacilityLoginEntryProps) => {
