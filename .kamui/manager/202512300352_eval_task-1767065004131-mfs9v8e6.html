@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - AppRouter パスプレフィックス実装</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin: 16px 0 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #eef3f4;
+        padding: 16px;
+      }
+      .score-card h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .score-total {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--pending {
+        background: #e3edf0;
+        border-color: #cdd9dd;
+      }
+      .status-badge--error {
+        background: #f8d7da;
+        border-color: #f1aeb5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .chart-block {
+        margin-bottom: 12px;
+      }
+      .chart-block svg {
+        display: block;
+        width: 220px;
+        height: 220px;
+      }
+      .metric-list {
+        margin: 12px 0 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 02 AppRouter パスプレフィックス実装</h1>
+        <p class="monitor-description">対象ブランチのコミットと差分をもとに、ルーティング集約・旧URL導線・検証状況を評価しました。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>gemini cli / task-1767065004133-e8c894</h2>
+          <div class="score-total">合計 490 / 600 🥈</div>
+          <div>総合スコア: 82点（メダル: 🥈）</div>
+        </div>
+        <div class="score-card">
+          <h2>gemini cli / task-1767065004332-54bf56</h2>
+          <div class="score-total">合計 233 / 600 ⚪️</div>
+          <div>総合スコア: 35点（メダル: ⚪️）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>gemini cli / task-1767065004133-e8c894</th>
+            <th>gemini cli / task-1767065004332-54bf56</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-30 03:53 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">完了</span>
+                <span class="agent-label">旧URLの明示ルートを追加し、/f/:facilityId/* へ集約する導線を補強。</span>
+              </div>
+              <div class="chart-block">
+                <svg viewBox="0 0 240 240" aria-label="六角形チャート">
+                  <polygon points="120,40 189.3,80 189.3,160 120,200 50.7,160 50.7,80" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="120,49.6 178.9,86 182.4,156 120,185.6 75,146 64.6,88" fill="#9fc4cf" stroke="#3a6a78" />
+                </svg>
+                <ul class="metric-list">
+                  <li>仕様準拠 88点: /f/:facilityId への集約方針と衝突回避を実装。</li>
+                  <li>ルーティング整合 85点: 旧URLの明示ルート追加で曖昧さを低減。</li>
+                  <li>リダイレクト導線 90点: LegacyRootRedirect の導線を強化。</li>
+                  <li>コード品質 82点: 既存構造に沿った追加で副作用が少ない。</li>
+                  <li>テスト/検証 65点: 実行記録のみで自動テスト追加はなし。</li>
+                  <li>完了度 80点: 要件充足だが旧URL案内UIは未対応。</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767065004133-e8c894/web-client/src/AppRouter.tsx">AppRouter.tsx</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767065004133-e8c894/web-client/src/webclient_facility_prefix/02_AppRouterパスプレフィックス実装.md">作業メモ</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>ad46e47ef (task/task-1767065004133-e8c894) Implement facility prefix routing in AppRouter</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">差分概要</summary>
+                <pre> web-client/src/AppRouter.tsx                       | 13 ++++++++++++
+ web-client/src/webclient_facility_prefix/02_AppRouterパスプレフィックス実装.md | 23 ++++++++++++++++++++++
+ 2 files changed, 36 insertions(+)</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--pending">未完了</span>
+                <span class="agent-label">コミットなし。未コミット変更のみで要件達成が確認できない。</span>
+              </div>
+              <div class="chart-block">
+                <svg viewBox="0 0 240 240" aria-label="六角形チャート">
+                  <polygon points="120,40 189.3,80 189.3,160 120,200 50.7,160 50.7,80" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="120,88 144.2,106 151.2,138 120,164 99.2,132 95.8,106" fill="#d9b1b1" stroke="#8a3b3b" />
+                </svg>
+                <ul class="metric-list">
+                  <li>仕様準拠 40点: 旧URL案内の一部はあるが /f ルート移行は未確定。</li>
+                  <li>ルーティング整合 35点: AppRouter 変更は軽微で導線補完に留まる。</li>
+                  <li>リダイレクト導線 45点: legacyFrom 情報を渡す追加のみ。</li>
+                  <li>コード品質 55点: 追加内容は整理されているが未確定。</li>
+                  <li>テスト/検証 30点: テスト追加はあるが未コミットで不確実。</li>
+                  <li>完了度 28点: 未コミット・一時ファイル混在で提出不可。</li>
+                </ul>
+              </div>
+              <div class="snapshot-summary">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767065004332-54bf56/web-client/src/AppRouter.tsx">AppRouter.tsx</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767065004332-54bf56/web-client/src/features/login/FacilityLoginEntry.tsx">FacilityLoginEntry.tsx</a></li>
+                <li><a href="/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767065004332-54bf56/web-client/src/features/login/__tests__/FacilityLoginEntry.test.tsx">FacilityLoginEntry.test.tsx</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミットログ</summary>
+                <pre>master..task/task-1767065004332-54bf56 に追加コミットなし</pre>
+              </details>
+              <details class="snapshot-details">
+                <summary class="details-toggle">未コミット差分</summary>
+                <pre> M tmp/web-client-dev.pid
+ M web-client/src/AppRouter.tsx
+ M web-client/src/features/login/FacilityLoginEntry.tsx
+ M web-client/src/features/login/__tests__/FacilityLoginEntry.test.tsx
+
+ tmp/web-client-dev.pid                             |  2 +-
+ web-client/src/AppRouter.tsx                       |  3 ++-
+ web-client/src/features/login/FacilityLoginEntry.tsx | 29 +++++++++++++++++-----
+ web-client/src/features/login/__tests__/FacilityLoginEntry.test.tsx | 10 +++++++-
+ 4 files changed, 35 insertions(+), 9 deletions(-)</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

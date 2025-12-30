@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 04 認証保存と遷移統一</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-grid {
+        display: grid;
+        gap: 16px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        margin: 20px 0 32px;
+      }
+      .summary-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .summary-score {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 4px;
+      }
+      .summary-label {
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .comparison-block {
+        margin-bottom: 32px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-card {
+        display: grid;
+        grid-template-columns: 180px 1fr;
+        gap: 12px;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        width: 180px;
+        height: 180px;
+        display: block;
+      }
+      .metric-list {
+        display: grid;
+        grid-template-columns: 1fr;
+        gap: 4px;
+        font-size: 12px;
+      }
+      .metric-item {
+        display: flex;
+        justify-content: space-between;
+        gap: 8px;
+      }
+      .metric-item span {
+        white-space: nowrap;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin: 20px 0 8px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .artifact-list a {
+        color: #1f2a30;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 6px;
+      }
+      .score-note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 04 認証保存と遷移統一</h1>
+        <p class="monitor-description">
+          対象タスクは「devFacilityId の URL 由来更新」「ログイン成功後の遷移先統一（/f/:facilityId/reception）」「施設ID参照の整合性確認」。
+          3つの実装ブランチのコミット/差分を参照し、緻密性を中心に評価しました。
+        </p>
+      </header>
+
+      <section>
+        <div class="section-title">仕事の概要</div>
+        <ul>
+          <li>LoginScreen の localStorage 保存ロジックを URL 由来の施設ID優先に調整。</li>
+          <li>ログイン後の遷移を /f/:facilityId/reception に固定し、from ルートの復帰を廃止。</li>
+          <li>httpClient の facilityId 参照（devFacilityId）と整合する保存順序を再確認。</li>
+        </ul>
+        <div class="note">成果物はそれぞれ異なる worktree にあり、リンクは相対パスで記載しています。</div>
+      </section>
+
+      <section class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-score">🥈 482 / 600</div>
+          <div class="summary-label">AI: codex / task-1767069765718-0fe8bc</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-score">🥇 495 / 600</div>
+          <div class="summary-label">AI: codex / task-1767069765919-ec602f</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-score">🥈 492 / 600</div>
+          <div class="summary-label">AI: codex / task-1767069766119-143f41</div>
+        </div>
+      </section>
+
+      <section class="comparison-block">
+        <div class="section-title">比較 1: task-1767069765718-0fe8bc vs task-1767069765919-ec602f</div>
+        <table class="monitor-report">
+          <colgroup>
+            <col class="timestamp-column" />
+            <col class="agent-column" />
+            <col class="agent-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>AI codex / task-1767069765718-0fe8bc</th>
+              <th>AI codex / task-1767069765919-ec602f</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="timestamp">2025-12-30 14:01</td>
+              <td>
+                <div class="agent-meta">
+                  <span class="status-badge status-badge--completed">完了</span>
+                  <span class="agent-label">LoginScreen に URL 由来 facilityId を明示的に渡し保存。</span>
+                </div>
+                <div class="radar-card">
+                  <div class="radar" data-scores="92,88,78,80,84,60" data-labels="要件充足,整合性,簡潔性,安全性,可読性,検証"></div>
+                  <div class="metric-list">
+                    <div class="metric-item"><span>要件充足</span><span>92点</span></div>
+                    <div class="metric-item"><span>整合性</span><span>88点</span></div>
+                    <div class="metric-item"><span>簡潔性</span><span>78点</span></div>
+                    <div class="metric-item"><span>安全性</span><span>80点</span></div>
+                    <div class="metric-item"><span>可読性</span><span>84点</span></div>
+                    <div class="metric-item"><span>検証</span><span>60点</span></div>
+                  </div>
+                </div>
+                <div class="score-note">理由: URL 由来の値を独立パラメータ化して明確化。一方 props 追加で影響面が増え、テスト追加はなし。</div>
+                <div class="section-title">コミットログ</div>
+                <pre>241e337b1 Fix login redirect and facility id storage</pre>
+                <div class="section-title">差分サマリ</div>
+                <pre>web-client/src/AppRouter.tsx | 15 +--------------
+web-client/src/LoginScreen.tsx | 13 +++++++++++--</pre>
+                <div class="section-title">成果物リンク</div>
+                <ul class="artifact-list">
+                  <li><a href="../../.worktrees/task-1767069765718-0fe8bc/web-client/src/LoginScreen.tsx">.worktrees/task-1767069765718-0fe8bc/web-client/src/LoginScreen.tsx</a></li>
+                  <li><a href="../../.worktrees/task-1767069765718-0fe8bc/web-client/src/AppRouter.tsx">.worktrees/task-1767069765718-0fe8bc/web-client/src/AppRouter.tsx</a></li>
+                </ul>
+              </td>
+              <td>
+                <div class="agent-meta">
+                  <span class="status-badge status-badge--completed">完了</span>
+                  <span class="agent-label">initialFacilityId を直接利用し URL 由来 facilityId を保存。</span>
+                </div>
+                <div class="radar-card">
+                  <div class="radar" data-scores="94,90,85,82,85,59" data-labels="要件充足,整合性,簡潔性,安全性,可読性,検証"></div>
+                  <div class="metric-list">
+                    <div class="metric-item"><span>要件充足</span><span>94点</span></div>
+                    <div class="metric-item"><span>整合性</span><span>90点</span></div>
+                    <div class="metric-item"><span>簡潔性</span><span>85点</span></div>
+                    <div class="metric-item"><span>安全性</span><span>82点</span></div>
+                    <div class="metric-item"><span>可読性</span><span>85点</span></div>
+                    <div class="metric-item"><span>検証</span><span>59点</span></div>
+                  </div>
+                </div>
+                <div class="score-note">理由: 既存 props を活用して最小変更で要件を満たす。テスト追加は無し。</div>
+                <div class="section-title">コミットログ</div>
+                <pre>0ba64a0e6 Fix facility login storage and redirect</pre>
+                <div class="section-title">差分サマリ</div>
+                <pre>web-client/src/AppRouter.tsx | 14 --------------
+web-client/src/LoginScreen.tsx | 7 +++++--</pre>
+                <div class="section-title">成果物リンク</div>
+                <ul class="artifact-list">
+                  <li><a href="../../.worktrees/task-1767069765919-ec602f/web-client/src/LoginScreen.tsx">.worktrees/task-1767069765919-ec602f/web-client/src/LoginScreen.tsx</a></li>
+                  <li><a href="../../.worktrees/task-1767069765919-ec602f/web-client/src/AppRouter.tsx">.worktrees/task-1767069765919-ec602f/web-client/src/AppRouter.tsx</a></li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section class="comparison-block">
+        <div class="section-title">比較 2: task-1767069766119-143f41 vs task-1767069765919-ec602f（基準）</div>
+        <table class="monitor-report">
+          <colgroup>
+            <col class="timestamp-column" />
+            <col class="agent-column" />
+            <col class="agent-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>AI codex / task-1767069766119-143f41</th>
+              <th>AI codex / task-1767069765919-ec602f</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="timestamp">2025-12-30 14:01</td>
+              <td>
+                <div class="agent-meta">
+                  <span class="status-badge status-badge--completed">完了</span>
+                  <span class="agent-label">URL 由来 facilityId を事前に正規化して保存。</span>
+                </div>
+                <div class="radar-card">
+                  <div class="radar" data-scores="93,90,84,82,84,59" data-labels="要件充足,整合性,簡潔性,安全性,可読性,検証"></div>
+                  <div class="metric-list">
+                    <div class="metric-item"><span>要件充足</span><span>93点</span></div>
+                    <div class="metric-item"><span>整合性</span><span>90点</span></div>
+                    <div class="metric-item"><span>簡潔性</span><span>84点</span></div>
+                    <div class="metric-item"><span>安全性</span><span>82点</span></div>
+                    <div class="metric-item"><span>可読性</span><span>84点</span></div>
+                    <div class="metric-item"><span>検証</span><span>59点</span></div>
+                  </div>
+                </div>
+                <div class="score-note">理由: 計算位置を前倒しして読みやすいが、検証追加は無し。</div>
+                <div class="section-title">コミットログ</div>
+                <pre>0fbc9ee95 Fix login redirect and facilityId storage</pre>
+                <div class="section-title">差分サマリ</div>
+                <pre>web-client/src/AppRouter.tsx | 14 --------------
+web-client/src/LoginScreen.tsx | 6 ++++--</pre>
+                <div class="section-title">成果物リンク</div>
+                <ul class="artifact-list">
+                  <li><a href="../../.worktrees/task-1767069766119-143f41/web-client/src/LoginScreen.tsx">.worktrees/task-1767069766119-143f41/web-client/src/LoginScreen.tsx</a></li>
+                  <li><a href="../../.worktrees/task-1767069766119-143f41/web-client/src/AppRouter.tsx">.worktrees/task-1767069766119-143f41/web-client/src/AppRouter.tsx</a></li>
+                </ul>
+              </td>
+              <td>
+                <div class="agent-meta">
+                  <span class="status-badge status-badge--completed">完了</span>
+                  <span class="agent-label">基準比較: 最小変更で URL 由来保存と遷移統一。</span>
+                </div>
+                <div class="radar-card">
+                  <div class="radar" data-scores="94,90,85,82,85,59" data-labels="要件充足,整合性,簡潔性,安全性,可読性,検証"></div>
+                  <div class="metric-list">
+                    <div class="metric-item"><span>要件充足</span><span>94点</span></div>
+                    <div class="metric-item"><span>整合性</span><span>90点</span></div>
+                    <div class="metric-item"><span>簡潔性</span><span>85点</span></div>
+                    <div class="metric-item"><span>安全性</span><span>82点</span></div>
+                    <div class="metric-item"><span>可読性</span><span>85点</span></div>
+                    <div class="metric-item"><span>検証</span><span>59点</span></div>
+                  </div>
+                </div>
+                <div class="score-note">理由: 既存 props で目的を達成し、影響面を限定。</div>
+                <div class="section-title">コミットログ</div>
+                <pre>0ba64a0e6 Fix facility login storage and redirect</pre>
+                <div class="section-title">差分サマリ</div>
+                <pre>web-client/src/AppRouter.tsx | 14 --------------
+web-client/src/LoginScreen.tsx | 7 +++++--</pre>
+                <div class="section-title">成果物リンク</div>
+                <ul class="artifact-list">
+                  <li><a href="../../.worktrees/task-1767069765919-ec602f/web-client/src/LoginScreen.tsx">.worktrees/task-1767069765919-ec602f/web-client/src/LoginScreen.tsx</a></li>
+                  <li><a href="../../.worktrees/task-1767069765919-ec602f/web-client/src/AppRouter.tsx">.worktrees/task-1767069765919-ec602f/web-client/src/AppRouter.tsx</a></li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <div class="section-title">評価メモ</div>
+        <ul>
+          <li>全ブランチで /login からの遷移は /f/:facilityId/reception に固定され、要件に一致。</li>
+          <li>devFacilityId の保存は URL 由来優先に変更され、httpClient の X-Facility-Id と整合。</li>
+          <li>テストや検証ログ追加が無く、緻密性の観点で減点。</li>
+        </ul>
+      </section>
+    </div>
+
+    <script>
+      const createRadar = (container) => {
+        const labels = (container.dataset.labels || '').split(',');
+        const scores = (container.dataset.scores || '').split(',').map((v) => Number(v));
+        const size = 180;
+        const cx = size / 2;
+        const cy = size / 2;
+        const maxR = 70;
+        const angles = [-90, -30, 30, 90, 150, 210];
+        const svgNS = 'http://www.w3.org/2000/svg';
+        const svg = document.createElementNS(svgNS, 'svg');
+        svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+
+        const axisGroup = document.createElementNS(svgNS, 'g');
+        axisGroup.setAttribute('stroke', '#c4d3d7');
+        axisGroup.setAttribute('stroke-width', '1');
+
+        const outline = document.createElementNS(svgNS, 'polygon');
+        const outlinePoints = angles
+          .map((angle) => {
+            const rad = (Math.PI / 180) * angle;
+            return `${cx + maxR * Math.cos(rad)},${cy + maxR * Math.sin(rad)}`;
+          })
+          .join(' ');
+        outline.setAttribute('points', outlinePoints);
+        outline.setAttribute('fill', 'none');
+        outline.setAttribute('stroke', '#8aa1a9');
+        outline.setAttribute('stroke-width', '1.5');
+
+        angles.forEach((angle) => {
+          const rad = (Math.PI / 180) * angle;
+          const line = document.createElementNS(svgNS, 'line');
+          line.setAttribute('x1', String(cx));
+          line.setAttribute('y1', String(cy));
+          line.setAttribute('x2', String(cx + maxR * Math.cos(rad)));
+          line.setAttribute('y2', String(cy + maxR * Math.sin(rad)));
+          axisGroup.appendChild(line);
+        });
+
+        const scorePolygon = document.createElementNS(svgNS, 'polygon');
+        const scorePoints = scores
+          .map((score, index) => {
+            const rad = (Math.PI / 180) * angles[index];
+            const r = maxR * Math.max(0, Math.min(score, 100)) / 100;
+            return `${cx + r * Math.cos(rad)},${cy + r * Math.sin(rad)}`;
+          })
+          .join(' ');
+        scorePolygon.setAttribute('points', scorePoints);
+        scorePolygon.setAttribute('fill', 'rgba(70, 118, 129, 0.35)');
+        scorePolygon.setAttribute('stroke', '#466e7a');
+        scorePolygon.setAttribute('stroke-width', '1.5');
+
+        svg.appendChild(axisGroup);
+        svg.appendChild(outline);
+        svg.appendChild(scorePolygon);
+        container.appendChild(svg);
+      };
+
+      document.querySelectorAll('.radar').forEach((container) => createRadar(container));
+    </script>
+  </body>
+</html>
