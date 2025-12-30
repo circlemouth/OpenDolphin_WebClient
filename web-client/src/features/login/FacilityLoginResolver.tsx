@@ -47,6 +47,7 @@ export const FacilityLoginResolver = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const [showEntry, setShowEntry] = useState(false);
+  const [isResolving, setIsResolving] = useState(true);
 
   const fromState = useMemo(() => resolveFromState(location.state), [location.state]);
   const forwardState = useMemo(() => (fromState ? { from: fromState } : undefined), [fromState]);
@@ -55,6 +56,7 @@ export const FacilityLoginResolver = () => {
   useEffect(() => {
     let active = true;
     setShowEntry(false);
+    setIsResolving(true);
 
     const attemptResolve = async () => {
       const facilityId = await resolveFacilityId();
@@ -67,6 +69,7 @@ export const FacilityLoginResolver = () => {
         return;
       }
       setShowEntry(true);
+      setIsResolving(false);
     };
 
     void attemptResolve();
@@ -75,6 +78,19 @@ export const FacilityLoginResolver = () => {
       active = false;
     };
   }, [forwardState, fromState, legacyFrom, location.key, navigate]);
+
+  if (isResolving) {
+    return (
+      <main className="login-shell">
+        <section className="login-card" aria-labelledby="facility-login-resolve">
+          <header className="login-card__header">
+            <h1 id="facility-login-resolve">施設情報を確認中…</h1>
+            <p>施設IDの補完候補を確認しています。少々お待ちください。</p>
+          </header>
+        </section>
+      </main>
+    );
+  }
 
   if (!showEntry) return null;
 
