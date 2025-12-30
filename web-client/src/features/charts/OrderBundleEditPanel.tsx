@@ -84,7 +84,22 @@ type StampFormState = {
   target: string;
 };
 
-const buildEmptyItem = (): OrderBundleItem => ({ name: '', quantity: '', unit: '', memo: '' });
+type OrderBundleItemWithRowId = OrderBundleItem & { rowId?: string };
+
+const createRowId = () =>
+  `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
+
+const ensureRowId = (item: OrderBundleItem): OrderBundleItemWithRowId => ({
+  ...item,
+  rowId: (item as OrderBundleItemWithRowId).rowId ?? createRowId(),
+});
+
+const stripRowMeta = (item: OrderBundleItem): OrderBundleItem => {
+  const { rowId, ...rest } = item as OrderBundleItemWithRowId;
+  return rest;
+};
+
+const buildEmptyItem = (): OrderBundleItem => ensureRowId({ name: '', quantity: '', unit: '', memo: '' });
 
 const NO_PROCEDURE_CHARGE_TEXT = '手技料なし';
 const MATERIAL_CODE_PREFIX = '7';
@@ -208,9 +223,9 @@ const toFormState = (bundle: OrderBundle, today: string): BundleFormState => {
     adminMemo: bundle.adminMemo ?? '',
     memo: bundle.memo ?? '',
     startDate: bundle.started ?? today,
-    items: normal.length > 0 ? normal : [buildEmptyItem()],
-    materialItems: material,
-    commentItems: comment,
+    items: normal.length > 0 ? normal.map(ensureRowId) : [buildEmptyItem()],
+    materialItems: material.map(ensureRowId),
+    commentItems: comment.map(ensureRowId),
     bodyPart,
   };
 };
@@ -224,12 +239,14 @@ const toFormStateFromStamp = (stamp: StampBundleJson, today: string): BundleForm
   startDate: today,
   items:
     stamp.claimItem && stamp.claimItem.length > 0
-      ? stamp.claimItem.map((item) => ({
-          name: item.name ?? '',
-          quantity: item.number ?? '',
-          unit: item.unit ?? '',
-          memo: item.memo ?? '',
-        }))
+      ? stamp.claimItem.map((item) =>
+          ensureRowId({
+            name: item.name ?? '',
+            quantity: item.number ?? '',
+            unit: item.unit ?? '',
+            memo: item.memo ?? '',
+          }),
+        )
       : [buildEmptyItem()],
   materialItems: [],
   commentItems: [],
@@ -245,9 +262,9 @@ const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => {
     adminMemo: stamp.bundle.adminMemo,
     memo: stamp.bundle.memo,
     startDate: stamp.bundle.startDate,
-    items: normal.length > 0 ? normal : [buildEmptyItem()],
-    materialItems: material,
-    commentItems: comment,
+    items: normal.length > 0 ? normal.map(ensureRowId) : [buildEmptyItem()],
+    materialItems: material.map(ensureRowId),
+    commentItems: comment.map(ensureRowId),
     bodyPart,
   };
 };
@@ -350,6 +367,9 @@ export function OrderBundleEditPanel({
   const [usageLimit, setUsageLimit] = useState(DEFAULT_USAGE_LIMIT);
   const [materialKeyword, setMaterialKeyword] = useState('');
   const [bodyPartKeyword, setBodyPartKeyword] = useState('');
+  const [draggingIndex, setDraggingIndex] = useState<number | null>(null);
+  const [dragOverIndex, setDragOverIndex] = useState<number | null>(null);
+  const [selectedItemRowId, setSelectedItemRowId] = useState<string | null>(null);
   const [commentDraft, setCommentDraft] = useState<OrderBundleItem>({
     code: '',
     name: '',
@@ -579,9 +599,9 @@ export function OrderBundleEditPanel({
       const nextItems = [...prev.items];
       const emptyIndex = nextItems.findIndex((row) => row.name.trim().length === 0);
       if (emptyIndex >= 0) {
-        nextItems[emptyIndex] = { ...nextItems[emptyIndex], ...item };
+        nextItems[emptyIndex] = ensureRowId({ ...nextItems[emptyIndex], ...item });
       } else {
-        nextItems.push(item);
+        nextItems.push(ensureRowId(item));
       }
       return { ...prev, items: nextItems };
     });
@@ -597,7 +617,7 @@ export function OrderBundleEditPanel({
   };
 
   const appendMaterialItem = (item: OrderBundleItem) => {
-    setForm((prev) => ({ ...prev, materialItems: [...prev.materialItems, item] }));
+    setForm((prev) => ({ ...prev, materialItems: [...prev.materialItems, ensureRowId(item)] }));
   };
 
   const applyBodyPart = (item: OrderMasterSearchItem) => {
@@ -618,7 +638,9 @@ export function OrderBundleEditPanel({
   const mutation = useMutation({
     mutationFn: async (payload: OrderBundleSubmitPayload) => {
       if (!patientId) throw new Error('patientId is required');
-      const filteredItems = collectBundleItems(payload.form).filter((item) => item.name.trim().length > 0);
+      const filteredItems = collectBundleItems(payload.form)
+        .filter((item) => item.name.trim().length > 0)
+        .map(stripRowMeta);
       return mutateOrderBundles({
         patientId,
         operations: [
@@ -1015,7 +1037,9 @@ export function OrderBundleEditPanel({
         adminMemo: form.adminMemo,
         memo: form.memo,
         startDate: form.startDate,
-        items: collectBundleItems(form).filter((item) => item.name.trim().length > 0),
+        items: collectBundleItems(form)
+          .filter((item) => item.name.trim().length > 0)
+          .map(stripRowMeta),
       },
     });
     setLocalStamps(loadLocalStamps(userName));
@@ -1118,6 +1142,51 @@ export function OrderBundleEditPanel({
     }
     stampImportMutation.mutate(selection.id);
   };
+
+  const reorderItems = (items: OrderBundleItem[], fromIndex: number, toIndex: number) => {
+    const nextItems = [...items];
+    const [moved] = nextItems.splice(fromIndex, 1);
+    nextItems.splice(toIndex, 0, moved);
+    return nextItems;
+  };
+
+  const clearItemRows = () => {
+    if (!window.confirm('薬剤/項目・材料・コメントの入力をすべてクリアしますか？')) return;
+    setForm((prev) => ({
+      ...prev,
+      items: [buildEmptyItem()],
+      materialItems: [],
+      commentItems: [],
+    }));
+    setCommentDraft({ code: '', name: '', quantity: '', unit: '', memo: '' });
+  };
+
+  const removeItemRowById = (rowId?: string | null) => {
+    if (!rowId) return;
+    setForm((prev) => {
+      const nextItems =
+        prev.items.length > 1
+          ? prev.items.filter((item) => (item as OrderBundleItemWithRowId).rowId !== rowId)
+          : [buildEmptyItem()];
+      return { ...prev, items: nextItems };
+    });
+  };
+
+  const removeSelectedItemRow = () => removeItemRowById(selectedItemRowId);
+
+  useEffect(() => {
+    const rows = form.items;
+    if (rows.length === 0) {
+      setSelectedItemRowId(null);
+      return;
+    }
+    const exists = selectedItemRowId
+      ? rows.some((item) => (item as OrderBundleItemWithRowId).rowId === selectedItemRowId)
+      : false;
+    if (!exists) {
+      setSelectedItemRowId((rows[0] as OrderBundleItemWithRowId).rowId ?? null);
+    }
+  }, [form.items, selectedItemRowId]);
 
   if (!patientId) {
     return <p className="charts-side-panel__empty">患者IDが未選択のため {title} を開始できません。</p>;
@@ -1648,17 +1717,92 @@ export function OrderBundleEditPanel({
         <div className="charts-side-panel__subsection">
           <div className="charts-side-panel__subheader">
             <strong>薬剤/項目</strong>
-            <button
-              type="button"
-              className="charts-side-panel__ghost"
-              onClick={() => setForm((prev) => ({ ...prev, items: [...prev.items, buildEmptyItem()] }))}
-              disabled={isBlocked}
-            >
-              追加
-            </button>
+            <div className="charts-side-panel__subheader-actions">
+              <button
+                type="button"
+                className="charts-side-panel__ghost"
+                onClick={() => {
+                  const nextItem = buildEmptyItem();
+                  setForm((prev) => ({ ...prev, items: [...prev.items, nextItem] }));
+                  setSelectedItemRowId((nextItem as OrderBundleItemWithRowId).rowId ?? null);
+                }}
+                disabled={isBlocked}
+              >
+                追加
+              </button>
+              <button
+                type="button"
+                className="charts-side-panel__row-delete"
+                onClick={removeSelectedItemRow}
+                disabled={isBlocked || !selectedItemRowId}
+              >
+                選択行削除
+              </button>
+              <button
+                type="button"
+                className="charts-side-panel__ghost charts-side-panel__ghost--danger"
+                onClick={clearItemRows}
+                disabled={isBlocked}
+              >
+                全クリア
+              </button>
+            </div>
           </div>
           {form.items.map((item, index) => (
-            <div key={`${entity}-item-${index}`} className="charts-side-panel__item-row">
+            <div
+              key={(item as OrderBundleItemWithRowId).rowId ?? `${entity}-item-${index}`}
+              className={`charts-side-panel__item-row${
+                dragOverIndex === index ? ' charts-side-panel__item-row--drag-over' : ''
+              }${draggingIndex === index ? ' charts-side-panel__item-row--dragging' : ''}${
+                selectedItemRowId === (item as OrderBundleItemWithRowId).rowId
+                  ? ' charts-side-panel__item-row--selected'
+                  : ''
+              }`}
+              data-testid="order-bundle-item-row"
+              data-rowid={(item as OrderBundleItemWithRowId).rowId ?? ''}
+              onClick={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
+              onDragOver={(event) => {
+                if (isBlocked) return;
+                event.preventDefault();
+                setDragOverIndex(index);
+              }}
+              onDrop={(event) => {
+                if (isBlocked) return;
+                event.preventDefault();
+                const fromIndex = Number(event.dataTransfer.getData('text/plain'));
+                if (Number.isNaN(fromIndex) || fromIndex === index) {
+                  setDragOverIndex(null);
+                  setDraggingIndex(null);
+                  return;
+                }
+                setForm((prev) => ({
+                  ...prev,
+                  items: reorderItems(prev.items, fromIndex, index),
+                }));
+                setDragOverIndex(null);
+                setDraggingIndex(null);
+              }}
+            >
+              <button
+                type="button"
+                className="charts-side-panel__drag-handle"
+                aria-label={`行 ${index + 1} をドラッグして並べ替え`}
+                draggable={!isBlocked}
+                onDragStart={(event) => {
+                  if (isBlocked) return;
+                  event.dataTransfer.effectAllowed = 'move';
+                  event.dataTransfer.setData('text/plain', String(index));
+                  setDraggingIndex(index);
+                }}
+                onDragEnd={() => {
+                  setDragOverIndex(null);
+                  setDraggingIndex(null);
+                }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
+                disabled={isBlocked}
+              >
+                ≡
+              </button>
               <input
                 value={item.name}
                 onChange={(event) => {
@@ -1669,6 +1813,7 @@ export function OrderBundleEditPanel({
                     return { ...prev, items: next };
                   });
                 }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
                 placeholder="項目名"
                 disabled={isBlocked}
               />
@@ -1682,6 +1827,7 @@ export function OrderBundleEditPanel({
                     return { ...prev, items: next };
                   });
                 }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
                 placeholder={itemQuantityLabel}
                 disabled={isBlocked}
               />
@@ -1695,18 +1841,15 @@ export function OrderBundleEditPanel({
                     return { ...prev, items: next };
                   });
                 }}
+                onFocus={() => setSelectedItemRowId((item as OrderBundleItemWithRowId).rowId ?? null)}
                 placeholder="単位"
                 disabled={isBlocked}
               />
               <button
                 type="button"
                 className="charts-side-panel__icon"
-                onClick={() => {
-                  setForm((prev) => ({
-                    ...prev,
-                    items: prev.items.length > 1 ? prev.items.filter((_, idx) => idx !== index) : [buildEmptyItem()],
-                  }));
-                }}
+                aria-label={`行 ${index + 1} を削除`}
+                onClick={() => removeItemRowById((item as OrderBundleItemWithRowId).rowId)}
                 disabled={isBlocked}
               >
                 ✕
