@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - レビュー準備と合意形成</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .score-card {
+        padding: 16px;
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+      }
+      .score-card h2 {
+        font-size: 14px;
+        margin: 0 0 6px;
+        color: #2c3a40;
+      }
+      .score-card .score-total {
+        font-size: 28px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .score-card .score-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 8px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .hex-chart {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+      .hex-chart svg {
+        width: 200px;
+        height: 200px;
+      }
+      .metric-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 14px 0 6px;
+        color: #2c3a40;
+      }
+      .snapshot-summary {
+        margin-bottom: 8px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      a {
+        color: #1b6378;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - レビュー準備と合意形成</h1>
+        <p class="monitor-description">
+          タスク「webclient non chart gap audit plan 20251230 / レビュー準備と合意形成」の成果物を比較評価。
+          コミットログと差分を参照し、レビュー観点リストと追加検討項目の説明資料の充実度を採点。
+          主評価基準は緻密性。
+        </p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <h2>cursor cli / task-1767127361590-93beb3</h2>
+          <div class="score-total">🥈 合計 517 / 600</div>
+          <div class="score-meta">総合スコア: 88点（silver）</div>
+        </div>
+        <div class="score-card">
+          <h2>cursor cli / task-1767127361790-660281</h2>
+          <div class="score-total">🏆 合計 535 / 600</div>
+          <div class="score-meta">総合スコア: 91点（gold）</div>
+        </div>
+        <div class="score-card">
+          <h2>cursor cli / task-1767127362139-9f4842</h2>
+          <div class="score-total">🥉 合計 512 / 600</div>
+          <div class="score-meta">総合スコア: 85点（bronze）</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>cursor cli / task-1767127361590-93beb3</th>
+            <th>cursor cli / task-1767127361790-660281</th>
+            <th>cursor cli / task-1767127362139-9f4842</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-30 20:47 UTC</td>
+            <td>
+              <div class="hex-chart">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100.0,30.0 160.6,65.0 160.6,135.0 100.0,170.0 39.4,135.0 39.4,65.0" fill="none" stroke="#b8c9cd" stroke-width="2" />
+                  <polygon points="100.0,38.4 152.1,69.9 151.5,129.8 100.0,158.8 47.9,130.1 46.7,69.2" fill="#8bb7c4" fill-opacity="0.45" stroke="#1b6378" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性 88点</li>
+                  <li>目的/スコープ適合 86点</li>
+                  <li>参照整合 85点</li>
+                  <li>成果物充実度 84点</li>
+                  <li>運用観点 86点</li>
+                  <li>可読性 88点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>9カテゴリのレビュー観点と追加検討項目の要約があり、運用・監査・ORCAの確認観点が網羅的。
+成果物リストの明記はないが、合意形成ポイントが整理されている点を高評価。
+RUN_ID・期間・参照ドキュメントが揃い、レビュー資料の着地点が明確。</pre>
+              <div class="section-title">コミット/差分</div>
+              <pre>be9da18af Add review prep and alignment notes
+- src/planning/レビュー準備と合意形成.md (86 insertions)
+未コミット変更: なし</pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <pre><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767127361590-93beb3/src/planning/レビュー準備と合意形成.md">レビュー準備と合意形成.md</a></pre>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100.0,30.0 160.6,65.0 160.6,135.0 100.0,170.0 39.4,135.0 39.4,65.0" fill="none" stroke="#b8c9cd" stroke-width="2" />
+                  <polygon points="100.0,36.3 154.6,68.5 153.3,130.8 100.0,160.9 45.4,131.5 46.0,68.8" fill="#7fb2b0" fill-opacity="0.45" stroke="#1b6378" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性 91点</li>
+                  <li>目的/スコープ適合 90点</li>
+                  <li>参照整合 88点</li>
+                  <li>成果物充実度 87点</li>
+                  <li>運用観点 90点</li>
+                  <li>可読性 89点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>BKL番号まで踏み込んだ追加検討項目の説明があり、合意形成の判断材料が最も具体的。
+レビュー会の進め方提案まで含むため、運用視点と合意プロセスの明確さで優位。
+成果物明記はないが、背景/期待効果/リスクの整理が高水準。</pre>
+              <div class="section-title">コミット/差分</div>
+              <pre>4baed2afb レビュー準備と合意形成の整理
+- src/planning/レビュー準備と合意形成.md (86 insertions)
+未コミット変更: なし</pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <pre><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767127361790-660281/src/planning/レビュー準備と合意形成.md">レビュー準備と合意形成.md</a></pre>
+            </td>
+            <td>
+              <div class="hex-chart">
+                <svg viewBox="0 0 200 200" aria-label="六角形チャート">
+                  <polygon points="100.0,30.0 160.6,65.0 160.6,135.0 100.0,170.0 39.4,135.0 39.4,65.0" fill="none" stroke="#b8c9cd" stroke-width="2" />
+                  <polygon points="100.0,39.8 151.5,70.3 150.9,129.4 100.0,160.2 49.1,129.4 47.3,69.5" fill="#9cc2b6" fill-opacity="0.45" stroke="#1b6378" stroke-width="2" />
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性 86点</li>
+                  <li>目的/スコープ適合 85点</li>
+                  <li>参照整合 84点</li>
+                  <li>成果物充実度 86点</li>
+                  <li>運用観点 84点</li>
+                  <li>可読性 87点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価理由</div>
+              <pre>成果物リストの明記があり目的/スコープの整理は明快。
+追加検討項目は網羅的だが、BKL対応やレビュー進行の提案が省略され比較軸が弱い。
+必要情報は揃っており、合意形成に十分な基盤。</pre>
+              <div class="section-title">コミット/差分</div>
+              <pre>09bb09c63 docs: add review preparation and alignment checklist
+- src/planning/レビュー準備と合意形成.md (81 insertions)
+未コミット変更: なし</pre>
+              <div class="section-title">成果物リンク（別worktree）</div>
+              <pre><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767127362139-9f4842/src/planning/レビュー準備と合意形成.md">レビュー準備と合意形成.md</a></pre>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
