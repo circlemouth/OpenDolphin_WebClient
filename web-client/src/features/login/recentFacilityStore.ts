@@ -28,9 +28,12 @@ const uniqueFacilities = (values: string[]) => {
 export const loadRecentFacilities = (): string[] => {
   if (typeof localStorage === 'undefined') return [];
   const stored = parseStoredFacilities(localStorage.getItem(RECENT_FACILITIES_KEY));
-  const fallback = normalizeFacilityId(localStorage.getItem('devFacilityId'));
-  const combined = fallback ? [fallback, ...stored] : stored;
-  return uniqueFacilities(combined).slice(0, MAX_RECENT_FACILITIES);
+  return uniqueFacilities(stored).slice(0, MAX_RECENT_FACILITIES);
+};
+
+export const loadDevFacilityId = (): string | undefined => {
+  if (typeof localStorage === 'undefined') return undefined;
+  return normalizeFacilityId(localStorage.getItem('devFacilityId'));
 };
 
 export const addRecentFacility = (facilityId: string) => {
@@ -46,4 +49,3 @@ export const addRecentFacility = (facilityId: string) => {
   }
   return merged;
 };
-

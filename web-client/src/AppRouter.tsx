@@ -46,7 +46,7 @@ import {
   normalizeFacilityId,
   parseFacilityPath,
 } from './routes/facilityRoutes';
-import { FacilityLoginEntry } from './features/login/FacilityLoginEntry';
+import { FacilityLoginResolver } from './features/login/FacilityLoginResolver';
 import { addRecentFacility } from './features/login/recentFacilityStore';
 
 type Session = LoginResult;
@@ -195,7 +195,7 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
-          <Route path="login" element={<FacilityLoginEntry />} />
+          <Route path="login" element={<FacilityLoginResolver />} />
           {LEGACY_ROUTES.map((path) => (
             <Route key={path} path={path} element={<LegacyRootRedirect session={session} />} />
           ))}
