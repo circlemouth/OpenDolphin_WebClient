@@ -89,4 +89,19 @@ describe('OrderBundleEditPanel history copy', () => {
     expect(operation?.documentId).toBeUndefined();
     expect(operation?.moduleId).toBeUndefined();
   });
+
+  it('編集ガード中は履歴コピーが無効になる', async () => {
+    renderWithClient(
+      <OrderBundleEditPanel
+        {...baseProps}
+        meta={{ ...baseProps.meta, readOnly: true, readOnlyReason: '閲覧専用です' }}
+      />,
+    );
+
+    await screen.findByText('編集はブロックされています: 閲覧専用です');
+
+    const list = await screen.findByRole('list');
+    const copyButton = within(list).getByRole('button', { name: 'コピー' });
+    expect(copyButton).toBeDisabled();
+  });
 });
