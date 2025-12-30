@@ -379,7 +379,8 @@ export function OrderBundleEditPanel({
   });
   const isInjectionOrder = entity === 'injectionOrder';
   const isRadiologyOrder = entity === 'radiologyOrder';
-  const supportsBodyPartSearch = isRadiologyOrder || entity === 'generalOrder';
+  const isRehabOrder = entity === 'generalOrder';
+  const supportsBodyPartSearch = isRadiologyOrder || isRehabOrder;
   const supportsCommentCodes = BASE_EDITOR_ENTITIES.includes(entity);
   const supportsMaterials = ['generalOrder', 'treatmentOrder', 'testOrder', 'instractionChargeOrder'].includes(entity);
   const blockReasons = useMemo(() => {
@@ -1514,13 +1515,18 @@ export function OrderBundleEditPanel({
               placeholder="コメントを入力"
               disabled={isBlocked}
             />
+            {isRehabOrder && (
+              <p className="charts-side-panel__message">
+                メモは自由記述の補足欄です。指示・コメントをコードで管理する場合は「コメントコード」に入力してください。
+              </p>
+            )}
           </div>
         )}
 
         {supportsBodyPartSearch && (
           <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
             <div className="charts-side-panel__subheader">
-              <strong>{isRadiologyOrder ? '部位' : 'リハビリ部位'}</strong>
+              <strong>{isRadiologyOrder ? '部位' : '部位（リハビリ）'}</strong>
               {isRadiologyOrder && (
                 <span
                   className={`charts-side-panel__status ${
@@ -1549,7 +1555,7 @@ export function OrderBundleEditPanel({
                       },
                     }))
                   }
-                  placeholder="例: 胸部"
+                  placeholder={isRadiologyOrder ? '例: 胸部' : '例: 膝関節'}
                   disabled={isBlocked}
                 />
               </div>
@@ -1559,7 +1565,7 @@ export function OrderBundleEditPanel({
                   id={`${entity}-bodypart-keyword`}
                   value={bodyPartKeyword}
                   onChange={(event) => setBodyPartKeyword(event.target.value)}
-                  placeholder="例: 胸"
+                  placeholder={isRadiologyOrder ? '例: 胸' : '例: 膝'}
                   disabled={isBlocked}
                 />
               </div>

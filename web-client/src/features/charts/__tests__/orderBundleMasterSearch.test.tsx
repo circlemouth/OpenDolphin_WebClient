@@ -168,6 +168,61 @@ describe('OrderBundleEditPanel master search UI', () => {
     expect(fetchOrderBundles).toHaveBeenCalled();
   });
 
+  it('リハビリ部位検索で選択した部位が反映される', async () => {
+    localStorage.setItem('devFacilityId', 'facility');
+    localStorage.setItem('devUserId', 'doctor');
+    const searchMock = vi.mocked(fetchOrderMasterSearch);
+    searchMock.mockImplementation(async ({ type }) => {
+      if (type === 'bodypart') {
+        return {
+          ok: true,
+          items: [
+            {
+              type: 'bodypart',
+              code: '002001',
+              name: '膝関節',
+            },
+          ],
+          totalCount: 1,
+        };
+      }
+      return { ok: true, items: [], totalCount: 0 };
+    });
+
+    const user = userEvent.setup();
+    renderWithClient(
+      <OrderBundleEditPanel
+        {...baseProps}
+        entity="generalOrder"
+        title="オーダー編集"
+        bundleLabel="オーダー名"
+        itemQuantityLabel="数量"
+      />,
+    );
+
+    const keywordInput = screen.getByLabelText('部位検索', {
+      selector: 'input[id$="-bodypart-keyword"]',
+    });
+    await user.type(keywordInput, '膝');
+
+    const searchButton = screen.getByRole('button', { name: '部位検索' });
+    await user.click(searchButton);
+
+    await waitFor(() =>
+      expect(searchMock).toHaveBeenCalledWith(expect.objectContaining({ type: 'bodypart', keyword: '膝' })),
+    );
+    await waitFor(() => expect(screen.getByText('膝関節')).toBeInTheDocument());
+
+    const rowButton = screen.getByText('膝関節').closest('button');
+    expect(rowButton).not.toBeNull();
+    await user.click(rowButton!);
+
+    const bodyPartInput = screen.getByLabelText('部位', {
+      selector: 'input[id$="-bodypart"]',
+    }) as HTMLInputElement;
+    expect(bodyPartInput.value).toBe('膝関節');
+  });
+
   it('readOnly の場合は放射線の部位/コメント入力が無効化される', async () => {
     localStorage.setItem('devFacilityId', 'facility');
     localStorage.setItem('devUserId', 'doctor');
