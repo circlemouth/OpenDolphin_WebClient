@@ -44,6 +44,19 @@ describe('FacilityLoginResolver', () => {
     });
   });
 
+  it('from state を forwardState として維持する', async () => {
+    const fromState = { pathname: '/f/XYZ-02/charts', search: '?mode=print' };
+    localStorage.setItem('opendolphin:web-client:recentFacilities', JSON.stringify(['0001', '0002']));
+    const router = buildRouter({ pathname: '/login', state: { from: fromState } });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/f/XYZ-02/login');
+    });
+    expect(router.state.location.state).toEqual({ from: fromState });
+  });
+
   it('recentFacilities が複数なら施設選択を表示する', async () => {
     localStorage.setItem('opendolphin:web-client:recentFacilities', JSON.stringify(['0001', '0002']));
     const router = buildRouter();
