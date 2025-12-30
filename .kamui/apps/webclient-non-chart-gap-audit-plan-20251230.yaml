@@ -184,8 +184,8 @@ src:
       agent: codex
       api: []
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2025-12-30T00:00:00.000Z
         days: 1
@@ -236,8 +236,8 @@ src:
       agent: gemini cli
       api: []
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2025-12-31T00:00:00.000Z
         days: 2
@@ -261,8 +261,8 @@ src:
       agent: cursor cli
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-01T00:00:00.000Z
         days: 1
@@ -281,8 +281,8 @@ src:
       agent: codex
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-01T00:00:00.000Z
         days: 1
@@ -308,8 +308,8 @@ src:
       agent: claude code
       api: []
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-02T00:00:00.000Z
         days: 1
@@ -328,8 +328,8 @@ src:
       agent: codex
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-02T00:00:00.000Z
         days: 1
@@ -349,8 +349,8 @@ src:
       agent: gemini cli
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-03T00:00:00.000Z
         days: 1
@@ -369,8 +369,8 @@ src:
       agent: cursor cli
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-03T00:00:00.000Z
         days: 1
@@ -392,8 +392,8 @@ src:
       agent: claude code
       api: []
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-03T00:00:00.000Z
         days: 1
