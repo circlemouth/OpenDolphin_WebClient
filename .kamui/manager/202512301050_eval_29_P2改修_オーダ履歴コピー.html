@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート: 29 P2 改修 オーダ履歴コピー</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .summary-title {
+        font-weight: 700;
+        margin-bottom: 6px;
+      }
+      .summary-score {
+        font-size: 28px;
+        font-weight: 700;
+      }
+      .summary-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.task-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-block {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .score-list {
+        font-size: 12px;
+        color: #1f2a30;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .score-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      .notes {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .hex-bg {
+        fill: none;
+        stroke: #b8c9cd;
+        stroke-width: 1;
+      }
+      .hex-data {
+        fill: rgba(64, 126, 152, 0.35);
+        stroke: #407e98;
+        stroke-width: 1.5;
+      }
+      .hex-axis {
+        stroke: #c4d3d7;
+        stroke-width: 1;
+      }
+      .link-list {
+        font-size: 12px;
+        margin: 0;
+        padding: 0;
+        list-style: none;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 29 P2 改修 オーダ履歴コピー</h1>
+        <p class="monitor-description">
+          対象ブランチのコミットと差分を比較し、オーダ履歴コピー導線の実装緻密性を評価。
+          RUN_ID: 20251230T014917Z
+        </p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-title">task-1767058697492-6a9d70</div>
+          <div class="summary-score">390 / 600 🥉</div>
+          <div class="summary-sub">総合スコア 65 / 100</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-title">task-1767058697692-96bf8c</div>
+          <div class="summary-score">510 / 600 🏆</div>
+          <div class="summary-sub">総合スコア 85 / 100</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-title">task-1767058697892-f87d36</div>
+          <div class="summary-score">438 / 600 🥈</div>
+          <div class="summary-sub">総合スコア 73 / 100</div>
+        </div>
+      </section>
+
+      <section class="monitor-header">
+        <div class="section-title">タスク概要</div>
+        <p class="monitor-description">
+          Charts のオーダ履歴一覧から行をコピーし、OrderBundleEditPanel の編集フォームへ反映する導線を追加。
+          readOnly / missingMaster / fallbackUsed のガード維持、履歴コピー後の新規保存に切り替わる挙動、監査ログの記録可否を比較。
+        </p>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="task-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>比較</th>
+            <th>Agent task-1767058697492-6a9d70</th>
+            <th>Agent task-1767058697692-96bf8c</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="agent-meta">一次評価</td>
+            <td>
+              <div class="score-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" aria-label="Hex chart">
+                  <polygon class="hex-bg" points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35"></polygon>
+                  <line class="hex-axis" x1="60" y1="60" x2="60" y2="10"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="103.3" y2="35"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="103.3" y2="85"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="60" y2="110"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="16.7" y2="85"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="16.7" y2="35"></line>
+                  <polygon class="hex-data" points="60.0,20.0 96.8,38.8 92.5,78.8 60.0,65.0 25.4,80.0 34.0,45.0"></polygon>
+                </svg>
+                <ul class="score-list">
+                  <li>要件適合 80点</li>
+                  <li>ガード/監査 85点</li>
+                  <li>UI/UX 75点</li>
+                  <li>テスト 10点</li>
+                  <li>可読性 80点</li>
+                  <li>リスク管理 60点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価コメント</div>
+              <ul class="notes">
+                <li>履歴コピーで documentId / moduleId を外し、startDate を当日に更新するため新規作成へ切替。</li>
+                <li>ガード中のコピーを isBlocked で遮断し、監査ログへ blockedReasons を記録。</li>
+                <li>テストが未追加で、コピー後に新規保存へ切り替わる挙動の確認が不足。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767058697492-6a9d70/web-client/src/features/charts/OrderBundleEditPanel.tsx</code></li>
+              </ul>
+              <div class="section-title">コミット概要</div>
+              <pre>08fa1585b Add order history copy to order bundle editor
+- 1 file changed, 77 insertions</pre>
+            </td>
+            <td>
+              <div class="score-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" aria-label="Hex chart">
+                  <polygon class="hex-bg" points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35"></polygon>
+                  <line class="hex-axis" x1="60" y1="60" x2="60" y2="10"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="103.3" y2="35"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="103.3" y2="85"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="60" y2="110"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="16.7" y2="85"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="16.7" y2="35"></line>
+                  <polygon class="hex-data" points="60.0,15.0 99.0,37.5 94.6,80.0 60.0,102.5 23.2,81.3 25.4,40.0"></polygon>
+                </svg>
+                <ul class="score-list">
+                  <li>要件適合 90点</li>
+                  <li>ガード/監査 90点</li>
+                  <li>UI/UX 80点</li>
+                  <li>テスト 85点</li>
+                  <li>可読性 85点</li>
+                  <li>リスク管理 80点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価コメント</div>
+              <ul class="notes">
+                <li>コピー時に documentId / moduleId を外し、当日 startDate に更新して新規作成へ遷移。</li>
+                <li>ガード中はコピー不可、監査ログに blockedReasons を記録し通知も明示。</li>
+                <li>履歴コピー後に create で保存されることをテストで検証済み。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767058697692-96bf8c/web-client/src/features/charts/OrderBundleEditPanel.tsx</code></li>
+                <li><code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767058697692-96bf8c/web-client/src/features/charts/__tests__/orderBundleHistoryCopy.test.tsx</code></li>
+              </ul>
+              <div class="section-title">コミット概要</div>
+              <pre>4c52361a Add history copy action for order bundles
+- 2 files changed, 166 insertions</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="agent-meta">追加比較</td>
+            <td>
+              <div class="score-block">
+                <svg width="120" height="120" viewBox="0 0 120 120" aria-label="Hex chart">
+                  <polygon class="hex-bg" points="60,10 103.3,35 103.3,85 60,110 16.7,85 16.7,35"></polygon>
+                  <line class="hex-axis" x1="60" y1="60" x2="60" y2="10"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="103.3" y2="35"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="103.3" y2="85"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="60" y2="110"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="16.7" y2="85"></line>
+                  <line class="hex-axis" x1="60" y1="60" x2="16.7" y2="35"></line>
+                  <polygon class="hex-data" points="60.0,22.5 86.0,45.0 93.8,79.5 60.0,100.0 25.4,80.0 31.9,43.8"></polygon>
+                </svg>
+                <ul class="score-list">
+                  <li>要件適合 75点</li>
+                  <li>ガード/監査 60点</li>
+                  <li>UI/UX 78点</li>
+                  <li>テスト 80点</li>
+                  <li>可読性 80点</li>
+                  <li>リスク管理 65点</li>
+                </ul>
+              </div>
+              <div class="section-title">評価コメント</div>
+              <ul class="notes">
+                <li>履歴コピーで更新モード解除とフォーム反映のテストあり。</li>
+                <li>isBlocked 時の動作はボタン disabled のみで、ブロック通知や監査ログが不足。</li>
+                <li>コピー操作の action 名や通知文言が他案と異なり、運用ログの統一性が低下。</li>
+              </ul>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767058697892-f87d36/web-client/src/features/charts/OrderBundleEditPanel.tsx</code></li>
+                <li><code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767058697892-f87d36/web-client/src/features/charts/__tests__/orderBundleHistoryCopy.test.tsx</code></li>
+              </ul>
+              <div class="section-title">コミット概要</div>
+              <pre>711db77f Add order history copy action in order bundle panel
+- 2 files changed, 157 insertions</pre>
+            </td>
+            <td>
+              <div class="section-title">比較メモ</div>
+              <p class="notes">
+                task-1767058697692-96bf8c はガード時の audit 記録とコピー後の create 保存を明示的に検証しており、
+                緻密性評価では最上位。task-1767058697892-f87d36 は UI/テストはあるが、
+                ガード時のログ欠落が運用監査の抜けとして評価を下げた。
+              </p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
