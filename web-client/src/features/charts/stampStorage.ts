@@ -23,15 +23,33 @@ export type LocalStampEntry = {
   bundle: LocalStampBundle;
 };
 
+export type StampClipboardEntry = {
+  savedAt: string;
+  source: 'local' | 'server';
+  name: string;
+  category: string;
+  target: string;
+  entity: string;
+  bundle: LocalStampBundle;
+};
+
 const STORAGE_PREFIX = 'web-client:order-stamps';
+const CLIPBOARD_PREFIX = `${STORAGE_PREFIX}:clipboard`;
 
 const buildStorageKey = (userName: string) => `${STORAGE_PREFIX}:${userName}`;
+const buildClipboardKey = (userName: string) => `${CLIPBOARD_PREFIX}:${userName}`;
 
 const generateLocalStampId = () => {
   if (globalThis.crypto?.randomUUID) {
     return globalThis.crypto.randomUUID();
   }
   return `local-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+};
+
+const resolveClipboardStorage = () => {
+  if (typeof sessionStorage !== 'undefined') return sessionStorage;
+  if (typeof localStorage !== 'undefined') return localStorage;
+  return null;
 };
 
 export function loadLocalStamps(userName: string): LocalStampEntry[] {
@@ -61,4 +79,34 @@ export function saveLocalStamp(
   const updated = [next, ...existing].slice(0, 200);
   localStorage.setItem(key, JSON.stringify(updated));
   return next;
+}
+
+export function loadStampClipboard(userName: string): StampClipboardEntry | null {
+  const storage = resolveClipboardStorage();
+  if (!storage) return null;
+  const raw = storage.getItem(buildClipboardKey(userName));
+  if (!raw) return null;
+  try {
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== 'object') return null;
+    return parsed as StampClipboardEntry;
+  } catch {
+    return null;
+  }
+}
+
+export function saveStampClipboard(userName: string, entry: StampClipboardEntry): StampClipboardEntry {
+  const storage = resolveClipboardStorage();
+  if (!storage) {
+    return { ...entry, savedAt: entry.savedAt || new Date().toISOString() };
+  }
+  const next = { ...entry, savedAt: entry.savedAt || new Date().toISOString() };
+  storage.setItem(buildClipboardKey(userName), JSON.stringify(next));
+  return next;
+}
+
+export function clearStampClipboard(userName: string): void {
+  const storage = resolveClipboardStorage();
+  if (!storage) return;
+  storage.removeItem(buildClipboardKey(userName));
 }

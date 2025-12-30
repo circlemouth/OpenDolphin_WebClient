@@ -109,6 +109,8 @@ describe('OrderBundleEditPanel stamp flow', () => {
     expect(screen.getByLabelText('対象')).toBeDisabled();
     expect(screen.getByRole('button', { name: 'スタンプ保存' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'スタンプ取り込み' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'スタンプコピー' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'スタンプペースト' })).toBeDisabled();
   });
 
   it('スタンプ取り込みでフォームに反映される', async () => {
@@ -119,6 +121,23 @@ describe('OrderBundleEditPanel stamp flow', () => {
     const select = screen.getByLabelText('既存スタンプ');
     await user.selectOptions(select, 'server::STAMP-1');
     await user.click(screen.getByRole('button', { name: 'スタンプ取り込み' }));
+
+    const bundleNameInput = screen.getByLabelText('RP名') as HTMLInputElement;
+    await waitFor(() => expect(bundleNameInput.value).toBe('降圧セット'));
+  });
+
+  it('スタンプコピー/ペーストでフォームに反映される', async () => {
+    const user = userEvent.setup();
+    renderWithClient(<OrderBundleEditPanel {...baseProps} />);
+
+    await screen.findByRole('option', { name: /降圧セット/ });
+    const select = screen.getByLabelText('既存スタンプ');
+    await user.selectOptions(select, 'server::STAMP-1');
+    await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
+
+    await waitFor(() => expect(screen.getByText('スタンプをコピーしました。')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'スタンプペースト' }));
 
     const bundleNameInput = screen.getByLabelText('RP名') as HTMLInputElement;
     await waitFor(() => expect(bundleNameInput.value).toBe('降圧セット'));

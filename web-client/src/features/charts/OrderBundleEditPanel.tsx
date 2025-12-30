@@ -11,7 +11,14 @@ import {
   type OrderMasterSearchType,
 } from './orderMasterSearchApi';
 import { fetchStampDetail, fetchStampTree, fetchUserProfile, type StampBundleJson, type StampTreeEntry } from './stampApi';
-import { loadLocalStamps, saveLocalStamp, type LocalStampEntry } from './stampStorage';
+import {
+  loadLocalStamps,
+  loadStampClipboard,
+  saveLocalStamp,
+  saveStampClipboard,
+  type LocalStampEntry,
+  type StampClipboardEntry,
+} from './stampStorage';
 import type { DataSourceTransition } from './authService';
 
 export type OrderBundleEditPanelMeta = {
@@ -308,6 +315,49 @@ const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => {
   };
 };
 
+const toClipboardEntryFromLocalStamp = (stamp: LocalStampEntry): StampClipboardEntry => ({
+  savedAt: new Date().toISOString(),
+  source: 'local',
+  name: stamp.name,
+  category: stamp.category,
+  target: stamp.target,
+  entity: stamp.entity,
+  bundle: stamp.bundle,
+});
+
+const toClipboardEntryFromStamp = (
+  stamp: StampBundleJson,
+  today: string,
+  meta: { name?: string; category?: string; target: string; entity: string },
+): StampClipboardEntry => ({
+  savedAt: new Date().toISOString(),
+  source: 'server',
+  name: meta.name ?? stamp.orderName ?? stamp.className ?? '',
+  category: meta.category ?? '',
+  target: meta.target,
+  entity: meta.entity,
+  bundle: {
+    bundleName: stamp.orderName ?? stamp.className ?? '',
+    admin: stamp.admin ?? '',
+    bundleNumber: stamp.bundleNumber ?? '1',
+    classCode: stamp.classCode,
+    classCodeSystem: stamp.classCodeSystem,
+    className: stamp.className,
+    adminMemo: stamp.adminMemo ?? '',
+    memo: stamp.memo ?? '',
+    startDate: today,
+    items:
+      stamp.claimItem && stamp.claimItem.length > 0
+        ? stamp.claimItem.map((item) => ({
+            name: item.name ?? '',
+            quantity: item.number ?? '',
+            unit: item.unit ?? '',
+            memo: item.memo ?? '',
+          }))
+        : [],
+  },
+});
+
 const formatBundleName = (bundle: OrderBundle) => bundle.bundleName ?? '名称未設定';
 const formatMasterLabel = (item: OrderMasterSearchItem) => (item.code ? `${item.code} ${item.name}` : item.name);
 const formatUsageLabel = (item: OrderMasterSearchItem) => formatMasterLabel(item);
@@ -444,6 +494,7 @@ export function OrderBundleEditPanel({
   const [stampForm, setStampForm] = useState<StampFormState>({ name: '', category: '', target: entity });
   const [selectedStamp, setSelectedStamp] = useState<string>('');
   const [localStamps, setLocalStamps] = useState<LocalStampEntry[]>([]);
+  const [stampClipboard, setStampClipboard] = useState<StampClipboardEntry | null>(null);
   const [masterKeyword, setMasterKeyword] = useState('');
   const [masterSearchType, setMasterSearchType] = useState<OrderMasterSearchType>('generic-class');
   const [usageKeyword, setUsageKeyword] = useState('');
@@ -511,6 +562,14 @@ export function OrderBundleEditPanel({
   useEffect(() => {
     if (!userName) return;
     setLocalStamps(loadLocalStamps(userName));
+  }, [userName]);
+
+  useEffect(() => {
+    if (!userName) {
+      setStampClipboard(null);
+      return;
+    }
+    setStampClipboard(loadStampClipboard(userName));
   }, [userName]);
 
   useEffect(() => {
@@ -1126,6 +1185,103 @@ export function OrderBundleEditPanel({
     },
   });
 
+  const stampCopyMutation = useMutation({
+    mutationFn: async (stampId: string) => fetchStampDetail(stampId),
+    onSuccess: (result, stampId) => {
+      if (!result.ok || !result.stamp) {
+        setStampNotice({ tone: 'error', message: result.message ?? 'スタンプのコピーに失敗しました。' });
+        logAuditEvent({
+          runId: meta.runId,
+          cacheHit: meta.cacheHit,
+          missingMaster: meta.missingMaster,
+          fallbackUsed: meta.fallbackUsed,
+          dataSourceTransition: meta.dataSourceTransition,
+          payload: {
+            action: 'CHARTS_STAMP_COPY',
+            outcome: 'error',
+            subject: 'charts',
+            details: {
+              ...auditMetaDetails,
+              runId: result.runId ?? meta.runId,
+              operationPhase: 'copy',
+              entity,
+              patientId,
+              stampId,
+              stampSource: 'server',
+              error: result.message ?? 'stamp_copy_failed',
+            },
+          },
+        });
+        return;
+      }
+      if (!userName) {
+        setStampNotice({ tone: 'error', message: 'ログイン情報が取得できないためコピーできません。' });
+        return;
+      }
+      const stampMeta = stampTreeEntries.find((entry) => entry.stampId === stampId);
+      const entry = saveStampClipboard(
+        userName,
+        toClipboardEntryFromStamp(result.stamp, today, {
+          name: stampMeta?.name,
+          category: stampMeta?.treeName ?? '',
+          target: entity,
+          entity,
+        }),
+      );
+      setStampClipboard(entry);
+      setStampNotice({ tone: 'success', message: 'スタンプをコピーしました。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_COPY',
+          outcome: 'success',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: result.runId ?? meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            stampId,
+            stampSource: 'server',
+            bundleName: entry.bundle.bundleName,
+            itemCount: countItems(entry.bundle.items),
+          },
+        },
+      });
+    },
+    onError: (error: unknown, stampId: string) => {
+      const message = error instanceof Error ? error.message : String(error);
+      setStampNotice({ tone: 'error', message: `スタンプのコピーに失敗しました: ${message}` });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_COPY',
+          outcome: 'error',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            stampId,
+            stampSource: 'server',
+            error: message,
+          },
+        },
+      });
+    },
+  });
+
   const saveStamp = () => {
     if (isBlocked) {
       setStampNotice({ tone: 'error', message: '編集ガード中のためスタンプ保存はできません。' });
@@ -1287,6 +1443,185 @@ export function OrderBundleEditPanel({
       return;
     }
     stampImportMutation.mutate(selection.id);
+  };
+
+  const copyStamp = () => {
+    if (isBlocked) {
+      setStampNotice({ tone: 'error', message: '編集ガード中のためスタンプコピーはできません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_COPY',
+          outcome: 'blocked',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            blockedReasons: blockReasons,
+          },
+        },
+      });
+      return;
+    }
+    if (!userName) {
+      setStampNotice({ tone: 'error', message: 'ログイン情報が取得できないためスタンプコピーができません。' });
+      return;
+    }
+    const selection = parseStampSelection(selectedStamp);
+    if (!selection) {
+      setStampNotice({ tone: 'error', message: 'コピーするスタンプを選択してください。' });
+      return;
+    }
+    if (selection.source === 'local') {
+      const local = localStamps.find((stamp) => stamp.id === selection.id);
+      if (!local) {
+        setStampNotice({ tone: 'error', message: 'ローカルスタンプが見つかりません。' });
+        return;
+      }
+      const entry = saveStampClipboard(userName, toClipboardEntryFromLocalStamp(local));
+      setStampClipboard(entry);
+      setStampNotice({ tone: 'success', message: 'スタンプをコピーしました。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_COPY',
+          outcome: 'success',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            stampId: selection.id,
+            stampSource: 'local',
+            bundleName: entry.bundle.bundleName,
+            itemCount: countItems(entry.bundle.items),
+          },
+        },
+      });
+      return;
+    }
+    stampCopyMutation.mutate(selection.id);
+  };
+
+  const pasteStamp = () => {
+    if (isBlocked) {
+      setStampNotice({ tone: 'error', message: '編集ガード中のためスタンプペーストはできません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_PASTE',
+          outcome: 'blocked',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'paste',
+            entity,
+            patientId,
+            blockedReasons: blockReasons,
+          },
+        },
+      });
+      return;
+    }
+    if (!userName) {
+      setStampNotice({ tone: 'error', message: 'ログイン情報が取得できないためスタンプペーストができません。' });
+      return;
+    }
+    const entry = stampClipboard ?? loadStampClipboard(userName);
+    if (!entry) {
+      setStampNotice({ tone: 'error', message: 'コピー済みのスタンプがありません。' });
+      return;
+    }
+    if (!stampClipboard) {
+      setStampClipboard(entry);
+    }
+    if (entry.entity && entry.entity !== entity) {
+      setStampNotice({ tone: 'error', message: 'スタンプ対象が一致しないためペーストできません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_STAMP_PASTE',
+          outcome: 'blocked',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'paste',
+            entity,
+            patientId,
+            stampSource: entry.source,
+            blockedReasons: ['entity_mismatch'],
+          },
+        },
+      });
+      return;
+    }
+    const localEntry: LocalStampEntry = {
+      id: 'clipboard',
+      savedAt: entry.savedAt,
+      name: entry.name,
+      category: entry.category,
+      target: entry.target || entity,
+      entity: entry.entity || entity,
+      bundle: entry.bundle,
+    };
+    const nextForm = toFormStateFromLocalStamp(localEntry);
+    setForm((prev) => ({
+      ...nextForm,
+      documentId: prev.documentId,
+      moduleId: prev.moduleId,
+    }));
+    setStampForm((prev) => ({
+      ...prev,
+      name: entry.name || prev.name,
+      category: entry.category || prev.category,
+      target: entry.target || prev.target,
+    }));
+    setStampNotice({ tone: 'success', message: 'スタンプをペーストしました。内容を確認して反映してください。' });
+    logAuditEvent({
+      runId: meta.runId,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      payload: {
+        action: 'CHARTS_STAMP_PASTE',
+        outcome: 'success',
+        subject: 'charts',
+        details: {
+          ...auditMetaDetails,
+          runId: meta.runId,
+          operationPhase: 'paste',
+          entity,
+          patientId,
+          stampSource: entry.source,
+          bundleName: nextForm.bundleName,
+          itemCount: countItems(nextForm.items),
+        },
+      },
+    });
   };
 
   const reorderItems = (items: OrderBundleItem[], fromIndex: number, toIndex: number) => {
@@ -1473,6 +1808,25 @@ export function OrderBundleEditPanel({
             スタンプ取り込み
           </button>
         </div>
+        <div className="charts-side-panel__actions">
+          <button
+            type="button"
+            onClick={copyStamp}
+            disabled={stampCopyMutation.isPending || isBlocked}
+          >
+            スタンプコピー
+          </button>
+          <button type="button" onClick={pasteStamp} disabled={isBlocked}>
+            スタンプペースト
+          </button>
+        </div>
+        {stampClipboard && (
+          <p className="charts-side-panel__help">
+            コピー済み: {stampClipboard.name || '名称未設定'}
+            {stampClipboard.category ? ` / ${stampClipboard.category}` : ''}
+            {stampClipboard.source === 'server' ? '（サーバー）' : '（ローカル）'}
+          </p>
+        )}
         <p className="charts-side-panel__message">
           取り込み後は内容を確認し、必要に応じて編集してから「展開する」「展開継続する」または「保存して追加」で反映してください。
         </p>
