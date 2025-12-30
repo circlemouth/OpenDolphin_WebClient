@@ -225,7 +225,7 @@ const buildEmptyForm = (today: string, entity: string): BundleFormState => ({
   bodyPart: null,
 });
 
-const toFormState = (bundle: OrderBundle, today: string): BundleFormState => {
+export const toFormState = (bundle: OrderBundle, today: string): BundleFormState => {
   const { normal, material, comment, bodyPart } = splitBundleItems(bundle.items);
   const prescription = parsePrescriptionClassCode(bundle.classCode);
   return {
@@ -307,7 +307,7 @@ const matchesUsagePattern = (code: string | undefined, pattern: string) => {
   }
 };
 
-const resolvePrescriptionClassCode = (timing: PrescriptionTiming, location: PrescriptionLocation) =>
+export const resolvePrescriptionClassCode = (timing: PrescriptionTiming, location: PrescriptionLocation) =>
   PRESCRIPTION_CLASS_CODES[timing][location];
 
 const resolvePrescriptionLabel = (timing: PrescriptionTiming, location: PrescriptionLocation) =>
@@ -316,7 +316,7 @@ const resolvePrescriptionLabel = (timing: PrescriptionTiming, location: Prescrip
 const resolvePrescriptionClassName = (classCode: string | undefined) =>
   classCode ? PRESCRIPTION_CLASS_NAMES[classCode] : undefined;
 
-const parsePrescriptionClassCode = (classCode?: string | null) => {
+export const parsePrescriptionClassCode = (classCode?: string | null) => {
   if (!classCode) {
     return {
       location: DEFAULT_PRESCRIPTION_LOCATION,
@@ -334,15 +334,23 @@ const parsePrescriptionClassCode = (classCode?: string | null) => {
   return { location, timing };
 };
 
-const resolveDefaultBundleName = (
-  form: BundleFormState,
-  entity: string,
-  bundleLabel: string,
-) => {
-  if (entity !== 'medOrder') return '';
-  const candidate = collectBundleItems(form).find((item) => item.name.trim())?.name.trim();
+type MedOrderBundleNameInput = {
+  bundleName: string;
+  items: OrderBundleItem[];
+  prescriptionTiming: PrescriptionTiming;
+  prescriptionLocation: PrescriptionLocation;
+};
+
+export const resolveMedOrderBundleName = ({
+  bundleName,
+  items,
+  prescriptionTiming,
+  prescriptionLocation,
+}: MedOrderBundleNameInput) => {
+  if (bundleName.trim()) return bundleName;
+  const candidate = items.find((item) => item.name.trim())?.name.trim();
   if (candidate) return candidate;
-  return resolvePrescriptionLabel(form.prescriptionTiming, form.prescriptionLocation) || bundleLabel;
+  return resolvePrescriptionLabel(prescriptionTiming, prescriptionLocation);
 };
 
 export const validateBundleForm = ({
@@ -701,15 +709,30 @@ export function OrderBundleEditPanel({
   };
 
   const applyBundleNameCorrection = (bundleForm: BundleFormState) => {
-    if (!isMedOrder || bundleForm.bundleName.trim()) return bundleForm;
-    const corrected = resolveDefaultBundleName(bundleForm, entity, bundleLabel);
-    if (!corrected.trim()) return bundleForm;
+    if (entity !== 'medOrder' || bundleForm.bundleName.trim()) return bundleForm;
+    const corrected = resolveMedOrderBundleName({
+      bundleName: bundleForm.bundleName,
+      items: bundleForm.items,
+      prescriptionTiming: bundleForm.prescriptionTiming,
+      prescriptionLocation: bundleForm.prescriptionLocation,
+    });
+    if (!corrected.trim() || corrected === bundleForm.bundleName) return bundleForm;
     return { ...bundleForm, bundleName: corrected };
   };
 
   const isNoProcedureCharge = isInjectionOrder && form.memo === NO_PROCEDURE_CHARGE_TEXT;
   const bundleNumberLabel = isMedOrder ? '日数/回数' : '回数';
   const bundleNumberPlaceholder = isMedOrder ? '例: 7' : '1';
+  const isPrescriptionLocationLocked = isMedOrder && form.prescriptionTiming !== 'regular';
+  const canEditBundleNumber = !isMedOrder || form.admin.trim().length > 0;
+  const bundleNumberDisabled = isBlocked || !canEditBundleNumber;
+  const bundleNumberHelp = isMedOrder
+    ? form.admin.trim()
+      ? form.prescriptionTiming === 'regular'
+        ? '通常処方は日数として扱われます。'
+        : '頓用/臨時は回数として扱われます。'
+      : '用法入力後に日数/回数を入力できます。'
+    : '';
 
   const mutation = useMutation({
     mutationFn: async (payload: OrderBundleSubmitPayload) => {
@@ -1105,23 +1128,27 @@ export function OrderBundleEditPanel({
       setStampNotice({ tone: 'error', message: '対象を選択してください。' });
       return;
     }
-    const classMeta = resolveBundleClassMeta(form);
+    const normalizedForm = applyBundleNameCorrection(form);
+    if (normalizedForm !== form) {
+      setForm(normalizedForm);
+    }
+    const classMeta = resolveBundleClassMeta(normalizedForm);
     const entry = saveLocalStamp(userName, {
       name: stampForm.name.trim(),
       category: stampForm.category.trim(),
       target: stampForm.target,
       entity,
       bundle: {
-        bundleName: form.bundleName,
-        admin: form.admin,
-        bundleNumber: form.bundleNumber,
+        bundleName: normalizedForm.bundleName,
+        admin: normalizedForm.admin,
+        bundleNumber: normalizedForm.bundleNumber,
         classCode: classMeta.classCode,
         classCodeSystem: classMeta.classCodeSystem,
         className: classMeta.className,
-        adminMemo: form.adminMemo,
-        memo: form.memo,
-        startDate: form.startDate,
-        items: collectBundleItems(form).filter((item) => item.name.trim().length > 0),
+        adminMemo: normalizedForm.adminMemo,
+        memo: normalizedForm.memo,
+        startDate: normalizedForm.startDate,
+        items: collectBundleItems(normalizedForm).filter((item) => item.name.trim().length > 0),
       },
     });
     setLocalStamps(loadLocalStamps(userName));
@@ -1147,8 +1174,8 @@ export function OrderBundleEditPanel({
           stampCategory: stampForm.category.trim(),
           stampTarget: stampForm.target,
           stampSource: 'local',
-          bundleName: form.bundleName,
-          itemCount: countItems(collectBundleItems(form)),
+          bundleName: normalizedForm.bundleName,
+          itemCount: countItems(collectBundleItems(normalizedForm)),
         },
       },
     });
@@ -1403,7 +1430,7 @@ export function OrderBundleEditPanel({
                         prescriptionLocation: 'in',
                       }))
                     }
-                    disabled={isBlocked}
+                    disabled={isBlocked || isPrescriptionLocationLocked}
                   />
                   院内
                 </label>
@@ -1419,11 +1446,14 @@ export function OrderBundleEditPanel({
                         prescriptionLocation: 'out',
                       }))
                     }
-                    disabled={isBlocked}
+                    disabled={isBlocked || isPrescriptionLocationLocked}
                   />
                   院外
                 </label>
               </div>
+              {isPrescriptionLocationLocked && (
+                <p className="charts-side-panel__help">頓用/臨時では内用/外用を変更できません。</p>
+              )}
             </div>
             <div className="charts-side-panel__field">
               <label>頓用/臨時</label>
@@ -1480,8 +1510,11 @@ export function OrderBundleEditPanel({
               value={form.bundleNumber}
               onChange={(event) => setForm((prev) => ({ ...prev, bundleNumber: event.target.value }))}
               placeholder={bundleNumberPlaceholder}
-              disabled={isBlocked}
+              disabled={bundleNumberDisabled}
             />
+            {isMedOrder && bundleNumberHelp && (
+              <p className="charts-side-panel__help">{bundleNumberHelp}</p>
+            )}
           </div>
         </div>
         <div className="charts-side-panel__subsection charts-side-panel__subsection--search">
