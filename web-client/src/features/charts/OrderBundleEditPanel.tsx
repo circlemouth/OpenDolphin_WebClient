@@ -308,6 +308,16 @@ const toFormStateFromLocalStamp = (stamp: LocalStampEntry): BundleFormState => {
   };
 };
 
+const toFormStateFromHistoryCopy = (bundle: OrderBundle, today: string): BundleFormState => {
+  const base = toFormState(bundle, today);
+  return {
+    ...base,
+    documentId: undefined,
+    moduleId: undefined,
+    startDate: today,
+  };
+};
+
 const formatBundleName = (bundle: OrderBundle) => bundle.bundleName ?? '名称未設定';
 const formatMasterLabel = (item: OrderMasterSearchItem) => (item.code ? `${item.code} ${item.name}` : item.name);
 const formatUsageLabel = (item: OrderMasterSearchItem) => formatMasterLabel(item);
@@ -740,6 +750,63 @@ export function OrderBundleEditPanel({
     });
     if (!corrected.trim() || corrected === bundleForm.bundleName) return bundleForm;
     return { ...bundleForm, bundleName: corrected };
+  };
+
+  const copyFromHistory = (bundle: OrderBundle) => {
+    if (isBlocked) {
+      setNotice({ tone: 'error', message: '編集ガード中のため履歴コピーはできません。' });
+      logAuditEvent({
+        runId: meta.runId,
+        cacheHit: meta.cacheHit,
+        missingMaster: meta.missingMaster,
+        fallbackUsed: meta.fallbackUsed,
+        dataSourceTransition: meta.dataSourceTransition,
+        payload: {
+          action: 'CHARTS_ORDER_HISTORY_COPY',
+          outcome: 'blocked',
+          subject: 'charts',
+          details: {
+            ...auditMetaDetails,
+            runId: meta.runId,
+            operationPhase: 'copy',
+            entity,
+            patientId,
+            sourceDocumentId: bundle.documentId,
+            sourceModuleId: bundle.moduleId,
+            bundleName: bundle.bundleName,
+            itemCount: countItems(bundle.items),
+            blockedReasons: guardReasonKeys.length > 0 ? guardReasonKeys : ['edit_guard'],
+          },
+        },
+      });
+      return;
+    }
+    const nextForm = toFormStateFromHistoryCopy(bundle, today);
+    setForm(nextForm);
+    setNotice({ tone: 'info', message: '履歴をコピーしました。内容を確認して反映してください。' });
+    logAuditEvent({
+      runId: meta.runId,
+      cacheHit: meta.cacheHit,
+      missingMaster: meta.missingMaster,
+      fallbackUsed: meta.fallbackUsed,
+      dataSourceTransition: meta.dataSourceTransition,
+      payload: {
+        action: 'CHARTS_ORDER_HISTORY_COPY',
+        outcome: 'success',
+        subject: 'charts',
+        details: {
+          ...auditMetaDetails,
+          runId: meta.runId,
+          operationPhase: 'copy',
+          entity,
+          patientId,
+          sourceDocumentId: bundle.documentId,
+          sourceModuleId: bundle.moduleId,
+          bundleName: bundle.bundleName,
+          itemCount: countItems(bundle.items),
+        },
+      },
+    });
   };
 
   const isNoProcedureCharge = isInjectionOrder && form.memo === NO_PROCEDURE_CHARGE_TEXT;
@@ -2394,6 +2461,13 @@ export function OrderBundleEditPanel({
                   ))}
                 </div>
                 <div className="charts-side-panel__item-actions">
+                  <button
+                    type="button"
+                    onClick={() => copyFromHistory(bundle)}
+                    disabled={isBlocked}
+                  >
+                    コピー
+                  </button>
                   <button
                     type="button"
                     onClick={() => {
