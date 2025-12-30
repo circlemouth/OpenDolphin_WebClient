@@ -226,8 +226,8 @@ src:
         - 補完後は `/f/:facilityId/login` へ遷移し、履歴は replace を基本とする（旧URLや状態復帰時の誘導は例外扱い）。
         - 補完不可時は `FacilityLoginEntry` を表示し、選択/入力を要求する（エラーではなく誘導とする）。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -255,8 +255,8 @@ src:
         - 補完不可時は `FacilityLoginEntry` へフォールバックし、選択/入力を要求する。
         - 既存の `from` state や旧URL誘導がある場合は、`replace`/`push` の使い分け方針を明文化して適用する。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: claude code
       api: []
       dependency:
@@ -278,8 +278,8 @@ src:
         - 生成した UUID をフォーム状態/送信 payload に反映する。
         - 既存の UUID 参照箇所があれば互換性を確認する。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: cursor cli
       api: []
       dependency:
@@ -302,8 +302,8 @@ src:
         - `/login` 直アクセスで施設ID補完が働き、`/f/:facilityId/login` に遷移することを確認する。
         - UUID 入力なしでログインでき、`/f/:facilityId/reception` へ遷移することを確認する。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
