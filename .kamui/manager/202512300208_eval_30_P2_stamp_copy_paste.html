@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 30 P2 スタンプコピー/ペースト</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1240px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+        gap: 16px;
+        margin: 20px 0 28px;
+      }
+      .summary-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .summary-card h2 {
+        font-size: 16px;
+        margin: 0 0 8px;
+        color: #203037;
+      }
+      .summary-score {
+        font-size: 28px;
+        font-weight: 700;
+        margin: 4px 0;
+        color: #1f2a30;
+      }
+      .summary-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .section-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin: 20px 0 8px;
+        color: #1f2a30;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: calc(100% / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+      .agent-header h3 {
+        margin: 0;
+        font-size: 15px;
+        color: #1f2a30;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 140px;
+      }
+      .hex-metrics {
+        font-size: 12px;
+        margin: 8px 0 0;
+        padding-left: 16px;
+        color: #2c3a40;
+      }
+      .hex-metrics li {
+        margin-bottom: 4px;
+      }
+      .metric-reasons {
+        font-size: 12px;
+        color: #2c3a40;
+        margin-top: 12px;
+      }
+      .metric-reasons p {
+        margin: 6px 0;
+      }
+      .agent-block {
+        margin-top: 12px;
+      }
+      .agent-block h4 {
+        margin: 12px 0 6px;
+        font-size: 13px;
+        color: #203037;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .link-list {
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 8px 0 0;
+        padding-left: 16px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：30 P2 改修 スタンプコピー/ペースト</h1>
+        <p class="monitor-description">対象ブランチ: task/task-1767059394536-535b87 / task/task-1767059396320-6e0f0d / task/task-1767059396335-b8852f</p>
+        <p class="monitor-description">評価基準: 緻密性 / RUN_ID: 20251230T015306Z</p>
+      </header>
+
+      <section>
+        <h2 class="section-title">タスク概要</h2>
+        <p class="monitor-description">旧来版のスタンプコピー/ペースト導線を Web クライアントの OrderBundleEditPanel に追加し、コピー→ペースト→保存の運用が可能か、readOnly 時の無効化や既存 UI との干渉を確認する。</p>
+      </section>
+
+      <section>
+        <h2 class="section-title">総合スコア（600点満点）</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <h2>Agent: codex / task-1767059394536-535b87</h2>
+            <div class="summary-score">415 / 600 🥉</div>
+            <div class="summary-meta">総合スコア: 69 / 100（緻密性）</div>
+          </div>
+          <div class="summary-card">
+            <h2>Agent: codex / task-1767059396320-6e0f0d</h2>
+            <div class="summary-score">468 / 600 🥈</div>
+            <div class="summary-meta">総合スコア: 78 / 100（緻密性）</div>
+          </div>
+          <div class="summary-card">
+            <h2>Agent: codex / task-1767059396335-b8852f</h2>
+            <div class="summary-score">383 / 600 🥉</div>
+            <div class="summary-meta">総合スコア: 64 / 100（緻密性）</div>
+          </div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Agent codex / task-1767059394536-535b87</th>
+            <th>Agent codex / task-1767059396320-6e0f0d</th>
+            <th>Agent codex / task-1767059396335-b8852f</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <div class="agent-header">
+                <svg class="hex-chart" data-scores="70,65,70,72,68,70" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon class="hex-bg" points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="hex-score" fill="rgba(46, 120, 138, 0.35)" stroke="#2e788a" stroke-width="1"></polygon>
+                </svg>
+                <ul class="hex-metrics">
+                  <li>仕様適合 70点</li>
+                  <li>機能網羅 65点</li>
+                  <li>UI/UX 70点</li>
+                  <li>保守性 72点</li>
+                  <li>監査/ログ 68点</li>
+                  <li>テスト 70点</li>
+                </ul>
+              </div>
+              <div class="metric-reasons">
+                <p>仕様適合: コピー/ペースト導線は追加されるが、履歴コピー機能が削除されるため既存機能の維持が弱い。</p>
+                <p>機能網羅: サーバー/ローカル双方に対応する一方、コピー済み状態の表示やカテゴリ引継ぎが不足。</p>
+                <p>UI/UX: ボタン追加は明確だが、コピー済み情報の可視化がなく誤操作に弱い。</p>
+                <p>保守性: applyStampForm で共通化されるが、コピー時の監査ログ・エッジケースが不足。</p>
+                <p>監査/ログ: 成功/失敗は記録するが、ガード時の監査ログが抜ける。</p>
+                <p>テスト: スタンプフローのテスト追加はあるが、履歴コピーのテスト欠落が発生。</p>
+              </div>
+              <div class="agent-block">
+                <h4>コミット</h4>
+                <pre>35a748031 Add stamp copy/paste to order bundle panel</pre>
+              </div>
+              <div class="agent-block">
+                <h4>差分要約</h4>
+                <pre>OrderBundleEditPanel.tsx 249+ / 11-
+orderBundleStampFlow.test.tsx 16+
+stampStorage.ts 35+</pre>
+              </div>
+              <div class="agent-block">
+                <h4>主な指摘</h4>
+                <pre>- OrderBundleEditPanel の履歴コピー導線が削除され、既存機能の後退が発生。
+- orderBundleHistoryCopy.test.tsx がブランチに存在せず、テストカバレッジが低下。</pre>
+              </div>
+              <div class="agent-block">
+                <h4>成果物リンク（別worktree）</h4>
+                <ul class="link-list">
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059394536-535b87/web-client/src/features/charts/OrderBundleEditPanel.tsx</li>
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059394536-535b87/web-client/src/features/charts/stampStorage.ts</li>
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059394536-535b87/web-client/src/features/charts/__tests__/orderBundleStampFlow.test.tsx</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <div class="agent-header">
+                <svg class="hex-chart" data-scores="78,80,78,78,82,72" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon class="hex-bg" points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="hex-score" fill="rgba(46, 120, 138, 0.35)" stroke="#2e788a" stroke-width="1"></polygon>
+                </svg>
+                <ul class="hex-metrics">
+                  <li>仕様適合 78点</li>
+                  <li>機能網羅 80点</li>
+                  <li>UI/UX 78点</li>
+                  <li>保守性 78点</li>
+                  <li>監査/ログ 82点</li>
+                  <li>テスト 72点</li>
+                </ul>
+              </div>
+              <div class="metric-reasons">
+                <p>仕様適合: コピー→ペーストでフォームに反映でき、要件に沿うが履歴コピーの後退が残る。</p>
+                <p>機能網羅: サーバー/ローカルのコピー、クリップボード表示、エンティティ不一致の処理まで実装。</p>
+                <p>UI/UX: コピー済みラベルの表示で状態把握がしやすい。</p>
+                <p>保守性: stampStorage でクリップボードを分離し、専用ユーティリティで整理。</p>
+                <p>監査/ログ: 成功/失敗/ガードを網羅的に記録し、運用観測性が高い。</p>
+                <p>テスト: フロー全体のテストは追加されたが、履歴コピーのテスト欠落は同様に残る。</p>
+              </div>
+              <div class="agent-block">
+                <h4>コミット</h4>
+                <pre>f92bcf953 Add stamp copy paste actions to order bundle panel</pre>
+              </div>
+              <div class="agent-block">
+                <h4>差分要約</h4>
+                <pre>OrderBundleEditPanel.tsx 356+ / 1-
+orderBundleStampFlow.test.tsx 19+
+stampStorage.ts 48+</pre>
+              </div>
+              <div class="agent-block">
+                <h4>主な指摘</h4>
+                <pre>- OrderBundleEditPanel の履歴コピー機能が削除され、既存導線が後退。
+- orderBundleHistoryCopy.test.tsx がブランチに存在せず、リグレッションを検知できない。</pre>
+              </div>
+              <div class="agent-block">
+                <h4>成果物リンク（別worktree）</h4>
+                <ul class="link-list">
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059396320-6e0f0d/web-client/src/features/charts/OrderBundleEditPanel.tsx</li>
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059396320-6e0f0d/web-client/src/features/charts/stampStorage.ts</li>
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059396320-6e0f0d/web-client/src/features/charts/__tests__/orderBundleStampFlow.test.tsx</li>
+                </ul>
+              </div>
+            </td>
+            <td>
+              <div class="agent-header">
+                <svg class="hex-chart" data-scores="55,60,65,68,70,65" viewBox="0 0 120 120" aria-label="六角形チャート">
+                  <polygon class="hex-bg" points="60,10 103,35 103,85 60,110 17,85 17,35" fill="#eef3f4" stroke="#c4d3d7" stroke-width="1"></polygon>
+                  <polygon class="hex-score" fill="rgba(46, 120, 138, 0.35)" stroke="#2e788a" stroke-width="1"></polygon>
+                </svg>
+                <ul class="hex-metrics">
+                  <li>仕様適合 55点</li>
+                  <li>機能網羅 60点</li>
+                  <li>UI/UX 65点</li>
+                  <li>保守性 68点</li>
+                  <li>監査/ログ 70点</li>
+                  <li>テスト 65点</li>
+                </ul>
+              </div>
+              <div class="metric-reasons">
+                <p>仕様適合: ペーストはローカルスタンプ複製に留まり、フォーム反映フローに直結しない。</p>
+                <p>機能網羅: コピー済み情報がメモリ保持のみで永続性がなく、再読込で失われる。</p>
+                <p>UI/UX: 導線は明示されるが、利用者は追加の「取り込み」操作が必要。</p>
+                <p>保守性: 追加ロジックは整理されるが、別途クリップボード保持の共通化がない。</p>
+                <p>監査/ログ: copy/paste の記録はあるが、成功時の追跡情報が限定的。</p>
+                <p>テスト: ローカル複製のテストはあるが、フォーム反映は検証していない。</p>
+              </div>
+              <div class="agent-block">
+                <h4>コミット</h4>
+                <pre>70cac95b9 Add stamp copy/paste actions in order bundle panel
+73ed1578c Add stamp copy/paste gap analysis doc</pre>
+              </div>
+              <div class="agent-block">
+                <h4>差分要約</h4>
+                <pre>OrderBundleEditPanel.tsx 367+ / 8-
+orderBundleStampFlow.test.tsx 16+
+30_P2改修_スタンプコピー_ペースト.md 23+</pre>
+              </div>
+              <div class="agent-block">
+                <h4>主な指摘</h4>
+                <pre>- コピー/ペーストがフォーム反映ではなくローカルスタンプ複製に固定され、要件の「コピー→ペースト→保存」導線と一致しにくい。
+- クリップボード状態がメモリ限定で、ページ再読込時に失われる。</pre>
+              </div>
+              <div class="agent-block">
+                <h4>成果物リンク（別worktree）</h4>
+                <ul class="link-list">
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059396335-b8852f/web-client/src/features/charts/OrderBundleEditPanel.tsx</li>
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059396335-b8852f/web-client/src/features/charts/__tests__/orderBundleStampFlow.test.tsx</li>
+                  <li>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767059396335-b8852f/src/order_input_gap_analysis/30_P2改修_スタンプコピー_ペースト.md</li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <p class="note">注記: 3ブランチとも master に存在する履歴コピー導線と orderBundleHistoryCopy.test.tsx が欠落しており、マージ時にリグレッションが発生する可能性があります。差分統合時は master の機能保持を前提に再確認してください。</p>
+    </div>
+
+    <script>
+      const toPoint = (cx, cy, radius, angleDeg) => {
+        const angle = (Math.PI / 180) * angleDeg;
+        return [
+          cx + radius * Math.cos(angle),
+          cy + radius * Math.sin(angle),
+        ];
+      };
+
+      document.querySelectorAll('.hex-chart').forEach((svg) => {
+        const scores = svg.dataset.scores.split(',').map((value) => Math.max(0, Math.min(100, Number(value))));
+        const cx = 60;
+        const cy = 60;
+        const maxRadius = 50;
+        const angles = [-90, -30, 30, 90, 150, 210];
+        const points = scores.map((score, index) => {
+          const radius = (maxRadius * score) / 100;
+          return toPoint(cx, cy, radius, angles[index]);
+        });
+        const pointsText = points.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(' ');
+        const polygon = svg.querySelector('.hex-score');
+        if (polygon) {
+          polygon.setAttribute('points', pointsText);
+        }
+      });
+    </script>
+  </body>
+</html>

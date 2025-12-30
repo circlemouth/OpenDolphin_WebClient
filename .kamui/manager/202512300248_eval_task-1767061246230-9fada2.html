@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - webclient facility prefix plan 20251229</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        border: 1px solid #c4d3d7;
+        background: #f6f9fa;
+        padding: 16px;
+        margin-bottom: 20px;
+      }
+      .summary-title {
+        font-weight: 600;
+        margin-bottom: 6px;
+      }
+      .summary-list {
+        margin: 0;
+        padding-left: 18px;
+        color: #2c3a40;
+        font-size: 13px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .status-badge--warning {
+        background: #fef3cd;
+        border-color: #f0e5a5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .score-block {
+        display: grid;
+        grid-template-columns: 160px 1fr;
+        gap: 12px;
+        align-items: start;
+        margin-bottom: 12px;
+      }
+      .total-score {
+        font-size: 18px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .metric-reason {
+        margin-top: 6px;
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .artifact-list {
+        margin: 8px 0 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .artifact-list a {
+        color: #1f2a30;
+      }
+      .hex-chart {
+        width: 160px;
+        height: 160px;
+      }
+      .hex-grid {
+        fill: #edf3f5;
+        stroke: #c4d3d7;
+        stroke-width: 1;
+      }
+      .hex-data {
+        fill: rgba(64, 120, 132, 0.35);
+        stroke: #397584;
+        stroke-width: 2;
+      }
+      .hex-label {
+        font-size: 9px;
+        fill: #3a4b53;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート - webclient facility prefix plan 20251229</h1>
+        <p class="monitor-description">対象: 01_ルーティング設計と旧URL方針（12/30 09:30 - 12/31 09:30 JST）。評価基準は「緻密性」。</p>
+      </header>
+
+      <section class="summary-block">
+        <div class="summary-title">タスク概要</div>
+        <ul class="summary-list">
+          <li>目的: `/f/:facilityId/*` へのルート集約、`/login` 直アクセス時の挙動確定、旧URL互換方針の明文化。</li>
+          <li>評価対象ブランチ: task/task-1767061246230-9fada2, task/task-1767061246439-a94042, task/task-1767061246632-137460。</li>
+          <li>比較構成は3ブランチ同時比較のため列を追加（原指定の2列比較を拡張）。</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1767061246230-9fada2</th>
+            <th>Agent task-1767061246439-a94042</th>
+            <th>Agent task-1767061246632-137460</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-30 02:48 UTC</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">AI名: 不明 / 総合: 🥇 88点（緻密性重視）</span>
+              </div>
+              <div class="score-block">
+                <svg class="hex-chart" viewBox="0 0 160 160" role="img" aria-label="六角形チャート">
+                  <polygon class="hex-grid" points="80,20 132,50 132,110 80,140 28,110 28,50" />
+                  <polygon class="hex-data" points="80.0,27.2 124.2,54.5 121.6,104.0 80.0,130.4 48.8,98.0 39.5,56.6" />
+                  <text class="hex-label" x="80" y="14" text-anchor="middle">緻密性</text>
+                  <text class="hex-label" x="140" y="48" text-anchor="middle">仕様適合</text>
+                  <text class="hex-label" x="140" y="116" text-anchor="middle">影響評価</text>
+                  <text class="hex-label" x="80" y="154" text-anchor="middle">設計明確</text>
+                  <text class="hex-label" x="20" y="116" text-anchor="middle">テスト</text>
+                  <text class="hex-label" x="20" y="48" text-anchor="middle">変更範囲</text>
+                </svg>
+                <div>
+                  <div class="total-score">合計 475 / 600 🥈</div>
+                  <ul class="metric-list">
+                    <li>緻密性 88点 / 仕様適合 85点 / 影響評価 80点</li>
+                    <li>設計明確 84点 / テスト 60点 / 変更範囲 78点</li>
+                  </ul>
+                  <div class="metric-reason">
+                    ルーティングの入口/旧URL/画面遷移まで実装範囲が広く、facility prefix への統一が具体的に反映されている。一方、テスト追加や `/login` 専用導線のUI整備は未実施。
+                  </div>
+                </div>
+              </div>
+              <div class="snapshot-summary">成果物リンク（別worktree）</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767061246230-9fada2/web-client/src/AppRouter.tsx">AppRouter.tsx</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767061246230-9fada2/web-client/src/routes/facilityRoutes.ts">facilityRoutes.ts</a></li>
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767061246230-9fada2/web-client/src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md">設計ドキュメント</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分詳細</summary>
+                <pre>commit log:
+- f656a0bce feat: facility prefix routing policy
+
+status:
+- clean (no uncommitted changes)
+
+diff --stat (master..HEAD):
+- web-client/src/AppRouter.tsx | 123 ++
+- web-client/src/features/administration/AdministrationPage.tsx | 5 +-
+- web-client/src/features/charts/ChartsActionBar.tsx | 8 +-
+- web-client/src/features/charts/DocumentCreatePanel.tsx | 5 +-
+- web-client/src/features/charts/PatientsTab.tsx | 4 +-
+- web-client/src/features/charts/encounterContext.ts | 3 +-
+- web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx | 17 ++
+- web-client/src/features/charts/pages/ChartsOutpatientPrintPage.tsx | 17 ++
+- web-client/src/features/charts/pages/ChartsPage.tsx | 9 +-
+- web-client/src/features/outpatient/OutpatientMockPage.tsx | 8 +-
+- web-client/src/features/patients/PatientsPage.tsx | 11 +-
+- web-client/src/features/reception/pages/ReceptionPage.tsx | 7 +-
+- web-client/src/routes/facilityRoutes.ts | 47 +++++
+- web-client/src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md | 38 +++++
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--warning">要補強</span>
+                <span class="agent-label">AI名: claude code / 総合: 🥉 62点</span>
+              </div>
+              <div class="score-block">
+                <svg class="hex-chart" viewBox="0 0 160 160" role="img" aria-label="六角形チャート">
+                  <polygon class="hex-grid" points="80,20 132,50 132,110 80,140 28,110 28,50" />
+                  <polygon class="hex-data" points="80.0,44.0 108.6,63.5 106.0,95.0 80.0,117.2 64.4,89.0 43.6,59.0" />
+                  <text class="hex-label" x="80" y="14" text-anchor="middle">緻密性</text>
+                  <text class="hex-label" x="140" y="48" text-anchor="middle">仕様適合</text>
+                  <text class="hex-label" x="140" y="116" text-anchor="middle">影響評価</text>
+                  <text class="hex-label" x="80" y="154" text-anchor="middle">設計明確</text>
+                  <text class="hex-label" x="20" y="116" text-anchor="middle">テスト</text>
+                  <text class="hex-label" x="20" y="48" text-anchor="middle">変更範囲</text>
+                </svg>
+                <div>
+                  <div class="total-score">合計 327 / 600 🥉</div>
+                  <ul class="metric-list">
+                    <li>緻密性 60点 / 仕様適合 55点 / 影響評価 50点</li>
+                    <li>設計明確 62点 / テスト 30点 / 変更範囲 70点</li>
+                  </ul>
+                  <div class="metric-reason">
+                    設計ドキュメントはあるが、`/f/:facilityId/login` の導線を前提にしており現行実装と不整合。旧URLの戻り制御やログイン後復帰方針の具体化が不足。
+                  </div>
+                </div>
+              </div>
+              <div class="snapshot-summary">成果物リンク（別worktree）</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767061246439-a94042/src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md">設計ドキュメント</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分詳細</summary>
+                <pre>commit log:
+- 9704cb20c Add facility-prefixed routing policy doc
+
+status:
+- clean (no uncommitted changes)
+
+diff --stat (master..HEAD):
+- src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md | 64 +++++
+                </pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">AI名: codex / 総合: 🥈 78点</span>
+              </div>
+              <div class="score-block">
+                <svg class="hex-chart" viewBox="0 0 160 160" role="img" aria-label="六角形チャート">
+                  <polygon class="hex-grid" points="80,20 132,50 132,110 80,140 28,110 28,50" />
+                  <polygon class="hex-data" points="80.0,33.2 119.0,57.5 113.8,99.5 80.0,128.0 64.4,89.0 42.6,58.4" />
+                  <text class="hex-label" x="80" y="14" text-anchor="middle">緻密性</text>
+                  <text class="hex-label" x="140" y="48" text-anchor="middle">仕様適合</text>
+                  <text class="hex-label" x="140" y="116" text-anchor="middle">影響評価</text>
+                  <text class="hex-label" x="80" y="154" text-anchor="middle">設計明確</text>
+                  <text class="hex-label" x="20" y="116" text-anchor="middle">テスト</text>
+                  <text class="hex-label" x="20" y="48" text-anchor="middle">変更範囲</text>
+                </svg>
+                <div>
+                  <div class="total-score">合計 400 / 600 🥈</div>
+                  <ul class="metric-list">
+                    <li>緻密性 78点 / 仕様適合 75点 / 影響評価 65点</li>
+                    <li>設計明確 80点 / テスト 30点 / 変更範囲 72点</li>
+                  </ul>
+                  <div class="metric-reason">
+                    `/login` をグローバル入口として整理し、旧URL互換と正規ルートの関係が明確。コード反映までは踏み込んでおらず、検証項目も最小限。
+                  </div>
+                </div>
+              </div>
+              <div class="snapshot-summary">成果物リンク（別worktree）</div>
+              <ul class="artifact-list">
+                <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767061246632-137460/web-client/src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md">設計ドキュメント</a></li>
+              </ul>
+              <details class="snapshot-details">
+                <summary class="details-toggle">コミット/差分詳細</summary>
+                <pre>commit log:
+- e540561ed docs: add facility prefix routing policy
+
+status:
+- clean (no uncommitted changes)
+
+diff --stat (master..HEAD):
+- web-client/src/webclient_facility_prefix/01_ルーティング設計と旧URL方針.md | 53 +++++
+                </pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
