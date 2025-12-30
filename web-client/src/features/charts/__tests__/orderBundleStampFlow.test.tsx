@@ -5,6 +5,7 @@ import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 
 import { OrderBundleEditPanel } from '../OrderBundleEditPanel';
+import { mutateOrderBundles } from '../orderBundleApi';
 import { fetchStampDetail } from '../stampApi';
 
 vi.mock('../orderBundleApi', async () => ({
@@ -109,6 +110,8 @@ describe('OrderBundleEditPanel stamp flow', () => {
     expect(screen.getByLabelText('対象')).toBeDisabled();
     expect(screen.getByRole('button', { name: 'スタンプ保存' })).toBeDisabled();
     expect(screen.getByRole('button', { name: 'スタンプ取り込み' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'スタンプコピー' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'スタンプペースト' })).toBeDisabled();
   });
 
   it('スタンプ取り込みでフォームに反映される', async () => {
@@ -122,6 +125,49 @@ describe('OrderBundleEditPanel stamp flow', () => {
 
     const bundleNameInput = screen.getByLabelText('RP名') as HTMLInputElement;
     await waitFor(() => expect(bundleNameInput.value).toBe('降圧セット'));
+  });
+
+  it('スタンプコピー/ペーストでフォームに反映される', async () => {
+    const user = userEvent.setup();
+    renderWithClient(<OrderBundleEditPanel {...baseProps} />);
+
+    await screen.findByRole('option', { name: /降圧セット/ });
+    const select = screen.getByLabelText('既存スタンプ');
+    await user.selectOptions(select, 'server::STAMP-1');
+    await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
+
+    await waitFor(() => expect(screen.getByText('スタンプをコピーしました。')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'スタンプペースト' }));
+
+    const bundleNameInput = screen.getByLabelText('RP名') as HTMLInputElement;
+    await waitFor(() => expect(bundleNameInput.value).toBe('降圧セット'));
+  });
+
+  it('スタンプコピー→ペースト→保存で create が発火する', async () => {
+    const user = userEvent.setup();
+    vi.mocked(mutateOrderBundles).mockResolvedValueOnce({ ok: true, runId: 'RUN-ORDER' });
+    renderWithClient(<OrderBundleEditPanel {...baseProps} />);
+
+    await screen.findByRole('option', { name: /降圧セット/ });
+    const select = screen.getByLabelText('既存スタンプ');
+    await user.selectOptions(select, 'server::STAMP-1');
+    await user.click(screen.getByRole('button', { name: 'スタンプコピー' }));
+
+    await waitFor(() => expect(screen.getByText('スタンプをコピーしました。')).toBeInTheDocument());
+
+    await user.click(screen.getByRole('button', { name: 'スタンプペースト' }));
+
+    await user.click(screen.getByRole('button', { name: '保存して追加' }));
+
+    const mutateMock = vi.mocked(mutateOrderBundles);
+    await waitFor(() => expect(mutateMock).toHaveBeenCalled());
+
+    const payload = mutateMock.mock.calls[0]?.[0];
+    const operation = payload?.operations?.[0];
+    expect(operation?.operation).toBe('create');
+    expect(operation?.documentId).toBeUndefined();
+    expect(operation?.moduleId).toBeUndefined();
   });
 
   it('スタンプ保存でローカルスタンプが追加される', async () => {

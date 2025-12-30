@@ -122,6 +122,10 @@ const ALLOWED_DETAIL_KEYS = new Set([
   'documentIssuedAt',
   'documentId',
   'missingFields',
+  'stampSource',
+  'stampId',
+  'stampName',
+  'entity',
 ]);
 
 const sanitizeDetails = (details: Record<string, unknown>) => {
