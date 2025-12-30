@@ -26,6 +26,7 @@ import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { ToneBanner } from '../../reception/components/ToneBanner';
 import { useSession } from '../../../AppRouter';
+import { buildFacilityPath } from '../../../routes/facilityRoutes';
 import { fetchEffectiveAdminConfig, type ChartsMasterSourcePolicy } from '../../administration/api';
 import type { ClaimOutpatientPayload } from '../../outpatient/types';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
@@ -209,6 +210,7 @@ function ChartsContent() {
   const navigationRunId = normalizeRunId(typeof navigationState.runId === 'string' ? navigationState.runId : undefined);
   const explicitRunId = urlMeta.runId ?? navigationRunId;
   const runIdForUrl = explicitRunId ?? flags.runId;
+  const chartsBasePath = useMemo(() => buildFacilityPath(session.facilityId, '/charts'), [session.facilityId]);
   const [encounterContext, setEncounterContext] = useState<OutpatientEncounterContext>(() => {
     const urlContext = parseChartsEncounterContext(location.search);
     if (hasEncounterContext(urlContext)) return urlContext;
@@ -442,7 +444,7 @@ function ChartsContent() {
       });
       const currentSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: flags.runId });
       if (location.search !== currentSearch) {
-        navigate({ pathname: '/charts', search: currentSearch }, { replace: true });
+        navigate({ pathname: chartsBasePath, search: currentSearch }, { replace: true });
       }
       return;
     }
@@ -491,6 +493,7 @@ function ChartsContent() {
       },
     });
   }, [
+    chartsBasePath,
     draftState.dirty,
     encounterContext,
     flags.runId,
@@ -506,8 +509,8 @@ function ChartsContent() {
     storeChartsEncounterContext(encounterContext);
     const nextSearch = buildChartsEncounterSearch(encounterContext, receptionCarryover, { runId: runIdForUrl });
     if (location.search === nextSearch) return;
-    navigate({ pathname: '/charts', search: nextSearch }, { replace: true });
-  }, [encounterContext, location.search, navigate, receptionCarryover, runIdForUrl]);
+    navigate({ pathname: chartsBasePath, search: nextSearch }, { replace: true });
+  }, [chartsBasePath, encounterContext, location.search, navigate, receptionCarryover, runIdForUrl]);
 
   const adminQueryKey = ['admin-effective-config'];
   const adminConfigQuery = useQuery({

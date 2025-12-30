@@ -15,6 +15,8 @@ import type { ClaimQueueEntry } from '../outpatient/types';
 import type { ReceptionEntry } from '../reception/api';
 import { saveOutpatientPrintPreview } from './print/printPreviewStorage';
 import { isNetworkError } from '../shared/apiError';
+import { useOptionalSession } from '../../AppRouter';
+import { buildFacilityPath } from '../../routes/facilityRoutes';
 
 type ChartAction = 'finish' | 'send' | 'draft' | 'cancel' | 'print';
 
@@ -124,6 +126,7 @@ export function ChartsActionBar({
   onApprovalConfirmed,
   onApprovalUnlock,
 }: ChartsActionBarProps) {
+  const session = useOptionalSession();
   const navigate = useNavigate();
   const [lockReason, setLockReason] = useState<string | null>(null);
   const [toast, setToast] = useState<ToastState | null>(null);
@@ -875,6 +878,7 @@ export function ChartsActionBar({
       },
     });
 
+    const printPath = buildFacilityPath(session?.facilityId, '/charts/print/outpatient');
     logUiState({
       action: 'print',
       screen: 'charts/action-bar',
@@ -886,13 +890,13 @@ export function ChartsActionBar({
       fallbackUsed,
       details: {
         operationPhase: 'do',
-        destination: '/charts/print/outpatient',
+        destination: printPath,
         patientId: selectedEntry.patientId ?? selectedEntry.id,
         appointmentId: selectedEntry.appointmentId,
       },
     });
 
-    navigate('/charts/print/outpatient', {
+    navigate(printPath, {
       state: {
         entry: selectedEntry,
         meta: { runId, cacheHit, missingMaster, fallbackUsed, dataSourceTransition },

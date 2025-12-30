@@ -10,6 +10,8 @@ import { AdminBroadcastBanner } from '../shared/AdminBroadcastBanner';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
+import { useSession } from '../../AppRouter';
+import { buildFacilityPath, parseFacilityPath } from '../../routes/facilityRoutes';
 import { PatientFormErrorAlert } from './PatientFormErrorAlert';
 import { useAppToast } from '../../libs/ui/appToast';
 import { useAdminBroadcast } from '../../libs/admin/useAdminBroadcast';
@@ -58,7 +60,9 @@ const pickString = (value: unknown): string | undefined => (typeof value === 'st
 
 const isSafeChartsReturnTo = (value?: string | null) => {
   if (!value) return false;
-  return value.startsWith('/charts');
+  if (value.startsWith('/charts')) return true;
+  const facilityMatch = parseFacilityPath(value);
+  return facilityMatch ? facilityMatch.suffix.startsWith('/charts') : false;
 };
 
 const readStorageJson = (key: string) => {
@@ -115,6 +119,7 @@ type PatientsPageProps = {
 };
 
 export function PatientsPage({ runId }: PatientsPageProps) {
+  const session = useSession();
   const navigate = useNavigate();
   const location = useLocation();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -144,6 +149,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       { patientId, appointmentId: appointmentIdParam, receptionId: receptionIdParam, visitDate: visitDateParam },
       receptionCarryover,
       { runId: runIdParam ?? runId },
+      buildFacilityPath(session.facilityId, '/charts'),
     );
   }, [
     appointmentIdParam,
@@ -155,6 +161,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     runIdParam,
     runId,
     searchParams,
+    session.facilityId,
     visitDateParam,
   ]);
   const initialFilters = useMemo(() => readFilters(searchParams), [searchParams]);
@@ -773,7 +780,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
         <button
           type="button"
           className="patients-page__filter-link"
-          onClick={() => navigate({ pathname: '/reception', search: location.search })}
+          onClick={() => navigate({ pathname: buildFacilityPath(session.facilityId, '/reception'), search: location.search })}
         >
           Reception に戻る
         </button>

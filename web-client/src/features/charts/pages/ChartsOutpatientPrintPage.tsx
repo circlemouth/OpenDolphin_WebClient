@@ -11,6 +11,8 @@ import { recordChartsAuditEvent } from '../audit';
 import { chartsPrintStyles } from '../print/printStyles';
 import { OutpatientClinicalDocument, type ChartsPrintMeta } from '../print/outpatientClinicalDocument';
 import { clearOutpatientPrintPreview, loadOutpatientPrintPreview } from '../print/printPreviewStorage';
+import { useOptionalSession } from '../../../AppRouter';
+import { buildFacilityPath } from '../../../routes/facilityRoutes';
 
 type PrintLocationState = {
   entry: ReceptionEntry;
@@ -39,6 +41,7 @@ export function ChartsOutpatientPrintPage() {
 }
 
 function ChartsOutpatientPrintContent() {
+  const session = useOptionalSession();
   const navigate = useNavigate();
   const location = useLocation();
   const restored = useMemo(() => loadOutpatientPrintPreview(), []);
@@ -227,7 +230,7 @@ function ChartsOutpatientPrintContent() {
 
   const handleClose = () => {
     clearOutpatientPrintPreview();
-    navigate('/charts');
+    navigate(buildFacilityPath(session?.facilityId, '/charts'));
   };
 
   if (!state) {
@@ -320,7 +323,11 @@ function ChartsOutpatientPrintContent() {
             runId={state.meta.runId}
           />
           <div className="charts-print__recovery" role="group" aria-label="出力復旧導線">
-            <button type="button" className="charts-print__button" onClick={() => navigate('/reception')}>
+            <button
+              type="button"
+              className="charts-print__button"
+              onClick={() => navigate(buildFacilityPath(session?.facilityId, '/reception'))}
+            >
               Receptionへ戻る
             </button>
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
@@ -347,7 +354,11 @@ function ChartsOutpatientPrintContent() {
             >
               再試行
             </button>
-            <button type="button" className="charts-print__button" onClick={() => navigate('/reception')}>
+            <button
+              type="button"
+              className="charts-print__button"
+              onClick={() => navigate(buildFacilityPath(session?.facilityId, '/reception'))}
+            >
               Receptionへ戻る
             </button>
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>

@@ -12,6 +12,7 @@ import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tone
 import type { ReceptionEntry } from '../reception/api';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
 import { buildChartsUrl, type OutpatientEncounterContext, type ReceptionCarryoverParams } from './encounterContext';
+import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { useSession } from '../../AppRouter';
 import { fetchPatients, type PatientRecord } from '../patients/api';
 import { PatientInfoEditDialog } from './PatientInfoEditDialog';
@@ -514,6 +515,7 @@ export function PatientsTab({
       },
       receptionCarryover,
       { runId: flags.runId },
+      buildFacilityPath(session.facilityId, '/charts'),
     );
     if (returnTo) params.set('returnTo', returnTo);
     if (typeof sessionStorage !== 'undefined') {
@@ -523,7 +525,7 @@ export function PatientsTab({
         // storage が使えない環境ではスキップ
       }
     }
-    navigate(`/patients?${params.toString()}`);
+    navigate(`${buildFacilityPath(session.facilityId, '/patients')}?${params.toString()}`);
 
     recordOutpatientFunnel('charts_patient_sidepane', {
       runId: flags.runId,

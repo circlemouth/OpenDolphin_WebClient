@@ -16,6 +16,8 @@ import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
 import { buildChartsUrl, type ReceptionCarryoverParams } from '../../charts/encounterContext';
+import { useSession } from '../../../AppRouter';
+import { buildFacilityPath } from '../../../routes/facilityRoutes';
 import type { ClaimBundle, ClaimQueueEntry, ClaimQueuePhase } from '../../outpatient/types';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 import {
@@ -194,6 +196,7 @@ export function ReceptionPage({
   title = 'Reception 検索と外来API接続',
   description = '外来請求/予約 API を React Query で取得し、missingMaster・cacheHit・dataSourceTransition をトーンバナーとリストへ反映します。行をダブルクリックすると同じ RUN_ID で Charts へ遷移します。',
 }: ReceptionPageProps) {
+  const session = useSession();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -896,6 +899,7 @@ export function ReceptionPage({
         },
         receptionCarryover,
         { runId: nextRunId },
+        buildFacilityPath(session.facilityId, '/charts'),
       );
       navigate(url, {
         state: {
@@ -917,6 +921,7 @@ export function ReceptionPage({
       mergedMeta.runId,
       navigate,
       receptionCarryover,
+      session.facilityId,
     ],
   );
 
@@ -1031,7 +1036,7 @@ export function ReceptionPage({
                       if (sortKey) params.set('sort', sortKey);
                       if (selectedDate) params.set('date', selectedDate);
                       params.set('from', 'reception');
-                      navigate(`/patients?${params.toString()}`);
+                      navigate(`${buildFacilityPath(session.facilityId, '/patients')}?${params.toString()}`);
                     }}
                   >
                     Patients へ
