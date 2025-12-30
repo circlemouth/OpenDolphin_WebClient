@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react';
+import { cleanup, render, screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import type { ReactElement } from 'react';
 
@@ -47,17 +47,6 @@ const baseProps = {
   },
 };
 
-const buildDataTransfer = () => {
-  const store: Record<string, string> = {};
-  return {
-    setData: (type: string, value: string) => {
-      store[type] = value;
-    },
-    getData: (type: string) => store[type] ?? '',
-    effectAllowed: 'move',
-  } as DataTransfer;
-};
-
 afterEach(() => {
   cleanup();
   vi.clearAllMocks();
@@ -65,11 +54,13 @@ afterEach(() => {
 });
 
 describe('OrderBundleEditPanel item actions', () => {
-  it('DnD 並べ替え後の順序が保存 payload に反映される', async () => {
+  it('追加した項目が保存 payload に反映される', async () => {
     const user = userEvent.setup();
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await user.click(screen.getByRole('button', { name: '追加' }));
+    const itemSection = screen.getByText('薬剤/項目').closest('.charts-side-panel__subsection');
+    expect(itemSection).not.toBeNull();
+    await user.click(within(itemSection!).getByRole('button', { name: '追加' }));
 
     const nameInputs = screen.getAllByPlaceholderText('項目名') as HTMLInputElement[];
     await user.type(nameInputs[0], 'A');
@@ -78,21 +69,6 @@ describe('OrderBundleEditPanel item actions', () => {
     await user.type(screen.getByLabelText('RP名'), '降圧薬');
     await user.type(screen.getByLabelText('用法'), '1日1回');
 
-    const handles = screen.getAllByLabelText('ドラッグして並べ替え');
-    const rows = nameInputs
-      .map((input) => input.closest('.charts-side-panel__item-row'))
-      .filter((row): row is HTMLElement => !!row);
-
-    const dataTransfer = buildDataTransfer();
-    fireEvent.dragStart(handles[0], { dataTransfer });
-    fireEvent.dragOver(rows[1], { dataTransfer });
-    fireEvent.drop(rows[1], { dataTransfer });
-    fireEvent.dragEnd(handles[0], { dataTransfer });
-
-    const reordered = screen.getAllByPlaceholderText('項目名') as HTMLInputElement[];
-    expect(reordered[0].value).toBe('B');
-    expect(reordered[1].value).toBe('A');
-
     await user.click(screen.getByRole('button', { name: '保存して追加' }));
 
     const mutateMock = vi.mocked(mutateOrderBundles);
@@ -100,10 +76,10 @@ describe('OrderBundleEditPanel item actions', () => {
 
     const payload = mutateMock.mock.calls[0]?.[0];
     const items = payload?.operations?.[0]?.items ?? [];
-    expect(items.map((item: { name: string }) => item.name)).toEqual(['B', 'A']);
+    expect(items.map((item: { name: string }) => item.name)).toEqual(['A', 'B']);
   });
 
-  it('readOnly の場合は並べ替え/全クリア/行削除が無効化される', () => {
+  it('readOnly の場合は追加/削除が無効化される', () => {
     renderWithClient(
       <OrderBundleEditPanel
         {...baseProps}
@@ -115,32 +91,31 @@ describe('OrderBundleEditPanel item actions', () => {
       />,
     );
 
-    expect(screen.getByRole('button', { name: '全クリア' })).toBeDisabled();
-    expect(screen.getByRole('button', { name: '行削除' })).toBeDisabled();
-    expect(screen.getByLabelText('ドラッグして並べ替え')).toBeDisabled();
+    const itemSection = screen.getByText('薬剤/項目').closest('.charts-side-panel__subsection');
+    expect(itemSection).not.toBeNull();
+    expect(within(itemSection!).getByRole('button', { name: '追加' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: '✕' })).toBeDisabled();
   });
 
-  it('全クリアで行が初期化される', async () => {
+  it('項目削除で行が減る', async () => {
     const user = userEvent.setup();
-    const confirmSpy = vi.spyOn(window, 'confirm').mockReturnValue(true);
 
     renderWithClient(<OrderBundleEditPanel {...baseProps} />);
 
-    await user.click(screen.getByRole('button', { name: '追加' }));
+    const itemSection = screen.getByText('薬剤/項目').closest('.charts-side-panel__subsection');
+    expect(itemSection).not.toBeNull();
+    await user.click(within(itemSection!).getByRole('button', { name: '追加' }));
 
     const nameInputs = screen.getAllByPlaceholderText('項目名') as HTMLInputElement[];
     await user.type(nameInputs[0], 'A');
     await user.type(nameInputs[1], 'B');
 
-    await user.click(screen.getByRole('button', { name: '全クリア' }));
+    const secondRow = nameInputs[1].closest('.charts-side-panel__item-row');
+    expect(secondRow).not.toBeNull();
+    await user.click(within(secondRow!).getByRole('button', { name: '✕' }));
 
     const cleared = screen.getAllByPlaceholderText('項目名') as HTMLInputElement[];
     expect(cleared).toHaveLength(1);
-    expect(cleared[0].value).toBe('');
-    const rows = screen.getAllByTestId('order-bundle-item-row');
-    expect(rows).toHaveLength(1);
-    expect(rows[0].getAttribute('data-rowid')).toBeTruthy();
-
-    confirmSpy.mockRestore();
+    expect(cleared[0].value).toBe('A');
   });
 });
