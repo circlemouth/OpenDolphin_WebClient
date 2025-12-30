@@ -33,6 +33,17 @@ describe('FacilityLoginResolver', () => {
     });
   });
 
+  it('from state に施設ID付きパスがある場合は最優先で自動補完する', async () => {
+    localStorage.setItem('opendolphin:web-client:recentFacilities', JSON.stringify(['0001', '0002']));
+    const router = buildRouter({ pathname: '/login', state: { from: '/f/ABC-01/reception' } });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => {
+      expect(router.state.location.pathname).toBe('/f/ABC-01/login');
+    });
+  });
+
   it('recentFacilities が複数なら施設選択を表示する', async () => {
     localStorage.setItem('opendolphin:web-client:recentFacilities', JSON.stringify(['0001', '0002']));
     const router = buildRouter();
