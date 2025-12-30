@@ -261,39 +261,26 @@
     "aiCompetitionScore": 90
   },
   {
-    "id": "task-1767128128992-8d34c6",
-    "name": "🔍Monitor: [webclient non chart gap audit plan 20251230] 調査結果レポート作成\n期間: 01/03 09:00 - 01/04 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 調査結果レポート作成\n\n## 目的\n洗い出し結果をまとめ、次フェーズの実装計画に引き渡す。\n\n## 成果物\n- 画面別の追加検討項目一覧\n- 優先度と依存関係のまとめ\n- 未確認事項とリスク\n\nYAML ID: src/reporting/調査結果レポート作成.md",
-    "model": "codex",
+    "id": "task-1767130505569-1c42d7",
+    "name": "対象ファイル: .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml\n\nがんと関連ドキュメントレビューして進捗更新して、リモートにpushして",
+    "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2025-12-30T20:55:28.992Z",
-    "updatedAt": "2025-12-30T20:55:28.992Z",
+    "createdAt": "2025-12-30T21:35:05.569Z",
+    "updatedAt": "2025-12-30T21:35:05.569Z",
     "requiresTerminal": true,
-    "createWorktree": true,
-    "branchName": "task/task-1767128128992-8d34c6",
-    "baseBranch": "master",
-    "useTmux": true,
-    "singleMode": false,
+    "createWorktree": false,
+    "branchName": null,
+    "baseBranch": null,
+    "useTmux": false,
+    "singleMode": true,
     "aiCompetitionEntry": false,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767128105254-c7u2jvgd",
-    "aiCompetitionGroupName": "[webclient non chart gap audit plan 20251230] 調査結果レポート作成\n期間: 01/03 09:00 - 01/04 09:00 / 優先度: high / 緊急度: medium / エージェント: claude code\n\n# 調査結果レポート作成\n\n## 目的\n洗い出し結果をまとめ、次フェーズの実装計画に引き渡す。\n\n## 成果物\n- 画面別の追加検討項目一覧\n- 優先度と依存関係のまとめ\n- 未確認事項とリスク\n\nYAML ID: src/reporting/調査結果レポート作成.md",
-    "aiCompetitionMonitor": true,
-    "monitorTargets": [
-      "task-1767128105255-4c7bf5",
-      "task-1767128105456-ce87a5",
-      "task-1767128105657-109165"
-    ],
-    "scoringConfig": {
-      "auditEnabled": false,
-      "auditPrompt": "",
-      "enabled": true,
-      "prompt": "緻密性",
-      "rubric": "medals",
-      "model": "codex"
-    },
-    "autoEvaluationNotBefore": 1767128165254,
-    "worktreePath": ".worktrees/task-1767128128992-8d34c6"
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null
   }
 ]
