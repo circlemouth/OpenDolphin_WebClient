@@ -15,6 +15,9 @@ export type OrderBundle = {
   entity?: string;
   bundleName?: string;
   bundleNumber?: string;
+  classCode?: string;
+  classCodeSystem?: string;
+  className?: string;
   admin?: string;
   adminMemo?: string;
   memo?: string;
@@ -38,6 +41,9 @@ export type OrderBundleOperation = {
   entity?: string;
   bundleName?: string;
   bundleNumber?: string;
+  classCode?: string;
+  classCodeSystem?: string;
+  className?: string;
   admin?: string;
   adminMemo?: string;
   memo?: string;

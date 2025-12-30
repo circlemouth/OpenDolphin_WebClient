@@ -22,6 +22,7 @@ import java.util.UUID;
 import java.util.stream.Collectors;
 import open.dolphin.audit.AuditEventEnvelope;
 import open.dolphin.infomodel.BundleDolphin;
+import open.dolphin.infomodel.ClaimConst;
 import open.dolphin.infomodel.ClaimItem;
 import open.dolphin.infomodel.DocInfoModel;
 import open.dolphin.infomodel.DocumentModel;
@@ -134,6 +135,9 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
                 entry.setEntity(moduleEntity);
                 entry.setBundleName(resolveBundleName(bundle, info));
                 entry.setBundleNumber(bundle.getBundleNumber());
+                entry.setClassCode(bundle.getClassCode());
+                entry.setClassCodeSystem(bundle.getClassCodeSystem());
+                entry.setClassName(bundle.getClassName());
                 entry.setAdmin(bundle.getAdmin());
                 entry.setAdminMemo(bundle.getAdminMemo());
                 entry.setMemo(bundle.getMemo());
@@ -366,7 +370,15 @@ public class OrcaOrderBundleResource extends AbstractOrcaRestResource {
         bundle.setAdmin(op.getAdmin());
         bundle.setAdminMemo(op.getAdminMemo());
         bundle.setMemo(op.getMemo());
-        bundle.setClassName(op.getBundleName());
+        if (hasText(op.getClassName())) {
+            bundle.setClassName(op.getClassName());
+        } else if (hasText(op.getBundleName())) {
+            bundle.setClassName(op.getBundleName());
+        }
+        if (hasText(op.getClassCode())) {
+            bundle.setClassCode(op.getClassCode());
+            bundle.setClassCodeSystem(hasText(op.getClassCodeSystem()) ? op.getClassCodeSystem() : ClaimConst.CLASS_CODE_ID);
+        }
         bundle.setClaimItem(toClaimItems(op.getItems()));
 
         ModuleModel module = new ModuleModel();

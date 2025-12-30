@@ -36,6 +36,9 @@ public class OrderBundleMutationRequest {
         private String entity;
         private String bundleName;
         private String bundleNumber;
+        private String classCode;
+        private String classCodeSystem;
+        private String className;
         private String admin;
         private String adminMemo;
         private String memo;
@@ -89,6 +92,30 @@ public class OrderBundleMutationRequest {
 
         public void setBundleNumber(String bundleNumber) {
             this.bundleNumber = bundleNumber;
+        }
+
+        public String getClassCode() {
+            return classCode;
+        }
+
+        public void setClassCode(String classCode) {
+            this.classCode = classCode;
+        }
+
+        public String getClassCodeSystem() {
+            return classCodeSystem;
+        }
+
+        public void setClassCodeSystem(String classCodeSystem) {
+            this.classCodeSystem = classCodeSystem;
+        }
+
+        public String getClassName() {
+            return className;
+        }
+
+        public void setClassName(String className) {
+            this.className = className;
         }
 
         public String getAdmin() {

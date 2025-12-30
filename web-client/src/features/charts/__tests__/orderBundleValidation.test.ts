@@ -9,6 +9,8 @@ const baseForm = {
   adminMemo: '',
   memo: '',
   startDate: '2025-12-29',
+  prescriptionLocation: 'out',
+  prescriptionTiming: 'regular',
   items: [{ name: '', quantity: '', unit: '', memo: '' }],
   materialItems: [],
   commentItems: [],
