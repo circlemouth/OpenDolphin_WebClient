@@ -158,5 +158,127 @@
     "taskType": "yaml-plan",
     "source": "yaml-app",
     "description": "# 追加検討項目の優先度付け\n\n## 目的\n抽出したギャップを重要度と影響度で整理し、次フェーズへの引き継ぎに備える。\n\n## 成果物\n- 重要度/緊急度マトリクス\n- 初期バックログ案"
+  },
+  {
+    "id": "task-1767124741928-2b2eb3",
+    "name": "CodexCLI2: [webclient non chart gap audit plan 20251230] 追加検討項目の優先度付け\n期間: 01/02 09:00 - 01/03 09:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 追加検討項目の優先度付け\n\n## 目的\n抽出したギャップを重要度と影響度で整理し、次フェーズへの引き継ぎに備える。\n\n## 成果物\n- 重要度/緊急度マトリクス\n- 初期バックログ案\n\nYAML ID: src/gap_analysis/追加検討項目の優先度付け.md",
+    "model": "Codex CLI",
+    "status": "working",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-30T19:59:01.928Z",
+    "updatedAt": "2025-12-30T19:59:01.928Z",
+    "requiresTerminal": true,
+    "createWorktree": true,
+    "branchName": "task/task-1767124741928-2b2eb3",
+    "baseBranch": "master",
+    "useTmux": true,
+    "singleMode": false,
+    "aiCompetitionEntry": true,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": "comp-1767124741727-pbyracmm",
+    "aiCompetitionGroupName": "[webclient non chart gap audit plan 20251230] 追加検討項目の優先度付け\n期間: 01/02 09:00 - 01/03 09:00 / 優先度: medium / 緊急度: high / エージェント: codex\n\n# 追加検討項目の優先度付け\n\n## 目的\n抽出したギャップを重要度と影響度で整理し、次フェーズへの引き継ぎに備える。\n\n## 成果物\n- 重要度/緊急度マトリクス\n- 初期バックログ案\n\nYAML ID: src/gap_analysis/追加検討項目の優先度付け.md",
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "worktreePath": ".worktrees/task-1767124741928-2b2eb3",
+    "medal": "gold",
+    "aiCompetitionScore": 90
+  },
+  {
+    "id": "task-yaml-15ibwym-src-planning-md",
+    "name": "[webclient non chart gap audit plan 20251230] 依存関係と影響範囲整理\n期間: 01/03 09:00 - 01/04 09:00 / 優先度: medium / 緊急度: medium / エージェント: gemini cli\n\n# 依存関係と影響範囲整理\n\n## 目的\n追加検討項目の実装影響範囲と依存関係を整理し、計画化できる状態にする。\n\n## 成果物\n- 依存関係マップ\n- 影響範囲のメモ（UI/API/運用/監査）\n\nYAML ID: src/planning/依存関係と影響範囲整理.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-30T20:06:41.953Z",
+    "updatedAt": "2025-12-30T20:06:41.953Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-15ibwym-src-planning-md",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7::src/planning/依存関係と影響範囲整理.md",
+      "appId": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7",
+      "datasetLabel": "webclient non chart gap audit plan 20251230",
+      "pathId": "src/planning/依存関係と影響範囲整理.md",
+      "fileName": "webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "addedAt": "2025-12-30T20:06:41.942Z"
+    },
+    "labels": [
+      "webclient non chart gap audit plan 20251230",
+      "src / planning"
+    ],
+    "dependencies": [
+      "task-yaml-uc3ajs-src-gap-analysis"
+    ],
+    "schedule": {
+      "startMs": 1767398400000,
+      "endMs": 1767484800000,
+      "durationDays": 1
+    },
+    "category": "src / planning",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 依存関係と影響範囲整理\n\n## 目的\n追加検討項目の実装影響範囲と依存関係を整理し、計画化できる状態にする。\n\n## 成果物\n- 依存関係マップ\n- 影響範囲のメモ（UI/API/運用/監査）"
+  },
+  {
+    "id": "task-yaml-1tgwjml-src-planning-md",
+    "name": "[webclient non chart gap audit plan 20251230] レビュー準備と合意形成\n期間: 01/03 09:00 - 01/04 09:00 / 優先度: medium / 緊急度: medium / エージェント: cursor cli\n\n# レビュー準備と合意形成\n\n## 目的\nチームレビュー用の資料を整え、合意形成のための確認観点を整理する。\n\n## 成果物\n- レビュー観点リスト\n- 追加検討項目の説明資料\n\nYAML ID: src/planning/レビュー準備と合意形成.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "medium",
+    "urgency": "medium",
+    "createdAt": "2025-12-30T20:06:48.361Z",
+    "updatedAt": "2025-12-30T20:06:48.361Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-1tgwjml-src-planning-md",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7::src/planning/レビュー準備と合意形成.md",
+      "appId": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7",
+      "datasetLabel": "webclient non chart gap audit plan 20251230",
+      "pathId": "src/planning/レビュー準備と合意形成.md",
+      "fileName": "webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "addedAt": "2025-12-30T20:06:48.340Z"
+    },
+    "labels": [
+      "webclient non chart gap audit plan 20251230",
+      "src / planning"
+    ],
+    "dependencies": [
+      "task-yaml-uc3ajs-src-gap-analysis"
+    ],
+    "schedule": {
+      "startMs": 1767398400000,
+      "endMs": 1767484800000,
+      "durationDays": 1
+    },
+    "category": "src / planning",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# レビュー準備と合意形成\n\n## 目的\nチームレビュー用の資料を整え、合意形成のための確認観点を整理する。\n\n## 成果物\n- レビュー観点リスト\n- 追加検討項目の説明資料"
   }
 ]
