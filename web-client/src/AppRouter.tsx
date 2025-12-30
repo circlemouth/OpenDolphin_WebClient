@@ -41,9 +41,13 @@ import {
 import {
   buildFacilityPath,
   buildFacilityUrl,
+  decodeFacilityParam,
   ensureFacilityUrl,
+  normalizeFacilityId,
   parseFacilityPath,
 } from './routes/facilityRoutes';
+import { FacilityLoginEntry } from './features/login/FacilityLoginEntry';
+import { addRecentFacility } from './features/login/recentFacilityStore';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
@@ -127,6 +131,7 @@ export function AppRouter() {
 
   const handleLoginSuccess = (result: LoginResult) => {
     updateObservabilityMeta({ runId: result.runId });
+    addRecentFacility(result.facilityId);
     setSession(result);
     persistSession(result);
   };
@@ -180,7 +185,8 @@ export function AppRouter() {
     <BrowserRouter>
       <Routes>
         <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
-          <Route path="login" element={<LoginScreen onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="login" element={<FacilityLoginEntry />} />
+          <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
           <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
           <Route path="*" element={<LegacyRootRedirect session={session} />} />
         </Route>
@@ -191,13 +197,14 @@ export function AppRouter() {
 
 function FacilityGate({ session, onLogout }: { session: Session | null; onLogout: () => void }) {
   const location = useLocation();
+  const loginRoute = isLoginRoute(location.pathname);
   if (!session) {
-    if (location.pathname === '/login') {
+    if (loginRoute) {
       return <Outlet />;
     }
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
-  if (location.pathname === '/login') {
+  if (loginRoute) {
     const redirectFrom = resolveLoginRedirect(location);
     if (redirectFrom) {
       return <Navigate to={normalizeFacilityRedirect(session.facilityId, redirectFrom)} replace />;
@@ -251,6 +258,19 @@ function FacilityShell({ session }: { session: Session | null }) {
   );
 }
 
+function FacilityLoginScreen({ onLoginSuccess }: { onLoginSuccess: (result: LoginResult) => void }) {
+  const { facilityId } = useParams();
+  const normalizedId = normalizeFacilityId(decodeFacilityParam(facilityId) ?? facilityId);
+
+  return (
+    <LoginScreen
+      onLoginSuccess={onLoginSuccess}
+      initialFacilityId={normalizedId ?? ''}
+      lockFacilityId={Boolean(normalizedId)}
+    />
+  );
+}
+
 function LegacyRootRedirect({ session }: { session: Session | null }) {
   const location = useLocation();
   const redirectFromLoginState = resolveLoginRedirect(location);
@@ -277,6 +297,12 @@ const resolveLoginRedirect = (location: Location): string | null => {
   const path = from.pathname ?? '';
   if (!path) return null;
   return `${path}${from.search ?? ''}`;
+};
+
+const isLoginRoute = (pathname: string) => {
+  if (pathname === '/login') return true;
+  const match = parseFacilityPath(pathname);
+  return match?.suffix === '/login';
 };
 
 const normalizeFacilityRedirect = (facilityId: string, target: string) => {

@@ -71,9 +71,11 @@ export type LoginResult = {
 
 type LoginScreenProps = {
   onLoginSuccess?: (result: LoginResult) => void;
+  initialFacilityId?: string;
+  lockFacilityId?: boolean;
 };
 
-export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
+export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId = false }: LoginScreenProps) => {
   const [values, setValues] = useState<LoginFormValues>({
     facilityId: '',
     userId: '',
@@ -95,6 +97,11 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
       setStatus('error');
     }
   }, []);
+
+  useEffect(() => {
+    if (!initialFacilityId) return;
+    setValues((prev) => ({ ...prev, facilityId: initialFacilityId }));
+  }, [initialFacilityId]);
 
   const handleChange = (key: FieldKey) => (event: ChangeEvent<HTMLInputElement>) => {
     setValues((prev) => ({ ...prev, [key]: event.target.value }));
@@ -191,6 +198,7 @@ export const LoginScreen = ({ onLoginSuccess }: LoginScreenProps) => {
               value={values.facilityId}
               onChange={handleChange('facilityId')}
               placeholder="例: 0001"
+              disabled={lockFacilityId}
             />
             {errors.facilityId ? <span className="field-error">{errors.facilityId}</span> : null}
           </label>

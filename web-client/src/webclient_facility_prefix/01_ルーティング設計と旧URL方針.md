@@ -36,3 +36,17 @@
 - `/f/:facilityId/*` を AppRouter の主要ルートとし、旧URLは LegacyRootRedirect で施設付きパスへ正規化。
 - 画面内遷移や deep link は `buildFacilityPath()` を介して `/f/:facilityId/*` に統一。
 - `buildChartsUrl` に `basePath` を追加し、Charts/Patients の returnTo を施設付きで生成。
+
+## 実施ログ
+- RUN_ID: `20251230T025257Z`
+  - 実装: `/login` を施設選択入口に変更し、`/f/:facilityId/login` へ遷移する導線を追加（最近利用施設の候補表示/別施設入力/遷移時の state.from 継承）。
+  - 実装: `LoginScreen` に施設ID固定表示を追加し、`/f/:facilityId/login` から施設IDを確定してログインできるようにした。
+  - 実装: ログイン成功時に最近利用施設を localStorage に保存。
+  - 実装: `FacilityGate` のログイン判定を `/login` と `/f/:facilityId/login` の双方に対応し、`state.from` を facilityId で正規化して復帰する挙動を維持。
+  - 実装: OrcaSummary / PatientsTab の `/reception` 遷移を `/f/:facilityId/reception` に統一。
+  - テスト: `npm test -- FacilityLoginEntry`（2 tests, 2 passed）。
+  - 動作確認:
+    - 起動: `MINIO_API_PORT=31000 MINIO_CONSOLE_PORT=31001 MODERNIZED_POSTGRES_PORT=56432 MODERNIZED_APP_HTTP_PORT=19080 MODERNIZED_APP_ADMIN_PORT=19995 WEB_CLIENT_MODE=npm ./setup-modernized-env.sh`
+    - 起動ログ: `tmp/web-client-dev.log` に Vite 起動ログを確認。
+    - ルート応答: `curl http://localhost:5173/login` と `curl http://localhost:5173/f/1.3.6.1.4.1.9414.10.1/login` が HTTP 200。
+    - 補足: 初回の DB seed/ユーザー登録は `d_facility`/`d_users` 未生成のためスキップ（ログ出力あり）。

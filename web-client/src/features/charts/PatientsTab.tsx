@@ -474,7 +474,7 @@ export function PatientsTab({
     const params = new URLSearchParams();
     if (keywordValue) params.set('kw', keywordValue);
     params.set('intent', intent);
-    navigate(`/reception?${params.toString()}`);
+    navigate(`${buildFacilityPath(session.facilityId, '/reception')}?${params.toString()}`);
     recordChartsAuditEvent({
       action: 'CHARTS_NAVIGATE_RECEPTION',
       outcome: 'success',
