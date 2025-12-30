@@ -115,7 +115,8 @@ export const buildChartsUrl = (
   context: OutpatientEncounterContext,
   carryover?: ReceptionCarryoverParams,
   meta?: ChartsNavigationMeta,
-): string => `/charts${buildChartsEncounterSearch(context, carryover, meta)}`;
+  basePath = '/charts',
+): string => `${basePath}${buildChartsEncounterSearch(context, carryover, meta)}`;
 
 export const storeChartsEncounterContext = (context: OutpatientEncounterContext) => {
   if (typeof sessionStorage === 'undefined') return;

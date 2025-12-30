@@ -6,6 +6,7 @@ import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { useSession } from '../../AppRouter';
+import { buildFacilityPath } from '../../routes/facilityRoutes';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags } from '../charts/authService';
 import {
   ORCA_QUEUE_STALL_THRESHOLD_MS,
@@ -543,7 +544,9 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               <li>system_admin で再ログインしてください。</li>
               <li>権限保持者へ配信依頼を行ってください。</li>
               <li>
-                <Link to="/reception" className="admin-guard__link">Reception へ戻って受付状況を確認</Link>
+                <Link to={buildFacilityPath(session.facilityId, '/reception')} className="admin-guard__link">
+                  Reception へ戻って受付状況を確認
+                </Link>
               </li>
             </ul>
           </div>

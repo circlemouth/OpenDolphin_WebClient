@@ -9,6 +9,8 @@ import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
 import { DOCUMENT_TEMPLATES, DOCUMENT_TYPE_LABELS, getTemplateById, type DocumentType } from './documentTemplates';
 import { saveDocumentPrintPreview, type DocumentOutputMode } from './print/documentPrintPreviewStorage';
+import { useOptionalSession } from '../../AppRouter';
+import { buildFacilityPath } from '../../routes/facilityRoutes';
 
 export type DocumentCreatePanelMeta = {
   runId?: string;
@@ -162,6 +164,7 @@ const resolveMissingFields = (type: DocumentType, form: DocumentFormState): stri
 };
 
 export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreatePanelProps) {
+  const session = useOptionalSession();
   const navigate = useNavigate();
   const today = useMemo(() => new Date().toISOString().slice(0, 10), []);
   const [activeType, setActiveType] = useState<DocumentType>('referral');
@@ -490,7 +493,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       facilityId,
       initialOutputMode,
     };
-    navigate('/charts/print/document', { state: previewState });
+    navigate(buildFacilityPath(session?.facilityId, '/charts/print/document'), { state: previewState });
     saveDocumentPrintPreview(previewState);
   };
 

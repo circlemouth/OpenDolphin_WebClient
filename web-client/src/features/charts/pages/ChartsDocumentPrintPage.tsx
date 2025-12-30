@@ -16,6 +16,8 @@ import {
   type DocumentPrintPreviewState,
 } from '../print/documentPrintPreviewStorage';
 import { DOCUMENT_TYPE_LABELS } from '../documentTemplates';
+import { useOptionalSession } from '../../../AppRouter';
+import { buildFacilityPath } from '../../../routes/facilityRoutes';
 
 type OutputMode = DocumentOutputMode;
 type OutputStatus = 'idle' | 'printing' | 'completed' | 'failed';
@@ -37,6 +39,7 @@ export function ChartsDocumentPrintPage() {
 }
 
 function ChartsDocumentPrintContent() {
+  const session = useOptionalSession();
   const navigate = useNavigate();
   const location = useLocation();
   const restored = useMemo(() => loadDocumentPrintPreview(), []);
@@ -284,7 +287,7 @@ function ChartsDocumentPrintContent() {
 
   const handleClose = () => {
     clearDocumentPrintPreview();
-    navigate('/charts');
+    navigate(buildFacilityPath(session?.facilityId, '/charts'));
   };
 
   if (!state) {
@@ -378,7 +381,11 @@ function ChartsDocumentPrintContent() {
             runId={state.meta.runId}
           />
           <div className="charts-print__recovery" role="group" aria-label="出力復旧導線">
-            <button type="button" className="charts-print__button" onClick={() => navigate('/reception')}>
+            <button
+              type="button"
+              className="charts-print__button"
+              onClick={() => navigate(buildFacilityPath(session?.facilityId, '/reception'))}
+            >
               Receptionへ戻る
             </button>
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
@@ -405,7 +412,11 @@ function ChartsDocumentPrintContent() {
             >
               再試行
             </button>
-            <button type="button" className="charts-print__button" onClick={() => navigate('/reception')}>
+            <button
+              type="button"
+              className="charts-print__button"
+              onClick={() => navigate(buildFacilityPath(session?.facilityId, '/reception'))}
+            >
               Receptionへ戻る
             </button>
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>

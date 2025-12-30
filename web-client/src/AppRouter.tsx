@@ -16,6 +16,8 @@ import {
   NavLink,
   Outlet,
   useLocation,
+  useParams,
+  type Location,
 } from 'react-router-dom';
 
 import { LoginScreen, type LoginResult } from './LoginScreen';
@@ -36,6 +38,16 @@ import {
   clearSessionExpiredNotice,
   type SessionExpiryNotice,
 } from './libs/session/sessionExpiry';
+import {
+  buildFacilityPath,
+  buildFacilityUrl,
+  decodeFacilityParam,
+  ensureFacilityUrl,
+  normalizeFacilityId,
+  parseFacilityPath,
+} from './routes/facilityRoutes';
+import { FacilityLoginEntry } from './features/login/FacilityLoginEntry';
+import { addRecentFacility } from './features/login/recentFacilityStore';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
@@ -94,11 +106,16 @@ const SessionContext = createContext<Session | null>(null);
 
 // eslint-disable-next-line react-refresh/only-export-components
 export function useSession() {
-  const context = useContext(SessionContext);
+  const context = useOptionalSession();
   if (!context) {
     throw new Error('useSession must be used within SessionContext');
   }
   return context;
+}
+
+// eslint-disable-next-line react-refresh/only-export-components
+export function useOptionalSession() {
+  return useContext(SessionContext);
 }
 
 const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
@@ -114,6 +131,7 @@ export function AppRouter() {
 
   const handleLoginSuccess = (result: LoginResult) => {
     updateObservabilityMeta({ runId: result.runId });
+    addRecentFacility(result.facilityId);
     setSession(result);
     persistSession(result);
   };
@@ -166,32 +184,32 @@ export function AppRouter() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route
-          path="/login"
-          element={
-            session ? <Navigate to="/reception" replace /> : <LoginScreen onLoginSuccess={handleLoginSuccess} />
-          }
-        />
-        <Route element={<Protected session={session} onLogout={() => handleLogout('manual')} />}>
-          <Route index element={<Navigate to="/reception" replace />} />
-        <Route path="/reception" element={<ConnectedReception />} />
-        <Route path="/charts" element={<ConnectedCharts />} />
-        <Route path="/charts/print/outpatient" element={<ChartsOutpatientPrintPage />} />
-        <Route path="/charts/print/document" element={<ChartsDocumentPrintPage />} />
-        <Route path="/patients" element={<ConnectedPatients />} />
-        <Route path="/administration" element={<ConnectedAdministration />} />
-        <Route path="/outpatient-mock" element={<OutpatientMockPage />} />
-      </Route>
-        <Route path="*" element={<Navigate to={session ? '/reception' : '/login'} replace />} />
+        <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
+          <Route path="login" element={<FacilityLoginEntry />} />
+          <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
+          <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
+          <Route path="*" element={<LegacyRootRedirect session={session} />} />
+        </Route>
       </Routes>
     </BrowserRouter>
   );
 }
 
-function Protected({ session, onLogout }: { session: Session | null; onLogout: () => void }) {
+function FacilityGate({ session, onLogout }: { session: Session | null; onLogout: () => void }) {
   const location = useLocation();
+  const loginRoute = isLoginRoute(location.pathname);
   if (!session) {
+    if (loginRoute) {
+      return <Outlet />;
+    }
     return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+  if (loginRoute) {
+    const redirectFrom = resolveLoginRedirect(location);
+    if (redirectFrom) {
+      return <Navigate to={normalizeFacilityRedirect(session.facilityId, redirectFrom)} replace />;
+    }
+    return <Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />;
   }
 
   return (
@@ -210,6 +228,92 @@ function Protected({ session, onLogout }: { session: Session | null; onLogout: (
     </SessionContext.Provider>
   );
 }
+
+function FacilityShell({ session }: { session: Session | null }) {
+  const { facilityId } = useParams();
+  const location = useLocation();
+  const normalizedId = facilityId ? decodeURIComponent(facilityId) : undefined;
+
+  if (!session) {
+    const next = buildFacilityUrl(normalizedId, location.pathname, location.search);
+    return <Navigate to="/login" state={{ from: next }} replace />;
+  }
+
+  if (normalizedId && normalizedId !== session.facilityId) {
+    return <Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />;
+  }
+
+  return (
+    <Routes>
+      <Route index element={<Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />} />
+      <Route path="reception" element={<ConnectedReception />} />
+      <Route path="charts" element={<ConnectedCharts />} />
+      <Route path="charts/print/outpatient" element={<ChartsOutpatientPrintPage />} />
+      <Route path="charts/print/document" element={<ChartsDocumentPrintPage />} />
+      <Route path="patients" element={<ConnectedPatients />} />
+      <Route path="administration" element={<ConnectedAdministration />} />
+      <Route path="outpatient-mock" element={<OutpatientMockPage />} />
+      <Route path="*" element={<Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />} />
+    </Routes>
+  );
+}
+
+function FacilityLoginScreen({ onLoginSuccess }: { onLoginSuccess: (result: LoginResult) => void }) {
+  const { facilityId } = useParams();
+  const normalizedId = normalizeFacilityId(decodeFacilityParam(facilityId) ?? facilityId);
+
+  return (
+    <LoginScreen
+      onLoginSuccess={onLoginSuccess}
+      initialFacilityId={normalizedId ?? ''}
+      lockFacilityId={Boolean(normalizedId)}
+    />
+  );
+}
+
+function LegacyRootRedirect({ session }: { session: Session | null }) {
+  const location = useLocation();
+  const redirectFromLoginState = resolveLoginRedirect(location);
+  if (redirectFromLoginState) {
+    return <Navigate to={redirectFromLoginState} replace />;
+  }
+
+  if (!session) {
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
+
+  const facilityId = session.facilityId;
+  const legacyRedirect = ensureFacilityUrl(facilityId, location.pathname, location.search);
+  return <Navigate to={legacyRedirect} replace />;
+}
+
+const resolveLoginRedirect = (location: Location): string | null => {
+  const state = location.state as { from?: string | Location } | null;
+  const from = state?.from;
+  if (!from) return null;
+  if (typeof from === 'string') {
+    return from;
+  }
+  const path = from.pathname ?? '';
+  if (!path) return null;
+  return `${path}${from.search ?? ''}`;
+};
+
+const isLoginRoute = (pathname: string) => {
+  if (pathname === '/login') return true;
+  const match = parseFacilityPath(pathname);
+  return match?.suffix === '/login';
+};
+
+const normalizeFacilityRedirect = (facilityId: string, target: string) => {
+  const [pathname, rawSearch] = target.split('?');
+  const search = rawSearch ? `?${rawSearch}` : '';
+  const facilityMatch = parseFacilityPath(pathname);
+  const safePath = facilityMatch
+    ? buildFacilityPath(facilityId, facilityMatch.suffix)
+    : buildFacilityPath(facilityId, pathname);
+  return `${safePath}${search}`;
+};
 
 function AppLayout({ onLogout }: { onLogout: () => void }) {
   const location = useLocation();
@@ -276,8 +380,9 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
     () =>
       NAV_LINKS.map((link) => {
         const allowed = !link.roles || link.roles.includes(session.role);
+        const linkPath = buildFacilityPath(session.facilityId, link.to);
         const className = ({ isActive }: { isActive: boolean }) =>
-          `app-shell__nav-link${isActive || location.pathname.startsWith(link.to) ? ' is-active' : ''}${
+          `app-shell__nav-link${isActive || location.pathname.startsWith(linkPath) ? ' is-active' : ''}${
             allowed ? '' : ' is-disabled'
           }`;
         const handleClick = (event: MouseEvent) => {
@@ -306,7 +411,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
         return (
           <NavLink
             key={link.to}
-            to={allowed ? link.to : '#'}
+            to={allowed ? linkPath : '#'}
             className={className}
             aria-disabled={!allowed}
             tabIndex={allowed ? 0 : -1}
@@ -319,7 +424,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           </NavLink>
         );
       }),
-    [enqueueToast, location.pathname, session.role],
+    [enqueueToast, location.pathname, resolvedRunId, session.facilityId, session.role, session.userId],
   );
 
   const handleCopyRunId = async () => {

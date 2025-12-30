@@ -19,6 +19,8 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { receptionStyles } from '../reception/styles';
 import { CacheHitBadge, MissingMasterBadge } from '../shared/StatusBadge';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import { useOptionalSession } from '../../AppRouter';
+import { buildFacilityPath } from '../../routes/facilityRoutes';
 import {
   listOutpatientScenarios,
   OUTPATIENT_FALLBACK_RUN_ID,
@@ -58,6 +60,7 @@ const toResolvedFlags = (claim: FlagEnvelope, medical: FlagEnvelope): ResolvedFl
 });
 
 export function OutpatientMockPage() {
+  const session = useOptionalSession();
   const mswDisabled = import.meta.env.VITE_DISABLE_MSW === '1';
   const mswQueryEnabled = useMemo(() => {
     if (typeof window === 'undefined') return false;
@@ -275,7 +278,10 @@ export function OutpatientMockPage() {
           ) : !mswQueryEnabled ? (
             <p className="status-message" aria-live="assertive">
               ⚠️ `msw=1` が付いていないため、障害注入ヘッダー（x-msw-fault / x-msw-delay-ms）は送出されません。検証時は{' '}
-              <a href="/outpatient-mock?msw=1">/outpatient-mock?msw=1</a> を開いてください。
+              <a href={`${buildFacilityPath(session?.facilityId, '/outpatient-mock')}?msw=1`}>
+                /outpatient-mock?msw=1
+              </a>{' '}
+              を開いてください。
             </p>
           ) : (
             <p className="status-message" aria-live="polite">

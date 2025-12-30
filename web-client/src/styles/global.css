@@ -112,6 +112,90 @@ body {
   box-shadow: none;
 }
 
+.facility-entry__block {
+  margin-top: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.facility-entry__label {
+  margin: 0;
+  font-weight: 600;
+  color: #475569;
+}
+
+.facility-entry__choices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.facility-entry__choice {
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background: #f1f5ff;
+  color: #1e3a8a;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.facility-entry__choice:hover {
+  background: #dbeafe;
+  box-shadow: 0 8px 20px rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+.facility-entry__toggle {
+  align-self: flex-start;
+  border: none;
+  background: transparent;
+  color: #2563eb;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 0;
+}
+
+.facility-entry__toggle:disabled {
+  color: #94a3b8;
+  cursor: not-allowed;
+}
+
+.facility-entry__empty {
+  margin-top: 1rem;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.facility-entry__form {
+  margin-top: 1rem;
+}
+
+.facility-entry__actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.facility-entry__secondary {
+  width: 100%;
+  padding: 0.65rem 1rem;
+  border-radius: 999px;
+  border: 1px solid #cbd5f5;
+  background: #ffffff;
+  color: #1e293b;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.facility-entry__secondary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 8px 20px rgba(15, 23, 42, 0.12);
+}
+
 .status-message {
   margin-top: 0.25rem;
   padding: 0.75rem 1rem;

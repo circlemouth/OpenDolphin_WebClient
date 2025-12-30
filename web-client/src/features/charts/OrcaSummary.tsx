@@ -10,6 +10,8 @@ import type { ClaimOutpatientPayload, ReceptionEntry } from '../outpatient/types
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { logUiState } from '../../libs/audit/auditLogger';
 import { resolveOutpatientFlags, type OutpatientFlagSource } from '../outpatient/flags';
+import { buildFacilityPath } from '../../routes/facilityRoutes';
+import { useOptionalSession } from '../../AppRouter';
 
 export interface OrcaSummaryProps {
   summary?: OrcaOutpatientSummary;
@@ -29,6 +31,7 @@ export function OrcaSummary({
   isRefreshing = false,
 }: OrcaSummaryProps) {
   const navigate = useNavigate();
+  const session = useOptionalSession();
   const { flags } = useAuthService();
   const resolvedFlags = resolveOutpatientFlags(summary, claim, appointmentMeta, flags);
   const resolvedRunId = resolvedFlags.runId ?? flags.runId;
@@ -105,7 +108,7 @@ export function OrcaSummary({
       if (target === 'reservation') search.set('section', 'appointment');
       if (target === 'billing') search.set('section', 'billing');
       if (target === 'new-appointment') search.set('create', '1');
-      navigate(`/reception?${search.toString()}`, {
+      navigate(`${buildFacilityPath(session?.facilityId, '/reception')}?${search.toString()}`, {
         state: { runId: resolvedRunId, dataSourceTransition: resolvedTransition, from: 'charts', manualRefresh: false },
       });
       logUiState({
@@ -130,7 +133,15 @@ export function OrcaSummary({
         note: `cta:${target}`,
       });
     },
-    [navigate, resolvedCacheHit, resolvedFallbackUsed, resolvedMissingMaster, resolvedRunId, resolvedTransition],
+    [
+      navigate,
+      resolvedCacheHit,
+      resolvedFallbackUsed,
+      resolvedMissingMaster,
+      resolvedRunId,
+      resolvedTransition,
+      session?.facilityId,
+    ],
   );
 
   const handleRefresh = useCallback(async () => {
