@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート - 施設ID自動補完ルーティング</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .score-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        background: #f7fafb;
+      }
+      .score-title {
+        font-size: 16px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+        margin-bottom: 8px;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .radar {
+        margin: 12px 0 8px;
+        display: flex;
+        justify-content: center;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px 12px;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .label {
+        font-weight: 600;
+        color: #2c3a40;
+        margin-bottom: 6px;
+      }
+      .note {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .link-list a {
+        color: #1f2a30;
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート：施設ID自動補完ルーティング実装</h1>
+        <p class="monitor-description">
+          対象ブランチ2本の実装差分・コミットログ・テスト記述を比較し、緻密性（仕様適合・正確性・境界配慮・検証・可読性・記録）で採点。
+        </p>
+        <p class="monitor-description">成果物は異なるworktreeに存在するため、リンク先パスの差異に注意。</p>
+      </header>
+
+      <section class="score-grid">
+        <div class="score-card">
+          <div class="score-title">claude code / task-1767078204936-44fb8b</div>
+          <div class="score-total">🥇 522 / 600</div>
+          <div class="score-sub">総合スコア: 88 / 100（メダル: 🥈）</div>
+          <div class="radar">
+            <svg width="180" height="180" viewBox="0 0 160 160" aria-label="評価チャート">
+              <polygon points="80,20 131.96,50 131.96,110 80,140 28.04,110 28.04,50" fill="#eef3f4" stroke="#c4d3d7" />
+              <polygon points="80,40 116.64,60 116.64,100 80,120 43.36,100 43.36,60" fill="none" stroke="#c4d3d7" />
+              <polygon points="80,60 101.32,70 101.32,90 80,100 58.68,90 58.68,70" fill="none" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="80" y2="20" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="131.96" y2="50" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="131.96" y2="110" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="80" y2="140" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="28.04" y2="110" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="28.04" y2="50" stroke="#c4d3d7" />
+              <polygon points="80,26 125.7,53.6 126.8,107 80,128 34.3,106.4 35.3,54.2" fill="#5f7f89" fill-opacity="0.4" stroke="#2c3a40" />
+            </svg>
+          </div>
+          <div class="metric-list">
+            <div>仕様適合 90点</div>
+            <div>正確性 88点</div>
+            <div>境界配慮 90点</div>
+            <div>テスト 80点</div>
+            <div>可読性 88点</div>
+            <div>記録/文書 86点</div>
+          </div>
+        </div>
+        <div class="score-card">
+          <div class="score-title">claude code / task-1767078205138-ca4720</div>
+          <div class="score-total">🥇 519 / 600</div>
+          <div class="score-sub">総合スコア: 86 / 100（メダル: 🥈）</div>
+          <div class="radar">
+            <svg width="180" height="180" viewBox="0 0 160 160" aria-label="評価チャート">
+              <polygon points="80,20 131.96,50 131.96,110 80,140 28.04,110 28.04,50" fill="#eef3f4" stroke="#c4d3d7" />
+              <polygon points="80,40 116.64,60 116.64,100 80,120 43.36,100 43.36,60" fill="none" stroke="#c4d3d7" />
+              <polygon points="80,60 101.32,70 101.32,90 80,100 58.68,90 58.68,70" fill="none" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="80" y2="20" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="131.96" y2="50" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="131.96" y2="110" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="80" y2="140" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="28.04" y2="110" stroke="#c4d3d7" />
+              <line x1="80" y1="80" x2="28.04" y2="50" stroke="#c4d3d7" />
+              <polygon points="80,27.2 124.7,54.2 123.6,105.2 80,131 35.3,105.8 33.2,53" fill="#5f7f89" fill-opacity="0.4" stroke="#2c3a40" />
+            </svg>
+          </div>
+          <div class="metric-list">
+            <div>仕様適合 88点</div>
+            <div>正確性 86点</div>
+            <div>境界配慮 84点</div>
+            <div>テスト 85点</div>
+            <div>可読性 86点</div>
+            <div>記録/文書 90点</div>
+          </div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>項目</th>
+            <th>claude code / task-1767078204936-44fb8b</th>
+            <th>claude code / task-1767078205138-ca4720</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="label">タスク概要</td>
+            <td>
+              /login 直アクセス時の施設ID自動補完を強化。from state 由来の施設IDを最優先にし、旧URL誘導時の push/replace 方針をコメントで明文化。
+            </td>
+            <td>
+              /login 直アクセスの施設ID補完を追加。from state から施設IDを抽出し、直アクセス時 replace を維持する方針をコメントで明文化。
+            </td>
+          </tr>
+          <tr>
+            <td class="label">コミットログ</td>
+            <td>
+              <pre>704094fc1 Add facility auto-resolve on /login</pre>
+            </td>
+            <td>
+              <pre>890102e87 feat: auto-resolve facility id on login</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">差分概要</td>
+            <td>
+              <pre>+ FacilityLoginResolver: from state 解析関数追加
++ FacilityLoginResolver.test: from state 優先テスト追加
++ 作業記録MD 追加</pre>
+            </td>
+            <td>
+              <pre>+ FacilityLoginResolver: from state 解析関数追加
++ FacilityLoginResolver.test: from state 優先テスト追加
++ 作業記録MD 追加（補完順/方針を詳細化）</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">緻密性の根拠</td>
+            <td>
+              <pre>仕様適合: from state 優先順位を C案の先頭に追加。
+正確性: query/hash を除去してから parse し、facilityId が空の場合は無視。
+境界配慮: string/Location 両対応、未解決時のフォールバック維持。
+テスト: from state 優先のシナリオを追加。
+可読性: resolveFacilityIdFromFromState を独立関数化。
+記録: 作業記録に補完順とテスト手順を明記。</pre>
+            </td>
+            <td>
+              <pre>仕様適合: from state 優先と push/replace 方針を反映。
+正確性: from state の pathname 解析を追加。
+境界配慮: hash 未除去のケースは suffix に残るが facilityId は維持。
+テスト: from state 経由の遷移と state 維持を確認。
+可読性: 小さな helper で整理。
+記録: 補完順序と replace/push を明文化。</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">リスク/懸念</td>
+            <td>
+              <pre>forwardState の維持をテストしていないため、履歴遷移の信頼性検証が弱い。</pre>
+            </td>
+            <td>
+              <pre>from state が hash のみを含む文字列の場合、suffix に hash が残る点の説明不足。</pre>
+            </td>
+          </tr>
+          <tr>
+            <td class="label">成果物リンク</td>
+            <td class="link-list">
+              <div>worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078204936-44fb8b</div>
+              <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078204936-44fb8b/web-client/src/features/login/FacilityLoginResolver.tsx">FacilityLoginResolver.tsx</a></div>
+              <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078204936-44fb8b/web-client/src/features/login/__tests__/FacilityLoginResolver.test.tsx">FacilityLoginResolver.test.tsx</a></div>
+              <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078204936-44fb8b/web-client/src/webclient_facility_prefix/07_%E6%96%BD%E8%A8%ADID%E8%87%AA%E5%8B%95%E8%A3%9C%E5%AE%8C%E3%83%AB%E3%83%BC%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0%E5%AE%9F%E8%A3%85.md">作業記録</a></div>
+            </td>
+            <td class="link-list">
+              <div>worktree: /Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078205138-ca4720</div>
+              <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078205138-ca4720/web-client/src/features/login/FacilityLoginResolver.tsx">FacilityLoginResolver.tsx</a></div>
+              <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078205138-ca4720/web-client/src/features/login/__tests__/FacilityLoginResolver.test.tsx">FacilityLoginResolver.test.tsx</a></div>
+              <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767078205138-ca4720/web-client/src/webclient_facility_prefix/07_%E6%96%BD%E8%A8%ADID%E8%87%AA%E5%8B%95%E8%A3%9C%E5%AE%8C%E3%83%AB%E3%83%BC%E3%83%86%E3%82%A3%E3%83%B3%E3%82%B0%E5%AE%9F%E8%A3%85.md">作業記録</a></div>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
