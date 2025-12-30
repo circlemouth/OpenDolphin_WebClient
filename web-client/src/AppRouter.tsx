@@ -126,6 +126,16 @@ const NAV_LINKS: Array<{ to: string; label: string; roles?: string[] }> = [
   { to: '/outpatient-mock', label: 'Outpatient Mock' },
 ];
 
+const LEGACY_ROUTES = [
+  'reception',
+  'charts',
+  'charts/print/outpatient',
+  'charts/print/document',
+  'patients',
+  'administration',
+  'outpatient-mock',
+];
+
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
 
@@ -186,6 +196,9 @@ export function AppRouter() {
       <Routes>
         <Route element={<FacilityGate session={session} onLogout={() => handleLogout('manual')} />}>
           <Route path="login" element={<FacilityLoginEntry />} />
+          {LEGACY_ROUTES.map((path) => (
+            <Route key={path} path={path} element={<LegacyRootRedirect session={session} />} />
+          ))}
           <Route path="f/:facilityId/login" element={<FacilityLoginScreen onLoginSuccess={handleLoginSuccess} />} />
           <Route path="f/:facilityId/*" element={<FacilityShell session={session} />} />
           <Route path="*" element={<LegacyRootRedirect session={session} />} />

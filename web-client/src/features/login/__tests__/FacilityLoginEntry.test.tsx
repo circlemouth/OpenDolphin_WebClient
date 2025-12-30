@@ -40,11 +40,21 @@ describe('FacilityLoginEntry', () => {
     const user = userEvent.setup();
 
     render(<RouterProvider router={router} />);
+    expect(screen.getByText(/旧URLからアクセスされています/)).toBeInTheDocument();
     await user.type(screen.getByLabelText('施設ID'), 'FAC-9');
     await user.click(screen.getByRole('button', { name: 'ログインへ進む' }));
 
     expect(router.state.location.pathname).toBe('/f/FAC-9/login');
     expect(router.state.location.state).toEqual({ from });
   });
-});
 
+  it('facility 付き URL からの遷移では旧URL案内を表示しない', () => {
+    const from = { pathname: '/f/0001/reception', search: '' };
+    const router = buildRouter({ pathname: '/login', state: { from } });
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.queryByText(/旧URLからアクセスされています/)).toBeNull();
+    expect(router.state.location.pathname).toBe('/login');
+  });
+});

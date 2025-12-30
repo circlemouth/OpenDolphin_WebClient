@@ -2,7 +2,7 @@ import { useMemo, useState } from 'react';
 import type { ChangeEvent, FormEvent } from 'react';
 import { useLocation, useNavigate, type Location } from 'react-router-dom';
 
-import { buildFacilityPath, normalizeFacilityId } from '../../routes/facilityRoutes';
+import { buildFacilityPath, normalizeFacilityId, parseFacilityPath } from '../../routes/facilityRoutes';
 import { loadRecentFacilities } from './recentFacilityStore';
 
 type FacilityLoginEntryProps = {
@@ -17,6 +17,13 @@ const normalizeFromState = (state: unknown): { from?: string | Location } | unde
   return undefined;
 };
 
+const isLegacyFrom = (from?: string | Location) => {
+  if (!from) return false;
+  const pathname = typeof from === 'string' ? from.split('?')[0] ?? '' : from.pathname ?? '';
+  if (!pathname || pathname === '/login') return false;
+  return parseFacilityPath(pathname) === null;
+};
+
 export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }: FacilityLoginEntryProps) => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -27,6 +34,7 @@ export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }:
 
   const fromState = useMemo(() => normalizeFromState(location.state)?.from, [location.state]);
   const forwardState = useMemo(() => (fromState ? { from: fromState } : undefined), [fromState]);
+  const showLegacyNotice = useMemo(() => isLegacyFrom(fromState), [fromState]);
 
   const handleSelectFacility = (facilityId: string) => {
     const normalized = normalizeFacilityId(facilityId);
@@ -57,6 +65,11 @@ export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }:
           <h1 id="facility-login-heading">{heading}</h1>
           <p>ログインする施設IDを選択または入力してください。選択後にログイン画面へ進みます。</p>
         </header>
+        {showLegacyNotice ? (
+          <p className="status-message" role="status">
+            旧URLからアクセスされています。施設IDを選択すると目的の画面へ進みます。
+          </p>
+        ) : null}
 
         {hasRecentFacilities ? (
           <div className="facility-entry__block" aria-label="最近利用施設">
