@@ -351,8 +351,8 @@ src:
         - 依存/前提: entity 定義・必須項目一覧の整備（不足時は前提ドキュメントに追記）。
         - テスト: 必須違反時の保存ブロック/メッセージ/監査ログの整合。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -376,8 +376,8 @@ src:
         - 依存/前提: /orca/master/* の検索 API スキーマ確認（不足時は server-modernized タスク起票）。
         - テスト: 検索条件変更時の結果更新、行選択反映、readOnly 時のブロック。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -401,8 +401,8 @@ src:
         - 依存/前提: 展開時のビジネスルール（カルテ反映定義）の合意。
         - テスト: 展開/展開継続/保存の導線とログが一致すること。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -426,8 +426,8 @@ src:
         - 依存/前提: /stamp/* API の仕様確認（不足時は server-modernized タスク起票）。
         - テスト: 保存/取り込み成功・失敗、readOnly ブロック、反映手順表示。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -451,8 +451,8 @@ src:
         - 依存/前提: 文書作成 API の有無/仕様確認（不足時は server-modernized タスク起票）。
         - テスト: メニュー表示、フォーム起動、保存/中断の導線確認。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -476,8 +476,8 @@ src:
         - 依存/前提: DnD ライブラリ選定と既存テーブル構造の整理。
         - テスト: 保存順序の反映、readOnly/missingMaster/fallbackUsed 時の無効化。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: in_progress
+      progress: 30
       agent: codex
       api: []
       dependency:
@@ -501,8 +501,8 @@ src:
         - 依存/前提: /orca/master/bodypart/material 等の API 確認（不足時は server-modernized タスク起票）。
         - テスト: 追加/編集/削除の保存反映、readOnly ブロック。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -524,8 +524,8 @@ src:
         - 依存/前提: 文書テンプレ API/出力 API の仕様確認（不足時は server-modernized タスク起票）。
         - テスト: テンプレ選択→生成→印刷の導線、権限/ガード条件。
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:
@@ -650,8 +650,8 @@ src:
         - 依存/前提: /orca/master/medicine などの API 仕様確認（不足時は server-modernized タスク起票）。
         - テスト: 検索→行追加→保存、readOnly 時のブロック。
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       agent: codex
       api: []
       dependency:

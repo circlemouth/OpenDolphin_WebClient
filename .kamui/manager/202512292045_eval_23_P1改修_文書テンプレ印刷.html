@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート | 23 P1改修 文書テンプレ印刷</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .summary-block {
+        border: 1px solid #c4d3d7;
+        background: #f7fbfc;
+        padding: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-block h2 {
+        margin: 0 0 8px;
+        font-size: 16px;
+      }
+      .summary-block ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 13px;
+        color: #34434a;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 180px;
+      }
+      col.agent-column {
+        width: calc((100% - 180px) / 2);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 12px;
+      }
+      .agent-title {
+        font-weight: 700;
+        font-size: 14px;
+      }
+      .score-card {
+        display: inline-flex;
+        align-items: baseline;
+        gap: 8px;
+        padding: 6px 10px;
+        background: #102a2f;
+        color: #ffffff;
+        border-radius: 6px;
+        font-weight: 700;
+      }
+      .score-card span {
+        font-size: 18px;
+      }
+      .score-card small {
+        font-size: 11px;
+        opacity: 0.7;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar svg {
+        display: block;
+        width: 140px;
+        height: 140px;
+      }
+      .metric-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list ul {
+        margin: 0;
+        padding-left: 18px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 700;
+        margin: 12px 0 6px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 11px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .note-list {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 6px;
+        border-radius: 4px;
+        background: #e3edf0;
+        font-size: 11px;
+        font-weight: 600;
+      }
+      .links ul {
+        margin: 0;
+        padding-left: 18px;
+        font-size: 12px;
+      }
+      .links a {
+        color: #1d4ed8;
+        text-decoration: none;
+      }
+      .links a:hover {
+        text-decoration: underline;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 23 P1改修 文書テンプレ印刷</h1>
+        <p class="monitor-description">評価基準: 緻密性 / 評価日時: 2025-12-29 20:45 UTC / RUN_ID: 20251229T081044Z</p>
+      </header>
+
+      <section class="summary-block">
+        <h2>タスク概要</h2>
+        <ul>
+          <li>Charts 文書作成導線に ODT テンプレ差し込みと文書別印刷/プレビュー導線を追加。</li>
+          <li>出力操作の監査ログを既存印刷ログに準拠して追加。</li>
+          <li>文書テンプレ/出力 API は未統合のため、UI/ガード/監査中心の実装で評価。</li>
+          <li>比較対象ブランチ: task-1767039129349-c5525b / task-1767039128806-e0ac89 / task-1767039129003-8444b0</li>
+        </ul>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent/Task A</th>
+            <th>Agent/Task B</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-29 20:45</td>
+            <td>
+              <div class="agent-header">
+                <div class="agent-title">codex / task-1767039129349-c5525b</div>
+                <div class="score-card"><span>542 / 600 🏆</span><small>総合</small></div>
+              </div>
+              <div class="radar-wrap">
+                <div class="radar">
+                  <svg viewBox="0 0 140 140" aria-label="評価チャート">
+                    <polygon points="70,10 121,40 121,100 70,130 19,100 19,40" fill="none" stroke="#c4d3d7" />
+                    <polygon points="70,14.8 116.8,43 118.9,98.2 70,125.2 26.3,95.2 23.2,43" fill="rgba(37, 99, 235, 0.25)" stroke="#2563eb" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <ul>
+                    <li>要件適合 92点</li>
+                    <li>導線設計 90点</li>
+                    <li>監査ログ 94点</li>
+                    <li>ガード/リスク 92点</li>
+                    <li>テスト 84点</li>
+                    <li>実装精度 90点</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="section-title">評価理由</div>
+              <ul class="note-list">
+                <li>テンプレ選択・差し込み・プレビュー/印刷・復旧導線まで UI が一貫している。</li>
+                <li>missingMaster/fallback/患者未選択/権限不足/テンプレ未選択のガードと監査ログが揃う。</li>
+                <li>PRINT_DOCUMENT の approval/lock/do フェーズまで監査メタが詳細。</li>
+                <li>印刷ページの確認ダイアログ/再試行/復旧導線が丁寧。</li>
+              </ul>
+
+              <div class="section-title">懸念/残課題</div>
+              <ul class="note-list">
+                <li>ODT テンプレート/出力 API 連携は未実装（UI 側の擬似テンプレ）。</li>
+                <li>E2E 検証と実ブラウザ印刷確認は未実施。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>ef6b46109 Add chart document templates and print flow</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>11 files changed, 1265 insertions(+), 16 deletions(-)
+web-client/src/AppRouter.tsx
+web-client/src/features/charts/DocumentCreatePanel.tsx
+web-client/src/features/charts/__tests__/chartsDocumentPrintPage.test.tsx
+web-client/src/features/charts/__tests__/chartsPrintAudit.test.ts
+web-client/src/features/charts/__tests__/documentCreatePanel.test.tsx
+web-client/src/features/charts/audit.ts
+web-client/src/features/charts/documentTemplates.ts
+web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx
+web-client/src/features/charts/print/documentClinicalDocument.tsx
+web-client/src/features/charts/print/documentPrintPreviewStorage.ts
+web-client/src/features/charts/styles.ts</pre>
+
+              <div class="section-title">成果物リンク（worktree: task-1767039129349-c5525b）</div>
+              <div class="links">
+                <ul>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129349-c5525b/web-client/src/features/charts/DocumentCreatePanel.tsx">DocumentCreatePanel.tsx</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129349-c5525b/web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx">ChartsDocumentPrintPage.tsx</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129349-c5525b/web-client/src/features/charts/documentTemplates.ts">documentTemplates.ts</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129349-c5525b/web-client/src/features/charts/print/documentClinicalDocument.tsx">documentClinicalDocument.tsx</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129349-c5525b/web-client/src/features/charts/__tests__/chartsDocumentPrintPage.test.tsx">chartsDocumentPrintPage.test.tsx</a></li>
+                </ul>
+              </div>
+            </td>
+
+            <td>
+              <div class="agent-header">
+                <div class="agent-title">codex / task-1767039128806-e0ac89</div>
+                <div class="score-card"><span>470 / 600 🥉</span><small>総合</small></div>
+              </div>
+              <div class="radar-wrap">
+                <div class="radar">
+                  <svg viewBox="0 0 140 140" aria-label="評価チャート">
+                    <polygon points="70,10 121,40 121,100 70,130 19,100 19,40" fill="none" stroke="#c4d3d7" />
+                    <polygon points="70,20.8 110.5,46.6 114.7,95.8 70,118 35.7,89.8 29.5,46.6" fill="rgba(16, 185, 129, 0.25)" stroke="#10b981" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <ul>
+                    <li>要件適合 82点</li>
+                    <li>導線設計 78点</li>
+                    <li>監査ログ 86点</li>
+                    <li>ガード/リスク 80点</li>
+                    <li>テスト 66点</li>
+                    <li>実装精度 78点</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="section-title">評価理由</div>
+              <ul class="note-list">
+                <li>テンプレ選択→保存→プレビュー/印刷の導線は概ね実装。</li>
+                <li>PRINT_DOCUMENT の監査ログ追加とテンプレ変更のシナリオログは良い。</li>
+                <li>印刷ページでガード/確認/復旧導線を持つが、UI 側の細かな出力抑止は不足。</li>
+              </ul>
+
+              <div class="section-title">懸念/残課題</div>
+              <ul class="note-list">
+                <li>プレビュー/印刷は単一ボタンで、文書別の出力操作がやや粗い。</li>
+                <li>印刷ページの単体テストが未追加。</li>
+                <li>ODT テンプレ/出力 API 連携は未実装。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>721edf23d Log template selection as scenario change
+8ba61ea5b Add document template print flow</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>9 files changed, 1006 insertions(+), 55 deletions(-)
+web-client/src/AppRouter.tsx
+web-client/src/features/charts/DocumentCreatePanel.tsx
+web-client/src/features/charts/__tests__/chartsPrintAudit.test.ts
+web-client/src/features/charts/__tests__/documentCreatePanel.test.tsx
+web-client/src/features/charts/audit.ts
+web-client/src/features/charts/documentModels.ts
+web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx
+web-client/src/features/charts/print/documentClinicalDocument.tsx
+web-client/src/features/charts/print/documentPrintPreviewStorage.ts</pre>
+
+              <div class="section-title">成果物リンク（worktree: task-1767039128806-e0ac89）</div>
+              <div class="links">
+                <ul>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039128806-e0ac89/web-client/src/features/charts/DocumentCreatePanel.tsx">DocumentCreatePanel.tsx</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039128806-e0ac89/web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx">ChartsDocumentPrintPage.tsx</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039128806-e0ac89/web-client/src/features/charts/documentModels.ts">documentModels.ts</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039128806-e0ac89/web-client/src/features/charts/__tests__/chartsPrintAudit.test.ts">chartsPrintAudit.test.ts</a></li>
+                </ul>
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td class="timestamp">2025-12-29 20:45</td>
+            <td>
+              <div class="agent-header">
+                <div class="agent-title">codex / task-1767039129003-8444b0</div>
+                <div class="score-card"><span>448 / 600 🥉</span><small>総合</small></div>
+              </div>
+              <div class="radar-wrap">
+                <div class="radar">
+                  <svg viewBox="0 0 140 140" aria-label="評価チャート">
+                    <polygon points="70,10 121,40 121,100 70,130 19,100 19,40" fill="none" stroke="#c4d3d7" />
+                    <polygon points="70,22 109.5,47.2 110.5,93.4 70,114.4 37.8,88.6 29.5,46.6" fill="rgba(244, 114, 182, 0.2)" stroke="#f472b6" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <ul>
+                    <li>要件適合 80点</li>
+                    <li>導線設計 76点</li>
+                    <li>監査ログ 78点</li>
+                    <li>ガード/リスク 74点</li>
+                    <li>テスト 62点</li>
+                    <li>実装精度 78点</li>
+                  </ul>
+                </div>
+              </div>
+
+              <div class="section-title">評価理由</div>
+              <ul class="note-list">
+                <li>テンプレ選択と印刷プレビュー導線の基本機能は満たす。</li>
+                <li>セッション/監査ログの連携はあるが、UI ガードや補助情報がやや不足。</li>
+              </ul>
+
+              <div class="section-title">懸念/残課題</div>
+              <ul class="note-list">
+                <li>PRINT_DOCUMENT の監査テストが未整備。</li>
+                <li>出力ガードの事前表示・テンプレ未選択対策は不足。</li>
+                <li>ODT テンプレ/出力 API 連携は未実装。</li>
+              </ul>
+
+              <div class="section-title">コミットログ</div>
+              <pre>593486736 feat: add charts document template print flow</pre>
+
+              <div class="section-title">差分サマリ</div>
+              <pre>9 files changed, 1010 insertions(+), 51 deletions(-)
+web-client/src/AppRouter.tsx
+web-client/src/features/charts/DocumentCreatePanel.tsx
+web-client/src/features/charts/__tests__/documentCreatePanel.test.tsx
+web-client/src/features/charts/audit.ts
+web-client/src/features/charts/documentTemplates.ts
+web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx
+web-client/src/features/charts/print/documentPrintPreviewStorage.ts
+web-client/src/features/charts/print/documentTemplateDocument.tsx
+web-client/src/features/charts/styles.ts</pre>
+
+              <div class="section-title">成果物リンク（worktree: task-1767039129003-8444b0）</div>
+              <div class="links">
+                <ul>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129003-8444b0/web-client/src/features/charts/DocumentCreatePanel.tsx">DocumentCreatePanel.tsx</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129003-8444b0/web-client/src/features/charts/pages/ChartsDocumentPrintPage.tsx">ChartsDocumentPrintPage.tsx</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129003-8444b0/web-client/src/features/charts/documentTemplates.ts">documentTemplates.ts</a></li>
+                  <li><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767039129003-8444b0/web-client/src/features/charts/print/documentTemplateDocument.tsx">documentTemplateDocument.tsx</a></li>
+                </ul>
+              </div>
+            </td>
+
+            <td>
+              <div class="agent-header">
+                <div class="agent-title">比較対象なし</div>
+                <div class="score-card"><span>-- / 600</span><small>総合</small></div>
+              </div>
+              <div class="radar-wrap">
+                <div class="radar">
+                  <svg viewBox="0 0 140 140" aria-label="評価チャート">
+                    <polygon points="70,10 121,40 121,100 70,130 19,100 19,40" fill="none" stroke="#c4d3d7" />
+                    <polygon points="70,70 70,70 70,70 70,70 70,70 70,70" fill="rgba(148, 163, 184, 0.2)" stroke="#94a3b8" />
+                  </svg>
+                </div>
+                <div class="metric-list">
+                  <ul>
+                    <li>要件適合 --</li>
+                    <li>導線設計 --</li>
+                    <li>監査ログ --</li>
+                    <li>ガード/リスク --</li>
+                    <li>テスト --</li>
+                    <li>実装精度 --</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="section-title">補足</div>
+              <ul class="note-list">
+                <li>監視対象ブランチは 3 件のため、比較枠は空欄として保持。</li>
+              </ul>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

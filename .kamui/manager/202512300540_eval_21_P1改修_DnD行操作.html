@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 20px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 12px;
+        margin: 20px 0 28px;
+      }
+      .summary-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 14px 16px;
+      }
+      .summary-card h3 {
+        margin: 0 0 6px;
+        font-size: 14px;
+        color: #2c3a40;
+      }
+      .summary-score {
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+      }
+      .summary-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .section-title {
+        margin: 24px 0 8px;
+        font-size: 16px;
+        color: #2c3a40;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.agent-column {
+        width: 50%;
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      .agent-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+      .agent-title {
+        font-weight: 700;
+        font-size: 15px;
+        color: #1f2a30;
+      }
+      .agent-score {
+        font-size: 20px;
+        font-weight: 700;
+      }
+      .badge {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 11px;
+        border-radius: 999px;
+        border: 1px solid #b8c9cd;
+        background: #e3edf0;
+        color: #2c3a40;
+      }
+      .hex-chart {
+        display: grid;
+        grid-template-columns: 200px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .hex-metrics {
+        font-size: 12px;
+        color: #2c3a40;
+        line-height: 1.4;
+      }
+      .hex-metrics div {
+        margin-bottom: 4px;
+      }
+      .metric-label {
+        font-weight: 600;
+      }
+      ul {
+        margin: 6px 0 12px 18px;
+        padding: 0;
+      }
+      li {
+        margin-bottom: 4px;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 12px;
+      }
+      .small {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      .link-list a {
+        color: #1f2a30;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート: 21 P1 改修 DnD並べ替え / 全クリア / 行削除補助（再評価）</h1>
+        <p class="monitor-description">対象: OrderBundleEditPanel（Charts 右パネル） / 評価基準: 緻密性 / 参照ブランチ: task-1767037731711-a9a67d, task-1767037731512-d30d67, task-1767037731910-369c6c</p>
+        <p class="monitor-description">タスク概要: 行ドラッグによる並べ替え、全クリア確認導線、行削除アクションを追加し、readOnly/missingMaster/fallbackUsed 時は無効化する。</p>
+      </header>
+
+      <section>
+        <h2 class="section-title">総合スコア（600点満点）</h2>
+        <div class="summary-grid">
+          <div class="summary-card">
+            <h3>codex / task-1767037731711-a9a67d</h3>
+            <div class="summary-score">🥇 546 / 600</div>
+            <div class="summary-meta">総合スコア: 91点 / メダル: Gold</div>
+          </div>
+          <div class="summary-card">
+            <h3>codex / task-1767037731512-d30d67</h3>
+            <div class="summary-score">🥈 498 / 600</div>
+            <div class="summary-meta">総合スコア: 83点 / メダル: Silver</div>
+          </div>
+          <div class="summary-card">
+            <h3>codex / task-1767037731910-369c6c</h3>
+            <div class="summary-score">🥉 432 / 600</div>
+            <div class="summary-meta">総合スコア: 72点 / メダル: Bronze</div>
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2 class="section-title">比較評価（2列構成）</h2>
+        <table class="monitor-report">
+          <colgroup>
+            <col class="agent-column" />
+            <col class="agent-column" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Column 1</th>
+              <th>Column 2</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>
+                <div class="agent-header">
+                  <div class="agent-title">codex / task-1767037731711-a9a67d</div>
+                  <div class="agent-score">🥇 91点 <span class="badge">緻密性 高</span></div>
+                </div>
+                <div class="hex-chart">
+                  <svg width="200" height="200" viewBox="0 0 200 200" aria-label="六角形チャート">
+                    <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#f1f5f9" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon points="100.0,26.4 162.4,64.0 161.0,135.2 100.0,172.0 33.5,138.4 37.6,64.0" fill="rgba(59,130,246,0.35)" stroke="#3b82f6" stroke-width="1.5" />
+                  </svg>
+                  <div class="hex-metrics">
+                    <div><span class="metric-label">要件網羅</span> 92点</div>
+                    <div><span class="metric-label">操作安全性</span> 90点</div>
+                    <div><span class="metric-label">UI整合</span> 88点</div>
+                    <div><span class="metric-label">状態管理</span> 90点</div>
+                    <div><span class="metric-label">テスト</span> 96点</div>
+                    <div><span class="metric-label">実装品質</span> 90点</div>
+                  </div>
+                </div>
+                <div class="small">理由:</div>
+                <ul>
+                  <li>rowId導入で並べ替え後のDOM安定性が改善し、DnD状態リセットも整備。</li>
+                  <li>保存/ローカルスタンプ/スタンプ取り込み時に rowId を除外し payload が純化。</li>
+                  <li>テストが並べ替え順序・readOnly無効化・全クリア後の rowId 1行化まで網羅。</li>
+                </ul>
+                <div class="small">コミット:</div>
+                <pre>e25d9cf58 Stabilize order bundle item keys for DnD</pre>
+                <div class="small">差分要約:</div>
+                <pre>OrderBundleEditPanel.tsx (+192/-?)
+orderBundleItemActions.test.tsx (+146)
+styles.ts (+52/-?)</pre>
+                <div class="small">成果物リンク（worktree別）:</div>
+                <div class="link-list small">
+                  <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767037731711-a9a67d/web-client/src/features/charts/OrderBundleEditPanel.tsx">OrderBundleEditPanel.tsx</a></div>
+                  <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767037731711-a9a67d/web-client/src/features/charts/styles.ts">styles.ts</a></div>
+                  <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767037731711-a9a67d/web-client/src/features/charts/__tests__/orderBundleItemActions.test.tsx">orderBundleItemActions.test.tsx</a></div>
+                </div>
+              </td>
+              <td>
+                <div class="agent-header">
+                  <div class="agent-title">codex / task-1767037731512-d30d67</div>
+                  <div class="agent-score">🥈 83点 <span class="badge">緻密性 中</span></div>
+                </div>
+                <div class="hex-chart">
+                  <svg width="200" height="200" viewBox="0 0 200 200" aria-label="六角形チャート">
+                    <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#f1f5f9" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon points="100.0,28.0 162.4,64.0 158.9,134.0 100.0,170.4 58.4,124.0 41.1,66.0" fill="rgba(14,116,144,0.35)" stroke="#0e7490" stroke-width="1.5" />
+                  </svg>
+                  <div class="hex-metrics">
+                    <div><span class="metric-label">要件網羅</span> 90点</div>
+                    <div><span class="metric-label">操作安全性</span> 90点</div>
+                    <div><span class="metric-label">UI整合</span> 85点</div>
+                    <div><span class="metric-label">状態管理</span> 88点</div>
+                    <div><span class="metric-label">テスト</span> 60点</div>
+                    <div><span class="metric-label">実装品質</span> 85点</div>
+                  </div>
+                </div>
+                <div class="small">理由:</div>
+                <ul>
+                  <li>rowId 付与で並べ替え時の行識別を安定化し、送信/保存時に除外する配慮あり。</li>
+                  <li>全クリアの確認条件や無効化条件が細かく設計されている。</li>
+                  <li>テストが未追加のため、保存順序やreadOnly無効化の自動検証が不足。</li>
+                </ul>
+                <div class="small">コミット:</div>
+                <pre>12248adef Add order bundle item DnD clear controls</pre>
+                <div class="small">差分要約:</div>
+                <pre>OrderBundleEditPanel.tsx (+167/-?)
+styles.ts (+46/-?)</pre>
+                <div class="small">成果物リンク（worktree別）:</div>
+                <div class="link-list small">
+                  <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767037731512-d30d67/web-client/src/features/charts/OrderBundleEditPanel.tsx">OrderBundleEditPanel.tsx</a></div>
+                  <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767037731512-d30d67/web-client/src/features/charts/styles.ts">styles.ts</a></div>
+                </div>
+              </td>
+            </tr>
+            <tr>
+              <td>
+                <div class="agent-header">
+                  <div class="agent-title">codex / task-1767037731910-369c6c</div>
+                  <div class="agent-score">🥉 72点 <span class="badge">緻密性 低〜中</span></div>
+                </div>
+                <div class="hex-chart">
+                  <svg width="200" height="200" viewBox="0 0 200 200" aria-label="六角形チャート">
+                    <polygon points="100.0,20.0 169.3,60.0 169.3,140.0 100.0,180.0 30.7,140.0 30.7,60.0" fill="#f1f5f9" stroke="#c4d3d7" stroke-width="1" />
+                    <polygon points="100.0,34.4 154.0,68.8 155.4,132.0 100.0,156.0 68.8,118.0 46.7,69.2" fill="rgba(148,163,184,0.45)" stroke="#64748b" stroke-width="1.5" />
+                  </svg>
+                  <div class="hex-metrics">
+                    <div><span class="metric-label">要件網羅</span> 82点</div>
+                    <div><span class="metric-label">操作安全性</span> 78点</div>
+                    <div><span class="metric-label">UI整合</span> 80点</div>
+                    <div><span class="metric-label">状態管理</span> 70点</div>
+                    <div><span class="metric-label">テスト</span> 45点</div>
+                    <div><span class="metric-label">実装品質</span> 77点</div>
+                  </div>
+                </div>
+                <div class="small">理由:</div>
+                <ul>
+                  <li>基本機能は揃うが、DnD視覚フィードバックや状態リセットが簡素。</li>
+                  <li>rowId等の安定キーがなく、並べ替え後のDOM安定性が弱い。</li>
+                  <li>テストがないため挙動保証が弱い。</li>
+                </ul>
+                <div class="small">コミット:</div>
+                <pre>9646f526b Add DnD reorder and clear actions to order bundle items</pre>
+                <div class="small">差分要約:</div>
+                <pre>OrderBundleEditPanel.tsx (+94/-?)
+styles.ts (+37/-?)</pre>
+                <div class="small">成果物リンク（worktree別）:</div>
+                <div class="link-list small">
+                  <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767037731910-369c6c/web-client/src/features/charts/OrderBundleEditPanel.tsx">OrderBundleEditPanel.tsx</a></div>
+                  <div><a href="file:///Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767037731910-369c6c/web-client/src/features/charts/styles.ts">styles.ts</a></div>
+                </div>
+              </td>
+              <td>
+                <div class="agent-header">
+                  <div class="agent-title">N/A</div>
+                  <div class="agent-score">-</div>
+                </div>
+                <div class="small">2列構成のため空欄。</div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <section>
+        <h2 class="section-title">観点別メモ</h2>
+        <ul>
+          <li>a9a67d は rowId と DnD state の整理により、弱点だった行キー不安定性を解消。</li>
+          <li>保存時の rowId 除去・全クリア後の rowId 再生成など実装品質が向上。</li>
+          <li>テストが保存順序・readOnly・全クリア後 rowId をカバーし、回帰耐性が上がった。</li>
+        </ul>
+      </section>
+    </div>
+  </body>
+</html>

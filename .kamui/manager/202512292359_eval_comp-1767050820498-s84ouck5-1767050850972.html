@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 10px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+        margin: 0;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+        margin: 0;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .summary-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .summary-title {
+        font-size: 13px;
+        color: #3a4b53;
+        margin-bottom: 6px;
+      }
+      .summary-score {
+        font-size: 22px;
+        font-weight: 700;
+        color: #1f2a30;
+      }
+      .summary-meta {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 170px;
+      }
+      col.agent-column {
+        width: calc((100% - 170px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      .snapshot-summary {
+        margin-bottom: 12px;
+        font-weight: 500;
+        color: #2c3a40;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .metric-grid {
+        display: grid;
+        grid-template-columns: 140px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .metric-list {
+        display: grid;
+        gap: 6px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-item span {
+        font-weight: 600;
+      }
+      .hex-chart {
+        width: 140px;
+        height: 140px;
+      }
+      .section-title {
+        font-weight: 600;
+        font-size: 12px;
+        color: #2c3a40;
+        margin: 12px 0 6px;
+      }
+      .link-list {
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .link-list code {
+        display: block;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート（27 P1改修：処方詳細入力補助）</h1>
+        <p class="monitor-description">評価基準: 緻密性。対象ブランチ3件のコミットログと差分を参照し、要件網羅・仕様適合・実装整合・影響管理・テスト・ドキュメントの6指標で比較。</p>
+      </header>
+
+      <section class="summary-grid">
+        <div class="summary-card">
+          <div class="summary-title">task-1767050820699-8bf796（codex）</div>
+          <div class="summary-score">総合点 410 / 600 🥉</div>
+          <div class="summary-meta">メダル: silver / スコア: 78</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-title">task-1767050820498-176159（codex）</div>
+          <div class="summary-score">総合点 471 / 600 🥈</div>
+          <div class="summary-meta">メダル: gold / スコア: 86</div>
+        </div>
+        <div class="summary-card">
+          <div class="summary-title">task-1767050820938-fc07cc（codex）</div>
+          <div class="summary-score">総合点 312 / 600 ⚪️</div>
+          <div class="summary-meta">メダル: bronze / スコア: 64</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1767050820699-8bf796</th>
+            <th>Agent task-1767050820498-176159</th>
+            <th>Agent task-1767050820938-fc07cc</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2025-12-30 08:59</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">処方区分（院内/院外・頓用/臨時・内用/外用）と classCode/classCodeSystem を追加。RP名は空欄補正「処方」固定。</span>
+              </div>
+              <div class="metric-grid">
+                <svg class="hex-chart" viewBox="0 0 140 140" aria-label="六角形チャート">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="70,25 109,47 109,93 70,115 31,93 31,47" fill="#f7fafb" stroke="#c4d3d7" />
+                  <polygon points="70.0,23.2 107.4,48.4 111.6,94.0 70.0,112.0 44.0,85.0 38.8,52.0" fill="rgba(45, 125, 146, 0.35)" stroke="#2d7d92" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <div class="metric-item"><span>要件網羅性</span> 78点</div>
+                  <div class="metric-item"><span>仕様適合性</span> 72点</div>
+                  <div class="metric-item"><span>実装整合性</span> 80点</div>
+                  <div class="metric-item"><span>変更影響管理</span> 70点</div>
+                  <div class="metric-item"><span>テスト/検証</span> 50点</div>
+                  <div class="metric-item"><span>ドキュメント</span> 60点</div>
+                </div>
+              </div>
+              <div class="section-title">点数根拠</div>
+              <pre>+ classCode/classCodeSystem を server-modernized と Web に追加し往復は成立
+- className 非対応、RP名補正が固定値で要件の「薬剤名→区分ラベル」補正に未達
+- 日数/回数はラベル変更のみで旧UI相当の拡張に届かず
+- テストは最低限の検証更新のみ</pre>
+              <div class="section-title">成果物リンク</div>
+              <div class="link-list">
+                <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767050820699-8bf796/web-client/src/features/charts/OrderBundleEditPanel.tsx</code>
+                <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767050820699-8bf796/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaOrderBundleResource.java</code>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>commit: 040a84638 feat: add prescription detail flags and classCode
+files: server-modernized DTO/Resource, web-client OrderBundleEditPanel.tsx, orderBundleApi.ts, stampStorage.ts
+uncommitted: none
+</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">classCode/className/classCodeSystem と UI拡張、RP名補正ルール、ギャップ分析メモを追加。</span>
+              </div>
+              <div class="metric-grid">
+                <svg class="hex-chart" viewBox="0 0 140 140" aria-label="六角形チャート">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="70,25 109,47 109,93 70,115 31,93 31,47" fill="#f7fafb" stroke="#c4d3d7" />
+                  <polygon points="70.0,18.4 113.6,44.8 115.7,96.4 70.0,118.0 41.4,86.5 29.5,46.6" fill="rgba(45, 125, 146, 0.35)" stroke="#2d7d92" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <div class="metric-item"><span>要件網羅性</span> 86点</div>
+                  <div class="metric-item"><span>仕様適合性</span> 84点</div>
+                  <div class="metric-item"><span>実装整合性</span> 88点</div>
+                  <div class="metric-item"><span>変更影響管理</span> 80点</div>
+                  <div class="metric-item"><span>テスト/検証</span> 55点</div>
+                  <div class="metric-item"><span>ドキュメント</span> 78点</div>
+                </div>
+              </div>
+              <div class="section-title">点数根拠</div>
+              <pre>+ classCode/className/classCodeSystem の往復を server-modernized まで拡張
++ RP名補正（薬剤名→区分ラベル）やギャップ分析メモで根拠整理
+- 日数/回数のUIは既存入力のラベル拡張に留まる
+- テストは検証拡張が限定的</pre>
+              <div class="section-title">成果物リンク</div>
+              <div class="link-list">
+                <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767050820498-176159/web-client/src/features/charts/OrderBundleEditPanel.tsx</code>
+                <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767050820498-176159/server-modernized/src/main/java/open/dolphin/rest/orca/OrcaOrderBundleResource.java</code>
+                <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767050820498-176159/src/order_input_gap_analysis/27_P1改修_処方詳細入力補助.md</code>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>commit: c3f044519 feat: 処方詳細入力補助のUI/送信項目拡充
+files: server-modernized DTO/Resource, web-client OrderBundleEditPanel.tsx, orderBundleApi.ts, stampStorage.ts, gap analysis md
+uncommitted: none
+</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">メモ文字列で区分を表現し UI を拡張。server-modernized 連携や classCode 対応が欠落。</span>
+              </div>
+              <div class="metric-grid">
+                <svg class="hex-chart" viewBox="0 0 140 140" aria-label="六角形チャート">
+                  <polygon points="70,10 122,40 122,100 70,130 18,100 18,40" fill="#eef3f4" stroke="#c4d3d7" />
+                  <polygon points="70,25 109,47 109,93 70,115 31,93 31,47" fill="#f7fafb" stroke="#c4d3d7" />
+                  <polygon points="70.0,32.8 98.6,53.5 100.1,87.4 70.0,101.2 46.6,83.5 49.2,58.0" fill="rgba(45, 125, 146, 0.35)" stroke="#2d7d92" stroke-width="1.5" />
+                </svg>
+                <div class="metric-list">
+                  <div class="metric-item"><span>要件網羅性</span> 62点</div>
+                  <div class="metric-item"><span>仕様適合性</span> 55点</div>
+                  <div class="metric-item"><span>実装整合性</span> 58点</div>
+                  <div class="metric-item"><span>変更影響管理</span> 52点</div>
+                  <div class="metric-item"><span>テスト/検証</span> 45点</div>
+                  <div class="metric-item"><span>ドキュメント</span> 40点</div>
+                </div>
+              </div>
+              <div class="section-title">点数根拠</div>
+              <pre>+ UI 操作は追加し UX 表示は充実
+- classCode/classCodeSystem を使わず memo で代替し仕様との差異が大きい
+- server-modernized の DTO/Resource 変更がなく保存・復元整合が不足
+- ドキュメント/検証が不足</pre>
+              <div class="section-title">成果物リンク</div>
+              <div class="link-list">
+                <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767050820938-fc07cc/web-client/src/features/charts/OrderBundleEditPanel.tsx</code>
+                <code>/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.worktrees/task-1767050820938-fc07cc/web-client/src/features/charts/styles.ts</code>
+              </div>
+              <details class="snapshot-details">
+                <summary class="details-toggle">ログ詳細</summary>
+                <pre>commit: 0cf1113d0 P1: 処方詳細入力補助を追加
+files: web-client OrderBundleEditPanel.tsx, styles.ts, orderBundleValidation.test.ts
+uncommitted: none
+</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>
