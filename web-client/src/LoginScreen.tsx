@@ -151,10 +151,13 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
       setFeedback('ログインに成功しました。');
       setStatus('success');
       try {
+        const urlFacilityId = normalize(initialFacilityId ?? '');
+        const storedFacilityId = urlFacilityId || normalizedValues.facilityId;
         // サーバーからの result.userId は "facilityId:userId" 形式で返されるが、
         // httpClient.ts は devFacilityId と devUserId を結合するため、
-        // ユーザー入力値 (normalizedValues) を保存しないと二重結合になる
-        localStorage.setItem('devFacilityId', normalizedValues.facilityId);
+        // ユーザー入力値 (normalizedValues) を保存しないと二重結合になる。
+        // facilityId は URL 由来の値を優先して保存し、遷移先と整合させる。
+        localStorage.setItem('devFacilityId', storedFacilityId);
         localStorage.setItem('devUserId', normalizedValues.userId);
         localStorage.setItem('devPasswordMd5', hashPasswordMd5(normalizedValues.password));
         localStorage.setItem('devClientUuid', result.clientUuid);
