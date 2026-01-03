@@ -329,13 +329,11 @@ function LoginSwitchNotice({ session, onLogout }: { session: Session; onLogout: 
       <section className="login-card" aria-labelledby="login-switch-notice">
         <header className="login-card__header">
           <h1 id="login-switch-notice">ログイン中のため切替が必要です</h1>
-          <p>現在のセッションでは別施設/ユーザーへの切替はできません。ログアウト後に再ログインしてください。</p>
+          <p>現在のセッションでは別施設/ユーザーへの切替はできません。権限境界を明示するため、ログアウト後に再ログインしてください。</p>
         </header>
         <div className="status-message is-error" role="status">
-          <p>
-            現在のログイン: {describeFacilityId(session.facilityId)}:{session.userId} / role={session.role}
-          </p>
-          <p>RUN_ID: {session.runId}</p>
+          <p>現在のログイン: 施設ID={describeFacilityId(session.facilityId)}</p>
+          <p>ユーザー={session.userId} / role={session.role} / RUN_ID={session.runId}</p>
         </div>
         <div className="login-form__actions">
           <button type="button" onClick={handleSwitch}>
@@ -412,9 +410,8 @@ function FacilityMismatchNotice({
         <p>
           要求された施設: {describeFacilityId(requestedFacilityId)} / 現在の施設: {describeFacilityId(session.facilityId)}
         </p>
-        <p>
-          施設/ユーザー切替は上部の「施設/ユーザー切替」からログアウト後に実施してください。
-        </p>
+        <p>現在のログイン: ユーザー={session.userId} / role={session.role} / RUN_ID={session.runId}</p>
+        <p>施設/ユーザー切替は上部の「施設/ユーザー切替」からログアウト後に実施してください。</p>
       </div>
       <div className="login-form__actions" style={{ marginTop: '1rem' }}>
         <button type="button" onClick={() => navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true })}>
