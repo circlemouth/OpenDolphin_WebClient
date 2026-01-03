@@ -110,6 +110,21 @@ const readFilters = (searchParams: URLSearchParams): typeof DEFAULT_FILTER => {
   } as typeof DEFAULT_FILTER;
 };
 
+const normalizeAuditValue = (value: unknown): string => {
+  if (value === null || value === undefined) return '';
+  return String(value).normalize('NFKC').toLowerCase();
+};
+
+const resolveUnlinkedState = (patient?: PatientRecord | null) => {
+  const missingPatientId = !patient?.patientId;
+  const missingName = !patient?.name;
+  return {
+    missingPatientId,
+    missingName,
+    isUnlinked: missingPatientId || missingName,
+  };
+};
+
 type ToastState = {
   tone: 'warning' | 'success' | 'error' | 'info';
   message: string;
@@ -183,6 +198,13 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [selectedViewId, setSelectedViewId] = useState<string>('');
   const lastUnlinkedToastKey = useRef<string | null>(null);
   const lastChartsPatientId = useRef<string | null>(null);
+  const [auditKeyword, setAuditKeyword] = useState('');
+  const [auditOutcome, setAuditOutcome] = useState<'all' | 'success' | 'error' | 'warning' | 'partial' | 'unknown'>('all');
+  const [auditScope, setAuditScope] = useState<'selected' | 'all'>('selected');
+  const [auditSort, setAuditSort] = useState<'desc' | 'asc'>('desc');
+  const [auditLimit, setAuditLimit] = useState<'10' | '20' | '50' | 'all'>('10');
+  const [auditDateFrom, setAuditDateFrom] = useState('');
+  const [auditDateTo, setAuditDateTo] = useState('');
   const [lastMeta, setLastMeta] = useState<
     Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
   >({
@@ -306,13 +328,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     });
   }, [bumpRunId, patientsQuery.data, setCacheHit, setDataSourceTransition, setFallbackUsed, setMissingMaster]);
 
-  const tonePayload: ChartTonePayload = {
-    missingMaster: resolvedMissingMaster,
-    cacheHit: resolvedCacheHit,
-    dataSourceTransition: resolvedTransition,
-  };
-  const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
-
   const patients = patientsQuery.data?.patients ?? [];
   const resolvedRunId = resolveRunId(patientsQuery.data?.runId ?? flags.runId);
   const infoLive = resolveAriaLive('info');
@@ -323,19 +338,45 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     patientsQuery.data?.dataSourceTransition ?? flags.dataSourceTransition ?? lastMeta.dataSourceTransition;
   const resolvedFetchedAt = patientsQuery.data?.fetchedAt ?? lastMeta.fetchedAt;
   const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
+  const isUnlinkedStopNotice = resolvedMissingMaster || resolvedFallbackUsed;
+  const unlinkedAlertLabel = isUnlinkedStopNotice ? '反映停止注意' : '未紐付警告';
+  const unlinkedBadgeLabel = isUnlinkedStopNotice ? '反映停止' : '未紐付';
+
+  const tonePayload: ChartTonePayload = {
+    missingMaster: resolvedMissingMaster,
+    cacheHit: resolvedCacheHit,
+    dataSourceTransition: resolvedTransition,
+  };
+  const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
+
+  const unlinkedCounts = useMemo(() => {
+    return patients.reduce(
+      (acc, patient) => {
+        const state = resolveUnlinkedState(patient);
+        if (state.missingPatientId) acc.missingPatientId += 1;
+        if (state.missingName) acc.missingName += 1;
+        return acc;
+      },
+      { missingPatientId: 0, missingName: 0 },
+    );
+  }, [patients]);
 
   const unlinkedNotice = useMemo(() => {
-    const missingPatientId = patients.filter((patient) => !patient.patientId).length;
-    const missingName = patients.filter((patient) => !patient.name).length;
-    if (missingPatientId === 0 && missingName === 0) return null;
+    if (unlinkedCounts.missingPatientId === 0 && unlinkedCounts.missingName === 0) return null;
     const parts = [
-      missingPatientId > 0 ? `患者ID未紐付: ${missingPatientId}` : undefined,
-      missingName > 0 ? `氏名未紐付: ${missingName}` : undefined,
+      unlinkedCounts.missingPatientId > 0 ? `患者ID未紐付: ${unlinkedCounts.missingPatientId}` : undefined,
+      unlinkedCounts.missingName > 0 ? `氏名未紐付: ${unlinkedCounts.missingName}` : undefined,
     ].filter((value): value is string => typeof value === 'string');
-    const message = `患者一覧に未紐付ステータスがあります（${parts.join(' / ')}）`;
-    const key = `${missingPatientId}-${missingName}-${resolvedRunId ?? 'runId'}`;
+    const message = `患者一覧に${unlinkedAlertLabel}があります（${parts.join(' / ')}）`;
+    const key = `${unlinkedCounts.missingPatientId}-${unlinkedCounts.missingName}-${resolvedRunId ?? 'runId'}`;
     return { message, detail: `recordsReturned=${resolvedRecordsReturned ?? '―'}`, key };
-  }, [patients, resolvedRecordsReturned, resolvedRunId]);
+  }, [resolvedRecordsReturned, resolvedRunId, unlinkedAlertLabel, unlinkedCounts.missingName, unlinkedCounts.missingPatientId]);
+
+  const selectedUnlinked = useMemo(() => {
+    if (!baseline) return null;
+    const state = resolveUnlinkedState(form);
+    return state.isUnlinked ? state : null;
+  }, [baseline, form]);
 
   const chartsArrivalBanner = useMemo(() => {
     if (!fromCharts) return null;
@@ -533,6 +574,26 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     );
   };
 
+  const auditDateValidation = useMemo(() => {
+    if (!auditDateFrom || !auditDateTo) {
+      return { fromDate: auditDateFrom, toDate: auditDateTo, isValid: true, message: '' };
+    }
+    const fromValue = Date.parse(`${auditDateFrom}T00:00:00`);
+    const toValue = Date.parse(`${auditDateTo}T23:59:59`);
+    if (Number.isNaN(fromValue) || Number.isNaN(toValue)) {
+      return { fromDate: auditDateFrom, toDate: auditDateTo, isValid: true, message: '' };
+    }
+    if (fromValue > toValue) {
+      return {
+        fromDate: auditDateFrom,
+        toDate: auditDateTo,
+        isValid: false,
+        message: `開始日 (${auditDateFrom}) が終了日 (${auditDateTo}) より後です。`,
+      };
+    }
+    return { fromDate: auditDateFrom, toDate: auditDateTo, isValid: true, message: '' };
+  }, [auditDateFrom, auditDateTo]);
+
   const auditRows = useMemo(() => {
     const selectedPatientId = form.patientId ?? baseline?.patientId ?? undefined;
     const list = [...auditSnapshot];
@@ -542,11 +603,87 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       const source = record.source ?? '';
       if (!action.includes('PATIENT') && !source.includes('patient')) return false;
       const recordPatientId = resolveAuditPatientId(record);
-      if (!selectedPatientId) return true;
-      return recordPatientId === selectedPatientId;
+      if (auditScope === 'selected' && selectedPatientId) {
+        return recordPatientId === selectedPatientId;
+      }
+      return true;
     });
-    return filtered.slice(-5).reverse();
-  }, [auditSnapshot, baseline?.patientId, form.patientId]);
+
+    const keyword = normalizeAuditValue(auditKeyword).trim();
+    const outcomeFilter = normalizeAuditValue(auditOutcome);
+    const fromDate = auditDateFrom ? new Date(`${auditDateFrom}T00:00:00`).getTime() : undefined;
+    const toDate = auditDateTo ? new Date(`${auditDateTo}T23:59:59`).getTime() : undefined;
+
+    const matches = filtered.filter((record) => {
+      const payload = record.payload as Record<string, unknown> | undefined;
+      const details = payload?.details as Record<string, unknown> | undefined;
+      const action = normalizeAuditValue((payload?.action as string | undefined) ?? '');
+      const outcome = normalizeAuditValue(
+        (payload?.outcome as string | undefined) ?? (details?.outcome as string | undefined) ?? 'unknown',
+      );
+      const patientId = resolveAuditPatientId(record);
+      const changedKeys = details?.changedKeys as string[] | string | undefined;
+      const message = (details?.message as string | undefined) ?? (payload?.message as string | undefined);
+      const sourcePath = (details?.sourcePath as string | undefined) ?? (payload?.sourcePath as string | undefined);
+      const recordTime = new Date(record.timestamp).getTime();
+
+      if (auditDateValidation.isValid) {
+        if (fromDate && recordTime < fromDate) return false;
+        if (toDate && recordTime > toDate) return false;
+      }
+
+      if (outcomeFilter !== 'all' && outcome !== outcomeFilter) return false;
+
+      if (keyword) {
+        const haystack = normalizeAuditValue(
+          [
+            action,
+            outcome,
+            record.source ?? '',
+            record.note ?? '',
+            record.runId ?? '',
+            record.traceId ?? '',
+            patientId ?? '',
+            String(details?.operation ?? ''),
+            String(details?.section ?? ''),
+            String(details?.appointmentId ?? ''),
+            String(details?.receptionId ?? ''),
+            String(details?.visitDate ?? ''),
+            String(details?.requestId ?? ''),
+            typeof changedKeys === 'string' ? changedKeys : Array.isArray(changedKeys) ? changedKeys.join(',') : '',
+            message ?? '',
+            sourcePath ?? '',
+          ].join(' '),
+        );
+        if (!haystack.includes(keyword)) return false;
+      }
+      return true;
+    });
+
+    const sorted = [...matches].sort((a, b) => {
+      const aTime = new Date(a.timestamp).getTime();
+      const bTime = new Date(b.timestamp).getTime();
+      return auditSort === 'asc' ? aTime - bTime : bTime - aTime;
+    });
+
+    const limit = auditLimit === 'all' ? sorted.length : Number(auditLimit);
+    return {
+      total: sorted.length,
+      items: sorted.slice(0, limit),
+    };
+  }, [
+    auditDateFrom,
+    auditDateTo,
+    auditDateValidation.isValid,
+    auditKeyword,
+    auditLimit,
+    auditOutcome,
+    auditScope,
+    auditSnapshot,
+    auditSort,
+    baseline?.patientId,
+    form.patientId,
+  ]);
 
   const describeAudit = (record: AuditEventRecord) => {
     const payload = record.payload as Record<string, unknown> | undefined;
@@ -558,10 +695,19 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     const outcome = (payload?.outcome as string | undefined) ?? (details?.outcome as string | undefined) ?? '—';
     const runId = (payload?.runId as string | undefined) ?? record.runId ?? '—';
     const traceId = (payload?.traceId as string | undefined) ?? record.traceId ?? '—';
+    const requestId = (payload?.requestId as string | undefined) ?? (details?.requestId as string | undefined) ?? '—';
+    const patientId = resolveAuditPatientId(record) ?? '—';
     const changedKeysRaw = details?.changedKeys as string[] | string | undefined;
-    const changedKeys = Array.isArray(changedKeysRaw) ? changedKeysRaw.join(', ') : changedKeysRaw ?? '';
+    const changedKeys = Array.isArray(changedKeysRaw)
+      ? changedKeysRaw.length <= 5
+        ? changedKeysRaw.join(', ')
+        : `${changedKeysRaw.slice(0, 5).join(', ')} 他${changedKeysRaw.length - 5}件`
+      : changedKeysRaw ?? '';
     const status = details?.status as string | number | undefined;
     const sourcePath = details?.sourcePath as string | undefined;
+    const message = (details?.message as string | undefined) ?? (payload?.message as string | undefined);
+    const section = (details?.section as string | undefined) ?? (payload?.section as string | undefined);
+    const operation = (details?.operation as string | undefined) ?? (payload?.operation as string | undefined);
     const orcaStatus =
       record.missingMaster || record.fallbackUsed || record.dataSourceTransition !== 'server'
         ? '反映停止'
@@ -575,11 +721,30 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       outcome,
       runId,
       traceId,
+      requestId,
+      patientId,
       changedKeys,
       status,
       sourcePath,
+      message,
+      section,
+      operation,
       orcaStatus,
     };
+  };
+
+  const renderAuditMessage = (message?: string) => {
+    if (!message) return null;
+    if (message.length <= 100) {
+      return <span>message: {message}</span>;
+    }
+    const summary = `${message.slice(0, 100)}…`;
+    return (
+      <details className="patients-page__audit-message">
+        <summary>message: {summary}</summary>
+        <div>{message}</div>
+      </details>
+    );
   };
 
   const focusField = (field: keyof PatientRecord) => {
@@ -846,6 +1011,13 @@ export function PatientsPage({ runId }: PatientsPageProps) {
 
       <section className="patients-page__content">
         <div className="patients-page__list" role="list" aria-label="患者一覧">
+          {(unlinkedCounts.missingPatientId > 0 || unlinkedCounts.missingName > 0) && (
+            <div className={`patients-page__list-alert${isUnlinkedStopNotice ? ' is-blocked' : ''}`} role="status" aria-live="polite">
+              <strong>{unlinkedAlertLabel}</strong>
+              <span>患者ID欠損: {unlinkedCounts.missingPatientId}</span>
+              <span>氏名欠損: {unlinkedCounts.missingName}</span>
+            </div>
+          )}
           {patients.length === 0 && (
             <p className="patients-page__empty" role="status" aria-live={infoLive}>
               患者データがありません。フィルタを変えて再検索してください。
@@ -853,11 +1025,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           )}
           {patients.map((patient) => {
             const selected = selectedId === patient.patientId || (!selectedId && patients[0] === patient);
+            const unlinkedState = resolveUnlinkedState(patient);
             return (
               <button
                 key={patient.patientId ?? patient.name ?? Math.random().toString(36).slice(2, 8)}
                 type="button"
-                className={`patients-page__row${selected ? ' is-selected' : ''}`}
+                className={`patients-page__row${selected ? ' is-selected' : ''}${unlinkedState.isUnlinked ? ' is-unlinked' : ''}`}
                 onClick={() => handleSelect(patient)}
                 aria-pressed={selected}
               >
@@ -865,11 +1038,26 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <span className="patients-page__row-id">{patient.patientId ?? '新規'}</span>
                   <strong>{patient.name ?? '氏名未登録'}</strong>
                   <span className="patients-page__row-kana">{patient.kana ?? 'カナ未登録'}</span>
+                  {unlinkedState.isUnlinked ? (
+                    <span
+                      className={`patients-page__row-warning${isUnlinkedStopNotice ? ' is-blocked' : ''}`}
+                      role="status"
+                      aria-live="polite"
+                    >
+                      {unlinkedBadgeLabel}
+                    </span>
+                  ) : null}
                 </div>
                 <div className="patients-page__row-meta">
                   <span>{patient.birthDate ?? '生年月日未設定'}</span>
                   <span>{patient.insurance ?? '保険未設定'}</span>
                   <span>{patient.lastVisit ? `最終受診 ${patient.lastVisit}` : '受診履歴なし'}</span>
+                  {unlinkedState.missingPatientId ? (
+                    <span className={`patients-page__row-warning-detail${isUnlinkedStopNotice ? ' is-blocked' : ''}`}>患者ID欠損</span>
+                  ) : null}
+                  {unlinkedState.missingName ? (
+                    <span className={`patients-page__row-warning-detail${isUnlinkedStopNotice ? ' is-blocked' : ''}`}>氏名欠損</span>
+                  ) : null}
                 </div>
               </button>
             );
@@ -895,6 +1083,17 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               </button>
             </div>
           </div>
+
+          {selectedUnlinked ? (
+            <div className={`patients-page__unlinked-alert${isUnlinkedStopNotice ? ' is-blocked' : ''}`} role="alert" aria-live="assertive">
+              <strong>{unlinkedAlertLabel}</strong>
+              <p>選択中の患者データに欠損があります。</p>
+              <div className="patients-page__unlinked-alert-tags">
+                {selectedUnlinked.missingPatientId ? <span>患者ID欠損</span> : null}
+                {selectedUnlinked.missingName ? <span>氏名欠損</span> : null}
+              </div>
+            </div>
+          ) : null}
 
           <div className="patients-page__grid">
             <label>
@@ -1099,10 +1298,86 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           <div className="patients-page__audit-view" role="status" aria-live={infoLive}>
             <div className="patients-page__audit-head">
               <h3>監査ログビュー</h3>
-              <button type="button" onClick={() => setAuditSnapshot(getAuditEventLog())}>
-                履歴を更新
-              </button>
+              <div className="patients-page__audit-actions">
+                <button type="button" onClick={() => setAuditSnapshot(getAuditEventLog())}>
+                  履歴を更新
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuditKeyword('');
+                    setAuditOutcome('all');
+                    setAuditScope('selected');
+                    setAuditSort('desc');
+                    setAuditLimit('10');
+                    setAuditDateFrom('');
+                    setAuditDateTo('');
+                  }}
+                >
+                  フィルタ初期化
+                </button>
+              </div>
             </div>
+            <div className="patients-page__audit-filters" role="group" aria-label="監査検索">
+              <label>
+                <span>キーワード</span>
+                <input
+                  value={auditKeyword}
+                  onChange={(event) => setAuditKeyword(event.target.value)}
+                  placeholder="patientId / runId / action / endpoint"
+                />
+              </label>
+              <label>
+                <span>outcome</span>
+                <select value={auditOutcome} onChange={(event) => setAuditOutcome(event.target.value as typeof auditOutcome)}>
+                  <option value="all">全件</option>
+                  <option value="success">success</option>
+                  <option value="error">error</option>
+                  <option value="warning">warning</option>
+                  <option value="partial">partial</option>
+                  <option value="unknown">unknown</option>
+                </select>
+              </label>
+              <label>
+                <span>対象</span>
+                <select value={auditScope} onChange={(event) => setAuditScope(event.target.value as typeof auditScope)}>
+                  <option value="selected">選択患者のみ</option>
+                  <option value="all">全患者</option>
+                </select>
+              </label>
+              <label>
+                <span>並び順</span>
+                <select value={auditSort} onChange={(event) => setAuditSort(event.target.value as typeof auditSort)}>
+                  <option value="desc">新しい順</option>
+                  <option value="asc">古い順</option>
+                </select>
+              </label>
+              <label>
+                <span>件数</span>
+                <select value={auditLimit} onChange={(event) => setAuditLimit(event.target.value as typeof auditLimit)}>
+                  <option value="10">10件</option>
+                  <option value="20">20件</option>
+                  <option value="50">50件</option>
+                  <option value="all">全件</option>
+                </select>
+              </label>
+              <label>
+                <span>開始日</span>
+                <input type="date" value={auditDateFrom} onChange={(event) => setAuditDateFrom(event.target.value)} />
+              </label>
+              <label>
+                <span>終了日</span>
+                <input type="date" value={auditDateTo} onChange={(event) => setAuditDateTo(event.target.value)} />
+              </label>
+              <div className="patients-page__audit-count" role="status" aria-live="polite">
+                対象件数: {auditRows.total}
+              </div>
+            </div>
+            {auditDateValidation.message ? (
+              <div className="patients-page__audit-date-error" role="alert" aria-live="assertive">
+                {auditDateValidation.message}
+              </div>
+            ) : null}
             <div className="patients-page__audit-summary">
               <div className="patients-page__audit-card">
                 <span>保存結果</span>
@@ -1118,6 +1393,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 <strong>{lastSaveOrcaStatus.state}</strong>
                 <small>{lastSaveOrcaStatus.detail}</small>
               </div>
+              <div className="patients-page__audit-card">
+                <span>現在の反映可否</span>
+                <strong>{currentOrcaStatus.state}</strong>
+                <small>{currentOrcaStatus.detail}</small>
+              </div>
             </div>
             {lastAuditEvent && (
               <div className="patients-page__audit-raw">
@@ -1130,12 +1410,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               </div>
             )}
             <div className="patients-page__audit-list" role="list" aria-label="保存履歴">
-              {auditRows.length === 0 ? (
+              {auditRows.items.length === 0 ? (
                 <p className="patients-page__audit-empty" role="status" aria-live={infoLive}>
                   まだ保存履歴がありません（Patients/Charts で保存すると反映されます）。
                 </p>
               ) : (
-                auditRows.map((record, index) => {
+                auditRows.items.map((record, index) => {
                   const desc = describeAudit(record);
                   return (
                     <div key={`${record.timestamp}-${index}`} className="patients-page__audit-row" role="listitem">
@@ -1145,12 +1425,17 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                         <span className="patients-page__audit-pill">ORCA: {desc.orcaStatus}</span>
                       </div>
                       <div className="patients-page__audit-row-sub">
-                        <span>{record.timestamp}</span>
+                        <span>patientId: {desc.patientId}</span>
                         <span>runId: {desc.runId}</span>
                         <span>traceId: {desc.traceId}</span>
+                        <span>requestId: {desc.requestId}</span>
+                        <span>{record.timestamp}</span>
                         {desc.status ? <span>status: {String(desc.status)}</span> : null}
                         {desc.sourcePath ? <span>endpoint: {desc.sourcePath}</span> : null}
                         {desc.changedKeys ? <span>changedKeys: {desc.changedKeys}</span> : null}
+                        {desc.operation ? <span>operation: {desc.operation}</span> : null}
+                        {desc.section ? <span>section: {desc.section}</span> : null}
+                        {renderAuditMessage(desc.message)}
                       </div>
                     </div>
                   );

@@ -28,6 +28,8 @@ export type PatientSearchParams = {
 export type PatientListResponse = {
   patients: PatientRecord[];
   runId?: string;
+  traceId?: string;
+  requestId?: string;
   cacheHit?: boolean;
   missingMaster?: boolean;
   dataSourceTransition?: DataSourceTransition;
@@ -59,6 +61,8 @@ export type PatientMutationPayload = {
 export type PatientMutationResult = {
   ok: boolean;
   runId?: string;
+  traceId?: string;
+  requestId?: string;
   cacheHit?: boolean;
   missingMaster?: boolean;
   dataSourceTransition?: DataSourceTransition;
@@ -113,6 +117,14 @@ const normalizeBoolean = (value: unknown) => {
   if (typeof value === 'boolean') return value;
   if (typeof value === 'string') return value === 'true';
   return undefined;
+};
+
+const normalizeDataSourceTransition = (value: unknown): DataSourceTransition | undefined => {
+  return typeof value === 'string' ? (value as DataSourceTransition) : undefined;
+};
+
+const stripNullish = <T extends Record<string, unknown>>(value: T): T => {
+  return Object.fromEntries(Object.entries(value).filter(([, entry]) => entry !== null && entry !== undefined)) as T;
 };
 
 const parsePatients = (json: any): PatientRecord[] => {
@@ -211,6 +223,9 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
 
   const result = await tryFetchJson(patientInfoCandidates, payload);
   const json = (result?.data as Record<string, unknown>) ?? {};
+  const traceId = typeof json.traceId === 'string' ? (json.traceId as string) : getObservabilityMeta().traceId;
+  const requestId = typeof json.requestId === 'string' ? (json.requestId as string) : undefined;
+  const dataSourceTransition = normalizeDataSourceTransition(json.dataSourceTransition);
   const patients = parsePatients(json);
   const resolvedPatients = patients.length > 0 ? patients : result?.error ? [] : SAMPLE_PATIENTS;
   const recordsReturned =
@@ -223,9 +238,11 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
   const meta: PatientListResponse = {
     patients: resolvedPatients,
     runId: (json.runId as string | undefined) ?? getObservabilityMeta().runId,
+    traceId,
+    requestId,
     cacheHit: normalizeBoolean(json.cacheHit),
     missingMaster: normalizeBoolean(json.missingMaster),
-    dataSourceTransition: json.dataSourceTransition as DataSourceTransition | undefined,
+    dataSourceTransition,
     fallbackUsed: normalizeBoolean(json.fallbackUsed),
     fetchedAt: typeof json.fetchedAt === 'string' ? (json.fetchedAt as string) : undefined,
     recordsReturned,
@@ -236,11 +253,13 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
     raw: json,
   };
 
-  const auditDetails = {
+  const auditDetails = stripNullish({
     ...(typeof (meta.auditEvent as Record<string, unknown> | undefined)?.details === 'object'
       ? ((meta.auditEvent as Record<string, unknown>).details as Record<string, unknown>)
       : {}),
     runId: meta.runId,
+    traceId: meta.traceId,
+    requestId: meta.requestId,
     dataSourceTransition: meta.dataSourceTransition,
     cacheHit: meta.cacheHit,
     missingMaster: meta.missingMaster,
@@ -248,16 +267,18 @@ export async function fetchPatients(params: PatientSearchParams): Promise<Patien
     fetchedAt: meta.fetchedAt,
     recordsReturned: meta.recordsReturned,
     sourcePath: meta.sourcePath,
-  };
+  });
 
   meta.auditEvent = {
     action: (meta.auditEvent as Record<string, unknown> | undefined)?.action ?? 'PATIENT_OUTPATIENT_FETCH',
     ...((meta.auditEvent as Record<string, unknown>) ?? {}),
+    traceId: meta.traceId,
     details: auditDetails,
   };
 
   updateObservabilityMeta({
     runId: meta.runId,
+    traceId: meta.traceId,
     cacheHit: meta.cacheHit,
     missingMaster: meta.missingMaster,
     dataSourceTransition: meta.dataSourceTransition,
@@ -334,12 +355,17 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
   const postResult = await tryPostJson(patientMutationCandidates, body);
   const json = postResult.json ?? {};
   const serverAuditEvent = (json.auditEvent as Record<string, unknown> | undefined) ?? undefined;
+  const traceId = typeof json.traceId === 'string' ? (json.traceId as string) : getObservabilityMeta().traceId;
+  const requestId = typeof json.requestId === 'string' ? (json.requestId as string) : undefined;
+  const dataSourceTransition = normalizeDataSourceTransition(json.dataSourceTransition);
   const result: PatientMutationResult = {
     ok: postResult.ok,
     runId: (json.runId as string | undefined) ?? runId,
+    traceId,
+    requestId,
     cacheHit: normalizeBoolean(json.cacheHit),
     missingMaster: normalizeBoolean(json.missingMaster),
-    dataSourceTransition: json.dataSourceTransition as DataSourceTransition | undefined,
+    dataSourceTransition,
     fallbackUsed: normalizeBoolean(json.fallbackUsed),
     auditEvent: serverAuditEvent,
     message: (json.apiResultMessage as string | undefined) ?? (postResult.ok ? '保存しました' : '保存に失敗しました'),
@@ -353,7 +379,7 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
       ? (serverAuditEvent.details as Record<string, unknown>)
       : {};
 
-  const normalizedDetails: Record<string, unknown> = {
+  const normalizedDetails = stripNullish({
     ...serverDetails,
     operation: payload.operation,
     source: payload.auditMeta?.source ?? 'patients',
@@ -364,22 +390,27 @@ export async function savePatient(payload: PatientMutationPayload): Promise<Pati
     appointmentId: payload.auditMeta?.appointmentId,
     visitDate: payload.auditMeta?.visitDate,
     actorRole: payload.auditMeta?.actorRole,
+    traceId: result.traceId,
+    requestId: result.requestId,
     status: result.status,
     sourcePath: result.sourcePath,
+    dataSourceTransition: result.dataSourceTransition,
     outcome: result.ok ? 'success' : 'error',
     message: result.message,
-  };
+  }) as Record<string, unknown>;
 
   result.auditEvent = {
     action: (serverAuditEvent?.action as string | undefined) ?? 'PATIENTMODV2_OUTPATIENT_MUTATE',
     outcome: (serverAuditEvent?.outcome as string | undefined) ?? (result.ok ? 'success' : 'error'),
     subject: (serverAuditEvent?.subject as string | undefined) ?? (payload.auditMeta?.source ?? 'patients'),
     runId: (serverAuditEvent?.runId as string | undefined) ?? result.runId,
+    traceId: (serverAuditEvent?.traceId as string | undefined) ?? result.traceId,
     details: normalizedDetails,
   };
 
   updateObservabilityMeta({
     runId: result.runId,
+    traceId: result.traceId,
     cacheHit: result.cacheHit,
     missingMaster: result.missingMaster,
     dataSourceTransition: result.dataSourceTransition,
