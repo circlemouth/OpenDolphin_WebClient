@@ -1,8 +1,8 @@
 # Administration/配信ギャップ実装計画
 
 - RUN_ID: `20260103T093344Z`
-- 対象: BKL-001/002/009/012/04（管理メニュー/権限ガード/配信タイミング/証跡/監査）
-- 優先度: P0
+- 対象: BKL-001/002/009/012（管理メニュー/権限ガード/配信タイミング/証跡/監査）
+- 優先度: P0/P1
 
 ## 実装箇所（web-client）
 - `web-client/src/features/administration/AdministrationPage.tsx`

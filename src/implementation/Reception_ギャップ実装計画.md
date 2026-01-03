@@ -1,8 +1,8 @@
 # Reception ギャップ実装計画
 
 - RUN_ID: `20260103T093344Z`
-- 対象: BKL-006/010/011/013/05（例外一覧/右ペイン/列拡張/監査履歴/新規タブ導線）
-- 優先度: P0/P1
+- 対象: BKL-006/010/011/013（例外一覧/右ペイン/列拡張/監査履歴/新規タブ導線）
+- 優先度: P0/P1/P2
 
 ## 実装箇所（web-client）
 - `web-client/src/features/reception/pages/ReceptionPage.tsx`

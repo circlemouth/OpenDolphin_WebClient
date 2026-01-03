@@ -411,7 +411,7 @@ src:
         | --- | --- | --- | --- |
         | BKL-001/002/009/012 | Administration/配信 | `web-client/src/features/administration/AdministrationPage.tsx` / `web-client/src/features/administration/api.ts` / `web-client/src/features/shared/*` | `/api/admin/config` `/api/admin/delivery` / 監査 API |
         | BKL-003/004/016 | Login/共通権限 | `web-client/src/features/login/*` / `web-client/src/AppRouter.tsx` / `web-client/src/routes/facilityRoutes.ts` | 認証/ユーザ切替 API / 監査 API |
-        | BKL-006/010/011/013/05 | Reception | `web-client/src/features/reception/pages/ReceptionPage.tsx` / `web-client/src/features/reception/api.ts` / `web-client/src/features/reception/components/*` | `/api01rv2/appointment/outpatient/*` `/api01rv2/claim/outpatient` / 監査 API |
+        | BKL-006/010/011/013 | Reception | `web-client/src/features/reception/pages/ReceptionPage.tsx` / `web-client/src/features/reception/api.ts` / `web-client/src/features/reception/components/*` | `/api01rv2/appointment/outpatient/*` `/api01rv2/claim/outpatient` / 監査 API |
         | BKL-007/014/015 | Patients | `web-client/src/features/patients/PatientsPage.tsx` / `web-client/src/features/patients/api.ts` | `/orca12/patientmodv2/outpatient` / 監査 API |
         | BKL-005/008/017/018 | Charts（非カルテ領域） | `web-client/src/features/charts/*`（`print/` `DocumentTimeline.tsx` ほか） | `/orca21/medicalmodv2/outpatient` `/api01rv2/claim/outpatient` / 監査 API |
         | BKL-019/020 | 共通 | `web-client/src/libs/observability/*` / `web-client/src/libs/audit/*` / `web-client/src/features/shared/*` | 監査 API / runId 伝播 |
@@ -425,8 +425,8 @@ src:
       agent: codex
       api: []
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-04T00:00:00.000Z
         days: 1
@@ -466,8 +466,8 @@ src:
         - "/api/admin/config"
         - "/api/admin/delivery"
       priority: High
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-04T00:00:00.000Z
         days: 1
@@ -480,8 +480,8 @@ src:
 
         ## タスク分割（案）
         - 認証/権限（BKL-003/004/016）
-        - Administration/配信（BKL-001/002/009/012/04）
-        - Reception（BKL-006/010/011/013/05）
+        - Administration/配信（BKL-001/002/009/012）
+        - Reception（BKL-006/010/011/013）
         - Patients（BKL-007/014/015）
         - Charts 非カルテ（BKL-005/008/017/018）
         - 共通（BKL-019/020）
@@ -495,8 +495,8 @@ src:
       agent: codex
       api: []
       priority: Medium
-      status: not_started
-      progress: 0
+      status: completed
+      progress: 100
       schedule:
         start: 2026-01-05T00:00:00.000Z
         days: 1
@@ -534,7 +534,7 @@ src:
         # Administration/配信ギャップ実装計画
 
         ## 対象
-        - BKL-001/002/009/012/04（管理メニュー/権限ガード/配信タイミング/証跡/監査）
+        - BKL-001/002/009/012（管理メニュー/権限ガード/配信タイミング/証跡/監査）
 
         ## 実装箇所
         - `web-client/src/features/administration/AdministrationPage.tsx`
@@ -564,7 +564,7 @@ src:
         # Reception ギャップ実装計画
 
         ## 対象
-        - BKL-006/010/011/013/05（例外一覧/右ペイン/列拡張/監査履歴/新規タブ導線）
+        - BKL-006/010/011/013（例外一覧/右ペイン/列拡張/監査履歴/新規タブ導線）
 
         ## 実装箇所
         - `web-client/src/features/reception/pages/ReceptionPage.tsx`
