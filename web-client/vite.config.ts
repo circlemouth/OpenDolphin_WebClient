@@ -1,5 +1,6 @@
 import fs from 'node:fs';
 import path from 'node:path';
+import https from 'node:https';
 import { randomUUID } from 'node:crypto';
 
 import { defineConfig } from 'vitest/config';
@@ -12,12 +13,32 @@ const useHttps = process.env.VITE_DEV_USE_HTTPS !== '0';
 const httpsOption = useHttps ? {} : false;
 const runId = process.env.VITE_RUM_RUN_ID ?? process.env.RUN_ID ?? '20251124T200000Z';
 const rumOutputDir = path.resolve(__dirname, `../artifacts/perf/orca-master/${runId}/rum`);
+const orcaCertPath = process.env.ORCA_PROD_CERT_PATH ?? process.env.ORCA_PROD_CERT;
+const orcaCertPass = process.env.ORCA_PROD_CERT_PASS;
+const orcaBasicUser = process.env.ORCA_PROD_BASIC_USER;
+const orcaBasicKey = process.env.ORCA_PROD_BASIC_KEY;
+const hasOrcaCert = Boolean(orcaCertPath && orcaCertPass && fs.existsSync(orcaCertPath));
+const orcaClientAgent = hasOrcaCert
+  ? new https.Agent({
+      pfx: fs.readFileSync(orcaCertPath as string),
+      passphrase: orcaCertPass,
+      rejectUnauthorized: false,
+    })
+  : undefined;
+const orcaAuthHeader =
+  orcaBasicUser && orcaBasicKey
+    ? {
+        Authorization: `Basic ${Buffer.from(`${orcaBasicUser}:${orcaBasicKey}`).toString('base64')}`,
+      }
+    : undefined;
 
 const apiProxy = {
   '/api': {
     target: apiProxyTarget,
     changeOrigin: true,
     secure: false,
+    agent: orcaClientAgent,
+    headers: orcaAuthHeader,
     // /api/ にのみマッチさせ、/api01rv2 などは書き換えない。
     rewrite: (path: string) => path.replace(/^\/api(?=\/|$)/, ''),
   },
@@ -26,16 +47,22 @@ const apiProxy = {
     target: apiProxyTarget,
     changeOrigin: true,
     secure: false,
+    agent: orcaClientAgent,
+    headers: orcaAuthHeader,
   },
   '/orca21': {
     target: apiProxyTarget,
     changeOrigin: true,
     secure: false,
+    agent: orcaClientAgent,
+    headers: orcaAuthHeader,
   },
   '/orca12': {
     target: apiProxyTarget,
     changeOrigin: true,
     secure: false,
+    agent: orcaClientAgent,
+    headers: orcaAuthHeader,
   },
 } as const;
 
