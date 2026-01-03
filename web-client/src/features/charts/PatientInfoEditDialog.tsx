@@ -4,6 +4,7 @@ import { useMutation } from '@tanstack/react-query';
 import { FocusTrapDialog } from '../../components/modals/FocusTrapDialog';
 import { logUiState, logAuditEvent } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { resolveAriaLive } from '../../libs/observability/observability';
 import type { DataSourceTransition } from '../../libs/observability/types';
 import { savePatient, type PatientRecord, type PatientMutationResult } from '../patients/api';
 import { PatientFormErrorAlert } from '../patients/PatientFormErrorAlert';
@@ -326,7 +327,7 @@ export function PatientInfoEditDialog({
       testId="patient-info-edit-dialog"
     >
       {!editAllowed ? (
-        <div className="patient-edit__blocked" role="alert" aria-live="assertive">
+        <div className="patient-edit__blocked" role="alert" aria-live={resolveAriaLive('warning')}>
           <p>編集ガード中のため更新できません。</p>
           {editBlockedReason ? <p className="patient-edit__blocked-reason">{editBlockedReason}</p> : null}
           <div className="patient-edit__actions">
@@ -338,7 +339,11 @@ export function PatientInfoEditDialog({
       ) : (
         <>
           {notice ? (
-            <div className={`patient-edit__notice patient-edit__notice--${notice.tone}`} role="alert" aria-live="assertive">
+            <div
+              className={`patient-edit__notice patient-edit__notice--${notice.tone}`}
+              role="alert"
+              aria-live={resolveAriaLive(notice.tone)}
+            >
               <p className="patient-edit__notice-title">{notice.message}</p>
               {notice.detail ? <p className="patient-edit__notice-detail">{notice.detail}</p> : null}
             </div>

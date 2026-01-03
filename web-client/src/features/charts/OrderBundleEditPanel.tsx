@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { readStoredAuth } from '../../libs/auth/storedAuth';
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { resolveAriaLive } from '../../libs/observability/observability';
 import { fetchOrderBundles, mutateOrderBundles, type OrderBundle, type OrderBundleItem } from './orderBundleApi';
 import {
   fetchOrderMasterSearch,
@@ -2965,7 +2966,7 @@ export function OrderBundleEditPanel({
         </div>
       </form>
 
-      <div className="charts-side-panel__list" aria-live="polite">
+      <div className="charts-side-panel__list" aria-live={resolveAriaLive('info')}>
         <div className="charts-side-panel__list-header">
           <span>登録済み{title}</span>
           <span>{bundleQuery.isFetching ? '更新中' : `${bundles.length}件`}</span>

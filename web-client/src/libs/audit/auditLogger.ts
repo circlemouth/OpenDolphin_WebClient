@@ -99,8 +99,8 @@ export function logUiState(entry: Omit<UiStateLog, 'timestamp'>) {
   const resolvedFallbackUsed = merged.fallbackUsed ?? meta.fallbackUsed ?? false;
   const resolvedDataSourceTransition = resolveDataSourceTransition(
     merged.dataSourceTransition,
-    merged.cacheHit,
-    merged.fallbackUsed,
+    resolvedCacheHit,
+    resolvedFallbackUsed,
   );
   const normalizedDetails: Record<string, unknown> = { ...details };
   if (normalizedDetails.runId === undefined) normalizedDetails.runId = resolvedRunId;
@@ -138,9 +138,12 @@ export function logUiState(entry: Omit<UiStateLog, 'timestamp'>) {
   };
   const missing: string[] = [];
   if (!record.runId) missing.push('runId');
+  if (!record.traceId) missing.push('traceId');
   if (record.dataSourceTransition === undefined) missing.push('dataSourceTransition');
   if (record.cacheHit === undefined) missing.push('cacheHit');
   if (record.missingMaster === undefined) missing.push('missingMaster');
+  if (record.fallbackUsed === undefined) missing.push('fallbackUsed');
+  if (!record.facilityId) missing.push('facilityId');
   const maskedRecord = maskSensitiveLog(record);
   if (missing.length > 0 && typeof console !== 'undefined') {
     console.warn('[audit] UI state schema warning', { missing, record: maskedRecord });

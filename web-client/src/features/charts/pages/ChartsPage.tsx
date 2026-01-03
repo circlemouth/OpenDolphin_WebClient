@@ -24,6 +24,7 @@ import { getAuditEventLog, logAuditEvent, logUiState, type AuditEventRecord } fr
 import { fetchOrcaOutpatientSummary } from '../api';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
+import { RunIdBadge } from '../../shared/RunIdBadge';
 import { ToneBanner } from '../../reception/components/ToneBanner';
 import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
@@ -32,7 +33,7 @@ import type { ClaimOutpatientPayload } from '../../outpatient/types';
 import { hasStoredAuth } from '../../../libs/http/httpClient';
 import { fetchOrcaQueue } from '../../outpatient/orcaQueueApi';
 import { resolveOrcaSendStatus, toClaimQueueEntryFromOrcaQueueEntry } from '../../outpatient/orcaQueueStatus';
-import { getObservabilityMeta } from '../../../libs/observability/observability';
+import { getObservabilityMeta, resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
 import {
   buildChartsEncounterSearch,
   hasEncounterContext,
@@ -790,7 +791,8 @@ function ChartsContent() {
     orcaSummaryQuery.data?.fallbackUsed,
   ]);
 
-  const resolvedRunId = mergedFlags.runId ?? flags.runId;
+  const resolvedRunId = resolveRunId(mergedFlags.runId ?? flags.runId);
+  const infoLive = resolveAriaLive('info');
   const resolvedCacheHit = mergedFlags.cacheHit ?? flags.cacheHit;
   const resolvedMissingMaster = mergedFlags.missingMaster ?? flags.missingMaster;
   const resolvedTransition = mergedFlags.dataSourceTransition ?? flags.dataSourceTransition;
@@ -1651,7 +1653,7 @@ function ChartsContent() {
         id="charts-main"
         tabIndex={-1}
         className="charts-page"
-        data-run-id={flags.runId}
+        data-run-id={resolvedRunId}
         aria-busy={lockState.locked}
       >
       <header className="charts-page__header" id="charts-topbar" tabIndex={-1} data-focus-anchor="true">
@@ -1672,7 +1674,7 @@ function ChartsContent() {
           data-cache-hit={String(resolvedCacheHit)}
           data-fallback-used={String(resolvedFallbackUsed)}
         >
-          <span className="charts-page__pill">RUN_ID: {resolvedRunId}</span>
+          <RunIdBadge runId={resolvedRunId} className="charts-page__pill" />
           <span className="charts-page__pill">dataSourceTransition: {resolvedTransition}</span>
           <span className="charts-page__pill">missingMaster: {String(resolvedMissingMaster)}</span>
           <span className="charts-page__pill">cacheHit: {String(resolvedCacheHit)}</span>
@@ -1703,7 +1705,6 @@ function ChartsContent() {
           destination="Charts"
           nextAction="必要なら Reception で再選択"
           runId={flags.runId}
-          ariaLive={contextAlert.tone === 'info' ? 'polite' : 'assertive'}
         />
       ) : null}
       {editLockAlert ? (
@@ -1713,7 +1714,7 @@ function ChartsContent() {
           destination="Charts"
           nextAction="別タブを閉じる / 最新を再読込 / 強制引き継ぎ"
           runId={resolvedRunId ?? flags.runId}
-          ariaLive={editLockAlert.ariaLive}
+          ariaLive={resolveAriaLive(editLockAlert.tone, editLockAlert.ariaLive)}
         />
       ) : null}
       {deliveryImpactBanner ? (
@@ -1734,14 +1735,13 @@ function ChartsContent() {
           destination="Charts"
           nextAction="Administration で再配信"
           runId={adminConfigQuery.data?.runId ?? broadcast?.runId ?? flags.runId}
-          ariaLive="assertive"
         />
       ) : null}
 
       {deliveryAppliedMeta ? (
         <section className="charts-card" aria-label="管理配信の適用メタ">
           <h2>管理配信（適用メタ）</h2>
-          <div className="charts-page__meta" aria-live="polite">
+          <div className="charts-page__meta" aria-live={infoLive}>
             <span className="charts-page__pill">適用時刻: {deliveryAppliedMeta.appliedAt}</span>
             <span className="charts-page__pill">適用ユーザー: {deliveryAppliedMeta.appliedTo}</span>
             <span className="charts-page__pill">role: {deliveryAppliedMeta.role}</span>
@@ -1926,7 +1926,7 @@ function ChartsContent() {
                 <div
                   className="charts-safety"
                   role="status"
-                  aria-live={resolvedMissingMaster ? 'assertive' : 'polite'}
+                  aria-live={resolveAriaLive(resolvedMissingMaster ? 'warning' : 'info')}
                   data-run-id={resolvedRunId}
                   data-missing-master={String(resolvedMissingMaster)}
                 >
@@ -2140,7 +2140,7 @@ function ChartsContent() {
                     className="charts-side-panel"
                     role="dialog"
                     aria-label="右固定メニューの詳細パネル"
-                    aria-live="polite"
+                    aria-live={infoLive}
                     data-open={sidePanelAction ? 'true' : 'false'}
                   >
                     <div className="charts-side-panel__header">

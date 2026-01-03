@@ -1,4 +1,4 @@
-import { resolveRunId } from '../../libs/observability/observability';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 
 type RunIdNavBadgeProps = {
   runId?: string;
@@ -11,7 +11,7 @@ export function RunIdNavBadge({ runId, onCopy }: RunIdNavBadgeProps) {
     <div
       className="app-shell__nav-runid"
       role="status"
-      aria-live="polite"
+      aria-live={resolveAriaLive('info')}
       aria-atomic="true"
       data-run-id={resolvedRunId}
     >

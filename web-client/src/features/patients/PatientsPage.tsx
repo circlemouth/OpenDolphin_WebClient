@@ -3,10 +3,12 @@ import { useMutation, useQuery } from '@tanstack/react-query';
 import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
 
 import { getAuditEventLog, logUiState, type AuditEventRecord } from '../../libs/audit/auditLogger';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
 import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { AdminBroadcastBanner } from '../shared/AdminBroadcastBanner';
+import { RunIdBadge } from '../shared/RunIdBadge';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { applyAuthServicePatch, useAuthService, type AuthServiceFlags, type DataSourceTransition } from '../charts/authService';
 import { buildChartsUrl, normalizeRunId, normalizeVisitDate, parseReceptionCarryoverParams } from '../charts/encounterContext';
@@ -312,7 +314,8 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const { tone, message: toneMessage, transitionMeta } = getChartToneDetails(tonePayload);
 
   const patients = patientsQuery.data?.patients ?? [];
-  const resolvedRunId = patientsQuery.data?.runId ?? flags.runId;
+  const resolvedRunId = resolveRunId(patientsQuery.data?.runId ?? flags.runId);
+  const infoLive = resolveAriaLive('info');
   const resolvedCacheHit = patientsQuery.data?.cacheHit ?? flags.cacheHit ?? lastMeta.cacheHit ?? false;
   const resolvedMissingMaster = patientsQuery.data?.missingMaster ?? flags.missingMaster ?? lastMeta.missingMaster ?? false;
   const resolvedFallbackUsed = patientsQuery.data?.fallbackUsed ?? flags.fallbackUsed ?? lastMeta.fallbackUsed ?? false;
@@ -679,30 +682,28 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     setSelectedViewId('');
   };
 
-  const toneLive = missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite';
-
   return (
     <main className="patients-page" data-run-id={resolvedRunId}>
       <header className="patients-page__header">
         <div>
           <p className="patients-page__kicker">Patients 編集と監査連携</p>
           <h1>患者一覧・編集</h1>
-          <p className="patients-page__hint" role="status" aria-live="polite">
+          <p className="patients-page__hint" role="status" aria-live={infoLive}>
             Reception で選んだフィルタを復元し、/api01rv2/patient/outpatient で閲覧・/orca12/patientmodv2/outpatient で保存します。取得時は runId/cacheHit/missingMaster/fallbackUsed/dataSourceTransition/fetchedAt/recordsReturned を透過します。
           </p>
         </div>
         <div className="patients-page__badges">
-          <StatusBadge label="runId" value={resolvedRunId ?? ''} tone="info" />
-          <StatusBadge label="missingMaster" value={String(missingMasterFlag)} tone={missingMasterFlag ? 'warning' : 'success'} ariaLive={toneLive} />
-          <StatusBadge label="fallbackUsed" value={String(fallbackUsedFlag)} tone={fallbackUsedFlag ? 'warning' : 'success'} ariaLive={toneLive} />
+          <RunIdBadge runId={resolvedRunId} />
+          <StatusBadge label="missingMaster" value={String(missingMasterFlag)} tone={missingMasterFlag ? 'warning' : 'success'} />
+          <StatusBadge label="fallbackUsed" value={String(fallbackUsedFlag)} tone={fallbackUsedFlag ? 'warning' : 'success'} />
           <StatusBadge label="cacheHit" value={String(resolvedCacheHit)} tone={resolvedCacheHit ? 'success' : 'warning'} />
           <StatusBadge label="dataSourceTransition" value={resolvedTransition ?? 'unknown'} tone="info" />
           <StatusBadge label="recordsReturned" value={String(resolvedRecordsReturned ?? '―') } tone="info" />
         </div>
       </header>
 
-      <AdminBroadcastBanner broadcast={broadcast} surface="patients" runId={resolvedRunId ?? runId} />
-      <ToneBanner tone={tone} message={toneMessage} runId={resolvedRunId} ariaLive={missingMasterFlag || fallbackUsedFlag ? 'assertive' : 'polite'} />
+      <AdminBroadcastBanner broadcast={broadcast} surface="patients" runId={resolvedRunId} />
+      <ToneBanner tone={tone} message={toneMessage} runId={resolvedRunId} />
       {chartsArrivalBanner && (
         <ToneBanner
           tone={chartsArrivalBanner.tone}
@@ -712,7 +713,6 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           destination="Patients"
           nextAction={chartsArrivalBanner.nextAction}
           runId={resolvedRunId}
-          ariaLive="assertive"
         />
       )}
       {unlinkedNotice && (
@@ -722,11 +722,10 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           destination="Patients"
           nextAction="一覧を確認"
           runId={resolvedRunId}
-          ariaLive="assertive"
         />
       )}
 
-      <section className="patients-page__filters" aria-label="フィルタ" aria-live="polite">
+      <section className="patients-page__filters" aria-label="フィルタ" aria-live={infoLive}>
         <label>
           <span>キーワード</span>
           <input
@@ -848,7 +847,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       <section className="patients-page__content">
         <div className="patients-page__list" role="list" aria-label="患者一覧">
           {patients.length === 0 && (
-            <p className="patients-page__empty" role="status" aria-live="polite">
+            <p className="patients-page__empty" role="status" aria-live={infoLive}>
               患者データがありません。フィルタを変えて再検索してください。
             </p>
           )}
@@ -877,7 +876,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           })}
         </div>
 
-        <form className="patients-page__form" onSubmit={handleSubmit} aria-live={blocking ? 'assertive' : 'polite'}>
+        <form className="patients-page__form" onSubmit={handleSubmit} aria-live={resolveAriaLive(blocking ? 'warning' : 'info')}>
           <div className="patients-page__form-header">
             <div>
               <p className="patients-page__pill">編集フォーム</p>
@@ -1049,7 +1048,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           </div>
 
           {blocking && (
-            <div className="patients-page__block" role="alert" aria-live="assertive">
+            <div className="patients-page__block" role="alert" aria-live={resolveAriaLive('warning')}>
               <strong>編集をブロックしました</strong>
               <ul>
                 {blockReasons.map((reason) => (
@@ -1064,14 +1063,14 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           <PatientFormErrorAlert errors={validationErrors} onFocusField={focusField} />
 
           {toast && (
-            <div className={`patients-page__toast patients-page__toast--${toast.tone}`} role="alert" aria-live="assertive">
+            <div className={`patients-page__toast patients-page__toast--${toast.tone}`} role="alert" aria-live={resolveAriaLive(toast.tone)}>
               <strong>{toast.message}</strong>
               {toast.detail && <p>{toast.detail}</p>}
             </div>
           )}
 
               {(toast?.tone === 'error' || toast?.tone === 'warning') && lastAttempt ? (
-            <div className="patients-page__retry-save" role="alert" aria-live="assertive">
+            <div className="patients-page__retry-save" role="alert" aria-live={resolveAriaLive('warning')}>
               <p className="patients-page__retry-save-title">保存を再試行できます</p>
               <div className="patients-page__retry-save-actions" role="group" aria-label="保存失敗時の操作">
                 <button type="button" onClick={() => mutation.mutate(lastAttempt)} disabled={mutation.isPending}>
@@ -1097,7 +1096,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             </div>
           ) : null}
 
-          <div className="patients-page__audit-view" role="status" aria-live="polite">
+          <div className="patients-page__audit-view" role="status" aria-live={infoLive}>
             <div className="patients-page__audit-head">
               <h3>監査ログビュー</h3>
               <button type="button" onClick={() => setAuditSnapshot(getAuditEventLog())}>
@@ -1132,7 +1131,7 @@ export function PatientsPage({ runId }: PatientsPageProps) {
             )}
             <div className="patients-page__audit-list" role="list" aria-label="保存履歴">
               {auditRows.length === 0 ? (
-                <p className="patients-page__audit-empty" role="status" aria-live="polite">
+                <p className="patients-page__audit-empty" role="status" aria-live={infoLive}>
                   まだ保存履歴がありません（Patients/Charts で保存すると反映されます）。
                 </p>
               ) : (

@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 
 import type { OrcaOutpatientSummary } from '../outpatient/types';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { StatusBadge } from '../shared/StatusBadge';
 import { extractMedicalOutpatientRecord, toOutcomeLabel, toOutcomeTone, type MedicalSectionState } from './medicalOutpatient';
 
@@ -24,10 +25,12 @@ export function MedicalOutpatientRecordPanel({ summary, selectedPatientId }: Med
     () => extractMedicalOutpatientRecord(summary?.payload, selectedPatientId),
     [selectedPatientId, summary?.payload],
   );
+  const resolvedRunId = resolveRunId(summary?.runId);
+  const infoLive = resolveAriaLive('info');
 
   if (!summary) {
     return (
-      <section className="medical-record" aria-live="polite" data-test-id="medical-record-panel">
+      <section className="medical-record" aria-live={infoLive} data-test-id="medical-record-panel">
         <header className="medical-record__header">
           <strong>医療記録</strong>
         </header>
@@ -42,7 +45,12 @@ export function MedicalOutpatientRecordPanel({ summary, selectedPatientId }: Med
     if (hasFetchError) {
       const httpLabel = httpStatus === 0 ? 'NETWORK' : typeof httpStatus === 'number' ? `HTTP ${httpStatus}` : 'UNKNOWN';
       return (
-        <section className="medical-record" aria-live="assertive" data-test-id="medical-record-panel" data-run-id={summary.runId}>
+        <section
+          className="medical-record"
+          aria-live={resolveAriaLive('error')}
+          data-test-id="medical-record-panel"
+          data-run-id={resolvedRunId}
+        >
           <header className="medical-record__header">
             <strong>医療記録</strong>
             <span className="medical-record__meta">
@@ -56,7 +64,7 @@ export function MedicalOutpatientRecordPanel({ summary, selectedPatientId }: Med
       );
     }
     return (
-      <section className="medical-record" aria-live="polite" data-test-id="medical-record-panel">
+      <section className="medical-record" aria-live={infoLive} data-test-id="medical-record-panel">
         <header className="medical-record__header">
           <strong>医療記録</strong>
           <span className="medical-record__meta">recordsReturned: {summary.recordsReturned ?? '—'}</span>
@@ -68,10 +76,11 @@ export function MedicalOutpatientRecordPanel({ summary, selectedPatientId }: Med
     );
   }
 
-  const ariaLive = record.outcome === 'ERROR' ? 'assertive' : record.outcome === 'PARTIAL' ? 'polite' : 'off';
+  const recordTone = toOutcomeTone(record.outcome);
+  const ariaLive = resolveAriaLive(recordTone, record.outcome === 'SUCCESS' ? 'off' : undefined);
 
   return (
-    <section className="medical-record" aria-live={ariaLive} data-test-id="medical-record-panel" data-run-id={summary.runId}>
+    <section className="medical-record" aria-live={ariaLive} data-test-id="medical-record-panel" data-run-id={resolvedRunId}>
       <header className="medical-record__header">
         <div className="medical-record__title">
           <strong>医療記録</strong>

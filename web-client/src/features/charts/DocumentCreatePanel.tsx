@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { logUiState } from '../../libs/audit/auditLogger';
 import { resolveAuditActor } from '../../libs/auth/storedAuth';
 import { hasStoredAuth } from '../../libs/http/httpClient';
-import { ensureObservabilityMeta } from '../../libs/observability/observability';
+import { ensureObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import type { DataSourceTransition } from './authService';
 import { DOCUMENT_TEMPLATES, DOCUMENT_TYPE_LABELS, getTemplateById, type DocumentType } from './documentTemplates';
@@ -762,7 +762,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
           </button>
         </div>
       </form>
-      <div className="charts-document-list" aria-live="polite">
+      <div className="charts-document-list" aria-live={resolveAriaLive('info')}>
         <div className="charts-document-list__header">
           <strong>保存済み文書</strong>
           <span>{savedDocs.length} 件</span>

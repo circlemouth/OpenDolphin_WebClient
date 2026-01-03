@@ -6,6 +6,7 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { logUiState, getAuditEventLog, type AuditEventRecord } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { useAuthService } from './authService';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
@@ -53,6 +54,8 @@ export function PatientsTab({
   onSelectEncounter,
 }: PatientsTabProps) {
   const { flags } = useAuthService();
+  const resolvedRunId = resolveRunId(flags.runId);
+  const infoLive = resolveAriaLive('info');
   const session = useSession();
   const navigate = useNavigate();
   const tonePayload: ChartTonePayload = {
@@ -725,9 +728,9 @@ export function PatientsTab({
   return (
     <section
       className="patients-tab"
-      aria-live={tone === 'info' ? 'polite' : 'assertive'}
+      aria-live={resolveAriaLive(tone)}
       aria-atomic="false"
-      data-run-id={flags.runId}
+      data-run-id={resolvedRunId}
     >
       <ToneBanner
         tone={tone}
@@ -809,7 +812,7 @@ export function PatientsTab({
             aria-label="患者検索キーワード"
           />
         </label>
-        <div className="patients-tab__edit-guard" aria-live="polite">
+        <div className="patients-tab__edit-guard" aria-live={infoLive}>
           {guardMessage}
         </div>
       </div>
@@ -817,7 +820,7 @@ export function PatientsTab({
       <div className="patients-tab__body">
         <div className="patients-tab__table" role="list" aria-label="外来一覧（患者切替）">
           {filteredEntries.length === 0 && (
-            <article className="patients-tab__row" data-run-id={flags.runId}>
+            <article className="patients-tab__row" data-run-id={resolvedRunId}>
               <div className="patients-tab__row-meta">
                 <span className="patients-tab__row-id">患者データなし</span>
                 <strong>外来 API 応答を待機</strong>
@@ -840,7 +843,7 @@ export function PatientsTab({
                 key={patient.id}
                 type="button"
                 className={`patients-tab__row${isSelected ? ' patients-tab__row--selected' : ''}`}
-                data-run-id={flags.runId}
+                data-run-id={resolvedRunId}
                 disabled={switchLocked}
                 onClick={() => handleSelect(patient)}
               >
@@ -1139,7 +1142,7 @@ export function PatientsTab({
                 ) : null}
                 <div className="patients-tab__history" role="list" aria-label="受診履歴一覧">
                   {historyEntriesForSelected.length === 0 ? (
-                    <p className="patients-tab__detail-empty" role="status" aria-live="polite">
+                    <p className="patients-tab__detail-empty" role="status" aria-live={infoLive}>
                       該当する履歴がありません（このデモでは外来一覧の範囲内のみ表示）。
                     </p>
                   ) : (
@@ -1243,7 +1246,7 @@ export function PatientsTab({
       </div>
 
       {auditEvent && (
-        <div className="patients-tab__audit" role="alert" aria-live="assertive">
+        <div className="patients-tab__audit" role="alert" aria-live={resolveAriaLive('warning')}>
           <strong>auditEvent</strong>
           <p>
             {Object.entries(auditEvent)
@@ -1267,7 +1270,7 @@ export function PatientsTab({
             </p>
             <div className="patients-tab__modal-list" role="list">
               {relevantAuditEvents.length === 0 ? (
-                <p className="patients-tab__detail-empty" role="status" aria-live="polite">
+                <p className="patients-tab__detail-empty" role="status" aria-live={infoLive}>
                   まだ保存履歴がありません（Charts/Patients で保存するとここに反映されます）。
                 </p>
               ) : (

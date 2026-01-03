@@ -1,3 +1,5 @@
+import { resolveAriaLive } from '../../../libs/observability/observability';
+
 export type ResolveMasterSource = 'mock' | 'snapshot' | 'server' | 'fallback';
 
 const toneMapping: Record<ResolveMasterSource, 'info' | 'warning' | 'error' | 'success'> = {
@@ -18,7 +20,7 @@ export function ResolveMasterBadge({ masterSource, transitionDescription, runId 
     <div
       className={`resolve-master resolve-master--${toneMapping[masterSource]}`}
       role="note"
-      aria-live="polite"
+      aria-live={resolveAriaLive(toneMapping[masterSource])}
       data-run-id={runId}
     >
       <span className="resolve-master__label">resolveMasterSource</span>

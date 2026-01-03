@@ -3,6 +3,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
+import { resolveAriaLive } from '../../libs/observability/observability';
 import { fetchDiseases, mutateDiseases, type DiseaseEntry } from './diseaseApi';
 import type { DataSourceTransition } from './authService';
 
@@ -441,7 +442,7 @@ export function DiagnosisEditPanel({ patientId, meta }: DiagnosisEditPanelProps)
         </div>
       </form>
 
-      <div className="charts-side-panel__list" aria-live="polite">
+      <div className="charts-side-panel__list" aria-live={resolveAriaLive('info')}>
         <div className="charts-side-panel__list-header">
           <span>登録済み病名</span>
           <span>{diagnosisQuery.isFetching ? '更新中' : `${list.length}件`}</span>

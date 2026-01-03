@@ -29,6 +29,7 @@ import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import './styles/app-shell.css';
 import { resolveAriaLive, updateObservabilityMeta } from './libs/observability/observability';
+import { copyRunIdToClipboard } from './libs/observability/runIdCopy';
 import { AuthServiceProvider, clearStoredAuthFlags, useAuthService } from './features/charts/authService';
 import { PatientsPage } from './features/patients/PatientsPage';
 import { AdministrationPage } from './features/administration/AdministrationPage';
@@ -603,19 +604,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
       return;
     }
     try {
-      if (navigator.clipboard?.writeText) {
-        await navigator.clipboard.writeText(runId);
-      } else {
-        const textarea = document.createElement('textarea');
-        textarea.value = runId;
-        textarea.style.position = 'fixed';
-        textarea.style.top = '-1000px';
-        textarea.style.opacity = '0';
-        document.body.appendChild(textarea);
-        textarea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textarea);
-      }
+      await copyRunIdToClipboard(runId);
       enqueueToast({ tone: 'success', message: 'RUN_ID をコピーしました', detail: runId });
     } catch {
       enqueueToast({ tone: 'error', message: 'RUN_ID のコピーに失敗しました', detail: 'クリップボード権限を確認してください。' });
@@ -642,7 +631,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   return (
     <AppToastProvider value={{ enqueue: enqueueToast, dismiss: dismissToast }}>
       <div className="app-shell">
-        <header className="app-shell__topbar" role="status" aria-live="polite" data-run-id={resolvedRunId}>
+        <header className="app-shell__topbar" role="status" aria-live={resolveAriaLive('info')} data-run-id={resolvedRunId}>
           <div className="app-shell__brand">
             <span className="app-shell__title">OpenDolphin Web</span>
             <small className="app-shell__subtitle">電子カルテデモシェル</small>
@@ -674,7 +663,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           </div>
         </header>
 
-        <nav className="app-shell__nav" aria-label="画面ナビゲーション" role="status" aria-live="polite" data-run-id={resolvedRunId}>
+        <nav className="app-shell__nav" aria-label="画面ナビゲーション" role="status" aria-live={resolveAriaLive('info')} data-run-id={resolvedRunId}>
           {navItems}
           <RunIdNavBadge runId={resolvedRunId} onCopy={handleCopyRunId} />
         </nav>
@@ -683,7 +672,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           <Outlet />
         </div>
 
-        <aside className="app-shell__notice-stack" aria-live="polite" data-run-id={resolvedRunId}>
+        <aside className="app-shell__notice-stack" aria-live={resolveAriaLive('info')} data-run-id={resolvedRunId}>
           {toasts.map((toast) => (
             <div
               key={toast.id}

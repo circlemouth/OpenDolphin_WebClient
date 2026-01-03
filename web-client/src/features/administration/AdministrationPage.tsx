@@ -3,6 +3,7 @@ import { Link } from 'react-router-dom';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { logAuditEvent, logUiState } from '../../libs/audit/auditLogger';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { persistHeaderFlags, resolveHeaderFlags } from '../../libs/http/header-flags';
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { useSession } from '../../AppRouter';
@@ -29,6 +30,7 @@ import {
   type AdminDeliveryFlagState,
   type AdminDeliveryStatus,
 } from '../../libs/admin/broadcast';
+import { RunIdBadge } from '../shared/RunIdBadge';
 
 type AdministrationPageProps = {
   runId: string;
@@ -146,7 +148,8 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   });
 
   const latestRunId = configQuery.data?.runId ?? queueQuery.data?.runId ?? runId;
-  const resolvedRunId = latestRunId ?? flags.runId;
+  const resolvedRunId = resolveRunId(latestRunId ?? flags.runId);
+  const infoLive = resolveAriaLive('info');
   const envFallback = normalizeEnvironmentLabel(
     (import.meta.env as Record<string, string | undefined>).VITE_ENVIRONMENT ??
       (import.meta.env as Record<string, string | undefined>).VITE_DEPLOY_ENV ??
@@ -505,11 +508,12 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
     <main className="administration-page" data-test-id="administration-page" data-run-id={resolvedRunId}>
       <div className="administration-page__header">
         <h1>Administration（設定配信）</h1>
-        <p className="administration-page__lead" role="status" aria-live="assertive">
+        <p className="administration-page__lead" role="status" aria-live={infoLive}>
           管理者が ORCA 接続・MSW トグル・配信フラグを編集し、保存時に broadcast / audit を送ります。RUN_ID:{' '}
           <strong>{resolvedRunId}</strong>
         </p>
-        <div className="administration-page__meta" aria-live="polite">
+        <div className="administration-page__meta" aria-live={infoLive}>
+          <RunIdBadge runId={resolvedRunId} />
           <span className="administration-page__pill">role: {role ?? 'unknown'}</span>
           <span className="administration-page__pill">配信元: {configQuery.data?.source ?? 'live'}</span>
           <span className="administration-page__pill">環境: {environmentLabel}</span>
@@ -536,7 +540,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           <span className="administration-page__pill">mismatchFields: {syncMismatchFields ?? '―'}</span>
         </div>
         {!isSystemAdmin ? (
-          <div className="admin-guard" role="alert" aria-live="assertive" id={guardMessageId}>
+          <div className="admin-guard" role="alert" aria-live={resolveAriaLive('warning')} id={guardMessageId}>
             <div className="admin-guard__header">
               <span className="admin-guard__title">操作ガード中</span>
               <span className="admin-guard__badge">system_adminのみ</span>
@@ -724,7 +728,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
               <p
                 className="status-message"
                 role="status"
-                aria-live={feedback.tone === 'error' ? 'assertive' : 'polite'}
+                aria-live={resolveAriaLive(feedback.tone)}
               >
                 {feedback.message}
               </p>
