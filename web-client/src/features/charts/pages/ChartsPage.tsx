@@ -268,6 +268,7 @@ function ChartsContent() {
     deliveredAt?: string;
     deliveryId?: string;
     deliveryVersion?: string;
+    deliveryEtag?: string;
     syncMismatch?: boolean;
     syncMismatchFields?: string;
   } | null>(null);
@@ -559,6 +560,7 @@ function ChartsContent() {
     const key = JSON.stringify({
       deliveryId: data.deliveryId,
       deliveryVersion: data.deliveryVersion,
+      deliveryEtag: data.deliveryEtag,
       deliveredAt: data.deliveredAt,
       runId: data.runId,
       chartsDisplayEnabled: data.chartsDisplayEnabled,
@@ -580,6 +582,7 @@ function ChartsContent() {
       deliveredAt: data.deliveredAt,
       deliveryId: data.deliveryId,
       deliveryVersion: data.deliveryVersion,
+      deliveryEtag: data.deliveryEtag ?? data.deliveryVersion,
       syncMismatch: data.syncMismatch,
       syncMismatchFields: data.syncMismatchFields?.length ? data.syncMismatchFields.join(', ') : undefined,
     });
@@ -596,6 +599,7 @@ function ChartsContent() {
         delivery: {
           deliveryId: data.deliveryId,
           deliveryVersion: data.deliveryVersion,
+          deliveryEtag: data.deliveryEtag ?? data.deliveryVersion,
           deliveredAt: data.deliveredAt,
           deliveryMode: resolvedDeliveryMode,
         },
@@ -1686,7 +1690,7 @@ function ChartsContent() {
           <span className="charts-page__pill">Charts master: {chartsMasterSourcePolicy}</span>
           <span className="charts-page__pill">Charts送信: {sendAllowedByDelivery ? 'enabled' : 'disabled'}</span>
           <span className="charts-page__pill">
-            配信: {adminConfigQuery.data?.deliveryVersion ?? adminConfigQuery.data?.deliveryId ?? '―'}
+            ETag: {adminConfigQuery.data?.deliveryEtag ?? adminConfigQuery.data?.deliveryVersion ?? adminConfigQuery.data?.deliveryId ?? '―'}
           </span>
           <span className="charts-page__pill">適用先: {session.facilityId}:{session.userId}</span>
         </div>
@@ -1745,6 +1749,7 @@ function ChartsContent() {
             <span className="charts-page__pill">deliveredAt: {deliveryAppliedMeta.deliveredAt ?? '―'}</span>
             <span className="charts-page__pill">deliveryId: {deliveryAppliedMeta.deliveryId ?? '―'}</span>
             <span className="charts-page__pill">deliveryVersion: {deliveryAppliedMeta.deliveryVersion ?? '―'}</span>
+            <span className="charts-page__pill">ETag: {deliveryAppliedMeta.deliveryEtag ?? deliveryAppliedMeta.deliveryVersion ?? '―'}</span>
             <span className="charts-page__pill">
               syncMismatch: {deliveryAppliedMeta.syncMismatch === undefined ? '―' : String(deliveryAppliedMeta.syncMismatch)}
             </span>

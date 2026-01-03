@@ -19,6 +19,7 @@ export type AdminConfigResponse = Partial<AdminConfigPayload> & {
   runId?: string;
   deliveryId?: string;
   deliveryVersion?: string;
+  deliveryEtag?: string;
   deliveredAt?: string;
   source?: 'mock' | 'live';
   verified?: boolean;
@@ -42,6 +43,7 @@ const normalizeBooleanHeader = (value: string | null) => {
   return value === 'enabled' || value === '1' || value === 'true';
 };
 
+const normalizeHeaderValue = (value: string | null) => (typeof value === 'string' ? value.trim() : undefined);
 const getString = (value: unknown) => (typeof value === 'string' ? value : undefined);
 const getBoolean = (value: unknown) => (typeof value === 'boolean' ? value : undefined);
 const resolveClientEnvironment = () => {
@@ -80,6 +82,9 @@ const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse =
   const runId = getString(body.runId) ?? headers.get('x-run-id') ?? undefined;
   const verifyHeader = headers.get('x-admin-delivery-verification');
   const queueMode = headers.get('x-orca-queue-mode');
+  const headerEtag = normalizeHeaderValue(headers.get('etag') ?? headers.get('x-etag') ?? headers.get('x-delivery-etag'));
+  const deliveryEtag = getString(body.etag) ?? headerEtag;
+  const deliveryVersion = getString(body.deliveryVersion) ?? getString(body.version) ?? deliveryEtag;
   const verified = getBoolean(body.verified) ?? normalizeBooleanHeader(verifyHeader);
   const source = (getString(body.source) as 'mock' | 'live' | undefined) ?? (queueMode === 'mock' ? 'mock' : 'live');
   const environment = normalizeEnvironment(body, headers);
@@ -97,7 +102,8 @@ const normalizeConfig = (json: unknown, headers: Headers): AdminConfigResponse =
     chartsMasterSource:
       getChartsMasterSourcePolicy(body.chartsMasterSource) ?? getChartsMasterSourcePolicy(charts.masterSource),
     deliveryId: getString(body.deliveryId),
-    deliveryVersion: getString(body.deliveryVersion) ?? getString(body.etag) ?? getString(body.version),
+    deliveryVersion,
+    deliveryEtag,
     deliveredAt: getString(body.deliveredAt) ?? getString(body.updatedAt),
     note: getString(body.note),
     runId,
@@ -175,6 +181,8 @@ export function mergeAdminConfigResponses(
     chartsMasterSource: delivery.chartsMasterSource ?? config.chartsMasterSource,
     environment: delivery.environment ?? config.environment,
     deliveryMode: delivery.deliveryMode ?? config.deliveryMode,
+    deliveryVersion: delivery.deliveryVersion ?? config.deliveryVersion,
+    deliveryEtag: delivery.deliveryEtag ?? config.deliveryEtag,
     rawConfig: config,
     rawDelivery: delivery,
     syncMismatch: syncMismatchFields.length > 0 ? true : false,

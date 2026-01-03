@@ -69,6 +69,7 @@ export function AdminBroadcastBanner({ broadcast, surface, runId }: AdminBroadca
   const queueStatusLabel = broadcast.queueStatus
     ? `queue: 合計${broadcast.queueStatus.total}件 / pending:${broadcast.queueStatus.pending} / failed:${broadcast.queueStatus.failed} / delayed:${broadcast.queueStatus.delayed}`
     : undefined;
+  const resolvedEtag = broadcast.deliveryEtag ?? broadcast.deliveryVersion;
   const message = isQueueBroadcast
     ? [
         '配信キュー操作が通知されました',
@@ -89,7 +90,7 @@ export function AdminBroadcastBanner({ broadcast, surface, runId }: AdminBroadca
           ? `配信:${deliveryStatusSummary.summary}${deliveryStatusSummary.parts.length ? '（D=表示/S=送信/M=master）' : ''}`
           : undefined,
         broadcast.deliveryId ? `deliveryId: ${broadcast.deliveryId}` : undefined,
-        broadcast.deliveryVersion ? `version: ${broadcast.deliveryVersion}` : undefined,
+        resolvedEtag ? `ETag: ${resolvedEtag}` : undefined,
         broadcast.deliveredAt ? `deliveredAt: ${formatTimestamp(broadcast.deliveredAt) ?? broadcast.deliveredAt}` : undefined,
         broadcast.queueMode ? `queueMode: ${broadcast.queueMode}` : undefined,
         broadcast.chartsMasterSource ? `chartsMasterSource: ${broadcast.chartsMasterSource}` : undefined,
