@@ -172,6 +172,21 @@ export const chartsStyles = css`
     text-transform: uppercase;
   }
 
+  .charts-safety__name {
+    font-size: 1.2rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+  }
+
+  .charts-safety__age {
+    font-size: 0.9rem;
+    font-weight: 700;
+    padding: 0.15rem 0.6rem;
+    border-radius: 999px;
+    background: rgba(146, 64, 14, 0.12);
+    color: #7c2d12;
+  }
+
   .charts-safety__meta {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
@@ -709,6 +724,40 @@ export const chartsStyles = css`
     justify-content: space-between;
     font-size: 0.85rem;
     color: #475569;
+  }
+
+  .charts-document-list__filters {
+    display: grid;
+    grid-template-columns: minmax(160px, 1.2fr) minmax(120px, 0.6fr) minmax(140px, 0.8fr) auto;
+    gap: 0.4rem;
+    align-items: center;
+  }
+
+  .charts-document-list__filters input,
+  .charts-document-list__filters select {
+    border-radius: 10px;
+    border: 1px solid rgba(148, 163, 184, 0.35);
+    padding: 0.35rem 0.6rem;
+    font-size: 0.8rem;
+    background: #ffffff;
+    color: #0f172a;
+  }
+
+  .charts-document-list__clear {
+    border-radius: 999px;
+    border: 1px solid rgba(148, 163, 184, 0.45);
+    background: #f1f5f9;
+    color: #475569;
+    padding: 0.25rem 0.9rem;
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+  }
+
+  @media (max-width: 900px) {
+    .charts-document-list__filters {
+      grid-template-columns: 1fr;
+    }
   }
 
   .charts-document-list__items {

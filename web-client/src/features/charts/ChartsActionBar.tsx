@@ -92,6 +92,7 @@ export interface ChartsActionBarProps {
   onDiscardChanges?: () => void;
   onForceTakeover?: () => void;
   onAfterSend?: () => void | Promise<void>;
+  onAfterFinish?: () => void | Promise<void>;
   onDraftSaved?: () => void;
   onLockChange?: (locked: boolean, reason?: string) => void;
   onApprovalConfirmed?: (meta: { action: 'send'; actor?: string }) => void;
@@ -121,6 +122,7 @@ export function ChartsActionBar({
   onDiscardChanges,
   onForceTakeover,
   onAfterSend,
+  onAfterFinish,
   onDraftSaved,
   onLockChange,
   onApprovalConfirmed,
@@ -150,6 +152,10 @@ export function ChartsActionBar({
   const resolvedPatientId = patientId ?? selectedEntry?.patientId ?? selectedEntry?.id;
   const resolvedAppointmentId = queueEntry?.appointmentId ?? selectedEntry?.appointmentId;
   const resolvedReceptionId = selectedEntry?.receptionId;
+  const resolvedVisitDate = useMemo(
+    () => selectedEntry?.visitDate ?? new Date().toISOString().slice(0, 10),
+    [selectedEntry?.visitDate],
+  );
 
   const sendQueueLabel = useMemo(() => {
     const phase = queueEntry?.phase;
@@ -432,6 +438,21 @@ export function ChartsActionBar({
     if ((!patientId || !queueEntry?.appointmentId) && resolvedReceptionId) details.fallbackReceptionId = resolvedReceptionId;
     if (editLock?.lockStatus) details.lockStatus = editLock.lockStatus;
     return details;
+  };
+
+  const buildOutpatientPayload = () => {
+    const payload: Record<string, unknown> = {
+      appointmentDate: resolvedVisitDate,
+      date: resolvedVisitDate,
+      appointmentId: resolvedAppointmentId,
+      receptionId: resolvedReceptionId,
+    };
+    if (resolvedPatientId) {
+      payload.Patient_ID = resolvedPatientId;
+      payload.patientId = resolvedPatientId;
+      payload.patientInformation = { Patient_ID: resolvedPatientId };
+    }
+    return payload;
   };
 
   const logAudit = (
@@ -730,25 +751,87 @@ export function ChartsActionBar({
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
 
-      if (action === 'send') {
-        const endpoint = `/api/orca/queue?patientId=${encodeURIComponent(patientId ?? '')}&retry=1`;
-        const response = await httpFetch(endpoint, { method: 'GET', signal });
+      if (action === 'send' || action === 'finish') {
+        const endpoint = action === 'send' ? '/api01rv2/claim/outpatient' : '/orca21/medicalmodv2/outpatient';
+        const payload = buildOutpatientPayload();
+        const response = await httpFetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+          signal,
+        });
+        const json = (await response.json().catch(() => ({}))) as Record<string, unknown>;
         if (response.status === 401 || response.status === 403) {
           setPermissionDenied(true);
           throw new Error(`権限不足（HTTP ${response.status}）。再ログインまたは権限設定を確認してください。`);
         }
         if (!response.ok) {
-          const bodyText = await response.text().catch(() => '');
-          throw new Error(`ORCA 送信 API に失敗（HTTP ${response.status}）。${bodyText ? `response=${bodyText.slice(0, 120)}` : ''}`);
+          const apiResult = typeof json.apiResult === 'string' ? json.apiResult : undefined;
+          const apiResultMessage = typeof json.apiResultMessage === 'string' ? json.apiResultMessage : undefined;
+          const outcome = typeof json.outcome === 'string' ? json.outcome : undefined;
+          const detailParts = [
+            `HTTP ${response.status}`,
+            apiResult ? `apiResult=${apiResult}` : undefined,
+            apiResultMessage ? `message=${apiResultMessage}` : undefined,
+            outcome ? `outcome=${outcome}` : undefined,
+          ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+          throw new Error(`${ACTION_LABEL[action]} API に失敗（${detailParts.join(' / ')}）`);
         }
-        // 応答ボディは環境差があるため、ここでは成功判定のみ行い、詳細は claim/outpatient 再取得で確認する。
-        await response.json().catch(() => ({}));
-        await onAfterSend?.();
+
+        const responseRunId = typeof json.runId === 'string' ? json.runId : undefined;
+        const responseTraceId = typeof json.traceId === 'string' ? json.traceId : undefined;
+        const responseRequestId = typeof json.requestId === 'string' ? json.requestId : undefined;
+        const responseOutcome = typeof json.outcome === 'string' ? json.outcome : undefined;
+        const responseApiResult = typeof json.apiResult === 'string' ? json.apiResult : undefined;
+        const responseApiResultMessage = typeof json.apiResultMessage === 'string' ? json.apiResultMessage : undefined;
+        const responseAuditEvent = (json.auditEvent as Record<string, unknown> | undefined) ?? undefined;
+
+        const after = getObservabilityMeta();
+        const nextRunId = responseRunId ?? after.runId ?? runId;
+        const nextTraceId = responseTraceId ?? after.traceId ?? resolvedTraceId;
+
+        const responseDetailParts = [
+          `runId=${nextRunId}`,
+          `traceId=${nextTraceId ?? 'unknown'}`,
+          responseRequestId ? `requestId=${responseRequestId}` : undefined,
+          responseOutcome ? `outcome=${responseOutcome}` : undefined,
+          responseApiResult ? `apiResult=${responseApiResult}` : undefined,
+        ].filter((part): part is string => typeof part === 'string' && part.length > 0);
+
+        setBanner(null);
+        setToast({
+          tone: 'success',
+          message: `${ACTION_LABEL[action]}を完了`,
+          detail: responseDetailParts.join(' / '),
+        });
+
+        const durationMs = Math.round(performance.now() - startedAt);
+        logTelemetry(action, 'success', durationMs);
+        logAudit(action, 'success', undefined, durationMs, {
+          phase: 'do',
+          details: {
+            endpoint,
+            httpStatus: response.status,
+            requestId: responseRequestId,
+            outcome: responseOutcome,
+            apiResult: responseApiResult,
+            apiResultMessage: responseApiResultMessage,
+            auditEvent: responseAuditEvent,
+            payload,
+          },
+        });
+
+        if (action === 'send') {
+          await onAfterSend?.();
+        } else {
+          await onAfterFinish?.();
+        }
+        return;
       } else if (action === 'draft') {
         // TODO: 本実装では localStorage / server に保存。現段階は送信前チェック用のガード連携を優先。
         onDraftSaved?.();
       } else {
-        // finish/cancel/print は現状デモ（監査・テレメトリの記録）として扱う。
+        // cancel/print は現状デモ（監査・テレメトリの記録）として扱う。
       }
 
       const durationMs = Math.round(performance.now() - startedAt);

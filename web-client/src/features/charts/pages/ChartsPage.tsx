@@ -1098,6 +1098,41 @@ function ChartsContent() {
     return patientEntries.find((entry) => (entry.patientId ?? entry.id) === encounterContext.patientId);
   }, [encounterContext.appointmentId, encounterContext.patientId, encounterContext.receptionId, patientEntries]);
 
+  const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
+  const receptionId = selectedEntry?.receptionId ?? encounterContext.receptionId;
+  const appointmentId = selectedEntry?.appointmentId ?? encounterContext.appointmentId;
+  const patientDisplay = useMemo(() => {
+    const resolvedVisitDate = normalizeVisitDate(selectedEntry?.visitDate ?? encounterContext.visitDate);
+    const baseDate = parseDate(resolvedVisitDate) ?? new Date();
+    return {
+      name: selectedEntry?.name ?? '患者未選択',
+      kana: selectedEntry?.kana ?? '—',
+      birthDate: formatBirthDate(selectedEntry?.birthDate),
+      age: formatAge(selectedEntry?.birthDate, baseDate),
+      sex: selectedEntry?.sex ?? '—',
+      status: selectedEntry?.status ?? '—',
+      department: selectedEntry?.department ?? '—',
+      physician: selectedEntry?.physician ?? '—',
+      insurance: selectedEntry?.insurance ?? '—',
+      visitDate: resolvedVisitDate ?? '—',
+      appointmentTime: selectedEntry?.appointmentTime ?? '—',
+      note: selectedEntry?.note ?? 'メモなし',
+    };
+  }, [
+    encounterContext.visitDate,
+    selectedEntry?.appointmentTime,
+    selectedEntry?.birthDate,
+    selectedEntry?.department,
+    selectedEntry?.insurance,
+    selectedEntry?.kana,
+    selectedEntry?.name,
+    selectedEntry?.note,
+    selectedEntry?.physician,
+    selectedEntry?.sex,
+    selectedEntry?.status,
+    selectedEntry?.visitDate,
+  ]);
+
   const lockTarget = useMemo(() => {
     const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
     return {
@@ -1849,6 +1884,7 @@ function ChartsContent() {
               onApprovalConfirmed={handleApprovalConfirmed}
               onApprovalUnlock={handleApprovalUnlock}
               onAfterSend={handleRefreshSummary}
+              onAfterFinish={handleRefreshSummary}
               onDraftSaved={() => setDraftState((prev) => ({ ...prev, dirty: false }))}
               onLockChange={handleLockChange}
             />
@@ -1932,12 +1968,14 @@ function ChartsContent() {
                 >
                   <div className="charts-safety__primary">
                     <span className="charts-safety__label">安全表示</span>
-                    <strong>{patientDisplay.name}</strong>
+                    <strong className="charts-safety__name">{patientDisplay.name}</strong>
+                    <span className="charts-safety__age">{patientDisplay.age}</span>
                   </div>
                   <div className="charts-safety__meta">
                     <span>患者ID: {patientId ?? '—'}</span>
                     <span>受付ID: {receptionId ?? '—'}</span>
                     <span>生年月日: {patientDisplay.birthDate}</span>
+                    <span>性別: {patientDisplay.sex}</span>
                     <span>RUN_ID: {resolvedRunId}</span>
                     <span>missingMaster: {String(resolvedMissingMaster)}</span>
                   </div>

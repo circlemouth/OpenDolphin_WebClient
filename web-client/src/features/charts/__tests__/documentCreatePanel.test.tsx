@@ -1,5 +1,5 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { MemoryRouter } from 'react-router-dom';
 
@@ -13,6 +13,10 @@ vi.mock('../../../libs/audit/auditLogger', () => ({
 vi.mock('../audit', () => ({
   recordChartsAuditEvent: vi.fn(),
 }));
+
+afterEach(() => {
+  localStorage.clear();
+});
 
 describe('DocumentCreatePanel', () => {
   const baseProps = {
@@ -72,6 +76,45 @@ describe('DocumentCreatePanel', () => {
     expect(screen.getByRole('button', { name: 'プレビュー' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: '印刷' })).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'PDF出力' })).toBeInTheDocument();
+  });
+
+  it('文書履歴の検索・フィルタが機能する', async () => {
+    localStorage.setItem('devFacilityId', 'F-1');
+    localStorage.setItem('devUserId', 'U-1');
+    localStorage.setItem('devPasswordMd5', 'md5');
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+
+    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'REF-ODT-STD');
+    await user.type(screen.getByLabelText('宛先医療機関 *'), '東京クリニック');
+    await user.type(screen.getByLabelText('宛先医師 *'), '山田太郎');
+    await user.type(screen.getByLabelText('紹介目的 *'), '精査依頼');
+    await user.type(screen.getByLabelText('主病名 *'), '高血圧');
+    await user.type(screen.getByLabelText('紹介内容 *'), '既往歴と検査結果を記載');
+    await user.click(screen.getByRole('button', { name: '保存' }));
+
+    await user.click(screen.getByRole('tab', { name: /診断書/ }));
+    await user.selectOptions(screen.getByLabelText('テンプレート *'), 'CERT-ODT-STD');
+    await user.type(screen.getByLabelText('提出先 *'), '会社提出');
+    await user.type(screen.getByLabelText('診断名 *'), '感冒');
+    await user.type(screen.getByLabelText('用途 *'), '勤務先提出');
+    await user.type(screen.getByLabelText('所見 *'), '安静と投薬');
+    await user.click(screen.getByRole('button', { name: '保存' }));
+
+    await user.selectOptions(screen.getByLabelText('文書種別フィルタ'), 'certificate');
+    const list = screen.getByRole('list');
+    expect(within(list).getByText('会社提出')).toBeInTheDocument();
+    expect(within(list).queryByText('東京クリニック')).not.toBeInTheDocument();
+
+    await user.type(screen.getByLabelText('文書履歴の検索'), '会社');
+    expect(within(list).getByText('会社提出')).toBeInTheDocument();
+
+    await user.selectOptions(screen.getByLabelText('出力可否フィルタ'), 'available');
+    expect(within(list).getByText('会社提出')).toBeInTheDocument();
   });
 
   it('中断で入力を破棄して閉じる', async () => {

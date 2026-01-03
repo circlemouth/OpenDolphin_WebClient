@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 
 import { logUiState } from '../../libs/audit/auditLogger';
@@ -171,6 +171,9 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
   const [forms, setForms] = useState<DocumentFormState>(() => buildEmptyForms(today));
   const [notice, setNotice] = useState<{ tone: 'info' | 'success' | 'error'; message: string } | null>(null);
   const [savedDocs, setSavedDocs] = useState<SavedDocument[]>([]);
+  const [filterText, setFilterText] = useState('');
+  const [filterType, setFilterType] = useState<DocumentType | 'all'>('all');
+  const [filterOutput, setFilterOutput] = useState<'all' | 'available' | 'blocked'>('all');
   const observability = useMemo(() => ensureObservabilityMeta({ runId: meta.runId }), [meta.runId]);
   const resolvedRunId = observability.runId ?? meta.runId;
   const hasPermission = useMemo(() => hasStoredAuth(), []);
@@ -384,7 +387,7 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
     if (onClose) onClose();
   };
 
-  const resolveOutputGuardReasons = (doc: SavedDocument) => {
+  const resolveOutputGuardReasons = useCallback((doc: SavedDocument) => {
     const reasons: Array<{ key: string; summary: string; detail: string }> = [];
     if (meta.missingMaster) {
       reasons.push({
@@ -422,7 +425,33 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       });
     }
     return reasons;
-  };
+  }, [hasPermission, meta.fallbackUsed, meta.missingMaster]);
+
+  const filteredDocs = useMemo(() => {
+    if (savedDocs.length === 0) return [];
+    const keyword = filterText.trim().toLowerCase();
+    return savedDocs.filter((doc) => {
+      if (filterType !== 'all' && doc.type !== filterType) return false;
+      if (keyword) {
+        const haystack = [
+          doc.title,
+          doc.templateLabel,
+          doc.issuedAt,
+          DOCUMENT_TYPE_LABELS[doc.type],
+        ]
+          .filter((value): value is string => typeof value === 'string' && value.length > 0)
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(keyword)) return false;
+      }
+      if (filterOutput !== 'all') {
+        const blocked = resolveOutputGuardReasons(doc).length > 0;
+        if (filterOutput === 'available' && blocked) return false;
+        if (filterOutput === 'blocked' && !blocked) return false;
+      }
+      return true;
+    });
+  }, [filterOutput, filterText, filterType, resolveOutputGuardReasons, savedDocs]);
 
   const handleOpenDocumentPreview = (doc: SavedDocument, initialOutputMode?: DocumentOutputMode) => {
     const { actor, facilityId } = resolveAuditActor();
@@ -765,13 +794,62 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
       <div className="charts-document-list" aria-live="polite">
         <div className="charts-document-list__header">
           <strong>保存済み文書</strong>
-          <span>{savedDocs.length} 件</span>
+          <span>
+            {filteredDocs.length}/{savedDocs.length} 件
+          </span>
         </div>
         {savedDocs.length === 0 ? (
           <p className="charts-side-panel__empty">保存履歴はまだありません。</p>
         ) : (
-          <ul className="charts-document-list__items">
-            {savedDocs.map((doc) => (
+          <>
+            <div className="charts-document-list__filters" role="group" aria-label="文書履歴の検索フィルタ">
+              <input
+                type="search"
+                placeholder="検索（タイトル/テンプレ/発行日）"
+                value={filterText}
+                onChange={(event) => setFilterText(event.target.value)}
+                aria-label="文書履歴の検索"
+              />
+              <select
+                value={filterType}
+                onChange={(event) => setFilterType(event.target.value as DocumentType | 'all')}
+                aria-label="文書種別フィルタ"
+              >
+                <option value="all">すべての文書</option>
+                {DOCUMENT_TYPES.map((item) => (
+                  <option key={item.type} value={item.type}>
+                    {item.label}
+                  </option>
+                ))}
+              </select>
+              <select
+                value={filterOutput}
+                onChange={(event) => setFilterOutput(event.target.value as 'all' | 'available' | 'blocked')}
+                aria-label="出力可否フィルタ"
+              >
+                <option value="all">出力可否: すべて</option>
+                <option value="available">出力可能のみ</option>
+                <option value="blocked">出力停止のみ</option>
+              </select>
+              {(filterText.trim().length > 0 || filterType !== 'all' || filterOutput !== 'all') && (
+                <button
+                  type="button"
+                  className="charts-document-list__clear"
+                  onClick={() => {
+                    setFilterText('');
+                    setFilterType('all');
+                    setFilterOutput('all');
+                  }}
+                >
+                  フィルタをクリア
+                </button>
+              )}
+            </div>
+            {filteredDocs.length === 0 ? (
+              <p className="charts-side-panel__empty">検索条件に該当する文書がありません。</p>
+            ) : (
+              <ul className="charts-document-list__items">
+                {filteredDocs.map((doc) => (
               <li key={doc.id}>
                 {(() => {
                   const guards = resolveOutputGuardReasons(doc);
@@ -802,8 +880,10 @@ export function DocumentCreatePanel({ patientId, meta, onClose }: DocumentCreate
                   );
                 })()}
               </li>
-            ))}
-          </ul>
+                ))}
+              </ul>
+            )}
+          </>
         )}
       </div>
     </section>
