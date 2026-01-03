@@ -12,3 +12,13 @@
 ## 成果物
 - テスト結果のログ/スクリーンショット
 - 失敗ケースの再現手順
+
+## 実行ログの保存先
+- `artifacts/validation/e2e/logs/`
+- `artifacts/validation/e2e/screenshots/`
+- `artifacts/validation/e2e/README.md`（サマリとrunId一覧）
+
+## 証跡最低要件
+- シナリオ/結果/エラーが揃った実行ログ
+- 主要フローのスクリーンショット
+- 監査イベントの確認メモ（runId/endpoint）

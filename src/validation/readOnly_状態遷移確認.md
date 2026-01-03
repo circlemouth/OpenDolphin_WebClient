@@ -11,3 +11,13 @@ sidePanelMeta の readOnly/missingMaster/fallback などの状態が UI と API 
 ## 成果物
 - 状態遷移の確認表
 - 不整合の一覧
+
+## 実行ログの保存先
+- `artifacts/validation/readonly/logs/`
+- `artifacts/validation/readonly/screenshots/`
+- `artifacts/validation/readonly/README.md`（サマリとrunId一覧）
+
+## 証跡最低要件
+- 状態遷移の確認表（readOnly/missingMaster/fallback/dataSourceTransition）
+- 監査イベントの確認メモ（runId/状態/画面）
+- 代表ケースのスクリーンショット

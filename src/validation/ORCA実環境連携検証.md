@@ -12,3 +12,13 @@
 - 実環境検証ログ（runId, 操作, 結果）
 - 監査ログ到達の確認記録
 - ブロッカー/差分の一覧
+
+## 実行ログの保存先
+- `artifacts/validation/orca/logs/`
+- `artifacts/validation/orca/screenshots/`
+- `artifacts/validation/orca/README.md`（サマリとrunId一覧）
+
+## 証跡最低要件
+- runId/操作/結果が揃った実行ログ
+- 監査イベント到達の確認メモ（runId/endpoint）
+- 主要画面（Reception/Charts/Patients/Administration）のスクリーンショット

@@ -689,6 +689,14 @@ src:
         - 実環境検証ログ（runId, 操作, 結果）
         - 監査ログ到達の確認記録
         - ブロッカー/差分の一覧
+        
+        ## 成果物リンク
+        - src/validation/ORCA実環境連携検証.md
+        
+        ## 証跡最低要件
+        - 実行ログ（runId/操作/結果）を保存
+        - 監査イベント到達の確認メモ
+        - 主要画面のスクリーンショット（Reception/Charts/Patients/Administration）
       dependency:
         - src/implementation/認証_権限ギャップ実装計画.md
         - src/implementation/Administration_配信ギャップ実装計画.md
@@ -701,6 +709,12 @@ src:
       priority: High
       status: not_started
       progress: 0
+      outputs:
+        - src/validation/ORCA実環境連携検証.md
+      evidence:
+        - artifacts/validation/orca/README.md
+        - artifacts/validation/orca/logs/*
+        - artifacts/validation/orca/screenshots/*
       schedule:
         start: 2026-01-04T00:00:00.000Z
         days: 2
@@ -720,6 +734,14 @@ src:
         ## 成果物
         - テスト結果のログ/スクリーンショット
         - 失敗ケースの再現手順
+        
+        ## 成果物リンク
+        - src/validation/E2E_統合テスト実施.md
+        
+        ## 証跡最低要件
+        - 実行ログ（シナリオ/結果/エラー）を保存
+        - 主要フローのスクリーンショット
+        - 監査イベントの確認メモ（runId/endpoint）
       dependency:
         - src/implementation/Administration_配信ギャップ実装計画.md
         - src/implementation/Reception_ギャップ実装計画.md
@@ -730,6 +752,12 @@ src:
       priority: High
       status: not_started
       progress: 0
+      outputs:
+        - src/validation/E2E_統合テスト実施.md
+      evidence:
+        - artifacts/validation/e2e/README.md
+        - artifacts/validation/e2e/logs/*
+        - artifacts/validation/e2e/screenshots/*
       schedule:
         start: 2026-01-06T00:00:00.000Z
         days: 2
@@ -748,6 +776,14 @@ src:
         ## 成果物
         - 状態遷移の確認表
         - 不整合の一覧
+        
+        ## 成果物リンク
+        - src/validation/readOnly_状態遷移確認.md
+        
+        ## 証跡最低要件
+        - 状態遷移の確認表（readOnly/missingMaster/fallback/dataSourceTransition）
+        - 監査イベントの確認メモ（runId/状態/画面）
+        - 代表ケースのスクリーンショット
       dependency:
         - src/implementation/Patients_ギャップ実装計画.md
         - src/implementation/Charts_非カルテギャップ実装計画.md
@@ -757,6 +793,12 @@ src:
       priority: Medium
       status: not_started
       progress: 0
+      outputs:
+        - src/validation/readOnly_状態遷移確認.md
+      evidence:
+        - artifacts/validation/readonly/README.md
+        - artifacts/validation/readonly/logs/*
+        - artifacts/validation/readonly/screenshots/*
       schedule:
         start: 2026-01-08T00:00:00.000Z
         days: 1
@@ -775,6 +817,14 @@ src:
         ## 成果物
         - バリデーション確認メモ
         - 仕様差分/追加対応の一覧
+        
+        ## 成果物リンク
+        - src/validation/入力バリデーション妥当性確認.md
+        
+        ## 証跡最低要件
+        - バリデーション確認メモ（期待/実結果）
+        - エラー応答のスクリーンショット or ログ
+        - 監査イベントの確認メモ（拒否理由/endpoint）
       dependency:
         - src/implementation/Patients_ギャップ実装計画.md
         - src/implementation/Charts_非カルテギャップ実装計画.md
@@ -784,6 +834,12 @@ src:
       priority: Medium
       status: not_started
       progress: 0
+      outputs:
+        - src/validation/入力バリデーション妥当性確認.md
+      evidence:
+        - artifacts/validation/validation/README.md
+        - artifacts/validation/validation/logs/*
+        - artifacts/validation/validation/screenshots/*
       schedule:
         start: 2026-01-09T00:00:00.000Z
         days: 1
