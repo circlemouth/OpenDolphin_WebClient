@@ -1,28 +1,124 @@
 [
   {
-    "id": "task-1767431182283-0e7299",
-    "name": "CodexCLI1: 対象ファイル: .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml\n\n現在、すべてのタスクと調査が完了しているが、このタスクの後続タスクとして、具体的に判明した未実装項目をどの画面に実装すべきか、どこに実装すべきか検討し、実装計画の後続タスクを新規追加して作業計画を立案せよ。モダナイズ版サーバーとの関連機能の接続も行うこと。",
+    "id": "task-yaml-13mm2gc-src-implementati",
+    "name": "[webclient non chart gap audit plan 20251230] 未実装項目の画面割当と実装箇所整理\n期間: 01/04 09:00 - 01/05 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 未実装項目の画面割当と実装箇所整理\n\n## 目的\n追加検討項目（BKL-001〜020）を **どの画面に実装するか**、**どのコードに配置するか** を確定し、\n後続実装タスクの粒度を固定する。\n\n## 画面・コード配置の割当（ドラフト）\n| Backlog ID | 画面 | 実装箇所（web-client） | 主なサーバ連携候補 |\n| --- | --- | --- | --- |\n| BKL-001/002/009/012 | Administration/配信 | `web-client/src/features/administration/AdministrationPage.tsx` / `web-client/src/features/administration/api.ts` / `web-client/src/features/shared/*` | `/api/admin/config` `/api/admin/delivery` / 監査 API |\n| BKL-003/004/016 | Login/共通権限 | `web-client/src/features/login/*` / `web-client/src/AppRouter.tsx` / `web-client/src/routes/facilityRoutes.ts` | 認証/ユーザ切替 API / 監査 API |\n| BKL-006/010/011/013/05 | Reception | `web-client/src/features/reception/pages/ReceptionPage.tsx` / `web-client/src/features/reception/api.ts` / `web-client/src/features/reception/components/*` | `/api01rv2/appointment/outpatient/*` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-007/014/015 | Patients | `web-client/src/features/patients/PatientsPage.tsx` / `web-client/src/features/patients/api.ts` | `/orca12/patientmodv2/outpatient` / 監査 API |\n| BKL-005/008/017/018 | Charts（非カルテ領域） | `web-client/src/features/charts/*`（`print/` `DocumentTimeline.tsx` ほか） | `/orca21/medicalmodv2/outpatient` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-019/020 | 共通 | `web-client/src/libs/observability/*` / `web-client/src/libs/audit/*` / `web-client/src/features/shared/*` | 監査 API / runId 伝播 |\n\n## 成果物\n- 画面別の実装担当リスト\n- web-client の実装配置表（主要ファイル/コンポーネント単位）\n- サーバ連携 API の仮割当リスト\n\nYAML ID: src/implementation_planning/未実装項目の画面割当と実装箇所整理.md",
+    "model": "YAML App",
+    "status": "completed",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2026-01-03T09:39:14.484Z",
+    "updatedAt": "2026-01-03T09:57:02.409Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-13mm2gc-src-implementati",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7::src/implementation_planning/未実装項目の画面割当と実装箇所整理.md",
+      "appId": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7",
+      "datasetLabel": "webclient non chart gap audit plan 20251230",
+      "pathId": "src/implementation_planning/未実装項目の画面割当と実装箇所整理.md",
+      "fileName": "webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "addedAt": "2026-01-03T09:39:14.454Z"
+    },
+    "labels": [
+      "webclient non chart gap audit plan 20251230",
+      "src / implementation_planning"
+    ],
+    "dependencies": [
+      "task-yaml-11x80kt-src-reporting-md"
+    ],
+    "schedule": {
+      "startMs": 1767484800000,
+      "endMs": 1767571200000,
+      "durationDays": 1
+    },
+    "category": "src / implementation_planning",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# 未実装項目の画面割当と実装箇所整理\n\n## 目的\n追加検討項目（BKL-001〜020）を **どの画面に実装するか**、**どのコードに配置するか** を確定し、\n後続実装タスクの粒度を固定する。\n\n## 画面・コード配置の割当（ドラフト）\n| Backlog ID | 画面 | 実装箇所（web-client） | 主なサーバ連携候補 |\n| --- | --- | --- | --- |\n| BKL-001/002/009/012 | Administration/配信 | `web-client/src/features/administration/AdministrationPage.tsx` / `web-client/src/features/administration/api.ts` / `web-client/src/features/shared/*` | `/api/admin/config` `/api/admin/delivery` / 監査 API |\n| BKL-003/004/016 | Login/共通権限 | `web-client/src/features/login/*` / `web-client/src/AppRouter.tsx` / `web-client/src/routes/facilityRoutes.ts` | 認証/ユーザ切替 API / 監査 API |\n| BKL-006/010/011/013/05 | Reception | `web-client/src/features/reception/pages/ReceptionPage.tsx` / `web-client/src/features/reception/api.ts` / `web-client/src/features/reception/components/*` | `/api01rv2/appointment/outpatient/*` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-007/014/015 | Patients | `web-client/src/features/patients/PatientsPage.tsx` / `web-client/src/features/patients/api.ts` | `/orca12/patientmodv2/outpatient` / 監査 API |\n| BKL-005/008/017/018 | Charts（非カルテ領域） | `web-client/src/features/charts/*`（`print/` `DocumentTimeline.tsx` ほか） | `/orca21/medicalmodv2/outpatient` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-019/020 | 共通 | `web-client/src/libs/observability/*` / `web-client/src/libs/audit/*` / `web-client/src/features/shared/*` | 監査 API / runId 伝播 |\n\n## 成果物\n- 画面別の実装担当リスト\n- web-client の実装配置表（主要ファイル/コンポーネント単位）\n- サーバ連携 API の仮割当リスト"
+  },
+  {
+    "id": "task-yaml-4p84dc-src-implementati",
+    "name": "[webclient non chart gap audit plan 20251230] モダナイズ版サーバー連携整理\n期間: 01/04 09:00 - 01/05 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# モダナイズ版サーバー連携整理\n\n## 目的\n非カルテ領域の未実装項目を **モダナイズ版サーバーに接続するための契約** として整理し、\nUI と server-modernized の責務境界を確定する。\n\n## 連携対象（暫定）\n- Reception/例外一覧・キュー状態: `/api01rv2/claim/outpatient` / `/api01rv2/appointment/outpatient/*`\n- Patients/反映状態: `/orca12/patientmodv2/outpatient`\n- Charts/送信・印刷: `/orca21/medicalmodv2/outpatient` / `/api01rv2/claim/outpatient`\n- Administration/配信: `/api/admin/config` / `/api/admin/delivery`\n- 共通監査: `auditEvent` 永続化/検索 API\n\n## 接続計画（ドラフト）\n1. web-client 側の API 呼び出しを `fetchWithResolver` へ統一し、`dataSourceTransition/cacheHit/runId` を UI と監査に透過。\n2. server-modernized 側で不足する REST ルートがあれば `server-modernized/src/main/java/open/*/rest/*` に追加。\n3. 監査イベントの必須メタ（runId, dataSource, screenId, patientId など）を共通化。\n4. エラー時の UI バナー/例外一覧の表示条件を API レスポンスに合わせて更新。\n\n## 成果物\n- 接続対象 API 一覧（URL/契約/監査メタ）\n- server-modernized 側の追加/修正ポイント整理\n- UI 側の API 置換/追加実装チェックリスト\n\nYAML ID: src/implementation_planning/モダナイズ版サーバー連携整理.md",
+    "model": "YAML App",
+    "status": "pending",
+    "importance": "high",
+    "urgency": "high",
+    "createdAt": "2026-01-03T09:39:20.734Z",
+    "updatedAt": "2026-01-03T09:39:20.734Z",
+    "requiresTerminal": false,
+    "createWorktree": false,
+    "branchName": "task/task-yaml-4p84dc-src-implementati",
+    "baseBranch": "main",
+    "useTmux": false,
+    "singleMode": false,
+    "aiCompetitionEntry": false,
+    "aiCompetitionResult": null,
+    "aiCompetitionGroupId": null,
+    "aiCompetitionGroupName": null,
+    "aiCompetitionMonitor": false,
+    "monitorTargets": null,
+    "scoringConfig": null,
+    "yamlSource": {
+      "key": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7::src/implementation_planning/モダナイズ版サーバー連携整理.md",
+      "appId": "custom-app-webclient-non-chart-gap-audit-plan-2-a0e0462ed7",
+      "datasetLabel": "webclient non chart gap audit plan 20251230",
+      "pathId": "src/implementation_planning/モダナイズ版サーバー連携整理.md",
+      "fileName": "webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "absolutePath": "/Users/Hayato/Documents/GitHub/OpenDolphin_WebClient/.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml",
+      "addedAt": "2026-01-03T09:39:20.689Z"
+    },
+    "labels": [
+      "webclient non chart gap audit plan 20251230",
+      "src / implementation_planning"
+    ],
+    "dependencies": [
+      "task-yaml-13mm2gc-src-implementati"
+    ],
+    "schedule": {
+      "startMs": 1767484800000,
+      "endMs": 1767571200000,
+      "durationDays": 1
+    },
+    "category": "src / implementation_planning",
+    "taskType": "yaml-plan",
+    "source": "yaml-app",
+    "description": "# モダナイズ版サーバー連携整理\n\n## 目的\n非カルテ領域の未実装項目を **モダナイズ版サーバーに接続するための契約** として整理し、\nUI と server-modernized の責務境界を確定する。\n\n## 連携対象（暫定）\n- Reception/例外一覧・キュー状態: `/api01rv2/claim/outpatient` / `/api01rv2/appointment/outpatient/*`\n- Patients/反映状態: `/orca12/patientmodv2/outpatient`\n- Charts/送信・印刷: `/orca21/medicalmodv2/outpatient` / `/api01rv2/claim/outpatient`\n- Administration/配信: `/api/admin/config` / `/api/admin/delivery`\n- 共通監査: `auditEvent` 永続化/検索 API\n\n## 接続計画（ドラフト）\n1. web-client 側の API 呼び出しを `fetchWithResolver` へ統一し、`dataSourceTransition/cacheHit/runId` を UI と監査に透過。\n2. server-modernized 側で不足する REST ルートがあれば `server-modernized/src/main/java/open/*/rest/*` に追加。\n3. 監査イベントの必須メタ（runId, dataSource, screenId, patientId など）を共通化。\n4. エラー時の UI バナー/例外一覧の表示条件を API レスポンスに合わせて更新。\n\n## 成果物\n- 接続対象 API 一覧（URL/契約/監査メタ）\n- server-modernized 側の追加/修正ポイント整理\n- UI 側の API 置換/追加実装チェックリスト"
+  },
+  {
+    "id": "task-1767433184796-b83670",
+    "name": "CodexCLI1: [webclient non chart gap audit plan 20251230] 未実装項目の画面割当と実装箇所整理\n期間: 01/04 09:00 - 01/05 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 未実装項目の画面割当と実装箇所整理\n\n## 目的\n追加検討項目（BKL-001〜020）を **どの画面に実装するか**、**どのコードに配置するか** を確定し、\n後続実装タスクの粒度を固定する。\n\n## 画面・コード配置の割当（ドラフト）\n| Backlog ID | 画面 | 実装箇所（web-client） | 主なサーバ連携候補 |\n| --- | --- | --- | --- |\n| BKL-001/002/009/012 | Administration/配信 | `web-client/src/features/administration/AdministrationPage.tsx` / `web-client/src/features/administration/api.ts` / `web-client/src/features/shared/*` | `/api/admin/config` `/api/admin/delivery` / 監査 API |\n| BKL-003/004/016 | Login/共通権限 | `web-client/src/features/login/*` / `web-client/src/AppRouter.tsx` / `web-client/src/routes/facilityRoutes.ts` | 認証/ユーザ切替 API / 監査 API |\n| BKL-006/010/011/013/05 | Reception | `web-client/src/features/reception/pages/ReceptionPage.tsx` / `web-client/src/features/reception/api.ts` / `web-client/src/features/reception/components/*` | `/api01rv2/appointment/outpatient/*` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-007/014/015 | Patients | `web-client/src/features/patients/PatientsPage.tsx` / `web-client/src/features/patients/api.ts` | `/orca12/patientmodv2/outpatient` / 監査 API |\n| BKL-005/008/017/018 | Charts（非カルテ領域） | `web-client/src/features/charts/*`（`print/` `DocumentTimeline.tsx` ほか） | `/orca21/medicalmodv2/outpatient` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-019/020 | 共通 | `web-client/src/libs/observability/*` / `web-client/src/libs/audit/*` / `web-client/src/features/shared/*` | 監査 API / runId 伝播 |\n\n## 成果物\n- 画面別の実装担当リスト\n- web-client の実装配置表（主要ファイル/コンポーネント単位）\n- サーバ連携 API の仮割当リスト\n\nYAML ID: src/implementation_planning/未実装項目の画面割当と実装箇所整理.md",
     "model": "Codex CLI",
     "status": "working",
     "importance": "medium",
     "urgency": "medium",
-    "createdAt": "2026-01-03T09:06:22.283Z",
-    "updatedAt": "2026-01-03T09:06:22.283Z",
+    "createdAt": "2026-01-03T09:39:44.796Z",
+    "updatedAt": "2026-01-03T09:39:44.796Z",
     "requiresTerminal": true,
     "createWorktree": true,
-    "branchName": "task/task-1767431182283-0e7299",
+    "branchName": "task/task-1767433184796-b83670",
     "baseBranch": "master",
     "useTmux": true,
     "singleMode": false,
     "aiCompetitionEntry": true,
     "aiCompetitionResult": null,
-    "aiCompetitionGroupId": "comp-1767431182282-fuwc16to",
-    "aiCompetitionGroupName": "対象ファイル: .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml\n\n現在、すべてのタスクと調査が完了しているが、このタスクの後続タスクとして、具体的に判明した未実装項目をどの画面に実装すべきか、どこに実装すべきか検討し、実装計画の後続タスクを新規追加して作業計画を立案せよ。モダナイズ版サーバーとの関連機能の接続も行うこと。",
+    "aiCompetitionGroupId": "comp-1767433184795-s028h9yi",
+    "aiCompetitionGroupName": "[webclient non chart gap audit plan 20251230] 未実装項目の画面割当と実装箇所整理\n期間: 01/04 09:00 - 01/05 09:00 / 優先度: high / 緊急度: high / エージェント: codex\n\n# 未実装項目の画面割当と実装箇所整理\n\n## 目的\n追加検討項目（BKL-001〜020）を **どの画面に実装するか**、**どのコードに配置するか** を確定し、\n後続実装タスクの粒度を固定する。\n\n## 画面・コード配置の割当（ドラフト）\n| Backlog ID | 画面 | 実装箇所（web-client） | 主なサーバ連携候補 |\n| --- | --- | --- | --- |\n| BKL-001/002/009/012 | Administration/配信 | `web-client/src/features/administration/AdministrationPage.tsx` / `web-client/src/features/administration/api.ts` / `web-client/src/features/shared/*` | `/api/admin/config` `/api/admin/delivery` / 監査 API |\n| BKL-003/004/016 | Login/共通権限 | `web-client/src/features/login/*` / `web-client/src/AppRouter.tsx` / `web-client/src/routes/facilityRoutes.ts` | 認証/ユーザ切替 API / 監査 API |\n| BKL-006/010/011/013/05 | Reception | `web-client/src/features/reception/pages/ReceptionPage.tsx` / `web-client/src/features/reception/api.ts` / `web-client/src/features/reception/components/*` | `/api01rv2/appointment/outpatient/*` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-007/014/015 | Patients | `web-client/src/features/patients/PatientsPage.tsx` / `web-client/src/features/patients/api.ts` | `/orca12/patientmodv2/outpatient` / 監査 API |\n| BKL-005/008/017/018 | Charts（非カルテ領域） | `web-client/src/features/charts/*`（`print/` `DocumentTimeline.tsx` ほか） | `/orca21/medicalmodv2/outpatient` `/api01rv2/claim/outpatient` / 監査 API |\n| BKL-019/020 | 共通 | `web-client/src/libs/observability/*` / `web-client/src/libs/audit/*` / `web-client/src/features/shared/*` | 監査 API / runId 伝播 |\n\n## 成果物\n- 画面別の実装担当リスト\n- web-client の実装配置表（主要ファイル/コンポーネント単位）\n- サーバ連携 API の仮割当リスト\n\nYAML ID: src/implementation_planning/未実装項目の画面割当と実装箇所整理.md",
     "aiCompetitionMonitor": false,
     "monitorTargets": null,
     "scoringConfig": null,
-    "worktreePath": ".worktrees/task-1767431182283-0e7299",
+    "worktreePath": ".worktrees/task-1767433184796-b83670",
     "medal": "gold",
-    "aiCompetitionScore": 88
+    "aiCompetitionScore": 90
   }
 ]

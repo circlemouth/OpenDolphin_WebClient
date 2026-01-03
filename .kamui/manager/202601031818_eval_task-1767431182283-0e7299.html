@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="ja">
+  <head>
+    <meta charset="utf-8" />
+    <title>評価レポート</title>
+    <style>
+      body {
+        font-family: "Hiragino Sans", "Noto Sans JP", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+        line-height: 1.6;
+        margin: 24px;
+        background-color: #e9f0f2;
+        color: #1f2a30;
+      }
+      .monitor-wrapper {
+        max-width: 1180px;
+        margin: 0 auto;
+        padding: 32px;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      .monitor-header {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        margin-bottom: 24px;
+      }
+      .monitor-title {
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        color: #1f2a30;
+      }
+      .monitor-description {
+        font-size: 14px;
+        color: #3a4b53;
+      }
+      .scoreboard {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 16px;
+        margin-bottom: 24px;
+      }
+      .score-card {
+        border: 1px solid #c4d3d7;
+        background: #f7fafb;
+        padding: 16px;
+      }
+      .score-total {
+        font-size: 22px;
+        font-weight: 700;
+      }
+      .score-sub {
+        font-size: 12px;
+        color: #3a4b53;
+      }
+      table.monitor-report {
+        width: 100%;
+        border-collapse: collapse;
+        table-layout: fixed;
+        background: #ffffff;
+        border: 1px solid #c4d3d7;
+      }
+      col.timestamp-column {
+        width: 160px;
+      }
+      col.agent-column {
+        width: calc((100% - 160px) / 3);
+      }
+      th,
+      td {
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+        vertical-align: top;
+        background-color: #ffffff;
+      }
+      th {
+        background: #d8e6e9;
+        text-align: left;
+        font-size: 13px;
+        font-weight: 600;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: #2c3a40;
+      }
+      tbody tr:nth-child(even) td {
+        background-color: #eef3f4;
+      }
+      details {
+        display: block;
+        margin: 0;
+      }
+      details summary {
+        list-style: none;
+      }
+      details[open] summary {
+        margin-bottom: 12px;
+      }
+      .details-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        cursor: pointer;
+        font-weight: 500;
+        font-size: 13px;
+        color: #1f2a30;
+        padding: 0;
+        background: transparent;
+        border: none;
+      }
+      .details-toggle::before {
+        content: "▶";
+        font-size: 10px;
+        transition: transform 160ms ease;
+        display: inline-block;
+      }
+      details[open] .details-toggle::before {
+        transform: rotate(90deg);
+      }
+      .timestamp {
+        font-weight: 600;
+        color: #2c3a40;
+        overflow-wrap: anywhere;
+      }
+      pre {
+        white-space: pre-wrap;
+        word-break: break-word;
+        margin: 0;
+        font-size: 12px;
+        line-height: 1.55;
+        color: #1f2a30;
+        background: #f2f6f7;
+        border: 1px solid #c4d3d7;
+        padding: 16px;
+      }
+      .status-badge {
+        display: inline-block;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.02em;
+        padding: 1px 6px;
+        background: #d8e6e9;
+        border: 1px solid #b8c9cd;
+        color: #1f2a30;
+        white-space: nowrap;
+        line-height: 1.3;
+        vertical-align: top;
+      }
+      .status-badge--completed {
+        background: #c3d4d8;
+        border-color: #aabfc5;
+      }
+      .agent-meta {
+        display: block;
+        margin-bottom: 12px;
+        line-height: 1.5;
+      }
+      .agent-meta .status-badge {
+        margin-right: 6px;
+      }
+      .agent-meta .agent-label {
+        display: inline;
+        font-size: 13px;
+        color: #3a4b53;
+      }
+      .radar-wrap {
+        display: grid;
+        grid-template-columns: 120px 1fr;
+        gap: 12px;
+        align-items: center;
+        margin-bottom: 12px;
+      }
+      .radar {
+        width: 120px;
+        height: 120px;
+      }
+      .metric-list {
+        margin: 0;
+        padding-left: 16px;
+        font-size: 12px;
+        color: #2c3a40;
+      }
+      .metric-list li {
+        margin-bottom: 4px;
+      }
+      .link-list {
+        margin: 8px 0 0 0;
+        padding-left: 16px;
+        font-size: 12px;
+      }
+      .link-list li {
+        margin-bottom: 4px;
+      }
+      .section-title {
+        font-size: 13px;
+        font-weight: 600;
+        margin: 8px 0;
+        color: #2c3a40;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="monitor-wrapper">
+      <header class="monitor-header">
+        <h1 class="monitor-title">評価レポート</h1>
+        <p class="monitor-description">RUN_ID: 20260103T091555Z / 対象: webclient-non-chart-gap-audit-plan-20251230.yaml / 比較対象は異なる worktree 上の成果物。</p>
+        <p class="monitor-description">タスク内容: 未実装項目の画面割当・実装箇所の特定、後続実装タスク追加、server-modernized 連携方針の整理。</p>
+      </header>
+
+      <section class="scoreboard">
+        <div class="score-card">
+          <div class="score-total">🏆 529 / 600</div>
+          <div class="score-sub">task/task-1767431182283-0e7299 (AI: codex)</div>
+        </div>
+        <div class="score-card">
+          <div class="score-total">🥈 510 / 600</div>
+          <div class="score-sub">task/task-1767431182483-118c78 (AI: codex)</div>
+        </div>
+        <div class="score-card">
+          <div class="score-total">🥉 418 / 600</div>
+          <div class="score-sub">task/task-1767431182685-dfc7b3 (AI: codex)</div>
+        </div>
+      </section>
+
+      <table class="monitor-report">
+        <colgroup>
+          <col class="timestamp-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+          <col class="agent-column" />
+        </colgroup>
+        <thead>
+          <tr>
+            <th>Timestamp</th>
+            <th>Agent task-1767431182283-0e7299</th>
+            <th>Agent task-1767431182483-118c78</th>
+            <th>Agent task-1767431182685-dfc7b3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td class="timestamp">2026-01-03 18:18</td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">要件に沿った後続タスク追加とサーバ連携計画を YAML 内で完結。</span>
+              </div>
+              <div class="radar-wrap">
+                <svg class="radar" viewBox="0 0 120 120" data-scores="88,90,86,82,88,95">
+                  <polygon class="radar-outline" points="60,15 98.97,37.5 98.97,82.5 60,105 21.03,82.5 21.03,37.5" fill="none" stroke="#a8bcc2" stroke-width="1" />
+                  <polygon class="radar-shape" points="" fill="rgba(52, 120, 149, 0.35)" stroke="#347895" stroke-width="1" />
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性 88点: 画面/コード/API の粒度が一貫。</li>
+                  <li>要件遵守 90点: 指定ファイル内で後続計画を完結。</li>
+                  <li>計画具体性 86点: 実装計画と依存を明記。</li>
+                  <li>サーバ連携 82点: API 連携方針を整理。</li>
+                  <li>実装位置特定 88点: 具体ファイルまで提示。</li>
+                  <li>スコープ適正 95点: 余分な変更なし。</li>
+                </ul>
+              </div>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../../.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml">.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml</a></li>
+              </ul>
+              <details>
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>コミット: bd370843e plan: add follow-up implementation tasks for non-chart gaps
+差分: .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml (275 insertions)
+未コミット変更: なし</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">詳細な実装マッピングと server-modernized 連携計画を記載。追加ファイルが発生。</span>
+              </div>
+              <div class="radar-wrap">
+                <svg class="radar" viewBox="0 0 120 120" data-scores="92,78,90,88,92,70">
+                  <polygon class="radar-outline" points="60,15 98.97,37.5 98.97,82.5 60,105 21.03,82.5 21.03,37.5" fill="none" stroke="#a8bcc2" stroke-width="1" />
+                  <polygon class="radar-shape" points="" fill="rgba(117, 96, 30, 0.35)" stroke="#75601e" stroke-width="1" />
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性 92点: GAP/BKL 単位の紐付けが細かい。</li>
+                  <li>要件遵守 78点: 指定外のファイル追加が発生。</li>
+                  <li>計画具体性 90点: 後続タスクが粒度高い。</li>
+                  <li>サーバ連携 88点: Resource 追加案が具体。</li>
+                  <li>実装位置特定 92点: UI/API の配置が明確。</li>
+                  <li>スコープ適正 70点: 追加ドキュメントが作業範囲外。</li>
+                </ul>
+              </div>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../../.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml">.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml</a></li>
+                <li><a href="../../src/implementation_plan/モダナイズ版サーバー連携計画.md">src/implementation_plan/モダナイズ版サーバー連携計画.md</a></li>
+                <li><a href="../../src/implementation_plan/実装計画_後続タスク追加.md">src/implementation_plan/実装計画_後続タスク追加.md</a></li>
+                <li><a href="../../src/implementation_plan/未実装項目_画面実装マッピング.md">src/implementation_plan/未実装項目_画面実装マッピング.md</a></li>
+              </ul>
+              <details>
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>コミット: 777e26930 Add implementation follow-up tasks for non-chart gaps
+差分: .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml (227 insertions)
+追加ファイル: src/implementation_plan/未実装項目_画面実装マッピング.md / src/implementation_plan/モダナイズ版サーバー連携計画.md / src/implementation_plan/実装計画_後続タスク追加.md
+未コミット変更: なし</pre>
+              </details>
+            </td>
+            <td>
+              <div class="agent-meta">
+                <span class="status-badge status-badge--completed">評価完了</span>
+                <span class="agent-label">画面割当や実装箇所は後工程化され、具体性が不足。</span>
+              </div>
+              <div class="radar-wrap">
+                <svg class="radar" viewBox="0 0 120 120" data-scores="68,80,65,60,55,90">
+                  <polygon class="radar-outline" points="60,15 98.97,37.5 98.97,82.5 60,105 21.03,82.5 21.03,37.5" fill="none" stroke="#a8bcc2" stroke-width="1" />
+                  <polygon class="radar-shape" points="" fill="rgba(103, 84, 117, 0.35)" stroke="#675475" stroke-width="1" />
+                </svg>
+                <ul class="metric-list">
+                  <li>緻密性 68点: 画面/コードの指名が少ない。</li>
+                  <li>要件遵守 80点: 指定ファイル内のみ。</li>
+                  <li>計画具体性 65点: 追加計画の粒度が抽象的。</li>
+                  <li>サーバ連携 60点: 接続計画が汎用説明に留まる。</li>
+                  <li>実装位置特定 55点: 実装箇所の確定が不足。</li>
+                  <li>スコープ適正 90点: 余分な変更なし。</li>
+                </ul>
+              </div>
+              <div class="section-title">成果物リンク</div>
+              <ul class="link-list">
+                <li><a href="../../.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml">.kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml</a></li>
+              </ul>
+              <details>
+                <summary class="details-toggle">コミット/差分</summary>
+                <pre>コミット: 5b84244c7 plan: add implementation follow-up tasks (RUN_ID=20260103T090753Z)
+差分: .kamui/apps/webclient-non-chart-gap-audit-plan-20251230.yaml (127 insertions)
+未コミット変更: なし</pre>
+              </details>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <script>
+      const angles = [-90, -30, 30, 90, 150, 210];
+      const radius = 45;
+      const cx = 60;
+      const cy = 60;
+      const toPoint = (score, angle) => {
+        const r = radius * (score / 100);
+        const rad = (angle * Math.PI) / 180;
+        const x = cx + r * Math.cos(rad);
+        const y = cy + r * Math.sin(rad);
+        return `${x.toFixed(1)},${y.toFixed(1)}`;
+      };
+
+      document.querySelectorAll(".radar").forEach((svg) => {
+        const scores = (svg.dataset.scores || "").split(",").map((v) => Number(v.trim()) || 0);
+        const points = scores.map((score, index) => toPoint(score, angles[index])).join(" ");
+        const polygon = svg.querySelector(".radar-shape");
+        if (polygon) {
+          polygon.setAttribute("points", points);
+        }
+      });
+    </script>
+  </body>
+</html>
