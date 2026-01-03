@@ -115,6 +115,22 @@
   overflow: auto;
 }
 
+.patients-page__list-alert {
+  border-radius: 10px;
+  border: 1px solid rgba(245, 158, 11, 0.35);
+  background: #fffbeb;
+  color: #92400e;
+  padding: 0.6rem 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  font-size: 0.9rem;
+}
+
+.patients-page__list-alert strong {
+  font-weight: 800;
+}
+
 .patients-page__row {
   border: 1px solid rgba(148, 163, 184, 0.25);
   background: #ffffff;
@@ -138,6 +154,11 @@
   box-shadow: 0 12px 32px rgba(37, 99, 235, 0.25);
 }
 
+.patients-page__row.is-unlinked {
+  border-color: rgba(245, 158, 11, 0.5);
+  box-shadow: 0 8px 20px rgba(245, 158, 11, 0.15);
+}
+
 .patients-page__row-main {
   display: flex;
   align-items: baseline;
@@ -157,12 +178,26 @@
   color: #64748b;
 }
 
+.patients-page__row-warning {
+  background: #fef3c7;
+  color: #92400e;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+}
+
 .patients-page__row-meta {
   display: flex;
   gap: 0.6rem;
   flex-wrap: wrap;
   font-size: 0.9rem;
   color: #475569;
+}
+
+.patients-page__row-warning-detail {
+  color: #b45309;
+  font-weight: 700;
 }
 
 .patients-page__empty {
@@ -427,6 +462,46 @@
   background: #ffffff;
   font-weight: 700;
   cursor: pointer;
+}
+
+.patients-page__audit-actions {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+}
+
+.patients-page__audit-filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 0.6rem;
+  background: #ffffff;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 10px;
+  padding: 0.6rem;
+}
+
+.patients-page__audit-filters label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+  color: #475569;
+}
+
+.patients-page__audit-filters input,
+.patients-page__audit-filters select {
+  border: 1px solid #cbd5e1;
+  border-radius: 10px;
+  padding: 0.45rem 0.6rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+}
+
+.patients-page__audit-count {
+  align-self: center;
+  color: #64748b;
+  font-size: 0.85rem;
+  padding: 0.2rem 0.4rem;
 }
 
 .patients-page__audit-summary {

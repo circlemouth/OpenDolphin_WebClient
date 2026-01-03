@@ -181,6 +181,13 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const [selectedViewId, setSelectedViewId] = useState<string>('');
   const lastUnlinkedToastKey = useRef<string | null>(null);
   const lastChartsPatientId = useRef<string | null>(null);
+  const [auditKeyword, setAuditKeyword] = useState('');
+  const [auditOutcome, setAuditOutcome] = useState<'all' | 'success' | 'error' | 'warning' | 'partial' | 'unknown'>('all');
+  const [auditScope, setAuditScope] = useState<'selected' | 'all'>('selected');
+  const [auditSort, setAuditSort] = useState<'desc' | 'asc'>('desc');
+  const [auditLimit, setAuditLimit] = useState<'10' | '20' | '50' | 'all'>('10');
+  const [auditDateFrom, setAuditDateFrom] = useState('');
+  const [auditDateTo, setAuditDateTo] = useState('');
   const [lastMeta, setLastMeta] = useState<
     Pick<PatientListResponse, 'missingMaster' | 'fallbackUsed' | 'cacheHit' | 'dataSourceTransition' | 'runId' | 'fetchedAt' | 'recordsReturned'>
   >({
@@ -321,18 +328,23 @@ export function PatientsPage({ runId }: PatientsPageProps) {
   const resolvedFetchedAt = patientsQuery.data?.fetchedAt ?? lastMeta.fetchedAt;
   const resolvedRecordsReturned = patientsQuery.data?.recordsReturned ?? lastMeta.recordsReturned;
 
+  const unlinkedCounts = useMemo(() => {
+    return {
+      missingPatientId: patients.filter((patient) => !patient.patientId).length,
+      missingName: patients.filter((patient) => !patient.name).length,
+    };
+  }, [patients]);
+
   const unlinkedNotice = useMemo(() => {
-    const missingPatientId = patients.filter((patient) => !patient.patientId).length;
-    const missingName = patients.filter((patient) => !patient.name).length;
-    if (missingPatientId === 0 && missingName === 0) return null;
+    if (unlinkedCounts.missingPatientId === 0 && unlinkedCounts.missingName === 0) return null;
     const parts = [
-      missingPatientId > 0 ? `患者ID未紐付: ${missingPatientId}` : undefined,
-      missingName > 0 ? `氏名未紐付: ${missingName}` : undefined,
+      unlinkedCounts.missingPatientId > 0 ? `患者ID未紐付: ${unlinkedCounts.missingPatientId}` : undefined,
+      unlinkedCounts.missingName > 0 ? `氏名未紐付: ${unlinkedCounts.missingName}` : undefined,
     ].filter((value): value is string => typeof value === 'string');
     const message = `患者一覧に未紐付ステータスがあります（${parts.join(' / ')}）`;
-    const key = `${missingPatientId}-${missingName}-${resolvedRunId ?? 'runId'}`;
+    const key = `${unlinkedCounts.missingPatientId}-${unlinkedCounts.missingName}-${resolvedRunId ?? 'runId'}`;
     return { message, detail: `recordsReturned=${resolvedRecordsReturned ?? '―'}`, key };
-  }, [patients, resolvedRecordsReturned, resolvedRunId]);
+  }, [resolvedRecordsReturned, resolvedRunId, unlinkedCounts.missingName, unlinkedCounts.missingPatientId]);
 
   const chartsArrivalBanner = useMemo(() => {
     if (!fromCharts) return null;
@@ -539,11 +551,85 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       const source = record.source ?? '';
       if (!action.includes('PATIENT') && !source.includes('patient')) return false;
       const recordPatientId = resolveAuditPatientId(record);
-      if (!selectedPatientId) return true;
-      return recordPatientId === selectedPatientId;
+      if (auditScope === 'selected' && selectedPatientId) {
+        return recordPatientId === selectedPatientId;
+      }
+      return true;
     });
-    return filtered.slice(-5).reverse();
-  }, [auditSnapshot, baseline?.patientId, form.patientId]);
+
+    const keyword = auditKeyword.trim().toLowerCase();
+    const outcomeFilter = auditOutcome;
+    const fromDate = auditDateFrom ? new Date(`${auditDateFrom}T00:00:00`).getTime() : undefined;
+    const toDate = auditDateTo ? new Date(`${auditDateTo}T23:59:59`).getTime() : undefined;
+
+    const matches = filtered.filter((record) => {
+      const payload = record.payload as Record<string, unknown> | undefined;
+      const details = payload?.details as Record<string, unknown> | undefined;
+      const action = ((payload?.action as string | undefined) ?? '').toLowerCase();
+      const outcome =
+        ((payload?.outcome as string | undefined) ??
+          (details?.outcome as string | undefined) ??
+          'unknown')
+          .toLowerCase();
+      const patientId = resolveAuditPatientId(record);
+      const changedKeys = details?.changedKeys as string[] | string | undefined;
+      const message = (details?.message as string | undefined) ?? (payload?.message as string | undefined);
+      const sourcePath = (details?.sourcePath as string | undefined) ?? (payload?.sourcePath as string | undefined);
+      const recordTime = new Date(record.timestamp).getTime();
+
+      if (fromDate && recordTime < fromDate) return false;
+      if (toDate && recordTime > toDate) return false;
+
+      if (outcomeFilter !== 'all' && outcome !== outcomeFilter) return false;
+
+      if (keyword) {
+        const haystack = [
+          action,
+          outcome,
+          record.source ?? '',
+          record.note ?? '',
+          record.runId ?? '',
+          record.traceId ?? '',
+          patientId ?? '',
+          String(details?.operation ?? ''),
+          String(details?.section ?? ''),
+          String(details?.appointmentId ?? ''),
+          String(details?.receptionId ?? ''),
+          String(details?.visitDate ?? ''),
+          typeof changedKeys === 'string' ? changedKeys : Array.isArray(changedKeys) ? changedKeys.join(',') : '',
+          message ?? '',
+          sourcePath ?? '',
+        ]
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(keyword)) return false;
+      }
+      return true;
+    });
+
+    const sorted = matches.sort((a, b) => {
+      const aTime = new Date(a.timestamp).getTime();
+      const bTime = new Date(b.timestamp).getTime();
+      return auditSort === 'asc' ? aTime - bTime : bTime - aTime;
+    });
+
+    const limit = auditLimit === 'all' ? sorted.length : Number(auditLimit);
+    return {
+      total: sorted.length,
+      items: sorted.slice(0, limit),
+    };
+  }, [
+    auditDateFrom,
+    auditDateTo,
+    auditKeyword,
+    auditLimit,
+    auditOutcome,
+    auditScope,
+    auditSnapshot,
+    auditSort,
+    baseline?.patientId,
+    form.patientId,
+  ]);
 
   const describeAudit = (record: AuditEventRecord) => {
     const payload = record.payload as Record<string, unknown> | undefined;
@@ -555,10 +641,14 @@ export function PatientsPage({ runId }: PatientsPageProps) {
     const outcome = (payload?.outcome as string | undefined) ?? (details?.outcome as string | undefined) ?? '—';
     const runId = (payload?.runId as string | undefined) ?? record.runId ?? '—';
     const traceId = (payload?.traceId as string | undefined) ?? record.traceId ?? '—';
+    const patientId = resolveAuditPatientId(record) ?? '—';
     const changedKeysRaw = details?.changedKeys as string[] | string | undefined;
     const changedKeys = Array.isArray(changedKeysRaw) ? changedKeysRaw.join(', ') : changedKeysRaw ?? '';
     const status = details?.status as string | number | undefined;
     const sourcePath = details?.sourcePath as string | undefined;
+    const message = (details?.message as string | undefined) ?? (payload?.message as string | undefined);
+    const section = (details?.section as string | undefined) ?? (payload?.section as string | undefined);
+    const operation = (details?.operation as string | undefined) ?? (payload?.operation as string | undefined);
     const orcaStatus =
       record.missingMaster || record.fallbackUsed || record.dataSourceTransition !== 'server'
         ? '反映停止'
@@ -572,9 +662,13 @@ export function PatientsPage({ runId }: PatientsPageProps) {
       outcome,
       runId,
       traceId,
+      patientId,
       changedKeys,
       status,
       sourcePath,
+      message,
+      section,
+      operation,
       orcaStatus,
     };
   };
@@ -847,6 +941,13 @@ export function PatientsPage({ runId }: PatientsPageProps) {
 
       <section className="patients-page__content">
         <div className="patients-page__list" role="list" aria-label="患者一覧">
+          {(unlinkedCounts.missingPatientId > 0 || unlinkedCounts.missingName > 0) && (
+            <div className="patients-page__list-alert" role="status" aria-live="polite">
+              <strong>未紐付警告</strong>
+              <span>患者ID欠損: {unlinkedCounts.missingPatientId}</span>
+              <span>氏名欠損: {unlinkedCounts.missingName}</span>
+            </div>
+          )}
           {patients.length === 0 && (
             <p className="patients-page__empty" role="status" aria-live="polite">
               患者データがありません。フィルタを変えて再検索してください。
@@ -854,11 +955,14 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           )}
           {patients.map((patient) => {
             const selected = selectedId === patient.patientId || (!selectedId && patients[0] === patient);
+            const missingId = !patient.patientId;
+            const missingName = !patient.name;
+            const isUnlinked = missingId || missingName;
             return (
               <button
                 key={patient.patientId ?? patient.name ?? Math.random().toString(36).slice(2, 8)}
                 type="button"
-                className={`patients-page__row${selected ? ' is-selected' : ''}`}
+                className={`patients-page__row${selected ? ' is-selected' : ''}${isUnlinked ? ' is-unlinked' : ''}`}
                 onClick={() => handleSelect(patient)}
                 aria-pressed={selected}
               >
@@ -866,11 +970,18 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                   <span className="patients-page__row-id">{patient.patientId ?? '新規'}</span>
                   <strong>{patient.name ?? '氏名未登録'}</strong>
                   <span className="patients-page__row-kana">{patient.kana ?? 'カナ未登録'}</span>
+                  {isUnlinked ? (
+                    <span className="patients-page__row-warning" role="status" aria-live="polite">
+                      未紐付
+                    </span>
+                  ) : null}
                 </div>
                 <div className="patients-page__row-meta">
                   <span>{patient.birthDate ?? '生年月日未設定'}</span>
                   <span>{patient.insurance ?? '保険未設定'}</span>
                   <span>{patient.lastVisit ? `最終受診 ${patient.lastVisit}` : '受診履歴なし'}</span>
+                  {missingId ? <span className="patients-page__row-warning-detail">患者ID欠損</span> : null}
+                  {missingName ? <span className="patients-page__row-warning-detail">氏名欠損</span> : null}
                 </div>
               </button>
             );
@@ -1100,9 +1211,80 @@ export function PatientsPage({ runId }: PatientsPageProps) {
           <div className="patients-page__audit-view" role="status" aria-live="polite">
             <div className="patients-page__audit-head">
               <h3>監査ログビュー</h3>
-              <button type="button" onClick={() => setAuditSnapshot(getAuditEventLog())}>
-                履歴を更新
-              </button>
+              <div className="patients-page__audit-actions">
+                <button type="button" onClick={() => setAuditSnapshot(getAuditEventLog())}>
+                  履歴を更新
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setAuditKeyword('');
+                    setAuditOutcome('all');
+                    setAuditScope('selected');
+                    setAuditSort('desc');
+                    setAuditLimit('10');
+                    setAuditDateFrom('');
+                    setAuditDateTo('');
+                  }}
+                >
+                  フィルタ初期化
+                </button>
+              </div>
+            </div>
+            <div className="patients-page__audit-filters" role="group" aria-label="監査検索">
+              <label>
+                <span>キーワード</span>
+                <input
+                  value={auditKeyword}
+                  onChange={(event) => setAuditKeyword(event.target.value)}
+                  placeholder="patientId / runId / action / endpoint"
+                />
+              </label>
+              <label>
+                <span>outcome</span>
+                <select value={auditOutcome} onChange={(event) => setAuditOutcome(event.target.value as typeof auditOutcome)}>
+                  <option value="all">全件</option>
+                  <option value="success">success</option>
+                  <option value="error">error</option>
+                  <option value="warning">warning</option>
+                  <option value="partial">partial</option>
+                  <option value="unknown">unknown</option>
+                </select>
+              </label>
+              <label>
+                <span>対象</span>
+                <select value={auditScope} onChange={(event) => setAuditScope(event.target.value as typeof auditScope)}>
+                  <option value="selected">選択患者のみ</option>
+                  <option value="all">全患者</option>
+                </select>
+              </label>
+              <label>
+                <span>並び順</span>
+                <select value={auditSort} onChange={(event) => setAuditSort(event.target.value as typeof auditSort)}>
+                  <option value="desc">新しい順</option>
+                  <option value="asc">古い順</option>
+                </select>
+              </label>
+              <label>
+                <span>件数</span>
+                <select value={auditLimit} onChange={(event) => setAuditLimit(event.target.value as typeof auditLimit)}>
+                  <option value="10">10件</option>
+                  <option value="20">20件</option>
+                  <option value="50">50件</option>
+                  <option value="all">全件</option>
+                </select>
+              </label>
+              <label>
+                <span>開始日</span>
+                <input type="date" value={auditDateFrom} onChange={(event) => setAuditDateFrom(event.target.value)} />
+              </label>
+              <label>
+                <span>終了日</span>
+                <input type="date" value={auditDateTo} onChange={(event) => setAuditDateTo(event.target.value)} />
+              </label>
+              <div className="patients-page__audit-count" role="status" aria-live="polite">
+                対象件数: {auditRows.total}
+              </div>
             </div>
             <div className="patients-page__audit-summary">
               <div className="patients-page__audit-card">
@@ -1119,6 +1301,11 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                 <strong>{lastSaveOrcaStatus.state}</strong>
                 <small>{lastSaveOrcaStatus.detail}</small>
               </div>
+              <div className="patients-page__audit-card">
+                <span>現在の反映可否</span>
+                <strong>{currentOrcaStatus.state}</strong>
+                <small>{currentOrcaStatus.detail}</small>
+              </div>
             </div>
             {lastAuditEvent && (
               <div className="patients-page__audit-raw">
@@ -1131,12 +1318,12 @@ export function PatientsPage({ runId }: PatientsPageProps) {
               </div>
             )}
             <div className="patients-page__audit-list" role="list" aria-label="保存履歴">
-              {auditRows.length === 0 ? (
+              {auditRows.items.length === 0 ? (
                 <p className="patients-page__audit-empty" role="status" aria-live="polite">
                   まだ保存履歴がありません（Patients/Charts で保存すると反映されます）。
                 </p>
               ) : (
-                auditRows.map((record, index) => {
+                auditRows.items.map((record, index) => {
                   const desc = describeAudit(record);
                   return (
                     <div key={`${record.timestamp}-${index}`} className="patients-page__audit-row" role="listitem">
@@ -1147,11 +1334,15 @@ export function PatientsPage({ runId }: PatientsPageProps) {
                       </div>
                       <div className="patients-page__audit-row-sub">
                         <span>{record.timestamp}</span>
+                        <span>patientId: {desc.patientId}</span>
                         <span>runId: {desc.runId}</span>
                         <span>traceId: {desc.traceId}</span>
                         {desc.status ? <span>status: {String(desc.status)}</span> : null}
                         {desc.sourcePath ? <span>endpoint: {desc.sourcePath}</span> : null}
                         {desc.changedKeys ? <span>changedKeys: {desc.changedKeys}</span> : null}
+                        {desc.operation ? <span>operation: {desc.operation}</span> : null}
+                        {desc.section ? <span>section: {desc.section}</span> : null}
+                        {desc.message ? <span>message: {desc.message}</span> : null}
                       </div>
                     </div>
                   );
