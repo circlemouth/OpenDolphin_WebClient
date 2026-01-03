@@ -1,5 +1,7 @@
 import { Global } from '@emotion/react';
 
+import type { LiveRegionAria } from '../../../libs/observability/types';
+import { resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
 import { toneBannerStyles } from '../styles';
 
 export type BannerTone = 'error' | 'warning' | 'info';
@@ -10,12 +12,6 @@ const tonePrefix: Record<BannerTone, string> = {
   info: '情報',
 };
 
-const toneLive: Record<BannerTone, 'polite' | 'assertive'> = {
-  error: 'assertive',
-  warning: 'assertive',
-  info: 'polite',
-};
-
 export interface ToneBannerProps {
   tone: BannerTone;
   message: string;
@@ -24,7 +20,7 @@ export interface ToneBannerProps {
   destination?: string;
   nextAction?: string;
   runId?: string;
-  ariaLive?: 'polite' | 'assertive';
+  ariaLive?: LiveRegionAria;
 }
 
 export function ToneBanner({
@@ -37,8 +33,9 @@ export function ToneBanner({
   runId,
   ariaLive,
 }: ToneBannerProps) {
-  const live = ariaLive ?? toneLive[tone];
+  const live = resolveAriaLive(tone, ariaLive);
   const role = tone === 'info' ? 'status' : 'alert';
+  const resolvedRunId = resolveRunId(runId);
   const fragments = [
     message,
     patientId ? `患者ID: ${patientId}` : undefined,
@@ -57,7 +54,7 @@ export function ToneBanner({
         aria-atomic="true"
         aria-label={ariaText}
         tabIndex={0}
-        data-run-id={runId}
+        data-run-id={resolvedRunId}
       >
         <div className="tone-banner__tag">{tonePrefix[tone]}</div>
         <p className="tone-banner__message">{fragments.join(' ｜ ')}</p>

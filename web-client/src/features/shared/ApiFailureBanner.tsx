@@ -1,5 +1,6 @@
 import { ToneBanner } from '../reception/components/ToneBanner';
 import { buildApiFailureBanner, type ApiErrorContext } from './apiError';
+import type { LiveRegionAria } from '../../libs/observability/types';
 
 export type ApiFailureBannerProps = ApiErrorContext & {
   subject: string;
@@ -7,7 +8,7 @@ export type ApiFailureBannerProps = ApiErrorContext & {
   destination?: string;
   runId?: string;
   nextAction?: string;
-  ariaLive?: 'polite' | 'assertive';
+  ariaLive?: LiveRegionAria;
   retryLabel?: string;
   onRetry?: () => void;
   isRetrying?: boolean;

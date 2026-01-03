@@ -28,12 +28,13 @@ import { ChartsDocumentPrintPage } from './features/charts/pages/ChartsDocumentP
 import { ReceptionPage } from './features/reception/pages/ReceptionPage';
 import { OutpatientMockPage } from './features/outpatient/OutpatientMockPage';
 import './styles/app-shell.css';
-import { updateObservabilityMeta } from './libs/observability/observability';
+import { resolveAriaLive, updateObservabilityMeta } from './libs/observability/observability';
 import { AuthServiceProvider, clearStoredAuthFlags, useAuthService } from './features/charts/authService';
 import { PatientsPage } from './features/patients/PatientsPage';
 import { AdministrationPage } from './features/administration/AdministrationPage';
 import { AppToastProvider, type AppToast, type AppToastInput } from './libs/ui/appToast';
 import { logAuditEvent } from './libs/audit/auditLogger';
+import { RunIdNavBadge } from './features/shared/RunIdNavBadge';
 import {
   SESSION_EXPIRED_EVENT,
   clearSessionExpiredNotice,
@@ -483,6 +484,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
   const resolvedRunId = flags.runId || session.runId;
   const [toasts, setToasts] = useState<AppToast[]>([]);
   const toastTimers = useRef<Map<string, number>>(new Map());
+  const runIdNoticeRef = useRef<string | undefined>(resolvedRunId);
 
   const enqueueToast = useCallback((toast: AppToastInput) => {
     const id = toast.id ?? `${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -536,6 +538,12 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
     if (!resolvedRunId || resolvedRunId === session.runId) return;
     persistSession({ ...session, runId: resolvedRunId });
   }, [resolvedRunId, session]);
+
+  useEffect(() => {
+    if (!resolvedRunId || runIdNoticeRef.current === resolvedRunId) return;
+    runIdNoticeRef.current = resolvedRunId;
+    enqueueToast({ tone: 'info', message: 'RUN_ID が更新されました', detail: resolvedRunId, id: `runid-${resolvedRunId}` });
+  }, [enqueueToast, resolvedRunId]);
 
   const navItems = useMemo(
     () =>
@@ -652,6 +660,7 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
               className="app-shell__pill app-shell__pill--copy"
               onClick={handleCopyRunId}
               aria-label={`RUN_ID をコピー: ${resolvedRunId}`}
+              data-run-id={resolvedRunId}
             >
               RUN_ID: {resolvedRunId}
               <span className="app-shell__pill-note">クリックでコピー</span>
@@ -665,17 +674,25 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
           </div>
         </header>
 
-        <nav className="app-shell__nav" aria-label="画面ナビゲーション" role="status" aria-live="polite">
+        <nav className="app-shell__nav" aria-label="画面ナビゲーション" role="status" aria-live="polite" data-run-id={resolvedRunId}>
           {navItems}
+          <RunIdNavBadge runId={resolvedRunId} onCopy={handleCopyRunId} />
         </nav>
 
         <div className="app-shell__body">
           <Outlet />
         </div>
 
-        <aside className="app-shell__notice-stack" aria-live="polite">
+        <aside className="app-shell__notice-stack" aria-live="polite" data-run-id={resolvedRunId}>
           {toasts.map((toast) => (
-            <div key={toast.id} className={`app-shell__notice app-shell__notice--${toast.tone}`} role="status">
+            <div
+              key={toast.id}
+              className={`app-shell__notice app-shell__notice--${toast.tone}`}
+              role="status"
+              aria-live={resolveAriaLive(toast.tone)}
+              aria-atomic="true"
+              data-run-id={resolvedRunId}
+            >
               <div className="app-shell__notice-message">{toast.message}</div>
               {toast.detail ? <div className="app-shell__notice-detail">{toast.detail}</div> : null}
               <button

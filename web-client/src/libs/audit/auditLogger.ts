@@ -92,20 +92,48 @@ export function logUiState(entry: Omit<UiStateLog, 'timestamp'>) {
   const resolvedClaimId =
     merged.claimId ??
     (details.claimId as string | undefined);
+  const resolvedRunId = merged.runId ?? meta.runId;
+  const resolvedTraceId = merged.traceId ?? meta.traceId;
+  const resolvedCacheHit = merged.cacheHit ?? meta.cacheHit ?? false;
+  const resolvedMissingMaster = merged.missingMaster ?? meta.missingMaster ?? false;
+  const resolvedFallbackUsed = merged.fallbackUsed ?? meta.fallbackUsed ?? false;
+  const resolvedDataSourceTransition = resolveDataSourceTransition(
+    merged.dataSourceTransition,
+    merged.cacheHit,
+    merged.fallbackUsed,
+  );
+  const normalizedDetails: Record<string, unknown> = { ...details };
+  if (normalizedDetails.runId === undefined) normalizedDetails.runId = resolvedRunId;
+  if (normalizedDetails.traceId === undefined) normalizedDetails.traceId = resolvedTraceId;
+  if (normalizedDetails.cacheHit === undefined) normalizedDetails.cacheHit = resolvedCacheHit;
+  if (normalizedDetails.missingMaster === undefined) normalizedDetails.missingMaster = resolvedMissingMaster;
+  if (normalizedDetails.fallbackUsed === undefined) normalizedDetails.fallbackUsed = resolvedFallbackUsed;
+  if (normalizedDetails.dataSourceTransition === undefined) {
+    normalizedDetails.dataSourceTransition = resolvedDataSourceTransition;
+  }
+  if (normalizedDetails.facilityId === undefined) normalizedDetails.facilityId = resolvedFacilityId;
+  if (resolvedPatientId !== undefined && normalizedDetails.patientId === undefined) {
+    normalizedDetails.patientId = resolvedPatientId;
+  }
+  if (resolvedAppointmentId !== undefined && normalizedDetails.appointmentId === undefined) {
+    normalizedDetails.appointmentId = resolvedAppointmentId;
+  }
+  if (resolvedClaimId !== undefined && normalizedDetails.claimId === undefined) {
+    normalizedDetails.claimId = resolvedClaimId;
+  }
   const record: UiStateLog = {
     ...merged,
     facilityId: resolvedFacilityId,
     patientId: resolvedPatientId,
     appointmentId: resolvedAppointmentId,
     claimId: resolvedClaimId,
-    cacheHit: merged.cacheHit ?? false,
-    missingMaster: merged.missingMaster ?? false,
-    fallbackUsed: merged.fallbackUsed ?? false,
-    dataSourceTransition: resolveDataSourceTransition(
-      merged.dataSourceTransition,
-      merged.cacheHit,
-      merged.fallbackUsed,
-    ),
+    runId: resolvedRunId,
+    traceId: resolvedTraceId,
+    cacheHit: resolvedCacheHit,
+    missingMaster: resolvedMissingMaster,
+    fallbackUsed: resolvedFallbackUsed,
+    dataSourceTransition: resolvedDataSourceTransition,
+    details: normalizedDetails,
     timestamp: new Date().toISOString(),
   };
   const missing: string[] = [];
