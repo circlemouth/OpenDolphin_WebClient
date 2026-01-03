@@ -1,0 +1,70 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`buildExceptionAuditDetails > 監査ログ詳細の構造を保持する 1`] = `
+{
+  "delayedBasis": {
+    "reasonCountsByQueue": {
+      "hold": 0,
+      "no_queue": 0,
+      "not_due": 0,
+      "pending_overdue": 0,
+      "phase_exempt": 1,
+      "phase_exempt_sent": 0,
+      "retry_missing_next_retry": 0,
+      "retry_overdue": 1,
+      "sent_overdue": 0,
+    },
+    "reasons": {},
+    "thresholdMs": 300000,
+  },
+  "exceptionCounts": {
+    "delayed": 0,
+    "sendError": 1,
+    "total": 2,
+    "unapproved": 1,
+  },
+  "queuePhaseCounts": {
+    "ack": 0,
+    "delayed": 1,
+    "failed": 1,
+    "hold": 0,
+    "pending": 0,
+    "retry": 1,
+    "sent": 0,
+  },
+  "runId": "RUN-1",
+  "samples": [
+    {
+      "appointmentId": undefined,
+      "delayedReason": "phase_exempt",
+      "kind": "send_error",
+      "patientId": "P-1",
+      "queuePhase": "failed",
+      "receptionId": undefined,
+      "sendErrorMessage": "error",
+      "unapprovedReason": "会計待ち",
+    },
+    {
+      "appointmentId": undefined,
+      "delayedReason": "no_queue",
+      "kind": "unapproved",
+      "patientId": "P-1",
+      "queuePhase": undefined,
+      "receptionId": undefined,
+      "sendErrorMessage": undefined,
+      "unapprovedReason": "未承認",
+    },
+  ],
+  "sendErrorBasis": {
+    "phases": {
+      "failed": 1,
+    },
+  },
+  "unapprovedBasis": {
+    "reasons": {
+      "会計待ち": 1,
+      "未承認": 1,
+    },
+  },
+}
+`;

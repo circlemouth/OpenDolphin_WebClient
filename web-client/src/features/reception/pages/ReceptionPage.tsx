@@ -6,6 +6,8 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
 import type { DataSourceTransition } from '../../../libs/observability/types';
 import { OrderConsole } from '../components/OrderConsole';
+import { ReceptionAuditPanel } from '../components/ReceptionAuditPanel';
+import { ReceptionExceptionList, type ReceptionExceptionItem } from '../components/ReceptionExceptionList';
 import { ToneBanner } from '../components/ToneBanner';
 import { fetchAppointmentOutpatients, fetchClaimFlags, type ReceptionEntry, type ReceptionStatus } from '../api';
 import { receptionStyles } from '../styles';
@@ -20,6 +22,12 @@ import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
 import type { ClaimBundle, ClaimQueueEntry, ClaimQueuePhase } from '../../outpatient/types';
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
+import { ORCA_QUEUE_STALL_THRESHOLD_MS } from '../../outpatient/orcaQueueStatus';
+import {
+  buildExceptionAuditDetails,
+  buildQueuePhaseSummary,
+  resolveExceptionDecision,
+} from '../exceptionLogic';
 import {
   loadOutpatientSavedViews,
   removeOutpatientSavedView,
@@ -77,6 +85,14 @@ const resolveQueueStatus = (entry?: ClaimQueueEntry) => {
     entry.retryCount !== undefined ? `再送${entry.retryCount}回` : entry.holdReason ?? entry.errorMessage ?? undefined;
   return { label, tone, detail };
 };
+
+const paymentModeLabel = (insurance?: string | null) => {
+  const mode = resolvePaymentMode(insurance ?? undefined);
+  if (mode === 'insurance') return '保険';
+  if (mode === 'self') return '自費';
+  return '不明';
+};
+
 
 const toDateLabel = (value?: string) => {
   if (!value) return '-';
@@ -220,6 +236,7 @@ export function ReceptionPage({
   const lastAuditEventHash = useRef<string>();
   const [selectedEntryKey, setSelectedEntryKey] = useState<string | null>(null);
   const lastSidepaneAuditKey = useRef<string | null>(null);
+  const lastExceptionAuditKey = useRef<string | null>(null);
   const [savedViews, setSavedViews] = useState<OutpatientSavedView[]>(() => loadOutpatientSavedViews());
   const [savedViewName, setSavedViewName] = useState('');
   const [selectedViewId, setSelectedViewId] = useState<string>('');
@@ -434,6 +451,11 @@ export function ReceptionPage({
   const claimBundles = claimQuery.data?.bundles ?? [];
   const claimQueueEntries = claimQuery.data?.queueEntries ?? [];
 
+  const queueSummary = useMemo(() => {
+    const nowMs = Date.now();
+    return buildQueuePhaseSummary(claimQueueEntries, nowMs, ORCA_QUEUE_STALL_THRESHOLD_MS);
+  }, [claimQueueEntries]);
+
   const claimBundlesByKey = useMemo(() => {
     const map = new Map<string, ClaimBundle[]>();
     for (const bundle of claimBundles) {
@@ -510,6 +532,82 @@ export function ReceptionPage({
     (entry: ReceptionEntry) => resolveQueueStatus(resolveQueueForEntry(entry)),
     [resolveQueueForEntry],
   );
+
+  const buildChartsUrlForEntry = useCallback(
+    (entry: ReceptionEntry, runIdOverride?: string) => {
+      const runId = runIdOverride ?? mergedMeta.runId ?? initialRunId ?? flags.runId;
+      return buildChartsUrl(
+        {
+          patientId: entry.patientId,
+          appointmentId: entry.appointmentId,
+          receptionId: entry.receptionId,
+          visitDate: entry.visitDate,
+        },
+        receptionCarryover,
+        { runId },
+        buildFacilityPath(session.facilityId, '/charts'),
+      );
+    },
+    [flags.runId, initialRunId, mergedMeta.runId, receptionCarryover, session.facilityId],
+  );
+
+  const exceptionItems = useMemo(() => {
+    const nowMs = Date.now();
+    const baseRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
+    const list: ReceptionExceptionItem[] = [];
+    for (const entry of sortedEntries) {
+      const bundle = resolveBundleForEntry(entry);
+      const queue = resolveQueueForEntry(entry);
+      const queueStatus = resolveQueueStatus(queue);
+      const decision = resolveExceptionDecision({
+        entry,
+        bundle,
+        queue,
+        nowMs,
+        thresholdMs: ORCA_QUEUE_STALL_THRESHOLD_MS,
+      });
+      if (!decision.kind) continue;
+
+      list.push({
+        id: `${decision.kind}-${entryKey(entry)}`,
+        kind: decision.kind,
+        detail: decision.detail,
+        nextAction: decision.nextAction,
+        entry,
+        bundle,
+        queue,
+        queueLabel: queueStatus.label,
+        queueDetail: queueStatus.detail,
+        paymentLabel: paymentModeLabel(entry.insurance),
+        chartsUrl: buildChartsUrlForEntry(entry, baseRunId),
+        reasons: decision.reasons,
+      });
+    }
+    return list;
+  }, [
+    buildChartsUrlForEntry,
+    flags.runId,
+    initialRunId,
+    mergedMeta.runId,
+    resolveBundleForEntry,
+    resolveQueueForEntry,
+    sortedEntries,
+  ]);
+
+  const exceptionCounts = useMemo(() => {
+    const counts = {
+      total: exceptionItems.length,
+      unapproved: 0,
+      sendError: 0,
+      delayed: 0,
+    };
+    exceptionItems.forEach((item) => {
+      if (item.kind === 'send_error') counts.sendError += 1;
+      if (item.kind === 'delayed') counts.delayed += 1;
+      if (item.kind === 'unapproved') counts.unapproved += 1;
+    });
+    return counts;
+  }, [exceptionItems]);
 
   const selectedEntry = useMemo(() => {
     if (!selectedEntryKey) return undefined;
@@ -693,6 +791,48 @@ export function ReceptionPage({
     selectedBundle,
     selectedEntry,
     selectedQueue,
+  ]);
+
+  useEffect(() => {
+    const runId = mergedMeta.runId ?? initialRunId ?? flags.runId;
+    if (!runId) return;
+    const auditDetails = buildExceptionAuditDetails({
+      runId,
+      items: exceptionItems.map((item) => ({
+        kind: item.kind,
+        entry: item.entry,
+        reasons: item.reasons ?? {},
+      })),
+      queueSummary,
+      thresholdMs: ORCA_QUEUE_STALL_THRESHOLD_MS,
+    });
+    const signature = JSON.stringify(auditDetails);
+    if (lastExceptionAuditKey.current === signature) return;
+    lastExceptionAuditKey.current = signature;
+    logAuditEvent({
+      runId,
+      source: 'reception-exception-list',
+      cacheHit: mergedMeta.cacheHit,
+      missingMaster: mergedMeta.missingMaster,
+      dataSourceTransition: mergedMeta.dataSourceTransition,
+      payload: {
+        action: 'RECEPTION_EXCEPTION_LIST',
+        outcome: 'info',
+        details: {
+          runId,
+          summary: auditDetails,
+        },
+      },
+    });
+  }, [
+    exceptionItems,
+    flags.runId,
+    initialRunId,
+    mergedMeta.cacheHit,
+    mergedMeta.dataSourceTransition,
+    mergedMeta.missingMaster,
+    mergedMeta.runId,
+    queueSummary,
   ]);
 
   const tonePayload = useMemo(
@@ -890,17 +1030,7 @@ export function ReceptionPage({
         missingMaster: mergedMeta.missingMaster,
         patientId: entry.patientId,
       });
-      const url = buildChartsUrl(
-        {
-          patientId: entry.patientId,
-          appointmentId: entry.appointmentId,
-          receptionId: entry.receptionId,
-          visitDate: entry.visitDate,
-        },
-        receptionCarryover,
-        { runId: nextRunId },
-        buildFacilityPath(session.facilityId, '/charts'),
-      );
+      const url = buildChartsUrlForEntry(entry, nextRunId);
       navigate(url, {
         state: {
           runId: nextRunId,
@@ -913,6 +1043,7 @@ export function ReceptionPage({
     },
     [
       bumpRunId,
+      buildChartsUrlForEntry,
       flags.runId,
       initialRunId,
       mergedMeta.cacheHit,
@@ -920,9 +1051,63 @@ export function ReceptionPage({
       mergedMeta.missingMaster,
       mergedMeta.runId,
       navigate,
-      receptionCarryover,
-      session.facilityId,
     ],
+  );
+
+  const handleOpenChartsNewTab = useCallback(
+    (entry: ReceptionEntry, urlOverride?: string) => {
+      if (!entry.patientId) {
+        logUiState({
+          action: 'navigate',
+          screen: 'reception/list',
+          controlId: 'open-charts-new-tab',
+          runId: mergedMeta.runId ?? initialRunId ?? flags.runId,
+          details: { blockedReason: 'missing_patient_id' },
+        });
+        return;
+      }
+      const nextRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
+      if (nextRunId) bumpRunId(nextRunId);
+      const url = urlOverride ?? buildChartsUrlForEntry(entry, nextRunId);
+      if (typeof window !== 'undefined') {
+        window.open(url, '_blank', 'noopener,noreferrer');
+      }
+      logUiState({
+        action: 'navigate',
+        screen: 'reception/list',
+        controlId: 'open-charts-new-tab',
+        runId: nextRunId,
+        dataSourceTransition: mergedMeta.dataSourceTransition,
+        cacheHit: mergedMeta.cacheHit,
+        missingMaster: mergedMeta.missingMaster,
+        patientId: entry.patientId,
+      });
+    },
+    [
+      bumpRunId,
+      buildChartsUrlForEntry,
+      flags.runId,
+      initialRunId,
+      mergedMeta.cacheHit,
+      mergedMeta.dataSourceTransition,
+      mergedMeta.missingMaster,
+      mergedMeta.runId,
+    ],
+  );
+
+  const handleSelectEntry = useCallback(
+    (entry: ReceptionEntry) => {
+      setSelectedEntryKey(entryKey(entry));
+      logUiState({
+        action: 'history_jump',
+        screen: 'reception/exceptions',
+        controlId: 'exception-select',
+        runId: mergedMeta.runId ?? initialRunId ?? flags.runId,
+        patientId: entry.patientId,
+        appointmentId: entry.appointmentId,
+      });
+    },
+    [flags.runId, initialRunId, mergedMeta.runId],
   );
 
   const toggleSection = (status: ReceptionStatus) => {
@@ -1136,6 +1321,14 @@ export function ReceptionPage({
               )}
             </section>
 
+            <ReceptionExceptionList
+              items={exceptionItems}
+              counts={exceptionCounts}
+              runId={mergedMeta.runId}
+              onSelectEntry={handleSelectEntry}
+              onOpenCharts={handleOpenChartsNewTab}
+            />
+
             {grouped.map(({ status, items }, index) => {
               const sectionId = `reception-section-${index}`;
               const tableHelpId = `${sectionId}-help`;
@@ -1184,21 +1377,26 @@ export function ReceptionPage({
                           <th scope="col">名前</th>
                           <th scope="col">来院時刻</th>
                           <th scope="col">保険/自費</th>
+                          <th scope="col">請求状態</th>
                           <th scope="col">メモ</th>
                           <th scope="col">直近診療</th>
                           <th scope="col">ORCAキュー</th>
+                          <th scope="col">カルテ</th>
                         </tr>
                       </thead>
                       <tbody>
                         {items.length === 0 && (
                           <tr>
-                            <td colSpan={8} className="reception-table__empty">
+                            <td colSpan={10} className="reception-table__empty">
                               該当なし
                             </td>
                           </tr>
                         )}
                         {items.map((entry) => {
                           const queueStatus = resolveQueueStatusForEntry(entry);
+                          const bundle = resolveBundleForEntry(entry);
+                          const paymentLabel = paymentModeLabel(entry.insurance);
+                          const canOpenCharts = Boolean(entry.patientId);
                           const isSelected = selectedEntryKey === entryKey(entry);
                           return (
                             <tr
@@ -1239,7 +1437,14 @@ export function ReceptionPage({
                                 <div className="reception-table__time">{entry.appointmentTime ?? '-'}</div>
                                 <small className="reception-table__sub">{entry.department ?? '-'}</small>
                               </td>
-                              <td className="reception-table__insurance">{entry.insurance ?? '-'}</td>
+                              <td className="reception-table__insurance">
+                                <span className="reception-pill">{paymentLabel}</span>
+                                <small className="reception-table__sub">{entry.insurance ?? '—'}</small>
+                              </td>
+                              <td className="reception-table__claim">
+                                <div>{bundle?.claimStatus ?? bundle?.claimStatusText ?? '未取得'}</div>
+                                {bundle?.bundleNumber && <small className="reception-table__sub">bundle: {bundle.bundleNumber}</small>}
+                              </td>
                               <td className="reception-table__note">
                                 {entry.note ?? '-'}
                                 <div className="reception-table__source">source: {entry.source}</div>
@@ -1253,6 +1458,20 @@ export function ReceptionPage({
                                   {queueStatus.label}
                                 </span>
                                 {queueStatus.detail && <small className="reception-table__sub">{queueStatus.detail}</small>}
+                              </td>
+                              <td className="reception-table__action">
+                                <button
+                                  type="button"
+                                  className="reception-table__action-button"
+                                  onClick={(event) => {
+                                    event.stopPropagation();
+                                    handleOpenChartsNewTab(entry);
+                                  }}
+                                  disabled={!canOpenCharts}
+                                  title={canOpenCharts ? 'Charts を新規タブで開く' : '患者IDが未登録のため新規タブを開けません'}
+                                >
+                                  新規タブ
+                                </button>
                               </td>
                             </tr>
                           );
@@ -1277,10 +1496,31 @@ export function ReceptionPage({
               tabIndex={0}
             >
               <header className="reception-sidepane__header">
-                <h2 id="reception-sidepane-patient-title">患者概要</h2>
-                <span className="reception-sidepane__meta">
-                  {selectedEntry?.name ?? '未選択'}
-                </span>
+                <div>
+                  <h2 id="reception-sidepane-patient-title">患者概要</h2>
+                  <span className="reception-sidepane__meta">
+                    {selectedEntry?.name ?? '未選択'}
+                  </span>
+                </div>
+                <div className="reception-sidepane__actions">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!selectedEntry) return;
+                      handleOpenChartsNewTab(selectedEntry);
+                    }}
+                    disabled={!selectedEntry || !selectedEntry.patientId}
+                    title={
+                      !selectedEntry
+                        ? '患者を選択してください'
+                        : selectedEntry.patientId
+                          ? 'Charts を新規タブで開く'
+                          : '患者IDが未登録のため新規タブを開けません'
+                    }
+                  >
+                    Charts を新規タブで開く
+                  </button>
+                </div>
               </header>
               <p id="reception-sidepane-patient-status" className="sr-only">
                 {selectionSummaryText}
@@ -1292,6 +1532,12 @@ export function ReceptionPage({
                   <div className="reception-sidepane__item">
                     <span>患者ID</span>
                     <strong>{selectedEntry.patientId ?? '未登録'}</strong>
+                  </div>
+                  <div className="reception-sidepane__item">
+                    <span>受付/予約ID</span>
+                    <strong>
+                      {selectedEntry.receptionId ?? '—'} / {selectedEntry.appointmentId ?? '—'}
+                    </strong>
                   </div>
                   <div className="reception-sidepane__item">
                     <span>氏名</span>
@@ -1308,8 +1554,13 @@ export function ReceptionPage({
                     </strong>
                   </div>
                   <div className="reception-sidepane__item">
-                    <span>保険/自費</span>
-                    <strong>{selectedEntry.insurance ?? '—'}</strong>
+                    <span>支払区分</span>
+                    <strong>{paymentModeLabel(selectedEntry.insurance)}</strong>
+                    <small>{selectedEntry.insurance ?? '—'}</small>
+                  </div>
+                  <div className="reception-sidepane__item">
+                    <span>状態</span>
+                    <strong>{selectedEntry.status ?? '—'}</strong>
                   </div>
                   <div className="reception-sidepane__item">
                     <span>診療科/担当医</span>
@@ -1372,6 +1623,8 @@ export function ReceptionPage({
                     <span>ORCAキュー</span>
                     <strong>{selectedQueueStatus.label}</strong>
                     {selectedQueueStatus.detail && <small>{selectedQueueStatus.detail}</small>}
+                    {selectedQueue?.nextRetryAt && <small>nextRetryAt: {selectedQueue.nextRetryAt}</small>}
+                    {selectedQueue?.errorMessage && <small>error: {selectedQueue.errorMessage}</small>}
                   </div>
                 </div>
               )}
@@ -1397,6 +1650,8 @@ export function ReceptionPage({
             />
           </aside>
         </section>
+
+        <ReceptionAuditPanel runId={mergedMeta.runId} selectedEntry={selectedEntry} />
       </main>
     </>
   );
