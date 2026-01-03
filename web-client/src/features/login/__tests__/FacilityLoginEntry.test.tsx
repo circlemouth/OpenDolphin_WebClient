@@ -57,4 +57,24 @@ describe('FacilityLoginEntry', () => {
     expect(screen.queryByText(/旧URLからアクセスされています/)).toBeNull();
     expect(router.state.location.pathname).toBe('/login');
   });
+
+  it('switchContext を引き継いで施設ログインへ遷移する', async () => {
+    const from = { pathname: '/f/0002/reception', search: '' };
+    const switchContext = {
+      mode: 'switch',
+      reason: 'manual',
+      actor: { facilityId: '0001', userId: 'user-1', role: 'admin', runId: 'RUN-0001' },
+    };
+    localStorage.setItem('opendolphin:web-client:recentFacilities', JSON.stringify(['0001']));
+    const router = buildRouter({ pathname: '/login', state: { from, switchContext } });
+    const user = userEvent.setup();
+
+    render(<RouterProvider router={router} />);
+
+    expect(screen.getByText(/施設\/ユーザー切替を開始しました/)).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: '0001' }));
+
+    expect(router.state.location.pathname).toBe('/f/0001/login');
+    expect(router.state.location.state).toEqual({ from, switchContext });
+  });
 });

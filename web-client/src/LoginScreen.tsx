@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { httpFetch } from './libs/http/httpClient';
 import { generateRunId, updateObservabilityMeta } from './libs/observability/observability';
 import { consumeSessionExpiredNotice } from './libs/session/sessionExpiry';
+import { logAuditEvent } from './libs/audit/auditLogger';
 
 const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL ?? '/api').replace(/\/$/, '');
 const SYSTEM_ICON_URL = `${import.meta.env.BASE_URL}LogoImage/nz8rHDLB3Mdj8Gzrm_F_F_output.jpg`;
@@ -146,13 +147,39 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
     setErrors({});
     setStatus('loading');
 
+    const runId = generateRunId();
+    updateObservabilityMeta({ runId, traceId: undefined });
+
     try {
-      const runId = generateRunId();
-      updateObservabilityMeta({ runId, traceId: undefined });
+      logAuditEvent({
+        runId,
+        source: 'auth',
+        note: 'login attempt',
+        payload: {
+          action: 'login',
+          screen: 'login',
+          facilityId: normalizedValues.facilityId,
+          userId: normalizedValues.userId,
+        },
+      });
       const result = await performLogin(normalizedValues, runId);
       setProfile(result);
       setFeedback('ログインに成功しました。');
       setStatus('success');
+      logAuditEvent({
+        runId: result.runId,
+        source: 'auth',
+        note: 'login success',
+        payload: {
+          action: 'login',
+          screen: 'login',
+          outcome: 'success',
+          facilityId: result.facilityId,
+          userId: result.userId,
+          role: result.role,
+          roles: result.roles,
+        },
+      });
       try {
         const urlFacilityId = normalize(initialFacilityId ?? '');
         const storedFacilityId = urlFacilityId || normalizedValues.facilityId;
@@ -172,6 +199,19 @@ export const LoginScreen = ({ onLoginSuccess, initialFacilityId, lockFacilityId 
       const message = error instanceof Error ? error.message : 'ログインに失敗しました。';
       setFeedback(message);
       setStatus('error');
+      logAuditEvent({
+        runId,
+        source: 'auth',
+        note: 'login denied',
+        payload: {
+          action: 'login',
+          screen: 'login',
+          outcome: 'denied',
+          facilityId: normalizedValues.facilityId,
+          userId: normalizedValues.userId,
+          reason: message,
+        },
+      });
     }
   };
 

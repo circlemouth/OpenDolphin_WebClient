@@ -79,4 +79,17 @@ describe('FacilityLoginResolver', () => {
       expect(router.state.location.pathname).toBe('/f/DEV-01/login');
     });
   });
+
+  it('switchContext がある場合は自動補完せず施設選択を表示する', async () => {
+    localStorage.setItem('opendolphin:web-client:recentFacilities', JSON.stringify(['0001']));
+    const switchContext = { mode: 'switch', reason: 'manual', actor: { facilityId: '0001', userId: 'user-1' } };
+    const router = buildRouter({ pathname: '/login', state: { switchContext } });
+
+    render(<RouterProvider router={router} />);
+
+    await waitFor(() => {
+      expect(screen.getByText('OpenDolphin Web 施設選択')).toBeInTheDocument();
+    });
+    expect(router.state.location.pathname).toBe('/login');
+  });
 });
