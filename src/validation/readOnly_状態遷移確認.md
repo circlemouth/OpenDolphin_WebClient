@@ -3,6 +3,11 @@
 ## 目的
 sidePanelMeta の readOnly/missingMaster/fallback などの状態が UI と API で一致し、運用上の誤解がないことを確認する。
 
+## 実行前提
+- `WEB_CLIENT_MODE=npm ./setup-modernized-env.sh` で起動し、ログイン情報は同スクリプトの記載に従う
+- missingMaster/fallback/dataSourceTransition を再現できるデータ条件が用意されていること
+- 監査イベントを確認できる状態（UI の監査表示/ログ保存先の準備）
+
 ## 手順
 - Patients/Charts で readOnly になる条件（missingMaster/fallback/dataSourceTransition）を再現
 - 画面表示と監査イベントの内容を突合
