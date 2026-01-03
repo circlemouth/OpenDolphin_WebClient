@@ -95,11 +95,12 @@ const formatJapaneseEra = (date: Date): string => {
   return `${found.name}${yearLabel}年${date.getMonth() + 1}月${date.getDate()}日`;
 };
 
-const formatBirthDate = (value?: string): string => {
+const formatBirthDateParts = (value?: string): { iso: string; era: string; display: string } => {
   const date = parseDate(value);
-  if (!date) return '—';
+  if (!date) return { iso: '—', era: '—', display: '—' };
   const iso = date.toISOString().slice(0, 10);
-  return `${iso}（${formatJapaneseEra(date)}）`;
+  const era = formatJapaneseEra(date);
+  return { iso, era, display: `${iso}（${era}）` };
 };
 
 const pickLatestOutpatientMeta = (pages: AppointmentPayload[]): AppointmentPayload | undefined => {
@@ -1101,25 +1102,37 @@ function ChartsContent() {
   const patientId = selectedEntry?.patientId ?? selectedEntry?.id ?? encounterContext.patientId;
   const receptionId = selectedEntry?.receptionId ?? encounterContext.receptionId;
   const appointmentId = selectedEntry?.appointmentId ?? encounterContext.appointmentId;
+  const actionVisitDate = useMemo(
+    () => normalizeVisitDate(selectedEntry?.visitDate ?? encounterContext.visitDate),
+    [encounterContext.visitDate, selectedEntry?.visitDate],
+  );
   const patientDisplay = useMemo(() => {
-    const resolvedVisitDate = normalizeVisitDate(selectedEntry?.visitDate ?? encounterContext.visitDate);
-    const baseDate = parseDate(resolvedVisitDate) ?? new Date();
+    const baseDate = parseDate(actionVisitDate) ?? new Date();
+    const birthDateParts = formatBirthDateParts(selectedEntry?.birthDate);
     return {
+      patientId: patientId ?? '—',
+      receptionId: receptionId ?? '—',
+      appointmentId: appointmentId ?? '—',
       name: selectedEntry?.name ?? '患者未選択',
       kana: selectedEntry?.kana ?? '—',
-      birthDate: formatBirthDate(selectedEntry?.birthDate),
+      birthDate: birthDateParts.display,
+      birthDateIso: birthDateParts.iso,
+      birthDateEra: birthDateParts.era,
       age: formatAge(selectedEntry?.birthDate, baseDate),
       sex: selectedEntry?.sex ?? '—',
       status: selectedEntry?.status ?? '—',
       department: selectedEntry?.department ?? '—',
       physician: selectedEntry?.physician ?? '—',
       insurance: selectedEntry?.insurance ?? '—',
-      visitDate: resolvedVisitDate ?? '—',
+      visitDate: actionVisitDate ?? '—',
       appointmentTime: selectedEntry?.appointmentTime ?? '—',
       note: selectedEntry?.note ?? 'メモなし',
     };
   }, [
-    encounterContext.visitDate,
+    actionVisitDate,
+    appointmentId,
+    patientId,
+    receptionId,
     selectedEntry?.appointmentTime,
     selectedEntry?.birthDate,
     selectedEntry?.department,
@@ -1805,7 +1818,8 @@ function ChartsContent() {
               selectedEntry={selectedEntry}
               sendEnabled={sendAllowedByDelivery}
               sendDisabledReason={sendDisabledReason}
-              patientId={encounterContext.patientId}
+              patientId={patientId}
+              visitDate={actionVisitDate}
               queueEntry={actionBarQueueEntry}
               hasUnsavedDraft={draftState.dirty}
               hasPermission={hasPermission}
@@ -1972,10 +1986,13 @@ function ChartsContent() {
                     <span className="charts-safety__age">{patientDisplay.age}</span>
                   </div>
                   <div className="charts-safety__meta">
-                    <span>患者ID: {patientId ?? '—'}</span>
-                    <span>受付ID: {receptionId ?? '—'}</span>
-                    <span>生年月日: {patientDisplay.birthDate}</span>
+                    <span>患者ID: {patientDisplay.patientId}</span>
+                    <span>受付ID: {patientDisplay.receptionId}</span>
+                    <span>予約ID: {patientDisplay.appointmentId}</span>
+                    <span>生年月日(ISO): {patientDisplay.birthDateIso}</span>
+                    <span>和暦: {patientDisplay.birthDateEra}</span>
                     <span>性別: {patientDisplay.sex}</span>
+                    <span>年齢: {patientDisplay.age}</span>
                     <span>RUN_ID: {resolvedRunId}</span>
                     <span>missingMaster: {String(resolvedMissingMaster)}</span>
                   </div>

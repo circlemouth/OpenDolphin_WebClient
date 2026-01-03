@@ -42,7 +42,7 @@ export function OutpatientClinicalDocument({
           <div>
             <h1 className="charts-print__title">診療記録（外来サマリ）</h1>
             <p style={{ margin: '0.35rem 0 0', color: '#475569' }}>
-              本出力は Web クライアントの診療文書出力（デモ）です。実運用では施設規定・監査要件に従ってください。
+              本出力は Web クライアントの診療文書出力です。実運用では施設規定・監査要件に従ってください。
             </p>
           </div>
           <div className="charts-print__meta" aria-label="出力メタ情報">

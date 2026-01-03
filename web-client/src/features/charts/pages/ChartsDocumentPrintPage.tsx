@@ -12,15 +12,19 @@ import { DocumentClinicalDocument } from '../print/documentClinicalDocument';
 import {
   clearDocumentPrintPreview,
   loadDocumentPrintPreview,
+  saveDocumentOutputResult,
   type DocumentOutputMode,
   type DocumentPrintPreviewState,
 } from '../print/documentPrintPreviewStorage';
 import { DOCUMENT_TYPE_LABELS } from '../documentTemplates';
 import { useOptionalSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
+import { getObservabilityMeta } from '../../../libs/observability/observability';
 
 type OutputMode = DocumentOutputMode;
 type OutputStatus = 'idle' | 'printing' | 'completed' | 'failed';
+const OUTPUT_ENDPOINT = 'window.print';
+const PRINT_HELP_URL = 'https://support.google.com/chrome/answer/1069693?hl=ja';
 
 const getState = (value: unknown): DocumentPrintPreviewState | null => {
   if (!value || typeof value !== 'object') return null;
@@ -96,8 +100,11 @@ function ChartsDocumentPrintContent() {
           documentIssuedAt: state.document.issuedAt,
           templateId: state.document.templateId,
           documentId: state.document.id,
+          endpoint: OUTPUT_ENDPOINT,
+          httpStatus: 200,
         },
       });
+      storeOutputResult('success', mode, 'afterprint', 200);
       lastModeRef.current = null;
     };
     window.addEventListener('afterprint', onAfterPrint);
@@ -169,6 +176,22 @@ function ChartsDocumentPrintContent() {
   const outputGuardSummary = outputGuardReasons.map((reason) => reason.summary).join(' / ');
   const outputGuardDetail = outputGuardReasons.map((reason) => reason.detail).join(' / ');
 
+  const storeOutputResult = (outcome: 'success' | 'failed' | 'blocked', mode: OutputMode | null, detail?: string, httpStatus?: number) => {
+    if (!state) return;
+    const traceId = getObservabilityMeta().traceId;
+    saveDocumentOutputResult({
+      documentId: state.document.id,
+      outcome,
+      mode: mode ?? undefined,
+      at: new Date().toISOString(),
+      detail,
+      runId: state.meta.runId,
+      traceId,
+      endpoint: OUTPUT_ENDPOINT,
+      httpStatus,
+    });
+  };
+
   const recordOutputAudit = (
     outcome: 'started' | 'success' | 'blocked' | 'error',
     note: string,
@@ -188,7 +211,11 @@ function ChartsDocumentPrintContent() {
       missingMaster: state?.meta.missingMaster,
       fallbackUsed: state?.meta.fallbackUsed,
       dataSourceTransition: state?.meta.dataSourceTransition,
-      details,
+      details: {
+        endpoint: OUTPUT_ENDPOINT,
+        httpStatus: outcome === 'success' ? 200 : outcome === 'error' || outcome === 'blocked' ? 0 : undefined,
+        ...(details ?? {}),
+      },
     });
   };
 
@@ -209,6 +236,7 @@ function ChartsDocumentPrintContent() {
       });
       setOutputStatus('failed');
       setOutputError(detail);
+      storeOutputResult('blocked', mode, detail, 0);
       return;
     }
     lastModeRef.current = mode;
@@ -243,6 +271,7 @@ function ChartsDocumentPrintContent() {
         },
         detail,
       );
+      storeOutputResult('failed', mode, detail, 0);
     }
   };
 
@@ -263,6 +292,7 @@ function ChartsDocumentPrintContent() {
       });
       setOutputStatus('failed');
       setOutputError(detail);
+      storeOutputResult('blocked', mode, detail, 0);
       return;
     }
     setOutputStatus('idle');
@@ -391,6 +421,14 @@ function ChartsDocumentPrintContent() {
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
               Chartsへ戻る
             </button>
+            <a
+              className="charts-print__button charts-print__button--ghost"
+              href={PRINT_HELP_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              印刷ヘルプ
+            </a>
           </div>
         </div>
       )}
@@ -422,6 +460,14 @@ function ChartsDocumentPrintContent() {
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
               Chartsへ戻る
             </button>
+            <a
+              className="charts-print__button charts-print__button--ghost"
+              href={PRINT_HELP_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              印刷ヘルプ
+            </a>
           </div>
         </div>
       )}

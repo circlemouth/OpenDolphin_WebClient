@@ -16,6 +16,7 @@ vi.mock('../audit', () => ({
 
 afterEach(() => {
   localStorage.clear();
+  sessionStorage.clear();
 });
 
 describe('DocumentCreatePanel', () => {
@@ -150,5 +151,110 @@ describe('DocumentCreatePanel', () => {
         }),
       }),
     );
+  });
+
+  it('文書出力の成功結果を履歴とトーストへ反映する', () => {
+    sessionStorage.setItem(
+      'opendolphin:web-client:charts:document-history',
+      JSON.stringify({
+        version: 1,
+        documents: [
+          {
+            id: 'doc-1',
+            type: 'referral',
+            issuedAt: '2025-12-01',
+            title: '東京クリニック',
+            savedAt: '2025-12-01T09:00:00Z',
+            templateId: 'REF-ODT-STD',
+            templateLabel: '標準紹介状',
+            form: {
+              issuedAt: '2025-12-01',
+              templateId: 'REF-ODT-STD',
+              hospital: '東京クリニック',
+              doctor: '山田太郎',
+              purpose: '精査依頼',
+              diagnosis: '高血圧',
+              body: '既往歴と検査結果を記載',
+            },
+            patientId: 'P-100',
+          },
+        ],
+      }),
+    );
+    sessionStorage.setItem(
+      'opendolphin:web-client:charts:printResult:document',
+      JSON.stringify({
+        documentId: 'doc-1',
+        outcome: 'success',
+        mode: 'print',
+        at: '2026-01-03T00:00:00Z',
+        detail: 'output=print afterprint',
+        runId: 'RUN-DOC',
+        traceId: 'TRACE-1',
+        endpoint: 'window.print',
+        httpStatus: 200,
+      }),
+    );
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+    expect(screen.getByText(/文書出力成功/)).toBeInTheDocument();
+    expect(within(screen.getByRole('list')).getByText(/監査結果: 成功/)).toBeInTheDocument();
+  });
+
+  it('文書出力の失敗結果で監査フィルタと復旧導線が表示される', async () => {
+    sessionStorage.setItem(
+      'opendolphin:web-client:charts:document-history',
+      JSON.stringify({
+        version: 1,
+        documents: [
+          {
+            id: 'doc-2',
+            type: 'certificate',
+            issuedAt: '2025-12-02',
+            title: '会社提出',
+            savedAt: '2025-12-02T10:00:00Z',
+            templateId: 'CERT-ODT-STD',
+            templateLabel: '標準診断書',
+            form: {
+              issuedAt: '2025-12-02',
+              templateId: 'CERT-ODT-STD',
+              submitTo: '会社提出',
+              diagnosis: '感冒',
+              purpose: '勤務先提出',
+              body: '安静と投薬',
+            },
+            patientId: 'P-100',
+          },
+        ],
+      }),
+    );
+    sessionStorage.setItem(
+      'opendolphin:web-client:charts:printResult:document',
+      JSON.stringify({
+        documentId: 'doc-2',
+        outcome: 'failed',
+        mode: 'pdf',
+        at: '2026-01-03T00:00:00Z',
+        detail: '印刷ダイアログの起動に失敗しました。',
+        runId: 'RUN-DOC',
+        traceId: 'TRACE-2',
+        endpoint: 'window.print',
+        httpStatus: 0,
+      }),
+    );
+    const user = userEvent.setup();
+    render(
+      <MemoryRouter>
+        <DocumentCreatePanel {...baseProps} />
+      </MemoryRouter>,
+    );
+    await user.selectOptions(screen.getByLabelText('監査結果フィルタ'), 'failed');
+    const list = screen.getByRole('list');
+    expect(within(list).getByText('会社提出')).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: '再試行' })).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /再出力/ })).toBeInTheDocument();
   });
 });

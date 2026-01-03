@@ -23,6 +23,8 @@ type PrintLocationState = {
 
 type OutputMode = 'print' | 'pdf';
 type OutputStatus = 'idle' | 'printing' | 'completed' | 'failed';
+const OUTPUT_ENDPOINT = 'window.print';
+const PRINT_HELP_URL = 'https://support.google.com/chrome/answer/1069693?hl=ja';
 
 const getState = (value: unknown): PrintLocationState | null => {
   if (!value || typeof value !== 'object') return null;
@@ -94,6 +96,8 @@ function ChartsOutpatientPrintContent() {
         dataSourceTransition: state.meta.dataSourceTransition,
         details: {
           operationPhase: 'do',
+          endpoint: OUTPUT_ENDPOINT,
+          httpStatus: 200,
         },
       });
       lastModeRef.current = null;
@@ -171,7 +175,11 @@ function ChartsOutpatientPrintContent() {
       missingMaster: state?.meta.missingMaster,
       fallbackUsed: state?.meta.fallbackUsed,
       dataSourceTransition: state?.meta.dataSourceTransition,
-      details,
+      details: {
+        endpoint: OUTPUT_ENDPOINT,
+        httpStatus: outcome === 'success' ? 200 : outcome === 'error' || outcome === 'blocked' ? 0 : undefined,
+        ...(details ?? {}),
+      },
     });
   };
 
@@ -333,6 +341,14 @@ function ChartsOutpatientPrintContent() {
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
               Chartsへ戻る
             </button>
+            <a
+              className="charts-print__button charts-print__button--ghost"
+              href={PRINT_HELP_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              印刷ヘルプ
+            </a>
           </div>
         </div>
       )}
@@ -364,6 +380,14 @@ function ChartsOutpatientPrintContent() {
             <button type="button" className="charts-print__button charts-print__button--ghost" onClick={handleClose}>
               Chartsへ戻る
             </button>
+            <a
+              className="charts-print__button charts-print__button--ghost"
+              href={PRINT_HELP_URL}
+              target="_blank"
+              rel="noreferrer"
+            >
+              印刷ヘルプ
+            </a>
           </div>
         </div>
       )}
