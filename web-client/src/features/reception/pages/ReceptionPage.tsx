@@ -24,6 +24,11 @@ import type { ClaimBundle, ClaimQueueEntry, ClaimQueuePhase } from '../../outpat
 import { getAppointmentDataBanner } from '../../outpatient/appointmentDataBanner';
 import { ORCA_QUEUE_STALL_THRESHOLD_MS } from '../../outpatient/orcaQueueStatus';
 import {
+  buildExceptionAuditDetails,
+  buildQueuePhaseSummary,
+  resolveExceptionDecision,
+} from '../exceptionLogic';
+import {
   loadOutpatientSavedViews,
   removeOutpatientSavedView,
   resolvePaymentMode,
@@ -88,21 +93,6 @@ const paymentModeLabel = (insurance?: string | null) => {
   return '不明';
 };
 
-const toTimeMs = (value?: string) => {
-  if (!value) return undefined;
-  const ms = Date.parse(value);
-  return Number.isNaN(ms) ? undefined : ms;
-};
-
-const isQueueDelayed = (entry?: ClaimQueueEntry, nowMs = Date.now()) => {
-  if (!entry) return false;
-  if (entry.phase === 'failed' || entry.phase === 'ack') return false;
-  if (entry.phase === 'hold') return true;
-  const nextRetryMs = toTimeMs(entry.nextRetryAt);
-  if (nextRetryMs !== undefined) return nowMs - nextRetryMs >= ORCA_QUEUE_STALL_THRESHOLD_MS;
-  if (entry.retryCount !== undefined) return entry.retryCount > 0;
-  return false;
-};
 
 const toDateLabel = (value?: string) => {
   if (!value) return '-';
@@ -462,22 +452,8 @@ export function ReceptionPage({
   const claimQueueEntries = claimQuery.data?.queueEntries ?? [];
 
   const queueSummary = useMemo(() => {
-    const summary = {
-      total: claimQueueEntries.length,
-      pending: 0,
-      retry: 0,
-      hold: 0,
-      failed: 0,
-      sent: 0,
-      ack: 0,
-      delayed: 0,
-    };
     const nowMs = Date.now();
-    for (const entry of claimQueueEntries) {
-      summary[entry.phase] += 1;
-      if (isQueueDelayed(entry, nowMs)) summary.delayed += 1;
-    }
-    return summary;
+    return buildQueuePhaseSummary(claimQueueEntries, nowMs, ORCA_QUEUE_STALL_THRESHOLD_MS);
   }, [claimQueueEntries]);
 
   const claimBundlesByKey = useMemo(() => {
@@ -583,36 +559,20 @@ export function ReceptionPage({
       const bundle = resolveBundleForEntry(entry);
       const queue = resolveQueueForEntry(entry);
       const queueStatus = resolveQueueStatus(queue);
-      const claimStatusText = bundle?.claimStatusText ?? bundle?.claimStatus ?? '';
-      const unapproved =
-        claimStatusText.includes('会計待ち') ||
-        claimStatusText.includes('未承認') ||
-        claimStatusText.includes('未確定') ||
-        claimStatusText.includes('未送信') ||
-        claimStatusText.includes('承認待ち') ||
-        bundle?.claimStatus === '会計待ち';
-      const sendError = queue?.phase === 'failed' || !!queue?.errorMessage;
-      const delayed = isQueueDelayed(queue, nowMs);
-      if (!unapproved && !sendError && !delayed) continue;
+      const decision = resolveExceptionDecision({
+        entry,
+        bundle,
+        queue,
+        nowMs,
+        thresholdMs: ORCA_QUEUE_STALL_THRESHOLD_MS,
+      });
+      if (!decision.kind) continue;
 
-      const detailParts = [];
-      if (sendError) {
-        detailParts.push(`送信エラー: ${queue?.errorMessage ?? '失敗状態'}`);
-      }
-      if (delayed) {
-        detailParts.push(queue?.nextRetryAt ? `遅延: nextRetryAt ${queue.nextRetryAt}` : '遅延: 再送/待機中');
-      }
-      if (unapproved) {
-        detailParts.push(`未承認: ${claimStatusText || '会計待ち'}`);
-      }
-      const kind = sendError ? 'send_error' : delayed ? 'delayed' : 'unapproved';
-      const nextAction =
-        kind === 'send_error' ? '再送/原因確認' : kind === 'delayed' ? '遅延監視/キュー確認' : '承認/会計確認';
       list.push({
-        id: `${kind}-${entryKey(entry)}`,
-        kind,
-        detail: detailParts.join(' / '),
-        nextAction,
+        id: `${decision.kind}-${entryKey(entry)}`,
+        kind: decision.kind,
+        detail: decision.detail,
+        nextAction: decision.nextAction,
         entry,
         bundle,
         queue,
@@ -620,6 +580,7 @@ export function ReceptionPage({
         queueDetail: queueStatus.detail,
         paymentLabel: paymentModeLabel(entry.insurance),
         chartsUrl: buildChartsUrlForEntry(entry, baseRunId),
+        reasons: decision.reasons,
       });
     }
     return list;
@@ -835,19 +796,17 @@ export function ReceptionPage({
   useEffect(() => {
     const runId = mergedMeta.runId ?? initialRunId ?? flags.runId;
     if (!runId) return;
-    const snapshot = {
+    const auditDetails = buildExceptionAuditDetails({
       runId,
-      counts: exceptionCounts,
-      queueSummary,
-      first: exceptionItems.slice(0, 12).map((item) => ({
+      items: exceptionItems.map((item) => ({
         kind: item.kind,
-        patientId: item.entry.patientId,
-        appointmentId: item.entry.appointmentId,
-        receptionId: item.entry.receptionId,
-        queuePhase: item.queue?.phase,
+        entry: item.entry,
+        reasons: item.reasons ?? {},
       })),
-    };
-    const signature = JSON.stringify(snapshot);
+      queueSummary,
+      thresholdMs: ORCA_QUEUE_STALL_THRESHOLD_MS,
+    });
+    const signature = JSON.stringify(auditDetails);
     if (lastExceptionAuditKey.current === signature) return;
     lastExceptionAuditKey.current = signature;
     logAuditEvent({
@@ -861,15 +820,11 @@ export function ReceptionPage({
         outcome: 'info',
         details: {
           runId,
-          exceptionCounts,
-          queueSnapshot: queueSummary,
-          exceptionsTotal: exceptionItems.length,
-          exceptions: snapshot.first,
+          summary: auditDetails,
         },
       },
     });
   }, [
-    exceptionCounts,
     exceptionItems,
     flags.runId,
     initialRunId,
@@ -1101,6 +1056,16 @@ export function ReceptionPage({
 
   const handleOpenChartsNewTab = useCallback(
     (entry: ReceptionEntry, urlOverride?: string) => {
+      if (!entry.patientId) {
+        logUiState({
+          action: 'navigate',
+          screen: 'reception/list',
+          controlId: 'open-charts-new-tab',
+          runId: mergedMeta.runId ?? initialRunId ?? flags.runId,
+          details: { blockedReason: 'missing_patient_id' },
+        });
+        return;
+      }
       const nextRunId = mergedMeta.runId ?? initialRunId ?? flags.runId;
       if (nextRunId) bumpRunId(nextRunId);
       const url = urlOverride ?? buildChartsUrlForEntry(entry, nextRunId);
@@ -1431,6 +1396,7 @@ export function ReceptionPage({
                           const queueStatus = resolveQueueStatusForEntry(entry);
                           const bundle = resolveBundleForEntry(entry);
                           const paymentLabel = paymentModeLabel(entry.insurance);
+                          const canOpenCharts = Boolean(entry.patientId);
                           const isSelected = selectedEntryKey === entryKey(entry);
                           return (
                             <tr
@@ -1501,6 +1467,8 @@ export function ReceptionPage({
                                     event.stopPropagation();
                                     handleOpenChartsNewTab(entry);
                                   }}
+                                  disabled={!canOpenCharts}
+                                  title={canOpenCharts ? 'Charts を新規タブで開く' : '患者IDが未登録のため新規タブを開けません'}
                                 >
                                   新規タブ
                                 </button>
@@ -1541,7 +1509,14 @@ export function ReceptionPage({
                       if (!selectedEntry) return;
                       handleOpenChartsNewTab(selectedEntry);
                     }}
-                    disabled={!selectedEntry}
+                    disabled={!selectedEntry || !selectedEntry.patientId}
+                    title={
+                      !selectedEntry
+                        ? '患者を選択してください'
+                        : selectedEntry.patientId
+                          ? 'Charts を新規タブで開く'
+                          : '患者IDが未登録のため新規タブを開けません'
+                    }
                   >
                     Charts を新規タブで開く
                   </button>

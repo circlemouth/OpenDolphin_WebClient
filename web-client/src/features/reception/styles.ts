@@ -769,6 +769,11 @@ export const receptionStyles = css`
   .reception-exception__detail p {
     margin: 0;
     color: #475569;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    word-break: break-word;
   }
 
   .reception-exception__actions {
@@ -786,6 +791,11 @@ export const receptionStyles = css`
     font-weight: 700;
     padding: 0.4rem 0.9rem;
     cursor: pointer;
+  }
+
+  .reception-exception__actions button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
   }
 
   .reception-exception__next {
@@ -964,6 +974,12 @@ export const receptionStyles = css`
 
   .reception-table__action-button:hover {
     background: #eef2ff;
+  }
+
+  .reception-table__action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background: #ffffff;
   }
 
   .reception-badge {

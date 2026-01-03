@@ -1,5 +1,6 @@
 import type { ReceptionEntry } from '../api';
 import type { ClaimBundle, ClaimQueueEntry } from '../../outpatient/types';
+import type { ExceptionDecision } from '../exceptionLogic';
 
 export type ReceptionExceptionKind = 'unapproved' | 'send_error' | 'delayed';
 
@@ -15,6 +16,7 @@ export type ReceptionExceptionItem = {
   queueDetail?: string;
   paymentLabel?: string;
   chartsUrl?: string;
+  reasons?: ExceptionDecision['reasons'];
 };
 
 export type ReceptionExceptionCounts = {
@@ -59,7 +61,9 @@ export function ReceptionExceptionList({ items, counts, runId, onSelectEntry, on
         </p>
       ) : (
         <div className="reception-exceptions__list" role="list">
-          {items.map((item) => (
+          {items.map((item) => {
+            const canOpenCharts = Boolean(item.entry.patientId);
+            return (
             <article key={item.id} className={`reception-exception reception-exception--${item.kind}`} role="listitem">
               <div className="reception-exception__head">
                 <span className={`reception-exception__badge reception-exception__badge--${item.kind}`}>{kindLabel[item.kind]}</span>
@@ -82,19 +86,25 @@ export function ReceptionExceptionList({ items, counts, runId, onSelectEntry, on
               </div>
               <div className="reception-exception__detail">
                 <strong>理由</strong>
-                <p>{item.detail}</p>
+                <p title={item.detail}>{item.detail}</p>
               </div>
               <div className="reception-exception__actions" role="group" aria-label="例外対応">
                 <button type="button" onClick={() => onSelectEntry?.(item.entry)}>
                   一覧で選択
                 </button>
-                <button type="button" onClick={() => onOpenCharts?.(item.entry, item.chartsUrl)}>
+                <button
+                  type="button"
+                  onClick={() => onOpenCharts?.(item.entry, item.chartsUrl)}
+                  disabled={!canOpenCharts}
+                  title={canOpenCharts ? 'Charts を新規タブで開く' : '患者IDが未登録のため新規タブを開けません'}
+                >
                   Charts を新規タブで開く
                 </button>
                 <span className="reception-exception__next">次アクション: {item.nextAction}</span>
               </div>
             </article>
-          ))}
+          );
+          })}
         </div>
       )}
     </section>

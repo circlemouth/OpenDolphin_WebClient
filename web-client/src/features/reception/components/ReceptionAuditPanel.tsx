@@ -26,6 +26,7 @@ const resolveAuditDetails = (record: AuditEventRecord) => {
     appointmentId: record.appointmentId ?? (details.appointmentId as string | undefined),
     sourcePath: details.sourcePath as string | undefined,
     queueSnapshot: details.queueSnapshot as Record<string, unknown> | undefined,
+    exceptionSummary: details.summary as Record<string, unknown> | undefined,
   };
 };
 
@@ -174,6 +175,14 @@ export function ReceptionAuditPanel({ runId, selectedEntry }: ReceptionAuditPane
             const { action, outcome } = resolveAuditAction(record);
             const details = resolveAuditDetails(record);
             const queueSnapshot = details.queueSnapshot;
+            const exceptionSummary = details.exceptionSummary as
+              | {
+                  queuePhaseCounts?: Record<string, unknown>;
+                  unapprovedBasis?: { reasons?: Record<string, unknown> };
+                  delayedBasis?: { thresholdMs?: number; reasons?: Record<string, unknown> };
+                  sendErrorBasis?: { phases?: Record<string, unknown> };
+                }
+              | undefined;
             return (
               <div key={`${record.timestamp}-${index}`} className="reception-audit__row" role="listitem">
                 <div className="reception-audit__row-main">
@@ -198,6 +207,17 @@ export function ReceptionAuditPanel({ runId, selectedEntry }: ReceptionAuditPane
                       pending {String(queueSnapshot.pending)} / retry {String(queueSnapshot.retry)} / hold{' '}
                       {String(queueSnapshot.hold)} / failed {String(queueSnapshot.failed)} / delayed{' '}
                       {String(queueSnapshot.delayed)}
+                    </code>
+                  </div>
+                ) : null}
+                {exceptionSummary ? (
+                  <div className="reception-audit__row-queue">
+                    <span>exceptionSummary:</span>
+                    <code>
+                      queuePhase {JSON.stringify(exceptionSummary.queuePhaseCounts ?? {})} / unapproved{' '}
+                      {JSON.stringify(exceptionSummary.unapprovedBasis?.reasons ?? {})} / sendError{' '}
+                      {JSON.stringify(exceptionSummary.sendErrorBasis?.phases ?? {})} / delayed{' '}
+                      {JSON.stringify(exceptionSummary.delayedBasis?.reasons ?? {})}
                     </code>
                   </div>
                 ) : null}
