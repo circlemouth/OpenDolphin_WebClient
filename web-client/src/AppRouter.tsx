@@ -16,6 +16,7 @@ import {
   NavLink,
   Outlet,
   useLocation,
+  useNavigate,
   useParams,
   type Location,
 } from 'react-router-dom';
@@ -42,12 +43,15 @@ import {
   buildFacilityPath,
   buildFacilityUrl,
   decodeFacilityParam,
+  describeFacilityId,
   ensureFacilityUrl,
+  isFacilityMatch,
   normalizeFacilityId,
   parseFacilityPath,
 } from './routes/facilityRoutes';
 import { FacilityLoginResolver } from './features/login/FacilityLoginResolver';
 import { addRecentFacility } from './features/login/recentFacilityStore';
+import { resolveSwitchContext, type LoginSwitchContext } from './features/login/loginRouteState';
 
 type Session = LoginResult;
 const AUTH_STORAGE_KEY = 'opendolphin:web-client:auth';
@@ -136,10 +140,51 @@ const LEGACY_ROUTES = [
   'outpatient-mock',
 ];
 
+const buildSwitchContext = (
+  session: Session,
+  reason: LoginSwitchContext['reason'] = 'manual',
+): LoginSwitchContext => ({
+  mode: 'switch',
+  reason,
+  actor: {
+    facilityId: session.facilityId,
+    userId: session.userId,
+    role: session.role,
+    runId: session.runId,
+  },
+});
+
 export function AppRouter() {
   const [session, setSession] = useState<Session | null>(null);
 
-  const handleLoginSuccess = (result: LoginResult) => {
+  const handleLoginSuccess = (result: LoginResult, context?: LoginSwitchContext) => {
+    const nextActor = {
+      facilityId: result.facilityId,
+      userId: result.userId,
+      role: result.role,
+      runId: result.runId,
+    };
+    const previousActor = context?.actor ?? (session ?? undefined);
+    if (
+      context?.mode === 'switch' ||
+      (session &&
+        (session.facilityId !== result.facilityId ||
+          session.userId !== result.userId ||
+          session.role !== result.role))
+    ) {
+      logAuditEvent({
+        runId: result.runId,
+        source: 'auth',
+        note: 'role-switch',
+        payload: {
+          action: 'role-switch',
+          screen: 'login',
+          reason: context?.reason ?? 'manual',
+          previous: previousActor,
+          next: nextActor,
+        },
+      });
+    }
     updateObservabilityMeta({ runId: result.runId });
     addRecentFacility(result.facilityId);
     setSession(result);
@@ -218,7 +263,7 @@ function FacilityGate({ session, onLogout }: { session: Session | null; onLogout
     return <Navigate to="/login" state={{ from: location }} replace />;
   }
   if (loginRoute) {
-    return <Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />;
+    return <LoginSwitchNotice session={session} onLogout={onLogout} />;
   }
 
   return (
@@ -238,6 +283,73 @@ function FacilityGate({ session, onLogout }: { session: Session | null; onLogout
   );
 }
 
+function LoginSwitchNotice({ session, onLogout }: { session: Session; onLogout: () => void }) {
+  const location = useLocation();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    logAuditEvent({
+      runId: session.runId,
+      source: 'authz',
+      note: 'login route blocked',
+      payload: {
+        action: 'login',
+        screen: 'login',
+        outcome: 'blocked',
+        facilityId: session.facilityId,
+        userId: session.userId,
+        role: session.role,
+      },
+    });
+  }, [session.facilityId, session.role, session.runId, session.userId]);
+
+  const handleReturn = () => {
+    navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true });
+  };
+
+  const handleSwitch = () => {
+    const switchContext = buildSwitchContext(session, 'manual');
+    logAuditEvent({
+      runId: session.runId,
+      source: 'auth',
+      note: 'switch initiated',
+      payload: {
+        action: 'role-switch',
+        screen: 'login',
+        reason: switchContext.reason,
+        previous: switchContext.actor,
+      },
+    });
+    onLogout();
+    navigate('/login', { state: { from: location, switchContext }, replace: true });
+  };
+
+  return (
+    <main className="login-shell">
+      <section className="login-card" aria-labelledby="login-switch-notice">
+        <header className="login-card__header">
+          <h1 id="login-switch-notice">ログイン中のため切替が必要です</h1>
+          <p>現在のセッションでは別施設/ユーザーへの切替はできません。ログアウト後に再ログインしてください。</p>
+        </header>
+        <div className="status-message is-error" role="status">
+          <p>
+            現在のログイン: {describeFacilityId(session.facilityId)}:{session.userId} / role={session.role}
+          </p>
+          <p>RUN_ID: {session.runId}</p>
+        </div>
+        <div className="login-form__actions">
+          <button type="button" onClick={handleSwitch}>
+            ログアウトして切替
+          </button>
+          <button type="button" className="facility-entry__secondary" onClick={handleReturn}>
+            現在の施設へ戻る
+          </button>
+        </div>
+      </section>
+    </main>
+  );
+}
+
 function FacilityShell({ session }: { session: Session | null }) {
   const { facilityId } = useParams();
   const location = useLocation();
@@ -248,8 +360,8 @@ function FacilityShell({ session }: { session: Session | null }) {
     return <Navigate to="/login" state={{ from: next }} replace />;
   }
 
-  if (normalizedId && normalizedId !== session.facilityId) {
-    return <Navigate to={buildFacilityPath(session.facilityId, '/reception')} replace />;
+  if (normalizedId && !isFacilityMatch(normalizedId, session.facilityId)) {
+    return <FacilityMismatchNotice session={session} requestedFacilityId={normalizedId} />;
   }
 
   return (
@@ -267,13 +379,65 @@ function FacilityShell({ session }: { session: Session | null }) {
   );
 }
 
-function FacilityLoginScreen({ onLoginSuccess }: { onLoginSuccess: (result: LoginResult) => void }) {
+function FacilityMismatchNotice({
+  session,
+  requestedFacilityId,
+}: {
+  session: Session;
+  requestedFacilityId: string;
+}) {
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    logAuditEvent({
+      runId: session.runId,
+      source: 'authz',
+      note: 'facility boundary denied',
+      payload: {
+        action: 'navigate',
+        screen: 'facility',
+        outcome: 'denied',
+        facilityId: session.facilityId,
+        requestedFacilityId,
+        userId: session.userId,
+        role: session.role,
+      },
+    });
+  }, [requestedFacilityId, session.facilityId, session.role, session.runId, session.userId]);
+
+  return (
+    <div style={{ maxWidth: '620px', margin: '2rem auto' }}>
+      <div className="status-message is-error" role="status">
+        <p>施設IDが現在のログインと一致しないためアクセスを拒否しました。</p>
+        <p>
+          要求された施設: {describeFacilityId(requestedFacilityId)} / 現在の施設: {describeFacilityId(session.facilityId)}
+        </p>
+        <p>
+          施設/ユーザー切替は上部の「施設/ユーザー切替」からログアウト後に実施してください。
+        </p>
+      </div>
+      <div className="login-form__actions" style={{ marginTop: '1rem' }}>
+        <button type="button" onClick={() => navigate(buildFacilityPath(session.facilityId, '/reception'), { replace: true })}>
+          現在の施設へ戻る
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function FacilityLoginScreen({
+  onLoginSuccess,
+}: {
+  onLoginSuccess: (result: LoginResult, context?: LoginSwitchContext) => void;
+}) {
   const { facilityId } = useParams();
+  const location = useLocation();
   const normalizedId = normalizeFacilityId(decodeFacilityParam(facilityId) ?? facilityId);
+  const switchContext = useMemo(() => resolveSwitchContext(location.state), [location.state]);
 
   return (
     <LoginScreen
-      onLoginSuccess={onLoginSuccess}
+      onLoginSuccess={(result) => onLoginSuccess(result, switchContext)}
       initialFacilityId={normalizedId ?? ''}
       lockFacilityId={Boolean(normalizedId)}
     />
@@ -316,6 +480,7 @@ const isLoginRoute = (pathname: string) => {
 
 function AppLayout({ onLogout }: { onLogout: () => void }) {
   const location = useLocation();
+  const navigate = useNavigate();
   const session = useSession();
   const { flags } = useAuthService();
   const resolvedRunId = flags.runId || session.runId;
@@ -452,6 +617,23 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
     }
   };
 
+  const handleSwitchAccount = () => {
+    const switchContext = buildSwitchContext(session, 'manual');
+    logAuditEvent({
+      runId: resolvedRunId,
+      source: 'auth',
+      note: 'switch initiated',
+      payload: {
+        action: 'role-switch',
+        screen: 'navigation',
+        reason: switchContext.reason,
+        previous: switchContext.actor,
+      },
+    });
+    onLogout();
+    navigate('/login', { state: { from: location, switchContext }, replace: true });
+  };
+
   return (
     <AppToastProvider value={{ enqueue: enqueueToast, dismiss: dismissToast }}>
       <div className="app-shell">
@@ -476,6 +658,9 @@ function AppLayout({ onLogout }: { onLogout: () => void }) {
             >
               RUN_ID: {resolvedRunId}
               <span className="app-shell__pill-note">クリックでコピー</span>
+            </button>
+            <button type="button" className="app-shell__logout" onClick={handleSwitchAccount}>
+              施設/ユーザー切替
             </button>
             <button type="button" className="app-shell__logout" onClick={onLogout}>
               ログアウト

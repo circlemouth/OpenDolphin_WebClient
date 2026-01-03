@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 
 import { buildFacilityPath, normalizeFacilityId } from '../../routes/facilityRoutes';
 import { loadRecentFacilities } from './recentFacilityStore';
-import { isLegacyFrom, normalizeFromState } from './loginRouteState';
+import { isLegacyFrom, normalizeFromState, resolveSwitchContext } from './loginRouteState';
 
 type FacilityLoginEntryProps = {
   heading?: string;
@@ -19,8 +19,16 @@ export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }:
   const [error, setError] = useState<string | null>(null);
 
   const fromState = useMemo(() => normalizeFromState(location.state)?.from, [location.state]);
-  const forwardState = useMemo(() => (fromState ? { from: fromState } : undefined), [fromState]);
   const showLegacyNotice = useMemo(() => isLegacyFrom(fromState), [fromState]);
+  const switchContext = useMemo(() => resolveSwitchContext(location.state), [location.state]);
+  const switchActor = switchContext?.actor;
+  const forwardState = useMemo(() => {
+    if (!fromState && !switchContext) return undefined;
+    return {
+      ...(fromState ? { from: fromState } : {}),
+      ...(switchContext ? { switchContext } : {}),
+    };
+  }, [fromState, switchContext]);
 
   const handleSelectFacility = (facilityId: string) => {
     const normalized = normalizeFacilityId(facilityId);
@@ -51,6 +59,20 @@ export const FacilityLoginEntry = ({ heading = 'OpenDolphin Web 施設選択' }:
           <h1 id="facility-login-heading">{heading}</h1>
           <p>ログインする施設IDを選択または入力してください。選択後にログイン画面へ進みます。</p>
         </header>
+        {switchContext ? (
+          <div className="status-message is-error" role="status">
+            <p>施設/ユーザー切替を開始しました。権限境界を明示するため、再ログインが必要です。</p>
+            {switchActor ? (
+              <p className="status-message__detail">
+                直前のログイン: {switchActor.facilityId}:{switchActor.userId}
+                {switchActor.role ? ` / role=${switchActor.role}` : ''}
+                {switchActor.runId ? ` / RUN_ID=${switchActor.runId}` : ''}
+              </p>
+            ) : (
+              <p className="status-message__detail">前回のログイン情報は取得できませんでした。</p>
+            )}
+          </div>
+        ) : null}
         {showLegacyNotice ? (
           <p className="status-message" role="status">
             旧URLからアクセスされています。施設IDを選択すると目的の画面へ進みます。

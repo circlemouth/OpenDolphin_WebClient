@@ -3,7 +3,7 @@ import { useLocation, useNavigate, type Location } from 'react-router-dom';
 
 import { buildFacilityPath, normalizeFacilityId, parseFacilityPath } from '../../routes/facilityRoutes';
 import { FacilityLoginEntry } from './FacilityLoginEntry';
-import { isLegacyFrom, resolveFromState } from './loginRouteState';
+import { isLegacyFrom, resolveFromState, resolveSwitchContext } from './loginRouteState';
 import { loadDevFacilityId, loadRecentFacilities } from './recentFacilityStore';
 
 type FacilityJson = {
@@ -67,6 +67,7 @@ export const FacilityLoginResolver = () => {
   const fromState = useMemo(() => resolveFromState(location.state), [location.state]);
   const forwardState = useMemo(() => (fromState ? { from: fromState } : undefined), [fromState]);
   const legacyFrom = useMemo(() => isLegacyFrom(fromState), [fromState]);
+  const switchContext = useMemo(() => resolveSwitchContext(location.state), [location.state]);
 
   useEffect(() => {
     let active = true;
@@ -74,6 +75,11 @@ export const FacilityLoginResolver = () => {
     setIsResolving(true);
 
     const attemptResolve = async () => {
+      if (switchContext) {
+        setShowEntry(true);
+        setIsResolving(false);
+        return;
+      }
       const facilityId = await resolveFacilityId(fromState);
       if (!active) return;
       if (facilityId) {
@@ -94,7 +100,7 @@ export const FacilityLoginResolver = () => {
     return () => {
       active = false;
     };
-  }, [forwardState, fromState, legacyFrom, location.key, navigate]);
+  }, [forwardState, fromState, legacyFrom, location.key, navigate, switchContext]);
 
   if (isResolving) {
     return (

@@ -6,6 +6,16 @@ export const normalizeFacilityId = (value?: string | null): string | undefined =
   return trimmed.length > 0 ? trimmed : undefined;
 };
 
+export const describeFacilityId = (value?: string | null, fallback = '未指定'): string =>
+  normalizeFacilityId(value) ?? fallback;
+
+export const isFacilityMatch = (left?: string | null, right?: string | null): boolean => {
+  const normalizedLeft = normalizeFacilityId(left);
+  const normalizedRight = normalizeFacilityId(right);
+  if (!normalizedLeft || !normalizedRight) return false;
+  return normalizedLeft === normalizedRight;
+};
+
 export const decodeFacilityParam = (value?: string | null): string | undefined => {
   if (!value) return undefined;
   try {
