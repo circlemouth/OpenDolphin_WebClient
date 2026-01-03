@@ -16,6 +16,8 @@ ORCA証明書ファイル（`.p12`など）を**ローカルのワークツリ�
 - `ORCAcertification/*.pem` - PEM形式証明書
 - `ORCAcertification/使用目的不明：使用停止/` - 特定ディレクトリ
 - `ORCAcertification/新規*.txt` - 特定のテキストファイル
+- `ORCAcertification/*パスワード*.txt` - 認証情報メモ
+- `ORCAcertification/*アカウント情報*.txt` - 認証情報メモ
 
 ### 2. .gitignore（デフォルト除外）
 

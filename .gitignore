@@ -36,6 +36,8 @@ ORCAcertification/*.key
 ORCAcertification/*.pem
 ORCAcertification/使用目的不明：使用停止/
 ORCAcertification/新規*.txt
+ORCAcertification/*パスワード*.txt
+ORCAcertification/*アカウント情報*.txt
 # README is tracked by default (no exclusion needed)
 
 # Build artifacts and temporary files
