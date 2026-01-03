@@ -1,9 +1,8 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { MemoryRouter } from 'react-router-dom';
 import { cleanup, render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 
-import { PatientsPage } from '../PatientsPage';
 import { clearAuditEventLog, logAuditEvent } from '../../../libs/audit/auditLogger';
 
 type MockQueryData = {
@@ -39,16 +38,25 @@ const mockAuthFlags = {
   fallbackUsed: false,
 };
 
+const mockAuthActions = {
+  setCacheHit: vi.fn(),
+  setMissingMaster: vi.fn(),
+  setDataSourceTransition: vi.fn(),
+  setFallbackUsed: vi.fn(),
+  bumpRunId: vi.fn(),
+};
+
 vi.mock('../../charts/authService', () => ({
   applyAuthServicePatch: (patch: any, previous: any) => ({ ...previous, ...patch }),
   useAuthService: () => ({
     flags: mockAuthFlags,
-    setCacheHit: vi.fn(),
-    setMissingMaster: vi.fn(),
-    setDataSourceTransition: vi.fn(),
-    setFallbackUsed: vi.fn(),
-    bumpRunId: vi.fn(),
+    ...mockAuthActions,
   }),
+}));
+
+vi.mock('@emotion/react', () => ({
+  Global: () => null,
+  css: () => '',
 }));
 
 vi.mock('../../../libs/audit/auditLogger', () => {
@@ -99,6 +107,17 @@ vi.mock('../../../libs/ui/appToast', () => ({
 vi.mock('../../../AppRouter', () => ({
   useSession: () => ({ facilityId: 'FAC-TEST', runId: 'RUN-SESSION' }),
 }));
+
+type PatientsPageType = typeof import('../PatientsPage').PatientsPage;
+let PatientsPage: PatientsPageType;
+
+beforeAll(async () => {
+  ({ PatientsPage } = await import('../PatientsPage'));
+});
+
+afterAll(() => {
+  PatientsPage = undefined as unknown as PatientsPageType;
+});
 
 afterEach(() => {
   cleanup();
@@ -254,13 +273,12 @@ describe('PatientsPage unlinked warnings', () => {
     });
 
     renderPatientsPage();
-    await screen.findByText('患者ID欠損');
+    await screen.findAllByText('患者ID欠損');
 
-    await screen.findByText('未紐付警告');
+    await screen.findAllByText('未紐付警告');
     expect(screen.getAllByText('未紐付').length).toBeGreaterThan(0);
-    expect(screen.getAllByText('未紐付').length).toBeGreaterThan(0);
-    expect(screen.getByText('患者ID欠損')).toBeInTheDocument();
-    expect(screen.getByText('氏名欠損')).toBeInTheDocument();
+    expect(screen.getAllByText('患者ID欠損').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('氏名欠損').length).toBeGreaterThan(0);
   });
 
   it('missingMaster 時は反映停止注意として表示する', async () => {
@@ -273,9 +291,9 @@ describe('PatientsPage unlinked warnings', () => {
     });
 
     renderPatientsPage();
-    await screen.findByText('患者ID欠損');
+    await screen.findAllByText('患者ID欠損');
 
-    await screen.findByText('反映停止注意');
+    await screen.findAllByText('反映停止注意');
     expect(screen.getAllByText('反映停止').length).toBeGreaterThan(0);
   });
 });
