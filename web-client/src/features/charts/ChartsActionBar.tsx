@@ -5,7 +5,7 @@ import { FocusTrapDialog } from '../../components/modals/FocusTrapDialog';
 import { logUiState } from '../../libs/audit/auditLogger';
 import { resolveAuditActor } from '../../libs/auth/storedAuth';
 import { httpFetch } from '../../libs/http/httpClient';
-import { getObservabilityMeta } from '../../libs/observability/observability';
+import { getObservabilityMeta, resolveAriaLive } from '../../libs/observability/observability';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
 import { ToneBanner, type BannerTone } from '../reception/components/ToneBanner';
 import { recordChartsAuditEvent, type ChartsOperationPhase } from './audit';
@@ -1322,7 +1322,7 @@ export function ChartsActionBar({
       )}
 
       {isRunning && (
-        <div className="charts-actions__skeleton" role="status" aria-live="polite">
+        <div className="charts-actions__skeleton" role="status" aria-live={resolveAriaLive('info')}>
           <div className="charts-actions__skeleton-bar" />
           <div className="charts-actions__skeleton-bar charts-actions__skeleton-bar--short" />
         </div>
@@ -1332,7 +1332,7 @@ export function ChartsActionBar({
         <div
           className={`charts-actions__toast charts-actions__toast--${toast.tone}`}
           role="status"
-          aria-live="polite"
+          aria-live={resolveAriaLive(toast.tone)}
           aria-atomic="false"
         >
           <div>

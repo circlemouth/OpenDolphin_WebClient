@@ -2,6 +2,7 @@ import { useMemo, useState } from 'react';
 
 import type { ReceptionEntry } from '../api';
 import { getAuditEventLog, logUiState, type AuditEventRecord } from '../../../libs/audit/auditLogger';
+import { resolveAriaLive } from '../../../libs/observability/observability';
 
 const resolveAuditAction = (record: AuditEventRecord) => {
   const payload = record.payload ?? {};
@@ -158,7 +159,7 @@ export function ReceptionAuditPanel({ runId, selectedEntry }: ReceptionAuditPane
         <button type="submit">検索</button>
       </form>
 
-      <div className="reception-audit__summary" role="status" aria-live="polite">
+      <div className="reception-audit__summary" role="status" aria-live={resolveAriaLive('info')}>
         <span>該当 {summary.total} 件</span>
         <span>success {summary.success}</span>
         <span>error {summary.error}</span>
@@ -167,7 +168,7 @@ export function ReceptionAuditPanel({ runId, selectedEntry }: ReceptionAuditPane
 
       <div className="reception-audit__list" role="list">
         {sorted.length === 0 ? (
-          <p className="reception-audit__empty" role="status" aria-live="polite">
+          <p className="reception-audit__empty" role="status" aria-live={resolveAriaLive('info')}>
             監査履歴が見つかりませんでした。
           </p>
         ) : (

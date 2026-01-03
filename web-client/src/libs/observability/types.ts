@@ -3,6 +3,9 @@ export type DataSourceTransition = 'mock' | 'snapshot' | 'server' | 'fallback';
 // dataSourceTransition と同じ語彙で master ソースの決定を表現する。
 export type ResolveMasterSource = DataSourceTransition;
 
+export type LiveRegionAria = 'off' | 'polite' | 'assertive';
+export type LiveRegionTone = 'info' | 'warning' | 'error' | 'success';
+
 export type ObservabilityMeta = {
   runId?: string;
   traceId?: string;

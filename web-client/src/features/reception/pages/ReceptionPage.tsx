@@ -4,6 +4,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 
 import { logAuditEvent, logUiState } from '../../../libs/audit/auditLogger';
+import { resolveAriaLive, resolveRunId } from '../../../libs/observability/observability';
 import type { DataSourceTransition } from '../../../libs/observability/types';
 import { OrderConsole } from '../components/OrderConsole';
 import { ReceptionAuditPanel } from '../components/ReceptionAuditPanel';
@@ -17,6 +18,7 @@ import type { ResolveMasterSource } from '../components/ResolveMasterBadge';
 import { useAdminBroadcast } from '../../../libs/admin/useAdminBroadcast';
 import { AdminBroadcastBanner } from '../../shared/AdminBroadcastBanner';
 import { ApiFailureBanner } from '../../shared/ApiFailureBanner';
+import { RunIdBadge } from '../../shared/RunIdBadge';
 import { buildChartsUrl, type ReceptionCarryoverParams } from '../../charts/encounterContext';
 import { useSession } from '../../../AppRouter';
 import { buildFacilityPath } from '../../../routes/facilityRoutes';
@@ -406,6 +408,8 @@ export function ReceptionPage({
     flags.runId,
     initialRunId,
   ]);
+  const resolvedRunId = resolveRunId(mergedMeta.runId ?? initialRunId ?? flags.runId);
+  const infoLive = resolveAriaLive('info');
 
   useEffect(() => {
     const { runId, cacheHit, missingMaster, dataSourceTransition, fallbackUsed } = mergedMeta;
@@ -1117,19 +1121,19 @@ export function ReceptionPage({
   return (
     <>
       <Global styles={receptionStyles} />
-      <main className="reception-page" data-run-id={mergedMeta.runId}>
+      <main className="reception-page" data-run-id={resolvedRunId}>
         <a className="skip-link" href="#reception-results">
           検索結果へスキップ
         </a>
         <a className="skip-link" href="#reception-sidepane">
           右ペインへスキップ
         </a>
-        <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={mergedMeta.runId ?? initialRunId ?? flags.runId} />
+        <AdminBroadcastBanner broadcast={broadcast} surface="reception" runId={resolvedRunId} />
         <section className="reception-page__header">
           <h1>{title}</h1>
           <p>{description}</p>
-          <div className="reception-page__meta-bar" role="status" aria-live="polite" data-run-id={mergedMeta.runId}>
-            <span className="reception-pill">RUN_ID: {mergedMeta.runId ?? '未取得'}</span>
+          <div className="reception-page__meta-bar" role="status" aria-live={infoLive} data-run-id={resolvedRunId}>
+            <RunIdBadge runId={resolvedRunId} />
             <span className="reception-pill">dataSourceTransition: {mergedMeta.dataSourceTransition ?? 'snapshot'}</span>
             <span className="reception-pill">missingMaster: {String(mergedMeta.missingMaster ?? true)}</span>
             <span className="reception-pill">cacheHit: {String(mergedMeta.cacheHit ?? false)}</span>
@@ -1278,7 +1282,7 @@ export function ReceptionPage({
                   </button>
                 </div>
               </div>
-              <p className="reception-summary" aria-live="polite" ref={summaryRef} tabIndex={-1}>
+              <p className="reception-summary" aria-live={infoLive} ref={summaryRef} tabIndex={-1}>
                 {summaryText}
               </p>
               {unlinkedWarning && (
@@ -1303,7 +1307,7 @@ export function ReceptionPage({
                 />
               )}
               {appointmentQuery.isLoading && (
-                <p role="status" aria-live="polite" className="reception-status">
+                <p role="status" aria-live={infoLive} className="reception-status">
                   外来リストを読み込み中…
                 </p>
               )}
@@ -1343,7 +1347,7 @@ export function ReceptionPage({
                 <header className="reception-section__header">
                   <div>
                     <h2 id={tableLabelId}>{SECTION_LABEL[status]}</h2>
-                    <span className="reception-section__count" aria-live="polite">
+                    <span className="reception-section__count" aria-live={infoLive}>
                       {items.length} 件
                     </span>
                   </div>
@@ -1366,7 +1370,7 @@ export function ReceptionPage({
                     <p id={tableHelpId} className="sr-only">
                       テーブル行は Tab でフォーカスし、Enter で Charts へ移動します。
                     </p>
-                    <p id={tableStatusId} className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+                    <p id={tableStatusId} className="sr-only" role="status" aria-live={infoLive} aria-atomic="true">
                       {tableStatusText}
                     </p>
                     <table className="reception-table" aria-describedby={`${tableHelpId} ${tableStatusId}`}>
@@ -1487,9 +1491,9 @@ export function ReceptionPage({
           <aside className="reception-layout__side" aria-label="右ペイン" id="reception-sidepane" tabIndex={-1}>
             <section
               className="reception-sidepane"
-              data-run-id={mergedMeta.runId}
+              data-run-id={resolvedRunId}
               role="region"
-              aria-live="polite"
+              aria-live={infoLive}
               aria-atomic="true"
               aria-labelledby="reception-sidepane-patient-title"
               aria-describedby="reception-sidepane-patient-status"
@@ -1578,9 +1582,9 @@ export function ReceptionPage({
 
             <section
               className="reception-sidepane"
-              data-run-id={mergedMeta.runId}
+              data-run-id={resolvedRunId}
               role="region"
-              aria-live="polite"
+              aria-live={infoLive}
               aria-atomic="true"
               aria-labelledby="reception-sidepane-order-title"
               aria-describedby="reception-sidepane-order-status"

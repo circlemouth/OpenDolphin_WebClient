@@ -102,6 +102,79 @@
   border-bottom: 1px solid rgba(148, 163, 184, 0.35);
 }
 
+.app-shell__nav-runid {
+  margin-left: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.45rem 0.6rem;
+  border-radius: 12px;
+  background: rgba(226, 232, 240, 0.7);
+  border: 1px dashed rgba(59, 130, 246, 0.35);
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.app-shell__nav-copy {
+  border: none;
+  background: #1d4ed8;
+  color: #ffffff;
+  padding: 0.2rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.app-shell__nav-copy:hover,
+.app-shell__nav-copy:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+}
+
+.runid-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.65rem;
+  border-radius: 999px;
+  border: 1px solid rgba(37, 99, 235, 0.25);
+  background: rgba(238, 242, 255, 0.9);
+  color: #1e3a8a;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+.runid-badge__label {
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #4c51a3;
+}
+
+.runid-badge__value {
+  font-variant-numeric: tabular-nums;
+}
+
+.runid-badge__copy {
+  border: none;
+  background: #1d4ed8;
+  color: #ffffff;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.15s ease, box-shadow 0.15s ease;
+}
+
+.runid-badge__copy:hover,
+.runid-badge__copy:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(37, 99, 235, 0.25);
+}
+
 .app-shell__nav-link {
   text-decoration: none;
   padding: 0.65rem 1rem;
@@ -315,6 +388,12 @@
 
   .app-shell__nav {
     flex-wrap: wrap;
+  }
+
+  .app-shell__nav-runid {
+    width: 100%;
+    margin-left: 0;
+    justify-content: space-between;
   }
 }
 .app-shell__pill[data-tooltip]::after {

@@ -12,7 +12,7 @@ import {
   type OutpatientFunnelRecord,
 } from '../../libs/telemetry/telemetryClient';
 import { logUiState } from '../../libs/audit/auditLogger';
-import { updateObservabilityMeta } from '../../libs/observability/observability';
+import { resolveAriaLive, updateObservabilityMeta } from '../../libs/observability/observability';
 import { handleOutpatientFlags, getResolveMasterSource, type ResolveMasterSource } from '../charts/orchestration';
 import { ResolveMasterBadge } from '../reception/components/ResolveMasterBadge';
 import { ToneBanner } from '../reception/components/ToneBanner';
@@ -263,7 +263,7 @@ export function OutpatientMockPage() {
             missingMaster/cacheHit/dataSourceTransition の同期と telemetry funnel（resolve_master → charts_orchestration）を可視化します。
             VITE_DISABLE_MSW=1 のときは実 API 接続となり、シナリオ切替は無効化されます。
           </p>
-          <p className="status-message" role="status" aria-live="polite">
+          <p className="status-message" role="status" aria-live={resolveAriaLive('info')}>
             RUN_ID: <strong>{flags.runId}</strong> ／ dataSourceTransition: <strong>{flags.dataSourceTransition}</strong> ／
             cacheHit: <strong>{flags.cacheHit ? 'true' : 'false'}</strong> ／ missingMaster:{' '}
             <strong>{flags.missingMaster ? 'true' : 'false'}</strong> ／ resolveMasterSource:{' '}
@@ -271,12 +271,12 @@ export function OutpatientMockPage() {
             {!loaded ? '（読込中…）' : ''}
           </p>
           {mswDisabled ? (
-            <p className="status-message" aria-live="assertive">
+            <p className="status-message" aria-live={resolveAriaLive('warning')}>
               ⚠️ VITE_DISABLE_MSW=1: 実 API 接続中のためシナリオ切替や runId/dataSourceTransition の上書きは無効です。
               MSW を使う場合はフラグを 0 にして再読込してください。
             </p>
           ) : !mswQueryEnabled ? (
-            <p className="status-message" aria-live="assertive">
+            <p className="status-message" aria-live={resolveAriaLive('warning')}>
               ⚠️ `msw=1` が付いていないため、障害注入ヘッダー（x-msw-fault / x-msw-delay-ms）は送出されません。検証時は{' '}
               <a href={`${buildFacilityPath(session?.facilityId, '/outpatient-mock')}?msw=1`}>
                 /outpatient-mock?msw=1
@@ -284,7 +284,7 @@ export function OutpatientMockPage() {
               を開いてください。
             </p>
           ) : (
-            <p className="status-message" aria-live="polite">
+            <p className="status-message" aria-live={resolveAriaLive('info')}>
               MSW モック有効: シナリオ選択・フラグ上書きで Reception/Charts/Patients を同一フィクスチャから給電します。
             </p>
           )}
@@ -310,7 +310,7 @@ export function OutpatientMockPage() {
             </div>
             <div className="order-console__step">
               <span className="order-console__step-label">フラグ上書き</span>
-              <div className="order-console__status-group" aria-live="polite">
+              <div className="order-console__status-group" aria-live={resolveAriaLive('info')}>
                 <button
                   type="button"
                   className="order-console__toggle"
@@ -342,7 +342,7 @@ export function OutpatientMockPage() {
                   上書きをリセット
                 </button>
               </div>
-              <div className="order-console__status-group" aria-live="polite">
+              <div className="order-console__status-group" aria-live={resolveAriaLive('info')}>
                 <label className="order-console__toggle">
                   runId:
                   <input
@@ -372,7 +372,7 @@ export function OutpatientMockPage() {
             </div>
             <div className="order-console__step">
               <span className="order-console__step-label">障害注入（MSW）</span>
-              <div className="order-console__status-group" aria-live="polite">
+              <div className="order-console__status-group" aria-live={resolveAriaLive('info')}>
                 <label className="order-console__toggle">
                   mode:
                   <select
@@ -454,7 +454,7 @@ export function OutpatientMockPage() {
           </div>
           <div className="order-console__step">
             <span className="order-console__step-label">Telemetry funnel (resolve → charts)</span>
-            <ol className="order-console__note" data-test-id="telemetry-log" aria-live="polite">
+            <ol className="order-console__note" data-test-id="telemetry-log" aria-live={resolveAriaLive('info')}>
               {telemetryLog.map((entry, index) => (
                 <li key={`${entry.stage}-${index}`} data-stage={entry.stage} data-index={index}>
                   {index + 1}. {entry.stage} / transition: {entry.dataSourceTransition} / cacheHit:{' '}

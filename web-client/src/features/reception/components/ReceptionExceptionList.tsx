@@ -1,3 +1,4 @@
+import { resolveAriaLive } from '../../../libs/observability/observability';
 import type { ReceptionEntry } from '../api';
 import type { ClaimBundle, ClaimQueueEntry } from '../../outpatient/types';
 import type { ExceptionDecision } from '../exceptionLogic';
@@ -56,7 +57,7 @@ export function ReceptionExceptionList({ items, counts, runId, onSelectEntry, on
         </div>
       </header>
       {items.length === 0 ? (
-        <p className="reception-exceptions__empty" role="status" aria-live="polite">
+        <p className="reception-exceptions__empty" role="status" aria-live={resolveAriaLive('info')}>
           現在の条件では例外は検出されていません。
         </p>
       ) : (

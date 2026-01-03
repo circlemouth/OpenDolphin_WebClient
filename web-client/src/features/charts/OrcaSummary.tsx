@@ -5,6 +5,7 @@ import { ToneBanner } from '../reception/components/ToneBanner';
 import { StatusBadge } from '../shared/StatusBadge';
 import { useAuthService } from './authService';
 import { getChartToneDetails, getTransitionCopy, type ChartTonePayload } from '../../ux/charts/tones';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import type { OrcaOutpatientSummary } from './api';
 import type { ClaimOutpatientPayload, ReceptionEntry } from '../outpatient/types';
 import { recordOutpatientFunnel } from '../../libs/telemetry/telemetryClient';
@@ -34,7 +35,7 @@ export function OrcaSummary({
   const session = useOptionalSession();
   const { flags } = useAuthService();
   const resolvedFlags = resolveOutpatientFlags(summary, claim, appointmentMeta, flags);
-  const resolvedRunId = resolvedFlags.runId ?? flags.runId;
+  const resolvedRunId = resolveRunId(resolvedFlags.runId ?? flags.runId);
   const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
   const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;
   const resolvedFallbackUsed = resolvedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
@@ -343,13 +344,23 @@ export function OrcaSummary({
             </ul>
           )}
           {hasAppointmentCollision && (
-            <p className="orca-summary__warning" data-test-id="orca-summary-warning" role="alert" aria-live="assertive">
+            <p
+              className="orca-summary__warning"
+              data-test-id="orca-summary-warning"
+              role="alert"
+              aria-live={resolveAriaLive('warning')}
+            >
               予約時間が重複しています。オーバーブッキングに注意してください。
             </p>
           )}
         </div>
         {(resolvedFallbackUsed || resolvedMissingMaster || hasAppointmentCollision) && (
-          <div className="orca-summary__card orca-summary__card--warning" role="alert" aria-live="assertive" data-test-id="orca-summary-warning">
+          <div
+            className="orca-summary__card orca-summary__card--warning"
+            role="alert"
+            aria-live={resolveAriaLive('warning')}
+            data-test-id="orca-summary-warning"
+          >
             <strong>注意</strong>
             <ul>
               {resolvedFallbackUsed && <li>計算は暫定（fallbackUsed=true）。会計/予約確定をブロックしています。</li>}

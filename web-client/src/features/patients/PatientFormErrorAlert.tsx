@@ -1,3 +1,4 @@
+import { resolveAriaLive } from '../../libs/observability/observability';
 import type { PatientRecord } from './api';
 import type { PatientValidationError } from './patientValidation';
 
@@ -13,7 +14,7 @@ export function PatientFormErrorAlert({ errors, onFocusField }: PatientFormError
   const fieldErrors = errors.filter((e) => e.field && e.field !== 'form') as Array<PatientValidationError & { field: keyof PatientRecord }>;
 
   return (
-    <div className="patient-form__alert" role="alert" aria-live="assertive">
+    <div className="patient-form__alert" role="alert" aria-live={resolveAriaLive('warning')}>
       <p className="patient-form__alert-title">入力エラーがあります</p>
       {formErrors.length > 0 ? (
         <ul className="patient-form__alert-list">
@@ -40,4 +41,3 @@ export function PatientFormErrorAlert({ errors, onFocusField }: PatientFormError
     </div>
   );
 }
-

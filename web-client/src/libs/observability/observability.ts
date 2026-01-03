@@ -1,4 +1,4 @@
-import { type DataSourceTransition, type ObservabilityMeta } from './types';
+import { type DataSourceTransition, type LiveRegionAria, type LiveRegionTone, type ObservabilityMeta } from './types';
 
 const DEFAULT_RUN_ID =
   import.meta.env.VITE_RUM_RUN_ID ??
@@ -10,6 +10,12 @@ let currentMeta: ObservabilityMeta = {
 };
 
 type HeadersDict = Record<string, string>;
+const liveRegionToneMap: Record<LiveRegionTone, Exclude<LiveRegionAria, 'off'>> = {
+  info: 'polite',
+  success: 'polite',
+  warning: 'assertive',
+  error: 'assertive',
+};
 
 const normalizeHeaders = (headers?: HeadersInit): HeadersDict => {
   if (!headers) return {};
@@ -65,6 +71,15 @@ export function updateObservabilityMeta(next: ObservabilityMeta) {
 
 export function getObservabilityMeta(): ObservabilityMeta {
   return { ...currentMeta };
+}
+
+export function resolveRunId(runId?: string): string | undefined {
+  return runId ?? currentMeta.runId;
+}
+
+export function resolveAriaLive(tone: LiveRegionTone, override?: LiveRegionAria): LiveRegionAria {
+  if (override) return override;
+  return liveRegionToneMap[tone];
 }
 
 export function ensureObservabilityMeta(overrides?: ObservabilityMeta): ObservabilityMeta {

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 
 import { logUiState } from '../../libs/audit/auditLogger';
+import { resolveAriaLive } from '../../libs/observability/observability';
 import { useAuthService, type DataSourceTransition } from './authService';
 
 const TRANSITIONS: DataSourceTransition[] = ['mock', 'snapshot', 'server', 'fallback'];
@@ -65,7 +66,7 @@ export function AuthServiceControls() {
   };
 
   return (
-    <section className="auth-service-controls" aria-live="polite" aria-atomic="false">
+    <section className="auth-service-controls" aria-live={resolveAriaLive('info')} aria-atomic="false">
       <h2>Auth-service flags（デモ）</h2>
       <p className="auth-service-controls__description">
         `auth-service` から届く `missingMaster`/`cacheHit`/`dataSourceTransition` を切り替えて、Charts 側の tone を

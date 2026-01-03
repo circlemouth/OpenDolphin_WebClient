@@ -1,5 +1,7 @@
 import type { ReactNode } from 'react';
 import { Global } from '@emotion/react';
+import type { LiveRegionAria } from '../../libs/observability/types';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import { statusBadgeStyles } from '../reception/styles';
 
 export type BadgeTone = 'info' | 'warning' | 'error' | 'success';
@@ -9,7 +11,7 @@ export interface StatusBadgeProps {
   value: string;
   tone?: BadgeTone;
   description?: ReactNode;
-  ariaLive?: 'off' | 'polite' | 'assertive';
+  ariaLive?: LiveRegionAria;
   runId?: string;
 }
 
@@ -25,21 +27,23 @@ export function StatusBadge({
   value,
   tone = 'info',
   description,
-  ariaLive = 'off',
+  ariaLive,
   runId,
 }: StatusBadgeProps) {
   const descriptionText = typeof description === 'string' ? description : undefined;
   const ariaText = [label, value, descriptionText].filter(Boolean).join('、');
+  const live = resolveAriaLive(tone, ariaLive);
+  const resolvedRunId = resolveRunId(runId);
   return (
     <>
       <Global styles={statusBadgeStyles} />
       <div
         className={`status-badge status-badge--${tone}`}
         role="status"
-        aria-live={ariaLive}
+        aria-live={live}
         aria-atomic="true"
         aria-label={ariaText}
-        data-run-id={runId}
+        data-run-id={resolvedRunId}
       >
         <div className="status-badge__row">
           <span className="status-badge__label">{label}</span>

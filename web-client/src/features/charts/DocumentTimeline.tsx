@@ -5,6 +5,7 @@ import { StatusBadge } from '../shared/StatusBadge';
 import { ApiFailureBanner } from '../shared/ApiFailureBanner';
 import { useAuthService } from './authService';
 import { getChartToneDetails, type ChartTonePayload } from '../../ux/charts/tones';
+import { resolveAriaLive, resolveRunId } from '../../libs/observability/observability';
 import type { ReceptionEntry, ReceptionStatus } from '../reception/api';
 import type { ClaimOutpatientPayload, ClaimBundle, ClaimBundleStatus } from '../outpatient/types';
 import type { AppointmentDataBanner } from '../outpatient/appointmentDataBanner';
@@ -165,12 +166,13 @@ export function DocumentTimeline({
 }: DocumentTimelineProps) {
   const { flags } = useAuthService();
   const resolvedFlags = resolveOutpatientFlags(claimData, appointmentMeta, flags);
-  const resolvedRunId = resolvedFlags.runId ?? flags.runId;
+  const resolvedRunId = resolveRunId(resolvedFlags.runId ?? flags.runId);
   const resolvedMissingMaster = resolvedFlags.missingMaster ?? flags.missingMaster;
   const resolvedCacheHit = resolvedFlags.cacheHit ?? flags.cacheHit;
   const resolvedTransition = resolvedFlags.dataSourceTransition ?? flags.dataSourceTransition;
   const resolvedFallbackUsed = resolvedFlags.fallbackUsed ?? flags.fallbackUsed ?? false;
   const fallbackFlagMissing = resolvedFlags.fallbackFlagMissing ?? false;
+  const infoLive = resolveAriaLive('info');
   const tonePayload: ChartTonePayload = {
     missingMaster: resolvedMissingMaster ?? false,
     cacheHit: resolvedCacheHit ?? false,
@@ -616,7 +618,7 @@ export function DocumentTimeline({
     <section
       id="document-timeline"
       className="document-timeline"
-      aria-live={tone === 'info' ? 'polite' : 'assertive'}
+      aria-live={resolveAriaLive(tone)}
       aria-atomic="false"
       role="region"
       tabIndex={-1}
@@ -624,7 +626,7 @@ export function DocumentTimeline({
     >
       <div className="document-timeline__header" aria-label="DocumentTimeline メタ">
         <h2>Document Timeline</h2>
-        <div className="document-timeline__meta-bar" role="status" aria-live="polite">
+        <div className="document-timeline__meta-bar" role="status" aria-live={infoLive}>
           <span>RUN_ID: {resolvedRunId}</span>
           <span>dataSourceTransition: {resolvedTransition ?? 'snapshot'}</span>
           <span>cacheHit: {String(resolvedCacheHit ?? false)}</span>
@@ -646,7 +648,6 @@ export function DocumentTimeline({
           runId={resolvedRunId}
           destination="予約/来院リスト"
           nextAction="必要に応じて再取得"
-          ariaLive={appointmentBanner.tone === 'info' ? 'polite' : 'assertive'}
         />
       )}
       {orcaQueueError && (
@@ -656,7 +657,6 @@ export function DocumentTimeline({
           destination="ORCA キュー"
           runId={resolvedRunId}
           nextAction="再取得 / 設定確認（Administration のキュー監視）"
-          ariaLive="assertive"
         />
       )}
       <div className="document-timeline__controls">
@@ -696,13 +696,13 @@ export function DocumentTimeline({
         )}
       </div>
       {resolvedFallbackUsed && (
-        <div className="document-timeline__fallback" role="alert" aria-live="assertive">
+        <div className="document-timeline__fallback" role="alert" aria-live={resolveAriaLive('warning')}>
           <strong>請求試算は暫定データ（fallbackUsed=true）です。</strong>
           <p>最新の請求バンドル取得を優先してください。必要に応じて Reception で再取得してから送信してください。</p>
         </div>
       )}
       {fallbackFlagMissing && (
-        <div className="document-timeline__fallback" role="alert" aria-live="assertive">
+        <div className="document-timeline__fallback" role="alert" aria-live={resolveAriaLive('warning')}>
           <strong>API から fallbackUsed フラグが返却されていません。</strong>
           <p>サーバー側の telemetry 設定を確認し、fallback 判定を UI/Audit に連携してください。</p>
         </div>
@@ -723,7 +723,7 @@ export function DocumentTimeline({
         />
       )}
       {!claimError && onRetryClaim && (resolvedFallbackUsed || resolvedCacheHit === false) && (
-        <div className="document-timeline__retry" aria-live="polite">
+        <div className="document-timeline__retry" aria-live={infoLive}>
           <p>請求バンドルの整合性を再確認するには再取得を実行してください。</p>
           <button className="document-timeline__retry-button" onClick={onRetryClaim} disabled={isClaimLoading}>
             {isClaimLoading ? '再取得中…' : '請求バンドルを再取得'}
@@ -806,7 +806,6 @@ export function DocumentTimeline({
             value={resolvedMissingMaster ? 'true' : 'false'}
             tone={resolvedMissingMaster ? 'warning' : 'success'}
             description={resolvedMissingMaster ? 'マスタ欠損を検知・再取得を待機中' : 'マスタ取得済み・ORCA 再送フェーズ'}
-            ariaLive={resolvedMissingMaster ? 'assertive' : 'polite'}
             runId={resolvedRunId}
           />
           <StatusBadge
@@ -819,12 +818,12 @@ export function DocumentTimeline({
           <div
             className={`document-timeline__transition document-timeline__transition--${transitionMeta.tone}`}
             role="status"
-            aria-live="polite"
+            aria-live={resolveAriaLive(transitionMeta.tone)}
           >
             <strong>{transitionMeta.label}</strong>
             <p>{transitionMeta.description}</p>
           </div>
-          <div className="document-timeline__queue" aria-live="polite">
+          <div className="document-timeline__queue" aria-live={infoLive}>
             <div className="document-timeline__queue-header">
               <strong>ORCA キュー連携</strong>
               <span className="document-timeline__queue-runid">RUN_ID: {resolvedRunId}</span>
@@ -862,7 +861,6 @@ export function DocumentTimeline({
                         .join(' ｜ ')
                     : 'ORCA キュー応答から送信状態を解決します（Alt+S で再送）。'
                 }
-                ariaLive={selectedSendStatus?.isStalled ? 'assertive' : 'polite'}
                 runId={orcaQueue?.runId ?? resolvedRunId}
               />
               <StatusBadge
@@ -893,7 +891,6 @@ export function DocumentTimeline({
                     .filter((v): v is string => typeof v === 'string' && v.length > 0)
                     .join(' ｜ ') || '選択患者以外の滞留/失敗も含めて俯瞰します。'
                 }
-                ariaLive={orcaQueueCounts.failure > 0 || orcaQueueCounts.stalled > 0 ? 'assertive' : 'polite'}
                 runId={orcaQueue?.runId ?? resolvedRunId}
               />
             </div>
@@ -903,7 +900,7 @@ export function DocumentTimeline({
               </p>
             )}
             {claimBundles.length > 0 && (
-              <div className="document-timeline__queue-meta" aria-live="polite">
+              <div className="document-timeline__queue-meta" aria-live={infoLive}>
                 <strong>請求バンドル ({claimBundles.length}件)</strong>
                 <ul>
                   {claimBundles.slice(0, 3).map((bundle, idx) => (
@@ -924,7 +921,6 @@ export function DocumentTimeline({
               destination="Charts/Timeline"
               nextAction="必要なら再取得して整合を確認"
               runId={resolvedRunId}
-              ariaLive="polite"
             />
           ) : null}
         </div>
