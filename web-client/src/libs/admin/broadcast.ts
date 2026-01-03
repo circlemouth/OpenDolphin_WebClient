@@ -18,6 +18,7 @@ export type AdminBroadcast = {
   action?: 'config' | 'queue';
   deliveryId?: string;
   deliveryVersion?: string;
+  deliveryEtag?: string;
   deliveredAt?: string;
   queueMode?: 'mock' | 'live';
   verifyAdminDelivery?: boolean;

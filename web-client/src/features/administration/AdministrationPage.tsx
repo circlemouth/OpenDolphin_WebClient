@@ -245,6 +245,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
         action: 'config',
         deliveryId: data.deliveryId,
         deliveryVersion: data.deliveryVersion,
+        deliveryEtag: data.deliveryEtag ?? data.deliveryVersion,
         deliveredAt,
         queueMode: data.useMockOrcaQueue ? 'mock' : 'live',
         verifyAdminDelivery: data.verifyAdminDelivery,
@@ -268,6 +269,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           delivery: {
             deliveryId: data.deliveryId,
             deliveryVersion: data.deliveryVersion,
+            deliveryEtag: data.deliveryEtag ?? data.deliveryVersion,
             deliveredAt,
             deliveryMode: data.deliveryMode ?? configQuery.data?.deliveryMode,
             source: data.source,
@@ -470,6 +472,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
   const rawConfig = configQuery.data?.rawConfig ?? configQuery.data;
   const rawDelivery = configQuery.data?.rawDelivery;
   const deliveryMode = configQuery.data?.deliveryMode ?? rawDelivery?.deliveryMode ?? rawConfig?.deliveryMode;
+  const effectiveDeliveryEtag = configQuery.data?.deliveryEtag ?? configQuery.data?.deliveryVersion;
   const deliveryStatus = buildChartsDeliveryStatus(rawConfig, rawDelivery);
   const deliverySummary = summarizeDeliveryStatus(deliveryStatus);
   const lastDeliveredAt = rawDelivery?.deliveredAt ?? configQuery.data?.deliveredAt;
@@ -511,6 +514,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           <span className="administration-page__pill">配信元: {configQuery.data?.source ?? 'live'}</span>
           <span className="administration-page__pill">環境: {environmentLabel}</span>
           <span className="administration-page__pill">deliveryMode: {deliveryMode ?? '―'}</span>
+          <span className="administration-page__pill">ETag: {effectiveDeliveryEtag ?? '―'}</span>
           <span className="administration-page__pill">配信状態: {deliverySummary.summary}</span>
           <span className="administration-page__pill">最終配信: {formatTimestampWithAgo(lastDeliveredAt)}</span>
           <span className="administration-page__pill">
@@ -734,6 +738,7 @@ export function AdministrationPage({ runId, role }: AdministrationPageProps) {
           <ul className="placeholder-page__list">
             <li>deliveryId: {configQuery.data?.deliveryId ?? '―'}</li>
             <li>deliveryVersion: {configQuery.data?.deliveryVersion ?? '―'}</li>
+            <li>ETag: {effectiveDeliveryEtag ?? '―'}</li>
             <li>deliveredAt: {formatTimestamp(rawDelivery?.deliveredAt ?? configQuery.data?.deliveredAt)}</li>
             <li>environment: {environmentLabel}</li>
             <li>deliveryMode: {deliveryMode ?? '―'}</li>
